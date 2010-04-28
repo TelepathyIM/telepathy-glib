@@ -37,7 +37,9 @@ struct _TpConnectionPrivate {
     TpHandle self_handle;
     TpConnectionStatus status;
     TpConnectionStatusReason status_reason;
-    GError *connection_error /* initialized statically */;
+    gchar *connection_error;
+    /* a TP_HASH_TYPE_STRING_VARIANT_MAP */
+    GHashTable *connection_error_details;
 
     /* GArray of GQuark */
     GArray *contact_attribute_interfaces;

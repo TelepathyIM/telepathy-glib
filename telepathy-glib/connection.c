@@ -23,6 +23,8 @@
 
 #include <string.h>
 
+#include <dbus/dbus-protocol.h>
+
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
@@ -198,6 +200,9 @@ tp_connection_get_feature_quark_avatar_requirements (void)
  * #TpConnectionStatusReason.
  *
  * This macro expands to a function call returning a #GQuark.
+ *
+ * Since 0.7.24, this error domain is only used if a connection manager emits
+ * a #TpConnectionStatusReason not known to telepathy-glib.
  *
  * Since: 0.7.1
  */
@@ -746,15 +751,14 @@ tp_connection_connection_error_cb (TpConnection *self,
                                    gpointer user_data,
                                    GObject *weak_object)
 {
-  if (self->priv->connection_error != NULL)
-    {
-      g_error_free (self->priv->connection_error);
-      self->priv->connection_error = NULL;
-    }
+  g_free (self->priv->connection_error);
+  self->priv->connection_error = g_strdup (error_name);
 
-  tp_proxy_dbus_error_to_gerror (self, error_name,
-        tp_asv_get_string (details, "debug-message"),
-        &(self->priv->connection_error));
+  if (self->priv->connection_error_details != NULL)
+    g_hash_table_unref (self->priv->connection_error_details);
+
+  self->priv->connection_error_details = g_boxed_copy (
+      TP_HASH_TYPE_STRING_VARIANT_MAP, details);
 }
 
 static void
@@ -877,16 +881,39 @@ tp_connection_status_changed_cb (TpConnection *self,
 
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
+      GError *error = NULL;
+
       if (self->priv->connection_error == NULL)
         {
-          tp_connection_status_reason_to_gerror (reason, prev_status,
-              &(self->priv->connection_error));
+          g_assert (self->priv->connection_error_details == NULL);
+
+          tp_connection_status_reason_to_gerror (reason, prev_status, &error);
+        }
+      else
+        {
+          g_assert (self->priv->connection_error_details != NULL);
+          tp_proxy_dbus_error_to_gerror (self, self->priv->connection_error,
+              tp_asv_get_string (self->priv->connection_error_details,
+                "debug-message"), &error);
+
+          /* ... but if we don't know anything about that D-Bus error
+           * name, we can still be more helpful by deriving an error code from
+           * TpConnectionStatusReason */
+          if (g_error_matches (error, TP_DBUS_ERRORS,
+                TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR))
+            {
+              GError *from_csr = NULL;
+
+              tp_connection_status_reason_to_gerror (reason, prev_status,
+                  &from_csr);
+              error->domain = from_csr->domain;
+              error->code = from_csr->code;
+              g_error_free (from_csr);
+            }
         }
 
-      tp_proxy_invalidate ((TpProxy *) self, self->priv->connection_error);
-
-      g_error_free (self->priv->connection_error);
-      self->priv->connection_error = NULL;
+      tp_proxy_invalidate ((TpProxy *) self, error);
+      g_error_free (error);
     }
 }
 
@@ -1006,10 +1033,13 @@ tp_connection_finalize (GObject *object)
       self->priv->contact_attribute_interfaces = NULL;
     }
 
-  if (self->priv->connection_error != NULL)
+  g_free (self->priv->connection_error);
+  self->priv->connection_error = NULL;
+
+  if (self->priv->connection_error_details != NULL)
     {
-      g_error_free (self->priv->connection_error);
-      self->priv->connection_error = NULL;
+      g_hash_table_unref (self->priv->connection_error_details);
+      self->priv->connection_error_details = NULL;
     }
 
   ((GObjectClass *) tp_connection_parent_class)->finalize (object);
@@ -2167,4 +2197,78 @@ tp_avatar_requirements_destroy (TpAvatarRequirements *self)
 
   g_strfreev (self->supported_mime_types);
   g_slice_free (TpAvatarRequirements, self);
+}
+
+/**
+ * tp_connection_get_detailed_error:
+ * @self: a connection
+ * @details: (out) (allow-none) (element-type utf8 GObject.Value) (transfer none):
+ *  optionally used to return a map from string to #GValue, which must not be
+ *  modified or destroyed by the caller
+ *
+ * If the connection has disconnected, return the D-Bus error name with which
+ * it disconnected (in particular, this is %TP_ERROR_STR_CANCELLED if it was
+ * disconnected by a user request).
+ *
+ * Otherwise, return %NULL, without altering @details.
+ *
+ * Returns: (transfer none) (allow-none): a D-Bus error name, or %NULL.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_connection_get_detailed_error (TpConnection *self,
+    const GHashTable **details)
+{
+  TpProxy *proxy = (TpProxy *) self;
+
+  if (proxy->invalidated == NULL)
+    return NULL;
+
+  if (self->priv->connection_error != NULL)
+    {
+      g_assert (self->priv->connection_error_details != NULL);
+
+      if (details != NULL)
+        *details = self->priv->connection_error_details;
+
+      return self->priv->connection_error;
+    }
+  else
+    {
+      /* no detailed error, but we *have* been invalidated - guess one based
+       * on the invalidation reason, and don't give any details */
+
+      if (details != NULL)
+        *details = tp_asv_new (NULL, NULL);
+
+      if (proxy->invalidated->domain == TP_ERRORS)
+        {
+          return tp_error_get_dbus_name (proxy->invalidated->code);
+        }
+      else if (proxy->invalidated->domain == TP_DBUS_ERRORS)
+        {
+          switch (proxy->invalidated->code)
+            {
+            case TP_DBUS_ERROR_NAME_OWNER_LOST:
+              /* the CM probably crashed */
+              return DBUS_ERROR_NO_REPLY;
+              break;
+
+            case TP_DBUS_ERROR_OBJECT_REMOVED:
+            case TP_DBUS_ERROR_UNKNOWN_REMOTE_ERROR:
+            case TP_DBUS_ERROR_INCONSISTENT:
+            /* ... and all other cases up to and including
+             * TP_DBUS_ERROR_INCONSISTENT don't make sense in this context, so
+             * just use the generic one for them too */
+            default:
+              return TP_ERROR_STR_DISCONNECTED;
+            }
+        }
+      else
+        {
+          /* no idea what that means */
+          return TP_ERROR_STR_DISCONNECTED;
+        }
+    }
 }
