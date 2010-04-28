@@ -39,6 +39,7 @@ simple_observe_channels (
   SimpleClient *self = SIMPLE_CLIENT (client);
   GHashTable *info;
   gboolean fail;
+  GList *l;
 
   /* Fail if caller set the fake "FAIL" info */
   g_object_get (context, "observer-info", &info, NULL);
@@ -58,6 +59,31 @@ simple_observe_channels (
 
       tp_observe_channels_context_fail (context, &error);
       return;
+    }
+
+  g_assert (TP_IS_ACCOUNT (account));
+  g_assert (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
+
+  g_assert (TP_IS_CONNECTION (connection));
+  g_assert (tp_proxy_is_prepared (connection, TP_CONNECTION_FEATURE_CORE));
+
+  g_assert_cmpuint (g_list_length (channels), >, 0);
+  for (l = channels; l != NULL; l = g_list_next (l))
+    {
+      TpChannel *channel = l->data;
+
+      g_assert (TP_IS_CHANNEL (channel));
+      g_assert (tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE));
+    }
+
+  if (dispatch_operation != NULL)
+    g_assert (TP_IS_CHANNEL_DISPATCH_OPERATION (dispatch_operation));
+
+  for (l = requests; l != NULL; l = g_list_next (l))
+    {
+      TpChannelRequest *request = l->data;
+
+      g_assert (TP_IS_CHANNEL_REQUEST (request));
     }
 
   self->observe_ctx = g_object_ref (context);
