@@ -113,6 +113,10 @@ void tp_base_client_set_handler_related_conferences_bypass_approval (
 gboolean tp_base_client_register (TpBaseClient *self,
     GError **error);
 
+const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
+
+const gchar *tp_base_client_get_object_path (TpBaseClient *self);
+
 #if 0
 /* Normal methods, can be called at any time */
 

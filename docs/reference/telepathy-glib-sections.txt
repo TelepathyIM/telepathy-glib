@@ -3737,6 +3737,8 @@ tp_base_client_set_observer_recover
 TpBaseClientClassObserveChannelsImpl
 tp_base_client_implement_observe_channels
 tp_base_client_register
+tp_base_client_get_bus_name
+tp_base_client_get_object_path
 <SUBSECTION Standard>
 tp_base_client_get_type
 TP_BASE_CLIENT

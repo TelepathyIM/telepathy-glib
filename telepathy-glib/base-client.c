@@ -132,6 +132,9 @@ struct _TpBaseClientPrivate
   GPtrArray *handler_filters;
   /* array of g_strdup(token), plus NULL included in length */
   GPtrArray *handler_caps;
+
+  gchar *bus_name;
+  gchar *object_path;
 };
 
 static GHashTable *
@@ -425,44 +428,22 @@ gboolean
 tp_base_client_register (TpBaseClient *self,
     GError **error)
 {
-  GString *string;
-  gchar *path;
-  static guint unique_counter = 0;
-
   g_return_val_if_fail (TP_IS_BASE_CLIENT (self), FALSE);
   g_return_val_if_fail (!self->priv->registered, FALSE);
   /* Client should at least be an Observer, Approver or Handler */
   g_return_val_if_fail (self->priv->flags != 0, FALSE);
 
-  string = g_string_new (TP_CLIENT_BUS_NAME_BASE);
-  g_string_append (string, self->priv->name);
+  DEBUG ("request name %s", self->priv->bus_name);
 
-  if (self->priv->uniquify_name)
+  if (!tp_dbus_daemon_request_name (self->priv->dbus, self->priv->bus_name,
+        TRUE, error))
     {
-      const gchar *unique;
-
-      unique = tp_dbus_daemon_get_unique_name (self->priv->dbus);
-      g_string_append_printf (string, ".%s", tp_escape_as_identifier (unique));
-      g_string_append_printf (string, ".n%u", unique_counter++);
-    }
-
-  DEBUG ("request name %s", string->str);
-
-  if (!tp_dbus_daemon_request_name (self->priv->dbus, string->str, TRUE,
-        error))
-    {
-      DEBUG ("Failed to register bus name %s\n", string->str);
-      g_string_free (string, TRUE);
+      DEBUG ("Failed to register bus name %s\n", self->priv->bus_name);
       return FALSE;
     }
 
-  path = g_strdup_printf ("/%s", string->str);
-  g_strdelimit (path, ".", '/');
-
-  tp_dbus_daemon_register_object (self->priv->dbus, path, G_OBJECT (self));
-
-  g_string_free (string, TRUE);
-  g_free (path);
+  tp_dbus_daemon_register_object (self->priv->dbus, self->priv->object_path,
+      G_OBJECT (self));
 
   self->priv->registered = TRUE;
 
@@ -546,6 +527,9 @@ tp_base_client_finalize (GObject *object)
   g_ptr_array_free (self->priv->handler_filters, TRUE);
   g_ptr_array_free (self->priv->handler_caps, TRUE);
 
+  g_free (self->priv->bus_name);
+  g_free (self->priv->object_path);
+
   if (finalize != NULL)
     finalize (object);
 }
@@ -614,12 +598,33 @@ tp_base_client_constructed (GObject *object)
   TpBaseClient *self = TP_BASE_CLIENT (object);
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_base_client_parent_class)->constructed;
+  GString *string;
+  static guint unique_counter = 0;
 
   if (chain_up != NULL)
     chain_up (object);
 
   g_assert (self->priv->dbus != NULL);
   g_assert (self->priv->name != NULL);
+
+  /* Bus name */
+  string = g_string_new (TP_CLIENT_BUS_NAME_BASE);
+  g_string_append (string, self->priv->name);
+
+  if (self->priv->uniquify_name)
+    {
+      const gchar *unique;
+
+      unique = tp_dbus_daemon_get_unique_name (self->priv->dbus);
+      g_string_append_printf (string, ".%s", tp_escape_as_identifier (unique));
+      g_string_append_printf (string, ".n%u", unique_counter++);
+    }
+
+  /* Object path */
+  self->priv->object_path = g_strdup_printf ("/%s", string->str);
+  g_strdelimit (self->priv->object_path, ".", '/');
+
+  self->priv->bus_name = g_string_free (string, FALSE);
 }
 
 typedef enum {
@@ -1142,4 +1147,40 @@ tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
     TpBaseClientClassObserveChannelsImpl impl)
 {
   cls->priv->observe_channels_impl = impl;
+}
+
+/**
+ * tp_base_client_get_bus_name:
+ * @self: a #TpBaseClient
+ *
+ * Return the bus name of @self. Note that doesn't mean the client is
+ * actually owning this name; for example if tp_base_client_register()
+ * has not been called yet or failed.
+ *
+ * Returns: the bus name of the client
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_base_client_get_bus_name (TpBaseClient *self)
+{
+  return self->priv->bus_name;
+}
+
+/**
+ * tp_base_client_get_object_path:
+ * @self: a #TpBaseClient
+ *
+ * Return the object path of @self. Note that doesn't mean the client is
+ * actually registered on this path; for example if tp_base_client_register()
+ * has not been called yet or failed.
+ *
+ * Returns: the object path of the client
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_base_client_get_object_path (TpBaseClient *self)
+{
+  return self->priv->object_path;
 }
