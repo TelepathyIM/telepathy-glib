@@ -1,5 +1,7 @@
-telepathy-glib 0.11.4 (UNRELEASED)
+telepathy-glib 0.11.4 (2010-04-28)
 ==================================
+
+The “not sure whether to be amused or terrified” release.
 
 This version includes all the bugfixes from today's 0.10.5 release.
 
@@ -23,6 +25,9 @@ Enhancements:
 ∮ fd.o #19164: tighten the definition of TpChannel:identifier to guarantee
   that it's always non-NULL, even before the channel is ready (previously,
   it could be NULL before the channel was ready)
+
+∮ fd.o #23369 (partial): improve error mapping on TpConnection and
+  TpBaseConnection, and add tp_connection_get_detailed_error (smcv)
 
 Fixes:
 

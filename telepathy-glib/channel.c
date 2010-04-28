@@ -296,7 +296,7 @@ tp_channel_get_handle (TpChannel *self,
  * This is the same as the #TpChannel:identifier property, and isn't guaranteed
  * to be set until the %TP_CHANNEL_FEATURE_CORE property is ready.
  *
- * Changed in 0.11.UNRELEASED: as with #TpChannel:identifier, this could
+ * Changed in 0.11.4: as with #TpChannel:identifier, this could
  * previously either be %NULL or the empty string if there was no suitable
  * value. It is now non-%NULL in all cases.
  *
@@ -1466,7 +1466,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be
    * the empty string.
    *
-   * Changed in 0.11.UNRELEASED: this property is never %NULL. Previously,
+   * Changed in 0.11.4: this property is never %NULL. Previously,
    * it was %NULL before an identifier was known, or when a channel
    * with no TargetID D-Bus property had TargetHandleType %TP_HANDLE_TYPE_NONE.
    */

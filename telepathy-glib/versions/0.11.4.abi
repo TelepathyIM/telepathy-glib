@@ -1,0 +1,11 @@
+Version: TELEPATHY_GLIB_0.11.4
+Extends: TELEPATHY_GLIB_0.11.3
+Release: 0.11.4
+
+tp_avatar_requirements_copy
+tp_avatar_requirements_destroy
+tp_avatar_requirements_get_type
+tp_avatar_requirements_new
+tp_connection_get_avatar_requirements
+tp_connection_get_detailed_error
+tp_connection_get_feature_quark_avatar_requirements

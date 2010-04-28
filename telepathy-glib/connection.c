@@ -183,7 +183,7 @@ tp_connection_get_feature_quark_capabilities (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.4
  */
 
 GQuark
@@ -2055,7 +2055,7 @@ tp_connection_get_capabilities (TpConnection *self)
  * Returns: (transfer none): a #TpAvatarRequirements struct, or %NULL if the
  *  feature is not yet prepared or the connection doesn't have the necessary
  *  properties.
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.4
  */
 TpAvatarRequirements *
 tp_connection_get_avatar_requirements (TpConnection *self)
@@ -2084,7 +2084,7 @@ tp_connection_get_avatar_requirements (TpConnection *self)
  *
  * The requirements for setting an avatar on a particular protocol.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.4
  */
 
 /**
@@ -2092,7 +2092,7 @@ tp_connection_get_avatar_requirements (TpConnection *self)
  *
  * The boxed type of a #TpAvatarRequirements.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.4
  */
 GType
 tp_avatar_requirements_get_type (void)
@@ -2130,7 +2130,7 @@ tp_avatar_requirements_get_type (void)
  *
  * Returns: a newly allocated #TpAvatarRequirements, free it with
  * tp_avatar_requirements_destroy()
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.4
  */
 TpAvatarRequirements *
 tp_avatar_requirements_new (GStrv supported_mime_types,
@@ -2165,7 +2165,7 @@ tp_avatar_requirements_new (GStrv supported_mime_types,
  *
  * Returns: a newly allocated #TpAvatarRequirements, free it with
  * tp_avatar_requirements_destroy()
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.4
  */
 TpAvatarRequirements *
 tp_avatar_requirements_copy (TpAvatarRequirements *self)
@@ -2188,7 +2188,7 @@ tp_avatar_requirements_copy (TpAvatarRequirements *self)
  *
  * Free all memory used by the #TpAvatarRequirements.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.4
  */
 void
 tp_avatar_requirements_destroy (TpAvatarRequirements *self)
@@ -2214,7 +2214,7 @@ tp_avatar_requirements_destroy (TpAvatarRequirements *self)
  *
  * Returns: (transfer none) (allow-none): a D-Bus error name, or %NULL.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.4
  */
 const gchar *
 tp_connection_get_detailed_error (TpConnection *self,
