@@ -10,22 +10,22 @@ BUILT_GIRFILES += \
 	TelepathyGLib-0.12.gir
 
 INTROSPECTION_FILES = \
-	proxy.c _gen/proxy-introspectable.h \
-	account.c account.h \
-	account-manager.c account-manager.h \
-	connection.c connection.h \
-	connection-handles.c \
-	connection-manager.c connection-manager.h \
-	channel.c channel.h \
-	handle.c handle.h \
-	dbus-daemon.c dbus-daemon.h \
-	interfaces.c interfaces.h \
-	intset.c intset.h \
-	dbus.c dbus.h \
-	capabilities.c capabilities.h \
-	contact.c contact.h \
-	defs.h \
-	debug.c debug.h \
+	$(srcdir)/proxy.c _gen/proxy-introspectable.h \
+	$(srcdir)/account.c $(srcdir)/account.h \
+	$(srcdir)/account-manager.c $(srcdir)/account-manager.h \
+	$(srcdir)/connection.c $(srcdir)/connection.h \
+	$(srcdir)/connection-handles.c \
+	$(srcdir)/connection-manager.c $(srcdir)/connection-manager.h \
+	$(srcdir)/channel.c $(srcdir)/channel.h \
+	$(srcdir)/handle.c $(srcdir)/handle.h \
+	$(srcdir)/dbus-daemon.c $(srcdir)/dbus-daemon.h \
+	$(srcdir)/interfaces.c $(srcdir)/interfaces.h \
+	$(srcdir)/intset.c $(srcdir)/intset.h \
+	$(srcdir)/dbus.c $(srcdir)/dbus.h \
+	$(srcdir)/capabilities.c $(srcdir)/capabilities.h \
+	$(srcdir)/contact.c $(srcdir)/contact.h \
+	$(srcdir)/defs.h \
+	$(srcdir)/debug.c $(srcdir)/debug.h \
 	_gen/telepathy-enums.h \
 	_gen/telepathy-interfaces.h
 
@@ -35,7 +35,7 @@ _gen/proxy-introspectable.h: proxy.h introspection.am
 
 TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		libtelepathy-glib.la \
-		kludge-616375.xsl \
+		$(srcdir)/kludge-616375.xsl \
 		$(INTROSPECTION_FILES)
 	$(AM_V_GEN)$(INTROSPECTION_SCANNER) -v \
 		--namespace TelepathyGLib \
@@ -51,7 +51,7 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		--pkg dbus-glib-1 \
 		--output _gen/$@.tmp \
 		$(INTROSPECTION_FILES)
-	@xsltproc kludge-616375.xsl _gen/$@.tmp > $@
+	@xsltproc $(srcdir)/kludge-616375.xsl _gen/$@.tmp > $@
 	@rm -f _gen/proxy-introspectable.h
 	@rm -f _gen/$@.tmp
 
