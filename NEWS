@@ -1,6 +1,8 @@
 telepathy-glib 0.11.4 (UNRELEASED)
 ==================================
 
+This version includes all the bugfixes from today's 0.10.5 release.
+
 Requirements:
 
 ∮ gtk-doc 1.14 is now required. Applying commit 0a874b3a from gtk-doc git
@@ -30,6 +32,8 @@ Fixes:
 
 ∮ Fix more assertion failures (this time in TpContact) if getting contact
   attributes fails or yields the wrong type (wjt)
+
+∮ Remove some dead code to keep coverity happy (wjt)
 
 telepathy-glib 0.11.3 (2010-04-20)
 ==================================
