@@ -95,6 +95,19 @@ tp_observe_channels_context_dispose (GObject *object)
   void (*dispose) (GObject *) =
     G_OBJECT_CLASS (tp_observe_channels_context_parent_class)->dispose;
 
+  if (self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE ||
+      self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED)
+    {
+      GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Disposing the TpObserveChannelsContext" };
+
+      g_warning ("Disposing a context in the %s state",
+          self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE ?
+          "none": "delayed");
+
+      tp_observe_channels_context_fail (self, &error);
+    }
+
   if (self->account != NULL)
     {
       g_object_unref (self->account);
