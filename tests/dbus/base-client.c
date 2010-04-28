@@ -123,11 +123,7 @@ static void
 teardown (Test *test,
           gconstpointer data)
 {
-  if (test->error != NULL)
-    {
-      g_error_free (test->error);
-      test->error = NULL;
-    }
+  g_clear_error (&test->error);
 
   if (test->interfaces != NULL)
     {
@@ -274,11 +270,7 @@ no_return_cb (TpClient *proxy,
 {
   Test *test = user_data;
 
-  if (test->error != NULL)
-    {
-      g_error_free (test->error);
-      test->error = NULL;
-    }
+  g_clear_error (&test->error);
 
   if (error != NULL)
     {
