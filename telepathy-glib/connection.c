@@ -2026,8 +2026,9 @@ tp_connection_get_capabilities (TpConnection *self)
  *
  * This property cannot change after @self goes to the Connected state.
  *
- * Returns: a #TpAvatarRequirements or %NULL if the feature is not yet
- * prepared, or connection doesn't have avatar requirements properties.
+ * Returns: (transfer none): a #TpAvatarRequirements struct, or %NULL if the
+ *  feature is not yet prepared or the connection doesn't have the necessary
+ *  properties.
  * Since: 0.11.UNRELEASED
  */
 TpAvatarRequirements *
