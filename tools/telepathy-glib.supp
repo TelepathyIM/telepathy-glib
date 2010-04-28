@@ -43,6 +43,14 @@
    obj:/lib/ld-2.9.so
 }
 
+{
+  selinux, we just don't know
+  Memcheck:Leak
+  fun:malloc
+  fun:getdelim
+  obj:/lib/libselinux.so.1
+}
+
 # ============================= GLib ==================================
 
 {
