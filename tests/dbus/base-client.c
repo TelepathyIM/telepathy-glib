@@ -77,8 +77,8 @@ setup (Test *test,
   test->client = g_object_new (TP_TYPE_CLIENT,
           "dbus-daemon", test->dbus,
           "dbus-connection", ((TpProxy *) test->dbus)->dbus_connection,
-          "bus-name", "org.freedesktop.Telepathy.Client.Test",
-          "object-path", "/org/freedesktop/Telepathy/Client/Test",
+          "bus-name", tp_base_client_get_bus_name (test->base_client),
+          "object-path", tp_base_client_get_object_path (test->base_client),
           NULL);
 
   g_assert (test->client != NULL);
