@@ -535,12 +535,15 @@ tp_base_client_get_property (GObject *object,
       case PROP_DBUS_DAEMON:
         g_value_set_object (value, self->priv->dbus);
         break;
+
       case PROP_NAME:
         g_value_set_string (value, self->priv->name);
         break;
+
       case PROP_UNIQUIFY_NAME:
         g_value_set_boolean (value, self->priv->uniquify_name);
         break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -560,12 +563,15 @@ tp_base_client_set_property (GObject *object,
       case PROP_DBUS_DAEMON:
         self->priv->dbus = g_value_dup_object (value);
         break;
+
       case PROP_NAME:
         self->priv->name = g_value_dup_string (value);
         break;
+
       case PROP_UNIQUIFY_NAME:
         self->priv->uniquify_name = g_value_get_boolean (value);
         break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
