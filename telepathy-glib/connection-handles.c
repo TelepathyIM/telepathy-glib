@@ -738,8 +738,8 @@ connection_got_contact_attributes (TpConnection *self,
  * @handles: an array of handles
  * @interfaces: a #GStrv of interfaces
  * @hold: if %TRUE, the callback will hold one reference to each valid handle
- * @callback: called on success or failure (unless @weak_object has become
- *  unreferenced)
+ * @callback: (type GObject.Callback): called on success or
+ *  failure (unless @weak_object has become unreferenced)
  * @user_data: arbitrary user-supplied data
  * @destroy: called to destroy @user_data after calling @callback, or when
  *  @weak_object becomes unreferenced (whichever occurs sooner)

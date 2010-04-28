@@ -161,7 +161,7 @@ struct _TpContactPrivate {
  *
  * <!-- nothing more to say -->
  *
- * Returns: a borrowed reference to the #TpContact:connection
+ * Returns: (transfer none): a borrowed reference to the #TpContact:connection
  *  (it must be referenced with g_object_ref if it must remain valid
  *  longer than the contact)
  *
@@ -376,7 +376,8 @@ tp_contact_get_presence_message (TpContact *self)
  * requires a hash table that will persist for longer than that, it must be
  * reffed with g_hash_table_ref().
  *
- * Returns: the same #GHashTable (or %NULL) as the #TpContact:location property
+ * Returns: (element-type utf8 GObject.Value) (transfer none): the same
+ *  #GHashTable (or %NULL) as the #TpContact:location property
  *
  * Since: 0.11.1
  */
@@ -996,14 +997,16 @@ contacts_context_fail (ContactsContext *c,
  * @connection: The connection
  * @n_contacts: The number of TpContact objects successfully created
  *  (one per valid ID), or 0 on unrecoverable errors
- * @contacts: An array of @n_contacts TpContact objects (this callback is
+ * @contacts: (array length=n_contacts): An array of @n_contacts TpContact
+ *  objects (this callback is
  *  not given a reference to any of these objects, and must call
  *  g_object_ref() on any that it will keep), or %NULL on unrecoverable errors
- * @requested_ids: An array of @n_contacts valid IDs (JIDs, SIP URIs etc.)
+ * @requested_ids: (array length=n_contacts): An array of @n_contacts valid IDs
+ *  (JIDs, SIP URIs etc.)
  *  that were passed to tp_connection_get_contacts_by_id(), in an order
  *  corresponding to @contacts, or %NULL on unrecoverable errors
- * @failed_id_errors: A hash table in which the keys are IDs
- *  and the values are errors (#GError)
+ * @failed_id_errors: (element-type utf8 GLib.Error): A hash table in which
+ *  the keys are IDs and the values are errors (#GError)
  * @error: %NULL on success, or an unrecoverable error that caused everything
  *  to fail
  * @user_data: the @user_data that was passed to
@@ -2411,16 +2414,18 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
  * @self: A connection, which must be ready (#TpConnection:connection-ready
  *  must be %TRUE)
  * @n_contacts: The number of contacts in @contacts (must be at least 1)
- * @contacts: An array of #TpContact objects associated with @self
+ * @contacts: (array length=n_contacts): An array of #TpContact objects
+ *  associated with @self
  * @n_features: The number of features in @features (must be at least 1)
- * @features: An array of features that must be ready for use (if supported)
- *  before the callback is called
- * @callback: A user callback to call when the contacts are ready
+ * @features: (array length=n_features): An array of features that must be
+ *  ready for use (if supported) before the callback is called
+ * @callback: (scope async): A user callback to call when the contacts are ready
  * @user_data: Data to pass to the callback
  * @destroy: Called to destroy @user_data either after @callback has been
  *  called, or if the operation is cancelled
- * @weak_object: An object to pass to the callback, which will be weakly
- *  referenced; if this object is destroyed, the operation will be cancelled
+ * @weak_object: (allow-none): An object to pass to the callback, which will be
+ *  weakly referenced; if this object is destroyed, the operation will be
+ *  cancelled
  *
  * Given several #TpContact objects, make asynchronous method calls
  * ensure that all the features specified in @features are ready for use
@@ -2622,17 +2627,20 @@ contacts_requested_handles (TpConnection *connection,
  * @self: A connection, which must be ready (#TpConnection:connection-ready
  *  must be %TRUE)
  * @n_ids: The number of IDs in @ids (must be at least 1)
- * @ids: An array of strings representing the desired contacts by their
+ * @ids: (array length=n_ids) (transfer none): An array of strings representing
+ *  the desired contacts by their
  *  identifiers in the IM protocol (XMPP JIDs, SIP URIs, MSN Passports,
  *  AOL screen-names etc.)
  * @n_features: The number of features in @features (may be 0)
- * @features: An array of features that must be ready for use (if supported)
+ * @features: (array length=n_features) (allow-none): An array of features
+ *  that must be ready for use (if supported)
  *  before the callback is called (may be %NULL if @n_features is 0)
- * @callback: A user callback to call when the contacts are ready
+ * @callback: (scope async): A user callback to call when the contacts are ready
  * @user_data: Data to pass to the callback
  * @destroy: Called to destroy @user_data either after @callback has been
  *  called, or if the operation is cancelled
- * @weak_object: An object to pass to the callback, which will be weakly
+ * @weak_object: (allow-none) (transfer none): An object to pass to the
+ *  callback, which will be weakly
  *  referenced; if this object is destroyed, the operation will be cancelled
  *
  * Create a number of #TpContact objects and make asynchronous method calls

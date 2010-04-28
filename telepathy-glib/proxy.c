@@ -356,7 +356,7 @@ static guint signals[N_SIGNALS] = {0};
 static void tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy, TpProxy *self);
 
 /**
- * tp_proxy_borrow_interface_by_id:
+ * tp_proxy_borrow_interface_by_id: (skip)
  * @self: the TpProxy
  * @iface: quark representing the interface required
  * @error: used to raise an error in the #TP_DBUS_ERRORS domain if @iface
@@ -556,7 +556,7 @@ tp_proxy_iface_destroyed_cb (DBusGProxy *dgproxy,
 }
 
 /**
- * tp_proxy_add_interface_by_id:
+ * tp_proxy_add_interface_by_id: (skip)
  * @self: the TpProxy, which must not have become #TpProxy::invalidated.
  * @iface: quark representing the interface to be added
  *
@@ -1139,7 +1139,7 @@ tp_proxy_class_init (TpProxyClass *klass)
       param_spec);
 
   /**
-   * TpProxy:dbus-connection:
+   * TpProxy:dbus-connection: (skip)
    *
    * The D-Bus connection for this object. Read-only except during
    * construction.
@@ -1189,7 +1189,7 @@ tp_proxy_class_init (TpProxyClass *klass)
       param_spec);
 
   /**
-   * TpProxy::interface-added:
+   * TpProxy::interface-added: (skip)
    * @self: the proxy object
    * @id: the GQuark representing the interface
    * @proxy: the dbus-glib proxy representing the interface
@@ -1236,9 +1236,10 @@ tp_proxy_class_init (TpProxyClass *klass)
  *
  * <!-- -->
  *
- * Returns: a borrowed reference to the #TpDBusDaemon for this object, if any;
- *  always %NULL if this object is itself a #TpDBusDaemon. The caller must
- *  reference the returned object with g_object_ref() if it will be kept.
+ * Returns: (transfer none): a borrowed reference to the #TpDBusDaemon for
+ *  this object, if any; always %NULL if this object is itself a
+ *  #TpDBusDaemon. The caller must reference the returned object with
+ *  g_object_ref() if it will be kept.
  *
  * Since: 0.7.17
  */
@@ -1251,7 +1252,7 @@ tp_proxy_get_dbus_daemon (gpointer self)
 }
 
 /**
- * tp_proxy_get_dbus_connection:
+ * tp_proxy_get_dbus_connection: (skip)
  * @self: a #TpProxy or subclass
  *
  * <!-- -->
@@ -1518,8 +1519,9 @@ _tp_proxy_is_preparing (gpointer self,
 /**
  * tp_proxy_prepare_async:
  * @self: an instance of a #TpProxy subclass
- * @features: an  array of desired features, ending with 0; %NULL is
- *  equivalent to an  array containing only 0
+ * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
+ *  of desired features, ending with 0; %NULL is equivalent to an array
+ *  containing only 0
  * @callback: if not %NULL, called exactly once, when the features have all
  *  been prepared or failed to prepare, or after the proxy is invalidated
  * @user_data: user data for @callback

@@ -17,6 +17,8 @@ Makefile
 *~
 *.pyc
 *.loT
+*.gir
+*.typelib
 .semanticache
 _gen
 FIXME.out

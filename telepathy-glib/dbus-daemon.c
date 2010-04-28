@@ -120,7 +120,7 @@ tp_dbus_daemon_dup (GError **error)
 }
 
 /**
- * tp_dbus_daemon_new:
+ * tp_dbus_daemon_new: (skip)
  * @connection: a connection to D-Bus
  *
  * Returns a proxy for signals and method calls on a particular bus

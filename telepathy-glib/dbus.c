@@ -65,7 +65,7 @@
 #include <telepathy-glib/util.h>
 
 /**
- * tp_asv_size:
+ * tp_asv_size: (skip)
  * @asv: a GHashTable
  *
  * Return the size of @asv as if via g_hash_table_size().
@@ -78,7 +78,7 @@
 /* (#define + static inline in dbus.h) */
 
 /**
- * tp_dbus_g_method_return_not_implemented:
+ * tp_dbus_g_method_return_not_implemented: (skip)
  * @context: The D-Bus method invocation context
  *
  * Return the Telepathy error NotImplemented from the method invocation
@@ -106,7 +106,7 @@ _tp_dbus_starter_bus_conn (GError **error)
 }
 
 /**
- * tp_get_bus:
+ * tp_get_bus: (skip)
  *
  * Returns a connection to the D-Bus daemon on which this process was
  * activated if it was launched by D-Bus service activation, or the session
@@ -138,7 +138,7 @@ tp_get_bus (void)
 }
 
 /**
- * tp_get_bus_proxy:
+ * tp_get_bus_proxy: (skip)
  *
  * Return a #DBusGProxy for the bus daemon object. The same caveats as for
  * tp_get_bus() apply.
@@ -691,7 +691,7 @@ tp_g_value_slice_new_take_object_path (gchar *path)
 }
 
 /**
- * tp_asv_new:
+ * tp_asv_new: (skip)
  * @first_key: the name of the first key (or NULL)
  * @...: type and value for the first key, followed by a NULL-terminated list
  *  of (key, type, value) tuples
@@ -772,7 +772,7 @@ tp_asv_new (const gchar *first_key, ...)
 }
 
 /**
- * tp_asv_get_boolean:
+ * tp_asv_get_boolean: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location to store %TRUE if the key actually
@@ -813,7 +813,7 @@ tp_asv_get_boolean (const GHashTable *asv,
 }
 
 /**
- * tp_asv_set_boolean:
+ * tp_asv_set_boolean: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -837,7 +837,7 @@ tp_asv_set_boolean (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_bytes:
+ * tp_asv_get_bytes: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  *
@@ -872,7 +872,7 @@ tp_asv_get_bytes (const GHashTable *asv,
 }
 
 /**
- * tp_asv_set_bytes:
+ * tp_asv_set_bytes: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @length: the number of bytes to copy
@@ -901,7 +901,7 @@ tp_asv_set_bytes (GHashTable *asv,
 }
 
 /**
- * tp_asv_take_bytes:
+ * tp_asv_take_bytes: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: a non-NULL #GArray of %guchar, ownership of which will be taken by
@@ -928,7 +928,7 @@ tp_asv_take_bytes (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_string:
+ * tp_asv_get_string: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  *
@@ -961,7 +961,7 @@ tp_asv_get_string (const GHashTable *asv,
 }
 
 /**
- * tp_asv_set_string:
+ * tp_asv_set_string: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -985,7 +985,7 @@ tp_asv_set_string (GHashTable *asv,
 }
 
 /**
- * tp_asv_take_string:
+ * tp_asv_take_string: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1011,7 +1011,7 @@ tp_asv_take_string (GHashTable *asv,
 }
 
 /**
- * tp_asv_set_static_string:
+ * tp_asv_set_static_string: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1037,7 +1037,7 @@ tp_asv_set_static_string (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_int32:
+ * tp_asv_get_int32: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1125,7 +1125,7 @@ return_invalid:
 }
 
 /**
- * tp_asv_set_int32:
+ * tp_asv_set_int32: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1149,7 +1149,7 @@ tp_asv_set_int32 (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_uint32:
+ * tp_asv_get_uint32: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1237,7 +1237,7 @@ return_invalid:
 }
 
 /**
- * tp_asv_set_uint32:
+ * tp_asv_set_uint32: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1261,7 +1261,7 @@ tp_asv_set_uint32 (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_int64:
+ * tp_asv_get_int64: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1338,7 +1338,7 @@ return_invalid:
 }
 
 /**
- * tp_asv_set_int64:
+ * tp_asv_set_int64: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1362,7 +1362,7 @@ tp_asv_set_int64 (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_uint64:
+ * tp_asv_get_uint64: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1443,7 +1443,7 @@ return_invalid:
 }
 
 /**
- * tp_asv_set_uint64:
+ * tp_asv_set_uint64: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1467,7 +1467,7 @@ tp_asv_set_uint64 (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_double:
+ * tp_asv_get_double: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1541,7 +1541,7 @@ return_invalid:
 }
 
 /**
- * tp_asv_set_double:
+ * tp_asv_set_double: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1565,7 +1565,7 @@ tp_asv_set_double (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_object_path:
+ * tp_asv_get_object_path: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  *
@@ -1598,7 +1598,7 @@ tp_asv_get_object_path (const GHashTable *asv,
 }
 
 /**
- * tp_asv_set_object_path:
+ * tp_asv_set_object_path: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1624,7 +1624,7 @@ tp_asv_set_object_path (GHashTable *asv,
 }
 
 /**
- * tp_asv_take_object_path:
+ * tp_asv_take_object_path: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1650,7 +1650,7 @@ tp_asv_take_object_path (GHashTable *asv,
 }
 
 /**
- * tp_asv_set_static_object_path:
+ * tp_asv_set_static_object_path: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: value
@@ -1676,7 +1676,7 @@ tp_asv_set_static_object_path (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_boxed:
+ * tp_asv_get_boxed: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @type: The type that the key's value should have, which must be derived
@@ -1714,7 +1714,7 @@ tp_asv_get_boxed (const GHashTable *asv,
 }
 
 /**
- * tp_asv_set_boxed:
+ * tp_asv_set_boxed: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @type: the type of the key's value, which must be derived from %G_TYPE_BOXED
@@ -1742,7 +1742,7 @@ tp_asv_set_boxed (GHashTable *asv,
 }
 
 /**
- * tp_asv_take_boxed:
+ * tp_asv_take_boxed: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @type: the type of the key's value, which must be derived from %G_TYPE_BOXED
@@ -1770,7 +1770,7 @@ tp_asv_take_boxed (GHashTable *asv,
 }
 
 /**
- * tp_asv_set_static_boxed:
+ * tp_asv_set_static_boxed: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @type: the type of the key's value, which must be derived from %G_TYPE_BOXED
@@ -1799,7 +1799,7 @@ tp_asv_set_static_boxed (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_strv:
+ * tp_asv_get_strv: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  *
@@ -1833,7 +1833,7 @@ tp_asv_get_strv (const GHashTable *asv,
 }
 
 /**
- * tp_asv_set_strv:
+ * tp_asv_set_strv: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  * @key: string key
  * @value: a %NULL-terminated string array
@@ -1858,7 +1858,7 @@ tp_asv_set_strv (GHashTable *asv,
 }
 
 /**
- * tp_asv_lookup:
+ * tp_asv_lookup: (skip)
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  *
@@ -1882,7 +1882,7 @@ tp_asv_lookup (const GHashTable *asv,
 }
 
 /**
- * tp_asv_dump:
+ * tp_asv_dump: (skip)
  * @asv: a #GHashTable created with tp_asv_new()
  *
  * Dumps the a{sv} map to the debugging console.
