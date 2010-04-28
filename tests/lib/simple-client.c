@@ -22,6 +22,8 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
+#include "tests/lib/util.h"
+
 G_DEFINE_TYPE (SimpleClient, simple_client, TP_TYPE_BASE_CLIENT)
 
 static void
@@ -99,7 +101,7 @@ simple_client_new (TpDBusDaemon *dbus_daemon,
     const gchar *name,
     gboolean uniquify_name)
 {
-  return g_object_new (SIMPLE_TYPE_CLIENT,
+  return test_object_new_static_class (SIMPLE_TYPE_CLIENT,
       "dbus-daemon", dbus_daemon,
       "name", name,
       "uniquify-name", uniquify_name,

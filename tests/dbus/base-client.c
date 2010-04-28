@@ -69,12 +69,13 @@ setup (Test *test,
   test->base_client = TP_BASE_CLIENT (test->simple_client);
 
   /* Create service-side Account object */
-  test->account_service = g_object_new (SIMPLE_TYPE_ACCOUNT, NULL);
+  test->account_service = test_object_new_static_class (SIMPLE_TYPE_ACCOUNT,
+      NULL);
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 
   /* Create client-side Client object */
-  test->client = g_object_new (TP_TYPE_CLIENT,
+  test->client = test_object_new_static_class (TP_TYPE_CLIENT,
           "dbus-daemon", test->dbus,
           "dbus-connection", ((TpProxy *) test->dbus)->dbus_connection,
           "bus-name", tp_base_client_get_bus_name (test->base_client),
@@ -102,7 +103,8 @@ setup (Test *test,
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service = TEST_TEXT_CHANNEL_NULL (g_object_new (
+  test->text_chan_service = TEST_TEXT_CHANNEL_NULL (
+      test_object_new_static_class (
         TEST_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
