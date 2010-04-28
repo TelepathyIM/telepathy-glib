@@ -38,6 +38,8 @@
  *
  * tp_base_client_register (client, NULL);
  * ]|
+ *
+ * See examples/client/media-observer.c for a complete example.
  */
 
 /**
