@@ -76,7 +76,6 @@ setup (Test *test,
   /* Create client-side Client object */
   test->client = test_object_new_static_class (TP_TYPE_CLIENT,
           "dbus-daemon", test->dbus,
-          "dbus-connection", ((TpProxy *) test->dbus)->dbus_connection,
           "bus-name", tp_base_client_get_bus_name (test->base_client),
           "object-path", tp_base_client_get_object_path (test->base_client),
           NULL);
