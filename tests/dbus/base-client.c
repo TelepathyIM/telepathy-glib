@@ -1,6 +1,6 @@
 /* Tests of TpBaseClient
  *
- * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2010 Collabora Ltd. <http://www.collabora.co.uk/>
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
