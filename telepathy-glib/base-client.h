@@ -58,7 +58,7 @@ GType tp_base_client_get_type (void);
 /* Protected methods; should be called only by subclasses */
 
 typedef void (*TpBaseClientClassObserveChannelsImpl) (
-    TpBaseClient *self,
+    TpBaseClient *client,
     TpAccount *account,
     TpConnection *connection,
     GList *channels,
