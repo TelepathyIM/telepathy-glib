@@ -447,12 +447,13 @@ tp_base_client_register (TpBaseClient *self,
   if (!tp_dbus_daemon_request_name (self->priv->dbus, string->str, TRUE,
         error))
     {
-      g_warning ("Failed to register bus name %s\n", string->str);
+      DEBUG ("Failed to register bus name %s\n", string->str);
       g_string_free (string, TRUE);
       return FALSE;
     }
 
-  path = g_strdup_printf ("/%s", g_strdelimit (string->str, ".", '/'));
+  path = g_strdup_printf ("/%s", string->str);
+  g_strdelimit (path, ".", '/');
 
   tp_dbus_daemon_register_object (self->priv->dbus, path, G_OBJECT (self));
 
