@@ -30,8 +30,6 @@ G_DEFINE_TYPE (TplContact, tpl_contact, G_TYPE_OBJECT)
 
 struct _TplContactPriv
 {
-  TpContact *contact;
-
   TplContactType contact_type;
   gchar *alias;
   gchar *identifier;
@@ -58,22 +56,6 @@ tpl_contact_finalize (GObject *obj)
   priv->identifier = NULL;
 
   G_OBJECT_CLASS (tpl_contact_parent_class)->finalize (obj);
-}
-
-
-static void
-tpl_contact_dispose (GObject *obj)
-{
-  TplContact *self = TPL_CONTACT (obj);
-  TplContactPriv *priv = self->priv;
-
-  if (priv->contact != NULL)
-    {
-      g_object_unref (priv->contact);
-      priv->contact = NULL;
-    }
-
-  G_OBJECT_CLASS (tpl_contact_parent_class)->dispose (obj);
 }
 
 
@@ -136,7 +118,6 @@ static void tpl_contact_class_init (TplContactClass *klass)
   GParamSpec *param_spec;
 
   object_class->finalize = tpl_contact_finalize;
-  object_class->dispose = tpl_contact_dispose;
   object_class->get_property = tpl_contact_get_property;
   object_class->set_property = tpl_contact_set_property;
 
@@ -198,7 +179,6 @@ _tpl_contact_from_tp_contact (TpContact *contact)
   g_return_val_if_fail (TP_IS_CONTACT (contact), NULL);
 
   ret = _tpl_contact_new (tp_contact_get_identifier (contact));
-  tpl_contact_set_contact (ret, contact);
 
   if (tp_contact_get_alias (contact) != NULL)
     tpl_contact_set_alias (ret, (gchar *) tp_contact_get_alias (contact));
@@ -218,15 +198,6 @@ _tpl_contact_new (const gchar *identifier)
 
   return g_object_new (TPL_TYPE_CONTACT,
       "identifier", identifier, NULL);
-}
-
-
-TpContact *
-tpl_contact_get_contact (TplContact *self)
-{
-  g_return_val_if_fail (TPL_IS_CONTACT (self), NULL);
-
-  return self->priv->contact;
 }
 
 
@@ -263,18 +234,6 @@ tpl_contact_get_avatar_token (TplContact *self)
   g_return_val_if_fail (TPL_IS_CONTACT (self), NULL);
 
   return self->priv->avatar_token;
-}
-
-
-void
-tpl_contact_set_contact (TplContact *self,
-    TpContact *data)
-{
-  g_return_if_fail (TPL_IS_CONTACT (self));
-  g_return_if_fail (TP_IS_CONTACT (data));
-  g_return_if_fail (self->priv->contact == NULL);
-
-  self->priv->contact = g_object_ref (data);
 }
 
 

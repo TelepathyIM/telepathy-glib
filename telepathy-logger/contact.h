@@ -52,13 +52,11 @@ typedef struct
 
 GType tpl_contact_get_type (void);
 
-TpContact *tpl_contact_get_contact (TplContact *self);
 const gchar *tpl_contact_get_alias (TplContact *self);
 const gchar *tpl_contact_get_identifier (TplContact *self);
 TplContactType tpl_contact_get_contact_type (TplContact *self);
 const gchar *tpl_contact_get_avatar_token (TplContact *self);
 
-void tpl_contact_set_contact (TplContact *self, TpContact *data);
 void tpl_contact_set_alias (TplContact *self, const gchar *data);
 void tpl_contact_set_identifier (TplContact *self, const gchar *data);
 void tpl_contact_set_contact_type (TplContact *self, TplContactType data);
