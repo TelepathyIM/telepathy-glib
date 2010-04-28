@@ -221,7 +221,7 @@ channel_closed_cb (ExampleEchoChannel *chan,
     }
 }
 
-static ExampleEchoChannel *
+static void
 new_channel (ExampleEchoImManager *self,
              TpHandle handle,
              TpHandle initiator,
@@ -245,6 +245,7 @@ new_channel (ExampleEchoImManager *self,
 
   g_signal_connect (chan, "closed", (GCallback) channel_closed_cb, self);
 
+  /* self->priv->channels takes ownership of 'chan' */
   g_hash_table_insert (self->priv->channels, GUINT_TO_POINTER (handle), chan);
 
   if (request_token != NULL)
@@ -253,8 +254,6 @@ new_channel (ExampleEchoImManager *self,
   tp_channel_manager_emit_new_channel (self, TP_EXPORTABLE_CHANNEL (chan),
       requests);
   g_slist_free (requests);
-
-  return chan;
 }
 
 static const gchar * const fixed_properties[] = {
@@ -323,8 +322,7 @@ example_echo_im_manager_request (ExampleEchoImManager *self,
 
   if (chan == NULL)
     {
-      chan = new_channel (self, handle, self->priv->conn->self_handle,
-          request_token);
+      new_channel (self, handle, self->priv->conn->self_handle, request_token);
     }
   else if (require_new)
     {
