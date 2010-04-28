@@ -459,9 +459,10 @@ tp_observe_channels_context_fail (TpObserveChannelsContext *self,
  * @self: a #TpObserveChannelsContext
  *
  * Called by #TpBaseClientClassObserveChannelsImpl to indicate that it
- * implements the method in an async way. It has to ref the
- * #TpObserveChannelsContext before calling this function and is responsible
- * to call tp_observe_channels_context_accept once the call is done.
+ * implements the method in an async way. The caller must take a reference
+ * to the #TpObserveChannelsContext before calling this function, and
+ * is responsible for calling either tp_observe_channels_context_accept() or
+ * tp_observe_channels_context_fail() later.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -478,10 +479,13 @@ tp_observe_channels_context_delay (TpObserveChannelsContext *self)
  * tp_observe_channels_context_is_recovering:
  * @self: a #TpObserveChannelsContext
  *
- * If the "recovering" key in present in the Observer_Info hash table
- * associated with this context, its value; %FALSE if the key is not present.
+ * If this call to ObserveChannels is for channels that already
+ * existed before this observer started (because the observer used
+ * tp_base_client_set_observer_recover()), return %TRUE.
  *
- * Returns: value
+ * In most cases, the result is %FALSE.
+ *
+ * Returns: %TRUE for pre-existing channels, %FALSE for new channels
  *
  * Since: 0.11.UNRELEASED
  */
@@ -652,6 +656,8 @@ _tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
     gpointer user_data)
 {
   g_return_if_fail (TP_IS_OBSERVE_CHANNELS_CONTEXT (self));
+  /* This is only used once, by TpBaseClient, so for simplicity, we only
+   * allow one asynchronous preparation */
   g_return_if_fail (self->priv->result == NULL);
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self),
