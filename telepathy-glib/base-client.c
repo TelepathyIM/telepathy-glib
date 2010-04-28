@@ -168,9 +168,8 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
       _tp_base_client_copy_filter (filter));
 }
 
-/* FIXME: This function should be (skip) but that breaks gtk-doc <= 1.14 */
 /**
- * tp_base_client_take_observer_filter:
+ * tp_base_client_take_observer_filter: (skip)
  * @self: a client
  * @filter: (transfer full) (element-type utf8 GObject.Value):
  * a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
