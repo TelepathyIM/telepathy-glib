@@ -110,6 +110,7 @@ enum {
     PROP_RECOVER = 1,
     PROP_CALLBACK,
     PROP_USER_DATA,
+    PROP_DESTROY,
     N_PROPS
 };
 
@@ -117,6 +118,7 @@ struct _TpSimpleObserverPrivate
 {
   TpSimpleObserverObserveChannelsImpl callback;
   gpointer user_data;
+  GDestroyNotify destroy;
 };
 
 static void
@@ -140,12 +142,19 @@ tp_simple_observer_set_property (GObject *object,
       case PROP_RECOVER:
         tp_base_client_set_observer_recover (base, g_value_get_boolean (value));
         break;
+
       case PROP_CALLBACK:
         self->priv->callback = g_value_get_pointer (value);
         break;
+
       case PROP_USER_DATA:
         self->priv->user_data = g_value_get_pointer (value);
         break;
+
+      case PROP_DESTROY:
+        self->priv->destroy = g_value_get_pointer (value);
+        break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -163,6 +172,23 @@ tp_simple_observer_constructed (GObject *object)
 
   if (chain_up != NULL)
     chain_up (object);
+}
+
+static void
+tp_simple_observer_dispose (GObject *object)
+{
+  TpSimpleObserver *self = TP_SIMPLE_OBSERVER (object);
+  void (*dispose) (GObject *) =
+    G_OBJECT_CLASS (tp_simple_observer_parent_class)->dispose;
+
+  if (self->priv->destroy != NULL)
+    {
+      self->priv->destroy (self->priv->user_data);
+      self->priv->destroy = NULL;
+    }
+
+  if (dispose != NULL)
+    dispose (object);
 }
 
 static void
@@ -192,6 +218,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
 
   object_class->set_property = tp_simple_observer_set_property;
   object_class->constructed = tp_simple_observer_constructed;
+  object_class->dispose = tp_simple_observer_dispose;
 
   /**
    * TpSimpleObserver:recover:
@@ -238,6 +265,20 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
   g_object_class_install_property (object_class, PROP_USER_DATA,
       param_spec);
 
+  /**
+   * TpSimpleObserver:destroy:
+   *
+   * The #GDestroyNotify function called to free the user-data pointer when
+   * the #TpSimpleObserver is destroyed.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_pointer ("destroy", "destroy",
+      "function called to destroy the user-data when destroying the observer",
+      G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DESTROY,
+      param_spec);
+
   tp_base_client_implement_observe_channels (base_clt_cls, observe_channels);
 }
 
@@ -249,6 +290,8 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  * @unique: the value of the TpBaseClient:uniquify-name: property
  * @callback: the function called when ObserverChannels is called
  * @user_data: arbitrary user-supplied data passed to @callback
+ * @destroy: called with the user_data as argument, when the #TpSimpleObserver
+ * is destroyed
  *
  * Convenient function to create a new #TpSimpleObserver instance.
  *
@@ -262,7 +305,8 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
     const gchar *name,
     gboolean unique,
     TpSimpleObserverObserveChannelsImpl callback,
-    gpointer user_data)
+    gpointer user_data,
+    GDestroyNotify destroy)
 {
   return g_object_new (TP_TYPE_SIMPLE_OBSERVER,
       "dbus-daemon", dbus,
@@ -271,5 +315,6 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
       "uniquify-name", unique,
       "callback", callback,
       "user-data", user_data,
+      "destroy", destroy,
       NULL);
 }

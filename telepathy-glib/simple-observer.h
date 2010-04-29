@@ -77,7 +77,8 @@ TpBaseClient * tp_simple_observer_new (TpDBusDaemon *dbus,
     const gchar *name,
     gboolean unique,
     TpSimpleObserverObserveChannelsImpl callback,
-    gpointer user_data);
+    gpointer user_data,
+    GDestroyNotify destroy);
 
 G_END_DECLS
 

@@ -147,6 +147,7 @@ create_simple_observer (Test *test,
       "uniquify-name", FALSE,
       "callback", impl,
       "user-data", test,
+      "destroy", NULL,
       NULL);
   g_assert (test->simple_observer != NULL);
 

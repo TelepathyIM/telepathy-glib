@@ -95,7 +95,7 @@ main (int argc,
     }
 
   observer = tp_simple_observer_new (bus_daemon, FALSE, "ExampleMediaObserver",
-      FALSE, observe_channels_cb, NULL);
+      FALSE, observe_channels_cb, NULL, NULL);
 
   tp_base_client_take_observer_filter (observer, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
