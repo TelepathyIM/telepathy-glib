@@ -49,8 +49,8 @@
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
- * @channels: (element-type Tp.Channel): a #GPtrArray of #TpChannel having
- * all %TP_CHANNEL_FEATURE_CORE prepared
+ * @channels: (element-type Tp.Channel): a #GList of #TpChannel,
+ * all having %TP_CHANNEL_FEATURE_CORE prepared
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  * the dispatch_operation is not guaranteed to be prepared
  * @requests: (element-type Tp.ChannelRequest): a #GList of #TpChannelRequest
