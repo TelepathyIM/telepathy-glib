@@ -21,9 +21,7 @@
 
 #include "telepathy-glib/channel-dispatch-operation.h"
 
-#include <telepathy-glib/account.h>
 #include <telepathy-glib/channel.h>
-#include <telepathy-glib/connection.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
@@ -662,4 +660,103 @@ tp_channel_dispatch_operation_get_feature_quark_core (void)
 {
   return g_quark_from_static_string (
       "tp-channel-dispatch-operation-feature-core");
+}
+
+/**
+ * tp_channel_dispatch_operation_borrow_connection:
+ * @self: a #TpChannelDispatchOperation
+ *
+ * Returns the #TpConnection of this ChannelDispatchOperation.
+ * The returned pointer is only valid while @self is valid - reference
+ * it with g_object_ref() if needed.
+ *
+ * Returns: (transfer none): the value of #TpChannelDispatchOperation:connection
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpConnection *
+tp_channel_dispatch_operation_borrow_connection (
+    TpChannelDispatchOperation *self)
+{
+  return self->priv->connection;
+}
+
+/**
+ * tp_channel_dispatch_operation_borrow_account:
+ * @self: a #TpChannelDispatchOperation
+ *
+ * Returns the #TpAccount of this ChannelDispatchOperation.
+ * The returned pointer is only valid while @self is valid - reference
+ * it with g_object_ref() if needed.
+ *
+ * Returns: (transfer none): the value of #TpChannelDispatchOperation:account
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpAccount *
+tp_channel_dispatch_operation_borrow_account (
+    TpChannelDispatchOperation *self)
+{
+  return self->priv->account;
+}
+
+/**
+ * tp_channel_dispatch_operation_borrow_channels:
+ * @self: a #TpChannelDispatchOperation
+ *
+ * Returns a #GPtrArray containing the #TpChannel of this
+ * ChannelDispatchOperation.
+ * The returned array and its #TpChannel are only valid while @self is
+ * valid - copy array and reference channels with g_object_ref() if needed.
+ *
+ * Returns: (transfer none): the value of #TpChannelDispatchOperation:channels
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GPtrArray *
+tp_channel_dispatch_operation_borrow_channels (
+    TpChannelDispatchOperation *self)
+{
+  return self->priv->channels;
+}
+
+/**
+ * tp_channel_dispatch_operation_borrow_possible_handlers:
+ * @self: a #TpChannelDispatchOperation
+ *
+ * Returns a #GStrv containing the possible handlers of this
+ * ChannelDispatchOperation.
+ * The returned array and its strings are only valid while @self is
+ * valid - copy it with g_strdupv if needed.
+ *
+ * Returns: (transfer none): the value of
+ * #TpChannelDispatchOperation:possible-handlers
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GStrv
+tp_channel_dispatch_operation_borrow_possible_handlers (
+    TpChannelDispatchOperation *self)
+{
+  return self->priv->possible_handlers;
+}
+
+/**
+ * tp_channel_dispatch_operation_borrow_immutable_properties:
+ * @self: a #TpChannelDispatchOperation
+ *
+ * Returns the immutable D-Bus properties of this channel.
+ * The returned hash table is only valid while @self is valid - reference
+ * it with g_hash_table_ref() if needed.
+ *
+ * Returns: (transfer none): the value of
+ * #TpChannelDispatchOperation:channel-dispatch-operation-properties
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GHashTable *
+tp_channel_dispatch_operation_borrow_immutable_properties (
+    TpChannelDispatchOperation *self)
+{
+  return self->priv->immutable_properties;
 }

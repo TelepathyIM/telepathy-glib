@@ -22,6 +22,8 @@
 #ifndef TP_CHANNEL_DISPATCH_OPERATION_H
 #define TP_CHANNEL_DISPATCH_OPERATION_H
 
+#include <telepathy-glib/account.h>
+#include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
@@ -79,6 +81,21 @@ void tp_channel_dispatch_operation_init_known_interfaces (void);
   tp_channel_dispatch_operation_get_feature_quark_core ()
 
 GQuark tp_channel_dispatch_operation_get_feature_quark_core (void) G_GNUC_CONST;
+
+TpConnection * tp_channel_dispatch_operation_borrow_connection (
+    TpChannelDispatchOperation *self);
+
+TpAccount * tp_channel_dispatch_operation_borrow_account (
+    TpChannelDispatchOperation *self);
+
+GPtrArray * tp_channel_dispatch_operation_borrow_channels (
+    TpChannelDispatchOperation *self);
+
+GStrv tp_channel_dispatch_operation_borrow_possible_handlers (
+    TpChannelDispatchOperation *self);
+
+GHashTable * tp_channel_dispatch_operation_borrow_immutable_properties (
+    TpChannelDispatchOperation *self);
 
 G_END_DECLS
 
