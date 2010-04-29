@@ -17,33 +17,8 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include "tests/lib/simple-channel-dispatch-operation.h"
 #include "tests/lib/util.h"
-
-/* This object implements no methods and no properties - TpChannelRequest
- * doesn't actually use them yet */
-
-static GType test_simple_cdo_get_type (void);
-
-typedef struct {
-    GObject parent;
-} TestSimpleCDO;
-
-typedef struct {
-    GObjectClass parent;
-} TestSimpleCDOClass;
-
-G_DEFINE_TYPE_WITH_CODE (TestSimpleCDO, test_simple_cdo, G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_DISPATCH_OPERATION, NULL));
-
-static void
-test_simple_cdo_init (TestSimpleCDO *self)
-{
-}
-
-static void
-test_simple_cdo_class_init (TestSimpleCDOClass *klass)
-{
-}
 
 typedef struct {
     GMainLoop *mainloop;
@@ -84,7 +59,7 @@ setup (Test *test,
   test->cdo = NULL;
 
   test->cdo_service = test_object_new_static_class (
-      test_simple_cdo_get_type (),
+      SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
       NULL);
   tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
       test->cdo_service);
