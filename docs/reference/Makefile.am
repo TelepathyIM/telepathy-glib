@@ -67,7 +67,8 @@ IGNORE_HFILES=\
     connection-internal.h \
     debug-internal.h \
     handle-repo-internal.h \
-    proxy-internal.h
+    proxy-internal.h \
+    proxy-introspectable.h
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png
