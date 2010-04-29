@@ -252,7 +252,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  *
  * Convenient function to create a new #TpSimpleObserver instance.
  *
- * Returns: a new #TpSimpleObserver
+ * Returns: (type Tp.SimpleObserver): a new #TpSimpleObserver
  *
  * Since: 0.11.UNRELEASED
  */
