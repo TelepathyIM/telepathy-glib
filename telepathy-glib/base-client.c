@@ -59,8 +59,10 @@
  * D-Bus call
  *
  * Signature of the implementation of the ObserveChannels method.
- * This function MUST call tp_observe_channels_context_accept,
- * tp_observe_channels_context_delay or tp_observe_channels_context_fail.
+ *
+ * This function must call either tp_observe_channels_context_accept,
+ * tp_observe_channels_context_delay or tp_observe_channels_context_fail
+ * on @context before it returns.
  *
  * Since: 0.11.UNRELEASED
  */
