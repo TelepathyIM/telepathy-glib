@@ -63,15 +63,16 @@
  * @self: a #TpSimpleObserver instance
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
- * @channels: a #GPtrArray of #TpChannel having all %TP_CHANNEL_FEATURE_CORE
- * prepared
+ * @channels: (element-type Tp.Channel): a #GList of #TpChannel,
+ * all having %TP_CHANNEL_FEATURE_CORE prepared
  * @dispatch_operation: a #TpChannelDispatchOperation or %NULL; the
- * dispatch_operation is not garanteed to be prepared
- * @requests: a #GList of #TpChannelRequest having their object-path defined
- * but are not garanteed to be prepared.
+ * dispatch_operation is not guaranteed to be prepared
+ * @requests: (element-type Tp.ChannelRequest): a #GList of #TpChannelRequest,
+ * all having their object-path defined
+ * but are not guaranteed to be prepared.
  * @context: a #TpObserveChannelsContext representing the context of this
  * D-Bus call
- * @user_data: arbitrary user-supplied data passed to the callback
+ * @user_data: arbitrary user-supplied data passed to tp_simple_observer_new()
  *
  * Signature of the implementation of the ObserveChannels method.
  *
