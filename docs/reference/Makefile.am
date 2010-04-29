@@ -29,7 +29,8 @@ SCANGOBJ_OPTIONS=
 # e.g. SCAN_OPTIONS=--deprecated-guards="GTK_DISABLE_DEPRECATED"
 SCAN_OPTIONS=\
     --deprecated-guards=TP_DISABLE_DEPRECATED \
-    --ignore-decorators=_TP_GNUC_DEPRECATED
+    --ignore-decorators=_TP_GNUC_DEPRECATED \
+    --rebuild-types
 
 # Extra options to supply to gtkdoc-mkdb.
 # e.g. MKDB_OPTIONS=--sgml-mode --output-format=xml
