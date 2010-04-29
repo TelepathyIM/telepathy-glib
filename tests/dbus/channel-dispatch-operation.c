@@ -385,6 +385,39 @@ test_properties_passed (Test *test,
   g_hash_table_unref (props);
 }
 
+/* Don't pass immutable properties to tp_channel_dispatch_operation_new so
+ * properties are fetched when preparing the core feature. */
+static void
+test_properties_fetched (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  gboolean ok;
+  GHashTable *props;
+
+  ok = tp_dbus_daemon_request_name (test->private_dbus,
+      TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
+  g_assert (ok);
+
+  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+      "/whatever", NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  /* Properties are not defined yet */
+  g_assert (tp_channel_dispatch_operation_borrow_connection (test->cdo)
+      == NULL);
+  g_assert (tp_channel_dispatch_operation_borrow_account (test->cdo)
+      == NULL);
+  g_assert (tp_channel_dispatch_operation_borrow_channels (test->cdo)
+      == NULL);
+  g_assert (tp_channel_dispatch_operation_borrow_possible_handlers (test->cdo)
+      == NULL);
+  props = tp_channel_dispatch_operation_borrow_immutable_properties (
+        test->cdo);
+  g_assert_cmpuint (g_hash_table_size (props), ==, 0);
+
+  /* TODO: prepare core feature */
+}
+
 int
 main (int argc,
       char **argv)
@@ -397,6 +430,8 @@ main (int argc,
   g_test_add ("/cdo/finished", Test, NULL, setup, test_finished, teardown);
   g_test_add ("/cdo/properties-passed", Test, NULL, setup_services,
       test_properties_passed, teardown_services);
+  g_test_add ("/cdo/properties-fetched", Test, NULL, setup_services,
+      test_properties_fetched, teardown_services);
 
   return g_test_run ();
 }
