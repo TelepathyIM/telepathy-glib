@@ -353,7 +353,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
       param_spec);
 
   /**
-   * TpObserveChannelsContext:dbus-context:
+   * TpObserveChannelsContext:dbus-context: (skip)
    *
    * The #DBusGMethodInvocation representing the D-Bus context of the
    * ObserveChannels call.
