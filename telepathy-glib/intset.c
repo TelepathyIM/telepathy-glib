@@ -385,7 +385,7 @@ addint (guint i, gpointer data)
  *
  * <!--Returns: says it all-->
  *
- * Returns: a GArray of guint (which must be freed by the caller) containing
+ * Returns: (element-type uint): a GArray of guint (which must be freed by the caller) containing
  * the same integers as @set.
  */
 GArray *
@@ -405,7 +405,7 @@ tp_intset_to_array (const TpIntSet *set)
 
 /**
  * tp_intset_from_array:
- * @array: An array of guint
+ * @array: (element-type uint): An array of guint
  *
  * <!--Returns: says it all-->
  *
