@@ -249,3 +249,37 @@ tp_channel_dispatch_operation_new (TpDBusDaemon *bus_daemon,
 
   return self;
 }
+
+/**
+ * TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark for the "core" feature
+ * on a #TpChannelDispatchOperation.
+ *
+ * When this feature is prepared, the basic properties of the
+ * ChannelDispatchOperation have been retrieved and are available for use.
+ *
+ * Specifically, this implies that:
+ *
+ * - #TpChannelDispatchOperation:connection is set (but
+ *   TP_CONNECTION_FEATURE_CORE is not necessarily prepared)
+ * - #TpChannelDispatchOperation:account is set (but
+ *   TP_ACCOUNT_FEATURE_CORE is not necessarily prepared)
+ * - #TpChannelDispatchOperation:channels is set (but
+ *   TP_CHANNEL_FEATURE_CORE is not necessarily prepared)
+ * - #TpChannelDispatchOperation:possible-handlers is set
+ * - any extra interfaces will have been set up in TpProxy (i.e.
+ *   #TpProxy:interfaces contains at least all extra ChannelDispatchOperation
+ *   interfaces)
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GQuark
+tp_channel_dispatch_operation_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string (
+      "tp-channel-dispatch-operation-feature-core");
+}

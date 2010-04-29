@@ -75,6 +75,11 @@ TpChannelDispatchOperation *tp_channel_dispatch_operation_new (
 
 void tp_channel_dispatch_operation_init_known_interfaces (void);
 
+#define TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE \
+  tp_channel_dispatch_operation_get_feature_quark_core ()
+
+GQuark tp_channel_dispatch_operation_get_feature_quark_core (void) G_GNUC_CONST;
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel-dispatch-operation.h>
