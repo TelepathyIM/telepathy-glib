@@ -273,7 +273,7 @@ tp_base_client_register (TpBaseClient *self,
   if (!tp_dbus_daemon_request_name (self->priv->dbus, self->priv->bus_name,
         TRUE, error))
     {
-      DEBUG ("Failed to register bus name %s\n", self->priv->bus_name);
+      DEBUG ("Failed to register bus name %s", self->priv->bus_name);
       return FALSE;
     }
 
