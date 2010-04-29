@@ -29,11 +29,27 @@
  *
  * A typical simple observer would look liks this:
  * |[
+ * static void
+ * my_observe_channels (TpSimpleObserver *self,
+ *    TpAccount *account,
+ *    TpConnection *connection,
+ *    GList *channels,
+ *    TpChannelDispatchOperation *dispatch_operation,
+ *    GList *requests,
+ *    TpObserveChannelsContext *context,
+ *    gpointer user_data)
+ * {
+ *  /<!-- -->* do something useful with the channels here *<!-- -->/
+ *
+ *  tp_observe_channels_context_accept (context);
+ * }
+ *
  * client = tp_simple_observer_new (dbus, TRUE, "MyObserver", FALSE,
  *    my_observe_channels, user_data);
  *
  * tp_base_client_take_observer_filter (client, tp_asv_new (
  *      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
+ *      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
  *      NULL));
  *
  * tp_base_client_register (client, NULL);
