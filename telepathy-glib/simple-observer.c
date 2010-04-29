@@ -108,14 +108,14 @@ G_DEFINE_TYPE(TpSimpleObserver, tp_simple_observer, TP_TYPE_BASE_CLIENT)
 
 enum {
     PROP_RECOVER = 1,
-    PROP_OBSERV_IMPL,
+    PROP_CALLBACK,
     PROP_USER_DATA,
     N_PROPS
 };
 
 struct _TpSimpleObserverPrivate
 {
-  TpSimpleObserverObserveChannelsImpl observe_channels_impl;
+  TpSimpleObserverObserveChannelsImpl callback;
   gpointer user_data;
 };
 
@@ -140,8 +140,8 @@ tp_simple_observer_set_property (GObject *object,
       case PROP_RECOVER:
         tp_base_client_set_observer_recover (base, g_value_get_boolean (value));
         break;
-      case PROP_OBSERV_IMPL:
-        self->priv->observe_channels_impl = g_value_get_pointer (value);
+      case PROP_CALLBACK:
+        self->priv->callback = g_value_get_pointer (value);
         break;
       case PROP_USER_DATA:
         self->priv->user_data = g_value_get_pointer (value);
@@ -159,7 +159,7 @@ tp_simple_observer_constructed (GObject *object)
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_simple_observer_parent_class)->constructed;
 
-  g_assert (self->priv->observe_channels_impl != NULL);
+  g_assert (self->priv->callback != NULL);
 
   if (chain_up != NULL)
     chain_up (object);
@@ -177,7 +177,7 @@ observe_channels (
 {
   TpSimpleObserver *self = TP_SIMPLE_OBSERVER (client);
 
-  self->priv->observe_channels_impl (self, account, connection, channels,
+  self->priv->callback (self, account, connection, channels,
       dispatch_operation, requests, context, self->priv->user_data);
 }
 
@@ -217,11 +217,11 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    *
    * Since: 0.11.UNRELEASED
    */
-  param_spec = g_param_spec_pointer ("observe-channels-impl",
-      "implementation of ObserverChannels",
+  param_spec = g_param_spec_pointer ("callback",
+      "Callback",
       "Function called when ObserverChannels is called",
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_OBSERV_IMPL,
+  g_object_class_install_property (object_class, PROP_CALLBACK,
       param_spec);
 
   /**
@@ -247,8 +247,8 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
  * @unique: the value of the TpBaseClient:uniquify-name: property
- * @observe_channels_impl: the function called when ObserverChannels is called
- * @user_data: arbitrary user-supplied data passed to @observe_channels_impl
+ * @callback: the function called when ObserverChannels is called
+ * @user_data: arbitrary user-supplied data passed to @callback
  *
  * Convenient function to create a new #TpSimpleObserver instance.
  *
@@ -261,7 +261,7 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
     gboolean recover,
     const gchar *name,
     gboolean unique,
-    TpSimpleObserverObserveChannelsImpl observe_channels_impl,
+    TpSimpleObserverObserveChannelsImpl callback,
     gpointer user_data)
 {
   return g_object_new (TP_TYPE_SIMPLE_OBSERVER,
@@ -269,7 +269,7 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
       "recover", recover,
       "name", name,
       "uniquify-name", unique,
-      "observe-channels-impl", observe_channels_impl,
+      "callback", callback,
       "user-data", user_data,
       NULL);
 }

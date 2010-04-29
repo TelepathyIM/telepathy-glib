@@ -145,7 +145,7 @@ create_simple_observer (Test *test,
       "recover", recover,
       "name", "MySimpleObserver",
       "uniquify-name", FALSE,
-      "observe-channels-impl", impl,
+      "callback", impl,
       "user-data", test,
       NULL);
   g_assert (test->simple_observer != NULL);
