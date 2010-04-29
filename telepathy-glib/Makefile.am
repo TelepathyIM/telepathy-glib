@@ -25,6 +25,7 @@ noinst_LTLIBRARIES = libtelepathy-glib-internal.la
 our_headers = \
     account.h \
     account-manager.h \
+    base-client.h \
     base-connection.h \
     base-connection-manager.h \
     channel.h \
@@ -62,6 +63,7 @@ our_headers = \
     intset.h \
     media-interfaces.h \
     message-mixin.h \
+    observe-channels-context.h \
     presence-mixin.h \
     properties-mixin.h \
     proxy.h \
@@ -109,6 +111,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-internal.h \
     account-manager.c \
     account-manager-internal.h \
+    base-client.c \
     base-connection.c \
     base-connection-manager.c \
     capabilities.c \
@@ -152,6 +155,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel-factory-iface.c \
     media-interfaces.c \
     message-mixin.c \
+    observe-channels-context-internal.h \
+    observe-channels-context.c \
     presence-mixin.c \
     properties-mixin.c \
     proxy.c \

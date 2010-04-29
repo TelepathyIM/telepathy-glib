@@ -15,6 +15,8 @@ libtp_glib_tests_la_SOURCES = \
     simple-account.h \
     simple-account-manager.c\
     simple-account-manager.h\
+    simple-client.c \
+    simple-client.h \
     simple-conn.c \
     simple-conn.h \
     simple-manager.c \
