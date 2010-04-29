@@ -5,7 +5,7 @@
 #include "telepathy-glib/debug-internal.h"
 
 /* Only run test if ENABLE_DEBUG is defined, otherwise we won't have
- * _tp_debug and the TpDebugFlags enum. */
+ * _tp_log and the TpDebugFlags enum. */
 #ifdef ENABLE_DEBUG
 
 typedef struct
@@ -37,6 +37,7 @@ handler (const gchar *log_domain,
 
   parts = g_strsplit (log_domain, "/", -1);
 
+  g_assert_cmpuint (log_level, ==, G_LOG_LEVEL_DEBUG);
   g_assert_cmpuint (g_strv_length (parts), ==, 2);
   g_assert (!tp_strdiff (parts[0], "tp-glib"));
   g_assert (!tp_strdiff (parts[1], i.domain));
@@ -60,7 +61,7 @@ int main (int argc, char **argv)
   for (; items[item].domain != NULL; item++)
     {
       i = items[item];
-      _tp_debug (i.flag, "foo");
+      _tp_log (G_LOG_LEVEL_DEBUG, i.flag, "foo");
     }
 
 #else

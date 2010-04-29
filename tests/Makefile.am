@@ -84,7 +84,7 @@ test_signal_connect_object_LDADD = \
     $(LDADD)
 
 # this needs to link against the static convenience library so that
-# _tp_debug is still visible
+# _tp_log is still visible
 test_debug_domain_LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la
 test_internal_debug_LDADD = \

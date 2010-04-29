@@ -120,7 +120,7 @@ typedef struct {
 } DebugKeyToDomain;
 
 /* This is an array of debug key flags to log domains. The point of this is so
- * that once getting the index of the bit set, _tp_debug() can simply index
+ * that once getting the index of the bit set, _tp_log() can simply index
  * this array. Aditionally, having the domain already in $domain/$category
  * format means we don't have to call g_strdup_printf() to get the desired
  * domain for each debug message logged, and then g_free() to free the newly
@@ -295,22 +295,25 @@ debug_flag_to_domain (TpDebugFlags flag)
 }
 
 /*
- * _tp_debug_set_flags:
- * @flag: Flag to test
+ * _tp_log:
+ * @level: Log level
+ * @flag: Debug flag
  * @format: Format string for g_logv
  *
- * Emit a debug message with the given format and arguments, but only if
- * the given debug flag is set. For use via DEBUG() only.
+ * Emit a debug message with the given format and arguments, but only
+ * if the given debug flag is set. For use via
+ * ERROR()/CRITICAL()/.../DEBUG() only.
  */
-void _tp_debug (TpDebugFlags flag,
-                const gchar *format,
-                ...)
+void _tp_log (GLogLevelFlags level,
+              TpDebugFlags flag,
+              const gchar *format,
+              ...)
 {
   if (flag & flags)
     {
       va_list args;
       va_start (args, format);
-      g_logv (debug_flag_to_domain (flag), G_LOG_LEVEL_DEBUG, format, args);
+      g_logv (debug_flag_to_domain (flag), level, format, args);
       va_end (args);
     }
 }

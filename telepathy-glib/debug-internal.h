@@ -33,8 +33,8 @@ typedef enum
 
 gboolean _tp_debug_flag_is_set (TpDebugFlags flag);
 void _tp_debug_set_flags (TpDebugFlags flags);
-void _tp_debug (TpDebugFlags flag, const gchar *format, ...)
-    G_GNUC_PRINTF (2, 3);
+void _tp_log (GLogLevelFlags level, TpDebugFlags flag, const gchar *format, ...)
+    G_GNUC_PRINTF (3, 4);
 gboolean _tp_debug_is_persistent (void);
 
 #define _TP_DEBUG_IS_PERSISTENT (_tp_debug_is_persistent ())
@@ -70,15 +70,46 @@ G_END_DECLS
 #ifdef DEBUG_FLAG
 #ifdef ENABLE_DEBUG
 
+#undef ERROR
+#define ERROR(format, ...) \
+  _tp_log (G_LOG_LEVEL_ERROR, DEBUG_FLAG, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#undef CRITICAL
+#define CRITICAL(format, ...) \
+  _tp_log (G_LOG_LEVEL_CRITICAL, DEBUG_FLAG, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#undef WARNING
+#define WARNING(format, ...) \
+  _tp_log (G_LOG_LEVEL_WARNING, DEBUG_FLAG, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#undef MESSAGE
+#define MESSAGE(format, ...) \
+  _tp_log (G_LOG_LEVEL_MESSAGE, DEBUG_FLAG, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
+#undef INFO
+#define INFO(format, ...) \
+  _tp_log (G_LOG_LEVEL_INFO, DEBUG_FLAG, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
 #undef DEBUG
 #define DEBUG(format, ...) \
-  _tp_debug (DEBUG_FLAG, "%s: " format, G_STRFUNC, ##__VA_ARGS__)
+  _tp_log (G_LOG_LEVEL_DEBUG, DEBUG_FLAG, "%s: " format, \
+      G_STRFUNC, ##__VA_ARGS__)
 
 #undef DEBUGGING
 #define DEBUGGING _tp_debug_flag_is_set (DEBUG_FLAG)
 
 #else /* !defined (ENABLE_DEBUG) */
 
+#undef ERROR
+#define ERROR(format, ...) do {} while (0)
+#undef CRITICAL
+#define CRITICAL(format, ...) do {} while (0)
+#undef WARNING
+#define WARNING(format, ...) do {} while (0)
+#undef MESSAGE
+#define MESSAGE(format, ...) do {} while (0)
+#undef INFO
+#define INFO(format, ...) do {} while (0)
 #undef DEBUG
 #define DEBUG(format, ...) do {} while (0)
 

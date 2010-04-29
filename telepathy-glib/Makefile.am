@@ -16,7 +16,7 @@ EXTRA_DIST = \
 # produced by abi.am.
 #
 # The static version is necessary because one of the tests wants to use
-# internal symbols (_tp_debug) which are made invisible by GNU ld.
+# internal symbols (_tp_log) which are made invisible by GNU ld.
 
 lib_LTLIBRARIES = libtelepathy-glib.la
 noinst_LTLIBRARIES = libtelepathy-glib-internal.la
