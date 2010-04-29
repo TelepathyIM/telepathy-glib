@@ -419,11 +419,13 @@ tp_base_client_constructed (GObject *object)
 
   if (self->priv->uniquify_name)
     {
-      const gchar *unique;
+      gchar *unique;
 
-      unique = tp_dbus_daemon_get_unique_name (self->priv->dbus);
-      g_string_append_printf (string, ".%s", tp_escape_as_identifier (unique));
-      g_string_append_printf (string, ".n%u", unique_counter++);
+      unique = tp_escape_as_identifier (tp_dbus_daemon_get_unique_name (
+            self->priv->dbus));
+
+      g_string_append_printf (string, ".%s.n%u", unique, unique_counter++);
+      g_free (unique);
     }
 
   /* Object path */
