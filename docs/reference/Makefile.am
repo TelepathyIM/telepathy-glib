@@ -29,7 +29,8 @@ SCANGOBJ_OPTIONS=
 # e.g. SCAN_OPTIONS=--deprecated-guards="GTK_DISABLE_DEPRECATED"
 SCAN_OPTIONS=\
     --deprecated-guards=TP_DISABLE_DEPRECATED \
-    --ignore-decorators=_TP_GNUC_DEPRECATED
+    --ignore-decorators=_TP_GNUC_DEPRECATED \
+    --rebuild-types
 
 # Extra options to supply to gtkdoc-mkdb.
 # e.g. MKDB_OPTIONS=--sgml-mode --output-format=xml
@@ -66,7 +67,8 @@ IGNORE_HFILES=\
     connection-internal.h \
     debug-internal.h \
     handle-repo-internal.h \
-    proxy-internal.h
+    proxy-internal.h \
+    proxy-introspectable.h
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png
@@ -120,6 +122,17 @@ check-local:
 		echo "^^^ Undeclared symbols" >&2; \
 		err=1; \
 	fi; \
+	sed -n -e 's,<FILE>\(.*\)</FILE>,\1,p' $(srcdir)/telepathy-glib-sections.txt |\
+	while read file; do \
+		if grep -F "xml/$$file.xml" $(srcdir)/telepathy-glib-docs.sgml \
+			>/dev/null;\
+		then \
+		:; \
+		else \
+			echo "$$file missing from telepathy-glib-docs.sgml"; \
+			err=1; \
+		fi; \
+	done; \
 	case @ENABLE_DOC_CHECKS@/$$err in \
 		(yes/1) \
 			echo "Documentation check failed" >&2; \

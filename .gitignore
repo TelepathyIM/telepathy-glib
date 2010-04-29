@@ -45,6 +45,7 @@ docs/reference/*.interfaces
 docs/reference/*.prerequisites
 docs/reference/*.signals
 docs/reference/*.stamp
+docs/reference/*.types
 docs/reference/html
 docs/reference/tmpl/*.sgml
 docs/reference/xml

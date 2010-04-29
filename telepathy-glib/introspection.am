@@ -47,7 +47,6 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		--output _gen/$@.tmp \
 		$(INTROSPECTION_FILES)
 	@xsltproc $(srcdir)/kludge-616375.xsl _gen/$@.tmp > $@
-	@rm -f _gen/proxy-introspectable.h
 	@rm -f _gen/$@.tmp
 
 girdir = $(datadir)/gir-1.0
