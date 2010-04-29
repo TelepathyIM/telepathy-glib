@@ -38,6 +38,7 @@ noinst_PROGRAMS = \
     test-properties \
     test-self-handle \
     test-self-presence \
+    test-simple-observer \
     test-text-mixin \
     test-text-respawn \
     test-unsupported-interface
@@ -165,6 +166,8 @@ test_unsupported_interface_SOURCES = unsupported-interface.c
 
 test_params_cm_SOURCES = \
     params-cm.c
+
+test_simple_observer_SOURCES = simple-observer.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
