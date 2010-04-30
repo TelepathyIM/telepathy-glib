@@ -79,21 +79,21 @@
  * @self: a #TpSimpleObserver instance
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
- * @channels: (element-type Tp.Channel): a #GList of #TpChannel,
- * all having %TP_CHANNEL_FEATURE_CORE prepared
+ * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
+ *  all having %TP_CHANNEL_FEATURE_CORE prepared
  * @dispatch_operation: a #TpChannelDispatchOperation or %NULL; the
  * dispatch_operation is not guaranteed to be prepared
- * @requests: (element-type Tp.ChannelRequest): a #GList of #TpChannelRequest,
- * all having their object-path defined
- * but are not guaranteed to be prepared.
+ * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
+ *  #TpChannelRequest, all having their object-path defined but are not
+ *  guaranteed to be prepared.
  * @context: a #TpObserveChannelsContext representing the context of this
- * D-Bus call
+ *  D-Bus call
  * @user_data: arbitrary user-supplied data passed to tp_simple_observer_new()
  *
  * Signature of the implementation of the ObserveChannels method.
  *
- * This function must call either tp_observe_channels_context_accept,
- * tp_observe_channels_context_delay or tp_observe_channels_context_fail
+ * This function must call either tp_observe_channels_context_accept(),
+ * tp_observe_channels_context_delay() or tp_observe_channels_context_fail()
  * on @context before it returns.
  *
  * Since: 0.11.UNRELEASED
@@ -295,7 +295,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  *
  * Convenient function to create a new #TpSimpleObserver instance.
  *
- * Returns: (type Tp.SimpleObserver): a new #TpSimpleObserver
+ * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
  * Since: 0.11.UNRELEASED
  */
