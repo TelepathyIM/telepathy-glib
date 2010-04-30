@@ -64,6 +64,9 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/util.h>
 
+#define DEBUG_FLAG TP_DEBUG_MISC
+#include "debug-internal.h"
+
 /**
  * tp_asv_size: (skip)
  * @asv: a GHashTable

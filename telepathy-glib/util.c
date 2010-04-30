@@ -35,6 +35,9 @@
 
 #include <string.h>
 
+#define DEBUG_FLAG TP_DEBUG_MISC
+#include "debug-internal.h"
+
 /**
  * tp_verify:
  * @R: a requirement (constant expression) to be checked at compile-time

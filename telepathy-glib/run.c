@@ -45,6 +45,7 @@
 #include <unistd.h>
 #endif
 
+#define DEBUG_FLAG TP_DEBUG_MANAGER
 #include "debug-internal.h"
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/debug.h>

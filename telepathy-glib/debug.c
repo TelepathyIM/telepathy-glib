@@ -44,7 +44,7 @@
  * <listitem><literal>im</literal> - (text) instant messaging
  *    (service)</listitem>
  * <listitem><literal>properties</literal> -
- *    #TpPropertiesMixin (service)</listitem>
+ *    #TpDBusPropertiesMixin and #TpPropertiesMixin (service)</listitem>
  * <listitem><literal>params</literal> - connection manager parameters
  *    (service)</listitem>
  * <listitem><literal>handles</literal> - handle reference tracking tracking
@@ -70,6 +70,7 @@
 
 #include <telepathy-glib/debug.h>
 
+#define DEBUG_FLAG TP_DEBUG_MISC
 #include "debug-internal.h"
 
 static TpDebugFlags flags = 0;

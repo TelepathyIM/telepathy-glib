@@ -50,6 +50,9 @@
 #include <telepathy-glib/handle-repo-internal.h>
 #include <telepathy-glib/util.h>
 
+#define DEBUG_FLAG TP_DEBUG_HANDLES
+#include "telepathy-glib/debug-internal.h"
+
 /**
  * TpDynamicHandleRepoNormalizeFunc:
  * @repo: The repository on which tp_handle_lookup() or tp_handle_ensure()

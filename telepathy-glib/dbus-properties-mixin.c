@@ -26,6 +26,9 @@
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/util.h>
 
+#define DEBUG_FLAG TP_DEBUG_PROPERTIES
+#include "telepathy-glib/debug-internal.h"
+
 /**
  * SECTION:dbus-properties-mixin
  * @title: TpDBusPropertiesMixin
