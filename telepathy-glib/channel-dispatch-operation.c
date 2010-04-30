@@ -33,6 +33,7 @@
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "telepathy-glib/_gen/tp-cli-channel-dispatch-operation-body.h"
 
@@ -80,9 +81,8 @@
  * emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_OBJECT_REMOVED.
  *
- * If a channel closes, the D-Bus signal ChannelLost is emitted; this class
- * doesn't (yet) have a GObject binding for this signal, but you can use
- * tp_cli_channel_dispatch_operation_connect_to_channel_lost(). If all channels
+ * If a channel closes, the #TpChannelDispatchOperation::channel-lost signal
+ * is emitted. If all channels
  * close, there is nothing more to dispatch, so the invalidated signal will be
  * emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_OBJECT_REMOVED.
@@ -127,6 +127,13 @@ enum
   N_PROPS
 };
 
+enum {
+  SIGNAL_CHANNEL_LOST,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = { 0 };
+
 G_DEFINE_TYPE (TpChannelDispatchOperation, tp_channel_dispatch_operation,
     TP_TYPE_PROXY);
 
@@ -149,6 +156,46 @@ tp_channel_dispatch_operation_finished_cb (TpChannelDispatchOperation *self,
       "ChannelDispatchOperation finished and was removed" };
 
   tp_proxy_invalidate ((TpProxy *) self, &e);
+}
+
+static void
+tp_channel_dispatch_operation_channel_lost_cb (TpChannelDispatchOperation *self,
+    const gchar *path,
+    const gchar *dbus_error,
+    const gchar *message,
+    gpointer unused G_GNUC_UNUSED,
+    GObject *object G_GNUC_UNUSED)
+{
+  guint i;
+
+  for (i = 0; i < self->priv->channels->len; i++)
+    {
+      TpChannel *channel = g_ptr_array_index (self->priv->channels, i);
+
+      if (!tp_strdiff (tp_proxy_get_object_path (channel), path))
+        {
+          GError *error = NULL;
+
+          /* Removing the channel from the array will unref it, add an extra
+           * ref as we'll need it to fire the signal */
+          g_object_ref (channel);
+
+          g_ptr_array_remove (self->priv->channels, channel);
+
+          tp_proxy_dbus_error_to_gerror (self, dbus_error, message, &error);
+
+          g_signal_emit (self, signals[SIGNAL_CHANNEL_LOST], 0, channel,
+              error->domain, error->code, error->message);
+
+          g_object_notify ((GObject *) self, "channels");
+
+          g_object_unref (channel);
+          g_error_free (error);
+          return;
+        }
+    }
+
+  DEBUG ("Don't know this channel: %s", path);
 }
 
 static void
@@ -384,6 +431,17 @@ tp_channel_dispatch_operation_constructed (GObject *object)
   if (sc == NULL)
     {
       CRITICAL ("Couldn't connect to Finished: %s", error->message);
+      g_error_free (error);
+      g_assert_not_reached ();
+      return;
+    }
+
+  sc = tp_cli_channel_dispatch_operation_connect_to_channel_lost (self,
+      tp_channel_dispatch_operation_channel_lost_cb, NULL, NULL, NULL, &error);
+
+  if (sc == NULL)
+    {
+      g_critical ("Couldn't connect to ChannelLost: %s", error->message);
       g_error_free (error);
       g_assert_not_reached ();
       return;
@@ -691,6 +749,27 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class,
       PROP_CHANNEL_DISPATCH_OPERATION_PROPERTIES, param_spec);
+
+ /**
+   * TpChannelDispatchOperation::channel-lost: (skip)
+   * @self: a #TpChannelDispatchOperation
+   * @channel: the #TpChannel that closed
+   * @domain: domain of a #GError indicating why the channel has been closed
+   * @code: error code of a #GError indicating why the channel has been closed
+   * @message: a message associated with the error
+   *
+   * Emitted when a channel has closed before it could be claimed or handled.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  signals[SIGNAL_CHANNEL_LOST] = g_signal_new (
+      "channel-lost", G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__OBJECT_UINT_INT_STRING,
+      G_TYPE_NONE, 4,
+      TP_TYPE_CHANNEL, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL_DISPATCH_OPERATION;
   proxy_class->must_have_unique_name = TRUE;
