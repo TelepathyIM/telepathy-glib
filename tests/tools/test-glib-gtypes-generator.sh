@@ -9,6 +9,7 @@ ${PYTHON} ${top_srcdir}/tools/glib-gtypes-generator.py \
 e=0
 # We assume POSIX diff, until someone complains
 diff -b -c ${srcdir}/expected-gtypes.h actual.h || e=$?
+diff -b -c ${srcdir}/expected-gtypes-gtk-doc.h actual-gtk-doc.h || e=$?
 diff -b -c ${srcdir}/expected-gtypes-body.h actual-body.h || e=$?
 
 exit $e
