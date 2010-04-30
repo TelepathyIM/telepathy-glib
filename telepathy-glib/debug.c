@@ -83,9 +83,6 @@ static gboolean tp_debug_persistent = FALSE;
  * Activate all possible debug modes. This also activates persistent mode,
  * which should have been orthogonal.
  *
- * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
- *
  * @deprecated since 0.6.1. Use tp_debug_set_flags ("all") and
  * tp_debug_set_persistent() instead.
  */
@@ -161,7 +158,8 @@ static GDebugKey persist_keys[] = {
  * The parsing matches that of g_parse_debug_string().
  *
  * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
+ * this function has no practical effect, since the debug messages it would
+ * enable were removed at compile time.
  *
  * @since 0.6.1
  */
@@ -189,9 +187,6 @@ tp_debug_set_flags (const gchar *flags_string)
  *
  * The parsing matches that of g_parse_debug_string().
  *
- * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
- *
  * @deprecated since 0.6.1. Use tp_debug_set_flags() and
  * tp_debug_set_persistent() instead
  */
@@ -212,9 +207,6 @@ tp_debug_set_flags_from_string (const gchar *flags_string)
  * Equivalent to
  * <literal>tp_debug_set_flags_from_string (g_getenv (var))</literal>,
  * and has the same problem with persistence being included in "all".
- *
- * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
  *
  * @deprecated since 0.6.1. Use tp_debug_set_flags(g_getenv(...)) and
  * tp_debug_set_persistent() instead
@@ -237,9 +229,6 @@ tp_debug_set_flags_from_env (const gchar *var)
  *
  * Used to enable persistent operation of the connection manager process for
  * debugging purposes.
- *
- * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
  */
 void
 tp_debug_set_persistent (gboolean persistent)
