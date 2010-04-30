@@ -586,7 +586,8 @@ connection_requested_handles (TpConnection *self,
           g_warning ("%s", e->message);
 
           context->callback (self, context->handle_type, 0, NULL, NULL,
-              error, context->user_data, weak_object);
+              e, context->user_data, weak_object);
+          g_error_free (e);
           return;
         }
 
