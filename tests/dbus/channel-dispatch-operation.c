@@ -447,6 +447,56 @@ test_properties_fetched (Test *test,
   check_channels (test);
 }
 
+static void
+channe_lost_cb (TpChannelDispatchOperation *cdo,
+    TpChannel *channel,
+    guint domain,
+    gint code,
+    gchar *message,
+    Test *test)
+{
+  GError *error = g_error_new_literal (domain, code, message);
+
+  g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
+        tp_proxy_get_object_path (test->text_chan)));
+  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+
+  g_error_free (error);
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_channel_lost (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
+  GPtrArray *channels;
+
+  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+      "/whatever", NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  tp_proxy_prepare_async (test->cdo, features, features_prepared_cb, test);
+  g_main_loop_run (test->mainloop);
+
+  g_assert (tp_proxy_is_prepared (test->cdo,
+        TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
+
+  check_channels (test);
+
+  g_signal_connect (test->cdo, "channel-lost", G_CALLBACK (channe_lost_cb),
+      test);
+
+  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+      test->text_chan);
+  g_main_loop_run (test->mainloop);
+
+  channels = tp_channel_dispatch_operation_borrow_channels (test->cdo);
+  g_assert (channels != NULL);
+  /* Channel has  been removed */
+  g_assert_cmpuint (channels->len, ==, 0);
+}
+
 int
 main (int argc,
       char **argv)
@@ -461,6 +511,8 @@ main (int argc,
       test_properties_passed, teardown_services);
   g_test_add ("/cdo/properties-fetched", Test, NULL, setup_services,
       test_properties_fetched, teardown_services);
+  g_test_add ("/cdo/channel-lost", Test, NULL, setup_services,
+      test_channel_lost, teardown_services);
 
   return g_test_run ();
 }
