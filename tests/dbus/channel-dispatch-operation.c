@@ -346,6 +346,21 @@ check_immutable_properties (Test *test)
 }
 
 static void
+check_channels (Test *test)
+{
+  GPtrArray *channels;
+  TpChannel *channel;
+
+  channels = tp_channel_dispatch_operation_borrow_channels (test->cdo);
+  g_assert (channels != NULL);
+  g_assert_cmpuint (channels->len, ==, 1);
+  channel = g_ptr_array_index (channels, 0);
+  g_assert (TP_IS_CHANNEL (channel));
+  g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
+        tp_proxy_get_object_path (test->text_chan)));
+}
+
+static void
 test_properties_passed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -353,6 +368,7 @@ test_properties_passed (Test *test,
   GHashTable *props;
   gboolean ok;
   GPtrArray *channels;
+  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
 
   ok = tp_dbus_daemon_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
@@ -383,6 +399,17 @@ test_properties_passed (Test *test,
   g_assert (tp_channel_dispatch_operation_borrow_channels (test->cdo) == NULL);
 
   g_hash_table_unref (props);
+
+  /* Prepare TpChannelDispatchOperation */
+  tp_proxy_prepare_async (test->cdo, features, features_prepared_cb, test);
+  g_main_loop_run (test->mainloop);
+
+  g_assert (tp_proxy_is_prepared (test->cdo,
+        TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
+
+  /* Channels are now defined */
+  check_immutable_properties (test);
+  check_channels (test);
 }
 
 /* Don't pass immutable properties to tp_channel_dispatch_operation_new so
@@ -393,6 +420,7 @@ test_properties_fetched (Test *test,
 {
   gboolean ok;
   GHashTable *props;
+  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
 
   ok = tp_dbus_daemon_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
@@ -415,7 +443,15 @@ test_properties_fetched (Test *test,
         test->cdo);
   g_assert_cmpuint (g_hash_table_size (props), ==, 0);
 
-  /* TODO: prepare core feature */
+  tp_proxy_prepare_async (test->cdo, features, features_prepared_cb, test);
+  g_main_loop_run (test->mainloop);
+
+  g_assert (tp_proxy_is_prepared (test->cdo,
+        TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
+
+  /* Immutable properties and Channels are now defined */
+  check_immutable_properties (test);
+  check_channels (test);
 }
 
 int
