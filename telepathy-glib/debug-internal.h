@@ -63,8 +63,14 @@ G_END_DECLS
 
 #undef ERROR
 #define ERROR(format, ...) \
-  _tp_log (G_LOG_LEVEL_ERROR, DEBUG_FLAG, "%s: " format, \
-      G_STRFUNC, ##__VA_ARGS__)
+  do \
+    { \
+      _tp_log (G_LOG_LEVEL_ERROR, DEBUG_FLAG, "%s: " format, \
+          G_STRFUNC, ##__VA_ARGS__); \
+      g_assert_not_reached (); \
+    } \
+  while (0)
+
 #undef CRITICAL
 #define CRITICAL(format, ...) \
   _tp_log (G_LOG_LEVEL_CRITICAL, DEBUG_FLAG, "%s: " format, \
