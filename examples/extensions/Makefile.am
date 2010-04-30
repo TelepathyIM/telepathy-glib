@@ -98,7 +98,7 @@ _gen/enums.h: _gen/all.xml \
 	$(tools_dir)/c-constants-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/c-constants-gen.py \
 		Example \
-		$< > $@
+		$< _gen/enums
 
 _gen/interfaces-body.h _gen/interfaces.h: _gen/all.xml \
 	$(tools_dir)/glib-interfaces-gen.py
