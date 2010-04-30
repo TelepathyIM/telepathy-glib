@@ -71,8 +71,6 @@
 
 #include "debug-internal.h"
 
-#ifdef ENABLE_DEBUG
-
 static TpDebugFlags flags = 0;
 
 static gboolean tp_debug_persistent = FALSE;
@@ -309,7 +307,7 @@ void _tp_log (GLogLevelFlags level,
               const gchar *format,
               ...)
 {
-  if (flag & flags)
+  if ((flag & flags) || level > G_LOG_LEVEL_DEBUG)
     {
       va_list args;
       va_start (args, format);
@@ -329,35 +327,6 @@ _tp_debug_is_persistent (void)
 {
   return tp_debug_persistent;
 }
-
-#else /* !ENABLE_DEBUG */
-
-void
-tp_debug_set_all_flags (void)
-{
-}
-
-void
-tp_debug_set_flags (const gchar *flags_string)
-{
-}
-
-void
-tp_debug_set_flags_from_string (const gchar *flags_string)
-{
-}
-
-void
-tp_debug_set_flags_from_env (const gchar *var)
-{
-}
-
-void
-tp_debug_set_persistent (gboolean persistent)
-{
-}
-
-#endif /* !ENABLE_DEBUG */
 
 /**
  * tp_debug_divert_messages:

@@ -3,8 +3,6 @@
 
 #include "config.h"
 
-#ifdef ENABLE_DEBUG
-
 #include <glib.h>
 
 #include <telepathy-glib/debug.h>
@@ -41,12 +39,6 @@ gboolean _tp_debug_is_persistent (void);
 
 G_END_DECLS
 
-#else
-
-#define _TP_DEBUG_IS_PERSISTENT (0)
-
-#endif /* ENABLE_DEBUG */
-
 #endif /* __DEBUG_H__ */
 
 /* ------------------------------------ */
@@ -68,7 +60,6 @@ G_END_DECLS
  */
 
 #ifdef DEBUG_FLAG
-#ifdef ENABLE_DEBUG
 
 #undef ERROR
 #define ERROR(format, ...) \
@@ -90,31 +81,18 @@ G_END_DECLS
 #define INFO(format, ...) \
   _tp_log (G_LOG_LEVEL_INFO, DEBUG_FLAG, "%s: " format, \
       G_STRFUNC, ##__VA_ARGS__)
+
 #undef DEBUG
-#define DEBUG(format, ...) \
-  _tp_log (G_LOG_LEVEL_DEBUG, DEBUG_FLAG, "%s: " format, \
-      G_STRFUNC, ##__VA_ARGS__)
-
 #undef DEBUGGING
-#define DEBUGGING _tp_debug_flag_is_set (DEBUG_FLAG)
 
+#ifdef ENABLE_DEBUG
+#   define DEBUG(format, ...) \
+      _tp_log (G_LOG_LEVEL_DEBUG, DEBUG_FLAG, "%s: " format, \
+          G_STRFUNC, ##__VA_ARGS__)
+#   define DEBUGGING _tp_debug_flag_is_set (DEBUG_FLAG)
 #else /* !defined (ENABLE_DEBUG) */
-
-#undef ERROR
-#define ERROR(format, ...) do {} while (0)
-#undef CRITICAL
-#define CRITICAL(format, ...) do {} while (0)
-#undef WARNING
-#define WARNING(format, ...) do {} while (0)
-#undef MESSAGE
-#define MESSAGE(format, ...) do {} while (0)
-#undef INFO
-#define INFO(format, ...) do {} while (0)
-#undef DEBUG
-#define DEBUG(format, ...) do {} while (0)
-
-#undef DEBUGGING
-#define DEBUGGING 0
-
+#   define DEBUG(format, ...) do {} while (0)
+#   define DEBUGGING 0
 #endif /* !defined (ENABLE_DEBUG) */
+
 #endif /* defined (DEBUG_FLAG) */
