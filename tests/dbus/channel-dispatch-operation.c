@@ -121,6 +121,9 @@ setup_services (Test *test,
   simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan);
 
+  g_assert (tp_dbus_daemon_request_name (test->private_dbus,
+      TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL));
+
   tp_handle_unref (contact_repo, handle);
   g_free (chan_path);
 }
@@ -366,13 +369,8 @@ test_properties_passed (Test *test,
 {
   static const char *interfaces[] = { NULL };
   GHashTable *props;
-  gboolean ok;
   GPtrArray *channels;
   GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
-
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
-      TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
-  g_assert (ok);
 
   props = tp_asv_new (
       TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
@@ -418,13 +416,8 @@ static void
 test_properties_fetched (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  gboolean ok;
   GHashTable *props;
   GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
-
-  ok = tp_dbus_daemon_request_name (test->private_dbus,
-      TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
-  g_assert (ok);
 
   test->cdo = tp_channel_dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
