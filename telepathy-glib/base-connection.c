@@ -2825,8 +2825,7 @@ tp_base_connection_change_status (TpBaseConnection *self,
       g_return_if_fail (prev_status == TP_INTERNAL_CONNECTION_STATUS_NEW);
       break;
     default:
-      g_warning ("%s: invalid connection status %d", G_STRFUNC, status);
-      g_assert_not_reached ();
+      CRITICAL ("invalid connection status %d", status);
       return;
     }
 
