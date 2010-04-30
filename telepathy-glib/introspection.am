@@ -21,6 +21,11 @@ INTROSPECTION_FILES = \
 	$(srcdir)/contact.c $(srcdir)/contact.h \
 	$(srcdir)/defs.h \
 	$(srcdir)/debug.c $(srcdir)/debug.h \
+	$(srcdir)/base-client.c $(srcdir)/base-client.h \
+	$(srcdir)/simple-observer.c $(srcdir)/simple-observer.h \
+	$(srcdir)/dbus-properties-mixin.c $(srcdir)/dbus-properties-mixin.h \
+	$(srcdir)/channel-dispatch-operation.c $(srcdir)/channel-dispatch-operation.h \
+	$(srcdir)/observe-channels-context.c $(srcdir)/observe-channels-context.h \
 	_gen/telepathy-enums.h \
 	_gen/telepathy-interfaces.h
 
