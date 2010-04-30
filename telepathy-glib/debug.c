@@ -33,6 +33,7 @@
  * are subject to change, but currently include:
  *
  * <itemizedlist>
+ * <listitem><literal>misc</literal> - low-level utility code</listitem>
  * <listitem><literal>manager</literal> -
  *    #TpConnectionManager (client)</listitem>
  * <listitem><literal>connection</literal> - #TpBaseConnection (service)
@@ -95,6 +96,7 @@ tp_debug_set_all_flags (void)
 }
 
 static GDebugKey keys[] = {
+  { "misc",          TP_DEBUG_MISC },
   { "groups",        TP_DEBUG_GROUPS },
   { "properties",    TP_DEBUG_PROPERTIES },
   { "connection",    TP_DEBUG_CONNECTION },
@@ -124,8 +126,7 @@ typedef struct {
  * domain for each debug message logged, and then g_free() to free the newly
  * created string... */
 static DebugKeyToDomain key_to_domain[] = {
-  /* There is no 1 << 0 */
-  { 0,                   G_LOG_DOMAIN "/misc" },
+  { TP_DEBUG_MISC,       G_LOG_DOMAIN "/misc" },
   { TP_DEBUG_GROUPS,     G_LOG_DOMAIN "/groups" },
   { TP_DEBUG_PROPERTIES, G_LOG_DOMAIN "/properties" },
   { TP_DEBUG_IM,         G_LOG_DOMAIN "/im" },

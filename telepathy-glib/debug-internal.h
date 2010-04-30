@@ -13,6 +13,7 @@ G_BEGIN_DECLS
  * and #key_to_domain, in debug.c */
 typedef enum
 {
+  TP_DEBUG_MISC          = 1 << 0,
   TP_DEBUG_GROUPS        = 1 << 1,
   TP_DEBUG_PROPERTIES    = 1 << 2,
   TP_DEBUG_IM            = 1 << 3,
