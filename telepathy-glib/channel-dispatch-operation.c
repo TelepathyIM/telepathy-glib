@@ -113,6 +113,8 @@ struct _TpChannelDispatchOperationPrivate {
   GPtrArray *channels;
   GStrv possible_handlers;
   GHashTable *immutable_properties;
+
+  gboolean preparing_core;
 };
 
 enum
@@ -409,7 +411,7 @@ tp_channel_dispatch_operation_dispose (GObject *object)
 
   if (self->priv->channels != NULL)
     {
-      g_ptr_array_foreach (self->priv->channels, (GFunc) g_object_unref, NULL);
+      /* channels array has 'g_object_unref' has free_func */
       g_ptr_array_free (self->priv->channels, TRUE);
       self->priv->channels = NULL;
     }
@@ -425,6 +427,155 @@ tp_channel_dispatch_operation_dispose (GObject *object)
 
   if (dispose != NULL)
     dispose (object);
+}
+
+static void
+get_dispatch_operation_prop_cb (TpProxy *proxy,
+    GHashTable *props,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) proxy;
+  gboolean prepared = TRUE;
+  GPtrArray *channels;
+  guint i;
+
+  self->priv->preparing_core = FALSE;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to fetch ChannelDispatchOperation properties: %s",
+          error->message);
+
+      prepared = FALSE;
+      goto out;
+    }
+
+  /* Connection */
+  maybe_set_connection (self, tp_asv_get_boxed (props, "Connection",
+        DBUS_TYPE_G_OBJECT_PATH));
+
+  if (self->priv->connection == NULL)
+    {
+      DEBUG ("Mandatory 'Connection' property is missing");
+      prepared = FALSE;
+      goto out;
+    }
+
+  /* Account */
+  maybe_set_account (self, tp_asv_get_boxed (props, "Account",
+        DBUS_TYPE_G_OBJECT_PATH));
+
+  if (self->priv->account == NULL)
+    {
+      DEBUG ("Mandatory 'Account' property is missing");
+      prepared = FALSE;
+      goto out;
+    }
+
+  /* PossibleHandlers */
+  maybe_set_possible_handlers (self, tp_asv_get_boxed (props,
+        "PossibleHandlers", G_TYPE_STRV));
+
+  if (self->priv->possible_handlers == NULL)
+    {
+      DEBUG ("Mandatory 'PossibleHandlers' property is missing");
+      prepared = FALSE;
+      goto out;
+    }
+
+  maybe_set_interfaces (self, tp_asv_get_boxed (props,
+        "Interfaces", G_TYPE_STRV));
+
+  /* set channels (not an immutable property) */
+  channels = tp_asv_get_boxed (props, "Channels",
+      TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST);
+  if (channels == NULL)
+    {
+      DEBUG ("No Channels property");
+
+      prepared = FALSE;
+      goto out;
+    }
+
+  self->priv->channels = g_ptr_array_sized_new (channels->len);
+  g_ptr_array_set_free_func (self->priv->channels,
+      (GDestroyNotify) g_object_unref);
+
+  for (i = 0; i < channels->len; i++)
+    {
+      const gchar *path;
+      GHashTable *chan_props;
+      TpChannel *channel;
+      GError *err = NULL;
+
+      tp_value_array_unpack (g_ptr_array_index (channels, i), 2,
+            &path, &chan_props);
+
+      channel = tp_channel_new_from_properties (self->priv->connection,
+          path, chan_props, &err);
+
+      if (channel == NULL)
+        {
+          DEBUG ("Failed to create channel %s: %s", path, err->message);
+          g_error_free (err);
+          continue;
+        }
+
+      g_ptr_array_add (self->priv->channels, channel);
+    }
+
+  g_object_notify ((GObject *) self, "channels");
+  g_object_notify ((GObject *) self, "channel-dispatch-operation-properties");
+
+out:
+  _tp_proxy_set_feature_prepared (proxy,
+      TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, prepared);
+}
+
+static void
+maybe_prepare_core (TpProxy *proxy)
+{
+  TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) proxy;
+
+  if (self->priv->channels != NULL)
+    return;   /* already done */
+
+  if (self->priv->preparing_core)
+    return;   /* already running */
+
+  if (!_tp_proxy_is_preparing (proxy,
+        TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE))
+    return;   /* not interested right now */
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CHANNEL_DISPATCH_OPERATION,
+      get_dispatch_operation_prop_cb,
+      NULL, NULL, NULL);
+}
+
+enum {
+    FEAT_CORE,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tp_channel_dispatch_operation_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_CORE].name = TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE;
+  features[FEAT_CORE].core = TRUE;
+  features[FEAT_CORE].start_preparing = maybe_prepare_core;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
 }
 
 static void
@@ -543,6 +694,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL_DISPATCH_OPERATION;
   proxy_class->must_have_unique_name = TRUE;
+  proxy_class->list_features = tp_channel_dispatch_operation_list_features;
 
   tp_channel_dispatch_operation_init_known_interfaces ();
 }
