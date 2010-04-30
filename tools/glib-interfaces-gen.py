@@ -120,10 +120,10 @@ GQuark
 /**
  * %(TOKEN_PREFIX)s_%(TOKEN_UC)s:
  *
- * The fully-qualified contact attribute token name "%(name)s.%(prop)s"
+ * The fully-qualified contact attribute token name "%(name)s/%(prop)s"
  */
 #define %(TOKEN_PREFIX)s_%(TOKEN_UC)s \\
-"%(name)s.%(prop)s"
+"%(name)s/%(prop)s"
 """ % {'TOKEN_PREFIX' : (self.prefix + 'TOKEN_' + \
                 parent_name).upper().replace('/', ''),
            'TOKEN_UC': prop.getAttributeNS(None, "name").upper().replace("-", "_").replace(".", "_"),
@@ -139,10 +139,10 @@ GQuark
 /**
  * %(TOKEN_PREFIX)s_%(TOKEN_UC)s:
  *
- * The fully-qualified capability token name "%(name)s.%(prop)s"
+ * The fully-qualified capability token name "%(name)s/%(prop)s"
  */
 #define %(TOKEN_PREFIX)s_%(TOKEN_UC)s \\
-"%(name)s.%(prop)s"
+"%(name)s/%(prop)s"
 """ % {'TOKEN_PREFIX' : (self.prefix + 'TOKEN_' + \
                 parent_name).upper().replace('/', ''),
            'TOKEN_UC': prop.getAttributeNS(None, "name").upper().replace("-", "_").replace(".", "_"),
