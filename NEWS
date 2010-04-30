@@ -1,7 +1,28 @@
 telepathy-glib 0.11.5 (UNRELEASED)
 ==================================
 
-...
+Enhancements:
+
+⌬ fd.o #25236: TpBaseClient, a base class for Observers, which will also
+  support Approvers and Handlers in a future release (cassidy)
+
+⌬ fd.o #27871: TpSimpleObserver, a simple TpBaseClient subclass for
+  projects that don't need their own subclass (cassidy)
+
+⌬ fd.o #24214: telepathy-glib now implements an example Observer (cassidy)
+
+⌬ fd.o #27899: internal macros for ERROR(), CRITICAL() etc., analogous to
+  DEBUG() (jonny)
+
+Fixes:
+
+⌬ fd.o #26211: correct the generated constants for contact attributes and
+  handler capability tokens, which were present-but-wrong since 0.11.3 (smcv)
+
+⌬ fd.o #24689: document more clearly that the TpConnectionManager.protocols
+  struct member can be reallocated (smcv)
+
+⌬ some fixes to GObject-Introspection metadata (danni)
 
 telepathy-glib 0.11.4 (2010-04-28)
 ==================================
