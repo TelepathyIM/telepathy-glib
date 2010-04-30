@@ -1631,7 +1631,7 @@ tp_base_connection_register (TpBaseConnection *self,
     }
   else
     {
-      g_warning ("Protocol name %s is not valid - should match "
+      WARNING ("Protocol name %s is not valid - should match "
           "[A-Za-z][A-Za-z0-9-]+", priv->protocol);
       safe_proto = tp_escape_as_identifier (priv->protocol);
     }
@@ -1656,7 +1656,7 @@ tp_base_connection_register (TpBaseConnection *self,
            */
           if (prefix_length >= dbus_max_name_length - 10)
             {
-              g_warning (
+              WARNING (
                   "Couldn't fit CM name + protocol name + unique name into "
                   "255 characters.");
               g_free (unique_name);
@@ -2796,8 +2796,8 @@ tp_base_connection_change_status (TpBaseConnection *self,
 
   if (self->status == status)
     {
-      g_warning ("%s: attempted to re-emit the current status %u, reason %u",
-          G_STRFUNC, status, reason);
+      WARNING ("attempted to re-emit the current status %u, reason %u",
+          status, reason);
       return;
     }
 

@@ -376,28 +376,28 @@ tp_debug_divert_messages (const gchar *filename)
 
   if (fd == -1)
     {
-      g_warning ("Can't open logfile '%s': %s", filename,
+      WARNING ("Can't open logfile '%s': %s", filename,
           g_strerror (errno));
       return;
     }
 
   if (dup2 (fd, 1) == -1)     /* STDOUT_FILENO is less universal */
     {
-      g_warning ("Error duplicating stdout file descriptor: %s",
+      WARNING ("Error duplicating stdout file descriptor: %s",
           g_strerror (errno));
       return;
     }
 
   if (dup2 (fd, 2) == -1)     /* STDERR_FILENO is less universal */
     {
-      g_warning ("Error duplicating stderr file descriptor: %s",
+      WARNING ("Error duplicating stderr file descriptor: %s",
           g_strerror (errno));
     }
 
   /* avoid leaking the fd */
   if (close (fd) != 0)
     {
-      g_warning ("Error closing temporary logfile fd: %s", g_strerror (errno));
+      WARNING ("Error closing temporary logfile fd: %s", g_strerror (errno));
     }
 }
 

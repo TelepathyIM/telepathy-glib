@@ -133,7 +133,7 @@ tp_get_bus (void)
 
   if (bus == NULL)
     {
-      g_warning ("Failed to connect to starter bus: %s", error->message);
+      WARNING ("Failed to connect to starter bus: %s", error->message);
       exit (1);
     }
 
@@ -162,7 +162,7 @@ tp_get_bus_proxy (void)
 
       if (bus == NULL)
         {
-          g_warning ("Failed to connect to starter bus: %s", error->message);
+          WARNING ("Failed to connect to starter bus: %s", error->message);
           exit (1);
         }
 
@@ -172,7 +172,7 @@ tp_get_bus_proxy (void)
                                             "org.freedesktop.DBus");
 
       if (bus_proxy == NULL)
-        g_error ("Failed to get proxy object for bus.");
+        ERROR ("Failed to get proxy object for bus.");
     }
 
   return bus_proxy;
@@ -759,7 +759,7 @@ tp_asv_new (const gchar *first_key, ...)
 
     if (error != NULL)
     {
-      g_critical ("key %s: %s", key, error);
+      CRITICAL ("key %s: %s", key, error);
       g_free (error);
       error = NULL;
       tp_g_value_slice_free (value);

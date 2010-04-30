@@ -570,7 +570,7 @@ _tp_account_constructed (GObject *object)
 
   if (sc == NULL)
     {
-      g_critical ("Couldn't connect to Removed: %s", error->message);
+      CRITICAL ("Couldn't connect to Removed: %s", error->message);
       g_error_free (error);
     }
 

@@ -247,7 +247,7 @@ tp_run_connection_manager (const char *prog_name,
 
   if (bus_daemon == NULL)
     {
-      g_warning ("%s", error->message);
+      WARNING ("%s", error->message);
       g_error_free (error);
       error = NULL;
       goto out;
