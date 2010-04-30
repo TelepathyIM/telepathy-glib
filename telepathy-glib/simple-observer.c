@@ -81,8 +81,8 @@
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  all having %TP_CHANNEL_FEATURE_CORE prepared
- * @dispatch_operation: a #TpChannelDispatchOperation or %NULL; the
- * dispatch_operation is not guaranteed to be prepared
+ * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
+ *  the dispatch_operation is not guaranteed to be prepared
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
  *  #TpChannelRequest, all having their object-path defined but are not
  *  guaranteed to be prepared.
