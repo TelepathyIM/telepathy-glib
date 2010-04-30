@@ -3415,7 +3415,7 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
       g_assert (tmp != NULL);
 
       tp_contacts_mixin_set_contact_attribute (attributes_hash,
-          handle, TP_IFACE_CONNECTION"/contact-id",
+          handle, TP_TOKEN_CONNECTION_CONTACT_ID,
           tp_g_value_slice_new_string (tmp));
     }
 }

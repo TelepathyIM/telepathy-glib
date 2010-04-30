@@ -2106,7 +2106,7 @@ contacts_got_attributes (TpConnection *connection,
 
       /* set up the contact with its attributes */
 
-      s = tp_asv_get_string (asv, TP_IFACE_CONNECTION "/contact-id");
+      s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_CONTACT_ID);
 
       if (s == NULL)
         {
@@ -2138,7 +2138,7 @@ contacts_got_attributes (TpConnection *connection,
         }
 
       s = tp_asv_get_string (asv,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias");
+          TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS);
 
       if (s != NULL)
         {
@@ -2148,27 +2148,26 @@ contacts_got_attributes (TpConnection *connection,
           g_object_notify ((GObject *) contact, "alias");
         }
 
-      s = tp_asv_get_string (asv,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token");
+      s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
 
       if (s != NULL)
         contacts_avatar_updated (connection, contact->priv->handle, s,
             NULL, NULL);
 
       boxed = tp_asv_get_boxed (asv,
-          TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE "/presence",
+          TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
           TP_STRUCT_TYPE_SIMPLE_PRESENCE);
       contact_maybe_set_simple_presence (contact, boxed);
 
       /* Location */
       boxed = tp_asv_get_boxed (asv,
-          TP_IFACE_CONNECTION_INTERFACE_LOCATION "/location",
+          TP_TOKEN_CONNECTION_INTERFACE_LOCATION_LOCATION,
           TP_HASH_TYPE_LOCATION);
       contact_maybe_set_location (contact, boxed);
 
       /* Capabilities */
       boxed = tp_asv_get_boxed (asv,
-          TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES "/capabilities",
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES_CAPABILITIES,
           TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
 
       contact_maybe_set_capabilities (contact, boxed);

@@ -280,7 +280,7 @@ aliasing_fill_contact_attributes (GObject *object,
       TpHandle contact = g_array_index (contacts, guint, i);
 
       tp_contacts_mixin_set_contact_attribute (attributes, contact,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias",
+          TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS,
           tp_g_value_slice_new_string (
             example_contact_list_manager_get_alias (self->priv->list_manager,
               contact)));

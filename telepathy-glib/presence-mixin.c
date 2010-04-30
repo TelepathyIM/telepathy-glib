@@ -1386,7 +1386,7 @@ simple_presence_fill_contact_attributes_foreach (gpointer key,
 
   tp_contacts_mixin_set_contact_attribute (data->presence_hash,
     handle,
-    TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE"/presence",
+    TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
     tp_g_value_slice_new_take_boxed (G_TYPE_VALUE_ARRAY, presence));
 }
 
