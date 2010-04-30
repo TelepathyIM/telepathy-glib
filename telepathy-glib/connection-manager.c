@@ -165,6 +165,11 @@ enum
  * %TP_CONNECTION_MANAGER_FEATURE_CORE is prepared. Use
  * tp_proxy_prepare_async() to wait for this to happen.
  *
+ * Note that the @protocols may be freed and reallocated (based on new
+ * information) whenever the main loop is entered. Since 0.11.3, each protocol
+ * struct can be copied with tp_connection_manager_protocol_copy() if a
+ * private copy is needed.
+ *
  * Since: 0.7.1
  */
 
@@ -2340,6 +2345,8 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  * tp_connection_manager_call_when_ready() to wait for this.
  *
  * The result is not necessarily valid after the main loop is re-entered.
+ * Since 0.11.3, it can be copied with tp_connection_manager_protocol_copy()
+ * if a permanently-valid copy is needed.
  *
  * Returns: (transfer none): a structure representing the protocol
  * Since: 0.7.26
