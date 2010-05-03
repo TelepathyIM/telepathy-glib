@@ -29,6 +29,7 @@ our_headers = \
     base-client.h \
     base-connection.h \
     base-connection-manager.h \
+    base-protocol.h \
     channel.h \
     channel-iface.h \
     channel-dispatcher.h \
@@ -121,6 +122,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     base-client.c \
     base-connection.c \
     base-connection-manager.c \
+    base-protocol-internal.h \
+    base-protocol.c \
     capabilities.c \
     capabilities-internal.h \
     channel.c \

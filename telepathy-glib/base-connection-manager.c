@@ -40,65 +40,8 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
+#include "telepathy-glib/base-protocol-internal.h"
 #include "telepathy-glib/debug-internal.h"
-
-/**
- * TpCMParamSpec:
- * @name: Name as passed over D-Bus
- * @dtype: D-Bus type signature. We currently support 16- and 32-bit integers
- *         (@gtype is INT), 16- and 32-bit unsigned integers (gtype is UINT),
- *         strings (gtype is STRING) and booleans (gtype is BOOLEAN).
- * @gtype: GLib type, derived from @dtype as above
- * @flags: Some combination of TP_CONN_MGR_PARAM_FLAG_foo
- * @def: Default value, as a (const gchar *) for string parameters, or
-         using #GINT_TO_POINTER or #GUINT_TO_POINTER for integer parameters
- * @offset: Offset of the parameter in the opaque data structure, if
- *          appropriate. The member at that offset is expected to be a gint,
- *          guint, (gchar *) or gboolean, depending on @gtype. The default
- *          parameter setter, #tp_cm_param_setter_offset, uses this field.
- * @filter: A callback which is used to validate or normalize the user-provided
- *          value before it is written into the opaque data structure
- * @filter_data: Arbitrary opaque data intended for use by the filter function
- * @setter_data: Arbitrary opaque data intended for use by the setter function
- *               instead of or in addition to @offset.
- *
- * Structure representing a connection manager parameter, as accepted by
- * RequestConnection.
- *
- * In addition to the fields documented here, there is one gpointer field
- * which must currently be %NULL. A meaning may be defined for it in a
- * future version of telepathy-glib.
- */
-
-/**
- * TpCMParamFilter:
- * @paramspec: The parameter specification. The filter is likely to use
- *  name (for the error message if the value is invalid) and filter_data.
- * @value: The value for that parameter provided by the user.
- *  May be changed to contain a different value of the same type, if
- *  some sort of normalization is required
- * @error: Used to raise %TP_ERROR_INVALID_ARGUMENT if the given value is
- *  rejected
- *
- * Signature of a callback used to validate and/or normalize user-provided
- * CM parameter values.
- *
- * Returns: %TRUE to accept, %FALSE (with @error set) to reject
- */
-
-/**
- * TpCMParamSetter:
- * @paramspec: The parameter specification.  The setter is likely to use
- *  some combination of the name, offset and setter_data fields.
- * @value: The value for that parameter provided by the user.
- * @params: An opaque data structure, created by
- *  #TpCMProtocolSpec.params_new.
- *
- * The signature of a callback used to set a parameter within the opaque
- * data structure used for a protocol.
- *
- * Since: 0.7.0
- */
 
 /**
  * TpCMProtocolSpec:
@@ -450,103 +393,6 @@ get_parameters (const TpCMProtocolSpec *protos,
   return FALSE;
 }
 
-static GValue *
-param_default_value (const TpCMParamSpec *param)
-{
-  GValue *value;
-
-  value = tp_g_value_slice_new (param->gtype);
-
-  /* If HAS_DEFAULT is false, we don't really care what the value is, so we'll
-   * just use whatever's in the user-supplied param spec. As long as we're
-   * careful to accept NULL, that should be fine. */
-
-  switch (param->dtype[0])
-    {
-      case DBUS_TYPE_STRING:
-        g_assert (param->gtype == G_TYPE_STRING);
-        if (param->def == NULL)
-          g_value_set_static_string (value, "");
-        else
-          g_value_set_static_string (value, param->def);
-        break;
-
-      case DBUS_TYPE_INT16:
-      case DBUS_TYPE_INT32:
-        g_assert (param->gtype == G_TYPE_INT);
-        g_value_set_int (value, GPOINTER_TO_INT (param->def));
-        break;
-
-      case DBUS_TYPE_UINT16:
-      case DBUS_TYPE_UINT32:
-        g_assert (param->gtype == G_TYPE_UINT);
-        g_value_set_uint (value, GPOINTER_TO_UINT (param->def));
-        break;
-
-      case DBUS_TYPE_UINT64:
-        g_assert (param->gtype == G_TYPE_UINT64);
-        g_value_set_uint64 (value, param->def == NULL ? 0
-            : *(const guint64 *) param->def);
-        break;
-
-      case DBUS_TYPE_INT64:
-        g_assert (param->gtype == G_TYPE_INT64);
-        g_value_set_int64 (value, param->def == NULL ? 0
-            : *(const gint64 *) param->def);
-        break;
-
-      case DBUS_TYPE_DOUBLE:
-        g_assert (param->gtype == G_TYPE_DOUBLE);
-        g_value_set_double (value, param->def == NULL ? 0.0
-            : *(const double *) param->def);
-        break;
-
-      case DBUS_TYPE_OBJECT_PATH:
-        g_assert (param->gtype == DBUS_TYPE_G_OBJECT_PATH);
-        g_value_set_static_boxed (value, param->def == NULL ? "/"
-            : param->def);
-        break;
-
-      case DBUS_TYPE_ARRAY:
-        switch (param->dtype[1])
-          {
-          case DBUS_TYPE_STRING:
-            g_assert (param->gtype == G_TYPE_STRV);
-            g_value_set_static_boxed (value, param->def);
-            break;
-
-          case DBUS_TYPE_BYTE:
-            g_assert (param->gtype == DBUS_TYPE_G_UCHAR_ARRAY);
-            if (param->def == NULL)
-              {
-                GArray *array = g_array_new (FALSE, FALSE, sizeof (guint8));
-                g_value_take_boxed (value, array);
-              }
-            else
-              {
-                g_value_set_static_boxed (value, param->def);
-              }
-            break;
-
-          default:
-            ERROR ("encountered unknown type %s on argument %s",
-                param->dtype, param->name);
-          }
-        break;
-
-      case DBUS_TYPE_BOOLEAN:
-        g_assert (param->gtype == G_TYPE_BOOLEAN);
-        g_value_set_boolean (value, GPOINTER_TO_INT (param->def));
-        break;
-
-      default:
-        ERROR ("encountered unknown type %s on argument %s",
-            param->dtype, param->name);
-    }
-
-  return value;
-}
-
 /**
  * tp_cm_param_setter_offset:
  * @paramspec: A parameter specification with offset set to some
@@ -732,16 +578,6 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
     }
 }
 
-static void
-set_param_from_default (const TpCMParamSpec *paramspec,
-                        const TpCMParamSetter set_param,
-                        gpointer params)
-{
-  GValue *value = param_default_value (paramspec);
-  set_param (paramspec, value, params);
-  tp_g_value_slice_free (value);
-}
-
 static gboolean
 set_param_from_value (const TpCMParamSpec *paramspec,
                       GValue *value,
@@ -822,7 +658,7 @@ parse_parameters (const TpCMParamSpec *paramspec,
             }
           else if (paramspec[i].flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT)
             {
-              set_param_from_default (&paramspec[i], set_param, params);
+              _tp_cm_param_spec_set_default (&paramspec[i], set_param, params);
               tp_intset_add (params_present, i);
             }
           else
@@ -900,24 +736,8 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
 
   for (i = 0; protospec->parameters[i].name != NULL; i++)
     {
-      GValue *def_value;
-      GValue param = { 0, };
-
-      g_value_init (&param, param_type);
-      g_value_set_static_boxed (&param,
-        dbus_g_type_specialized_construct (param_type));
-
-      def_value = param_default_value (protospec->parameters + i);
-      dbus_g_type_struct_set (&param,
-        0, protospec->parameters[i].name,
-        1, protospec->parameters[i].flags,
-        2, protospec->parameters[i].dtype,
-        3, def_value,
-        G_MAXUINT);
-      g_value_unset (def_value);
-      g_slice_free (GValue, def_value);
-
-      g_ptr_array_add (ret, g_value_get_boxed (&param));
+      g_ptr_array_add (ret,
+          _tp_cm_param_spec_to_dbus (protospec->parameters + i));
     }
 
   tp_svc_connection_manager_return_from_get_parameters (context, ret);
@@ -1138,58 +958,6 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(list_protocols);
   IMPLEMENT(request_connection);
 #undef IMPLEMENT
-}
-
-/**
- * tp_cm_param_filter_uint_nonzero:
- * @paramspec: The parameter specification for a guint parameter
- * @value: A GValue containing a guint, which will not be altered
- * @error: Used to return an error if the guint is 0
- *
- * A #TpCMParamFilter which rejects zero, useful for server port numbers.
- *
- * Returns: %TRUE to accept, %FALSE (with @error set) to reject
- */
-gboolean
-tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
-                                 GValue *value,
-                                 GError **error)
-{
-  if (g_value_get_uint (value) == 0)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Account parameter '%s' may not be set to zero",
-          paramspec->name);
-      return FALSE;
-    }
-  return TRUE;
-}
-
-/**
- * tp_cm_param_filter_string_nonempty:
- * @paramspec: The parameter specification for a string parameter
- * @value: A GValue containing a string, which will not be altered
- * @error: Used to return an error if the string is empty
- *
- * A #TpCMParamFilter which rejects empty strings.
- *
- * Returns: %TRUE to accept, %FALSE (with @error set) to reject
- */
-gboolean
-tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
-                                    GValue *value,
-                                    GError **error)
-{
-  const gchar *str = g_value_get_string (value);
-
-  if (tp_str_empty (str))
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Account parameter '%s' may not be set to an empty string",
-          paramspec->name);
-      return FALSE;
-    }
-  return TRUE;
 }
 
 /**
