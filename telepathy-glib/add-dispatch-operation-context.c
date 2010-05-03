@@ -542,7 +542,6 @@ channel_prepare_cb (GObject *source,
     {
       DEBUG ("Failed to prepare channel: %s", error->message);
 
-      g_ptr_array_remove (self->channels, source);
       g_error_free (error);
     }
 
