@@ -72,9 +72,32 @@
  * Since: 0.11.UNRELEASED
  */
 
+/**
+ * TpBaseClientClassAddDispatchOperationImpl:
+ * @client: a #TpBaseClient instance
+ * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
+ * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
+ * if possible
+ * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
+ *  all having %TP_CHANNEL_FEATURE_CORE prepared if possible
+ * @dispatch_operation: a #TpChannelDispatchOperation having
+ * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE prepared if possible
+ * @context: a #TpObserveChannelsContext representing the context of this
+ *  D-Bus call
+ *
+ * Signature of the implementation of the AddDispatchOperation method.
+ *
+ * This function must call either tp_add_dispatch_operation_context_accept(),
+ * tp_add_dispatch_operation_context_delay() or
+ * tp_add_dispatch_operation_context_fail() on @context before it returns.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
 #include "telepathy-glib/base-client.h"
 
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus-internal.h>
@@ -90,6 +113,7 @@
 struct _TpBaseClientClassPrivate {
     /*<private>*/
     TpBaseClientClassObserveChannelsImpl observe_channels_impl;
+    TpBaseClientClassAddDispatchOperationImpl add_dispatch_operation_impl;
 };
 
 static void observer_iface_init (gpointer, gpointer);
@@ -266,8 +290,11 @@ void
 tp_base_client_take_approver_filter (TpBaseClient *self,
     GHashTable *filter)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->priv->add_dispatch_operation_impl != NULL);
 
   self->priv->flags |= CLIENT_IS_APPROVER;
   g_ptr_array_add (self->priv->approver_filters, filter);
@@ -841,14 +868,183 @@ observer_iface_init (gpointer g_iface,
 }
 
 static void
+add_dispatch_context_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseClient *self = user_data;
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+  TpAddDispatchOperationContext *ctx = TP_ADD_DISPATCH_OPERATION_CONTEXT (
+      source);
+  GError *error = NULL;
+  GList *channels_list;
+
+  if (!_tp_add_dispatch_operation_context_prepare_finish (ctx, result, &error))
+    {
+      DEBUG ("Failed to prepare TpAddDispatchOperationContext: %s",
+          error->message);
+
+      if (g_error_matches (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED))
+        {
+          /* There is no point calling the AddDispatchOperation
+           * implementation; just terminate the D-Bus call right away */
+          tp_add_dispatch_operation_context_accept (ctx);
+        }
+      else
+        {
+          tp_add_dispatch_operation_context_fail (ctx, error);
+        }
+
+      g_error_free (error);
+      return;
+    }
+
+  channels_list = ptr_array_to_list (ctx->channels);
+
+  cls->priv->add_dispatch_operation_impl (self, ctx->account, ctx->connection,
+      channels_list, ctx->dispatch_operation, ctx);
+
+  g_list_free (channels_list);
+
+  if (_tp_add_dispatch_operation_context_get_state (ctx) ==
+      TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE)
+    {
+      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Implementation of AddDispatchOperation in %s didn't call "
+          "tp_add_dispatch_operation_context_{accept,fail,delay}",
+          G_OBJECT_TYPE_NAME (self));
+
+      g_critical ("%s", error->message);
+
+      tp_add_dispatch_operation_context_fail (ctx, error);
+      g_error_free (error);
+    }
+}
+
+static void
 _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
-    const GPtrArray *channels,
-    const gchar *dispatch_operation,
+    const GPtrArray *channels_arr,
+    const gchar *dispatch_operation_path,
     GHashTable *properties,
     DBusGMethodInvocation *context)
 {
-  /* FIXME */
-  tp_dbus_g_method_return_not_implemented (context);
+  TpBaseClient *self = TP_BASE_CLIENT (iface);
+  TpAddDispatchOperationContext *ctx;
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+  GError *error = NULL;
+  TpAccount *account = NULL;
+  TpConnection *connection = NULL;
+  GPtrArray *channels = NULL;
+  TpChannelDispatchOperation *dispatch_operation = NULL;
+  guint i;
+  const gchar *path;
+
+  if (!(self->priv->flags & CLIENT_IS_APPROVER))
+    {
+      /* Pretend that the method is not implemented if we are not supposed to
+       * be an Approver. */
+      tp_dbus_g_method_return_not_implemented (context);
+      return;
+    }
+
+  if (cls->priv->add_dispatch_operation_impl == NULL)
+    {
+      DEBUG ("class %s does not implement AddDispatchOperation",
+          G_OBJECT_TYPE_NAME (self));
+
+      tp_dbus_g_method_return_not_implemented (context);
+      return;
+    }
+
+  path = tp_asv_get_object_path (properties,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT);
+  if (path == NULL)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Properties doesn't contain 'Account'");
+      DEBUG ("%s", error->message);
+      goto out;
+    }
+
+  account = tp_account_manager_ensure_account (self->priv->account_mgr,
+      path);
+
+  path = tp_asv_get_object_path (properties,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION);
+  if (path == NULL)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Properties doesn't contain 'Connection'");
+      DEBUG ("%s", error->message);
+      goto out;
+    }
+
+  connection = tp_account_ensure_connection (account, path);
+  if (connection == NULL)
+    {
+      DEBUG ("Failed to create TpConnection");
+      goto out;
+    }
+
+  if (channels_arr->len == 0)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Channels should contain at least one channel");
+      DEBUG ("%s", error->message);
+      goto out;
+    }
+
+  channels = g_ptr_array_sized_new (channels_arr->len);
+  g_ptr_array_set_free_func (channels, g_object_unref);
+  for (i = 0; i < channels_arr->len; i++)
+    {
+      const gchar *chan_path;
+      GHashTable *chan_props;
+      TpChannel *channel;
+
+      tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
+          &chan_path, &chan_props);
+
+      channel = tp_channel_new_from_properties (connection,
+          chan_path, chan_props, &error);
+      if (channel == NULL)
+        {
+          DEBUG ("Failed to create TpChannel: %s", error->message);
+          goto out;
+        }
+
+      g_ptr_array_add (channels, channel);
+    }
+
+  dispatch_operation = tp_channel_dispatch_operation_new (self->priv->dbus,
+      dispatch_operation_path, properties, &error);
+  if (dispatch_operation == NULL)
+    {
+      DEBUG ("Failed to create TpChannelDispatchOperation: %s", error->message);
+      goto out;
+    }
+
+  ctx = _tp_add_dispatch_operation_context_new (account, connection, channels,
+      dispatch_operation, context);
+
+  _tp_add_dispatch_operation_context_prepare_async (ctx,
+      add_dispatch_context_prepare_cb, self);
+
+  g_object_unref (ctx);
+
+out:
+  if (channels != NULL)
+    g_ptr_array_unref (channels);
+
+  if (dispatch_operation != NULL)
+    g_object_unref (dispatch_operation);
+
+  if (error == NULL)
+    return;
+
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
+
 }
 
 static void
@@ -913,4 +1109,22 @@ const gchar *
 tp_base_client_get_object_path (TpBaseClient *self)
 {
   return self->priv->object_path;
+}
+
+/**
+ * tp_base_client_implement_add_dispatch_operation:
+ * @klass: the #TpBaseClientClass of the object
+ * @impl: the #TpBaseClientClassAddDispatchOperationImpl function implementing
+ * AddDispatchOperation()
+ *
+ * Called by subclasses to define the actual implementation of the
+ * AddDispatchOperation() D-Bus method.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *cls,
+    TpBaseClientClassAddDispatchOperationImpl impl)
+{
+  cls->priv->add_dispatch_operation_impl = impl;
 }

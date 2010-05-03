@@ -25,6 +25,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/add-dispatch-operation-context.h>
 #include <telepathy-glib/observe-channels-context.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/connection.h>
@@ -68,6 +69,17 @@ typedef void (*TpBaseClientClassObserveChannelsImpl) (
 
 void tp_base_client_implement_observe_channels (TpBaseClientClass *klass,
     TpBaseClientClassObserveChannelsImpl impl);
+
+typedef void (*TpBaseClientClassAddDispatchOperationImpl) (
+    TpBaseClient *client,
+    TpAccount *account,
+    TpConnection *connection,
+    GList *channels,
+    TpChannelDispatchOperation *dispatch_operation,
+    TpAddDispatchOperationContext *context);
+
+void tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *klass,
+    TpBaseClientClassAddDispatchOperationImpl impl);
 
 /* setup functions which can only be called before register() */
 
