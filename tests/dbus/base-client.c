@@ -17,6 +17,7 @@
 
 #include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
+#include "tests/lib/simple-channel-dispatch-operation.h"
 #include "tests/lib/simple-client.h"
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/textchan-null.h"
@@ -31,6 +32,7 @@ typedef struct {
     TpBaseConnection *base_connection;
     SimpleAccount *account_service;
     TestTextChannelNull *text_chan_service;
+    SimpleChannelDispatchOperation *cdo_service;
 
     /* Client side objects */
     TpAccountManager *account_mgr;
@@ -44,6 +46,7 @@ typedef struct {
 } Test;
 
 #define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
+#define CDO_PATH "/whatever"
 
 static void
 setup (Test *test,
@@ -124,6 +127,24 @@ setup (Test *test,
 
   tp_handle_unref (contact_repo, handle);
 
+  /* Create Service side ChannelDispatchOperation object */
+  test->cdo_service = test_object_new_static_class (
+      SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
+      NULL);
+  tp_dbus_daemon_register_object (test->dbus, CDO_PATH, test->cdo_service);
+
+  simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
+      tp_proxy_get_object_path (test->connection));
+
+  simple_channel_dispatch_operation_set_account_path (test->cdo_service,
+      tp_proxy_get_object_path (test->account));
+
+  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+      test->text_chan);
+
+  g_assert (tp_dbus_daemon_request_name (test->dbus,
+      TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL));
+
   g_free (chan_path);
 }
 
@@ -136,6 +157,9 @@ teardown (Test *test,
   g_strfreev (test->interfaces);
 
   g_object_unref (test->account_mgr);
+
+  tp_dbus_daemon_release_name (test->dbus, TP_CHANNEL_DISPATCHER_BUS_NAME,
+      NULL);
 
   g_object_unref (test->base_client);
   g_object_unref (test->client);
@@ -156,6 +180,8 @@ teardown (Test *test,
 
   g_object_unref (test->text_chan_service);
   g_object_unref (test->text_chan);
+
+  g_object_unref (test->cdo_service);
 
   tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
   g_assert_no_error (test->error);
@@ -456,6 +482,9 @@ test_approver (Test *test,
   GHashTable *filter;
   GPtrArray *channels;
   GHashTable *properties;
+  static const char *interfaces[] = { NULL };
+  static const gchar *possible_handlers[] = {
+    TP_CLIENT_BUS_NAME_BASE ".Badger", NULL, };
 
   filter = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -491,19 +520,31 @@ test_approver (Test *test,
   g_assert_no_error (test->error);
 
   /* Call AddDispatchOperation */
-  channels = g_ptr_array_sized_new (0);
-  properties = g_hash_table_new (NULL, NULL);
+  channels = g_ptr_array_sized_new (1);
+  add_channel_to_ptr_array (channels, test->text_chan);
+
+  properties = tp_asv_new (
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
+        G_TYPE_STRV, interfaces,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
+        DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (test->connection),
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
+        DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (test->account),
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
+        G_TYPE_STRV, possible_handlers,
+      NULL);
 
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_APPROVER);
 
   tp_cli_client_approver_call_add_dispatch_operation (test->client, -1,
-      channels,  "/DispatchOperation", properties,
+      channels, CDO_PATH, properties,
       no_return_cb, test, NULL, NULL);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
 
+  g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);
   g_hash_table_unref (properties);
 }
