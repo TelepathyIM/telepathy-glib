@@ -3750,6 +3750,7 @@ TP_TYPE_OBSERVE_CHANNELS_CONTEXT
 TP_TYPE_BASE_CLIENT
 TpBaseClientClass
 TpBaseClientPrivate
+TpBaseClientClassPrivate
 </SECTION>
 
 <SECTION>
@@ -3770,7 +3771,6 @@ TP_IS_OBSERVE_CHANNELS_CONTEXT
 TP_IS_OBSERVE_CHANNELS_CONTEXT_CLASS
 TpObserveChannelsContextClass
 TpObserveChannelsContextPrivate
-TpBaseClientClassPrivate
 </SECTION>
 
 <SECTION>
