@@ -422,7 +422,6 @@ test_observer (Test *test,
   g_hash_table_unref (info);
 }
 
-#if 0
 /* Test Approver */
 static void
 get_approver_prop_cb (TpProxy *proxy,
@@ -509,8 +508,6 @@ test_approver (Test *test,
   g_hash_table_unref (properties);
 }
 
-#endif
-
 int
 main (int argc,
       char **argv)
@@ -524,10 +521,8 @@ main (int argc,
   g_test_add ("/base-client/basics", Test, NULL, setup, test_basics, teardown);
   g_test_add ("/base-client/observer", Test, NULL, setup, test_observer,
       teardown);
-#if 0
   g_test_add ("/base-client/approver", Test, NULL, setup, test_approver,
       teardown);
-#endif
 
   return g_test_run ();
 }
