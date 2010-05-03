@@ -991,3 +991,103 @@ tp_channel_dispatch_operation_borrow_immutable_properties (
 {
   return self->priv->immutable_properties;
 }
+
+static void
+handle_with_cb (TpChannelDispatchOperation *self,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("HandleWith failed: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_channel_dispatch_operation_handle_with_async:
+ * @self: a #TpChannelDispatchOperation
+ * @handler: The well-known bus name (starting with #TP_CLIENT_BUS_NAME_BASE)
+ * of the channel handler that should handle the channel, or %NULL
+ * if the client has no preferred channel handler
+ * @callback: a callback to call when the call returns
+ * @user_data: data to pass to @callback
+ *
+ * Called by an approver to accept a channel bundle and request that the
+ * given handler be used to handle it.
+ *
+ * If successful, this method will cause the #TpProxy::invalidated signal
+ * to be emitted.
+ *
+ * However, this method may fail because the dispatch has already been
+ * completed and the object has already gone. If this occurs, it indicates
+ * that another approver has asked for the bundle to be handled by a
+ * particular handler. The approver MUST NOT attempt to interact with
+ * the channels further in this case, unless it is separately
+ * invoked as the handler.
+ *
+ * Approvers which are also channel handlers SHOULD use
+ * tp_channel_dispatch_operation_claim_async() instead
+ * of tp_channel_dispatch_operation_handle_with_async() to request
+ * that they can handle a channel bundle themselves.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_channel_dispatch_operation_handle_with_async (
+    TpChannelDispatchOperation *self,
+    const gchar *handler,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data, tp_channel_dispatch_operation_handle_with_async);
+
+  tp_cli_channel_dispatch_operation_call_handle_with (self, -1,
+      handler != NULL ? handler: "",
+      handle_with_cb, result, NULL, G_OBJECT (self));
+}
+
+/**
+ * tp_channel_dispatch_operation_handle_with_finish:
+ * @self: a #TpChannelDispatchOperation
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async call to HandleWith().
+ *
+ * Returns: %TRUE if the HandleWith() call was successful, otherwise %FALSE
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_channel_dispatch_operation_handle_with_finish (
+    TpChannelDispatchOperation *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (self), tp_channel_dispatch_operation_handle_with_async),
+      FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  return TRUE;
+}

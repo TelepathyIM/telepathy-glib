@@ -97,6 +97,17 @@ GStrv tp_channel_dispatch_operation_borrow_possible_handlers (
 GHashTable * tp_channel_dispatch_operation_borrow_immutable_properties (
     TpChannelDispatchOperation *self);
 
+void tp_channel_dispatch_operation_handle_with_async (
+    TpChannelDispatchOperation *self,
+    const gchar *handler,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_dispatch_operation_handle_with_finish (
+    TpChannelDispatchOperation *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel-dispatch-operation.h>
