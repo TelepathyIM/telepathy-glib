@@ -277,6 +277,23 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
   self->priv->flags |= (CLIENT_IS_OBSERVER | CLIENT_OBSERVER_RECOVER);
 }
 
+/**
+ * tp_base_client_add_approver_filter:
+ * @self: a #TpBaseClient
+ * @filter: (transfer none) (element-type utf8 GObject.Value):
+ * a %TP_HASH_TYPE_CHANNEL_CLASS
+ *
+ * Register a new channel class as Approver.ApproverChannelFilter.
+ * The @add_dispatch_operation virtual method set up using
+ * tp_base_client_implement_add_dispatch_operation() will be called whenever
+ * a new channel's properties match the ones in @filter.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects that implement
+ * @add_dispatch_operation.
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_add_approver_filter (TpBaseClient *self,
     GHashTable *filter)
@@ -286,6 +303,27 @@ tp_base_client_add_approver_filter (TpBaseClient *self,
       _tp_base_client_copy_filter (filter));
 }
 
+/**
+ * tp_base_client_take_approver_filter: (skip)
+ * @self: a client
+ * @filter: (transfer full) (element-type utf8 GObject.Value):
+ * a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
+ *
+ * The same as tp_base_client_add_approver_filter(), but ownership of @filter
+ * is taken by @self. This makes it convenient to call using tp_asv_new():
+ *
+ * |[
+ * tp_base_client_take_approver_filter (client,
+ *    tp_asv_new (
+ *        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+ *            TP_IFACE_CHANNEL_TYPE_TEXT,
+ *        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+ *            TP_HANDLE_TYPE_CONTACT,
+ *        ...));
+ * ]|
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_take_approver_filter (TpBaseClient *self,
     GHashTable *filter)
