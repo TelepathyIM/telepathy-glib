@@ -69,6 +69,7 @@ our_headers = \
     observe-channels-context.h \
     presence-mixin.h \
     properties-mixin.h \
+    protocol.h \
     proxy.h \
     proxy-subclass.h \
     run.h \
@@ -88,6 +89,7 @@ our_headers = \
     svc-generic.h \
     svc-media-interfaces.h \
     svc-properties-interface.h \
+    svc-protocol.h \
     telepathy-glib.h \
     text-mixin.h \
     util.h
@@ -173,6 +175,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     observe-channels-context.c \
     presence-mixin.c \
     properties-mixin.c \
+    protocol.c \
     proxy.c \
     proxy-internal.h \
     proxy-methods.c \

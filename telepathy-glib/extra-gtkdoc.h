@@ -747,3 +747,14 @@
  *
  * Since: 0.11.7
  */
+
+/**
+ * SECTION:svc-protocol
+ * @title: Service-side Protocol interface
+ * @short_description: GInterface for Telepathy Protocol objects
+ * @see_also: #TpBaseProtocol
+ *
+ * The #TpSvcProtocol interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * Protocol interface.
+ */

@@ -2124,6 +2124,8 @@ TP_IFACE_DEBUG
 TP_IFACE_QUARK_DEBUG
 TP_IFACE_CONNECTION_MANAGER
 TP_IFACE_QUARK_CONNECTION_MANAGER
+TP_IFACE_PROTOCOL
+TP_IFACE_QUARK_PROTOCOL
 TP_IFACE_CONNECTION
 TP_IFACE_QUARK_CONNECTION
 TP_IFACE_CONNECTION_INTERFACE_ALIASING
@@ -2341,6 +2343,15 @@ TP_PROP_MEDIA_STREAM_HANDLER_CREATED_LOCALLY
 TP_PROP_MEDIA_STREAM_HANDLER_NAT_TRAVERSAL
 TP_PROP_MEDIA_STREAM_HANDLER_RELAY_INFO
 TP_PROP_MEDIA_STREAM_HANDLER_STUN_SERVERS
+TP_PROP_PROTOCOL_DISPLAY_NAME
+TP_PROP_PROTOCOL_GUARANTEED_CHANNEL_CLASSES
+TP_PROP_PROTOCOL_GUARANTEED_INTERFACES
+TP_PROP_PROTOCOL_ICON
+TP_PROP_PROTOCOL_INTERFACES
+TP_PROP_PROTOCOL_PARAMETERS
+TP_PROP_PROTOCOL_POSSIBLE_CHANNEL_CLASSES
+TP_PROP_PROTOCOL_POSSIBLE_INTERFACES
+TP_PROP_PROTOCOL_VCARD_FIELD
 TP_TOKEN_CONNECTION_CONTACT_ID
 TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS
 TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN
@@ -2405,6 +2416,7 @@ tp_iface_quark_dbus_daemon
 tp_iface_quark_media_session_handler
 tp_iface_quark_media_stream_handler
 tp_iface_quark_properties_interface
+tp_iface_quark_protocol
 tp_iface_quark_channel_interface_call_state
 tp_iface_quark_channel_interface_anonymity
 tp_iface_quark_channel_interface_service_point
@@ -4106,4 +4118,52 @@ TP_TYPE_BASE_PROTOCOL
 <SUBSECTION Private>
 TpBaseProtocolPrivate
 TpBaseProtocolClassPrivate
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/svc-protocol.h</INCLUDE>
+<FILE>svc-protocol</FILE>
+<TITLE>svc-protocol</TITLE>
+TpSvcProtocol
+TpSvcProtocolClass
+<SUBSECTION>
+tp_svc_protocol_identify_account_impl
+tp_svc_protocol_implement_identify_account
+tp_svc_protocol_implement_normalize_contact
+tp_svc_protocol_normalize_contact_impl
+tp_svc_protocol_return_from_identify_account
+tp_svc_protocol_return_from_normalize_contact
+<SUBSECTION Standard>
+tp_svc_protocol_get_type
+TP_SVC_PROTOCOL
+TP_SVC_PROTOCOL_CLASS
+TP_SVC_PROTOCOL_GET_CLASS
+TP_IS_SVC_PROTOCOL
+TP_TYPE_SVC_PROTOCOL
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/protocol.h</INCLUDE>
+<FILE>protocol</FILE>
+<TITLE>protocol</TITLE>
+TpProtocol
+TpProtocolClass
+tp_protocol_new
+tp_protocol_init_known_interfaces
+<SUBSECTION>
+tp_cli_protocol_call_identify_account
+tp_cli_protocol_call_normalize_contact
+tp_cli_protocol_callback_for_identify_account
+tp_cli_protocol_callback_for_normalize_contact
+<SUBSECTION Standard>
+tp_protocol_get_type
+TP_PROTOCOL
+TP_PROTOCOL_CLASS
+TP_PROTOCOL_GET_CLASS
+TP_IS_PROTOCOL
+TP_IS_PROTOCOL_CLASS
+TP_TYPE_PROTOCOL
+<SUBSECTION Private>
+TpProtocolPrivate
+TpProtocolClassPrivate
 </SECTION>
