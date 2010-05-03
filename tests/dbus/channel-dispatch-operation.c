@@ -532,6 +532,33 @@ test_handle_with (Test *test,
   g_clear_error (&test->error);
 }
 
+static void
+claim_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_channel_dispatch_operation_claim_finish (
+      TP_CHANNEL_DISPATCH_OPERATION (source), result, &test->error);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_claim (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+      "/whatever", NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  tp_channel_dispatch_operation_claim_async (test->cdo, claim_cb, test);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_no_error (test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -550,6 +577,8 @@ main (int argc,
       test_channel_lost, teardown_services);
   g_test_add ("/cdo/handle-with", Test, NULL, setup_services,
       test_handle_with, teardown_services);
+  g_test_add ("/cdo/claim", Test, NULL, setup_services,
+      test_claim, teardown_services);
 
   return g_test_run ();
 }
