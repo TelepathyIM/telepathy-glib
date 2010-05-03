@@ -3814,3 +3814,23 @@ TP_IS_SIMPLE_OBSERVER_CLASS
 TpSimpleObserverClass
 TpSimpleObserverPrivate
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/add-dispatch-operation-context.h</INCLUDE>
+<FILE>add-dispatch-operation-context</FILE>
+<TITLE>add-dispatch-operation-context</TITLE>
+TpAddDispatchOperationContext
+tp_add_dispatch_operation_context_accept
+tp_add_dispatch_operation_context_delay
+tp_add_dispatch_operation_context_fail
+<SUBSECTION Standard>
+tp_add_dispatch_operation_context_get_type
+TP_ADD_DISPATCH_OPERATION_CONTEXT
+TP_ADD_DISPATCH_OPERATION_CONTEXT_CLASS
+TP_ADD_DISPATCH_OPERATION_CONTEXT_GET_CLASS
+TP_IS_ADD_DISPATCH_OPERATION_CONTEXT
+TP_IS_ADD_DISPATCH_OPERATION_CONTEXT_CLASS
+TpAddDispatchOperationContextClass
+TpAddDispatchOperationContextPrivate
+TP_TYPE_ADD_DISPATCH_OPERATION_CONTEXT
+</SECTION>

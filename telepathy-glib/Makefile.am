@@ -25,6 +25,7 @@ noinst_LTLIBRARIES = libtelepathy-glib-internal.la
 our_headers = \
     account.h \
     account-manager.h \
+    add-dispatch-operation-context.h \
     base-client.h \
     base-connection.h \
     base-connection-manager.h \
@@ -112,6 +113,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-internal.h \
     account-manager.c \
     account-manager-internal.h \
+    add-dispatch-operation-context-internal.h \
+    add-dispatch-operation-context.c \
     base-client.c \
     base-connection.c \
     base-connection-manager.c \

@@ -63,6 +63,7 @@ CFILE_GLOB=$(top_srcdir)/telepathy-glib/*.c $(top_builddir)/telepathy-glib/_gen/
 # Header files to ignore when scanning.
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES=\
+    add-dispatch-operation-context-internal.h \
     channel-internal.h \
     connection-internal.h \
     debug-internal.h \
