@@ -632,7 +632,7 @@ context_prepare_cb (GObject *source,
           "tp_observe_channels_context_{accept,fail,delay}",
           G_OBJECT_TYPE_NAME (self));
 
-      g_critical ("%s", error->message);
+      CRITICAL ("%s", error->message);
 
       tp_observe_channels_context_fail (ctx, error);
       g_error_free (error);

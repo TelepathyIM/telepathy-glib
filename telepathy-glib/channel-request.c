@@ -146,7 +146,7 @@ tp_channel_request_constructed (GObject *object)
 
   if (sc == NULL)
     {
-      g_critical ("Couldn't connect to Failed: %s", error->message);
+      CRITICAL ("Couldn't connect to Failed: %s", error->message);
       g_error_free (error);
       g_assert_not_reached ();
       return;
@@ -157,7 +157,7 @@ tp_channel_request_constructed (GObject *object)
 
   if (sc == NULL)
     {
-      g_critical ("Couldn't connect to Succeeded: %s", error->message);
+      CRITICAL ("Couldn't connect to Succeeded: %s", error->message);
       g_error_free (error);
       g_assert_not_reached ();
       return;

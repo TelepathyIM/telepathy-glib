@@ -1204,7 +1204,7 @@ tp_channel_constructor (GType type,
 
   if (sc == NULL)
     {
-      g_critical ("Couldn't connect to Closed: %s", error->message);
+      CRITICAL ("Couldn't connect to Closed: %s", error->message);
       g_assert_not_reached ();
       g_error_free (error);
       return NULL;

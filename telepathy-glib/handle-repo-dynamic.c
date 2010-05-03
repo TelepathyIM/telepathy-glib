@@ -50,6 +50,9 @@
 #include <telepathy-glib/handle-repo-internal.h>
 #include <telepathy-glib/util.h>
 
+#define DEBUG_FLAG TP_DEBUG_HANDLES
+#include "telepathy-glib/debug-internal.h"
+
 /**
  * TpDynamicHandleRepoNormalizeFunc:
  * @repo: The repository on which tp_handle_lookup() or tp_handle_ensure()
@@ -303,7 +306,7 @@ tp_dynamic_handle_repo_init (TpDynamicHandleRepo *self)
   self->bus_daemon = tp_dbus_daemon_dup (NULL);
 
   if (self->bus_daemon == NULL)
-    g_error ("Unable to connect to starter bus");
+    ERROR ("Unable to connect to starter bus");
 
   return;
 }
@@ -641,7 +644,7 @@ dynamic_client_hold_handle (TpHandleRepoIface *repo,
 
   if (!client_name || *client_name == '\0')
     {
-      g_critical ("%s: called with invalid client name", G_STRFUNC);
+      CRITICAL ("called with invalid client name");
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "invalid client name");
       return FALSE;
@@ -683,7 +686,7 @@ dynamic_client_release_handle (TpHandleRepoIface *repo,
 
   if (!client_name || *client_name == '\0')
     {
-      g_critical ("%s: called with invalid client name", G_STRFUNC);
+      CRITICAL ("called with invalid client name");
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "invalid client name");
       return FALSE;

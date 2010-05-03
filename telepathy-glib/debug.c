@@ -33,6 +33,7 @@
  * are subject to change, but currently include:
  *
  * <itemizedlist>
+ * <listitem><literal>misc</literal> - low-level utility code</listitem>
  * <listitem><literal>manager</literal> -
  *    #TpConnectionManager (client)</listitem>
  * <listitem><literal>connection</literal> - #TpBaseConnection (service)
@@ -43,7 +44,7 @@
  * <listitem><literal>im</literal> - (text) instant messaging
  *    (service)</listitem>
  * <listitem><literal>properties</literal> -
- *    #TpPropertiesMixin (service)</listitem>
+ *    #TpDBusPropertiesMixin and #TpPropertiesMixin (service)</listitem>
  * <listitem><literal>params</literal> - connection manager parameters
  *    (service)</listitem>
  * <listitem><literal>handles</literal> - handle reference tracking tracking
@@ -69,9 +70,8 @@
 
 #include <telepathy-glib/debug.h>
 
+#define DEBUG_FLAG TP_DEBUG_MISC
 #include "debug-internal.h"
-
-#ifdef ENABLE_DEBUG
 
 static TpDebugFlags flags = 0;
 
@@ -82,9 +82,6 @@ static gboolean tp_debug_persistent = FALSE;
  *
  * Activate all possible debug modes. This also activates persistent mode,
  * which should have been orthogonal.
- *
- * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
  *
  * @deprecated since 0.6.1. Use tp_debug_set_flags ("all") and
  * tp_debug_set_persistent() instead.
@@ -97,6 +94,7 @@ tp_debug_set_all_flags (void)
 }
 
 static GDebugKey keys[] = {
+  { "misc",          TP_DEBUG_MISC },
   { "groups",        TP_DEBUG_GROUPS },
   { "properties",    TP_DEBUG_PROPERTIES },
   { "connection",    TP_DEBUG_CONNECTION },
@@ -126,8 +124,7 @@ typedef struct {
  * domain for each debug message logged, and then g_free() to free the newly
  * created string... */
 static DebugKeyToDomain key_to_domain[] = {
-  /* There is no 1 << 0 */
-  { 0,                   G_LOG_DOMAIN "/misc" },
+  { TP_DEBUG_MISC,       G_LOG_DOMAIN "/misc" },
   { TP_DEBUG_GROUPS,     G_LOG_DOMAIN "/groups" },
   { TP_DEBUG_PROPERTIES, G_LOG_DOMAIN "/properties" },
   { TP_DEBUG_IM,         G_LOG_DOMAIN "/im" },
@@ -161,7 +158,8 @@ static GDebugKey persist_keys[] = {
  * The parsing matches that of g_parse_debug_string().
  *
  * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
+ * this function has no practical effect, since the debug messages it would
+ * enable were removed at compile time.
  *
  * @since 0.6.1
  */
@@ -189,9 +187,6 @@ tp_debug_set_flags (const gchar *flags_string)
  *
  * The parsing matches that of g_parse_debug_string().
  *
- * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
- *
  * @deprecated since 0.6.1. Use tp_debug_set_flags() and
  * tp_debug_set_persistent() instead
  */
@@ -212,9 +207,6 @@ tp_debug_set_flags_from_string (const gchar *flags_string)
  * Equivalent to
  * <literal>tp_debug_set_flags_from_string (g_getenv (var))</literal>,
  * and has the same problem with persistence being included in "all".
- *
- * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
  *
  * @deprecated since 0.6.1. Use tp_debug_set_flags(g_getenv(...)) and
  * tp_debug_set_persistent() instead
@@ -237,9 +229,6 @@ tp_debug_set_flags_from_env (const gchar *var)
  *
  * Used to enable persistent operation of the connection manager process for
  * debugging purposes.
- *
- * If telepathy-glib was compiled with --disable-debug (not recommended),
- * this function does nothing.
  */
 void
 tp_debug_set_persistent (gboolean persistent)
@@ -309,7 +298,7 @@ void _tp_log (GLogLevelFlags level,
               const gchar *format,
               ...)
 {
-  if (flag & flags)
+  if ((flag & flags) || level > G_LOG_LEVEL_DEBUG)
     {
       va_list args;
       va_start (args, format);
@@ -329,35 +318,6 @@ _tp_debug_is_persistent (void)
 {
   return tp_debug_persistent;
 }
-
-#else /* !ENABLE_DEBUG */
-
-void
-tp_debug_set_all_flags (void)
-{
-}
-
-void
-tp_debug_set_flags (const gchar *flags_string)
-{
-}
-
-void
-tp_debug_set_flags_from_string (const gchar *flags_string)
-{
-}
-
-void
-tp_debug_set_flags_from_env (const gchar *var)
-{
-}
-
-void
-tp_debug_set_persistent (gboolean persistent)
-{
-}
-
-#endif /* !ENABLE_DEBUG */
 
 /**
  * tp_debug_divert_messages:
@@ -405,28 +365,28 @@ tp_debug_divert_messages (const gchar *filename)
 
   if (fd == -1)
     {
-      g_warning ("Can't open logfile '%s': %s", filename,
+      WARNING ("Can't open logfile '%s': %s", filename,
           g_strerror (errno));
       return;
     }
 
   if (dup2 (fd, 1) == -1)     /* STDOUT_FILENO is less universal */
     {
-      g_warning ("Error duplicating stdout file descriptor: %s",
+      WARNING ("Error duplicating stdout file descriptor: %s",
           g_strerror (errno));
       return;
     }
 
   if (dup2 (fd, 2) == -1)     /* STDERR_FILENO is less universal */
     {
-      g_warning ("Error duplicating stderr file descriptor: %s",
+      WARNING ("Error duplicating stderr file descriptor: %s",
           g_strerror (errno));
     }
 
   /* avoid leaking the fd */
   if (close (fd) != 0)
     {
-      g_warning ("Error closing temporary logfile fd: %s", g_strerror (errno));
+      WARNING ("Error closing temporary logfile fd: %s", g_strerror (errno));
     }
 }
 

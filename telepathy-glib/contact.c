@@ -1267,7 +1267,7 @@ contacts_inspected (TpConnection *connection,
           tp_proxy_get_bus_name (connection), c->handles->len,
           g_strv_length ((GStrv) ids));
 
-      g_warning ("%s", e->message);
+      WARNING ("%s", e->message);
       contacts_context_fail (c, e);
       g_error_free (e);
       return;
@@ -1295,7 +1295,7 @@ contacts_inspected (TpConnection *connection,
                   tp_proxy_get_bus_name (connection), contact->priv->handle,
                   contact->priv->identifier, ids[i]);
 
-              g_warning ("%s", e->message);
+              WARNING ("%s", e->message);
               contacts_context_fail (c, e);
               g_error_free (e);
               return;
@@ -1351,7 +1351,7 @@ contacts_requested_aliases (TpConnection *connection,
 
       if (G_UNLIKELY (g_strv_length ((GStrv) aliases) != c->contacts->len))
         {
-          g_warning ("Connection manager %s is broken: we requested %u "
+          WARNING ("Connection manager %s is broken: we requested %u "
               "handles' aliases but got %u strings back",
               tp_proxy_get_bus_name (connection), c->contacts->len,
               g_strv_length ((GStrv) aliases));
@@ -1413,7 +1413,7 @@ contacts_got_aliases (TpConnection *connection,
             }
           else
             {
-              g_warning ("No alias returned for %u, will use ID instead",
+              WARNING ("No alias returned for %u, will use ID instead",
                   contact->priv->handle);
             }
 

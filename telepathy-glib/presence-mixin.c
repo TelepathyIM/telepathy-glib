@@ -246,7 +246,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
             case TP_CONNECTION_PRESENCE_TYPE_OFFLINE:
             case TP_CONNECTION_PRESENCE_TYPE_UNKNOWN:
             case TP_CONNECTION_PRESENCE_TYPE_ERROR:
-              g_warning ("Status \"%s\" of type %u should not be available "
+              WARNING ("Status \"%s\" of type %u should not be available "
                   "to set on yourself", statuses[i].name,
                   statuses[i].presence_type);
               break;

@@ -35,6 +35,9 @@
 
 #include <string.h>
 
+#define DEBUG_FLAG TP_DEBUG_MISC
+#include "debug-internal.h"
+
 /**
  * tp_verify:
  * @R: a requirement (constant expression) to be checked at compile-time
@@ -1061,7 +1064,7 @@ tp_value_array_build (gsize length,
 
       if (error != NULL)
         {
-          g_critical ("%s", error);
+          CRITICAL ("%s", error);
           g_free (error);
 
           g_value_array_free (arr);
@@ -1116,7 +1119,7 @@ tp_value_array_unpack (GValueArray *array,
 
       if (G_UNLIKELY (i > array->n_values))
         {
-          g_warning ("More parameters than entries in the struct!");
+          WARNING ("More parameters than entries in the struct!");
           break;
         }
 
@@ -1125,7 +1128,7 @@ tp_value_array_unpack (GValueArray *array,
       G_VALUE_LCOPY (value, var_args, G_VALUE_NOCOPY_CONTENTS, &error);
       if (error != NULL)
         {
-          g_warning ("%s: %s", G_STRFUNC, error);
+          WARNING ("%s", error);
           g_free (error);
           break;
         }

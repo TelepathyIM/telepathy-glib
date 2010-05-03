@@ -45,6 +45,7 @@
 #include <unistd.h>
 #endif
 
+#define DEBUG_FLAG TP_DEBUG_MANAGER
 #include "debug-internal.h"
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/debug.h>
@@ -246,7 +247,7 @@ tp_run_connection_manager (const char *prog_name,
 
   if (bus_daemon == NULL)
     {
-      g_warning ("%s", error->message);
+      WARNING ("%s", error->message);
       g_error_free (error);
       error = NULL;
       goto out;

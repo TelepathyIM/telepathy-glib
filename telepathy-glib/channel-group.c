@@ -1128,7 +1128,7 @@ _tp_channel_get_group_properties (TpChannel *self)
    * to these signals must succeed. */
 #define DIE(sig) \
   { \
-    g_critical ("couldn't connect to " sig ": %s", error->message); \
+    CRITICAL ("couldn't connect to " sig ": %s", error->message); \
     g_assert_not_reached (); \
     g_error_free (error); \
     return; \

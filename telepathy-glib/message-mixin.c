@@ -1565,7 +1565,7 @@ tp_message_mixin_has_pending_messages (GObject *object,
       if (valid)
         *first_sender = h;
       else
-        g_warning ("%s: oldest message's message-sender is mistyped", G_STRFUNC);
+        WARNING ("oldest message's message-sender is mistyped");
     }
 
   return (msg != NULL);

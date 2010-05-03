@@ -147,7 +147,7 @@ tp_channel_dispatch_operation_constructed (GObject *object)
 
   if (sc == NULL)
     {
-      g_critical ("Couldn't connect to Finished: %s", error->message);
+      CRITICAL ("Couldn't connect to Finished: %s", error->message);
       g_error_free (error);
       g_assert_not_reached ();
       return;

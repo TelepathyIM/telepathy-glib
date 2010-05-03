@@ -505,7 +505,7 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
           DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS, "GetNameOwner");
 
       if (message == NULL)
-        g_error ("Out of memory");
+        ERROR ("Out of memory");
 
       /* We already checked that @name was in (a small subset of) UTF-8,
        * so OOM is the only thing that can go wrong. The use of &name here
@@ -513,11 +513,11 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
       if (!dbus_message_append_args (message,
             DBUS_TYPE_STRING, &name,
             DBUS_TYPE_INVALID))
-        g_error ("Out of memory");
+        ERROR ("Out of memory");
 
       if (!dbus_connection_send_with_reply (self->priv->libdbus,
           message, &pc, -1))
-        g_error ("Out of memory");
+        ERROR ("Out of memory");
       /* pc is unreffed by _tp_dbus_daemon_get_name_owner_notify */
 
       if (pc == NULL || dbus_pending_call_get_completed (pc))
@@ -530,7 +530,7 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
             _tp_dbus_daemon_get_name_owner_notify,
             context, get_name_owner_context_unref))
         {
-          g_error ("Out of memory");
+          ERROR ("Out of memory");
         }
     }
   else
@@ -703,12 +703,12 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
       DBUS_INTERFACE_DBUS, "GetNameOwner");
 
   if (message == NULL)
-    g_error ("Out of memory");
+    ERROR ("Out of memory");
 
   if (!dbus_message_append_args (message,
         DBUS_TYPE_STRING, &well_known_name,
         DBUS_TYPE_INVALID))
-    g_error ("Out of memory");
+    ERROR ("Out of memory");
 
   dbus_error_init (&dbus_error);
   reply = dbus_connection_send_with_reply_and_block (dbc, message,
@@ -719,7 +719,7 @@ _tp_dbus_daemon_get_name_owner (TpDBusDaemon *self,
   if (reply == NULL)
     {
       if (!tp_strdiff (dbus_error.name, DBUS_ERROR_NO_MEMORY))
-        g_error ("Out of memory");
+        ERROR ("Out of memory");
 
       /* FIXME: ideally we'd use dbus-glib's error mapping for this */
       g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_NAME_OWNER_LOST,
@@ -1163,11 +1163,11 @@ _tp_dbus_daemon_list_names_common (TpDBusDaemon *self,
       DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS, method);
 
   if (message == NULL)
-    g_error ("Out of memory");
+    ERROR ("Out of memory");
 
   if (!dbus_connection_send_with_reply (self->priv->libdbus,
       message, &pc, timeout_ms))
-    g_error ("Out of memory");
+    ERROR ("Out of memory");
   /* pc is unreffed by _tp_dbus_daemon_list_names_notify */
 
   context = list_names_context_new (self, callback, user_data, destroy,
@@ -1183,7 +1183,7 @@ _tp_dbus_daemon_list_names_common (TpDBusDaemon *self,
         _tp_dbus_daemon_list_names_notify, context,
         list_names_context_unref))
     {
-      g_error ("Out of memory");
+      ERROR ("Out of memory");
     }
 }
 
@@ -1286,7 +1286,7 @@ tp_dbus_daemon_constructor (GType type,
 
   /* one ref per TpDBusDaemon, released in finalize */
   if (!dbus_connection_allocate_data_slot (&daemons_slot))
-    g_error ("Out of memory");
+    ERROR ("Out of memory");
 
   daemons = dbus_connection_get_data (self->priv->libdbus, daemons_slot);
 
@@ -1302,7 +1302,7 @@ tp_dbus_daemon_constructor (GType type,
       /* we add this filter at most once per DBusConnection */
       if (!dbus_connection_add_filter (self->priv->libdbus,
             _tp_dbus_daemon_name_owner_changed_filter, NULL, NULL))
-        g_error ("Out of memory");
+        ERROR ("Out of memory");
     }
 
   *daemons = g_slist_prepend (*daemons, self);

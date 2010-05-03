@@ -50,7 +50,7 @@ static inline void oom (void) G_GNUC_NORETURN;
 static inline void
 oom (void)
 {
-  g_error ("Out of memory in libdbus. Cannot have a bucket");
+  ERROR ("Out of memory in libdbus. Cannot have a bucket");
 }
 
 static void
@@ -583,10 +583,11 @@ connection_requested_handles (TpConnection *self,
           /* This CM is bad and wrong. We can't trust it to get anything
            * right, so we'd probably better leak the handles, hence this
            * early-return comes before recording that we have a ref to them. */
-          g_warning ("%s", e->message);
+          WARNING ("%s", e->message);
 
           context->callback (self, context->handle_type, 0, NULL, NULL,
-              error, context->user_data, weak_object);
+              e, context->user_data, weak_object);
+          g_error_free (e);
           return;
         }
 

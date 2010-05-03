@@ -101,7 +101,7 @@ tp_observe_channels_context_dispose (GObject *object)
       GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Disposing the TpObserveChannelsContext" };
 
-      g_warning ("Disposing a context in the %s state",
+      WARNING ("Disposing a context in the %s state",
           self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE ?
           "none": "delayed");
 

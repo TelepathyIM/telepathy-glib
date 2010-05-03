@@ -237,7 +237,7 @@ tp_proxy_signal_invocation_free (gpointer p)
       /* this shouldn't really happen - it'll get run if the idle source
        * is removed by something other than t_p_s_c_disconnect or
        * t_p_s_i_run */
-      g_warning ("%s: idle source removed by someone else", G_STRFUNC);
+      WARNING ("idle source removed by someone else");
 
       g_queue_remove (&invocation->sc->invocations, invocation);
       g_object_unref (invocation->proxy);

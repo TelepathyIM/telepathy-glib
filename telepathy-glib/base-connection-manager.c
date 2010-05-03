@@ -282,7 +282,7 @@ tp_base_connection_manager_constructor (GType type,
 
   if (!tp_base_connection_manager_ensure_dbus (self, &error))
     {
-      g_warning ("%s", error->message);
+      WARNING ("%s", error->message);
       g_error_free (error);
     }
 
@@ -529,8 +529,8 @@ param_default_value (const TpCMParamSpec *param)
             break;
 
           default:
-            g_error ("parameter_defaults: encountered unknown type %s on "
-                "argument %s", param->dtype, param->name);
+            ERROR ("encountered unknown type %s on argument %s",
+                param->dtype, param->name);
           }
         break;
 
@@ -540,8 +540,8 @@ param_default_value (const TpCMParamSpec *param)
         break;
 
       default:
-        g_error ("parameter_defaults: encountered unknown type %s on "
-            "argument %s", param->dtype, param->name);
+        ERROR ("encountered unknown type %s on argument %s",
+            param->dtype, param->name);
     }
 
   return value;
@@ -719,16 +719,15 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
               break;
 
             default:
-              g_error ("%s: encountered unhandled D-Bus array type %s on "
-                       "argument %s", G_STRFUNC, paramspec->dtype,
-                       paramspec->name);
+              ERROR ("encountered unhandled D-Bus array type %s on "
+                  "argument %s", paramspec->dtype, paramspec->name);
               g_assert_not_reached ();
           }
         break;
 
       default:
-        g_error ("%s: encountered unhandled D-Bus type %s on argument %s",
-                 G_STRFUNC, paramspec->dtype, paramspec->name);
+        ERROR ("encountered unhandled D-Bus type %s on argument %s",
+            paramspec->dtype, paramspec->name);
         g_assert_not_reached ();
     }
 }
@@ -1119,7 +1118,7 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   return TRUE;
 
 except:
-  g_warning ("%s", error->message);
+  WARNING ("%s", error->message);
   g_error_free (error);
 
   if (string != NULL)
