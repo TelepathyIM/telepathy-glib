@@ -542,7 +542,7 @@ test_approver (Test *test,
       no_return_cb, test, NULL, NULL);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
+  g_assert_no_error (test->error);
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);
