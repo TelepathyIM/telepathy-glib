@@ -205,7 +205,8 @@ teardown (Test *test,
 
   g_object_unref (test->account);
 
-  g_object_unref (test->text_chan_service);
+  if (test->text_chan_service != NULL)
+    g_object_unref (test->text_chan_service);
   g_object_unref (test->text_chan);
 
   if (test->text_chan_service_2 != NULL)
@@ -606,6 +607,23 @@ test_approver (Test *test,
   /* But the context contains both */
   g_assert_cmpuint (test->simple_client->add_dispatch_ctx->channels->len,
       ==, 2);
+
+  /* Another call to AddDispatchOperation, the last channel will be
+   * invalidated during the call */
+  tp_cli_client_approver_call_add_dispatch_operation (test->client, -1,
+      channels, CDO_PATH, properties,
+      no_return_cb, test, NULL, NULL);
+
+  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service);
+
+  g_object_unref (test->text_chan_service);
+  test->text_chan_service = NULL;
+
+  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+      test->text_chan);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);
