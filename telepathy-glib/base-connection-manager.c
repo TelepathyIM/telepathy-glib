@@ -954,6 +954,8 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   TpBaseConnectionManagerClass *cls;
   GString *string = NULL;
   guint i;
+  GHashTableIter iter;
+  gpointer name, protocol;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (self));
   cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
@@ -982,6 +984,26 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   g_string_assign (string, TP_CM_OBJECT_PATH_BASE);
   g_string_append (string, cls->cm_dbus_name);
   tp_dbus_daemon_register_object (self->priv->dbus_daemon, string->str, self);
+
+  g_hash_table_iter_init (&iter, self->priv->protocols);
+
+  while (g_hash_table_iter_next (&iter, &name, &protocol))
+    {
+      TpBaseProtocolClass *protocol_class =
+        TP_BASE_PROTOCOL_GET_CLASS (protocol);
+
+      /* don't export uninformative "stub" protocol objects on D-Bus */
+      if (protocol_class->is_stub)
+        continue;
+
+      g_string_assign (string, TP_CM_OBJECT_PATH_BASE);
+      g_string_append (string, cls->cm_dbus_name);
+      g_string_append_c (string, '/');
+      g_string_append (string, name);
+
+      tp_dbus_daemon_register_object (self->priv->dbus_daemon, string->str,
+          protocol);
+    }
 
   g_string_free (string, TRUE);
 
