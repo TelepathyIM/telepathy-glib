@@ -155,6 +155,9 @@ setup_services (Test *test,
   simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan_2);
 
+  simple_channel_dispatch_operation_set_account_path (test->cdo_service,
+       ACCOUNT_PATH);
+
   g_assert (tp_dbus_daemon_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL));
 }

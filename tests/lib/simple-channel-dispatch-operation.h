@@ -65,6 +65,10 @@ void simple_channel_dispatch_operation_lost_channel (
     SimpleChannelDispatchOperation *self,
     TpChannel *chan);
 
+void simple_channel_dispatch_operation_set_account_path (
+    SimpleChannelDispatchOperation *self,
+    const gchar *account_path);
+
 G_END_DECLS
 
 #endif /* #ifndef __SIMPLE_CHANNEL_DISPATCH_OPERATION_H__ */

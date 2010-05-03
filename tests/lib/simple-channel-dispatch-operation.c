@@ -51,6 +51,7 @@ enum
 struct _SimpleChannelDispatchOperationPrivate
 {
   gchar *conn_path;
+  gchar *account_path;
   /* Array of TpChannel */
   GPtrArray *channels;
 };
@@ -117,7 +118,7 @@ simple_channel_dispatch_operation_get_property (GObject *object,
       break;
 
     case PROP_ACCOUNT:
-      g_value_set_boxed (value, TP_ACCOUNT_OBJECT_PATH_BASE "fake/fake/fake");
+      g_value_set_boxed (value, self->priv->account_path);
       break;
 
     case PROP_CONNECTION:
@@ -164,6 +165,7 @@ simple_channel_dispatch_operation_finalize (GObject *object)
     G_OBJECT_CLASS (simple_channel_dispatch_operation_parent_class)->finalize;
 
   g_free (self->priv->conn_path);
+  g_free (self->priv->account_path);
   g_ptr_array_free (self->priv->channels, TRUE);
 
   if (finalize != NULL)
@@ -272,4 +274,12 @@ simple_channel_dispatch_operation_lost_channel (
       /* We removed the last channel; fire Finished */
       tp_svc_channel_dispatch_operation_emit_finished (self);
     }
+}
+
+void
+simple_channel_dispatch_operation_set_account_path (
+    SimpleChannelDispatchOperation *self,
+    const gchar *account_path)
+{
+  self->priv->account_path = g_strdup (account_path);
 }
