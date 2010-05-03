@@ -39,6 +39,7 @@ class Generator(object):
         self.dom = dom
         self.__header = []
         self.__body = []
+        self.__docs = []
 
         self.prefix_lc = prefix.lower()
         self.prefix_uc = prefix.upper()
@@ -70,6 +71,11 @@ class Generator(object):
         if isinstance(s, unicode):
             s = s.encode('utf-8')
         self.__body.append(s)
+
+    def d(self, s):
+        if isinstance(s, unicode):
+            s = s.encode('utf-8')
+        self.__docs.append(s)
 
     def get_iface_quark(self):
         assert self.iface_dbus is not None
@@ -123,25 +129,27 @@ class Generator(object):
         #   guint arg_handle, gboolean arg_suppress_handler,
         #   gpointer user_data, GObject *weak_object);
 
-        self.b('/**')
-        self.b(' * %s:' % callback_name)
-        self.b(' * @proxy: The proxy on which %s_%s_connect_to_%s ()'
+        self.d('/**')
+        self.d(' * %s:' % callback_name)
+        self.d(' * @proxy: The proxy on which %s_%s_connect_to_%s ()'
                % (self.prefix_lc, iface_lc, member_lc))
-        self.b(' *  was called')
+        self.d(' *  was called')
 
         for arg in args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: %s' % (name,
+            self.d(' * @%s: %s' % (name,
                 xml_escape(get_docstring(elt) or '(Undocumented)')))
 
-        self.b(' * @user_data: User-supplied data')
-        self.b(' * @weak_object: User-supplied weakly referenced object')
-        self.b(' *')
-        self.b(' * Represents the signature of a callback for the signal %s.'
+        self.d(' * @user_data: User-supplied data')
+        self.d(' * @weak_object: User-supplied weakly referenced object')
+        self.d(' *')
+        self.d(' * Represents the signature of a callback for the signal %s.'
                % member)
-        self.b(' */')
+        self.d(' */')
+        self.d('')
+
         self.h('typedef void (*%s) (%sproxy,'
                % (callback_name, self.proxy_cls))
 
@@ -290,31 +298,33 @@ class Generator(object):
         # emitted the 'invalidated' signal, or because the weakly referenced
         # object has gone away.
 
-        self.b('/**')
-        self.b(' * %s_%s_connect_to_%s:'
+        self.d('/**')
+        self.d(' * %s_%s_connect_to_%s:'
                % (self.prefix_lc, iface_lc, member_lc))
-        self.b(' * @proxy: %s' % self.proxy_doc)
-        self.b(' * @callback: Callback to be called when the signal is')
-        self.b(' *   received')
-        self.b(' * @user_data: User-supplied data for the callback')
-        self.b(' * @destroy: Destructor for the user-supplied data, which')
-        self.b(' *   will be called when this signal is disconnected, or')
-        self.b(' *   before this function returns %NULL')
-        self.b(' * @weak_object: A #GObject which will be weakly referenced; ')
-        self.b(' *   if it is destroyed, this callback will automatically be')
-        self.b(' *   disconnected')
-        self.b(' * @error: If not %NULL, used to raise an error if %NULL is')
-        self.b(' *   returned')
-        self.b(' *')
-        self.b(' * Connect a handler to the signal %s.' % member)
-        self.b(' *')
-        self.b(' * %s' % xml_escape(get_docstring(signal) or '(Undocumented)'))
-        self.b(' *')
-        self.b(' * Returns: a #TpProxySignalConnection containing all of the')
-        self.b(' * above, which can be used to disconnect the signal; or')
-        self.b(' * %NULL if the proxy does not have the desired interface')
-        self.b(' * or has become invalid.')
-        self.b(' */')
+        self.d(' * @proxy: %s' % self.proxy_doc)
+        self.d(' * @callback: Callback to be called when the signal is')
+        self.d(' *   received')
+        self.d(' * @user_data: User-supplied data for the callback')
+        self.d(' * @destroy: Destructor for the user-supplied data, which')
+        self.d(' *   will be called when this signal is disconnected, or')
+        self.d(' *   before this function returns %NULL')
+        self.d(' * @weak_object: A #GObject which will be weakly referenced; ')
+        self.d(' *   if it is destroyed, this callback will automatically be')
+        self.d(' *   disconnected')
+        self.d(' * @error: If not %NULL, used to raise an error if %NULL is')
+        self.d(' *   returned')
+        self.d(' *')
+        self.d(' * Connect a handler to the signal %s.' % member)
+        self.d(' *')
+        self.d(' * %s' % xml_escape(get_docstring(signal) or '(Undocumented)'))
+        self.d(' *')
+        self.d(' * Returns: a #TpProxySignalConnection containing all of the')
+        self.d(' * above, which can be used to disconnect the signal; or')
+        self.d(' * %NULL if the proxy does not have the desired interface')
+        self.d(' * or has become invalid.')
+        self.d(' */')
+        self.d('')
+
         self.h('TpProxySignalConnection *%s_%s_connect_to_%s (%sproxy,'
                % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.h('    %s callback,' % callback_name)
@@ -322,6 +332,7 @@ class Generator(object):
         self.h('    GDestroyNotify destroy,')
         self.h('    GObject *weak_object,')
         self.h('    GError **error);')
+        self.h('')
 
         self.b('TpProxySignalConnection *')
         self.b('%s_%s_connect_to_%s (%sproxy,'
@@ -360,8 +371,6 @@ class Generator(object):
         self.b('      weak_object, error);')
         self.b('}')
         self.b('')
-
-        self.h('')
 
     def do_method(self, iface, method):
         iface_lc = iface.lower()
@@ -414,34 +423,35 @@ class Generator(object):
         #       gpointer user_data,
         #       GObject *weak_object);
 
-        self.b('/**')
-        self.b(' * %s_%s_callback_for_%s:'
+        self.d('/**')
+        self.d(' * %s_%s_callback_for_%s:'
                % (self.prefix_lc, iface_lc, member_lc))
-        self.b(' * @proxy: the proxy on which the call was made')
+        self.d(' * @proxy: the proxy on which the call was made')
 
         for arg in out_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: Used to return an \'out\' argument if @error is '
+            self.d(' * @%s: Used to return an \'out\' argument if @error is '
                    '%%NULL: %s'
                    % (name, xml_escape(get_docstring(elt) or '(Undocumented)')))
 
-        self.b(' * @error: %NULL on success, or an error on failure')
-        self.b(' * @user_data: user-supplied data')
-        self.b(' * @weak_object: user-supplied object')
-        self.b(' *')
-        self.b(' * Signature of the callback called when a %s method call'
+        self.d(' * @error: %NULL on success, or an error on failure')
+        self.d(' * @user_data: user-supplied data')
+        self.d(' * @weak_object: user-supplied object')
+        self.d(' *')
+        self.d(' * Signature of the callback called when a %s method call'
                % member)
-        self.b(' * succeeds or fails.')
+        self.d(' * succeeds or fails.')
 
         deprecated = method.getElementsByTagName('tp:deprecated')
         if deprecated:
             d = deprecated[0]
-            self.b(' *')
-            self.b(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
+            self.d(' *')
+            self.d(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
 
-        self.b(' */')
+        self.d(' */')
+        self.d('')
 
         callback_name = '%s_%s_callback_for_%s' % (self.prefix_lc, iface_lc,
                                                    member_lc)
@@ -666,49 +676,51 @@ class Generator(object):
                % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.h('    gint timeout_ms,')
 
-        self.b('/**')
-        self.b(' * %s_%s_call_%s:'
+        self.d('/**')
+        self.d(' * %s_%s_call_%s:'
                % (self.prefix_lc, iface_lc, member_lc))
-        self.b(' * @proxy: the #TpProxy')
-        self.b(' * @timeout_ms: the timeout in milliseconds, or -1 to use the')
-        self.b(' *   default')
+        self.d(' * @proxy: the #TpProxy')
+        self.d(' * @timeout_ms: the timeout in milliseconds, or -1 to use the')
+        self.d(' *   default')
 
         for arg in in_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: Used to pass an \'in\' argument: %s'
+            self.d(' * @%s: Used to pass an \'in\' argument: %s'
                    % (name, xml_escape(get_docstring(elt) or '(Undocumented)')))
 
-        self.b(' * @callback: called when the method call succeeds or fails;')
-        self.b(' *   may be %NULL to make a "fire and forget" call with no ')
-        self.b(' *   reply tracking')
-        self.b(' * @user_data: user-supplied data passed to the callback;')
-        self.b(' *   must be %NULL if @callback is %NULL')
-        self.b(' * @destroy: called with the user_data as argument, after the')
-        self.b(' *   call has succeeded, failed or been cancelled;')
-        self.b(' *   must be %NULL if @callback is %NULL')
-        self.b(' * @weak_object: If not %NULL, a #GObject which will be ')
-        self.b(' *   weakly referenced; if it is destroyed, this call ')
-        self.b(' *   will automatically be cancelled. Must be %NULL if ')
-        self.b(' *   @callback is %NULL')
-        self.b(' *')
-        self.b(' * Start a %s method call.' % member)
-        self.b(' *')
-        self.b(' * %s' % xml_escape(get_docstring(method) or '(Undocumented)'))
-        self.b(' *')
-        self.b(' * Returns: a #TpProxyPendingCall representing the call in')
-        self.b(' *  progress. It is borrowed from the object, and will become')
-        self.b(' *  invalid when the callback is called, the call is')
-        self.b(' *  cancelled or the #TpProxy becomes invalid.')
+        self.d(' * @callback: called when the method call succeeds or fails;')
+        self.d(' *   may be %NULL to make a "fire and forget" call with no ')
+        self.d(' *   reply tracking')
+        self.d(' * @user_data: user-supplied data passed to the callback;')
+        self.d(' *   must be %NULL if @callback is %NULL')
+        self.d(' * @destroy: called with the user_data as argument, after the')
+        self.d(' *   call has succeeded, failed or been cancelled;')
+        self.d(' *   must be %NULL if @callback is %NULL')
+        self.d(' * @weak_object: If not %NULL, a #GObject which will be ')
+        self.d(' *   weakly referenced; if it is destroyed, this call ')
+        self.d(' *   will automatically be cancelled. Must be %NULL if ')
+        self.d(' *   @callback is %NULL')
+        self.d(' *')
+        self.d(' * Start a %s method call.' % member)
+        self.d(' *')
+        self.d(' * %s' % xml_escape(get_docstring(method) or '(Undocumented)'))
+        self.d(' *')
+        self.d(' * Returns: a #TpProxyPendingCall representing the call in')
+        self.d(' *  progress. It is borrowed from the object, and will become')
+        self.d(' *  invalid when the callback is called, the call is')
+        self.d(' *  cancelled or the #TpProxy becomes invalid.')
 
         deprecated = method.getElementsByTagName('tp:deprecated')
         if deprecated:
             d = deprecated[0]
-            self.b(' *')
-            self.b(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
+            self.d(' *')
+            self.d(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
 
-        self.b(' */')
+        self.d(' */')
+        self.d('')
+
         self.b('TpProxyPendingCall *\n%s_%s_call_%s (%sproxy,'
                % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.b('    gint timeout_ms,')
@@ -825,6 +837,7 @@ class Generator(object):
                                      in_args, out_args, collect_callback)
 
         # leave a gap for the end of the method
+        self.d('')
         self.b('')
         self.h('')
 
@@ -921,51 +934,53 @@ class Generator(object):
                % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.h('    gint timeout_ms,')
 
-        self.b('/**')
-        self.b(' * %s_%s_run_%s:' % (self.prefix_lc, iface_lc, member_lc))
-        self.b(' * @proxy: %s' % self.proxy_doc)
-        self.b(' * @timeout_ms: Timeout in milliseconds, or -1 for default')
+        self.d('/**')
+        self.d(' * %s_%s_run_%s:' % (self.prefix_lc, iface_lc, member_lc))
+        self.d(' * @proxy: %s' % self.proxy_doc)
+        self.d(' * @timeout_ms: Timeout in milliseconds, or -1 for default')
 
         for arg in in_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: Used to pass an \'in\' argument: %s'
+            self.d(' * @%s: Used to pass an \'in\' argument: %s'
                    % (name, xml_escape(get_docstring(elt) or '(Undocumented)')))
 
         for arg in out_args:
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.b(' * @%s: Used to return an \'out\' argument if %%TRUE is '
+            self.d(' * @%s: Used to return an \'out\' argument if %%TRUE is '
                    'returned: %s'
                    % (name, xml_escape(get_docstring(elt) or '(Undocumented)')))
 
-        self.b(' * @error: If not %NULL, used to return errors if %FALSE ')
-        self.b(' *  is returned')
-        self.b(' * @loop: If not %NULL, set before re-entering ')
-        self.b(' *  the main loop, to point to a #GMainLoop ')
-        self.b(' *  which can be used to cancel this call with ')
-        self.b(' *  g_main_loop_quit(), causing a return of ')
-        self.b(' *  %FALSE with @error set to %TP_DBUS_ERROR_CANCELLED')
-        self.b(' *')
-        self.b(' * Call the method %s and run the main loop' % member)
-        self.b(' * until it returns. Before calling this method, you must')
-        self.b(' * add a reference to any borrowed objects you need to keep,')
-        self.b(' * and generally ensure that everything is in a consistent')
-        self.b(' * state.')
-        self.b(' *')
-        self.b(' * %s' % xml_escape(get_docstring(method) or '(Undocumented)'))
-        self.b(' *')
-        self.b(' * Returns: TRUE on success, FALSE and sets @error on error')
+        self.d(' * @error: If not %NULL, used to return errors if %FALSE ')
+        self.d(' *  is returned')
+        self.d(' * @loop: If not %NULL, set before re-entering ')
+        self.d(' *  the main loop, to point to a #GMainLoop ')
+        self.d(' *  which can be used to cancel this call with ')
+        self.d(' *  g_main_loop_quit(), causing a return of ')
+        self.d(' *  %FALSE with @error set to %TP_DBUS_ERROR_CANCELLED')
+        self.d(' *')
+        self.d(' * Call the method %s and run the main loop' % member)
+        self.d(' * until it returns. Before calling this method, you must')
+        self.d(' * add a reference to any borrowed objects you need to keep,')
+        self.d(' * and generally ensure that everything is in a consistent')
+        self.d(' * state.')
+        self.d(' *')
+        self.d(' * %s' % xml_escape(get_docstring(method) or '(Undocumented)'))
+        self.d(' *')
+        self.d(' * Returns: TRUE on success, FALSE and sets @error on error')
 
         deprecated = method.getElementsByTagName('tp:deprecated')
         if deprecated:
             d = deprecated[0]
-            self.b(' *')
-            self.b(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
+            self.d(' *')
+            self.d(' * Deprecated: %s' % xml_escape(get_deprecated(d)))
 
-        self.b(' */')
+        self.d(' */')
+        self.d('')
+
         self.b('gboolean\n%s_%s_run_%s (%sproxy,'
                % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
         self.b('    gint timeout_ms,')
@@ -1185,6 +1200,7 @@ class Generator(object):
 
         open(self.basename + '.h', 'w').write('\n'.join(self.__header))
         open(self.basename + '-body.h', 'w').write('\n'.join(self.__body))
+        open(self.basename + '-gtk-doc.h', 'w').write('\n'.join(self.__docs))
 
 
 def types_to_gtypes(types):

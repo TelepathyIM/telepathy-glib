@@ -123,8 +123,7 @@ _gen/gtypes.h _gen/gtypes-body.h: _gen/stable-spec.xml \
 _gen/telepathy-enums.h: _gen/stable-spec.xml \
 	$(tools_dir)/c-constants-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/c-constants-gen.py \
-		Tp \
-		$< > $@
+		Tp $< _gen/telepathy-enums
 
 _gen/interfaces-body.h _gen/telepathy-interfaces.h: _gen/stable-spec.xml \
 	$(tools_dir)/glib-interfaces-gen.py

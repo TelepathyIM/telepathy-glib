@@ -13,12 +13,22 @@ class Generator(object):
 
         self.__header = []
         self.__body = []
+        self.__docs = []
 
     def h(self, s):
+        if isinstance(s, unicode):
+            s = s.encode('utf-8')
         self.__header.append(s)
 
     def b(self, s):
+        if isinstance(s, unicode):
+            s = s.encode('utf-8')
         self.__body.append(s)
+
+    def d(self, s):
+        if isinstance(s, unicode):
+            s = s.encode('utf-8')
+        self.__docs.append(s)
 
     def __call__(self):
         errors = self.errors.getElementsByTagNameNS(NS_TP, 'error')
@@ -38,14 +48,15 @@ class Generator(object):
             name = 'TP_ERROR_STR_' + uc_nick
             error_name = '%s.%s' % (ns, nick)
 
-            self.h('')
-            self.h('/**')
-            self.h(' * %s:' % name)
-            self.h(' *')
-            self.h(' * The D-Bus error name %s' % error_name)
-            self.h(' *')
-            self.h(' * %s' % xml_escape(get_docstring(error)))
-            self.h(' */')
+            self.d('/**')
+            self.d(' * %s:' % name)
+            self.d(' *')
+            self.d(' * The D-Bus error name %s' % error_name)
+            self.d(' *')
+            self.d(' * %s' % xml_escape(get_docstring(error)))
+            self.d(' */')
+            self.d('')
+
             self.h('#define %s "%s"' % (name, error_name))
 
             self.b('      case TP_ERROR_%s:' % uc_nick)
@@ -62,6 +73,7 @@ class Generator(object):
 
         open(self.basename + '.h', 'w').write('\n'.join(self.__header))
         open(self.basename + '.c', 'w').write('\n'.join(self.__body))
+        open(self.basename + '-gtk-doc.h', 'w').write('\n'.join(self.__docs))
 
 if __name__ == '__main__':
     argv = sys.argv[1:]

@@ -74,7 +74,8 @@ tags
 tests/dbus/dbus-1/session.conf
 tests/dbus/test-*
 tests/test-*
-tests/tools/actual.h
-tests/tools/actual-body.h
+/tests/tools/actual.h
+/tests/tools/actual-body.h
+/tests/tools/actual-gtk-doc.h
 tools/telepathy-glib-env
 /valgrind.log
