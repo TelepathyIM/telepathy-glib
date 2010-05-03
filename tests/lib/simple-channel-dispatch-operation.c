@@ -266,4 +266,10 @@ simple_channel_dispatch_operation_lost_channel (
 
   tp_svc_channel_dispatch_operation_emit_channel_lost (self, path,
       TP_ERROR_STR_NOT_AVAILABLE, "Badger");
+
+  if (self->priv->channels->len == 0)
+    {
+      /* We removed the last channel; fire Finished */
+      tp_svc_channel_dispatch_operation_emit_finished (self);
+    }
 }
