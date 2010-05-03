@@ -56,12 +56,38 @@ struct _SimpleChannelDispatchOperationPrivate
 };
 
 static void
+simple_channel_dispatch_operation_handle_with (
+    TpSvcChannelDispatchOperation *iface,
+    const gchar *handler,
+    DBusGMethodInvocation *context)
+{
+  if (!tp_strdiff (handler, "FAIL"))
+    {
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "Nope" };
+
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+  dbus_g_method_return (context);
+}
+
+static void
+simple_channel_dispatch_operation_claim (
+    TpSvcChannelDispatchOperation *iface,
+    DBusGMethodInvocation *context)
+{
+  dbus_g_method_return (context);
+}
+
+static void
 channel_dispatch_operation_iface_init (gpointer klass,
     gpointer unused G_GNUC_UNUSED)
 {
 #define IMPLEMENT(x) tp_svc_channel_dispatch_operation_implement_##x (\
   klass, simple_channel_dispatch_operation_##x)
-  /* TODO */
+  IMPLEMENT(handle_with);
+  IMPLEMENT(claim);
 #undef IMPLEMENT
 }
 
