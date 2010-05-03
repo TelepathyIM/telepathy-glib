@@ -209,10 +209,9 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  *  subclasses in their class_init function.
  * @protocol_params: An array of #TpCMProtocolSpec structures representing
  *  the protocols this connection manager supports, terminated by a structure
- *  whose name member is %NULL.
+ *  whose name member is %NULL; or %NULL if this CM uses Protocol objects.
  * @new_connection: A #TpBaseConnectionManagerNewConnFunc used to construct
- *  new connections. Must be filled in by subclasses in their class_init
- *  function.
+ *  new connections, or %NULL if this CM uses Protocol objects.
  *
  * The class structure for #TpBaseConnectionManager.
  *
@@ -222,6 +221,10 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  *
  * Changed in 0.7.1: it is a fatal error for @cm_dbus_name not to conform to
  * the specification.
+ *
+ * Changed in 0.11.UNRELEASED: protocol_params and new_connection may both be
+ * %NULL. If so, this connection manager is assumed to use Protocol objects
+ * instead.
  */
 
 /**
@@ -352,8 +355,10 @@ tp_base_connection_manager_constructor (GType type,
   GError *error = NULL;
 
   g_assert (tp_connection_manager_check_valid_name (cls->cm_dbus_name, NULL));
-  g_assert (cls->protocol_params != NULL);
-  g_assert (cls->new_connection != NULL);
+
+  /* if one of these is NULL, the other must be too */
+  g_assert (cls->new_connection == NULL || cls->protocol_params != NULL);
+  g_assert (cls->protocol_params == NULL || cls->new_connection != NULL);
 
   if (!tp_base_connection_manager_ensure_dbus (self, &error))
     {
@@ -840,14 +845,11 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
   GPtrArray *ret;
   GError *error = NULL;
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (iface);
-  TpBaseConnectionManagerClass *cls =
-    TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
   guint i;
   TpBaseProtocol *protocol;
   const TpCMParamSpec *parameters;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
-  g_assert (cls->protocol_params != NULL);
   /* a D-Bus method shouldn't be happening til we're on D-Bus */
   g_assert (self->priv->registered);
 
@@ -1024,10 +1026,13 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   if (!tp_base_connection_manager_ensure_dbus (self, &error))
     goto except;
 
-  for (i = 0; cls->protocol_params[i].name != NULL; i++)
+  if (cls->protocol_params != NULL)
     {
-      tp_base_connection_manager_add_protocol (self,
-          _tp_legacy_protocol_new (self, cls->protocol_params + i));
+      for (i = 0; cls->protocol_params[i].name != NULL; i++)
+        {
+          tp_base_connection_manager_add_protocol (self,
+              _tp_legacy_protocol_new (self, cls->protocol_params + i));
+        }
     }
 
   g_assert (self->priv->dbus_daemon != NULL);
