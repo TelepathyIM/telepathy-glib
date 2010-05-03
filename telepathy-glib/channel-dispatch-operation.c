@@ -1091,3 +1091,93 @@ tp_channel_dispatch_operation_handle_with_finish (
 
   return TRUE;
 }
+
+static void
+claim_cb (TpChannelDispatchOperation *self,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Claim failed: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_channel_dispatch_operation_claim_async:
+ * @self: a #TpChannelDispatchOperation
+ * @callback: a callback to call when the call returns
+ * @user_data: data to pass to @callback
+ *
+ * Called by an approver to claim channels for handling internally.
+ * If this method is called successfully, the process calling this
+ * method becomes the handler for the channel.
+ *
+ * If successful, this method will cause the #TpProxy::invalidated signal
+ * to be emitted, in the same wayas for
+ * tp_channel_dispatch_operation_handle_with_async().
+ *
+ * This method may fail because the dispatch operation has already
+ * been completed. Again, see tp_channel_dispatch_operation_claim_async()
+ * for more details. The approver MUST NOT attempt to interact with
+ * the channels further in this case.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_channel_dispatch_operation_claim_async (
+    TpChannelDispatchOperation *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data, tp_channel_dispatch_operation_claim_async);
+
+  tp_cli_channel_dispatch_operation_call_claim (self, -1,
+      claim_cb, result, NULL, G_OBJECT (self));
+}
+
+/**
+ * tp_channel_dispatch_operation_claim_finish:
+ * @self: a #TpChannelDispatchOperation
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async call to Claim().
+ *
+ * Returns: %TRUE if the Claim() call was successful, otherwise %FALSE
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_channel_dispatch_operation_claim_finish (
+    TpChannelDispatchOperation *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (self), tp_channel_dispatch_operation_claim_async),
+      FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  return TRUE;
+}

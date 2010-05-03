@@ -108,6 +108,16 @@ gboolean tp_channel_dispatch_operation_handle_with_finish (
     GAsyncResult *result,
     GError **error);
 
+void tp_channel_dispatch_operation_claim_async (
+    TpChannelDispatchOperation *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_dispatch_operation_claim_finish (
+    TpChannelDispatchOperation *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel-dispatch-operation.h>
