@@ -2299,17 +2299,19 @@ lookup_all_contacts (ContactsContext *context)
  * @self: A connection, which must be ready (#TpConnection:connection-ready
  *  must be %TRUE)
  * @n_handles: The number of handles in @handles (must be at least 1)
- * @handles: An array of handles of type %TP_HANDLE_TYPE_CONTACT representing
- *  the desired contacts
+ * @handles: (array length=n_handles) (element-type uint): An array of handles
+ *  of type %TP_HANDLE_TYPE_CONTACT representing the desired contacts
  * @n_features: The number of features in @features (may be 0)
- * @features: An array of features that must be ready for use (if supported)
- *  before the callback is called (may be %NULL if @n_features is 0)
+ * @features: (array length=n_features) (allow-none): An array of features that
+ *  must be ready for use (if supported) before the callback is called (may
+ *  be %NULL if @n_features is 0)
  * @callback: A user callback to call when the contacts are ready
  * @user_data: Data to pass to the callback
  * @destroy: Called to destroy @user_data either after @callback has been
  *  called, or if the operation is cancelled
- * @weak_object: An object to pass to the callback, which will be weakly
- *  referenced; if this object is destroyed, the operation will be cancelled
+ * @weak_object: (allow-none): An object to pass to the callback, which will be
+ *  weakly referenced; if this object is destroyed, the operation will be
+ *  cancelled
  *
  * Create a number of #TpContact objects and make asynchronous method calls
  * to hold their handles and ensure that all the features specified in
@@ -2418,7 +2420,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
  * @n_features: The number of features in @features (must be at least 1)
  * @features: (array length=n_features): An array of features that must be
  *  ready for use (if supported) before the callback is called
- * @callback: (scope async): A user callback to call when the contacts are ready
+ * @callback: A user callback to call when the contacts are ready
  * @user_data: Data to pass to the callback
  * @destroy: Called to destroy @user_data either after @callback has been
  *  called, or if the operation is cancelled
@@ -2634,13 +2636,13 @@ contacts_requested_handles (TpConnection *connection,
  * @features: (array length=n_features) (allow-none): An array of features
  *  that must be ready for use (if supported)
  *  before the callback is called (may be %NULL if @n_features is 0)
- * @callback: (scope async): A user callback to call when the contacts are ready
+ * @callback: A user callback to call when the contacts are ready
  * @user_data: Data to pass to the callback
  * @destroy: Called to destroy @user_data either after @callback has been
  *  called, or if the operation is cancelled
- * @weak_object: (allow-none) (transfer none): An object to pass to the
- *  callback, which will be weakly
- *  referenced; if this object is destroyed, the operation will be cancelled
+ * @weak_object: (allow-none): An object to pass to the callback, which will
+ *  be weakly referenced; if this object is destroyed, the operation will be
+ *  cancelled
  *
  * Create a number of #TpContact objects and make asynchronous method calls
  * to obtain their handles and ensure that all the features specified in

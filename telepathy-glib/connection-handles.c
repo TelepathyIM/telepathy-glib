@@ -263,7 +263,7 @@ _tp_connection_clean_up_handle_refs (TpConnection *self)
  * @self: a connection
  * @handle_type: a handle type
  * @n_handles: the number of handles in @handles
- * @handles: an array of @n_handles handles
+ * @handles: (array length=n_handles): an array of @n_handles handles
  *
  * Release the reference to the handles in @handles that was obtained by
  * calling tp_connection_hold_handles() or tp_connection_request_handles().
@@ -449,7 +449,7 @@ connection_held_handles (TpConnection *self,
  * @timeout_ms: the timeout in milliseconds, or -1 to use the default
  * @handle_type: the handle type
  * @n_handles: the number of handles in @handles (must be at least 1)
- * @handles: an array of handles
+ * @handles: (array length=n_handles): an array of handles
  * @callback: called on success or failure (unless @weak_object has become
  *  unreferenced)
  * @user_data: arbitrary user-supplied data
@@ -535,8 +535,8 @@ request_handles_context_free (gpointer p)
  *  tp_connection_request_handles()
  * @n_handles: the number of IDs that were passed to
  *  tp_connection_request_handles() on success, or 0 on failure
- * @handles: the @n_handles handles corresponding to @ids, in the same order,
- *  or %NULL on failure
+ * @handles: (array length=n_handles): the @n_handles handles corresponding to
+ *  @ids, in the same order, or %NULL on failure
  * @ids: a copy of the array of @n_handles IDs that was passed to
  *  tp_connection_request_handles() on success, or %NULL on failure
  * @error: %NULL on success, or an error on failure
@@ -620,8 +620,8 @@ connection_requested_handles (TpConnection *self,
  * @self: a connection
  * @timeout_ms: the timeout in milliseconds, or -1 to use the default
  * @handle_type: the handle type
- * @ids: an array of string identifiers for which handles are required,
- *  terminated by %NULL (must not be %NULL or empty)
+ * @ids: (array zero-terminated=1): an array of string identifiers for which
+ *  handles are required, terminated by %NULL (must not be %NULL or empty)
  * @callback: called on success or failure (unless @weak_object has become
  *  unreferenced)
  * @user_data: arbitrary user-supplied data
@@ -735,7 +735,7 @@ connection_got_contact_attributes (TpConnection *self,
  * @self: a connection
  * @timeout_ms: the timeout in milliseconds, or -1 to use the default
  * @n_handles: the number of handles in @handles (must be at least 1)
- * @handles: an array of handles
+ * @handles: (array length=n_handles): an array of handles
  * @interfaces: a #GStrv of interfaces
  * @hold: if %TRUE, the callback will hold one reference to each valid handle
  * @callback: (type GObject.Callback): called on success or

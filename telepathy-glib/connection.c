@@ -1498,14 +1498,15 @@ raise_invalidated:
 
 /**
  * TpConnectionNameListCb:
- * @names: %NULL-terminated array of @n connection bus names,
- *   or %NULL on error
+ * @names: (array zero-terminated=1): %NULL-terminated array of @n
+ *  connection bus names, or %NULL on error
  * @n: number of names (not including the final %NULL), or 0 on error
- * @cms: %NULL-terminated array of @n connection manager names
- *   (e.g. "gabble") in the same order as @names, or %NULL on error
- * @protocols: %NULL-terminated array of @n protocol names as defined in the
- *   Telepathy spec (e.g. "jabber") in the same order as @names, or %NULL on
- *   error
+ * @cms: (array zero-terminated=1): %NULL-terminated array of @n
+ *  connection manager names (e.g. "gabble") in the same order as @names, or
+ *  %NULL on error
+ * @protocols: (array zero-terminated=1): %NULL-terminated array of
+ *  @n protocol names as defined in the Telepathy spec (e.g. "jabber") in the
+ *  same order as @names, or %NULL on error
  * @error: %NULL on success, or an error that occurred
  * @user_data: user-supplied data
  * @weak_object: user-supplied weakly referenced object
@@ -1690,7 +1691,7 @@ list_context_free (gpointer p)
  * @destroy: callback to destroy the user-supplied data, called after
  *   @callback, but also if the D-Bus connection fails or if the @weak_object
  *   goes away
- * @weak_object: if not %NULL, will be weakly referenced; the callback will
+ * @weak_object: (allow-none): if not %NULL, will be weakly referenced; the callback will
  *   not be called if the object has vanished
  *
  * List the bus names of all the connections that currently exist, together
