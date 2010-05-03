@@ -611,7 +611,7 @@ context_prepare_cb (GObject *source,
   if (!_tp_observe_channels_context_prepare_finish (ctx, result, &error))
     {
       DEBUG ("Failed to prepare TpObserveChannelsContext: %s", error->message);
-      dbus_g_method_return_error (ctx->dbus_context, error);
+      tp_observe_channels_context_fail (ctx, error);
       return;
     }
 
