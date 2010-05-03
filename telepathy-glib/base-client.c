@@ -93,18 +93,14 @@ struct _TpBaseClientClassPrivate {
 };
 
 static void observer_iface_init (gpointer, gpointer);
-#if 0
 static void approver_iface_init (gpointer, gpointer);
-#endif
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT, NULL);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_OBSERVER, observer_iface_init);
-#if 0
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_APPROVER, approver_iface_init);
-#endif
     g_type_add_class_private (g_define_type_id, sizeof (
         TpBaseClientClassPrivate)))
 
@@ -257,7 +253,6 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
   self->priv->flags |= (CLIENT_IS_OBSERVER | CLIENT_OBSERVER_RECOVER);
 }
 
-#if 0
 void
 tp_base_client_add_approver_filter (TpBaseClient *self,
     GHashTable *filter)
@@ -277,8 +272,6 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
   self->priv->flags |= CLIENT_IS_APPROVER;
   g_ptr_array_add (self->priv->approver_filters, filter);
 }
-
-#endif
 
 /**
  * tp_base_client_register:
@@ -539,11 +532,9 @@ tp_base_client_get_dbus_properties (GObject *object,
       g_value_set_boxed (value, self->priv->observer_filters);
       break;
 
-#if 0
     case DP_APPROVER_CHANNEL_FILTER:
       g_value_set_boxed (value, self->priv->approver_filters);
       break;
-#endif
 
     case DP_OBSERVER_RECOVER:
       g_value_set_boolean (value,
@@ -563,13 +554,11 @@ tp_base_client_class_init (TpBaseClientClass *cls)
         { "Interfaces", GINT_TO_POINTER (DP_INTERFACES) },
         { NULL }
   };
-#if 0
   static TpDBusPropertiesMixinPropImpl approver_properties[] = {
         { "ApproverChannelFilter",
           GINT_TO_POINTER (DP_APPROVER_CHANNEL_FILTER) },
         { NULL }
   };
-#endif
   static TpDBusPropertiesMixinPropImpl observer_properties[] = {
         { "ObserverChannelFilter",
           GINT_TO_POINTER (DP_OBSERVER_CHANNEL_FILTER) },
@@ -582,10 +571,8 @@ tp_base_client_class_init (TpBaseClientClass *cls)
           client_properties },
         { TP_IFACE_CLIENT_OBSERVER, tp_base_client_get_dbus_properties, NULL,
           observer_properties },
-#if 0
         { TP_IFACE_CLIENT_APPROVER, tp_base_client_get_dbus_properties, NULL,
           approver_properties },
-#endif
         { NULL }
   };
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
@@ -853,7 +840,6 @@ observer_iface_init (gpointer g_iface,
 #undef IMPLEMENT
 }
 
-#if 0
 static void
 _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
     const GPtrArray *channels,
@@ -864,9 +850,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   /* FIXME */
   tp_dbus_g_method_return_not_implemented (context);
 }
-#endif
 
-#if 0
 static void
 approver_iface_init (gpointer g_iface,
     gpointer unused G_GNUC_UNUSED)
@@ -876,7 +860,6 @@ approver_iface_init (gpointer g_iface,
   IMPLEMENT (add_dispatch_operation);
 #undef IMPLEMENT
 }
-#endif
 
 /**
  * tp_base_client_implement_observe_channels:

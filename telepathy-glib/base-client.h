@@ -80,12 +80,10 @@ void tp_base_client_take_observer_filter (TpBaseClient *self,
 void tp_base_client_set_observer_recover (TpBaseClient *self,
     gboolean recover);
 
-#if 0
 void tp_base_client_add_approver_filter (TpBaseClient *self,
     GHashTable *filter);
 void tp_base_client_take_approver_filter (TpBaseClient *self,
     GHashTable *filter);
-#endif
 
 gboolean tp_base_client_register (TpBaseClient *self,
     GError **error);
