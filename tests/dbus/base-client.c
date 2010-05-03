@@ -8,6 +8,7 @@
  */
 
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/base-client.h>
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/debug.h>
@@ -32,6 +33,7 @@ typedef struct {
     TpBaseConnection *base_connection;
     SimpleAccount *account_service;
     TestTextChannelNull *text_chan_service;
+    TestTextChannelNull *text_chan_service_2;
     SimpleChannelDispatchOperation *cdo_service;
 
     /* Client side objects */
@@ -40,6 +42,7 @@ typedef struct {
     TpConnection *connection;
     TpAccount *account;
     TpChannel *text_chan;
+    TpChannel *text_chan_2;
 
     GError *error /* initialized where needed */;
     GStrv interfaces;
@@ -126,6 +129,30 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   tp_handle_unref (contact_repo, handle);
+  g_free (chan_path);
+
+  /* Create a second channel */
+  chan_path = g_strdup_printf ("%s/Channel2",
+      tp_proxy_get_object_path (test->connection));
+
+  handle = tp_handle_ensure (contact_repo, "alice", NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  test->text_chan_service_2 = TEST_TEXT_CHANNEL_NULL (
+      test_object_new_static_class (
+        TEST_TYPE_TEXT_CHANNEL_NULL,
+        "connection", test->base_connection,
+        "object-path", chan_path,
+        "handle", handle,
+        NULL));
+
+  /* Create client-side text channel object */
+  test->text_chan_2 = tp_channel_new (test->connection, chan_path, NULL,
+      TP_HANDLE_TYPE_CONTACT, handle, &test->error);
+  g_assert_no_error (test->error);
+
+  tp_handle_unref (contact_repo, handle);
+  g_free (chan_path);
 
   /* Create Service side ChannelDispatchOperation object */
   test->cdo_service = test_object_new_static_class (
@@ -141,11 +168,11 @@ setup (Test *test,
 
   simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan);
+  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+      test->text_chan_2);
 
   g_assert (tp_dbus_daemon_request_name (test->dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL));
-
-  g_free (chan_path);
 }
 
 static void
@@ -180,6 +207,9 @@ teardown (Test *test,
 
   g_object_unref (test->text_chan_service);
   g_object_unref (test->text_chan);
+
+  g_object_unref (test->text_chan_service_2);
+  g_object_unref (test->text_chan_2);
 
   g_object_unref (test->cdo_service);
 
@@ -480,7 +510,7 @@ test_approver (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *filter;
-  GPtrArray *channels;
+  GPtrArray *channels, *chans;
   GHashTable *properties;
   static const char *interfaces[] = { NULL };
   static const gchar *possible_handlers[] = {
@@ -520,8 +550,9 @@ test_approver (Test *test,
   g_assert_no_error (test->error);
 
   /* Call AddDispatchOperation */
-  channels = g_ptr_array_sized_new (1);
+  channels = g_ptr_array_sized_new (2);
   add_channel_to_ptr_array (channels, test->text_chan);
+  add_channel_to_ptr_array (channels, test->text_chan_2);
 
   properties = tp_asv_new (
       TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
@@ -543,6 +574,11 @@ test_approver (Test *test,
 
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
+
+  g_assert (test->simple_client->add_dispatch_ctx != NULL);
+  chans = tp_channel_dispatch_operation_borrow_channels (
+      test->simple_client->add_dispatch_ctx->dispatch_operation);
+  g_assert_cmpuint (chans->len, ==, 2);
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);
