@@ -415,6 +415,217 @@ tp_base_protocol_get_parameters (TpBaseProtocol *self)
   return cls->get_parameters (self);
 }
 
+static gboolean
+_tp_cm_param_spec_check_all_allowed (const TpCMParamSpec *parameters,
+    GHashTable *asv,
+    GError **error)
+{
+  GHashTable *tmp = g_hash_table_new (g_str_hash, g_str_equal);
+  const TpCMParamSpec *iter;
+
+  tp_g_hash_table_update (tmp, asv, NULL, NULL);
+
+  for (iter = parameters; iter->name != NULL; iter++)
+    {
+      g_hash_table_remove (tmp, iter->name);
+    }
+
+  if (g_hash_table_size (tmp) != 0)
+    {
+      gchar *error_txt;
+      GString *error_str = g_string_new ("unknown parameters provided:");
+      GHashTableIter h_iter;
+      gpointer k;
+
+      g_hash_table_iter_init (&h_iter, tmp);
+
+      while (g_hash_table_iter_next (&h_iter, &k, NULL))
+        {
+          g_string_append_c (error_str, ' ');
+          g_string_append (error_str, k);
+        }
+
+      error_txt = g_string_free (error_str, FALSE);
+
+      DEBUG ("%s", error_txt);
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "%s", error_txt);
+      g_free (error_txt);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static GValue *
+_tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
+    GHashTable *asv,
+    GError **error)
+{
+  const gchar *name = param_spec->name;
+  const GValue *value = tp_asv_lookup (asv, name);
+
+  if (tp_asv_lookup (asv, name) == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "%s not found in parameters", name);
+      return NULL;
+    }
+
+  switch (param_spec->dtype[0])
+    {
+    case DBUS_TYPE_BOOLEAN:
+    case DBUS_TYPE_OBJECT_PATH:
+    case DBUS_TYPE_STRING:
+    case DBUS_TYPE_ARRAY:
+        {
+          /* These types only accept an exactly-matching GType. */
+
+          if (G_VALUE_TYPE (value) != param_spec->gtype)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "%s has type %s, but %s was expected",
+                  name, G_VALUE_TYPE_NAME (value),
+                  g_type_name (param_spec->gtype));
+              return NULL;
+            }
+
+          return tp_g_value_slice_dup (value);
+        }
+
+    case DBUS_TYPE_INT16:
+    case DBUS_TYPE_INT32:
+        {
+          /* Coerce any sensible integer to G_TYPE_INT */
+          gboolean valid;
+          gint i;
+
+          i = tp_asv_get_int32 (asv, name, &valid);
+
+          if (!valid)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "%s has a non-integer type or is out of range (type=%s)",
+                  name, G_VALUE_TYPE_NAME (value));
+              return NULL;
+            }
+
+          if (param_spec->dtype[0] == DBUS_TYPE_INT16 &&
+              (i < -0x8000 || i > 0x7fff))
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "%s is out of range for a 16-bit signed integer", name);
+              return NULL;
+            }
+
+          return tp_g_value_slice_new_int (i);
+        }
+
+    case DBUS_TYPE_BYTE:
+    case DBUS_TYPE_UINT16:
+    case DBUS_TYPE_UINT32:
+        {
+          /* Coerce any sensible integer to G_TYPE_UINT */
+          gboolean valid;
+          guint i;
+
+          i = tp_asv_get_uint32 (asv, name, &valid);
+
+          if (!valid)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "%s has a non-integer type or is out of range (type=%s)",
+                  name, G_VALUE_TYPE_NAME (value));
+              return NULL;
+            }
+
+          if (param_spec->dtype[0] == DBUS_TYPE_BYTE && i > 0xff)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "%s is out of range for a byte", name);
+              return NULL;
+            }
+
+          if (param_spec->dtype[0] == DBUS_TYPE_UINT16 && i > 0xffff)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "%s is out of range for a 16-bit unsigned integer", name);
+              return NULL;
+            }
+
+          if (param_spec->dtype[0] == DBUS_TYPE_BYTE)
+            return tp_g_value_slice_new_byte (i);
+          else
+            return tp_g_value_slice_new_uint (i);
+        }
+
+    case DBUS_TYPE_INT64:
+        {
+          /* Coerce any sensible integer to G_TYPE_INT64 */
+          gboolean valid;
+          gint64 i;
+
+          i = tp_asv_get_int64 (asv, name, &valid);
+
+          if (!valid)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "%s is not a valid 64-bit signed integer (type=%s)", name,
+                  G_VALUE_TYPE_NAME (value));
+              return NULL;
+            }
+
+          return tp_g_value_slice_new_int64 (i);
+        }
+
+    case DBUS_TYPE_UINT64:
+        {
+          /* Coerce any sensible integer to G_TYPE_UINT64 */
+          gboolean valid;
+          guint64 i;
+
+          i = tp_asv_get_uint64 (asv, name, &valid);
+
+          if (!valid)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "%s is not a valid 64-bit unsigned integer (type=%s)", name,
+                  G_VALUE_TYPE_NAME (value));
+              return NULL;
+            }
+
+          return tp_g_value_slice_new_uint64 (i);
+        }
+
+    case DBUS_TYPE_DOUBLE:
+        {
+          /* Coerce any sensible number to G_TYPE_DOUBLE */
+          gboolean valid;
+          gdouble d;
+
+          d = tp_asv_get_double (asv, name, &valid);
+
+          if (!valid)
+            {
+              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+                  "%s is not a valid double (type=%s)", name,
+                  G_VALUE_TYPE_NAME (value));
+              return NULL;
+            }
+
+          return tp_g_value_slice_new_double (d);
+        }
+
+    default:
+        {
+          g_error ("%s: encountered unhandled D-Bus type %s on argument %s",
+              G_STRFUNC, param_spec->dtype, param_spec->name);
+        }
+    }
+
+  g_assert_not_reached ();
+}
+
 /**
  * tp_base_protocol_new_connection:
  * @self: a Protocol
@@ -433,9 +644,98 @@ tp_base_protocol_new_connection (TpBaseProtocol *self,
     GError **error)
 {
   TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
+  GHashTable *combined;
+  const TpCMParamSpec *parameters;
+  guint i;
+  TpBaseConnection *conn = NULL;
+  guint mandatory_flag;
 
   g_return_val_if_fail (cls != NULL, NULL);
   g_return_val_if_fail (cls->new_connection != NULL, NULL);
 
-  return cls->new_connection (self, asv, error);
+  parameters = tp_base_protocol_get_parameters (self);
+
+  combined = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, (GDestroyNotify) tp_g_value_slice_free);
+
+  if (!_tp_cm_param_spec_check_all_allowed (parameters, asv, error))
+    goto finally;
+
+  if (tp_asv_get_boolean (asv, "register", NULL))
+    {
+      mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REGISTER;
+    }
+  else
+    {
+      mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REQUIRED;
+    }
+
+  for (i = 0; parameters[i].name != NULL; i++)
+    {
+      const gchar *name = parameters[i].name;
+
+      if (tp_asv_lookup (asv, name) != NULL)
+        {
+          /* coerce to the expected type */
+          GValue *coerced = _tp_cm_param_spec_coerce (parameters + i, asv,
+              error);
+
+          if (coerced == NULL)
+            goto finally;
+
+          if (G_UNLIKELY (G_VALUE_TYPE (coerced) != parameters[i].gtype))
+            {
+              g_error ("parameter %s should have been coerced to %s, got %s",
+                  name, g_type_name (parameters[i].gtype),
+                    G_VALUE_TYPE_NAME (coerced));
+            }
+
+          if (parameters[i].filter != NULL)
+            {
+              if (!(parameters[i].filter (parameters + i, coerced, error)))
+                {
+                  DEBUG ("parameter %s rejected by filter function", name);
+                  tp_g_value_slice_free (coerced);
+                  goto finally;
+                }
+            }
+
+          if (G_UNLIKELY (G_VALUE_TYPE (coerced) != parameters[i].gtype))
+            {
+              g_error ("parameter %s filter changed its type from %s to %s",
+                  name, g_type_name (parameters[i].gtype),
+                    G_VALUE_TYPE_NAME (coerced));
+            }
+
+          DEBUG ("using specified value for %s", name);
+          g_hash_table_insert (combined, g_strdup (name), coerced);
+        }
+      else if ((parameters[i].flags & mandatory_flag) != 0)
+        {
+          DEBUG ("missing mandatory account parameter %s", name);
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "missing mandatory account parameter %s",
+              name);
+          goto finally;
+        }
+      else if ((parameters[i].flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT) != 0)
+        {
+          GValue *value = param_default_value (parameters + i);
+
+          DEBUG ("using default value for %s", name);
+          g_hash_table_insert (combined, g_strdup (name), value);
+        }
+      else
+        {
+          DEBUG ("no default value for %s", name);
+        }
+    }
+
+  conn = cls->new_connection (self, combined, error);
+
+finally:
+  if (combined != NULL)
+    g_hash_table_unref (combined);
+
+  return conn;
 }
