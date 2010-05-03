@@ -66,6 +66,28 @@ struct _TpCMParamSpec {
     gpointer _future1;
 };
 
+typedef struct _TpBaseProtocol TpBaseProtocol;
+typedef struct _TpBaseProtocolClass TpBaseProtocolClass;
+typedef struct _TpBaseProtocolPrivate TpBaseProtocolPrivate;
+typedef struct _TpBaseProtocolClassPrivate TpBaseProtocolClassPrivate;
+
+GType tp_base_protocol_get_type (void) G_GNUC_CONST;
+
+#define TP_TYPE_BASE_PROTOCOL \
+  (tp_base_protocol_get_type ())
+#define TP_BASE_PROTOCOL(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_BASE_PROTOCOL, \
+                               TpBaseProtocol))
+#define TP_BASE_PROTOCOL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_BASE_PROTOCOL, \
+                            TpBaseProtocolClass))
+#define TP_IS_BASE_PROTOCOL(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_BASE_PROTOCOL))
+#define TP_IS_BASE_PROTOCOL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_BASE_PROTOCOL))
+#define TP_BASE_PROTOCOL_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_PROTOCOL, \
+                              TpBaseProtocolClass))
 G_END_DECLS
 
 #endif

@@ -262,3 +262,66 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
     }
   return TRUE;
 }
+
+/**
+ * SECTION:base-protocol
+ * @title: TpBaseProtocol
+ * @short_description: base class for #TpSvcProtocol implementations
+ * @see_also: #TpBaseConnectionManager, #TpSvcProtocol
+ *
+ * Base class for Telepathy Protocol objects.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+/**
+ * TpBaseProtocol:
+ *
+ * An object providing static details of the implementation of one real-time
+ * communications protocol.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+struct _TpBaseProtocol
+{
+  /*<private>*/
+  GObject parent;
+  TpBaseProtocolPrivate *priv;
+};
+
+/**
+ * TpBaseProtocolClass:
+ *
+ * The class of a #TpBaseProtocol.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+struct _TpBaseProtocolClass
+{
+  /*<private>*/
+  GObjectClass parent_class;
+  GCallback padding[8];
+  TpBaseProtocolClassPrivate *priv;
+};
+
+G_DEFINE_ABSTRACT_TYPE(TpBaseProtocol, tp_base_protocol, G_TYPE_OBJECT);
+
+struct _TpBaseProtocolPrivate
+{
+  int dummy;
+};
+
+static void
+tp_base_protocol_class_init (TpBaseProtocolClass *klass)
+{
+  g_type_class_add_private (klass, sizeof (TpBaseProtocolPrivate));
+}
+
+static void
+tp_base_protocol_init (TpBaseProtocol *self)
+{
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_BASE_PROTOCOL,
+      TpBaseProtocolPrivate);
+}

@@ -90,6 +90,7 @@
     <title>Service-side implementation</title>
     <xi:include href="xml/run.xml"/>
     <xi:include href="xml/base-connection-manager.xml"/>
+    <xi:include href="xml/base-protocol.xml"/>
     <xi:include href="xml/base-connection.xml"/>
     <xi:include href="xml/channel-factory-iface.xml"/>
     <xi:include href="xml/channel-manager.xml"/>
