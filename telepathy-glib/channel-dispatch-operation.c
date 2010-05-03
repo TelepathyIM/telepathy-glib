@@ -168,6 +168,10 @@ tp_channel_dispatch_operation_channel_lost_cb (TpChannelDispatchOperation *self,
 {
   guint i;
 
+  if (self->priv->channels == NULL)
+    /* We didn't fetch channels yet */
+    return;
+
   for (i = 0; i < self->priv->channels->len; i++)
     {
       TpChannel *channel = g_ptr_array_index (self->priv->channels, i);
