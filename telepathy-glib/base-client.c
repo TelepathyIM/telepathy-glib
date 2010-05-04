@@ -50,8 +50,9 @@
 /**
  * TpBaseClientClassObserveChannelsImpl:
  * @client: a #TpBaseClient instance
- * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared
+ * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
+ * if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  all having %TP_CHANNEL_FEATURE_CORE prepared if possible
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;

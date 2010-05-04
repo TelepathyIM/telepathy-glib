@@ -529,19 +529,6 @@ context_check_prepare (TpObserveChannelsContext *self)
 }
 
 static void
-failed_to_prepare (TpObserveChannelsContext *self,
-    const GError *error)
-{
-  g_return_if_fail (self->priv->result != NULL);
-
-  g_simple_async_result_set_from_error (self->priv->result, error);
-  g_simple_async_result_complete (self->priv->result);
-
-  g_object_unref (self->priv->result);
-  self->priv->result = NULL;
-}
-
-static void
 account_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -555,9 +542,7 @@ account_prepare_cb (GObject *source,
   if (!tp_proxy_prepare_finish (source, result, &error))
     {
       DEBUG ("Failed to prepare account: %s", error->message);
-      failed_to_prepare (self, error);
       g_error_free (error);
-      goto out;
     }
 
   self->priv->num_pending--;
@@ -581,9 +566,7 @@ conn_prepare_cb (GObject *source,
   if (!tp_proxy_prepare_finish (source, result, &error))
     {
       DEBUG ("Failed to prepare connection: %s", error->message);
-      failed_to_prepare (self, error);
       g_error_free (error);
-      goto out;
     }
 
   self->priv->num_pending--;
