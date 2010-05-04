@@ -26,6 +26,8 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
 
+#include <telepathy-glib/_gen/genums.h>
+
 G_BEGIN_DECLS
 
 typedef struct _TpConnectionManager TpConnectionManager;
