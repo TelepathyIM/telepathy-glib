@@ -692,6 +692,59 @@ test_channel_lost_preparing (Test *test,
         tp_proxy_get_object_path (test->text_chan_2)));
 }
 
+static void
+features_not_prepared_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_proxy_prepare_finish (source, result, &test->error);
+  g_assert_error (test->error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED);
+  g_clear_error (&test->error);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_finished_preparing (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
+  GPtrArray *channels;
+
+  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+      "/whatever", NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  tp_proxy_prepare_async (test->cdo, features, features_not_prepared_cb, test);
+
+  /* The 2 channels are lost while preparing */
+  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service);
+
+  g_object_unref (test->text_chan_service);
+  test->text_chan_service = NULL;
+
+  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+      test->text_chan);
+
+  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service_2);
+
+  g_object_unref (test->text_chan_service_2);
+  test->text_chan_service_2 = NULL;
+
+  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+      test->text_chan_2);
+
+  g_main_loop_run (test->mainloop);
+
+  g_assert (!tp_proxy_is_prepared (test->cdo,
+        TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
+
+  channels = tp_channel_dispatch_operation_borrow_channels (test->cdo);
+  g_assert (channels == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -714,6 +767,8 @@ main (int argc,
       test_claim, teardown_services);
   g_test_add ("/cdo/channel-lost-preparing", Test, NULL, setup_services,
       test_channel_lost_preparing, teardown_services);
+  g_test_add ("/cdo/finished--preparing", Test, NULL, setup_services,
+      test_finished_preparing, teardown_services);
 
   return g_test_run ();
 }
