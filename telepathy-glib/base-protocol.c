@@ -628,15 +628,26 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 
 /**
  * tp_base_protocol_new_connection:
- * @self: a Protocol
- * @asv: (transfer none) (element-type utf8 GObject.Value): parameters for
- *  the new connection
- * @error: used to raise an error if %NULL is returned
+ * @self: a Protocol object
+ * @asv: (transfer none) (element-type utf8 GObject.Value): the parameters
+ *  provided via D-Bus
+ * @error: used to return an error if %NULL is returned
  *
- * Create a new connection to this protocol by calling the virtual method
- * #TpBaseProtocolClass.new_connection.
+ * Create a new connection using the #TpBaseProtocolClass.get_parameters and
+ * #TpBaseProtocolClass.new_connection implementations provided by a subclass.
+ * This is used to implement the RequestConnection() D-Bus method.
  *
- * Returns: a reference to a new #TpBaseConnection, or %NULL
+ * If the parameters in @asv do not fit the result of @get_parameters (unknown
+ * parameters are given, types are inappropriate, required parameters are
+ * not given, or a #TpCMParamSpec.filter fails), then this method raises an
+ * error and @new_connection is not called.
+ *
+ * Otherwise, @new_connection is called. Its @asv argument is a copy of the
+ * @asv given to this method, with default values for missing parameters
+ * filled in where available, and parameters' types converted to the #GType
+ * specified by #TpCMParamSpec.gtype.
+ *
+ * Returns: a new connection, or %NULL on error
  */
 TpBaseConnection *
 tp_base_protocol_new_connection (TpBaseProtocol *self,
