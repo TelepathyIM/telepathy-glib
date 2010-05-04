@@ -25,6 +25,8 @@ class Generator(object):
             nick = error.getAttribute('name').replace(' ', '')
             enum = ('TP_ERROR_' +
                     error.getAttribute('name').replace(' ', '_').replace('.', '_').upper())
+            s = ('TP_ERROR_STR_' +
+                 error.getAttribute('name').replace(' ', '_').replace('.', '_').upper())
 
             print ''
             print '  /* %s.%s */' % (ns, nick)
@@ -46,6 +48,8 @@ class Generator(object):
                     % nick)
             print ('  g_assert_cmpstr (value_by_nick->value_nick, ==, "%s");'
                     % nick)
+            print ('  g_assert_cmpstr (%s, ==, TP_ERROR_PREFIX "%s");'
+                    % (s, nick))
 
         print '}'
 
