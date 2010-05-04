@@ -27,7 +27,7 @@ G_BEGIN_DECLS
 
 /* ---- Semi-abstract property definition (used in TpSvc*) ---------- */
 
-typedef enum {
+typedef enum { /*< flags >*/
     TP_DBUS_PROPERTIES_MIXIN_FLAG_READ = 1,
     TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE = 2
 } TpDBusPropertiesMixinFlags;
