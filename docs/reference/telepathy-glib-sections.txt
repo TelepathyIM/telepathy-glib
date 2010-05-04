@@ -1677,6 +1677,7 @@ tp_dbus_g_method_return_not_implemented
 tp_get_bus
 tp_get_bus_proxy
 TpDBusNameType
+TP_TYPE_DBUS_NAME_TYPE
 tp_dbus_check_valid_bus_name
 tp_dbus_check_valid_interface_name
 tp_dbus_check_valid_member_name
@@ -1759,6 +1760,7 @@ tp_cli_dbus_daemon_signal_callback_name_acquired
 tp_cli_dbus_daemon_signal_callback_name_lost
 tp_cli_dbus_daemon_signal_callback_name_owner_changed
 <SUBSECTION Standard>
+tp_dbus_name_type_get_type
 tp_dbus_daemon_get_type
 TP_DBUS_DAEMON
 TP_DBUS_DAEMON_CLASS
@@ -1774,6 +1776,7 @@ TpDBusDaemonPrivate
 <FILE>dbus-properties-mixin</FILE>
 <TITLE>dbus-properties-mixin</TITLE>
 TpDBusPropertiesMixinFlags
+TP_TYPE_DBUS_PROPERTIES_MIXIN_FLAGS
 TpDBusPropertiesMixinIfaceInfo
 TpDBusPropertiesMixinPropInfo
 tp_svc_interface_set_dbus_properties_info
@@ -1790,6 +1793,8 @@ tp_dbus_properties_mixin_implement_interface
 tp_dbus_properties_mixin_iface_init
 tp_dbus_properties_mixin_get
 tp_dbus_properties_mixin_make_properties_hash
+<SUBSECTION Standard>
+tp_dbus_properties_mixin_flags_get_type
 </SECTION>
 
 <SECTION>
@@ -2321,7 +2326,9 @@ tp_proxy_get_invalidated
 tp_proxy_dbus_error_to_gerror
 TP_DBUS_ERRORS
 TpDBusError
+TP_TYPE_DBUS_ERROR
 <SUBSECTION Standard>
+tp_dbus_error_get_type
 tp_dbus_errors_quark
 TpProxyPrivate
 TP_TYPE_PROXY
@@ -3049,6 +3056,7 @@ TpConnectionManagerWhenReadyCb
 tp_connection_manager_call_when_ready
 tp_connection_manager_is_ready
 TpCMInfoSource
+TP_TYPE_CM_INFO_SOURCE
 tp_connection_manager_get_info_source
 tp_connection_manager_activate
 tp_connection_manager_is_running
@@ -3076,6 +3084,7 @@ tp_connection_manager_param_free
 tp_connection_manager_protocol_copy
 tp_connection_manager_protocol_free
 <SUBSECTION Standard>
+tp_cm_info_source_get_type
 tp_connection_manager_get_type
 tp_connection_manager_protocol_get_type
 tp_connection_manager_param_get_type
@@ -3210,6 +3219,7 @@ tp_cli_media_stream_handler_run_codecs_updated
 <TITLE>contact</TITLE>
 TpContact
 TpContactFeature
+TP_TYPE_CONTACT_FEATURE
 TpConnectionContactsByHandleCb
 tp_connection_get_contacts_by_handle
 TpConnectionContactsByIdCb
@@ -3228,6 +3238,7 @@ tp_contact_get_location
 tp_contact_get_capabilities
 tp_contact_has_feature
 <SUBSECTION Standard>
+tp_contact_feature_get_type
 tp_contact_get_type
 TP_CONTACT
 TP_CONTACT_CLASS
