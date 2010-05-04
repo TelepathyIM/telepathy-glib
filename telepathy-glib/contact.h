@@ -27,6 +27,8 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/handle.h>
 
+#include <telepathy-glib/_gen/genums.h>
+
 G_BEGIN_DECLS
 
 typedef struct _TpContact TpContact;
