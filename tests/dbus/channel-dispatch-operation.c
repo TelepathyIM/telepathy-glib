@@ -34,6 +34,7 @@ typedef struct {
     TpDBusDaemon *private_dbus;
     SimpleChannelDispatchOperation *cdo_service;
     TestTextChannelNull *text_chan_service;
+    TestTextChannelNull *text_chan_service_2;
 
     TpChannelDispatchOperation *cdo;
     GError *error /* initialized where needed */;
@@ -41,6 +42,7 @@ typedef struct {
     TpBaseConnection *base_connection;
     TpConnection *connection;
     TpChannel *text_chan;
+    TpChannel *text_chan_2;
 } Test;
 
 static void
@@ -114,6 +116,33 @@ setup_services (Test *test,
       TP_HANDLE_TYPE_CONTACT, handle, &test->error);
   g_assert_no_error (test->error);
 
+  tp_handle_unref (contact_repo, handle);
+  g_free (chan_path);
+
+  /* Create a second channel */
+  chan_path = g_strdup_printf ("%s/Channel2",
+      tp_proxy_get_object_path (test->connection));
+
+  handle = tp_handle_ensure (contact_repo, "alice", NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  test->text_chan_service_2 = TEST_TEXT_CHANNEL_NULL (
+      test_object_new_static_class (
+        TEST_TYPE_TEXT_CHANNEL_NULL,
+        "connection", test->base_connection,
+        "object-path", chan_path,
+        "handle", handle,
+        NULL));
+
+  /* Create client-side text channel object */
+  test->text_chan_2 = tp_channel_new (test->connection, chan_path, NULL,
+      TP_HANDLE_TYPE_CONTACT, handle, &test->error);
+  g_assert_no_error (test->error);
+
+  tp_handle_unref (contact_repo, handle);
+  g_free (chan_path);
+
+
   /* Configure fake ChannelDispatchOperation service */
   simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
       tp_proxy_get_object_path (test->connection));
@@ -121,11 +150,11 @@ setup_services (Test *test,
   simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan);
 
+  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+      test->text_chan_2);
+
   g_assert (tp_dbus_daemon_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL));
-
-  tp_handle_unref (contact_repo, handle);
-  g_free (chan_path);
 }
 
 static void
@@ -177,6 +206,9 @@ teardown_services (Test *test,
 {
   g_object_unref (test->text_chan);
   g_object_unref (test->text_chan_service);
+
+  g_object_unref (test->text_chan_2);
+  g_object_unref (test->text_chan_service_2);
 
   tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
   g_assert_no_error (test->error);
@@ -356,11 +388,17 @@ check_channels (Test *test)
 
   channels = tp_channel_dispatch_operation_borrow_channels (test->cdo);
   g_assert (channels != NULL);
-  g_assert_cmpuint (channels->len, ==, 1);
+  g_assert_cmpuint (channels->len, ==, 2);
+
   channel = g_ptr_array_index (channels, 0);
   g_assert (TP_IS_CHANNEL (channel));
   g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
         tp_proxy_get_object_path (test->text_chan)));
+
+  channel = g_ptr_array_index (channels, 1);
+  g_assert (TP_IS_CHANNEL (channel));
+  g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
+        tp_proxy_get_object_path (test->text_chan_2)));
 }
 
 static void
@@ -471,6 +509,7 @@ test_channel_lost (Test *test,
 {
   GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
   GPtrArray *channels;
+  TpChannel *channel;
 
   test->cdo = tp_channel_dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
@@ -494,7 +533,11 @@ test_channel_lost (Test *test,
   channels = tp_channel_dispatch_operation_borrow_channels (test->cdo);
   g_assert (channels != NULL);
   /* Channel has  been removed */
-  g_assert_cmpuint (channels->len, ==, 0);
+  g_assert_cmpuint (channels->len, ==, 1);
+
+  channel = g_ptr_array_index (channels, 0);
+  g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
+        tp_proxy_get_object_path (test->text_chan_2)));
 }
 
 static void
