@@ -16,6 +16,8 @@ codegen_extra_dist = \
     dbus-peer.xml \
     dbus-properties.xml \
     generic.xml \
+    genums.c.template \
+    genums.h.template \
     media-session-handler.xml \
     media-stream-handler.xml \
     stable-interfaces.xml
