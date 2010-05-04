@@ -24,6 +24,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/_gen/error-str.h>
+#include <telepathy-glib/_gen/genums.h>
 
 G_BEGIN_DECLS
 
@@ -36,49 +37,45 @@ GQuark tp_errors_quark (void);
 void tp_g_set_error_invalid_handle_type (guint type, GError **error);
 void tp_g_set_error_unsupported_handle_type (guint type, GError **error);
 
-#define TP_TYPE_ERROR (tp_error_get_type())
-
-GType tp_error_get_type (void);
-
 typedef enum {
-    TP_ERROR_NETWORK_ERROR,
-    TP_ERROR_NOT_IMPLEMENTED,
-    TP_ERROR_INVALID_ARGUMENT,
-    TP_ERROR_NOT_AVAILABLE,
-    TP_ERROR_PERMISSION_DENIED,
-    TP_ERROR_DISCONNECTED,
-    TP_ERROR_INVALID_HANDLE,
-    TP_ERROR_CHANNEL_BANNED,
-    TP_ERROR_CHANNEL_FULL,
-    TP_ERROR_CHANNEL_INVITE_ONLY,
-    TP_ERROR_NOT_YOURS,
-    TP_ERROR_CANCELLED,
-    TP_ERROR_AUTHENTICATION_FAILED,
-    TP_ERROR_ENCRYPTION_NOT_AVAILABLE,
-    TP_ERROR_ENCRYPTION_ERROR,
-    TP_ERROR_CERT_NOT_PROVIDED,
-    TP_ERROR_CERT_UNTRUSTED,
-    TP_ERROR_CERT_EXPIRED,
-    TP_ERROR_CERT_NOT_ACTIVATED,
-    TP_ERROR_CERT_FINGERPRINT_MISMATCH,
-    TP_ERROR_CERT_HOSTNAME_MISMATCH,
-    TP_ERROR_CERT_SELF_SIGNED,
-    TP_ERROR_CERT_INVALID,
-    TP_ERROR_NOT_CAPABLE,
-    TP_ERROR_OFFLINE,
-    TP_ERROR_CHANNEL_KICKED,
-    TP_ERROR_BUSY,
-    TP_ERROR_NO_ANSWER,
-    TP_ERROR_DOES_NOT_EXIST,
-    TP_ERROR_TERMINATED,
-    TP_ERROR_CONNECTION_REFUSED,
-    TP_ERROR_CONNECTION_FAILED,
-    TP_ERROR_CONNECTION_LOST,
-    TP_ERROR_ALREADY_CONNECTED,
-    TP_ERROR_CONNECTION_REPLACED,
-    TP_ERROR_REGISTRATION_EXISTS,
-    TP_ERROR_SERVICE_BUSY,
-    TP_ERROR_RESOURCE_UNAVAILABLE,
+    TP_ERROR_NETWORK_ERROR, /*< nick=NetworkError >*/
+    TP_ERROR_NOT_IMPLEMENTED, /*< nick=NotImplemented >*/
+    TP_ERROR_INVALID_ARGUMENT, /*< nick=InvalidArgument >*/
+    TP_ERROR_NOT_AVAILABLE, /*< nick=NotAvailable >*/
+    TP_ERROR_PERMISSION_DENIED, /*< nick=PermissionDenied >*/
+    TP_ERROR_DISCONNECTED, /*< nick=Disconnected >*/
+    TP_ERROR_INVALID_HANDLE, /*< nick=InvalidHandle >*/
+    TP_ERROR_CHANNEL_BANNED, /*< nick=Channel.Banned >*/
+    TP_ERROR_CHANNEL_FULL, /*< nick=Channel.Full >*/
+    TP_ERROR_CHANNEL_INVITE_ONLY, /*< nick=Channel.InviteOnly >*/
+    TP_ERROR_NOT_YOURS, /*< nick=NotYours >*/
+    TP_ERROR_CANCELLED, /*< nick=Cancelled >*/
+    TP_ERROR_AUTHENTICATION_FAILED, /*< nick=AuthenticationFailed >*/
+    TP_ERROR_ENCRYPTION_NOT_AVAILABLE, /*< nick=EncryptionNotAvailable >*/
+    TP_ERROR_ENCRYPTION_ERROR, /*< nick=EncryptionError >*/
+    TP_ERROR_CERT_NOT_PROVIDED, /*< nick=Cert.NotProvided >*/
+    TP_ERROR_CERT_UNTRUSTED, /*< nick=Cert.Untrusted >*/
+    TP_ERROR_CERT_EXPIRED, /*< nick=Cert.Expired >*/
+    TP_ERROR_CERT_NOT_ACTIVATED, /*< nick=Cert.NotActivated >*/
+    TP_ERROR_CERT_FINGERPRINT_MISMATCH, /*< nick=Cert.FingerprintMismatch >*/
+    TP_ERROR_CERT_HOSTNAME_MISMATCH, /*< nick=Cert.HostnameMismatch >*/
+    TP_ERROR_CERT_SELF_SIGNED, /*< nick=Cert.SelfSigned >*/
+    TP_ERROR_CERT_INVALID, /*< nick=Cert.Invalid >*/
+    TP_ERROR_NOT_CAPABLE, /*< nick=NotCapable >*/
+    TP_ERROR_OFFLINE, /*< nick=Offline >*/
+    TP_ERROR_CHANNEL_KICKED, /*< nick=Channel.Kicked >*/
+    TP_ERROR_BUSY, /*< nick=Busy >*/
+    TP_ERROR_NO_ANSWER, /*< nick=NoAnswer >*/
+    TP_ERROR_DOES_NOT_EXIST, /*< nick=DoesNotExist >*/
+    TP_ERROR_TERMINATED, /*< nick=Terminated >*/
+    TP_ERROR_CONNECTION_REFUSED, /*< nick=ConnectionRefused >*/
+    TP_ERROR_CONNECTION_FAILED, /*< nick=ConnectionFailed >*/
+    TP_ERROR_CONNECTION_LOST, /*< nick=ConnectionLost >*/
+    TP_ERROR_ALREADY_CONNECTED, /*< nick=AlreadyConnected >*/
+    TP_ERROR_CONNECTION_REPLACED, /*< nick=ConnectionReplaced >*/
+    TP_ERROR_REGISTRATION_EXISTS, /*< nick=RegistrationExists >*/
+    TP_ERROR_SERVICE_BUSY, /*< nick=ServiceBusy >*/
+    TP_ERROR_RESOURCE_UNAVAILABLE, /*< nick=ResourceUnavailable >*/
 } TpError;
 
 const gchar *tp_error_get_dbus_name (TpError error);

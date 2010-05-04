@@ -31,6 +31,7 @@ nodist_geninclude_HEADERS = \
     _gen/error-str.h \
     _gen/telepathy-enums.h \
     _gen/telepathy-interfaces.h \
+    _gen/genums.h \
     _gen/gtypes.h \
     _gen/tp-cli-account.h \
     _gen/tp-cli-account-manager.h \
@@ -66,6 +67,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/signals-marshal.list \
     _gen/tp-signals-marshal.list \
     _gen/interfaces-body.h \
+    _gen/genums.c \
     _gen/gtypes-body.h \
     _gen/register-dbus-glib-marshallers-body.h \
     _gen/tp-cli-account-body.h \
@@ -148,6 +150,14 @@ _gen/signals-marshal.h: _gen/signals-marshal.list codegen.am
 _gen/signals-marshal.c: _gen/signals-marshal.list codegen.am
 	$(AM_V_GEN){ echo '#include "_gen/signals-marshal.h"' && \
 	$(GLIB_GENMARSHAL) --body --prefix=_tp_marshal $< ; } > $@
+
+_gen/genums.c: $(our_headers) genums.c.template codegen.am
+	$(AM_V_GEN)$(GLIB_MKENUMS) --template genums.c.template \
+		$(our_headers) > $@
+
+_gen/genums.h: $(our_headers) genums.h.template codegen.am
+	$(AM_V_GEN)$(GLIB_MKENUMS) --template genums.h.template \
+		$(our_headers) > $@
 
 _gen/error-str.h _gen/error-str.c: _gen/stable-spec.xml \
 	$(tools_dir)/glib-errors-str-gen.py

@@ -8,6 +8,7 @@ noinst_PROGRAMS = \
     test-asv \
     test-capabilities \
     test-availability-cmp \
+    test-enums \
     test-gnio-util \
     test-heap \
     test-internal-debug \
@@ -70,6 +71,9 @@ test_intset_SOURCES = \
 
 test_availability_cmp_SOURCES = \
     availability-cmp.c
+
+test_enums_SOURCES = \
+    enums.c
 
 test_debug_domain_SOURCES = \
     debug-domain.c
