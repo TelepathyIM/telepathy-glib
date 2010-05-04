@@ -78,7 +78,7 @@ typedef struct _TpChannelFactoryIfaceClass TpChannelFactoryIfaceClass;
  *
  * Indicates the result of a channel request.
  */
-typedef enum {
+typedef enum { /*< skip >*/
   TP_CHANNEL_FACTORY_REQUEST_STATUS_NOT_IMPLEMENTED = 0,
   TP_CHANNEL_FACTORY_REQUEST_STATUS_NOT_AVAILABLE,
   TP_CHANNEL_FACTORY_REQUEST_STATUS_INVALID_HANDLE,

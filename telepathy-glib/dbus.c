@@ -196,7 +196,18 @@ tp_get_bus_proxy (void)
  * types. %TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON and %TP_DBUS_NAME_TYPE_ANY are
  * the bitwise-or of other appropriate types, for convenience.
  *
+ * Since 0.11.UNRELEASED, there is a corresponding #GFlagsClass type,
+ * %TP_TYPE_DBUS_NAME_TYPE.
+ *
  * Since: 0.7.1
+ */
+
+/**
+ * TP_TYPE_DBUS_NAME_TYPE:
+ *
+ * The #GFlagsClass type of a #TpDBusNameType or a set of name types.
+ *
+ * Since: 0.11.UNRELEASED
  */
 
 /**

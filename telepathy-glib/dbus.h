@@ -26,19 +26,19 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/dbus-daemon.h>
 
+#include <telepathy-glib/_gen/genums.h>
+
 G_BEGIN_DECLS
 
 void tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context);
 
-typedef enum
+typedef enum /*< flags >*/
 {
   TP_DBUS_NAME_TYPE_UNIQUE = 1,
   TP_DBUS_NAME_TYPE_WELL_KNOWN = 2,
   TP_DBUS_NAME_TYPE_BUS_DAEMON = 4,
-  TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON =
-    TP_DBUS_NAME_TYPE_UNIQUE | TP_DBUS_NAME_TYPE_WELL_KNOWN,
-  TP_DBUS_NAME_TYPE_ANY =
-    TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON | TP_DBUS_NAME_TYPE_BUS_DAEMON
+  TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON = TP_DBUS_NAME_TYPE_UNIQUE | TP_DBUS_NAME_TYPE_WELL_KNOWN,
+  TP_DBUS_NAME_TYPE_ANY = TP_DBUS_NAME_TYPE_NOT_BUS_DAEMON | TP_DBUS_NAME_TYPE_BUS_DAEMON
 } TpDBusNameType;
 
 gboolean tp_dbus_check_valid_bus_name (const gchar *name,
