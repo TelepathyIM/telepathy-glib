@@ -26,6 +26,7 @@
 #include <gio/gio.h>
 
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/_gen/genums.h>
 
 G_BEGIN_DECLS
 
