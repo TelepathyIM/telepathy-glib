@@ -23,6 +23,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/_gen/genums.h>
+
 G_BEGIN_DECLS
 
 /* ---- Semi-abstract property definition (used in TpSvc*) ---------- */
