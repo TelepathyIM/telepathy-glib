@@ -607,9 +607,7 @@ channel_prepare_cb (GObject *source,
   if (!tp_proxy_prepare_finish (source, result, &error))
     {
       DEBUG ("Failed to prepare channel: %s", error->message);
-      failed_to_prepare (self, error);
       g_error_free (error);
-      goto out;
     }
 
   self->priv->num_pending--;

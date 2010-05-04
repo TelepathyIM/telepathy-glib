@@ -11,6 +11,7 @@
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/observe-channels-context-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/util.h"
@@ -310,6 +311,7 @@ test_observer (Test *test,
   GHashTable *filter;
   GPtrArray *channels, *requests_satisified;
   GHashTable *info;
+  TpChannel *chan;
 
   filter = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -383,6 +385,25 @@ test_observer (Test *test,
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_clear_error (&test->error);
+
+  /* The channel being observed is invalidated while preparing */
+  g_hash_table_remove (info, "FAIL");
+
+  tp_cli_client_observer_call_observe_channels (test->client, -1,
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
+      channels, "/", requests_satisified, info,
+      no_return_cb, test, NULL, NULL);
+
+  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  chan = g_ptr_array_index (test->simple_client->observe_ctx->channels, 0);
+  g_assert (TP_IS_CHANNEL (chan));
+  g_assert (tp_proxy_get_invalidated (chan) != NULL);
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);

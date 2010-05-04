@@ -72,7 +72,8 @@ simple_observe_channels (
       TpChannel *channel = l->data;
 
       g_assert (TP_IS_CHANNEL (channel));
-      g_assert (tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE));
+      g_assert (tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE) ||
+          tp_proxy_get_invalidated (channel) != NULL);
     }
 
   if (dispatch_operation != NULL)

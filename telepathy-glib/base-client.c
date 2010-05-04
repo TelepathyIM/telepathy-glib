@@ -53,7 +53,7 @@
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
- *  all having %TP_CHANNEL_FEATURE_CORE prepared
+ *  all having %TP_CHANNEL_FEATURE_CORE prepared if possible
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  *  the dispatch_operation is not guaranteed to be prepared
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
