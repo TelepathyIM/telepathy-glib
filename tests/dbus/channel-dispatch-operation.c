@@ -205,7 +205,8 @@ teardown_services (Test *test,
           gconstpointer data)
 {
   g_object_unref (test->text_chan);
-  g_object_unref (test->text_chan_service);
+  if (test->text_chan_service != NULL)
+    g_object_unref (test->text_chan_service);
 
   g_object_unref (test->text_chan_2);
   g_object_unref (test->text_chan_service_2);
@@ -525,6 +526,12 @@ test_channel_lost (Test *test,
 
   g_signal_connect (test->cdo, "channel-lost", G_CALLBACK (channe_lost_cb),
       test);
+
+  /* First channel disappears and so is lost */
+  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service);
+
+  g_object_unref (test->text_chan_service);
+  test->text_chan_service = NULL;
 
   simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
