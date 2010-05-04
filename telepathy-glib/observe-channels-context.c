@@ -77,6 +77,7 @@ struct _TpObserveChannelsContextPrivate
 {
   TpObserveChannelsContextState state;
   GSimpleAsyncResult *result;
+  DBusGMethodInvocation *dbus_context;
 };
 
 static void
@@ -218,7 +219,7 @@ tp_observe_channels_context_set_property (GObject *object,
         g_ptr_array_foreach (self->requests, (GFunc) g_object_ref, NULL);
         break;
       case PROP_DBUS_CONTEXT:
-        self->dbus_context = g_value_get_pointer (value);
+        self->priv->dbus_context = g_value_get_pointer (value);
         break;
       case PROP_OBSERVER_INFO:
         self->observer_info = g_value_dup_boxed (value);
@@ -244,7 +245,7 @@ tp_observe_channels_context_constructed (GObject *object)
   g_assert (self->channels != NULL);
   g_assert (self->requests != NULL);
   g_assert (self->observer_info != NULL);
-  g_assert (self->dbus_context != NULL);
+  g_assert (self->priv->dbus_context != NULL);
 
   /* self->dispatch_operation may be NULL (channels were requested) */
 }
@@ -423,12 +424,12 @@ tp_observe_channels_context_accept (TpObserveChannelsContext *self)
 {
   g_return_if_fail (self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE
       || self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED);
-  g_return_if_fail (self->dbus_context != NULL);
+  g_return_if_fail (self->priv->dbus_context != NULL);
 
   self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_DONE;
-  dbus_g_method_return (self->dbus_context);
+  dbus_g_method_return (self->priv->dbus_context);
 
-  self->dbus_context = NULL;
+  self->priv->dbus_context = NULL;
 }
 
 /**
@@ -446,12 +447,12 @@ tp_observe_channels_context_fail (TpObserveChannelsContext *self,
 {
   g_return_if_fail (self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE
       || self->priv->state == TP_OBSERVE_CHANNELS_CONTEXT_STATE_DELAYED);
-  g_return_if_fail (self->dbus_context != NULL);
+  g_return_if_fail (self->priv->dbus_context != NULL);
 
   self->priv->state = TP_OBSERVE_CHANNELS_CONTEXT_STATE_FAILED;
-  dbus_g_method_return_error (self->dbus_context, error);
+  dbus_g_method_return_error (self->priv->dbus_context, error);
 
-  self->dbus_context = NULL;
+  self->priv->dbus_context = NULL;
 }
 
 /**

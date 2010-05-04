@@ -51,7 +51,6 @@ struct _TpObserveChannelsContext {
   /* Array of reffed TpChannelRequest */
   GPtrArray *requests;
   GHashTable *observer_info;
-  DBusGMethodInvocation *dbus_context;
 };
 
 TpObserveChannelsContext * _tp_observe_channels_context_new (
