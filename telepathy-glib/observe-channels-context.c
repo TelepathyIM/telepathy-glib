@@ -78,6 +78,10 @@ struct _TpObserveChannelsContextPrivate
   TpObserveChannelsContextState state;
   GSimpleAsyncResult *result;
   DBusGMethodInvocation *dbus_context;
+
+  /* Number of calls we are waiting they return. Once they have all returned
+   * the context is considered as prepared */
+  guint num_pending;
 };
 
 static void
@@ -508,23 +512,7 @@ _tp_observe_channels_context_get_state (
 static gboolean
 context_is_prepared (TpObserveChannelsContext *self)
 {
-  guint i;
-
-  if (!tp_proxy_is_prepared (self->account, TP_ACCOUNT_FEATURE_CORE))
-    return FALSE;
-
-  if (!tp_proxy_is_prepared (self->connection, TP_CONNECTION_FEATURE_CORE))
-    return FALSE;
-
-  for (i = 0; i < self->channels->len; i++)
-    {
-      TpChannel *channel = g_ptr_array_index (self->channels, i);
-
-      if (!tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE))
-        return FALSE;
-    }
-
-  return TRUE;
+  return self->priv->num_pending == 0;
 }
 
 static void
@@ -572,6 +560,7 @@ account_prepare_cb (GObject *source,
       goto out;
     }
 
+  self->priv->num_pending--;
   context_check_prepare (self);
 
 out:
@@ -597,6 +586,7 @@ conn_prepare_cb (GObject *source,
       goto out;
     }
 
+  self->priv->num_pending--;
   context_check_prepare (self);
 
 out:
@@ -622,6 +612,7 @@ channel_prepare_cb (GObject *source,
       goto out;
     }
 
+  self->priv->num_pending--;
   context_check_prepare (self);
 
 out:
@@ -636,6 +627,8 @@ context_prepare (TpObserveChannelsContext *self)
   GQuark channel_features[] = { TP_CHANNEL_FEATURE_CORE, 0 };
   guint i;
 
+  self->priv->num_pending = 2;
+
   tp_proxy_prepare_async (self->account, account_features,
       account_prepare_cb, g_object_ref (self));
 
@@ -645,6 +638,8 @@ context_prepare (TpObserveChannelsContext *self)
   for (i = 0; i < self->channels->len; i++)
     {
       TpChannel *channel = g_ptr_array_index (self->channels, i);
+
+      self->priv->num_pending++;
 
       tp_proxy_prepare_async (channel, channel_features,
           channel_prepare_cb, g_object_ref (self));
@@ -663,14 +658,6 @@ _tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data, _tp_observe_channels_context_prepare_async);
-
-  if (context_is_prepared (self))
-    {
-      g_simple_async_result_complete_in_idle (self->priv->result);
-      g_object_unref (self->priv->result);
-      self->priv->result = NULL;
-      return;
-    }
 
   context_prepare (self);
 }
