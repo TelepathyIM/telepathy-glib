@@ -18,4 +18,7 @@ TESTS_ENVIRONMENT = \
     top_srcdir=$(top_srcdir) \
     sh
 
-CLEANFILES = actual.h actual-body.h
+CLEANFILES = \
+	actual.h \
+	actual-body.h \
+	actual-gtk-doc.h

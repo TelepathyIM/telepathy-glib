@@ -60,6 +60,9 @@ BUILT_SOURCES = \
 
 CLEANFILES = $(BUILT_SOURCES)
 
+clean-local:
+	rm -rf _gen
+
 XSLTPROCFLAGS = --nonet --novalid
 
 # Generated files which can be generated for all categories simultaneously
