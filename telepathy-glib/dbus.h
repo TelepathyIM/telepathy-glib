@@ -26,6 +26,8 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/dbus-daemon.h>
 
+#include <telepathy-glib/_gen/genums.h>
+
 G_BEGIN_DECLS
 
 void tp_dbus_g_method_return_not_implemented (DBusGMethodInvocation *context);
