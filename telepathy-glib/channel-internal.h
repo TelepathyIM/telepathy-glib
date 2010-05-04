@@ -64,9 +64,8 @@ struct _TpChannelPrivate {
     /* (TpHandle => LocalPendingInfo), or NULL if members not discovered yet */
     GHashTable *group_local_pending_info;
 
-    /* reason the self-handle left, message == NULL if not removed */
-    gchar *group_remove_message;
-    TpChannelGroupChangeReason group_remove_reason;
+    /* reason the self-handle left */
+    GError *group_remove_error /* implicitly zero-initialized */ ;
     /* guint => guint, NULL if not discovered yet */
     GHashTable *group_handle_owners;
 
