@@ -612,6 +612,7 @@ context_prepare_cb (GObject *source,
     {
       DEBUG ("Failed to prepare TpObserveChannelsContext: %s", error->message);
       tp_observe_channels_context_fail (ctx, error);
+      g_error_free (error);
       return;
     }
 
