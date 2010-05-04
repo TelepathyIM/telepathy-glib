@@ -959,15 +959,16 @@ contacts_context_fail (ContactsContext *c,
  * @connection: The connection
  * @n_contacts: The number of TpContact objects successfully created
  *  (one per valid handle), or 0 on unrecoverable errors
- * @contacts: An array of @n_contacts TpContact objects (this callback is
- *  not given a reference to any of these objects, and must call g_object_ref()
- *  on any that it will keep), or %NULL on unrecoverable errors
+ * @contacts: (array length=n_contacts): An array of @n_contacts TpContact
+ *  objects (this callback is not given a reference to any of these objects,
+ *  and must call g_object_ref() on any that it will keep), or %NULL on
+ *  unrecoverable errors
  * @n_failed: The number of invalid handles that were passed to
  *  tp_connection_get_contacts_by_handle() (or on unrecoverable errors,
  *  the total number of handles that were given)
- * @failed: An array of @n_failed handles that were passed to
- *  tp_connection_get_contacts_by_handle() but turned out to be invalid
- *  (or on unrecoverable errors, all the handles that were given)
+ * @failed: (array length=n_failed): An array of @n_failed handles that were
+ *  passed to tp_connection_get_contacts_by_handle() but turned out to be
+ *  invalid (or on unrecoverable errors, all the handles that were given)
  * @error: %NULL on success, or an unrecoverable error that caused everything
  *  to fail
  * @user_data: the @user_data that was passed to
@@ -2302,7 +2303,7 @@ lookup_all_contacts (ContactsContext *context)
  * @handles: (array length=n_handles) (element-type uint): An array of handles
  *  of type %TP_HANDLE_TYPE_CONTACT representing the desired contacts
  * @n_features: The number of features in @features (may be 0)
- * @features: (array length=n_features) (allow-none): An array of features that
+ * @features: (array length=n_features) (allow-none) (element-type uint): An array of features that
  *  must be ready for use (if supported) before the callback is called (may
  *  be %NULL if @n_features is 0)
  * @callback: A user callback to call when the contacts are ready

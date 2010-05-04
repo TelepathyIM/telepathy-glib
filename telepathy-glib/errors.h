@@ -24,6 +24,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/_gen/error-str.h>
+#include <telepathy-glib/_gen/genums.h>
 
 G_BEGIN_DECLS
 
@@ -35,10 +36,6 @@ GQuark tp_errors_quark (void);
 
 void tp_g_set_error_invalid_handle_type (guint type, GError **error);
 void tp_g_set_error_unsupported_handle_type (guint type, GError **error);
-
-#define TP_TYPE_ERROR (tp_error_get_type())
-
-GType tp_error_get_type (void);
 
 typedef enum {
     TP_ERROR_NETWORK_ERROR,
