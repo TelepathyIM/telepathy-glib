@@ -6,6 +6,7 @@ EXTRA_DIST = \
     expected-gobject-foo.h \
     expected-gtypes.h \
     expected-gtypes-body.h \
+    expected-gtypes-gtk-doc.h \
     expected-ginterface-foo.h \
     glib-gtypes-generator.xml
 
