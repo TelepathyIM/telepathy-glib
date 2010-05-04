@@ -1212,6 +1212,14 @@ tp_connection_manager_read_file (const gchar *cm_name,
       if (!g_str_has_prefix (*group, PROTOCOL_PREFIX))
         continue;
 
+      if (!tp_connection_manager_check_valid_protocol_name (
+            *group + PROTOCOL_PREFIX_LEN, NULL))
+        {
+          DEBUG ("Protocol '%s' has an invalid name",
+              *group + PROTOCOL_PREFIX_LEN);
+          continue;
+        }
+
       proto_struct = g_slice_new (TpConnectionManagerProtocol);
       proto_struct->name = g_strdup (*group + PROTOCOL_PREFIX_LEN);
       DEBUG ("Protocol %s", proto_struct->name);
