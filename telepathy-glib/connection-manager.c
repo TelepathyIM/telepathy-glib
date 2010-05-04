@@ -34,6 +34,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_MANAGER
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/protocol-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-connection-manager-body.h"
 
@@ -284,17 +285,6 @@ _tp_connection_manager_param_copy_contents (
 }
 
 
-static void
-_tp_connection_manager_param_free_contents (TpConnectionManagerParam *param)
-{
-  g_free (param->name);
-  g_free (param->dbus_signature);
-
-  if (G_IS_VALUE (&param->default_value))
-    g_value_unset (&param->default_value);
-}
-
-
 /**
  * tp_connection_manager_param_copy:
  * @in: the #TpConnectionManagerParam to copy
@@ -380,16 +370,7 @@ tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
 void
 tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
 {
-  TpConnectionManagerParam *param;
-
-  g_free (proto->name);
-
-  for (param = proto->params; param->name != NULL; param++)
-    {
-      _tp_connection_manager_param_free_contents (param);
-    }
-
-  g_free (proto->params);
+  _tp_connection_manager_protocol_free_contents (proto);
 
   g_slice_free (TpConnectionManagerProtocol, proto);
 }

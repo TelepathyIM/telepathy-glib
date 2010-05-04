@@ -31,6 +31,7 @@
  */
 
 #include <telepathy-glib/protocol.h>
+#include <telepathy-glib/protocol-internal.h>
 
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/telepathy-glib.h>
@@ -68,15 +69,58 @@ G_DEFINE_TYPE(TpProtocol, tp_protocol, TP_TYPE_PROXY);
 
 struct _TpProtocolPrivate
 {
-  int dummy;
+  TpConnectionManagerProtocol protocol_struct;
 };
+
+void
+_tp_connection_manager_param_free_contents (TpConnectionManagerParam *param)
+{
+  g_free (param->name);
+  g_free (param->dbus_signature);
+
+  if (G_IS_VALUE (&param->default_value))
+    g_value_unset (&param->default_value);
+}
+
+void
+_tp_connection_manager_protocol_free_contents (
+    TpConnectionManagerProtocol *proto)
+{
+  g_free (proto->name);
+
+  if (proto->params != NULL)
+    {
+      TpConnectionManagerParam *param;
+
+      for (param = proto->params; param->name != NULL; param++)
+        _tp_connection_manager_param_free_contents (param);
+    }
+
+  g_free (proto->params);
+}
+
+static void
+tp_protocol_finalize (GObject *object)
+{
+  TpProtocol *self = TP_PROTOCOL (object);
+  GObjectFinalizeFunc finalize =
+    ((GObjectClass *) tp_protocol_parent_class)->finalize;
+
+  _tp_connection_manager_protocol_free_contents (&self->priv->protocol_struct);
+
+  if (finalize != NULL)
+    finalize (object);
+}
 
 static void
 tp_protocol_class_init (TpProtocolClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
+  GObjectClass *object_class = (GObjectClass *) klass;
 
   g_type_class_add_private (klass, sizeof (TpProtocolPrivate));
+
+  object_class->finalize = tp_protocol_finalize;
 
   proxy_class->must_have_unique_name = FALSE;
   proxy_class->interface = TP_IFACE_QUARK_PROTOCOL;
@@ -172,4 +216,10 @@ tp_protocol_init_known_interfaces (void)
 
       g_once_init_leave (&once, 1);
     }
+}
+
+TpConnectionManagerProtocol *
+_tp_protocol_get_struct (TpProtocol *self)
+{
+  return &self->priv->protocol_struct;
 }

@@ -176,6 +176,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     presence-mixin.c \
     properties-mixin.c \
     protocol.c \
+    protocol-internal.h \
     proxy.c \
     proxy-internal.h \
     proxy-methods.c \
