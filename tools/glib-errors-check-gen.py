@@ -48,7 +48,7 @@ class Generator(object):
                     % nick)
             print ('  g_assert_cmpstr (value_by_nick->value_nick, ==, "%s");'
                     % nick)
-            print ('  g_assert_cmpstr (%s, ==, TP_ERROR_PREFIX "%s");'
+            print ('  g_assert_cmpstr (%s, ==, TP_ERROR_PREFIX ".%s");'
                     % (s, nick))
 
         print '}'
