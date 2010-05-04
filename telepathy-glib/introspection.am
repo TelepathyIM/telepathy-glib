@@ -22,6 +22,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/defs.h \
 	$(srcdir)/debug.c $(srcdir)/debug.h \
 	$(srcdir)/base-client.c $(srcdir)/base-client.h \
+	$(srcdir)/simple-approver.c $(srcdir)/simple-approver.h \
 	$(srcdir)/simple-observer.c $(srcdir)/simple-observer.h \
 	$(srcdir)/dbus-properties-mixin.c $(srcdir)/dbus-properties-mixin.h \
 	$(srcdir)/channel-dispatch-operation.c $(srcdir)/channel-dispatch-operation.h \

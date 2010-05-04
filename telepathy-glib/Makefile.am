@@ -70,6 +70,7 @@ our_headers = \
     proxy.h \
     proxy-subclass.h \
     run.h \
+    simple-approver.h \
     simple-observer.h \
     svc-account.h \
     svc-account-manager.h \
@@ -169,6 +170,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     proxy-signals.c \
     run.c \
     signals-marshal.list \
+    simple-approver.c \
     simple-observer.c \
     text-mixin.c \
     util.c \

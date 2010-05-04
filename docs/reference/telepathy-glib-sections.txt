@@ -3838,3 +3838,23 @@ TpAddDispatchOperationContextClass
 TpAddDispatchOperationContextPrivate
 TP_TYPE_ADD_DISPATCH_OPERATION_CONTEXT
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/simple-approver.h</INCLUDE>
+<FILE>simple-approver</FILE>
+<TITLE>simple-approver</TITLE>
+TpSimpleApprover
+TpSimpleApproverAddDispatchOperationImpl
+tp_simple_approver_new
+<SUBSECTION Standard>
+tp_simple_approver_get_type
+TP_TYPE_SIMPLE_APPROVER
+TP_SIMPLE_APPROVER
+TP_SIMPLE_APPROVER_CLASS
+TP_SIMPLE_APPROVER_GET_CLASS
+TP_IS_SIMPLE_APPROVER
+TP_IS_SIMPLE_APPROVER_CLASS
+TpSimpleApproverClass
+TpSimpleApproverPrivate
+</SECTION>
+
