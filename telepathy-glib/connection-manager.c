@@ -1703,6 +1703,9 @@ tp_connection_manager_class_init (TpConnectionManagerClass *klass)
    *
    * Since 0.7.26, the #GObject::notify signal is emitted for this
    * property.
+   *
+   * (Note that this is of type %G_TYPE_UINT, not %TP_TYPE_CM_INFO_SOURCE,
+   * for historical reasons.)
    */
   param_spec = g_param_spec_uint ("info-source", "CM info source",
       "Where we got the current information on supported protocols",
