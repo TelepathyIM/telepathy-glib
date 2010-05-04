@@ -4094,6 +4094,7 @@ TpSimpleHandlerPrivate
 TpBaseProtocol
 TpBaseProtocolClass
 tp_base_protocol_get_parameters
+tp_base_protocol_new_connection
 <SUBSECTION Standard>
 tp_base_protocol_get_type
 TP_BASE_PROTOCOL

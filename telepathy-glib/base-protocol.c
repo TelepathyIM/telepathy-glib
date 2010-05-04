@@ -291,6 +291,9 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * @get_parameters: a callback used to implement
  *  tp_base_protocol_get_parameters(), which all subclasses must provide;
  *  see the documentation of that method for details
+ * @new_connection: a callback used to implement
+ *  tp_base_protocol_new_connection(), which all subclasses must provide;
+ *  see the documentation of that method for details
  *
  * The class of a #TpBaseProtocol.
  *
@@ -410,4 +413,29 @@ tp_base_protocol_get_parameters (TpBaseProtocol *self)
   g_return_val_if_fail (cls->get_parameters != NULL, NULL);
 
   return cls->get_parameters (self);
+}
+
+/**
+ * tp_base_protocol_new_connection:
+ * @self: a Protocol
+ * @asv: (transfer none) (element-type utf8 GObject.Value): parameters for
+ *  the new connection
+ * @error: used to raise an error if %NULL is returned
+ *
+ * Create a new connection to this protocol by calling the virtual method
+ * #TpBaseProtocolClass.new_connection.
+ *
+ * Returns: a reference to a new #TpBaseConnection, or %NULL
+ */
+TpBaseConnection *
+tp_base_protocol_new_connection (TpBaseProtocol *self,
+    GHashTable *asv,
+    GError **error)
+{
+  TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
+
+  g_return_val_if_fail (cls != NULL, NULL);
+  g_return_val_if_fail (cls->new_connection != NULL, NULL);
+
+  return cls->new_connection (self, asv, error);
 }

@@ -78,6 +78,9 @@
  */
 typedef struct {
     TpBaseProtocol parent;
+    /* Really a TpBaseConnectionManager, but using that type with
+     * g_object_add_weak_pointer violates strict aliasing */
+    gpointer cm;
     const TpCMProtocolSpec *protocol_spec;
 } _TpLegacyProtocol;
 
@@ -100,6 +103,67 @@ _tp_legacy_protocol_get_parameters (TpBaseProtocol *protocol)
   return self->protocol_spec->parameters;
 }
 
+static gboolean parse_parameters (const TpCMParamSpec *paramspec,
+    GHashTable *provided, TpIntSet *params_present,
+    const TpCMParamSetter set_param, void *params, GError **error);
+
+static TpBaseConnection *
+_tp_legacy_protocol_new_connection (TpBaseProtocol *protocol,
+    GHashTable *asv,
+    GError **error)
+{
+  _TpLegacyProtocol *self = (_TpLegacyProtocol *) protocol;
+  const TpCMProtocolSpec *protospec = self->protocol_spec;
+  TpBaseConnectionManagerClass *cls;
+  TpBaseConnection *conn = NULL;
+  void *params = NULL;
+  TpIntSet *params_present = NULL;
+  TpCMParamSetter set_param;
+
+  if (self->cm == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Connection manager no longer available");
+      return NULL;
+    }
+
+  g_object_ref (self->cm);
+
+  g_assert (protospec->parameters != NULL);
+  g_assert (protospec->params_new != NULL);
+  g_assert (protospec->params_free != NULL);
+
+  cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self->cm);
+
+  params_present = tp_intset_new ();
+  params = protospec->params_new ();
+
+  set_param = protospec->set_param;
+
+  if (set_param == NULL)
+    set_param = tp_cm_param_setter_offset;
+
+  if (!parse_parameters (protospec->parameters, (GHashTable *) asv,
+        params_present, set_param, params, error))
+    {
+      goto finally;
+    }
+
+  conn = (cls->new_connection) (self->cm, protospec->name, params_present,
+      params, error);
+
+finally:
+  if (params_present != NULL)
+    tp_intset_destroy (params_present);
+
+  if (params != NULL)
+    protospec->params_free (params);
+
+  g_object_unref (self->cm);
+
+  return conn;
+}
+
 static void
 _tp_legacy_protocol_class_init (_TpLegacyProtocolClass *cls)
 {
@@ -107,6 +171,7 @@ _tp_legacy_protocol_class_init (_TpLegacyProtocolClass *cls)
 
   base_class->is_stub = TRUE;
   base_class->get_parameters = _tp_legacy_protocol_get_parameters;
+  base_class->new_connection = _tp_legacy_protocol_new_connection;
 }
 
 static void
@@ -115,13 +180,16 @@ _tp_legacy_protocol_init (_TpLegacyProtocol *self)
 }
 
 static TpBaseProtocol *
-_tp_legacy_protocol_new (const TpCMProtocolSpec *protocol_spec)
+_tp_legacy_protocol_new (TpBaseConnectionManager *cm,
+    const TpCMProtocolSpec *protocol_spec)
 {
   _TpLegacyProtocol *self = g_object_new (_TP_TYPE_LEGACY_PROTOCOL,
       "name", protocol_spec->name,
       NULL);
 
   self->protocol_spec = protocol_spec;
+  self->cm = cm;
+  g_object_add_weak_pointer ((GObject *) cm, &(self->cm));
   return (TpBaseProtocol *) self;
 }
 
@@ -449,31 +517,6 @@ tp_base_connection_manager_get_protocol (TpBaseConnectionManager *self,
       "unknown protocol %s", protocol_name);
 
   return NULL;
-}
-
-static gboolean
-get_parameters (const TpCMProtocolSpec *protos,
-                const char *proto,
-                const TpCMProtocolSpec **ret,
-                GError **error)
-{
-  guint i;
-
-  for (i = 0; protos[i].name; i++)
-    {
-      if (!tp_strdiff (proto, protos[i].name))
-        {
-          *ret = protos + i;
-          return TRUE;
-        }
-    }
-
-  DEBUG ("unknown protocol %s", proto);
-
-  g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-      "unknown protocol %s", proto);
-
-  return FALSE;
 }
 
 /**
@@ -900,10 +943,7 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   gchar *bus_name;
   gchar *object_path;
   GError *error = NULL;
-  void *params = NULL;
-  TpIntSet *params_present = NULL;
-  const TpCMProtocolSpec *protospec = NULL;
-  TpCMParamSetter set_param;
+  TpBaseProtocol *protocol;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
 
@@ -913,33 +953,15 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   if (!tp_connection_manager_check_valid_protocol_name (proto, &error))
     goto ERROR;
 
-  if (!get_parameters (cls->protocol_params, proto, &protospec, &error))
-    {
-      goto ERROR;
-    }
+  protocol = tp_base_connection_manager_get_protocol (self, proto, &error);
 
-  g_assert (protospec->parameters != NULL);
-  g_assert (protospec->params_new != NULL);
-  g_assert (protospec->params_free != NULL);
+  if (protocol == NULL)
+    goto ERROR;
 
-  params_present = tp_intset_new ();
-  params = protospec->params_new ();
+  conn = tp_base_protocol_new_connection (protocol, parameters, &error);
 
-  set_param = protospec->set_param;
-  if (set_param == NULL)
-    set_param = tp_cm_param_setter_offset;
-
-  if (!parse_parameters (protospec->parameters, parameters, params_present,
-        set_param, params, &error))
-    {
-      goto ERROR;
-    }
-
-  conn = (cls->new_connection) (self, proto, params_present, params, &error);
-  if (!conn)
-    {
-      goto ERROR;
-    }
+  if (conn == NULL)
+    goto ERROR;
 
   /* register on bus and save bus name and object path */
   if (!tp_base_connection_register (conn, cls->cm_dbus_name,
@@ -968,17 +990,11 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
 
   g_free (bus_name);
   g_free (object_path);
-  goto OUT;
+  return;
 
 ERROR:
   dbus_g_method_return_error (context, error);
   g_error_free (error);
-
-OUT:
-  if (params_present)
-    tp_intset_destroy (params_present);
-  if (params)
-    protospec->params_free (params);
 }
 
 /**
@@ -1010,7 +1026,7 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   for (i = 0; cls->protocol_params[i].name != NULL; i++)
     {
       tp_base_connection_manager_add_protocol (self,
-          _tp_legacy_protocol_new (cls->protocol_params + i));
+          _tp_legacy_protocol_new (self, cls->protocol_params + i));
     }
 
   g_assert (self->priv->dbus_daemon != NULL);

@@ -23,6 +23,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/base-connection.h>
+
 G_BEGIN_DECLS
 
 typedef struct _TpCMParamSpec TpCMParamSpec;
@@ -102,6 +104,9 @@ struct _TpBaseProtocolClass
 
   gboolean is_stub;
   const TpCMParamSpec *(*get_parameters) (TpBaseProtocol *self);
+  TpBaseConnection *(*new_connection) (TpBaseProtocol *self,
+      GHashTable *asv,
+      GError **error);
 
   /*<private>*/
   GCallback padding[8];
@@ -109,6 +114,9 @@ struct _TpBaseProtocolClass
 };
 
 const TpCMParamSpec *tp_base_protocol_get_parameters (TpBaseProtocol *self);
+
+TpBaseConnection *tp_base_protocol_new_connection (TpBaseProtocol *self,
+    GHashTable *asv, GError **error);
 
 G_END_DECLS
 
