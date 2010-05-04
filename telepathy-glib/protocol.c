@@ -72,6 +72,53 @@ struct _TpProtocolPrivate
   TpConnectionManagerProtocol protocol_struct;
 };
 
+enum
+{
+    PROP_PROTOCOL_NAME = 1,
+    N_PROPS
+};
+
+static void
+tp_protocol_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpProtocol *self = (TpProtocol *) object;
+
+  switch (property_id)
+    {
+    case PROP_PROTOCOL_NAME:
+      g_value_set_string (value, self->priv->protocol_struct.name);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+tp_protocol_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpProtocol *self = (TpProtocol *) object;
+
+  switch (property_id)
+    {
+    case PROP_PROTOCOL_NAME:
+      g_assert (self->priv->protocol_struct.name == NULL);
+      self->priv->protocol_struct.name = g_value_dup_string (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
 void
 _tp_connection_manager_param_free_contents (TpConnectionManagerParam *param)
 {
@@ -120,7 +167,16 @@ tp_protocol_class_init (TpProtocolClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpProtocolPrivate));
 
+  object_class->get_property = tp_protocol_get_property;
+  object_class->set_property = tp_protocol_set_property;
   object_class->finalize = tp_protocol_finalize;
+
+  g_object_class_install_property (object_class, PROP_PROTOCOL_NAME,
+      g_param_spec_string ("protocol-name",
+        "Name of this protocol",
+        "The Protocol from telepathy-spec, such as 'jabber' or 'local-xmpp'",
+        NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   proxy_class->must_have_unique_name = FALSE;
   proxy_class->interface = TP_IFACE_QUARK_PROTOCOL;
@@ -178,6 +234,7 @@ tp_protocol_new (TpDBusDaemon *dbus,
         "dbus-daemon", dbus,
         "bus-name", bus_name,
         "object-path", object_path,
+        "protocol-name", protocol_name,
         NULL));
 
 finally:

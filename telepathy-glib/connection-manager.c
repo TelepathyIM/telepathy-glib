@@ -681,12 +681,11 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
   g_assert (proto_object != NULL);
 
   proto_struct = _tp_protocol_get_struct (proto_object);
-  /* just constructed, so these should be true (implementation detail
+  g_assert (!tp_strdiff (proto_struct->name, protocol));
+  /* just constructed, so this should be true (implementation detail
    * of TpProtocol) */
-  g_assert (proto_struct->name == NULL);
   g_assert (proto_struct->params == NULL);
 
-  proto_struct->name = g_strdup (protocol);
   proto_struct->params =
       (TpConnectionManagerParam *) g_array_free (output, FALSE);
 
@@ -1253,9 +1252,9 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
         }
 
       proto_struct = _tp_protocol_get_struct (proto_object);
-      /* just constructed, so these should be true (implementation detail
+      g_assert (!tp_strdiff (proto_struct->name, name));
+      /* just constructed, so this should be true (implementation detail
        * of TpProtocol) */
-      g_assert (proto_struct->name == NULL);
       g_assert (proto_struct->params == NULL);
 
       proto_struct->name = g_strdup (name);
