@@ -43,6 +43,8 @@ typedef struct {
     TpConnection *connection;
     TpChannel *text_chan;
     TpChannel *text_chan_2;
+
+    guint sig;
 } Test;
 
 static void
@@ -209,7 +211,8 @@ teardown_services (Test *test,
     g_object_unref (test->text_chan_service);
 
   g_object_unref (test->text_chan_2);
-  g_object_unref (test->text_chan_service_2);
+  if (test->text_chan_service_2 != NULL)
+    g_object_unref (test->text_chan_service_2);
 
   tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
   g_assert_no_error (test->error);
@@ -496,12 +499,37 @@ channe_lost_cb (TpChannelDispatchOperation *cdo,
 {
   GError *error = g_error_new_literal (domain, code, message);
 
-  g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
-        tp_proxy_get_object_path (test->text_chan)));
+  if (test->text_chan_service_2 != NULL)
+    {
+      /* The second channel is still there so we removed the first one */
+      g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
+            tp_proxy_get_object_path (test->text_chan)));
+    }
+  else
+    {
+      g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
+            tp_proxy_get_object_path (test->text_chan_2)));
+    }
+
   g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
 
   g_error_free (error);
-  g_main_loop_quit (test->mainloop);
+
+  test->sig--;
+  if (test->sig == 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+invalidated_cb (TpProxy *self,
+    guint domain,
+    gint code,
+    gchar *message,
+    Test *test)
+{
+  test->sig--;
+  if (test->sig == 0)
+    g_main_loop_quit (test->mainloop);
 }
 
 static void
@@ -524,6 +552,7 @@ test_channel_lost (Test *test,
 
   check_channels (test);
 
+  test->sig = 1;
   g_signal_connect (test->cdo, "channel-lost", G_CALLBACK (channe_lost_cb),
       test);
 
@@ -545,6 +574,22 @@ test_channel_lost (Test *test,
   channel = g_ptr_array_index (channels, 0);
   g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
         tp_proxy_get_object_path (test->text_chan_2)));
+  /* Second channel disappears, Finished is emited and so the CDO is
+   * invalidated */
+  test->sig = 2;
+  g_signal_connect (test->cdo, "invalidated", G_CALLBACK (invalidated_cb),
+      test);
+
+  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service_2);
+
+  g_object_unref (test->text_chan_service_2);
+  test->text_chan_service_2 = NULL;
+
+  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+      test->text_chan_2);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_cmpuint (channels->len, ==, 0);
 }
 
 static void
