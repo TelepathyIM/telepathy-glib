@@ -79,4 +79,5 @@ EXTRA_DIST = \
     Media_Session_Handler.xml \
     Media_Stream_Handler.xml \
     Properties_Interface.xml \
+    Protocol.xml \
     template.xml

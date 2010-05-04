@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </p>
  </tp:docstring>
  <xi:include href="Connection_Manager.xml"/>
+ <xi:include href="Protocol.xml"/>
 
  <tp:section name="Connection Object">
   <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
