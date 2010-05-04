@@ -235,7 +235,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
       param_spec);
 
   /**
-   * TpSimpleObserver:observe-channels-impl:
+   * TpSimpleObserver:callback:
    *
    * The TpSimpleObserverObserveChannelsImpl callback implementing the
    * ObserverChannels D-Bus method.
