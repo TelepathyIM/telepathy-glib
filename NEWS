@@ -1,6 +1,19 @@
 telepathy-glib 0.11.5 (UNRELEASED)
 ==================================
 
+API changes:
+
+⌬ fd.o #23369: when the local user is removed from a Group Channel, the
+  GError with which the TpChannel is invalidated has changed:
+
+  → if possible, the detailed error name from D-Bus is mapped to a TpError,
+    or a custom GError domain set up with tp_proxy_subclass_add_error_mapping
+  → otherwise, the TpChannelGroupChangeReason is translated into a TpError
+
+  Previously, we used an error from the TP_ERRORS_REMOVED_FROM_GROUP domain
+  in most cases; this domain is no longer used, unless we get a change reason
+  that isn't recognised.
+
 Enhancements:
 
 ⌬ fd.o #25236: TpBaseClient, a base class for Observers, which will also
@@ -13,6 +26,9 @@ Enhancements:
 
 ⌬ fd.o #27899: internal macros for ERROR(), CRITICAL() etc., analogous to
   DEBUG() (jonny)
+
+⌬ fd.o #23369: improve the errors with which a Group TpChannel is invalidated
+  if we're removed, as per "API changes" above (smcv)
 
 Fixes:
 
