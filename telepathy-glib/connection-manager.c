@@ -231,8 +231,13 @@ struct _TpConnectionManagerPrivate {
     /* TRUE if dispose() has run already */
     unsigned disposed:1;
 
+    /* dup'd name => referenced TpProtocol, corresponding exactly to
+     * @protocol_structs */
+    GHashTable *protocol_objects;
+
     /* GPtrArray of TpConnectionManagerProtocol *. This is the implementation
-     * for self->protocols.
+     * for self->protocols. Each item is borrowed from the corresponding
+     * object in protocol_objects.
      *
      * NULL if file_info and live_info are both FALSE
      * Protocols from file, if file_info is TRUE but live_info is FALSE
@@ -244,11 +249,13 @@ struct _TpConnectionManagerPrivate {
      * gchar * representing protocols we haven't yet introspected.
      * Otherwise NULL */
     GPtrArray *pending_protocols;
-    /* If we're waiting for a GetParameters, then GPtrArray of
-     * TpConnectionManagerProtocol * for the introspection that is in
-     * progress (will replace ->protocol_structs when finished).
-     * Otherwise NULL */
-    GPtrArray *found_protocols;
+
+    /* dup'd name => referenced TpProtocol
+     *
+     * If we're waiting for a GetParameters, protocols we found so far for
+     * the introspection that is in progress (will replace protocol_objects
+     * when finished). Otherwise NULL */
+    GHashTable *found_protocols;
 
     /* list of WhenReadyContext */
     GList *waiting_for_ready;
@@ -591,6 +598,7 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
   gchar *protocol = user_data;
   GArray *output;
   guint i;
+  TpProtocol *proto_object;
   TpConnectionManagerProtocol *proto_struct;
 
   DEBUG ("Protocol name: %s", protocol);
@@ -666,32 +674,27 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
 #endif
     }
 
-  proto_struct = g_slice_new (TpConnectionManagerProtocol);
+  proto_object = tp_protocol_new (tp_proxy_get_dbus_daemon (self),
+      self->name, protocol, NULL, NULL);
+  /* tp_protocol_new can currently only fail because of malformed names,
+   * and we already checked those */
+  g_assert (proto_object != NULL);
+
+  proto_struct = _tp_protocol_get_struct (proto_object);
+  /* just constructed, so these should be true (implementation detail
+   * of TpProtocol) */
+  g_assert (proto_struct->name == NULL);
+  g_assert (proto_struct->params == NULL);
+
   proto_struct->name = g_strdup (protocol);
   proto_struct->params =
       (TpConnectionManagerParam *) g_array_free (output, FALSE);
-  g_ptr_array_add (self->priv->found_protocols, proto_struct);
+
+  g_hash_table_insert (self->priv->found_protocols,
+      g_strdup (protocol), proto_object);
 
 out:
   tp_connection_manager_continue_introspection (self);
-}
-
-static void
-tp_connection_manager_free_protocols (GPtrArray *protocols)
-{
-  guint i;
-
-  for (i = 0; i < protocols->len; i++)
-    {
-      TpConnectionManagerProtocol *proto = g_ptr_array_index (protocols, i);
-
-      if (proto == NULL)
-        continue;
-
-      tp_connection_manager_protocol_free (proto);
-    }
-
-  g_ptr_array_free (protocols, TRUE);
 }
 
 static void tp_connection_manager_ready_or_failed (TpConnectionManager *self,
@@ -711,7 +714,7 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
 
   if (self->priv->found_protocols != NULL)
     {
-      tp_connection_manager_free_protocols (self->priv->found_protocols);
+      g_hash_table_unref (self->priv->found_protocols);
       self->priv->found_protocols = NULL;
     }
 
@@ -730,6 +733,33 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
 }
 
 static void
+tp_connection_manager_update_protocol_structs (TpConnectionManager *self)
+{
+  GHashTableIter iter;
+  gpointer protocol_object;
+
+  g_assert (self->priv->protocol_objects != NULL);
+
+  if (self->priv->protocol_structs != NULL)
+    g_ptr_array_free (self->priv->protocol_structs, TRUE);
+
+  self->priv->protocol_structs = g_ptr_array_sized_new (
+      g_hash_table_size (self->priv->protocol_objects) + 1);
+
+  g_hash_table_iter_init (&iter, self->priv->protocol_objects);
+
+  while (g_hash_table_iter_next (&iter, NULL, &protocol_object))
+    {
+      g_ptr_array_add (self->priv->protocol_structs,
+          _tp_protocol_get_struct (protocol_object));
+    }
+
+  g_ptr_array_add (self->priv->protocol_structs, NULL);
+  self->protocols = (const TpConnectionManagerProtocol * const *)
+      self->priv->protocol_structs->pdata;
+}
+
+static void
 tp_connection_manager_continue_introspection (TpConnectionManager *self)
 {
   gchar *next_protocol;
@@ -738,19 +768,16 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 
   if (self->priv->pending_protocols->len == 0)
     {
-      GPtrArray *tmp;
+      GHashTable *tmp;
       guint old;
 
-      g_ptr_array_add (self->priv->found_protocols, NULL);
-
-      /* swap found_protocols and protocol_structs, so we'll free the old
-       * protocol_structs as part of end_introspection */
-      tmp = self->priv->protocol_structs;
-      self->priv->protocol_structs = self->priv->found_protocols;
+      /* swap found_protocols and protocol_objects, so we'll free the old
+       * protocol_objects as part of end_introspection */
+      tmp = self->priv->protocol_objects;
+      self->priv->protocol_objects = self->priv->found_protocols;
       self->priv->found_protocols = tmp;
 
-      self->protocols = (const TpConnectionManagerProtocol * const *)
-          self->priv->protocol_structs->pdata;
+      tp_connection_manager_update_protocol_structs (self);
 
       old = self->info_source;
       self->info_source = TP_CM_INFO_SOURCE_LIVE;
@@ -805,8 +832,8 @@ tp_connection_manager_got_protocols (TpConnectionManager *self,
   DEBUG ("Succeeded with %u protocols", i);
 
   g_assert (self->priv->found_protocols == NULL);
-  /* Allocate one more pointer - we're going to append NULL afterwards */
-  self->priv->found_protocols = g_ptr_array_sized_new (i + 1);
+  self->priv->found_protocols = g_hash_table_new_full (g_str_hash,
+      g_str_equal, g_free, g_object_unref);
 
   g_assert (self->priv->pending_protocols == NULL);
   self->priv->pending_protocols = g_ptr_array_sized_new (i);
@@ -1173,56 +1200,67 @@ parse_default_value (GValue *value,
 #define PROTOCOL_PREFIX_LEN 9
 tp_verify (sizeof (PROTOCOL_PREFIX) == PROTOCOL_PREFIX_LEN + 1);
 
-static GPtrArray *
-tp_connection_manager_read_file (const gchar *cm_name,
+static GHashTable *
+tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
+    const gchar *cm_name,
     const gchar *filename,
     GError **error)
 {
   GKeyFile *file;
-  gchar **groups, **group;
+  gchar **groups = NULL;
+  gchar **group;
   guint i;
+  TpProtocol *proto_object;
   TpConnectionManagerProtocol *proto_struct;
-  GPtrArray *protocols;
+  GHashTable *protocols = NULL;
 
   file = g_key_file_new ();
 
   if (!g_key_file_load_from_file (file, filename, G_KEY_FILE_NONE, error))
-    return NULL;
+    goto finally;
+
+  protocols = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+      g_object_unref);
 
   groups = g_key_file_get_groups (file, NULL);
 
-  if (groups == NULL || *groups == NULL)
-    return g_ptr_array_sized_new (1);
-
-  i = 0;
-  for (group = groups; *group != NULL; group++)
-    {
-      if (g_str_has_prefix (*group, PROTOCOL_PREFIX))
-        i++;
-    }
-
-  /* Reserve space for the caller to add a NULL at the end, so +1 */
-  protocols = g_ptr_array_sized_new (i + 1);
+  if (groups == NULL)
+    goto finally;
 
   for (group = groups; *group != NULL; group++)
     {
+      const gchar *name;
       gchar **keys, **key;
       GArray *output;
 
       if (!g_str_has_prefix (*group, PROTOCOL_PREFIX))
         continue;
 
-      if (!tp_connection_manager_check_valid_protocol_name (
-            *group + PROTOCOL_PREFIX_LEN, NULL))
+      name = *group + PROTOCOL_PREFIX_LEN;
+
+      if (!tp_connection_manager_check_valid_protocol_name (name, NULL))
         {
-          DEBUG ("Protocol '%s' has an invalid name",
-              *group + PROTOCOL_PREFIX_LEN);
+          DEBUG ("Protocol '%s' has an invalid name", name);
           continue;
         }
 
-      proto_struct = g_slice_new (TpConnectionManagerProtocol);
-      proto_struct->name = g_strdup (*group + PROTOCOL_PREFIX_LEN);
-      DEBUG ("Protocol %s", proto_struct->name);
+      proto_object = tp_protocol_new (dbus_daemon, cm_name, name, NULL, NULL);
+
+      if (proto_object == NULL)
+        {
+          DEBUG ("Invalid protocol name? %s", name);
+          continue;
+        }
+
+      proto_struct = _tp_protocol_get_struct (proto_object);
+      /* just constructed, so these should be true (implementation detail
+       * of TpProtocol) */
+      g_assert (proto_struct->name == NULL);
+      g_assert (proto_struct->params == NULL);
+
+      proto_struct->name = g_strdup (name);
+
+      DEBUG ("Protocol %s", name);
 
       keys = g_key_file_get_keys (file, *group, NULL, NULL);
 
@@ -1327,9 +1365,10 @@ tp_connection_manager_read_file (const gchar *cm_name,
       proto_struct->params =
           (TpConnectionManagerParam *) g_array_free (output, FALSE);
 
-      g_ptr_array_add (protocols, proto_struct);
+      g_hash_table_insert (protocols, g_strdup (name), proto_object);
     }
 
+finally:
   g_strfreev (groups);
   g_key_file_free (file);
 
@@ -1343,13 +1382,14 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 
   self->priv->manager_file_read_idle_id = 0;
 
-  if (self->priv->protocol_structs == NULL)
+  if (self->priv->protocol_objects == NULL)
     {
       if (self->priv->manager_file != NULL &&
           self->priv->manager_file[0] != '\0')
         {
           GError *error = NULL;
-          GPtrArray *protocols = tp_connection_manager_read_file (
+          GHashTable *protocols = tp_connection_manager_read_file (
+              tp_proxy_get_dbus_daemon (self),
               self->name, self->priv->manager_file, &error);
 
           DEBUG ("Read %s", self->priv->manager_file);
@@ -1363,11 +1403,8 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
             }
           else
             {
-              g_ptr_array_add (protocols, NULL);
-              self->priv->protocol_structs = protocols;
-
-              self->protocols = (const TpConnectionManagerProtocol * const *)
-                  self->priv->protocol_structs->pdata;
+              self->priv->protocol_objects = protocols;
+              tp_connection_manager_update_protocol_structs (self);
 
               DEBUG ("Got info from file");
               /* previously it must have been NONE */
@@ -1494,6 +1531,24 @@ tp_connection_manager_dispose (GObject *object)
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb,
       object);
 
+  if (self->priv->protocol_structs != NULL)
+    {
+      g_ptr_array_free (self->priv->protocol_structs, TRUE);
+      self->priv->protocol_structs = NULL;
+    }
+
+  if (self->priv->protocol_objects != NULL)
+    {
+      g_hash_table_unref (self->priv->protocol_objects);
+      self->priv->protocol_objects = NULL;
+    }
+
+  if (self->priv->found_protocols != NULL)
+    {
+      g_hash_table_unref (self->priv->found_protocols);
+      self->priv->found_protocols = NULL;
+    }
+
 finally:
   G_OBJECT_CLASS (tp_connection_manager_parent_class)->dispose (object);
 }
@@ -1512,22 +1567,12 @@ tp_connection_manager_finalize (GObject *object)
   if (self->priv->introspect_idle_id != 0)
     g_source_remove (self->priv->introspect_idle_id);
 
-  if (self->priv->protocol_structs != NULL)
-    {
-      tp_connection_manager_free_protocols (self->priv->protocol_structs);
-    }
-
   if (self->priv->pending_protocols != NULL)
     {
       for (i = 0; i < self->priv->pending_protocols->len; i++)
         g_free (self->priv->pending_protocols->pdata[i]);
 
       g_ptr_array_free (self->priv->pending_protocols, TRUE);
-    }
-
-  if (self->priv->found_protocols != NULL)
-    {
-      tp_connection_manager_free_protocols (self->priv->found_protocols);
     }
 
   G_OBJECT_CLASS (tp_connection_manager_parent_class)->finalize (object);
