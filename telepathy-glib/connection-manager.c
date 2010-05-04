@@ -1169,6 +1169,10 @@ parse_default_value (GValue *value,
   return FALSE;
 }
 
+#define PROTOCOL_PREFIX "Protocol "
+#define PROTOCOL_PREFIX_LEN 9
+tp_verify (sizeof (PROTOCOL_PREFIX) == PROTOCOL_PREFIX_LEN + 1);
+
 static GPtrArray *
 tp_connection_manager_read_file (const gchar *cm_name,
     const gchar *filename,
@@ -1193,7 +1197,7 @@ tp_connection_manager_read_file (const gchar *cm_name,
   i = 0;
   for (group = groups; *group != NULL; group++)
     {
-      if (g_str_has_prefix (*group, "Protocol "))
+      if (g_str_has_prefix (*group, PROTOCOL_PREFIX))
         i++;
     }
 
@@ -1205,15 +1209,11 @@ tp_connection_manager_read_file (const gchar *cm_name,
       gchar **keys, **key;
       GArray *output;
 
-      if (!g_str_has_prefix (*group, "Protocol "))
+      if (!g_str_has_prefix (*group, PROTOCOL_PREFIX))
         continue;
 
       proto_struct = g_slice_new (TpConnectionManagerProtocol);
-
-      keys = g_strsplit (*group, " ", 2);
-      proto_struct->name = g_strdup (keys[1]);
-      g_strfreev (keys);
-
+      proto_struct->name = g_strdup (*group + PROTOCOL_PREFIX_LEN);
       DEBUG ("Protocol %s", proto_struct->name);
 
       keys = g_key_file_get_keys (file, *group, NULL, NULL);
