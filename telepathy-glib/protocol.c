@@ -82,6 +82,87 @@ enum
     N_PROPS
 };
 
+/* this is NULL-safe for @parameters, and callers rely on this */
+static TpConnectionManagerParam *
+tp_protocol_params_from_param_specs (const GPtrArray *parameters,
+    const gchar *cm_debug_name,
+    const gchar *protocol)
+{
+  GArray *output;
+  guint i;
+
+  DEBUG ("Protocol name: %s", protocol);
+
+  if (parameters == NULL)
+    {
+      return g_new0 (TpConnectionManagerParam, 1);
+    }
+
+  output = g_array_sized_new (TRUE, TRUE,
+      sizeof (TpConnectionManagerParam), parameters->len);
+
+  for (i = 0; i < parameters->len; i++)
+    {
+      GValue structure = { 0 };
+      GValue *tmp;
+      /* Points to the zeroed entry just after the end of the array
+       * - but we're about to extend the array to make it valid */
+      TpConnectionManagerParam *param = &g_array_index (output,
+          TpConnectionManagerParam, output->len);
+
+      g_value_init (&structure, TP_STRUCT_TYPE_PARAM_SPEC);
+      g_value_set_static_boxed (&structure, g_ptr_array_index (parameters, i));
+
+      g_array_set_size (output, output->len + 1);
+
+      if (!dbus_g_type_struct_get (&structure,
+            0, &param->name,
+            1, &param->flags,
+            2, &param->dbus_signature,
+            3, &tmp,
+            G_MAXUINT))
+        {
+          DEBUG ("Unparseable parameter #%d for %s, ignoring", i, protocol);
+          /* *shrug* that one didn't work, let's skip it */
+          g_array_set_size (output, output->len - 1);
+          continue;
+        }
+
+      g_value_init (&param->default_value,
+          G_VALUE_TYPE (tmp));
+      g_value_copy (tmp, &param->default_value);
+      g_value_unset (tmp);
+      g_free (tmp);
+
+      param->priv = NULL;
+
+      DEBUG ("\tParam name: %s", param->name);
+      DEBUG ("\tParam flags: 0x%x", param->flags);
+      DEBUG ("\tParam sig: %s", param->dbus_signature);
+
+      if ((!tp_strdiff (param->name, "password") ||
+          g_str_has_suffix (param->name, "-password")) &&
+          (param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET) == 0)
+        {
+          DEBUG ("\tTreating as secret due to its name (please fix %s)",
+              cm_debug_name);
+          param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
+        }
+
+#ifdef ENABLE_DEBUG
+        {
+          gchar *repr = g_strdup_value_contents (&(param->default_value));
+
+          DEBUG ("\tParam default value: %s of type %s", repr,
+              G_VALUE_TYPE_NAME (&(param->default_value)));
+          g_free (repr);
+        }
+#endif
+    }
+
+  return (TpConnectionManagerParam *) g_array_free (output, FALSE);
+}
+
 static void
 tp_protocol_get_property (GObject *object,
     guint property_id,
@@ -190,6 +271,12 @@ tp_protocol_constructed (GObject *object)
   if (self->priv->protocol_properties == NULL)
     self->priv->protocol_properties = g_hash_table_new_full (g_str_hash,
         g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+
+  self->priv->protocol_struct.params = tp_protocol_params_from_param_specs (
+        tp_asv_get_boxed (self->priv->protocol_properties,
+          TP_PROP_PROTOCOL_PARAMETERS,
+          TP_ARRAY_TYPE_PARAM_SPEC_LIST),
+        tp_proxy_get_bus_name (self), self->priv->protocol_struct.name);
 }
 
 static void
@@ -669,7 +756,7 @@ _tp_protocol_parse_rcc (GKeyFile *file,
 
 GHashTable *
 _tp_protocol_parse_manager_file (GKeyFile *file,
-    const gchar *cm_name,
+    const gchar *cm_debug_name,
     const gchar *group,
     gchar **protocol_name)
 {
@@ -743,7 +830,7 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
               (param.flags & TP_CONN_MGR_PARAM_FLAG_SECRET) == 0)
             {
               DEBUG ("\tTreating %s as secret due to its name (please "
-                  "fix %s.manager)", param.name, cm_name);
+                  "fix %s.manager)", param.name, cm_debug_name);
               param.flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
             }
 

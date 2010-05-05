@@ -602,87 +602,6 @@ tp_connection_manager_call_when_ready (TpConnectionManager *self,
 static void tp_connection_manager_continue_introspection
     (TpConnectionManager *self);
 
-/* this is NULL-safe for @parameters, and callers rely on this */
-static TpConnectionManagerParam *
-tp_connection_manager_params_from_param_specs (const GPtrArray *parameters,
-    const gchar *cm_name,
-    const gchar *protocol)
-{
-  GArray *output;
-  guint i;
-
-  DEBUG ("Protocol name: %s", protocol);
-
-  if (parameters == NULL)
-    {
-      return g_new0 (TpConnectionManagerParam, 1);
-    }
-
-  output = g_array_sized_new (TRUE, TRUE,
-      sizeof (TpConnectionManagerParam), parameters->len);
-
-  for (i = 0; i < parameters->len; i++)
-    {
-      GValue structure = { 0 };
-      GValue *tmp;
-      /* Points to the zeroed entry just after the end of the array
-       * - but we're about to extend the array to make it valid */
-      TpConnectionManagerParam *param = &g_array_index (output,
-          TpConnectionManagerParam, output->len);
-
-      g_value_init (&structure, TP_STRUCT_TYPE_PARAM_SPEC);
-      g_value_set_static_boxed (&structure, g_ptr_array_index (parameters, i));
-
-      g_array_set_size (output, output->len + 1);
-
-      if (!dbus_g_type_struct_get (&structure,
-            0, &param->name,
-            1, &param->flags,
-            2, &param->dbus_signature,
-            3, &tmp,
-            G_MAXUINT))
-        {
-          DEBUG ("Unparseable parameter #%d for %s, ignoring", i, protocol);
-          /* *shrug* that one didn't work, let's skip it */
-          g_array_set_size (output, output->len - 1);
-          continue;
-        }
-
-      g_value_init (&param->default_value,
-          G_VALUE_TYPE (tmp));
-      g_value_copy (tmp, &param->default_value);
-      g_value_unset (tmp);
-      g_free (tmp);
-
-      param->priv = NULL;
-
-      DEBUG ("\tParam name: %s", param->name);
-      DEBUG ("\tParam flags: 0x%x", param->flags);
-      DEBUG ("\tParam sig: %s", param->dbus_signature);
-
-      if ((!tp_strdiff (param->name, "password") ||
-          g_str_has_suffix (param->name, "-password")) &&
-          (param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET) == 0)
-        {
-          DEBUG ("\tTreating as secret due to its name (please fix %s)",
-              cm_name);
-          param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
-        }
-
-#ifdef ENABLE_DEBUG
-        {
-          gchar *repr = g_strdup_value_contents (&(param->default_value));
-
-          DEBUG ("\tParam default value: %s of type %s", repr,
-              G_VALUE_TYPE_NAME (&(param->default_value)));
-          g_free (repr);
-        }
-#endif
-    }
-
-  return (TpConnectionManagerParam *) g_array_free (output, FALSE);
-}
-
 static void
 tp_connection_manager_got_parameters (TpConnectionManager *self,
                                       const GPtrArray *parameters,
@@ -692,8 +611,7 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
 {
   gchar *protocol = user_data;
   TpProtocol *proto_object;
-  TpConnectionManagerProtocol *proto_struct;
-  TpConnectionManagerParam *param_structs;
+  GHashTable *immutables;
 
   g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PARAMETERS);
   g_assert (self->priv->introspection_call != NULL);
@@ -705,22 +623,16 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
       goto out;
     }
 
+  immutables = tp_asv_new (
+      TP_PROP_PROTOCOL_PARAMETERS, TP_ARRAY_TYPE_PARAM_SPEC_LIST, parameters,
+      NULL);
   proto_object = tp_protocol_new (tp_proxy_get_dbus_daemon (self),
-      self->name, protocol, NULL, NULL);
+      self->name, protocol, immutables, NULL);
+  g_hash_table_unref (immutables);
+
   /* tp_protocol_new can currently only fail because of malformed names,
    * and we already checked those */
   g_assert (proto_object != NULL);
-
-  proto_struct = _tp_protocol_get_struct (proto_object);
-  g_assert (!tp_strdiff (proto_struct->name, protocol));
-  /* just constructed, so this should be true (implementation detail
-   * of TpProtocol) */
-  g_assert (proto_struct->params == NULL);
-
-  param_structs = tp_connection_manager_params_from_param_specs (parameters,
-      self->name, protocol);
-  g_assert (param_structs != NULL);
-  proto_struct->params = param_structs;
 
   g_hash_table_insert (self->priv->found_protocols,
       g_strdup (protocol), proto_object);
@@ -857,33 +769,16 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
             {
               const gchar *name = k;
               GHashTable *protocol_properties = v;
-              TpProtocol *proto_object;
 
               if (tp_connection_manager_check_valid_protocol_name (name, NULL))
                 {
-                  TpConnectionManagerProtocol *proto_struct;
-                  TpConnectionManagerParam *param_structs;
-
-                  proto_object = tp_protocol_new (
+                  TpProtocol *proto_object = tp_protocol_new (
                       tp_proxy_get_dbus_daemon (self), self->name, name,
                       protocol_properties, NULL);
+
                   /* tp_protocol_new can currently only fail because of
                    * malformed names, and we already checked for that */
                   g_assert (proto_object != NULL);
-                  proto_struct = _tp_protocol_get_struct (proto_object);
-                  /* just constructed, so this should be true (implementation
-                   * detail of TpProtocol) */
-                  g_assert (proto_struct->params == NULL);
-
-                  param_structs =
-                    tp_connection_manager_params_from_param_specs (
-                        tp_asv_get_boxed (protocol_properties,
-                          TP_PROP_PROTOCOL_PARAMETERS,
-                          TP_ARRAY_TYPE_PARAM_SPEC_LIST),
-                        self->name, name);
-
-                  g_assert (param_structs != NULL);
-                  proto_struct->params = param_structs;
 
                   g_hash_table_insert (self->priv->found_protocols,
                       g_strdup (name), proto_object);
@@ -1140,7 +1035,6 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
   gchar **groups = NULL;
   gchar **group;
   TpProtocol *proto_object;
-  TpConnectionManagerProtocol *proto_struct;
   GHashTable *protocols = NULL;
   GStrv interfaces = NULL;
 
@@ -1165,7 +1059,6 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
     {
       gchar *name;
       GHashTable *immutables;
-      TpConnectionManagerParam *param_structs;
 
       immutables = _tp_protocol_parse_manager_file (file, cm_name, *group,
           &name);
@@ -1176,21 +1069,6 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
       proto_object = tp_protocol_new (dbus_daemon, cm_name, name,
           immutables, NULL);
       g_assert (proto_object != NULL);
-
-      proto_struct = _tp_protocol_get_struct (proto_object);
-      g_assert (!tp_strdiff (proto_struct->name, name));
-      /* just constructed, so this should be true (implementation detail
-       * of TpProtocol) */
-      g_assert (proto_struct->params == NULL);
-
-      param_structs =
-        tp_connection_manager_params_from_param_specs (
-            tp_asv_get_boxed (immutables, TP_PROP_PROTOCOL_PARAMETERS,
-              TP_ARRAY_TYPE_PARAM_SPEC_LIST),
-            cm_name, name);
-
-      g_assert (param_structs != NULL);
-      proto_struct->params = param_structs;
 
       /* steals @name */
       g_hash_table_insert (protocols, name, proto_object);
