@@ -7,6 +7,7 @@
  * notice and this notice are preserved.
  */
 
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/base-client.h>
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/debug.h>
@@ -32,6 +33,7 @@ typedef struct {
     TestTextChannelNull *text_chan_service;
 
     /* Client side objects */
+    TpAccountManager *account_mgr;
     TpClient *client;
     TpConnection *connection;
     TpAccount *account;
@@ -56,6 +58,9 @@ setup (Test *test,
 
   test->error = NULL;
   test->interfaces = NULL;
+
+  test->account_mgr = tp_account_manager_dup ();
+  g_assert (test->account_mgr != NULL);
 
   /* Claim AccountManager bus-name (needed as we're going to export an Account
    * object). */
@@ -84,8 +89,10 @@ setup (Test *test,
   g_assert (test->client != NULL);
 
   /* Create client-side Account object */
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_account_manager_ensure_account (test->account_mgr,
+      ACCOUNT_PATH);
   g_assert (test->account != NULL);
+  g_object_ref (test->account);
 
   /* Create (service and client sides) connection objects */
   test_create_and_connect_conn (SIMPLE_TYPE_CONNECTION, "me@test.com",
@@ -127,6 +134,8 @@ teardown (Test *test,
   g_clear_error (&test->error);
 
   g_strfreev (test->interfaces);
+
+  g_object_unref (test->account_mgr);
 
   g_object_unref (test->base_client);
   g_object_unref (test->client);
@@ -373,6 +382,8 @@ test_observer (Test *test,
   g_assert (test->simple_client->observe_ctx != NULL);
   g_assert (tp_observe_channels_context_is_recovering (
         test->simple_client->observe_ctx));
+
+  g_assert (test->simple_client->observe_ctx->account == test->account);
 
   /* Now call it with an invalid argument */
   tp_asv_set_boolean (info, "FAIL", TRUE);
