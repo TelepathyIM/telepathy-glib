@@ -847,18 +847,46 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
 
           DEBUG ("%u Protocols from D-Bus", g_hash_table_size (protocols));
 
+          g_assert (self->priv->found_protocols == NULL);
+          self->priv->found_protocols = g_hash_table_new_full (g_str_hash,
+              g_str_equal, g_free, g_object_unref);
+
           g_hash_table_iter_init (&iter, protocols);
 
           while (g_hash_table_iter_next (&iter, &k, &v))
             {
               const gchar *name = k;
               GHashTable *protocol_properties = v;
+              TpProtocol *proto_object;
 
               if (tp_connection_manager_check_valid_protocol_name (name, NULL))
                 {
-                  DEBUG ("Protocol: %s", name);
+                  TpConnectionManagerProtocol *proto_struct;
+                  TpConnectionManagerParam *param_structs;
 
-                  (void) protocol_properties;
+                  proto_object = tp_protocol_new (
+                      tp_proxy_get_dbus_daemon (self), self->name, name,
+                      protocol_properties, NULL);
+                  /* tp_protocol_new can currently only fail because of
+                   * malformed names, and we already checked for that */
+                  g_assert (proto_object != NULL);
+                  proto_struct = _tp_protocol_get_struct (proto_object);
+                  /* just constructed, so this should be true (implementation
+                   * detail of TpProtocol) */
+                  g_assert (proto_struct->params == NULL);
+
+                  param_structs =
+                    tp_connection_manager_params_from_param_specs (
+                        tp_asv_get_boxed (protocol_properties,
+                          TP_PROP_PROTOCOL_PARAMETERS,
+                          TP_ARRAY_TYPE_PARAM_SPEC_LIST),
+                        self->name, name);
+
+                  g_assert (param_structs != NULL);
+                  proto_struct->params = param_structs;
+
+                  g_hash_table_insert (self->priv->found_protocols,
+                      g_strdup (name), proto_object);
                 }
               else
                 {
@@ -900,21 +928,23 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 
   if (self->priv->introspection_step == INTROSPECT_GETTING_PROPERTIES)
     {
-      DEBUG ("calling ListProtocols on CM");
-      self->priv->introspection_step = INTROSPECT_LISTING_PROTOCOLS;
-      self->priv->introspection_call =
-        tp_cli_connection_manager_call_list_protocols (self, -1,
-            tp_connection_manager_got_protocols, NULL, NULL, NULL);
-      return;
+      g_assert (self->priv->pending_protocols == NULL);
+
+      if (self->priv->found_protocols == NULL)
+        {
+          DEBUG ("calling ListProtocols on CM");
+          self->priv->introspection_step = INTROSPECT_LISTING_PROTOCOLS;
+          self->priv->introspection_call =
+            tp_cli_connection_manager_call_list_protocols (self, -1,
+                tp_connection_manager_got_protocols, NULL, NULL, NULL);
+          return;
+        }
+      /* else we already found the protocols and their parameters, so behave
+       * as though we'd already called GetParameters n times */
     }
 
-  if (self->priv->introspection_step == INTROSPECT_LISTING_PROTOCOLS)
-    self->priv->introspection_step = INTROSPECT_GETTING_PARAMETERS;
-
-  g_assert (self->priv->pending_protocols != NULL);
-  g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PARAMETERS);
-
-  if (self->priv->pending_protocols->len == 0)
+  if (self->priv->pending_protocols == NULL ||
+      self->priv->pending_protocols->len == 0)
     {
       GHashTable *tmp;
       guint old;
@@ -936,15 +966,17 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
       tp_connection_manager_end_introspection (self, NULL);
 
       g_assert (self->priv->introspection_step == INTROSPECT_IDLE);
-      return;
     }
-
-  next_protocol = g_ptr_array_remove_index_fast (self->priv->pending_protocols,
-      0);
-  self->priv->introspection_call =
-      tp_cli_connection_manager_call_get_parameters (self, -1, next_protocol,
-          tp_connection_manager_got_parameters, next_protocol, g_free,
-          NULL);
+  else
+    {
+      next_protocol = g_ptr_array_remove_index_fast (
+          self->priv->pending_protocols, 0);
+      self->priv->introspection_step = INTROSPECT_GETTING_PARAMETERS;
+      self->priv->introspection_call =
+          tp_cli_connection_manager_call_get_parameters (self, -1,
+              next_protocol, tp_connection_manager_got_parameters,
+              next_protocol, g_free, NULL);
+    }
 }
 
 static void
