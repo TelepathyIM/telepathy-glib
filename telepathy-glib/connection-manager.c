@@ -776,6 +776,29 @@ tp_connection_manager_update_protocol_structs (TpConnectionManager *self)
 }
 
 static void
+tp_connection_manager_add_interfaces (TpConnectionManager *self,
+    const gchar * const * interfaces)
+{
+  if (interfaces == NULL)
+    return;
+
+  for (; *interfaces != NULL; interfaces++)
+    {
+      if (tp_dbus_check_valid_interface_name (*interfaces, NULL))
+        {
+          GQuark q = g_quark_from_string (*interfaces);
+
+          tp_proxy_add_interface_by_id ((TpProxy *) self, q);
+        }
+      else
+        {
+          DEBUG ("Ignoring invalid interface on %s: %s",
+              tp_proxy_get_object_path (self), *interfaces);
+        }
+    }
+}
+
+static void
 tp_connection_manager_get_all_cb (TpProxy *proxy,
     GHashTable *properties,
     const GError *error,
@@ -791,25 +814,10 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
 
   if (error == NULL)
     {
-      const gchar * const *interfaces;
       GHashTable *protocols;
 
-      for (interfaces = tp_asv_get_strv (properties, "Interfaces");
-          interfaces != NULL && *interfaces != NULL;
-          interfaces++)
-        {
-          if (tp_dbus_check_valid_interface_name (*interfaces, NULL))
-            {
-              GQuark q = g_quark_from_string (*interfaces);
-
-              tp_proxy_add_interface_by_id ((TpProxy *) self, q);
-            }
-          else
-            {
-              DEBUG ("Ignoring invalid interface on %s: %s",
-                  tp_proxy_get_object_path (self), *interfaces);
-            }
-        }
+      tp_connection_manager_add_interfaces (self,
+          tp_asv_get_strv (properties, "Interfaces"));
 
       protocols = tp_asv_get_boxed (properties, "Protocols",
           TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP);
@@ -1320,10 +1328,12 @@ parse_default_value (GValue *value,
 #define PROTOCOL_PREFIX_LEN 9
 tp_verify (sizeof (PROTOCOL_PREFIX) == PROTOCOL_PREFIX_LEN + 1);
 
-static GHashTable *
+static gboolean
 tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
     const gchar *cm_name,
     const gchar *filename,
+    GHashTable **protocols_out,
+    GStrv *interfaces_out,
     GError **error)
 {
   GKeyFile *file;
@@ -1333,11 +1343,16 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
   TpProtocol *proto_object;
   TpConnectionManagerProtocol *proto_struct;
   GHashTable *protocols = NULL;
+  GStrv interfaces = NULL;
 
   file = g_key_file_new ();
 
   if (!g_key_file_load_from_file (file, filename, G_KEY_FILE_NONE, error))
-    goto finally;
+    return FALSE;
+
+  /* if missing, it's not an error, so ignore @error */
+  interfaces = g_key_file_get_string_list (file, "ConnectionManager",
+      "Interfaces", NULL, NULL);
 
   protocols = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
       g_object_unref);
@@ -1345,7 +1360,7 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
   groups = g_key_file_get_groups (file, NULL);
 
   if (groups == NULL)
-    goto finally;
+    goto success;
 
   for (group = groups; *group != NULL; group++)
     {
@@ -1488,11 +1503,21 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
       g_hash_table_insert (protocols, g_strdup (name), proto_object);
     }
 
-finally:
+success:
   g_strfreev (groups);
   g_key_file_free (file);
 
-  return protocols;
+  if (protocols_out != NULL)
+    *protocols_out = protocols;
+  else
+    g_hash_table_unref (protocols);
+
+  if (interfaces_out != NULL)
+    *interfaces_out = interfaces;
+  else
+    g_strfreev (interfaces);
+
+  return TRUE;
 }
 
 static gboolean
@@ -1508,13 +1533,15 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
           self->priv->manager_file[0] != '\0')
         {
           GError *error = NULL;
-          GHashTable *protocols = tp_connection_manager_read_file (
+          GHashTable *protocols;
+          GStrv interfaces = NULL;
+
+          DEBUG ("Reading %s", self->priv->manager_file);
+
+          if (!tp_connection_manager_read_file (
               tp_proxy_get_dbus_daemon (self),
-              self->name, self->priv->manager_file, &error);
-
-          DEBUG ("Read %s", self->priv->manager_file);
-
-          if (protocols == NULL)
+              self->name, self->priv->manager_file, &protocols, &interfaces,
+              &error))
             {
               DEBUG ("Failed to load %s: %s", self->priv->manager_file,
                   error->message);
@@ -1523,6 +1550,10 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
             }
           else
             {
+              tp_connection_manager_add_interfaces (self,
+                  (const gchar * const *) interfaces);
+              g_strfreev (interfaces);
+
               self->priv->protocol_objects = protocols;
               tp_connection_manager_update_protocol_structs (self);
 
