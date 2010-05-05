@@ -86,6 +86,10 @@
  * will have been retrieved, either by activating the connection manager over
  * D-Bus or by reading the .manager file in which that information is cached.
  *
+ * Since 0.11.UNRELEASED, this feature also finds any extra interfaces that
+ * this connection manager has, and adds them to #TpProxy:interfaces (where
+ * they can be queried with tp_proxy_has_interface()).
+ *
  * (These are the same guarantees offered by the older
  * tp_connection_manager_call_when_ready() mechanism.)
  *
@@ -218,6 +222,13 @@ enum
  * Since: 0.7.1
  */
 
+typedef enum {
+    INTROSPECT_IDLE,
+    INTROSPECT_GETTING_PROPERTIES,
+    INTROSPECT_LISTING_PROTOCOLS,
+    INTROSPECT_GETTING_PARAMETERS
+} IntrospectionStep;
+
 struct _TpConnectionManagerPrivate {
     /* absolute path to .manager file */
     gchar *manager_file;
@@ -259,6 +270,9 @@ struct _TpConnectionManagerPrivate {
 
     /* list of WhenReadyContext */
     GList *waiting_for_ready;
+
+    /* things we introspected so far */
+    IntrospectionStep introspection_step;
 
     /* the method call currently pending, or NULL if none. */
     TpProxyPendingCall *introspection_call;
@@ -603,6 +617,7 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
 
   DEBUG ("Protocol name: %s", protocol);
 
+  g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PARAMETERS);
   g_assert (self->priv->introspection_call != NULL);
   self->priv->introspection_call = NULL;
 
@@ -705,6 +720,8 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
 {
   guint i;
 
+  self->priv->introspection_step = INTROSPECT_IDLE;
+
   if (self->priv->introspection_call != NULL)
     {
       tp_proxy_pending_call_cancel (self->priv->introspection_call);
@@ -759,11 +776,117 @@ tp_connection_manager_update_protocol_structs (TpConnectionManager *self)
 }
 
 static void
+tp_connection_manager_get_all_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer nil G_GNUC_UNUSED,
+    GObject *object G_GNUC_UNUSED)
+{
+  TpConnectionManager *self = (TpConnectionManager *) proxy;
+
+  g_assert (TP_IS_CONNECTION_MANAGER (self));
+  g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PROPERTIES);
+  g_assert (self->priv->introspection_call != NULL);
+  self->priv->introspection_call = NULL;
+
+  if (error == NULL)
+    {
+      const gchar * const *interfaces;
+      GHashTable *protocols;
+
+      for (interfaces = tp_asv_get_strv (properties, "Interfaces");
+          interfaces != NULL && *interfaces != NULL;
+          interfaces++)
+        {
+          if (tp_dbus_check_valid_interface_name (*interfaces, NULL))
+            {
+              GQuark q = g_quark_from_string (*interfaces);
+
+              tp_proxy_add_interface_by_id ((TpProxy *) self, q);
+            }
+          else
+            {
+              DEBUG ("Ignoring invalid interface on %s: %s",
+                  tp_proxy_get_object_path (self), *interfaces);
+            }
+        }
+
+      protocols = tp_asv_get_boxed (properties, "Protocols",
+          TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP);
+
+      if (protocols != NULL)
+        {
+          GHashTableIter iter;
+          gpointer k, v;
+
+          DEBUG ("%u Protocols from D-Bus", g_hash_table_size (protocols));
+
+          g_hash_table_iter_init (&iter, protocols);
+
+          while (g_hash_table_iter_next (&iter, &k, &v))
+            {
+              const gchar *name = k;
+              GHashTable *protocol_properties = v;
+
+              if (tp_connection_manager_check_valid_protocol_name (name, NULL))
+                {
+                  DEBUG ("Protocol: %s", name);
+
+                  (void) protocol_properties;
+                }
+              else
+                {
+                  INFO ("ignoring invalid Protocol name %s from %s",
+                      name, tp_proxy_get_object_path (self));
+                }
+            }
+        }
+    }
+  else
+    {
+      DEBUG ("Ignoring error getting ConnectionManager properties: %s %d: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+
+  tp_connection_manager_continue_introspection (self);
+}
+
+static void tp_connection_manager_got_protocols (TpConnectionManager *self,
+    const gchar **protocols,
+    const GError *error,
+    gpointer user_data,
+    GObject *user_object);
+
+static void
 tp_connection_manager_continue_introspection (TpConnectionManager *self)
 {
   gchar *next_protocol;
 
+  if (self->priv->introspection_step == INTROSPECT_IDLE)
+    {
+      DEBUG ("calling GetAll on CM");
+      self->priv->introspection_step = INTROSPECT_GETTING_PROPERTIES;
+      self->priv->introspection_call = tp_cli_dbus_properties_call_get_all (
+          self, -1, TP_IFACE_CONNECTION_MANAGER,
+          tp_connection_manager_get_all_cb, NULL, NULL, NULL);
+      return;
+    }
+
+  if (self->priv->introspection_step == INTROSPECT_GETTING_PROPERTIES)
+    {
+      DEBUG ("calling ListProtocols on CM");
+      self->priv->introspection_step = INTROSPECT_LISTING_PROTOCOLS;
+      self->priv->introspection_call =
+        tp_cli_connection_manager_call_list_protocols (self, -1,
+            tp_connection_manager_got_protocols, NULL, NULL, NULL);
+      return;
+    }
+
+  if (self->priv->introspection_step == INTROSPECT_LISTING_PROTOCOLS)
+    self->priv->introspection_step = INTROSPECT_GETTING_PARAMETERS;
+
   g_assert (self->priv->pending_protocols != NULL);
+  g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PARAMETERS);
 
   if (self->priv->pending_protocols->len == 0)
     {
@@ -786,6 +909,7 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 
       tp_connection_manager_end_introspection (self, NULL);
 
+      g_assert (self->priv->introspection_step == INTROSPECT_IDLE);
       return;
     }
 
@@ -868,10 +992,7 @@ tp_connection_manager_idle_introspect (gpointer data)
       (self->always_introspect ||
        self->info_source == TP_CM_INFO_SOURCE_NONE))
     {
-      DEBUG ("calling ListProtocols on CM");
-      self->priv->introspection_call =
-        tp_cli_connection_manager_call_list_protocols (self, -1,
-            tp_connection_manager_got_protocols, NULL, NULL, NULL);
+      tp_connection_manager_continue_introspection (self);
     }
 
   self->priv->introspect_idle_id = 0;
