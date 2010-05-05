@@ -400,19 +400,22 @@ tp_base_connection_manager_get_property (GObject *object,
         {
           GHashTable *map = g_hash_table_new_full (g_str_hash, g_str_equal,
               g_free, (GDestroyNotify) g_hash_table_unref);
-          GHashTable *empty = tp_asv_new (NULL, NULL);
           GHashTableIter iter;
-          gpointer name;
+          gpointer name, protocol;
 
           g_hash_table_iter_init (&iter, self->priv->protocols);
 
-          while (g_hash_table_iter_next (&iter, &name, NULL))
+          while (g_hash_table_iter_next (&iter, &name, &protocol))
             {
-              g_hash_table_insert (map, g_strdup (name),
-                  g_hash_table_ref (empty));
+              GHashTable *props;
+
+              g_object_get (protocol,
+                  "immutable-properties", &props,
+                  NULL);
+
+              g_hash_table_insert (map, g_strdup (name), props);
             }
 
-          g_hash_table_unref (empty);
           g_value_take_boxed (value, map);
         }
       break;
