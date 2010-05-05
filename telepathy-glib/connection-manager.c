@@ -602,32 +602,23 @@ tp_connection_manager_call_when_ready (TpConnectionManager *self,
 static void tp_connection_manager_continue_introspection
     (TpConnectionManager *self);
 
-static void
-tp_connection_manager_got_parameters (TpConnectionManager *self,
-                                      const GPtrArray *parameters,
-                                      const GError *error,
-                                      gpointer user_data,
-                                      GObject *user_object)
+/* this is NULL-safe for @parameters, and callers rely on this */
+static TpConnectionManagerParam *
+tp_connection_manager_params_from_param_specs (const GPtrArray *parameters,
+    const gchar *cm_name,
+    const gchar *protocol)
 {
-  gchar *protocol = user_data;
   GArray *output;
   guint i;
-  TpProtocol *proto_object;
-  TpConnectionManagerProtocol *proto_struct;
 
   DEBUG ("Protocol name: %s", protocol);
 
-  g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PARAMETERS);
-  g_assert (self->priv->introspection_call != NULL);
-  self->priv->introspection_call = NULL;
-
-  if (error != NULL)
+  if (parameters == NULL)
     {
-      DEBUG ("Error getting params for %s, skipping it", protocol);
-      goto out;
+      return g_new0 (TpConnectionManagerParam, 1);
     }
 
-   output = g_array_sized_new (TRUE, TRUE,
+  output = g_array_sized_new (TRUE, TRUE,
       sizeof (TpConnectionManagerParam), parameters->len);
 
   for (i = 0; i < parameters->len; i++)
@@ -674,7 +665,7 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
           (param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET) == 0)
         {
           DEBUG ("\tTreating as secret due to its name (please fix %s)",
-              self->name);
+              cm_name);
           param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
         }
 
@@ -689,6 +680,31 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
 #endif
     }
 
+  return (TpConnectionManagerParam *) g_array_free (output, FALSE);
+}
+
+static void
+tp_connection_manager_got_parameters (TpConnectionManager *self,
+                                      const GPtrArray *parameters,
+                                      const GError *error,
+                                      gpointer user_data,
+                                      GObject *user_object)
+{
+  gchar *protocol = user_data;
+  TpProtocol *proto_object;
+  TpConnectionManagerProtocol *proto_struct;
+  TpConnectionManagerParam *param_structs;
+
+  g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PARAMETERS);
+  g_assert (self->priv->introspection_call != NULL);
+  self->priv->introspection_call = NULL;
+
+  if (error != NULL)
+    {
+      DEBUG ("Error getting params for %s, skipping it", protocol);
+      goto out;
+    }
+
   proto_object = tp_protocol_new (tp_proxy_get_dbus_daemon (self),
       self->name, protocol, NULL, NULL);
   /* tp_protocol_new can currently only fail because of malformed names,
@@ -701,8 +717,10 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
    * of TpProtocol) */
   g_assert (proto_struct->params == NULL);
 
-  proto_struct->params =
-      (TpConnectionManagerParam *) g_array_free (output, FALSE);
+  param_structs = tp_connection_manager_params_from_param_specs (parameters,
+      self->name, protocol);
+  g_assert (param_structs != NULL);
+  proto_struct->params = param_structs;
 
   g_hash_table_insert (self->priv->found_protocols,
       g_strdup (protocol), proto_object);
