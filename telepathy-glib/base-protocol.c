@@ -389,12 +389,21 @@ tp_base_protocol_constructed (GObject *object)
 GHashTable *
 tp_base_protocol_get_immutable_properties (TpBaseProtocol *self)
 {
+  TpBaseProtocolClass *cls;
   GHashTable *table;
 
   g_return_val_if_fail (TP_IS_BASE_PROTOCOL (self), NULL);
 
+  cls = TP_BASE_PROTOCOL_GET_CLASS (self);
+
   table = tp_dbus_properties_mixin_make_properties_hash ((GObject *) self,
       TP_IFACE_PROTOCOL, "Parameters",
+      NULL);
+
+  if (cls->is_stub)
+    return table;
+
+  tp_dbus_properties_mixin_fill_properties_hash ((GObject *) self, table,
       TP_IFACE_PROTOCOL, "Interfaces",
       TP_IFACE_PROTOCOL, "ConnectionInterfaces",
       TP_IFACE_PROTOCOL, "RequestableChannelClasses",
