@@ -133,6 +133,67 @@ test_protocol_properties (Test *test,
   g_assert_cmpuint (arr->len, >=, 1);
 }
 
+static void
+test_protocols_property (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *properties = NULL;
+  GHashTable *protocols;
+  GHashTable *pp;
+  GPtrArray *arr;
+  GValueArray *va;
+  GHashTable *fixed;
+
+  tp_cli_dbus_properties_run_get_all (test->cm, -1,
+      TP_IFACE_CONNECTION_MANAGER, &properties, &test->error, NULL);
+  test_assert_no_error (test->error);
+
+  g_assert (tp_asv_lookup (properties, "Interfaces") != NULL);
+  test_assert_strv_equals (tp_asv_get_boxed (properties, "Interfaces",
+        G_TYPE_STRV), no_interfaces);
+
+  protocols = tp_asv_get_boxed (properties, "Protocols",
+      TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP);
+  g_assert (protocols != NULL);
+  g_assert_cmpuint (g_hash_table_size (protocols), ==, 1);
+
+  pp = g_hash_table_lookup (protocols, "example");
+  g_assert (pp != NULL);
+
+  test_assert_strv_equals (tp_asv_get_boxed (pp, TP_PROP_PROTOCOL_INTERFACES,
+        G_TYPE_STRV), no_interfaces);
+
+  g_assert_cmpstr (tp_asv_get_string (pp, TP_PROP_PROTOCOL_ICON), ==,
+      "im-icq");
+  g_assert_cmpstr (tp_asv_get_string (pp, TP_PROP_PROTOCOL_ENGLISH_NAME), ==,
+      "Echo II example");
+  g_assert_cmpstr (tp_asv_get_string (pp, TP_PROP_PROTOCOL_VCARD_FIELD), ==,
+      "x-telepathy-example");
+
+  test_assert_strv_equals (tp_asv_get_boxed (pp,
+        TP_PROP_PROTOCOL_CONNECTION_INTERFACES, G_TYPE_STRV),
+      expected_interfaces);
+
+  arr = tp_asv_get_boxed (pp, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
+      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
+  g_assert (arr != NULL);
+  g_assert_cmpuint (arr->len, ==, 1);
+
+  va = g_ptr_array_index (arr, 0);
+  g_assert (G_VALUE_HOLDS (va->values + 0, TP_HASH_TYPE_CHANNEL_CLASS));
+  g_assert (G_VALUE_HOLDS (va->values + 1, G_TYPE_STRV));
+
+  fixed = g_value_get_boxed (va->values + 0);
+  g_assert_cmpstr (tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
+      TP_IFACE_CHANNEL_TYPE_TEXT);
+
+  arr = tp_asv_get_boxed (pp, TP_PROP_PROTOCOL_PARAMETERS,
+      TP_ARRAY_TYPE_PARAM_SPEC_LIST);
+  g_assert (arr != NULL);
+  g_assert_cmpuint (arr->len, >=, 1);
+
+}
+
 int
 main (int argc,
       char **argv)
@@ -142,6 +203,8 @@ main (int argc,
 
   g_test_add ("/protocol-objects/protocol-properties", Test, NULL, setup,
       test_protocol_properties, teardown);
+  g_test_add ("/protocol-objects/protocols-property", Test, NULL, setup,
+      test_protocols_property, teardown);
 
   return g_test_run ();
 }
