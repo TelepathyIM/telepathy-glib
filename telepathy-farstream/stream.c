@@ -3061,11 +3061,9 @@ cb_fs_component_state_changed (TfStream *self,
       break;
     case FS_STREAM_STATE_GATHERING:
     case FS_STREAM_STATE_CONNECTING:
-    case FS_STREAM_STATE_CONNECTED:
-      state_str = "connecting";
       state = TP_MEDIA_STREAM_STATE_CONNECTING;
       break;
-    case FS_STREAM_STATE_READY:
+    case FS_STREAM_STATE_CONNECTED:
     default:
       state_str = "connected";
       state = TP_MEDIA_STREAM_STATE_CONNECTED;
