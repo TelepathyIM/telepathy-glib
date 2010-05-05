@@ -126,6 +126,11 @@ test_protocol_properties (Test *test,
   fixed = g_value_get_boxed (va->values + 0);
   g_assert_cmpstr (tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
+
+  arr = tp_asv_get_boxed (properties, "Parameters",
+      TP_ARRAY_TYPE_PARAM_SPEC_LIST);
+  g_assert (arr != NULL);
+  g_assert_cmpuint (arr->len, >=, 1);
 }
 
 int
