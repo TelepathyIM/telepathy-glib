@@ -710,12 +710,9 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       goto out;
     }
 
-  account = tp_account_new (self->priv->dbus, account_path, &error);
-  if (account == NULL)
-    {
-      DEBUG ("Failed to create TpAccount: %s", error->message);
-      goto out;
-    }
+  account = tp_account_manager_ensure_account (self->priv->account_mgr,
+      account_path);
+  g_object_ref (account);
 
   connection = tp_connection_new (self->priv->dbus, NULL, connection_path,
       &error);
