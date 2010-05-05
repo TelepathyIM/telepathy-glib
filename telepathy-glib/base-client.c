@@ -74,6 +74,7 @@
 
 #include "telepathy-glib/base-client.h"
 
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/interfaces.h>
@@ -135,6 +136,8 @@ struct _TpBaseClientPrivate
 
   gchar *bus_name;
   gchar *object_path;
+
+  TpAccountManager *account_mgr;
 };
 
 static GHashTable *
@@ -320,6 +323,12 @@ tp_base_client_dispose (GObject *object)
       self->priv->dbus = NULL;
     }
 
+  if (self->priv->account_mgr != NULL)
+    {
+      g_object_unref (self->priv->account_mgr);
+      self->priv->account_mgr = NULL;
+    }
+
   if (dispose != NULL)
     dispose (object);
 }
@@ -411,6 +420,7 @@ tp_base_client_constructed (GObject *object)
     ((GObjectClass *) tp_base_client_parent_class)->constructed;
   GString *string;
   static guint unique_counter = 0;
+  TpDBusDaemon *dbus;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -438,6 +448,20 @@ tp_base_client_constructed (GObject *object)
   g_strdelimit (self->priv->object_path, ".", '/');
 
   self->priv->bus_name = g_string_free (string, FALSE);
+
+  dbus = tp_dbus_daemon_dup (NULL);
+  if (self->priv->dbus == dbus)
+    {
+      /* The AM is guaranteed to be the one from tp_account_manager_dup() */
+      self->priv->account_mgr = tp_account_manager_dup ();
+    }
+  else
+    {
+      /* No guarantee, create a new AM */
+      self->priv->account_mgr = tp_account_manager_new (self->priv->dbus);
+    }
+
+  g_object_unref (dbus);
 }
 
 typedef enum {
