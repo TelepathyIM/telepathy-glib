@@ -77,6 +77,7 @@
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/dbus-internal.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/observe-channels-context-internal.h>
 #include <telepathy-glib/svc-client.h>
@@ -420,7 +421,6 @@ tp_base_client_constructed (GObject *object)
     ((GObjectClass *) tp_base_client_parent_class)->constructed;
   GString *string;
   static guint unique_counter = 0;
-  TpDBusDaemon *dbus;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -449,8 +449,7 @@ tp_base_client_constructed (GObject *object)
 
   self->priv->bus_name = g_string_free (string, FALSE);
 
-  dbus = tp_dbus_daemon_dup (NULL);
-  if (self->priv->dbus == dbus)
+  if (_tp_dbus_daemon_is_the_shared_one (self->priv->dbus))
     {
       /* The AM is guaranteed to be the one from tp_account_manager_dup() */
       self->priv->account_mgr = tp_account_manager_dup ();
@@ -460,8 +459,6 @@ tp_base_client_constructed (GObject *object)
       /* No guarantee, create a new AM */
       self->priv->account_mgr = tp_account_manager_new (self->priv->dbus);
     }
-
-  g_object_unref (dbus);
 }
 
 typedef enum {
