@@ -1425,5 +1425,11 @@ tp_dbus_daemon_class_init (TpDBusDaemonClass *klass)
   proxy_class->interface = TP_IFACE_QUARK_DBUS_DAEMON;
 }
 
+gboolean
+_tp_dbus_daemon_is_the_shared_one (TpDBusDaemon *self)
+{
+  return (self != NULL && self == starter_bus_daemon);
+}
+
 /* Auto-generated implementation of _tp_register_dbus_glib_marshallers */
 #include "_gen/register-dbus-glib-marshallers-body.h"
