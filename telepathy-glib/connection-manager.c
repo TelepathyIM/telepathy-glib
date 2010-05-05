@@ -79,7 +79,11 @@
  * Expands to a call to a function that returns a quark for the "core" feature
  * on a #TpConnectionManager.
  *
- * When this feature is prepared, [...]
+ * After this feature is prepared, basic information about the connection
+ * manager's protocols (tp_connection_manager_get_protocol() and
+ * tp_connection_manager_dup_protocol_names()), and their available parameters,
+ * will have been retrieved, either by activating the connection manager over
+ * D-Bus or by reading the .manager file in which that information is cached.
  *
  * (These are the same guarantees offered by the older
  * tp_connection_manager_call_when_ready() mechanism.)
