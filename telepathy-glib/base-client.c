@@ -714,13 +714,13 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       account_path);
   g_object_ref (account);
 
-  connection = tp_connection_new (self->priv->dbus, NULL, connection_path,
-      &error);
+  connection = tp_account_ensure_connection (account, connection_path);
   if (connection == NULL)
     {
-      DEBUG ("Failed to create TpConnection: %s", error->message);
+      DEBUG ("Failed to create TpConnection");
       goto out;
     }
+  g_object_ref (connection);
 
   channels = g_ptr_array_sized_new (channels_arr->len);
   g_ptr_array_set_free_func (channels, g_object_unref);
