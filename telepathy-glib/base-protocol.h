@@ -130,6 +130,8 @@ struct _TpBaseProtocolClass
   TpBaseProtocolClassPrivate *priv;
 };
 
+GHashTable *tp_base_protocol_get_immutable_properties (TpBaseProtocol *self);
+
 const TpCMParamSpec *tp_base_protocol_get_parameters (TpBaseProtocol *self);
 
 TpBaseConnection *tp_base_protocol_new_connection (TpBaseProtocol *self,

@@ -327,6 +327,7 @@ struct _TpBaseProtocolPrivate
 enum
 {
     PROP_NAME = 1,
+    PROP_IMMUTABLE_PROPERTIES,
     N_PROPS
 };
 
@@ -364,6 +365,50 @@ tp_base_protocol_constructed (GObject *object)
     }
 }
 
+/**
+ * tp_base_protocol_get_immutable_properties:
+ * @self: a Protocol
+ *
+ * Return a basic set of immutable properties for this Protocol object,
+ * by using tp_dbus_properties_mixin_make_properties_hash().
+ *
+ * Additional keys and values can be inserted into the returned hash table;
+ * if this is done, the inserted keys and values will be freed when the
+ * hash table is destroyed. The keys must be allocated with g_strdup() or
+ * equivalent, and the values must be slice-allocated (for instance with
+ * tp_g_value_slice_new_string() or a similar function).
+ *
+ * Note that in particular, tp_asv_set_string() and similar functions should
+ * not be used with this hash table.
+ *
+ * Returns: a hash table mapping (gchar *) fully-qualified property names to
+ *          GValues, which must be freed by the caller (at which point its
+ *          contents will also be freed).
+ */
+
+GHashTable *
+tp_base_protocol_get_immutable_properties (TpBaseProtocol *self)
+{
+  GHashTable *table;
+
+  g_return_val_if_fail (TP_IS_BASE_PROTOCOL (self), NULL);
+
+  table = tp_dbus_properties_mixin_make_properties_hash ((GObject *) self,
+      TP_IFACE_PROTOCOL, "Parameters",
+      TP_IFACE_PROTOCOL, "Interfaces",
+      TP_IFACE_PROTOCOL, "ConnectionInterfaces",
+      TP_IFACE_PROTOCOL, "RequestableChannelClasses",
+      TP_IFACE_PROTOCOL, "VCardField",
+      TP_IFACE_PROTOCOL, "EnglishName",
+      TP_IFACE_PROTOCOL, "Icon",
+      NULL);
+
+  /* FIXME: when we support avatar requirements, etc., we could use
+   * tp_dbus_properties_mixin_fill_properties_hash() for them */
+
+  return table;
+}
+
 static void
 tp_base_protocol_get_property (GObject *object,
     guint property_id,
@@ -376,6 +421,11 @@ tp_base_protocol_get_property (GObject *object,
     {
     case PROP_NAME:
       g_value_set_string (value, self->priv->name);
+      break;
+
+    case PROP_IMMUTABLE_PROPERTIES:
+      g_value_take_boxed (value,
+          tp_base_protocol_get_immutable_properties (self));
       break;
 
     default:
@@ -528,6 +578,32 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
         "The Protocol from telepathy-spec, such as 'jabber' or 'local-xmpp'",
         NULL,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpBaseProtocol:immutable-properties:
+   *
+   * The D-Bus properties to be announced in the ConnectionManager
+   * interface's Protocols property, as a map from
+   * interface.name.propertyname to GValue.
+   *
+   * A protocol's immutable properties are constant for its lifetime on the
+   * bus, so this property should never change. All of the D-Bus
+   * properties mentioned here should also be exposed through the D-Bus
+   * properties interface.
+   *
+   * The #TpBaseProtocol base class implements this property to be correct
+   * for the basic set of properties. It can be reimplemented by
+   * subclasses to have more immutable properties; if so, the subclass
+   * should use tp_base_protocol_get_immutable_properties(),
+   * then augment the result using
+   * tp_dbus_properties_mixin_fill_properties_hash().
+   */
+  g_object_class_install_property (object_class, PROP_IMMUTABLE_PROPERTIES,
+      g_param_spec_boxed ("immutable-properties",
+        "Immutable properties",
+        "The protocol's immutable properties",
+          TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
