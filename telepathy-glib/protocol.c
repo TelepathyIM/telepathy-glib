@@ -72,11 +72,13 @@ G_DEFINE_TYPE(TpProtocol, tp_protocol, TP_TYPE_PROXY);
 struct _TpProtocolPrivate
 {
   TpConnectionManagerProtocol protocol_struct;
+  GHashTable *protocol_properties;
 };
 
 enum
 {
     PROP_PROTOCOL_NAME = 1,
+    PROP_PROTOCOL_PROPERTIES,
     N_PROPS
 };
 
@@ -92,6 +94,10 @@ tp_protocol_get_property (GObject *object,
     {
     case PROP_PROTOCOL_NAME:
       g_value_set_string (value, self->priv->protocol_struct.name);
+      break;
+
+    case PROP_PROTOCOL_PROPERTIES:
+      g_value_set_boxed (value, self->priv->protocol_properties);
       break;
 
     default:
@@ -113,6 +119,11 @@ tp_protocol_set_property (GObject *object,
     case PROP_PROTOCOL_NAME:
       g_assert (self->priv->protocol_struct.name == NULL);
       self->priv->protocol_struct.name = g_value_dup_string (value);
+      break;
+
+    case PROP_PROTOCOL_PROPERTIES:
+      g_assert (self->priv->protocol_properties == NULL);
+      self->priv->protocol_properties = g_value_dup_boxed (value);
       break;
 
     default:
@@ -157,8 +168,28 @@ tp_protocol_finalize (GObject *object)
 
   _tp_connection_manager_protocol_free_contents (&self->priv->protocol_struct);
 
+  if (self->priv->protocol_properties != NULL)
+    g_hash_table_unref (self->priv->protocol_properties);
+
   if (finalize != NULL)
     finalize (object);
+}
+
+static void
+tp_protocol_constructed (GObject *object)
+{
+  TpProtocol *self = (TpProtocol *) object;
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) tp_protocol_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  g_assert (self->priv->protocol_struct.name != NULL);
+
+  if (self->priv->protocol_properties == NULL)
+    self->priv->protocol_properties = g_hash_table_new_full (g_str_hash,
+        g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
 }
 
 static void
@@ -169,6 +200,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpProtocolPrivate));
 
+  object_class->constructed = tp_protocol_constructed;
   object_class->get_property = tp_protocol_get_property;
   object_class->set_property = tp_protocol_set_property;
   object_class->finalize = tp_protocol_finalize;
@@ -178,6 +210,13 @@ tp_protocol_class_init (TpProtocolClass *klass)
         "Name of this protocol",
         "The Protocol from telepathy-spec, such as 'jabber' or 'local-xmpp'",
         NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_PROTOCOL_PROPERTIES,
+      g_param_spec_boxed ("protocol-properties",
+        "Protocol properties",
+        "The immutable properties of this Protocol",
+        TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   proxy_class->must_have_unique_name = FALSE;
@@ -197,8 +236,7 @@ tp_protocol_init (TpProtocol *self)
  * @dbus: proxy for the D-Bus daemon; may not be %NULL
  * @cm_name: the connection manager name (such as "gabble")
  * @protocol_name: the protocol name (such as "jabber")
- * @immutable_properties: the immutable D-Bus properties for this protocol,
- *  if available (currently unused)
+ * @immutable_properties: the immutable D-Bus properties for this protocol
  * @error: used to indicate the error if %NULL is returned
  *
  * <!-- -->
@@ -211,7 +249,7 @@ TpProtocol *
 tp_protocol_new (TpDBusDaemon *dbus,
     const gchar *cm_name,
     const gchar *protocol_name,
-    const GHashTable *immutable_properties G_GNUC_UNUSED,
+    const GHashTable *immutable_properties,
     GError **error)
 {
   TpProtocol *ret = NULL;
@@ -237,6 +275,7 @@ tp_protocol_new (TpDBusDaemon *dbus,
         "bus-name", bus_name,
         "object-path", object_path,
         "protocol-name", protocol_name,
+        "protocol-properties", immutable_properties,
         NULL));
 
 finally:
