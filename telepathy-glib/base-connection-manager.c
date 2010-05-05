@@ -280,6 +280,7 @@ enum
 {
     PROP_DBUS_DAEMON = 1,
     PROP_INTERFACES,
+    PROP_PROTOCOLS,
     N_PROPS
 };
 
@@ -395,6 +396,27 @@ tp_base_connection_manager_get_property (GObject *object,
       g_value_set_boxed (value, cls->interfaces);
       break;
 
+    case PROP_PROTOCOLS:
+        {
+          GHashTable *map = g_hash_table_new_full (g_str_hash, g_str_equal,
+              g_free, (GDestroyNotify) g_hash_table_unref);
+          GHashTable *empty = tp_asv_new (NULL, NULL);
+          GHashTableIter iter;
+          gpointer name;
+
+          g_hash_table_iter_init (&iter, self->priv->protocols);
+
+          while (g_hash_table_iter_next (&iter, &name, NULL))
+            {
+              g_hash_table_insert (map, g_strdup (name),
+                  g_hash_table_ref (empty));
+            }
+
+          g_hash_table_unref (empty);
+          g_value_take_boxed (value, map);
+        }
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -432,6 +454,7 @@ static void
 tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl cm_properties[] = {
+      { "Protocols", "protocols", NULL },
       { "Interfaces", "interfaces", NULL },
       { NULL }
   };
@@ -477,6 +500,21 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
         "The set of D-Bus interfaces available on this ConnectionManager, "
         "other than ConnectionManager itself",
         G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpBaseConnectionManager:protocols:
+   *
+   * The Protocol objects available on this ConnectionManager.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_PROTOCOLS,
+      g_param_spec_boxed ("protocols",
+        "ConnectionManager.Protocols",
+        "The set of protocols available on this Connection, other than "
+        "ConnectionManager itself",
+        TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP,
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
    * TpBaseConnectionManager::no-more-connections:
