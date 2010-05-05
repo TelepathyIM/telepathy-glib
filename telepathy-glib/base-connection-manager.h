@@ -66,8 +66,9 @@ struct _TpBaseConnectionManagerClass {
     const TpCMProtocolSpec *protocol_params;
     TpBaseConnectionManagerNewConnFunc new_connection;
 
+    const gchar * const *interfaces;
+
     /*<private>*/
-    gpointer _future1;
     gpointer _future2;
     gpointer _future3;
     gpointer _future4;

@@ -212,12 +212,15 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  *  whose name member is %NULL; or %NULL if this CM uses Protocol objects.
  * @new_connection: A #TpBaseConnectionManagerNewConnFunc used to construct
  *  new connections, or %NULL if this CM uses Protocol objects.
+ * @interfaces: A #GStrv of extra D-Bus interfaces implemented
+ *  by instances of this class, which may be filled in by subclasses. The
+ *  default is to list no additional interfaces. Since: 0.11.UNRELEASED
  *
  * The class structure for #TpBaseConnectionManager.
  *
- * In addition to the fields documented here, there are four gpointer fields
+ * In addition to the fields documented here, there are some gpointer fields
  * which must currently be %NULL (a meaning may be defined for these in a
- * future version of telepathy-glib), and a pointer to opaque private data.
+ * future version of telepathy-glib).
  *
  * Changed in 0.7.1: it is a fatal error for @cm_dbus_name not to conform to
  * the specification.
@@ -254,6 +257,8 @@ static void service_iface_init (gpointer, gpointer);
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnectionManager,
     tp_base_connection_manager,
     G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_MANAGER,
         service_iface_init))
 
@@ -274,6 +279,7 @@ struct _TpBaseConnectionManagerPrivate
 enum
 {
     PROP_DBUS_DAEMON = 1,
+    PROP_INTERFACES,
     N_PROPS
 };
 
@@ -376,11 +382,17 @@ tp_base_connection_manager_get_property (GObject *object,
     GParamSpec *pspec)
 {
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (object);
+  TpBaseConnectionManagerClass *cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (
+      object);
 
   switch (property_id)
     {
     case PROP_DBUS_DAEMON:
       g_value_set_object (value, self->priv->dbus_daemon);
+      break;
+
+    case PROP_INTERFACES:
+      g_value_set_boxed (value, cls->interfaces);
       break;
 
     default:
@@ -419,6 +431,10 @@ tp_base_connection_manager_set_property (GObject *object,
 static void
 tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
 {
+  static TpDBusPropertiesMixinPropImpl cm_properties[] = {
+      { "Interfaces", "interfaces", NULL },
+      { NULL }
+  };
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TpBaseConnectionManagerPrivate));
@@ -448,6 +464,21 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
+   * TpBaseConnectionManager:interfaces:
+   *
+   * The set of D-Bus interfaces available on this ConnectionManager, other
+   * than ConnectionManager itself.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_INTERFACES,
+      g_param_spec_boxed ("interfaces",
+        "ConnectionManager.Interfaces",
+        "The set of D-Bus interfaces available on this ConnectionManager, "
+        "other than ConnectionManager itself",
+        G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
    * TpBaseConnectionManager::no-more-connections:
    *
    * Emitted when the table of active connections becomes empty.
@@ -462,6 +493,12 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
+
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CONNECTION_MANAGER,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      cm_properties);
 }
 
 static void
