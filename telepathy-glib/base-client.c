@@ -124,6 +124,8 @@ struct _TpBaseClientClassPrivate {
 
 static void observer_iface_init (gpointer, gpointer);
 static void approver_iface_init (gpointer, gpointer);
+static void handler_iface_init (gpointer, gpointer);
+static void requests_iface_init (gpointer, gpointer);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
@@ -131,6 +133,9 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT, NULL);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_OBSERVER, observer_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_APPROVER, approver_iface_init);
+    G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_HANDLER, handler_iface_init);
+    G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS,
+      requests_iface_init);
     g_type_add_class_private (g_define_type_id, sizeof (
         TpBaseClientClassPrivate)))
 
@@ -344,6 +349,143 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
   g_ptr_array_add (self->priv->approver_filters, filter);
 }
 
+void
+tp_base_client_be_a_handler (TpBaseClient *self)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  self->priv->flags |= CLIENT_IS_HANDLER;
+}
+
+void
+tp_base_client_add_handler_filter (TpBaseClient *self,
+    GHashTable *filter)
+{
+  g_return_if_fail (filter != NULL);
+  tp_base_client_take_handler_filter (self,
+      _tp_base_client_copy_filter (filter));
+}
+
+void
+tp_base_client_take_handler_filter (TpBaseClient *self,
+    GHashTable *filter)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  self->priv->flags |= CLIENT_IS_HANDLER;
+  g_ptr_array_add (self->priv->handler_filters, filter);
+}
+
+void
+tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
+    gboolean bypass_approval)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  self->priv->flags |= (CLIENT_IS_HANDLER | CLIENT_HANDLER_BYPASSES_APPROVAL);
+}
+
+void
+tp_base_client_set_handler_request_notification (TpBaseClient *self)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  self->priv->flags |= (CLIENT_IS_HANDLER | CLIENT_HANDLER_WANTS_REQUESTS);
+}
+
+static void
+_tp_base_client_add_handler_capability (TpBaseClient *self,
+    const gchar *token)
+{
+  self->priv->flags |= CLIENT_IS_HANDLER;
+
+  g_assert (g_ptr_array_index (self->priv->handler_caps,
+        self->priv->handler_caps->len - 1) == NULL);
+  g_ptr_array_index (self->priv->handler_caps,
+      self->priv->handler_caps->len - 1) = g_strdup (token);
+  g_ptr_array_add (self->priv->handler_caps, NULL);
+}
+
+/**
+ * tp_base_client_add_handler_capability:
+ * @self: a client, which must not have been registered with
+ *  tp_base_client_register() yet
+ * @token: a capability token as defined by the Telepathy D-Bus API
+ *  Specification
+ *
+ * Add one capability token to this client, as if via
+ * tp_base_client_add_handler_capabilities().
+ */
+void
+tp_base_client_add_handler_capability (TpBaseClient *self,
+    const gchar *token)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  _tp_base_client_add_handler_capability (self, token);
+}
+
+/**
+ * tp_base_client_add_handler_capabilities:
+ * @self: a client, which must not have been registered with
+ *  tp_base_client_register() yet
+ * @tokens: (array zero-terminated=1) (element-type utf8): capability
+ *  tokens as defined by the Telepathy D-Bus API Specification
+ *
+ * Add several capability tokens to this client. These are used to signal
+ * that Telepathy connection managers should advertise certain capabilities
+ * to other contacts, such as the ability to receive audio/video calls using
+ * particular streaming protocols and codecs.
+ */
+void
+tp_base_client_add_handler_capabilities (TpBaseClient *self,
+    const gchar * const *tokens)
+{
+  const gchar * const *iter;
+
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  if (tokens == NULL)
+    return;
+
+  for (iter = tokens; *iter != NULL; iter++)
+    _tp_base_client_add_handler_capability (self, *iter);
+}
+
+/**
+ * tp_base_client_add_handler_capabilities_varargs: (skip)
+ * @self: a client, which must not have been registered with
+ *  tp_base_client_register() yet
+ * @first_token: a capability token from the Telepathy D-Bus API Specification
+ * @...: more tokens, ending with %NULL
+ *
+ * Convenience C API equivalent to calling
+ * tp_base_client_add_handler_capability() for each capability token.
+ */
+void
+tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
+    const gchar *first_token, ...)
+{
+  va_list ap;
+  const gchar *token = first_token;
+
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  va_start (ap, first_token);
+
+  for (token = first_token; token != NULL; token = va_arg (ap, gchar *))
+    _tp_base_client_add_handler_capability (self, token);
+
+  va_end (ap);
+}
+
 /**
  * tp_base_client_register:
  * @self: a #TpBaseClient, which must not have been registered with
@@ -385,6 +527,33 @@ tp_base_client_register (TpBaseClient *self,
   self->priv->registered = TRUE;
 
   return TRUE;
+}
+
+/**
+ * Only works after tp_base_client_set_handler_request_notification().
+ *
+ * Returns: (transfer container) (element-type Tp.ChannelRequest): the
+ *  requests
+ */
+GList *
+tp_base_client_get_pending_requests (TpBaseClient *self)
+{
+  /* FIXME */
+  return NULL;
+}
+
+/**
+ * Returns the set of channels currently handled by this base client or by any
+ * other #TpBaseClient with which it shares a unique name.
+ *
+ * Returns: (transfer container) (element-type Tp.Channel): the handled
+ *  channels
+ */
+GList *
+tp_base_client_get_handled_channels (TpBaseClient *self)
+{
+  /* FIXME */
+  return NULL;
 }
 
 static void
@@ -607,6 +776,35 @@ tp_base_client_get_dbus_properties (GObject *object,
       g_value_set_boxed (value, self->priv->approver_filters);
       break;
 
+    case DP_HANDLER_CHANNEL_FILTER:
+      g_value_set_boxed (value, self->priv->handler_filters);
+      break;
+
+    case DP_BYPASS_APPROVAL:
+      g_value_set_boolean (value,
+          (self->priv->flags & CLIENT_HANDLER_BYPASSES_APPROVAL) != 0);
+      break;
+
+    case DP_CAPABILITIES:
+      /* this is already NULL-terminated */
+      g_value_set_boxed (value, (GStrv) self->priv->handler_caps->pdata);
+      break;
+
+    case DP_HANDLED_CHANNELS:
+        {
+          GList *channels = tp_base_client_get_handled_channels (self);
+          GList *iter;
+          GPtrArray *arr = g_ptr_array_sized_new (g_list_length (channels));
+
+          for (iter = channels; iter != NULL; iter = iter->next)
+            g_ptr_array_add (arr,
+                g_strdup (tp_proxy_get_object_path (iter->data)));
+
+          g_value_take_boxed (value, arr);
+          g_list_free (channels);
+        }
+      break;
+
     case DP_OBSERVER_RECOVER:
       g_value_set_boolean (value,
           (self->priv->flags & CLIENT_OBSERVER_RECOVER) != 0);
@@ -623,6 +821,17 @@ tp_base_client_class_init (TpBaseClientClass *cls)
   GParamSpec *param_spec;
   static TpDBusPropertiesMixinPropImpl client_properties[] = {
         { "Interfaces", GINT_TO_POINTER (DP_INTERFACES) },
+        { NULL }
+  };
+  static TpDBusPropertiesMixinPropImpl handler_properties[] = {
+        { "HandlerChannelFilter",
+          GINT_TO_POINTER (DP_HANDLER_CHANNEL_FILTER) },
+        { "BypassApproval",
+          GINT_TO_POINTER (DP_BYPASS_APPROVAL) },
+        { "Capabilities",
+          GINT_TO_POINTER (DP_CAPABILITIES) },
+        { "HandledChannels",
+          GINT_TO_POINTER (DP_HANDLED_CHANNELS) },
         { NULL }
   };
   static TpDBusPropertiesMixinPropImpl approver_properties[] = {
@@ -644,6 +853,8 @@ tp_base_client_class_init (TpBaseClientClass *cls)
           observer_properties },
         { TP_IFACE_CLIENT_APPROVER, tp_base_client_get_dbus_properties, NULL,
           approver_properties },
+        { TP_IFACE_CLIENT_HANDLER, tp_base_client_get_dbus_properties, NULL,
+          handler_properties },
         { NULL }
   };
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
@@ -1090,6 +1301,62 @@ approver_iface_init (gpointer g_iface,
 #define IMPLEMENT(x) tp_svc_client_approver_implement_##x (\
   g_iface, _tp_base_client_##x)
   IMPLEMENT (add_dispatch_operation);
+#undef IMPLEMENT
+}
+
+static void
+_tp_base_client_handle_channels (TpSvcClientHandler *iface,
+    const gchar *account,
+    const gchar *connection,
+    const GPtrArray *channels,
+    const GPtrArray *requests,
+    guint64 user_action_time,
+    GHashTable *handler_info,
+    DBusGMethodInvocation *context)
+{
+  /* FIXME */
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+handler_iface_init (gpointer g_iface,
+    gpointer unused G_GNUC_UNUSED)
+{
+#define IMPLEMENT(x) tp_svc_client_handler_implement_##x (\
+  g_iface, _tp_base_client_##x)
+  IMPLEMENT (handle_channels);
+#undef IMPLEMENT
+}
+
+static void
+_tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
+    const gchar *request,
+    GHashTable *properties,
+    DBusGMethodInvocation *context)
+{
+  /* FIXME: emit a signal first */
+  tp_svc_client_interface_requests_return_from_add_request (context);
+}
+
+static void
+_tp_base_client_remove_request (TpSvcClientInterfaceRequests *iface,
+    const gchar *request,
+    const gchar *error,
+    const gchar *reason,
+    DBusGMethodInvocation *context)
+{
+  /* FIXME: emit a signal first */
+  tp_svc_client_interface_requests_return_from_remove_request (context);
+}
+
+static void
+requests_iface_init (gpointer g_iface,
+    gpointer unused G_GNUC_UNUSED)
+{
+#define IMPLEMENT(x) tp_svc_client_interface_requests_implement_##x (\
+  g_iface, _tp_base_client_##x)
+  IMPLEMENT (add_request);
+  IMPLEMENT (remove_request);
 #undef IMPLEMENT
 }
 
