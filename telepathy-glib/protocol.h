@@ -26,6 +26,19 @@
 
 G_BEGIN_DECLS
 
+typedef struct _TpConnectionManagerParam TpConnectionManagerParam;
+
+struct _TpConnectionManagerParam
+{
+  /*<public>*/
+  gchar *name;
+  gchar *dbus_signature;
+  GValue default_value;
+  guint flags;
+
+  gpointer priv;
+};
+
 typedef struct _TpProtocol TpProtocol;
 typedef struct _TpProtocolClass TpProtocolClass;
 typedef struct _TpProtocolPrivate TpProtocolPrivate;

@@ -24,6 +24,7 @@
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/protocol.h>
 #include <telepathy-glib/proxy.h>
 
 #include <telepathy-glib/_gen/genums.h>
@@ -59,18 +60,6 @@ GType tp_connection_manager_protocol_get_type (void);
   (tp_connection_manager_param_get_type ())
 #define TP_TYPE_CONNECTION_MANAGER_PROTOCOL \
   (tp_connection_manager_protocol_get_type ())
-
-typedef struct _TpConnectionManagerParam TpConnectionManagerParam;
-struct _TpConnectionManagerParam
-{
-  /*<public>*/
-  gchar *name;
-  gchar *dbus_signature;
-  GValue default_value;
-  guint flags;
-
-  gpointer priv;
-};
 
 typedef struct _TpConnectionManagerProtocol TpConnectionManagerProtocol;
 struct _TpConnectionManagerProtocol
