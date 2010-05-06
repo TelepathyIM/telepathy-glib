@@ -420,6 +420,7 @@ tp_protocol_constructed (GObject *object)
     ((GObjectClass *) tp_protocol_parent_class)->constructed;
   const gchar *s;
   const GPtrArray *rccs;
+  gboolean had_immutables = TRUE;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -427,8 +428,11 @@ tp_protocol_constructed (GObject *object)
   g_assert (self->priv->protocol_struct.name != NULL);
 
   if (self->priv->protocol_properties == NULL)
-    self->priv->protocol_properties = g_hash_table_new_full (g_str_hash,
-        g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+    {
+      had_immutables = FALSE;
+      self->priv->protocol_properties = g_hash_table_new_full (g_str_hash,
+          g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+    }
 
   self->priv->protocol_struct.params = tp_protocol_params_from_param_specs (
         tp_asv_get_boxed (self->priv->protocol_properties,
@@ -470,9 +474,10 @@ tp_protocol_constructed (GObject *object)
     self->priv->capabilities = _tp_capabilities_new (rccs, FALSE);
 
   /* become ready immediately */
-  _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_PARAMETERS, TRUE);
+  _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_PARAMETERS,
+      had_immutables);
   _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_CORE,
-    tp_protocol_check_for_core (self));
+      had_immutables && tp_protocol_check_for_core (self));
 }
 
 enum {
@@ -536,6 +541,11 @@ tp_protocol_class_init (TpProtocolClass *klass)
    *
    * The immutable properties of this Protocol, as provided at construction
    * time. This is a map from string to #GValue, which must not be modified.
+   *
+   * If the immutable properties were not provided at construction time,
+   * the %TP_PROTOCOL_FEATURE_PARAMETERS and %TP_PROTOCOL_FEATURE_CORE features
+   * will both be unavailable, and this #TpProtocol object will only be useful
+   * as a way to access lower-level D-Bus calls.
    *
    * Since: 0.11.UNRELEASED
    */
