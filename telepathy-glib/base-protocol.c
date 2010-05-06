@@ -317,12 +317,10 @@ struct _TpBaseProtocolPrivate
 {
   gchar *name;
   GStrv interfaces;
-  GStrv guaranteed_interfaces;
-  GStrv possible_interfaces;
-  GPtrArray *guaranteed_channel_classes;
-  GPtrArray *possible_channel_classes;
+  GStrv connection_interfaces;
+  GPtrArray *requestable_channel_classes;
   gchar *icon;
-  gchar *display_name;
+  gchar *english_name;
   gchar *vcard_field;
 };
 
@@ -351,20 +349,17 @@ tp_base_protocol_constructed (GObject *object)
   if (cls->get_connection_details != NULL)
     {
       (cls->get_connection_details) (self,
-          &self->priv->guaranteed_interfaces,
-          &self->priv->possible_interfaces,
-          &self->priv->guaranteed_channel_classes,
-          &self->priv->possible_channel_classes,
+          &self->priv->connection_interfaces,
+          &self->priv->requestable_channel_classes,
           &self->priv->icon,
-          &self->priv->display_name,
+          &self->priv->english_name,
           &self->priv->vcard_field);
     }
   else
     {
-      self->priv->guaranteed_channel_classes = g_ptr_array_sized_new (0);
-      self->priv->possible_channel_classes = g_ptr_array_sized_new (0);
+      self->priv->requestable_channel_classes = g_ptr_array_sized_new (0);
       self->priv->icon = g_strdup ("");
-      self->priv->display_name = g_strdup ("");
+      self->priv->english_name = g_strdup ("");
       self->priv->vcard_field = g_strdup ("");
     }
 }
@@ -419,19 +414,14 @@ tp_base_protocol_finalize (GObject *object)
 
   g_free (self->priv->name);
   g_strfreev (self->priv->interfaces);
-  g_strfreev (self->priv->guaranteed_interfaces);
-  g_strfreev (self->priv->possible_interfaces);
+  g_strfreev (self->priv->connection_interfaces);
   g_free (self->priv->icon);
-  g_free (self->priv->display_name);
+  g_free (self->priv->english_name);
   g_free (self->priv->vcard_field);
 
-  if (self->priv->guaranteed_channel_classes != NULL)
+  if (self->priv->requestable_channel_classes != NULL)
     g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-        self->priv->guaranteed_channel_classes);
-
-  if (self->priv->possible_channel_classes != NULL)
-    g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
-        self->priv->possible_channel_classes);
+        self->priv->requestable_channel_classes);
 
   if (finalize != NULL)
     finalize (object);
@@ -440,12 +430,10 @@ tp_base_protocol_finalize (GObject *object)
 typedef enum {
     PP_PARAMETERS,
     PP_INTERFACES,
-    PP_GUARANTEED_INTERFACES,
-    PP_POSSIBLE_INTERFACES,
-    PP_GUARANTEED_CHANNEL_CLASSES,
-    PP_POSSIBLE_CHANNEL_CLASSES,
+    PP_CONNECTION_INTERFACES,
+    PP_REQUESTABLE_CHANNEL_CLASSES,
     PP_VCARD_FIELD,
-    PP_DISPLAY_NAME,
+    PP_ENGLISH_NAME,
     PP_ICON,
     N_PP
 } ProtocolProp;
@@ -481,28 +469,20 @@ protocol_properties_getter (GObject *object,
       g_value_set_boxed (value, self->priv->interfaces);
       break;
 
-    case PP_GUARANTEED_INTERFACES:
-      g_value_set_boxed (value, self->priv->guaranteed_interfaces);
+    case PP_CONNECTION_INTERFACES:
+      g_value_set_boxed (value, self->priv->connection_interfaces);
       break;
 
-    case PP_POSSIBLE_INTERFACES:
-      g_value_set_boxed (value, self->priv->possible_interfaces);
-      break;
-
-    case PP_GUARANTEED_CHANNEL_CLASSES:
-      g_value_set_boxed (value, self->priv->guaranteed_channel_classes);
-      break;
-
-    case PP_POSSIBLE_CHANNEL_CLASSES:
-      g_value_set_boxed (value, self->priv->possible_channel_classes);
+    case PP_REQUESTABLE_CHANNEL_CLASSES:
+      g_value_set_boxed (value, self->priv->requestable_channel_classes);
       break;
 
     case PP_VCARD_FIELD:
       g_value_set_string (value, self->priv->vcard_field);
       break;
 
-    case PP_DISPLAY_NAME:
-      g_value_set_string (value, self->priv->display_name);
+    case PP_ENGLISH_NAME:
+      g_value_set_string (value, self->priv->english_name);
       break;
 
     case PP_ICON:
@@ -520,15 +500,12 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
   static TpDBusPropertiesMixinPropImpl channel_props[] = {
       { "Parameters", GINT_TO_POINTER (PP_PARAMETERS), NULL },
       { "Interfaces", GINT_TO_POINTER (PP_INTERFACES), NULL },
-      { "GuaranteedInterfaces", GINT_TO_POINTER (PP_GUARANTEED_INTERFACES),
+      { "ConnectionInterfaces", GINT_TO_POINTER (PP_CONNECTION_INTERFACES),
         NULL },
-      { "PossibleInterfaces", GINT_TO_POINTER (PP_POSSIBLE_INTERFACES), NULL },
-      { "GuaranteedChannelClasses",
-        GINT_TO_POINTER (PP_GUARANTEED_CHANNEL_CLASSES), NULL },
-      { "PossibleChannelClasses",
-        GINT_TO_POINTER (PP_POSSIBLE_CHANNEL_CLASSES), NULL },
+      { "RequestableChannelClasses",
+        GINT_TO_POINTER (PP_REQUESTABLE_CHANNEL_CLASSES), NULL },
       { "VCardField", GINT_TO_POINTER (PP_VCARD_FIELD), NULL },
-      { "DisplayName", GINT_TO_POINTER (PP_DISPLAY_NAME), NULL },
+      { "EnglishName", GINT_TO_POINTER (PP_ENGLISH_NAME), NULL },
       { "Icon", GINT_TO_POINTER (PP_ICON), NULL },
       { NULL }
   };

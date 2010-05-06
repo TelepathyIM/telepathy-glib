@@ -54,9 +54,9 @@
         <p>A list of interfaces supported by this Protocol object.</p>
 
         <p>This property is immutable, and should not be confused with
-          <tp:member-ref>GuaranteedInterfaces</tp:member-ref> and
-          <tp:member-ref>PossibleInterfaces</tp:member-ref>, which refer to the
-          interfaces of <em>connections</em> to this protocol.</p>
+          <tp:member-ref>ConnectionInterfaces</tp:member-ref>,
+          which refers to the interfaces of <em>connections</em> to this
+          protocol.</p>
 
         <p>Connection managers with a <code>.manager</code> file
           (as described as part of the
@@ -88,37 +88,17 @@
       </tp:docstring>
     </property>
 
-    <property name="GuaranteedInterfaces"
-      tp:name-for-bindings="Guaranteed_Interfaces"
+    <property name="ConnectionInterfaces"
+      tp:name-for-bindings="Connection_Interfaces"
       access="read" type="as" tp:type="DBus_Interface[]">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>A list of interface names which will definitely be in the
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection"
-            >Interfaces</tp:dbus-ref> property of any
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy"
-            >Connection</tp:dbus-ref> to this protocol.</p>
-
-        <p>This property is immutable, and should not be confused with
-          <tp:member-ref>Interfaces</tp:member-ref>.</p>
-
-        <p>Connection managers with a <code>.manager</code> file
-          MUST cache this property in the protocol's section of the
-          <code>.manager</code> file, using the key
-          <code>GuaranteedInterfaces</code>. The corresponding value
-          is a list of D-Bus interface names, each followed by a semicolon.</p>
-      </tp:docstring>
-    </property>
-
-    <property name="PossibleInterfaces"
-      tp:name-for-bindings="Possible_Interfaces"
-      access="read" type="as" tp:type="DBus_Interface[]">
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>A list of interface names which will might be in the
+        <p>A list of interface names which might be in the
           <tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection"
             >Interfaces</tp:dbus-ref> property of a
           <tp:dbus-ref namespace="org.freedesktop.Telepathy"
-            >Connection</tp:dbus-ref> to this protocol, or not, depending
-          on server capabilities.</p>
+            >Connection</tp:dbus-ref> to this protocol. Whether a Connection
+          will have all, some or none of these interfaces depends on server
+          capabilities.</p>
 
         <p>This property is immutable, and should not be confused with
           <tp:member-ref>Interfaces</tp:member-ref>.</p>
@@ -126,28 +106,33 @@
         <p>Connection managers with a <code>.manager</code> file
           MUST cache this property in the protocol's section of the
           <code>.manager</code> file, using the key
-          <code>PossibleInterfaces</code>. The corresponding value
+          <code>ConnectionInterfaces</code>. The corresponding value
           is a list of D-Bus interface names, each followed by a semicolon.</p>
       </tp:docstring>
     </property>
 
-    <property name="GuaranteedChannelClasses"
-      tp:name-for-bindings="Guaranteed_Channel_Classes"
-      access="read" type="a(a{sv}as)" tp:type="Channel_Class[]">
+    <property name="RequestableChannelClasses"
+      tp:name-for-bindings="Requestable_Channel_Classes"
+      access="read" type="a(a{sv}as)" tp:type="Requestable_Channel_Class[]">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>A list of channel classes which will be requestable from any
+        <p>A list of channel classes which might be requestable from a
           <tp:dbus-ref namespace="org.freedesktop.Telepathy"
-            >Connection</tp:dbus-ref> to this protocol (i.e. they are
-          guaranteed to appear in the Connection's <tp:dbus-ref
+            >Connection</tp:dbus-ref> to this protocol (i.e. they will,
+          or might, appear in the Connection's <tp:dbus-ref
             namespace="org.freedesktop.Telepathy.Connection.Interface.Requests"
             >RequestableChannelClasses</tp:dbus-ref> property).</p>
+
+        <p>Whether a Connection will have all, some or none of these
+          requestable channel classes depends on server capabilities;
+          similarly, individual contacts are not guaranteed to support
+          all of these channel classes.</p>
 
         <p>This property is immutable.</p>
 
         <p>Connection managers with a <code>.manager</code> file
           MUST cache this property in the protocol's section of the
           <code>.manager</code> file, using the key
-          <code>GuaranteedChannelClasses</code>. The corresponding value
+          <code>RequestableChannelClasses</code>. The corresponding value
           is a list of opaque strings, each followed by a semicolon; each
           of those strings is the name of a group in the <code>.manager</code>
           file which represents a channel class.</p>
@@ -173,35 +158,13 @@
 <pre>[Protocol jabber]
 param-account=s required
 param-password=s required
-GuaranteedChannelClasses=text
+RequestableChannelClasses=text
 
 [text]
 org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Text
 org.freedesktop.Telepathy.Channel.TargetHandleType u=1
 allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;
 </pre>
-      </tp:docstring>
-    </property>
-
-    <property name="PossibleChannelClasses"
-      tp:name-for-bindings="Possible_Channel_Classes"
-      access="read" type="a(a{sv}as)" tp:type="Channel_Class[]">
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>A list of channel classes which might be requestable from a
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy"
-            >Connection</tp:dbus-ref> to this protocol, or not, depending
-          on capability discovery (i.e. might appear in the Connection's
-          <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Connection.Interface.Requests"
-            >RequestableChannelClasses</tp:dbus-ref> property, or not).</p>
-
-        <p>This property is immutable.</p>
-
-        <p>Connection managers with a <code>.manager</code> file
-          MUST cache this property in the protocol's section of the
-          <code>.manager</code> file, using the same representation as
-          <tp:member-ref>GuaranteedChannelClasses</tp:member-ref>, but with
-          the key <code>PossibleChannelClasses</code>.</p>
       </tp:docstring>
     </property>
 
@@ -214,11 +177,30 @@ allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy
 
         <p>For example, this would be <code>x-jabber</code> for
           Jabber/XMPP (including Google Talk), or <code>tel</code> for
-          telephony.</p>
+          the <abbr title="Public Switched Telephone Network">PSTN</abbr>.</p>
+
+        <tp:rationale>
+          <p>This is taken from Mission Control profiles as used on Maemo 5.
+            One valid use of this field is to answer the question: given a
+            contact's vCard containing an X-JABBER field, how can you
+            communicate with the contact? By iterating through protocols
+            looking for an x-jabber VCardField, one can build up a list of
+            protocols that handle x-jabber, then offer the user a list of
+            accounts for those protocols and/or the option to create a new
+            account for one of those protocols.</p>
+
+          <p>It is not necessarily valid to interpret contacts' identifiers
+            as values of this vCard field. For instance, telepathy-sofiasip
+            supports contacts whose identifiers are of the form
+            sip:jenny@example.com or tel:8675309, which would not normally
+            both be represented by any single vCard field. Representing
+            arbitrary handles/identifiers as vCard fields is a topic for
+            future work.</p>
+        </tp:rationale>
       </tp:docstring>
     </property>
 
-    <property name="DisplayName" tp:name-for-bindings="Display_Name"
+    <property name="EnglishName" tp:name-for-bindings="English_Name"
       access="read" type="s">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The name of the protocol in a form suitable for display to users,
@@ -332,6 +314,32 @@ allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy
           impossible to do without a <tp:dbus-ref
             namespace="org.freedesktop.Telepathy">Connection</tp:dbus-ref>,
           this method SHOULD perform a best-effort normalization.</p>
+
+        <tp:rationale>
+          <p>One common example of a best-effort offline normalization
+            differing from the ideal normalization is XMPP.</p>
+
+          <p>On XMPP, contacts' JIDs should normally have the resource removed
+            during normalization, but for contacts in a MUC (chatroom), the
+            resource is an integral part of the JID - so the contact JID
+            alice@example.com/Empathy should normalize to alice@example.com,
+            but the in-MUC JID wonderland@conference.example.com/Alice should
+            normalize to itself.</p>
+
+          <p>While online, the connection manager has enough context to know
+            which chatrooms the user is in, and can infer from that whether
+            to remove resources, but the best-effort normalization performed
+            while offline does not have this context, so the best that can be
+            done is to remove the resource from all JIDs.</p>
+        </tp:rationale>
+
+        <p>This method MAY simply raise NotImplemented on some protocols.</p>
+
+        <tp:rationale>
+          <p>In link-local XMPP, you can't talk to someone who isn't present
+            on your local network, so normalizing identifiers in advance is
+            meaningless.</p>
+        </tp:rationale>
       </tp:docstring>
 
       <arg direction="in" name="Contact_ID" type="s">

@@ -157,18 +157,13 @@ shut_down (TpBaseConnection *conn)
 static const gchar *interfaces_always_present[] = {
     TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
     NULL };
-static const gchar *interfaces_sometimes_present[] = { NULL };
-
-const gchar * const *
-example_echo_2_connection_get_guaranteed_interfaces (void)
-{
-  return interfaces_always_present;
-}
 
 const gchar * const *
 example_echo_2_connection_get_possible_interfaces (void)
 {
-  return interfaces_sometimes_present;
+  /* in this example CM we don't have any extra interfaces that are sometimes,
+   * but not always, present */
+  return interfaces_always_present;
 }
 
 static void

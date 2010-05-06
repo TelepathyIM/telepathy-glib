@@ -109,36 +109,23 @@ get_interfaces (TpBaseProtocol *self)
 
 static void
 get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
-    GStrv *guaranteed_interfaces,
-    GStrv *possible_interfaces,
-    GPtrArray **guaranteed_channel_classes,
-    GPtrArray **possible_channel_classes,
+    GStrv *connection_interfaces,
+    GPtrArray **requestable_channel_classes,
     gchar **icon_name,
-    gchar **display_name,
+    gchar **english_name,
     gchar **vcard_field)
 {
-  if (guaranteed_interfaces != NULL)
+  if (connection_interfaces != NULL)
     {
-      *guaranteed_interfaces = g_strdupv (
-          (GStrv) example_echo_2_connection_get_guaranteed_interfaces ());
-    }
-
-  if (possible_interfaces != NULL)
-    {
-      *possible_interfaces = g_strdupv (
+      *connection_interfaces = g_strdupv (
           (GStrv) example_echo_2_connection_get_possible_interfaces ());
     }
 
-  if (guaranteed_channel_classes != NULL)
+  if (requestable_channel_classes != NULL)
     {
-      *guaranteed_channel_classes = g_ptr_array_new ();
+      *requestable_channel_classes = g_ptr_array_new ();
       example_echo_2_im_manager_append_channel_classes (
-          *guaranteed_channel_classes);
-    }
-
-  if (possible_channel_classes != NULL)
-    {
-      *possible_channel_classes = g_ptr_array_new ();
+          *requestable_channel_classes);
     }
 
   if (icon_name != NULL)
@@ -148,11 +135,11 @@ get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
       *icon_name = g_strdup ("im-icq");
     }
 
-  if (display_name != NULL)
+  if (english_name != NULL)
     {
       /* in a real protocol this would be "ICQ" or
        * "Windows Live Messenger (MSN)" or something */
-      *display_name = g_strdup ("Echo II example");
+      *english_name = g_strdup ("Echo II example");
     }
 
   if (vcard_field != NULL)

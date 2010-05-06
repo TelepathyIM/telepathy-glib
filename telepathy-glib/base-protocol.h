@@ -119,12 +119,10 @@ struct _TpBaseProtocolClass
   GStrv (*get_interfaces) (TpBaseProtocol *self);
 
   void (*get_connection_details) (TpBaseProtocol *self,
-      GStrv *guaranteed_interfaces,
-      GStrv *possible_interfaces,
-      GPtrArray **guaranteed_channel_classes,
-      GPtrArray **possible_channel_classes,
+      GStrv *connection_interfaces,
+      GPtrArray **requestable_channel_classes,
       gchar **icon_name,
-      gchar **display_name,
+      gchar **english_name,
       gchar **vcard_field);
 
   /*<private>*/

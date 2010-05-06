@@ -92,8 +92,8 @@ test_protocol_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *properties = NULL;
-  GPtrArray *gcc, *pcc;
-  GValueArray *cc;
+  GPtrArray *arr;
+  GValueArray *va;
   GHashTable *fixed;
 
   tp_cli_dbus_properties_run_get_all (test->protocol, -1,
@@ -104,7 +104,7 @@ test_protocol_properties (Test *test,
         G_TYPE_STRV), no_interfaces);
 
   g_assert_cmpstr (tp_asv_get_string (properties, "Icon"), ==, "im-icq");
-  g_assert_cmpstr (tp_asv_get_string (properties, "DisplayName"), ==,
+  g_assert_cmpstr (tp_asv_get_string (properties, "EnglishName"), ==,
       "Echo II example");
   g_assert_cmpstr (tp_asv_get_string (properties, "VCardField"), ==,
       "x-telepathy-example");
@@ -112,27 +112,20 @@ test_protocol_properties (Test *test,
       "x-telepathy-example");
 
   test_assert_strv_equals (tp_asv_get_boxed (properties,
-        "GuaranteedInterfaces", G_TYPE_STRV), expected_interfaces);
-  test_assert_strv_equals (tp_asv_get_boxed (properties, "PossibleInterfaces",
-        G_TYPE_STRV), no_interfaces);
+        "ConnectionInterfaces", G_TYPE_STRV), expected_interfaces);
 
-  gcc = tp_asv_get_boxed (properties, "GuaranteedChannelClasses",
+  arr = tp_asv_get_boxed (properties, "RequestableChannelClasses",
       TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
-  g_assert (gcc != NULL);
-  g_assert_cmpuint (gcc->len, ==, 1);
+  g_assert (arr != NULL);
+  g_assert_cmpuint (arr->len, ==, 1);
 
-  cc = g_ptr_array_index (gcc, 0);
-  g_assert (G_VALUE_HOLDS (cc->values + 0, TP_HASH_TYPE_CHANNEL_CLASS));
-  g_assert (G_VALUE_HOLDS (cc->values + 1, G_TYPE_STRV));
+  va = g_ptr_array_index (arr, 0);
+  g_assert (G_VALUE_HOLDS (va->values + 0, TP_HASH_TYPE_CHANNEL_CLASS));
+  g_assert (G_VALUE_HOLDS (va->values + 1, G_TYPE_STRV));
 
-  fixed = g_value_get_boxed (cc->values + 0);
+  fixed = g_value_get_boxed (va->values + 0);
   g_assert_cmpstr (tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
-
-  pcc = tp_asv_get_boxed (properties, "PossibleChannelClasses",
-      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
-  g_assert (pcc != NULL);
-  g_assert_cmpuint (pcc->len, ==, 0);
 }
 
 int
