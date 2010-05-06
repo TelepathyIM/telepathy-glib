@@ -108,7 +108,6 @@ teardown (Test *test,
   test->mainloop = NULL;
 }
 
-const gchar * const no_interfaces[] = { NULL };
 const gchar * const expected_interfaces[] = {
     TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
     NULL };
@@ -126,8 +125,8 @@ test_protocol_properties (Test *test,
       TP_IFACE_PROTOCOL, &properties, &test->error, NULL);
   test_assert_no_error (test->error);
 
-  test_assert_strv_equals (tp_asv_get_boxed (properties, "Interfaces",
-        G_TYPE_STRV), no_interfaces);
+  test_assert_empty_strv (tp_asv_get_boxed (properties, "Interfaces",
+        G_TYPE_STRV));
 
   g_assert_cmpstr (tp_asv_get_string (properties, "Icon"), ==, "im-icq");
   g_assert_cmpstr (tp_asv_get_string (properties, "EnglishName"), ==,
@@ -175,8 +174,8 @@ test_protocols_property (Test *test,
   test_assert_no_error (test->error);
 
   g_assert (tp_asv_lookup (properties, "Interfaces") != NULL);
-  test_assert_strv_equals (tp_asv_get_boxed (properties, "Interfaces",
-        G_TYPE_STRV), no_interfaces);
+  test_assert_empty_strv (tp_asv_get_boxed (properties, "Interfaces",
+        G_TYPE_STRV));
 
   protocols = tp_asv_get_boxed (properties, "Protocols",
       TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP);
@@ -186,8 +185,8 @@ test_protocols_property (Test *test,
   pp = g_hash_table_lookup (protocols, "example");
   g_assert (pp != NULL);
 
-  test_assert_strv_equals (tp_asv_get_boxed (pp, TP_PROP_PROTOCOL_INTERFACES,
-        G_TYPE_STRV), no_interfaces);
+  test_assert_empty_strv (tp_asv_get_boxed (pp, TP_PROP_PROTOCOL_INTERFACES,
+        G_TYPE_STRV));
 
   g_assert_cmpstr (tp_asv_get_string (pp, TP_PROP_PROTOCOL_ICON), ==,
       "im-icq");
