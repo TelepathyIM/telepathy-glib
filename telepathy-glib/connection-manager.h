@@ -142,6 +142,8 @@ gboolean tp_connection_manager_has_protocol (TpConnectionManager *self,
     const gchar *protocol);
 const TpConnectionManagerProtocol *tp_connection_manager_get_protocol (
     TpConnectionManager *self, const gchar *protocol);
+TpProtocol *tp_connection_manager_get_protocol_object (
+    TpConnectionManager *self, const gchar *protocol);
 
 gchar **tp_connection_manager_protocol_dup_param_names (
     const TpConnectionManagerProtocol *protocol)

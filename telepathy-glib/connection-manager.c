@@ -2122,6 +2122,9 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  * Returns a structure representing a protocol, or %NULL if this connection
  * manager does not support the specified protocol.
  *
+ * Since 0.11.UNRELEASED, you can get a #GObject version with more
+ * functionality by calling tp_connection_manager_get_protocol_object().
+ *
  * If this function is called before the connection manager information has
  * been obtained, the result is always %NULL. Use
  * tp_connection_manager_call_when_ready() to wait for this.
@@ -2135,27 +2138,48 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  */
 const TpConnectionManagerProtocol *
 tp_connection_manager_get_protocol (TpConnectionManager *self,
-                                    const gchar *protocol)
+    const gchar *protocol)
 {
-  guint i;
+  TpProtocol *object;
 
-  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
+  object = tp_connection_manager_get_protocol_object (self, protocol);
 
-  if (self->info_source == TP_CM_INFO_SOURCE_NONE)
+  if (object == NULL)
     return NULL;
 
-  g_assert (self->priv->protocol_structs != NULL);
+  return _tp_protocol_get_struct (object);
+}
 
-  for (i = 0; i < self->priv->protocol_structs->len; i++)
-    {
-      TpConnectionManagerProtocol *proto = g_ptr_array_index (
-          self->priv->protocol_structs, i);
+/**
+ * tp_connection_manager_get_protocol_object:
+ * @self: a connection manager
+ * @protocol: the name of a protocol as defined in the Telepathy D-Bus API,
+ *            e.g. "jabber" or "msn"
+ *
+ * Returns an object representing a protocol, or %NULL if this connection
+ * manager does not support the specified protocol.
+ *
+ * If this function is called before the connection manager information has
+ * been obtained, the result is always %NULL. Use tp_proxy_prepare_async()
+ * to wait for this.
+ *
+ * The result should be referenced with g_object_ref() if it will be kept.
+ *
+ * Returns: (transfer none): an object representing the protocol, or %NULL
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpProtocol *
+tp_connection_manager_get_protocol_object (TpConnectionManager *self,
+    const gchar *protocol)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
+  g_return_val_if_fail (protocol != NULL, NULL);
 
-      if (proto != NULL && !tp_strdiff (proto->name, protocol))
-        return proto;
-    }
+  if (self->priv->protocol_objects == NULL)
+    return NULL;
 
-  return NULL;
+  return g_hash_table_lookup (self->priv->protocol_objects, protocol);
 }
 
 /**
@@ -2177,7 +2201,7 @@ gboolean
 tp_connection_manager_has_protocol (TpConnectionManager *self,
                                     const gchar *protocol)
 {
-  return (tp_connection_manager_get_protocol (self, protocol) != NULL);
+  return (tp_connection_manager_get_protocol_object (self, protocol) != NULL);
 }
 
 /**
