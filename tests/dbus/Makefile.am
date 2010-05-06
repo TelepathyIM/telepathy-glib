@@ -159,6 +159,7 @@ nodist_test_properties_SOURCES = \
 
 test_protocol_objects_LDADD = \
     $(LDADD) \
+    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la \
     $(top_builddir)/examples/cm/echo-message-parts/libexample-cm-echo-2.la
 test_protocol_objects_SOURCES = protocol-objects.c
 

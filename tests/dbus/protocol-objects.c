@@ -10,9 +10,12 @@
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/telepathy-glib.h>
 
+#include "examples/cm/echo/connection-manager.h"
+
 #include "examples/cm/echo-message-parts/connection-manager.h"
 #include "examples/cm/echo-message-parts/chan.h"
 #include "examples/cm/echo-message-parts/conn.h"
+
 #include "tests/lib/util.h"
 
 #define CLEAR_OBJECT(o) \
@@ -31,8 +34,13 @@ typedef struct
   GError *error /* statically initialized to NULL */ ;
 
   ExampleEcho2ConnectionManager *service_cm;
+
   TpConnectionManager *cm;
   TpProtocol *protocol;
+
+  ExampleEchoConnectionManager *old_service_cm;
+  TpConnectionManager *old_cm;
+  TpProtocol *old_protocol;
 } Test;
 
 static void
@@ -67,6 +75,23 @@ setup (Test *test,
   test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
       "example", NULL, NULL);
   g_assert (test->protocol != NULL);
+
+  test->old_service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (g_object_new (
+        EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER,
+        NULL));
+  g_assert (test->old_service_cm != NULL);
+  service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->old_service_cm);
+  g_assert (service_cm_as_base != NULL);
+
+  ok = tp_base_connection_manager_register (service_cm_as_base);
+  g_assert (ok);
+
+  test->old_cm = tp_connection_manager_new (test->dbus, "example_echo",
+      NULL, &test->error);
+  g_assert (test->old_cm != NULL);
+  test_connection_manager_run_until_ready (test->old_cm);
+
+  test->old_protocol = NULL;
 }
 
 static void
@@ -76,6 +101,7 @@ teardown (Test *test,
   CLEAR_OBJECT (&test->protocol);
   CLEAR_OBJECT (&test->cm);
   CLEAR_OBJECT (&test->service_cm);
+  CLEAR_OBJECT (&test->old_service_cm);
 
   CLEAR_OBJECT (&test->dbus);
   g_main_loop_unref (test->mainloop);
@@ -191,6 +217,46 @@ test_protocols_property (Test *test,
       TP_ARRAY_TYPE_PARAM_SPEC_LIST);
   g_assert (arr != NULL);
   g_assert_cmpuint (arr->len, >=, 1);
+}
+
+static void
+test_protocols_property_old (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *properties = NULL;
+  GHashTable *protocols;
+  GHashTable *pp;
+  GPtrArray *arr;
+
+  tp_cli_dbus_properties_run_get_all (test->old_cm, -1,
+      TP_IFACE_CONNECTION_MANAGER, &properties, &test->error, NULL);
+  test_assert_no_error (test->error);
+
+  g_assert (tp_asv_lookup (properties, "Interfaces") != NULL);
+  test_assert_empty_strv (tp_asv_get_boxed (properties, "Interfaces",
+        G_TYPE_STRV));
+
+  protocols = tp_asv_get_boxed (properties, "Protocols",
+      TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP);
+  g_assert (protocols != NULL);
+  g_assert_cmpuint (g_hash_table_size (protocols), ==, 1);
+
+  pp = g_hash_table_lookup (protocols, "example");
+  g_assert (pp != NULL);
+
+  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_INTERFACES) == NULL);
+  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_ICON) == NULL);
+  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_ENGLISH_NAME) == NULL);
+  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_VCARD_FIELD) == NULL);
+  g_assert (tp_asv_lookup (pp,
+        TP_PROP_PROTOCOL_CONNECTION_INTERFACES) == NULL);
+  g_assert (tp_asv_lookup (pp, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES)
+      == NULL);
+
+  arr = tp_asv_get_boxed (pp, TP_PROP_PROTOCOL_PARAMETERS,
+      TP_ARRAY_TYPE_PARAM_SPEC_LIST);
+  g_assert (arr != NULL);
+  g_assert_cmpuint (arr->len, >=, 1);
 
 }
 
@@ -205,6 +271,8 @@ main (int argc,
       test_protocol_properties, teardown);
   g_test_add ("/protocol-objects/protocols-property", Test, NULL, setup,
       test_protocols_property, teardown);
+  g_test_add ("/protocol-objects/protocols-property-old", Test, NULL, setup,
+      test_protocols_property_old, teardown);
 
   return g_test_run ();
 }
