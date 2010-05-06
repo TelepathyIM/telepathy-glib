@@ -709,7 +709,6 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
 
   account = tp_account_manager_ensure_account (self->priv->account_mgr,
       account_path);
-  g_object_ref (account);
 
   connection = tp_account_ensure_connection (account, connection_path);
   if (connection == NULL)
@@ -717,7 +716,6 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       DEBUG ("Failed to create TpConnection");
       goto out;
     }
-  g_object_ref (connection);
 
   channels = g_ptr_array_sized_new (channels_arr->len);
   g_ptr_array_set_free_func (channels, g_object_unref);
@@ -783,12 +781,6 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   g_object_unref (ctx);
 
 out:
-  if (account != NULL)
-    g_object_unref (account);
-
-  if (connection != NULL)
-    g_object_unref (connection);
-
   if (channels != NULL)
     g_ptr_array_unref (channels);
 
