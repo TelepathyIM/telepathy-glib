@@ -27,6 +27,9 @@ telepathy_example_extended_client_LDADD = \
 EXAMPLES += telepathy-example-media-observer
 telepathy_example_media_observer_SOURCES = media-observer.c
 
+EXAMPLES += telepathy-example-approver
+telepathy_example_approver_SOURCES = approver.c
+
 if INSTALL_EXAMPLES
 bin_PROGRAMS = $(EXAMPLES)
 else
