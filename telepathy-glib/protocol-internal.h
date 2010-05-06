@@ -32,6 +32,11 @@ void _tp_connection_manager_protocol_free_contents (
 
 TpConnectionManagerProtocol *_tp_protocol_get_struct (TpProtocol *self);
 
+GHashTable *_tp_protocol_parse_manager_file (GKeyFile *file,
+    const gchar *cm_name,
+    const gchar *group,
+    gchar **protocol_name);
+
 G_END_DECLS
 
 #endif

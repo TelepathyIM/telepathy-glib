@@ -1129,256 +1129,6 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
 }
 
 static gboolean
-init_gvalue_from_dbus_sig (const gchar *sig,
-                           GValue *value)
-{
-  g_assert (!G_IS_VALUE (value));
-
-  switch (sig[0])
-    {
-    case 'b':
-      g_value_init (value, G_TYPE_BOOLEAN);
-      return TRUE;
-
-    case 's':
-      g_value_init (value, G_TYPE_STRING);
-      return TRUE;
-
-    case 'q':
-    case 'u':
-      g_value_init (value, G_TYPE_UINT);
-      return TRUE;
-
-    case 'y':
-      g_value_init (value, G_TYPE_UCHAR);
-      return TRUE;
-
-    case 'n':
-    case 'i':
-      g_value_init (value, G_TYPE_INT);
-      return TRUE;
-
-    case 'x':
-      g_value_init (value, G_TYPE_INT64);
-      return TRUE;
-
-    case 't':
-      g_value_init (value, G_TYPE_UINT64);
-      return TRUE;
-
-    case 'o':
-      g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-      g_value_set_static_boxed (value, "/");
-      return TRUE;
-
-    case 'd':
-      g_value_init (value, G_TYPE_DOUBLE);
-      return TRUE;
-
-    case 'v':
-      g_value_init (value, G_TYPE_VALUE);
-      return TRUE;
-
-    case 'a':
-      switch (sig[1])
-        {
-        case 's':
-          g_value_init (value, G_TYPE_STRV);
-          return TRUE;
-
-        case 'y':
-          g_value_init (value, DBUS_TYPE_G_UCHAR_ARRAY);
-          return TRUE;
-        }
-    }
-
-  return FALSE;
-}
-
-static gboolean
-parse_default_value (GValue *value,
-                     const gchar *sig,
-                     gchar *string,
-                     GKeyFile *file,
-                     const gchar *group,
-                     const gchar *key)
-{
-  GError *error = NULL;
-  gchar *s, *p;
-
-  switch (sig[0])
-    {
-    case 'b':
-      g_value_set_boolean (value, g_key_file_get_boolean (file, group, key,
-            &error));
-
-      if (error == NULL)
-        return TRUE;
-
-      /* In telepathy-glib < 0.7.26 we accepted true and false in
-       * any case combination, 0, and 1. The desktop file spec specifies
-       * "true" and "false" only, while GKeyFile currently accepts 0 and 1 too.
-       * So, on error, let's fall back to more lenient parsing that explicitly
-       * allows everything we historically allowed. */
-      g_error_free (error);
-      s = g_key_file_get_value (file, group, key, NULL);
-
-      if (s == NULL)
-        return FALSE;
-
-      for (p = s; *p != '\0'; p++)
-        {
-          *p = g_ascii_tolower (*p);
-        }
-
-      if (!tp_strdiff (s, "1") || !tp_strdiff (s, "true"))
-        {
-          g_value_set_boolean (value, TRUE);
-        }
-      else if (!tp_strdiff (s, "0") || !tp_strdiff (s, "false"))
-        {
-          g_value_set_boolean (value, TRUE);
-        }
-      else
-        {
-          g_free (s);
-          return FALSE;
-        }
-
-      g_free (s);
-      return TRUE;
-
-    case 's':
-      s = g_key_file_get_string (file, group, key, NULL);
-
-      g_value_take_string (value, s);
-      return (s != NULL);
-
-    case 'y':
-    case 'q':
-    case 'u':
-    case 't':
-        {
-          guint64 v = tp_g_key_file_get_uint64 (file, group, key, &error);
-
-          if (error != NULL)
-            {
-              g_error_free (error);
-              return FALSE;
-            }
-
-          if (sig[0] == 't')
-            {
-              g_value_set_uint64 (value, v);
-              return TRUE;
-            }
-
-          if (sig[0] == 'y')
-            {
-              if (v > G_MAXUINT8)
-                {
-                  return FALSE;
-                }
-
-              g_value_set_uchar (value, v);
-              return TRUE;
-            }
-
-          if (v > G_MAXUINT32 || (sig[0] == 'q' && v > G_MAXUINT16))
-            return FALSE;
-
-          g_value_set_uint (value, v);
-          return TRUE;
-        }
-
-    case 'n':
-    case 'i':
-    case 'x':
-      if (string[0] == '\0')
-        {
-          return FALSE;
-        }
-      else
-        {
-          gint64 v = tp_g_key_file_get_int64 (file, group, key, &error);
-
-          if (error != NULL)
-            {
-              g_error_free (error);
-              return FALSE;
-            }
-
-          if (sig[0] == 'x')
-            {
-              g_value_set_int64 (value, v);
-              return TRUE;
-            }
-
-          if (v > G_MAXINT32 || (sig[0] == 'q' && v > G_MAXINT16))
-            return FALSE;
-
-          if (v < G_MININT32 || (sig[0] == 'n' && v < G_MININT16))
-            return FALSE;
-
-          g_value_set_int (value, v);
-          return TRUE;
-        }
-
-    case 'o':
-      s = g_key_file_get_string (file, group, key, NULL);
-
-      if (s == NULL || !tp_dbus_check_valid_object_path (s, NULL))
-        {
-          g_free (s);
-          return FALSE;
-        }
-
-      g_value_take_boxed (value, s);
-
-      return TRUE;
-
-    case 'd':
-      g_value_set_double (value, g_key_file_get_double (file, group, key,
-            &error));
-
-      if (error != NULL)
-        {
-          g_error_free (error);
-          return FALSE;
-        }
-
-      return TRUE;
-
-    case 'a':
-      switch (sig[1])
-        {
-        case 's':
-            {
-              g_value_take_boxed (value,
-                  g_key_file_get_string_list (file, group, key, NULL, &error));
-
-              if (error != NULL)
-                {
-                  g_error_free (error);
-                  return FALSE;
-                }
-
-              return TRUE;
-            }
-        }
-    }
-
-  if (G_IS_VALUE (value))
-    g_value_unset (value);
-
-  return FALSE;
-}
-
-#define PROTOCOL_PREFIX "Protocol "
-#define PROTOCOL_PREFIX_LEN 9
-tp_verify (sizeof (PROTOCOL_PREFIX) == PROTOCOL_PREFIX_LEN + 1);
-
-static gboolean
 tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
     const gchar *cm_name,
     const gchar *filename,
@@ -1389,7 +1139,6 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
   GKeyFile *file;
   gchar **groups = NULL;
   gchar **group;
-  guint i;
   TpProtocol *proto_object;
   TpConnectionManagerProtocol *proto_struct;
   GHashTable *protocols = NULL;
@@ -1414,28 +1163,19 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
 
   for (group = groups; *group != NULL; group++)
     {
-      const gchar *name;
-      gchar **keys, **key;
-      GArray *output;
+      gchar *name;
+      GHashTable *immutables;
+      TpConnectionManagerParam *param_structs;
 
-      if (!g_str_has_prefix (*group, PROTOCOL_PREFIX))
+      immutables = _tp_protocol_parse_manager_file (file, cm_name, *group,
+          &name);
+
+      if (immutables == NULL)
         continue;
 
-      name = *group + PROTOCOL_PREFIX_LEN;
-
-      if (!tp_connection_manager_check_valid_protocol_name (name, NULL))
-        {
-          DEBUG ("Protocol '%s' has an invalid name", name);
-          continue;
-        }
-
-      proto_object = tp_protocol_new (dbus_daemon, cm_name, name, NULL, NULL);
-
-      if (proto_object == NULL)
-        {
-          DEBUG ("Invalid protocol name? %s", name);
-          continue;
-        }
+      proto_object = tp_protocol_new (dbus_daemon, cm_name, name,
+          immutables, NULL);
+      g_assert (proto_object != NULL);
 
       proto_struct = _tp_protocol_get_struct (proto_object);
       g_assert (!tp_strdiff (proto_struct->name, name));
@@ -1443,114 +1183,19 @@ tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
        * of TpProtocol) */
       g_assert (proto_struct->params == NULL);
 
-      proto_struct->name = g_strdup (name);
+      param_structs =
+        tp_connection_manager_params_from_param_specs (
+            tp_asv_get_boxed (immutables, TP_PROP_PROTOCOL_PARAMETERS,
+              TP_ARRAY_TYPE_PARAM_SPEC_LIST),
+            cm_name, name);
 
-      DEBUG ("Protocol %s", name);
+      g_assert (param_structs != NULL);
+      proto_struct->params = param_structs;
 
-      keys = g_key_file_get_keys (file, *group, NULL, NULL);
+      /* steals @name */
+      g_hash_table_insert (protocols, name, proto_object);
 
-      i = 0;
-      for (key = keys; key != NULL && *key != NULL; key++)
-        {
-          if (g_str_has_prefix (*key, "param-"))
-            i++;
-        }
-
-      output = g_array_sized_new (TRUE, TRUE,
-          sizeof (TpConnectionManagerParam), i);
-
-      for (key = keys; key != NULL && *key != NULL; key++)
-        {
-          if (g_str_has_prefix (*key, "param-"))
-            {
-              gchar **strv, **iter;
-              gchar *value, *def;
-              /* Points to the zeroed entry just after the end of the array
-               * - but we're about to extend the array to make it valid */
-              TpConnectionManagerParam *param = &g_array_index (output,
-                  TpConnectionManagerParam, output->len);
-
-              value = g_key_file_get_string (file, *group, *key, NULL);
-              if (value == NULL)
-                continue;
-
-              /* zero_terminated=TRUE and clear_=TRUE */
-              g_assert (param->name == NULL);
-
-              g_array_set_size (output, output->len + 1);
-
-              /* strlen ("param-") == 6 */
-              param->name = g_strdup (*key + 6);
-
-              strv = g_strsplit (value, " ", 0);
-              g_free (value);
-
-              param->dbus_signature = g_strdup (strv[0]);
-
-              for (iter = strv + 1; *iter != NULL; iter++)
-                {
-                  if (!tp_strdiff (*iter, "required"))
-                    param->flags |= TP_CONN_MGR_PARAM_FLAG_REQUIRED;
-                  if (!tp_strdiff (*iter, "register"))
-                    param->flags |= TP_CONN_MGR_PARAM_FLAG_REGISTER;
-                  if (!tp_strdiff (*iter, "secret"))
-                    param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
-                  if (!tp_strdiff (*iter, "dbus-property"))
-                    param->flags |= TP_CONN_MGR_PARAM_FLAG_DBUS_PROPERTY;
-                }
-
-              g_strfreev (strv);
-
-              if ((!tp_strdiff (param->name, "password") ||
-                  g_str_has_suffix (param->name, "-password")) &&
-                  (param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET) == 0)
-                {
-                  DEBUG ("\tTreating %s as secret due to its name (please "
-                      "fix %s)", param->name, cm_name);
-                  param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
-                }
-
-              def = g_strdup_printf ("default-%s", param->name);
-              value = g_key_file_get_string (file, *group, def, NULL);
-
-              init_gvalue_from_dbus_sig (param->dbus_signature,
-                  &param->default_value);
-
-              if (value != NULL && parse_default_value (&param->default_value,
-                    param->dbus_signature, value, file, *group, def))
-                param->flags |= TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT;
-
-              g_free (value);
-              g_free (def);
-
-              DEBUG ("\tParam name: %s", param->name);
-              DEBUG ("\tParam flags: 0x%x", param->flags);
-              DEBUG ("\tParam sig: %s", param->dbus_signature);
-
-#ifdef ENABLE_DEBUG
-              if (G_IS_VALUE (&param->default_value))
-                {
-                  gchar *repr = g_strdup_value_contents
-                      (&(param->default_value));
-
-                  DEBUG ("\tParam default value: %s of type %s", repr,
-                      G_VALUE_TYPE_NAME (&(param->default_value)));
-                  g_free (repr);
-                }
-              else
-                {
-                  DEBUG ("\tParam default value: not set");
-                }
-#endif
-            }
-        }
-
-      g_strfreev (keys);
-
-      proto_struct->params =
-          (TpConnectionManagerParam *) g_array_free (output, FALSE);
-
-      g_hash_table_insert (protocols, g_strdup (name), proto_object);
+      g_hash_table_unref (immutables);
     }
 
 success:
