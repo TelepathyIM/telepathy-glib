@@ -22,6 +22,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
@@ -76,6 +77,26 @@ TpProtocol *tp_protocol_new (TpDBusDaemon *dbus, const gchar *cm_name,
     GError **error);
 
 const gchar *tp_protocol_get_name (TpProtocol *self);
+
+#define TP_PROTOCOL_FEATURE_PARAMETERS \
+  (tp_protocol_get_feature_quark_parameters ())
+GQuark tp_protocol_get_feature_quark_parameters (void) G_GNUC_CONST;
+
+const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
+    const gchar *param);
+gboolean tp_protocol_has_param (TpProtocol *self,
+    const gchar *param);
+gboolean tp_protocol_can_register (TpProtocol *self);
+GStrv tp_protocol_dup_param_names (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
+
+#define TP_PROTOCOL_FEATURE_CORE \
+  (tp_protocol_get_feature_quark_core ())
+GQuark tp_protocol_get_feature_quark_core (void) G_GNUC_CONST;
+
+const gchar *tp_protocol_get_vcard_field (TpProtocol *self);
+const gchar *tp_protocol_get_english_name (TpProtocol *self);
+const gchar *tp_protocol_get_icon_name (TpProtocol *self);
+TpCapabilities *tp_protocol_get_capabilities (TpProtocol *self);
 
 G_END_DECLS
 

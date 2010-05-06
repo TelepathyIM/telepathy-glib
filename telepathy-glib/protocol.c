@@ -37,7 +37,9 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
+#include "telepathy-glib/capabilities-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/proxy-internal.h"
 
 #include "telepathy-glib/_gen/signals-marshal.h"
 #include "telepathy-glib/_gen/tp-cli-protocol.h"
@@ -69,16 +71,85 @@ struct _TpProtocolClass
 
 G_DEFINE_TYPE(TpProtocol, tp_protocol, TP_TYPE_PROXY);
 
+/**
+ * TP_PROTOCOL_FEATURE_PARAMETERS:
+ *
+ * Expands to a call to a function that returns a quark for the parameters
+ * feature of a #TpProtocol.
+ *
+ * When this feature is prepared, the possible parameters for connections to
+ * this protocol have been retrieved and are available for use.
+ *
+ * Unlike %TP_PROTOCOL_FEATURE_CORE, this feature can even be available on
+ * connection managers that don't really have Protocol objects
+ * (on these older connection managers, the #TpProtocol uses information from
+ * ConnectionManager methods to provide the list of parameters).
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_protocol_get_feature_quark_parameters (void)
+{
+  return g_quark_from_static_string ("tp-protocol-feature-parameters");
+}
+
+/**
+ * TP_PROTOCOL_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark for the core
+ * feature of a #TpProtocol.
+ *
+ * When this feature is prepared, at least the following basic information
+ * about the protocol is available:
+ *
+ * <itemizedlist>
+ *  <listitem>possible parameters for connections to this protocol</listitem>
+ *  <listitem>interfaces expected on connections to this protocol</listitem>
+ *  <listitem>classes of channel that could be requested from connections
+ *    to this protocol</listitem>
+ * </itemizedlist>
+ *
+ * (This feature implies that %TP_PROTOCOL_FEATURE_PARAMETERS is also
+ * available.)
+ *
+ * Unlike %TP_PROTOCOL_FEATURE_PARAMETERS, this feature can only become
+ * available on connection managers that implement Protocol objects.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GQuark
+tp_protocol_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tp-protocol-feature-core");
+}
+
 struct _TpProtocolPrivate
 {
   TpConnectionManagerProtocol protocol_struct;
   GHashTable *protocol_properties;
+  gchar *vcard_field;
+  gchar *english_name;
+  gchar *icon_name;
+  TpCapabilities *capabilities;
 };
 
 enum
 {
     PROP_PROTOCOL_NAME = 1,
     PROP_PROTOCOL_PROPERTIES,
+    PROP_ENGLISH_NAME,
+    PROP_VCARD_FIELD,
+    PROP_ICON_NAME,
+    PROP_CAPABILITIES,
+    PROP_PARAM_NAMES,
     N_PROPS
 };
 
@@ -181,6 +252,26 @@ tp_protocol_get_property (GObject *object,
       g_value_set_boxed (value, self->priv->protocol_properties);
       break;
 
+    case PROP_ENGLISH_NAME:
+      g_value_set_string (value, tp_protocol_get_english_name (self));
+      break;
+
+    case PROP_VCARD_FIELD:
+      g_value_set_string (value, tp_protocol_get_vcard_field (self));
+      break;
+
+    case PROP_ICON_NAME:
+      g_value_set_string (value, tp_protocol_get_icon_name (self));
+      break;
+
+    case PROP_CAPABILITIES:
+      g_value_set_object (value, tp_protocol_get_capabilities (self));
+      break;
+
+    case PROP_PARAM_NAMES:
+      g_value_take_boxed (value, tp_protocol_dup_param_names (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -241,6 +332,23 @@ _tp_connection_manager_protocol_free_contents (
 }
 
 static void
+tp_protocol_dispose (GObject *object)
+{
+  TpProtocol *self = TP_PROTOCOL (object);
+  GObjectFinalizeFunc dispose =
+    ((GObjectClass *) tp_protocol_parent_class)->dispose;
+
+  if (self->priv->capabilities != NULL)
+    {
+      g_object_unref (self->priv->capabilities);
+      self->priv->capabilities = NULL;
+    }
+
+  if (dispose != NULL)
+    dispose (object);
+}
+
+static void
 tp_protocol_finalize (GObject *object)
 {
   TpProtocol *self = TP_PROTOCOL (object);
@@ -248,6 +356,8 @@ tp_protocol_finalize (GObject *object)
     ((GObjectClass *) tp_protocol_parent_class)->finalize;
 
   _tp_connection_manager_protocol_free_contents (&self->priv->protocol_struct);
+  g_free (self->priv->vcard_field);
+  g_free (self->priv->english_name);
 
   if (self->priv->protocol_properties != NULL)
     g_hash_table_unref (self->priv->protocol_properties);
@@ -256,12 +366,60 @@ tp_protocol_finalize (GObject *object)
     finalize (object);
 }
 
+static gboolean
+tp_protocol_check_for_core (TpProtocol *self)
+{
+  const GHashTable *props = self->priv->protocol_properties;
+  const GValue *value;
+
+  /* this one can legitimately be NULL so we need to be more careful */
+  value = tp_asv_lookup (props, TP_PROP_PROTOCOL_CONNECTION_INTERFACES);
+
+  if (value == NULL || !G_VALUE_HOLDS (value, G_TYPE_STRV))
+    return FALSE;
+
+  if (tp_asv_get_boxed (props, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
+        TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST) == NULL)
+    return FALSE;
+
+  /* Interfaces has a sensible default, the empty list.
+   * VCardField, EnglishName and Icon have a sensible default, "". */
+
+  return TRUE;
+}
+
+static gchar *
+title_case (const gchar *s)
+{
+  gunichar u;
+  /* 6 bytes are enough for any Unicode character, 7th byte remains '\0' */
+  gchar buf[7] = { 0 };
+
+  /* if s isn't UTF-8, give up and use it as-is */
+  if (!g_utf8_validate (s, -1, NULL))
+    return g_strdup (s);
+
+  u = g_utf8_get_char (s);
+
+  if (!g_unichar_islower (u))
+    return g_strdup (s);
+
+  u = g_unichar_totitle (u);
+  g_unichar_to_utf8 (u, buf);
+  g_assert (buf [sizeof (buf) - 1] == '\0');
+
+  return g_strdup_printf ("%s%s", buf, g_utf8_next_char (s));
+}
+
 static void
 tp_protocol_constructed (GObject *object)
 {
   TpProtocol *self = (TpProtocol *) object;
+  TpProxy *proxy = (TpProxy *) object;
   void (*chain_up) (GObject *) =
     ((GObjectClass *) tp_protocol_parent_class)->constructed;
+  const gchar *s;
+  const GPtrArray *rccs;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -277,6 +435,71 @@ tp_protocol_constructed (GObject *object)
           TP_PROP_PROTOCOL_PARAMETERS,
           TP_ARRAY_TYPE_PARAM_SPEC_LIST),
         tp_proxy_get_bus_name (self), self->priv->protocol_struct.name);
+
+  /* force vCard field to lower case, even if the CM is spec-incompliant */
+  s = tp_asv_get_string (self->priv->protocol_properties,
+      TP_PROP_PROTOCOL_VCARD_FIELD);
+
+  if (tp_str_empty (s))
+    self->priv->vcard_field = NULL;
+  else
+    self->priv->vcard_field = g_utf8_strdown (s, -1);
+
+  s = tp_asv_get_string (self->priv->protocol_properties,
+      TP_PROP_PROTOCOL_ENGLISH_NAME);
+
+  if (tp_str_empty (s))
+    self->priv->english_name = title_case (self->priv->protocol_struct.name);
+  else
+    self->priv->english_name = g_strdup (s);
+
+  s = tp_asv_get_string (self->priv->protocol_properties,
+      TP_PROP_PROTOCOL_ICON);
+
+  if (tp_str_empty (s))
+    self->priv->icon_name = g_strdup_printf ("im-%s",
+        self->priv->protocol_struct.name);
+  else
+    self->priv->icon_name = g_strdup (s);
+
+  rccs = tp_asv_get_boxed (self->priv->protocol_properties,
+        TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
+        TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
+
+  if (rccs != NULL)
+    self->priv->capabilities = _tp_capabilities_new (rccs, FALSE);
+
+  /* become ready immediately */
+  _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_PARAMETERS, TRUE);
+  _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_CORE,
+    tp_protocol_check_for_core (self));
+}
+
+enum {
+    FEAT_PARAMETERS,
+    FEAT_CORE,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tp_protocol_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  /* we always try to prepare both of these features, and nothing else is
+   * allowed to complete until they have succeeded or failed */
+  features[FEAT_PARAMETERS].name = TP_PROTOCOL_FEATURE_PARAMETERS;
+  features[FEAT_PARAMETERS].core = TRUE;
+  features[FEAT_CORE].name = TP_PROTOCOL_FEATURE_CORE;
+  features[FEAT_CORE].core = TRUE;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
 }
 
 static void
@@ -290,8 +513,17 @@ tp_protocol_class_init (TpProtocolClass *klass)
   object_class->constructed = tp_protocol_constructed;
   object_class->get_property = tp_protocol_get_property;
   object_class->set_property = tp_protocol_set_property;
+  object_class->dispose = tp_protocol_dispose;
   object_class->finalize = tp_protocol_finalize;
 
+  /**
+   * TpProtocol:protocol-name:
+   *
+   * The machine-readable name of the protocol, taken from the Telepathy
+   * D-Bus Interface Specification, such as "jabber" or "local-xmpp".
+   *
+   * Since: 0.11.UNRELEASED
+   */
   g_object_class_install_property (object_class, PROP_PROTOCOL_NAME,
       g_param_spec_string ("protocol-name",
         "Name of this protocol",
@@ -299,6 +531,14 @@ tp_protocol_class_init (TpProtocolClass *klass)
         NULL,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * TpProtocol:protocol-properties
+   *
+   * The immutable properties of this Protocol, as provided at construction
+   * time. This is a map from string to #GValue, which must not be modified.
+   *
+   * Since: 0.11.UNRELEASED
+   */
   g_object_class_install_property (object_class, PROP_PROTOCOL_PROPERTIES,
       g_param_spec_boxed ("protocol-properties",
         "Protocol properties",
@@ -306,6 +546,91 @@ tp_protocol_class_init (TpProtocolClass *klass)
         TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * TpProtocol:english-name:
+   *
+   * The name of the protocol in a form suitable for display to users,
+   * such as "AIM" or "Yahoo!", or a string based on #TpProtocol:name
+   * (currently constructed by putting the first character in title case,
+   * but this is not guaranteed) if no better name is available or the
+   * %TP_PROTOCOL_FEATURE_CORE feature has not been prepared.
+   *
+   * This is effectively in the C locale (international English); user
+   * interfaces requiring a localized protocol name should look one up in their
+   * own message catalog based on either #TpProtocol:name or
+   * #TpProtocol:english-name, but should use this English version as a
+   * fallback if no translated version can be found.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_ENGLISH_NAME,
+      g_param_spec_string ("english-name",
+        "English name",
+        "A non-NULL English name for this Protocol",
+        NULL, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:vcard-field:
+   *
+   * The most common vCard field used for this protocol's contact
+   * identifiers, normalized to lower case, or %NULL if there is no such field
+   * or the %TP_PROTOCOL_FEATURE_CORE feature has not been prepared.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_VCARD_FIELD,
+      g_param_spec_string ("vcard-field",
+        "vCard field",
+        "A lower-case vCard name for this Protocol, or NULL",
+        NULL, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:icon-name:
+   *
+   * The name of an icon in the system's icon theme. If none was supplied
+   * by the Protocol, or the %TP_PROTOCOL_FEATURE_CORE feature has not been
+   * prepared, a default is used; currently, this is "im-" plus
+   * #TpProtocol:name.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_ICON_NAME,
+      g_param_spec_string ("icon-name",
+        "Icon name",
+        "A non-NULL Icon name for this Protocol",
+        NULL, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:capabilities:
+   *
+   * The classes of channel that can be requested from connections to this
+   * protocol, or %NULL if this is unknown or the %TP_PROTOCOL_FEATURE_CORE
+   * feature has not been prepared.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_CAPABILITIES,
+      g_param_spec_object ("capabilities",
+        "Capabilities",
+        "Requestable channel classes for this Protocol",
+        TP_TYPE_CAPABILITIES, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:param-names:
+   *
+   * A list of parameter names supported by this connection manager
+   * for this protocol, or %NULL if %TP_PROTOCOL_FEATURE_PARAMETERS has not
+   * been prepared.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_PARAM_NAMES,
+      g_param_spec_boxed ("param-names",
+        "Parameter names",
+        "A list of parameter names",
+        G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  proxy_class->list_features = tp_protocol_list_features;
   proxy_class->must_have_unique_name = FALSE;
   proxy_class->interface = TP_IFACE_QUARK_PROTOCOL;
   tp_protocol_init_known_interfaces ();
@@ -417,12 +742,160 @@ _tp_protocol_get_struct (TpProtocol *self)
  * in C code. The returned string is valid for as long as @self exists.
  *
  * Returns: the value of the #TpProtocol:protocol-name property
+ *
+ * Since: 0.11.UNRELEASED
  */
 const gchar *
 tp_protocol_get_name (TpProtocol *self)
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
   return self->priv->protocol_struct.name;
+}
+
+/**
+ * tp_protocol_has_param:
+ * @self: a protocol
+ * @param: a parameter name
+ *
+ * <!-- no more to say -->
+ *
+ * Returns: %TRUE if @self supports the parameter @param.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_protocol_has_param (TpProtocol *self,
+    const gchar *param)
+{
+  return (tp_protocol_get_param (self, param) != NULL);
+}
+
+/**
+ * tp_protocol_get_param:
+ * @self: a protocol
+ * @param: a parameter name
+ *
+ * <!-- no more to say -->
+ *
+ * Returns: a structure representing the parameter @param, or %NULL if not
+ *          supported
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
+    const gchar *param)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), FALSE);
+  return tp_connection_manager_protocol_get_param (
+      &self->priv->protocol_struct, param);
+}
+
+/**
+ * tp_protocol_can_register:
+ * @self: a protocol
+ *
+ * Return whether a new account can be registered on this protocol, by setting
+ * the special "register" parameter to %TRUE.
+ *
+ * Returns: %TRUE if @protocol supports the parameter "register"
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_protocol_can_register (TpProtocol *self)
+{
+  return tp_protocol_has_param (self, "register");
+}
+
+/**
+ * tp_protocol_dup_param_names:
+ * @self: a protocol
+ *
+ * Returns a list of parameter names supported by this connection manager
+ * for this protocol.
+ *
+ * The result is copied and must be freed by the caller with g_strfreev().
+ *
+ * Returns: (type GObject.Strv) (transfer full): a copy of
+ *  #TpProtocol:param-names
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GStrv
+tp_protocol_dup_param_names (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+  return tp_connection_manager_protocol_dup_param_names (
+      &self->priv->protocol_struct);
+}
+
+/**
+ * tp_protocol_get_vcard_field:
+ * @self: a protocol object
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpProtocol:vcard-field
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_protocol_get_vcard_field (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+  return self->priv->vcard_field;
+}
+
+/**
+ * tp_protocol_get_english_name:
+ * @self: a protocol object
+ *
+ * <!-- -->
+ *
+ * Returns: the non-%NULL, non-empty value of #TpProtocol:english-name
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_protocol_get_english_name (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), "");
+  return self->priv->english_name;
+}
+
+/**
+ * tp_protocol_get_icon_name:
+ * @self: a protocol object
+ *
+ * <!-- -->
+ *
+ * Returns: the non-%NULL, non-empty value of #TpProtocol:icon-name
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_protocol_get_icon_name (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), "dialog-error");
+  return self->priv->icon_name;
+}
+
+/**
+ * tp_protocol_get_capabilities:
+ * @self: a protocol object
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): #TpProtocol:capabilities, which must be referenced
+ *  (if non-%NULL) if it will be kept
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpCapabilities *
+tp_protocol_get_capabilities (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+  return self->priv->capabilities;
 }
 
 static gboolean

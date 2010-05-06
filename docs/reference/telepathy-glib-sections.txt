@@ -4155,6 +4155,18 @@ tp_protocol_new
 tp_protocol_get_name
 tp_protocol_init_known_interfaces
 <SUBSECTION>
+TP_PROTOCOL_FEATURE_PARAMETERS
+tp_protocol_dup_param_names
+tp_protocol_get_param
+tp_protocol_has_param
+tp_protocol_can_register
+<SUBSECTION>
+TP_PROTOCOL_FEATURE_CORE
+tp_protocol_get_capabilities
+tp_protocol_get_english_name
+tp_protocol_get_icon_name
+tp_protocol_get_vcard_field
+<SUBSECTION>
 tp_cli_protocol_call_identify_account
 tp_cli_protocol_call_normalize_contact
 tp_cli_protocol_callback_for_identify_account
@@ -4167,6 +4179,8 @@ TP_PROTOCOL_GET_CLASS
 TP_IS_PROTOCOL
 TP_IS_PROTOCOL_CLASS
 TP_TYPE_PROTOCOL
+tp_protocol_get_feature_quark_core
+tp_protocol_get_feature_quark_parameters
 <SUBSECTION Private>
 TpProtocolPrivate
 TpProtocolClassPrivate
