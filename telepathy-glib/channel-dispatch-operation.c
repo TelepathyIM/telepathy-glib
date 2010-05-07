@@ -490,6 +490,7 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
   gboolean prepared = TRUE;
   GPtrArray *channels;
   guint i;
+  GError *e = NULL;
 
   self->priv->preparing_core = FALSE;
 
@@ -499,6 +500,7 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
           error->message);
 
       prepared = FALSE;
+      e = g_error_copy (error);
       goto out;
     }
 
@@ -508,7 +510,10 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
 
   if (self->priv->connection == NULL)
     {
-      DEBUG ("Mandatory 'Connection' property is missing");
+      e = g_error_new_literal (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Mandatory 'Connection' property is missing");
+      DEBUG ("%s", e->message);
+
       prepared = FALSE;
       goto out;
     }
@@ -519,7 +524,10 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
 
   if (self->priv->account == NULL)
     {
-      DEBUG ("Mandatory 'Account' property is missing");
+      e = g_error_new_literal (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Mandatory 'Account' property is missing");
+      DEBUG ("%s", e->message);
+
       prepared = FALSE;
       goto out;
     }
@@ -530,7 +538,10 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
 
   if (self->priv->possible_handlers == NULL)
     {
-      DEBUG ("Mandatory 'PossibleHandlers' property is missing");
+      e = g_error_new_literal (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Mandatory 'PossibleHandlers' property is missing");
+      DEBUG ("%s", e->message);
+
       prepared = FALSE;
       goto out;
     }
@@ -543,7 +554,9 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
       TP_ARRAY_TYPE_CHANNEL_DETAILS_LIST);
   if (channels == NULL)
     {
-      DEBUG ("No Channels property");
+      e = g_error_new_literal (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Mandatory 'Channels' property is missing");
+      DEBUG ("%s", e->message);
 
       prepared = FALSE;
       goto out;
@@ -582,6 +595,12 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
 out:
   _tp_proxy_set_feature_prepared (proxy,
       TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, prepared);
+
+  if (!prepared)
+    {
+      tp_proxy_invalidate ((TpProxy *) self, e);
+      g_error_free (e);
+    }
 }
 
 static void
