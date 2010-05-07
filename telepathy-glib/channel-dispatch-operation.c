@@ -368,38 +368,38 @@ tp_channel_dispatch_operation_set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_CHANNEL_DISPATCH_OPERATION_PROPERTIES:
-      {
-        GHashTable *asv = g_value_get_boxed (value);
+      case PROP_CHANNEL_DISPATCH_OPERATION_PROPERTIES:
+        {
+          GHashTable *asv = g_value_get_boxed (value);
 
-        if (asv == NULL)
-          return;
+          if (asv == NULL)
+            return;
 
-        tp_g_hash_table_update (self->priv->immutable_properties,
-            asv, (GBoxedCopyFunc) g_strdup,
-            (GBoxedCopyFunc) tp_g_value_slice_dup);
+          tp_g_hash_table_update (self->priv->immutable_properties,
+              asv, (GBoxedCopyFunc) g_strdup,
+              (GBoxedCopyFunc) tp_g_value_slice_dup);
 
-        maybe_set_connection (self, tp_asv_get_boxed (asv,
-              TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
-              DBUS_TYPE_G_OBJECT_PATH));
+          maybe_set_connection (self, tp_asv_get_boxed (asv,
+                TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
+                DBUS_TYPE_G_OBJECT_PATH));
 
-        maybe_set_account (self, tp_asv_get_boxed (asv,
-              TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
-              DBUS_TYPE_G_OBJECT_PATH));
+          maybe_set_account (self, tp_asv_get_boxed (asv,
+                TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
+                DBUS_TYPE_G_OBJECT_PATH));
 
-        maybe_set_possible_handlers (self, tp_asv_get_boxed (asv,
-              TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
-              G_TYPE_STRV));
+          maybe_set_possible_handlers (self, tp_asv_get_boxed (asv,
+                TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
+                G_TYPE_STRV));
 
-        maybe_set_interfaces (self, tp_asv_get_boxed (asv,
-              TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
-              G_TYPE_STRV));
-      }
-      break;
+          maybe_set_interfaces (self, tp_asv_get_boxed (asv,
+                TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
+                G_TYPE_STRV));
+        }
+        break;
 
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
   }
 }
 
