@@ -926,16 +926,7 @@ add_dispatch_context_prepare_cb (GObject *source,
       DEBUG ("Failed to prepare TpAddDispatchOperationContext: %s",
           error->message);
 
-      if (g_error_matches (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED))
-        {
-          /* There is no point calling the AddDispatchOperation
-           * implementation; just terminate the D-Bus call right away */
-          tp_add_dispatch_operation_context_accept (ctx);
-        }
-      else
-        {
-          tp_add_dispatch_operation_context_fail (ctx, error);
-        }
+      tp_add_dispatch_operation_context_fail (ctx, error);
 
       g_error_free (error);
       return;
