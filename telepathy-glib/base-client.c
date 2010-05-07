@@ -91,6 +91,10 @@
  * tp_add_dispatch_operation_context_delay() or
  * tp_add_dispatch_operation_context_fail() on @context before it returns.
  *
+ * Implementation can then use tp_channel_dispatch_operation_handle_with_async()
+ * or tp_channel_dispatch_operation_claim_async() to approve or disapprove the
+ * channels.
+ *
  * Since: 0.11.UNRELEASED
  */
 
