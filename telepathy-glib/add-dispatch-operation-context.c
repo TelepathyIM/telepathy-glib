@@ -225,7 +225,7 @@ tp_add_dispatch_operation_context_constructed (GObject *object)
   TpAddDispatchOperationContext *self = TP_ADD_DISPATCH_OPERATION_CONTEXT (
       object);
   void (*chain_up) (GObject *) =
-    ((GObjectClass *) \
+    ((GObjectClass *)
       tp_add_dispatch_operation_context_parent_class)->constructed;
 
   if (chain_up != NULL)
