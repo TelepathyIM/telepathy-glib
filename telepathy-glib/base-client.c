@@ -376,6 +376,20 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
   g_ptr_array_add (self->priv->approver_filters, filter);
 }
 
+/**
+ * tp_base_client_be_a_handler:
+ * @self: a #TpBaseClient
+ *
+ * Register @self as a ChannelHandler with an empty list of filter.
+ * This is useful if you want to create a client that only handle channels
+ * for which it's the PreferredHandler.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_handle_channels().
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_be_a_handler (TpBaseClient *self)
 {
@@ -388,6 +402,23 @@ tp_base_client_be_a_handler (TpBaseClient *self)
   self->priv->flags |= CLIENT_IS_HANDLER;
 }
 
+/**
+ * tp_base_client_add_handler_filter:
+ * @self: a #TpBaseClient
+ * @filter: (transfer none) (element-type utf8 GObject.Value):
+ * a %TP_HASH_TYPE_CHANNEL_CLASS
+ *
+ * Register a new channel class as Handler.HandlerChannelFilter.
+ * The @handle_channels virtual method set up using
+ * tp_base_client_implement_handle_channels() will be called whenever
+ * a new channel's properties match the ones in @filter.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_handle_channels().
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_add_handler_filter (TpBaseClient *self,
     GHashTable *filter)
@@ -398,6 +429,27 @@ tp_base_client_add_handler_filter (TpBaseClient *self,
       _tp_base_client_copy_filter (filter));
 }
 
+/**
+ * tp_base_client_take_handler_filter: (skip)
+ * @self: a #TpBaseClient
+ * @filter: (transfer full) (element-type utf8 GObject.Value):
+ * a %TP_HASH_TYPE_CHANNEL_CLASS, ownership of which is taken by @self
+ *
+ * The same as tp_base_client_add_handler_filter(), but ownership of @filter
+ * is taken by @self. This makes it convenient to call using tp_asv_new():
+ *
+ * |[
+ * tp_base_client_take_handler_filter (client,
+ *    tp_asv_new (
+ *        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+ *            TP_IFACE_CHANNEL_TYPE_TEXT,
+ *        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+ *            TP_HANDLE_TYPE_CONTACT,
+ *        ...));
+ * ]|
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_take_handler_filter (TpBaseClient *self,
     GHashTable *filter)
@@ -412,6 +464,22 @@ tp_base_client_take_handler_filter (TpBaseClient *self,
   g_ptr_array_add (self->priv->handler_filters, filter);
 }
 
+/**
+ * tp_base_client_set_handler_bypass_approval:
+ * @self: a #TpBaseClient
+ * @bypass_approval: the value of the Handler.BypassApproval property
+ *
+ * Set whether the channels destined for this handler are automatically
+ * handled, without invoking approvers.
+ * (This is implemented by setting the value of its BypassApproval
+ * D-Bus property.)
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_handle_channels().
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
     gboolean bypass_approval)
@@ -425,6 +493,22 @@ tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
   self->priv->flags |= (CLIENT_IS_HANDLER | CLIENT_HANDLER_BYPASSES_APPROVAL);
 }
 
+/**
+ * tp_base_client_set_handler_request_notification:
+ * @self: a #TpBaseClient
+ *
+ * Indicate that @self is a Handler willing to be notified about requests for
+ * channels that it is likely to be asked to handle.
+ * That means the TpBaseClient::request-added and TpBaseClient::request-removed:
+ * signals will be fired and tp_base_client_get_pending_requests() will
+ * return the list of pending requests.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_handle_channels().
+ *
+ * Since: 0.11.UNRELEASED
+ */
 void
 tp_base_client_set_handler_request_notification (TpBaseClient *self)
 {
@@ -463,6 +547,12 @@ _tp_base_client_add_handler_capability (TpBaseClient *self,
  *
  * Add one capability token to this client, as if via
  * tp_base_client_add_handler_capabilities().
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_handle_channels().
+ *
+ * Since: 0.11.UNRELEASED
  */
 void
 tp_base_client_add_handler_capability (TpBaseClient *self,
@@ -488,6 +578,12 @@ tp_base_client_add_handler_capability (TpBaseClient *self,
  * that Telepathy connection managers should advertise certain capabilities
  * to other contacts, such as the ability to receive audio/video calls using
  * particular streaming protocols and codecs.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_handle_channels().
+ *
+ * Since: 0.11.UNRELEASED
  */
 void
 tp_base_client_add_handler_capabilities (TpBaseClient *self,
@@ -514,6 +610,12 @@ tp_base_client_add_handler_capabilities (TpBaseClient *self,
  *
  * Convenience C API equivalent to calling
  * tp_base_client_add_handler_capability() for each capability token.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_handle_channels().
+ *
+ * Since: 0.11.UNRELEASED
  */
 void
 tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
@@ -577,10 +679,17 @@ tp_base_client_register (TpBaseClient *self,
 }
 
 /**
- * Only works after tp_base_client_set_handler_request_notification().
+ * tp_base_client_get_pending_requests:
+ * @self: a #TpBaseClient
  *
- * Returns: (transfer container) (element-type Tp.ChannelRequest): the
- *  requests
+ * Only works if tp_base_client_set_handler_request_notification() has been
+ * called.
+ * Returns the list of requests @self is likely be asked to handle.
+ *
+ * Returns: (transfer container) (element-type Tp.ChannelRequest): a #GList
+ * of #TpChannelRequest
+ *
+ * Since: 0.11.UNRELEASED
  */
 GList *
 tp_base_client_get_pending_requests (TpBaseClient *self)
@@ -590,11 +699,16 @@ tp_base_client_get_pending_requests (TpBaseClient *self)
 }
 
 /**
+ * tp_base_client_get_handled_channels:
+ * @self: a #TpBaseClient
+ *
  * Returns the set of channels currently handled by this base client or by any
  * other #TpBaseClient with which it shares a unique name.
  *
  * Returns: (transfer container) (element-type Tp.Channel): the handled
  *  channels
+ *
+ * Since: 0.11.UNRELEASED
  */
 GList *
 tp_base_client_get_handled_channels (TpBaseClient *self)
