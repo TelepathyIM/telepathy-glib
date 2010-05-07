@@ -334,7 +334,7 @@ check_immutable_properties (Test *test)
       "connection", &conn,
       "account", &account,
       "possible-handlers", &possible_handlers,
-      "channel-dispatch-operation-properties", &immutable_props,
+      "cdo-properties", &immutable_props,
       NULL);
 
   /* connection */

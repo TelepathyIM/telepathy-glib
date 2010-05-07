@@ -123,7 +123,7 @@ enum
   PROP_ACCOUNT,
   PROP_CHANNELS,
   PROP_POSSIBLE_HANDLERS,
-  PROP_CHANNEL_DISPATCH_OPERATION_PROPERTIES,
+  PROP_CDO_PROPERTIES,
   N_PROPS
 };
 
@@ -228,7 +228,7 @@ tp_channel_dispatch_operation_get_property (GObject *object,
       g_value_set_boxed (value, self->priv->possible_handlers);
       break;
 
-    case PROP_CHANNEL_DISPATCH_OPERATION_PROPERTIES:
+    case PROP_CDO_PROPERTIES:
       g_value_set_boxed (value, self->priv->immutable_properties);
       break;
 
@@ -368,7 +368,7 @@ tp_channel_dispatch_operation_set_property (GObject *object,
 
   switch (property_id)
     {
-      case PROP_CHANNEL_DISPATCH_OPERATION_PROPERTIES:
+      case PROP_CDO_PROPERTIES:
         {
           GHashTable *asv = g_value_get_boxed (value);
 
@@ -590,7 +590,7 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
     }
 
   g_object_notify ((GObject *) self, "channels");
-  g_object_notify ((GObject *) self, "channel-dispatch-operation-properties");
+  g_object_notify ((GObject *) self, "cdo-properties");
 
 out:
   _tp_proxy_set_feature_prepared (proxy,
@@ -742,7 +742,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
       param_spec);
 
   /**
-   * TpChannelDispatchOperation:channel-dispatch-operation-properties:
+   * TpChannelDispatchOperation:cdo-properties:
    *
    * The immutable D-Bus properties of this ChannelDispatchOperation,
    * represented by a #GHashTable where the keys are D-Bus
@@ -755,13 +755,13 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    *
    * Since: 0.11.UNRELEASED
    */
-  param_spec = g_param_spec_boxed ("channel-dispatch-operation-properties",
+  param_spec = g_param_spec_boxed ("cdo-properties",
       "Immutable D-Bus properties",
       "A map D-Bus interface + \".\" + property name => GValue",
       TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class,
-      PROP_CHANNEL_DISPATCH_OPERATION_PROPERTIES, param_spec);
+      PROP_CDO_PROPERTIES, param_spec);
 
  /**
    * TpChannelDispatchOperation::channel-lost:
@@ -864,7 +864,7 @@ tp_channel_dispatch_operation_new (TpDBusDaemon *bus_daemon,
         "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
         "bus-name", unique_name,
         "object-path", object_path,
-        "channel-dispatch-operation-properties", immutable_properties,
+        "cdo-properties", immutable_properties,
         NULL));
 
   g_free (unique_name);
@@ -994,7 +994,7 @@ tp_channel_dispatch_operation_borrow_possible_handlers (
  * it with g_hash_table_ref() if needed.
  *
  * Returns: (transfer none): the value of
- * #TpChannelDispatchOperation:channel-dispatch-operation-properties
+ * #TpChannelDispatchOperation:cdo-properties
  *
  * Since: 0.11.UNRELEASED
  */
