@@ -342,8 +342,8 @@ check_immutable_properties (Test *test)
   g_assert (TP_IS_CONNECTION (conn));
   g_assert (tp_channel_dispatch_operation_borrow_connection (test->cdo)
       == conn);
-  g_assert (!tp_strdiff (tp_proxy_get_object_path (conn),
-        tp_proxy_get_object_path (test->connection)));
+  g_assert_cmpstr (tp_proxy_get_object_path (conn), ==,
+        tp_proxy_get_object_path (test->connection));
   g_object_unref (conn);
 
   /* account */
@@ -351,8 +351,8 @@ check_immutable_properties (Test *test)
   g_assert (TP_IS_ACCOUNT (account));
   g_assert (tp_channel_dispatch_operation_borrow_account (test->cdo)
       == account);
-  g_assert (!tp_strdiff (tp_proxy_get_object_path (account),
-        ACCOUNT_PATH));
+  g_assert_cmpstr (tp_proxy_get_object_path (account), ==,
+        ACCOUNT_PATH);
   g_object_unref (account);
 
   /* possible handlers */
@@ -396,13 +396,13 @@ check_channels (Test *test)
 
   channel = g_ptr_array_index (channels, 0);
   g_assert (TP_IS_CHANNEL (channel));
-  g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
-        tp_proxy_get_object_path (test->text_chan)));
+  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
+        tp_proxy_get_object_path (test->text_chan));
 
   channel = g_ptr_array_index (channels, 1);
   g_assert (TP_IS_CHANNEL (channel));
-  g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
-        tp_proxy_get_object_path (test->text_chan_2)));
+  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
+        tp_proxy_get_object_path (test->text_chan_2));
 }
 
 static void
@@ -502,13 +502,13 @@ channe_lost_cb (TpChannelDispatchOperation *cdo,
   if (test->text_chan_service_2 != NULL)
     {
       /* The second channel is still there so we removed the first one */
-      g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
-            tp_proxy_get_object_path (test->text_chan)));
+      g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
+            tp_proxy_get_object_path (test->text_chan));
     }
   else
     {
-      g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
-            tp_proxy_get_object_path (test->text_chan_2)));
+      g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
+            tp_proxy_get_object_path (test->text_chan_2));
     }
 
   g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
@@ -572,8 +572,8 @@ test_channel_lost (Test *test,
   g_assert_cmpuint (channels->len, ==, 1);
 
   channel = g_ptr_array_index (channels, 0);
-  g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
-        tp_proxy_get_object_path (test->text_chan_2)));
+  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
+        tp_proxy_get_object_path (test->text_chan_2));
   /* Second channel disappears, Finished is emited and so the CDO is
    * invalidated */
   test->sig = 2;
@@ -688,8 +688,8 @@ test_channel_lost_preparing (Test *test,
   g_assert_cmpuint (channels->len, ==, 1);
 
   channel = g_ptr_array_index (channels, 0);
-  g_assert (!tp_strdiff (tp_proxy_get_object_path (channel),
-        tp_proxy_get_object_path (test->text_chan_2)));
+  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
+      tp_proxy_get_object_path (test->text_chan_2));
 }
 
 static void
