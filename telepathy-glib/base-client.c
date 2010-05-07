@@ -99,6 +99,31 @@
  * Since: 0.11.5
  */
 
+/**
+ * TpBaseClientClassHandleChannelsImpl:
+ * @client: a #TpBaseClient instance
+ * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
+ * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
+ * if possible
+ * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
+ *  all having %TP_CHANNEL_FEATURE_CORE prepared if possible
+ * @requests_satisfied: (element-type TelepathyGLib.ChannelRequest): a #GList of
+ *  #TpChannelRequest having their object-path defined but are not guaranteed
+ *  to be prepared.
+ * @user_action_time: the time at which user action occurred, or 0 if this
+ * channel is to be handled for some reason not involving user action.
+ * @context: a #TpHandleChannelsContext representing the context of this
+ *  D-Bus call
+ *
+ * Signature of the implementation of the HandleChannels method.
+ *
+ * This function must call either tp_handle_channels_context_accept(),
+ * tp_handle_channels_context_delay() or tp_handle_channels_context_fail()
+ * on @context before it returns.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
 #include "telepathy-glib/base-client.h"
 
 #include <telepathy-glib/account-manager.h>
@@ -107,6 +132,7 @@
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus-internal.h>
+#include <telepathy-glib/handle-channels-context-internal.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/observe-channels-context-internal.h>
 #include <telepathy-glib/svc-client.h>
@@ -120,6 +146,7 @@ struct _TpBaseClientClassPrivate {
     /*<private>*/
     TpBaseClientClassObserveChannelsImpl observe_channels_impl;
     TpBaseClientClassAddDispatchOperationImpl add_dispatch_operation_impl;
+    TpBaseClientClassHandleChannelsImpl handle_channels_impl;
 };
 
 static void observer_iface_init (gpointer, gpointer);
@@ -352,8 +379,11 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
 void
 tp_base_client_be_a_handler (TpBaseClient *self)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
 
   self->priv->flags |= CLIENT_IS_HANDLER;
 }
@@ -363,6 +393,7 @@ tp_base_client_add_handler_filter (TpBaseClient *self,
     GHashTable *filter)
 {
   g_return_if_fail (filter != NULL);
+
   tp_base_client_take_handler_filter (self,
       _tp_base_client_copy_filter (filter));
 }
@@ -371,8 +402,11 @@ void
 tp_base_client_take_handler_filter (TpBaseClient *self,
     GHashTable *filter)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
 
   self->priv->flags |= CLIENT_IS_HANDLER;
   g_ptr_array_add (self->priv->handler_filters, filter);
@@ -382,8 +416,11 @@ void
 tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
     gboolean bypass_approval)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
 
   self->priv->flags |= (CLIENT_IS_HANDLER | CLIENT_HANDLER_BYPASSES_APPROVAL);
 }
@@ -391,8 +428,11 @@ tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
 void
 tp_base_client_set_handler_request_notification (TpBaseClient *self)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
 
   self->priv->flags |= (CLIENT_IS_HANDLER | CLIENT_HANDLER_WANTS_REQUESTS);
 }
@@ -401,6 +441,10 @@ static void
 _tp_base_client_add_handler_capability (TpBaseClient *self,
     const gchar *token)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
+  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
+
   self->priv->flags |= CLIENT_IS_HANDLER;
 
   g_assert (g_ptr_array_index (self->priv->handler_caps,
@@ -424,8 +468,11 @@ void
 tp_base_client_add_handler_capability (TpBaseClient *self,
     const gchar *token)
 {
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
 
   _tp_base_client_add_handler_capability (self, token);
 }
@@ -1305,17 +1352,162 @@ approver_iface_init (gpointer g_iface,
 }
 
 static void
+handle_channels_context_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseClient *self = user_data;
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+  TpHandleChannelsContext *ctx = TP_HANDLE_CHANNELS_CONTEXT (source);
+  GError *error = NULL;
+  GList *channels_list, *requests_list;
+
+  if (!_tp_handle_channels_context_prepare_finish (ctx, result, &error))
+    {
+      DEBUG ("Failed to prepare TpHandleChannelsContext: %s", error->message);
+      tp_handle_channels_context_fail (ctx, error);
+      g_error_free (error);
+      return;
+    }
+
+  channels_list = ptr_array_to_list (ctx->channels);
+  requests_list = ptr_array_to_list (ctx->requests_satisfied);
+
+  cls->priv->handle_channels_impl (self, ctx->account, ctx->connection,
+      channels_list, requests_list, ctx->user_action_time, ctx);
+
+  g_list_free (channels_list);
+  g_list_free (requests_list);
+
+  if (_tp_handle_channels_context_get_state (ctx) ==
+      TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE)
+    {
+      error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Implementation of HandledChannels in %s didn't call "
+          "tp_handle_channels_context_{accept,fail,delay}",
+          G_OBJECT_TYPE_NAME (self));
+
+      CRITICAL ("%s", error->message);
+
+      tp_handle_channels_context_fail (ctx, error);
+      g_error_free (error);
+    }
+}
+
+static void
 _tp_base_client_handle_channels (TpSvcClientHandler *iface,
-    const gchar *account,
-    const gchar *connection,
-    const GPtrArray *channels,
-    const GPtrArray *requests,
+    const gchar *account_path,
+    const gchar *connection_path,
+    const GPtrArray *channels_arr,
+    const GPtrArray *requests_arr,
     guint64 user_action_time,
     GHashTable *handler_info,
     DBusGMethodInvocation *context)
 {
-  /* FIXME */
-  tp_dbus_g_method_return_not_implemented (context);
+  TpBaseClient *self = TP_BASE_CLIENT (iface);
+  TpHandleChannelsContext *ctx;
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+  GError *error = NULL;
+  TpAccount *account = NULL;
+  TpConnection *connection = NULL;
+  GPtrArray *channels = NULL, *requests = NULL;
+  guint i;
+
+  if (!(self->priv->flags & CLIENT_IS_HANDLER))
+    {
+      /* Pretend that the method is not implemented if we are not supposed to
+       * be an Handler. */
+      tp_dbus_g_method_return_not_implemented (context);
+      return;
+    }
+
+  if (cls->priv->handle_channels_impl == NULL)
+    {
+      DEBUG ("class %s does not implement HandleChannels",
+          G_OBJECT_TYPE_NAME (self));
+
+      tp_dbus_g_method_return_not_implemented (context);
+      return;
+    }
+
+  if (channels_arr->len == 0)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Channels should contain at least one channel");
+      DEBUG ("%s", error->message);
+      goto out;
+    }
+
+  account = tp_account_manager_ensure_account (self->priv->account_mgr,
+      account_path);
+
+  connection = tp_account_ensure_connection (account, connection_path);
+  if (connection == NULL)
+    {
+      DEBUG ("Failed to create TpConnection");
+      goto out;
+    }
+
+  channels = g_ptr_array_sized_new (channels_arr->len);
+  g_ptr_array_set_free_func (channels, g_object_unref);
+  for (i = 0; i < channels_arr->len; i++)
+    {
+      const gchar *chan_path;
+      GHashTable *chan_props;
+      TpChannel *channel;
+
+      tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
+          &chan_path, &chan_props);
+
+      channel = tp_channel_new_from_properties (connection,
+          chan_path, chan_props, &error);
+      if (channel == NULL)
+        {
+          DEBUG ("Failed to create TpChannel: %s", error->message);
+          goto out;
+        }
+
+      g_ptr_array_add (channels, channel);
+    }
+
+  requests = g_ptr_array_sized_new (requests_arr->len);
+  g_ptr_array_set_free_func (requests, g_object_unref);
+  for (i = 0; i < requests_arr->len; i++)
+    {
+      const gchar *req_path = g_ptr_array_index (requests_arr, i);
+      TpChannelRequest *request;
+
+      request = tp_channel_request_new (self->priv->dbus, req_path, NULL,
+          &error);
+      if (request == NULL)
+        {
+          DEBUG ("Failed to create TpChannelRequest: %s", error->message);
+          goto out;
+        }
+
+      g_ptr_array_add (requests, request);
+    }
+
+  ctx = _tp_handle_channels_context_new (account, connection, channels,
+      requests, user_action_time, handler_info, context);
+
+  _tp_handle_channels_context_prepare_async (ctx,
+      handle_channels_context_prepare_cb, self);
+
+  g_object_unref (ctx);
+
+out:
+  if (channels != NULL)
+    g_ptr_array_unref (channels);
+
+  if (requests != NULL)
+    g_ptr_array_unref (requests);
+
+  if (error == NULL)
+    return;
+
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void
@@ -1430,4 +1622,22 @@ tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *cls,
     TpBaseClientClassAddDispatchOperationImpl impl)
 {
   cls->priv->add_dispatch_operation_impl = impl;
+}
+
+/**
+ * tp_base_client_implement_handle_channels:
+ * @klass: the #TpBaseClientClass of the object
+ * @impl: the #TpBaseClientClassHandleChannelsImpl function implementing
+ * HandleCHannels()
+ *
+ * Called by subclasses to define the actual implementation of the
+ * HandleChannels() D-Bus method.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_base_client_implement_handle_channels (TpBaseClientClass *cls,
+    TpBaseClientClassHandleChannelsImpl impl)
+{
+  cls->priv->handle_channels_impl = impl;
 }
