@@ -368,18 +368,6 @@ tp_channel_dispatch_operation_set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_CONNECTION:
-      self->priv->connection = g_value_dup_object (value);
-      break;
-
-    case PROP_ACCOUNT:
-      self->priv->account = g_value_dup_object (value);
-      break;
-
-    case PROP_POSSIBLE_HANDLERS:
-      self->priv->possible_handlers = g_value_dup_boxed (value);
-      break;
-
     case PROP_CHANNEL_DISPATCH_OPERATION_PROPERTIES:
       {
         GHashTable *asv = g_value_get_boxed (value);
