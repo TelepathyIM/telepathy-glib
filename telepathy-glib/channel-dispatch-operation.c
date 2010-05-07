@@ -1036,7 +1036,7 @@ handle_with_cb (TpChannelDispatchOperation *self,
  * given handler be used to handle it.
  *
  * If successful, this method will cause the #TpProxy::invalidated signal
- * to be emitted.
+ * to be emitted with the TP_DBUS_ERROR_OBJECT_REMOVED error code.
  *
  * However, this method may fail because the dispatch has already been
  * completed and the object has already gone. If this occurs, it indicates
