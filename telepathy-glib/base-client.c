@@ -91,9 +91,10 @@
  * tp_add_dispatch_operation_context_delay() or
  * tp_add_dispatch_operation_context_fail() on @context before it returns.
  *
- * Implementation can then use tp_channel_dispatch_operation_handle_with_async()
- * or tp_channel_dispatch_operation_claim_async() to approve or disapprove the
- * channels.
+ * The implementation can then use
+ * tp_channel_dispatch_operation_handle_with_async() to approve handling of the
+ * channels, or tp_channel_dispatch_operation_claim_async() to take
+ * responsibility for handling or closing them".
  *
  * Since: 0.11.UNRELEASED
  */
@@ -195,8 +196,8 @@ _tp_base_client_copy_filter (GHashTable *filter)
  * a new channel's properties match the ones in @filter.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects that implement
- * @observe_channels.
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_observe_channels().
  *
  * Since: 0.11.UNRELEASED
  */
@@ -263,8 +264,8 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
  * its filter, it will automatically be restarted by service-activation.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects that implement
- * @observe_channels.
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_observe_channels().
  *
  * Since: 0.11.UNRELEASED
  */
@@ -293,8 +294,8 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
  * a new channel's properties match the ones in @filter.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects that implement
- * @add_dispatch_operation.
+ * called, and may only be called on objects whose class has called
+ * tp_base_client_implement_add_dispatch_operation().
  *
  * Since: 0.11.UNRELEASED
  */
