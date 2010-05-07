@@ -77,17 +77,17 @@
  * happens, the approver should stop prompting the user.
  *
  * Because all approvers are launched simultaneously, the user might respond
- * to another approver; if this happens, the invalidated signal will be
- * emitted with the domain %TP_DBUS_ERRORS and the error code
+ * to another approver; if this happens, the #TpProxy::invalidated signal
+ * will be emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_OBJECT_REMOVED.
  *
  * If a channel closes, the #TpChannelDispatchOperation::channel-lost signal
  * is emitted. If all channels
- * close, there is nothing more to dispatch, so the invalidated signal will be
- * emitted with the domain %TP_DBUS_ERRORS and the error code
+ * close, there is nothing more to dispatch, so the #TpProxy::invalidated
+ * signal will be emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_OBJECT_REMOVED.
  *
- * If the channel dispatcher crashes or exits, the invalidated
+ * If the channel dispatcher crashes or exits, the #TpProxy::invalidated
  * signal will be emitted with the domain %TP_DBUS_ERRORS and the error code
  * %TP_DBUS_ERROR_NAME_OWNER_LOST. In a high-quality implementation, the
  * dispatcher should be restarted, at which point it will create new
