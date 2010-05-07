@@ -618,6 +618,8 @@ maybe_prepare_core (TpProxy *proxy)
         TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE))
     return;   /* not interested right now */
 
+  self->priv->preparing_core = TRUE;
+
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CHANNEL_DISPATCH_OPERATION,
       get_dispatch_operation_prop_cb,
