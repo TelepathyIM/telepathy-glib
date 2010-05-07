@@ -795,7 +795,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
 
   if (cls->priv->observe_channels_impl == NULL)
     {
-      DEBUG ("class %s does not implement ObserveChannels",
+      WARNING ("class %s does not implement ObserveChannels",
           G_OBJECT_TYPE_NAME (self));
 
       tp_dbus_g_method_return_not_implemented (context);
@@ -983,7 +983,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
 
   if (cls->priv->add_dispatch_operation_impl == NULL)
     {
-      DEBUG ("class %s does not implement AddDispatchOperation",
+      WARNING ("class %s does not implement AddDispatchOperation",
           G_OBJECT_TYPE_NAME (self));
 
       tp_dbus_g_method_return_not_implemented (context);
