@@ -134,6 +134,51 @@ simple_add_dispatch_operation (
 }
 
 static void
+simple_handle_channels (TpBaseClient *client,
+    TpAccount *account,
+    TpConnection *connection,
+    GList *channels,
+    GList *requests_satisfied,
+    gint64 user_action_time,
+    TpHandleChannelsContext *context)
+{
+  SimpleClient *self = SIMPLE_CLIENT (client);
+  GList *l;
+
+  if (self->handle_channels_ctx != NULL)
+    {
+      g_object_unref (self->handle_channels_ctx);
+      self->handle_channels_ctx = NULL;
+    }
+
+  g_assert (TP_IS_ACCOUNT (account));
+  g_assert (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
+
+  g_assert (TP_IS_CONNECTION (connection));
+  g_assert (tp_proxy_is_prepared (connection, TP_CONNECTION_FEATURE_CORE));
+
+  g_assert_cmpuint (g_list_length (channels), >, 0);
+  for (l = channels; l != NULL; l = g_list_next (l))
+    {
+      TpChannel *channel = l->data;
+
+      g_assert (TP_IS_CHANNEL (channel));
+      g_assert (tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE) ||
+          tp_proxy_get_invalidated (channel) != NULL);
+    }
+
+  for (l = requests_satisfied; l != NULL; l = g_list_next (l))
+    {
+      TpChannelRequest *request = l->data;
+
+      g_assert (TP_IS_CHANNEL_REQUEST (request));
+    }
+
+  self->handle_channels_ctx = g_object_ref (context);
+  tp_handle_channels_context_accept (context);
+}
+
+static void
 simple_client_init (SimpleClient *self)
 {
 }
@@ -157,6 +202,12 @@ simple_client_dispose (GObject *object)
       self->add_dispatch_ctx = NULL;
     }
 
+  if (self->handle_channels_ctx != NULL)
+    {
+      g_object_unref (self->handle_channels_ctx);
+      self->handle_channels_ctx = NULL;
+    }
+
   if (dispose != NULL)
     dispose (object);
 }
@@ -174,6 +225,9 @@ simple_client_class_init (SimpleClientClass *klass)
 
   tp_base_client_implement_add_dispatch_operation (base_class,
       simple_add_dispatch_operation);
+
+  tp_base_client_implement_handle_channels (base_class,
+      simple_handle_channels);
 }
 
 SimpleClient *

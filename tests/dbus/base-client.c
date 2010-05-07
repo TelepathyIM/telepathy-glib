@@ -13,6 +13,7 @@
 #include <telepathy-glib/client.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/handle-channels-context-internal.h>
 #include <telepathy-glib/observe-channels-context-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 
@@ -773,7 +774,10 @@ test_handler (Test *test,
   g_assert_no_error (test->error);
 
   /* Call HandleChannels */
-  channels = g_ptr_array_sized_new (0);
+  channels = g_ptr_array_sized_new (2);
+  add_channel_to_ptr_array (channels, test->text_chan);
+  add_channel_to_ptr_array (channels, test->text_chan_2);
+
   requests_satisified = g_ptr_array_sized_new (0);
   info = g_hash_table_new (NULL, NULL);
 
@@ -781,14 +785,18 @@ test_handler (Test *test,
       TP_IFACE_QUARK_CLIENT_HANDLER);
 
   tp_cli_client_handler_call_handle_channels (test->client, -1,
-      "/org/freedesktop/Telepathy/Account/fake/fake/fake",
-      "/org/freedesktop/Telepathy/Connection/fake/fake/fake",
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
       channels, requests_satisified, 0, info,
       no_return_cb, test, NULL, NULL);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
+  g_assert_no_error (test->error);
 
+  g_assert (test->simple_client->handle_channels_ctx != NULL);
+  g_assert (test->simple_client->handle_channels_ctx->account == test->account);
+
+  g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);
   g_ptr_array_free (requests_satisified, TRUE);
   g_hash_table_unref (info);
