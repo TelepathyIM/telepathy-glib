@@ -764,7 +764,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
       PROP_CHANNEL_DISPATCH_OPERATION_PROPERTIES, param_spec);
 
  /**
-   * TpChannelDispatchOperation::channel-lost: (skip)
+   * TpChannelDispatchOperation::channel-lost:
    * @self: a #TpChannelDispatchOperation
    * @channel: the #TpChannel that closed
    * @domain: domain of a #GError indicating why the channel has been closed
