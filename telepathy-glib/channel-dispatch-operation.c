@@ -907,7 +907,7 @@ tp_channel_dispatch_operation_get_feature_quark_core (void)
 }
 
 /**
- * tp_channel_dispatch_operation_borrow_connection:
+ * tp_channel_dispatch_operation_borrow_connection: (skip)
  * @self: a #TpChannelDispatchOperation
  *
  * Returns the #TpConnection of this ChannelDispatchOperation.
@@ -926,7 +926,7 @@ tp_channel_dispatch_operation_borrow_connection (
 }
 
 /**
- * tp_channel_dispatch_operation_borrow_account:
+ * tp_channel_dispatch_operation_borrow_account: (skip)
  * @self: a #TpChannelDispatchOperation
  *
  * Returns the #TpAccount of this ChannelDispatchOperation.
@@ -945,7 +945,7 @@ tp_channel_dispatch_operation_borrow_account (
 }
 
 /**
- * tp_channel_dispatch_operation_borrow_channels:
+ * tp_channel_dispatch_operation_borrow_channels: (skip)
  * @self: a #TpChannelDispatchOperation
  *
  * Returns a #GPtrArray containing the #TpChannel of this
@@ -965,7 +965,7 @@ tp_channel_dispatch_operation_borrow_channels (
 }
 
 /**
- * tp_channel_dispatch_operation_borrow_possible_handlers:
+ * tp_channel_dispatch_operation_borrow_possible_handlers: (skip)
  * @self: a #TpChannelDispatchOperation
  *
  * Returns a #GStrv containing the possible handlers of this
@@ -986,14 +986,14 @@ tp_channel_dispatch_operation_borrow_possible_handlers (
 }
 
 /**
- * tp_channel_dispatch_operation_borrow_immutable_properties:
+ * tp_channel_dispatch_operation_borrow_immutable_properties: (skip)
  * @self: a #TpChannelDispatchOperation
  *
  * Returns the immutable D-Bus properties of this channel.
  * The returned hash table is only valid while @self is valid - reference
  * it with g_hash_table_ref() if needed.
  *
- * Returns: (transfer none): the value of
+ * Returns: (transfer none) (element-type utf8 GObject.Value): the value of
  * #TpChannelDispatchOperation:cdo-properties
  *
  * Since: 0.11.UNRELEASED
