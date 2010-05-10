@@ -3920,3 +3920,21 @@ TP_IS_SIMPLE_HANDLER_CLASS
 TpSimpleHandlerClass
 TpSimpleHandlerPrivate
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/contact-list-manager.h</INCLUDE>
+<FILE>contact-list-manager</FILE>
+<TITLE>contact-list-manager</TITLE>
+TpContactListManager
+TpContactListManagerClass
+<SUBSECTION Standard>
+tp_contact_list_manager_get_type
+TpContactListManagerPrivate
+TpContactListManagerClassPrivate
+TP_TYPE_CONTACT_LIST_MANAGER
+TP_CONTACT_LIST_MANAGER
+TP_CONTACT_LIST_MANAGER_CLASS
+TP_CONTACT_LIST_MANAGER_GET_CLASS
+TP_IS_CONTACT_LIST_MANAGER
+TP_IS_CONTACT_LIST_MANAGER_CLASS
+</SECTION>

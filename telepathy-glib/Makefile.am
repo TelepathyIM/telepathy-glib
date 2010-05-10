@@ -41,6 +41,7 @@ our_headers = \
     connection-manager.h \
     capabilities.h \
     contact.h \
+    contact-list-manager.h \
     contacts-mixin.h \
     dbus.h \
     dbus-daemon.h \
@@ -137,6 +138,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     connection-handles.c \
     connection-manager.c \
     contact.c \
+    contact-list-manager.c \
     contacts-mixin.c \
     dbus.c \
     dbus-daemon.c \
