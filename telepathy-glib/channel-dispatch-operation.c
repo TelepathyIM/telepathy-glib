@@ -370,10 +370,12 @@ tp_channel_dispatch_operation_set_property (GObject *object,
   switch (property_id)
     {
       case PROP_ACCOUNT:
+        g_assert (self->priv->account == NULL);     /* construct-only */
         self->priv->account = g_value_dup_object (value);
         break;
 
       case PROP_CONNECTION:
+        g_assert (self->priv->connection == NULL);  /* construct-only */
         self->priv->connection = g_value_dup_object (value);
         break;
 
@@ -381,6 +383,8 @@ tp_channel_dispatch_operation_set_property (GObject *object,
         {
           GPtrArray *tmp;
           guint i;
+
+          g_assert (self->priv->channels == NULL);  /* construct-only */
 
           /* g_value_dup_boxed returns a new reference to the same
            * GPtrArray which is not what we want (removing a channel from the
