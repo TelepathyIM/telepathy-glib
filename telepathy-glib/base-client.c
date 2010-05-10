@@ -103,6 +103,7 @@
 
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
+#include <telepathy-glib/channel-dispatch-operation-internal.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus-internal.h>
@@ -1050,8 +1051,9 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       g_ptr_array_add (channels, channel);
     }
 
-  dispatch_operation = tp_channel_dispatch_operation_new (self->priv->dbus,
-      dispatch_operation_path, properties, &error);
+  dispatch_operation = _tp_channel_dispatch_operation_new_with_objects (
+      self->priv->dbus, dispatch_operation_path, properties,
+      account, connection, channels, &error);
   if (dispatch_operation == NULL)
     {
       DEBUG ("Failed to create TpChannelDispatchOperation: %s", error->message);
