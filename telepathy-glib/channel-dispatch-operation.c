@@ -407,22 +407,6 @@ tp_channel_dispatch_operation_set_property (GObject *object,
           tp_g_hash_table_update (self->priv->immutable_properties,
               asv, (GBoxedCopyFunc) g_strdup,
               (GBoxedCopyFunc) tp_g_value_slice_dup);
-
-          maybe_set_connection (self, tp_asv_get_boxed (asv,
-                TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
-                DBUS_TYPE_G_OBJECT_PATH));
-
-          maybe_set_account (self, tp_asv_get_boxed (asv,
-                TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
-                DBUS_TYPE_G_OBJECT_PATH));
-
-          maybe_set_possible_handlers (self, tp_asv_get_boxed (asv,
-                TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
-                G_TYPE_STRV));
-
-          maybe_set_interfaces (self, tp_asv_get_boxed (asv,
-                TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
-                G_TYPE_STRV));
         }
         break;
 
@@ -445,6 +429,26 @@ tp_channel_dispatch_operation_constructed (GObject *object)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
+
+  maybe_set_connection (self,
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
+        DBUS_TYPE_G_OBJECT_PATH));
+
+  maybe_set_account (self,
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
+        DBUS_TYPE_G_OBJECT_PATH));
+
+  maybe_set_possible_handlers (self,
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
+        G_TYPE_STRV));
+
+  maybe_set_interfaces (self,
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
+        G_TYPE_STRV));
 
   sc = tp_cli_channel_dispatch_operation_connect_to_finished (self,
       tp_channel_dispatch_operation_finished_cb, NULL, NULL, NULL, &error);
