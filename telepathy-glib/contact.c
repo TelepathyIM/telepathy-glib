@@ -98,7 +98,7 @@ struct _TpContact {
  * the #TpContact code will only initialize state for those features, to
  * avoid unwanted D-Bus round-trips and signal connections.
  *
- * Since 0.11.UNRELEASED, there is a corresponding #GEnumClass type,
+ * Since 0.11.5, there is a corresponding #GEnumClass type,
  * %TP_TYPE_CONTACT_FEATURE.
  *
  * Since: 0.7.18
@@ -109,7 +109,7 @@ struct _TpContact {
  *
  * The #GEnumClass type of a #TpContactFeature.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 G_DEFINE_TYPE (TpContact, tp_contact, G_TYPE_OBJECT);

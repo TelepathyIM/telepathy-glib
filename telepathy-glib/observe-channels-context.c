@@ -33,7 +33,7 @@
  * Data structure representing the context of a Observer.ObserveChannels()
  * call.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
@@ -41,7 +41,7 @@
  *
  * The class of a #TpObserveChannelsContext.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 #include "telepathy-glib/observe-channels-context-internal.h"
@@ -276,7 +276,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_object ("account", "TpAccount",
       "The TpAccount that has been passed to ObserveChannels",
@@ -294,7 +294,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_object ("connection", "TpConnection",
       "The TpConnection that has been passed to ObserveChannels",
@@ -312,7 +312,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
       "The TpChannels that have been passed to ObserveChannels",
@@ -329,7 +329,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
    * or %NULL if none has been passed.
    * Read-only except during construction.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_object ("dispatch-operation",
      "TpChannelDispatchOperation",
@@ -348,7 +348,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_boxed ("requests", "GPtrArray of TpChannelRequest",
       "The TpChannelRequest that have been passed to ObserveChannels",
@@ -364,7 +364,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
    * ObserveChannels call.
    * Can only be written during construction.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
       "The DBusGMethodInvocation associated with the ObserveChannels call",
@@ -383,7 +383,7 @@ tp_observe_channels_context_class_init (TpObserveChannelsContextClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_boxed ("observer-info", "Observer info",
       "The Observer_Info that has been passed to ObserveChannels",
@@ -421,7 +421,7 @@ _tp_observe_channels_context_new (
  * Called by #TpBaseClientClassObserveChannelsImpl when it's done so the D-Bus
  * method can return.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_observe_channels_context_accept (TpObserveChannelsContext *self)
@@ -443,7 +443,7 @@ tp_observe_channels_context_accept (TpObserveChannelsContext *self)
  *
  * Called by #TpBaseClientClassObserveChannelsImpl to raise a D-Bus error.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_observe_channels_context_fail (TpObserveChannelsContext *self,
@@ -469,7 +469,7 @@ tp_observe_channels_context_fail (TpObserveChannelsContext *self,
  * is responsible for calling either tp_observe_channels_context_accept() or
  * tp_observe_channels_context_fail() later.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_observe_channels_context_delay (TpObserveChannelsContext *self)
@@ -492,7 +492,7 @@ tp_observe_channels_context_delay (TpObserveChannelsContext *self)
  *
  * Returns: %TRUE for pre-existing channels, %FALSE for new channels
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 gboolean
 tp_observe_channels_context_is_recovering (TpObserveChannelsContext *self)

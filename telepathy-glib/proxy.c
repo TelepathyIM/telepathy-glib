@@ -96,7 +96,7 @@ tp_dbus_errors_quark (void)
  *
  * #GError codes for use with the %TP_DBUS_ERRORS domain.
  *
- * Since 0.11.UNRELEASED, there is a corresponding #GEnumClass type,
+ * Since 0.11.5, there is a corresponding #GEnumClass type,
  * %TP_TYPE_DBUS_ERROR.
  *
  * Since: 0.7.1
@@ -107,7 +107,7 @@ tp_dbus_errors_quark (void)
  *
  * The #GEnumClass type of a #TpDBusError.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**

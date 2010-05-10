@@ -61,7 +61,7 @@
  *
  * Data structure representing a simple Approver implementation.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
@@ -69,7 +69,7 @@
  *
  * The class of a #TpSimpleApprover.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
@@ -92,7 +92,7 @@
  * tp_add_dispatch_operation_context_delay() or
  * tp_add_dispatch_operation_context_fail() on @context before it returns.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 #include "telepathy-glib/simple-approver.h"
@@ -217,7 +217,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("callback",
       "Callback",
@@ -232,7 +232,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
    * The user-data pointer passed to the callback implementing the
    * ApproverChannels D-Bus method.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("user-data", "user data",
       "pointer passed as user-data when ApproverChannels is called",
@@ -246,7 +246,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
    * The #GDestroyNotify function called to free the user-data pointer when
    * the #TpSimpleApprover is destroyed.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("destroy", "destroy",
       "function called to destroy the user-data when destroying the approver",
@@ -272,7 +272,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
  *
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 TpBaseClient *
 tp_simple_approver_new (TpDBusDaemon *dbus,

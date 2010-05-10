@@ -762,7 +762,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
    * finished preparing %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_object ("connection", "TpConnection",
       "The TpConnection of this channel dispatch operation",
@@ -781,7 +781,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
    * finished preparing %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_object ("account", "TpAccount",
       "The TpAccount of this channel dispatch operation",
@@ -800,7 +800,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
    * finished preparing %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
       "The TpChannel to be dispatched",
@@ -821,7 +821,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
    * finished preparing %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_boxed ("possible-handlers", "Possible handlers",
       "Possible handlers for the channels",
@@ -842,7 +842,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    * tp_proxy_prepare_async() has finished preparing
    * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_boxed ("cdo-properties",
       "Immutable D-Bus properties",
@@ -862,7 +862,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
    *
    * Emitted when a channel has closed before it could be claimed or handled.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   signals[SIGNAL_CHANNEL_LOST] = g_signal_new (
       "channel-lost", G_OBJECT_CLASS_TYPE (klass),
@@ -985,7 +985,7 @@ tp_channel_dispatch_operation_new (TpDBusDaemon *bus_daemon,
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 GQuark
 tp_channel_dispatch_operation_get_feature_quark_core (void)
@@ -1004,7 +1004,7 @@ tp_channel_dispatch_operation_get_feature_quark_core (void)
  *
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:connection
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 TpConnection *
 tp_channel_dispatch_operation_borrow_connection (
@@ -1023,7 +1023,7 @@ tp_channel_dispatch_operation_borrow_connection (
  *
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:account
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 TpAccount *
 tp_channel_dispatch_operation_borrow_account (
@@ -1043,7 +1043,7 @@ tp_channel_dispatch_operation_borrow_account (
  *
  * Returns: (transfer none): the value of #TpChannelDispatchOperation:channels
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 GPtrArray *
 tp_channel_dispatch_operation_borrow_channels (
@@ -1064,7 +1064,7 @@ tp_channel_dispatch_operation_borrow_channels (
  * Returns: (transfer none): the value of
  * #TpChannelDispatchOperation:possible-handlers
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 GStrv
 tp_channel_dispatch_operation_borrow_possible_handlers (
@@ -1084,7 +1084,7 @@ tp_channel_dispatch_operation_borrow_possible_handlers (
  * Returns: (transfer none) (element-type utf8 GObject.Value): the value of
  * #TpChannelDispatchOperation:cdo-properties
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 GHashTable *
 tp_channel_dispatch_operation_borrow_immutable_properties (
@@ -1138,7 +1138,7 @@ handle_with_cb (TpChannelDispatchOperation *self,
  * of tp_channel_dispatch_operation_handle_with_async() to request
  * that they can handle a channel bundle themselves.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_channel_dispatch_operation_handle_with_async (
@@ -1169,7 +1169,7 @@ tp_channel_dispatch_operation_handle_with_async (
  *
  * Returns: %TRUE if the HandleWith() call was successful, otherwise %FALSE
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 gboolean
 tp_channel_dispatch_operation_handle_with_finish (
@@ -1230,7 +1230,7 @@ claim_cb (TpChannelDispatchOperation *self,
  * for more details. The approver MUST NOT attempt to interact with
  * the channels further in this case.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_channel_dispatch_operation_claim_async (
@@ -1259,7 +1259,7 @@ tp_channel_dispatch_operation_claim_async (
  *
  * Returns: %TRUE if the Claim() call was successful, otherwise %FALSE
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 gboolean
 tp_channel_dispatch_operation_claim_finish (

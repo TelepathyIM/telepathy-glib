@@ -63,7 +63,7 @@
  *
  * Data structure representing a simple Observer implementation.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
@@ -71,7 +71,7 @@
  *
  * The class of a #TpSimpleObserver.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
@@ -97,7 +97,7 @@
  * tp_observe_channels_context_delay() or tp_observe_channels_context_fail()
  * on @context before it returns.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 #include "telepathy-glib/simple-observer.h"
@@ -226,7 +226,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    *
    * The value of the Observer.Recover D-Bus property.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_boolean ("recover", "Recover",
       "Observer.Recover",
@@ -243,7 +243,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("callback",
       "Callback",
@@ -258,7 +258,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    * The user-data pointer passed to the callback implementing the
    * ObserverChannels D-Bus method.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("user-data", "user data",
       "pointer passed as user-data when ObserverChannels is called",
@@ -272,7 +272,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    * The #GDestroyNotify function called to free the user-data pointer when
    * the #TpSimpleObserver is destroyed.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("destroy", "destroy",
       "function called to destroy the user-data when destroying the observer",
@@ -298,7 +298,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 TpBaseClient *
 tp_simple_observer_new (TpDBusDaemon *dbus,

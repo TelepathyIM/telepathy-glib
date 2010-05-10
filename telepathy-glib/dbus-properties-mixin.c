@@ -67,7 +67,7 @@
  *
  * Bitfield representing allowed access to a property.
  *
- * Since 0.11.UNRELEASED, there is a corresponding #GFlagsClass type,
+ * Since 0.11.5, there is a corresponding #GFlagsClass type,
  * %TP_TYPE_DBUS_PROPERTIES_MIXIN_FLAGS.
  *
  * Since: 0.7.3
@@ -78,7 +78,7 @@
  *
  * The #GFlagsClass type of #TpDBusPropertiesMixinFlags.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**

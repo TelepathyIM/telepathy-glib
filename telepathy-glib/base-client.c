@@ -36,7 +36,7 @@
  *
  * Data structure representing a generic #TpSvcClient implementation.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
@@ -44,7 +44,7 @@
  *
  * The class of a #TpBaseClient.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
@@ -69,7 +69,7 @@
  * tp_observe_channels_context_delay() or tp_observe_channels_context_fail()
  * on @context before it returns.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
@@ -96,7 +96,7 @@
  * channels, or tp_channel_dispatch_operation_claim_async() to take
  * responsibility for handling or closing them".
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 #include "telepathy-glib/base-client.h"
@@ -200,7 +200,7 @@ _tp_base_client_copy_filter (GHashTable *filter)
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_observe_channels().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_base_client_add_observer_filter (TpBaseClient *self,
@@ -230,7 +230,7 @@ tp_base_client_add_observer_filter (TpBaseClient *self,
  *        ...));
  * ]|
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_base_client_take_observer_filter (TpBaseClient *self,
@@ -268,7 +268,7 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_observe_channels().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_base_client_set_observer_recover (TpBaseClient *self,
@@ -298,7 +298,7 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_add_dispatch_operation().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_base_client_add_approver_filter (TpBaseClient *self,
@@ -328,7 +328,7 @@ tp_base_client_add_approver_filter (TpBaseClient *self,
  *        ...));
  * ]|
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_base_client_take_approver_filter (TpBaseClient *self,
@@ -359,7 +359,7 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
  *
  * Returns: %TRUE if the client was registered successfully
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 gboolean
 tp_base_client_register (TpBaseClient *self,
@@ -664,7 +664,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_object ("dbus-daemon", "TpDBusDaemon object",
       "The dbus daemon associated with this client",
@@ -680,7 +680,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
  param_spec = g_param_spec_string ("name", "name",
       "The name of the client",
@@ -694,7 +694,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * If %TRUE, tp_base_client_register() will append an unique token to the
    * service bus name and object path to ensure they are unique.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
  param_spec = g_param_spec_boolean ("uniquify-name", "Uniquify name",
       "if TRUE, append a unique token to the name",
@@ -1102,7 +1102,7 @@ approver_iface_init (gpointer g_iface,
  * Called by subclasses to define the actual implementation of the
  * ObserveChannels() D-Bus method.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
@@ -1121,7 +1121,7 @@ tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
  *
  * Returns: the bus name of the client
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 const gchar *
 tp_base_client_get_bus_name (TpBaseClient *self)
@@ -1139,7 +1139,7 @@ tp_base_client_get_bus_name (TpBaseClient *self)
  *
  * Returns: the object path of the client
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 const gchar *
 tp_base_client_get_object_path (TpBaseClient *self)
@@ -1156,7 +1156,7 @@ tp_base_client_get_object_path (TpBaseClient *self)
  * Called by subclasses to define the actual implementation of the
  * AddDispatchOperation() D-Bus method.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *cls,

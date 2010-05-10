@@ -33,7 +33,7 @@
  * Data structure representing the context of a Approver.AddDispatchOperation()
  * call.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
@@ -41,7 +41,7 @@
  *
  * The class of a #TpAddDispatchOperationContext.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 #include "telepathy-glib/add-dispatch-operation-context-internal.h"
@@ -261,7 +261,7 @@ tp_add_dispatch_operation_context_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_object ("account", "TpAccount",
       "The TpAccount of the context",
@@ -279,7 +279,7 @@ tp_add_dispatch_operation_context_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_object ("connection", "TpConnection",
       "The TpConnection of the context",
@@ -297,7 +297,7 @@ tp_add_dispatch_operation_context_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
       "The TpChannels that have been passed to AddDispatchOperation",
@@ -315,7 +315,7 @@ tp_add_dispatch_operation_context_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_object ("dispatch-operation",
      "TpChannelDispatchOperation",
@@ -333,7 +333,7 @@ tp_add_dispatch_operation_context_class_init (
    * AddDispatchOperation call.
    * Can only be written during construction.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
       "The DBusGMethodInvocation associated with the AddDispatchOperation call",
@@ -366,7 +366,7 @@ _tp_add_dispatch_operation_context_new (
  * Called by #TpBaseClientClassAddDispatchOperationImpl when it's done so
  * the D-Bus method can return.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_add_dispatch_operation_context_accept (TpAddDispatchOperationContext *self)
@@ -389,7 +389,7 @@ tp_add_dispatch_operation_context_accept (TpAddDispatchOperationContext *self)
  *
  * Called by #TpBaseClientClassAddDispatchOperationImpl to raise a D-Bus error.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_add_dispatch_operation_context_fail (TpAddDispatchOperationContext *self,
@@ -417,7 +417,7 @@ tp_add_dispatch_operation_context_fail (TpAddDispatchOperationContext *self,
  * tp_add_dispatch_operation_context_accept() or
  * tp_add_dispatch_operation_context_fail() later.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 void
 tp_add_dispatch_operation_context_delay (TpAddDispatchOperationContext *self)

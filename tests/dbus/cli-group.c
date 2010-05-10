@@ -316,7 +316,7 @@ check_invalidated_unknown_error_cb (TpProxy *proxy,
   *invalidated = TRUE;
 
   /* Because we didn't understand the D-Bus error string, the Telepathy error
-   * is derived from the Channel_Group_Change_Reason; since 0.11.UNRELEASED
+   * is derived from the Channel_Group_Change_Reason; since 0.11.5
    * it's remapped into the TP_ERRORS domain if possible */
   g_assert_error (error, TP_ERRORS, TP_ERROR_NO_ANSWER);
   MYASSERT (strstr (message, REMOVED_UNKNOWN_ERROR) != NULL, " (%s, %s)",

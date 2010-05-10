@@ -1,5 +1,7 @@
-telepathy-glib 0.11.5 (UNRELEASED)
+telepathy-glib 0.11.5 (2010-05-10)
 ==================================
+
+The "also, hi from bl.uk" release.
 
 API changes:
 
@@ -16,19 +18,28 @@ API changes:
 
 Enhancements:
 
-⌬ fd.o #25236: TpBaseClient, a base class for Observers, which will also
-  support Approvers and Handlers in a future release (cassidy)
+⌬ fd.o #25236: TpBaseClient, a base class for Observers and Approvers, which
+  will also support Handlers in a future release (cassidy)
 
-⌬ fd.o #27871: TpSimpleObserver, a simple TpBaseClient subclass for
-  projects that don't need their own subclass (cassidy)
+⌬ fd.o #27871, #24214: TpSimpleObserver, a simple TpBaseClient subclass for
+  projects that don't need their own subclass, and an example Observer that
+  uses it (cassidy)
 
-⌬ fd.o #24214: telepathy-glib now implements an example Observer (cassidy)
+⌬ fd.o #27875: TpSimpleApprover, a simple TpBaseClient subclass for
+  projects that don't need their own subclass, and an example Approver that
+  uses it (cassidy)
 
 ⌬ fd.o #27899: internal macros for ERROR(), CRITICAL() etc., analogous to
   DEBUG() (jonny)
 
 ⌬ fd.o #23369: improve the errors with which a Group TpChannel is invalidated
   if we're removed, as per "API changes" above (smcv)
+
+⌬ fd.o #18055: generate GEnum types for TpCMInfoSource, TpContactFeature,
+  TpDBusError, and GFlags types for TpDBusNameType and
+  TpDBusPropertiesMixinFlags. Note that TpConnectionManager:info-source is
+  still of type G_TYPE_UINT, not TP_TYPE_CM_INFO_SOURCE, since switching it
+  would be an ABI break. (danni, smcv)
 
 Fixes:
 
@@ -37,6 +48,10 @@ Fixes:
 
 ⌬ fd.o #24689: document more clearly that the TpConnectionManager.protocols
   struct member can be reallocated (smcv)
+
+⌬ fd.o #28043: explicitly link tests/* against dbus-glib, fixing compilation
+  with GNU gold, with GNU ld with LDFLAGS=-Wl,--no-add-needed, and hopefully
+  also with Fedora 13's patched GNU ld (see Red Hat #564245) (smcv)
 
 ⌬ some fixes to GObject-Introspection metadata (danni)
 

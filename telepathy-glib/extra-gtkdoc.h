@@ -381,7 +381,7 @@
  * constants representing fully-qualified D-Bus property names, like
  * <literal>org.freedesktop.Telepathy.Channel.Interface.Group.GroupFlags</literal>.
  *
- * Since 0.11.UNRELEASED it also provides cpp defines like
+ * Since 0.11.5 it also provides cpp defines like
  * %TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS for contact attributes like
  * "org.freedesktop.Telepathy.Connection.Interface.Aliasing/alias",
  * and defines like

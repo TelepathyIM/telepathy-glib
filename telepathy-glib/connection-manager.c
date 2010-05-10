@@ -109,7 +109,7 @@ tp_connection_manager_get_feature_quark_core (void)
  * Describes possible sources of information on connection managers'
  * supported protocols.
  *
- * Since 0.11.UNRELEASED, there is a corresponding #GEnumClass type,
+ * Since 0.11.5, there is a corresponding #GEnumClass type,
  * %TP_TYPE_CM_INFO_SOURCE.
  *
  * Since: 0.7.1
@@ -120,7 +120,7 @@ tp_connection_manager_get_feature_quark_core (void)
  *
  * The #GEnumClass type of a #TpCMInfoSource.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.5
  */
 
 /**
