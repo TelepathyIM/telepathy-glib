@@ -100,6 +100,7 @@ check-local: check-coding-style
 
 LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(DBUS_LIBS) \
     $(GLIB_LIBS)
 
 AM_CFLAGS = \
