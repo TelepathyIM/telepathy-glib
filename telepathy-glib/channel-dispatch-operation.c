@@ -391,6 +391,10 @@ tp_channel_dispatch_operation_set_property (GObject *object,
            * CDO array shouldn't remove it from the caller). Copying the
            * GPtrArray to avoid this problem.*/
           tmp = g_value_get_boxed (value);
+
+          if (tmp == NULL)
+            break;
+
           self->priv->channels = g_ptr_array_sized_new (tmp->len);
           g_ptr_array_set_free_func (self->priv->channels,
               (GDestroyNotify) g_object_unref);
@@ -555,13 +559,15 @@ update_channels_array (TpChannelDispatchOperation *self,
     {
       const gchar *path;
       GHashTable *chan_props;
-      TpChannel *channel;
+      TpChannel *channel = NULL;
       GError *err = NULL;
 
       tp_value_array_unpack (g_ptr_array_index (channels, i), 2,
             &path, &chan_props);
 
-      channel = look_for_channel_having_path (old, path);
+      if (old != NULL)
+        channel = look_for_channel_having_path (old, path);
+
       if (channel != NULL)
         {
           g_object_ref (channel);
