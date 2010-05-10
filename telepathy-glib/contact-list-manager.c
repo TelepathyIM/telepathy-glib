@@ -19,6 +19,7 @@
 
 #include <config.h>
 #include <telepathy-glib/contact-list-manager.h>
+#include <telepathy-glib/contact-list-manager-internal.h>
 
 /**
  * SECTION:contact-list-manager
@@ -258,4 +259,65 @@ channel_manager_iface_init (TpChannelManagerIface *iface)
   iface->ensure_channel = tp_contact_list_manager_ensure_channel;
   /* In this channel manager, Request has the same semantics as Ensure */
   iface->request_channel = tp_contact_list_manager_ensure_channel;
+}
+
+TpChannelGroupFlags
+_tp_contact_list_manager_get_list_flags (TpContactListManager *self,
+    TpHandle list)
+{
+  /* FIXME: stub */
+  return 0;
+}
+
+gboolean
+_tp_contact_list_manager_add_to_list (TpContactListManager *self,
+    TpHandle list,
+    TpHandle contact,
+    const gchar *message,
+    GError **error)
+{
+  /* FIXME: stub */
+  return TRUE;
+}
+
+gboolean
+_tp_contact_list_manager_remove_from_list (TpContactListManager *self,
+    TpHandle list,
+    TpHandle contact,
+    const gchar *message,
+    GError **error)
+{
+  /* FIXME: stub */
+  return TRUE;
+}
+
+gboolean
+_tp_contact_list_manager_add_to_group (TpContactListManager *self,
+    TpHandle group,
+    TpHandle contact,
+    const gchar *message,
+    GError **error)
+{
+  /* FIXME: stub */
+  return TRUE;
+}
+
+gboolean
+_tp_contact_list_manager_remove_from_group (TpContactListManager *self,
+    TpHandle group,
+    TpHandle contact,
+    const gchar *message,
+    GError **error)
+{
+  /* FIXME: stub */
+  return TRUE;
+}
+
+gboolean
+_tp_contact_list_manager_delete_group_by_handle (TpContactListManager *self,
+    TpHandle group,
+    GError **error)
+{
+  /* FIXME: stub */
+  return TRUE;
 }
