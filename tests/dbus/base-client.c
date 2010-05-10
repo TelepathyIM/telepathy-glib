@@ -517,6 +517,7 @@ test_approver (Test *test,
   static const char *interfaces[] = { NULL };
   static const gchar *possible_handlers[] = {
     TP_CLIENT_BUS_NAME_BASE ".Badger", NULL, };
+  guint i;
 
   filter = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -581,6 +582,24 @@ test_approver (Test *test,
   chans = tp_channel_dispatch_operation_borrow_channels (
       test->simple_client->add_dispatch_ctx->dispatch_operation);
   g_assert_cmpuint (chans->len, ==, 2);
+
+  /* Check that we reuse existing proxies rather than creating new ones */
+  g_assert (test->simple_client->add_dispatch_ctx->account == test->account);
+  g_assert (tp_channel_dispatch_operation_borrow_account (
+        test->simple_client->add_dispatch_ctx->dispatch_operation) ==
+      test->account);
+
+  g_assert (tp_channel_dispatch_operation_borrow_connection (
+        test->simple_client->add_dispatch_ctx->dispatch_operation) ==
+      test->simple_client->add_dispatch_ctx->connection);
+
+  g_assert (chans->len == test->simple_client->add_dispatch_ctx->channels->len);
+  for (i = 0; i < chans->len; i++)
+    {
+      g_assert (g_ptr_array_index (chans, i) ==
+          g_ptr_array_index (test->simple_client->add_dispatch_ctx->channels,
+            i));
+    }
 
   /* Another call to AddDispatchOperation, the second channel will be
    * invalidated during the call */
