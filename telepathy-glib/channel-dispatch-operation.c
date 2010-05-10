@@ -370,10 +370,12 @@ tp_channel_dispatch_operation_set_property (GObject *object,
   switch (property_id)
     {
       case PROP_ACCOUNT:
+        g_assert (self->priv->account == NULL);     /* construct-only */
         self->priv->account = g_value_dup_object (value);
         break;
 
       case PROP_CONNECTION:
+        g_assert (self->priv->connection == NULL);  /* construct-only */
         self->priv->connection = g_value_dup_object (value);
         break;
 
@@ -382,11 +384,17 @@ tp_channel_dispatch_operation_set_property (GObject *object,
           GPtrArray *tmp;
           guint i;
 
+          g_assert (self->priv->channels == NULL);  /* construct-only */
+
           /* g_value_dup_boxed returns a new reference to the same
            * GPtrArray which is not what we want (removing a channel from the
            * CDO array shouldn't remove it from the caller). Copying the
            * GPtrArray to avoid this problem.*/
           tmp = g_value_get_boxed (value);
+
+          if (tmp == NULL)
+            break;
+
           self->priv->channels = g_ptr_array_sized_new (tmp->len);
           g_ptr_array_set_free_func (self->priv->channels,
               (GDestroyNotify) g_object_unref);
@@ -407,22 +415,6 @@ tp_channel_dispatch_operation_set_property (GObject *object,
           tp_g_hash_table_update (self->priv->immutable_properties,
               asv, (GBoxedCopyFunc) g_strdup,
               (GBoxedCopyFunc) tp_g_value_slice_dup);
-
-          maybe_set_connection (self, tp_asv_get_boxed (asv,
-                TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
-                DBUS_TYPE_G_OBJECT_PATH));
-
-          maybe_set_account (self, tp_asv_get_boxed (asv,
-                TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
-                DBUS_TYPE_G_OBJECT_PATH));
-
-          maybe_set_possible_handlers (self, tp_asv_get_boxed (asv,
-                TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
-                G_TYPE_STRV));
-
-          maybe_set_interfaces (self, tp_asv_get_boxed (asv,
-                TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
-                G_TYPE_STRV));
         }
         break;
 
@@ -445,6 +437,26 @@ tp_channel_dispatch_operation_constructed (GObject *object)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
+
+  maybe_set_connection (self,
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
+        DBUS_TYPE_G_OBJECT_PATH));
+
+  maybe_set_account (self,
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
+        DBUS_TYPE_G_OBJECT_PATH));
+
+  maybe_set_possible_handlers (self,
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
+        G_TYPE_STRV));
+
+  maybe_set_interfaces (self,
+      tp_asv_get_boxed (self->priv->immutable_properties,
+        TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
+        G_TYPE_STRV));
 
   sc = tp_cli_channel_dispatch_operation_connect_to_finished (self,
       tp_channel_dispatch_operation_finished_cb, NULL, NULL, NULL, &error);
@@ -547,13 +559,15 @@ update_channels_array (TpChannelDispatchOperation *self,
     {
       const gchar *path;
       GHashTable *chan_props;
-      TpChannel *channel;
+      TpChannel *channel = NULL;
       GError *err = NULL;
 
       tp_value_array_unpack (g_ptr_array_index (channels, i), 2,
             &path, &chan_props);
 
-      channel = look_for_channel_having_path (old, path);
+      if (old != NULL)
+        channel = look_for_channel_having_path (old, path);
+
       if (channel != NULL)
         {
           g_object_ref (channel);
