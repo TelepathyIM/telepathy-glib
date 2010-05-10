@@ -507,6 +507,78 @@ tp_channel_dispatch_operation_dispose (GObject *object)
     dispose (object);
 }
 
+static TpChannel *
+look_for_channel_having_path (GPtrArray *array,
+    const gchar *path)
+{
+  guint i;
+
+  for (i = 0; i < array->len; i++)
+    {
+      TpChannel *channel = g_ptr_array_index (array, i);
+
+      if (!tp_strdiff (tp_proxy_get_object_path (channel), path))
+        return channel;
+    }
+
+  return NULL;
+}
+
+static void
+update_channels_array (TpChannelDispatchOperation *self,
+    GPtrArray *channels)
+{
+  guint i;
+  GPtrArray *old = NULL;
+
+  if (self->priv->channels != NULL)
+    {
+      /* We received an initial list of channels during creation. Remove those
+       * which are not in the Channels property any more. */
+      old = self->priv->channels;
+    }
+
+  self->priv->channels = g_ptr_array_sized_new (channels->len);
+  g_ptr_array_set_free_func (self->priv->channels,
+      (GDestroyNotify) g_object_unref);
+
+  for (i = 0; i < channels->len; i++)
+    {
+      const gchar *path;
+      GHashTable *chan_props;
+      TpChannel *channel;
+      GError *err = NULL;
+
+      tp_value_array_unpack (g_ptr_array_index (channels, i), 2,
+            &path, &chan_props);
+
+      channel = look_for_channel_having_path (old, path);
+      if (channel != NULL)
+        {
+          g_object_ref (channel);
+        }
+      else
+        {
+          channel = tp_channel_new_from_properties (self->priv->connection,
+              path, chan_props, &err);
+
+          if (channel == NULL)
+            {
+              DEBUG ("Failed to create channel %s: %s", path, err->message);
+              g_error_free (err);
+              continue;
+            }
+        }
+
+      g_ptr_array_add (self->priv->channels, channel);
+    }
+
+  if (old != NULL)
+    {
+      g_ptr_array_unref (old);
+    }
+}
+
 static void
 get_dispatch_operation_prop_cb (TpProxy *proxy,
     GHashTable *props,
@@ -517,7 +589,6 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
   TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) proxy;
   gboolean prepared = TRUE;
   GPtrArray *channels;
-  guint i;
   GError *e = NULL;
 
   self->priv->preparing_core = FALSE;
@@ -590,32 +661,7 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
       goto out;
     }
 
-  self->priv->channels = g_ptr_array_sized_new (channels->len);
-  g_ptr_array_set_free_func (self->priv->channels,
-      (GDestroyNotify) g_object_unref);
-
-  for (i = 0; i < channels->len; i++)
-    {
-      const gchar *path;
-      GHashTable *chan_props;
-      TpChannel *channel;
-      GError *err = NULL;
-
-      tp_value_array_unpack (g_ptr_array_index (channels, i), 2,
-            &path, &chan_props);
-
-      channel = tp_channel_new_from_properties (self->priv->connection,
-          path, chan_props, &err);
-
-      if (channel == NULL)
-        {
-          DEBUG ("Failed to create channel %s: %s", path, err->message);
-          g_error_free (err);
-          continue;
-        }
-
-      g_ptr_array_add (self->priv->channels, channel);
-    }
+  update_channels_array (self, channels);
 
   g_object_notify ((GObject *) self, "channels");
   g_object_notify ((GObject *) self, "cdo-properties");
