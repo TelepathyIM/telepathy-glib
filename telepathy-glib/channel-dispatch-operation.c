@@ -368,6 +368,34 @@ tp_channel_dispatch_operation_set_property (GObject *object,
 
   switch (property_id)
     {
+      case PROP_ACCOUNT:
+        self->priv->account = g_value_dup_object (value);
+        break;
+
+      case PROP_CONNECTION:
+        self->priv->connection = g_value_dup_object (value);
+        break;
+
+      case PROP_CHANNELS:
+        {
+          GPtrArray *tmp;
+          guint i;
+
+          /* g_value_dup_boxed returns a new reference to the same
+           * GPtrArray which is not what we want (removing a channel from the
+           * CDO array shouldn't remove it from the caller). Copying the
+           * GPtrArray to avoid this problem.*/
+          tmp = g_value_get_boxed (value);
+          self->priv->channels = g_ptr_array_sized_new (tmp->len);
+          g_ptr_array_set_free_func (self->priv->channels,
+              (GDestroyNotify) g_object_unref);
+
+          for (i = 0; i < tmp->len; i++)
+            g_ptr_array_add (self->priv->channels,
+                g_object_ref (g_ptr_array_index (tmp, i)));
+        }
+        break;
+
       case PROP_CDO_PROPERTIES:
         {
           GHashTable *asv = g_value_get_boxed (value);
@@ -608,7 +636,7 @@ maybe_prepare_core (TpProxy *proxy)
 {
   TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) proxy;
 
-  if (self->priv->channels != NULL)
+  if (tp_proxy_is_prepared (proxy, TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE))
     return;   /* already done */
 
   if (self->priv->preparing_core)
@@ -678,7 +706,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
   param_spec = g_param_spec_object ("connection", "TpConnection",
       "The TpConnection of this channel dispatch operation",
       TP_TYPE_CONNECTION,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION,
       param_spec);
 
@@ -697,7 +725,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
   param_spec = g_param_spec_object ("account", "TpAccount",
       "The TpAccount of this channel dispatch operation",
       TP_TYPE_ACCOUNT,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT,
       param_spec);
 
@@ -716,7 +744,7 @@ tp_channel_dispatch_operation_class_init (TpChannelDispatchOperationClass *klass
   param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
       "The TpChannel to be dispatched",
       G_TYPE_PTR_ARRAY,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNELS,
       param_spec);
 
