@@ -73,8 +73,8 @@ struct _ContactsConnectionPrivate
 {
   /* TpHandle => gchar * */
   GHashTable *aliases;
-  /* TpHandle => gchar * */
-  GHashTable *avatar_tokens;
+  /* TpHandle => AvatarData */
+  GHashTable *avatars;
   /* TpHandle => ContactsConnectionPresenceStatusIndex */
   GHashTable *presence_statuses;
   /* TpHandle => gchar * */
@@ -84,6 +84,41 @@ struct _ContactsConnectionPrivate
   /* TpHandle => GPtrArray * */
   GHashTable *capabilities;
 };
+
+typedef struct
+{
+  GArray *data;
+  gchar *mimetype;
+  gchar *token;
+} AvatarData;
+
+static AvatarData *
+avatar_data_new (GArray *data, const gchar *mimetype, const gchar *token)
+{
+  AvatarData *a;
+
+  a = g_slice_new (AvatarData);
+  a->data = data ? g_array_ref (data) : NULL;
+  a->mimetype = g_strdup (mimetype);
+  a->token = g_strdup (token);
+
+  return a;
+}
+
+static void
+avatar_data_free (gpointer data)
+{
+  AvatarData *a = data;
+
+  if (a != NULL)
+    {
+      if (a->data != NULL)
+        g_array_unref (a->data);
+      g_free (a->mimetype);
+      g_free (a->token);
+      g_slice_free (AvatarData, a);
+    }
+}
 
 static void
 free_rcc_list (GPtrArray *rccs)
@@ -98,8 +133,8 @@ contacts_connection_init (ContactsConnection *self)
       ContactsConnectionPrivate);
   self->priv->aliases = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, g_free);
-  self->priv->avatar_tokens = g_hash_table_new_full (g_direct_hash,
-      g_direct_equal, NULL, g_free);
+  self->priv->avatars = g_hash_table_new_full (g_direct_hash,
+      g_direct_equal, NULL, avatar_data_free);
   self->priv->presence_statuses = g_hash_table_new_full (g_direct_hash,
       g_direct_equal, NULL, NULL);
   self->priv->presence_messages = g_hash_table_new_full (g_direct_hash,
@@ -117,7 +152,7 @@ finalize (GObject *object)
 
   tp_contacts_mixin_finalize (object);
   g_hash_table_destroy (self->priv->aliases);
-  g_hash_table_destroy (self->priv->avatar_tokens);
+  g_hash_table_destroy (self->priv->avatars);
   g_hash_table_destroy (self->priv->presence_statuses);
   g_hash_table_destroy (self->priv->presence_messages);
   g_hash_table_destroy (self->priv->locations);
@@ -165,14 +200,14 @@ avatars_fill_contact_attributes (GObject *object,
   for (i = 0; i < contacts->len; i++)
     {
       TpHandle handle = g_array_index (contacts, guint, i);
-      const gchar *token = g_hash_table_lookup (self->priv->avatar_tokens,
+      AvatarData *a = g_hash_table_lookup (self->priv->avatars,
           GUINT_TO_POINTER (handle));
 
-      if (token != NULL)
+      if (a != NULL && a->token != NULL)
         {
           tp_contacts_mixin_set_contact_attribute (attributes, handle,
               TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token",
-              tp_g_value_slice_new_string (token));
+              tp_g_value_slice_new_string (a->token));
         }
     }
 }
@@ -480,11 +515,24 @@ contacts_connection_change_avatar_tokens (ContactsConnection *self,
   for (i = 0; i < n; i++)
     {
       DEBUG ("contact#%u -> %s", handles[i], tokens[i]);
-      g_hash_table_insert (self->priv->avatar_tokens,
-          GUINT_TO_POINTER (handles[i]), g_strdup (tokens[i]));
+      g_hash_table_insert (self->priv->avatars,
+          GUINT_TO_POINTER (handles[i]), avatar_data_new (NULL, NULL, tokens[i]));
       tp_svc_connection_interface_avatars_emit_avatar_updated (self,
           handles[i], tokens[i]);
     }
+}
+
+void contacts_connection_change_avatar_data (ContactsConnection *self,
+    TpHandle handle,
+    GArray *data,
+    const gchar *mimetype,
+    const gchar *token)
+{
+  g_hash_table_insert (self->priv->avatars,
+      GUINT_TO_POINTER (handle), avatar_data_new (data, mimetype, token));
+
+  tp_svc_connection_interface_avatars_emit_avatar_updated (self,
+      handle, token);
 }
 
 void
@@ -668,23 +716,23 @@ my_get_avatar_tokens (TpSvcConnectionInterfaceAvatars *avatars,
   for (i = 0; i < contacts->len; i++)
     {
       TpHandle handle = g_array_index (contacts, TpHandle, i);
-      const gchar *token = g_hash_table_lookup (self->priv->avatar_tokens,
+      AvatarData *a = g_hash_table_lookup (self->priv->avatars,
           GUINT_TO_POINTER (handle));
 
-      if (token == NULL)
+      if (a == NULL || a->token == NULL)
         {
           /* we're expected to do a round-trip to the server to find out
            * their token, so we have to give some sort of result. Assume
            * no avatar, here */
-          token = "";
-          g_hash_table_insert (self->priv->avatar_tokens,
-              GUINT_TO_POINTER (handle), g_strdup (token));
+          a = avatar_data_new (NULL, NULL, "");
+          g_hash_table_insert (self->priv->avatars,
+              GUINT_TO_POINTER (handle), a);
           tp_svc_connection_interface_avatars_emit_avatar_updated (self,
-              handle, token);
+              handle, a->token);
         }
 
       g_hash_table_insert (result, GUINT_TO_POINTER (handle),
-          (gchar *) token);
+          a->token);
     }
 
   tp_svc_connection_interface_avatars_return_from_get_known_avatar_tokens (
@@ -719,8 +767,9 @@ my_get_known_avatar_tokens (TpSvcConnectionInterfaceAvatars *avatars,
   for (i = 0; i < contacts->len; i++)
     {
       TpHandle handle = g_array_index (contacts, TpHandle, i);
-      const gchar *token = g_hash_table_lookup (self->priv->avatar_tokens,
+      AvatarData *a = g_hash_table_lookup (self->priv->avatars,
           GUINT_TO_POINTER (handle));
+      const gchar *token = a ? a->token : NULL;
 
       g_hash_table_insert (result, GUINT_TO_POINTER (handle),
           (gchar *) (token != NULL ? token : ""));
@@ -729,6 +778,41 @@ my_get_known_avatar_tokens (TpSvcConnectionInterfaceAvatars *avatars,
   tp_svc_connection_interface_avatars_return_from_get_known_avatar_tokens (
       context, result);
   g_hash_table_destroy (result);
+}
+
+static void
+my_request_avatars (TpSvcConnectionInterfaceAvatars *avatars,
+                    const GArray *contacts,
+                    DBusGMethodInvocation *context)
+{
+  ContactsConnection *self = CONTACTS_CONNECTION (avatars);
+  TpBaseConnection *base = TP_BASE_CONNECTION (avatars);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (base,
+      TP_HANDLE_TYPE_CONTACT);
+  GError *error = NULL;
+  guint i;
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (base, context);
+
+  if (!tp_handles_are_valid (contact_repo, contacts, FALSE, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpHandle handle = g_array_index (contacts, TpHandle, i);
+      AvatarData *a = g_hash_table_lookup (self->priv->avatars,
+          GUINT_TO_POINTER (handle));
+
+      if (a != NULL)
+        tp_svc_connection_interface_avatars_emit_avatar_retrieved (self, handle,
+            a->token, a->data, a->mimetype);
+    }
+
+  tp_svc_connection_interface_avatars_return_from_request_avatars (context);
 }
 
 static void
@@ -763,7 +847,7 @@ init_avatars (gpointer g_iface,
   IMPLEMENT(get_avatar_tokens);
   IMPLEMENT(get_known_avatar_tokens);
   /* IMPLEMENT(request_avatar); */
-  /* IMPLEMENT(request_avatars); */
+  IMPLEMENT(request_avatars);
   /* IMPLEMENT(set_avatar); */
   /* IMPLEMENT(clear_avatar); */
 #undef IMPLEMENT
