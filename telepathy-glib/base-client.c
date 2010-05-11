@@ -176,6 +176,7 @@ enum {
 
 enum {
   SIGNAL_REQUEST_ADDED,
+  SIGNAL_REQUEST_REMOVED,
   N_SIGNALS
 };
 
@@ -1114,6 +1115,30 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       G_TYPE_NONE, 2,
       TP_TYPE_ACCOUNT, TP_TYPE_CHANNEL_REQUEST);
 
+ /**
+   * TpBaseClient::request-removed:
+   * @self: a #TpBaseClient
+   * @request: the #TpChannelRequest being removed
+   * @error: the name of the D-Bus error with which the request failed.
+   * @message: any message supplied with the D-Bus error.
+   *
+   * Emitted when a request has failed and should be disregarded.
+   *
+   * This signal is only fired if
+   * tp_base_client_set_handler_request_notification() has been called
+   * on @self previously.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  signals[SIGNAL_REQUEST_REMOVED] = g_signal_new (
+      "request-removed", G_OBJECT_CLASS_TYPE (cls),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__OBJECT_STRING_STRING,
+      G_TYPE_NONE, 3,
+      TP_TYPE_CHANNEL_REQUEST, G_TYPE_STRING, G_TYPE_STRING);
+
   cls->dbus_properties_class.interfaces = prop_ifaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseClientClass, dbus_properties_class));
@@ -1547,6 +1572,23 @@ handle_channels_context_prepare_cb (GObject *source,
     }
 }
 
+static TpChannelRequest *
+find_request_by_path (TpBaseClient *self,
+    const gchar *path)
+{
+  GList *l;
+
+  for (l = self->priv->pending_requests; l != NULL; l = g_list_next (l))
+    {
+      TpChannelRequest *request = l->data;
+
+      if (!tp_strdiff (tp_proxy_get_object_path (request), path))
+        return request;
+    }
+
+  return NULL;
+}
+
 static void
 _tp_base_client_handle_channels (TpSvcClientHandler *iface,
     const gchar *account_path,
@@ -1773,12 +1815,30 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
 
 static void
 _tp_base_client_remove_request (TpSvcClientInterfaceRequests *iface,
-    const gchar *request,
+    const gchar *path,
     const gchar *error,
     const gchar *reason,
     DBusGMethodInvocation *context)
 {
-  /* FIXME: emit a signal first */
+  TpBaseClient *self = TP_BASE_CLIENT (iface);
+  TpChannelRequest *request;
+
+  request = find_request_by_path (self, path);
+  if (request == NULL)
+    {
+      GError err = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Uknown ChannelRequest" };
+
+      dbus_g_method_return_error (context, &err);
+      return;
+    }
+
+  self->priv->pending_requests = g_list_remove (self->priv->pending_requests,
+      request);
+
+  g_signal_emit (self, signals[SIGNAL_REQUEST_REMOVED], 0, request,
+      error, reason);
+
   tp_svc_client_interface_requests_return_from_remove_request (context);
 }
 
