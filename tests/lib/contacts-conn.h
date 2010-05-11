@@ -30,6 +30,7 @@ struct _ContactsConnectionClass {
 
     TpPresenceMixinClass presence_mixin;
     TpContactsMixinClass contacts_mixin;
+    TpDBusPropertiesMixinClass properties_class;
 };
 
 struct _ContactsConnection {

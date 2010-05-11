@@ -98,6 +98,53 @@ finish (gpointer r)
 }
 
 static void
+prepare_avatar_requirements_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpConnection *connection = TP_CONNECTION (object);
+  Result *result = user_data;
+
+  tp_proxy_prepare_finish (connection, res, &result->error);
+  if (result->error == NULL)
+    {
+      TpAvatarRequirements *req;
+
+      req = tp_connection_get_avatar_requirements (connection);
+      MYASSERT (req != NULL, "");
+      MYASSERT_SAME_UINT (req->minimum_width, 1);
+      MYASSERT_SAME_UINT (req->minimum_height, 2);
+      MYASSERT_SAME_UINT (req->recommended_width, 3);
+      MYASSERT_SAME_UINT (req->recommended_height, 4);
+      MYASSERT_SAME_UINT (req->maximum_width, 5);
+      MYASSERT_SAME_UINT (req->maximum_height, 6);
+      MYASSERT_SAME_UINT (req->maximum_bytes, 7);
+      MYASSERT (req->supported_mime_types != NULL, "");
+      MYASSERT_SAME_STRING (req->supported_mime_types[0], "image/png");
+      MYASSERT (req->supported_mime_types[1] == NULL, "");
+    }
+
+  finish (result);
+}
+
+static void
+test_avatar_requirements (ContactsConnection *service_conn,
+                          TpConnection *client_conn)
+{
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  GQuark features[] = { TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS, 0 };
+
+  g_message (G_STRFUNC);
+
+  tp_proxy_prepare_async (TP_PROXY (client_conn), features,
+      prepare_avatar_requirements_cb, &result);
+  g_main_loop_run (result.loop);
+
+  test_assert_no_error (result.error);
+  g_main_loop_unref (result.loop);
+}
+
+static void
 test_by_handle (ContactsConnection *service_conn,
                 TpConnection *client_conn)
 {
@@ -1310,6 +1357,7 @@ main (int argc,
 
   /* Tests */
 
+  test_avatar_requirements (service_conn, client_conn);
   test_by_handle (service_conn, client_conn);
   test_no_features (service_conn, client_conn);
   test_features (service_conn, client_conn);

@@ -25,6 +25,8 @@ static void init_aliasing (gpointer, gpointer);
 static void init_avatars (gpointer, gpointer);
 static void init_location (gpointer, gpointer);
 static void init_contact_caps (gpointer, gpointer);
+static void conn_avatars_properties_getter (GObject *object, GQuark interface,
+    GQuark name, GValue *value, gpointer getter_data);
 
 G_DEFINE_TYPE_WITH_CODE (ContactsConnection,
     contacts_connection,
@@ -47,6 +49,20 @@ G_DEFINE_TYPE_WITH_CODE (ContactsConnection,
     );
 
 /* type definition stuff */
+
+static const char *mimetypes[] = { "image/png", NULL };
+static TpDBusPropertiesMixinPropImpl conn_avatars_properties[] = {
+      { "MinimumAvatarWidth", GUINT_TO_POINTER (1), NULL },
+      { "MinimumAvatarHeight", GUINT_TO_POINTER (2), NULL },
+      { "RecommendedAvatarWidth", GUINT_TO_POINTER (3), NULL },
+      { "RecommendedAvatarHeight", GUINT_TO_POINTER (4), NULL },
+      { "MaximumAvatarWidth", GUINT_TO_POINTER (5), NULL },
+      { "MaximumAvatarHeight", GUINT_TO_POINTER (6), NULL },
+      { "MaximumAvatarBytes", GUINT_TO_POINTER (7), NULL },
+      /* special-cased - it's the only one with a non-guint value */
+      { "SupportedAvatarMIMETypes", NULL, NULL },
+      { NULL }
+};
 
 enum
 {
@@ -345,6 +361,14 @@ contacts_connection_class_init (ContactsConnectionClass *klass)
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES,
       TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
       NULL };
+  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+        { TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+          conn_avatars_properties_getter,
+          NULL,
+          conn_avatars_properties,
+        },
+        { NULL }
+  };
 
   object_class->constructed = constructed;
   object_class->finalize = finalize;
@@ -361,6 +385,10 @@ contacts_connection_class_init (ContactsConnectionClass *klass)
       my_set_own_status, my_statuses);
 
   tp_presence_mixin_simple_presence_init_dbus_properties (object_class);
+
+  klass->properties_class.interfaces = prop_interfaces;
+  tp_dbus_properties_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ContactsConnectionClass, properties_class));
 }
 
 void
@@ -701,6 +729,26 @@ my_get_known_avatar_tokens (TpSvcConnectionInterfaceAvatars *avatars,
   tp_svc_connection_interface_avatars_return_from_get_known_avatar_tokens (
       context, result);
   g_hash_table_destroy (result);
+}
+
+static void
+conn_avatars_properties_getter (GObject *object,
+                                GQuark interface,
+                                GQuark name,
+                                GValue *value,
+                                gpointer getter_data)
+{
+  GQuark q_mime_types = g_quark_from_static_string (
+      "SupportedAvatarMIMETypes");
+
+  if (name == q_mime_types)
+    {
+      g_value_set_static_boxed (value, mimetypes);
+    }
+  else
+    {
+      g_value_set_uint (value, GPOINTER_TO_UINT (getter_data));
+    }
 }
 
 static void
