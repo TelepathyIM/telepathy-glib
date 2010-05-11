@@ -142,7 +142,7 @@ const gchar *tp_base_client_get_object_path (TpBaseClient *self);
 
 /* Normal methods, can be called at any time */
 
-GList *tp_base_client_get_pending_requests (TpBaseClient *self);
+const GList *tp_base_client_get_pending_requests (TpBaseClient *self);
 GList *tp_base_client_get_handled_channels (TpBaseClient *self);
 
 #define TP_TYPE_BASE_CLIENT \

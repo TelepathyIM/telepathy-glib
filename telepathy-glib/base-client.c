@@ -141,6 +141,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/_gen/signals-marshal.h"
 
 struct _TpBaseClientClassPrivate {
     /*<private>*/
@@ -173,6 +174,13 @@ enum {
     N_PROPS
 };
 
+enum {
+  SIGNAL_REQUEST_ADDED,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = { 0 };
+
 typedef enum {
     CLIENT_IS_OBSERVER = 1 << 0,
     CLIENT_IS_APPROVER = 1 << 1,
@@ -198,6 +206,8 @@ struct _TpBaseClientPrivate
   GPtrArray *handler_filters;
   /* array of g_strdup(token), plus NULL included in length */
   GPtrArray *handler_caps;
+
+  GList *pending_requests;
 
   gchar *bus_name;
   gchar *object_path;
@@ -686,16 +696,15 @@ tp_base_client_register (TpBaseClient *self,
  * called.
  * Returns the list of requests @self is likely be asked to handle.
  *
- * Returns: (transfer container) (element-type Tp.ChannelRequest): a #GList
+ * Returns: (transfer none) (element-type Tp.ChannelRequest): a #GList
  * of #TpChannelRequest
  *
  * Since: 0.11.UNRELEASED
  */
-GList *
+const GList *
 tp_base_client_get_pending_requests (TpBaseClient *self)
 {
-  /* FIXME */
-  return NULL;
+  return self->priv->pending_requests;
 }
 
 /**
@@ -752,6 +761,10 @@ tp_base_client_dispose (GObject *object)
       g_object_unref (self->priv->account_mgr);
       self->priv->account_mgr = NULL;
     }
+
+  g_list_foreach (self->priv->pending_requests, (GFunc) g_object_unref, NULL);
+  g_list_free (self->priv->pending_requests);
+  self->priv->pending_requests = NULL;
 
   if (dispose != NULL)
     dispose (object);
@@ -1074,6 +1087,32 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_UNIQUIFY_NAME,
       param_spec);
+
+ /**
+   * TpBaseClient::request-added:
+   * @self: a #TpBaseClient
+   * @account: the #TpAccount on which the request was made
+   * having %TP_ACCOUNT_FEATURE_CORE prepared if possible
+   * @request: a #TpChannelRequest having its object-path defined but
+   * is not guaranteed to be prepared.
+   *
+   * Emitted when a channels have been requested, and that if the
+   * request is successful, they will probably be handled by this Handler.
+   *
+   * This signal is only fired if
+   * tp_base_client_set_handler_request_notification() has been called
+   * on @self previously.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  signals[SIGNAL_REQUEST_ADDED] = g_signal_new (
+      "request-added", G_OBJECT_CLASS_TYPE (cls),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__OBJECT_OBJECT,
+      G_TYPE_NONE, 2,
+      TP_TYPE_ACCOUNT, TP_TYPE_CHANNEL_REQUEST);
 
   cls->dbus_properties_class.interfaces = prop_ifaces;
   tp_dbus_properties_mixin_class_init (object_class,
@@ -1634,13 +1673,101 @@ handler_iface_init (gpointer g_iface,
 #undef IMPLEMENT
 }
 
+typedef struct
+{
+  TpBaseClient *self;
+  TpChannelRequest *request;
+} channel_request_prepare_account_ctx;
+
+static channel_request_prepare_account_ctx *
+channel_request_prepare_account_ctx_new (TpBaseClient *self,
+    TpChannelRequest *request)
+{
+  channel_request_prepare_account_ctx *ctx = g_slice_new (
+      channel_request_prepare_account_ctx);
+
+  ctx->self = g_object_ref (self);
+  ctx->request = g_object_ref (request);
+  return ctx;
+}
+
+static void
+channel_request_prepare_account_ctx_free (
+    channel_request_prepare_account_ctx *ctx)
+{
+  g_object_unref (ctx->self);
+  g_object_unref (ctx->request);
+
+  g_slice_free (channel_request_prepare_account_ctx, ctx);
+}
+
+static void
+channel_request_account_prepare_cb (GObject *account,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  channel_request_prepare_account_ctx *ctx = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (account, result, &error))
+    {
+      DEBUG ("Failed to prepare account: %s", error->message);
+      g_error_free (error);
+    }
+
+  g_signal_emit (ctx->self, signals[SIGNAL_REQUEST_ADDED], 0, account,
+      ctx->request);
+
+  channel_request_prepare_account_ctx_free (ctx);
+}
+
 static void
 _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
-    const gchar *request,
+    const gchar *path,
     GHashTable *properties,
     DBusGMethodInvocation *context)
 {
-  /* FIXME: emit a signal first */
+  TpBaseClient *self = TP_BASE_CLIENT (iface);
+  TpChannelRequest *request;
+  TpAccount *account;
+  GError *error = NULL;
+  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+  channel_request_prepare_account_ctx *ctx;
+
+  request = tp_channel_request_new (self->priv->dbus, path, properties, &error);
+  if (request == NULL)
+    {
+      DEBUG ("Failed to create TpChannelRequest: %s", error->message);
+
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  path = tp_asv_get_object_path (properties, TP_PROP_CHANNEL_REQUEST_ACCOUNT);
+  if (path == NULL)
+    {
+      error = g_error_new_literal (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Mandatory 'Account' property is missing");
+
+      DEBUG ("%s", error->message);
+
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  account = tp_account_manager_ensure_account (self->priv->account_mgr,
+      path);
+
+  self->priv->pending_requests = g_list_append (self->priv->pending_requests,
+      request);
+
+  ctx = channel_request_prepare_account_ctx_new (self, request);
+
+  tp_proxy_prepare_async (account, account_features,
+      channel_request_account_prepare_cb, ctx);
+
   tp_svc_client_interface_requests_return_from_add_request (context);
 }
 
