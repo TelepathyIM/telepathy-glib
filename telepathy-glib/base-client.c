@@ -1672,12 +1672,20 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       const gchar *req_path = g_ptr_array_index (requests_arr, i);
       TpChannelRequest *request;
 
-      request = tp_channel_request_new (self->priv->dbus, req_path, NULL,
-          &error);
-      if (request == NULL)
+      request = find_request_by_path (self, req_path);
+      if (request != NULL)
         {
-          DEBUG ("Failed to create TpChannelRequest: %s", error->message);
-          goto out;
+          g_object_ref (request);
+        }
+      else
+        {
+          request = tp_channel_request_new (self->priv->dbus, req_path, NULL,
+              &error);
+          if (request == NULL)
+            {
+              DEBUG ("Failed to create TpChannelRequest: %s", error->message);
+              goto out;
+            }
         }
 
       g_ptr_array_add (requests, request);
