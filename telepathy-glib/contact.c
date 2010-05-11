@@ -2691,8 +2691,8 @@ get_feature_flags (guint n_features,
     }
 
   /* Force AVATAR_TOKEN if we have AVATAR_DATA */
-  if ((feature_flags & TP_CONTACT_FEATURE_AVATAR_DATA) != 0)
-    feature_flags |= (1 << TP_CONTACT_FEATURE_AVATAR_TOKEN);
+  if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
+    feature_flags |= CONTACT_FEATURE_FLAG_AVATAR_TOKEN;
 
   return feature_flags;
 }
