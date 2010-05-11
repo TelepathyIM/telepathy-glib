@@ -47,6 +47,7 @@ typedef struct {
 
     GError *error /* initialized where needed */;
     GStrv interfaces;
+    gint wait;
 } Test;
 
 #define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
@@ -369,7 +370,9 @@ no_return_cb (TpClient *proxy,
     }
 
 out:
-  g_main_loop_quit (test->mainloop);
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
 }
 
 static void
@@ -825,6 +828,27 @@ out:
 }
 
 static void
+request_added_cb (TpBaseClient *client,
+    TpAccount *account,
+    TpChannelRequest *request,
+    Test *test)
+{
+  const GList *requests;
+
+  g_assert (TP_IS_CHANNEL_REQUEST (request));
+  g_assert (TP_IS_ACCOUNT (account));
+  g_assert (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CORE));
+
+  requests = tp_base_client_get_pending_requests (test->base_client);
+  g_assert_cmpuint (g_list_length ((GList *) requests), ==, 1);
+  g_assert (requests->data == request);
+
+  test->wait--;
+  if (test->wait == 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_handler_requests (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -862,18 +886,23 @@ test_handler_requests (Test *test,
   g_assert_no_error (test->error);
 
   /* Call AddRequest */
-  properties = g_hash_table_new (NULL, NULL);
+  properties = tp_asv_new (
+      TP_PROP_CHANNEL_REQUEST_ACCOUNT, DBUS_TYPE_G_OBJECT_PATH, ACCOUNT_PATH,
+      NULL);
 
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_INTERFACE_REQUESTS);
+
+  g_signal_connect (test->base_client, "request-added",
+      G_CALLBACK (request_added_cb), test);
 
   tp_cli_client_interface_requests_call_add_request (test->client, -1,
       "/Request", properties,
       no_return_cb, test, NULL, NULL);
 
+  test->wait = 2;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
-  /* TODO: check if signal has been fired */
 
   /* Call RemoveRequest */
   tp_cli_client_interface_requests_call_remove_request (test->client, -1,
