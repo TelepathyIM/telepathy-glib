@@ -867,6 +867,11 @@ test_handler_requests (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *properties;
+  GPtrArray *channels;
+  GPtrArray *requests_satisified;
+  GHashTable *info;
+  TpChannelRequest *request;
+  const GList *requests;
 
   tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
@@ -922,6 +927,35 @@ test_handler_requests (Test *test,
 
   g_assert (tp_base_client_get_pending_requests (test->base_client) != NULL);
 
+  /* Call HandleChannels */
+  channels = g_ptr_array_sized_new (2);
+  add_channel_to_ptr_array (channels, test->text_chan);
+
+  requests_satisified = g_ptr_array_sized_new (1);
+  g_ptr_array_add (requests_satisified, "/Request");
+
+  info = g_hash_table_new (NULL, NULL);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
+      TP_IFACE_QUARK_CLIENT_HANDLER);
+
+  tp_cli_client_handler_call_handle_channels (test->client, -1,
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
+      channels, requests_satisified, 0, info,
+      no_return_cb, test, NULL, NULL);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (test->simple_client->handle_channels_ctx != NULL);
+  g_assert_cmpint (
+      test->simple_client->handle_channels_ctx->requests_satisfied->len, ==, 1);
+  request = g_ptr_array_index (
+      test->simple_client->handle_channels_ctx->requests_satisfied, 0);
+  requests = tp_base_client_get_pending_requests (test->base_client);
+  g_assert (requests->data == request);
+
   /* Call RemoveRequest */
   g_signal_connect (test->base_client, "request-removed",
       G_CALLBACK (request_removed_cb), test);
@@ -937,6 +971,10 @@ test_handler_requests (Test *test,
   g_assert (tp_base_client_get_pending_requests (test->base_client) == NULL);
 
   g_hash_table_unref (properties);
+  g_ptr_array_foreach (channels, free_channel_details, NULL);
+  g_ptr_array_free (channels, TRUE);
+  g_ptr_array_free (requests_satisified, TRUE);
+  g_hash_table_unref (info);
 }
 
 int
