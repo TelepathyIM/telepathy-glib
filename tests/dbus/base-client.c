@@ -849,6 +849,20 @@ request_added_cb (TpBaseClient *client,
 }
 
 static void
+request_removed_cb (TpBaseClient *client,
+    TpChannelRequest *request,
+    const gchar *error,
+    const gchar *reason,
+    Test *test)
+{
+  g_assert (TP_IS_CHANNEL_REQUEST (request));
+
+  test->wait--;
+  if (test->wait == 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_handler_requests (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -885,6 +899,8 @@ test_handler_requests (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
+  g_assert (tp_base_client_get_pending_requests (test->base_client) == NULL);
+
   /* Call AddRequest */
   properties = tp_asv_new (
       TP_PROP_CHANNEL_REQUEST_ACCOUNT, DBUS_TYPE_G_OBJECT_PATH, ACCOUNT_PATH,
@@ -904,14 +920,21 @@ test_handler_requests (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
+  g_assert (tp_base_client_get_pending_requests (test->base_client) != NULL);
+
   /* Call RemoveRequest */
+  g_signal_connect (test->base_client, "request-removed",
+      G_CALLBACK (request_removed_cb), test);
+
   tp_cli_client_interface_requests_call_remove_request (test->client, -1,
-      "/Remove", "Badger", "snake",
+      "/Request", "Badger", "snake",
       no_return_cb, test, NULL, NULL);
 
+  test->wait = 2;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
-  /* TODO: check if signal has been fired */
+
+  g_assert (tp_base_client_get_pending_requests (test->base_client) == NULL);
 
   g_hash_table_unref (properties);
 }
