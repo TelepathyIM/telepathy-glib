@@ -833,7 +833,7 @@ request_added_cb (TpBaseClient *client,
     TpChannelRequest *request,
     Test *test)
 {
-  const GList *requests;
+  GList *requests;
 
   g_assert (TP_IS_CHANNEL_REQUEST (request));
   g_assert (TP_IS_ACCOUNT (account));
@@ -842,6 +842,7 @@ request_added_cb (TpBaseClient *client,
   requests = tp_base_client_get_pending_requests (test->base_client);
   g_assert_cmpuint (g_list_length ((GList *) requests), ==, 1);
   g_assert (requests->data == request);
+  g_list_free (requests);
 
   test->wait--;
   if (test->wait == 0)
@@ -871,7 +872,7 @@ test_handler_requests (Test *test,
   GPtrArray *requests_satisified;
   GHashTable *info;
   TpChannelRequest *request;
-  const GList *requests;
+  GList *requests;
 
   tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
@@ -925,7 +926,9 @@ test_handler_requests (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert (tp_base_client_get_pending_requests (test->base_client) != NULL);
+  requests = tp_base_client_get_pending_requests (test->base_client);
+  g_assert (requests != NULL);
+  g_list_free (requests);
 
   /* Call HandleChannels */
   channels = g_ptr_array_sized_new (2);
@@ -955,6 +958,7 @@ test_handler_requests (Test *test,
       test->simple_client->handle_channels_ctx->requests_satisfied, 0);
   requests = tp_base_client_get_pending_requests (test->base_client);
   g_assert (requests->data == request);
+  g_list_free (requests);
 
   /* Call RemoveRequest */
   g_signal_connect (test->base_client, "request-removed",

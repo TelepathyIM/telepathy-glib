@@ -697,15 +697,15 @@ tp_base_client_register (TpBaseClient *self,
  * called.
  * Returns the list of requests @self is likely be asked to handle.
  *
- * Returns: (transfer none) (element-type Tp.ChannelRequest): a #GList
+ * Returns: (transfer container) (element-type Tp.ChannelRequest): a #GList
  * of #TpChannelRequest
  *
  * Since: 0.11.UNRELEASED
  */
-const GList *
+GList *
 tp_base_client_get_pending_requests (TpBaseClient *self)
 {
-  return self->priv->pending_requests;
+  return g_list_copy (self->priv->pending_requests);
 }
 
 /**
