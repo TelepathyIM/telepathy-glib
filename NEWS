@@ -1,7 +1,9 @@
 telepathy-glib 0.10.6 (UNRELEASED)
 ==================================
 
-...
+Fixes:
+
+* Correct the syntax of TP_IS_HANDLE_REPO_IFACE (smcv)
 
 telepathy-glib 0.10.5 (2010-04-28)
 ==================================
