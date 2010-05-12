@@ -51,7 +51,7 @@ typedef struct _TpHandleSet TpHandleSet;
 
 #define TP_IS_HANDLE_REPO_IFACE(obj) \
     (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
-    TP_TYPE_HANDLE_REPO_IFACE)
+    TP_TYPE_HANDLE_REPO_IFACE))
 
 #define TP_HANDLE_REPO_IFACE_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
