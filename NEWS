@@ -9,6 +9,8 @@ Fixes:
 * Fix more assertion failures (this time in TpContact) if getting contact
   attributes fails or yields the wrong type (wjt)
 
+* Correct the syntax of TP_IS_HANDLE_REPO_IFACE (smcv)
+
 telepathy-glib 0.8.3 (2010-04-06)
 =================================
 
