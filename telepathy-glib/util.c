@@ -1173,7 +1173,7 @@ struct _TpWeakRef {
 
 /**
  * tp_weak_ref_new:
- * @object: (type Object): an object to which to take a weak reference
+ * @object: (type GObject.Object): an object to which to take a weak reference
  * @user_data: optional additional data to store alongside the weak ref
  * @destroy: destructor for @user_data, called when the weak ref
  *  is freed
@@ -1227,7 +1227,7 @@ tp_weak_ref_get_user_data (TpWeakRef *self)
  * If the weakly referenced object still exists, return a new reference to
  * it. Otherwise, return %NULL.
  *
- * Returns: (type Object) (transfer full): a new reference, or %NULL
+ * Returns: (type GObject.Object) (transfer full): a new reference, or %NULL
  *
  * Since: 0.11.3
  */
