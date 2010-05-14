@@ -1978,7 +1978,7 @@ requests_iface_init (gpointer g_iface,
 }
 
 /**
- * tp_base_client_implement_observe_channels:
+ * tp_base_client_implement_observe_channels: (skip)
  * @klass: the #TpBaseClientClass of the object
  * @impl: the #TpBaseClientClassObserveChannelsImpl function implementing
  * ObserveChannels()
@@ -2032,7 +2032,7 @@ tp_base_client_get_object_path (TpBaseClient *self)
 }
 
 /**
- * tp_base_client_implement_add_dispatch_operation:
+ * tp_base_client_implement_add_dispatch_operation: (skip)
  * @klass: the #TpBaseClientClass of the object
  * @impl: the #TpBaseClientClassAddDispatchOperationImpl function implementing
  * AddDispatchOperation()
@@ -2050,7 +2050,7 @@ tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *cls,
 }
 
 /**
- * tp_base_client_implement_handle_channels:
+ * tp_base_client_implement_handle_channels: (skip)
  * @klass: the #TpBaseClientClass of the object
  * @impl: the #TpBaseClientClassHandleChannelsImpl function implementing
  * HandleCHannels()
