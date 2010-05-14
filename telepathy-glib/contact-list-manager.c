@@ -21,6 +21,11 @@
 #include <telepathy-glib/contact-list-manager.h>
 #include <telepathy-glib/contact-list-manager-internal.h>
 
+#include <telepathy-glib/handle-repo-dynamic.h>
+#include <telepathy-glib/handle-repo-static.h>
+
+#include <telepathy-glib/base-connection-internal.h>
+
 /**
  * SECTION:contact-list-manager
  * @title: TpContactListManager
@@ -158,17 +163,53 @@ tp_contact_list_manager_set_property (GObject *object,
     }
 }
 
+static gchar *
+tp_contact_list_manager_normalize_group (TpHandleRepoIface *repo,
+    const gchar *id,
+    gpointer context,
+    GError **error)
+{
+  /* FIXME: stub: should normalize appropriately for a protocol */
+  return g_strdup (id);
+}
+
+/* elements 0, 1... of this enum must be kept in sync with elements 1, 2...
+ * of the enum in the -internal header */
+static const gchar * const tp_contact_list_manager_contact_lists
+  [NUM_TP_LIST_HANDLES + 1] = {
+    "subscribe",
+    "publish",
+    "stored",
+    "deny",
+    NULL
+};
+
 static void
 tp_contact_list_manager_constructed (GObject *object)
 {
   TpContactListManager *self = TP_CONTACT_LIST_MANAGER (object);
   void (*chain_up) (GObject *) =
     G_OBJECT_CLASS (tp_contact_list_manager_parent_class)->constructed;
+  TpHandleRepoIface *group_repo, *list_repo;
 
   if (chain_up != NULL)
     chain_up (object);
 
   g_assert (self->priv->conn != NULL);
+
+  list_repo = tp_static_handle_repo_new (TP_HANDLE_TYPE_LIST,
+      (const gchar **) tp_contact_list_manager_contact_lists);
+  group_repo = tp_dynamic_handle_repo_new (TP_HANDLE_TYPE_GROUP,
+      tp_contact_list_manager_normalize_group, NULL);
+
+  _tp_base_connection_set_handle_repo (self->priv->conn, TP_HANDLE_TYPE_LIST,
+      list_repo);
+  _tp_base_connection_set_handle_repo (self->priv->conn, TP_HANDLE_TYPE_GROUP,
+      group_repo);
+
+  /* set_handle_repo doesn't steal a reference */
+  g_object_unref (list_repo);
+  g_object_unref (group_repo);
 }
 
 static void

@@ -27,6 +27,17 @@
 
 G_BEGIN_DECLS
 
+/* elements 1, 2... of this enum must be kept in sync with elements 0, 1...
+ * of the array in the .c */
+typedef enum {
+    INVALID_TP_LIST_HANDLE = 0,
+    TP_LIST_HANDLE_SUBSCRIBE,
+    TP_LIST_HANDLE_PUBLISH,
+    TP_LIST_HANDLE_STORED,
+    TP_LIST_HANDLE_DENY,
+    NUM_TP_LIST_HANDLES
+} TpListHandle;
+
 TpChannelGroupFlags _tp_contact_list_manager_get_list_flags (
     TpContactListManager *self,
     TpHandle list);
