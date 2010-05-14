@@ -1,8 +1,8 @@
 /*
  * base-connection.c - Source for TpBaseConnection
  *
- * Copyright (C) 2005-2008 Collabora Ltd.
- * Copyright (C) 2005-2008 Nokia Corporation
+ * Copyright © 2005-2010 Collabora Ltd.
+ * Copyright © 2005-2009 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -234,6 +234,7 @@
 
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/base-connection-internal.h>
 
 #include <string.h>
 
@@ -404,6 +405,8 @@ struct _TpBaseConnectionPrivate
   GPtrArray *disconnect_requests;
 
   TpDBusDaemon *bus_proxy;
+  /* TRUE after constructor() returns */
+  gboolean been_constructed;
 };
 
 static guint tp_base_connection_get_dbus_status (TpBaseConnection *self);
@@ -1211,6 +1214,26 @@ manager_channel_closed_cb (TpChannelManager *manager,
   tp_svc_connection_interface_requests_emit_channel_closed (self, path);
 }
 
+/*
+ * Set the @handle_type'th handle repository, which must be %NULL, to
+ * @handle_repo. This method can only be called from code run during the
+ * constructor(), after handle repository instantiation (in practice, this
+ * means it can only be called from the @create_channel_managers callback).
+ */
+void
+_tp_base_connection_set_handle_repo (TpBaseConnection *self,
+    TpHandleType handle_type,
+    TpHandleRepoIface *handle_repo)
+{
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+  g_return_if_fail (!self->priv->been_constructed);
+  g_return_if_fail (tp_handle_type_is_valid (handle_type, NULL));
+  g_return_if_fail (self->priv->handles[TP_HANDLE_TYPE_CONTACT] != NULL);
+  g_return_if_fail (self->priv->handles[handle_type] == NULL);
+  g_return_if_fail (TP_IS_HANDLE_REPO_IFACE (handle_repo));
+
+  self->priv->handles[handle_type] = g_object_ref (handle_repo);
+}
 
 static GObject *
 tp_base_connection_constructor (GType type, guint n_construct_properties,
@@ -1284,6 +1307,8 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
       g_signal_connect (manager, "channel-closed",
           (GCallback) manager_channel_closed_cb, self);
     }
+
+  priv->been_constructed = TRUE;
 
   return (GObject *) self;
 }
