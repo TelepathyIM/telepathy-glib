@@ -3901,3 +3901,22 @@ TpHandleChannelsContextClass
 TpHandleChannelsContextPrivate
 TP_TYPE_HANDLE_CHANNELS_CONTEXT
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/simple-handler.h</INCLUDE>
+<FILE>simple-handler</FILE>
+<TITLE>simple-handler</TITLE>
+TpSimpleHandler
+TpSimpleHandlerHandleChannelsImpl
+tp_simple_handler_new
+<SUBSECTION Standard>
+tp_simple_handler_get_type
+TP_TYPE_SIMPLE_HANDLER
+TP_SIMPLE_HANDLER
+TP_SIMPLE_HANDLER_CLASS
+TP_SIMPLE_HANDLER_GET_CLASS
+TP_IS_SIMPLE_HANDLER
+TP_IS_SIMPLE_HANDLER_CLASS
+TpSimpleHandlerClass
+TpSimpleHandlerPrivate
+</SECTION>
