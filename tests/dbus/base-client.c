@@ -754,6 +754,16 @@ out:
 }
 
 static void
+channel_invalidated_cb (TpChannel *channel,
+    guint domain,
+    gint code,
+    gchar *message,
+    Test *test)
+{
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_handler (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -762,6 +772,8 @@ test_handler (Test *test,
   GPtrArray *channels;
   GPtrArray *requests_satisified;
   GHashTable *info;
+  GList *chans;
+  SimpleClient *client_2;
 
   filter = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -825,6 +837,38 @@ test_handler (Test *test,
 
   g_assert (test->simple_client->handle_channels_ctx != NULL);
   g_assert (test->simple_client->handle_channels_ctx->account == test->account);
+
+  chans = tp_base_client_get_handled_channels (test->base_client);
+  g_assert_cmpuint (g_list_length (chans), ==, 2);
+  g_list_free (chans);
+
+  /* One of the channel is closed */
+  g_signal_connect (test->text_chan, "invalidated",
+      G_CALLBACK (channel_invalidated_cb), test);
+
+  tp_dbus_daemon_unregister_object (tp_base_connection_get_dbus_daemon (
+        test->base_connection), test->text_chan_service);
+  /*
+  g_object_unref (test->text_chan_service);
+  test->text_chan_service = NULL;
+  */
+  g_main_loop_run (test->mainloop);
+
+  chans = tp_base_client_get_handled_channels (test->base_client);
+  g_assert_cmpuint (g_list_length (chans), ==, 1);
+  g_list_free (chans);
+
+  /* Create another client sharing the same unique name */
+  client_2 = simple_client_new (test->dbus, "Test", TRUE);
+  tp_base_client_be_a_handler (TP_BASE_CLIENT (client_2));
+  tp_base_client_register (TP_BASE_CLIENT (client_2), &test->error);
+  g_assert_no_error (test->error);
+
+  chans = tp_base_client_get_handled_channels (TP_BASE_CLIENT (client_2));
+  g_assert_cmpuint (g_list_length (chans), ==, 1);
+  g_list_free (chans);
+
+  g_object_unref (client_2);
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);
