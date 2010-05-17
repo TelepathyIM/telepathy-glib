@@ -3295,6 +3295,8 @@ tp_connection_set_contact_info_finish
 TP_UNKNOWN_CONNECTION_STATUS
 TP_ERRORS_DISCONNECTED
 tp_connection_get_detailed_error
+tp_connection_add_client_interest
+tp_connection_add_client_interest_by_id
 <SUBSECTION Standard>
 tp_errors_disconnected_quark
 tp_connection_get_type
