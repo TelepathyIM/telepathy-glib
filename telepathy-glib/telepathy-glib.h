@@ -46,6 +46,7 @@
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/debug.h>
+#include <telepathy-glib/simple-approver.h>
 #include <telepathy-glib/simple-observer.h>
 
 #include <telepathy-glib/svc-generic.h>
