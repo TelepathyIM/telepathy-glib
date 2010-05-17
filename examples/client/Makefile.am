@@ -30,6 +30,9 @@ telepathy_example_media_observer_SOURCES = media-observer.c
 EXAMPLES += telepathy-example-approver
 telepathy_example_approver_SOURCES = approver.c
 
+EXAMPLES += telepathy-example-text-handler
+telepathy_example_text_handler_SOURCES = text-handler.c
+
 if INSTALL_EXAMPLES
 bin_PROGRAMS = $(EXAMPLES)
 else
