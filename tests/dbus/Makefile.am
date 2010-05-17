@@ -40,6 +40,7 @@ noinst_PROGRAMS = \
     test-self-handle \
     test-self-presence \
     test-simple-approver \
+    test-simple-handler \
     test-simple-observer \
     test-text-mixin \
     test-text-respawn \
@@ -177,6 +178,8 @@ test_params_cm_SOURCES = \
 test_simple_observer_SOURCES = simple-observer.c
 
 test_simple_approver_SOURCES = simple-approver.c
+
+test_simple_handler_SOURCES = simple-handler.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
