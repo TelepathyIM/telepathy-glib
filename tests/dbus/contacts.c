@@ -158,8 +158,8 @@ test_avatar_requirements (TpConnection *client_conn)
 
 static GFile *
 create_contact_with_fake_avatar (ContactsConnection *service_conn,
-                                 TpConnection *client_conn,
-                                 const gchar *id)
+    TpConnection *client_conn,
+    const gchar *id)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
@@ -197,7 +197,8 @@ create_contact_with_fake_avatar (ContactsConnection *service_conn,
       g_main_loop_run (result.loop);
     }
 
-  g_assert_cmpstr (tp_contact_get_avatar_mimetype (contact), ==, avatar_mimetype);
+  g_assert_cmpstr (tp_contact_get_avatar_mimetype (contact), ==,
+      avatar_mimetype);
   g_assert_cmpstr (tp_contact_get_avatar_token (contact), ==, avatar_token);
 
   avatar_file = tp_contact_get_avatar_file (contact);
@@ -237,7 +238,7 @@ avatar_retrieved_cb (TpConnection *connection,
 
 static void
 test_avatar_data (ContactsConnection *service_conn,
-                  TpConnection *client_conn)
+    TpConnection *client_conn)
 {
   gboolean avatar_retrieved_called;
   GError *error = NULL;

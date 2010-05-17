@@ -93,7 +93,9 @@ typedef struct
 } AvatarData;
 
 static AvatarData *
-avatar_data_new (GArray *data, const gchar *mimetype, const gchar *token)
+avatar_data_new (GArray *data,
+    const gchar *mimetype,
+    const gchar *token)
 {
   AvatarData *a;
 
@@ -522,7 +524,8 @@ contacts_connection_change_avatar_tokens (ContactsConnection *self,
     }
 }
 
-void contacts_connection_change_avatar_data (ContactsConnection *self,
+void
+contacts_connection_change_avatar_data (ContactsConnection *self,
     TpHandle handle,
     GArray *data,
     const gchar *mimetype,
@@ -782,8 +785,8 @@ my_get_known_avatar_tokens (TpSvcConnectionInterfaceAvatars *avatars,
 
 static void
 my_request_avatars (TpSvcConnectionInterfaceAvatars *avatars,
-                    const GArray *contacts,
-                    DBusGMethodInvocation *context)
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
 {
   ContactsConnection *self = CONTACTS_CONNECTION (avatars);
   TpBaseConnection *base = TP_BASE_CONNECTION (avatars);
