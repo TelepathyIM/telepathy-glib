@@ -126,6 +126,9 @@
 
 #include "telepathy-glib/base-client.h"
 
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
+
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/channel-dispatch-operation-internal.h>
@@ -182,6 +185,8 @@ enum {
 
 static guint signals[N_SIGNALS] = { 0 };
 
+static dbus_int32_t clients_slot = -1;
+
 typedef enum {
     CLIENT_IS_OBSERVER = 1 << 0,
     CLIENT_IS_APPROVER = 1 << 1,
@@ -196,6 +201,8 @@ struct _TpBaseClientPrivate
   TpDBusDaemon *dbus;
   gchar *name;
   gboolean uniquify_name;
+  /* reffed */
+  DBusConnection *libdbus;
 
   gboolean registered;
   ClientFlags flags;
@@ -209,6 +216,9 @@ struct _TpBaseClientPrivate
   GPtrArray *handler_caps;
 
   GList *pending_requests;
+  /* Channels actually handled by THIS observer.
+   * borrowed path (gchar *) => reffed TpChannel */
+  GHashTable *my_chans;
 
   gchar *bus_name;
   gchar *object_path;
@@ -667,6 +677,8 @@ gboolean
 tp_base_client_register (TpBaseClient *self,
     GError **error)
 {
+  GHashTable *clients;
+
   g_return_val_if_fail (TP_IS_BASE_CLIENT (self), FALSE);
   g_return_val_if_fail (!self->priv->registered, FALSE);
   /* Client should at least be an Observer, Approver or Handler */
@@ -685,6 +697,30 @@ tp_base_client_register (TpBaseClient *self,
       G_OBJECT (self));
 
   self->priv->registered = TRUE;
+
+  self->priv->libdbus = dbus_connection_ref (
+      dbus_g_connection_get_connection (
+        tp_proxy_get_dbus_connection (self->priv->dbus)));
+
+  /* one ref per TpBaseClient, released in finalize */
+  if (!dbus_connection_allocate_data_slot (&clients_slot))
+    ERROR ("Out of memory");
+
+  clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
+
+  if (clients == NULL)
+    {
+      /* Map DBusConnection to the self->priv->my_chans hash table owned by
+       * the client using this DBusConnection.
+
+       * borrowed client path => borrowed (GHashTable *) */
+      clients = g_hash_table_new (g_str_hash, g_str_equal);
+
+      dbus_connection_set_data (self->priv->libdbus, clients_slot, clients,
+          (DBusFreeFunction) g_hash_table_unref);
+    }
+
+  g_hash_table_insert (clients, self->priv->object_path, self->priv->my_chans);
 
   return TRUE;
 }
@@ -723,8 +759,31 @@ tp_base_client_get_pending_requests (TpBaseClient *self)
 GList *
 tp_base_client_get_handled_channels (TpBaseClient *self)
 {
-  /* FIXME */
-  return NULL;
+  GList *result = NULL;
+  GHashTable *clients;
+  GHashTableIter iter;
+  gpointer value;
+  GHashTable *set;
+
+  if (clients_slot == -1)
+    return NULL;
+
+  set = g_hash_table_new (g_str_hash, g_str_equal);
+
+  clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
+
+  g_hash_table_iter_init (&iter, clients);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      GHashTable *chans = value;
+
+      tp_g_hash_table_update (set, chans, NULL, NULL);
+    }
+
+  result = g_hash_table_get_values (set);
+  g_hash_table_unref (set);
+
+  return result;
 }
 
 static void
@@ -742,6 +801,9 @@ tp_base_client_init (TpBaseClient *self)
       (GDestroyNotify) g_hash_table_unref);
   self->priv->handler_caps = g_ptr_array_new_with_free_func (g_free);
   g_ptr_array_add (self->priv->handler_caps, NULL);
+
+  self->priv->my_chans = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, NULL);
 }
 
 static void
@@ -767,6 +829,24 @@ tp_base_client_dispose (GObject *object)
   g_list_free (self->priv->pending_requests);
   self->priv->pending_requests = NULL;
 
+  if (self->priv->my_chans != NULL)
+    {
+      g_hash_table_unref (self->priv->my_chans);
+      self->priv->my_chans = NULL;
+    }
+
+  if (self->priv->libdbus != NULL)
+    {
+      GHashTable *clients;
+
+      clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
+      if (clients != NULL)
+        g_hash_table_remove (clients, self->priv->object_path);
+
+      dbus_connection_unref (self->priv->libdbus);
+      self->priv->libdbus = NULL;
+    }
+
   if (dispose != NULL)
     dispose (object);
 }
@@ -784,6 +864,8 @@ tp_base_client_finalize (GObject *object)
   g_ptr_array_free (self->priv->approver_filters, TRUE);
   g_ptr_array_free (self->priv->handler_filters, TRUE);
   g_ptr_array_free (self->priv->handler_caps, TRUE);
+
+  dbus_connection_free_data_slot (&clients_slot);
 
   g_free (self->priv->bus_name);
   g_free (self->priv->object_path);
@@ -1530,6 +1612,41 @@ approver_iface_init (gpointer g_iface,
 }
 
 static void
+chan_invalidated_cb (TpChannel *channel,
+    guint domain,
+    gint code,
+    gchar *message,
+    TpBaseClient *self)
+{
+  DEBUG ("Channel %s has been invalidated", tp_proxy_get_object_path (channel));
+
+  g_hash_table_remove (self->priv->my_chans, tp_proxy_get_object_path (
+        channel));
+}
+
+static void
+ctx_done_cb (TpHandleChannelsContext *context,
+    TpBaseClient *self)
+{
+  guint i;
+
+  for (i = 0; i < context->channels->len; i++)
+    {
+      TpChannel *channel = g_ptr_array_index (context->channels, i);
+
+      if (tp_proxy_get_invalidated (channel) == NULL)
+        {
+          g_hash_table_insert (self->priv->my_chans,
+              (gchar *) tp_proxy_get_object_path (channel),
+              g_object_ref (channel));
+
+          tp_g_signal_connect_object (channel, "invalidated",
+              G_CALLBACK (chan_invalidated_cb), self, 0);
+        }
+    }
+}
+
+static void
 handle_channels_context_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -1550,6 +1667,9 @@ handle_channels_context_prepare_cb (GObject *source,
 
   channels_list = ptr_array_to_list (ctx->channels);
   requests_list = ptr_array_to_list (ctx->requests_satisfied);
+
+  tp_g_signal_connect_object (ctx, "done", G_CALLBACK (ctx_done_cb),
+      self, 0);
 
   cls->priv->handle_channels_impl (self, ctx->account, ctx->connection,
       channels_list, requests_list, ctx->user_action_time, ctx);
