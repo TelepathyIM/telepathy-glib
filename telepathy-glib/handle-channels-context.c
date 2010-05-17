@@ -53,6 +53,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/_gen/signals-marshal.h"
 
 struct _TpHandleChannelsContextClass {
     /*<private>*/
@@ -72,6 +73,13 @@ enum {
     PROP_DBUS_CONTEXT,
     N_PROPS
 };
+
+enum {
+  SIGNAL_DONE,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = { 0 };
 
 struct _TpHandleChannelsContextPrivate
 {
@@ -405,6 +413,23 @@ tp_handle_channels_context_class_init (
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_CONTEXT,
       param_spec);
+
+ /**
+   * TpHandleChannelsContext::done:
+   * @self: a #TpHandleChannelsContext
+   *
+   * Emitted when tp_handle_channels_context_accept has been called on @self.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  signals[SIGNAL_DONE] = g_signal_new (
+      "done", G_OBJECT_CLASS_TYPE (cls),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
 }
 
 TpHandleChannelsContext * _tp_handle_channels_context_new (
@@ -448,6 +473,8 @@ tp_handle_channels_context_accept (TpHandleChannelsContext *self)
   dbus_g_method_return (self->priv->dbus_context);
 
   self->priv->dbus_context = NULL;
+
+  g_signal_emit (self, signals[SIGNAL_DONE], 0);
 }
 
 /**
