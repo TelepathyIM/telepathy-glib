@@ -119,23 +119,22 @@ prepare_avatar_requirements_cb (GObject *object,
   TpConnection *connection = TP_CONNECTION (object);
   Result *result = user_data;
 
-  tp_proxy_prepare_finish (connection, res, &result->error);
-  if (result->error == NULL)
+  if (tp_proxy_prepare_finish (connection, res, &result->error))
     {
       TpAvatarRequirements *req;
 
       req = tp_connection_get_avatar_requirements (connection);
-      MYASSERT (req != NULL, "");
-      MYASSERT_SAME_UINT (req->minimum_width, 1);
-      MYASSERT_SAME_UINT (req->minimum_height, 2);
-      MYASSERT_SAME_UINT (req->recommended_width, 3);
-      MYASSERT_SAME_UINT (req->recommended_height, 4);
-      MYASSERT_SAME_UINT (req->maximum_width, 5);
-      MYASSERT_SAME_UINT (req->maximum_height, 6);
-      MYASSERT_SAME_UINT (req->maximum_bytes, 7);
-      MYASSERT (req->supported_mime_types != NULL, "");
-      MYASSERT_SAME_STRING (req->supported_mime_types[0], "image/png");
-      MYASSERT (req->supported_mime_types[1] == NULL, "");
+      g_assert (req != NULL);
+      g_assert (req->supported_mime_types != NULL);
+      g_assert_cmpstr (req->supported_mime_types[0], ==, "image/png");
+      g_assert (req->supported_mime_types[1] == NULL);
+      g_assert_cmpuint (req->minimum_width, ==, 1);
+      g_assert_cmpuint (req->minimum_height, ==, 2);
+      g_assert_cmpuint (req->recommended_width, ==, 3);
+      g_assert_cmpuint (req->recommended_height, ==, 4);
+      g_assert_cmpuint (req->maximum_width, ==, 5);
+      g_assert_cmpuint (req->maximum_height, ==, 6);
+      g_assert_cmpuint (req->maximum_bytes, ==, 7);
     }
 
   finish (result);
@@ -153,7 +152,7 @@ test_avatar_requirements (TpConnection *client_conn)
       prepare_avatar_requirements_cb, &result);
   g_main_loop_run (result.loop);
 
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
   g_main_loop_unref (result.loop);
 }
 
@@ -188,7 +187,7 @@ create_contact_with_fake_avatar (ContactsConnection *service_conn,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   contact = g_ptr_array_index (result.contacts, 0);
   if (tp_contact_get_avatar_file (contact) == NULL)
@@ -198,14 +197,14 @@ create_contact_with_fake_avatar (ContactsConnection *service_conn,
       g_main_loop_run (result.loop);
     }
 
-  MYASSERT_SAME_STRING (tp_contact_get_avatar_mimetype (contact), avatar_mimetype);
-  MYASSERT_SAME_STRING (tp_contact_get_avatar_token (contact), avatar_token);
+  g_assert_cmpstr (tp_contact_get_avatar_mimetype (contact), ==, avatar_mimetype);
+  g_assert_cmpstr (tp_contact_get_avatar_token (contact), ==, avatar_token);
 
   avatar_file = tp_contact_get_avatar_file (contact);
-  MYASSERT (avatar_file != NULL, "");
+  g_assert (avatar_file != NULL);
   g_file_load_contents (avatar_file, NULL, &content, NULL, NULL, &result.error);
-  test_assert_no_error (result.error);
-  MYASSERT_SAME_STRING (content, avatar_data);
+  g_assert_no_error (result.error);
+  g_assert_cmpstr (content, ==, avatar_data);
   g_free (content);
 
   /* Keep avatar_file alive after contact destruction */
@@ -248,31 +247,31 @@ test_avatar_data (ContactsConnection *service_conn,
   g_message (G_STRFUNC);
 
   g_setenv ("XDG_CACHE_HOME", "/tmp", TRUE);
-  MYASSERT_SAME_STRING (g_get_user_cache_dir (), "/tmp");
+  g_assert_cmpstr (g_get_user_cache_dir (), ==, "/tmp");
 
   /* Check if AvatarRetrieved gets called */
   signal_id = tp_cli_connection_interface_avatars_connect_to_avatar_retrieved (
       client_conn, avatar_retrieved_cb, &avatar_retrieved_called, NULL, NULL,
       &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* First time we create a contact, avatar should not be in cache, so
    * AvatarRetrived should be called */
   avatar_retrieved_called = FALSE;
   file1 = create_contact_with_fake_avatar (service_conn, client_conn,
       "fake-id1");
-  MYASSERT (avatar_retrieved_called == TRUE, "");
+  g_assert (avatar_retrieved_called);
 
   /* Second time we create a contact, avatar should be in cache now, so
    * AvatarRetrived should NOT be called */
   avatar_retrieved_called = FALSE;
   file2 = create_contact_with_fake_avatar (service_conn, client_conn,
       "fake-id2");
-  MYASSERT (avatar_retrieved_called == FALSE, "");
+  g_assert (!avatar_retrieved_called);
 
-  MYASSERT (g_file_equal (file1, file2), "");
+  g_assert (g_file_equal (file1, file2));
   g_file_delete (file1, NULL, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   tp_proxy_signal_connection_disconnect (signal_id);
   g_object_unref (file1);
