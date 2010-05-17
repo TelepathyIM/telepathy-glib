@@ -1952,6 +1952,9 @@ contacts_bind_to_location_updated (TpConnection *connection)
 
       tp_cli_connection_interface_location_connect_to_location_updated
         (connection, contacts_location_updated, NULL, NULL, NULL, NULL);
+
+      tp_connection_add_client_interest (connection,
+          TP_IFACE_CONNECTION_INTERFACE_LOCATION);
     }
 }
 
