@@ -9,6 +9,7 @@
  *
  * Copyright (C) 2008 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2008 Nokia Corporation
+ * Copyright (C) 2007 Will Thompson
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -16,6 +17,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <glib/gstdio.h>
 
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
@@ -236,10 +238,58 @@ avatar_retrieved_cb (TpConnection *connection,
   *called = TRUE;
 }
 
+/* From telepathy-haze, with permission */
+static gboolean
+haze_remove_directory (const gchar *path)
+{
+  const gchar *child_path;
+  GDir *dir = g_dir_open (path, 0, NULL);
+  gboolean ret = TRUE;
+
+  if (!dir)
+    return FALSE;
+
+  while (ret && (child_path = g_dir_read_name (dir)))
+    {
+      gchar *child_full_path = g_build_filename (path, child_path, NULL);
+
+      if (g_file_test (child_full_path, G_FILE_TEST_IS_DIR))
+        {
+          if (!haze_remove_directory (child_full_path))
+            ret = FALSE;
+        }
+      else
+        {
+          DEBUG ("deleting %s", child_full_path);
+
+          if (g_unlink (child_full_path))
+            ret = FALSE;
+        }
+
+      g_free (child_full_path);
+    }
+
+  g_dir_close (dir);
+
+  if (ret)
+    {
+      DEBUG ("deleting %s", path);
+      ret = !g_rmdir (path);
+    }
+
+  return ret;
+}
+
+#define RAND_STR_LEN 6
+
 static void
 test_avatar_data (ContactsConnection *service_conn,
     TpConnection *client_conn)
 {
+  static const gchar letters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  gchar rand_str[RAND_STR_LEN + 1];
+  gchar *dir;
+  guint i;
   gboolean avatar_retrieved_called;
   GError *error = NULL;
   GFile *file1, *file2;
@@ -247,8 +297,16 @@ test_avatar_data (ContactsConnection *service_conn,
 
   g_message (G_STRFUNC);
 
-  g_setenv ("XDG_CACHE_HOME", "/tmp", TRUE);
-  g_assert_cmpstr (g_get_user_cache_dir (), ==, "/tmp");
+  /* Make sure g_get_user_cache_dir() returns a tmp directory, to not mess up
+   * user's cache dir.
+   * FIXME: Replace this with g_mkdtemp once it gets added to GLib.
+   * See GNOME bug #118563 */
+  for (i = 0; i < RAND_STR_LEN; i++)
+    rand_str[i] = letters[g_random_int_range (0, strlen (letters))];
+  rand_str[RAND_STR_LEN] = '\0';
+  dir = g_build_filename (g_get_tmp_dir (), rand_str, NULL);
+  g_setenv ("XDG_CACHE_HOME", dir, TRUE);
+  g_assert_cmpstr (g_get_user_cache_dir (), ==, dir);
 
   /* Check if AvatarRetrieved gets called */
   signal_id = tp_cli_connection_interface_avatars_connect_to_avatar_retrieved (
@@ -271,12 +329,12 @@ test_avatar_data (ContactsConnection *service_conn,
   g_assert (!avatar_retrieved_called);
 
   g_assert (g_file_equal (file1, file2));
-  g_file_delete (file1, NULL, &error);
-  g_assert_no_error (error);
+  g_assert (haze_remove_directory (dir));
 
   tp_proxy_signal_connection_disconnect (signal_id);
   g_object_unref (file1);
   g_object_unref (file2);
+  g_free (dir);
 }
 
 static void
