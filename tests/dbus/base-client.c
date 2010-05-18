@@ -267,6 +267,7 @@ get_client_prop_cb (TpProxy *proxy,
 
   g_assert_cmpint (g_hash_table_size (properties), == , 1);
 
+  g_strfreev (test->interfaces);
   test->interfaces = g_strdupv ((GStrv) tp_asv_get_strv (
         properties, "Interfaces"));
 
@@ -280,6 +281,9 @@ test_register (Test *test,
 {
   tp_base_client_be_a_handler (test->base_client);
 
+  /* no-op as the client is not registered yet */
+  tp_base_client_unregister (test->base_client);
+
   /* Client is not registered yet */
   tp_cli_dbus_properties_call_get_all (test->client, -1,
       TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
@@ -289,6 +293,29 @@ test_register (Test *test,
   g_error_free (test->error);
   test->error = NULL;
 
+  /* register the client */
+  tp_base_client_register (test->base_client, &test->error);
+  g_assert_no_error (test->error);
+
+  tp_cli_dbus_properties_call_get_all (test->client, -1,
+      TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_no_error (test->error);
+
+  /* unregister the client */
+  tp_base_client_unregister (test->base_client);
+  test_proxy_run_until_dbus_queue_processed (test->client);
+
+  tp_cli_dbus_properties_call_get_all (test->client, -1,
+      TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+
+  g_assert_error (test->error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN);
+  g_error_free (test->error);
+  test->error = NULL;
+
+  /* re-register the client */
   tp_base_client_register (test->base_client, &test->error);
   g_assert_no_error (test->error);
 
