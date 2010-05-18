@@ -702,7 +702,7 @@ tp_base_client_register (TpBaseClient *self,
       dbus_g_connection_get_connection (
         tp_proxy_get_dbus_connection (self->priv->dbus)));
 
-  /* one ref per TpBaseClient, released in finalize */
+  /* one ref per TpBaseClient, released in tp_base_client_unregister() */
   if (!dbus_connection_allocate_data_slot (&clients_slot))
     ERROR ("Out of memory");
 
@@ -813,6 +813,8 @@ tp_base_client_dispose (GObject *object)
   void (*dispose) (GObject *) =
     G_OBJECT_CLASS (tp_base_client_parent_class)->dispose;
 
+  tp_base_client_unregister (self);
+
   if (self->priv->dbus != NULL)
     {
       g_object_unref (self->priv->dbus);
@@ -835,18 +837,6 @@ tp_base_client_dispose (GObject *object)
       self->priv->my_chans = NULL;
     }
 
-  if (self->priv->libdbus != NULL)
-    {
-      GHashTable *clients;
-
-      clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
-      if (clients != NULL)
-        g_hash_table_remove (clients, self->priv->object_path);
-
-      dbus_connection_unref (self->priv->libdbus);
-      self->priv->libdbus = NULL;
-    }
-
   if (dispose != NULL)
     dispose (object);
 }
@@ -864,8 +854,6 @@ tp_base_client_finalize (GObject *object)
   g_ptr_array_free (self->priv->approver_filters, TRUE);
   g_ptr_array_free (self->priv->handler_filters, TRUE);
   g_ptr_array_free (self->priv->handler_caps, TRUE);
-
-  dbus_connection_free_data_slot (&clients_slot);
 
   g_free (self->priv->bus_name);
   g_free (self->priv->object_path);
@@ -2069,4 +2057,56 @@ tp_base_client_implement_handle_channels (TpBaseClientClass *cls,
     TpBaseClientClassHandleChannelsImpl impl)
 {
   cls->priv->handle_channels_impl = impl;
+}
+
+/**
+ * tp_base_client_unregister:
+ * @self: a client, which may already have been registered with
+ *  tp_base_client_register(), or not
+ *
+ * Remove this client object from D-Bus, if tp_base_client_register()
+ * has already been called.
+ *
+ * If the object is not registered, this method may be called, but has
+ * no effect.
+ *
+ * Releasing the last reference to the object also has the same effect
+ * as calling this method, but this method should be preferred, as it
+ * has more deterministic behaviour.
+ *
+ * If the object still exists, tp_base_client_register() may be used to
+ * attempt to register it again.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_base_client_unregister (TpBaseClient *self)
+{
+  GError *error = NULL;
+  GHashTable *clients;
+
+  if (!self->priv->registered)
+    return;
+
+  if (!tp_dbus_daemon_release_name (self->priv->dbus, self->priv->bus_name,
+        &error))
+    {
+      ERROR ("Failed to release bus name (%s): %s", self->priv->bus_name,
+          error->message);
+
+      g_error_free (error);
+    }
+
+  tp_dbus_daemon_unregister_object (self->priv->dbus, self);
+
+  clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
+  if (clients != NULL)
+    g_hash_table_remove (clients, self->priv->object_path);
+
+  dbus_connection_unref (self->priv->libdbus);
+  self->priv->libdbus = NULL;
+
+  dbus_connection_free_data_slot (&clients_slot);
+
+  self->priv->registered = FALSE;
 }

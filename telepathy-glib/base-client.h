@@ -145,6 +145,8 @@ const gchar *tp_base_client_get_object_path (TpBaseClient *self);
 GList *tp_base_client_get_pending_requests (TpBaseClient *self);
 GList *tp_base_client_get_handled_channels (TpBaseClient *self);
 
+void tp_base_client_unregister (TpBaseClient *self);
+
 #define TP_TYPE_BASE_CLIENT \
   (tp_base_client_get_type ())
 #define TP_BASE_CLIENT(obj) \

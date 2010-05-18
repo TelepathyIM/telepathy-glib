@@ -3776,6 +3776,7 @@ tp_base_client_set_handler_bypass_approval
 tp_base_client_set_handler_request_notification
 tp_base_client_take_handler_filter
 tp_base_client_register
+tp_base_client_unregister
 tp_base_client_get_bus_name
 tp_base_client_get_object_path
 <SUBSECTION Standard>
