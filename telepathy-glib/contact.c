@@ -322,7 +322,7 @@ tp_contact_get_avatar_token (TpContact *self)
  * is re-entered; if the caller requires a #GFile that will persist for
  * longer than that, it must be reffed with g_object_ref().
  *
- * Returns: the same #Gfile as the #TpContact:avatar-file property
+ * Returns: the same #GFile as the #TpContact:avatar-file property
  *  (possibly %NULL)
  *
  * Since: 0.11.UNRELEASED
@@ -343,7 +343,7 @@ tp_contact_get_avatar_file (TpContact *self)
  * is re-entered; if the caller requires a string that will persist for
  * longer than that, it must be copied with g_strdup().
  *
- * Returns: the same token as the #TpContact:avatar-mime-type property
+ * Returns: the same MIME type as the #TpContact:avatar-mime-type property
  *  (possibly %NULL)
  *
  * Since: 0.11.UNRELEASED
@@ -719,14 +719,14 @@ tp_contact_class_init (TpContactClass *klass)
    * #GFile to the latest cached avatar image, or %NULL if this contact has
    * no avatar, or if the avatar data is not yet retrieved.
    *
-   * When #TpContact:avatar-token change, this property is not updated directly,
-   * but will be once the new avatar data is retrieved and stored in cache.
-   * Until then, the file will keep its old value of the latest cached
-   * avatar image.
+   * When #TpContact:avatar-token changes, this property is not updated
+   * immediately, but will be updated when the new avatar data is retrieved and
+   * stored in cache. Until then, the file will keep its old value of the latest
+   * cached avatar image.
    *
    * This is set to %NULL if %TP_CONTACT_FEATURE_AVATAR_DATA is not set on this
    * contact. Note that setting %TP_CONTACT_FEATURE_AVATAR_DATA will also
-   * implicitely set %TP_CONTACT_FEATURE_AVATAR_TOKEN.
+   * implicitly set %TP_CONTACT_FEATURE_AVATAR_TOKEN.
    *
    * Since: 0.11.UNRELEASED
    */
