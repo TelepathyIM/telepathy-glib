@@ -50,7 +50,7 @@ G_DEFINE_TYPE_WITH_CODE (ContactsConnection,
 
 /* type definition stuff */
 
-static const char *mimetypes[] = { "image/png", NULL };
+static const char *mime_types[] = { "image/png", NULL };
 static TpDBusPropertiesMixinPropImpl conn_avatars_properties[] = {
       { "MinimumAvatarWidth", GUINT_TO_POINTER (1), NULL },
       { "MinimumAvatarHeight", GUINT_TO_POINTER (2), NULL },
@@ -88,20 +88,20 @@ struct _ContactsConnectionPrivate
 typedef struct
 {
   GArray *data;
-  gchar *mimetype;
+  gchar *mime_type;
   gchar *token;
 } AvatarData;
 
 static AvatarData *
 avatar_data_new (GArray *data,
-    const gchar *mimetype,
+    const gchar *mime_type,
     const gchar *token)
 {
   AvatarData *a;
 
   a = g_slice_new (AvatarData);
   a->data = data ? g_array_ref (data) : NULL;
-  a->mimetype = g_strdup (mimetype);
+  a->mime_type = g_strdup (mime_type);
   a->token = g_strdup (token);
 
   return a;
@@ -116,7 +116,7 @@ avatar_data_free (gpointer data)
     {
       if (a->data != NULL)
         g_array_unref (a->data);
-      g_free (a->mimetype);
+      g_free (a->mime_type);
       g_free (a->token);
       g_slice_free (AvatarData, a);
     }
@@ -528,11 +528,11 @@ void
 contacts_connection_change_avatar_data (ContactsConnection *self,
     TpHandle handle,
     GArray *data,
-    const gchar *mimetype,
+    const gchar *mime_type,
     const gchar *token)
 {
   g_hash_table_insert (self->priv->avatars,
-      GUINT_TO_POINTER (handle), avatar_data_new (data, mimetype, token));
+      GUINT_TO_POINTER (handle), avatar_data_new (data, mime_type, token));
 
   tp_svc_connection_interface_avatars_emit_avatar_updated (self,
       handle, token);
@@ -812,7 +812,7 @@ my_request_avatars (TpSvcConnectionInterfaceAvatars *avatars,
 
       if (a != NULL)
         tp_svc_connection_interface_avatars_emit_avatar_retrieved (self, handle,
-            a->token, a->data, a->mimetype);
+            a->token, a->data, a->mime_type);
     }
 
   tp_svc_connection_interface_avatars_return_from_request_avatars (context);
@@ -830,7 +830,7 @@ conn_avatars_properties_getter (GObject *object,
 
   if (name == q_mime_types)
     {
-      g_value_set_static_boxed (value, mimetypes);
+      g_value_set_static_boxed (value, mime_types);
     }
   else
     {

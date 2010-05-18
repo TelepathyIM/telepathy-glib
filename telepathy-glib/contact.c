@@ -92,7 +92,7 @@ struct _TpContact {
  * @TP_CONTACT_FEATURE_CAPABILITIES: #TpContact:capabilities
  *  (available since 0.11.3)
  * @TP_CONTACT_FEATURE_AVATAR_DATA: #TpContact:avatar-file and
- *  #TpContact:avatar-mimetype. Implies %TP_CONTACT_FEATURE_AVATAR_TOKEN
+ *  #TpContact:avatar-mime-type. Implies %TP_CONTACT_FEATURE_AVATAR_TOKEN
  *  (available since 0.11.UNRELEASED)
  * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
  *  supported by this version of telepathy-glib
@@ -126,7 +126,7 @@ enum {
     PROP_ALIAS,
     PROP_AVATAR_TOKEN,
     PROP_AVATAR_FILE,
-    PROP_AVATAR_MIMETYPE,
+    PROP_AVATAR_MIME_TYPE,
     PROP_PRESENCE_TYPE,
     PROP_PRESENCE_STATUS,
     PROP_PRESENCE_MESSAGE,
@@ -159,7 +159,7 @@ struct _TpContactPrivate {
     /* avatars */
     gchar *avatar_token;
     GFile *avatar_file;
-    gchar *avatar_mimetype;
+    gchar *avatar_mime_type;
 
     /* presence */
     TpConnectionPresenceType presence_type;
@@ -336,24 +336,24 @@ tp_contact_get_avatar_file (TpContact *self)
 }
 
 /**
- * tp_contact_get_avatar_mimetype:
+ * tp_contact_get_avatar_mime_type:
  * @self: a contact
  *
  * Return the contact's avatar MIME type. This remains valid until the main loop
  * is re-entered; if the caller requires a string that will persist for
  * longer than that, it must be copied with g_strdup().
  *
- * Returns: the same token as the #TpContact:avatar-mimetype property
+ * Returns: the same token as the #TpContact:avatar-mime-type property
  *  (possibly %NULL)
  *
  * Since: 0.11.UNRELEASED
  */
 const gchar *
-tp_contact_get_avatar_mimetype (TpContact *self)
+tp_contact_get_avatar_mime_type (TpContact *self)
 {
   g_return_val_if_fail (self != NULL, NULL);
 
-  return self->priv->avatar_mimetype;
+  return self->priv->avatar_mime_type;
 }
 
 /**
@@ -533,7 +533,7 @@ tp_contact_finalize (GObject *object)
   g_free (self->priv->identifier);
   g_free (self->priv->alias);
   g_free (self->priv->avatar_token);
-  g_free (self->priv->avatar_mimetype);
+  g_free (self->priv->avatar_mime_type);
   g_free (self->priv->presence_status);
   g_free (self->priv->presence_message);
 
@@ -578,8 +578,8 @@ tp_contact_get_property (GObject *object,
       g_value_set_object (value, self->priv->avatar_file);
       break;
 
-    case PROP_AVATAR_MIMETYPE:
-      g_value_set_string (value, self->priv->avatar_mimetype);
+    case PROP_AVATAR_MIME_TYPE:
+      g_value_set_string (value, self->priv->avatar_mime_type);
       break;
 
     case PROP_PRESENCE_TYPE:
@@ -739,7 +739,7 @@ tp_contact_class_init (TpContactClass *klass)
       param_spec);
 
   /**
-   * TpContact:avatar-mimetype:
+   * TpContact:avatar-mime-type:
    *
    * MIME type of the latest cached avatar image, or %NULL if this contact has
    * no avatar, or if the avatar data is not yet retrieved.
@@ -748,12 +748,12 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * Since: 0.11.UNRELEASED
    */
-  param_spec = g_param_spec_string ("avatar-mimetype",
+  param_spec = g_param_spec_string ("avatar-mime-type",
       "Avatar MIME type",
       "MIME type of the latest cached avatar image, or %NULL",
       NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_AVATAR_MIMETYPE,
+  g_object_class_install_property (object_class, PROP_AVATAR_MIME_TYPE,
       param_spec);
 
   /**
@@ -2041,11 +2041,11 @@ contact_avatar_retrieved (TpConnection *connection,
     g_object_unref (self->priv->avatar_file);
   self->priv->avatar_file = g_file_new_for_path (filename);
 
-  g_free (self->priv->avatar_mimetype);
-  self->priv->avatar_mimetype = g_strdup (mime_type);
+  g_free (self->priv->avatar_mime_type);
+  self->priv->avatar_mime_type = g_strdup (mime_type);
 
   g_object_notify ((GObject *) self, "avatar-file");
-  g_object_notify ((GObject *) self, "avatar-mimetype");
+  g_object_notify ((GObject *) self, "avatar-mime-type");
 
 out:
   g_free (filename);
@@ -2090,13 +2090,13 @@ contact_update_avatar_data (TpContact *self)
         g_object_unref (self->priv->avatar_file);
       self->priv->avatar_file = NULL;
 
-      g_free (self->priv->avatar_mimetype);
-      self->priv->avatar_mimetype = NULL;
+      g_free (self->priv->avatar_mime_type);
+      self->priv->avatar_mime_type = NULL;
 
       DEBUG ("contact#%u has no avatar", self->priv->handle);
 
       g_object_notify ((GObject *) self, "avatar-file");
-      g_object_notify ((GObject *) self, "avatar-mimetype");
+      g_object_notify ((GObject *) self, "avatar-mime-type");
 
       return;
     }
@@ -2113,21 +2113,21 @@ contact_update_avatar_data (TpContact *self)
             g_object_unref (self->priv->avatar_file);
           self->priv->avatar_file = g_file_new_for_path (filename);
 
-          g_free (self->priv->avatar_mimetype);
-          if (!g_file_get_contents (mime_filename, &self->priv->avatar_mimetype,
+          g_free (self->priv->avatar_mime_type);
+          if (!g_file_get_contents (mime_filename, &self->priv->avatar_mime_type,
               NULL, &error))
             {
               DEBUG ("Error reading avatar MIME type (%s): %s", mime_filename,
                   error ? error->message : "No error message");
-              self->priv->avatar_mimetype = NULL;
+              self->priv->avatar_mime_type = NULL;
               g_clear_error (&error);
             }
 
           DEBUG ("contact#%u avatar found in cache: %s, %s",
-              self->priv->handle, filename, self->priv->avatar_mimetype);
+              self->priv->handle, filename, self->priv->avatar_mime_type);
 
           g_object_notify ((GObject *) self, "avatar-file");
-          g_object_notify ((GObject *) self, "avatar-mimetype");
+          g_object_notify ((GObject *) self, "avatar-mime_type");
 
           goto out;
         }

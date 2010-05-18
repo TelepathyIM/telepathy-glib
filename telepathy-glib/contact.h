@@ -89,7 +89,7 @@ TpCapabilities *tp_contact_get_capabilities (TpContact *self);
 
 /* TP_CONTACT_FEATURE_AVATAR_DATA */
 GFile *tp_contact_get_avatar_file (TpContact *self);
-const gchar *tp_contact_get_avatar_mimetype (TpContact *self);
+const gchar *tp_contact_get_avatar_mime_type (TpContact *self);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,

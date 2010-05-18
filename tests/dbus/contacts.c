@@ -83,7 +83,7 @@ by_handle_cb (TpConnection *connection,
           DEBUG ("contact #%u avatar token: %s", i,
               tp_contact_get_avatar_token (contact));
           DEBUG ("contact #%u avatar MIME type: %s", i,
-              tp_contact_get_avatar_mimetype (contact));
+              tp_contact_get_avatar_mime_type (contact));
           DEBUG ("contact #%u avatar file: %s", i,
               avatar_uri);
           DEBUG ("contact #%u presence type: %u", i,
@@ -169,7 +169,7 @@ create_contact_with_fake_avatar (ContactsConnection *service_conn,
   TpContactFeature features[] = { TP_CONTACT_FEATURE_AVATAR_DATA };
   const gchar avatar_data[] = "fake-avatar-data";
   const gchar avatar_token[] = "fake-avatar-token";
-  const gchar avatar_mimetype[] = "fake-avatar-mimetype";
+  const gchar avatar_mime_type[] = "fake-avatar-mime-type";
   TpContact *contact;
   TpHandle handle;
   GArray *array;
@@ -181,7 +181,7 @@ create_contact_with_fake_avatar (ContactsConnection *service_conn,
   g_array_append_vals (array, avatar_data, strlen (avatar_data) + 1);
 
   contacts_connection_change_avatar_data (service_conn, handle, array,
-      avatar_mimetype, avatar_token);
+      avatar_mime_type, avatar_token);
 
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
@@ -199,8 +199,8 @@ create_contact_with_fake_avatar (ContactsConnection *service_conn,
       g_main_loop_run (result.loop);
     }
 
-  g_assert_cmpstr (tp_contact_get_avatar_mimetype (contact), ==,
-      avatar_mimetype);
+  g_assert_cmpstr (tp_contact_get_avatar_mime_type (contact), ==,
+      avatar_mime_type);
   g_assert_cmpstr (tp_contact_get_avatar_token (contact), ==, avatar_token);
 
   avatar_file = tp_contact_get_avatar_file (contact);
@@ -229,7 +229,7 @@ avatar_retrieved_cb (TpConnection *connection,
     guint handle,
     const gchar *token,
     const GArray *avatar,
-    const gchar *mimetype,
+    const gchar *mime_type,
     gpointer user_data,
     GObject *weak_object)
 {

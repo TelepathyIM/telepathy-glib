@@ -85,7 +85,7 @@ void contacts_connection_change_avatar_tokens (ContactsConnection *self,
 void contacts_connection_change_avatar_data (ContactsConnection *self,
     TpHandle handle,
     GArray *data,
-    const gchar *mimetype,
+    const gchar *mime_type,
     const gchar *token);
 
 void contacts_connection_change_locations (ContactsConnection *self,

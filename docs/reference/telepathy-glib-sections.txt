@@ -3229,7 +3229,7 @@ tp_connection_upgrade_contacts
 tp_contact_get_alias
 tp_contact_get_avatar_token
 tp_contact_get_avatar_file
-tp_contact_get_avatar_mimetype
+tp_contact_get_avatar_mime_type
 tp_contact_get_connection
 tp_contact_get_handle
 tp_contact_get_identifier
