@@ -698,6 +698,10 @@ tp_base_client_register (TpBaseClient *self,
 
   self->priv->registered = TRUE;
 
+  if (!(self->priv->flags & CLIENT_IS_HANDLER))
+    return TRUE;
+
+  /* Client is an handler */
   self->priv->libdbus = dbus_connection_ref (
       dbus_g_connection_get_connection (
         tp_proxy_get_dbus_connection (self->priv->dbus)));
