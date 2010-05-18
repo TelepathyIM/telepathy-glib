@@ -2673,20 +2673,17 @@ lookup_all_contacts (ContactsContext *context)
   return contacts;
 }
 
-static ContactFeatureFlags
+static gboolean
 get_feature_flags (guint n_features,
-    const TpContactFeature *features)
+    const TpContactFeature *features,
+    ContactFeatureFlags *flags)
 {
   ContactFeatureFlags feature_flags = 0;
   guint i;
 
   for (i = 0; i < n_features; i++)
     {
-      if (features[i] >= NUM_TP_CONTACT_FEATURES)
-        {
-          WARNING ("Unknown feature %d", features[i]);
-          continue;
-        }
+      g_return_val_if_fail (features[i] < NUM_TP_CONTACT_FEATURES, FALSE);
       feature_flags |= (1 << features[i]);
     }
 
@@ -2694,7 +2691,9 @@ get_feature_flags (guint n_features,
   if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
     feature_flags |= CONTACT_FEATURE_FLAG_AVATAR_TOKEN;
 
-  return feature_flags;
+  *flags = feature_flags;
+
+  return TRUE;
 }
 
 /**
@@ -2750,7 +2749,8 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   g_return_if_fail (n_features == 0 || features != NULL);
   g_return_if_fail (callback != NULL);
 
-  feature_flags = get_feature_flags (n_features, features);
+  if (!get_feature_flags (n_features, features, &feature_flags))
+    return;
 
   context = contacts_context_new (self, n_handles, feature_flags,
       CB_BY_HANDLE, user_data, destroy, weak_object);
@@ -2865,7 +2865,8 @@ tp_connection_upgrade_contacts (TpConnection *self,
       g_return_if_fail (contacts[i]->priv->connection == self);
     }
 
-  feature_flags = get_feature_flags (n_features, features);
+  if (!get_feature_flags (n_features, features, &feature_flags))
+    return;
 
   context = contacts_context_new (self, n_contacts, feature_flags,
       CB_UPGRADE, user_data, destroy, weak_object);
@@ -3073,7 +3074,8 @@ tp_connection_get_contacts_by_id (TpConnection *self,
   g_return_if_fail (n_features == 0 || features != NULL);
   g_return_if_fail (callback != NULL);
 
-  feature_flags = get_feature_flags (n_features, features);
+  if (!get_feature_flags (n_features, features, &feature_flags))
+    return;
 
   context = contacts_context_new (self, n_ids, feature_flags,
       CB_BY_ID, user_data, destroy, weak_object);
