@@ -305,6 +305,7 @@ test_avatar_data (ContactsConnection *service_conn,
     rand_str[i] = letters[g_random_int_range (0, strlen (letters))];
   rand_str[RAND_STR_LEN] = '\0';
   dir = g_build_filename (g_get_tmp_dir (), rand_str, NULL);
+  g_assert (g_mkdir (dir, 0700) == 0);
   g_setenv ("XDG_CACHE_HOME", dir, TRUE);
   g_assert_cmpstr (g_get_user_cache_dir (), ==, dir);
 
