@@ -741,6 +741,8 @@ tp_base_client_register (TpBaseClient *self,
 GList *
 tp_base_client_get_pending_requests (TpBaseClient *self)
 {
+  g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, NULL);
+
   return g_list_copy (self->priv->pending_requests);
 }
 
@@ -764,6 +766,8 @@ tp_base_client_get_handled_channels (TpBaseClient *self)
   GHashTableIter iter;
   gpointer value;
   GHashTable *set;
+
+  g_return_val_if_fail (self->priv->flags & CLIENT_IS_HANDLER, NULL);
 
   if (clients_slot == -1)
     return NULL;
