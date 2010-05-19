@@ -261,6 +261,30 @@ ref_one (guint handle, gpointer data)
 }
 
 /**
+ * tp_handle_set_copy:
+ * @other: another handle set
+ *
+ * Creates a new #TpHandleSet with the same contents as @other.
+ *
+ * Returns: a new set
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpHandleSet *
+tp_handle_set_copy (const TpHandleSet *other)
+{
+  TpHandleSet *set;
+
+  g_return_val_if_fail (other != NULL, NULL);
+
+  set = g_slice_new0 (TpHandleSet);
+  set->repo = other->repo;
+  set->intset = tp_intset_copy (other->intset);
+  tp_intset_foreach (set->intset, ref_one, set);
+  return set;
+}
+
+/**
  * tp_handle_set_update:
  * @set: a #TpHandleSet to update
  * @add: a #TpIntSet of handles to add

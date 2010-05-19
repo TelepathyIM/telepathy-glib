@@ -202,6 +202,7 @@ TP_HANDLE_REPO_IFACE_GET_CLASS
 TpHandleSet
 TpHandleSetMemberFunc
 tp_handle_set_new
+tp_handle_set_copy
 tp_handle_set_clear
 tp_handle_set_destroy
 tp_handle_set_peek

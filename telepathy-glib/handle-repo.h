@@ -125,6 +125,8 @@ typedef void (*TpHandleSetMemberFunc)(TpHandleSet *set, TpHandle handle,
 
 TpHandleSet * tp_handle_set_new (TpHandleRepoIface *repo)
   G_GNUC_WARN_UNUSED_RESULT;
+TpHandleSet *tp_handle_set_copy (const TpHandleSet *other)
+  G_GNUC_WARN_UNUSED_RESULT;
 void tp_handle_set_clear (TpHandleSet *set);
 void tp_handle_set_destroy (TpHandleSet *set);
 
