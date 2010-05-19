@@ -103,7 +103,7 @@ tp_handle_set_clear (TpHandleSet *set)
  * Since: 0.11.UNRELEASED
  */
 gboolean
-tp_handle_set_is_empty (TpHandleSet *set)
+tp_handle_set_is_empty (const TpHandleSet *set)
 {
   return tp_intset_is_empty (set->intset);
 }
@@ -182,7 +182,8 @@ tp_handle_set_remove (TpHandleSet *set, TpHandle handle)
  *
  */
 gboolean
-tp_handle_set_is_member (TpHandleSet *set, TpHandle handle)
+tp_handle_set_is_member (const TpHandleSet *set,
+    TpHandle handle)
 {
   return tp_intset_is_member (set->intset, handle);
 }
@@ -230,7 +231,7 @@ tp_handle_set_foreach (TpHandleSet *set, TpHandleSetMemberFunc func,
  * Returns: the number of handles in this set
  */
 int
-tp_handle_set_size (TpHandleSet *set)
+tp_handle_set_size (const TpHandleSet *set)
 {
   return tp_intset_size (set->intset);
 }
@@ -245,7 +246,7 @@ tp_handle_set_size (TpHandleSet *set)
  * in the set
  */
 GArray *
-tp_handle_set_to_array (TpHandleSet *set)
+tp_handle_set_to_array (const TpHandleSet *set)
 {
   g_return_val_if_fail (set != NULL, NULL);
 

@@ -132,14 +132,15 @@ TpIntSet *tp_handle_set_peek (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_handle_set_add (TpHandleSet *set, TpHandle handle);
 gboolean tp_handle_set_remove (TpHandleSet *set, TpHandle handle);
-gboolean tp_handle_set_is_member (TpHandleSet *set, TpHandle handle);
+gboolean tp_handle_set_is_member (const TpHandleSet *set, TpHandle handle);
 
 void tp_handle_set_foreach (TpHandleSet *set, TpHandleSetMemberFunc func,
     gpointer userdata);
 
-gboolean tp_handle_set_is_empty (TpHandleSet *set);
-int tp_handle_set_size (TpHandleSet *set);
-GArray *tp_handle_set_to_array (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
+gboolean tp_handle_set_is_empty (const TpHandleSet *set);
+int tp_handle_set_size (const TpHandleSet *set);
+GArray *tp_handle_set_to_array (const TpHandleSet *set)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 TpIntSet *tp_handle_set_update (TpHandleSet *set, const TpIntSet *add)
   G_GNUC_WARN_UNUSED_RESULT;
