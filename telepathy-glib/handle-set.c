@@ -77,6 +77,38 @@ tp_handle_set_destroy (TpHandleSet *set)
 }
 
 /**
+ * tp_handle_set_clear:
+ * @set:#TpHandleSet to clear
+ *
+ * Remove every handle from @set, releasing the references it holds.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_handle_set_clear (TpHandleSet *set)
+{
+  tp_handle_set_foreach (set, freer, NULL);
+  g_assert (tp_handle_set_is_empty (set));
+}
+
+/**
+ * tp_handle_set_is_empty:
+ * @set:#TpHandleSet to check
+ *
+ * Return the same thing as <code>(tp_handle_set_size (set) == 0)</code>,
+ * but calculated more efficiently.
+ *
+ * Returns: %TRUE if the set has no members
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_handle_set_is_empty (TpHandleSet *set)
+{
+  return tp_intset_is_empty (set->intset);
+}
+
+/**
  * tp_handle_set_peek:
  * @set:#TpHandleSet to peek at
  *

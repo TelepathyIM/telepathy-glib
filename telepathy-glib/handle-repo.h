@@ -125,6 +125,7 @@ typedef void (*TpHandleSetMemberFunc)(TpHandleSet *set, TpHandle handle,
 
 TpHandleSet * tp_handle_set_new (TpHandleRepoIface *repo)
   G_GNUC_WARN_UNUSED_RESULT;
+void tp_handle_set_clear (TpHandleSet *set);
 void tp_handle_set_destroy (TpHandleSet *set);
 
 TpIntSet *tp_handle_set_peek (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
@@ -136,6 +137,7 @@ gboolean tp_handle_set_is_member (TpHandleSet *set, TpHandle handle);
 void tp_handle_set_foreach (TpHandleSet *set, TpHandleSetMemberFunc func,
     gpointer userdata);
 
+gboolean tp_handle_set_is_empty (TpHandleSet *set);
 int tp_handle_set_size (TpHandleSet *set);
 GArray *tp_handle_set_to_array (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
