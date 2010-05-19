@@ -152,8 +152,6 @@ void tp_proxy_prepare_async (gpointer self,
 gboolean tp_proxy_prepare_finish (gpointer self,
     GAsyncResult *result,
     GError **error);
-void _tp_proxy_set_features_failed (TpProxy *self,
-    const GError *error);
 
 G_END_DECLS
 

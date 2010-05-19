@@ -42,5 +42,7 @@ gboolean _tp_proxy_is_preparing (gpointer self,
 void _tp_proxy_set_feature_prepared (TpProxy *self,
     GQuark feature,
     gboolean succeeded);
+void _tp_proxy_set_features_failed (TpProxy *self,
+    const GError *error);
 
 #endif
