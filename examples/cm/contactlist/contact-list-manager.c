@@ -1481,7 +1481,9 @@ example_contact_list_manager_remove_from_list (ExampleContactListManager *self,
     case EXAMPLE_CONTACT_LIST_STORED:
       /* we would like to remove member from the roster altogether */
         {
-          if (lookup_contact (self, member) != NULL)
+          ExampleContactDetails *d = lookup_contact (self, member);
+
+          if (d != NULL)
             {
               g_hash_table_remove (self->priv->contact_details,
                   GUINT_TO_POINTER (member));
@@ -1492,6 +1494,16 @@ example_contact_list_manager_remove_from_list (ExampleContactListManager *self,
                   NULL, set, NULL, NULL,
                   self->priv->conn->self_handle,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+              tp_group_mixin_change_members (
+                  (GObject *) self->priv->lists[EXAMPLE_CONTACT_LIST_SUBSCRIBE],
+                  "", NULL, set, NULL, NULL,
+                  self->priv->conn->self_handle,
+                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+              tp_group_mixin_change_members (
+                  (GObject *) self->priv->lists[EXAMPLE_CONTACT_LIST_PUBLISH],
+                  "", NULL, set, NULL, NULL,
+                  self->priv->conn->self_handle,
+                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
               tp_intset_destroy (set);
 
               tp_handle_set_remove (self->priv->contacts, member);
@@ -1500,6 +1512,7 @@ example_contact_list_manager_remove_from_list (ExampleContactListManager *self,
                * see their presence, so emit a signal changing it to
                * UNKNOWN */
               g_signal_emit (self, signals[PRESENCE_UPDATED], 0, member);
+
             }
         }
       return TRUE;
