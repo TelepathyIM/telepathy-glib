@@ -1309,6 +1309,8 @@ example_contact_list_manager_add_to_list (ExampleContactListManager *self,
 
           if (d == NULL || !d->publish_requested)
             {
+              /* the group mixin won't actually allow this to be reached,
+               * because of the flags we set */
               g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
                   "Can't unilaterally send presence to %s",
                   tp_handle_inspect (self->priv->contact_repo, member));
