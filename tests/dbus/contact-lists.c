@@ -25,6 +25,8 @@ typedef struct {
     TpChannel *subscribe;
     TpChannel *stored;
 
+    TpChannel *group;
+
     TpHandleRepoIface *contact_repo;
     TpHandle sjoerd;
     TpHandle helen;
@@ -110,6 +112,7 @@ teardown (Test *test,
   test_clear_object (&test->publish);
   test_clear_object (&test->subscribe);
   test_clear_object (&test->stored);
+  test_clear_object (&test->group);
 
   /* make a new TpConnection just to disconnect the underlying Connection,
    * so we don't leak it */
@@ -156,6 +159,7 @@ test_ensure_channel (Test *test,
   g_assert_no_error (error);
   ret = tp_channel_new_from_properties (test->conn, path, props,
       &error);
+  g_assert (ret != NULL);
   g_assert_no_error (error);
   g_free (path);
   g_hash_table_unref (props);
@@ -707,6 +711,147 @@ test_remove_from_subscribe_no_op (Test *test,
   g_clear_error (&error);
 }
 
+static void
+test_add_to_group (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
+  test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+  test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST,
+      "subscribe");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 4);
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->ninja));
+
+  g_array_append_val (test->arr, test->ninja);
+  tp_cli_channel_interface_group_run_add_members (test->group,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * change-notification, too */
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 5);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->ninja));
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->subscribe),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->publish),
+        test->ninja));
+}
+
+static void
+test_add_to_group_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+
+  g_array_append_val (test->arr, test->sjoerd);
+  tp_cli_channel_interface_group_run_add_members (test->group,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+}
+
+static void
+test_remove_from_group (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+
+  g_array_append_val (test->arr, test->sjoerd);
+  tp_cli_channel_interface_group_run_remove_members (test->group,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * removal-notification, too */
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+}
+
+static void
+test_remove_from_group_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->ninja));
+
+  g_array_append_val (test->arr, test->ninja);
+  tp_cli_channel_interface_group_run_remove_members (test->group,
+      -1, test->arr, "", &error, NULL);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_clear_error (&error);
+}
+
+static void
+test_remove_group (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert (!tp_intset_is_empty (
+        tp_channel_group_get_members (test->group)));
+
+  tp_cli_channel_run_close (test->group, -1, &error, NULL);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+}
+
+static void
+test_remove_group_non_empty (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "people who understand const in C");
+
+  g_assert (tp_intset_is_empty (
+        tp_channel_group_get_members (test->group)));
+
+  tp_cli_channel_run_close (test->group, -1, &error, NULL);
+  g_assert_no_error (error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -748,6 +893,19 @@ main (int argc,
       Test, NULL, setup, test_remove_from_subscribe_pending, teardown);
   g_test_add ("/contact-lists/remove-from-subscribe/no-op",
       Test, NULL, setup, test_remove_from_subscribe_no_op, teardown);
+
+  g_test_add ("/contact-lists/add-to-group",
+      Test, NULL, setup, test_add_to_group, teardown);
+  g_test_add ("/contact-lists/add-to-group/no-op",
+      Test, NULL, setup, test_add_to_group_no_op, teardown);
+  g_test_add ("/contact-lists/remove-from-group",
+      Test, NULL, setup, test_remove_from_group, teardown);
+  g_test_add ("/contact-lists/remove-from-group/no-op",
+      Test, NULL, setup, test_remove_from_group_no_op, teardown);
+  g_test_add ("/contact-lists/remove-group",
+      Test, NULL, setup, test_remove_group, teardown);
+  g_test_add ("/contact-lists/remove-group/non-empty",
+      Test, NULL, setup, test_remove_group_non_empty, teardown);
 
   return g_test_run ();
 }
