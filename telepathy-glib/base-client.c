@@ -2099,7 +2099,7 @@ tp_base_client_unregister (TpBaseClient *self)
   if (!tp_dbus_daemon_release_name (self->priv->dbus, self->priv->bus_name,
         &error))
     {
-      ERROR ("Failed to release bus name (%s): %s", self->priv->bus_name,
+      WARNING ("Failed to release bus name (%s): %s", self->priv->bus_name,
           error->message);
 
       g_error_free (error);
