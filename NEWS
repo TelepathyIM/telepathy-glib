@@ -1,3 +1,11 @@
+telepathy-logger 0.1.2 (UNRELEASED)
+===================================
+
+Dependencies:
+
+* telepathy-glib ≥ 0.11.5
+* telepathy-mission-control ≥ 5.4.0 is recommended
+
 telepathy-logger 0.1.1 (2010-02-26)
 ===================================
 
