@@ -38,6 +38,7 @@ example_contact_list_connection_manager_init (
 
 typedef struct {
     gchar *account;
+    guint simulation_delay;
 } ExampleParams;
 
 static gboolean
@@ -93,6 +94,7 @@ new_connection (TpBaseConnectionManager *self,
   conn = EXAMPLE_CONTACT_LIST_CONNECTION
       (g_object_new (EXAMPLE_TYPE_CONTACT_LIST_CONNECTION,
           "account", params->account,
+          "simulation-delay", params->simulation_delay,
           "protocol", proto,
           NULL));
 

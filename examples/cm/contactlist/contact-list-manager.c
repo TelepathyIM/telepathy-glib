@@ -101,12 +101,14 @@ static guint signals[N_SIGNALS] = { 0 };
 enum
 {
   PROP_CONNECTION = 1,
+  PROP_SIMULATION_DELAY,
   N_PROPS
 };
 
 struct _ExampleContactListManagerPrivate
 {
   TpBaseConnection *conn;
+  guint simulation_delay;
   TpHandleRepoIface *contact_repo;
   TpHandleRepoIface *group_repo;
 
@@ -252,6 +254,11 @@ get_property (GObject *object,
     case PROP_CONNECTION:
       g_value_set_object (value, self->priv->conn);
       break;
+
+    case PROP_SIMULATION_DELAY:
+      g_value_set_uint (value, self->priv->simulation_delay);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -273,6 +280,11 @@ set_property (GObject *object,
        * less than its lifetime */
       self->priv->conn = g_value_get_object (value);
       break;
+
+    case PROP_SIMULATION_DELAY:
+      self->priv->simulation_delay = g_value_get_uint (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -607,7 +619,8 @@ status_changed_cb (TpBaseConnection *conn,
           /* Do network I/O to get the contact list. This connection manager
            * doesn't really have a server, so simulate a small network delay
            * then invent a contact list */
-          g_timeout_add_full (G_PRIORITY_DEFAULT, 1000, receive_contact_lists,
+          g_timeout_add_full (G_PRIORITY_DEFAULT,
+              2 * self->priv->simulation_delay, receive_contact_lists,
               g_object_ref (self), g_object_unref);
         }
       break;
@@ -659,6 +672,13 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
+
+  param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
+      "Delay between simulated network events",
+      0, G_MAXUINT32, 1000,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
+      param_spec);
 
   g_type_class_add_private (klass, sizeof (ExampleContactListManagerPrivate));
 
@@ -1277,7 +1297,7 @@ example_contact_list_manager_add_to_list (ExampleContactListManager *self,
               TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
           tp_intset_destroy (set);
 
-          /* Pretend that after 500ms, the contact notices the request
+          /* Pretend that after a delay, the contact notices the request
            * and allows or rejects it. In this example connection manager,
            * empty requests are allowed, as are requests that contain "please"
            * case-insensitively. All other requests are denied. */
@@ -1285,13 +1305,15 @@ example_contact_list_manager_add_to_list (ExampleContactListManager *self,
 
           if (message[0] == '\0' || strstr (message_lc, "please") != NULL)
             {
-              g_timeout_add_full (G_PRIORITY_DEFAULT, 500, receive_authorized,
+              g_timeout_add_full (G_PRIORITY_DEFAULT,
+                  self->priv->simulation_delay, receive_authorized,
                   self_and_contact_new (self, member),
                   self_and_contact_destroy);
             }
           else
             {
-              g_timeout_add_full (G_PRIORITY_DEFAULT, 500,
+              g_timeout_add_full (G_PRIORITY_DEFAULT,
+                  self->priv->simulation_delay,
                   receive_unauthorized,
                   self_and_contact_new (self, member),
                   self_and_contact_destroy);
@@ -1412,9 +1434,10 @@ example_contact_list_manager_remove_from_list (ExampleContactListManager *self,
                       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
                   tp_intset_destroy (set);
 
-                  /* Pretend that after 500ms, the contact notices the change
+                  /* Pretend that after a delay, the contact notices the change
                    * and asks for our presence again */
-                  g_timeout_add_full (G_PRIORITY_DEFAULT, 500, auth_request_cb,
+                  g_timeout_add_full (G_PRIORITY_DEFAULT,
+                      self->priv->simulation_delay, auth_request_cb,
                       self_and_contact_new (self, member),
                       self_and_contact_destroy);
                 }
