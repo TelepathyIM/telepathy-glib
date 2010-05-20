@@ -23,6 +23,8 @@
 #define __TPL_OBSERVER_H__
 
 #include <glib-object.h>
+
+#include <telepathy-glib/base-client.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 
 #include <telepathy-logger/channel-internal.h>
@@ -41,10 +43,12 @@ G_BEGIN_DECLS
 #define TPL_IS_OBSERVER(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_OBSERVER))
 #define TPL_IS_OBSERVER_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE ((obj), TPL_TYPE_OBSERVER))
 #define TPL_OBSERVER_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_OBSERVER, TplObserverClass))
+
 typedef struct _TplObserverPriv TplObserverPriv;
+
 typedef struct
 {
-  GObject parent;
+  TpBaseClient parent;
 
   /* private */
   TplObserverPriv *priv;
@@ -52,8 +56,7 @@ typedef struct
 
 typedef struct
 {
-  GObjectClass parent_class;
-  TpDBusPropertiesMixinClass dbus_props_class;
+  TpBaseClientClass parent_class;
 } TplObserverClass;
 
 GType tpl_observer_get_type (void);
