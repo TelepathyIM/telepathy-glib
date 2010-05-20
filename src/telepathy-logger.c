@@ -176,7 +176,7 @@ main (int argc,
   DEBUG ("Registering channel factory into TplObserver");
   tpl_observer_set_channel_factory (observer, tpl_channel_factory_build);
 
-  if (!tpl_observer_register_dbus (observer, &error))
+  if (!tp_base_client_register (TP_BASE_CLIENT (observer), &error))
     {
       g_critical ("Error during D-Bus registration: %s", error->message);
       goto out;

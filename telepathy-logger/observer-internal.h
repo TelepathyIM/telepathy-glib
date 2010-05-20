@@ -67,7 +67,6 @@ gboolean tpl_observer_register_channel (TplObserver *self,
     TplChannel *channel);
 gboolean tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *channel);
-gboolean tpl_observer_register_dbus (TplObserver *self, GError **error);
 void tpl_observer_set_channel_factory (TplObserver *self,
     TplChannelFactory factory);
 

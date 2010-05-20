@@ -70,7 +70,7 @@
  * anymore.
  *
  * This object will register to it's DBus interface when
- * tpl_observer_register_dbus is called, ensuring that the registration will
+ * tp_base_client_register is called, ensuring that the registration will
  * happen only once per singleton instance.
  *
  * Since: 0.1
@@ -356,25 +356,6 @@ tpl_observer_init (TplObserver *self)
       NULL));
 
   tp_base_client_set_observer_recover (TP_BASE_CLIENT (self), TRUE);
-}
-
-
-/**
- * tpl_observer_register_dbus:
- * @self: #TplObserver instance, cannot be %NULL.
- * @error: Used to raise an error if DBus registration fails
- *
- * Registers the object using #TPL_OBSERVER_WELL_KNOWN_BUS_NAME well known
- * name.
- *
- * Returns: %TRUE if the registration is successful, %FALSE with @error set if
- * it fails.
- */
-gboolean
-tpl_observer_register_dbus (TplObserver *self,
-    GError **error)
-{
-  return tp_base_client_register (TP_BASE_CLIENT (self), error);
 }
 
 

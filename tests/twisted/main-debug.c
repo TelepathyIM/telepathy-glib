@@ -41,7 +41,7 @@ tpl_init (void)
       (TplChannelConstructor) tpl_channel_test_new);
 
 	observer = tpl_observer_new ();
-  if (tpl_observer_register_dbus (observer, &error) == FALSE)
+  if (tp_base_client_register (TP_BASE_CLIENT (observer), &error) == FALSE)
     {
       g_debug ("Error during D-Bus registration: %s", error->message);
       g_error_free (error);
