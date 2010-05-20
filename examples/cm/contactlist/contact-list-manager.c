@@ -318,6 +318,13 @@ ensure_contact (ExampleContactListManager *self,
 
       g_hash_table_insert (self->priv->contact_details,
           GUINT_TO_POINTER (contact), ret);
+
+      if (created != NULL)
+        *created = TRUE;
+    }
+  else if (created != NULL)
+    {
+      *created = FALSE;
     }
 
   return ret;
