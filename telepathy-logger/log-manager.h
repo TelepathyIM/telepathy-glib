@@ -85,8 +85,9 @@ gboolean tpl_log_manager_exists (TplLogManager *manager,
 GList *tpl_log_manager_get_dates (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom);
 
-GList *tpl_log_manager_get_dates_finish (TplLogManager *self,
+gboolean tpl_log_manager_get_dates_finish (TplLogManager *self,
     GAsyncResult *result,
+    GList **dates,
     GError **error);
 
 void tpl_log_manager_get_dates_async (TplLogManager *manager,

@@ -475,9 +475,8 @@ _get_dates_return (GObject *manager,
   RecentMessagesContext *ctx = user_data;
   GError *error = NULL;
 
-  ctx->dates = tpl_log_manager_get_dates_finish (TPL_LOG_MANAGER (manager), res,
-        &error);
-  if (ctx->dates == NULL)
+  if (!tpl_log_manager_get_dates_finish (TPL_LOG_MANAGER (manager), res,
+      &ctx->dates, &error))
     {
       DEBUG ("Failed to get dates: %s", error->message);
 
