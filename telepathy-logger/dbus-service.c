@@ -390,9 +390,8 @@ _get_messages_return (GObject *manager,
   GList *messages, *ptr;
   GError *error = NULL;
 
-  messages = tpl_log_manager_get_messages_for_date_finish (
-      TPL_LOG_MANAGER (manager), res, &error);
-  if (error != NULL)
+  if (!tpl_log_manager_get_messages_for_date_finish (
+      TPL_LOG_MANAGER (manager), res, &messages, &error))
     {
       DEBUG ("Failed to get messages: %s", error->message);
 
