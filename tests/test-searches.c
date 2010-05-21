@@ -13,7 +13,7 @@ static GMainLoop *loop = NULL;
 static void
 got_dates_cb (GObject *obj, GAsyncResult *result, gpointer user_data)
 {
-  GList *ret = tpl_log_manager_get_dates_async_finish (result, NULL);
+  GList *ret = tpl_log_manager_get_dates_finish (result, NULL);
 
   for (; ret != NULL; ret = g_list_next (ret))
     {

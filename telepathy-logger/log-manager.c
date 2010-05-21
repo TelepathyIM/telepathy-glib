@@ -778,7 +778,7 @@ _tpl_log_manager_async_operation_cb (GObject *source_object,
 
 /* Start of add_message async implementation */
 gboolean
-_tpl_log_manager_add_message_async_finish (GAsyncResult *result,
+_tpl_log_manager_add_message_finish (GAsyncResult *result,
     GError **error)
 {
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -842,7 +842,7 @@ _tpl_log_manager_add_message_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      _tpl_log_manager_add_message_async_finish);
+      _tpl_log_manager_add_message_finish);
 
   g_simple_async_result_run_in_thread (simple, _add_message_async_thread, 0,
       NULL);
@@ -852,7 +852,7 @@ _tpl_log_manager_add_message_async (TplLogManager *manager,
 
 /* Start of get_dates async implementation */
 GList *
-tpl_log_manager_get_dates_async_finish (GAsyncResult *result,
+tpl_log_manager_get_dates_finish (GAsyncResult *result,
     GError **error)
 {
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -932,7 +932,7 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_get_dates_async_finish);
+      tpl_log_manager_get_dates_finish);
 
   g_simple_async_result_run_in_thread (simple, _get_dates_async_thread, 0,
       NULL);
@@ -941,7 +941,7 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
 
 /* Start of get_messages_for_date async implementation */
 GList *
-tpl_log_manager_get_messages_for_date_async_finish (GAsyncResult *result,
+tpl_log_manager_get_messages_for_date_finish (GAsyncResult *result,
     GError **error)
 {
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -1029,7 +1029,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_get_messages_for_date_async_finish);
+      tpl_log_manager_get_messages_for_date_finish);
 
   g_simple_async_result_run_in_thread (simple,
       _get_messages_for_date_async_thread, 0, NULL);
@@ -1039,7 +1039,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
 
 /* Start of get_filtered_messages async implementation */
 GList *
-tpl_log_manager_get_filtered_messages_async_finish (GAsyncResult *result,
+tpl_log_manager_get_filtered_messages_finish (GAsyncResult *result,
     GError **error)
 {
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -1132,7 +1132,7 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_get_filtered_messages_async_finish);
+      tpl_log_manager_get_filtered_messages_finish);
 
   g_simple_async_result_run_in_thread (simple,
       _get_filtered_messages_async_thread, 0, NULL);
@@ -1142,7 +1142,7 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
 
 /* Start of get_chats async implementation */
 GList *
-tpl_log_manager_get_chats_async_finish (GAsyncResult *result,
+tpl_log_manager_get_chats_finish (GAsyncResult *result,
     GError **error)
 {
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -1212,7 +1212,7 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_get_chats_async_finish);
+      tpl_log_manager_get_chats_finish);
 
   g_simple_async_result_run_in_thread (simple, _get_chats_async_thread, 0,
       NULL);
@@ -1221,7 +1221,7 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
 
 /* Start of tpl_log_manager_search_in_identifier_chats_new async implementation */
 GList *
-tpl_log_manager_search_in_identifier_chats_new_async_finish (
+tpl_log_manager_search_in_identifier_chats_new_finish (
     GAsyncResult *result,
     GError **error)
 {
@@ -1297,7 +1297,7 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_search_in_identifier_chats_new_async_finish);
+      tpl_log_manager_search_in_identifier_chats_new_finish);
 
   g_simple_async_result_run_in_thread (simple,
       _search_in_identifier_chats_new_async_thread, 0, NULL);
@@ -1307,7 +1307,7 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 
 /* Start of tpl_log_manager_search_new async implementation */
 GList *
-tpl_log_manager_search_new_async_finish (GAsyncResult *result,
+tpl_log_manager_search_new_finish (GAsyncResult *result,
     GError **error)
 {
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -1373,7 +1373,7 @@ tpl_log_manager_search_new_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_search_new_async_finish);
+      tpl_log_manager_search_new_finish);
 
   g_simple_async_result_run_in_thread (simple, _search_new_async_thread, 0,
       NULL);

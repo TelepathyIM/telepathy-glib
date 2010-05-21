@@ -390,7 +390,7 @@ _get_messages_return (GObject *manager,
   GList *messages, *ptr;
   GError *error = NULL;
 
-  messages = tpl_log_manager_get_messages_for_date_async_finish (res, &error);
+  messages = tpl_log_manager_get_messages_for_date_finish (res, &error);
   if (error != NULL)
     {
       DEBUG ("Failed to get messages: %s", error->message);
@@ -474,7 +474,7 @@ _get_dates_return (GObject *manager,
   RecentMessagesContext *ctx = user_data;
   GError *error = NULL;
 
-  ctx->dates = tpl_log_manager_get_dates_async_finish (res, &error);
+  ctx->dates = tpl_log_manager_get_dates_finish (res, &error);
   if (ctx->dates == NULL)
     {
       DEBUG ("Failed to get dates: %s", error->message);
