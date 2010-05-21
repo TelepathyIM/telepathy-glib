@@ -477,7 +477,7 @@ tpl_channel_text_call_when_ready (TplChannelText *self,
    * If for any reason, the order is changed, it's needed to check what objects
    * are unreferenced by g_object_unref but used by a next action AND what object are actually not
    * prepared but used anyway */
-  actions = _tpl_action_chain_new (G_OBJECT (self), cb, user_data);
+  actions = _tpl_action_chain_new_async (G_OBJECT (self), cb, user_data);
   _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
@@ -508,7 +508,7 @@ got_tpl_chan_ready_cb (GObject *obj,
   TplActionChain *ctx = user_data;
 
   /* if TplChannel preparation is OK, keep on with the TplChannelText */
-  if (_tpl_action_chain_finish (tpl_chan_result))
+  if (_tpl_action_chain_new_finish (tpl_chan_result))
     _tpl_action_chain_continue (ctx);
   else
      _tpl_action_chain_terminate (ctx);

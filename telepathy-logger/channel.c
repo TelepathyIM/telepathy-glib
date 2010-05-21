@@ -227,7 +227,7 @@ call_when_ready_protected (TplChannel *self,
 {
   TplActionChain *actions;
 
-  actions = _tpl_action_chain_new (G_OBJECT (self), cb, user_data);
+  actions = _tpl_action_chain_new_async (G_OBJECT (self), cb, user_data);
   _tpl_action_chain_append (actions, pendingproc_get_ready_tp_connection, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_ready_tp_channel, NULL);
   _tpl_action_chain_continue (actions);

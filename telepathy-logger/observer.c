@@ -273,7 +273,7 @@ got_tpl_channel_text_ready_cb (GObject *obj,
 {
   ObservingContext *observing_ctx = user_data;
   DBusGMethodInvocation *dbus_ctx = observing_ctx->dbus_ctx;
-  gboolean success = _tpl_action_chain_finish (result);
+  gboolean success = _tpl_action_chain_new_finish (result);
 
   if (success)
     {

@@ -308,7 +308,7 @@ favourite_contacts_file_parsed_cb (GObject *object,
   TplDBusService *self = TPL_DBUS_SERVICE (object);
   TplDBusServicePriv *priv = self->priv;
 
-  if (!_tpl_action_chain_finish (result))
+  if (!_tpl_action_chain_new_finish (result))
     {
       DEBUG ("Failed to parse the favourite contacts file and/or execute "
           "subsequent queued method calls");
@@ -323,7 +323,7 @@ tpl_dbus_service_constructed (GObject *object)
 {
   TplDBusServicePriv *priv = TPL_DBUS_SERVICE (object)->priv;
 
-  priv->favourite_contacts_actions = _tpl_action_chain_new (object,
+  priv->favourite_contacts_actions = _tpl_action_chain_new_async (object,
       favourite_contacts_file_parsed_cb, object);
 
   _tpl_action_chain_append (priv->favourite_contacts_actions,

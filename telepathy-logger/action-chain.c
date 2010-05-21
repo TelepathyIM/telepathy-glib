@@ -29,7 +29,7 @@ typedef struct {
 
 
 TplActionChain *
-_tpl_action_chain_new (GObject *obj,
+_tpl_action_chain_new_async (GObject *obj,
     GAsyncReadyCallback cb,
     gpointer user_data)
 {
@@ -37,7 +37,7 @@ _tpl_action_chain_new (GObject *obj,
 
   ret->chain = g_queue_new ();
   ret->simple = g_simple_async_result_new (obj, cb, user_data,
-      _tpl_action_chain_finish);
+      _tpl_action_chain_new_async);
 
   g_object_set_data (G_OBJECT (ret->simple), "chain", ret);
 
@@ -137,7 +137,7 @@ _tpl_action_chain_terminate (TplActionChain *self)
 
 
 /**
- * _tpl_action_chain_finish:
+ * _tpl_action_chain_new_finish:
  *
  * Get the result from running the action chain (%TRUE if the chain completed
  * successfully, %FALSE if it was terminated).
@@ -145,7 +145,7 @@ _tpl_action_chain_terminate (TplActionChain *self)
  * This function also frees the chain.
  */
 gboolean
-_tpl_action_chain_finish (GAsyncResult *result)
+_tpl_action_chain_new_finish (GAsyncResult *result)
 {
   TplActionChain *chain;
   gboolean retval;
