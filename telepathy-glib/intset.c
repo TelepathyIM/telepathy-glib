@@ -97,6 +97,10 @@ tp_intset_get_type (void)
  *
  * A structure representing iteration over a set of integers. Must be
  * initialized with either TP_INTSET_ITER_INIT() or tp_intset_iter_init().
+ *
+ * Since 0.11.UNRELEASED, consider using #TpIntSetFastIter if iteration in
+ * numerical order is not required.
+ *
  */
 /* (public, see header) */
 
@@ -114,6 +118,10 @@ tp_intset_get_type (void)
  *   /<!-- -->* ... do something with iter ... *<!-- -->/
  * }
  * </programlisting></informalexample>
+ *
+ * Since 0.11.UNRELEASED, consider using #TpIntSetFastIter if iteration in
+ * numerical order is not required.
+ *
  */
 /* (macro, see header) */
 
@@ -744,6 +752,9 @@ tp_intset_dump (const TpIntSet *set)
  * }
  * </programlisting></informalexample>
  *
+ * Since 0.11.UNRELEASED, consider using #TpIntSetFastIter if iteration in
+ * numerical order is not required.
+ *
  * Returns: %TRUE if (@iter->element) has been advanced
  */
 gboolean
@@ -779,6 +790,22 @@ tp_intset_iter_next (TpIntSetIter *iter)
  *
  * An opaque structure representing iteration in undefined order over a set of
  * integers. Must be initialized with tp_intset_fast_iter_init().
+ *
+ * Usage is similar to #GHashTableIter:
+ *
+ * <informalexample><programlisting>
+ * TpIntSetFastIter iter;
+ * guint element;
+ *
+ * tp_intset_fast_iter_init (&amp;iter, intset);
+ *
+ * while (tp_intset_fast_iter_next (&amp;iter, &amp;element))
+ * {
+ *   printf ("%u is in the intset\n", element);
+ * }
+ * </programlisting></informalexample>
+ *
+ * Since: 0.11.UNRELEASED
  */
 
 typedef struct {
@@ -797,6 +824,8 @@ tp_verify (sizeof (TpIntSetFastIter) >= sizeof (RealFastIter));
  *
  * Initialize @iter to iterate over @set in arbitrary order. @iter will become
  * invalid if @set is modified.
+ *
+ * Since: 0.11.UNRELEASED
  */
 void
 tp_intset_fast_iter_init (TpIntSetFastIter *iter,
@@ -821,6 +850,8 @@ tp_intset_fast_iter_init (TpIntSetFastIter *iter,
  * is not necessarily in numerical order.
  *
  * Returns: %FALSE if the end of the set has been reached
+ *
+ * Since: 0.11.UNRELEASED
  */
 gboolean
 tp_intset_fast_iter_next (TpIntSetFastIter *iter,
