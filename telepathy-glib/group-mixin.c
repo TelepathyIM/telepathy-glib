@@ -555,6 +555,7 @@ tp_group_mixin_add_members (GObject *obj,
       handle = g_array_index (contacts, TpHandle, i);
 
       if ((mixin->group_flags & TP_CHANNEL_GROUP_FLAG_CAN_ADD) == 0 &&
+          !tp_handle_set_is_member (mixin->members, handle) &&
           !tp_handle_set_is_member (mixin->local_pending, handle))
         {
           DEBUG ("handle %u cannot be added to members without "
@@ -719,11 +720,8 @@ tp_group_mixin_remove_members_with_reason (GObject *obj,
         {
           DEBUG ("handle %u is not a current or pending member",
                    handle);
-
-          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "handle %u is not a current or pending member", handle);
-
-          return FALSE;
+          /* skip this handle during the second pass */
+          g_array_index (contacts, TpHandle, i) = 0;
         }
     }
 
@@ -731,6 +729,9 @@ tp_group_mixin_remove_members_with_reason (GObject *obj,
   for (i = 0; i < contacts->len; i++)
     {
       handle = g_array_index (contacts, TpHandle, i);
+
+      if (handle == 0)
+        continue;
 
       if (mixin_cls->priv->remove_with_reason != NULL)
         {
