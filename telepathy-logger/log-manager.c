@@ -782,10 +782,19 @@ _tpl_log_manager_add_message_finish (TplLogManager *self,
     GAsyncResult *result,
     GError **error)
 {
-  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+  GSimpleAsyncResult *simple;
 
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-  return g_simple_async_result_get_op_res_gboolean (simple);
+  g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (self), _tpl_log_manager_add_message_async), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  return TRUE;
 }
 
 
@@ -809,8 +818,6 @@ _add_message_async_thread (GSimpleAsyncResult *simple,
       g_simple_async_result_set_from_error (simple, error);
       g_error_free (error);
     }
-  else
-    g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 }
 
 void
