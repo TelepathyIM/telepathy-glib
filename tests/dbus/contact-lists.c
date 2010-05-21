@@ -536,6 +536,7 @@ test_accept_subscribe_request (Test *test,
 
   test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "subscribe");
   test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
 
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->subscribe)),
@@ -557,6 +558,12 @@ test_accept_subscribe_request (Test *test,
    * change-notification, too */
   g_assert (tp_intset_is_member (
         tp_channel_group_get_remote_pending (test->subscribe),
+        test->ninja));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->stored),
         test->ninja));
 
   /* after a short delay, the contact accepts our request */
@@ -593,6 +600,7 @@ test_reject_subscribe_request (Test *test,
   GError *error = NULL;
 
   test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "subscribe");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
 
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->subscribe)),
@@ -616,6 +624,12 @@ test_reject_subscribe_request (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_remote_pending (test->subscribe),
         test->ninja));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->stored),
+        test->ninja));
 
   /* after a short delay, the contact rejects our request. Say please! */
   while (tp_intset_is_member (
@@ -629,6 +643,14 @@ test_reject_subscribe_request (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_remote_pending (test->subscribe),
         test->ninja));
+
+  /* the ninja is still on the stored list */
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->stored),
+        test->ninja));
 }
 
 static void
@@ -638,6 +660,7 @@ test_remove_from_subscribe (Test *test,
   GError *error = NULL;
 
   test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "subscribe");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
 
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->subscribe)),
@@ -656,6 +679,9 @@ test_remove_from_subscribe (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->subscribe),
         test->sjoerd));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
+        test->sjoerd));
 }
 
 static void
@@ -665,6 +691,7 @@ test_remove_from_subscribe_pending (Test *test,
   GError *error = NULL;
 
   test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "subscribe");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
 
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_remote_pending (test->subscribe)),
@@ -685,6 +712,9 @@ test_remove_from_subscribe_pending (Test *test,
         test->helen));
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_remote_pending (test->subscribe),
+        test->helen));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
         test->helen));
 }
 
