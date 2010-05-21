@@ -123,8 +123,9 @@ void tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
 
 GList *tpl_log_manager_get_chats (TplLogManager *manager, TpAccount *account);
 
-GList *tpl_log_manager_get_chats_finish (TplLogManager *self,
+gboolean tpl_log_manager_get_chats_finish (TplLogManager *self,
     GAsyncResult *result,
+    GList **chats,
     GError **error);
 
 void tpl_log_manager_get_chats_async (TplLogManager *manager,
