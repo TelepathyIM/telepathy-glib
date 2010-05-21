@@ -1621,6 +1621,9 @@ tp_intset_union
 tp_intset_difference
 tp_intset_symmetric_difference
 tp_intset_dump
+TpIntSetFastIter
+tp_intset_fast_iter_init
+tp_intset_fast_iter_next
 TP_INTSET_ITER_INIT
 TpIntSetIter
 tp_intset_iter_init

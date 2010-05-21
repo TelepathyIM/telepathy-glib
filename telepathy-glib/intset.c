@@ -28,17 +28,33 @@
  * @see_also: #TpHandleSet
  *
  * A #TpIntSet is a set of unsigned integers, implemented as a
- * dynamically-allocated bitfield.
+ * dynamically-allocated sparse bitfield.
  */
 
 #include <telepathy-glib/intset.h>
+#include <telepathy-glib/util.h>
 
 #include <string.h>
 #include <glib.h>
 
-#define DEFAULT_SIZE 16
-#define DEFAULT_INCREMENT 8
-#define DEFAULT_INCREMENT_LOG2 3
+/* On platforms with 64-bit pointers we could pack 64 bits into the values,
+ * if count_bits32() is replaced with a 64-bit version. This doesn't work
+ * yet. */
+#undef USE_64_BITS
+
+#ifdef USE_64_BITS
+#   define BITFIELD_BITS 64
+#   define BITFIELD_LOG2_BITS 6
+#else
+#   define BITFIELD_BITS 32
+#   define BITFIELD_LOG2_BITS 5
+#endif
+
+tp_verify (1 << BITFIELD_LOG2_BITS == BITFIELD_BITS);
+tp_verify (sizeof (gpointer) >= sizeof (gsize));
+#define LOW_MASK (BITFIELD_BITS - 1)
+#define HIGH_PART(x) (x & ~LOW_MASK)
+#define LOW_PART(x) (x & LOW_MASK)
 
 /**
  * TP_TYPE_INTSET:
@@ -127,55 +143,45 @@ tp_intset_get_type (void)
 
 struct _TpIntSet
 {
-  guint32 *bits;
-  guint size;
+  /* HIGH_PART(n) => bitfield where bit LOW_PART(n) is set if n is present.
+   *
+   * For instance, when using 32-bit values, the set { 5, 23 } is represented
+   * by the map { 0 => (1 << 23 | 1 << 5) }, and the set { 1, 32, 42 } is
+   * represented by the map { 0 => (1 << 1), 32 => (1 << 10 | 1 << 0) }. */
+  GHashTable *table;
+  guint largest_ever;
 };
-
-static TpIntSet *
-_tp_intset_new_with_size (guint size)
-{
-  TpIntSet *set = g_slice_new (TpIntSet);
-  set->size = MAX (size, DEFAULT_SIZE);
-  set->bits = g_new0 (guint32, set->size);
-  return set;
-}
 
 /**
  * tp_intset_sized_new:
- * @size: 1 more than the largest integer you expect to store
+ * @size: ignored (it was previously 1 more than the largest integer you
+ *  expect to store)
  *
- * Allocate an integer set just large enough to store the given number of bits,
- * rounded up as necessary.
- *
- * The set will still expand automatically if you store larger integers;
- * this is just an optimization to avoid wasting memory (if the set is too
- * large) or time (if the set is too small and needs reallocation).
+ * Allocate a new integer set.
  *
  * Returns: a new, empty integer set to be destroyed with tp_intset_destroy()
  */
 TpIntSet *
-tp_intset_sized_new (guint size)
+tp_intset_sized_new (guint size G_GNUC_UNUSED)
 {
-  /* convert from a size in bits to a size in 32-bit words */
-  if (G_UNLIKELY (size == 0))
-    size = 1;
-  else
-    size = ((size - 1) >> 5) + 1;
-
-  return _tp_intset_new_with_size (size);
+  return tp_intset_new ();
 }
 
 /**
  * tp_intset_new:
  *
- * Allocate a new integer set with a default memory allocation.
+ * Allocate a new integer set.
  *
  * Returns: a new, empty integer set to be destroyed with tp_intset_destroy()
  */
 TpIntSet *
 tp_intset_new ()
 {
-  return _tp_intset_new_with_size (DEFAULT_SIZE);
+  TpIntSet *set = g_slice_new (TpIntSet);
+
+  set->table = g_hash_table_new (NULL, NULL);
+  set->largest_ever = 0;
+  return set;
 }
 
 /**
@@ -192,7 +198,7 @@ tp_intset_new ()
 TpIntSet *
 tp_intset_new_containing (guint element)
 {
-  TpIntSet *ret = tp_intset_sized_new (element + 1);
+  TpIntSet *ret = tp_intset_new ();
 
   tp_intset_add (ret, element);
 
@@ -210,7 +216,7 @@ tp_intset_destroy (TpIntSet *set)
 {
   g_return_if_fail (set != NULL);
 
-  g_free (set->bits);
+  g_hash_table_destroy (set->table);
   g_slice_free (TpIntSet, set);
 }
 
@@ -225,7 +231,7 @@ tp_intset_clear (TpIntSet *set)
 {
   g_return_if_fail (set != NULL);
 
-  memset (set->bits, 0, set->size * sizeof (guint32));
+  g_hash_table_remove_all (set->table);
 }
 
 /**
@@ -236,25 +242,23 @@ tp_intset_clear (TpIntSet *set)
  * Add an integer into a TpIntSet.
  */
 void
-tp_intset_add (TpIntSet *set, guint element)
+tp_intset_add (TpIntSet *set,
+    guint element)
 {
-  guint offset;
-  guint newsize;
+  gpointer key = GSIZE_TO_POINTER ((gsize) HIGH_PART (element));
+  gsize bit = LOW_PART (element);
+  gpointer old_value, new_value;
 
   g_return_if_fail (set != NULL);
 
-  offset = element >> 5;
+  old_value = g_hash_table_lookup (set->table, key);
+  new_value = GSIZE_TO_POINTER (GPOINTER_TO_SIZE (old_value) | (1 << bit));
 
-  if (offset >= set->size)
-  {
-    newsize = ((offset>>DEFAULT_INCREMENT_LOG2) +1 ) << DEFAULT_INCREMENT_LOG2;
-    set->bits = g_renew (guint32, set->bits, newsize);
-    memset (set->bits + set->size, 0,
-        sizeof (guint32) * (newsize - set->size));
-    set->size = newsize;
-    g_assert (offset<newsize);
-  }
-  set->bits[offset] = set->bits[offset] | (1<<(element & 0x1f));
+  if (old_value != new_value)
+    g_hash_table_insert (set->table, key, new_value);
+
+  if (element > set->largest_ever)
+    set->largest_ever = element;
 }
 
 /**
@@ -267,36 +271,41 @@ tp_intset_add (TpIntSet *set, guint element)
  * Returns: %TRUE if @element was previously in @set
  */
 gboolean
-tp_intset_remove (TpIntSet *set, guint element)
+tp_intset_remove (TpIntSet *set,
+    guint element)
 {
-  guint offset;
-  guint mask;
+  gpointer key = GSIZE_TO_POINTER ((gsize) HIGH_PART (element));
+  gsize bit = LOW_PART (element);
+  gpointer old_value, new_value;
 
   g_return_val_if_fail (set != NULL, FALSE);
 
-  offset = element >> 5;
-  mask = 1 << (element & 0x1f);
-  if (offset >= set->size)
-    return FALSE;
-  else if (!(set->bits[offset] & mask))
-    return FALSE;
-  else
+  old_value = g_hash_table_lookup (set->table, key);
+  new_value = GSIZE_TO_POINTER (GPOINTER_TO_SIZE (old_value) & ~ (1 << bit));
+
+  if (old_value != new_value)
     {
-      set->bits[offset] &= ~mask;
+      if (new_value == NULL)
+        g_hash_table_remove (set->table, key);
+      else
+        g_hash_table_insert (set->table, key, new_value);
+
       return TRUE;
     }
+
+  return FALSE;
 }
 
 static inline gboolean
-_tp_intset_is_member (const TpIntSet *set, guint element)
+_tp_intset_is_member (const TpIntSet *set,
+    guint element)
 {
-  guint offset;
+  gpointer key = GSIZE_TO_POINTER ((gsize) HIGH_PART (element));
+  gsize bit = LOW_PART (element);
+  gpointer value;
 
-  offset = element >> 5;
-  if (offset >= set->size)
-    return FALSE;
-  else
-    return (set->bits[offset] & (1 << (element & 0x1f))) != 0;
+  value = g_hash_table_lookup (set->table, key);
+  return ((GPOINTER_TO_SIZE (value) & (1 << bit)) != 0);
 }
 
 /**
@@ -322,28 +331,38 @@ tp_intset_is_member (const TpIntSet *set, guint element)
  * @func: @TpIntFunc to use to iterate the set
  * @userdata: user data to pass to each call of @func
  *
- * Call @func(element, @userdata) for each element of @set.
+ * Call @func(element, @userdata) for each element of @set, in order.
  */
 
 void
-tp_intset_foreach (const TpIntSet *set, TpIntFunc func, gpointer userdata)
+tp_intset_foreach (const TpIntSet *set,
+    TpIntFunc func,
+    gpointer userdata)
 {
-  guint i, j;
+  gsize high_part, low_part;
 
   g_return_if_fail (set != NULL);
   g_return_if_fail (func != NULL);
 
-  for (i = 0; i < set->size; i++)
+  for (high_part = 0;
+      high_part <= set->largest_ever;
+      high_part += BITFIELD_BITS)
     {
-      if (set->bits[i])
-        for (j = 0; j < 32; j++)
-          {
-            if (set->bits[i] & 1 << j)
-              func (i * 32 + j, userdata);
-          }
+      gsize entry = GPOINTER_TO_SIZE (g_hash_table_lookup (set->table,
+            GSIZE_TO_POINTER (high_part)));
+
+      if (entry == 0)
+        continue;
+
+      for (low_part = 0; low_part < BITFIELD_BITS; low_part++)
+        {
+          if (entry & (1 << low_part))
+            {
+              func (high_part + low_part, userdata);
+            }
+        }
     }
 }
-
 
 static void
 addint (guint i, gpointer data)
@@ -389,20 +408,11 @@ TpIntSet *
 tp_intset_from_array (const GArray *array)
 {
   TpIntSet *set;
-  guint max, i;
+  guint i;
 
   g_return_val_if_fail (array != NULL, NULL);
 
-  /* look at the 1st, last and middle values in the array to get an
-   * approximation of the largest */
-  max = 0;
-  if (array->len > 0)
-    max = g_array_index (array, guint, 0);
-  if (array->len > 1)
-    max = MAX (max, g_array_index (array, guint, array->len - 1));
-  if (array->len > 2)
-    max = MAX (max, g_array_index (array, guint, (array->len - 1) >> 1));
-  set = _tp_intset_new_with_size (1 + (max >> 5));
+  set = tp_intset_new ();
 
   for (i = 0; i < array->len; i++)
     {
@@ -412,6 +422,15 @@ tp_intset_from_array (const GArray *array)
   return set;
 }
 
+/* these magic numbers would need adjusting for 64-bit storage */
+tp_verify (BITFIELD_BITS == 32);
+
+static inline guint
+count_bits32 (guint32 n)
+{
+  n = n - ((n >> 1) & 033333333333) - ((n >> 2) & 011111111111);
+  return ((n + (n >> 3)) & 030707070707) % 63;
+}
 
 /**
  * tp_intset_size:
@@ -425,16 +444,17 @@ tp_intset_from_array (const GArray *array)
 guint
 tp_intset_size (const TpIntSet *set)
 {
-  guint i, count = 0;
-  guint32 n;
+  guint count = 0;
+  gpointer entry;
+  GHashTableIter iter;
 
   g_return_val_if_fail (set != NULL, 0);
 
-  for (i = 0; i < set->size; i++)
+  g_hash_table_iter_init (&iter, (GHashTable *) set->table);
+
+  while (g_hash_table_iter_next (&iter, NULL, &entry))
     {
-      n = set->bits[i];
-      n = n - ((n >> 1) & 033333333333) - ((n >> 2) & 011111111111);
-      count += ((n + (n >> 3)) & 030707070707) % 63;
+      count += count_bits32 (GPOINTER_TO_SIZE (entry));
     }
 
   return count;
@@ -452,35 +472,26 @@ tp_intset_size (const TpIntSet *set)
  */
 
 gboolean
-tp_intset_is_equal (const TpIntSet *left, const TpIntSet *right)
+tp_intset_is_equal (const TpIntSet *left,
+    const TpIntSet *right)
 {
-  const TpIntSet *large, *small;
-  guint i;
+  gpointer key, value;
+  GHashTableIter iter;
 
   g_return_val_if_fail (left != NULL, FALSE);
   g_return_val_if_fail (right != NULL, FALSE);
 
-  if (left->size > right->size)
-    {
-      large = left;
-      small = right;
-    }
-  else
-    {
-      large = right;
-      small = left;
-    }
+  if (g_hash_table_size (left->table) != g_hash_table_size (right->table))
+    return FALSE;
 
-  for (i = 0; i < small->size; i++)
-    {
-      if (large->bits[i] != small->bits[i])
-        return FALSE;
-    }
+  g_hash_table_iter_init (&iter, (GHashTable *) left->table);
 
-  for (i = small->size; i < large->size; i++)
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      if (large->bits[i] != 0)
-        return FALSE;
+      if (g_hash_table_lookup (right->table, key) != value)
+        {
+          return FALSE;
+        }
     }
 
   return TRUE;
@@ -500,12 +511,20 @@ tp_intset_is_equal (const TpIntSet *left, const TpIntSet *right)
 TpIntSet *
 tp_intset_copy (const TpIntSet *orig)
 {
+  gpointer key, value;
+  GHashTableIter iter;
   TpIntSet *ret;
 
   g_return_val_if_fail (orig != NULL, NULL);
 
-  ret = _tp_intset_new_with_size (orig->size);
-  memcpy (ret->bits, orig->bits, (ret->size * sizeof (guint32)));
+  ret = tp_intset_new ();
+
+  g_hash_table_iter_init (&iter, (GHashTable *) orig->table);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      g_hash_table_insert (ret->table, key, value);
+    }
 
   return ret;
 }
@@ -526,29 +545,21 @@ tp_intset_copy (const TpIntSet *orig)
 TpIntSet *
 tp_intset_intersection (const TpIntSet *left, const TpIntSet *right)
 {
-  const TpIntSet *large, *small;
+  gpointer key, value;
+  GHashTableIter iter;
   TpIntSet *ret;
-  guint i;
 
-  g_return_val_if_fail (left != NULL, NULL);
-  g_return_val_if_fail (right != NULL, NULL);
+  ret = tp_intset_new ();
 
-  if (left->size > right->size)
+  g_hash_table_iter_init (&iter, (GHashTable *) left->table);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      large = left;
-      small = right;
-    }
-  else
-    {
-      large = right;
-      small = left;
-    }
+      gsize v = GPOINTER_TO_SIZE (value);
+      v &= GPOINTER_TO_SIZE (g_hash_table_lookup (right->table, key));
 
-  ret = tp_intset_copy (small);
-
-  for (i = 0; i < ret->size; i++)
-    {
-      ret->bits[i] &= large->bits[i];
+      if (v != 0)
+        g_hash_table_insert (ret->table, key, GSIZE_TO_POINTER (v));
     }
 
   return ret;
@@ -570,29 +581,19 @@ tp_intset_intersection (const TpIntSet *left, const TpIntSet *right)
 TpIntSet *
 tp_intset_union (const TpIntSet *left, const TpIntSet *right)
 {
-  const TpIntSet *large, *small;
+  gpointer key, value;
+  GHashTableIter iter;
   TpIntSet *ret;
-  guint i;
 
-  g_return_val_if_fail (left != NULL, NULL);
-  g_return_val_if_fail (right != NULL, NULL);
+  ret = tp_intset_copy (left);
 
-  if (left->size > right->size)
+  g_hash_table_iter_init (&iter, (GHashTable *) right->table);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      large = left;
-      small = right;
-    }
-  else
-    {
-      large = right;
-      small = left;
-    }
-
-  ret = tp_intset_copy (large);
-
-  for (i = 0; i < small->size; i++)
-    {
-      ret->bits[i] |= small->bits[i];
+      gsize v = GPOINTER_TO_SIZE (value);
+      v |= GPOINTER_TO_SIZE (g_hash_table_lookup (ret->table, key));
+      g_hash_table_insert (ret->table, key, GSIZE_TO_POINTER (v));
     }
 
   return ret;
@@ -615,16 +616,25 @@ TpIntSet *
 tp_intset_difference (const TpIntSet *left, const TpIntSet *right)
 {
   TpIntSet *ret;
-  guint i;
+  gpointer key, value;
+  GHashTableIter iter;
 
   g_return_val_if_fail (left != NULL, NULL);
   g_return_val_if_fail (right != NULL, NULL);
 
   ret = tp_intset_copy (left);
 
-  for (i = 0; i < MIN (right->size, left->size); i++)
+  g_hash_table_iter_init (&iter, (GHashTable *) right->table);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      ret->bits[i] &= ~right->bits[i];
+      gsize v = GPOINTER_TO_SIZE (value);
+      v = (GPOINTER_TO_SIZE (g_hash_table_lookup (ret->table, key))) & ~v;
+
+      if (v == 0)
+        g_hash_table_remove (ret->table, key);
+      else
+        g_hash_table_insert (ret->table, key, GSIZE_TO_POINTER (v));
     }
 
   return ret;
@@ -646,29 +656,26 @@ tp_intset_difference (const TpIntSet *left, const TpIntSet *right)
 TpIntSet *
 tp_intset_symmetric_difference (const TpIntSet *left, const TpIntSet *right)
 {
-  const TpIntSet *large, *small;
   TpIntSet *ret;
-  guint i;
+  gpointer key, value;
+  GHashTableIter iter;
 
   g_return_val_if_fail (left != NULL, NULL);
   g_return_val_if_fail (right != NULL, NULL);
 
-  if (left->size > right->size)
-    {
-      large = left;
-      small = right;
-    }
-  else
-    {
-      large = right;
-      small = left;
-    }
+  ret = tp_intset_copy (left);
 
-  ret = tp_intset_copy (large);
+  g_hash_table_iter_init (&iter, (GHashTable *) right->table);
 
-  for (i = 0; i < small->size; i++)
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      ret->bits[i] ^= small->bits[i];
+      gsize v = GPOINTER_TO_SIZE (value);
+      v = v ^ GPOINTER_TO_SIZE (g_hash_table_lookup (ret->table, key));
+
+      if (v == 0)
+        g_hash_table_remove (ret->table, key);
+      else
+        g_hash_table_insert (ret->table, key, GSIZE_TO_POINTER (v));
     }
 
   return ret;
@@ -745,7 +752,96 @@ tp_intset_iter_next (TpIntSetIter *iter)
           return TRUE;
         }
     }
-  while (iter->element < (iter->set->size << 5)
-         && iter->element != (guint)(-1));
+  while (iter->element < iter->set->largest_ever &&
+      iter->element != (guint)(-1));
   return FALSE;
+}
+
+/**
+ * TpIntSetFastIter:
+ *
+ * An opaque structure representing iteration in undefined order over a set of
+ * integers. Must be initialized with tp_intset_fast_iter_init().
+ */
+
+typedef struct {
+    GHashTableIter hash_iter;
+    gboolean ok;
+    gsize high_part;
+    gsize bitfield;
+} RealFastIter;
+
+tp_verify (sizeof (TpIntSetFastIter) >= sizeof (RealFastIter));
+
+/**
+ * tp_intset_fast_iter_init:
+ * @iter: an iterator
+ * @set: a set
+ *
+ * Initialize @iter to iterate over @set in arbitrary order. @iter will become
+ * invalid if @set is modified.
+ */
+void
+tp_intset_fast_iter_init (TpIntSetFastIter *iter,
+    const TpIntSet *set)
+{
+  RealFastIter *real = (RealFastIter *) iter;
+  g_return_if_fail (set != NULL);
+  g_return_if_fail (set->table != NULL);
+
+  g_hash_table_iter_init (&real->hash_iter, (GHashTable *) set->table);
+  real->bitfield = 0;
+  real->high_part = 0;
+  real->ok = TRUE;
+}
+
+/**
+ * tp_intset_fast_iter_next:
+ * @iter: an iterator
+ * @output: a location to store a new integer, in arbitrary order
+ *
+ * Advances @iter and retrieves the integer it now points to. Iteration
+ * is not necessarily in numerical order.
+ *
+ * Returns: %FALSE if the end of the set has been reached
+ */
+gboolean
+tp_intset_fast_iter_next (TpIntSetFastIter *iter,
+    guint *output)
+{
+  RealFastIter *real = (RealFastIter *) iter;
+  guint low_part;
+
+  if (!real->ok)
+    return FALSE;
+
+  if (real->bitfield == 0)
+    {
+      gpointer k, v;
+
+      real->ok = g_hash_table_iter_next (&real->hash_iter, &k, &v);
+
+      if (!real->ok)
+        return FALSE;
+
+      real->high_part = GPOINTER_TO_SIZE (k);
+      real->bitfield = GPOINTER_TO_SIZE (v);
+      g_assert (real->bitfield != 0);
+    }
+
+  for (low_part = 0; low_part < BITFIELD_BITS; low_part++)
+    {
+      if (real->bitfield & (1 << low_part))
+        {
+          /* clear the bit so we won't return it again */
+          real->bitfield -= (1 << low_part);
+
+          if (output != NULL)
+            *output = real->high_part | low_part;
+
+          return TRUE;
+        }
+    }
+
+  g_assert_not_reached ();
 }

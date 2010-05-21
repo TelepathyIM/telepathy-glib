@@ -25,7 +25,7 @@ int main (int argc, char **argv)
   tp_intset_add (set1, 1024);
   tp_intset_add (set1, 32);
 
-  g_assert (tp_intset_size (set1) == 7);
+  g_assert_cmpuint (tp_intset_size (set1), ==, 7);
 
   g_assert (tp_intset_is_member (set1, 2));
   g_assert (tp_intset_is_member (set1, 5));
@@ -39,7 +39,7 @@ int main (int argc, char **argv)
 
   tp_intset_remove (set1, 8);
   tp_intset_remove (set1, 1024);
-  g_assert (tp_intset_size (set1) == 5);
+  g_assert_cmpuint (tp_intset_size (set1), ==, 5);
 
   tp_intset_destroy (set1);
 
@@ -147,6 +147,22 @@ int main (int argc, char **argv)
     tp_intset_destroy (tmp);
     arr = NULL;
     tmp = NULL;
+  }
+
+  {
+    TpIntSetFastIter iter;
+    guint n = 0;
+    guint i;
+
+    tp_intset_fast_iter_init (&iter, a);
+
+    while (tp_intset_fast_iter_next (&iter, &i))
+      {
+        g_assert (tp_intset_is_member (a, i));
+        n++;
+      }
+
+    g_assert_cmpuint (n, ==, tp_intset_size (a));
   }
 
   value = tp_g_value_slice_new_take_boxed (TP_TYPE_INTSET, a);

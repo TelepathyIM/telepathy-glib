@@ -97,6 +97,17 @@ tp_intset_iter_reset_inline (TpIntSetIter *iter)
 
 gboolean tp_intset_iter_next (TpIntSetIter *iter);
 
+typedef struct {
+    /*<private>*/
+    gpointer _dummy[16];
+} TpIntSetFastIter;
+
+void tp_intset_fast_iter_init (TpIntSetFastIter *iter,
+    const TpIntSet *set);
+
+gboolean tp_intset_fast_iter_next (TpIntSetFastIter *iter,
+    guint *output);
+
 G_END_DECLS
 
 #endif /*__TP_INTSET_H__*/
