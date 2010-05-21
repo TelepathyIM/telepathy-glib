@@ -39,7 +39,7 @@ G_BEGIN_DECLS
  * @TPL_CONTACT_UNKNOWN: the current contact's type is unknown
  * @TPL_CONTACT_USER: the contact's type represents a user (buddy), but not
  * the the account's owner for which @TPL_CONTACT_SELF is used
- * @TPL_CONTACT_GROUP: the contact's type represents a chatroom
+ * @TPL_CONTACT_GROUP: a named chatroom (#TP_HANDLE_TYPE_ROOM)
  * @TPL_CONTACT_SELF: the contact's type represents the owner of the account
  * whose channel has been logged, as opposite to @TPL_CONTACT_USER which
  * represents any other user
