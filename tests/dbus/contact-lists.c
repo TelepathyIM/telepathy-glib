@@ -408,8 +408,7 @@ test_remove_from_publish_no_op (Test *test,
   g_array_append_val (test->arr, test->ninja);
   tp_cli_channel_interface_group_run_remove_members (test->publish,
       -1, test->arr, "", &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
-  g_clear_error (&error);
+  g_assert_no_error (error);
 }
 
 static void
@@ -524,8 +523,7 @@ test_remove_from_stored_no_op (Test *test,
   g_array_append_val (test->arr, test->ninja);
   tp_cli_channel_interface_group_run_remove_members (test->stored,
       -1, test->arr, "", &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
-  g_clear_error (&error);
+  g_assert_no_error (error);
 }
 
 static void
@@ -736,8 +734,7 @@ test_remove_from_subscribe_no_op (Test *test,
   g_array_append_val (test->arr, test->ninja);
   tp_cli_channel_interface_group_run_remove_members (test->subscribe,
       -1, test->arr, "", &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
-  g_clear_error (&error);
+  g_assert_no_error (error);
 }
 
 static void
@@ -845,8 +842,7 @@ test_remove_from_group_no_op (Test *test,
   g_array_append_val (test->arr, test->ninja);
   tp_cli_channel_interface_group_run_remove_members (test->group,
       -1, test->arr, "", &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
-  g_clear_error (&error);
+  g_assert_no_error (error);
 }
 
 static void
