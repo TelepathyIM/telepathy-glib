@@ -95,13 +95,13 @@ tpl_contact_set_property (GObject *object,
 
   switch (param_id) {
       case PROP_IDENTIFIER:
-        tpl_contact_set_identifier (self, g_value_get_string (value));
+        _tpl_contact_set_identifier (self, g_value_get_string (value));
         break;
       case PROP_ALIAS:
-        tpl_contact_set_alias (self, g_value_get_string (value));
+        _tpl_contact_set_alias (self, g_value_get_string (value));
         break;
       case PROP_AVATAR_TOKEN:
-        tpl_contact_set_avatar_token (self, g_value_get_string (value));
+        _tpl_contact_set_avatar_token (self, g_value_get_string (value));
         break;
 
       default:
@@ -186,8 +186,8 @@ tpl_contact_from_room_id (const gchar *chatroom_id)
   g_return_val_if_fail (chatroom_id != NULL, NULL);
 
   ret = _tpl_contact_new (chatroom_id);
-  tpl_contact_set_alias (ret, chatroom_id);
-  tpl_contact_set_contact_type (ret, TPL_CONTACT_GROUP);
+  _tpl_contact_set_alias (ret, chatroom_id);
+  _tpl_contact_set_contact_type (ret, TPL_CONTACT_GROUP);
 
   DEBUG ("Chatroom id: %s", chatroom_id);
   return ret;
@@ -214,14 +214,14 @@ _tpl_contact_from_tp_contact (TpContact *contact)
   ret = _tpl_contact_new (tp_contact_get_identifier (contact));
 
   if (tp_contact_get_alias (contact) != NULL)
-    tpl_contact_set_alias (ret, (gchar *) tp_contact_get_alias (contact));
+    _tpl_contact_set_alias (ret, (gchar *) tp_contact_get_alias (contact));
   if (tp_contact_get_avatar_token (contact) != NULL)
-    tpl_contact_set_avatar_token (ret, tp_contact_get_avatar_token (contact));
+    _tpl_contact_set_avatar_token (ret, tp_contact_get_avatar_token (contact));
 
   /* set contact type to TPL_CONTACT_USER by default, the client need to set
    * it to TPL_CONTACT_SELF in case the contact is actually the account's
    * owner */
-  tpl_contact_set_contact_type (ret, TPL_CONTACT_USER);
+  _tpl_contact_set_contact_type (ret, TPL_CONTACT_USER);
 
   DEBUG ("ID: %s, TOK: %s", tpl_contact_get_identifier (ret),
       tpl_contact_get_avatar_token (ret));
@@ -276,7 +276,7 @@ tpl_contact_get_avatar_token (TplContact *self)
 
 
 void
-tpl_contact_set_alias (TplContact *self,
+_tpl_contact_set_alias (TplContact *self,
     const gchar *data)
 {
   g_return_if_fail (TPL_IS_CONTACT (self));
@@ -288,7 +288,7 @@ tpl_contact_set_alias (TplContact *self,
 
 
 void
-tpl_contact_set_identifier (TplContact *self,
+_tpl_contact_set_identifier (TplContact *self,
     const gchar *data)
 {
   g_return_if_fail (TPL_IS_CONTACT (self));
@@ -313,7 +313,7 @@ tpl_contact_set_identifier (TplContact *self,
  * @see #TplContactType
  */
 void
-tpl_contact_set_contact_type (TplContact *self,
+_tpl_contact_set_contact_type (TplContact *self,
     TplContactType data)
 {
   g_return_if_fail (TPL_IS_CONTACT (self));
@@ -323,7 +323,7 @@ tpl_contact_set_contact_type (TplContact *self,
 
 
 void
-tpl_contact_set_avatar_token (TplContact *self,
+_tpl_contact_set_avatar_token (TplContact *self,
     const gchar *data)
 {
   g_return_if_fail (TPL_IS_CONTACT (self));

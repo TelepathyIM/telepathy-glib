@@ -77,10 +77,5 @@ const gchar *tpl_contact_get_identifier (TplContact *self);
 TplContactType tpl_contact_get_contact_type (TplContact *self);
 const gchar *tpl_contact_get_avatar_token (TplContact *self);
 
-void tpl_contact_set_alias (TplContact *self, const gchar *data);
-void tpl_contact_set_identifier (TplContact *self, const gchar *data);
-void tpl_contact_set_contact_type (TplContact *self, TplContactType data);
-void tpl_contact_set_avatar_token (TplContact *self, const gchar *data);
-
 G_END_DECLS
 #endif // __TPL_CONTACT_H__

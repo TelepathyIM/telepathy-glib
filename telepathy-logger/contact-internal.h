@@ -40,5 +40,17 @@ typedef struct
 TplContact *_tpl_contact_from_tp_contact (TpContact *contact);
 TplContact *_tpl_contact_new (const gchar *identifier);
 
+void _tpl_contact_set_alias (TplContact *self,
+    const gchar *data);
+
+void _tpl_contact_set_identifier (TplContact *self,
+    const gchar *data);
+
+void _tpl_contact_set_contact_type (TplContact *self,
+    TplContactType data);
+
+void _tpl_contact_set_avatar_token (TplContact *self,
+    const gchar *data);
+
 G_END_DECLS
 #endif // __TPL_CONTACT_INTERNAL_H__

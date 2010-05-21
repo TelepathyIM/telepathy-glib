@@ -829,8 +829,8 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
       t = _tpl_time_parse (time_);
 
       sender = _tpl_contact_new (sender_id);
-      tpl_contact_set_alias (sender, sender_name);
-      tpl_contact_set_avatar_token (sender, sender_avatar_token);
+      _tpl_contact_set_alias (sender, sender_name);
+      _tpl_contact_set_avatar_token (sender, sender_avatar_token);
 
       if (self->priv->empathy_legacy)
         {
