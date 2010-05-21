@@ -33,12 +33,9 @@ G_BEGIN_DECLS
 
 /* Forward declaration because it's in the HandleRepo API */
 
-/**
- * TpHandleSet:
- *
- * A set of handles. This is similar to a #TpIntSet (and implemented using
- * one), but adding a handle to the set also references it.
- */
+#define TP_TYPE_HANDLE_SET (tp_handle_set_get_type ())
+GType tp_handle_set_get_type (void);
+
 typedef struct _TpHandleSet TpHandleSet;
 
 /* Handle repository abstract interface */

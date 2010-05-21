@@ -198,8 +198,10 @@ TP_IS_HANDLE_REPO_IFACE
 TP_TYPE_HANDLE_REPO_IFACE
 tp_handle_repo_iface_get_type
 TP_HANDLE_REPO_IFACE_GET_CLASS
+tp_handle_set_get_type
 <SUBSECTION>
 TpHandleSet
+TP_TYPE_HANDLE_SET
 TpHandleSetMemberFunc
 tp_handle_set_new
 tp_handle_set_copy

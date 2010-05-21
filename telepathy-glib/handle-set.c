@@ -29,11 +29,41 @@
 
 #include <telepathy-glib/intset.h>
 
+/**
+ * TpHandleSet:
+ *
+ * A set of handles. This is similar to a #TpIntSet (and implemented using
+ * one), but adding a handle to the set also references it.
+ */
 struct _TpHandleSet
 {
   TpHandleRepoIface *repo;
   TpIntSet *intset;
 };
+
+/**
+ * TP_TYPE_HANDLE_SET:
+ *
+ * The boxed type of a #TpHandleSet.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GType
+tp_handle_set_get_type (void)
+{
+  static GType type = 0;
+
+  if (G_UNLIKELY (type == 0))
+    {
+      type = g_boxed_type_register_static (
+          g_intern_static_string ("TpHandleSet"),
+          (GBoxedCopyFunc) tp_handle_set_copy,
+          (GBoxedFreeFunc) tp_handle_set_destroy);
+    }
+
+  return type;
+}
 
 /**
  * tp_handle_set_new:
