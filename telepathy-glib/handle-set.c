@@ -29,11 +29,41 @@
 
 #include <telepathy-glib/intset.h>
 
+/**
+ * TpHandleSet:
+ *
+ * A set of handles. This is similar to a #TpIntSet (and implemented using
+ * one), but adding a handle to the set also references it.
+ */
 struct _TpHandleSet
 {
   TpHandleRepoIface *repo;
   TpIntSet *intset;
 };
+
+/**
+ * TP_TYPE_HANDLE_SET:
+ *
+ * The boxed type of a #TpHandleSet.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GType
+tp_handle_set_get_type (void)
+{
+  static GType type = 0;
+
+  if (G_UNLIKELY (type == 0))
+    {
+      type = g_boxed_type_register_static (
+          g_intern_static_string ("TpHandleSet"),
+          (GBoxedCopyFunc) tp_handle_set_copy,
+          (GBoxedFreeFunc) tp_handle_set_destroy);
+    }
+
+  return type;
+}
 
 /**
  * tp_handle_set_new:
@@ -74,6 +104,38 @@ tp_handle_set_destroy (TpHandleSet *set)
   tp_handle_set_foreach (set, freer, NULL);
   tp_intset_destroy (set->intset);
   g_slice_free (TpHandleSet, set);
+}
+
+/**
+ * tp_handle_set_clear:
+ * @set:#TpHandleSet to clear
+ *
+ * Remove every handle from @set, releasing the references it holds.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_handle_set_clear (TpHandleSet *set)
+{
+  tp_handle_set_foreach (set, freer, NULL);
+  g_assert (tp_handle_set_is_empty (set));
+}
+
+/**
+ * tp_handle_set_is_empty:
+ * @set:#TpHandleSet to check
+ *
+ * Return the same thing as <code>(tp_handle_set_size (set) == 0)</code>,
+ * but calculated more efficiently.
+ *
+ * Returns: %TRUE if the set has no members
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_handle_set_is_empty (const TpHandleSet *set)
+{
+  return tp_intset_is_empty (set->intset);
 }
 
 /**
@@ -150,7 +212,8 @@ tp_handle_set_remove (TpHandleSet *set, TpHandle handle)
  *
  */
 gboolean
-tp_handle_set_is_member (TpHandleSet *set, TpHandle handle)
+tp_handle_set_is_member (const TpHandleSet *set,
+    TpHandle handle)
 {
   return tp_intset_is_member (set->intset, handle);
 }
@@ -198,7 +261,7 @@ tp_handle_set_foreach (TpHandleSet *set, TpHandleSetMemberFunc func,
  * Returns: the number of handles in this set
  */
 int
-tp_handle_set_size (TpHandleSet *set)
+tp_handle_set_size (const TpHandleSet *set)
 {
   return tp_intset_size (set->intset);
 }
@@ -213,7 +276,7 @@ tp_handle_set_size (TpHandleSet *set)
  * in the set
  */
 GArray *
-tp_handle_set_to_array (TpHandleSet *set)
+tp_handle_set_to_array (const TpHandleSet *set)
 {
   g_return_val_if_fail (set != NULL, NULL);
 
@@ -225,6 +288,30 @@ ref_one (guint handle, gpointer data)
 {
   TpHandleSet *set = (TpHandleSet *) data;
   tp_handle_ref (set->repo, handle);
+}
+
+/**
+ * tp_handle_set_copy:
+ * @other: another handle set
+ *
+ * Creates a new #TpHandleSet with the same contents as @other.
+ *
+ * Returns: a new set
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpHandleSet *
+tp_handle_set_copy (const TpHandleSet *other)
+{
+  TpHandleSet *set;
+
+  g_return_val_if_fail (other != NULL, NULL);
+
+  set = g_slice_new0 (TpHandleSet);
+  set->repo = other->repo;
+  set->intset = tp_intset_copy (other->intset);
+  tp_intset_foreach (set->intset, ref_one, set);
+  return set;
 }
 
 /**

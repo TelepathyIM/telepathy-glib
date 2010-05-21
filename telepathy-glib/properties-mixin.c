@@ -877,8 +877,9 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntSet *props)
       G_OBJECT_GET_CLASS (obj));
   GPtrArray *prop_arr;
   GValue prop_list = { 0, };
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (props);
+  TpIntSetFastIter iter;
   guint len = tp_intset_size (props);
+  guint prop_id;
 
   if (len == 0)
     {
@@ -892,10 +893,11 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntSet *props)
             "%s: emitting properties changed for propert%s:\n",
             G_STRFUNC, (len > 1) ? "ies" : "y");
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, props);
+
+  while (tp_intset_fast_iter_next (&iter, &prop_id))
     {
       GValue prop_val = { 0, };
-      guint prop_id = iter.element;
 
       g_value_init (&prop_val, TP_STRUCT_TYPE_PROPERTY_VALUE);
       g_value_take_boxed (&prop_val,
@@ -944,8 +946,9 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntSet *props)
       G_OBJECT_GET_CLASS (obj));
   GPtrArray *prop_arr;
   GValue prop_list = { 0, };
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (props);
+  TpIntSetFastIter iter;
   guint len = tp_intset_size (props);
+  guint prop_id;
 
   if (len == 0)
     {
@@ -959,10 +962,11 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntSet *props)
             "%s: emitting properties flags changed for propert%s:\n",
             G_STRFUNC, (len > 1) ? "ies" : "y");
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, props);
+
+  while (tp_intset_fast_iter_next (&iter, &prop_id))
     {
       GValue prop_val = { 0, };
-      guint prop_id = iter.element;
       guint prop_flags;
 
       prop_flags = mixin->properties[prop_id].flags;

@@ -360,7 +360,7 @@ receive_contact_lists (gpointer p)
   TpHandle handle, cambridge, montreal, francophones;
   ExampleContactDetails *d;
   TpIntSet *set, *cam_set, *mtl_set, *fr_set;
-  TpIntSetIter iter;
+  TpIntSetFastIter iter;
   ExampleContactList *subscribe, *publish, *stored;
   ExampleContactGroup *cambridge_group, *montreal_group,
       *francophones_group;
@@ -462,12 +462,12 @@ receive_contact_lists (gpointer p)
       set, NULL, NULL, NULL,
       0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
-  tp_intset_iter_init (&iter, set);
+  tp_intset_fast_iter_init (&iter, set);
 
-  while (tp_intset_iter_next (&iter))
+  while (tp_intset_fast_iter_next (&iter, &handle))
     {
-      g_signal_emit (self, signals[ALIAS_UPDATED], 0, iter.element);
-      g_signal_emit (self, signals[PRESENCE_UPDATED], 0, iter.element);
+      g_signal_emit (self, signals[ALIAS_UPDATED], 0, handle);
+      g_signal_emit (self, signals[PRESENCE_UPDATED], 0, handle);
     }
 
   tp_intset_destroy (set);
@@ -510,12 +510,12 @@ receive_contact_lists (gpointer p)
       NULL, NULL, NULL, set,
       0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
-  tp_intset_iter_init (&iter, set);
+  tp_intset_fast_iter_init (&iter, set);
 
-  while (tp_intset_iter_next (&iter))
+  while (tp_intset_fast_iter_next (&iter, &handle))
     {
-      g_signal_emit (self, signals[ALIAS_UPDATED], 0, iter.element);
-      g_signal_emit (self, signals[PRESENCE_UPDATED], 0, iter.element);
+      g_signal_emit (self, signals[ALIAS_UPDATED], 0, handle);
+      g_signal_emit (self, signals[PRESENCE_UPDATED], 0, handle);
     }
 
   tp_intset_destroy (set);
@@ -1000,12 +1000,15 @@ send_updated_roster (ExampleContactListManager *self,
       else
         {
           TpIntSet *set = tp_handle_set_peek (d->tags);
-          TpIntSetIter iter = TP_INTSET_ITER_INIT (set);
+          TpIntSetFastIter iter;
+          TpHandle member;
 
-          while (tp_intset_iter_next (&iter))
+          tp_intset_fast_iter_init (&iter, set);
+
+          while (tp_intset_fast_iter_next (&iter, &member))
             {
               g_message ("\tin group: %s",
-                  tp_handle_inspect (self->priv->group_repo, iter.element));
+                  tp_handle_inspect (self->priv->group_repo, member));
             }
         }
     }

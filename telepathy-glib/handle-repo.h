@@ -33,12 +33,9 @@ G_BEGIN_DECLS
 
 /* Forward declaration because it's in the HandleRepo API */
 
-/**
- * TpHandleSet:
- *
- * A set of handles. This is similar to a #TpIntSet (and implemented using
- * one), but adding a handle to the set also references it.
- */
+#define TP_TYPE_HANDLE_SET (tp_handle_set_get_type ())
+GType tp_handle_set_get_type (void);
+
 typedef struct _TpHandleSet TpHandleSet;
 
 /* Handle repository abstract interface */
@@ -125,19 +122,24 @@ typedef void (*TpHandleSetMemberFunc)(TpHandleSet *set, TpHandle handle,
 
 TpHandleSet * tp_handle_set_new (TpHandleRepoIface *repo)
   G_GNUC_WARN_UNUSED_RESULT;
+TpHandleSet *tp_handle_set_copy (const TpHandleSet *other)
+  G_GNUC_WARN_UNUSED_RESULT;
+void tp_handle_set_clear (TpHandleSet *set);
 void tp_handle_set_destroy (TpHandleSet *set);
 
 TpIntSet *tp_handle_set_peek (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_handle_set_add (TpHandleSet *set, TpHandle handle);
 gboolean tp_handle_set_remove (TpHandleSet *set, TpHandle handle);
-gboolean tp_handle_set_is_member (TpHandleSet *set, TpHandle handle);
+gboolean tp_handle_set_is_member (const TpHandleSet *set, TpHandle handle);
 
 void tp_handle_set_foreach (TpHandleSet *set, TpHandleSetMemberFunc func,
     gpointer userdata);
 
-int tp_handle_set_size (TpHandleSet *set);
-GArray *tp_handle_set_to_array (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
+gboolean tp_handle_set_is_empty (const TpHandleSet *set);
+int tp_handle_set_size (const TpHandleSet *set);
+GArray *tp_handle_set_to_array (const TpHandleSet *set)
+  G_GNUC_WARN_UNUSED_RESULT;
 
 TpIntSet *tp_handle_set_update (TpHandleSet *set, const TpIntSet *add)
   G_GNUC_WARN_UNUSED_RESULT;
