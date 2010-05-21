@@ -60,15 +60,16 @@ channel_ready_cb (TpChannel *channel,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
     {
       const TpIntSet *members = tp_channel_group_get_members (channel);
-      TpIntSetIter group_iter;
+      TpIntSetFastIter group_iter;
+      TpHandle member;
 
       printf ("Group members:\n");
 
-      tp_intset_iter_init (&group_iter, members);
+      tp_intset_fast_iter_init (&group_iter, members);
 
-      while (tp_intset_iter_next (&group_iter))
+      while (tp_intset_fast_iter_next (&group_iter, &member))
         {
-          printf ("\tcontact #%u\n", group_iter.element);
+          printf ("\tcontact #%u\n", member);
         }
     }
 
