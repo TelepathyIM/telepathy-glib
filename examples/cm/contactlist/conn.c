@@ -38,12 +38,14 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
 enum
 {
   PROP_ACCOUNT = 1,
+  PROP_SIMULATION_DELAY,
   N_PROPS
 };
 
 struct _ExampleContactListConnectionPrivate
 {
   gchar *account;
+  guint simulation_delay;
   ExampleContactListManager *list_manager;
   gboolean away;
 };
@@ -71,6 +73,10 @@ get_property (GObject *object,
       g_value_set_string (value, self->priv->account);
       break;
 
+    case PROP_SIMULATION_DELAY:
+      g_value_set_uint (value, self->priv->simulation_delay);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
     }
@@ -90,6 +96,10 @@ set_property (GObject *object,
     case PROP_ACCOUNT:
       g_free (self->priv->account);
       self->priv->account = g_value_dup_string (value);
+      break;
+
+    case PROP_SIMULATION_DELAY:
+      self->priv->simulation_delay = g_value_get_uint (value);
       break;
 
     default:
@@ -221,6 +231,7 @@ create_channel_managers (TpBaseConnection *conn)
     EXAMPLE_CONTACT_LIST_MANAGER (g_object_new (
           EXAMPLE_TYPE_CONTACT_LIST_MANAGER,
           "connection", conn,
+          "simulation-delay", self->priv->simulation_delay,
           NULL));
 
   g_signal_connect (self->priv->list_manager, "alias-updated",
@@ -430,6 +441,13 @@ example_contact_list_connection_class_init (
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+
+  param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
+      "Delay between simulated network events",
+      0, G_MAXUINT32, 1000,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
+      param_spec);
 
   tp_contacts_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleContactListConnectionClass, contacts_mixin));

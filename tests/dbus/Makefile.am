@@ -18,6 +18,7 @@ noinst_PROGRAMS = \
     test-connection-handles \
     test-connection-inject-bug16307 \
     test-connection-getinterfaces-failure \
+    test-contact-lists \
     test-contacts \
     test-contacts-bug-19101 \
     test-contacts-mixin \
@@ -88,6 +89,11 @@ test_cm_LDADD = \
     $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
 
 test_connection_SOURCES = connection.c
+
+test_contact_lists_SOURCES = contact-lists.c
+test_contact_lists_LDADD = \
+    $(LDADD) \
+    $(top_builddir)/examples/cm/contactlist/libexample-cm-contactlist.la
 
 test_connection_bug_18845_SOURCES = connection-bug-18845.c
 

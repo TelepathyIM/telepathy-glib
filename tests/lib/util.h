@@ -24,6 +24,12 @@ void test_proxy_run_until_dbus_queue_processed (gpointer proxy);
 TpHandle test_connection_run_request_contact_handle (TpConnection *connection,
     const gchar *id);
 
+void test_proxy_run_until_prepared (gpointer proxy,
+    const GQuark *features);
+gboolean test_proxy_run_until_prepared_or_failed (gpointer proxy,
+    const GQuark *features,
+    GError **error);
+
 void test_connection_run_until_ready (TpConnection *conn);
 void test_connection_manager_run_until_ready (TpConnectionManager *cm);
 void test_connection_manager_run_until_readying_fails (TpConnectionManager *cm,

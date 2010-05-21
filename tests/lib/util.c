@@ -10,6 +10,43 @@
 
 #include "tests/lib/util.h"
 
+void
+test_proxy_run_until_prepared (gpointer proxy,
+    const GQuark *features)
+{
+  GError *error = NULL;
+
+  test_proxy_run_until_prepared_or_failed (proxy, features, &error);
+  g_assert_no_error (error);
+}
+
+static void
+prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  GAsyncResult **result = user_data;
+
+  *result = g_object_ref (res);
+}
+
+gboolean
+test_proxy_run_until_prepared_or_failed (gpointer proxy,
+    const GQuark *features,
+    GError **error)
+{
+  GAsyncResult *result = NULL;
+
+  tp_proxy_prepare_async (proxy, features, prepared_cb, &result);
+  /* not synchronous */
+  g_assert (result == NULL);
+
+  while (result == NULL)
+    g_main_context_iteration (NULL, TRUE);
+
+  return tp_proxy_prepare_finish (proxy, result, error);
+}
+
 static void
 conn_ready_cb (TpConnection *conn G_GNUC_UNUSED,
     const GError *error,
