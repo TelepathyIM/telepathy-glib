@@ -720,11 +720,8 @@ tp_group_mixin_remove_members_with_reason (GObject *obj,
         {
           DEBUG ("handle %u is not a current or pending member",
                    handle);
-
-          g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "handle %u is not a current or pending member", handle);
-
-          return FALSE;
+          /* skip this handle during the second pass */
+          g_array_index (contacts, TpHandle, i) = 0;
         }
     }
 
@@ -732,6 +729,9 @@ tp_group_mixin_remove_members_with_reason (GObject *obj,
   for (i = 0; i < contacts->len; i++)
     {
       handle = g_array_index (contacts, TpHandle, i);
+
+      if (handle == 0)
+        continue;
 
       if (mixin_cls->priv->remove_with_reason != NULL)
         {
