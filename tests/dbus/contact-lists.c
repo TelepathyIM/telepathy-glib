@@ -331,8 +331,8 @@ test_add_to_publish_no_op (Test *test,
 {
   GError *error = NULL;
 
-  /* Adding a member to the publish channel when they're already there probably
-   * ought to be valid, but at the moment the group mixin disallows it. */
+  /* Adding a member to the publish channel when they're already there is
+   * valid. */
 
   test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
 
@@ -343,8 +343,7 @@ test_add_to_publish_no_op (Test *test,
   g_array_append_val (test->arr, test->sjoerd);
   tp_cli_channel_interface_group_run_add_members (test->publish,
       -1, test->arr, "", &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED);
-  g_clear_error (&error);
+  g_assert_no_error (error);
 
   g_assert (tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
