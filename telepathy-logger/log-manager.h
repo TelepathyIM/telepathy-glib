@@ -147,8 +147,9 @@ void tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manage
 GList *tpl_log_manager_search_new (TplLogManager *manager,
     const gchar *text);
 
-GList *tpl_log_manager_search_new_finish (TplLogManager *self,
+gboolean tpl_log_manager_search_new_finish (TplLogManager *self,
     GAsyncResult *result,
+    GList **chats,
     GError **error);
 
 void tpl_log_manager_search_new_async (TplLogManager *manager,
