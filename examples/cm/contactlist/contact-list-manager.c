@@ -526,7 +526,7 @@ receive_contact_lists (gpointer p)
       NULL, NULL, NULL, set,
       0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_group_mixin_change_members ((GObject *) stored, "",
-      NULL, NULL, NULL, set,
+      set, NULL, NULL, NULL,
       0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   tp_intset_fast_iter_init (&iter, set);
@@ -1178,6 +1178,8 @@ receive_authorized (gpointer p)
   TpIntSet *set;
   ExampleContactList *subscribe = s->self->priv->lists[
     EXAMPLE_CONTACT_LIST_SUBSCRIBE];
+  ExampleContactList *stored = s->self->priv->lists[
+    EXAMPLE_CONTACT_LIST_STORED];
 
   /* A remote contact has accepted our request to see their presence.
    *
@@ -1198,6 +1200,9 @@ receive_authorized (gpointer p)
 
   set = tp_intset_new_containing (s->contact);
   tp_group_mixin_change_members ((GObject *) subscribe, "",
+      set, NULL, NULL, NULL,
+      s->contact, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_group_mixin_change_members ((GObject *) stored, "",
       set, NULL, NULL, NULL,
       s->contact, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (set);
@@ -1265,6 +1270,7 @@ example_contact_list_manager_add_to_list (ExampleContactListManager *self,
                                           GError **error)
 {
   TpIntSet *set;
+  ExampleContactList *stored = self->priv->lists[EXAMPLE_CONTACT_LIST_STORED];
 
   switch (list)
     {
@@ -1293,6 +1299,11 @@ example_contact_list_manager_add_to_list (ExampleContactListManager *self,
           set = tp_intset_new_containing (member);
           tp_group_mixin_change_members (channel, message,
               NULL, NULL, NULL, set,
+              self->priv->conn->self_handle,
+              TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+          /* subscribing to someone implicitly puts them on Stored, too */
+          tp_group_mixin_change_members ((GObject *) stored, "",
+              set, NULL, NULL, NULL,
               self->priv->conn->self_handle,
               TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
           tp_intset_destroy (set);

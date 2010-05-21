@@ -216,13 +216,13 @@ test_initial_channels (Test *test,
         test->helen));
 
   g_assert_cmpuint (
-      tp_intset_size (tp_channel_group_get_members (test->stored)), ==, 4);
+      tp_intset_size (tp_channel_group_get_members (test->stored)), ==, 6);
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_local_pending (test->stored)),
       ==, 0);
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_remote_pending (test->stored)),
-      ==, 2);
+      ==, 0);
   g_assert (tp_intset_is_member (tp_channel_group_get_members (test->stored),
         test->sjoerd));
 
@@ -425,7 +425,7 @@ test_add_to_stored (Test *test,
 
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->stored)),
-      ==, 4);
+      ==, 6);
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->stored),
         test->ninja));
@@ -439,7 +439,7 @@ test_add_to_stored (Test *test,
    * change-notification, too */
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->stored)),
-      ==, 5);
+      ==, 7);
   g_assert (tp_intset_is_member (
         tp_channel_group_get_members (test->stored),
         test->ninja));
@@ -462,7 +462,7 @@ test_add_to_stored_no_op (Test *test,
 
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->stored)),
-      ==, 4);
+      ==, 6);
   g_assert (tp_intset_is_member (
         tp_channel_group_get_members (test->stored),
         test->sjoerd));
@@ -516,7 +516,7 @@ test_remove_from_stored_no_op (Test *test,
 
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->stored)),
-      ==, 4);
+      ==, 6);
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->stored),
         test->ninja));
