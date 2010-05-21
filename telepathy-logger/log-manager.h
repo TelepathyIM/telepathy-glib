@@ -111,8 +111,9 @@ GList *tpl_log_manager_get_filtered_messages (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
     guint num_messages, TplLogMessageFilter filter, gpointer user_data);
 
-GList *tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
+gboolean tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
     GAsyncResult *result,
+    GList **messages,
     GError **error);
 
 void tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
