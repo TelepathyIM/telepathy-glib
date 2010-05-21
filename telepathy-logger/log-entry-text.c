@@ -296,7 +296,7 @@ tpl_log_entry_text_set_message (TplLogEntryText *self,
   TplLogEntryTextPriv *priv;
 
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
-  g_return_if_fail (data != NULL); /* allow zero lenght */
+  g_return_if_fail (data != NULL); /* allow zero length */
 
   priv = self->priv;
 
