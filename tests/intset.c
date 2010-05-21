@@ -15,6 +15,9 @@ int main (int argc, char **argv)
 
   g_type_init ();
 
+  g_assert (tp_intset_is_empty (set1));
+  g_assert_cmpuint (tp_intset_size (set1), ==, 0);
+
   tp_intset_add (set1, 0);
 
   tp_intset_add (set1, 2);
@@ -25,6 +28,7 @@ int main (int argc, char **argv)
   tp_intset_add (set1, 1024);
   tp_intset_add (set1, 32);
 
+  g_assert (!tp_intset_is_empty (set1));
   g_assert_cmpuint (tp_intset_size (set1), ==, 7);
 
   g_assert (tp_intset_is_member (set1, 2));

@@ -460,6 +460,23 @@ tp_intset_size (const TpIntSet *set)
   return count;
 }
 
+/**
+ * tp_intset_is_empty:
+ * @set: a set of integers
+ *
+ * Return the same thing as <code>(tp_intset_size (set) == 0)</code>,
+ * but calculated more efficiently.
+ *
+ * Returns: %TRUE if @set is empty
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_intset_is_empty (const TpIntSet *set)
+{
+  g_return_val_if_fail (set != NULL, TRUE);
+  return (g_hash_table_size (set->table) == 0);
+}
 
 /**
  * tp_intset_is_equal:
