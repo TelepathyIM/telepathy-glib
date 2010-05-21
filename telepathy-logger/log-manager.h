@@ -134,9 +134,11 @@ void tpl_log_manager_get_chats_async (TplLogManager *manager,
 GList *tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
     TpAccount *account, gchar const *chat_id, const gchar *text);
 
-GList *tpl_log_manager_search_in_identifier_chats_new_finish (
+gboolean tpl_log_manager_search_in_identifier_chats_new_finish (
     TplLogManager *self,
-    GAsyncResult *result, GError **error);
+    GAsyncResult *result,
+    GList **chats,
+    GError **error);
 
 void tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
     TpAccount *account, gchar const *chat_id, const gchar *text,

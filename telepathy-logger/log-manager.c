@@ -1282,17 +1282,30 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
 /* End of get_chats async implementation */
 
 /* Start of tpl_log_manager_search_in_identifier_chats_new async implementation */
-GList *
+gboolean
 tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
     GAsyncResult *result,
+    GList **chats,
     GError **error)
 {
-  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+  GSimpleAsyncResult *simple;
 
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-  return g_simple_async_result_get_op_res_gpointer (simple);
+  g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (self), tpl_log_manager_search_in_identifier_chats_new_finish),
+      FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  if (chats != NULL)
+    *chats = g_simple_async_result_get_op_res_gpointer (simple);
+
+  return TRUE;
 }
-
 
 static void
 _search_in_identifier_chats_new_async_result_free (gpointer data)
