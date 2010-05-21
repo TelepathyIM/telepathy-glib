@@ -3,6 +3,12 @@ telepathy-glib 0.10.6 (UNRELEASED)
 
 Fixes:
 
+* TpGroupMixin: allow "adding" contacts who are already members, even if the
+  Can_Add flag isn't set (e.g. accepting a subscription request twice) (smcv)
+
+* TpGroupMixin: allow "removing" contacts who are not in the channel
+  (e.g. rejecting a subscription request twice) (smcv)
+
 * Correct the syntax of TP_IS_HANDLE_REPO_IFACE (smcv)
 
 telepathy-glib 0.10.5 (2010-04-28)
