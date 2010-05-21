@@ -555,6 +555,7 @@ tp_group_mixin_add_members (GObject *obj,
       handle = g_array_index (contacts, TpHandle, i);
 
       if ((mixin->group_flags & TP_CHANNEL_GROUP_FLAG_CAN_ADD) == 0 &&
+          !tp_handle_set_is_member (mixin->members, handle) &&
           !tp_handle_set_is_member (mixin->local_pending, handle))
         {
           DEBUG ("handle %u cannot be added to members without "
