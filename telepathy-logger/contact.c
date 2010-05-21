@@ -202,7 +202,7 @@ tpl_contact_from_room_id (const gchar *chatroom_id)
 {
   TplContact *ret;
 
-  g_return_val_if_fail (!TPL_STR_EMPTY (chatroom_id), NULL);
+  g_return_val_if_fail (chatroom_id != NULL, NULL);
 
   ret = tpl_contact_new (chatroom_id);
   tpl_contact_set_alias (ret, chatroom_id);
