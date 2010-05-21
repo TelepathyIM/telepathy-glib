@@ -668,7 +668,10 @@ _tp_channel_emit_initial_sets (TpChannel *self)
 {
   GArray *added, *remote_pending;
   GArray empty_array = { NULL, 0 };
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (self->priv->group_local_pending);
+  TpIntSetFastIter iter;
+  TpHandle handle;
+
+  tp_intset_fast_iter_init (&iter, self->priv->group_local_pending);
 
   added = tp_intset_to_array (self->priv->group_members);
   remote_pending = tp_intset_to_array (self->priv->group_remote_pending);
@@ -676,15 +679,13 @@ _tp_channel_emit_initial_sets (TpChannel *self)
   g_signal_emit_by_name (self, "group-members-changed", "",
       added, &empty_array, &empty_array, remote_pending, 0, 0);
 
-  while (tp_intset_iter_next (&iter))
+  while (tp_intset_fast_iter_next (&iter, &handle))
     {
-      TpHandle handle;
       GArray local_pending = { (gchar *) &handle, 1 };
       TpHandle actor;
       TpChannelGroupChangeReason reason;
       const gchar *message;
 
-      handle = iter.element;
       tp_channel_group_get_local_pending_info (self, handle, &actor, &reason,
           &message);
 
