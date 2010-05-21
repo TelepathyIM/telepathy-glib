@@ -555,6 +555,9 @@ receive_contact_lists (gpointer p)
       "I'm more metal than you!",
       NULL, NULL, set, NULL,
       handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_group_mixin_change_members ((GObject *) stored, "",
+      set, NULL, NULL, NULL,
+      handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (set);
   g_signal_emit (self, signals[ALIAS_UPDATED], 0, handle);
   g_signal_emit (self, signals[PRESENCE_UPDATED], 0, handle);
@@ -571,6 +574,9 @@ receive_contact_lists (gpointer p)
   tp_group_mixin_change_members ((GObject *) publish,
       "I have some fermented herring for you",
       NULL, NULL, set, NULL,
+      handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_group_mixin_change_members ((GObject *) stored, "",
+      set, NULL, NULL, NULL,
       handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (set);
   g_signal_emit (self, signals[ALIAS_UPDATED], 0, handle);
@@ -1142,6 +1148,8 @@ receive_auth_request (ExampleContactListManager *self,
   TpIntSet *set;
   ExampleContactList *publish = self->priv->lists[
     EXAMPLE_CONTACT_LIST_PUBLISH];
+  ExampleContactList *stored = self->priv->lists[
+    EXAMPLE_CONTACT_LIST_STORED];
 
   /* if shutting down, do nothing */
   if (publish == NULL)
@@ -1166,6 +1174,9 @@ receive_auth_request (ExampleContactListManager *self,
   tp_group_mixin_change_members ((GObject *) publish,
       "May I see your presence, please?",
       NULL, NULL, set, NULL,
+      contact, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_group_mixin_change_members ((GObject *) stored, "",
+      set, NULL, NULL, NULL,
       contact, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (set);
 }
@@ -1358,6 +1369,10 @@ example_contact_list_manager_add_to_list (ExampleContactListManager *self,
 
               set = tp_intset_new_containing (member);
               tp_group_mixin_change_members (channel, "",
+                  set, NULL, NULL, NULL,
+                  self->priv->conn->self_handle,
+                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+              tp_group_mixin_change_members ((GObject *) stored, "",
                   set, NULL, NULL, NULL,
                   self->priv->conn->self_handle,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
