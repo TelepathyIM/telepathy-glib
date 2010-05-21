@@ -1,15 +1,29 @@
 telepathy-glib 0.11.6 (UNRELEASED)
 ==================================
 
+Enhancements:
+
+* fd.o #20035: add TP_CONTACT_FEATURE_AVATAR_DATA, the ability to cache and
+  access avatar data (Zdra)
+
+* fd.o #16170: cope better with sparse TpIntSets (smcv)
+
+* Add more API for int sets and handle sets (smcv)
+
+* Make the ContactList example connection manager more realistic, and add a
+  regression test for it (smcv)
+
 Fixes:
 
-* TpGroupMixin: allow "adding" contacts who are already members, even if the
-  Can_Add flag isn't set (e.g. accepting a subscription request twice) (smcv)
-
-* TpGroupMixin: allow "removing" contacts who are not in the channel
+* fd.o #28203: TpGroupMixin: allow "adding" contacts who are already members,
+  even if the Can_Add flag isn't set (e.g. accepting a subscription request
+  twice), and allow "removing" contacts who are not in the channel
   (e.g. rejecting a subscription request twice) (smcv)
 
 * Correct the syntax of TP_IS_HANDLE_REPO_IFACE (smcv)
+
+* Move _tp_proxy_set_features_failed (which isn't intended to be API, and
+  isn't ABI) to an internal header (smcv)
 
 telepathy-glib 0.11.5 (2010-05-10)
 ==================================
