@@ -41,7 +41,7 @@ G_BEGIN_DECLS
  * the the account's owner for which @TPL_CONTACT_SELF is used
  * @TPL_CONTACT_GROUP: a named chatroom (#TP_HANDLE_TYPE_ROOM)
  * @TPL_CONTACT_SELF: the contact's type represents the owner of the account
- * whose channel has been logged, as opposite to @TPL_CONTACT_USER which
+ * whose channel has been logged, as opposed to @TPL_CONTACT_USER which
  * represents any other user
  */
 typedef enum
