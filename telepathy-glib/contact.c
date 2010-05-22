@@ -322,7 +322,7 @@ tp_contact_get_avatar_token (TpContact *self)
  * is re-entered; if the caller requires a #GFile that will persist for
  * longer than that, it must be reffed with g_object_ref().
  *
- * Returns: the same #GFile as the #TpContact:avatar-file property
+ * Returns: (transfer none): the same #GFile as the #TpContact:avatar-file property
  *  (possibly %NULL)
  *
  * Since: 0.11.UNRELEASED
