@@ -194,7 +194,7 @@ tp_handle_channels_context_get_property (GObject *object,
         break;
 
       case PROP_USER_ACTION_TIME:
-        g_value_set_uint64 (value, self->user_action_time);
+        g_value_set_int64 (value, self->user_action_time);
         break;
 
       case PROP_HANDLER_INFO:
@@ -238,7 +238,7 @@ tp_handle_channels_context_set_property (GObject *object,
         break;
 
       case PROP_USER_ACTION_TIME:
-        self->user_action_time = g_value_get_uint64 (value);
+        self->user_action_time = g_value_get_int64 (value);
         break;
 
       case PROP_HANDLER_INFO:
@@ -369,11 +369,16 @@ tp_handle_channels_context_class_init (
    * The User_Action_Time that have been passed to HandleChannels.
    * Read-only except during construction.
    *
-   * This property can't be %NULL.
+   * If 0, the action doesn't involve any user action. Clients
+   * SHOULD avoid stealing focus when presenting the channel.
+   *
+   * If #G_MAXINT64: clients SHOULD behave as though the user
+   * action happened at the current time, e.g. a client MAY
+   * request that its window gains focus.
    *
    * Since: 0.11.UNRELEASED
    */
-  param_spec = g_param_spec_uint64 ("user-action-time",
+  param_spec = g_param_spec_int64 ("user-action-time",
      "User action time",
      "The User_Action_Time that has been passed to HandleChannels",
      0, G_MAXINT64, 0,
