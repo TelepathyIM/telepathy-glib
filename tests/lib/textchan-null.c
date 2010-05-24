@@ -205,6 +205,18 @@ set_property (GObject *object,
     }
 }
 
+void
+test_text_channel_null_close (TestTextChannelNull *self)
+{
+  if (!self->priv->closed)
+    {
+      self->priv->closed = TRUE;
+      tp_svc_channel_emit_closed (self);
+      tp_dbus_daemon_unregister_object (
+          tp_base_connection_get_dbus_daemon (self->priv->conn), self);
+    }
+}
+
 static void
 dispose (GObject *object)
 {
@@ -214,11 +226,7 @@ dispose (GObject *object)
     return;
 
   self->priv->disposed = TRUE;
-
-  if (!self->priv->closed)
-    {
-      tp_svc_channel_emit_closed (self);
-    }
+  test_text_channel_null_close (self);
 
   ((GObjectClass *) test_text_channel_null_parent_class)->dispose (object);
 }
@@ -444,12 +452,7 @@ channel_close (TpSvcChannel *iface,
 {
   TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
 
-  if (!self->priv->closed)
-    {
-      self->priv->closed = TRUE;
-      tp_svc_channel_emit_closed (self);
-    }
-
+  test_text_channel_null_close (self);
   tp_svc_channel_return_from_close (context);
 }
 
