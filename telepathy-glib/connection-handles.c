@@ -535,8 +535,8 @@ request_handles_context_free (gpointer p)
  *  tp_connection_request_handles()
  * @n_handles: the number of IDs that were passed to
  *  tp_connection_request_handles() on success, or 0 on failure
- * @handles: (array length=n_handles): the @n_handles handles corresponding to
- *  @ids, in the same order, or %NULL on failure
+ * @handles: (element-type uint) (array length=n_handles): the @n_handles
+ *  handles corresponding to @ids, in the same order, or %NULL on failure
  * @ids: a copy of the array of @n_handles IDs that was passed to
  *  tp_connection_request_handles() on success, or %NULL on failure
  * @error: %NULL on success, or an error on failure

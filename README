@@ -29,6 +29,7 @@ Building telepathy-glib requires:
   Python <http://www.python.org/>
 
 and can also make use of:
+  GObject-Introspection <http://ftp.gnome.org/pub/GNOME/sources/gobject-introspection/>
   gtkdoc <http://ftp.gnome.org/pub/GNOME/sources/gtk-doc/>
 
 See configure.ac for full details, including versions required.
@@ -42,7 +43,7 @@ Bugs, feature requests and to-do list
 =====================================
 
 Report all bugs, feature requests and "to-do" items here:
-  <https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=telepathy-glib>
+  <https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=tp-glib>
 
 Running "make check" will produce FIXME.out, which lists all the mentions of
 FIXME, TODO or XXX in the source code. Ideally, all of these should be in
@@ -100,7 +101,8 @@ The current development version of telepathy-glib is available from the
 Stable branches are available from branches with names like
 'telepathy-glib-0.6' in the same repository.
 
-Proposed patches awaiting review can usually be found in Merge Monkey:
-  <http://monkey.collabora.co.uk/>
+Proposed patches awaiting review can usually be found in freedesktop.org bugzilla.
+Our review procedure is described by:
+  <http://telepathy.freedesktop.org/wiki/Review%20Procedure>
 
 Please follow <http://telepathy.freedesktop.org/wiki/Style>.

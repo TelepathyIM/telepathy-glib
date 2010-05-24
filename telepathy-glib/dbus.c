@@ -590,7 +590,7 @@ tp_dbus_check_valid_object_path (const gchar *path, GError **error)
 }
 
 /**
- * tp_g_value_slice_new_bytes:
+ * tp_g_value_slice_new_bytes: (skip)
  * @length: number of bytes to copy
  * @bytes: location of an array of bytes to be copied (this may be %NULL
  *  if and only if length is 0)
@@ -621,7 +621,7 @@ tp_g_value_slice_new_bytes (guint length,
 }
 
 /**
- * tp_g_value_slice_new_take_bytes:
+ * tp_g_value_slice_new_take_bytes: (skip)
  * @bytes: a non-NULL #GArray of guchar, ownership of which will be taken by
  *  the #GValue
  *
@@ -643,7 +643,7 @@ tp_g_value_slice_new_take_bytes (GArray *bytes)
 }
 
 /**
- * tp_g_value_slice_new_object_path:
+ * tp_g_value_slice_new_object_path: (skip)
  * @path: a valid D-Bus object path which will be copied
  *
  * Slice-allocate a #GValue containing an object path, using
@@ -663,7 +663,7 @@ tp_g_value_slice_new_object_path (const gchar *path)
 }
 
 /**
- * tp_g_value_slice_new_static_object_path:
+ * tp_g_value_slice_new_static_object_path: (skip)
  * @path: a valid D-Bus object path which must remain valid forever
  *
  * Slice-allocate a #GValue containing an object path, using
@@ -683,7 +683,7 @@ tp_g_value_slice_new_static_object_path (const gchar *path)
 }
 
 /**
- * tp_g_value_slice_new_take_object_path:
+ * tp_g_value_slice_new_take_object_path: (skip)
  * @path: a valid D-Bus object path which will be freed with g_free() by the
  *  returned #GValue (the caller must own it before calling this function, but
  *  no longer owns it after this function returns)
