@@ -160,6 +160,25 @@ struct _TpIntSet
   guint largest_ever;
 };
 
+/*
+ * Update @set's largest_ever member to be at least as large as everything
+ * that could be encoded in the hash table key @key.
+ *
+ * We could use g_bit_nth_msf (value, BITFIELD_BITS) instead of LOW_MASK if we
+ * wanted to get largest_ever exactly right, but we just need something
+ * reasonable to make TpIntSetIter terminate early, and carrying on for up to
+ * BITFIELD_BITS extra iterations isn't a problem.
+ */
+static inline void
+intset_update_largest_ever (TpIntSet *set,
+    gpointer key)
+{
+  guint upper_bound = GPOINTER_TO_UINT (key) | LOW_MASK;
+
+  if (set->largest_ever < upper_bound)
+    set->largest_ever = upper_bound;
+}
+
 /**
  * tp_intset_sized_new:
  * @size: ignored (it was previously 1 more than the largest integer you
@@ -548,6 +567,7 @@ tp_intset_copy (const TpIntSet *orig)
 
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
+      intset_update_largest_ever (ret, key);
       g_hash_table_insert (ret->table, key, value);
     }
 
@@ -581,10 +601,14 @@ tp_intset_intersection (const TpIntSet *left, const TpIntSet *right)
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       gsize v = GPOINTER_TO_SIZE (value);
+
       v &= GPOINTER_TO_SIZE (g_hash_table_lookup (right->table, key));
 
       if (v != 0)
-        g_hash_table_insert (ret->table, key, GSIZE_TO_POINTER (v));
+        {
+          intset_update_largest_ever (ret, key);
+          g_hash_table_insert (ret->table, key, GSIZE_TO_POINTER (v));
+        }
     }
 
   return ret;
@@ -617,6 +641,8 @@ tp_intset_union (const TpIntSet *left, const TpIntSet *right)
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       gsize v = GPOINTER_TO_SIZE (value);
+
+      intset_update_largest_ever (ret, key);
       v |= GPOINTER_TO_SIZE (g_hash_table_lookup (ret->table, key));
       g_hash_table_insert (ret->table, key, GSIZE_TO_POINTER (v));
     }
@@ -655,6 +681,8 @@ tp_intset_difference (const TpIntSet *left, const TpIntSet *right)
     {
       gsize v = GPOINTER_TO_SIZE (value);
       v = (GPOINTER_TO_SIZE (g_hash_table_lookup (ret->table, key))) & ~v;
+
+      /* No need to update largest_ever here - we're only deleting members. */
 
       if (v == 0)
         g_hash_table_remove (ret->table, key);
@@ -696,6 +724,8 @@ tp_intset_symmetric_difference (const TpIntSet *left, const TpIntSet *right)
     {
       gsize v = GPOINTER_TO_SIZE (value);
       v = v ^ GPOINTER_TO_SIZE (g_hash_table_lookup (ret->table, key));
+
+      /* No need to update largest_ever here - we're only deleting members. */
 
       if (v == 0)
         g_hash_table_remove (ret->table, key);
