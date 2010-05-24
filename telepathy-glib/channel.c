@@ -1630,13 +1630,13 @@ tp_channel_class_init (TpChannelClass *klass)
   /**
    * TpChannel::group-members-changed-detailed:
    * @self: a channel
-   * @added: (type GLib.Array) (element-type uint): a #GArray of #guint 
+   * @added: (type GLib.Array) (element-type uint): a #GArray of #guint
    *  containing the full members added
-   * @removed: (type GLib.Array) (element-type uint):  a #GArray of #guint 
+   * @removed: (type GLib.Array) (element-type uint):  a #GArray of #guint
    *  containing the members (full, local-pending or remote-pending) removed
-   * @local_pending: (type GLib.Array) (element-type uint):  a #GArray of 
+   * @local_pending: (type GLib.Array) (element-type uint):  a #GArray of
    *  #guint containing the local-pending members added
-   * @remote_pending: (type GLib.Array) (element-type uint):  a #GArray of 
+   * @remote_pending: (type GLib.Array) (element-type uint):  a #GArray of
    *  #guint containing the remote-pending members added
    * @details: (type GLib.HashTable): (element-type utf8 GObject.Value):
    *  a #GHashTable mapping (gchar *) to #GValue containing details
