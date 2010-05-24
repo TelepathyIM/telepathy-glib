@@ -19,7 +19,6 @@
 #include "contact-list-manager.h"
 
 static void channel_iface_init (gpointer iface, gpointer data);
-static void list_channel_iface_init (gpointer iface, gpointer data);
 static void group_channel_iface_init (gpointer iface, gpointer data);
 
 /* Abstract base class */
@@ -34,10 +33,7 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListBase, example_contact_list_base,
     G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL))
 
-/* Subclass for handle type LIST */
-G_DEFINE_TYPE_WITH_CODE (ExampleContactList, example_contact_list,
-    EXAMPLE_TYPE_CONTACT_LIST_BASE,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, list_channel_iface_init))
+/* Subclass for handle type LIST deleted due to TpContactListManager */
 
 /* Subclass for handle type GROUP */
 G_DEFINE_TYPE_WITH_CODE (ExampleContactGroup, example_contact_group,
@@ -80,11 +76,6 @@ struct _ExampleContactListBasePrivate
   unsigned disposed:1;
 };
 
-struct _ExampleContactListPrivate
-{
-  int dummy:1;
-};
-
 struct _ExampleContactGroupPrivate
 {
   int dummy:1;
@@ -95,13 +86,6 @@ example_contact_list_base_init (ExampleContactListBase *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       EXAMPLE_TYPE_CONTACT_LIST_BASE, ExampleContactListBasePrivate);
-}
-
-static void
-example_contact_list_init (ExampleContactList *self)
-{
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_CONTACT_LIST,
-      ExampleContactListPrivate);
 }
 
 static void
@@ -139,55 +123,6 @@ constructed (GObject *object)
   /* Both the subclasses have full support for telepathy-spec 0.17.6. */
   tp_group_mixin_change_flags (object,
       TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
-}
-
-static void
-list_constructed (GObject *object)
-{
-  ExampleContactList *self = EXAMPLE_CONTACT_LIST (object);
-  void (*chain_up) (GObject *) =
-    ((GObjectClass *) example_contact_list_parent_class)->constructed;
-
-  if (chain_up != NULL)
-    chain_up (object);
-
-  g_assert (self->parent.priv->handle_type == TP_HANDLE_TYPE_LIST);
-
-  switch (self->parent.priv->handle)
-    {
-    case EXAMPLE_CONTACT_LIST_PUBLISH:
-      /* We can stop publishing presence to people, but we can't
-       * start sending people our presence unless they ask for it.
-       *
-       * (We can accept people's requests to see our presence - but that's
-       * always allowed, so there's no flag.)
-       */
-      tp_group_mixin_change_flags (object,
-          TP_CHANNEL_GROUP_FLAG_CAN_REMOVE, 0);
-      break;
-    case EXAMPLE_CONTACT_LIST_STORED:
-      /* We can add people to our roster (not that that's very useful without
-       * also adding them to subscribe), and we can remove them altogether
-       * (which implicitly removes them from subscribe, publish, and all
-       * user-defined groups).
-       */
-      tp_group_mixin_change_flags (object,
-          TP_CHANNEL_GROUP_FLAG_CAN_ADD | TP_CHANNEL_GROUP_FLAG_CAN_REMOVE, 0);
-      break;
-    case EXAMPLE_CONTACT_LIST_SUBSCRIBE:
-      /* We can ask people to show us their presence, attaching a message.
-       * We can also cancel (rescind) requests that they haven't replied to,
-       * and stop receiving their presence after they allow it.
-       */
-      tp_group_mixin_change_flags (object,
-          TP_CHANNEL_GROUP_FLAG_CAN_ADD | TP_CHANNEL_GROUP_FLAG_MESSAGE_ADD |
-          TP_CHANNEL_GROUP_FLAG_CAN_REMOVE |
-          TP_CHANNEL_GROUP_FLAG_CAN_RESCIND,
-          0);
-      break;
-    default:
-      g_assert_not_reached ();
-    }
 }
 
 static void
@@ -375,30 +310,6 @@ group_remove_member (GObject *object,
       object, self->priv->handle, handle, message, error);
 }
 
-static gboolean
-list_add_member (GObject *object,
-                 TpHandle handle,
-                 const gchar *message,
-                 GError **error)
-{
-  ExampleContactListBase *self = EXAMPLE_CONTACT_LIST_BASE (object);
-
-  return example_contact_list_manager_add_to_list (self->priv->manager,
-      object, self->priv->handle, handle, message, error);
-}
-
-static gboolean
-list_remove_member (GObject *object,
-                    TpHandle handle,
-                    const gchar *message,
-                    GError **error)
-{
-  ExampleContactListBase *self = EXAMPLE_CONTACT_LIST_BASE (object);
-
-  return example_contact_list_manager_remove_from_list (self->priv->manager,
-      object, self->priv->handle, handle, message, error);
-}
-
 static void
 example_contact_list_base_class_init (ExampleContactListBaseClass *klass)
 {
@@ -498,22 +409,6 @@ example_contact_list_base_class_init (ExampleContactListBaseClass *klass)
 }
 
 static void
-example_contact_list_class_init (ExampleContactListClass *klass)
-{
-  GObjectClass *object_class = (GObjectClass *) klass;
-
-  g_type_class_add_private (klass, sizeof (ExampleContactListPrivate));
-
-  object_class->constructed = list_constructed;
-
-  tp_group_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleContactListBaseClass, group_class),
-      list_add_member,
-      list_remove_member);
-  tp_group_mixin_init_dbus_properties (object_class);
-}
-
-static void
 example_contact_group_class_init (ExampleContactGroupClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -527,16 +422,6 @@ example_contact_group_class_init (ExampleContactGroupClass *klass)
       group_add_member,
       group_remove_member);
   tp_group_mixin_init_dbus_properties (object_class);
-}
-
-static void
-list_channel_close (TpSvcChannel *iface G_GNUC_UNUSED,
-                    DBusGMethodInvocation *context)
-{
-  GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-      "ContactList channels with handle type LIST may not be closed" };
-
-  dbus_g_method_return_error (context, &e);
 }
 
 static void
@@ -606,17 +491,6 @@ channel_iface_init (gpointer iface,
   IMPLEMENT (get_channel_type);
   IMPLEMENT (get_handle);
   IMPLEMENT (get_interfaces);
-#undef IMPLEMENT
-}
-
-static void
-list_channel_iface_init (gpointer iface,
-                         gpointer data G_GNUC_UNUSED)
-{
-  TpSvcChannelClass *klass = iface;
-
-#define IMPLEMENT(x) tp_svc_channel_implement_##x (klass, list_channel_##x)
-  IMPLEMENT (close);
 #undef IMPLEMENT
 }
 

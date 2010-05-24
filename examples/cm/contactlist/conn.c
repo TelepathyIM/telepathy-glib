@@ -167,9 +167,6 @@ create_handle_repos (TpBaseConnection *conn,
   repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new
       (TP_HANDLE_TYPE_CONTACT, example_contact_list_normalize_contact, NULL);
 
-  repos[TP_HANDLE_TYPE_LIST] = tp_static_handle_repo_new
-      (TP_HANDLE_TYPE_LIST, example_contact_lists ());
-
   repos[TP_HANDLE_TYPE_GROUP] = tp_dynamic_handle_repo_new
       (TP_HANDLE_TYPE_GROUP, example_contact_list_normalize_group, NULL);
 }

@@ -306,7 +306,8 @@ test_add_to_publish_invalid (Test *test,
 {
   GError *error = NULL;
 
-  /* Unilaterally adding a member to the publish channel doesn't work. */
+  /* Unilaterally adding a member to the publish channel doesn't work, but
+   * in the new contact list manager the method "succeeds" anyway. */
 
   test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
 
@@ -317,8 +318,7 @@ test_add_to_publish_invalid (Test *test,
   g_array_append_val (test->arr, test->ninja);
   tp_cli_channel_interface_group_run_add_members (test->publish,
       -1, test->arr, "", &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED);
-  g_clear_error (&error);
+  g_assert_no_error (error);
 
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),

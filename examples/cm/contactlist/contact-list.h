@@ -23,16 +23,11 @@ typedef struct _ExampleContactListBase ExampleContactListBase;
 typedef struct _ExampleContactListBaseClass ExampleContactListBaseClass;
 typedef struct _ExampleContactListBasePrivate ExampleContactListBasePrivate;
 
-typedef struct _ExampleContactList ExampleContactList;
-typedef struct _ExampleContactListClass ExampleContactListClass;
-typedef struct _ExampleContactListPrivate ExampleContactListPrivate;
-
 typedef struct _ExampleContactGroup ExampleContactGroup;
 typedef struct _ExampleContactGroupClass ExampleContactGroupClass;
 typedef struct _ExampleContactGroupPrivate ExampleContactGroupPrivate;
 
 GType example_contact_list_base_get_type (void);
-GType example_contact_list_get_type (void);
 GType example_contact_group_get_type (void);
 
 #define EXAMPLE_TYPE_CONTACT_LIST_BASE \
@@ -50,22 +45,6 @@ GType example_contact_group_get_type (void);
 #define EXAMPLE_CONTACT_LIST_BASE_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CONTACT_LIST_BASE, \
                               ExampleContactListBaseClass))
-
-#define EXAMPLE_TYPE_CONTACT_LIST \
-  (example_contact_list_get_type ())
-#define EXAMPLE_CONTACT_LIST(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), EXAMPLE_TYPE_CONTACT_LIST, \
-                               ExampleContactList))
-#define EXAMPLE_CONTACT_LIST_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), EXAMPLE_TYPE_CONTACT_LIST, \
-                            ExampleContactListClass))
-#define EXAMPLE_IS_CONTACT_LIST(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EXAMPLE_TYPE_CONTACT_LIST))
-#define EXAMPLE_IS_CONTACT_LIST_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), EXAMPLE_TYPE_CONTACT_LIST))
-#define EXAMPLE_CONTACT_LIST_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CONTACT_LIST, \
-                              ExampleContactListClass))
 
 #define EXAMPLE_TYPE_CONTACT_GROUP \
   (example_contact_group_get_type ())
@@ -89,10 +68,6 @@ struct _ExampleContactListBaseClass {
     TpDBusPropertiesMixinClass dbus_properties_class;
 };
 
-struct _ExampleContactListClass {
-    ExampleContactListBaseClass parent_class;
-};
-
 struct _ExampleContactGroupClass {
     ExampleContactListBaseClass parent_class;
 };
@@ -101,11 +76,6 @@ struct _ExampleContactListBase {
     GObject parent;
     TpGroupMixin group;
     ExampleContactListBasePrivate *priv;
-};
-
-struct _ExampleContactList {
-    ExampleContactListBase parent;
-    ExampleContactListPrivate *priv;
 };
 
 struct _ExampleContactGroup {
