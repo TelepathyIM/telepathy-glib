@@ -290,16 +290,16 @@ main (int argc,
 {
   TpConnectionManager *cm = NULL;
   GError *error = NULL;
-  TpDBusDaemon *daemon = NULL;
+  TpDBusDaemon *dbus = NULL;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
   example_cli_init ();
 
-  daemon = tp_dbus_daemon_dup (&error);
+  dbus = tp_dbus_daemon_dup (&error);
 
-  if (daemon == NULL)
+  if (dbus == NULL)
     {
       g_warning ("%s", error->message);
       g_error_free (error);
@@ -308,7 +308,7 @@ main (int argc,
 
   mainloop = g_main_loop_new (NULL, FALSE);
 
-  cm = tp_connection_manager_new (daemon, "example_extended", NULL, &error);
+  cm = tp_connection_manager_new (dbus, "example_extended", NULL, &error);
 
   if (cm == NULL)
     {
@@ -327,8 +327,8 @@ out:
   if (cm != NULL)
     g_object_unref (cm);
 
-  if (daemon != NULL)
-    g_object_unref (daemon);
+  if (dbus != NULL)
+    g_object_unref (dbus);
 
   if (mainloop != NULL)
     g_main_loop_unref (mainloop);

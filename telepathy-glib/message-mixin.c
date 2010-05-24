@@ -1923,15 +1923,15 @@ tp_message_mixin_get_dbus_property (GObject *object,
     {
       GPtrArray *arrays = g_ptr_array_sized_new (g_queue_get_length (
             mixin->priv->pending));
-      GList *link;
+      GList *l;
       GType type = dbus_g_type_get_collection ("GPtrArray",
           TP_HASH_TYPE_MESSAGE_PART);
 
-      for (link = g_queue_peek_head_link (mixin->priv->pending);
-           link != NULL;
-           link = g_list_next (link))
+      for (l = g_queue_peek_head_link (mixin->priv->pending);
+           l != NULL;
+           l = g_list_next (l))
         {
-          TpMessage *msg = link->data;
+          TpMessage *msg = l->data;
 
           g_ptr_array_add (arrays, g_boxed_copy (type, msg->parts));
         }

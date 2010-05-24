@@ -166,14 +166,14 @@ example_contact_list_manager_close_all (ExampleContactListManager *self)
       while (g_hash_table_iter_next (&iter, &key, &value))
         {
           GSList *requests = value;
-          GSList *link;
+          GSList *l;
 
           requests = g_slist_reverse (requests);
 
-          for (link = requests; link != NULL; link = link->next)
+          for (l = requests; l != NULL; l = l->next)
             {
               tp_channel_manager_emit_request_failed (self,
-                  link->data, TP_ERRORS, TP_ERROR_DISCONNECTED,
+                  l->data, TP_ERRORS, TP_ERROR_DISCONNECTED,
                   "Unable to complete channel request due to disconnection");
             }
 

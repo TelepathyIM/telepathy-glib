@@ -172,13 +172,13 @@ static void test_dump_stream_events (Test *test) G_GNUC_UNUSED;
 
 static void test_dump_stream_events (Test *test)
 {
-  GSList *link;
+  GSList *l;
 
   g_message ("Stream events (most recent first):");
 
-  for (link = test->stream_events; link != NULL; link = link->next)
+  for (l = test->stream_events; l != NULL; l = l->next)
     {
-      StreamEvent *se = link->data;
+      StreamEvent *se = l->data;
 
       switch (se->type)
         {

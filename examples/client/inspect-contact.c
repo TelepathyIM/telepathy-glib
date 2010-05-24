@@ -173,7 +173,7 @@ main (int argc,
   const gchar *bus_name, *object_path;
   TpConnection *connection = NULL;
   InspectContactData data = { NULL, 1, NULL };
-  TpDBusDaemon *daemon = NULL;
+  TpDBusDaemon *dbus = NULL;
   GError *error = NULL;
 
   g_type_init ();
@@ -203,15 +203,15 @@ main (int argc,
 
   data.to_inspect = argv[2];
 
-  daemon = tp_dbus_daemon_dup (&error);
+  dbus = tp_dbus_daemon_dup (&error);
 
-  if (daemon == NULL)
+  if (dbus == NULL)
     {
       g_warning ("%s", error->message);
       goto out;
     }
 
-  connection = tp_connection_new (daemon, bus_name, object_path, &error);
+  connection = tp_connection_new (dbus, bus_name, object_path, &error);
 
   if (connection == NULL)
     {
@@ -239,8 +239,8 @@ out:
   if (connection != NULL)
     g_object_unref (connection);
 
-  if (daemon != NULL)
-    g_object_unref (daemon);
+  if (dbus != NULL)
+    g_object_unref (dbus);
 
   return data.exit_status;
 }

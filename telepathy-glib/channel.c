@@ -1759,7 +1759,6 @@ tp_channel_new (TpConnection *conn,
 {
   TpChannel *ret = NULL;
   TpProxy *conn_proxy = (TpProxy *) conn;
-  gchar *dup = NULL;
 
   g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
@@ -1803,7 +1802,6 @@ tp_channel_new (TpConnection *conn,
         NULL));
 
 finally:
-  g_free (dup);
 
   return ret;
 }

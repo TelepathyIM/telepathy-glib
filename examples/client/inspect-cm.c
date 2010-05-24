@@ -131,7 +131,7 @@ main (int argc,
   TpConnectionManager *cm = NULL;
   GMainLoop *mainloop = NULL;
   GError *error = NULL;
-  TpDBusDaemon *daemon = NULL;
+  TpDBusDaemon *dbus = NULL;
   int ret = 1;
 
   g_type_init ();
@@ -140,9 +140,9 @@ main (int argc,
   if (argc < 2)
     return 2;
 
-  daemon = tp_dbus_daemon_dup (&error);
+  dbus = tp_dbus_daemon_dup (&error);
 
-  if (daemon == NULL)
+  if (dbus == NULL)
     {
       g_warning ("%s", error->message);
       g_error_free (error);
@@ -154,7 +154,7 @@ main (int argc,
   cm_name = argv[1];
   manager_file = argv[2];   /* possibly NULL */
 
-  cm = tp_connection_manager_new (daemon, cm_name, manager_file, &error);
+  cm = tp_connection_manager_new (dbus, cm_name, manager_file, &error);
 
   if (cm == NULL)
     {
@@ -174,8 +174,8 @@ out:
   if (mainloop != NULL)
     g_main_loop_unref (mainloop);
 
-  if (daemon != NULL)
-    g_object_unref (daemon);
+  if (dbus != NULL)
+    g_object_unref (dbus);
 
   return ret;
 }

@@ -79,7 +79,7 @@ main (int argc,
   const gchar *bus_name, *object_path;
   TpConnection *connection = NULL;
   GMainLoop *mainloop = NULL;
-  TpDBusDaemon *daemon = NULL;
+  TpDBusDaemon *dbus = NULL;
   GError *error = NULL;
 
   g_type_init ();
@@ -107,16 +107,16 @@ main (int argc,
       bus_name = NULL;
     }
 
-  daemon = tp_dbus_daemon_dup (&error);
+  dbus = tp_dbus_daemon_dup (&error);
 
-  if (daemon == NULL)
+  if (dbus == NULL)
     {
       g_warning ("%s", error->message);
       g_error_free (error);
       goto out;
     }
 
-  connection = tp_connection_new (daemon, bus_name, object_path, &error);
+  connection = tp_connection_new (dbus, bus_name, object_path, &error);
 
   if (connection == NULL)
     {
@@ -140,8 +140,8 @@ out:
   if (mainloop != NULL)
     g_main_loop_unref (mainloop);
 
-  if (daemon != NULL)
-    g_object_unref (daemon);
+  if (dbus != NULL)
+    g_object_unref (dbus);
 
   return exit_status;
 }
