@@ -261,7 +261,7 @@ tp_handle_channels_context_constructed (GObject *object)
   TpHandleChannelsContext *self = TP_HANDLE_CHANNELS_CONTEXT (
       object);
   void (*chain_up) (GObject *) =
-    ((GObjectClass *) \
+    ((GObjectClass *)
       tp_handle_channels_context_parent_class)->constructed;
 
   if (chain_up != NULL)
