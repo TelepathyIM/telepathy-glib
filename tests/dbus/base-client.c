@@ -845,13 +845,7 @@ test_handler (Test *test,
   /* One of the channel is closed */
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
-
-  tp_dbus_daemon_unregister_object (tp_base_connection_get_dbus_daemon (
-        test->base_connection), test->text_chan_service);
-  /*
-  g_object_unref (test->text_chan_service);
-  test->text_chan_service = NULL;
-  */
+  test_text_channel_null_close (test->text_chan_service);
   g_main_loop_run (test->mainloop);
 
   chans = tp_base_client_get_handled_channels (test->base_client);

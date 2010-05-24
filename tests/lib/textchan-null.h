@@ -128,6 +128,8 @@ GType test_props_group_text_channel_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL, \
                               TestPropsGroupTextChannelClass))
 
+void test_text_channel_null_close (TestTextChannelNull *self);
+
 G_END_DECLS
 
 #endif /* #ifndef __TEST_TEXT_CHANNEL_NULL_H__ */
