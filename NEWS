@@ -1,6 +1,11 @@
 telepathy-glib 0.11.6 (UNRELEASED)
 ==================================
 
+Requirements:
+
+* If gtk-doc is enabled, it must be version 1.15 or later.
+* If GObject-Introspection is enabled, it must be version 0.6.11 or later.
+
 Enhancements:
 
 * fd.o #20035: add TP_CONTACT_FEATURE_AVATAR_DATA, the ability to cache and
