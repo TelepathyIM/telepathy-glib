@@ -57,7 +57,7 @@ AM_PROG_MKDIR_P
 # pkg-config 0.21 adds CFLAGS from Requires.private, which we need
 PKG_PROG_PKG_CONFIG([0.21])
 
-GOBJECT_INTROSPECTION_CHECK([0.6.4])
+GOBJECT_INTROSPECTION_CHECK([0.6.11])
 GTK_DOC_CHECK([1.14])
 
 LT_CURRENT=tp_glib_lt_current
