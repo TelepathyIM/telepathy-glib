@@ -44,8 +44,8 @@
  * Since: 0.11.UNRELEASED
  */
 
-#include "telepathy-glib/handle-channels-context-internal.h"
 #include "telepathy-glib/handle-channels-context.h"
+#include "telepathy-glib/handle-channels-context-internal.h"
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus.h>
