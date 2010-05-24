@@ -2,6 +2,54 @@
 #include <telepathy-glib/intset.h>
 #include <telepathy-glib/util.h>
 
+static void
+iterate_in_order (TpIntSet *set)
+{
+  TpIntSetIter iter;
+  guint n = 0;
+  gint64 prev = (guint) -1;
+
+  tp_intset_iter_init (&iter, set);
+
+  while (tp_intset_iter_next (&iter))
+    {
+      g_assert (tp_intset_is_member (set, iter.element));
+
+      if (prev != (guint) -1)
+        g_assert_cmpuint (iter.element, >, prev);
+
+      prev = iter.element;
+      n++;
+    }
+
+  g_assert_cmpuint (n, ==, tp_intset_size (set));
+}
+
+static void
+iterate_fast (TpIntSet *set)
+{
+  TpIntSetFastIter iter;
+  guint n = 0;
+  guint i;
+
+  tp_intset_fast_iter_init (&iter, set);
+
+  while (tp_intset_fast_iter_next (&iter, &i))
+    {
+      g_assert (tp_intset_is_member (set, i));
+      n++;
+    }
+
+  g_assert_cmpuint (n, ==, tp_intset_size (set));
+}
+
+static void
+test_iteration (TpIntSet *set)
+{
+  iterate_fast (set);
+  iterate_in_order (set);
+}
+
 int main (int argc, char **argv)
 {
   TpIntSet *set1 = tp_intset_new ();
@@ -45,6 +93,8 @@ int main (int argc, char **argv)
   tp_intset_remove (set1, 1024);
   g_assert_cmpuint (tp_intset_size (set1), ==, 5);
 
+  test_iteration (set1);
+
   tp_intset_destroy (set1);
 
 #define NUM_A 11
@@ -59,6 +109,7 @@ int main (int argc, char **argv)
   tp_intset_add (a, NUM_B);
   tp_intset_add (a, NUM_C);
   tp_intset_add (a, NUM_D);
+  test_iteration (a);
 
   g_assert (tp_intset_is_equal (a, a));
 
@@ -68,6 +119,7 @@ int main (int argc, char **argv)
   tp_intset_add (b, NUM_E);
   tp_intset_add (b, NUM_F);
 
+  test_iteration (b);
   g_assert (tp_intset_is_equal (b, b));
   g_assert (!tp_intset_is_equal (a, b));
 
@@ -81,6 +133,7 @@ int main (int argc, char **argv)
 
   ab_union = tp_intset_union (a, b);
   g_assert (tp_intset_is_equal (ab_union, ab_expected_union));
+  test_iteration (ab_union);
   tp_intset_destroy (ab_union);
   tp_intset_destroy (ab_expected_union);
   ab_union = NULL;
@@ -91,6 +144,7 @@ int main (int argc, char **argv)
   tp_intset_add (ab_expected_inter, NUM_D);
 
   ab_inter = tp_intset_intersection (a, b);
+  test_iteration (ab_inter);
   g_assert (tp_intset_is_equal (ab_inter, ab_expected_inter));
   tp_intset_destroy (ab_inter);
   tp_intset_destroy (ab_expected_inter);
@@ -102,6 +156,7 @@ int main (int argc, char **argv)
   tp_intset_add (a_expected_diff_b, NUM_B);
 
   a_diff_b = tp_intset_difference (a, b);
+  test_iteration (a_diff_b);
   g_assert (tp_intset_is_equal (a_diff_b, a_expected_diff_b));
   tp_intset_destroy (a_diff_b);
   tp_intset_destroy (a_expected_diff_b);
@@ -113,6 +168,7 @@ int main (int argc, char **argv)
   tp_intset_add (b_expected_diff_a, NUM_F);
 
   b_diff_a = tp_intset_difference (b, a);
+  test_iteration (b_diff_a);
   g_assert (tp_intset_is_equal (b_diff_a, b_expected_diff_a));
   tp_intset_destroy (b_diff_a);
   tp_intset_destroy (b_expected_diff_a);
@@ -126,6 +182,7 @@ int main (int argc, char **argv)
   tp_intset_add (ab_expected_symmdiff, NUM_F);
 
   ab_symmdiff = tp_intset_symmetric_difference (a, b);
+  test_iteration (ab_symmdiff);
   g_assert (tp_intset_is_equal (ab_symmdiff, ab_expected_symmdiff));
   tp_intset_destroy (ab_symmdiff);
   tp_intset_destroy (ab_expected_symmdiff);
@@ -153,27 +210,12 @@ int main (int argc, char **argv)
     tmp = NULL;
   }
 
-  {
-    TpIntSetFastIter iter;
-    guint n = 0;
-    guint i;
-
-    tp_intset_fast_iter_init (&iter, a);
-
-    while (tp_intset_fast_iter_next (&iter, &i))
-      {
-        g_assert (tp_intset_is_member (a, i));
-        n++;
-      }
-
-    g_assert_cmpuint (n, ==, tp_intset_size (a));
-  }
-
   value = tp_g_value_slice_new_take_boxed (TP_TYPE_INTSET, a);
   copy = g_value_dup_boxed (value);
 
   g_assert (copy != a);
   g_assert (tp_intset_is_equal (copy, a));
+  test_iteration (copy);
   g_boxed_free (TP_TYPE_INTSET, copy);
 
   /* a is owned by value now, so don't free it explicitly */
