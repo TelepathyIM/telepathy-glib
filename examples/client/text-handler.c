@@ -13,8 +13,6 @@
 #include <glib.h>
 
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-glib/debug.h>
-#include <telepathy-glib/simple-handler.h>
 
 static void
 echo_message (TpChannel *channel,
