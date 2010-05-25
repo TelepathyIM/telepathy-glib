@@ -14,6 +14,8 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+gboolean got_pending_msg = FALSE;
+
 static void
 echo_message (TpChannel *channel,
     const gchar *text)
@@ -42,6 +44,10 @@ message_received_cb (TpChannel *channel,
 {
   GArray *arr;
 
+  /* Ignore messages if we didn't fetch pending messages yet */
+  if (!got_pending_msg)
+    return;
+
   g_print ("received: %s\n", text);
 
   echo_message (channel, text);
@@ -64,6 +70,8 @@ got_pending_messages_cb (TpChannel *channel,
 {
   guint i;
   GArray *ids;
+
+  got_pending_msg = TRUE;
 
   if (error != NULL)
     return;
