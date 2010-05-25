@@ -158,10 +158,8 @@ tp_contact_group_channel_constructed (GObject *object)
 
   g_assert (self->handle_type == TP_HANDLE_TYPE_GROUP);
 
-  /* We can presumably add people to user-defined groups, and also remove
-   * them. */
   tp_group_mixin_change_flags (object,
-      TP_CHANNEL_GROUP_FLAG_CAN_ADD | TP_CHANNEL_GROUP_FLAG_CAN_REMOVE, 0);
+      _tp_contact_list_manager_get_group_flags (self->manager), 0);
 }
 
 

@@ -197,6 +197,14 @@ struct _TpContactListManagerClassPrivate
   TpContactListManagerGetContactsFunc get_blocked_contacts;
   TpContactListManagerActOnContactsFunc block_contacts;
   TpContactListManagerActOnContactsFunc unblock_contacts;
+
+  TpContactListManagerGetGroupsFunc get_groups;
+  TpContactListManagerGetContactGroupsFunc get_contact_groups;
+  TpContactListManagerBooleanFunc disjoint_groups;
+  TpContactListManagerNormalizeFunc normalize_group;
+  TpContactListManagerGroupContactsFunc add_to_group;
+  TpContactListManagerGroupContactsFunc remove_from_group;
+  TpContactListManagerRemoveGroupFunc remove_group;
 };
 
 static void channel_manager_iface_init (TpChannelManagerIface *iface);
@@ -295,6 +303,8 @@ tp_contact_list_manager_free_contents (TpContactListManager *self)
 
   if (self->priv->group_repo != NULL)
     {
+      _tp_dynamic_handle_repo_set_normalization_data (self->priv->group_repo,
+          NULL, NULL);
       g_object_unref (self->priv->group_repo);
       self->priv->group_repo = NULL;
     }
@@ -378,8 +388,32 @@ tp_contact_list_manager_normalize_group (TpHandleRepoIface *repo,
     gpointer context,
     GError **error)
 {
-  /* FIXME: stub: should normalize appropriately for a protocol */
-  return g_strdup (id);
+  TpContactListManager *self =
+    _tp_dynamic_handle_repo_get_normalization_data (repo);
+  TpContactListManagerClass *cls;
+  gchar *ret;
+
+  if (id == NULL)
+    id = "";
+
+  if (self == NULL)
+    {
+      /* already disconnected or something */
+      return g_strdup (id);
+    }
+
+  cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+
+  if (cls->priv->normalize_group == NULL)
+    return g_strdup (id);
+
+  ret = cls->priv->normalize_group (self, id);
+
+  if (ret == NULL)
+    g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
+        "Invalid group name '%s'", id);
+
+  return ret;
 }
 
 /* elements 0, 1... of this enum must be kept in sync with elements 1, 2...
@@ -449,8 +483,10 @@ tp_contact_list_manager_constructed (GObject *object)
   list_repo = tp_static_handle_repo_new (TP_HANDLE_TYPE_LIST,
       (const gchar **) tp_contact_list_manager_contact_lists);
 
-  if (FALSE)  /* FIXME: reinstate if this CM has groups */
+  if (cls->priv->get_groups != NULL)
     {
+      g_assert (cls->priv->get_contact_groups != NULL);
+
       self->priv->group_repo = tp_dynamic_handle_repo_new (TP_HANDLE_TYPE_GROUP,
           tp_contact_list_manager_normalize_group, NULL);
       _tp_dynamic_handle_repo_set_normalization_data (self->priv->group_repo,
@@ -546,6 +582,7 @@ tp_contact_list_manager_foreach_channel_class (TpChannelManager *manager,
     TpChannelManagerChannelClassFunc func,
     gpointer user_data)
 {
+  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (manager);
   GHashTable *table = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
           G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CONTACT_LIST,
@@ -554,7 +591,7 @@ tp_contact_list_manager_foreach_channel_class (TpChannelManager *manager,
 
   func (manager, table, allowed_properties, user_data);
 
-  if (FALSE)  /* FIXME: do this if we actually support groups */
+  if (cls->priv->add_to_group != NULL)
     {
       g_hash_table_insert (table, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
           tp_g_value_slice_new_uint (TP_HANDLE_TYPE_GROUP));
@@ -657,9 +694,9 @@ tp_contact_list_manager_request_helper (TpChannelManager *manager,
   handle_type = tp_asv_get_uint32 (request_properties,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL);
 
-  /* FIXME: remove early-return for groups once we support them */
   if (handle_type != TP_HANDLE_TYPE_LIST &&
-      (handle_type != TP_HANDLE_TYPE_GROUP || TRUE))
+      (handle_type != TP_HANDLE_TYPE_GROUP ||
+       cls->priv->add_to_group == NULL))
     {
       return FALSE;
     }
@@ -763,6 +800,24 @@ channel_manager_iface_init (TpChannelManagerIface *iface)
 }
 
 TpChannelGroupFlags
+_tp_contact_list_manager_get_group_flags (TpContactListManager *self)
+{
+  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpChannelGroupFlags ret = 0;
+
+  if (!cls->priv->can_change_subscriptions (self))
+    return 0;
+
+  if (cls->priv->add_to_group != NULL)
+    ret |= TP_CHANNEL_GROUP_FLAG_CAN_ADD;
+
+  if (cls->priv->remove_from_group != NULL)
+    ret |= TP_CHANNEL_GROUP_FLAG_CAN_REMOVE;
+
+  return ret;
+}
+
+TpChannelGroupFlags
 _tp_contact_list_manager_get_list_flags (TpContactListManager *self,
     TpHandle list)
 {
@@ -810,10 +865,31 @@ gboolean
 _tp_contact_list_manager_add_to_group (TpContactListManager *self,
     TpHandle group,
     TpHandle contact,
-    const gchar *message,
+    const gchar *message G_GNUC_UNUSED,
     GError **error)
 {
-  /* FIXME: stub */
+  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpHandleSet *contacts;
+  const gchar *group_name;
+
+  if (!tp_contact_list_manager_check_still_usable (self, error))
+    return FALSE;
+
+  if (!cls->priv->can_change_subscriptions (self) ||
+      cls->priv->add_to_group == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Cannot add contacts to a group");
+      return FALSE;
+    }
+
+  contacts = tp_handle_set_new (self->priv->contact_repo);
+  tp_handle_set_add (contacts, contact);
+  group_name = tp_handle_inspect (self->priv->group_repo, group);
+
+  cls->priv->add_to_group (self, group_name, contacts);
+
+  tp_handle_set_destroy (contacts);
   return TRUE;
 }
 
@@ -821,10 +897,31 @@ gboolean
 _tp_contact_list_manager_remove_from_group (TpContactListManager *self,
     TpHandle group,
     TpHandle contact,
-    const gchar *message,
+    const gchar *message G_GNUC_UNUSED,
     GError **error)
 {
-  /* FIXME: stub */
+  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpHandleSet *contacts;
+  const gchar *group_name;
+
+  if (!tp_contact_list_manager_check_still_usable (self, error))
+    return FALSE;
+
+  if (!cls->priv->can_change_subscriptions (self) ||
+      cls->priv->remove_from_group == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Cannot remove contacts from a group");
+      return FALSE;
+    }
+
+  contacts = tp_handle_set_new (self->priv->contact_repo);
+  tp_handle_set_add (contacts, contact);
+  group_name = tp_handle_inspect (self->priv->group_repo, group);
+
+  cls->priv->remove_from_group (self, group_name, contacts);
+
+  tp_handle_set_destroy (contacts);
   return TRUE;
 }
 
@@ -833,8 +930,26 @@ _tp_contact_list_manager_delete_group_by_handle (TpContactListManager *self,
     TpHandle group,
     GError **error)
 {
-  /* FIXME: stub */
-  return TRUE;
+  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  const gchar *group_name;
+
+  if (!tp_contact_list_manager_check_still_usable (self, NULL))
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_DISCONNECTED, "Disconnected");
+      return FALSE;
+    }
+
+  if (!cls->priv->can_change_subscriptions (self) ||
+      cls->priv->remove_group == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Cannot remove a group");
+      return FALSE;
+    }
+
+  group_name = tp_handle_inspect (self->priv->group_repo, group);
+
+  return cls->priv->remove_group (self, group_name, error);
 }
 
 gboolean
@@ -1011,6 +1126,65 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
 
       DEBUG ("Initial contacts: %s", tmp);
       g_free (tmp);
+    }
+
+  /* The natural thing to do here would be to iterate over all contacts, and
+   * for each contact, emit a signal adding them to their own groups. However,
+   * that emits a signal per contact. Here we turn the data model inside out,
+   * to emit one signal per group - that's probably fewer (and also means we
+   * can put them in batches for legacy Group channels). */
+  if (cls->priv->get_groups != NULL)
+    {
+      GStrv groups = cls->priv->get_groups (self);
+      TpIntSetIter i_iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (
+            contacts));
+      GHashTable *group_members = g_hash_table_new_full (g_str_hash,
+          g_str_equal, g_free, (GDestroyNotify) tp_handle_set_destroy);
+      GHashTableIter h_iter;
+      gpointer group, members;
+
+      tp_contact_list_manager_groups_created (self,
+          (const gchar * const *) groups);
+
+      g_strfreev (groups);
+
+      while (tp_intset_iter_next (&i_iter))
+        {
+          groups = cls->priv->get_contact_groups (self, i_iter.element);
+
+          if (groups != NULL)
+            {
+              guint i;
+
+              for (i = 0; groups[i] != NULL; i++)
+                {
+                  members = g_hash_table_lookup (group_members, groups[i]);
+
+                  if (members == NULL)
+                    members = tp_handle_set_new (self->priv->contact_repo);
+                  else
+                    g_hash_table_steal (group_members, groups[i]);
+
+                  tp_handle_set_add (members, i_iter.element);
+
+                  g_hash_table_insert (group_members, g_strdup (groups[i]),
+                      members);
+                }
+
+              g_strfreev (groups);
+            }
+        }
+
+      g_hash_table_iter_init (&h_iter, group_members);
+
+      while (g_hash_table_iter_next (&h_iter, &group, &members))
+        {
+          const gchar *strv[] = { group, NULL };
+
+          tp_contact_list_manager_groups_changed (self, members, strv, NULL);
+        }
+
+      g_hash_table_unref (group_members);
     }
 
   tp_contact_list_manager_contacts_changed (self, contacts, NULL);
@@ -1745,4 +1919,499 @@ tp_contact_list_manager_class_implement_unblock_contacts (
   g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->unblock_contacts = impl;
+}
+
+/**
+ * TpContactListManagerNormalizeFunc:
+ * @self: a contact list manager
+ * @s: a non-%NULL name to normalize
+ *
+ * Signature of a virtual method to normalize strings in a contact list
+ * manager.
+ *
+ * Returns: a normalized form of @s, or %NULL on error
+ */
+
+/**
+ * tp_contact_list_manager_class_implement_normalize_group:
+ * @cls: a contact list manager subclass
+ * @impl: a function that returns a normalized form of the argument @s, or
+ *  %NULL on error
+ *
+ * Set a function that can be used to normalize the name of a group.
+ *
+ * The default is to use the group's name as-is. Protocols where this default
+ * is not suitable (for instance, if group names can only contain XML
+ * character data, or a particular Unicode normal form like NFKC) should call
+ * this function from #GTypeClass.class_init.
+ */
+void
+tp_contact_list_manager_class_implement_normalize_group (
+    TpContactListManagerClass *cls,
+    TpContactListManagerNormalizeFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->normalize_group = impl;
+}
+
+/**
+ * tp_contact_list_manager_groups_created:
+ * @self: a contact list manager
+ * @created: (array zero-terminated=1) (element-type utf8): one or more groups
+ *
+ * Called by subclasses when new groups have been created. This will typically
+ * be followed by a call to tp_contact_list_manager_groups_changed() to add
+ * some members to those groups.
+ */
+void
+tp_contact_list_manager_groups_created (TpContactListManager *self,
+    const gchar * const *created)
+{
+  GPtrArray *pa;
+  guint i;
+
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (created != NULL);
+  g_return_if_fail (created[0] != NULL);
+
+  for (i = 0; created[i] != NULL; i++)
+    /* do nothing, just count the items */ ;
+
+  pa = g_ptr_array_sized_new (i + 1);
+
+  for (i = 0; created[i] != NULL; i++)
+    {
+      TpHandle handle = tp_handle_ensure (self->priv->group_repo, created[i],
+          NULL, NULL);
+
+      if (handle != 0)
+        {
+          gpointer c = g_hash_table_lookup (self->priv->groups,
+              GUINT_TO_POINTER (handle));
+
+          if (c == NULL)
+            {
+              tp_contact_list_manager_new_channel (self, TP_HANDLE_TYPE_GROUP,
+                  handle, NULL);
+              g_ptr_array_add (pa, (gchar *) tp_handle_inspect (
+                    self->priv->group_repo, handle));
+
+            }
+
+          tp_handle_unref (self->priv->group_repo, handle);
+        }
+    }
+
+  if (pa->len > 0)
+    {
+      g_ptr_array_add (pa, NULL);
+      /* FIXME: emit GroupsCreated(pa->pdata) in the new API */
+    }
+
+  g_ptr_array_unref (pa);
+}
+
+/**
+ * tp_contact_list_manager_groups_removed:
+ * @self: a contact list manager
+ * @removed: (array zero-terminated=1) (element-type utf8): one or more groups
+ *
+ * Called by subclasses when groups have been removed. If the groups had
+ * members, the subclass does not also need to call
+ * tp_contact_list_manager_groups_changed() for them - the group membership
+ * change signals will be emitted automatically.
+ */
+void
+tp_contact_list_manager_groups_removed (TpContactListManager *self,
+    const gchar * const *removed)
+{
+  GPtrArray *pa;
+  guint i;
+
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (removed != NULL);
+  g_return_if_fail (removed[0] != NULL);
+
+  for (i = 0; removed[i] != NULL; i++)
+    /* do nothing, just count the items */ ;
+
+  pa = g_ptr_array_sized_new (i + 1);
+
+  for (i = 0; removed[i] != NULL; i++)
+    {
+      TpHandle handle = tp_handle_lookup (self->priv->group_repo, removed[i],
+          NULL, NULL);
+
+      if (handle != 0)
+        {
+          gpointer c = g_hash_table_lookup (self->priv->groups,
+              GUINT_TO_POINTER (handle));
+
+          if (c != NULL)
+            {
+              TpGroupMixin *mixin = TP_GROUP_MIXIN (c);
+              TpIntSet *set;
+
+              g_ptr_array_add (pa, (gchar *) tp_handle_inspect (
+                    self->priv->group_repo, handle));
+
+              g_assert (mixin != NULL);
+              /* remove members: presumably the self-handle is the actor */
+              set = tp_intset_copy (tp_handle_set_peek (mixin->members));
+              tp_group_mixin_change_members (c, "", NULL, set, NULL, NULL,
+                  self->priv->conn->self_handle,
+                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+              tp_intset_destroy (set);
+
+              _tp_base_contact_list_channel_close (c);
+              g_hash_table_remove (self->priv->groups,
+                  GUINT_TO_POINTER (handle));
+            }
+        }
+    }
+
+  if (pa->len > 0)
+    {
+      g_ptr_array_add (pa, NULL);
+
+      /* FIXME: emit GroupsRemoved(pa->pdata) in the new API */
+
+      /* FIXME: emit GroupsChanged for them, too */
+    }
+
+  g_ptr_array_unref (pa);
+}
+
+/**
+ * tp_contact_list_manager_group_renamed:
+ * @self: a contact list manager
+ * @old_name: the group's old name
+ * @new_name: the group's new name
+ *
+ * Called by subclasses when a group has been renamed. The subclass should not
+ * also call tp_contact_list_manager_groups_changed() for the group's members -
+ * the group membership change signals will be emitted automatically.
+ */
+void
+tp_contact_list_manager_group_renamed (TpContactListManager *self,
+    const gchar *old_name,
+    const gchar *new_name)
+{
+  TpHandle old_handle, new_handle;
+  gpointer old_chan, new_chan;
+  const gchar *old_names[] = { old_name, NULL };
+  const gchar *new_names[] = { new_name, NULL };
+  TpGroupMixin *mixin;
+  TpIntSet *set;
+
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+
+  old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL, NULL);
+
+  if (old_handle == 0)
+    return;
+
+  old_chan = g_hash_table_lookup (self->priv->groups,
+      GUINT_TO_POINTER (old_handle));
+
+  if (old_chan == NULL)
+    return;
+
+  mixin = TP_GROUP_MIXIN (old_chan);
+  g_assert (mixin != NULL);
+
+  new_handle = tp_handle_ensure (self->priv->group_repo, new_name, NULL, NULL);
+
+  if (new_handle == 0)
+    return;
+
+  new_chan = g_hash_table_lookup (self->priv->groups,
+      GUINT_TO_POINTER (new_handle));
+
+  if (new_chan == NULL)
+    {
+      new_chan = g_hash_table_lookup (self->priv->groups,
+          GUINT_TO_POINTER (new_handle));
+
+      tp_contact_list_manager_new_channel (self, TP_HANDLE_TYPE_GROUP,
+          new_handle, NULL);
+
+      g_assert (new_chan != NULL);
+    }
+
+  /* move the members - presumably the self-handle is the actor */
+  set = tp_intset_copy (tp_handle_set_peek (mixin->members));
+  tp_group_mixin_change_members (new_chan, "", set, NULL, NULL, NULL,
+      self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+  tp_group_mixin_change_members (old_chan, "", NULL, set, NULL, NULL,
+      self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  /* delete the old channel */
+  _tp_base_contact_list_channel_close (old_chan);
+  g_hash_table_remove (self->priv->groups, GUINT_TO_POINTER (old_handle));
+
+  /* get normalized forms */
+  old_names[0] = tp_handle_inspect (self->priv->group_repo, old_handle);
+  new_names[0] = tp_handle_inspect (self->priv->group_repo, new_handle);
+
+  /* FIXME: emit GroupRenamed(old_names[0], new_names[0]) in new API */
+  DEBUG ("GroupRenamed('%s', '%s')", old_names[0], new_names[0]);
+
+  /* FIXME: emit GroupsChanged(set, old_names, new_names) in new API */
+  DEBUG ("GroupsChanged([...], ['%s'], ['%s'])", old_names[0], new_names[0]);
+
+  tp_intset_destroy (set);
+  tp_handle_unref (self->priv->group_repo, new_handle);
+}
+
+/**
+ * tp_contact_list_manager_groups_changed:
+ * @self: a contact list manager
+ * @contacts: a set containing one or more contacts
+ * @added: (array zero-terminated=1) (element-type utf8) (allow-none): zero or
+ *  more groups to which the @contacts were added, or %NULL (which has the
+ *  same meaning as an empty list)
+ * @removed: (array zero-terminated=1) (element-type utf8) (allow-none): zero
+ *  or more groups from which the @contacts were removed, or %NULL (which has
+ *  the same meaning as an empty list)
+ *
+ * Called by subclasses when groups' membership has been changed.
+ *
+ * If any of the groups in @added are not already known to exist,
+ * this method also signals that they were created, as if
+ * tp_contact_list_manager_groups_created() had been called first.
+ */
+void
+tp_contact_list_manager_groups_changed (TpContactListManager *self,
+    TpHandleSet *contacts,
+    const gchar * const *added,
+    const gchar * const *removed)
+{
+  static const gchar *empty_strv[] = { NULL };
+  guint i;
+
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (contacts != NULL);
+
+  if (added == NULL)
+    added = empty_strv;
+
+  if (removed == NULL)
+    removed = empty_strv;
+
+  if (added[0] != NULL)
+    tp_contact_list_manager_groups_created (self, added);
+
+  for (i = 0; added[i] != NULL; i++)
+    {
+      TpHandle handle = tp_handle_lookup (self->priv->group_repo, added[i],
+          NULL, NULL);
+      gpointer c;
+
+      /* it doesn't matter if handle is 0, we'll just get NULL */
+      c = g_hash_table_lookup (self->priv->groups,
+          GUINT_TO_POINTER (handle));
+
+      if (c == NULL)
+        continue;
+
+      tp_group_mixin_change_members (c, "",
+          tp_handle_set_peek (contacts), NULL, NULL, NULL,
+          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    }
+
+  for (i = 0; removed[i] != NULL; i++)
+    {
+      TpHandle handle = tp_handle_lookup (self->priv->group_repo, removed[i],
+          NULL, NULL);
+      gpointer c;
+
+      /* it doesn't matter if handle is 0, we'll just get NULL */
+      c = g_hash_table_lookup (self->priv->groups,
+          GUINT_TO_POINTER (handle));
+
+      if (c == NULL)
+        continue;
+
+      tp_group_mixin_change_members (c, "",
+          NULL, tp_handle_set_peek (contacts), NULL, NULL,
+          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    }
+
+  /* FIXME: emit GroupsChanged(contacts, added, removed) in new API */
+}
+
+/**
+ * tp_contact_list_manager_class_implement_disjoint_groups:
+ * @cls: a contact list manager subclass
+ * @impl: an implementation of the virtual method
+ *
+ * Fill in an implementation of the @disjoint_groups virtual method,
+ * which tells clients whether groups in this protocol are disjoint
+ * (i.e. each contact can be in at most one group).
+ *
+ * This is merely informational: subclasses are responsible for making
+ * appropriate calls to tp_contact_list_manager_groups_changed(), etc.
+ *
+ * The default implementation is tp_contact_list_manager_false_func();
+ * subclasses where groups are disjoint should call this function
+ * with @impl = tp_contact_list_manager_true_func() during
+ * #GTypeClass.class_init.
+ *
+ * In the unlikely event that a protocol can have disjoint groups, or not,
+ * determined at runtime, it can use a custom implementation for @impl.
+ */
+void
+tp_contact_list_manager_class_implement_disjoint_groups (
+    TpContactListManagerClass *cls,
+    TpContactListManagerBooleanFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->disjoint_groups = impl;
+}
+
+/**
+ * TpContactListManagerGetGroupsFunc:
+ * @self: a contact list manager
+ *
+ * Signature of a virtual method that lists every group that exists on a
+ * connection.
+ *
+ * Returns: (array zero-terminated=1) (element-type utf8): an array of groups
+ */
+
+/**
+ * tp_contact_list_manager_class_implement_get_groups:
+ * @cls: a contact list manager subclass
+ * @impl: an implementation of the virtual method
+ *
+ * Fill in an implementation of the @get_groups virtual method,
+ * which is used to list all the groups on a connection. Every subclass
+ * that supports contact groups must call this function in its
+ * #GTypeClass.class_init.
+ */
+void
+tp_contact_list_manager_class_implement_get_groups (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGetGroupsFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->get_groups = impl;
+}
+
+/**
+ * TpContactListManagerGetContactGroupsFunc:
+ * @self: a contact list manager
+ * @contact: a non-zero contact handle
+ *
+ * Signature of a virtual method that lists the groups to which @contact
+ * belongs.
+ *
+ * If @contact is not on the contact list, this method must return either
+ * %NULL or an empty array, without error.
+ *
+ * Returns: (array zero-terminated=1) (element-type utf8): an array of groups
+ */
+
+/**
+ * tp_contact_list_manager_class_implement_get_contact_groups:
+ * @cls: a contact list manager subclass
+ * @impl: an implementation of the virtual method
+ *
+ * Fill in an implementation of the @get_contact_groups virtual method,
+ * which is used to list the groups to which a contact belongs. Every subclass
+ * that supports contact groups must call this function in its
+ * #GTypeClass.class_init.
+ */
+void
+tp_contact_list_manager_class_implement_get_contact_groups (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGetContactGroupsFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->get_contact_groups = impl;
+}
+
+/**
+ * TpContactListManagerGroupContactsFunc:
+ * @self: a contact list manager
+ * @group: a group
+ * @contacts: a set of contact handles
+ *
+ * Signature of a virtual method that alters a group's members.
+ */
+
+/**
+ * tp_contact_list_manager_class_implement_add_to_group:
+ * @cls: a contact list manager subclass
+ * @impl: an implementation of the virtual method
+ *
+ * Fill in an implementation of the @add_to_group virtual method,
+ * which adds a contact to one or more groups.
+ *
+ * Every subclass that supports altering contact groups should call this
+ * function in its #GTypeClass.class_init.
+ */
+void tp_contact_list_manager_class_implement_add_to_group (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGroupContactsFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->add_to_group = impl;
+}
+
+/**
+ * tp_contact_list_manager_class_implement_remove_from_group:
+ * @cls: a contact list manager subclass
+ * @impl: an implementation of the virtual method
+ *
+ * Fill in an implementation of the @remove_from_group virtual method,
+ * which removes one or more members from a group.
+ *
+ * Every subclass that supports altering contact groups should call this
+ * function in its #GTypeClass.class_init.
+ */
+void tp_contact_list_manager_class_implement_remove_from_group (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGroupContactsFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->remove_from_group = impl;
+}
+
+/**
+ * TpContactListManagerRemoveGroupFunc:
+ * @self: a contact list manager
+ * @group: a group
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Signature of a method that deletes groups.
+ *
+ * Returns: %TRUE on success
+ */
+
+/**
+ * tp_contact_list_manager_class_implement_remove_group:
+ * @cls: a contact list manager subclass
+ * @impl: an implementation of the virtual method
+ *
+ * Fill in an implementation of the @remove_group virtual method,
+ * which removes a group entirely, removing any members in the process.
+ *
+ * Every subclass that supports deleting contact groups should call this
+ * function in its #GTypeClass.class_init.
+ */
+void tp_contact_list_manager_class_implement_remove_group (
+    TpContactListManagerClass *cls,
+    TpContactListManagerRemoveGroupFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->remove_group = impl;
 }

@@ -42,6 +42,9 @@ TpChannelGroupFlags _tp_contact_list_manager_get_list_flags (
     TpContactListManager *self,
     TpHandle list);
 
+TpChannelGroupFlags _tp_contact_list_manager_get_group_flags (
+    TpContactListManager *self);
+
 gboolean _tp_contact_list_manager_add_to_list (TpContactListManager *self,
     TpHandle list,
     TpHandle contact,

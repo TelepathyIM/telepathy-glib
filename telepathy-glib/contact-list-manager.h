@@ -71,13 +71,15 @@ typedef enum { /*< skip >*/
     TP_PRESENCE_STATE_YES
 } TpPresenceState;
 
-/* ---- Called by subclasses ---- */
+/* ---- Called by subclasses for ContactList (or both) ---- */
 
 void tp_contact_list_manager_set_list_received (TpContactListManager *self);
 
 void tp_contact_list_manager_contacts_changed (TpContactListManager *self,
     TpHandleSet *changed,
     TpHandleSet *removed);
+
+/* ---- Implemented by subclasses for ContactList ---- */
 
 typedef gboolean (*TpContactListManagerBooleanFunc) (
     TpContactListManager *self);
@@ -179,6 +181,74 @@ void tp_contact_list_manager_class_implement_block_contacts (
 void tp_contact_list_manager_class_implement_unblock_contacts (
     TpContactListManagerClass *cls,
     TpContactListManagerActOnContactsFunc impl);
+
+/* ---- Called by subclasses for ContactGroups ---- */
+
+void tp_contact_list_manager_groups_created (TpContactListManager *self,
+    const gchar * const *created);
+
+void tp_contact_list_manager_groups_removed (TpContactListManager *self,
+    const gchar * const *removed);
+
+void tp_contact_list_manager_group_renamed (TpContactListManager *self,
+    const gchar *old_name,
+    const gchar *new_name);
+
+void tp_contact_list_manager_groups_changed (TpContactListManager *self,
+    TpHandleSet *contacts,
+    const gchar * const *added,
+    const gchar * const *removed);
+
+/* ---- Implemented by subclasses for ContactGroups ---- */
+
+void tp_contact_list_manager_class_implement_disjoint_groups (
+    TpContactListManagerClass *cls,
+    TpContactListManagerBooleanFunc impl);
+
+typedef GStrv (*TpContactListManagerGetGroupsFunc) (
+    TpContactListManager *self);
+
+void tp_contact_list_manager_class_implement_get_groups (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGetGroupsFunc impl);
+
+typedef GStrv (*TpContactListManagerGetContactGroupsFunc) (
+    TpContactListManager *self,
+    TpHandle contact);
+
+void tp_contact_list_manager_class_implement_get_contact_groups (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGetContactGroupsFunc impl);
+
+typedef gchar *(*TpContactListManagerNormalizeFunc) (
+    TpContactListManager *self,
+    const gchar *s);
+
+void tp_contact_list_manager_class_implement_normalize_group (
+    TpContactListManagerClass *cls,
+    TpContactListManagerNormalizeFunc impl);
+
+typedef void (*TpContactListManagerGroupContactsFunc) (
+    TpContactListManager *self,
+    const gchar *group,
+    TpHandleSet *contacts);
+
+void tp_contact_list_manager_class_implement_add_to_group (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGroupContactsFunc impl);
+
+void tp_contact_list_manager_class_implement_remove_from_group (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGroupContactsFunc impl);
+
+typedef gboolean (*TpContactListManagerRemoveGroupFunc) (
+    TpContactListManager *self,
+    const gchar *group,
+    GError **error);
+
+void tp_contact_list_manager_class_implement_remove_group (
+    TpContactListManagerClass *cls,
+    TpContactListManagerRemoveGroupFunc impl);
 
 G_END_DECLS
 
