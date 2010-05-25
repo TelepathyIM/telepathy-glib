@@ -103,6 +103,8 @@ struct _ExampleContactListManagerPrivate
    *    => ExampleContactDetails */
   GHashTable *contact_details;
 
+  TpHandleSet *blocked_contacts;
+
   /* GUINT_TO_POINTER (handle borrowed from channel) => ExampleContactGroup */
   GHashTable *groups;
 
@@ -131,6 +133,7 @@ example_contact_list_manager_init (ExampleContactListManager *self)
   self->priv->contact_repo = NULL;
   self->priv->group_repo = NULL;
   self->priv->contacts = NULL;
+  self->priv->blocked_contacts = NULL;
 }
 
 static void
@@ -170,6 +173,12 @@ example_contact_list_manager_close_all (ExampleContactListManager *self)
     {
       tp_handle_set_destroy (self->priv->contacts);
       self->priv->contacts = NULL;
+    }
+
+  if (self->priv->blocked_contacts != NULL)
+    {
+      tp_handle_set_destroy (self->priv->blocked_contacts);
+      self->priv->blocked_contacts = NULL;
     }
 
   if (self->priv->contact_details != NULL)
@@ -462,6 +471,16 @@ receive_contact_lists (gpointer p)
   d->publish_request = g_strdup ("I have some fermented herring for you");
   tp_handle_unref (self->priv->contact_repo, handle);
 
+  /* Add a couple of blocked contacts. */
+  handle = tp_handle_ensure (self->priv->contact_repo, "bill@example.com",
+      NULL, NULL);
+  tp_handle_set_add (self->priv->blocked_contacts, handle);
+  tp_handle_unref (self->priv->contact_repo, handle);
+  handle = tp_handle_ensure (self->priv->contact_repo, "steve@example.com",
+      NULL, NULL);
+  tp_handle_set_add (self->priv->blocked_contacts, handle);
+  tp_handle_unref (self->priv->contact_repo, handle);
+
   tp_group_mixin_change_members ((GObject *) cambridge_group, "",
       cam_set, NULL, NULL, NULL,
       0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
@@ -560,6 +579,7 @@ constructed (GObject *object)
   self->priv->group_repo = tp_base_connection_get_handles (self->priv->conn,
       TP_HANDLE_TYPE_GROUP);
   self->priv->contacts = tp_handle_set_new (self->priv->contact_repo);
+  self->priv->blocked_contacts = tp_handle_set_new (self->priv->contact_repo);
 
   self->priv->status_changed_id = g_signal_connect (self->priv->conn,
       "status-changed", (GCallback) status_changed_cb, self);
@@ -1504,6 +1524,88 @@ example_contact_list_manager_unpublish (TpContactListManager *manager,
   return TRUE;
 }
 
+static gboolean
+example_contact_list_manager_get_contact_blocked (
+    TpContactListManager *manager,
+    TpHandle contact)
+{
+  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
+
+  return tp_handle_set_is_member (self->priv->blocked_contacts, contact);
+}
+
+static TpHandleSet *
+example_contact_list_manager_get_blocked_contacts (
+    TpContactListManager *manager)
+{
+  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
+
+  return tp_handle_set_copy (self->priv->blocked_contacts);
+}
+
+static gboolean
+example_contact_list_manager_block_contacts (
+    TpContactListManager *manager,
+    TpHandleSet *contacts,
+    GError **error)
+{
+  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
+  TpIntSetFastIter iter;
+  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandle member;
+
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
+    {
+      if (tp_handle_set_is_member (self->priv->blocked_contacts, member))
+        {
+          tp_handle_set_remove (changed, member);
+        }
+      else
+        {
+          g_message ("Adding contact %s to blocked list",
+              tp_handle_inspect (self->priv->contact_repo, member));
+          tp_handle_set_add (self->priv->blocked_contacts, member);
+        }
+    }
+
+  tp_contact_list_manager_contact_blocking_changed (manager, changed);
+  tp_handle_set_destroy (changed);
+  return TRUE;
+}
+
+static gboolean
+example_contact_list_manager_unblock_contacts (
+    TpContactListManager *manager,
+    TpHandleSet *contacts,
+    GError **error)
+{
+  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
+  TpIntSetFastIter iter;
+  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandle member;
+
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
+    {
+      if (tp_handle_set_remove (self->priv->blocked_contacts, member))
+        {
+          g_message ("Removing contact %s from blocked list",
+              tp_handle_inspect (self->priv->contact_repo, member));
+        }
+      else
+        {
+          tp_handle_set_remove (changed, member);
+        }
+    }
+
+  tp_contact_list_manager_contact_blocking_changed (manager, changed);
+  tp_handle_set_destroy (changed);
+  return TRUE;
+}
+
 static void
 example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
 {
@@ -1546,6 +1648,17 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
       list_manager_class, example_contact_list_manager_unsubscribe);
   tp_contact_list_manager_class_implement_unpublish (
       list_manager_class, example_contact_list_manager_unpublish);
+
+  tp_contact_list_manager_class_implement_can_block (
+      list_manager_class, tp_contact_list_manager_true_func);
+  tp_contact_list_manager_class_implement_get_blocked_contacts (
+      list_manager_class, example_contact_list_manager_get_blocked_contacts);
+  tp_contact_list_manager_class_implement_get_contact_blocked (
+      list_manager_class, example_contact_list_manager_get_contact_blocked);
+  tp_contact_list_manager_class_implement_block_contacts (
+      list_manager_class, example_contact_list_manager_block_contacts);
+  tp_contact_list_manager_class_implement_unblock_contacts (
+      list_manager_class, example_contact_list_manager_unblock_contacts);
 
   g_type_class_add_private (klass, sizeof (ExampleContactListManagerPrivate));
 
