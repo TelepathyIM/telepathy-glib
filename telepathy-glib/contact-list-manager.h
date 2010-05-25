@@ -150,6 +150,36 @@ void tp_contact_list_manager_class_implement_unpublish (
     TpContactListManagerClass *cls,
     TpContactListManagerActOnContactsFunc impl);
 
+/* ---- contact blocking ---- */
+
+void tp_contact_list_manager_contact_blocking_changed (
+    TpContactListManager *self,
+    TpHandleSet *changed);
+
+void tp_contact_list_manager_class_implement_can_block (
+    TpContactListManagerClass *cls,
+    TpContactListManagerBooleanFunc check);
+
+void tp_contact_list_manager_class_implement_get_blocked_contacts (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGetContactsFunc impl);
+
+typedef gboolean (*TpContactListManagerContactBooleanFunc) (
+    TpContactListManager *self,
+    TpHandle contact);
+
+void tp_contact_list_manager_class_implement_get_contact_blocked (
+    TpContactListManagerClass *cls,
+    TpContactListManagerContactBooleanFunc impl);
+
+void tp_contact_list_manager_class_implement_block_contacts (
+    TpContactListManagerClass *cls,
+    TpContactListManagerActOnContactsFunc impl);
+
+void tp_contact_list_manager_class_implement_unblock_contacts (
+    TpContactListManagerClass *cls,
+    TpContactListManagerActOnContactsFunc impl);
+
 G_END_DECLS
 
 #endif

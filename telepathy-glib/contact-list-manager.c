@@ -191,6 +191,12 @@ struct _TpContactListManagerClassPrivate
   TpContactListManagerBooleanFunc subscriptions_persist;
   TpContactListManagerBooleanFunc can_change_subscriptions;
   TpContactListManagerBooleanFunc request_uses_message;
+
+  TpContactListManagerBooleanFunc can_block;
+  TpContactListManagerContactBooleanFunc get_contact_blocked;
+  TpContactListManagerGetContactsFunc get_blocked_contacts;
+  TpContactListManagerActOnContactsFunc block_contacts;
+  TpContactListManagerActOnContactsFunc unblock_contacts;
 };
 
 static void channel_manager_iface_init (TpChannelManagerIface *iface);
@@ -428,6 +434,14 @@ tp_contact_list_manager_constructed (GObject *object)
       g_assert (cls->priv->unpublish != NULL);
     }
 
+  if (cls->priv->can_block != tp_contact_list_manager_false_func)
+    {
+      g_assert (cls->priv->get_blocked_contacts != NULL);
+      g_assert (cls->priv->get_contact_blocked != NULL);
+      g_assert (cls->priv->block_contacts != NULL);
+      g_assert (cls->priv->unblock_contacts != NULL);
+    }
+
   self->priv->contact_repo = tp_base_connection_get_handles (self->priv->conn,
       TP_HANDLE_TYPE_CONTACT);
   g_object_ref (self->priv->contact_repo);
@@ -469,6 +483,7 @@ tp_contact_list_manager_class_init (TpContactListManagerClass *cls)
   cls->priv->can_change_subscriptions = tp_contact_list_manager_false_func;
   cls->priv->subscriptions_persist = tp_contact_list_manager_true_func;
   cls->priv->request_uses_message = tp_contact_list_manager_true_func;
+  cls->priv->can_block = tp_contact_list_manager_false_func;
 
   object_class->get_property = tp_contact_list_manager_get_property;
   object_class->set_property = tp_contact_list_manager_set_property;
@@ -675,9 +690,7 @@ tp_contact_list_manager_request_helper (TpChannelManager *manager,
           goto error;
         }
 
-      /* FIXME: allow the deny list on CMs where it's appropriate: for now,
-       * we never allow it */
-      if (handle == TP_LIST_HANDLE_DENY)
+      if (handle == TP_LIST_HANDLE_DENY && !cls->priv->can_block (self))
         {
           g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
               "This connection cannot put people on the 'deny' list");
@@ -863,8 +876,7 @@ _tp_contact_list_manager_add_to_list (TpContactListManager *self,
       break;
 
     case TP_LIST_HANDLE_DENY:
-      /* FIXME: stub */
-      ret = TRUE;
+      ret = cls->priv->block_contacts (self, contacts, error);
       break;
     }
 
@@ -911,7 +923,7 @@ _tp_contact_list_manager_remove_from_list (TpContactListManager *self,
       break;
 
     case TP_LIST_HANDLE_DENY:
-      /* FIXME: stub */
+      ret = cls->priv->unblock_contacts (self, contacts, error);
       ret = TRUE;
       break;
     }
@@ -952,6 +964,11 @@ satisfy_queued_requests (TpExportableChannel *channel,
  * The #TpContactListManagerGetContactsFunc and
  * #TpContactListManagerGetPresenceStatesFunc must already give correct
  * results when entering this method.
+ *
+ * The results of the implementations for
+ * tp_contact_list_manager_class_implement_get_contact_blocked() and
+ * tp_contact_list_manager_class_implement_get_blocked_contacts() must also
+ * give correct results when entering this method, if they're implemented.
  */
 void
 tp_contact_list_manager_set_list_received (TpContactListManager *self)
@@ -986,14 +1003,6 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
           TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_STORED, NULL);
     }
 
-  /* FIXME: only create deny on CMs where it's appropriate */
-  if (FALSE &&
-      self->priv->lists[TP_LIST_HANDLE_DENY] == NULL)
-    {
-      tp_contact_list_manager_new_channel (self,
-          TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_DENY, NULL);
-    }
-
   contacts = cls->priv->get_contacts (self);
 
   if (DEBUGGING)
@@ -1006,6 +1015,28 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
 
   tp_contact_list_manager_contacts_changed (self, contacts, NULL);
   tp_handle_set_destroy (contacts);
+
+  if (cls->priv->can_block (self))
+    {
+      if (self->priv->lists[TP_LIST_HANDLE_DENY] == NULL)
+        {
+          tp_contact_list_manager_new_channel (self,
+              TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_DENY, NULL);
+        }
+
+      contacts = cls->priv->get_blocked_contacts (self);
+
+      if (DEBUGGING)
+        {
+          gchar *tmp = tp_intset_dump (tp_handle_set_peek (contacts));
+
+          DEBUG ("Initially blocked contacts: %s", tmp);
+          g_free (tmp);
+        }
+
+      tp_contact_list_manager_contact_blocking_changed (self, contacts);
+      tp_handle_set_destroy (contacts);
+    }
 
   tp_contact_list_manager_foreach_channel ((TpChannelManager *) self,
       satisfy_queued_requests, self);
@@ -1214,6 +1245,73 @@ tp_contact_list_manager_contacts_changed (TpContactListManager *self,
 
   g_hash_table_unref (changes);
   g_array_unref (removals);
+}
+
+/**
+ * tp_contact_list_manager_contact_blocking_changed:
+ * @self: the contact list manager
+ * @changed: a set of contacts who were blocked or unblocked
+ *
+ * Emit signals for a change to the blocked contacts list.
+ *
+ * The results of the implementations for
+ * tp_contact_list_manager_class_implement_get_contact_blocked() and
+ * tp_contact_list_manager_class_implement_get_blocked_contacts()
+ * must already reflect the contacts' new statuses when entering this method
+ * (in practice, this means that implementations must update their own cache
+ * of contacts before calling this method).
+ */
+void
+tp_contact_list_manager_contact_blocking_changed (TpContactListManager *self,
+    TpHandleSet *changed)
+{
+  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpIntSet *blocked, *unblocked;
+  TpIntSetFastIter iter;
+  GObject *deny_chan;
+  TpHandle handle;
+
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (changed != NULL);
+
+  /* don't do anything if we're disconnecting, or if we haven't had the
+   * initial contact list yet */
+  if (!tp_contact_list_manager_check_still_usable (self, NULL) ||
+      !self->priv->had_contact_list)
+    return;
+
+  g_return_if_fail (cls->priv->can_block (self));
+
+  deny_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_DENY];
+  g_return_if_fail (G_IS_OBJECT (deny_chan));
+
+  blocked = tp_intset_new ();
+  unblocked = tp_intset_new ();
+
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (changed));
+
+  while (tp_intset_fast_iter_next (&iter, &handle))
+    {
+      if (cls->priv->get_contact_blocked (self, handle))
+        tp_intset_add (blocked, handle);
+      else
+        tp_intset_add (unblocked, handle);
+
+      DEBUG ("Contact %s: blocked=%c",
+          tp_handle_inspect (self->priv->contact_repo, handle),
+          cls->priv->get_contact_blocked (self, handle) ? 'Y' : 'N');
+    }
+
+  tp_group_mixin_change_members (deny_chan, "",
+      blocked, unblocked, NULL, NULL,
+      tp_base_connection_get_self_handle (self->priv->conn),
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  /* FIXME: emit ContactBlockingChanged (blocked, unblocked) when the new
+   * D-Bus API is available */
+
+  tp_intset_destroy (blocked);
+  tp_intset_destroy (unblocked);
 }
 
 /**
@@ -1530,4 +1628,121 @@ void tp_contact_list_manager_class_implement_request_uses_message (
   g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
   g_return_if_fail (check != NULL);
   cls->priv->request_uses_message = check;
+}
+
+/**
+ * tp_contact_list_manager_class_implement_can_block:
+ * @cls: a contact list manager subclass
+ * @check: a function that returns %TRUE if contacts can be
+ *  blocked
+ *
+ * Set whether instances of a contact list manager subclass can block
+ * and unblock contacts. The default is tp_contact_list_manager_false_func().
+ *
+ * Subclasses that call this method in #GTypeClass.class_init and set
+ * any implementation other than tp_contact_list_manager_false_func()
+ * (even if that implementation itself returns %FALSE) must also call
+ * tp_contact_list_manager_class_implement_get_contact_blocked(),
+ * tp_contact_list_manager_class_implement_get_blocked_contacts(),
+ * tp_contact_list_manager_class_implement_block_contacts() and
+ * tp_contact_list_manager_class_implement_unblock_contacts().
+ *
+ * In the case of a protocol where blocking may or may not work
+ * and this is detected while connecting, the subclass can implement another
+ * #TpContactListManagerBooleanFunc (whose result must remain constant
+ * after the #TpBaseConnection has moved to state
+ * %TP_CONNECTION_STATUS_CONNECTED), and use that as the implementation.
+ *
+ * (For instance, this could be useful for XMPP, where support for contact
+ * blocking is server-dependent: telepathy-gabble 0.8.x implements it for
+ * connections to Google Talk servers, but not for any other server.)
+ */
+void
+tp_contact_list_manager_class_implement_can_block (
+    TpContactListManagerClass *cls,
+    TpContactListManagerBooleanFunc check)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (check != NULL);
+  cls->priv->can_block = check;
+}
+
+/**
+ * tp_contact_list_manager_class_implement_get_blocked_contacts:
+ * @cls: a contact list manager subclass
+ * @impl: a function that returns the set of blocked contacts
+ *
+ * Set a function that can be used to list all blocked contacts.
+ */
+void
+tp_contact_list_manager_class_implement_get_blocked_contacts (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGetContactsFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->get_blocked_contacts = impl;
+}
+
+/**
+ * TpContactListManagerContactBooleanFunc:
+ * @self: a contact list manager
+ * @contact: a contact
+ *
+ * Signature of a virtual method that returns some boolean attribute of a
+ * contact, such as whether communication from that contact has been blocked.
+ *
+ * Returns: %TRUE if the contact has the attribute.
+ */
+
+/**
+ * tp_contact_list_manager_class_implement_get_contact_blocked:
+ * @cls: a contact list manager subclass
+ * @impl: a function that returns %TRUE if the @contact is blocked
+ *
+ * Set a function that can be used to check whether a contact has been
+ * blocked.
+ */
+void
+tp_contact_list_manager_class_implement_get_contact_blocked (
+    TpContactListManagerClass *cls,
+    TpContactListManagerContactBooleanFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->get_contact_blocked = impl;
+}
+
+/**
+ * tp_contact_list_manager_class_implement_block_contacts:
+ * @cls: a contact list manager subclass
+ * @impl: a function that blocks the contacts
+ *
+ * Set a function that can be used to block contacts.
+ */
+void
+tp_contact_list_manager_class_implement_block_contacts (
+    TpContactListManagerClass *cls,
+    TpContactListManagerActOnContactsFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->block_contacts = impl;
+}
+
+/**
+ * tp_contact_list_manager_class_implement_unblock_contacts:
+ * @cls: a contact list manager subclass
+ * @impl: a function that unblocks the contacts
+ *
+ * Set a function that can be used to unblock contacts.
+ */
+void
+tp_contact_list_manager_class_implement_unblock_contacts (
+    TpContactListManagerClass *cls,
+    TpContactListManagerActOnContactsFunc impl)
+{
+  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->unblock_contacts = impl;
 }
