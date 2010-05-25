@@ -523,7 +523,7 @@ test_observer (Test *test,
       channels, "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
-  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service);
+  test_text_channel_null_close (test->text_chan_service);
 
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
@@ -665,7 +665,7 @@ test_approver (Test *test,
       channels, CDO_PATH, properties,
       no_return_cb, test, NULL, NULL);
 
-  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service_2);
+  test_text_channel_null_close (test->text_chan_service_2);
 
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
@@ -691,8 +691,7 @@ test_approver (Test *test,
       channels, CDO_PATH, properties,
       no_return_cb, test, NULL, NULL);
 
-  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service);
-
+  test_text_channel_null_close (test->text_chan_service);
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
