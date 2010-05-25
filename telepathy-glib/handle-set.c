@@ -46,7 +46,7 @@ struct _TpHandleSet
  *
  * The boxed type of a #TpHandleSet.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 
 GType
@@ -112,7 +112,7 @@ tp_handle_set_destroy (TpHandleSet *set)
  *
  * Remove every handle from @set, releasing the references it holds.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_handle_set_clear (TpHandleSet *set)
@@ -130,7 +130,7 @@ tp_handle_set_clear (TpHandleSet *set)
  *
  * Returns: %TRUE if the set has no members
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 gboolean
 tp_handle_set_is_empty (const TpHandleSet *set)
@@ -298,7 +298,7 @@ ref_one (guint handle, gpointer data)
  *
  * Returns: a new set
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 TpHandleSet *
 tp_handle_set_copy (const TpHandleSet *other)

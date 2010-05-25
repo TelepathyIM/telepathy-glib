@@ -1,5 +1,7 @@
-telepathy-glib 0.11.6 (UNRELEASED)
+telepathy-glib 0.11.6 (2010-05-25)
 ==================================
+
+The "anybody need this sign?" release.
 
 This version includes all the bugfixes from today's 0.10.6 release.
 

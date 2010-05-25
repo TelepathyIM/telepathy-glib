@@ -121,7 +121,7 @@
  * tp_handle_channels_context_delay() or tp_handle_channels_context_fail()
  * on @context before it returns.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 
 #include "telepathy-glib/base-client.h"
@@ -409,7 +409,7 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_handle_channels().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_be_a_handler (TpBaseClient *self)
@@ -438,7 +438,7 @@ tp_base_client_be_a_handler (TpBaseClient *self)
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_handle_channels().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_add_handler_filter (TpBaseClient *self,
@@ -469,7 +469,7 @@ tp_base_client_add_handler_filter (TpBaseClient *self,
  *        ...));
  * ]|
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_take_handler_filter (TpBaseClient *self,
@@ -499,7 +499,7 @@ tp_base_client_take_handler_filter (TpBaseClient *self,
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_handle_channels().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
@@ -528,7 +528,7 @@ tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_handle_channels().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_set_handler_request_notification (TpBaseClient *self)
@@ -573,7 +573,7 @@ _tp_base_client_add_handler_capability (TpBaseClient *self,
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_handle_channels().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_add_handler_capability (TpBaseClient *self,
@@ -604,7 +604,7 @@ tp_base_client_add_handler_capability (TpBaseClient *self,
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_handle_channels().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_add_handler_capabilities (TpBaseClient *self,
@@ -636,7 +636,7 @@ tp_base_client_add_handler_capabilities (TpBaseClient *self,
  * called, and may only be called on objects whose class has called
  * tp_base_client_implement_handle_channels().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
@@ -740,7 +740,7 @@ tp_base_client_register (TpBaseClient *self,
  * Returns: (transfer container) (element-type Tp.ChannelRequest): a #GList
  * of #TpChannelRequest
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 GList *
 tp_base_client_get_pending_requests (TpBaseClient *self)
@@ -760,7 +760,7 @@ tp_base_client_get_pending_requests (TpBaseClient *self)
  * Returns: (transfer container) (element-type Tp.Channel): the handled
  *  channels
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 GList *
 tp_base_client_get_handled_channels (TpBaseClient *self)
@@ -1182,7 +1182,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * tp_base_client_set_handler_request_notification() has been called
    * on @self previously.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   signals[SIGNAL_REQUEST_ADDED] = g_signal_new (
       "request-added", G_OBJECT_CLASS_TYPE (cls),
@@ -1206,7 +1206,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * tp_base_client_set_handler_request_notification() has been called
    * on @self previously.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   signals[SIGNAL_REQUEST_REMOVED] = g_signal_new (
       "request-removed", G_OBJECT_CLASS_TYPE (cls),
@@ -2058,7 +2058,7 @@ tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *cls,
  * Called by subclasses to define the actual implementation of the
  * HandleChannels() D-Bus method.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_implement_handle_channels (TpBaseClientClass *cls,
@@ -2085,7 +2085,7 @@ tp_base_client_implement_handle_channels (TpBaseClientClass *cls,
  * If the object still exists, tp_base_client_register() may be used to
  * attempt to register it again.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_base_client_unregister (TpBaseClient *self)

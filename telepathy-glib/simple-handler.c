@@ -57,6 +57,8 @@
  * ]|
  *
  * See examples/client/text-handler.c for a complete example.
+ *
+ * Since: 0.11.6
  */
 
 /**
@@ -64,7 +66,7 @@
  *
  * Data structure representing a simple Handler implementation.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 
 /**
@@ -72,7 +74,7 @@
  *
  * The class of a #TpSimpleHandler.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 
 /**
@@ -98,7 +100,7 @@
  * tp_handle_channels_context_delay() or tp_handle_channels_context_fail()
  * on @context before it returns.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 
 #include "telepathy-glib/simple-handler.h"
@@ -234,7 +236,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
    *
    * The value of the Handler.BypassApproval D-Bus property.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_boolean ("bypass-approval", "bypass approval",
       "Handler.BypassApproval",
@@ -248,7 +250,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
    *
    * If %TRUE, the Handler will implement the Requests interface
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_boolean ("requests", "requests",
       "Requests",
@@ -265,7 +267,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_pointer ("callback",
       "Callback",
@@ -280,7 +282,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
    * The user-data pointer passed to the callback implementing the
    * HandleChannels D-Bus method.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_pointer ("user-data", "user data",
       "pointer passed as user-data when HandleChannels is called",
@@ -294,7 +296,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
    * The #GDestroyNotify function called to free the user-data pointer when
    * the #TpSimpleHandler is destroyed.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_pointer ("destroy", "destroy",
       "function called to destroy the user-data when destroying the handler",
@@ -323,7 +325,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 TpBaseClient *
 tp_simple_handler_new (TpDBusDaemon *dbus,

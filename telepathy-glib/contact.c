@@ -93,7 +93,7 @@ struct _TpContact {
  *  (available since 0.11.3)
  * @TP_CONTACT_FEATURE_AVATAR_DATA: #TpContact:avatar-file and
  *  #TpContact:avatar-mime-type. Implies %TP_CONTACT_FEATURE_AVATAR_TOKEN
- *  (available since 0.11.UNRELEASED)
+ *  (available since 0.11.6)
  * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
  *  supported by this version of telepathy-glib
  *
@@ -325,7 +325,7 @@ tp_contact_get_avatar_token (TpContact *self)
  * Returns: (transfer none): the same #GFile as the #TpContact:avatar-file property
  *  (possibly %NULL)
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 GFile *
 tp_contact_get_avatar_file (TpContact *self)
@@ -346,7 +346,7 @@ tp_contact_get_avatar_file (TpContact *self)
  * Returns: the same MIME type as the #TpContact:avatar-mime-type property
  *  (possibly %NULL)
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 const gchar *
 tp_contact_get_avatar_mime_type (TpContact *self)
@@ -728,7 +728,7 @@ tp_contact_class_init (TpContactClass *klass)
    * contact. Note that setting %TP_CONTACT_FEATURE_AVATAR_DATA will also
    * implicitly set %TP_CONTACT_FEATURE_AVATAR_TOKEN.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_object ("avatar-file",
       "Avatar file",
@@ -746,7 +746,7 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * This is always the MIME type of the image given by #TpContact:avatar-file.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_string ("avatar-mime-type",
       "Avatar MIME type",

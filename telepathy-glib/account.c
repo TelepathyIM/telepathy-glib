@@ -842,7 +842,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_proxy_prepare_async() has finished; until then, the value is
    * %FALSE.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   g_object_class_install_property (object_class, PROP_CHANGING_PRESENCE,
       g_param_spec_boolean ("changing-presence",
@@ -2063,7 +2063,7 @@ tp_account_remove_finish (TpAccount *account,
  *
  * Returns: the same as the #TpAccount:changing-presence property
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 gboolean
 tp_account_get_changing_presence (TpAccount *self)

@@ -25,6 +25,8 @@
  *
  * Object used to represent the context of a Handler.HandleChannels()
  * D-Bus call on a #TpBaseClient.
+ *
+ * Since: 0.11.6
  */
 
 /**
@@ -33,7 +35,7 @@
  * Data structure representing the context of a Handler.HandleChannels()
  * call.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 
 /**
@@ -41,7 +43,7 @@
  *
  * The class of a #TpHandleChannelsContext.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 
 #include "telepathy-glib/handle-channels-context.h"
@@ -298,7 +300,7 @@ tp_handle_channels_context_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_object ("account", "TpAccount",
       "The TpAccount of the context",
@@ -316,7 +318,7 @@ tp_handle_channels_context_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_object ("connection", "TpConnection",
       "The TpConnection of the context",
@@ -334,7 +336,7 @@ tp_handle_channels_context_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
       "The TpChannels that have been passed to HandleChannels",
@@ -352,7 +354,7 @@ tp_handle_channels_context_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_boxed ("requests-satisfied",
      "GPtrArray of TpChannelRequest",
@@ -376,7 +378,7 @@ tp_handle_channels_context_class_init (
    * action happened at the current time, e.g. a client MAY
    * request that its window gains focus.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_int64 ("user-action-time",
      "User action time",
@@ -395,7 +397,7 @@ tp_handle_channels_context_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_boxed ("handler-info", "Handler info",
       "The Handler that has been passed to ObserveChannels",
@@ -411,7 +413,7 @@ tp_handle_channels_context_class_init (
    * HandleChannels call.
    * Can only be written during construction.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
       "The DBusGMethodInvocation associated with the HandleChannels call",
@@ -425,7 +427,7 @@ tp_handle_channels_context_class_init (
    *
    * Emitted when tp_handle_channels_context_accept has been called on @self.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.6
    */
   signals[SIGNAL_DONE] = g_signal_new (
       "done", G_OBJECT_CLASS_TYPE (cls),
@@ -464,7 +466,7 @@ TpHandleChannelsContext * _tp_handle_channels_context_new (
  * Called by #TpBaseClientClassAddDispatchOperationImpl when it's done so
  * the D-Bus method can return.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_handle_channels_context_accept (TpHandleChannelsContext *self)
@@ -489,7 +491,7 @@ tp_handle_channels_context_accept (TpHandleChannelsContext *self)
  *
  * Called by #TpBaseClientClassAddDispatchOperationImpl to raise a D-Bus error.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_handle_channels_context_fail (TpHandleChannelsContext *self,
@@ -517,7 +519,7 @@ tp_handle_channels_context_fail (TpHandleChannelsContext *self,
  * tp_handle_channels_context_accept() or
  * tp_handle_channels_context_fail() later.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_handle_channels_context_delay (TpHandleChannelsContext *self)

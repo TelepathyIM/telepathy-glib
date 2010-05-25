@@ -98,7 +98,7 @@ tp_intset_get_type (void)
  * A structure representing iteration over a set of integers. Must be
  * initialized with either TP_INTSET_ITER_INIT() or tp_intset_iter_init().
  *
- * Since 0.11.UNRELEASED, consider using #TpIntSetFastIter if iteration in
+ * Since 0.11.6, consider using #TpIntSetFastIter if iteration in
  * numerical order is not required.
  *
  */
@@ -119,7 +119,7 @@ tp_intset_get_type (void)
  * }
  * </programlisting></informalexample>
  *
- * Since 0.11.UNRELEASED, consider using #TpIntSetFastIter if iteration in
+ * Since 0.11.6, consider using #TpIntSetFastIter if iteration in
  * numerical order is not required.
  *
  */
@@ -496,7 +496,7 @@ tp_intset_size (const TpIntSet *set)
  *
  * Returns: %TRUE if @set is empty
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 gboolean
 tp_intset_is_empty (const TpIntSet *set)
@@ -782,7 +782,7 @@ tp_intset_dump (const TpIntSet *set)
  * }
  * </programlisting></informalexample>
  *
- * Since 0.11.UNRELEASED, consider using #TpIntSetFastIter if iteration in
+ * Since 0.11.6, consider using #TpIntSetFastIter if iteration in
  * numerical order is not required.
  *
  * Returns: %TRUE if (@iter->element) has been advanced
@@ -835,7 +835,7 @@ tp_intset_iter_next (TpIntSetIter *iter)
  * }
  * </programlisting></informalexample>
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 
 typedef struct {
@@ -855,7 +855,7 @@ tp_verify (sizeof (TpIntSetFastIter) >= sizeof (RealFastIter));
  * Initialize @iter to iterate over @set in arbitrary order. @iter will become
  * invalid if @set is modified.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_intset_fast_iter_init (TpIntSetFastIter *iter,
@@ -881,7 +881,7 @@ tp_intset_fast_iter_init (TpIntSetFastIter *iter,
  *
  * Returns: %FALSE if the end of the set has been reached
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 gboolean
 tp_intset_fast_iter_next (TpIntSetFastIter *iter,
