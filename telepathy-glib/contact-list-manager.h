@@ -21,6 +21,9 @@
 #define __TP_CONTACT_LIST_MANAGER_H__
 
 #include <glib-object.h>
+#include <gio/gio.h>
+
+#include <telepathy-glib/handle-repo.h>
 
 G_BEGIN_DECLS
 
@@ -59,6 +62,93 @@ GType tp_contact_list_manager_get_type (void);
 #define TP_CONTACT_LIST_MANAGER_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONTACT_LIST_MANAGER, \
                               TpContactListManagerClass))
+
+/* ---- Will be in telepathy-spec later (so, no GEnum) ---- */
+
+typedef enum { /*< skip >*/
+    TP_PRESENCE_STATE_NO,
+    TP_PRESENCE_STATE_ASK,
+    TP_PRESENCE_STATE_YES
+} TpPresenceState;
+
+/* ---- Called by subclasses ---- */
+
+void tp_contact_list_manager_set_list_received (TpContactListManager *self);
+
+void tp_contact_list_manager_contacts_changed (TpContactListManager *self,
+    TpHandleSet *changed,
+    TpHandleSet *removed);
+
+typedef gboolean (*TpContactListManagerBooleanFunc) (
+    TpContactListManager *self);
+
+gboolean tp_contact_list_manager_true_func (TpContactListManager *self);
+gboolean tp_contact_list_manager_false_func (TpContactListManager *self);
+
+void tp_contact_list_manager_class_implement_can_change_subscriptions (
+    TpContactListManagerClass *cls,
+    TpContactListManagerBooleanFunc check);
+
+void tp_contact_list_manager_class_implement_subscriptions_persist (
+    TpContactListManagerClass *cls,
+    TpContactListManagerBooleanFunc check);
+
+void tp_contact_list_manager_class_implement_request_uses_message (
+    TpContactListManagerClass *cls,
+    TpContactListManagerBooleanFunc check);
+
+typedef TpHandleSet *(*TpContactListManagerGetContactsFunc) (
+    TpContactListManager *self);
+
+void tp_contact_list_manager_class_implement_get_contacts (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGetContactsFunc impl);
+
+typedef void (*TpContactListManagerGetPresenceStatesFunc) (
+    TpContactListManager *self,
+    TpHandle contact,
+    TpPresenceState *subscribe,
+    TpPresenceState *publish,
+    gchar **publish_request);
+
+void tp_contact_list_manager_class_implement_get_states (
+    TpContactListManagerClass *cls,
+    TpContactListManagerGetPresenceStatesFunc impl);
+
+typedef gboolean (*TpContactListManagerRequestSubscriptionFunc) (
+    TpContactListManager *self,
+    TpHandleSet *contacts,
+    const gchar *message,
+    GError **error);
+
+void tp_contact_list_manager_class_implement_request_subscription (
+    TpContactListManagerClass *cls,
+    TpContactListManagerRequestSubscriptionFunc impl);
+
+typedef gboolean (*TpContactListManagerActOnContactsFunc) (
+    TpContactListManager *self,
+    TpHandleSet *contacts,
+    GError **error);
+
+void tp_contact_list_manager_class_implement_authorize_publication (
+    TpContactListManagerClass *cls,
+    TpContactListManagerActOnContactsFunc impl);
+
+void tp_contact_list_manager_class_implement_just_store_contacts (
+    TpContactListManagerClass *cls,
+    TpContactListManagerActOnContactsFunc impl);
+
+void tp_contact_list_manager_class_implement_remove_contacts (
+    TpContactListManagerClass *cls,
+    TpContactListManagerActOnContactsFunc impl);
+
+void tp_contact_list_manager_class_implement_unsubscribe (
+    TpContactListManagerClass *cls,
+    TpContactListManagerActOnContactsFunc impl);
+
+void tp_contact_list_manager_class_implement_unpublish (
+    TpContactListManagerClass *cls,
+    TpContactListManagerActOnContactsFunc impl);
 
 G_END_DECLS
 
