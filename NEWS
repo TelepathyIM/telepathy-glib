@@ -8,6 +8,22 @@ Requirements:
 
 Enhancements:
 
+* Updated to telepathy-spec 0.19.6:
+  * ChangingPresence property on the Account interface
+  * SupportedLocationFeatures property on the Location interface
+  * HandleWithTime method on ChannelDispatchOperation
+  * MultipleTones method, SendingTones and StoppedTones signals, and
+    CurrentlySendingTones and InitialTones properties on the DTMF interface
+
+* TpAccount:changing-presence and tp_account_get_changing_presence, a binding
+  for the new ChangingPresence property (smcv)
+
+* fd.o #27872: enhance TpBaseClient to support being a Handler (cassidy)
+
+* fd.o #27873: TpSimpleHandler, a simple TpBaseClient subclass for
+  projects that don't need their own subclass, and an example Approver that
+  uses it (cassidy)
+
 * fd.o #20035: add TP_CONTACT_FEATURE_AVATAR_DATA, the ability to cache and
   access avatar data (Zdra)
 
@@ -29,6 +45,8 @@ Fixes:
 
 * Move _tp_proxy_set_features_failed (which isn't intended to be API, and
   isn't ABI) to an internal header (smcv)
+
+* Fix the namespace version for GObject-Introspection (smcv)
 
 telepathy-glib 0.11.5 (2010-05-10)
 ==================================
