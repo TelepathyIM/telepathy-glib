@@ -33,6 +33,7 @@ GQuark tp_errors_quark (void);
 #define TP_ERROR_PREFIX "org.freedesktop.Telepathy.Error"
 
 #define TP_ERRORS (tp_errors_quark ())
+#define TP_ERROR TP_ERRORS
 
 void tp_g_set_error_invalid_handle_type (guint type, GError **error);
 void tp_g_set_error_unsupported_handle_type (guint type, GError **error);

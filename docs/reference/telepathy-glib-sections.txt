@@ -1863,6 +1863,8 @@ TP_ERROR_STR_RESOURCE_UNAVAILABLE
 <SUBSECTION Standard>
 tp_error_get_type
 tp_errors_quark
+<SUBSECTION Private>
+TP_ERROR
 </SECTION>
 
 <SECTION>
