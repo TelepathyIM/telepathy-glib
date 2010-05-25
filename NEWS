@@ -1,6 +1,8 @@
 telepathy-glib 0.11.6 (UNRELEASED)
 ==================================
 
+This version includes all the bugfixes from today's 0.10.6 release.
+
 Requirements:
 
 * If gtk-doc is enabled, it must be version 1.15 or later.
