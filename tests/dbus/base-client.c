@@ -7,6 +7,8 @@
  * notice and this notice are preserved.
  */
 
+/* We include -internal headers of context to be able to easily access to
+ * their semi-private attributes (connection, account, channels, etc). */
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/base-client.h>
