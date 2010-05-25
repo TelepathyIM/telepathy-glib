@@ -24,6 +24,7 @@ typedef struct {
     TpChannel *publish;
     TpChannel *subscribe;
     TpChannel *stored;
+    TpChannel *deny;
 
     TpChannel *group;
 
@@ -31,6 +32,7 @@ typedef struct {
     TpHandle sjoerd;
     TpHandle helen;
     TpHandle wim;
+    TpHandle bill;
     TpHandle ninja;
 
     GArray *arr;
@@ -86,6 +88,9 @@ setup (Test *test,
   test->wim = tp_handle_ensure (test->contact_repo, "wim@example.com",
       NULL, NULL);
   g_assert (test->wim != 0);
+  test->bill = tp_handle_ensure (test->contact_repo, "bill@example.com",
+      NULL, NULL);
+  g_assert (test->bill != 0);
   test->ninja = tp_handle_ensure (test->contact_repo, "ninja@example.com",
       NULL, NULL);
   g_assert (test->ninja != 0);
@@ -106,6 +111,7 @@ teardown (Test *test,
   tp_handle_unref (test->contact_repo, test->sjoerd);
   tp_handle_unref (test->contact_repo, test->helen);
   tp_handle_unref (test->contact_repo, test->wim);
+  tp_handle_unref (test->contact_repo, test->bill);
   tp_handle_unref (test->contact_repo, test->ninja);
 
   test_clear_object (&test->conn);
@@ -185,6 +191,7 @@ test_initial_channels (Test *test,
   test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST,
       "subscribe");
   test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
 
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->publish)), ==, 4);
@@ -233,6 +240,17 @@ test_initial_channels (Test *test,
         test->ninja));
   g_assert (!tp_intset_is_member (tp_channel_group_get_members (test->stored),
         test->ninja));
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->deny)), ==, 2);
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_local_pending (test->deny)),
+      ==, 0);
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_remote_pending (test->deny)),
+      ==, 0);
+  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->deny),
+        test->bill));
 }
 
 static void
@@ -877,6 +895,111 @@ test_remove_group_non_empty (Test *test,
   g_assert_no_error (error);
 }
 
+static void
+test_add_to_deny (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->deny)),
+      ==, 2);
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->ninja));
+
+  g_array_append_val (test->arr, test->ninja);
+  tp_cli_channel_interface_group_run_add_members (test->deny,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * change-notification, too */
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->deny)),
+      ==, 3);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->ninja));
+
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
+        test->ninja));
+}
+
+static void
+test_add_to_deny_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->bill));
+
+  g_array_append_val (test->arr, test->bill);
+  tp_cli_channel_interface_group_run_add_members (test->deny,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->bill));
+}
+
+static void
+test_remove_from_deny (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
+  test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+  test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST,
+      "subscribe");
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->bill));
+
+  g_array_append_val (test->arr, test->bill);
+  tp_cli_channel_interface_group_run_remove_members (test->deny,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * removal-notification, too */
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->bill));
+}
+
+static void
+test_remove_from_deny_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
+
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->ninja));
+
+  g_array_append_val (test->arr, test->ninja);
+  tp_cli_channel_interface_group_run_remove_members (test->deny,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->ninja));
+}
+
 int
 main (int argc,
       char **argv)
@@ -931,6 +1054,15 @@ main (int argc,
       Test, NULL, setup, test_remove_group, teardown);
   g_test_add ("/contact-lists/remove-group/non-empty",
       Test, NULL, setup, test_remove_group_non_empty, teardown);
+
+  g_test_add ("/contact-lists/add-to-deny",
+      Test, NULL, setup, test_add_to_deny, teardown);
+  g_test_add ("/contact-lists/add-to-deny/no-op",
+      Test, NULL, setup, test_add_to_deny_no_op, teardown);
+  g_test_add ("/contact-lists/remove-from-deny",
+      Test, NULL, setup, test_remove_from_deny, teardown);
+  g_test_add ("/contact-lists/remove-from-deny/no-op",
+      Test, NULL, setup, test_remove_from_deny_no_op, teardown);
 
   return g_test_run ();
 }
