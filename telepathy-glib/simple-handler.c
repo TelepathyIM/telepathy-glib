@@ -309,8 +309,9 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  * tp_simple_handler_new:
  * @dbus: a #TpDBusDaemon object, may not be %NULL
  * @bypass_approval: the value of the Handler.BypassApproval D-Bus property
+ * (see tp_base_client_set_handler_bypass_approval() for details)
  * @requests: if this handler implement Requests (see
- * tp_base_client_set_handler_bypass_approval() for details)
+ * tp_base_client_set_handler_request_notification() for details)
  * @name: the name of the Handler (see #TpBaseClient:name: for details)
  * @unique: the value of the TpBaseClient:uniquify-name: property
  * @callback: the function called when HandleChannels is called
