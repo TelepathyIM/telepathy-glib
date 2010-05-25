@@ -14,8 +14,6 @@ libexample_cm_contactlist_la_SOURCES = \
     conn.h \
     connection-manager.c \
     connection-manager.h \
-    contact-list.c \
-    contact-list.h \
     contact-list-manager.c \
     contact-list-manager.h
 

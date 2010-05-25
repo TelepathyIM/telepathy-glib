@@ -53,14 +53,6 @@ GType example_contact_list_manager_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CONTACT_LIST_MANAGER, \
                               ExampleContactListManagerClass))
 
-gboolean example_contact_list_manager_add_to_group (
-    ExampleContactListManager *self, GObject *channel,
-    TpHandle group, TpHandle member, const gchar *message, GError **error);
-
-gboolean example_contact_list_manager_remove_from_group (
-    ExampleContactListManager *self, GObject *channel,
-    TpHandle group, TpHandle member, const gchar *message, GError **error);
-
 /* this enum must be kept in sync with the array _statuses in
  * contact-list-manager.c */
 typedef enum {

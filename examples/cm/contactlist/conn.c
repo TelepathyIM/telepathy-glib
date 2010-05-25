@@ -144,31 +144,12 @@ example_contact_list_normalize_contact (TpHandleRepoIface *repo,
   return g_utf8_normalize (id, -1, G_NORMALIZE_ALL_COMPOSE);
 }
 
-static gchar *
-example_contact_list_normalize_group (TpHandleRepoIface *repo,
-                                      const gchar *id,
-                                      gpointer context,
-                                      GError **error)
-{
-  if (id[0] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "Contact group name cannot be empty");
-      return NULL;
-    }
-
-  return g_utf8_normalize (id, -1, G_NORMALIZE_ALL_COMPOSE);
-}
-
 static void
 create_handle_repos (TpBaseConnection *conn,
                      TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES])
 {
   repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new
       (TP_HANDLE_TYPE_CONTACT, example_contact_list_normalize_contact, NULL);
-
-  repos[TP_HANDLE_TYPE_GROUP] = tp_dynamic_handle_repo_new
-      (TP_HANDLE_TYPE_GROUP, example_contact_list_normalize_group, NULL);
 }
 
 static void
