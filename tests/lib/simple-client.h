@@ -28,6 +28,7 @@ struct _SimpleClient {
 
     TpObserveChannelsContext *observe_ctx;
     TpAddDispatchOperationContext *add_dispatch_ctx;
+    TpHandleChannelsContext *handle_channels_ctx;
 };
 
 GType simple_client_get_type (void);

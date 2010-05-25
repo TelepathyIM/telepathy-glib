@@ -560,7 +560,7 @@ test_channel_lost (Test *test,
       test);
 
   /* First channel disappears and so is lost */
-  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service);
+  test_text_channel_null_close (test->text_chan_service);
 
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
@@ -583,7 +583,7 @@ test_channel_lost (Test *test,
   g_signal_connect (test->cdo, "invalidated", G_CALLBACK (invalidated_cb),
       test);
 
-  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service_2);
+  test_text_channel_null_close (test->text_chan_service_2);
 
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
@@ -672,7 +672,7 @@ test_channel_lost_preparing (Test *test,
   tp_proxy_prepare_async (test->cdo, features, features_prepared_cb, test);
 
   /* First channel disappears while preparing */
-  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service);
+  test_text_channel_null_close (test->text_chan_service);
 
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
@@ -723,7 +723,7 @@ test_finished_preparing (Test *test,
   tp_proxy_prepare_async (test->cdo, features, features_not_prepared_cb, test);
 
   /* The 2 channels are lost while preparing */
-  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service);
+  test_text_channel_null_close (test->text_chan_service);
 
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
@@ -731,7 +731,7 @@ test_finished_preparing (Test *test,
   simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
 
-  tp_dbus_daemon_unregister_object (test->dbus, test->text_chan_service_2);
+  test_text_channel_null_close (test->text_chan_service_2);
 
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;

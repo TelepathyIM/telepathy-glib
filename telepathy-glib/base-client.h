@@ -26,6 +26,7 @@
 
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
+#include <telepathy-glib/handle-channels-context.h>
 #include <telepathy-glib/observe-channels-context.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/connection.h>
@@ -81,6 +82,18 @@ typedef void (*TpBaseClientClassAddDispatchOperationImpl) (
 void tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *klass,
     TpBaseClientClassAddDispatchOperationImpl impl);
 
+typedef void (*TpBaseClientClassHandleChannelsImpl) (
+    TpBaseClient *client,
+    TpAccount *account,
+    TpConnection *connection,
+    GList *channels,
+    GList *requests_satisfied,
+    gint64 user_action_time,
+    TpHandleChannelsContext *context);
+
+void tp_base_client_implement_handle_channels (TpBaseClientClass *klass,
+    TpBaseClientClassHandleChannelsImpl impl);
+
 /* setup functions which can only be called before register() */
 
 void tp_base_client_add_observer_filter (TpBaseClient *self,
@@ -97,12 +110,42 @@ void tp_base_client_add_approver_filter (TpBaseClient *self,
 void tp_base_client_take_approver_filter (TpBaseClient *self,
     GHashTable *filter);
 
+void tp_base_client_be_a_handler (TpBaseClient *self);
+
+void tp_base_client_add_handler_filter (TpBaseClient *self,
+    GHashTable *filter);
+void tp_base_client_take_handler_filter (TpBaseClient *self,
+    GHashTable *filter);
+void tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
+    gboolean bypass_approval);
+
+void tp_base_client_set_handler_request_notification (TpBaseClient *self);
+
+void tp_base_client_add_handler_capability (TpBaseClient *self,
+    const gchar *token);
+void tp_base_client_add_handler_capabilities (TpBaseClient *self,
+    const gchar * const *tokens);
+void tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
+    const gchar *first_token, ...) G_GNUC_NULL_TERMINATED;
+
+/* future, potentially (currently in spec as a draft):
+void tp_base_client_set_handler_related_conferences_bypass_approval (
+    TpBaseClient *self, gboolean bypass_approval);
+    */
+
 gboolean tp_base_client_register (TpBaseClient *self,
     GError **error);
 
 const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
 
 const gchar *tp_base_client_get_object_path (TpBaseClient *self);
+
+/* Normal methods, can be called at any time */
+
+GList *tp_base_client_get_pending_requests (TpBaseClient *self);
+GList *tp_base_client_get_handled_channels (TpBaseClient *self);
+
+void tp_base_client_unregister (TpBaseClient *self);
 
 #define TP_TYPE_BASE_CLIENT \
   (tp_base_client_get_type ())

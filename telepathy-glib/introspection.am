@@ -13,6 +13,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/connection-manager.c $(srcdir)/connection-manager.h \
 	$(srcdir)/channel.c $(srcdir)/channel.h \
 	$(srcdir)/handle.c $(srcdir)/handle.h \
+	$(srcdir)/handle-channels-context.c $(srcdir)/handle-channels-context.h \
 	$(srcdir)/dbus-daemon.c $(srcdir)/dbus-daemon.h \
 	$(srcdir)/interfaces.c $(srcdir)/interfaces.h \
 	$(srcdir)/intset.c $(srcdir)/intset.h \

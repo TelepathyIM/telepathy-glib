@@ -1,7 +1,7 @@
 /*
- *  objects for AddDispatchOperation calls
+ * object for HandleChannels calls context
  *
- * Copyright © 2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,33 +19,33 @@
  */
 
 /**
- * SECTION:add-dispatch-operation-context
- * @title: TpAddDispatchOperationContext
- * @short_description: context of a Approver.AddDispatchOperation() call
+ * SECTION: handle-channels-context
+ * @title: TpHandleChannelsContext
+ * @short_description: context of a Handler.HandleChannels() call
  *
- * Object used to represent the context of a Approver.AddDispatchOperation()
+ * Object used to represent the context of a Handler.HandleChannels()
  * D-Bus call on a #TpBaseClient.
  */
 
 /**
- * TpAddDispatchOperationContext:
+ * TpHandleChannelsContext:
  *
- * Data structure representing the context of a Approver.AddDispatchOperation()
+ * Data structure representing the context of a Handler.HandleChannels()
  * call.
  *
- * Since: 0.11.5
+ * Since: 0.11.UNRELEASED
  */
 
 /**
- * TpAddDispatchOperationContextClass:
+ * TpHandleChannelsContextClass:
  *
- * The class of a #TpAddDispatchOperationContext.
+ * The class of a #TpHandleChannelsContext.
  *
- * Since: 0.11.5
+ * Since: 0.11.UNRELEASED
  */
 
-#include "telepathy-glib/add-dispatch-operation-context-internal.h"
-#include "telepathy-glib/add-dispatch-operation-context.h"
+#include "telepathy-glib/handle-channels-context.h"
+#include "telepathy-glib/handle-channels-context-internal.h"
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus.h>
@@ -53,27 +53,37 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/_gen/signals-marshal.h"
 
-struct _TpAddDispatchOperationContextClass {
+struct _TpHandleChannelsContextClass {
     /*<private>*/
     GObjectClass parent_class;
 };
 
-G_DEFINE_TYPE(TpAddDispatchOperationContext,
-    tp_add_dispatch_operation_context, G_TYPE_OBJECT)
+G_DEFINE_TYPE(TpHandleChannelsContext,
+    tp_handle_channels_context, G_TYPE_OBJECT)
 
 enum {
     PROP_ACCOUNT = 1,
     PROP_CONNECTION,
     PROP_CHANNELS,
-    PROP_DISPATCH_OPERATION,
+    PROP_REQUESTS_SATISFIED,
+    PROP_USER_ACTION_TIME,
+    PROP_HANDLER_INFO,
     PROP_DBUS_CONTEXT,
     N_PROPS
 };
 
-struct _TpAddDispatchOperationContextPrivate
+enum {
+  SIGNAL_DONE,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = { 0 };
+
+struct _TpHandleChannelsContextPrivate
 {
-  TpAddDispatchOperationContextState state;
+  TpHandleChannelsContextState state;
   GSimpleAsyncResult *result;
   DBusGMethodInvocation *dbus_context;
 
@@ -83,34 +93,34 @@ struct _TpAddDispatchOperationContextPrivate
 };
 
 static void
-tp_add_dispatch_operation_context_init (TpAddDispatchOperationContext *self)
+tp_handle_channels_context_init (TpHandleChannelsContext *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_ADD_DISPATCH_OPERATION_CONTEXT,
-      TpAddDispatchOperationContextPrivate);
+      TP_TYPE_HANDLE_CHANNELS_CONTEXT,
+      TpHandleChannelsContextPrivate);
 
-  self->priv->state = TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE;
+  self->priv->state = TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE;
 }
 
 static void
-tp_add_dispatch_operation_context_dispose (GObject *object)
+tp_handle_channels_context_dispose (GObject *object)
 {
-  TpAddDispatchOperationContext *self = TP_ADD_DISPATCH_OPERATION_CONTEXT (
+  TpHandleChannelsContext *self = TP_HANDLE_CHANNELS_CONTEXT (
       object);
   void (*dispose) (GObject *) =
-    G_OBJECT_CLASS (tp_add_dispatch_operation_context_parent_class)->dispose;
+    G_OBJECT_CLASS (tp_handle_channels_context_parent_class)->dispose;
 
-  if (self->priv->state == TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE ||
-      self->priv->state == TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_DELAYED)
+  if (self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE ||
+      self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED)
     {
       GError error = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Disposing the TpAddDispatchOperationContext" };
+          "Disposing the TpHandleChannelsContext" };
 
       WARNING ("Disposing a context in the %s state",
-          self->priv->state == TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE ?
+          self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE ?
           "none": "delayed");
 
-      tp_add_dispatch_operation_context_fail (self, &error);
+      tp_handle_channels_context_fail (self, &error);
     }
 
   if (self->account != NULL)
@@ -132,10 +142,18 @@ tp_add_dispatch_operation_context_dispose (GObject *object)
       self->channels = NULL;
     }
 
-  if (self->dispatch_operation != NULL)
+  if (self->requests_satisfied != NULL)
     {
-      g_object_unref (self->dispatch_operation);
-      self->dispatch_operation = NULL;
+      g_ptr_array_foreach (self->requests_satisfied, (GFunc) g_object_unref,
+          NULL);
+      g_ptr_array_unref (self->requests_satisfied);
+      self->requests_satisfied = NULL;
+    }
+
+  if (self->handler_info != NULL)
+    {
+      g_hash_table_unref (self->handler_info);
+      self->handler_info = NULL;
     }
 
   if (self->priv->result != NULL)
@@ -149,12 +167,12 @@ tp_add_dispatch_operation_context_dispose (GObject *object)
 }
 
 static void
-tp_add_dispatch_operation_context_get_property (GObject *object,
+tp_handle_channels_context_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpAddDispatchOperationContext *self = TP_ADD_DISPATCH_OPERATION_CONTEXT (
+  TpHandleChannelsContext *self = TP_HANDLE_CHANNELS_CONTEXT (
       object);
 
   switch (property_id)
@@ -171,8 +189,16 @@ tp_add_dispatch_operation_context_get_property (GObject *object,
         g_value_set_boxed (value, self->channels);
         break;
 
-      case PROP_DISPATCH_OPERATION:
-        g_value_set_object (value, self->dispatch_operation);
+      case PROP_REQUESTS_SATISFIED:
+        g_value_set_boxed (value, self->requests_satisfied);
+        break;
+
+      case PROP_USER_ACTION_TIME:
+        g_value_set_int64 (value, self->user_action_time);
+        break;
+
+      case PROP_HANDLER_INFO:
+        g_value_set_boxed (value, self->handler_info);
         break;
 
       default:
@@ -182,12 +208,12 @@ tp_add_dispatch_operation_context_get_property (GObject *object,
 }
 
 static void
-tp_add_dispatch_operation_context_set_property (GObject *object,
+tp_handle_channels_context_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TpAddDispatchOperationContext *self = TP_ADD_DISPATCH_OPERATION_CONTEXT (
+  TpHandleChannelsContext *self = TP_HANDLE_CHANNELS_CONTEXT (
       object);
 
   switch (property_id)
@@ -205,8 +231,18 @@ tp_add_dispatch_operation_context_set_property (GObject *object,
         g_ptr_array_foreach (self->channels, (GFunc) g_object_ref, NULL);
         break;
 
-      case PROP_DISPATCH_OPERATION:
-        self->dispatch_operation = g_value_dup_object (value);
+      case PROP_REQUESTS_SATISFIED:
+        self->requests_satisfied = g_value_dup_boxed (value);
+        g_ptr_array_foreach (self->requests_satisfied, (GFunc) g_object_ref,
+            NULL);
+        break;
+
+      case PROP_USER_ACTION_TIME:
+        self->user_action_time = g_value_get_int64 (value);
+        break;
+
+      case PROP_HANDLER_INFO:
+        self->handler_info = g_value_dup_boxed (value);
         break;
 
       case PROP_DBUS_CONTEXT:
@@ -220,13 +256,13 @@ tp_add_dispatch_operation_context_set_property (GObject *object,
 }
 
 static void
-tp_add_dispatch_operation_context_constructed (GObject *object)
+tp_handle_channels_context_constructed (GObject *object)
 {
-  TpAddDispatchOperationContext *self = TP_ADD_DISPATCH_OPERATION_CONTEXT (
+  TpHandleChannelsContext *self = TP_HANDLE_CHANNELS_CONTEXT (
       object);
   void (*chain_up) (GObject *) =
     ((GObjectClass *)
-      tp_add_dispatch_operation_context_parent_class)->constructed;
+      tp_handle_channels_context_parent_class)->constructed;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -234,34 +270,35 @@ tp_add_dispatch_operation_context_constructed (GObject *object)
   g_assert (self->account != NULL);
   g_assert (self->connection != NULL);
   g_assert (self->channels != NULL);
-  g_assert (self->dispatch_operation != NULL);
+  g_assert (self->requests_satisfied != NULL);
+  g_assert (self->handler_info != NULL);
   g_assert (self->priv->dbus_context != NULL);
 }
 
 static void
-tp_add_dispatch_operation_context_class_init (
-    TpAddDispatchOperationContextClass *cls)
+tp_handle_channels_context_class_init (
+    TpHandleChannelsContextClass *cls)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
   GParamSpec *param_spec;
 
-  g_type_class_add_private (cls, sizeof (TpAddDispatchOperationContextPrivate));
+  g_type_class_add_private (cls, sizeof (TpHandleChannelsContextPrivate));
 
-  object_class->get_property = tp_add_dispatch_operation_context_get_property;
-  object_class->set_property = tp_add_dispatch_operation_context_set_property;
-  object_class->constructed = tp_add_dispatch_operation_context_constructed;
-  object_class->dispose = tp_add_dispatch_operation_context_dispose;
+  object_class->get_property = tp_handle_channels_context_get_property;
+  object_class->set_property = tp_handle_channels_context_set_property;
+  object_class->constructed = tp_handle_channels_context_constructed;
+  object_class->dispose = tp_handle_channels_context_dispose;
 
  /**
-   * TpAddDispatchOperationContext:account:
+   * TpHandleChannelsContext:account:
    *
    * A #TpAccount object representing the Account of the DispatchOperation
-   * that has been passed to AddDispatchOperation.
+   * that has been passed to HandleChannels.
    * Read-only except during construction.
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.5
+   * Since: 0.11.UNRELEASED
    */
   param_spec = g_param_spec_object ("account", "TpAccount",
       "The TpAccount of the context",
@@ -271,15 +308,15 @@ tp_add_dispatch_operation_context_class_init (
       param_spec);
 
   /**
-   * TpAddDispatchOperationContext:connection:
+   * TpHandleChannelsContext:connection:
    *
    * A #TpConnection object representing the Connection of the DispatchOperation
-   * that has been passed to AddDispatchOperation.
+   * that has been passed to HandleChannels.
    * Read-only except during construction.
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.5
+   * Since: 0.11.UNRELEASED
    */
   param_spec = g_param_spec_object ("connection", "TpConnection",
       "The TpConnection of the context",
@@ -289,160 +326,223 @@ tp_add_dispatch_operation_context_class_init (
       param_spec);
 
   /**
-   * TpAddDispatchOperationContext:channels:
+   * TpHandleChannelsContext:channels:
    *
    * A #GPtrArray containing #TpChannel objects representing the channels
-   * that have been passed to AddDispatchOperation.
+   * that have been passed to HandleChannels.
    * Read-only except during construction.
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.5
+   * Since: 0.11.UNRELEASED
    */
   param_spec = g_param_spec_boxed ("channels", "GPtrArray of TpChannel",
-      "The TpChannels that have been passed to AddDispatchOperation",
+      "The TpChannels that have been passed to HandleChannels",
       G_TYPE_PTR_ARRAY,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNELS,
       param_spec);
 
   /**
-   * TpAddDispatchOperationContext:dispatch-operation:
+   * TpHandleChannelsContext:requests-satisfied:
    *
-   * A #TpChannelDispatchOperation object representing the
-   * ChannelDispatchOperation that has been passed to AddDispatchOperation.
+   * A #GPtrArray containing #TpChannelRequest objects representing the
+   * requests that have been passed to HandleChannels.
    * Read-only except during construction.
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.5
+   * Since: 0.11.UNRELEASED
    */
-  param_spec = g_param_spec_object ("dispatch-operation",
-     "TpChannelDispatchOperation",
-     "The TpChannelDispatchOperation that has been passed to "
-     "AddDispatchOperation",
-     TP_TYPE_CHANNEL_DISPATCH_OPERATION,
+  param_spec = g_param_spec_boxed ("requests-satisfied",
+     "GPtrArray of TpChannelRequest",
+     "The TpChannelRequest that has been passed to "
+     "HandleChannels",
+     G_TYPE_PTR_ARRAY,
      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DISPATCH_OPERATION,
+  g_object_class_install_property (object_class, PROP_REQUESTS_SATISFIED,
       param_spec);
 
   /**
-   * TpAddDispatchOperationContext:dbus-context: (skip)
+   * TpHandleChannelsContext:user-action-time:
+   *
+   * The User_Action_Time that have been passed to HandleChannels.
+   * Read-only except during construction.
+   *
+   * If 0, the action doesn't involve any user action. Clients
+   * SHOULD avoid stealing focus when presenting the channel.
+   *
+   * If #G_MAXINT64: clients SHOULD behave as though the user
+   * action happened at the current time, e.g. a client MAY
+   * request that its window gains focus.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_int64 ("user-action-time",
+     "User action time",
+     "The User_Action_Time that has been passed to HandleChannels",
+     0, G_MAXINT64, 0,
+     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_USER_ACTION_TIME,
+      param_spec);
+
+  /**
+   * TpHandleChannelsContext:handler-info:
+   *
+   * A #GHashTable where the keys are string and values are GValue instances.
+   * It represents the Handler_info hash table that has been passed to
+   * HandleChannels.
+   *
+   * This property can't be %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("handler-info", "Handler info",
+      "The Handler that has been passed to ObserveChannels",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_HANDLER_INFO,
+      param_spec);
+
+  /**
+   * TpHandleChannelsContext:dbus-context: (skip)
    *
    * The #DBusGMethodInvocation representing the D-Bus context of the
-   * AddDispatchOperation call.
+   * HandleChannels call.
    * Can only be written during construction.
    *
-   * Since: 0.11.5
+   * Since: 0.11.UNRELEASED
    */
   param_spec = g_param_spec_pointer ("dbus-context", "D-Bus context",
-      "The DBusGMethodInvocation associated with the AddDispatchOperation call",
+      "The DBusGMethodInvocation associated with the HandleChannels call",
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_CONTEXT,
       param_spec);
+
+ /**
+   * TpHandleChannelsContext::done:
+   * @self: a #TpHandleChannelsContext
+   *
+   * Emitted when tp_handle_channels_context_accept has been called on @self.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  signals[SIGNAL_DONE] = g_signal_new (
+      "done", G_OBJECT_CLASS_TYPE (cls),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
 }
 
-TpAddDispatchOperationContext *
-_tp_add_dispatch_operation_context_new (
+TpHandleChannelsContext * _tp_handle_channels_context_new (
     TpAccount *account,
     TpConnection *connection,
     GPtrArray *channels,
-    TpChannelDispatchOperation *dispatch_operation,
+    GPtrArray *requests_satisfied,
+    guint64 user_action_time,
+    GHashTable *handler_info,
     DBusGMethodInvocation *dbus_context)
 {
-  return g_object_new (TP_TYPE_ADD_DISPATCH_OPERATION_CONTEXT,
+  return g_object_new (TP_TYPE_HANDLE_CHANNELS_CONTEXT,
       "account", account,
       "connection", connection,
       "channels", channels,
-      "dispatch-operation", dispatch_operation,
+      "requests-satisfied", requests_satisfied,
+      "user-action-time", user_action_time,
+      "handler-info", handler_info,
       "dbus-context", dbus_context,
       NULL);
 }
 
 /**
- * tp_add_dispatch_operation_context_accept:
- * @self: a #TpAddDispatchOperationContext
+ * tp_handle_channels_context_accept:
+ * @self: a #TpHandleChannelsContext
  *
  * Called by #TpBaseClientClassAddDispatchOperationImpl when it's done so
  * the D-Bus method can return.
  *
- * Since: 0.11.5
+ * Since: 0.11.UNRELEASED
  */
 void
-tp_add_dispatch_operation_context_accept (TpAddDispatchOperationContext *self)
+tp_handle_channels_context_accept (TpHandleChannelsContext *self)
 {
   g_return_if_fail (self->priv->state ==
-      TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE
-      || self->priv->state == TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_DELAYED);
+      TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE
+      || self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED);
   g_return_if_fail (self->priv->dbus_context != NULL);
 
-  self->priv->state = TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_DONE;
+  self->priv->state = TP_HANDLE_CHANNELS_CONTEXT_STATE_DONE;
   dbus_g_method_return (self->priv->dbus_context);
 
   self->priv->dbus_context = NULL;
+
+  g_signal_emit (self, signals[SIGNAL_DONE], 0);
 }
 
 /**
- * tp_add_dispatch_operation_context_fail:
- * @self: a #TpAddDispatchOperationContext
+ * tp_handle_channels_context_fail:
+ * @self: a #TpHandleChannelsContext
  * @error: the error to return from the method
  *
  * Called by #TpBaseClientClassAddDispatchOperationImpl to raise a D-Bus error.
  *
- * Since: 0.11.5
+ * Since: 0.11.UNRELEASED
  */
 void
-tp_add_dispatch_operation_context_fail (TpAddDispatchOperationContext *self,
+tp_handle_channels_context_fail (TpHandleChannelsContext *self,
     const GError *error)
 {
   g_return_if_fail (self->priv->state ==
-      TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE
-      || self->priv->state == TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_DELAYED);
+      TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE
+      || self->priv->state == TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED);
   g_return_if_fail (self->priv->dbus_context != NULL);
 
-  self->priv->state = TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_FAILED;
+  self->priv->state = TP_HANDLE_CHANNELS_CONTEXT_STATE_FAILED;
   dbus_g_method_return_error (self->priv->dbus_context, error);
 
   self->priv->dbus_context = NULL;
 }
 
 /**
- * tp_add_dispatch_operation_context_delay:
- * @self: a #TpAddDispatchOperationContext
+ * tp_handle_channels_context_delay:
+ * @self: a #TpHandleChannelsContext
  *
  * Called by #TpBaseClientClassAddDispatchOperationImpl to indicate that it
  * implements the method in an async way. The caller must take a reference
- * to the #TpAddDispatchOperationContext before calling this function, and
+ * to the #TpHandleChannelsContext before calling this function, and
  * is responsible for calling either
- * tp_add_dispatch_operation_context_accept() or
- * tp_add_dispatch_operation_context_fail() later.
+ * tp_handle_channels_context_accept() or
+ * tp_handle_channels_context_fail() later.
  *
- * Since: 0.11.5
+ * Since: 0.11.UNRELEASED
  */
 void
-tp_add_dispatch_operation_context_delay (TpAddDispatchOperationContext *self)
+tp_handle_channels_context_delay (TpHandleChannelsContext *self)
 {
   g_return_if_fail (self->priv->state ==
-      TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_NONE);
+      TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE);
 
-  self->priv->state = TP_ADD_DISPATCH_OPERATION_CONTEXT_STATE_DELAYED;
+  self->priv->state = TP_HANDLE_CHANNELS_CONTEXT_STATE_DELAYED;
 }
 
-TpAddDispatchOperationContextState
-_tp_add_dispatch_operation_context_get_state (
-    TpAddDispatchOperationContext *self)
+TpHandleChannelsContextState
+_tp_handle_channels_context_get_state (
+    TpHandleChannelsContext *self)
 {
   return self->priv->state;
 }
 
 static gboolean
-context_is_prepared (TpAddDispatchOperationContext *self)
+context_is_prepared (TpHandleChannelsContext *self)
 {
   return self->priv->num_pending == 0;
 }
 
 static void
-context_check_prepare (TpAddDispatchOperationContext *self)
+context_check_prepare (TpHandleChannelsContext *self)
 {
   if (!context_is_prepared (self))
     return;
@@ -455,36 +555,11 @@ context_check_prepare (TpAddDispatchOperationContext *self)
 }
 
 static void
-cdo_prepare_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpAddDispatchOperationContext *self = user_data;
-  GError *error = NULL;
-
-  if (self->priv->result == NULL)
-    goto out;
-
-  if (!tp_proxy_prepare_finish (source, result, &error))
-    {
-      DEBUG ("Failed to prepare ChannelDispatchOperation: %s", error->message);
-
-      g_error_free (error);
-    }
-
-  self->priv->num_pending--;
-  context_check_prepare (self);
-
-out:
-  g_object_unref (self);
-}
-
-static void
 account_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpAddDispatchOperationContext *self = user_data;
+  TpHandleChannelsContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -508,7 +583,7 @@ conn_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpAddDispatchOperationContext *self = user_data;
+  TpHandleChannelsContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -532,7 +607,7 @@ channel_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpAddDispatchOperationContext *self = user_data;
+  TpHandleChannelsContext *self = user_data;
   GError *error = NULL;
 
   if (self->priv->result == NULL)
@@ -553,24 +628,20 @@ out:
 }
 
 static void
-context_prepare (TpAddDispatchOperationContext *self)
+context_prepare (TpHandleChannelsContext *self)
 {
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CORE, 0 };
-  GQuark cdo_features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
   GQuark channel_features[] = { TP_CHANNEL_FEATURE_CORE, 0 };
   guint i;
 
-  self->priv->num_pending = 3;
+  self->priv->num_pending = 2;
 
   tp_proxy_prepare_async (self->account, account_features,
       account_prepare_cb, g_object_ref (self));
 
   tp_proxy_prepare_async (self->connection, conn_features,
       conn_prepare_cb, g_object_ref (self));
-
-  tp_proxy_prepare_async (self->dispatch_operation, cdo_features,
-      cdo_prepare_cb, g_object_ref (self));
 
   for (i = 0; i < self->channels->len; i++)
     {
@@ -584,31 +655,31 @@ context_prepare (TpAddDispatchOperationContext *self)
 }
 
 void
-_tp_add_dispatch_operation_context_prepare_async (
-    TpAddDispatchOperationContext *self,
+_tp_handle_channels_context_prepare_async (
+    TpHandleChannelsContext *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  g_return_if_fail (TP_IS_ADD_DISPATCH_OPERATION_CONTEXT (self));
+  g_return_if_fail (TP_IS_HANDLE_CHANNELS_CONTEXT (self));
   /* This is only used once, by TpBaseClient, so for simplicity, we only
    * allow one asynchronous preparation */
   g_return_if_fail (self->priv->result == NULL);
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self),
-      callback, user_data, _tp_add_dispatch_operation_context_prepare_async);
+      callback, user_data, _tp_handle_channels_context_prepare_async);
 
   context_prepare (self);
 }
 
 gboolean
-_tp_add_dispatch_operation_context_prepare_finish (
-    TpAddDispatchOperationContext *self,
+_tp_handle_channels_context_prepare_finish (
+    TpHandleChannelsContext *self,
     GAsyncResult *result,
     GError **error)
 {
   GSimpleAsyncResult *simple;
 
-  g_return_val_if_fail (TP_IS_ADD_DISPATCH_OPERATION_CONTEXT (self), FALSE);
+  g_return_val_if_fail (TP_IS_HANDLE_CHANNELS_CONTEXT (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
@@ -617,7 +688,7 @@ _tp_add_dispatch_operation_context_prepare_finish (
     return FALSE;
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), _tp_add_dispatch_operation_context_prepare_async),
+          G_OBJECT (self), _tp_handle_channels_context_prepare_async),
       FALSE);
 
   return TRUE;

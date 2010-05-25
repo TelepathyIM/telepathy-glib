@@ -68,6 +68,7 @@ IGNORE_HFILES=\
     channel-internal.h \
     connection-internal.h \
     debug-internal.h \
+    handle-channels-context-internal.h \
     handle-repo-internal.h \
     observe-channels-context-internal.h \
     proxy-internal.h \
