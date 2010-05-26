@@ -26,6 +26,30 @@
 
 G_BEGIN_DECLS
 
+typedef enum
+{
+  TPL_LOG_ENTRY_TEXT_SIGNAL_NONE = 0,
+  TPL_LOG_ENTRY_TEXT_SIGNAL_SENT,
+  TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED,
+  TPL_LOG_ENTRY_TEXT_SIGNAL_SEND_ERROR,
+  TPL_LOG_ENTRY_TEXT_SIGNAL_LOST_MESSAGE,
+  TPL_LOG_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED,
+  TPL_LOG_ENTRY_SIGNAL_CHANNEL_CLOSED
+} TplLogEntryTextSignalType;
+
+struct _TplLogEntryText
+{
+  TplLogEntry parent;
+
+  /* Private */
+  TplLogEntryTextPriv *priv;
+};
+
+struct _TplLogEntryTextClass
+{
+  TplLogEntryClass parent_class;
+};
+
 TplLogEntryText * _tpl_log_entry_text_new (const gchar* log_id,
     const gchar *account_path,
     TplLogEntryDirection direction);

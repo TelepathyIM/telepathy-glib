@@ -36,32 +36,9 @@ G_BEGIN_DECLS
 #define TPL_IS_LOG_ENTRY_TEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_LOG_ENTRY_TEXT))
 #define TPL_LOG_ENTRY_TEXT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_ENTRY_TEXT, TplLogEntryTextClass))
 
-typedef enum
-{
-  TPL_LOG_ENTRY_TEXT_SIGNAL_NONE = 0,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_SENT,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_SEND_ERROR,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_LOST_MESSAGE,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED,
-  TPL_LOG_ENTRY_SIGNAL_CHANNEL_CLOSED
-} TplLogEntryTextSignalType;
-
-
+typedef struct _TplLogEntryText TplLogEntryText;
+typedef struct _TplLogEntryTextClass TplLogEntryTextClass;
 typedef struct _TplLogEntryTextPriv TplLogEntryTextPriv;
-
-typedef struct
-{
-  TplLogEntry parent;
-
-  /* Private */
-  TplLogEntryTextPriv *priv;
-} TplLogEntryText;
-
-typedef struct
-{
-  TplLogEntryClass parent_class;
-} TplLogEntryTextClass;
 
 GType tpl_log_entry_text_get_type (void);
 
