@@ -50,6 +50,7 @@ libtelepathy_logger_la_SOURCES = \
 		debug-internal.h		\
 		debug.c				\
 		log-entry.c			\
+		log-entry-internal.h			\
 		log-entry-text.c		\
 		log-manager.c			\
 		log-store.c			\

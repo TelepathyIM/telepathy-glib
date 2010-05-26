@@ -40,6 +40,7 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/util.h>
 
+#include <telepathy-logger/log-entry-internal.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store.h>
@@ -850,9 +851,9 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
       message = tpl_log_entry_text_new (log_id,
           tp_proxy_get_object_path (account), TPL_LOG_ENTRY_DIRECTION_NONE);
 
-      tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (message), pending_id);
-      tpl_log_entry_set_sender (TPL_LOG_ENTRY (message), sender);
-      tpl_log_entry_set_timestamp (TPL_LOG_ENTRY (message), t);
+      _tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (message), pending_id);
+      _tpl_log_entry_set_sender (TPL_LOG_ENTRY (message), sender);
+      _tpl_log_entry_set_timestamp (TPL_LOG_ENTRY (message), t);
       tpl_log_entry_text_set_message (message, body);
       tpl_log_entry_text_set_message_type (message, msg_type);
 

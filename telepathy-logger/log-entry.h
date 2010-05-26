@@ -126,17 +126,6 @@ TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry *self);
 TplContact *tpl_log_entry_get_sender (TplLogEntry *self);
 TplContact *tpl_log_entry_get_receiver (TplLogEntry *self);
 
-void tpl_log_entry_set_timestamp (TplLogEntry *self, gint64 data);
-void tpl_log_entry_set_pending_msg_id (TplLogEntry *self, gint data);
-void tpl_log_entry_set_signal_type (TplLogEntry *self,
-    TplLogEntrySignalType data);
-void tpl_log_entry_set_direction (TplLogEntry *self,
-    TplLogEntryDirection data);
-void tpl_log_entry_set_chat_id (TplLogEntry *self, const gchar *data);
-void tpl_log_entry_set_channel_path (TplLogEntry *self, const gchar *data);
-void tpl_log_entry_set_sender (TplLogEntry *self, TplContact *data);
-void tpl_log_entry_set_receiver (TplLogEntry *self, TplContact *data);
-
 gboolean tpl_log_entry_equal (TplLogEntry *self, TplLogEntry *data);
 
 

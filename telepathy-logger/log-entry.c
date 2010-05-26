@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "log-entry.h"
+#include "log-entry-internal.h"
 
 #include <glib.h>
 #include <telepathy-glib/util.h>
@@ -57,7 +58,7 @@
  * TPL_LOG_ENTRY_MSG_ID_UNKNOWN:
  *
  * Special value used instead of a message ID to indicate a message with an
- * unknown status (before tpl_log_entry_set_pending_msg_id() was called, or
+ * unknown status (before _tpl_log_entry_set_pending_msg_id() was called, or
  * when it wasn't possible to obtain the message ID).
  */
 
@@ -203,34 +204,34 @@ tpl_log_entry_set_property (GObject *object,
 
   switch (param_id) {
       case PROP_TIMESTAMP:
-        tpl_log_entry_set_timestamp (self, g_value_get_uint (value));
+        _tpl_log_entry_set_timestamp (self, g_value_get_uint (value));
         break;
       case PROP_SIGNAL_TYPE:
-        tpl_log_entry_set_signal_type (self, g_value_get_uint (value));
+        _tpl_log_entry_set_signal_type (self, g_value_get_uint (value));
         break;
       case PROP_PENDING_MSG_ID:
-        tpl_log_entry_set_pending_msg_id (self, g_value_get_int (value));
+        _tpl_log_entry_set_pending_msg_id (self, g_value_get_int (value));
         break;
       case PROP_LOG_ID:
         tpl_log_entry_set_log_id (self, g_value_get_string (value));
         break;
       case PROP_DIRECTION:
-        tpl_log_entry_set_direction (self, g_value_get_uint (value));
+        _tpl_log_entry_set_direction (self, g_value_get_uint (value));
         break;
       case PROP_CHAT_ID:
-        tpl_log_entry_set_chat_id (self, g_value_get_string (value));
+        _tpl_log_entry_set_chat_id (self, g_value_get_string (value));
         break;
       case PROP_ACCOUNT_PATH:
         tpl_log_entry_set_account_path (self, g_value_get_string (value));
         break;
       case PROP_CHANNEL_PATH:
-        tpl_log_entry_set_channel_path (self, g_value_get_string (value));
+        _tpl_log_entry_set_channel_path (self, g_value_get_string (value));
         break;
       case PROP_SENDER:
-        tpl_log_entry_set_sender (self, g_value_get_object (value));
+        _tpl_log_entry_set_sender (self, g_value_get_object (value));
         break;
       case PROP_RECEIVER:
-        tpl_log_entry_set_receiver (self, g_value_get_object (value));
+        _tpl_log_entry_set_receiver (self, g_value_get_object (value));
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -262,13 +263,13 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
   klass->is_pending = tpl_log_entry_is_pending;
   klass->equal = NULL;
 
-  klass->set_timestamp = tpl_log_entry_set_timestamp;
-  klass->set_signal_type = tpl_log_entry_set_signal_type;
-  klass->set_direction = tpl_log_entry_set_direction;
-  klass->set_sender = tpl_log_entry_set_sender;
-  klass->set_receiver = tpl_log_entry_set_receiver;
-  klass->set_chat_id = tpl_log_entry_set_chat_id;
-  klass->set_pending_msg_id = tpl_log_entry_set_pending_msg_id;
+  klass->set_timestamp = _tpl_log_entry_set_timestamp;
+  klass->set_signal_type = _tpl_log_entry_set_signal_type;
+  klass->set_direction = _tpl_log_entry_set_direction;
+  klass->set_sender = _tpl_log_entry_set_sender;
+  klass->set_receiver = _tpl_log_entry_set_receiver;
+  klass->set_chat_id = _tpl_log_entry_set_chat_id;
+  klass->set_pending_msg_id = _tpl_log_entry_set_pending_msg_id;
 
   param_spec = g_param_spec_uint ("timestamp",
       "Timestamp",
@@ -488,7 +489,7 @@ tpl_log_entry_get_channel_path (TplLogEntry *self)
 
 
 void
-tpl_log_entry_set_timestamp (TplLogEntry *self,
+_tpl_log_entry_set_timestamp (TplLogEntry *self,
     gint64 data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
@@ -499,7 +500,7 @@ tpl_log_entry_set_timestamp (TplLogEntry *self,
 
 
 void
-tpl_log_entry_set_signal_type (TplLogEntry *self,
+_tpl_log_entry_set_signal_type (TplLogEntry *self,
     TplLogEntrySignalType data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
@@ -509,7 +510,7 @@ tpl_log_entry_set_signal_type (TplLogEntry *self,
 }
 
 /**
- * tpl_log_entry_set_pending_msg_id:
+ * _tpl_log_entry_set_pending_msg_id:
  * @self: TplLogentry instance
  * @data: the pending message ID
  *
@@ -518,7 +519,7 @@ tpl_log_entry_set_signal_type (TplLogEntry *self,
  * @see_also: #TplLogEntry::pending-msg-id for special values.
  */
 void
-tpl_log_entry_set_pending_msg_id (TplLogEntry *self,
+_tpl_log_entry_set_pending_msg_id (TplLogEntry *self,
     gint data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
@@ -543,7 +544,7 @@ tpl_log_entry_set_log_id (TplLogEntry *self,
 
 
 void
-tpl_log_entry_set_direction (TplLogEntry *self,
+_tpl_log_entry_set_direction (TplLogEntry *self,
     TplLogEntryDirection data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
@@ -554,7 +555,7 @@ tpl_log_entry_set_direction (TplLogEntry *self,
 
 
 void
-tpl_log_entry_set_sender (TplLogEntry *self,
+_tpl_log_entry_set_sender (TplLogEntry *self,
     TplContact *data)
 {
   TplLogEntryPriv *priv;
@@ -572,7 +573,7 @@ tpl_log_entry_set_sender (TplLogEntry *self,
 
 
 void
-tpl_log_entry_set_receiver (TplLogEntry *self,
+_tpl_log_entry_set_receiver (TplLogEntry *self,
     TplContact *data)
 {
   TplLogEntryPriv *priv;
@@ -592,7 +593,7 @@ tpl_log_entry_set_receiver (TplLogEntry *self,
 
 
 void
-tpl_log_entry_set_chat_id (TplLogEntry *self,
+_tpl_log_entry_set_chat_id (TplLogEntry *self,
     const gchar *data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));
@@ -618,7 +619,7 @@ tpl_log_entry_set_account_path (TplLogEntry *self,
 
 
 void
-tpl_log_entry_set_channel_path (TplLogEntry *self,
+_tpl_log_entry_set_channel_path (TplLogEntry *self,
     const gchar *data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY (self));

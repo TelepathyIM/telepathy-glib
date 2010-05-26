@@ -29,6 +29,7 @@
 
 #include <telepathy-logger/channel.h>
 #include <telepathy-logger/observer.h>
+#include <telepathy-logger/log-entry-internal.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager-priv.h>
 #include <telepathy-logger/log-store-sqlite.h>
@@ -1171,9 +1172,9 @@ on_sent_signal_cb (TpChannel *proxy,
   log = tpl_log_entry_text_new (log_id, account_path,
       TPL_LOG_ENTRY_DIRECTION_OUT);
 
-  tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (log),
+  _tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (log),
       TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED);
-  tpl_log_entry_set_channel_path (TPL_LOG_ENTRY (log), channel_path);
+  _tpl_log_entry_set_channel_path (TPL_LOG_ENTRY (log), channel_path);
   tpl_log_entry_text_set_chat_id (log, chat_id);
   tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
   tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
@@ -1369,8 +1370,8 @@ on_received_signal_cb (TpChannel *proxy,
   log = tpl_log_entry_text_new (log_id, account_path,
       TPL_LOG_ENTRY_DIRECTION_IN);
 
-  tpl_log_entry_set_channel_path (TPL_LOG_ENTRY (log), channel_path);
-  tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (log), arg_ID);
+  _tpl_log_entry_set_channel_path (TPL_LOG_ENTRY (log), channel_path);
+  _tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (log), arg_ID);
   tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);
   tpl_log_entry_text_set_message (log, arg_Text);
   tpl_log_entry_text_set_message_type (log, arg_Type);
