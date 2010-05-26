@@ -44,13 +44,5 @@ GType tpl_log_entry_text_get_type (void);
 
 const gchar *tpl_log_entry_text_get_message (TplLogEntryText *self);
 
-/* Methods inherited by TplLogEntry */
-
-const gchar * tpl_log_entry_text_get_log_id (TplLogEntryText *self);
-TplContact * tpl_log_entry_text_get_sender (TplLogEntryText *self);
-TplContact * tpl_log_entry_text_get_receiver (TplLogEntryText *self);
-
-/* Methods inherited by TplLogEntry */
-
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_TEXT_H__

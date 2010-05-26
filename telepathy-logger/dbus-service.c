@@ -408,7 +408,7 @@ _get_messages_return (GObject *manager,
       const char *message = tpl_log_entry_text_get_message (
           TPL_LOG_ENTRY_TEXT (log));
       const char *sender = tpl_contact_get_identifier (
-          tpl_log_entry_text_get_sender (TPL_LOG_ENTRY_TEXT (log)));
+          _tpl_log_entry_get_sender (log));
       gint64 timestamp = tpl_log_entry_get_timestamp (log);
 
       DEBUG ("Message: %" G_GINT64_FORMAT " <%s> %s",

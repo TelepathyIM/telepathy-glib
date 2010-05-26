@@ -80,46 +80,8 @@ TpChannelTextMessageType _tpl_log_entry_text_get_message_type (
 
 gboolean _tpl_log_entry_text_is_chatroom (TplLogEntryText *self);
 
-/* Methods inherited by TplLogEntry */
-
-gint64 _tpl_log_entry_text_get_timestamp (TplLogEntryText *self);
-
-TplLogEntrySignalType _tpl_log_entry_text_get_signal_type (
-    TplLogEntryText *self);
-
-void _tpl_log_entry_text_set_timestamp (TplLogEntryText *self,
-    gint64 data);
-
-void _tpl_log_entry_text_set_signal_type (TplLogEntryText *self,
-    TplLogEntrySignalType data);
-
-void _tpl_log_entry_text_set_direction (TplLogEntryText *self,
-    TplLogEntryDirection data);
-
-void _tpl_log_entry_text_set_chat_id (TplLogEntryText *self,
-    const gchar *data);
-
-void _tpl_log_entry_text_set_sender (TplLogEntryText *self,
-    TplContact *data);
-
-void _tpl_log_entry_text_set_receiver (TplLogEntryText *self,
-    TplContact *data);
-
-void _tpl_log_entry_text_set_pending_msg_id (TplLogEntryText *self,
-    gint64 data);
-
-gint64 _tpl_log_entry_text_get_pending_msg_id (TplLogEntryText *self);
-
-gboolean _tpl_log_entry_text_is_pending (TplLogEntry *self);
-
-const gchar * _tpl_log_entry_text_get_chat_id (TplLogEntryText *self);
-
-TplLogEntryDirection _tpl_log_entry_text_get_direction (TplLogEntryText *self);
-
 gboolean _tpl_log_entry_text_equal (TplLogEntry *message1,
     TplLogEntry *message2);
-
-/* Methods inherited by TplLogEntry */
 
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_TEXT_INTERNAL_H__
