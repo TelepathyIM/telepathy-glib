@@ -50,5 +50,21 @@ void _tpl_log_entry_set_sender (TplLogEntry *self,
 void _tpl_log_entry_set_receiver (TplLogEntry *self,
     TplContact *data);
 
+const gchar * _tpl_log_entry_get_log_id (TplLogEntry *self);
+
+TplContact * _tpl_log_entry_get_sender (TplLogEntry *self);
+TplContact * _tpl_log_entry_get_receiver (TplLogEntry *self);
+
+gint _tpl_log_entry_get_pending_msg_id (TplLogEntry *self);
+gboolean _tpl_log_entry_is_pending (TplLogEntry *self);
+TplLogEntrySignalType _tpl_log_entry_get_signal_type (TplLogEntry *self);
+const gchar * _tpl_log_entry_get_chat_id (TplLogEntry * self);
+const gchar * _tpl_log_entry_get_channel_path (TplLogEntry *self);
+
+TplLogEntryDirection _tpl_log_entry_get_direction (TplLogEntry *self);
+
+gboolean _tpl_log_entry_equal (TplLogEntry *self,
+    TplLogEntry *data);
+
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_INTERNAL_H__

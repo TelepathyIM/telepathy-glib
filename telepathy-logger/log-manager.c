@@ -36,6 +36,7 @@
 #include <telepathy-glib/util.h>
 
 #include <telepathy-logger/log-entry.h>
+#include <telepathy-logger/log-entry-internal.h>
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/log-store-xml.h>
 #include <telepathy-logger/log-store-sqlite.h>
@@ -254,7 +255,7 @@ _tpl_log_manager_add_message (TplLogManager *manager,
   if (!retval)
     {
       CRITICAL ("Failed to write to all "
-          "writable LogStores log-id %s.", tpl_log_entry_get_log_id (message));
+          "writable LogStores log-id %s.", _tpl_log_entry_get_log_id (message));
       g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
           TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
           "Not recoverable error occurred during log manager's "

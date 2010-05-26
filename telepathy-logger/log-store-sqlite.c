@@ -27,6 +27,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <sqlite3.h>
 
+#include "log-entry-internal.h"
 #include "log-entry-text.h"
 #include "log-store-sqlite.h"
 
@@ -280,7 +281,7 @@ get_channel_name (TpChannel *chan)
 static const char *
 get_channel_name_from_entry (TplLogEntry *entry)
 {
-  return tpl_log_entry_get_channel_path (entry) +
+  return _tpl_log_entry_get_channel_path (entry) +
     strlen (TP_CONN_OBJECT_PATH_BASE);
 }
 
@@ -435,11 +436,11 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  if (tpl_log_entry_get_signal_type (message) !=
+  if (_tpl_log_entry_get_signal_type (message) !=
           TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED)
     {
       DEBUG ("ignoring msg %s, not interesting for message-counter",
-          tpl_log_entry_get_log_id (message));
+          _tpl_log_entry_get_log_id (message));
       retval = TRUE;
       goto out;
     }
@@ -447,7 +448,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   DEBUG ("message received");
 
   account = get_account_name_from_entry (message);
-  identifier = tpl_log_entry_get_chat_id (message);
+  identifier = _tpl_log_entry_get_chat_id (message);
   chatroom = tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
   date = get_date (message);
 
@@ -577,7 +578,7 @@ tpl_log_store_sqlite_add_message_cache (TplLogStore *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  log_id = tpl_log_entry_get_log_id (message);
+  log_id = _tpl_log_entry_get_log_id (message);
   DEBUG ("received %s, considering if can be cached", log_id);
   if (tpl_log_store_sqlite_log_id_is_present (self, log_id))
     {
@@ -695,9 +696,9 @@ _insert_to_cache_table (TplLogStore *self,
 
   account = get_account_name_from_entry (message);
   channel = get_channel_name_from_entry (message);
-  identifier = tpl_log_entry_get_chat_id (message);
-  log_id = tpl_log_entry_get_log_id (message);
-  msg_id = tpl_log_entry_get_pending_msg_id (message);
+  identifier = _tpl_log_entry_get_chat_id (message);
+  log_id = _tpl_log_entry_get_log_id (message);
+  msg_id = _tpl_log_entry_get_pending_msg_id (message);
   chatroom = tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
   date = get_datetime (message);
 

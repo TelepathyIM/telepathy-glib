@@ -253,14 +253,14 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
   object_class->set_property = tpl_log_entry_set_property;
 
   klass->get_timestamp = tpl_log_entry_get_timestamp;
-  klass->get_signal_type = tpl_log_entry_get_signal_type;
-  klass->get_log_id = tpl_log_entry_get_log_id;
-  klass->get_direction = tpl_log_entry_get_direction;
-  klass->get_sender = tpl_log_entry_get_sender;
-  klass->get_receiver = tpl_log_entry_get_receiver;
-  klass->get_chat_id = tpl_log_entry_get_chat_id;
-  klass->get_pending_msg_id = tpl_log_entry_get_pending_msg_id;
-  klass->is_pending = tpl_log_entry_is_pending;
+  klass->get_signal_type = _tpl_log_entry_get_signal_type;
+  klass->get_log_id = _tpl_log_entry_get_log_id;
+  klass->get_direction = _tpl_log_entry_get_direction;
+  klass->get_sender = _tpl_log_entry_get_sender;
+  klass->get_receiver = _tpl_log_entry_get_receiver;
+  klass->get_chat_id = _tpl_log_entry_get_chat_id;
+  klass->get_pending_msg_id = _tpl_log_entry_get_pending_msg_id;
+  klass->is_pending = _tpl_log_entry_is_pending;
   klass->equal = NULL;
 
   klass->set_timestamp = _tpl_log_entry_set_timestamp;
@@ -399,7 +399,7 @@ tpl_log_entry_get_timestamp (TplLogEntry *self)
 
 
 gint
-tpl_log_entry_get_pending_msg_id (TplLogEntry *self)
+_tpl_log_entry_get_pending_msg_id (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), -1);
 
@@ -408,15 +408,15 @@ tpl_log_entry_get_pending_msg_id (TplLogEntry *self)
 
 
 gboolean
-tpl_log_entry_is_pending (TplLogEntry *self)
+_tpl_log_entry_is_pending (TplLogEntry *self)
 {
   return TPL_LOG_ENTRY_MSG_ID_IS_VALID (
-      tpl_log_entry_get_pending_msg_id (self));
+      _tpl_log_entry_get_pending_msg_id (self));
 }
 
 
 TplLogEntrySignalType
-tpl_log_entry_get_signal_type (TplLogEntry *self)
+_tpl_log_entry_get_signal_type (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), TPL_LOG_ENTRY_SIGNAL_NONE);
 
@@ -425,7 +425,7 @@ tpl_log_entry_get_signal_type (TplLogEntry *self)
 
 
 const gchar *
-tpl_log_entry_get_log_id (TplLogEntry *self)
+_tpl_log_entry_get_log_id (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), 0);
 
@@ -434,7 +434,7 @@ tpl_log_entry_get_log_id (TplLogEntry *self)
 
 
 TplLogEntryDirection
-tpl_log_entry_get_direction (TplLogEntry *self)
+_tpl_log_entry_get_direction (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self),
       TPL_LOG_ENTRY_DIRECTION_NONE);
@@ -444,7 +444,7 @@ tpl_log_entry_get_direction (TplLogEntry *self)
 
 
 TplContact *
-tpl_log_entry_get_sender (TplLogEntry *self)
+_tpl_log_entry_get_sender (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
@@ -453,7 +453,7 @@ tpl_log_entry_get_sender (TplLogEntry *self)
 
 
 TplContact *
-tpl_log_entry_get_receiver (TplLogEntry *self)
+_tpl_log_entry_get_receiver (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
@@ -462,7 +462,7 @@ tpl_log_entry_get_receiver (TplLogEntry *self)
 
 
 const gchar *
-tpl_log_entry_get_chat_id (TplLogEntry *self)
+_tpl_log_entry_get_chat_id (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
@@ -480,7 +480,7 @@ tpl_log_entry_get_account_path (TplLogEntry *self)
 
 
 const gchar *
-tpl_log_entry_get_channel_path (TplLogEntry *self)
+_tpl_log_entry_get_channel_path (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
@@ -631,7 +631,7 @@ _tpl_log_entry_set_channel_path (TplLogEntry *self,
 }
 
 /**
- * log_entry:
+ * _tpl_log_entry_equal:
  * @self: TplLogEntry subclass instance
  * @data: an instance of the same TplLogEntry subclass of @self
  *
@@ -641,7 +641,7 @@ _tpl_log_entry_set_channel_path (TplLogEntry *self,
  * data, %FALSE otherwise
  */
 gboolean
-tpl_log_entry_equal (TplLogEntry *self,
+_tpl_log_entry_equal (TplLogEntry *self,
     TplLogEntry *data)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), FALSE);

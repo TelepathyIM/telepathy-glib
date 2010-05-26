@@ -113,21 +113,10 @@ struct _TplLogEntryClass {
 };
 
 GType tpl_log_entry_get_type (void);
+
 gint64 tpl_log_entry_get_timestamp (TplLogEntry *self);
-gint tpl_log_entry_get_pending_msg_id (TplLogEntry *self);
-gboolean tpl_log_entry_is_pending (TplLogEntry *self);
-TplLogEntrySignalType tpl_log_entry_get_signal_type (TplLogEntry *self);
-const gchar* tpl_log_entry_get_log_id (TplLogEntry *self);
-const gchar *tpl_log_entry_get_chat_id (TplLogEntry * self);
+
 const gchar *tpl_log_entry_get_account_path (TplLogEntry *self);
-const gchar *tpl_log_entry_get_channel_path (TplLogEntry *self);
-
-TplLogEntryDirection tpl_log_entry_get_direction (TplLogEntry *self);
-TplContact *tpl_log_entry_get_sender (TplLogEntry *self);
-TplContact *tpl_log_entry_get_receiver (TplLogEntry *self);
-
-gboolean tpl_log_entry_equal (TplLogEntry *self, TplLogEntry *data);
-
 
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_H__

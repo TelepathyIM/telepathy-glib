@@ -464,7 +464,7 @@ add_message_text_chat (TplLogStoreXml *self,
   timestamp = log_store_xml_get_timestamp_from_message (
       TPL_LOG_ENTRY (message));
 
-  sender = tpl_log_entry_get_sender (TPL_LOG_ENTRY (message));
+  sender = _tpl_log_entry_get_sender (TPL_LOG_ENTRY (message));
   contact_id = g_markup_escape_text (tpl_contact_get_identifier (sender), -1);
   if (tpl_contact_get_alias (sender) != NULL)
     contact_name = g_markup_escape_text (tpl_contact_get_alias (sender), -1);
@@ -475,7 +475,7 @@ add_message_text_chat (TplLogStoreXml *self,
   entry = g_strdup_printf ("<message time='%s' cm_id='%s' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'>"
       "%s</message>\n" LOG_FOOTER, timestamp,
-      tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
+      _tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
       contact_id, contact_name,
       avatar_token ? avatar_token : "",
       tpl_contact_get_contact_type (sender) ==
@@ -484,11 +484,11 @@ add_message_text_chat (TplLogStoreXml *self,
       body);
 
   DEBUG ("writing %s from %s (ts %s)",
-      tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
+      _tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
-      tpl_log_entry_get_chat_id (TPL_LOG_ENTRY (message)),
+      _tpl_log_entry_get_chat_id (TPL_LOG_ENTRY (message)),
       tpl_log_entry_text_is_chatroom (message),
       entry, error);
 
@@ -520,7 +520,7 @@ add_message_text (TplLogStoreXml *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
 
-  signal_type = tpl_log_entry_get_signal_type (TPL_LOG_ENTRY (message));
+  signal_type = _tpl_log_entry_get_signal_type (TPL_LOG_ENTRY (message));
 
   switch (signal_type)
     {
@@ -556,7 +556,7 @@ log_store_xml_add_message (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  switch (tpl_log_entry_get_signal_type (TPL_LOG_ENTRY (message)))
+  switch (_tpl_log_entry_get_signal_type (TPL_LOG_ENTRY (message)))
     {
       case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_SENT:
       case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_RECEIVED:
