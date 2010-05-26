@@ -21,6 +21,7 @@
 
 #include "config.h"
 #include "log-entry-text.h"
+#include "log-entry-text-internal.h"
 
 #include <glib-object.h>
 #include <telepathy-glib/util.h>
@@ -115,13 +116,13 @@ tpl_log_entry_text_set_property (GObject *object,
 
   switch (param_id) {
       case PROP_MESSAGE_TYPE:
-        tpl_log_entry_text_set_message_type (self, g_value_get_uint (value));
+        _tpl_log_entry_text_set_message_type (self, g_value_get_uint (value));
         break;
       case PROP_MESSAGE:
-        tpl_log_entry_text_set_message (self, g_value_get_string (value));
+        _tpl_log_entry_text_set_message (self, g_value_get_string (value));
         break;
       case PROP_TPL_CHANNEL_TEXT:
-        tpl_log_entry_text_set_tpl_channel_text (self,
+        _tpl_log_entry_text_set_tpl_channel_text (self,
             g_value_get_object (value));
         break;
       default:
@@ -275,7 +276,7 @@ tpl_log_entry_text_get_message_type (TplLogEntryText * self)
 
 
 void
-tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText * self,
+_tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText * self,
     TplChannelText *data)
 {
   TplLogEntryTextPriv *priv;
@@ -291,7 +292,7 @@ tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText * self,
 
 
 void
-tpl_log_entry_text_set_message (TplLogEntryText *self,
+_tpl_log_entry_text_set_message (TplLogEntryText *self,
     const gchar *data)
 {
   TplLogEntryTextPriv *priv;
@@ -307,7 +308,7 @@ tpl_log_entry_text_set_message (TplLogEntryText *self,
 
 
 void
-tpl_log_entry_text_set_message_type (TplLogEntryText *self,
+_tpl_log_entry_text_set_message_type (TplLogEntryText *self,
     TpChannelTextMessageType data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
@@ -317,7 +318,7 @@ tpl_log_entry_text_set_message_type (TplLogEntryText *self,
 
 
 void
-tpl_log_entry_text_set_chatroom (TplLogEntryText *self,
+_tpl_log_entry_text_set_chatroom (TplLogEntryText *self,
     gboolean data)
 {
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
@@ -399,7 +400,7 @@ tpl_log_entry_text_get_receiver (TplLogEntryText *self)
 
 
 void
-tpl_log_entry_text_set_timestamp (TplLogEntryText *self,
+_tpl_log_entry_text_set_timestamp (TplLogEntryText *self,
     gint64 data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
@@ -408,7 +409,7 @@ tpl_log_entry_text_set_timestamp (TplLogEntryText *self,
 
 
 void
-tpl_log_entry_text_set_signal_type (TplLogEntryText *self,
+_tpl_log_entry_text_set_signal_type (TplLogEntryText *self,
   TplLogEntrySignalType data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
@@ -417,7 +418,7 @@ tpl_log_entry_text_set_signal_type (TplLogEntryText *self,
 
 
 void
-tpl_log_entry_text_set_direction (TplLogEntryText *self,
+_tpl_log_entry_text_set_direction (TplLogEntryText *self,
     TplLogEntryDirection data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
@@ -426,7 +427,7 @@ tpl_log_entry_text_set_direction (TplLogEntryText *self,
 
 
 void
-tpl_log_entry_text_set_chat_id (TplLogEntryText *self,
+_tpl_log_entry_text_set_chat_id (TplLogEntryText *self,
     const gchar *data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
@@ -434,14 +435,14 @@ tpl_log_entry_text_set_chat_id (TplLogEntryText *self,
 }
 
 
-/* tpl_log_entry_text_set_sender:
+/* _tpl_log_entry_text_set_sender:
  * @self: a log entry text entry
  * @data: a TPL contact instance for the sender
  *
  * Set who sent this log entry.
  */
 void
-tpl_log_entry_text_set_sender (TplLogEntryText *self,
+_tpl_log_entry_text_set_sender (TplLogEntryText *self,
     TplContact *data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
@@ -449,14 +450,14 @@ tpl_log_entry_text_set_sender (TplLogEntryText *self,
 }
 
 
-/* tpl_log_entry_text_set_receiver:
+/* _tpl_log_entry_text_set_receiver:
  * @self: a log entry text entry
  * @data: a TPL contact instance for the receiver
  *
  * Set who received this log entry.
  */
 void
-tpl_log_entry_text_set_receiver (TplLogEntryText *self,
+_tpl_log_entry_text_set_receiver (TplLogEntryText *self,
     TplContact *data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
@@ -465,7 +466,7 @@ tpl_log_entry_text_set_receiver (TplLogEntryText *self,
 
 
 void
-tpl_log_entry_text_set_pending_msg_id (TplLogEntryText *self,
+_tpl_log_entry_text_set_pending_msg_id (TplLogEntryText *self,
     gint64 data)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);

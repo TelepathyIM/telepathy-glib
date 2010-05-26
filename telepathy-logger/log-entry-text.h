@@ -80,15 +80,6 @@ const gchar *tpl_log_entry_text_get_message (TplLogEntryText *self);
 TpChannelTextMessageType tpl_log_entry_text_get_message_type (TplLogEntryText *self);
 gboolean tpl_log_entry_text_is_chatroom (TplLogEntryText *self);
 
-void tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText *self,
-    TplChannelText *data);
-void tpl_log_entry_text_set_message (TplLogEntryText *self,
-    const gchar *data);
-void tpl_log_entry_text_set_message_type (TplLogEntryText *self,
-    TpChannelTextMessageType data);
-void tpl_log_entry_text_set_chatroom (TplLogEntryText *self, gboolean data);
-
-
 /* Methods inherited by TplLogEntry */
 gint64 tpl_log_entry_text_get_timestamp (TplLogEntryText *self);
 TplLogEntrySignalType tpl_log_entry_text_get_signal_type (
@@ -100,18 +91,6 @@ const gchar *tpl_log_entry_text_get_chat_id (TplLogEntryText *self);
 TplLogEntryDirection tpl_log_entry_text_get_direction (TplLogEntryText *self);
 TplContact *tpl_log_entry_text_get_sender (TplLogEntryText *self);
 TplContact *tpl_log_entry_text_get_receiver (TplLogEntryText *self);
-
-void tpl_log_entry_text_set_timestamp (TplLogEntryText *self, gint64 data);
-void tpl_log_entry_text_set_signal_type (TplLogEntryText *self,
-    TplLogEntrySignalType data);
-void tpl_log_entry_text_set_direction (TplLogEntryText *self,
-    TplLogEntryDirection data);
-void tpl_log_entry_text_set_chat_id (TplLogEntryText *self,
-    const gchar *data);
-void tpl_log_entry_text_set_sender (TplLogEntryText *self, TplContact *data);
-void tpl_log_entry_text_set_receiver (TplLogEntryText *self,
-    TplContact *data);
-void tpl_log_entry_text_set_pending_msg_id (TplLogEntryText *self, gint64 data);
 
 gboolean tpl_log_entry_text_equal (TplLogEntry *message1, TplLogEntry *message2);
 /* Methods inherited by TplLogEntry */

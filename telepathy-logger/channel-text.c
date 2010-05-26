@@ -31,6 +31,7 @@
 #include <telepathy-logger/observer.h>
 #include <telepathy-logger/log-entry-internal.h>
 #include <telepathy-logger/log-entry-text.h>
+#include <telepathy-logger/log-entry-text-internal.h>
 #include <telepathy-logger/log-manager-priv.h>
 #include <telepathy-logger/log-store-sqlite.h>
 
@@ -1175,19 +1176,19 @@ on_sent_signal_cb (TpChannel *proxy,
   _tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (log),
       TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED);
   _tpl_log_entry_set_channel_path (TPL_LOG_ENTRY (log), channel_path);
-  tpl_log_entry_text_set_chat_id (log, chat_id);
-  tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
-  tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
-  tpl_log_entry_text_set_sender (log, tpl_contact_sender);
+  _tpl_log_entry_text_set_chat_id (log, chat_id);
+  _tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
+  _tpl_log_entry_text_set_signal_type (log, TPL_LOG_ENTRY_TEXT_SIGNAL_SENT);
+  _tpl_log_entry_text_set_sender (log, tpl_contact_sender);
   /* NULL when it's a chatroom */
   if (tpl_contact_receiver != NULL)
-    tpl_log_entry_text_set_receiver (log, tpl_contact_receiver);
-  tpl_log_entry_text_set_message (log, arg_Text);
-  tpl_log_entry_text_set_message_type (log, arg_Type);
-  tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);
+    _tpl_log_entry_text_set_receiver (log, tpl_contact_receiver);
+  _tpl_log_entry_text_set_message (log, arg_Text);
+  _tpl_log_entry_text_set_message_type (log, arg_Type);
+  _tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);
 
   /* Initialized LogStore and send the log entry */
-  tpl_log_entry_text_set_chatroom (log,
+  _tpl_log_entry_text_set_chatroom (log,
       tpl_channel_text_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
@@ -1277,7 +1278,7 @@ keepon_on_receiving_signal (TplLogEntryText *log)
 
   tpl_contact_sender = _tpl_contact_from_tp_contact (remote);
   _tpl_contact_set_contact_type (tpl_contact_sender, TPL_CONTACT_USER);
-  tpl_log_entry_text_set_sender (log, tpl_contact_sender);
+  _tpl_log_entry_text_set_sender (log, tpl_contact_sender);
 
   tpl_contact_receiver = _tpl_contact_from_tp_contact (local);
 
@@ -1291,13 +1292,13 @@ keepon_on_receiving_signal (TplLogEntryText *log)
 
 
   if (!tpl_channel_text_is_chatroom (tpl_text))
-    tpl_log_entry_text_set_chat_id (log, tpl_contact_get_identifier (
+    _tpl_log_entry_text_set_chat_id (log, tpl_contact_get_identifier (
           tpl_contact_sender));
   else
-    tpl_log_entry_text_set_chat_id (log, tpl_channel_text_get_chatroom_id (
+    _tpl_log_entry_text_set_chat_id (log, tpl_channel_text_get_chatroom_id (
           tpl_text));
 
-  tpl_log_entry_text_set_chatroom (log,
+  _tpl_log_entry_text_set_chatroom (log,
       tpl_channel_text_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
@@ -1372,18 +1373,18 @@ on_received_signal_cb (TpChannel *proxy,
 
   _tpl_log_entry_set_channel_path (TPL_LOG_ENTRY (log), channel_path);
   _tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (log), arg_ID);
-  tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);
-  tpl_log_entry_text_set_message (log, arg_Text);
-  tpl_log_entry_text_set_message_type (log, arg_Type);
-  tpl_log_entry_text_set_signal_type (log,
+  _tpl_log_entry_text_set_tpl_channel_text (log, tpl_text);
+  _tpl_log_entry_text_set_message (log, arg_Text);
+  _tpl_log_entry_text_set_message_type (log, arg_Type);
+  _tpl_log_entry_text_set_signal_type (log,
       TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED);
 
   me = tpl_channel_text_get_my_contact (tpl_text);
   tpl_contact_receiver = _tpl_contact_from_tp_contact (me);
   _tpl_contact_set_contact_type (tpl_contact_receiver, TPL_CONTACT_USER);
-  tpl_log_entry_text_set_receiver (log, tpl_contact_receiver);
+  _tpl_log_entry_text_set_receiver (log, tpl_contact_receiver);
 
-  tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
+  _tpl_log_entry_text_set_timestamp (log, (time_t) arg_Timestamp);
 
   tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_chan));
   /* it's a chatroom and no contact has been pre-cached */
