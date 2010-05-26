@@ -252,24 +252,7 @@ tpl_log_entry_class_init (TplLogEntryClass *klass)
   object_class->get_property = tpl_log_entry_get_property;
   object_class->set_property = tpl_log_entry_set_property;
 
-  klass->get_timestamp = tpl_log_entry_get_timestamp;
-  klass->get_signal_type = _tpl_log_entry_get_signal_type;
-  klass->get_log_id = _tpl_log_entry_get_log_id;
-  klass->get_direction = _tpl_log_entry_get_direction;
-  klass->get_sender = _tpl_log_entry_get_sender;
-  klass->get_receiver = _tpl_log_entry_get_receiver;
-  klass->get_chat_id = _tpl_log_entry_get_chat_id;
-  klass->get_pending_msg_id = _tpl_log_entry_get_pending_msg_id;
-  klass->is_pending = _tpl_log_entry_is_pending;
   klass->equal = NULL;
-
-  klass->set_timestamp = _tpl_log_entry_set_timestamp;
-  klass->set_signal_type = _tpl_log_entry_set_signal_type;
-  klass->set_direction = _tpl_log_entry_set_direction;
-  klass->set_sender = _tpl_log_entry_set_sender;
-  klass->set_receiver = _tpl_log_entry_set_receiver;
-  klass->set_chat_id = _tpl_log_entry_set_chat_id;
-  klass->set_pending_msg_id = _tpl_log_entry_set_pending_msg_id;
 
   param_spec = g_param_spec_uint ("timestamp",
       "Timestamp",
