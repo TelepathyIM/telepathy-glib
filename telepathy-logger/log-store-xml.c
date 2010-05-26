@@ -461,7 +461,7 @@ add_message_text_chat (TplLogStoreXml *self,
     goto out;
 
   body = g_markup_escape_text (body_str, -1);
-  msg_type = tpl_log_entry_text_get_message_type (message);
+  msg_type = _tpl_log_entry_text_get_message_type (message);
   timestamp = log_store_xml_get_timestamp_from_message (
       TPL_LOG_ENTRY (message));
 
@@ -481,7 +481,7 @@ add_message_text_chat (TplLogStoreXml *self,
       avatar_token ? avatar_token : "",
       tpl_contact_get_contact_type (sender) ==
       TPL_CONTACT_USER ? "true" : "false",
-      tpl_log_entry_text_message_type_to_str (msg_type),
+      _tpl_log_entry_text_message_type_to_str (msg_type),
       body);
 
   DEBUG ("writing %s from %s (ts %s)",
@@ -490,7 +490,7 @@ add_message_text_chat (TplLogStoreXml *self,
 
   ret = _log_store_xml_write_to_store (self, account,
       _tpl_log_entry_get_chat_id (TPL_LOG_ENTRY (message)),
-      tpl_log_entry_text_is_chatroom (message),
+      _tpl_log_entry_text_is_chatroom (message),
       entry, error);
 
 out:
@@ -819,7 +819,7 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
         is_user = (!tp_strdiff (is_user_str, "true"));
 
       if (msg_type_str != NULL)
-        msg_type = tpl_log_entry_text_message_type_from_str (msg_type_str);
+        msg_type = _tpl_log_entry_text_message_type_from_str (msg_type_str);
 
       if (log_id != NULL && self->priv->empathy_legacy)
         /* in legacy mode, it's actually the pending message id before ACK */
@@ -849,7 +849,7 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
           g_free (instead_of_channel_path);
         }
 
-      message = tpl_log_entry_text_new (log_id,
+      message = _tpl_log_entry_text_new (log_id,
           tp_proxy_get_object_path (account), TPL_LOG_ENTRY_DIRECTION_NONE);
 
       _tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (message), pending_id);

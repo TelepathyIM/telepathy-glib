@@ -1,4 +1,5 @@
 #include <telepathy-logger/log-entry-text.h>
+#include <telepathy-logger/log-entry-text-internal.h>
 
 #define gconf_client_get_bool(obj,key,err) g_print ("%s", key)
 
@@ -13,7 +14,7 @@ int main (int argc, char **argv)
 
   g_type_init ();
 
-  log = tpl_log_entry_text_new (LOG_ID, ACCOUNT_PATH, DIRECTION);
+  log = _tpl_log_entry_text_new (LOG_ID, ACCOUNT_PATH, DIRECTION);
 
 
   return 0;

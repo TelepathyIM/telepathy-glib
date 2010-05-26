@@ -142,7 +142,7 @@ static void tpl_log_entry_text_class_init (TplLogEntryTextClass *klass)
   object_class->dispose = tpl_log_entry_text_dispose;
   object_class->get_property = tpl_log_entry_text_get_property;
   object_class->set_property = tpl_log_entry_text_set_property;
-  log_entry_class->equal = tpl_log_entry_text_equal;
+  log_entry_class->equal = _tpl_log_entry_text_equal;
 
   param_spec = g_param_spec_uint ("message-type",
       "MessageType",
@@ -178,7 +178,7 @@ tpl_log_entry_text_init (TplLogEntryText *self)
 
 
 TplLogEntryText *
-tpl_log_entry_text_new (const gchar *log_id,
+_tpl_log_entry_text_new (const gchar *log_id,
     const gchar *account_path,
     TplLogEntryDirection direction)
 {
@@ -199,7 +199,7 @@ static gchar *message_types[] = {
 
 
 /**
- * tpl_log_entry_text_message_type_to_str
+ * _tpl_log_entry_text_message_type_from_str
  * @type_str: string to transform into a #TpChannelTextMessageType
  *
  * Maps strings into enum #TpChannelTextMessageType values.
@@ -208,7 +208,7 @@ static gchar *message_types[] = {
  * mapping is found, or defaults to %TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL if not.
  */
 TpChannelTextMessageType
-tpl_log_entry_text_message_type_from_str (const gchar *type_str)
+_tpl_log_entry_text_message_type_from_str (const gchar *type_str)
 {
   guint i;
   for (i = 0; i < G_N_ELEMENTS (message_types); ++i)
@@ -221,7 +221,7 @@ tpl_log_entry_text_message_type_from_str (const gchar *type_str)
 
 
 /**
- * tpl_log_entry_text_message_type_to_str
+ * _tpl_log_entry_text_message_type_to_str
  * @msg_type: message type to transform into a string
  *
  * Maps enum #TpChannelTextMessageType values into strings
@@ -230,7 +230,7 @@ tpl_log_entry_text_message_type_from_str (const gchar *type_str)
  * a legal value for %TpChannelTextMessageType.
  */
 const gchar *
-tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
+_tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
 {
   g_return_val_if_fail (G_N_ELEMENTS (message_types) >= msg_type, NULL);
 
@@ -239,7 +239,7 @@ tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
 
 
 gboolean
-tpl_log_entry_text_is_chatroom (TplLogEntryText * self)
+_tpl_log_entry_text_is_chatroom (TplLogEntryText * self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), FALSE);
 
@@ -248,7 +248,7 @@ tpl_log_entry_text_is_chatroom (TplLogEntryText * self)
 
 
 TplChannelText *
-tpl_log_entry_text_get_tpl_channel_text (TplLogEntryText * self)
+_tpl_log_entry_text_get_tpl_channel_text (TplLogEntryText * self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), NULL);
 
@@ -266,7 +266,7 @@ tpl_log_entry_text_get_message (TplLogEntryText * self)
 
 
 TpChannelTextMessageType
-tpl_log_entry_text_get_message_type (TplLogEntryText * self)
+_tpl_log_entry_text_get_message_type (TplLogEntryText * self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self),
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
@@ -329,7 +329,7 @@ _tpl_log_entry_text_set_chatroom (TplLogEntryText *self,
 /* Methods inherited by TplLogEntry */
 
 gint64
-tpl_log_entry_text_get_timestamp (TplLogEntryText *self)
+_tpl_log_entry_text_get_timestamp (TplLogEntryText *self)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
   return TPL_LOG_ENTRY_GET_CLASS (self)->get_timestamp (logentry);
@@ -337,7 +337,7 @@ tpl_log_entry_text_get_timestamp (TplLogEntryText *self)
 
 
 TplLogEntrySignalType
-tpl_log_entry_text_get_signal_type (TplLogEntryText *self)
+_tpl_log_entry_text_get_signal_type (TplLogEntryText *self)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
   return TPL_LOG_ENTRY_GET_CLASS (self)->get_signal_type (logentry);
@@ -353,7 +353,7 @@ tpl_log_entry_text_get_log_id (TplLogEntryText *self)
 
 
 gint64
-tpl_log_entry_text_get_pending_msg_id (TplLogEntryText *self)
+_tpl_log_entry_text_get_pending_msg_id (TplLogEntryText *self)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
   return TPL_LOG_ENTRY_GET_CLASS (self)->get_pending_msg_id (logentry);
@@ -361,14 +361,14 @@ tpl_log_entry_text_get_pending_msg_id (TplLogEntryText *self)
 
 
 gboolean
-tpl_log_entry_text_is_pending (TplLogEntry *self)
+_tpl_log_entry_text_is_pending (TplLogEntry *self)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
   return TPL_LOG_ENTRY_GET_CLASS (self)->is_pending (logentry);
 }
 
 const gchar *
-tpl_log_entry_text_get_chat_id (TplLogEntryText *self)
+_tpl_log_entry_text_get_chat_id (TplLogEntryText *self)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
   return TPL_LOG_ENTRY_GET_CLASS (self)->get_chat_id (logentry);
@@ -376,7 +376,7 @@ tpl_log_entry_text_get_chat_id (TplLogEntryText *self)
 
 
 TplLogEntryDirection
-tpl_log_entry_text_get_direction (TplLogEntryText *self)
+_tpl_log_entry_text_get_direction (TplLogEntryText *self)
 {
   TplLogEntry *logentry = TPL_LOG_ENTRY (self);
   return TPL_LOG_ENTRY_GET_CLASS (self)->get_direction (logentry);
@@ -475,7 +475,7 @@ _tpl_log_entry_text_set_pending_msg_id (TplLogEntryText *self,
 
 
 gboolean
-tpl_log_entry_text_equal (TplLogEntry *message1,
+_tpl_log_entry_text_equal (TplLogEntry *message1,
     TplLogEntry *message2)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message1), FALSE);

@@ -29,6 +29,7 @@
 
 #include "log-entry-internal.h"
 #include "log-entry-text.h"
+#include "log-entry-text-internal.h"
 #include "log-store-sqlite.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
@@ -449,7 +450,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
 
   account = get_account_name_from_entry (message);
   identifier = _tpl_log_entry_get_chat_id (message);
-  chatroom = tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
+  chatroom = _tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
   date = get_date (message);
 
   DEBUG ("account = %s", account);
@@ -699,7 +700,7 @@ _insert_to_cache_table (TplLogStore *self,
   identifier = _tpl_log_entry_get_chat_id (message);
   log_id = _tpl_log_entry_get_log_id (message);
   msg_id = _tpl_log_entry_get_pending_msg_id (message);
-  chatroom = tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
+  chatroom = _tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
   date = get_datetime (message);
 
   DEBUG ("channel = %s", channel);

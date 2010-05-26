@@ -1170,7 +1170,7 @@ on_sent_signal_cb (TpChannel *proxy,
   account_path = tp_proxy_get_object_path (
       TP_PROXY (tpl_channel_get_account (TPL_CHANNEL (tpl_text))));
 
-  log = tpl_log_entry_text_new (log_id, account_path,
+  log = _tpl_log_entry_text_new (log_id, account_path,
       TPL_LOG_ENTRY_DIRECTION_OUT);
 
   _tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (log),
@@ -1230,7 +1230,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
 
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (log));
 
-  tpl_text = tpl_log_entry_text_get_tpl_channel_text (log);
+  tpl_text = _tpl_log_entry_text_get_tpl_channel_text (log);
 
   if (error != NULL)
     {
@@ -1272,7 +1272,7 @@ keepon_on_receiving_signal (TplLogEntryText *log)
 
   g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (log));
 
-  tpl_text = tpl_log_entry_text_get_tpl_channel_text (log);
+  tpl_text = _tpl_log_entry_text_get_tpl_channel_text (log);
   remote = tpl_channel_text_get_remote_contact (tpl_text);
   local = tpl_channel_text_get_my_contact (tpl_text);
 
@@ -1368,7 +1368,7 @@ on_received_signal_cb (TpChannel *proxy,
     }
 
   /* Initialize TplLogEntryText (part 1) - chat_id still unknown */
-  log = tpl_log_entry_text_new (log_id, account_path,
+  log = _tpl_log_entry_text_new (log_id, account_path,
       TPL_LOG_ENTRY_DIRECTION_IN);
 
   _tpl_log_entry_set_channel_path (TPL_LOG_ENTRY (log), channel_path);
