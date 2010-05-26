@@ -72,46 +72,6 @@ typedef struct _TplLogEntry TplLogEntry;
 typedef struct _TplLogEntryClass TplLogEntryClass;
 typedef struct _TplLogEntryPriv TplLogEntryPriv;
 
-struct _TplLogEntry
-{
-  GObject parent;
-
-  /* Private */
-  TplLogEntryPriv *priv;
-};
-
-struct _TplLogEntryClass {
-  GObjectClass parent_class;
-
-  void (*dispose) (GObject *obj);
-  void (*finalize) (GObject *obj);
-
-  gint64 (*get_timestamp) (TplLogEntry *self);
-  gint (*get_pending_msg_id) (TplLogEntry *self);
-  gboolean (*is_pending) (TplLogEntry *self);
-  TplLogEntrySignalType (*get_signal_type) (TplLogEntry *self);
-  const gchar* (*get_log_id) (TplLogEntry *self);
-  TplLogEntryDirection (*get_direction) (TplLogEntry *self);
-  TplContact * (*get_sender) (TplLogEntry *self);
-  TplContact * (*get_receiver) (TplLogEntry *self);
-  const gchar * (*get_chat_id) (TplLogEntry *self);
-  const gchar * (*get_account_path) (TplLogEntry *self);
-  const gchar * (*get_channel_path) (TplLogEntry *self);
-
-  void (*set_timestamp) (TplLogEntry *self, gint64 data);
-  void (*set_pending_msg_id) (TplLogEntry *self, gint data);
-  void (*set_signal_type) (TplLogEntry *self, TplLogEntrySignalType data);
-  void (*set_log_id) (TplLogEntry *self, guint data);
-  void (*set_direction) (TplLogEntry *self, TplLogEntryDirection data);
-  void (*set_sender) (TplLogEntry *self, TplContact *data);
-  void (*set_receiver) (TplLogEntry *self, TplContact *data);
-  void (*set_chat_id) (TplLogEntry *self, const gchar *data);
-  void (*set_channel_path) (TplLogEntry *self, const gchar *data);
-
-  /* to be implemented only by subclasses */
-  gboolean (*equal) (TplLogEntry *entry1, TplLogEntry *entry2);
-};
-
 GType tpl_log_entry_get_type (void);
 
 gint64 tpl_log_entry_get_timestamp (TplLogEntry *self);
