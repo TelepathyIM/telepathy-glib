@@ -33,11 +33,26 @@ G_BEGIN_DECLS
 #define TPL_IS_CONTACT_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONTACT))
 #define TPL_CONTACT_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONTACT, TplContactClass))
 
+/* TplContactType:
+ *
+ * @TPL_CONTACT_UNKNOWN: the current contact's type is unknown
+ * @TPL_CONTACT_USER: the contact's type represents a user (buddy), but not
+ * the the account's owner for which @TPL_CONTACT_SELF is used
+ * @TPL_CONTACT_GROUP: a named chatroom (#TP_HANDLE_TYPE_ROOM)
+ * @TPL_CONTACT_SELF: the contact's type represents the owner of the account
+ * whose channel has been logged, as opposed to @TPL_CONTACT_USER which
+ * represents any other user
+ */
 typedef enum
 {
   TPL_CONTACT_UNKNOWN,
+  /* contact is a user (buddy) */
   TPL_CONTACT_USER,
-  TPL_CONTACT_GROUP
+  /* contact is a chatroom, meaning that the related message has been sent to
+   * a chatroom instead of to a 1-1 channel */
+  TPL_CONTACT_GROUP,
+  /* contact is both a USER and the account's owner (self-handle) */
+  TPL_CONTACT_SELF
 } TplContactType;
 
 typedef struct _TplContactPriv TplContactPriv;
@@ -51,6 +66,11 @@ typedef struct
 
 
 GType tpl_contact_get_type (void);
+
+TplContact *tpl_contact_from_room_id (const gchar *chatroom_id);
+TplContact *tpl_contact_from_tp_contact (TpContact *contact);
+
+TpContact *tpl_contact_get_contact (TplContact *self);
 
 const gchar *tpl_contact_get_alias (TplContact *self);
 const gchar *tpl_contact_get_identifier (TplContact *self);

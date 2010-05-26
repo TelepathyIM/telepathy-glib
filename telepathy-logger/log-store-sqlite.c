@@ -426,7 +426,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   const char *account, *identifier;
   gboolean chatroom;
-  char *date;
+  char *date = NULL;
   int count = 0;
   sqlite3_stmt *sql = NULL;
   gboolean retval = FALSE;
@@ -786,7 +786,7 @@ out:
  * It gets all the log-ids for messages matching the object-path of
  * @channel and older than @timestamp.
  *
- * If @channel is %NULL, it will get all the exiting log-ids.
+ * If @channel is %NULL, it will get all the existing log-ids.
  *
  * All the entries will be filtered against @timestamp, returning only log-ids
  * older than this value (time_t). Set it to %G_MAXUINT or any other value in
