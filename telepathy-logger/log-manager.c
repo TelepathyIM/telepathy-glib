@@ -458,10 +458,8 @@ log_manager_message_date_cmp (gconstpointer a,
   g_assert (TPL_IS_LOG_ENTRY (one));
   g_assert (TPL_IS_LOG_ENTRY (two));
 
-  /* TODO better to use a real method call, instead or dereferencing it's
-   * pointer */
-  one_time = TPL_LOG_ENTRY_GET_CLASS (one)->get_timestamp (one);
-  two_time = TPL_LOG_ENTRY_GET_CLASS (two)->get_timestamp (two);
+  one_time = tpl_log_entry_get_timestamp (one);
+  two_time = tpl_log_entry_get_timestamp (two);
 
   /* return -1, o or 1 depending on message1 is newer, the same or older than
    * message2 */
