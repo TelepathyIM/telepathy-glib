@@ -71,9 +71,6 @@ struct _TplLogEntry
 struct _TplLogEntryClass {
   GObjectClass parent_class;
 
-  void (*dispose) (GObject *obj);
-  void (*finalize) (GObject *obj);
-
   gint64 (*get_timestamp) (TplLogEntry *self);
   gint (*get_pending_msg_id) (TplLogEntry *self);
   gboolean (*is_pending) (TplLogEntry *self);
