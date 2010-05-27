@@ -23,6 +23,7 @@
 #define __TPL_LOG_ENTRY_TEXT_INTERNAL_H__
 
 #include <telepathy-logger/log-entry-text.h>
+#include <telepathy-logger/log-entry-internal.h>
 
 G_BEGIN_DECLS
 

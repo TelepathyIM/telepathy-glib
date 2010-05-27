@@ -26,7 +26,6 @@
 
 #include <telepathy-logger/channel-text.h>
 #include <telepathy-logger/log-entry.h>
-#include <telepathy-logger/log-entry-internal.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_ENTRY_TEXT                  (tpl_log_entry_text_get_type ())

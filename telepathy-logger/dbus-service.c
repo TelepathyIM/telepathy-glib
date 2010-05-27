@@ -31,6 +31,7 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/svc-generic.h>
 
+#include <telepathy-logger/log-entry-internal.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
 
