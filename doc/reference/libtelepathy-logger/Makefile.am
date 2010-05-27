@@ -56,7 +56,7 @@ CFILE_GLOB=$(top_srcdir)/telepathy-logger/*.c
 # Header files to ignore when scanning.
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES=\
-    log-manager-priv.h \
+    log-manager-internal.h \
     action-chain-internal.h \
     datetime-internal.h \
     debug-internal.h \

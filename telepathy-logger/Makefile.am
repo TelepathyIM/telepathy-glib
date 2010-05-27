@@ -48,7 +48,7 @@ libtelepathy_logger_la_SOURCES = \
 		log-entry-text.c		\
 		log-entry-text-internal.h		\
 		log-manager.c			\
-		log-manager-priv.h		\
+		log-manager-internal.h		\
 		log-store.c			\
 		log-store.h			\
 		log-store-xml.c			\

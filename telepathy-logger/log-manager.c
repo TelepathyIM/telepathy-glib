@@ -24,7 +24,7 @@
 
 #include "config.h"
 #include "log-manager.h"
-#include "log-manager-priv.h"
+#include "log-manager-internal.h"
 
 #include <string.h>
 #include <stdio.h>

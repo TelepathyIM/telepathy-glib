@@ -3,7 +3,7 @@
 #include <glib.h>
 
 #include <telepathy-logger/log-manager.h>
-#include <telepathy-logger/log-manager-priv.h>
+#include <telepathy-logger/log-manager-internal.h>
 #include <telepathy-logger/log-store.h>
 #include <telepathy-logger/log-store-xml.h>
 
