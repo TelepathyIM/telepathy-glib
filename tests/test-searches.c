@@ -63,7 +63,7 @@ main (int argc, char *argv[])
    * it's assured to work as long as the blocking API and the wapper work */
 
   /* we do not want duplicates */
-  ret = tpl_log_manager_get_dates (manager, acc, ID, FALSE);
+  ret = _tpl_log_manager_get_dates (manager, acc, ID, FALSE);
   ret = g_list_sort (ret, (GCompareFunc) g_strcmp0);
   for (loc = ret; loc; loc = g_list_next (loc))
     if (loc->next)
@@ -73,13 +73,13 @@ main (int argc, char *argv[])
 
 
   /* we do not want duplicates */
-  ret = tpl_log_manager_get_chats (manager, acc);
-  ret = g_list_sort (ret, (GCompareFunc) tpl_log_manager_search_hit_compare);
+  ret = _tpl_log_manager_get_chats (manager, acc);
+  ret = g_list_sort (ret, (GCompareFunc) _tpl_log_manager_search_hit_compare);
   for (loc = ret; loc; loc = g_list_next (loc))
     if (loc->next)
-      g_assert (tpl_log_manager_search_hit_compare (loc->data,
+      g_assert (_tpl_log_manager_search_hit_compare (loc->data,
             loc->next->data) != 0);
-  g_list_foreach (ret, (GFunc) tpl_log_manager_search_hit_free, NULL);
+  g_list_foreach (ret, (GFunc) _tpl_log_manager_search_hit_free, NULL);
   g_list_free (ret);
 
 
