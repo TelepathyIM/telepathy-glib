@@ -339,6 +339,6 @@ _tpl_log_entry_text_equal (TplLogEntry *message1,
     if (!tp_strdiff (priv1->entry.text->message, priv2->entry.text->message)) {
     }
   */
-  return !tp_strdiff (_tpl_log_entry_get_log_id (message1),
-      _tpl_log_entry_get_log_id (message2));
+  return !tp_strdiff (tpl_log_entry_get_log_id (message1),
+      tpl_log_entry_get_log_id (message2));
 }

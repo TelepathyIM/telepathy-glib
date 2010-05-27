@@ -44,5 +44,12 @@ gint64 tpl_log_entry_get_timestamp (TplLogEntry *self);
 
 const gchar *tpl_log_entry_get_account_path (TplLogEntry *self);
 
+TplContact * tpl_log_entry_get_sender (TplLogEntry *self);
+TplContact * tpl_log_entry_get_receiver (TplLogEntry *self);
+
+const gchar * tpl_log_entry_get_log_id (TplLogEntry *self);
+
+gint tpl_log_entry_get_pending_msg_id (TplLogEntry *self);
+
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_H__
