@@ -1200,7 +1200,7 @@ tpl_log_manager_get_chats_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_get_chats_finish), FALSE);
+        G_OBJECT (self), tpl_log_manager_get_chats_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
