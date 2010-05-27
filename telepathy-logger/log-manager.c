@@ -775,7 +775,6 @@ _tpl_log_manager_async_operation_cb (GObject *source_object,
 /* end of Async common function */
 
 
-/* Start of add_message async implementation */
 gboolean
 _tpl_log_manager_add_message_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -854,10 +853,7 @@ _tpl_log_manager_add_message_async (TplLogManager *manager,
   g_simple_async_result_run_in_thread (simple, _add_message_async_thread, 0,
       NULL);
 }
-/* End of add_message async implementation */
 
-
-/* Start of get_dates async implementation */
 gboolean
 tpl_log_manager_get_dates_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -957,9 +953,7 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
   g_simple_async_result_run_in_thread (simple, _get_dates_async_thread, 0,
       NULL);
 }
-/* End of get_dates async implementation */
 
-/* Start of get_messages_for_date async implementation */
 gboolean
 tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -1068,10 +1062,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
   g_simple_async_result_run_in_thread (simple,
       _get_messages_for_date_async_thread, 0, NULL);
 }
-/* End of get_messages_for_date async implementation */
 
-
-/* Start of get_filtered_messages async implementation */
 gboolean
 tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -1185,10 +1176,7 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
   g_simple_async_result_run_in_thread (simple,
       _get_filtered_messages_async_thread, 0, NULL);
 }
-/* End of get_filtered_messages async implementation */
 
-
-/* Start of get_chats async implementation */
 gboolean
 tpl_log_manager_get_chats_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -1278,10 +1266,7 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
   g_simple_async_result_run_in_thread (simple, _get_chats_async_thread, 0,
       NULL);
 }
-/* End of get_chats async implementation */
 
-/* Start of tpl_log_manager_search_in_identifier_chats_new async
- * implementation */
 gboolean
 _tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -1378,10 +1363,7 @@ _tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
   g_simple_async_result_run_in_thread (simple,
       _search_in_identifier_chats_new_async_thread, 0, NULL);
 }
-/* End of tpl_log_manager_search_in_identifier_chats_new async implementation */
 
-
-/* Start of tpl_log_manager_search_new async implementation */
 gboolean
 tpl_log_manager_search_new_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -1468,4 +1450,3 @@ tpl_log_manager_search_new_async (TplLogManager *manager,
   g_simple_async_result_run_in_thread (simple, _search_new_async_thread, 0,
       NULL);
 }
-/* End of tpl_log_manager_search_new async implementation */
