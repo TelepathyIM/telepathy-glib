@@ -19,34 +19,28 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 
 LIBTPLdir = $(includedir)/telepathy-logger
 LIBTPL_HEADERS = \
-		channel.h			\
-		channel-factory.h		\
-		channel-text.h			\
-		conf.h				\
 		contact.h			\
-		dbus-service.h			\
 		log-entry.h			\
 		log-entry-text.h		\
 		log-manager.h			\
-		log-manager-priv.h		\
-		log-store.h			\
-		log-store-xml.h			\
-		log-store-sqlite.h		\
-		log-store-factory.h		\
-		observer.h			\
 		$(NULL)
 
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\
 		action-chain-internal.h		\
+		channel.h			\
 		channel.c			\
 		channel-factory.c		\
+		channel-factory.h		\
 		channel-text.c			\
+		channel-text.h			\
 		conf.c				\
+		conf.h				\
 		contact.c			\
 		datetime.c			\
 		datetime-internal.h		\
 		dbus-service.c			\
+		dbus-service.h			\
 		debug-internal.h		\
 		debug.c				\
 		log-entry.c			\
@@ -54,11 +48,17 @@ libtelepathy_logger_la_SOURCES = \
 		log-entry-text.c		\
 		log-entry-text-internal.h		\
 		log-manager.c			\
+		log-manager-priv.h		\
 		log-store.c			\
+		log-store.h			\
 		log-store-xml.c			\
+		log-store-xml.h			\
 		log-store-sqlite.c		\
+		log-store-sqlite.h		\
 		log-store-factory.c		\
+		log-store-factory.h		\
 		observer.c			\
+		observer.h			\
 		util-internal.h			\
 		util.c				\
 		$(NULL)
