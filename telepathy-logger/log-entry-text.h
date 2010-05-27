@@ -24,7 +24,7 @@
 
 #include <glib-object.h>
 
-#include <telepathy-logger/channel-text.h>
+#include <telepathy-logger/channel-text-internal.h>
 #include <telepathy-logger/log-entry.h>
 
 G_BEGIN_DECLS

@@ -32,7 +32,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
 
-#include <telepathy-logger/channel.h>
+#include <telepathy-logger/channel-internal.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_CHANNEL_TEXT                  (tpl_channel_text_get_type ())

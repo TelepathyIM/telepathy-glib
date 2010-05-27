@@ -20,20 +20,20 @@
  */
 
 #include "config.h"
-#include "channel-text.h"
+#include "channel-text-internal.h"
 
 #include <glib.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/proxy.h>
 
-#include <telepathy-logger/channel.h>
-#include <telepathy-logger/observer.h>
+#include <telepathy-logger/channel-internal.h>
+#include <telepathy-logger/observer-internal.h>
 #include <telepathy-logger/log-entry-internal.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-entry-text-internal.h>
 #include <telepathy-logger/log-manager-internal.h>
-#include <telepathy-logger/log-store-sqlite.h>
+#include <telepathy-logger/log-store-sqlite-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/action-chain-internal.h>

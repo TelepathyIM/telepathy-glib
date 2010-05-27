@@ -30,7 +30,7 @@
 #include "log-entry-internal.h"
 #include "log-entry-text.h"
 #include "log-entry-text-internal.h"
-#include "log-store-sqlite.h"
+#include "log-store-sqlite-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include "datetime-internal.h"

@@ -4,8 +4,8 @@
 
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-manager-internal.h>
-#include <telepathy-logger/log-store.h>
-#include <telepathy-logger/log-store-xml.h>
+#include <telepathy-logger/log-store-internal.h>
+#include <telepathy-logger/log-store-xml-internal.h>
 
 
 static GMainLoop *loop = NULL;

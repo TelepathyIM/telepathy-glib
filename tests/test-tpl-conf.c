@@ -1,4 +1,4 @@
-#include <telepathy-logger/conf.h>
+#include <telepathy-logger/conf-internal.h>
 
 int
 main (int argc, char **argv)

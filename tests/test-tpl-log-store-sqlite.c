@@ -1,4 +1,4 @@
-#include <telepathy-logger/log-store-sqlite.h>
+#include <telepathy-logger/log-store-sqlite-internal.h>
 #include <telepathy-logger/debug-internal.h>
 
 int

@@ -23,7 +23,7 @@
 
 #include "config.h"
 
-#include <telepathy-logger/log-store.h>
+#include <telepathy-logger/log-store-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug-internal.h>

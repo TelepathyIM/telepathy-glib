@@ -26,7 +26,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/account.h>
 
-#include <telepathy-logger/channel.h>
+#include <telepathy-logger/channel-internal.h>
 
 #define TPL_CHANNEL_FACTORY_ERROR g_quark_from_static_string ( \
     "tpl-channel-factory-error-quark")

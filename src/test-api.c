@@ -25,7 +25,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/proxy-subclass.h>
 
-#include <telepathy-logger/dbus-service.h>
+#include <telepathy-logger/dbus-service-internal.h>
 #include <extensions/extensions.h>
 
 static GMainLoop *mainloop = NULL;

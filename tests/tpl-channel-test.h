@@ -33,8 +33,8 @@
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/svc-client.h>
 
-#include <telepathy-logger/channel.h>
-#include <telepathy-logger/observer.h>
+#include <telepathy-logger/channel-internal.h>
+#include <telepathy-logger/observer-internal.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_CHANNEL_TEST                 (tpl_channel_test_get_type ())

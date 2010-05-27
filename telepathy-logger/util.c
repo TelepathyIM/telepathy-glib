@@ -22,7 +22,7 @@
 #include "util-internal.h"
 
 #include "datetime-internal.h"
-#include "log-store-sqlite.h"
+#include "log-store-sqlite-internal.h"
 
 /* Bug#26838 prevents us to trust Messages' iface message-token
  * header, so I need to create a token which TPL can trust to be unique

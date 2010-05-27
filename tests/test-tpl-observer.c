@@ -1,7 +1,7 @@
 #include "tpl-channel-test.h"
 
-#include <telepathy-logger/channel-factory.h>
-#include <telepathy-logger/observer.h>
+#include <telepathy-logger/channel-factory-internal.h>
+#include <telepathy-logger/observer-internal.h>
 
 static gint factory_counter = 0;
 

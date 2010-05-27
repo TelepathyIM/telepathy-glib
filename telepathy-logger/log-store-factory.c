@@ -20,7 +20,7 @@
  */
 
 #include "config.h"
-#include "log-store-factory.h"
+#include "log-store-factory-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug-internal.h>

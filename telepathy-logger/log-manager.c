@@ -37,9 +37,9 @@
 
 #include <telepathy-logger/log-entry.h>
 #include <telepathy-logger/log-entry-internal.h>
-#include <telepathy-logger/log-store.h>
-#include <telepathy-logger/log-store-xml.h>
-#include <telepathy-logger/log-store-sqlite.h>
+#include <telepathy-logger/log-store-internal.h>
+#include <telepathy-logger/log-store-xml-internal.h>
+#include <telepathy-logger/log-store-sqlite-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_MANAGER
 #include <telepathy-logger/datetime-internal.h>

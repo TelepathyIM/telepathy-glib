@@ -20,7 +20,7 @@
  */
 
 #include "config.h"
-#include "observer.h"
+#include "observer-internal.h"
 
 #include <glib.h>
 #include <telepathy-glib/interfaces.h>
@@ -31,9 +31,9 @@
 #include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/account-manager.h>
 
-#include <telepathy-logger/conf.h>
-#include <telepathy-logger/channel.h>
-#include <telepathy-logger/channel-factory.h>
+#include <telepathy-logger/conf-internal.h>
+#include <telepathy-logger/channel-internal.h>
+#include <telepathy-logger/channel-factory-internal.h>
 #include <telepathy-logger/log-manager.h>
 
 #define DEBUG_FLAG TPL_DEBUG_OBSERVER

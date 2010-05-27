@@ -25,8 +25,8 @@
 #include <glib-object.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 
-#include <telepathy-logger/channel.h>
-#include <telepathy-logger/channel-factory.h>
+#include <telepathy-logger/channel-internal.h>
+#include <telepathy-logger/channel-factory-internal.h>
 
 #define TPL_OBSERVER_WELL_KNOWN_BUS_NAME \
   "org.freedesktop.Telepathy.Client.Logger"

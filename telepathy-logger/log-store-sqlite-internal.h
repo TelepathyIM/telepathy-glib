@@ -26,7 +26,7 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#include <telepathy-logger/log-store.h>
+#include <telepathy-logger/log-store-internal.h>
 
 G_BEGIN_DECLS
 

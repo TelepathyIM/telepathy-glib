@@ -1,6 +1,6 @@
 #include "tpl-channel-test.h"
 
-#include <telepathy-logger/conf.h>
+#include <telepathy-logger/conf-internal.h>
 
 #define CONNECTION_PATH "org.freedesktop.Telepathy.Connection.gabble.jabber.cosimo_2ealfarano_40collabora_2eco_2euk_2fKazoo"
 #define ACCOUNT_PATH "/org/freedesktop/Telepathy/Account/FOO/BAR/BAZ"

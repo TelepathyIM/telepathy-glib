@@ -23,9 +23,9 @@
 
 #include <dbus/dbus.h>
 
-#include <telepathy-logger/observer.h>
-#include <telepathy-logger/channel-factory.h>
-#include <telepathy-logger/channel-text.h>
+#include <telepathy-logger/observer-internal.h>
+#include <telepathy-logger/channel-factory-internal.h>
+#include <telepathy-logger/channel-text-internal.h>
 
 
 static TplObserver *

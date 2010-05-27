@@ -25,10 +25,10 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/debug-sender.h>
 
-#include <telepathy-logger/channel-factory.h>
-#include <telepathy-logger/channel-text.h>
-#include <telepathy-logger/observer.h>
-#include <telepathy-logger/dbus-service.h>
+#include <telepathy-logger/channel-factory-internal.h>
+#include <telepathy-logger/channel-text-internal.h>
+#include <telepathy-logger/observer-internal.h>
+#include <telepathy-logger/dbus-service-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_MAIN
 #include <telepathy-logger/debug-internal.h>

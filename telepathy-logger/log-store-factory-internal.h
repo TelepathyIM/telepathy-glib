@@ -24,7 +24,7 @@
 
 #include <glib-object.h>
 
-#include <telepathy-logger/log-store.h>
+#include <telepathy-logger/log-store-internal.h>
 
 typedef TplLogStore* (*TplLogStoreConstructor) (const gchar *name,
     gboolean write_access, gboolean read_access);

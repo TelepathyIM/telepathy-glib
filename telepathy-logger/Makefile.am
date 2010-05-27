@@ -28,19 +28,19 @@ LIBTPL_HEADERS = \
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\
 		action-chain-internal.h		\
-		channel.h			\
+		channel-internal.h			\
 		channel.c			\
 		channel-factory.c		\
-		channel-factory.h		\
+		channel-factory-internal.h		\
 		channel-text.c			\
-		channel-text.h			\
+		channel-text-internal.h			\
 		conf.c				\
-		conf.h				\
+		conf-internal.h				\
 		contact.c			\
 		datetime.c			\
 		datetime-internal.h		\
 		dbus-service.c			\
-		dbus-service.h			\
+		dbus-service-internal.h			\
 		debug-internal.h		\
 		debug.c				\
 		log-entry.c			\
@@ -50,15 +50,15 @@ libtelepathy_logger_la_SOURCES = \
 		log-manager.c			\
 		log-manager-internal.h		\
 		log-store.c			\
-		log-store.h			\
+		log-store-internal.h			\
 		log-store-xml.c			\
-		log-store-xml.h			\
+		log-store-xml-internal.h			\
 		log-store-sqlite.c		\
-		log-store-sqlite.h		\
+		log-store-sqlite-internal.h		\
 		log-store-factory.c		\
-		log-store-factory.h		\
+		log-store-factory-internal.h		\
 		observer.c			\
-		observer.h			\
+		observer-internal.h			\
 		util-internal.h			\
 		util.c				\
 		$(NULL)

@@ -20,7 +20,7 @@
  */
 
 #include "config.h"
-#include "dbus-service.h"
+#include "dbus-service-internal.h"
 
 #include <string.h>
 #include <sys/stat.h>

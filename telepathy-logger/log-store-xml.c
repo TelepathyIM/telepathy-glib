@@ -24,7 +24,7 @@
  */
 
 #include "config.h"
-#include "log-store-xml.h"
+#include "log-store-xml-internal.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -44,7 +44,7 @@
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-entry-text-internal.h>
 #include <telepathy-logger/log-manager.h>
-#include <telepathy-logger/log-store.h>
+#include <telepathy-logger/log-store-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/contact-internal.h>
