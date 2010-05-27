@@ -82,9 +82,6 @@ TplLogManager *tpl_log_manager_dup_singleton (void);
 gboolean tpl_log_manager_exists (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean chatroom);
 
-GList *tpl_log_manager_get_dates (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom);
-
 gboolean tpl_log_manager_get_dates_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **dates,
@@ -94,10 +91,6 @@ void tpl_log_manager_get_dates_async (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
     GAsyncReadyCallback callback, gpointer user_data);
 
-GList *tpl_log_manager_get_messages_for_date (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom,
-    const gchar *date);
-
 gboolean tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **messages,
@@ -106,10 +99,6 @@ gboolean tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
 void tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
     const gchar *date, GAsyncReadyCallback callback, gpointer user_data);
-
-GList *tpl_log_manager_get_filtered_messages (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom,
-    guint num_messages, TplLogMessageFilter filter, gpointer user_data);
 
 gboolean tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -121,8 +110,6 @@ void tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
     guint num_messages, TplLogMessageFilter filter, gpointer filter_user_data,
     GAsyncReadyCallback callback, gpointer user_data);
 
-GList *tpl_log_manager_get_chats (TplLogManager *manager, TpAccount *account);
-
 gboolean tpl_log_manager_get_chats_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **chats,
@@ -130,9 +117,6 @@ gboolean tpl_log_manager_get_chats_finish (TplLogManager *self,
 
 void tpl_log_manager_get_chats_async (TplLogManager *manager,
     TpAccount *account, GAsyncReadyCallback callback, gpointer user_data);
-
-GList *tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
-    TpAccount *account, gchar const *chat_id, const gchar *text);
 
 gboolean tpl_log_manager_search_in_identifier_chats_new_finish (
     TplLogManager *self,
@@ -143,9 +127,6 @@ gboolean tpl_log_manager_search_in_identifier_chats_new_finish (
 void tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
     TpAccount *account, gchar const *chat_id, const gchar *text,
     GAsyncReadyCallback callback, gpointer user_data);
-
-GList *tpl_log_manager_search_new (TplLogManager *manager,
-    const gchar *text);
 
 gboolean tpl_log_manager_search_new_finish (TplLogManager *self,
     GAsyncResult *result,

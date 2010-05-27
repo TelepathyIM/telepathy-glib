@@ -364,7 +364,7 @@ tpl_log_manager_exists (TplLogManager *manager,
 
 
 /**
- * tpl_log_manager_get_dates:
+ * _tpl_log_manager_get_dates:
  * @manager: a TplLogManager
  * @account: a TpAccount
  * @chat_id: a non-NULL chat identifier
@@ -383,7 +383,7 @@ tpl_log_manager_exists (TplLogManager *manager,
  * g_list_free (lst);
  */
 GList *
-tpl_log_manager_get_dates (TplLogManager *manager,
+_tpl_log_manager_get_dates (TplLogManager *manager,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom)
@@ -421,7 +421,7 @@ tpl_log_manager_get_dates (TplLogManager *manager,
 
 
 GList *
-tpl_log_manager_get_messages_for_date (TplLogManager *manager,
+_tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
@@ -468,7 +468,7 @@ log_manager_message_date_cmp (gconstpointer a,
 
 
 GList *
-tpl_log_manager_get_filtered_messages (TplLogManager *manager,
+_tpl_log_manager_get_filtered_messages (TplLogManager *manager,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
@@ -577,7 +577,7 @@ tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
 
 
 /**
- * tpl_log_manager_get_chats
+ * _tpl_log_manager_get_chats
  * @manager: the log manager
  * @account: a TpAccount the query will return data related to
  *
@@ -589,7 +589,7 @@ tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
  * #tpl_log_manager_search_hit_free
  */
 GList *
-tpl_log_manager_get_chats (TplLogManager *manager,
+_tpl_log_manager_get_chats (TplLogManager *manager,
     TpAccount *account)
 {
   GList *l, *out = NULL;
@@ -630,7 +630,7 @@ tpl_log_manager_get_chats (TplLogManager *manager,
 
 
 GList *
-tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
+_tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
     TpAccount *account,
     gchar const *identifier,
     const gchar *text)
@@ -659,7 +659,7 @@ tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
 
 
 GList *
-tpl_log_manager_search_new (TplLogManager *manager,
+_tpl_log_manager_search_new (TplLogManager *manager,
     const gchar *text)
 {
   GList *l, *out = NULL;
@@ -905,7 +905,7 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  lst = tpl_log_manager_get_dates (async_data->manager,
+  lst = _tpl_log_manager_get_dates (async_data->manager,
       chat_info->account, chat_info->chat_id,
       chat_info->is_chatroom);
 
@@ -1008,7 +1008,7 @@ _get_messages_for_date_async_thread (GSimpleAsyncResult *simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  lst = tpl_log_manager_get_messages_for_date (async_data->manager,
+  lst = _tpl_log_manager_get_messages_for_date (async_data->manager,
       chat_info->account,
       chat_info->chat_id,
       chat_info->is_chatroom,
@@ -1119,7 +1119,7 @@ _get_filtered_messages_async_thread (GSimpleAsyncResult *simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  lst = tpl_log_manager_get_filtered_messages (async_data->manager,
+  lst = _tpl_log_manager_get_filtered_messages (async_data->manager,
       chat_info->account, chat_info->chat_id, chat_info->is_chatroom,
       chat_info->num_messages, chat_info->filter, chat_info->user_data);
 
@@ -1236,7 +1236,7 @@ _get_chats_async_thread (GSimpleAsyncResult *simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  lst = tpl_log_manager_get_chats (async_data->manager, chat_info->account);
+  lst = _tpl_log_manager_get_chats (async_data->manager, chat_info->account);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _get_chats_async_result_free);
@@ -1280,7 +1280,8 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
 }
 /* End of get_chats async implementation */
 
-/* Start of tpl_log_manager_search_in_identifier_chats_new async implementation */
+/* Start of tpl_log_manager_search_in_identifier_chats_new async
+ * implementation */
 gboolean
 tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -1329,8 +1330,8 @@ _search_in_identifier_chats_new_async_thread (GSimpleAsyncResult *simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  lst = tpl_log_manager_search_in_identifier_chats_new (async_data->manager, chat_info->account,
-      chat_info->chat_id, chat_info->search_text);
+  lst = _tpl_log_manager_search_in_identifier_chats_new (async_data->manager,
+      chat_info->account, chat_info->chat_id, chat_info->search_text);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _search_in_identifier_chats_new_async_result_free);
@@ -1427,7 +1428,8 @@ _search_new_async_thread (GSimpleAsyncResult *simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  lst = tpl_log_manager_search_new (async_data->manager, chat_info->search_text);
+  lst = _tpl_log_manager_search_new (async_data->manager,
+      chat_info->search_text);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _search_new_async_result_free);

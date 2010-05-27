@@ -41,4 +41,35 @@ void _tpl_log_manager_add_message_async (TplLogManager *manager,
 gboolean _tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore);
 
+GList * _tpl_log_manager_get_dates (TplLogManager *manager,
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom);
+
+GList * _tpl_log_manager_get_messages_for_date (TplLogManager *manager,
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom,
+    const gchar *date);
+
+GList * _tpl_log_manager_get_filtered_messages (TplLogManager *manager,
+    TpAccount *account,
+    const gchar *chat_id,
+    gboolean chatroom,
+    guint num_messages,
+    TplLogMessageFilter filter,
+    gpointer user_data);
+
+GList * _tpl_log_manager_get_chats (TplLogManager *manager,
+    TpAccount *account);
+
+GList * _tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
+    TpAccount *account,
+    gchar const *chat_id,
+    const gchar *text);
+
+GList * _tpl_log_manager_search_new (TplLogManager *manager,
+    const gchar *text);
+
+
 #endif /* __TPL_LOG_MANAGER_PRIV_H__ */
