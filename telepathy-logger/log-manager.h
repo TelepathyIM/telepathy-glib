@@ -118,16 +118,6 @@ gboolean tpl_log_manager_get_chats_finish (TplLogManager *self,
 void tpl_log_manager_get_chats_async (TplLogManager *manager,
     TpAccount *account, GAsyncReadyCallback callback, gpointer user_data);
 
-gboolean tpl_log_manager_search_in_identifier_chats_new_finish (
-    TplLogManager *self,
-    GAsyncResult *result,
-    GList **chats,
-    GError **error);
-
-void tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
-    TpAccount *account, gchar const *chat_id, const gchar *text,
-    GAsyncReadyCallback callback, gpointer user_data);
-
 gboolean tpl_log_manager_search_new_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **chats,
@@ -139,10 +129,6 @@ void tpl_log_manager_search_new_async (TplLogManager *manager,
 void tpl_log_manager_search_free (GList *hits);
 
 gchar *tpl_log_manager_get_date_readable (const gchar *date);
-
-void tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
-gint tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
-    TplLogSearchHit *b);
 
 G_END_DECLS
 #endif /* __TPL_LOG_MANAGER_H__ */

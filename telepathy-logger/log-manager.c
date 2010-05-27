@@ -529,7 +529,7 @@ _tpl_log_manager_get_filtered_messages (TplLogManager *manager,
 
 
 /**
- * tpl_log_manager_search_hit_compare:
+ * _tpl_log_manager_search_hit_compare:
  * @a: a TplLogSerachHit
  * @b: a TplLogSerachHit
  *
@@ -544,7 +544,7 @@ _tpl_log_manager_get_filtered_messages (TplLogManager *manager,
  *
  * Returns: -1 if a > b, 1 if a < b or 0 is a == b */
 gint
-tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
+_tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
     TplLogSearchHit *b)
 {
   /* if chat_ids differ, just return their sorting return value */
@@ -586,7 +586,7 @@ tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
  *
  * Returns: a list of pointer to TplLogSearchHit, having chat_id and
  * is_chatroom fields filled. the result needs to be freed after use using
- * #tpl_log_manager_search_hit_free
+ * _tpl_log_manager_search_hit_free
  */
 GList *
 _tpl_log_manager_get_chats (TplLogManager *manager,
@@ -613,14 +613,14 @@ _tpl_log_manager_get_chats (TplLogManager *manager,
           TplLogSearchHit *hit = in->data;
 
           if (g_list_find_custom (out, hit,
-                (GCompareFunc) tpl_log_manager_search_hit_compare) == NULL)
+                (GCompareFunc) _tpl_log_manager_search_hit_compare) == NULL)
             {
               /* add data if not already present */
               out = g_list_prepend (out, hit);
             }
           else
             /* free hit if already present in out */
-            tpl_log_manager_search_hit_free (hit);
+            _tpl_log_manager_search_hit_free (hit);
         }
       g_list_free (in);
     }
@@ -682,7 +682,7 @@ _tpl_log_manager_search_new (TplLogManager *manager,
 
 
 void
-tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
+_tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
 {
   if (hit->account != NULL)
     g_object_unref (hit->account);
@@ -702,7 +702,7 @@ tpl_log_manager_search_free (GList *hits)
 
   for (l = hits; l != NULL; l = g_list_next (l))
     {
-      tpl_log_manager_search_hit_free (l->data);
+      _tpl_log_manager_search_hit_free (l->data);
     }
 
   g_list_free (hits);
@@ -1283,7 +1283,7 @@ tpl_log_manager_get_chats_async (TplLogManager *manager,
 /* Start of tpl_log_manager_search_in_identifier_chats_new async
  * implementation */
 gboolean
-tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
+_tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **chats,
     GError **error)
@@ -1293,7 +1293,8 @@ tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_search_in_identifier_chats_new_finish),
+        G_OBJECT (self),
+        _tpl_log_manager_search_in_identifier_chats_new_async),
       FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
@@ -1313,7 +1314,7 @@ _search_in_identifier_chats_new_async_result_free (gpointer data)
   GList *lst = data; /* list of TplSearchHit */
   g_return_if_fail (data != NULL);
 
-  g_list_foreach (lst, (GFunc) tpl_log_manager_search_hit_free, NULL);
+  g_list_foreach (lst, (GFunc) _tpl_log_manager_search_hit_free, NULL);
   g_list_free (lst);
 }
 
@@ -1339,7 +1340,7 @@ _search_in_identifier_chats_new_async_thread (GSimpleAsyncResult *simple,
 
 
 void
-tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
+_tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
     TpAccount *account,
     gchar const *identifier,
     const gchar *text,
@@ -1372,7 +1373,7 @@ tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_search_in_identifier_chats_new_async);
+      _tpl_log_manager_search_in_identifier_chats_new_async);
 
   g_simple_async_result_run_in_thread (simple,
       _search_in_identifier_chats_new_async_thread, 0, NULL);
@@ -1411,7 +1412,7 @@ _search_new_async_result_free (gpointer data)
   GList *lst = data; /* list of TplSearchHit */
   g_return_if_fail (data != NULL);
 
-  g_list_foreach (lst, (GFunc) tpl_log_manager_search_hit_free, NULL);
+  g_list_foreach (lst, (GFunc) _tpl_log_manager_search_hit_free, NULL);
   g_list_free (lst);
 }
 

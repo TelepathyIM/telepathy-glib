@@ -71,5 +71,23 @@ GList * _tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
 GList * _tpl_log_manager_search_new (TplLogManager *manager,
     const gchar *text);
 
+gboolean _tpl_log_manager_search_in_identifier_chats_new_finish (
+    TplLogManager *self,
+    GAsyncResult *result,
+    GList **chats,
+    GError **error);
+
+void _tpl_log_manager_search_in_identifier_chats_new_async (
+    TplLogManager *manager,
+    TpAccount *account,
+    gchar const *chat_id,
+    const gchar *text,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+void _tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
+
+gint _tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
+    TplLogSearchHit *b);
 
 #endif /* __TPL_LOG_MANAGER_PRIV_H__ */
