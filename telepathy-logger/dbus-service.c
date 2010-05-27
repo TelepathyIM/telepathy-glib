@@ -31,6 +31,7 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/svc-generic.h>
 
+#include <telepathy-logger/log-entry-internal.h>
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-manager.h>
 
@@ -408,7 +409,7 @@ _get_messages_return (GObject *manager,
       const char *message = tpl_log_entry_text_get_message (
           TPL_LOG_ENTRY_TEXT (log));
       const char *sender = tpl_contact_get_identifier (
-          _tpl_log_entry_get_sender (log));
+          tpl_log_entry_get_sender (log));
       gint64 timestamp = tpl_log_entry_get_timestamp (log);
 
       DEBUG ("Message: %" G_GINT64_FORMAT " <%s> %s",

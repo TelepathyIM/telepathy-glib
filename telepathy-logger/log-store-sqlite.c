@@ -441,7 +441,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
           TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED)
     {
       DEBUG ("ignoring msg %s, not interesting for message-counter",
-          _tpl_log_entry_get_log_id (message));
+          tpl_log_entry_get_log_id (message));
       retval = TRUE;
       goto out;
     }
@@ -579,7 +579,7 @@ tpl_log_store_sqlite_add_message_cache (TplLogStore *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  log_id = _tpl_log_entry_get_log_id (message);
+  log_id = tpl_log_entry_get_log_id (message);
   DEBUG ("received %s, considering if can be cached", log_id);
   if (tpl_log_store_sqlite_log_id_is_present (self, log_id))
     {
@@ -698,8 +698,8 @@ _insert_to_cache_table (TplLogStore *self,
   account = get_account_name_from_entry (message);
   channel = get_channel_name_from_entry (message);
   identifier = _tpl_log_entry_get_chat_id (message);
-  log_id = _tpl_log_entry_get_log_id (message);
-  msg_id = _tpl_log_entry_get_pending_msg_id (message);
+  log_id = tpl_log_entry_get_log_id (message);
+  msg_id = tpl_log_entry_get_pending_msg_id (message);
   chatroom = _tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
   date = get_datetime (message);
 

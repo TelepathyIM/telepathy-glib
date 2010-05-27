@@ -382,7 +382,7 @@ tpl_log_entry_get_timestamp (TplLogEntry *self)
 
 
 gint
-_tpl_log_entry_get_pending_msg_id (TplLogEntry *self)
+tpl_log_entry_get_pending_msg_id (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), -1);
 
@@ -394,7 +394,7 @@ gboolean
 _tpl_log_entry_is_pending (TplLogEntry *self)
 {
   return TPL_LOG_ENTRY_MSG_ID_IS_VALID (
-      _tpl_log_entry_get_pending_msg_id (self));
+      tpl_log_entry_get_pending_msg_id (self));
 }
 
 
@@ -408,7 +408,7 @@ _tpl_log_entry_get_signal_type (TplLogEntry *self)
 
 
 const gchar *
-_tpl_log_entry_get_log_id (TplLogEntry *self)
+tpl_log_entry_get_log_id (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), 0);
 
@@ -427,7 +427,7 @@ _tpl_log_entry_get_direction (TplLogEntry *self)
 
 
 TplContact *
-_tpl_log_entry_get_sender (TplLogEntry *self)
+tpl_log_entry_get_sender (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 
@@ -436,7 +436,7 @@ _tpl_log_entry_get_sender (TplLogEntry *self)
 
 
 TplContact *
-_tpl_log_entry_get_receiver (TplLogEntry *self)
+tpl_log_entry_get_receiver (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), NULL);
 

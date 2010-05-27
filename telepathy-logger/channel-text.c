@@ -1286,7 +1286,7 @@ keepon_on_receiving_signal (TplLogEntryText *text_log)
   tpl_contact_receiver = _tpl_contact_from_tp_contact (local);
 
   DEBUG ("recvd:\n\tlog_id=\"%s\"\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-      _tpl_log_entry_get_log_id (log),
+      tpl_log_entry_get_log_id (log),
       tpl_contact_get_identifier (tpl_contact_receiver),
       tpl_contact_get_alias (tpl_contact_receiver),
       tpl_contact_get_identifier (tpl_contact_sender),
