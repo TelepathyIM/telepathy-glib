@@ -182,7 +182,7 @@ static void start_telephony_event (TpMediaStreamHandler *proxy, guchar event,
 static void stop_telephony_event (TpMediaStreamHandler *proxy,
     gpointer user_data, GObject *object);
 
-static void close (TpMediaStreamHandler *proxy,
+static void stream_close (TpMediaStreamHandler *proxy,
     gpointer user_data, GObject *object);
 
 static void invalidated_cb (TpMediaStreamHandler *proxy,
@@ -731,7 +731,7 @@ get_all_properties_cb (TpProxy *proxy,
       (stream->priv->stream_handler_proxy, stop_telephony_event, NULL, NULL,
           (GObject*) stream, NULL);
   tp_cli_media_stream_handler_connect_to_close
-      (stream->priv->stream_handler_proxy, close, NULL, NULL,
+      (stream->priv->stream_handler_proxy, stream_close, NULL, NULL,
           (GObject*) stream, NULL);
 
   memset (params, 0, sizeof(GParameter) * MAX_STREAM_TRANS_PARAMS);
@@ -867,7 +867,6 @@ get_all_properties_cb (TpProxy *proxy,
   if (dbus_relay_info && dbus_relay_info->len)
     {
       GValueArray *fs_relay_info = g_value_array_new (0);
-      guint i;
       GValue val = {0};
       g_value_init (&val, GST_TYPE_STRUCTURE);
 
@@ -1778,7 +1777,7 @@ tf_stream_shutdown (TfStream *self)
 
 
 static void
-close (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+stream_close (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
        gpointer user_data G_GNUC_UNUSED,
        GObject *object)
 {
@@ -1904,7 +1903,6 @@ _tf_stream_bus_message (TfStream *stream,
 {
   const gchar *debug = NULL;
   const GstStructure *s = gst_message_get_structure (message);
-  const GValue *value = NULL;
 
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
     return FALSE;
@@ -1915,6 +1913,7 @@ _tf_stream_bus_message (TfStream *stream,
   if (gst_structure_has_name (s, "farsight-error"))
     {
       GObject *object;
+      const GValue *value = NULL;
 
       value = gst_structure_get_value (s, "src-object");
       object = g_value_get_object (value);
