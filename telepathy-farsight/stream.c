@@ -690,6 +690,7 @@ get_all_properties_cb (TpProxy *proxy,
   gboolean created_locally = TRUE;
   gboolean valid = FALSE;
   guint i;
+  gboolean do_controlling = FALSE;
 
   if (dbus_error &&
       !(dbus_error->domain == DBUS_GERROR &&
@@ -744,6 +745,7 @@ get_all_properties_cb (TpProxy *proxy,
   if (!nat_traversal || !strcmp (nat_traversal, "gtalk-p2p"))
     {
       transmitter = "nice";
+      do_controlling = TRUE;
 
       params[n_args].name = "compatibility-mode";
       g_value_init (&params[n_args].value, G_TYPE_UINT);
@@ -753,10 +755,12 @@ get_all_properties_cb (TpProxy *proxy,
   else if (!strcmp (nat_traversal, "ice-udp"))
     {
       transmitter = "nice";
+      do_controlling = TRUE;
     }
   else if (!strcmp (nat_traversal, "wlm-8.5"))
     {
       transmitter = "nice";
+      do_controlling = TRUE;
 
       params[n_args].name = "compatibility-mode";
       g_value_init (&params[n_args].value, G_TYPE_UINT);
@@ -766,6 +770,7 @@ get_all_properties_cb (TpProxy *proxy,
   else if (!strcmp (nat_traversal, "wlm-2009"))
     {
       transmitter = "nice";
+      do_controlling = TRUE;
 
       params[n_args].name = "compatibility-mode";
       g_value_init (&params[n_args].value, G_TYPE_UINT);
@@ -927,7 +932,7 @@ get_all_properties_cb (TpProxy *proxy,
       g_value_array_free (fs_relay_info);
     }
 
-  if (out_Properties)
+  if (out_Properties && do_controlling)
     {
       created_locally = tp_asv_get_boolean (out_Properties, "CreatedLocally",
           &valid);
