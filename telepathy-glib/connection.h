@@ -30,25 +30,6 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpConnection TpConnection;
-typedef struct _TpConnectionPrivate TpConnectionPrivate;
-typedef struct _TpConnectionClass TpConnectionClass;
-
-struct _TpConnectionClass {
-    TpProxyClass parent_class;
-    /*<private>*/
-    GCallback _1;
-    GCallback _2;
-    GCallback _3;
-    GCallback _4;
-};
-
-struct _TpConnection {
-    /*<private>*/
-    TpProxy parent;
-    TpConnectionPrivate *priv;
-};
-
 typedef struct _TpAvatarRequirements TpAvatarRequirements;
 struct _TpAvatarRequirements
 {
@@ -70,9 +51,7 @@ struct _TpAvatarRequirements
 
 #define TP_TYPE_AVATAR_REQUIREMENTS (tp_avatar_requirements_get_type ())
 GType tp_avatar_requirements_get_type (void);
-
-TpAvatarRequirements * tp_avatar_requirements_new (
-    GStrv supported_mime_types,
+TpAvatarRequirements * tp_avatar_requirements_new (GStrv supported_mime_types,
     guint minimum_width,
     guint minimum_height,
     guint recommended_width,
@@ -80,12 +59,28 @@ TpAvatarRequirements * tp_avatar_requirements_new (
     guint maximum_width,
     guint maximum_height,
     guint maximum_bytes);
-
-TpAvatarRequirements * tp_avatar_requirements_copy (
-    TpAvatarRequirements *self);
-
+TpAvatarRequirements * tp_avatar_requirements_copy (TpAvatarRequirements *self);
 void tp_avatar_requirements_destroy (TpAvatarRequirements *self);
 
+
+typedef struct _TpConnection TpConnection;
+typedef struct _TpConnectionPrivate TpConnectionPrivate;
+typedef struct _TpConnectionClass TpConnectionClass;
+
+struct _TpConnectionClass {
+    TpProxyClass parent_class;
+    /*<private>*/
+    GCallback _1;
+    GCallback _2;
+    GCallback _3;
+    GCallback _4;
+};
+
+struct _TpConnection {
+    /*<private>*/
+    TpProxy parent;
+    TpConnectionPrivate *priv;
+};
 
 GType tp_connection_get_type (void);
 
