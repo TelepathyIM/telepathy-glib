@@ -63,6 +63,51 @@ TpAvatarRequirements * tp_avatar_requirements_copy (
     const TpAvatarRequirements *self);
 void tp_avatar_requirements_destroy (TpAvatarRequirements *self);
 
+typedef struct _TpContactInfoFieldSpec TpContactInfoFieldSpec;
+struct _TpContactInfoFieldSpec
+{
+  gchar *name;
+  gchar **parameters;
+  TpContactInfoFieldFlags flags;
+  guint max;
+  /*<private>*/
+  gpointer priv;
+};
+
+#define TP_TYPE_CONTACT_INFO_FIELD_SPEC (tp_contact_info_field_spec_get_type ())
+GType tp_contact_info_field_spec_get_type (void);
+TpContactInfoFieldSpec *tp_contact_info_field_spec_new (const gchar *name,
+    GStrv parameters, TpContactInfoFieldFlags flags, guint max);
+TpContactInfoFieldSpec *tp_contact_info_field_spec_copy (
+    TpContactInfoFieldSpec *self);
+void tp_contact_info_field_spec_free (TpContactInfoFieldSpec *self);
+
+#define TP_TYPE_CONTACT_INFO_SPEC_LIST (tp_contact_info_spec_list_get_type ())
+GType tp_contact_info_spec_list_get_type (void);
+GList *tp_contact_info_spec_list_copy (GList *list);
+void tp_contact_info_spec_list_free (GList *list);
+
+typedef struct _TpContactInfoField TpContactInfoField;
+struct _TpContactInfoField
+{
+  gchar *field_name;
+  gchar **parameters;
+  gchar **field_value;
+  /*<private>*/
+  gpointer priv;
+};
+
+#define TP_TYPE_CONTACT_INFO_FIELD (tp_contact_info_field_get_type ())
+GType tp_contact_info_field_get_type (void);
+TpContactInfoField *tp_contact_info_field_new (const gchar *field_name,
+    GStrv parameters, GStrv field_value);
+TpContactInfoField *tp_contact_info_field_copy (TpContactInfoField *self);
+void tp_contact_info_field_free (TpContactInfoField *self);
+
+#define TP_TYPE_CONTACT_INFO_LIST (tp_contact_info_list_get_type ())
+GType tp_contact_info_list_get_type (void);
+GList *tp_contact_info_list_copy (GList *list);
+void tp_contact_info_list_free (GList *list);
 
 typedef struct _TpConnection TpConnection;
 typedef struct _TpConnectionPrivate TpConnectionPrivate;
@@ -120,6 +165,17 @@ TpCapabilities * tp_connection_get_capabilities (TpConnection *self);
 TpAvatarRequirements * tp_connection_get_avatar_requirements (
     TpConnection *self);
 
+TpContactInfoFlags tp_connection_get_contact_info_flags (TpConnection *self);
+
+GList *tp_connection_get_contact_info_supported_fields (TpConnection *self);
+
+void tp_connection_set_contact_info_async (TpConnection *self,
+    GList *info, GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_connection_set_contact_info_finish (TpConnection *self,
+    GAsyncResult *result, GError **error);
+
 gboolean tp_connection_is_ready (TpConnection *self);
 
 #ifndef TP_DISABLE_DEPRECATED
@@ -170,6 +226,10 @@ GQuark tp_connection_get_feature_quark_capabilities (void) G_GNUC_CONST;
 #define TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS \
   (tp_connection_get_feature_quark_avatar_requirements ())
 GQuark tp_connection_get_feature_quark_avatar_requirements (void) G_GNUC_CONST;
+
+#define TP_CONNECTION_FEATURE_CONTACT_INFO \
+  (tp_connection_get_feature_quark_contact_info ())
+GQuark tp_connection_get_feature_quark_contact_info (void) G_GNUC_CONST;
 
 /* connection-handles.c */
 

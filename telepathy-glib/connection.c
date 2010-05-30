@@ -483,6 +483,7 @@ tp_connection_continue_introspection (TpConnection *self)
 
       tp_connection_maybe_prepare_capabilities ((TpProxy *) self);
       tp_connection_maybe_prepare_avatar_requirements ((TpProxy *) self);
+      _tp_connection_maybe_prepare_contact_info ((TpProxy *) self);
     }
   else
     {
@@ -1047,9 +1048,11 @@ tp_connection_finalize (GObject *object)
       self->priv->avatar_request_idle_id = 0;
     }
 
+  tp_contact_info_spec_list_free (self->priv->contact_info_supported_fields);
+  self->priv->contact_info_supported_fields = NULL;
+
   ((GObjectClass *) tp_connection_parent_class)->finalize (object);
 }
-
 
 static void
 contact_notify_invalidated (gpointer k G_GNUC_UNUSED,
@@ -1086,6 +1089,7 @@ enum {
     FEAT_CONNECTED,
     FEAT_CAPABILITIES,
     FEAT_AVATAR_REQUIREMENTS,
+    FEAT_CONTACT_INFO,
     N_FEAT
 };
 
@@ -1109,6 +1113,10 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_AVATAR_REQUIREMENTS].name = TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS;
   features[FEAT_AVATAR_REQUIREMENTS].start_preparing =
     tp_connection_maybe_prepare_avatar_requirements;
+
+  features[FEAT_CONTACT_INFO].name = TP_CONNECTION_FEATURE_CONTACT_INFO;
+  features[FEAT_CONTACT_INFO].start_preparing =
+    _tp_connection_maybe_prepare_contact_info;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);

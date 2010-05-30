@@ -133,6 +133,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel-request.c \
     client.c \
     connection.c \
+    connection-contact-info.c \
     connection-internal.h \
     connection-handles.c \
     connection-manager.c \
