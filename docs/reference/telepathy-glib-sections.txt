@@ -3287,6 +3287,8 @@ TpConnectionContactsByIdCb
 tp_connection_get_contacts_by_id
 TpConnectionUpgradeContactsCb
 tp_connection_upgrade_contacts
+tp_connection_refresh_contact_info_async
+tp_connection_refresh_contact_info_finish
 tp_contact_get_alias
 tp_contact_get_avatar_token
 tp_contact_get_avatar_file
@@ -3299,6 +3301,7 @@ tp_contact_get_presence_status
 tp_contact_get_presence_type
 tp_contact_get_location
 tp_contact_get_capabilities
+tp_contact_get_contact_info
 tp_contact_has_feature
 <SUBSECTION Standard>
 tp_contact_feature_get_type

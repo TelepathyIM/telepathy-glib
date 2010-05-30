@@ -59,6 +59,7 @@ struct _TpConnectionPrivate {
     TpProxyPendingCall *introspection_call;
     unsigned fetching_rcc:1;
     unsigned fetching_avatar_requirements:1;
+    unsigned contact_info_fetched:1;
 
     unsigned ready:1;
     unsigned tracking_aliases_changed:1;
@@ -68,6 +69,7 @@ struct _TpConnectionPrivate {
     unsigned tracking_presence_update:1;
     unsigned tracking_location_changed:1;
     unsigned tracking_contact_caps_changed:1;
+    unsigned tracking_contact_info_changed:1;
     unsigned introspecting_after_connected:1;
 };
 
