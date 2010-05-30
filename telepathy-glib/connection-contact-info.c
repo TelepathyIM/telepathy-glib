@@ -107,7 +107,7 @@ tp_contact_info_field_spec_copy (TpContactInfoFieldSpec *self)
 }
 
 /**
- * tp_contact_info_field_spec_free:
+ * tp_contact_info_field_spec_free: (skip)
  * @self: a #TpContactInfoFieldSpec
  *
  * Free all memory used by the #TpContactInfoFieldSpec.
@@ -285,7 +285,7 @@ tp_contact_info_field_copy (TpContactInfoField *self)
 }
 
 /**
- * tp_contact_info_field_free:
+ * tp_contact_info_field_free: (skip)
  * @self: a #TpContactInfoField
  *
  * Free all memory used by the #TpContactInfoField.

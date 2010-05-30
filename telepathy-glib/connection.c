@@ -2165,7 +2165,7 @@ tp_avatar_requirements_new (GStrv supported_mime_types,
 }
 
 /**
- * tp_avatar_requirements_copy:
+ * tp_avatar_requirements_copy: (skip)
  * @self: a #TpAvatarRequirements
  *
  * <!--Returns: says it all-->
@@ -2190,7 +2190,7 @@ tp_avatar_requirements_copy (const TpAvatarRequirements *self)
 }
 
 /**
- * tp_avatar_requirements_destroy:
+ * tp_avatar_requirements_destroy: (skip)
  * @self: a #TpAvatarRequirements
  *
  * Free all memory used by the #TpAvatarRequirements.
