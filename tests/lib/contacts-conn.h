@@ -96,6 +96,9 @@ void contacts_connection_change_locations (ContactsConnection *self,
 void contacts_connection_change_capabilities (ContactsConnection *self,
     GHashTable *capabilities);
 
+void contacts_connection_change_contact_info (ContactsConnection *self,
+    TpHandle handle, GPtrArray *info);
+
 /* Legacy version (no Contacts interface) */
 
 typedef struct _LegacyContactsConnection LegacyContactsConnection;
