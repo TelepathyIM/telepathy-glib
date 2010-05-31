@@ -185,10 +185,10 @@ void tp_contact_list_manager_class_implement_unblock_contacts (
 /* ---- Called by subclasses for ContactGroups ---- */
 
 void tp_contact_list_manager_groups_created (TpContactListManager *self,
-    const gchar * const *created);
+    const gchar * const *created, gssize n_created);
 
 void tp_contact_list_manager_groups_removed (TpContactListManager *self,
-    const gchar * const *removed);
+    const gchar * const *removed, gssize n_removed);
 
 void tp_contact_list_manager_group_renamed (TpContactListManager *self,
     const gchar *old_name,
@@ -196,8 +196,8 @@ void tp_contact_list_manager_group_renamed (TpContactListManager *self,
 
 void tp_contact_list_manager_groups_changed (TpContactListManager *self,
     TpHandleSet *contacts,
-    const gchar * const *added,
-    const gchar * const *removed);
+    const gchar * const *added, gssize n_added,
+    const gchar * const *removed, gssize n_removed);
 
 /* ---- Implemented by subclasses for ContactGroups ---- */
 

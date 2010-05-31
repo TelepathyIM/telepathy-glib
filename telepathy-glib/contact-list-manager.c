@@ -1148,7 +1148,7 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
       gpointer group, members;
 
       tp_contact_list_manager_groups_created (self,
-          (const gchar * const *) groups);
+          (const gchar * const *) groups, -1);
 
       g_strfreev (groups);
 
@@ -1183,9 +1183,10 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
 
       while (g_hash_table_iter_next (&h_iter, &group, &members))
         {
-          const gchar *strv[] = { group, NULL };
+          const gchar *group_id = group;
 
-          tp_contact_list_manager_groups_changed (self, members, strv, NULL);
+          tp_contact_list_manager_groups_changed (self, members,
+              &group_id, 1, NULL, 0);
         }
 
       g_hash_table_unref (group_members);
@@ -1962,7 +1963,10 @@ tp_contact_list_manager_class_implement_normalize_group (
 /**
  * tp_contact_list_manager_groups_created:
  * @self: a contact list manager
- * @created: (array zero-terminated=1) (element-type utf8): one or more groups
+ * @created: (array length=n_created) (element-type utf8) (allow-none): zero
+ *  or more groups that were created
+ * @n_created: the number of groups created, or -1 if @created is
+ *  %NULL-terminated
  *
  * Called by subclasses when new groups have been created. This will typically
  * be followed by a call to tp_contact_list_manager_groups_changed() to add
@@ -1970,21 +1974,32 @@ tp_contact_list_manager_class_implement_normalize_group (
  */
 void
 tp_contact_list_manager_groups_created (TpContactListManager *self,
-    const gchar * const *created)
+    const gchar * const *created,
+    gssize n_created)
 {
   GPtrArray *pa;
   guint i;
 
   g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
-  g_return_if_fail (created != NULL);
-  g_return_if_fail (created[0] != NULL);
+  g_return_if_fail (n_created >= -1);
+  g_return_if_fail (n_created <= 0 || created != NULL);
 
-  for (i = 0; created[i] != NULL; i++)
-    /* do nothing, just count the items */ ;
+  if (n_created == 0 || created == NULL)
+    return;
 
-  pa = g_ptr_array_sized_new (i + 1);
+  if (n_created < 0)
+    {
+      n_created = (gssize) g_strv_length ((GStrv) created);
+    }
+  else
+    {
+      for (i = 0; i < n_created; i++)
+        g_return_if_fail (created[i] != NULL);
+    }
 
-  for (i = 0; created[i] != NULL; i++)
+  pa = g_ptr_array_sized_new (n_created + 1);
+
+  for (i = 0; i < n_created; i++)
     {
       TpHandle handle = tp_handle_ensure (self->priv->group_repo, created[i],
           NULL, NULL);
@@ -2018,7 +2033,10 @@ tp_contact_list_manager_groups_created (TpContactListManager *self,
 /**
  * tp_contact_list_manager_groups_removed:
  * @self: a contact list manager
- * @removed: (array zero-terminated=1) (element-type utf8): one or more groups
+ * @removed: (array length=n_removed) (element-type utf8) (allow-none): zero
+ *  or more groups that were removed
+ * @n_removed: the number of groups removed, or -1 if @removed is
+ *  %NULL-terminated
  *
  * Called by subclasses when groups have been removed. If the groups had
  * members, the subclass does not also need to call
@@ -2027,21 +2045,33 @@ tp_contact_list_manager_groups_created (TpContactListManager *self,
  */
 void
 tp_contact_list_manager_groups_removed (TpContactListManager *self,
-    const gchar * const *removed)
+    const gchar * const *removed,
+    gssize n_removed)
 {
   GPtrArray *pa;
   guint i;
 
   g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
   g_return_if_fail (removed != NULL);
-  g_return_if_fail (removed[0] != NULL);
+  g_return_if_fail (n_removed >= -1);
+  g_return_if_fail (n_removed <= 0 || removed != NULL);
 
-  for (i = 0; removed[i] != NULL; i++)
-    /* do nothing, just count the items */ ;
+  if (n_removed == 0 || removed == NULL)
+    return;
 
-  pa = g_ptr_array_sized_new (i + 1);
+  if (n_removed < 0)
+    {
+      n_removed = (gssize) g_strv_length ((GStrv) removed);
+    }
+  else
+    {
+      for (i = 0; i < n_removed; i++)
+        g_return_if_fail (removed[i] != NULL);
+    }
 
-  for (i = 0; removed[i] != NULL; i++)
+  pa = g_ptr_array_sized_new (n_removed + 1);
+
+  for (i = 0; i < n_removed; i++)
     {
       TpHandle handle = tp_handle_lookup (self->priv->group_repo, removed[i],
           NULL, NULL);
@@ -2172,12 +2202,15 @@ tp_contact_list_manager_group_renamed (TpContactListManager *self,
  * tp_contact_list_manager_groups_changed:
  * @self: a contact list manager
  * @contacts: a set containing one or more contacts
- * @added: (array zero-terminated=1) (element-type utf8) (allow-none): zero or
+ * @added: (array length=n_added) (element-type utf8) (allow-none): zero or
  *  more groups to which the @contacts were added, or %NULL (which has the
  *  same meaning as an empty list)
+ * @n_added: the number of groups added, or -1 if @added is %NULL-terminated
  * @removed: (array zero-terminated=1) (element-type utf8) (allow-none): zero
  *  or more groups from which the @contacts were removed, or %NULL (which has
  *  the same meaning as an empty list)
+ * @n_removed: the number of groups removed, or -1 if @removed is
+ *  %NULL-terminated
  *
  * Called by subclasses when groups' membership has been changed.
  *
@@ -2189,24 +2222,52 @@ void
 tp_contact_list_manager_groups_changed (TpContactListManager *self,
     TpHandleSet *contacts,
     const gchar * const *added,
-    const gchar * const *removed)
+    gssize n_added,
+    const gchar * const *removed,
+    gssize n_removed)
 {
-  static const gchar *empty_strv[] = { NULL };
   guint i;
 
   g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
   g_return_if_fail (contacts != NULL);
+  g_return_if_fail (n_added >= -1);
+  g_return_if_fail (n_removed >= -1);
+  g_return_if_fail (n_added <= 0 || added != NULL);
+  g_return_if_fail (n_removed <= 0 || removed != NULL);
 
-  if (added == NULL)
-    added = empty_strv;
+  if (n_added < 0)
+    {
+      if (added == NULL)
+        n_added = 0;
+      else
+        n_added = (gssize) g_strv_length ((GStrv) added);
 
-  if (removed == NULL)
-    removed = empty_strv;
+      g_return_if_fail (n_added < 0);
+    }
+  else
+    {
+      for (i = 0; i < n_added; i++)
+        g_return_if_fail (added[i] != NULL);
+    }
 
-  if (added[0] != NULL)
-    tp_contact_list_manager_groups_created (self, added);
+  if (n_removed < 0)
+    {
+      if (added == NULL)
+        n_removed = 0;
+      else
+        n_removed = (gssize) g_strv_length ((GStrv) added);
 
-  for (i = 0; added[i] != NULL; i++)
+      g_return_if_fail (n_removed < 0);
+    }
+  else
+    {
+      for (i = 0; i < n_removed; i++)
+        g_return_if_fail (removed[i] != NULL);
+    }
+
+  tp_contact_list_manager_groups_created (self, added, n_added);
+
+  for (i = 0; i < n_added; i++)
     {
       TpHandle handle = tp_handle_lookup (self->priv->group_repo, added[i],
           NULL, NULL);
@@ -2224,7 +2285,7 @@ tp_contact_list_manager_groups_changed (TpContactListManager *self,
           self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
     }
 
-  for (i = 0; removed[i] != NULL; i++)
+  for (i = 0; i < n_removed; i++)
     {
       TpHandle handle = tp_handle_lookup (self->priv->group_repo, removed[i],
           NULL, NULL);

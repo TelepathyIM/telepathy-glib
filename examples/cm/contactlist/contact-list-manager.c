@@ -255,13 +255,10 @@ ensure_tag (ExampleContactListManager *self,
 
   if (r == NULL)
     {
-      const gchar *strv[] = { NULL, NULL };
-
       r = g_strdup (s);
       g_hash_table_insert (self->priv->all_tags, r, r);
-      strv[0] = r;
       tp_contact_list_manager_groups_created ((TpContactListManager *) self,
-          strv);
+          &s, 1);
     }
 
   return r;
@@ -526,7 +523,6 @@ example_contact_list_manager_add_to_group (TpContactListManager *manager,
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *new_contacts = tp_handle_set_copy (contacts);
   TpHandleSet *new_to_group = tp_handle_set_copy (contacts);
-  const gchar *strv[] = { group, NULL };
 
   while (tp_intset_iter_next (&iter))
     {
@@ -557,7 +553,8 @@ example_contact_list_manager_add_to_group (TpContactListManager *manager,
     tp_contact_list_manager_contacts_changed (manager, new_contacts, NULL);
 
   if (!tp_handle_set_is_empty (new_to_group))
-    tp_contact_list_manager_groups_changed (manager, new_to_group, strv, NULL);
+    tp_contact_list_manager_groups_changed (manager, new_to_group, &group, 1,
+        NULL, 0);
 
   tp_handle_set_destroy (new_to_group);
   tp_handle_set_destroy (new_contacts);
@@ -571,7 +568,6 @@ example_contact_list_manager_remove_from_group (TpContactListManager *manager,
   TpIntSetIter iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (contacts));
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
-  const gchar *strv[] = { group, NULL };
 
   while (tp_intset_iter_next (&iter))
     {
@@ -586,7 +582,8 @@ example_contact_list_manager_remove_from_group (TpContactListManager *manager,
     }
 
   if (!tp_handle_set_is_empty (changed))
-    tp_contact_list_manager_groups_changed (manager, changed, NULL, strv);
+    tp_contact_list_manager_groups_changed (manager, changed, NULL, 0,
+        &group, 1);
 
   tp_handle_set_destroy (changed);
 }
@@ -1299,11 +1296,8 @@ example_contact_list_manager_remove_group (TpContactListManager *manager,
     const gchar *group,
     GError **error)
 {
-  const gchar *strv[] = { group, NULL };
-
   g_message ("deleting group %s", group);
-
-  tp_contact_list_manager_groups_removed (manager, strv);
+  tp_contact_list_manager_groups_removed (manager, &group, 1);
   return TRUE;
 }
 
