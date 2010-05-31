@@ -227,10 +227,9 @@ tp_contact_list_manager_init (TpContactListManager *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONTACT_LIST_MANAGER,
       TpContactListManagerPrivate);
-  self->priv->groups = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-      NULL, g_object_unref);
-  self->priv->queued_requests = g_hash_table_new_full (g_direct_hash,
-      g_direct_equal, NULL, NULL);
+  self->priv->groups = g_hash_table_new_full (NULL, NULL, NULL,
+      g_object_unref);
+  self->priv->queued_requests = g_hash_table_new (NULL, NULL);
 }
 
 static gboolean
