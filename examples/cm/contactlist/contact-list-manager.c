@@ -44,7 +44,7 @@ typedef struct {
     guint publish_requested:1;
     gchar *publish_request;
 
-    /* string borrowed from priv->all_tags => itself */
+    /* string borrowed from priv->all_tags => the same pointer */
     GHashTable *tags;
 } ExampleContactDetails;
 
@@ -92,7 +92,7 @@ struct _ExampleContactListManagerPrivate
   guint simulation_delay;
   TpHandleRepoIface *contact_repo;
 
-  /* g_strdup (group name) => itself */
+  /* g_strdup (group name) => the same pointer */
   GHashTable *all_tags;
 
   TpHandleSet *contacts;
