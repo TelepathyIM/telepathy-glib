@@ -1140,10 +1140,10 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
   if (cls->priv->get_groups != NULL)
     {
       GStrv groups = cls->priv->get_groups (self);
-      TpIntSetIter i_iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (
-            contacts));
       GHashTable *group_members = g_hash_table_new_full (g_str_hash,
           g_str_equal, g_free, (GDestroyNotify) tp_handle_set_destroy);
+      TpIntSetFastIter i_iter;
+      TpHandle member;
       GHashTableIter h_iter;
       gpointer group, members;
 
@@ -1152,9 +1152,11 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
 
       g_strfreev (groups);
 
-      while (tp_intset_iter_next (&i_iter))
+      tp_intset_fast_iter_init (&i_iter, tp_handle_set_peek (contacts));
+
+      while (tp_intset_fast_iter_next (&i_iter, &member))
         {
-          groups = cls->priv->get_contact_groups (self, i_iter.element);
+          groups = cls->priv->get_contact_groups (self, member);
 
           if (groups != NULL)
             {
@@ -1169,7 +1171,7 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
                   else
                     g_hash_table_steal (group_members, groups[i]);
 
-                  tp_handle_set_add (members, i_iter.element);
+                  tp_handle_set_add (members, member);
 
                   g_hash_table_insert (group_members, g_strdup (groups[i]),
                       members);

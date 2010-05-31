@@ -519,14 +519,16 @@ example_contact_list_manager_add_to_group (TpContactListManager *manager,
     const gchar *group,
     TpHandleSet *contacts)
 {
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (contacts));
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *new_contacts = tp_handle_set_copy (contacts);
   TpHandleSet *new_to_group = tp_handle_set_copy (contacts);
+  TpIntSetFastIter iter;
+  TpHandle member;
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
     {
-      TpHandle member = iter.element;
       gboolean created = FALSE, updated = FALSE;
       ExampleContactDetails *d = ensure_contact (self, member, &created);
       gchar *tag = ensure_tag (self, group);
@@ -565,13 +567,15 @@ example_contact_list_manager_remove_from_group (TpContactListManager *manager,
     const gchar *group,
     TpHandleSet *contacts)
 {
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (contacts));
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpIntSetFastIter iter;
+  TpHandle member;
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
     {
-      TpHandle member = iter.element;
       ExampleContactDetails *d = lookup_contact (self, member);
 
       /* If not on the roster or not in any groups, we have nothing to do */
@@ -887,12 +891,14 @@ example_contact_list_manager_request_subscription (
     GError **error)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (contacts));
   TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpIntSetFastIter iter;
+  TpHandle member;
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
     {
-      TpHandle member = iter.element;
       gboolean created;
       ExampleContactDetails *d = ensure_contact (self, member, &created);
       gchar *message_lc;
@@ -951,12 +957,14 @@ example_contact_list_manager_authorize_publication (
     GError **error)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (contacts));
   TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpIntSetFastIter iter;
+  TpHandle member;
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
     {
-      TpHandle member = iter.element;
       ExampleContactDetails *d = lookup_contact (self, member);
 
       /* We would like member to see our presence. In this simulated protocol,
@@ -993,12 +1001,14 @@ example_contact_list_manager_just_store_contacts (
     GError **error)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (contacts));
   TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpIntSetFastIter iter;
+  TpHandle member;
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
     {
-      TpHandle member = iter.element;
       gboolean created;
 
       /* we would like member to be on the roster, but nothing more */
@@ -1021,13 +1031,14 @@ example_contact_list_manager_remove_contacts (TpContactListManager *manager,
     GError **error)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (contacts));
   TpHandleSet *removed = tp_handle_set_copy (contacts);
+  TpIntSetFastIter iter;
+  TpHandle member;
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
     {
-      TpHandle member = iter.element;
-
       /* we would like to remove member from the roster altogether */
       if (lookup_contact (self, member) != NULL)
         {
@@ -1059,12 +1070,14 @@ example_contact_list_manager_unsubscribe (TpContactListManager *manager,
     GError **error)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (contacts));
   TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpIntSetFastIter iter;
+  TpHandle member;
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
     {
-      TpHandle member = iter.element;
       ExampleContactDetails *d = lookup_contact (self, member);
 
       /* we would like to avoid receiving member's presence any more,
@@ -1116,12 +1129,14 @@ example_contact_list_manager_unpublish (TpContactListManager *manager,
     GError **error)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetIter iter = TP_INTSET_ITER_INIT (tp_handle_set_peek (contacts));
   TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpIntSetFastIter iter;
+  TpHandle member;
 
-  while (tp_intset_iter_next (&iter))
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
     {
-      TpHandle member = iter.element;
       ExampleContactDetails *d = lookup_contact (self, member);
 
       /* we would like member not to see our presence any more, or we
