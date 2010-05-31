@@ -303,6 +303,8 @@ tp_contact_list_manager_free_contents (TpContactListManager *self)
 
   if (self->priv->group_repo != NULL)
     {
+      /* the normalization data is a borrowed reference to @self, which must
+       * be released when @self is no longer usable */
       _tp_dynamic_handle_repo_set_normalization_data (self->priv->group_repo,
           NULL, NULL);
       g_object_unref (self->priv->group_repo);
@@ -489,6 +491,9 @@ tp_contact_list_manager_constructed (GObject *object)
 
       self->priv->group_repo = tp_dynamic_handle_repo_new (TP_HANDLE_TYPE_GROUP,
           tp_contact_list_manager_normalize_group, NULL);
+
+      /* borrowed ref so the handle repo can call our virtual method, released
+       * in tp_contact_list_manager_free_contents */
       _tp_dynamic_handle_repo_set_normalization_data (self->priv->group_repo,
           self, NULL);
 
