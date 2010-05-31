@@ -2000,7 +2000,6 @@ tp_contact_list_manager_groups_created (TpContactListManager *self,
                   handle, NULL);
               g_ptr_array_add (pa, (gchar *) tp_handle_inspect (
                     self->priv->group_repo, handle));
-
             }
 
           tp_handle_unref (self->priv->group_repo, handle);
