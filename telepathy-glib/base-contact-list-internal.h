@@ -20,7 +20,7 @@
 #ifndef __TP_BASE_CONTACT_LIST_INTERNAL_H__
 #define __TP_BASE_CONTACT_LIST_INTERNAL_H__
 
-#include <telepathy-glib/contact-list-manager.h>
+#include <telepathy-glib/base-contact-list.h>
 
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle.h>

@@ -18,8 +18,8 @@
  */
 
 #include <config.h>
-#include <telepathy-glib/contact-list-manager.h>
-#include <telepathy-glib/contact-list-manager-internal.h>
+#include <telepathy-glib/base-contact-list.h>
+#include <telepathy-glib/base-contact-list-internal.h>
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
@@ -31,7 +31,7 @@
 #include <telepathy-glib/handle-repo-internal.h>
 
 /**
- * SECTION:contact-list-manager
+ * SECTION:base-contact-list
  * @title: TpBaseContactList
  * @short_description: channel manager for ContactList channels
  *

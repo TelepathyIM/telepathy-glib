@@ -14,8 +14,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/base-contact-list.h>
 #include <telepathy-glib/channel-manager.h>
-#include <telepathy-glib/contact-list-manager.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/presence-mixin.h>
 

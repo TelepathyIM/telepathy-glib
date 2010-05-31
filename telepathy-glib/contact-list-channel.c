@@ -28,7 +28,7 @@
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
 
-#include <telepathy-glib/contact-list-manager-internal.h>
+#include <telepathy-glib/base-contact-list-internal.h>
 
 static void channel_iface_init (TpSvcChannelClass *iface);
 static void list_channel_iface_init (TpSvcChannelClass *iface);

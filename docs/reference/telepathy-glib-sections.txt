@@ -3953,9 +3953,9 @@ TpSimpleHandlerPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/contact-list-manager.h</INCLUDE>
-<FILE>contact-list-manager</FILE>
-<TITLE>contact-list-manager</TITLE>
+<INCLUDE>telepathy-glib/base-contact-list.h</INCLUDE>
+<FILE>base-contact-list</FILE>
+<TITLE>base-contact-list</TITLE>
 TpBaseContactList
 TpBaseContactListClass
 TpPresenceState
