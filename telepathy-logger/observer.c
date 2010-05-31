@@ -130,6 +130,7 @@ tpl_observer_observe_channels (TpBaseClient *client,
   ObservingContext *observing_ctx = NULL;
   const gchar *chan_type;
   GList *l;
+  GError *err = NULL;
 
   chan_factory = tpl_observer_get_channel_factory (self);
 
@@ -194,12 +195,16 @@ tpl_observer_observe_channels (TpBaseClient *client,
   return;
 
 error:
+  err = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      "Failed to observe channel: %s", error->message);
+
   g_clear_error (&error);
 
   DEBUG ("Returning from observe channels on error condition. "
       "Unable to log the channel");
 
-  tp_observe_channels_context_accept (context);
+  tp_observe_channels_context_fail (context, err);
+  g_error_free (err);
 }
 
 
