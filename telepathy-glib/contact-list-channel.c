@@ -115,7 +115,7 @@ tp_base_contact_list_channel_constructed (GObject *object)
     chain_up (object);
 
   g_assert (TP_IS_BASE_CONNECTION (self->conn));
-  g_assert (TP_IS_CONTACT_LIST_MANAGER (self->manager));
+  g_assert (TP_IS_BASE_CONTACT_LIST (self->manager));
 
   tp_dbus_daemon_register_object (
       tp_base_connection_get_dbus_daemon (self->conn),
@@ -142,7 +142,7 @@ tp_contact_list_channel_constructed (GObject *object)
   g_assert (self->handle_type == TP_HANDLE_TYPE_LIST);
 
   tp_group_mixin_change_flags (object,
-      _tp_contact_list_manager_get_list_flags (self->manager, self->handle),
+      _tp_base_contact_list_get_list_flags (self->manager, self->handle),
       0);
 }
 
@@ -159,7 +159,7 @@ tp_contact_group_channel_constructed (GObject *object)
   g_assert (self->handle_type == TP_HANDLE_TYPE_GROUP);
 
   tp_group_mixin_change_flags (object,
-      _tp_contact_list_manager_get_group_flags (self->manager), 0);
+      _tp_base_contact_list_get_group_flags (self->manager), 0);
 }
 
 
@@ -379,7 +379,7 @@ group_add_member (GObject *object,
   TpBaseContactListChannel *self = TP_BASE_CONTACT_LIST_CHANNEL (object);
 
   return tp_base_contact_list_channel_check_still_usable (self, error) &&
-    _tp_contact_list_manager_add_to_group (self->manager,
+    _tp_base_contact_list_add_to_group (self->manager,
       self->handle, handle, message, error);
 }
 
@@ -392,7 +392,7 @@ group_remove_member (GObject *object,
   TpBaseContactListChannel *self = TP_BASE_CONTACT_LIST_CHANNEL (object);
 
   return tp_base_contact_list_channel_check_still_usable (self, error) &&
-    _tp_contact_list_manager_remove_from_group (self->manager,
+    _tp_base_contact_list_remove_from_group (self->manager,
       self->handle, handle, message, error);
 }
 
@@ -405,7 +405,7 @@ list_add_member (GObject *object,
   TpBaseContactListChannel *self = TP_BASE_CONTACT_LIST_CHANNEL (object);
 
   return tp_base_contact_list_channel_check_still_usable (self, error) &&
-    _tp_contact_list_manager_add_to_list (self->manager,
+    _tp_base_contact_list_add_to_list (self->manager,
       self->handle, handle, message, error);
 }
 
@@ -418,7 +418,7 @@ list_remove_member (GObject *object,
   TpBaseContactListChannel *self = TP_BASE_CONTACT_LIST_CHANNEL (object);
 
   return tp_base_contact_list_channel_check_still_usable (self, error) &&
-    _tp_contact_list_manager_remove_from_list (self->manager,
+    _tp_base_contact_list_remove_from_list (self->manager,
       self->handle, handle, message, error);
 }
 
@@ -472,9 +472,9 @@ _tp_base_contact_list_channel_class_init (TpBaseContactListChannelClass *cls)
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_MANAGER,
-      g_param_spec_object ("manager", "TpContactListManager",
-        "TpContactListManager object that owns this channel",
-        TP_TYPE_CONTACT_LIST_MANAGER,
+      g_param_spec_object ("manager", "TpBaseContactList",
+        "TpBaseContactList object that owns this channel",
+        TP_TYPE_BASE_CONTACT_LIST,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_INTERFACES,
@@ -570,7 +570,7 @@ group_channel_close (TpSvcChannel *iface,
       goto error;
     }
 
-  if (!_tp_contact_list_manager_delete_group_by_handle (self->manager,
+  if (!_tp_base_contact_list_delete_group_by_handle (self->manager,
       self->handle, &error))
     goto error;
 

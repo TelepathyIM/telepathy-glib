@@ -26,11 +26,11 @@ typedef struct _ExampleContactListManagerClass ExampleContactListManagerClass;
 typedef struct _ExampleContactListManagerPrivate ExampleContactListManagerPrivate;
 
 struct _ExampleContactListManagerClass {
-    TpContactListManagerClass parent_class;
+    TpBaseContactListClass parent_class;
 };
 
 struct _ExampleContactListManager {
-    TpContactListManager parent;
+    TpBaseContactList parent;
 
     ExampleContactListManagerPrivate *priv;
 };

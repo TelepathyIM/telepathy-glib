@@ -32,7 +32,7 @@
 
 /**
  * SECTION:contact-list-manager
- * @title: TpContactListManager
+ * @title: TpBaseContactList
  * @short_description: channel manager for ContactList channels
  *
  * This class represents a connection's contact list (roster, buddy list etc.)
@@ -48,17 +48,17 @@
  */
 
 /**
- * TpContactListManager:
+ * TpBaseContactList:
  *
  * A connection's contact list (roster, buddy list) inside a connection
- * manager. Each #TpBaseConnection may have at most one #TpContactListManager.
+ * manager. Each #TpBaseConnection may have at most one #TpBaseContactList.
  *
  * This abstract base class provides the Telepathy "view" of the contact list:
  * subclasses must provide access to the "model" by implementing its virtual
  * methods in terms of the protocol's real contact list (e.g. the XMPP roster
  * object in Wocky).
  *
- * The implementation must call tp_contact_list_manager_set_list_received()
+ * The implementation must call tp_base_contact_list_set_list_received()
  * exactly once, when the initial set of contacts has been received (or
  * immediately, if that condition is not meaningful for the protocol).
  *
@@ -66,9 +66,9 @@
  */
 
 /**
- * TpContactListManagerClass:
+ * TpBaseContactListClass:
  *
- * The class of a #TpContactListManager.
+ * The class of a #TpBaseContactList.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -85,7 +85,7 @@
  */
 
 /**
- * TpContactListManagerGetContactsFunc:
+ * TpBaseContactListGetContactsFunc:
  * @self: the contact list manager
  *
  * Signature of a virtual method to list contacts. The implementation is
@@ -96,7 +96,7 @@
  */
 
 /**
- * TpContactListManagerGetPresenceStatesFunc:
+ * TpBaseContactListGetPresenceStatesFunc:
  * @self: the contact list manager
  * @contact: the contact
  * @subscribe: (out): used to return the state of the user's subscription to
@@ -115,7 +115,7 @@
  */
 
 /**
- * TpContactListManagerActOnContactsFunc:
+ * TpBaseContactListActOnContactsFunc:
  * @self: the contact list manager
  * @contacts: the contacts on which to act
  * @error: used to raise an error if %FALSE is returned
@@ -125,14 +125,14 @@
  * presence publication, cancelling presence subscription, or removing
  * contacts.
  *
- * The virtual method should call tp_contact_list_manager_contacts_changed()
+ * The virtual method should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before returning.
  *
  * Returns: %TRUE on success
  */
 
 /**
- * TpContactListManagerRequestSubscriptionFunc:
+ * TpBaseContactListRequestSubscriptionFunc:
  * @self: the contact list manager
  * @contacts: the contacts whose subscription is to be requested
  * @message: an optional human-readable message from the user
@@ -141,7 +141,7 @@
  * Signature of a virtual method to request permission to see some contacts'
  * presence.
  *
- * The virtual method should call tp_contact_list_manager_contacts_changed()
+ * The virtual method should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before returning.
  *
  * Returns: %TRUE on success
@@ -154,7 +154,7 @@
 #define DEBUG_FLAG TP_DEBUG_CONTACT_LISTS
 #include "telepathy-glib/debug-internal.h"
 
-struct _TpContactListManagerPrivate
+struct _TpBaseContactListPrivate
 {
   TpBaseConnection *conn;
   TpHandleRepoIface *contact_repo;
@@ -178,44 +178,44 @@ struct _TpContactListManagerPrivate
   gulong status_changed_id;
 };
 
-struct _TpContactListManagerClassPrivate
+struct _TpBaseContactListClassPrivate
 {
-  TpContactListManagerGetContactsFunc get_contacts;
-  TpContactListManagerGetPresenceStatesFunc get_states;
-  TpContactListManagerRequestSubscriptionFunc request_subscription;
-  TpContactListManagerActOnContactsFunc authorize_publication;
-  TpContactListManagerActOnContactsFunc just_store_contacts;
-  TpContactListManagerActOnContactsFunc remove_contacts;
-  TpContactListManagerActOnContactsFunc unsubscribe;
-  TpContactListManagerActOnContactsFunc unpublish;
-  TpContactListManagerBooleanFunc subscriptions_persist;
-  TpContactListManagerBooleanFunc can_change_subscriptions;
-  TpContactListManagerBooleanFunc request_uses_message;
+  TpBaseContactListGetContactsFunc get_contacts;
+  TpBaseContactListGetPresenceStatesFunc get_states;
+  TpBaseContactListRequestSubscriptionFunc request_subscription;
+  TpBaseContactListActOnContactsFunc authorize_publication;
+  TpBaseContactListActOnContactsFunc just_store_contacts;
+  TpBaseContactListActOnContactsFunc remove_contacts;
+  TpBaseContactListActOnContactsFunc unsubscribe;
+  TpBaseContactListActOnContactsFunc unpublish;
+  TpBaseContactListBooleanFunc subscriptions_persist;
+  TpBaseContactListBooleanFunc can_change_subscriptions;
+  TpBaseContactListBooleanFunc request_uses_message;
 
-  TpContactListManagerBooleanFunc can_block;
-  TpContactListManagerContactBooleanFunc get_contact_blocked;
-  TpContactListManagerGetContactsFunc get_blocked_contacts;
-  TpContactListManagerActOnContactsFunc block_contacts;
-  TpContactListManagerActOnContactsFunc unblock_contacts;
+  TpBaseContactListBooleanFunc can_block;
+  TpBaseContactListContactBooleanFunc get_contact_blocked;
+  TpBaseContactListGetContactsFunc get_blocked_contacts;
+  TpBaseContactListActOnContactsFunc block_contacts;
+  TpBaseContactListActOnContactsFunc unblock_contacts;
 
-  TpContactListManagerGetGroupsFunc get_groups;
-  TpContactListManagerGetContactGroupsFunc get_contact_groups;
-  TpContactListManagerBooleanFunc disjoint_groups;
-  TpContactListManagerNormalizeFunc normalize_group;
-  TpContactListManagerGroupContactsFunc add_to_group;
-  TpContactListManagerGroupContactsFunc remove_from_group;
-  TpContactListManagerRemoveGroupFunc remove_group;
+  TpBaseContactListGetGroupsFunc get_groups;
+  TpBaseContactListGetContactGroupsFunc get_contact_groups;
+  TpBaseContactListBooleanFunc disjoint_groups;
+  TpBaseContactListNormalizeFunc normalize_group;
+  TpBaseContactListGroupContactsFunc add_to_group;
+  TpBaseContactListGroupContactsFunc remove_from_group;
+  TpBaseContactListRemoveGroupFunc remove_group;
 };
 
 static void channel_manager_iface_init (TpChannelManagerIface *iface);
 
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpContactListManager,
-    tp_contact_list_manager,
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseContactList,
+    tp_base_contact_list,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_MANAGER,
       channel_manager_iface_init);
     g_type_add_class_private (g_define_type_id, sizeof (
-        TpContactListManagerClassPrivate)))
+        TpBaseContactListClassPrivate)))
 
 enum {
     PROP_CONNECTION = 1,
@@ -223,17 +223,17 @@ enum {
 };
 
 static void
-tp_contact_list_manager_init (TpContactListManager *self)
+tp_base_contact_list_init (TpBaseContactList *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONTACT_LIST_MANAGER,
-      TpContactListManagerPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_BASE_CONTACT_LIST,
+      TpBaseContactListPrivate);
   self->priv->groups = g_hash_table_new_full (NULL, NULL, NULL,
       g_object_unref);
   self->priv->queued_requests = g_hash_table_new (NULL, NULL);
 }
 
 static gboolean
-tp_contact_list_manager_check_still_usable (TpContactListManager *self,
+tp_base_contact_list_check_still_usable (TpBaseContactList *self,
     GError **error)
 {
   if (self->priv->conn == NULL)
@@ -244,7 +244,7 @@ tp_contact_list_manager_check_still_usable (TpContactListManager *self,
 }
 
 static void
-tp_contact_list_manager_free_contents (TpContactListManager *self)
+tp_base_contact_list_free_contents (TpBaseContactList *self)
 {
   guint i;
 
@@ -325,13 +325,13 @@ tp_contact_list_manager_free_contents (TpContactListManager *self)
 }
 
 static void
-tp_contact_list_manager_dispose (GObject *object)
+tp_base_contact_list_dispose (GObject *object)
 {
-  TpContactListManager *self = TP_CONTACT_LIST_MANAGER (object);
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (object);
   void (*dispose) (GObject *) =
-    G_OBJECT_CLASS (tp_contact_list_manager_parent_class)->dispose;
+    G_OBJECT_CLASS (tp_base_contact_list_parent_class)->dispose;
 
-  tp_contact_list_manager_free_contents (self);
+  tp_base_contact_list_free_contents (self);
   g_assert (self->priv->groups == NULL);
   g_assert (self->priv->contact_repo == NULL);
   g_assert (self->priv->group_repo == NULL);
@@ -343,12 +343,12 @@ tp_contact_list_manager_dispose (GObject *object)
 }
 
 static void
-tp_contact_list_manager_get_property (GObject *object,
+tp_base_contact_list_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpContactListManager *self = TP_CONTACT_LIST_MANAGER (object);
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (object);
 
   switch (property_id)
     {
@@ -363,12 +363,12 @@ tp_contact_list_manager_get_property (GObject *object,
 }
 
 static void
-tp_contact_list_manager_set_property (GObject *object,
+tp_base_contact_list_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TpContactListManager *self = TP_CONTACT_LIST_MANAGER (object);
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (object);
 
   switch (property_id)
     {
@@ -384,14 +384,14 @@ tp_contact_list_manager_set_property (GObject *object,
 }
 
 static gchar *
-tp_contact_list_manager_normalize_group (TpHandleRepoIface *repo,
+tp_base_contact_list_normalize_group (TpHandleRepoIface *repo,
     const gchar *id,
     gpointer context,
     GError **error)
 {
-  TpContactListManager *self =
+  TpBaseContactList *self =
     _tp_dynamic_handle_repo_get_normalization_data (repo);
-  TpContactListManagerClass *cls;
+  TpBaseContactListClass *cls;
   gchar *ret;
 
   if (id == NULL)
@@ -403,7 +403,7 @@ tp_contact_list_manager_normalize_group (TpHandleRepoIface *repo,
       return g_strdup (id);
     }
 
-  cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
   if (cls->priv->normalize_group == NULL)
     return g_strdup (id);
@@ -419,7 +419,7 @@ tp_contact_list_manager_normalize_group (TpHandleRepoIface *repo,
 
 /* elements 0, 1... of this enum must be kept in sync with elements 1, 2...
  * of the enum in the -internal header */
-static const gchar * const tp_contact_list_manager_contact_lists
+static const gchar * const tp_base_contact_list_contact_lists
   [NUM_TP_LIST_HANDLES + 1] = {
     "subscribe",
     "publish",
@@ -432,19 +432,19 @@ static void
 status_changed_cb (TpBaseConnection *conn,
     guint status,
     guint reason,
-    TpContactListManager *self)
+    TpBaseContactList *self)
 {
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
-    tp_contact_list_manager_free_contents (self);
+    tp_base_contact_list_free_contents (self);
 }
 
 static void
-tp_contact_list_manager_constructed (GObject *object)
+tp_base_contact_list_constructed (GObject *object)
 {
-  TpContactListManager *self = TP_CONTACT_LIST_MANAGER (object);
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (object);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   void (*chain_up) (GObject *) =
-    G_OBJECT_CLASS (tp_contact_list_manager_parent_class)->constructed;
+    G_OBJECT_CLASS (tp_base_contact_list_parent_class)->constructed;
   TpHandleRepoIface *list_repo;
 
   if (chain_up != NULL)
@@ -459,7 +459,7 @@ tp_contact_list_manager_constructed (GObject *object)
   g_assert (cls->priv->subscriptions_persist != NULL);
 
   if (cls->priv->can_change_subscriptions !=
-      tp_contact_list_manager_false_func)
+      tp_base_contact_list_false_func)
     {
       g_assert (cls->priv->request_subscription != NULL);
       g_assert (cls->priv->authorize_publication != NULL);
@@ -469,7 +469,7 @@ tp_contact_list_manager_constructed (GObject *object)
       g_assert (cls->priv->unpublish != NULL);
     }
 
-  if (cls->priv->can_block != tp_contact_list_manager_false_func)
+  if (cls->priv->can_block != tp_base_contact_list_false_func)
     {
       g_assert (cls->priv->get_blocked_contacts != NULL);
       g_assert (cls->priv->get_contact_blocked != NULL);
@@ -482,17 +482,17 @@ tp_contact_list_manager_constructed (GObject *object)
   g_object_ref (self->priv->contact_repo);
 
   list_repo = tp_static_handle_repo_new (TP_HANDLE_TYPE_LIST,
-      (const gchar **) tp_contact_list_manager_contact_lists);
+      (const gchar **) tp_base_contact_list_contact_lists);
 
   if (cls->priv->get_groups != NULL)
     {
       g_assert (cls->priv->get_contact_groups != NULL);
 
       self->priv->group_repo = tp_dynamic_handle_repo_new (TP_HANDLE_TYPE_GROUP,
-          tp_contact_list_manager_normalize_group, NULL);
+          tp_base_contact_list_normalize_group, NULL);
 
       /* borrowed ref so the handle repo can call our virtual method, released
-       * in tp_contact_list_manager_free_contents */
+       * in tp_base_contact_list_free_contents */
       _tp_dynamic_handle_repo_set_normalization_data (self->priv->group_repo,
           self, NULL);
 
@@ -511,27 +511,27 @@ tp_contact_list_manager_constructed (GObject *object)
 }
 
 static void
-tp_contact_list_manager_class_init (TpContactListManagerClass *cls)
+tp_base_contact_list_class_init (TpBaseContactListClass *cls)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
 
-  g_type_class_add_private (cls, sizeof (TpContactListManagerPrivate));
+  g_type_class_add_private (cls, sizeof (TpBaseContactListPrivate));
 
-  cls->priv = G_TYPE_CLASS_GET_PRIVATE (cls, TP_TYPE_CONTACT_LIST_MANAGER,
-      TpContactListManagerClassPrivate);
+  cls->priv = G_TYPE_CLASS_GET_PRIVATE (cls, TP_TYPE_BASE_CONTACT_LIST,
+      TpBaseContactListClassPrivate);
   /* defaults */
-  cls->priv->can_change_subscriptions = tp_contact_list_manager_false_func;
-  cls->priv->subscriptions_persist = tp_contact_list_manager_true_func;
-  cls->priv->request_uses_message = tp_contact_list_manager_true_func;
-  cls->priv->can_block = tp_contact_list_manager_false_func;
+  cls->priv->can_change_subscriptions = tp_base_contact_list_false_func;
+  cls->priv->subscriptions_persist = tp_base_contact_list_true_func;
+  cls->priv->request_uses_message = tp_base_contact_list_true_func;
+  cls->priv->can_block = tp_base_contact_list_false_func;
 
-  object_class->get_property = tp_contact_list_manager_get_property;
-  object_class->set_property = tp_contact_list_manager_set_property;
-  object_class->constructed = tp_contact_list_manager_constructed;
-  object_class->dispose = tp_contact_list_manager_dispose;
+  object_class->get_property = tp_base_contact_list_get_property;
+  object_class->set_property = tp_base_contact_list_set_property;
+  object_class->constructed = tp_base_contact_list_constructed;
+  object_class->dispose = tp_base_contact_list_dispose;
 
   /**
-   * TpContactListManager:connection:
+   * TpBaseContactList:connection:
    *
    * The connection that owns this channel manager.
    * Read-only except during construction.
@@ -546,11 +546,11 @@ tp_contact_list_manager_class_init (TpContactListManagerClass *cls)
 }
 
 static void
-tp_contact_list_manager_foreach_channel (TpChannelManager *manager,
+tp_base_contact_list_foreach_channel (TpChannelManager *manager,
     TpExportableChannelFunc func,
     gpointer user_data)
 {
-  TpContactListManager *self = TP_CONTACT_LIST_MANAGER (manager);
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (manager);
   GHashTableIter iter;
   gpointer handle, channel;
   guint i;
@@ -582,11 +582,11 @@ static const gchar * const allowed_properties[] = {
 };
 
 static void
-tp_contact_list_manager_foreach_channel_class (TpChannelManager *manager,
+tp_base_contact_list_foreach_channel_class (TpChannelManager *manager,
     TpChannelManagerChannelClassFunc func,
     gpointer user_data)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (manager);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (manager);
   GHashTable *table = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
           G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CONTACT_LIST,
@@ -606,7 +606,7 @@ tp_contact_list_manager_foreach_channel_class (TpChannelManager *manager,
 }
 
 static void
-tp_contact_list_manager_new_channel (TpContactListManager *self,
+tp_base_contact_list_new_channel (TpBaseContactList *self,
     TpHandleType handle_type,
     TpHandle handle,
     gpointer request_token)
@@ -620,7 +620,7 @@ tp_contact_list_manager_new_channel (TpContactListManager *self,
     {
       object_path = g_strdup_printf ("%s/ContactList/%s",
           self->priv->conn->object_path,
-          tp_contact_list_manager_contact_lists[handle - 1]);
+          tp_base_contact_list_contact_lists[handle - 1]);
       type = TP_TYPE_CONTACT_LIST_CHANNEL;
     }
   else
@@ -674,19 +674,19 @@ tp_contact_list_manager_new_channel (TpContactListManager *self,
 }
 
 static gboolean
-tp_contact_list_manager_request_helper (TpChannelManager *manager,
+tp_base_contact_list_request_helper (TpChannelManager *manager,
     gpointer request_token,
     GHashTable *request_properties,
     gboolean is_create)
 {
-  TpContactListManager *self = (TpContactListManager *) manager;
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactList *self = (TpBaseContactList *) manager;
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleType handle_type;
   TpHandle handle;
   TpBaseContactListChannel *chan;
   GError *error = NULL;
 
-  g_return_val_if_fail (TP_IS_CONTACT_LIST_MANAGER (self), FALSE);
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
 
   if (tp_strdiff (tp_asv_get_string (request_properties,
           TP_PROP_CHANNEL_CHANNEL_TYPE),
@@ -711,7 +711,7 @@ tp_contact_list_manager_request_helper (TpChannelManager *manager,
 
   if (tp_channel_manager_asv_has_unknown_properties (request_properties,
         fixed_properties, allowed_properties, &error) ||
-      !tp_contact_list_manager_check_still_usable (self, &error))
+      !tp_base_contact_list_check_still_usable (self, &error))
     {
       goto error;
     }
@@ -748,7 +748,7 @@ tp_contact_list_manager_request_helper (TpChannelManager *manager,
 
   if (chan == NULL)
     {
-      tp_contact_list_manager_new_channel (self, handle_type, handle,
+      tp_base_contact_list_new_channel (self, handle_type, handle,
           request_token);
     }
   else if (is_create)
@@ -774,39 +774,39 @@ error:
 }
 
 static gboolean
-tp_contact_list_manager_create_channel (TpChannelManager *manager,
+tp_base_contact_list_create_channel (TpChannelManager *manager,
     gpointer request_token,
     GHashTable *request_properties)
 {
-  return tp_contact_list_manager_request_helper (manager, request_token,
+  return tp_base_contact_list_request_helper (manager, request_token,
       request_properties, TRUE);
 }
 
 static gboolean
-tp_contact_list_manager_ensure_channel (TpChannelManager *manager,
+tp_base_contact_list_ensure_channel (TpChannelManager *manager,
     gpointer request_token,
     GHashTable *request_properties)
 {
-  return tp_contact_list_manager_request_helper (manager, request_token,
+  return tp_base_contact_list_request_helper (manager, request_token,
       request_properties, FALSE);
 }
 
 static void
 channel_manager_iface_init (TpChannelManagerIface *iface)
 {
-  iface->foreach_channel = tp_contact_list_manager_foreach_channel;
+  iface->foreach_channel = tp_base_contact_list_foreach_channel;
   iface->foreach_channel_class =
-      tp_contact_list_manager_foreach_channel_class;
-  iface->create_channel = tp_contact_list_manager_create_channel;
-  iface->ensure_channel = tp_contact_list_manager_ensure_channel;
+      tp_base_contact_list_foreach_channel_class;
+  iface->create_channel = tp_base_contact_list_create_channel;
+  iface->ensure_channel = tp_base_contact_list_ensure_channel;
   /* In this channel manager, Request has the same semantics as Ensure */
-  iface->request_channel = tp_contact_list_manager_ensure_channel;
+  iface->request_channel = tp_base_contact_list_ensure_channel;
 }
 
 TpChannelGroupFlags
-_tp_contact_list_manager_get_group_flags (TpContactListManager *self)
+_tp_base_contact_list_get_group_flags (TpBaseContactList *self)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpChannelGroupFlags ret = 0;
 
   if (!cls->priv->can_change_subscriptions (self))
@@ -822,10 +822,10 @@ _tp_contact_list_manager_get_group_flags (TpContactListManager *self)
 }
 
 TpChannelGroupFlags
-_tp_contact_list_manager_get_list_flags (TpContactListManager *self,
+_tp_base_contact_list_get_list_flags (TpBaseContactList *self,
     TpHandle list)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
   if (!cls->priv->can_change_subscriptions (self))
     return 0;
@@ -866,17 +866,17 @@ _tp_contact_list_manager_get_list_flags (TpContactListManager *self,
 }
 
 gboolean
-_tp_contact_list_manager_add_to_group (TpContactListManager *self,
+_tp_base_contact_list_add_to_group (TpBaseContactList *self,
     TpHandle group,
     TpHandle contact,
     const gchar *message G_GNUC_UNUSED,
     GError **error)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleSet *contacts;
   const gchar *group_name;
 
-  if (!tp_contact_list_manager_check_still_usable (self, error))
+  if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
   if (!cls->priv->can_change_subscriptions (self) ||
@@ -898,17 +898,17 @@ _tp_contact_list_manager_add_to_group (TpContactListManager *self,
 }
 
 gboolean
-_tp_contact_list_manager_remove_from_group (TpContactListManager *self,
+_tp_base_contact_list_remove_from_group (TpBaseContactList *self,
     TpHandle group,
     TpHandle contact,
     const gchar *message G_GNUC_UNUSED,
     GError **error)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleSet *contacts;
   const gchar *group_name;
 
-  if (!tp_contact_list_manager_check_still_usable (self, error))
+  if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
   if (!cls->priv->can_change_subscriptions (self) ||
@@ -930,14 +930,14 @@ _tp_contact_list_manager_remove_from_group (TpContactListManager *self,
 }
 
 gboolean
-_tp_contact_list_manager_delete_group_by_handle (TpContactListManager *self,
+_tp_base_contact_list_delete_group_by_handle (TpBaseContactList *self,
     TpHandle group,
     GError **error)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   const gchar *group_name;
 
-  if (!tp_contact_list_manager_check_still_usable (self, NULL))
+  if (!tp_base_contact_list_check_still_usable (self, NULL))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_DISCONNECTED, "Disconnected");
       return FALSE;
@@ -957,17 +957,17 @@ _tp_contact_list_manager_delete_group_by_handle (TpContactListManager *self,
 }
 
 gboolean
-_tp_contact_list_manager_add_to_list (TpContactListManager *self,
+_tp_base_contact_list_add_to_list (TpBaseContactList *self,
     TpHandle list,
     TpHandle contact,
     const gchar *message,
     GError **error)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   gboolean ret = TRUE;
   TpHandleSet *contacts;
 
-  if (!tp_contact_list_manager_check_still_usable (self, error))
+  if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
   if (!cls->priv->can_change_subscriptions (self))
@@ -1004,17 +1004,17 @@ _tp_contact_list_manager_add_to_list (TpContactListManager *self,
 }
 
 gboolean
-_tp_contact_list_manager_remove_from_list (TpContactListManager *self,
+_tp_base_contact_list_remove_from_list (TpBaseContactList *self,
     TpHandle list,
     TpHandle contact,
     const gchar *message G_GNUC_UNUSED,
     GError **error)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   gboolean ret = TRUE;
   TpHandleSet *contacts;
 
-  if (!tp_contact_list_manager_check_still_usable (self, error))
+  if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
   if (!cls->priv->can_change_subscriptions (self))
@@ -1055,7 +1055,7 @@ static void
 satisfy_queued_requests (TpExportableChannel *channel,
                          gpointer user_data)
 {
-  TpContactListManager *self = user_data;
+  TpBaseContactList *self = user_data;
   GSList *requests = g_hash_table_lookup (self->priv->queued_requests,
       channel);
 
@@ -1067,7 +1067,7 @@ satisfy_queued_requests (TpExportableChannel *channel,
 }
 
 /**
- * tp_contact_list_manager_set_list_received:
+ * tp_base_contact_list_set_list_received:
  * @self: the contact list manager
  *
  * Record that the initial contact list has been received. This allows the
@@ -1080,45 +1080,45 @@ satisfy_queued_requests (TpExportableChannel *channel,
  * initial contact list has been received (such as link-local XMPP), this
  * method may be called immediately.
  *
- * The #TpContactListManagerGetContactsFunc and
- * #TpContactListManagerGetPresenceStatesFunc must already give correct
+ * The #TpBaseContactListGetContactsFunc and
+ * #TpBaseContactListGetPresenceStatesFunc must already give correct
  * results when entering this method.
  *
  * The results of the implementations for
- * tp_contact_list_manager_class_implement_get_contact_blocked() and
- * tp_contact_list_manager_class_implement_get_blocked_contacts() must also
+ * tp_base_contact_list_class_implement_get_contact_blocked() and
+ * tp_base_contact_list_class_implement_get_blocked_contacts() must also
  * give correct results when entering this method, if they're implemented.
  */
 void
-tp_contact_list_manager_set_list_received (TpContactListManager *self)
+tp_base_contact_list_set_list_received (TpBaseContactList *self)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleSet *contacts;
 
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (!self->priv->had_contact_list);
 
-  if (!tp_contact_list_manager_check_still_usable (self, NULL))
+  if (!tp_base_contact_list_check_still_usable (self, NULL))
     return;
 
   self->priv->had_contact_list = TRUE;
 
   if (self->priv->lists[TP_LIST_HANDLE_SUBSCRIBE] == NULL)
     {
-      tp_contact_list_manager_new_channel (self,
+      tp_base_contact_list_new_channel (self,
           TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_SUBSCRIBE, NULL);
     }
 
   if (self->priv->lists[TP_LIST_HANDLE_PUBLISH] == NULL)
     {
-      tp_contact_list_manager_new_channel (self,
+      tp_base_contact_list_new_channel (self,
           TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_PUBLISH, NULL);
     }
 
   if (cls->priv->subscriptions_persist (self) &&
       self->priv->lists[TP_LIST_HANDLE_STORED] == NULL)
     {
-      tp_contact_list_manager_new_channel (self,
+      tp_base_contact_list_new_channel (self,
           TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_STORED, NULL);
     }
 
@@ -1147,7 +1147,7 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
       GHashTableIter h_iter;
       gpointer group, members;
 
-      tp_contact_list_manager_groups_created (self,
+      tp_base_contact_list_groups_created (self,
           (const gchar * const *) groups, -1);
 
       g_strfreev (groups);
@@ -1187,21 +1187,21 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
         {
           const gchar *group_id = group;
 
-          tp_contact_list_manager_groups_changed (self, members,
+          tp_base_contact_list_groups_changed (self, members,
               &group_id, 1, NULL, 0);
         }
 
       g_hash_table_unref (group_members);
     }
 
-  tp_contact_list_manager_contacts_changed (self, contacts, NULL);
+  tp_base_contact_list_contacts_changed (self, contacts, NULL);
   tp_handle_set_destroy (contacts);
 
   if (cls->priv->can_block (self))
     {
       if (self->priv->lists[TP_LIST_HANDLE_DENY] == NULL)
         {
-          tp_contact_list_manager_new_channel (self,
+          tp_base_contact_list_new_channel (self,
               TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_DENY, NULL);
         }
 
@@ -1215,11 +1215,11 @@ tp_contact_list_manager_set_list_received (TpContactListManager *self)
           g_free (tmp);
         }
 
-      tp_contact_list_manager_contact_blocking_changed (self, contacts);
+      tp_base_contact_list_contact_blocking_changed (self, contacts);
       tp_handle_set_destroy (contacts);
     }
 
-  tp_contact_list_manager_foreach_channel ((TpChannelManager *) self,
+  tp_base_contact_list_foreach_channel ((TpChannelManager *) self,
       satisfy_queued_requests, self);
 
   g_assert (g_hash_table_size (self->priv->queued_requests) == 0);
@@ -1249,7 +1249,7 @@ presence_state_to_letter (TpPresenceState ps)
 #endif
 
 /**
- * tp_contact_list_manager_contacts_changed:
+ * tp_base_contact_list_contacts_changed:
  * @self: the contact list manager
  * @changed: (allow-none): a set of contacts added to the contact list or with
  *  a changed status
@@ -1257,29 +1257,29 @@ presence_state_to_letter (TpPresenceState ps)
  *
  * Emit signals for a change to the contact list.
  *
- * The results of #TpContactListManagerGetContactsFunc and
- * #TpContactListManagerGetPresenceStatesFunc must already reflect
+ * The results of #TpBaseContactListGetContactsFunc and
+ * #TpBaseContactListGetPresenceStatesFunc must already reflect
  * the contacts' new statuses when entering this method (in practice, this
  * means that implementations must update their own cache of contacts
  * before calling this method).
  */
 void
-tp_contact_list_manager_contacts_changed (TpContactListManager *self,
+tp_base_contact_list_contacts_changed (TpBaseContactList *self,
     TpHandleSet *changed,
     TpHandleSet *removed)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   GHashTable *changes;
   GArray *removals;
   TpIntSetIter iter;
   TpIntSet *pub, *sub, *sub_rp, *unpub, *unsub, *store;
   GObject *sub_chan, *pub_chan, *stored_chan;
 
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
 
   /* don't do anything if we're disconnecting, or if we haven't had the
    * initial contact list yet */
-  if (!tp_contact_list_manager_check_still_usable (self, NULL) ||
+  if (!tp_base_contact_list_check_still_usable (self, NULL) ||
       !self->priv->had_contact_list)
     return;
 
@@ -1429,35 +1429,35 @@ tp_contact_list_manager_contacts_changed (TpContactListManager *self,
 }
 
 /**
- * tp_contact_list_manager_contact_blocking_changed:
+ * tp_base_contact_list_contact_blocking_changed:
  * @self: the contact list manager
  * @changed: a set of contacts who were blocked or unblocked
  *
  * Emit signals for a change to the blocked contacts list.
  *
  * The results of the implementations for
- * tp_contact_list_manager_class_implement_get_contact_blocked() and
- * tp_contact_list_manager_class_implement_get_blocked_contacts()
+ * tp_base_contact_list_class_implement_get_contact_blocked() and
+ * tp_base_contact_list_class_implement_get_blocked_contacts()
  * must already reflect the contacts' new statuses when entering this method
  * (in practice, this means that implementations must update their own cache
  * of contacts before calling this method).
  */
 void
-tp_contact_list_manager_contact_blocking_changed (TpContactListManager *self,
+tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
     TpHandleSet *changed)
 {
-  TpContactListManagerClass *cls = TP_CONTACT_LIST_MANAGER_GET_CLASS (self);
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpIntSet *blocked, *unblocked;
   TpIntSetFastIter iter;
   GObject *deny_chan;
   TpHandle handle;
 
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (changed != NULL);
 
   /* don't do anything if we're disconnecting, or if we haven't had the
    * initial contact list yet */
-  if (!tp_contact_list_manager_check_still_usable (self, NULL) ||
+  if (!tp_base_contact_list_check_still_usable (self, NULL) ||
       !self->priv->had_contact_list)
     return;
 
@@ -1496,67 +1496,67 @@ tp_contact_list_manager_contact_blocking_changed (TpContactListManager *self,
 }
 
 /**
- * tp_contact_list_manager_class_implement_get_contacts:
+ * tp_base_contact_list_class_implement_get_contacts:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
  * Fill in an implementation of the @get_contacts virtual method.
- * This function should be called from every #TpContactListManager subclass's
+ * This function should be called from every #TpBaseContactList subclass's
  * #GTypeClass.class_init function.
  */
 void
-tp_contact_list_manager_class_implement_get_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetContactsFunc impl)
+tp_base_contact_list_class_implement_get_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->get_contacts = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_request_subscription:
+ * tp_base_contact_list_class_implement_request_subscription:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
  * Fill in an implementation of the @request_subscription virtual method.
- * This function should be called from any #TpContactListManager subclass's
+ * This function should be called from any #TpBaseContactList subclass's
  * #GTypeClass.class_init function where
- * tp_contact_list_manager_class_implement_can_change_subscriptions() has been
+ * tp_base_contact_list_class_implement_can_change_subscriptions() has been
  * called.
  */
 void
-tp_contact_list_manager_class_implement_request_subscription (
-    TpContactListManagerClass *cls,
-    TpContactListManagerRequestSubscriptionFunc impl)
+tp_base_contact_list_class_implement_request_subscription (
+    TpBaseContactListClass *cls,
+    TpBaseContactListRequestSubscriptionFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->request_subscription = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_get_states:
+ * tp_base_contact_list_class_implement_get_states:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
  * Fill in an implementation of the @get_states virtual method.
  *
- * This function must be called from every #TpContactListManager subclass's
+ * This function must be called from every #TpBaseContactList subclass's
  * #GTypeClass.class_init function.
  */
 void
-tp_contact_list_manager_class_implement_get_states (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetPresenceStatesFunc impl)
+tp_base_contact_list_class_implement_get_states (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetPresenceStatesFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->get_states = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_authorize_publication:
+ * tp_base_contact_list_class_implement_authorize_publication:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -1566,23 +1566,23 @@ tp_contact_list_manager_class_implement_get_states (
  * presence to those contacts if they have not asked for it, and records the
  * fact that publication is desired for future use.
  *
- * This function must be called from any #TpContactListManager subclass's
+ * This function must be called from any #TpBaseContactList subclass's
  * #GTypeClass.class_init function where
- * tp_contact_list_manager_class_implement_can_change_subscriptions() has been
+ * tp_base_contact_list_class_implement_can_change_subscriptions() has been
  * called.
  */
 void
-tp_contact_list_manager_class_implement_authorize_publication (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl)
+tp_base_contact_list_class_implement_authorize_publication (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->authorize_publication = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_just_store_contacts:
+ * tp_base_contact_list_class_implement_just_store_contacts:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -1591,23 +1591,23 @@ tp_contact_list_manager_class_implement_authorize_publication (
  * attempting to subscribe to their presence or authorize publication of
  * presence to them.
  *
- * This function must be called from any #TpContactListManager subclass's
+ * This function must be called from any #TpBaseContactList subclass's
  * #GTypeClass.class_init function where
- * tp_contact_list_manager_class_implement_can_change_subscriptions() has been
+ * tp_base_contact_list_class_implement_can_change_subscriptions() has been
  * called.
  */
 void
-tp_contact_list_manager_class_implement_just_store_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl)
+tp_base_contact_list_class_implement_just_store_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->just_store_contacts = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_remove_contacts:
+ * tp_base_contact_list_class_implement_remove_contacts:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -1615,23 +1615,23 @@ tp_contact_list_manager_class_implement_just_store_contacts (
  * removes the given contacts from the user's contact list entirely,
  * and also has the effect of @unsubscribe and @unpublish.
  *
- * This function must be called from any #TpContactListManager subclass's
+ * This function must be called from any #TpBaseContactList subclass's
  * #GTypeClass.class_init function where
- * tp_contact_list_manager_class_implement_can_change_subscriptions() has been
+ * tp_base_contact_list_class_implement_can_change_subscriptions() has been
  * called.
  */
 void
-tp_contact_list_manager_class_implement_remove_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl)
+tp_base_contact_list_class_implement_remove_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->remove_contacts = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_unsubscribe:
+ * tp_base_contact_list_class_implement_unsubscribe:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -1639,23 +1639,23 @@ tp_contact_list_manager_class_implement_remove_contacts (
  * attempts to stop receiving presence from the given contacts while leaving
  * them on the user's contact list.
  *
- * This function must be called from any #TpContactListManager subclass's
+ * This function must be called from any #TpBaseContactList subclass's
  * #GTypeClass.class_init function where
- * tp_contact_list_manager_class_implement_can_change_subscriptions() has been
+ * tp_base_contact_list_class_implement_can_change_subscriptions() has been
  * called.
  */
 void
-tp_contact_list_manager_class_implement_unsubscribe (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl)
+tp_base_contact_list_class_implement_unsubscribe (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->unsubscribe = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_unpublish:
+ * tp_base_contact_list_class_implement_unpublish:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -1664,85 +1664,85 @@ tp_contact_list_manager_class_implement_unsubscribe (
  * request to send presence to them) while leaving them on the user's contact
  * list.
  *
- * This function must be called from any #TpContactListManager subclass's
+ * This function must be called from any #TpBaseContactList subclass's
  * #GTypeClass.class_init function where
- * tp_contact_list_manager_class_implement_can_change_subscriptions() has been
+ * tp_base_contact_list_class_implement_can_change_subscriptions() has been
  * called.
  */
 void
-tp_contact_list_manager_class_implement_unpublish (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl)
+tp_base_contact_list_class_implement_unpublish (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->unpublish = impl;
 }
 
 /**
- * TpContactListManagerBooleanFunc:
+ * TpBaseContactListBooleanFunc:
  * @self: a contact list manager
  *
  * Signature of a virtual method that returns a boolean result. These are used
  * for feature-discovery.
  *
  * For the simple cases of a constant result, use
- * tp_contact_list_manager_true_func() or tp_contact_list_manager_false_func().
+ * tp_base_contact_list_true_func() or tp_base_contact_list_false_func().
  *
  * Returns: a boolean result
  */
 
 /**
- * tp_contact_list_manager_true_func:
+ * tp_base_contact_list_true_func:
  * @self: ignored
  *
- * An implementation of #TpContactListManagerBooleanFunc that returns %TRUE,
+ * An implementation of #TpBaseContactListBooleanFunc that returns %TRUE,
  * for use in simple cases.
  *
  * Returns: %TRUE
  */
 gboolean
-tp_contact_list_manager_true_func (TpContactListManager *self G_GNUC_UNUSED)
+tp_base_contact_list_true_func (TpBaseContactList *self G_GNUC_UNUSED)
 {
   return TRUE;
 }
 
 /**
- * tp_contact_list_manager_false_func:
+ * tp_base_contact_list_false_func:
  * @self: ignored
  *
- * An implementation of #TpContactListManagerBooleanFunc that returns %FALSE,
+ * An implementation of #TpBaseContactListBooleanFunc that returns %FALSE,
  * for use in simple cases.
  *
  * Returns: %FALSE
  */
 gboolean
-tp_contact_list_manager_false_func (TpContactListManager *self G_GNUC_UNUSED)
+tp_base_contact_list_false_func (TpBaseContactList *self G_GNUC_UNUSED)
 {
   return FALSE;
 }
 
 /**
- * tp_contact_list_manager_class_implement_can_change_subscriptions:
+ * tp_base_contact_list_class_implement_can_change_subscriptions:
  * @cls: a contact list manager subclass
  * @check: a function that returns %TRUE if subscription states can be
  *  changed
  *
  * Set whether instances of a contact list manager subclass can alter
- * subscription states. The default is tp_contact_list_manager_false_func().
+ * subscription states. The default is tp_base_contact_list_false_func().
  *
- * Most protocols should set this to tp_contact_list_manager_true_func(),
+ * Most protocols should set this to tp_base_contact_list_true_func(),
  * but this is not the default, since this functionality requires additional
  * methods to be implemented.
  *
  * Subclasses that call this method in #GTypeClass.class_init and set
- * any implementation other than tp_contact_list_manager_false_func()
+ * any implementation other than tp_base_contact_list_false_func()
  * (even if that implementation itself returns %FALSE) must also implement
  * various other virtual methods, to make the actual changes to subscriptions.
  *
  * In the rare case of a protocol where subscriptions sometimes persist
  * and this is detected while connecting, the subclass can implement another
- * #TpContactListManagerBooleanFunc (whose result must remain constant
+ * #TpBaseContactListBooleanFunc (whose result must remain constant
  * after the #TpBaseConnection has moved to state
  * %TP_CONNECTION_STATUS_CONNECTED), and use that as the implementation.
  *
@@ -1751,45 +1751,45 @@ tp_contact_list_manager_false_func (TpContactListManager *self G_GNUC_UNUSED)
  * not actually supported.)
  */
 void
-tp_contact_list_manager_class_implement_can_change_subscriptions (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc check)
+tp_base_contact_list_class_implement_can_change_subscriptions (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc check)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (check != NULL);
   cls->priv->can_change_subscriptions = check;
 }
 
 /**
- * tp_contact_list_manager_class_implement_subscriptions_persist:
+ * tp_base_contact_list_class_implement_subscriptions_persist:
  * @cls: a contact list manager subclass
  * @check: a function that returns %TRUE if subscription states persist
  *
  * Set a function that can be used to query whether subscriptions on this
  * protocol persist between sessions (i.e. are stored on the server).
  *
- * The default is tp_contact_list_manager_true_func(), which is correct for
+ * The default is tp_base_contact_list_true_func(), which is correct for
  * most protocols; protocols where the contact list isn't stored should
- * set this to tp_contact_list_manager_false_func() in their
+ * set this to tp_base_contact_list_false_func() in their
  * #GTypeClass.class_init.
  *
  * In the rare case of a protocol where subscriptions sometimes persist
  * and this is detected while connecting, the subclass can implement another
- * #TpContactListManagerBooleanFunc (whose result must remain constant
+ * #TpBaseContactListBooleanFunc (whose result must remain constant
  * after the #TpBaseConnection has moved to state
  * %TP_CONNECTION_STATUS_CONNECTED), and use that as the implementation.
  */
-void tp_contact_list_manager_class_implement_subscriptions_persist (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc check)
+void tp_base_contact_list_class_implement_subscriptions_persist (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc check)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (check != NULL);
   cls->priv->subscriptions_persist = check;
 }
 
 /**
- * tp_contact_list_manager_class_implement_request_uses_message:
+ * tp_base_contact_list_class_implement_request_uses_message:
  * @cls: a contact list manager subclass
  * @check: a function that returns %TRUE if @request_subscription uses its
  *  @message argument
@@ -1797,40 +1797,40 @@ void tp_contact_list_manager_class_implement_subscriptions_persist (
  * Set a function that can be used to query whether the
  * @request_subscription virtual method's @message argument is actually used.
  *
- * The default is tp_contact_list_manager_true_func(), which is correct for
+ * The default is tp_base_contact_list_true_func(), which is correct for
  * most protocols; protocols where the message argument isn't actually used
- * should set this to tp_contact_list_manager_false_func() in their
+ * should set this to tp_base_contact_list_false_func() in their
  * #GTypeClass.class_init.
  */
-void tp_contact_list_manager_class_implement_request_uses_message (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc check)
+void tp_base_contact_list_class_implement_request_uses_message (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc check)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (check != NULL);
   cls->priv->request_uses_message = check;
 }
 
 /**
- * tp_contact_list_manager_class_implement_can_block:
+ * tp_base_contact_list_class_implement_can_block:
  * @cls: a contact list manager subclass
  * @check: a function that returns %TRUE if contacts can be
  *  blocked
  *
  * Set whether instances of a contact list manager subclass can block
- * and unblock contacts. The default is tp_contact_list_manager_false_func().
+ * and unblock contacts. The default is tp_base_contact_list_false_func().
  *
  * Subclasses that call this method in #GTypeClass.class_init and set
- * any implementation other than tp_contact_list_manager_false_func()
+ * any implementation other than tp_base_contact_list_false_func()
  * (even if that implementation itself returns %FALSE) must also call
- * tp_contact_list_manager_class_implement_get_contact_blocked(),
- * tp_contact_list_manager_class_implement_get_blocked_contacts(),
- * tp_contact_list_manager_class_implement_block_contacts() and
- * tp_contact_list_manager_class_implement_unblock_contacts().
+ * tp_base_contact_list_class_implement_get_contact_blocked(),
+ * tp_base_contact_list_class_implement_get_blocked_contacts(),
+ * tp_base_contact_list_class_implement_block_contacts() and
+ * tp_base_contact_list_class_implement_unblock_contacts().
  *
  * In the case of a protocol where blocking may or may not work
  * and this is detected while connecting, the subclass can implement another
- * #TpContactListManagerBooleanFunc (whose result must remain constant
+ * #TpBaseContactListBooleanFunc (whose result must remain constant
  * after the #TpBaseConnection has moved to state
  * %TP_CONNECTION_STATUS_CONNECTED), and use that as the implementation.
  *
@@ -1839,34 +1839,34 @@ void tp_contact_list_manager_class_implement_request_uses_message (
  * connections to Google Talk servers, but not for any other server.)
  */
 void
-tp_contact_list_manager_class_implement_can_block (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc check)
+tp_base_contact_list_class_implement_can_block (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc check)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (check != NULL);
   cls->priv->can_block = check;
 }
 
 /**
- * tp_contact_list_manager_class_implement_get_blocked_contacts:
+ * tp_base_contact_list_class_implement_get_blocked_contacts:
  * @cls: a contact list manager subclass
  * @impl: a function that returns the set of blocked contacts
  *
  * Set a function that can be used to list all blocked contacts.
  */
 void
-tp_contact_list_manager_class_implement_get_blocked_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetContactsFunc impl)
+tp_base_contact_list_class_implement_get_blocked_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->get_blocked_contacts = impl;
 }
 
 /**
- * TpContactListManagerContactBooleanFunc:
+ * TpBaseContactListContactBooleanFunc:
  * @self: a contact list manager
  * @contact: a contact
  *
@@ -1877,7 +1877,7 @@ tp_contact_list_manager_class_implement_get_blocked_contacts (
  */
 
 /**
- * tp_contact_list_manager_class_implement_get_contact_blocked:
+ * tp_base_contact_list_class_implement_get_contact_blocked:
  * @cls: a contact list manager subclass
  * @impl: a function that returns %TRUE if the @contact is blocked
  *
@@ -1885,51 +1885,51 @@ tp_contact_list_manager_class_implement_get_blocked_contacts (
  * blocked.
  */
 void
-tp_contact_list_manager_class_implement_get_contact_blocked (
-    TpContactListManagerClass *cls,
-    TpContactListManagerContactBooleanFunc impl)
+tp_base_contact_list_class_implement_get_contact_blocked (
+    TpBaseContactListClass *cls,
+    TpBaseContactListContactBooleanFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->get_contact_blocked = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_block_contacts:
+ * tp_base_contact_list_class_implement_block_contacts:
  * @cls: a contact list manager subclass
  * @impl: a function that blocks the contacts
  *
  * Set a function that can be used to block contacts.
  */
 void
-tp_contact_list_manager_class_implement_block_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl)
+tp_base_contact_list_class_implement_block_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->block_contacts = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_unblock_contacts:
+ * tp_base_contact_list_class_implement_unblock_contacts:
  * @cls: a contact list manager subclass
  * @impl: a function that unblocks the contacts
  *
  * Set a function that can be used to unblock contacts.
  */
 void
-tp_contact_list_manager_class_implement_unblock_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl)
+tp_base_contact_list_class_implement_unblock_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->unblock_contacts = impl;
 }
 
 /**
- * TpContactListManagerNormalizeFunc:
+ * TpBaseContactListNormalizeFunc:
  * @self: a contact list manager
  * @s: a non-%NULL name to normalize
  *
@@ -1940,7 +1940,7 @@ tp_contact_list_manager_class_implement_unblock_contacts (
  */
 
 /**
- * tp_contact_list_manager_class_implement_normalize_group:
+ * tp_base_contact_list_class_implement_normalize_group:
  * @cls: a contact list manager subclass
  * @impl: a function that returns a normalized form of the argument @s, or
  *  %NULL on error
@@ -1953,17 +1953,17 @@ tp_contact_list_manager_class_implement_unblock_contacts (
  * this function from #GTypeClass.class_init.
  */
 void
-tp_contact_list_manager_class_implement_normalize_group (
-    TpContactListManagerClass *cls,
-    TpContactListManagerNormalizeFunc impl)
+tp_base_contact_list_class_implement_normalize_group (
+    TpBaseContactListClass *cls,
+    TpBaseContactListNormalizeFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->normalize_group = impl;
 }
 
 /**
- * tp_contact_list_manager_groups_created:
+ * tp_base_contact_list_groups_created:
  * @self: a contact list manager
  * @created: (array length=n_created) (element-type utf8) (allow-none): zero
  *  or more groups that were created
@@ -1971,18 +1971,18 @@ tp_contact_list_manager_class_implement_normalize_group (
  *  %NULL-terminated
  *
  * Called by subclasses when new groups have been created. This will typically
- * be followed by a call to tp_contact_list_manager_groups_changed() to add
+ * be followed by a call to tp_base_contact_list_groups_changed() to add
  * some members to those groups.
  */
 void
-tp_contact_list_manager_groups_created (TpContactListManager *self,
+tp_base_contact_list_groups_created (TpBaseContactList *self,
     const gchar * const *created,
     gssize n_created)
 {
   GPtrArray *pa;
   guint i;
 
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (n_created >= -1);
   g_return_if_fail (n_created <= 0 || created != NULL);
 
@@ -2013,7 +2013,7 @@ tp_contact_list_manager_groups_created (TpContactListManager *self,
 
           if (c == NULL)
             {
-              tp_contact_list_manager_new_channel (self, TP_HANDLE_TYPE_GROUP,
+              tp_base_contact_list_new_channel (self, TP_HANDLE_TYPE_GROUP,
                   handle, NULL);
               g_ptr_array_add (pa, (gchar *) tp_handle_inspect (
                     self->priv->group_repo, handle));
@@ -2033,7 +2033,7 @@ tp_contact_list_manager_groups_created (TpContactListManager *self,
 }
 
 /**
- * tp_contact_list_manager_groups_removed:
+ * tp_base_contact_list_groups_removed:
  * @self: a contact list manager
  * @removed: (array length=n_removed) (element-type utf8) (allow-none): zero
  *  or more groups that were removed
@@ -2042,18 +2042,18 @@ tp_contact_list_manager_groups_created (TpContactListManager *self,
  *
  * Called by subclasses when groups have been removed. If the groups had
  * members, the subclass does not also need to call
- * tp_contact_list_manager_groups_changed() for them - the group membership
+ * tp_base_contact_list_groups_changed() for them - the group membership
  * change signals will be emitted automatically.
  */
 void
-tp_contact_list_manager_groups_removed (TpContactListManager *self,
+tp_base_contact_list_groups_removed (TpBaseContactList *self,
     const gchar * const *removed,
     gssize n_removed)
 {
   GPtrArray *pa;
   guint i;
 
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (removed != NULL);
   g_return_if_fail (n_removed >= -1);
   g_return_if_fail (n_removed <= 0 || removed != NULL);
@@ -2119,17 +2119,17 @@ tp_contact_list_manager_groups_removed (TpContactListManager *self,
 }
 
 /**
- * tp_contact_list_manager_group_renamed:
+ * tp_base_contact_list_group_renamed:
  * @self: a contact list manager
  * @old_name: the group's old name
  * @new_name: the group's new name
  *
  * Called by subclasses when a group has been renamed. The subclass should not
- * also call tp_contact_list_manager_groups_changed() for the group's members -
+ * also call tp_base_contact_list_groups_changed() for the group's members -
  * the group membership change signals will be emitted automatically.
  */
 void
-tp_contact_list_manager_group_renamed (TpContactListManager *self,
+tp_base_contact_list_group_renamed (TpBaseContactList *self,
     const gchar *old_name,
     const gchar *new_name)
 {
@@ -2140,7 +2140,7 @@ tp_contact_list_manager_group_renamed (TpContactListManager *self,
   TpGroupMixin *mixin;
   TpIntSet *set;
 
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
 
   old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL, NULL);
 
@@ -2169,7 +2169,7 @@ tp_contact_list_manager_group_renamed (TpContactListManager *self,
       new_chan = g_hash_table_lookup (self->priv->groups,
           GUINT_TO_POINTER (new_handle));
 
-      tp_contact_list_manager_new_channel (self, TP_HANDLE_TYPE_GROUP,
+      tp_base_contact_list_new_channel (self, TP_HANDLE_TYPE_GROUP,
           new_handle, NULL);
 
       g_assert (new_chan != NULL);
@@ -2201,7 +2201,7 @@ tp_contact_list_manager_group_renamed (TpContactListManager *self,
 }
 
 /**
- * tp_contact_list_manager_groups_changed:
+ * tp_base_contact_list_groups_changed:
  * @self: a contact list manager
  * @contacts: a set containing one or more contacts
  * @added: (array length=n_added) (element-type utf8) (allow-none): zero or
@@ -2218,10 +2218,10 @@ tp_contact_list_manager_group_renamed (TpContactListManager *self,
  *
  * If any of the groups in @added are not already known to exist,
  * this method also signals that they were created, as if
- * tp_contact_list_manager_groups_created() had been called first.
+ * tp_base_contact_list_groups_created() had been called first.
  */
 void
-tp_contact_list_manager_groups_changed (TpContactListManager *self,
+tp_base_contact_list_groups_changed (TpBaseContactList *self,
     TpHandleSet *contacts,
     const gchar * const *added,
     gssize n_added,
@@ -2230,7 +2230,7 @@ tp_contact_list_manager_groups_changed (TpContactListManager *self,
 {
   guint i;
 
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER (self));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (contacts != NULL);
   g_return_if_fail (n_added >= -1);
   g_return_if_fail (n_removed >= -1);
@@ -2267,7 +2267,7 @@ tp_contact_list_manager_groups_changed (TpContactListManager *self,
         g_return_if_fail (removed[i] != NULL);
     }
 
-  tp_contact_list_manager_groups_created (self, added, n_added);
+  tp_base_contact_list_groups_created (self, added, n_added);
 
   for (i = 0; i < n_added; i++)
     {
@@ -2309,7 +2309,7 @@ tp_contact_list_manager_groups_changed (TpContactListManager *self,
 }
 
 /**
- * tp_contact_list_manager_class_implement_disjoint_groups:
+ * tp_base_contact_list_class_implement_disjoint_groups:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -2318,28 +2318,28 @@ tp_contact_list_manager_groups_changed (TpContactListManager *self,
  * (i.e. each contact can be in at most one group).
  *
  * This is merely informational: subclasses are responsible for making
- * appropriate calls to tp_contact_list_manager_groups_changed(), etc.
+ * appropriate calls to tp_base_contact_list_groups_changed(), etc.
  *
- * The default implementation is tp_contact_list_manager_false_func();
+ * The default implementation is tp_base_contact_list_false_func();
  * subclasses where groups are disjoint should call this function
- * with @impl = tp_contact_list_manager_true_func() during
+ * with @impl = tp_base_contact_list_true_func() during
  * #GTypeClass.class_init.
  *
  * In the unlikely event that a protocol can have disjoint groups, or not,
  * determined at runtime, it can use a custom implementation for @impl.
  */
 void
-tp_contact_list_manager_class_implement_disjoint_groups (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc impl)
+tp_base_contact_list_class_implement_disjoint_groups (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->disjoint_groups = impl;
 }
 
 /**
- * TpContactListManagerGetGroupsFunc:
+ * TpBaseContactListGetGroupsFunc:
  * @self: a contact list manager
  *
  * Signature of a virtual method that lists every group that exists on a
@@ -2349,7 +2349,7 @@ tp_contact_list_manager_class_implement_disjoint_groups (
  */
 
 /**
- * tp_contact_list_manager_class_implement_get_groups:
+ * tp_base_contact_list_class_implement_get_groups:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -2359,17 +2359,17 @@ tp_contact_list_manager_class_implement_disjoint_groups (
  * #GTypeClass.class_init.
  */
 void
-tp_contact_list_manager_class_implement_get_groups (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetGroupsFunc impl)
+tp_base_contact_list_class_implement_get_groups (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetGroupsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->get_groups = impl;
 }
 
 /**
- * TpContactListManagerGetContactGroupsFunc:
+ * TpBaseContactListGetContactGroupsFunc:
  * @self: a contact list manager
  * @contact: a non-zero contact handle
  *
@@ -2383,7 +2383,7 @@ tp_contact_list_manager_class_implement_get_groups (
  */
 
 /**
- * tp_contact_list_manager_class_implement_get_contact_groups:
+ * tp_base_contact_list_class_implement_get_contact_groups:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -2393,17 +2393,17 @@ tp_contact_list_manager_class_implement_get_groups (
  * #GTypeClass.class_init.
  */
 void
-tp_contact_list_manager_class_implement_get_contact_groups (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetContactGroupsFunc impl)
+tp_base_contact_list_class_implement_get_contact_groups (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetContactGroupsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->get_contact_groups = impl;
 }
 
 /**
- * TpContactListManagerGroupContactsFunc:
+ * TpBaseContactListGroupContactsFunc:
  * @self: a contact list manager
  * @group: a group
  * @contacts: a set of contact handles
@@ -2412,7 +2412,7 @@ tp_contact_list_manager_class_implement_get_contact_groups (
  */
 
 /**
- * tp_contact_list_manager_class_implement_add_to_group:
+ * tp_base_contact_list_class_implement_add_to_group:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -2422,17 +2422,17 @@ tp_contact_list_manager_class_implement_get_contact_groups (
  * Every subclass that supports altering contact groups should call this
  * function in its #GTypeClass.class_init.
  */
-void tp_contact_list_manager_class_implement_add_to_group (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGroupContactsFunc impl)
+void tp_base_contact_list_class_implement_add_to_group (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGroupContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->add_to_group = impl;
 }
 
 /**
- * tp_contact_list_manager_class_implement_remove_from_group:
+ * tp_base_contact_list_class_implement_remove_from_group:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -2442,17 +2442,17 @@ void tp_contact_list_manager_class_implement_add_to_group (
  * Every subclass that supports altering contact groups should call this
  * function in its #GTypeClass.class_init.
  */
-void tp_contact_list_manager_class_implement_remove_from_group (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGroupContactsFunc impl)
+void tp_base_contact_list_class_implement_remove_from_group (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGroupContactsFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->remove_from_group = impl;
 }
 
 /**
- * TpContactListManagerRemoveGroupFunc:
+ * TpBaseContactListRemoveGroupFunc:
  * @self: a contact list manager
  * @group: a group
  * @error: used to raise an error if %FALSE is returned
@@ -2463,7 +2463,7 @@ void tp_contact_list_manager_class_implement_remove_from_group (
  */
 
 /**
- * tp_contact_list_manager_class_implement_remove_group:
+ * tp_base_contact_list_class_implement_remove_group:
  * @cls: a contact list manager subclass
  * @impl: an implementation of the virtual method
  *
@@ -2473,11 +2473,11 @@ void tp_contact_list_manager_class_implement_remove_from_group (
  * Every subclass that supports deleting contact groups should call this
  * function in its #GTypeClass.class_init.
  */
-void tp_contact_list_manager_class_implement_remove_group (
-    TpContactListManagerClass *cls,
-    TpContactListManagerRemoveGroupFunc impl)
+void tp_base_contact_list_class_implement_remove_group (
+    TpBaseContactListClass *cls,
+    TpBaseContactListRemoveGroupFunc impl)
 {
-  g_return_if_fail (TP_IS_CONTACT_LIST_MANAGER_CLASS (cls));
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->remove_group = impl;
 }

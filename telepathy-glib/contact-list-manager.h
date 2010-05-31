@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_CONTACT_LIST_MANAGER_H__
-#define __TP_CONTACT_LIST_MANAGER_H__
+#ifndef __TP_BASE_CONTACT_LIST_H__
+#define __TP_BASE_CONTACT_LIST_H__
 
 #include <glib-object.h>
 #include <gio/gio.h>
@@ -27,41 +27,41 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpContactListManager TpContactListManager;
-typedef struct _TpContactListManagerClass TpContactListManagerClass;
-typedef struct _TpContactListManagerPrivate TpContactListManagerPrivate;
-typedef struct _TpContactListManagerClassPrivate TpContactListManagerClassPrivate;
+typedef struct _TpBaseContactList TpBaseContactList;
+typedef struct _TpBaseContactListClass TpBaseContactListClass;
+typedef struct _TpBaseContactListPrivate TpBaseContactListPrivate;
+typedef struct _TpBaseContactListClassPrivate TpBaseContactListClassPrivate;
 
-struct _TpContactListManagerClass {
+struct _TpBaseContactListClass {
     /*<private>*/
     GObjectClass parent_class;
     GCallback _padding[7];
-    TpContactListManagerClassPrivate *priv;
+    TpBaseContactListClassPrivate *priv;
 };
 
-struct _TpContactListManager {
+struct _TpBaseContactList {
     /*<private>*/
     GObject parent;
-    TpContactListManagerPrivate *priv;
+    TpBaseContactListPrivate *priv;
 };
 
-GType tp_contact_list_manager_get_type (void);
+GType tp_base_contact_list_get_type (void);
 
-#define TP_TYPE_CONTACT_LIST_MANAGER \
-  (tp_contact_list_manager_get_type ())
-#define TP_CONTACT_LIST_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_CONTACT_LIST_MANAGER, \
-                               TpContactListManager))
-#define TP_CONTACT_LIST_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_CONTACT_LIST_MANAGER, \
-                            TpContactListManagerClass))
-#define TP_IS_CONTACT_LIST_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_CONTACT_LIST_MANAGER))
-#define TP_IS_CONTACT_LIST_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_CONTACT_LIST_MANAGER))
-#define TP_CONTACT_LIST_MANAGER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CONTACT_LIST_MANAGER, \
-                              TpContactListManagerClass))
+#define TP_TYPE_BASE_CONTACT_LIST \
+  (tp_base_contact_list_get_type ())
+#define TP_BASE_CONTACT_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_BASE_CONTACT_LIST, \
+                               TpBaseContactList))
+#define TP_BASE_CONTACT_LIST_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_BASE_CONTACT_LIST, \
+                            TpBaseContactListClass))
+#define TP_IS_BASE_CONTACT_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_BASE_CONTACT_LIST))
+#define TP_IS_BASE_CONTACT_LIST_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_BASE_CONTACT_LIST))
+#define TP_BASE_CONTACT_LIST_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_CONTACT_LIST, \
+                              TpBaseContactListClass))
 
 /* ---- Will be in telepathy-spec later (so, no GEnum) ---- */
 
@@ -73,182 +73,182 @@ typedef enum { /*< skip >*/
 
 /* ---- Called by subclasses for ContactList (or both) ---- */
 
-void tp_contact_list_manager_set_list_received (TpContactListManager *self);
+void tp_base_contact_list_set_list_received (TpBaseContactList *self);
 
-void tp_contact_list_manager_contacts_changed (TpContactListManager *self,
+void tp_base_contact_list_contacts_changed (TpBaseContactList *self,
     TpHandleSet *changed,
     TpHandleSet *removed);
 
 /* ---- Implemented by subclasses for ContactList ---- */
 
-typedef gboolean (*TpContactListManagerBooleanFunc) (
-    TpContactListManager *self);
+typedef gboolean (*TpBaseContactListBooleanFunc) (
+    TpBaseContactList *self);
 
-gboolean tp_contact_list_manager_true_func (TpContactListManager *self);
-gboolean tp_contact_list_manager_false_func (TpContactListManager *self);
+gboolean tp_base_contact_list_true_func (TpBaseContactList *self);
+gboolean tp_base_contact_list_false_func (TpBaseContactList *self);
 
-void tp_contact_list_manager_class_implement_can_change_subscriptions (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc check);
+void tp_base_contact_list_class_implement_can_change_subscriptions (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc check);
 
-void tp_contact_list_manager_class_implement_subscriptions_persist (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc check);
+void tp_base_contact_list_class_implement_subscriptions_persist (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc check);
 
-void tp_contact_list_manager_class_implement_request_uses_message (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc check);
+void tp_base_contact_list_class_implement_request_uses_message (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc check);
 
-typedef TpHandleSet *(*TpContactListManagerGetContactsFunc) (
-    TpContactListManager *self);
+typedef TpHandleSet *(*TpBaseContactListGetContactsFunc) (
+    TpBaseContactList *self);
 
-void tp_contact_list_manager_class_implement_get_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetContactsFunc impl);
+void tp_base_contact_list_class_implement_get_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetContactsFunc impl);
 
-typedef void (*TpContactListManagerGetPresenceStatesFunc) (
-    TpContactListManager *self,
+typedef void (*TpBaseContactListGetPresenceStatesFunc) (
+    TpBaseContactList *self,
     TpHandle contact,
     TpPresenceState *subscribe,
     TpPresenceState *publish,
     gchar **publish_request);
 
-void tp_contact_list_manager_class_implement_get_states (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetPresenceStatesFunc impl);
+void tp_base_contact_list_class_implement_get_states (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetPresenceStatesFunc impl);
 
-typedef gboolean (*TpContactListManagerRequestSubscriptionFunc) (
-    TpContactListManager *self,
+typedef gboolean (*TpBaseContactListRequestSubscriptionFunc) (
+    TpBaseContactList *self,
     TpHandleSet *contacts,
     const gchar *message,
     GError **error);
 
-void tp_contact_list_manager_class_implement_request_subscription (
-    TpContactListManagerClass *cls,
-    TpContactListManagerRequestSubscriptionFunc impl);
+void tp_base_contact_list_class_implement_request_subscription (
+    TpBaseContactListClass *cls,
+    TpBaseContactListRequestSubscriptionFunc impl);
 
-typedef gboolean (*TpContactListManagerActOnContactsFunc) (
-    TpContactListManager *self,
+typedef gboolean (*TpBaseContactListActOnContactsFunc) (
+    TpBaseContactList *self,
     TpHandleSet *contacts,
     GError **error);
 
-void tp_contact_list_manager_class_implement_authorize_publication (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl);
+void tp_base_contact_list_class_implement_authorize_publication (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl);
 
-void tp_contact_list_manager_class_implement_just_store_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl);
+void tp_base_contact_list_class_implement_just_store_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl);
 
-void tp_contact_list_manager_class_implement_remove_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl);
+void tp_base_contact_list_class_implement_remove_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl);
 
-void tp_contact_list_manager_class_implement_unsubscribe (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl);
+void tp_base_contact_list_class_implement_unsubscribe (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl);
 
-void tp_contact_list_manager_class_implement_unpublish (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl);
+void tp_base_contact_list_class_implement_unpublish (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl);
 
 /* ---- contact blocking ---- */
 
-void tp_contact_list_manager_contact_blocking_changed (
-    TpContactListManager *self,
+void tp_base_contact_list_contact_blocking_changed (
+    TpBaseContactList *self,
     TpHandleSet *changed);
 
-void tp_contact_list_manager_class_implement_can_block (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc check);
+void tp_base_contact_list_class_implement_can_block (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc check);
 
-void tp_contact_list_manager_class_implement_get_blocked_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetContactsFunc impl);
+void tp_base_contact_list_class_implement_get_blocked_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetContactsFunc impl);
 
-typedef gboolean (*TpContactListManagerContactBooleanFunc) (
-    TpContactListManager *self,
+typedef gboolean (*TpBaseContactListContactBooleanFunc) (
+    TpBaseContactList *self,
     TpHandle contact);
 
-void tp_contact_list_manager_class_implement_get_contact_blocked (
-    TpContactListManagerClass *cls,
-    TpContactListManagerContactBooleanFunc impl);
+void tp_base_contact_list_class_implement_get_contact_blocked (
+    TpBaseContactListClass *cls,
+    TpBaseContactListContactBooleanFunc impl);
 
-void tp_contact_list_manager_class_implement_block_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl);
+void tp_base_contact_list_class_implement_block_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl);
 
-void tp_contact_list_manager_class_implement_unblock_contacts (
-    TpContactListManagerClass *cls,
-    TpContactListManagerActOnContactsFunc impl);
+void tp_base_contact_list_class_implement_unblock_contacts (
+    TpBaseContactListClass *cls,
+    TpBaseContactListActOnContactsFunc impl);
 
 /* ---- Called by subclasses for ContactGroups ---- */
 
-void tp_contact_list_manager_groups_created (TpContactListManager *self,
+void tp_base_contact_list_groups_created (TpBaseContactList *self,
     const gchar * const *created, gssize n_created);
 
-void tp_contact_list_manager_groups_removed (TpContactListManager *self,
+void tp_base_contact_list_groups_removed (TpBaseContactList *self,
     const gchar * const *removed, gssize n_removed);
 
-void tp_contact_list_manager_group_renamed (TpContactListManager *self,
+void tp_base_contact_list_group_renamed (TpBaseContactList *self,
     const gchar *old_name,
     const gchar *new_name);
 
-void tp_contact_list_manager_groups_changed (TpContactListManager *self,
+void tp_base_contact_list_groups_changed (TpBaseContactList *self,
     TpHandleSet *contacts,
     const gchar * const *added, gssize n_added,
     const gchar * const *removed, gssize n_removed);
 
 /* ---- Implemented by subclasses for ContactGroups ---- */
 
-void tp_contact_list_manager_class_implement_disjoint_groups (
-    TpContactListManagerClass *cls,
-    TpContactListManagerBooleanFunc impl);
+void tp_base_contact_list_class_implement_disjoint_groups (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc impl);
 
-typedef GStrv (*TpContactListManagerGetGroupsFunc) (
-    TpContactListManager *self);
+typedef GStrv (*TpBaseContactListGetGroupsFunc) (
+    TpBaseContactList *self);
 
-void tp_contact_list_manager_class_implement_get_groups (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetGroupsFunc impl);
+void tp_base_contact_list_class_implement_get_groups (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetGroupsFunc impl);
 
-typedef GStrv (*TpContactListManagerGetContactGroupsFunc) (
-    TpContactListManager *self,
+typedef GStrv (*TpBaseContactListGetContactGroupsFunc) (
+    TpBaseContactList *self,
     TpHandle contact);
 
-void tp_contact_list_manager_class_implement_get_contact_groups (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGetContactGroupsFunc impl);
+void tp_base_contact_list_class_implement_get_contact_groups (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGetContactGroupsFunc impl);
 
-typedef gchar *(*TpContactListManagerNormalizeFunc) (
-    TpContactListManager *self,
+typedef gchar *(*TpBaseContactListNormalizeFunc) (
+    TpBaseContactList *self,
     const gchar *s);
 
-void tp_contact_list_manager_class_implement_normalize_group (
-    TpContactListManagerClass *cls,
-    TpContactListManagerNormalizeFunc impl);
+void tp_base_contact_list_class_implement_normalize_group (
+    TpBaseContactListClass *cls,
+    TpBaseContactListNormalizeFunc impl);
 
-typedef void (*TpContactListManagerGroupContactsFunc) (
-    TpContactListManager *self,
+typedef void (*TpBaseContactListGroupContactsFunc) (
+    TpBaseContactList *self,
     const gchar *group,
     TpHandleSet *contacts);
 
-void tp_contact_list_manager_class_implement_add_to_group (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGroupContactsFunc impl);
+void tp_base_contact_list_class_implement_add_to_group (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGroupContactsFunc impl);
 
-void tp_contact_list_manager_class_implement_remove_from_group (
-    TpContactListManagerClass *cls,
-    TpContactListManagerGroupContactsFunc impl);
+void tp_base_contact_list_class_implement_remove_from_group (
+    TpBaseContactListClass *cls,
+    TpBaseContactListGroupContactsFunc impl);
 
-typedef gboolean (*TpContactListManagerRemoveGroupFunc) (
-    TpContactListManager *self,
+typedef gboolean (*TpBaseContactListRemoveGroupFunc) (
+    TpBaseContactList *self,
     const gchar *group,
     GError **error);
 
-void tp_contact_list_manager_class_implement_remove_group (
-    TpContactListManagerClass *cls,
-    TpContactListManagerRemoveGroupFunc impl);
+void tp_base_contact_list_class_implement_remove_group (
+    TpBaseContactListClass *cls,
+    TpBaseContactListRemoveGroupFunc impl);
 
 G_END_DECLS
 

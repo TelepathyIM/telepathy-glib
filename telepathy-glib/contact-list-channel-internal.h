@@ -109,7 +109,7 @@ struct _TpBaseContactListChannel
 
   /* set to NULL after channel is closed */
   TpBaseConnection *conn;
-  TpContactListManager *manager;
+  TpBaseContactList *manager;
 
   gchar *object_path;
   TpHandleType handle_type;

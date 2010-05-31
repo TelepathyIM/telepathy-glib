@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_CONTACT_LIST_MANAGER_INTERNAL_H__
-#define __TP_CONTACT_LIST_MANAGER_INTERNAL_H__
+#ifndef __TP_BASE_CONTACT_LIST_INTERNAL_H__
+#define __TP_BASE_CONTACT_LIST_INTERNAL_H__
 
 #include <telepathy-glib/contact-list-manager.h>
 
@@ -38,41 +38,41 @@ typedef enum {
     NUM_TP_LIST_HANDLES
 } TpListHandle;
 
-TpChannelGroupFlags _tp_contact_list_manager_get_list_flags (
-    TpContactListManager *self,
+TpChannelGroupFlags _tp_base_contact_list_get_list_flags (
+    TpBaseContactList *self,
     TpHandle list);
 
-TpChannelGroupFlags _tp_contact_list_manager_get_group_flags (
-    TpContactListManager *self);
+TpChannelGroupFlags _tp_base_contact_list_get_group_flags (
+    TpBaseContactList *self);
 
-gboolean _tp_contact_list_manager_add_to_list (TpContactListManager *self,
+gboolean _tp_base_contact_list_add_to_list (TpBaseContactList *self,
     TpHandle list,
     TpHandle contact,
     const gchar *message,
     GError **error);
 
-gboolean _tp_contact_list_manager_remove_from_list (
-    TpContactListManager *self,
+gboolean _tp_base_contact_list_remove_from_list (
+    TpBaseContactList *self,
     TpHandle list,
     TpHandle contact,
     const gchar *message,
     GError **error);
 
-gboolean _tp_contact_list_manager_add_to_group (TpContactListManager *self,
+gboolean _tp_base_contact_list_add_to_group (TpBaseContactList *self,
     TpHandle group,
     TpHandle contact,
     const gchar *message,
     GError **error);
 
-gboolean _tp_contact_list_manager_remove_from_group (
-    TpContactListManager *self,
+gboolean _tp_base_contact_list_remove_from_group (
+    TpBaseContactList *self,
     TpHandle group,
     TpHandle contact,
     const gchar *message,
     GError **error);
 
-gboolean _tp_contact_list_manager_delete_group_by_handle (
-    TpContactListManager *self,
+gboolean _tp_base_contact_list_delete_group_by_handle (
+    TpBaseContactList *self,
     TpHandle group,
     GError **error);
 
