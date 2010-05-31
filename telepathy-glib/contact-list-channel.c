@@ -191,7 +191,15 @@ tp_base_contact_list_channel_get_property (GObject *object,
 
     case PROP_TARGET_ID:
         {
-          TpHandleRepoIface *handle_repo = tp_base_connection_get_handles (
+          TpHandleRepoIface *handle_repo;
+
+          if (self->conn == NULL)
+            {
+              g_value_set_string (value, "");
+              break;
+            }
+
+          handle_repo = tp_base_connection_get_handles (
               self->conn, self->handle_type);
 
           g_value_set_string (value,
@@ -225,7 +233,7 @@ tp_base_contact_list_channel_get_property (GObject *object,
       break;
 
     case PROP_CHANNEL_DESTROYED:
-      g_value_set_boolean (value, self->closed);
+      g_value_set_boolean (value, (self->conn == NULL));
       break;
 
     case PROP_CHANNEL_PROPERTIES:
@@ -280,13 +288,13 @@ tp_base_contact_list_channel_set_property (GObject *object,
       break;
 
     case PROP_CONNECTION:
-      /* FIXME: borrowed reference */
-      self->conn = g_value_get_object (value);
+      g_assert (self->conn == NULL);      /* construct-only */
+      self->conn = g_value_dup_object (value);
       break;
 
     case PROP_MANAGER:
-      /* FIXME: borrowed reference */
-      self->manager = g_value_get_object (value);
+      g_assert (self->manager == NULL);   /* construct-only */
+      self->manager = g_value_dup_object (value);
       break;
 
     default:
@@ -298,21 +306,27 @@ tp_base_contact_list_channel_set_property (GObject *object,
 void
 _tp_base_contact_list_channel_close (TpBaseContactListChannel *self)
 {
-  TpHandleRepoIface *handle_repo = tp_base_connection_get_handles (
-      self->conn, self->handle_type);
+  TpHandleRepoIface *handle_repo;
 
-  if (self->closed)
+  if (self->conn == NULL)
     return;
-
-  self->closed = TRUE;
 
   tp_svc_channel_emit_closed (self);
 
   tp_dbus_daemon_unregister_object (
       tp_base_connection_get_dbus_daemon (self->conn), self);
 
+  handle_repo = tp_base_connection_get_handles (
+      self->conn, self->handle_type);
+
   tp_handle_unref (handle_repo, self->handle);
   tp_group_mixin_finalize ((GObject *) self);
+
+  g_object_unref (self->manager);
+  self->manager = NULL;
+
+  g_object_unref (self->conn);
+  self->conn = NULL;
 }
 
 static void
@@ -342,6 +356,21 @@ tp_base_contact_list_channel_finalize (GObject *object)
 }
 
 static gboolean
+tp_base_contact_list_channel_check_still_usable (
+    TpBaseContactListChannel *self,
+    GError **error)
+{
+  if (self->conn == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_TERMINATED,
+          "Channel already closed");
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static gboolean
 group_add_member (GObject *object,
     TpHandle handle,
     const gchar *message,
@@ -349,7 +378,8 @@ group_add_member (GObject *object,
 {
   TpBaseContactListChannel *self = TP_BASE_CONTACT_LIST_CHANNEL (object);
 
-  return _tp_contact_list_manager_add_to_group (self->manager,
+  return tp_base_contact_list_channel_check_still_usable (self, error) &&
+    _tp_contact_list_manager_add_to_group (self->manager,
       self->handle, handle, message, error);
 }
 
@@ -361,7 +391,8 @@ group_remove_member (GObject *object,
 {
   TpBaseContactListChannel *self = TP_BASE_CONTACT_LIST_CHANNEL (object);
 
-  return _tp_contact_list_manager_remove_from_group (self->manager,
+  return tp_base_contact_list_channel_check_still_usable (self, error) &&
+    _tp_contact_list_manager_remove_from_group (self->manager,
       self->handle, handle, message, error);
 }
 
@@ -373,7 +404,8 @@ list_add_member (GObject *object,
 {
   TpBaseContactListChannel *self = TP_BASE_CONTACT_LIST_CHANNEL (object);
 
-  return _tp_contact_list_manager_add_to_list (self->manager,
+  return tp_base_contact_list_channel_check_still_usable (self, error) &&
+    _tp_contact_list_manager_add_to_list (self->manager,
       self->handle, handle, message, error);
 }
 
@@ -385,7 +417,8 @@ list_remove_member (GObject *object,
 {
   TpBaseContactListChannel *self = TP_BASE_CONTACT_LIST_CHANNEL (object);
 
-  return _tp_contact_list_manager_remove_from_list (self->manager,
+  return tp_base_contact_list_channel_check_still_usable (self, error) &&
+    _tp_contact_list_manager_remove_from_list (self->manager,
       self->handle, handle, message, error);
 }
 
@@ -527,25 +560,26 @@ group_channel_close (TpSvcChannel *iface,
   TpBaseContactListChannel *self = TP_BASE_CONTACT_LIST_CHANNEL (iface);
   GError *error = NULL;
 
+  if (!tp_base_contact_list_channel_check_still_usable (self, &error))
+    goto error;
+
   if (tp_handle_set_size (self->group.members) > 0)
     {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Non-empty groups may not be deleted (closed)" };
-
-      dbus_g_method_return_error (context, &e);
-      return;
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Non-empty groups may not be deleted (closed)");
+      goto error;
     }
 
-  if (_tp_contact_list_manager_delete_group_by_handle (self->manager,
+  if (!_tp_contact_list_manager_delete_group_by_handle (self->manager,
       self->handle, &error))
-    {
-      tp_svc_channel_return_from_close (context);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_clear_error (&error);
-    }
+    goto error;
+
+  tp_svc_channel_return_from_close (context);
+  return;
+
+error:
+  dbus_g_method_return_error (context, error);
+  g_clear_error (&error);
 }
 
 static void

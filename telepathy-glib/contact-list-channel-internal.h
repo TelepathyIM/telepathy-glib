@@ -104,13 +104,16 @@ struct _TpBaseContactListChannel
   GObject parent;
   TpGroupMixin group;
 
+  /*<private>*/
   /* these would be in priv if this was a public object */
+
+  /* set to NULL after channel is closed */
   TpBaseConnection *conn;
   TpContactListManager *manager;
+
   gchar *object_path;
   TpHandleType handle_type;
   TpHandle handle;
-  gboolean closed;
 };
 
 void _tp_base_contact_list_channel_close (TpBaseContactListChannel *self);
