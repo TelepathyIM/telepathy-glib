@@ -223,7 +223,7 @@ main (int argc,
 
   cm = tp_connection_manager_new (dbus, "example_echo_2", NULL, &error);
   g_assert (cm != NULL);
-  test_connection_manager_run_until_ready (cm);
+  test_proxy_run_until_prepared (cm, NULL);
 
   parameters = tp_asv_new (
       "account", G_TYPE_STRING, "me@example.com",

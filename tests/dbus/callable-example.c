@@ -235,7 +235,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "example_callable",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  test_connection_manager_run_until_ready (test->cm);
+  test_proxy_run_until_prepared (test->cm, NULL);
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
