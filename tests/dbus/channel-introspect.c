@@ -80,12 +80,12 @@ assert_chan_sane (TpChannel *chan,
   MYASSERT (tp_channel_get_channel_type_id (chan) ==
         TP_IFACE_QUARK_CHANNEL_TYPE_TEXT, "");
   MYASSERT (TP_IS_CONNECTION (tp_channel_borrow_connection (chan)), "");
-  MYASSERT_SAME_STRING (tp_channel_get_identifier (chan), IDENTIFIER);
+  g_assert_cmpstr (tp_channel_get_identifier (chan), ==, IDENTIFIER);
 
   asv = tp_channel_borrow_immutable_properties (chan);
   MYASSERT (asv != NULL, "");
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE),
+  g_assert_cmpstr (
+      tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
   MYASSERT_SAME_UINT (
       tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL),
@@ -93,8 +93,8 @@ assert_chan_sane (TpChannel *chan,
   MYASSERT_SAME_UINT (
       tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE, NULL),
       handle);
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (asv, TP_PROP_CHANNEL_TARGET_ID),
+  g_assert_cmpstr (
+      tp_asv_get_string (asv, TP_PROP_CHANNEL_TARGET_ID), ==,
       IDENTIFIER);
 }
 

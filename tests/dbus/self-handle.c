@@ -42,8 +42,8 @@ test_self_handle (SimpleConnection *service_conn,
   g_signal_connect (client_conn, "notify::self-handle",
       G_CALLBACK (on_self_handle_changed), &times);
 
-  MYASSERT_SAME_STRING (tp_handle_inspect (contact_repo,
-        tp_base_connection_get_self_handle (service_conn_as_base)),
+  g_assert_cmpstr (tp_handle_inspect (contact_repo,
+        tp_base_connection_get_self_handle (service_conn_as_base)), ==,
       "me@example.com");
 
   MYASSERT_SAME_UINT (tp_connection_get_self_handle (client_conn),
@@ -62,8 +62,8 @@ test_self_handle (SimpleConnection *service_conn,
   test_connection_run_until_dbus_queue_processed (client_conn);
   MYASSERT_SAME_UINT (times, 1);
 
-  MYASSERT_SAME_STRING (tp_handle_inspect (contact_repo,
-        tp_base_connection_get_self_handle (service_conn_as_base)),
+  g_assert_cmpstr (tp_handle_inspect (contact_repo,
+        tp_base_connection_get_self_handle (service_conn_as_base)), ==,
       "myself@example.org");
 
   MYASSERT_SAME_UINT (tp_connection_get_self_handle (client_conn),

@@ -29,7 +29,7 @@ on_connection_error (TpConnection *conn,
                      GObject *weak_object)
 {
   connection_errors++;
-  MYASSERT_SAME_STRING (error, "com.example.DomainSpecificError");
+  g_assert_cmpstr (error, ==, "com.example.DomainSpecificError");
   MYASSERT_SAME_UINT (g_hash_table_size (details), 0);
 }
 
@@ -206,7 +206,7 @@ test_registered_error (Test *test,
       "com.example.DomainSpecificError");
   g_assert (asv != NULL);
 
-  MYASSERT_SAME_STRING (g_quark_to_string (error->domain),
+  g_assert_cmpstr (g_quark_to_string (error->domain), ==,
       g_quark_to_string (example_com_error_quark ()));
   MYASSERT_SAME_UINT (error->code, DOMAIN_SPECIFIC_ERROR);
   g_error_free (error);
@@ -221,7 +221,7 @@ on_unregistered_connection_error (TpConnection *conn,
     GObject *weak_object)
 {
   connection_errors++;
-  MYASSERT_SAME_STRING (error, "net.example.WTF");
+  g_assert_cmpstr (error, ==, "net.example.WTF");
   MYASSERT_SAME_UINT (g_hash_table_size (details), 0);
 }
 

@@ -83,7 +83,7 @@ test_simple_presence (ContactsConnection *service_conn,
 
   MYASSERT (!tp_cli_connection_interface_simple_presence_run_set_presence (
         client_conn, -1, "offline", "", &error, NULL), "");
-  MYASSERT_SAME_STRING (g_quark_to_string (error->domain),
+  g_assert_cmpstr (g_quark_to_string (error->domain), ==,
       g_quark_to_string (TP_ERRORS));
   g_error_free (error);
   error = NULL;
@@ -116,8 +116,8 @@ test_complex_presence (ContactsConnection *service_conn,
   params = g_value_get_boxed (spec->values + 3);
   MYASSERT (params != NULL, "");
   MYASSERT_SAME_UINT (g_hash_table_size (params), 1);
-  MYASSERT_SAME_STRING (
-      (const gchar *) g_hash_table_lookup (params, "message"), "s");
+  g_assert_cmpstr (
+      (const gchar *) g_hash_table_lookup (params, "message"), ==, "s");
 
   spec = g_hash_table_lookup (statuses, "away");
   MYASSERT (spec != NULL, "");
@@ -128,8 +128,8 @@ test_complex_presence (ContactsConnection *service_conn,
   params = g_value_get_boxed (spec->values + 3);
   MYASSERT (params != NULL, "");
   MYASSERT_SAME_UINT (g_hash_table_size (params), 1);
-  MYASSERT_SAME_STRING (
-      (const gchar *) g_hash_table_lookup (params, "message"), "s");
+  g_assert_cmpstr (
+      (const gchar *) g_hash_table_lookup (params, "message"), ==, "s");
 
   spec = g_hash_table_lookup (statuses, "busy");
   MYASSERT (spec != NULL, "");
@@ -140,8 +140,8 @@ test_complex_presence (ContactsConnection *service_conn,
   params = g_value_get_boxed (spec->values + 3);
   MYASSERT (params != NULL, "");
   MYASSERT_SAME_UINT (g_hash_table_size (params), 1);
-  MYASSERT_SAME_STRING (
-      (const gchar *) g_hash_table_lookup (params, "message"), "s");
+  g_assert_cmpstr (
+      (const gchar *) g_hash_table_lookup (params, "message"), ==, "s");
 
   spec = g_hash_table_lookup (statuses, "offline");
   MYASSERT (spec != NULL, "");
@@ -180,7 +180,7 @@ test_complex_presence (ContactsConnection *service_conn,
 
   MYASSERT (!tp_cli_connection_interface_presence_run_set_status (
         client_conn, -1, monster, &error, NULL), "");
-  MYASSERT_SAME_STRING (g_quark_to_string (error->domain),
+  g_assert_cmpstr (g_quark_to_string (error->domain), ==,
       g_quark_to_string (TP_ERRORS));
   g_error_free (error);
   error = NULL;

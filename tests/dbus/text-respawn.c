@@ -222,7 +222,7 @@ main (int argc,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
       MYASSERT_SAME_UINT (g_value_get_uint (structure->values + 4),
           TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED);
-      MYASSERT_SAME_STRING (g_value_get_string (structure->values + 5),
+      g_assert_cmpstr (g_value_get_string (structure->values + 5), ==,
           "You said: Hello, world!");
 
       g_print ("Freeing\n");

@@ -83,7 +83,7 @@ on_members_changed (TpChannel *proxy,
   MYASSERT (expecting_members_changed, ": got unexpected MembersChanged");
   expecting_members_changed = FALSE;
 
-  MYASSERT_SAME_STRING (arg_Message, expected_message);
+  g_assert_cmpstr (arg_Message, ==, expected_message);
   MYASSERT_SAME_UINT (arg_Actor, expected_actor);
   MYASSERT_SAME_UINT (arg_Reason, expected_reason);
 
@@ -118,7 +118,7 @@ on_members_changed_detailed (TpChannel *proxy,
   if (message == NULL)
     message = "";
 
-  MYASSERT_SAME_STRING (message, expected_message);
+  g_assert_cmpstr (message, ==, expected_message);
 
   actor = tp_asv_get_uint32 (arg_Details, "actor", &valid);
   if (valid)
@@ -214,7 +214,7 @@ details_contains_ids_for (const GHashTable *details,
 
       id = g_hash_table_lookup (member_ids, GUINT_TO_POINTER (*h));
       MYASSERT (id != NULL, ": id for %u in map", *h);
-      MYASSERT_SAME_STRING (id, tp_handle_inspect (contact_repo, *h));
+      g_assert_cmpstr (id, ==, tp_handle_inspect (contact_repo, *h));
     }
 
   MYASSERT (g_hash_table_size (member_ids) == n, ": %u member IDs", n);
