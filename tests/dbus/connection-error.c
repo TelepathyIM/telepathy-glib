@@ -142,15 +142,15 @@ setup (Test *test,
 
   MYASSERT (tp_base_connection_register (test->service_conn_as_base, "simple",
         &test->conn_name, &test->conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
   MYASSERT (test->conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 }
 
 static void

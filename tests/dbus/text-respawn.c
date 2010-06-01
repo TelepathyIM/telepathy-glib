@@ -108,22 +108,22 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "example",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
   MYASSERT (contact_repo != NULL, "");
 
   handle = tp_handle_ensure (contact_repo, "them@example.org", NULL, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* FIXME: exercise RequestChannel rather than just pasting on a channel */
 
@@ -138,10 +138,10 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   tp_channel_run_until_ready (chan, &error, NULL);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_cli_channel_type_text_connect_to_received (chan, on_received,
       g_object_ref (contact_repo), g_object_unref, NULL, NULL) != NULL, "");
@@ -153,7 +153,7 @@ main (int argc,
   tp_cli_channel_type_text_run_send (chan, -1,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, "Hello, world!",
       &error, NULL);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   test_connection_run_until_dbus_queue_processed (conn);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
@@ -177,7 +177,7 @@ main (int argc,
       TpHandle new_initiator;
 
       MYASSERT (tp_cli_channel_run_close (chan, -1, &error, NULL), "");
-      test_assert_no_error (error);
+      g_assert_no_error (error);
       MYASSERT (tp_proxy_get_invalidated (chan) != NULL, "");
 
       g_object_get (service_chan,
@@ -195,10 +195,10 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   tp_channel_run_until_ready (chan, &error, NULL);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_print ("\n\n==== Listing messages ====\n");
 
@@ -208,7 +208,7 @@ main (int argc,
 
       tp_cli_channel_type_text_run_list_pending_messages (chan, -1,
           FALSE, &messages, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       MYASSERT_SAME_UINT (messages->len, 1);
       structure = g_ptr_array_index (messages, 0);
@@ -236,7 +236,7 @@ main (int argc,
 
       MYASSERT (tp_cli_channel_interface_destroyable_run_destroy (chan, -1,
             &error, NULL), "");
-      test_assert_no_error (error);
+      g_assert_no_error (error);
       MYASSERT (tp_proxy_get_invalidated (chan) != NULL, "");
 
       g_object_get (service_chan,
@@ -249,7 +249,7 @@ main (int argc,
   g_print ("\n\n==== End of tests ====\n");
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   tp_handle_unref (contact_repo, handle);
   g_object_unref (chan);

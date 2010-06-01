@@ -53,7 +53,7 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "example",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   /* Name is too long to be used unmodified; check that it's shortened to 255
    * characters.
    */

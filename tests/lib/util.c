@@ -54,7 +54,7 @@ conn_ready_cb (TpConnection *conn G_GNUC_UNUSED,
 {
   GMainLoop *loop = user_data;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
   g_main_loop_quit (loop);
 }
 
@@ -130,7 +130,7 @@ cm_ready_cb (TpConnectionManager *cm G_GNUC_UNUSED,
 {
   GMainLoop *loop = user_data;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
   g_main_loop_quit (loop);
 }
 
@@ -202,7 +202,7 @@ handles_requested_cb (TpConnection *connection G_GNUC_UNUSED,
 {
   HandleRequestResult *result = user_data;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
   g_assert_cmpuint (n_handles, ==, 1);
   result->handle = handles[0];
 }
@@ -328,12 +328,12 @@ test_create_and_connect_conn (GType conn_type,
 
   g_assert (tp_base_connection_register (*service_conn, "simple",
         &name, &conn_path, &error));
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   *client_conn = tp_connection_new (dbus, name, conn_path,
       &error);
   g_assert (*client_conn != NULL);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   tp_cli_connection_call_connect (*client_conn, -1, NULL, NULL, NULL, NULL);
   test_connection_run_until_ready (*client_conn);

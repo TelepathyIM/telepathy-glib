@@ -80,14 +80,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_as_base, "simple",
         &name, &path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   client = tp_connection_new (dbus, name, path, &error);
   MYASSERT (client != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (client, TRUE, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_cli_connection_connect_to_status_changed (client,
         on_status_changed, &client, NULL, NULL, NULL), "");

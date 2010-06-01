@@ -138,7 +138,7 @@ test_by_handle (ContactsConnection *service_conn,
 
   MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
   MYASSERT (result.invalid->len == 2, ": %u", result.invalid->len);
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
   MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
@@ -182,7 +182,7 @@ test_by_handle (ContactsConnection *service_conn,
 
   MYASSERT (result.contacts->len == 4, ": %u", result.contacts->len);
   MYASSERT (result.invalid->len == 0, ": %u", result.invalid->len);
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   /* 0, 1 and 3 we already have a reference to */
   MYASSERT (g_ptr_array_index (result.contacts, 0) == contacts[0], "");
@@ -258,7 +258,7 @@ test_no_features (ContactsConnection *service_conn,
 
   MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
   MYASSERT (result.invalid->len == 0, ": %u", result.invalid->len);
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
   MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
@@ -414,7 +414,7 @@ test_upgrade (ContactsConnection *service_conn,
 
   MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
   MYASSERT (result.invalid->len == 0, ": %u", result.invalid->len);
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
   MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
@@ -463,7 +463,7 @@ test_upgrade (ContactsConnection *service_conn,
 
   MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
   MYASSERT (result.invalid == NULL, "");
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   for (i = 0; i < 3; i++)
     {
@@ -655,7 +655,7 @@ test_features (ContactsConnection *service_conn,
 
   MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
   MYASSERT (result.invalid->len == 0, ": %u", result.invalid->len);
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
   MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
@@ -907,7 +907,7 @@ test_by_id (TpConnection *client_conn)
   MYASSERT (result.contacts->len == 0, ": %u", result.contacts->len);
   MYASSERT (g_hash_table_size (result.bad_ids) == 1, ": %u",
       g_hash_table_size (result.bad_ids));
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   e = g_hash_table_lookup (result.bad_ids, "Not valid");
   MYASSERT (e != NULL, "");
@@ -932,7 +932,7 @@ test_by_id (TpConnection *client_conn)
   MYASSERT (result.contacts->len == 2, ": %u", result.contacts->len);
   MYASSERT (g_hash_table_size (result.bad_ids) == 0, ": %u",
       g_hash_table_size (result.bad_ids));
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
   MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
@@ -968,7 +968,7 @@ test_by_id (TpConnection *client_conn)
   MYASSERT (result.contacts->len == 3, ": %u", result.contacts->len);
   MYASSERT (g_hash_table_size (result.bad_ids) == 2, ": %u",
       g_hash_table_size (result.bad_ids));
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
 
   e = g_hash_table_lookup (result.bad_ids, "Not valid");
   MYASSERT (e != NULL, "");
@@ -1040,7 +1040,7 @@ main (int argc,
 
   MYASSERT (tp_cli_connection_run_disconnect (legacy_client_conn, -1, &error,
         NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_object_unref (legacy_client_conn);
   g_object_unref (legacy_service_conn);
