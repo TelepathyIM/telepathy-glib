@@ -223,6 +223,7 @@ test_create_and_connect_conn (GType conn_type,
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   g_assert (service_conn != NULL);
   g_assert (client_conn != NULL);
@@ -246,7 +247,7 @@ test_create_and_connect_conn (GType conn_type,
   g_assert_no_error (error);
 
   tp_cli_connection_call_connect (*client_conn, -1, NULL, NULL, NULL, NULL);
-  test_connection_run_until_ready (*client_conn);
+  test_proxy_run_until_prepared (*client_conn, conn_features);
 
   g_free (name);
   g_free (conn_path);

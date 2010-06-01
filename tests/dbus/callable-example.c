@@ -208,6 +208,7 @@ setup (Test *test,
   guint audio = TP_MEDIA_STREAM_TYPE_AUDIO;
   guint video = TP_MEDIA_STREAM_TYPE_VIDEO;
   guint not_a_media_type = 31337;
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -253,7 +254,7 @@ setup (Test *test,
   g_assert_no_error (test->error);
   g_assert (test->conn != NULL);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  test_connection_run_until_ready (test->conn);
+  test_proxy_run_until_prepared (test->conn, conn_features);
 
   test->self_handle = tp_connection_get_self_handle (test->conn);
   g_assert (test->self_handle != 0);
