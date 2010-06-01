@@ -230,19 +230,6 @@ test_connection_run_request_contact_handle (TpConnection *connection,
 }
 
 void
-_test_assert_no_error (const GError *error,
-                       const char *file,
-                       int line)
-{
-  if (error != NULL)
-    {
-      g_error ("%s:%d:%s: code %u: %s",
-          file, line, g_quark_to_string (error->domain),
-          error->code, error->message);
-    }
-}
-
-void
 _test_assert_empty_strv (const char *file,
     int line,
     gconstpointer strv)

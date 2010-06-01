@@ -35,10 +35,6 @@ void test_connection_manager_run_until_ready (TpConnectionManager *cm);
 void test_connection_manager_run_until_readying_fails (TpConnectionManager *cm,
     GError **error);
 
-#define test_assert_no_error(e) _test_assert_no_error (e, __FILE__, __LINE__)
-
-void _test_assert_no_error (const GError *error, const char *file, int line);
-
 #define test_assert_empty_strv(strv) \
   _test_assert_empty_strv (__FILE__, __LINE__, strv)
 void _test_assert_empty_strv (const char *file, int line, gconstpointer strv);
