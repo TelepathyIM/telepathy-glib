@@ -30,7 +30,7 @@ on_connection_error (TpConnection *conn,
 {
   connection_errors++;
   g_assert_cmpstr (error, ==, "com.example.DomainSpecificError");
-  MYASSERT_SAME_UINT (g_hash_table_size (details), 0);
+  g_assert_cmpuint (g_hash_table_size (details), ==, 0);
 }
 
 static void
@@ -40,8 +40,8 @@ on_status_changed (TpConnection *conn,
                    gpointer user_data,
                    GObject *weak_object)
 {
-  MYASSERT_SAME_UINT (status, TP_CONNECTION_STATUS_DISCONNECTED);
-  MYASSERT_SAME_UINT (reason, TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
+  g_assert_cmpuint (status, ==, TP_CONNECTION_STATUS_DISCONNECTED);
+  g_assert_cmpuint (reason, ==, TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
   g_main_loop_quit (user_data);
 }
 
@@ -193,7 +193,7 @@ test_registered_error (Test *test,
 
   g_main_loop_run (test->mainloop);
 
-  MYASSERT_SAME_UINT (connection_errors, 1);
+  g_assert_cmpuint (connection_errors, ==, 1);
 
   MYASSERT (!tp_connection_run_until_ready (test->conn, FALSE, &error, NULL),
       "");
@@ -208,7 +208,7 @@ test_registered_error (Test *test,
 
   g_assert_cmpstr (g_quark_to_string (error->domain), ==,
       g_quark_to_string (example_com_error_quark ()));
-  MYASSERT_SAME_UINT (error->code, DOMAIN_SPECIFIC_ERROR);
+  g_assert_cmpuint (error->code, ==, DOMAIN_SPECIFIC_ERROR);
   g_error_free (error);
   error = NULL;
 }
@@ -222,7 +222,7 @@ on_unregistered_connection_error (TpConnection *conn,
 {
   connection_errors++;
   g_assert_cmpstr (error, ==, "net.example.WTF");
-  MYASSERT_SAME_UINT (g_hash_table_size (details), 0);
+  g_assert_cmpuint (g_hash_table_size (details), ==, 0);
 }
 
 static void
@@ -244,7 +244,7 @@ test_unregistered_error (Test *test,
 
   g_main_loop_run (test->mainloop);
 
-  MYASSERT_SAME_UINT (connection_errors, 1);
+  g_assert_cmpuint (connection_errors, ==, 1);
 
   MYASSERT (!tp_connection_run_until_ready (test->conn, FALSE, &error, NULL),
       "");

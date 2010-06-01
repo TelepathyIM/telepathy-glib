@@ -55,12 +55,12 @@ test_self_handle (SimpleConnection *service_conn,
   MYASSERT_SAME_UINT (handle,
       tp_base_connection_get_self_handle (service_conn_as_base));
 
-  MYASSERT_SAME_UINT (times, 0);
+  g_assert_cmpuint (times, ==, 0);
 
   /* similar to /nick in IRC */
   simple_connection_set_identifier (service_conn, "myself@example.org");
   test_connection_run_until_dbus_queue_processed (client_conn);
-  MYASSERT_SAME_UINT (times, 1);
+  g_assert_cmpuint (times, ==, 1);
 
   g_assert_cmpstr (tp_handle_inspect (contact_repo,
         tp_base_connection_get_self_handle (service_conn_as_base)), ==,

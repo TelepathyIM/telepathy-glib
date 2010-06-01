@@ -186,7 +186,7 @@ main (int argc,
           NULL);
 
       MYASSERT (!dead, "");
-      MYASSERT_SAME_UINT (new_initiator, handle);
+      g_assert_cmpuint (new_initiator, ==, handle);
     }
 
   g_print ("\n\n==== Re-creating TpChannel ====\n");
@@ -210,7 +210,7 @@ main (int argc,
           FALSE, &messages, &error, NULL);
       g_assert_no_error (error);
 
-      MYASSERT_SAME_UINT (messages->len, 1);
+      g_assert_cmpuint (messages->len, ==, 1);
       structure = g_ptr_array_index (messages, 0);
       MYASSERT_SAME_UINT (g_value_get_uint (structure->values + 0),
           last_received_id);

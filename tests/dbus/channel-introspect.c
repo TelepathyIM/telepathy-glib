@@ -291,9 +291,9 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
@@ -505,9 +505,9 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 1);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 1);
 
   assert_chan_sane (chan, handle);
 
@@ -529,9 +529,9 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
   assert_chan_sane (chan, handle);
 
@@ -553,9 +553,9 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
   assert_chan_sane (chan, handle);
 
@@ -654,9 +654,9 @@ main (int argc,
   g_error_free (error);
   error = NULL;
 
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 0);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 0);
 
   g_object_unref (chan);
   chan = NULL;
@@ -680,9 +680,9 @@ main (int argc,
   g_message ("Leaving main loop");
   MYASSERT (was_ready == TRUE, "");
   g_assert_no_error (invalidated);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
   assert_chan_sane (chan, handle);
 

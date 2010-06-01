@@ -115,7 +115,7 @@ test_complex_presence (ContactsConnection *service_conn,
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
   params = g_value_get_boxed (spec->values + 3);
   MYASSERT (params != NULL, "");
-  MYASSERT_SAME_UINT (g_hash_table_size (params), 1);
+  g_assert_cmpuint (g_hash_table_size (params), ==, 1);
   g_assert_cmpstr (
       (const gchar *) g_hash_table_lookup (params, "message"), ==, "s");
 
@@ -127,7 +127,7 @@ test_complex_presence (ContactsConnection *service_conn,
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
   params = g_value_get_boxed (spec->values + 3);
   MYASSERT (params != NULL, "");
-  MYASSERT_SAME_UINT (g_hash_table_size (params), 1);
+  g_assert_cmpuint (g_hash_table_size (params), ==, 1);
   g_assert_cmpstr (
       (const gchar *) g_hash_table_lookup (params, "message"), ==, "s");
 
@@ -139,7 +139,7 @@ test_complex_presence (ContactsConnection *service_conn,
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
   params = g_value_get_boxed (spec->values + 3);
   MYASSERT (params != NULL, "");
-  MYASSERT_SAME_UINT (g_hash_table_size (params), 1);
+  g_assert_cmpuint (g_hash_table_size (params), ==, 1);
   g_assert_cmpstr (
       (const gchar *) g_hash_table_lookup (params, "message"), ==, "s");
 
@@ -151,7 +151,7 @@ test_complex_presence (ContactsConnection *service_conn,
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
   params = g_value_get_boxed (spec->values + 3);
   MYASSERT (params != NULL, "");
-  MYASSERT_SAME_UINT (g_hash_table_size (params), 0);
+  g_assert_cmpuint (g_hash_table_size (params), ==, 0);
 
   spec = g_hash_table_lookup (statuses, "error");
   MYASSERT (spec != NULL, "");
@@ -161,7 +161,7 @@ test_complex_presence (ContactsConnection *service_conn,
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
   params = g_value_get_boxed (spec->values + 3);
   MYASSERT (params != NULL, "");
-  MYASSERT_SAME_UINT (g_hash_table_size (params), 0);
+  g_assert_cmpuint (g_hash_table_size (params), ==, 0);
 
   spec = g_hash_table_lookup (statuses, "unknown");
   MYASSERT (spec != NULL, "");
@@ -171,7 +171,7 @@ test_complex_presence (ContactsConnection *service_conn,
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
   params = g_value_get_boxed (spec->values + 3);
   MYASSERT (params != NULL, "");
-  MYASSERT_SAME_UINT (g_hash_table_size (params), 0);
+  g_assert_cmpuint (g_hash_table_size (params), ==, 0);
 
   monster = g_hash_table_new (g_str_hash, g_str_equal);
   params = g_hash_table_new (g_str_hash, g_str_equal);

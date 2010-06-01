@@ -84,8 +84,8 @@ on_members_changed (TpChannel *proxy,
   expecting_members_changed = FALSE;
 
   g_assert_cmpstr (arg_Message, ==, expected_message);
-  MYASSERT_SAME_UINT (arg_Actor, expected_actor);
-  MYASSERT_SAME_UINT (arg_Reason, expected_reason);
+  g_assert_cmpuint (arg_Actor, ==, expected_actor);
+  g_assert_cmpuint (arg_Reason, ==, expected_reason);
 
   expected_diffs (arg_Added, arg_Removed, arg_Local_Pending,
       arg_Remote_Pending, NULL);
@@ -123,11 +123,11 @@ on_members_changed_detailed (TpChannel *proxy,
   actor = tp_asv_get_uint32 (arg_Details, "actor", &valid);
   if (valid)
     {
-      MYASSERT_SAME_UINT (actor, expected_actor);
+      g_assert_cmpuint (actor, ==, expected_actor);
     }
   else
     {
-      MYASSERT_SAME_UINT (expected_actor, 0);
+      g_assert_cmpuint (expected_actor, ==, 0);
       MYASSERT (tp_asv_lookup (arg_Details, "actor") == NULL,
           ": wanted an actor, not an imposter");
     }
@@ -135,7 +135,7 @@ on_members_changed_detailed (TpChannel *proxy,
   reason = tp_asv_get_uint32 (arg_Details, "change-reason", &valid);
   if (valid)
     {
-      MYASSERT_SAME_UINT (reason, expected_reason);
+      g_assert_cmpuint (reason, ==, expected_reason);
     }
   else
     {
@@ -237,7 +237,7 @@ self_added_to_lp (const GArray *added,
 
   /* ...which is us */
   h = g_array_index (local_pending, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, self_handle);
+  g_assert_cmpuint (h, ==, self_handle);
 
   details_contains_ids_for (details, hs);
 }
@@ -255,7 +255,7 @@ self_added_to_members (const GArray *added,
   MYASSERT (added->len == 1, ": one added");
 
   h = g_array_index (added, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, self_handle);
+  g_assert_cmpuint (h, ==, self_handle);
 
   MYASSERT (removed->len == 0, ": no-one removed");
   MYASSERT (local_pending->len == 0, ": no new local pending");
@@ -319,7 +319,7 @@ camel_added (const GArray *added,
   MYASSERT (added->len == 1, ": one added");
 
   h = g_array_index (added, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, camel);
+  g_assert_cmpuint (h, ==, camel);
 
   details_contains_ids_for (details, hs);
 
@@ -342,7 +342,7 @@ camel2_added (const GArray *added,
   MYASSERT (added->len == 1, ": one added");
 
   h = g_array_index (added, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, camel2);
+  g_assert_cmpuint (h, ==, camel2);
 
   details_contains_ids_for (details, hs);
 
@@ -369,7 +369,7 @@ camel_removed (const GArray *added,
   MYASSERT (removed->len == 1, ": one removed");
 
   h = g_array_index (removed, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, camel);
+  g_assert_cmpuint (h, ==, camel);
 
   MYASSERT (added->len == 0, ": no-one added");
   MYASSERT (local_pending->len == 0, ": no new local pending");
@@ -464,7 +464,7 @@ in_the_desert (void)
     GArray *service_members;
     TpHandle a, b;
 
-    MYASSERT_SAME_UINT (tp_intset_size (members), 2);
+    g_assert_cmpuint (tp_intset_size (members), ==, 2);
     MYASSERT (tp_intset_is_member (members, self_handle), "");
     MYASSERT (tp_intset_is_member (members, camel2), ": what a pity");
 
@@ -473,7 +473,7 @@ in_the_desert (void)
      */
     tp_group_mixin_get_members ((GObject *) service_chan, &service_members,
         NULL);
-    MYASSERT_SAME_UINT (service_members->len, 2);
+    g_assert_cmpuint (service_members->len, ==, 2);
     a = g_array_index (service_members, TpHandle, 0);
     b = g_array_index (service_members, TpHandle, 1);
     MYASSERT (a != b, "");

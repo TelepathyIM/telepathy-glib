@@ -51,7 +51,7 @@ group_members_changed_cb (TpChannel *chan_,
       local_pending->len, remote_pending->len, actor, reason);
 
   MYASSERT (expecting_group_members_changed, "");
-  MYASSERT_SAME_UINT (reason, expected_reason);
+  g_assert_cmpuint (reason, ==, expected_reason);
 
   expecting_group_members_changed = FALSE;
 }
@@ -71,7 +71,7 @@ group_members_changed_detailed_cb (TpChannel *chan_,
       local_pending->len, remote_pending->len, g_hash_table_size (details));
 
   MYASSERT (expecting_group_members_changed_detailed, "");
-  MYASSERT_SAME_UINT (reason, expected_reason);
+  g_assert_cmpuint (reason, ==, expected_reason);
 
   expecting_group_members_changed_detailed = FALSE;
 }
@@ -205,7 +205,7 @@ channel_invalidated_cb (TpProxy *proxy,
 {
   DEBUG ("called");
   MYASSERT (expecting_invalidated, ": I've been EXPECTING YOU");
-  MYASSERT_SAME_UINT (domain, TP_DBUS_ERRORS);
+  g_assert_cmpuint (domain, ==, TP_DBUS_ERRORS);
   MYASSERT (code == TP_DBUS_ERROR_INCONSISTENT, ": was %i", code);
 
   expecting_invalidated = FALSE;

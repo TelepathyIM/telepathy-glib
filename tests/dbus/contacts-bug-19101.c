@@ -116,7 +116,7 @@ test_by_id (TpConnection *client_conn)
   g_main_loop_run (result.loop);
 
   MYASSERT (result.error != NULL, ": should fail as the CM is broken");
-  MYASSERT_SAME_UINT (result.error->domain, TP_DBUS_ERRORS);
+  g_assert_cmpuint (result.error->domain, ==, TP_DBUS_ERRORS);
   MYASSERT (result.error->code == TP_DBUS_ERROR_INCONSISTENT,
       ": %i != %i", result.error->code, TP_DBUS_ERROR_INCONSISTENT);
 

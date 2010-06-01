@@ -32,7 +32,7 @@ test_no_features (ContactsConnection *service_conn,
   MYASSERT (tp_cli_connection_interface_contacts_run_get_contact_attributes (
         client_conn, -1, handles, NULL, FALSE, &contacts, &error, NULL), "");
   g_assert_no_error (error);
-  MYASSERT_SAME_UINT (g_hash_table_size (contacts), 3);
+  g_assert_cmpuint (g_hash_table_size (contacts), ==, 3);
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 0)));
@@ -78,7 +78,7 @@ test_features (ContactsConnection *service_conn,
         client_conn, -1, handles, interfaces, FALSE, &contacts, &error, NULL),
       "");
   g_assert_no_error (error);
-  MYASSERT_SAME_UINT (g_hash_table_size (contacts), 3);
+  g_assert_cmpuint (g_hash_table_size (contacts), ==, 3);
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 0)));

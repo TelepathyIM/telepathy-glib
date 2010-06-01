@@ -144,13 +144,13 @@ test_by_handle (ContactsConnection *service_conn,
   MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
   MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
   contacts[0] = g_ptr_array_index (result.contacts, 0);
-  MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[0]), handles[0]);
+  g_assert_cmpuint (tp_contact_get_handle (contacts[0]), ==, handles[0]);
   g_assert_cmpstr (tp_contact_get_identifier (contacts[0]), ==, "alice");
   contacts[1] = g_ptr_array_index (result.contacts, 1);
-  MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[1]), handles[1]);
+  g_assert_cmpuint (tp_contact_get_handle (contacts[1]), ==, handles[1]);
   g_assert_cmpstr (tp_contact_get_identifier (contacts[1]), ==, "bob");
   contacts[3] = g_ptr_array_index (result.contacts, 2);
-  MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[3]), handles[3]);
+  g_assert_cmpuint (tp_contact_get_handle (contacts[3]), ==, handles[3]);
   g_assert_cmpstr (tp_contact_get_identifier (contacts[3]), ==, "chris");
 
   /* clean up before doing the second request */
@@ -194,7 +194,7 @@ test_by_handle (ContactsConnection *service_conn,
 
   /* 2 we don't */
   contacts[2] = g_ptr_array_index (result.contacts, 2);
-  MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[2]), handles[2]);
+  g_assert_cmpuint (tp_contact_get_handle (contacts[2]), ==, handles[2]);
   g_assert_cmpstr (tp_contact_get_identifier (contacts[2]), ==, "dora");
 
   /* clean up refs to contacts and assert that they aren't leaked */
@@ -270,7 +270,7 @@ test_no_features (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       MYASSERT (tp_contact_get_connection (contacts[i]) == client_conn, "");
-      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      g_assert_cmpuint (tp_contact_get_handle (contacts[i]), ==, handles[i]);
       g_assert_cmpstr (tp_contact_get_identifier (contacts[i]), ==, ids[i]);
       g_assert_cmpstr (tp_contact_get_alias (contacts[i]), ==,
           tp_contact_get_identifier (contacts[i]));
@@ -426,7 +426,7 @@ test_upgrade (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       MYASSERT (tp_contact_get_connection (contacts[i]) == client_conn, "");
-      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      g_assert_cmpuint (tp_contact_get_handle (contacts[i]), ==, handles[i]);
       g_assert_cmpstr (tp_contact_get_identifier (contacts[i]), ==, ids[i]);
       g_assert_cmpstr (tp_contact_get_alias (contacts[i]), ==,
           tp_contact_get_identifier (contacts[i]));
@@ -473,7 +473,7 @@ test_upgrade (ContactsConnection *service_conn,
 
   for (i = 0; i < 3; i++)
     {
-      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      g_assert_cmpuint (tp_contact_get_handle (contacts[i]), ==, handles[i]);
       g_assert_cmpstr (tp_contact_get_identifier (contacts[i]), ==, ids[i]);
 
       MYASSERT (tp_contact_has_feature (contacts[i],
@@ -664,7 +664,7 @@ test_features (ContactsConnection *service_conn,
 
   for (i = 0; i < 3; i++)
     {
-      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      g_assert_cmpuint (tp_contact_get_handle (contacts[i]), ==, handles[i]);
       g_assert_cmpstr (tp_contact_get_identifier (contacts[i]), ==, ids[i]);
 
       MYASSERT (tp_contact_has_feature (contacts[i],
@@ -714,7 +714,7 @@ test_features (ContactsConnection *service_conn,
       "location", &from_gobject.location,
       NULL);
   MYASSERT (from_gobject.connection == client_conn, "");
-  MYASSERT_SAME_UINT (from_gobject.handle, handles[0]);
+  g_assert_cmpuint (from_gobject.handle, ==, handles[0]);
   g_assert_cmpstr (from_gobject.identifier, ==, "alice");
   g_assert_cmpstr (from_gobject.alias, ==, "Alice in Wonderland");
   g_assert_cmpstr (from_gobject.avatar_token, ==, "aaaaa");
@@ -754,7 +754,7 @@ test_features (ContactsConnection *service_conn,
 
   for (i = 0; i < 2; i++)
     {
-      MYASSERT_SAME_UINT (tp_contact_get_handle (contacts[i]), handles[i]);
+      g_assert_cmpuint (tp_contact_get_handle (contacts[i]), ==, handles[i]);
       g_assert_cmpstr (tp_contact_get_identifier (contacts[i]), ==,
           ids[i]);
 
