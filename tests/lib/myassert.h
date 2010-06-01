@@ -13,9 +13,6 @@
         }\
   } G_STMT_END
 
-#define MYASSERT_SAME_STRING(left, right) \
-  g_assert_cmpstr ((left), ==, (right));
-
 #define MYASSERT_SAME_UINT(left, right) \
   g_assert_cmpuint ((left), ==, (right))
 
