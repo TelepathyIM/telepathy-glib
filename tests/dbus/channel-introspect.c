@@ -207,7 +207,9 @@ main (int argc,
 
   MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT (error != NULL, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_assert_error (error, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (error->message, ==, invalidated_for_test.message);
   g_error_free (error);
   error = NULL;
 
@@ -215,7 +217,9 @@ main (int argc,
     g_main_loop_run (mainloop);
 
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_assert_error (error, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (error->message, ==, invalidated_for_test.message);
   g_clear_error (&error);
   /* it was never ready */
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
@@ -245,7 +249,9 @@ main (int argc,
   tp_proxy_invalidate ((TpProxy *) chan, &invalidated_for_test);
   MYASSERT (was_ready == TRUE, "");
   MYASSERT (invalidated != NULL, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, invalidated);
+  g_assert_error (invalidated, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (invalidated->message, ==, invalidated_for_test.message);
   g_error_free (invalidated);
   invalidated = NULL;
 
@@ -253,7 +259,9 @@ main (int argc,
   MYASSERT (prepare_result == NULL, "");
   g_main_loop_run (mainloop);
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_assert_error (error, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (error->message, ==, invalidated_for_test.message);
   g_clear_error (&error);
   g_object_unref (prepare_result);
   prepare_result = NULL;
@@ -720,14 +728,18 @@ main (int argc,
       FALSE);
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
       ==, FALSE);
-  MYASSERT_SAME_ERROR (tp_proxy_get_invalidated (chan), invalidated);
+  g_assert_error (invalidated, tp_proxy_get_invalidated (chan)->domain,
+      tp_proxy_get_invalidated (chan)->code);
+  g_assert_cmpstr (invalidated->message, ==,
+      tp_proxy_get_invalidated (chan)->message);
 
   /* ... but prepare_async still hasn't finished until we run the main loop */
   g_assert (prepare_result == NULL);
   g_main_loop_run (mainloop);
   g_assert (prepare_result != NULL);
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  MYASSERT_SAME_ERROR (tp_proxy_get_invalidated (chan), invalidated);
+  g_assert_error (error, invalidated->domain, invalidated->code);
+  g_assert_cmpstr (error->message, ==, invalidated->message);
 
   g_clear_error (&error);
   g_clear_error (&invalidated);
