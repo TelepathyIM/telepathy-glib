@@ -18,9 +18,6 @@ TpDBusDaemon *test_dbus_daemon_dup_or_die (void);
 
 void test_proxy_run_until_dbus_queue_processed (gpointer proxy);
 
-#define test_connection_run_until_dbus_queue_processed(c) \
-  (test_proxy_run_until_dbus_queue_processed (c))
-
 TpHandle test_connection_run_request_contact_handle (TpConnection *connection,
     const gchar *id);
 
