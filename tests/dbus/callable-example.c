@@ -753,7 +753,7 @@ test_basics (Test *test,
 
   /* Immediately the call is accepted, the remote peer accepts our proposed
    * stream direction */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_DIRECTION_CHANGED);
@@ -936,7 +936,7 @@ test_basics (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -990,7 +990,7 @@ test_no_answer (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
@@ -1025,7 +1025,7 @@ test_no_answer (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -1073,7 +1073,7 @@ test_busy (Test *test,
 
   /* The last stream event should be the removal of the stream */
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
@@ -1129,7 +1129,7 @@ test_terminated_by_peer (Test *test,
 
   /* The last stream event should be the removal of the stream */
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
@@ -1169,7 +1169,7 @@ test_terminate_via_close (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
@@ -1190,7 +1190,7 @@ test_terminate_via_close (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -1235,7 +1235,7 @@ test_terminate_via_no_streams (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
@@ -1260,7 +1260,7 @@ test_terminate_via_no_streams (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -1461,7 +1461,7 @@ test_incoming (Test *test,
 
   /* Immediately the call is accepted, we accept the remote peer's proposed
    * stream direction */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   test_assert_uu_hash_contains (test->stream_directions, test->audio_stream_id,
       TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
@@ -1490,7 +1490,7 @@ test_incoming (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 }
 

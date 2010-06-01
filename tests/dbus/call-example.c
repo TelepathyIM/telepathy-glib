@@ -454,14 +454,14 @@ assert_ended_and_run_close (Test *test,
   g_assert_cmpuint (test->get_contents_return->len, ==, 0);
 
   /* ... but the channel doesn't close */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) == NULL);
 
   /* When we call Close it finally closes */
   tp_cli_channel_call_close (test->chan, -1, void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 }
 
@@ -757,7 +757,7 @@ test_no_answer (Test *test,
   g_assert_no_error (test->error);
 
   /* After the initial flurry of D-Bus messages, smcv still hasn't answered */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
@@ -861,7 +861,7 @@ test_terminate_via_close (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to termination, the channel does genuinely close */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* FIXME: when we hook up signals, check for expected call state

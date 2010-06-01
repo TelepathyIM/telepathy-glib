@@ -155,7 +155,7 @@ main (int argc,
       &error, NULL);
   g_assert_no_error (error);
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,

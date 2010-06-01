@@ -212,7 +212,7 @@ test_by_handle (ContactsConnection *service_conn,
     }
 
   /* wait for ReleaseHandles to run */
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* unref all the handles we created service-side */
   tp_handle_unref (service_repo, handles[0]);
@@ -293,7 +293,7 @@ test_no_features (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       g_object_unref (contacts[i]);
-      test_connection_run_until_dbus_queue_processed (client_conn);
+      test_proxy_run_until_dbus_queue_processed (client_conn);
       tp_handle_unref (service_repo, handles[i]);
       MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
     }
@@ -511,7 +511,7 @@ test_upgrade (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       g_object_unref (contacts[i]);
-      test_connection_run_until_dbus_queue_processed (client_conn);
+      test_proxy_run_until_dbus_queue_processed (client_conn);
       tp_handle_unref (service_repo, handles[i]);
       MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
     }
@@ -747,7 +747,7 @@ test_features (ContactsConnection *service_conn,
       new_tokens);
   contacts_connection_change_locations (service_conn, 2, handles,
       new_locations);
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
 
   g_assert (notify_ctx_is_fully_changed (&notify_ctx_alice));
   g_assert (!notify_ctx_is_changed (&notify_ctx_chris));
@@ -791,7 +791,7 @@ test_features (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       g_object_unref (contacts[i]);
-      test_connection_run_until_dbus_queue_processed (client_conn);
+      test_proxy_run_until_dbus_queue_processed (client_conn);
       tp_handle_unref (service_repo, handles[i]);
       MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
     }
@@ -996,7 +996,7 @@ test_by_id (TpConnection *client_conn)
     }
 
   /* wait for ReleaseHandles to run */
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);

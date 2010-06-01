@@ -59,7 +59,7 @@ test_self_handle (SimpleConnection *service_conn,
 
   /* similar to /nick in IRC */
   simple_connection_set_identifier (service_conn, "myself@example.org");
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
   g_assert_cmpuint (times, ==, 1);
 
   g_assert_cmpstr (tp_handle_inspect (contact_repo,

@@ -152,7 +152,7 @@ test_request_and_release (SimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have been released */
 
@@ -256,7 +256,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have not been released */
 
@@ -275,7 +275,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have been released */
 
