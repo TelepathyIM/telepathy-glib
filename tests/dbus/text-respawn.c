@@ -212,15 +212,15 @@ main (int argc,
 
       g_assert_cmpuint (messages->len, ==, 1);
       structure = g_ptr_array_index (messages, 0);
-      MYASSERT_SAME_UINT (g_value_get_uint (structure->values + 0),
+      g_assert_cmpuint (g_value_get_uint (structure->values + 0), ==,
           last_received_id);
-      MYASSERT_SAME_UINT (g_value_get_uint (structure->values + 1),
+      g_assert_cmpuint (g_value_get_uint (structure->values + 1), ==,
           last_received_time);
-      MYASSERT_SAME_UINT (g_value_get_uint (structure->values + 2),
+      g_assert_cmpuint (g_value_get_uint (structure->values + 2), ==,
           handle);
-      MYASSERT_SAME_UINT (g_value_get_uint (structure->values + 3),
+      g_assert_cmpuint (g_value_get_uint (structure->values + 3), ==,
           TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
-      MYASSERT_SAME_UINT (g_value_get_uint (structure->values + 4),
+      g_assert_cmpuint (g_value_get_uint (structure->values + 4), ==,
           TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED);
       g_assert_cmpstr (g_value_get_string (structure->values + 5), ==,
           "You said: Hello, world!");

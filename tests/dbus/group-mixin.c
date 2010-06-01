@@ -139,7 +139,7 @@ on_members_changed_detailed (TpChannel *proxy,
     }
   else
     {
-      MYASSERT_SAME_UINT (expected_reason,
+      g_assert_cmpuint (expected_reason, ==,
           TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
       MYASSERT (tp_asv_lookup (arg_Details, "reason") == NULL,
           ": utterly unreasonable");
@@ -185,7 +185,7 @@ check_initial_properties (void)
 
   flags = tp_asv_get_uint32 (props, "GroupFlags", &valid);
   MYASSERT (flags, ": GroupFlags property should be defined");
-  MYASSERT_SAME_UINT (flags,
+  g_assert_cmpuint (flags, ==,
       TP_CHANNEL_GROUP_FLAG_PROPERTIES |
       TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED);
 

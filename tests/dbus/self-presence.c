@@ -41,40 +41,40 @@ test_simple_presence (ContactsConnection *service_conn,
 
   spec = g_hash_table_lookup (statuses, "available");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   MYASSERT (g_value_get_boolean (spec->values + 1), ""); /* can set on self */
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* can have message */
 
   spec = g_hash_table_lookup (statuses, "busy");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_BUSY);
   MYASSERT (g_value_get_boolean (spec->values + 1), ""); /* can set on self */
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* can have message */
 
   spec = g_hash_table_lookup (statuses, "away");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_AWAY);
   MYASSERT (g_value_get_boolean (spec->values + 1), ""); /* can set on self */
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* can have message */
 
   spec = g_hash_table_lookup (statuses, "offline");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_OFFLINE);
   MYASSERT (!g_value_get_boolean (spec->values + 1), ""); /* can set on self */
 
   spec = g_hash_table_lookup (statuses, "unknown");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_UNKNOWN);
   MYASSERT (!g_value_get_boolean (spec->values + 1), ""); /* can set on self */
 
   spec = g_hash_table_lookup (statuses, "error");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_ERROR);
   MYASSERT (!g_value_get_boolean (spec->values + 1), ""); /* can set on self */
 
@@ -109,7 +109,7 @@ test_complex_presence (ContactsConnection *service_conn,
 
   spec = g_hash_table_lookup (statuses, "available");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   MYASSERT (g_value_get_boolean (spec->values + 1), ""); /* can set on self */
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
@@ -121,7 +121,7 @@ test_complex_presence (ContactsConnection *service_conn,
 
   spec = g_hash_table_lookup (statuses, "away");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_AWAY);
   MYASSERT (g_value_get_boolean (spec->values + 1), ""); /* can set on self */
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
@@ -133,7 +133,7 @@ test_complex_presence (ContactsConnection *service_conn,
 
   spec = g_hash_table_lookup (statuses, "busy");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_BUSY);
   MYASSERT (g_value_get_boolean (spec->values + 1), ""); /* can set on self */
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
@@ -145,7 +145,7 @@ test_complex_presence (ContactsConnection *service_conn,
 
   spec = g_hash_table_lookup (statuses, "offline");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_OFFLINE);
   MYASSERT (!g_value_get_boolean (spec->values + 1), ""); /* can set on self */
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
@@ -155,7 +155,7 @@ test_complex_presence (ContactsConnection *service_conn,
 
   spec = g_hash_table_lookup (statuses, "error");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_ERROR);
   MYASSERT (!g_value_get_boolean (spec->values + 1), ""); /* can set on self */
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */
@@ -165,7 +165,7 @@ test_complex_presence (ContactsConnection *service_conn,
 
   spec = g_hash_table_lookup (statuses, "unknown");
   MYASSERT (spec != NULL, "");
-  MYASSERT_SAME_UINT (g_value_get_uint (spec->values + 0),
+  g_assert_cmpuint (g_value_get_uint (spec->values + 0), ==,
       TP_CONNECTION_PRESENCE_TYPE_UNKNOWN);
   MYASSERT (!g_value_get_boolean (spec->values + 1), ""); /* can set on self */
   MYASSERT (g_value_get_boolean (spec->values + 2), ""); /* exclusive */

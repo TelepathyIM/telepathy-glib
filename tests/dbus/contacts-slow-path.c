@@ -276,7 +276,7 @@ test_no_features (ContactsConnection *service_conn,
           tp_contact_get_identifier (contacts[i]));
       MYASSERT (tp_contact_get_avatar_token (contacts[i]) == NULL,
           ": %s", tp_contact_get_avatar_token (contacts[i]));
-      MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[i]),
+      g_assert_cmpuint (tp_contact_get_presence_type (contacts[i]), ==,
           TP_CONNECTION_PRESENCE_TYPE_UNSET);
       g_assert_cmpstr (tp_contact_get_presence_status (contacts[i]), ==, "");
       g_assert_cmpstr (tp_contact_get_presence_message (contacts[i]), ==, "");
@@ -358,7 +358,8 @@ upgrade_cb (TpConnection *connection,
  * FIXME: Ideally we should have a MYASSERT_SAME_ASV */
 #define ASSERT_SAME_LOCATION(left, right)\
   G_STMT_START {\
-    MYASSERT_SAME_UINT (g_hash_table_size (left), g_hash_table_size (right));\
+    g_assert_cmpuint (g_hash_table_size (left), ==, \
+        g_hash_table_size (right));\
     g_assert_cmpstr (g_hash_table_lookup (left, "country"), ==,\
         g_hash_table_lookup (right, "country"));\
   } G_STMT_END
@@ -432,7 +433,7 @@ test_upgrade (ContactsConnection *service_conn,
           tp_contact_get_identifier (contacts[i]));
       MYASSERT (tp_contact_get_avatar_token (contacts[i]) == NULL,
           ": %s", tp_contact_get_avatar_token (contacts[i]));
-      MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[i]),
+      g_assert_cmpuint (tp_contact_get_presence_type (contacts[i]), ==,
           TP_CONNECTION_PRESENCE_TYPE_UNSET);
       g_assert_cmpstr (tp_contact_get_presence_status (contacts[i]), ==, "");
       g_assert_cmpstr (tp_contact_get_presence_message (contacts[i]), ==, "");
@@ -496,14 +497,14 @@ test_upgrade (ContactsConnection *service_conn,
           locations[i]);
     }
 
-  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[0]),
+  g_assert_cmpuint (tp_contact_get_presence_type (contacts[0]), ==,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   g_assert_cmpstr (tp_contact_get_presence_status (contacts[0]), ==,
       "available");
-  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[1]),
+  g_assert_cmpuint (tp_contact_get_presence_type (contacts[1]), ==,
       TP_CONNECTION_PRESENCE_TYPE_BUSY);
   g_assert_cmpstr (tp_contact_get_presence_status (contacts[1]), ==, "busy");
-  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[2]),
+  g_assert_cmpuint (tp_contact_get_presence_type (contacts[2]), ==,
       TP_CONNECTION_PRESENCE_TYPE_AWAY);
   g_assert_cmpstr (tp_contact_get_presence_status (contacts[2]), ==, "away");
 
@@ -687,16 +688,15 @@ test_features (ContactsConnection *service_conn,
           locations[i]);
     }
 
-  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[0]),
+  g_assert_cmpuint (tp_contact_get_presence_type (contacts[0]), ==,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   g_assert_cmpstr (tp_contact_get_presence_status (contacts[0]), ==,
       "available");
-  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[1]),
-
+  g_assert_cmpuint (tp_contact_get_presence_type (contacts[1]), ==,
       TP_CONNECTION_PRESENCE_TYPE_BUSY);
   g_assert_cmpstr (tp_contact_get_presence_status (contacts[1]), ==,
       "busy");
-  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[2]),
+  g_assert_cmpuint (tp_contact_get_presence_type (contacts[2]), ==,
       TP_CONNECTION_PRESENCE_TYPE_AWAY);
   g_assert_cmpstr (tp_contact_get_presence_status (contacts[2]), ==,
       "away");
@@ -718,7 +718,7 @@ test_features (ContactsConnection *service_conn,
   g_assert_cmpstr (from_gobject.identifier, ==, "alice");
   g_assert_cmpstr (from_gobject.alias, ==, "Alice in Wonderland");
   g_assert_cmpstr (from_gobject.avatar_token, ==, "aaaaa");
-  MYASSERT_SAME_UINT (from_gobject.presence_type,
+  g_assert_cmpuint (from_gobject.presence_type, ==,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   g_assert_cmpstr (from_gobject.presence_status, ==, "available");
   g_assert_cmpstr (from_gobject.presence_message, ==, "");
@@ -779,11 +779,11 @@ test_features (ContactsConnection *service_conn,
           new_locations[i]);
     }
 
-  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[0]),
+  g_assert_cmpuint (tp_contact_get_presence_type (contacts[0]), ==,
       TP_CONNECTION_PRESENCE_TYPE_AWAY);
   g_assert_cmpstr (tp_contact_get_presence_status (contacts[0]), ==,
       "away");
-  MYASSERT_SAME_UINT (tp_contact_get_presence_type (contacts[1]),
+  g_assert_cmpuint (tp_contact_get_presence_type (contacts[1]), ==,
       TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
   g_assert_cmpstr (tp_contact_get_presence_status (contacts[1]), ==,
       "available");

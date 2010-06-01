@@ -46,13 +46,13 @@ test_self_handle (SimpleConnection *service_conn,
         tp_base_connection_get_self_handle (service_conn_as_base)), ==,
       "me@example.com");
 
-  MYASSERT_SAME_UINT (tp_connection_get_self_handle (client_conn),
+  g_assert_cmpuint (tp_connection_get_self_handle (client_conn), ==,
       tp_base_connection_get_self_handle (service_conn_as_base));
 
   g_object_get (client_conn,
       "self-handle", &handle,
       NULL);
-  MYASSERT_SAME_UINT (handle,
+  g_assert_cmpuint (handle, ==,
       tp_base_connection_get_self_handle (service_conn_as_base));
 
   g_assert_cmpuint (times, ==, 0);
@@ -66,13 +66,13 @@ test_self_handle (SimpleConnection *service_conn,
         tp_base_connection_get_self_handle (service_conn_as_base)), ==,
       "myself@example.org");
 
-  MYASSERT_SAME_UINT (tp_connection_get_self_handle (client_conn),
+  g_assert_cmpuint (tp_connection_get_self_handle (client_conn), ==,
       tp_base_connection_get_self_handle (service_conn_as_base));
 
   g_object_get (client_conn,
       "self-handle", &handle,
       NULL);
-  MYASSERT_SAME_UINT (handle,
+  g_assert_cmpuint (handle, ==,
       tp_base_connection_get_self_handle (service_conn_as_base));
 }
 

@@ -87,11 +87,11 @@ assert_chan_sane (TpChannel *chan,
   g_assert_cmpstr (
       tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
-  MYASSERT_SAME_UINT (
-      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL),
+  g_assert_cmpuint (
+      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==,
       TP_HANDLE_TYPE_CONTACT);
-  MYASSERT_SAME_UINT (
-      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE, NULL),
+  g_assert_cmpuint (
+      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE, NULL), ==,
       handle);
   g_assert_cmpstr (
       tp_asv_get_string (asv, TP_PROP_CHANNEL_TARGET_ID), ==,
@@ -338,12 +338,14 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, 0);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called, 0);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, ==, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called,
+      ==, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called, ==,
+      0);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
@@ -412,16 +414,18 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
-  MYASSERT_SAME_UINT (g_hash_table_size (
-      service_props_chan->dbus_property_interfaces_retrieved), 0);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, 0);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called, 0);
+  g_assert_cmpuint (g_hash_table_size (
+      service_props_chan->dbus_property_interfaces_retrieved), ==, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, ==, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called,
+      ==, 0);
   /* FIXME: with an improved fast-path we could avoid this one too maybe? */
   /*
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called,
+      ==, 0);
    */
 
   assert_chan_sane (chan, handle);
@@ -470,15 +474,15 @@ main (int argc,
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
   g_assert_no_error (error);
-  MYASSERT_SAME_UINT (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
-      ->get_handle_called, 0);
-  MYASSERT_SAME_UINT (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
-      ->get_channel_type_called, 0);
-  MYASSERT_SAME_UINT (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
-      ->get_interfaces_called, 0);
-  MYASSERT_SAME_UINT (g_hash_table_size (
+  g_assert_cmpuint (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
+      ->get_handle_called, ==, 0);
+  g_assert_cmpuint (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
+      ->get_channel_type_called, ==, 0);
+  g_assert_cmpuint (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
+      ->get_interfaces_called, ==, 0);
+  g_assert_cmpuint (g_hash_table_size (
       TEST_PROPS_TEXT_CHANNEL (service_props_group_chan)
-      ->dbus_property_interfaces_retrieved), 1);
+      ->dbus_property_interfaces_retrieved), ==, 1);
   MYASSERT (g_hash_table_lookup (
       TEST_PROPS_TEXT_CHANNEL (service_props_group_chan)
       ->dbus_property_interfaces_retrieved,
