@@ -47,30 +47,6 @@ test_proxy_run_until_prepared_or_failed (gpointer proxy,
   return tp_proxy_prepare_finish (proxy, result, error);
 }
 
-static void
-conn_ready_cb (TpConnection *conn G_GNUC_UNUSED,
-    const GError *error,
-    gpointer user_data)
-{
-  GMainLoop *loop = user_data;
-
-  g_assert_no_error ((GError *) error);
-  g_main_loop_quit (loop);
-}
-
-void
-test_connection_run_until_ready (TpConnection *conn)
-{
-  GMainLoop *loop = g_main_loop_new (NULL, FALSE);
-
-  if (tp_connection_is_ready (conn))
-    return;
-
-  tp_connection_call_when_ready (conn, conn_ready_cb, loop);
-  g_main_loop_run (loop);
-  g_main_loop_unref (loop);
-}
-
 TpDBusDaemon *
 test_dbus_daemon_dup_or_die (void)
 {

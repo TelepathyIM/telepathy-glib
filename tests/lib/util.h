@@ -27,8 +27,6 @@ gboolean test_proxy_run_until_prepared_or_failed (gpointer proxy,
     const GQuark *features,
     GError **error);
 
-void test_connection_run_until_ready (TpConnection *conn);
-
 #define test_assert_empty_strv(strv) \
   _test_assert_empty_strv (__FILE__, __LINE__, strv)
 void _test_assert_empty_strv (const char *file, int line, gconstpointer strv);
