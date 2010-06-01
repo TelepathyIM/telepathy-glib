@@ -258,18 +258,6 @@ _tp_account_removed_cb (TpAccount *self,
 }
 
 static void
-_tp_account_free_connection (TpAccount *account)
-{
-  TpAccountPrivate *priv = account->priv;
-
-  if (priv->connection == NULL)
-    return;
-
-  g_object_unref (priv->connection);
-  priv->connection = NULL;
-}
-
-static void
 _tp_account_set_connection (TpAccount *account,
     const gchar *path)
 {
@@ -284,7 +272,7 @@ _tp_account_set_connection (TpAccount *account,
         return;
     }
 
-  _tp_account_free_connection (account);
+  tp_clear_object (&account->priv->connection);
 
   if (tp_strdiff ("/", path))
     {
@@ -482,8 +470,7 @@ _tp_account_update (TpAccount *account,
 
           priv->connection_object_path = g_strdup (path);
 
-          if (priv->connection != NULL)
-            _tp_account_free_connection (account);
+          tp_clear_object (&account->priv->connection);
 
           g_object_notify (G_OBJECT (account), "connection");
         }
@@ -688,7 +675,7 @@ _tp_account_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
-  _tp_account_free_connection (self);
+  tp_clear_object (&self->priv->connection);
 
   /* release any references held by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->dispose != NULL)

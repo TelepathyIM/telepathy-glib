@@ -990,11 +990,7 @@ tp_proxy_dispose (GObject *object)
 
   tp_proxy_invalidate (self, &e);
 
-  if (self->dbus_daemon != NULL)
-    {
-      g_object_unref (self->dbus_daemon);
-      self->dbus_daemon = NULL;
-    }
+  tp_clear_object (&self->dbus_daemon);
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->dispose (object);
 }
