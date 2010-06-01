@@ -24,6 +24,7 @@
 
 #include <telepathy-logger/log-entry-text.h>
 #include <telepathy-logger/log-entry-internal.h>
+#include <telepathy-logger/channel-text-internal.h>
 
 G_BEGIN_DECLS
 
