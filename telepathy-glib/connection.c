@@ -1078,21 +1078,12 @@ tp_connection_dispose (GObject *object)
     {
       g_hash_table_foreach (self->priv->contacts, contact_notify_invalidated,
           NULL);
-      g_hash_table_destroy (self->priv->contacts);
-      self->priv->contacts = NULL;
+      tp_clear_pointer (&self->priv->contacts, g_hash_table_destroy);
     }
 
-  if (self->priv->capabilities != NULL)
-    {
-      g_object_unref (self->priv->capabilities);
-      self->priv->capabilities = NULL;
-    }
-
-  if (self->priv->avatar_requirements != NULL)
-    {
-      tp_avatar_requirements_destroy (self->priv->avatar_requirements);
-      self->priv->avatar_requirements = NULL;
-    }
+  tp_clear_object (&self->priv->capabilities);
+  tp_clear_pointer (&self->priv->avatar_requirements,
+      tp_avatar_requirements_destroy);
 
   ((GObjectClass *) tp_connection_parent_class)->dispose (object);
 }

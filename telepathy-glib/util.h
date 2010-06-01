@@ -1,9 +1,8 @@
 /*
  * util.h - Headers for telepathy-glib utility functions
  *
- * Copyright (C) 2006-2007 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2006-2007 Nokia Corporation
- *   @author Robert McQueen <robert.mcqueen@collabora.co.uk>
+ * Copyright © 2006-2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2006-2008 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -106,6 +105,38 @@ TpWeakRef *tp_weak_ref_new (gpointer object,
 gpointer tp_weak_ref_get_user_data (TpWeakRef *self) G_GNUC_WARN_UNUSED_RESULT;
 gpointer tp_weak_ref_dup_object (TpWeakRef *self) G_GNUC_WARN_UNUSED_RESULT;
 void tp_weak_ref_destroy (TpWeakRef *self);
+
+#define tp_clear_pointer(pp, destroy) \
+  G_STMT_START \
+    { \
+      if (pp != NULL) \
+        { \
+          gpointer _tp_clear_pointer_tmp = *(pp); \
+          \
+          *(pp) = NULL; \
+          \
+          if (_tp_clear_pointer_tmp != NULL) \
+            (destroy) (_tp_clear_pointer_tmp); \
+        } \
+    } \
+  G_STMT_END
+
+#define tp_clear_object(op) tp_clear_pointer ((op), g_object_unref)
+
+#define tp_clear_boxed(gtype, pp) \
+  G_STMT_START \
+    { \
+      if (pp != NULL) \
+        { \
+          gpointer _tp_clear_boxed_tmp = *(pp); \
+          \
+          *(pp) = NULL; \
+          \
+          if (_tp_clear_boxed_tmp != NULL) \
+            g_boxed_free (gtype, _tp_clear_boxed_tmp); \
+        } \
+    } \
+  G_STMT_END
 
 G_END_DECLS
 

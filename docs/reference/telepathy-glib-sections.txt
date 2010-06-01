@@ -1140,6 +1140,9 @@ tp_weak_ref_new
 tp_weak_ref_dup_object
 tp_weak_ref_get_user_data
 tp_weak_ref_destroy
+tp_clear_pointer
+tp_clear_object
+tp_clear_boxed
 </SECTION>
 
 <SECTION>

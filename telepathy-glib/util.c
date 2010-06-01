@@ -1,8 +1,7 @@
 /*
  * util.c - Source for telepathy-glib utility functions
- * Copyright (C) 2006-2007 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2006-2007 Nokia Corporation
- *   @author Robert McQueen <robert.mcqueen@collabora.co.uk>
+ * Copyright © 2006-2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2006-2008 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1251,3 +1250,75 @@ tp_weak_ref_destroy (TpWeakRef *self)
 
   g_slice_free (TpWeakRef, self);
 }
+
+/**
+ * tp_clear_object: (skip)
+ * @op: (allow-none): a pointer to a variable, struct member etc. holding a
+ *  #GObject
+ *
+ * Set a variable holding a #GObject to %NULL. If it was not already %NULL,
+ * unref the object it previously pointed to.
+ *
+ * This is exactly equivalent to calling tp_clear_pointer() on @op,
+ * with @destroy = g_object_unref(). See tp_clear_pointer() for example usage.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+/**
+ * tp_clear_pointer: (skip)
+ * @pp: (allow-none): a pointer to a variable, struct member etc. holding a
+ *  pointer
+ * @destroy: a function to which a gpointer can be passed, to destroy *@pp
+ *  (if calling this macro from C++, explicitly casting the function to
+ *  #GDestroyNotify may be necessary)
+ *
+ * Set a variable holding a pointer to %NULL. If it was not already %NULL,
+ * unref or destroy the object it previously pointed to with @destroy.
+ *
+ * More precisely, if both @pp and *@pp are non-%NULL, set *@pp to %NULL, then
+ * call @destroy on the object that *@pp previously pointed to.
+ *
+ * This is analogous to g_clear_error() for non-error objects, but also
+ * ensures that @pp is already %NULL before the destructor is run.
+ *
+ * Typical usage is something like this:
+ *
+ * |[
+ * typedef struct {
+ *   TpConnection *conn;
+ *   GError *error;
+ *   GHashTable *table;
+ *   MyStruct *misc;
+ * } Foo;
+ * Foo *foo;
+ *
+ * ...
+ *
+ * tp_clear_object (&amp;foo->conn);
+ * g_clear_error (&amp;foo->error);
+ * tp_clear_boxed (G_TYPE_HASH_TABLE, &amp;foo->table);
+ * tp_clear_pointer (&amp;foo->misc, my_struct_destroy);
+ * ]|
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+/**
+ * tp_clear_boxed: (skip)
+ * @gtype: (type GObject.Type): the #GType of *@pp, e.g. %G_TYPE_HASH_TABLE
+ * @pp: (allow-none): a pointer to a variable, struct member etc. holding a
+ *  boxed object
+ *
+ * Set a variable holding a boxed object to %NULL. If it was not already %NULL,
+ * destroy the boxed object it previously pointed to, as appropriate for
+ * @gtype.
+ *
+ * More precisely, if both @pp and *@pp are non-%NULL, set *@pp to %NULL, then
+ * call g_boxed_free() on the object that *@pp previously pointed to.
+ *
+ * This is similar to tp_clear_pointer(); see that function's documentation
+ * for typical usage.
+ *
+ * Since: 0.11.UNRELEASED
+ */

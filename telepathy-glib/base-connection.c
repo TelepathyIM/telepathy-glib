@@ -540,16 +540,10 @@ tp_base_connection_dispose (GObject *object)
       self->self_handle = 0;
     }
 
-  if (priv->bus_proxy != NULL)
-    {
-      if (self->bus_name != NULL)
-        {
-          tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
-        }
+  if (priv->bus_proxy != NULL && self->bus_name != NULL)
+    tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
 
-      g_object_unref (priv->bus_proxy);
-      priv->bus_proxy = NULL;
-    }
+  tp_clear_object (&priv->bus_proxy);
 
   g_ptr_array_foreach (priv->channel_factories, (GFunc) g_object_unref, NULL);
   g_ptr_array_free (priv->channel_factories, TRUE);
@@ -567,13 +561,7 @@ tp_base_connection_dispose (GObject *object)
     }
 
   for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
-    {
-      if (priv->handles[i])
-        {
-          g_object_unref ((GObject *) priv->handles[i]);
-          priv->handles[i] = NULL;
-        }
-    }
+    tp_clear_object (priv->handles + i);
 
   if (priv->interfaces)
     {

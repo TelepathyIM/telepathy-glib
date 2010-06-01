@@ -28,33 +28,6 @@
 
 #include "tests/lib/util.h"
 
-#define CLEAR_OBJECT(o) \
-  G_STMT_START { \
-      if (*(o) != NULL) \
-        { \
-          g_object_unref (*(o)); \
-          *(o) = NULL; \
-        } \
-  } G_STMT_END
-
-#define CLEAR_BOXED(g, o) \
-  G_STMT_START { \
-      if (*(o) != NULL) \
-        { \
-          g_boxed_free ((g), *(o)); \
-          *(o) = NULL; \
-        } \
-  } G_STMT_END
-
-#define CLEAR_HASH(h) \
-  G_STMT_START { \
-      if (*(h) != NULL) \
-        { \
-          g_hash_table_unref (*(h)); \
-          *(h) = NULL; \
-        } \
-  } G_STMT_END
-
 /* FIXME: if this isn't needed for Senders, remove it */
 G_GNUC_UNUSED static void
 test_assert_uu_hash_contains (GHashTable *hash,
@@ -217,7 +190,7 @@ added_content_cb (TpChannel *chan G_GNUC_UNUSED,
 {
   Test *test = user_data;
 
-  CLEAR_OBJECT (&test->added_content);
+  tp_clear_object (&test->added_content);
 
   if (error != NULL)
     {
@@ -244,7 +217,7 @@ got_all_cb (TpProxy *proxy,
 
   test_assert_no_error (error);
 
-  CLEAR_HASH (&test->get_all_return);
+  tp_clear_pointer (&test->get_all_return, g_hash_table_unref);
   test->get_all_return = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) tp_g_value_slice_free);
   tp_g_hash_table_update (test->get_all_return, properties,
@@ -264,7 +237,7 @@ got_contents_cb (TpProxy *proxy,
 
   test_assert_no_error (error);
 
-  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
+  tp_clear_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
   g_assert (G_VALUE_HOLDS (value, TP_ARRAY_TYPE_OBJECT_PATH_LIST));
   test->get_contents_return = g_value_dup_boxed (value);
 
@@ -280,7 +253,7 @@ got_senders_cb (TpProxy *proxy,
 {
   Test *test = user_data;
 
-  CLEAR_HASH (&test->get_senders_return);
+  tp_clear_pointer (&test->get_senders_return, g_hash_table_unref);
 
   if (test->error != NULL)
     g_clear_error (&test->error);
@@ -602,7 +575,7 @@ test_basics (Test *test,
       FALSE, FALSE, FALSE); /* don't care about initial audio/video */
 
   /* There's still one content */
-  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
+  tp_clear_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
   test->get_contents_return = g_boxed_copy (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
       tp_asv_get_boxed (test->get_all_return,
         "Contents", TP_ARRAY_TYPE_OBJECT_PATH_LIST));
@@ -611,7 +584,7 @@ test_basics (Test *test,
       ==, tp_proxy_get_object_path (test->audio_content));
 
   /* Other contact is sending now */
-  CLEAR_HASH (&test->get_senders_return);
+  tp_clear_pointer (&test->get_senders_return, g_hash_table_unref);
   tp_cli_dbus_properties_call_get (test->audio_stream, -1,
       FUTURE_IFACE_CALL_STREAM, "Senders", got_senders_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
@@ -645,7 +618,7 @@ test_basics (Test *test,
   test_assert_no_error (test->error);
 
   g_assert (test->added_content != NULL);
-  CLEAR_OBJECT (&test->video_content);
+  tp_clear_object (&test->video_content);
   test->video_content = g_object_ref (test->added_content);
 
   /* There are two Contents, because now we have the video content too */
@@ -1058,27 +1031,26 @@ teardown (Test *test,
   g_array_free (test->video_request, TRUE);
   g_array_free (test->invalid_request, TRUE);
   g_array_free (test->stream_ids, TRUE);
-  CLEAR_HASH (&test->get_all_return);
+  tp_clear_pointer (&test->get_all_return, g_hash_table_unref);
 
-  CLEAR_BOXED (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
-      &test->get_contents_return);
-  CLEAR_HASH (&test->get_senders_return);
+  tp_clear_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
+  tp_clear_pointer (&test->get_senders_return, g_hash_table_unref);
 
-  CLEAR_OBJECT (&test->audio_stream);
-  CLEAR_OBJECT (&test->video_stream);
-  CLEAR_OBJECT (&test->added_content);
-  CLEAR_OBJECT (&test->audio_content);
-  CLEAR_OBJECT (&test->video_content);
-  CLEAR_OBJECT (&test->chan);
-  CLEAR_OBJECT (&test->conn);
-  CLEAR_OBJECT (&test->cm);
+  tp_clear_object (&test->audio_stream);
+  tp_clear_object (&test->video_stream);
+  tp_clear_object (&test->added_content);
+  tp_clear_object (&test->audio_content);
+  tp_clear_object (&test->video_content);
+  tp_clear_object (&test->chan);
+  tp_clear_object (&test->conn);
+  tp_clear_object (&test->cm);
 
-  CLEAR_OBJECT (&test->service_cm);
+  tp_clear_object (&test->service_cm);
 
   /* make sure any pending things have happened */
   test_proxy_run_until_dbus_queue_processed (test->dbus);
 
-  CLEAR_OBJECT (&test->dbus);
+  tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 }
