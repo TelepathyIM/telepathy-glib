@@ -28,9 +28,6 @@ gboolean test_proxy_run_until_prepared_or_failed (gpointer proxy,
     GError **error);
 
 void test_connection_run_until_ready (TpConnection *conn);
-void test_connection_manager_run_until_ready (TpConnectionManager *cm);
-void test_connection_manager_run_until_readying_fails (TpConnectionManager *cm,
-    GError **error);
 
 #define test_assert_empty_strv(strv) \
   _test_assert_empty_strv (__FILE__, __LINE__, strv)
