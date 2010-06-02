@@ -1562,8 +1562,15 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
           0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
     }
 
-  /* FIXME: emit ContactsChanged (changed, removed) when the new D-Bus API
-   * is available */
+  if (g_hash_table_size (changes) > 0 || removals->len > 0)
+    {
+      DEBUG ("ContactsChanged([%u changed], [%u removed])",
+          g_hash_table_size (changes), removals->len);
+
+      if (self->priv->svc_contact_list)
+        tp_svc_connection_interface_contact_list_emit_contacts_changed (
+            self->priv->conn, changes, removals);
+    }
 
   /* FIXME: the new D-Bus API doesn't allow us to distinguish between
    * added-by-user, added-by-server and added-by-remote, or between
@@ -1601,6 +1608,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 {
   TpHandleSet *now_blocked;
   TpIntSet *blocked, *unblocked;
+  GArray *blocked_arr, *unblocked_arr;
   TpIntSetFastIter iter;
   GObject *deny_chan;
   TpHandle handle;
@@ -1643,8 +1651,12 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
       tp_base_connection_get_self_handle (self->priv->conn),
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
-  /* FIXME: emit ContactBlockingChanged (blocked, unblocked) when the new
-   * D-Bus API is available */
+  blocked_arr = tp_intset_to_array (blocked);
+  unblocked_arr = tp_intset_to_array (unblocked);
+  /* FIXME: emit ContactBlockingChanged (blocked_arr, unblocked_arr) when the
+   * new D-Bus API is available */
+  g_array_unref (blocked_arr);
+  g_array_unref (unblocked_arr);
 
   tp_intset_destroy (blocked);
   tp_intset_destroy (unblocked);
