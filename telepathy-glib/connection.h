@@ -59,7 +59,8 @@ TpAvatarRequirements * tp_avatar_requirements_new (GStrv supported_mime_types,
     guint maximum_width,
     guint maximum_height,
     guint maximum_bytes);
-TpAvatarRequirements * tp_avatar_requirements_copy (TpAvatarRequirements *self);
+TpAvatarRequirements * tp_avatar_requirements_copy (
+    const TpAvatarRequirements *self);
 void tp_avatar_requirements_destroy (TpAvatarRequirements *self);
 
 

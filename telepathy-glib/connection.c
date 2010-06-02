@@ -2167,7 +2167,7 @@ tp_avatar_requirements_new (GStrv supported_mime_types,
  * Since: 0.11.4
  */
 TpAvatarRequirements *
-tp_avatar_requirements_copy (TpAvatarRequirements *self)
+tp_avatar_requirements_copy (const TpAvatarRequirements *self)
 {
   g_return_val_if_fail (self != NULL, NULL);
 
