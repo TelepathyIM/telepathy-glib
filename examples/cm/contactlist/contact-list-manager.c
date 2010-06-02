@@ -982,6 +982,8 @@ example_contact_list_manager_authorize_publication (
         {
           d->publish = TRUE;
           d->publish_requested = FALSE;
+          g_free (d->publish_request);
+          d->publish_request = NULL;
           send_updated_roster (self, member);
         }
       else
@@ -1149,6 +1151,8 @@ example_contact_list_manager_unpublish (TpBaseContactList *manager,
               g_message ("Rejecting authorization request from %s",
                   tp_handle_inspect (self->priv->contact_repo, member));
               d->publish_requested = FALSE;
+              g_free (d->publish_request);
+              d->publish_request = NULL;
             }
           else if (d->publish)
             {
