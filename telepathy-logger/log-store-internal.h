@@ -70,7 +70,7 @@ typedef struct
   GList * (*get_dates) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom);
   GList * (*get_messages_for_date) (TplLogStore *self, TpAccount *account,
-      const gchar *chat_id, gboolean chatroom, const gchar *date);
+      const gchar *chat_id, gboolean chatroom, GDate *date);
   GList * (*get_recent_messages) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom);
   GList * (*get_chats) (TplLogStore *self, TpAccount *account);
@@ -93,7 +93,7 @@ GList *tpl_log_store_get_dates (TplLogStore *self, TpAccount *account,
     const gchar *chat_id, gboolean chatroom);
 GList *tpl_log_store_get_messages_for_date (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom,
-    const gchar *date);
+    GDate *date);
 GList *tpl_log_store_get_recent_messages (TplLogStore *self,
     TpAccount *account, const gchar *chat_id, gboolean chatroom);
 GList *tpl_log_store_get_chats (TplLogStore *self, TpAccount *account);

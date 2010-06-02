@@ -172,13 +172,13 @@ tpl_log_store_add_message (TplLogStore *self,
  * @chat_id: a non-NULL chat identifier
  * @chatroom: whather if the request is related to a chatroom or not.
  *
- * Retrieves a list of dates, in string form YYYYMMDD, corrisponding to each day
+ * Retrieves a list of #GDate, corresponding to each day
  * at least a message was sent to or received from @chat_id.
  * @chat_id may be the id of a buddy or a chatroom, depending on the value of
  * @chatroom.
  *
- * Returns: a GList of (char *), to be freed using something like
- * g_list_foreach (lst, g_free, NULL);
+ * Returns: a GList of (GDate *), to be freed using something like
+ * g_list_foreach (lst, g_date_free, NULL);
  * g_list_free (lst);
  */
 GList *
@@ -202,7 +202,7 @@ tpl_log_store_get_dates (TplLogStore *self,
  * @account: a TpAccount
  * @chat_id: a non-NULL chat identifier
  * @chatroom: whather if the request is related to a chatroom or not.
- * @date: a date, in YYYYMMDD string form
+ * @date: a #GDate
  *
  * Retrieves a list of text messages, with timestamp matching @date.
  *
@@ -215,7 +215,7 @@ tpl_log_store_get_messages_for_date (TplLogStore *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
-    const gchar *date)
+    GDate *date)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (TPL_LOG_STORE_GET_INTERFACE (self)->get_messages_for_date == NULL)

@@ -23,12 +23,15 @@
  *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
+#define _XOPEN_SOURCE /* glibc2 needs this for strptime */
+
 #include "config.h"
 #include "log-store-xml-internal.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <glib/gstdio.h>
 
 #include <glib-object.h>
@@ -595,6 +598,29 @@ log_store_xml_exists (TplLogStore *store,
   return exists;
 }
 
+static GDate *
+create_date_from_string (const gchar *str)
+{
+  GDate *date;
+  struct tm tm;
+  time_t t;
+  gchar *tmp;
+
+  memset (&tm, 0, sizeof (struct tm));
+
+  tmp = strptime (str, "%Y%m%d", &tm);
+  if (tmp == NULL || tmp[0] != '\0')
+    return NULL;
+
+  t = mktime (&tm);
+  if (t == -1)
+    return NULL;
+
+  date = g_date_new ();
+  g_date_set_time_t (date, t);
+
+  return date;
+}
 
 static GList *
 log_store_xml_get_dates (TplLogStore *store,
@@ -604,7 +630,6 @@ log_store_xml_get_dates (TplLogStore *store,
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *dates = NULL;
-  gchar *date;
   gchar *directory;
   GDir *dir;
   const gchar *filename;
@@ -627,19 +652,23 @@ log_store_xml_get_dates (TplLogStore *store,
 
   while ((filename = g_dir_read_name (dir)) != NULL)
     {
+      gchar *str;
+      GDate *date;
+
       if (!g_str_has_suffix (filename, LOG_FILENAME_SUFFIX))
         continue;
 
       p = strstr (filename, LOG_FILENAME_SUFFIX);
-      date = g_strndup (filename, p - filename);
+      str = g_strndup (filename, p - filename);
 
-      if (!date)
+      if (str == NULL)
         continue;
 
-      if (!g_regex_match_simple ("\\d{8}", date, 0, 0))
-        continue;
+      date = create_date_from_string (str);
+      if (date != NULL)
+       dates = g_list_insert_sorted (dates, date, (GCompareFunc) strcmp);
 
-      dates = g_list_insert_sorted (dates, date, (GCompareFunc) strcmp);
+      g_free (str);
     }
 
   g_free (directory);
@@ -656,19 +685,22 @@ log_store_xml_get_filename_for_date (TplLogStoreXml *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
-    const gchar *date)
+    GDate *date)
 {
   gchar *basedir;
   gchar *timestamp;
   gchar *filename;
+  gchar str[9];
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (date), NULL);
+  g_return_val_if_fail (date != NULL, NULL);
+
+  g_date_strftime (str, 9, "%Y%m%d", date);
 
   basedir = log_store_xml_get_dir (self, account, chat_id, chatroom);
-  timestamp = g_strconcat (date, LOG_FILENAME_SUFFIX, NULL);
+  timestamp = g_strconcat (str, LOG_FILENAME_SUFFIX, NULL);
   filename = g_build_filename (basedir, timestamp, NULL);
 
   g_free (basedir);
@@ -688,6 +720,7 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   gchar **strv;
   guint len;
   GList *accounts, *l;
+  gchar *tmp;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (filename), NULL);
@@ -700,7 +733,9 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   hit = g_slice_new0 (TplLogSearchHit);
 
   end = strstr (strv[len - 1], LOG_FILENAME_SUFFIX);
-  hit->date = g_strndup (strv[len - 1], end - strv[len - 1]);
+  tmp = g_strndup (strv[len - 1], end - strv[len - 1]);
+  hit->date = create_date_from_string (tmp);
+  g_free (tmp);
   hit->chat_id = g_strdup (strv[len - 2]);
   hit->is_chatroom = (strcmp (strv[len - 3], LOG_DIR_CHATROOMS) == 0);
 
@@ -972,8 +1007,9 @@ _log_store_xml_search_in_files (TplLogStoreXml *self,
           if (hit != NULL)
             {
               hits = g_list_prepend (hits, hit);
-              DEBUG ("Found text:'%s' in file:'%s' on date:'%s'", text,
-                  hit->filename, hit->date);
+              DEBUG ("Found text:'%s' in file:'%s' on date:'%u/%u/%u'", text,
+                  hit->filename, g_date_get_day (hit->date),
+                  g_date_get_month (hit->date), g_date_get_year (hit->date));
             }
         }
 
@@ -1088,7 +1124,7 @@ log_store_xml_get_messages_for_date (TplLogStore *store,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
-    const gchar *date)
+    GDate *date)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *filename;
@@ -1097,7 +1133,7 @@ log_store_xml_get_messages_for_date (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (date), NULL);
+  g_return_val_if_fail (date != NULL, NULL);
 
   filename = log_store_xml_get_filename_for_date (self, account, chat_id,
       chatroom, date);

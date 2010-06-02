@@ -67,7 +67,7 @@ typedef struct
   gchar *chat_id;
   gboolean is_chatroom;
   gchar *filename;
-  gchar *date;
+  GDate *date;
 } TplLogSearchHit;
 
 typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
@@ -96,7 +96,7 @@ gboolean tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
 
 void tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
-    const gchar *date, GAsyncReadyCallback callback, gpointer user_data);
+    GDate *date, GAsyncReadyCallback callback, gpointer user_data);
 
 gboolean tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
     GAsyncResult *result,

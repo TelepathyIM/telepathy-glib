@@ -50,7 +50,7 @@ GList * _tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
-    const gchar *date);
+    GDate *date);
 
 GList * _tpl_log_manager_get_filtered_messages (TplLogManager *manager,
     TpAccount *account,

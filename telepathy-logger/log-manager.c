@@ -62,7 +62,7 @@ typedef struct
   TpAccount *account;
   gchar *chat_id;
   gboolean is_chatroom;
-  gchar *date;
+  GDate *date;
   guint num_messages;
   TplLogMessageFilter filter;
   gchar *search_text;
@@ -370,7 +370,7 @@ tpl_log_manager_exists (TplLogManager *manager,
  * @chat_id: a non-NULL chat identifier
  * @chatroom: whather if the request is related to a chatroom or not.
  *
- * Retrieves a list of dates, in string form YYYYMMDD, corrisponding to each day
+ * Retrieves a list of #GDate corresponding to each day
  * at least a message was sent to or received from @chat_id.
  * @chat_id may be the id of a buddy or a chatroom, depending on the value of
  * @chatroom.
@@ -378,8 +378,8 @@ tpl_log_manager_exists (TplLogManager *manager,
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
  *
- * Returns: a GList of (char *), to be freed using something like
- * g_list_foreach (lst, g_free, NULL);
+ * Returns: a GList of (GDate *), to be freed using something like
+ * g_list_foreach (lst, g_data_free, NULL);
  * g_list_free (lst);
  */
 GList *
@@ -406,11 +406,13 @@ _tpl_log_manager_get_dates (TplLogManager *manager,
       new = tpl_log_store_get_dates (store, account, chat_id, chatroom);
       while (new)
         {
-          if (g_list_find_custom (out, new->data, (GCompareFunc) strcmp))
-            g_free (new->data);
+          if (g_list_find_custom (out, new->data,
+                (GCompareFunc) g_date_compare))
+            g_date_free (new->data);
           else
             out =
-              g_list_insert_sorted (out, new->data, (GCompareFunc) strcmp);
+              g_list_insert_sorted (out, new->data,
+                  (GCompareFunc) g_date_compare);
 
           new = g_list_delete_link (new, new);
         }
@@ -425,7 +427,7 @@ _tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
-    const gchar *date)
+    GDate *date)
 {
   GList *l, *out = NULL;
   TplLogManagerPriv *priv;
@@ -687,7 +689,9 @@ _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
   if (hit->account != NULL)
     g_object_unref (hit->account);
 
-  g_free (hit->date);
+  if (hit->date != NULL)
+    g_date_free (hit->date);
+
   g_free (hit->filename);
   g_free (hit->chat_id);
 
@@ -754,7 +758,7 @@ tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
   if (data->chat_id != NULL)
     g_free (data->chat_id);
   if (data->date != NULL)
-    g_free (data->date);
+    g_date_free (data->date);
   g_slice_free (TplLogManagerChatInfo, data);
 }
 
@@ -1018,7 +1022,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
     TpAccount *account,
     const gchar *chat_id,
     gboolean is_chatroom,
-    const gchar *date,
+    GDate *date,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -1038,15 +1042,16 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
       TPL_LOG_MANAGER, FAILED,
       "chat_id argument passed cannot be empty string or NULL ptr",
       callback, user_data);
-  tpl_call_with_err_if_fail (!TPL_STR_EMPTY (date), manager,
+  tpl_call_with_err_if_fail (date != NULL, manager,
       TPL_LOG_MANAGER, FAILED,
-      "date argument passed cannot be empty string or NULL ptr",
+      "date argument passed cannot be NULL ptr",
       callback, user_data);
 
   chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);
   chat_info->is_chatroom = is_chatroom;
-  chat_info->date = g_strdup (date);
+  /* There is no g_date_copy() */
+  chat_info->date = g_date_new_julian (g_date_get_julian (date));
 
   async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;

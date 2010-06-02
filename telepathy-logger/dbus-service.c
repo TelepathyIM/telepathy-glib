@@ -438,9 +438,10 @@ _lookup_next_date (RecentMessagesContext *ctx)
 
   if (ctx->ptr != NULL && ctx->lines > 0)
     {
-      char *date = ctx->ptr->data;
+      GDate *date = ctx->ptr->data;
 
-      DEBUG ("Looking up date %s", date);
+      DEBUG ("Looking up date %u/%u/%u", g_date_get_day (date),
+          g_date_get_month (date), g_date_get_year (date));
 
       tpl_log_manager_get_messages_for_date_async (priv->manager,
           ctx->account, ctx->identifier, ctx->is_chatroom, date,
@@ -453,7 +454,7 @@ _lookup_next_date (RecentMessagesContext *ctx)
       /* return and release */
       DEBUG ("complete, returning");
 
-      g_list_foreach (ctx->dates, (GFunc) g_free, NULL);
+      g_list_foreach (ctx->dates, (GFunc) g_date_free, NULL);
       g_list_free (ctx->dates);
 
       tpl_svc_logger_return_from_get_recent_messages (ctx->context,

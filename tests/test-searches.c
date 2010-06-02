@@ -2,6 +2,7 @@
 
 #include <glib.h>
 
+#include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-manager-internal.h>
 #include <telepathy-logger/log-store-internal.h>
@@ -22,9 +23,9 @@ got_dates_cb (GObject *obj, GAsyncResult *result, gpointer user_data)
 
   for (; ret != NULL; ret = g_list_next (ret))
     {
-      gchar *date = ret->data;
+      GDate *date = ret->data;
       /* g_assert (!tp_strdiff (date, "12345678")); */
-      g_free (date);
+      g_date_free (date);
     }
     g_list_free (ret);
     g_main_loop_quit (loop);
@@ -67,7 +68,7 @@ main (int argc, char *argv[])
   ret = g_list_sort (ret, (GCompareFunc) g_strcmp0);
   for (loc = ret; loc; loc = g_list_next (loc))
     if (loc->next)
-      g_assert (g_strcmp0 (loc->data, loc->next->data) != 0);
+      g_assert (g_date_compare (loc->data, loc->next->data) != 0);
   g_list_foreach (ret, (GFunc) g_free, NULL);
   g_list_free (ret);
 
