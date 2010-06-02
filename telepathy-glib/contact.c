@@ -2432,6 +2432,101 @@ contacts_get_contact_info (ContactsContext *c)
   contacts_context_continue (c);
 }
 
+static void
+contact_info_request_cb (TpConnection *connection,
+    const GPtrArray *contact_info,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpContact *self = TP_CONTACT (weak_object);
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to request ContactInfo: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+  else
+    {
+      contact_maybe_set_info (self, contact_info);
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_contact_request_contact_info_async:
+ * @self: a #TpContact
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous request of the contact info of @self. When
+ * the operation is finished, @callback will be called. You can then call
+ * tp_contact_request_contact_info_finish() to get the result of the operation.
+ *
+ * If the operation is successful, the TpContact:contact-info property will be
+ * updated (emitting "notify::contact-info" signal) before @callback is called.
+ * That means you can call tp_contact_get_contact_info() to get the new vCard
+ * inside @callback.
+ *
+ * If %TP_CONTACT_FEATURE_CONTACT_INFO is not yet set on @self, it will be
+ * set before its property gets updated and @callback is called.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_contact_request_contact_info_async (TpContact *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CONTACT (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_contact_request_contact_info_finish);
+
+  contacts_bind_to_contact_info_changed (self->priv->connection);
+  tp_cli_connection_interface_contact_info_call_request_contact_info (
+      self->priv->connection, 60*60*1000, self->priv->handle,
+      contact_info_request_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_contact_request_contact_info_finish:
+ * @self: a #TpContact
+ * @result: a #GAsyncResult
+ * @error: a #GError to be filled
+ *
+ * Finishes an async request of @self info. If the operation was successful,
+ * the contact's vCard can be accessed using tp_contact_get_contact_info().
+ *
+ * Returns: %TRUE if the request call was successful, otherwise %FALSE
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_contact_request_contact_info_finish (TpContact *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_CONTACT (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+      G_OBJECT (self), tp_contact_request_contact_info_finish), FALSE);
+
+  return TRUE;
+}
+
 /**
  * tp_connection_refresh_contact_info:
  * @self: a #TpConnection
