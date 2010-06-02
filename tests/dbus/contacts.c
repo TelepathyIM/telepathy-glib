@@ -236,6 +236,29 @@ contact_info_request_cb (GObject *object,
 }
 
 static void
+contact_info_request_cancelled_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpContact *contact = TP_CONTACT (object);
+  Result *result = user_data;
+  GError *error = NULL;
+
+  tp_contact_request_contact_info_finish (contact, res, &error);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+  g_clear_error (&error);
+
+  finish (result);
+}
+
+static gboolean
+contact_info_request_cancel (gpointer cancellable)
+{
+  g_cancellable_cancel (cancellable);
+  return FALSE;
+}
+
+static void
 test_contact_info (ContactsConnection *service_conn,
     TpConnection *client_conn)
 {
@@ -249,6 +272,7 @@ test_contact_info (ContactsConnection *service_conn,
   GPtrArray *info;
   GList *info_list = NULL;
   GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_INFO, 0 };
+  GCancellable *cancellable;
 
   /* Create fake info fields */
   info = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
@@ -353,8 +377,35 @@ test_contact_info (ContactsConnection *service_conn,
   contact = g_ptr_array_index (result.contacts, 0);
   g_assert (tp_contact_get_contact_info (contact) == NULL);
 
-  tp_contact_request_contact_info_async (contact, contact_info_request_cb,
+  tp_contact_request_contact_info_async (contact, NULL, contact_info_request_cb,
       &result);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  reset_result (&result);
+  tp_handle_unref (service_repo, handle);
+
+  /* TEST6: Create a TpContact without INFO feature, then request the contact's
+   * info, and cancel the request. */
+  handle = tp_handle_ensure (service_repo, "info-test-6", NULL, NULL);
+  tp_connection_get_contacts_by_handle (client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  contact = g_ptr_array_index (result.contacts, 0);
+  g_assert (tp_contact_get_contact_info (contact) == NULL);
+
+  cancellable = g_cancellable_new ();
+  tp_contact_request_contact_info_async (contact, cancellable,
+      contact_info_request_cancelled_cb, &result);
+  g_object_unref (cancellable);
+
+  g_idle_add (contact_info_request_cancel, cancellable);
+
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
