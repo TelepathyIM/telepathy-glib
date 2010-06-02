@@ -202,6 +202,7 @@ struct _TpBaseContactListClassPrivate
   TpBaseContactListGetContactGroupsFunc get_contact_groups;
   TpBaseContactListBooleanFunc disjoint_groups;
   TpBaseContactListNormalizeFunc normalize_group;
+  TpBaseContactListCreateGroupsFunc create_groups;
   TpBaseContactListGroupContactsFunc add_to_group;
   TpBaseContactListGroupContactsFunc remove_from_group;
   TpBaseContactListRemoveGroupFunc remove_group;
@@ -748,8 +749,44 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
 
   if (chan == NULL)
     {
-      tp_base_contact_list_new_channel (self, handle_type, handle,
-          request_token);
+      if (handle_type == TP_HANDLE_TYPE_LIST)
+        {
+          /* always create channels for our supported lists */
+          tp_base_contact_list_new_channel (self, handle_type, handle,
+              request_token);
+        }
+      else
+        {
+          /* defer to the subclass to create groups */
+          if (cls->priv->create_groups == NULL)
+            {
+              g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+                  "This connection cannot create new groups");
+              goto error;
+            }
+          else
+            {
+              const gchar *name = tp_handle_inspect (self->priv->group_repo,
+                  handle);
+
+              cls->priv->create_groups (self, &name, 1);
+              /* hopefully, that resulted in a call to
+               * tp_base_contact_list_groups_created, which created the
+               * actual channel */
+              chan = g_hash_table_lookup (self->priv->groups,
+                  GUINT_TO_POINTER (handle));
+
+              if (chan == NULL)
+                {
+                  g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+                      "Unable to create group '%s'", name);
+                  goto error;
+                }
+
+              tp_channel_manager_emit_request_already_satisfied (self,
+                  request_token, TP_EXPORTABLE_CHANNEL (chan));
+            }
+        }
     }
   else if (is_create)
     {
@@ -1960,6 +1997,45 @@ tp_base_contact_list_class_implement_normalize_group (
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
   g_return_if_fail (impl != NULL);
   cls->priv->normalize_group = impl;
+}
+
+/**
+ * TpBaseContactListCreateGroupsFunc:
+ * @self: a contact list manager
+ * @normalized_names: (array length=n_names) (element-type utf8): the group
+ *  names, which have already been normalized via the
+ *  #TpBaseContactListNormalizeFunc if one was provided
+ * @n_names: the number of group names in @normalized_names
+ *
+ * Signature of a virtual method that creates groups.
+ *
+ * Implementations are expected to send any network messages that are
+ * necessary in the underlying protocol, and call
+ * tp_base_contact_list_groups_created() to signal success, before returning.
+ *
+ * If tp_base_contact_list_groups_created() is not called, this will be
+ * signalled as a D-Bus error where appropriate.
+ */
+
+/**
+ * tp_base_contact_list_class_implement_create_groups:
+ * @cls: a contact list manager subclass
+ * @impl: a function that creates the groups if possible
+ *
+ * Set a function that can be used to create new groups.
+ *
+ * The default is to be unable to create new groups. On most protocols this
+ * default is not suitable, and the subclass should call this function from
+ * #GTypeClass.class_init.
+ */
+void
+tp_base_contact_list_class_implement_create_groups (
+    TpBaseContactListClass *cls,
+    TpBaseContactListCreateGroupsFunc impl)
+{
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
+  g_return_if_fail (impl != NULL);
+  cls->priv->create_groups = impl;
 }
 
 /**

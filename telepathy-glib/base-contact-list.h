@@ -228,6 +228,15 @@ void tp_base_contact_list_class_implement_normalize_group (
     TpBaseContactListClass *cls,
     TpBaseContactListNormalizeFunc impl);
 
+typedef void (*TpBaseContactListCreateGroupsFunc) (
+    TpBaseContactList *self,
+    const gchar * const *normalized_names,
+    gsize n_names);
+
+void tp_base_contact_list_class_implement_create_groups (
+    TpBaseContactListClass *cls,
+    TpBaseContactListCreateGroupsFunc impl);
+
 typedef void (*TpBaseContactListGroupContactsFunc) (
     TpBaseContactList *self,
     const gchar *group,
