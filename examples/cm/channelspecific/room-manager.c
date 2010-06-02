@@ -30,12 +30,14 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCSHRoomManager,
 enum
 {
   PROP_CONNECTION = 1,
+  PROP_SIMULATION_DELAY,
   N_PROPS
 };
 
 struct _ExampleCSHRoomManagerPrivate
 {
   TpBaseConnection *conn;
+  guint simulation_delay;
 
   /* GUINT_TO_POINTER (room handle) => ExampleCSHRoomChannel */
   GHashTable *channels;
@@ -78,6 +80,11 @@ get_property (GObject *object,
     case PROP_CONNECTION:
       g_value_set_object (value, self->priv->conn);
       break;
+
+    case PROP_SIMULATION_DELAY:
+      g_value_set_uint (value, self->priv->simulation_delay);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -99,6 +106,11 @@ set_property (GObject *object,
        * less than its lifetime */
       self->priv->conn = g_value_get_object (value);
       break;
+
+    case PROP_SIMULATION_DELAY:
+      self->priv->simulation_delay = g_value_get_uint (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -147,6 +159,13 @@ example_csh_room_manager_class_init (ExampleCSHRoomManagerClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
+
+  param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
+      "Delay between simulated network events",
+      0, G_MAXUINT32, 500,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
+      param_spec);
 
   g_type_class_add_private (klass, sizeof (ExampleCSHRoomManagerPrivate));
 }

@@ -385,8 +385,6 @@ tp_connection_get_avatar_requirements_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpConnection *self = (TpConnection *) proxy;
-  GStrv supported_mime_types;
-  GStrv empty_strv = { NULL };
 
   self->priv->fetching_avatar_requirements = FALSE;
 
@@ -400,13 +398,8 @@ tp_connection_get_avatar_requirements_cb (TpProxy *proxy,
 
   DEBUG ("AVATAR REQUIREMENTS ready");
 
-  supported_mime_types = (GStrv) tp_asv_get_strv (properties,
-      "SupportedAvatarMIMETypes");
-  if (supported_mime_types == NULL)
-    supported_mime_types = empty_strv;
-
   self->priv->avatar_requirements = tp_avatar_requirements_new (
-      supported_mime_types,
+      (GStrv) tp_asv_get_strv (properties, "SupportedAvatarMIMETypes"),
       tp_asv_get_uint32 (properties, "MinimumAvatarWidth", NULL),
       tp_asv_get_uint32 (properties, "MinimumAvatarHeight", NULL),
       tp_asv_get_uint32 (properties, "RecommendedAvatarWidth", NULL),
@@ -1078,21 +1071,12 @@ tp_connection_dispose (GObject *object)
     {
       g_hash_table_foreach (self->priv->contacts, contact_notify_invalidated,
           NULL);
-      g_hash_table_destroy (self->priv->contacts);
-      self->priv->contacts = NULL;
+      tp_clear_pointer (&self->priv->contacts, g_hash_table_destroy);
     }
 
-  if (self->priv->capabilities != NULL)
-    {
-      g_object_unref (self->priv->capabilities);
-      self->priv->capabilities = NULL;
-    }
-
-  if (self->priv->avatar_requirements != NULL)
-    {
-      tp_avatar_requirements_destroy (self->priv->avatar_requirements);
-      self->priv->avatar_requirements = NULL;
-    }
+  tp_clear_object (&self->priv->capabilities);
+  tp_clear_pointer (&self->priv->avatar_requirements,
+      tp_avatar_requirements_destroy);
 
   ((GObjectClass *) tp_connection_parent_class)->dispose (object);
 }
@@ -2156,9 +2140,11 @@ tp_avatar_requirements_new (GStrv supported_mime_types,
                             guint maximum_bytes)
 {
   TpAvatarRequirements *self;
+  gchar *empty[] = { NULL };
 
   self = g_slice_new (TpAvatarRequirements);
-  self->supported_mime_types = g_strdupv (supported_mime_types);
+  self->supported_mime_types =
+      g_strdupv (supported_mime_types ? supported_mime_types : empty);
   self->minimum_width = minimum_width;
   self->minimum_height = minimum_height;
   self->recommended_width = recommended_width;
@@ -2181,7 +2167,7 @@ tp_avatar_requirements_new (GStrv supported_mime_types,
  * Since: 0.11.4
  */
 TpAvatarRequirements *
-tp_avatar_requirements_copy (TpAvatarRequirements *self)
+tp_avatar_requirements_copy (const TpAvatarRequirements *self)
 {
   g_return_val_if_fail (self != NULL, NULL);
 

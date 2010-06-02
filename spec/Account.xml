@@ -480,6 +480,44 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </property>
 
+    <property name="ChangingPresence" tp:name-for-bindings="Changing_Presence"
+      type="b" access="read">
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>If true, a change to the presence of this account is
+        in progress.</p>
+
+        <p>Whenever <tp:member-ref>RequestedPresence</tp:member-ref> is set on
+        an account that could go online, or whenever an account with a
+        non-offline <tp:member-ref>RequestedPresence</tp:member-ref> becomes
+        able to go online (for instance because
+        <tp:member-ref>Enabled</tp:member-ref> or
+        <tp:member-ref>Valid</tp:member-ref> changes to True),
+        ChangingPresence MUST change to True, and the two property changes MUST
+        be emitted in the same
+        <tp:member-ref>AccountPropertyChanged</tp:member-ref> signal, before the
+        Set method returns.</p>
+
+        <p>When the account manager succeeds or fails in changing the presence,
+        or the connection disconnects due to an error, ChangingPresence MUST
+        change to False as part of the same
+        <tp:member-ref>AccountPropertyChanged</tp:member-ref> signal.</p>
+
+        <tp:rationale>
+          <p>This allows UIs to indicate that a presence change is in progress
+          or has finished, even if the change was initiated by a different
+          UI.</p>
+
+          <p>For instance, Maemo 5 and Empathy indicate a presence change by
+          having the presence indicator alternate between the
+          <tp:member-ref>RequestedPresence</tp:member-ref>
+          and the <tp:member-ref>CurrentPresence</tp:member-ref>; they should
+          start blinking when ChangingPresence becomes true, and stop when it
+          becomes false.</p>
+        </tp:rationale>
+
+      </tp:docstring>
+    </property>
+
     <method name="Reconnect" tp:name-for-bindings="Reconnect">
       <tp:added version="0.17.24"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">

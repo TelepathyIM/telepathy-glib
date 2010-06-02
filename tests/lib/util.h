@@ -51,19 +51,6 @@ void _test_assert_strv_equals (const char *file, int line,
   const char *actual_desc, gconstpointer actual_strv,
   const char *expected_desc, gconstpointer expected_strv);
 
-#define test_clear_object(op) \
-  G_STMT_START \
-    { \
-      gpointer _test_clear_object_obj = *(op); \
-      \
-      *(op) = NULL; \
-      \
-      if (_test_clear_object_obj != NULL) \
-        g_object_unref (_test_clear_object_obj); \
-    } \
-  G_STMT_END
-
-
 void test_create_and_connect_conn (GType conn_type,
     const gchar *account,
     TpBaseConnection **service_conn,

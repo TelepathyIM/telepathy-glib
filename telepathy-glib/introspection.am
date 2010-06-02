@@ -44,7 +44,7 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		$(INTROSPECTION_FILES)
 	$(AM_V_GEN)$(INTROSPECTION_SCANNER) -v \
 		--namespace TelepathyGLib \
-		--nsversion=$(VERSION) \
+		--nsversion=0.12 \
 		--strip-prefix=tp \
 		-I$(top_builddir) \
 		-I$(top_srcdir) \

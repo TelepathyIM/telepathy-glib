@@ -109,3 +109,16 @@ AM_CFLAGS = \
     $(GLIB_CFLAGS) \
     -D_TP_IGNORE_DEPRECATIONS \
     $(TP_GLIB_CFLAGS)
+
+AM_CXXFLAGS = \
+    $(DBUS_CFLAGS) \
+    $(GLIB_CFLAGS) \
+    -D_TP_IGNORE_DEPRECATIONS \
+    $(TP_GLIB_CFLAGS)
+
+if HAVE_CXX
+noinst_PROGRAMS += \
+    test-util-cxx
+
+test_util_cxx_SOURCES = util-cxx.cpp
+endif

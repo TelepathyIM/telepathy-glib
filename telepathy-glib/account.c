@@ -94,6 +94,7 @@ struct _TpAccountPrivate {
   gchar *requested_status;
   gchar *requested_message;
 
+  gboolean changing_presence;
   gboolean connect_automatically;
   gboolean has_been_online;
 
@@ -126,6 +127,7 @@ static guint signals[LAST_SIGNAL];
 /* properties */
 enum {
   PROP_ENABLED = 1,
+  PROP_CHANGING_PRESENCE,
   PROP_CURRENT_PRESENCE_TYPE,
   PROP_CURRENT_STATUS,
   PROP_CURRENT_STATUS_MESSAGE,
@@ -256,18 +258,6 @@ _tp_account_removed_cb (TpAccount *self,
 }
 
 static void
-_tp_account_free_connection (TpAccount *account)
-{
-  TpAccountPrivate *priv = account->priv;
-
-  if (priv->connection == NULL)
-    return;
-
-  g_object_unref (priv->connection);
-  priv->connection = NULL;
-}
-
-static void
 _tp_account_set_connection (TpAccount *account,
     const gchar *path)
 {
@@ -282,7 +272,7 @@ _tp_account_set_connection (TpAccount *account,
         return;
     }
 
-  _tp_account_free_connection (account);
+  tp_clear_object (&account->priv->connection);
 
   if (tp_strdiff ("/", path))
     {
@@ -480,11 +470,21 @@ _tp_account_update (TpAccount *account,
 
           priv->connection_object_path = g_strdup (path);
 
-          if (priv->connection != NULL)
-            _tp_account_free_connection (account);
+          tp_clear_object (&account->priv->connection);
 
           g_object_notify (G_OBJECT (account), "connection");
         }
+    }
+
+  if (g_hash_table_lookup (properties, "ChangingPresence") != NULL)
+    {
+      gboolean old = priv->changing_presence;
+
+      priv->changing_presence =
+        tp_asv_get_boolean (properties, "ChangingPresence", NULL);
+
+      if (old != priv->changing_presence)
+        g_object_notify (G_OBJECT (account), "changing-presence");
     }
 
   if (g_hash_table_lookup (properties, "ConnectAutomatically") != NULL)
@@ -634,6 +634,9 @@ _tp_account_get_property (GObject *object,
     case PROP_ICON_NAME:
       g_value_set_string (value, self->priv->icon_name);
       break;
+    case PROP_CHANGING_PRESENCE:
+      g_value_set_boolean (value, self->priv->changing_presence);
+      break;
     case PROP_CONNECT_AUTOMATICALLY:
       g_value_set_boolean (value, self->priv->connect_automatically);
       break;
@@ -672,7 +675,7 @@ _tp_account_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
-  _tp_account_free_connection (self);
+  tp_clear_object (&self->priv->connection);
 
   /* release any references held by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->dispose != NULL)
@@ -807,6 +810,32 @@ tp_account_class_init (TpAccountClass *klass)
           "current-status-message",
           "The Status message string of the account",
           NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:changing-presence:
+   *
+   * %TRUE if an attempt is currently being made to change the account's
+   * presence (#TpAccount:current-presence-type, #TpAccount:current-status
+   * and #TpAccount:current-status-message) to match its requested presence
+   * (#TpAccount:requested-presence-type, #TpAccount:requested-status
+   * and #TpAccount:requested-status-message).
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_proxy_prepare_async() has finished; until then, the value is
+   * %FALSE.
+   *
+   * Since: 0.11.6
+   */
+  g_object_class_install_property (object_class, PROP_CHANGING_PRESENCE,
+      g_param_spec_boolean ("changing-presence",
+          "Changing Presence",
+          "TRUE if presence is changing",
+          FALSE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
@@ -2011,6 +2040,24 @@ tp_account_remove_finish (TpAccount *account,
           G_OBJECT (account), tp_account_remove_finish), FALSE);
 
   return TRUE;
+}
+
+/**
+ * tp_account_get_changing_presence:
+ * @self: an account
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpAccount:changing-presence property
+ *
+ * Since: 0.11.6
+ */
+gboolean
+tp_account_get_changing_presence (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), FALSE);
+
+  return self->priv->changing_presence;
 }
 
 /**

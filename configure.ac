@@ -11,7 +11,7 @@ AC_PREREQ([2.59])
 
 m4_define([tp_glib_major_version], [0])
 m4_define([tp_glib_minor_version], [11])
-m4_define([tp_glib_micro_version], [5])
+m4_define([tp_glib_micro_version], [6])
 m4_define([tp_glib_nano_version], [1])
 
 # If library source has changed since last release, increment revision
@@ -26,9 +26,9 @@ m4_define([tp_glib_nano_version], [1])
 # (we don't guarantee that we won't add ABI then remove it again, if it was
 # never seen in a release).
 
-m4_define([tp_glib_lt_current], [37])
+m4_define([tp_glib_lt_current], [38])
 m4_define([tp_glib_lt_revision], [0])
-m4_define([tp_glib_lt_age], [37])
+m4_define([tp_glib_lt_age], [38])
 
 # Some magic
 m4_define([tp_glib_base_version],
@@ -220,6 +220,25 @@ if test -z "$NM"; then
 	HAVE_LD_VERSION_SCRIPT=no
 fi
 AM_CONDITIONAL([HAVE_LD_VERSION_SCRIPT], [test $HAVE_LD_VERSION_SCRIPT = yes])
+
+dnl Check for C++ compiler, for syntax checking
+AC_PROG_CXX
+AC_LANG_PUSH([C++])
+_TP_OLD_LIBS="$LIBS"
+LIBS="$GLIB_LIBS"
+_TP_OLD_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$GLIB_CFLAGS"
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM(
+     [[#include <gio/gio.h>]],
+     [[g_type_init (); g_object_unref (g_file_new_for_path ("/"));]])
+  ],
+  [tp_cxx_works=yes],
+  [tp_cxx_works=no])
+LIBS="$_TP_OLD_LIBS"
+CXXFLAGS="$_TP_OLD_CXXFLAGS"
+AC_LANG_POP([C++])
+AM_CONDITIONAL([HAVE_CXX], [test $tp_cxx_works = yes])
 
 AC_OUTPUT( Makefile \
 	   docs/Makefile \

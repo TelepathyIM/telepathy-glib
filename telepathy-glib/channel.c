@@ -1287,8 +1287,7 @@ tp_channel_dispose (GObject *object)
 
   self->priv->conn_invalidated_id = 0;
 
-  g_object_unref (self->priv->connection);
-  self->priv->connection = NULL;
+  tp_clear_object (&self->priv->connection);
 
 finally:
   ((GObjectClass *) tp_channel_parent_class)->dispose (object);

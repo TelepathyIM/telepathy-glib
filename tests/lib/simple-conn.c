@@ -190,8 +190,8 @@ start_connecting (TpBaseConnection *conn,
   /* In a real connection manager we'd ask the underlying implementation to
    * start connecting, then go to state CONNECTED when finished. Here there
    * isn't actually a connection, so we'll fake a connection process that
-   * takes half a second. */
-  self->priv->connect_source = g_timeout_add (500, pretend_connected, self);
+   * takes time. */
+  self->priv->connect_source = g_timeout_add (0, pretend_connected, self);
 
   return TRUE;
 }
@@ -214,8 +214,8 @@ shut_down (TpBaseConnection *conn)
   /* In a real connection manager we'd ask the underlying implementation to
    * start shutting down, then call this function when finished. Here there
    * isn't actually a connection, so we'll fake a disconnection process that
-   * takes half a second. */
-  self->priv->disconnect_source = g_timeout_add (500, pretend_disconnected,
+   * takes time. */
+  self->priv->disconnect_source = g_timeout_add (0, pretend_disconnected,
       conn);
 }
 

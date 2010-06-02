@@ -73,8 +73,8 @@ static void
 teardown (Test *test,
     gconstpointer data)
 {
-  test_clear_object (&test->emitter);
-  test_clear_object (&test->observer);
+  tp_clear_object (&test->emitter);
+  tp_clear_object (&test->observer);
 }
 
 static void
@@ -106,7 +106,7 @@ test_dead_observer (Test *test,
       G_CALLBACK (increment_caught), test->observer, 0);
   g_object_notify (test->emitter, "name");
   g_object_notify (test->emitter, "name");
-  test_clear_object (&test->observer);
+  tp_clear_object (&test->observer);
   g_object_notify (test->emitter, "name");
   g_assert_cmpuint (test->caught, ==, 2);
 }
@@ -119,7 +119,7 @@ test_dead_emitter (Test *test,
       G_CALLBACK (increment_caught), test->observer, 0);
   g_object_notify (test->emitter, "name");
   g_object_notify (test->emitter, "name");
-  test_clear_object (&test->emitter);
+  tp_clear_object (&test->emitter);
   g_assert_cmpuint (test->caught, ==, 2);
 }
 
@@ -149,7 +149,7 @@ test_dead_observer_and_disconnected (Test *test,
   g_object_notify (test->emitter, "name");
   g_object_notify (test->emitter, "name");
   g_signal_handler_disconnect (test->emitter, id);
-  test_clear_object (&test->observer);
+  tp_clear_object (&test->observer);
   g_object_notify (test->emitter, "name");
   g_assert_cmpuint (test->caught, ==, 2);
 }

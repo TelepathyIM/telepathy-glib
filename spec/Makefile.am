@@ -5,6 +5,7 @@ EXTRA_DIST = \
     all.xml \
     Call_Content.xml \
     Call_Content_Interface_Media.xml \
+    Call_Content_Interface_Mute.xml \
     Call_Content_Codec_Offer.xml \
     Call_Stream.xml \
     Call_Stream_Interface_Media.xml \
@@ -14,6 +15,7 @@ EXTRA_DIST = \
     Channel_Dispatcher_Interface_Operation_List.xml \
     Channel_Future.xml \
     Channel_Handler.xml \
+    Channel_Interface_Anonymity.xml \
     Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
     Channel_Interface_Conference.xml \
@@ -26,6 +28,7 @@ EXTRA_DIST = \
     Channel_Interface_Mergeable_Conference.xml \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
+    Channel_Interface_Service_Point.xml \
     Channel_Interface_Splittable.xml \
     Channel_Interface_Transfer.xml \
     Channel_Interface_Tube.xml \
@@ -49,11 +52,15 @@ EXTRA_DIST = \
     Client_Observer.xml \
     Connection_Future.xml \
     Connection_Interface_Aliasing.xml \
+    Connection_Interface_Anonymity.xml \
     Connection_Interface_Avatars.xml \
     Connection_Interface_Balance.xml \
     Connection_Interface_Capabilities.xml \
+    Connection_Interface_Cellular.xml \
     Connection_Interface_Contact_Capabilities.xml \
+    Connection_Interface_Contact_Groups.xml \
     Connection_Interface_Contact_Info.xml \
+    Connection_Interface_Contact_List.xml \
     Connection_Interface_Contacts.xml \
     Connection_Interface_Forwarding.xml \
     Connection_Interface_Location.xml \
@@ -62,6 +69,7 @@ EXTRA_DIST = \
     Connection_Interface_Privacy.xml \
     Connection_Interface_Renaming.xml \
     Connection_Interface_Requests.xml \
+    Connection_Interface_Service_Point.xml \
     Connection_Interface_Simple_Presence.xml \
     Connection_Manager.xml \
     Connection.xml \

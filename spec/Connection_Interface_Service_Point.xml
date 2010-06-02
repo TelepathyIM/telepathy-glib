@@ -1,0 +1,135 @@
+<?xml version="1.0" ?>
+<node name="/Connection_Interface_Service_Point" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <tp:copyright> Copyright © 2005-2010 Nokia Corporation </tp:copyright>
+  <tp:copyright> Copyright © 2005-2010 Collabora Ltd </tp:copyright>
+  <tp:license xmlns="http://www.w3.org/1999/xhtml">
+    <p>This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.</p>
+
+<p>This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
+  </tp:license>
+  <interface name="org.freedesktop.Telepathy.Connection.Interface.ServicePoint.DRAFT" tp:causes-havoc="experimental">
+    <tp:added version="0.19.6">(draft version, not API-stable)</tp:added>
+
+    <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+      <p>An interface for connections whose channels may be able to indicate
+        specific they are connected to some form
+        of service station.  For example, when
+        dialing 9-1-1 in the US, a GSM modem/network will recognize that as
+        an emergency call, and inform higher levels of the stack that the
+        call is being handled by an emergency service.  In this example,
+        the call is handled by a Public Safety Answering Point (PSAP) which is labeled
+        as "urn:service:sos".  Other networks and protocols may handle this
+        differently while still using this interface.</p>
+    </tp:docstring>
+
+   <tp:struct name="Service_Point_Info" array-name="Service_Point_Info_List">
+      <tp:member type="(us)" tp:type="Service_Point" name="ServicePoint">
+        <tp:docstring>
+          The service point.
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="as" name="ServiceIDs">
+        <tp:docstring>
+          A list of IDs that are mapped to this service. This is provided as
+          a convenience for the UIs, but the preferred method for
+          requesting channel to a service is by setting <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy.Channel.Interface.ServicePoint.DRAFT">InitialServicePoint</tp:dbus-ref>
+            property in channel request.
+        </tp:docstring>
+      </tp:member>
+      <tp:docstring>
+        <p>Description of a service point and IDs which are mapped to id.</p>
+
+        <p>An example Service Point info for GSM emergency calls (callable through
+        "911" and "112") could look like:</p>
+
+<pre>
+  ServicePointInfo = (
+    ServicePoint: (
+      ServicePointType: 1 (Emergency),
+      ServicePoint: "urn:service:sos"
+    ),
+    ServiceIDs: [ "911", "112" ]
+  )
+</pre>
+      </tp:docstring>
+    </tp:struct>
+
+    <property name="KnownServicePoints" tp:name-for-bindings="Known_Service_Points"
+      type="a((us)as)" tp:type="Service_Point_Info[]" access="read">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+         The list of all (known) service points.
+        </tp:docstring>
+    </property>
+
+    <signal name="ServicePointsChanged" tp:name-for-bindings="Service_Points_Changed">
+      <arg name="ServicePoints" type="a((us)as)" tp:type="Service_Point_Info[]">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+         <p>The new list of service points.</p>
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Indicate that the list of known service points (or their IDs) have
+        changed, presenting the new list.
+      </tp:docstring>
+    </signal>
+
+    <tp:struct name="Service_Point">
+      <tp:docstring>A service point.</tp:docstring>
+      <tp:member type="u" name="ServicePointType" tp:type="Service_Point_Type">
+        <tp:docstring>
+          The service type.
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="s" name="Service">
+        <tp:docstring>
+          String representation of the service point. The representation is
+          service specific; it may be <tp:type>Uniform_Resource_Name</tp:type>
+          or may be in some other form. Empty, unused or unknown value is
+          represented by "".
+        </tp:docstring>
+      </tp:member>
+    </tp:struct>
+
+    <tp:enum name="Service_Point_Type" type="u">
+      <tp:docstring>
+        The various types of service points the channel might connect to.
+      </tp:docstring>
+
+      <tp:enumvalue value="0" suffix="None">
+        <tp:docstring>
+          The service point is not used/available.
+        </tp:docstring>
+      </tp:enumvalue>
+
+      <tp:enumvalue value="1" suffix="Emergency">
+        <tp:docstring>
+          The service point is a generic emergency point.
+        </tp:docstring>
+      </tp:enumvalue>
+
+      <tp:enumvalue value="2" suffix="Counseling">
+        <tp:docstring>
+          The service point is some kind of counseling service (ie, mental health
+          or child-services counseling).
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
+
+    <tp:simple-type name="Uniform_Resource_Name" type="s">
+      <tp:docstring>Uniform Resource Name as specified by
+        <a href="http://www.rfc-editor.org/rfc/rfc5031.txt">RFC 5031</a>.</tp:docstring>
+    </tp:simple-type>
+  </interface>
+</node>
+<!-- vim:set sw=2 sts=2 et ft=xml: -->

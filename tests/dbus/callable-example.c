@@ -32,24 +32,6 @@
 
 #include "tests/lib/util.h"
 
-#define CLEAR_OBJECT(o) \
-  G_STMT_START { \
-      if (*(o) != NULL) \
-        { \
-          g_object_unref (*(o)); \
-          *(o) = NULL; \
-        } \
-  } G_STMT_END
-
-#define CLEAR_BOXED(g, o) \
-  G_STMT_START { \
-      if (*(o) != NULL) \
-        { \
-          g_boxed_free ((g), *(o)); \
-          *(o) = NULL; \
-        } \
-  } G_STMT_END
-
 static void
 test_assert_uu_hash_contains (GHashTable *hash,
                               guint key,
@@ -333,7 +315,7 @@ requested_streams_cb (TpChannel *chan G_GNUC_UNUSED,
 {
   Test *test = user_data;
 
-  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
+  tp_clear_boxed (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->request_streams_return);
 
   if (error != NULL)
@@ -361,7 +343,7 @@ listed_streams_cb (TpChannel *chan G_GNUC_UNUSED,
   /* ListStreams shouldn't fail in any of these tests */
   test_assert_no_error (error);
 
-  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
+  tp_clear_boxed (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->list_streams_return);
 
   test->list_streams_return = g_boxed_copy (
@@ -1537,25 +1519,25 @@ teardown (Test *test,
   g_slist_foreach (test->stream_events, (GFunc) stream_event_destroy, NULL);
   g_slist_free (test->stream_events);
 
-  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
+  tp_clear_boxed (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->list_streams_return);
-  CLEAR_BOXED (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
+  tp_clear_boxed (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->request_streams_return);
 
   g_hash_table_destroy (test->stream_directions);
   g_hash_table_destroy (test->stream_pending_sends);
   g_hash_table_destroy (test->stream_states);
 
-  CLEAR_OBJECT (&test->chan);
-  CLEAR_OBJECT (&test->conn);
-  CLEAR_OBJECT (&test->cm);
+  tp_clear_object (&test->chan);
+  tp_clear_object (&test->conn);
+  tp_clear_object (&test->cm);
 
-  CLEAR_OBJECT (&test->service_cm);
+  tp_clear_object (&test->service_cm);
 
   /* make sure any pending things have happened */
   test_proxy_run_until_dbus_queue_processed (test->dbus);
 
-  CLEAR_OBJECT (&test->dbus);
+  tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 }

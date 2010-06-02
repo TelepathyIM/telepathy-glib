@@ -46,7 +46,7 @@ struct _TpHandleSet
  *
  * The boxed type of a #TpHandleSet.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 
 GType
@@ -86,6 +86,29 @@ tp_handle_set_new (TpHandleRepoIface *repo)
   return set;
 }
 
+/**
+ * tp_handle_set_new_from_array:
+ * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
+ * @array: array of handles to be referenced by this set
+ *
+ * Creates a new #TpHandleSet
+ *
+ * Returns: A new #TpHandleSet
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpHandleSet *
+tp_handle_set_new_from_array (TpHandleRepoIface *repo,
+    const GArray *array)
+{
+  TpHandleSet *set = tp_handle_set_new (repo);
+  TpIntSet *tmp = tp_intset_from_array (array);
+
+  tp_intset_destroy (tp_handle_set_update (set, tmp));
+  tp_intset_destroy (tmp);
+  return set;
+}
+
 static void
 freer (TpHandleSet *set, TpHandle handle, gpointer userdata)
 {
@@ -112,7 +135,7 @@ tp_handle_set_destroy (TpHandleSet *set)
  *
  * Remove every handle from @set, releasing the references it holds.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 void
 tp_handle_set_clear (TpHandleSet *set)
@@ -130,7 +153,7 @@ tp_handle_set_clear (TpHandleSet *set)
  *
  * Returns: %TRUE if the set has no members
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 gboolean
 tp_handle_set_is_empty (const TpHandleSet *set)
@@ -298,7 +321,7 @@ ref_one (guint handle, gpointer data)
  *
  * Returns: a new set
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.6
  */
 TpHandleSet *
 tp_handle_set_copy (const TpHandleSet *other)

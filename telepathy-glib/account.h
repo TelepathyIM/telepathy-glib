@@ -198,6 +198,8 @@ gboolean tp_account_set_avatar_finish (TpAccount *self,
     GAsyncResult *result,
     GError **error);
 
+gboolean tp_account_get_changing_presence (TpAccount *self);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account.h>

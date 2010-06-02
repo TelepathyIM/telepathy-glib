@@ -114,11 +114,11 @@ teardown (Test *test,
   tp_handle_unref (test->contact_repo, test->bill);
   tp_handle_unref (test->contact_repo, test->ninja);
 
-  test_clear_object (&test->conn);
-  test_clear_object (&test->publish);
-  test_clear_object (&test->subscribe);
-  test_clear_object (&test->stored);
-  test_clear_object (&test->group);
+  tp_clear_object (&test->conn);
+  tp_clear_object (&test->publish);
+  tp_clear_object (&test->subscribe);
+  tp_clear_object (&test->stored);
+  tp_clear_object (&test->group);
 
   /* make a new TpConnection just to disconnect the underlying Connection,
    * so we don't leak it */
