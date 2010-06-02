@@ -2438,8 +2438,15 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
 
   if (pa->len > 0)
     {
-      g_ptr_array_add (pa, NULL);
-      /* FIXME: emit GroupsCreated(pa->pdata) in the new API */
+      DEBUG ("GroupsCreated([%u including '%s'])", pa->len,
+          (gchar *) g_ptr_array_index (pa, 0));
+
+      if (self->priv->svc_contact_groups)
+      {
+        g_ptr_array_add (pa, NULL);
+        tp_svc_connection_interface_contact_groups_emit_groups_created (
+            self->priv->conn, (const gchar **) pa->pdata);
+      }
     }
 
   g_ptr_array_unref (pa);
