@@ -175,8 +175,8 @@ struct _TpContactPrivate {
     /* capabilities */
     TpCapabilities *capabilities;
 
-    /* info */
-    GList *info;
+    /* a list of TpContactInfoField */
+    GList *contact_info;
 };
 
 
@@ -497,7 +497,7 @@ tp_contact_get_contact_info (TpContact *self)
 {
   g_return_val_if_fail (TP_IS_CONTACT (self), NULL);
 
-  return g_list_copy (self->priv->info);
+  return g_list_copy (self->priv->contact_info);
 }
 
 void
@@ -548,7 +548,7 @@ tp_contact_finalize (GObject *object)
   g_free (self->priv->avatar_mime_type);
   g_free (self->priv->presence_status);
   g_free (self->priv->presence_message);
-  tp_contact_info_list_free (self->priv->info);
+  tp_contact_info_list_free (self->priv->contact_info);
 
   ((GObjectClass *) tp_contact_parent_class)->finalize (object);
 }
@@ -2332,8 +2332,8 @@ contact_maybe_set_info (TpContact *self,
   if (self == NULL || contact_info == NULL)
     return;
 
-  tp_contact_info_list_free (self->priv->info);
-  self->priv->info = NULL;
+  tp_contact_info_list_free (self->priv->contact_info);
+  self->priv->contact_info = NULL;
 
   self->priv->has_features |= CONTACT_FEATURE_FLAG_CONTACT_INFO;
   for (i = 0; i < contact_info->len; i++)
@@ -2345,7 +2345,7 @@ contact_maybe_set_info (TpContact *self,
       gchar *empty[] = { NULL };
 
       tp_value_array_unpack (va, 3, &field_name, &parameters, &field_value);
-      self->priv->info = g_list_prepend (self->priv->info,
+      self->priv->contact_info = g_list_prepend (self->priv->contact_info,
           tp_contact_info_field_new (field_name,
               parameters ? parameters : empty,
               field_value ? field_value : empty));
