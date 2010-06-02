@@ -190,6 +190,9 @@ struct _TpBaseContactListPrivate
   GHashTable *channel_requests;
 
   gulong status_changed_id;
+
+  gboolean svc_contact_list;
+  gboolean svc_contact_groups;
 };
 
 struct _TpBaseContactListClassPrivate
@@ -412,6 +415,8 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
         }
 
       tp_clear_object (&self->priv->conn);
+      self->priv->svc_contact_list = FALSE;
+      self->priv->svc_contact_groups = FALSE;
     }
 }
 
@@ -540,6 +545,11 @@ tp_base_contact_list_constructed (GObject *object)
   g_return_if_fail (cls->get_contacts != NULL);
   g_return_if_fail (cls->get_states != NULL);
   g_return_if_fail (cls->get_subscriptions_persist != NULL);
+
+  self->priv->svc_contact_list =
+    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_LIST (self->priv->conn);
+  self->priv->svc_contact_groups =
+    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS (self->priv->conn);
 
   if (TP_IS_MUTABLE_CONTACT_LIST (self))
     {
