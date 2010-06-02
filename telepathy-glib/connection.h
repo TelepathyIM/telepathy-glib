@@ -76,8 +76,6 @@ struct _TpContactInfoFieldSpec
 
 #define TP_TYPE_CONTACT_INFO_FIELD_SPEC (tp_contact_info_field_spec_get_type ())
 GType tp_contact_info_field_spec_get_type (void);
-TpContactInfoFieldSpec *tp_contact_info_field_spec_new (const gchar *name,
-    GStrv parameters, TpContactInfoFieldFlags flags, guint max);
 TpContactInfoFieldSpec *tp_contact_info_field_spec_copy (
     const TpContactInfoFieldSpec *self);
 void tp_contact_info_field_spec_free (TpContactInfoFieldSpec *self);

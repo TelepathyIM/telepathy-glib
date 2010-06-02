@@ -88,6 +88,9 @@ void _tp_contact_connection_invalidated (TpContact *contact);
 
 /* connection-contact-info.c */
 void _tp_connection_maybe_prepare_contact_info (TpProxy *proxy);
+TpContactInfoFieldSpec *_tp_contact_info_field_spec_new (const gchar *name,
+    GStrv parameters, TpContactInfoFieldFlags flags, guint max);
+
 
 
 G_END_DECLS

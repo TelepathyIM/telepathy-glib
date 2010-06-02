@@ -56,7 +56,7 @@
  */
 
 /**
- * tp_contact_info_field_spec_new:
+ * _tp_contact_info_field_spec_new:
  * @name: The name of the field; this is the lowercased name of a vCard
  *  field. For example, a field representing a contact's address would be named
  *  "adr".
@@ -77,7 +77,7 @@
  * Since: 0.11.UNRELEASED
  */
 TpContactInfoFieldSpec *
-tp_contact_info_field_spec_new (const gchar *name,
+_tp_contact_info_field_spec_new (const gchar *name,
     GStrv parameters,
     TpContactInfoFieldFlags flags,
     guint max)
@@ -109,7 +109,7 @@ tp_contact_info_field_spec_copy (const TpContactInfoFieldSpec *self)
 {
   g_return_val_if_fail (self != NULL, NULL);
 
-  return tp_contact_info_field_spec_new (self->name, self->parameters,
+  return _tp_contact_info_field_spec_new (self->name, self->parameters,
       self->flags, self->max);
 }
 
@@ -465,7 +465,7 @@ tp_connection_get_contact_info_cb (TpProxy *proxy,
       tp_value_array_unpack (va, 4, &name, &parameters, &flags, &max);
       self->priv->contact_info_supported_fields = g_list_prepend (
           self->priv->contact_info_supported_fields,
-          tp_contact_info_field_spec_new (name, parameters, flags, max));
+          _tp_contact_info_field_spec_new (name, parameters, flags, max));
     }
 
   success = TRUE;

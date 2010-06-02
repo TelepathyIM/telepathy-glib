@@ -2848,7 +2848,6 @@ tp_avatar_requirements_destroy
 <SUBSECTION contact-info>
 TpContactInfoFieldSpec
 TP_TYPE_CONTACT_INFO_FIELD_SPEC
-tp_contact_info_field_spec_new
 tp_contact_info_field_spec_copy
 tp_contact_info_field_spec_free
 TP_TYPE_CONTACT_INFO_SPEC_LIST
