@@ -83,10 +83,11 @@ tp_contact_info_field_spec_new (const gchar *name,
     guint max)
 {
   TpContactInfoFieldSpec *self;
+  gchar *empty[] = { NULL };
 
   self = g_slice_new0 (TpContactInfoFieldSpec);
   self->name = g_strdup (name);
-  self->parameters = g_strdupv (parameters);
+  self->parameters = g_strdupv (parameters ? parameters : empty);
   self->flags = flags;
   self->max = max;
 
@@ -262,11 +263,12 @@ tp_contact_info_field_new (const gchar *field_name,
     GStrv field_value)
 {
   TpContactInfoField *self;
+  gchar *empty[] = { NULL };
 
   self = g_slice_new0 (TpContactInfoField);
   self->field_name = g_strdup (field_name);
-  self->parameters = g_strdupv (parameters);
-  self->field_value = g_strdupv (field_value);
+  self->parameters = g_strdupv (parameters ? parameters : empty);
+  self->field_value = g_strdupv (field_value ? field_value : empty);
 
   return self;
 }
@@ -459,13 +461,11 @@ tp_connection_get_contact_info_cb (TpProxy *proxy,
       GStrv parameters;
       TpContactInfoFieldFlags flags;
       guint max;
-      gchar *empty[] = { NULL };
 
       tp_value_array_unpack (va, 4, &name, &parameters, &flags, &max);
       self->priv->contact_info_supported_fields = g_list_prepend (
           self->priv->contact_info_supported_fields,
-          tp_contact_info_field_spec_new (name, parameters ? parameters : empty,
-              flags, max));
+          tp_contact_info_field_spec_new (name, parameters, flags, max));
     }
 
   success = TRUE;

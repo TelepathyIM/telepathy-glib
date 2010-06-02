@@ -2342,13 +2342,10 @@ contact_maybe_set_info (TpContact *self,
       const gchar *field_name;
       GStrv parameters;
       GStrv field_value;
-      gchar *empty[] = { NULL };
 
       tp_value_array_unpack (va, 3, &field_name, &parameters, &field_value);
       self->priv->contact_info = g_list_prepend (self->priv->contact_info,
-          tp_contact_info_field_new (field_name,
-              parameters ? parameters : empty,
-              field_value ? field_value : empty));
+          tp_contact_info_field_new (field_name, parameters, field_value));
     }
   self->priv->contact_info = g_list_reverse (self->priv->contact_info);
 
