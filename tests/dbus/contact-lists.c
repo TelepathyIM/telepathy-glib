@@ -13,6 +13,28 @@
 #include "examples/cm/contactlist/conn.h"
 #include "tests/lib/util.h"
 
+typedef enum {
+    CONTACTS_CHANGED,
+} LogEntryType;
+
+typedef struct {
+    LogEntryType type;
+    GHashTable *contacts_changed;
+    GArray *contacts_removed;
+} LogEntry;
+
+static void
+log_entry_free (LogEntry *le)
+{
+  if (le->contacts_changed != NULL)
+    g_hash_table_unref (le->contacts_changed);
+
+  if (le->contacts_removed != NULL)
+    g_array_unref (le->contacts_removed);
+
+  g_slice_free (LogEntry, le);
+}
+
 typedef struct {
     TpDBusDaemon *dbus;
     ExampleContactListConnection *service_conn;
@@ -37,8 +59,41 @@ typedef struct {
 
     GArray *arr;
 
+    /* list of LogEntry */
+    GPtrArray *log;
+
     GAsyncResult *prepare_result;
 } Test;
+
+static void
+contacts_changed_cb (TpConnection *connection,
+    GHashTable *changes,
+    const GArray *removals,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  g_assert (g_hash_table_size (changes) > 0 || removals->len > 0);
+
+  le->type = CONTACTS_CHANGED;
+  le->contacts_changed = g_boxed_copy (TP_HASH_TYPE_CONTACT_SUBSCRIPTION_MAP,
+      changes);
+  le->contacts_removed = g_array_sized_new (FALSE, FALSE, sizeof (guint),
+      removals->len);
+  g_array_append_vals (le->contacts_removed, removals->data, removals->len);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
+maybe_queue_disconnect (TpProxySignalConnection *sc)
+{
+  if (sc != NULL)
+    g_test_queue_destroy (
+        (GDestroyNotify) tp_proxy_signal_connection_disconnect, sc);
+}
 
 static void
 setup (Test *test,
@@ -79,6 +134,12 @@ setup (Test *test,
   g_assert (tp_proxy_is_prepared (test->conn,
         TP_CONNECTION_FEATURE_CONNECTED));
 
+  test->log = g_ptr_array_new ();
+
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_list_connect_to_contacts_changed (
+        test->conn, contacts_changed_cb, test, NULL, NULL, NULL));
+
   test->sjoerd = tp_handle_ensure (test->contact_repo, "sjoerd@example.com",
       NULL, NULL);
   g_assert (test->sjoerd != 0);
@@ -107,6 +168,9 @@ teardown (Test *test,
   GError *error = NULL;
 
   g_array_free (test->arr, TRUE);
+
+  g_ptr_array_foreach (test->log, (GFunc) log_entry_free, NULL);
+  g_ptr_array_free (test->log, TRUE);
 
   tp_handle_unref (test->contact_repo, test->sjoerd);
   tp_handle_unref (test->contact_repo, test->helen);
@@ -173,6 +237,53 @@ test_ensure_channel (Test *test,
 
   test_proxy_run_until_prepared (ret, NULL);
   return ret;
+}
+
+static void
+test_assert_one_contact_changed (Test *test,
+    guint index,
+    TpHandle handle,
+    TpPresenceState expected_sub_state,
+    TpPresenceState expected_pub_state,
+    const gchar *expected_pub_request)
+{
+  LogEntry *le;
+  GValueArray *va;
+  guint sub_state;
+  guint pub_state;
+  const gchar *pub_request;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, CONTACTS_CHANGED);
+
+  g_assert_cmpuint (g_hash_table_size (le->contacts_changed), ==, 1);
+  va = g_hash_table_lookup (le->contacts_changed, GUINT_TO_POINTER (handle));
+  g_assert (va != NULL);
+  tp_value_array_unpack (va, 3,
+      &sub_state,
+      &pub_state,
+      &pub_request);
+  g_assert_cmpuint (sub_state, ==, expected_sub_state);
+  g_assert_cmpuint (pub_state, ==, expected_pub_state);
+  g_assert_cmpstr (pub_request, ==, expected_pub_request);
+
+  g_assert_cmpuint (le->contacts_removed->len, ==, 0);
+}
+
+static void
+test_assert_one_contact_removed (Test *test,
+    guint index,
+    TpHandle handle)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, CONTACTS_CHANGED);
+
+  g_assert_cmpuint (g_hash_table_size (le->contacts_changed), ==, 0);
+  g_assert_cmpuint (le->contacts_removed->len, ==, 1);
+  g_assert_cmpuint (g_array_index (le->contacts_removed, guint, 0), ==,
+      handle);
 }
 
 static void
@@ -251,6 +362,8 @@ test_initial_channels (Test *test,
       ==, 0);
   g_assert (tp_intset_is_member (tp_channel_group_get_members (test->deny),
         test->bill));
+
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
@@ -284,6 +397,10 @@ test_accept_publish_request (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->wim));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_changed (test, 0, test->wim, TP_PRESENCE_STATE_NO,
+      TP_PRESENCE_STATE_YES, "");
 }
 
 static void
@@ -316,6 +433,10 @@ test_reject_publish_request (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->wim));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_changed (test, 0, test->wim, TP_PRESENCE_STATE_NO,
+      TP_PRESENCE_STATE_NO, "");
 }
 
 static void
@@ -332,11 +453,12 @@ test_add_to_publish_pre_approve (Test *test,
   test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
   test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "subscribe");
 
+  g_array_append_val (test->arr, test->ninja);
+
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->ninja));
 
-  g_array_append_val (test->arr, test->ninja);
   tp_cli_channel_interface_group_run_add_members (test->publish,
       -1, test->arr, "", &error, NULL);
   g_assert_no_error (error);
@@ -346,7 +468,6 @@ test_add_to_publish_pre_approve (Test *test,
         test->ninja));
 
   /* the example CM's fake contacts accept requests that contain "please" */
-  g_array_append_val (test->arr, test->ninja);
   tp_cli_channel_interface_group_run_add_members (test->subscribe,
       -1, test->arr, "Please may I see your presence?", &error, NULL);
   g_assert_no_error (error);
@@ -380,7 +501,7 @@ test_add_to_publish_pre_approve (Test *test,
    * pre-approved, so they go straight to full membership */
   while (!tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
-        test->ninja))
+        test->ninja) || test->log->len < 3)
     g_main_context_iteration (NULL, TRUE);
 
   g_assert (tp_intset_is_member (
@@ -389,6 +510,14 @@ test_add_to_publish_pre_approve (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 3);
+  test_assert_one_contact_changed (test, 0, test->ninja, TP_PRESENCE_STATE_ASK,
+      TP_PRESENCE_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->ninja, TP_PRESENCE_STATE_YES,
+      TP_PRESENCE_STATE_NO, "");
+  test_assert_one_contact_changed (test, 2, test->ninja, TP_PRESENCE_STATE_YES,
+      TP_PRESENCE_STATE_YES, "");
 }
 
 static void
@@ -414,6 +543,8 @@ test_add_to_publish_no_op (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
@@ -445,7 +576,8 @@ test_remove_from_publish (Test *test,
   /* the contact re-requests our presence after a short delay */
   while (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
-        test->sjoerd))
+        test->sjoerd) ||
+      test->log->len < 2)
     g_main_context_iteration (NULL, TRUE);
 
   g_assert (!tp_intset_is_member (
@@ -454,6 +586,13 @@ test_remove_from_publish (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+  test_assert_one_contact_changed (test, 0, test->sjoerd,
+      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->sjoerd,
+      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_ASK,
+      "May I see your presence, please?");
 }
 
 static void
@@ -475,6 +614,8 @@ test_remove_from_publish_no_op (Test *test,
   tp_cli_channel_interface_group_run_remove_members (test->publish,
       -1, test->arr, "", &error, NULL);
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
@@ -515,6 +656,10 @@ test_add_to_stored (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
         test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_changed (test, 0, test->ninja,
+      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
 }
 
 static void
@@ -536,6 +681,8 @@ test_add_to_stored_no_op (Test *test,
   tp_cli_channel_interface_group_run_add_members (test->stored,
       -1, test->arr, "", &error, NULL);
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
@@ -569,6 +716,9 @@ test_remove_from_stored (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_removed (test, 0, test->sjoerd);
 }
 
 static void
@@ -590,6 +740,8 @@ test_remove_from_stored_no_op (Test *test,
   tp_cli_channel_interface_group_run_remove_members (test->stored,
       -1, test->arr, "", &error, NULL);
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
@@ -646,7 +798,8 @@ test_accept_subscribe_request (Test *test,
   /* the contact also requests our presence after a short delay */
   while (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
-        test->ninja))
+        test->ninja) ||
+      test->log->len < 3)
     g_main_context_iteration (NULL, TRUE);
 
   g_assert (!tp_intset_is_member (
@@ -655,6 +808,15 @@ test_accept_subscribe_request (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 3);
+  test_assert_one_contact_changed (test, 0, test->ninja,
+      TP_PRESENCE_STATE_ASK, TP_PRESENCE_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->ninja,
+      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_NO, "");
+  test_assert_one_contact_changed (test, 2, test->ninja,
+      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_ASK,
+      "May I see your presence, please?");
 }
 
 static void
@@ -698,7 +860,8 @@ test_reject_subscribe_request (Test *test,
   /* after a short delay, the contact rejects our request. Say please! */
   while (tp_intset_is_member (
         tp_channel_group_get_remote_pending (test->subscribe),
-        test->ninja))
+        test->ninja) ||
+      test->log->len < 2)
     g_main_context_iteration (NULL, TRUE);
 
   g_assert (!tp_intset_is_member (
@@ -715,6 +878,12 @@ test_reject_subscribe_request (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_remote_pending (test->stored),
         test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+  test_assert_one_contact_changed (test, 0, test->ninja,
+      TP_PRESENCE_STATE_ASK, TP_PRESENCE_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->ninja,
+      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
 }
 
 static void
@@ -746,6 +915,10 @@ test_remove_from_subscribe (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_members (test->stored),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_changed (test, 0, test->sjoerd,
+      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_YES, "");
 }
 
 static void
@@ -780,6 +953,10 @@ test_remove_from_subscribe_pending (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_members (test->stored),
         test->helen));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_changed (test, 0, test->helen,
+      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
 }
 
 static void
@@ -801,6 +978,8 @@ test_remove_from_subscribe_no_op (Test *test,
   tp_cli_channel_interface_group_run_remove_members (test->subscribe,
       -1, test->arr, "", &error, NULL);
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
