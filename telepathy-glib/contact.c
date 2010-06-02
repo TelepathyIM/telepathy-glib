@@ -2350,6 +2350,7 @@ contact_maybe_set_info (TpContact *self,
               parameters ? parameters : empty,
               field_value ? field_value : empty));
     }
+  self->priv->contact_info = g_list_reverse (self->priv->contact_info);
 
   g_object_notify ((GObject *) self, "contact-info");
 }
