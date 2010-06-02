@@ -95,12 +95,8 @@ const gchar *tp_contact_get_avatar_mime_type (TpContact *self);
 /* TP_CONTACT_FEATURE_INFO */
 GList *tp_contact_get_contact_info (TpContact *self);
 
-void tp_connection_refresh_contact_info_async (TpConnection *self,
-    guint n_contacts, TpContact * const *contacts, GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_connection_refresh_contact_info_finish (TpConnection *self,
-    GAsyncResult *result, GError **error);
+void tp_connection_refresh_contact_info (TpConnection *self,
+    guint n_contacts, TpContact * const *contacts);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,

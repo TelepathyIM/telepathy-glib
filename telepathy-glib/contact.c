@@ -2434,37 +2434,17 @@ contacts_get_contact_info (ContactsContext *c)
   contacts_context_continue (c);
 }
 
-static void
-refresh_info_cb (TpConnection *self,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  GSimpleAsyncResult *result = user_data;
-
-  if (error != NULL)
-    {
-      DEBUG ("Failed to refresh info: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
-    }
-
-  g_simple_async_result_complete (result);
-}
-
 /**
- * tp_connection_refresh_contact_info_async:
+ * tp_connection_refresh_contact_info:
  * @self: a #TpConnection
  * @n_contacts: The number of contacts in @contacts (must be at least 1)
  * @contacts: (array length=n_contacts): An array of #TpContact objects
  *  associated with @self
- * @callback: a callback to call when the request is satisfied
- * @user_data: data to pass to @callback
  *
- * Requests asynchronously to refresh the TpContact:contact-info property on
- * each contact from @contacts, requesting it from the network
- * if an up-to-date version is not cached locally. @callback will be called
- * immediately, emitting "notify::contact-info" when the contacts' updated
- * contact information is returned.
+ * Requests to refresh the TpContact:contact-info property on each contact from
+ * @contacts, requesting it from the network if an up-to-date version is not
+ * cached locally. "notify::contact-info" will be emitted when the contact's
+ * information are updated.
  *
  * If %TP_CONTACT_FEATURE_CONTACT_INFO is not yet set on a contact, it will be
  * set before its property gets updated.
@@ -2472,13 +2452,10 @@ refresh_info_cb (TpConnection *self,
  * Since: 0.11.UNRELEASED
  */
 void
-tp_connection_refresh_contact_info_async (TpConnection *self,
+tp_connection_refresh_contact_info (TpConnection *self,
     guint n_contacts,
-    TpContact * const *contacts,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
+    TpContact * const *contacts)
 {
-  GSimpleAsyncResult *result;
   GArray *handles;
   guint i;
 
@@ -2498,46 +2475,10 @@ tp_connection_refresh_contact_info_async (TpConnection *self,
   for (i = 0; i < n_contacts; i++)
     g_array_append_val (handles, contacts[i]->priv->handle);
 
-  result = g_simple_async_result_new (G_OBJECT (self), callback,
-      user_data, tp_connection_refresh_contact_info_finish);
-
   tp_cli_connection_interface_contact_info_call_refresh_contact_info (self, -1,
-      handles, refresh_info_cb, result, g_object_unref, NULL);
+      handles, NULL, NULL, NULL, NULL);
 
   g_array_free (handles, TRUE);
-}
-
-/**
- * tp_connection_refresh_contact_info_finish:
- * @self: a #TpConnection
- * @result: a #GAsyncResult
- * @error: a #GError to be filled
- *
- * Finishes an async refresh of contacts info.
- *
- * Returns: %TRUE if the request call was successful, otherwise %FALSE
- *
- * Since: 0.11.UNRELEASED
- */
-gboolean
-tp_connection_refresh_contact_info_finish (TpConnection *self,
-    GAsyncResult *result,
-    GError **error)
-{
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-      G_OBJECT (self), tp_connection_refresh_contact_info_finish), FALSE);
-
-  return TRUE;
 }
 
 static gboolean

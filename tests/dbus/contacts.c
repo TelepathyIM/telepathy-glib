@@ -315,7 +315,7 @@ test_contact_info (ContactsConnection *service_conn,
 
   g_signal_connect (contact, "notify::contact-info",
       G_CALLBACK (contact_info_notify_cb), &result);
-  tp_connection_refresh_contact_info_async (client_conn, 1, &contact, NULL, NULL);
+  tp_connection_refresh_contact_info (client_conn, 1, &contact);
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
