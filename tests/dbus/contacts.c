@@ -190,7 +190,8 @@ contact_info_prepare_cb (GObject *object,
       TpContactInfoFieldSpec *spec;
 
       flags = tp_connection_get_contact_info_flags (connection);
-      g_assert_cmpint (flags, ==, TP_CONTACT_INFO_FLAG_PUSH);
+      g_assert_cmpint (flags, ==, TP_CONTACT_INFO_FLAG_PUSH |
+          TP_CONTACT_INFO_FLAG_CAN_SET);
 
       specs = tp_connection_get_contact_info_supported_fields (connection);
       g_assert (specs != NULL);
@@ -221,6 +222,20 @@ contact_info_set_cb (GObject *object,
 }
 
 static void
+contact_info_request_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpContact *contact = TP_CONTACT (object);
+  Result *result = user_data;
+
+  contact_info_verify (contact);
+
+  tp_contact_request_contact_info_finish (contact, res, &result->error);
+  finish (result);
+}
+
+static void
 test_contact_info (ContactsConnection *service_conn,
     TpConnection *client_conn)
 {
@@ -245,6 +260,8 @@ test_contact_info (ContactsConnection *service_conn,
 
   info_list = g_list_prepend (info_list,
       tp_contact_info_field_new ("n", NULL, (GStrv) field_value));
+
+  contacts_connection_set_default_contact_info (service_conn, info);
 
   /* TEST1: Verify ContactInfo properties are correctly introspected on
    * TpConnection */
@@ -277,7 +294,7 @@ test_contact_info (ContactsConnection *service_conn,
 
   /* TEST3: Create a TpContact with the INFO feature. Then change its info in
    * the CM. That should emit "notify::info" signal on the TpContact. */
-  handle = tp_handle_ensure (service_repo, "info-test-1", NULL, NULL);
+  handle = tp_handle_ensure (service_repo, "info-test-3", NULL, NULL);
   tp_connection_get_contacts_by_handle (client_conn,
       1, &handle,
       G_N_ELEMENTS (features), features,
@@ -299,7 +316,7 @@ test_contact_info (ContactsConnection *service_conn,
 
   /* TEST 4: First set the info in the CM for an handle, then create a TpContact
    * without INFO feature, and finally refresh the contact's info. */
-  handle = tp_handle_ensure (service_repo, "info-test-3", NULL, NULL);
+  handle = tp_handle_ensure (service_repo, "info-test-4", NULL, NULL);
   contacts_connection_change_contact_info (service_conn, handle, info);
 
   tp_connection_get_contacts_by_handle (client_conn,
@@ -316,6 +333,28 @@ test_contact_info (ContactsConnection *service_conn,
   g_signal_connect (contact, "notify::contact-info",
       G_CALLBACK (contact_info_notify_cb), &result);
   tp_connection_refresh_contact_info (client_conn, 1, &contact);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  reset_result (&result);
+  tp_handle_unref (service_repo, handle);
+
+  /* TEST5: Create a TpContact without INFO feature, then request the contact's
+   * info. */
+  handle = tp_handle_ensure (service_repo, "info-test-5", NULL, NULL);
+  tp_connection_get_contacts_by_handle (client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  contact = g_ptr_array_index (result.contacts, 0);
+  g_assert (tp_contact_get_contact_info (contact) == NULL);
+
+  tp_contact_request_contact_info_async (contact, contact_info_request_cb,
+      &result);
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 

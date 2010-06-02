@@ -99,6 +99,9 @@ void contacts_connection_change_capabilities (ContactsConnection *self,
 void contacts_connection_change_contact_info (ContactsConnection *self,
     TpHandle handle, GPtrArray *info);
 
+void contacts_connection_set_default_contact_info (ContactsConnection *self,
+    GPtrArray *info);
+
 /* Legacy version (no Contacts interface) */
 
 typedef struct _LegacyContactsConnection LegacyContactsConnection;

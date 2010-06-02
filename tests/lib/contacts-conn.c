@@ -88,6 +88,7 @@ struct _ContactsConnectionPrivate
   GHashTable *capabilities;
   /* TpHandle => GPtrArray * */
   GHashTable *contact_info;
+  GPtrArray *default_contact_info;
 };
 
 typedef struct
@@ -167,6 +168,9 @@ finalize (GObject *object)
   g_hash_table_destroy (self->priv->locations);
   g_hash_table_destroy (self->priv->capabilities);
   g_hash_table_destroy (self->priv->contact_info);
+
+  if (self->priv->default_contact_info != NULL)
+    g_ptr_array_unref (self->priv->default_contact_info);
 
   G_OBJECT_CLASS (contacts_connection_parent_class)->finalize (object);
 }
@@ -294,8 +298,8 @@ contact_info_fill_contact_attributes (GObject *object,
 }
 
 static TpDBusPropertiesMixinPropImpl conn_contact_info_properties[] = {
-      { "ContactInfoFlags", GUINT_TO_POINTER (TP_CONTACT_INFO_FLAG_PUSH),
-        NULL },
+      { "ContactInfoFlags", GUINT_TO_POINTER (TP_CONTACT_INFO_FLAG_PUSH |
+          TP_CONTACT_INFO_FLAG_CAN_SET), NULL },
       { "SupportedFields", NULL, NULL },
       { NULL }
 };
@@ -665,6 +669,15 @@ contacts_connection_change_contact_info (ContactsConnection *self,
 
   tp_svc_connection_interface_contact_info_emit_contact_info_changed (self,
       handle, info);
+}
+
+void
+contacts_connection_set_default_contact_info (ContactsConnection *self,
+    GPtrArray *info)
+{
+  if (self->priv->default_contact_info != NULL)
+    g_ptr_array_unref (self->priv->default_contact_info);
+  self->priv->default_contact_info = g_ptr_array_ref (info);
 }
 
 static void
@@ -1052,6 +1065,23 @@ init_contact_caps (gpointer g_iface,
 #undef IMPLEMENT
 }
 
+static GPtrArray *
+lookup_contact_info (ContactsConnection *self,
+    TpHandle handle)
+{
+  GPtrArray *ret = g_hash_table_lookup (self->priv->contact_info,
+      GUINT_TO_POINTER (handle));
+
+  if (ret == NULL && self->priv->default_contact_info != NULL)
+    {
+      ret = self->priv->default_contact_info;
+      g_hash_table_insert (self->priv->contact_info, GUINT_TO_POINTER (handle),
+          g_ptr_array_ref (ret));
+    }
+
+  return ret;
+}
+
 static void
 my_refresh_contact_info (TpSvcConnectionInterfaceContactInfo *obj,
     const GArray *contacts,
@@ -1076,8 +1106,7 @@ my_refresh_contact_info (TpSvcConnectionInterfaceContactInfo *obj,
   for (i = 0; i < contacts->len; i++)
     {
       TpHandle handle = g_array_index (contacts, guint, i);
-      GPtrArray *arr = g_hash_table_lookup (self->priv->contact_info,
-          GUINT_TO_POINTER (handle));
+      GPtrArray *arr = lookup_contact_info (self, handle);
 
       tp_svc_connection_interface_contact_info_emit_contact_info_changed (self,
           handle, arr);
@@ -1108,14 +1137,7 @@ my_request_contact_info (TpSvcConnectionInterfaceContactInfo *obj,
       return;
     }
 
-  ret = g_hash_table_lookup (self->priv->contact_info,
-    GUINT_TO_POINTER (handle));
-  if (ret == NULL)
-    {
-       ret = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
-       g_hash_table_insert (self->priv->contact_info,
-               GUINT_TO_POINTER (handle), ret);
-    }
+  ret = lookup_contact_info (self, handle);
 
   tp_svc_connection_interface_contact_info_return_from_request_contact_info (
       context, ret);
