@@ -56,14 +56,6 @@ GType tp_base_contact_list_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_CONTACT_LIST, \
                               TpBaseContactListClass))
 
-/* ---- Will be in telepathy-spec later (so, no GEnum) ---- */
-
-typedef enum { /*< skip >*/
-    TP_PRESENCE_STATE_NO,
-    TP_PRESENCE_STATE_ASK,
-    TP_PRESENCE_STATE_YES
-} TpPresenceState;
-
 /* ---- Called by subclasses for ContactList (or both) ---- */
 
 void tp_base_contact_list_set_list_received (TpBaseContactList *self);
