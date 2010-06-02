@@ -520,7 +520,7 @@ _tp_connection_maybe_prepare_contact_info (TpProxy *proxy)
  *
  * This property cannot change after @self goes to the Connected state.
  *
- * Returns: a #TpContactInfoFlags
+ * Returns: a set of #TpContactInfoFlags
  * Since: 0.11.UNRELEASED
  */
 TpContactInfoFlags
