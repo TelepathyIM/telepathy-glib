@@ -12,6 +12,10 @@ PARAMS = {
                 # 'struct_field': '...',
                 # 'setter_data': 'NULL',
                 },
+            'simulation-delay': {
+                'dtype': 'u',
+                'default': 500,
+                },
             },
         }
 STRUCTS = {
