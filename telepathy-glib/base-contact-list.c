@@ -2475,6 +2475,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
 {
   GPtrArray *pa;
   guint i;
+  TpIntSet *old_members;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
@@ -2495,7 +2496,9 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
         g_return_if_fail (removed[i] != NULL);
     }
 
+  old_members = tp_intset_new ();
   pa = g_ptr_array_sized_new (n_removed + 1);
+  g_ptr_array_set_free_func (pa, g_free);
 
   for (i = 0; i < n_removed; i++)
     {
@@ -2510,18 +2513,30 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
           if (c != NULL)
             {
               TpGroupMixin *mixin = TP_GROUP_MIXIN (c);
-              TpIntSet *set;
-
-              g_ptr_array_add (pa, (gchar *) tp_handle_inspect (
-                    self->priv->group_repo, handle));
+              TpHandle contact;
+              TpIntSetFastIter iter;
 
               g_assert (mixin != NULL);
-              /* remove members: presumably the self-handle is the actor */
-              set = tp_intset_copy (tp_handle_set_peek (mixin->members));
-              tp_group_mixin_change_members (c, "", NULL, set, NULL, NULL,
+
+              /* the handle might get unref'd by closing the channel, so copy
+               * the string */
+              g_ptr_array_add (pa, g_strdup (tp_handle_inspect (
+                    self->priv->group_repo, handle)));
+
+              tp_intset_fast_iter_init (&iter,
+                  tp_handle_set_peek (mixin->members));
+
+              while (tp_intset_fast_iter_next (&iter, &contact))
+                tp_intset_add (old_members, contact);
+
+              /* Remove members if any: presumably the self-handle is the
+               * actor. We could remove a copy of the set of members, but
+               * we already made old_members a superset of that, and it's
+               * harmless to "remove" non-members from a TpGroupMixin. */
+              tp_group_mixin_change_members (c, "",
+                  NULL, old_members, NULL, NULL,
                   self->priv->conn->self_handle,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-              tp_intset_destroy (set);
 
               _tp_base_contact_list_channel_close (c);
               g_hash_table_remove (self->priv->groups,
@@ -2532,11 +2547,30 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
 
   if (pa->len > 0)
     {
+      GArray *members_arr = tp_intset_to_array (old_members);
+
+      DEBUG ("GroupsRemoved([%u including '%s'])",
+          pa->len, (gchar *) g_ptr_array_index (pa, 0));
+
       g_ptr_array_add (pa, NULL);
 
-      /* FIXME: emit GroupsRemoved(pa->pdata) in the new API */
+      if (self->priv->svc_contact_groups)
+        tp_svc_connection_interface_contact_groups_emit_groups_removed (
+            self->priv->conn, (const gchar **) pa->pdata);
 
-      /* FIXME: emit GroupsChanged for them, too */
+      if (members_arr->len > 0)
+        {
+          /* we already added NULL to pa, so subtract 1 from its length */
+          DEBUG ("GroupsChanged([%u contacts], [], [%u groups])",
+              members_arr->len, pa->len - 1);
+
+          if (self->priv->svc_contact_groups)
+            tp_svc_connection_interface_contact_groups_emit_groups_changed (
+                self->priv->conn, members_arr, NULL,
+                (const gchar **) pa->pdata);
+        }
+
+      g_array_unref (members_arr);
     }
 
   g_ptr_array_unref (pa);
