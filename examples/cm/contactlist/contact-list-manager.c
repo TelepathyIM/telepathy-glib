@@ -59,8 +59,7 @@ example_contact_details_destroy (gpointer p)
 {
   ExampleContactDetails *d = p;
 
-  if (d->tags != NULL)
-    g_hash_table_unref (d->tags);
+  tp_clear_pointer (&d->tags, g_hash_table_unref);
 
   g_free (d->alias);
   g_free (d->publish_request);
@@ -125,33 +124,12 @@ example_contact_list_manager_init (ExampleContactListManager *self)
 static void
 example_contact_list_manager_close_all (ExampleContactListManager *self)
 {
-  if (self->priv->contacts != NULL)
-    {
-      tp_handle_set_destroy (self->priv->contacts);
-      self->priv->contacts = NULL;
-    }
-
-  if (self->priv->blocked_contacts != NULL)
-    {
-      tp_handle_set_destroy (self->priv->blocked_contacts);
-      self->priv->blocked_contacts = NULL;
-    }
-
-  if (self->priv->contact_details != NULL)
-    {
-      GHashTable *tmp = self->priv->contact_details;
-
-      self->priv->contact_details = NULL;
-      g_hash_table_destroy (tmp);
-    }
-
+  tp_clear_pointer (&self->priv->contacts, tp_handle_set_destroy);
+  tp_clear_pointer (&self->priv->blocked_contacts, tp_handle_set_destroy);
+  tp_clear_pointer (&self->priv->contact_details, g_hash_table_unref);
   /* this must come after freeing contact_details, because the strings are
    * borrowed */
-  if (self->priv->all_tags != NULL)
-    {
-      g_hash_table_unref (self->priv->all_tags);
-      self->priv->all_tags = NULL;
-    }
+  tp_clear_pointer (&self->priv->all_tags, g_hash_table_unref);
 
   if (self->priv->status_changed_id != 0)
     {
@@ -445,11 +423,7 @@ status_changed_cb (TpBaseConnection *conn,
         {
           example_contact_list_manager_close_all (self);
 
-          if (self->priv->conn != NULL)
-            {
-              g_object_unref (self->priv->conn);
-              self->priv->conn = NULL;
-            }
+          tp_clear_object (&self->priv->conn);
         }
       break;
     }
