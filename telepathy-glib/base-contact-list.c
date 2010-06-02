@@ -280,26 +280,10 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
     }
 
   for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
-    {
-      TpBaseContactListChannel *c = self->priv->lists[i];
+    tp_clear_object (self->priv->lists + i);
 
-      self->priv->lists[i] = NULL;
-
-      if (c != NULL)
-        g_object_unref (c);
-    }
-
-  if (self->priv->groups != NULL)
-    {
-      g_hash_table_unref (self->priv->groups);
-      self->priv->groups = NULL;
-    }
-
-  if (self->priv->contact_repo != NULL)
-    {
-      g_object_unref (self->priv->contact_repo);
-      self->priv->contact_repo = NULL;
-    }
+  tp_clear_pointer (&self->priv->groups, g_hash_table_unref);
+  tp_clear_object (&self->priv->contact_repo);
 
   if (self->priv->group_repo != NULL)
     {
@@ -307,8 +291,7 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
        * be released when @self is no longer usable */
       _tp_dynamic_handle_repo_set_normalization_data (self->priv->group_repo,
           NULL, NULL);
-      g_object_unref (self->priv->group_repo);
-      self->priv->group_repo = NULL;
+      tp_clear_object (&self->priv->group_repo);
     }
 
   if (self->priv->conn != NULL)
@@ -320,8 +303,7 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
           self->priv->status_changed_id = 0;
         }
 
-      g_object_unref (self->priv->conn);
-      self->priv->conn = NULL;
+      tp_clear_object (&self->priv->conn);
     }
 }
 

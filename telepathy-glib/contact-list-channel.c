@@ -322,11 +322,8 @@ _tp_base_contact_list_channel_close (TpBaseContactListChannel *self)
   tp_handle_unref (handle_repo, self->handle);
   tp_group_mixin_finalize ((GObject *) self);
 
-  g_object_unref (self->manager);
-  self->manager = NULL;
-
-  g_object_unref (self->conn);
-  self->conn = NULL;
+  tp_clear_object (&self->manager);
+  tp_clear_object (&self->conn);
 }
 
 static void
