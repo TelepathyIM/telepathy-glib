@@ -126,7 +126,5 @@ void tpl_log_manager_search_async (TplLogManager *manager,
 
 void tpl_log_manager_search_free (GList *hits);
 
-gchar *tpl_log_manager_get_date_readable (const gchar *date);
-
 G_END_DECLS
 #endif /* __TPL_LOG_MANAGER_H__ */

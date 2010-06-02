@@ -712,19 +712,6 @@ tpl_log_manager_search_free (GList *hits)
   g_list_free (hits);
 }
 
-
-/* Format is just date, 20061201. */
-gchar *
-tpl_log_manager_get_date_readable (const gchar *date)
-{
-  time_t t;
-
-  t = _tpl_time_parse (date);
-
-  return _tpl_time_to_string_local (t, _TPL_TIME_FORMAT_DISPLAY_LONG);
-}
-
-
 /* start of Async definitions */
 static TplLogManagerAsyncData *
 tpl_log_manager_async_data_new (void)
