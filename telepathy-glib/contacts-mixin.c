@@ -1,7 +1,7 @@
 /*
  * contacts-mixin.c - Source for TpContactsMixin
- * Copyright (C) 2008 Collabora Ltd.
- * Copyright (C) 2008 Nokia Corporation
+ * Copyright © 2008-2010 Collabora Ltd.
+ * Copyright © 2008 Nokia Corporation
  *   @author Sjoerd Simons <sjoerd.simons@collabora.co.uk>
  *
  * This library is free software; you can redistribute it and/or
@@ -49,6 +49,7 @@
  */
 
 #include <telepathy-glib/contacts-mixin.h>
+#include <telepathy-glib/contacts-mixin-internal.h>
 
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
@@ -264,13 +265,26 @@ tp_contacts_mixin_finalize (GObject *obj)
 
 static void
 tp_contacts_mixin_get_contact_attributes (
-  TpSvcConnectionInterfaceContacts *iface, const GArray *handles,
-  const char **interfaces, gboolean hold, DBusGMethodInvocation *context)
+  TpSvcConnectionInterfaceContacts *iface,
+  const GArray *handles,
+  const char **interfaces,
+  gboolean hold,
+  DBusGMethodInvocation *context)
 {
-  TpContactsMixin *self = TP_CONTACTS_MIXIN (iface);
+  _tp_contacts_mixin_get_contact_attributes (
+      TP_BASE_CONNECTION (iface), handles, interfaces, hold, context);
+}
+
+void
+_tp_contacts_mixin_get_contact_attributes (TpBaseConnection *conn,
+  const GArray *handles,
+  const char **interfaces,
+  gboolean hold,
+  DBusGMethodInvocation *context)
+{
+  TpContactsMixin *self = TP_CONTACTS_MIXIN (conn);
   GHashTable *result;
   guint i;
-  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
         TP_HANDLE_TYPE_CONTACT);
   GArray *valid_handles;
@@ -312,7 +326,7 @@ tp_contacts_mixin_get_contact_attributes (
   func = g_hash_table_lookup (self->priv->interfaces, TP_IFACE_CONNECTION);
 
   if (func != NULL)
-    func (G_OBJECT (iface), valid_handles, result);
+    func (G_OBJECT (conn), valid_handles, result);
 
   for (i = 0; interfaces[i] != NULL; i++)
     {
@@ -322,7 +336,7 @@ tp_contacts_mixin_get_contact_attributes (
       if (func == NULL)
         DEBUG ("non-inspectable interface %s given; ignoring", interfaces[i]);
       else
-        func (G_OBJECT(iface), valid_handles, result);
+        func (G_OBJECT(conn), valid_handles, result);
     }
 
   tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
