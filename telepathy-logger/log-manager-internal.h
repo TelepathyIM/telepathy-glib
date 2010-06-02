@@ -68,7 +68,7 @@ GList * _tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
     gchar const *chat_id,
     const gchar *text);
 
-GList * _tpl_log_manager_search_new (TplLogManager *manager,
+GList * _tpl_log_manager_search (TplLogManager *manager,
     const gchar *text);
 
 gboolean _tpl_log_manager_search_in_identifier_chats_new_finish (

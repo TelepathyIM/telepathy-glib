@@ -661,7 +661,7 @@ _tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
 
 
 GList *
-_tpl_log_manager_search_new (TplLogManager *manager,
+_tpl_log_manager_search (TplLogManager *manager,
     const gchar *text)
 {
   GList *l, *out = NULL;
@@ -1366,7 +1366,7 @@ _tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 }
 
 gboolean
-tpl_log_manager_search_new_finish (TplLogManager *self,
+tpl_log_manager_search_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **chats,
     GError **error)
@@ -1376,7 +1376,7 @@ tpl_log_manager_search_new_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_search_new_async), FALSE);
+        G_OBJECT (self), tpl_log_manager_search_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
@@ -1401,7 +1401,7 @@ _search_new_async_result_free (gpointer data)
 
 
 static void
-_search_new_async_thread (GSimpleAsyncResult *simple,
+_search_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
@@ -1412,7 +1412,7 @@ _search_new_async_thread (GSimpleAsyncResult *simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   chat_info = async_data->request;
 
-  lst = _tpl_log_manager_search_new (async_data->manager,
+  lst = _tpl_log_manager_search (async_data->manager,
       chat_info->search_text);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
@@ -1421,7 +1421,7 @@ _search_new_async_thread (GSimpleAsyncResult *simple,
 
 
 void
-tpl_log_manager_search_new_async (TplLogManager *manager,
+tpl_log_manager_search_async (TplLogManager *manager,
     const gchar *text,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1446,8 +1446,8 @@ tpl_log_manager_search_new_async (TplLogManager *manager,
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_search_new_async);
+      tpl_log_manager_search_async);
 
-  g_simple_async_result_run_in_thread (simple, _search_new_async_thread, 0,
+  g_simple_async_result_run_in_thread (simple, _search_async_thread, 0,
       NULL);
 }

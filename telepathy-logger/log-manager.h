@@ -116,12 +116,12 @@ gboolean tpl_log_manager_get_chats_finish (TplLogManager *self,
 void tpl_log_manager_get_chats_async (TplLogManager *manager,
     TpAccount *account, GAsyncReadyCallback callback, gpointer user_data);
 
-gboolean tpl_log_manager_search_new_finish (TplLogManager *self,
+gboolean tpl_log_manager_search_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **chats,
     GError **error);
 
-void tpl_log_manager_search_new_async (TplLogManager *manager,
+void tpl_log_manager_search_async (TplLogManager *manager,
     const gchar *text, GAsyncReadyCallback callback, gpointer user_data);
 
 void tpl_log_manager_search_free (GList *hits);
