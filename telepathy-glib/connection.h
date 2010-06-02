@@ -79,7 +79,7 @@ GType tp_contact_info_field_spec_get_type (void);
 TpContactInfoFieldSpec *tp_contact_info_field_spec_new (const gchar *name,
     GStrv parameters, TpContactInfoFieldFlags flags, guint max);
 TpContactInfoFieldSpec *tp_contact_info_field_spec_copy (
-    TpContactInfoFieldSpec *self);
+    const TpContactInfoFieldSpec *self);
 void tp_contact_info_field_spec_free (TpContactInfoFieldSpec *self);
 
 #define TP_TYPE_CONTACT_INFO_SPEC_LIST (tp_contact_info_spec_list_get_type ())
@@ -101,7 +101,7 @@ struct _TpContactInfoField
 GType tp_contact_info_field_get_type (void);
 TpContactInfoField *tp_contact_info_field_new (const gchar *field_name,
     GStrv parameters, GStrv field_value);
-TpContactInfoField *tp_contact_info_field_copy (TpContactInfoField *self);
+TpContactInfoField *tp_contact_info_field_copy (const TpContactInfoField *self);
 void tp_contact_info_field_free (TpContactInfoField *self);
 
 #define TP_TYPE_CONTACT_INFO_LIST (tp_contact_info_list_get_type ())

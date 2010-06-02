@@ -104,7 +104,7 @@ tp_contact_info_field_spec_new (const gchar *name,
  * Since: 0.11.UNRELEASED
  */
 TpContactInfoFieldSpec *
-tp_contact_info_field_spec_copy (TpContactInfoFieldSpec *self)
+tp_contact_info_field_spec_copy (const TpContactInfoFieldSpec *self)
 {
   g_return_val_if_fail (self != NULL, NULL);
 
@@ -282,7 +282,7 @@ tp_contact_info_field_new (const gchar *field_name,
  * Since: 0.11.UNRELEASED
  */
 TpContactInfoField *
-tp_contact_info_field_copy (TpContactInfoField *self)
+tp_contact_info_field_copy (const TpContactInfoField *self)
 {
   g_return_val_if_fail (self != NULL, NULL);
 
