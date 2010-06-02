@@ -2719,6 +2719,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
     gssize n_removed)
 {
   guint i;
+  GPtrArray *really_added, *really_removed;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
@@ -2727,6 +2728,12 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
   g_return_if_fail (n_removed >= -1);
   g_return_if_fail (n_added <= 0 || added != NULL);
   g_return_if_fail (n_removed <= 0 || removed != NULL);
+
+  if (tp_handle_set_is_empty (contacts))
+    {
+      DEBUG ("No contacts, doing nothing");
+      return;
+    }
 
   if (n_added < 0)
     {
@@ -2758,7 +2765,16 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
         g_return_if_fail (removed[i] != NULL);
     }
 
+  DEBUG ("Changing up to %u contacts, adding %" G_GSSIZE_FORMAT
+      " groups, removing %" G_GSSIZE_FORMAT,
+      tp_handle_set_size (contacts), n_added, n_removed);
+
   tp_base_contact_list_groups_created (self, added, n_added);
+
+  /* These two arrays are lists of the groups whose members really changed;
+   * groups where the change was a no-op are skipped. */
+  really_added = g_ptr_array_sized_new (n_added);
+  really_removed = g_ptr_array_sized_new (n_removed);
 
   for (i = 0; i < n_added; i++)
     {
@@ -2771,11 +2787,18 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
           GUINT_TO_POINTER (handle));
 
       if (c == NULL)
-        continue;
+        {
+          DEBUG ("No channel for group '%s', it must be invalid?", added[i]);
+          continue;
+        }
 
-      tp_group_mixin_change_members (c, "",
+      DEBUG ("Adding %u contacts to group '%s'", tp_handle_set_size (contacts),
+          added[i]);
+
+      if (tp_group_mixin_change_members (c, "",
           tp_handle_set_peek (contacts), NULL, NULL, NULL,
-          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE))
+        g_ptr_array_add (really_added, (gchar *) added[i]);
     }
 
   for (i = 0; i < n_removed; i++)
@@ -2789,14 +2812,43 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
           GUINT_TO_POINTER (handle));
 
       if (c == NULL)
-        continue;
+        {
+          DEBUG ("Group '%s' doesn't exist", removed[i]);
+          continue;
+        }
 
-      tp_group_mixin_change_members (c, "",
+      DEBUG ("Removing %u contacts from group '%s'",
+          tp_handle_set_size (contacts), removed[i]);
+
+      if (tp_group_mixin_change_members (c, "",
           NULL, tp_handle_set_peek (contacts), NULL, NULL,
-          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE))
+        g_ptr_array_add (really_removed, (gchar *) removed[i]);
     }
 
-  /* FIXME: emit GroupsChanged(contacts, added, removed) in new API */
+  if (really_added->len > 0 || really_removed->len > 0)
+    {
+      DEBUG ("GroupsChanged([%u contacts], [%u groups], [%u groups])",
+          tp_handle_set_size (contacts), really_added->len,
+          really_removed->len);
+
+      g_ptr_array_add (really_added, NULL);
+      g_ptr_array_add (really_removed, NULL);
+
+      if (self->priv->svc_contact_groups)
+        {
+          GArray *members_arr = tp_handle_set_to_array (contacts);
+
+          tp_svc_connection_interface_contact_groups_emit_groups_changed (
+              self->priv->conn, members_arr,
+              (const gchar **) really_added->pdata,
+              (const gchar **) really_removed->pdata);
+          g_array_unref (members_arr);
+        }
+    }
+
+  g_ptr_array_unref (really_added);
+  g_ptr_array_unref (really_removed);
 }
 
 /**
