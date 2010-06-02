@@ -46,6 +46,7 @@ enum
   PROP_INTERFACES,
   PROP_CHANNEL_DESTROYED,
   PROP_CHANNEL_PROPERTIES,
+  PROP_SIMULATION_DELAY,
   N_PROPS
 };
 
@@ -55,6 +56,7 @@ struct _ExampleCSHRoomChannelPrivate
   gchar *object_path;
   TpHandle handle;
   TpHandle initiator;
+  guint simulation_delay;
 
   /* These are really booleans, but gboolean is signed. Thanks, GLib */
   unsigned closed:1;
@@ -232,8 +234,9 @@ join_room (ExampleCSHRoomChannel *self)
 
   /* Actually join the room. In a real implementation this would be a network
    * round-trip - we don't have a network, so pretend that joining takes
-   * 500ms */
-  g_timeout_add (500, (GSourceFunc) complete_join, self);
+   * a short time */
+  g_timeout_add (self->priv->simulation_delay, (GSourceFunc) complete_join,
+      self);
 }
 
 
@@ -363,6 +366,9 @@ get_property (GObject *object,
               TP_IFACE_CHANNEL, "Interfaces",
               NULL));
       break;
+    case PROP_SIMULATION_DELAY:
+      g_value_set_uint (value, self->priv->simulation_delay);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -400,6 +406,9 @@ set_property (GObject *object,
       break;
     case PROP_CONNECTION:
       self->priv->conn = g_value_get_object (value);
+      break;
+    case PROP_SIMULATION_DELAY:
+      self->priv->simulation_delay = g_value_get_uint (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -576,6 +585,13 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
       FALSE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
+
+  param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
+      "Delay between simulated network events",
+      0, G_MAXUINT32, 500,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
+      param_spec);
 
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, text_class));
