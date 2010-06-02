@@ -96,7 +96,8 @@ const gchar *tp_contact_get_avatar_mime_type (TpContact *self);
 GList *tp_contact_get_contact_info (TpContact *self);
 
 void tp_contact_request_contact_info_async (TpContact *self,
-    GAsyncReadyCallback callback, gpointer user_data);
+    GCancellable *cancellable, GAsyncReadyCallback callback,
+    gpointer user_data);
 
 gboolean tp_contact_request_contact_info_finish (TpContact *self,
     GAsyncResult *result, GError **error);

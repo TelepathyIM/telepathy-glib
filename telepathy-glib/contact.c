@@ -2432,6 +2432,31 @@ contacts_get_contact_info (ContactsContext *c)
   contacts_context_continue (c);
 }
 
+typedef struct
+{
+  GSimpleAsyncResult *result;
+  TpProxyPendingCall *call;
+  GCancellable *cancellable;
+  gulong cancellable_id;
+} ContactInfoRequestData;
+
+static void
+contact_info_request_data_free (ContactInfoRequestData *data)
+{
+  if (data != NULL)
+    {
+      g_object_unref (data->result);
+
+      if (data->cancellable != NULL)
+        {
+          g_cancellable_disconnect (data->cancellable, data->cancellable_id);
+          g_object_unref (data->cancellable);
+        }
+
+      g_slice_free (ContactInfoRequestData, data);
+    }
+}
+
 static void
 contact_info_request_cb (TpConnection *connection,
     const GPtrArray *contact_info,
@@ -2440,24 +2465,43 @@ contact_info_request_cb (TpConnection *connection,
     GObject *weak_object)
 {
   TpContact *self = TP_CONTACT (weak_object);
-  GSimpleAsyncResult *result = user_data;
+  ContactInfoRequestData *data = user_data;
 
   if (error != NULL)
     {
       DEBUG ("Failed to request ContactInfo: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
+      g_simple_async_result_set_from_error (data->result, error);
     }
   else
     {
       contact_maybe_set_info (self, contact_info);
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete (data->result);
+}
+
+static void
+contact_info_request_cancelled_cb (GCancellable *cancellable,
+    ContactInfoRequestData *data)
+{
+  GError *error = NULL;
+
+  if (!g_cancellable_set_error_if_cancelled (data->cancellable, &error))
+    return;
+
+  DEBUG ("Request ContactInfo cancelled");
+
+  g_simple_async_result_set_from_error (data->result, error);
+  g_simple_async_result_complete (data->result);
+  g_clear_error (&error);
+
+  tp_proxy_pending_call_cancel (data->call);
 }
 
 /**
  * tp_contact_request_contact_info_async:
  * @self: a #TpContact
+ * @cancellable: optional #GCancellable object, %NULL to ignore.
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -2477,20 +2521,34 @@ contact_info_request_cb (TpConnection *connection,
  */
 void
 tp_contact_request_contact_info_async (TpContact *self,
+    GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GSimpleAsyncResult *result;
+  ContactInfoRequestData *data;
 
   g_return_if_fail (TP_IS_CONTACT (self));
 
-  result = g_simple_async_result_new (G_OBJECT (self), callback,
+  contacts_bind_to_contact_info_changed (self->priv->connection);
+
+  data = g_slice_new0 (ContactInfoRequestData);
+
+  data->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_contact_request_contact_info_finish);
 
-  contacts_bind_to_contact_info_changed (self->priv->connection);
-  tp_cli_connection_interface_contact_info_call_request_contact_info (
+  data->call = tp_cli_connection_interface_contact_info_call_request_contact_info (
       self->priv->connection, 60*60*1000, self->priv->handle,
-      contact_info_request_cb, result, g_object_unref, G_OBJECT (self));
+      contact_info_request_cb,
+      data, (GDestroyNotify) contact_info_request_data_free,
+      G_OBJECT (self));
+
+  if (cancellable != NULL)
+    {
+      data->cancellable = g_object_ref (cancellable);
+      data->cancellable_id = g_cancellable_connect (data->cancellable,
+          G_CALLBACK (contact_info_request_cancelled_cb), data, NULL);
+    }
+
 }
 
 /**
