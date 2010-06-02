@@ -15,12 +15,23 @@
 
 typedef enum {
     CONTACTS_CHANGED,
+    GROUPS_CHANGED,
+    GROUPS_CREATED,
+    GROUPS_REMOVED,
+    GROUP_RENAMED
 } LogEntryType;
 
 typedef struct {
     LogEntryType type;
+    /* ContactsChanged */
     GHashTable *contacts_changed;
     GArray *contacts_removed;
+    /* GroupsChanged */
+    GArray *contacts;
+    /* GroupsChanged, GroupsCreated, GroupRenamed */
+    GStrv groups_added;
+    /* GroupsChanged, GroupsRemoved, GroupRenamed */
+    GStrv groups_removed;
 } LogEntry;
 
 static void
@@ -31,6 +42,12 @@ log_entry_free (LogEntry *le)
 
   if (le->contacts_removed != NULL)
     g_array_unref (le->contacts_removed);
+
+  if (le->contacts != NULL)
+    g_array_unref (le->contacts);
+
+  g_strfreev (le->groups_added);
+  g_strfreev (le->groups_removed);
 
   g_slice_free (LogEntry, le);
 }
@@ -88,6 +105,86 @@ contacts_changed_cb (TpConnection *connection,
 }
 
 static void
+groups_changed_cb (TpConnection *connection,
+    const GArray *contacts,
+    const gchar **groups_added,
+    const gchar **groups_removed,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  g_assert (contacts->len > 0);
+  g_assert ((groups_added != NULL && groups_added[0] != NULL) ||
+      (groups_removed != NULL && groups_removed[0] != NULL));
+
+  le->type = GROUPS_CHANGED;
+  le->contacts = g_array_sized_new (FALSE, FALSE, sizeof (guint),
+      contacts->len);
+  g_array_append_vals (le->contacts, contacts->data, contacts->len);
+  le->groups_added = g_strdupv ((GStrv) groups_added);
+  le->groups_removed = g_strdupv ((GStrv) groups_removed);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
+groups_created_cb (TpConnection *connection,
+    const gchar **groups_added,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  g_assert (groups_added != NULL);
+  g_assert (groups_added[0] != NULL);
+
+  le->type = GROUPS_CREATED;
+  le->groups_added = g_strdupv ((GStrv) groups_added);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
+groups_removed_cb (TpConnection *connection,
+    const gchar **groups_removed,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  g_assert (groups_removed != NULL);
+  g_assert (groups_removed[0] != NULL);
+
+  le->type = GROUPS_REMOVED;
+  le->groups_removed = g_strdupv ((GStrv) groups_removed);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
+group_renamed_cb (TpConnection *connection,
+    const gchar *old_name,
+    const gchar *new_name,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  le->type = GROUP_RENAMED;
+  le->groups_added = g_new0 (gchar *, 2);
+  le->groups_added[0] = g_strdup (new_name);
+  le->groups_removed = g_new0 (gchar *, 2);
+  le->groups_removed[0] = g_strdup (old_name);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
 maybe_queue_disconnect (TpProxySignalConnection *sc)
 {
   if (sc != NULL)
@@ -139,6 +236,18 @@ setup (Test *test,
   maybe_queue_disconnect (
       tp_cli_connection_interface_contact_list_connect_to_contacts_changed (
         test->conn, contacts_changed_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_groups_connect_to_groups_changed (
+        test->conn, groups_changed_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_groups_connect_to_groups_created (
+        test->conn, groups_created_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_groups_connect_to_groups_removed (
+        test->conn, groups_removed_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_groups_connect_to_group_renamed (
+        test->conn, group_renamed_cb, test, NULL, NULL, NULL));
 
   test->sjoerd = tp_handle_ensure (test->contact_repo, "sjoerd@example.com",
       NULL, NULL);
@@ -284,6 +393,70 @@ test_assert_one_contact_removed (Test *test,
   g_assert_cmpuint (le->contacts_removed->len, ==, 1);
   g_assert_cmpuint (g_array_index (le->contacts_removed, guint, 0), ==,
       handle);
+}
+
+static void
+test_assert_one_group_joined (Test *test,
+    guint index,
+    TpHandle handle,
+    const gchar *group)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 1);
+  g_assert_cmpuint (g_array_index (le->contacts, guint, 0), ==, handle);
+  g_assert (le->groups_added != NULL);
+  g_assert_cmpstr (le->groups_added[0], ==, group);
+  g_assert_cmpstr (le->groups_added[1], ==, NULL);
+  g_assert (le->groups_removed == NULL || le->groups_removed[0] == NULL);
+}
+
+static void
+test_assert_one_group_left (Test *test,
+    guint index,
+    TpHandle handle,
+    const gchar *group)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 1);
+  g_assert_cmpuint (g_array_index (le->contacts, guint, 0), ==, handle);
+  g_assert (le->groups_added == NULL || le->groups_added[0] == NULL);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, group);
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+}
+
+static void
+test_assert_one_group_created (Test *test,
+    guint index,
+    const gchar *group)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, GROUPS_CREATED);
+  g_assert (le->groups_added != NULL);
+  g_assert_cmpstr (le->groups_added[0], ==, group);
+  g_assert_cmpstr (le->groups_added[1], ==, NULL);
+}
+
+static void
+test_assert_one_group_removed (Test *test,
+    guint index,
+    const gchar *group)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, GROUPS_REMOVED);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, group);
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
 }
 
 static void
@@ -987,6 +1160,8 @@ test_add_to_group (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
+  LogEntry *le;
+  guint i;
 
   test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
       "Cambridge");
@@ -1025,6 +1200,26 @@ test_add_to_group (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
         test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+
+  le = g_ptr_array_index (test->log, 0);
+
+  if (le->type == CONTACTS_CHANGED)
+    {
+      test_assert_one_contact_changed (test, 0, test->ninja,
+          TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
+      i = 1;
+    }
+  else
+    {
+      test_assert_one_contact_changed (test, 1, test->ninja,
+          TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
+      i = 0;
+    }
+
+  /* either way, the i'th entry is now the GroupsChanged signal */
+  test_assert_one_group_joined (test, i, test->ninja, "Cambridge");
 }
 
 static void
@@ -1044,6 +1239,8 @@ test_add_to_group_no_op (Test *test,
   tp_cli_channel_interface_group_run_add_members (test->group,
       -1, test->arr, "", &error, NULL);
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
@@ -1069,6 +1266,9 @@ test_remove_from_group (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->group),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_group_left (test, 0, test->sjoerd, "Cambridge");
 }
 
 static void
@@ -1088,6 +1288,8 @@ test_remove_from_group_no_op (Test *test,
   tp_cli_channel_interface_group_run_remove_members (test->group,
       -1, test->arr, "", &error, NULL);
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
@@ -1104,6 +1306,8 @@ test_remove_group (Test *test,
 
   tp_cli_channel_run_close (test->group, -1, &error, NULL);
   g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
@@ -1112,14 +1316,21 @@ test_remove_group_empty (Test *test,
 {
   GError *error = NULL;
 
+  g_assert_cmpuint (test->log->len, ==, 0);
   test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
       "people who understand const in C");
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_group_created (test, 0, "people who understand const in C");
 
   g_assert (tp_intset_is_empty (
         tp_channel_group_get_members (test->group)));
 
   tp_cli_channel_run_close (test->group, -1, &error, NULL);
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+  test_assert_one_group_removed (test, 1, "people who understand const in C");
 }
 
 static void
