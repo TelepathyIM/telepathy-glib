@@ -255,6 +255,7 @@ ensure_tag (ExampleContactListManager *self,
 
   if (r == NULL)
     {
+      g_message ("creating group %s", s);
       r = g_strdup (s);
       g_hash_table_insert (self->priv->all_tags, r, r);
       tp_base_contact_list_groups_created ((TpBaseContactList *) self,
@@ -262,6 +263,18 @@ ensure_tag (ExampleContactListManager *self,
     }
 
   return r;
+}
+
+static void
+example_contact_list_manager_create_groups (TpBaseContactList *manager,
+    const gchar * const *names,
+    gsize n)
+{
+  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
+  gsize i;
+
+  for (i = 0; i < n; i++)
+    ensure_tag (self, names[i]);
 }
 
 static gboolean
@@ -1396,6 +1409,8 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
       list_manager_class, example_contact_list_manager_remove_group);
   tp_base_contact_list_class_implement_normalize_group (
       list_manager_class, example_contact_list_manager_normalize_group);
+  tp_base_contact_list_class_implement_create_groups (
+      list_manager_class, example_contact_list_manager_create_groups);
 
   g_type_class_add_private (klass, sizeof (ExampleContactListManagerPrivate));
 
