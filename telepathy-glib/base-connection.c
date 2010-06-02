@@ -3470,3 +3470,24 @@ tp_base_connection_get_dbus_daemon (TpBaseConnection *self)
 
   return self->priv->bus_proxy;
 }
+
+gpointer
+_tp_base_connection_find_channel_manager (TpBaseConnection *self,
+    GType type)
+{
+  guint i;
+
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), NULL);
+
+  for (i = 0; i < self->priv->channel_managers->len; i++)
+    {
+      gpointer manager = g_ptr_array_index (self->priv->channel_managers, i);
+
+      if (g_type_is_a (G_OBJECT_TYPE (manager), type))
+        {
+          return manager;
+        }
+    }
+
+  return NULL;
+}

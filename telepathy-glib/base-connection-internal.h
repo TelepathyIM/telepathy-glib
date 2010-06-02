@@ -29,6 +29,9 @@ void _tp_base_connection_set_handle_repo (TpBaseConnection *self,
     TpHandleType handle_type,
     TpHandleRepoIface *handle_repo);
 
+gpointer _tp_base_connection_find_channel_manager (TpBaseConnection *self,
+    GType type);
+
 G_END_DECLS
 
 #endif
