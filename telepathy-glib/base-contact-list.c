@@ -173,7 +173,7 @@ struct _TpBaseContactListPrivate
    * downloaded. The requests are in reverse chronological order.
    *
    * This becomes NULL when the contact list has been downloaded. */
-  GHashTable *queued_requests;
+  GHashTable *channel_requests;
 
   gulong status_changed_id;
 };
@@ -229,7 +229,7 @@ tp_base_contact_list_init (TpBaseContactList *self)
       TpBaseContactListPrivate);
   self->priv->groups = g_hash_table_new_full (NULL, NULL, NULL,
       g_object_unref);
-  self->priv->queued_requests = g_hash_table_new (NULL, NULL);
+  self->priv->channel_requests = g_hash_table_new (NULL, NULL);
 }
 
 static gboolean
@@ -248,13 +248,13 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
 {
   guint i;
 
-  if (self->priv->queued_requests != NULL)
+  if (self->priv->channel_requests != NULL)
     {
-      GHashTable *tmp = self->priv->queued_requests;
+      GHashTable *tmp = self->priv->channel_requests;
       GHashTableIter iter;
       gpointer key, value;
 
-      self->priv->queued_requests = NULL;
+      self->priv->channel_requests = NULL;
       g_hash_table_iter_init (&iter, tmp);
 
       while (g_hash_table_iter_next (&iter, &key, &value))
@@ -336,7 +336,7 @@ tp_base_contact_list_dispose (GObject *object)
   g_assert (self->priv->contact_repo == NULL);
   g_assert (self->priv->group_repo == NULL);
   g_assert (self->priv->lists[TP_LIST_HANDLE_SUBSCRIBE] == NULL);
-  g_assert (self->priv->queued_requests == NULL);
+  g_assert (self->priv->channel_requests == NULL);
 
   if (dispose != NULL)
     dispose (object);
@@ -654,7 +654,7 @@ tp_base_contact_list_new_channel (TpBaseContactList *self,
           chan);
     }
 
-  if (self->priv->queued_requests == NULL)
+  if (self->priv->channel_requests == NULL)
     {
       if (request_token != NULL)
         requests = g_slist_prepend (requests, request_token);
@@ -666,10 +666,10 @@ tp_base_contact_list_new_channel (TpBaseContactList *self,
   else if (request_token != NULL)
     {
       /* initial contact list not received yet, so we have to wait for it */
-      requests = g_hash_table_lookup (self->priv->queued_requests, chan);
-      g_hash_table_steal (self->priv->queued_requests, chan);
+      requests = g_hash_table_lookup (self->priv->channel_requests, chan);
+      g_hash_table_steal (self->priv->channel_requests, chan);
       requests = g_slist_prepend (requests, request_token);
-      g_hash_table_insert (self->priv->queued_requests, chan, requests);
+      g_hash_table_insert (self->priv->channel_requests, chan, requests);
     }
 }
 
@@ -1052,15 +1052,15 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
 }
 
 static void
-satisfy_queued_requests (TpExportableChannel *channel,
-                         gpointer user_data)
+satisfy_channel_requests (TpExportableChannel *channel,
+    gpointer user_data)
 {
   TpBaseContactList *self = user_data;
-  GSList *requests = g_hash_table_lookup (self->priv->queued_requests,
+  GSList *requests = g_hash_table_lookup (self->priv->channel_requests,
       channel);
 
   /* this is all fine even if requests is NULL */
-  g_hash_table_steal (self->priv->queued_requests, channel);
+  g_hash_table_steal (self->priv->channel_requests, channel);
   requests = g_slist_reverse (requests);
   tp_channel_manager_emit_new_channel (self, channel, requests);
   g_slist_free (requests);
@@ -1220,11 +1220,11 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
     }
 
   tp_base_contact_list_foreach_channel ((TpChannelManager *) self,
-      satisfy_queued_requests, self);
+      satisfy_channel_requests, self);
 
-  g_assert (g_hash_table_size (self->priv->queued_requests) == 0);
-  g_hash_table_destroy (self->priv->queued_requests);
-  self->priv->queued_requests = NULL;
+  g_assert (g_hash_table_size (self->priv->channel_requests) == 0);
+  g_hash_table_destroy (self->priv->channel_requests);
+  self->priv->channel_requests = NULL;
 }
 
 #ifdef ENABLE_DEBUG
