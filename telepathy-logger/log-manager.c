@@ -1155,10 +1155,6 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
       TPL_LOG_MANAGER, FAILED,
       "num_message argument passed needs to be greater than 0",
       callback, user_data);
-  tpl_call_with_err_if_fail (filter != NULL, manager,
-      TPL_LOG_MANAGER, FAILED,
-      "filter function should be not NULL",
-      callback, user_data);
 
   chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);

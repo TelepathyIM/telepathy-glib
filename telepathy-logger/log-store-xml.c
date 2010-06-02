@@ -1285,7 +1285,7 @@ log_store_xml_get_filtered_messages (TplLogStore *store,
       while (n != NULL)
         {
           next = g_list_next (n);
-          if (!filter (n->data, user_data))
+          if (filter != NULL && !filter (n->data, user_data))
             {
               g_object_unref (n->data);
               new_messages = g_list_delete_link (new_messages, n);
