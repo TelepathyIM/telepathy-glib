@@ -42,7 +42,10 @@
  *  "adr".
  * @parameters: The set of vCard type parameters which may be set on this field.
  *  If this list is empty and the #TP_CONTACT_INFO_FIELD_FLAG_PARAMETERS_EXACT
- *  flag is not set, any vCard type parameters may be used.
+ *  flag is not set, any vCard type parameters may be used. The type parameter
+ *  names, and any values that are case-insensitive in vCard, MUST be in lower
+ *  case. For example, a contact's preferred home address would have parameters
+ *  'type=home' and 'type=pref'.
  * @flags: Flags describing the behaviour of this field.
  * @max: Maximum number of instances of this field which may be set.
  *  #G_MAXUINT32 is used to indicate that there is no limit.
@@ -59,7 +62,10 @@
  *  "adr".
  * @parameters: The set of vCard type parameters which may be set on this field.
  *  If this list is empty and the #TP_CONTACT_INFO_FIELD_FLAG_PARAMETERS_EXACT
- *  flag is not set, any vCard type parameters may be used.
+ *  flag is not set, any vCard type parameters may be used. The type parameter
+ *  names, and any values that are case-insensitive in vCard, MUST be in lower
+ *  case. For example, a contact's preferred home address would have parameters
+ *  'type=home' and 'type=pref'.
  * @flags: Flags describing the behaviour of this field.
  * @max: Maximum number of instances of this field which may be set.
  *  #G_MAXUINT32 is used to indicate that there is no limit.
