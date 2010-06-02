@@ -385,8 +385,6 @@ tp_connection_get_avatar_requirements_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpConnection *self = (TpConnection *) proxy;
-  GStrv supported_mime_types;
-  GStrv empty_strv = { NULL };
 
   self->priv->fetching_avatar_requirements = FALSE;
 
@@ -400,13 +398,8 @@ tp_connection_get_avatar_requirements_cb (TpProxy *proxy,
 
   DEBUG ("AVATAR REQUIREMENTS ready");
 
-  supported_mime_types = (GStrv) tp_asv_get_strv (properties,
-      "SupportedAvatarMIMETypes");
-  if (supported_mime_types == NULL)
-    supported_mime_types = empty_strv;
-
   self->priv->avatar_requirements = tp_avatar_requirements_new (
-      supported_mime_types,
+      (GStrv) tp_asv_get_strv (properties, "SupportedAvatarMIMETypes"),
       tp_asv_get_uint32 (properties, "MinimumAvatarWidth", NULL),
       tp_asv_get_uint32 (properties, "MinimumAvatarHeight", NULL),
       tp_asv_get_uint32 (properties, "RecommendedAvatarWidth", NULL),
@@ -2147,9 +2140,11 @@ tp_avatar_requirements_new (GStrv supported_mime_types,
                             guint maximum_bytes)
 {
   TpAvatarRequirements *self;
+  gchar *empty[] = { NULL };
 
   self = g_slice_new (TpAvatarRequirements);
-  self->supported_mime_types = g_strdupv (supported_mime_types);
+  self->supported_mime_types =
+      g_strdupv (supported_mime_types ? supported_mime_types : empty);
   self->minimum_width = minimum_width;
   self->minimum_height = minimum_height;
   self->recommended_width = recommended_width;
