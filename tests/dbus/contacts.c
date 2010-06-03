@@ -404,14 +404,13 @@ test_contact_info (ContactsConnection *service_conn,
       contact_info_request_cancelled_cb, &result);
 
   g_idle_add_full (G_PRIORITY_HIGH, contact_info_request_cancel,
-      cancellable, NULL);
+      cancellable, g_object_unref);
 
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
   reset_result (&result);
   tp_handle_unref (service_repo, handle);
-  g_object_unref (cancellable);
 
   /* Cleanup */
   g_main_loop_unref (result.loop);
