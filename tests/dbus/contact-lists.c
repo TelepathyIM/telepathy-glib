@@ -573,6 +573,8 @@ test_properties (Test *test,
   g_assert (G_VALUE_HOLDS_BOOLEAN (tp_asv_lookup (asv, "DisjointGroups")));
   g_assert (!tp_asv_get_boolean (asv, "DisjointGroups", NULL));
   g_assert (G_VALUE_HOLDS_UINT (tp_asv_lookup (asv, "GroupStorage")));
+  g_assert_cmpuint (tp_asv_get_uint32 (asv, "GroupStorage", NULL), ==,
+      TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE);
   /* Don't assert about the contents yet - we might not have received the
    * contact list yet */
   g_assert (G_VALUE_HOLDS (tp_asv_lookup (asv, "Groups"), G_TYPE_STRV));
