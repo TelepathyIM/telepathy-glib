@@ -2253,8 +2253,8 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   /* FIXME: emit GroupRenamed(old_names[0], new_names[0]) in new API */
   DEBUG ("GroupRenamed('%s', '%s')", old_names[0], new_names[0]);
 
-  /* FIXME: emit GroupsChanged(set, old_names, new_names) in new API */
-  DEBUG ("GroupsChanged([...], ['%s'], ['%s'])", old_names[0], new_names[0]);
+  /* FIXME: emit GroupsChanged(set, new_names, old_names) in new API */
+  DEBUG ("GroupsChanged([...], ['%s'], ['%s'])", new_names[0], old_names[0]);
 
   tp_intset_destroy (set);
   tp_handle_unref (self->priv->group_repo, new_handle);
