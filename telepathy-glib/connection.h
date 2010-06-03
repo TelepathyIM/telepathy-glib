@@ -33,7 +33,7 @@ G_BEGIN_DECLS
 typedef struct _TpAvatarRequirements TpAvatarRequirements;
 struct _TpAvatarRequirements
 {
-  gchar **supported_mime_types;
+  GStrv supported_mime_types;
   guint minimum_width;
   guint minimum_height;
   guint recommended_width;
@@ -67,7 +67,7 @@ typedef struct _TpContactInfoFieldSpec TpContactInfoFieldSpec;
 struct _TpContactInfoFieldSpec
 {
   gchar *name;
-  gchar **parameters;
+  GStrv parameters;
   TpContactInfoFieldFlags flags;
   guint max;
   /*<private>*/
@@ -89,8 +89,8 @@ typedef struct _TpContactInfoField TpContactInfoField;
 struct _TpContactInfoField
 {
   gchar *field_name;
-  gchar **parameters;
-  gchar **field_value;
+  GStrv parameters;
+  GStrv field_value;
   /*<private>*/
   gpointer priv;
 };
