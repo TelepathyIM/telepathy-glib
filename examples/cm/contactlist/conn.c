@@ -31,9 +31,9 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
       tp_contacts_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST,
-      NULL);
+      tp_base_contact_list_mixin_list_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS,
-      NULL);
+      tp_base_contact_list_mixin_groups_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
       tp_presence_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
@@ -292,7 +292,10 @@ constructed (GObject *object)
 
   tp_contacts_mixin_init (object,
       G_STRUCT_OFFSET (ExampleContactListConnection, contacts_mixin));
+
   tp_base_connection_register_with_contacts_mixin (base);
+  tp_base_contact_list_mixin_register_with_contacts_mixin (base);
+
   tp_contacts_mixin_add_contact_attributes_iface (object,
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       aliasing_fill_contact_attributes);
@@ -435,11 +438,14 @@ example_contact_list_connection_class_init (
 
   tp_contacts_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleContactListConnectionClass, contacts_mixin));
+
   tp_presence_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleContactListConnectionClass, presence_mixin),
       status_available, get_contact_statuses, set_own_status,
       example_contact_list_presence_statuses ());
   tp_presence_mixin_simple_presence_init_dbus_properties (object_class);
+
+  tp_base_contact_list_mixin_class_init (base_class);
 }
 
 static void
