@@ -2653,11 +2653,34 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   old_names[0] = tp_handle_inspect (self->priv->group_repo, old_handle);
   new_names[0] = tp_handle_inspect (self->priv->group_repo, new_handle);
 
-  /* FIXME: emit GroupRenamed(old_names[0], new_names[0]) in new API */
   DEBUG ("GroupRenamed('%s', '%s')", old_names[0], new_names[0]);
 
-  /* FIXME: emit GroupsChanged(set, new_names, old_names) in new API */
-  DEBUG ("GroupsChanged([...], ['%s'], ['%s'])", new_names[0], old_names[0]);
+  if (self->priv->svc_contact_groups)
+    {
+      tp_svc_connection_interface_contact_groups_emit_group_renamed (
+          self->priv->conn, old_names[0], new_names[0]);
+
+      tp_svc_connection_interface_contact_groups_emit_groups_created (
+          self->priv->conn, new_names);
+
+      tp_svc_connection_interface_contact_groups_emit_groups_removed (
+          self->priv->conn, old_names);
+    }
+
+  if (tp_intset_size (set) > 0)
+    {
+      DEBUG ("GroupsChanged([%u contacts], ['%s'], ['%s'])",
+          tp_intset_size (set), new_names[0], old_names[0]);
+
+      if (self->priv->svc_contact_groups)
+        {
+          GArray *arr = tp_intset_to_array (set);
+
+          tp_svc_connection_interface_contact_groups_emit_groups_changed (
+              self->priv->conn, arr, new_names, old_names);
+          g_array_unref (arr);
+        }
+    }
 
   tp_intset_destroy (set);
   tp_handle_unref (self->priv->group_repo, new_handle);
