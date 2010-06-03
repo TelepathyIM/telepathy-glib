@@ -535,6 +535,60 @@ test_initial_channels (Test *test,
       ==, 0);
   g_assert (tp_intset_is_member (tp_channel_group_get_members (test->deny),
         test->bill));
+}
+
+static void
+test_properties (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GHashTable *asv;
+  GError *error = NULL;
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
+  g_assert (tp_asv_get_boolean (asv, "SubscriptionsPersist", NULL));
+  g_assert (tp_asv_get_boolean (asv, "CanChangeSubscriptions", NULL));
+  g_assert (tp_asv_get_boolean (asv, "RequestUsesMessage", NULL));
+  g_hash_table_unref (asv);
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
+  g_assert (G_VALUE_HOLDS_BOOLEAN (tp_asv_lookup (asv, "DisjointGroups")));
+  g_assert (!tp_asv_get_boolean (asv, "DisjointGroups", NULL));
+  g_assert (G_VALUE_HOLDS_UINT (tp_asv_lookup (asv, "GroupStorage")));
+  /* Don't assert about the contents yet - we might not have received the
+   * contact list yet */
+  g_assert (G_VALUE_HOLDS (tp_asv_lookup (asv, "Groups"), G_TYPE_STRV));
+  g_hash_table_unref (asv);
+
+  /* this has the side-effect of waiting for the contact list to be received */
+  test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
+  g_assert (tp_asv_get_boolean (asv, "SubscriptionsPersist", NULL));
+  g_assert (tp_asv_get_boolean (asv, "CanChangeSubscriptions", NULL));
+  g_assert (tp_asv_get_boolean (asv, "RequestUsesMessage", NULL));
+  g_hash_table_unref (asv);
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
+  g_assert (G_VALUE_HOLDS_BOOLEAN (tp_asv_lookup (asv, "DisjointGroups")));
+  g_assert (G_VALUE_HOLDS_UINT (tp_asv_lookup (asv, "GroupStorage")));
+  g_assert (tp_asv_get_strv (asv, "Groups") != NULL);
+  g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"), "Cambridge"));
+  g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"), "Montreal"));
+  g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"),
+        "Francophones"));
+  g_hash_table_unref (asv);
 
   g_assert_cmpuint (test->log->len, ==, 0);
 }
@@ -1449,6 +1503,9 @@ main (int argc,
 
   g_test_add ("/contact-lists/initial-channels",
       Test, NULL, setup, test_initial_channels, teardown);
+  g_test_add ("/contact-lists/properties",
+      Test, NULL, setup, test_properties, teardown);
+
   g_test_add ("/contact-lists/accept-publish-request",
       Test, NULL, setup, test_accept_publish_request, teardown);
   g_test_add ("/contact-lists/reject-publish-request",
