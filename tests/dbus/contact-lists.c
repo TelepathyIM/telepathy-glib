@@ -880,7 +880,7 @@ test_remove_group (Test *test,
 }
 
 static void
-test_remove_group_non_empty (Test *test,
+test_remove_group_empty (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
@@ -1052,8 +1052,8 @@ main (int argc,
       Test, NULL, setup, test_remove_from_group_no_op, teardown);
   g_test_add ("/contact-lists/remove-group",
       Test, NULL, setup, test_remove_group, teardown);
-  g_test_add ("/contact-lists/remove-group/non-empty",
-      Test, NULL, setup, test_remove_group_non_empty, teardown);
+  g_test_add ("/contact-lists/remove-group/empty",
+      Test, NULL, setup, test_remove_group_empty, teardown);
 
   g_test_add ("/contact-lists/add-to-deny",
       Test, NULL, setup, test_add_to_deny, teardown);
