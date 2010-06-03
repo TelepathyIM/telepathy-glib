@@ -1846,6 +1846,74 @@ test_set_group_members (Test *test,
 }
 
 static void
+test_rename_group (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  LogEntry *le;
+  GError *error = NULL;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 4);
+
+  tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
+      -1, "Cambridge", "Grantabrugge", &error, NULL);
+  g_assert_no_error (error);
+
+  g_assert (tp_proxy_get_invalidated (test->group) != NULL);
+  g_assert_cmpuint (test->log->len, ==, 4);
+
+  test_assert_one_group_created (test, 0, "Grantabrugge");
+
+  le = g_ptr_array_index (test->log, 1);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 4);
+  g_assert (le->groups_added != NULL);
+  g_assert_cmpstr (le->groups_added[0], ==, "Grantabrugge");
+  g_assert_cmpstr (le->groups_added[1], ==, NULL);
+  g_assert (le->groups_removed == NULL || le->groups_removed[0] == NULL);
+
+  test_assert_one_group_removed (test, 2, "Cambridge");
+
+  le = g_ptr_array_index (test->log, 3);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 4);
+  g_assert (le->groups_added == NULL || le->groups_added[0] == NULL);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+}
+
+static void
+test_rename_group_overwrite (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
+      -1, "Cambridge", "Montreal", &error, NULL);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_assert_cmpuint (test->log->len, ==, 0);
+  g_clear_error (&error);
+}
+
+static void
+test_rename_group_absent (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
+      -1, "Badgers", "Mushrooms", &error, NULL);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_DOES_NOT_EXIST);
+  g_assert_cmpuint (test->log->len, ==, 0);
+  g_clear_error (&error);
+}
+
+static void
 test_add_to_deny (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
@@ -2072,6 +2140,13 @@ main (int argc,
 
   g_test_add ("/contact-lists/set_group_members",
       Test, NULL, setup, test_set_group_members, teardown);
+
+  g_test_add ("/contact-lists/rename_group",
+      Test, NULL, setup, test_rename_group, teardown);
+  g_test_add ("/contact-lists/rename_group/absent",
+      Test, NULL, setup, test_rename_group_absent, teardown);
+  g_test_add ("/contact-lists/rename_group/overwrite",
+      Test, NULL, setup, test_rename_group_overwrite, teardown);
 
   g_test_add ("/contact-lists/add-to-deny",
       Test, NULL, setup, test_add_to_deny, teardown);
