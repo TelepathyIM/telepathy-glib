@@ -729,6 +729,38 @@ test_contacts (Test *test,
 }
 
 static void
+test_contact_list_attrs (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  const gchar * const interfaces[] = {
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      NULL };
+
+  tp_connection_request_contact_list_attributes (test->conn, -1,
+      interfaces, FALSE, contact_attrs_cb, test, test_quit_loop, NULL);
+  g_main_loop_run (test->main_loop);
+
+  test_assert_contact_list_attrs (test, test->sjoerd,
+      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_YES, NULL);
+  test_assert_contact_list_attrs (test, test->wim,
+      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_ASK,
+      "I'm more metal than you!");
+  test_assert_contact_list_attrs (test, test->helen,
+      TP_PRESENCE_STATE_ASK, TP_PRESENCE_STATE_NO, NULL);
+
+  test_assert_contact_groups_attr (test, test->sjoerd, "Cambridge");
+  test_assert_contact_groups_attr (test, test->wim, NULL);
+  test_assert_contact_groups_attr (test, test->helen, "Cambridge");
+
+  /* bill is blocked, but is not on the contact list as such; the ninja isn't
+   * in the initial state at all */
+  g_assert (g_hash_table_lookup (test->contact_attributes,
+        GUINT_TO_POINTER (test->bill)) == NULL);
+  g_assert (g_hash_table_lookup (test->contact_attributes,
+        GUINT_TO_POINTER (test->ninja)) == NULL);
+}
+
+static void
 test_accept_publish_request (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
@@ -1692,6 +1724,8 @@ main (int argc,
       Test, NULL, setup, test_properties, teardown);
   g_test_add ("/contact-lists/contacts",
       Test, NULL, setup, test_contacts, teardown);
+  g_test_add ("/contact-lists/contact-list-attrs",
+      Test, NULL, setup, test_contact_list_attrs, teardown);
 
   g_test_add ("/contact-lists/accept-publish-request",
       Test, NULL, setup, test_accept_publish_request, teardown);
