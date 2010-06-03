@@ -2434,11 +2434,25 @@ contacts_get_contact_info (ContactsContext *c)
 
 typedef struct
 {
+  TpContact *contact;
   GSimpleAsyncResult *result;
   TpProxyPendingCall *call;
   GCancellable *cancellable;
-  gulong cancellable_id;
+  gulong cancelled_id;
+  guint cancel_idle_id;
 } ContactInfoRequestData;
+
+static void
+contact_info_request_data_disconnect_cancellable (ContactInfoRequestData *data)
+{
+  if (data->cancelled_id != 0)
+    g_cancellable_disconnect (data->cancellable, data->cancelled_id);
+  data->cancelled_id = 0;
+
+  if (data->cancel_idle_id != 0)
+    g_source_remove (data->cancel_idle_id);
+  data->cancel_idle_id = 0;
+}
 
 static void
 contact_info_request_data_free (ContactInfoRequestData *data)
@@ -2447,11 +2461,9 @@ contact_info_request_data_free (ContactInfoRequestData *data)
     {
       g_object_unref (data->result);
 
+      contact_info_request_data_disconnect_cancellable (data);
       if (data->cancellable != NULL)
-        {
-          g_cancellable_disconnect (data->cancellable, data->cancellable_id);
-          g_object_unref (data->cancellable);
-        }
+        g_object_unref (data->cancellable);
 
       g_slice_free (ContactInfoRequestData, data);
     }
@@ -2464,8 +2476,11 @@ contact_info_request_cb (TpConnection *connection,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpContact *self = TP_CONTACT (weak_object);
   ContactInfoRequestData *data = user_data;
+  TpContact *self = data->contact;
+
+  /* At this point it's too late to cancel the operation */
+  contact_info_request_data_disconnect_cancellable (data);
 
   if (error != NULL)
     {
@@ -2478,16 +2493,19 @@ contact_info_request_cb (TpConnection *connection,
     }
 
   g_simple_async_result_complete (data->result);
+  data->call = NULL;
 }
 
-static void
-contact_info_request_cancelled_cb (GCancellable *cancellable,
-    ContactInfoRequestData *data)
+static gboolean
+contact_info_request_cancelled_idle_cb (gpointer user_data)
 {
+  ContactInfoRequestData *data = user_data;
   GError *error = NULL;
 
+  data->cancel_idle_id = 0;
+
   if (!g_cancellable_set_error_if_cancelled (data->cancellable, &error))
-    return;
+    return FALSE;
 
   DEBUG ("Request ContactInfo cancelled");
 
@@ -2495,7 +2513,22 @@ contact_info_request_cancelled_cb (GCancellable *cancellable,
   g_simple_async_result_complete (data->result);
   g_clear_error (&error);
 
+  g_assert (data->call != NULL);
   tp_proxy_pending_call_cancel (data->call);
+
+  return FALSE;
+}
+
+static void
+contact_info_request_cancelled_cb (GCancellable *cancellable,
+    ContactInfoRequestData *data)
+{
+  /* Cancellable is locked here, and g_cancellable_disconnect() also try to get
+   * the lock. That could then make deadlock. To be safe we cancel the DBus call
+   * in an idle callback. Use G_PRIORITY_HIGH to be sure our callback comes
+   * before the DBus reply otherwise it could be racy. */
+  data->cancel_idle_id = g_idle_add_full (G_PRIORITY_HIGH,
+      contact_info_request_cancelled_idle_cb, data, NULL);
 }
 
 /**
@@ -2538,6 +2571,7 @@ tp_contact_request_contact_info_async (TpContact *self,
 
   data = g_slice_new0 (ContactInfoRequestData);
 
+  data->contact = self;
   data->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_contact_request_contact_info_finish);
 
@@ -2545,12 +2579,12 @@ tp_contact_request_contact_info_async (TpContact *self,
       self->priv->connection, 60*60*1000, self->priv->handle,
       contact_info_request_cb,
       data, (GDestroyNotify) contact_info_request_data_free,
-      G_OBJECT (self));
+      NULL);
 
   if (cancellable != NULL)
     {
       data->cancellable = g_object_ref (cancellable);
-      data->cancellable_id = g_cancellable_connect (data->cancellable,
+      data->cancelled_id = g_cancellable_connect (data->cancellable,
           G_CALLBACK (contact_info_request_cancelled_cb), data, NULL);
     }
 
