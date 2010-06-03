@@ -243,7 +243,8 @@ ensure_contact (ExampleContactListManager *self,
 
 static gchar *
 ensure_tag (ExampleContactListManager *self,
-    const gchar *s)
+    const gchar *s,
+    gboolean emit_signal)
 {
   gchar *r = g_hash_table_lookup (self->priv->all_tags, s);
 
@@ -252,8 +253,10 @@ ensure_tag (ExampleContactListManager *self,
       g_message ("creating group %s", s);
       r = g_strdup (s);
       g_hash_table_insert (self->priv->all_tags, r, r);
-      tp_base_contact_list_groups_created ((TpBaseContactList *) self,
-          &s, 1);
+
+      if (emit_signal)
+        tp_base_contact_list_groups_created ((TpBaseContactList *) self,
+            &s, 1);
     }
 
   return r;
@@ -268,7 +271,9 @@ example_contact_list_manager_create_groups (TpBaseContactList *manager,
   gsize i;
 
   for (i = 0; i < n; i++)
-    ensure_tag (self, names[i]);
+    ensure_tag (self, names[i], FALSE);
+
+  tp_base_contact_list_groups_created (manager, names, n);
 }
 
 static gboolean
@@ -294,9 +299,9 @@ receive_contact_lists (gpointer p)
 
   g_message ("Receiving roster from server");
 
-  cambridge = ensure_tag (self, "Cambridge");
-  montreal = ensure_tag (self, "Montreal");
-  francophones = ensure_tag (self, "Francophones");
+  cambridge = ensure_tag (self, "Cambridge", FALSE);
+  montreal = ensure_tag (self, "Montreal", FALSE);
+  francophones = ensure_tag (self, "Francophones", FALSE);
 
   /* Add various people who are already subscribing and publishing */
 
@@ -534,7 +539,7 @@ example_contact_list_manager_add_to_group (TpBaseContactList *manager,
     {
       gboolean created = FALSE, updated = FALSE;
       ExampleContactDetails *d = ensure_contact (self, member, &created);
-      gchar *tag = ensure_tag (self, group);
+      gchar *tag = ensure_tag (self, group, TRUE);
 
       if (!created)
         tp_handle_set_remove (new_contacts, member);
