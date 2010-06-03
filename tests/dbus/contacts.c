@@ -164,6 +164,8 @@ contact_info_verify (TpContact *contact)
   g_assert (field->field_value != NULL);
   g_assert_cmpstr (field->field_value[0], ==, "Foo");
   g_assert (field->field_value[1] == NULL);
+
+  g_list_free (info);
 }
 
 static void
@@ -204,6 +206,8 @@ contact_info_prepare_cb (GObject *object,
       g_assert (spec->parameters[0] == NULL);
       g_assert_cmpint (spec->flags, ==, 0);
       g_assert_cmpint (spec->max, ==, 0);
+
+      g_list_free (specs);
     }
 
   finish (result);
