@@ -507,6 +507,7 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
   cls->priv->subscriptions_persist = tp_base_contact_list_true_func;
   cls->priv->request_uses_message = tp_base_contact_list_true_func;
   cls->priv->can_block = tp_base_contact_list_false_func;
+  cls->priv->disjoint_groups = tp_base_contact_list_false_func;
 
   object_class->get_property = tp_base_contact_list_get_property;
   object_class->set_property = tp_base_contact_list_set_property;
