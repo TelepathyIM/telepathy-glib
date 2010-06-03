@@ -2547,10 +2547,10 @@ contact_info_request_cancelled_cb (GCancellable *cancellable,
  * That means you can call tp_contact_get_contact_info() to get the new vCard
  * inside @callback.
  *
- * Note that requesting the vCard from network can take significant time, so
- * a bigger timeout is set on the underlying DBus call. That's also the reason
- * we provide @cancellable in case the UI is not interested in the vCard
- * anymore.
+ * Note that requesting the vCard from the network can take significant time, so
+ * a bigger timeout is set on the underlying D-Bus call. @cancellable can be
+ * cancelled to free resources used in the D-Bus call if the caller is no longer
+ * interested in the vCard.
  *
  * If %TP_CONTACT_FEATURE_CONTACT_INFO is not yet set on @self, it will be
  * set before its property gets updated and @callback is called.
