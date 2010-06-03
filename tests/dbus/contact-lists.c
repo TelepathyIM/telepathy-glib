@@ -1550,7 +1550,7 @@ test_remove_from_subscribe_no_op (Test *test,
 
 static void
 test_add_to_group (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
   LogEntry *le;
@@ -1571,8 +1571,14 @@ test_add_to_group (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->group,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->group,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_groups_run_add_to_group (test->conn,
+        -1, "Cambridge", test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -1620,7 +1626,7 @@ test_add_to_group (Test *test,
 
 static void
 test_add_to_group_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1632,8 +1638,14 @@ test_add_to_group_no_op (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_add_members (test->group,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->group,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_groups_run_add_to_group (test->conn,
+        -1, "Cambridge", test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   g_assert_cmpuint (test->log->len, ==, 0);
@@ -1643,7 +1655,7 @@ test_add_to_group_no_op (Test *test,
 
 static void
 test_remove_from_group (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1655,8 +1667,14 @@ test_remove_from_group (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_remove_members (test->group,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->group,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_groups_run_remove_from_group (
+        test->conn, -1, "Cambridge", test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -1673,7 +1691,7 @@ test_remove_from_group (Test *test,
 
 static void
 test_remove_from_group_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1685,8 +1703,14 @@ test_remove_from_group_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->group,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->group,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_groups_run_remove_from_group (
+        test->conn, -1, "Cambridge", test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   g_assert_cmpuint (test->log->len, ==, 0);
@@ -1696,7 +1720,7 @@ test_remove_from_group_no_op (Test *test,
 
 static void
 test_remove_group (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1706,15 +1730,40 @@ test_remove_group (Test *test,
   g_assert (!tp_intset_is_empty (
         tp_channel_group_get_members (test->group)));
 
-  tp_cli_channel_run_close (test->group, -1, &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  if (!tp_strdiff (mode, "old"))
+    {
+      /* The old API can't remove non-empty groups... */
+      tp_cli_channel_run_close (test->group, -1, &error, NULL);
+      g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
 
-  g_assert_cmpuint (test->log->len, ==, 0);
+      g_assert_cmpuint (test->log->len, ==, 0);
+    }
+  else
+    {
+      /* ... but the new API can */
+      LogEntry *le;
+
+      tp_cli_connection_interface_contact_groups_run_remove_group (test->conn,
+          -1, "Cambridge", &error, NULL);
+      g_assert_no_error (error);
+
+      g_assert (tp_proxy_get_invalidated (test->group) != NULL);
+      g_assert_cmpuint (test->log->len, ==, 2);
+      test_assert_one_group_removed (test, 0, "Cambridge");
+
+      le = g_ptr_array_index (test->log, 1);
+      g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+      g_assert_cmpuint (le->contacts->len, ==, 4);
+      g_assert (le->groups_added == NULL || le->groups_added[0] == NULL);
+      g_assert (le->groups_removed != NULL);
+      g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
+      g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+    }
 }
 
 static void
 test_remove_group_empty (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1946,6 +1995,19 @@ main (int argc,
       Test, NULL, setup, test_remove_group, teardown);
   g_test_add ("/contact-lists/remove-group/empty",
       Test, NULL, setup, test_remove_group_empty, teardown);
+
+  g_test_add ("/contact-lists/add-to-group/old",
+      Test, "old", setup, test_add_to_group, teardown);
+  g_test_add ("/contact-lists/add-to-group/no-op/old",
+      Test, "old", setup, test_add_to_group_no_op, teardown);
+  g_test_add ("/contact-lists/remove-from-group/old",
+      Test, "old", setup, test_remove_from_group, teardown);
+  g_test_add ("/contact-lists/remove-from-group/no-op/old",
+      Test, "old", setup, test_remove_from_group_no_op, teardown);
+  g_test_add ("/contact-lists/remove-group/old",
+      Test, "old", setup, test_remove_group, teardown);
+  g_test_add ("/contact-lists/remove-group/empty/old",
+      Test, "old", setup, test_remove_group_empty, teardown);
 
   g_test_add ("/contact-lists/add-to-deny",
       Test, NULL, setup, test_add_to_deny, teardown);
