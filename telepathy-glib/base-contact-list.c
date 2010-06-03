@@ -2224,12 +2224,11 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
 
   if (new_chan == NULL)
     {
-      new_chan = g_hash_table_lookup (self->priv->groups,
-          GUINT_TO_POINTER (new_handle));
-
       tp_base_contact_list_new_channel (self, TP_HANDLE_TYPE_GROUP,
           new_handle, NULL);
 
+      new_chan = g_hash_table_lookup (self->priv->groups,
+          GUINT_TO_POINTER (new_handle));
       g_assert (new_chan != NULL);
     }
 
