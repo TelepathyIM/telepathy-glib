@@ -1785,6 +1785,67 @@ test_remove_group_empty (Test *test,
 }
 
 static void
+test_set_group_members (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+  LogEntry *le;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 4);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->helen));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->wim));
+
+  g_array_append_val (test->arr, test->sjoerd);
+  g_array_append_val (test->arr, test->wim);
+
+  tp_cli_connection_interface_contact_groups_run_set_group_members (test->conn,
+      -1, "Cambridge", test->arr, &error, NULL);
+
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * change-notification, too */
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 2);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->wim));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->helen));
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+
+  /* Wim was added */
+  test_assert_one_group_joined (test, 0, test->wim, "Cambridge");
+
+  /* The three other members, other than Sjoerd, left */
+  le = g_ptr_array_index (test->log, 1);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 3);
+  g_assert (le->groups_added == NULL || le->groups_added[0] == NULL);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+}
+
+static void
 test_add_to_deny (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
@@ -2008,6 +2069,9 @@ main (int argc,
       Test, "old", setup, test_remove_group, teardown);
   g_test_add ("/contact-lists/remove-group/empty/old",
       Test, "old", setup, test_remove_group_empty, teardown);
+
+  g_test_add ("/contact-lists/set_group_members",
+      Test, NULL, setup, test_set_group_members, teardown);
 
   g_test_add ("/contact-lists/add-to-deny",
       Test, NULL, setup, test_add_to_deny, teardown);
