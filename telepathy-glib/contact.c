@@ -616,7 +616,7 @@ tp_contact_get_property (GObject *object,
       break;
 
     case PROP_CONTACT_INFO:
-      g_value_set_boxed (value, tp_contact_get_contact_info (self));
+      g_value_set_boxed (value, self->priv->contact_info);
       break;
 
     default:
