@@ -114,50 +114,70 @@ struct _TpBaseContactListClass {
     TpBaseContactListClassPrivate *priv;
 };
 
-/* ---- Implemented by subclasses for ContactList ---- */
+/* ---- Implemented by subclasses for ContactList modification ---- */
 
-void tp_base_contact_list_class_implement_can_change_subscriptions (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check);
+#define TP_TYPE_MUTABLE_CONTACT_LIST \
+  (tp_mutable_contact_list_get_type ())
 
-void tp_base_contact_list_class_implement_request_uses_message (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check);
+#define TP_IS_MUTABLE_CONTACT_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+  TP_TYPE_MUTABLE_CONTACT_LIST))
 
-typedef gboolean (*TpBaseContactListRequestSubscriptionFunc) (
+#define TP_MUTABLE_CONTACT_LIST_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
+  TP_TYPE_MUTABLE_CONTACT_LIST, TpMutableContactListInterface))
+
+typedef struct _TpMutableContactListInterface TpMutableContactListInterface;
+
+typedef void (*TpBaseContactListRequestSubscriptionFunc) (
     TpBaseContactList *self,
     TpHandleSet *contacts,
-    const gchar *message,
-    GError **error);
+    const gchar *message);
 
-void tp_base_contact_list_class_implement_request_subscription (
-    TpBaseContactListClass *cls,
-    TpBaseContactListRequestSubscriptionFunc impl);
-
-typedef gboolean (*TpBaseContactListActOnContactsFunc) (
+typedef void (*TpBaseContactListActOnContactsFunc) (
     TpBaseContactList *self,
+    TpHandleSet *contacts);
+
+struct _TpMutableContactListInterface {
+    GTypeInterface parent;
+    /* mandatory-to-implement */
+    TpBaseContactListRequestSubscriptionFunc request_subscription;
+    TpBaseContactListActOnContactsFunc authorize_publication;
+    TpBaseContactListActOnContactsFunc remove_contacts;
+    TpBaseContactListActOnContactsFunc unsubscribe;
+    TpBaseContactListActOnContactsFunc unpublish;
+    /* optional-to-implement */
+    TpBaseContactListActOnContactsFunc store_contacts;
+    TpBaseContactListBooleanFunc can_change_subscriptions;
+    TpBaseContactListBooleanFunc get_request_uses_message;
+};
+
+GType tp_mutable_contact_list_get_type (void) G_GNUC_CONST;
+
+gboolean tp_base_contact_list_can_change_subscriptions (
+    TpBaseContactList *self);
+
+gboolean tp_base_contact_list_get_request_uses_message (
+    TpBaseContactList *self);
+
+void tp_base_contact_list_request_subscription (TpBaseContactList *self,
     TpHandleSet *contacts,
-    GError **error);
+    const gchar *message);
 
-void tp_base_contact_list_class_implement_authorize_publication (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl);
+void tp_base_contact_list_authorize_publication (TpBaseContactList *self,
+    TpHandleSet *contacts);
 
-void tp_base_contact_list_class_implement_just_store_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl);
+void tp_base_contact_list_store_contacts (TpBaseContactList *self,
+    TpHandleSet *contacts);
 
-void tp_base_contact_list_class_implement_remove_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl);
+void tp_base_contact_list_remove_contacts (TpBaseContactList *self,
+    TpHandleSet *contacts);
 
-void tp_base_contact_list_class_implement_unsubscribe (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl);
+void tp_base_contact_list_unsubscribe (TpBaseContactList *self,
+    TpHandleSet *contacts);
 
-void tp_base_contact_list_class_implement_unpublish (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl);
+void tp_base_contact_list_unpublish (TpBaseContactList *self,
+    TpHandleSet *contacts);
 
 /* ---- contact blocking ---- */
 

@@ -80,6 +80,10 @@
  *
  * The class of a #TpBaseContactList.
  *
+ * Additional functionality can be added by implementing #GInterface<!-- -->s.
+ * Most subclasses should implement %TP_TYPE_MUTABLE_CONTACT_LIST, which allows
+ * the contact list to be altered.
+ *
  * Since: 0.11.UNRELEASED
  */
 
@@ -131,7 +135,6 @@
  * TpBaseContactListActOnContactsFunc:
  * @self: the contact list manager
  * @contacts: the contacts on which to act
- * @error: used to raise an error if %FALSE is returned
  *
  * Signature of a virtual method that acts on a set of contacts and needs no
  * additional information, such as removing contacts, approving or cancelling
@@ -140,8 +143,6 @@
  *
  * The virtual method should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before returning.
- *
- * Returns: %TRUE on success
  */
 
 /**
@@ -149,15 +150,12 @@
  * @self: the contact list manager
  * @contacts: the contacts whose subscription is to be requested
  * @message: an optional human-readable message from the user
- * @error: used to raise an error if %FALSE is returned
  *
  * Signature of a virtual method to request permission to see some contacts'
  * presence.
  *
  * The virtual method should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before returning.
- *
- * Returns: %TRUE on success
  */
 
 #include <telepathy-glib/base-connection.h>
@@ -193,15 +191,6 @@ struct _TpBaseContactListPrivate
 
 struct _TpBaseContactListClassPrivate
 {
-  TpBaseContactListRequestSubscriptionFunc request_subscription;
-  TpBaseContactListActOnContactsFunc authorize_publication;
-  TpBaseContactListActOnContactsFunc just_store_contacts;
-  TpBaseContactListActOnContactsFunc remove_contacts;
-  TpBaseContactListActOnContactsFunc unsubscribe;
-  TpBaseContactListActOnContactsFunc unpublish;
-  TpBaseContactListBooleanFunc can_change_subscriptions;
-  TpBaseContactListBooleanFunc request_uses_message;
-
   TpBaseContactListBooleanFunc can_block;
   TpBaseContactListContactBooleanFunc get_contact_blocked;
   TpBaseContactListGetContactsFunc get_blocked_contacts;
@@ -227,6 +216,42 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseContactList,
       channel_manager_iface_init);
     g_type_add_class_private (g_define_type_id, sizeof (
         TpBaseContactListClassPrivate)))
+
+/**
+ * TP_TYPE_MUTABLE_CONTACT_LIST:
+ *
+ * Interface representing a #TpBaseContactList on which the contact list can
+ * potentially be changed.
+ */
+
+/**
+ * TpMutableContactListInterface:
+ * @parent: the parent interface
+ * @request_subscription: the implementation of
+ *  tp_base_contact_list_request_subscription(); must always be provided
+ * @authorize_publication: the implementation of
+ *  tp_base_contact_list_authorize_publication(); must always be provided
+ * @remove_contacts: the implementation of
+ *  tp_base_contact_list_remove_contacts(); must always be provided
+ * @unsubscribe: the implementation of
+ *  tp_base_contact_list_unsubscribe(); must always be provided
+ * @unpublish: the implementation of
+ *  tp_base_contact_list_unpublish(); must always be provided
+ * @store_contacts: the implementation of
+ *  tp_base_contact_list_store_contacts(); if not reimplemented,
+ *  the default implementation is %NULL, which is interpreted as "do nothing"
+ * @can_change_subscriptions: the implementation of
+ *  tp_base_contact_list_can_change_subscriptions(); if not reimplemented,
+ *  the default implementation always returns %TRUE
+ * @get_request_uses_message: the implementation of
+ *  tp_base_contact_list_get_request_uses_message(); if not reimplemented,
+ *  the default implementation always returns %TRUE
+ *
+ * The interface vtable for a %TP_TYPE_MUTABLE_CONTACT_LIST.
+ */
+
+G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
+    TP_TYPE_BASE_CONTACT_LIST)
 
 enum {
     PROP_CONNECTION = 1,
@@ -449,18 +474,19 @@ tp_base_contact_list_constructed (GObject *object)
   g_return_if_fail (cls->get_states != NULL);
   g_return_if_fail (cls->get_subscriptions_persist != NULL);
 
-  g_assert (cls->priv->can_change_subscriptions != NULL);
-  g_assert (cls->priv->request_uses_message != NULL);
-
-  if (cls->priv->can_change_subscriptions !=
-      tp_base_contact_list_false_func)
+  if (TP_IS_MUTABLE_CONTACT_LIST (self))
     {
-      g_assert (cls->priv->request_subscription != NULL);
-      g_assert (cls->priv->authorize_publication != NULL);
-      g_assert (cls->priv->just_store_contacts != NULL);
-      g_assert (cls->priv->remove_contacts != NULL);
-      g_assert (cls->priv->unsubscribe != NULL);
-      g_assert (cls->priv->unpublish != NULL);
+      TpMutableContactListInterface *iface =
+        TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+
+      g_return_if_fail (iface->can_change_subscriptions != NULL);
+      g_return_if_fail (iface->get_request_uses_message != NULL);
+      g_return_if_fail (iface->request_subscription != NULL);
+      g_return_if_fail (iface->authorize_publication != NULL);
+      /* iface->store_contacts == NULL is OK */
+      g_return_if_fail (iface->remove_contacts != NULL);
+      g_return_if_fail (iface->unsubscribe != NULL);
+      g_return_if_fail (iface->unpublish != NULL);
     }
 
   if (cls->priv->can_block != tp_base_contact_list_false_func)
@@ -505,6 +531,14 @@ tp_base_contact_list_constructed (GObject *object)
 }
 
 static void
+tp_mutable_contact_list_default_init (TpMutableContactListInterface *iface)
+{
+  iface->can_change_subscriptions = tp_base_contact_list_true_func;
+  iface->get_request_uses_message = tp_base_contact_list_true_func;
+  /* there's no default for the other virtual methods */
+}
+
+static void
 tp_base_contact_list_class_init (TpBaseContactListClass *cls)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
@@ -517,8 +551,6 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
   /* defaults */
   cls->get_subscriptions_persist = tp_base_contact_list_true_func;
 
-  cls->priv->can_change_subscriptions = tp_base_contact_list_false_func;
-  cls->priv->request_uses_message = tp_base_contact_list_true_func;
   cls->priv->can_block = tp_base_contact_list_false_func;
   cls->priv->disjoint_groups = tp_base_contact_list_false_func;
 
@@ -842,7 +874,7 @@ _tp_base_contact_list_get_group_flags (TpBaseContactList *self)
   TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpChannelGroupFlags ret = 0;
 
-  if (!cls->priv->can_change_subscriptions (self))
+  if (!tp_base_contact_list_can_change_subscriptions (self))
     return 0;
 
   if (cls->priv->add_to_group != NULL)
@@ -858,9 +890,7 @@ TpChannelGroupFlags
 _tp_base_contact_list_get_list_flags (TpBaseContactList *self,
     TpHandle list)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
-
-  if (!cls->priv->can_change_subscriptions (self))
+  if (!tp_base_contact_list_can_change_subscriptions (self))
     return 0;
 
   switch (list)
@@ -877,7 +907,7 @@ _tp_base_contact_list_get_list_flags (TpBaseContactList *self,
        * unsubscribing, even if the underlying protocol does not. */
       return
         TP_CHANNEL_GROUP_FLAG_CAN_ADD |
-        (cls->priv->request_uses_message (self)
+        (tp_base_contact_list_get_request_uses_message (self)
           ? TP_CHANNEL_GROUP_FLAG_MESSAGE_ADD
           : 0) |
         TP_CHANNEL_GROUP_FLAG_CAN_REMOVE |
@@ -912,7 +942,7 @@ _tp_base_contact_list_add_to_group (TpBaseContactList *self,
   if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
-  if (!cls->priv->can_change_subscriptions (self) ||
+  if (!tp_base_contact_list_can_change_subscriptions (self) ||
       cls->priv->add_to_group == NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
@@ -944,7 +974,7 @@ _tp_base_contact_list_remove_from_group (TpBaseContactList *self,
   if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
-  if (!cls->priv->can_change_subscriptions (self) ||
+  if (!tp_base_contact_list_can_change_subscriptions (self) ||
       cls->priv->remove_from_group == NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
@@ -976,7 +1006,7 @@ _tp_base_contact_list_delete_group_by_handle (TpBaseContactList *self,
       return FALSE;
     }
 
-  if (!cls->priv->can_change_subscriptions (self) ||
+  if (!tp_base_contact_list_can_change_subscriptions (self) ||
       cls->priv->remove_group == NULL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
@@ -997,13 +1027,12 @@ _tp_base_contact_list_add_to_list (TpBaseContactList *self,
     GError **error)
 {
   TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
-  gboolean ret = TRUE;
   TpHandleSet *contacts;
 
   if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
-  if (!cls->priv->can_change_subscriptions (self))
+  if (!tp_base_contact_list_can_change_subscriptions (self))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot change subscriptions");
@@ -1016,24 +1045,24 @@ _tp_base_contact_list_add_to_list (TpBaseContactList *self,
   switch (list)
     {
     case TP_LIST_HANDLE_SUBSCRIBE:
-      ret = cls->priv->request_subscription (self, contacts, message, error);
+      tp_base_contact_list_request_subscription (self, contacts, message);
       break;
 
     case TP_LIST_HANDLE_PUBLISH:
-      ret = cls->priv->authorize_publication (self, contacts, error);
+      tp_base_contact_list_authorize_publication (self, contacts);
       break;
 
     case TP_LIST_HANDLE_STORED:
-      ret = cls->priv->just_store_contacts (self, contacts, error);
+      tp_base_contact_list_store_contacts (self, contacts);
       break;
 
     case TP_LIST_HANDLE_DENY:
-      ret = cls->priv->block_contacts (self, contacts, error);
+      cls->priv->block_contacts (self, contacts);
       break;
     }
 
   tp_handle_set_destroy (contacts);
-  return ret;
+  return TRUE;
 }
 
 gboolean
@@ -1044,13 +1073,12 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
     GError **error)
 {
   TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
-  gboolean ret = TRUE;
   TpHandleSet *contacts;
 
   if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
-  if (!cls->priv->can_change_subscriptions (self))
+  if (!tp_base_contact_list_can_change_subscriptions (self))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot change subscriptions");
@@ -1063,25 +1091,24 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
   switch (list)
     {
     case TP_LIST_HANDLE_SUBSCRIBE:
-      ret = cls->priv->unsubscribe (self, contacts, error);
+      tp_base_contact_list_unsubscribe (self, contacts);
       break;
 
     case TP_LIST_HANDLE_PUBLISH:
-      ret = cls->priv->unpublish (self, contacts, error);
+      tp_base_contact_list_unpublish (self, contacts);
       break;
 
     case TP_LIST_HANDLE_STORED:
-      ret = cls->priv->remove_contacts (self, contacts, error);
+      tp_base_contact_list_remove_contacts (self, contacts);
       break;
 
     case TP_LIST_HANDLE_DENY:
-      ret = cls->priv->unblock_contacts (self, contacts, error);
-      ret = TRUE;
+      cls->priv->unblock_contacts (self, contacts);
       break;
     }
 
   tp_handle_set_destroy (contacts);
-  return ret;
+  return TRUE;
 }
 
 static void
@@ -1557,24 +1584,43 @@ tp_base_contact_list_get_contacts (TpBaseContactList *self)
 }
 
 /**
- * tp_base_contact_list_class_implement_request_subscription:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_request_subscription:
+ * @self: a contact list manager
+ * @contacts: the contacts whose subscription is to be requested
+ * @message: an optional human-readable message from the user
  *
- * Fill in an implementation of the @request_subscription virtual method.
- * This function should be called from any #TpBaseContactList subclass's
- * #GTypeClass.class_init function where
- * tp_base_contact_list_class_implement_can_change_subscriptions() has been
- * called.
+ * Request permission to see some contacts' presence.
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which must be implemented, using
+ * #TpMutableContactListInterface.request_subscription.
+ * The implementation should call tp_base_contact_list_contacts_changed()
+ * for any contacts it has changed, before returning.
+ *
+ * If @message will be ignored,
+ * #TpMutableContactListInterface.get_request_uses_message should also be
+ * reimplemented to return %FALSE.
  */
 void
-tp_base_contact_list_class_implement_request_subscription (
-    TpBaseContactListClass *cls,
-    TpBaseContactListRequestSubscriptionFunc impl)
+tp_base_contact_list_request_subscription (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    const gchar *message)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->request_subscription = impl;
+  TpMutableContactListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->request_subscription != NULL);
+
+  iface->request_subscription (self, contacts, message);
 }
 
 /**
@@ -1619,127 +1665,183 @@ tp_base_contact_list_get_states (TpBaseContactList *self,
 }
 
 /**
- * tp_base_contact_list_class_implement_authorize_publication:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_authorize_publication:
+ * @self: a contact list manager
+ * @contacts: the contacts to whom presence will be published
  *
- * Fill in an implementation of the @authorize_publication virtual method,
- * which authorizes publication of the user's presence to the given contacts
- * if they have asked for it, attempts to cause publication of the user's
- * presence to those contacts if they have not asked for it, and records the
- * fact that publication is desired for future use.
+ * Give permission for some contacts to see the local user's presence.
  *
- * This function must be called from any #TpBaseContactList subclass's
- * #GTypeClass.class_init function where
- * tp_base_contact_list_class_implement_can_change_subscriptions() has been
- * called.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which must be implemented, using
+ * #TpMutableContactListInterface.authorize_publication.
+ * The implementation should call tp_base_contact_list_contacts_changed()
+ * for any contacts it has changed, before returning.
  */
 void
-tp_base_contact_list_class_implement_authorize_publication (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl)
+tp_base_contact_list_authorize_publication (TpBaseContactList *self,
+    TpHandleSet *contacts)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->authorize_publication = impl;
+  TpMutableContactListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->authorize_publication != NULL);
+
+  iface->authorize_publication (self, contacts);
 }
 
 /**
- * tp_base_contact_list_class_implement_just_store_contacts:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_store_contacts:
+ * @self: a contact list manager
+ * @contacts: the contacts to be stored
  *
- * Fill in an implementation of the @just_store_contacts virtual method, which
- * merely stores the given contacts on the user's contact list, without
- * attempting to subscribe to their presence or authorize publication of
- * presence to them.
+ * Store @contacts on the contact list, without attempting to subscribe to
+ * them or send presence to them. If this is not possible, do nothing.
  *
- * This function must be called from any #TpBaseContactList subclass's
- * #GTypeClass.class_init function where
- * tp_base_contact_list_class_implement_can_change_subscriptions() has been
- * called.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, or if the implementation
+ * of #TpMutableContactListInterface.store_contacts is %NULL (which is the
+ * default), this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method, which may be implemented using
+ * #TpMutableContactListInterface.store_contacts.
+ * The implementation should call tp_base_contact_list_contacts_changed()
+ * for any contacts it has changed, before returning.
  */
 void
-tp_base_contact_list_class_implement_just_store_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl)
+tp_base_contact_list_store_contacts (TpBaseContactList *self,
+    TpHandleSet *contacts)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->just_store_contacts = impl;
+  TpMutableContactListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+
+  if (iface->store_contacts == NULL)
+    return;
+
+  iface->store_contacts (self, contacts);
 }
 
 /**
- * tp_base_contact_list_class_implement_remove_contacts:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_remove_contacts:
+ * @self: a contact list manager
+ * @contacts: the contacts to be removed
  *
- * Fill in an implementation of the @remove_contacts virtual method, which
- * removes the given contacts from the user's contact list entirely,
- * and also has the effect of @unsubscribe and @unpublish.
+ * Remove @contacts from the contact list entirely; this includes the
+ * effect of both tp_base_contact_list_unsubscribe() and
+ * tp_base_contact_list_unpublish(), and also reverses the effect of
+ * tp_base_contact_list_store_contacts().
  *
- * This function must be called from any #TpBaseContactList subclass's
- * #GTypeClass.class_init function where
- * tp_base_contact_list_class_implement_can_change_subscriptions() has been
- * called.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which must be implemented, using
+ * #TpMutableContactListInterface.remove_contacts.
+ * The implementation should call tp_base_contact_list_contacts_changed()
+ * for any contacts it has changed, before returning.
  */
 void
-tp_base_contact_list_class_implement_remove_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl)
+tp_base_contact_list_remove_contacts (TpBaseContactList *self,
+    TpHandleSet *contacts)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->remove_contacts = impl;
+  TpMutableContactListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->remove_contacts != NULL);
+
+  iface->remove_contacts (self, contacts);
 }
 
 /**
- * tp_base_contact_list_class_implement_unsubscribe:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_unsubscribe:
+ * @self: a contact list manager
+ * @contacts: the contacts whose presence will no longer be received
  *
- * Fill in an implementation of the @unsubscribe virtual method, which
- * attempts to stop receiving presence from the given contacts while leaving
- * them on the user's contact list.
+ * Cancel a pending subscription request to @contacts, or attempt to stop
+ * receiving their presence.
  *
- * This function must be called from any #TpBaseContactList subclass's
- * #GTypeClass.class_init function where
- * tp_base_contact_list_class_implement_can_change_subscriptions() has been
- * called.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which must be implemented, using
+ * #TpMutableContactListInterface.unsubscribe.
+ * The implementation should call tp_base_contact_list_contacts_changed()
+ * for any contacts it has changed, before returning.
  */
 void
-tp_base_contact_list_class_implement_unsubscribe (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl)
+tp_base_contact_list_unsubscribe (TpBaseContactList *self,
+    TpHandleSet *contacts)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->unsubscribe = impl;
+  TpMutableContactListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->unsubscribe != NULL);
+
+  iface->unsubscribe (self, contacts);
 }
 
 /**
- * tp_base_contact_list_class_implement_unpublish:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_unpublish:
+ * @self: a contact list manager
+ * @contacts: the contacts to whom presence will no longer be published
  *
- * Fill in an implementation of the @unpublish virtual method, which attempts
- * to stop sending presence to the given contacts (or explicitly rejects a
- * request to send presence to them) while leaving them on the user's contact
- * list.
+ * Reject a pending subscription request from @contacts, or attempt to stop
+ * sending presence to them.
  *
- * This function must be called from any #TpBaseContactList subclass's
- * #GTypeClass.class_init function where
- * tp_base_contact_list_class_implement_can_change_subscriptions() has been
- * called.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which must be implemented, using
+ * #TpMutableContactListInterface.unpublish.
+ * The implementation should call tp_base_contact_list_contacts_changed()
+ * for any contacts it has changed, before returning.
  */
 void
-tp_base_contact_list_class_implement_unpublish (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl)
+tp_base_contact_list_unpublish (TpBaseContactList *self,
+    TpHandleSet *contacts)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->unpublish = impl;
+  TpMutableContactListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->unpublish != NULL);
+
+  iface->unpublish (self, contacts);
 }
 
 /**
@@ -1786,41 +1888,46 @@ tp_base_contact_list_false_func (TpBaseContactList *self G_GNUC_UNUSED)
 }
 
 /**
- * tp_base_contact_list_class_implement_can_change_subscriptions:
- * @cls: a contact list manager subclass
- * @check: a function that returns %TRUE if subscription states can be
- *  changed
+ * tp_base_contact_list_can_change_subscriptions:
+ * @self: a contact list manager
  *
- * Set whether instances of a contact list manager subclass can alter
- * subscription states. The default is tp_base_contact_list_false_func().
+ * Return whether the contact list can be changed.
  *
- * Most protocols should set this to tp_base_contact_list_true_func(),
- * but this is not the default, since this functionality requires additional
- * methods to be implemented.
+ * If the #TpBaseContactList subclass does not implement #TpMutableContactList,
+ * this method always returns %FALSE.
  *
- * Subclasses that call this method in #GTypeClass.class_init and set
- * any implementation other than tp_base_contact_list_false_func()
- * (even if that implementation itself returns %FALSE) must also implement
- * various other virtual methods, to make the actual changes to subscriptions.
+ * For implementations of #TpMutableContactList, this is a virtual method,
+ * implemented using #TpMutableContactListInterface.can_change_subscriptions.
+ * The default implementation always returns %TRUE.
  *
- * In the rare case of a protocol where subscriptions sometimes persist
- * and this is detected while connecting, the subclass can implement another
- * #TpBaseContactListBooleanFunc (whose result must remain constant
- * after the #TpBaseConnection has moved to state
- * %TP_CONNECTION_STATUS_CONNECTED), and use that as the implementation.
+ * In the rare case of a protocol where subscriptions can only sometimes be
+ * changed and this is detected while connecting, the #TpBaseContactList
+ * subclass should implement #TpMutableContactList, and set
+ * #TpMutableContactListInterface.can_change_subscriptions to its own
+ * implementation, whose result must remain constant after the
+ * #TpBaseConnection has moved to state %TP_CONNECTION_STATUS_CONNECTED.
  *
  * (For instance, this could be useful for XMPP, where subscriptions can
  * normally be altered, but on connections to Facebook Chat servers this is
  * not actually supported.)
+ *
+ * Returns: %TRUE if the contact list can be changed
  */
-void
-tp_base_contact_list_class_implement_can_change_subscriptions (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check)
+gboolean
+tp_base_contact_list_can_change_subscriptions (TpBaseContactList *self)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (check != NULL);
-  cls->priv->can_change_subscriptions = check;
+  TpMutableContactListInterface *iface;
+
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
+
+  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
+    return FALSE;
+
+  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (iface != NULL, FALSE);
+  g_return_val_if_fail (iface->can_change_subscriptions != NULL, FALSE);
+
+  return iface->can_change_subscriptions (self);
 }
 
 /**
@@ -1857,26 +1964,39 @@ tp_base_contact_list_get_subscriptions_persist (TpBaseContactList *self)
 }
 
 /**
- * tp_base_contact_list_class_implement_request_uses_message:
- * @cls: a contact list manager subclass
- * @check: a function that returns %TRUE if @request_subscription uses its
- *  @message argument
+ * tp_base_contact_list_get_request_uses_message:
+ * @self: a contact list manager
  *
- * Set a function that can be used to query whether the
- * @request_subscription virtual method's @message argument is actually used.
+ * Return whether the tp_base_contact_list_request_subscription()
+ * method's @message argument is actually used.
  *
- * The default is tp_base_contact_list_true_func(), which is correct for
- * most protocols; protocols where the message argument isn't actually used
- * should set this to tp_base_contact_list_false_func() in their
- * #GTypeClass.class_init.
+ * If the #TpBaseContactList subclass does not implement #TpMutableContactList,
+ * this method always returns %FALSE.
+ *
+ * For implementations of #TpMutableContactList, this is a virtual method,
+ * implemented using #TpMutableContactListInterface.get_request_uses_message.
+ * The default implementation always returns %TRUE, which is correct for most
+ * protocols; subclasses may reimplement this method with
+ * tp_base_contact_list_false_func() or a custom implementation if desired.
+ *
+ * Returns: %TRUE if tp_base_contact_list_request_subscription() will not
+ *  ignore its @message argument
  */
-void tp_base_contact_list_class_implement_request_uses_message (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check)
+gboolean
+tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (check != NULL);
-  cls->priv->request_uses_message = check;
+  TpMutableContactListInterface *iface;
+
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
+
+  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
+    return FALSE;
+
+  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (iface != NULL, FALSE);
+  g_return_val_if_fail (iface->get_request_uses_message != NULL, FALSE);
+
+  return iface->get_request_uses_message (self);
 }
 
 /**

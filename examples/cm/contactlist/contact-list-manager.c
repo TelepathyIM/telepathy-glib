@@ -66,9 +66,13 @@ example_contact_details_destroy (gpointer p)
   g_slice_free (ExampleContactDetails, d);
 }
 
-G_DEFINE_TYPE (ExampleContactListManager,
+static void mutable_contact_list_iface_init (TpMutableContactListInterface *);
+
+G_DEFINE_TYPE_WITH_CODE (ExampleContactListManager,
     example_contact_list_manager,
-    TP_TYPE_BASE_CONTACT_LIST)
+    TP_TYPE_BASE_CONTACT_LIST,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_MUTABLE_CONTACT_LIST,
+      mutable_contact_list_iface_init))
 
 enum
 {
@@ -870,12 +874,11 @@ example_contact_list_manager_get_states (TpBaseContactList *manager,
     *publish_request = g_strdup (details->publish_request);
 }
 
-static gboolean
+static void
 example_contact_list_manager_request_subscription (
     TpBaseContactList *manager,
     TpHandleSet *contacts,
-    const gchar *message,
-    GError **error)
+    const gchar *message)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -934,14 +937,12 @@ example_contact_list_manager_request_subscription (
     }
 
   tp_base_contact_list_contacts_changed (manager, contacts, NULL);
-  return TRUE;
 }
 
-static gboolean
+static void
 example_contact_list_manager_authorize_publication (
     TpBaseContactList *manager,
-    TpHandleSet *contacts,
-    GError **error)
+    TpHandleSet *contacts)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -980,14 +981,12 @@ example_contact_list_manager_authorize_publication (
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
-  return TRUE;
 }
 
-static gboolean
-example_contact_list_manager_just_store_contacts (
+static void
+example_contact_list_manager_store_contacts (
     TpBaseContactList *manager,
-    TpHandleSet *contacts,
-    GError **error)
+    TpHandleSet *contacts)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -1011,13 +1010,11 @@ example_contact_list_manager_just_store_contacts (
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
-  return TRUE;
 }
 
-static gboolean
+static void
 example_contact_list_manager_remove_contacts (TpBaseContactList *manager,
-    TpHandleSet *contacts,
-    GError **error)
+    TpHandleSet *contacts)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *removed = tp_handle_set_copy (contacts);
@@ -1050,13 +1047,11 @@ example_contact_list_manager_remove_contacts (TpBaseContactList *manager,
     }
 
   tp_base_contact_list_contacts_changed (manager, NULL, removed);
-  return TRUE;
 }
 
-static gboolean
+static void
 example_contact_list_manager_unsubscribe (TpBaseContactList *manager,
-    TpHandleSet *contacts,
-    GError **error)
+    TpHandleSet *contacts)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -1109,13 +1104,11 @@ example_contact_list_manager_unsubscribe (TpBaseContactList *manager,
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
-  return TRUE;
 }
 
-static gboolean
+static void
 example_contact_list_manager_unpublish (TpBaseContactList *manager,
-    TpHandleSet *contacts,
-    GError **error)
+    TpHandleSet *contacts)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -1170,7 +1163,6 @@ example_contact_list_manager_unpublish (TpBaseContactList *manager,
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
-  return TRUE;
 }
 
 static gboolean
@@ -1192,11 +1184,10 @@ example_contact_list_manager_get_blocked_contacts (
   return tp_handle_set_copy (self->priv->blocked_contacts);
 }
 
-static gboolean
+static void
 example_contact_list_manager_block_contacts (
     TpBaseContactList *manager,
-    TpHandleSet *contacts,
-    GError **error)
+    TpHandleSet *contacts)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpIntSetFastIter iter;
@@ -1221,14 +1212,12 @@ example_contact_list_manager_block_contacts (
 
   tp_base_contact_list_contact_blocking_changed (manager, changed);
   tp_handle_set_destroy (changed);
-  return TRUE;
 }
 
-static gboolean
+static void
 example_contact_list_manager_unblock_contacts (
     TpBaseContactList *manager,
-    TpHandleSet *contacts,
-    GError **error)
+    TpHandleSet *contacts)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpIntSetFastIter iter;
@@ -1252,7 +1241,6 @@ example_contact_list_manager_unblock_contacts (
 
   tp_base_contact_list_contact_blocking_changed (manager, changed);
   tp_handle_set_destroy (changed);
-  return TRUE;
 }
 
 static GStrv
@@ -1335,33 +1323,12 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
         0, G_MAXUINT32, 1000,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  /* read-only information */
-
   list_manager_class->get_contacts = example_contact_list_manager_get_contacts;
   list_manager_class->get_states = example_contact_list_manager_get_states;
   /* for this example CM we pretend there is a server-stored contact list,
    * like in XMPP, even though there obviously isn't really */
   list_manager_class->get_subscriptions_persist =
     tp_base_contact_list_true_func;
-
-  /* contact list modification */
-
-  tp_base_contact_list_class_implement_can_change_subscriptions (
-      list_manager_class, tp_base_contact_list_true_func);
-  tp_base_contact_list_class_implement_request_uses_message (
-      list_manager_class, tp_base_contact_list_true_func);
-  tp_base_contact_list_class_implement_request_subscription (
-      list_manager_class, example_contact_list_manager_request_subscription);
-  tp_base_contact_list_class_implement_authorize_publication (
-      list_manager_class, example_contact_list_manager_authorize_publication);
-  tp_base_contact_list_class_implement_just_store_contacts (
-      list_manager_class, example_contact_list_manager_just_store_contacts);
-  tp_base_contact_list_class_implement_remove_contacts (
-      list_manager_class, example_contact_list_manager_remove_contacts);
-  tp_base_contact_list_class_implement_unsubscribe (
-      list_manager_class, example_contact_list_manager_unsubscribe);
-  tp_base_contact_list_class_implement_unpublish (
-      list_manager_class, example_contact_list_manager_unpublish);
 
   /* contact blocking */
 
@@ -1408,4 +1375,19 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
       0,
       NULL, NULL,
       g_cclosure_marshal_VOID__UINT, G_TYPE_NONE, 1, G_TYPE_UINT);
+}
+
+static void
+mutable_contact_list_iface_init (TpMutableContactListInterface *iface)
+{
+  iface->can_change_subscriptions = tp_base_contact_list_true_func;
+  iface->get_request_uses_message = tp_base_contact_list_true_func;
+  iface->request_subscription =
+    example_contact_list_manager_request_subscription;
+  iface->authorize_publication =
+    example_contact_list_manager_authorize_publication;
+  iface->store_contacts = example_contact_list_manager_store_contacts;
+  iface->remove_contacts = example_contact_list_manager_remove_contacts;
+  iface->unsubscribe = example_contact_list_manager_unsubscribe;
+  iface->unpublish = example_contact_list_manager_unpublish;
 }
