@@ -294,31 +294,51 @@ typedef void (*TpBaseContactListCreateGroupsFunc) (
     const gchar * const *normalized_names,
     gsize n_names);
 
-void tp_base_contact_list_class_implement_create_groups (
-    TpBaseContactListClass *cls,
-    TpBaseContactListCreateGroupsFunc impl);
+void tp_base_contact_list_create_groups (TpBaseContactList *self,
+    const gchar * const *normalized_names,
+    gsize n_names);
 
-typedef void (*TpBaseContactListGroupContactsFunc) (
-    TpBaseContactList *self,
+typedef void (*TpBaseContactListGroupContactsFunc) (TpBaseContactList *self,
     const gchar *group,
     TpHandleSet *contacts);
 
-void tp_base_contact_list_class_implement_add_to_group (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGroupContactsFunc impl);
-
-void tp_base_contact_list_class_implement_remove_from_group (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGroupContactsFunc impl);
-
-typedef gboolean (*TpBaseContactListRemoveGroupFunc) (
-    TpBaseContactList *self,
+void tp_base_contact_list_add_to_group (TpBaseContactList *self,
     const gchar *group,
-    GError **error);
+    TpHandleSet *contacts);
 
-void tp_base_contact_list_class_implement_remove_group (
-    TpBaseContactListClass *cls,
-    TpBaseContactListRemoveGroupFunc impl);
+void tp_base_contact_list_remove_from_group (TpBaseContactList *self,
+    const gchar *group,
+    TpHandleSet *contacts);
+
+typedef void (*TpBaseContactListRemoveGroupFunc) (TpBaseContactList *self,
+    const gchar *group);
+
+void tp_base_contact_list_remove_group (TpBaseContactList *self,
+    const gchar *group);
+
+#define TP_TYPE_MUTABLE_CONTACT_GROUP_LIST \
+  (tp_mutable_contact_group_list_get_type ())
+GType tp_mutable_contact_group_list_get_type (void) G_GNUC_CONST;
+
+#define TP_IS_MUTABLE_CONTACT_GROUP_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+  TP_TYPE_MUTABLE_CONTACT_GROUP_LIST))
+
+#define TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
+  TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, TpMutableContactGroupListInterface))
+
+typedef struct _TpMutableContactGroupListInterface
+    TpMutableContactGroupListInterface;
+
+struct _TpMutableContactGroupListInterface {
+    GTypeInterface parent;
+    /* mandatory to implement */
+    TpBaseContactListCreateGroupsFunc create_groups;
+    TpBaseContactListGroupContactsFunc add_to_group;
+    TpBaseContactListGroupContactsFunc remove_from_group;
+    TpBaseContactListRemoveGroupFunc remove_group;
+};
 
 G_END_DECLS
 

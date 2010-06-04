@@ -70,6 +70,8 @@ static void mutable_contact_list_iface_init (TpMutableContactListInterface *);
 static void blockable_contact_list_iface_init (
     TpBlockableContactListInterface *);
 static void contact_group_list_iface_init (TpContactGroupListInterface *);
+static void mutable_contact_group_list_iface_init (
+    TpMutableContactGroupListInterface *);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleContactListManager,
     example_contact_list_manager,
@@ -78,6 +80,8 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListManager,
       blockable_contact_list_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CONTACT_GROUP_LIST,
       contact_group_list_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_MUTABLE_CONTACT_GROUP_LIST,
+      mutable_contact_group_list_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_MUTABLE_CONTACT_LIST,
       mutable_contact_list_iface_init))
 
@@ -1282,14 +1286,12 @@ example_contact_list_manager_get_contact_groups (TpBaseContactList *manager,
   return (GStrv) g_ptr_array_free (pa, FALSE);
 }
 
-static gboolean
+static void
 example_contact_list_manager_remove_group (TpBaseContactList *manager,
-    const gchar *group,
-    GError **error)
+    const gchar *group)
 {
   g_message ("deleting group %s", group);
   tp_base_contact_list_groups_removed (manager, &group, 1);
-  return TRUE;
 }
 
 static gchar *
@@ -1326,15 +1328,6 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
    * like in XMPP, even though there obviously isn't really */
   list_manager_class->get_subscriptions_persist =
     tp_base_contact_list_true_func;
-
-  tp_base_contact_list_class_implement_add_to_group (
-      list_manager_class, example_contact_list_manager_add_to_group);
-  tp_base_contact_list_class_implement_remove_from_group (
-      list_manager_class, example_contact_list_manager_remove_from_group);
-  tp_base_contact_list_class_implement_remove_group (
-      list_manager_class, example_contact_list_manager_remove_group);
-  tp_base_contact_list_class_implement_create_groups (
-      list_manager_class, example_contact_list_manager_create_groups);
 
   g_type_class_add_private (klass, sizeof (ExampleContactListManagerPrivate));
 
@@ -1384,4 +1377,14 @@ contact_group_list_iface_init (TpContactGroupListInterface *iface)
   iface->get_groups = example_contact_list_manager_get_groups;
   iface->get_contact_groups = example_contact_list_manager_get_contact_groups;
   iface->normalize_group = example_contact_list_manager_normalize_group;
+}
+
+static void
+mutable_contact_group_list_iface_init (
+    TpMutableContactGroupListInterface *iface)
+{
+  iface->add_to_group = example_contact_list_manager_add_to_group;
+  iface->remove_from_group = example_contact_list_manager_remove_from_group;
+  iface->remove_group = example_contact_list_manager_remove_group;
+  iface->create_groups = example_contact_list_manager_create_groups;
 }

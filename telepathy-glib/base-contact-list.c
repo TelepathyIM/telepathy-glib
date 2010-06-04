@@ -194,10 +194,7 @@ struct _TpBaseContactListPrivate
 
 struct _TpBaseContactListClassPrivate
 {
-  TpBaseContactListCreateGroupsFunc create_groups;
-  TpBaseContactListGroupContactsFunc add_to_group;
-  TpBaseContactListGroupContactsFunc remove_from_group;
-  TpBaseContactListRemoveGroupFunc remove_group;
+  char dummy;
 };
 
 static void channel_manager_iface_init (TpChannelManagerIface *iface);
@@ -302,6 +299,32 @@ G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
 
 G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
     TP_TYPE_BASE_CONTACT_LIST)
+
+/**
+ * TP_TYPE_MUTABLE_CONTACT_GROUP_LIST:
+ *
+ * Interface representing a #TpBaseContactList on which user-defined contact
+ * groups can potentially be changed. %TP_TYPE_CONTACT_GROUP_LIST is a
+ * prerequisite for this interface.
+ */
+
+/**
+ * TpMutableContactGroupListInterface:
+ * @parent: the parent interface
+ * @create_groups: the implementation of
+ *  tp_base_contact_list_create_groups(); must always be implemented
+ * @add_to_group: the implementation of
+ *  tp_base_contact_list_add_to_group(); must always be implemented
+ * @remove_from_group: the implementation of
+ *  tp_base_contact_list_remove_from_group(); must always be implemented
+ * @remove_group: the implementation of
+ *  tp_base_contact_list_remove_group(); must always be implemented
+ *
+ * The interface vtable for a %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST.
+ */
+
+G_DEFINE_INTERFACE (TpMutableContactGroupList, tp_mutable_contact_group_list,
+    TP_TYPE_CONTACT_GROUP_LIST)
 
 enum {
     PROP_CONNECTION = 1,
@@ -572,6 +595,17 @@ tp_base_contact_list_constructed (GObject *object)
           TP_HANDLE_TYPE_GROUP, self->priv->group_repo);
     }
 
+  if (TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    {
+      TpMutableContactGroupListInterface *iface =
+        TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+
+      g_return_if_fail (iface->create_groups != NULL);
+      g_return_if_fail (iface->add_to_group != NULL);
+      g_return_if_fail (iface->remove_from_group != NULL);
+      g_return_if_fail (iface->remove_group != NULL);
+    }
+
   _tp_base_connection_set_handle_repo (self->priv->conn, TP_HANDLE_TYPE_LIST,
       list_repo);
 
@@ -602,6 +636,12 @@ tp_contact_group_list_default_init (TpContactGroupListInterface *iface)
 {
   iface->has_disjoint_groups = tp_base_contact_list_false_func;
   /* there's no default for the other virtual methods */
+}
+
+static void
+tp_mutable_contact_group_list_default_init (
+    TpMutableContactGroupListInterface *iface)
+{
 }
 
 static void
@@ -678,7 +718,6 @@ tp_base_contact_list_foreach_channel_class (TpChannelManager *manager,
     TpChannelManagerChannelClassFunc func,
     gpointer user_data)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (manager);
   GHashTable *table = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
           G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CONTACT_LIST,
@@ -687,7 +726,7 @@ tp_base_contact_list_foreach_channel_class (TpChannelManager *manager,
 
   func (manager, table, allowed_properties, user_data);
 
-  if (cls->priv->add_to_group != NULL)
+  if (TP_IS_MUTABLE_CONTACT_GROUP_LIST (manager))
     {
       g_hash_table_insert (table, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
           tp_g_value_slice_new_uint (TP_HANDLE_TYPE_GROUP));
@@ -772,7 +811,6 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
     gboolean is_create)
 {
   TpBaseContactList *self = (TpBaseContactList *) manager;
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleType handle_type;
   TpHandle handle;
   TpBaseContactListChannel *chan;
@@ -849,19 +887,12 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
         }
       else
         {
-          /* defer to the subclass to create groups */
-          if (cls->priv->create_groups == NULL)
-            {
-              g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-                  "This connection cannot create new groups");
-              goto error;
-            }
-          else
+          if (TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
             {
               const gchar *name = tp_handle_inspect (self->priv->group_repo,
                   handle);
 
-              cls->priv->create_groups (self, &name, 1);
+              tp_base_contact_list_create_groups (self, &name, 1);
               /* hopefully, that resulted in a call to
                * tp_base_contact_list_groups_created, which created the
                * actual channel */
@@ -877,6 +908,12 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
 
               tp_channel_manager_emit_request_already_satisfied (self,
                   request_token, TP_EXPORTABLE_CHANNEL (chan));
+            }
+          else
+            {
+              g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+                  "This connection cannot create new groups");
+              goto error;
             }
         }
     }
@@ -935,19 +972,10 @@ channel_manager_iface_init (TpChannelManagerIface *iface)
 TpChannelGroupFlags
 _tp_base_contact_list_get_group_flags (TpBaseContactList *self)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
-  TpChannelGroupFlags ret = 0;
+  if (TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    return TP_CHANNEL_GROUP_FLAG_CAN_ADD | TP_CHANNEL_GROUP_FLAG_CAN_REMOVE;
 
-  if (!tp_base_contact_list_can_change_subscriptions (self))
-    return 0;
-
-  if (cls->priv->add_to_group != NULL)
-    ret |= TP_CHANNEL_GROUP_FLAG_CAN_ADD;
-
-  if (cls->priv->remove_from_group != NULL)
-    ret |= TP_CHANNEL_GROUP_FLAG_CAN_REMOVE;
-
-  return ret;
+  return 0;
 }
 
 TpChannelGroupFlags
@@ -999,15 +1027,13 @@ _tp_base_contact_list_add_to_group (TpBaseContactList *self,
     const gchar *message G_GNUC_UNUSED,
     GError **error)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleSet *contacts;
   const gchar *group_name;
 
   if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
-  if (!tp_base_contact_list_can_change_subscriptions (self) ||
-      cls->priv->add_to_group == NULL)
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot add contacts to a group");
@@ -1018,7 +1044,7 @@ _tp_base_contact_list_add_to_group (TpBaseContactList *self,
   tp_handle_set_add (contacts, contact);
   group_name = tp_handle_inspect (self->priv->group_repo, group);
 
-  cls->priv->add_to_group (self, group_name, contacts);
+  tp_base_contact_list_add_to_group (self, group_name, contacts);
 
   tp_handle_set_destroy (contacts);
   return TRUE;
@@ -1031,15 +1057,13 @@ _tp_base_contact_list_remove_from_group (TpBaseContactList *self,
     const gchar *message G_GNUC_UNUSED,
     GError **error)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleSet *contacts;
   const gchar *group_name;
 
   if (!tp_base_contact_list_check_still_usable (self, error))
     return FALSE;
 
-  if (!tp_base_contact_list_can_change_subscriptions (self) ||
-      cls->priv->remove_from_group == NULL)
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot remove contacts from a group");
@@ -1050,7 +1074,7 @@ _tp_base_contact_list_remove_from_group (TpBaseContactList *self,
   tp_handle_set_add (contacts, contact);
   group_name = tp_handle_inspect (self->priv->group_repo, group);
 
-  cls->priv->remove_from_group (self, group_name, contacts);
+  tp_base_contact_list_remove_from_group (self, group_name, contacts);
 
   tp_handle_set_destroy (contacts);
   return TRUE;
@@ -1061,7 +1085,6 @@ _tp_base_contact_list_delete_group_by_handle (TpBaseContactList *self,
     TpHandle group,
     GError **error)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   const gchar *group_name;
 
   if (!tp_base_contact_list_check_still_usable (self, NULL))
@@ -1070,8 +1093,7 @@ _tp_base_contact_list_delete_group_by_handle (TpBaseContactList *self,
       return FALSE;
     }
 
-  if (!tp_base_contact_list_can_change_subscriptions (self) ||
-      cls->priv->remove_group == NULL)
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot remove a group");
@@ -1080,7 +1102,8 @@ _tp_base_contact_list_delete_group_by_handle (TpBaseContactList *self,
 
   group_name = tp_handle_inspect (self->priv->group_repo, group);
 
-  return cls->priv->remove_group (self, group_name, error);
+  tp_base_contact_list_remove_group (self, group_name);
+  return TRUE;
 }
 
 gboolean
@@ -2282,28 +2305,48 @@ tp_base_contact_list_normalize_group (TpBaseContactList *self,
  * tp_base_contact_list_groups_created() to signal success, before returning.
  *
  * If tp_base_contact_list_groups_created() is not called, this will be
- * signalled as a D-Bus error where appropriate.
+ * signalled as a D-Bus error (inability to create the group).
  */
 
 /**
- * tp_base_contact_list_class_implement_create_groups:
- * @cls: a contact list manager subclass
- * @impl: a function that creates the groups if possible
+ * tp_base_contact_list_create_groups:
+ * @self: a contact list manager
+ * @normalized_names: (array length=n_names) (element-type utf8): the group
+ *  names, which must already have been normalized via the
+ *  #TpBaseContactListNormalizeFunc if one was provided
+ * @n_names: the number of group names in @normalized_names
  *
- * Set a function that can be used to create new groups.
+ * Attempt to create new groups.
  *
- * The default is to be unable to create new groups. On most protocols this
- * default is not suitable, and the subclass should call this function from
- * #GTypeClass.class_init.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which must be implemented, using
+ * #TpMutableContactGroupListInterface.create_groups.
+ * The implementation should call tp_base_contact_list_groups_created()
+ * for any groups it successfully created, before returning.
+ *
+ * If tp_base_contact_list_groups_created() is not called, this will be
+ * signalled as a D-Bus error (inability to create the group).
  */
 void
-tp_base_contact_list_class_implement_create_groups (
-    TpBaseContactListClass *cls,
-    TpBaseContactListCreateGroupsFunc impl)
+tp_base_contact_list_create_groups (TpBaseContactList *self,
+    const gchar * const *normalized_names,
+    gsize n_names)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->create_groups = impl;
+  TpMutableContactGroupListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->create_groups != NULL);
+
+  iface->create_groups (self, normalized_names, n_names);
 }
 
 /**
@@ -2804,72 +2847,112 @@ tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
  */
 
 /**
- * tp_base_contact_list_class_implement_add_to_group:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_add_to_group:
+ * @self: a contact list manager
+ * @group: the normalized name of a group
+ * @contacts: some contacts
  *
- * Fill in an implementation of the @add_to_group virtual method,
- * which adds a contact to one or more groups.
+ * Add @contacts to @group.
  *
- * Every subclass that supports altering contact groups should call this
- * function in its #GTypeClass.class_init.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which must be implemented, using
+ * #TpMutableContactGroupListInterface.add_to_group.
+ * The implementation should call tp_base_contact_list_groups_changed()
+ * for any changes it successfully made, before returning.
  */
-void tp_base_contact_list_class_implement_add_to_group (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGroupContactsFunc impl)
+void tp_base_contact_list_add_to_group (TpBaseContactList *self,
+    const gchar *group,
+    TpHandleSet *contacts)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->add_to_group = impl;
+  TpMutableContactGroupListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->add_to_group != NULL);
+
+  iface->add_to_group (self, group, contacts);
 }
 
 /**
- * tp_base_contact_list_class_implement_remove_from_group:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_remove_from_group:
+ * @self: a contact list manager
+ * @group: the normalized name of a group
+ * @contacts: some contacts
  *
- * Fill in an implementation of the @remove_from_group virtual method,
- * which removes one or more members from a group.
+ * Remove @contacts from @group.
  *
- * Every subclass that supports altering contact groups should call this
- * function in its #GTypeClass.class_init.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which must be implemented, using
+ * #TpMutableContactGroupListInterface.remove_from_group.
+ * The implementation should call tp_base_contact_list_groups_changed()
+ * for any changes it successfully made, before returning.
  */
-void tp_base_contact_list_class_implement_remove_from_group (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGroupContactsFunc impl)
+void tp_base_contact_list_remove_from_group (TpBaseContactList *self,
+    const gchar *group,
+    TpHandleSet *contacts)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->remove_from_group = impl;
+  TpMutableContactGroupListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->remove_from_group != NULL);
+
+  iface->remove_from_group (self, group, contacts);
 }
 
 /**
  * TpBaseContactListRemoveGroupFunc:
  * @self: a contact list manager
- * @group: a group
- * @error: used to raise an error if %FALSE is returned
+ * @group: the normalized name of a group
  *
  * Signature of a method that deletes groups.
- *
- * Returns: %TRUE on success
  */
 
 /**
- * tp_base_contact_list_class_implement_remove_group:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_remove_group:
+ * @self: a contact list manager
+ * @group: the normalized name of a group
  *
- * Fill in an implementation of the @remove_group virtual method,
- * which removes a group entirely, removing any members in the process.
+ * Remove a group entirely, removing any members in the process.
  *
- * Every subclass that supports deleting contact groups should call this
- * function in its #GTypeClass.class_init.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which must be implemented, using
+ * #TpMutableContactGroupListInterface.remove_group.
+ * The implementation should call tp_base_contact_list_groups_removed()
+ * for any groups it successfully removed, before returning.
  */
-void tp_base_contact_list_class_implement_remove_group (
-    TpBaseContactListClass *cls,
-    TpBaseContactListRemoveGroupFunc impl)
+void tp_base_contact_list_remove_group (TpBaseContactList *self,
+    const gchar *group)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->remove_group = impl;
+  TpMutableContactGroupListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->remove_group != NULL);
+
+  iface->remove_group (self, group);
 }
