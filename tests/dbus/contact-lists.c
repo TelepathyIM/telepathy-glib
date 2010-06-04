@@ -319,15 +319,18 @@ test_reject_publish_request (Test *test,
 }
 
 static void
-test_add_to_publish_invalid (Test *test,
+test_add_to_publish_pre_approve (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
   GError *error = NULL;
 
   /* Unilaterally adding a member to the publish channel doesn't work, but
-   * in the new contact list manager the method "succeeds" anyway. */
+   * in the new contact list manager the method "succeeds" anyway, and
+   * any subsequent subscription request succeeds instantly. */
 
   test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
+  test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "subscribe");
 
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
@@ -338,6 +341,51 @@ test_add_to_publish_invalid (Test *test,
       -1, test->arr, "", &error, NULL);
   g_assert_no_error (error);
 
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_local_pending (test->publish),
+        test->ninja));
+
+  /* the example CM's fake contacts accept requests that contain "please" */
+  g_array_append_val (test->arr, test->ninja);
+  tp_cli_channel_interface_group_run_add_members (test->subscribe,
+      -1, test->arr, "Please may I see your presence?", &error, NULL);
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * change-notification, too */
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->subscribe),
+        test->ninja));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->stored),
+        test->ninja));
+
+  /* after a short delay, the contact accepts our request */
+  while (tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->subscribe),
+        test->ninja))
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->subscribe),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->subscribe),
+        test->ninja));
+
+  /* the contact also requests our presence after a short delay - we
+   * pre-approved, so they go straight to full membership */
+  while (!tp_intset_is_member (
+        tp_channel_group_get_members (test->publish),
+        test->ninja))
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->publish),
+        test->ninja));
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->ninja));
@@ -1015,8 +1063,8 @@ main (int argc,
       Test, NULL, setup, test_accept_publish_request, teardown);
   g_test_add ("/contact-lists/reject-publish-request",
       Test, NULL, setup, test_reject_publish_request, teardown);
-  g_test_add ("/contact-lists/add-to-publish/invalid",
-      Test, NULL, setup, test_add_to_publish_invalid, teardown);
+  g_test_add ("/contact-lists/add-to-publish/pre-approve",
+      Test, NULL, setup, test_add_to_publish_pre_approve, teardown);
   g_test_add ("/contact-lists/add-to-publish/no-op",
       Test, NULL, setup, test_add_to_publish_no_op, teardown);
   g_test_add ("/contact-lists/remove-from-publish",
