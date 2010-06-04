@@ -100,7 +100,7 @@ static void log_store_xml_set_writable (TplLogStoreXml *self, gboolean data);
 static void log_store_xml_set_readable (TplLogStoreXml *self, gboolean data);
 
 
-G_DEFINE_TYPE_WITH_CODE (TplLogStoreXml, tpl_log_store_xml,
+G_DEFINE_TYPE_WITH_CODE (TplLogStoreXml, _tpl_log_store_xml,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TPL_TYPE_LOG_STORE, log_store_iface_init))
 
@@ -208,7 +208,7 @@ tpl_log_store_xml_set_property (GObject *object,
 
 
 static void
-tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
+_tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
@@ -253,7 +253,7 @@ tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
 
 
 static void
-tpl_log_store_xml_init (TplLogStoreXml *self)
+_tpl_log_store_xml_init (TplLogStoreXml *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_LOG_STORE_XML, TplLogStoreXmlPriv);

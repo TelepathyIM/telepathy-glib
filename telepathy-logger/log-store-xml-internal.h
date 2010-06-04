@@ -30,7 +30,7 @@
 
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_STORE_XML \
-  (tpl_log_store_xml_get_type ())
+  (_tpl_log_store_xml_get_type ())
 #define TPL_LOG_STORE_XML(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_STORE_XML, \
                                TplLogStoreXml))
@@ -58,7 +58,7 @@ typedef struct
   GObjectClass parent;
 } TplLogStoreXmlClass;
 
-GType tpl_log_store_xml_get_type (void);
+GType _tpl_log_store_xml_get_type (void);
 
 G_END_DECLS
 #endif /* __TPL_LOG_STORE_XML_H__ */
