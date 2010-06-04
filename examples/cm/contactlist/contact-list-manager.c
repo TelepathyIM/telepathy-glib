@@ -961,7 +961,7 @@ example_contact_list_manager_request_subscription (
       g_free (message_lc);
     }
 
-  tp_base_contact_list_contacts_changed (manager, contacts, NULL);
+  tp_base_contact_list_contacts_changed (manager, changed, NULL);
 }
 
 static void
