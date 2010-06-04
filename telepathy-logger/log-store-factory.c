@@ -29,7 +29,7 @@
 static GHashTable *logstores_table = NULL;
 
 void
-tpl_log_store_factory_init (void)
+_tpl_log_store_factory_init (void)
 {
   g_return_if_fail (logstores_table == NULL);
 
@@ -39,7 +39,7 @@ tpl_log_store_factory_init (void)
 
 
 void
-tpl_log_store_factory_add (const gchar *logstore_type,
+_tpl_log_store_factory_add (const gchar *logstore_type,
     TplLogStoreConstructor constructor)
 {
   gchar *key;
@@ -62,7 +62,7 @@ tpl_log_store_factory_add (const gchar *logstore_type,
 
 
 TplLogStoreConstructor
-tpl_log_store_factory_lookup (const gchar *logstore_type)
+_tpl_log_store_factory_lookup (const gchar *logstore_type)
 {
   g_return_val_if_fail (!TPL_STR_EMPTY (logstore_type), NULL);
   g_return_val_if_fail (logstores_table != NULL, NULL);
@@ -71,7 +71,7 @@ tpl_log_store_factory_lookup (const gchar *logstore_type)
 }
 
 void
-tpl_log_store_factory_deinit (void)
+_tpl_log_store_factory_deinit (void)
 {
   g_return_if_fail (logstores_table != NULL);
 
@@ -80,7 +80,7 @@ tpl_log_store_factory_deinit (void)
 }
 
 TplLogStore *
-tpl_log_store_factory_build (const gchar *logstore_type,
+_tpl_log_store_factory_build (const gchar *logstore_type,
     const gchar *name,
     gboolean write_access,
     gboolean read_access)
@@ -89,7 +89,7 @@ tpl_log_store_factory_build (const gchar *logstore_type,
 
   g_return_val_if_fail (logstores_table != NULL, NULL);
 
-  constructor = tpl_log_store_factory_lookup (logstore_type);
+  constructor = _tpl_log_store_factory_lookup (logstore_type);
   if (constructor == NULL)
     {
       DEBUG ("%s: log store type not handled by this logger", logstore_type);

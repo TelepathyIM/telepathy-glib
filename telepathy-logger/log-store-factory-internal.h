@@ -31,12 +31,12 @@ typedef TplLogStore* (*TplLogStoreConstructor) (const gchar *name,
 typedef TplLogStore* (*TplLogStoreFactory) (const gchar *logstore_type,
     const gchar *name, gboolean write_access, gboolean read_access);
 
-void tpl_log_store_factory_init (void);
-void tpl_log_store_factory_deinit (void);
-void tpl_log_store_factory_add (const gchar *logstore_type,
+void _tpl_log_store_factory_init (void);
+void _tpl_log_store_factory_deinit (void);
+void _tpl_log_store_factory_add (const gchar *logstore_type,
     TplLogStoreConstructor constructor);
-TplLogStoreConstructor tpl_log_store_factory_lookup (const gchar *logstore_type);
-TplLogStore *tpl_log_store_factory_build (const gchar *logstore_type,
+TplLogStoreConstructor _tpl_log_store_factory_lookup (const gchar *logstore_type);
+TplLogStore * _tpl_log_store_factory_build (const gchar *logstore_type,
     const gchar *name, gboolean write_access, gboolean read_access);
 
 #endif /* __TPL_LOG_STORE_FACTORY_H__ */
