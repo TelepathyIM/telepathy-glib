@@ -23,11 +23,11 @@ main (int argc, char **argv)
 
   g_type_init ();
 
-  obs = tpl_observer_new ();
+  obs = _tpl_observer_new ();
 
   /* TplObserver is a singleton, be sure both references point to the same
    * memory address  */
-  obs2 = tpl_observer_new ();
+  obs2 = _tpl_observer_new ();
   g_assert (obs == obs2);
 
   /* unref the second singleton pointer and check that the it is still
@@ -39,7 +39,7 @@ main (int argc, char **argv)
   g_assert (TPL_IS_OBSERVER (obs2));
 
   /* register a ChanFactory and test ObserveChannel() */
-  tpl_observer_set_channel_factory (obs, mock_factory);
+  _tpl_observer_set_channel_factory (obs, mock_factory);
 
 
   /* proper disposal for the singleton when no references are present */

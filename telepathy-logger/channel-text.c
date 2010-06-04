@@ -126,7 +126,7 @@ got_contact_cb (TpConnection *connection,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplObserver *observer = tpl_observer_new (); /* singleton */
+  TplObserver *observer = _tpl_observer_new (); /* singleton */
   TplActionChain *ctx = user_data;
   TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
   TplChannelTextPriv *priv = tpl_text->priv;
@@ -1067,9 +1067,9 @@ on_closed_cb (TpChannel *proxy,
 {
   TplChannelText *tpl_text = TPL_CHANNEL_TEXT (user_data);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
-  TplObserver *observer = tpl_observer_new ();
+  TplObserver *observer = _tpl_observer_new ();
 
-  if (!tpl_observer_unregister_channel (observer, tpl_chan))
+  if (!_tpl_observer_unregister_channel (observer, tpl_chan))
     PATH_DEBUG (tpl_chan, "Channel couldn't be unregistered correctly (BUG?)");
 
   g_object_unref (observer);

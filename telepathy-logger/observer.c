@@ -112,7 +112,7 @@ enum
   PROP_REGISTERED_CHANNELS
 };
 
-G_DEFINE_TYPE (TplObserver, tpl_observer, TP_TYPE_BASE_CLIENT)
+G_DEFINE_TYPE (TplObserver, _tpl_observer, TP_TYPE_BASE_CLIENT)
 
 static void
 tpl_observer_observe_channels (TpBaseClient *client,
@@ -220,7 +220,7 @@ got_tpl_channel_text_ready_cb (GObject *obj,
     {
       PATH_DEBUG (obj, "prepared channel");
 
-      tpl_observer_register_channel (observing_ctx->self, TPL_CHANNEL (obj));
+      _tpl_observer_register_channel (observing_ctx->self, TPL_CHANNEL (obj));
     }
   else
     {
@@ -288,7 +288,7 @@ tpl_observer_constructor (GType type,
     retval = g_object_ref (observer_singleton);
   else
     {
-      retval = G_OBJECT_CLASS (tpl_observer_parent_class)->constructor (type,
+      retval = G_OBJECT_CLASS (_tpl_observer_parent_class)->constructor (type,
           n_props, props);
 
       observer_singleton = TPL_OBSERVER (retval);
@@ -300,7 +300,7 @@ tpl_observer_constructor (GType type,
 
 
 static void
-tpl_observer_class_init (TplObserverClass *klass)
+_tpl_observer_class_init (TplObserverClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   TpBaseClientClass *base_clt_cls = TP_BASE_CLIENT_CLASS (klass);
@@ -332,7 +332,7 @@ tpl_observer_class_init (TplObserverClass *klass)
 }
 
 static void
-tpl_observer_init (TplObserver *self)
+_tpl_observer_init (TplObserver *self)
 {
   TplObserverPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_OBSERVER, TplObserverPriv);
@@ -380,12 +380,12 @@ tpl_observer_dispose (GObject *obj)
       priv->logmanager = NULL;
     }
 
-  G_OBJECT_CLASS (tpl_observer_parent_class)->dispose (obj);
+  G_OBJECT_CLASS (_tpl_observer_parent_class)->dispose (obj);
 }
 
 
 TplObserver *
-tpl_observer_new (void)
+_tpl_observer_new (void)
 {
   TpDBusDaemon *dbus;
   TplObserver *result;
@@ -414,7 +414,7 @@ tpl_observer_get_channel_map (TplObserver *self)
 
 
 gboolean
-tpl_observer_register_channel (TplObserver *self,
+_tpl_observer_register_channel (TplObserver *self,
     TplChannel *channel)
 {
   GHashTable *glob_map = tpl_observer_get_channel_map (self);
@@ -436,7 +436,7 @@ tpl_observer_register_channel (TplObserver *self,
 
 
 /**
- * tpl_observer_unregister_channel:
+ * _tpl_observer_unregister_channel:
  * @self: #TplObserver instance, cannot be %NULL.
  * @channel: a #TplChannel cast of a TplChannel subclass instance
  *
@@ -454,7 +454,7 @@ tpl_observer_register_channel (TplObserver *self,
  * cannot be un-registered.
  */
 gboolean
-tpl_observer_unregister_channel (TplObserver *self,
+_tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *channel)
 {
   GHashTable *glob_map = tpl_observer_get_channel_map (self);
@@ -492,7 +492,7 @@ tpl_observer_get_channel_factory (TplObserver *self)
 
 
 void
-tpl_observer_set_channel_factory (TplObserver *self,
+_tpl_observer_set_channel_factory (TplObserver *self,
     TplChannelFactory factory)
 {
   g_return_if_fail (TPL_IS_OBSERVER (self));

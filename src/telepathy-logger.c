@@ -172,9 +172,9 @@ main (int argc,
       (TplChannelConstructor) _tpl_channel_text_new);
   DEBUG ("- TplChannelText registred.");
 
-  observer = tpl_observer_new ();
+  observer = _tpl_observer_new ();
   DEBUG ("Registering channel factory into TplObserver");
-  tpl_observer_set_channel_factory (observer, _tpl_channel_factory_build);
+  _tpl_observer_set_channel_factory (observer, _tpl_channel_factory_build);
 
   if (!tp_base_client_register (TP_BASE_CLIENT (observer), &error))
     {

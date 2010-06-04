@@ -40,7 +40,7 @@ tpl_init (void)
   _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
       (TplChannelConstructor) tpl_channel_test_new);
 
-	observer = tpl_observer_new ();
+	observer = _tpl_observer_new ();
   if (!tp_base_client_register (TP_BASE_CLIENT (observer), &error))
     {
       g_debug ("Error during D-Bus registration: %s", error->message);

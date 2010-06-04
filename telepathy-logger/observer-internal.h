@@ -37,7 +37,7 @@
 
 
 G_BEGIN_DECLS
-#define TPL_TYPE_OBSERVER (tpl_observer_get_type ())
+#define TPL_TYPE_OBSERVER (_tpl_observer_get_type ())
 #define TPL_OBSERVER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_OBSERVER, TplObserver))
 #define TPL_OBSERVER_CLASS(obj) (G_TYPE_CHECK_CLASS_CAST ((obj), TPL_TYPE_OBSERVER, TplObserverClass))
 #define TPL_IS_OBSERVER(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_OBSERVER))
@@ -59,15 +59,15 @@ typedef struct
   TpBaseClientClass parent_class;
 } TplObserverClass;
 
-GType tpl_observer_get_type (void);
+GType _tpl_observer_get_type (void);
 
-TplObserver *tpl_observer_new (void);
+TplObserver * _tpl_observer_new (void);
 
-gboolean tpl_observer_register_channel (TplObserver *self,
+gboolean _tpl_observer_register_channel (TplObserver *self,
     TplChannel *channel);
-gboolean tpl_observer_unregister_channel (TplObserver *self,
+gboolean _tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *channel);
-void tpl_observer_set_channel_factory (TplObserver *self,
+void _tpl_observer_set_channel_factory (TplObserver *self,
     TplChannelFactory factory);
 
 
