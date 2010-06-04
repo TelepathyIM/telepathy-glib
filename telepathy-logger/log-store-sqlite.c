@@ -51,7 +51,7 @@ static void tpl_log_store_sqlite_purge (TplLogStoreSqlite *self, time_t delta,
 static gboolean purge_entry_timeout (gpointer logstore);
 
 
-G_DEFINE_TYPE_WITH_CODE (TplLogStoreSqlite, tpl_log_store_sqlite,
+G_DEFINE_TYPE_WITH_CODE (TplLogStoreSqlite, _tpl_log_store_sqlite,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TPL_TYPE_LOG_STORE, log_store_iface_init));
 
@@ -81,7 +81,7 @@ tpl_log_store_sqlite_constructor (GType type,
   else
     {
       singleton =
-        G_OBJECT_CLASS (tpl_log_store_sqlite_parent_class)->constructor (
+        G_OBJECT_CLASS (_tpl_log_store_sqlite_parent_class)->constructor (
             type, n_props, props);
 
       if (singleton == NULL)
@@ -160,11 +160,11 @@ tpl_log_store_sqlite_dispose (GObject *self)
       priv->db = NULL;
     }
 
-  G_OBJECT_CLASS (tpl_log_store_sqlite_parent_class)->dispose (self);
+  G_OBJECT_CLASS (_tpl_log_store_sqlite_parent_class)->dispose (self);
 }
 
 static void
-tpl_log_store_sqlite_class_init (TplLogStoreSqliteClass *klass)
+_tpl_log_store_sqlite_class_init (TplLogStoreSqliteClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
@@ -181,7 +181,7 @@ tpl_log_store_sqlite_class_init (TplLogStoreSqliteClass *klass)
 }
 
 static void
-tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
+_tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   char *filename = get_db_filename ();
@@ -361,7 +361,7 @@ out:
 
 
 /**
- * tpl_log_store_sqlite_log_id_is_present:
+ * _tpl_log_store_sqlite_log_id_is_present:
  * @self: A TplLogStoreSqlite
  * @log_id: the log identifier token
  *
@@ -377,7 +377,7 @@ out:
  * Returns: %TRUE if @log_id is found, %FALSE otherwise
  */
 gboolean
-tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
+_tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
   const gchar* log_id)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
@@ -581,7 +581,7 @@ tpl_log_store_sqlite_add_message_cache (TplLogStore *self,
 
   log_id = tpl_log_entry_get_log_id (message);
   DEBUG ("received %s, considering if can be cached", log_id);
-  if (tpl_log_store_sqlite_log_id_is_present (self, log_id))
+  if (_tpl_log_store_sqlite_log_id_is_present (self, log_id))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_PRESENT,
@@ -778,7 +778,7 @@ out:
 }
 
 /**
- * tpl_log_store_sqlite_get_log_ids:
+ * _tpl_log_store_sqlite_get_log_ids:
  * @self: a TplLogStoreSqlite instance
  * @channel: a pointer to a TpChannel or NULL
  * @timestamp: selects entries which timestamp is older than @timestamp.
@@ -809,7 +809,7 @@ out:
  * Returns: a list of log-id
  */
 GList *
-tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
+_tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
     TpChannel *channel,
     time_t timestamp,
     GError **error)
@@ -881,7 +881,7 @@ out:
 
 
 /**
- * tpl_log_store_sqlite_get_pending_messages:
+ * _tpl_log_store_sqlite_get_pending_messages:
  * @self: a TplLogStoreSqlite instance
  * @channel: a pointer to a TpChannel or NULL
  * @error: set if an error occurs
@@ -905,7 +905,7 @@ out:
  * Returns: a list of log-id
  */
 GList *
-tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
+_tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
     TpChannel *channel,
     GError **error)
 {
@@ -973,7 +973,7 @@ out:
 }
 
 void
-tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
+_tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
     TpChannel *channel,
     guint msg_id,
     GError **error)
@@ -990,7 +990,7 @@ tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
     {
       DEBUG ("%s: found %s for pending id %d", get_channel_name (channel),
           log_id, msg_id);
-      tpl_log_store_sqlite_set_acknowledgment (self, log_id, error);
+      _tpl_log_store_sqlite_set_acknowledgment (self, log_id, error);
     }
   else
     g_set_error (error, TPL_LOG_STORE_ERROR,
@@ -1002,7 +1002,7 @@ tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
 }
 
 void
-tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
+_tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
     const gchar* log_id,
     GError **error)
 {
@@ -1014,7 +1014,7 @@ tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
   g_return_if_fail (TPL_IS_LOG_STORE_SQLITE (self));
   g_return_if_fail (!TPL_STR_EMPTY (log_id));
 
-  if (!tpl_log_store_sqlite_log_id_is_present (TPL_LOG_STORE (self), log_id))
+  if (!_tpl_log_store_sqlite_log_id_is_present (TPL_LOG_STORE (self), log_id))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_NOT_PRESENT,
@@ -1183,13 +1183,13 @@ log_store_iface_init (TplLogStoreInterface *iface)
 }
 
 TplLogStore *
-tpl_log_store_sqlite_dup (void)
+_tpl_log_store_sqlite_dup (void)
 {
   return g_object_new (TPL_TYPE_LOG_STORE_SQLITE, NULL);
 }
 
 gint64
-tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
+_tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
     TpAccount *account,
     const char *identifier)
 {
@@ -1247,7 +1247,7 @@ out:
 
 
 double
-tpl_log_store_sqlite_get_frequency (TplLogStoreSqlite *self,
+_tpl_log_store_sqlite_get_frequency (TplLogStoreSqlite *self,
     TpAccount *account,
     const char *identifier)
 {

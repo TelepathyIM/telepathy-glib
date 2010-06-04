@@ -21,10 +21,10 @@ main (int argc, char **argv)
       &error);
   g_assert_no_error (error);
 
-  store = tpl_log_store_sqlite_dup ();
+  store = _tpl_log_store_sqlite_dup ();
 
   g_print ("freq = %g\n",
-      tpl_log_store_sqlite_get_frequency (TPL_LOG_STORE_SQLITE (store),
+      _tpl_log_store_sqlite_get_frequency (TPL_LOG_STORE_SQLITE (store),
         account, "dannielle.meyer@gmail.com"));
 
   g_object_unref (store);

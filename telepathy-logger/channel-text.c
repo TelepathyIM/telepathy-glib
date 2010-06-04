@@ -524,14 +524,14 @@ static void
 tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
     GList *stale_tokens)
 {
-  TplLogStore *cache = tpl_log_store_sqlite_dup ();
+  TplLogStore *cache = _tpl_log_store_sqlite_dup ();
   GError *loc_error = NULL;
 
   for (; stale_tokens != NULL; stale_tokens = g_list_next (stale_tokens))
     {
       gchar *log_id = stale_tokens->data;
 
-      tpl_log_store_sqlite_set_acknowledgment (cache, log_id, &loc_error);
+      _tpl_log_store_sqlite_set_acknowledgment (cache, log_id, &loc_error);
 
       if (loc_error != NULL)
         {
@@ -573,7 +573,7 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
   TplChannelText *self = _tpl_action_chain_get_object (ctx);
   const time_t time_limit = _tpl_time_get_current () -
     TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT;
-  TplLogStore *cache = tpl_log_store_sqlite_dup ();
+  TplLogStore *cache = _tpl_log_store_sqlite_dup ();
   GList *l;
   GError *error = NULL;
 
@@ -583,7 +583,7 @@ pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
       goto out;
     }
 
-  l = tpl_log_store_sqlite_get_log_ids (cache, NULL, time_limit,
+  l = _tpl_log_store_sqlite_get_log_ids (cache, NULL, time_limit,
       &error);
   if (error != NULL)
     {
@@ -640,7 +640,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   const gchar *channel_path = tp_proxy_get_object_path (proxy);
-  TplLogStore *cache = tpl_log_store_sqlite_dup ();
+  TplLogStore *cache = _tpl_log_store_sqlite_dup ();
   TplActionChain *ctx = user_data;
   GPtrArray *result = NULL;
   GList *cached_pending_msgs = NULL;
@@ -670,7 +670,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
   result = g_value_get_boxed (out_Value);
 
   /* getting messages ids known to be pending at last TPL exit */
-  cached_pending_msgs = tpl_log_store_sqlite_get_pending_messages (cache,
+  cached_pending_msgs = _tpl_log_store_sqlite_get_pending_messages (cache,
       TP_CHANNEL (proxy), &loc_error);
   if (loc_error != NULL)
     {
@@ -806,7 +806,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplLogStore *cache = tpl_log_store_sqlite_dup ();
+  TplLogStore *cache = _tpl_log_store_sqlite_dup ();
   TplActionChain *ctx = user_data;
   GList *cached_pending_msgs, *l;
   const gchar *channel_path;
@@ -824,7 +824,7 @@ got_text_pending_messages_cb (TpChannel *proxy,
   channel_path = tp_proxy_get_object_path (proxy);
 
   /* getting messages ids known to be pending at last TPL exit */
-  cached_pending_msgs = tpl_log_store_sqlite_get_pending_messages (cache,
+  cached_pending_msgs = _tpl_log_store_sqlite_get_pending_messages (cache,
       TP_CHANNEL (proxy), &loc_error);
 
   if (loc_error != NULL)
@@ -1034,14 +1034,14 @@ on_pending_messages_removed_cb (TpChannel *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplLogStore *cache = tpl_log_store_sqlite_dup ();
+  TplLogStore *cache = _tpl_log_store_sqlite_dup ();
   guint i;
   GError *error = NULL;
 
   for (i = 0; i < message_ids->len; ++i)
     {
       guint msg_id = g_array_index (message_ids, guint, i);
-      tpl_log_store_sqlite_set_acknowledgment_by_msg_id (cache, proxy, msg_id,
+      _tpl_log_store_sqlite_set_acknowledgment_by_msg_id (cache, proxy, msg_id,
           &error);
       if (error != NULL)
         {
@@ -1338,7 +1338,7 @@ on_received_signal_cb (TpChannel *proxy,
   TplLogEntryText *text_log = NULL;
   TplLogEntry *log;
   TpAccount *account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
-  TplLogStore *index = tpl_log_store_sqlite_dup ();
+  TplLogStore *index = _tpl_log_store_sqlite_dup ();
   const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   gchar *log_id = _tpl_create_message_token (channel_path, arg_Timestamp, arg_ID);
@@ -1355,7 +1355,7 @@ on_received_signal_cb (TpChannel *proxy,
    * handler has already received and logged the message.
    * In the latter (here), the handler will detect that the P.M.L analisys
    * has found and logged it, returning immediatly */
-  if (tpl_log_store_sqlite_log_id_is_present (index, log_id))
+  if (_tpl_log_store_sqlite_log_id_is_present (index, log_id))
     {
       PATH_DEBUG (tpl_text, "%s found, not logging", log_id);
       goto out;

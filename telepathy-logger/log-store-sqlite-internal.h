@@ -31,7 +31,7 @@
 G_BEGIN_DECLS
 
 #define TPL_TYPE_LOG_STORE_SQLITE \
-  (tpl_log_store_sqlite_get_type ())
+  (_tpl_log_store_sqlite_get_type ())
 #define TPL_LOG_STORE_SQLITE(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_STORE_SQLITE, \
                                TplLogStoreSqlite))
@@ -55,7 +55,7 @@ typedef enum
   /* generic error, avoids clashing with TPL_LOG_STORE_ERROR using its last
    * value */
   TPL_LOG_STORE_SQLITE_ERROR_FAILED = TPL_LOG_STORE_ERROR_LAST,
-  /* generic tpl_log_store_sqlite_get_pending_messages() error, to be used when
+  /* generic _tpl_log_store_sqlite_get_pending_messages() error, to be used when
    * any other code cannot be use, including TPL_LOG_STORE_ERROR ones */
   TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES
 } TplLogStoreSqliteError;
@@ -75,23 +75,23 @@ struct _TplLogStoreSqliteClass
   GObjectClass parent_class;
 };
 
-GType tpl_log_store_sqlite_get_type (void);
-TplLogStore *tpl_log_store_sqlite_dup (void);
-GList *tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
+GType _tpl_log_store_sqlite_get_type (void);
+TplLogStore * _tpl_log_store_sqlite_dup (void);
+GList * _tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
     TpChannel *channel, GError **error);
-GList *tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
+GList * _tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
     TpChannel *channel, time_t timestamp, GError **error);
-gboolean tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
+gboolean _tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
   const gchar* log_id);
 
-void tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
+void _tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
     const gchar* log_id, GError **error);
-void tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
+void _tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
     TpChannel *channel, guint msg_id, GError **error);
 
-gint64 tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
+gint64 _tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
     TpAccount *account, const char *identifier);
-double tpl_log_store_sqlite_get_frequency (TplLogStoreSqlite *self,
+double _tpl_log_store_sqlite_get_frequency (TplLogStoreSqlite *self,
     TpAccount *account, const char *identifier);
 
 G_END_DECLS
