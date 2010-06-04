@@ -215,7 +215,7 @@ tpl_log_store_get_messages_for_date (TplLogStore *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
-    GDate *date)
+    const GDate *date)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (TPL_LOG_STORE_GET_INTERFACE (self)->get_messages_for_date == NULL)

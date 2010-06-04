@@ -96,7 +96,7 @@ gboolean tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
 
 void tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
     TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
-    GDate *date, GAsyncReadyCallback callback, gpointer user_data);
+    const GDate *date, GAsyncReadyCallback callback, gpointer user_data);
 
 gboolean tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
     GAsyncResult *result,

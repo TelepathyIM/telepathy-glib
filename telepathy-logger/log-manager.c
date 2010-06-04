@@ -427,7 +427,7 @@ _tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
-    GDate *date)
+    const GDate *date)
 {
   GList *l, *out = NULL;
   TplLogManagerPriv *priv;
@@ -1054,7 +1054,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
     TpAccount *account,
     const gchar *chat_id,
     gboolean is_chatroom,
-    GDate *date,
+    const GDate *date,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {

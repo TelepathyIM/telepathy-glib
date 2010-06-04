@@ -685,7 +685,7 @@ log_store_xml_get_filename_for_date (TplLogStoreXml *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
-    GDate *date)
+    const GDate *date)
 {
   gchar *basedir;
   gchar *timestamp;
@@ -1124,7 +1124,7 @@ log_store_xml_get_messages_for_date (TplLogStore *store,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
-    GDate *date)
+    const GDate *date)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *filename;
