@@ -23,15 +23,12 @@
  *          Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#define _XOPEN_SOURCE /* glibc2 needs this for strptime */
-
 #include "config.h"
 #include "log-store-xml-internal.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <glib/gstdio.h>
 
 #include <glib-object.h>
@@ -602,22 +599,20 @@ static GDate *
 create_date_from_string (const gchar *str)
 {
   GDate *date;
-  struct tm tm;
-  time_t t;
-  gchar *tmp;
+  guint u;
+  guint day, month, year;
 
-  memset (&tm, 0, sizeof (struct tm));
-
-  tmp = strptime (str, "%Y%m%d", &tm);
-  if (tmp == NULL || tmp[0] != '\0')
+  if (sscanf (str, "%u", &u) != 1)
     return NULL;
 
-  t = mktime (&tm);
-  if (t == -1)
+  day = (u % 100);
+  month = ((u / 100) % 100);
+  year = (u / 10000);
+
+  if (!g_date_valid_dmy (day, month, year))
     return NULL;
 
-  date = g_date_new ();
-  g_date_set_time_t (date, t);
+  date = g_date_new_dmy (day, month, year);
 
   return date;
 }
