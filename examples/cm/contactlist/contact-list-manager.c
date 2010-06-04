@@ -40,6 +40,7 @@ typedef struct {
 
     guint subscribe:1;
     guint publish:1;
+    guint pre_approved:1;
     guint subscribe_requested:1;
     guint publish_requested:1;
     gchar *publish_request;
@@ -645,8 +646,21 @@ receive_auth_request (ExampleContactListManager *self,
   if (d->publish)
     return;
 
-  d->publish_requested = TRUE;
-  d->publish_request = g_strdup ("May I see your presence, please?");
+  if (d->pre_approved)
+    {
+      /* the user already said yes, no need to signal anything */
+      g_message ("... this publish request was already approved");
+      d->pre_approved = FALSE;
+      d->publish = TRUE;
+      g_free (d->publish_request);
+      d->publish_request = NULL;
+      send_updated_roster (self, contact);
+    }
+  else
+    {
+      d->publish_requested = TRUE;
+      d->publish_request = g_strdup ("May I see your presence, please?");
+    }
 
   set = tp_handle_set_new (self->priv->contact_repo);
   tp_handle_set_add (set, contact);
@@ -844,6 +858,7 @@ static const ExampleContactDetails no_details = {
     FALSE,
     FALSE,
     FALSE,
+    FALSE,
     "",
     NULL
 };
@@ -878,8 +893,7 @@ example_contact_list_manager_get_states (TpBaseContactList *manager,
         details->subscribe_requested);
 
   if (publish != NULL)
-    *publish = compose_presence (details->publish,
-        details->publish_requested);
+    *publish = compose_presence (details->publish, details->publish_requested);
 
   if (publish_request != NULL)
     *publish_request = g_strdup (details->publish_request);
@@ -964,17 +978,14 @@ example_contact_list_manager_authorize_publication (
 
   while (tp_intset_fast_iter_next (&iter, &member))
     {
-      ExampleContactDetails *d = lookup_contact (self, member);
+      ExampleContactDetails *d = ensure_contact (self, member, NULL);
 
       /* We would like member to see our presence. In this simulated protocol,
-       * this is meaningless, unless they have asked for it. */
-
-      if (d == NULL || !d->publish_requested)
+       * this is meaningless, unless they have asked for it; but we can still
+       * remember the pre-authorization in case they ask later. */
+      if (!d->publish_requested)
         {
-          /* the group mixin won't actually allow this to be reached,
-           * because of the flags we set */
-          g_message ("Can't unilaterally send presence to %s",
-              tp_handle_inspect (self->priv->contact_repo, member));
+          d->pre_approved = TRUE;
           tp_handle_set_remove (changed, member);
         }
       else if (!d->publish)
@@ -1137,6 +1148,8 @@ example_contact_list_manager_unpublish (TpBaseContactList *manager,
 
       if (d != NULL)
         {
+          d->pre_approved = FALSE;
+
           if (d->publish_requested)
             {
               g_message ("Rejecting authorization request from %s",
