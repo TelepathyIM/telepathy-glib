@@ -181,33 +181,45 @@ void tp_base_contact_list_unpublish (TpBaseContactList *self,
 
 /* ---- contact blocking ---- */
 
+#define TP_TYPE_BLOCKABLE_CONTACT_LIST \
+  (tp_blockable_contact_list_get_type ())
+GType tp_blockable_contact_list_get_type (void) G_GNUC_CONST;
+
+#define TP_IS_BLOCKABLE_CONTACT_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+  TP_TYPE_BLOCKABLE_CONTACT_LIST))
+
+#define TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
+  TP_TYPE_BLOCKABLE_CONTACT_LIST, TpBlockableContactListInterface))
+
+typedef struct _TpBlockableContactListInterface
+    TpBlockableContactListInterface;
+
 void tp_base_contact_list_contact_blocking_changed (
     TpBaseContactList *self,
     TpHandleSet *changed);
 
-void tp_base_contact_list_class_implement_can_block (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check);
+gboolean tp_base_contact_list_can_block (TpBaseContactList *self);
 
-void tp_base_contact_list_class_implement_get_blocked_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGetContactsFunc impl);
+TpHandleSet *tp_base_contact_list_get_blocked_contacts (
+    TpBaseContactList *self);
 
-typedef gboolean (*TpBaseContactListContactBooleanFunc) (
-    TpBaseContactList *self,
-    TpHandle contact);
+void tp_base_contact_list_block_contacts (TpBaseContactList *self,
+    TpHandleSet *contacts);
 
-void tp_base_contact_list_class_implement_get_contact_blocked (
-    TpBaseContactListClass *cls,
-    TpBaseContactListContactBooleanFunc impl);
+void tp_base_contact_list_unblock_contacts (TpBaseContactList *self,
+    TpHandleSet *contacts);
 
-void tp_base_contact_list_class_implement_block_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl);
-
-void tp_base_contact_list_class_implement_unblock_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl);
+struct _TpBlockableContactListInterface {
+    GTypeInterface parent;
+    /* mandatory to implement */
+    TpBaseContactListGetContactsFunc get_blocked_contacts;
+    TpBaseContactListActOnContactsFunc block_contacts;
+    TpBaseContactListActOnContactsFunc unblock_contacts;
+    /* optional to implement */
+    TpBaseContactListBooleanFunc can_block;
+};
 
 /* ---- Called by subclasses for ContactGroups ---- */
 

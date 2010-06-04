@@ -84,6 +84,9 @@
  * Most subclasses should implement %TP_TYPE_MUTABLE_CONTACT_LIST, which allows
  * the contact list to be altered.
  *
+ * Subclasses may implement %TP_TYPE_BLOCKABLE_CONTACT_LIST if contacts can
+ * be blocked from communicating with the user.
+ *
  * Since: 0.11.UNRELEASED
  */
 
@@ -191,12 +194,6 @@ struct _TpBaseContactListPrivate
 
 struct _TpBaseContactListClassPrivate
 {
-  TpBaseContactListBooleanFunc can_block;
-  TpBaseContactListContactBooleanFunc get_contact_blocked;
-  TpBaseContactListGetContactsFunc get_blocked_contacts;
-  TpBaseContactListActOnContactsFunc block_contacts;
-  TpBaseContactListActOnContactsFunc unblock_contacts;
-
   TpBaseContactListGetGroupsFunc get_groups;
   TpBaseContactListGetContactGroupsFunc get_contact_groups;
   TpBaseContactListBooleanFunc disjoint_groups;
@@ -251,6 +248,32 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseContactList,
  */
 
 G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
+    TP_TYPE_BASE_CONTACT_LIST)
+
+/**
+ * TP_TYPE_BLOCKABLE_CONTACT_LIST:
+ *
+ * Interface representing a #TpBaseContactList on which contacts can
+ * be blocked from communicating with the user.
+ */
+
+/**
+ * TpBlockableContactListInterface:
+ * @parent: the parent interface
+ * @get_blocked_contacts: the implementation of
+ *  tp_base_contact_list_get_blocked_contacts(); must always be provided
+ * @block_contacts: the implementation of
+ *  tp_base_contact_list_block_contacts(); must always be provided
+ * @unblock_contacts: the implementation of
+ *  tp_base_contact_list_unblock_contacts(); must always be provided
+ * @can_block: the implementation of
+ *  tp_base_contact_list_can_block(); if not reimplemented,
+ *  the default implementation always returns %TRUE
+ *
+ * The interface vtable for a %TP_TYPE_BLOCKABLE_CONTACT_LIST.
+ */
+
+G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
     TP_TYPE_BASE_CONTACT_LIST)
 
 enum {
@@ -489,12 +512,15 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->unpublish != NULL);
     }
 
-  if (cls->priv->can_block != tp_base_contact_list_false_func)
+  if (TP_IS_BLOCKABLE_CONTACT_LIST (self))
     {
-      g_assert (cls->priv->get_blocked_contacts != NULL);
-      g_assert (cls->priv->get_contact_blocked != NULL);
-      g_assert (cls->priv->block_contacts != NULL);
-      g_assert (cls->priv->unblock_contacts != NULL);
+      TpBlockableContactListInterface *iface =
+        TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+
+      g_return_if_fail (iface->can_block != NULL);
+      g_return_if_fail (iface->get_blocked_contacts != NULL);
+      g_return_if_fail (iface->block_contacts != NULL);
+      g_return_if_fail (iface->unblock_contacts != NULL);
     }
 
   self->priv->contact_repo = tp_base_connection_get_handles (self->priv->conn,
@@ -539,6 +565,13 @@ tp_mutable_contact_list_default_init (TpMutableContactListInterface *iface)
 }
 
 static void
+tp_blockable_contact_list_default_init (TpBlockableContactListInterface *iface)
+{
+  iface->can_block = tp_base_contact_list_true_func;
+  /* there's no default for the other virtual methods */
+}
+
+static void
 tp_base_contact_list_class_init (TpBaseContactListClass *cls)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
@@ -551,7 +584,6 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
   /* defaults */
   cls->get_subscriptions_persist = tp_base_contact_list_true_func;
 
-  cls->priv->can_block = tp_base_contact_list_false_func;
   cls->priv->disjoint_groups = tp_base_contact_list_false_func;
 
   object_class->get_property = tp_base_contact_list_get_property;
@@ -760,7 +792,8 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
           goto error;
         }
 
-      if (handle == TP_LIST_HANDLE_DENY && !cls->priv->can_block (self))
+      if (handle == TP_LIST_HANDLE_DENY &&
+          !tp_base_contact_list_can_block (self))
         {
           g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
               "This connection cannot put people on the 'deny' list");
@@ -1026,7 +1059,6 @@ _tp_base_contact_list_add_to_list (TpBaseContactList *self,
     const gchar *message,
     GError **error)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleSet *contacts;
 
   if (!tp_base_contact_list_check_still_usable (self, error))
@@ -1057,7 +1089,7 @@ _tp_base_contact_list_add_to_list (TpBaseContactList *self,
       break;
 
     case TP_LIST_HANDLE_DENY:
-      cls->priv->block_contacts (self, contacts);
+      tp_base_contact_list_block_contacts (self, contacts);
       break;
     }
 
@@ -1072,7 +1104,6 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
     const gchar *message G_GNUC_UNUSED,
     GError **error)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleSet *contacts;
 
   if (!tp_base_contact_list_check_still_usable (self, error))
@@ -1103,7 +1134,7 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
       break;
 
     case TP_LIST_HANDLE_DENY:
-      cls->priv->unblock_contacts (self, contacts);
+      tp_base_contact_list_unblock_contacts (self, contacts);
       break;
     }
 
@@ -1144,10 +1175,8 @@ satisfy_channel_requests (TpExportableChannel *channel,
  * #TpBaseContactListGetStatesFunc must already give correct
  * results when entering this method.
  *
- * The results of the implementations for
- * tp_base_contact_list_class_implement_get_contact_blocked() and
- * tp_base_contact_list_class_implement_get_blocked_contacts() must also
- * give correct results when entering this method, if they're implemented.
+ * If implemented, tp_base_contact_list_get_blocked_contacts() must also
+ * give correct results when entering this method.
  */
 void
 tp_base_contact_list_set_list_received (TpBaseContactList *self)
@@ -1258,7 +1287,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   tp_base_contact_list_contacts_changed (self, contacts, NULL);
   tp_handle_set_destroy (contacts);
 
-  if (cls->priv->can_block (self))
+  if (tp_base_contact_list_can_block (self))
     {
       if (self->priv->lists[TP_LIST_HANDLE_DENY] == NULL)
         {
@@ -1266,7 +1295,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
               TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_DENY, NULL);
         }
 
-      contacts = cls->priv->get_blocked_contacts (self);
+      contacts = tp_base_contact_list_get_blocked_contacts (self);
 
       if (DEBUGGING)
         {
@@ -1495,18 +1524,19 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
  *
  * Emit signals for a change to the blocked contacts list.
  *
- * The results of the implementations for
- * tp_base_contact_list_class_implement_get_contact_blocked() and
- * tp_base_contact_list_class_implement_get_blocked_contacts()
+ * tp_base_contact_list_get_blocked_contacts()
  * must already reflect the contacts' new statuses when entering this method
  * (in practice, this means that implementations must update their own cache
  * of contacts before calling this method).
+ *
+ * It is an error to call this method if tp_base_contact_list_can_block()
+ * would return %FALSE.
  */
 void
 tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
     TpHandleSet *changed)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+  TpHandleSet *now_blocked;
   TpIntSet *blocked, *unblocked;
   TpIntSetFastIter iter;
   GObject *deny_chan;
@@ -1521,10 +1551,12 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
       !self->priv->had_contact_list)
     return;
 
-  g_return_if_fail (cls->priv->can_block (self));
+  g_return_if_fail (tp_base_contact_list_can_block (self));
 
   deny_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_DENY];
   g_return_if_fail (G_IS_OBJECT (deny_chan));
+
+  now_blocked = tp_base_contact_list_get_blocked_contacts (self);
 
   blocked = tp_intset_new ();
   unblocked = tp_intset_new ();
@@ -1533,14 +1565,14 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 
   while (tp_intset_fast_iter_next (&iter, &handle))
     {
-      if (cls->priv->get_contact_blocked (self, handle))
+      if (tp_handle_set_is_member (now_blocked, handle))
         tp_intset_add (blocked, handle);
       else
         tp_intset_add (unblocked, handle);
 
       DEBUG ("Contact %s: blocked=%c",
           tp_handle_inspect (self->priv->contact_repo, handle),
-          cls->priv->get_contact_blocked (self, handle) ? 'Y' : 'N');
+          tp_handle_set_is_member (now_blocked, handle) ? 'Y' : 'N');
     }
 
   tp_group_mixin_change_members (deny_chan, "",
@@ -1553,6 +1585,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 
   tp_intset_destroy (blocked);
   tp_intset_destroy (unblocked);
+  tp_handle_set_destroy (now_blocked);
 }
 
 /**
@@ -1566,6 +1599,10 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
  * This is a virtual method, implemented using
  * #TpBaseContactListClass.get_contacts. Every subclass of #TpBaseContactList
  * must implement this method.
+ *
+ * If the contact list implements %TP_TYPE_BLOCKABLE_CONTACT_LIST, blocked
+ * contacts should not appear in the result of this method unless they are
+ * considered to be on the contact list for some other reason.
  *
  * Returns: (transfer full): a new #TpHandleSet of contact handles
  */
@@ -2000,21 +2037,18 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
 }
 
 /**
- * tp_base_contact_list_class_implement_can_block:
- * @cls: a contact list manager subclass
- * @check: a function that returns %TRUE if contacts can be
- *  blocked
+ * tp_base_contact_list_can_block:
+ * @self: a contact list manager
  *
- * Set whether instances of a contact list manager subclass can block
- * and unblock contacts. The default is tp_base_contact_list_false_func().
+ * Return whether this contact list has a list of blocked contacts. If it
+ * does, that list is assumed to be modifiable.
  *
- * Subclasses that call this method in #GTypeClass.class_init and set
- * any implementation other than tp_base_contact_list_false_func()
- * (even if that implementation itself returns %FALSE) must also call
- * tp_base_contact_list_class_implement_get_contact_blocked(),
- * tp_base_contact_list_class_implement_get_blocked_contacts(),
- * tp_base_contact_list_class_implement_block_contacts() and
- * tp_base_contact_list_class_implement_unblock_contacts().
+ * If the #TpBaseContactList subclass does not implement
+ * #TpBlockableContactList, this method always returns %FALSE.
+ *
+ * For implementations of #TpBlockableContactList, this is a virtual method,
+ * implemented using #TpBlockableContactListInterface.can_block.
+ * The default implementation always returns %TRUE.
  *
  * In the case of a protocol where blocking may or may not work
  * and this is detected while connecting, the subclass can implement another
@@ -2025,95 +2059,122 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
  * (For instance, this could be useful for XMPP, where support for contact
  * blocking is server-dependent: telepathy-gabble 0.8.x implements it for
  * connections to Google Talk servers, but not for any other server.)
- */
-void
-tp_base_contact_list_class_implement_can_block (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check)
-{
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (check != NULL);
-  cls->priv->can_block = check;
-}
-
-/**
- * tp_base_contact_list_class_implement_get_blocked_contacts:
- * @cls: a contact list manager subclass
- * @impl: a function that returns the set of blocked contacts
  *
- * Set a function that can be used to list all blocked contacts.
+ * Returns: %TRUE if communication from contacts can be blocked
  */
-void
-tp_base_contact_list_class_implement_get_blocked_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGetContactsFunc impl)
+gboolean
+tp_base_contact_list_can_block (TpBaseContactList *self)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->get_blocked_contacts = impl;
+  TpBlockableContactListInterface *iface;
+
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
+
+  if (!TP_IS_BLOCKABLE_CONTACT_LIST (self))
+    return FALSE;
+
+  iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (iface != NULL, FALSE);
+  g_return_val_if_fail (iface->can_block != NULL, FALSE);
+
+  return iface->can_block (self);
 }
 
 /**
- * TpBaseContactListContactBooleanFunc:
+ * tp_base_contact_list_get_blocked_contacts:
  * @self: a contact list manager
- * @contact: a contact
  *
- * Signature of a virtual method that returns some boolean attribute of a
- * contact, such as whether communication from that contact has been blocked.
+ * Return the list of blocked contacts. It is incorrect to call this method
+ * before tp_base_contact_list_set_list_retrieved() has been called, after
+ * the connection has disconnected, or on a #TpBaseContactList that does
+ * not implement %TP_TYPE_BLOCKABLE_CONTACT_LIST.
  *
- * Returns: %TRUE if the contact has the attribute.
+ * For implementations of #TpBlockableContactList, this is a virtual method,
+ * implemented using #TpBlockableContactListInterface.can_block.
+ *
+ * Returns: (transfer full): a new #TpHandleSet of contact handles
  */
-
-/**
- * tp_base_contact_list_class_implement_get_contact_blocked:
- * @cls: a contact list manager subclass
- * @impl: a function that returns %TRUE if the @contact is blocked
- *
- * Set a function that can be used to check whether a contact has been
- * blocked.
- */
-void
-tp_base_contact_list_class_implement_get_contact_blocked (
-    TpBaseContactListClass *cls,
-    TpBaseContactListContactBooleanFunc impl)
+TpHandleSet *
+tp_base_contact_list_get_blocked_contacts (TpBaseContactList *self)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->get_contact_blocked = impl;
+  TpBlockableContactListInterface *iface =
+    TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+
+  g_return_val_if_fail (iface != NULL, NULL);
+  g_return_val_if_fail (iface->get_blocked_contacts != NULL, NULL);
+
+  return iface->get_blocked_contacts (self);
 }
 
 /**
- * tp_base_contact_list_class_implement_block_contacts:
- * @cls: a contact list manager subclass
- * @impl: a function that blocks the contacts
+ * tp_base_contact_list_block_contacts:
+ * @self: a contact list manager
+ * @contacts: contacts whose communications should be blocked
  *
- * Set a function that can be used to block contacts.
+ * Request that the given contacts are prevented from communicating with the
+ * user, and that presence is not sent to them even if they have a valid
+ * presence subscription, if possible.
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
+ * method which must be implemented, using
+ * #TpBlockableContactListInterface.block_contacts.
+ * The implementation should call
+ * tp_base_contact_list_contact_blocking_changed()
+ * for any contacts it has changed, before returning.
  */
 void
-tp_base_contact_list_class_implement_block_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl)
+tp_base_contact_list_block_contacts (TpBaseContactList *self,
+    TpHandleSet *contacts)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->block_contacts = impl;
+  TpBlockableContactListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_BLOCKABLE_CONTACT_LIST (self))
+    return;
+
+  iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->block_contacts != NULL);
+
+  iface->block_contacts (self, contacts);
 }
 
 /**
- * tp_base_contact_list_class_implement_unblock_contacts:
- * @cls: a contact list manager subclass
- * @impl: a function that unblocks the contacts
+ * tp_base_contact_list_unblock_contacts:
+ * @self: a contact list manager
+ * @contacts: contacts whose communications should no longer be blocked
  *
- * Set a function that can be used to unblock contacts.
+ * Reverse the effects of tp_base_contact_list_block_contacts().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
+ * method which must be implemented, using
+ * #TpBlockableContactListInterface.unblock_contacts.
+ * The implementation should call
+ * tp_base_contact_list_contact_blocking_changed()
+ * for any contacts it has changed, before returning.
  */
 void
-tp_base_contact_list_class_implement_unblock_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListActOnContactsFunc impl)
+tp_base_contact_list_unblock_contacts (TpBaseContactList *self,
+    TpHandleSet *contacts)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->unblock_contacts = impl;
+  TpBlockableContactListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_BLOCKABLE_CONTACT_LIST (self))
+    return;
+
+  iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->unblock_contacts != NULL);
+
+  iface->unblock_contacts (self, contacts);
 }
 
 /**
