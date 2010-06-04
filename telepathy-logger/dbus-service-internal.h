@@ -34,7 +34,7 @@
 
 G_BEGIN_DECLS
 
-#define TPL_TYPE_DBUS_SERVICE            (tpl_dbus_service_get_type ())
+#define TPL_TYPE_DBUS_SERVICE            (_tpl_dbus_service_get_type ())
 #define TPL_DBUS_SERVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_DBUS_SERVICE, TplDBusService))
 #define TPL_DBUS_SERVICE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_DBUS_SERVICE, TplDBusServiceClass))
 #define TPL_IS_DBUS_SERVICE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_DBUS_SERVICE))
@@ -72,9 +72,9 @@ typedef struct
   gchar *message;
 } TplDBusServiceChatMessage;
 
-GType tpl_dbus_service_get_type (void);
+GType _tpl_dbus_service_get_type (void);
 
-TplDBusService *tpl_dbus_service_new (void);
+TplDBusService * _tpl_dbus_service_new (void);
 
 G_END_DECLS
 

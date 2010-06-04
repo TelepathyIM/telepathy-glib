@@ -115,7 +115,7 @@ telepathy_logger_dbus_init (void)
       goto out;
     }
 
-  dbus_srv = tpl_dbus_service_new ();
+  dbus_srv = _tpl_dbus_service_new ();
   dbus_g_connection_register_g_object (tp_get_bus (), TPL_DBUS_SRV_OBJECT_PATH,
       G_OBJECT (dbus_srv));
 

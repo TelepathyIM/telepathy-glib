@@ -55,7 +55,7 @@ struct _TplDBusServicePriv
   TplActionChain *favourite_contacts_actions;
 };
 
-G_DEFINE_TYPE_WITH_CODE (TplDBusService, tpl_dbus_service, G_TYPE_OBJECT,
+G_DEFINE_TYPE_WITH_CODE (TplDBusService, _tpl_dbus_service, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TPL_TYPE_SVC_LOGGER, tpl_logger_iface_init));
 
 typedef struct _FavouriteContactClosure FavouriteContactClosure;
@@ -297,7 +297,7 @@ tpl_dbus_service_dispose (GObject *obj)
   if (priv->favourite_contacts_actions != NULL)
     priv->favourite_contacts_actions = NULL;
 
-  G_OBJECT_CLASS (tpl_dbus_service_parent_class)->dispose (obj);
+  G_OBJECT_CLASS (_tpl_dbus_service_parent_class)->dispose (obj);
 }
 
 
@@ -334,7 +334,7 @@ tpl_dbus_service_constructed (GObject *object)
 
 
 static void
-tpl_dbus_service_class_init (TplDBusServiceClass *klass)
+_tpl_dbus_service_class_init (TplDBusServiceClass *klass)
 {
   GObjectClass* object_class = G_OBJECT_CLASS (klass);
 
@@ -346,7 +346,7 @@ tpl_dbus_service_class_init (TplDBusServiceClass *klass)
 
 
 static void
-tpl_dbus_service_init (TplDBusService *self)
+_tpl_dbus_service_init (TplDBusService *self)
 {
   TplDBusServicePriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_DBUS_SERVICE, TplDBusServicePriv);
@@ -362,7 +362,7 @@ tpl_dbus_service_init (TplDBusService *self)
 
 
 TplDBusService *
-tpl_dbus_service_new (void)
+_tpl_dbus_service_new (void)
 {
   return g_object_new (TPL_TYPE_DBUS_SERVICE, NULL);
 }
