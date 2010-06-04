@@ -379,7 +379,7 @@ tpl_log_manager_exists (TplLogManager *manager,
  * property %TRUE.
  *
  * Returns: a GList of (GDate *), to be freed using something like
- * g_list_foreach (lst, g_data_free, NULL);
+ * g_list_foreach (lst, g_date_free, NULL);
  * g_list_free (lst);
  */
 GList *
