@@ -241,12 +241,12 @@ _tpl_log_manager_add_message (TplLogManager *manager,
       TplLogStore *store = l->data;
       gboolean result;
 
-      result = tpl_log_store_add_message (store, message, &loc_error);
+      result = _tpl_log_store_add_message (store, message, &loc_error);
       if (!result)
         {
           CRITICAL ("logstore name=%s: %s. "
               "Event may not be logged properly.",
-              tpl_log_store_get_name (store), loc_error->message);
+              _tpl_log_store_get_name (store), loc_error->message);
           g_clear_error (&loc_error);
         }
       /* TRUE if at least one LogStore succeeds */
@@ -294,9 +294,9 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
   for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = l->data;
-      const gchar *name = tpl_log_store_get_name (logstore);
+      const gchar *name = _tpl_log_store_get_name (logstore);
 
-      if (!tp_strdiff (name, tpl_log_store_get_name (store)))
+      if (!tp_strdiff (name, _tpl_log_store_get_name (store)))
         {
           found = TRUE;
           break;
@@ -304,20 +304,20 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
     }
   if (found)
     {
-      DEBUG ("name=%s: already registered", tpl_log_store_get_name (logstore));
+      DEBUG ("name=%s: already registered", _tpl_log_store_get_name (logstore));
       return FALSE;
     }
 
-  if (tpl_log_store_is_readable (logstore))
+  if (_tpl_log_store_is_readable (logstore))
     priv->readable_stores = g_list_prepend (priv->readable_stores, logstore);
 
-  if (tpl_log_store_is_writable (logstore))
+  if (_tpl_log_store_is_writable (logstore))
     priv->writable_stores = g_list_prepend (priv->writable_stores, logstore);
 
   /* reference just once, writable/readable lists are kept in sync with the
    * general list and never written separatedly */
   priv->stores = g_list_prepend (priv->stores, g_object_ref (logstore));
-  DEBUG ("LogStore name=%s registered", tpl_log_store_get_name (logstore));
+  DEBUG ("LogStore name=%s registered", _tpl_log_store_get_name (logstore));
 
   return TRUE;
 }
@@ -354,7 +354,7 @@ tpl_log_manager_exists (TplLogManager *manager,
 
   for (l = priv->stores; l != NULL; l = g_list_next (l))
     {
-      if (tpl_log_store_exists (TPL_LOG_STORE (l->data),
+      if (_tpl_log_store_exists (TPL_LOG_STORE (l->data),
             account, chat_id, chatroom))
         return TRUE;
     }
@@ -403,7 +403,7 @@ _tpl_log_manager_get_dates (TplLogManager *manager,
 
       /* Insert dates of each store in the out list. Keep the out list sorted
        * and avoid to insert dups. */
-      new = tpl_log_store_get_dates (store, account, chat_id, chatroom);
+      new = _tpl_log_store_get_dates (store, account, chat_id, chatroom);
       while (new)
         {
           if (g_list_find_custom (out, new->data,
@@ -441,7 +441,7 @@ _tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
-      out = g_list_concat (out, tpl_log_store_get_messages_for_date (store,
+      out = g_list_concat (out, _tpl_log_store_get_messages_for_date (store,
           account, chat_id, chatroom, date));
     }
 
@@ -495,7 +495,7 @@ _tpl_log_manager_get_filtered_messages (TplLogManager *manager,
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *new;
 
-      new = tpl_log_store_get_filtered_messages (store, account, chat_id,
+      new = _tpl_log_store_get_filtered_messages (store, account, chat_id,
           chatroom, num_messages, filter, user_data);
       while (new != NULL)
         {
@@ -608,7 +608,7 @@ _tpl_log_manager_get_chats (TplLogManager *manager,
       GList *in;
 
       /* merge the lists avoiding duplicates */
-      for (in = tpl_log_store_get_chats (store, account);
+      for (in = _tpl_log_store_get_chats (store, account);
           in != NULL;
           in = g_list_next (in))
         {
@@ -652,7 +652,7 @@ _tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
       out = g_list_concat (out,
-          tpl_log_store_search_in_identifier_chats_new
+          _tpl_log_store_search_in_identifier_chats_new
           (store, account, identifier, text));
     }
 
@@ -676,7 +676,7 @@ _tpl_log_manager_search (TplLogManager *manager,
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
-      out = g_list_concat (out, tpl_log_store_search_new (store, text));
+      out = g_list_concat (out, _tpl_log_store_search_new (store, text));
     }
 
   return out;

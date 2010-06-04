@@ -39,10 +39,10 @@
  * implement in order to be used into a #TplLogManager.
  */
 
-static void tpl_log_store_init (gpointer g_iface);
+static void _tpl_log_store_init (gpointer g_iface);
 
 GType
-tpl_log_store_get_type (void)
+_tpl_log_store_get_type (void)
 {
   static GType type = 0;
   if (type == 0)
@@ -51,7 +51,7 @@ tpl_log_store_get_type (void)
           sizeof (TplLogStoreInterface),
           NULL, /* base_init */
           NULL, /* base_finalize */
-          (GClassInitFunc) tpl_log_store_init, /* class_init */
+          (GClassInitFunc) _tpl_log_store_init, /* class_init */
           NULL, /* class_finalize */
           NULL, /* class_data */
           0,
@@ -65,7 +65,7 @@ tpl_log_store_get_type (void)
 }
 
 static void
-tpl_log_store_init (gpointer g_iface)
+_tpl_log_store_init (gpointer g_iface)
 {
   g_object_interface_install_property (g_iface,
       g_param_spec_string ("name",
@@ -109,7 +109,7 @@ tpl_log_store_init (gpointer g_iface)
 }
 
 const gchar *
-tpl_log_store_get_name (TplLogStore *self)
+_tpl_log_store_get_name (TplLogStore *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->get_name)
@@ -120,7 +120,7 @@ tpl_log_store_get_name (TplLogStore *self)
 
 
 gboolean
-tpl_log_store_exists (TplLogStore *self,
+_tpl_log_store_exists (TplLogStore *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom)
@@ -135,7 +135,7 @@ tpl_log_store_exists (TplLogStore *self,
 
 
 /**
- * tpl_log_store_add_message:
+ * _tpl_log_store_add_message:
  * @self: a TplLogStore
  * @message: an instance of a subclass of TplLogEntry (ie TplLogEntryText)
  * @error: memory location used if an error occurs
@@ -145,7 +145,7 @@ tpl_log_store_exists (TplLogStore *self,
  * Returns: %TRUE if succeeds, %FALSE with @error set otherwise
  */
 gboolean
-tpl_log_store_add_message (TplLogStore *self,
+_tpl_log_store_add_message (TplLogStore *self,
     TplLogEntry *message,
     GError **error)
 {
@@ -166,7 +166,7 @@ tpl_log_store_add_message (TplLogStore *self,
 
 
 /**
- * tpl_log_store_get_dates:
+ * _tpl_log_store_get_dates:
  * @self: a TplLogStore
  * @account: a TpAccount
  * @chat_id: a non-NULL chat identifier
@@ -182,7 +182,7 @@ tpl_log_store_add_message (TplLogStore *self,
  * g_list_free (lst);
  */
 GList *
-tpl_log_store_get_dates (TplLogStore *self,
+_tpl_log_store_get_dates (TplLogStore *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom)
@@ -197,7 +197,7 @@ tpl_log_store_get_dates (TplLogStore *self,
 
 
 /**
- * tpl_log_store_get_messages_for_date:
+ * _tpl_log_store_get_messages_for_date:
  * @self: a TplLogStore
  * @account: a TpAccount
  * @chat_id: a non-NULL chat identifier
@@ -211,7 +211,7 @@ tpl_log_store_get_dates (TplLogStore *self,
  * g_list_free (lst);
  */
 GList *
-tpl_log_store_get_messages_for_date (TplLogStore *self,
+_tpl_log_store_get_messages_for_date (TplLogStore *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
@@ -227,7 +227,7 @@ tpl_log_store_get_messages_for_date (TplLogStore *self,
 
 
 GList *
-tpl_log_store_get_recent_messages (TplLogStore *self,
+_tpl_log_store_get_recent_messages (TplLogStore *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom)
@@ -242,7 +242,7 @@ tpl_log_store_get_recent_messages (TplLogStore *self,
 
 
 /**
- * tpl_log_store_get_chats:
+ * _tpl_log_store_get_chats:
  * @self: a TplLogStore
  * @account: a TpAccount
  *
@@ -254,7 +254,7 @@ tpl_log_store_get_recent_messages (TplLogStore *self,
  * g_list_free (lst);
  */
 GList *
-tpl_log_store_get_chats (TplLogStore *self,
+_tpl_log_store_get_chats (TplLogStore *self,
     TpAccount *account)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
@@ -266,7 +266,7 @@ tpl_log_store_get_chats (TplLogStore *self,
 
 
 /**
- * tpl_log_store_search_in_identifier_chats_new:
+ * _tpl_log_store_search_in_identifier_chats_new:
  * @self: a TplLogStore
  * @account: a TpAccount
  * @chat_id: a chat_id
@@ -279,7 +279,7 @@ tpl_log_store_get_chats (TplLogStore *self,
  * g_list_free (lst);
  */
 GList *
-tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
+_tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
     TpAccount *account,
     const gchar *chat_id,
     const gchar *text)
@@ -295,7 +295,7 @@ tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
 
 
 /**
- * tpl_log_store_search_new:
+ * _tpl_log_store_search_new:
  * @self: a TplLogStore
  * @text: a text to be searched among @chat_id messages
  *
@@ -307,7 +307,7 @@ tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
  * g_list_free (lst);
  */
 GList *
-tpl_log_store_search_new (TplLogStore *self,
+_tpl_log_store_search_new (TplLogStore *self,
     const gchar *text)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
@@ -319,7 +319,7 @@ tpl_log_store_search_new (TplLogStore *self,
 
 
 /**
- * tpl_log_store_search_in_identifier_chats_new:
+ * _tpl_log_store_search_in_identifier_chats_new:
  * @self: a TplLogStore
  * @account: a TpAccount
  * @chat_id: a chat_id
@@ -338,7 +338,7 @@ tpl_log_store_search_new (TplLogStore *self,
  * g_list_free (lst);
  */
 GList *
-tpl_log_store_get_filtered_messages (TplLogStore *self,
+_tpl_log_store_get_filtered_messages (TplLogStore *self,
     TpAccount *account,
     const gchar *chat_id,
     gboolean chatroom,
@@ -356,7 +356,7 @@ tpl_log_store_get_filtered_messages (TplLogStore *self,
 
 
 gboolean
-tpl_log_store_is_writable (TplLogStore *self)
+_tpl_log_store_is_writable (TplLogStore *self)
 {
   gboolean writable;
 
@@ -371,7 +371,7 @@ tpl_log_store_is_writable (TplLogStore *self)
 
 
 gboolean
-tpl_log_store_is_readable (TplLogStore *self)
+_tpl_log_store_is_readable (TplLogStore *self)
 {
   gboolean readable;
 
