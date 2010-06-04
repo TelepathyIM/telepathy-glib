@@ -169,7 +169,7 @@ main (int argc,
 
   DEBUG ("Initialising TPL Channel Factory");
   _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
-      (TplChannelConstructor) tpl_channel_text_new);
+      (TplChannelConstructor) _tpl_channel_text_new);
   DEBUG ("- TplChannelText registred.");
 
   observer = tpl_observer_new ();
