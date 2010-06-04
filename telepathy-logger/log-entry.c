@@ -408,7 +408,7 @@ _tpl_log_entry_get_signal_type (TplLogEntry *self)
 
 
 const gchar *
-tpl_log_entry_get_log_id (TplLogEntry *self)
+_tpl_log_entry_get_log_id (TplLogEntry *self)
 {
   g_return_val_if_fail (TPL_IS_LOG_ENTRY (self), 0);
 

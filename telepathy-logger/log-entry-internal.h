@@ -110,5 +110,7 @@ TplLogEntryDirection _tpl_log_entry_get_direction (TplLogEntry *self);
 gboolean _tpl_log_entry_equal (TplLogEntry *self,
     TplLogEntry *data);
 
+const gchar * _tpl_log_entry_get_log_id (TplLogEntry *self);
+
 G_END_DECLS
 #endif // __TPL_LOG_ENTRY_INTERNAL_H__

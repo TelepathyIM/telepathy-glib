@@ -476,7 +476,7 @@ add_message_text_chat (TplLogStoreXml *self,
   entry = g_strdup_printf ("<message time='%s' cm_id='%s' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'>"
       "%s</message>\n" LOG_FOOTER, timestamp,
-      tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
+      _tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
       contact_id, contact_name,
       avatar_token ? avatar_token : "",
       tpl_contact_get_contact_type (sender) ==
@@ -485,7 +485,7 @@ add_message_text_chat (TplLogStoreXml *self,
       body);
 
   DEBUG ("writing %s from %s (ts %s)",
-      tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
+      _tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
