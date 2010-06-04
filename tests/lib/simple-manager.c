@@ -75,8 +75,8 @@ new_connection (TpBaseConnectionManager *self,
                 GError **error)
 {
   SimpleParams *params = parsed_params;
-  SimpleConnection *conn = SIMPLE_CONNECTION
-      (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
+  TpTestsSimpleConnection *conn = TP_TESTS_SIMPLE_CONNECTION (
+      test_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CONNECTION,
           "account", params->account,
           "protocol", proto,
           NULL));

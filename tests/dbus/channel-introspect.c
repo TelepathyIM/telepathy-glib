@@ -102,7 +102,7 @@ int
 main (int argc,
       char **argv)
 {
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
   TestTextChannelNull *service_chan;
@@ -131,8 +131,8 @@ main (int argc,
   tp_debug_set_flags ("all");
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (test_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));

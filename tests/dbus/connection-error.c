@@ -96,7 +96,7 @@ example_com_error_quark (void)
 typedef struct {
   TpDBusDaemon *dbus;
   GMainLoop *mainloop;
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *conn_name;
   gchar *conn_path;
@@ -131,8 +131,9 @@ setup (Test *test,
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = test_dbus_daemon_dup_or_die ();
 
-  test->service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
+  test->service_conn = TP_TESTS_SIMPLE_CONNECTION (
+      test_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));

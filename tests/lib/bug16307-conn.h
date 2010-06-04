@@ -24,11 +24,11 @@ typedef struct _TpTestsBug16307ConnectionClass TpTestsBug16307ConnectionClass;
 typedef struct _TpTestsBug16307ConnectionPrivate TpTestsBug16307ConnectionPrivate;
 
 struct _TpTestsBug16307ConnectionClass {
-    SimpleConnectionClass parent_class;
+    TpTestsSimpleConnectionClass parent_class;
 };
 
 struct _TpTestsBug16307Connection {
-    SimpleConnection parent;
+    TpTestsSimpleConnection parent;
 
     TpTestsBug16307ConnectionPrivate *priv;
 };

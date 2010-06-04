@@ -30,7 +30,7 @@ static void conn_avatars_properties_getter (GObject *object, GQuark interface,
 
 G_DEFINE_TYPE_WITH_CODE (ContactsConnection,
     contacts_connection,
-    SIMPLE_TYPE_CONNECTION,
+    TP_TESTS_TYPE_SIMPLE_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING,
       init_aliasing);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_AVATARS,

@@ -69,7 +69,7 @@ setup (Test *test,
   g_assert (test->account != NULL);
 
   /* Create (service and client sides) connection objects */
-  test_create_and_connect_conn (SIMPLE_TYPE_CONNECTION, "me@test.com",
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION, "me@test.com",
       &test->base_connection, &test->connection);
 
   /* Create service-side text channel object */

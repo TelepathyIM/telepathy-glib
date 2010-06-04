@@ -20,7 +20,7 @@
 
 typedef struct {
     TpDBusDaemon *dbus;
-    SimpleConnection *service_conn;
+    TpTestsSimpleConnection *service_conn;
     TpBaseConnection *service_conn_as_base;
     gchar *conn_name;
     gchar *conn_path;
@@ -59,8 +59,9 @@ setup (Test *test,
   tp_debug_set_flags ("all");
   test->dbus = test_dbus_daemon_dup_or_die ();
 
-  test->service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
+  test->service_conn = TP_TESTS_SIMPLE_CONNECTION (
+    test_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple-protocol",
         NULL));

@@ -102,7 +102,7 @@ finish (gpointer r)
  * Assert that RequestHandles + unref releases the handles.
  */
 static void
-test_request_and_release (SimpleConnection *service_conn,
+test_request_and_release (TpTestsSimpleConnection *service_conn,
                           TpConnection *client_conn)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
@@ -176,7 +176,7 @@ test_request_and_release (SimpleConnection *service_conn,
  * handles, but a second unref does.
  */
 static void
-test_request_hold_release (SimpleConnection *service_conn,
+test_request_hold_release (TpTestsSimpleConnection *service_conn,
                            TpConnection *client_conn)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
@@ -299,7 +299,7 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
@@ -312,8 +312,8 @@ main (int argc,
   tp_debug_set_flags ("all");
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (test_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));

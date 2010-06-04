@@ -42,7 +42,7 @@ on_invalidated (TpChannel *chan,
 static gboolean
 disconnect (gpointer data)
 {
-  simple_connection_inject_disconnect (data);
+  tp_tests_simple_connection_inject_disconnect (data);
 
   return FALSE;
 }
@@ -58,7 +58,7 @@ int
 main (int argc,
       char **argv)
 {
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
   TestTextChannelNull *service_chan;
@@ -76,7 +76,8 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
   dbus = test_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (test_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
