@@ -36,8 +36,8 @@ tpl_init (void)
 
 	g_type_init ();
 
-  tpl_channel_factory_init ();
-  tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
+  _tpl_channel_factory_init ();
+  _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
       (TplChannelConstructor) tpl_channel_test_new);
 
 	observer = tpl_observer_new ();

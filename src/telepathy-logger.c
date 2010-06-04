@@ -165,16 +165,16 @@ main (int argc,
   g_log_set_default_handler (log_handler, NULL);
 #endif /* ENABLE_DEBUG */
 
-  tpl_channel_factory_init ();
+  _tpl_channel_factory_init ();
 
   DEBUG ("Initialising TPL Channel Factory");
-  tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
+  _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
       (TplChannelConstructor) tpl_channel_text_new);
   DEBUG ("- TplChannelText registred.");
 
   observer = tpl_observer_new ();
   DEBUG ("Registering channel factory into TplObserver");
-  tpl_observer_set_channel_factory (observer, tpl_channel_factory_build);
+  tpl_observer_set_channel_factory (observer, _tpl_channel_factory_build);
 
   if (!tp_base_client_register (TP_BASE_CLIENT (observer), &error))
     {
@@ -193,7 +193,7 @@ out:
     g_object_unref (observer);
   if (dbus_srv != NULL)
     g_object_unref (dbus_srv);
-  tpl_channel_factory_deinit ();
+  _tpl_channel_factory_deinit ();
 
 #ifdef ENABLE_DEBUG
   g_log_set_default_handler (g_log_default_handler, NULL);

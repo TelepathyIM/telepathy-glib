@@ -33,7 +33,7 @@
 static GHashTable *channel_table = NULL;
 
 void
-tpl_channel_factory_init (void)
+_tpl_channel_factory_init (void)
 {
   g_return_if_fail (channel_table == NULL);
 
@@ -43,7 +43,7 @@ tpl_channel_factory_init (void)
 
 
 void
-tpl_channel_factory_add (const gchar *type,
+_tpl_channel_factory_add (const gchar *type,
     TplChannelConstructor constructor)
 {
   gchar *key;
@@ -65,7 +65,7 @@ tpl_channel_factory_add (const gchar *type,
 
 
 TplChannelConstructor
-tpl_channel_factory_lookup (const gchar *type)
+_tpl_channel_factory_lookup (const gchar *type)
 {
   g_return_val_if_fail (!TPL_STR_EMPTY (type), NULL);
   g_return_val_if_fail (channel_table != NULL, NULL);
@@ -74,7 +74,7 @@ tpl_channel_factory_lookup (const gchar *type)
 }
 
 void
-tpl_channel_factory_deinit (void)
+_tpl_channel_factory_deinit (void)
 {
   g_return_if_fail (channel_table != NULL);
 
@@ -83,7 +83,7 @@ tpl_channel_factory_deinit (void)
 }
 
 TplChannel *
-tpl_channel_factory_build (const gchar *channel_type,
+_tpl_channel_factory_build (const gchar *channel_type,
     TpConnection *conn,
     const gchar *object_path,
     GHashTable *tp_chan_props,
@@ -94,7 +94,7 @@ tpl_channel_factory_build (const gchar *channel_type,
 
   g_return_val_if_fail (channel_table != NULL, NULL);
 
-  chan_constructor = tpl_channel_factory_lookup (channel_type);
+  chan_constructor = _tpl_channel_factory_lookup (channel_type);
   if (chan_constructor == NULL)
     {
       g_set_error (error, TPL_CHANNEL_FACTORY_ERROR,
