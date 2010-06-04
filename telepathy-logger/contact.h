@@ -67,7 +67,6 @@ typedef struct
 
 GType tpl_contact_get_type (void);
 
-TplContact *tpl_contact_from_room_id (const gchar *chatroom_id);
 TplContact *tpl_contact_from_tp_contact (TpContact *contact);
 
 TpContact *tpl_contact_get_contact (TplContact *self);

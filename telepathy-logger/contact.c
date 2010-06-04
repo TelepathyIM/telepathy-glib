@@ -171,7 +171,7 @@ tpl_contact_init (TplContact *self)
 }
 
 
-/* tpl_contact_from_room_id:
+/* _tpl_contact_from_room_id:
  * @chatroom_id: the chatroom id which will be the identifier for the contact
  *
  * Return a TplContact instance with identifier, alias copied from
@@ -179,7 +179,7 @@ tpl_contact_init (TplContact *self)
  * the #TplContact returned.
  */
 TplContact *
-tpl_contact_from_room_id (const gchar *chatroom_id)
+_tpl_contact_from_room_id (const gchar *chatroom_id)
 {
   TplContact *ret;
 

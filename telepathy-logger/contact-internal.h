@@ -52,5 +52,7 @@ void _tpl_contact_set_contact_type (TplContact *self,
 void _tpl_contact_set_avatar_token (TplContact *self,
     const gchar *data);
 
+TplContact * _tpl_contact_from_room_id (const gchar *chatroom_id);
+
 G_END_DECLS
 #endif // __TPL_CONTACT_INTERNAL_H__
