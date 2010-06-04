@@ -73,3 +73,5 @@ include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
 CLEANFILES = $(BUILT_SOURCES)
+
+include abi.am

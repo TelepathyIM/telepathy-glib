@@ -1,0 +1,6 @@
+_gen/abi.txt: libtelepathy-logger.la abi.am
+	$(NM) .libs/libtelepathy-logger.a > _gen/abi.nm
+	grep " [DT] " < _gen/abi.nm > _gen/abi.funcs
+	cut -d" " -f3 < _gen/abi.funcs > _gen/abi.funcnames
+	grep "^tpl" < _gen/abi.funcnames > _gen/abi.tpfuncnames
+	$(AM_V_GEN)sort -u < _gen/abi.tpfuncnames > $@
