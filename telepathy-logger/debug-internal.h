@@ -53,7 +53,7 @@ gboolean _tpl_debug_flag_is_set (TplDebugFlags flag);
 void _tpl_debug_free (void);
 void _tpl_debug (TplDebugFlags flag, const gchar *format, ...)
     G_GNUC_PRINTF (2, 3);
-void tpl_critical (TplDebugFlags flag, const gchar *format, ...)
+void _tpl_critical (TplDebugFlags flag, const gchar *format, ...)
     G_GNUC_PRINTF (2, 3);
 
 
@@ -61,7 +61,7 @@ G_END_DECLS
 
 /* CRITICAL/PATH_CRITICAL needs to be always defined */
 #define CRITICAL(format, ...) \
-  tpl_critical (DEBUG_FLAG, "%s: " format, G_STRFUNC, ##__VA_ARGS__)
+  _tpl_critical (DEBUG_FLAG, "%s: " format, G_STRFUNC, ##__VA_ARGS__)
 #define PATH_CRITICAL(_proxy, _format, ...) \
 G_STMT_START { \
   const gchar *_path; \

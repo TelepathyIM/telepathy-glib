@@ -108,7 +108,7 @@ void _tpl_debug (TplDebugFlags flag,
 /* The following function has to be always define or CRITICAL messages won't
  * be shown */
 
-void tpl_critical (TplDebugFlags flag,
+void _tpl_critical (TplDebugFlags flag,
     const gchar *format,
     ...)
 {
