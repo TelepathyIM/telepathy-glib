@@ -187,7 +187,7 @@ tpl_observer_observe_channels (TpBaseClient *client,
         }
       PATH_DEBUG (tpl_chan, "Starting preparation for TplChannel instance %p",
           tpl_chan);
-      tpl_channel_call_when_ready (tpl_chan, got_tpl_channel_text_ready_cb,
+      _tpl_channel_call_when_ready (tpl_chan, got_tpl_channel_text_ready_cb,
           observing_ctx);
     }
 

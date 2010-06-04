@@ -30,7 +30,7 @@
 #include <telepathy-glib/channel.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_CHANNEL                  (tpl_channel_get_type ())
+#define TPL_TYPE_CHANNEL                  (_tpl_channel_get_type ())
 #define TPL_CHANNEL(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CHANNEL, TplChannel))
 #define TPL_CHANNEL_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CHANNEL, TplChannelClass))
 #define TPL_IS_CHANNEL(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CHANNEL))
@@ -59,10 +59,10 @@ typedef struct
       gpointer user_data);
 } TplChannelClass;
 
-GType tpl_channel_get_type (void);
+GType _tpl_channel_get_type (void);
 
-TpAccount *tpl_channel_get_account (TplChannel *self);
-void tpl_channel_call_when_ready (TplChannel *self, GAsyncReadyCallback cb,
+TpAccount *_tpl_channel_get_account (TplChannel *self);
+void _tpl_channel_call_when_ready (TplChannel *self, GAsyncReadyCallback cb,
     gpointer user_data);
 
 G_END_DECLS

@@ -50,7 +50,7 @@ static void pendingproc_get_ready_tp_channel (TplActionChain *ctx,
 static void got_ready_tp_channel_cb (TpChannel *channel,
     const GError *error, gpointer user_data);
 
-G_DEFINE_ABSTRACT_TYPE (TplChannel, tpl_channel, TP_TYPE_CHANNEL)
+G_DEFINE_ABSTRACT_TYPE (TplChannel, _tpl_channel, TP_TYPE_CHANNEL)
 
 struct _TplChannelPriv
 {
@@ -112,12 +112,12 @@ tpl_channel_dispose (GObject *obj)
       priv->account = NULL;
     }
 
-  G_OBJECT_CLASS (tpl_channel_parent_class)->dispose (obj);
+  G_OBJECT_CLASS (_tpl_channel_parent_class)->dispose (obj);
 }
 
 
 static void
-tpl_channel_class_init (TplChannelClass *klass)
+_tpl_channel_class_init (TplChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
@@ -144,7 +144,7 @@ tpl_channel_class_init (TplChannelClass *klass)
 
 
 static void
-tpl_channel_init (TplChannel *self)
+_tpl_channel_init (TplChannel *self)
 {
   TplChannelPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TPL_TYPE_CHANNEL,
       TplChannelPriv);
@@ -153,7 +153,7 @@ tpl_channel_init (TplChannel *self)
 
 
 TpAccount *
-tpl_channel_get_account (TplChannel *self)
+_tpl_channel_get_account (TplChannel *self)
 {
   TplChannelPriv *priv;
 
@@ -197,7 +197,7 @@ tpl_channel_set_account (TplChannel *self,
  * #TplChannel instance.
  */
 void
-tpl_channel_call_when_ready (TplChannel *self,
+_tpl_channel_call_when_ready (TplChannel *self,
     GAsyncReadyCallback cb,
     gpointer user_data)
 {

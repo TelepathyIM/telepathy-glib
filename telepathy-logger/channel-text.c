@@ -1169,7 +1169,7 @@ on_sent_signal_cb (TpChannel *proxy,
     chat_id = tpl_channel_text_get_chatroom_id (tpl_text);
 
   account_path = tp_proxy_get_object_path (
-      TP_PROXY (tpl_channel_get_account (TPL_CHANNEL (tpl_text))));
+      TP_PROXY (_tpl_channel_get_account (TPL_CHANNEL (tpl_text))));
 
   text_log = _tpl_log_entry_text_new (log_id, account_path,
       TPL_LOG_ENTRY_DIRECTION_OUT);
@@ -1337,7 +1337,7 @@ on_received_signal_cb (TpChannel *proxy,
   TplContact *tpl_contact_receiver = NULL;
   TplLogEntryText *text_log = NULL;
   TplLogEntry *log;
-  TpAccount *account = tpl_channel_get_account (TPL_CHANNEL (tpl_text));
+  TpAccount *account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
   TplLogStore *index = tpl_log_store_sqlite_dup ();
   const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
