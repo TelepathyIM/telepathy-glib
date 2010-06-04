@@ -191,6 +191,9 @@ struct _TpBaseContactListPrivate
 
   gulong status_changed_id;
 
+  /* TRUE if @conn implements TpSvcConnectionInterface$FOO - used to
+   * decide whether to emit signals on these new interfaces. Initialized in
+   * the constructor and cleared when we lose @conn. */
   gboolean svc_contact_list;
   gboolean svc_contact_groups;
 };
