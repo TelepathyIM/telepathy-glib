@@ -34,7 +34,7 @@
 #define GCONF_KEY_LOGGING_TURNED_ON GCONF_KEY_BASE "logging/turned_on"
 #define GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST GCONF_KEY_BASE "logging/accounts/ignorelist"
 
-G_DEFINE_TYPE (TplConf, tpl_conf, G_TYPE_OBJECT)
+G_DEFINE_TYPE (TplConf, _tpl_conf, G_TYPE_OBJECT)
 
 static TplConf *conf_singleton = NULL;
 
@@ -56,7 +56,7 @@ tpl_conf_finalize (GObject *obj)
       priv->client = NULL;
     }
 
-  G_OBJECT_CLASS (tpl_conf_parent_class)->finalize (obj);
+  G_OBJECT_CLASS (_tpl_conf_parent_class)->finalize (obj);
 }
 
 
@@ -65,7 +65,7 @@ tpl_conf_dispose (GObject *obj)
 {
   /* TplConf *self = TPL_CONF (obj); */
 
-  G_OBJECT_CLASS (tpl_conf_parent_class)->dispose (obj);
+  G_OBJECT_CLASS (_tpl_conf_parent_class)->dispose (obj);
 }
 
 
@@ -80,7 +80,7 @@ tpl_conf_constructor (GType type,
     retval = g_object_ref (conf_singleton);
   else
     {
-      retval = G_OBJECT_CLASS (tpl_conf_parent_class)->constructor (type,
+      retval = G_OBJECT_CLASS (_tpl_conf_parent_class)->constructor (type,
           n_props, props);
       conf_singleton = TPL_CONF (retval);
       g_object_add_weak_pointer (retval, (gpointer *) &conf_singleton);
@@ -91,7 +91,7 @@ tpl_conf_constructor (GType type,
 
 
 static void
-tpl_conf_class_init (TplConfClass *klass)
+_tpl_conf_class_init (TplConfClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -103,7 +103,7 @@ tpl_conf_class_init (TplConfClass *klass)
 }
 
 static void
-tpl_conf_init (TplConf *self)
+_tpl_conf_init (TplConf *self)
 {
   TplConfPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_CONF, TplConfPriv);
@@ -112,7 +112,7 @@ tpl_conf_init (TplConf *self)
 }
 
 /**
- * tpl_conf_get_gconf_client
+ * _tpl_conf_get_gconf_client
  * @self: TplConf instance
  *
  * You probably won't need to and anyway you shoudln't access directly the
@@ -122,14 +122,14 @@ tpl_conf_init (TplConf *self)
  * Returns: an GConfClient instance, owned by the TplConfInstance.
  */
 GConfClient *
-tpl_conf_get_gconf_client (TplConf *self)
+_tpl_conf_get_gconf_client (TplConf *self)
 {
   return GET_PRIV (self)->client;
 }
 
 
 /**
- * tpl_conf_dup
+ * _tpl_conf_dup
  *
  * Convenience function to obtain a TPL Configuration object, which is a
  * singleton.
@@ -138,27 +138,27 @@ tpl_conf_get_gconf_client (TplConf *self)
  * incremented. Remember to unref the counter.
  */
 TplConf *
-tpl_conf_dup (void)
+_tpl_conf_dup (void)
 {
   return g_object_new (TPL_TYPE_CONF, NULL);
 }
 
 
 /**
- * tpl_conf_is_globally_enabled
+ * _tpl_conf_is_globally_enabled
  * @self: a TplConf instance
  * @error: memory adress where to store a GError, in case of error, or %NULL
  * to ignore error reporting.
  *
  * Wether TPL is globally enabled or not. If it's not globally enabled, no
  * signals will be logged at all.
- * To enable/disable a single account use tpl_conf_set_accounts_ignorelist()
+ * To enable/disable a single account use _tpl_conf_set_accounts_ignorelist()
  *
  * Returns: %TRUE if TPL logging is globally enable, otherwise returns %FALSE
  * and @error will be used.
  */
 gboolean
-tpl_conf_is_globally_enabled (TplConf *self,
+_tpl_conf_is_globally_enabled (TplConf *self,
     GError **error)
 {
   GConfValue *value;
@@ -199,7 +199,7 @@ tpl_conf_is_globally_enabled (TplConf *self,
 
 
 /**
- * tpl_conf_globally_enable
+ * _tpl_conf_globally_enable
  * @self: a TplConf instance
  * @enable: wether to globally enable or globally disable logging.
  * @error: memory adress where to store a GError, in case of error, or %NULL
@@ -212,7 +212,7 @@ tpl_conf_is_globally_enabled (TplConf *self,
  * libtelepathy-logger.
  */
 void
-tpl_conf_globally_enable (TplConf *self,
+_tpl_conf_globally_enable (TplConf *self,
     gboolean enable,
     GError **error)
 {
@@ -243,7 +243,7 @@ tpl_conf_globally_enable (TplConf *self,
 
 
 /**
- * tpl_conf_get_accounts_ignorelist
+ * _tpl_conf_get_accounts_ignorelist
  * @self: a TplConf instance
  * @error: memory adress where to store a GError, in case of error, or %NULL
  * to ignore error reporting.
@@ -255,7 +255,7 @@ tpl_conf_globally_enable (TplConf *self,
  * %NULL with @error set otherwise.
  */
 GSList *
-tpl_conf_get_accounts_ignorelist (TplConf *self,
+_tpl_conf_get_accounts_ignorelist (TplConf *self,
     GError **error)
 {
   GSList *ret;
@@ -280,7 +280,7 @@ tpl_conf_get_accounts_ignorelist (TplConf *self,
 
 
 /**
- * tpl_conf_set_accounts_ignorelist
+ * _tpl_conf_set_accounts_ignorelist
  * @self: a TplConf instance
  * @newlist: a new GList containing account's object paths (gchar *) to be
  * ignored
@@ -295,7 +295,7 @@ tpl_conf_get_accounts_ignorelist (TplConf *self,
  * libtelepathy-logger.
  */
 void
-tpl_conf_set_accounts_ignorelist (TplConf *self,
+_tpl_conf_set_accounts_ignorelist (TplConf *self,
     GSList *newlist,
     GError **error)
 {
@@ -326,7 +326,7 @@ tpl_conf_set_accounts_ignorelist (TplConf *self,
 
 
 /**
- * tpl_conf_is_account_ignored
+ * _tpl_conf_is_account_ignored
  * @self: a TplConf instance
  * @account_path: a TpAccount object-path
  * @error: memory adress where to store a GError, in case of error, or %NULL
@@ -338,7 +338,7 @@ tpl_conf_set_accounts_ignorelist (TplConf *self,
  * and @error set if an error occurs.
  */
 gboolean
-tpl_conf_is_account_ignored (TplConf *self,
+_tpl_conf_is_account_ignored (TplConf *self,
     const gchar *account_path,
     GError **error)
 {

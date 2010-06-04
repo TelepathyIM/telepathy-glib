@@ -7,10 +7,10 @@ main (int argc, char **argv)
 
   g_type_init ();
 
-  conf = tpl_conf_dup ();
+  conf = _tpl_conf_dup ();
 
   /* TplConf is a singleton, be sure both point to the same memory */
-  conf2 = tpl_conf_dup ();
+  conf2 = _tpl_conf_dup ();
   g_assert (conf == conf2);
 
   /* unref the second singleton pointer and check that the it is still

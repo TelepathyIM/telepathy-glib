@@ -27,7 +27,7 @@
 
 G_BEGIN_DECLS
 
-#define TPL_TYPE_CONF                  (tpl_conf_get_type ())
+#define TPL_TYPE_CONF                  (_tpl_conf_get_type ())
 #define TPL_CONF(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CONF, TplConf))
 #define TPL_CONF_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CONF, TplConfClass))
 #define TPL_IS_CONF(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CONF))
@@ -57,21 +57,21 @@ typedef struct
   GObjectClass parent_class;
 } TplConfClass;
 
-GType tpl_conf_get_type (void);
+GType _tpl_conf_get_type (void);
 
-TplConf *tpl_conf_dup (void);
+TplConf * _tpl_conf_dup (void);
 
-GConfClient *tpl_conf_get_gconf_client (TplConf *self);
+GConfClient * _tpl_conf_get_gconf_client (TplConf *self);
 
-gboolean  tpl_conf_is_globally_enabled (TplConf * self, GError **error);
+gboolean  _tpl_conf_is_globally_enabled (TplConf * self, GError **error);
 
-gboolean tpl_conf_is_account_ignored (TplConf *self, const gchar *account_path, GError **error);
+gboolean _tpl_conf_is_account_ignored (TplConf *self, const gchar *account_path, GError **error);
 
-GSList *tpl_conf_get_accounts_ignorelist (TplConf * self, GError **error);
+GSList * _tpl_conf_get_accounts_ignorelist (TplConf * self, GError **error);
 
-void tpl_conf_globally_enable (TplConf *self, gboolean enable, GError **error);
+void _tpl_conf_globally_enable (TplConf *self, gboolean enable, GError **error);
 
-void tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist,
+void _tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist,
     GError **error);
 G_END_DECLS
 

@@ -136,8 +136,8 @@ tpl_observer_observe_channels (TpBaseClient *client,
 
   /* Check if logging if enabled globally and for the given account_path,
    * return imemdiatly if it's not */
-  conf = tpl_conf_dup ();
-  if (!tpl_conf_is_globally_enabled (conf, &error))
+  conf = _tpl_conf_dup ();
+  if (!_tpl_conf_is_globally_enabled (conf, &error))
     {
       if (error != NULL)
         DEBUG ("%s", error->message);
@@ -146,7 +146,7 @@ tpl_observer_observe_channels (TpBaseClient *client,
 
       goto error;
     }
-  if (tpl_conf_is_account_ignored (conf, tp_proxy_get_object_path (account),
+  if (_tpl_conf_is_account_ignored (conf, tp_proxy_get_object_path (account),
         &error))
     {
       DEBUG ("Logging is disabled for account %s. "
