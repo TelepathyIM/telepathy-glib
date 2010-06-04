@@ -67,6 +67,16 @@
 
 /**
  * TpBaseContactListClass:
+ * @parent_class: the parent class
+ * @get_contacts: the implementation of tp_base_contact_list_get_contacts();
+ *  every subclass must implement this itself
+ * @get_states: the implementation of
+ *  tp_base_contact_list_get_states(); every subclass must implement
+ *  this itself
+ * @get_subscriptions_persist: the implementation of
+ *  tp_base_contact_list_get_subscriptions_persist(); if a subclass does not
+ *  implement this itself, the default implementation always returns %TRUE,
+ *  which is correct for most protocols
  *
  * The class of a #TpBaseContactList.
  *
@@ -88,15 +98,18 @@
  * TpBaseContactListGetContactsFunc:
  * @self: the contact list manager
  *
- * Signature of a virtual method to list contacts. The implementation is
- * expected to have a cache of contacts on the contact list, which is updated
- * based on protocol events.
+ * Signature of a virtual method to list contacts with a particular state;
+ * the required state is defined by the particular virtual method being
+ * implemented.
  *
- * Returns: (transfer full): a set containing the entire contact list
+ * The implementation is expected to have a cache of contacts on the contact
+ * list, which is updated based on protocol events.
+ *
+ * Returns: (transfer full): a set of contacts with the desired state
  */
 
 /**
- * TpBaseContactListGetPresenceStatesFunc:
+ * TpBaseContactListGetStatesFunc:
  * @self: the contact list manager
  * @contact: the contact
  * @subscribe: (out): used to return the state of the user's subscription to
@@ -180,15 +193,12 @@ struct _TpBaseContactListPrivate
 
 struct _TpBaseContactListClassPrivate
 {
-  TpBaseContactListGetContactsFunc get_contacts;
-  TpBaseContactListGetPresenceStatesFunc get_states;
   TpBaseContactListRequestSubscriptionFunc request_subscription;
   TpBaseContactListActOnContactsFunc authorize_publication;
   TpBaseContactListActOnContactsFunc just_store_contacts;
   TpBaseContactListActOnContactsFunc remove_contacts;
   TpBaseContactListActOnContactsFunc unsubscribe;
   TpBaseContactListActOnContactsFunc unpublish;
-  TpBaseContactListBooleanFunc subscriptions_persist;
   TpBaseContactListBooleanFunc can_change_subscriptions;
   TpBaseContactListBooleanFunc request_uses_message;
 
@@ -435,11 +445,12 @@ tp_base_contact_list_constructed (GObject *object)
 
   g_assert (self->priv->conn != NULL);
 
-  g_assert (cls->priv->get_contacts != NULL);
-  g_assert (cls->priv->get_states != NULL);
+  g_return_if_fail (cls->get_contacts != NULL);
+  g_return_if_fail (cls->get_states != NULL);
+  g_return_if_fail (cls->get_subscriptions_persist != NULL);
+
   g_assert (cls->priv->can_change_subscriptions != NULL);
   g_assert (cls->priv->request_uses_message != NULL);
-  g_assert (cls->priv->subscriptions_persist != NULL);
 
   if (cls->priv->can_change_subscriptions !=
       tp_base_contact_list_false_func)
@@ -502,9 +513,11 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
 
   cls->priv = G_TYPE_CLASS_GET_PRIVATE (cls, TP_TYPE_BASE_CONTACT_LIST,
       TpBaseContactListClassPrivate);
+
   /* defaults */
+  cls->get_subscriptions_persist = tp_base_contact_list_true_func;
+
   cls->priv->can_change_subscriptions = tp_base_contact_list_false_func;
-  cls->priv->subscriptions_persist = tp_base_contact_list_true_func;
   cls->priv->request_uses_message = tp_base_contact_list_true_func;
   cls->priv->can_block = tp_base_contact_list_false_func;
   cls->priv->disjoint_groups = tp_base_contact_list_false_func;
@@ -707,7 +720,7 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
       g_assert (handle < NUM_TP_LIST_HANDLES);
 
       if (handle == TP_LIST_HANDLE_STORED &&
-          !cls->priv->subscriptions_persist (self))
+          !tp_base_contact_list_get_subscriptions_persist (self))
         {
           g_set_error_literal (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
               "Subscriptions do not persist, so this connection lacks the "
@@ -1101,7 +1114,7 @@ satisfy_channel_requests (TpExportableChannel *channel,
  * method may be called immediately.
  *
  * The #TpBaseContactListGetContactsFunc and
- * #TpBaseContactListGetPresenceStatesFunc must already give correct
+ * #TpBaseContactListGetStatesFunc must already give correct
  * results when entering this method.
  *
  * The results of the implementations for
@@ -1135,14 +1148,15 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
           TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_PUBLISH, NULL);
     }
 
-  if (cls->priv->subscriptions_persist (self) &&
+  if (tp_base_contact_list_get_subscriptions_persist (self) &&
       self->priv->lists[TP_LIST_HANDLE_STORED] == NULL)
     {
       tp_base_contact_list_new_channel (self,
           TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_STORED, NULL);
     }
 
-  contacts = cls->priv->get_contacts (self);
+  contacts = tp_base_contact_list_get_contacts (self);
+  g_return_if_fail (contacts != NULL);
 
   if (DEBUGGING)
     {
@@ -1278,7 +1292,7 @@ presence_state_to_letter (TpPresenceState ps)
  * Emit signals for a change to the contact list.
  *
  * The results of #TpBaseContactListGetContactsFunc and
- * #TpBaseContactListGetPresenceStatesFunc must already reflect
+ * #TpBaseContactListGetStatesFunc must already reflect
  * the contacts' new statuses when entering this method (in practice, this
  * means that implementations must update their own cache of contacts
  * before calling this method).
@@ -1288,7 +1302,6 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
     TpHandleSet *changed,
     TpHandleSet *removed)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   GHashTable *changes;
   GArray *removals;
   TpIntSetIter iter;
@@ -1332,7 +1345,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 
       tp_intset_add (store, iter.element);
 
-      cls->priv->get_states (self, iter.element,
+      tp_base_contact_list_get_states (self, iter.element,
           &subscribe, &publish, &publish_request);
 
       if (publish_request == NULL)
@@ -1516,22 +1529,31 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 }
 
 /**
- * tp_base_contact_list_class_implement_get_contacts:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_get_contacts:
+ * @self: a contact list manager
  *
- * Fill in an implementation of the @get_contacts virtual method.
- * This function should be called from every #TpBaseContactList subclass's
- * #GTypeClass.class_init function.
+ * Return the contact list. It is incorrect to call this method before
+ * tp_base_contact_list_set_list_retrieved() has been called, or after the
+ * connection has disconnected.
+ *
+ * This is a virtual method, implemented using
+ * #TpBaseContactListClass.get_contacts. Every subclass of #TpBaseContactList
+ * must implement this method.
+ *
+ * Returns: (transfer full): a new #TpHandleSet of contact handles
  */
-void
-tp_base_contact_list_class_implement_get_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGetContactsFunc impl)
+TpHandleSet *
+tp_base_contact_list_get_contacts (TpBaseContactList *self)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->get_contacts = impl;
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  g_return_val_if_fail (cls != NULL, NULL);
+  g_return_val_if_fail (cls->get_contacts != NULL, NULL);
+  g_return_val_if_fail (self->priv->had_contact_list, NULL);
+  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
+      NULL);
+
+  return cls->get_contacts (self);
 }
 
 /**
@@ -1556,23 +1578,44 @@ tp_base_contact_list_class_implement_request_subscription (
 }
 
 /**
- * tp_base_contact_list_class_implement_get_states:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_get_states:
+ * @self: a contact list manager
+ * @contact: the contact
+ * @subscribe: (out): used to return the state of the user's subscription to
+ *  @contact's presence
+ * @publish: (out): used to return the state of @contact's subscription to
+ *  the user's presence
+ * @publish_request: (out) (transfer full): if @publish will be set to
+ *  %TP_PRESENCE_STATE_ASK, used to return the message that @contact sent when
+ *  they requested permission to see the user's presence; otherwise, used to
+ *  return an empty string
  *
- * Fill in an implementation of the @get_states virtual method.
+ * Return the presence subscription state of @contact. It is incorrect to call
+ * this method before tp_base_contact_list_set_list_retrieved() has been
+ * called, or after the connection has disconnected.
  *
- * This function must be called from every #TpBaseContactList subclass's
- * #GTypeClass.class_init function.
+ * This is a virtual method, implemented using
+ * #TpBaseContactListClass.get_states. Every subclass of #TpBaseContactList
+ * must implement this method.
  */
 void
-tp_base_contact_list_class_implement_get_states (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGetPresenceStatesFunc impl)
+tp_base_contact_list_get_states (TpBaseContactList *self,
+    TpHandle contact,
+    TpPresenceState *subscribe,
+    TpPresenceState *publish,
+    gchar **publish_request)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->get_states = impl;
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  g_return_if_fail (cls != NULL);
+  g_return_if_fail (cls->get_states != NULL);
+  g_return_if_fail (self->priv->had_contact_list);
+  g_return_if_fail (tp_base_contact_list_check_still_usable (self, NULL));
+
+  cls->get_states (self, contact, subscribe, publish, publish_request);
+
+  if (publish_request != NULL && *publish_request == NULL)
+    *publish_request = g_strdup ("");
 }
 
 /**
@@ -1781,31 +1824,36 @@ tp_base_contact_list_class_implement_can_change_subscriptions (
 }
 
 /**
- * tp_base_contact_list_class_implement_subscriptions_persist:
- * @cls: a contact list manager subclass
- * @check: a function that returns %TRUE if subscription states persist
+ * tp_base_contact_list_get_subscriptions_persist:
+ * @self: a contact list manager
  *
- * Set a function that can be used to query whether subscriptions on this
- * protocol persist between sessions (i.e. are stored on the server).
+ * Return whether subscriptions on this protocol persist between sessions
+ * (i.e. are stored on the server).
  *
- * The default is tp_base_contact_list_true_func(), which is correct for
- * most protocols; protocols where the contact list isn't stored should
- * set this to tp_base_contact_list_false_func() in their
- * #GTypeClass.class_init.
+ * This is a virtual method, implemented using
+ * #TpBaseContactListClass.get_subscriptions_persist.
+ *
+ * The default implementation is tp_base_contact_list_true_func(), which is
+ * correct for most protocols. Protocols where the contact list isn't stored
+ * should use tp_base_contact_list_false_func() as their implementation.
  *
  * In the rare case of a protocol where subscriptions sometimes persist
  * and this is detected while connecting, the subclass can implement another
  * #TpBaseContactListBooleanFunc (whose result must remain constant
  * after the #TpBaseConnection has moved to state
  * %TP_CONNECTION_STATUS_CONNECTED), and use that as the implementation.
+ *
+ * Returns: %TRUE if subscriptions persist
  */
-void tp_base_contact_list_class_implement_subscriptions_persist (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check)
+gboolean
+tp_base_contact_list_get_subscriptions_persist (TpBaseContactList *self)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (check != NULL);
-  cls->priv->subscriptions_persist = check;
+  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  g_return_val_if_fail (cls != NULL, TRUE);
+  g_return_val_if_fail (cls->get_subscriptions_persist != NULL, TRUE);
+
+  return cls->get_subscriptions_persist (self);
 }
 
 /**

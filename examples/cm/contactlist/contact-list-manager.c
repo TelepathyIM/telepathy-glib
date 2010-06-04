@@ -1335,18 +1335,21 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
         0, G_MAXUINT32, 1000,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  tp_base_contact_list_class_implement_can_change_subscriptions (
-      list_manager_class, tp_base_contact_list_true_func);
+  /* read-only information */
+
+  list_manager_class->get_contacts = example_contact_list_manager_get_contacts;
+  list_manager_class->get_states = example_contact_list_manager_get_states;
   /* for this example CM we pretend there is a server-stored contact list,
    * like in XMPP, even though there obviously isn't really */
-  tp_base_contact_list_class_implement_subscriptions_persist (
+  list_manager_class->get_subscriptions_persist =
+    tp_base_contact_list_true_func;
+
+  /* contact list modification */
+
+  tp_base_contact_list_class_implement_can_change_subscriptions (
       list_manager_class, tp_base_contact_list_true_func);
   tp_base_contact_list_class_implement_request_uses_message (
       list_manager_class, tp_base_contact_list_true_func);
-  tp_base_contact_list_class_implement_get_contacts (
-      list_manager_class, example_contact_list_manager_get_contacts);
-  tp_base_contact_list_class_implement_get_states (
-      list_manager_class, example_contact_list_manager_get_states);
   tp_base_contact_list_class_implement_request_subscription (
       list_manager_class, example_contact_list_manager_request_subscription);
   tp_base_contact_list_class_implement_authorize_publication (
@@ -1360,6 +1363,8 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
   tp_base_contact_list_class_implement_unpublish (
       list_manager_class, example_contact_list_manager_unpublish);
 
+  /* contact blocking */
+
   tp_base_contact_list_class_implement_can_block (
       list_manager_class, tp_base_contact_list_true_func);
   tp_base_contact_list_class_implement_get_blocked_contacts (
@@ -1370,6 +1375,8 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
       list_manager_class, example_contact_list_manager_block_contacts);
   tp_base_contact_list_class_implement_unblock_contacts (
       list_manager_class, example_contact_list_manager_unblock_contacts);
+
+  /* user-defined contact groups */
 
   tp_base_contact_list_class_implement_get_groups (
       list_manager_class, example_contact_list_manager_get_groups);

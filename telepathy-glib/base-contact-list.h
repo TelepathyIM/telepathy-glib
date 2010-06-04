@@ -32,13 +32,6 @@ typedef struct _TpBaseContactListClass TpBaseContactListClass;
 typedef struct _TpBaseContactListPrivate TpBaseContactListPrivate;
 typedef struct _TpBaseContactListClassPrivate TpBaseContactListClassPrivate;
 
-struct _TpBaseContactListClass {
-    /*<private>*/
-    GObjectClass parent_class;
-    GCallback _padding[7];
-    TpBaseContactListClassPrivate *priv;
-};
-
 struct _TpBaseContactList {
     /*<private>*/
     GObject parent;
@@ -79,7 +72,8 @@ void tp_base_contact_list_contacts_changed (TpBaseContactList *self,
     TpHandleSet *changed,
     TpHandleSet *removed);
 
-/* ---- Implemented by subclasses for ContactList ---- */
+/* ---- Implemented by subclasses for ContactList (mandatory read-only
+ * things) ---- */
 
 typedef gboolean (*TpBaseContactListBooleanFunc) (
     TpBaseContactList *self);
@@ -87,35 +81,48 @@ typedef gboolean (*TpBaseContactListBooleanFunc) (
 gboolean tp_base_contact_list_true_func (TpBaseContactList *self);
 gboolean tp_base_contact_list_false_func (TpBaseContactList *self);
 
-void tp_base_contact_list_class_implement_can_change_subscriptions (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check);
-
-void tp_base_contact_list_class_implement_subscriptions_persist (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check);
-
-void tp_base_contact_list_class_implement_request_uses_message (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc check);
+gboolean tp_base_contact_list_get_subscriptions_persist (
+    TpBaseContactList *self);
 
 typedef TpHandleSet *(*TpBaseContactListGetContactsFunc) (
     TpBaseContactList *self);
 
-void tp_base_contact_list_class_implement_get_contacts (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGetContactsFunc impl);
+TpHandleSet *tp_base_contact_list_get_contacts (TpBaseContactList *self);
 
-typedef void (*TpBaseContactListGetPresenceStatesFunc) (
+typedef void (*TpBaseContactListGetStatesFunc) (
     TpBaseContactList *self,
     TpHandle contact,
     TpPresenceState *subscribe,
     TpPresenceState *publish,
     gchar **publish_request);
 
-void tp_base_contact_list_class_implement_get_states (
+void tp_base_contact_list_get_states (TpBaseContactList *self,
+    TpHandle contact,
+    TpPresenceState *subscribe,
+    TpPresenceState *publish,
+    gchar **publish_request);
+
+struct _TpBaseContactListClass {
+    GObjectClass parent_class;
+
+    TpBaseContactListGetContactsFunc get_contacts;
+    TpBaseContactListGetStatesFunc get_states;
+    TpBaseContactListBooleanFunc get_subscriptions_persist;
+
+    /*<private>*/
+    GCallback _padding[7];
+    TpBaseContactListClassPrivate *priv;
+};
+
+/* ---- Implemented by subclasses for ContactList ---- */
+
+void tp_base_contact_list_class_implement_can_change_subscriptions (
     TpBaseContactListClass *cls,
-    TpBaseContactListGetPresenceStatesFunc impl);
+    TpBaseContactListBooleanFunc check);
+
+void tp_base_contact_list_class_implement_request_uses_message (
+    TpBaseContactListClass *cls,
+    TpBaseContactListBooleanFunc check);
 
 typedef gboolean (*TpBaseContactListRequestSubscriptionFunc) (
     TpBaseContactList *self,
