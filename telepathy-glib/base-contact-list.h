@@ -240,32 +240,54 @@ void tp_base_contact_list_groups_changed (TpBaseContactList *self,
 
 /* ---- Implemented by subclasses for ContactGroups ---- */
 
-void tp_base_contact_list_class_implement_disjoint_groups (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc impl);
+gboolean tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self);
 
 typedef GStrv (*TpBaseContactListGetGroupsFunc) (
     TpBaseContactList *self);
 
-void tp_base_contact_list_class_implement_get_groups (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGetGroupsFunc impl);
+GStrv tp_base_contact_list_get_groups (TpBaseContactList *self);
 
 typedef GStrv (*TpBaseContactListGetContactGroupsFunc) (
     TpBaseContactList *self,
     TpHandle contact);
 
-void tp_base_contact_list_class_implement_get_contact_groups (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGetContactGroupsFunc impl);
+GStrv tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
+    TpHandle contact);
 
 typedef gchar *(*TpBaseContactListNormalizeFunc) (
     TpBaseContactList *self,
     const gchar *s);
 
-void tp_base_contact_list_class_implement_normalize_group (
-    TpBaseContactListClass *cls,
-    TpBaseContactListNormalizeFunc impl);
+gchar *tp_base_contact_list_normalize_group (
+    TpBaseContactList *self,
+    const gchar *s);
+
+#define TP_TYPE_CONTACT_GROUP_LIST \
+  (tp_contact_group_list_get_type ())
+GType tp_contact_group_list_get_type (void) G_GNUC_CONST;
+
+#define TP_IS_CONTACT_GROUP_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+  TP_TYPE_CONTACT_GROUP_LIST))
+
+#define TP_CONTACT_GROUP_LIST_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
+  TP_TYPE_CONTACT_GROUP_LIST, TpContactGroupListInterface))
+
+typedef struct _TpContactGroupListInterface
+    TpContactGroupListInterface;
+
+struct _TpContactGroupListInterface {
+    GTypeInterface parent;
+    /* mandatory to implement */
+    TpBaseContactListGetGroupsFunc get_groups;
+    TpBaseContactListGetContactGroupsFunc get_contact_groups;
+    /* optional to implement */
+    TpBaseContactListBooleanFunc has_disjoint_groups;
+    TpBaseContactListNormalizeFunc normalize_group;
+};
+
+/* ---- Implemented by subclasses for mutable ContactGroups ---- */
 
 typedef void (*TpBaseContactListCreateGroupsFunc) (
     TpBaseContactList *self,

@@ -69,12 +69,15 @@ example_contact_details_destroy (gpointer p)
 static void mutable_contact_list_iface_init (TpMutableContactListInterface *);
 static void blockable_contact_list_iface_init (
     TpBlockableContactListInterface *);
+static void contact_group_list_iface_init (TpContactGroupListInterface *);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleContactListManager,
     example_contact_list_manager,
     TP_TYPE_BASE_CONTACT_LIST,
     G_IMPLEMENT_INTERFACE (TP_TYPE_BLOCKABLE_CONTACT_LIST,
       blockable_contact_list_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_CONTACT_GROUP_LIST,
+      contact_group_list_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_MUTABLE_CONTACT_LIST,
       mutable_contact_list_iface_init))
 
@@ -1324,20 +1327,12 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
   list_manager_class->get_subscriptions_persist =
     tp_base_contact_list_true_func;
 
-  /* user-defined contact groups */
-
-  tp_base_contact_list_class_implement_get_groups (
-      list_manager_class, example_contact_list_manager_get_groups);
-  tp_base_contact_list_class_implement_get_contact_groups (
-      list_manager_class, example_contact_list_manager_get_contact_groups);
   tp_base_contact_list_class_implement_add_to_group (
       list_manager_class, example_contact_list_manager_add_to_group);
   tp_base_contact_list_class_implement_remove_from_group (
       list_manager_class, example_contact_list_manager_remove_from_group);
   tp_base_contact_list_class_implement_remove_group (
       list_manager_class, example_contact_list_manager_remove_group);
-  tp_base_contact_list_class_implement_normalize_group (
-      list_manager_class, example_contact_list_manager_normalize_group);
   tp_base_contact_list_class_implement_create_groups (
       list_manager_class, example_contact_list_manager_create_groups);
 
@@ -1381,4 +1376,12 @@ blockable_contact_list_iface_init (TpBlockableContactListInterface *iface)
     example_contact_list_manager_get_blocked_contacts;
   iface->block_contacts = example_contact_list_manager_block_contacts;
   iface->unblock_contacts = example_contact_list_manager_unblock_contacts;
+}
+
+static void
+contact_group_list_iface_init (TpContactGroupListInterface *iface)
+{
+  iface->get_groups = example_contact_list_manager_get_groups;
+  iface->get_contact_groups = example_contact_list_manager_get_contact_groups;
+  iface->normalize_group = example_contact_list_manager_normalize_group;
 }

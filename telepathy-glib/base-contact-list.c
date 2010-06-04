@@ -194,10 +194,6 @@ struct _TpBaseContactListPrivate
 
 struct _TpBaseContactListClassPrivate
 {
-  TpBaseContactListGetGroupsFunc get_groups;
-  TpBaseContactListGetContactGroupsFunc get_contact_groups;
-  TpBaseContactListBooleanFunc disjoint_groups;
-  TpBaseContactListNormalizeFunc normalize_group;
   TpBaseContactListCreateGroupsFunc create_groups;
   TpBaseContactListGroupContactsFunc add_to_group;
   TpBaseContactListGroupContactsFunc remove_from_group;
@@ -274,6 +270,37 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  */
 
 G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
+    TP_TYPE_BASE_CONTACT_LIST)
+
+/**
+ * TP_TYPE_CONTACT_GROUP_LIST:
+ *
+ * Interface representing a #TpBaseContactList on which contacts can
+ * be in user-defined groups, which cannot necessarily be edited
+ * (%TP_TYPE_MUTABLE_CONTACT_GROUP_LIST represents a list where these
+ * groups exist and can also be edited).
+ */
+
+/**
+ * TpContactGroupListInterface:
+ * @parent: the parent interface
+ * @get_groups: the implementation of
+ *  tp_base_contact_list_get_groups(); must always be implemented
+ * @get_contact_groups: the implementation of
+ *  tp_base_contact_list_get_contact_groups(); must always be implemented
+ * @has_disjoint_groups: the implementation of
+ *  tp_base_contact_list_has_disjoint_groups(); if not reimplemented,
+ *  the default implementation always returns %FALSE
+ * @normalize_group: the implementation of
+ *  tp_base_contact_list_normalize_group(); if not reimplemented,
+ *  the default implementation is %NULL, which allows any UTF-8 string
+ *  as a group name (including the empty string) and assumes that any distinct
+ *  group names can coexist
+ *
+ * The interface vtable for a %TP_TYPE_CONTACT_GROUP_LIST.
+ */
+
+G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
     TP_TYPE_BASE_CONTACT_LIST)
 
 enum {
@@ -425,14 +452,13 @@ tp_base_contact_list_set_property (GObject *object,
 }
 
 static gchar *
-tp_base_contact_list_normalize_group (TpHandleRepoIface *repo,
+tp_base_contact_list_repo_normalize_group (TpHandleRepoIface *repo,
     const gchar *id,
     gpointer context,
     GError **error)
 {
   TpBaseContactList *self =
     _tp_dynamic_handle_repo_get_normalization_data (repo);
-  TpBaseContactListClass *cls;
   gchar *ret;
 
   if (id == NULL)
@@ -444,12 +470,7 @@ tp_base_contact_list_normalize_group (TpHandleRepoIface *repo,
       return g_strdup (id);
     }
 
-  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
-
-  if (cls->priv->normalize_group == NULL)
-    return g_strdup (id);
-
-  ret = cls->priv->normalize_group (self, id);
+  ret = tp_base_contact_list_normalize_group (self, id);
 
   if (ret == NULL)
     g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
@@ -530,12 +551,17 @@ tp_base_contact_list_constructed (GObject *object)
   list_repo = tp_static_handle_repo_new (TP_HANDLE_TYPE_LIST,
       (const gchar **) tp_base_contact_list_contact_lists);
 
-  if (cls->priv->get_groups != NULL)
+  if (TP_IS_CONTACT_GROUP_LIST (self))
     {
-      g_assert (cls->priv->get_contact_groups != NULL);
+      TpContactGroupListInterface *iface =
+        TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+
+      g_return_if_fail (iface->has_disjoint_groups != NULL);
+      g_return_if_fail (iface->get_groups != NULL);
+      g_return_if_fail (iface->get_contact_groups != NULL);
 
       self->priv->group_repo = tp_dynamic_handle_repo_new (TP_HANDLE_TYPE_GROUP,
-          tp_base_contact_list_normalize_group, NULL);
+          tp_base_contact_list_repo_normalize_group, NULL);
 
       /* borrowed ref so the handle repo can call our virtual method, released
        * in tp_base_contact_list_free_contents */
@@ -572,6 +598,13 @@ tp_blockable_contact_list_default_init (TpBlockableContactListInterface *iface)
 }
 
 static void
+tp_contact_group_list_default_init (TpContactGroupListInterface *iface)
+{
+  iface->has_disjoint_groups = tp_base_contact_list_false_func;
+  /* there's no default for the other virtual methods */
+}
+
+static void
 tp_base_contact_list_class_init (TpBaseContactListClass *cls)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (cls);
@@ -583,8 +616,6 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
 
   /* defaults */
   cls->get_subscriptions_persist = tp_base_contact_list_true_func;
-
-  cls->priv->disjoint_groups = tp_base_contact_list_false_func;
 
   object_class->get_property = tp_base_contact_list_get_property;
   object_class->set_property = tp_base_contact_list_set_property;
@@ -1181,7 +1212,6 @@ satisfy_channel_requests (TpExportableChannel *channel,
 void
 tp_base_contact_list_set_list_received (TpBaseContactList *self)
 {
-  TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
   TpHandleSet *contacts;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -1227,9 +1257,9 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
    * that emits a signal per contact. Here we turn the data model inside out,
    * to emit one signal per group - that's probably fewer (and also means we
    * can put them in batches for legacy Group channels). */
-  if (cls->priv->get_groups != NULL)
+  if (TP_IS_CONTACT_GROUP_LIST (self))
     {
-      GStrv groups = cls->priv->get_groups (self);
+      GStrv groups = tp_base_contact_list_get_groups (self);
       GHashTable *group_members = g_hash_table_new_full (g_str_hash,
           g_str_equal, g_free, (GDestroyNotify) tp_handle_set_destroy);
       TpIntSetFastIter i_iter;
@@ -1246,7 +1276,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
       while (tp_intset_fast_iter_next (&i_iter, &member))
         {
-          groups = cls->priv->get_contact_groups (self, member);
+          groups = tp_base_contact_list_get_contact_groups (self, member);
 
           if (groups != NULL)
             {
@@ -1930,16 +1960,17 @@ tp_base_contact_list_false_func (TpBaseContactList *self G_GNUC_UNUSED)
  *
  * Return whether the contact list can be changed.
  *
- * If the #TpBaseContactList subclass does not implement #TpMutableContactList,
- * this method always returns %FALSE.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, this method always returns %FALSE.
  *
- * For implementations of #TpMutableContactList, this is a virtual method,
- * implemented using #TpMutableContactListInterface.can_change_subscriptions.
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST this is a virtual
+ * method, implemented using
+ * #TpMutableContactListInterface.can_change_subscriptions.
  * The default implementation always returns %TRUE.
  *
  * In the rare case of a protocol where subscriptions can only sometimes be
  * changed and this is detected while connecting, the #TpBaseContactList
- * subclass should implement #TpMutableContactList, and set
+ * subclass should implement %TP_TYPE_MUTABLE_CONTACT_LIST.
  * #TpMutableContactListInterface.can_change_subscriptions to its own
  * implementation, whose result must remain constant after the
  * #TpBaseConnection has moved to state %TP_CONNECTION_STATUS_CONNECTED.
@@ -2007,11 +2038,13 @@ tp_base_contact_list_get_subscriptions_persist (TpBaseContactList *self)
  * Return whether the tp_base_contact_list_request_subscription()
  * method's @message argument is actually used.
  *
- * If the #TpBaseContactList subclass does not implement #TpMutableContactList,
- * this method always returns %FALSE.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, this method is meaningless, and always
+ * returns %FALSE.
  *
- * For implementations of #TpMutableContactList, this is a virtual method,
- * implemented using #TpMutableContactListInterface.get_request_uses_message.
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method, implemented using
+ * #TpMutableContactListInterface.get_request_uses_message.
  * The default implementation always returns %TRUE, which is correct for most
  * protocols; subclasses may reimplement this method with
  * tp_base_contact_list_false_func() or a custom implementation if desired.
@@ -2044,10 +2077,10 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
  * does, that list is assumed to be modifiable.
  *
  * If the #TpBaseContactList subclass does not implement
- * #TpBlockableContactList, this method always returns %FALSE.
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, this method always returns %FALSE.
  *
- * For implementations of #TpBlockableContactList, this is a virtual method,
- * implemented using #TpBlockableContactListInterface.can_block.
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
+ * method, implemented using #TpBlockableContactListInterface.can_block.
  * The default implementation always returns %TRUE.
  *
  * In the case of a protocol where blocking may or may not work
@@ -2088,8 +2121,10 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
  * the connection has disconnected, or on a #TpBaseContactList that does
  * not implement %TP_TYPE_BLOCKABLE_CONTACT_LIST.
  *
- * For implementations of #TpBlockableContactList, this is a virtual method,
- * implemented using #TpBlockableContactListInterface.can_block.
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
+ * method, implemented using
+ * #TpBlockableContactListInterface.get_blocked_contacts.
+ * It must always be implemented.
  *
  * Returns: (transfer full): a new #TpHandleSet of contact handles
  */
@@ -2189,26 +2224,47 @@ tp_base_contact_list_unblock_contacts (TpBaseContactList *self,
  */
 
 /**
- * tp_base_contact_list_class_implement_normalize_group:
- * @cls: a contact list manager subclass
- * @impl: a function that returns a normalized form of the argument @s, or
- *  %NULL on error
+ * tp_base_contact_list_normalize_group:
+ * @self: a contact list manager
+ * @s: a non-%NULL group name to normalize
  *
- * Set a function that can be used to normalize the name of a group.
+ * Return a normalized form of the group name @s, or %NULL if a group of a
+ * sufficiently similar name cannot be created.
  *
- * The default is to use the group's name as-is. Protocols where this default
- * is not suitable (for instance, if group names can only contain XML
- * character data, or a particular Unicode normal form like NFKC) should call
- * this function from #GTypeClass.class_init.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_CONTACT_GROUP_LIST, this method is meaningless, and always
+ * returns %NULL.
+ *
+ * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
+ * method, implemented using #TpContactGroupListInterface.normalize_group.
+ * If unimplemented, the default behaviour is to use the group's name as-is.
+ *
+ * Protocols where this default is not suitable (for instance, if group names
+ * cannot be the empty string, or can only contain XML character data, or can
+ * only contain a particular Unicode normal form like NFKC) should reimplement
+ * this virtual method.
+ *
+ * Returns: a normalized form of @s, or %NULL on error
  */
-void
-tp_base_contact_list_class_implement_normalize_group (
-    TpBaseContactListClass *cls,
-    TpBaseContactListNormalizeFunc impl)
+gchar *
+tp_base_contact_list_normalize_group (TpBaseContactList *self,
+    const gchar *s)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->normalize_group = impl;
+  TpContactGroupListInterface *iface;
+
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), NULL);
+  g_return_val_if_fail (s != NULL, NULL);
+
+  if (!TP_IS_CONTACT_GROUP_LIST (self))
+    return NULL;
+
+  iface = TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (iface != NULL, FALSE);
+
+  if (iface->normalize_group == NULL)
+    return g_strdup (s);
+
+  return iface->normalize_group (self, s);
 }
 
 /**
@@ -2261,6 +2317,9 @@ tp_base_contact_list_class_implement_create_groups (
  * Called by subclasses when new groups have been created. This will typically
  * be followed by a call to tp_base_contact_list_groups_changed() to add
  * some members to those groups.
+ *
+ * It is an error to call this method on a contact list that
+ * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
  */
 void
 tp_base_contact_list_groups_created (TpBaseContactList *self,
@@ -2271,6 +2330,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
   g_return_if_fail (n_created >= -1);
   g_return_if_fail (n_created <= 0 || created != NULL);
 
@@ -2332,6 +2392,9 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
  * members, the subclass does not also need to call
  * tp_base_contact_list_groups_changed() for them - the group membership
  * change signals will be emitted automatically.
+ *
+ * It is an error to call this method on a contact list that
+ * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
  */
 void
 tp_base_contact_list_groups_removed (TpBaseContactList *self,
@@ -2342,6 +2405,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
   g_return_if_fail (removed != NULL);
   g_return_if_fail (n_removed >= -1);
   g_return_if_fail (n_removed <= 0 || removed != NULL);
@@ -2415,6 +2479,9 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
  * Called by subclasses when a group has been renamed. The subclass should not
  * also call tp_base_contact_list_groups_changed() for the group's members -
  * the group membership change signals will be emitted automatically.
+ *
+ * It is an error to call this method on a contact list that
+ * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
  */
 void
 tp_base_contact_list_group_renamed (TpBaseContactList *self,
@@ -2429,6 +2496,7 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   TpIntSet *set;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
 
   old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL, NULL);
 
@@ -2509,6 +2577,9 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
  * If any of the groups in @added are not already known to exist,
  * this method also signals that they were created, as if
  * tp_base_contact_list_groups_created() had been called first.
+ *
+ * It is an error to call this method on a contact list that
+ * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
  */
 void
 tp_base_contact_list_groups_changed (TpBaseContactList *self,
@@ -2521,6 +2592,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
   g_return_if_fail (contacts != NULL);
   g_return_if_fail (n_added >= -1);
   g_return_if_fail (n_removed >= -1);
@@ -2599,33 +2671,44 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
 }
 
 /**
- * tp_base_contact_list_class_implement_disjoint_groups:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_has_disjoint_groups:
+ * @self: a contact list manager
  *
- * Fill in an implementation of the @disjoint_groups virtual method,
- * which tells clients whether groups in this protocol are disjoint
+ * Return whether groups in this protocol are disjoint
  * (i.e. each contact can be in at most one group).
- *
  * This is merely informational: subclasses are responsible for making
  * appropriate calls to tp_base_contact_list_groups_changed(), etc.
  *
- * The default implementation is tp_base_contact_list_false_func();
- * subclasses where groups are disjoint should call this function
- * with @impl = tp_base_contact_list_true_func() during
- * #GTypeClass.class_init.
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_CONTACT_GROUP_LIST, this method is meaningless, and always
+ * returns %FALSE.
  *
+ * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
+ * method, implemented using #TpContactGroupListInterface.has_disjoint_groups.
+ *
+ * The default implementation is tp_base_contact_list_false_func();
+ * subclasses where groups are disjoint should use
+ * tp_base_contact_list_true_func() instead.
  * In the unlikely event that a protocol can have disjoint groups, or not,
- * determined at runtime, it can use a custom implementation for @impl.
+ * determined at runtime, it can use a custom implementation.
+ *
+ * Returns: %TRUE if groups are disjoint
  */
-void
-tp_base_contact_list_class_implement_disjoint_groups (
-    TpBaseContactListClass *cls,
-    TpBaseContactListBooleanFunc impl)
+gboolean
+tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->disjoint_groups = impl;
+  TpContactGroupListInterface *iface;
+
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
+
+  if (!TP_IS_CONTACT_GROUP_LIST (self))
+    return FALSE;
+
+  iface = TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (iface != NULL, FALSE);
+  g_return_val_if_fail (iface->has_disjoint_groups != NULL, FALSE);
+
+  return iface->has_disjoint_groups (self);
 }
 
 /**
@@ -2639,23 +2722,30 @@ tp_base_contact_list_class_implement_disjoint_groups (
  */
 
 /**
- * tp_base_contact_list_class_implement_get_groups:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_get_groups:
+ * @self: a contact list manager
  *
- * Fill in an implementation of the @get_groups virtual method,
- * which is used to list all the groups on a connection. Every subclass
- * that supports contact groups must call this function in its
- * #GTypeClass.class_init.
+ * Return a list of all groups on this connection. It is incorrect to call
+ * this method before tp_base_contact_list_set_list_retrieved() has been
+ * called, after the connection has disconnected, or on a #TpBaseContactList
+ * that does not implement %TP_TYPE_CONTACT_GROUP_LIST.
+ *
+ * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
+ * method, implemented using #TpContactGroupListInterface.get_groups.
+ * It must always be implemented.
+ *
+ * Returns: (array zero-terminated=1) (element-type utf8): an array of groups
  */
-void
-tp_base_contact_list_class_implement_get_groups (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGetGroupsFunc impl)
+GStrv
+tp_base_contact_list_get_groups (TpBaseContactList *self)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->get_groups = impl;
+  TpContactGroupListInterface *iface =
+    TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+
+  g_return_val_if_fail (iface != NULL, NULL);
+  g_return_val_if_fail (iface->get_groups != NULL, NULL);
+
+  return iface->get_groups (self);
 }
 
 /**
@@ -2673,23 +2763,35 @@ tp_base_contact_list_class_implement_get_groups (
  */
 
 /**
- * tp_base_contact_list_class_implement_get_contact_groups:
- * @cls: a contact list manager subclass
- * @impl: an implementation of the virtual method
+ * tp_base_contact_list_get_contact_groups:
+ * @self: a contact list manager
+ * @contact: a contact handle
  *
- * Fill in an implementation of the @get_contact_groups virtual method,
- * which is used to list the groups to which a contact belongs. Every subclass
- * that supports contact groups must call this function in its
- * #GTypeClass.class_init.
+ * Return a list of groups of which @contact is a member. It is incorrect to
+ * call this method before tp_base_contact_list_set_list_retrieved() has been
+ * called, after the connection has disconnected, or on a #TpBaseContactList
+ * that does not implement %TP_TYPE_CONTACT_GROUP_LIST.
+ *
+ * If @contact is not on the contact list, this method must return either
+ * %NULL or an empty array.
+ *
+ * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
+ * method, implemented using #TpContactGroupListInterface.get_contact_groups.
+ * It must always be implemented.
+ *
+ * Returns: (array zero-terminated=1) (element-type utf8): an array of groups
  */
-void
-tp_base_contact_list_class_implement_get_contact_groups (
-    TpBaseContactListClass *cls,
-    TpBaseContactListGetContactGroupsFunc impl)
+GStrv
+tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
+    TpHandle contact)
 {
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST_CLASS (cls));
-  g_return_if_fail (impl != NULL);
-  cls->priv->get_contact_groups = impl;
+  TpContactGroupListInterface *iface =
+    TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+
+  g_return_val_if_fail (iface != NULL, NULL);
+  g_return_val_if_fail (iface->get_contact_groups != NULL, NULL);
+
+  return iface->get_contact_groups (self, contact);
 }
 
 /**
