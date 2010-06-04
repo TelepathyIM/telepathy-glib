@@ -95,6 +95,7 @@ struct _TpContact {
  *  #TpContact:avatar-mime-type. Implies %TP_CONTACT_FEATURE_AVATAR_TOKEN
  *  (available since 0.11.6)
  * @TP_CONTACT_FEATURE_CONTACT_INFO: #TpContact:contact-info
+ *  (available since 0.11.UNRELEASED)
  * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
  *  supported by this version of telepathy-glib
  *
@@ -485,7 +486,7 @@ tp_contact_get_capabilities (TpContact *self)
  * dupped before returning from this function. One could copy every item in the
  * list using tp_contact_info_field_copy().
  *
- * Same as the TpContact:contact-info property.
+ * Same as the #TpContact:contact-info property.
  *
  * Returns: (element-type TelepathyGLib.ContactInfoField) (transfer container):
  *  a #GList of #TpContactInfoField, or %NULL if the feature is not yet
@@ -2542,7 +2543,7 @@ contact_info_request_cancelled_cb (GCancellable *cancellable,
  * the operation is finished, @callback will be called. You can then call
  * tp_contact_request_contact_info_finish() to get the result of the operation.
  *
- * If the operation is successful, the TpContact:contact-info property will be
+ * If the operation is successful, the #TpContact:contact-info property will be
  * updated (emitting "notify::contact-info" signal) before @callback is called.
  * That means you can call tp_contact_get_contact_info() to get the new vCard
  * inside @callback.
@@ -2631,7 +2632,7 @@ tp_contact_request_contact_info_finish (TpContact *self,
  * @contacts: (array length=n_contacts): An array of #TpContact objects
  *  associated with @self
  *
- * Requests to refresh the TpContact:contact-info property on each contact from
+ * Requests to refresh the #TpContact:contact-info property on each contact from
  * @contacts, requesting it from the network if an up-to-date version is not
  * cached locally. "notify::contact-info" will be emitted when the contact's
  * information are updated.
