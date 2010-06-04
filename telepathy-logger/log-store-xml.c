@@ -1007,9 +1007,9 @@ _log_store_xml_search_in_files (TplLogStoreXml *self,
           if (hit != NULL)
             {
               hits = g_list_prepend (hits, hit);
-              DEBUG ("Found text:'%s' in file:'%s' on date:'%u/%u/%u'", text,
-                  hit->filename, g_date_get_day (hit->date),
-                  g_date_get_month (hit->date), g_date_get_year (hit->date));
+              DEBUG ("Found text:'%s' in file:'%s' on date: %04u-%02u-%02u",
+                  text, hit->filename, g_date_get_year (hit->date),
+                  g_date_get_month (hit->date), g_date_get_day (hit->date));
             }
         }
 

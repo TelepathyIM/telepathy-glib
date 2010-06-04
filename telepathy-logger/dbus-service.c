@@ -440,8 +440,8 @@ _lookup_next_date (RecentMessagesContext *ctx)
     {
       GDate *date = ctx->ptr->data;
 
-      DEBUG ("Looking up date %u/%u/%u", g_date_get_day (date),
-          g_date_get_month (date), g_date_get_year (date));
+      DEBUG ("Looking up date %04u-%02u-%02u", g_date_get_year (date),
+          g_date_get_month (date), g_date_get_day (date));
 
       tpl_log_manager_get_messages_for_date_async (priv->manager,
           ctx->account, ctx->identifier, ctx->is_chatroom, date,
