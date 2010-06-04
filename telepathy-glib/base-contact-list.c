@@ -792,7 +792,7 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
 
   if (handle_type != TP_HANDLE_TYPE_LIST &&
       (handle_type != TP_HANDLE_TYPE_GROUP ||
-       cls->priv->add_to_group == NULL))
+       !TP_IS_CONTACT_GROUP_LIST (self)))
     {
       return FALSE;
     }
