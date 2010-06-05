@@ -34,7 +34,7 @@ typedef struct {
     TpBaseClient *base_client;
     SimpleClient *simple_client;
     TpBaseConnection *base_connection;
-    SimpleAccount *account_service;
+    TpTestsSimpleAccount *account_service;
     TpTestsTextChannelNull *text_chan_service;
     TpTestsTextChannelNull *text_chan_service_2;
     SimpleChannelDispatchOperation *cdo_service;
@@ -85,7 +85,7 @@ setup (Test *test,
 
   /* Create service-side Account object */
   test->account_service = tp_tests_object_new_static_class (
-      SIMPLE_TYPE_ACCOUNT, NULL);
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 

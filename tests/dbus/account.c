@@ -88,7 +88,7 @@ typedef struct {
     GHashTable *times_notified;
     GError *error /* initialized where needed */;
 
-    SimpleAccount *account_service /* initialized in prepare_service */;
+    TpTestsSimpleAccount *account_service /* initialized in prepare_service */;
 } Test;
 
 static void
@@ -123,7 +123,7 @@ setup_service (Test *test,
       CONN2_BUS_NAME, FALSE, &test->error);
   g_assert_no_error (test->error);
 
-  test->account_service = g_object_new (SIMPLE_TYPE_ACCOUNT, NULL);
+  test->account_service = g_object_new (TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 }
