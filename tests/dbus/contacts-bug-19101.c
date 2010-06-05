@@ -150,7 +150,7 @@ main (int argc,
   DEBUG ("a");
   service_conn = TP_TESTS_CONTACTS_CONNECTION (
       tp_tests_object_new_static_class (
-        TEST_TYPE_BUG19101_CONNECTION,
+        TP_TESTS_TYPE_BUG19101_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
