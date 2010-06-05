@@ -32,7 +32,7 @@ typedef struct {
 
     DBusGConnection *private_conn;
     TpDBusDaemon *private_dbus;
-    SimpleChannelDispatchOperation *cdo_service;
+    TpTestsSimpleChannelDispatchOperation *cdo_service;
     TpTestsTextChannelNull *text_chan_service;
     TpTestsTextChannelNull *text_chan_service_2;
 
@@ -74,7 +74,7 @@ setup (Test *test,
   test->cdo = NULL;
 
   test->cdo_service = tp_tests_object_new_static_class (
-      SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
+      TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
       NULL);
   tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
       test->cdo_service);
@@ -146,16 +146,16 @@ setup_services (Test *test,
 
 
   /* Configure fake ChannelDispatchOperation service */
-  simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
       tp_proxy_get_object_path (test->connection));
 
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan);
 
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan_2);
 
-  simple_channel_dispatch_operation_set_account_path (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_account_path (test->cdo_service,
        ACCOUNT_PATH);
 
   g_assert (tp_dbus_daemon_request_name (test->private_dbus,
@@ -565,7 +565,7 @@ test_channel_lost (Test *test,
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
   g_main_loop_run (test->mainloop);
 
@@ -588,7 +588,7 @@ test_channel_lost (Test *test,
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan_2);
   g_main_loop_run (test->mainloop);
 
@@ -677,7 +677,7 @@ test_channel_lost_preparing (Test *test,
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
 
   g_main_loop_run (test->mainloop);
@@ -728,7 +728,7 @@ test_finished_preparing (Test *test,
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
 
   tp_tests_text_channel_null_close (test->text_chan_service_2);
@@ -736,7 +736,7 @@ test_finished_preparing (Test *test,
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan_2);
 
   g_main_loop_run (test->mainloop);

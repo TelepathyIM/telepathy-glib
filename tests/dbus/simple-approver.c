@@ -28,7 +28,7 @@ typedef struct {
     TpBaseConnection *base_connection;
     TpTestsSimpleAccount *account_service;
     TpTestsTextChannelNull *text_chan_service;
-    SimpleChannelDispatchOperation *cdo_service;
+    TpTestsSimpleChannelDispatchOperation *cdo_service;
 
     /* Client side objects */
     TpClient *client;
@@ -105,17 +105,17 @@ setup (Test *test,
 
   /* Create Service side ChannelDispatchOperation object */
   test->cdo_service = tp_tests_object_new_static_class (
-      SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
+      TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
       NULL);
   tp_dbus_daemon_register_object (test->dbus, CDO_PATH, test->cdo_service);
 
-  simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
       tp_proxy_get_object_path (test->connection));
 
-  simple_channel_dispatch_operation_set_account_path (test->cdo_service,
-      tp_proxy_get_object_path (test->account));
+  tp_tests_simple_channel_dispatch_operation_set_account_path (
+      test->cdo_service, tp_proxy_get_object_path (test->account));
 
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan);
 
   g_assert (tp_dbus_daemon_request_name (test->dbus,

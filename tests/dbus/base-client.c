@@ -37,7 +37,7 @@ typedef struct {
     TpTestsSimpleAccount *account_service;
     TpTestsTextChannelNull *text_chan_service;
     TpTestsTextChannelNull *text_chan_service_2;
-    SimpleChannelDispatchOperation *cdo_service;
+    TpTestsSimpleChannelDispatchOperation *cdo_service;
 
     /* Client side objects */
     TpAccountManager *account_mgr;
@@ -160,19 +160,19 @@ setup (Test *test,
 
   /* Create Service side ChannelDispatchOperation object */
   test->cdo_service = tp_tests_object_new_static_class (
-      SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
+      TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
       NULL);
   tp_dbus_daemon_register_object (test->dbus, CDO_PATH, test->cdo_service);
 
-  simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
       tp_proxy_get_object_path (test->connection));
 
-  simple_channel_dispatch_operation_set_account_path (test->cdo_service,
-      tp_proxy_get_object_path (test->account));
+  tp_tests_simple_channel_dispatch_operation_set_account_path (
+      test->cdo_service, tp_proxy_get_object_path (test->account));
 
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan);
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan_2);
 
   g_assert (tp_dbus_daemon_request_name (test->dbus,
@@ -670,7 +670,7 @@ test_approver (Test *test,
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan_2);
 
   g_main_loop_run (test->mainloop);
@@ -695,7 +695,7 @@ test_approver (Test *test,
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
 
   g_main_loop_run (test->mainloop);
