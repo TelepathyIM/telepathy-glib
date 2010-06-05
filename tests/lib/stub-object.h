@@ -1,11 +1,11 @@
-#ifndef TESTS_STUB_OBJECT_H
-#define TESTS_STUB_OBJECT_H
+#ifndef __TP_TESTS_STUB_OBJECT_H__
+#define __TP_TESTS_STUB_OBJECT_H__
 
 #include <glib-object.h>
 
-typedef struct { GObject p; } StubObject;
-typedef struct { GObjectClass p; } StubObjectClass;
+typedef struct { GObject p; } TpTestsStubObject;
+typedef struct { GObjectClass p; } TpTestsStubObjectClass;
 
-GType stub_object_get_type (void);
+GType tp_tests_stub_object_get_type (void);
 
-#endif
+#endif /* #ifndef __TP_TESTS_STUB_OBJECT_H__ */

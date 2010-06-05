@@ -63,10 +63,10 @@ setup (Test *test,
 
   test->caught = 0;
   test->observer = tp_tests_object_new_static_class (
-      stub_object_get_type (), NULL);
+      tp_tests_stub_object_get_type (), NULL);
   g_object_set_data (test->observer, DATA_KEY, test);
   test->emitter = tp_tests_object_new_static_class (
-      stub_object_get_type (), NULL);
+      tp_tests_stub_object_get_type (), NULL);
 }
 
 static void
