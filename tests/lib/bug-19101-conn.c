@@ -15,8 +15,8 @@
 
 static void contacts_iface_init (gpointer g_iface, gpointer iface_data);
 
-G_DEFINE_TYPE_WITH_CODE (Bug19101Connection, bug_19101_connection,
-    CONTACTS_TYPE_CONNECTION,
+G_DEFINE_TYPE_WITH_CODE (Bug19101Connection, bug19101_connection,
+    TP_TESTS_TYPE_CONTACTS_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
         contacts_iface_init);
     )

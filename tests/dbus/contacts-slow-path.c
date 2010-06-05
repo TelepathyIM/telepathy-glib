@@ -93,7 +93,7 @@ finish (gpointer r)
 }
 
 static void
-test_by_handle (ContactsConnection *service_conn,
+test_by_handle (TpTestsContactsConnection *service_conn,
                 TpConnection *client_conn)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
@@ -232,7 +232,7 @@ test_by_handle (ContactsConnection *service_conn,
 }
 
 static void
-test_no_features (ContactsConnection *service_conn,
+test_no_features (TpTestsContactsConnection *service_conn,
                   TpConnection *client_conn)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
@@ -365,7 +365,7 @@ upgrade_cb (TpConnection *connection,
   } G_STMT_END
 
 static void
-test_upgrade (ContactsConnection *service_conn,
+test_upgrade (TpTestsContactsConnection *service_conn,
               TpConnection *client_conn)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
@@ -374,9 +374,10 @@ test_upgrade (ContactsConnection *service_conn,
   static const gchar * const aliases[] = { "Alice in Wonderland",
       "Bob the Builder", "Christopher Robin" };
   static const gchar * const tokens[] = { "aaaaa", "bbbbb", "ccccc" };
-  static ContactsConnectionPresenceStatusIndex statuses[] = {
-      CONTACTS_CONNECTION_STATUS_AVAILABLE, CONTACTS_CONNECTION_STATUS_BUSY,
-      CONTACTS_CONNECTION_STATUS_AWAY };
+  static TpTestsContactsConnectionPresenceStatusIndex statuses[] = {
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_AVAILABLE,
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_BUSY,
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_AWAY };
   static const gchar * const messages[] = { "", "Fixing it",
       "GON OUT BACKSON" };
   GHashTable *location_1 = tp_asv_new (
@@ -399,11 +400,14 @@ test_upgrade (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     handles[i] = tp_handle_ensure (service_repo, ids[i], NULL, NULL);
 
-  contacts_connection_change_aliases (service_conn, 3, handles, aliases);
-  contacts_connection_change_presences (service_conn, 3, handles,
+  tp_tests_contacts_connection_change_aliases (service_conn, 3, handles,
+      aliases);
+  tp_tests_contacts_connection_change_presences (service_conn, 3, handles,
       statuses, messages);
-  contacts_connection_change_avatar_tokens (service_conn, 3, handles, tokens);
-  contacts_connection_change_locations (service_conn, 3, handles, locations);
+  tp_tests_contacts_connection_change_avatar_tokens (service_conn, 3, handles,
+      tokens);
+  tp_tests_contacts_connection_change_locations (service_conn, 3, handles,
+      locations);
 
   tp_connection_get_contacts_by_handle (client_conn,
       3, handles,
@@ -580,7 +584,7 @@ contact_notify_cb (TpContact *contact,
 }
 
 static void
-test_features (ContactsConnection *service_conn,
+test_features (TpTestsContactsConnection *service_conn,
                TpConnection *client_conn)
 {
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
@@ -589,16 +593,18 @@ test_features (ContactsConnection *service_conn,
   static const gchar * const aliases[] = { "Alice in Wonderland",
       "Bob the Builder", "Christopher Robin" };
   static const gchar * const tokens[] = { "aaaaa", "bbbbb", "ccccc" };
-  static ContactsConnectionPresenceStatusIndex statuses[] = {
-      CONTACTS_CONNECTION_STATUS_AVAILABLE, CONTACTS_CONNECTION_STATUS_BUSY,
-      CONTACTS_CONNECTION_STATUS_AWAY };
+  static TpTestsContactsConnectionPresenceStatusIndex statuses[] = {
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_AVAILABLE,
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_BUSY,
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_AWAY };
   static const gchar * const messages[] = { "", "Fixing it",
       "GON OUT BACKSON" };
   static const gchar * const new_aliases[] = { "Alice [at a tea party]",
       "Bob the Plumber" };
   static const gchar * const new_tokens[] = { "AAAA", "BBBB" };
-  static ContactsConnectionPresenceStatusIndex new_statuses[] = {
-      CONTACTS_CONNECTION_STATUS_AWAY, CONTACTS_CONNECTION_STATUS_AVAILABLE };
+  static TpTestsContactsConnectionPresenceStatusIndex new_statuses[] = {
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_AWAY,
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_AVAILABLE };
   static const gchar * const new_messages[] = { "At the Mad Hatter's",
       "It'll cost you" };
   GHashTable *location_1 = tp_asv_new (
@@ -638,11 +644,14 @@ test_features (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     handles[i] = tp_handle_ensure (service_repo, ids[i], NULL, NULL);
 
-  contacts_connection_change_aliases (service_conn, 3, handles, aliases);
-  contacts_connection_change_presences (service_conn, 3, handles,
+  tp_tests_contacts_connection_change_aliases (service_conn, 3, handles,
+      aliases);
+  tp_tests_contacts_connection_change_presences (service_conn, 3, handles,
       statuses, messages);
-  contacts_connection_change_avatar_tokens (service_conn, 3, handles, tokens);
-  contacts_connection_change_locations (service_conn, 3, handles, locations);
+  tp_tests_contacts_connection_change_avatar_tokens (service_conn, 3, handles,
+      tokens);
+  tp_tests_contacts_connection_change_locations (service_conn, 3, handles,
+      locations);
 
   tp_connection_get_contacts_by_handle (client_conn,
       3, handles,
@@ -740,12 +749,13 @@ test_features (ContactsConnection *service_conn,
       G_CALLBACK (contact_notify_cb), &notify_ctx_chris);
 
   /* Change Alice and Bob's contact info, leave Chris as-is */
-  contacts_connection_change_aliases (service_conn, 2, handles, new_aliases);
-  contacts_connection_change_presences (service_conn, 2, handles,
+  tp_tests_contacts_connection_change_aliases (service_conn, 2, handles,
+      new_aliases);
+  tp_tests_contacts_connection_change_presences (service_conn, 2, handles,
       new_statuses, new_messages);
-  contacts_connection_change_avatar_tokens (service_conn, 2, handles,
+  tp_tests_contacts_connection_change_avatar_tokens (service_conn, 2, handles,
       new_tokens);
-  contacts_connection_change_locations (service_conn, 2, handles,
+  tp_tests_contacts_connection_change_locations (service_conn, 2, handles,
       new_locations);
   tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
 
@@ -1014,7 +1024,7 @@ main (int argc,
       char **argv)
 {
   TpBaseConnection *base_connection;
-  ContactsConnection *legacy_service_conn;
+  TpTestsContactsConnection *legacy_service_conn;
   GError *error = NULL;
   TpConnection *legacy_client_conn;
 
@@ -1023,10 +1033,10 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
 
-  tp_tests_create_and_connect_conn (LEGACY_CONTACTS_TYPE_CONNECTION,
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
       "me@test.com", &base_connection, &legacy_client_conn);
 
-  legacy_service_conn = CONTACTS_CONNECTION (base_connection);
+  legacy_service_conn = TP_TESTS_CONTACTS_CONNECTION (base_connection);
 
   /* Tests */
   test_by_handle (legacy_service_conn, legacy_client_conn);

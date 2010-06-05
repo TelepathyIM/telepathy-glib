@@ -19,7 +19,7 @@
 #include "tests/lib/util.h"
 
 static void
-test_no_features (ContactsConnection *service_conn,
+test_no_features (TpTestsContactsConnection *service_conn,
                   TpConnection *client_conn,
                   GArray *handles)
 {
@@ -59,7 +59,7 @@ test_no_features (ContactsConnection *service_conn,
 }
 
 static void
-test_features (ContactsConnection *service_conn,
+test_features (TpTestsContactsConnection *service_conn,
                TpConnection *client_conn,
                GArray *handles)
 {
@@ -133,7 +133,7 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  ContactsConnection *service_conn;
+  TpTestsContactsConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
@@ -144,9 +144,10 @@ main (int argc,
   static const gchar * const aliases[] = { "Alice in Wonderland",
       "Bob the Builder", "Christopher Robin" };
   static const gchar * const tokens[] = { "aaaaa", "bbbbb", "ccccc" };
-  static ContactsConnectionPresenceStatusIndex statuses[] = {
-      CONTACTS_CONNECTION_STATUS_AVAILABLE, CONTACTS_CONNECTION_STATUS_BUSY,
-      CONTACTS_CONNECTION_STATUS_AWAY };
+  static TpTestsContactsConnectionPresenceStatusIndex statuses[] = {
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_AVAILABLE,
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_BUSY,
+      TP_TESTS_CONTACTS_CONNECTION_STATUS_AWAY };
   static const gchar * const messages[] = { "", "Fixing it",
       "GON OUT BACKSON" };
   TpHandleRepoIface *service_repo;
@@ -158,9 +159,9 @@ main (int argc,
   tp_debug_set_flags ("all");
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = TEST_CONTACTS_CONNECTION (
+  service_conn = TP_TESTS_CONTACTS_CONNECTION (
     tp_tests_object_new_static_class (
-        TEST_TYPE_CONTACTS_CONNECTION,
+        TP_TESTS_TYPE_CONTACTS_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -190,11 +191,11 @@ main (int argc,
       g_array_append_val (handles, handle);
     }
 
-  contacts_connection_change_aliases (service_conn, 3,
+  tp_tests_contacts_connection_change_aliases (service_conn, 3,
       (const TpHandle *) handles->data, aliases);
-  contacts_connection_change_presences (service_conn, 3,
+  tp_tests_contacts_connection_change_presences (service_conn, 3,
       (const TpHandle *) handles->data, statuses, messages);
-  contacts_connection_change_avatar_tokens (service_conn, 3,
+  tp_tests_contacts_connection_change_avatar_tokens (service_conn, 3,
       (const TpHandle *) handles->data, tokens);
 
   /* Tests */

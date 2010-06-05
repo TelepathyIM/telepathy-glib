@@ -20,7 +20,7 @@
 #include "tests/lib/util.h"
 
 static void
-test_simple_presence (ContactsConnection *service_conn,
+test_simple_presence (TpTestsContactsConnection *service_conn,
                       TpConnection *client_conn)
 {
   GError *error = NULL;
@@ -94,7 +94,7 @@ test_simple_presence (ContactsConnection *service_conn,
 }
 
 static void
-test_complex_presence (ContactsConnection *service_conn,
+test_complex_presence (TpTestsContactsConnection *service_conn,
               TpConnection *client_conn)
 {
   GHashTable *statuses = NULL;
@@ -205,7 +205,7 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  ContactsConnection *service_conn;
+  TpTestsContactsConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
@@ -220,9 +220,9 @@ main (int argc,
   tp_debug_set_flags ("all");
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = TEST_CONTACTS_CONNECTION (
+  service_conn = TP_TESTS_CONTACTS_CONNECTION (
       tp_tests_object_new_static_class (
-        TEST_TYPE_CONTACTS_CONNECTION,
+        TP_TESTS_TYPE_CONTACTS_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));

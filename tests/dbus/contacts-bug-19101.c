@@ -134,7 +134,7 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  ContactsConnection *service_conn;
+  TpTestsContactsConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
@@ -148,7 +148,7 @@ main (int argc,
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   DEBUG ("a");
-  service_conn = TEST_CONTACTS_CONNECTION (
+  service_conn = TP_TESTS_CONTACTS_CONNECTION (
       tp_tests_object_new_static_class (
         TEST_TYPE_BUG19101_CONNECTION,
         "account", "me@example.com",
