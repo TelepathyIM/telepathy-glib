@@ -32,7 +32,7 @@ typedef struct {
 
     /* Service side objects */
     TpBaseClient *base_client;
-    SimpleClient *simple_client;
+    TpTestsSimpleClient *simple_client;
     TpBaseConnection *base_connection;
     TpTestsSimpleAccount *account_service;
     TpTestsTextChannelNull *text_chan_service;
@@ -79,7 +79,7 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   /* Create service-side Client object */
-  test->simple_client = simple_client_new (test->dbus, "Test", FALSE);
+  test->simple_client = tp_tests_simple_client_new (test->dbus, "Test", FALSE);
   g_assert (test->simple_client != NULL);
   test->base_client = TP_BASE_CLIENT (test->simple_client);
 
@@ -774,7 +774,7 @@ test_handler (Test *test,
   GPtrArray *requests_satisified;
   GHashTable *info;
   GList *chans;
-  SimpleClient *client_2;
+  TpTestsSimpleClient *client_2;
 
   filter = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -854,7 +854,7 @@ test_handler (Test *test,
   g_list_free (chans);
 
   /* Create another client sharing the same unique name */
-  client_2 = simple_client_new (test->dbus, "Test", TRUE);
+  client_2 = tp_tests_simple_client_new (test->dbus, "Test", TRUE);
   tp_base_client_be_a_handler (TP_BASE_CLIENT (client_2));
   tp_base_client_register (TP_BASE_CLIENT (client_2), &test->error);
   g_assert_no_error (test->error);
