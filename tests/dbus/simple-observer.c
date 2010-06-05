@@ -26,7 +26,7 @@ typedef struct {
     TpBaseClient *simple_observer;
     TpBaseConnection *base_connection;
     SimpleAccount *account_service;
-    TestTextChannelNull *text_chan_service;
+    TpTestsTextChannelNull *text_chan_service;
 
     /* Client side objects */
     TpClient *client;
@@ -83,9 +83,9 @@ setup (Test *test,
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service = TEST_TEXT_CHANNEL_NULL (
+  test->text_chan_service = TP_TESTS_TEXT_CHANNEL_NULL (
       tp_tests_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,

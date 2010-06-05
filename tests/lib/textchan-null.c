@@ -22,26 +22,26 @@
 static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
 
-G_DEFINE_TYPE_WITH_CODE (TestTextChannelNull,
-    test_text_channel_null,
+G_DEFINE_TYPE_WITH_CODE (TpTestsTextChannelNull,
+    tp_tests_text_channel_null,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL))
 
-G_DEFINE_TYPE_WITH_CODE (TestPropsTextChannel,
-    test_props_text_channel,
-    TEST_TYPE_TEXT_CHANNEL_NULL,
+G_DEFINE_TYPE_WITH_CODE (TpTestsPropsTextChannel,
+    tp_tests_props_text_channel,
+    TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init))
 
-G_DEFINE_TYPE_WITH_CODE (TestPropsGroupTextChannel,
-    test_props_group_text_channel,
-    TEST_TYPE_PROPS_TEXT_CHANNEL,
+G_DEFINE_TYPE_WITH_CODE (TpTestsPropsGroupTextChannel,
+    tp_tests_props_group_text_channel,
+    TP_TESTS_TYPE_PROPS_TEXT_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
         tp_group_mixin_iface_init))
 
-static const char *test_text_channel_null_interfaces[] = { NULL };
+static const char *tp_tests_text_channel_null_interfaces[] = { NULL };
 
 /* type definition stuff */
 
@@ -60,7 +60,7 @@ enum
   N_PROPS
 };
 
-struct _TestTextChannelNullPrivate
+struct _TpTestsTextChannelNullPrivate
 {
   TpBaseConnection *conn;
   gchar *object_path;
@@ -71,14 +71,14 @@ struct _TestTextChannelNullPrivate
 };
 
 static void
-test_text_channel_null_init (TestTextChannelNull *self)
+tp_tests_text_channel_null_init (TpTestsTextChannelNull *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TEST_TYPE_TEXT_CHANNEL_NULL,
-      TestTextChannelNullPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TP_TESTS_TYPE_TEXT_CHANNEL_NULL, TpTestsTextChannelNullPrivate);
 }
 
 static void
-test_props_text_channel_init (TestPropsTextChannel *self)
+tp_tests_props_text_channel_init (TpTestsPropsTextChannel *self)
 {
   self->dbus_property_interfaces_retrieved = g_hash_table_new (NULL, NULL);
 }
@@ -89,9 +89,9 @@ constructor (GType type,
              GObjectConstructParam *props)
 {
   GObject *object =
-      G_OBJECT_CLASS (test_text_channel_null_parent_class)->constructor (type,
+      G_OBJECT_CLASS (tp_tests_text_channel_null_parent_class)->constructor (type,
           n_props, props);
-  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (object);
+  TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (object);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
@@ -101,7 +101,7 @@ constructor (GType type,
       tp_base_connection_get_dbus_daemon (self->priv->conn),
       self->priv->object_path, self);
 
-  tp_text_mixin_init (object, G_STRUCT_OFFSET (TestTextChannelNull, text),
+  tp_text_mixin_init (object, G_STRUCT_OFFSET (TpTestsTextChannelNull, text),
       contact_repo);
 
   tp_text_mixin_set_message_types (object,
@@ -119,7 +119,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (object);
+  TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (object);
 
   switch (property_id)
     {
@@ -160,7 +160,7 @@ get_property (GObject *object,
         }
       break;
     case PROP_INTERFACES:
-      g_value_set_boxed (value, test_text_channel_null_interfaces);
+      g_value_set_boxed (value, tp_tests_text_channel_null_interfaces);
       break;
     case PROP_CONNECTION:
       g_value_set_object (value, self->priv->conn);
@@ -177,7 +177,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (object);
+  TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (object);
 
   switch (property_id)
     {
@@ -206,7 +206,7 @@ set_property (GObject *object,
 }
 
 void
-test_text_channel_null_close (TestTextChannelNull *self)
+tp_tests_text_channel_null_close (TpTestsTextChannelNull *self)
 {
   if (!self->priv->closed)
     {
@@ -220,21 +220,21 @@ test_text_channel_null_close (TestTextChannelNull *self)
 static void
 dispose (GObject *object)
 {
-  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (object);
+  TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (object);
 
   if (self->priv->disposed)
     return;
 
   self->priv->disposed = TRUE;
-  test_text_channel_null_close (self);
+  tp_tests_text_channel_null_close (self);
 
-  ((GObjectClass *) test_text_channel_null_parent_class)->dispose (object);
+  ((GObjectClass *) tp_tests_text_channel_null_parent_class)->dispose (object);
 }
 
 static void
 finalize (GObject *object)
 {
-  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (object);
+  TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (object);
   TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
@@ -243,16 +243,16 @@ finalize (GObject *object)
 
   tp_text_mixin_finalize (object);
 
-  ((GObjectClass *) test_text_channel_null_parent_class)->finalize (object);
+  ((GObjectClass *) tp_tests_text_channel_null_parent_class)->finalize (object);
 }
 
 static void
-test_text_channel_null_class_init (TestTextChannelNullClass *klass)
+tp_tests_text_channel_null_class_init (TpTestsTextChannelNullClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
-  g_type_class_add_private (klass, sizeof (TestTextChannelNullPrivate));
+  g_type_class_add_private (klass, sizeof (TpTestsTextChannelNullPrivate));
 
   object_class->constructor = constructor;
   object_class->set_property = set_property;
@@ -308,17 +308,17 @@ test_text_channel_null_class_init (TestTextChannelNullClass *klass)
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
 
   tp_text_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TestTextChannelNullClass, text_class));
+      G_STRUCT_OFFSET (TpTestsTextChannelNullClass, text_class));
 }
 
 static void
-test_props_text_channel_getter_gobject_properties (GObject *object,
+tp_tests_props_text_channel_getter_gobject_properties (GObject *object,
     GQuark interface,
     GQuark name,
     GValue *value,
     gpointer getter_data)
 {
-  TestPropsTextChannel *self = TEST_PROPS_TEXT_CHANNEL (object);
+  TpTestsPropsTextChannel *self = TP_TESTS_PROPS_TEXT_CHANNEL (object);
 
   g_hash_table_insert (self->dbus_property_interfaces_retrieved,
       GUINT_TO_POINTER (interface), GUINT_TO_POINTER (interface));
@@ -330,15 +330,15 @@ test_props_text_channel_getter_gobject_properties (GObject *object,
 static void
 props_finalize (GObject *object)
 {
-  TestPropsTextChannel *self = TEST_PROPS_TEXT_CHANNEL (object);
+  TpTestsPropsTextChannel *self = TP_TESTS_PROPS_TEXT_CHANNEL (object);
 
   g_hash_table_unref (self->dbus_property_interfaces_retrieved);
 
-  ((GObjectClass *) test_text_channel_null_parent_class)->finalize (object);
+  ((GObjectClass *) tp_tests_text_channel_null_parent_class)->finalize (object);
 }
 
 static void
-test_props_text_channel_class_init (TestPropsTextChannelClass *klass)
+tp_tests_props_text_channel_class_init (TpTestsPropsTextChannelClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   static TpDBusPropertiesMixinPropImpl channel_props[] = {
@@ -354,7 +354,7 @@ test_props_text_channel_class_init (TestPropsTextChannelClass *klass)
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_CHANNEL,
-        test_props_text_channel_getter_gobject_properties,
+        tp_tests_props_text_channel_getter_gobject_properties,
         NULL,
         channel_props,
       },
@@ -365,26 +365,26 @@ test_props_text_channel_class_init (TestPropsTextChannelClass *klass)
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TestPropsTextChannelClass, dbus_properties_class));
+      G_STRUCT_OFFSET (TpTestsPropsTextChannelClass, dbus_properties_class));
 }
 
 static void
-test_props_group_text_channel_init (TestPropsGroupTextChannel *self)
+tp_tests_props_group_text_channel_init (TpTestsPropsGroupTextChannel *self)
 {
 }
 
 static void
 group_constructed (GObject *self)
 {
-  TpBaseConnection *conn = TEST_TEXT_CHANNEL_NULL (self)->priv->conn;
+  TpBaseConnection *conn = TP_TESTS_TEXT_CHANNEL_NULL (self)->priv->conn;
   void (*chain_up) (GObject *) =
-    ((GObjectClass *) test_props_group_text_channel_parent_class)->constructed;
+    ((GObjectClass *) tp_tests_props_group_text_channel_parent_class)->constructed;
 
   if (chain_up != NULL)
     chain_up (self);
 
   tp_group_mixin_init (self,
-      G_STRUCT_OFFSET (TestPropsGroupTextChannel, group),
+      G_STRUCT_OFFSET (TpTestsPropsGroupTextChannel, group),
       tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT),
       tp_base_connection_get_self_handle (conn));
   tp_group_mixin_change_flags (self, TP_CHANNEL_GROUP_FLAG_PROPERTIES, 0);
@@ -412,7 +412,7 @@ group_iface_props_getter (GObject *object,
     GValue *value,
     gpointer getter_data)
 {
-  TestPropsTextChannel *self = TEST_PROPS_TEXT_CHANNEL (object);
+  TpTestsPropsTextChannel *self = TP_TESTS_PROPS_TEXT_CHANNEL (object);
 
   g_hash_table_insert (self->dbus_property_interfaces_retrieved,
       GUINT_TO_POINTER (interface), GUINT_TO_POINTER (interface));
@@ -421,7 +421,7 @@ group_iface_props_getter (GObject *object,
 }
 
 static void
-test_props_group_text_channel_class_init (TestPropsGroupTextChannelClass *klass)
+tp_tests_props_group_text_channel_class_init (TpTestsPropsGroupTextChannelClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   static TpDBusPropertiesMixinPropImpl group_props[] = {
@@ -438,7 +438,7 @@ test_props_group_text_channel_class_init (TestPropsGroupTextChannelClass *klass)
   object_class->finalize = group_finalize;
 
   tp_group_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TestPropsGroupTextChannelClass, group_class),
+      G_STRUCT_OFFSET (TpTestsPropsGroupTextChannelClass, group_class),
       dummy_add_remove_member,
       dummy_add_remove_member);
   tp_dbus_properties_mixin_implement_interface (object_class,
@@ -450,9 +450,9 @@ static void
 channel_close (TpSvcChannel *iface,
                DBusGMethodInvocation *context)
 {
-  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
+  TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (iface);
 
-  test_text_channel_null_close (self);
+  tp_tests_text_channel_null_close (self);
   tp_svc_channel_return_from_close (context);
 }
 
@@ -460,7 +460,7 @@ static void
 channel_get_channel_type (TpSvcChannel *iface,
                           DBusGMethodInvocation *context)
 {
-  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
+  TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (iface);
 
   self->get_channel_type_called++;
 
@@ -472,7 +472,7 @@ static void
 channel_get_handle (TpSvcChannel *iface,
                     DBusGMethodInvocation *context)
 {
-  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
+  TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (iface);
 
   self->get_handle_called++;
 
@@ -484,12 +484,12 @@ static void
 channel_get_interfaces (TpSvcChannel *iface,
                         DBusGMethodInvocation *context)
 {
-  TestTextChannelNull *self = TEST_TEXT_CHANNEL_NULL (iface);
+  TpTestsTextChannelNull *self = TP_TESTS_TEXT_CHANNEL_NULL (iface);
 
   self->get_interfaces_called++;
 
   tp_svc_channel_return_from_get_interfaces (context,
-      test_text_channel_null_interfaces);
+      tp_tests_text_channel_null_interfaces);
 }
 
 static void

@@ -61,7 +61,7 @@ main (int argc,
   TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
-  TestTextChannelNull *service_chan;
+  TpTestsTextChannelNull *service_chan;
   TpDBusDaemon *dbus;
   TpConnection *conn;
   TpChannel *chan;
@@ -109,8 +109,8 @@ main (int argc,
   g_assert_no_error (error);
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = TEST_TEXT_CHANNEL_NULL (tp_tests_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+  service_chan = TP_TESTS_TEXT_CHANNEL_NULL (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", service_conn,
         "object-path", chan_path,
         "handle", handle,
