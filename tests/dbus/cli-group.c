@@ -78,7 +78,7 @@ group_members_changed_detailed_cb (TpChannel *chan_,
 
 
 static void
-test_channel_proxy (TestTextChannelGroup *service_chan,
+test_channel_proxy (TpTestsTextChannelGroup *service_chan,
                     TpChannel *chan,
                     gboolean detailed,
                     gboolean properties)
@@ -212,7 +212,7 @@ channel_invalidated_cb (TpProxy *proxy,
 }
 
 static void
-test_invalidated_on_illegal_change (TestTextChannelGroup *serv_chan,
+test_invalidated_on_illegal_change (TpTestsTextChannelGroup *serv_chan,
                                     TpChannel *chan,
                                     gboolean detailed,
                                     gboolean properties)
@@ -252,13 +252,14 @@ run_membership_test (guint channel_number,
                      gboolean properties)
 {
   gchar *chan_path;
-  TestTextChannelGroup *service_chan;
+  TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
   GError *error = NULL;
 
   chan_path = g_strdup_printf ("%s/Channel%u", conn_path, channel_number);
-  service_chan = TEST_TEXT_CHANNEL_GROUP (tp_tests_object_new_static_class (
-      TEST_TYPE_TEXT_CHANNEL_GROUP,
+  service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (
+      tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
       "connection", service_conn,
       "object-path", chan_path,
       "detailed", detailed,
@@ -330,7 +331,7 @@ static void
 check_removed_unknown_error_in_invalidated (void)
 {
   gchar *chan_path;
-  TestTextChannelGroup *service_chan;
+  TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
   TpIntSet *self_handle_singleton = tp_intset_new ();
   GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
@@ -339,8 +340,9 @@ check_removed_unknown_error_in_invalidated (void)
   GError *error = NULL;
 
   chan_path = g_strdup_printf ("%s/Channel_1_6180339887", conn_path);
-  service_chan = TEST_TEXT_CHANNEL_GROUP (tp_tests_object_new_static_class (
-      TEST_TYPE_TEXT_CHANNEL_GROUP,
+  service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (
+      tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
       "connection", service_conn,
       "object-path", chan_path,
       "detailed", TRUE,
@@ -419,7 +421,7 @@ static void
 check_removed_known_error_in_invalidated (void)
 {
   gchar *chan_path;
-  TestTextChannelGroup *service_chan;
+  TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
   TpIntSet *self_handle_singleton = tp_intset_new ();
   GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
@@ -428,8 +430,8 @@ check_removed_known_error_in_invalidated (void)
   GError *error = NULL;
 
   chan_path = g_strdup_printf ("%s/Channel_1_6180339887", conn_path);
-  service_chan = TEST_TEXT_CHANNEL_GROUP (g_object_new (
-      TEST_TYPE_TEXT_CHANNEL_GROUP,
+  service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (g_object_new (
+      TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
       "connection", service_conn,
       "object-path", chan_path,
       "detailed", TRUE,

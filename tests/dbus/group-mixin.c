@@ -24,7 +24,7 @@
 #define IDENTIFIER "them@example.org"
 
 static GMainLoop *mainloop;
-TestTextChannelGroup *service_chan;
+TpTestsTextChannelGroup *service_chan;
 TpChannel *chan = NULL;
 TpHandleRepoIface *contact_repo;
 TpHandle self_handle, camel, camel2;
@@ -555,8 +555,9 @@ main (int argc,
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = TEST_TEXT_CHANNEL_GROUP (tp_tests_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_GROUP,
+  service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
         "connection", service_conn,
         "object-path", chan_path,
         "detailed", TRUE,
