@@ -145,11 +145,12 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   DEBUG ("a");
-  service_conn = CONTACTS_CONNECTION (test_object_new_static_class (
-        BUG_19101_TYPE_CONNECTION,
+  service_conn = TEST_CONTACTS_CONNECTION (
+      tp_tests_object_new_static_class (
+        TEST_TYPE_BUG19101_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));

@@ -76,7 +76,7 @@ new_connection (TpBaseConnectionManager *self,
 {
   SimpleParams *params = parsed_params;
   TpTestsSimpleConnection *conn = TP_TESTS_SIMPLE_CONNECTION (
-      test_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+      tp_tests_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CONNECTION,
           "account", params->account,
           "protocol", proto,
           NULL));

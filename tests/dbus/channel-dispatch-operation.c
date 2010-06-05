@@ -57,7 +57,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
   g_assert (libdbus != NULL);
@@ -73,7 +73,7 @@ setup (Test *test,
 
   test->cdo = NULL;
 
-  test->cdo_service = test_object_new_static_class (
+  test->cdo_service = tp_tests_object_new_static_class (
       SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
       NULL);
   tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
@@ -106,7 +106,7 @@ setup_services (Test *test,
   g_assert_no_error (test->error);
 
   test->text_chan_service = TEST_TEXT_CHANNEL_NULL (
-      test_object_new_static_class (
+      tp_tests_object_new_static_class (
         TEST_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
@@ -128,9 +128,9 @@ setup_services (Test *test,
   handle = tp_handle_ensure (contact_repo, "alice", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service_2 = TEST_TEXT_CHANNEL_NULL (
-      test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+  test->text_chan_service_2 = TP_TESTS_TEXT_CHANNEL_NULL (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -196,8 +196,8 @@ teardown (Test *test,
       test->private_conn = NULL;
     }
 
-   /* make sure any pending things have happened */
-  test_proxy_run_until_dbus_queue_processed (test->dbus);
+  /* make sure any pending things have happened */
+  tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
 
   g_object_unref (test->dbus);
   test->dbus = NULL;
@@ -268,7 +268,7 @@ test_crash (Test *test,
   tp_dbus_daemon_release_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, NULL);
 
-  test_proxy_run_until_dbus_queue_processed (test->cdo);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cdo);
 
   g_assert (tp_proxy_get_invalidated (test->cdo) == NULL);
 
@@ -277,7 +277,7 @@ test_crash (Test *test,
   dbus_g_connection_unref (test->private_conn);
   test->private_conn = NULL;
 
-  test_proxy_run_until_dbus_queue_processed (test->cdo);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cdo);
 
   g_assert (tp_proxy_get_invalidated (test->cdo) != NULL);
   g_assert (tp_proxy_get_invalidated (test->cdo)->domain == TP_DBUS_ERRORS);
@@ -302,7 +302,7 @@ test_finished (Test *test,
 
   tp_svc_channel_dispatch_operation_emit_finished (test->cdo_service);
 
-  test_proxy_run_until_dbus_queue_processed (test->cdo);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cdo);
 
   g_assert (tp_proxy_get_invalidated (test->cdo) != NULL);
   g_assert (tp_proxy_get_invalidated (test->cdo)->domain == TP_DBUS_ERRORS);

@@ -35,9 +35,10 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (test_object_new_static_class (
+  test->service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (
+      tp_tests_object_new_static_class (
         EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);

@@ -458,7 +458,7 @@ test_by_handle (ContactsConnection *service_conn,
     }
 
   /* wait for ReleaseHandles to run */
-  test_proxy_run_until_dbus_queue_processed (client_conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* unref all the handles we created service-side */
   tp_handle_unref (service_repo, handles[0]);
@@ -544,7 +544,7 @@ test_no_features (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       g_object_unref (contacts[i]);
-      test_proxy_run_until_dbus_queue_processed (client_conn);
+      tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
       tp_handle_unref (service_repo, handles[i]);
       MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
     }
@@ -837,7 +837,7 @@ test_upgrade (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       g_object_unref (contacts[i]);
-      test_proxy_run_until_dbus_queue_processed (client_conn);
+      tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
       tp_handle_unref (service_repo, handles[i]);
       MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
     }
@@ -1141,7 +1141,7 @@ test_features (ContactsConnection *service_conn,
   contacts_connection_change_capabilities (service_conn, new_capabilities);
   g_hash_table_unref (new_capabilities);
 
-  test_proxy_run_until_dbus_queue_processed (client_conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
 
   g_assert (notify_ctx_is_fully_changed (&notify_ctx_alice));
   g_assert (!notify_ctx_is_changed (&notify_ctx_chris));
@@ -1195,7 +1195,7 @@ test_features (ContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       g_object_unref (contacts[i]);
-      test_proxy_run_until_dbus_queue_processed (client_conn);
+      tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
       tp_handle_unref (service_repo, handles[i]);
       MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
     }
@@ -1400,7 +1400,7 @@ test_by_id (TpConnection *client_conn)
     }
 
   /* wait for ReleaseHandles to run */
-  test_proxy_run_until_dbus_queue_processed (client_conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
@@ -1552,16 +1552,16 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
 
-  test_create_and_connect_conn (CONTACTS_TYPE_CONNECTION, "me@test.com",
-      &base_connection, &client_conn);
+  tp_tests_create_and_connect_conn (CONTACTS_TYPE_CONNECTION,
+      "me@test.com", &base_connection, &client_conn);
 
   service_conn = CONTACTS_CONNECTION (base_connection);
 
-  test_create_and_connect_conn (LEGACY_CONTACTS_TYPE_CONNECTION, "me2@test.com",
-      &legacy_base_connection, &legacy_client_conn);
+  tp_tests_create_and_connect_conn (LEGACY_CONTACTS_TYPE_CONNECTION,
+      "me2@test.com", &legacy_base_connection, &legacy_client_conn);
 
-  test_create_and_connect_conn (NO_REQUESTS_TYPE_CONNECTION, "me3@test.com",
-      &no_requests_base_connection, &no_requests_client_conn);
+  tp_tests_create_and_connect_conn (NO_REQUESTS_TYPE_CONNECTION,
+      "me3@test.com", &no_requests_base_connection, &no_requests_client_conn);
 
   /* Tests */
 

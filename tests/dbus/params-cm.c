@@ -61,10 +61,11 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = PARAM_CONNECTION_MANAGER (test_object_new_static_class (
-        TYPE_PARAM_CONNECTION_MANAGER,
+  test->service_cm = TEST_PARAM_CONNECTION_MANAGER (
+    tp_tests_object_new_static_class (
+        TEST_TYPE_PARAM_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);
   service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
@@ -76,7 +77,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "params_cm",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  test_proxy_run_until_prepared (test->cm, NULL);
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
 }
 
 static void

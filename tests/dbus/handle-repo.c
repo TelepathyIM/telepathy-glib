@@ -15,14 +15,14 @@
 static void
 test_handles (void)
 {
-  TpDBusDaemon *bus_daemon = test_dbus_daemon_dup_or_die ();
+  TpDBusDaemon *bus_daemon = tp_tests_dbus_daemon_dup_or_die ();
   TpHandleRepoIface *tp_repo = NULL;
   GError *error = NULL;
   TpHandle handle = 0;
   const gchar *jid = "handle.test@foobar";
   const gchar *return_jid;
 
-  tp_repo = test_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
+  tp_repo = tp_tests_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
       "handle-type", TP_HANDLE_TYPE_CONTACT,
       NULL);
   g_assert (tp_repo != NULL);
@@ -90,7 +90,7 @@ test_handles (void)
   g_assert (tp_handle_is_valid (tp_repo, handle, NULL) == TRUE);
 
   /* wait for D-Bus to catch up */
-  test_proxy_run_until_dbus_queue_processed (bus_daemon);
+  tp_tests_proxy_run_until_dbus_queue_processed (bus_daemon);
 
   /* No more refs */
   g_assert (tp_handle_is_valid (tp_repo, handle, NULL) == FALSE);

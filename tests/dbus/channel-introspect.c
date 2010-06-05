@@ -129,9 +129,9 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = TP_TESTS_SIMPLE_CONNECTION (test_object_new_static_class (
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
         TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
@@ -161,7 +161,7 @@ main (int argc,
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = TEST_TEXT_CHANNEL_NULL (test_object_new_static_class (
+  service_chan = TEST_TEXT_CHANNEL_NULL (tp_tests_object_new_static_class (
         TEST_TYPE_TEXT_CHANNEL_NULL,
         "connection", service_conn,
         "object-path", chan_path,
@@ -170,7 +170,8 @@ main (int argc,
 
   props_chan_path = g_strdup_printf ("%s/PropertiesChannel", conn_path);
 
-  service_props_chan = TEST_PROPS_TEXT_CHANNEL (test_object_new_static_class (
+  service_props_chan = TEST_PROPS_TEXT_CHANNEL (
+      tp_tests_object_new_static_class (
         TEST_TYPE_PROPS_TEXT_CHANNEL,
         "connection", service_conn,
         "object-path", props_chan_path,
@@ -180,7 +181,7 @@ main (int argc,
   props_group_chan_path = g_strdup_printf ("%s/PropsGroupChannel", conn_path);
 
   service_props_group_chan = TEST_PROPS_GROUP_TEXT_CHANNEL (
-      test_object_new_static_class (
+      tp_tests_object_new_static_class (
         TEST_TYPE_PROPS_GROUP_TEXT_CHANNEL,
         "connection", service_conn,
         "object-path", props_group_chan_path,
@@ -276,7 +277,7 @@ main (int argc,
 
   g_message ("Channel becomes ready while we wait");
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -317,7 +318,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (the version with "
       "Properties)");
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called = 0;
   TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called = 0;
@@ -385,7 +386,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (preloading immutable "
       "properties)");
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called = 0;
   TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called = 0;
@@ -436,7 +437,7 @@ main (int argc,
   g_message ("Group channel becomes ready while we wait (preloading immutable "
       "properties)");
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   TEST_TEXT_CHANNEL_NULL (service_props_group_chan)->get_handle_called = 0;
   TEST_TEXT_CHANNEL_NULL (service_props_group_chan)->get_interfaces_called = 0;
@@ -497,7 +498,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (in the case where we "
       "have to discover the channel type)");
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -521,7 +522,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (in the case where we "
       "have to discover the handle type)");
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -545,7 +546,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (in the case where we "
       "have to discover the handle)");
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -614,7 +615,7 @@ main (int argc,
   g_message ("Channel doesn't actually implement Group (preloading immutable "
       "properties)");
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -667,7 +668,7 @@ main (int argc,
 
   g_message ("Channel becomes ready and we are called back");
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;

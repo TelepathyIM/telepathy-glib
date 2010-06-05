@@ -96,7 +96,7 @@ setup (Test *test,
        gconstpointer data)
 {
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (test->dbus != NULL);
 
   test->account = NULL;
@@ -169,7 +169,7 @@ teardown (Test *test,
 {
   if (test->account != NULL)
     {
-      test_proxy_run_until_dbus_queue_processed (test->account);
+      tp_tests_proxy_run_until_dbus_queue_processed (test->account);
 
       if (test->notify_id != 0)
         {
@@ -184,7 +184,7 @@ teardown (Test *test,
   test->times_notified = NULL;
 
   /* make sure any pending calls on the account have happened, so it can die */
-  test_proxy_run_until_dbus_queue_processed (test->dbus);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
 
   g_object_unref (test->dbus);
   test->dbus = NULL;
@@ -367,7 +367,7 @@ test_connection (Test *test,
   tp_svc_account_emit_account_property_changed (test->account_service, change);
   g_hash_table_remove_all (change);
 
-  test_proxy_run_until_dbus_queue_processed (test->account);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->account);
 
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 0);
   conn = tp_account_get_connection (test->account);

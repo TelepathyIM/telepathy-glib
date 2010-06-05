@@ -51,7 +51,7 @@ setup (Test *test,
   TpHandleRepoIface *contact_repo;
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   test->error = NULL;
 
@@ -62,8 +62,8 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   /* Create service-side Account object */
-  test->account_service = test_object_new_static_class (SIMPLE_TYPE_ACCOUNT,
-      NULL);
+  test->account_service = tp_tests_object_new_static_class (
+      SIMPLE_TYPE_ACCOUNT, NULL);
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 
@@ -87,7 +87,7 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   test->text_chan_service = TEST_TEXT_CHANNEL_NULL (
-      test_object_new_static_class (
+      tp_tests_object_new_static_class (
         TEST_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
@@ -104,7 +104,7 @@ setup (Test *test,
   g_free (chan_path);
 
   /* Create Service side ChannelDispatchOperation object */
-  test->cdo_service = test_object_new_static_class (
+  test->cdo_service = tp_tests_object_new_static_class (
       SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
       NULL);
   tp_dbus_daemon_register_object (test->dbus, CDO_PATH, test->cdo_service);
@@ -165,7 +165,8 @@ create_simple_approver (Test *test,
     TpSimpleApproverAddDispatchOperationImpl impl)
 {
   /* Create service-side Client object */
-  test->simple_approver = test_object_new_static_class (TP_TYPE_SIMPLE_APPROVER,
+  test->simple_approver = tp_tests_object_new_static_class (
+      TP_TYPE_SIMPLE_APPROVER,
       "dbus-daemon", test->dbus,
       "name", "MySimpleApprover",
       "uniquify-name", FALSE,
@@ -176,7 +177,7 @@ create_simple_approver (Test *test,
   g_assert (test->simple_approver != NULL);
 
   /* Create client-side Client object */
-  test->client = test_object_new_static_class (TP_TYPE_CLIENT,
+  test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
           "dbus-daemon", test->dbus,
           "bus-name", tp_base_client_get_bus_name (test->simple_approver),
           "object-path", tp_base_client_get_object_path (test->simple_approver),

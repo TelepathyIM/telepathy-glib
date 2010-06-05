@@ -59,7 +59,7 @@ test_self_handle (TpTestsSimpleConnection *service_conn,
 
   /* similar to /nick in IRC */
   tp_tests_simple_connection_set_identifier (service_conn, "myself@example.org");
-  test_proxy_run_until_dbus_queue_processed (client_conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
   g_assert_cmpuint (times, ==, 1);
 
   g_assert_cmpstr (tp_handle_inspect (contact_repo,
@@ -92,9 +92,9 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = TP_TESTS_SIMPLE_CONNECTION (test_object_new_static_class (
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
         TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",

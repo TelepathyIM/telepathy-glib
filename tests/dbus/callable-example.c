@@ -221,9 +221,10 @@ setup (Test *test,
   test->stream_states = g_hash_table_new (NULL, NULL);
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = EXAMPLE_CALLABLE_CONNECTION_MANAGER (test_object_new_static_class (
+  test->service_cm = EXAMPLE_CALLABLE_CONNECTION_MANAGER (
+      tp_tests_object_new_static_class (
         EXAMPLE_TYPE_CALLABLE_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);
@@ -236,7 +237,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "example_callable",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  test_proxy_run_until_prepared (test->cm, NULL);
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -254,7 +255,7 @@ setup (Test *test,
   g_assert_no_error (test->error);
   g_assert (test->conn != NULL);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  test_proxy_run_until_prepared (test->conn, conn_features);
+  tp_tests_proxy_run_until_prepared (test->conn, conn_features);
 
   test->self_handle = tp_connection_get_self_handle (test->conn);
   g_assert (test->self_handle != 0);
@@ -754,7 +755,7 @@ test_basics (Test *test,
 
   /* Immediately the call is accepted, the remote peer accepts our proposed
    * stream direction */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_DIRECTION_CHANGED);
@@ -937,7 +938,7 @@ test_basics (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -991,7 +992,7 @@ test_no_answer (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
@@ -1026,7 +1027,7 @@ test_no_answer (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -1074,7 +1075,7 @@ test_busy (Test *test,
 
   /* The last stream event should be the removal of the stream */
 
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
@@ -1130,7 +1131,7 @@ test_terminated_by_peer (Test *test,
 
   /* The last stream event should be the removal of the stream */
 
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
@@ -1170,7 +1171,7 @@ test_terminate_via_close (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
@@ -1191,7 +1192,7 @@ test_terminate_via_close (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -1236,7 +1237,7 @@ test_terminate_via_no_streams (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
@@ -1261,7 +1262,7 @@ test_terminate_via_no_streams (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -1462,7 +1463,7 @@ test_incoming (Test *test,
 
   /* Immediately the call is accepted, we accept the remote peer's proposed
    * stream direction */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   test_assert_uu_hash_contains (test->stream_directions, test->audio_stream_id,
       TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
@@ -1491,7 +1492,7 @@ test_incoming (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 }
 
@@ -1536,7 +1537,7 @@ teardown (Test *test,
   tp_clear_object (&test->service_cm);
 
   /* make sure any pending things have happened */
-  test_proxy_run_until_dbus_queue_processed (test->dbus);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
 
   tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);

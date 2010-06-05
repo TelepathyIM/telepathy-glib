@@ -69,7 +69,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (test->dbus != NULL);
 
   libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
@@ -86,7 +86,7 @@ setup (Test *test,
 
   test->cr = NULL;
 
-  test->cr_service = test_object_new_static_class (test_simple_cr_get_type (),
+  test->cr_service = tp_tests_object_new_static_class (test_simple_cr_get_type (),
       NULL);
   tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
       test->cr_service);
@@ -124,7 +124,7 @@ teardown (Test *test,
     }
 
   /* make sure any pending things have happened */
-  test_proxy_run_until_dbus_queue_processed (test->dbus);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
 
   g_object_unref (test->dbus);
   test->dbus = NULL;
@@ -173,7 +173,7 @@ test_crash (Test *test,
   tp_dbus_daemon_release_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, NULL);
 
-  test_proxy_run_until_dbus_queue_processed (test->cr);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
 
   g_assert (tp_proxy_get_invalidated (test->cr) == NULL);
 
@@ -182,7 +182,7 @@ test_crash (Test *test,
   dbus_g_connection_unref (test->private_conn);
   test->private_conn = NULL;
 
-  test_proxy_run_until_dbus_queue_processed (test->cr);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
 
   g_assert (tp_proxy_get_invalidated (test->cr) != NULL);
   g_assert (tp_proxy_get_invalidated (test->cr)->domain == TP_DBUS_ERRORS);
@@ -215,7 +215,7 @@ test_succeeded (Test *test,
 
   tp_svc_channel_request_emit_succeeded (test->cr_service);
 
-  test_proxy_run_until_dbus_queue_processed (test->cr);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
 
   g_assert (tp_proxy_get_invalidated (test->cr) != NULL);
   g_assert (tp_proxy_get_invalidated (test->cr)->domain == TP_DBUS_ERRORS);
@@ -247,7 +247,7 @@ test_failed (Test *test,
   tp_svc_channel_request_emit_failed (test->cr_service,
       TP_ERROR_STR_NOT_YOURS, "lalala");
 
-  test_proxy_run_until_dbus_queue_processed (test->cr);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
 
   g_assert (tp_proxy_get_invalidated (test->cr) != NULL);
   g_assert (tp_proxy_get_invalidated (test->cr)->domain == TP_ERRORS);

@@ -235,7 +235,7 @@ simple_client_new (TpDBusDaemon *dbus_daemon,
     const gchar *name,
     gboolean uniquify_name)
 {
-  return test_object_new_static_class (SIMPLE_TYPE_CLIENT,
+  return tp_tests_object_new_static_class (SIMPLE_TYPE_CLIENT,
       "dbus-daemon", dbus_daemon,
       "name", name,
       "uniquify-name", uniquify_name,

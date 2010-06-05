@@ -152,7 +152,7 @@ test_request_and_release (TpTestsSimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-  test_proxy_run_until_dbus_queue_processed (client_conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have been released */
 
@@ -256,7 +256,7 @@ test_request_hold_release (TpTestsSimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-  test_proxy_run_until_dbus_queue_processed (client_conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have not been released */
 
@@ -275,7 +275,7 @@ test_request_hold_release (TpTestsSimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-  test_proxy_run_until_dbus_queue_processed (client_conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have been released */
 
@@ -310,9 +310,9 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = TP_TESTS_SIMPLE_CONNECTION (test_object_new_static_class (
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
         TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",

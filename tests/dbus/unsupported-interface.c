@@ -75,7 +75,7 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
 
-  bus_daemon = test_dbus_daemon_dup_or_die ();
+  bus_daemon = tp_tests_dbus_daemon_dup_or_die ();
 
   /* this interface is automatically supported... */
   MYASSERT (tp_cli_dbus_daemon_run_list_names (bus_daemon, -1, NULL,
