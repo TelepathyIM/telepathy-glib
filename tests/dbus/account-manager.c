@@ -24,7 +24,7 @@ typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
 
-    SimpleAccountManager *service /* initialized in prepare_service */;
+    TpTestsSimpleAccountManager *service /* initialized in prepare_service */;
     TpAccountManager *am;
     TpAccount *account;
     gboolean prepared /* The result of prepare_finish */;
@@ -144,7 +144,7 @@ setup_service (Test *test,
           TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error));
 
   test->service = tp_tests_object_new_static_class (
-      SIMPLE_TYPE_ACCOUNT_MANAGER, NULL);
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, NULL);
   tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
       test->service);
 }
