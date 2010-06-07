@@ -3246,7 +3246,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
 }
 
 static gboolean
-tp_base_contact_list_check_before_change (TpBaseContactList *self,
+tp_base_contact_list_check_change (TpBaseContactList *self,
     const GArray *contacts_or_null,
     GError **error)
 {
@@ -3260,10 +3260,39 @@ tp_base_contact_list_check_before_change (TpBaseContactList *self,
         error))
     return FALSE;
 
+  return TRUE;
+}
+
+static gboolean
+tp_base_contact_list_check_list_change (TpBaseContactList *self,
+    const GArray *contacts_or_null,
+    GError **error)
+{
+  if (!tp_base_contact_list_check_change (self, contacts_or_null, error))
+    return FALSE;
+
   if (!tp_base_contact_list_can_change_subscriptions (self))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot change subscriptions");
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static gboolean
+tp_base_contact_list_check_group_change (TpBaseContactList *self,
+    const GArray *contacts_or_null,
+    GError **error)
+{
+  if (!tp_base_contact_list_check_change (self, contacts_or_null, error))
+    return FALSE;
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Cannot change group memberships");
       return FALSE;
     }
 
@@ -3294,7 +3323,7 @@ tp_base_contact_list_mixin_request_subscription (
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3318,7 +3347,7 @@ tp_base_contact_list_mixin_authorize_publication (
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3342,7 +3371,7 @@ tp_base_contact_list_mixin_remove_contacts (
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3366,7 +3395,7 @@ tp_base_contact_list_mixin_unsubscribe (
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3390,7 +3419,7 @@ tp_base_contact_list_mixin_unpublish (
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_list_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3551,15 +3580,8 @@ tp_base_contact_list_mixin_add_to_group (
   TpHandle group_handle = 0;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_group_change (self, contacts, &error))
     goto finally;
-
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Cannot add contacts to groups");
-      goto finally;
-    }
 
   /* get the handle so we can use the normalized name */
   group_handle = tp_handle_ensure (self->priv->group_repo, group, NULL,
@@ -3597,7 +3619,7 @@ tp_base_contact_list_mixin_remove_from_group (
   TpHandle group_handle;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
+  if (!tp_base_contact_list_check_group_change (self, contacts, &error))
     goto finally;
 
   /* get the handle so we can use the normalized name */
@@ -3606,13 +3628,6 @@ tp_base_contact_list_mixin_remove_from_group (
   /* removing from a group that doesn't exist is a no-op */
   if (group_handle == 0)
     goto finally;
-
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Cannot remove contacts from groups");
-      goto finally;
-    }
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
@@ -3637,7 +3652,7 @@ tp_base_contact_list_mixin_remove_group (
   GError *error = NULL;
   TpHandle group_handle;
 
-  if (!tp_base_contact_list_check_before_change (self, NULL, &error))
+  if (!tp_base_contact_list_check_group_change (self, NULL, &error))
     goto finally;
 
   /* get the handle so we can use the normalized name */
@@ -3646,13 +3661,6 @@ tp_base_contact_list_mixin_remove_group (
   /* removing from a group that doesn't exist is a no-op */
   if (group_handle == 0)
     goto finally;
-
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Cannot remove groups");
-      goto finally;
-    }
 
   tp_base_contact_list_remove_group (self, group);
 
