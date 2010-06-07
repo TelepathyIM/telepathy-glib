@@ -345,6 +345,10 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
 /**
  * TpMutableContactGroupListInterface:
  * @parent: the parent interface
+ * @get_group_storage: the implementation of
+ *  tp_base_contact_list_get_group_storage(); the default implementation is
+ *  %NULL, which results in %TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE being
+ *  advertised
  * @set_contact_groups: the implementation of
  *  tp_base_contact_list_set_contact_groups(); must always be implemented
  * @create_groups: the implementation of
@@ -711,6 +715,7 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->add_to_group != NULL);
       g_return_if_fail (iface->remove_from_group != NULL);
       g_return_if_fail (iface->remove_group != NULL);
+      g_return_if_fail (iface->get_group_storage != NULL);
     }
 
   _tp_base_connection_set_handle_repo (self->priv->conn, TP_HANDLE_TYPE_LIST,
@@ -3689,6 +3694,58 @@ tp_base_contact_list_mixin_list_iface_init (
 #undef IMPLEMENT
 }
 
+/**
+ * TpBaseContactListUIntFunc:
+ * @self: a contact list manager
+ *
+ * Signature of a virtual method that returns an unsigned integer result.
+ * These are used for feature-discovery.
+ *
+ * Returns: an unsigned integer result
+ */
+
+/**
+ * tp_base_contact_list_get_group_storage:
+ * @self: a contact list manager
+ *
+ * Return the extent to which user-defined groups can be set in this protocol.
+ * If this is %TP_CONTACT_METADATA_STORAGE_TYPE_NONE, methods that would alter
+ * the group list will not be called.
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method is meaningless, and always
+ * returns %TP_CONTACT_METADATA_STORAGE_TYPE_NONE.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method, implemented using
+ * #TpMutableContactGroupListInterface.get_group_storage.
+ *
+ * The default implementation is %NULL, which is treated as equivalent to an
+ * implementation that always returns %TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE.
+ * A custom implementation can also be used.
+ *
+ * Returns: %TRUE if groups are disjoint
+ */
+TpContactMetadataStorageType
+tp_base_contact_list_get_group_storage (TpBaseContactList *self)
+{
+  TpMutableContactGroupListInterface *iface;
+
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self),
+      TP_CONTACT_METADATA_STORAGE_TYPE_NONE);
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    return TP_CONTACT_METADATA_STORAGE_TYPE_NONE;
+
+  iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (iface != NULL, TP_CONTACT_METADATA_STORAGE_TYPE_NONE);
+
+  if (iface->get_group_storage == NULL)
+    return TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE;
+
+  return iface->get_group_storage (self);
+}
+
 static void
 tp_base_contact_list_mixin_set_contact_groups (
     TpSvcConnectionInterfaceContactGroups *svc,
@@ -4006,8 +4063,7 @@ tp_base_contact_list_get_group_dbus_property (GObject *conn,
 
     case GP_GROUP_STORAGE:
       g_return_if_fail (G_VALUE_HOLDS_UINT (value));
-      /* FIXME: set a real value */
-      g_value_set_uint (value, 0);
+      g_value_set_uint (value, tp_base_contact_list_get_group_storage (self));
       break;
 
     case GP_GROUPS:

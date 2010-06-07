@@ -4142,6 +4142,7 @@ TpBaseContactListGetContactsFunc
 tp_base_contact_list_get_contacts
 TpBaseContactListGetStatesFunc
 tp_base_contact_list_get_states
+TpBaseContactListUIntFunc
 <SUBSECTION changes>
 TP_TYPE_MUTABLE_CONTACT_LIST
 TpMutableContactListInterface
@@ -4183,6 +4184,7 @@ TpBaseContactListRemoveGroupFunc
 tp_base_contact_list_remove_group
 TpBaseContactListRenameGroupFunc
 tp_base_contact_list_rename_group
+tp_base_contact_list_get_group_storage
 <SUBSECTION blocking>
 TP_TYPE_BLOCKABLE_CONTACT_LIST
 TpBlockableContactListInterface

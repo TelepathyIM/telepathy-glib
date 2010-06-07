@@ -283,6 +283,12 @@ struct _TpContactGroupListInterface {
 
 /* ---- Implemented by subclasses for mutable ContactGroups ---- */
 
+typedef guint (*TpBaseContactListUIntFunc) (
+    TpBaseContactList *self);
+
+TpContactMetadataStorageType tp_base_contact_list_get_group_storage (
+    TpBaseContactList *self);
+
 typedef void (*TpBaseContactListSetContactGroupsFunc) (TpBaseContactList *self,
     TpHandle contact,
     const gchar * const *normalized_names,
@@ -353,6 +359,7 @@ struct _TpMutableContactGroupListInterface {
     TpBaseContactListRemoveGroupFunc remove_group;
     /* optional to implement */
     TpBaseContactListRenameGroupFunc rename_group;
+    TpBaseContactListUIntFunc get_group_storage;
 };
 
 /* ---- Mixin-like functionality for our parent TpBaseConnection ---- */

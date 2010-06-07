@@ -1332,6 +1332,12 @@ example_contact_list_manager_unblock_contacts (
   tp_handle_set_destroy (changed);
 }
 
+static guint
+example_contact_list_manager_get_group_storage (TpBaseContactList *manager)
+{
+  return TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE;
+}
+
 static GStrv
 example_contact_list_manager_get_groups (TpBaseContactList *manager)
 {
@@ -1500,4 +1506,5 @@ mutable_contact_group_list_iface_init (
   iface->create_groups = example_contact_list_manager_create_groups;
   iface->rename_group = example_contact_list_manager_rename_group;
   iface->set_contact_groups = example_contact_list_manager_set_contact_groups;
+  iface->get_group_storage = example_contact_list_manager_get_group_storage;
 }
