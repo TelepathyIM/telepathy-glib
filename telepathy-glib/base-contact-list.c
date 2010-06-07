@@ -3245,6 +3245,182 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
     }
 }
 
+static gboolean
+tp_base_contact_list_check_before_change (TpBaseContactList *self,
+    const GArray *contacts_or_null,
+    GError **error,
+    TpBaseContactListClass **cls_out)
+{
+  TpBaseContactListClass *cls;
+
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
+
+  if (!tp_base_contact_list_check_still_usable (self, error))
+    return FALSE;
+
+  if (contacts_or_null != NULL &&
+      !tp_handles_are_valid (self->priv->contact_repo, contacts_or_null, FALSE,
+        error))
+    return FALSE;
+
+  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  if (!tp_base_contact_list_can_change_subscriptions (self))
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Cannot change subscriptions");
+      return FALSE;
+    }
+
+  if (cls_out != NULL)
+    *cls_out = cls;
+
+  return TRUE;
+}
+
+/* Normally we'd use the return_from functions, but these methods all return
+ * void, and life's too short. */
+static void
+tp_base_contact_list_mixin_return_void (DBusGMethodInvocation *context,
+    const GError *error)
+{
+  if (error == NULL)
+    dbus_g_method_return (context);
+  else
+    dbus_g_method_return_error (context, error);
+}
+
+static void
+tp_base_contact_list_mixin_request_subscription (
+    TpSvcConnectionInterfaceContactList *svc,
+    const GArray *contacts,
+    const gchar *message,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  GError *error = NULL;
+  TpHandleSet *contacts_set;
+
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
+        &cls))
+    goto finally;
+
+  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts);
+  tp_base_contact_list_request_subscription (self, contacts_set, message);
+  tp_handle_set_destroy (contacts_set);
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
+tp_base_contact_list_mixin_authorize_publication (
+    TpSvcConnectionInterfaceContactList *svc,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  GError *error = NULL;
+  TpHandleSet *contacts_set;
+
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
+        &cls))
+    goto finally;
+
+  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts);
+  tp_base_contact_list_authorize_publication (self, contacts_set);
+  tp_handle_set_destroy (contacts_set);
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
+tp_base_contact_list_mixin_remove_contacts (
+    TpSvcConnectionInterfaceContactList *svc,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  GError *error = NULL;
+  TpHandleSet *contacts_set;
+
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
+        &cls))
+    goto finally;
+
+  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts);
+  tp_base_contact_list_remove_contacts (self, contacts_set);
+  tp_handle_set_destroy (contacts_set);
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
+tp_base_contact_list_mixin_unsubscribe (
+    TpSvcConnectionInterfaceContactList *svc,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  GError *error = NULL;
+  TpHandleSet *contacts_set;
+
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
+        &cls))
+    goto finally;
+
+  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts);
+  tp_base_contact_list_unsubscribe (self, contacts_set);
+  tp_handle_set_destroy (contacts_set);
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
+tp_base_contact_list_mixin_unpublish (
+    TpSvcConnectionInterfaceContactList *svc,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  GError *error = NULL;
+  TpHandleSet *contacts_set;
+
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
+        &cls))
+    goto finally;
+
+  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts);
+  tp_base_contact_list_unpublish (self, contacts_set);
+  tp_handle_set_destroy (contacts_set);
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
 typedef enum {
     LP_SUBSCRIPTIONS_PERSIST,
     LP_CAN_CHANGE_SUBSCRIPTIONS,
@@ -3372,14 +3548,11 @@ tp_base_contact_list_mixin_list_iface_init (
 #define IMPLEMENT(x) tp_svc_connection_interface_contact_list_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
   IMPLEMENT (get_contact_list_attributes);
-  /* FIXME: implement the other methods */
-#if 0
   IMPLEMENT (request_subscription);
   IMPLEMENT (authorize_publication);
   IMPLEMENT (remove_contacts);
   IMPLEMENT (unsubscribe);
   IMPLEMENT (unpublish);
-#endif
 #undef IMPLEMENT
 }
 
