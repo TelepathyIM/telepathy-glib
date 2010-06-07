@@ -3556,6 +3556,135 @@ tp_base_contact_list_mixin_list_iface_init (
 #undef IMPLEMENT
 }
 
+static void
+tp_base_contact_list_mixin_add_to_group (
+    TpSvcConnectionInterfaceContactGroups *svc,
+    const gchar *group,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  GError *error = NULL;
+  TpHandle group_handle = 0;
+  TpHandleSet *contacts_set;
+
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
+        &cls))
+    goto finally;
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Cannot add contacts to groups");
+      goto finally;
+    }
+
+  /* get the handle so we can use the normalized name */
+  group_handle = tp_handle_ensure (self->priv->group_repo, group, NULL,
+      &error);
+
+  /* if the group's name is syntactically invalid, just fail */
+  if (group_handle == 0)
+    goto finally;
+
+  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts);
+  tp_base_contact_list_add_to_group (self,
+      tp_handle_inspect (self->priv->group_repo, group_handle),
+      contacts_set);
+  tp_handle_set_destroy (contacts_set);
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+
+  if (group_handle != 0)
+    tp_handle_unref (self->priv->group_repo, group_handle);
+}
+
+static void
+tp_base_contact_list_mixin_remove_from_group (
+    TpSvcConnectionInterfaceContactGroups *svc,
+    const gchar *group,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  GError *error = NULL;
+  TpHandle group_handle;
+  TpHandleSet *contacts_set;
+
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
+        &cls))
+    goto finally;
+
+  /* get the handle so we can use the normalized name */
+  group_handle = tp_handle_lookup (self->priv->group_repo, group, NULL, NULL);
+
+  /* removing from a group that doesn't exist is a no-op */
+  if (group_handle == 0)
+    goto finally;
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Cannot remove contacts from groups");
+      goto finally;
+    }
+
+  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts);
+  tp_base_contact_list_remove_from_group (self,
+      tp_handle_inspect (self->priv->group_repo, group_handle),
+      contacts_set);
+  tp_handle_set_destroy (contacts_set);
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
+tp_base_contact_list_mixin_remove_group (
+    TpSvcConnectionInterfaceContactGroups *svc,
+    const gchar *group,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  GError *error = NULL;
+  TpHandle group_handle;
+
+  if (!tp_base_contact_list_check_before_change (self, NULL, &error,
+        &cls))
+    goto finally;
+
+  /* get the handle so we can use the normalized name */
+  group_handle = tp_handle_lookup (self->priv->group_repo, group, NULL, NULL);
+
+  /* removing from a group that doesn't exist is a no-op */
+  if (group_handle == 0)
+    goto finally;
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Cannot remove groups");
+      goto finally;
+    }
+
+  tp_base_contact_list_remove_group (self, group);
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
 typedef enum {
     GP_DISJOINT_GROUPS,
     GP_GROUP_STORAGE,
@@ -3670,9 +3799,11 @@ tp_base_contact_list_mixin_groups_iface_init (
 #if 0
   IMPLEMENT (set_contact_groups);
   IMPLEMENT (set_group_members);
+#endif
   IMPLEMENT (add_to_group);
   IMPLEMENT (remove_from_group);
   IMPLEMENT (remove_group);
+#if 0
   IMPLEMENT (rename_group);
 #endif
 #undef IMPLEMENT
