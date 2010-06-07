@@ -53,7 +53,7 @@ tp_tests_dbus_daemon_dup_or_die (void)
   TpDBusDaemon *d = tp_dbus_daemon_dup (NULL);
 
   /* In a shared library, this would be very bad (see fd.o #18832), but in a
-   * regression tp_tests that's going to be run under a temporary session bus,
+   * regression test that's going to be run under a temporary session bus,
    * it's just what we want. */
   if (d == NULL)
     {
