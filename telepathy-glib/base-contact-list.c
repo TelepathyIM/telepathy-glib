@@ -3568,6 +3568,71 @@ tp_base_contact_list_mixin_list_iface_init (
 }
 
 static void
+tp_base_contact_list_mixin_set_group_members (
+    TpSvcConnectionInterfaceContactGroups *svc,
+    const gchar *group,
+    const GArray *contacts,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  GError *error = NULL;
+  TpHandle group_handle = 0;
+  TpHandleSet *contacts_set = NULL;
+  gpointer c;
+  TpHandleSet *old_members = NULL;
+
+  if (!tp_base_contact_list_check_group_change (self, NULL, &error))
+    goto finally;
+
+  group_handle = tp_handle_ensure (self->priv->group_repo, group, NULL,
+      &error);
+
+  /* if the group's name is syntactically invalid, just fail */
+  if (group_handle == 0)
+    goto finally;
+
+  contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts);
+
+  /* implement "set group members" as "add new members, then delete
+   * everyone else" */
+
+  c = g_hash_table_lookup (self->priv->groups,
+      GUINT_TO_POINTER (group_handle));
+
+  if (c != NULL)
+    {
+      TpGroupMixin *mixin = TP_GROUP_MIXIN (c);
+
+      old_members = tp_handle_set_copy (mixin->members);
+      tp_intset_destroy (tp_handle_set_difference_update (old_members,
+          tp_handle_set_peek (contacts_set)));
+    }
+
+  tp_base_contact_list_add_to_group (self,
+      tp_handle_inspect (self->priv->group_repo, group_handle),
+      contacts_set);
+
+  if (old_members != NULL)
+    {
+      tp_base_contact_list_remove_from_group (self,
+          tp_handle_inspect (self->priv->group_repo, group_handle),
+          old_members);
+      tp_handle_set_destroy (old_members);
+    }
+
+  tp_handle_set_destroy (contacts_set);
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+
+  if (group_handle != 0)
+    tp_handle_unref (self->priv->group_repo, group_handle);
+}
+
+static void
 tp_base_contact_list_mixin_add_to_group (
     TpSvcConnectionInterfaceContactGroups *svc,
     const gchar *group,
@@ -3782,8 +3847,8 @@ tp_base_contact_list_mixin_groups_iface_init (
   /* FIXME: implement methods */
 #if 0
   IMPLEMENT (set_contact_groups);
-  IMPLEMENT (set_group_members);
 #endif
+  IMPLEMENT (set_group_members);
   IMPLEMENT (add_to_group);
   IMPLEMENT (remove_from_group);
   IMPLEMENT (remove_group);
