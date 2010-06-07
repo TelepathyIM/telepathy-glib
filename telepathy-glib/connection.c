@@ -636,6 +636,9 @@ get_self_handle (TpConnection *self)
       self, -1, got_self_handle, NULL, NULL, NULL);
 }
 
+/* Appending callbacks to self->priv->introspect_needed relies on this */
+G_STATIC_ASSERT (sizeof (TpConnectionProc) <= sizeof (gpointer));
+
 static void
 tp_connection_got_interfaces_cb (TpConnection *self,
                                  const gchar **interfaces,
@@ -663,7 +666,6 @@ tp_connection_got_interfaces_cb (TpConnection *self,
     }
 
   g_assert (self->priv->introspect_needed == NULL);
-  tp_verify_statement (sizeof (TpConnectionProc) <= sizeof (gpointer));
   self->priv->introspect_needed = g_list_append (self->priv->introspect_needed,
     get_self_handle);
 

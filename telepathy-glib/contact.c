@@ -980,6 +980,12 @@ struct _ContactsContext {
     guint next_index;
 };
 
+/* This code (and lots of telepathy-glib, really) won't work if this
+ * assertion fails, because we put function pointers in a GQueue. If anyone
+ * cares about platforms where this fails, fixing this would involve
+ * slice-allocating sizeof (GCallback) bytes repeatedly, and putting *those*
+ * in the queue. */
+G_STATIC_ASSERT (sizeof (GCallback) == sizeof (gpointer));
 
 static ContactsContext *
 contacts_context_new (TpConnection *connection,
@@ -1003,13 +1009,6 @@ contacts_context_new (TpConnection *connection,
   c->user_data = user_data;
   c->destroy = destroy;
   c->weak_object = weak_object;
-
-  /* This code (and lots of telepathy-glib, really) won't work if this
-   * assertion fails, because we put function pointers in a GQueue. If anyone
-   * cares about platforms where this fails, fixing this would involve
-   * slice-allocating sizeof (GCallback) bytes repeatedly, and putting *those*
-   * in the queue. */
-  tp_verify_statement (sizeof (GCallback) == sizeof (gpointer));
 
   g_queue_init (&c->todo);
 
