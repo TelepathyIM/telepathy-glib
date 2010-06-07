@@ -815,7 +815,8 @@ tp_connection_get_contact_attributes (TpConnection *self,
  * @timeout_ms: the timeout in milliseconds (using a large timeout is
  *  recommended)
  * @interfaces: a #GStrv of interfaces
- * @hold: if %TRUE, the callback will hold one reference to each valid handle
+ * @hold: if %TRUE, the callback will hold one reference to each handle it
+ *  receives
  * @callback: (type GObject.Callback): called on success or
  *  failure (unless @weak_object has become unreferenced)
  * @user_data: arbitrary user-supplied data
@@ -824,22 +825,15 @@ tp_connection_get_contact_attributes (TpConnection *self,
  * @weak_object: if not %NULL, an object to be weakly referenced: if it is
  *  destroyed, @callback will not be called
  *
- * Return (via a callback) any number of attributes of the given handles, and
- * if they are valid and @hold is TRUE, hold a reference to them.
+ * Return (via a callback) the contacts on the contact list and any number of
+ * their attributes, and if @hold is TRUE, hold a reference to them.
  *
- * This is a thin wrapper around the GetContactAttributes D-Bus method, and
- * should be used in preference to
- * tp_cli_connection_interface_contacts_get_contact_attributes(); mixing this
- * function, tp_connection_hold_handles(), tp_connection_unref_handles(), and
- * #TpContact with direct use of the RequestHandles, HoldHandles and
- * GetContactAttributes D-Bus methods is unwise, as #TpConnection and
- * #TpContact perform client-side reference counting of handles.
+ * This is a thin wrapper around the GetContactListAttributes D-Bus method,
+ * and should be used in preference to lower-level functions; it is similar
+ * to tp_connection_get_contact_attributes().
+ *
  * The #TpContact API provides a higher-level abstraction which should
  * usually be used instead.
- *
- * @callback will later be called with the attributes of those of the given
- * handles that were valid. Invalid handles are simply omitted from the
- * parameter to the callback.
  *
  * If @hold is %TRUE, the @callback is given one reference to each handle
  * that appears as a key in the callback's @attributes parameter.
