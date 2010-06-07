@@ -40,6 +40,29 @@
  * inside a connection manager. It can be used to implement the ContactList
  * D-Bus interface on the Connection.
  *
+ * Connections that use #TpBaseContactList must also have the #TpContactsMixin.
+ *
+ * To use the #TpBaseContactList subclass as a mixin, call
+ * tp_base_contact_list_mixin_class_init() after tp_contacts_mixin_class_init()
+ * in the #TpBaseConnection's #GTypeClass.class_init method, create a
+ * #TpBaseContactList in the #TpBaseConnectionClass.create_channel_managers
+ * method, then call tp_base_contact_list_register_with_contacts_mixin() after
+ * tp_contacts_mixin_init() in the #ObjectClass.constructor or
+ * #GObjectClass.constructed method.
+ *
+ * Also add the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
+ * interface to the #TpBaseConnectionClass.interfaces_always_present,
+ * and implement the %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST #GInterface
+ * by passing tp_base_contact_list_mixin_implement_list() to
+ * G_IMPLEMENT_INTERFACE().
+ *
+ * To support user-defined contact groups too, do the same, but additionally
+ * implement %TP_TYPE_CONTACT_GROUP_LIST in the #TpBaseContactList,
+ * add the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS
+ * interface to the #TpBaseConnectionClass.interfaces_always_present,
+ * and implement %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS using
+ * tp_base_contact_list_mixin_implement_groups().
+ *
  * In versions of the Telepathy D-Bus Interface Specification prior to
  * 0.19.UNRELEASED, this functionality was provided as a collection of
  * individual ContactList channels. As a result, this object also implements
