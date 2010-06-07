@@ -20,6 +20,7 @@
 #include <config.h>
 #include <telepathy-glib/base-contact-list.h>
 #include <telepathy-glib/base-contact-list-internal.h>
+#include <telepathy-glib/contacts-mixin.h>
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
@@ -3096,4 +3097,347 @@ void tp_base_contact_list_remove_group (TpBaseContactList *self,
   g_return_if_fail (iface->remove_group != NULL);
 
   iface->remove_group (self, group);
+}
+
+typedef enum {
+    LP_SUBSCRIPTIONS_PERSIST,
+    LP_CAN_CHANGE_SUBSCRIPTIONS,
+    LP_REQUEST_USES_MESSAGE,
+    NUM_LIST_PROPERTIES
+} ListProp;
+
+static TpDBusPropertiesMixinPropImpl known_list_props[] = {
+    { "SubscriptionsPersist", GINT_TO_POINTER (LP_SUBSCRIPTIONS_PERSIST), },
+    { "CanChangeSubscriptions", GINT_TO_POINTER (LP_CAN_CHANGE_SUBSCRIPTIONS) },
+    { "RequestUsesMessage", GINT_TO_POINTER (LP_REQUEST_USES_MESSAGE) },
+    { NULL }
+};
+
+static void
+tp_base_contact_list_get_list_dbus_property (GObject *conn,
+    GQuark interface G_GNUC_UNUSED,
+    GQuark name G_GNUC_UNUSED,
+    GValue *value,
+    gpointer data)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST);
+  ListProp p = GPOINTER_TO_INT (data);
+  TpBaseContactListClass *cls;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (tp_base_contact_list_check_still_usable (self, NULL));
+
+  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  switch (p)
+    {
+    case LP_SUBSCRIPTIONS_PERSIST:
+      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
+      g_value_set_boolean (value,
+          tp_base_contact_list_get_subscriptions_persist (self));
+      break;
+
+    case LP_CAN_CHANGE_SUBSCRIPTIONS:
+      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
+      g_value_set_boolean (value,
+          tp_base_contact_list_can_change_subscriptions (self));
+      break;
+
+    case LP_REQUEST_USES_MESSAGE:
+      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
+      g_value_set_boolean (value,
+          tp_base_contact_list_get_request_uses_message (self));
+      break;
+
+    default:
+      g_return_if_reached ();
+    }
+}
+
+static void
+tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
+  const GArray *contacts,
+  GHashTable *attributes_hash)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) obj, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  guint i;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (tp_base_contact_list_check_still_usable (self, NULL));
+
+  /* just omit the attributes if the contact list hasn't come in yet */
+  if (!self->priv->had_contact_list)
+    return;
+
+  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpPresenceState subscribe = TP_PRESENCE_STATE_NO;
+      TpPresenceState publish = TP_PRESENCE_STATE_NO;
+      gchar *publish_request = NULL;
+      TpHandle handle;
+
+      handle = g_array_index (contacts, TpHandle, i);
+
+      tp_base_contact_list_get_states (self, handle,
+          &subscribe, &publish, &publish_request);
+
+      tp_contacts_mixin_set_contact_attribute (attributes_hash,
+          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH,
+          tp_g_value_slice_new_uint (publish));
+
+      tp_contacts_mixin_set_contact_attribute (attributes_hash,
+          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE,
+          tp_g_value_slice_new_uint (subscribe));
+
+      if (tp_str_empty (publish_request) || publish != TP_PRESENCE_STATE_ASK)
+        {
+          g_free (publish_request);
+        }
+      else
+        {
+          tp_contacts_mixin_set_contact_attribute (attributes_hash,
+              handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST,
+              tp_g_value_slice_new_take_string (publish_request));
+        }
+    }
+}
+
+/**
+ * tp_base_contact_list_mixin_list_iface_init:
+ * @klass: the service-side D-Bus interface
+ *
+ * Use the #TpBaseContactList like a mixin, to implement the ContactList
+ * D-Bus interface.
+ *
+ * This function should be passed to G_IMPLEMENT_INTERFACE() for
+ * #TpSvcConnectionInterfaceContactList.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_base_contact_list_mixin_list_iface_init (
+    TpSvcConnectionInterfaceContactListClass *klass)
+{
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_list_implement_##x (\
+  klass, tp_base_contact_list_mixin_##x)
+  /* FIXME: implement methods */
+#if 0
+  IMPLEMENT (get_contact_list_attributes);
+  IMPLEMENT (request_subscription);
+  IMPLEMENT (authorize_publication);
+  IMPLEMENT (remove_contacts);
+  IMPLEMENT (unsubscribe);
+  IMPLEMENT (unpublish);
+#endif
+#undef IMPLEMENT
+}
+
+typedef enum {
+    GP_DISJOINT_GROUPS,
+    GP_GROUP_STORAGE,
+    GP_GROUPS,
+    NUM_GROUP_PROPERTIES
+} GroupProp;
+
+static TpDBusPropertiesMixinPropImpl known_group_props[] = {
+    { "DisjointGroups", GINT_TO_POINTER (GP_DISJOINT_GROUPS), },
+    { "GroupStorage", GINT_TO_POINTER (GP_GROUP_STORAGE) },
+    { "Groups", GINT_TO_POINTER (GP_GROUPS) },
+    { NULL }
+};
+
+static void
+tp_base_contact_list_get_group_dbus_property (GObject *conn,
+    GQuark interface G_GNUC_UNUSED,
+    GQuark name G_GNUC_UNUSED,
+    GValue *value,
+    gpointer data)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST);
+  GroupProp p = GPOINTER_TO_INT (data);
+  TpBaseContactListClass *cls;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
+  g_return_if_fail (tp_base_contact_list_check_still_usable (self, NULL));
+
+  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  switch (p)
+    {
+    case GP_DISJOINT_GROUPS:
+      g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
+      g_value_set_boolean (value,
+          tp_base_contact_list_has_disjoint_groups (self));
+      break;
+
+    case GP_GROUP_STORAGE:
+      g_return_if_fail (G_VALUE_HOLDS_UINT (value));
+      /* FIXME: set a real value */
+      g_value_set_uint (value, 0);
+      break;
+
+    case GP_GROUPS:
+      g_return_if_fail (G_VALUE_HOLDS (value, G_TYPE_STRV));
+
+      if (self->priv->had_contact_list)
+        g_value_take_boxed (value, tp_base_contact_list_get_groups (self));
+
+      break;
+
+    default:
+      g_return_if_reached ();
+    }
+}
+
+static void
+tp_base_contact_list_fill_groups_contact_attributes (GObject *obj,
+  const GArray *contacts,
+  GHashTable *attributes_hash)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) obj, TP_TYPE_BASE_CONTACT_LIST);
+  TpBaseContactListClass *cls;
+  guint i;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
+  g_return_if_fail (tp_base_contact_list_check_still_usable (self, NULL));
+
+  /* just omit the attributes if the contact list hasn't come in yet */
+  if (!self->priv->had_contact_list)
+    return;
+
+  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpHandle handle;
+
+      handle = g_array_index (contacts, TpHandle, i);
+
+      tp_contacts_mixin_set_contact_attribute (attributes_hash,
+          handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS,
+          tp_g_value_slice_new_take_boxed (G_TYPE_STRV,
+            tp_base_contact_list_get_contact_groups (self, handle)));
+    }
+}
+
+/**
+ * tp_base_contact_list_mixin_groups_iface_init:
+ * @klass: the service-side D-Bus interface
+ *
+ * Use the #TpBaseContactList like a mixin, to implement the ContactGroups
+ * D-Bus interface.
+ *
+ * This function should be passed to G_IMPLEMENT_INTERFACE() for
+ * #TpSvcConnectionInterfaceContactGroups.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_base_contact_list_mixin_groups_iface_init (
+    TpSvcConnectionInterfaceContactGroupsClass *klass)
+{
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_groups_implement_##x (\
+  klass, tp_base_contact_list_mixin_##x)
+  /* FIXME: implement methods */
+#if 0
+  IMPLEMENT (set_contact_groups);
+  IMPLEMENT (set_group_members);
+  IMPLEMENT (add_to_group);
+  IMPLEMENT (remove_from_group);
+  IMPLEMENT (remove_group);
+  IMPLEMENT (rename_group);
+#endif
+#undef IMPLEMENT
+}
+
+/**
+ * tp_base_contact_list_mixin_class_init:
+ * @cls: A subclass of #TpBaseConnection that has a #TpContactsMixinClass,
+ *  and implements #TpSvcConnectionInterfaceContactList using
+ *  #TpBaseContactList
+ *
+ * Register the #TpBaseContactList to be used like a mixin in @cls.
+ * Before this function is called, the #TpContactsMixin must be initialized
+ * with tp_contact_list_mixin_class_init().
+ *
+ * If the connection implements #TpSvcConnectionInterfaceContactGroups, this
+ * function automatically sets up that interface as well as ContactList.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
+{
+  GType type = G_OBJECT_CLASS_TYPE (cls);
+  GObjectClass *obj_cls = (GObjectClass *) cls;
+
+  g_return_if_fail (TP_IS_BASE_CONNECTION_CLASS (cls));
+  g_return_if_fail (TP_CONTACTS_MIXIN_CLASS (cls) != NULL);
+  g_return_if_fail (g_type_is_a (type,
+        TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST));
+
+  tp_dbus_properties_mixin_implement_interface (obj_cls,
+      TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST,
+      tp_base_contact_list_get_list_dbus_property,
+      NULL, known_list_props);
+
+  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS))
+    {
+      tp_dbus_properties_mixin_implement_interface (obj_cls,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS,
+          tp_base_contact_list_get_group_dbus_property,
+          NULL, known_group_props);
+    }
+}
+
+/**
+ * tp_base_contact_list_mixin_register_with_contacts_mixin:
+ * @conn: An instance of #TpBaseConnection that uses a #TpContactsMixin,
+ *  and implements #TpSvcConnectionInterfaceContactList using
+ *  #TpBaseContactList
+ *
+ * Register the ContactList interface with the Contacts interface to make it
+ * inspectable. Before this function is called, the #TpContactsMixin must be
+ * initialized with tp_contact_list_mixin_init(), and @conn must have a
+ * #TpBaseContactList in its list of channel managers (by creating it in
+ * its #TpBaseConnectionClass.create_channel_managers implementation).
+ *
+ * If the connection implements #TpSvcConnectionInterfaceContactGroups, this
+ * function automatically also registers the ContactGroups interface with the
+ * Contacts interface.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_base_contact_list_mixin_register_with_contacts_mixin (
+    TpBaseConnection *conn)
+{
+  GType type = G_OBJECT_TYPE (conn);
+  GObject *object = (GObject *) conn;
+
+  g_return_if_fail (TP_IS_BASE_CONNECTION (conn));
+  g_return_if_fail (_tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST) != NULL);
+  g_return_if_fail (g_type_is_a (type,
+        TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST));
+
+  tp_contacts_mixin_add_contact_attributes_iface (object,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
+      tp_base_contact_list_fill_list_contact_attributes);
+
+  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS))
+    {
+      tp_contacts_mixin_add_contact_attributes_iface (object,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+          tp_base_contact_list_fill_groups_contact_attributes);
+    }
 }

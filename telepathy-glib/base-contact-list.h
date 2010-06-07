@@ -23,7 +23,9 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 
+#include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/handle-repo.h>
+#include <telepathy-glib/svc-connection.h>
 
 G_BEGIN_DECLS
 
@@ -331,6 +333,17 @@ struct _TpMutableContactGroupListInterface {
     TpBaseContactListGroupContactsFunc remove_from_group;
     TpBaseContactListRemoveGroupFunc remove_group;
 };
+
+/* ---- Mixin-like functionality for our parent TpBaseConnection ---- */
+
+void tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls);
+void tp_base_contact_list_mixin_register_with_contacts_mixin (
+    TpBaseConnection *conn);
+void tp_base_contact_list_mixin_list_iface_init (
+    TpSvcConnectionInterfaceContactListClass *klass);
+
+void tp_base_contact_list_mixin_groups_iface_init (
+    TpSvcConnectionInterfaceContactGroupsClass *klass);
 
 G_END_DECLS
 
