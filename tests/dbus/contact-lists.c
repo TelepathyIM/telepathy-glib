@@ -762,7 +762,7 @@ test_contact_list_attrs (Test *test,
 
 static void
 test_accept_publish_request (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -776,8 +776,14 @@ test_accept_publish_request (Test *test,
         test->wim));
 
   g_array_append_val (test->arr, test->wim);
-  tp_cli_channel_interface_group_run_add_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_authorize_publication (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -801,7 +807,7 @@ test_accept_publish_request (Test *test,
 
 static void
 test_reject_publish_request (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -815,8 +821,27 @@ test_reject_publish_request (Test *test,
         test->wim));
 
   g_array_append_val (test->arr, test->wim);
-  tp_cli_channel_interface_group_run_remove_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    {
+      tp_cli_channel_interface_group_run_remove_members (test->publish,
+          -1, test->arr, "", &error, NULL);
+    }
+  else if (!tp_strdiff (mode, "unpublish"))
+    {
+      /* directly equivalent, but in practice people won't do this */
+      tp_cli_connection_interface_contact_list_run_unpublish (
+          test->conn, -1, test->arr, &error, NULL);
+    }
+  else
+    {
+      /* this isn't directly equivalent, but in practice it's what people
+       * will do */
+      tp_cli_connection_interface_contact_list_run_remove_contacts (
+          test->conn, -1, test->arr, &error, NULL);
+    }
+
+  g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
    * removal-notification, too */
@@ -831,15 +856,20 @@ test_reject_publish_request (Test *test,
         test->wim));
 
   g_assert_cmpuint (test->log->len, ==, 1);
-  test_assert_one_contact_changed (test, 0, test->wim, TP_PRESENCE_STATE_NO,
-      TP_PRESENCE_STATE_NO, "");
+
+  if (!tp_strdiff (mode, "old") || !tp_strdiff (mode, "unpublish"))
+    test_assert_one_contact_changed (test, 0, test->wim, TP_PRESENCE_STATE_NO,
+        TP_PRESENCE_STATE_NO, "");
+  else
+    test_assert_one_contact_removed (test, 0, test->wim);
+
   test_assert_contact_state (test, test->wim,
       TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
 }
 
 static void
 test_add_to_publish_pre_approve (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -857,8 +887,13 @@ test_add_to_publish_pre_approve (Test *test,
         tp_channel_group_get_local_pending (test->publish),
         test->ninja));
 
-  tp_cli_channel_interface_group_run_add_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_authorize_publication (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   g_assert (!tp_intset_is_member (
@@ -866,8 +901,14 @@ test_add_to_publish_pre_approve (Test *test,
         test->ninja));
 
   /* the example CM's fake contacts accept requests that contain "please" */
-  tp_cli_channel_interface_group_run_add_members (test->subscribe,
-      -1, test->arr, "Please may I see your presence?", &error, NULL);
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->subscribe,
+        -1, test->arr, "Please may I see your presence?", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_request_subscription (
+        test->conn, -1, test->arr, "Please may I see your presence?", &error,
+        NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -923,7 +964,7 @@ test_add_to_publish_pre_approve (Test *test,
 
 static void
 test_add_to_publish_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -937,8 +978,14 @@ test_add_to_publish_no_op (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_add_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_authorize_publication (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   g_assert (tp_intset_is_member (
@@ -952,7 +999,7 @@ test_add_to_publish_no_op (Test *test,
 
 static void
 test_remove_from_publish (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -966,8 +1013,14 @@ test_remove_from_publish (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_remove_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unpublish (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -1003,7 +1056,7 @@ test_remove_from_publish (Test *test,
 
 static void
 test_remove_from_publish_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1017,8 +1070,14 @@ test_remove_from_publish_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unpublish (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   g_assert_cmpuint (test->log->len, ==, 0);
@@ -1028,7 +1087,7 @@ test_remove_from_publish_no_op (Test *test,
 
 static void
 test_add_to_stored (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1045,8 +1104,26 @@ test_add_to_stored (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->stored,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    {
+      tp_cli_channel_interface_group_run_add_members (test->stored,
+          -1, test->arr, "", &error, NULL);
+    }
+  else
+    {
+      /* there's no specific API for adding contacts to stored (it's not a
+       * very useful action in general), but setting an alias has it as a
+       * side-effect */
+      GHashTable *table = g_hash_table_new (NULL, NULL);
+
+      g_hash_table_insert (table, GUINT_TO_POINTER (test->ninja),
+          "The Wee Ninja");
+      tp_cli_connection_interface_aliasing_run_set_aliases (test->conn,
+          -1, table, &error, NULL);
+      g_hash_table_unref (table);
+    }
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -1074,7 +1151,7 @@ test_add_to_stored (Test *test,
 
 static void
 test_add_to_stored_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1088,8 +1165,26 @@ test_add_to_stored_no_op (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_add_members (test->stored,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    {
+      tp_cli_channel_interface_group_run_add_members (test->stored,
+          -1, test->arr, "", &error, NULL);
+    }
+  else
+    {
+      /* there's no specific API for adding contacts to stored (it's not a
+       * very useful action in general), but setting an alias has it as a
+       * side-effect */
+      GHashTable *table = g_hash_table_new (NULL, NULL);
+
+      g_hash_table_insert (table, GUINT_TO_POINTER (test->sjoerd),
+          "Sjoerd");
+      tp_cli_connection_interface_aliasing_run_set_aliases (test->conn,
+          -1, table, &error, NULL);
+      g_hash_table_unref (table);
+    }
+
   g_assert_no_error (error);
 
   g_assert_cmpuint (test->log->len, ==, 0);
@@ -1099,7 +1194,7 @@ test_add_to_stored_no_op (Test *test,
 
 static void
 test_remove_from_stored (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1113,8 +1208,14 @@ test_remove_from_stored (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_remove_members (test->stored,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->stored,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+        -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -1137,7 +1238,7 @@ test_remove_from_stored (Test *test,
 
 static void
 test_remove_from_stored_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1151,8 +1252,14 @@ test_remove_from_stored_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->stored,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->stored,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+        -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   g_assert_cmpuint (test->log->len, ==, 0);
@@ -1162,7 +1269,7 @@ test_remove_from_stored_no_op (Test *test,
 
 static void
 test_accept_subscribe_request (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1182,8 +1289,15 @@ test_accept_subscribe_request (Test *test,
 
   /* the example CM's fake contacts accept requests that contain "please" */
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->subscribe,
-      -1, test->arr, "Please may I see your presence?", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->subscribe,
+        -1, test->arr, "Please may I see your presence?", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_request_subscription (
+        test->conn, -1, test->arr, "Please may I see your presence?",
+        &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -1240,7 +1354,7 @@ test_accept_subscribe_request (Test *test,
 
 static void
 test_reject_subscribe_request (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1260,8 +1374,15 @@ test_reject_subscribe_request (Test *test,
   /* the example CM's fake contacts reject requests that don't contain
    * "please" */
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->subscribe,
-      -1, test->arr, "I demand to see your presence", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->subscribe,
+        -1, test->arr, "I demand to see your presence?", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_request_subscription (
+        test->conn, -1, test->arr, "I demand to see your presence?",
+        &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -1309,7 +1430,7 @@ test_reject_subscribe_request (Test *test,
 
 static void
 test_remove_from_subscribe (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1324,8 +1445,14 @@ test_remove_from_subscribe (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_remove_members (test->subscribe,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->subscribe,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unsubscribe (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -1346,7 +1473,7 @@ test_remove_from_subscribe (Test *test,
 
 static void
 test_remove_from_subscribe_pending (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1361,8 +1488,14 @@ test_remove_from_subscribe_pending (Test *test,
         test->helen));
 
   g_array_append_val (test->arr, test->helen);
-  tp_cli_channel_interface_group_run_remove_members (test->subscribe,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->subscribe,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unsubscribe (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -1386,7 +1519,7 @@ test_remove_from_subscribe_pending (Test *test,
 
 static void
 test_remove_from_subscribe_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -1400,8 +1533,14 @@ test_remove_from_subscribe_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->subscribe,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->subscribe,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unsubscribe (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   g_assert_cmpuint (test->log->len, ==, 0);
@@ -1731,6 +1870,8 @@ main (int argc,
       Test, NULL, setup, test_accept_publish_request, teardown);
   g_test_add ("/contact-lists/reject-publish-request",
       Test, NULL, setup, test_reject_publish_request, teardown);
+  g_test_add ("/contact-lists/reject-publish-request/unpublish",
+      Test, "unpublish", setup, test_reject_publish_request, teardown);
   g_test_add ("/contact-lists/add-to-publish/pre-approve",
       Test, NULL, setup, test_add_to_publish_pre_approve, teardown);
   g_test_add ("/contact-lists/add-to-publish/no-op",
@@ -1739,6 +1880,20 @@ main (int argc,
       Test, NULL, setup, test_remove_from_publish, teardown);
   g_test_add ("/contact-lists/remove-from-publish/no-op",
       Test, NULL, setup, test_remove_from_publish_no_op, teardown);
+
+  g_test_add ("/contact-lists/accept-publish-request/old",
+      Test, "old", setup, test_accept_publish_request, teardown);
+  g_test_add ("/contact-lists/reject-publish-request/old",
+      Test, "old", setup, test_reject_publish_request, teardown);
+  g_test_add ("/contact-lists/add-to-publish/pre-approve/old",
+      Test, "old", setup, test_add_to_publish_pre_approve, teardown);
+  g_test_add ("/contact-lists/add-to-publish/no-op/old",
+      Test, "old", setup, test_add_to_publish_no_op, teardown);
+  g_test_add ("/contact-lists/remove-from-publish/old",
+      Test, "old", setup, test_remove_from_publish, teardown);
+  g_test_add ("/contact-lists/remove-from-publish/no-op/old",
+      Test, "old", setup, test_remove_from_publish_no_op, teardown);
+
   g_test_add ("/contact-lists/add-to-stored",
       Test, NULL, setup, test_add_to_stored, teardown);
   g_test_add ("/contact-lists/add-to-stored/no-op",
@@ -1747,6 +1902,16 @@ main (int argc,
       Test, NULL, setup, test_remove_from_stored, teardown);
   g_test_add ("/contact-lists/remove-from-stored/no-op",
       Test, NULL, setup, test_remove_from_stored_no_op, teardown);
+
+  g_test_add ("/contact-lists/add-to-stored/old",
+      Test, "old", setup, test_add_to_stored, teardown);
+  g_test_add ("/contact-lists/add-to-stored/no-op/old",
+      Test, "old", setup, test_add_to_stored_no_op, teardown);
+  g_test_add ("/contact-lists/remove-from-stored/old",
+      Test, "old", setup, test_remove_from_stored, teardown);
+  g_test_add ("/contact-lists/remove-from-stored/no-op/old",
+      Test, "old", setup, test_remove_from_stored_no_op, teardown);
+
   g_test_add ("/contact-lists/accept-subscribe-request",
       Test, NULL, setup, test_accept_subscribe_request, teardown);
   g_test_add ("/contact-lists/reject-subscribe-request",
@@ -1757,6 +1922,17 @@ main (int argc,
       Test, NULL, setup, test_remove_from_subscribe_pending, teardown);
   g_test_add ("/contact-lists/remove-from-subscribe/no-op",
       Test, NULL, setup, test_remove_from_subscribe_no_op, teardown);
+
+  g_test_add ("/contact-lists/accept-subscribe-request/old",
+      Test, "old", setup, test_accept_subscribe_request, teardown);
+  g_test_add ("/contact-lists/reject-subscribe-request/old",
+      Test, "old", setup, test_reject_subscribe_request, teardown);
+  g_test_add ("/contact-lists/remove-from-subscribe/old",
+      Test, "old", setup, test_remove_from_subscribe, teardown);
+  g_test_add ("/contact-lists/remove-from-subscribe/pending/old",
+      Test, "old", setup, test_remove_from_subscribe_pending, teardown);
+  g_test_add ("/contact-lists/remove-from-subscribe/no-op/old",
+      Test, "old", setup, test_remove_from_subscribe_no_op, teardown);
 
   g_test_add ("/contact-lists/add-to-group",
       Test, NULL, setup, test_add_to_group, teardown);
