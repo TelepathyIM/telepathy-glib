@@ -10,8 +10,8 @@
     <title>Public API</title>
 
     <xi:include href="xml/log-manager.xml"/>
-    <xi:include href="xml/log-entry.xml"/>
-    <xi:include href="xml/log-entry-text.xml"/>
+    <xi:include href="xml/entry.xml"/>
+    <xi:include href="xml/entry-text.xml"/>
     <xi:include href="xml/contact.xml"/>
     <xi:include href="xml/conf.xml"/>
   </chapter>

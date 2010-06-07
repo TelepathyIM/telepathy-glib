@@ -35,8 +35,8 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
-#include <telepathy-logger/log-entry.h>
-#include <telepathy-logger/log-entry-internal.h>
+#include <telepathy-logger/entry.h>
+#include <telepathy-logger/entry-internal.h>
 #include <telepathy-logger/log-store-internal.h>
 #include <telepathy-logger/log-store-xml-internal.h>
 #include <telepathy-logger/log-store-sqlite-internal.h>

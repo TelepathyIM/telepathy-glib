@@ -19,8 +19,8 @@
  */
 
 #include "config.h"
-#include "log-entry.h"
-#include "log-entry-internal.h"
+#include "entry.h"
+#include "entry-internal.h"
 
 #include <glib.h>
 #include <telepathy-glib/util.h>
@@ -32,7 +32,7 @@
 #include <telepathy-logger/util-internal.h>
 
 /**
- * SECTION:log-entry
+ * SECTION:entry
  * @title: TplLogEntry
  * @short_description: Abstract representation of a log entry
  * @see_also: #TplLogEntryText and other subclasses when they'll exist

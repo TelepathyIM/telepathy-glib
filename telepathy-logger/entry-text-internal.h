@@ -22,8 +22,8 @@
 #ifndef __TPL_LOG_ENTRY_TEXT_INTERNAL_H__
 #define __TPL_LOG_ENTRY_TEXT_INTERNAL_H__
 
-#include <telepathy-logger/log-entry-text.h>
-#include <telepathy-logger/log-entry-internal.h>
+#include <telepathy-logger/entry-text.h>
+#include <telepathy-logger/entry-internal.h>
 #include <telepathy-logger/channel-text-internal.h>
 
 G_BEGIN_DECLS

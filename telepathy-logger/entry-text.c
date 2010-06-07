@@ -20,14 +20,14 @@
  */
 
 #include "config.h"
-#include "log-entry-text.h"
-#include "log-entry-text-internal.h"
+#include "entry-text.h"
+#include "entry-text-internal.h"
 
 #include <glib-object.h>
 #include <telepathy-glib/util.h>
 
-#include <telepathy-logger/log-entry.h>
-#include <telepathy-logger/log-entry-internal.h>
+#include <telepathy-logger/entry.h>
+#include <telepathy-logger/entry-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug-internal.h>

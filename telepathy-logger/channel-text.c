@@ -29,9 +29,9 @@
 
 #include <telepathy-logger/channel-internal.h>
 #include <telepathy-logger/observer-internal.h>
-#include <telepathy-logger/log-entry-internal.h>
-#include <telepathy-logger/log-entry-text.h>
-#include <telepathy-logger/log-entry-text-internal.h>
+#include <telepathy-logger/entry-internal.h>
+#include <telepathy-logger/entry-text.h>
+#include <telepathy-logger/entry-text-internal.h>
 #include <telepathy-logger/log-manager-internal.h>
 #include <telepathy-logger/log-store-sqlite-internal.h>
 

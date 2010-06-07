@@ -40,9 +40,9 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/util.h>
 
-#include <telepathy-logger/log-entry-internal.h>
-#include <telepathy-logger/log-entry-text.h>
-#include <telepathy-logger/log-entry-text-internal.h>
+#include <telepathy-logger/entry-internal.h>
+#include <telepathy-logger/entry-text.h>
+#include <telepathy-logger/entry-text-internal.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store-internal.h>
 

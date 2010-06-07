@@ -27,9 +27,9 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <sqlite3.h>
 
-#include "log-entry-internal.h"
-#include "log-entry-text.h"
-#include "log-entry-text-internal.h"
+#include "entry-internal.h"
+#include "entry-text.h"
+#include "entry-text-internal.h"
 #include "log-store-sqlite-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE

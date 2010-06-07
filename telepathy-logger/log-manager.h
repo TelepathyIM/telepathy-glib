@@ -28,7 +28,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/account.h>
 
-#include <telepathy-logger/log-entry.h>
+#include <telepathy-logger/entry.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_MANAGER  (tpl_log_manager_get_type ())
