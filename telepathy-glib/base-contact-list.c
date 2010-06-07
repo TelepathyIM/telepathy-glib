@@ -29,6 +29,7 @@
 
 #include <telepathy-glib/base-connection-internal.h>
 #include <telepathy-glib/contact-list-channel-internal.h>
+#include <telepathy-glib/contacts-mixin-internal.h>
 #include <telepathy-glib/handle-repo-internal.h>
 
 /**
@@ -213,6 +214,9 @@ struct _TpBaseContactListPrivate
    * This becomes NULL when the contact list has been downloaded. */
   GHashTable *channel_requests;
 
+  /* queue of ListRequest representing GetContactListAttributes calls */
+  GQueue list_requests;
+
   gulong status_changed_id;
 
   /* TRUE if @conn implements TpSvcConnectionInterface$FOO - used to
@@ -382,6 +386,63 @@ tp_base_contact_list_check_still_usable (TpBaseContactList *self,
   return (self->priv->conn != NULL);
 }
 
+typedef struct {
+    gchar **interfaces;
+    gboolean hold;
+    DBusGMethodInvocation *context;
+} ListRequest;
+
+static void
+list_request_free (ListRequest *request)
+{
+  g_strfreev (request->interfaces);
+  g_slice_free (ListRequest, request);
+}
+
+static void
+tp_base_contact_list_complete_requests (TpBaseContactList *self)
+{
+  TpHandleSet *set;
+  GArray *contacts;
+  GError *error = NULL;
+  ListRequest *request;
+
+  if (!tp_base_contact_list_check_still_usable (self, &error))
+    {
+      for (request = g_queue_pop_head (&self->priv->list_requests);
+          request != NULL;
+          request = g_queue_pop_head (&self->priv->list_requests))
+        {
+          dbus_g_method_return_error (request->context, error);
+          list_request_free (request);
+        }
+
+      g_clear_error (&error);
+      return;
+    }
+
+  g_assert (self->priv->had_contact_list);
+  g_assert (TP_CONTACTS_MIXIN (self->priv->conn) != NULL);
+
+  set = tp_base_contact_list_get_contacts (self);
+  contacts = tp_handle_set_to_array (set);
+
+  for (request = g_queue_pop_head (&self->priv->list_requests);
+      request != NULL;
+      request = g_queue_pop_head (&self->priv->list_requests))
+    {
+      /* GetContactListAttributes returns the same data type as
+       * GetContactAttributes, so this is OK to do. */
+      _tp_contacts_mixin_get_contact_attributes (self->priv->conn,
+          contacts, (const gchar **) request->interfaces,
+          request->hold, request->context);
+      list_request_free (request);
+    }
+
+  g_array_free (contacts, TRUE);
+  tp_handle_set_destroy (set);
+}
+
 static void
 tp_base_contact_list_free_contents (TpBaseContactList *self)
 {
@@ -445,6 +506,8 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
       self->priv->svc_contact_list = FALSE;
       self->priv->svc_contact_groups = FALSE;
     }
+
+  tp_base_contact_list_complete_requests (self);
 }
 
 static void
@@ -1405,6 +1468,8 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   g_assert (g_hash_table_size (self->priv->channel_requests) == 0);
   g_hash_table_destroy (self->priv->channel_requests);
   self->priv->channel_requests = NULL;
+
+  tp_base_contact_list_complete_requests (self);
 }
 
 #ifdef ENABLE_DEBUG
@@ -3122,6 +3187,64 @@ void tp_base_contact_list_remove_group (TpBaseContactList *self,
   iface->remove_group (self, group);
 }
 
+static void
+tp_base_contact_list_mixin_get_contact_list_attributes (
+    TpSvcConnectionInterfaceContactList *svc,
+    const gchar **interfaces,
+    gboolean hold,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpContactsMixin *contacts_mixin = TP_CONTACTS_MIXIN (svc);
+  ListRequest *request;
+  GPtrArray *pa;
+  const gchar * empty_strv[] = { NULL };
+  const gchar **p;
+  gboolean have_cl = FALSE;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (contacts_mixin != NULL);
+
+  request = g_slice_new0 (ListRequest);
+  request->hold = hold;
+  request->context = context;
+
+  if (interfaces == NULL)
+    interfaces = empty_strv;
+
+  pa = g_ptr_array_sized_new (g_strv_length ((GStrv) interfaces) + 2);
+
+  for (p = interfaces; *p != NULL; p++)
+    {
+      g_ptr_array_add (pa, g_strdup (*p));
+
+      if (!tp_strdiff (*p, TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST))
+        have_cl = TRUE;
+    }
+
+  /* ContactList is implicitly included */
+  if (!have_cl)
+    {
+      g_ptr_array_add (pa,
+          g_strdup (TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST));
+    }
+
+  g_ptr_array_add (pa, NULL);
+
+  request->interfaces = (GStrv) g_ptr_array_free (pa, FALSE);
+  g_queue_push_tail (&self->priv->list_requests, request);
+
+  /* if we can already reply, do so; otherwise, we'll reply after
+   * disconnection or after the contact list arrives */
+  if (!tp_base_contact_list_check_still_usable (self, NULL) ||
+      self->priv->had_contact_list)
+    {
+      tp_base_contact_list_complete_requests (self);
+      g_assert (self->priv->list_requests.length == 0);
+    }
+}
+
 typedef enum {
     LP_SUBSCRIPTIONS_PERSIST,
     LP_CAN_CHANGE_SUBSCRIPTIONS,
@@ -3248,9 +3371,9 @@ tp_base_contact_list_mixin_list_iface_init (
 {
 #define IMPLEMENT(x) tp_svc_connection_interface_contact_list_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
-  /* FIXME: implement methods */
-#if 0
   IMPLEMENT (get_contact_list_attributes);
+  /* FIXME: implement the other methods */
+#if 0
   IMPLEMENT (request_subscription);
   IMPLEMENT (authorize_publication);
   IMPLEMENT (remove_contacts);
