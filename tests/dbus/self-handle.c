@@ -30,7 +30,7 @@ on_self_handle_changed (TpConnection *client_conn,
 }
 
 static void
-test_self_handle (SimpleConnection *service_conn,
+test_self_handle (TpTestsSimpleConnection *service_conn,
                   TpConnection *client_conn)
 {
   TpBaseConnection *service_conn_as_base = TP_BASE_CONNECTION (service_conn);
@@ -58,8 +58,8 @@ test_self_handle (SimpleConnection *service_conn,
   g_assert_cmpuint (times, ==, 0);
 
   /* similar to /nick in IRC */
-  simple_connection_set_identifier (service_conn, "myself@example.org");
-  test_proxy_run_until_dbus_queue_processed (client_conn);
+  tp_tests_simple_connection_set_identifier (service_conn, "myself@example.org");
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
   g_assert_cmpuint (times, ==, 1);
 
   g_assert_cmpstr (tp_handle_inspect (contact_repo,
@@ -81,7 +81,7 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
@@ -92,10 +92,10 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));

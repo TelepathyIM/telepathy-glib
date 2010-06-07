@@ -9,43 +9,43 @@
  * notice and this notice are preserved.
  */
 
-#ifndef TESTS_LIB_BUG_19101_CONN_H
-#define TESTS_LIB_BUG_19101_CONN_H
+#ifndef __TP_TESTS_BUG19101_CONN_H__
+#define __TP_TESTS_BUG19101_CONN_H__
 
 #include "contacts-conn.h"
 
 G_BEGIN_DECLS
 
-typedef struct _Bug19101Connection Bug19101Connection;
-typedef struct _Bug19101ConnectionClass Bug19101ConnectionClass;
+typedef struct _TpTestsBug19101Connection TpTestsBug19101Connection;
+typedef struct _TpTestsBug19101ConnectionClass TpTestsBug19101ConnectionClass;
 
-struct _Bug19101ConnectionClass {
-    ContactsConnectionClass parent_class;
+struct _TpTestsBug19101ConnectionClass {
+    TpTestsContactsConnectionClass parent_class;
 };
 
-struct _Bug19101Connection {
-    ContactsConnection parent;
+struct _TpTestsBug19101Connection {
+    TpTestsContactsConnection parent;
 };
 
-GType bug_19101_connection_get_type (void);
+GType tp_tests_bug19101_connection_get_type (void);
 
 /* TYPE MACROS */
-#define BUG_19101_TYPE_CONNECTION \
-  (bug_19101_connection_get_type ())
+#define TP_TESTS_TYPE_BUG19101_CONNECTION \
+  (tp_tests_bug19101_connection_get_type ())
 #define BUG_19101_CONNECTION(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), BUG_19101_TYPE_CONNECTION, \
-                              Bug19101Connection))
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TESTS_TYPE_BUG19101_CONNECTION, \
+                              TpTestsBug19101Connection))
 #define BUG_19101_CONNECTION_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), BUG_19101_TYPE_CONNECTION, \
-                           Bug19101ConnectionClass))
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TESTS_TYPE_BUG19101_CONNECTION, \
+                           TpTestsBug19101ConnectionClass))
 #define BUG_19101_IS_CONNECTION(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), BUG_19101_TYPE_CONNECTION))
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TESTS_TYPE_BUG19101_CONNECTION))
 #define BUG_19101_IS_CONNECTION_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), BUG_19101_TYPE_CONNECTION))
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TESTS_TYPE_BUG19101_CONNECTION))
 #define BUG_19101_CONNECTION_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), BUG_19101_TYPE_CONNECTION, \
-                              Bug19101ConnectionClass))
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_BUG19101_CONNECTION, \
+                              TpTestsBug19101ConnectionClass))
 
 G_END_DECLS
 
-#endif
+#endif /* #ifndef __TP_TESTS_BUG19101_CONN_H__ */

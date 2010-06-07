@@ -1,5 +1,5 @@
 /*
- * params-cm.h - source for ParamConnectionManager
+ * params-cm.h - source for TpTestsParamConnectionManager
  *
  * Copyright © 2007-2009 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright © 2007-2009 Nokia Corporation
@@ -26,39 +26,39 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/errors.h>
 
-G_DEFINE_TYPE (ParamConnectionManager,
-    param_connection_manager,
+G_DEFINE_TYPE (TpTestsParamConnectionManager,
+    tp_tests_param_connection_manager,
     TP_TYPE_BASE_CONNECTION_MANAGER)
 
-struct _ParamConnectionManagerPrivate
+struct _TpTestsParamConnectionManagerPrivate
 {
   int dummy;
 };
 
 static void
-param_connection_manager_init (
-    ParamConnectionManager *self)
+tp_tests_param_connection_manager_init (
+    TpTestsParamConnectionManager *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TYPE_PARAM_CONNECTION_MANAGER,
-      ParamConnectionManagerPrivate);
+      TP_TESTS_TYPE_PARAM_CONNECTION_MANAGER,
+      TpTestsParamConnectionManagerPrivate);
 }
 
 enum {
-    PARAM_STRING,
-    PARAM_INT16,
-    PARAM_INT32,
-    PARAM_UINT16,
-    PARAM_UINT32,
-    PARAM_INT64,
-    PARAM_UINT64,
-    PARAM_BOOLEAN,
-    PARAM_DOUBLE,
-    PARAM_ARRAY_STRINGS,
-    PARAM_ARRAY_BYTES,
-    PARAM_OBJECT_PATH,
-    PARAM_LC_STRING,
-    PARAM_UC_STRING,
+    TP_TESTS_PARAM_STRING,
+    TP_TESTS_PARAM_INT16,
+    TP_TESTS_PARAM_INT32,
+    TP_TESTS_PARAM_UINT16,
+    TP_TESTS_PARAM_UINT32,
+    TP_TESTS_PARAM_INT64,
+    TP_TESTS_PARAM_UINT64,
+    TP_TESTS_PARAM_BOOLEAN,
+    TP_TESTS_PARAM_DOUBLE,
+    TP_TESTS_PARAM_ARRAY_STRINGS,
+    TP_TESTS_PARAM_ARRAY_BYTES,
+    TP_TESTS_PARAM_OBJECT_PATH,
+    TP_TESTS_PARAM_LC_STRING,
+    TP_TESTS_PARAM_UC_STRING,
     NUM_PARAM
 };
 
@@ -93,48 +93,48 @@ filter_string_ascii_case (const TpCMParamSpec *param_spec,
 static TpCMParamSpec param_example_params[] = {
   { "a-string", "s", G_TYPE_STRING,
     TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT, "the default string",
-    G_STRUCT_OFFSET (CMParams, a_string), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_string), NULL, NULL, NULL },
   { "a-int16", "n", G_TYPE_INT,
     TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT, GINT_TO_POINTER (42),
-    G_STRUCT_OFFSET (CMParams, a_int16), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_int16), NULL, NULL, NULL },
   { "a-int32", "i", G_TYPE_INT,
     TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT, GINT_TO_POINTER (42),
-    G_STRUCT_OFFSET (CMParams, a_int32), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_int32), NULL, NULL, NULL },
   { "a-uint16", "q", G_TYPE_UINT, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, a_uint16), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_uint16), NULL, NULL, NULL },
   { "a-uint32", "u", G_TYPE_UINT, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, a_uint32), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_uint32), NULL, NULL, NULL },
   { "a-int64", "x", G_TYPE_INT64, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, a_int64), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_int64), NULL, NULL, NULL },
   { "a-uint64", "t", G_TYPE_UINT64, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, a_uint64), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_uint64), NULL, NULL, NULL },
   { "a-boolean", "b", G_TYPE_BOOLEAN, TP_CONN_MGR_PARAM_FLAG_REQUIRED, NULL,
-    G_STRUCT_OFFSET (CMParams, a_boolean), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_boolean), NULL, NULL, NULL },
   { "a-double", "d", G_TYPE_DOUBLE, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, a_double), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_double), NULL, NULL, NULL },
   { "a-array-of-strings", "as", 0, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, a_array_of_strings), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_array_of_strings), NULL, NULL, NULL },
   { "a-array-of-bytes", "ay", 0, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, a_array_of_bytes), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_array_of_bytes), NULL, NULL, NULL },
   { "a-object-path", "o", 0, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, a_object_path), NULL, NULL, NULL },
+    G_STRUCT_OFFSET (TpTestsCMParams, a_object_path), NULL, NULL, NULL },
 
   /* demo of a filter */
   { "lc-string", "s", G_TYPE_STRING, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, lc_string),
+    G_STRUCT_OFFSET (TpTestsCMParams, lc_string),
     filter_string_ascii_case, GINT_TO_POINTER (FALSE), NULL },
   { "uc-string", "s", G_TYPE_STRING, 0, NULL,
-    G_STRUCT_OFFSET (CMParams, uc_string),
+    G_STRUCT_OFFSET (TpTestsCMParams, uc_string),
     filter_string_ascii_case, GINT_TO_POINTER (TRUE), NULL },
   { NULL }
 };
 
-static CMParams *params = NULL;
+static TpTestsCMParams *params = NULL;
 
 static gpointer
 alloc_params (void)
 {
-  params = g_slice_new0 (CMParams);
+  params = g_slice_new0 (TpTestsCMParams);
 
   return params;
 }
@@ -143,7 +143,7 @@ static void
 free_params (gpointer p)
 {
   /* CM user is responsible to free params so he can check their values */
-  params = (CMParams *) p;
+  params = (TpTestsCMParams *) p;
   params->would_have_been_freed = TRUE;
 }
 
@@ -166,35 +166,37 @@ new_connection (TpBaseConnectionManager *self,
 }
 
 static void
-param_connection_manager_class_init (
-    ParamConnectionManagerClass *klass)
+tp_tests_param_connection_manager_class_init (
+    TpTestsParamConnectionManagerClass *klass)
 {
   TpBaseConnectionManagerClass *base_class =
       (TpBaseConnectionManagerClass *) klass;
 
   g_type_class_add_private (klass,
-      sizeof (ParamConnectionManagerPrivate));
+      sizeof (TpTestsParamConnectionManagerPrivate));
 
-  param_example_params[PARAM_ARRAY_STRINGS].gtype = G_TYPE_STRV;
-  param_example_params[PARAM_ARRAY_BYTES].gtype = DBUS_TYPE_G_UCHAR_ARRAY;
-  param_example_params[PARAM_OBJECT_PATH].gtype = DBUS_TYPE_G_OBJECT_PATH;
+  param_example_params[TP_TESTS_PARAM_ARRAY_STRINGS].gtype = G_TYPE_STRV;
+  param_example_params[TP_TESTS_PARAM_ARRAY_BYTES].gtype =
+      DBUS_TYPE_G_UCHAR_ARRAY;
+  param_example_params[TP_TESTS_PARAM_OBJECT_PATH].gtype =
+      DBUS_TYPE_G_OBJECT_PATH;
 
   base_class->new_connection = new_connection;
   base_class->cm_dbus_name = "params_cm";
   base_class->protocol_params = example_protocols;
 }
 
-CMParams *
-param_connection_manager_steal_params_last_conn (void)
+TpTestsCMParams *
+tp_tests_param_connection_manager_steal_params_last_conn (void)
 {
-  CMParams *p = params;
+  TpTestsCMParams *p = params;
 
   params = NULL;
   return p;
 }
 
 void
-param_connection_manager_free_params (CMParams *p)
+tp_tests_param_connection_manager_free_params (TpTestsCMParams *p)
 {
   g_free (p->a_string);
   g_strfreev (p->a_array_of_strings);
@@ -202,5 +204,5 @@ param_connection_manager_free_params (CMParams *p)
     g_array_free (p->a_array_of_bytes, TRUE);
   g_free (p->a_object_path);
 
-  g_slice_free (CMParams, p);
+  g_slice_free (TpTestsCMParams, p);
 }

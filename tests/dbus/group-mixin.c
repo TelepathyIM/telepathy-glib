@@ -24,7 +24,7 @@
 #define IDENTIFIER "them@example.org"
 
 static GMainLoop *mainloop;
-TestTextChannelGroup *service_chan;
+TpTestsTextChannelGroup *service_chan;
 TpChannel *chan = NULL;
 TpHandleRepoIface *contact_repo;
 TpHandle self_handle, camel, camel2;
@@ -514,7 +514,7 @@ int
 main (int argc,
       char **argv)
 {
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpDBusDaemon *dbus;
   TpConnection *conn;
@@ -525,9 +525,10 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -554,8 +555,9 @@ main (int argc,
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = TEST_TEXT_CHANNEL_GROUP (test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_GROUP,
+  service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
         "connection", service_conn,
         "object-path", chan_path,
         "detailed", TRUE,

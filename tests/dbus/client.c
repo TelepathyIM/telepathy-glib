@@ -29,7 +29,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   test->client = NULL;
 }
@@ -54,7 +54,7 @@ static void
 test_new (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
-  test->client = test_object_new_static_class (TP_TYPE_CLIENT,
+  test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
       "dbus-daemon", test->dbus,
       "object-path", "/org/freedesktop/Telepathy/Client/whatever",
       "bus-name", "org.freedesktop.Telepathy.Client.whatever",

@@ -21,8 +21,8 @@
 
 static void account_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE (SimpleAccount,
-    simple_account,
+G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
+    tp_tests_simple_account,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT,
         account_iface_init);
@@ -54,7 +54,7 @@ enum
   PROP_HAS_BEEN_ONLINE,
 };
 
-struct _SimpleAccountPrivate
+struct _TpTestsSimpleAccountPrivate
 {
   gpointer unused;
 };
@@ -64,21 +64,21 @@ account_iface_init (gpointer klass,
     gpointer unused G_GNUC_UNUSED)
 {
 #define IMPLEMENT(x) tp_svc_account_implement_##x (\
-  klass, simple_account_##x)
+  klass, tp_tests_simple_account_##x)
   /* TODO */
 #undef IMPLEMENT
 }
 
 
 static void
-simple_account_init (SimpleAccount *self)
+tp_tests_simple_account_init (TpTestsSimpleAccount *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, SIMPLE_TYPE_ACCOUNT,
-      SimpleAccountPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_SIMPLE_ACCOUNT,
+      TpTestsSimpleAccountPrivate);
 }
 
 static void
-simple_account_get_property (GObject *object,
+tp_tests_simple_account_get_property (GObject *object,
               guint property_id,
               GValue *value,
               GParamSpec *spec)
@@ -154,7 +154,7 @@ simple_account_get_property (GObject *object,
   * Properties.GetAll().
   */
 static void
-simple_account_class_init (SimpleAccountClass *klass)
+tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
@@ -188,8 +188,8 @@ simple_account_class_init (SimpleAccountClass *klass)
         { NULL },
   };
 
-  g_type_class_add_private (klass, sizeof (SimpleAccountPrivate));
-  object_class->get_property = simple_account_get_property;
+  g_type_class_add_private (klass, sizeof (TpTestsSimpleAccountPrivate));
+  object_class->get_property = tp_tests_simple_account_get_property;
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "In this case we only implement Account, so none.",
@@ -297,5 +297,5 @@ simple_account_class_init (SimpleAccountClass *klass)
 
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (SimpleAccountClass, dbus_props_class));
+      G_STRUCT_OFFSET (TpTestsSimpleAccountClass, dbus_props_class));
 }

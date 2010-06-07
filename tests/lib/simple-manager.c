@@ -20,14 +20,14 @@
 #include "simple-conn.h"
 #include "tests/lib/util.h"
 
-G_DEFINE_TYPE (SimpleConnectionManager,
-    simple_connection_manager,
+G_DEFINE_TYPE (TpTestsSimpleConnectionManager,
+    tp_tests_simple_connection_manager,
     TP_TYPE_BASE_CONNECTION_MANAGER)
 
 /* type definition stuff */
 
 static void
-simple_connection_manager_init (SimpleConnectionManager *self)
+tp_tests_simple_connection_manager_init (TpTestsSimpleConnectionManager *self)
 {
 }
 
@@ -35,12 +35,12 @@ simple_connection_manager_init (SimpleConnectionManager *self)
 
 typedef struct {
     gchar *account;
-} SimpleParams;
+} TpTestsSimpleParams;
 
 static const TpCMParamSpec simple_params[] = {
   { "account", DBUS_TYPE_STRING_AS_STRING, G_TYPE_STRING,
     TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER, NULL,
-    G_STRUCT_OFFSET (SimpleParams, account),
+    G_STRUCT_OFFSET (TpTestsSimpleParams, account),
     tp_cm_param_filter_string_nonempty, NULL },
 
   { NULL }
@@ -49,17 +49,17 @@ static const TpCMParamSpec simple_params[] = {
 static gpointer
 alloc_params (void)
 {
-  return g_slice_new0 (SimpleParams);
+  return g_slice_new0 (TpTestsSimpleParams);
 }
 
 static void
 free_params (gpointer p)
 {
-  SimpleParams *params = p;
+  TpTestsSimpleParams *params = p;
 
   g_free (params->account);
 
-  g_slice_free (SimpleParams, params);
+  g_slice_free (TpTestsSimpleParams, params);
 }
 
 static const TpCMProtocolSpec simple_protocols[] = {
@@ -74,9 +74,9 @@ new_connection (TpBaseConnectionManager *self,
                 gpointer parsed_params,
                 GError **error)
 {
-  SimpleParams *params = parsed_params;
-  SimpleConnection *conn = SIMPLE_CONNECTION
-      (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
+  TpTestsSimpleParams *params = parsed_params;
+  TpTestsSimpleConnection *conn = TP_TESTS_SIMPLE_CONNECTION (
+      tp_tests_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CONNECTION,
           "account", params->account,
           "protocol", proto,
           NULL));
@@ -85,7 +85,8 @@ new_connection (TpBaseConnectionManager *self,
 }
 
 static void
-simple_connection_manager_class_init (SimpleConnectionManagerClass *klass)
+tp_tests_simple_connection_manager_class_init (
+    TpTestsSimpleConnectionManagerClass *klass)
 {
   TpBaseConnectionManagerClass *base_class =
       (TpBaseConnectionManagerClass *) klass;

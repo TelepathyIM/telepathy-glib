@@ -172,7 +172,7 @@ main (int argc,
   /* We use TpDBusDaemon because it's a convenient concrete subclass of
    * TpProxy. */
   g_message ("Creating proxies");
-  a = test_dbus_daemon_dup_or_die ();
+  a = tp_tests_dbus_daemon_dup_or_die ();
   g_message ("a=%p", a);
   b = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("b=%p", b);
@@ -209,7 +209,8 @@ main (int argc,
 
   /* b gets its signal connection cancelled because stub is
    * destroyed */
-  stub = test_object_new_static_class (stub_object_get_type (), NULL);
+  stub = tp_tests_object_new_static_class (tp_tests_stub_object_get_type (),
+      NULL);
   g_message ("Connecting signal to b");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (b, noc, PTR (TEST_B),
       destroy_user_data, stub, &error_out);
@@ -306,7 +307,8 @@ main (int argc,
   /* h gets its signal connection cancelled because its weak object is
    * destroyed, meaning there are simultaneously two reasons for it to become
    * cancelled (fd.o#14750) */
-  stub = test_object_new_static_class (stub_object_get_type (), NULL);
+  stub = tp_tests_object_new_static_class (tp_tests_stub_object_get_type (),
+      NULL);
   g_object_weak_ref (stub, h_stub_destroyed, &sc);
   g_message ("Connecting signal to h");
   tp_cli_dbus_daemon_connect_to_name_owner_changed (h, noc, PTR (TEST_H),

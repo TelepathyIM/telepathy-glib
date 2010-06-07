@@ -25,7 +25,7 @@
 #include "tests/lib/util.h"
 
 static GMainLoop *mainloop;
-SimpleConnection *service_conn;
+TpTestsSimpleConnection *service_conn;
 gchar *conn_path;
 TpConnection *conn;
 TpHandleRepoIface *contact_repo;
@@ -78,7 +78,7 @@ group_members_changed_detailed_cb (TpChannel *chan_,
 
 
 static void
-test_channel_proxy (TestTextChannelGroup *service_chan,
+test_channel_proxy (TpTestsTextChannelGroup *service_chan,
                     TpChannel *chan,
                     gboolean detailed,
                     gboolean properties)
@@ -127,7 +127,7 @@ test_channel_proxy (TestTextChannelGroup *service_chan,
   /* Clear the queue to ensure that there aren't any more
    * MembersChanged[Detailed] signals waiting for us.
    */
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   expected_members = add;
   MYASSERT (tp_intset_is_equal (expected_members,
@@ -147,7 +147,7 @@ test_channel_proxy (TestTextChannelGroup *service_chan,
   tp_intset_destroy (add);
   tp_intset_destroy (rem);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   tp_intset_add (expected_members, h3);
   tp_intset_remove (expected_members, h1);
@@ -185,7 +185,7 @@ test_channel_proxy (TestTextChannelGroup *service_chan,
   g_array_free (yarr, TRUE);
   g_array_free (arr, TRUE);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   /* And, the cache of group members should be unaltered, since the signal the
    * TpChannel cares about was not fired.
@@ -212,7 +212,7 @@ channel_invalidated_cb (TpProxy *proxy,
 }
 
 static void
-test_invalidated_on_illegal_change (TestTextChannelGroup *serv_chan,
+test_invalidated_on_illegal_change (TpTestsTextChannelGroup *serv_chan,
                                     TpChannel *chan,
                                     gboolean detailed,
                                     gboolean properties)
@@ -233,7 +233,7 @@ test_invalidated_on_illegal_change (TestTextChannelGroup *serv_chan,
   *(properties ? &add : &del) |= TP_CHANNEL_GROUP_FLAG_PROPERTIES;
   DEBUG ("Changing flags: add %u, del %u", add, del);
   tp_svc_channel_interface_group_emit_group_flags_changed (serv_chan, add, del);
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   /* Now, let's flip the Detailed and Properties flags, and check that the
    * proxy gets invalidated due to inconsistency on the part of the service.
@@ -241,7 +241,7 @@ test_invalidated_on_illegal_change (TestTextChannelGroup *serv_chan,
   expecting_invalidated = TRUE;
   DEBUG ("Changing flags: add %u, del %u", del, add);
   tp_group_mixin_change_flags ((GObject *) serv_chan, del, add);
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   MYASSERT (!expecting_invalidated, ": invalidated should have fired");
 }
@@ -252,13 +252,14 @@ run_membership_test (guint channel_number,
                      gboolean properties)
 {
   gchar *chan_path;
-  TestTextChannelGroup *service_chan;
+  TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
   GError *error = NULL;
 
   chan_path = g_strdup_printf ("%s/Channel%u", conn_path, channel_number);
-  service_chan = TEST_TEXT_CHANNEL_GROUP (test_object_new_static_class (
-      TEST_TYPE_TEXT_CHANNEL_GROUP,
+  service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (
+      tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
       "connection", service_conn,
       "object-path", chan_path,
       "detailed", detailed,
@@ -330,7 +331,7 @@ static void
 check_removed_unknown_error_in_invalidated (void)
 {
   gchar *chan_path;
-  TestTextChannelGroup *service_chan;
+  TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
   TpIntSet *self_handle_singleton = tp_intset_new ();
   GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
@@ -339,8 +340,9 @@ check_removed_unknown_error_in_invalidated (void)
   GError *error = NULL;
 
   chan_path = g_strdup_printf ("%s/Channel_1_6180339887", conn_path);
-  service_chan = TEST_TEXT_CHANNEL_GROUP (test_object_new_static_class (
-      TEST_TYPE_TEXT_CHANNEL_GROUP,
+  service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (
+      tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
       "connection", service_conn,
       "object-path", chan_path,
       "detailed", TRUE,
@@ -363,7 +365,7 @@ check_removed_unknown_error_in_invalidated (void)
       self_handle_singleton, NULL, NULL, NULL, 0,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   g_hash_table_insert (details, "change-reason",
       tp_g_value_slice_new_uint (REMOVED_REASON));
@@ -377,13 +379,13 @@ check_removed_unknown_error_in_invalidated (void)
   tp_group_mixin_change_members_detailed ((GObject *) service_chan, NULL,
       self_handle_singleton, NULL, NULL, details);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   tp_cli_channel_call_close (chan, -1, NULL, NULL, NULL, NULL);
 
   g_hash_table_unref (details);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   MYASSERT (invalidated, "");
 
@@ -419,7 +421,7 @@ static void
 check_removed_known_error_in_invalidated (void)
 {
   gchar *chan_path;
-  TestTextChannelGroup *service_chan;
+  TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
   TpIntSet *self_handle_singleton = tp_intset_new ();
   GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
@@ -428,8 +430,8 @@ check_removed_known_error_in_invalidated (void)
   GError *error = NULL;
 
   chan_path = g_strdup_printf ("%s/Channel_1_6180339887", conn_path);
-  service_chan = TEST_TEXT_CHANNEL_GROUP (g_object_new (
-      TEST_TYPE_TEXT_CHANNEL_GROUP,
+  service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (g_object_new (
+      TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
       "connection", service_conn,
       "object-path", chan_path,
       "detailed", TRUE,
@@ -452,7 +454,7 @@ check_removed_known_error_in_invalidated (void)
       self_handle_singleton, NULL, NULL, NULL, 0,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   g_hash_table_insert (details, "change-reason",
       tp_g_value_slice_new_uint (REMOVED_REASON));
@@ -466,13 +468,13 @@ check_removed_known_error_in_invalidated (void)
   tp_group_mixin_change_members_detailed ((GObject *) service_chan, NULL,
       self_handle_singleton, NULL, NULL, details);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   tp_cli_channel_call_close (chan, -1, NULL, NULL, NULL, NULL);
 
   g_hash_table_unref (details);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
 
   MYASSERT (invalidated, "");
 
@@ -493,9 +495,10 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));

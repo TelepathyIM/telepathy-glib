@@ -93,9 +93,9 @@ main (int argc,
 
   g_type_init ();
   /* tp_debug_set_flags ("all"); */
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = EXAMPLE_ECHO_CONNECTION (test_object_new_static_class (
+  service_conn = EXAMPLE_ECHO_CONNECTION (tp_tests_object_new_static_class (
         EXAMPLE_TYPE_ECHO_CONNECTION,
         "account", "me@example.com",
         "protocol", "example",
@@ -127,7 +127,7 @@ main (int argc,
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = EXAMPLE_ECHO_CHANNEL (test_object_new_static_class (
+  service_chan = EXAMPLE_ECHO_CHANNEL (tp_tests_object_new_static_class (
         EXAMPLE_TYPE_ECHO_CHANNEL,
         "connection", service_conn,
         "object-path", chan_path,
@@ -153,7 +153,7 @@ main (int argc,
       &error, NULL);
   g_assert_no_error (error);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -175,7 +175,7 @@ main (int argc,
       &error, NULL);
   g_assert_no_error (error);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
@@ -198,7 +198,7 @@ main (int argc,
       &error, NULL);
   g_assert_no_error (error);
 
-  test_proxy_run_until_dbus_queue_processed (conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (conn);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,

@@ -24,7 +24,7 @@ typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
 
-    SimpleAccountManager *service /* initialized in prepare_service */;
+    TpTestsSimpleAccountManager *service /* initialized in prepare_service */;
     TpAccountManager *am;
     TpAccount *account;
     gboolean prepared /* The result of prepare_finish */;
@@ -127,7 +127,7 @@ setup (Test *test,
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
 
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   test->am = NULL;
   test->timeout_id = 0;
@@ -143,8 +143,8 @@ setup_service (Test *test,
   g_assert (tp_dbus_daemon_request_name (test->dbus,
           TP_ACCOUNT_MANAGER_BUS_NAME, FALSE, &test->error));
 
-  test->service = test_object_new_static_class (SIMPLE_TYPE_ACCOUNT_MANAGER,
-      NULL);
+  test->service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, NULL);
   tp_dbus_daemon_register_object (test->dbus, TP_ACCOUNT_MANAGER_OBJECT_PATH,
       test->service);
 }
@@ -167,7 +167,7 @@ teardown (Test *test,
   test->script = NULL;
 
   /* make sure any pending things have happened */
-  test_proxy_run_until_dbus_queue_processed (test->dbus);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
 
   g_object_unref (test->dbus);
   test->dbus = NULL;

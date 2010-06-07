@@ -24,7 +24,7 @@ main (int argc,
 
   g_type_init ();
 
-  repo = test_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
+  repo = tp_tests_object_new_static_class (TP_TYPE_DYNAMIC_HANDLE_REPO,
       "handle-type", TP_HANDLE_TYPE_CONTACT,
       NULL);
   MYASSERT (repo != NULL, "");

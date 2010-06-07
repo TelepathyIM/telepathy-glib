@@ -95,9 +95,10 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = EXAMPLE_CALL_CONNECTION_MANAGER (test_object_new_static_class (
+  test->service_cm = EXAMPLE_CALL_CONNECTION_MANAGER (
+      tp_tests_object_new_static_class (
         EXAMPLE_TYPE_CALL_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);
@@ -110,7 +111,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "example_call",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  test_proxy_run_until_prepared (test->cm, NULL);
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -128,7 +129,7 @@ setup (Test *test,
   g_assert_no_error (test->error);
   g_assert (test->conn != NULL);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  test_proxy_run_until_prepared (test->conn, conn_features);
+  tp_tests_proxy_run_until_prepared (test->conn, conn_features);
 
   test->self_handle = tp_connection_get_self_handle (test->conn);
   g_assert (test->self_handle != 0);
@@ -455,14 +456,14 @@ assert_ended_and_run_close (Test *test,
   g_assert_cmpuint (test->get_contents_return->len, ==, 0);
 
   /* ... but the channel doesn't close */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) == NULL);
 
   /* When we call Close it finally closes */
   tp_cli_channel_call_close (test->chan, -1, void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 }
 
@@ -758,7 +759,7 @@ test_no_answer (Test *test,
   g_assert_no_error (test->error);
 
   /* After the initial flurry of D-Bus messages, smcv still hasn't answered */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
@@ -862,7 +863,7 @@ test_terminate_via_close (Test *test,
   g_assert_no_error (test->error);
 
   /* In response to termination, the channel does genuinely close */
-  test_proxy_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* FIXME: when we hook up signals, check for expected call state
@@ -1049,7 +1050,7 @@ teardown (Test *test,
   tp_clear_object (&test->service_cm);
 
   /* make sure any pending things have happened */
-  test_proxy_run_until_dbus_queue_processed (test->dbus);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
 
   tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);

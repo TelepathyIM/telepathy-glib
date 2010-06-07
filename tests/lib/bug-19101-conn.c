@@ -15,19 +15,19 @@
 
 static void contacts_iface_init (gpointer g_iface, gpointer iface_data);
 
-G_DEFINE_TYPE_WITH_CODE (Bug19101Connection, bug_19101_connection,
-    CONTACTS_TYPE_CONNECTION,
+G_DEFINE_TYPE_WITH_CODE (TpTestsBug19101Connection,
+    tp_tests_bug19101_connection, TP_TESTS_TYPE_CONTACTS_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
         contacts_iface_init);
     )
 
 static void
-bug_19101_connection_init (Bug19101Connection *self)
+tp_tests_bug19101_connection_init (TpTestsBug19101Connection *self)
 {
 }
 
 static void
-bug_19101_connection_class_init (Bug19101ConnectionClass *klass)
+tp_tests_bug19101_connection_class_init (TpTestsBug19101ConnectionClass *klass)
 {
 }
 
@@ -35,7 +35,7 @@ bug_19101_connection_class_init (Bug19101ConnectionClass *klass)
  * of attributes for each handle.
  */
 static void
-bug_19101_connection_get_contact_attributes (
+tp_tests_bug19101_connection_get_contact_attributes (
     TpSvcConnectionInterfaceContacts *iface,
     const GArray *handles,
     const char **interfaces,
@@ -68,7 +68,7 @@ contacts_iface_init (gpointer g_iface, gpointer iface_data)
     (TpSvcConnectionInterfaceContactsClass *) g_iface;
 
 #define IMPLEMENT(x) tp_svc_connection_interface_contacts_implement_##x ( \
-    klass, bug_19101_connection_##x)
+    klass, tp_tests_bug19101_connection_##x)
   IMPLEMENT(get_contact_attributes);
 #undef IMPLEMENT
 }

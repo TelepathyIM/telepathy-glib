@@ -19,29 +19,29 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TestTextChannelGroup TestTextChannelGroup;
-typedef struct _TestTextChannelGroupClass TestTextChannelGroupClass;
-typedef struct _TestTextChannelGroupPrivate TestTextChannelGroupPrivate;
+typedef struct _TpTestsTextChannelGroup TpTestsTextChannelGroup;
+typedef struct _TpTestsTextChannelGroupClass TpTestsTextChannelGroupClass;
+typedef struct _TpTestsTextChannelGroupPrivate TpTestsTextChannelGroupPrivate;
 
-GType test_text_channel_group_get_type (void);
+GType tp_tests_text_channel_group_get_type (void);
 
-#define TEST_TYPE_TEXT_CHANNEL_GROUP \
-  (test_text_channel_group_get_type ())
-#define TEST_TEXT_CHANNEL_GROUP(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TEST_TYPE_TEXT_CHANNEL_GROUP, \
-                               TestTextChannelGroup))
-#define TEST_TEXT_CHANNEL_GROUP_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), TEST_TYPE_TEXT_CHANNEL_GROUP, \
-                            TestTextChannelGroupClass))
+#define TP_TESTS_TYPE_TEXT_CHANNEL_GROUP \
+  (tp_tests_text_channel_group_get_type ())
+#define TP_TESTS_TEXT_CHANNEL_GROUP(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TESTS_TYPE_TEXT_CHANNEL_GROUP, \
+                               TpTestsTextChannelGroup))
+#define TP_TESTS_TEXT_CHANNEL_GROUP_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TESTS_TYPE_TEXT_CHANNEL_GROUP, \
+                            TpTestsTextChannelGroupClass))
 #define TEST_IS_TEXT_CHANNEL_GROUP(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TEST_TYPE_TEXT_CHANNEL_GROUP))
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TESTS_TYPE_TEXT_CHANNEL_GROUP))
 #define TEST_IS_TEXT_CHANNEL_GROUP_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), TEST_TYPE_TEXT_CHANNEL_GROUP))
-#define TEST_TEXT_CHANNEL_GROUP_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), TEST_TYPE_TEXT_CHANNEL_GROUP, \
-                              TestTextChannelGroupClass))
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TESTS_TYPE_TEXT_CHANNEL_GROUP))
+#define TP_TESTS_TEXT_CHANNEL_GROUP_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_TEXT_CHANNEL_GROUP, \
+                              TpTestsTextChannelGroupClass))
 
-struct _TestTextChannelGroupClass {
+struct _TpTestsTextChannelGroupClass {
     GObjectClass parent_class;
 
     TpTextMixinClass text_class;
@@ -49,7 +49,7 @@ struct _TestTextChannelGroupClass {
     TpDBusPropertiesMixinClass dbus_properties_class;
 };
 
-struct _TestTextChannelGroup {
+struct _TpTestsTextChannelGroup {
     GObject parent;
 
     TpBaseConnection *conn;
@@ -57,7 +57,7 @@ struct _TestTextChannelGroup {
     TpTextMixin text;
     TpGroupMixin group;
 
-    TestTextChannelGroupPrivate *priv;
+    TpTestsTextChannelGroupPrivate *priv;
 };
 
 G_END_DECLS

@@ -49,7 +49,7 @@ on_invalidated (TpChannel *chan,
 static gboolean
 disconnect (gpointer data)
 {
-  simple_connection_inject_disconnect (data);
+  tp_tests_simple_connection_inject_disconnect (data);
 
   return FALSE;
 }
@@ -68,10 +68,10 @@ int
 main (int argc,
       char **argv)
 {
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
-  TestTextChannelNull *service_chan;
+  TpTestsTextChannelNull *service_chan;
   TpDBusDaemon *dbus;
   TpConnection *conn;
   TpChannel *chan;
@@ -84,9 +84,10 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -118,8 +119,8 @@ main (int argc,
   g_assert_no_error (error);
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = TEST_TEXT_CHANNEL_NULL (test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+  service_chan = TP_TESTS_TEXT_CHANNEL_NULL (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", service_conn,
         "object-path", chan_path,
         "handle", handle,

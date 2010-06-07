@@ -25,8 +25,8 @@ typedef struct {
     /* Service side objects */
     TpBaseClient *simple_handler;
     TpBaseConnection *base_connection;
-    SimpleAccount *account_service;
-    TestTextChannelNull *text_chan_service;
+    TpTestsSimpleAccount *account_service;
+    TpTestsTextChannelNull *text_chan_service;
 
     /* Client side objects */
     TpClient *client;
@@ -48,7 +48,7 @@ setup (Test *test,
   TpHandleRepoIface *contact_repo;
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   test->error = NULL;
 
@@ -59,8 +59,8 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   /* Create service-side Account object */
-  test->account_service = test_object_new_static_class (SIMPLE_TYPE_ACCOUNT,
-      NULL);
+  test->account_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 
@@ -69,8 +69,8 @@ setup (Test *test,
   g_assert (test->account != NULL);
 
   /* Create (service and client sides) connection objects */
-  test_create_and_connect_conn (SIMPLE_TYPE_CONNECTION, "me@test.com",
-      &test->base_connection, &test->connection);
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+      "me@test.com", &test->base_connection, &test->connection);
 
   /* Create service-side text channel object */
   chan_path = g_strdup_printf ("%s/Channel",
@@ -83,9 +83,9 @@ setup (Test *test,
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service = TEST_TEXT_CHANNEL_NULL (
-      test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+  test->text_chan_service = TP_TESTS_TEXT_CHANNEL_NULL (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -141,7 +141,8 @@ create_simple_handler (Test *test,
     TpSimpleHandlerHandleChannelsImpl impl)
 {
   /* Create service-side Client object */
-  test->simple_handler = test_object_new_static_class (TP_TYPE_SIMPLE_HANDLER,
+  test->simple_handler = tp_tests_object_new_static_class (
+      TP_TYPE_SIMPLE_HANDLER,
       "dbus-daemon", test->dbus,
       "bypass-approval", bypass_approval,
       "requests", requests,
@@ -154,7 +155,7 @@ create_simple_handler (Test *test,
   g_assert (test->simple_handler != NULL);
 
  /* Create client-side Client object */
-  test->client = test_object_new_static_class (TP_TYPE_CLIENT,
+  test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
           "dbus-daemon", test->dbus,
           "bus-name", tp_base_client_get_bus_name (test->simple_handler),
           "object-path", tp_base_client_get_object_path (test->simple_handler),

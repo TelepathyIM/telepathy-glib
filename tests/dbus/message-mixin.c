@@ -209,9 +209,10 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (test_object_new_static_class (
+  service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (
+      tp_tests_object_new_static_class (
         EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
         NULL));
   g_assert (service_cm != NULL);
@@ -223,7 +224,7 @@ main (int argc,
 
   cm = tp_connection_manager_new (dbus, "example_echo_2", NULL, &error);
   g_assert (cm != NULL);
-  test_proxy_run_until_prepared (cm, NULL);
+  tp_tests_proxy_run_until_prepared (cm, NULL);
 
   parameters = tp_asv_new (
       "account", G_TYPE_STRING, "me@example.com",
@@ -243,7 +244,7 @@ main (int argc,
       "");
   g_assert_no_error (error);
 
-  handle = test_connection_run_request_contact_handle (conn,
+  handle = tp_tests_connection_run_request_contact_handle (conn,
       "them@example.com");
 
     {

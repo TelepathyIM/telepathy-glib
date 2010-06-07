@@ -23,7 +23,7 @@
 
 #include "tests/lib/util.h"
 
-G_DEFINE_TYPE (SimpleClient, simple_client, TP_TYPE_BASE_CLIENT)
+G_DEFINE_TYPE (TpTestsSimpleClient, tp_tests_simple_client, TP_TYPE_BASE_CLIENT)
 
 static void
 simple_observe_channels (
@@ -35,7 +35,7 @@ simple_observe_channels (
     GList *requests,
     TpObserveChannelsContext *context)
 {
-  SimpleClient *self = SIMPLE_CLIENT (client);
+  TpTestsSimpleClient *self = TP_TESTS_SIMPLE_CLIENT (client);
   GHashTable *info;
   gboolean fail;
   GList *l;
@@ -99,7 +99,7 @@ simple_add_dispatch_operation (
     TpChannelDispatchOperation *dispatch_operation,
     TpAddDispatchOperationContext *context)
 {
-  SimpleClient *self = SIMPLE_CLIENT (client);
+  TpTestsSimpleClient *self = TP_TESTS_SIMPLE_CLIENT (client);
   GList *l;
 
   g_assert (TP_IS_ACCOUNT (account));
@@ -142,7 +142,7 @@ simple_handle_channels (TpBaseClient *client,
     gint64 user_action_time,
     TpHandleChannelsContext *context)
 {
-  SimpleClient *self = SIMPLE_CLIENT (client);
+  TpTestsSimpleClient *self = TP_TESTS_SIMPLE_CLIENT (client);
   GList *l;
 
   if (self->handle_channels_ctx != NULL)
@@ -179,16 +179,16 @@ simple_handle_channels (TpBaseClient *client,
 }
 
 static void
-simple_client_init (SimpleClient *self)
+tp_tests_simple_client_init (TpTestsSimpleClient *self)
 {
 }
 
 static void
-simple_client_dispose (GObject *object)
+tp_tests_simple_client_dispose (GObject *object)
 {
-  SimpleClient *self = SIMPLE_CLIENT (object);
+  TpTestsSimpleClient *self = TP_TESTS_SIMPLE_CLIENT (object);
   void (*dispose) (GObject *) =
-    G_OBJECT_CLASS (simple_client_parent_class)->dispose;
+    G_OBJECT_CLASS (tp_tests_simple_client_parent_class)->dispose;
 
   if (self->observe_ctx != NULL)
     {
@@ -213,12 +213,12 @@ simple_client_dispose (GObject *object)
 }
 
 static void
-simple_client_class_init (SimpleClientClass *klass)
+tp_tests_simple_client_class_init (TpTestsSimpleClientClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   TpBaseClientClass *base_class = TP_BASE_CLIENT_CLASS (klass);
 
-  object_class->dispose = simple_client_dispose;
+  object_class->dispose = tp_tests_simple_client_dispose;
 
   tp_base_client_implement_observe_channels (base_class,
       simple_observe_channels);
@@ -230,12 +230,12 @@ simple_client_class_init (SimpleClientClass *klass)
       simple_handle_channels);
 }
 
-SimpleClient *
-simple_client_new (TpDBusDaemon *dbus_daemon,
+TpTestsSimpleClient *
+tp_tests_simple_client_new (TpDBusDaemon *dbus_daemon,
     const gchar *name,
     gboolean uniquify_name)
 {
-  return test_object_new_static_class (SIMPLE_TYPE_CLIENT,
+  return tp_tests_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CLIENT,
       "dbus-daemon", dbus_daemon,
       "name", name,
       "uniquify-name", uniquify_name,

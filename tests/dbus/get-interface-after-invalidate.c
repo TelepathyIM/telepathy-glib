@@ -13,7 +13,7 @@ test_get_interface_after_invalidate (void)
   GError invalidation_reason = { TP_ERRORS, TP_ERROR_NOT_YOURS, "bees!" };
   GError *error = NULL;
 
-  bus_daemon = test_dbus_daemon_dup_or_die ();
+  bus_daemon = tp_tests_dbus_daemon_dup_or_die ();
   tp_proxy_invalidate ((TpProxy *) bus_daemon, &invalidation_reason);
 
   props = tp_proxy_borrow_interface_by_id ((TpProxy *) bus_daemon,

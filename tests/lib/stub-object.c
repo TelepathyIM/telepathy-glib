@@ -1,6 +1,6 @@
 #include "stub-object.h"
 
-G_DEFINE_TYPE (StubObject, stub_object, G_TYPE_OBJECT)
+G_DEFINE_TYPE (TpTestsStubObject, tp_tests_stub_object, G_TYPE_OBJECT)
 
 enum {
     PROP_0,
@@ -45,7 +45,7 @@ stub_object_set_property (GObject *object,
 }
 
 static void
-stub_object_class_init (StubObjectClass *klass)
+tp_tests_stub_object_class_init (TpTestsStubObjectClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
 
@@ -61,6 +61,6 @@ stub_object_class_init (StubObjectClass *klass)
 }
 
 static void
-stub_object_init (StubObject *self)
+tp_tests_stub_object_init (TpTestsStubObject *self)
 {
 }
