@@ -3734,6 +3734,75 @@ finally:
   g_clear_error (&error);
 }
 
+static void
+tp_base_contact_list_mixin_rename_group (
+    TpSvcConnectionInterfaceContactGroups *svc,
+    const gchar *before,
+    const gchar *after,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  GError *error = NULL;
+  TpHandle old_handle;
+  gpointer old_channel;
+  TpHandle new_handle = 0;
+
+  if (!tp_base_contact_list_check_group_change (self, NULL, &error))
+    goto finally;
+
+  old_handle = tp_handle_lookup (self->priv->group_repo, before, NULL, NULL);
+  old_channel = g_hash_table_lookup (self->priv->groups,
+      GUINT_TO_POINTER (old_handle));
+
+  if (old_handle == 0 || old_channel == NULL)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_DOES_NOT_EXIST,
+          "Group '%s' does not exist", before);
+      goto finally;
+    }
+
+  new_handle = tp_handle_ensure (self->priv->group_repo, after, NULL, &error);
+
+  if (new_handle == 0)
+    goto finally;
+
+  if (g_hash_table_lookup (self->priv->groups, GUINT_TO_POINTER (new_handle))
+      != NULL)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Group '%s' already exists",
+          tp_handle_inspect (self->priv->group_repo, new_handle));
+      goto finally;
+    }
+
+  if (0)
+    {
+      /* FIXME: add an optional rename_group virtual method and prefer to use
+       * it, for protocols that have that concept */
+    }
+  else
+    {
+      /* for XMPP etc., implement "rename" as "add all members of old group
+       * to new group, then delete old group" */
+      const gchar *new_name = tp_handle_inspect (self->priv->group_repo,
+          new_handle);
+      TpGroupMixin *mixin = TP_GROUP_MIXIN (old_channel);
+
+      tp_base_contact_list_create_groups (self, &new_name, 1);
+      tp_base_contact_list_add_to_group (self, new_name, mixin->members);
+      tp_base_contact_list_remove_group (self,
+          tp_handle_inspect (self->priv->group_repo, old_handle));
+    }
+
+finally:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+
+  if (new_handle != 0)
+    tp_handle_unref (self->priv->group_repo, new_handle);
+}
+
 typedef enum {
     GP_DISJOINT_GROUPS,
     GP_GROUP_STORAGE,
@@ -3852,9 +3921,7 @@ tp_base_contact_list_mixin_groups_iface_init (
   IMPLEMENT (add_to_group);
   IMPLEMENT (remove_from_group);
   IMPLEMENT (remove_group);
-#if 0
   IMPLEMENT (rename_group);
-#endif
 #undef IMPLEMENT
 }
 
