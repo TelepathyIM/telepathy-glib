@@ -40,6 +40,14 @@ typedef struct _TplEntryPriv TplEntryPriv;
 
 GType tpl_entry_get_type (void);
 
+typedef enum
+{
+  TPL_ENTRY_DIRECTION_NONE = 0,
+
+  TPL_ENTRY_DIRECTION_IN,
+  TPL_ENTRY_DIRECTION_OUT
+} TplEntryDirection;
+
 gint64 tpl_entry_get_timestamp (TplEntry *self);
 
 const gchar *tpl_entry_get_account_path (TplEntry *self);
