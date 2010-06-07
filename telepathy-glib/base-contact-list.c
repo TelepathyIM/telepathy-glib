@@ -345,6 +345,8 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
 /**
  * TpMutableContactGroupListInterface:
  * @parent: the parent interface
+ * @set_contact_groups: the implementation of
+ *  tp_base_contact_list_set_contact_groups(); must always be implemented
  * @create_groups: the implementation of
  *  tp_base_contact_list_create_groups(); must always be implemented
  * @add_to_group: the implementation of
@@ -704,6 +706,7 @@ tp_base_contact_list_constructed (GObject *object)
       TpMutableContactGroupListInterface *iface =
         TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
 
+      g_return_if_fail (iface->set_contact_groups != NULL);
       g_return_if_fail (iface->create_groups != NULL);
       g_return_if_fail (iface->add_to_group != NULL);
       g_return_if_fail (iface->remove_from_group != NULL);
@@ -3317,6 +3320,53 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
     }
 }
 
+/**
+ * TpBaseContactListSetContactGroupsFunc:
+ * @self: a contact list manager
+ * @contact: a contact handle
+ * @normalized_names: (array length=n_names): the normalized names of some
+ *  groups
+ * @n_names: the number of groups
+ *
+ * Signature of an implementation of tp_base_contact_list_set_contact_groups().
+ */
+
+/**
+ * tp_base_contact_list_set_contact_groups:
+ * @self: a contact list manager
+ * @contact: a contact handle
+ * @normalized_names: (array length=n_names): the normalized names of some
+ *  groups
+ * @n_names: the number of groups
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method does nothing.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which must be implemented, using
+ * #TpMutableContactGroupListInterface.set_contact_groups.
+ * The implementation should call tp_base_contact_list_groups_changed()
+ * for any changes it successfully made, before returning.
+ */
+void tp_base_contact_list_set_contact_groups (TpBaseContactList *self,
+    TpHandle contact,
+    const gchar * const *normalized_names,
+    gsize n_names)
+{
+  TpMutableContactGroupListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+    return;
+
+  iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->set_contact_groups != NULL);
+
+  iface->set_contact_groups (self, contact, normalized_names, n_names);
+}
+
 static gboolean
 tp_base_contact_list_check_change (TpBaseContactList *self,
     const GArray *contacts_or_null,
@@ -3637,6 +3687,60 @@ tp_base_contact_list_mixin_list_iface_init (
   IMPLEMENT (unsubscribe);
   IMPLEMENT (unpublish);
 #undef IMPLEMENT
+}
+
+static void
+tp_base_contact_list_mixin_set_contact_groups (
+    TpSvcConnectionInterfaceContactGroups *svc,
+    guint contact,
+    const gchar **groups,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  const gchar *empty_strv[] = { NULL };
+  GError *error = NULL;
+  TpHandleSet *group_set = NULL;
+  GPtrArray *normalized_groups = NULL;
+  guint i;
+
+  if (!tp_base_contact_list_check_group_change (self, NULL, &error))
+    goto finally;
+
+  if (groups == NULL)
+    groups = empty_strv;
+
+  group_set = tp_handle_set_new (self->priv->group_repo);
+  normalized_groups = g_ptr_array_sized_new (g_strv_length ((GStrv) groups));
+
+  for (i = 0; groups[i] != NULL; i++)
+    {
+      TpHandle group_handle = tp_handle_ensure (self->priv->group_repo,
+          groups[i], NULL, NULL);
+
+      if (group_handle != 0)
+        {
+          g_ptr_array_add (normalized_groups,
+              (gchar *) tp_handle_inspect (self->priv->group_repo,
+                group_handle));
+          tp_handle_set_add (group_set, group_handle);
+          tp_handle_unref (self->priv->group_repo, group_handle);
+        }
+      else
+        {
+          DEBUG ("group '%s' not valid, ignoring it", groups[i]);
+        }
+    }
+
+  tp_base_contact_list_set_contact_groups (self, contact,
+      (const gchar * const *) normalized_groups->pdata,
+      normalized_groups->len);
+
+finally:
+  tp_clear_pointer (&group_set, tp_handle_set_destroy);
+  tp_clear_pointer (&normalized_groups, g_ptr_array_unref);
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
 }
 
 static void
@@ -3970,10 +4074,7 @@ tp_base_contact_list_mixin_groups_iface_init (
 {
 #define IMPLEMENT(x) tp_svc_connection_interface_contact_groups_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
-  /* FIXME: implement methods */
-#if 0
   IMPLEMENT (set_contact_groups);
-#endif
   IMPLEMENT (set_group_members);
   IMPLEMENT (add_to_group);
   IMPLEMENT (remove_from_group);

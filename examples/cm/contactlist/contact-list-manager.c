@@ -276,6 +276,76 @@ example_contact_list_manager_create_groups (TpBaseContactList *manager,
   tp_base_contact_list_groups_created (manager, names, n);
 }
 
+static void
+example_contact_list_manager_set_contact_groups (TpBaseContactList *manager,
+    TpHandle contact,
+    const gchar * const *names,
+    gsize n)
+{
+  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
+  TpHandleSet *set = tp_handle_set_new (self->priv->contact_repo);
+  gboolean created;
+  gsize i;
+  ExampleContactDetails *d;
+  GPtrArray *old_names, *new_names;
+  GHashTableIter iter;
+  gpointer k;
+
+  for (i = 0; i < n; i++)
+    ensure_tag (self, names[i], FALSE);
+
+  tp_base_contact_list_groups_created (manager, names, n);
+
+  tp_handle_set_add (set, contact);
+
+  d = ensure_contact (self, contact, &created);
+
+  if (created)
+    tp_base_contact_list_contacts_changed (manager, set, NULL);
+
+  if (d->tags == NULL)
+    d->tags = g_hash_table_new (g_str_hash, g_str_equal);
+
+  old_names = g_ptr_array_sized_new (g_hash_table_size (d->tags));
+  new_names = g_ptr_array_sized_new (n);
+
+  for (i = 0; i < n; i++)
+    {
+      if (g_hash_table_lookup (d->tags, names[i]) == NULL)
+        {
+          gchar *tag = g_hash_table_lookup (self->priv->all_tags, names[i]);
+
+          g_assert (tag != NULL);   /* already ensured to exist, above */
+          g_hash_table_insert (d->tags, tag, tag);
+          g_ptr_array_add (new_names, tag);
+        }
+    }
+
+  g_hash_table_iter_init (&iter, d->tags);
+
+  while (g_hash_table_iter_next (&iter, &k, NULL))
+    {
+      for (i = 0; i < n; i++)
+        {
+          if (!tp_strdiff (names[i], k))
+            goto next_hash_element;
+        }
+
+      /* not found in @names, so remove it */
+      g_ptr_array_add (old_names, k);
+      g_hash_table_iter_remove (&iter);
+
+next_hash_element:
+      continue;
+    }
+
+  tp_base_contact_list_groups_changed (manager, set,
+      (const gchar * const *) new_names->pdata, new_names->len,
+      (const gchar * const *) old_names->pdata, old_names->len);
+  g_ptr_array_unref (old_names);
+  g_ptr_array_unref (new_names);
+}
+
 static gboolean
 receive_contact_lists (gpointer p)
 {
@@ -1429,4 +1499,5 @@ mutable_contact_group_list_iface_init (
   iface->remove_group = example_contact_list_manager_remove_group;
   iface->create_groups = example_contact_list_manager_create_groups;
   iface->rename_group = example_contact_list_manager_rename_group;
+  iface->set_contact_groups = example_contact_list_manager_set_contact_groups;
 }

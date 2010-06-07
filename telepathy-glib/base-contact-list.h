@@ -283,6 +283,16 @@ struct _TpContactGroupListInterface {
 
 /* ---- Implemented by subclasses for mutable ContactGroups ---- */
 
+typedef void (*TpBaseContactListSetContactGroupsFunc) (TpBaseContactList *self,
+    TpHandle contact,
+    const gchar * const *normalized_names,
+    gsize n_names);
+
+void tp_base_contact_list_set_contact_groups (TpBaseContactList *self,
+    TpHandle contact,
+    const gchar * const *normalized_names,
+    gsize n_names);
+
 typedef void (*TpBaseContactListCreateGroupsFunc) (
     TpBaseContactList *self,
     const gchar * const *normalized_names,
@@ -336,6 +346,7 @@ typedef struct _TpMutableContactGroupListInterface
 struct _TpMutableContactGroupListInterface {
     GTypeInterface parent;
     /* mandatory to implement */
+    TpBaseContactListSetContactGroupsFunc set_contact_groups;
     TpBaseContactListCreateGroupsFunc create_groups;
     TpBaseContactListGroupContactsFunc add_to_group;
     TpBaseContactListGroupContactsFunc remove_from_group;
