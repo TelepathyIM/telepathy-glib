@@ -98,7 +98,6 @@ struct _TplEntryPriv
 
 enum {
     PROP_TIMESTAMP = 1,
-    PROP_SIGNAL_TYPE,
     PROP_LOG_ID,
     PROP_PENDING_MSG_ID,
     PROP_DIRECTION,
@@ -160,9 +159,6 @@ tpl_entry_get_property (GObject *object,
       case PROP_TIMESTAMP:
         g_value_set_uint (value, priv->timestamp);
         break;
-      case PROP_SIGNAL_TYPE:
-        g_value_set_uint (value, priv->signal_type);
-        break;
       case PROP_PENDING_MSG_ID:
         g_value_set_int (value, priv->pending_msg_id);
         break;
@@ -205,9 +201,6 @@ tpl_entry_set_property (GObject *object,
   switch (param_id) {
       case PROP_TIMESTAMP:
         _tpl_entry_set_timestamp (self, g_value_get_uint (value));
-        break;
-      case PROP_SIGNAL_TYPE:
-        _tpl_entry_set_signal_type (self, g_value_get_uint (value));
         break;
       case PROP_PENDING_MSG_ID:
         _tpl_entry_set_pending_msg_id (self, g_value_get_int (value));
@@ -259,13 +252,6 @@ tpl_entry_class_init (TplEntryClass *klass)
       "The timestamp (gint64) for the log entry",
       0, G_MAXUINT32, 0, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TIMESTAMP, param_spec);
-
-  param_spec = g_param_spec_uint ("signal-type",
-      "SignalType",
-      "The signal type which caused the log entry",
-      0, G_MAXUINT32, TPL_ENTRY_SIGNAL_NONE, G_PARAM_READWRITE |
-      G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_SIGNAL_TYPE, param_spec);
 
   /**
    * TplEntry::pending-msg-id:
