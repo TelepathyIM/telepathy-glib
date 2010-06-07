@@ -3416,7 +3416,8 @@ tp_base_contact_list_check_group_change (TpBaseContactList *self,
   if (!tp_base_contact_list_check_change (self, contacts_or_null, error))
     return FALSE;
 
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
+  if (tp_base_contact_list_get_group_storage (self) ==
+      TP_CONTACT_METADATA_STORAGE_TYPE_NONE)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot change group memberships");
