@@ -353,6 +353,10 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  *  tp_base_contact_list_remove_from_group(); must always be implemented
  * @remove_group: the implementation of
  *  tp_base_contact_list_remove_group(); must always be implemented
+ * @rename_group: the implementation of
+ *  tp_base_contact_list_rename_group(); the default implementation is %NULL,
+ *  which results in group renaming being emulated via a call to @add_to_group
+ *  and a call to @remove_group
  *
  * The interface vtable for a %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST.
  */
@@ -3112,6 +3116,74 @@ void tp_base_contact_list_add_to_group (TpBaseContactList *self,
 }
 
 /**
+ * TpBaseContactListRenameGroupFunc:
+ * @self: a contact list manager
+ * @old_name: a group
+ * @new_name: a new name for the group
+ *
+ * Signature of a method that renames groups.
+ */
+
+/**
+ * tp_base_contact_list_rename_group:
+ * @self: a contact list manager
+ * @old_name: the normalized name of a group, which must exist
+ * @new_name: a new normalized name for the group name
+ *
+ * Rename a group; if possible, do so as an atomic operation. If this
+ * protocol can't do that, emulate renaming in terms of other operations.
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which may be implemented, using
+ * #TpMutableContactGroupListInterface.rename_group.
+ *
+ * If this virtual method is not implemented, the default is to implement
+ * renaming a group as creating the new group, adding all the old group's
+ * members to it, and removing the old group: this is appropriate for protocols
+ * like XMPP, in which groups behave more like tags.
+ *
+ * The implementation should call tp_base_contact_list_groups_renamed() before
+ * returning.
+ */
+void
+tp_base_contact_list_rename_group (TpBaseContactList *self,
+    const gchar *old_name,
+    const gchar *new_name)
+{
+  TpMutableContactGroupListInterface *iface;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_if_fail (iface != NULL);
+
+  if (iface->rename_group != NULL)
+    {
+      iface->rename_group (self, old_name, new_name);
+    }
+  else
+    {
+      TpHandle old_handle;
+      gpointer old_channel;
+      TpGroupMixin *mixin;
+
+      old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL,
+          NULL);
+      g_return_if_fail (old_handle != 0);
+      old_channel = g_hash_table_lookup (self->priv->groups,
+          GUINT_TO_POINTER (old_handle));
+      g_return_if_fail (old_channel != NULL);
+      mixin = TP_GROUP_MIXIN (old_channel);
+
+      iface->create_groups (self, &new_name, 1);
+      iface->add_to_group (self, new_name, mixin->members);
+      iface->remove_group (self, old_name);
+    }
+}
+
+/**
  * tp_base_contact_list_remove_from_group:
  * @self: a contact list manager
  * @group: the normalized name of a group
@@ -3776,24 +3848,9 @@ tp_base_contact_list_mixin_rename_group (
       goto finally;
     }
 
-  if (0)
-    {
-      /* FIXME: add an optional rename_group virtual method and prefer to use
-       * it, for protocols that have that concept */
-    }
-  else
-    {
-      /* for XMPP etc., implement "rename" as "add all members of old group
-       * to new group, then delete old group" */
-      const gchar *new_name = tp_handle_inspect (self->priv->group_repo,
-          new_handle);
-      TpGroupMixin *mixin = TP_GROUP_MIXIN (old_channel);
-
-      tp_base_contact_list_create_groups (self, &new_name, 1);
-      tp_base_contact_list_add_to_group (self, new_name, mixin->members);
-      tp_base_contact_list_remove_group (self,
-          tp_handle_inspect (self->priv->group_repo, old_handle));
-    }
+  tp_base_contact_list_rename_group (self,
+      tp_handle_inspect (self->priv->group_repo, old_handle),
+      tp_handle_inspect (self->priv->group_repo, new_handle));
 
 finally:
   tp_base_contact_list_mixin_return_void (context, error);

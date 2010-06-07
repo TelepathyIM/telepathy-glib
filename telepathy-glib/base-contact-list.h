@@ -310,6 +310,14 @@ typedef void (*TpBaseContactListRemoveGroupFunc) (TpBaseContactList *self,
 void tp_base_contact_list_remove_group (TpBaseContactList *self,
     const gchar *group);
 
+typedef void (*TpBaseContactListRenameGroupFunc) (TpBaseContactList *self,
+    const gchar *old_name,
+    const gchar *new_name);
+
+void tp_base_contact_list_rename_group (TpBaseContactList *self,
+    const gchar *old_name,
+    const gchar *new_name);
+
 #define TP_TYPE_MUTABLE_CONTACT_GROUP_LIST \
   (tp_mutable_contact_group_list_get_type ())
 GType tp_mutable_contact_group_list_get_type (void) G_GNUC_CONST;
@@ -332,6 +340,8 @@ struct _TpMutableContactGroupListInterface {
     TpBaseContactListGroupContactsFunc add_to_group;
     TpBaseContactListGroupContactsFunc remove_from_group;
     TpBaseContactListRemoveGroupFunc remove_group;
+    /* optional to implement */
+    TpBaseContactListRenameGroupFunc rename_group;
 };
 
 /* ---- Mixin-like functionality for our parent TpBaseConnection ---- */
