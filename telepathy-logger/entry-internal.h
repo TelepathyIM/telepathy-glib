@@ -19,98 +19,98 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#ifndef __TPL_LOG_ENTRY_INTERNAL_H__
-#define __TPL_LOG_ENTRY_INTERNAL_H__
+#ifndef __TPL_ENTRY_INTERNAL_H__
+#define __TPL_ENTRY_INTERNAL_H__
 
 #include <telepathy-logger/entry.h>
 
 G_BEGIN_DECLS
 
-#define TPL_LOG_ENTRY_MSG_ID_IS_VALID(msg) (msg >= 0)
+#define TPL_ENTRY_MSG_ID_IS_VALID(msg) (msg >= 0)
 
-#define TPL_LOG_ENTRY_MSG_ID_UNKNOWN -2
-#define TPL_LOG_ENTRY_MSG_ID_ACKNOWLEDGED -1
-
-typedef enum
-{
-  TPL_LOG_ENTRY_DIRECTION_NONE = 0,
-
-  TPL_LOG_ENTRY_DIRECTION_IN,
-  TPL_LOG_ENTRY_DIRECTION_OUT
-} TplLogEntryDirection;
+#define TPL_ENTRY_MSG_ID_UNKNOWN -2
+#define TPL_ENTRY_MSG_ID_ACKNOWLEDGED -1
 
 typedef enum
 {
-  TPL_LOG_ENTRY_SIGNAL_NONE = 0,
+  TPL_ENTRY_DIRECTION_NONE = 0,
 
-  TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_SENT,
-  TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_RECEIVED,
-  TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR,
-  TPL_LOG_ENTRY_CHANELL_TEXT_SIGNAL_LOST_MESSAGE,
-  TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_CHAT_STATUS_CHANGED,
-
-  TPL_LOG_ENTRY_CHANNEL_SIGNAL_CHANNEL_CLOSED
-
-} TplLogEntrySignalType;
+  TPL_ENTRY_DIRECTION_IN,
+  TPL_ENTRY_DIRECTION_OUT
+} TplEntryDirection;
 
 typedef enum
 {
-  TPL_LOG_ENTRY_ERROR,
-  TPL_LOG_ENTRY_TEXT
-} TplLogEntryType;
+  TPL_ENTRY_SIGNAL_NONE = 0,
+
+  TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SENT,
+  TPL_ENTRY_CHANNEL_TEXT_SIGNAL_RECEIVED,
+  TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR,
+  TPL_ENTRY_CHANELL_TEXT_SIGNAL_LOST_MESSAGE,
+  TPL_ENTRY_CHANNEL_TEXT_SIGNAL_CHAT_STATUS_CHANGED,
+
+  TPL_ENTRY_CHANNEL_SIGNAL_CHANNEL_CLOSED
+
+} TplEntrySignalType;
+
+typedef enum
+{
+  TPL_ENTRY_ERROR,
+  TPL_ENTRY_TEXT
+} TplEntryType;
 
 
-struct _TplLogEntry
+struct _TplEntry
 {
   GObject parent;
 
   /* Private */
-  TplLogEntryPriv *priv;
+  TplEntryPriv *priv;
 };
 
-struct _TplLogEntryClass {
+struct _TplEntryClass {
   GObjectClass parent_class;
 
   /* to be implemented only by subclasses */
-  gboolean (*equal) (TplLogEntry *entry1, TplLogEntry *entry2);
+  gboolean (*equal) (TplEntry *entry1, TplEntry *entry2);
 };
 
 
-void _tpl_log_entry_set_timestamp (TplLogEntry *self,
+void _tpl_entry_set_timestamp (TplEntry *self,
     gint64 data);
 
-void _tpl_log_entry_set_pending_msg_id (TplLogEntry *self,
+void _tpl_entry_set_pending_msg_id (TplEntry *self,
     gint data);
 
-void _tpl_log_entry_set_signal_type (TplLogEntry *self,
-    TplLogEntrySignalType data);
+void _tpl_entry_set_signal_type (TplEntry *self,
+    TplEntrySignalType data);
 
-void _tpl_log_entry_set_direction (TplLogEntry *self,
-    TplLogEntryDirection data);
+void _tpl_entry_set_direction (TplEntry *self,
+    TplEntryDirection data);
 
-void _tpl_log_entry_set_chat_id (TplLogEntry *self,
+void _tpl_entry_set_chat_id (TplEntry *self,
     const gchar *data);
 
-void _tpl_log_entry_set_channel_path (TplLogEntry *self,
+void _tpl_entry_set_channel_path (TplEntry *self,
     const gchar *data);
 
-void _tpl_log_entry_set_sender (TplLogEntry *self,
+void _tpl_entry_set_sender (TplEntry *self,
     TplContact *data);
 
-void _tpl_log_entry_set_receiver (TplLogEntry *self,
+void _tpl_entry_set_receiver (TplEntry *self,
     TplContact *data);
 
-gboolean _tpl_log_entry_is_pending (TplLogEntry *self);
-TplLogEntrySignalType _tpl_log_entry_get_signal_type (TplLogEntry *self);
-const gchar * _tpl_log_entry_get_chat_id (TplLogEntry * self);
-const gchar * _tpl_log_entry_get_channel_path (TplLogEntry *self);
+gboolean _tpl_entry_is_pending (TplEntry *self);
+TplEntrySignalType _tpl_entry_get_signal_type (TplEntry *self);
+const gchar * _tpl_entry_get_chat_id (TplEntry * self);
+const gchar * _tpl_entry_get_channel_path (TplEntry *self);
 
-TplLogEntryDirection _tpl_log_entry_get_direction (TplLogEntry *self);
+TplEntryDirection _tpl_entry_get_direction (TplEntry *self);
 
-gboolean _tpl_log_entry_equal (TplLogEntry *self,
-    TplLogEntry *data);
+gboolean _tpl_entry_equal (TplEntry *self,
+    TplEntry *data);
 
-const gchar * _tpl_log_entry_get_log_id (TplLogEntry *self);
+const gchar * _tpl_entry_get_log_id (TplEntry *self);
 
 G_END_DECLS
-#endif // __TPL_LOG_ENTRY_INTERNAL_H__
+#endif // __TPL_ENTRY_INTERNAL_H__

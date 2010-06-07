@@ -29,14 +29,14 @@
 #include <telepathy-logger/log-store-internal.h>
 
 gboolean _tpl_log_manager_add_message (TplLogManager *manager,
-    TplLogEntry *message, GError **error);
+    TplEntry *message, GError **error);
 
 gboolean _tpl_log_manager_add_message_finish (TplLogManager *self,
     GAsyncResult *result,
     GError **error);
 
 void _tpl_log_manager_add_message_async (TplLogManager *manager,
-    TplLogEntry *message, GAsyncReadyCallback callback, gpointer user_data);
+    TplEntry *message, GAsyncReadyCallback callback, gpointer user_data);
 
 gboolean _tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore);

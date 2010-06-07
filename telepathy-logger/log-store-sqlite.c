@@ -45,7 +45,7 @@
 
 static void log_store_iface_init (TplLogStoreInterface *iface);
 static gboolean _insert_to_cache_table (TplLogStore *self,
-    TplLogEntry *message, GError **error);
+    TplEntry *message, GError **error);
 static void tpl_log_store_sqlite_purge (TplLogStoreSqlite *self, time_t delta,
     GError **error);
 static gboolean purge_entry_timeout (gpointer logstore);
@@ -266,9 +266,9 @@ get_account_name (TpAccount *account)
 }
 
 static const char *
-get_account_name_from_entry (TplLogEntry *entry)
+get_account_name_from_entry (TplEntry *entry)
 {
-  return tpl_log_entry_get_account_path (entry) +
+  return tpl_entry_get_account_path (entry) +
     strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
 }
 
@@ -280,28 +280,28 @@ get_channel_name (TpChannel *chan)
 }
 
 static const char *
-get_channel_name_from_entry (TplLogEntry *entry)
+get_channel_name_from_entry (TplEntry *entry)
 {
-  return _tpl_log_entry_get_channel_path (entry) +
+  return _tpl_entry_get_channel_path (entry) +
     strlen (TP_CONN_OBJECT_PATH_BASE);
 }
 
 static char *
-get_date (TplLogEntry *entry)
+get_date (TplEntry *entry)
 {
   time_t t;
 
-  t = tpl_log_entry_get_timestamp (entry);
+  t = tpl_entry_get_timestamp (entry);
 
   return _tpl_time_to_string_utc (t, "%Y-%m-%d");
 }
 
 static char *
-get_datetime (TplLogEntry *entry)
+get_datetime (TplEntry *entry)
 {
   time_t t;
 
-  t = tpl_log_entry_get_timestamp (entry);
+  t = tpl_entry_get_timestamp (entry);
 
   return _tpl_time_to_string_utc (t, TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
 }
@@ -422,7 +422,7 @@ out:
 
 static gboolean
 tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
-    TplLogEntry *message,
+    TplEntry *message,
     GError **error)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
@@ -437,11 +437,11 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  if (_tpl_log_entry_get_signal_type (message) !=
-          TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED)
+  if (_tpl_entry_get_signal_type (message) !=
+          TPL_ENTRY_TEXT_SIGNAL_RECEIVED)
     {
       DEBUG ("ignoring msg %s, not interesting for message-counter",
-          _tpl_log_entry_get_log_id (message));
+          _tpl_entry_get_log_id (message));
       retval = TRUE;
       goto out;
     }
@@ -449,8 +449,8 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   DEBUG ("message received");
 
   account = get_account_name_from_entry (message);
-  identifier = _tpl_log_entry_get_chat_id (message);
-  chatroom = _tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
+  identifier = _tpl_entry_get_chat_id (message);
+  chatroom = _tpl_entry_text_is_chatroom (TPL_ENTRY_TEXT (message));
   date = get_date (message);
 
   DEBUG ("account = %s", account);
@@ -571,7 +571,7 @@ out:
 
 static gboolean
 tpl_log_store_sqlite_add_message_cache (TplLogStore *self,
-    TplLogEntry *message,
+    TplEntry *message,
     GError **error)
 {
   const char *log_id;
@@ -579,7 +579,7 @@ tpl_log_store_sqlite_add_message_cache (TplLogStore *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  log_id = _tpl_log_entry_get_log_id (message);
+  log_id = _tpl_entry_get_log_id (message);
   DEBUG ("received %s, considering if can be cached", log_id);
   if (_tpl_log_store_sqlite_log_id_is_present (self, log_id))
     {
@@ -605,24 +605,24 @@ out:
 /**
  * tpl_log_store_sqlite_add_message:
  * @self: TplLogstoreSqlite instance
- * @message: a TplLogEntry instance
+ * @message: a TplEntry instance
  * @error: memory pointer use in case of error
  *
  * @message will be sent to the MessageCounter and MessageSqlite tables.
  *
- * MessageSqlite will accept any instance of TplLogEntry for @message and will
+ * MessageSqlite will accept any instance of TplEntry for @message and will
  * return %FALSE with @error set when a fatal error occurs or when @message
  * has already been logged.
  * For the last case a TPL_LOG_STORE_ERROR_PRESENT will be set as error
  * code in @error, and is considered fatal, since it should never happen.
  *
- * A module implementing a TplChannel should always check for TplLogEntry
+ * A module implementing a TplChannel should always check for TplEntry
  * log-id presence in the cache log-store if there is a chance to receive the
  * same log-id twice.
  *
  * MessageCounter only handles Text messages, which means that it will
  * silently (ie won't use @error) not log @message, when it won't be an
- * instance ot TplLogEntryText, returning anyway %TRUE. This means "I could
+ * instance ot TplEntryText, returning anyway %TRUE. This means "I could
  * store @message, but I'm discarding it because I'm not interested in it" and
  * is not cosidered an error (@error won't be set).
  * It will return %FALSE with @error set if a fatal error occurred, for
@@ -635,7 +635,7 @@ out:
  */
 static gboolean
 tpl_log_store_sqlite_add_message (TplLogStore *self,
-    TplLogEntry *message,
+    TplEntry *message,
     GError **error)
 {
   gboolean retval = FALSE;
@@ -648,10 +648,10 @@ tpl_log_store_sqlite_add_message (TplLogStore *self,
           "TplLogStoreSqlite intance needed");
       goto out;
     }
-  if (!TPL_IS_LOG_ENTRY (message))
+  if (!TPL_IS_ENTRY (message))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE, "TplLogEntry instance needed");
+          TPL_LOG_STORE_ERROR_ADD_MESSAGE, "TplEntry instance needed");
       goto out;
     }
 
@@ -674,7 +674,7 @@ out:
 
 static gboolean
 _insert_to_cache_table (TplLogStore *self,
-    TplLogEntry *message,
+    TplEntry *message,
     GError **error)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
@@ -686,7 +686,7 @@ _insert_to_cache_table (TplLogStore *self,
   gboolean retval = FALSE;
   int e;
 
-  if (!TPL_IS_LOG_ENTRY_TEXT (message))
+  if (!TPL_IS_ENTRY_TEXT (message))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_MESSAGE,
@@ -697,10 +697,10 @@ _insert_to_cache_table (TplLogStore *self,
 
   account = get_account_name_from_entry (message);
   channel = get_channel_name_from_entry (message);
-  identifier = _tpl_log_entry_get_chat_id (message);
-  log_id = _tpl_log_entry_get_log_id (message);
-  msg_id = tpl_log_entry_get_pending_msg_id (message);
-  chatroom = _tpl_log_entry_text_is_chatroom (TPL_LOG_ENTRY_TEXT (message));
+  identifier = _tpl_entry_get_chat_id (message);
+  log_id = _tpl_entry_get_log_id (message);
+  msg_id = tpl_entry_get_pending_msg_id (message);
+  chatroom = _tpl_entry_text_is_chatroom (TPL_ENTRY_TEXT (message));
   date = get_datetime (message);
 
   DEBUG ("channel = %s", channel);
@@ -708,7 +708,7 @@ _insert_to_cache_table (TplLogStore *self,
   DEBUG ("chat_identifier = %s", identifier);
   DEBUG ("log_identifier = %s", log_id);
   DEBUG ("pending_msg_id = %d (%s)", msg_id,
-      (TPL_LOG_ENTRY_MSG_ID_IS_VALID (msg_id) ?
+      (TPL_ENTRY_MSG_ID_IS_VALID (msg_id) ?
        "pending" : "acknowledged or sent"));
   DEBUG ("chatroom = %i", chatroom);
   DEBUG ("date = %s", date);
@@ -743,7 +743,7 @@ _insert_to_cache_table (TplLogStore *self,
   sqlite3_bind_text (sql, 2, account, -1, SQLITE_TRANSIENT);
   /* insert NULL if ACKNOWLEDGED (ie sent message's entries, which are created
    * ACK'd */
-  if (!TPL_LOG_ENTRY_MSG_ID_IS_VALID (msg_id))
+  if (!TPL_ENTRY_MSG_ID_IS_VALID (msg_id))
     sqlite3_bind_null (sql, 3);
   else
     sqlite3_bind_int (sql, 3, msg_id);
@@ -804,7 +804,7 @@ out:
  * specific TpChannel instance with the same path or not, just knowking its
  * path.
  * This is not a problem, though, since log-ids are unique within TPL. If two
- * log-ids match, they relates to the same TplLogEntry instance.
+ * log-ids match, they relates to the same TplEntry instance.
  *
  * Returns: a list of log-id
  */
@@ -900,7 +900,7 @@ out:
  * specific TpChannel instance with the same path or not, just knowking its
  * path.
  * This is not a problem, though, since log-ids are unique within TPL. If two
- * log-ids match, they relates to the same TplLogEntry instance.
+ * log-ids match, they relates to the same TplEntry instance.
  *
  * Returns: a list of log-id
  */

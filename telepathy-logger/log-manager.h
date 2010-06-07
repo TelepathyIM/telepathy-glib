@@ -70,7 +70,7 @@ typedef struct
   GDate *date;
 } TplLogSearchHit;
 
-typedef gboolean (*TplLogMessageFilter) (TplLogEntry *message,
+typedef gboolean (*TplLogMessageFilter) (TplEntry *message,
     gpointer user_data);
 
 GType tpl_log_manager_get_type (void);

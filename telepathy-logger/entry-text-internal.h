@@ -19,8 +19,8 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#ifndef __TPL_LOG_ENTRY_TEXT_INTERNAL_H__
-#define __TPL_LOG_ENTRY_TEXT_INTERNAL_H__
+#ifndef __TPL_ENTRY_TEXT_INTERNAL_H__
+#define __TPL_ENTRY_TEXT_INTERNAL_H__
 
 #include <telepathy-logger/entry-text.h>
 #include <telepathy-logger/entry-internal.h>
@@ -30,60 +30,60 @@ G_BEGIN_DECLS
 
 typedef enum
 {
-  TPL_LOG_ENTRY_TEXT_SIGNAL_NONE = 0,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_SENT,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_SEND_ERROR,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_LOST_MESSAGE,
-  TPL_LOG_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED,
-  TPL_LOG_ENTRY_SIGNAL_CHANNEL_CLOSED
-} TplLogEntryTextSignalType;
+  TPL_ENTRY_TEXT_SIGNAL_NONE = 0,
+  TPL_ENTRY_TEXT_SIGNAL_SENT,
+  TPL_ENTRY_TEXT_SIGNAL_RECEIVED,
+  TPL_ENTRY_TEXT_SIGNAL_SEND_ERROR,
+  TPL_ENTRY_TEXT_SIGNAL_LOST_MESSAGE,
+  TPL_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED,
+  TPL_ENTRY_SIGNAL_CHANNEL_CLOSED
+} TplEntryTextSignalType;
 
-struct _TplLogEntryText
+struct _TplEntryText
 {
-  TplLogEntry parent;
+  TplEntry parent;
 
   /* Private */
-  TplLogEntryTextPriv *priv;
+  TplEntryTextPriv *priv;
 };
 
-struct _TplLogEntryTextClass
+struct _TplEntryTextClass
 {
-  TplLogEntryClass parent_class;
+  TplEntryClass parent_class;
 };
 
-TplLogEntryText * _tpl_log_entry_text_new (const gchar* log_id,
+TplEntryText * _tpl_entry_text_new (const gchar* log_id,
     const gchar *account_path,
-    TplLogEntryDirection direction);
+    TplEntryDirection direction);
 
-TpChannelTextMessageType _tpl_log_entry_text_message_type_from_str (
+TpChannelTextMessageType _tpl_entry_text_message_type_from_str (
     const gchar *type_str);
 
-const gchar * _tpl_log_entry_text_message_type_to_str (
+const gchar * _tpl_entry_text_message_type_to_str (
     TpChannelTextMessageType msg_type);
 
-TplChannelText * _tpl_log_entry_text_get_tpl_channel_text (
-    TplLogEntryText *self);
+TplChannelText * _tpl_entry_text_get_tpl_channel_text (
+    TplEntryText *self);
 
-void _tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText *self,
+void _tpl_entry_text_set_tpl_channel_text (TplEntryText *self,
     TplChannelText *data);
 
-void _tpl_log_entry_text_set_message (TplLogEntryText *self,
+void _tpl_entry_text_set_message (TplEntryText *self,
     const gchar *data);
 
-void _tpl_log_entry_text_set_message_type (TplLogEntryText *self,
+void _tpl_entry_text_set_message_type (TplEntryText *self,
     TpChannelTextMessageType data);
 
-void _tpl_log_entry_text_set_chatroom (TplLogEntryText *self,
+void _tpl_entry_text_set_chatroom (TplEntryText *self,
     gboolean data);
 
-TpChannelTextMessageType _tpl_log_entry_text_get_message_type (
-    TplLogEntryText *self);
+TpChannelTextMessageType _tpl_entry_text_get_message_type (
+    TplEntryText *self);
 
-gboolean _tpl_log_entry_text_is_chatroom (TplLogEntryText *self);
+gboolean _tpl_entry_text_is_chatroom (TplEntryText *self);
 
-gboolean _tpl_log_entry_text_equal (TplLogEntry *message1,
-    TplLogEntry *message2);
+gboolean _tpl_entry_text_equal (TplEntry *message1,
+    TplEntry *message2);
 
 G_END_DECLS
-#endif // __TPL_LOG_ENTRY_TEXT_INTERNAL_H__
+#endif // __TPL_ENTRY_TEXT_INTERNAL_H__

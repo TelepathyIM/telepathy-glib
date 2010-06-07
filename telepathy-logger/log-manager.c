@@ -67,7 +67,7 @@ typedef struct
   TplLogMessageFilter filter;
   gchar *search_text;
   gpointer user_data;
-  TplLogEntry *logentry;
+  TplEntry *logentry;
 } TplLogManagerChatInfo;
 
 
@@ -206,7 +206,7 @@ tpl_log_manager_dup_singleton (void)
 /**
  * _tpl_log_manager_add_message
  * @manager: the log manager
- * @message: a TplLogEntry subclass's instance
+ * @message: a TplEntry subclass's instance
  * @error: the memory location of GError, filled if an error occurs
  *
  * It stores @message, sending it to all the registered TplLogStore which have
@@ -221,7 +221,7 @@ tpl_log_manager_dup_singleton (void)
  */
 gboolean
 _tpl_log_manager_add_message (TplLogManager *manager,
-    TplLogEntry *message,
+    TplEntry *message,
     GError **error)
 {
   TplLogManagerPriv *priv;
@@ -230,7 +230,7 @@ _tpl_log_manager_add_message (TplLogManager *manager,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTRY (message), FALSE);
 
   priv = manager->priv;
 
@@ -255,7 +255,7 @@ _tpl_log_manager_add_message (TplLogManager *manager,
   if (!retval)
     {
       CRITICAL ("Failed to write to all "
-          "writable LogStores log-id %s.", _tpl_log_entry_get_log_id (message));
+          "writable LogStores log-id %s.", _tpl_entry_get_log_id (message));
       g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
           TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
           "Not recoverable error occurred during log manager's "
@@ -453,15 +453,15 @@ static gint
 log_manager_message_date_cmp (gconstpointer a,
     gconstpointer b)
 {
-  TplLogEntry *one = (TplLogEntry *) a;
-  TplLogEntry *two = (TplLogEntry *) b;
+  TplEntry *one = (TplEntry *) a;
+  TplEntry *two = (TplEntry *) b;
   gint64 one_time, two_time;
 
-  g_assert (TPL_IS_LOG_ENTRY (one));
-  g_assert (TPL_IS_LOG_ENTRY (two));
+  g_assert (TPL_IS_ENTRY (one));
+  g_assert (TPL_IS_ENTRY (two));
 
-  one_time = tpl_log_entry_get_timestamp (one);
-  two_time = tpl_log_entry_get_timestamp (two);
+  one_time = tpl_entry_get_timestamp (one);
+  two_time = tpl_entry_get_timestamp (two);
 
   /* return -1, o or 1 depending on message1 is newer, the same or older than
    * message2 */
@@ -811,7 +811,7 @@ _add_message_async_thread (GSimpleAsyncResult *simple,
 
 void
 _tpl_log_manager_add_message_async (TplLogManager *manager,
-    TplLogEntry *message,
+    TplEntry *message,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -823,9 +823,9 @@ _tpl_log_manager_add_message_async (TplLogManager *manager,
       TPL_LOG_MANAGER, FAILED,
       "manager argument passed is not a TplManager instance",
       callback, user_data);
-  tpl_call_with_err_if_fail (TPL_IS_LOG_ENTRY (message), manager,
+  tpl_call_with_err_if_fail (TPL_IS_ENTRY (message), manager,
       TPL_LOG_MANAGER, FAILED,
-      "message argument passed is not a TplLogEntry instance",
+      "message argument passed is not a TplEntry instance",
       callback, user_data);
 
   chat_info->logentry = g_object_ref (message);
@@ -1007,7 +1007,7 @@ tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
 static void
 _get_messages_for_date_async_result_free (gpointer data)
 {
-  GList *lst = data; /* list of TPL_LOG_ENTRY */
+  GList *lst = data; /* list of TPL_ENTRY */
   g_return_if_fail (data != NULL);
 
   g_list_foreach (lst, (GFunc) g_object_unref, NULL);
@@ -1047,7 +1047,7 @@ _get_messages_for_date_async_thread (GSimpleAsyncResult *simple,
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Retrieve a list of #TplLogEntry exchanged at @date with @chat_id.
+ * Retrieve a list of #TplEntry exchanged at @date with @chat_id.
  */
 void
 tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
@@ -1104,7 +1104,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
  * tpl_log_manager_get_filtered_messages_finish:
  * @manager: a #TplLogManager
  * @result: a #GAsyncResult
- * @messages: a pointer to a #GList used to return the list #TplLogEntry
+ * @messages: a pointer to a #GList used to return the list #TplEntry
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
@@ -1137,7 +1137,7 @@ tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
 static void
 _get_filtered_messages_async_result_free (gpointer data)
 {
-  GList *lst = data; /* list of TPL_LOG_ENTRY */
+  GList *lst = data; /* list of TPL_ENTRY */
   g_return_if_fail (data != NULL);
 
   g_list_foreach (lst, (GFunc) g_object_unref, NULL);

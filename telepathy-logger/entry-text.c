@@ -33,9 +33,9 @@
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
-G_DEFINE_TYPE (TplLogEntryText, tpl_log_entry_text, TPL_TYPE_LOG_ENTRY)
+G_DEFINE_TYPE (TplEntryText, tpl_entry_text, TPL_TYPE_ENTRY)
 
-struct _TplLogEntryTextPriv
+struct _TplEntryTextPriv
 {
   TplChannelText *tpl_text;
   TpChannelTextMessageType message_type;
@@ -52,10 +52,10 @@ enum
 
 
 static void
-tpl_log_entry_text_dispose (GObject * obj)
+tpl_entry_text_dispose (GObject * obj)
 {
-  TplLogEntryText *self = TPL_LOG_ENTRY_TEXT (obj);
-  TplLogEntryTextPriv *priv = self->priv;
+  TplEntryText *self = TPL_ENTRY_TEXT (obj);
+  TplEntryTextPriv *priv = self->priv;
 
   if (priv->tpl_text != NULL)
     {
@@ -63,30 +63,30 @@ tpl_log_entry_text_dispose (GObject * obj)
       priv->tpl_text = NULL;
     }
 
-  G_OBJECT_CLASS (tpl_log_entry_text_parent_class)->dispose (obj);
+  G_OBJECT_CLASS (tpl_entry_text_parent_class)->dispose (obj);
 }
 
 
 static void
-tpl_log_entry_text_finalize (GObject * obj)
+tpl_entry_text_finalize (GObject * obj)
 {
-  TplLogEntryText *self = TPL_LOG_ENTRY_TEXT (obj);
-  TplLogEntryTextPriv *priv = self->priv;
+  TplEntryText *self = TPL_ENTRY_TEXT (obj);
+  TplEntryTextPriv *priv = self->priv;
 
   g_free (priv->message);
   priv->message = NULL;
 
-  G_OBJECT_CLASS (tpl_log_entry_text_parent_class)->finalize (obj);
+  G_OBJECT_CLASS (tpl_entry_text_parent_class)->finalize (obj);
 }
 
 
 static void
-tpl_log_entry_text_get_property (GObject *object,
+tpl_entry_text_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplLogEntryTextPriv *priv = TPL_LOG_ENTRY_TEXT (object)->priv;
+  TplEntryTextPriv *priv = TPL_ENTRY_TEXT (object)->priv;
 
   switch (param_id)
     {
@@ -107,22 +107,22 @@ tpl_log_entry_text_get_property (GObject *object,
 
 
 static void
-tpl_log_entry_text_set_property (GObject *object,
+tpl_entry_text_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TplLogEntryText *self = TPL_LOG_ENTRY_TEXT (object);
+  TplEntryText *self = TPL_ENTRY_TEXT (object);
 
   switch (param_id) {
       case PROP_MESSAGE_TYPE:
-        _tpl_log_entry_text_set_message_type (self, g_value_get_uint (value));
+        _tpl_entry_text_set_message_type (self, g_value_get_uint (value));
         break;
       case PROP_MESSAGE:
-        _tpl_log_entry_text_set_message (self, g_value_get_string (value));
+        _tpl_entry_text_set_message (self, g_value_get_string (value));
         break;
       case PROP_TPL_CHANNEL_TEXT:
-        _tpl_log_entry_text_set_tpl_channel_text (self,
+        _tpl_entry_text_set_tpl_channel_text (self,
             g_value_get_object (value));
         break;
       default:
@@ -132,17 +132,17 @@ tpl_log_entry_text_set_property (GObject *object,
 }
 
 
-static void tpl_log_entry_text_class_init (TplLogEntryTextClass *klass)
+static void tpl_entry_text_class_init (TplEntryTextClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  TplLogEntryClass *log_entry_class = TPL_LOG_ENTRY_CLASS (klass);
+  TplEntryClass *entry_class = TPL_ENTRY_CLASS (klass);
   GParamSpec *param_spec;
 
-  object_class->finalize = tpl_log_entry_text_finalize;
-  object_class->dispose = tpl_log_entry_text_dispose;
-  object_class->get_property = tpl_log_entry_text_get_property;
-  object_class->set_property = tpl_log_entry_text_set_property;
-  log_entry_class->equal = _tpl_log_entry_text_equal;
+  object_class->finalize = tpl_entry_text_finalize;
+  object_class->dispose = tpl_entry_text_dispose;
+  object_class->get_property = tpl_entry_text_get_property;
+  object_class->set_property = tpl_entry_text_set_property;
+  entry_class->equal = _tpl_entry_text_equal;
 
   param_spec = g_param_spec_uint ("message-type",
       "MessageType",
@@ -163,26 +163,26 @@ static void tpl_log_entry_text_class_init (TplLogEntryTextClass *klass)
       TPL_TYPE_CHANNEL_TEXT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TPL_CHANNEL_TEXT, param_spec);
 
-  g_type_class_add_private (object_class, sizeof (TplLogEntryTextPriv));
+  g_type_class_add_private (object_class, sizeof (TplEntryTextPriv));
 
 }
 
 
 static void
-tpl_log_entry_text_init (TplLogEntryText *self)
+tpl_entry_text_init (TplEntryText *self)
 {
-  TplLogEntryTextPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TPL_TYPE_LOG_ENTRY_TEXT, TplLogEntryTextPriv);
+  TplEntryTextPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TPL_TYPE_ENTRY_TEXT, TplEntryTextPriv);
   self->priv = priv;
 }
 
 
-TplLogEntryText *
-_tpl_log_entry_text_new (const gchar *log_id,
+TplEntryText *
+_tpl_entry_text_new (const gchar *log_id,
     const gchar *account_path,
-    TplLogEntryDirection direction)
+    TplEntryDirection direction)
 {
-  return g_object_new (TPL_TYPE_LOG_ENTRY_TEXT,
+  return g_object_new (TPL_TYPE_ENTRY_TEXT,
       "log-id", log_id,
       "account-path", account_path,
       "direction", direction,
@@ -199,7 +199,7 @@ static gchar *message_types[] = {
 
 
 /**
- * _tpl_log_entry_text_message_type_from_str
+ * _tpl_entry_text_message_type_from_str
  * @type_str: string to transform into a #TpChannelTextMessageType
  *
  * Maps strings into enum #TpChannelTextMessageType values.
@@ -208,7 +208,7 @@ static gchar *message_types[] = {
  * mapping is found, or defaults to %TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL if not.
  */
 TpChannelTextMessageType
-_tpl_log_entry_text_message_type_from_str (const gchar *type_str)
+_tpl_entry_text_message_type_from_str (const gchar *type_str)
 {
   guint i;
   for (i = 0; i < G_N_ELEMENTS (message_types); ++i)
@@ -221,7 +221,7 @@ _tpl_log_entry_text_message_type_from_str (const gchar *type_str)
 
 
 /**
- * _tpl_log_entry_text_message_type_to_str
+ * _tpl_entry_text_message_type_to_str
  * @msg_type: message type to transform into a string
  *
  * Maps enum #TpChannelTextMessageType values into strings
@@ -230,7 +230,7 @@ _tpl_log_entry_text_message_type_from_str (const gchar *type_str)
  * a legal value for %TpChannelTextMessageType.
  */
 const gchar *
-_tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
+_tpl_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
 {
   g_return_val_if_fail (G_N_ELEMENTS (message_types) >= msg_type, NULL);
 
@@ -239,36 +239,36 @@ _tpl_log_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
 
 
 gboolean
-_tpl_log_entry_text_is_chatroom (TplLogEntryText * self)
+_tpl_entry_text_is_chatroom (TplEntryText * self)
 {
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self), FALSE);
 
   return self->priv->chatroom;
 }
 
 
 TplChannelText *
-_tpl_log_entry_text_get_tpl_channel_text (TplLogEntryText * self)
+_tpl_entry_text_get_tpl_channel_text (TplEntryText * self)
 {
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), NULL);
+  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self), NULL);
 
   return self->priv->tpl_text;
 }
 
 
 const gchar *
-tpl_log_entry_text_get_message (TplLogEntryText * self)
+tpl_entry_text_get_message (TplEntryText * self)
 {
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self), NULL);
+  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self), NULL);
 
   return self->priv->message;
 }
 
 
 TpChannelTextMessageType
-_tpl_log_entry_text_get_message_type (TplLogEntryText * self)
+_tpl_entry_text_get_message_type (TplEntryText * self)
 {
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (self),
+  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self),
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
 
   return self->priv->message_type;
@@ -276,12 +276,12 @@ _tpl_log_entry_text_get_message_type (TplLogEntryText * self)
 
 
 void
-_tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText * self,
+_tpl_entry_text_set_tpl_channel_text (TplEntryText * self,
     TplChannelText *data)
 {
-  TplLogEntryTextPriv *priv;
+  TplEntryTextPriv *priv;
 
-  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
+  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (data) || data == NULL);
 
   priv = self->priv;
@@ -292,12 +292,12 @@ _tpl_log_entry_text_set_tpl_channel_text (TplLogEntryText * self,
 
 
 void
-_tpl_log_entry_text_set_message (TplLogEntryText *self,
+_tpl_entry_text_set_message (TplEntryText *self,
     const gchar *data)
 {
-  TplLogEntryTextPriv *priv;
+  TplEntryTextPriv *priv;
 
-  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
+  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
   g_return_if_fail (data != NULL); /* allow zero length */
 
   priv = self->priv;
@@ -308,30 +308,30 @@ _tpl_log_entry_text_set_message (TplLogEntryText *self,
 
 
 void
-_tpl_log_entry_text_set_message_type (TplLogEntryText *self,
+_tpl_entry_text_set_message_type (TplEntryText *self,
     TpChannelTextMessageType data)
 {
-  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
+  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
 
   self->priv->message_type = data;
 }
 
 
 void
-_tpl_log_entry_text_set_chatroom (TplLogEntryText *self,
+_tpl_entry_text_set_chatroom (TplEntryText *self,
     gboolean data)
 {
-  g_return_if_fail (TPL_IS_LOG_ENTRY_TEXT (self));
+  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
 
   self->priv->chatroom = data;
 }
 
 gboolean
-_tpl_log_entry_text_equal (TplLogEntry *message1,
-    TplLogEntry *message2)
+_tpl_entry_text_equal (TplEntry *message1,
+    TplEntry *message2)
 {
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message1), FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message2), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (message1), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (message2), FALSE);
 
   /*
   if (priv1->id == priv2->id && !tp_strdiff (priv1->body, priv2->body)) {
@@ -339,6 +339,6 @@ _tpl_log_entry_text_equal (TplLogEntry *message1,
     if (!tp_strdiff (priv1->entry.text->message, priv2->entry.text->message)) {
     }
   */
-  return !tp_strdiff (_tpl_log_entry_get_log_id (message1),
-      _tpl_log_entry_get_log_id (message2));
+  return !tp_strdiff (_tpl_entry_get_log_id (message1),
+      _tpl_entry_get_log_id (message2));
 }

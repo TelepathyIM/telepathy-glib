@@ -405,12 +405,12 @@ _get_messages_return (GObject *manager,
        ptr != NULL && ctx->lines > 0;
        ptr = g_list_previous (ptr))
     {
-      TplLogEntry *log = ptr->data;
-      const char *message = tpl_log_entry_text_get_message (
-          TPL_LOG_ENTRY_TEXT (log));
+      TplEntry *log = ptr->data;
+      const char *message = tpl_entry_text_get_message (
+          TPL_ENTRY_TEXT (log));
       const char *sender = tpl_contact_get_identifier (
-          tpl_log_entry_get_sender (log));
-      gint64 timestamp = tpl_log_entry_get_timestamp (log);
+          tpl_entry_get_sender (log));
+      gint64 timestamp = tpl_entry_get_timestamp (log);
 
       DEBUG ("Message: %" G_GINT64_FORMAT " <%s> %s",
           timestamp, sender, message);

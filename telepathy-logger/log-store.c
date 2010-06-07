@@ -33,7 +33,7 @@
  * @title: TplLogStore
  * @short_description: LogStore interface can register into #TplLogManager as
  * #TplLogStore:writable or #TplLogStore:readable log stores.
- * @see_also: #log-entry-text:TplLogEntryText and other subclasses when they'll exist
+ * @see_also: #entry-text:TplEntryText and other subclasses when they'll exist
  *
  * The #TplLogStore defines all the public methods that a TPL Log Store has to
  * implement in order to be used into a #TplLogManager.
@@ -137,7 +137,7 @@ _tpl_log_store_exists (TplLogStore *self,
 /**
  * _tpl_log_store_add_message:
  * @self: a TplLogStore
- * @message: an instance of a subclass of TplLogEntry (ie TplLogEntryText)
+ * @message: an instance of a subclass of TplEntry (ie TplEntryText)
  * @error: memory location used if an error occurs
  *
  * Sends @message to the LogStore @self, in order to be stored.
@@ -146,7 +146,7 @@ _tpl_log_store_exists (TplLogStore *self,
  */
 gboolean
 _tpl_log_store_add_message (TplLogStore *self,
-    TplLogEntry *message,
+    TplEntry *message,
     GError **error)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
@@ -206,7 +206,7 @@ _tpl_log_store_get_dates (TplLogStore *self,
  *
  * Retrieves a list of text messages, with timestamp matching @date.
  *
- * Returns: a GList of TplLogEntryText, to be freed using something like
+ * Returns: a GList of TplEntryText, to be freed using something like
  * g_list_foreach (lst, g_object_unref, NULL);
  * g_list_free (lst);
  */
@@ -333,7 +333,7 @@ _tpl_log_store_search_new (TplLogStore *self,
  * It will return at most the last (ie most recent) @num_messages messages.
  * Pass G_MAXUINT if all the message are needed.
  *
- * Returns: a GList of TplLogEntryText, to be freed using something like
+ * Returns: a GList of TplEntryText, to be freed using something like
  * g_list_foreach (lst, g_object_unref, NULL);
  * g_list_free (lst);
  */

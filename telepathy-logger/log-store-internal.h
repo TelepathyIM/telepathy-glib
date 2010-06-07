@@ -65,7 +65,7 @@ typedef struct
   const gchar * (*get_name) (TplLogStore *self);
   gboolean (*exists) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom);
-  gboolean (*add_message) (TplLogStore *self, TplLogEntry *message,
+  gboolean (*add_message) (TplLogStore *self, TplEntry *message,
       GError **error);
   GList * (*get_dates) (TplLogStore *self, TpAccount *account,
       const gchar *chat_id, gboolean chatroom);
@@ -87,7 +87,7 @@ GType _tpl_log_store_get_type (void);
 const gchar * _tpl_log_store_get_name (TplLogStore *self);
 gboolean _tpl_log_store_exists (TplLogStore *self, TpAccount *account,
     const gchar *chat_id, gboolean chatroom);
-gboolean _tpl_log_store_add_message (TplLogStore *self, TplLogEntry *message,
+gboolean _tpl_log_store_add_message (TplLogStore *self, TplEntry *message,
     GError **error);
 GList * _tpl_log_store_get_dates (TplLogStore *self, TpAccount *account,
     const gchar *chat_id, gboolean chatroom);

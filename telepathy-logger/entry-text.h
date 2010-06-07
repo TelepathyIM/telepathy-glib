@@ -19,28 +19,28 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#ifndef __TPL_LOG_ENTRY_TEXT_H__
-#define __TPL_LOG_ENTRY_TEXT_H__
+#ifndef __TPL_ENTRY_TEXT_H__
+#define __TPL_ENTRY_TEXT_H__
 
 #include <glib-object.h>
 
 #include <telepathy-logger/entry.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_LOG_ENTRY_TEXT                  (tpl_log_entry_text_get_type ())
-#define TPL_LOG_ENTRY_TEXT(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_LOG_ENTRY_TEXT, TplLogEntryText))
-#define TPL_LOG_ENTRY_TEXT_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_LOG_ENTRY_TEXT, TplLogEntryTextClass))
-#define TPL_IS_LOG_ENTRY_TEXT(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_LOG_ENTRY_TEXT))
-#define TPL_IS_LOG_ENTRY_TEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_LOG_ENTRY_TEXT))
-#define TPL_LOG_ENTRY_TEXT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_ENTRY_TEXT, TplLogEntryTextClass))
+#define TPL_TYPE_ENTRY_TEXT                  (tpl_entry_text_get_type ())
+#define TPL_ENTRY_TEXT(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_ENTRY_TEXT, TplEntryText))
+#define TPL_ENTRY_TEXT_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_ENTRY_TEXT, TplEntryTextClass))
+#define TPL_IS_ENTRY_TEXT(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_ENTRY_TEXT))
+#define TPL_IS_ENTRY_TEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_ENTRY_TEXT))
+#define TPL_ENTRY_TEXT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_ENTRY_TEXT, TplEntryTextClass))
 
-typedef struct _TplLogEntryText TplLogEntryText;
-typedef struct _TplLogEntryTextClass TplLogEntryTextClass;
-typedef struct _TplLogEntryTextPriv TplLogEntryTextPriv;
+typedef struct _TplEntryText TplEntryText;
+typedef struct _TplEntryTextClass TplEntryTextClass;
+typedef struct _TplEntryTextPriv TplEntryTextPriv;
 
-GType tpl_log_entry_text_get_type (void);
+GType tpl_entry_text_get_type (void);
 
-const gchar *tpl_log_entry_text_get_message (TplLogEntryText *self);
+const gchar *tpl_entry_text_get_message (TplEntryText *self);
 
 G_END_DECLS
-#endif // __TPL_LOG_ENTRY_TEXT_H__
+#endif // __TPL_ENTRY_TEXT_H__

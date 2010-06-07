@@ -326,11 +326,11 @@ log_store_xml_get_timestamp_filename (void)
 
 
 static gchar *
-log_store_xml_get_timestamp_from_message (TplLogEntry *message)
+log_store_xml_get_timestamp_from_message (TplEntry *message)
 {
   time_t t;
 
-  t = tpl_log_entry_get_timestamp (message);
+  t = tpl_entry_get_timestamp (message);
 
   /* We keep the timestamps in the messages as UTC */
   return _tpl_time_to_string_utc (t, LOG_TIME_FORMAT_FULL);
@@ -366,7 +366,7 @@ log_store_xml_get_filename (TplLogStoreXml *self,
 
 
 /* this is a method used at the end of the add_message process, used by any
- * LogEntry<Type> instance. it should the only method allowed to write to the
+ * Entry<Type> instance. it should the only method allowed to write to the
  * store */
 static gboolean
 _log_store_xml_write_to_store (TplLogStoreXml *self,
@@ -421,7 +421,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
 
 static gboolean
 add_message_text_chat (TplLogStoreXml *self,
-    TplLogEntryText *message,
+    TplEntryText *message,
     GError **error)
 {
   gboolean ret = FALSE;
@@ -439,7 +439,7 @@ add_message_text_chat (TplLogStoreXml *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (message), FALSE);
 
   bus_daemon = tp_dbus_daemon_dup (error);
   if (bus_daemon == NULL)
@@ -449,23 +449,23 @@ add_message_text_chat (TplLogStoreXml *self,
     }
 
   account = tp_account_new (bus_daemon,
-      tpl_log_entry_get_account_path (TPL_LOG_ENTRY (message)), error);
+      tpl_entry_get_account_path (TPL_ENTRY (message)), error);
   if (account == NULL)
     {
       DEBUG ("Error acquiring TpAccount proxy: %s", (*error)->message);
       goto out;
     }
 
-  body_str = tpl_log_entry_text_get_message (message);
+  body_str = tpl_entry_text_get_message (message);
   if (TPL_STR_EMPTY (body_str))
     goto out;
 
   body = g_markup_escape_text (body_str, -1);
-  msg_type = _tpl_log_entry_text_get_message_type (message);
+  msg_type = _tpl_entry_text_get_message_type (message);
   timestamp = log_store_xml_get_timestamp_from_message (
-      TPL_LOG_ENTRY (message));
+      TPL_ENTRY (message));
 
-  sender = tpl_log_entry_get_sender (TPL_LOG_ENTRY (message));
+  sender = tpl_entry_get_sender (TPL_ENTRY (message));
   contact_id = g_markup_escape_text (tpl_contact_get_identifier (sender), -1);
   if (tpl_contact_get_alias (sender) != NULL)
     contact_name = g_markup_escape_text (tpl_contact_get_alias (sender), -1);
@@ -476,21 +476,21 @@ add_message_text_chat (TplLogStoreXml *self,
   entry = g_strdup_printf ("<message time='%s' cm_id='%s' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'>"
       "%s</message>\n" LOG_FOOTER, timestamp,
-      _tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
+      _tpl_entry_get_log_id (TPL_ENTRY (message)),
       contact_id, contact_name,
       avatar_token ? avatar_token : "",
       tpl_contact_get_contact_type (sender) ==
       TPL_CONTACT_USER ? "true" : "false",
-      _tpl_log_entry_text_message_type_to_str (msg_type),
+      _tpl_entry_text_message_type_to_str (msg_type),
       body);
 
   DEBUG ("writing %s from %s (ts %s)",
-      _tpl_log_entry_get_log_id (TPL_LOG_ENTRY (message)),
+      _tpl_entry_get_log_id (TPL_ENTRY (message)),
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
-      _tpl_log_entry_get_chat_id (TPL_LOG_ENTRY (message)),
-      _tpl_log_entry_text_is_chatroom (message),
+      _tpl_entry_get_chat_id (TPL_ENTRY (message)),
+      _tpl_entry_text_is_chatroom (message),
       entry, error);
 
 out:
@@ -512,63 +512,63 @@ out:
 
 static gboolean
 add_message_text (TplLogStoreXml *self,
-    TplLogEntryText *message,
+    TplEntryText *message,
     GError **error)
 {
-  TplLogEntryTextSignalType signal_type;
+  TplEntryTextSignalType signal_type;
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY_TEXT (message), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (message), FALSE);
 
-  signal_type = _tpl_log_entry_get_signal_type (TPL_LOG_ENTRY (message));
+  signal_type = _tpl_entry_get_signal_type (TPL_ENTRY (message));
 
   switch (signal_type)
     {
-      case TPL_LOG_ENTRY_TEXT_SIGNAL_SENT:
-      case TPL_LOG_ENTRY_TEXT_SIGNAL_RECEIVED:
+      case TPL_ENTRY_TEXT_SIGNAL_SENT:
+      case TPL_ENTRY_TEXT_SIGNAL_RECEIVED:
         return add_message_text_chat (self, message, error);
         break;
-      case TPL_LOG_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
+      case TPL_ENTRY_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
         g_warning ("STATUS_CHANGED log entry not currently handled");
         return FALSE;
         break;
-      case TPL_LOG_ENTRY_TEXT_SIGNAL_SEND_ERROR:
+      case TPL_ENTRY_TEXT_SIGNAL_SEND_ERROR:
         g_warning ("SEND_ERROR log entry not currently handled");
         return FALSE;
-      case TPL_LOG_ENTRY_TEXT_SIGNAL_LOST_MESSAGE:
+      case TPL_ENTRY_TEXT_SIGNAL_LOST_MESSAGE:
         g_warning ("LOST_MESSAGE log entry not currently handled");
         return FALSE;
       default:
-        g_warning ("LogEntry's signal type unknown");
+        g_warning ("Entry's signal type unknown");
         return FALSE;
     }
 }
 
 
-/* First of two phases selection: understand the type LogEntry */
+/* First of two phases selection: understand the type Entry */
 static gboolean
 log_store_xml_add_message (TplLogStore *store,
-    TplLogEntry *message,
+    TplEntry *message,
     GError **error)
 {
   TplLogStoreXml *self = TPL_LOG_STORE_XML (store);
 
-  g_return_val_if_fail (TPL_IS_LOG_ENTRY (message), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTRY (message), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  switch (_tpl_log_entry_get_signal_type (TPL_LOG_ENTRY (message)))
+  switch (_tpl_entry_get_signal_type (TPL_ENTRY (message)))
     {
-      case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_SENT:
-      case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_RECEIVED:
-      case TPL_LOG_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR:
-      case TPL_LOG_ENTRY_CHANELL_TEXT_SIGNAL_LOST_MESSAGE:
-        return add_message_text (self, TPL_LOG_ENTRY_TEXT (message), error);
+      case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SENT:
+      case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_RECEIVED:
+      case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR:
+      case TPL_ENTRY_CHANELL_TEXT_SIGNAL_LOST_MESSAGE:
+        return add_message_text (self, TPL_ENTRY_TEXT (message), error);
       default:
-        DEBUG ("TplLogEntrySignalType not handled by this LogStore (%s). "
-            "Ignoring LogEntry", log_store_xml_get_name (store));
+        DEBUG ("TplEntrySignalType not handled by this LogStore (%s). "
+            "Ignoring Entry", log_store_xml_get_name (store));
         /* do not consider it an error, this LogStore simply do not want/need
-         * this LogEntry */
+         * this Entry */
         return TRUE;
     }
 }
@@ -766,7 +766,7 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   return hit;
 }
 
-/* returns a Glist of TplLogEntryText instances */
+/* returns a Glist of TplEntryText instances */
 static GList *
 log_store_xml_get_messages_for_file (TplLogStoreXml *self,
     TpAccount *account,
@@ -814,7 +814,7 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
   /* Now get the messages. */
   for (node = log_node->children; node; node = node->next)
     {
-      TplLogEntryText *message;
+      TplEntryText *message;
       TplContact *sender;
       gchar *time_;
       time_t t;
@@ -849,14 +849,14 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
         is_user = (!tp_strdiff (is_user_str, "true"));
 
       if (msg_type_str != NULL)
-        msg_type = _tpl_log_entry_text_message_type_from_str (msg_type_str);
+        msg_type = _tpl_entry_text_message_type_from_str (msg_type_str);
 
       if (log_id != NULL && self->priv->empathy_legacy)
         /* in legacy mode, it's actually the pending message id before ACK */
         pending_id = atoi (log_id);
       else
         /* we have no way in non empathy-legacy mode to know it */
-        pending_id = TPL_LOG_ENTRY_MSG_ID_UNKNOWN;
+        pending_id = TPL_ENTRY_MSG_ID_UNKNOWN;
 
       t = _tpl_time_parse (time_);
 
@@ -879,14 +879,14 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
           g_free (instead_of_channel_path);
         }
 
-      message = _tpl_log_entry_text_new (log_id,
-          tp_proxy_get_object_path (account), TPL_LOG_ENTRY_DIRECTION_NONE);
+      message = _tpl_entry_text_new (log_id,
+          tp_proxy_get_object_path (account), TPL_ENTRY_DIRECTION_NONE);
 
-      _tpl_log_entry_set_pending_msg_id (TPL_LOG_ENTRY (message), pending_id);
-      _tpl_log_entry_set_sender (TPL_LOG_ENTRY (message), sender);
-      _tpl_log_entry_set_timestamp (TPL_LOG_ENTRY (message), t);
-      _tpl_log_entry_text_set_message (message, body);
-      _tpl_log_entry_text_set_message_type (message, msg_type);
+      _tpl_entry_set_pending_msg_id (TPL_ENTRY (message), pending_id);
+      _tpl_entry_set_sender (TPL_ENTRY (message), sender);
+      _tpl_entry_set_timestamp (TPL_ENTRY (message), t);
+      _tpl_entry_text_set_message (message, body);
+      _tpl_entry_text_set_message_type (message, msg_type);
 
       messages = g_list_append (messages, message);
 
@@ -1113,7 +1113,7 @@ log_store_xml_get_chats_for_dir (TplLogStoreXml *self,
 }
 
 
-/* returns a Glist of TplLogEntryText instances */
+/* returns a Glist of TplEntryText instances */
 static GList *
 log_store_xml_get_messages_for_date (TplLogStore *store,
     TpAccount *account,
