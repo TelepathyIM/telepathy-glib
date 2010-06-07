@@ -3248,11 +3248,8 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
 static gboolean
 tp_base_contact_list_check_before_change (TpBaseContactList *self,
     const GArray *contacts_or_null,
-    GError **error,
-    TpBaseContactListClass **cls_out)
+    GError **error)
 {
-  TpBaseContactListClass *cls;
-
   g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
 
   if (!tp_base_contact_list_check_still_usable (self, error))
@@ -3263,17 +3260,12 @@ tp_base_contact_list_check_before_change (TpBaseContactList *self,
         error))
     return FALSE;
 
-  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
-
   if (!tp_base_contact_list_can_change_subscriptions (self))
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot change subscriptions");
       return FALSE;
     }
-
-  if (cls_out != NULL)
-    *cls_out = cls;
 
   return TRUE;
 }
@@ -3299,12 +3291,10 @@ tp_base_contact_list_mixin_request_subscription (
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
-        &cls))
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3325,12 +3315,10 @@ tp_base_contact_list_mixin_authorize_publication (
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
-        &cls))
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3351,12 +3339,10 @@ tp_base_contact_list_mixin_remove_contacts (
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
-        &cls))
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3377,12 +3363,10 @@ tp_base_contact_list_mixin_unsubscribe (
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
-        &cls))
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3403,12 +3387,10 @@ tp_base_contact_list_mixin_unpublish (
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   GError *error = NULL;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
-        &cls))
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
     goto finally;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
@@ -3565,13 +3547,11 @@ tp_base_contact_list_mixin_add_to_group (
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   GError *error = NULL;
   TpHandle group_handle = 0;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
-        &cls))
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
     goto finally;
 
   if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
@@ -3613,13 +3593,11 @@ tp_base_contact_list_mixin_remove_from_group (
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   GError *error = NULL;
   TpHandle group_handle;
   TpHandleSet *contacts_set;
 
-  if (!tp_base_contact_list_check_before_change (self, contacts, &error,
-        &cls))
+  if (!tp_base_contact_list_check_before_change (self, contacts, &error))
     goto finally;
 
   /* get the handle so we can use the normalized name */
@@ -3656,12 +3634,10 @@ tp_base_contact_list_mixin_remove_group (
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   GError *error = NULL;
   TpHandle group_handle;
 
-  if (!tp_base_contact_list_check_before_change (self, NULL, &error,
-        &cls))
+  if (!tp_base_contact_list_check_before_change (self, NULL, &error))
     goto finally;
 
   /* get the handle so we can use the normalized name */
