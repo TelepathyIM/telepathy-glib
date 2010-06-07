@@ -120,7 +120,7 @@ test_request_and_release (SimpleConnection *service_conn,
 
   g_main_loop_run (result.loop);
 
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
   MYASSERT (result.ids != NULL, "");
   MYASSERT (result.handles != NULL, "");
 
@@ -152,7 +152,7 @@ test_request_and_release (SimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have been released */
 
@@ -195,7 +195,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   g_main_loop_run (result.loop);
 
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
   MYASSERT (result.ids != NULL, "");
   MYASSERT (result.handles != NULL, "");
 
@@ -238,7 +238,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   g_main_loop_run (result.loop);
 
-  test_assert_no_error (result.error);
+  g_assert_no_error (result.error);
   MYASSERT (result.ids == NULL, "");
   MYASSERT (result.handles != NULL, "");
 
@@ -256,7 +256,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have not been released */
 
@@ -275,7 +275,7 @@ test_request_hold_release (SimpleConnection *service_conn,
 
   tp_connection_unref_handles (client_conn, TP_HANDLE_TYPE_CONTACT,
       result.handles->len, (const TpHandle *) result.handles->data);
-  test_connection_run_until_dbus_queue_processed (client_conn);
+  test_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* check that the handles have been released */
 
@@ -323,14 +323,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* Tests */
 
@@ -341,7 +341,7 @@ main (int argc,
 
   MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);

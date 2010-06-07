@@ -31,28 +31,28 @@ test_no_features (ContactsConnection *service_conn,
 
   MYASSERT (tp_cli_connection_interface_contacts_run_get_contact_attributes (
         client_conn, -1, handles, NULL, FALSE, &contacts, &error, NULL), "");
-  test_assert_no_error (error);
-  MYASSERT_SAME_UINT (g_hash_table_size (contacts), 3);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (contacts), ==, 3);
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 0)));
   MYASSERT (attrs != NULL, "");
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"),
+  g_assert_cmpstr (
+      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"), ==,
       "alice");
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 1)));
   MYASSERT (attrs != NULL, "");
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"),
+  g_assert_cmpstr (
+      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"), ==,
       "bob");
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 2)));
   MYASSERT (attrs != NULL, "");
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"),
+  g_assert_cmpstr (
+      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"), ==,
       "chris");
 
   g_hash_table_destroy (contacts);
@@ -77,52 +77,52 @@ test_features (ContactsConnection *service_conn,
   MYASSERT (tp_cli_connection_interface_contacts_run_get_contact_attributes (
         client_conn, -1, handles, interfaces, FALSE, &contacts, &error, NULL),
       "");
-  test_assert_no_error (error);
-  MYASSERT_SAME_UINT (g_hash_table_size (contacts), 3);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (contacts), ==, 3);
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 0)));
   MYASSERT (attrs != NULL, "");
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"),
+  g_assert_cmpstr (
+      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"), ==,
       "alice");
-  MYASSERT_SAME_STRING (
+  g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"),
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"), ==,
       "Alice in Wonderland");
-  MYASSERT_SAME_STRING (
+  g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"),
+          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
       "aaaaa");
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 1)));
   MYASSERT (attrs != NULL, "");
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"),
+  g_assert_cmpstr (
+      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"), ==,
       "bob");
-  MYASSERT_SAME_STRING (
+  g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"),
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"), ==,
       "Bob the Builder");
-  MYASSERT_SAME_STRING (
+  g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"),
+          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
       "bbbbb");
 
   attrs = g_hash_table_lookup (contacts,
       GUINT_TO_POINTER (g_array_index (handles, guint, 2)));
   MYASSERT (attrs != NULL, "");
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"),
+  g_assert_cmpstr (
+      tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"), ==,
       "chris");
-  MYASSERT_SAME_STRING (
+  g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"),
+          TP_IFACE_CONNECTION_INTERFACE_ALIASING "/alias"), ==,
       "Christopher Robin");
-  MYASSERT_SAME_STRING (
+  g_assert_cmpstr (
       tp_asv_get_string (attrs,
-          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"),
+          TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
       "ccccc");
 
   g_hash_table_destroy (contacts);
@@ -171,14 +171,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* Set up some contacts */
 
@@ -205,7 +205,7 @@ main (int argc,
 
   MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);

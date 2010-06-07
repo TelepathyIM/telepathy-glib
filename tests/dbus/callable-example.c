@@ -208,6 +208,7 @@ setup (Test *test,
   guint audio = TP_MEDIA_STREAM_TYPE_AUDIO;
   guint video = TP_MEDIA_STREAM_TYPE_VIDEO;
   guint not_a_media_type = 31337;
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -235,7 +236,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "example_callable",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  test_connection_manager_run_until_ready (test->cm);
+  test_proxy_run_until_prepared (test->cm, NULL);
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -246,14 +247,14 @@ setup (Test *test,
 
   tp_cli_connection_manager_run_request_connection (test->cm, -1,
       "example", parameters, &bus_name, &object_path, &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   test->conn = tp_connection_new (test->dbus, bus_name, object_path,
       &test->error);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
   g_assert (test->conn != NULL);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  test_connection_run_until_ready (test->conn);
+  test_proxy_run_until_prepared (test->conn, conn_features);
 
   test->self_handle = tp_connection_get_self_handle (test->conn);
   g_assert (test->self_handle != 0);
@@ -286,11 +287,11 @@ channel_created_cb (TpConnection *connection,
   Test *test = user_data;
   GError *new_error = NULL;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
 
   test->chan = tp_channel_new_from_properties (connection, object_path,
       immutable_properties, &new_error);
-  test_assert_no_error (new_error);
+  g_assert_no_error (new_error);
 
   g_main_loop_quit (test->mainloop);
 }
@@ -302,7 +303,7 @@ channel_ready_cb (TpChannel *channel G_GNUC_UNUSED,
 {
   Test *test = user_data;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
   g_main_loop_quit (test->mainloop);
 }
 
@@ -341,7 +342,7 @@ listed_streams_cb (TpChannel *chan G_GNUC_UNUSED,
   Test *test = user_data;
 
   /* ListStreams shouldn't fail in any of these tests */
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
 
   tp_clear_boxed (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->list_streams_return);
@@ -594,7 +595,7 @@ test_basics (Test *test,
   tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
       listed_streams_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->list_streams_return->len, ==, 0);
 
@@ -625,7 +626,7 @@ test_basics (Test *test,
       test->audio_request, requested_streams_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->request_streams_return->len, ==, 1);
   audio_info = g_ptr_array_index (test->request_streams_return, 0);
@@ -657,7 +658,7 @@ test_basics (Test *test,
   tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
       listed_streams_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->list_streams_return->len, ==, 1);
   audio_info = g_ptr_array_index (test->list_streams_return, 0);
@@ -753,7 +754,7 @@ test_basics (Test *test,
 
   /* Immediately the call is accepted, the remote peer accepts our proposed
    * stream direction */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_DIRECTION_CHANGED);
@@ -786,7 +787,7 @@ test_basics (Test *test,
       test->video_request, requested_streams_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->request_streams_return->len, ==, 1);
 
@@ -817,7 +818,7 @@ test_basics (Test *test,
   tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
       listed_streams_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->list_streams_return->len, ==, 2);
 
@@ -894,14 +895,14 @@ test_basics (Test *test,
       test->stream_ids,
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* List streams again: now there's only the audio */
 
   tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
       listed_streams_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->list_streams_return->len, ==, 1);
   audio_info = g_ptr_array_index (test->list_streams_return, 0);
@@ -933,10 +934,10 @@ test_basics (Test *test,
       -1, test->contacts, "", TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -988,9 +989,9 @@ test_no_answer (Test *test,
       test->audio_request, requested_streams_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
@@ -1022,10 +1023,10 @@ test_no_answer (Test *test,
       -1, test->contacts, "", TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -1063,7 +1064,7 @@ test_busy (Test *test,
       test->audio_request, requested_streams_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* Wait for the remote contact to reject the call */
   while (tp_proxy_get_invalidated (test->chan) != NULL)
@@ -1073,7 +1074,7 @@ test_busy (Test *test,
 
   /* The last stream event should be the removal of the stream */
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
@@ -1113,7 +1114,7 @@ test_terminated_by_peer (Test *test,
       test->audio_request, requested_streams_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
@@ -1129,7 +1130,7 @@ test_terminated_by_peer (Test *test,
 
   /* The last stream event should be the removal of the stream */
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   se = g_slist_nth_data (test->stream_events, 0);
   g_assert_cmpuint (se->type, ==, STREAM_EVENT_REMOVED);
@@ -1167,9 +1168,9 @@ test_terminate_via_close (Test *test,
       test->audio_request, requested_streams_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
@@ -1187,10 +1188,10 @@ test_terminate_via_close (Test *test,
 
   tp_cli_channel_call_close (test->chan, -1, void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -1233,9 +1234,9 @@ test_terminate_via_no_streams (Test *test,
       test->audio_request, requested_streams_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   maybe_pop_stream_direction (test);
   g_assert_cmpuint (g_slist_length (test->stream_events), ==, 1);
@@ -1257,10 +1258,10 @@ test_terminate_via_no_streams (Test *test,
       test->stream_ids,
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* The last event should be that the peer and the self-handle were both
@@ -1326,7 +1327,7 @@ expect_incoming_call_cb (TpConnection *conn,
       /* save the channel */
       test->chan = tp_channel_new_from_properties (conn, object_path,
           properties, &test->error);
-      test_assert_no_error (test->error);
+      g_assert_no_error (test->error);
     }
 }
 
@@ -1341,16 +1342,16 @@ trigger_incoming_call (Test *test,
 
   tp_cli_connection_interface_simple_presence_run_set_presence (test->conn, -1,
       "away", "preparing for a test", &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   new_channels_sig =
     tp_cli_connection_interface_requests_connect_to_new_channels (test->conn,
         expect_incoming_call_cb, test, NULL, NULL, &test->error);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   tp_cli_connection_interface_simple_presence_run_set_presence (test->conn, -1,
       "available", message, &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* wait for the call to happen if it hasn't already */
   while (test->chan == NULL)
@@ -1395,7 +1396,7 @@ test_incoming (Test *test,
   tp_cli_channel_type_streamed_media_call_list_streams (test->chan, -1,
       listed_streams_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->list_streams_return->len, ==, 1);
   audio_info = g_ptr_array_index (test->list_streams_return, 0);
@@ -1440,7 +1441,7 @@ test_incoming (Test *test,
   tp_cli_channel_interface_group_call_add_members (test->chan,
       -1, test->contacts, "", void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* The self-handle and the peer are now the channel's members */
   g_assert_cmpuint (tp_channel_group_get_handle_owner (test->chan,
@@ -1461,7 +1462,7 @@ test_incoming (Test *test,
 
   /* Immediately the call is accepted, we accept the remote peer's proposed
    * stream direction */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
 
   test_assert_uu_hash_contains (test->stream_directions, test->audio_stream_id,
       TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL);
@@ -1487,10 +1488,10 @@ test_incoming (Test *test,
       -1, test->contacts, "", TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* In response to hanging up, the channel closes */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  test_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 }
 
@@ -1499,7 +1500,7 @@ teardown (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
   tp_cli_connection_run_disconnect (test->conn, -1, &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   if (test->members_changed_detailed_id != 0)
     {

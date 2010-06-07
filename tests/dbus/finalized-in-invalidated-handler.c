@@ -99,14 +99,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* Paste on a channel */
 
@@ -115,7 +115,7 @@ main (int argc,
   MYASSERT (contact_repo != NULL, "");
 
   handle = tp_handle_ensure (contact_repo, "them@example.org", NULL, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
   service_chan = TEST_TEXT_CHANNEL_NULL (test_object_new_static_class (
@@ -127,10 +127,10 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   tp_channel_run_until_ready (chan, &error, NULL);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_signal_connect (chan, "invalidated", G_CALLBACK (on_invalidated),
       &chan);

@@ -116,7 +116,7 @@ test_by_id (TpConnection *client_conn)
   g_main_loop_run (result.loop);
 
   MYASSERT (result.error != NULL, ": should fail as the CM is broken");
-  MYASSERT_SAME_UINT (result.error->domain, TP_DBUS_ERRORS);
+  g_assert_cmpuint (result.error->domain, ==, TP_DBUS_ERRORS);
   MYASSERT (result.error->code == TP_DBUS_ERROR_INCONSISTENT,
       ": %i != %i", result.error->code, TP_DBUS_ERROR_INCONSISTENT);
 
@@ -160,14 +160,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* Tests */
 
@@ -177,7 +177,7 @@ main (int argc,
 
   MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   g_object_unref (client_conn);
 
   service_conn_as_base = NULL;

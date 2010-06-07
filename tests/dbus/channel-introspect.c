@@ -80,21 +80,21 @@ assert_chan_sane (TpChannel *chan,
   MYASSERT (tp_channel_get_channel_type_id (chan) ==
         TP_IFACE_QUARK_CHANNEL_TYPE_TEXT, "");
   MYASSERT (TP_IS_CONNECTION (tp_channel_borrow_connection (chan)), "");
-  MYASSERT_SAME_STRING (tp_channel_get_identifier (chan), IDENTIFIER);
+  g_assert_cmpstr (tp_channel_get_identifier (chan), ==, IDENTIFIER);
 
   asv = tp_channel_borrow_immutable_properties (chan);
   MYASSERT (asv != NULL, "");
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE),
+  g_assert_cmpstr (
+      tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
-  MYASSERT_SAME_UINT (
-      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL),
+  g_assert_cmpuint (
+      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL), ==,
       TP_HANDLE_TYPE_CONTACT);
-  MYASSERT_SAME_UINT (
-      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE, NULL),
+  g_assert_cmpuint (
+      tp_asv_get_uint32 (asv, TP_PROP_CHANNEL_TARGET_HANDLE, NULL), ==,
       handle);
-  MYASSERT_SAME_STRING (
-      tp_asv_get_string (asv, TP_PROP_CHANNEL_TARGET_ID),
+  g_assert_cmpstr (
+      tp_asv_get_string (asv, TP_PROP_CHANNEL_TARGET_ID), ==,
       IDENTIFIER);
 }
 
@@ -142,22 +142,22 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
   MYASSERT (contact_repo != NULL, "");
 
   handle = tp_handle_ensure (contact_repo, IDENTIFIER, NULL, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
@@ -193,7 +193,7 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       FALSE);
@@ -207,7 +207,9 @@ main (int argc,
 
   MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT (error != NULL, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_assert_error (error, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (error->message, ==, invalidated_for_test.message);
   g_error_free (error);
   error = NULL;
 
@@ -215,7 +217,9 @@ main (int argc,
     g_main_loop_run (mainloop);
 
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_assert_error (error, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (error->message, ==, invalidated_for_test.message);
   g_clear_error (&error);
   /* it was never ready */
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
@@ -233,7 +237,7 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   was_ready = FALSE;
   tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
@@ -245,7 +249,9 @@ main (int argc,
   tp_proxy_invalidate ((TpProxy *) chan, &invalidated_for_test);
   MYASSERT (was_ready == TRUE, "");
   MYASSERT (invalidated != NULL, "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, invalidated);
+  g_assert_error (invalidated, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (invalidated->message, ==, invalidated_for_test.message);
   g_error_free (invalidated);
   invalidated = NULL;
 
@@ -253,7 +259,9 @@ main (int argc,
   MYASSERT (prepare_result == NULL, "");
   g_main_loop_run (mainloop);
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_assert_error (error, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (error->message, ==, invalidated_for_test.message);
   g_clear_error (&error);
   g_object_unref (prepare_result);
   prepare_result = NULL;
@@ -268,7 +276,7 @@ main (int argc,
 
   g_message ("Channel becomes ready while we wait");
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -276,16 +284,16 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   prepare_result = NULL;
   tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  test_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+  g_assert_no_error (error);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
@@ -296,7 +304,7 @@ main (int argc,
     g_main_loop_run (mainloop);
 
   MYASSERT (tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_object_unref (prepare_result);
   prepare_result = NULL;
@@ -309,7 +317,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (the version with "
       "Properties)");
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
 
   TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called = 0;
   TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called = 0;
@@ -317,7 +325,7 @@ main (int argc,
 
   chan = tp_channel_new (conn, props_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   prepare_result = NULL;
   tp_proxy_prepare_async (chan, some_features, channel_prepared_cb,
@@ -329,13 +337,15 @@ main (int argc,
       ==, FALSE);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  test_assert_no_error (error);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, 0);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called, 0);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called, 0);
+  g_assert_no_error (error);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, ==, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called,
+      ==, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called, ==,
+      0);
 
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
       TRUE);
@@ -346,7 +356,7 @@ main (int argc,
     g_main_loop_run (mainloop);
 
   MYASSERT (tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_object_unref (prepare_result);
   prepare_result = NULL;
@@ -364,7 +374,7 @@ main (int argc,
     g_main_loop_run (mainloop);
 
   MYASSERT (tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_object_unref (prepare_result);
   prepare_result = NULL;
@@ -375,7 +385,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (preloading immutable "
       "properties)");
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
 
   TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called = 0;
   TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called = 0;
@@ -397,23 +407,25 @@ main (int argc,
       NULL);
 
   chan = tp_channel_new_from_properties (conn, props_chan_path, asv, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_hash_table_destroy (asv);
   asv = NULL;
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  test_assert_no_error (error);
-  MYASSERT_SAME_UINT (g_hash_table_size (
-      service_props_chan->dbus_property_interfaces_retrieved), 0);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, 0);
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called, 0);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (
+      service_props_chan->dbus_property_interfaces_retrieved), ==, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_handle_called, ==, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_channel_type_called,
+      ==, 0);
   /* FIXME: with an improved fast-path we could avoid this one too maybe? */
   /*
-  MYASSERT_SAME_UINT (
-      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called, 0);
+  g_assert_cmpuint (
+      TEST_TEXT_CHANNEL_NULL (service_props_chan)->get_interfaces_called,
+      ==, 0);
    */
 
   assert_chan_sane (chan, handle);
@@ -424,7 +436,7 @@ main (int argc,
   g_message ("Group channel becomes ready while we wait (preloading immutable "
       "properties)");
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
 
   TEST_TEXT_CHANNEL_NULL (service_props_group_chan)->get_handle_called = 0;
   TEST_TEXT_CHANNEL_NULL (service_props_group_chan)->get_interfaces_called = 0;
@@ -455,22 +467,22 @@ main (int argc,
   }
 
   chan = tp_channel_new_from_properties (conn, props_group_chan_path, asv, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_hash_table_destroy (asv);
   asv = NULL;
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  test_assert_no_error (error);
-  MYASSERT_SAME_UINT (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
-      ->get_handle_called, 0);
-  MYASSERT_SAME_UINT (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
-      ->get_channel_type_called, 0);
-  MYASSERT_SAME_UINT (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
-      ->get_interfaces_called, 0);
-  MYASSERT_SAME_UINT (g_hash_table_size (
+  g_assert_no_error (error);
+  g_assert_cmpuint (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
+      ->get_handle_called, ==, 0);
+  g_assert_cmpuint (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
+      ->get_channel_type_called, ==, 0);
+  g_assert_cmpuint (TEST_TEXT_CHANNEL_NULL (service_props_group_chan)
+      ->get_interfaces_called, ==, 0);
+  g_assert_cmpuint (g_hash_table_size (
       TEST_PROPS_TEXT_CHANNEL (service_props_group_chan)
-      ->dbus_property_interfaces_retrieved), 1);
+      ->dbus_property_interfaces_retrieved), ==, 1);
   MYASSERT (g_hash_table_lookup (
       TEST_PROPS_TEXT_CHANNEL (service_props_group_chan)
       ->dbus_property_interfaces_retrieved,
@@ -485,7 +497,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (in the case where we "
       "have to discover the channel type)");
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -493,13 +505,13 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, NULL,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  test_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 1);
+  g_assert_no_error (error);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 1);
 
   assert_chan_sane (chan, handle);
 
@@ -509,7 +521,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (in the case where we "
       "have to discover the handle type)");
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -517,13 +529,13 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  test_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+  g_assert_no_error (error);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
   assert_chan_sane (chan, handle);
 
@@ -533,7 +545,7 @@ main (int argc,
   g_message ("Channel becomes ready while we wait (in the case where we "
       "have to discover the handle)");
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -541,13 +553,13 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, 0, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  test_assert_no_error (error);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+  g_assert_no_error (error);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
   assert_chan_sane (chan, handle);
 
@@ -559,7 +571,7 @@ main (int argc,
   bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist", conn_path);
   chan = tp_channel_new (conn, bad_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   was_ready = FALSE;
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
@@ -583,7 +595,7 @@ main (int argc,
   bad_chan_path = g_strdup_printf ("%s/Does/Not/Actually/Exist", conn_path);
   chan = tp_channel_new (conn, bad_chan_path, NULL,
       TP_UNKNOWN_HANDLE_TYPE, 0, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
   MYASSERT (error != NULL, "");
@@ -602,7 +614,7 @@ main (int argc,
   g_message ("Channel doesn't actually implement Group (preloading immutable "
       "properties)");
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -632,7 +644,7 @@ main (int argc,
    * should make introspection fail.
    */
   chan = tp_channel_new_from_properties (conn, chan_path, asv, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_hash_table_destroy (asv);
   asv = NULL;
@@ -646,16 +658,16 @@ main (int argc,
   g_error_free (error);
   error = NULL;
 
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 0);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 0);
 
   g_object_unref (chan);
   chan = NULL;
 
   g_message ("Channel becomes ready and we are called back");
 
-  test_connection_run_until_dbus_queue_processed (conn);
+  test_proxy_run_until_dbus_queue_processed (conn);
 
   service_chan->get_handle_called = 0;
   service_chan->get_interfaces_called = 0;
@@ -663,7 +675,7 @@ main (int argc,
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   was_ready = FALSE;
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
@@ -671,10 +683,10 @@ main (int argc,
   g_main_loop_run (mainloop);
   g_message ("Leaving main loop");
   MYASSERT (was_ready == TRUE, "");
-  test_assert_no_error (invalidated);
-  MYASSERT_SAME_UINT (service_chan->get_handle_called, 0);
-  MYASSERT_SAME_UINT (service_chan->get_interfaces_called, 1);
-  MYASSERT_SAME_UINT (service_chan->get_channel_type_called, 0);
+  g_assert_no_error (invalidated);
+  g_assert_cmpuint (service_chan->get_handle_called, ==, 0);
+  g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
+  g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
   assert_chan_sane (chan, handle);
 
@@ -685,7 +697,7 @@ main (int argc,
   was_ready = FALSE;
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
   MYASSERT (was_ready == TRUE, "");
-  test_assert_no_error (invalidated);
+  g_assert_no_error (invalidated);
 
   assert_chan_sane (chan, handle);
 
@@ -699,7 +711,7 @@ main (int argc,
       ==, FALSE);
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   was_ready = FALSE;
 
@@ -720,14 +732,18 @@ main (int argc,
       FALSE);
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CHAT_STATES),
       ==, FALSE);
-  MYASSERT_SAME_ERROR (tp_proxy_get_invalidated (chan), invalidated);
+  g_assert_error (invalidated, tp_proxy_get_invalidated (chan)->domain,
+      tp_proxy_get_invalidated (chan)->code);
+  g_assert_cmpstr (invalidated->message, ==,
+      tp_proxy_get_invalidated (chan)->message);
 
   /* ... but prepare_async still hasn't finished until we run the main loop */
   g_assert (prepare_result == NULL);
   g_main_loop_run (mainloop);
   g_assert (prepare_result != NULL);
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
-  MYASSERT_SAME_ERROR (tp_proxy_get_invalidated (chan), invalidated);
+  g_assert_error (error, invalidated->domain, invalidated->code);
+  g_assert_cmpstr (error->message, ==, invalidated->message);
 
   g_clear_error (&error);
   g_clear_error (&invalidated);

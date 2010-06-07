@@ -113,7 +113,7 @@ main (int argc,
   handler = g_signal_connect (early_cm, "exited",
       G_CALLBACK (early_cm_exited), &saw_exited);
 
-  test_connection_manager_run_until_readying_fails (early_cm, &error);
+  test_proxy_run_until_prepared_or_failed (early_cm, NULL, &error);
   g_assert (error != NULL);
   g_assert (tp_proxy_get_invalidated (early_cm) == NULL);
   g_assert_cmpuint (error->domain, ==, DBUS_GERROR);
@@ -148,8 +148,8 @@ main (int argc,
   g_signal_handler_disconnect (late_cm, handler);
 
   /* Now both objects can become ready */
-  test_connection_manager_run_until_ready (early_cm);
-  test_connection_manager_run_until_ready (late_cm);
+  test_proxy_run_until_prepared (early_cm, NULL);
+  test_proxy_run_until_prepared (late_cm, NULL);
 
   g_object_unref (late_cm);
   g_object_unref (early_cm);

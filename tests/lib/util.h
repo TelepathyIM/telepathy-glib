@@ -18,9 +18,6 @@ TpDBusDaemon *test_dbus_daemon_dup_or_die (void);
 
 void test_proxy_run_until_dbus_queue_processed (gpointer proxy);
 
-#define test_connection_run_until_dbus_queue_processed(c) \
-  (test_proxy_run_until_dbus_queue_processed (c))
-
 TpHandle test_connection_run_request_contact_handle (TpConnection *connection,
     const gchar *id);
 
@@ -29,15 +26,6 @@ void test_proxy_run_until_prepared (gpointer proxy,
 gboolean test_proxy_run_until_prepared_or_failed (gpointer proxy,
     const GQuark *features,
     GError **error);
-
-void test_connection_run_until_ready (TpConnection *conn);
-void test_connection_manager_run_until_ready (TpConnectionManager *cm);
-void test_connection_manager_run_until_readying_fails (TpConnectionManager *cm,
-    GError **error);
-
-#define test_assert_no_error(e) _test_assert_no_error (e, __FILE__, __LINE__)
-
-void _test_assert_no_error (const GError *error, const char *file, int line);
 
 #define test_assert_empty_strv(strv) \
   _test_assert_empty_strv (__FILE__, __LINE__, strv)

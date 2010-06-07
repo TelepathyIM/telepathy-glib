@@ -76,7 +76,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "params_cm",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  test_connection_manager_run_until_ready (test->cm);
+  test_proxy_run_until_prepared (test->cm, NULL);
 }
 
 static void
