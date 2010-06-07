@@ -1866,23 +1866,25 @@ test_rename_group (Test *test,
   g_assert (tp_proxy_get_invalidated (test->group) != NULL);
   g_assert_cmpuint (test->log->len, ==, 4);
 
-  test_assert_one_group_created (test, 0, "Grantabrugge");
-
-  le = g_ptr_array_index (test->log, 1);
-  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
-  g_assert_cmpuint (le->contacts->len, ==, 4);
+  le = g_ptr_array_index (test->log, 0);
+  g_assert_cmpint (le->type, ==, GROUP_RENAMED);
   g_assert (le->groups_added != NULL);
   g_assert_cmpstr (le->groups_added[0], ==, "Grantabrugge");
   g_assert_cmpstr (le->groups_added[1], ==, NULL);
-  g_assert (le->groups_removed == NULL || le->groups_removed[0] == NULL);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+
+  test_assert_one_group_created (test, 1, "Grantabrugge");
 
   test_assert_one_group_removed (test, 2, "Cambridge");
 
   le = g_ptr_array_index (test->log, 3);
   g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
   g_assert_cmpuint (le->contacts->len, ==, 4);
-  g_assert (le->groups_added == NULL || le->groups_added[0] == NULL);
-  g_assert (le->groups_removed != NULL);
+  g_assert (le->groups_added != NULL);
+  g_assert_cmpstr (le->groups_added[0], ==, "Grantabrugge");
+  g_assert_cmpstr (le->groups_added[1], ==, NULL);
   g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
   g_assert_cmpstr (le->groups_removed[1], ==, NULL);
 }

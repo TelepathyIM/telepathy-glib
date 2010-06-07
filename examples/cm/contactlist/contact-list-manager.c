@@ -1323,6 +1323,29 @@ example_contact_list_manager_normalize_group (TpBaseContactList *manager,
 }
 
 static void
+example_contact_list_manager_rename_group (TpBaseContactList *manager,
+    const gchar *old_name,
+    const gchar *new_name)
+{
+  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
+  gchar *tag = ensure_tag (self, new_name, FALSE);
+  GHashTableIter iter;
+  gpointer v;
+
+  g_hash_table_iter_init (&iter, self->priv->contact_details);
+
+  while (g_hash_table_iter_next (&iter, NULL, &v))
+    {
+      ExampleContactDetails *d = v;
+
+      if (d->tags != NULL && g_hash_table_remove (d->tags, old_name))
+        g_hash_table_insert (d->tags, tag, tag);
+    }
+
+  tp_base_contact_list_group_renamed (manager, old_name, new_name);
+}
+
+static void
 example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
 {
   TpBaseContactListClass *list_manager_class =
@@ -1405,4 +1428,5 @@ mutable_contact_group_list_iface_init (
   iface->remove_from_group = example_contact_list_manager_remove_from_group;
   iface->remove_group = example_contact_list_manager_remove_group;
   iface->create_groups = example_contact_list_manager_create_groups;
+  iface->rename_group = example_contact_list_manager_rename_group;
 }
