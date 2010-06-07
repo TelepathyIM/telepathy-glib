@@ -385,8 +385,6 @@ tp_connection_get_avatar_requirements_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpConnection *self = (TpConnection *) proxy;
-  GStrv supported_mime_types;
-  GStrv empty_strv = { NULL };
 
   self->priv->fetching_avatar_requirements = FALSE;
 
@@ -400,13 +398,8 @@ tp_connection_get_avatar_requirements_cb (TpProxy *proxy,
 
   DEBUG ("AVATAR REQUIREMENTS ready");
 
-  supported_mime_types = (GStrv) tp_asv_get_strv (properties,
-      "SupportedAvatarMIMETypes");
-  if (supported_mime_types == NULL)
-    supported_mime_types = empty_strv;
-
   self->priv->avatar_requirements = tp_avatar_requirements_new (
-      supported_mime_types,
+      (GStrv) tp_asv_get_strv (properties, "SupportedAvatarMIMETypes"),
       tp_asv_get_uint32 (properties, "MinimumAvatarWidth", NULL),
       tp_asv_get_uint32 (properties, "MinimumAvatarHeight", NULL),
       tp_asv_get_uint32 (properties, "RecommendedAvatarWidth", NULL),
@@ -490,6 +483,7 @@ tp_connection_continue_introspection (TpConnection *self)
 
       tp_connection_maybe_prepare_capabilities ((TpProxy *) self);
       tp_connection_maybe_prepare_avatar_requirements ((TpProxy *) self);
+      _tp_connection_maybe_prepare_contact_info ((TpProxy *) self);
     }
   else
     {
@@ -1054,9 +1048,11 @@ tp_connection_finalize (GObject *object)
       self->priv->avatar_request_idle_id = 0;
     }
 
+  tp_contact_info_spec_list_free (self->priv->contact_info_supported_fields);
+  self->priv->contact_info_supported_fields = NULL;
+
   ((GObjectClass *) tp_connection_parent_class)->finalize (object);
 }
-
 
 static void
 contact_notify_invalidated (gpointer k G_GNUC_UNUSED,
@@ -1093,6 +1089,7 @@ enum {
     FEAT_CONNECTED,
     FEAT_CAPABILITIES,
     FEAT_AVATAR_REQUIREMENTS,
+    FEAT_CONTACT_INFO,
     N_FEAT
 };
 
@@ -1116,6 +1113,10 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_AVATAR_REQUIREMENTS].name = TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS;
   features[FEAT_AVATAR_REQUIREMENTS].start_preparing =
     tp_connection_maybe_prepare_avatar_requirements;
+
+  features[FEAT_CONTACT_INFO].name = TP_CONNECTION_FEATURE_CONTACT_INFO;
+  features[FEAT_CONTACT_INFO].start_preparing =
+    _tp_connection_maybe_prepare_contact_info;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
@@ -2147,9 +2148,11 @@ tp_avatar_requirements_new (GStrv supported_mime_types,
                             guint maximum_bytes)
 {
   TpAvatarRequirements *self;
+  gchar *empty[] = { NULL };
 
   self = g_slice_new (TpAvatarRequirements);
-  self->supported_mime_types = g_strdupv (supported_mime_types);
+  self->supported_mime_types =
+      g_strdupv (supported_mime_types ? supported_mime_types : empty);
   self->minimum_width = minimum_width;
   self->minimum_height = minimum_height;
   self->recommended_width = recommended_width;
@@ -2162,7 +2165,7 @@ tp_avatar_requirements_new (GStrv supported_mime_types,
 }
 
 /**
- * tp_avatar_requirements_copy:
+ * tp_avatar_requirements_copy: (skip)
  * @self: a #TpAvatarRequirements
  *
  * <!--Returns: says it all-->
@@ -2172,7 +2175,7 @@ tp_avatar_requirements_new (GStrv supported_mime_types,
  * Since: 0.11.4
  */
 TpAvatarRequirements *
-tp_avatar_requirements_copy (TpAvatarRequirements *self)
+tp_avatar_requirements_copy (const TpAvatarRequirements *self)
 {
   g_return_val_if_fail (self != NULL, NULL);
 
@@ -2187,7 +2190,7 @@ tp_avatar_requirements_copy (TpAvatarRequirements *self)
 }
 
 /**
- * tp_avatar_requirements_destroy:
+ * tp_avatar_requirements_destroy: (skip)
  * @self: a #TpAvatarRequirements
  *
  * Free all memory used by the #TpAvatarRequirements.

@@ -100,6 +100,13 @@ void tp_tests_contacts_connection_change_locations (
 void tp_tests_contacts_connection_change_capabilities (
     TpTestsContactsConnection *self, GHashTable *capabilities);
 
+void tp_tests_contacts_connection_change_contact_info (
+    TpTestsContactsConnection *self, TpHandle handle, GPtrArray *info);
+
+void tp_tests_contacts_connection_set_default_contact_info (
+    TpTestsContactsConnection *self,
+    GPtrArray *info);
+
 /* Legacy version (no Contacts interface) */
 
 typedef struct _TpTestsLegacyContactsConnection TpTestsLegacyContactsConnection;

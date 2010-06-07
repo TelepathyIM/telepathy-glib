@@ -114,6 +114,317 @@ finish (gpointer r)
 }
 
 static void
+reset_result (Result *result)
+{
+  g_clear_error (&(result->error));
+
+  if (result->contacts != NULL)
+    {
+      g_ptr_array_foreach (result->contacts, (GFunc) g_object_unref, NULL);
+      g_ptr_array_unref (result->contacts);
+      result->contacts = NULL;
+    }
+
+  if (result->invalid)
+    {
+      g_array_unref (result->invalid);
+      result->invalid = NULL;
+    }
+
+  if (result->good_ids)
+    {
+      g_strfreev (result->good_ids);
+      result->good_ids = NULL;
+    }
+
+  if (result->bad_ids)
+    {
+      g_hash_table_unref (result->bad_ids);
+      result->bad_ids = NULL;
+    }
+}
+
+static void
+contact_info_verify (TpContact *contact)
+{
+  GList *info;
+  TpContactInfoField *field;
+
+  g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_CONTACT_INFO));
+
+  info = tp_contact_get_contact_info (contact);
+  g_assert (info != NULL);
+  g_assert (info->data != NULL);
+  g_assert (info->next == NULL);
+
+  field = info->data;
+  g_assert_cmpstr (field->field_name, ==, "n");
+  g_assert (field->parameters != NULL);
+  g_assert (field->parameters[0] == NULL);
+  g_assert (field->field_value != NULL);
+  g_assert_cmpstr (field->field_value[0], ==, "Foo");
+  g_assert (field->field_value[1] == NULL);
+
+  g_list_free (info);
+}
+
+static void
+contact_info_notify_cb (TpContact *contact,
+    GParamSpec *pspec,
+    Result *result)
+{
+  contact_info_verify (contact);
+  finish (result);
+}
+
+static void
+contact_info_prepare_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpConnection *connection = TP_CONNECTION (object);
+  Result *result = user_data;
+
+  if (tp_proxy_prepare_finish (connection, res, &result->error))
+    {
+      TpContactInfoFlags flags;
+      GList *specs;
+      TpContactInfoFieldSpec *spec;
+
+      flags = tp_connection_get_contact_info_flags (connection);
+      g_assert_cmpint (flags, ==, TP_CONTACT_INFO_FLAG_PUSH |
+          TP_CONTACT_INFO_FLAG_CAN_SET);
+
+      specs = tp_connection_get_contact_info_supported_fields (connection);
+      g_assert (specs != NULL);
+      g_assert (specs->data != NULL);
+      g_assert (specs->next == NULL);
+
+      spec = specs->data;
+      g_assert_cmpstr (spec->name, ==, "n");
+      g_assert (spec->parameters != NULL);
+      g_assert (spec->parameters[0] == NULL);
+      g_assert_cmpint (spec->flags, ==, 0);
+      g_assert_cmpint (spec->max, ==, 0);
+
+      g_list_free (specs);
+    }
+
+  finish (result);
+}
+
+static void
+contact_info_set_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpConnection *connection = TP_CONNECTION (object);
+  Result *result = user_data;
+
+  tp_connection_set_contact_info_finish (connection, res, &result->error);
+  finish (result);
+}
+
+static void
+contact_info_request_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpContact *contact = TP_CONTACT (object);
+  Result *result = user_data;
+
+  contact_info_verify (contact);
+
+  tp_contact_request_contact_info_finish (contact, res, &result->error);
+  finish (result);
+}
+
+static void
+contact_info_request_cancelled_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpContact *contact = TP_CONTACT (object);
+  Result *result = user_data;
+  GError *error = NULL;
+
+  tp_contact_request_contact_info_finish (contact, res, &error);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+  g_clear_error (&error);
+
+  finish (result);
+}
+
+static gboolean
+contact_info_request_cancel (gpointer cancellable)
+{
+  g_cancellable_cancel (cancellable);
+  return FALSE;
+}
+
+static void
+test_contact_info (TpTestsContactsConnection *service_conn,
+    TpConnection *client_conn)
+{
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
+      (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
+  TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_INFO };
+  TpContact *contact;
+  TpHandle handle;
+  const gchar *field_value[] = { "Foo", NULL };
+  GPtrArray *info;
+  GList *info_list = NULL;
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_INFO, 0 };
+  GCancellable *cancellable;
+
+  /* Create fake info fields */
+  info = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
+  g_ptr_array_add (info, tp_value_array_build (3,
+      G_TYPE_STRING, "n",
+      G_TYPE_STRV, NULL,
+      G_TYPE_STRV, field_value,
+      G_TYPE_INVALID));
+
+  info_list = g_list_prepend (info_list,
+      tp_contact_info_field_new ("n", NULL, (GStrv) field_value));
+
+  tp_tests_contacts_connection_set_default_contact_info (service_conn, info);
+
+  /* TEST1: Verify ContactInfo properties are correctly introspected on
+   * TpConnection */
+  tp_proxy_prepare_async (client_conn, conn_features, contact_info_prepare_cb,
+      &result);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  /* TEST2: Set contact info on the connection, then get the self TpContact.
+   * This tests the set operation works correctly and also test TpContact
+   * correctly introspects the ContactInfo when the feature is requested. */
+  tp_connection_set_contact_info_async (client_conn, info_list,
+    contact_info_set_cb, &result);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  handle = tp_connection_get_self_handle (client_conn);
+  tp_connection_get_contacts_by_handle (client_conn,
+      1, &handle,
+      G_N_ELEMENTS (features), features,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  contact = g_ptr_array_index (result.contacts, 0);
+  contact_info_verify (contact);
+
+  reset_result (&result);
+
+  /* TEST3: Create a TpContact with the INFO feature. Then change its info in
+   * the CM. That should emit "notify::info" signal on the TpContact. */
+  handle = tp_handle_ensure (service_repo, "info-test-3", NULL, NULL);
+  tp_connection_get_contacts_by_handle (client_conn,
+      1, &handle,
+      G_N_ELEMENTS (features), features,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  contact = g_ptr_array_index (result.contacts, 0);
+  g_signal_connect (contact, "notify::contact-info",
+      G_CALLBACK (contact_info_notify_cb), &result);
+
+  tp_tests_contacts_connection_change_contact_info (service_conn, handle,
+      info);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  reset_result (&result);
+  tp_handle_unref (service_repo, handle);
+
+  /* TEST 4: First set the info in the CM for an handle, then create a TpContact
+   * without INFO feature, and finally refresh the contact's info. */
+  handle = tp_handle_ensure (service_repo, "info-test-4", NULL, NULL);
+  tp_tests_contacts_connection_change_contact_info (service_conn, handle,
+      info);
+
+  tp_connection_get_contacts_by_handle (client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  contact = g_ptr_array_index (result.contacts, 0);
+  g_assert (tp_contact_get_contact_info (contact) == NULL);
+
+  g_signal_connect (contact, "notify::contact-info",
+      G_CALLBACK (contact_info_notify_cb), &result);
+  tp_connection_refresh_contact_info (client_conn, 1, &contact);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  reset_result (&result);
+  tp_handle_unref (service_repo, handle);
+
+  /* TEST5: Create a TpContact without INFO feature, then request the contact's
+   * info. */
+  handle = tp_handle_ensure (service_repo, "info-test-5", NULL, NULL);
+  tp_connection_get_contacts_by_handle (client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  contact = g_ptr_array_index (result.contacts, 0);
+  g_assert (tp_contact_get_contact_info (contact) == NULL);
+
+  tp_contact_request_contact_info_async (contact, NULL, contact_info_request_cb,
+      &result);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  reset_result (&result);
+  tp_handle_unref (service_repo, handle);
+
+  /* TEST6: Create a TpContact without INFO feature, then request the contact's
+   * info, and cancel the request. */
+  handle = tp_handle_ensure (service_repo, "info-test-6", NULL, NULL);
+  tp_connection_get_contacts_by_handle (client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  contact = g_ptr_array_index (result.contacts, 0);
+  g_assert (tp_contact_get_contact_info (contact) == NULL);
+
+  cancellable = g_cancellable_new ();
+  tp_contact_request_contact_info_async (contact, cancellable,
+      contact_info_request_cancelled_cb, &result);
+
+  g_idle_add_full (G_PRIORITY_HIGH, contact_info_request_cancel,
+      cancellable, g_object_unref);
+
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  reset_result (&result);
+  tp_handle_unref (service_repo, handle);
+
+  /* Cleanup */
+  g_main_loop_unref (result.loop);
+  g_ptr_array_unref (info);
+  tp_contact_info_list_free (info_list);
+}
+
+static void
 prepare_avatar_requirements_cb (GObject *object,
     GAsyncResult *res,
     gpointer user_data)
@@ -213,9 +524,7 @@ create_contact_with_fake_avatar (TpTestsContactsConnection *service_conn,
   /* Keep avatar_file alive after contact destruction */
   g_object_ref (avatar_file);
 
-  g_object_unref (contact);
-  g_array_free (result.invalid, TRUE);
-  g_ptr_array_free (result.contacts, TRUE);
+  reset_result (&result);
   g_main_loop_unref (result.loop);
 
   tp_handle_unref (service_repo, handle);
@@ -389,21 +698,18 @@ test_by_handle (TpTestsContactsConnection *service_conn,
   MYASSERT (g_ptr_array_index (result.contacts, 0) != NULL, "");
   MYASSERT (g_ptr_array_index (result.contacts, 1) != NULL, "");
   MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
-  contacts[0] = g_ptr_array_index (result.contacts, 0);
+  contacts[0] = g_object_ref (g_ptr_array_index (result.contacts, 0));
   g_assert_cmpuint (tp_contact_get_handle (contacts[0]), ==, handles[0]);
   g_assert_cmpstr (tp_contact_get_identifier (contacts[0]), ==, "alice");
-  contacts[1] = g_ptr_array_index (result.contacts, 1);
+  contacts[1] = g_object_ref (g_ptr_array_index (result.contacts, 1));
   g_assert_cmpuint (tp_contact_get_handle (contacts[1]), ==, handles[1]);
   g_assert_cmpstr (tp_contact_get_identifier (contacts[1]), ==, "bob");
-  contacts[3] = g_ptr_array_index (result.contacts, 2);
+  contacts[3] = g_object_ref (g_ptr_array_index (result.contacts, 2));
   g_assert_cmpuint (tp_contact_get_handle (contacts[3]), ==, handles[3]);
   g_assert_cmpstr (tp_contact_get_identifier (contacts[3]), ==, "chris");
 
   /* clean up before doing the second request */
-  g_array_free (result.invalid, TRUE);
-  result.invalid = NULL;
-  g_ptr_array_free (result.contacts, TRUE);
-  result.contacts = NULL;
+  reset_result (&result);
   g_assert (result.error == NULL);
 
   /* Replace one of the invalid handles with a valid one */
@@ -443,6 +749,9 @@ test_by_handle (TpTestsContactsConnection *service_conn,
   g_assert_cmpuint (tp_contact_get_handle (contacts[2]), ==, handles[2]);
   g_assert_cmpstr (tp_contact_get_identifier (contacts[2]), ==, "dora");
 
+  g_ptr_array_unref (result.contacts);
+  result.contacts = NULL;
+
   /* clean up refs to contacts and assert that they aren't leaked */
 
   for (i = 0; i < 4; i++)
@@ -471,10 +780,9 @@ test_by_handle (TpTestsContactsConnection *service_conn,
   MYASSERT (!tp_handle_is_valid (service_repo, handles[3], NULL), "");
 
   /* remaining cleanup */
-  g_main_loop_unref (result.loop);
-  g_array_free (result.invalid, TRUE);
-  g_ptr_array_free (result.contacts, TRUE);
   g_assert (result.error == NULL);
+  reset_result (&result);
+  g_main_loop_unref (result.loop);
 }
 
 static void
@@ -511,7 +819,10 @@ test_no_features (TpTestsContactsConnection *service_conn,
   MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
 
   for (i = 0; i < 3; i++)
-    contacts[i] = g_ptr_array_index (result.contacts, i);
+    contacts[i] = g_object_ref (g_ptr_array_index (result.contacts, i));
+
+  g_assert (result.error == NULL);
+  reset_result (&result);
 
   for (i = 0; i < 3; i++)
     {
@@ -551,9 +862,6 @@ test_no_features (TpTestsContactsConnection *service_conn,
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
-  g_array_free (result.invalid, TRUE);
-  g_ptr_array_free (result.contacts, TRUE);
-  g_assert (result.error == NULL);
 }
 
 static void
@@ -739,7 +1047,7 @@ test_upgrade (TpTestsContactsConnection *service_conn,
   MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
 
   for (i = 0; i < 3; i++)
-    contacts[i] = g_ptr_array_index (result.contacts, i);
+    contacts[i] = g_object_ref (g_ptr_array_index (result.contacts, i));
 
   for (i = 0; i < 3; i++)
     {
@@ -770,11 +1078,8 @@ test_upgrade (TpTestsContactsConnection *service_conn,
     }
 
   /* clean up before doing the second request */
-  g_array_free (result.invalid, TRUE);
-  result.invalid = NULL;
-  g_ptr_array_free (result.contacts, TRUE);
-  result.contacts = NULL;
   g_assert (result.error == NULL);
+  reset_result (&result);
 
   tp_connection_upgrade_contacts (client_conn,
       3, contacts,
@@ -791,8 +1096,11 @@ test_upgrade (TpTestsContactsConnection *service_conn,
   for (i = 0; i < 3; i++)
     {
       MYASSERT (g_ptr_array_index (result.contacts, 0) == contacts[0], "");
-      g_object_unref (g_ptr_array_index (result.contacts, i));
     }
+
+  g_assert (result.invalid == NULL);
+  g_assert (result.error == NULL);
+  reset_result (&result);
 
   for (i = 0; i < 3; i++)
     {
@@ -848,9 +1156,6 @@ test_upgrade (TpTestsContactsConnection *service_conn,
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
-  g_ptr_array_free (result.contacts, TRUE);
-  g_assert (result.invalid == NULL);
-  g_assert (result.error == NULL);
 }
 
 typedef struct
@@ -1036,7 +1341,10 @@ test_features (TpTestsContactsConnection *service_conn,
   MYASSERT (g_ptr_array_index (result.contacts, 2) != NULL, "");
 
   for (i = 0; i < 3; i++)
-    contacts[i] = g_ptr_array_index (result.contacts, i);
+    contacts[i] = g_object_ref (g_ptr_array_index (result.contacts, i));
+
+  g_assert (result.error == NULL);
+  reset_result (&result);
 
   for (i = 0; i < 3; i++)
     {
@@ -1214,9 +1522,6 @@ test_features (TpTestsContactsConnection *service_conn,
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
-  g_array_free (result.invalid, TRUE);
-  g_ptr_array_free (result.contacts, TRUE);
-  g_assert (result.error == NULL);
   g_hash_table_unref (location_1);
   g_hash_table_unref (location_2);
   g_hash_table_unref (location_3);
@@ -1306,7 +1611,6 @@ test_by_id (TpConnection *client_conn)
   static const gchar * const ids[] = { "Alice", "Bob", "Not valid", "Chris",
       "not valid either", NULL };
   TpContact *contacts[3];
-  guint i;
   GError *e /* no initialization needed */;
 
   g_message ("%s: all bad (fd.o #19688)", G_STRFUNC);
@@ -1327,12 +1631,7 @@ test_by_id (TpConnection *client_conn)
   e = g_hash_table_lookup (result.bad_ids, "Not valid");
   MYASSERT (e != NULL, "");
 
-  g_ptr_array_free (result.contacts, TRUE);
-  result.contacts = NULL;
-  g_strfreev (result.good_ids);
-  result.good_ids = NULL;
-  g_hash_table_destroy (result.bad_ids);
-  result.bad_ids = NULL;
+  reset_result (&result);
 
   g_message ("%s: all good", G_STRFUNC);
 
@@ -1358,17 +1657,7 @@ test_by_id (TpConnection *client_conn)
   g_assert_cmpstr (result.good_ids[1], ==, "Bob");
   g_assert_cmpstr (tp_contact_get_identifier (contacts[1]), ==, "bob");
 
-  for (i = 0; i < 2; i++)
-    {
-      g_object_unref (contacts[i]);
-    }
-
-  g_ptr_array_free (result.contacts, TRUE);
-  result.contacts = NULL;
-  g_strfreev (result.good_ids);
-  result.good_ids = NULL;
-  g_hash_table_destroy (result.bad_ids);
-  result.bad_ids = NULL;
+  reset_result (&result);
 
   g_message ("%s: not all good", G_STRFUNC);
 
@@ -1404,25 +1693,12 @@ test_by_id (TpConnection *client_conn)
   g_assert_cmpstr (result.good_ids[2], ==, "Chris");
   g_assert_cmpstr (tp_contact_get_identifier (contacts[2]), ==, "chris");
 
-  /* clean up refs to contacts */
-
-  for (i = 0; i < 3; i++)
-    {
-      g_object_unref (contacts[i]);
-    }
-
   /* wait for ReleaseHandles to run */
   tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
 
   /* remaining cleanup */
+  reset_result (&result);
   g_main_loop_unref (result.loop);
-
-  g_ptr_array_free (result.contacts, TRUE);
-  result.contacts = NULL;
-  g_strfreev (result.good_ids);
-  result.good_ids = NULL;
-  g_hash_table_destroy (result.bad_ids);
-  result.bad_ids = NULL;
 }
 
 static void
@@ -1482,10 +1758,9 @@ test_capabilities_without_contact_caps (
           " contact %u", i);
     }
 
-  g_main_loop_unref (result.loop);
-  g_array_free (result.invalid, TRUE);
-  g_ptr_array_free (result.contacts, TRUE);
   g_assert (result.error == NULL);
+  reset_result (&result);
+  g_main_loop_unref (result.loop);
 }
 
 static void
@@ -1545,10 +1820,9 @@ test_prepare_contact_caps_without_request (
       g_assert_cmpuint (classes->len, ==, 0);
     }
 
-  g_main_loop_unref (result.loop);
-  g_array_free (result.invalid, TRUE);
-  g_ptr_array_free (result.contacts, TRUE);
   g_assert (result.error == NULL);
+  reset_result (&result);
+  g_main_loop_unref (result.loop);
 }
 
 int
@@ -1586,6 +1860,7 @@ main (int argc,
   test_by_id (client_conn);
   test_avatar_requirements (client_conn);
   test_avatar_data (service_conn, client_conn);
+  test_contact_info (service_conn, client_conn);
 
   /* test if TpContact fallbacks to connection's capabilities if
    * ContactCapabilities is not implemented. */

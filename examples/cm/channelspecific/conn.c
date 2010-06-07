@@ -29,12 +29,14 @@ G_DEFINE_TYPE (ExampleCSHConnection,
 enum
 {
   PROP_ACCOUNT = 1,
+  PROP_SIMULATION_DELAY,
   N_PROPS
 };
 
 struct _ExampleCSHConnectionPrivate
 {
   gchar *account;
+  guint simulation_delay;
 };
 
 static void
@@ -56,6 +58,11 @@ get_property (GObject *object,
     case PROP_ACCOUNT:
       g_value_set_string (value, self->priv->account);
       break;
+
+    case PROP_SIMULATION_DELAY:
+      g_value_set_uint (value, self->priv->simulation_delay);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
   }
@@ -74,6 +81,11 @@ set_property (GObject *object,
       g_free (self->priv->account);
       self->priv->account = g_utf8_strdown (g_value_get_string (value), -1);
       break;
+
+    case PROP_SIMULATION_DELAY:
+      self->priv->simulation_delay = g_value_get_uint (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
   }
@@ -198,10 +210,12 @@ create_handle_repos (TpBaseConnection *conn,
 static GPtrArray *
 create_channel_managers (TpBaseConnection *conn)
 {
+  ExampleCSHConnection *self = EXAMPLE_CSH_CONNECTION (conn);
   GPtrArray *ret = g_ptr_array_sized_new (1);
 
   g_ptr_array_add (ret, g_object_new (EXAMPLE_TYPE_CSH_ROOM_MANAGER,
         "connection", conn,
+        "simulation-delay", self->priv->simulation_delay,
         NULL));
 
   return ret;
@@ -268,4 +282,11 @@ example_csh_connection_class_init (ExampleCSHConnectionClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+
+  param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
+      "Delay between simulated network events",
+      0, G_MAXUINT32, 500,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
+      param_spec);
 }
