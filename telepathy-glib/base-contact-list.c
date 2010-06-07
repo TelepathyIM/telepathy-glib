@@ -3413,9 +3413,10 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
  * #TpBaseContactList in its list of channel managers (by creating it in
  * its #TpBaseConnectionClass.create_channel_managers implementation).
  *
- * If the connection implements #TpSvcConnectionInterfaceContactGroups, this
- * function automatically also registers the ContactGroups interface with the
- * Contacts interface.
+ * If the connection implements #TpSvcConnectionInterfaceContactGroups
+ * the #TpBaseContactList implements %TP_TYPE_CONTACT_GROUP_LIST,
+ * this function automatically also registers the ContactGroups interface
+ * with the contacts mixin.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -3423,12 +3424,14 @@ void
 tp_base_contact_list_mixin_register_with_contacts_mixin (
     TpBaseConnection *conn)
 {
+  TpBaseContactList *self;
   GType type = G_OBJECT_TYPE (conn);
   GObject *object = (GObject *) conn;
 
   g_return_if_fail (TP_IS_BASE_CONNECTION (conn));
-  g_return_if_fail (_tp_base_connection_find_channel_manager (
-      (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST) != NULL);
+  self = _tp_base_connection_find_channel_manager (conn,
+      TP_TYPE_BASE_CONTACT_LIST);
+  g_return_if_fail (self != NULL);
   g_return_if_fail (g_type_is_a (type,
         TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST));
 
@@ -3436,7 +3439,8 @@ tp_base_contact_list_mixin_register_with_contacts_mixin (
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
       tp_base_contact_list_fill_list_contact_attributes);
 
-  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS))
+  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS)
+      && TP_IS_CONTACT_GROUP_LIST (self))
     {
       tp_contacts_mixin_add_contact_attributes_iface (object,
           TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
