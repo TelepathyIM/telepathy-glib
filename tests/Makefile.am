@@ -11,7 +11,7 @@ LDADD = \
 noinst_PROGRAMS = \
 	test-tpl-channel	\
 	test-tpl-conf		\
-	test-tpl-log-entry	\
+	test-tpl-entry	\
 	test-tpl-log-store-sqlite \
 	test-tpl-log-manager	\
 	test-tpl-observer	\
@@ -60,7 +60,7 @@ check_c_sources = \
 	tpl-channel-test.c	\
 	test-tpl-channel.c	\
 	test-tpl-conf.c		\
-	test-tpl-log-entry.c	\
+	test-tpl-entry.c	\
 	test-tpl-observer.c	\
 	test-searches.c		\
 	$(NULL)
