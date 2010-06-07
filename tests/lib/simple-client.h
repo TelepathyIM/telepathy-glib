@@ -8,22 +8,22 @@
  * notice and this notice are preserved.
  */
 
-#ifndef __SIMPLE_CLIENT_H__
-#define __SIMPLE_CLIENT_H__
+#ifndef __TP_TESTS_SIMPLE_CLIENT_H__
+#define __TP_TESTS_SIMPLE_CLIENT_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/base-client.h>
 
 G_BEGIN_DECLS
 
-typedef struct _SimpleClient SimpleClient;
-typedef struct _SimpleClientClass SimpleClientClass;
+typedef struct _TpTestsSimpleClient TpTestsSimpleClient;
+typedef struct _TpTestsSimpleClientClass TpTestsSimpleClientClass;
 
-struct _SimpleClientClass {
+struct _TpTestsSimpleClientClass {
     TpBaseClientClass parent_class;
 };
 
-struct _SimpleClient {
+struct _TpTestsSimpleClient {
     TpBaseClient parent;
 
     TpObserveChannelsContext *observe_ctx;
@@ -31,29 +31,29 @@ struct _SimpleClient {
     TpHandleChannelsContext *handle_channels_ctx;
 };
 
-GType simple_client_get_type (void);
+GType tp_tests_simple_client_get_type (void);
 
 /* TYPE MACROS */
-#define SIMPLE_TYPE_CLIENT \
-  (simple_client_get_type ())
-#define SIMPLE_CLIENT(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), SIMPLE_TYPE_CLIENT, \
-                              SimpleClient))
-#define SIMPLE_CLIENT_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), SIMPLE_TYPE_CLIENT, \
-                           SimpleClientClass))
+#define TP_TESTS_TYPE_SIMPLE_CLIENT \
+  (tp_tests_simple_client_get_type ())
+#define TP_TESTS_SIMPLE_CLIENT(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TESTS_TYPE_SIMPLE_CLIENT, \
+                              TpTestsSimpleClient))
+#define TP_TESTS_SIMPLE_CLIENT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TESTS_TYPE_SIMPLE_CLIENT, \
+                           TpTestsSimpleClientClass))
 #define SIMPLE_IS_CLIENT(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), SIMPLE_TYPE_CLIENT))
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TESTS_TYPE_SIMPLE_CLIENT))
 #define SIMPLE_IS_CLIENT_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), SIMPLE_TYPE_CLIENT))
-#define SIMPLE_CLIENT_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), SIMPLE_TYPE_CLIENT, \
-                              SimpleClientClass))
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TESTS_TYPE_SIMPLE_CLIENT))
+#define TP_TESTS_SIMPLE_CLIENT_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_SIMPLE_CLIENT, \
+                              TpTestsSimpleClientClass))
 
-SimpleClient * simple_client_new (TpDBusDaemon *dbus_daemon,
+TpTestsSimpleClient * tp_tests_simple_client_new (TpDBusDaemon *dbus_daemon,
     const gchar *name,
     gboolean uniquify_name);
 
 G_END_DECLS
 
-#endif /* #ifndef __SIMPLE_CONN_H__ */
+#endif /* #ifndef __TP_TESTS_SIMPLE_CONN_H__ */

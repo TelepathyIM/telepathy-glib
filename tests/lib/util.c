@@ -11,12 +11,12 @@
 #include "tests/lib/util.h"
 
 void
-test_proxy_run_until_prepared (gpointer proxy,
+tp_tests_proxy_run_until_prepared (gpointer proxy,
     const GQuark *features)
 {
   GError *error = NULL;
 
-  test_proxy_run_until_prepared_or_failed (proxy, features, &error);
+  tp_tests_proxy_run_until_prepared_or_failed (proxy, features, &error);
   g_assert_no_error (error);
 }
 
@@ -31,7 +31,7 @@ prepared_cb (GObject *object,
 }
 
 gboolean
-test_proxy_run_until_prepared_or_failed (gpointer proxy,
+tp_tests_proxy_run_until_prepared_or_failed (gpointer proxy,
     const GQuark *features,
     GError **error)
 {
@@ -47,109 +47,8 @@ test_proxy_run_until_prepared_or_failed (gpointer proxy,
   return tp_proxy_prepare_finish (proxy, result, error);
 }
 
-static void
-conn_ready_cb (TpConnection *conn G_GNUC_UNUSED,
-    const GError *error,
-    gpointer user_data)
-{
-  GMainLoop *loop = user_data;
-
-  test_assert_no_error (error);
-  g_main_loop_quit (loop);
-}
-
-void
-test_connection_run_until_ready (TpConnection *conn)
-{
-  GMainLoop *loop = g_main_loop_new (NULL, FALSE);
-
-  if (tp_connection_is_ready (conn))
-    return;
-
-  tp_connection_call_when_ready (conn, conn_ready_cb, loop);
-  g_main_loop_run (loop);
-  g_main_loop_unref (loop);
-}
-
-typedef struct {
-    GMainLoop *loop;
-    GError **error;
-} NotReadyCtx;
-
-static void
-cm_not_ready_cb (TpConnectionManager *cm G_GNUC_UNUSED,
-             const GError *error,
-             gpointer user_data,
-             GObject *weak_object G_GNUC_UNUSED)
-{
-  NotReadyCtx *ctx = user_data;
-
-  g_assert (error != NULL);
-
-  if (ctx->error != NULL)
-    {
-      *(ctx->error) = g_error_copy (error);
-    }
-
-  g_main_loop_quit (ctx->loop);
-}
-
-void
-test_connection_manager_run_until_readying_fails (TpConnectionManager *cm,
-    GError **error)
-{
-  NotReadyCtx ctx = { NULL, error };
-  const GError *invalidated;
-
-  g_return_if_fail (error == NULL || *error == NULL);
-  g_return_if_fail (!tp_connection_manager_is_ready (cm));
-
-  invalidated = tp_proxy_get_invalidated (cm);
-
-  if (invalidated != NULL)
-    {
-      if (error != NULL)
-        *error = g_error_copy (invalidated);
-
-      return;
-    }
-
-  ctx.loop = g_main_loop_new (NULL, FALSE);
-
-  tp_connection_manager_call_when_ready (cm, cm_not_ready_cb, &ctx, NULL,
-      NULL);
-  g_main_loop_run (ctx.loop);
-  g_main_loop_unref (ctx.loop);
-}
-
-static void
-cm_ready_cb (TpConnectionManager *cm G_GNUC_UNUSED,
-             const GError *error,
-             gpointer user_data,
-             GObject *weak_object G_GNUC_UNUSED)
-{
-  GMainLoop *loop = user_data;
-
-  test_assert_no_error (error);
-  g_main_loop_quit (loop);
-}
-
-void
-test_connection_manager_run_until_ready (TpConnectionManager *cm)
-{
-  GMainLoop *loop = g_main_loop_new (NULL, FALSE);
-
-  if (tp_connection_manager_is_ready (cm))
-    return;
-
-  tp_connection_manager_call_when_ready (cm, cm_ready_cb, loop, NULL,
-      NULL);
-  g_main_loop_run (loop);
-  g_main_loop_unref (loop);
-}
-
 TpDBusDaemon *
-test_dbus_daemon_dup_or_die (void)
+tp_tests_dbus_daemon_dup_or_die (void)
 {
   TpDBusDaemon *d = tp_dbus_daemon_dup (NULL);
 
@@ -175,7 +74,7 @@ introspect_cb (TpProxy *proxy G_GNUC_UNUSED,
 }
 
 void
-test_proxy_run_until_dbus_queue_processed (gpointer proxy)
+tp_tests_proxy_run_until_dbus_queue_processed (gpointer proxy)
 {
   GMainLoop *loop = g_main_loop_new (NULL, FALSE);
 
@@ -202,7 +101,7 @@ handles_requested_cb (TpConnection *connection G_GNUC_UNUSED,
 {
   HandleRequestResult *result = user_data;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
   g_assert_cmpuint (n_handles, ==, 1);
   result->handle = handles[0];
 }
@@ -216,7 +115,7 @@ handle_request_result_finish (gpointer r)
 }
 
 TpHandle
-test_connection_run_request_contact_handle (TpConnection *connection,
+tp_tests_connection_run_request_contact_handle (TpConnection *connection,
     const gchar *id)
 {
   HandleRequestResult result = { g_main_loop_new (NULL, FALSE), 0 };
@@ -227,19 +126,6 @@ test_connection_run_request_contact_handle (TpConnection *connection,
   g_main_loop_run (result.loop);
   g_main_loop_unref (result.loop);
   return result.handle;
-}
-
-void
-_test_assert_no_error (const GError *error,
-                       const char *file,
-                       int line)
-{
-  if (error != NULL)
-    {
-      g_error ("%s:%d:%s: code %u: %s",
-          file, line, g_quark_to_string (error->domain),
-          error->code, error->message);
-    }
 }
 
 void
@@ -266,7 +152,7 @@ _test_assert_empty_strv (const char *file,
 }
 
 void
-_test_assert_strv_equals (const char *file,
+_tp_tests_assert_strv_equals (const char *file,
     int line,
     const char *expected_desc,
     gconstpointer expected_strv,
@@ -304,7 +190,7 @@ _test_assert_strv_equals (const char *file,
 }
 
 void
-test_create_and_connect_conn (GType conn_type,
+tp_tests_create_and_connect_conn (GType conn_type,
     const gchar *account,
     TpBaseConnection **service_conn,
     TpConnection **client_conn)
@@ -313,13 +199,14 @@ test_create_and_connect_conn (GType conn_type,
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   g_assert (service_conn != NULL);
   g_assert (client_conn != NULL);
 
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  *service_conn = test_object_new_static_class (
+  *service_conn = tp_tests_object_new_static_class (
         conn_type,
         "account", account,
         "protocol", "simple",
@@ -328,15 +215,15 @@ test_create_and_connect_conn (GType conn_type,
 
   g_assert (tp_base_connection_register (*service_conn, "simple",
         &name, &conn_path, &error));
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   *client_conn = tp_connection_new (dbus, name, conn_path,
       &error);
   g_assert (*client_conn != NULL);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   tp_cli_connection_call_connect (*client_conn, -1, NULL, NULL, NULL, NULL);
-  test_connection_run_until_ready (*client_conn);
+  tp_tests_proxy_run_until_prepared (*client_conn, conn_features);
 
   g_free (name);
   g_free (conn_path);
@@ -347,7 +234,7 @@ test_create_and_connect_conn (GType conn_type,
 /* This object exists solely so that tests/tests.supp can ignore "leaked"
  * classes. */
 gpointer
-test_object_new_static_class (GType type,
+tp_tests_object_new_static_class (GType type,
     ...)
 {
   va_list ap;

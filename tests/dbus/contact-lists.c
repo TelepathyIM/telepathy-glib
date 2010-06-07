@@ -201,9 +201,9 @@ setup (Test *test,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_conn = test_object_new_static_class (
+  test->service_conn = tp_tests_object_new_static_class (
         EXAMPLE_TYPE_CONTACT_LIST_CONNECTION,
         "account", "me@example.com",
         "simulation-delay", 0,
@@ -225,7 +225,7 @@ setup (Test *test,
   g_assert (test->conn != NULL);
   g_assert_no_error (error);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  test_proxy_run_until_prepared (test->conn, features);
+  tp_tests_proxy_run_until_prepared (test->conn, features);
 
   g_assert (tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_CORE));
   g_assert (tp_proxy_is_prepared (test->conn,
@@ -344,7 +344,7 @@ test_ensure_channel (Test *test,
   g_hash_table_unref (props);
   g_hash_table_unref (asv);
 
-  test_proxy_run_until_prepared (ret, NULL);
+  tp_tests_proxy_run_until_prepared (ret, NULL);
   return ret;
 }
 

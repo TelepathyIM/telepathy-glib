@@ -89,14 +89,16 @@ setup (Test *test,
   guint audio = TP_MEDIA_STREAM_TYPE_AUDIO;
   guint video = TP_MEDIA_STREAM_TYPE_VIDEO;
   guint not_a_media_type = 31337;
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   g_type_init ();
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = EXAMPLE_CALL_CONNECTION_MANAGER (test_object_new_static_class (
+  test->service_cm = EXAMPLE_CALL_CONNECTION_MANAGER (
+      tp_tests_object_new_static_class (
         EXAMPLE_TYPE_CALL_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);
@@ -109,7 +111,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "example_call",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  test_connection_manager_run_until_ready (test->cm);
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -120,14 +122,14 @@ setup (Test *test,
 
   tp_cli_connection_manager_run_request_connection (test->cm, -1,
       "example", parameters, &bus_name, &object_path, &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   test->conn = tp_connection_new (test->dbus, bus_name, object_path,
       &test->error);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
   g_assert (test->conn != NULL);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
-  test_connection_run_until_ready (test->conn);
+  tp_tests_proxy_run_until_prepared (test->conn, conn_features);
 
   test->self_handle = tp_connection_get_self_handle (test->conn);
   g_assert (test->self_handle != 0);
@@ -159,11 +161,11 @@ channel_created_cb (TpConnection *connection,
   Test *test = user_data;
   GError *new_error = NULL;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
 
   test->chan = tp_channel_new_from_properties (connection, object_path,
       immutable_properties, &new_error);
-  test_assert_no_error (new_error);
+  g_assert_no_error (new_error);
 
   test->peer_handle = tp_channel_get_handle (test->chan, NULL);
 
@@ -177,7 +179,7 @@ channel_ready_cb (TpChannel *channel G_GNUC_UNUSED,
 {
   Test *test = user_data;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
   g_main_loop_quit (test->mainloop);
 }
 
@@ -215,7 +217,7 @@ got_all_cb (TpProxy *proxy,
 {
   Test *test = user_data;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
 
   tp_clear_pointer (&test->get_all_return, g_hash_table_unref);
   test->get_all_return = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -235,7 +237,7 @@ got_contents_cb (TpProxy *proxy,
 {
   Test *test = user_data;
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
 
   tp_clear_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
   g_assert (G_VALUE_HOLDS (value, TP_ARRAY_TYPE_OBJECT_PATH_LIST));
@@ -258,7 +260,7 @@ got_senders_cb (TpProxy *proxy,
   if (test->error != NULL)
     g_clear_error (&test->error);
 
-  test_assert_no_error (error);
+  g_assert_no_error ((GError *) error);
 
   g_assert (G_VALUE_HOLDS (value, FUTURE_HASH_TYPE_CONTACT_SENDING_STATE_MAP));
   test->get_senders_return = g_value_dup_boxed (value);
@@ -402,7 +404,7 @@ loop_until_ended (Test *test)
       tp_cli_dbus_properties_call_get_all (test->chan, -1,
           FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
       g_main_loop_run (test->mainloop);
-      test_assert_no_error (test->error);
+      g_assert_no_error (test->error);
 
       if (tp_asv_get_uint32 (test->get_all_return, "CallState",
             NULL) == FUTURE_CALL_STATE_ENDED)
@@ -418,7 +420,7 @@ loop_until_answered (Test *test)
       tp_cli_dbus_properties_call_get_all (test->chan, -1,
           FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
       g_main_loop_run (test->mainloop);
-      test_assert_no_error (test->error);
+      g_assert_no_error (test->error);
 
       if (tp_asv_get_uint32 (test->get_all_return, "CallState",
             NULL) != FUTURE_CALL_STATE_PENDING_RECEIVER)
@@ -436,7 +438,7 @@ assert_ended_and_run_close (Test *test,
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
   assert_call_properties (test->get_all_return,
       FUTURE_CALL_STATE_ENDED,
       expected_actor,
@@ -450,18 +452,18 @@ assert_ended_and_run_close (Test *test,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
       got_contents_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
   g_assert_cmpuint (test->get_contents_return->len, ==, 0);
 
   /* ... but the channel doesn't close */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) == NULL);
 
   /* When we call Close it finally closes */
   tp_cli_channel_call_close (test->chan, -1, void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  g_assert_no_error (test->error);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 }
 
@@ -478,7 +480,7 @@ test_basics (Test *test,
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   assert_call_properties (test->get_all_return,
       FUTURE_CALL_STATE_PENDING_INITIATOR, 0,
@@ -492,7 +494,7 @@ test_basics (Test *test,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
       got_contents_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->get_contents_return->len, ==, 1);
 
@@ -504,7 +506,7 @@ test_basics (Test *test,
   tp_cli_dbus_properties_call_get_all (test->audio_content, -1,
       FUTURE_IFACE_CALL_CONTENT, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
   assert_content_properties (test->get_all_return,
       TP_MEDIA_STREAM_TYPE_AUDIO, test->self_handle,
       FUTURE_CALL_CONTENT_DISPOSITION_INITIAL);
@@ -523,7 +525,7 @@ test_basics (Test *test,
       FUTURE_IFACE_CALL_STREAM, "Senders", got_senders_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
 
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (g_hash_table_size (test->get_senders_return), ==, 2);
   g_assert (!g_hash_table_lookup_extended (test->get_senders_return,
@@ -541,7 +543,7 @@ test_basics (Test *test,
   future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* Calling Accept again makes no sense, but mustn't crash */
   future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
@@ -566,7 +568,7 @@ test_basics (Test *test,
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   assert_call_properties (test->get_all_return,
       FUTURE_CALL_STATE_ACCEPTED, tp_channel_get_handle (test->chan, NULL),
@@ -588,7 +590,7 @@ test_basics (Test *test,
   tp_cli_dbus_properties_call_get (test->audio_stream, -1,
       FUTURE_IFACE_CALL_STREAM, "Senders", got_senders_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (g_hash_table_size (test->get_senders_return), ==, 2);
   g_assert (!g_hash_table_lookup_extended (test->get_senders_return,
@@ -615,7 +617,7 @@ test_basics (Test *test,
       "", TP_MEDIA_STREAM_TYPE_VIDEO, added_content_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert (test->added_content != NULL);
   tp_clear_object (&test->video_content);
@@ -627,7 +629,7 @@ test_basics (Test *test,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
       got_contents_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->get_contents_return->len, ==, 2);
 
@@ -649,7 +651,7 @@ test_basics (Test *test,
   tp_cli_dbus_properties_call_get_all (test->video_content, -1,
       FUTURE_IFACE_CALL_CONTENT, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
   assert_content_properties (test->get_all_return,
       TP_MEDIA_STREAM_TYPE_VIDEO, test->self_handle,
       FUTURE_CALL_CONTENT_DISPOSITION_NONE);
@@ -667,7 +669,7 @@ test_basics (Test *test,
   tp_cli_dbus_properties_call_get (test->video_stream, -1,
       FUTURE_IFACE_CALL_STREAM, "Senders", got_senders_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (g_hash_table_size (test->get_senders_return), ==, 2);
   g_assert (!g_hash_table_lookup_extended (test->get_senders_return,
@@ -709,7 +711,7 @@ test_basics (Test *test,
       test->stream_ids,
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* Get contents again: now there's only the audio */
 
@@ -717,7 +719,7 @@ test_basics (Test *test,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
       got_contents_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->get_contents_return->len, ==, 1);
   g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 0), ==,
@@ -730,7 +732,7 @@ test_basics (Test *test,
       -1, FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
   assert_ended_and_run_close (test, test->self_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       "");
@@ -754,15 +756,15 @@ test_no_answer (Test *test,
   future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* After the initial flurry of D-Bus messages, smcv still hasn't answered */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   assert_call_properties (test->get_all_return,
       FUTURE_CALL_STATE_PENDING_RECEIVER, test->self_handle,
@@ -775,7 +777,7 @@ test_no_answer (Test *test,
       -1, FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   assert_ended_and_run_close (test, test->self_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
@@ -793,7 +795,7 @@ test_busy (Test *test,
   future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* Wait for the remote contact to end the call as busy */
   loop_until_ended (test);
@@ -813,7 +815,7 @@ test_terminated_by_peer (Test *test,
   future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
@@ -835,7 +837,7 @@ test_terminate_via_close (Test *test,
   future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
@@ -844,7 +846,7 @@ test_terminate_via_close (Test *test,
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   assert_call_properties (test->get_all_return,
       FUTURE_CALL_STATE_ACCEPTED, test->peer_handle,
@@ -858,10 +860,10 @@ test_terminate_via_close (Test *test,
 
   tp_cli_channel_call_close (test->chan, -1, void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* In response to termination, the channel does genuinely close */
-  test_connection_run_until_dbus_queue_processed (test->conn);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) != NULL);
 
   /* FIXME: when we hook up signals, check for expected call state
@@ -913,7 +915,7 @@ expect_incoming_call_cb (TpConnection *conn,
       /* save the channel */
       test->chan = tp_channel_new_from_properties (conn, object_path,
           properties, &test->error);
-      test_assert_no_error (test->error);
+      g_assert_no_error (test->error);
     }
 }
 
@@ -928,16 +930,16 @@ trigger_incoming_call (Test *test,
 
   tp_cli_connection_interface_simple_presence_run_set_presence (test->conn, -1,
       "away", "preparing for a test", &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   new_channels_sig =
     tp_cli_connection_interface_requests_connect_to_new_channels (test->conn,
         expect_incoming_call_cb, test, NULL, NULL, &test->error);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   tp_cli_connection_interface_simple_presence_run_set_presence (test->conn, -1,
       "available", message, &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   /* wait for the call to happen if it hasn't already */
   while (test->chan == NULL)
@@ -966,7 +968,7 @@ test_incoming (Test *test,
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
   assert_call_properties (test->get_all_return,
       FUTURE_CALL_STATE_PENDING_RECEIVER, test->peer_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
@@ -979,7 +981,7 @@ test_incoming (Test *test,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
       got_contents_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert_cmpuint (test->get_contents_return->len, ==, 1);
 
@@ -989,12 +991,12 @@ test_incoming (Test *test,
   future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
       test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   tp_cli_dbus_properties_call_get_all (test->chan, -1,
       FUTURE_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
   assert_call_properties (test->get_all_return,
       FUTURE_CALL_STATE_ACCEPTED, test->self_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
@@ -1008,7 +1010,7 @@ test_incoming (Test *test,
       -1, FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
       void_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   assert_ended_and_run_close (test, test->self_handle,
       FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
@@ -1019,7 +1021,7 @@ teardown (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
   tp_cli_connection_run_disconnect (test->conn, -1, &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   if (test->members_changed_detailed_id != 0)
     {
@@ -1048,7 +1050,7 @@ teardown (Test *test,
   tp_clear_object (&test->service_cm);
 
   /* make sure any pending things have happened */
-  test_proxy_run_until_dbus_queue_processed (test->dbus);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
 
   tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);

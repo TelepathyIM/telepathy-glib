@@ -18,8 +18,8 @@
 
 static void account_manager_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE (SimpleAccountManager,
-    simple_account_manager,
+G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccountManager,
+    tp_tests_simple_account_manager,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_MANAGER,
         account_manager_iface_init);
@@ -47,13 +47,13 @@ enum
   PROP_INVALID_ACCOUNTS,
 };
 
-struct _SimpleAccountManagerPrivate
+struct _TpTestsSimpleAccountManagerPrivate
 {
   int dummy;
 };
 
 static void
-simple_account_manager_create_account (TpSvcAccountManager *self,
+tp_tests_simple_account_manager_create_account (TpSvcAccountManager *self,
     const gchar *in_Connection_Manager,
     const gchar *in_Protocol,
     const gchar *in_Display_Name,
@@ -71,21 +71,21 @@ account_manager_iface_init (gpointer klass,
     gpointer unused G_GNUC_UNUSED)
 {
 #define IMPLEMENT(x) tp_svc_account_manager_implement_##x (\
-  klass, simple_account_manager_##x)
+  klass, tp_tests_simple_account_manager_##x)
   IMPLEMENT (create_account);
 #undef IMPLEMENT
 }
 
 
 static void
-simple_account_manager_init (SimpleAccountManager *self)
+tp_tests_simple_account_manager_init (TpTestsSimpleAccountManager *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, SIMPLE_TYPE_ACCOUNT_MANAGER,
-      SimpleAccountManagerPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, TpTestsSimpleAccountManagerPrivate);
 }
 
 static void
-simple_account_manager_get_property (GObject *object,
+tp_tests_simple_account_manager_get_property (GObject *object,
               guint property_id,
               GValue *value,
               GParamSpec *spec)
@@ -130,7 +130,8 @@ simple_account_manager_get_property (GObject *object,
   * too.
   */
 static void
-simple_account_manager_class_init (SimpleAccountManagerClass *klass)
+tp_tests_simple_account_manager_class_init (
+    TpTestsSimpleAccountManagerClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
@@ -154,8 +155,8 @@ simple_account_manager_class_init (SimpleAccountManagerClass *klass)
         { NULL },
   };
 
-  g_type_class_add_private (klass, sizeof (SimpleAccountManagerPrivate));
-  object_class->get_property = simple_account_manager_get_property;
+  g_type_class_add_private (klass, sizeof (TpTestsSimpleAccountManagerPrivate));
+  object_class->get_property = tp_tests_simple_account_manager_get_property;
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "In this case we only implement AccountManager, so none.",
@@ -175,5 +176,5 @@ simple_account_manager_class_init (SimpleAccountManagerClass *klass)
 
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (SimpleAccountManagerClass, dbus_props_class));
+      G_STRUCT_OFFSET (TpTestsSimpleAccountManagerClass, dbus_props_class));
 }

@@ -23,8 +23,8 @@
 
 static void channel_dispatch_operation_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE (SimpleChannelDispatchOperation,
-    simple_channel_dispatch_operation,
+G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleChannelDispatchOperation,
+    tp_tests_simple_channel_dispatch_operation,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_DISPATCH_OPERATION,
         channel_dispatch_operation_iface_init);
@@ -57,7 +57,7 @@ struct _SimpleChannelDispatchOperationPrivate
 };
 
 static void
-simple_channel_dispatch_operation_handle_with (
+tp_tests_simple_channel_dispatch_operation_handle_with (
     TpSvcChannelDispatchOperation *iface,
     const gchar *handler,
     DBusGMethodInvocation *context)
@@ -74,7 +74,7 @@ simple_channel_dispatch_operation_handle_with (
 }
 
 static void
-simple_channel_dispatch_operation_claim (
+tp_tests_simple_channel_dispatch_operation_claim (
     TpSvcChannelDispatchOperation *iface,
     DBusGMethodInvocation *context)
 {
@@ -86,7 +86,7 @@ channel_dispatch_operation_iface_init (gpointer klass,
     gpointer unused G_GNUC_UNUSED)
 {
 #define IMPLEMENT(x) tp_svc_channel_dispatch_operation_implement_##x (\
-  klass, simple_channel_dispatch_operation_##x)
+  klass, tp_tests_simple_channel_dispatch_operation_##x)
   IMPLEMENT(handle_with);
   IMPLEMENT(claim);
 #undef IMPLEMENT
@@ -94,23 +94,24 @@ channel_dispatch_operation_iface_init (gpointer klass,
 
 
 static void
-simple_channel_dispatch_operation_init (SimpleChannelDispatchOperation *self)
+tp_tests_simple_channel_dispatch_operation_init (TpTestsSimpleChannelDispatchOperation *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
-      SimpleChannelDispatchOperationPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
+      TpTestsSimpleChannelDispatchOperationPrivate);
 
   self->priv->channels = g_ptr_array_new_with_free_func (
       (GDestroyNotify) g_object_unref);
 }
 
 static void
-simple_channel_dispatch_operation_get_property (GObject *object,
+tp_tests_simple_channel_dispatch_operation_get_property (GObject *object,
               guint property_id,
               GValue *value,
               GParamSpec *spec)
 {
-  SimpleChannelDispatchOperation *self = SIMPLE_CHANNEL_DISPATCH_OPERATION (
-      object);
+  TpTestsSimpleChannelDispatchOperation *self =
+    TP_TESTS_SIMPLE_CHANNEL_DISPATCH_OPERATION (object);
 
   switch (property_id) {
     case PROP_INTERFACES:
@@ -157,12 +158,12 @@ simple_channel_dispatch_operation_get_property (GObject *object,
 }
 
 static void
-simple_channel_dispatch_operation_finalize (GObject *object)
+tp_tests_simple_channel_dispatch_operation_finalize (GObject *object)
 {
-  SimpleChannelDispatchOperation *self = SIMPLE_CHANNEL_DISPATCH_OPERATION (
-      object);
+  TpTestsSimpleChannelDispatchOperation *self =
+    TP_TESTS_SIMPLE_CHANNEL_DISPATCH_OPERATION (object);
   void (*finalize) (GObject *) =
-    G_OBJECT_CLASS (simple_channel_dispatch_operation_parent_class)->finalize;
+    G_OBJECT_CLASS (tp_tests_simple_channel_dispatch_operation_parent_class)->finalize;
 
   g_free (self->priv->conn_path);
   g_free (self->priv->account_path);
@@ -178,7 +179,7 @@ simple_channel_dispatch_operation_finalize (GObject *object)
   * Properties.GetAll().
   */
 static void
-simple_channel_dispatch_operation_class_init (SimpleChannelDispatchOperationClass *klass)
+tp_tests_simple_channel_dispatch_operation_class_init (TpTestsSimpleChannelDispatchOperationClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
@@ -201,9 +202,9 @@ simple_channel_dispatch_operation_class_init (SimpleChannelDispatchOperationClas
         { NULL },
   };
 
-  g_type_class_add_private (klass, sizeof (SimpleChannelDispatchOperationPrivate));
-  object_class->get_property = simple_channel_dispatch_operation_get_property;
-  object_class->finalize = simple_channel_dispatch_operation_finalize;
+  g_type_class_add_private (klass, sizeof (TpTestsSimpleChannelDispatchOperationPrivate));
+  object_class->get_property = tp_tests_simple_channel_dispatch_operation_get_property;
+  object_class->finalize = tp_tests_simple_channel_dispatch_operation_finalize;
 
   param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
       "In this case we only implement ChannelDispatchOperation, so none.",
@@ -238,28 +239,28 @@ simple_channel_dispatch_operation_class_init (SimpleChannelDispatchOperationClas
 
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (SimpleChannelDispatchOperationClass, dbus_props_class));
+      G_STRUCT_OFFSET (TpTestsSimpleChannelDispatchOperationClass, dbus_props_class));
 }
 
 void
-simple_channel_dispatch_operation_set_conn_path (
-    SimpleChannelDispatchOperation *self,
+tp_tests_simple_channel_dispatch_operation_set_conn_path (
+    TpTestsSimpleChannelDispatchOperation *self,
     const gchar *conn_path)
 {
   self->priv->conn_path = g_strdup (conn_path);
 }
 
 void
-simple_channel_dispatch_operation_add_channel (
-    SimpleChannelDispatchOperation *self,
+tp_tests_simple_channel_dispatch_operation_add_channel (
+    TpTestsSimpleChannelDispatchOperation *self,
     TpChannel *chan)
 {
   g_ptr_array_add (self->priv->channels, g_object_ref (chan));
 }
 
 void
-simple_channel_dispatch_operation_lost_channel (
-    SimpleChannelDispatchOperation *self,
+tp_tests_simple_channel_dispatch_operation_lost_channel (
+    TpTestsSimpleChannelDispatchOperation *self,
     TpChannel *chan)
 {
   const gchar *path = tp_proxy_get_object_path (chan);
@@ -277,8 +278,8 @@ simple_channel_dispatch_operation_lost_channel (
 }
 
 void
-simple_channel_dispatch_operation_set_account_path (
-    SimpleChannelDispatchOperation *self,
+tp_tests_simple_channel_dispatch_operation_set_account_path (
+    TpTestsSimpleChannelDispatchOperation *self,
     const gchar *account_path)
 {
   self->priv->account_path = g_strdup (account_path);

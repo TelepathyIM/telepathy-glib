@@ -24,7 +24,7 @@
 #define IDENTIFIER "them@example.org"
 
 static GMainLoop *mainloop;
-TestTextChannelGroup *service_chan;
+TpTestsTextChannelGroup *service_chan;
 TpChannel *chan = NULL;
 TpHandleRepoIface *contact_repo;
 TpHandle self_handle, camel, camel2;
@@ -83,9 +83,9 @@ on_members_changed (TpChannel *proxy,
   MYASSERT (expecting_members_changed, ": got unexpected MembersChanged");
   expecting_members_changed = FALSE;
 
-  MYASSERT_SAME_STRING (arg_Message, expected_message);
-  MYASSERT_SAME_UINT (arg_Actor, expected_actor);
-  MYASSERT_SAME_UINT (arg_Reason, expected_reason);
+  g_assert_cmpstr (arg_Message, ==, expected_message);
+  g_assert_cmpuint (arg_Actor, ==, expected_actor);
+  g_assert_cmpuint (arg_Reason, ==, expected_reason);
 
   expected_diffs (arg_Added, arg_Removed, arg_Local_Pending,
       arg_Remote_Pending, NULL);
@@ -118,16 +118,16 @@ on_members_changed_detailed (TpChannel *proxy,
   if (message == NULL)
     message = "";
 
-  MYASSERT_SAME_STRING (message, expected_message);
+  g_assert_cmpstr (message, ==, expected_message);
 
   actor = tp_asv_get_uint32 (arg_Details, "actor", &valid);
   if (valid)
     {
-      MYASSERT_SAME_UINT (actor, expected_actor);
+      g_assert_cmpuint (actor, ==, expected_actor);
     }
   else
     {
-      MYASSERT_SAME_UINT (expected_actor, 0);
+      g_assert_cmpuint (expected_actor, ==, 0);
       MYASSERT (tp_asv_lookup (arg_Details, "actor") == NULL,
           ": wanted an actor, not an imposter");
     }
@@ -135,11 +135,11 @@ on_members_changed_detailed (TpChannel *proxy,
   reason = tp_asv_get_uint32 (arg_Details, "change-reason", &valid);
   if (valid)
     {
-      MYASSERT_SAME_UINT (reason, expected_reason);
+      g_assert_cmpuint (reason, ==, expected_reason);
     }
   else
     {
-      MYASSERT_SAME_UINT (expected_reason,
+      g_assert_cmpuint (expected_reason, ==,
           TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
       MYASSERT (tp_asv_lookup (arg_Details, "reason") == NULL,
           ": utterly unreasonable");
@@ -164,7 +164,7 @@ check_initial_properties (void)
 
   MYASSERT (tp_cli_dbus_properties_run_get_all (chan, -1,
       TP_IFACE_CHANNEL_INTERFACE_GROUP, &props, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   members = tp_asv_get_boxed (props, "Members", DBUS_TYPE_G_UINT_ARRAY);
   MYASSERT (members != NULL, ": Members should be defined"); \
@@ -185,7 +185,7 @@ check_initial_properties (void)
 
   flags = tp_asv_get_uint32 (props, "GroupFlags", &valid);
   MYASSERT (flags, ": GroupFlags property should be defined");
-  MYASSERT_SAME_UINT (flags,
+  g_assert_cmpuint (flags, ==,
       TP_CHANNEL_GROUP_FLAG_PROPERTIES |
       TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED);
 
@@ -214,7 +214,7 @@ details_contains_ids_for (const GHashTable *details,
 
       id = g_hash_table_lookup (member_ids, GUINT_TO_POINTER (*h));
       MYASSERT (id != NULL, ": id for %u in map", *h);
-      MYASSERT_SAME_STRING (id, tp_handle_inspect (contact_repo, *h));
+      g_assert_cmpstr (id, ==, tp_handle_inspect (contact_repo, *h));
     }
 
   MYASSERT (g_hash_table_size (member_ids) == n, ": %u member IDs", n);
@@ -237,7 +237,7 @@ self_added_to_lp (const GArray *added,
 
   /* ...which is us */
   h = g_array_index (local_pending, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, self_handle);
+  g_assert_cmpuint (h, ==, self_handle);
 
   details_contains_ids_for (details, hs);
 }
@@ -255,7 +255,7 @@ self_added_to_members (const GArray *added,
   MYASSERT (added->len == 1, ": one added");
 
   h = g_array_index (added, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, self_handle);
+  g_assert_cmpuint (h, ==, self_handle);
 
   MYASSERT (removed->len == 0, ": no-one removed");
   MYASSERT (local_pending->len == 0, ": no new local pending");
@@ -297,7 +297,7 @@ check_incoming_invitation (void)
         self_added_to_members);
     MYASSERT (tp_cli_channel_interface_group_run_add_members (chan, -1,
         contacts, "", &error, NULL), "");
-    test_assert_no_error (error);
+    g_assert_no_error (error);
     wait_for_outstanding_signals ();
     MYASSERT (!outstanding_signals (),
         ": MembersChanged and MembersChangedDetailed should have fired once");
@@ -319,7 +319,7 @@ camel_added (const GArray *added,
   MYASSERT (added->len == 1, ": one added");
 
   h = g_array_index (added, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, camel);
+  g_assert_cmpuint (h, ==, camel);
 
   details_contains_ids_for (details, hs);
 
@@ -342,7 +342,7 @@ camel2_added (const GArray *added,
   MYASSERT (added->len == 1, ": one added");
 
   h = g_array_index (added, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, camel2);
+  g_assert_cmpuint (h, ==, camel2);
 
   details_contains_ids_for (details, hs);
 
@@ -369,7 +369,7 @@ camel_removed (const GArray *added,
   MYASSERT (removed->len == 1, ": one removed");
 
   h = g_array_index (removed, TpHandle, 0);
-  MYASSERT_SAME_UINT (h, camel);
+  g_assert_cmpuint (h, ==, camel);
 
   MYASSERT (added->len == 0, ": no-one added");
   MYASSERT (local_pending->len == 0, ": no new local pending");
@@ -464,7 +464,7 @@ in_the_desert (void)
     GArray *service_members;
     TpHandle a, b;
 
-    MYASSERT_SAME_UINT (tp_intset_size (members), 2);
+    g_assert_cmpuint (tp_intset_size (members), ==, 2);
     MYASSERT (tp_intset_is_member (members, self_handle), "");
     MYASSERT (tp_intset_is_member (members, camel2), ": what a pity");
 
@@ -473,7 +473,7 @@ in_the_desert (void)
      */
     tp_group_mixin_get_members ((GObject *) service_chan, &service_members,
         NULL);
-    MYASSERT_SAME_UINT (service_members->len, 2);
+    g_assert_cmpuint (service_members->len, ==, 2);
     a = g_array_index (service_members, TpHandle, 0);
     b = g_array_index (service_members, TpHandle, 1);
     MYASSERT (a != b, "");
@@ -493,7 +493,7 @@ test_group_mixin (void)
   GError *error = NULL;
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_proxy_has_interface (chan, TP_IFACE_CHANNEL_INTERFACE_GROUP),
       "");
@@ -514,7 +514,7 @@ int
 main (int argc,
       char **argv)
 {
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpDBusDaemon *dbus;
   TpConnection *conn;
@@ -525,9 +525,10 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -537,15 +538,15 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
@@ -554,8 +555,9 @@ main (int argc,
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = TEST_TEXT_CHANNEL_GROUP (test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_GROUP,
+  service_chan = TP_TESTS_TEXT_CHANNEL_GROUP (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
         "connection", service_conn,
         "object-path", chan_path,
         "detailed", TRUE,
@@ -564,19 +566,19 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
 
   MYASSERT (tp_cli_connection_run_connect (conn, -1, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   chan = tp_channel_new (conn, chan_path, NULL, TP_UNKNOWN_HANDLE_TYPE, 0,
       &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   test_group_mixin ();
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* clean up */
 

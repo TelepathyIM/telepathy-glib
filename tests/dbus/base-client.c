@@ -32,12 +32,12 @@ typedef struct {
 
     /* Service side objects */
     TpBaseClient *base_client;
-    SimpleClient *simple_client;
+    TpTestsSimpleClient *simple_client;
     TpBaseConnection *base_connection;
-    SimpleAccount *account_service;
-    TestTextChannelNull *text_chan_service;
-    TestTextChannelNull *text_chan_service_2;
-    SimpleChannelDispatchOperation *cdo_service;
+    TpTestsSimpleAccount *account_service;
+    TpTestsTextChannelNull *text_chan_service;
+    TpTestsTextChannelNull *text_chan_service_2;
+    TpTestsSimpleChannelDispatchOperation *cdo_service;
 
     /* Client side objects */
     TpAccountManager *account_mgr;
@@ -64,7 +64,7 @@ setup (Test *test,
   TpHandleRepoIface *contact_repo;
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   test->error = NULL;
   test->interfaces = NULL;
@@ -79,18 +79,18 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   /* Create service-side Client object */
-  test->simple_client = simple_client_new (test->dbus, "Test", FALSE);
+  test->simple_client = tp_tests_simple_client_new (test->dbus, "Test", FALSE);
   g_assert (test->simple_client != NULL);
   test->base_client = TP_BASE_CLIENT (test->simple_client);
 
   /* Create service-side Account object */
-  test->account_service = test_object_new_static_class (SIMPLE_TYPE_ACCOUNT,
-      NULL);
+  test->account_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 
   /* Create client-side Client object */
-  test->client = test_object_new_static_class (TP_TYPE_CLIENT,
+  test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
           "dbus-daemon", test->dbus,
           "bus-name", tp_base_client_get_bus_name (test->base_client),
           "object-path", tp_base_client_get_object_path (test->base_client),
@@ -105,8 +105,8 @@ setup (Test *test,
   g_object_ref (test->account);
 
   /* Create (service and client sides) connection objects */
-  test_create_and_connect_conn (SIMPLE_TYPE_CONNECTION, "me@test.com",
-      &test->base_connection, &test->connection);
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+      "me@test.com", &test->base_connection, &test->connection);
 
   /* Create service-side text channel object */
   chan_path = g_strdup_printf ("%s/Channel",
@@ -119,9 +119,9 @@ setup (Test *test,
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service = TEST_TEXT_CHANNEL_NULL (
-      test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+  test->text_chan_service = TP_TESTS_TEXT_CHANNEL_NULL (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -142,9 +142,9 @@ setup (Test *test,
   handle = tp_handle_ensure (contact_repo, "alice", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service_2 = TEST_TEXT_CHANNEL_NULL (
-      test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+  test->text_chan_service_2 = TP_TESTS_TEXT_CHANNEL_NULL (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -159,20 +159,20 @@ setup (Test *test,
   g_free (chan_path);
 
   /* Create Service side ChannelDispatchOperation object */
-  test->cdo_service = test_object_new_static_class (
-      SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
+  test->cdo_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
       NULL);
   tp_dbus_daemon_register_object (test->dbus, CDO_PATH, test->cdo_service);
 
-  simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
       tp_proxy_get_object_path (test->connection));
 
-  simple_channel_dispatch_operation_set_account_path (test->cdo_service,
-      tp_proxy_get_object_path (test->account));
+  tp_tests_simple_channel_dispatch_operation_set_account_path (
+      test->cdo_service, tp_proxy_get_object_path (test->account));
 
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan);
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan_2);
 
   g_assert (tp_dbus_daemon_request_name (test->dbus,
@@ -307,7 +307,7 @@ test_register (Test *test,
 
   /* unregister the client */
   tp_base_client_unregister (test->base_client);
-  test_proxy_run_until_dbus_queue_processed (test->client);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->client);
 
   tp_cli_dbus_properties_call_get_all (test->client, -1,
       TP_IFACE_CLIENT, get_client_prop_cb, test, NULL, NULL);
@@ -523,7 +523,7 @@ test_observer (Test *test,
       channels, "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
-  test_text_channel_null_close (test->text_chan_service);
+  tp_tests_text_channel_null_close (test->text_chan_service);
 
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
@@ -665,12 +665,12 @@ test_approver (Test *test,
       channels, CDO_PATH, properties,
       no_return_cb, test, NULL, NULL);
 
-  test_text_channel_null_close (test->text_chan_service_2);
+  tp_tests_text_channel_null_close (test->text_chan_service_2);
 
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan_2);
 
   g_main_loop_run (test->mainloop);
@@ -691,11 +691,11 @@ test_approver (Test *test,
       channels, CDO_PATH, properties,
       no_return_cb, test, NULL, NULL);
 
-  test_text_channel_null_close (test->text_chan_service);
+  tp_tests_text_channel_null_close (test->text_chan_service);
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
 
   g_main_loop_run (test->mainloop);
@@ -774,7 +774,7 @@ test_handler (Test *test,
   GPtrArray *requests_satisified;
   GHashTable *info;
   GList *chans;
-  SimpleClient *client_2;
+  TpTestsSimpleClient *client_2;
 
   filter = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -846,7 +846,7 @@ test_handler (Test *test,
   /* One of the channel is closed */
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
-  test_text_channel_null_close (test->text_chan_service);
+  tp_tests_text_channel_null_close (test->text_chan_service);
   g_main_loop_run (test->mainloop);
 
   chans = tp_base_client_get_handled_channels (test->base_client);
@@ -854,7 +854,7 @@ test_handler (Test *test,
   g_list_free (chans);
 
   /* Create another client sharing the same unique name */
-  client_2 = simple_client_new (test->dbus, "Test", TRUE);
+  client_2 = tp_tests_simple_client_new (test->dbus, "Test", TRUE);
   tp_base_client_be_a_handler (TP_BASE_CLIENT (client_2));
   tp_base_client_register (TP_BASE_CLIENT (client_2), &test->error);
   g_assert_no_error (test->error);

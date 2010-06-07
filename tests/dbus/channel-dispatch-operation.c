@@ -32,9 +32,9 @@ typedef struct {
 
     DBusGConnection *private_conn;
     TpDBusDaemon *private_dbus;
-    SimpleChannelDispatchOperation *cdo_service;
-    TestTextChannelNull *text_chan_service;
-    TestTextChannelNull *text_chan_service_2;
+    TpTestsSimpleChannelDispatchOperation *cdo_service;
+    TpTestsTextChannelNull *text_chan_service;
+    TpTestsTextChannelNull *text_chan_service_2;
 
     TpChannelDispatchOperation *cdo;
     GError *error /* initialized where needed */;
@@ -57,7 +57,7 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
   g_assert (libdbus != NULL);
@@ -73,8 +73,8 @@ setup (Test *test,
 
   test->cdo = NULL;
 
-  test->cdo_service = test_object_new_static_class (
-      SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
+  test->cdo_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
       NULL);
   tp_dbus_daemon_register_object (test->private_dbus, "/whatever",
       test->cdo_service);
@@ -91,8 +91,8 @@ setup_services (Test *test,
   setup (test, data);
 
  /* Create (service and client sides) connection objects */
-  test_create_and_connect_conn (SIMPLE_TYPE_CONNECTION, "me@test.com",
-      &test->base_connection, &test->connection);
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+      "me@test.com", &test->base_connection, &test->connection);
 
   /* Create service-side text channel object */
   chan_path = g_strdup_printf ("%s/Channel",
@@ -105,9 +105,9 @@ setup_services (Test *test,
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service = TEST_TEXT_CHANNEL_NULL (
-      test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+  test->text_chan_service = TP_TESTS_TEXT_CHANNEL_NULL (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -128,9 +128,9 @@ setup_services (Test *test,
   handle = tp_handle_ensure (contact_repo, "alice", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service_2 = TEST_TEXT_CHANNEL_NULL (
-      test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+  test->text_chan_service_2 = TP_TESTS_TEXT_CHANNEL_NULL (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -146,16 +146,16 @@ setup_services (Test *test,
 
 
   /* Configure fake ChannelDispatchOperation service */
-  simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
       tp_proxy_get_object_path (test->connection));
 
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan);
 
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan_2);
 
-  simple_channel_dispatch_operation_set_account_path (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_account_path (test->cdo_service,
        ACCOUNT_PATH);
 
   g_assert (tp_dbus_daemon_request_name (test->private_dbus,
@@ -196,8 +196,8 @@ teardown (Test *test,
       test->private_conn = NULL;
     }
 
-   /* make sure any pending things have happened */
-  test_proxy_run_until_dbus_queue_processed (test->dbus);
+  /* make sure any pending things have happened */
+  tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
 
   g_object_unref (test->dbus);
   test->dbus = NULL;
@@ -268,7 +268,7 @@ test_crash (Test *test,
   tp_dbus_daemon_release_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, NULL);
 
-  test_proxy_run_until_dbus_queue_processed (test->cdo);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cdo);
 
   g_assert (tp_proxy_get_invalidated (test->cdo) == NULL);
 
@@ -277,7 +277,7 @@ test_crash (Test *test,
   dbus_g_connection_unref (test->private_conn);
   test->private_conn = NULL;
 
-  test_proxy_run_until_dbus_queue_processed (test->cdo);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cdo);
 
   g_assert (tp_proxy_get_invalidated (test->cdo) != NULL);
   g_assert (tp_proxy_get_invalidated (test->cdo)->domain == TP_DBUS_ERRORS);
@@ -302,7 +302,7 @@ test_finished (Test *test,
 
   tp_svc_channel_dispatch_operation_emit_finished (test->cdo_service);
 
-  test_proxy_run_until_dbus_queue_processed (test->cdo);
+  tp_tests_proxy_run_until_dbus_queue_processed (test->cdo);
 
   g_assert (tp_proxy_get_invalidated (test->cdo) != NULL);
   g_assert (tp_proxy_get_invalidated (test->cdo)->domain == TP_DBUS_ERRORS);
@@ -560,12 +560,12 @@ test_channel_lost (Test *test,
       test);
 
   /* First channel disappears and so is lost */
-  test_text_channel_null_close (test->text_chan_service);
+  tp_tests_text_channel_null_close (test->text_chan_service);
 
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
   g_main_loop_run (test->mainloop);
 
@@ -583,12 +583,12 @@ test_channel_lost (Test *test,
   g_signal_connect (test->cdo, "invalidated", G_CALLBACK (invalidated_cb),
       test);
 
-  test_text_channel_null_close (test->text_chan_service_2);
+  tp_tests_text_channel_null_close (test->text_chan_service_2);
 
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan_2);
   g_main_loop_run (test->mainloop);
 
@@ -672,12 +672,12 @@ test_channel_lost_preparing (Test *test,
   tp_proxy_prepare_async (test->cdo, features, features_prepared_cb, test);
 
   /* First channel disappears while preparing */
-  test_text_channel_null_close (test->text_chan_service);
+  tp_tests_text_channel_null_close (test->text_chan_service);
 
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
 
   g_main_loop_run (test->mainloop);
@@ -723,20 +723,20 @@ test_finished_preparing (Test *test,
   tp_proxy_prepare_async (test->cdo, features, features_not_prepared_cb, test);
 
   /* The 2 channels are lost while preparing */
-  test_text_channel_null_close (test->text_chan_service);
+  tp_tests_text_channel_null_close (test->text_chan_service);
 
   g_object_unref (test->text_chan_service);
   test->text_chan_service = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
 
-  test_text_channel_null_close (test->text_chan_service_2);
+  tp_tests_text_channel_null_close (test->text_chan_service_2);
 
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
 
-  simple_channel_dispatch_operation_lost_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan_2);
 
   g_main_loop_run (test->mainloop);

@@ -30,7 +30,7 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  Bug16307Connection *service_conn;
+  TpTestsBug16307Connection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
@@ -40,11 +40,12 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   /* service side */
-  service_conn = BUG16307_CONNECTION (test_object_new_static_class (
-        BUG16307_TYPE_CONNECTION,
+  service_conn = TP_TESTS_BUG16307_CONNECTION (
+    tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_BUG16307_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -54,21 +55,21 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* client side */
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
-  bug16307_connection_inject_get_status_return (service_conn);
+  tp_tests_bug16307_connection_inject_get_status_return (service_conn);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   service_conn_as_base = NULL;
   g_object_unref (service_conn);

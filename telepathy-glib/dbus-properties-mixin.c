@@ -406,7 +406,7 @@ link_interface (GType type,
 /* if this assertion fails, TpDBusPropertiesMixinIfaceImpl.mixin_next (which
  * used to be a GCallback but is now a gpointer) will be an ABI break on this
  * architecture, so do some evil trick with unions or something */
-tp_verify (sizeof (GCallback) == sizeof (gpointer));
+G_STATIC_ASSERT (sizeof (GCallback) == sizeof (gpointer));
 
 /**
  * tp_dbus_properties_mixin_implement_interface:

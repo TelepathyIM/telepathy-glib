@@ -95,7 +95,7 @@ test_basics (Test *test,
   add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
   add_ft_class (classes);
 
-  caps = test_object_new_static_class (TP_TYPE_CAPABILITIES,
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
       "contact-specific", FALSE,
       NULL);
@@ -164,7 +164,7 @@ test_supports (Test *test,
   classes = g_ptr_array_sized_new (1);
   add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
 
-  caps = test_object_new_static_class (TP_TYPE_CAPABILITIES,
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
       "contact-specific", TRUE,
       NULL);
@@ -182,7 +182,7 @@ test_supports (Test *test,
   classes = g_ptr_array_sized_new (1);
   add_text_chat_class (classes, TP_HANDLE_TYPE_ROOM);
 
-  caps = test_object_new_static_class (TP_TYPE_CAPABILITIES,
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
       "contact-specific", TRUE,
       NULL);
@@ -201,7 +201,7 @@ test_supports (Test *test,
   add_text_chat_class (classes, TP_HANDLE_TYPE_CONTACT);
   add_text_chat_class (classes, TP_HANDLE_TYPE_ROOM);
 
-  caps = test_object_new_static_class (TP_TYPE_CAPABILITIES,
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
       "channel-classes", classes,
       "contact-specific", TRUE,
       NULL);

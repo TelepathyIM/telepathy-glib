@@ -229,8 +229,6 @@ tp_errors_quark (void)
     {
       GQuark domain = g_quark_from_static_string ("tp_errors");
 
-      tp_verify_statement (sizeof (GQuark) <= sizeof (gsize));
-
       g_type_init ();
       dbus_g_error_domain_register (domain, TP_ERROR_PREFIX,
           TP_TYPE_ERROR);
@@ -239,3 +237,6 @@ tp_errors_quark (void)
 
   return (GQuark) quark;
 }
+
+/* tp_errors_quark assumes this */
+G_STATIC_ASSERT (sizeof (GQuark) <= sizeof (gsize));

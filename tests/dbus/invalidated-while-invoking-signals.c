@@ -38,7 +38,7 @@ on_status_changed (TpConnection *connection,
 static gboolean
 disconnect (gpointer data)
 {
-  simple_connection_inject_disconnect (data);
+  tp_tests_simple_connection_inject_disconnect (data);
 
   return FALSE;
 }
@@ -54,7 +54,7 @@ int
 main (int argc,
       char **argv)
 {
-  SimpleConnection *service;
+  TpTestsSimpleConnection *service;
   TpBaseConnection *service_as_base;
   TpDBusDaemon *dbus;
   TpConnection *client;
@@ -65,9 +65,10 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service = SIMPLE_CONNECTION (test_object_new_static_class (SIMPLE_TYPE_CONNECTION,
+  service = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -80,14 +81,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_as_base, "simple",
         &name, &path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   client = tp_connection_new (dbus, name, path, &error);
   MYASSERT (client != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (client, TRUE, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_cli_connection_connect_to_status_changed (client,
         on_status_changed, &client, NULL, NULL, NULL), "");

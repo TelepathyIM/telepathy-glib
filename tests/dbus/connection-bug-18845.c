@@ -35,7 +35,7 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
@@ -48,10 +48,10 @@ main (int argc,
 
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -61,14 +61,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   {
     const gchar *ids[] = {
@@ -79,7 +79,7 @@ main (int argc,
 
     MYASSERT (tp_cli_connection_run_request_handles (conn, -1,
         TP_HANDLE_TYPE_CONTACT, ids, &handles, &error, NULL), "");
-    test_assert_no_error (error);
+    g_assert_no_error (error);
 
     g_array_free (handles, TRUE);
   }
@@ -89,7 +89,7 @@ main (int argc,
    */
   proxy = tp_proxy_borrow_interface_by_id ((TpProxy *) conn,
       TP_IFACE_QUARK_CONNECTION, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   g_signal_emit_by_name (proxy, "destroy");
 
   g_idle_add_full (G_PRIORITY_LOW, no_more_idling_around, mainloop, NULL);
@@ -103,12 +103,12 @@ main (int argc,
    */
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_object_unref (conn);
 

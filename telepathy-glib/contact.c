@@ -94,6 +94,8 @@ struct _TpContact {
  * @TP_CONTACT_FEATURE_AVATAR_DATA: #TpContact:avatar-file and
  *  #TpContact:avatar-mime-type. Implies %TP_CONTACT_FEATURE_AVATAR_TOKEN
  *  (available since 0.11.6)
+ * @TP_CONTACT_FEATURE_CONTACT_INFO: #TpContact:contact-info
+ *  (available since 0.11.UNRELEASED)
  * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
  *  supported by this version of telepathy-glib
  *
@@ -132,6 +134,7 @@ enum {
     PROP_PRESENCE_MESSAGE,
     PROP_LOCATION,
     PROP_CAPABILITIES,
+    PROP_CONTACT_INFO,
     N_PROPS
 };
 
@@ -144,6 +147,7 @@ typedef enum {
     CONTACT_FEATURE_FLAG_LOCATION = 1 << TP_CONTACT_FEATURE_LOCATION,
     CONTACT_FEATURE_FLAG_CAPABILITIES = 1 << TP_CONTACT_FEATURE_CAPABILITIES,
     CONTACT_FEATURE_FLAG_AVATAR_DATA = 1 << TP_CONTACT_FEATURE_AVATAR_DATA,
+    CONTACT_FEATURE_FLAG_CONTACT_INFO = 1 << TP_CONTACT_FEATURE_CONTACT_INFO,
 } ContactFeatureFlags;
 
 struct _TpContactPrivate {
@@ -171,6 +175,9 @@ struct _TpContactPrivate {
 
     /* capabilities */
     TpCapabilities *capabilities;
+
+    /* a list of TpContactInfoField */
+    GList *contact_info;
 };
 
 
@@ -468,6 +475,31 @@ tp_contact_get_capabilities (TpContact *self)
   return self->priv->capabilities;
 }
 
+/**
+ * tp_contact_get_contact_info:
+ * @self: a #TpContact
+ *
+ * Returns a newly allocated #GList of contact's vCard fields. The list must be
+ * freed with g_list_free() after used.
+ *
+ * Note that the #TpContactInfoField<!-- -->s in the returned #GList are not
+ * dupped before returning from this function. One could copy every item in the
+ * list using tp_contact_info_field_copy().
+ *
+ * Same as the #TpContact:contact-info property.
+ *
+ * Returns: (element-type TelepathyGLib.ContactInfoField) (transfer container):
+ *  a #GList of #TpContactInfoField, or %NULL if the feature is not yet
+ *  prepared.
+ * Since: 0.11.UNRELEASED
+ */
+GList *
+tp_contact_get_contact_info (TpContact *self)
+{
+  g_return_val_if_fail (TP_IS_CONTACT (self), NULL);
+
+  return g_list_copy (self->priv->contact_info);
+}
 
 void
 _tp_contact_connection_invalidated (TpContact *contact)
@@ -517,6 +549,7 @@ tp_contact_finalize (GObject *object)
   g_free (self->priv->avatar_mime_type);
   g_free (self->priv->presence_status);
   g_free (self->priv->presence_message);
+  tp_contact_info_list_free (self->priv->contact_info);
 
   ((GObjectClass *) tp_contact_parent_class)->finalize (object);
 }
@@ -581,6 +614,10 @@ tp_contact_get_property (GObject *object,
 
     case PROP_CAPABILITIES:
       g_value_set_object (value, tp_contact_get_capabilities (self));
+      break;
+
+    case PROP_CONTACT_INFO:
+      g_value_set_boxed (value, self->priv->contact_info);
       break;
 
     default:
@@ -839,6 +876,24 @@ tp_contact_class_init (TpContactClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CAPABILITIES,
       param_spec);
+
+  /**
+   * TpContact:contact-info:
+   *
+   * A #GList of #TpContactInfoField representing the vCard of this contact.
+   *
+   * This is set to %NULL if %TP_CONTACT_FEATURE_CONTACT_INFO is not set on this
+   * contact.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("contact-info",
+      "Contact Info",
+      "Information of the contact, or NULL",
+      TP_TYPE_CONTACT_INFO_LIST,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONTACT_INFO,
+      param_spec);
 }
 
 
@@ -925,6 +980,12 @@ struct _ContactsContext {
     guint next_index;
 };
 
+/* This code (and lots of telepathy-glib, really) won't work if this
+ * assertion fails, because we put function pointers in a GQueue. If anyone
+ * cares about platforms where this fails, fixing this would involve
+ * slice-allocating sizeof (GCallback) bytes repeatedly, and putting *those*
+ * in the queue. */
+G_STATIC_ASSERT (sizeof (GCallback) == sizeof (gpointer));
 
 static ContactsContext *
 contacts_context_new (TpConnection *connection,
@@ -948,13 +1009,6 @@ contacts_context_new (TpConnection *connection,
   c->user_data = user_data;
   c->destroy = destroy;
   c->weak_object = weak_object;
-
-  /* This code (and lots of telepathy-glib, really) won't work if this
-   * assertion fails, because we put function pointers in a GQueue. If anyone
-   * cares about platforms where this fails, fixing this would involve
-   * slice-allocating sizeof (GCallback) bytes repeatedly, and putting *those*
-   * in the queue. */
-  tp_verify_statement (sizeof (GCallback) == sizeof (gpointer));
 
   g_queue_init (&c->todo);
 
@@ -2269,6 +2323,354 @@ contacts_get_avatar_tokens (ContactsContext *c)
   contacts_context_continue (c);
 }
 
+static void
+contact_maybe_set_info (TpContact *self,
+    const GPtrArray *contact_info)
+{
+  guint i;
+
+  if (self == NULL || contact_info == NULL)
+    return;
+
+  tp_contact_info_list_free (self->priv->contact_info);
+  self->priv->contact_info = NULL;
+
+  self->priv->has_features |= CONTACT_FEATURE_FLAG_CONTACT_INFO;
+  for (i = 0; i < contact_info->len; i++)
+    {
+      GValueArray *va = g_ptr_array_index (contact_info, i);
+      const gchar *field_name;
+      GStrv parameters;
+      GStrv field_value;
+
+      tp_value_array_unpack (va, 3, &field_name, &parameters, &field_value);
+      self->priv->contact_info = g_list_prepend (self->priv->contact_info,
+          tp_contact_info_field_new (field_name, parameters, field_value));
+    }
+  self->priv->contact_info = g_list_reverse (self->priv->contact_info);
+
+  g_object_notify ((GObject *) self, "contact-info");
+}
+
+static void
+contact_info_changed (TpConnection *connection,
+    guint handle,
+    const GPtrArray *contact_info,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  TpContact *self = _tp_connection_lookup_contact (connection, handle);
+
+  contact_maybe_set_info (self, contact_info);
+}
+
+static void
+contacts_got_contact_info (TpConnection *connection,
+    GHashTable *info,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("GetContactInfo failed with %s %u: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+  else
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+
+      g_hash_table_iter_init (&iter, info);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          contact_info_changed (connection, GPOINTER_TO_UINT (key),
+              value, NULL, NULL);
+        }
+    }
+
+  contacts_context_continue (c);
+}
+
+static void
+contacts_bind_to_contact_info_changed (TpConnection *connection)
+{
+  if (!connection->priv->tracking_contact_info_changed)
+    {
+      connection->priv->tracking_contact_info_changed = TRUE;
+
+      tp_cli_connection_interface_contact_info_connect_to_contact_info_changed (
+          connection, contact_info_changed, NULL, NULL, NULL, NULL);
+    }
+}
+
+static void
+contacts_get_contact_info (ContactsContext *c)
+{
+  guint i;
+
+  g_assert (c->handles->len == c->contacts->len);
+
+  contacts_bind_to_contact_info_changed (c->connection);
+
+  for (i = 0; i < c->contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (c->contacts, i);
+
+      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_CONTACT_INFO) == 0)
+        {
+          c->refcount++;
+          tp_cli_connection_interface_contact_info_call_get_contact_info (
+              c->connection, -1, c->handles, contacts_got_contact_info,
+              c, contacts_context_unref, c->weak_object);
+          return;
+        }
+    }
+
+  contacts_context_continue (c);
+}
+
+typedef struct
+{
+  TpContact *contact;
+  GSimpleAsyncResult *result;
+  TpProxyPendingCall *call;
+  GCancellable *cancellable;
+  gulong cancelled_id;
+  guint cancel_idle_id;
+} ContactInfoRequestData;
+
+static void
+contact_info_request_data_disconnect_cancellable (ContactInfoRequestData *data)
+{
+  if (data->cancelled_id != 0)
+    g_cancellable_disconnect (data->cancellable, data->cancelled_id);
+  data->cancelled_id = 0;
+
+  if (data->cancel_idle_id != 0)
+    g_source_remove (data->cancel_idle_id);
+  data->cancel_idle_id = 0;
+}
+
+static void
+contact_info_request_data_free (ContactInfoRequestData *data)
+{
+  if (data != NULL)
+    {
+      g_object_unref (data->result);
+
+      contact_info_request_data_disconnect_cancellable (data);
+      if (data->cancellable != NULL)
+        g_object_unref (data->cancellable);
+
+      g_slice_free (ContactInfoRequestData, data);
+    }
+}
+
+static void
+contact_info_request_cb (TpConnection *connection,
+    const GPtrArray *contact_info,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  ContactInfoRequestData *data = user_data;
+  TpContact *self = data->contact;
+
+  /* At this point it's too late to cancel the operation */
+  contact_info_request_data_disconnect_cancellable (data);
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to request ContactInfo: %s", error->message);
+      g_simple_async_result_set_from_error (data->result, error);
+    }
+  else
+    {
+      contact_maybe_set_info (self, contact_info);
+    }
+
+  g_simple_async_result_complete (data->result);
+  data->call = NULL;
+}
+
+static gboolean
+contact_info_request_cancelled_idle_cb (gpointer user_data)
+{
+  ContactInfoRequestData *data = user_data;
+  GError *error = NULL;
+
+  data->cancel_idle_id = 0;
+
+  if (!g_cancellable_set_error_if_cancelled (data->cancellable, &error))
+    return FALSE;
+
+  DEBUG ("Request ContactInfo cancelled");
+
+  g_simple_async_result_set_from_error (data->result, error);
+  g_simple_async_result_complete (data->result);
+  g_clear_error (&error);
+
+  g_assert (data->call != NULL);
+  tp_proxy_pending_call_cancel (data->call);
+
+  return FALSE;
+}
+
+static void
+contact_info_request_cancelled_cb (GCancellable *cancellable,
+    ContactInfoRequestData *data)
+{
+  /* Cancellable is locked here, and g_cancellable_disconnect() also try to get
+   * the lock. That could then make deadlock. To be safe we cancel the DBus call
+   * in an idle callback. Use G_PRIORITY_HIGH to be sure our callback comes
+   * before the DBus reply otherwise it could be racy. */
+  data->cancel_idle_id = g_idle_add_full (G_PRIORITY_HIGH,
+      contact_info_request_cancelled_idle_cb, data, NULL);
+}
+
+/**
+ * tp_contact_request_contact_info_async:
+ * @self: a #TpContact
+ * @cancellable: optional #GCancellable object, %NULL to ignore.
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous request of the contact info of @self. When
+ * the operation is finished, @callback will be called. You can then call
+ * tp_contact_request_contact_info_finish() to get the result of the operation.
+ *
+ * If the operation is successful, the #TpContact:contact-info property will be
+ * updated (emitting "notify::contact-info" signal) before @callback is called.
+ * That means you can call tp_contact_get_contact_info() to get the new vCard
+ * inside @callback.
+ *
+ * Note that requesting the vCard from the network can take significant time, so
+ * a bigger timeout is set on the underlying D-Bus call. @cancellable can be
+ * cancelled to free resources used in the D-Bus call if the caller is no longer
+ * interested in the vCard.
+ *
+ * If %TP_CONTACT_FEATURE_CONTACT_INFO is not yet set on @self, it will be
+ * set before its property gets updated and @callback is called.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_contact_request_contact_info_async (TpContact *self,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  ContactInfoRequestData *data;
+
+  g_return_if_fail (TP_IS_CONTACT (self));
+
+  contacts_bind_to_contact_info_changed (self->priv->connection);
+
+  data = g_slice_new0 (ContactInfoRequestData);
+
+  data->contact = self;
+  data->result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_contact_request_contact_info_finish);
+
+  data->call = tp_cli_connection_interface_contact_info_call_request_contact_info (
+      self->priv->connection, 60*60*1000, self->priv->handle,
+      contact_info_request_cb,
+      data, (GDestroyNotify) contact_info_request_data_free,
+      NULL);
+
+  if (cancellable != NULL)
+    {
+      data->cancellable = g_object_ref (cancellable);
+      data->cancelled_id = g_cancellable_connect (data->cancellable,
+          G_CALLBACK (contact_info_request_cancelled_cb), data, NULL);
+    }
+
+}
+
+/**
+ * tp_contact_request_contact_info_finish:
+ * @self: a #TpContact
+ * @result: a #GAsyncResult
+ * @error: a #GError to be filled
+ *
+ * Finishes an async request of @self info. If the operation was successful,
+ * the contact's vCard can be accessed using tp_contact_get_contact_info().
+ *
+ * Returns: %TRUE if the request call was successful, otherwise %FALSE
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_contact_request_contact_info_finish (TpContact *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_CONTACT (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+      G_OBJECT (self), tp_contact_request_contact_info_finish), FALSE);
+
+  return TRUE;
+}
+
+/**
+ * tp_connection_refresh_contact_info:
+ * @self: a #TpConnection
+ * @n_contacts: The number of contacts in @contacts (must be at least 1)
+ * @contacts: (array length=n_contacts): An array of #TpContact objects
+ *  associated with @self
+ *
+ * Requests to refresh the #TpContact:contact-info property on each contact from
+ * @contacts, requesting it from the network if an up-to-date version is not
+ * cached locally. "notify::contact-info" will be emitted when the contact's
+ * information are updated.
+ *
+ * If %TP_CONTACT_FEATURE_CONTACT_INFO is not yet set on a contact, it will be
+ * set before its property gets updated.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_connection_refresh_contact_info (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts)
+{
+  GArray *handles;
+  guint i;
+
+  g_return_if_fail (TP_IS_CONNECTION (self));
+  g_return_if_fail (n_contacts >= 1);
+  g_return_if_fail (contacts != NULL);
+
+  for (i = 0; i < n_contacts; i++)
+    {
+      g_return_if_fail (TP_IS_CONTACT (contacts[i]));
+      g_return_if_fail (contacts[i]->priv->connection == self);
+    }
+
+  contacts_bind_to_contact_info_changed (self);
+
+  handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
+  for (i = 0; i < n_contacts; i++)
+    g_array_append_val (handles, contacts[i]->priv->handle);
+
+  tp_cli_connection_interface_contact_info_call_refresh_contact_info (self, -1,
+      handles, NULL, NULL, NULL, NULL);
+
+  g_array_free (handles, TRUE);
+}
+
 static gboolean
 contacts_context_supports_iface (ContactsContext *context,
     GQuark iface)
@@ -2369,6 +2771,15 @@ contacts_context_queue_features (ContactsContext *context,
           "connection capabilities");
 
       g_queue_push_tail (&context->todo, contacts_get_conn_capabilities);
+    }
+
+  if ((feature_flags & CONTACT_FEATURE_FLAG_CONTACT_INFO) != 0 &&
+      !contacts_context_supports_iface (context,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO) &&
+      tp_proxy_has_interface_by_id (context->connection,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO))
+    {
+      g_queue_push_tail (&context->todo, contacts_get_contact_info);
     }
 }
 
@@ -2520,8 +2931,13 @@ contacts_got_attributes (TpConnection *connection,
       boxed = tp_asv_get_boxed (asv,
           TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES_CAPABILITIES,
           TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
-
       contact_maybe_set_capabilities (contact, boxed);
+
+      /* ContactInfo */
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO_INFO,
+          TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
+      contact_maybe_set_info (contact, boxed);
     }
 
   contacts_context_continue (c);
@@ -2598,6 +3014,15 @@ contacts_get_attributes (ContactsContext *context)
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES);
               contacts_bind_to_capabilities_updated (context->connection);
+            }
+        }
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO)
+        {
+          if ((context->wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO) != 0)
+            {
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO);
+              contacts_bind_to_contact_info_changed (context->connection);
             }
         }
     }

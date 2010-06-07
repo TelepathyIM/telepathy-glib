@@ -9,8 +9,8 @@
  * notice and this notice are preserved.
  */
 
-#ifndef __SIMPLE_ACCOUNT_MANAGER_H__
-#define __SIMPLE_ACCOUNT_MANAGER_H__
+#ifndef __TP_TESTS_SIMPLE_ACCOUNT_MANAGER_H__
+#define __TP_TESTS_SIMPLE_ACCOUNT_MANAGER_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
@@ -18,41 +18,41 @@
 
 G_BEGIN_DECLS
 
-typedef struct _SimpleAccountManager SimpleAccountManager;
-typedef struct _SimpleAccountManagerClass SimpleAccountManagerClass;
-typedef struct _SimpleAccountManagerPrivate SimpleAccountManagerPrivate;
+typedef struct _TpTestsSimpleAccountManager TpTestsSimpleAccountManager;
+typedef struct _TpTestsSimpleAccountManagerClass TpTestsSimpleAccountManagerClass;
+typedef struct _TpTestsSimpleAccountManagerPrivate TpTestsSimpleAccountManagerPrivate;
 
-struct _SimpleAccountManagerClass {
+struct _TpTestsSimpleAccountManagerClass {
     GObjectClass parent_class;
     TpDBusPropertiesMixinClass dbus_props_class;
 };
 
-struct _SimpleAccountManager {
+struct _TpTestsSimpleAccountManager {
     GObject parent;
 
-    SimpleAccountManagerPrivate *priv;
+    TpTestsSimpleAccountManagerPrivate *priv;
 };
 
-GType simple_account_manager_get_type (void);
+GType tp_tests_simple_account_manager_get_type (void);
 
 /* TYPE MACROS */
-#define SIMPLE_TYPE_ACCOUNT_MANAGER \
-  (simple_account_manager_get_type ())
+#define TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER \
+  (tp_tests_simple_account_manager_get_type ())
 #define SIMPLE_ACCOUNT_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), SIMPLE_TYPE_ACCOUNT_MANAGER, \
-                              SimpleAccountManager))
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, \
+                              TpTestsSimpleAccountManager))
 #define SIMPLE_ACCOUNT_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), SIMPLE_TYPE_ACCOUNT_MANAGER, \
-                           SimpleAccountManagerClass))
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, \
+                           TpTestsSimpleAccountManagerClass))
 #define SIMPLE_IS_ACCOUNT_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), SIMPLE_TYPE_ACCOUNT_MANAGER))
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER))
 #define SIMPLE_IS_ACCOUNT_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), SIMPLE_TYPE_ACCOUNT_MANAGER))
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER))
 #define SIMPLE_ACCOUNT_MANAGER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), SIMPLE_TYPE_ACCOUNT_MANAGER, \
-                              SimpleAccountManagerClass))
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_SIMPLE_ACCOUNT_MANAGER, \
+                              TpTestsSimpleAccountManagerClass))
 
 
 G_END_DECLS
 
-#endif /* #ifndef __SIMPLE_ACCOUNT_MANAGER_H__ */
+#endif /* #ifndef __TP_TESTS_SIMPLE_ACCOUNT_MANAGER_H__ */

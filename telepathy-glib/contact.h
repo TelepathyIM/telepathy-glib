@@ -61,7 +61,8 @@ typedef enum {
     TP_CONTACT_FEATURE_LOCATION,
     TP_CONTACT_FEATURE_CAPABILITIES,
     TP_CONTACT_FEATURE_AVATAR_DATA,
-#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_AVATAR_DATA + 1)
+    TP_CONTACT_FEATURE_CONTACT_INFO,
+#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_INFO + 1)
 } TpContactFeature;
 
 /* Basic functionality, always available */
@@ -90,6 +91,19 @@ TpCapabilities *tp_contact_get_capabilities (TpContact *self);
 /* TP_CONTACT_FEATURE_AVATAR_DATA */
 GFile *tp_contact_get_avatar_file (TpContact *self);
 const gchar *tp_contact_get_avatar_mime_type (TpContact *self);
+
+/* TP_CONTACT_FEATURE_INFO */
+GList *tp_contact_get_contact_info (TpContact *self);
+
+void tp_contact_request_contact_info_async (TpContact *self,
+    GCancellable *cancellable, GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_contact_request_contact_info_finish (TpContact *self,
+    GAsyncResult *result, GError **error);
+
+void tp_connection_refresh_contact_info (TpConnection *self,
+    guint n_contacts, TpContact * const *contacts);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,

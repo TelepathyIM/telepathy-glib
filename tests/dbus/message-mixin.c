@@ -209,9 +209,10 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (test_object_new_static_class (
+  service_cm = EXAMPLE_ECHO_2_CONNECTION_MANAGER (
+      tp_tests_object_new_static_class (
         EXAMPLE_TYPE_ECHO_2_CONNECTION_MANAGER,
         NULL));
   g_assert (service_cm != NULL);
@@ -223,7 +224,7 @@ main (int argc,
 
   cm = tp_connection_manager_new (dbus, "example_echo_2", NULL, &error);
   g_assert (cm != NULL);
-  test_connection_manager_run_until_ready (cm);
+  tp_tests_proxy_run_until_prepared (cm, NULL);
 
   parameters = tp_asv_new (
       "account", G_TYPE_STRING, "me@example.com",
@@ -231,19 +232,19 @@ main (int argc,
 
   tp_cli_connection_manager_run_request_connection (cm, -1,
       "example", parameters, &name, &conn_path, &error, NULL);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_hash_table_unref (parameters);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
-  handle = test_connection_run_request_contact_handle (conn,
+  handle = tp_tests_connection_run_request_contact_handle (conn,
       "them@example.com");
 
     {
@@ -257,17 +258,17 @@ main (int argc,
 
       tp_cli_connection_interface_requests_run_create_channel (conn, -1,
           request, &chan_path, NULL, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       g_hash_table_destroy (request);
     }
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_CONTACT, handle, &error);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   tp_channel_run_until_ready (chan, &error, NULL);
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_cli_channel_type_text_connect_to_received (chan, on_received,
       NULL, NULL, NULL, NULL) != NULL, "");
@@ -293,7 +294,7 @@ main (int argc,
 
       tp_cli_dbus_properties_run_get_all (chan, -1,
           TP_IFACE_CHANNEL_INTERFACE_MESSAGES, &properties, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       g_print ("\n\n==== Examining properties ====\n\n");
 
@@ -345,7 +346,7 @@ main (int argc,
   while (received_count < 1 || message_received_count < 1)
     g_main_context_iteration (NULL, TRUE);
 
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -385,7 +386,7 @@ main (int argc,
   while (received_count < 1 || message_received_count < 1)
     g_main_context_iteration (NULL, TRUE);
 
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
@@ -426,7 +427,7 @@ main (int argc,
   while (received_count < 1 || message_received_count < 1)
     g_main_context_iteration (NULL, TRUE);
 
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
   MYASSERT (received_count == 1, ": %u != 1", received_count);
   MYASSERT (last_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
@@ -513,7 +514,7 @@ main (int argc,
 
       tp_cli_channel_interface_messages_run_send_message (chan, -1,
           send_parts, 0 /* flags */, &token, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       /* wait for pending events to be delivered */
       while (received_count < 1 || message_received_count < 1)
@@ -619,7 +620,7 @@ main (int argc,
 
       tp_cli_channel_interface_messages_run_send_message (chan, -1,
           send_parts, 0 /* flags */, &token, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       /* wait for pending events to be delivered */
       while (received_count < 1 || message_received_count < 1)
@@ -709,7 +710,7 @@ main (int argc,
 
       tp_cli_channel_interface_messages_run_send_message (chan, -1,
           send_parts, 0 /* flags */, &token, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       /* wait for pending events to be delivered */
       while (received_count < 1 || message_received_count < 1)
@@ -803,7 +804,7 @@ main (int argc,
 
       tp_cli_channel_interface_messages_run_send_message (chan, -1,
           send_parts, 0 /* flags */, &token, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       /* wait for pending events to be delivered */
       while (received_count < 1 || message_received_count < 1)
@@ -859,7 +860,7 @@ main (int argc,
 
       tp_cli_channel_interface_messages_run_get_pending_message_content (chan,
           -1, last_received_id, part_numbers, &ret, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       MYASSERT (g_hash_table_size (ret) == 2, ": %u",
           g_hash_table_size (ret));
@@ -888,7 +889,7 @@ main (int argc,
 
       tp_cli_channel_type_text_run_list_pending_messages (chan, -1,
           FALSE, &messages, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       g_print ("Freeing\n");
       g_boxed_free (TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST, messages);
@@ -933,7 +934,7 @@ main (int argc,
 
       tp_cli_dbus_properties_run_get_all (chan, -1,
           TP_IFACE_CHANNEL_INTERFACE_MESSAGES, &properties, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       g_print ("\n\n==== Examining properties ====\n\n");
 
@@ -985,7 +986,7 @@ main (int argc,
 
       tp_cli_channel_type_text_run_acknowledge_pending_messages (chan, -1,
           msgid, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       g_array_free (msgid, TRUE);
     }
@@ -998,7 +999,7 @@ main (int argc,
 
       tp_cli_channel_type_text_run_list_pending_messages (chan, -1,
           TRUE, &messages, &error, NULL);
-      test_assert_no_error (error);
+      g_assert_no_error (error);
 
       g_print ("Freeing\n");
       g_boxed_free (TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST, messages);
@@ -1010,13 +1011,13 @@ main (int argc,
       GPtrArray *channels;
 
       MYASSERT (tp_cli_channel_run_close (chan, -1, &error, NULL), "");
-      test_assert_no_error (error);
+      g_assert_no_error (error);
       MYASSERT (tp_proxy_get_invalidated (chan) != NULL, "");
 
       /* assert that the channel has really gone */
       MYASSERT (tp_cli_connection_run_list_channels (conn, -1,
             &channels, &error, NULL), "");
-      test_assert_no_error (error);
+      g_assert_no_error (error);
       MYASSERT (channels->len == 0, "%u != 0", channels->len);
       g_boxed_free (TP_ARRAY_TYPE_CHANNEL_INFO_LIST, channels);
     }
@@ -1024,7 +1025,7 @@ main (int argc,
   g_print ("\n\n==== End of tests ====\n");
 
   MYASSERT (tp_cli_connection_run_disconnect (conn, -1, &error, NULL), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   g_object_unref (chan);
   g_object_unref (conn);

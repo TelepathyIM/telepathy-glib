@@ -19,14 +19,14 @@
 
 static GType bug15306_connection_get_type (void);
 
-typedef SimpleConnection Bug15306Connection;
-typedef SimpleConnectionClass Bug15306ConnectionClass;
+typedef TpTestsSimpleConnection Bug15306Connection;
+typedef TpTestsSimpleConnectionClass Bug15306ConnectionClass;
 
 static void bug15306_conn_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (Bug15306Connection,
     bug15306_connection,
-    SIMPLE_TYPE_CONNECTION,
+    TP_TESTS_TYPE_SIMPLE_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, bug15306_conn_iface_init))
 
 static void
@@ -83,7 +83,7 @@ int
 main (int argc,
       char **argv)
 {
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpDBusDaemon *dbus;
   TpConnection *conn;
@@ -94,9 +94,9 @@ main (int argc,
   g_type_init ();
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
         bug15306_connection_get_type (),
         "account", "me@example.com",
         "protocol", "simple",
@@ -110,20 +110,20 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* disconnect the service_conn */
   MYASSERT (tp_cli_connection_connect_to_status_changed (conn,
         on_status_changed, NULL, NULL, NULL, NULL), "");
-  simple_connection_inject_disconnect (service_conn);
+  tp_tests_simple_connection_inject_disconnect (service_conn);
   g_main_loop_run (mainloop);
 
   g_object_unref (conn);

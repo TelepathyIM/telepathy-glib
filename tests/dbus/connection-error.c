@@ -29,8 +29,8 @@ on_connection_error (TpConnection *conn,
                      GObject *weak_object)
 {
   connection_errors++;
-  MYASSERT_SAME_STRING (error, "com.example.DomainSpecificError");
-  MYASSERT_SAME_UINT (g_hash_table_size (details), 0);
+  g_assert_cmpstr (error, ==, "com.example.DomainSpecificError");
+  g_assert_cmpuint (g_hash_table_size (details), ==, 0);
 }
 
 static void
@@ -40,8 +40,8 @@ on_status_changed (TpConnection *conn,
                    gpointer user_data,
                    GObject *weak_object)
 {
-  MYASSERT_SAME_UINT (status, TP_CONNECTION_STATUS_DISCONNECTED);
-  MYASSERT_SAME_UINT (reason, TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
+  g_assert_cmpuint (status, ==, TP_CONNECTION_STATUS_DISCONNECTED);
+  g_assert_cmpuint (reason, ==, TP_CONNECTION_STATUS_REASON_NETWORK_ERROR);
   g_main_loop_quit (user_data);
 }
 
@@ -49,6 +49,9 @@ typedef enum
 {
   DOMAIN_SPECIFIC_ERROR = 0,
 } ExampleError;
+
+/* example_com_error_get_type relies on this */
+G_STATIC_ASSERT (sizeof (GType) <= sizeof (gsize));
 
 static GType
 example_com_error_get_type (void)
@@ -63,8 +66,6 @@ example_com_error_get_type (void)
             { 0 }
       };
       GType gtype;
-
-      tp_verify_statement (sizeof (GType) <= sizeof (gsize));
 
       gtype = g_enum_register_static ("ExampleError", values);
       g_once_init_leave (&type, gtype);
@@ -96,7 +97,7 @@ example_com_error_quark (void)
 typedef struct {
   TpDBusDaemon *dbus;
   GMainLoop *mainloop;
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *conn_name;
   gchar *conn_path;
@@ -129,10 +130,11 @@ setup (Test *test,
   global_setup ();
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
+  test->service_conn = TP_TESTS_SIMPLE_CONNECTION (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -142,15 +144,15 @@ setup (Test *test,
 
   MYASSERT (tp_base_connection_register (test->service_conn_as_base, "simple",
         &test->conn_name, &test->conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
   MYASSERT (test->conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 }
 
 static void
@@ -193,7 +195,7 @@ test_registered_error (Test *test,
 
   g_main_loop_run (test->mainloop);
 
-  MYASSERT_SAME_UINT (connection_errors, 1);
+  g_assert_cmpuint (connection_errors, ==, 1);
 
   MYASSERT (!tp_connection_run_until_ready (test->conn, FALSE, &error, NULL),
       "");
@@ -206,9 +208,9 @@ test_registered_error (Test *test,
       "com.example.DomainSpecificError");
   g_assert (asv != NULL);
 
-  MYASSERT_SAME_STRING (g_quark_to_string (error->domain),
+  g_assert_cmpstr (g_quark_to_string (error->domain), ==,
       g_quark_to_string (example_com_error_quark ()));
-  MYASSERT_SAME_UINT (error->code, DOMAIN_SPECIFIC_ERROR);
+  g_assert_cmpuint (error->code, ==, DOMAIN_SPECIFIC_ERROR);
   g_error_free (error);
   error = NULL;
 }
@@ -221,8 +223,8 @@ on_unregistered_connection_error (TpConnection *conn,
     GObject *weak_object)
 {
   connection_errors++;
-  MYASSERT_SAME_STRING (error, "net.example.WTF");
-  MYASSERT_SAME_UINT (g_hash_table_size (details), 0);
+  g_assert_cmpstr (error, ==, "net.example.WTF");
+  g_assert_cmpuint (g_hash_table_size (details), ==, 0);
 }
 
 static void
@@ -244,7 +246,7 @@ test_unregistered_error (Test *test,
 
   g_main_loop_run (test->mainloop);
 
-  MYASSERT_SAME_UINT (connection_errors, 1);
+  g_assert_cmpuint (connection_errors, ==, 1);
 
   MYASSERT (!tp_connection_run_until_ready (test->conn, FALSE, &error, NULL),
       "");

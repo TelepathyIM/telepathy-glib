@@ -13,26 +13,4 @@
         }\
   } G_STMT_END
 
-#define MYASSERT_SAME_ERROR(left, right) \
-  G_STMT_START {\
-    MYASSERT ((left)->domain == (right)->domain,\
-        ": (%s #%d \"%s\") != (%s #%d \"%s\")",\
-        g_quark_to_string ((left)->domain), (left)->code, (left)->message,\
-        g_quark_to_string ((right)->domain), (right)->code, (right)->message);\
-    MYASSERT ((left)->code == (right)->code,\
-        ": (%s #%d \"%s\") != (%s #%d \"%s\")",\
-        g_quark_to_string ((left)->domain), (left)->code, (left)->message,\
-        g_quark_to_string ((right)->domain), (right)->code, (right)->message);\
-    MYASSERT (!tp_strdiff ((left)->message, (right)->message),\
-        ": (%s #%d \"%s\") != (%s #%d \"%s\")",\
-        g_quark_to_string ((left)->domain), (left)->code, (left)->message,\
-        g_quark_to_string ((right)->domain), (right)->code, (right)->message);\
-  } G_STMT_END
-
-#define MYASSERT_SAME_STRING(left, right) \
-  g_assert_cmpstr ((left), ==, (right));
-
-#define MYASSERT_SAME_UINT(left, right) \
-  g_assert_cmpuint ((left), ==, (right))
-
 #endif

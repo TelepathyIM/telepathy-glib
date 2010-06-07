@@ -184,7 +184,7 @@ main (int argc,
   /* We use TpDBusDaemon because it's a convenient concrete subclass of
    * TpProxy. */
   g_message ("Creating proxies");
-  a = test_dbus_daemon_dup_or_die ();
+  a = tp_tests_dbus_daemon_dup_or_die ();
   g_message ("a=%p", a);
   b = tp_dbus_daemon_new (tp_proxy_get_dbus_connection (a));
   g_message ("b=%p", b);
@@ -219,7 +219,8 @@ main (int argc,
 
   /* b gets its pending call cancelled because the weak object is
    * destroyed */
-  b_stub = test_object_new_static_class (stub_object_get_type (), NULL);
+  b_stub = tp_tests_object_new_static_class (tp_tests_stub_object_get_type (),
+      NULL);
   g_message ("Starting call on b");
   tp_cli_dbus_daemon_call_list_names (b, -1, listed_names, PTR (TEST_B),
       destroy_user_data, b_stub);
@@ -330,7 +331,8 @@ main (int argc,
    * *and* there is a signal connection
    * (used to reproduce fd.o #14750 - see case h in test-disconnection.c
    * for the minimal regression test) */
-  i_stub = test_object_new_static_class (stub_object_get_type (), NULL);
+  i_stub = tp_tests_object_new_static_class (tp_tests_stub_object_get_type (),
+      NULL);
   tp_cli_dbus_daemon_connect_to_name_owner_changed (i, noc, PTR (TEST_I),
       NULL, i_stub, NULL);
   g_message ("Starting call on i");
@@ -354,7 +356,8 @@ main (int argc,
 
   /* j gets its pending call cancelled explicitly, and j_stub is
    * destroyed in response (related to fd.o #14750) */
-  j_stub = test_object_new_static_class (stub_object_get_type (), NULL);
+  j_stub = tp_tests_object_new_static_class (tp_tests_stub_object_get_type (),
+      NULL);
   g_object_weak_ref (j_stub, j_stub_destroyed, PTR (TEST_J));
   g_message ("Starting call on j");
   pc = tp_cli_dbus_daemon_call_list_names (j, -1, listed_names, j_stub,
@@ -369,7 +372,8 @@ main (int argc,
    * is destroyed, meaning there are simultaneously two reasons for it
    * to become cancelled (equivalent to fd.o#14750, but for pending calls
    * rather than signal connections) */
-  k_stub = test_object_new_static_class (stub_object_get_type (), NULL);
+  k_stub = tp_tests_object_new_static_class (tp_tests_stub_object_get_type (),
+      NULL);
   g_message ("Starting call on k");
   g_object_weak_ref (k_stub, k_stub_destroyed, &pc);
   tp_cli_dbus_daemon_call_list_names (k, -1, listed_names, PTR (TEST_K),

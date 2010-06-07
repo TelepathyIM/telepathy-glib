@@ -26,9 +26,9 @@ typedef struct {
     /* Service side objects */
     TpBaseClient *simple_approver;
     TpBaseConnection *base_connection;
-    SimpleAccount *account_service;
-    TestTextChannelNull *text_chan_service;
-    SimpleChannelDispatchOperation *cdo_service;
+    TpTestsSimpleAccount *account_service;
+    TpTestsTextChannelNull *text_chan_service;
+    TpTestsSimpleChannelDispatchOperation *cdo_service;
 
     /* Client side objects */
     TpClient *client;
@@ -51,7 +51,7 @@ setup (Test *test,
   TpHandleRepoIface *contact_repo;
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   test->error = NULL;
 
@@ -62,8 +62,8 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   /* Create service-side Account object */
-  test->account_service = test_object_new_static_class (SIMPLE_TYPE_ACCOUNT,
-      NULL);
+  test->account_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_ACCOUNT, NULL);
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 
@@ -72,8 +72,8 @@ setup (Test *test,
   g_assert (test->account != NULL);
 
   /* Create (service and client sides) connection objects */
-  test_create_and_connect_conn (SIMPLE_TYPE_CONNECTION, "me@test.com",
-      &test->base_connection, &test->connection);
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+      "me@test.com", &test->base_connection, &test->connection);
 
   /* Create service-side text channel object */
   chan_path = g_strdup_printf ("%s/Channel",
@@ -86,9 +86,9 @@ setup (Test *test,
   handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
-  test->text_chan_service = TEST_TEXT_CHANNEL_NULL (
-      test_object_new_static_class (
-        TEST_TYPE_TEXT_CHANNEL_NULL,
+  test->text_chan_service = TP_TESTS_TEXT_CHANNEL_NULL (
+      tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
         "connection", test->base_connection,
         "object-path", chan_path,
         "handle", handle,
@@ -104,18 +104,18 @@ setup (Test *test,
   g_free (chan_path);
 
   /* Create Service side ChannelDispatchOperation object */
-  test->cdo_service = test_object_new_static_class (
-      SIMPLE_TYPE_CHANNEL_DISPATCH_OPERATION,
+  test->cdo_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCH_OPERATION,
       NULL);
   tp_dbus_daemon_register_object (test->dbus, CDO_PATH, test->cdo_service);
 
-  simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_set_conn_path (test->cdo_service,
       tp_proxy_get_object_path (test->connection));
 
-  simple_channel_dispatch_operation_set_account_path (test->cdo_service,
-      tp_proxy_get_object_path (test->account));
+  tp_tests_simple_channel_dispatch_operation_set_account_path (
+      test->cdo_service, tp_proxy_get_object_path (test->account));
 
-  simple_channel_dispatch_operation_add_channel (test->cdo_service,
+  tp_tests_simple_channel_dispatch_operation_add_channel (test->cdo_service,
       test->text_chan);
 
   g_assert (tp_dbus_daemon_request_name (test->dbus,
@@ -165,7 +165,8 @@ create_simple_approver (Test *test,
     TpSimpleApproverAddDispatchOperationImpl impl)
 {
   /* Create service-side Client object */
-  test->simple_approver = test_object_new_static_class (TP_TYPE_SIMPLE_APPROVER,
+  test->simple_approver = tp_tests_object_new_static_class (
+      TP_TYPE_SIMPLE_APPROVER,
       "dbus-daemon", test->dbus,
       "name", "MySimpleApprover",
       "uniquify-name", FALSE,
@@ -176,7 +177,7 @@ create_simple_approver (Test *test,
   g_assert (test->simple_approver != NULL);
 
   /* Create client-side Client object */
-  test->client = test_object_new_static_class (TP_TYPE_CLIENT,
+  test->client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
           "dbus-daemon", test->dbus,
           "bus-name", tp_base_client_get_bus_name (test->simple_approver),
           "object-path", tp_base_client_get_object_path (test->simple_approver),

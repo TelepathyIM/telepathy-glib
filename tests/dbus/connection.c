@@ -20,7 +20,7 @@
 
 typedef struct {
     TpDBusDaemon *dbus;
-    SimpleConnection *service_conn;
+    TpTestsSimpleConnection *service_conn;
     TpBaseConnection *service_conn_as_base;
     gchar *conn_name;
     gchar *conn_path;
@@ -57,10 +57,11 @@ setup (Test *test,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
+  test->service_conn = TP_TESTS_SIMPLE_CONNECTION (
+    tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple-protocol",
         NULL));
@@ -128,7 +129,9 @@ test_run_until_invalid (Test *test,
   MYASSERT (!tp_connection_run_until_ready (test->conn, TRUE, &error, NULL),
       "");
   g_assert (error != NULL);
-  MYASSERT_SAME_ERROR (&invalidated_for_test, error);
+  g_assert_error (error, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (error->message, ==, invalidated_for_test.message);
   g_error_free (error);
 }
 
@@ -359,7 +362,9 @@ test_call_when_invalid (Test *test,
   tp_connection_call_when_ready (test->conn, conn_ready, test);
   tp_proxy_invalidate ((TpProxy *) test->conn, &invalidated_for_test);
   g_assert_cmpint (test->cwr_ready, ==, TRUE);
-  MYASSERT_SAME_ERROR (&invalidated_for_test, test->cwr_error);
+  g_assert_error (test->cwr_error, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (test->cwr_error->message, ==, invalidated_for_test.message);
   g_clear_error (&test->cwr_error);
 
   /* Connection already invalid, so we are called back synchronously */
@@ -368,7 +373,9 @@ test_call_when_invalid (Test *test,
   test->cwr_error = NULL;
   tp_connection_call_when_ready (test->conn, conn_ready, test);
   g_assert (test->cwr_ready);
-  MYASSERT_SAME_ERROR (&invalidated_for_test, test->cwr_error);
+  g_assert_error (test->cwr_error, invalidated_for_test.domain,
+      invalidated_for_test.code);
+  g_assert_cmpstr (test->cwr_error->message, ==, invalidated_for_test.message);
   g_error_free (test->cwr_error);
   test->cwr_error = NULL;
 }

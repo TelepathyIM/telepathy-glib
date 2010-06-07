@@ -1,5 +1,5 @@
 /*
- * params-cm.h - header for ParamConnectionManager
+ * params-cm.h - header for TpTestsParamConnectionManager
  *
  * Copyright © 2007-2009 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright © 2007-2009 Nokia Corporation
@@ -19,54 +19,54 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __PARAM_CONNECTION_MANAGER_H__
-#define __PARAM_CONNECTION_MANAGER_H__
+#ifndef __TP_TESTS_PARAM_CONNECTION_MANAGER_H__
+#define __TP_TESTS_PARAM_CONNECTION_MANAGER_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/base-connection-manager.h>
 
 G_BEGIN_DECLS
 
-typedef struct _ParamConnectionManager
-    ParamConnectionManager;
-typedef struct _ParamConnectionManagerPrivate
-    ParamConnectionManagerPrivate;
+typedef struct _TpTestsParamConnectionManager
+    TpTestsParamConnectionManager;
+typedef struct _TpTestsParamConnectionManagerPrivate
+    TpTestsParamConnectionManagerPrivate;
 
-typedef struct _ParamConnectionManagerClass
-    ParamConnectionManagerClass;
-typedef struct _ParamConnectionManagerClassPrivate
-    ParamConnectionManagerClassPrivate;
+typedef struct _TpTestsParamConnectionManagerClass
+    TpTestsParamConnectionManagerClass;
+typedef struct _TpTestsParamConnectionManagerClassPrivate
+    TpTestsParamConnectionManagerClassPrivate;
 
-struct _ParamConnectionManagerClass {
+struct _TpTestsParamConnectionManagerClass {
     TpBaseConnectionManagerClass parent_class;
 
-    ParamConnectionManagerClassPrivate *priv;
+    TpTestsParamConnectionManagerClassPrivate *priv;
 };
 
-struct _ParamConnectionManager {
+struct _TpTestsParamConnectionManager {
     TpBaseConnectionManager parent;
 
-    ParamConnectionManagerPrivate *priv;
+    TpTestsParamConnectionManagerPrivate *priv;
 };
 
-GType param_connection_manager_get_type (void);
+GType tp_tests_param_connection_manager_get_type (void);
 
 /* TYPE MACROS */
-#define TYPE_PARAM_CONNECTION_MANAGER \
-  (param_connection_manager_get_type ())
-#define PARAM_CONNECTION_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), TYPE_PARAM_CONNECTION_MANAGER, \
-                              ParamConnectionManager))
-#define PARAM_CONNECTION_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), TYPE_PARAM_CONNECTION_MANAGER, \
-                           ParamConnectionManagerClass))
+#define TP_TESTS_TYPE_PARAM_CONNECTION_MANAGER \
+  (tp_tests_param_connection_manager_get_type ())
+#define TP_TESTS_PARAM_CONNECTION_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TESTS_TYPE_PARAM_CONNECTION_MANAGER, \
+                              TpTestsParamConnectionManager))
+#define TP_TESTS_PARAM_CONNECTION_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TESTS_TYPE_PARAM_CONNECTION_MANAGER, \
+                           TpTestsParamConnectionManagerClass))
 #define IS_PARAM_CONNECTION_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TYPE_PARAM_CONNECTION_MANAGER))
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TESTS_TYPE_PARAM_CONNECTION_MANAGER))
 #define IS_PARAM_CONNECTION_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), TYPE_PARAM_CONNECTION_MANAGER))
-#define PARAM_CONNECTION_MANAGER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), TYPE_PARAM_CONNECTION_MANAGER, \
-                              ParamConnectionManagerClass))
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TESTS_TYPE_PARAM_CONNECTION_MANAGER))
+#define TP_TESTS_PARAM_CONNECTION_MANAGER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_PARAM_CONNECTION_MANAGER, \
+                              TpTestsParamConnectionManagerClass))
 
 typedef struct {
     gchar *a_string;
@@ -84,11 +84,12 @@ typedef struct {
     gchar *lc_string;
     gchar *uc_string;
     gboolean would_have_been_freed;
-} CMParams;
+} TpTestsCMParams;
 
-CMParams * param_connection_manager_steal_params_last_conn (void);
-void param_connection_manager_free_params (CMParams *params);
+TpTestsCMParams * tp_tests_param_connection_manager_steal_params_last_conn (
+    void);
+void tp_tests_param_connection_manager_free_params (TpTestsCMParams *params);
 
 G_END_DECLS
 
-#endif
+#endif /* #ifndef __TP_TESTS_PARAM_CONNECTION_MANAGER_H__ */

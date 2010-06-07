@@ -44,7 +44,7 @@ typedef struct
   TpDBusDaemon *dbus;
   GError *error /* statically initialized to NULL */ ;
 
-  ParamConnectionManager *service_cm;
+  TpTestsParamConnectionManager *service_cm;
 
   TpConnectionManager *cm;
   TpConnection *conn;
@@ -61,10 +61,11 @@ setup (Test *test,
   tp_debug_set_flags ("all");
 
   test->mainloop = g_main_loop_new (NULL, FALSE);
-  test->dbus = test_dbus_daemon_dup_or_die ();
+  test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = PARAM_CONNECTION_MANAGER (test_object_new_static_class (
-        TYPE_PARAM_CONNECTION_MANAGER,
+  test->service_cm = TP_TESTS_PARAM_CONNECTION_MANAGER (
+    tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_PARAM_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);
   service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
@@ -76,7 +77,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "params_cm",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  test_connection_manager_run_until_ready (test->cm);
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
 }
 
 static void
@@ -96,7 +97,7 @@ test_set_params (Test *test,
                  gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *parameters;
-  CMParams *params;
+  TpTestsCMParams *params;
   gchar *array_of_strings[] = { "Telepathy", "rocks", "!", NULL };
   guint i;
   GArray *array_of_bytes;
@@ -144,7 +145,7 @@ test_set_params (Test *test,
   g_assert (test->error->code == TP_ERROR_NOT_IMPLEMENTED);
   g_clear_error (&test->error);
 
-  params = param_connection_manager_steal_params_last_conn ();
+  params = tp_tests_param_connection_manager_steal_params_last_conn ();
   g_assert (params != NULL);
 
   g_assert (!tp_strdiff (params->a_string, "a string"));
@@ -170,7 +171,7 @@ test_set_params (Test *test,
   g_assert (!tp_strdiff (params->lc_string, "filter me"));
   g_assert (!tp_strdiff (params->uc_string, "FILTER ME"));
 
-  param_connection_manager_free_params (params);
+  tp_tests_param_connection_manager_free_params (params);
   g_hash_table_destroy (parameters);
   g_array_free (array_of_bytes, TRUE);
 }
@@ -180,7 +181,7 @@ test_defaults (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *parameters;
-  CMParams *params;
+  TpTestsCMParams *params;
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -193,12 +194,12 @@ test_defaults (Test *test,
   g_assert_cmpint (test->error->code, ==, TP_ERROR_NOT_IMPLEMENTED);
   g_clear_error (&test->error);
 
-  params = param_connection_manager_steal_params_last_conn ();
+  params = tp_tests_param_connection_manager_steal_params_last_conn ();
   g_assert (params->would_have_been_freed);
   g_assert_cmpstr (params->a_string, ==, "the default string");
   g_assert_cmpint (params->a_int16, ==, 42);
   g_assert_cmpint (params->a_int32, ==, 42);
-  param_connection_manager_free_params (params);
+  tp_tests_param_connection_manager_free_params (params);
 
   g_hash_table_destroy (parameters);
 }
@@ -208,7 +209,7 @@ test_missing_required (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *parameters;
-  CMParams *params;
+  TpTestsCMParams *params;
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -219,12 +220,12 @@ test_missing_required (Test *test,
   g_assert_cmpint (test->error->code, ==, TP_ERROR_INVALID_ARGUMENT);
   g_clear_error (&test->error);
 
-  params = param_connection_manager_steal_params_last_conn ();
+  params = tp_tests_param_connection_manager_steal_params_last_conn ();
 
   if (params != NULL)
     {
       g_assert (params->would_have_been_freed);
-      param_connection_manager_free_params (params);
+      tp_tests_param_connection_manager_free_params (params);
     }
 
   g_hash_table_destroy (parameters);
@@ -235,7 +236,7 @@ test_fail_filter (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *parameters;
-  CMParams *params;
+  TpTestsCMParams *params;
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -252,12 +253,12 @@ test_fail_filter (Test *test,
   g_assert_cmpint (test->error->code, ==, TP_ERROR_INVALID_ARGUMENT);
   g_clear_error (&test->error);
 
-  params = param_connection_manager_steal_params_last_conn ();
+  params = tp_tests_param_connection_manager_steal_params_last_conn ();
 
   if (params != NULL)
     {
       g_assert (params->would_have_been_freed);
-      param_connection_manager_free_params (params);
+      tp_tests_param_connection_manager_free_params (params);
     }
 
   g_hash_table_destroy (parameters);
@@ -268,7 +269,7 @@ test_wrong_type (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *parameters;
-  CMParams *params;
+  TpTestsCMParams *params;
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -281,12 +282,12 @@ test_wrong_type (Test *test,
   g_assert_cmpint (test->error->code, ==, TP_ERROR_INVALID_ARGUMENT);
   g_clear_error (&test->error);
 
-  params = param_connection_manager_steal_params_last_conn ();
+  params = tp_tests_param_connection_manager_steal_params_last_conn ();
 
   if (params != NULL)
     {
       g_assert (params->would_have_been_freed);
-      param_connection_manager_free_params (params);
+      tp_tests_param_connection_manager_free_params (params);
     }
 
   g_hash_table_destroy (parameters);
@@ -297,7 +298,7 @@ test_unwelcome (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *parameters;
-  CMParams *params;
+  TpTestsCMParams *params;
 
   parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
@@ -312,12 +313,12 @@ test_unwelcome (Test *test,
   g_assert_cmpint (test->error->code, ==, TP_ERROR_INVALID_ARGUMENT);
   g_clear_error (&test->error);
 
-  params = param_connection_manager_steal_params_last_conn ();
+  params = tp_tests_param_connection_manager_steal_params_last_conn ();
 
   if (params != NULL)
     {
       g_assert (params->would_have_been_freed);
-      param_connection_manager_free_params (params);
+      tp_tests_param_connection_manager_free_params (params);
     }
 
   g_hash_table_destroy (parameters);

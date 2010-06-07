@@ -21,9 +21,9 @@
 
 static void service_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE (Bug16307Connection,
-    bug16307_connection,
-    SIMPLE_TYPE_CONNECTION,
+G_DEFINE_TYPE_WITH_CODE (TpTestsBug16307Connection,
+    tp_tests_bug16307_connection,
+    TP_TESTS_TYPE_SIMPLE_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION,
       service_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING,
@@ -40,7 +40,7 @@ enum
 
 static guint signals[N_SIGNALS] = {0};
 
-struct _Bug16307ConnectionPrivate
+struct _TpTestsBug16307ConnectionPrivate
 {
   /* In a real connection manager, the underlying implementation start
    * connecting, then go to state CONNECTED when finished. Here there isn't
@@ -49,28 +49,28 @@ struct _Bug16307ConnectionPrivate
    * is called.
    *
    * Also, the GetStatus D-Bus reply is delayed until
-   * bug16307_connection_inject_get_status_return() is called
+   * tp_tests_bug16307_connection_inject_get_status_return() is called
    */
   DBusGMethodInvocation *get_status_invocation;
 };
 
 static void
-bug16307_connection_init (Bug16307Connection *self)
+tp_tests_bug16307_connection_init (TpTestsBug16307Connection *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, BUG16307_TYPE_CONNECTION,
-      Bug16307ConnectionPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TP_TESTS_TYPE_BUG16307_CONNECTION, TpTestsBug16307ConnectionPrivate);
 }
 
 static void
 finalize (GObject *object)
 {
-  G_OBJECT_CLASS (bug16307_connection_parent_class)->finalize (object);
+  G_OBJECT_CLASS (tp_tests_bug16307_connection_parent_class)->finalize (object);
 }
 
 static gboolean
 pretend_connected (gpointer data)
 {
-  Bug16307Connection *self = BUG16307_CONNECTION (data);
+  TpTestsBug16307Connection *self = TP_TESTS_BUG16307_CONNECTION (data);
   TpBaseConnection *conn = (TpBaseConnection *) self;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
@@ -90,7 +90,7 @@ pretend_connected (gpointer data)
 }
 
 void
-bug16307_connection_inject_get_status_return (Bug16307Connection *self)
+tp_tests_bug16307_connection_inject_get_status_return (TpTestsBug16307Connection *self)
 {
   TpBaseConnection *self_base = TP_BASE_CONNECTION (self);
   DBusGMethodInvocation *context;
@@ -139,7 +139,7 @@ start_connecting (TpBaseConnection *conn,
 }
 
 static void
-bug16307_connection_class_init (Bug16307ConnectionClass *klass)
+tp_tests_bug16307_connection_class_init (TpTestsBug16307ConnectionClass *klass)
 {
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
@@ -152,7 +152,7 @@ bug16307_connection_class_init (Bug16307ConnectionClass *klass)
       NULL };
 
   object_class->finalize = finalize;
-  g_type_class_add_private (klass, sizeof (Bug16307ConnectionPrivate));
+  g_type_class_add_private (klass, sizeof (TpTestsBug16307ConnectionPrivate));
 
   base_class->start_connecting = start_connecting;
 
@@ -168,17 +168,17 @@ bug16307_connection_class_init (Bug16307ConnectionClass *klass)
 }
 
 /**
- * bug16307_connection_get_status
+ * tp_tests_bug16307_connection_get_status
  *
  * Implements D-Bus method GetStatus
  * on interface org.freedesktop.Telepathy.Connection
  */
 static void
-bug16307_connection_get_status (TpSvcConnection *iface,
+tp_tests_bug16307_connection_get_status (TpSvcConnection *iface,
                               DBusGMethodInvocation *context)
 {
   TpBaseConnection *self_base = TP_BASE_CONNECTION (iface);
-  Bug16307Connection *self = BUG16307_CONNECTION (iface);
+  TpTestsBug16307Connection *self = TP_TESTS_BUG16307_CONNECTION (iface);
 
   /* auto-connect on get_status */
   if ((self_base->status == TP_INTERNAL_CONNECTION_STATUS_NEW ||
@@ -202,7 +202,7 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
   TpSvcConnectionClass *klass = g_iface;
 
 #define IMPLEMENT(prefix,x) tp_svc_connection_implement_##x (klass, \
-    bug16307_connection_##prefix##x)
+    tp_tests_bug16307_connection_##prefix##x)
   IMPLEMENT(,get_status);
 #undef IMPLEMENT
 }

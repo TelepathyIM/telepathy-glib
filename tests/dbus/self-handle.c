@@ -30,7 +30,7 @@ on_self_handle_changed (TpConnection *client_conn,
 }
 
 static void
-test_self_handle (SimpleConnection *service_conn,
+test_self_handle (TpTestsSimpleConnection *service_conn,
                   TpConnection *client_conn)
 {
   TpBaseConnection *service_conn_as_base = TP_BASE_CONNECTION (service_conn);
@@ -42,37 +42,37 @@ test_self_handle (SimpleConnection *service_conn,
   g_signal_connect (client_conn, "notify::self-handle",
       G_CALLBACK (on_self_handle_changed), &times);
 
-  MYASSERT_SAME_STRING (tp_handle_inspect (contact_repo,
-        tp_base_connection_get_self_handle (service_conn_as_base)),
+  g_assert_cmpstr (tp_handle_inspect (contact_repo,
+        tp_base_connection_get_self_handle (service_conn_as_base)), ==,
       "me@example.com");
 
-  MYASSERT_SAME_UINT (tp_connection_get_self_handle (client_conn),
+  g_assert_cmpuint (tp_connection_get_self_handle (client_conn), ==,
       tp_base_connection_get_self_handle (service_conn_as_base));
 
   g_object_get (client_conn,
       "self-handle", &handle,
       NULL);
-  MYASSERT_SAME_UINT (handle,
+  g_assert_cmpuint (handle, ==,
       tp_base_connection_get_self_handle (service_conn_as_base));
 
-  MYASSERT_SAME_UINT (times, 0);
+  g_assert_cmpuint (times, ==, 0);
 
   /* similar to /nick in IRC */
-  simple_connection_set_identifier (service_conn, "myself@example.org");
-  test_connection_run_until_dbus_queue_processed (client_conn);
-  MYASSERT_SAME_UINT (times, 1);
+  tp_tests_simple_connection_set_identifier (service_conn, "myself@example.org");
+  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
+  g_assert_cmpuint (times, ==, 1);
 
-  MYASSERT_SAME_STRING (tp_handle_inspect (contact_repo,
-        tp_base_connection_get_self_handle (service_conn_as_base)),
+  g_assert_cmpstr (tp_handle_inspect (contact_repo,
+        tp_base_connection_get_self_handle (service_conn_as_base)), ==,
       "myself@example.org");
 
-  MYASSERT_SAME_UINT (tp_connection_get_self_handle (client_conn),
+  g_assert_cmpuint (tp_connection_get_self_handle (client_conn), ==,
       tp_base_connection_get_self_handle (service_conn_as_base));
 
   g_object_get (client_conn,
       "self-handle", &handle,
       NULL);
-  MYASSERT_SAME_UINT (handle,
+  g_assert_cmpuint (handle, ==,
       tp_base_connection_get_self_handle (service_conn_as_base));
 }
 
@@ -81,7 +81,7 @@ main (int argc,
       char **argv)
 {
   TpDBusDaemon *dbus;
-  SimpleConnection *service_conn;
+  TpTestsSimpleConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   gchar *name;
   gchar *conn_path;
@@ -92,10 +92,10 @@ main (int argc,
 
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = test_dbus_daemon_dup_or_die ();
+  dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = SIMPLE_CONNECTION (test_object_new_static_class (
-        SIMPLE_TYPE_CONNECTION,
+  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
         NULL));
@@ -105,14 +105,14 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
 
   /* Tests */
 
@@ -122,7 +122,7 @@ main (int argc,
 
   MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
       "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   g_object_unref (client_conn);
 
   service_conn_as_base = NULL;

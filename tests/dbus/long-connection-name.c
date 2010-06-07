@@ -42,7 +42,7 @@ main (int argc,
   g_type_init ();
 
   MYASSERT (strlen (LONG_ACCOUNT_IS_LONG) == 256, "");
-  service_conn = EXAMPLE_ECHO_CONNECTION (test_object_new_static_class (
+  service_conn = EXAMPLE_ECHO_CONNECTION (tp_tests_object_new_static_class (
         EXAMPLE_TYPE_ECHO_CONNECTION,
         "account", LONG_ACCOUNT_IS_LONG,
         "protocol", "example",
@@ -53,7 +53,7 @@ main (int argc,
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "example",
         &name, &conn_path, &error), "");
-  test_assert_no_error (error);
+  g_assert_no_error (error);
   /* Name is too long to be used unmodified; check that it's shortened to 255
    * characters.
    */
