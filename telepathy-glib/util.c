@@ -51,6 +51,9 @@
  * (This is gnulib's verify macro, written by Paul Eggert, Bruno Haible and
  * Jim Meyering.)
  *
+ * This macro will be deprecated in a future telepathy-glib release. Please
+ * use GLib 2.20's G_STATIC_ASSERT() macro in new code.
+ *
  * Since: 0.7.34
  */
 
@@ -69,6 +72,9 @@
  * (This is gnulib's verify_true macro, written by Paul Eggert, Bruno Haible
  * and Jim Meyering.)
  *
+ * This macro will be deprecated in a future telepathy-glib release. Please
+ * use GLib 2.20's G_STATIC_ASSERT() macro in new code.
+ *
  * Returns: 1
  *
  * Since: 0.7.34
@@ -84,6 +90,9 @@
  *
  * This macro can be used anywhere that a statement would be allowed; it
  * is equivalent to ((void) tp_verify_true (R)).
+ *
+ * This macro will be deprecated in a future telepathy-glib release. Please
+ * use GLib 2.20's G_STATIC_ASSERT() macro in new code.
  *
  * Since: 0.7.34
  */

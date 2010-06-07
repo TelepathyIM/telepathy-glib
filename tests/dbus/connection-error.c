@@ -50,6 +50,9 @@ typedef enum
   DOMAIN_SPECIFIC_ERROR = 0,
 } ExampleError;
 
+/* example_com_error_get_type relies on this */
+G_STATIC_ASSERT (sizeof (GType) <= sizeof (gsize));
+
 static GType
 example_com_error_get_type (void)
 {
@@ -63,8 +66,6 @@ example_com_error_get_type (void)
             { 0 }
       };
       GType gtype;
-
-      tp_verify_statement (sizeof (GType) <= sizeof (gsize));
 
       gtype = g_enum_register_static ("ExampleError", values);
       g_once_init_leave (&type, gtype);

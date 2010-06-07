@@ -50,8 +50,8 @@
 #   define BITFIELD_LOG2_BITS 5
 #endif
 
-tp_verify (1 << BITFIELD_LOG2_BITS == BITFIELD_BITS);
-tp_verify (sizeof (gpointer) >= sizeof (gsize));
+G_STATIC_ASSERT (1 << BITFIELD_LOG2_BITS == BITFIELD_BITS);
+G_STATIC_ASSERT (sizeof (gpointer) >= sizeof (gsize));
 #define LOW_MASK (BITFIELD_BITS - 1)
 #define HIGH_PART(x) (x & ~LOW_MASK)
 #define LOW_PART(x) (x & LOW_MASK)
@@ -450,7 +450,7 @@ tp_intset_from_array (const GArray *array)
 }
 
 /* these magic numbers would need adjusting for 64-bit storage */
-tp_verify (BITFIELD_BITS == 32);
+G_STATIC_ASSERT (BITFIELD_BITS == 32);
 
 static inline guint
 count_bits32 (guint32 n)
@@ -845,7 +845,7 @@ typedef struct {
     gsize bitfield;
 } RealFastIter;
 
-tp_verify (sizeof (TpIntSetFastIter) >= sizeof (RealFastIter));
+G_STATIC_ASSERT (sizeof (TpIntSetFastIter) >= sizeof (RealFastIter));
 
 /**
  * tp_intset_fast_iter_init:
