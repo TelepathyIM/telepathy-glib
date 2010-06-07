@@ -3371,6 +3371,8 @@ tp_base_contact_list_mixin_groups_iface_init (
  *
  * If the connection implements #TpSvcConnectionInterfaceContactGroups, this
  * function automatically sets up that interface as well as ContactList.
+ * In this case, when the #TpBaseContactList is created later, it must
+ * implement %TP_TYPE_CONTACT_GROUP_LIST.
  *
  * Since: 0.11.UNRELEASED
  */
