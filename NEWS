@@ -1,7 +1,37 @@
 telepathy-glib 0.11.7 (UNRELEASED)
 ==================================
 
-...
+Requirements:
+
+* If GObject-Introspection is enabled, it must be version 0.6.13 or later.
+
+Semi-deprecations:
+
+* tp_verify() should not be used in new code: use GLib 2.20's G_STATIC_ASSERT.
+
+Enhancements:
+
+* fd.o #27676: add TP_CONNECTION_FEATURE_CONTACT_INFO,
+  TP_CONTACT_FEATURE_CONTACT_INFO, tp_contact_request_contact_info_async, etc.
+  (Zdra)
+
+* fd.o #28368: use GStrv instead of gchar ** in structs, so
+  GObject-Introspection ≥ 0.6.13 can introspect it correctly (Zdra)
+
+* Add tp_handle_set_new_from_array (smcv)
+
+* fd.o #28345: add tp_clear_object, tp_clear_pointer, tp_clear_boxed
+  (also proposed for GLib/GObject, as Gnome bug #620263) (smcv)
+
+* Add TP_ERROR as a synonym for TP_ERRORS, to be nice to Vala (treitter)
+
+* fd.o #28334, #28347: speed up the regression tests, clean up their code, and
+  put their utility code in a namespace so Vala tests can use it (treitter,
+  smcv)
+
+Fixes:
+
+* test-finalized-in-invalidated-handler: eliminate a race condition (smcv)
 
 telepathy-glib 0.11.6 (2010-05-25)
 ==================================
