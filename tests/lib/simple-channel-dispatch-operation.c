@@ -82,7 +82,7 @@ tp_tests_simple_channel_dispatch_operation_claim (
 }
 
 static void
-simple_channel_dispatch_operation_handle_with_time (
+tp_tests_simple_channel_dispatch_operation_handle_with_time (
     TpSvcChannelDispatchOperation *iface,
     const gchar *handler,
     gint64 user_action_timestamp,
