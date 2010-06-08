@@ -1114,9 +1114,9 @@ handle_with_cb (TpChannelDispatchOperation *self,
 /**
  * tp_channel_dispatch_operation_handle_with_async:
  * @self: a #TpChannelDispatchOperation
- * @handler: The well-known bus name (starting with #TP_CLIENT_BUS_NAME_BASE)
- * of the channel handler that should handle the channel, or %NULL
- * if the client has no preferred channel handler
+ * @handler: (allow-none): The well-known bus name (starting with
+ * #TP_CLIENT_BUS_NAME_BASE) of the channel handler that should handle the
+ * channel, or %NULL if the client has no preferred channel handler
  * @callback: a callback to call when the call returns
  * @user_data: data to pass to @callback
  *
