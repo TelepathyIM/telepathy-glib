@@ -71,9 +71,6 @@ struct _TplEntryClass {
 void _tpl_entry_set_timestamp (TplEntry *self,
     gint64 data);
 
-void _tpl_entry_set_pending_msg_id (TplEntry *self,
-    gint data);
-
 void _tpl_entry_set_signal_type (TplEntry *self,
     TplEntrySignalType data);
 
@@ -92,7 +89,6 @@ void _tpl_entry_set_sender (TplEntry *self,
 void _tpl_entry_set_receiver (TplEntry *self,
     TplContact *data);
 
-gboolean _tpl_entry_is_pending (TplEntry *self);
 TplEntrySignalType _tpl_entry_get_signal_type (TplEntry *self);
 const gchar * _tpl_entry_get_chat_id (TplEntry * self);
 const gchar * _tpl_entry_get_channel_path (TplEntry *self);

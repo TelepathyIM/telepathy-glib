@@ -882,7 +882,8 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
       message = _tpl_entry_text_new (log_id,
           tp_proxy_get_object_path (account), TPL_ENTRY_DIRECTION_NONE);
 
-      _tpl_entry_set_pending_msg_id (TPL_ENTRY (message), pending_id);
+      _tpl_entry_text_set_pending_msg_id (TPL_ENTRY_TEXT (message),
+          pending_id);
       _tpl_entry_set_sender (TPL_ENTRY (message), sender);
       _tpl_entry_set_timestamp (TPL_ENTRY (message), t);
       _tpl_entry_text_set_message (message, body);

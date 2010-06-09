@@ -699,7 +699,7 @@ _insert_to_cache_table (TplLogStore *self,
   channel = get_channel_name_from_entry (message);
   identifier = _tpl_entry_get_chat_id (message);
   log_id = _tpl_entry_get_log_id (message);
-  msg_id = tpl_entry_get_pending_msg_id (message);
+  msg_id = tpl_entry_text_get_pending_msg_id (TPL_ENTRY_TEXT (message));
   chatroom = _tpl_entry_text_is_chatroom (TPL_ENTRY_TEXT (message));
   date = get_datetime (message);
 

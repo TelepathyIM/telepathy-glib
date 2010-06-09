@@ -1175,7 +1175,7 @@ on_sent_signal_cb (TpChannel *proxy,
       TPL_ENTRY_DIRECTION_OUT);
   log = TPL_ENTRY (text_log);
 
-  _tpl_entry_set_pending_msg_id (TPL_ENTRY (log),
+  _tpl_entry_text_set_pending_msg_id (text_log,
       TPL_ENTRY_MSG_ID_ACKNOWLEDGED);
   _tpl_entry_set_channel_path (TPL_ENTRY (log), channel_path);
   _tpl_entry_set_chat_id (log, chat_id);
@@ -1377,7 +1377,7 @@ on_received_signal_cb (TpChannel *proxy,
   log = TPL_ENTRY (text_log);
 
   _tpl_entry_set_channel_path (log, channel_path);
-  _tpl_entry_set_pending_msg_id (log, arg_ID);
+  _tpl_entry_text_set_pending_msg_id (text_log, arg_ID);
   _tpl_entry_text_set_tpl_channel_text (text_log, tpl_text);
   _tpl_entry_text_set_message (text_log, arg_Text);
   _tpl_entry_text_set_message_type (text_log, arg_Type);

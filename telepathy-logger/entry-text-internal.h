@@ -85,5 +85,10 @@ gboolean _tpl_entry_text_is_chatroom (TplEntryText *self);
 gboolean _tpl_entry_text_equal (TplEntry *message1,
     TplEntry *message2);
 
+void _tpl_entry_text_set_pending_msg_id (TplEntryText *self,
+    gint data);
+
+gboolean _tpl_entry_text_is_pending (TplEntryText *self);
+
 G_END_DECLS
 #endif // __TPL_ENTRY_TEXT_INTERNAL_H__

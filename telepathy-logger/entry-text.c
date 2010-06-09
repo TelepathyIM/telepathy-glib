@@ -41,13 +41,17 @@ struct _TplEntryTextPriv
   TpChannelTextMessageType message_type;
   gchar *message;
   gboolean chatroom;
+  /* in specs it's guint, TplEntry needs a way to represent ACK'd messages:
+   * if pending_msg_id reachs G_MAXINT32, then the problem is elsewhere :-) */
+  gint pending_msg_id;
 };
 
 enum
 {
   PROP_MESSAGE_TYPE = 1,
   PROP_MESSAGE,
-  PROP_TPL_CHANNEL_TEXT
+  PROP_TPL_CHANNEL_TEXT,
+  PROP_PENDING_MSG_ID
 };
 
 
@@ -99,6 +103,9 @@ tpl_entry_text_get_property (GObject *object,
       case PROP_TPL_CHANNEL_TEXT:
         g_value_set_object (value, priv->tpl_text);
         break;
+      case PROP_PENDING_MSG_ID:
+        g_value_set_int (value, priv->pending_msg_id);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -124,6 +131,9 @@ tpl_entry_text_set_property (GObject *object,
       case PROP_TPL_CHANNEL_TEXT:
         _tpl_entry_text_set_tpl_channel_text (self,
             g_value_get_object (value));
+        break;
+      case PROP_PENDING_MSG_ID:
+        _tpl_entry_text_set_pending_msg_id (self, g_value_get_int (value));
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -162,6 +172,36 @@ static void tpl_entry_text_class_init (TplEntryTextClass *klass)
       "The TplChannelText instance associated with the log entry, if any",
       TPL_TYPE_CHANNEL_TEXT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TPL_CHANNEL_TEXT, param_spec);
+
+  /**
+   * TplEntryText::pending-msg-id:
+   *
+   * The pending message id for the current log entry.
+   * The default value, is #TPL_ENTRY_MSG_ID_UNKNOWN,
+   * meaning that it's not possible to know if the message is pending or has
+   * been acknowledged.
+   *
+   * An object instantiating a TplEntry subclass should explicitly set it
+   * to a valid msg-id number (id>=0) or to #TPL_ENTRY_MSG_ID_ACKNOWLEDGED
+   * when acknowledged or if the entry is a result of
+   * 'sent' signal.
+   * In fact a sent entry is considered as 'automatically' ACK by TPL.
+   *
+   * The pending message id value is only meaningful when associated to the
+   * #TplEntry::channel-path property.
+   * The couple (channel-path, pending-msg-id) cannot be considered unique,
+   * though, since a message-id might be reused over time.
+   *
+   * Use #TplEntry::log-id for a unique identifier within TPL.
+   */
+  param_spec = g_param_spec_int ("pending-msg-id",
+      "PendingMessageId",
+      "Pending Message ID, if set, the log entry is set as pending for ACK."
+      " Default to -1 meaning not pending.",
+      -1, G_MAXUINT32, TPL_ENTRY_MSG_ID_ACKNOWLEDGED,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_PENDING_MSG_ID,
+      param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplEntryTextPriv));
 
@@ -341,4 +381,39 @@ _tpl_entry_text_equal (TplEntry *message1,
   */
   return !tp_strdiff (_tpl_entry_get_log_id (message1),
       _tpl_entry_get_log_id (message2));
+}
+
+/**
+ * _tpl_entry_set_pending_msg_id:
+ * @self: TplEntryText instance
+ * @data: the pending message ID
+ *
+ * Sets @self to be associated to pending message id @data.
+ *
+ * @see_also: #TplEntry::pending-msg-id for special values.
+ */
+void
+_tpl_entry_text_set_pending_msg_id (TplEntryText *self,
+    gint data)
+{
+  g_return_if_fail (TPL_IS_ENTRY (self));
+
+  self->priv->pending_msg_id = data;
+  g_object_notify (G_OBJECT (self), "pending-msg-id");
+}
+
+gint
+tpl_entry_text_get_pending_msg_id (TplEntryText *self)
+{
+  g_return_val_if_fail (TPL_IS_ENTRY (self), -1);
+
+  return self->priv->pending_msg_id;
+}
+
+
+gboolean
+_tpl_entry_text_is_pending (TplEntryText *self)
+{
+  return TPL_ENTRY_MSG_ID_IS_VALID (
+      tpl_entry_text_get_pending_msg_id (self));
 }

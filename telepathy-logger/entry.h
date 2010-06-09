@@ -55,7 +55,5 @@ const gchar *tpl_entry_get_account_path (TplEntry *self);
 TplContact * tpl_entry_get_sender (TplEntry *self);
 TplContact * tpl_entry_get_receiver (TplEntry *self);
 
-gint tpl_entry_get_pending_msg_id (TplEntry *self);
-
 G_END_DECLS
 #endif // __TPL_ENTRY_H__

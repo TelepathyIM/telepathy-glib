@@ -42,5 +42,7 @@ GType tpl_entry_text_get_type (void);
 
 const gchar *tpl_entry_text_get_message (TplEntryText *self);
 
+gint tpl_entry_text_get_pending_msg_id (TplEntryText *self);
+
 G_END_DECLS
 #endif // __TPL_ENTRY_TEXT_H__
