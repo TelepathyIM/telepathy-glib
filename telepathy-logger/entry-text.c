@@ -157,20 +157,22 @@ static void tpl_entry_text_class_init (TplEntryTextClass *klass)
   param_spec = g_param_spec_uint ("message-type",
       "MessageType",
       "The message type for a Text log entry",
-      0, G_MAXUINT32, TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, G_PARAM_READWRITE |
-      G_PARAM_STATIC_STRINGS);
+      0, G_MAXUINT32, TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE_TYPE, param_spec);
 
   param_spec = g_param_spec_string ("message",
       "Message",
       "The text message of the log entry",
-      NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+      NULL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE, param_spec);
 
   param_spec = g_param_spec_object ("tpl-channel-text",
       "TplChannelText",
       "The TplChannelText instance associated with the log entry, if any",
-      TPL_TYPE_CHANNEL_TEXT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+      TPL_TYPE_CHANNEL_TEXT,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TPL_CHANNEL_TEXT, param_spec);
 
   /**

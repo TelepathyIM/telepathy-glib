@@ -265,18 +265,15 @@ tpl_entry_class_init (TplEntryClass *klass)
   param_spec = g_param_spec_uint ("direction",
       "Direction",
       "The direction of the log entry (in/out)",
-      0, G_MAXUINT32, TPL_ENTRY_DIRECTION_NONE, G_PARAM_READWRITE |
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+      0, G_MAXUINT32, TPL_ENTRY_DIRECTION_NONE,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DIRECTION, param_spec);
 
-  /* FIXME: G_PARAM_CONSTRUCT and not G_PARAM_CONSTRUCT_ONLY because it needs to be
-   * set not at instance time in channel_text.c on_received_signal.
-   * It would be much better using G_PARAM_CONSTRUCT_ONLY */
   param_spec = g_param_spec_string ("chat-id",
       "ChatId",
       "The chat identifier to which the log entry is related.",
       NULL,
-      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY  | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHAT_ID, param_spec);
 
   param_spec = g_param_spec_string ("account-path",
@@ -290,19 +287,21 @@ tpl_entry_class_init (TplEntryClass *klass)
       "ChannelPath",
       "The channel path of the TpChannel to which the log entry is related",
       NULL,
-      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNEL_PATH, param_spec);
 
   param_spec = g_param_spec_object ("sender",
       "Sender",
       "TplContact instance who originated the log entry",
-      TPL_TYPE_CONTACT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+      TPL_TYPE_CONTACT,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SENDER, param_spec);
 
   param_spec = g_param_spec_object ("receiver",
       "Receiver",
       "TplContact instance destination for the log entry",
-      TPL_TYPE_CONTACT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+      TPL_TYPE_CONTACT,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_RECEIVER, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplEntryPriv));
