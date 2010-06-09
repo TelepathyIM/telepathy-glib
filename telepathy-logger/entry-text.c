@@ -50,7 +50,6 @@ enum
 {
   PROP_MESSAGE_TYPE = 1,
   PROP_MESSAGE,
-  PROP_TPL_CHANNEL_TEXT,
   PROP_PENDING_MSG_ID
 };
 
@@ -100,9 +99,6 @@ tpl_entry_text_get_property (GObject *object,
       case PROP_MESSAGE:
         g_value_set_string (value, priv->message);
         break;
-      case PROP_TPL_CHANNEL_TEXT:
-        g_value_set_object (value, priv->tpl_text);
-        break;
       case PROP_PENDING_MSG_ID:
         g_value_set_int (value, priv->pending_msg_id);
         break;
@@ -127,10 +123,6 @@ tpl_entry_text_set_property (GObject *object,
         break;
       case PROP_MESSAGE:
         _tpl_entry_text_set_message (self, g_value_get_string (value));
-        break;
-      case PROP_TPL_CHANNEL_TEXT:
-        _tpl_entry_text_set_tpl_channel_text (self,
-            g_value_get_object (value));
         break;
       case PROP_PENDING_MSG_ID:
         _tpl_entry_text_set_pending_msg_id (self, g_value_get_int (value));
@@ -167,13 +159,6 @@ static void tpl_entry_text_class_init (TplEntryTextClass *klass)
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE, param_spec);
-
-  param_spec = g_param_spec_object ("tpl-channel-text",
-      "TplChannelText",
-      "The TplChannelText instance associated with the log entry, if any",
-      TPL_TYPE_CHANNEL_TEXT,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TPL_CHANNEL_TEXT, param_spec);
 
   /**
    * TplEntryText::pending-msg-id:
