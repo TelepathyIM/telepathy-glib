@@ -246,12 +246,8 @@ tpl_entry_class_init (TplEntryClass *klass)
   /**
    * TplEntry::log-id:
    *
-   * A token which can be trusted as unique over time within TPL.
+   * A token identifying the entry.
    *
-   * Always use this token if you need to identify a TplEntry uniquely.
-   *
-   * @see_also: #Util:create_message_token for more information about how it's
-   * built.
    */
   param_spec = g_param_spec_string ("log-id",
       "LogId",
