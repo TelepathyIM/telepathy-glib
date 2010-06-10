@@ -62,16 +62,12 @@ IGNORE_HFILES=\
     channel-text-internal.h \
     conf-internal.h \
     contact-internal.h \
-    contact.h \
     datetime-internal.h \
     dbus-service-internal.h \
     debug-internal.h \
     entry-internal.h \
     entry-text-internal.h \
-    entry-text.h \
-    entry.h \
     log-manager-internal.h \
-    log-manager.h \
     log-store-factory-internal.h \
     log-store-internal.h \
     log-store-sqlite-internal.h \
