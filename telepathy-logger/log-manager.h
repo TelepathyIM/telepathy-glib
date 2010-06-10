@@ -42,7 +42,6 @@ G_BEGIN_DECLS
 
 typedef enum
 {
-  TPL_LOG_MANAGER_ERROR_FAILED,
   TPL_LOG_MANAGER_ERROR_ADD_MESSAGE
 } TplLogManagerError;
 
