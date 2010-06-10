@@ -33,6 +33,20 @@
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
+/**
+ * SECTION:entry-text
+ * @title: TplEntryText
+ * @short_description: Representation of a text log entry
+ *
+ * A subclass of #TpEntry representing a text log entry.
+ */
+
+/**
+ * TplEntryText:
+ *
+ * An object representing a text log entry.
+ */
+
 G_DEFINE_TYPE (TplEntryText, tpl_entry_text, TPL_TYPE_ENTRY)
 
 struct _TplEntryTextPriv
@@ -282,7 +296,12 @@ _tpl_entry_text_get_tpl_channel_text (TplEntryText * self)
   return self->priv->tpl_text;
 }
 
-
+/**
+ * tpl_entry_text_get_message
+ * @self: a #TplEntryText
+ *
+ * Returns: the same message as the #TplEntryText:message property
+ */
 const gchar *
 tpl_entry_text_get_message (TplEntryText * self)
 {
@@ -290,7 +309,6 @@ tpl_entry_text_get_message (TplEntryText * self)
 
   return self->priv->message;
 }
-
 
 TpChannelTextMessageType
 _tpl_entry_text_get_message_type (TplEntryText * self)
@@ -391,6 +409,12 @@ _tpl_entry_text_set_pending_msg_id (TplEntryText *self,
   g_object_notify (G_OBJECT (self), "pending-msg-id");
 }
 
+/**
+ * tpl_entry_text_get_pending_msg_id
+ * @self: a #TplEntryText
+ *
+ * Returns: the id as the #TplEntryText:pending-msg-id property
+ */
 gint
 tpl_entry_text_get_pending_msg_id (TplEntryText *self)
 {
