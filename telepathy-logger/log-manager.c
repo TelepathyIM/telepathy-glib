@@ -851,14 +851,8 @@ _tpl_log_manager_add_message_async (TplLogManager *manager,
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
-  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "manager argument passed is not a TplManager instance",
-      callback, user_data);
-  tpl_call_with_err_if_fail (TPL_IS_ENTRY (message), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "message argument passed is not a TplEntry instance",
-      callback, user_data);
+  g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
+  g_return_if_fail (TPL_IS_ENTRY (message));
 
   chat_info->logentry = g_object_ref (message);
 
@@ -970,18 +964,9 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
-  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "manager argument passed is not a TplManager instance",
-      callback, user_data);
-  tpl_call_with_err_if_fail (TP_IS_ACCOUNT (account), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "account argument is not a TpAccount instance",
-      callback, user_data);
-  tpl_call_with_err_if_fail (!TPL_STR_EMPTY (chat_id), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "chat_id argument passed cannot be empty string or NULL ptr",
-      callback, user_data);
+  g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+  g_return_if_fail (!TPL_STR_EMPTY (chat_id));
 
   chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);
@@ -1094,22 +1079,10 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
-  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "manager argument passed is not a TplManager instance",
-      callback, user_data);
-  tpl_call_with_err_if_fail (TP_IS_ACCOUNT (account), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "account argument is not a TpAccount instance",
-      callback, user_data);
-  tpl_call_with_err_if_fail (!TPL_STR_EMPTY (chat_id), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "chat_id argument passed cannot be empty string or NULL ptr",
-      callback, user_data);
-  tpl_call_with_err_if_fail (date != NULL, manager,
-      TPL_LOG_MANAGER, FAILED,
-      "date argument passed cannot be NULL ptr",
-      callback, user_data);
+  g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+  g_return_if_fail (!TPL_STR_EMPTY (chat_id));
+  g_return_if_fail (date != NULL);
 
   chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);
@@ -1225,22 +1198,10 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
-  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "manager argument passed is not a TplManager instance",
-      callback, user_data);
-  tpl_call_with_err_if_fail (TP_IS_ACCOUNT (account), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "account argument is not a TpAccount instance",
-      callback, user_data);
-  tpl_call_with_err_if_fail (!TPL_STR_EMPTY (chat_id), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "chat_id argument passed cannot be empty string or NULL ptr",
-      callback, user_data);
-  tpl_call_with_err_if_fail ((num_messages > 0), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "num_message argument passed needs to be greater than 0",
-      callback, user_data);
+  g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+  g_return_if_fail (!TPL_STR_EMPTY (chat_id));
+  g_return_if_fail (num_messages > 0);
 
   chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);
@@ -1345,14 +1306,8 @@ tpl_log_manager_get_chats_async (TplLogManager *self,
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
-  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (self), self,
-      TPL_LOG_MANAGER, FAILED,
-      "manager argument is not a TplManager instance",
-      callback, user_data);
-  tpl_call_with_err_if_fail (TP_IS_ACCOUNT (account), self,
-      TPL_LOG_MANAGER, FAILED,
-      "account argument is not a TpAccount instance",
-      callback, user_data);
+  g_return_if_fail (TPL_IS_LOG_MANAGER (self));
+  g_return_if_fail (TP_IS_ACCOUNT (account));
 
   chat_info->account = g_object_ref (account);
 
@@ -1440,14 +1395,8 @@ _tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
-  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "manager argument is not a TplManager instance",
-      callback, user_data);
-  tpl_call_with_err_if_fail (TP_IS_ACCOUNT (account), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "account argument is not a TpAccount instance",
-      callback, user_data);
+  g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
+  g_return_if_fail (TP_IS_ACCOUNT (account));
 
   chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (identifier);
@@ -1550,10 +1499,7 @@ tpl_log_manager_search_async (TplLogManager *manager,
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
-  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
-      TPL_LOG_MANAGER, FAILED,
-      "manager argument is not a TplManager instance",
-      callback, user_data);
+  g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
 
   chat_info->search_text = g_strdup (text);
 

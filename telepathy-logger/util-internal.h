@@ -27,20 +27,6 @@
 
 #define TPL_STR_EMPTY(x) ((x) == NULL || (x)[0] == '\0')
 
-#define tpl_call_with_err_if_fail(guard, obj, PREFIX, POSTFIX, msg, func, user_data) \
-  if (!(guard)) \
-    { \
-      if (func != NULL) \
-        { \
-          GSimpleAsyncResult *result=NULL; \
-          g_simple_async_result_set_error (result, PREFIX ## _ERROR, \
-              PREFIX ## _ERROR_ ## POSTFIX, \
-              msg); \
-          return func (G_OBJECT (obj), G_ASYNC_RESULT (result), user_data); \
-        } \
-      return; \
-    }
-
 gchar *_tpl_create_message_token (const gchar *channel, gint64 timestamp,
     guint msgid);
 
