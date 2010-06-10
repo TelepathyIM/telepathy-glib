@@ -68,6 +68,12 @@
  * Returns: %TRUE if @message should appear in the result
  */
 
+/**
+ * TPL_LOG_MANAGER_ERRORS:
+ *
+ * The error domain for the #TplLogManager.
+ */
+
 typedef struct
 {
   GList *stores;
@@ -283,7 +289,7 @@ _tpl_log_manager_add_message (TplLogManager *manager,
     {
       CRITICAL ("Failed to write to all "
           "writable LogStores log-id %s.", _tpl_entry_get_log_id (message));
-      g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
+      g_set_error_literal (error, TPL_LOG_MANAGER_ERRORS,
           TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
           "Not recoverable error occurred during log manager's "
           "add_message() execution");
@@ -1516,4 +1522,25 @@ tpl_log_manager_search_async (TplLogManager *manager,
 
   g_simple_async_result_run_in_thread (simple, _search_async_thread, 0,
       NULL);
+}
+
+/**
+ * tpl_log_manager_errors_quark:
+ *
+ * Returns: the #GQuark associated with the error domain of #TplLogManager
+ */
+GQuark
+tpl_log_manager_errors_quark (void)
+{
+  static gsize quark = 0;
+
+  if (g_once_init_enter (&quark))
+    {
+      GQuark domain = g_quark_from_static_string (
+          "tpl_log_manager_errors");
+
+      g_once_init_leave (&quark, domain);
+    }
+
+  return (GQuark) quark;
 }
