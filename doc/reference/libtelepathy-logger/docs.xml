@@ -7,28 +7,13 @@
   </bookinfo>
 
   <chapter id="ch-public">
-    <title>Public API</title>
+    <title>libtelepathy-logger API</title>
 
     <xi:include href="xml/log-manager.xml"/>
     <xi:include href="xml/entry.xml"/>
     <xi:include href="xml/entry-text.xml"/>
     <xi:include href="xml/contact.xml"/>
-    <xi:include href="xml/conf.xml"/>
   </chapter>
 
-  <chapter id="ch-internal">
-    <title>Internal API (at least for now)</title>
-
-    <xi:include href="xml/channel-factory.xml"/>
-    <xi:include href="xml/channel-text.xml"/>
-    <xi:include href="xml/channel.xml"/>
-    <xi:include href="xml/dbus-service.xml"/>
-    <xi:include href="xml/log-store-factory.xml"/>
-    <xi:include href="xml/log-store-sqlite.xml"/>
-    <xi:include href="xml/log-store.xml"/>
-    <xi:include href="xml/log-store-xml.xml"/>
-    <xi:include href="xml/observer.xml"/>
-
-  </chapter>
 </book>
 <!-- set sts=2 sw=2 et -->
