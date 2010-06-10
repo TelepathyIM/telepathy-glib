@@ -46,6 +46,28 @@
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
+/**
+ * SECTION:log-manager
+ * @title: TplLogManager
+ * @short_description: Fetch and search trough logs
+ *
+ * The #TplLogManager object allows user to fetch logs and make searches.
+ */
+
+/**
+ * TplLogManager:
+ *
+ * An object used to access logs
+ */
+
+/**
+ * TplLogMessageFilter:
+ * @message: the #TplEntry to filter
+ * @user_data: user-supplied data
+ *
+ * Returns: %TRUE if @message should appear in the result
+ */
+
 typedef struct
 {
   GList *stores;
@@ -196,6 +218,11 @@ tpl_log_manager_init (TplLogManager *self)
 }
 
 
+/**
+ * tpl_log_manager_dup_singleton
+ *
+ * Returns: a new reference on the log manager
+ */
 TplLogManager *
 tpl_log_manager_dup_singleton (void)
 {
@@ -698,7 +725,12 @@ _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
   g_slice_free (TplLogSearchHit, hit);
 }
 
-
+/**
+ * tpl_log_manager_search_free:
+ * @hits: a #GList of #TplLogSearchHit
+ *
+ * Free @hists and its content.
+ */
 void
 tpl_log_manager_search_free (GList *hits)
 {
@@ -847,7 +879,7 @@ _tpl_log_manager_add_message_async (TplLogManager *manager,
 
 /**
  * tpl_log_manager_get_dates_finish:
- * @manager: a #TplLogManager
+ * @self: a #TplLogManager
  * @result: a #GAsyncResult
  * @dates: a pointer to a #GList used to return the list of #GDate
  * @error: a #GError to fill
@@ -914,14 +946,14 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
  * @manager: a #TplLogManager
  * @account: a #TpAccount
  * @chat_id: the chat identifier (can't be %NULL)
- * @chatroom: whather if the request is related to a chatroom or not.
+ * @is_chatroom: whather if the request is related to a chatroom or not.
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
  * Retrieves a list of #GDate corresponding to each day
  * at least a message was sent to or received from @chat_id.
  * @chat_id may be the id of a buddy or a chatroom, depending on the value of
- * @chatroom.
+ * @is_chatroom.
  *
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
@@ -971,8 +1003,8 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
 }
 
 /**
- * tpl_log_manager_get_dates_finish:
- * @manager: a #TplLogManager
+ * tpl_log_manager_get_messages_for_date_finish
+ * @self: a #TplLogManager
  * @result: a #GAsyncResult
  * @messages: a pointer to a #GList used to return the list of #GDate
  * @error: a #GError to fill
@@ -1038,11 +1070,11 @@ _get_messages_for_date_async_thread (GSimpleAsyncResult *simple,
 }
 
 /**
- * tpl_log_manager_get_messages_for_date_async:
+ * tpl_log_manager_get_messages_for_date_async
  * @manager: a #TplLogManager
  * @account: a #TpAccount
  * @chat_id: the chat identifier (can't be %NULL)
- * @chatroom: %TRUE if the request is related to a chatroom
+ * @is_chatroom: %TRUE if the request is related to a chatroom
  * @date: a #GDate
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
@@ -1102,7 +1134,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
 
 /**
  * tpl_log_manager_get_filtered_messages_finish:
- * @manager: a #TplLogManager
+ * @self: a #TplLogManager
  * @result: a #GAsyncResult
  * @messages: a pointer to a #GList used to return the list #TplEntry
  * @error: a #GError to fill
@@ -1233,8 +1265,8 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
 }
 
 /**
- * tpl_log_manager_get_filtered_messages_finish:
- * @manager: a #TplLogManager
+ * tpl_log_manager_get_chats_finish:
+ * @self: a #TplLogManager
  * @result: a #GAsyncResult
  * @chats: a pointer to a #GList used to return the list of chats
  * @error: a #GError to fill
@@ -1294,9 +1326,17 @@ _get_chats_async_thread (GSimpleAsyncResult *simple,
       _get_chats_async_result_free);
 }
 
-
+/**
+ * tpl_log_manager_get_chats_async:
+ * @self: a #TplLogManager
+ * @account: a #TpAccount
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Start a query looking for all the conversations on @account.
+ */
 void
-tpl_log_manager_get_chats_async (TplLogManager *manager,
+tpl_log_manager_get_chats_async (TplLogManager *self,
     TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1430,7 +1470,7 @@ _tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 
 /**
  * tpl_log_manager_search_finish:
- * @manager: a #TplLogManager
+ * @self: a #TplLogManager
  * @result: a #GAsyncResult
  * @chats: a pointer to a #GList used to return the list of #TplLogSearchHit
  * @error: a #GError to fill

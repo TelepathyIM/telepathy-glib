@@ -43,7 +43,6 @@ G_BEGIN_DECLS
 
 typedef enum
 {
-  /* generic error */
   TPL_LOG_MANAGER_ERROR_FAILED,
   TPL_LOG_MANAGER_ERROR_ADD_MESSAGE
 } TplLogManagerError;
@@ -113,7 +112,7 @@ gboolean tpl_log_manager_get_chats_finish (TplLogManager *self,
     GList **chats,
     GError **error);
 
-void tpl_log_manager_get_chats_async (TplLogManager *manager,
+void tpl_log_manager_get_chats_async (TplLogManager *self,
     TpAccount *account, GAsyncReadyCallback callback, gpointer user_data);
 
 gboolean tpl_log_manager_search_finish (TplLogManager *self,
