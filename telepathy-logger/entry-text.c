@@ -324,8 +324,10 @@ _tpl_entry_text_set_message (TplEntryText *self,
 {
   TplEntryTextPriv *priv;
 
+  if (data == NULL)
+    return;
+
   g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
-  g_return_if_fail (data != NULL); /* allow zero length */
 
   priv = self->priv;
 

@@ -447,8 +447,11 @@ _tpl_entry_set_sender (TplEntry *self,
 {
   TplEntryPriv *priv;
 
+  if (data == NULL)
+    return;
+
   g_return_if_fail (TPL_IS_ENTRY (self));
-  g_return_if_fail (TPL_IS_CONTACT (data) || data == NULL);
+  g_return_if_fail (TPL_IS_CONTACT (data));
 
   priv = self->priv;
 
@@ -465,8 +468,11 @@ _tpl_entry_set_receiver (TplEntry *self,
 {
   TplEntryPriv *priv;
 
+  if (data == NULL)
+    return;
+
   g_return_if_fail (TPL_IS_ENTRY (self));
-  g_return_if_fail (TPL_IS_CONTACT (data) || data == NULL);
+  g_return_if_fail (TPL_IS_CONTACT (data));
 
   priv = self->priv;
 
@@ -483,6 +489,9 @@ void
 _tpl_entry_set_chat_id (TplEntry *self,
     const gchar *data)
 {
+  if (data == NULL)
+    return;
+
   g_return_if_fail (TPL_IS_ENTRY (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
   g_return_if_fail (self->priv->chat_id == NULL);
@@ -509,6 +518,9 @@ void
 _tpl_entry_set_channel_path (TplEntry *self,
     const gchar *data)
 {
+  if (data == NULL)
+    return;
+
   g_return_if_fail (TPL_IS_ENTRY (self));
   g_return_if_fail (!TPL_STR_EMPTY (data));
   g_return_if_fail (self->priv->channel_path == NULL);
