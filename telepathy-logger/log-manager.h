@@ -39,7 +39,6 @@ G_BEGIN_DECLS
 #define TPL_LOG_MANAGER_GET_CLASS(o)  (G_TYPE_INSTANCE_GET_CLASS ((o), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
 
 #define TPL_LOG_MANAGER_ERROR g_quark_from_static_string ("tpl-log-manager-error-quark")
-#define TPL_LOG_MANAGER_LOG_STORE_DEFAULT "TpLogger"
 
 typedef enum
 {

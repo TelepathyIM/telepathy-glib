@@ -1345,25 +1345,25 @@ tpl_log_manager_get_chats_async (TplLogManager *self,
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
-  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (manager), manager,
+  tpl_call_with_err_if_fail (TPL_IS_LOG_MANAGER (self), self,
       TPL_LOG_MANAGER, FAILED,
       "manager argument is not a TplManager instance",
       callback, user_data);
-  tpl_call_with_err_if_fail (TP_IS_ACCOUNT (account), manager,
+  tpl_call_with_err_if_fail (TP_IS_ACCOUNT (account), self,
       TPL_LOG_MANAGER, FAILED,
       "account argument is not a TpAccount instance",
       callback, user_data);
 
   chat_info->account = g_object_ref (account);
 
-  async_data->manager = g_object_ref (manager);
+  async_data->manager = g_object_ref (self);
   async_data->request = chat_info;
   async_data->request_free =
     (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
-  simple = g_simple_async_result_new (G_OBJECT (manager),
+  simple = g_simple_async_result_new (G_OBJECT (self),
       _tpl_log_manager_async_operation_cb, async_data,
       tpl_log_manager_get_chats_async);
 
