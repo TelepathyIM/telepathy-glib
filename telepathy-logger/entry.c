@@ -42,6 +42,12 @@
  */
 
 /**
+ * TplEntry:
+ *
+ * An object representing a generic log entry.
+ */
+
+/**
  * TPL_ENTRY_MSG_ID_IS_VALID:
  * @msg: a message ID
  *
@@ -312,7 +318,12 @@ tpl_entry_init (TplEntry *self)
   self->priv = priv;
 }
 
-
+/**
+ * tpl_entry_get_timestamp
+ * @self: a #TplEntry
+ *
+ * Returns: the same timestamp as the #TplEntry:timestamp property
+ */
 gint64
 tpl_entry_get_timestamp (TplEntry *self)
 {
@@ -320,7 +331,6 @@ tpl_entry_get_timestamp (TplEntry *self)
 
   return self->priv->timestamp;
 }
-
 
 TplEntrySignalType
 _tpl_entry_get_signal_type (TplEntry *self)
@@ -349,7 +359,12 @@ _tpl_entry_get_direction (TplEntry *self)
   return self->priv->direction;
 }
 
-
+/**
+ * tpl_entry_get_sender
+ * @self: a #TplEntry
+ *
+ * Returns: the same #TplContact as the #TplEntry:sender property
+ */
 TplContact *
 tpl_entry_get_sender (TplEntry *self)
 {
@@ -358,7 +373,12 @@ tpl_entry_get_sender (TplEntry *self)
   return self->priv->sender;
 }
 
-
+/**
+ * tpl_entry_get_receiver
+ * @self: a #TplEntry
+ *
+ * Returns: the same #TplContact as the #TplEntry:receiver property
+ */
 TplContact *
 tpl_entry_get_receiver (TplEntry *self)
 {
@@ -377,6 +397,12 @@ _tpl_entry_get_chat_id (TplEntry *self)
 }
 
 
+/**
+ * tpl_entry_get_account_path
+ * @self: a #TplEntry
+ *
+ * Returns: the same path as the #TplEntry:account-path property
+ */
 const gchar *
 tpl_entry_get_account_path (TplEntry *self)
 {
