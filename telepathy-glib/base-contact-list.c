@@ -715,7 +715,6 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->add_to_group != NULL);
       g_return_if_fail (iface->remove_from_group != NULL);
       g_return_if_fail (iface->remove_group != NULL);
-      g_return_if_fail (iface->get_group_storage != NULL);
     }
 
   _tp_base_connection_set_handle_repo (self->priv->conn, TP_HANDLE_TYPE_LIST,
