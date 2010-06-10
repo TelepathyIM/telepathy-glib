@@ -67,8 +67,6 @@ typedef struct
 
 GType tpl_contact_get_type (void);
 
-TplContact *tpl_contact_from_tp_contact (TpContact *contact);
-
 const gchar *tpl_contact_get_alias (TplContact *self);
 const gchar *tpl_contact_get_identifier (TplContact *self);
 TplContactType tpl_contact_get_contact_type (TplContact *self);
