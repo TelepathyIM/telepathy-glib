@@ -26,6 +26,20 @@
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
+/**
+ * SECTION:contact
+ * @title: TplContact
+ * @short_description: Representation of a contact or chatroom
+ *
+ * An object representing a contact or chatroom.
+ */
+
+/**
+ * TplContact:
+ *
+ * An object representing a contact or chatroom.
+ */
+
 G_DEFINE_TYPE (TplContact, tpl_contact, G_TYPE_OBJECT)
 
 struct _TplContactPriv
@@ -238,7 +252,12 @@ _tpl_contact_new (const gchar *identifier)
       "identifier", identifier, NULL);
 }
 
-
+/**
+ * tpl_contact_get_alias:
+ * @self: a #TplContact
+ *
+ * Returns: the alias of the contact, or %NULL
+ */
 const gchar *
 tpl_contact_get_alias (TplContact *self)
 {
@@ -247,7 +266,12 @@ tpl_contact_get_alias (TplContact *self)
   return self->priv->alias;
 }
 
-
+/**
+ * tpl_contact_get_identifier:
+ * @self: a #TplContact
+ *
+ * Returns: the identifier of the contact
+ */
 const gchar *
 tpl_contact_get_identifier (TplContact *self)
 {
@@ -256,7 +280,12 @@ tpl_contact_get_identifier (TplContact *self)
   return self->priv->identifier;
 }
 
-
+/**
+ * tpl_contact_get_contact_type:
+ * @self: a #TplContact
+ *
+ * Returns: the type of the contact
+ */
 TplContactType
 tpl_contact_get_contact_type (TplContact *self)
 {
@@ -266,6 +295,12 @@ tpl_contact_get_contact_type (TplContact *self)
 }
 
 
+/**
+ * tpl_contact_get_avatar_token:
+ * @self: a #TplContact
+ *
+ * Returns: a token representing the avatar of the token, or %NULL
+ */
 const gchar *
 tpl_contact_get_avatar_token (TplContact *self)
 {
