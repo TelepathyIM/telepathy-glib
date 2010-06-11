@@ -69,7 +69,7 @@
  */
 
 /**
- * TPL_LOG_MANAGER_ERRORS:
+ * TPL_LOG_MANAGER_ERROR:
  *
  * The error domain for the #TplLogManager.
  */
@@ -289,7 +289,7 @@ _tpl_log_manager_add_message (TplLogManager *manager,
     {
       CRITICAL ("Failed to write to all "
           "writable LogStores log-id %s.", _tpl_entry_get_log_id (message));
-      g_set_error_literal (error, TPL_LOG_MANAGER_ERRORS,
+      g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
           TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
           "Not recoverable error occurred during log manager's "
           "add_message() execution");

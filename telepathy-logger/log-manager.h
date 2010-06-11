@@ -38,7 +38,7 @@ G_BEGIN_DECLS
 #define TPL_IS_LOG_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), TPL_TYPE_LOG_MANAGER))
 #define TPL_LOG_MANAGER_GET_CLASS(o)  (G_TYPE_INSTANCE_GET_CLASS ((o), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
 
-#define TPL_LOG_MANAGER_ERRORS tpl_log_manager_errors_quark()
+#define TPL_LOG_MANAGER_ERROR tpl_log_manager_errors_quark()
 
 GQuark tpl_log_manager_errors_quark (void);
 
