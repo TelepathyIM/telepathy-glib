@@ -49,7 +49,7 @@
 /**
  * SECTION:log-manager
  * @title: TplLogManager
- * @short_description: Fetch and search trough logs
+ * @short_description: Fetch and search through logs
  *
  * The #TplLogManager object allows user to fetch logs and make searches.
  */
@@ -735,7 +735,7 @@ _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
  * tpl_log_manager_search_free:
  * @hits: a #GList of #TplLogSearchHit
  *
- * Free @hists and its content.
+ * Free @hits and its content.
  */
 void
 tpl_log_manager_search_free (GList *hits)
