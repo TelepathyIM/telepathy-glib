@@ -7,6 +7,7 @@
 <xi:include href="../spec/Connection.xml"/>
 
 <xi:include href="../spec/Connection_Interface_Aliasing.xml"/>
+<xi:include href="../spec/Connection_Interface_Anonymity.xml"/>
 <xi:include href="../spec/Connection_Interface_Avatars.xml"/>
 <xi:include href="../spec/Connection_Interface_Balance.xml"/>
 <xi:include href="../spec/Connection_Interface_Capabilities.xml"/>
@@ -17,5 +18,6 @@
 <xi:include href="../spec/Connection_Interface_Contacts.xml"/>
 <xi:include href="../spec/Connection_Interface_Requests.xml"/>
 <xi:include href="../spec/Connection_Interface_Location.xml"/>
+<xi:include href="../spec/Connection_Interface_Service_Point.xml"/>
 
 </tp:spec>
