@@ -1011,7 +1011,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.7
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_ERROR,
       g_param_spec_string ("connection-error",
@@ -1042,7 +1042,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_proxy_prepare_async() has finished; until then, the value is
    * an empty map.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.7
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_ERROR_DETAILS,
       g_param_spec_boxed ("connection-error-details",
@@ -1306,7 +1306,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The @dbus_error_name and @details parameters were present, but
    * non-functional (always %NULL), in older versions. They have been
-   * available with their current behaviour since version 0.11.UNRELEASED.
+   * available with their current behaviour since version 0.11.7.
    *
    * Since: 0.9.0
    */
@@ -2924,7 +2924,7 @@ tp_account_set_avatar_async (TpAccount *self,
  *
  * Returns: (transfer none) (allow-none): a D-Bus error name, or %NULL.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 const gchar *
 tp_account_get_detailed_error (TpAccount *self,

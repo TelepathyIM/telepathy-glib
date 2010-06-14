@@ -1347,7 +1347,7 @@ _tp_channel_dispatch_operation_new_with_objects (TpDBusDaemon *bus_daemon,
  *
  * This method has been introduced in telepathy-mission-control 5.5.0.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 void
 tp_channel_dispatch_operation_handle_with_time_async (
@@ -1380,7 +1380,7 @@ tp_channel_dispatch_operation_handle_with_time_async (
  *
  * Returns: %TRUE if the HandleWithTime() call was successful, otherwise %FALSE
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 gboolean
   tp_channel_dispatch_operation_handle_with_time_finish (

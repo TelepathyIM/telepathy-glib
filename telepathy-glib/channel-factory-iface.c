@@ -29,10 +29,10 @@
  * requests from the connection, and responds to channel-related events
  * on the underlying network connection (e.g. incoming calls).
  *
- * Deprecated since version 0.11.UNRELEASED. Use #TpChannelManager, a newer
+ * Deprecated since version 0.11.7. Use #TpChannelManager, a newer
  * interface which can be used to implement modern D-Bus APIs, instead.
  *
- * Deprecated: 0.11.UNRELEASED
+ * Deprecated: 0.11.7
  */
 
 #include <telepathy-glib/channel-factory-iface.h>
@@ -143,9 +143,9 @@ tp_channel_factory_iface_get_type (void)
  * disconnected state, before either emitting the StatusChanged signal or
  * calling disconnected().
  *
- * Deprecated since version 0.11.UNRELEASED. Use #TpChannelManager instead.
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
  *
- * Deprecated: 0.11.UNRELEASED
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_close_all (TpChannelFactoryIface *self)
@@ -163,9 +163,9 @@ tp_channel_factory_iface_close_all (TpChannelFactoryIface *self)
  * Indicate that the connection has gone from disconnected to connecting
  * state.
  *
- * Deprecated since version 0.11.UNRELEASED. Use #TpChannelManager instead.
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
  *
- * Deprecated: 0.11.UNRELEASED
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_connecting (TpChannelFactoryIface *self)
@@ -182,9 +182,9 @@ tp_channel_factory_iface_connecting (TpChannelFactoryIface *self)
  *
  * Indicate that the connection has gone from connecting to connected state.
  *
- * Deprecated since version 0.11.UNRELEASED. Use #TpChannelManager instead.
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
  *
- * Deprecated: 0.11.UNRELEASED
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_connected (TpChannelFactoryIface *self)
@@ -201,9 +201,9 @@ tp_channel_factory_iface_connected (TpChannelFactoryIface *self)
  *
  * Indicate that the connection has become disconnected.
  *
- * Deprecated since version 0.11.UNRELEASED. Use #TpChannelManager instead.
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
  *
- * Deprecated: 0.11.UNRELEASED
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_disconnected (TpChannelFactoryIface *self)
@@ -222,9 +222,9 @@ tp_channel_factory_iface_disconnected (TpChannelFactoryIface *self)
  *
  * Call func(channel, data) for each channel managed by this factory.
  *
- * Deprecated since version 0.11.UNRELEASED. Use #TpChannelManager instead.
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
  *
- * Deprecated: 0.11.UNRELEASED
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_foreach (TpChannelFactoryIface *self,
@@ -258,9 +258,9 @@ tp_channel_factory_iface_foreach (TpChannelFactoryIface *self,
  *
  * Request a channel.
  *
- * Deprecated since version 0.11.UNRELEASED. Use #TpChannelManager instead.
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
  *
- * Deprecated: 0.11.UNRELEASED
+ * Deprecated: 0.11.7
  *
  * Returns: one of the values of #TpChannelFactoryRequestStatus, and
  *          behaves as documented for that return value
@@ -301,9 +301,9 @@ tp_channel_factory_iface_request (TpChannelFactoryIface *self,
  * to determine which channels satisfy which requests based on the handle
  * and handle-type.
  *
- * Deprecated since version 0.11.UNRELEASED. Use #TpChannelManager instead.
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
  *
- * Deprecated: 0.11.UNRELEASED
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_emit_new_channel (gpointer instance,
@@ -326,9 +326,9 @@ tp_channel_factory_iface_emit_new_channel (gpointer instance,
  *
  * request is as for tp_channel_factory_iface_emit_new_channel().
  *
- * Deprecated since version 0.11.UNRELEASED. Use #TpChannelManager instead.
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
  *
- * Deprecated: 0.11.UNRELEASED
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_emit_channel_error (gpointer instance,

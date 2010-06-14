@@ -171,7 +171,7 @@
  *     earlier request for anonymity, and the earlier request specified
  *     that raising an error is preferable to disclosing the user's
  *     identity
- *     Since 0.11.UNRELEASED
+ *     Since 0.11.7
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

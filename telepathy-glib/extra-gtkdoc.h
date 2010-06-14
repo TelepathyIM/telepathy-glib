@@ -694,7 +694,7 @@
  * This section documents the auto-generated C wrappers for the
  * Anonymity interfaces, used with #TpConnection and #TpChannel objects.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 
 /**
@@ -710,7 +710,7 @@
  * This section documents the auto-generated GInterfaces used to implement the
  * Anonymity interfaces.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 
 /**
@@ -728,7 +728,7 @@
  * This section documents the auto-generated C wrappers for the
  * ServicePoint interfaces, used with #TpConnection and #TpChannel objects.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 
 /**
@@ -745,5 +745,5 @@
  * This section documents the auto-generated GInterfaces used to implement the
  * ServicePoint interfaces.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
