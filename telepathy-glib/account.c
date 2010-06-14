@@ -136,6 +136,8 @@ enum {
   PROP_CURRENT_STATUS_MESSAGE,
   PROP_CONNECTION_STATUS,
   PROP_CONNECTION_STATUS_REASON,
+  PROP_CONNECTION_ERROR,
+  PROP_CONNECTION_ERROR_DETAILS,
   PROP_CONNECTION,
   PROP_DISPLAY_NAME,
   PROP_CONNECTION_MANAGER,
@@ -258,6 +260,8 @@ _tp_account_invalidated_cb (TpAccount *self,
 
       g_object_notify ((GObject *) self, "connection-status");
       g_object_notify ((GObject *) self, "connection-status-reason");
+      g_object_notify ((GObject *) self, "connection-error");
+      g_object_notify ((GObject *) self, "connection-error-details");
     }
 }
 
@@ -544,6 +548,8 @@ _tp_account_update (TpAccount *account,
 
       g_object_notify (G_OBJECT (account), "connection-status");
       g_object_notify (G_OBJECT (account), "connection-status-reason");
+      g_object_notify (G_OBJECT (account), "connection-error");
+      g_object_notify (G_OBJECT (account), "connection-error-details");
     }
 
   if (presence_changed)
@@ -711,6 +717,12 @@ _tp_account_get_property (GObject *object,
       break;
     case PROP_CONNECTION_STATUS_REASON:
       g_value_set_uint (value, self->priv->reason);
+      break;
+    case PROP_CONNECTION_ERROR:
+      g_value_set_string (value, self->priv->error);
+      break;
+    case PROP_CONNECTION_ERROR_DETAILS:
+      g_value_set_boxed (value, self->priv->error_details);
       break;
     case PROP_CONNECTION:
       g_value_set_object (value,
@@ -981,6 +993,62 @@ tp_account_class_init (TpAccountClass *klass)
           0,
           NUM_TP_CONNECTION_STATUS_REASONS,
           TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:connection-error:
+   *
+   * The D-Bus error name for the last disconnection or connection failure,
+   * (in particular, %TP_ERROR_STR_CANCELLED if it was disconnected by user
+   * request), or %NULL if the account is connected.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #TpAccount::status-changed signal, or by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_proxy_prepare_async() has finished; until then, the value is
+   * %NULL.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_CONNECTION_ERROR,
+      g_param_spec_string ("connection-error",
+          "ConnectionError",
+          "The account's last connection error",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:connection-error-details:
+   *
+   * A map from string to #GValue containing extensible error details
+   * related to #TpAccount:connection-error. Functions like tp_asv_get_string()
+   * can be used to read from this map.
+   *
+   * The keys for this map are defined by
+   * <ulink url="http://telepathy.freedesktop.org/spec/">the Telepathy D-Bus
+   * Interface Specification</ulink>. They will typically include
+   * <literal>debug-message</literal>, which is a debugging message in the C
+   * locale, analogous to #GError.message.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #TpAccount::status-changed signal, or by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_proxy_prepare_async() has finished; until then, the value is
+   * an empty map.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_CONNECTION_ERROR_DETAILS,
+      g_param_spec_boxed ("connection-error-details",
+          "ConnectionErrorDetails",
+          "Extensible details of the account's last connection error",
+          G_TYPE_HASH_TABLE,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
