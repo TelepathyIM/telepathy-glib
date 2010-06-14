@@ -903,7 +903,6 @@ tp_contact_class_init (TpContactClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONTACT_INFO,
       param_spec);
- 
 
   /**
    * TpContact::presence-changed:
