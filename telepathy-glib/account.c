@@ -303,6 +303,7 @@ _tp_account_update (TpAccount *account,
   TpAccountPrivate *priv = account->priv;
   GValueArray *arr;
   TpConnectionStatus old_s = priv->connection_status;
+  TpConnectionStatusReason old_r = priv->reason;
   gboolean presence_changed = FALSE;
 
   if (g_hash_table_lookup (properties, "Interfaces") != NULL)
@@ -442,7 +443,7 @@ _tp_account_update (TpAccount *account,
           parameters);
     }
 
-  if (priv->connection_status != old_s)
+  if (priv->connection_status != old_s || priv->reason != old_r)
     {
       g_signal_emit (account, signals[STATUS_CHANGED], 0,
           old_s, priv->connection_status, priv->reason, NULL, NULL);
