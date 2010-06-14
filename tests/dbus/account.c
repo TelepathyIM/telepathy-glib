@@ -253,6 +253,7 @@ test_prepare_success (Test *test,
   TpConnectionStatusReason reason;
   gchar *status = NULL;
   gchar *message = NULL;
+  const GHashTable *details = GUINT_TO_POINTER (666);
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -277,6 +278,12 @@ test_prepare_success (Test *test,
   g_assert_cmpint (tp_account_get_connection_status (test->account, &reason),
       ==, TP_CONNECTION_STATUS_CONNECTED);
   g_assert_cmpint (reason, ==, TP_CONNECTION_STATUS_REASON_REQUESTED);
+  g_assert_cmpstr (tp_account_get_detailed_error (test->account, NULL), ==,
+      NULL);
+  g_assert_cmpstr (tp_account_get_detailed_error (test->account, &details), ==,
+      NULL);
+  /* this is documented to be untouched */
+  g_assert_cmpuint (GPOINTER_TO_UINT (details), ==, 666);
 
   /* the CM and protocol come from the object path */
   g_assert_cmpstr (tp_account_get_connection_manager (test->account),
@@ -320,6 +327,7 @@ test_connection (Test *test,
   GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
   GHashTable *change = tp_asv_new (NULL, NULL);
   TpConnection *conn;
+  const GHashTable *details;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -348,6 +356,9 @@ test_connection (Test *test,
   conn = tp_account_get_connection (test->account);
   g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
+
+  g_assert_cmpstr (tp_account_get_detailed_error (test->account, NULL), ==,
+      TP_ERROR_STR_CANCELLED);
 
   /* ensure the same connection - no change notification */
 
@@ -410,6 +421,54 @@ test_connection (Test *test,
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
   conn = tp_account_get_connection (test->account);
   g_assert (conn == NULL);
+
+  g_assert_cmpstr (tp_account_get_detailed_error (test->account, NULL), ==,
+      TP_ERROR_STR_ENCRYPTION_ERROR);
+
+  /* another connection */
+
+  test_set_up_account_notify (test);
+  tp_asv_set_object_path (change, "Connection", CONN1_PATH);
+  tp_asv_set_uint32 (change, "ConnectionStatus",
+      TP_CONNECTION_STATUS_CONNECTING);
+  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+  tp_svc_account_emit_account_property_changed (test->account_service, change);
+  g_hash_table_remove_all (change);
+
+  tp_tests_proxy_run_until_dbus_queue_processed (test->account);
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
+
+  /* lose the connection again */
+
+  test_set_up_account_notify (test);
+  tp_asv_set_object_path (change, "Connection", "/");
+  tp_asv_set_uint32 (change, "ConnectionStatus",
+      TP_CONNECTION_STATUS_DISCONNECTED);
+  tp_asv_set_uint32 (change, "ConnectionStatusReason",
+      TP_CONNECTION_STATUS_REASON_ENCRYPTION_ERROR);
+  tp_asv_set_static_string (change, "ConnectionError",
+      "org.debian.packages.OpenSSL.NotRandomEnough");
+  tp_asv_take_boxed (change, "ConnectionErrorDetails",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      tp_asv_new (
+        "bits-of-entropy", G_TYPE_UINT, 15,
+        "debug-message", G_TYPE_STRING, "shiiiiii-",
+        NULL));
+  tp_svc_account_emit_account_property_changed (test->account_service, change);
+  g_hash_table_remove_all (change);
+
+  tp_tests_proxy_run_until_dbus_queue_processed (test->account);
+  g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
+  g_assert_cmpuint (test_get_times_notified (test, "connection-error"), ==, 1);
+
+  g_assert_cmpstr (tp_account_get_detailed_error (test->account, &details), ==,
+      "org.debian.packages.OpenSSL.NotRandomEnough");
+  g_assert_cmpuint (tp_asv_size (details), >=, 2);
+  g_assert_cmpstr (tp_asv_get_string (details, "debug-message"), ==,
+      "shiiiiii-");
+  g_assert_cmpuint (tp_asv_get_uint32 (details, "bits-of-entropy", NULL), ==,
+      15);
 
   /* staple on a Connection (this is intended for use in e.g. observers,
    * if they're told about a Connection that the Account hasn't told them
