@@ -881,8 +881,6 @@ tp_connection_status_changed_cb (TpConnection *self,
 
       if (self->priv->connection_error == NULL)
         {
-          g_assert (self->priv->connection_error_details == NULL);
-
           tp_connection_status_reason_to_gerror (reason, prev_status, &error);
         }
       else
@@ -2249,7 +2247,16 @@ tp_connection_get_detailed_error (TpConnection *self,
        * on the invalidation reason, and don't give any details */
 
       if (details != NULL)
-        *details = tp_asv_new (NULL, NULL);
+        {
+          if (self->priv->connection_error_details == NULL)
+            self->priv->connection_error_details = g_hash_table_new (
+                g_str_hash, g_str_equal);
+
+          g_assert (g_hash_table_size (self->priv->connection_error_details)
+              == 0);
+
+          *details = self->priv->connection_error_details;
+        }
 
       if (proxy->invalidated->domain == TP_ERRORS)
         {
