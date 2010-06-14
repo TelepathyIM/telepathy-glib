@@ -17,8 +17,8 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Channel.Interface.ServicePoint.DRAFT" tp:causes-havoc="experimental">
-    <tp:added version="0.19.6">(draft version, not API-stable)</tp:added>
+  <interface name="org.freedesktop.Telepathy.Channel.Interface.ServicePoint">
+    <tp:added version="0.19.7">(as stable API)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>An interface for channels
@@ -55,8 +55,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       type="(us)" tp:type="Service_Point" access="read">
       <tp:docstring>
         The service point that the channel is connected to. If the channel is
-        not connected to any service points, the CM MUST set the
-        <tp:type>Service_Point_Type</tp:type> field to None.
+        not connected to a service point, the CM MUST set the
+        <tp:type>Service_Point_Type</tp:type> field to None; for instance,
+        this will be the case for ordinary calls.
       </tp:docstring>
     </property>
 
@@ -73,7 +74,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         be in the process of connecting to the new service point.</p>
       </tp:docstring>
 
-      <arg name="ServicePoint" type="(us)" tp:type="Service_Point">
+      <arg name="Service_Point" type="(us)" tp:type="Service_Point">
         <tp:docstring>
           The new service point that is being used.
         </tp:docstring>

@@ -442,6 +442,58 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </property>
 
+    <property name="ConnectionError" tp:name-for-bindings="Connection_Error"
+      access="read" type="s" tp:type="DBus_Error_Name">
+      <tp:added version="0.19.7"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>If the last connection to this account failed with an error,
+          the D-Bus error name of that error; otherwise, the empty string.
+          The account manager is expected to set this by observing the
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy"
+            >Connection.ConnectionError</tp:dbus-ref> and
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy"
+            >Connection.StatusChanged</tp:dbus-ref>
+          signals.</p>
+
+        <p>If ConnectionError is received before the connection disconnects,
+          its first argument should be used to set this property;
+          otherwise, the Reason argument of StatusChanged should be converted
+          to a suitable D-Bus error name.</p>
+
+        <p>Whenever the Connection connects successfully, this property should
+          be reset to the empty string.</p>
+
+        <tp:rationale>
+          <p>This combines the state-recoverability of
+            <tp:member-ref>ConnectionStatusReason</tp:member-ref> with the
+            extensibility of Connection.ConnectionError.</p>
+        </tp:rationale>
+      </tp:docstring>
+    </property>
+
+    <property name="ConnectionErrorDetails"
+      tp:name-for-bindings="Connection_Error_Details"
+      access="read" type="a{sv}" tp:type="String_Variant_Map">
+      <tp:added version="0.19.7"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>If the last connection to this account failed with an error,
+          a mapping representing any additional information about the last
+          disconnection; otherwise, the empty map. The keys and values are
+          the same as for the second argument of
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy"
+            >Connection.ConnectionError</tp:dbus-ref>.</p>
+
+        <p>Whenever the Connection connects successfully, this property should
+          be reset to the empty map.</p>
+
+        <tp:rationale>
+          <p>This combines the state-recoverability of
+            <tp:member-ref>ConnectionStatusReason</tp:member-ref> with the
+            extensibility of Connection.ConnectionError.</p>
+        </tp:rationale>
+      </tp:docstring>
+    </property>
+
     <property name="CurrentPresence" type="(uss)" access="read"
       tp:type="Simple_Presence" tp:name-for-bindings="Current_Presence">
       <tp:docstring>
