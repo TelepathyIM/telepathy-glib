@@ -757,10 +757,11 @@ tp_connection_connection_error_cb (TpConnection *self,
       TP_HASH_TYPE_STRING_VARIANT_MAP, details);
 }
 
-static void
-tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
-                                       TpConnectionStatus prev_status,
-                                       GError **error)
+void
+_tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
+    TpConnectionStatus prev_status,
+    const gchar **ret_str,
+    GError **error)
 {
   TpError code;
   const gchar *message;
@@ -848,10 +849,17 @@ tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
     default:
       g_set_error (error, TP_ERRORS_DISCONNECTED, reason,
           "Unknown disconnection reason");
+
+      if (ret_str != NULL)
+        *ret_str = TP_ERROR_STR_DISCONNECTED;
+
       return;
     }
 
   g_set_error (error, TP_ERRORS, code, "%s", message);
+
+  if (ret_str != NULL)
+    *ret_str = tp_error_get_dbus_name (code);
 }
 
 static void
@@ -881,7 +889,8 @@ tp_connection_status_changed_cb (TpConnection *self,
 
       if (self->priv->connection_error == NULL)
         {
-          tp_connection_status_reason_to_gerror (reason, prev_status, &error);
+          _tp_connection_status_reason_to_gerror (reason, prev_status,
+              NULL, &error);
         }
       else
         {
@@ -898,8 +907,8 @@ tp_connection_status_changed_cb (TpConnection *self,
             {
               GError *from_csr = NULL;
 
-              tp_connection_status_reason_to_gerror (reason, prev_status,
-                  &from_csr);
+              _tp_connection_status_reason_to_gerror (reason, prev_status,
+                  NULL, &from_csr);
               error->domain = from_csr->domain;
               error->code = from_csr->code;
               g_error_free (from_csr);
