@@ -30,12 +30,13 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
-#include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
+#include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include <telepathy-glib/util-internal.h>
 
 #include "telepathy-glib/_gen/signals-marshal.h"
 #include "telepathy-glib/_gen/tp-cli-account-body.h"
@@ -85,6 +86,8 @@ struct _TpAccountPrivate {
 
   TpConnectionStatus connection_status;
   TpConnectionStatusReason reason;
+  gchar *error;
+  GHashTable *error_details;
 
   TpConnectionPresenceType presence;
   gchar *status;
@@ -209,6 +212,9 @@ tp_account_init (TpAccount *self)
       TpAccountPrivate);
 
   self->priv->connection_status = TP_CONNECTION_STATUS_DISCONNECTED;
+  self->priv->error = g_strdup (TP_ERROR_STR_DISCONNECTED);
+  self->priv->error_details = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, (GDestroyNotify) tp_g_value_slice_free);
 }
 
 static void
@@ -225,15 +231,29 @@ _tp_account_invalidated_cb (TpAccount *self,
   if (priv->connection_status != TP_CONNECTION_STATUS_DISCONNECTED)
     {
       priv->connection_status = TP_CONNECTION_STATUS_DISCONNECTED;
+      tp_clear_pointer (&priv->error, g_free);
+      g_hash_table_remove_all (priv->error_details);
 
       if (domain == TP_DBUS_ERRORS && code == TP_DBUS_ERROR_OBJECT_REMOVED)
         {
           /* presumably the user asked for it to be deleted... */
           priv->reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
+          priv->error = g_strdup (TP_ERROR_STR_CANCELLED);
+          g_hash_table_insert (priv->error_details,
+              g_strdup ("debug-message"),
+              tp_g_value_slice_new_static_string ("TpAccount was removed"));
         }
       else
         {
+          gchar *s;
+
           priv->reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
+          priv->error = g_strdup (TP_ERROR_STR_DISCONNECTED);
+          s = g_strdup_printf ("TpAccount was invalidated: %s #%u: %s",
+              g_quark_to_string (domain), code, message);
+          g_hash_table_insert (priv->error_details,
+              g_strdup ("debug-message"),
+              tp_g_value_slice_new_take_string (s));
         }
 
       g_object_notify ((GObject *) self, "connection-status");
@@ -303,7 +323,7 @@ _tp_account_update (TpAccount *account,
   TpAccountPrivate *priv = account->priv;
   GValueArray *arr;
   TpConnectionStatus old_s = priv->connection_status;
-  TpConnectionStatusReason old_r = priv->reason;
+  gboolean status_changed = FALSE;
   gboolean presence_changed = FALSE;
 
   if (g_hash_table_lookup (properties, "Interfaces") != NULL)
@@ -328,13 +348,86 @@ _tp_account_update (TpAccount *account,
     }
 
   if (g_hash_table_lookup (properties, "ConnectionStatus") != NULL)
-    priv->connection_status =
-      tp_asv_get_uint32 (properties, "ConnectionStatus", NULL);
+    {
+      priv->connection_status =
+        tp_asv_get_uint32 (properties, "ConnectionStatus", NULL);
 
+      if (old_s != priv->connection_status)
+        status_changed = TRUE;
+    }
 
   if (g_hash_table_lookup (properties, "ConnectionStatusReason") != NULL)
-    priv->reason = tp_asv_get_int32 (properties,
-        "ConnectionStatusReason", NULL);
+    {
+      TpConnectionStatusReason old = priv->reason;
+
+      priv->reason =
+        tp_asv_get_uint32 (properties, "ConnectionStatusReason", NULL);
+
+      if (old != priv->reason)
+        status_changed = TRUE;
+    }
+
+  if (g_hash_table_lookup (properties, "ConnectionError") != NULL)
+    {
+      const gchar *new_error = tp_asv_get_string (properties,
+          "ConnectionError");
+
+      if (tp_str_empty (new_error))
+        new_error = NULL;
+
+      if (tp_strdiff (new_error, priv->error))
+        {
+          tp_clear_pointer (&priv->error, g_free);
+          priv->error = g_strdup (new_error);
+          status_changed = TRUE;
+        }
+    }
+
+  if (g_hash_table_lookup (properties, "ConnectionErrorDetails") != NULL)
+    {
+      const GHashTable *details = tp_asv_get_boxed (properties,
+          "ConnectionErrorDetails", TP_HASH_TYPE_STRING_VARIANT_MAP);
+
+      if ((details != NULL && tp_asv_size (details) > 0) ||
+          tp_asv_size (priv->error_details) > 0)
+        {
+          g_hash_table_remove_all (priv->error_details);
+
+          if (details != NULL)
+            tp_g_hash_table_update (priv->error_details,
+                (GHashTable *) details,
+                (GBoxedCopyFunc) g_strdup,
+                (GBoxedCopyFunc) tp_g_value_slice_dup);
+
+          status_changed = TRUE;
+        }
+    }
+
+  if (status_changed)
+    {
+      if (priv->connection_status == TP_CONNECTION_STATUS_CONNECTED)
+        {
+          /* our connection status is CONNECTED - clear any error we may
+           * have recorded previously */
+          g_hash_table_remove_all (priv->error_details);
+          tp_clear_pointer (&priv->error, g_free);
+        }
+      else if (priv->error == NULL)
+        {
+          /* our connection status is worse than CONNECTED but the
+           * AccountManager didn't tell us why, so attempt to guess
+           * a detailed error from the status reason */
+          const gchar *guessed = NULL;
+
+          _tp_connection_status_reason_to_gerror (priv->reason,
+              old_s, &guessed, NULL);
+
+          if (guessed == NULL)
+            guessed = TP_ERROR_STR_DISCONNECTED;
+
+          priv->error = g_strdup (guessed);
+        }
+    }
 
   if (g_hash_table_lookup (properties, "CurrentPresence") != NULL)
     {
@@ -443,10 +536,11 @@ _tp_account_update (TpAccount *account,
           parameters);
     }
 
-  if (priv->connection_status != old_s || priv->reason != old_r)
+  if (status_changed)
     {
       g_signal_emit (account, signals[STATUS_CHANGED], 0,
-          old_s, priv->connection_status, priv->reason, NULL, NULL);
+          old_s, priv->connection_status, priv->reason, priv->error,
+          priv->error_details);
 
       g_object_notify (G_OBJECT (account), "connection-status");
       g_object_notify (G_OBJECT (account), "connection-status-reason");
@@ -702,8 +796,8 @@ _tp_account_finalize (GObject *object)
   g_free (priv->icon_name);
   g_free (priv->display_name);
 
-  if (priv->parameters != NULL)
-    g_hash_table_unref (priv->parameters);
+  tp_clear_pointer (&priv->parameters, g_hash_table_unref);
+  tp_clear_pointer (&priv->error_details, g_hash_table_unref);
 
   /* free any data held directly by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->finalize != NULL)
@@ -845,6 +939,7 @@ tp_account_class_init (TpAccountClass *klass)
    * The account's connection status type (a %TpConnectionStatus).
    *
    * One can receive change notifications on this property by connecting
+   * to the #TpAccount::status-changed signal, or by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
@@ -869,6 +964,7 @@ tp_account_class_init (TpAccountClass *klass)
    * The account's connection status reason (a %TpConnectionStatusReason).
    *
    * One can receive change notifications on this property by connecting
+   * to the #TpAccount::status-changed signal, or by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
@@ -1131,15 +1227,18 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount::status-changed:
    * @account: the #TpAccount
-   * @old_status: old connection status
-   * @new_status: new connection status
-   * @reason: the reason for the status change
-   * @dbus_error_name: currently unused, but for exposing the dbus error name
-   *                   on a connection error in the future
-   * @details: currently unused, but for exposing the error details
-   *           on a connection error in the future
+   * @old_status: old #TpAccount:connection-status
+   * @new_status: new #TpAccount:connection-status
+   * @reason: the #TpAccount:connection-status-reason
+   * @dbus_error_name: (allow-none): the #TpAccount:connection-error
+   * @details: (element-type utf8 GObject.Value): the
+   *  #TpAccount:connection-error-details
    *
    * Emitted when the connection status on the account changes.
+   *
+   * The @dbus_error_name and @details parameters were present, but
+   * non-functional (always %NULL), in older versions. They have been
+   * available with their current behaviour since version 0.11.UNRELEASED.
    *
    * Since: 0.9.0
    */
