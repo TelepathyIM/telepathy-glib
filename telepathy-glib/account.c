@@ -1146,7 +1146,7 @@ tp_account_class_init (TpAccountClass *klass)
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL,
-      _tp_marshal_VOID__UINT_UINT_UINT_STRING_POINTER,
+      _tp_marshal_VOID__UINT_UINT_UINT_STRING_BOXED,
       G_TYPE_NONE, 5, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_STRING,
       G_TYPE_HASH_TABLE);
 
