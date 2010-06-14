@@ -77,6 +77,7 @@ typedef enum {
     TP_ERROR_REGISTRATION_EXISTS, /*< nick=RegistrationExists >*/
     TP_ERROR_SERVICE_BUSY, /*< nick=ServiceBusy >*/
     TP_ERROR_RESOURCE_UNAVAILABLE, /*< nick=ResourceUnavailable >*/
+    TP_ERROR_WOULD_BREAK_ANONYMITY, /*< nick=WouldBreakAnonymity >*/
 } TpError;
 
 const gchar *tp_error_get_dbus_name (TpError error);

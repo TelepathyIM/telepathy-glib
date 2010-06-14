@@ -105,11 +105,12 @@
       </tp:enumvalue>
 
       <tp:enumvalue value="1" suffix="Busy">
-        <tp:docstring>
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The incoming channel should be forwarded if a busy signal is
             detected.  What defines "Busy" is CM-specific (perhaps a single
             resource is already in use, or a user's status is set to Busy
             <tp:type>Connection_Presence_Type</tp:type>).</p>
+
           <p>If initial timeout is specified for Busy condition and call
             waiting is not supported by the service, the timeout will be
             ignored.</p>
@@ -147,13 +148,14 @@
       </tp:docstring>
 
       <tp:member type="u" name="Timeout">
-        <tp:docstring>
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The length of time (in seconds) to wait the contact to respond
             to the forwarded channel.  This MAY be ignored by the CM if it
             isn't supported by the underlying network/protocol for the
             specific status of the remote contact (for example, a GSM call
             that is forwarded may return Not_Reachable immediately without
             waiting for the timeout value to expire).</p>
+
           <p>A value of 0 means the condition can match immediately. A
             value of MAX_UINT32 means that the CM's default should be
             used.</p>
@@ -208,23 +210,22 @@
     <property name="SupportedForwardingConditions" type="a{uu}" access="read"
       tp:type="Supported_Forwarding_Conditions_Map"
       tp:name-for-bindings="Supported_Forwarding_Conditions">
-      <tp:docstring>
-        <p>
-          A map of forwarding conditions supported on this connection to
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>A map of forwarding conditions supported on this connection to
           maximum number of <tp:type>Forwarding_Rule_Entry</tp:type>
-          supported for the specific condition.
-          <tp:rationale>
-            When forwarding is done by the provider, different providers
+          supported for the specific condition.</p>
+
+        <tp:rationale>
+          <p>When forwarding is done by the provider, different providers
             might support different chain sizes, or provider and local
-            implementation chain sizes might differ.
-          </tp:rationale>
-        </p>
+            implementation chain sizes might differ.</p>
+        </tp:rationale>
       </tp:docstring>
     </property>
 
     <property name="ForwardingRules" type="a{u(ua(uu))}" access="read"
       tp:type="Forwarding_Rule_Map" tp:name-for-bindings="Forwarding_Rules">
-      <tp:docstring>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The current forwarding rules that are enabled for this connection.
           Forwarding rules each contain an array of type
           <tp:type>Forwarding_Rule_Entry</tp:type>.</p>
@@ -269,7 +270,7 @@
       </tp:docstring>
 
       <arg direction="in" name="Condition" type="u" tp:type="Forwarding_Condition">
-        <tp:docstring>
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The forwarding rule to override.  Note that this SHOULD not affect
             other rules; setting a rule that overrides others (such as
             Forwarding_Rule_Unconditional) will not modify other rules.  This

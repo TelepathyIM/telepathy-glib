@@ -157,6 +157,9 @@ gboolean tp_account_get_has_been_online (TpAccount *account);
 TpConnectionStatus tp_account_get_connection_status (TpAccount *account,
     TpConnectionStatusReason *reason);
 
+const gchar *tp_account_get_detailed_error (TpAccount *self,
+    const GHashTable **details);
+
 TpConnectionPresenceType tp_account_get_current_presence (TpAccount *account,
     gchar **status, gchar **status_message);
 

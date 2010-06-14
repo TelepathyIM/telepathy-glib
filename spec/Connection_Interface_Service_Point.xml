@@ -17,8 +17,8 @@ Lesser General Public License for more details.</p>
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Connection.Interface.ServicePoint.DRAFT" tp:causes-havoc="experimental">
-    <tp:added version="0.19.6">(draft version, not API-stable)</tp:added>
+  <interface name="org.freedesktop.Telepathy.Connection.Interface.ServicePoint">
+    <tp:added version="0.19.7">(as stable API)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>An interface for connections whose channels may be able to indicate
@@ -33,33 +33,33 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </tp:docstring>
 
    <tp:struct name="Service_Point_Info" array-name="Service_Point_Info_List">
-      <tp:member type="(us)" tp:type="Service_Point" name="ServicePoint">
+      <tp:member type="(us)" tp:type="Service_Point" name="Service_Point">
         <tp:docstring>
           The service point.
         </tp:docstring>
       </tp:member>
-      <tp:member type="as" name="ServiceIDs">
+      <tp:member type="as" name="Service_IDs">
         <tp:docstring>
           A list of IDs that are mapped to this service. This is provided as
           a convenience for the UIs, but the preferred method for
-          requesting channel to a service is by setting <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel.Interface.ServicePoint.DRAFT">InitialServicePoint</tp:dbus-ref>
-            property in channel request.
+          requesting channel to a service is by setting the <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy.Channel.Interface.ServicePoint">InitialServicePoint</tp:dbus-ref>
+            property in a channel request.
         </tp:docstring>
       </tp:member>
       <tp:docstring>
-        <p>Description of a service point and IDs which are mapped to id.</p>
+        <p>Description of a service point and IDs which are mapped to it.</p>
 
-        <p>An example Service Point info for GSM emergency calls (callable through
-        "911" and "112") could look like:</p>
+        <p>An example Service Point info for GSM emergency calls (callable
+          through "911" and "112") could look like:</p>
 
 <pre>
   ServicePointInfo = (
-    ServicePoint: (
-      ServicePointType: 1 (Emergency),
-      ServicePoint: "urn:service:sos"
+    Service_Point: (
+      Service_Point_Type: 1 (Emergency),
+      Service_Point: "urn:service:sos"
     ),
-    ServiceIDs: [ "911", "112" ]
+    Service_IDs: [ "911", "112" ]
   )
 </pre>
       </tp:docstring>
@@ -73,20 +73,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </property>
 
     <signal name="ServicePointsChanged" tp:name-for-bindings="Service_Points_Changed">
-      <arg name="ServicePoints" type="a((us)as)" tp:type="Service_Point_Info[]">
+      <arg name="Service_Points" type="a((us)as)" tp:type="Service_Point_Info[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-         <p>The new list of service points.</p>
+          <p>The new value of
+            <tp:member-ref>KnownServicePoints</tp:member-ref>.</p>
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Indicate that the list of known service points (or their IDs) have
-        changed, presenting the new list.
+        Emitted when the list of known service points (or their IDs) has
+        changed.
       </tp:docstring>
     </signal>
 
     <tp:struct name="Service_Point">
       <tp:docstring>A service point.</tp:docstring>
-      <tp:member type="u" name="ServicePointType" tp:type="Service_Point_Type">
+      <tp:member type="u" name="Service_Point_Type"
+        tp:type="Service_Point_Type">
         <tp:docstring>
           The service type.
         </tp:docstring>
@@ -94,7 +96,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <tp:member type="s" name="Service">
         <tp:docstring>
           String representation of the service point. The representation is
-          service specific; it may be <tp:type>Uniform_Resource_Name</tp:type>
+          service specific; it may be a 'service' Uniform Resource Name as
+          specified by <a
+            href="http://www.rfc-editor.org/rfc/rfc5031.txt">RFC 5031</a>,
           or may be in some other form. Empty, unused or unknown value is
           represented by "".
         </tp:docstring>
@@ -103,12 +107,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <tp:enum name="Service_Point_Type" type="u">
       <tp:docstring>
-        The various types of service points the channel might connect to.
+        The various types of service points a channel might connect to.
       </tp:docstring>
 
       <tp:enumvalue value="0" suffix="None">
         <tp:docstring>
-          The service point is not used/available.
+          The channel is not communicating with a service point, or it is not
+          known whether it is communicating with a service point (e.g. an
+          ordinary call).
         </tp:docstring>
       </tp:enumvalue>
 
@@ -125,11 +131,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
-
-    <tp:simple-type name="Uniform_Resource_Name" type="s">
-      <tp:docstring>Uniform Resource Name as specified by
-        <a href="http://www.rfc-editor.org/rfc/rfc5031.txt">RFC 5031</a>.</tp:docstring>
-    </tp:simple-type>
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->
