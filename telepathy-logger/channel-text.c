@@ -1132,7 +1132,7 @@ on_sent_signal_cb (TpChannel *proxy,
   /* Initialize data for TplEntity */
   me = _tpl_channel_text_get_my_contact (tpl_text);
   tpl_entity_sender = _tpl_entity_from_tp_contact (me);
-  _tpl_entity_set_entity_type (tpl_entity_sender, TPL_ENTITY_USER);
+  _tpl_entity_set_entity_type (tpl_entity_sender, TPL_ENTITY_CONTACT);
 
   if (!_tpl_channel_text_is_chatroom (tpl_text))
     {
@@ -1141,7 +1141,7 @@ on_sent_signal_cb (TpChannel *proxy,
         PATH_DEBUG (tpl_text, "sending message: Remote TplEntity=NULL on 1-1"
             "Chat");
       tpl_entity_receiver = _tpl_entity_from_tp_contact (remote);
-      _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_USER);
+      _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_CONTACT);
 
       DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
           log_id,
@@ -1280,7 +1280,7 @@ keepon_on_receiving_signal (TplEntryText *text_log)
   local = _tpl_channel_text_get_my_contact (tpl_text);
 
   tpl_entity_sender = _tpl_entity_from_tp_contact (remote);
-  _tpl_entity_set_entity_type (tpl_entity_sender, TPL_ENTITY_USER);
+  _tpl_entity_set_entity_type (tpl_entity_sender, TPL_ENTITY_CONTACT);
   _tpl_entry_set_sender (log, tpl_entity_sender);
 
   tpl_entity_receiver = _tpl_entity_from_tp_contact (local);
@@ -1386,7 +1386,7 @@ on_received_signal_cb (TpChannel *proxy,
 
   me = _tpl_channel_text_get_my_contact (tpl_text);
   tpl_entity_receiver = _tpl_entity_from_tp_contact (me);
-  _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_USER);
+  _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_CONTACT);
   _tpl_entry_set_receiver (log, tpl_entity_receiver);
 
   _tpl_entry_set_timestamp (log, (time_t) arg_Timestamp);

@@ -36,18 +36,18 @@ G_BEGIN_DECLS
 /* TplEntityType:
  *
  * @TPL_ENTITY_UNKNOWN: the current contact's type is unknown
- * @TPL_ENTITY_USER: the contact's type represents a user (buddy), but not
+ * @TPL_ENTITY_CONTACT: the contact's type represents a user (buddy), but not
  * the the account's owner for which @TPL_ENTITY_SELF is used
  * @TPL_ENTITY_GROUP: a named chatroom (#TP_HANDLE_TYPE_ROOM)
  * @TPL_ENTITY_SELF: the contact's type represents the owner of the account
- * whose channel has been logged, as opposed to @TPL_ENTITY_USER which
+ * whose channel has been logged, as opposed to @TPL_ENTITY_CONTACT which
  * represents any other user
  */
 typedef enum
 {
   TPL_ENTITY_UNKNOWN,
   /* contact is a user (buddy) */
-  TPL_ENTITY_USER,
+  TPL_ENTITY_CONTACT,
   /* contact is a chatroom, meaning that the related message has been sent to
    * a chatroom instead of to a 1-1 channel */
   TPL_ENTITY_GROUP,

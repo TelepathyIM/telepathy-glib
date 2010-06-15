@@ -480,7 +480,7 @@ add_message_text_chat (TplLogStoreXml *self,
       contact_id, contact_name,
       avatar_token ? avatar_token : "",
       tpl_entity_get_entity_type (sender) ==
-      TPL_ENTITY_USER ? "true" : "false",
+      TPL_ENTITY_CONTACT ? "true" : "false",
       _tpl_entry_text_message_type_to_str (msg_type),
       body);
 

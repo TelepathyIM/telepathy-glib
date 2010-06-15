@@ -212,7 +212,7 @@ _tpl_entity_from_room_id (const gchar *chatroom_id)
  * @contact: the TpContact instance to create the TplEntity from
  *
  * Return a TplEntity instance with identifier, alias and
- * avatar's token copied. It also sets %TPL_ENTITY_USER as contact type for
+ * avatar's token copied. It also sets %TPL_ENTITY_CONTACT as contact type for
  * the #TplEntity returned. The client needs to set it to %TPL_ENTITY_SELF
  * in case the contact is the account's onwer.
  *
@@ -232,10 +232,10 @@ _tpl_entity_from_tp_contact (TpContact *contact)
   if (tp_contact_get_avatar_token (contact) != NULL)
     _tpl_entity_set_avatar_token (ret, tp_contact_get_avatar_token (contact));
 
-  /* set contact type to TPL_ENTITY_USER by default, the client need to set
+  /* set contact type to TPL_ENTITY_CONTACT by default, the client need to set
    * it to TPL_ENTITY_SELF in case the contact is actually the account's
    * owner */
-  _tpl_entity_set_entity_type (ret, TPL_ENTITY_USER);
+  _tpl_entity_set_entity_type (ret, TPL_ENTITY_CONTACT);
 
   DEBUG ("ID: %s, TOK: %s", tpl_entity_get_identifier (ret),
       tpl_entity_get_avatar_token (ret));
@@ -340,7 +340,7 @@ _tpl_entity_set_identifier (TplEntity *self,
  *
  * Set a entity type for @self.
  *
- * Note: %TPL_ENTITY_USER and %TPL_ENTITY_GROUP are automatically set after
+ * Note: %TPL_ENTITY_CONTACT and %TPL_ENTITY_GROUP are automatically set after
  * _tpl_entity_from_tp_contact() and #tpl_entity_from_chatroom_id(),
  * respectively. Though, the client will need to set %TPL_ENTITY_SELF after
  * those function calls when @self represents the owner of the account.
