@@ -1153,25 +1153,18 @@ tp_account_manager_create_account_finish (TpAccountManager *manager,
     GAsyncResult *result,
     GError **error)
 {
-  TpAccount *retval;
   GSimpleAsyncResult *simple;
 
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-          error))
-    return NULL;
-
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
           G_OBJECT (manager), tp_account_manager_create_account_finish), NULL);
 
-  retval = TP_ACCOUNT (g_simple_async_result_get_op_res_gpointer (
-          G_SIMPLE_ASYNC_RESULT (result)));
+  simple = (GSimpleAsyncResult *) result;
 
-  return retval;
+  if (g_simple_async_result_propagate_error (simple, error))
+    return NULL;
+
+  return TP_ACCOUNT (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 /**
