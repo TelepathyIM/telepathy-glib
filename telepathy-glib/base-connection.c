@@ -1663,7 +1663,11 @@ tp_base_connection_register (TpBaseConnection *self,
     }
 
   if (!tp_base_connection_ensure_dbus (self, error))
-    return FALSE;
+    {
+      g_free (safe_proto);
+      g_free (unique_name);
+      return FALSE;
+    }
 
   self->bus_name = g_strdup_printf (TP_CONN_BUS_NAME_BASE "%s.%s.%s",
       cm_name, safe_proto, unique_name);
