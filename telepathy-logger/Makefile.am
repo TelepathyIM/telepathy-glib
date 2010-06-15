@@ -19,7 +19,7 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 
 LIBTPLdir = $(includedir)/telepathy-logger-0.1/telepathy-logger
 LIBTPL_HEADERS = \
-		contact.h			\
+		entity.h			\
 		entry.h			\
 		entry-text.h		\
 		log-manager.h			\
@@ -36,7 +36,8 @@ libtelepathy_logger_la_SOURCES = \
 		channel-text-internal.h			\
 		conf.c				\
 		conf-internal.h				\
-		contact.c			\
+		entity.c			\
+		entity-internal.h			\
 		datetime.c			\
 		datetime-internal.h		\
 		dbus-service.c			\

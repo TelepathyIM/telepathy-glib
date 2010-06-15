@@ -20,7 +20,7 @@
  */
 
 #include "config.h"
-#include "contact-internal.h"
+#include "entity-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_CONTACT
 #include <telepathy-logger/debug-internal.h>

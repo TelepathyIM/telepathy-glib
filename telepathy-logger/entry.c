@@ -25,8 +25,6 @@
 #include <glib.h>
 #include <telepathy-glib/util.h>
 
-#include <telepathy-logger/contact.h>
-
 #define DEBUG_FLAG TPL_DEBUG_ENTRY
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>

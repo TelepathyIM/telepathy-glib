@@ -24,7 +24,7 @@
 
 #include <glib-object.h>
 
-#include <telepathy-logger/contact.h>
+#include <telepathy-logger/entity.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_ENTRY (tpl_entry_get_type ())

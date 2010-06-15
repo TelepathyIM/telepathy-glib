@@ -22,7 +22,7 @@
 #ifndef __TPL_CONTACT_INTERNAL_H__
 #define __TPL_CONTACT_INTERNAL_H__
 
-#include <telepathy-logger/contact.h>
+#include <telepathy-logger/entity.h>
 
 #include <glib-object.h>
 #include <telepathy-glib/contact.h>

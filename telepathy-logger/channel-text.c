@@ -37,7 +37,7 @@
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/action-chain-internal.h>
-#include <telepathy-logger/contact-internal.h>
+#include <telepathy-logger/entity-internal.h>
 #include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>

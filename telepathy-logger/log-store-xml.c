@@ -47,7 +47,7 @@
 #include <telepathy-logger/log-store-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
-#include <telepathy-logger/contact-internal.h>
+#include <telepathy-logger/entity-internal.h>
 #include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
