@@ -1132,7 +1132,7 @@ on_sent_signal_cb (TpChannel *proxy,
   /* Initialize data for TplEntity */
   me = _tpl_channel_text_get_my_contact (tpl_text);
   tpl_entity_sender = _tpl_entity_from_tp_contact (me);
-  _tpl_entity_set_entity_type (tpl_entity_sender, TPL_ENTITY_CONTACT);
+  _tpl_entity_set_entity_type (tpl_entity_sender, TPL_ENTITY_SELF);
 
   if (!_tpl_channel_text_is_chatroom (tpl_text))
     {
@@ -1386,7 +1386,7 @@ on_received_signal_cb (TpChannel *proxy,
 
   me = _tpl_channel_text_get_my_contact (tpl_text);
   tpl_entity_receiver = _tpl_entity_from_tp_contact (me);
-  _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_CONTACT);
+  _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_SELF);
   _tpl_entry_set_receiver (log, tpl_entity_receiver);
 
   _tpl_entry_set_timestamp (log, (time_t) arg_Timestamp);
