@@ -1076,12 +1076,14 @@ tp_value_array_build (gsize length,
           g_free (error);
 
           g_value_array_free (arr);
+          va_end (var_args);
           return NULL;
         }
     }
 
   g_warn_if_fail (arr->n_values == length);
 
+  va_end (var_args);
   return arr;
 }
 
