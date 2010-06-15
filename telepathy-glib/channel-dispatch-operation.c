@@ -1114,9 +1114,9 @@ handle_with_cb (TpChannelDispatchOperation *self,
 /**
  * tp_channel_dispatch_operation_handle_with_async:
  * @self: a #TpChannelDispatchOperation
- * @handler: The well-known bus name (starting with #TP_CLIENT_BUS_NAME_BASE)
- * of the channel handler that should handle the channel, or %NULL
- * if the client has no preferred channel handler
+ * @handler: (allow-none): The well-known bus name (starting with
+ * #TP_CLIENT_BUS_NAME_BASE) of the channel handler that should handle the
+ * channel, or %NULL if the client has no preferred channel handler
  * @callback: a callback to call when the call returns
  * @user_data: data to pass to @callback
  *
@@ -1322,4 +1322,84 @@ _tp_channel_dispatch_operation_new_with_objects (TpDBusDaemon *bus_daemon,
   g_free (unique_name);
 
   return self;
+}
+
+/**
+ * tp_channel_dispatch_operation_handle_with_time_async:
+ * @self: a #TpChannelDispatchOperation
+ * @handler: (allow-none): The well-known bus name (starting with
+ * #TP_CLIENT_BUS_NAME_BASE) of the channel handler that should handle the
+ * channel, or %NULL if the client has no preferred channel handler
+ * @user_action_timestamp: the time at which user action occurred
+ * @callback: a callback to call when the call returns
+ * @user_data: data to pass to @callback
+ *
+ * A variant of tp_channel_dispatch_operation_handle_with_async()
+ * allowing the approver to pass an user action time.
+ * This timestamp will be passed to the Handler when HandleChannels is called.
+ *
+ * If an X server timestamp for the user action causing this method call is
+ * available, @user_action_timestamp should be this timestamp (for instance, the
+ * result of gdk_event_get_time() if it is not %GDK_CURRENT_TIME). Otherwise, it
+ * may be 0 to behave as if there was no user action or it happened a long time
+ * ago, or %G_MAXINT64 to have the Handler behave as though the user action had
+ * just happened (resembling, but not numerically equal to, %GDK_CURRENT_TIME).
+ *
+ * This method has been introduced in telepathy-mission-control 5.5.0.
+ *
+ * Since: 0.11.7
+ */
+void
+tp_channel_dispatch_operation_handle_with_time_async (
+    TpChannelDispatchOperation *self,
+    const gchar *handler,
+    gint64 user_action_timestamp,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data,
+      tp_channel_dispatch_operation_handle_with_time_async);
+
+  tp_cli_channel_dispatch_operation_call_handle_with_time (self, -1,
+      handler != NULL ? handler: "", user_action_timestamp,
+      handle_with_cb, result, NULL, G_OBJECT (self));
+}
+
+/**
+ * tp_channel_dispatch_operation_handle_with_time_finish:
+ * @self: a #TpChannelDispatchOperation
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async call to HandleWithTime().
+ *
+ * Returns: %TRUE if the HandleWithTime() call was successful, otherwise %FALSE
+ *
+ * Since: 0.11.7
+ */
+gboolean
+  tp_channel_dispatch_operation_handle_with_time_finish (
+    TpChannelDispatchOperation *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (self), tp_channel_dispatch_operation_handle_with_time_async),
+      FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  return TRUE;
 }

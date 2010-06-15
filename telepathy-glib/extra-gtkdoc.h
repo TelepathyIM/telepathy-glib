@@ -693,3 +693,71 @@
  *
  * Since: 0.11.3
  */
+
+/**
+ * SECTION:cli-anonymity
+ * @title: Connection and Channel Anonymity interfaces
+ * @short_description: client-side wrappers for the Anonymity interfaces
+ * @see_also: #TpConnection, #TpChannel
+ *
+ * In some protocols, mainly those that interact with the PSTN, it's possible
+ * to make a call without disclosing the originating identity (e.g. phone
+ * number). The Anonymity interfaces on the Connection and Channel can be used
+ * to control this feature in Telepathy.
+ *
+ * This section documents the auto-generated C wrappers for the
+ * Anonymity interfaces, used with #TpConnection and #TpChannel objects.
+ *
+ * Since: 0.11.7
+ */
+
+/**
+ * SECTION:svc-anonymity
+ * @title: Service-side Connection and Channel Anonymity interfaces
+ * @short_description: GInterfaces to implement the Anonymity interfaces
+ *
+ * In some protocols, mainly those that interact with the PSTN, it's possible
+ * to make a call without disclosing the originating identity (e.g. phone
+ * number). The Anonymity interfaces on the Connection and Channel can be used
+ * to control this feature in Telepathy.
+ *
+ * This section documents the auto-generated GInterfaces used to implement the
+ * Anonymity interfaces.
+ *
+ * Since: 0.11.7
+ */
+
+/**
+ * SECTION:cli-service-point
+ * @title: Connection and Channel ServicePoint interfaces
+ * @short_description: client-side wrappers for the ServicePoint interfaces
+ * @see_also: #TpConnection, #TpChannel
+ *
+ * In some protocols, mainly those that interact with the PSTN, it's possible
+ * to contact the emergency services or other public service answering points.
+ * The ServicePoint interfaces on the Connection and Channel can be used
+ * to discover how to contact these service points, and detect whether a call
+ * in progress is communicating with a service point.
+ *
+ * This section documents the auto-generated C wrappers for the
+ * ServicePoint interfaces, used with #TpConnection and #TpChannel objects.
+ *
+ * Since: 0.11.7
+ */
+
+/**
+ * SECTION:svc-service-point
+ * @title: Service-side Connection and Channel ServicePoint interfaces
+ * @short_description: GInterfaces to implement the ServicePoint interfaces
+ *
+ * In some protocols, mainly those that interact with the PSTN, it's possible
+ * to contact the emergency services or other public service answering points.
+ * The ServicePoint interfaces on the Connection and Channel can be used
+ * to discover how to contact these service points, and detect whether a call
+ * in progress is communicating with a service point.
+ *
+ * This section documents the auto-generated GInterfaces used to implement the
+ * ServicePoint interfaces.
+ *
+ * Since: 0.11.7
+ */

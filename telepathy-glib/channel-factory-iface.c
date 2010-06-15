@@ -23,22 +23,16 @@
  * SECTION:channel-factory-iface
  * @title: TpChannelFactoryIface
  * @short_description: interface for channel allocation/tracking
- * @see_also: #TpSvcConnection
+ * @see_also: #TpSvcConnection, #TpChannelManager
  *
  * A channel factory is attached to a connection. It carries out channel
  * requests from the connection, and responds to channel-related events
  * on the underlying network connection (e.g. incoming calls).
  *
- * The connection has an array of channel factories. In a trivial
- * implementation there might be a single channel factory which handles
- * all requests and all incoming events, but in general, there will be
- * multiple channel factories handling different types of channel.
+ * Deprecated since version 0.11.7. Use #TpChannelManager, a newer
+ * interface which can be used to implement modern D-Bus APIs, instead.
  *
- * #TpChannelManager is a newer interface (introduced in telepathy-glib
- * 0.7.15) for allocating and tracking channels which supports the
- * Requests D-Bus interface introduced in version 0.17.11 of the
- * specification.  New connection managers should implement that interface
- * instead, and existing connection managers should migrate to it.
+ * Deprecated: 0.11.7
  */
 
 #include <telepathy-glib/channel-factory-iface.h>
@@ -148,6 +142,10 @@ tp_channel_factory_iface_get_type (void)
  * to be usable afterwards. This is called when the connection goes to
  * disconnected state, before either emitting the StatusChanged signal or
  * calling disconnected().
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_close_all (TpChannelFactoryIface *self)
@@ -164,6 +162,10 @@ tp_channel_factory_iface_close_all (TpChannelFactoryIface *self)
  *
  * Indicate that the connection has gone from disconnected to connecting
  * state.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_connecting (TpChannelFactoryIface *self)
@@ -179,6 +181,10 @@ tp_channel_factory_iface_connecting (TpChannelFactoryIface *self)
  * @self: An implementation of the channel factory interface
  *
  * Indicate that the connection has gone from connecting to connected state.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_connected (TpChannelFactoryIface *self)
@@ -194,6 +200,10 @@ tp_channel_factory_iface_connected (TpChannelFactoryIface *self)
  * @self: An implementation of the channel factory interface
  *
  * Indicate that the connection has become disconnected.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_disconnected (TpChannelFactoryIface *self)
@@ -211,6 +221,10 @@ tp_channel_factory_iface_disconnected (TpChannelFactoryIface *self)
  * @data: Extra data to be passed to @func
  *
  * Call func(channel, data) for each channel managed by this factory.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_foreach (TpChannelFactoryIface *self,
@@ -243,6 +257,10 @@ tp_channel_factory_iface_foreach (TpChannelFactoryIface *self,
  *         %TP_CHANNEL_FACTORY_REQUEST_STATUS_ERROR, unset otherwise
  *
  * Request a channel.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  *
  * Returns: one of the values of #TpChannelFactoryRequestStatus, and
  *          behaves as documented for that return value
@@ -282,6 +300,10 @@ tp_channel_factory_iface_request (TpChannelFactoryIface *self,
  * %NULL or a request that led to the channel's creation; callers are expected
  * to determine which channels satisfy which requests based on the handle
  * and handle-type.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_emit_new_channel (gpointer instance,
@@ -303,6 +325,10 @@ tp_channel_factory_iface_emit_new_channel (gpointer instance,
  * could become useful.
  *
  * request is as for tp_channel_factory_iface_emit_new_channel().
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 void
 tp_channel_factory_iface_emit_channel_error (gpointer instance,

@@ -95,7 +95,7 @@ tp_handle_set_new (TpHandleRepoIface *repo)
  *
  * Returns: A new #TpHandleSet
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 TpHandleSet *
 tp_handle_set_new_from_array (TpHandleRepoIface *repo,

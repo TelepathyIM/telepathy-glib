@@ -420,7 +420,20 @@
     </tp:docstring>
   </tp:error>
 
-  <tp:copyright>Copyright © 2005-2009 Collabora Limited</tp:copyright>
+  <tp:error name="Would Break Anonymity">
+    <tp:added version="0.19.7"/>
+    <tp:docstring>
+      Raised if a request cannot be satisfied without violating an earlier
+      request for anonymity, and the earlier request specified that raising
+      an error is preferable to disclosing the user's identity (for instance
+      via <tp:dbus-ref namespace="org.freedesktop.Telepathy"
+        >Connection.Interface.Anonymity.AnonymityMandatory</tp:dbus-ref> or
+      <tp:dbus-ref namespace="org.freedesktop.Telepathy"
+        >Channel.Interface.Anonymity.AnonymityMandatory</tp:dbus-ref>).
+    </tp:docstring>
+  </tp:error>
+
+  <tp:copyright>Copyright © 2005-2010 Collabora Limited</tp:copyright>
   <tp:copyright>Copyright © 2005-2009 Nokia Corporation</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
 <p>This library is free software; you can redistribute it and/or

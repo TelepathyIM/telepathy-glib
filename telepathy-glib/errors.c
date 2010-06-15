@@ -166,6 +166,12 @@
  *     Raised when a local process rejects a request because it does not have
  *     enough of a resource, such as memory.
  *     Since 0.7.34
+ * @TP_ERROR_WOULD_BREAK_ANONYMITY: org.freedesktop.Telepathy.Error.WouldBreakAnonymity:
+ *     Raised when a request cannot be satisfied without violating an
+ *     earlier request for anonymity, and the earlier request specified
+ *     that raising an error is preferable to disclosing the user's
+ *     identity
+ *     Since 0.11.7
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

@@ -199,7 +199,10 @@ TESTS_ENVIRONMENT = \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     sh $(top_srcdir)/tools/with-session-bus.sh \
-        --config-file=dbus-1/session.conf --
+        --config-file=dbus-1/session.conf -- \
+    $(EXTRA_TESTS_ENVIRONMENT)
+
+EXTRA_TESTS_ENVIRONMENT =
 
 check-valgrind:
 	$(MAKE) check-TESTS \

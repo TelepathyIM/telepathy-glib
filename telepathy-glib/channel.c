@@ -687,11 +687,7 @@ tp_channel_get_initial_chat_states_cb (TpProxy *proxy,
 {
   TpChannel *self = TP_CHANNEL (proxy);
 
-  /* FIXME: fd.o #24882: when that spec bug is fixed, use Chat_State_Map
-   * instead of Channel_Call_State_Map (the underlying D-Bus type is the same
-   * though) */
-  if (error == NULL && G_VALUE_HOLDS (value,
-        TP_HASH_TYPE_CHANNEL_CALL_STATE_MAP))
+  if (error == NULL && G_VALUE_HOLDS (value, TP_HASH_TYPE_CHAT_STATE_MAP))
     {
       tp_g_hash_table_update (self->priv->chat_states,
           g_value_get_boxed (value), NULL, NULL);
@@ -731,8 +727,6 @@ tp_channel_maybe_prepare_chat_states (TpProxy *proxy)
       self, tp_channel_chat_state_changed_cb, NULL, NULL, NULL,
       NULL);
 
-  /* this isn't really in telepathy-spec yet (fd.o #24882) but is
-   * harmless... */
   tp_cli_dbus_properties_call_get (self, -1,
       TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE, "ChatStates",
       tp_channel_get_initial_chat_states_cb,

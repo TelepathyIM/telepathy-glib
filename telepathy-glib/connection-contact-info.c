@@ -52,7 +52,7 @@
  *
  * A struct describing a vCard field.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 
 /**
@@ -74,7 +74,7 @@
  *
  * Returns: a newly allocated #TpContactInfoFieldSpec, free it with
  * tp_contact_info_field_spec_free()
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 TpContactInfoFieldSpec *
 _tp_contact_info_field_spec_new (const gchar *name,
@@ -102,7 +102,7 @@ _tp_contact_info_field_spec_new (const gchar *name,
  *
  * Returns: a newly allocated #TpContactInfoFieldSpec, free it with
  *  tp_contact_info_field_spec_free()
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 TpContactInfoFieldSpec *
 tp_contact_info_field_spec_copy (const TpContactInfoFieldSpec *self)
@@ -119,7 +119,7 @@ tp_contact_info_field_spec_copy (const TpContactInfoFieldSpec *self)
  *
  * Free all memory used by the #TpContactInfoFieldSpec.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 void
 tp_contact_info_field_spec_free (TpContactInfoFieldSpec *self)
@@ -137,7 +137,7 @@ tp_contact_info_field_spec_free (TpContactInfoFieldSpec *self)
  *
  * The boxed type of a #TpContactInfoFieldSpec.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 GType
 tp_contact_info_field_spec_get_type (void)
@@ -162,7 +162,7 @@ tp_contact_info_field_spec_get_type (void)
  *
  * Returns: a new #GList of newly allocated #TpContactInfoFieldSpec,
  *  free it with tp_contact_info_spec_list_free()
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 GList *
 tp_contact_info_spec_list_copy (GList *list)
@@ -184,7 +184,7 @@ tp_contact_info_spec_list_copy (GList *list)
  *
  * Free all memory used by the #GList and its elements.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 void
 tp_contact_info_spec_list_free (GList *list)
@@ -198,7 +198,7 @@ tp_contact_info_spec_list_free (GList *list)
  *
  * The boxed type of a #GList of #TpContactInfoFieldSpec.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 GType
 tp_contact_info_spec_list_get_type (void)
@@ -233,7 +233,7 @@ tp_contact_info_spec_list_get_type (void)
  * A structure representing an information about a contact. Similar to a vCard
  * field.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 
 /**
@@ -255,7 +255,7 @@ tp_contact_info_spec_list_get_type (void)
  *
  * Returns: a newly allocated #TpContactInfoField, free it with
  * tp_contact_info_field_free()
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 TpContactInfoField *
 tp_contact_info_field_new (const gchar *field_name,
@@ -281,7 +281,7 @@ tp_contact_info_field_new (const gchar *field_name,
  *
  * Returns: a newly allocated #TpContactInfoField, free it with
  *  tp_contact_info_field_free()
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 TpContactInfoField *
 tp_contact_info_field_copy (const TpContactInfoField *self)
@@ -298,7 +298,7 @@ tp_contact_info_field_copy (const TpContactInfoField *self)
  *
  * Free all memory used by the #TpContactInfoField.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 void
 tp_contact_info_field_free (TpContactInfoField *self)
@@ -317,7 +317,7 @@ tp_contact_info_field_free (TpContactInfoField *self)
  *
  * The boxed type of a #TpContactInfoField.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 GType
 tp_contact_info_field_get_type (void)
@@ -342,7 +342,7 @@ tp_contact_info_field_get_type (void)
  *
  * Returns: a new #GList of newly allocated #TpContactInfoField, free it with
  *  tp_contact_info_list_free()
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 GList *
 tp_contact_info_list_copy (GList *list)
@@ -364,7 +364,7 @@ tp_contact_info_list_copy (GList *list)
  *
  * Free all memory used by the #GList and its elements.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 void
 tp_contact_info_list_free (GList *list)
@@ -378,7 +378,7 @@ tp_contact_info_list_free (GList *list)
  *
  * The boxed type of a #GList of #TpContactInfoField.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 GType
 tp_contact_info_list_get_type (void)
@@ -409,7 +409,7 @@ tp_contact_info_list_get_type (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 
 GQuark
@@ -521,7 +521,7 @@ _tp_connection_maybe_prepare_contact_info (TpProxy *proxy)
  * This property cannot change after @self goes to the Connected state.
  *
  * Returns: a set of #TpContactInfoFlags
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 TpContactInfoFlags
 tp_connection_get_contact_info_flags (TpConnection *self)
@@ -550,7 +550,7 @@ tp_connection_get_contact_info_flags (TpConnection *self)
  * Returns: (element-type TelepathyGLib.ContactInfoFieldSpec) (transfer container):
  *  a #GList of #TpContactInfoFieldSpec struct, or %NULL if the feature is not
  *  yet prepared or the connection doesn't have the necessary properties.
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 GList *
 tp_connection_get_contact_info_supported_fields (TpConnection *self)
@@ -592,7 +592,7 @@ set_info_cb (TpConnection *self,
  * This method should not be expected to succeed if the result of
  * tp_connection_get_contact_info_flags() does not include
  * %TP_CONTACT_INFO_FLAG_CAN_SET.
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 void
 tp_connection_set_contact_info_async (TpConnection *self,
@@ -641,7 +641,7 @@ tp_connection_set_contact_info_async (TpConnection *self,
  *
  * Returns: %TRUE if the request call was successful, otherwise %FALSE
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 gboolean
 tp_connection_set_contact_info_finish (TpConnection *self,

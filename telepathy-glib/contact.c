@@ -32,6 +32,8 @@
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
+#include "telepathy-glib/_gen/signals-marshal.h"
+
 /**
  * SECTION:contact
  * @title: TpContact
@@ -95,7 +97,7 @@ struct _TpContact {
  *  #TpContact:avatar-mime-type. Implies %TP_CONTACT_FEATURE_AVATAR_TOKEN
  *  (available since 0.11.6)
  * @TP_CONTACT_FEATURE_CONTACT_INFO: #TpContact:contact-info
- *  (available since 0.11.UNRELEASED)
+ *  (available since 0.11.7)
  * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
  *  supported by this version of telepathy-glib
  *
@@ -137,6 +139,13 @@ enum {
     PROP_CONTACT_INFO,
     N_PROPS
 };
+
+enum {
+    SIGNAL_PRESENCE_CHANGED,
+    N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = {0};
 
 /* The API allows for more than 32 features, but this implementation does
  * not. We can easily expand this later. */
@@ -491,7 +500,7 @@ tp_contact_get_capabilities (TpContact *self)
  * Returns: (element-type TelepathyGLib.ContactInfoField) (transfer container):
  *  a #GList of #TpContactInfoField, or %NULL if the feature is not yet
  *  prepared.
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 GList *
 tp_contact_get_contact_info (TpContact *self)
@@ -885,7 +894,7 @@ tp_contact_class_init (TpContactClass *klass)
    * This is set to %NULL if %TP_CONTACT_FEATURE_CONTACT_INFO is not set on this
    * contact.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.7
    */
   param_spec = g_param_spec_boxed ("contact-info",
       "Contact Info",
@@ -894,6 +903,25 @@ tp_contact_class_init (TpContactClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONTACT_INFO,
       param_spec);
+
+  /**
+   * TpContact::presence-changed:
+   * @contact: A #TpContact
+   * @type: The new value of #TpContact:presence-type
+   * @status: The new value of #TpContact:presence-status
+   * @message: The new value of #TpContact:presence-message
+   *
+   * Emitted when this contact's presence changes.
+   *
+   * Since: 0.11.7
+   */
+  signals[SIGNAL_PRESENCE_CHANGED] = g_signal_new ("presence-changed",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__UINT_STRING_STRING,
+      G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
 }
 
 
@@ -1667,21 +1695,33 @@ static void
 contact_maybe_set_simple_presence (TpContact *contact,
                                    GValueArray *presence)
 {
+  guint type;
+  const gchar *status;
+  const gchar *message;
+
   if (contact == NULL || presence == NULL)
     return;
 
   contact->priv->has_features |= CONTACT_FEATURE_FLAG_PRESENCE;
-  contact->priv->presence_type = g_value_get_uint (presence->values + 0);
+
+  tp_value_array_unpack (presence, 3, &type, &status, &message);
+
+  contact->priv->presence_type = type;
+
   g_free (contact->priv->presence_status);
-  contact->priv->presence_status = g_value_dup_string (
-      presence->values + 1);
+  contact->priv->presence_status = g_strdup (status);
+
   g_free (contact->priv->presence_message);
-  contact->priv->presence_message = g_value_dup_string (
-      presence->values + 2);
+  contact->priv->presence_message = g_strdup (message);
 
   g_object_notify ((GObject *) contact, "presence-type");
   g_object_notify ((GObject *) contact, "presence-status");
   g_object_notify ((GObject *) contact, "presence-message");
+
+  g_signal_emit (contact, signals[SIGNAL_PRESENCE_CHANGED], 0,
+      contact->priv->presence_type,
+      contact->priv->presence_status,
+      contact->priv->presence_message);
 }
 
 static void
@@ -2555,7 +2595,7 @@ contact_info_request_cancelled_cb (GCancellable *cancellable,
  * If %TP_CONTACT_FEATURE_CONTACT_INFO is not yet set on @self, it will be
  * set before its property gets updated and @callback is called.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 void
 tp_contact_request_contact_info_async (TpContact *self,
@@ -2601,7 +2641,7 @@ tp_contact_request_contact_info_async (TpContact *self,
  *
  * Returns: %TRUE if the request call was successful, otherwise %FALSE
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 gboolean
 tp_contact_request_contact_info_finish (TpContact *self,
@@ -2639,7 +2679,7 @@ tp_contact_request_contact_info_finish (TpContact *self,
  * If %TP_CONTACT_FEATURE_CONTACT_INFO is not yet set on a contact, it will be
  * set before its property gets updated.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 void
 tp_connection_refresh_contact_info (TpConnection *self,

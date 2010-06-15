@@ -30,6 +30,8 @@
 
 G_BEGIN_DECLS
 
+#ifndef TP_DISABLE_DEPRECATED
+
 #define TP_TYPE_CHANNEL_FACTORY_IFACE (tp_channel_factory_iface_get_type ())
 
 #define TP_CHANNEL_FACTORY_IFACE(obj) \
@@ -48,6 +50,10 @@ G_BEGIN_DECLS
  * TpChannelFactoryIface:
  *
  * Opaque typedef representing any channel factory implementation.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 typedef struct _TpChannelFactoryIface TpChannelFactoryIface;
 
@@ -77,6 +83,10 @@ typedef struct _TpChannelFactoryIfaceClass TpChannelFactoryIfaceClass;
  *  existing channel.
  *
  * Indicates the result of a channel request.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 typedef enum { /*< skip >*/
   TP_CHANNEL_FACTORY_REQUEST_STATUS_NOT_IMPLEMENTED = 0,
@@ -94,6 +104,10 @@ typedef enum { /*< skip >*/
  *
  * A virtual method on a channel factory that takes no extra parameters
  * and returns nothing.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 typedef void (*TpChannelFactoryIfaceProc) (TpChannelFactoryIface *self);
 
@@ -118,6 +132,10 @@ typedef void (*TpChannelFactoryIfaceProc) (TpChannelFactoryIface *self);
  *
  * Signature of an implementation of RequestChannel.
  *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
+ *
  * Returns: one of the values of #TpChannelFactoryRequestStatus, and
  *          behaves as documented for that return value
  */
@@ -134,6 +152,10 @@ typedef TpChannelFactoryRequestStatus (*TpChannelFactoryIfaceRequestImpl) (
  *
  * Signature of an implementation of foreach, which must call
  * func(channel, data) for each channel managed by this factory.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 typedef void (*TpChannelFactoryIfaceForeachImpl) (TpChannelFactoryIface *self,
     TpChannelFunc func, gpointer data);
@@ -158,6 +180,10 @@ typedef void (*TpChannelFactoryIfaceForeachImpl) (TpChannelFactoryIface *self,
  *  implementations. See #TpChannelFactoryIfaceRequestImpl for details.
  *
  * The class structure and vtable for a channel factory implementation.
+ *
+ * Deprecated since version 0.11.7. Use #TpChannelManager instead.
+ *
+ * Deprecated: 0.11.7
  */
 struct _TpChannelFactoryIfaceClass {
   GTypeInterface parent_class;
@@ -168,7 +194,7 @@ struct _TpChannelFactoryIfaceClass {
   TpChannelFactoryIfaceProc disconnected;
   TpChannelFactoryIfaceForeachImpl foreach;
   TpChannelFactoryIfaceRequestImpl request;
-};
+} _TP_GNUC_DEPRECATED;
 
 GType tp_channel_factory_iface_get_type (void);
 
@@ -193,6 +219,8 @@ void tp_channel_factory_iface_emit_new_channel (gpointer instance,
 
 void tp_channel_factory_iface_emit_channel_error (gpointer instance,
     TpChannelIface *channel, GError *error, gpointer request);
+
+#endif /* not TP_DISABLE_DEPRECATED */
 
 G_END_DECLS
 

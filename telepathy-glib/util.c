@@ -1271,7 +1271,7 @@ tp_weak_ref_destroy (TpWeakRef *self)
  * This is exactly equivalent to calling tp_clear_pointer() on @op,
  * with @destroy = g_object_unref(). See tp_clear_pointer() for example usage.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 
 /**
@@ -1310,7 +1310,7 @@ tp_weak_ref_destroy (TpWeakRef *self)
  * tp_clear_pointer (&amp;foo->misc, my_struct_destroy);
  * ]|
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */
 
 /**
@@ -1329,5 +1329,5 @@ tp_weak_ref_destroy (TpWeakRef *self)
  * This is similar to tp_clear_pointer(); see that function's documentation
  * for typical usage.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.7
  */

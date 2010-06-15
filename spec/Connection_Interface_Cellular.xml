@@ -26,7 +26,7 @@
     <tp:added version="0.19.6">(draft version, not API-stable)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-      <p>This interface is for various cellular things (GSM and/or CDMA) things that
+      <p>This interface is for various cellular things (GSM and/or CDMA) that
         aren't really applicable to other protocols.</p>
     </tp:docstring>
 
@@ -34,20 +34,48 @@
       type="u" access="readwrite">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Define how long should the service centre try message delivery before
-        giving up, failing delivery and deleting the message. A value of 0 means
-        to use the service centre's default period.</p>
+          giving up, failing delivery and deleting the message. A value of 0
+          means to use the service centre's default period.</p>
+
         <p>The value specified is in seconds. Note that various protocols or
-        implementations may round the value up (eg. to a minute or hour
-        precision). The maximum validity period may vary depending on
-        protocol or provider.</p>
+          implementations may round the value up (eg. to a minute or hour
+          precision). The maximum validity period may vary depending on
+          protocol or provider.</p>
+
+        <p>Connections with this interface SHOULD provide this property as a
+          parameter for <tp:dbus-ref namespace="org.freedesktop.Telepathy"
+            >ConnectionManager.RequestConnection</tp:dbus-ref>, with the
+          <code>DBus_Property</code> flag.</p>
+
+        <p>For connections managed by the <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy">AccountManager</tp:dbus-ref>,
+          this property SHOULD be set via the Account Manager, by calling
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy"
+            >Account.UpdateParameters</tp:dbus-ref>; the AccountManager
+          provides change-notification, as long as all other clients cooperate
+          by using it instead of setting this property directly.</p>
       </tp:docstring>
     </property>
 
     <property name="MessageServiceCentre" tp:name-for-bindings="Message_Service_Centre"
       type="s" access="readwrite">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        Address for the messaging service centre. Typically (as is the case
-        for GSM's SMSC), it's the ISDN / telephony address (ie. a phone number).
+        <p>Address for the messaging service centre. Typically (as is the case
+          for GSM's SMSC), it's the ISDN / telephony address (ie. a phone
+          number).</p>
+
+        <p>Connections with this interface SHOULD provide this property as a
+          parameter for <tp:dbus-ref namespace="org.freedesktop.Telepathy"
+            >ConnectionManager.RequestConnection</tp:dbus-ref>, with the
+          <code>DBus_Property</code> flag.</p>
+
+        <p>For connections managed by the <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy">AccountManager</tp:dbus-ref>,
+          this property SHOULD be set via the Account Manager, by calling
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy"
+            >Account.UpdateParameters</tp:dbus-ref>; the AccountManager
+          provides change-notification, as long as all other clients cooperate
+          by using it instead of setting this property directly.</p>
       </tp:docstring>
     </property>
 

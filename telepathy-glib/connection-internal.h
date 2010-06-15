@@ -73,6 +73,11 @@ struct _TpConnectionPrivate {
     unsigned introspecting_after_connected:1;
 };
 
+void _tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
+    TpConnectionStatus prev_status,
+    const gchar **ret_str,
+    GError **error);
+
 void _tp_connection_init_handle_refs (TpConnection *self);
 void _tp_connection_clean_up_handle_refs (TpConnection *self);
 
