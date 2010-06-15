@@ -19,8 +19,8 @@
  *Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#ifndef __TPL_CONTACT_INTERNAL_H__
-#define __TPL_CONTACT_INTERNAL_H__
+#ifndef __TPL_ENTITY_INTERNAL_H__
+#define __TPL_ENTITY_INTERNAL_H__
 
 #include <telepathy-logger/entity.h>
 
@@ -28,31 +28,31 @@
 #include <telepathy-glib/contact.h>
 
 G_BEGIN_DECLS
-#define TPL_CONTACT_CLASS(klass)  (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CONTACT, TplContactClass))
-#define TPL_IS_CONTACT_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONTACT))
-#define TPL_CONTACT_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONTACT, TplContactClass))
+#define TPL_ENTITY_CLASS(klass)  (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_ENTITY, TplEntityClass))
+#define TPL_IS_ENTITY_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_ENTITY))
+#define TPL_ENTITY_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_ENTITY, TplEntityClass))
 
 typedef struct
 {
   GObjectClass parent_class;
-} TplContactClass;
+} TplEntityClass;
 
-TplContact *_tpl_contact_from_tp_contact (TpContact *contact);
-TplContact *_tpl_contact_new (const gchar *identifier);
+TplEntity *_tpl_entity_from_tp_contact (TpContact *contact);
+TplEntity *_tpl_entity_new (const gchar *identifier);
 
-void _tpl_contact_set_alias (TplContact *self,
+void _tpl_entity_set_alias (TplEntity *self,
     const gchar *data);
 
-void _tpl_contact_set_identifier (TplContact *self,
+void _tpl_entity_set_identifier (TplEntity *self,
     const gchar *data);
 
-void _tpl_contact_set_contact_type (TplContact *self,
-    TplContactType data);
+void _tpl_entity_set_entity_type (TplEntity *self,
+    TplEntityType data);
 
-void _tpl_contact_set_avatar_token (TplContact *self,
+void _tpl_entity_set_avatar_token (TplEntity *self,
     const gchar *data);
 
-TplContact * _tpl_contact_from_room_id (const gchar *chatroom_id);
+TplEntity * _tpl_entity_from_room_id (const gchar *chatroom_id);
 
 G_END_DECLS
-#endif // __TPL_CONTACT_INTERNAL_H__
+#endif // __TPL_ENTITY_INTERNAL_H__

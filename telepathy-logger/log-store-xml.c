@@ -427,7 +427,7 @@ add_message_text_chat (TplLogStoreXml *self,
   gboolean ret = FALSE;
   TpDBusDaemon *bus_daemon;
   TpAccount *account;
-  TplContact *sender;
+  TplEntity *sender;
   const gchar *body_str;
   gchar *avatar_token = NULL;
   gchar *body;
@@ -466,11 +466,11 @@ add_message_text_chat (TplLogStoreXml *self,
       TPL_ENTRY (message));
 
   sender = tpl_entry_get_sender (TPL_ENTRY (message));
-  contact_id = g_markup_escape_text (tpl_contact_get_identifier (sender), -1);
-  if (tpl_contact_get_alias (sender) != NULL)
-    contact_name = g_markup_escape_text (tpl_contact_get_alias (sender), -1);
-  if (tpl_contact_get_avatar_token (sender) != NULL)
-    avatar_token = g_markup_escape_text (tpl_contact_get_avatar_token
+  contact_id = g_markup_escape_text (tpl_entity_get_identifier (sender), -1);
+  if (tpl_entity_get_alias (sender) != NULL)
+    contact_name = g_markup_escape_text (tpl_entity_get_alias (sender), -1);
+  if (tpl_entity_get_avatar_token (sender) != NULL)
+    avatar_token = g_markup_escape_text (tpl_entity_get_avatar_token
         (sender), -1);
 
   entry = g_strdup_printf ("<message time='%s' cm_id='%s' id='%s' name='%s' "
@@ -479,8 +479,8 @@ add_message_text_chat (TplLogStoreXml *self,
       _tpl_entry_get_log_id (TPL_ENTRY (message)),
       contact_id, contact_name,
       avatar_token ? avatar_token : "",
-      tpl_contact_get_contact_type (sender) ==
-      TPL_CONTACT_USER ? "true" : "false",
+      tpl_entity_get_entity_type (sender) ==
+      TPL_ENTITY_USER ? "true" : "false",
       _tpl_entry_text_message_type_to_str (msg_type),
       body);
 
@@ -815,7 +815,7 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
   for (node = log_node->children; node; node = node->next)
     {
       TplEntryText *message;
-      TplContact *sender;
+      TplEntity *sender;
       gchar *time_;
       time_t t;
       gchar *sender_id;
@@ -860,9 +860,9 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
 
       t = _tpl_time_parse (time_);
 
-      sender = _tpl_contact_new (sender_id);
-      _tpl_contact_set_alias (sender, sender_name);
-      _tpl_contact_set_avatar_token (sender, sender_avatar_token);
+      sender = _tpl_entity_new (sender_id);
+      _tpl_entity_set_alias (sender, sender_name);
+      _tpl_entity_set_avatar_token (sender, sender_avatar_token);
 
       if (self->priv->empathy_legacy)
         {

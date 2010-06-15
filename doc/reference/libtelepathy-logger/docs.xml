@@ -12,7 +12,7 @@
     <xi:include href="xml/log-manager.xml"/>
     <xi:include href="xml/entry.xml"/>
     <xi:include href="xml/entry-text.xml"/>
-    <xi:include href="xml/contact.xml"/>
+    <xi:include href="xml/entity.xml"/>
   </chapter>
 
 </book>

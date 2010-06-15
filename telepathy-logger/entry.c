@@ -93,8 +93,8 @@ struct _TplEntryPriv
 
   /* message and receiver may be NULL depending on the signal. ie. status
    * changed signals set only the sender */
-  TplContact *sender;
-  TplContact *receiver;
+  TplEntity *sender;
+  TplEntity *receiver;
 };
 
 enum {
@@ -292,15 +292,15 @@ tpl_entry_class_init (TplEntryClass *klass)
 
   param_spec = g_param_spec_object ("sender",
       "Sender",
-      "TplContact instance who originated the log entry",
-      TPL_TYPE_CONTACT,
+      "TplEntity instance who originated the log entry",
+      TPL_TYPE_ENTITY,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SENDER, param_spec);
 
   param_spec = g_param_spec_object ("receiver",
       "Receiver",
-      "TplContact instance destination for the log entry",
-      TPL_TYPE_CONTACT,
+      "TplEntity instance destination for the log entry",
+      TPL_TYPE_ENTITY,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_RECEIVER, param_spec);
 
@@ -361,9 +361,9 @@ _tpl_entry_get_direction (TplEntry *self)
  * tpl_entry_get_sender
  * @self: a #TplEntry
  *
- * Returns: the same #TplContact as the #TplEntry:sender property
+ * Returns: the same #TplEntity as the #TplEntry:sender property
  */
-TplContact *
+TplEntity *
 tpl_entry_get_sender (TplEntry *self)
 {
   g_return_val_if_fail (TPL_IS_ENTRY (self), NULL);
@@ -375,9 +375,9 @@ tpl_entry_get_sender (TplEntry *self)
  * tpl_entry_get_receiver
  * @self: a #TplEntry
  *
- * Returns: the same #TplContact as the #TplEntry:receiver property
+ * Returns: the same #TplEntity as the #TplEntry:receiver property
  */
-TplContact *
+TplEntity *
 tpl_entry_get_receiver (TplEntry *self)
 {
   g_return_val_if_fail (TPL_IS_ENTRY (self), NULL);
@@ -467,7 +467,7 @@ _tpl_entry_set_direction (TplEntry *self,
 
 void
 _tpl_entry_set_sender (TplEntry *self,
-    TplContact *data)
+    TplEntity *data)
 {
   TplEntryPriv *priv;
 
@@ -475,7 +475,7 @@ _tpl_entry_set_sender (TplEntry *self,
     return;
 
   g_return_if_fail (TPL_IS_ENTRY (self));
-  g_return_if_fail (TPL_IS_CONTACT (data));
+  g_return_if_fail (TPL_IS_ENTITY (data));
 
   priv = self->priv;
 
@@ -488,7 +488,7 @@ _tpl_entry_set_sender (TplEntry *self,
 
 void
 _tpl_entry_set_receiver (TplEntry *self,
-    TplContact *data)
+    TplEntity *data)
 {
   TplEntryPriv *priv;
 
@@ -496,7 +496,7 @@ _tpl_entry_set_receiver (TplEntry *self,
     return;
 
   g_return_if_fail (TPL_IS_ENTRY (self));
-  g_return_if_fail (TPL_IS_CONTACT (data));
+  g_return_if_fail (TPL_IS_ENTITY (data));
 
   priv = self->priv;
 

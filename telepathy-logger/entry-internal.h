@@ -84,10 +84,10 @@ void _tpl_entry_set_channel_path (TplEntry *self,
     const gchar *data);
 
 void _tpl_entry_set_sender (TplEntry *self,
-    TplContact *data);
+    TplEntity *data);
 
 void _tpl_entry_set_receiver (TplEntry *self,
-    TplContact *data);
+    TplEntity *data);
 
 TplEntrySignalType _tpl_entry_get_signal_type (TplEntry *self);
 const gchar * _tpl_entry_get_chat_id (TplEntry * self);

@@ -37,7 +37,7 @@ typedef enum
 {
   TPL_DEBUG_ACTION_CHAIN  = 1 << 0,
   TPL_DEBUG_CONF          = 1 << 1,
-  TPL_DEBUG_CONTACT       = 1 << 2,
+  TPL_DEBUG_ENTITY        = 1 << 2,
   TPL_DEBUG_CHANNEL       = 1 << 3,
   TPL_DEBUG_DBUS_SERVICE  = 1 << 4,
   TPL_DEBUG_LOG_ENTRY     = 1 << 5,
