@@ -462,12 +462,12 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
     {
       GHashTable *tmp = self->priv->channel_requests;
       GHashTableIter iter;
-      gpointer key, value;
+      gpointer value;
 
       self->priv->channel_requests = NULL;
       g_hash_table_iter_init (&iter, tmp);
 
-      while (g_hash_table_iter_next (&iter, &key, &value))
+      while (g_hash_table_iter_next (&iter, NULL, &value))
         {
           GSList *requests = value;
           GSList *link;
