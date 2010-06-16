@@ -209,9 +209,11 @@ struct _TpBaseContactListPrivate
   gboolean had_contact_list;
   /* borrowed TpExportableChannel => GSList of gpointer (request tokens) that
    * will be satisfied by that channel when the contact list has been
-   * downloaded. The requests are in reverse chronological order.
+   * downloaded. The requests are in reverse chronological order; the list
+   * can also contain NULL.
    *
-   * This becomes NULL when the contact list has been downloaded. */
+   * If a channel appears in the keys of this map, that means it hasn't been
+   * announced via NewChannels yet. */
   GHashTable *channel_requests;
 
   /* queue of ListRequest representing GetContactListAttributes calls */
@@ -848,6 +850,21 @@ tp_base_contact_list_foreach_channel_class (TpChannelManager *manager,
 }
 
 static void
+tp_base_contact_list_associate_request (TpBaseContactList *self,
+    gpointer chan,
+    gpointer request_token)
+{
+  GSList *requests = NULL;
+
+  /* remember that it hasn't been announced yet, by putting it in
+   * channel_requests */
+  requests = g_hash_table_lookup (self->priv->channel_requests, chan);
+  g_hash_table_steal (self->priv->channel_requests, chan);
+  requests = g_slist_prepend (requests, request_token);
+  g_hash_table_insert (self->priv->channel_requests, chan, requests);
+}
+
+static gpointer
 tp_base_contact_list_new_channel (TpBaseContactList *self,
     TpHandleType handle_type,
     TpHandle handle,
@@ -856,7 +873,6 @@ tp_base_contact_list_new_channel (TpBaseContactList *self,
   gpointer chan;
   gchar *object_path;
   GType type;
-  GSList *requests = NULL;
 
   if (handle_type == TP_HANDLE_TYPE_LIST)
     {
@@ -896,23 +912,9 @@ tp_base_contact_list_new_channel (TpBaseContactList *self,
           chan);
     }
 
-  if (self->priv->channel_requests == NULL)
-    {
-      if (request_token != NULL)
-        requests = g_slist_prepend (requests, request_token);
+  tp_base_contact_list_associate_request (self, chan, request_token);
 
-      tp_channel_manager_emit_new_channel (self, TP_EXPORTABLE_CHANNEL (chan),
-          requests);
-      g_slist_free (requests);
-    }
-  else if (request_token != NULL)
-    {
-      /* initial contact list not received yet, so we have to wait for it */
-      requests = g_hash_table_lookup (self->priv->channel_requests, chan);
-      g_hash_table_steal (self->priv->channel_requests, chan);
-      requests = g_slist_prepend (requests, request_token);
-      g_hash_table_insert (self->priv->channel_requests, chan, requests);
-    }
+  return chan;
 }
 
 static gboolean
@@ -992,7 +994,8 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
     {
       if (handle_type == TP_HANDLE_TYPE_LIST)
         {
-          /* always create channels for our supported lists */
+          /* make an object, don't announce it yet, and remember the
+           * request token for when it's announced in set_list_received */
           tp_base_contact_list_new_channel (self, handle_type, handle,
               request_token);
         }
@@ -1003,22 +1006,18 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
               const gchar *name = tp_handle_inspect (self->priv->group_repo,
                   handle);
 
+              /* make an object, don't announce it yet, and remember the
+               * request token for when it's announced, if it's actually
+               * created */
+              tp_base_contact_list_new_channel (self, handle_type, handle,
+                  request_token);
+
+              /* this might announce the channel */
               tp_base_contact_list_create_groups (self, &name, 1);
-              /* hopefully, that resulted in a call to
-               * tp_base_contact_list_groups_created, which created the
-               * actual channel */
-              chan = g_hash_table_lookup (self->priv->groups,
-                  GUINT_TO_POINTER (handle));
 
-              if (chan == NULL)
-                {
-                  g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-                      "Unable to create group '%s'", name);
-                  goto error;
-                }
-
-              tp_channel_manager_emit_request_already_satisfied (self,
-                  request_token, TP_EXPORTABLE_CHANNEL (chan));
+              /* FIXME: we assume that group creation will succeed; if
+               * it fails somehow, the request will only be answered when
+               * we eventually disconnect */
             }
           else
             {
@@ -1034,6 +1033,14 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
           "A ContactList channel for type #%u, handle #%u already exists",
           handle_type, handle);
       goto error;
+    }
+  else if (g_hash_table_lookup_extended (self->priv->channel_requests, chan,
+        NULL, NULL))
+    {
+      /* there are outstanding requests for the channel, and there's an object
+       * to represent it, but it hasn't been announced; just append our
+       * request */
+      tp_base_contact_list_associate_request (self, chan, request_token);
     }
   else
     {
@@ -1489,10 +1496,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       while (g_hash_table_iter_next (&h_iter, NULL, &channel))
         tp_base_contact_list_announce_channel (self, channel);
     }
-
-  g_assert (g_hash_table_size (self->priv->channel_requests) == 0);
-  g_hash_table_destroy (self->priv->channel_requests);
-  self->priv->channel_requests = NULL;
 
   tp_base_contact_list_complete_requests (self);
   tp_handle_set_destroy (contacts);
@@ -2543,11 +2546,18 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
               GUINT_TO_POINTER (handle));
 
           if (c == NULL)
+            c = tp_base_contact_list_new_channel (self, TP_HANDLE_TYPE_GROUP,
+                handle, NULL);
+
+          if (g_hash_table_lookup_extended (self->priv->channel_requests, c,
+                NULL, NULL))
             {
-              tp_base_contact_list_new_channel (self, TP_HANDLE_TYPE_GROUP,
-                  handle, NULL);
+              /* the channel hasn't been announced yet: do so, and include
+               * it in the GroupsCreated signal */
               g_ptr_array_add (pa, (gchar *) tp_handle_inspect (
                     self->priv->group_repo, handle));
+
+              tp_base_contact_list_announce_channel (self, c);
             }
 
           tp_handle_unref (self->priv->group_repo, handle);
@@ -2746,12 +2756,15 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
 
   if (new_chan == NULL)
     {
-      tp_base_contact_list_new_channel (self, TP_HANDLE_TYPE_GROUP,
+      new_chan = tp_base_contact_list_new_channel (self, TP_HANDLE_TYPE_GROUP,
           new_handle, NULL);
+    }
 
-      new_chan = g_hash_table_lookup (self->priv->groups,
-          GUINT_TO_POINTER (new_handle));
-      g_assert (new_chan != NULL);
+  if (g_hash_table_lookup_extended (self->priv->channel_requests, new_chan,
+        NULL, NULL))
+    {
+      /* the channel hasn't been announced yet: do so */
+      tp_base_contact_list_announce_channel (self, new_chan);
     }
 
   /* move the members - presumably the self-handle is the actor */
