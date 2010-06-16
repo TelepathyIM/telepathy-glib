@@ -1316,8 +1316,15 @@ satisfy_channel_requests (TpExportableChannel *channel,
       channel);
 
   /* this is all fine even if requests is NULL */
+
   g_hash_table_steal (self->priv->channel_requests, channel);
+
+  /* get into chronological order */
   requests = g_slist_reverse (requests);
+  /* our list of requests can include NULL, which isn't a valid request
+   * token; get rid of it/them */
+  requests = g_slist_remove_all (requests, NULL);
+
   tp_channel_manager_emit_new_channel (self, channel, requests);
   g_slist_free (requests);
 }
