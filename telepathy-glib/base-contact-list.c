@@ -800,9 +800,14 @@ tp_base_contact_list_foreach_channel (TpChannelManager *manager,
   gpointer handle, channel;
   guint i;
 
+  /* in both cases, we look in channel_requests to avoid including channels
+   * that don't officially exist yet */
+
   for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
     {
-      if (self->priv->lists[i] != NULL)
+      if (self->priv->lists[i] != NULL &&
+          !g_hash_table_lookup_extended (self->priv->channel_requests,
+            self->priv->lists[i], NULL, NULL))
         func (TP_EXPORTABLE_CHANNEL (self->priv->lists[i]), user_data);
     }
 
@@ -810,7 +815,9 @@ tp_base_contact_list_foreach_channel (TpChannelManager *manager,
 
   while (g_hash_table_iter_next (&iter, &handle, &channel))
     {
-      func (TP_EXPORTABLE_CHANNEL (channel), user_data);
+      if (!g_hash_table_lookup_extended (self->priv->channel_requests,
+            channel, NULL, NULL))
+        func (TP_EXPORTABLE_CHANNEL (channel), user_data);
     }
 }
 
