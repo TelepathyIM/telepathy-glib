@@ -1308,10 +1308,9 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
 }
 
 static void
-satisfy_channel_requests (TpExportableChannel *channel,
-    gpointer user_data)
+tp_base_contact_list_announce_channel (TpBaseContactList *self,
+    gpointer channel)
 {
-  TpBaseContactList *self = user_data;
   GSList *requests = g_hash_table_lookup (self->priv->channel_requests,
       channel);
 
@@ -1354,6 +1353,7 @@ void
 tp_base_contact_list_set_list_received (TpBaseContactList *self)
 {
   TpHandleSet *contacts;
+  guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (!self->priv->had_contact_list);
@@ -1419,6 +1419,12 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       tp_handle_set_destroy (blocked);
     }
 
+  for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
+    {
+      if (self->priv->lists[i] != NULL)
+        tp_base_contact_list_announce_channel (self, self->priv->lists[i]);
+    }
+
   /* The natural thing to do here would be to iterate over all contacts, and
    * for each contact, emit a signal adding them to their own groups. However,
    * that emits a signal per contact. Here we turn the data model inside out,
@@ -1432,7 +1438,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       TpIntSetFastIter i_iter;
       TpHandle member;
       GHashTableIter h_iter;
-      gpointer group, members;
+      gpointer group, members, channel;
 
       tp_base_contact_list_groups_created (self,
           (const gchar * const *) groups, -1);
@@ -1447,8 +1453,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
           if (groups != NULL)
             {
-              guint i;
-
               for (i = 0; groups[i] != NULL; i++)
                 {
                   members = g_hash_table_lookup (group_members, groups[i]);
@@ -1479,10 +1483,12 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
         }
 
       g_hash_table_unref (group_members);
-    }
 
-  tp_base_contact_list_foreach_channel ((TpChannelManager *) self,
-      satisfy_channel_requests, self);
+      g_hash_table_iter_init (&h_iter, self->priv->groups);
+
+      while (g_hash_table_iter_next (&h_iter, NULL, &channel))
+        tp_base_contact_list_announce_channel (self, channel);
+    }
 
   g_assert (g_hash_table_size (self->priv->channel_requests) == 0);
   g_hash_table_destroy (self->priv->channel_requests);
