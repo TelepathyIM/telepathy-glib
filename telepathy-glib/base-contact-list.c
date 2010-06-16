@@ -1393,6 +1393,32 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       g_free (tmp);
     }
 
+  tp_base_contact_list_contacts_changed (self, contacts, NULL);
+
+  if (tp_base_contact_list_can_block (self))
+    {
+      TpHandleSet *blocked;
+
+      if (self->priv->lists[TP_LIST_HANDLE_DENY] == NULL)
+        {
+          tp_base_contact_list_new_channel (self,
+              TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_DENY, NULL);
+        }
+
+      blocked = tp_base_contact_list_get_blocked_contacts (self);
+
+      if (DEBUGGING)
+        {
+          gchar *tmp = tp_intset_dump (tp_handle_set_peek (contacts));
+
+          DEBUG ("Initially blocked contacts: %s", tmp);
+          g_free (tmp);
+        }
+
+      tp_base_contact_list_contact_blocking_changed (self, blocked);
+      tp_handle_set_destroy (blocked);
+    }
+
   /* The natural thing to do here would be to iterate over all contacts, and
    * for each contact, emit a signal adding them to their own groups. However,
    * that emits a signal per contact. Here we turn the data model inside out,
@@ -1455,31 +1481,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       g_hash_table_unref (group_members);
     }
 
-  tp_base_contact_list_contacts_changed (self, contacts, NULL);
-  tp_handle_set_destroy (contacts);
-
-  if (tp_base_contact_list_can_block (self))
-    {
-      if (self->priv->lists[TP_LIST_HANDLE_DENY] == NULL)
-        {
-          tp_base_contact_list_new_channel (self,
-              TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_DENY, NULL);
-        }
-
-      contacts = tp_base_contact_list_get_blocked_contacts (self);
-
-      if (DEBUGGING)
-        {
-          gchar *tmp = tp_intset_dump (tp_handle_set_peek (contacts));
-
-          DEBUG ("Initially blocked contacts: %s", tmp);
-          g_free (tmp);
-        }
-
-      tp_base_contact_list_contact_blocking_changed (self, contacts);
-      tp_handle_set_destroy (contacts);
-    }
-
   tp_base_contact_list_foreach_channel ((TpChannelManager *) self,
       satisfy_channel_requests, self);
 
@@ -1488,6 +1489,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   self->priv->channel_requests = NULL;
 
   tp_base_contact_list_complete_requests (self);
+  tp_handle_set_destroy (contacts);
 }
 
 #ifdef ENABLE_DEBUG
