@@ -216,8 +216,8 @@ AC_OUTPUT([
    extensions/tpl-extensions.pc
    src/Makefile
    telepathy-logger/Makefile
-   telepathy-logger/telepathy-logger.pc
-   telepathy-logger/telepathy-logger-uninstalled.pc
+   telepathy-logger/telepathy-logger-0.1.pc
+   telepathy-logger/telepathy-logger-0.1-uninstalled.pc
    tools/Makefile
    tests/Makefile
    tests/suppressions/Makefile
