@@ -5,10 +5,18 @@ SUBDIRS = \
     tools \
     spec \
     telepathy-glib \
+    $(NULL)
+
+if HAVE_VALA
+SUBDIRS += vala
+endif
+
+SUBDIRS += \
     extensions \
     examples \
     tests \
-    docs
+    docs \
+    $(NULL)
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --disable-debug
 

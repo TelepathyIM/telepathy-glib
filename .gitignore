@@ -78,4 +78,8 @@ tests/test-*
 /tests/tools/actual-body.h
 /tests/tools/actual-gtk-doc.h
 tools/telepathy-glib-env
+/vala/telepathy-glib-generated.gi
+/vala/telepathy-glib.files
+/vala/telepathy-glib.gi
+/vala/telepathy-glib.vapi
 /valgrind.log
