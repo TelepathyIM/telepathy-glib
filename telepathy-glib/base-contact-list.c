@@ -2540,6 +2540,9 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
         g_return_if_fail (created[i] != NULL);
     }
 
+  if (!self->priv->had_contact_list)
+    return;
+
   pa = g_ptr_array_sized_new (n_created + 1);
 
   for (i = 0; i < n_created; i++)
@@ -2630,6 +2633,9 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
       for (i = 0; i < n_removed; i++)
         g_return_if_fail (removed[i] != NULL);
     }
+
+  if (!self->priv->had_contact_list)
+    return;
 
   old_members = tp_intset_new ();
   pa = g_ptr_array_sized_new (n_removed + 1);
@@ -2739,6 +2745,9 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
+
+  if (!self->priv->had_contact_list)
+    return;
 
   old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL, NULL);
 
@@ -2904,6 +2913,9 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
       for (i = 0; i < n_removed; i++)
         g_return_if_fail (removed[i] != NULL);
     }
+
+  if (!self->priv->had_contact_list)
+    return;
 
   DEBUG ("Changing up to %u contacts, adding %" G_GSSIZE_FORMAT
       " groups, removing %" G_GSSIZE_FORMAT,
