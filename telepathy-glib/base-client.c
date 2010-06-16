@@ -737,8 +737,8 @@ tp_base_client_register (TpBaseClient *self,
  * called.
  * Returns the list of requests @self is likely be asked to handle.
  *
- * Returns: (transfer container) (element-type Tp.ChannelRequest): a #GList
- * of #TpChannelRequest
+ * Returns: (transfer container) (element-type TelepathyGLib.ChannelRequest): a
+ * #GList of #TpChannelRequest
  *
  * Since: 0.11.6
  */
@@ -757,8 +757,8 @@ tp_base_client_get_pending_requests (TpBaseClient *self)
  * Returns the set of channels currently handled by this base client or by any
  * other #TpBaseClient with which it shares a unique name.
  *
- * Returns: (transfer container) (element-type Tp.Channel): the handled
- *  channels
+ * Returns: (transfer container) (element-type TelepathyGLib.Channel): the
+ * handled channels
  *
  * Since: 0.11.6
  */
