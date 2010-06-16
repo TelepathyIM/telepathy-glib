@@ -2673,6 +2673,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
                   self->priv->conn->self_handle,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
+              tp_channel_manager_emit_channel_closed_for_object (self, c);
               _tp_base_contact_list_channel_close (c);
               g_hash_table_remove (self->priv->groups,
                   GUINT_TO_POINTER (handle));
@@ -2784,6 +2785,7 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   /* delete the old channel, but make sure to ref the old handle first,
    * in case the channel's ref was the last */
   tp_handle_ref (self->priv->group_repo, old_handle);
+  tp_channel_manager_emit_channel_closed_for_object (self, old_chan);
   _tp_base_contact_list_channel_close (old_chan);
   g_hash_table_remove (self->priv->groups, GUINT_TO_POINTER (old_handle));
 
