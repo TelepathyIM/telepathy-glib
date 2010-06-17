@@ -3,7 +3,7 @@ m4_define([tpl_minor_version], [1])
 m4_define([tpl_micro_version], [2])
 m4_define([tpl_nano_version], [1])
 
-# If library source has changed since last release, increment revision
+# If Tpl library source has changed since last release, increment revision
 # If interfaces have been added, removed or changed since last release,
 #  increment current and set revision to 0
 # If interfaces have been added since last release, increment age
@@ -11,6 +11,11 @@ m4_define([tpl_nano_version], [1])
 m4_define([tpl_lt_current], [1])
 m4_define([tpl_lt_revision], [0])
 m4_define([tpl_lt_age], [0])
+
+# The same for the extensions library produced by --enable-public-extensions
+m4_define([tpl_ext_lt_current], [1])
+m4_define([tpl_ext_lt_revision], [0])
+m4_define([tpl_ext_lt_age], [0])
 
 dnl Display the nano_version only if it's not '0'
 m4_define([tpl_base_version],
@@ -46,6 +51,13 @@ AC_SUBST([TPL_LT_AGE])
 # name of a plugin directory, for instance
 TPL_ABI_VERSION=`expr ${TPL_LT_CURRENT} - ${TPL_LT_AGE}`
 AC_SUBST([TPL_ABI_VERSION])
+
+TPL_EXT_LT_CURRENT=tpl_ext_lt_current
+TPL_EXT_LT_REVISION=tpl_ext_lt_revision
+TPL_EXT_LT_AGE=tpl_ext_lt_age
+AC_SUBST([TPL_EXT_LT_CURRENT])
+AC_SUBST([TPL_EXT_LT_REVISION])
+AC_SUBST([TPL_EXT_LT_AGE])
 
 AC_PREREQ(2.59)
 AC_COPYRIGHT([
