@@ -5,7 +5,6 @@ AM_CPPFLAGS =						\
 	-I$(top_srcdir)					\
 	$(ERROR_CFLAGS)					\
 	-DG_LOG_DOMAIN=\"tp-logger\"			\
-	$(LIBTPL_CFLAGS)				\
 	$(TPL_CFLAGS)					\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
@@ -20,7 +19,7 @@ noinst_PROGRAMS = \
 
 telepathy_logger_LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-	$(LIBTPL_LIBS)
+	$(TPL_LIBS)
 
 test_api_LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
