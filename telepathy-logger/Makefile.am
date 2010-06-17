@@ -23,6 +23,7 @@ LIBTPL_HEADERS = \
 		entry.h			\
 		entry-text.h		\
 		log-manager.h			\
+		telepathy-logger.h \
 		$(NULL)
 
 libtelepathy_logger_la_SOURCES = \
