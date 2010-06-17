@@ -74,8 +74,11 @@ typedef struct _TpProxyClass TpProxyClass;
 /* defined in proxy-internal.h for now */
 typedef struct _TpProxyFeature TpProxyFeature;
 
+/* XXX: hide this from the g-i scanner, since vapigen can't cope */
+#ifndef __GI_SCANNER__
 typedef const TpProxyFeature *(*TpProxyClassFeatureListFunc) (
     TpProxyClass *cls);
+#endif /* __GI_SCANNER__ */
 
 struct _TpProxyClass {
     /*<public>*/
@@ -86,7 +89,12 @@ struct _TpProxyClass {
     unsigned int must_have_unique_name:1;
     guint _reserved_flags:31;
 
+/* XXX: hide this from the g-i scanner, since vapigen can't cope */
+#ifdef __GI_SCANNER__
+    GCallback _internal_list_features;
+#else
     TpProxyClassFeatureListFunc list_features;
+#endif /* __GI_SCANNER__ */
     GCallback _reserved[3];
     gpointer priv;
 };
