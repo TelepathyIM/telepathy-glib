@@ -1,10 +1,7 @@
-dnl If not 1, append datestamp to the version number
-m4_define(tpl_released, 0)
-
 m4_define([tpl_major_version], [0])
 m4_define([tpl_minor_version], [1])
 m4_define([tpl_micro_version], [2])
-m4_define([tpl_nano_version], [0])
+m4_define([tpl_nano_version], [1])
 
 dnl Display the nano_version only if it's not '0'
 m4_define([tpl_base_version],
@@ -14,7 +11,7 @@ m4_define([tpl_full_version],
               [tpl_base_version].[tpl_nano_version])])
 
 m4_define(tpl_maybe_datestamp,
-          m4_esyscmd([if test x]tpl_released[ != x1; then date +.%Y%m%d | tr -d '\n\r'; fi]))
+          m4_esyscmd([if test x]tpl_nano_version[ != x0; then date +.%Y%m%d | tr -d '\n\r'; fi]))
 
 m4_define(tpl_version, tpl_full_version[]tpl_maybe_datestamp)
 
@@ -26,7 +23,7 @@ DBUS_SERVICES_DIR="$datadir/dbus-1/services"
 AC_SUBST(DBUS_SERVICES_DIR)
 AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [Where services dir for DBUS is])
 
-ifelse(tpl_released, 1,
+ifelse(tpl_nano_version, 0,
     [ official_release=yes ],
     [ official_release=no ])
 
