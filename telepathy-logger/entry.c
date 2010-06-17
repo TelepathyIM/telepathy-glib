@@ -437,7 +437,6 @@ _tpl_entry_set_signal_type (TplEntry *self,
   g_return_if_fail (TPL_IS_ENTRY (self));
 
   self->priv->signal_type = data;
-  g_object_notify (G_OBJECT (self), "signal-type");
 }
 
 /* set just on construction time */
