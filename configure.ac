@@ -167,21 +167,6 @@ if test x$enable_public_extensions = xyes; then
 fi
 AM_CONDITIONAL([ENABLE_PUBLIC_EXTENSIONS], [test "x$enable_public_extensions" = xyes])
 
-
-# -----------------------------------------------------------
-# Enable Channel types
-# -----------------------------------------------------------
-
-AC_ARG_ENABLE(channeltext,
-  AC_HELP_STRING([--disable-channeltext],[compile without Channel.Text support]),
-    enable_channeltext=$enableval, enable_channeltext=yes )
-
-if test x$enable_channeltext = xyes; then
-  AC_DEFINE(ENABLE_CHANNEL_TYPE_TEXT, [], [Enable Channel Text])
-fi
-AM_CONDITIONAL([ENABLE_CHANNEL_TYPE_TEXT], [test "x$enable_channeltext" = xyes])
-
-
 # -----------------------------------------------------------
 # Enable debug
 # -----------------------------------------------------------
