@@ -66,7 +66,7 @@ telepathy_logger_debug_SOURCES = \
 
 telepathy_logger_debug_LDADD = \
     $(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-    $(LIBTPL_LIBS)
+    $(TPL_LIBS)
 
 telepathy_logger_debug_LDFLAGS = -export-dynamic
 
