@@ -1371,6 +1371,12 @@ on_received_signal_cb (TpChannel *proxy,
       return;
     }
 
+  if (arg_Flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED)
+    {
+      PATH_DEBUG (tpl_text, "Ignore 'rescued' message");
+      return;
+    }
+
   /* Initialize TplEntryText (part 1) - chat_id still unknown */
   text_log = _tpl_entry_text_new (log_id, account_path,
       TPL_ENTRY_DIRECTION_IN);
