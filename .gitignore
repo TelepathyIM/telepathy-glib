@@ -50,6 +50,7 @@ Makefile.in
 /data/*.service
 
 /doc/reference/libtelepathy-logger/*.stamp
+/doc/reference/libtelepathy-logger/*.bak
 /doc/reference/libtelepathy-logger/html/
 /doc/reference/libtelepathy-logger/telepathy-logger-*.bak
 /doc/reference/libtelepathy-logger/telepathy-logger-*.txt
@@ -69,8 +70,8 @@ Makefile.in
 /src/telepathy-logger
 /src/test-api
 
-/telepathy-logger/telepathy-logger-uninstalled.pc
-/telepathy-logger/telepathy-logger.pc
+/telepathy-logger/telepathy-logger-0.1-uninstalled.pc
+/telepathy-logger/telepathy-logger-0.1.pc
 /telepathy-logger/_gen/*
 
 /tests/test-*[^ch]
