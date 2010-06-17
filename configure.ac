@@ -3,6 +3,15 @@ m4_define([tpl_minor_version], [1])
 m4_define([tpl_micro_version], [2])
 m4_define([tpl_nano_version], [1])
 
+# If library source has changed since last release, increment revision
+# If interfaces have been added, removed or changed since last release,
+#  increment current and set revision to 0
+# If interfaces have been added since last release, increment age
+# If interfaces have been removed since last release, set age to 0
+m4_define([tpl_lt_current], [1])
+m4_define([tpl_lt_revision], [0])
+m4_define([tpl_lt_age], [0])
+
 dnl Display the nano_version only if it's not '0'
 m4_define([tpl_base_version],
           [tpl_major_version.tpl_minor_version.tpl_micro_version])
@@ -26,6 +35,17 @@ AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [Where services dir 
 ifelse(tpl_nano_version, 0,
     [ official_release=yes ],
     [ official_release=no ])
+
+TPL_LT_CURRENT=tpl_lt_current
+TPL_LT_REVISION=tpl_lt_revision
+TPL_LT_AGE=tpl_lt_age
+AC_SUBST([TPL_LT_CURRENT])
+AC_SUBST([TPL_LT_REVISION])
+AC_SUBST([TPL_LT_AGE])
+# The ABI version is the end of the SONAME on Linux, and would appear in the
+# name of a plugin directory, for instance
+TPL_ABI_VERSION=`expr ${TPL_LT_CURRENT} - ${TPL_LT_AGE}`
+AC_SUBST([TPL_ABI_VERSION])
 
 AC_PREREQ(2.59)
 AC_COPYRIGHT([
