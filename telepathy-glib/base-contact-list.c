@@ -216,7 +216,7 @@ struct _TpBaseContactListPrivate
    * announced via NewChannels yet. */
   GHashTable *channel_requests;
 
-  /* queue of ListRequest representing GetContactListAttributes calls */
+  /* queue of ListRequest representing RequestContactList calls */
   GQueue list_requests;
 
   gulong status_changed_id;
@@ -443,7 +443,7 @@ tp_base_contact_list_complete_requests (TpBaseContactList *self)
       request != NULL;
       request = g_queue_pop_head (&self->priv->list_requests))
     {
-      /* GetContactListAttributes returns the same data type as
+      /* RequestContactList returns the same data type as
        * GetContactAttributes, so this is OK to do. */
       _tp_contacts_mixin_get_contact_attributes (self->priv->conn,
           contacts, (const gchar **) request->interfaces,
@@ -3316,7 +3316,7 @@ void tp_base_contact_list_remove_group (TpBaseContactList *self,
 }
 
 static void
-tp_base_contact_list_mixin_get_contact_list_attributes (
+tp_base_contact_list_mixin_request_contact_list (
     TpSvcConnectionInterfaceContactList *svc,
     const gchar **interfaces,
     gboolean hold,
@@ -3734,7 +3734,7 @@ tp_base_contact_list_mixin_list_iface_init (
 {
 #define IMPLEMENT(x) tp_svc_connection_interface_contact_list_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
-  IMPLEMENT (get_contact_list_attributes);
+  IMPLEMENT (request_contact_list);
   IMPLEMENT (request_subscription);
   IMPLEMENT (authorize_publication);
   IMPLEMENT (remove_contacts);

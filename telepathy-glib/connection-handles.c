@@ -828,7 +828,7 @@ tp_connection_get_contact_attributes (TpConnection *self,
  * Return (via a callback) the contacts on the contact list and any number of
  * their attributes, and if @hold is TRUE, hold a reference to them.
  *
- * This is a thin wrapper around the GetContactListAttributes D-Bus method,
+ * This is a thin wrapper around the RequestContactList D-Bus method,
  * and should be used in preference to lower-level functions; it is similar
  * to tp_connection_get_contact_attributes().
  *
@@ -862,7 +862,7 @@ tp_connection_request_contact_list_attributes (TpConnection *self,
   c->callback = callback;
   c->hold = hold;
 
-  tp_cli_connection_interface_contact_list_call_get_contact_list_attributes (
+  tp_cli_connection_interface_contact_list_call_request_contact_list (
       self, -1, (const gchar **) interfaces, hold,
       connection_got_contact_attributes,
       c, get_contact_attributes_context_free, weak_object);
