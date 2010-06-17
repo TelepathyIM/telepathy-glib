@@ -1,10 +1,21 @@
-dnl If not 1, append datestamp to the version number
-m4_define(tpl_released, 0)
-
 m4_define([tpl_major_version], [0])
 m4_define([tpl_minor_version], [1])
 m4_define([tpl_micro_version], [2])
-m4_define([tpl_nano_version], [0])
+m4_define([tpl_nano_version], [1])
+
+# If Tpl library source has changed since last release, increment revision
+# If interfaces have been added, removed or changed since last release,
+#  increment current and set revision to 0
+# If interfaces have been added since last release, increment age
+# If interfaces have been removed since last release, set age to 0
+m4_define([tpl_lt_current], [1])
+m4_define([tpl_lt_revision], [0])
+m4_define([tpl_lt_age], [0])
+
+# The same for the extensions library produced by --enable-public-extensions
+m4_define([tpl_ext_lt_current], [1])
+m4_define([tpl_ext_lt_revision], [0])
+m4_define([tpl_ext_lt_age], [0])
 
 dnl Display the nano_version only if it's not '0'
 m4_define([tpl_base_version],
@@ -14,7 +25,7 @@ m4_define([tpl_full_version],
               [tpl_base_version].[tpl_nano_version])])
 
 m4_define(tpl_maybe_datestamp,
-          m4_esyscmd([if test x]tpl_released[ != x1; then date +.%Y%m%d | tr -d '\n\r'; fi]))
+          m4_esyscmd([if test x]tpl_nano_version[ != x0; then date +.%Y%m%d | tr -d '\n\r'; fi]))
 
 m4_define(tpl_version, tpl_full_version[]tpl_maybe_datestamp)
 
@@ -26,9 +37,27 @@ DBUS_SERVICES_DIR="$datadir/dbus-1/services"
 AC_SUBST(DBUS_SERVICES_DIR)
 AC_DEFINE_UNQUOTED(DBUS_SERVICES_DIR, "$DBUS_SERVICES_DIR", [Where services dir for DBUS is])
 
-ifelse(tpl_released, 1,
+ifelse(tpl_nano_version, 0,
     [ official_release=yes ],
     [ official_release=no ])
+
+TPL_LT_CURRENT=tpl_lt_current
+TPL_LT_REVISION=tpl_lt_revision
+TPL_LT_AGE=tpl_lt_age
+AC_SUBST([TPL_LT_CURRENT])
+AC_SUBST([TPL_LT_REVISION])
+AC_SUBST([TPL_LT_AGE])
+# The ABI version is the end of the SONAME on Linux, and would appear in the
+# name of a plugin directory, for instance
+TPL_ABI_VERSION=`expr ${TPL_LT_CURRENT} - ${TPL_LT_AGE}`
+AC_SUBST([TPL_ABI_VERSION])
+
+TPL_EXT_LT_CURRENT=tpl_ext_lt_current
+TPL_EXT_LT_REVISION=tpl_ext_lt_revision
+TPL_EXT_LT_AGE=tpl_ext_lt_age
+AC_SUBST([TPL_EXT_LT_CURRENT])
+AC_SUBST([TPL_EXT_LT_REVISION])
+AC_SUBST([TPL_EXT_LT_AGE])
 
 AC_PREREQ(2.59)
 AC_COPYRIGHT([
@@ -166,21 +195,6 @@ if test x$enable_public_extensions = xyes; then
   AC_DEFINE(ENABLE_PUBLIC_EXTENSIONS, [], [Enable Public Extensions])
 fi
 AM_CONDITIONAL([ENABLE_PUBLIC_EXTENSIONS], [test "x$enable_public_extensions" = xyes])
-
-
-# -----------------------------------------------------------
-# Enable Channel types
-# -----------------------------------------------------------
-
-AC_ARG_ENABLE(channeltext,
-  AC_HELP_STRING([--disable-channeltext],[compile without Channel.Text support]),
-    enable_channeltext=$enableval, enable_channeltext=yes )
-
-if test x$enable_channeltext = xyes; then
-  AC_DEFINE(ENABLE_CHANNEL_TYPE_TEXT, [], [Enable Channel Text])
-fi
-AM_CONDITIONAL([ENABLE_CHANNEL_TYPE_TEXT], [test "x$enable_channeltext" = xyes])
-
 
 # -----------------------------------------------------------
 # Enable debug

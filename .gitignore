@@ -50,6 +50,7 @@ Makefile.in
 /data/*.service
 
 /doc/reference/libtelepathy-logger/*.stamp
+/doc/reference/libtelepathy-logger/*.bak
 /doc/reference/libtelepathy-logger/html/
 /doc/reference/libtelepathy-logger/telepathy-logger-*.bak
 /doc/reference/libtelepathy-logger/telepathy-logger-*.txt
