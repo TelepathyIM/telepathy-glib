@@ -178,12 +178,25 @@
  * @self: the contact list manager
  * @contacts: the contacts whose subscription is to be requested
  * @message: an optional human-readable message from the user
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * Signature of a virtual method to request permission to see some contacts'
  * presence.
  *
  * The virtual method should call tp_base_contact_list_contacts_changed()
- * for any contacts it has changed, before returning.
+ * for any contacts it has changed, before it calls @callback.
+ */
+
+/**
+ * TpBaseContactListAsyncFinishFunc:
+ * @self: the contact list manager
+ * @result: the result of the asynchronous operation
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Signature of a virtual method to finish an async operation.
+ *
+ * Returns: %TRUE on success, or %FALSE if @error is set
  */
 
 #include <telepathy-glib/base-connection.h>
@@ -253,8 +266,11 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseContactList,
 /**
  * TpMutableContactListInterface:
  * @parent: the parent interface
- * @request_subscription: the implementation of
- *  tp_base_contact_list_request_subscription(); must always be provided
+ * @request_subscription_async: the implementation of
+ *  tp_base_contact_list_request_subscription_async(); must always be provided
+ * @request_subscription_finish: the implementation of
+ *  tp_base_contact_list_request_subscription_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
  * @authorize_publication: the implementation of
  *  tp_base_contact_list_authorize_publication(); must always be provided
  * @remove_contacts: the implementation of
@@ -660,7 +676,8 @@ tp_base_contact_list_constructed (GObject *object)
 
       g_return_if_fail (iface->can_change_subscriptions != NULL);
       g_return_if_fail (iface->get_request_uses_message != NULL);
-      g_return_if_fail (iface->request_subscription != NULL);
+      g_return_if_fail (iface->request_subscription_async != NULL);
+      g_return_if_fail (iface->request_subscription_finish != NULL);
       g_return_if_fail (iface->authorize_publication != NULL);
       /* iface->store_contacts == NULL is OK */
       g_return_if_fail (iface->remove_contacts != NULL);
@@ -729,9 +746,26 @@ tp_base_contact_list_constructed (GObject *object)
       "status-changed", (GCallback) status_changed_cb, self);
 }
 
+static gboolean
+tp_base_contact_list_simple_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple = (GSimpleAsyncResult *) result;
+
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (g_async_result_get_source_object (result) ==
+      (GObject *) self, FALSE);
+  /* not using _is_valid here because we want to be source-tag-agnostic */
+
+  return !g_simple_async_result_propagate_error (simple, error);
+}
+
 static void
 tp_mutable_contact_list_default_init (TpMutableContactListInterface *iface)
 {
+  iface->request_subscription_finish = tp_base_contact_list_simple_finish;
+
   iface->can_change_subscriptions = tp_base_contact_list_true_func;
   iface->get_request_uses_message = tp_base_contact_list_true_func;
   /* there's no default for the other virtual methods */
@@ -1231,6 +1265,46 @@ _tp_base_contact_list_delete_group_by_handle (TpBaseContactList *self,
   return TRUE;
 }
 
+static void
+tp_base_contact_list_add_to_list_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer list_p)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  guint list = GPOINTER_TO_UINT (list_p);
+  GError *error = NULL;
+  gboolean ok;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
+
+  switch (list)
+    {
+    case TP_LIST_HANDLE_SUBSCRIBE:
+      ok = tp_base_contact_list_request_subscription_finish (self, result,
+          &error);
+      break;
+
+      /* FIXME: do the same for the act-on-contacts functions when they
+       * become async */
+
+    default:
+      g_return_if_reached ();
+    }
+
+  if (ok)
+    {
+      DEBUG ("Adding contact to '%s' list succeeded",
+          tp_base_contact_list_contact_lists[list - 1]);
+    }
+  else
+    {
+      DEBUG ("Adding contact to '%s' list failed: %s #%d: %s",
+          tp_base_contact_list_contact_lists[list - 1],
+          g_quark_to_string (error->domain), error->code, error->message);
+      g_clear_error (&error);
+    }
+}
+
 gboolean
 _tp_base_contact_list_add_to_list (TpBaseContactList *self,
     TpHandle list,
@@ -1256,7 +1330,9 @@ _tp_base_contact_list_add_to_list (TpBaseContactList *self,
   switch (list)
     {
     case TP_LIST_HANDLE_SUBSCRIBE:
-      tp_base_contact_list_request_subscription (self, contacts, message);
+      tp_base_contact_list_request_subscription_async (self, contacts,
+          message, tp_base_contact_list_add_to_list_cb,
+          GUINT_TO_POINTER (list));
       break;
 
     case TP_LIST_HANDLE_PUBLISH:
@@ -1824,30 +1900,35 @@ tp_base_contact_list_get_contacts (TpBaseContactList *self)
 }
 
 /**
- * tp_base_contact_list_request_subscription:
+ * tp_base_contact_list_request_subscription_async:
  * @self: a contact list manager
  * @contacts: the contacts whose subscription is to be requested
  * @message: an optional human-readable message from the user
+ * @callback: a callback to call when the request for subscription succeeds
+ *  or fails
+ * @user_data: optional data to pass to @callback
  *
  * Request permission to see some contacts' presence.
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
- * #TpMutableContactListInterface.request_subscription.
+ * #TpMutableContactListInterface.request_subscription_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
- * for any contacts it has changed, before returning.
+ * for any contacts it has changed, before it calls @callback.
  *
  * If @message will be ignored,
  * #TpMutableContactListInterface.get_request_uses_message should also be
  * reimplemented to return %FALSE.
  */
 void
-tp_base_contact_list_request_subscription (TpBaseContactList *self,
+tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
     TpHandleSet *contacts,
-    const gchar *message)
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpMutableContactListInterface *iface;
 
@@ -1858,9 +1939,45 @@ tp_base_contact_list_request_subscription (TpBaseContactList *self,
 
   iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
   g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->request_subscription != NULL);
+  g_return_if_fail (iface->request_subscription_async != NULL);
 
-  iface->request_subscription (self, contacts, message);
+  iface->request_subscription_async (self, contacts, message, callback,
+      user_data);
+}
+
+/**
+ * tp_base_contact_list_request_subscription_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_request_subscription_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_request_subscription_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.request_subscription_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactListInterface *iface;
+
+  g_return_val_if_fail (TP_IS_MUTABLE_CONTACT_LIST (self), FALSE);
+  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (iface != NULL, FALSE);
+  g_return_val_if_fail (iface->request_subscription_finish != NULL, FALSE);
+
+  return iface->request_subscription_finish (self, result, error);
 }
 
 /**
@@ -2208,7 +2325,7 @@ tp_base_contact_list_get_subscriptions_persist (TpBaseContactList *self)
  * tp_base_contact_list_get_request_uses_message:
  * @self: a contact list manager
  *
- * Return whether the tp_base_contact_list_request_subscription()
+ * Return whether the tp_base_contact_list_request_subscription_async()
  * method's @message argument is actually used.
  *
  * If the #TpBaseContactList subclass does not implement
@@ -2222,7 +2339,7 @@ tp_base_contact_list_get_subscriptions_persist (TpBaseContactList *self)
  * protocols; subclasses may reimplement this method with
  * tp_base_contact_list_false_func() or a custom implementation if desired.
  *
- * Returns: %TRUE if tp_base_contact_list_request_subscription() will not
+ * Returns: %TRUE if tp_base_contact_list_request_subscription_async() will not
  *  ignore its @message argument
  */
 gboolean
@@ -3488,6 +3605,19 @@ tp_base_contact_list_mixin_return_void (DBusGMethodInvocation *context,
 }
 
 static void
+tp_base_contact_list_mixin_request_subscription_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_request_subscription_finish (self, result, &error);
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
 tp_base_contact_list_mixin_request_subscription (
     TpSvcConnectionInterfaceContactList *svc,
     const GArray *contacts,
@@ -3500,14 +3630,16 @@ tp_base_contact_list_mixin_request_subscription (
   TpHandleSet *contacts_set;
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto finally;
+    goto error;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
-  tp_base_contact_list_request_subscription (self, contacts_set, message);
+  tp_base_contact_list_request_subscription_async (self, contacts_set, message,
+      tp_base_contact_list_mixin_request_subscription_cb, context);
   tp_handle_set_destroy (contacts_set);
+  return;
 
-finally:
+error:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
 }

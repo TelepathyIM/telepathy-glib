@@ -975,10 +975,26 @@ example_contact_list_manager_get_states (TpBaseContactList *manager,
 }
 
 static void
-example_contact_list_manager_request_subscription (
+example_contact_list_manager_succeed_void (ExampleContactListManager *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *simple;
+
+  simple = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      NULL);
+  g_simple_async_result_complete_in_idle (simple);
+  g_object_unref (simple);
+}
+
+
+static void
+example_contact_list_manager_request_subscription_async (
     TpBaseContactList *manager,
     TpHandleSet *contacts,
-    const gchar *message)
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -1019,14 +1035,14 @@ example_contact_list_manager_request_subscription (
 
       if (message[0] == '\0' || strstr (message_lc, "please") != NULL)
         {
-          g_timeout_add_full (G_PRIORITY_DEFAULT,
+          g_timeout_add_full (G_PRIORITY_LOW,
               self->priv->simulation_delay, receive_authorized,
               self_and_contact_new (self, member),
               self_and_contact_destroy);
         }
       else
         {
-          g_timeout_add_full (G_PRIORITY_DEFAULT,
+          g_timeout_add_full (G_PRIORITY_LOW,
               self->priv->simulation_delay,
               receive_unauthorized,
               self_and_contact_new (self, member),
@@ -1037,6 +1053,8 @@ example_contact_list_manager_request_subscription (
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
+
+  example_contact_list_manager_succeed_void (self, callback, user_data);
 }
 
 static void
@@ -1468,8 +1486,8 @@ mutable_contact_list_iface_init (TpMutableContactListInterface *iface)
 {
   iface->can_change_subscriptions = tp_base_contact_list_true_func;
   iface->get_request_uses_message = tp_base_contact_list_true_func;
-  iface->request_subscription =
-    example_contact_list_manager_request_subscription;
+  iface->request_subscription_async =
+    example_contact_list_manager_request_subscription_async;
   iface->authorize_publication =
     example_contact_list_manager_authorize_publication;
   iface->store_contacts = example_contact_list_manager_store_contacts;

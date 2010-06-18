@@ -126,16 +126,24 @@ typedef struct _TpMutableContactListInterface TpMutableContactListInterface;
 typedef void (*TpBaseContactListRequestSubscriptionFunc) (
     TpBaseContactList *self,
     TpHandleSet *contacts,
-    const gchar *message);
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 typedef void (*TpBaseContactListActOnContactsFunc) (
     TpBaseContactList *self,
     TpHandleSet *contacts);
 
+typedef gboolean (*TpBaseContactListAsyncFinishFunc) (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
 struct _TpMutableContactListInterface {
     GTypeInterface parent;
     /* mandatory-to-implement */
-    TpBaseContactListRequestSubscriptionFunc request_subscription;
+    TpBaseContactListRequestSubscriptionFunc request_subscription_async;
+    TpBaseContactListAsyncFinishFunc request_subscription_finish;
+
     TpBaseContactListActOnContactsFunc authorize_publication;
     TpBaseContactListActOnContactsFunc remove_contacts;
     TpBaseContactListActOnContactsFunc unsubscribe;
@@ -154,9 +162,16 @@ gboolean tp_base_contact_list_can_change_subscriptions (
 gboolean tp_base_contact_list_get_request_uses_message (
     TpBaseContactList *self);
 
-void tp_base_contact_list_request_subscription (TpBaseContactList *self,
+void tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
     TpHandleSet *contacts,
-    const gchar *message);
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_contact_list_request_subscription_finish (
+    TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
 
 void tp_base_contact_list_authorize_publication (TpBaseContactList *self,
     TpHandleSet *contacts);
