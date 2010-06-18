@@ -975,20 +975,6 @@ example_contact_list_manager_get_states (TpBaseContactList *manager,
 }
 
 static void
-example_contact_list_manager_succeed_void (ExampleContactListManager *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  GSimpleAsyncResult *simple;
-
-  simple = g_simple_async_result_new ((GObject *) self, callback, user_data,
-      NULL);
-  g_simple_async_result_complete_in_idle (simple);
-  g_object_unref (simple);
-}
-
-
-static void
 example_contact_list_manager_request_subscription_async (
     TpBaseContactList *manager,
     TpHandleSet *contacts,
@@ -1054,7 +1040,8 @@ example_contact_list_manager_request_subscription_async (
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
 
-  example_contact_list_manager_succeed_void (self, callback, user_data);
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_request_subscription_async);
 }
 
 static void
