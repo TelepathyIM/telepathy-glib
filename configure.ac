@@ -197,13 +197,7 @@ AC_ARG_ENABLE(vala-bindings,
 
 if test x$enable_vala_bindings = xyes; then
   PKG_CHECK_MODULES(VALA,
-                    [vala-1.0 >= 0.8.0.58-d033,
-                     glib-2.0 >= 2.22,
-                     gobject-2.0 >= 2.22,
-                     gio-2.0 >= 2.22])
-  PKG_CHECK_MODULES(LIBTEST_VALA_LOWLEVEL,
-                    [glib-2.0 >= 2.22,
-                     gobject-2.0 >= 2.22])
+                    [vala-1.0 >= 0.8.0.58-d033])
   have_vala=yes
 
   AC_PATH_PROG(VALAC, valac, valac)
