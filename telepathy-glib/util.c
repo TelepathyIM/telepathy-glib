@@ -1333,3 +1333,35 @@ tp_weak_ref_destroy (TpWeakRef *self)
  *
  * Since: 0.11.7
  */
+
+/**
+ * tp_simple_async_report_success_in_idle:
+ * @source: the source object
+ * @callback: the callback
+ * @user_data: user data for @callback
+ * @source_tag: the source tag for the #GSimpleAsyncResult
+ *
+ * Create a new #GSimpleAsyncResult with no operation result, and call
+ * g_simple_async_result_complete_in_idle() on it.
+ *
+ * This is like a successful version of g_simple_async_report_error_in_idle(),
+ * suitable for asynchronous functions that (conceptually) either succeed and
+ * return nothing, or raise an error, such as tp_proxy_prepare_async().
+ *
+ * The corresponding finish function should not call a function that attempts
+ * to get a result, such as g_simple_async_result_get_op_res_gpointer().
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_simple_async_report_success_in_idle (GObject *source,
+    GAsyncReadyCallback callback,
+    gpointer user_data,
+    gpointer source_tag)
+{
+  GSimpleAsyncResult *simple;
+
+  simple = g_simple_async_result_new (source, callback, user_data, source_tag);
+  g_simple_async_result_complete_in_idle (simple);
+  g_object_unref (simple);
+}
