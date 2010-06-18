@@ -1,10 +1,23 @@
-telepathy-logger 0.1.2 (UNRELEASED)
+telepathy-logger 0.1.2 (2010-06-18)
 ===================================
+
+The API of libtelepathy-logger has been cleaned up and now only includes:
+- TplEntity (previously TplContact)
+- TplEntry (previously TplLogEntry)
+- TplEntryText (previously TplLogTextEntry)
+- TplLogManager
+
+This API should stay stable in the 0.1.x cycle.
+
+The library has been licensed more permissively and is now available under the
+GNU Lesser General Public License, version 2.1 or (at your option) any
+later version.
 
 Dependencies:
 
 * telepathy-glib ≥ 0.11.5
 * telepathy-mission-control ≥ 5.4.0 is recommended
+
 
 telepathy-logger 0.1.1 (2010-02-26)
 ===================================
