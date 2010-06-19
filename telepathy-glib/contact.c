@@ -999,6 +999,9 @@ struct _ContactsContext {
     GDestroyNotify destroy;
     GObject *weak_object;
 
+    /* Whether or not our weak object died*/
+    gboolean no_purpose_in_life;
+
     /* queue of ContactsProc */
     GQueue todo;
 
@@ -1014,6 +1017,17 @@ struct _ContactsContext {
  * slice-allocating sizeof (GCallback) bytes repeatedly, and putting *those*
  * in the queue. */
 G_STATIC_ASSERT (sizeof (GCallback) == sizeof (gpointer));
+
+static void
+contacts_context_weak_notify (gpointer data,
+  GObject *dead)
+{
+  ContactsContext *c = data;
+
+  g_assert (c->weak_object == dead);
+  c->no_purpose_in_life = TRUE;
+  c->weak_object = NULL;
+}
 
 static ContactsContext *
 contacts_context_new (TpConnection *connection,
@@ -1037,6 +1051,9 @@ contacts_context_new (TpConnection *connection,
   c->user_data = user_data;
   c->destroy = destroy;
   c->weak_object = weak_object;
+
+  if (c->weak_object != NULL)
+    g_object_weak_ref (c->weak_object, contacts_context_weak_notify, c);
 
   g_queue_init (&c->todo);
 
@@ -1083,6 +1100,8 @@ contacts_context_unref (gpointer p)
   c->destroy = NULL;
   c->user_data = NULL;
 
+  if (c->weak_object != NULL)
+    g_object_weak_unref (c->weak_object, contacts_context_weak_notify, c);
   c->weak_object = NULL;
 
   g_slice_free (ContactsContext, c);
@@ -1246,6 +1265,9 @@ contacts_context_fail (ContactsContext *c,
 static void
 contacts_context_continue (ContactsContext *c)
 {
+  if (c->no_purpose_in_life)
+    return;
+
   if (g_queue_is_empty (&c->todo))
     {
       /* do some final sanity checking then hand over the contacts to the
