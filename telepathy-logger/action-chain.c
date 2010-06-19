@@ -46,9 +46,9 @@ _tpl_action_chain_new_async (GObject *obj,
 
 
 static void
-link_free (TplActionLink *link)
+link_free (TplActionLink *l)
 {
-  g_slice_free (TplActionLink, link);
+  g_slice_free (TplActionLink, l);
 }
 
 
@@ -81,13 +81,13 @@ _tpl_action_chain_prepend (TplActionChain *self,
     TplPendingAction func,
     gpointer user_data)
 {
-  TplActionLink *link;
+  TplActionLink *l;
 
-  link = g_slice_new0 (TplActionLink);
-  link->action = func;
-  link->user_data = user_data;
+  l = g_slice_new0 (TplActionLink);
+  l->action = func;
+  l->user_data = user_data;
 
-  g_queue_push_head (self->chain, link);
+  g_queue_push_head (self->chain, l);
 }
 
 
@@ -96,13 +96,13 @@ _tpl_action_chain_append (TplActionChain *self,
     TplPendingAction func,
     gpointer user_data)
 {
-  TplActionLink *link;
+  TplActionLink *l;
 
-  link = g_slice_new0 (TplActionLink);
-  link->action = func;
-  link->user_data = user_data;
+  l = g_slice_new0 (TplActionLink);
+  l->action = func;
+  l->user_data = user_data;
 
-  g_queue_push_tail (self->chain, link);
+  g_queue_push_tail (self->chain, l);
 }
 
 
@@ -118,10 +118,10 @@ _tpl_action_chain_continue (TplActionChain *self)
     }
   else
     {
-      TplActionLink *link = g_queue_pop_head (self->chain);
+      TplActionLink *l = g_queue_pop_head (self->chain);
 
-      link->action (self, link->user_data);
-      link_free (link);
+      l->action (self, l->user_data);
+      link_free (l);
     }
 }
 
