@@ -132,7 +132,9 @@ typedef void (*TpBaseContactListRequestSubscriptionFunc) (
 
 typedef void (*TpBaseContactListActOnContactsFunc) (
     TpBaseContactList *self,
-    TpHandleSet *contacts);
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 typedef gboolean (*TpBaseContactListAsyncFinishFunc) (TpBaseContactList *self,
     GAsyncResult *result,
@@ -140,16 +142,30 @@ typedef gboolean (*TpBaseContactListAsyncFinishFunc) (TpBaseContactList *self,
 
 struct _TpMutableContactListInterface {
     GTypeInterface parent;
-    /* mandatory-to-implement */
+
+    /* _async mandatory-to-implement, _finish has a default implementation
+     * suitable for a GSimpleAsyncResult */
+
     TpBaseContactListRequestSubscriptionFunc request_subscription_async;
     TpBaseContactListAsyncFinishFunc request_subscription_finish;
 
-    TpBaseContactListActOnContactsFunc authorize_publication;
-    TpBaseContactListActOnContactsFunc remove_contacts;
-    TpBaseContactListActOnContactsFunc unsubscribe;
-    TpBaseContactListActOnContactsFunc unpublish;
+    TpBaseContactListActOnContactsFunc authorize_publication_async;
+    TpBaseContactListAsyncFinishFunc authorize_publication_finish;
+
+    TpBaseContactListActOnContactsFunc remove_contacts_async;
+    TpBaseContactListAsyncFinishFunc remove_contacts_finish;
+
+    TpBaseContactListActOnContactsFunc unsubscribe_async;
+    TpBaseContactListAsyncFinishFunc unsubscribe_finish;
+
+    TpBaseContactListActOnContactsFunc unpublish_async;
+    TpBaseContactListAsyncFinishFunc unpublish_finish;
+
     /* optional-to-implement */
-    TpBaseContactListActOnContactsFunc store_contacts;
+
+    TpBaseContactListActOnContactsFunc store_contacts_async;
+    TpBaseContactListAsyncFinishFunc store_contacts_finish;
+
     TpBaseContactListBooleanFunc can_change_subscriptions;
     TpBaseContactListBooleanFunc get_request_uses_message;
 };
@@ -173,20 +189,51 @@ gboolean tp_base_contact_list_request_subscription_finish (
     GAsyncResult *result,
     GError **error);
 
-void tp_base_contact_list_authorize_publication (TpBaseContactList *self,
-    TpHandleSet *contacts);
+void tp_base_contact_list_authorize_publication_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
-void tp_base_contact_list_store_contacts (TpBaseContactList *self,
-    TpHandleSet *contacts);
+gboolean tp_base_contact_list_authorize_publication_finish (
+    TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
 
-void tp_base_contact_list_remove_contacts (TpBaseContactList *self,
-    TpHandleSet *contacts);
+void tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
-void tp_base_contact_list_unsubscribe (TpBaseContactList *self,
-    TpHandleSet *contacts);
+gboolean tp_base_contact_list_store_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
 
-void tp_base_contact_list_unpublish (TpBaseContactList *self,
-    TpHandleSet *contacts);
+void tp_base_contact_list_remove_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_contact_list_remove_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_base_contact_list_unsubscribe_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_contact_list_unsubscribe_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_base_contact_list_unpublish_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
 
 /* ---- contact blocking ---- */
 
@@ -214,19 +261,41 @@ gboolean tp_base_contact_list_can_block (TpBaseContactList *self);
 TpHandleSet *tp_base_contact_list_get_blocked_contacts (
     TpBaseContactList *self);
 
-void tp_base_contact_list_block_contacts (TpBaseContactList *self,
-    TpHandleSet *contacts);
+void tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
-void tp_base_contact_list_unblock_contacts (TpBaseContactList *self,
-    TpHandleSet *contacts);
+gboolean tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
 
 struct _TpBlockableContactListInterface {
     GTypeInterface parent;
+
     /* mandatory to implement */
+
     TpBaseContactListGetContactsFunc get_blocked_contacts;
-    TpBaseContactListActOnContactsFunc block_contacts;
-    TpBaseContactListActOnContactsFunc unblock_contacts;
+
+    /* _async mandatory-to-implement, _finish has a default implementation
+     * suitable for a GSimpleAsyncResult */
+
+    TpBaseContactListActOnContactsFunc block_contacts_async;
+    TpBaseContactListAsyncFinishFunc block_contacts_finish;
+    TpBaseContactListActOnContactsFunc unblock_contacts_async;
+    TpBaseContactListAsyncFinishFunc unblock_contacts_finish;
+
     /* optional to implement */
+
     TpBaseContactListBooleanFunc can_block;
 };
 

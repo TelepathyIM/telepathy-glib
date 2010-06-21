@@ -163,6 +163,8 @@
  * TpBaseContactListActOnContactsFunc:
  * @self: the contact list manager
  * @contacts: the contacts on which to act
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * Signature of a virtual method that acts on a set of contacts and needs no
  * additional information, such as removing contacts, approving or cancelling
@@ -271,17 +273,32 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseContactList,
  * @request_subscription_finish: the implementation of
  *  tp_base_contact_list_request_subscription_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
- * @authorize_publication: the implementation of
- *  tp_base_contact_list_authorize_publication(); must always be provided
- * @remove_contacts: the implementation of
- *  tp_base_contact_list_remove_contacts(); must always be provided
- * @unsubscribe: the implementation of
- *  tp_base_contact_list_unsubscribe(); must always be provided
- * @unpublish: the implementation of
- *  tp_base_contact_list_unpublish(); must always be provided
- * @store_contacts: the implementation of
- *  tp_base_contact_list_store_contacts(); if not reimplemented,
+ * @authorize_publication_async: the implementation of
+ *  tp_base_contact_list_authorize_publication_async(); must always be provided
+ * @authorize_publication_finish: the implementation of
+ *  tp_base_contact_list_authorize_publication_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
+ * @remove_contacts_async: the implementation of
+ *  tp_base_contact_list_remove_contacts_async(); must always be provided
+ * @remove_contacts_finish: the implementation of
+ *  tp_base_contact_list_remove_contacts_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
+ * @unsubscribe_async: the implementation of
+ *  tp_base_contact_list_unsubscribe_async(); must always be provided
+ * @unsubscribe_finish: the implementation of
+ *  tp_base_contact_list_unsubscribe_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
+ * @unpublish_async: the implementation of
+ *  tp_base_contact_list_unpublish_async(); must always be provided
+ * @unpublish_finish: the implementation of
+ *  tp_base_contact_list_unpublish_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
+ * @store_contacts_async: the implementation of
+ *  tp_base_contact_list_store_contacts_async(); if not reimplemented,
  *  the default implementation is %NULL, which is interpreted as "do nothing"
+ * @store_contacts_finish: the implementation of
+ *  tp_base_contact_list_store_contacts_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
  * @can_change_subscriptions: the implementation of
  *  tp_base_contact_list_can_change_subscriptions(); if not reimplemented,
  *  the default implementation always returns %TRUE
@@ -307,10 +324,16 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  * @parent: the parent interface
  * @get_blocked_contacts: the implementation of
  *  tp_base_contact_list_get_blocked_contacts(); must always be provided
- * @block_contacts: the implementation of
- *  tp_base_contact_list_block_contacts(); must always be provided
- * @unblock_contacts: the implementation of
- *  tp_base_contact_list_unblock_contacts(); must always be provided
+ * @block_contacts_async: the implementation of
+ *  tp_base_contact_list_block_contacts_async(); must always be provided
+ * @block_contacts_finish: the implementation of
+ *  tp_base_contact_list_block_contacts_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
+ * @unblock_contacts_async: the implementation of
+ *  tp_base_contact_list_unblock_contacts_async(); must always be provided
+ * @unblock_contacts_finish: the implementation of
+ *  tp_base_contact_list_unblock_contacts_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
  * @can_block: the implementation of
  *  tp_base_contact_list_can_block(); if not reimplemented,
  *  the default implementation always returns %TRUE
@@ -678,11 +701,16 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->get_request_uses_message != NULL);
       g_return_if_fail (iface->request_subscription_async != NULL);
       g_return_if_fail (iface->request_subscription_finish != NULL);
-      g_return_if_fail (iface->authorize_publication != NULL);
-      /* iface->store_contacts == NULL is OK */
-      g_return_if_fail (iface->remove_contacts != NULL);
-      g_return_if_fail (iface->unsubscribe != NULL);
-      g_return_if_fail (iface->unpublish != NULL);
+      g_return_if_fail (iface->authorize_publication_async != NULL);
+      g_return_if_fail (iface->authorize_publication_finish != NULL);
+      /* iface->store_contacts_async == NULL is OK */
+      g_return_if_fail (iface->store_contacts_finish != NULL);
+      g_return_if_fail (iface->remove_contacts_async != NULL);
+      g_return_if_fail (iface->remove_contacts_finish != NULL);
+      g_return_if_fail (iface->unsubscribe_async != NULL);
+      g_return_if_fail (iface->unsubscribe_finish != NULL);
+      g_return_if_fail (iface->unpublish_async != NULL);
+      g_return_if_fail (iface->unpublish_finish != NULL);
     }
 
   if (TP_IS_BLOCKABLE_CONTACT_LIST (self))
@@ -692,8 +720,10 @@ tp_base_contact_list_constructed (GObject *object)
 
       g_return_if_fail (iface->can_block != NULL);
       g_return_if_fail (iface->get_blocked_contacts != NULL);
-      g_return_if_fail (iface->block_contacts != NULL);
-      g_return_if_fail (iface->unblock_contacts != NULL);
+      g_return_if_fail (iface->block_contacts_async != NULL);
+      g_return_if_fail (iface->block_contacts_finish != NULL);
+      g_return_if_fail (iface->unblock_contacts_async != NULL);
+      g_return_if_fail (iface->unblock_contacts_finish != NULL);
     }
 
   self->priv->contact_repo = tp_base_connection_get_handles (self->priv->conn,
@@ -765,6 +795,11 @@ static void
 tp_mutable_contact_list_default_init (TpMutableContactListInterface *iface)
 {
   iface->request_subscription_finish = tp_base_contact_list_simple_finish;
+  iface->authorize_publication_finish = tp_base_contact_list_simple_finish;
+  iface->unsubscribe_finish = tp_base_contact_list_simple_finish;
+  iface->unpublish_finish = tp_base_contact_list_simple_finish;
+  iface->store_contacts_finish = tp_base_contact_list_simple_finish;
+  iface->remove_contacts_finish = tp_base_contact_list_simple_finish;
 
   iface->can_change_subscriptions = tp_base_contact_list_true_func;
   iface->get_request_uses_message = tp_base_contact_list_true_func;
@@ -774,6 +809,9 @@ tp_mutable_contact_list_default_init (TpMutableContactListInterface *iface)
 static void
 tp_blockable_contact_list_default_init (TpBlockableContactListInterface *iface)
 {
+  iface->block_contacts_finish = tp_base_contact_list_simple_finish;
+  iface->unblock_contacts_finish = tp_base_contact_list_simple_finish;
+
   iface->can_block = tp_base_contact_list_true_func;
   /* there's no default for the other virtual methods */
 }
@@ -1284,8 +1322,18 @@ tp_base_contact_list_add_to_list_cb (GObject *source,
           &error);
       break;
 
-      /* FIXME: do the same for the act-on-contacts functions when they
-       * become async */
+    case TP_LIST_HANDLE_PUBLISH:
+      ok = tp_base_contact_list_authorize_publication_finish (self, result,
+          &error);
+      break;
+
+    case TP_LIST_HANDLE_STORED:
+      ok = tp_base_contact_list_store_contacts_finish (self, result, &error);
+      break;
+
+    case TP_LIST_HANDLE_DENY:
+      ok = tp_base_contact_list_block_contacts_finish (self, result, &error);
+      break;
 
     default:
       g_return_if_reached ();
@@ -1336,20 +1384,71 @@ _tp_base_contact_list_add_to_list (TpBaseContactList *self,
       break;
 
     case TP_LIST_HANDLE_PUBLISH:
-      tp_base_contact_list_authorize_publication (self, contacts);
+      tp_base_contact_list_authorize_publication_async (self, contacts,
+          tp_base_contact_list_add_to_list_cb, GUINT_TO_POINTER (list));
       break;
 
     case TP_LIST_HANDLE_STORED:
-      tp_base_contact_list_store_contacts (self, contacts);
+      tp_base_contact_list_store_contacts_async (self, contacts,
+          tp_base_contact_list_add_to_list_cb, GUINT_TO_POINTER (list));
       break;
 
     case TP_LIST_HANDLE_DENY:
-      tp_base_contact_list_block_contacts (self, contacts);
+      tp_base_contact_list_block_contacts_async (self, contacts,
+          tp_base_contact_list_add_to_list_cb, GUINT_TO_POINTER (list));
       break;
     }
 
   tp_handle_set_destroy (contacts);
   return TRUE;
+}
+
+static void
+tp_base_contact_list_remove_from_list_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer list_p)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  guint list = GPOINTER_TO_UINT (list_p);
+  GError *error = NULL;
+  gboolean ok;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
+
+  switch (list)
+    {
+    case TP_LIST_HANDLE_SUBSCRIBE:
+      ok = tp_base_contact_list_unsubscribe_finish (self, result, &error);
+      break;
+
+    case TP_LIST_HANDLE_PUBLISH:
+      ok = tp_base_contact_list_unpublish_finish (self, result, &error);
+      break;
+
+    case TP_LIST_HANDLE_STORED:
+      ok = tp_base_contact_list_remove_contacts_finish (self, result, &error);
+      break;
+
+    case TP_LIST_HANDLE_DENY:
+      ok = tp_base_contact_list_unblock_contacts_finish (self, result, &error);
+      break;
+
+    default:
+      g_return_if_reached ();
+    }
+
+  if (ok)
+    {
+      DEBUG ("Removing contact from '%s' list succeeded",
+          tp_base_contact_list_contact_lists[list - 1]);
+    }
+  else
+    {
+      DEBUG ("Removing contact from '%s' list failed: %s #%d: %s",
+          tp_base_contact_list_contact_lists[list - 1],
+          g_quark_to_string (error->domain), error->code, error->message);
+      g_clear_error (&error);
+    }
 }
 
 gboolean
@@ -1377,19 +1476,23 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
   switch (list)
     {
     case TP_LIST_HANDLE_SUBSCRIBE:
-      tp_base_contact_list_unsubscribe (self, contacts);
+      tp_base_contact_list_unsubscribe_async (self, contacts,
+          tp_base_contact_list_remove_from_list_cb, GUINT_TO_POINTER (list));
       break;
 
     case TP_LIST_HANDLE_PUBLISH:
-      tp_base_contact_list_unpublish (self, contacts);
+      tp_base_contact_list_unpublish_async (self, contacts,
+          tp_base_contact_list_remove_from_list_cb, GUINT_TO_POINTER (list));
       break;
 
     case TP_LIST_HANDLE_STORED:
-      tp_base_contact_list_remove_contacts (self, contacts);
+      tp_base_contact_list_remove_contacts_async (self, contacts,
+          tp_base_contact_list_remove_from_list_cb, GUINT_TO_POINTER (list));
       break;
 
     case TP_LIST_HANDLE_DENY:
-      tp_base_contact_list_unblock_contacts (self, contacts);
+      tp_base_contact_list_unblock_contacts_async (self, contacts,
+          tp_base_contact_list_remove_from_list_cb, GUINT_TO_POINTER (list));
       break;
     }
 
@@ -2017,183 +2120,354 @@ tp_base_contact_list_get_states (TpBaseContactList *self,
 }
 
 /**
- * tp_base_contact_list_authorize_publication:
+ * tp_base_contact_list_authorize_publication_async:
  * @self: a contact list manager
  * @contacts: the contacts to whom presence will be published
+ * @callback: a callback to call when the authorization succeeds or fails
+ * @user_data: optional data to pass to @callback
  *
  * Give permission for some contacts to see the local user's presence.
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
  * #TpMutableContactListInterface.authorize_publication.
  * The implementation should call tp_base_contact_list_contacts_changed()
- * for any contacts it has changed, before returning.
+ * for any contacts it has changed, before it calls @callback.
  */
 void
-tp_base_contact_list_authorize_publication (TpBaseContactList *self,
-    TpHandleSet *contacts)
+tp_base_contact_list_authorize_publication_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TpMutableContactListInterface *iface;
+  TpMutableContactListInterface *mutable_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (mutable_iface != NULL);
+  g_return_if_fail (mutable_iface->authorize_publication_async != NULL);
 
-  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
-    return;
-
-  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->authorize_publication != NULL);
-
-  iface->authorize_publication (self, contacts);
+  mutable_iface->authorize_publication_async (self, contacts, callback,
+      user_data);
 }
 
 /**
- * tp_base_contact_list_store_contacts:
+ * tp_base_contact_list_authorize_publication_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_authorize_publication_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_authorize_publication_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.authorize_publication_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_authorize_publication_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactListInterface *mutable_iface;
+
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_iface->authorize_publication_finish != NULL,
+      FALSE);
+
+  return mutable_iface->authorize_publication_finish (self, result, error);
+}
+
+/**
+ * tp_base_contact_list_store_contacts_async:
  * @self: a contact list manager
  * @contacts: the contacts to be stored
+ * @callback: a callback to call when the operation succeeds or fails
+ * @user_data: optional data to pass to @callback
  *
  * Store @contacts on the contact list, without attempting to subscribe to
  * them or send presence to them. If this is not possible, do nothing.
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, or if the implementation
- * of #TpMutableContactListInterface.store_contacts is %NULL (which is the
- * default), this method does nothing.
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
  * method, which may be implemented using
- * #TpMutableContactListInterface.store_contacts.
+ * #TpMutableContactListInterface.store_contacts_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
- * for any contacts it has changed, before returning.
+ * for any contacts it has changed, before calling @callback.
+ *
+ * If the implementation of
+ * #TpMutableContactListInterface.store_contacts_async is %NULL (which is
+ * the default), this method calls @callback to signal success, but does
+ * nothing in the underlying protocol.
  */
 void
-tp_base_contact_list_store_contacts (TpBaseContactList *self,
-    TpHandleSet *contacts)
+tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TpMutableContactListInterface *iface;
+  TpMutableContactListInterface *mutable_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (mutable_iface != NULL);
 
-  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
-    return;
+  if (mutable_iface->store_contacts_async == NULL)
+    tp_simple_async_report_success_in_idle ((GObject *) self,
+        callback, user_data, NULL);
 
-  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-
-  if (iface->store_contacts == NULL)
-    return;
-
-  iface->store_contacts (self, contacts);
+  mutable_iface->store_contacts_async (self, contacts, callback, user_data);
 }
 
 /**
- * tp_base_contact_list_remove_contacts:
+ * tp_base_contact_list_store_contacts_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_store_contacts_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_store_contacts_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.store_contacts_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_store_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactListInterface *mutable_iface;
+
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_iface->store_contacts_finish != NULL, FALSE);
+
+  return mutable_iface->store_contacts_finish (self, result, error);
+}
+
+/**
+ * tp_base_contact_list_remove_contacts_async:
  * @self: a contact list manager
  * @contacts: the contacts to be removed
+ * @callback: a callback to call when the operation succeeds or fails
+ * @user_data: optional data to pass to @callback
  *
  * Remove @contacts from the contact list entirely; this includes the
- * effect of both tp_base_contact_list_unsubscribe() and
- * tp_base_contact_list_unpublish(), and also reverses the effect of
- * tp_base_contact_list_store_contacts().
+ * effect of both tp_base_contact_list_unsubscribe_async() and
+ * tp_base_contact_list_unpublish_async(), and also reverses the effect of
+ * tp_base_contact_list_store_contacts_async().
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
- * #TpMutableContactListInterface.remove_contacts.
+ * #TpMutableContactListInterface.remove_contacts_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
- * for any contacts it has changed, before returning.
+ * for any contacts it has changed, before calling @callback.
  */
 void
-tp_base_contact_list_remove_contacts (TpBaseContactList *self,
-    TpHandleSet *contacts)
+tp_base_contact_list_remove_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TpMutableContactListInterface *iface;
+  TpMutableContactListInterface *mutable_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (mutable_iface != NULL);
+  g_return_if_fail (mutable_iface->remove_contacts_async != NULL);
 
-  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
-    return;
-
-  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->remove_contacts != NULL);
-
-  iface->remove_contacts (self, contacts);
+  mutable_iface->remove_contacts_async (self, contacts, callback, user_data);
 }
 
 /**
- * tp_base_contact_list_unsubscribe:
+ * tp_base_contact_list_remove_contacts_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_remove_contacts_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_remove_contacts_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.remove_contacts_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_remove_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactListInterface *mutable_iface;
+
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_iface->remove_contacts_finish != NULL, FALSE);
+
+  return mutable_iface->remove_contacts_finish (self, result, error);
+}
+
+/**
+ * tp_base_contact_list_unsubscribe_async:
  * @self: a contact list manager
  * @contacts: the contacts whose presence will no longer be received
+ * @callback: a callback to call when the operation succeeds or fails
+ * @user_data: optional data to pass to @callback
  *
  * Cancel a pending subscription request to @contacts, or attempt to stop
  * receiving their presence.
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
- * #TpMutableContactListInterface.unsubscribe.
+ * #TpMutableContactListInterface.unsubscribe_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
- * for any contacts it has changed, before returning.
+ * for any contacts it has changed, before calling @callback.
  */
 void
-tp_base_contact_list_unsubscribe (TpBaseContactList *self,
-    TpHandleSet *contacts)
+tp_base_contact_list_unsubscribe_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TpMutableContactListInterface *iface;
+  TpMutableContactListInterface *mutable_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (mutable_iface != NULL);
+  g_return_if_fail (mutable_iface->unsubscribe_async != NULL);
 
-  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
-    return;
-
-  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->unsubscribe != NULL);
-
-  iface->unsubscribe (self, contacts);
+  mutable_iface->unsubscribe_async (self, contacts, callback, user_data);
 }
 
 /**
- * tp_base_contact_list_unpublish:
+ * tp_base_contact_list_unsubscribe_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_unsubscribe_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_unsubscribe_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.unsubscribe_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_unsubscribe_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactListInterface *mutable_iface;
+
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_iface->unsubscribe_finish != NULL, FALSE);
+
+  return mutable_iface->unsubscribe_finish (self, result, error);
+}
+
+/**
+ * tp_base_contact_list_unpublish_async:
  * @self: a contact list manager
  * @contacts: the contacts to whom presence will no longer be published
+ * @callback: a callback to call when the operation succeeds or fails
+ * @user_data: optional data to pass to @callback
  *
  * Reject a pending subscription request from @contacts, or attempt to stop
  * sending presence to them.
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, this method does nothing.
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
- * #TpMutableContactListInterface.unpublish.
+ * #TpMutableContactListInterface.unpublish_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
- * for any contacts it has changed, before returning.
+ * for any contacts it has changed, before calling @callback.
  */
 void
-tp_base_contact_list_unpublish (TpBaseContactList *self,
-    TpHandleSet *contacts)
+tp_base_contact_list_unpublish_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TpMutableContactListInterface *iface;
+  TpMutableContactListInterface *mutable_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (mutable_iface != NULL);
+  g_return_if_fail (mutable_iface->unpublish_async != NULL);
 
-  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
-    return;
+  mutable_iface->unpublish_async (self, contacts, callback, user_data);
+}
 
-  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->unpublish != NULL);
+/**
+ * tp_base_contact_list_unpublish_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_unpublish_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_unpublish_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.unpublish_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactListInterface *mutable_iface;
 
-  iface->unpublish (self, contacts);
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_iface->unpublish_finish != NULL, FALSE);
+
+  return mutable_iface->unpublish_finish (self, result, error);
 }
 
 /**
@@ -2426,75 +2700,142 @@ tp_base_contact_list_get_blocked_contacts (TpBaseContactList *self)
 }
 
 /**
- * tp_base_contact_list_block_contacts:
+ * tp_base_contact_list_block_contacts_async:
  * @self: a contact list manager
  * @contacts: contacts whose communications should be blocked
+ * @callback: a callback to call when the operation succeeds or fails
+ * @user_data: optional data to pass to @callback
  *
  * Request that the given contacts are prevented from communicating with the
  * user, and that presence is not sent to them even if they have a valid
  * presence subscription, if possible.
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_BLOCKABLE_CONTACT_LIST, this method does nothing.
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
- * #TpBlockableContactListInterface.block_contacts.
+ * #TpBlockableContactListInterface.block_contacts_async.
  * The implementation should call
  * tp_base_contact_list_contact_blocking_changed()
- * for any contacts it has changed, before returning.
+ * for any contacts it has changed, before calling @callback.
  */
 void
-tp_base_contact_list_block_contacts (TpBaseContactList *self,
-    TpHandleSet *contacts)
+tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TpBlockableContactListInterface *iface;
+  TpBlockableContactListInterface *blockable_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  blockable_iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (blockable_iface != NULL);
+  g_return_if_fail (blockable_iface->block_contacts_async != NULL);
 
-  if (!TP_IS_BLOCKABLE_CONTACT_LIST (self))
-    return;
-
-  iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->block_contacts != NULL);
-
-  iface->block_contacts (self, contacts);
+  blockable_iface->block_contacts_async (self, contacts, callback, user_data);
 }
 
 /**
- * tp_base_contact_list_unblock_contacts:
+ * tp_base_contact_list_block_contacts_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_block_contacts_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_block_contacts_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.block_contacts_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpBlockableContactListInterface *blockable_iface;
+
+  blockable_iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (blockable_iface != NULL, FALSE);
+  g_return_val_if_fail (blockable_iface->block_contacts_finish != NULL, FALSE);
+
+  return blockable_iface->block_contacts_finish (self, result, error);
+}
+
+/**
+ * tp_base_contact_list_unblock_contacts_async:
  * @self: a contact list manager
  * @contacts: contacts whose communications should no longer be blocked
+ * @callback: a callback to call when the operation succeeds or fails
+ * @user_data: optional data to pass to @callback
  *
- * Reverse the effects of tp_base_contact_list_block_contacts().
+ * Reverse the effects of tp_base_contact_list_block_contacts_async().
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_BLOCKABLE_CONTACT_LIST, this method does nothing.
  *
  * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
- * #TpBlockableContactListInterface.unblock_contacts.
+ * #TpBlockableContactListInterface.unblock_contacts_async.
  * The implementation should call
  * tp_base_contact_list_contact_blocking_changed()
- * for any contacts it has changed, before returning.
+ * for any contacts it has changed, before calling @callback.
  */
 void
-tp_base_contact_list_unblock_contacts (TpBaseContactList *self,
-    TpHandleSet *contacts)
+tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TpBlockableContactListInterface *iface;
+  TpBlockableContactListInterface *blockable_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  blockable_iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (blockable_iface != NULL);
+  g_return_if_fail (blockable_iface->unblock_contacts_async != NULL);
 
-  if (!TP_IS_BLOCKABLE_CONTACT_LIST (self))
-    return;
+  blockable_iface->unblock_contacts_async (self, contacts, callback, user_data);
+}
 
-  iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->unblock_contacts != NULL);
+/**
+ * tp_base_contact_list_unblock_contacts_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_unblock_contacts_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_unblock_contacts_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.unblock_contacts_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpBlockableContactListInterface *blockable_iface;
 
-  iface->unblock_contacts (self, contacts);
+  blockable_iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (blockable_iface != NULL, FALSE);
+  g_return_val_if_fail (blockable_iface->unblock_contacts_finish != NULL,
+      FALSE);
+
+  return blockable_iface->unblock_contacts_finish (self, result, error);
 }
 
 /**
@@ -3640,6 +3981,19 @@ error:
 }
 
 static void
+tp_base_contact_list_mixin_authorize_publication_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_authorize_publication_finish (self, result, &error);
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
 tp_base_contact_list_mixin_authorize_publication (
     TpSvcConnectionInterfaceContactList *svc,
     const GArray *contacts,
@@ -3651,14 +4005,29 @@ tp_base_contact_list_mixin_authorize_publication (
   TpHandleSet *contacts_set;
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto finally;
+    goto error;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
-  tp_base_contact_list_authorize_publication (self, contacts_set);
+  tp_base_contact_list_authorize_publication_async (self, contacts_set,
+      tp_base_contact_list_mixin_authorize_publication_cb, context);
   tp_handle_set_destroy (contacts_set);
+  return;
 
-finally:
+error:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
+tp_base_contact_list_mixin_remove_contacts_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_remove_contacts_finish (self, result, &error);
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
 }
@@ -3675,14 +4044,29 @@ tp_base_contact_list_mixin_remove_contacts (
   TpHandleSet *contacts_set;
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto finally;
+    goto error;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
-  tp_base_contact_list_remove_contacts (self, contacts_set);
+  tp_base_contact_list_remove_contacts_async (self, contacts_set,
+      tp_base_contact_list_mixin_remove_contacts_cb, context);
   tp_handle_set_destroy (contacts_set);
+  return;
 
-finally:
+error:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
+tp_base_contact_list_mixin_unsubscribe_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_unsubscribe_finish (self, result, &error);
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
 }
@@ -3699,14 +4083,29 @@ tp_base_contact_list_mixin_unsubscribe (
   TpHandleSet *contacts_set;
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto finally;
+    goto error;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
-  tp_base_contact_list_unsubscribe (self, contacts_set);
+  tp_base_contact_list_unsubscribe_async (self, contacts_set,
+      tp_base_contact_list_mixin_unsubscribe_cb, context);
   tp_handle_set_destroy (contacts_set);
+  return;
 
-finally:
+error:
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
+tp_base_contact_list_mixin_unpublish_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_unpublish_finish (self, result, &error);
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
 }
@@ -3723,14 +4122,16 @@ tp_base_contact_list_mixin_unpublish (
   TpHandleSet *contacts_set;
 
   if (!tp_base_contact_list_check_list_change (self, contacts, &error))
-    goto finally;
+    goto error;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
-  tp_base_contact_list_unpublish (self, contacts_set);
+  tp_base_contact_list_unpublish_async (self, contacts_set,
+      tp_base_contact_list_mixin_unpublish_cb, context);
   tp_handle_set_destroy (contacts_set);
+  return;
 
-finally:
+error:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
 }

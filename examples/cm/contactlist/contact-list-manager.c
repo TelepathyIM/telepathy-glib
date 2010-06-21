@@ -1045,9 +1045,11 @@ example_contact_list_manager_request_subscription_async (
 }
 
 static void
-example_contact_list_manager_authorize_publication (
+example_contact_list_manager_authorize_publication_async (
     TpBaseContactList *manager,
-    TpHandleSet *contacts)
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -1083,12 +1085,17 @@ example_contact_list_manager_authorize_publication (
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_authorize_publication_async);
 }
 
 static void
-example_contact_list_manager_store_contacts (
+example_contact_list_manager_store_contacts_async (
     TpBaseContactList *manager,
-    TpHandleSet *contacts)
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -1112,11 +1119,16 @@ example_contact_list_manager_store_contacts (
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_store_contacts_async);
 }
 
 static void
-example_contact_list_manager_remove_contacts (TpBaseContactList *manager,
-    TpHandleSet *contacts)
+example_contact_list_manager_remove_contacts_async (TpBaseContactList *manager,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *removed = tp_handle_set_copy (contacts);
@@ -1149,11 +1161,16 @@ example_contact_list_manager_remove_contacts (TpBaseContactList *manager,
     }
 
   tp_base_contact_list_contacts_changed (manager, NULL, removed);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_remove_contacts_async);
 }
 
 static void
-example_contact_list_manager_unsubscribe (TpBaseContactList *manager,
-    TpHandleSet *contacts)
+example_contact_list_manager_unsubscribe_async (TpBaseContactList *manager,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -1206,11 +1223,16 @@ example_contact_list_manager_unsubscribe (TpBaseContactList *manager,
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_unsubscribe_async);
 }
 
 static void
-example_contact_list_manager_unpublish (TpBaseContactList *manager,
-    TpHandleSet *contacts)
+example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -1246,7 +1268,7 @@ example_contact_list_manager_unpublish (TpBaseContactList *manager,
 
               /* Pretend that after a delay, the contact notices the change
                * and asks for our presence again */
-              g_timeout_add_full (G_PRIORITY_DEFAULT,
+              g_timeout_add_full (G_PRIORITY_LOW,
                   self->priv->simulation_delay, auth_request_cb,
                   self_and_contact_new (self, member),
                   self_and_contact_destroy);
@@ -1267,6 +1289,9 @@ example_contact_list_manager_unpublish (TpBaseContactList *manager,
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_unpublish_async);
 }
 
 static TpHandleSet *
@@ -1279,9 +1304,11 @@ example_contact_list_manager_get_blocked_contacts (
 }
 
 static void
-example_contact_list_manager_block_contacts (
+example_contact_list_manager_block_contacts_async (
     TpBaseContactList *manager,
-    TpHandleSet *contacts)
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpIntSetFastIter iter;
@@ -1306,12 +1333,16 @@ example_contact_list_manager_block_contacts (
 
   tp_base_contact_list_contact_blocking_changed (manager, changed);
   tp_handle_set_destroy (changed);
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_block_contacts_async);
 }
 
 static void
-example_contact_list_manager_unblock_contacts (
+example_contact_list_manager_unblock_contacts_async (
     TpBaseContactList *manager,
-    TpHandleSet *contacts)
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpIntSetFastIter iter;
@@ -1335,6 +1366,8 @@ example_contact_list_manager_unblock_contacts (
 
   tp_base_contact_list_contact_blocking_changed (manager, changed);
   tp_handle_set_destroy (changed);
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_unblock_contacts_async);
 }
 
 static guint
@@ -1475,12 +1508,14 @@ mutable_contact_list_iface_init (TpMutableContactListInterface *iface)
   iface->get_request_uses_message = tp_base_contact_list_true_func;
   iface->request_subscription_async =
     example_contact_list_manager_request_subscription_async;
-  iface->authorize_publication =
-    example_contact_list_manager_authorize_publication;
-  iface->store_contacts = example_contact_list_manager_store_contacts;
-  iface->remove_contacts = example_contact_list_manager_remove_contacts;
-  iface->unsubscribe = example_contact_list_manager_unsubscribe;
-  iface->unpublish = example_contact_list_manager_unpublish;
+  iface->authorize_publication_async =
+    example_contact_list_manager_authorize_publication_async;
+  iface->store_contacts_async =
+    example_contact_list_manager_store_contacts_async;
+  iface->remove_contacts_async =
+    example_contact_list_manager_remove_contacts_async;
+  iface->unsubscribe_async = example_contact_list_manager_unsubscribe_async;
+  iface->unpublish_async = example_contact_list_manager_unpublish_async;
 }
 
 static void
@@ -1489,8 +1524,10 @@ blockable_contact_list_iface_init (TpBlockableContactListInterface *iface)
   iface->can_block = tp_base_contact_list_true_func;
   iface->get_blocked_contacts =
     example_contact_list_manager_get_blocked_contacts;
-  iface->block_contacts = example_contact_list_manager_block_contacts;
-  iface->unblock_contacts = example_contact_list_manager_unblock_contacts;
+  iface->block_contacts_async =
+    example_contact_list_manager_block_contacts_async;
+  iface->unblock_contacts_async =
+    example_contact_list_manager_unblock_contacts_async;
 }
 
 static void
