@@ -240,7 +240,7 @@ get_handler_prop_cb (TpProxy *proxy,
 
   bypass = tp_asv_get_boolean (properties, "BypassApproval", &valid);
   g_assert (valid);
-  g_assert (bypass);
+  g_assert (!bypass);
 
   capabilities = tp_asv_get_strv (properties, "Capabilities");
   g_assert_cmpint (g_strv_length ((GStrv) capabilities), ==, 0);
@@ -272,7 +272,7 @@ static void
 test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_simple_handler (test, TRUE, TRUE, handle_channels_success);
+  create_simple_handler (test, FALSE, TRUE, handle_channels_success);
 
   tp_base_client_take_handler_filter (test->simple_handler, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,

@@ -511,7 +511,16 @@ tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->priv->handle_channels_impl != NULL);
 
-  self->priv->flags |= (CLIENT_IS_HANDLER | CLIENT_HANDLER_BYPASSES_APPROVAL);
+  if (bypass_approval)
+    {
+      self->priv->flags |= (CLIENT_IS_HANDLER |
+          CLIENT_HANDLER_BYPASSES_APPROVAL);
+    }
+  else
+    {
+      self->priv->flags |= CLIENT_IS_HANDLER;
+      self->priv->flags &= ~CLIENT_HANDLER_BYPASSES_APPROVAL;
+    }
 }
 
 /**
