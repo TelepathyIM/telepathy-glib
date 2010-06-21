@@ -1930,18 +1930,13 @@ tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpMutableContactListInterface *iface;
+  TpMutableContactListInterface *mutable_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_if_fail (mutable_iface != NULL);
+  g_return_if_fail (mutable_iface->request_subscription_async != NULL);
 
-  if (!TP_IS_MUTABLE_CONTACT_LIST (self))
-    return;
-
-  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->request_subscription_async != NULL);
-
-  iface->request_subscription_async (self, contacts, message, callback,
+  mutable_iface->request_subscription_async (self, contacts, message, callback,
       user_data);
 }
 
@@ -1970,14 +1965,14 @@ tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error)
 {
-  TpMutableContactListInterface *iface;
+  TpMutableContactListInterface *mutable_iface;
 
-  g_return_val_if_fail (TP_IS_MUTABLE_CONTACT_LIST (self), FALSE);
-  iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
-  g_return_val_if_fail (iface != NULL, FALSE);
-  g_return_val_if_fail (iface->request_subscription_finish != NULL, FALSE);
+  mutable_iface = TP_MUTABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_iface->request_subscription_finish != NULL,
+      FALSE);
 
-  return iface->request_subscription_finish (self, result, error);
+  return mutable_iface->request_subscription_finish (self, result, error);
 }
 
 /**
