@@ -390,8 +390,11 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  *  tp_base_contact_list_get_group_storage(); the default implementation is
  *  %NULL, which results in %TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE being
  *  advertised
- * @set_contact_groups: the implementation of
- *  tp_base_contact_list_set_contact_groups(); must always be implemented
+ * @set_contact_groups_async: the implementation of
+ *  tp_base_contact_list_set_contact_groups_async(); must always be implemented
+ * @set_contact_groups_finish: the implementation of
+ *  tp_base_contact_list_set_contact_groups_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
  * @create_groups: the implementation of
  *  tp_base_contact_list_create_groups(); must always be implemented
  * @add_to_group: the implementation of
@@ -759,7 +762,8 @@ tp_base_contact_list_constructed (GObject *object)
       TpMutableContactGroupListInterface *iface =
         TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
 
-      g_return_if_fail (iface->set_contact_groups != NULL);
+      g_return_if_fail (iface->set_contact_groups_async != NULL);
+      g_return_if_fail (iface->set_contact_groups_finish != NULL);
       g_return_if_fail (iface->create_groups != NULL);
       g_return_if_fail (iface->add_to_group != NULL);
       g_return_if_fail (iface->remove_from_group != NULL);
@@ -827,6 +831,7 @@ static void
 tp_mutable_contact_group_list_default_init (
     TpMutableContactGroupListInterface *iface)
 {
+  iface->set_contact_groups_finish = tp_base_contact_list_simple_finish;
 }
 
 static void
@@ -3833,44 +3838,82 @@ tp_base_contact_list_mixin_request_contact_list (
  * @normalized_names: (array length=n_names): the normalized names of some
  *  groups
  * @n_names: the number of groups
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
- * Signature of an implementation of tp_base_contact_list_set_contact_groups().
+ * Signature of an implementation of
+ * tp_base_contact_list_set_contact_groups_async().
  */
 
 /**
- * tp_base_contact_list_set_contact_groups:
+ * tp_base_contact_list_set_contact_groups_async:
  * @self: a contact list manager
  * @contact: a contact handle
  * @normalized_names: (array length=n_names): the normalized names of some
  *  groups
  * @n_names: the number of groups
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method does nothing.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which must be implemented, using
- * #TpMutableContactGroupListInterface.set_contact_groups.
+ * #TpMutableContactGroupListInterface.set_contact_groups_async.
  * The implementation should call tp_base_contact_list_groups_changed()
  * for any changes it successfully made, before returning.
  */
-void tp_base_contact_list_set_contact_groups (TpBaseContactList *self,
+void tp_base_contact_list_set_contact_groups_async (TpBaseContactList *self,
     TpHandle contact,
     const gchar * const *normalized_names,
-    gsize n_names)
+    gsize n_names,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TpMutableContactGroupListInterface *iface;
+  TpMutableContactGroupListInterface *mutable_groups_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  mutable_groups_iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_if_fail (mutable_groups_iface != NULL);
+  g_return_if_fail (mutable_groups_iface->set_contact_groups_async != NULL);
 
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    return;
+  mutable_groups_iface->set_contact_groups_async (self, contact,
+      normalized_names, n_names, callback, user_data);
+}
 
-  iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->set_contact_groups != NULL);
+/**
+ * tp_base_contact_list_set_contact_groups_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_set_contact_groups_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_set_contact_groups_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.set_contact_groups_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_set_contact_groups_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactGroupListInterface *mutable_groups_iface;
 
-  iface->set_contact_groups (self, contact, normalized_names, n_names);
+  mutable_groups_iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_groups_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_groups_iface->set_contact_groups_finish !=
+      NULL, FALSE);
+
+  return mutable_groups_iface->set_contact_groups_finish (self, result, error);
 }
 
 static gboolean
@@ -4324,6 +4367,19 @@ tp_base_contact_list_get_group_storage (TpBaseContactList *self)
 }
 
 static void
+tp_base_contact_list_mixin_set_contact_groups_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_set_contact_groups_finish (self, result, &error);
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
 tp_base_contact_list_mixin_set_contact_groups (
     TpSvcConnectionInterfaceContactGroups *svc,
     guint contact,
@@ -4366,14 +4422,19 @@ tp_base_contact_list_mixin_set_contact_groups (
         }
     }
 
-  tp_base_contact_list_set_contact_groups (self, contact,
+  tp_base_contact_list_set_contact_groups_async (self, contact,
       (const gchar * const *) normalized_groups->pdata,
-      normalized_groups->len);
+      normalized_groups->len,
+      tp_base_contact_list_mixin_set_contact_groups_cb, context);
+  context = NULL;     /* ownership transferred to callback */
 
 finally:
   tp_clear_pointer (&group_set, tp_handle_set_destroy);
   tp_clear_pointer (&normalized_groups, g_ptr_array_unref);
-  tp_base_contact_list_mixin_return_void (context, error);
+
+  if (context != NULL)
+    tp_base_contact_list_mixin_return_void (context, error);
+
   g_clear_error (&error);
 }
 

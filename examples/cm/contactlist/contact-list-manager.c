@@ -277,10 +277,13 @@ example_contact_list_manager_create_groups (TpBaseContactList *manager,
 }
 
 static void
-example_contact_list_manager_set_contact_groups (TpBaseContactList *manager,
+example_contact_list_manager_set_contact_groups_async (
+    TpBaseContactList *manager,
     TpHandle contact,
     const gchar * const *names,
-    gsize n)
+    gsize n,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *set = tp_handle_set_new (self->priv->contact_repo);
@@ -344,6 +347,8 @@ next_hash_element:
       (const gchar * const *) old_names->pdata, old_names->len);
   g_ptr_array_unref (old_names);
   g_ptr_array_unref (new_names);
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_set_contact_groups_async);
 }
 
 static gboolean
@@ -1547,6 +1552,7 @@ mutable_contact_group_list_iface_init (
   iface->remove_group = example_contact_list_manager_remove_group;
   iface->create_groups = example_contact_list_manager_create_groups;
   iface->rename_group = example_contact_list_manager_rename_group;
-  iface->set_contact_groups = example_contact_list_manager_set_contact_groups;
+  iface->set_contact_groups_async =
+    example_contact_list_manager_set_contact_groups_async;
   iface->get_group_storage = example_contact_list_manager_get_group_storage;
 }

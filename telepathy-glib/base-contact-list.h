@@ -376,12 +376,21 @@ TpContactMetadataStorageType tp_base_contact_list_get_group_storage (
 typedef void (*TpBaseContactListSetContactGroupsFunc) (TpBaseContactList *self,
     TpHandle contact,
     const gchar * const *normalized_names,
-    gsize n_names);
+    gsize n_names,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
-void tp_base_contact_list_set_contact_groups (TpBaseContactList *self,
+void tp_base_contact_list_set_contact_groups_async (TpBaseContactList *self,
     TpHandle contact,
     const gchar * const *normalized_names,
-    gsize n_names);
+    gsize n_names,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_contact_list_set_contact_groups_finish (
+    TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
 
 typedef void (*TpBaseContactListCreateGroupsFunc) (
     TpBaseContactList *self,
@@ -435,13 +444,20 @@ typedef struct _TpMutableContactGroupListInterface
 
 struct _TpMutableContactGroupListInterface {
     GTypeInterface parent;
-    /* mandatory to implement */
-    TpBaseContactListSetContactGroupsFunc set_contact_groups;
+
+    /* _async mandatory-to-implement, _finish has a default implementation
+     * suitable for a GSimpleAsyncResult */
+
+    TpBaseContactListSetContactGroupsFunc set_contact_groups_async;
+    TpBaseContactListAsyncFinishFunc set_contact_groups_finish;
+
     TpBaseContactListCreateGroupsFunc create_groups;
     TpBaseContactListGroupContactsFunc add_to_group;
     TpBaseContactListGroupContactsFunc remove_from_group;
     TpBaseContactListRemoveGroupFunc remove_group;
+
     /* optional to implement */
+
     TpBaseContactListRenameGroupFunc rename_group;
     TpBaseContactListUIntFunc get_group_storage;
 };
