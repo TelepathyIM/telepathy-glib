@@ -17,10 +17,6 @@ telepathy-glib.vapi: $(top_srcdir)/telepathy-glib/TelepathyGLib-0.12.gir
 		$< \
 		$(NULL)
 
-EXTRA_DIST = \
-	$(BUILT_SOURCES) \
-	$(NULL)
-
 CLEANFILES = \
 	$(BUILT_SOURCES) \
 	$(NULL)
