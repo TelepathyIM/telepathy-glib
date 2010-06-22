@@ -84,9 +84,7 @@ log_handler (const gchar *log_domain,
       g_log_default_handler (log_domain, log_level, message, NULL);
     }
 
-  /* messages are already sent to the debug sender in gabble_debug. */
-  if (log_level != G_LOG_LEVEL_DEBUG || tp_strdiff (log_domain, G_LOG_DOMAIN))
-    log_to_debug_sender (log_domain, log_level, message);
+  log_to_debug_sender (log_domain, log_level, message);
 }
 #endif /* ENABLE_DEBUG */
 
