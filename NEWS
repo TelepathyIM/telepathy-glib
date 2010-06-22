@@ -1,7 +1,11 @@
 telepathy-glib 0.10.7 (UNRELEASED)
 ==================================
 
-...
+Fixes:
+
+* Fix a va_list leak in tp_value_array_build (wjt)
+
+* Fix a memory leak for unlikely errors in tp_base_connection_register (wjt)
 
 telepathy-glib 0.10.6 (2010-05-25)
 ==================================
