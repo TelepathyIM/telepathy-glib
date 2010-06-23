@@ -125,7 +125,6 @@ get_self_contact_cb (TpConnection *connection,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplObserver *observer = _tpl_observer_new (); /* singleton */
   TplActionChain *ctx = user_data;
   TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
@@ -146,14 +145,12 @@ get_self_contact_cb (TpConnection *connection,
       PATH_DEBUG (tpl_text, "Error resolving self handle for connection %s."
          " Aborting channel observation", conn_path);
 
-      g_object_unref (observer);
       _tpl_action_chain_terminate (ctx);
       return;
     }
 
   _tpl_channel_text_set_my_contact (tpl_text, contacts[0]);
 
-  g_object_unref (observer);
   _tpl_action_chain_continue (ctx);
 }
 
