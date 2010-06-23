@@ -410,8 +410,8 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  *  tp_base_contact_list_remove_group_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
  * @rename_group_async: the implementation of
- *  tp_base_contact_list_rename_group_async(); the default implementation is
- *  %NULL, which results in group renaming being emulated via a call to
+ *  tp_base_contact_list_rename_group_async(); the default implementation
+ *  results in group renaming being emulated via a call to
  *  @add_to_group and a call to @remove_group_async
  * @rename_group_finish: the implementation of
  *  tp_base_contact_list_rename_group_finish(); the default
@@ -838,10 +838,15 @@ tp_contact_group_list_default_init (TpContactGroupListInterface *iface)
   /* there's no default for the other virtual methods */
 }
 
+static void tp_base_contact_list_emulate_rename_group (TpBaseContactList *,
+    const gchar *, const gchar *, GAsyncReadyCallback, gpointer);
+
 static void
 tp_mutable_contact_group_list_default_init (
     TpMutableContactGroupListInterface *iface)
 {
+  iface->rename_group_async = tp_base_contact_list_emulate_rename_group;
+
   iface->set_contact_groups_finish = tp_base_contact_list_simple_finish;
   iface->create_groups_finish = tp_base_contact_list_simple_finish;
   iface->remove_group_finish = tp_base_contact_list_simple_finish;
@@ -3786,29 +3791,34 @@ tp_base_contact_list_rename_group_async (TpBaseContactList *self,
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
   g_return_if_fail (iface != NULL);
+  g_return_if_fail (iface->rename_group_async != NULL);
 
-  if (iface->rename_group_async != NULL)
-    {
-      iface->rename_group_async (self, old_name, new_name, callback,
-          user_data);
-    }
-  else
-    {
-      TpHandle old_handle;
-      gpointer old_channel;
-      TpGroupMixin *mixin;
+  iface->rename_group_async (self, old_name, new_name, callback,
+      user_data);
+}
 
-      old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL,
-          NULL);
-      g_return_if_fail (old_handle != 0);
-      old_channel = g_hash_table_lookup (self->priv->groups,
-          GUINT_TO_POINTER (old_handle));
-      g_return_if_fail (old_channel != NULL);
-      mixin = TP_GROUP_MIXIN (old_channel);
+static void
+tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
+    const gchar *old_name,
+    const gchar *new_name,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpHandle old_handle;
+  gpointer old_channel;
+  TpGroupMixin *mixin;
 
-      iface->add_to_group (self, new_name, mixin->members);
-      iface->remove_group_async (self, old_name, callback, user_data);
-    }
+  old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL,
+      NULL);
+  g_return_if_fail (old_handle != 0);
+  old_channel = g_hash_table_lookup (self->priv->groups,
+      GUINT_TO_POINTER (old_handle));
+  g_return_if_fail (old_channel != NULL);
+  mixin = TP_GROUP_MIXIN (old_channel);
+
+  tp_base_contact_list_add_to_group (self, new_name, mixin->members);
+  tp_base_contact_list_remove_group_async (self, old_name, callback,
+      user_data);
 }
 
 /**
