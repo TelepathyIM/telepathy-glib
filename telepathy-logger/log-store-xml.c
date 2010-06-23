@@ -879,8 +879,7 @@ log_store_xml_get_messages_for_file (TplLogStoreXml *self,
           g_free (instead_of_channel_path);
         }
 
-      message = _tpl_entry_text_new (log_id,
-          tp_proxy_get_object_path (account), TPL_ENTRY_DIRECTION_NONE);
+      message = _tpl_entry_text_new (log_id, account, TPL_ENTRY_DIRECTION_NONE);
 
       _tpl_entry_text_set_pending_msg_id (TPL_ENTRY_TEXT (message),
           pending_id);

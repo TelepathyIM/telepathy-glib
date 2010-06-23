@@ -23,7 +23,6 @@
 #include "entry-internal.h"
 
 #include <glib.h>
-#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_ENTRY
 #include <telepathy-logger/debug-internal.h>
@@ -76,8 +75,6 @@
 G_DEFINE_ABSTRACT_TYPE (TplEntry, tpl_entry, G_TYPE_OBJECT)
 
 static void tpl_entry_set_log_id (TplEntry *self, const gchar *data);
-static void tpl_entry_set_account_path (TplEntry *self,
-    const gchar *data);
 
 struct _TplEntryPriv
 {
@@ -85,7 +82,7 @@ struct _TplEntryPriv
   gint64 timestamp;
   TplEntrySignalType signal_type;
   gchar *chat_id;
-  gchar *account_path;
+  TpAccount *account;
   gchar *channel_path;
 
   /* incoming/outgoing */
@@ -102,7 +99,7 @@ enum {
     PROP_LOG_ID,
     PROP_DIRECTION,
     PROP_CHAT_ID,
-    PROP_ACCOUNT_PATH,
+    PROP_ACCOUNT,
     PROP_CHANNEL_PATH,
     PROP_SENDER,
     PROP_RECEIVER
@@ -117,8 +114,8 @@ tpl_entry_finalize (GObject *obj)
 
   g_free (priv->chat_id);
   priv->chat_id = NULL;
-  g_free (priv->account_path);
-  priv->account_path = NULL;
+
+  tp_clear_object (&priv->account);
 
   G_OBJECT_CLASS (tpl_entry_parent_class)->finalize (obj);
 }
@@ -168,8 +165,8 @@ tpl_entry_get_property (GObject *object,
       case PROP_CHAT_ID:
         g_value_set_string (value, priv->chat_id);
         break;
-      case PROP_ACCOUNT_PATH:
-        g_value_set_string (value, priv->account_path);
+      case PROP_ACCOUNT:
+        g_value_set_object (value, priv->account);
         break;
       case PROP_CHANNEL_PATH:
         g_value_set_string (value, priv->channel_path);
@@ -208,8 +205,8 @@ tpl_entry_set_property (GObject *object,
       case PROP_CHAT_ID:
         _tpl_entry_set_chat_id (self, g_value_get_string (value));
         break;
-      case PROP_ACCOUNT_PATH:
-        tpl_entry_set_account_path (self, g_value_get_string (value));
+      case PROP_ACCOUNT:
+        self->priv->account = g_value_dup_object (value);
         break;
       case PROP_CHANNEL_PATH:
         _tpl_entry_set_channel_path (self, g_value_get_string (value));
@@ -276,12 +273,12 @@ tpl_entry_class_init (TplEntryClass *klass)
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY  | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHAT_ID, param_spec);
 
-  param_spec = g_param_spec_string ("account-path",
-      "AccountPath",
-      "The account path of the TpAccount to which the log entry is related",
-      NULL,
+  param_spec = g_param_spec_object ("account",
+      "TpAccount",
+      "The TpAccount to which the log entry is related",
+      TP_TYPE_ACCOUNT,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_ACCOUNT_PATH, param_spec);
+  g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
 
   param_spec = g_param_spec_string ("channel-path",
       "ChannelPath",
@@ -396,17 +393,19 @@ _tpl_entry_get_chat_id (TplEntry *self)
 
 
 /**
- * tpl_entry_get_account_path
+ * tpl_entry_get_account
  * @self: a #TplEntry
  *
- * Returns: the same path as the #TplEntry:account-path property
+ * <!-- no more to say -->
+ *
+ * Returns: the path as the #TplEntry:account property
  */
 const gchar *
 tpl_entry_get_account_path (TplEntry *self)
 {
   g_return_val_if_fail (TPL_IS_ENTRY (self), NULL);
 
-  return self->priv->account_path;
+  return tp_proxy_get_object_path (self->priv->account);
 }
 
 
@@ -522,20 +521,6 @@ _tpl_entry_set_chat_id (TplEntry *self,
   self->priv->chat_id = g_strdup (data);
   g_object_notify (G_OBJECT (self), "chat-id");
 }
-
-
-static void
-tpl_entry_set_account_path (TplEntry *self,
-    const gchar *data)
-{
-  g_return_if_fail (TPL_IS_ENTRY (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (self->priv->account_path == NULL);
-
-  self->priv->account_path = g_strdup (data);
-  g_object_notify (G_OBJECT (self), "account-path");
-}
-
 
 void
 _tpl_entry_set_channel_path (TplEntry *self,

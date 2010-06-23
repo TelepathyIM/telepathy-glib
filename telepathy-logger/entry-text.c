@@ -220,12 +220,12 @@ tpl_entry_text_init (TplEntryText *self)
 
 TplEntryText *
 _tpl_entry_text_new (const gchar *log_id,
-    const gchar *account_path,
+    TpAccount *account,
     TplEntryDirection direction)
 {
   return g_object_new (TPL_TYPE_ENTRY_TEXT,
       "log-id", log_id,
-      "account-path", account_path,
+      "account", account,
       "direction", direction,
       NULL);
 }

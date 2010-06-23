@@ -24,6 +24,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/telepathy-glib.h>
+
 #include <telepathy-logger/entity.h>
 
 G_BEGIN_DECLS

@@ -1120,7 +1120,7 @@ on_sent_signal_cb (TpChannel *proxy,
   TplEntry *log;
   TplLogManager *logmanager;
   const gchar *chat_id;
-  const gchar *account_path;
+  TpAccount *account;
   const gchar *channel_path;
   gchar *log_id;
 
@@ -1169,10 +1169,9 @@ on_sent_signal_cb (TpChannel *proxy,
   else
     chat_id = _tpl_channel_text_get_chatroom_id (tpl_text);
 
-  account_path = tp_proxy_get_object_path (
-      TP_PROXY (_tpl_channel_get_account (TPL_CHANNEL (tpl_text))));
+  account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
 
-  text_log = _tpl_entry_text_new (log_id, account_path,
+  text_log = _tpl_entry_text_new (log_id, account,
       TPL_ENTRY_DIRECTION_OUT);
   log = TPL_ENTRY (text_log);
 
@@ -1341,7 +1340,6 @@ on_received_signal_cb (TpChannel *proxy,
   TplEntry *log;
   TpAccount *account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
   TplLogStore *index = _tpl_log_store_sqlite_dup ();
-  const gchar *account_path = tp_proxy_get_object_path (TP_PROXY (account));
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   gchar *log_id = _tpl_create_message_token (channel_path, arg_Timestamp, arg_ID);
 
@@ -1380,7 +1378,7 @@ on_received_signal_cb (TpChannel *proxy,
     }
 
   /* Initialize TplEntryText (part 1) - chat_id still unknown */
-  text_log = _tpl_entry_text_new (log_id, account_path,
+  text_log = _tpl_entry_text_new (log_id, account,
       TPL_ENTRY_DIRECTION_IN);
   log = TPL_ENTRY (text_log);
 

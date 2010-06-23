@@ -53,7 +53,7 @@ struct _TplEntryTextClass
 };
 
 TplEntryText * _tpl_entry_text_new (const gchar* log_id,
-    const gchar *account_path,
+    TpAccount *account,
     TplEntryDirection direction);
 
 TpChannelTextMessageType _tpl_entry_text_message_type_from_str (
