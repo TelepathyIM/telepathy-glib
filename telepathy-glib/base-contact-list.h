@@ -423,10 +423,18 @@ void tp_base_contact_list_remove_from_group (TpBaseContactList *self,
     TpHandleSet *contacts);
 
 typedef void (*TpBaseContactListRemoveGroupFunc) (TpBaseContactList *self,
-    const gchar *group);
+    const gchar *group,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
-void tp_base_contact_list_remove_group (TpBaseContactList *self,
-    const gchar *group);
+void tp_base_contact_list_remove_group_async (TpBaseContactList *self,
+    const gchar *group,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_contact_list_remove_group_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
 
 typedef void (*TpBaseContactListRenameGroupFunc) (TpBaseContactList *self,
     const gchar *old_name,
@@ -465,7 +473,9 @@ struct _TpMutableContactGroupListInterface {
 
     TpBaseContactListGroupContactsFunc add_to_group;
     TpBaseContactListGroupContactsFunc remove_from_group;
-    TpBaseContactListRemoveGroupFunc remove_group;
+
+    TpBaseContactListRemoveGroupFunc remove_group_async;
+    TpBaseContactListAsyncFinishFunc remove_group_finish;
 
     /* optional to implement */
 

@@ -1428,11 +1428,15 @@ example_contact_list_manager_get_contact_groups (TpBaseContactList *manager,
 }
 
 static void
-example_contact_list_manager_remove_group (TpBaseContactList *manager,
-    const gchar *group)
+example_contact_list_manager_remove_group_async (TpBaseContactList *manager,
+    const gchar *group,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   g_message ("deleting group %s", group);
   tp_base_contact_list_groups_removed (manager, &group, 1);
+  tp_simple_async_report_success_in_idle ((GObject *) manager, callback,
+      user_data, example_contact_list_manager_remove_group_async);
 }
 
 static gchar *
@@ -1553,7 +1557,7 @@ mutable_contact_group_list_iface_init (
 {
   iface->add_to_group = example_contact_list_manager_add_to_group;
   iface->remove_from_group = example_contact_list_manager_remove_from_group;
-  iface->remove_group = example_contact_list_manager_remove_group;
+  iface->remove_group_async = example_contact_list_manager_remove_group_async;
   iface->create_groups_async =
     example_contact_list_manager_create_groups_async;
   iface->rename_group = example_contact_list_manager_rename_group;
