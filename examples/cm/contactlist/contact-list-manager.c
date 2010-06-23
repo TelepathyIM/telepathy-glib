@@ -602,9 +602,11 @@ send_updated_roster (ExampleContactListManager *self,
 }
 
 static void
-example_contact_list_manager_add_to_group (TpBaseContactList *manager,
+example_contact_list_manager_add_to_group_async (TpBaseContactList *manager,
     const gchar *group,
-    TpHandleSet *contacts)
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *new_contacts = tp_handle_set_copy (contacts);
@@ -647,12 +649,17 @@ example_contact_list_manager_add_to_group (TpBaseContactList *manager,
 
   tp_handle_set_destroy (new_to_group);
   tp_handle_set_destroy (new_contacts);
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_add_to_group_async);
 }
 
 static void
-example_contact_list_manager_remove_from_group (TpBaseContactList *manager,
+example_contact_list_manager_remove_from_group_async (
+    TpBaseContactList *manager,
     const gchar *group,
-    TpHandleSet *contacts)
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
@@ -677,6 +684,8 @@ example_contact_list_manager_remove_from_group (TpBaseContactList *manager,
         &group, 1);
 
   tp_handle_set_destroy (changed);
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, example_contact_list_manager_remove_from_group_async);
 }
 
 typedef struct {
@@ -1559,8 +1568,9 @@ static void
 mutable_contact_group_list_iface_init (
     TpMutableContactGroupListInterface *iface)
 {
-  iface->add_to_group = example_contact_list_manager_add_to_group;
-  iface->remove_from_group = example_contact_list_manager_remove_from_group;
+  iface->add_to_group_async = example_contact_list_manager_add_to_group_async;
+  iface->remove_from_group_async =
+    example_contact_list_manager_remove_from_group_async;
   iface->remove_group_async = example_contact_list_manager_remove_group_async;
   iface->create_groups_async =
     example_contact_list_manager_create_groups_async;

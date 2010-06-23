@@ -400,10 +400,16 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  * @create_groups_finish: the implementation of
  *  tp_base_contact_list_create_groups_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
- * @add_to_group: the implementation of
- *  tp_base_contact_list_add_to_group(); must always be implemented
- * @remove_from_group: the implementation of
- *  tp_base_contact_list_remove_from_group(); must always be implemented
+ * @add_to_group_async: the implementation of
+ *  tp_base_contact_list_add_to_group_async(); must always be implemented
+ * @add_to_group_finish: the implementation of
+ *  tp_base_contact_list_add_to_group_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
+ * @remove_from_group_async: the implementation of
+ *  tp_base_contact_list_remove_from_group_async(); must always be implemented
+ * @remove_from_group_finish: the implementation of
+ *  tp_base_contact_list_remove_from_group_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
  * @remove_group_async: the implementation of
  *  tp_base_contact_list_remove_group_async(); must always be implemented
  * @remove_group_finish: the implementation of
@@ -412,7 +418,7 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  * @rename_group_async: the implementation of
  *  tp_base_contact_list_rename_group_async(); the default implementation
  *  results in group renaming being emulated via a call to
- *  @add_to_group and a call to @remove_group_async
+ *  @add_to_group_async and a call to @remove_group_async
  * @rename_group_finish: the implementation of
  *  tp_base_contact_list_rename_group_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
@@ -775,8 +781,10 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->set_contact_groups_finish != NULL);
       g_return_if_fail (iface->create_groups_async != NULL);
       g_return_if_fail (iface->create_groups_finish != NULL);
-      g_return_if_fail (iface->add_to_group != NULL);
-      g_return_if_fail (iface->remove_from_group != NULL);
+      g_return_if_fail (iface->add_to_group_async != NULL);
+      g_return_if_fail (iface->add_to_group_finish != NULL);
+      g_return_if_fail (iface->remove_from_group_async != NULL);
+      g_return_if_fail (iface->remove_from_group_finish != NULL);
       g_return_if_fail (iface->remove_group_async != NULL);
       g_return_if_fail (iface->remove_group_finish != NULL);
     }
@@ -847,6 +855,8 @@ tp_mutable_contact_group_list_default_init (
 {
   iface->rename_group_async = tp_base_contact_list_emulate_rename_group;
 
+  iface->add_to_group_finish = tp_base_contact_list_simple_finish;
+  iface->remove_from_group_finish = tp_base_contact_list_simple_finish;
   iface->set_contact_groups_finish = tp_base_contact_list_simple_finish;
   iface->create_groups_finish = tp_base_contact_list_simple_finish;
   iface->remove_group_finish = tp_base_contact_list_simple_finish;
@@ -1300,6 +1310,30 @@ _tp_base_contact_list_get_list_flags (TpBaseContactList *self,
     }
 }
 
+static void
+tp_base_contact_list_add_to_group_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
+
+  if (tp_base_contact_list_add_to_group_finish (self, result, &error))
+    {
+      DEBUG ("Adding to group '%s' succeeded", (gchar *) user_data);
+    }
+  else
+    {
+      DEBUG ("Adding to group '%s' failed: %s #%d: %s", (gchar *) user_data,
+          g_quark_to_string (error->domain), error->code, error->message);
+      g_clear_error (&error);
+    }
+
+  g_free (user_data);
+}
+
 gboolean
 _tp_base_contact_list_add_to_group (TpBaseContactList *self,
     TpHandle group,
@@ -1324,10 +1358,36 @@ _tp_base_contact_list_add_to_group (TpBaseContactList *self,
   tp_handle_set_add (contacts, contact);
   group_name = tp_handle_inspect (self->priv->group_repo, group);
 
-  tp_base_contact_list_add_to_group (self, group_name, contacts);
+  tp_base_contact_list_add_to_group_async (self, group_name, contacts,
+      tp_base_contact_list_add_to_group_cb, g_strdup (group_name));
 
   tp_handle_set_destroy (contacts);
   return TRUE;
+}
+
+static void
+tp_base_contact_list_remove_from_group_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
+
+  if (tp_base_contact_list_remove_from_group_finish (self, result, &error))
+    {
+      DEBUG ("Removing from group '%s' succeeded", (gchar *) user_data);
+    }
+  else
+    {
+      DEBUG ("Removing from group '%s' failed: %s #%d: %s",
+          (gchar *) user_data,
+          g_quark_to_string (error->domain), error->code, error->message);
+      g_clear_error (&error);
+    }
+
+  g_free (user_data);
 }
 
 gboolean
@@ -1354,7 +1414,8 @@ _tp_base_contact_list_remove_from_group (TpBaseContactList *self,
   tp_handle_set_add (contacts, contact);
   group_name = tp_handle_inspect (self->priv->group_repo, group);
 
-  tp_base_contact_list_remove_from_group (self, group_name, contacts);
+  tp_base_contact_list_remove_from_group_async (self, group_name, contacts,
+      tp_base_contact_list_remove_from_group_cb, g_strdup (group_name));
 
   tp_handle_set_destroy (contacts);
   return TRUE;
@@ -3703,43 +3764,80 @@ tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
  * @self: a contact list manager
  * @group: a group
  * @contacts: a set of contact handles
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * Signature of a virtual method that alters a group's members.
  */
 
 /**
- * tp_base_contact_list_add_to_group:
+ * tp_base_contact_list_add_to_group_async:
  * @self: a contact list manager
  * @group: the normalized name of a group
  * @contacts: some contacts
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * Add @contacts to @group.
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method does nothing.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which must be implemented, using
- * #TpMutableContactGroupListInterface.add_to_group.
+ * #TpMutableContactGroupListInterface.add_to_group_async.
  * The implementation should call tp_base_contact_list_groups_changed()
- * for any changes it successfully made, before returning.
+ * for any changes it successfully made, before calling @callback.
  */
-void tp_base_contact_list_add_to_group (TpBaseContactList *self,
+void
+tp_base_contact_list_add_to_group_async (TpBaseContactList *self,
     const gchar *group,
-    TpHandleSet *contacts)
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpMutableContactGroupListInterface *iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    return;
-
   iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
   g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->add_to_group != NULL);
+  g_return_if_fail (iface->add_to_group_async != NULL);
 
-  iface->add_to_group (self, group, contacts);
+  iface->add_to_group_async (self, group, contacts, callback, user_data);
+}
+
+/**
+ * tp_base_contact_list_add_to_group_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_add_to_group_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_add_to_group_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.add_to_group_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_add_to_group_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactGroupListInterface *mutable_groups_iface;
+
+  mutable_groups_iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_groups_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_groups_iface->add_to_group_finish != NULL,
+      FALSE);
+
+  return mutable_groups_iface->add_to_group_finish (self, result, error);
 }
 
 /**
@@ -3816,6 +3914,28 @@ emulate_rename_group_remove_cb (GObject *source,
 }
 
 static void
+emulate_rename_group_add_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GSimpleAsyncResult *rename_result = user_data;
+  GError *error = NULL;
+
+  if (!tp_base_contact_list_request_subscription_finish (self, result, &error))
+    {
+      g_simple_async_result_set_from_error (rename_result, error);
+      g_clear_error (&error);
+      g_simple_async_result_complete (rename_result);
+      return;
+    }
+
+  tp_base_contact_list_remove_group_async (self,
+      g_simple_async_result_get_op_res_gpointer (rename_result),
+      emulate_rename_group_remove_cb, rename_result);
+}
+
+static void
 tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
     const gchar *old_name,
     const gchar *new_name,
@@ -3838,9 +3958,12 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_base_contact_list_emulate_rename_group);
 
-  tp_base_contact_list_add_to_group (self, new_name, mixin->members);
-  tp_base_contact_list_remove_group_async (self, old_name,
-      emulate_rename_group_remove_cb, result);
+  /* not really the operation result, just some extra data */
+  g_simple_async_result_set_op_res_gpointer (result, g_strdup (old_name),
+      g_free);
+
+  tp_base_contact_list_add_to_group_async (self, new_name, mixin->members,
+      emulate_rename_group_add_cb, result);
   g_object_unref (result);
 }
 
@@ -3880,38 +4003,72 @@ tp_base_contact_list_rename_group_finish (TpBaseContactList *self,
 }
 
 /**
- * tp_base_contact_list_remove_from_group:
+ * tp_base_contact_list_remove_from_group_async:
  * @self: a contact list manager
  * @group: the normalized name of a group
  * @contacts: some contacts
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * Remove @contacts from @group.
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method does nothing.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which must be implemented, using
- * #TpMutableContactGroupListInterface.remove_from_group.
+ * #TpMutableContactGroupListInterface.remove_from_group_async.
  * The implementation should call tp_base_contact_list_groups_changed()
- * for any changes it successfully made, before returning.
+ * for any changes it successfully made, before calling @callback.
  */
-void tp_base_contact_list_remove_from_group (TpBaseContactList *self,
+void tp_base_contact_list_remove_from_group_async (TpBaseContactList *self,
     const gchar *group,
-    TpHandleSet *contacts)
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpMutableContactGroupListInterface *iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    return;
-
   iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
   g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->remove_from_group != NULL);
+  g_return_if_fail (iface->remove_from_group_async != NULL);
 
-  iface->remove_from_group (self, group, contacts);
+  iface->remove_from_group_async (self, group, contacts, callback, user_data);
+}
+
+/**
+ * tp_base_contact_list_remove_from_group_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_remove_from_group_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_remove_from_group_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.remove_from_group_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_remove_from_group_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactGroupListInterface *mutable_groups_iface;
+
+  mutable_groups_iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_groups_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_groups_iface->remove_from_group_finish != NULL,
+      FALSE);
+
+  return mutable_groups_iface->remove_from_group_finish (self, result, error);
 }
 
 /**
@@ -4658,6 +4815,37 @@ finally:
 }
 
 static void
+tp_base_contact_list_set_group_members_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  gboolean is_add = GPOINTER_TO_INT (user_data);
+  GError *error = NULL;
+  gboolean ok;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
+
+  if (is_add)
+    ok = tp_base_contact_list_add_to_group_finish (self, result,
+        &error);
+  else
+    ok = tp_base_contact_list_remove_from_group_finish (self, result,
+        &error);
+
+  if (ok)
+    {
+      DEBUG ("Part of SetGroupMembers succeeded");
+    }
+  else
+    {
+      DEBUG ("Part of SetGroupMembers failed: %s #%d: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+      g_clear_error (&error);
+    }
+}
+
+static void
 tp_base_contact_list_mixin_set_group_members (
     TpSvcConnectionInterfaceContactGroups *svc,
     const gchar *group,
@@ -4700,15 +4888,20 @@ tp_base_contact_list_mixin_set_group_members (
           tp_handle_set_peek (contacts_set)));
     }
 
-  tp_base_contact_list_add_to_group (self,
+  /* FIXME: this should be two chained async operations, rather than
+   * fake-async */
+
+  tp_base_contact_list_add_to_group_async (self,
       tp_handle_inspect (self->priv->group_repo, group_handle),
-      contacts_set);
+      contacts_set, tp_base_contact_list_set_group_members_cb,
+      GINT_TO_POINTER (TRUE));
 
   if (old_members != NULL)
     {
-      tp_base_contact_list_remove_from_group (self,
+      tp_base_contact_list_remove_from_group_async (self,
           tp_handle_inspect (self->priv->group_repo, group_handle),
-          old_members);
+          old_members, tp_base_contact_list_set_group_members_cb,
+          GINT_TO_POINTER (FALSE));
       tp_handle_set_destroy (old_members);
     }
 
@@ -4720,6 +4913,19 @@ finally:
 
   if (group_handle != 0)
     tp_handle_unref (self->priv->group_repo, group_handle);
+}
+
+static void
+tp_base_contact_list_mixin_add_to_group_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_add_to_group_finish (self, result, &error);
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
 }
 
 static void
@@ -4736,7 +4942,7 @@ tp_base_contact_list_mixin_add_to_group (
   TpHandleSet *contacts_set;
 
   if (!tp_base_contact_list_check_group_change (self, contacts, &error))
-    goto finally;
+    goto sync_exit;
 
   /* get the handle so we can use the normalized name */
   group_handle = tp_handle_ensure (self->priv->group_repo, group, NULL,
@@ -4744,21 +4950,36 @@ tp_base_contact_list_mixin_add_to_group (
 
   /* if the group's name is syntactically invalid, just fail */
   if (group_handle == 0)
-    goto finally;
+    goto sync_exit;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
-  tp_base_contact_list_add_to_group (self,
+  tp_base_contact_list_add_to_group_async (self,
       tp_handle_inspect (self->priv->group_repo, group_handle),
-      contacts_set);
+      contacts_set, tp_base_contact_list_mixin_add_to_group_cb, context);
+  tp_handle_unref (self->priv->group_repo, group_handle);
   tp_handle_set_destroy (contacts_set);
+  return;
 
-finally:
+sync_exit:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
 
   if (group_handle != 0)
     tp_handle_unref (self->priv->group_repo, group_handle);
+}
+
+static void
+tp_base_contact_list_mixin_remove_from_group_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_remove_from_group_finish (self, result, &error);
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
 }
 
 static void
@@ -4775,23 +4996,24 @@ tp_base_contact_list_mixin_remove_from_group (
   TpHandleSet *contacts_set;
 
   if (!tp_base_contact_list_check_group_change (self, contacts, &error))
-    goto finally;
+    goto sync_exit;
 
   /* get the handle so we can use the normalized name */
   group_handle = tp_handle_lookup (self->priv->group_repo, group, NULL, NULL);
 
   /* removing from a group that doesn't exist is a no-op */
   if (group_handle == 0)
-    goto finally;
+    goto sync_exit;
 
   contacts_set = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts);
-  tp_base_contact_list_remove_from_group (self,
+  tp_base_contact_list_remove_from_group_async (self,
       tp_handle_inspect (self->priv->group_repo, group_handle),
-      contacts_set);
+      contacts_set, tp_base_contact_list_mixin_remove_from_group_cb, context);
   tp_handle_set_destroy (contacts_set);
+  return;
 
-finally:
+sync_exit:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
 }
