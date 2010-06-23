@@ -851,13 +851,13 @@ got_text_pending_messages_cb (TpChannel *proxy,
 
       message_struct = g_ptr_array_index (result, i);
 
-      message_id = g_value_get_uint (g_value_array_get_nth (message_struct, 0));
-      message_timestamp = g_value_get_uint (g_value_array_get_nth (
-            message_struct, 1));
-      from_handle = g_value_get_uint (g_value_array_get_nth (message_struct, 2));
-      message_type = g_value_get_uint (g_value_array_get_nth (message_struct, 3));
-      message_flags = g_value_get_uint (g_value_array_get_nth (message_struct, 4));
-      message_body = g_value_get_string (g_value_array_get_nth (message_struct, 5));
+      tp_value_array_unpack (message_struct, 6,
+          &message_id,
+          &message_timestamp,
+          &from_handle,
+          &message_type,
+          &message_flags,
+          &message_body);
 
       tpl_message_token = _tpl_create_message_token (channel_path,
           message_timestamp, message_id);
