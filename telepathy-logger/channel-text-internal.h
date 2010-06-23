@@ -62,24 +62,5 @@ TplChannelText * _tpl_channel_text_new (TpConnection *conn,
     const gchar *object_path, GHashTable *tp_chan_props, TpAccount *account,
     GError **error);
 
-TplChannel * _tpl_channel_text_get_tpl_channel (TplChannelText * self);
-TpContact * _tpl_channel_text_get_remote_contact (TplChannelText * self);
-TpContact * _tpl_channel_text_get_my_contact (TplChannelText * self);
-gboolean  _tpl_channel_text_is_chatroom (TplChannelText * self);
-const gchar * _tpl_channel_text_get_chatroom_id (TplChannelText * self);
-
-void _tpl_channel_text_set_tpl_channel (TplChannelText * self,
-  TplChannel * tpl_chan);
-void _tpl_channel_text_set_remote_contact (TplChannelText * self,
-            TpContact * data);
-void _tpl_channel_text_set_my_contact (TplChannelText * self,
-              TpContact * data);
-void _tpl_channel_text_set_chatroom (TplChannelText * self, gboolean data);
-void _tpl_channel_text_set_chatroom_id (TplChannelText * self,
-               const gchar * data);
-
-void _tpl_channel_text_call_when_ready (TplChannelText *self,
-    GAsyncReadyCallback cb, gpointer user_data);
-
 G_END_DECLS
 #endif /* __TPL_CHANNEL_TEXT_H__ */

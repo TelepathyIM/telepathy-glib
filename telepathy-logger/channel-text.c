@@ -108,6 +108,28 @@ static void got_text_pending_messages_cb (TpChannel *proxy,
 
 G_DEFINE_TYPE (TplChannelText, _tpl_channel_text, TPL_TYPE_CHANNEL)
 
+static void
+_tpl_channel_text_set_remote_contact (TplChannelText *self,
+    TpContact *data)
+{
+  g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
+  g_return_if_fail (TP_IS_CONTACT (data));
+  g_return_if_fail (self->priv->remote_contact == NULL);
+
+  self->priv->remote_contact = g_object_ref (data);
+}
+
+static void
+_tpl_channel_text_set_my_contact (TplChannelText *self,
+    TpContact *data)
+{
+  g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
+  g_return_if_fail (TP_IS_CONTACT (data));
+  g_return_if_fail (self->priv->my_contact == NULL);
+
+  self->priv->my_contact = g_object_ref (data);
+}
+
 /* used by _get_my_contact and _get_remote_contact */
 static void
 got_contact_cb (TpConnection *connection,
@@ -366,8 +388,7 @@ _tpl_channel_text_new (TpConnection *conn,
       NULL);
 }
 
-
-TpContact *
+static TpContact *
 _tpl_channel_text_get_remote_contact (TplChannelText *self)
 {
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
@@ -375,8 +396,7 @@ _tpl_channel_text_get_remote_contact (TplChannelText *self)
   return self->priv->remote_contact;
 }
 
-
-TpContact *
+static TpContact *
 _tpl_channel_text_get_my_contact (TplChannelText *self)
 {
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
@@ -384,8 +404,7 @@ _tpl_channel_text_get_my_contact (TplChannelText *self)
   return self->priv->my_contact;
 }
 
-
-gboolean
+static gboolean
 _tpl_channel_text_is_chatroom (TplChannelText *self)
 {
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), FALSE);
@@ -393,8 +412,7 @@ _tpl_channel_text_is_chatroom (TplChannelText *self)
   return self->priv->chatroom;
 }
 
-
-const gchar *
+static const gchar *
 _tpl_channel_text_get_chatroom_id (TplChannelText *self)
 {
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
@@ -402,32 +420,7 @@ _tpl_channel_text_get_chatroom_id (TplChannelText *self)
   return self->priv->chatroom_id;
 }
 
-
-void
-_tpl_channel_text_set_remote_contact (TplChannelText *self,
-    TpContact *data)
-{
-  g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
-  g_return_if_fail (TP_IS_CONTACT (data));
-  g_return_if_fail (self->priv->remote_contact == NULL);
-
-  self->priv->remote_contact = g_object_ref (data);
-}
-
-
-void
-_tpl_channel_text_set_my_contact (TplChannelText *self,
-    TpContact *data)
-{
-  g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
-  g_return_if_fail (TP_IS_CONTACT (data));
-  g_return_if_fail (self->priv->my_contact == NULL);
-
-  self->priv->my_contact = g_object_ref (data);
-}
-
-
-void
+static void
 _tpl_channel_text_set_chatroom (TplChannelText *self,
     gboolean data)
 {
@@ -436,8 +429,7 @@ _tpl_channel_text_set_chatroom (TplChannelText *self,
   self->priv->chatroom = data;
 }
 
-
-void
+static void
 _tpl_channel_text_set_chatroom_id (TplChannelText *self,
     const gchar *data)
 {
@@ -447,18 +439,7 @@ _tpl_channel_text_set_chatroom_id (TplChannelText *self,
   self->priv->chatroom_id = g_strdup (data);
 }
 
-
 static void
-call_when_ready_wrapper (TplChannel *tpl_chan,
-    GAsyncReadyCallback cb,
-    gpointer user_data)
-{
-  _tpl_channel_text_call_when_ready (TPL_CHANNEL_TEXT (tpl_chan), cb,
-      user_data);
-}
-
-
-void
 _tpl_channel_text_call_when_ready (TplChannelText *self,
     GAsyncReadyCallback cb, gpointer user_data)
 {
@@ -483,6 +464,14 @@ _tpl_channel_text_call_when_ready (TplChannelText *self,
   _tpl_action_chain_continue (actions);
 }
 
+static void
+call_when_ready_wrapper (TplChannel *tpl_chan,
+    GAsyncReadyCallback cb,
+    gpointer user_data)
+{
+  _tpl_channel_text_call_when_ready (TPL_CHANNEL_TEXT (tpl_chan), cb,
+      user_data);
+}
 
 static void
 pendingproc_prepare_tpl_channel (TplActionChain *ctx,
