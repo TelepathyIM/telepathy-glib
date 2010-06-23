@@ -660,7 +660,8 @@ log_store_xml_get_dates (TplLogStore *store,
 
       date = create_date_from_string (str);
       if (date != NULL)
-       dates = g_list_insert_sorted (dates, date, (GCompareFunc) strcmp);
+       dates = g_list_insert_sorted (dates, date,
+           (GCompareFunc) g_date_compare);
 
       g_free (str);
     }
