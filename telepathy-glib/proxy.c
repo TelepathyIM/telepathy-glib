@@ -194,14 +194,8 @@ tp_dbus_errors_quark (void)
  *    automatically add this interface in its constructor
  * @must_have_unique_name: If set %TRUE by a subclass, the #TpProxy
  *    constructor will fail if a well-known bus name is given
- * @_reserved_flags: Reserved for future expansion
- * @list_features: Defined by subclasses to provide features for
- *  tp_proxy_prepare_async() (currently only usable within telepathy-glib
- *  itself)
- * @_reserved: Reserved for future expansion
- * @priv: Opaque pointer for private data
  *
- * The class of a #TpProxy.
+ * The class of a #TpProxy. The struct fields not documented here are reserved.
  *
  * Since: 0.7.1
  */

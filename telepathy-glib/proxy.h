@@ -87,6 +87,7 @@ struct _TpProxyClass {
     GQuark interface;
 
     unsigned int must_have_unique_name:1;
+    /*<private>*/
     guint _reserved_flags:31;
 
 /* XXX: hide this from the g-i scanner, since vapigen can't cope */
