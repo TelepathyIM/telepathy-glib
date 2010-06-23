@@ -395,8 +395,11 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  * @set_contact_groups_finish: the implementation of
  *  tp_base_contact_list_set_contact_groups_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
- * @create_groups: the implementation of
- *  tp_base_contact_list_create_groups(); must always be implemented
+ * @create_groups_async: the implementation of
+ *  tp_base_contact_list_create_groups_async(); must always be implemented
+ * @create_groups_finish: the implementation of
+ *  tp_base_contact_list_create_groups_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
  * @add_to_group: the implementation of
  *  tp_base_contact_list_add_to_group(); must always be implemented
  * @remove_from_group: the implementation of
@@ -764,7 +767,8 @@ tp_base_contact_list_constructed (GObject *object)
 
       g_return_if_fail (iface->set_contact_groups_async != NULL);
       g_return_if_fail (iface->set_contact_groups_finish != NULL);
-      g_return_if_fail (iface->create_groups != NULL);
+      g_return_if_fail (iface->create_groups_async != NULL);
+      g_return_if_fail (iface->create_groups_finish != NULL);
       g_return_if_fail (iface->add_to_group != NULL);
       g_return_if_fail (iface->remove_from_group != NULL);
       g_return_if_fail (iface->remove_group != NULL);
@@ -832,6 +836,7 @@ tp_mutable_contact_group_list_default_init (
     TpMutableContactGroupListInterface *iface)
 {
   iface->set_contact_groups_finish = tp_base_contact_list_simple_finish;
+  iface->create_groups_finish = tp_base_contact_list_simple_finish;
 }
 
 static void
@@ -1001,6 +1006,67 @@ tp_base_contact_list_new_channel (TpBaseContactList *self,
   return chan;
 }
 
+static void
+tp_base_contact_list_announce_channel (TpBaseContactList *self,
+    gpointer channel,
+    const GError *error)
+{
+  GSList *requests = g_hash_table_lookup (self->priv->channel_requests,
+      channel);
+
+  /* this is all fine even if requests is NULL */
+
+  g_hash_table_steal (self->priv->channel_requests, channel);
+
+  /* get into chronological order */
+  requests = g_slist_reverse (requests);
+  /* our list of requests can include NULL, which isn't a valid request
+   * token; get rid of it/them */
+  requests = g_slist_remove_all (requests, NULL);
+
+  if (error == NULL)
+    {
+      tp_channel_manager_emit_new_channel (self, channel, requests);
+    }
+  else
+    {
+      GSList *iter;
+
+      for (iter = requests; iter != NULL; iter = iter->next)
+        tp_channel_manager_emit_request_failed (self, iter->data,
+            error->domain, error->code, error->message);
+    }
+
+  g_slist_free (requests);
+}
+
+static void
+tp_base_contact_list_create_group_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer channel)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  if (tp_base_contact_list_create_groups_finish (self, result, &error))
+    {
+      /* If all goes well, the channel should have been announced. */
+      GSList *tokens = g_hash_table_lookup (self->priv->channel_requests,
+          channel);
+
+      if (tokens == NULL)
+        return;
+
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "%s did not create a group even though it claims to have done so",
+          G_OBJECT_TYPE_NAME (self));
+    }
+
+  /**/
+
+  g_clear_error (&error);
+}
+
 static gboolean
 tp_base_contact_list_request_helper (TpChannelManager *manager,
     gpointer request_token,
@@ -1089,19 +1155,17 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
             {
               const gchar *name = tp_handle_inspect (self->priv->group_repo,
                   handle);
+              gpointer channel;
 
               /* make an object, don't announce it yet, and remember the
                * request token for when it's announced, if it's actually
                * created */
-              tp_base_contact_list_new_channel (self, handle_type, handle,
-                  request_token);
+              channel = tp_base_contact_list_new_channel (self, handle_type,
+                  handle, request_token);
 
-              /* this might announce the channel */
-              tp_base_contact_list_create_groups (self, &name, 1);
-
-              /* FIXME: we assume that group creation will succeed; if
-               * it fails somehow, the request will only be answered when
-               * we eventually disconnect */
+              /* this will announce the channel(s) later, if appropriate */
+              tp_base_contact_list_create_groups_async (self, &name, 1,
+                  tp_base_contact_list_create_group_cb, channel);
             }
           else
             {
@@ -1505,27 +1569,6 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
   return TRUE;
 }
 
-static void
-tp_base_contact_list_announce_channel (TpBaseContactList *self,
-    gpointer channel)
-{
-  GSList *requests = g_hash_table_lookup (self->priv->channel_requests,
-      channel);
-
-  /* this is all fine even if requests is NULL */
-
-  g_hash_table_steal (self->priv->channel_requests, channel);
-
-  /* get into chronological order */
-  requests = g_slist_reverse (requests);
-  /* our list of requests can include NULL, which isn't a valid request
-   * token; get rid of it/them */
-  requests = g_slist_remove_all (requests, NULL);
-
-  tp_channel_manager_emit_new_channel (self, channel, requests);
-  g_slist_free (requests);
-}
-
 /**
  * tp_base_contact_list_set_list_received:
  * @self: the contact list manager
@@ -1620,7 +1663,8 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
     {
       if (self->priv->lists[i] != NULL)
-        tp_base_contact_list_announce_channel (self, self->priv->lists[i]);
+        tp_base_contact_list_announce_channel (self, self->priv->lists[i],
+            NULL);
     }
 
   /* The natural thing to do here would be to iterate over all contacts, and
@@ -1685,7 +1729,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       g_hash_table_iter_init (&h_iter, self->priv->groups);
 
       while (g_hash_table_iter_next (&h_iter, NULL, &channel))
-        tp_base_contact_list_announce_channel (self, channel);
+        tp_base_contact_list_announce_channel (self, channel, NULL);
     }
 
   tp_base_contact_list_complete_requests (self);
@@ -2905,56 +2949,86 @@ tp_base_contact_list_normalize_group (TpBaseContactList *self,
  *  names, which have already been normalized via the
  *  #TpBaseContactListNormalizeFunc if one was provided
  * @n_names: the number of group names in @normalized_names
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * Signature of a virtual method that creates groups.
  *
- * Implementations are expected to send any network messages that are
- * necessary in the underlying protocol, and call
- * tp_base_contact_list_groups_created() to signal success, before returning.
- *
- * If tp_base_contact_list_groups_created() is not called, this will be
- * signalled as a D-Bus error (inability to create the group).
+ * Implementations are expected to call tp_base_contact_list_groups_created()
+ * before calling @callback successfully.
  */
 
 /**
- * tp_base_contact_list_create_groups:
+ * tp_base_contact_list_create_groups_async:
  * @self: a contact list manager
  * @normalized_names: (array length=n_names) (element-type utf8): the group
  *  names, which must already have been normalized via the
  *  #TpBaseContactListNormalizeFunc if one was provided
  * @n_names: the number of group names in @normalized_names
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * Attempt to create new groups.
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this method does nothing.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which must be implemented, using
- * #TpMutableContactGroupListInterface.create_groups.
+ * #TpMutableContactGroupListInterface.create_groups_async.
  * The implementation should call tp_base_contact_list_groups_created()
- * for any groups it successfully created, before returning.
- *
- * If tp_base_contact_list_groups_created() is not called, this will be
- * signalled as a D-Bus error (inability to create the group).
+ * for any groups it successfully created, before calling @callback.
  */
 void
-tp_base_contact_list_create_groups (TpBaseContactList *self,
+tp_base_contact_list_create_groups_async (TpBaseContactList *self,
     const gchar * const *normalized_names,
-    gsize n_names)
+    gsize n_names,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TpMutableContactGroupListInterface *iface;
+  TpMutableContactGroupListInterface *mutable_group_iface;
 
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  mutable_group_iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_if_fail (mutable_group_iface != NULL);
+  g_return_if_fail (mutable_group_iface->create_groups_async != NULL);
 
-  if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
-    return;
+  mutable_group_iface->create_groups_async (self, normalized_names, n_names,
+      callback, user_data);
+}
 
-  iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
-  g_return_if_fail (iface != NULL);
-  g_return_if_fail (iface->create_groups != NULL);
+/**
+ * tp_base_contact_list_create_groups_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_create_groups_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_create_groups_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.create_groups_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_create_groups_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactGroupListInterface *mutable_groups_iface;
 
-  iface->create_groups (self, normalized_names, n_names);
+  mutable_groups_iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_groups_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_groups_iface->create_groups_finish != NULL,
+      FALSE);
+
+  return mutable_groups_iface->create_groups_finish (self, result, error);
 }
 
 /**
@@ -3025,7 +3099,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
               g_ptr_array_add (pa, (gchar *) tp_handle_inspect (
                     self->priv->group_repo, handle));
 
-              tp_base_contact_list_announce_channel (self, c);
+              tp_base_contact_list_announce_channel (self, c, NULL);
             }
 
           tp_handle_unref (self->priv->group_repo, handle);
@@ -3239,7 +3313,7 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
         NULL, NULL))
     {
       /* the channel hasn't been announced yet: do so */
-      tp_base_contact_list_announce_channel (self, new_chan);
+      tp_base_contact_list_announce_channel (self, new_chan, NULL);
     }
 
   /* move the members - presumably the self-handle is the actor */
