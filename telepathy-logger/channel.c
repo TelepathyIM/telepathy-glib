@@ -43,8 +43,6 @@ static void call_when_ready_protected (TplChannel *self,
     GAsyncReadyCallback cb, gpointer user_data);
 static void pendingproc_get_ready_tp_connection (TplActionChain *ctx,
     gpointer user_data);
-static void got_ready_tp_connection_cb (TpConnection *connection,
-    const GError *error, gpointer user_data);
 static void pendingproc_get_ready_tp_channel (TplActionChain *ctx,
     gpointer user_data);
 
@@ -231,6 +229,29 @@ call_when_ready_protected (TplChannel *self,
   _tpl_action_chain_continue (actions);
 }
 
+static void
+conn_prepared_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TplActionChain *ctx = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      TplChannel *tpl_chan;
+
+      tpl_chan = _tpl_action_chain_get_object (ctx);
+      PATH_DEBUG (tpl_chan, "Giving up channel observation: %s",
+          error->message);
+
+      _tpl_action_chain_terminate (ctx);
+      g_error_free (error);
+      return;
+    }
+
+  _tpl_action_chain_continue (ctx);
+}
 
 static void
 pendingproc_get_ready_tp_connection (TplActionChain *ctx,
@@ -239,32 +260,9 @@ pendingproc_get_ready_tp_connection (TplActionChain *ctx,
   TplChannel *tpl_chan = _tpl_action_chain_get_object (ctx);
   TpConnection *tp_conn = tp_channel_borrow_connection (TP_CHANNEL (
       tpl_chan));
+  GQuark features[] = { TP_CONNECTION_FEATURE_CORE, 0 };
 
-  tp_connection_call_when_ready (tp_conn, got_ready_tp_connection_cb, ctx);
-}
-
-static void
-got_ready_tp_connection_cb (TpConnection *connection,
-    const GError *error,
-    gpointer user_data)
-{
-  TplActionChain *ctx = user_data;
-
-  if (error != NULL)
-    {
-      const gchar *chan_path;
-      TplChannel *tpl_chan;
-
-      tpl_chan = _tpl_action_chain_get_object (ctx);
-      chan_path = tp_proxy_get_object_path (TP_PROXY (tpl_chan));
-      PATH_DEBUG (tpl_chan, "Giving up channel observation: %s",
-          error->message);
-
-      _tpl_action_chain_terminate (ctx);
-      return;
-    }
-
-  _tpl_action_chain_continue (ctx);
+  tp_proxy_prepare_async (tp_conn, features, conn_prepared_cb, ctx);
 }
 
 static void
