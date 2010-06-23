@@ -53,6 +53,7 @@ typedef enum
 gint64 tpl_entry_get_timestamp (TplEntry *self);
 
 const gchar *tpl_entry_get_account_path (TplEntry *self);
+TpAccount * tpl_entry_get_account (TplEntry *self);
 
 TplEntity * tpl_entry_get_sender (TplEntry *self);
 TplEntity * tpl_entry_get_receiver (TplEntry *self);

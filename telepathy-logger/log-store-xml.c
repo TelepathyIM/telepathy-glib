@@ -447,13 +447,7 @@ add_message_text_chat (TplLogStoreXml *self,
       goto out;
     }
 
-  account = tp_account_new (bus_daemon,
-      tpl_entry_get_account_path (TPL_ENTRY (message)), error);
-  if (account == NULL)
-    {
-      DEBUG ("Error acquiring TpAccount proxy: %s", (*error)->message);
-      goto out;
-    }
+  account =  tpl_entry_get_account (TPL_ENTRY (message));
 
   body_str = tpl_entry_text_get_message (message);
   if (TPL_STR_EMPTY (body_str))
@@ -502,8 +496,6 @@ out:
 
   if (bus_daemon != NULL)
     g_object_unref (bus_daemon);
-  if (account != NULL)
-    g_object_unref (account);
 
   return ret;
 }
