@@ -83,7 +83,7 @@ static void on_send_error_cb (TpChannel *proxy, guint arg_Error,
 static void on_pending_messages_removed_cb (TpChannel *proxy,
     const GArray *arg_Message_IDs, gpointer user_data, GObject *weak_object);
 
-static void pendingproc_connect_signals (TplActionChain *ctx,
+static void pendingproc_connect_message_signals (TplActionChain *ctx,
     gpointer user_data);
 static void pendingproc_get_pending_messages (TplActionChain *ctx,
    gpointer user_data);
@@ -476,7 +476,7 @@ _tpl_channel_text_call_when_ready (TplChannelText *self,
   _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_remote_handle_type, NULL);
-  _tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
+  _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
   _tpl_action_chain_append (actions, pendingproc_cleanup_pending_messages_db, NULL);
   /* start the chain consuming */
@@ -944,7 +944,7 @@ get_chatroom_id_cb (TpConnection *proxy,
 
 
 static void
-pendingproc_connect_signals (TplActionChain *ctx,
+pendingproc_connect_message_signals (TplActionChain *ctx,
     gpointer user_data)
 {
   TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
