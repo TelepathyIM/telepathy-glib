@@ -1208,7 +1208,6 @@ on_received_signal_with_contact_cb (TpConnection *connection,
     GObject *weak_object)
 {
   TplEntryText *log = user_data;
-  TplChannelText *self = TPL_CHANNEL_TEXT (weak_object);
   TplChannelText *tpl_text;
   TpContact *remote;
 
@@ -1237,9 +1236,6 @@ on_received_signal_with_contact_cb (TpConnection *connection,
     }
 
   remote = contacts[0];
-
-  if (!self->priv->chatroom)
-    _tpl_channel_text_set_remote_contact (tpl_text, remote);
 
   keepon_on_receiving_signal (log, remote);
 }
