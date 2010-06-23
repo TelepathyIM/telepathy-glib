@@ -42,14 +42,10 @@
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
-#define TP_CONTACT_MYSELF 0
-#define TP_CONTACT_REMOTE 1
-
 struct _TplChannelTextPriv
 {
   gboolean chatroom;
   TpContact *my_contact;
-  TpContact *remote_contact;  /* only set if chatroom==FALSE */
   gchar *chatroom_id;          /* only set if chatroom==TRUE */
 
   /* Contacts participating in this channel.
@@ -59,9 +55,6 @@ struct _TplChannelTextPriv
    * TpHandle => reffed TpContact
    * */
   GHashTable *contacts;
-
-  /* only used as metadata in CB data passing */
-  guint selector;
 };
 
 static TpContactFeature features[3] = {
@@ -117,17 +110,6 @@ static void got_text_pending_messages_cb (TpChannel *proxy,
 G_DEFINE_TYPE (TplChannelText, _tpl_channel_text, TPL_TYPE_CHANNEL)
 
 static void
-_tpl_channel_text_set_remote_contact (TplChannelText *self,
-    TpContact *data)
-{
-  g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
-  g_return_if_fail (TP_IS_CONTACT (data));
-  g_return_if_fail (self->priv->remote_contact == NULL);
-
-  self->priv->remote_contact = g_object_ref (data);
-}
-
-static void
 _tpl_channel_text_set_my_contact (TplChannelText *self,
     TpContact *data)
 {
@@ -138,9 +120,8 @@ _tpl_channel_text_set_my_contact (TplChannelText *self,
   self->priv->my_contact = g_object_ref (data);
 }
 
-/* used by _get_my_contact and _get_remote_contact */
 static void
-got_contact_cb (TpConnection *connection,
+get_self_contact_cb (TpConnection *connection,
     guint n_contacts,
     TpContact *const *contacts,
     guint n_failed,
@@ -152,7 +133,6 @@ got_contact_cb (TpConnection *connection,
   TplObserver *observer = _tpl_observer_new (); /* singleton */
   TplActionChain *ctx = user_data;
   TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
-  TplChannelTextPriv *priv = tpl_text->priv;
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpChannel *tp_chan = TP_CHANNEL (tpl_chan);
 
@@ -160,7 +140,6 @@ got_contact_cb (TpConnection *connection,
 
   g_assert_cmpuint (n_failed, ==, 0);
   g_assert_cmpuint (n_contacts, ==, 1);
-  g_assert_cmpuint (priv->selector, <=, TP_CONTACT_REMOTE);
 
   if (n_failed > 0)
     {
@@ -177,42 +156,10 @@ got_contact_cb (TpConnection *connection,
       return;
     }
 
-  switch (priv->selector)
-    {
-      case TP_CONTACT_MYSELF:
-        _tpl_channel_text_set_my_contact (tpl_text, contacts[0]);
-        break;
-      case TP_CONTACT_REMOTE:
-        _tpl_channel_text_set_remote_contact (tpl_text, contacts[0]);
-        break;
-      default:
-        PATH_DEBUG (tpl_text, "retrieving TpContacts: passing invalid value"
-            " for selector: %d Aborting channel observation", priv->selector);
-        g_object_unref (observer);
-        _tpl_action_chain_terminate (ctx);
-        return;
-    }
+  _tpl_channel_text_set_my_contact (tpl_text, contacts[0]);
 
   g_object_unref (observer);
   _tpl_action_chain_continue (ctx);
-}
-
-
-static void
-pendingproc_get_remote_contact (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
-  TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
-  TpHandle remote_handle;
-  TpConnection *tp_conn = tp_channel_borrow_connection (TP_CHANNEL (
-        tpl_chan));
-
-  remote_handle = tp_channel_get_handle (TP_CHANNEL (tpl_chan), NULL);
-
-  tpl_text->priv->selector = TP_CONTACT_REMOTE;
-  tp_connection_get_contacts_by_handle (tp_conn, 1, &remote_handle,
-      G_N_ELEMENTS (features), features, got_contact_cb, ctx, NULL, NULL);
 }
 
 static void
@@ -224,9 +171,8 @@ pendingproc_get_my_contact (TplActionChain *ctx,
       TP_CHANNEL (tpl_text));
   TpHandle my_handle = tp_connection_get_self_handle (tp_conn);
 
-  tpl_text->priv->selector = TP_CONTACT_MYSELF;
   tp_connection_get_contacts_by_handle (tp_conn, 1, &my_handle,
-      G_N_ELEMENTS (features), features, got_contact_cb, ctx, NULL, NULL);
+      G_N_ELEMENTS (features), features, get_self_contact_cb, ctx, NULL, NULL);
 }
 
 static void
@@ -347,7 +293,6 @@ pendingproc_get_remote_handle_type (TplActionChain *ctx,
   switch (remote_handle_type)
     {
       case TP_HANDLE_TYPE_CONTACT:
-        _tpl_action_chain_prepend (ctx, pendingproc_get_remote_contact, NULL);
         break;
       case TP_HANDLE_TYPE_ROOM:
         _tpl_action_chain_prepend (ctx, pendingproc_get_chatroom_id, NULL);
@@ -393,11 +338,6 @@ tpl_channel_text_dispose (GObject *obj)
     {
       g_object_unref (priv->my_contact);
       priv->my_contact = NULL;
-    }
-  if (priv->remote_contact != NULL)
-    {
-      g_object_unref (priv->remote_contact);
-      priv->remote_contact = NULL;
     }
 
   tp_clear_pointer (&priv->contacts, g_hash_table_unref);
