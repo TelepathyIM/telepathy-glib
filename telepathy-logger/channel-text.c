@@ -90,11 +90,6 @@ static void pendingproc_get_pending_messages (TplActionChain *ctx,
    gpointer user_data);
 static void pendingproc_prepare_tpl_channel (TplActionChain *ctx,
    gpointer user_data);
-static void pendingproc_get_chatroom_id (TplActionChain *ctx,
-   gpointer user_data);
-static void get_chatroom_id_cb (TpConnection *proxy,
-    const gchar **identifiers, const GError *error, gpointer user_data,
-    GObject *weak_object);
 static void pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data);
 
@@ -282,52 +277,45 @@ pendingproc_get_remote_contacts (TplActionChain *ctx,
 }
 
 static void
-pendingproc_get_remote_handle_type (TplActionChain *ctx,
+_tpl_channel_text_set_chatroom_id (TplChannelText *self,
+    const gchar *data)
+{
+  g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
+  g_return_if_fail (!TPL_STR_EMPTY (data));
+  g_return_if_fail (self->priv->chatroom_id == NULL);
+  self->priv->chatroom_id = g_strdup (data);
+}
+
+static void
+_tpl_channel_text_set_chatroom (TplChannelText *self,
+    gboolean data)
+{
+  g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
+
+  self->priv->chatroom = data;
+}
+
+static void
+pendingproc_get_room_info (TplActionChain *ctx,
     gpointer user_data)
 {
   TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
-  TpHandleType remote_handle_type;
+  TpHandleType handle_type;
+  TpChannel *chan = TP_CHANNEL (tpl_text);
 
-  tp_channel_get_handle (TP_CHANNEL (tpl_text), &remote_handle_type);
+  tp_channel_get_handle (chan, &handle_type);
+  if (handle_type != TP_HANDLE_TYPE_ROOM)
+    goto out;
 
-  switch (remote_handle_type)
-    {
-      case TP_HANDLE_TYPE_CONTACT:
-        break;
-      case TP_HANDLE_TYPE_ROOM:
-        _tpl_action_chain_prepend (ctx, pendingproc_get_chatroom_id, NULL);
-        break;
-      case TP_HANDLE_TYPE_NONE:
-        PATH_DEBUG (tpl_text, "HANDLE_TYPE_NONE received, probably an anonymous "
-            "chat, like MSN ones. NOT IMPLEMENTED");
-        _tpl_action_chain_terminate (ctx);
-        return;
-        break;
-      /* follows unhandled TpHandleType */
-      case TP_HANDLE_TYPE_LIST:
-        PATH_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_LIST: "
-            "un-handled. Check the TelepathyLogger.client file.");
-        _tpl_action_chain_terminate (ctx);
-        return;
-        break;
-      case TP_HANDLE_TYPE_GROUP:
-        PATH_DEBUG (tpl_text, "remote handle: TP_HANDLE_TYPE_GROUP: "
-            "un-handled. Check the TelepathyLogger.client file.");
-        _tpl_action_chain_terminate (ctx);
-        return;
-        break;
-      default:
-        PATH_DEBUG (tpl_text, "remote handle type unknown %d.",
-            remote_handle_type);
-        _tpl_action_chain_terminate (ctx);
-        return;
-        break;
-    }
+  _tpl_channel_text_set_chatroom (tpl_text, TRUE);
 
+  PATH_DEBUG (tpl_text, "Chatroom id: %s", tp_channel_get_identifier (chan));
+  _tpl_channel_text_set_chatroom_id (tpl_text,
+      tp_channel_get_identifier (chan));
+
+out:
   _tpl_action_chain_continue (ctx);
 }
-/* end of async Callbacks */
-
 
 static void
 tpl_channel_text_dispose (GObject *obj)
@@ -470,25 +458,6 @@ _tpl_channel_text_get_chatroom_id (TplChannelText *self)
 }
 
 static void
-_tpl_channel_text_set_chatroom (TplChannelText *self,
-    gboolean data)
-{
-  g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
-
-  self->priv->chatroom = data;
-}
-
-static void
-_tpl_channel_text_set_chatroom_id (TplChannelText *self,
-    const gchar *data)
-{
-  g_return_if_fail (TPL_IS_CHANNEL_TEXT (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (self->priv->chatroom_id == NULL);
-  self->priv->chatroom_id = g_strdup (data);
-}
-
-static void
 _tpl_channel_text_call_when_ready (TplChannelText *self,
     GAsyncReadyCallback cb, gpointer user_data)
 {
@@ -506,7 +475,7 @@ _tpl_channel_text_call_when_ready (TplChannelText *self,
   _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_remote_contacts, NULL);
-  _tpl_action_chain_append (actions, pendingproc_get_remote_handle_type, NULL);
+  _tpl_action_chain_append (actions, pendingproc_get_room_info, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
   _tpl_action_chain_append (actions, pendingproc_cleanup_pending_messages_db, NULL);
@@ -934,53 +903,6 @@ got_text_pending_messages_cb (TpChannel *proxy,
 
   _tpl_action_chain_continue (ctx);
 }
-
-
-static void
-pendingproc_get_chatroom_id (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
-  TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
-  TpConnection *connection = tp_channel_borrow_connection (TP_CHANNEL (
-        tpl_chan));
-  TpHandle room_handle;
-  GArray handles = { (gchar *) &room_handle, 1 };
-
-  room_handle = tp_channel_get_handle (TP_CHANNEL (tpl_chan), NULL);
-
-  _tpl_channel_text_set_chatroom (tpl_text, TRUE);
-  tp_cli_connection_call_inspect_handles (connection,
-      -1, TP_HANDLE_TYPE_ROOM, &handles, get_chatroom_id_cb,
-      ctx, NULL, NULL);
-}
-
-
-static void
-get_chatroom_id_cb (TpConnection *proxy,
-    const gchar **identifiers,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TplActionChain *ctx = user_data;
-  TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
-
-  g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
-
-  if (error != NULL)
-    {
-      PATH_DEBUG (tpl_text, "retrieving chatroom identifier: %s", error->message);
-      _tpl_action_chain_terminate (ctx);
-      return;
-    }
-
-  PATH_DEBUG (tpl_text, "Chatroom id: %s", identifiers[0]);
-  _tpl_channel_text_set_chatroom_id (tpl_text, identifiers[0]);
-
-  _tpl_action_chain_continue (ctx);
-}
-
 
 static void
 pendingproc_connect_message_signals (TplActionChain *ctx,
