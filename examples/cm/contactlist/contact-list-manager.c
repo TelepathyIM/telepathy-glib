@@ -1450,9 +1450,11 @@ example_contact_list_manager_normalize_group (TpBaseContactList *manager,
 }
 
 static void
-example_contact_list_manager_rename_group (TpBaseContactList *manager,
+example_contact_list_manager_rename_group_async (TpBaseContactList *manager,
     const gchar *old_name,
-    const gchar *new_name)
+    const gchar *new_name,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   gchar *tag = ensure_tag (self, new_name, FALSE);
@@ -1470,6 +1472,8 @@ example_contact_list_manager_rename_group (TpBaseContactList *manager,
     }
 
   tp_base_contact_list_group_renamed (manager, old_name, new_name);
+  tp_simple_async_report_success_in_idle ((GObject *) manager, callback,
+      user_data, example_contact_list_manager_rename_group_async);
 }
 
 static void
@@ -1560,7 +1564,7 @@ mutable_contact_group_list_iface_init (
   iface->remove_group_async = example_contact_list_manager_remove_group_async;
   iface->create_groups_async =
     example_contact_list_manager_create_groups_async;
-  iface->rename_group = example_contact_list_manager_rename_group;
+  iface->rename_group_async = example_contact_list_manager_rename_group_async;
   iface->set_contact_groups_async =
     example_contact_list_manager_set_contact_groups_async;
   iface->get_group_storage = example_contact_list_manager_get_group_storage;

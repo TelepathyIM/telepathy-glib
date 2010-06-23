@@ -438,11 +438,19 @@ gboolean tp_base_contact_list_remove_group_finish (TpBaseContactList *self,
 
 typedef void (*TpBaseContactListRenameGroupFunc) (TpBaseContactList *self,
     const gchar *old_name,
-    const gchar *new_name);
+    const gchar *new_name,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
-void tp_base_contact_list_rename_group (TpBaseContactList *self,
+void tp_base_contact_list_rename_group_async (TpBaseContactList *self,
     const gchar *old_name,
-    const gchar *new_name);
+    const gchar *new_name,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_contact_list_rename_group_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
 
 #define TP_TYPE_MUTABLE_CONTACT_GROUP_LIST \
   (tp_mutable_contact_group_list_get_type ())
@@ -479,7 +487,8 @@ struct _TpMutableContactGroupListInterface {
 
     /* optional to implement */
 
-    TpBaseContactListRenameGroupFunc rename_group;
+    TpBaseContactListRenameGroupFunc rename_group_async;
+    TpBaseContactListAsyncFinishFunc rename_group_finish;
     TpBaseContactListUIntFunc get_group_storage;
 };
 

@@ -409,10 +409,13 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  * @remove_group_finish: the implementation of
  *  tp_base_contact_list_remove_group_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
- * @rename_group: the implementation of
- *  tp_base_contact_list_rename_group(); the default implementation is %NULL,
- *  which results in group renaming being emulated via a call to @add_to_group
- *  and a call to @remove_group_async
+ * @rename_group_async: the implementation of
+ *  tp_base_contact_list_rename_group_async(); the default implementation is
+ *  %NULL, which results in group renaming being emulated via a call to
+ *  @add_to_group and a call to @remove_group_async
+ * @rename_group_finish: the implementation of
+ *  tp_base_contact_list_rename_group_finish(); the default
+ *  implementation may be used if @result is a #GSimpleAsyncResult
  *
  * The interface vtable for a %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST.
  */
@@ -842,6 +845,7 @@ tp_mutable_contact_group_list_default_init (
   iface->set_contact_groups_finish = tp_base_contact_list_simple_finish;
   iface->create_groups_finish = tp_base_contact_list_simple_finish;
   iface->remove_group_finish = tp_base_contact_list_simple_finish;
+  iface->rename_group_finish = tp_base_contact_list_simple_finish;
 }
 
 static void
@@ -3738,40 +3742,19 @@ void tp_base_contact_list_add_to_group (TpBaseContactList *self,
  * @self: a contact list manager
  * @old_name: a group
  * @new_name: a new name for the group
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * Signature of a method that renames groups.
  */
 
-static void
-tp_base_contact_list_rename_group_remove_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  GError *error = NULL;
-
-  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
-
-  if (tp_base_contact_list_remove_group_finish (self, result, &error))
-    {
-      DEBUG ("Removing group '%s' for rename succeeded", (gchar *) user_data);
-    }
-  else
-    {
-      DEBUG ("Removing group '%s' for rename failed: %s #%d: %s",
-          (gchar *) user_data,
-          g_quark_to_string (error->domain), error->code, error->message);
-      g_clear_error (&error);
-    }
-
-  g_free (user_data);
-}
-
 /**
- * tp_base_contact_list_rename_group:
+ * tp_base_contact_list_rename_group_async:
  * @self: a contact list manager
  * @old_name: the normalized name of a group, which must exist
  * @new_name: a new normalized name for the group name
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
  *
  * Rename a group; if possible, do so as an atomic operation. If this
  * protocol can't do that, emulate renaming in terms of other operations.
@@ -3781,7 +3764,7 @@ tp_base_contact_list_rename_group_remove_cb (GObject *source,
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
  * virtual method which may be implemented, using
- * #TpMutableContactGroupListInterface.rename_group.
+ * #TpMutableContactGroupListInterface.rename_group_async.
  *
  * If this virtual method is not implemented, the default is to implement
  * renaming a group as creating the new group, adding all the old group's
@@ -3789,12 +3772,14 @@ tp_base_contact_list_rename_group_remove_cb (GObject *source,
  * like XMPP, in which groups behave more like tags.
  *
  * The implementation should call tp_base_contact_list_groups_renamed() before
- * returning.
+ * calling @callback.
  */
 void
-tp_base_contact_list_rename_group (TpBaseContactList *self,
+tp_base_contact_list_rename_group_async (TpBaseContactList *self,
     const gchar *old_name,
-    const gchar *new_name)
+    const gchar *new_name,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpMutableContactGroupListInterface *iface;
 
@@ -3802,9 +3787,10 @@ tp_base_contact_list_rename_group (TpBaseContactList *self,
   iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
   g_return_if_fail (iface != NULL);
 
-  if (iface->rename_group != NULL)
+  if (iface->rename_group_async != NULL)
     {
-      iface->rename_group (self, old_name, new_name);
+      iface->rename_group_async (self, old_name, new_name, callback,
+          user_data);
     }
   else
     {
@@ -3821,9 +3807,43 @@ tp_base_contact_list_rename_group (TpBaseContactList *self,
       mixin = TP_GROUP_MIXIN (old_channel);
 
       iface->add_to_group (self, new_name, mixin->members);
-      iface->remove_group_async (self, old_name,
-          tp_base_contact_list_rename_group_remove_cb, g_strdup (old_name));
+      iface->remove_group_async (self, old_name, callback, user_data);
     }
+}
+
+/**
+ * tp_base_contact_list_rename_group_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_rename_group_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_rename_group_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpMutableContactListInterface.rename_group_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ */
+gboolean
+tp_base_contact_list_rename_group_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpMutableContactGroupListInterface *mutable_groups_iface;
+
+  mutable_groups_iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (mutable_groups_iface != NULL, FALSE);
+  g_return_val_if_fail (mutable_groups_iface->rename_group_finish != NULL,
+      FALSE);
+
+  return mutable_groups_iface->rename_group_finish (self, result, error);
 }
 
 /**
@@ -4787,6 +4807,19 @@ sync_exit:
 }
 
 static void
+tp_base_contact_list_mixin_rename_group_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer context)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  GError *error = NULL;
+
+  tp_base_contact_list_rename_group_finish (self, result, &error);
+  tp_base_contact_list_mixin_return_void (context, error);
+  g_clear_error (&error);
+}
+
+static void
 tp_base_contact_list_mixin_rename_group (
     TpSvcConnectionInterfaceContactGroups *svc,
     const gchar *before,
@@ -4801,7 +4834,7 @@ tp_base_contact_list_mixin_rename_group (
   TpHandle new_handle = 0;
 
   if (!tp_base_contact_list_check_group_change (self, NULL, &error))
-    goto finally;
+    goto sync_exit;
 
   old_handle = tp_handle_lookup (self->priv->group_repo, before, NULL, NULL);
   old_channel = g_hash_table_lookup (self->priv->groups,
@@ -4811,13 +4844,13 @@ tp_base_contact_list_mixin_rename_group (
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_DOES_NOT_EXIST,
           "Group '%s' does not exist", before);
-      goto finally;
+      goto sync_exit;
     }
 
   new_handle = tp_handle_ensure (self->priv->group_repo, after, NULL, &error);
 
   if (new_handle == 0)
-    goto finally;
+    goto sync_exit;
 
   if (g_hash_table_lookup (self->priv->groups, GUINT_TO_POINTER (new_handle))
       != NULL)
@@ -4825,14 +4858,17 @@ tp_base_contact_list_mixin_rename_group (
       g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Group '%s' already exists",
           tp_handle_inspect (self->priv->group_repo, new_handle));
-      goto finally;
+      goto sync_exit;
     }
 
-  tp_base_contact_list_rename_group (self,
+  tp_base_contact_list_rename_group_async (self,
       tp_handle_inspect (self->priv->group_repo, old_handle),
-      tp_handle_inspect (self->priv->group_repo, new_handle));
+      tp_handle_inspect (self->priv->group_repo, new_handle),
+      tp_base_contact_list_mixin_rename_group_cb, context);
+  tp_handle_unref (self->priv->group_repo, new_handle);
+  return;
 
-finally:
+sync_exit:
   tp_base_contact_list_mixin_return_void (context, error);
   g_clear_error (&error);
 
