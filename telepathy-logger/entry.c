@@ -556,3 +556,17 @@ _tpl_entry_equal (TplEntry *self,
 
   return TPL_ENTRY_GET_CLASS (self)->equal (self, data);
 }
+
+/**
+ * tpl_entry_get_account
+ * @self: a #TplEntry
+ *
+ * <!-- no more to say -->
+ *
+ * Returns: the same account as the #TplEntry:account property
+ */
+TpAccount *
+tpl_entry_get_account (TplEntry *self)
+{
+  return self->priv->account;
+}
