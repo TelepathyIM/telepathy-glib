@@ -466,8 +466,8 @@ _tpl_channel_text_call_when_ready (TplChannelText *self,
    * last: check for pending messages
    *
    * If for any reason, the order is changed, it's needed to check what objects
-   * are unreferenced by g_object_unref but used by a next action AND what object are actually not
-   * prepared but used anyway */
+   * are unreferenced by g_object_unref but used by a next action AND what
+   * object are actually not prepared but used anyway */
   actions = _tpl_action_chain_new_async (G_OBJECT (self), cb, user_data);
   _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
@@ -475,7 +475,8 @@ _tpl_channel_text_call_when_ready (TplChannelText *self,
   _tpl_action_chain_append (actions, pendingproc_get_room_info, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
-  _tpl_action_chain_append (actions, pendingproc_cleanup_pending_messages_db, NULL);
+  _tpl_action_chain_append (actions, pendingproc_cleanup_pending_messages_db,
+      NULL);
   /* start the chain consuming */
   _tpl_action_chain_continue (actions);
 }
@@ -659,7 +660,8 @@ got_message_pending_messages_cb (TpProxy *proxy,
 
   if (error != NULL)
     {
-      PATH_CRITICAL (weak_object, "retrieving messages for Message iface: %s", error->message);
+      PATH_CRITICAL (weak_object, "retrieving messages for Message iface: %s",
+          error->message);
       goto out;
     }
 
@@ -941,7 +943,8 @@ pendingproc_connect_message_signals (TplActionChain *ctx,
       on_lost_message_cb, tpl_text, NULL, NULL, &error);
   if (error != NULL)
     {
-      PATH_DEBUG (tpl_text, "'lost message' signal connect: %s", error->message);
+      PATH_DEBUG (tpl_text, "'lost message' signal connect: %s",
+          error->message);
       g_clear_error (&error);
       is_error = TRUE;
     }
@@ -1096,7 +1099,8 @@ on_sent_signal_cb (TpChannel *proxy,
       tpl_entity_receiver = _tpl_entity_from_tp_contact (remote);
       _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_CONTACT);
 
-      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto=\"%s "
+          "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
           log_id,
           tpl_entity_get_identifier (tpl_entity_receiver),
           tpl_entity_get_alias (tpl_entity_receiver),
@@ -1107,7 +1111,8 @@ on_sent_signal_cb (TpChannel *proxy,
     }
   else
     {
-      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto "
+          "chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
           log_id,
           _tpl_channel_text_get_chatroom_id (tpl_text),
           tpl_entity_get_identifier (tpl_entity_sender),
@@ -1236,7 +1241,8 @@ keepon_on_receiving_signal (TplEntryText *text_log,
 
   tpl_entity_receiver = _tpl_entity_from_tp_contact (local);
 
-  DEBUG ("recvd:\n\tlog_id=\"%s\"\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+  DEBUG ("recvd:\n\tlog_id=\"%s\"\n\tto=\"%s "
+      "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
       _tpl_entry_get_log_id (log),
       tpl_entity_get_identifier (tpl_entity_receiver),
       tpl_entity_get_alias (tpl_entity_receiver),
@@ -1290,7 +1296,8 @@ on_received_signal_cb (TpChannel *proxy,
   TpAccount *account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
   TplLogStore *index = _tpl_log_store_sqlite_dup ();
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
-  gchar *log_id = _tpl_create_message_token (channel_path, arg_Timestamp, arg_ID);
+  gchar *log_id = _tpl_create_message_token (channel_path, arg_Timestamp,
+      arg_ID);
 
   /* First, check if log_id has already been logged
    *
@@ -1371,5 +1378,3 @@ out:
 
   g_free (log_id);
 }
-/* End of Signal's Callbacks */
-
