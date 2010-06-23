@@ -52,6 +52,14 @@ struct _TplChannelTextPriv
   TpContact *remote_contact;  /* only set if chatroom==FALSE */
   gchar *chatroom_id;          /* only set if chatroom==TRUE */
 
+  /* Contacts participating in this channel.
+   * This is used as a cache so we don't have to recreate TpContact objects
+   * each time we receive something.
+   *
+   * TpHandle => reffed TpContact
+   * */
+  GHashTable *contacts;
+
   /* only used as metadata in CB data passing */
   guint selector;
 };
@@ -207,7 +215,6 @@ pendingproc_get_remote_contact (TplActionChain *ctx,
       G_N_ELEMENTS (features), features, got_contact_cb, ctx, NULL, NULL);
 }
 
-
 static void
 pendingproc_get_my_contact (TplActionChain *ctx,
     gpointer user_data)
@@ -222,6 +229,111 @@ pendingproc_get_my_contact (TplActionChain *ctx,
       G_N_ELEMENTS (features), features, got_contact_cb, ctx, NULL, NULL);
 }
 
+static void
+get_remote_contacts_cb (TpConnection *connection,
+    guint n_contacts,
+    TpContact *const *contacts,
+    guint n_failed,
+    const TpHandle *failed,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TplActionChain *ctx = user_data;
+  TplChannelText *self = TPL_CHANNEL_TEXT (weak_object);
+  guint i;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get remote contacts: %s", error->message);
+
+      if (ctx != NULL)
+        _tpl_action_chain_terminate (ctx);
+      return;
+    }
+
+  for (i = 0; i < n_contacts; i++)
+    {
+      TpContact *contact = contacts[i];
+      TpHandle handle = tp_contact_get_handle (contact);
+
+      g_hash_table_insert (self->priv->contacts, GUINT_TO_POINTER (handle),
+          g_object_ref (contact));
+    }
+
+  if (ctx != NULL)
+    _tpl_action_chain_continue (ctx);
+}
+
+static void
+chan_members_changed_cb (TpChannel *chan,
+    gchar *message,
+    GArray *added,
+    GArray *removed,
+    GArray *local_pending,
+    GArray *remote_pending,
+    TpHandle actor,
+    guint reason,
+    gpointer user_data)
+{
+  TplChannelText *self = user_data;
+  guint i;
+
+  if (added->len > 0)
+    {
+      tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (chan),
+          added->len, (TpHandle *) added->data,
+          G_N_ELEMENTS (features), features, get_remote_contacts_cb, NULL, NULL,
+          G_OBJECT (self));
+    }
+
+  for (i = 0; i < removed->len; i++)
+    {
+      TpHandle handle = g_array_index (removed, TpHandle, i);
+
+      g_hash_table_remove (self->priv->contacts, GUINT_TO_POINTER (handle));
+    }
+}
+
+static void
+pendingproc_get_remote_contacts (TplActionChain *ctx,
+    gpointer user_data)
+{
+  TplChannelText *self = _tpl_action_chain_get_object (ctx);
+  TpChannel *chan = TP_CHANNEL (self);
+  TpConnection *tp_conn = tp_channel_borrow_connection (chan);
+  GArray *arr;
+
+  if (tp_proxy_has_interface_by_id (chan,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
+    {
+      /* Get the contacts of all the members */
+      const TpIntSet *members;
+
+      members = tp_channel_group_get_members (chan);
+      arr = tp_intset_to_array (members);
+
+      tp_g_signal_connect_object (chan, "group-members-changed",
+          G_CALLBACK (chan_members_changed_cb), self, 0);
+    }
+  else
+    {
+      /* Get the contact of the TargetHandle */
+      TpHandle handle;
+
+      arr = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
+      handle = tp_channel_get_handle (chan, NULL);
+
+      g_array_append_val (arr, handle);
+    }
+
+  tp_connection_get_contacts_by_handle (tp_conn,
+      arr->len, (TpHandle *) arr->data,
+      G_N_ELEMENTS (features), features, get_remote_contacts_cb, ctx, NULL,
+      G_OBJECT (self));
+
+  g_array_free (arr, TRUE);
+}
 
 static void
 pendingproc_get_remote_handle_type (TplActionChain *ctx,
@@ -288,6 +400,8 @@ tpl_channel_text_dispose (GObject *obj)
       priv->remote_contact = NULL;
     }
 
+  tp_clear_pointer (&priv->contacts, g_hash_table_unref);
+
   G_OBJECT_CLASS (_tpl_channel_text_parent_class)->dispose (obj);
 }
 
@@ -328,6 +442,9 @@ _tpl_channel_text_init (TplChannelText *self)
       TPL_TYPE_CHANNEL_TEXT, TplChannelTextPriv);
 
   self->priv = priv;
+
+  self->priv->contacts = g_hash_table_new_full (NULL, NULL, NULL,
+      (GDestroyNotify) g_object_unref);
 }
 
 
@@ -456,6 +573,7 @@ _tpl_channel_text_call_when_ready (TplChannelText *self,
   actions = _tpl_action_chain_new_async (G_OBJECT (self), cb, user_data);
   _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
+  _tpl_action_chain_append (actions, pendingproc_get_remote_contacts, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_remote_handle_type, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
