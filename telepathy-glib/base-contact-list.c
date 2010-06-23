@@ -3691,7 +3691,6 @@ tp_base_contact_list_rename_group (TpBaseContactList *self,
       g_return_if_fail (old_channel != NULL);
       mixin = TP_GROUP_MIXIN (old_channel);
 
-      iface->create_groups (self, &new_name, 1);
       iface->add_to_group (self, new_name, mixin->members);
       iface->remove_group (self, old_name);
     }
