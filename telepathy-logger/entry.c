@@ -100,6 +100,7 @@ enum {
     PROP_DIRECTION,
     PROP_CHAT_ID,
     PROP_ACCOUNT,
+    PROP_ACCOUNT_PATH,
     PROP_CHANNEL_PATH,
     PROP_SENDER,
     PROP_RECEIVER
@@ -167,6 +168,9 @@ tpl_entry_get_property (GObject *object,
         break;
       case PROP_ACCOUNT:
         g_value_set_object (value, priv->account);
+        break;
+      case PROP_ACCOUNT_PATH:
+        g_value_set_string (value, tpl_entry_get_account_path (self));
         break;
       case PROP_CHANNEL_PATH:
         g_value_set_string (value, priv->channel_path);
@@ -279,6 +283,13 @@ tpl_entry_class_init (TplEntryClass *klass)
       TP_TYPE_ACCOUNT,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+
+  param_spec = g_param_spec_string ("account-path",
+      "AccountPath",
+      "The account path of the TpAccount to which the log entry is related",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ACCOUNT_PATH, param_spec);
 
   param_spec = g_param_spec_string ("channel-path",
       "ChannelPath",
