@@ -506,14 +506,6 @@ _tpl_channel_text_new (TpConnection *conn,
 }
 
 static TpContact *
-_tpl_channel_text_get_remote_contact (TplChannelText *self)
-{
-  g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
-
-  return self->priv->remote_contact;
-}
-
-static TpContact *
 _tpl_channel_text_get_my_contact (TplChannelText *self)
 {
   g_return_val_if_fail (TPL_IS_CHANNEL_TEXT (self), NULL);
@@ -1211,7 +1203,6 @@ on_sent_signal_cb (TpChannel *proxy,
 {
   GError *error = NULL;
   TplChannelText *tpl_text = TPL_CHANNEL_TEXT (user_data);
-  TpContact *remote = NULL;
   TpContact *me;
   TplEntity *tpl_entity_sender;
   TplEntity *tpl_entity_receiver = NULL;
@@ -1236,10 +1227,13 @@ on_sent_signal_cb (TpChannel *proxy,
 
   if (!_tpl_channel_text_is_chatroom (tpl_text))
     {
-      remote = _tpl_channel_text_get_remote_contact (tpl_text);
-      if (remote == NULL)
-        PATH_DEBUG (tpl_text, "sending message: Remote TplEntity=NULL on 1-1"
-            "Chat");
+      TpContact *remote;
+      TpHandle handle = tp_channel_get_handle (TP_CHANNEL (tpl_text), NULL);
+
+      remote = g_hash_table_lookup (tpl_text->priv->contacts,
+          GUINT_TO_POINTER (handle));
+      g_assert (remote != NULL);
+
       tpl_entity_receiver = _tpl_entity_from_tp_contact (remote);
       _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_CONTACT);
 
