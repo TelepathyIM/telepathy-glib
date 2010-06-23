@@ -64,8 +64,6 @@ static TpContactFeature features[3] = {
 
 static void call_when_ready_wrapper (TplChannel *tpl_chan,
     GAsyncReadyCallback cb, gpointer user_data);
-void got_pending_messages_cb (TpChannel *proxy, const GPtrArray *result,
-    const GError *error, gpointer user_data, GObject *weak_object);
 
 static void got_tpl_chan_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
@@ -96,12 +94,6 @@ static void pendingproc_get_chatroom_id (TplActionChain *ctx,
 static void get_chatroom_id_cb (TpConnection *proxy,
     const gchar **identifiers, const GError *error, gpointer user_data,
     GObject *weak_object);
-static void pendingproc_get_my_contact (TplActionChain *ctx,
-   gpointer user_data);
-static void pendingproc_get_remote_contact (TplActionChain *ctx,
-   gpointer user_data);
-static void pendingproc_get_remote_handle_type (TplActionChain *ctx,
-   gpointer user_data);
 static void pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data);
 
