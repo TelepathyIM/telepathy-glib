@@ -105,7 +105,8 @@ static void pendingproc_get_remote_handle_type (TplActionChain *ctx,
 static void pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data);
 
-static void keepon_on_receiving_signal (TplEntryText *log);
+static void keepon_on_receiving_signal (TplEntryText *log,
+    TpContact *remote);
 static void got_message_pending_messages_cb (TpProxy *proxy,
     const GValue *out_Value, const GError *error, gpointer user_data,
     GObject *weak_object);
@@ -1226,7 +1227,8 @@ on_received_signal_with_contact_cb (TpConnection *connection,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplEntryText *log = TPL_ENTRY_TEXT (weak_object);
+  TplEntryText *log = user_data;
+  TplChannelText *self = TPL_CHANNEL_TEXT (weak_object);
   TplChannelText *tpl_text;
   TpContact *remote;
 
@@ -1255,14 +1257,17 @@ on_received_signal_with_contact_cb (TpConnection *connection,
     }
 
   remote = contacts[0];
-  _tpl_channel_text_set_remote_contact (tpl_text, remote);
 
-  keepon_on_receiving_signal (log);
+  if (!self->priv->chatroom)
+    _tpl_channel_text_set_remote_contact (tpl_text, remote);
+
+  keepon_on_receiving_signal (log, remote);
 }
 
 
 static void
-keepon_on_receiving_signal (TplEntryText *text_log)
+keepon_on_receiving_signal (TplEntryText *text_log,
+    TpContact *remote)
 {
   TplEntry *log = TPL_ENTRY (text_log);
   TplChannelText *tpl_text;
@@ -1270,13 +1275,11 @@ keepon_on_receiving_signal (TplEntryText *text_log)
   TplLogManager *logmanager;
   TplEntity *tpl_entity_sender;
   TplEntity *tpl_entity_receiver;
-  TpContact *remote;
   TpContact *local;
 
   g_return_if_fail (TPL_IS_ENTRY_TEXT (text_log));
 
   tpl_text = _tpl_entry_text_get_tpl_channel_text (text_log);
-  remote = _tpl_channel_text_get_remote_contact (tpl_text);
   local = _tpl_channel_text_get_my_contact (tpl_text);
 
   tpl_entity_sender = _tpl_entity_from_tp_contact (remote);
@@ -1322,18 +1325,17 @@ static void
 on_received_signal_cb (TpChannel *proxy,
     guint arg_ID,
     guint arg_Timestamp,
-    guint arg_Sender,
+    TpHandle sender,
     guint arg_Type,
     guint arg_Flags,
     const gchar *arg_Text,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpHandle remote_handle = (TpHandle) arg_Sender;
   TplChannelText *tpl_text = TPL_CHANNEL_TEXT (proxy);
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpConnection *tp_conn;
-  TpContact *me;
+  TpContact *me, *remote;
   TplEntity *tpl_entity_receiver = NULL;
   TplEntryText *text_log = NULL;
   TplEntry *log;
@@ -1398,13 +1400,19 @@ on_received_signal_cb (TpChannel *proxy,
   _tpl_entry_set_timestamp (log, (time_t) arg_Timestamp);
 
   tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_chan));
-  /* it's a chatroom and no contact has been pre-cached */
-  if (_tpl_channel_text_get_remote_contact (tpl_text) == NULL)
-    tp_connection_get_contacts_by_handle (tp_conn, 1, &remote_handle,
-        G_N_ELEMENTS (features), features, on_received_signal_with_contact_cb,
-        NULL, NULL, G_OBJECT (log));
+  remote = _tpl_channel_text_get_remote_contact (tpl_text);
+
+  if (remote == NULL)
+    {
+      /* it's a chatroom and no contact has been pre-cached */
+      tp_connection_get_contacts_by_handle (tp_conn, 1, &sender,
+          G_N_ELEMENTS (features), features, on_received_signal_with_contact_cb,
+          log, NULL, G_OBJECT (tpl_text));
+    }
   else
-    keepon_on_receiving_signal (text_log);
+    {
+      keepon_on_receiving_signal (text_log, remote);
+    }
 
 out:
   if (tpl_entity_receiver != NULL)
