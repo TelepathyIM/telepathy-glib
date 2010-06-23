@@ -474,9 +474,9 @@ _tpl_channel_text_call_when_ready (TplChannelText *self,
    * prepared but used anyway */
   actions = _tpl_action_chain_new_async (G_OBJECT (self), cb, user_data);
   _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
-  _tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_remote_handle_type, NULL);
+  _tpl_action_chain_append (actions, pendingproc_connect_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
   _tpl_action_chain_append (actions, pendingproc_cleanup_pending_messages_db, NULL);
   /* start the chain consuming */
