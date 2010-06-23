@@ -47,8 +47,6 @@ static void got_ready_tp_connection_cb (TpConnection *connection,
     const GError *error, gpointer user_data);
 static void pendingproc_get_ready_tp_channel (TplActionChain *ctx,
     gpointer user_data);
-static void got_ready_tp_channel_cb (TpChannel *channel,
-    const GError *error, gpointer user_data);
 
 G_DEFINE_ABSTRACT_TYPE (TplChannel, _tpl_channel, TP_TYPE_CHANNEL)
 
@@ -270,33 +268,36 @@ got_ready_tp_connection_cb (TpConnection *connection,
 }
 
 static void
-pendingproc_get_ready_tp_channel (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplChannel *tpl_chan = _tpl_action_chain_get_object (ctx);
-
-  /* user_data is a TplChannel instance */
-  tp_channel_call_when_ready (TP_CHANNEL (tpl_chan), got_ready_tp_channel_cb,
-      ctx);
-}
-
-
-static void
-got_ready_tp_channel_cb (TpChannel *channel,
-    const GError *error,
+channel_prepared_cb (GObject *source,
+    GAsyncResult *result,
     gpointer user_data)
 {
   TplActionChain *ctx = user_data;
   TplChannel *tpl_chan = _tpl_action_chain_get_object (ctx);
+  GError *error = NULL;
 
-  if (error != NULL)
+  if (!tp_proxy_prepare_finish (source, result, &error))
     {
       PATH_DEBUG (tpl_chan, "Giving up channel observation: %s",
           error->message);
 
       _tpl_action_chain_terminate (ctx);
+      g_error_free (error);
       return;
+
     }
 
   _tpl_action_chain_continue (ctx);
+}
+
+static void
+pendingproc_get_ready_tp_channel (TplActionChain *ctx,
+    gpointer user_data)
+{
+  TplChannel *tpl_chan = _tpl_action_chain_get_object (ctx);
+  GQuark features[] = { TP_CHANNEL_FEATURE_CORE, TP_CHANNEL_FEATURE_GROUP, 0 };
+
+  /* user_data is a TplChannel instance */
+  tp_proxy_prepare_async (TP_CHANNEL (tpl_chan), features, channel_prepared_cb,
+      ctx);
 }
