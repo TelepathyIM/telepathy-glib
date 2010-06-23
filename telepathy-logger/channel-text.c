@@ -1311,10 +1311,6 @@ on_sent_signal_cb (TpChannel *proxy,
 }
 
 
-/* the only function of this CB is resolving the remote TpHandle, in case
- * cannot be known at preparation time (ie on chatrooms channels)
- *
- * It sets gets a TplEntryText as weak_ref and sets the sender for it */
 static void
 on_received_signal_with_contact_cb (TpConnection *connection,
     guint n_contacts,
@@ -1328,6 +1324,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
   TplEntryText *log = user_data;
   TplChannelText *tpl_text;
   TpContact *remote;
+  TpHandle handle;
 
   g_return_if_fail (TPL_IS_ENTRY_TEXT (log));
 
@@ -1354,6 +1351,10 @@ on_received_signal_with_contact_cb (TpConnection *connection,
     }
 
   remote = contacts[0];
+  handle = tp_contact_get_handle (remote);
+
+  g_hash_table_insert (tpl_text->priv->contacts, GUINT_TO_POINTER (handle),
+      remote);
 
   keepon_on_receiving_signal (log, remote);
 }
@@ -1493,11 +1494,12 @@ on_received_signal_cb (TpChannel *proxy,
   _tpl_entry_set_timestamp (log, (time_t) arg_Timestamp);
 
   tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_chan));
-  remote = _tpl_channel_text_get_remote_contact (tpl_text);
+  remote = g_hash_table_lookup (tpl_text->priv->contacts,
+      GUINT_TO_POINTER (sender));
 
   if (remote == NULL)
     {
-      /* it's a chatroom and no contact has been pre-cached */
+      /* Contact is not in the cache */
       tp_connection_get_contacts_by_handle (tp_conn, 1, &sender,
           G_N_ELEMENTS (features), features, on_received_signal_with_contact_cb,
           log, NULL, G_OBJECT (tpl_text));
