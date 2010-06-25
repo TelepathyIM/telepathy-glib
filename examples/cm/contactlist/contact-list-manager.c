@@ -945,6 +945,29 @@ example_contact_list_manager_get_contacts (TpBaseContactList *manager)
   return tp_handle_set_copy (self->priv->contacts);
 }
 
+static TpHandleSet *
+example_contact_list_manager_get_group_members (TpBaseContactList *manager,
+    const gchar *group)
+{
+  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
+  TpIntSetFastIter iter;
+  TpHandle member;
+  TpHandleSet *members = tp_handle_set_copy (self->priv->contacts);
+
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (self->priv->contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
+    {
+      ExampleContactDetails *d = lookup_contact (self, member);
+
+      if (d == NULL || d->tags == NULL ||
+          !g_hash_table_lookup_extended (d->tags, group, NULL, NULL))
+        tp_handle_set_remove (members, member);
+    }
+
+  return members;
+}
+
 static const ExampleContactDetails no_details = {
     NULL,
     FALSE,
@@ -1560,6 +1583,7 @@ static void
 contact_group_list_iface_init (TpContactGroupListInterface *iface)
 {
   iface->get_groups = example_contact_list_manager_get_groups;
+  iface->get_group_members = example_contact_list_manager_get_group_members;
   iface->get_contact_groups = example_contact_list_manager_get_contact_groups;
   iface->normalize_group = example_contact_list_manager_normalize_group;
 }

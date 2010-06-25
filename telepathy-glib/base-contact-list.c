@@ -358,6 +358,8 @@ G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
  * @parent: the parent interface
  * @get_groups: the implementation of
  *  tp_base_contact_list_get_groups(); must always be implemented
+ * @get_group_members: the implementation of
+ *  tp_base_contact_list_get_group_members(); must always be implemented
  * @get_contact_groups: the implementation of
  *  tp_base_contact_list_get_contact_groups(); must always be implemented
  * @has_disjoint_groups: the implementation of
@@ -759,6 +761,7 @@ tp_base_contact_list_constructed (GObject *object)
       g_return_if_fail (iface->has_disjoint_groups != NULL);
       g_return_if_fail (iface->get_groups != NULL);
       g_return_if_fail (iface->get_contact_groups != NULL);
+      g_return_if_fail (iface->get_group_members != NULL);
 
       self->priv->group_repo = tp_dynamic_handle_repo_new (TP_HANDLE_TYPE_GROUP,
           tp_base_contact_list_repo_normalize_group, NULL);
@@ -1775,56 +1778,21 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   if (TP_IS_CONTACT_GROUP_LIST (self))
     {
       GStrv groups = tp_base_contact_list_get_groups (self);
-      GHashTable *group_members = g_hash_table_new_full (g_str_hash,
-          g_str_equal, g_free, (GDestroyNotify) tp_handle_set_destroy);
-      TpIntSetFastIter i_iter;
-      TpHandle member;
       GHashTableIter h_iter;
-      gpointer group, members, channel;
+      gpointer channel;
 
       tp_base_contact_list_groups_created (self,
           (const gchar * const *) groups, -1);
 
-      g_strfreev (groups);
-
-      tp_intset_fast_iter_init (&i_iter, tp_handle_set_peek (contacts));
-
-      while (tp_intset_fast_iter_next (&i_iter, &member))
+      for (i = 0; groups != NULL && groups[i] != NULL; i++)
         {
-          groups = tp_base_contact_list_get_contact_groups (self, member);
-
-          if (groups != NULL)
-            {
-              for (i = 0; groups[i] != NULL; i++)
-                {
-                  members = g_hash_table_lookup (group_members, groups[i]);
-
-                  if (members == NULL)
-                    members = tp_handle_set_new (self->priv->contact_repo);
-                  else
-                    g_hash_table_steal (group_members, groups[i]);
-
-                  tp_handle_set_add (members, member);
-
-                  g_hash_table_insert (group_members, g_strdup (groups[i]),
-                      members);
-                }
-
-              g_strfreev (groups);
-            }
-        }
-
-      g_hash_table_iter_init (&h_iter, group_members);
-
-      while (g_hash_table_iter_next (&h_iter, &group, &members))
-        {
-          const gchar *group_id = group;
+          TpHandleSet *members = tp_base_contact_list_get_group_members (self,
+              groups[i]);
 
           tp_base_contact_list_groups_changed (self, members,
-              &group_id, 1, NULL, 0);
+              (const gchar * const *) groups + i, 1, NULL, 0);
+          tp_handle_set_destroy (members);
         }
-
-      g_hash_table_unref (group_members);
 
       g_hash_table_iter_init (&h_iter, self->priv->groups);
 
@@ -3757,6 +3725,48 @@ tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
   g_return_val_if_fail (iface->get_contact_groups != NULL, NULL);
 
   return iface->get_contact_groups (self, contact);
+}
+
+/**
+ * TpBaseContactListGetGroupMembersFunc:
+ * @self: a contact list manager
+ * @group: a normalized group name
+ *
+ * Signature of a virtual method that lists the members of a group.
+ *
+ * Returns: a set of contact (%TP_HANDLE_TYPE_CONTACT) handles
+ */
+
+/**
+ * tp_base_contact_list_get_group_members:
+ * @self: a contact list manager
+ * @group: a normalized group name
+ *
+ * Return the set of members of @group. It is incorrect to
+ * call this method before tp_base_contact_list_set_list_retrieved() has been
+ * called, after the connection has disconnected, or on a #TpBaseContactList
+ * that does not implement %TP_TYPE_CONTACT_GROUP_LIST.
+ *
+ * If @group does not exist, this method must return either %NULL or an empty
+ * set, without error.
+ *
+ * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
+ * method, implemented using #TpContactGroupListInterface.get_group_members.
+ * It must always be implemented.
+ *
+ * Returns: a set of contact (%TP_HANDLE_TYPE_CONTACT) handles
+ */
+TpHandleSet *
+tp_base_contact_list_get_group_members (TpBaseContactList *self,
+    const gchar *group)
+{
+  TpContactGroupListInterface *iface =
+    TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
+
+  g_return_val_if_fail (iface != NULL, NULL);
+  g_return_val_if_fail (iface->get_group_members != NULL, NULL);
+
+  return iface->get_group_members (self, group);
 }
 
 /**

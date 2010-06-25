@@ -332,6 +332,13 @@ typedef GStrv (*TpBaseContactListGetContactGroupsFunc) (
 GStrv tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
     TpHandle contact);
 
+typedef TpHandleSet *(*TpBaseContactListGetGroupMembersFunc) (
+    TpBaseContactList *self,
+    const gchar *group);
+
+TpHandleSet *tp_base_contact_list_get_group_members (TpBaseContactList *self,
+    const gchar *group);
+
 typedef gchar *(*TpBaseContactListNormalizeFunc) (
     TpBaseContactList *self,
     const gchar *s);
@@ -359,6 +366,7 @@ struct _TpContactGroupListInterface {
     GTypeInterface parent;
     /* mandatory to implement */
     TpBaseContactListGetGroupsFunc get_groups;
+    TpBaseContactListGetGroupMembersFunc get_group_members;
     TpBaseContactListGetContactGroupsFunc get_contact_groups;
     /* optional to implement */
     TpBaseContactListBooleanFunc has_disjoint_groups;
