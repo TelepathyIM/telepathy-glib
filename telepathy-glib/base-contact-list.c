@@ -3932,7 +3932,7 @@ emulate_rename_group_add_cb (GObject *source,
   GSimpleAsyncResult *rename_result = user_data;
   GError *error = NULL;
 
-  if (!tp_base_contact_list_request_subscription_finish (self, result, &error))
+  if (!tp_base_contact_list_add_to_group_finish (self, result, &error))
     {
       g_simple_async_result_set_from_error (rename_result, error);
       g_clear_error (&error);
