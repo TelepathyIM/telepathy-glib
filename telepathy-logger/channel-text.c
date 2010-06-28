@@ -90,8 +90,10 @@ static void pendingproc_get_pending_messages (TplActionChain *ctx,
    gpointer user_data);
 static void pendingproc_prepare_tpl_channel (TplActionChain *ctx,
    gpointer user_data);
+#if 0
 static void pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data);
+#endif
 
 static void keepon_on_receiving_signal (TplEntryText *log,
     TpContact *remote);
@@ -481,8 +483,10 @@ _tpl_channel_text_call_when_ready (TplChannelText *self,
   _tpl_action_chain_append (actions, pendingproc_get_room_info, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
+#if 0
   _tpl_action_chain_append (actions, pendingproc_cleanup_pending_messages_db,
       NULL);
+#endif
   /* start the chain consuming */
   _tpl_action_chain_continue (actions);
 }
@@ -570,10 +574,12 @@ tpl_channel_text_clean_up_stale_tokens (TplChannelText *self,
  * No _tpl_action_chain_terminate() is called if some fatal error occurs since
  * it's not considered a crucial point for TplChannel preparation.
  */
+#if 0
 static void
 pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data)
 {
+  /* FIXME: https://bugs.freedesktop.org/show_bug.cgi?id=28791 */
   /* five days ago in seconds */
   TplChannelText *self = _tpl_action_chain_get_object (ctx);
   const time_t time_limit = _tpl_time_get_current () -
@@ -616,6 +622,7 @@ out:
 
   _tpl_action_chain_continue (ctx);
 }
+#endif
 
 
 static void
