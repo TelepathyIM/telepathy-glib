@@ -159,9 +159,15 @@ pendingproc_get_my_contact (TplActionChain *ctx,
     gpointer user_data)
 {
   TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
-  TpConnection *tp_conn = tp_channel_borrow_connection (
-      TP_CHANNEL (tpl_text));
-  TpHandle my_handle = tp_connection_get_self_handle (tp_conn);
+  TpChannel *chan = TP_CHANNEL (tpl_text);
+  TpConnection *tp_conn = tp_channel_borrow_connection (chan);
+  TpHandle my_handle;
+
+  my_handle = tp_channel_group_get_self_handle (chan);
+  if (my_handle == 0)
+    {
+      my_handle = tp_connection_get_self_handle (tp_conn);
+    }
 
   tp_connection_get_contacts_by_handle (tp_conn, 1, &my_handle,
       G_N_ELEMENTS (features), features, get_self_contact_cb, ctx, NULL, NULL);
