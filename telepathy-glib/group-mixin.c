@@ -1337,10 +1337,10 @@ local_pending_added_foreach (guint i,
 
 static void
 local_pending_added (TpGroupMixin *mixin,
-                    TpIntSet *added,
-                    TpHandle actor,
-                    guint reason,
-                    const gchar *message)
+    const TpIntSet *added,
+    TpHandle actor,
+    guint reason,
+    const gchar *message)
 {
   LocalPendingInfo info;
   _mixin_and_info data = { mixin, &info };
@@ -1514,10 +1514,10 @@ emit_members_changed_signals (GObject *channel,
 static gboolean
 change_members (GObject *obj,
                 const gchar *message,
-                TpIntSet *add,
-                TpIntSet *del,
-                TpIntSet *add_local_pending,
-                TpIntSet *add_remote_pending,
+                const TpIntSet *add,
+                const TpIntSet *del,
+                const TpIntSet *add_local_pending,
+                const TpIntSet *add_remote_pending,
                 TpHandle actor,
                 TpChannelGroupChangeReason reason,
                 const GHashTable *details)
@@ -1721,10 +1721,10 @@ change_members (GObject *obj,
 gboolean
 tp_group_mixin_change_members (GObject *obj,
                                const gchar *message,
-                               TpIntSet *add,
-                               TpIntSet *del,
-                               TpIntSet *add_local_pending,
-                               TpIntSet *add_remote_pending,
+                               const TpIntSet *add,
+                               const TpIntSet *del,
+                               const TpIntSet *add_local_pending,
+                               const TpIntSet *add_remote_pending,
                                TpHandle actor,
                                TpChannelGroupChangeReason reason)
 {
@@ -1808,10 +1808,10 @@ tp_group_mixin_change_members (GObject *obj,
  */
 gboolean
 tp_group_mixin_change_members_detailed (GObject *obj,
-                                        TpIntSet *add,
-                                        TpIntSet *del,
-                                        TpIntSet *add_local_pending,
-                                        TpIntSet *add_remote_pending,
+                                        const TpIntSet *add,
+                                        const TpIntSet *del,
+                                        const TpIntSet *add_local_pending,
+                                        const TpIntSet *add_remote_pending,
                                         const GHashTable *details)
 {
   const gchar *message;
