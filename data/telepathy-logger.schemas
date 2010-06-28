@@ -20,7 +20,7 @@ Setting it to "false" will completely disable any logging facility (it won't shu
       <owner>telepathy-logger</owner>
       <type>list</type>
       <list_type>string</list_type>
-      <default>true</default>
+      <default>[]</default>
       <locale name="C">
         <short>A list of accounts for which logging is disabled</short>
         <long>Disables logging for the named accounts, when logging is
