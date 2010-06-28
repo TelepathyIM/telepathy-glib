@@ -3206,10 +3206,12 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
  * @n_removed: the number of groups removed, or -1 if @removed is
  *  %NULL-terminated
  *
- * Called by subclasses when groups have been removed. If the groups had
- * members, the subclass does not also need to call
- * tp_base_contact_list_groups_changed() for them - the group membership
- * change signals will be emitted automatically.
+ * Called by subclasses when groups have been removed.
+ *
+ * Calling tp_base_contact_list_get_group_members() during this method should
+ * return the groups' old members. If this is done correctly by a subclass,
+ * then tp_base_contact_list_groups_changed() will automatically be emitted
+ * for the old members, and the subclass does not need to do so.
  *
  * It is an error to call this method on a contact list that
  * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
@@ -3221,7 +3223,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
 {
   GPtrArray *pa;
   guint i;
-  TpIntSet *old_members;
+  TpHandleSet *old_members;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
@@ -3245,7 +3247,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
   if (!self->priv->had_contact_list)
     return;
 
-  old_members = tp_intset_new ();
+  old_members = tp_handle_set_new (self->priv->contact_repo);
   pa = g_ptr_array_sized_new (n_removed + 1);
   g_ptr_array_set_free_func (pa, g_free);
 
@@ -3261,29 +3263,29 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
 
           if (c != NULL)
             {
-              TpGroupMixin *mixin = TP_GROUP_MIXIN (c);
+              gchar *name;
+              TpHandleSet *group_members;
               TpHandle contact;
               TpIntSetFastIter iter;
 
-              g_assert (mixin != NULL);
-
               /* the handle might get unref'd by closing the channel, so copy
                * the string */
-              g_ptr_array_add (pa, g_strdup (tp_handle_inspect (
-                    self->priv->group_repo, handle)));
+              name = g_strdup (tp_handle_inspect (self->priv->group_repo,
+                    handle));
+              g_ptr_array_add (pa, name);
+              group_members = tp_base_contact_list_get_group_members (self,
+                  name);
 
               tp_intset_fast_iter_init (&iter,
-                  tp_handle_set_peek (mixin->members));
+                  tp_handle_set_peek (group_members));
 
               while (tp_intset_fast_iter_next (&iter, &contact))
-                tp_intset_add (old_members, contact);
+                tp_handle_set_add (old_members, contact);
 
               /* Remove members if any: presumably the self-handle is the
-               * actor. We could remove a copy of the set of members, but
-               * we already made old_members a superset of that, and it's
-               * harmless to "remove" non-members from a TpGroupMixin. */
+               * actor. */
               tp_group_mixin_change_members (c, "",
-                  NULL, old_members, NULL, NULL,
+                  NULL, tp_handle_set_peek (group_members), NULL, NULL,
                   self->priv->conn->self_handle,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
@@ -3291,13 +3293,15 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
               _tp_base_contact_list_channel_close (c);
               g_hash_table_remove (self->priv->groups,
                   GUINT_TO_POINTER (handle));
+
+              tp_handle_set_destroy (group_members);
             }
         }
     }
 
   if (pa->len > 0)
     {
-      GArray *members_arr = tp_intset_to_array (old_members);
+      GArray *members_arr = tp_handle_set_to_array (old_members);
 
       DEBUG ("GroupsRemoved([%u including '%s'])",
           pa->len, (gchar *) g_ptr_array_index (pa, 0));
@@ -3323,7 +3327,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
       g_array_unref (members_arr);
     }
 
-  tp_intset_destroy (old_members);
+  tp_handle_set_destroy (old_members);
   g_ptr_array_unref (pa);
 }
 
