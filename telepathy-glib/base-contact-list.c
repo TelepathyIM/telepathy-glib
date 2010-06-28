@@ -3970,8 +3970,8 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
 {
   TpHandle old_handle;
   gpointer old_channel;
-  TpGroupMixin *mixin;
   GSimpleAsyncResult *result;
+  TpHandleSet *old_members;
 
   old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL,
       NULL);
@@ -3979,7 +3979,6 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
   old_channel = g_hash_table_lookup (self->priv->groups,
       GUINT_TO_POINTER (old_handle));
   g_return_if_fail (old_channel != NULL);
-  mixin = TP_GROUP_MIXIN (old_channel);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_base_contact_list_emulate_rename_group);
@@ -3988,9 +3987,11 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
   g_simple_async_result_set_op_res_gpointer (result, g_strdup (old_name),
       g_free);
 
-  tp_base_contact_list_add_to_group_async (self, new_name, mixin->members,
+  old_members = tp_base_contact_list_get_group_members (self, old_name);
+  tp_base_contact_list_add_to_group_async (self, new_name, old_members,
       emulate_rename_group_add_cb, result);
   g_object_unref (result);
+  tp_handle_set_destroy (old_members);
 }
 
 /**
