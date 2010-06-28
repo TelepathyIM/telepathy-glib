@@ -1537,8 +1537,27 @@ example_contact_list_manager_remove_group_async (TpBaseContactList *manager,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
+  TpIntSetFastIter iter;
+  TpHandle member;
+
+  /* signal the deletion */
   g_message ("deleting group %s", group);
   tp_base_contact_list_groups_removed (manager, &group, 1);
+
+  /* apply the change to our model of the contacts too; we don't need to signal
+   * the change, because TpBaseContactList already did */
+
+  tp_intset_fast_iter_init (&iter, tp_handle_set_peek (self->priv->contacts));
+
+  while (tp_intset_fast_iter_next (&iter, &member))
+    {
+      ExampleContactDetails *d = lookup_contact (self, member);
+
+      if (d != NULL && d->tags != NULL)
+        g_hash_table_remove (d->tags, group);
+    }
+
   tp_simple_async_report_success_in_idle ((GObject *) manager, callback,
       user_data, example_contact_list_manager_remove_group_async);
 }
