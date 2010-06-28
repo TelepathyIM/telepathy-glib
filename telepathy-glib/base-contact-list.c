@@ -3337,9 +3337,12 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
  * @old_name: the group's old name
  * @new_name: the group's new name
  *
- * Called by subclasses when a group has been renamed. The subclass should not
- * also call tp_base_contact_list_groups_changed() for the group's members -
- * the group membership change signals will be emitted automatically.
+ * Called by subclasses when a group has been renamed.
+ *
+ * Calling tp_base_contact_list_get_group_members() for @old_name during this
+ * method should return the group's old members. If this is done correctly by
+ * a subclass, then tp_base_contact_list_groups_changed() will automatically
+ * be emitted for the members, and the subclass does not need to do so.
  *
  * It is an error to call this method on a contact list that
  * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
@@ -3353,8 +3356,8 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   gpointer old_chan, new_chan;
   const gchar *old_names[] = { old_name, NULL };
   const gchar *new_names[] = { new_name, NULL };
-  TpGroupMixin *mixin;
-  TpIntSet *set;
+  const TpIntSet *set;
+  TpHandleSet *old_members;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
@@ -3362,7 +3365,7 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   if (!self->priv->had_contact_list)
     return;
 
-  old_handle = tp_handle_lookup (self->priv->group_repo, old_name, NULL, NULL);
+  old_handle = tp_handle_ensure (self->priv->group_repo, old_name, NULL, NULL);
 
   if (old_handle == 0)
     return;
@@ -3370,16 +3373,13 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   old_chan = g_hash_table_lookup (self->priv->groups,
       GUINT_TO_POINTER (old_handle));
 
-  if (old_chan == NULL)
-    return;
-
-  mixin = TP_GROUP_MIXIN (old_chan);
-  g_assert (mixin != NULL);
-
   new_handle = tp_handle_ensure (self->priv->group_repo, new_name, NULL, NULL);
 
   if (new_handle == 0)
-    return;
+    {
+      tp_handle_unref (self->priv->group_repo, old_handle);
+      return;
+    }
 
   new_chan = g_hash_table_lookup (self->priv->groups,
       GUINT_TO_POINTER (new_handle));
@@ -3397,16 +3397,19 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
       tp_base_contact_list_announce_channel (self, new_chan, NULL);
     }
 
+  old_members = tp_base_contact_list_get_group_members (self, old_name);
+
   /* move the members - presumably the self-handle is the actor */
-  set = tp_intset_copy (tp_handle_set_peek (mixin->members));
+  set = tp_handle_set_peek (old_members);
   tp_group_mixin_change_members (new_chan, "", set, NULL, NULL, NULL,
       self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-  tp_group_mixin_change_members (old_chan, "", NULL, set, NULL, NULL,
-      self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
-  /* delete the old channel, but make sure to ref the old handle first,
-   * in case the channel's ref was the last */
-  tp_handle_ref (self->priv->group_repo, old_handle);
+  if (old_chan != NULL)
+    {
+      tp_group_mixin_change_members (old_chan, "", NULL, set, NULL, NULL,
+          self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+    }
+
   tp_channel_manager_emit_channel_closed_for_object (self, old_chan);
   _tp_base_contact_list_channel_close (old_chan);
   g_hash_table_remove (self->priv->groups, GUINT_TO_POINTER (old_handle));
@@ -3444,9 +3447,9 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
         }
     }
 
-  tp_intset_destroy (set);
   tp_handle_unref (self->priv->group_repo, new_handle);
   tp_handle_unref (self->priv->group_repo, old_handle);
+  tp_handle_set_destroy (old_members);
 }
 
 /**
