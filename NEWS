@@ -1,3 +1,43 @@
+telepathy-logger 0.1.3 (2010-06-28)
+===================================
+
+Dependencies:
+
+* telepathy-glib ≥ 0.11.7
+
+Enhancements:
+
+* Properly support the Debug interface.
+
+* Reuse existing TpAccount objects instead of creating new ones. This reduce
+  the D-Bus traffic when logging messages as we don't need to fetch the
+  account properties any more (fdo #28682).
+
+* Cache all the participants of the room when logging group text channels
+  (fdo #28680).
+
+Fixes:
+
+* Correctly set the 'isuser' flag when logging text channels.
+
+* Correctly set the sender ID when logging group text channels.
+
+* Properly sort dates in the list returned by
+  tpl_log_manager_get_filtered_messages_finish.
+
+* Fix a race when logging text messages.
+
+* Correctly set the default value of the ignorelist gconf key.
+
+* Install the logger to $libexec.
+
+* Set the Recover flag in the logger's client file so MissionControl will
+  make it observe existing channels when (re)starting.
+
+* Return earlier from ObserveChannels() to avoid blocking channels dispatching
+  too long (fdo #28787).
+
+
 telepathy-logger 0.1.2 (2010-06-18)
 ===================================
 
