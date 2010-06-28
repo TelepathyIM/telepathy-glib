@@ -1584,6 +1584,13 @@ example_contact_list_manager_rename_group_async (TpBaseContactList *manager,
   GHashTableIter iter;
   gpointer v;
 
+  /* signal the rename */
+  g_print ("renaming group %s to %s", old_name, new_name);
+  tp_base_contact_list_group_renamed (manager, old_name, new_name);
+
+  /* update our model (this doesn't need to signal anything because
+   * TpBaseContactList already did) */
+
   g_hash_table_iter_init (&iter, self->priv->contact_details);
 
   while (g_hash_table_iter_next (&iter, NULL, &v))
@@ -1594,7 +1601,6 @@ example_contact_list_manager_rename_group_async (TpBaseContactList *manager,
         g_hash_table_insert (d->tags, tag, tag);
     }
 
-  tp_base_contact_list_group_renamed (manager, old_name, new_name);
   tp_simple_async_report_success_in_idle ((GObject *) manager, callback,
       user_data, example_contact_list_manager_rename_group_async);
 }
