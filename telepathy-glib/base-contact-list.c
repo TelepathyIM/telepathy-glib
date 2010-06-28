@@ -3323,6 +3323,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
       g_array_unref (members_arr);
     }
 
+  tp_intset_destroy (old_members);
   g_ptr_array_unref (pa);
 }
 
