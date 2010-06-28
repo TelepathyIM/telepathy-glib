@@ -11,7 +11,7 @@ AM_CPPFLAGS =						\
 
 BUILT_SOURCES =
 
-bin_PROGRAMS = \
+libexec_PROGRAMS = \
 	telepathy-logger
 
 noinst_PROGRAMS = \

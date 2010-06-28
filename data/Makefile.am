@@ -7,7 +7,7 @@ servicefile_in_files = \
 	org.freedesktop.Telepathy.Logger.service.in
 servicefile_DATA = $(servicefile_in_files:.service.in=.service)
 %.service: %.service.in Makefile
-	$(AM_V_GEN)sed -e "s|%bindir%|$(bindir)|" $< > $@
+	$(AM_V_GEN)sed -e "s|[@]libexecdir[@]|$(libexecdir)|" $< > $@
 
 clientfiledir = $(datarootdir)/telepathy/clients
 clientfile_DATA = Logger.client
