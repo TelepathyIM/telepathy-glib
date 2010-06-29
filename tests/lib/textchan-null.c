@@ -394,6 +394,8 @@ static void
 group_finalize (GObject *self)
 {
   tp_group_mixin_finalize (self);
+
+  ((GObjectClass *) tp_tests_props_group_text_channel_parent_class)->finalize (self);
 }
 
 static gboolean
