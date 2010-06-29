@@ -918,7 +918,7 @@ tp_dbus_daemon_release_name (TpDBusDaemon *self,
  * tp_dbus_daemon_register_object:
  * @self: object representing a connection to a bus
  * @object_path: an object path
- * @object: (type Object) (transfer none): an object to export
+ * @object: (type GObject.Object) (transfer none): an object to export
  *
  * Export @object at @object_path. This is a convenience wrapper around
  * dbus_g_connection_register_g_object(), and behaves similarly.
@@ -943,8 +943,8 @@ tp_dbus_daemon_register_object (TpDBusDaemon *self,
 /**
  * tp_dbus_daemon_unregister_object:
  * @self: object representing a connection to a bus
- * @object: (type Object) (transfer none): an object previously exported with
- *  tp_dbus_daemon_register_object()
+ * @object: (type GObject.Object) (transfer none): an object previously exported
+ * with tp_dbus_daemon_register_object()
  *
  * Stop exporting @object on D-Bus. This is a convenience wrapper around
  * dbus_g_connection_unregister_g_object(), and behaves similarly.

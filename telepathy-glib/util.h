@@ -23,7 +23,7 @@
 #define __TP_UTIL_H__
 #define __TP_IN_UTIL_H__
 
-#include <glib-object.h>
+#include <gio/gio.h>
 
 #include <telepathy-glib/verify.h>
 
@@ -137,6 +137,9 @@ void tp_weak_ref_destroy (TpWeakRef *self);
         } \
     } \
   G_STMT_END
+
+void tp_simple_async_report_success_in_idle (GObject *source,
+    GAsyncReadyCallback callback, gpointer user_data, gpointer source_tag);
 
 G_END_DECLS
 

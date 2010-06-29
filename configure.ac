@@ -11,7 +11,7 @@ AC_PREREQ([2.59])
 
 m4_define([tp_glib_major_version], [0])
 m4_define([tp_glib_minor_version], [11])
-m4_define([tp_glib_micro_version], [7])
+m4_define([tp_glib_micro_version], [8])
 m4_define([tp_glib_nano_version], [1])
 
 # If library source has changed since last release, increment revision
@@ -27,7 +27,7 @@ m4_define([tp_glib_nano_version], [1])
 # never seen in a release).
 
 m4_define([tp_glib_lt_current], [39])
-m4_define([tp_glib_lt_revision], [0])
+m4_define([tp_glib_lt_revision], [1])
 m4_define([tp_glib_lt_age], [39])
 
 # Some magic
@@ -57,7 +57,7 @@ AM_PROG_MKDIR_P
 # pkg-config 0.21 adds CFLAGS from Requires.private, which we need
 PKG_PROG_PKG_CONFIG([0.21])
 
-GOBJECT_INTROSPECTION_CHECK([0.6.13])
+GOBJECT_INTROSPECTION_CHECK([0.6.14])
 GTK_DOC_CHECK([1.15])
 
 LT_CURRENT=tp_glib_lt_current
@@ -189,6 +189,28 @@ PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.95, dbus-glib-1 >= 0.82])
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
+AC_ARG_ENABLE(vala-bindings,
+  AC_HELP_STRING([--enable-vala-bindings],
+                 [build the EXPERIMENTAL Vala bindings]),
+                  enable_vala_bindings=$enableval,
+                  enable_vala_bindings=no )
+
+if test x$enable_vala_bindings = xyes; then
+  PKG_CHECK_MODULES(VALA,
+                    [vala-1.0 >= 0.8.0.58-d033])
+  have_vala=yes
+
+  AC_PATH_PROG(VALAC, valac, valac)
+  AC_SUBST(VALAC)
+  AC_SUBST(VALAFLAGS)
+
+  VAPIGEN=`$PKG_CONFIG --variable=vapigen vala-1.0`
+  AC_SUBST(VAPIGEN)
+fi
+
+AM_CONDITIONAL([HAVE_VALA], [test "x$have_vala" = "xyes"])
+AC_SUBST(HAVE_VALA)
+
 dnl We want the examples to be able to use TP_GLIB_CFLAGS as though they were
 dnl independent programs, but subst'ing TP_GLIB_LIBS interferes with
 dnl dependency tracking
@@ -266,5 +288,8 @@ AC_OUTPUT( Makefile \
 	   tests/dbus/Makefile \
 	   tests/tools/Makefile \
 	   tools/Makefile \
-	   m4/Makefile
+	   m4/Makefile \
+	   vala/Makefile \
+	   vala/telepathy-vala.pc \
+	   vala/telepathy-vala-uninstalled.pc
 )

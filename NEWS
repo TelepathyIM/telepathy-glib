@@ -1,7 +1,34 @@
-telepathy-glib 0.11.8 (UNRELEASED)
+telepathy-glib 0.11.9 (UNRELEASED)
 ==================================
 
 …
+
+telepathy-glib 0.11.8 (2010-06-22)
+==================================
+
+The "moving to Canada for maple syrup and bacon" release.
+
+Requirements:
+
+⁂ If GObject-Introspection is enabled, it must be version 0.6.14 or later.
+
+Enhancements:
+
+⁂ Improve GObject-Introspection annotations, and optionally build Vala
+  bindings, which are currently considered highly experimental (treitter)
+
+Fixes:
+
+⁂ Make tp_base_client_set_handler_bypass_approval able to set the value to
+  FALSE, and hence make it possible for a TpSimpleHandler to not bypass
+  approval (cassidy)
+
+⁂ If the weak object for contact info retrieval disappears, stop, and don't
+  call the callback (sjoerd)
+
+⁂ Fix a va_list leak in tp_value_array_build (wjt)
+
+⁂ Fix a memory leak for unlikely errors in tp_base_connection_register (wjt)
 
 telepathy-glib 0.11.7 (2010-06-14)
 ==================================

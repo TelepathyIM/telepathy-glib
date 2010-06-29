@@ -511,7 +511,16 @@ tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->priv->handle_channels_impl != NULL);
 
-  self->priv->flags |= (CLIENT_IS_HANDLER | CLIENT_HANDLER_BYPASSES_APPROVAL);
+  if (bypass_approval)
+    {
+      self->priv->flags |= (CLIENT_IS_HANDLER |
+          CLIENT_HANDLER_BYPASSES_APPROVAL);
+    }
+  else
+    {
+      self->priv->flags |= CLIENT_IS_HANDLER;
+      self->priv->flags &= ~CLIENT_HANDLER_BYPASSES_APPROVAL;
+    }
 }
 
 /**
@@ -737,8 +746,8 @@ tp_base_client_register (TpBaseClient *self,
  * called.
  * Returns the list of requests @self is likely be asked to handle.
  *
- * Returns: (transfer container) (element-type Tp.ChannelRequest): a #GList
- * of #TpChannelRequest
+ * Returns: (transfer container) (element-type TelepathyGLib.ChannelRequest): a
+ * #GList of #TpChannelRequest
  *
  * Since: 0.11.6
  */
@@ -757,8 +766,8 @@ tp_base_client_get_pending_requests (TpBaseClient *self)
  * Returns the set of channels currently handled by this base client or by any
  * other #TpBaseClient with which it shares a unique name.
  *
- * Returns: (transfer container) (element-type Tp.Channel): the handled
- *  channels
+ * Returns: (transfer container) (element-type TelepathyGLib.Channel): the
+ * handled channels
  *
  * Since: 0.11.6
  */
@@ -1978,7 +1987,7 @@ requests_iface_init (gpointer g_iface,
 }
 
 /**
- * tp_base_client_implement_observe_channels:
+ * tp_base_client_implement_observe_channels: (skip)
  * @klass: the #TpBaseClientClass of the object
  * @impl: the #TpBaseClientClassObserveChannelsImpl function implementing
  * ObserveChannels()
@@ -2032,7 +2041,7 @@ tp_base_client_get_object_path (TpBaseClient *self)
 }
 
 /**
- * tp_base_client_implement_add_dispatch_operation:
+ * tp_base_client_implement_add_dispatch_operation: (skip)
  * @klass: the #TpBaseClientClass of the object
  * @impl: the #TpBaseClientClassAddDispatchOperationImpl function implementing
  * AddDispatchOperation()
@@ -2050,7 +2059,7 @@ tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *cls,
 }
 
 /**
- * tp_base_client_implement_handle_channels:
+ * tp_base_client_implement_handle_channels: (skip)
  * @klass: the #TpBaseClientClass of the object
  * @impl: the #TpBaseClientClassHandleChannelsImpl function implementing
  * HandleCHannels()

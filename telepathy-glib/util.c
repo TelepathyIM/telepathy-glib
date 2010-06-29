@@ -1076,12 +1076,14 @@ tp_value_array_build (gsize length,
           g_free (error);
 
           g_value_array_free (arr);
+          va_end (var_args);
           return NULL;
         }
     }
 
   g_warn_if_fail (arr->n_values == length);
 
+  va_end (var_args);
   return arr;
 }
 
@@ -1171,7 +1173,7 @@ struct _TpWeakRef {
 
 /**
  * tp_weak_ref_new:
- * @object: (type Object): an object to which to take a weak reference
+ * @object: (type GObject.Object): an object to which to take a weak reference
  * @user_data: optional additional data to store alongside the weak ref
  * @destroy: destructor for @user_data, called when the weak ref
  *  is freed
@@ -1225,7 +1227,7 @@ tp_weak_ref_get_user_data (TpWeakRef *self)
  * If the weakly referenced object still exists, return a new reference to
  * it. Otherwise, return %NULL.
  *
- * Returns: (type Object) (transfer full): a new reference, or %NULL
+ * Returns: (type GObject.Object) (transfer full): a new reference, or %NULL
  *
  * Since: 0.11.3
  */
@@ -1331,3 +1333,35 @@ tp_weak_ref_destroy (TpWeakRef *self)
  *
  * Since: 0.11.7
  */
+
+/**
+ * tp_simple_async_report_success_in_idle:
+ * @source: the source object
+ * @callback: the callback
+ * @user_data: user data for @callback
+ * @source_tag: the source tag for the #GSimpleAsyncResult
+ *
+ * Create a new #GSimpleAsyncResult with no operation result, and call
+ * g_simple_async_result_complete_in_idle() on it.
+ *
+ * This is like a successful version of g_simple_async_report_error_in_idle(),
+ * suitable for asynchronous functions that (conceptually) either succeed and
+ * return nothing, or raise an error, such as tp_proxy_prepare_async().
+ *
+ * The corresponding finish function should not call a function that attempts
+ * to get a result, such as g_simple_async_result_get_op_res_gpointer().
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_simple_async_report_success_in_idle (GObject *source,
+    GAsyncReadyCallback callback,
+    gpointer user_data,
+    gpointer source_tag)
+{
+  GSimpleAsyncResult *simple;
+
+  simple = g_simple_async_result_new (source, callback, user_data, source_tag);
+  g_simple_async_result_complete_in_idle (simple);
+  g_object_unref (simple);
+}
