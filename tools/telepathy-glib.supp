@@ -260,6 +260,13 @@
    fun:dbus_g_error_domain_register
 }
 
+{
+   DBusGProxy class init
+   Memcheck:Leak
+   ...
+   fun:dbus_g_proxy_class_init
+}
+
 # ============================= telepathy-glib ========================
 
 {
