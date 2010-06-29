@@ -909,7 +909,7 @@ test_dbus_fallback (Test *test,
    * exercise the fallback path */
   g_object_unref (test->service_cm);
   test->service_cm = NULL;
-  test->service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (test_object_new_static_class (
+  test->service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (tp_tests_object_new_static_class (
         propertyless_connection_manager_get_type (),
         NULL));
   g_assert (test->service_cm != NULL);

@@ -70,7 +70,7 @@ setup (Test *test,
   test->cm = tp_connection_manager_new (test->dbus, "example_echo_2",
       NULL, &test->error);
   g_assert (test->cm != NULL);
-  test_connection_manager_run_until_ready (test->cm);
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
   test->old_service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (g_object_new (
         EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER,
@@ -85,7 +85,7 @@ setup (Test *test,
   test->old_cm = tp_connection_manager_new (test->dbus, "example_echo",
       NULL, &test->error);
   g_assert (test->old_cm != NULL);
-  test_connection_manager_run_until_ready (test->old_cm);
+  tp_tests_proxy_run_until_prepared (test->old_cm, NULL);
 
   test->old_protocol = NULL;
 }
@@ -123,7 +123,7 @@ test_protocol_properties (Test *test,
 
   tp_cli_dbus_properties_run_get_all (test->protocol, -1,
       TP_IFACE_PROTOCOL, &properties, &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   test_assert_empty_strv (tp_asv_get_boxed (properties, "Interfaces",
         G_TYPE_STRV));
@@ -136,7 +136,7 @@ test_protocol_properties (Test *test,
   g_assert_cmpstr (tp_asv_get_string (properties, "VCardField"), ==,
       "x-telepathy-example");
 
-  test_assert_strv_equals (tp_asv_get_boxed (properties,
+  tp_tests_assert_strv_equals (tp_asv_get_boxed (properties,
         "ConnectionInterfaces", G_TYPE_STRV), expected_interfaces);
 
   arr = tp_asv_get_boxed (properties, "RequestableChannelClasses",
@@ -171,7 +171,7 @@ test_protocols_property (Test *test,
 
   tp_cli_dbus_properties_run_get_all (test->cm, -1,
       TP_IFACE_CONNECTION_MANAGER, &properties, &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert (tp_asv_lookup (properties, "Interfaces") != NULL);
   test_assert_empty_strv (tp_asv_get_boxed (properties, "Interfaces",
@@ -195,7 +195,7 @@ test_protocols_property (Test *test,
   g_assert_cmpstr (tp_asv_get_string (pp, TP_PROP_PROTOCOL_VCARD_FIELD), ==,
       "x-telepathy-example");
 
-  test_assert_strv_equals (tp_asv_get_boxed (pp,
+  tp_tests_assert_strv_equals (tp_asv_get_boxed (pp,
         TP_PROP_PROTOCOL_CONNECTION_INTERFACES, G_TYPE_STRV),
       expected_interfaces);
 
@@ -229,7 +229,7 @@ test_protocols_property_old (Test *test,
 
   tp_cli_dbus_properties_run_get_all (test->old_cm, -1,
       TP_IFACE_CONNECTION_MANAGER, &properties, &test->error, NULL);
-  test_assert_no_error (test->error);
+  g_assert_no_error (test->error);
 
   g_assert (tp_asv_lookup (properties, "Interfaces") != NULL);
   test_assert_empty_strv (tp_asv_get_boxed (properties, "Interfaces",
@@ -265,7 +265,7 @@ test_protocol_object (Test *test,
 {
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo_2");
-  test_connection_manager_run_until_ready (test->cm);
+  tp_tests_proxy_run_until_prepared (test->cm, NULL);
   test->protocol = g_object_ref (
       tp_connection_manager_get_protocol_object (test->cm, "example"));
 
@@ -295,7 +295,7 @@ test_protocol_object_old (Test *test,
 {
   g_assert_cmpstr (tp_connection_manager_get_name (test->old_cm), ==,
       "example_echo");
-  test_connection_manager_run_until_ready (test->old_cm);
+  tp_tests_proxy_run_until_prepared (test->old_cm, NULL);
   test->old_protocol = g_object_ref (
       tp_connection_manager_get_protocol_object (test->old_cm, "example"));
 
