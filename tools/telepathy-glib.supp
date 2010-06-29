@@ -181,14 +181,6 @@
 # ============================= dbus-glib =============================
 
 {
-   dbus-glib, https://bugs.freedesktop.org/show_bug.cgi?id=14125
-   Memcheck:Addr4
-   fun:g_hash_table_foreach
-   obj:/usr/lib/libdbus-glib-1.so.2.1.0
-   fun:g_object_run_dispose
-}
-
-{
    registering marshallers is permanent
    Memcheck:Leak
    ...
