@@ -197,6 +197,13 @@
 # ============================= GIO ===================================
 
 {
+   GIO init
+   Memcheck:Leak
+   ...
+   fun:g_inet_address_class_intern_init
+}
+
+{
    g_simple_async_result class
    Memcheck:Leak
    ...
