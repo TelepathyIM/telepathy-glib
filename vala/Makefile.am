@@ -16,6 +16,11 @@ telepathy-glib.vapi: $(top_srcdir)/telepathy-glib/TelepathyGLib-0.12.gir
 		--pkg gio-2.0 \
 		$< \
 		$(NULL)
+	@mv $@ telepathy-glib.vapi.tmp
+	$(AM_V_GEN)sed -e \
+		's/TelepathyGLib-0.12.h/telepathy-glib\/telepathy-glib.h/' \
+		< telepathy-glib.vapi.tmp > $@
+	@rm telepathy-glib.vapi.tmp
 
 CLEANFILES = \
 	$(BUILT_SOURCES) \
