@@ -24,6 +24,7 @@
 
 #include <gio/gio.h>
 
+#include <telepathy-glib/channel.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
@@ -210,6 +211,19 @@ gboolean tp_account_set_avatar_finish (TpAccount *self,
     GError **error);
 
 gboolean tp_account_get_changing_presence (TpAccount *self);
+
+/* API to request channels - defined in account-channels.c */
+
+void tp_account_create_and_handle_channel_async (TpAccount *account,
+    GHashTable *request,
+    gint64 user_action_time,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_create_and_handle_channel_finish (TpAccount *account,
+    GAsyncResult *result,
+    TpChannel **channel,
+    GError **error);
 
 G_END_DECLS
 
