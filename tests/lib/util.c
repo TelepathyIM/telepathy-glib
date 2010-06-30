@@ -36,6 +36,7 @@ tp_tests_proxy_run_until_prepared_or_failed (gpointer proxy,
     GError **error)
 {
   GAsyncResult *result = NULL;
+  gboolean r;
 
   tp_proxy_prepare_async (proxy, features, prepared_cb, &result);
   /* not synchronous */
@@ -44,7 +45,9 @@ tp_tests_proxy_run_until_prepared_or_failed (gpointer proxy,
   while (result == NULL)
     g_main_context_iteration (NULL, TRUE);
 
-  return tp_proxy_prepare_finish (proxy, result, error);
+  r =  tp_proxy_prepare_finish (proxy, result, error);
+  g_object_unref (result);
+  return r;
 }
 
 TpDBusDaemon *

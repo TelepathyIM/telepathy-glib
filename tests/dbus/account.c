@@ -13,7 +13,6 @@
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/svc-account.h>
 
-#include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
 #include "tests/lib/util.h"
 
