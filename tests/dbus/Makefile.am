@@ -1,5 +1,6 @@
 noinst_PROGRAMS = \
     test-account \
+    test-account-channels \
     test-account-manager \
     test-base-client \
     test-call-cancellation \
@@ -55,6 +56,8 @@ LDADD = \
     $(GLIB_LIBS)
 
 test_account_SOURCES = account.c
+
+test_account_channels_SOURCES = account-channels.c
 
 test_account_manager_SOURCES = account-manager.c
 
