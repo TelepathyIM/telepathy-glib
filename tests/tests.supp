@@ -6,5 +6,5 @@
    ...
    fun:g_type_class_ref
    ...
-   fun:test_object_new_static_class
+   fun:tp_tests_object_new_static_class
 }
