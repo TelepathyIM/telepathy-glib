@@ -141,6 +141,14 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
 
   tp_svc_channel_request_return_from_proceed (context);
 
+  if (tp_asv_get_boolean (req, "FireFailed", NULL))
+    {
+      /* We have been asked to fire the 'Failed' signal */
+      tp_svc_channel_request_emit_failed (self, TP_ERROR_STR_INVALID_ARGUMENT,
+          "Let's fail!");
+      return;
+    }
+
   /* We just support handling request having a preferred handler */
   if (self->priv->preferred_handler == NULL ||
       !tp_strdiff (self->priv->preferred_handler, ""))
