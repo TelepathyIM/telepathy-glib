@@ -204,6 +204,28 @@ test_proceed_fail (Test *test,
   g_assert (test->channel == NULL);
 }
 
+/* ChannelRequest fire the 'Failed' signal */
+static void
+test_cr_failed (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+
+  request = create_request ();
+
+  /* Ask to the CR to fire the signal */
+  tp_asv_set_boolean (request, "FireFailed", TRUE);
+
+  tp_account_create_and_handle_channel_async (test->account, request, 0,
+      create_and_handle_cb, test);
+
+  g_hash_table_unref (request);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -220,6 +242,8 @@ main (int argc,
       test_create_fail, teardown);
   g_test_add ("/account-channels/proceed-fail", Test, NULL, setup,
       test_proceed_fail, teardown);
+  g_test_add ("/account-channels/cr-failed", Test, NULL, setup,
+      test_cr_failed, teardown);
 
   return g_test_run ();
 }
