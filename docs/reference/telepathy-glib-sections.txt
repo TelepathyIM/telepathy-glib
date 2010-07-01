@@ -4100,6 +4100,7 @@ TP_IS_SIMPLE_HANDLER
 TP_IS_SIMPLE_HANDLER_CLASS
 TpSimpleHandlerClass
 TpSimpleHandlerPrivate
+</SECTION>
 
 <SECTION>
 <INCLUDE>telepathy-glib/base-protocol.h</INCLUDE>
