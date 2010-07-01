@@ -69,6 +69,34 @@ request_ctx_fail (request_ctx *ctx,
 }
 
 static void
+request_ctx_complete (request_ctx *ctx,
+    TpChannel *channel)
+{
+  g_assert (ctx->result != NULL);
+
+  g_simple_async_result_set_op_res_gpointer (ctx->result,
+      g_object_ref (channel), g_object_unref);
+
+  g_simple_async_result_complete (ctx->result);
+
+  /* We just need to keep the Handler around */
+  tp_clear_object (&ctx->dbus);
+  tp_clear_object (&ctx->result);
+  tp_clear_object (&ctx->chan_request);
+}
+
+static void
+channel_invalidated_cb (TpProxy *chan,
+    guint domain,
+    gint code,
+    gchar *message,
+    request_ctx *ctx)
+{
+  /* Channel has been destroyed, we can remove the Handler */
+  request_ctx_free (ctx);
+}
+
+static void
 handle_channels (TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *connection,
@@ -91,15 +119,27 @@ handle_channels (TpSimpleHandler *handler,
       return;
     }
 
+  if (ctx->result == NULL)
+    /* We are re-handling the channel, no async request to complete */
+    goto out;
+
   /* Request succeed */
   channel = channels->data;
 
-  g_simple_async_result_set_op_res_gpointer (ctx->result,
-      g_object_ref (channel), g_object_unref);
+  request_ctx_complete (ctx, channel);
 
-  g_simple_async_result_complete (ctx->result);
-  request_ctx_free (ctx);
+  if (tp_proxy_get_invalidated (channel) == NULL)
+    {
+      /* Keep the handler alive while the channel is valid */
+      g_signal_connect (channel, "invalidated",
+          G_CALLBACK (channel_invalidated_cb), ctx);
+    }
+  else
+    {
+      request_ctx_free (ctx);
+    }
 
+out:
   tp_handle_channels_context_accept (context);
 }
 
@@ -121,6 +161,25 @@ channel_request_failed_cb (TpChannelRequest *request,
   request_ctx_fail (ctx, err);
   request_ctx_free (ctx);
   g_error_free (err);
+}
+
+static void
+channel_request_succeeded_cb (TpChannelRequest *request,
+  gpointer user_data,
+  GObject *weak_object)
+{
+  request_ctx *ctx = user_data;
+  GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
+      "Another Handler is handling this channel" };
+
+  if (ctx->result == NULL)
+    /* Our handler has been called, all good */
+    return;
+
+  /* Our handler hasn't be called but the channel request is complete.
+   * That means another handler handled the channels so we don't own it. */
+  request_ctx_fail (ctx, &err);
+  request_ctx_free (ctx);
 }
 
 static void
@@ -182,8 +241,13 @@ request_and_handle_channel_cb (TpChannelDispatcher *cd,
       goto fail;
     }
 
-  /* No need to connect the 'Succeeded' signal; we terminate the async call
-   * once the handler has received the channel for handling. */
+  if (tp_cli_channel_request_connect_to_succeeded (ctx->chan_request,
+      channel_request_succeeded_cb, ctx, NULL,
+      G_OBJECT (ctx->result), &err) == NULL)
+    {
+      DEBUG ("Failed to connect the 'Succeeded' signal: %s", err->message);
+      goto fail;
+    }
 
   DEBUG ("Calling ChannelRequest.Proceed()");
 
