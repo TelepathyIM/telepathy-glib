@@ -203,6 +203,14 @@
    fun:g_type_add_interface_static
 }
 
+{
+   initialization of interfaces
+   Memcheck:Leak
+   ...
+   fun:type_iface_vtable_base_init_Wm
+   fun:g_type_class_ref
+}
+
 # ============================= GIO ===================================
 
 {
