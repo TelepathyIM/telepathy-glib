@@ -226,6 +226,42 @@ test_cr_failed (Test *test,
   g_assert (test->channel == NULL);
 }
 
+static void
+ensure_and_handle_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+
+{
+  Test *test = user_data;
+
+  if (!tp_account_ensure_and_handle_channel_finish (TP_ACCOUNT (source),
+        result, &test->channel, &test->error))
+    goto out;
+
+  g_assert (TP_IS_CHANNEL (test->channel));
+  tp_clear_object (&test->channel);
+
+out:
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_ensure_success (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+
+  request = create_request ();
+
+  tp_account_ensure_and_handle_channel_async (test->account, request, 0,
+      ensure_and_handle_cb, test);
+
+  g_hash_table_unref (request);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -244,6 +280,8 @@ main (int argc,
       test_proceed_fail, teardown);
   g_test_add ("/account-channels/cr-failed", Test, NULL, setup,
       test_cr_failed, teardown);
+  g_test_add ("/account-channels/ensure-success", Test, NULL, setup,
+      test_ensure_success, teardown);
 
   return g_test_run ();
 }
