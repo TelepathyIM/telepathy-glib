@@ -51,6 +51,12 @@ struct _TpTestsSimpleChannelDispatcherPrivate
 
   /* List of reffed TpTestsSimpleChannelRequest */
   GSList *requests;
+
+  /* Used when ensuring a channel to store its handler.
+   * If this is set we fake that the channel already exist and re-call
+   * HandleChannels() on the handler rather than creating a new channel.
+   * This is pretty stupid but good enough for our tests. */
+  gchar *old_handler;
 };
 
 static gchar *
@@ -130,10 +136,19 @@ tp_tests_simple_channel_dispatcher_ensure_channel (
   TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
   gchar *path;
 
-  /* FIXME: check if channel already exist */
+  if (self->priv->old_handler != NULL)
+    {
+      /* Pretend that the channel already exists */
+      path = create_channel_request (self, account, request, user_action_time,
+          self->priv->old_handler);
+    }
+  else
+    {
+      path = create_channel_request (self, account, request, user_action_time,
+          preferred_handler);
 
-  path = create_channel_request (self, account, request, user_action_time,
-      preferred_handler);
+      self->priv->old_handler = g_strdup (preferred_handler);
+    }
 
   tp_svc_channel_dispatcher_return_from_ensure_channel (context, path);
 
@@ -205,6 +220,8 @@ tp_tests_simple_channel_dispatcher_dispose (GObject *object)
 
   g_slist_foreach (self->priv->requests, (GFunc) g_object_unref, NULL);
   g_slist_free (self->priv->requests);
+
+  g_free (self->priv->old_handler);
 
   if (G_OBJECT_CLASS (tp_tests_simple_channel_dispatcher_parent_class)->dispose != NULL)
     G_OBJECT_CLASS (tp_tests_simple_channel_dispatcher_parent_class)->dispose (object);
