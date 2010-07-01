@@ -237,7 +237,13 @@ request_and_handle_channel_async (TpAccount *account,
 
   if (ensure)
     {
-      /* FIXME */
+      ctx->result = g_simple_async_result_new (G_OBJECT (account),
+          callback, user_data, tp_account_ensure_and_handle_channel_async);
+
+      tp_cli_channel_dispatcher_call_ensure_channel (cd, -1,
+          tp_proxy_get_object_path (account), request, user_action_time,
+          tp_base_client_get_bus_name (ctx->handler),
+          request_and_handle_channel_cb, ctx, NULL, NULL);
     }
   else
     {
@@ -334,4 +340,60 @@ tp_account_create_and_handle_channel_finish (TpAccount *account,
 {
   return request_and_handle_channel_finish (account, result, channel,
       tp_account_create_and_handle_channel_async, error);
+}
+
+/**
+ * tp_account_ensure_and_handle_channel_async:
+ * @account: a #TpAccount
+ * @request: (transfer none) (element-type utf8 GObject.Value): the requested
+ * properties of the channel
+ * @user_action_time: the user action time to pass to the channel dispatcher
+ * when requesting the channel
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Asynchronously calls EnsureChannel on the ChannelDispatcher to ensure a
+ * channel with the properties provided in @request that you are going to handle
+ * yourself.
+ * When the operation is finished, @callback will be called. You can then call
+ * tp_account_ensure_and_handle_channel_finish () to get the result of
+ * the operation.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_account_ensure_and_handle_channel_async (TpAccount *account,
+    GHashTable *request,
+    gint64 user_action_time,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  request_and_handle_channel_async (account, request, user_action_time,
+      callback, user_data, TRUE);
+}
+
+/**
+ * tp_account_ensure_and_handle_channel_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @channel: (out): a pointer used to return a reference on the newly created
+ * #TpChannel having #TP_CHANNEL_FEATURE_CORE prepared if possible
+ * @error: a #GError to fill
+ *
+ * Finishes an async channel creation started using
+ * tp_account_ensure_and_handle_channel_async().
+ *
+ * Returns: %TRUE if the channel was successful created and you are handling
+ * it, otherwise %FALSE
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_account_ensure_and_handle_channel_finish (TpAccount *account,
+    GAsyncResult *result,
+    TpChannel **channel,
+    GError **error)
+{
+  return request_and_handle_channel_finish (account, result, channel,
+      tp_account_ensure_and_handle_channel_async, error);
 }

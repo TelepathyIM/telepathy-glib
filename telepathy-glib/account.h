@@ -225,6 +225,17 @@ gboolean tp_account_create_and_handle_channel_finish (TpAccount *account,
     TpChannel **channel,
     GError **error);
 
+void tp_account_ensure_and_handle_channel_async (TpAccount *account,
+    GHashTable *request,
+    gint64 user_action_time,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_ensure_and_handle_channel_finish (TpAccount *account,
+    GAsyncResult *result,
+    TpChannel **channel,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account.h>
