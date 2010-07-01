@@ -78,6 +78,15 @@
    obj:/lib/libselinux.so.1
 }
 
+{
+   I have no idea what SELinux is doing but it's not my problem
+   Memcheck:Leak
+   ...
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
+}
+
 # ============================= GLib ==================================
 
 {
