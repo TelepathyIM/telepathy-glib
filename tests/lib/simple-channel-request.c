@@ -125,6 +125,19 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   GPtrArray *satisfied;
   GHashTable *info;
   TpBaseConnection *base_conn = (TpBaseConnection *) self->priv->conn;
+  GHashTable *req;
+
+  req = g_ptr_array_index (self->priv->requests, 0);
+  g_assert (req != NULL);
+  if (tp_asv_get_boolean (req, "ProceedFail", NULL))
+    {
+      /* We have been asked to fail */
+     GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Computer says no" };
+
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
 
   tp_svc_channel_request_return_from_proceed (context);
 
