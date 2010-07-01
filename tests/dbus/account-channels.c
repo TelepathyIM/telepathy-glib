@@ -160,6 +160,28 @@ test_create_success (Test *test,
   g_assert_no_error (test->error);
 }
 
+/* ChannelDispatcher.CreateChannel() call fails */
+static void
+test_create_fail (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+
+  request = create_request ();
+
+  /* Ask to the CD to fail */
+  tp_asv_set_boolean (request, "CreateChannelFail", TRUE);
+
+  tp_account_create_and_handle_channel_async (test->account, request, 0,
+      create_and_handle_cb, test);
+
+  g_hash_table_unref (request);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -172,6 +194,8 @@ main (int argc,
 
   g_test_add ("/account-channels/create-success", Test, NULL, setup,
       test_create_success, teardown);
+  g_test_add ("/account-channels/create-fail", Test, NULL, setup,
+      test_create_fail, teardown);
 
   return g_test_run ();
 }
