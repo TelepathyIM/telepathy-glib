@@ -53,33 +53,19 @@ struct _TpTestsSimpleChannelDispatcherPrivate
   GSList *requests;
 };
 
-static void
-tp_tests_simple_channel_dispatcher_create_channel (
-    TpSvcChannelDispatcher *dispatcher,
+static gchar *
+create_channel_request (TpTestsSimpleChannelDispatcher *self,
     const gchar *account,
     GHashTable *request,
     gint64 user_action_time,
-    const gchar *preferred_handler,
-    DBusGMethodInvocation *context)
+    const gchar *preferred_handler)
 {
-  TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
   TpTestsSimpleChannelRequest *chan_request;
   GPtrArray *requests;
   static guint count = 0;
   gchar *path;
   TpDBusDaemon *dbus;
 
-  if (tp_asv_get_boolean (request, "CreateChannelFail", NULL))
-    {
-      /* Fail to create the channel */
-      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Computer says no" };
-
-      dbus_g_method_return_error (context, &error);
-      return;
-    }
-
-  /* create and register ChannelRequest */
   requests = g_ptr_array_sized_new (1);
   g_ptr_array_add (requests, request);
 
@@ -97,10 +83,61 @@ tp_tests_simple_channel_dispatcher_create_channel (
 
   tp_dbus_daemon_register_object (dbus, path, chan_request);
 
+  g_object_unref (dbus);
+
+  return path;
+}
+
+static void
+tp_tests_simple_channel_dispatcher_create_channel (
+    TpSvcChannelDispatcher *dispatcher,
+    const gchar *account,
+    GHashTable *request,
+    gint64 user_action_time,
+    const gchar *preferred_handler,
+    DBusGMethodInvocation *context)
+{
+  TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
+  gchar *path;
+
+  if (tp_asv_get_boolean (request, "CreateChannelFail", NULL))
+    {
+      /* Fail to create the channel */
+      GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Computer says no" };
+
+      dbus_g_method_return_error (context, &error);
+      return;
+    }
+
+  path = create_channel_request (self, account, request, user_action_time,
+      preferred_handler);
+
   tp_svc_channel_dispatcher_return_from_create_channel (context, path);
 
   g_free (path);
-  g_object_unref (dbus);
+}
+
+static void
+tp_tests_simple_channel_dispatcher_ensure_channel (
+    TpSvcChannelDispatcher *dispatcher,
+    const gchar *account,
+    GHashTable *request,
+    gint64 user_action_time,
+    const gchar *preferred_handler,
+    DBusGMethodInvocation *context)
+{
+  TpTestsSimpleChannelDispatcher *self = SIMPLE_CHANNEL_DISPATCHER (dispatcher);
+  gchar *path;
+
+  /* FIXME: check if channel already exist */
+
+  path = create_channel_request (self, account, request, user_action_time,
+      preferred_handler);
+
+  tp_svc_channel_dispatcher_return_from_ensure_channel (context, path);
+
+  g_free (path);
 }
 
 static void
@@ -110,6 +147,7 @@ channel_dispatcher_iface_init (gpointer klass,
 #define IMPLEMENT(x) tp_svc_channel_dispatcher_implement_##x (\
   klass, tp_tests_simple_channel_dispatcher_##x)
   IMPLEMENT (create_channel);
+  IMPLEMENT (ensure_channel);
 #undef IMPLEMENT
 }
 
