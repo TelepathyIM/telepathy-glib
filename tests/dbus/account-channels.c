@@ -239,7 +239,6 @@ ensure_and_handle_cb (GObject *source,
     goto out;
 
   g_assert (TP_IS_CHANNEL (test->channel));
-  tp_clear_object (&test->channel);
 
 out:
   g_main_loop_quit (test->mainloop);
@@ -256,10 +255,19 @@ test_ensure_success (Test *test,
   tp_account_ensure_and_handle_channel_async (test->account, request, 0,
       ensure_and_handle_cb, test);
 
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Try again, now it will fail as the channel already exist */
+  tp_account_ensure_and_handle_channel_async (test->account, request, 0,
+      ensure_and_handle_cb, test);
+
   g_hash_table_unref (request);
 
   g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_YOURS);
+
+  tp_clear_object (&test->channel);
 }
 
 int
