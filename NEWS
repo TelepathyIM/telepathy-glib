@@ -1,7 +1,28 @@
 telepathy-glib 0.11.9 (UNRELEASED)
 ==================================
 
-…
+Enhancements:
+
+❉ Updated spec to 0.19.8 (smcv):
+  ➠ generate code for some new properties, Conn.I.Cellular and
+    Account.I.Storage
+  ➠ add convenience methods to TpAccount to access Account.Service
+
+❉ Added tp_simple_async_report_success_in_idle, a convenience function to
+  return "void" from an async method (smcv)
+
+Fixes:
+
+❉ Fixed libdbus errors when unregistering a TpBaseClient that isn't a
+  Handler (cassidy)
+
+❉ Made some TpGroupMixin methods more const-correct (smcv)
+
+❉ Fixed some memory leaks in regression tests (smcv)
+
+❉ Suppressed more valgrind false-positives (smcv, cassidy)
+
+❉ Improved generation of experimental Vala bindings (treitter)
 
 telepathy-glib 0.11.8 (2010-06-22)
 ==================================
