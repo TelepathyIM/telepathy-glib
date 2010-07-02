@@ -137,6 +137,13 @@ void tp_account_set_icon_name_async (TpAccount *account,
 gboolean tp_account_set_icon_name_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
 
+void tp_account_set_service_async (TpAccount *self,
+    const gchar *service, GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_set_service_finish (TpAccount *self,
+    GAsyncResult *result, GError **error);
+
 void tp_account_request_presence_async (TpAccount *account,
     TpConnectionPresenceType type, const gchar *status, const gchar *message,
     GAsyncReadyCallback callback, gpointer user_data);

@@ -1166,6 +1166,9 @@ tp_account_class_init (TpAccountClass *klass)
    * respectively, and this property will be "jabber" for accounts that
    * connect to a generic Jabber server.
    *
+   * To change this property, use
+   * tp_account_set_service_async().
+   *
    * Since: 0.11.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_SERVICE,
@@ -2122,6 +2125,81 @@ tp_account_set_display_name_finish (TpAccount *account,
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
           G_OBJECT (account), tp_account_set_display_name_finish), FALSE);
+
+  return TRUE;
+}
+
+/**
+ * tp_account_set_service_async:
+ * @self: a #TpAccount
+ * @service: a new service name, or %NULL or the empty string to unset the
+ *  service name (which will result in the #TpAccount:service property
+ *  becoming the same as #TpAccount:protocol)
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous set of the Service property on @self. When
+ * the operation is finished, @callback will be called. You can then call
+ * tp_account_set_service_finish() to get the result of the operation.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_account_set_service_async (TpAccount *self,
+    const char *service,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GValue value = {0, };
+
+  g_return_if_fail (TP_IS_ACCOUNT (self));
+
+  if (service == NULL)
+    service = "";
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_account_set_service_async);
+
+  g_value_init (&value, G_TYPE_STRING);
+  g_value_set_string (&value, service);
+
+  tp_cli_dbus_properties_call_set (self, -1, TP_IFACE_ACCOUNT,
+      "Service", &value, _tp_account_property_set_cb, result, NULL,
+      G_OBJECT (self));
+
+  g_value_unset (&value);
+}
+
+/**
+ * tp_account_set_service_finish:
+ * @self: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async set of the Service parameter.
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_account_set_service_finish (TpAccount *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (self), tp_account_set_service_async), FALSE);
 
   return TRUE;
 }
