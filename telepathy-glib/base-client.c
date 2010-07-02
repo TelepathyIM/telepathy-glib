@@ -715,7 +715,8 @@ tp_base_client_register (TpBaseClient *self,
       dbus_g_connection_get_connection (
         tp_proxy_get_dbus_connection (self->priv->dbus)));
 
-  /* one ref per TpBaseClient, released in tp_base_client_unregister() */
+  /* one ref per TpBaseClient with CLIENT_IS_HANDLER, released
+   * in tp_base_client_unregister() */
   if (!dbus_connection_allocate_data_slot (&clients_slot))
     ERROR ("Out of memory");
 
@@ -2100,7 +2101,6 @@ void
 tp_base_client_unregister (TpBaseClient *self)
 {
   GError *error = NULL;
-  GHashTable *clients;
 
   if (!self->priv->registered)
     return;
@@ -2116,14 +2116,19 @@ tp_base_client_unregister (TpBaseClient *self)
 
   tp_dbus_daemon_unregister_object (self->priv->dbus, self);
 
-  clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
-  if (clients != NULL)
-    g_hash_table_remove (clients, self->priv->object_path);
+  if (self->priv->flags & CLIENT_IS_HANDLER)
+    {
+      GHashTable *clients;
 
-  dbus_connection_unref (self->priv->libdbus);
-  self->priv->libdbus = NULL;
+      clients = dbus_connection_get_data (self->priv->libdbus, clients_slot);
+      if (clients != NULL)
+        g_hash_table_remove (clients, self->priv->object_path);
 
-  dbus_connection_free_data_slot (&clients_slot);
+      dbus_connection_unref (self->priv->libdbus);
+      self->priv->libdbus = NULL;
+
+      dbus_connection_free_data_slot (&clients_slot);
+    }
 
   self->priv->registered = FALSE;
 }
