@@ -110,6 +110,7 @@ struct _TpAccountPrivate {
   gchar *cm_name;
   gchar *proto_name;
   gchar *icon_name;
+  gchar *service;
 
   gchar *display_name;
 
@@ -145,6 +146,7 @@ enum {
   PROP_ICON_NAME,
   PROP_CONNECT_AUTOMATICALLY,
   PROP_HAS_BEEN_ONLINE,
+  PROP_SERVICE,
   PROP_VALID,
   PROP_REQUESTED_PRESENCE_TYPE,
   PROP_REQUESTED_STATUS,
@@ -516,6 +518,24 @@ _tp_account_update (TpAccount *account,
         }
     }
 
+  if (g_hash_table_lookup (properties, "Service") != NULL)
+    {
+      const gchar *service;
+      gchar *old = priv->service;
+
+      service = tp_asv_get_string (properties, "Service");
+
+      if (tp_str_empty (service))
+        priv->service = g_strdup (priv->proto_name);
+      else
+        priv->service = g_strdup (service);
+
+      if (tp_strdiff (old, priv->service))
+        g_object_notify (G_OBJECT (account), "service");
+
+      g_free (old);
+    }
+
   if (g_hash_table_lookup (properties, "Valid") != NULL)
     {
       gboolean old = priv->valid;
@@ -679,6 +699,7 @@ _tp_account_constructed (GObject *object)
       &(priv->cm_name), &(priv->proto_name), NULL, NULL);
 
   priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
+  priv->service = g_strdup (priv->proto_name);
 
   g_signal_connect (self, "invalidated",
       G_CALLBACK (_tp_account_invalidated_cb), NULL);
@@ -750,6 +771,9 @@ _tp_account_get_property (GObject *object,
     case PROP_HAS_BEEN_ONLINE:
       g_value_set_boolean (value, self->priv->has_been_online);
       break;
+    case PROP_SERVICE:
+      g_value_set_string (value, self->priv->service);
+      break;
     case PROP_VALID:
       g_value_set_boolean (value, self->priv->valid);
       break;
@@ -808,6 +832,7 @@ _tp_account_finalize (GObject *object)
   g_free (priv->proto_name);
   g_free (priv->icon_name);
   g_free (priv->display_name);
+  g_free (priv->service);
 
   tp_clear_pointer (&priv->parameters, g_hash_table_unref);
   tp_clear_pointer (&priv->error_details, g_hash_table_unref);
@@ -1122,6 +1147,31 @@ tp_account_class_init (TpAccountClass *klass)
       g_param_spec_string ("protocol",
           "Protocol",
           "The account's protocol name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:service:
+   *
+   * A machine-readable name identifying a specific service to which this
+   * account connects, or a copy of #TpAccount:protocol if there is no more
+   * specific service.
+   *
+   * Well-known names for various services can be found in the Telepathy D-Bus
+   * Interface Specification.
+   *
+   * For instance, accounts for the "jabber" protocol should have the service
+   * names "google-talk", "ovi-chat", "facebook" and "lj-talk" for accounts
+   * that connect to Google Talk, Ovi Chat, Facebook and Livejournal,
+   * respectively, and this property will be "jabber" for accounts that
+   * connect to a generic Jabber server.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_SERVICE,
+      g_param_spec_string ("service",
+          "Service",
+          "The account's service name",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -1568,6 +1618,24 @@ tp_account_get_protocol (TpAccount *account)
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
   return account->priv->proto_name;
+}
+
+/**
+ * tp_account_get_service:
+ * @self: an account
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpAccount:service property
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_account_get_service (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  return self->priv->service;
 }
 
 /**

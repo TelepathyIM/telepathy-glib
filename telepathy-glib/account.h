@@ -90,6 +90,7 @@ const gchar *tp_account_get_display_name (TpAccount *account);
 const gchar *tp_account_get_connection_manager (TpAccount *account);
 
 const gchar *tp_account_get_protocol (TpAccount *account);
+const gchar *tp_account_get_service (TpAccount *self);
 
 const gchar *tp_account_get_icon_name (TpAccount *account);
 
