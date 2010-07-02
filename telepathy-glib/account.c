@@ -1139,7 +1139,9 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:protocol:
    *
-   * The account's protocol name.
+   * The account's machine-readable protocol name, such as "jabber", "msn" or
+   * "local-xmpp". Recommended names for most protocols can be found in the
+   * Telepathy D-Bus Interface Specification.
    *
    * Since: 0.9.0
    */
