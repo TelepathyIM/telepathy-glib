@@ -110,7 +110,7 @@ _gen/spec-stamp: $(wildcard $(top_srcdir)/spec/*.xml)
 	$(mkdir_p) _gen
 	touch $@
 
-_gen/stable-stamp: $(wildcard *.xml) _gen/spec-stamp
+_gen/stable-stamp: $(wildcard $(abs_srcdir)/*.xml) _gen/spec-stamp
 	touch $@
 
 _gen/stable-spec.xml: stable-interfaces.xml _gen/stable-stamp $(tools_dir)/xincludator.py
