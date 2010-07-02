@@ -757,5 +757,5 @@
  * An interface for connections to cellular telephony (GSM, CDMA etc.), which
  * provides properties and signals that aren't applicable to other protocols.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.9
  */

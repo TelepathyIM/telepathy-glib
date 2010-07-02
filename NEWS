@@ -1,5 +1,7 @@
-telepathy-glib 0.11.9 (UNRELEASED)
+telepathy-glib 0.11.9 (2010-07-02)
 ==================================
+
+The “mistakenly displays 2 more bars than it should” release.
 
 Enhancements:
 

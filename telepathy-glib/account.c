@@ -1171,7 +1171,7 @@ tp_account_class_init (TpAccountClass *klass)
    * To change this property, use
    * tp_account_set_service_async().
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.9
    */
   g_object_class_install_property (object_class, PROP_SERVICE,
       g_param_spec_string ("service",
@@ -1633,7 +1633,7 @@ tp_account_get_protocol (TpAccount *account)
  *
  * Returns: the same as the #TpAccount:service property
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.9
  */
 const gchar *
 tp_account_get_service (TpAccount *self)
@@ -2144,7 +2144,7 @@ tp_account_set_display_name_finish (TpAccount *account,
  * the operation is finished, @callback will be called. You can then call
  * tp_account_set_service_finish() to get the result of the operation.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.9
  */
 void
 tp_account_set_service_async (TpAccount *self,
@@ -2183,7 +2183,7 @@ tp_account_set_service_async (TpAccount *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.9
  */
 gboolean
 tp_account_set_service_finish (TpAccount *self,
