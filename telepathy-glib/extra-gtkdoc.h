@@ -747,3 +747,15 @@
  *
  * Since: 0.11.7
  */
+
+/**
+ * SECTION:connection-cellular
+ * @title: Connection Cellular interface
+ * @short_description: client-side wrappers for the Cellular interface
+ * @see_also: #TpConnection
+ *
+ * An interface for connections to cellular telephony (GSM, CDMA etc.), which
+ * provides properties and signals that aren't applicable to other protocols.
+ *
+ * Since: 0.11.UNRELEASED
+ */

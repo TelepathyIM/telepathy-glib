@@ -90,6 +90,7 @@ const gchar *tp_account_get_display_name (TpAccount *account);
 const gchar *tp_account_get_connection_manager (TpAccount *account);
 
 const gchar *tp_account_get_protocol (TpAccount *account);
+const gchar *tp_account_get_service (TpAccount *self);
 
 const gchar *tp_account_get_icon_name (TpAccount *account);
 
@@ -134,6 +135,13 @@ void tp_account_set_icon_name_async (TpAccount *account,
     gpointer user_data);
 
 gboolean tp_account_set_icon_name_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
+void tp_account_set_service_async (TpAccount *self,
+    const gchar *service, GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_set_service_finish (TpAccount *self,
     GAsyncResult *result, GError **error);
 
 void tp_account_request_presence_async (TpAccount *account,

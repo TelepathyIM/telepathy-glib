@@ -1,5 +1,6 @@
 EXTRA_DIST = \
     Account_Interface_Avatar.xml \
+    Account_Interface_Storage.xml \
     Account_Manager.xml \
     Account.xml \
     all.xml \
@@ -79,4 +80,7 @@ EXTRA_DIST = \
     Media_Session_Handler.xml \
     Media_Stream_Handler.xml \
     Properties_Interface.xml \
+    Protocol.xml \
+    Protocol_Interface_Avatars.xml \
+    Protocol_Interface_Presence.xml \
     template.xml
