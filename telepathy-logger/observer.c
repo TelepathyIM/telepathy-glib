@@ -86,12 +86,12 @@ static void tpl_observer_dispose (GObject * obj);
 static void got_tpl_channel_text_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
 static TplChannelFactory tpl_observer_get_channel_factory (TplObserver *self);
-static GHashTable *tpl_observer_get_channel_map (TplObserver *self);
 
 struct _TplObserverPriv
 {
-    /* mapping channel_path->TplChannel instances */
-    GHashTable *channel_map;
+    /* Registered channels
+     * channel path borrowed from the TplChannel => reffed TplChannel */
+    GHashTable *channels;
     TplLogManager *logmanager;
     gboolean  dbus_registered;
     TplChannelFactory channel_factory;
@@ -211,18 +211,16 @@ static gboolean
 _tpl_observer_register_channel (TplObserver *self,
     TplChannel *channel)
 {
-  GHashTable *glob_map = tpl_observer_get_channel_map (self);
   gchar *key;
 
   g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
   g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
-  g_return_val_if_fail (glob_map != NULL, FALSE);
 
   key = (char *) tp_proxy_get_object_path (G_OBJECT (channel));
 
   DEBUG ("Registering channel %s", key);
 
-  g_hash_table_insert (glob_map, key, g_object_ref (channel));
+  g_hash_table_insert (self->priv->channels, key, g_object_ref (channel));
   g_object_notify (G_OBJECT (self), "registered-channels");
 
   return TRUE;
@@ -262,11 +260,13 @@ got_tpl_channel_text_ready_cb (GObject *obj,
 
 
 static void
-tpl_observer_get_property (GObject *self,
+tpl_observer_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
+  TplObserver *self = TPL_OBSERVER (object);
+
   switch (property_id)
     {
       case PROP_REGISTERED_CHANNELS:
@@ -274,8 +274,7 @@ tpl_observer_get_property (GObject *self,
           GPtrArray *array = g_ptr_array_new ();
           GList *keys, *ptr;
 
-          keys = g_hash_table_get_keys (tpl_observer_get_channel_map (
-                TPL_OBSERVER (self)));
+          keys = g_hash_table_get_keys (self->priv->channels);
 
           for (ptr = keys; ptr != NULL; ptr = ptr->next)
             {
@@ -358,7 +357,7 @@ _tpl_observer_init (TplObserver *self)
       TPL_TYPE_OBSERVER, TplObserverPriv);
   self->priv = priv;
 
-  priv->channel_map = g_hash_table_new_full (g_str_hash, g_str_equal,
+  priv->channels = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, g_object_unref);
   priv->logmanager = tpl_log_manager_dup_singleton ();
 
@@ -389,11 +388,8 @@ tpl_observer_dispose (GObject *obj)
 {
   TplObserverPriv *priv = TPL_OBSERVER (obj)->priv;
 
-  if (priv->channel_map != NULL)
-    {
-      g_hash_table_unref (priv->channel_map);
-      priv->channel_map = NULL;
-    }
+  tp_clear_pointer (&priv->channels, g_hash_table_unref);
+
   if (priv->logmanager != NULL)
     {
       g_object_unref (priv->logmanager);
@@ -423,16 +419,6 @@ _tpl_observer_new (void)
   return result;
 }
 
-
-static GHashTable *
-tpl_observer_get_channel_map (TplObserver *self)
-{
-  g_return_val_if_fail (TPL_IS_OBSERVER (self), NULL);
-
-  return self->priv->channel_map;
-}
-
-
 /**
  * _tpl_observer_unregister_channel:
  * @self: #TplObserver instance, cannot be %NULL.
@@ -455,13 +441,11 @@ gboolean
 _tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *channel)
 {
-  GHashTable *glob_map = tpl_observer_get_channel_map (self);
   gboolean retval;
   gchar *key;
 
   g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
   g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
-  g_return_val_if_fail (glob_map != NULL, FALSE);
 
   key = (char *) tp_proxy_get_object_path (TP_PROXY (channel));
 
@@ -471,7 +455,7 @@ _tpl_observer_unregister_channel (TplObserver *self,
      the hash table reference should be the only one for the
      value's object
    */
-  retval = g_hash_table_remove (glob_map, key);
+  retval = g_hash_table_remove (self->priv->channels, key);
 
   if (retval)
     g_object_notify (G_OBJECT (self), "registered-channels");
