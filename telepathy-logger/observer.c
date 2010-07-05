@@ -92,6 +92,9 @@ struct _TplObserverPriv
     /* Registered channels
      * channel path borrowed from the TplChannel => reffed TplChannel */
     GHashTable *channels;
+    /* Channels that we'll register once they are registered
+     * channel path borrowed from the TplChannel => reffed TplChannel */
+    GHashTable *preparing_channels;
     TplLogManager *logmanager;
     gboolean  dbus_registered;
     TplChannelFactory channel_factory;
@@ -187,6 +190,11 @@ tpl_observer_observe_channels (TpBaseClient *client,
         }
       PATH_DEBUG (tpl_chan, "Starting preparation for TplChannel instance %p",
           tpl_chan);
+
+      /* Pass the reference on the TplChannel to the hash table */
+      g_hash_table_insert (self->priv->preparing_channels,
+          (gchar *) tp_proxy_get_object_path (tpl_chan), tpl_chan);
+
       _tpl_channel_call_when_ready (tpl_chan, got_tpl_channel_text_ready_cb,
           observing_ctx);
     }
@@ -245,8 +253,8 @@ got_tpl_channel_text_ready_cb (GObject *obj,
       PATH_DEBUG (obj, "failed to prepare");
     }
 
-  /* drop our ref */
-  g_object_unref (obj);
+  g_hash_table_remove (observing_ctx->self->priv->preparing_channels,
+      tp_proxy_get_object_path (obj));
 
   observing_ctx->chan_n -= 1;
   if (observing_ctx->chan_n == 0)
@@ -359,6 +367,10 @@ _tpl_observer_init (TplObserver *self)
 
   priv->channels = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, g_object_unref);
+
+  priv->preparing_channels = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, g_object_unref);
+
   priv->logmanager = tpl_log_manager_dup_singleton ();
 
   /* Observe contact text channels */
@@ -389,6 +401,7 @@ tpl_observer_dispose (GObject *obj)
   TplObserverPriv *priv = TPL_OBSERVER (obj)->priv;
 
   tp_clear_pointer (&priv->channels, g_hash_table_unref);
+  tp_clear_pointer (&priv->preparing_channels, g_hash_table_unref);
 
   if (priv->logmanager != NULL)
     {
