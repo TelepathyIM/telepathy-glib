@@ -172,7 +172,8 @@ pendingproc_get_my_contact (TplActionChain *ctx,
     }
 
   tp_connection_get_contacts_by_handle (tp_conn, 1, &my_handle,
-      G_N_ELEMENTS (features), features, get_self_contact_cb, ctx, NULL, NULL);
+      G_N_ELEMENTS (features), features, get_self_contact_cb, ctx, NULL,
+      G_OBJECT (tpl_text));
 }
 
 static void
