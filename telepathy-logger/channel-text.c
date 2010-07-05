@@ -1226,7 +1226,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
   handle = tp_contact_get_handle (remote);
 
   g_hash_table_insert (tpl_text->priv->contacts, GUINT_TO_POINTER (handle),
-      remote);
+      g_object_ref (remote));
 
   keepon_on_receiving_signal (log, remote);
 }
