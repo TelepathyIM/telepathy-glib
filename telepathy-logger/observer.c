@@ -207,6 +207,26 @@ error:
   g_error_free (err);
 }
 
+static gboolean
+_tpl_observer_register_channel (TplObserver *self,
+    TplChannel *channel)
+{
+  GHashTable *glob_map = tpl_observer_get_channel_map (self);
+  gchar *key;
+
+  g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
+  g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
+  g_return_val_if_fail (glob_map != NULL, FALSE);
+
+  key = (char *) tp_proxy_get_object_path (G_OBJECT (channel));
+
+  DEBUG ("Registering channel %s", key);
+
+  g_hash_table_insert (glob_map, key, g_object_ref (channel));
+  g_object_notify (G_OBJECT (self), "registered-channels");
+
+  return TRUE;
+}
 
 static void
 got_tpl_channel_text_ready_cb (GObject *obj,
@@ -410,28 +430,6 @@ tpl_observer_get_channel_map (TplObserver *self)
   g_return_val_if_fail (TPL_IS_OBSERVER (self), NULL);
 
   return self->priv->channel_map;
-}
-
-
-gboolean
-_tpl_observer_register_channel (TplObserver *self,
-    TplChannel *channel)
-{
-  GHashTable *glob_map = tpl_observer_get_channel_map (self);
-  gchar *key;
-
-  g_return_val_if_fail (TPL_IS_OBSERVER (self), FALSE);
-  g_return_val_if_fail (TPL_IS_CHANNEL (channel), FALSE);
-  g_return_val_if_fail (glob_map != NULL, FALSE);
-
-  key = (char *) tp_proxy_get_object_path (G_OBJECT (channel));
-
-  DEBUG ("Registering channel %s", key);
-
-  g_hash_table_insert (glob_map, key, g_object_ref (channel));
-  g_object_notify (G_OBJECT (self), "registered-channels");
-
-  return TRUE;
 }
 
 

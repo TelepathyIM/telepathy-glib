@@ -63,8 +63,6 @@ GType _tpl_observer_get_type (void);
 
 TplObserver * _tpl_observer_new (void);
 
-gboolean _tpl_observer_register_channel (TplObserver *self,
-    TplChannel *channel);
 gboolean _tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *channel);
 void _tpl_observer_set_channel_factory (TplObserver *self,
