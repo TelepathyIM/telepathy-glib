@@ -176,6 +176,12 @@ tpl_observer_observe_channels (TpBaseClient *client,
       const gchar *path;
 
       path = tp_proxy_get_object_path (channel);
+
+      /* Ignore channel if we are already observing it */
+      if (g_hash_table_lookup (self->priv->channels, path) != NULL ||
+          g_hash_table_lookup (self->priv->preparing_channels, path) != NULL)
+        continue;
+
       /* d.bus.propertyName.str/gvalue hash */
       prop_map = tp_channel_borrow_immutable_properties (channel);
       chan_type = tp_channel_get_channel_type (channel);
