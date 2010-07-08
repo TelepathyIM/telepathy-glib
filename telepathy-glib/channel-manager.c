@@ -104,7 +104,7 @@
  * it matches a channel class handled by this manager.  If so, they should
  * return %TRUE to accept responsibility for the request, and ultimately emit
  * exactly one of the #TpChannelManager::new-channels,
- * #TpChannelManager::already-satisfied and
+ * #TpChannelManager::request-already-satisfied and
  * #TpChannelManager::request-failed signals (including @request_token in
  * the appropriate argument).
  *
