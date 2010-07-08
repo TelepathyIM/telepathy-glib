@@ -1,3 +1,11 @@
+telepathy-logger 0.1.4 (2010-07-08)
+===================================
+
+Fix:
+
+* Don't crash if the logger is asked to observe the same channel twice. This
+  appens with telepathy-idle because of bug fdo #28918.
+
 telepathy-logger 0.1.3 (2010-06-28)
 ===================================
 
