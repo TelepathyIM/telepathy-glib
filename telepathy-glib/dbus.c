@@ -786,7 +786,7 @@ tp_asv_new (const gchar *first_key, ...)
 }
 
 /**
- * tp_asv_get_boolean: (skip)
+ * tp_asv_get_boolean:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location to store %TRUE if the key actually
@@ -851,7 +851,7 @@ tp_asv_set_boolean (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_bytes: (skip)
+ * tp_asv_get_bytes:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  *
@@ -865,7 +865,7 @@ tp_asv_set_boolean (GHashTable *asv,
  * g_boxed_copy (DBUS_TYPE_G_UCHAR_ARRAY, ...) if you need to keep
  * it for longer.
  *
- * Returns: the string value of @key, or %NULL
+ * Returns: (transfer none) (allow-none): the string value of @key, or %NULL
  * Since: 0.7.9
  */
 const GArray *
@@ -942,7 +942,7 @@ tp_asv_take_bytes (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_string: (skip)
+ * tp_asv_get_string:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  *
@@ -954,7 +954,7 @@ tp_asv_take_bytes (GHashTable *asv,
  * for @key in @asv is not removed or altered. Copy it with g_strdup() if you
  * need to keep it for longer.
  *
- * Returns: the string value of @key, or %NULL
+ * Returns: (transfer none) (allow-none): the string value of @key, or %NULL
  * Since: 0.7.9
  */
 const gchar *
@@ -1051,7 +1051,7 @@ tp_asv_set_static_string (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_int32: (skip)
+ * tp_asv_get_int32:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1163,7 +1163,7 @@ tp_asv_set_int32 (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_uint32: (skip)
+ * tp_asv_get_uint32:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1275,7 +1275,7 @@ tp_asv_set_uint32 (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_int64: (skip)
+ * tp_asv_get_int64:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1376,7 +1376,7 @@ tp_asv_set_int64 (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_uint64: (skip)
+ * tp_asv_get_uint64:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1481,7 +1481,7 @@ tp_asv_set_uint64 (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_double: (skip)
+ * tp_asv_get_double:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
@@ -1579,7 +1579,7 @@ tp_asv_set_double (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_object_path: (skip)
+ * tp_asv_get_object_path:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  *
@@ -1591,7 +1591,8 @@ tp_asv_set_double (GHashTable *asv,
  * for @key in @asv is not removed or altered. Copy it with g_strdup() if you
  * need to keep it for longer.
  *
- * Returns: the object-path value of @key, or %NULL
+ * Returns: (transfer none) (allow-none): the object-path value of @key, or
+ * %NULL
  * Since: 0.7.9
  */
 const gchar *
@@ -1690,7 +1691,7 @@ tp_asv_set_static_object_path (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_boxed: (skip)
+ * tp_asv_get_boxed:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  * @type: The type that the key's value should have, which must be derived
@@ -1705,7 +1706,7 @@ tp_asv_set_static_object_path (GHashTable *asv,
  * for @key in @asv is not removed or altered. Copy it, for instance with
  * g_boxed_copy(), if you need to keep it for longer.
  *
- * Returns: the value of @key, or %NULL
+ * Returns: (transfer none) (allow-none): the value of @key, or %NULL
  * Since: 0.7.9
  */
 gpointer
@@ -1813,7 +1814,7 @@ tp_asv_set_static_boxed (GHashTable *asv,
 }
 
 /**
- * tp_asv_get_strv: (skip)
+ * tp_asv_get_strv:
  * @asv: A GHashTable where the keys are strings and the values are GValues
  * @key: The key to look up
  *
@@ -1826,7 +1827,8 @@ tp_asv_set_static_boxed (GHashTable *asv,
  * for @key in @asv is not removed or altered. Copy it with g_strdupv() if you
  * need to keep it for longer.
  *
- * Returns: the %NULL-terminated string-array value of @key, or %NULL
+ * Returns: (transfer none) (allow-none): the %NULL-terminated string-array
+ * value of @key, or %NULL
  * Since: 0.7.9
  */
 const gchar * const *
