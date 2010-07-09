@@ -2045,8 +2045,8 @@ tp_connection_is_ready (TpConnection *self)
  *
  * <!-- -->
  *
- * Returns: the same #TpCapabilities as the #TpConnection:capabilities
- * property
+ * Returns: (transfer none): the same #TpCapabilities as the
+ * #TpConnection:capabilities property
  * Since: 0.11.3
  */
 TpCapabilities *
