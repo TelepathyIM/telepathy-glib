@@ -78,7 +78,8 @@ struct _TpCapabilitiesPrivate {
  *
  * <!-- -->
  *
- * Returns: the same #GPtrArray as the #TpCapabilities:channel-classes property
+ * Returns: (transfer none): the same #GPtrArray as the
+ * #TpCapabilities:channel-classes property
  *
  * Since: 0.11.3
  */
