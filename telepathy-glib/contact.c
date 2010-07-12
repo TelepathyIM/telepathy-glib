@@ -2557,6 +2557,7 @@ contact_info_request_cancelled_cb (GCancellable *cancellable,
     ContactInfoRequestData *data)
 {
   GError *error = NULL;
+  gboolean was_cancelled;
 
   /* We disconnect from the signal manually; since we're in the cancelled
    * callback, we hold the cancellable's lock so calling this instead of
@@ -2569,7 +2570,9 @@ contact_info_request_cancelled_cb (GCancellable *cancellable,
     g_signal_handler_disconnect (data->cancellable, data->cancelled_id);
   data->cancelled_id = 0;
 
-  g_assert (g_cancellable_set_error_if_cancelled (data->cancellable, &error));
+  was_cancelled = g_cancellable_set_error_if_cancelled (data->cancellable,
+      &error);
+  g_assert (was_cancelled);
 
   DEBUG ("Request ContactInfo cancelled");
 
