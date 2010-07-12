@@ -73,7 +73,7 @@ struct _TpCapabilitiesPrivate {
 };
 
 /**
- * tp_capabilities_get_channel_classes: (skip)
+ * tp_capabilities_get_channel_classes:
  * @self: a #TpCapabilities object
  *
  * <!-- -->
