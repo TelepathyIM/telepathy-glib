@@ -471,7 +471,7 @@ tp_contact_get_location (TpContact *self)
  *
  * <!-- -->
  *
- * Returns: the same #TpCapabilities (or %NULL) as the
+ * Returns: (transfer none): the same #TpCapabilities (or %NULL) as the
  * #TpContact:capabilities property
  *
  * Since: 0.11.3

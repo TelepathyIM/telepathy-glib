@@ -197,7 +197,7 @@ AC_ARG_ENABLE(vala-bindings,
 
 if test x$enable_vala_bindings = xyes; then
   PKG_CHECK_MODULES(VALA,
-                    [vala-1.0 >= 0.9.2.74-236cd])
+                    [vala-1.0 >= 0.9.2.97-2b08])
   have_vala=yes
 
   AC_PATH_PROG(VALAC, valac, valac)
