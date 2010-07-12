@@ -2527,16 +2527,21 @@ contact_info_request_cb (TpConnection *connection,
   ContactInfoRequestData *data = user_data;
   TpContact *self = data->contact;
 
-  /* At this point it's too late to cancel the operation. This will block
-   * until the signal handler has finished if it's already running, so we're
-   * guaranteed to never be in a partially-cancelled state after this call. */
-  g_cancellable_disconnect (data->cancellable, data->cancelled_id);
+  if (data->cancellable != NULL)
+    {
+      /* At this point it's too late to cancel the operation. This will block
+       * until the signal handler has finished if it's already running, so
+       * we're guaranteed to never be in a partially-cancelled state after
+       * this call. */
+      g_cancellable_disconnect (data->cancellable, data->cancelled_id);
 
-  /* If this is true, the cancelled callback has already run and completed the
-   * async result, so just bail. */
-  if (data->cancelled_id == 0)
-    return;
-  data->cancelled_id = 0;
+      /* If this is true, the cancelled callback has already run and completed the
+       * async result, so just bail. */
+      if (data->cancelled_id == 0)
+        return;
+
+      data->cancelled_id = 0;
+    }
 
   if (error != NULL)
     {
