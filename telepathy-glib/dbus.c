@@ -787,7 +787,8 @@ tp_asv_new (const gchar *first_key, ...)
 
 /**
  * tp_asv_get_boolean:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location to store %TRUE if the key actually
  *  exists and has a boolean value
@@ -852,7 +853,8 @@ tp_asv_set_boolean (GHashTable *asv,
 
 /**
  * tp_asv_get_bytes:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  *
  * If a value for @key in @asv is present and is an array of bytes
@@ -943,7 +945,8 @@ tp_asv_take_bytes (GHashTable *asv,
 
 /**
  * tp_asv_get_string:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  *
  * If a value for @key in @asv is present and is a string, return it.
@@ -1052,7 +1055,8 @@ tp_asv_set_static_string (GHashTable *asv,
 
 /**
  * tp_asv_get_int32:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
  *    %FALSE on failure
@@ -1164,7 +1168,8 @@ tp_asv_set_int32 (GHashTable *asv,
 
 /**
  * tp_asv_get_uint32:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
  *    %FALSE on failure
@@ -1276,7 +1281,8 @@ tp_asv_set_uint32 (GHashTable *asv,
 
 /**
  * tp_asv_get_int64:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
  *    %FALSE on failure
@@ -1377,7 +1383,8 @@ tp_asv_set_int64 (GHashTable *asv,
 
 /**
  * tp_asv_get_uint64:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
  *    %FALSE on failure
@@ -1482,7 +1489,8 @@ tp_asv_set_uint64 (GHashTable *asv,
 
 /**
  * tp_asv_get_double:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  * @valid: Either %NULL, or a location in which to store %TRUE on success or
  *    %FALSE on failure
@@ -1580,7 +1588,8 @@ tp_asv_set_double (GHashTable *asv,
 
 /**
  * tp_asv_get_object_path:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  *
  * If a value for @key in @asv is present and is an object path, return it.
@@ -1692,7 +1701,8 @@ tp_asv_set_static_object_path (GHashTable *asv,
 
 /**
  * tp_asv_get_boxed:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  * @type: The type that the key's value should have, which must be derived
  *  from %G_TYPE_BOXED
@@ -1815,7 +1825,8 @@ tp_asv_set_static_boxed (GHashTable *asv,
 
 /**
  * tp_asv_get_strv:
- * @asv: A GHashTable where the keys are strings and the values are GValues
+ * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
+ * strings and the values are GValues
  * @key: The key to look up
  *
  * If a value for @key in @asv is present and is an array of strings (strv),
