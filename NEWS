@@ -1,7 +1,22 @@
-telepathy-glib 0.11.10 (UNRELEASED)
+telepathy-glib 0.11.10 (2010-07-12)
 ===================================
 
-…
+The “as many fossils as last year” release.
+
+Enhancements:
+
+❱ Updated spec to 0.19.9 (wjt):
+  ❭ added support for Read and Deleted delivery reports
+
+Fixes:
+
+❱ Improved GObject-Introspection annotations to be sufficient for
+  libfolks (treitter)
+
+❱ Fixed a typo in the documentation (jonny)
+
+❱ fd.o #28920: fixed tp_contact_request_contact_info_async cancellation
+  handling when dealing with synchronous errors (pwithnall)
 
 telepathy-glib 0.11.9 (2010-07-02)
 ==================================
