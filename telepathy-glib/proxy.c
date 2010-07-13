@@ -455,11 +455,25 @@ tp_proxy_has_interface_by_id (gpointer self,
  * @self: the #TpProxy (or subclass)
  * @iface: the interface required, as a string
  *
- * A macro wrapping tp_proxy_has_interface_by_id(). Returns %TRUE if this
- * proxy implements the given interface.
+ * Return whether this proxy is known to have a particular interface. In
+ * versions older than 0.11.UNRELEASED, this was a macro wrapper around
+ * tp_proxy_has_interface_by_id().
  *
+ * Returns: %TRUE if this proxy implements the given interface.
  * Since: 0.7.1
  */
+gboolean
+tp_proxy_has_interface (gpointer self,
+    const gchar *iface)
+{
+  TpProxy *proxy = self;
+  GQuark q = g_quark_try_string (iface);
+
+  g_return_val_if_fail (TP_IS_PROXY (self), FALSE);
+
+  return (q != 0 &&
+    g_datalist_id_get_data (&proxy->priv->interfaces, q) != NULL);
+}
 
 static void
 tp_proxy_lose_interface (GQuark unused,
