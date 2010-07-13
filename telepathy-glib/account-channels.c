@@ -308,6 +308,7 @@ static void
 request_and_handle_channel_async (TpAccount *account,
     GHashTable *request,
     gint64 user_action_time,
+    GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data,
     gboolean ensure)
@@ -372,6 +373,7 @@ request_and_handle_channel_async (TpAccount *account,
  * properties of the channel
  * @user_action_time: the user action time to pass to the channel dispatcher
  * when requesting the channel
+ * @cancellable: optional #GCancellable object, %NULL to ignore
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -388,11 +390,12 @@ void
 tp_account_create_and_handle_channel_async (TpAccount *account,
     GHashTable *request,
     gint64 user_action_time,
+    GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
   request_and_handle_channel_async (account, request, user_action_time,
-      callback, user_data, FALSE);
+      cancellable, callback, user_data, FALSE);
 }
 
 static gboolean
@@ -455,6 +458,7 @@ tp_account_create_and_handle_channel_finish (TpAccount *account,
  * properties of the channel
  * @user_action_time: the user action time to pass to the channel dispatcher
  * when requesting the channel
+ * @cancellable: optional #GCancellable object, %NULL to ignore
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -471,11 +475,12 @@ void
 tp_account_ensure_and_handle_channel_async (TpAccount *account,
     GHashTable *request,
     gint64 user_action_time,
+    GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
   request_and_handle_channel_async (account, request, user_action_time,
-      callback, user_data, TRUE);
+      cancellable, callback, user_data, TRUE);
 }
 
 /**

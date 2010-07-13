@@ -152,7 +152,7 @@ test_create_success (Test *test,
   request = create_request ();
 
   tp_account_create_and_handle_channel_async (test->account, request, 0,
-      create_and_handle_cb, test);
+      NULL, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
 
@@ -173,7 +173,7 @@ test_create_fail (Test *test,
   tp_asv_set_boolean (request, "CreateChannelFail", TRUE);
 
   tp_account_create_and_handle_channel_async (test->account, request, 0,
-      create_and_handle_cb, test);
+      NULL, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
 
@@ -195,7 +195,7 @@ test_proceed_fail (Test *test,
   tp_asv_set_boolean (request, "ProceedFail", TRUE);
 
   tp_account_create_and_handle_channel_async (test->account, request, 0,
-      create_and_handle_cb, test);
+      NULL, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
 
@@ -217,7 +217,7 @@ test_cr_failed (Test *test,
   tp_asv_set_boolean (request, "FireFailed", TRUE);
 
   tp_account_create_and_handle_channel_async (test->account, request, 0,
-      create_and_handle_cb, test);
+      NULL, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
 
@@ -253,14 +253,14 @@ test_ensure_success (Test *test,
   request = create_request ();
 
   tp_account_ensure_and_handle_channel_async (test->account, request, 0,
-      ensure_and_handle_cb, test);
+      NULL, ensure_and_handle_cb, test);
 
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   /* Try again, now it will fail as the channel already exist */
   tp_account_ensure_and_handle_channel_async (test->account, request, 0,
-      ensure_and_handle_cb, test);
+      NULL, ensure_and_handle_cb, test);
 
   g_hash_table_unref (request);
 

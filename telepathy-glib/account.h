@@ -217,6 +217,7 @@ gboolean tp_account_get_changing_presence (TpAccount *self);
 void tp_account_create_and_handle_channel_async (TpAccount *account,
     GHashTable *request,
     gint64 user_action_time,
+    GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
@@ -228,6 +229,7 @@ gboolean tp_account_create_and_handle_channel_finish (TpAccount *account,
 void tp_account_ensure_and_handle_channel_async (TpAccount *account,
     GHashTable *request,
     gint64 user_action_time,
+    GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
