@@ -109,13 +109,15 @@ handle_channels (TpSimpleHandler *handler,
   request_ctx *ctx = user_data;
   TpChannel *channel;
 
-  if (g_list_length (channels) != 1)
+  if (G_UNLIKELY (g_list_length (channels) != 1))
     {
       GError error = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "We are supposed to handle only one channel" };
 
       tp_handle_channels_context_fail (context, &error);
-      /* FIXME: Should we fail the operation ? */
+
+      request_ctx_fail (ctx, &error);
+      request_ctx_free (ctx);
       return;
     }
 
