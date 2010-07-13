@@ -444,7 +444,9 @@ gboolean
 tp_proxy_has_interface_by_id (gpointer self,
                               GQuark iface)
 {
-  TpProxy *proxy = TP_PROXY (self);
+  TpProxy *proxy = self;
+
+  g_return_val_if_fail (TP_IS_PROXY (self), FALSE);
 
   return (g_datalist_id_get_data (&proxy->priv->interfaces, iface)
       != NULL);
