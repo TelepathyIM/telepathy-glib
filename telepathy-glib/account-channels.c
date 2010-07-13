@@ -31,7 +31,6 @@
 
 typedef struct
 {
-  TpDBusDaemon *dbus;
   gboolean ensure;
   TpBaseClient *handler;
   GSimpleAsyncResult *result;
@@ -40,12 +39,10 @@ typedef struct
 } request_ctx;
 
 static request_ctx *
-request_ctx_new (TpDBusDaemon *dbus,
-    gboolean ensure)
+request_ctx_new (gboolean ensure)
 {
   request_ctx *ctx = g_slice_new0 (request_ctx);
 
-  ctx->dbus = g_object_ref (dbus);
   ctx->ensure = ensure;
   return ctx;
 }
@@ -66,7 +63,6 @@ static void
 request_ctx_free (request_ctx *ctx)
 {
   request_ctx_disconnect (ctx);
-  tp_clear_object (&ctx->dbus);
   tp_clear_object (&ctx->handler);
   tp_clear_object (&ctx->result);
   tp_clear_object (&ctx->chan_request);
@@ -96,7 +92,6 @@ request_ctx_complete (request_ctx *ctx,
 
   /* We just need to keep the Handler around */
   request_ctx_disconnect (ctx);
-  tp_clear_object (&ctx->dbus);
   tp_clear_object (&ctx->result);
   tp_clear_object (&ctx->chan_request);
 }
@@ -267,8 +262,9 @@ request_and_handle_channel_cb (TpChannelDispatcher *cd,
 
   DEBUG ("Got ChannelRequest: %s", channel_request_path);
 
-  ctx->chan_request = tp_channel_request_new (ctx->dbus,
-      channel_request_path, NULL, &err);
+  ctx->chan_request = tp_channel_request_new (
+      tp_base_client_get_dbus_daemon (ctx->handler), channel_request_path,
+      NULL, &err);
 
   if (ctx->chan_request == NULL)
     {
@@ -326,7 +322,7 @@ request_and_handle_channel_async (TpAccount *account,
 
   dbus = tp_proxy_get_dbus_daemon (account);
 
-  ctx = request_ctx_new (dbus, ensure);
+  ctx = request_ctx_new (ensure);
 
   /* Create a temp handler */
   ctx->handler = tp_simple_handler_new (dbus, TRUE, FALSE,
