@@ -432,9 +432,11 @@ tp_proxy_borrow_interface_by_id (TpProxy *self,
 /**
  * tp_proxy_has_interface_by_id:
  * @self: the #TpProxy (or subclass)
- * @iface: quark representing the interface required
+ * @iface: quark representing the D-Bus interface required
  *
- * <!-- -->
+ * Return whether this proxy is known to have a particular interface, by its
+ * quark ID. This is equivalent to using g_quark_to_string() followed by
+ * tp_proxy_has_interface(), but more efficient.
  *
  * Returns: %TRUE if this proxy implements the given interface.
  *
@@ -455,11 +457,18 @@ tp_proxy_has_interface_by_id (gpointer self,
 /**
  * tp_proxy_has_interface:
  * @self: the #TpProxy (or subclass)
- * @iface: the interface required, as a string
+ * @iface: the D-Bus interface required, as a string
  *
  * Return whether this proxy is known to have a particular interface. In
  * versions older than 0.11.UNRELEASED, this was a macro wrapper around
  * tp_proxy_has_interface_by_id().
+ *
+ * For objects that discover their interfaces at runtime, this method will
+ * indicate that interfaces are missing until they are known to be present.
+ * In subclasses that define features for use with tp_proxy_prepare_async(),
+ * successfully preparing the "core" feature for that subclass (such as
+ * %TP_CHANNEL_FEATURE_CORE or %TP_CONNECTION_FEATURE_CORE) implies that the
+ * interfaces are known.
  *
  * Returns: %TRUE if this proxy implements the given interface.
  * Since: 0.7.1
