@@ -30,39 +30,6 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpAvatarRequirements TpAvatarRequirements;
-struct _TpAvatarRequirements
-{
-  GStrv supported_mime_types;
-  guint minimum_width;
-  guint minimum_height;
-  guint recommended_width;
-  guint recommended_height;
-  guint maximum_width;
-  guint maximum_height;
-  guint maximum_bytes;
-
-  /*<private>*/
-  gpointer _1;
-  gpointer _2;
-  gpointer _3;
-  gpointer _4;
-};
-
-#define TP_TYPE_AVATAR_REQUIREMENTS (tp_avatar_requirements_get_type ())
-GType tp_avatar_requirements_get_type (void);
-TpAvatarRequirements * tp_avatar_requirements_new (GStrv supported_mime_types,
-    guint minimum_width,
-    guint minimum_height,
-    guint recommended_width,
-    guint recommended_height,
-    guint maximum_width,
-    guint maximum_height,
-    guint maximum_bytes);
-TpAvatarRequirements * tp_avatar_requirements_copy (
-    const TpAvatarRequirements *self);
-void tp_avatar_requirements_destroy (TpAvatarRequirements *self);
-
 typedef struct _TpContactInfoFieldSpec TpContactInfoFieldSpec;
 struct _TpContactInfoFieldSpec
 {
@@ -160,9 +127,6 @@ TpHandle tp_connection_get_self_handle (TpConnection *self);
 
 TpCapabilities * tp_connection_get_capabilities (TpConnection *self);
 
-TpAvatarRequirements * tp_connection_get_avatar_requirements (
-    TpConnection *self);
-
 TpContactInfoFlags tp_connection_get_contact_info_flags (TpConnection *self);
 
 GList *tp_connection_get_contact_info_supported_fields (TpConnection *self);
@@ -221,10 +185,6 @@ GQuark tp_connection_get_feature_quark_connected (void) G_GNUC_CONST;
   (tp_connection_get_feature_quark_capabilities ())
 GQuark tp_connection_get_feature_quark_capabilities (void) G_GNUC_CONST;
 
-#define TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS \
-  (tp_connection_get_feature_quark_avatar_requirements ())
-GQuark tp_connection_get_feature_quark_avatar_requirements (void) G_GNUC_CONST;
-
 #define TP_CONNECTION_FEATURE_CONTACT_INFO \
   (tp_connection_get_feature_quark_contact_info ())
 GQuark tp_connection_get_feature_quark_contact_info (void) G_GNUC_CONST;
@@ -252,6 +212,48 @@ void tp_connection_request_handles (TpConnection *self, gint timeout_ms,
 
 void tp_connection_unref_handles (TpConnection *self,
     TpHandleType handle_type, guint n_handles, const TpHandle *handles);
+
+/* connection-avatars.c */
+
+typedef struct _TpAvatarRequirements TpAvatarRequirements;
+struct _TpAvatarRequirements
+{
+  GStrv supported_mime_types;
+  guint minimum_width;
+  guint minimum_height;
+  guint recommended_width;
+  guint recommended_height;
+  guint maximum_width;
+  guint maximum_height;
+  guint maximum_bytes;
+
+  /*<private>*/
+  gpointer _1;
+  gpointer _2;
+  gpointer _3;
+  gpointer _4;
+};
+
+#define TP_TYPE_AVATAR_REQUIREMENTS (tp_avatar_requirements_get_type ())
+GType tp_avatar_requirements_get_type (void);
+TpAvatarRequirements * tp_avatar_requirements_new (GStrv supported_mime_types,
+    guint minimum_width,
+    guint minimum_height,
+    guint recommended_width,
+    guint recommended_height,
+    guint maximum_width,
+    guint maximum_height,
+    guint maximum_bytes);
+TpAvatarRequirements * tp_avatar_requirements_copy (
+    const TpAvatarRequirements *self);
+void tp_avatar_requirements_destroy (TpAvatarRequirements *self);
+
+#define TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS \
+  (tp_connection_get_feature_quark_avatar_requirements ())
+GQuark tp_connection_get_feature_quark_avatar_requirements (void) G_GNUC_CONST;
+
+TpAvatarRequirements * tp_connection_get_avatar_requirements (
+    TpConnection *self);
 
 G_END_DECLS
 

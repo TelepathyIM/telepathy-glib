@@ -4004,6 +4004,9 @@ tp_base_client_register
 tp_base_client_unregister
 tp_base_client_get_bus_name
 tp_base_client_get_object_path
+tp_base_client_get_dbus_daemon
+tp_base_client_get_name
+tp_base_client_get_uniquify_name
 <SUBSECTION Standard>
 tp_base_client_get_type
 TP_BASE_CLIENT

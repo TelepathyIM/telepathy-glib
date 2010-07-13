@@ -2020,6 +2020,7 @@ tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
 const gchar *
 tp_base_client_get_bus_name (TpBaseClient *self)
 {
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
   return self->priv->bus_name;
 }
 
@@ -2038,7 +2039,63 @@ tp_base_client_get_bus_name (TpBaseClient *self)
 const gchar *
 tp_base_client_get_object_path (TpBaseClient *self)
 {
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
   return self->priv->object_path;
+}
+
+/**
+ * tp_base_client_get_name: (skip)
+ * @self: a #TpBaseClient
+ *
+ * Return the #TpBaseClient:name construct-only property, which is used as
+ * part of the bus name and object path.
+ *
+ * Returns: the value of #TpBaseClient:name
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_base_client_get_name (TpBaseClient *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
+  return self->priv->name;
+}
+
+/**
+ * tp_base_client_get_uniquify_name: (skip)
+ * @self: a #TpBaseClient
+ *
+ * Return the #TpBaseClient:uniquify-name construct-only property; if this
+ * is true, the bus name and object path will be made unique by appending
+ * a suffix that includes the D-Bus unique name and a per-process counter.
+ *
+ * Returns: the value of #TpBaseClient:uniquify-name
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_base_client_get_uniquify_name (TpBaseClient *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), FALSE);
+  return self->priv->uniquify_name;
+}
+
+/**
+ * tp_base_client_get_dbus_daemon: (skip)
+ * @self: a #TpBaseClient
+ *
+ * Return the #TpBaseClient:dbus-daemon construct-only property, which
+ * represents the D-Bus connection used to export this client object.
+ *
+ * The returned object's reference count is not incremented, so it is not
+ * necessarily valid after @self is destroyed.
+ *
+ * Returns: (transfer none): the value of #TpBaseClient:dbus-daemon
+ * Since: 0.11.UNRELEASED
+ */
+TpDBusDaemon *
+tp_base_client_get_dbus_daemon (TpBaseClient *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
+  return self->priv->dbus;
 }
 
 /**
@@ -2101,6 +2158,8 @@ void
 tp_base_client_unregister (TpBaseClient *self)
 {
   GError *error = NULL;
+
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
 
   if (!self->priv->registered)
     return;
