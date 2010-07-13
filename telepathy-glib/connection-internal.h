@@ -96,7 +96,8 @@ void _tp_connection_maybe_prepare_contact_info (TpProxy *proxy);
 TpContactInfoFieldSpec *_tp_contact_info_field_spec_new (const gchar *name,
     GStrv parameters, TpContactInfoFieldFlags flags, guint max);
 
-
+/* connection-avatars.c */
+void _tp_connection_maybe_prepare_avatar_requirements (TpProxy *proxy);
 
 G_END_DECLS
 
