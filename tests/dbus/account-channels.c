@@ -29,6 +29,8 @@ typedef struct {
     TpAccount *account;
     TpChannel *channel;
 
+    GCancellable *cancellable;
+
     GError *error /* initialized where needed */;
 } Test;
 
@@ -40,6 +42,8 @@ setup (Test *test,
 {
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+
+  test->cancellable = g_cancellable_new ();
 
   test->error = NULL;
 
@@ -111,6 +115,8 @@ teardown (Test *test,
 
   tp_clear_object (&test->connection);
   tp_clear_object (&test->base_connection);
+
+  tp_clear_object (&test->cancellable);
 }
 
 static void
@@ -270,6 +276,26 @@ test_ensure_success (Test *test,
   tp_clear_object (&test->channel);
 }
 
+/* Cancel the operation before starting it */
+static void
+test_cancel_before (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+
+  request = create_request ();
+
+  g_cancellable_cancel (test->cancellable);
+
+  tp_account_create_and_handle_channel_async (test->account, request, 0,
+      test->cancellable, create_and_handle_cb, test);
+
+  g_hash_table_unref (request);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+}
+
 int
 main (int argc,
       char **argv)
@@ -290,6 +316,8 @@ main (int argc,
       test_cr_failed, teardown);
   g_test_add ("/account-channels/ensure-success", Test, NULL, setup,
       test_ensure_success, teardown);
+  g_test_add ("/account-channels/cancel-before", Test, NULL, setup,
+      test_cancel_before, teardown);
 
   return g_test_run ();
 }

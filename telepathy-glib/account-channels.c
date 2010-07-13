@@ -31,6 +31,7 @@
 
 typedef struct
 {
+  GCancellable *cancellable;
   gboolean ensure;
   TpBaseClient *handler;
   GSimpleAsyncResult *result;
@@ -39,10 +40,13 @@ typedef struct
 } request_ctx;
 
 static request_ctx *
-request_ctx_new (gboolean ensure)
+request_ctx_new (GCancellable *cancellable,
+    gboolean ensure)
 {
   request_ctx *ctx = g_slice_new0 (request_ctx);
 
+  if (cancellable != NULL)
+    ctx->cancellable = g_object_ref (cancellable);
   ctx->ensure = ensure;
   return ctx;
 }
@@ -63,6 +67,7 @@ static void
 request_ctx_free (request_ctx *ctx)
 {
   request_ctx_disconnect (ctx);
+  tp_clear_object (&ctx->cancellable);
   tp_clear_object (&ctx->handler);
   tp_clear_object (&ctx->result);
   tp_clear_object (&ctx->chan_request);
@@ -321,9 +326,18 @@ request_and_handle_channel_async (TpAccount *account,
   g_return_if_fail (TP_IS_ACCOUNT (account));
   g_return_if_fail (request != NULL);
 
+  if (g_cancellable_is_cancelled (cancellable))
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (account), callback,
+          user_data, G_IO_ERROR, G_IO_ERROR_CANCELLED,
+          "Operation has been cancelled");
+
+      return;
+    }
+
   dbus = tp_proxy_get_dbus_daemon (account);
 
-  ctx = request_ctx_new (ensure);
+  ctx = request_ctx_new (cancellable, ensure);
 
   /* Create a temp handler */
   ctx->handler = tp_simple_handler_new (dbus, TRUE, FALSE,
