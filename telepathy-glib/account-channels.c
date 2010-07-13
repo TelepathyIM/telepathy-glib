@@ -36,6 +36,7 @@ typedef struct
   TpBaseClient *handler;
   GSimpleAsyncResult *result;
   TpChannelRequest *chan_request;
+  gulong invalidated_sig;
 } request_ctx;
 
 static request_ctx *
@@ -50,8 +51,21 @@ request_ctx_new (TpDBusDaemon *dbus,
 }
 
 static void
+request_ctx_disconnect (request_ctx *ctx)
+{
+  if (ctx->invalidated_sig == 0)
+    return;
+
+  g_assert (ctx->chan_request != NULL);
+
+  g_signal_handler_disconnect (ctx->chan_request, ctx->invalidated_sig);
+  ctx->invalidated_sig = 0;
+}
+
+static void
 request_ctx_free (request_ctx *ctx)
 {
+  request_ctx_disconnect (ctx);
   tp_clear_object (&ctx->dbus);
   tp_clear_object (&ctx->handler);
   tp_clear_object (&ctx->result);
@@ -64,6 +78,7 @@ static void
 request_ctx_fail (request_ctx *ctx,
     const GError *error)
 {
+  request_ctx_disconnect (ctx);
   g_simple_async_result_set_from_error (ctx->result, error);
   g_simple_async_result_complete (ctx->result);
 }
@@ -80,6 +95,7 @@ request_ctx_complete (request_ctx *ctx,
   g_simple_async_result_complete (ctx->result);
 
   /* We just need to keep the Handler around */
+  request_ctx_disconnect (ctx);
   tp_clear_object (&ctx->dbus);
   tp_clear_object (&ctx->result);
   tp_clear_object (&ctx->chan_request);
@@ -205,6 +221,31 @@ channel_request_proceed_cb (TpChannelRequest *request,
 }
 
 static void
+channel_request_invalidated_cb (TpProxy *proxy,
+    guint domain,
+    gint code,
+    gchar *message,
+    request_ctx *ctx)
+{
+  GError *error = NULL;
+
+  error = g_error_new_literal (domain, code, message);
+
+  /* Ignore if the channel request has been removed by MC. We handle this case
+   * when catching the Succeeded and Failed signals. */
+  if (g_error_matches (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED))
+    goto out;
+
+  DEBUG ("MC seem to have crashed: %s", message);
+
+  request_ctx_fail (ctx, error);
+  request_ctx_free (ctx);
+
+out:
+  g_error_free (error);
+}
+
+static void
 request_and_handle_channel_cb (TpChannelDispatcher *cd,
     const gchar *channel_request_path,
     const GError *error,
@@ -250,6 +291,9 @@ request_and_handle_channel_cb (TpChannelDispatcher *cd,
       DEBUG ("Failed to connect the 'Succeeded' signal: %s", err->message);
       goto fail;
     }
+
+  ctx->invalidated_sig = g_signal_connect (ctx->chan_request, "invalidated",
+      G_CALLBACK (channel_request_invalidated_cb), ctx);
 
   DEBUG ("Calling ChannelRequest.Proceed()");
 
