@@ -2020,6 +2020,7 @@ tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
 const gchar *
 tp_base_client_get_bus_name (TpBaseClient *self)
 {
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
   return self->priv->bus_name;
 }
 
@@ -2038,6 +2039,7 @@ tp_base_client_get_bus_name (TpBaseClient *self)
 const gchar *
 tp_base_client_get_object_path (TpBaseClient *self)
 {
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
   return self->priv->object_path;
 }
 
@@ -2101,6 +2103,8 @@ void
 tp_base_client_unregister (TpBaseClient *self)
 {
   GError *error = NULL;
+
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
 
   if (!self->priv->registered)
     return;
