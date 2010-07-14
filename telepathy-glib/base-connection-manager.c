@@ -1145,15 +1145,11 @@ void
 tp_base_connection_manager_add_protocol (TpBaseConnectionManager *self,
     TpBaseProtocol *protocol)
 {
-  gchar *name;
-
   g_return_if_fail (TP_IS_BASE_CONNECTION_MANAGER (self));
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (TP_IS_BASE_PROTOCOL (protocol));
 
-  g_object_get (protocol,
-      "name", &name,
-      NULL);
-
-  g_hash_table_insert (self->priv->protocols, name, g_object_ref (protocol));
+  g_hash_table_insert (self->priv->protocols,
+      g_strdup (tp_base_protocol_get_name (protocol)),
+      g_object_ref (protocol));
 }
