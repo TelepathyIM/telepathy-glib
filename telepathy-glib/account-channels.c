@@ -390,7 +390,7 @@ request_and_handle_channel_async (TpAccount *account,
 /**
  * tp_account_create_and_handle_channel_async:
  * @account: a #TpAccount
- * @request: (transfer none) (element-type utf8 GObject.Value): the requested
+ * @request: (transfer none) (element-type utf8 GObject.Value): the requested
  * properties of the channel
  * @user_action_time: the user action time to pass to the channel dispatcher
  * when requesting the channel
@@ -398,11 +398,11 @@ request_and_handle_channel_async (TpAccount *account,
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Asynchronously calls CreateChannel on the ChannelDispatcher to create a
- * channel with the properties provided in @request that you are going to handle
+ * Asynchronously calls CreateChannel on the ChannelDispatcher to create a
+ * channel with the properties provided in @request that you are going to handle
  * yourself.
- * When the operation is finished, @callback will be called. You can then call
- * tp_account_create_and_handle_channel_finish() to get the result of
+ * When the operation is finished, @callback will be called. You can then call
+ * tp_account_create_and_handle_channel_finish() to get the result of
  * the operation.
  *
  * Since: 0.11.UNRELEASED
@@ -475,7 +475,7 @@ tp_account_create_and_handle_channel_finish (TpAccount *account,
 /**
  * tp_account_ensure_and_handle_channel_async:
  * @account: a #TpAccount
- * @request: (transfer none) (element-type utf8 GObject.Value): the requested
+ * @request: (transfer none) (element-type utf8 GObject.Value): the requested
  * properties of the channel
  * @user_action_time: the user action time to pass to the channel dispatcher
  * when requesting the channel
@@ -483,11 +483,11 @@ tp_account_create_and_handle_channel_finish (TpAccount *account,
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Asynchronously calls EnsureChannel on the ChannelDispatcher to ensure a
- * channel with the properties provided in @request that you are going to handle
+ * Asynchronously calls EnsureChannel on the ChannelDispatcher to ensure a
+ * channel with the properties provided in @request that you are going to handle
  * yourself.
- * When the operation is finished, @callback will be called. You can then call
- * tp_account_ensure_and_handle_channel_finish() to get the result of
+ * When the operation is finished, @callback will be called. You can then call
+ * tp_account_ensure_and_handle_channel_finish() to get the result of
  * the operation.
  *
  * If the channel already exists and is already being handled, or if a
