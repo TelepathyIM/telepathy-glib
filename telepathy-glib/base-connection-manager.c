@@ -1079,6 +1079,8 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
       g_string_append_c (string, '/');
       g_string_append (string, name);
 
+      g_strdelimit (string->str, "-", '_');
+
       tp_dbus_daemon_register_object (self->priv->dbus_daemon, string->str,
           protocol);
     }
