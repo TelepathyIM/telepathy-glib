@@ -14,6 +14,7 @@
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/textchan-null.h"
 #include "tests/lib/simple-channel-dispatcher.h"
+#include "tests/lib/simple-channel-request.h"
 
 typedef struct {
     GMainLoop *mainloop;
@@ -296,6 +297,35 @@ test_cancel_before (Test *test,
   g_assert_error (test->error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
 }
 
+/* Cancel the operation after the channel request has been created */
+static void
+channel_request_created_cb (TpTestsSimpleChannelDispatcher *dispatcher,
+    TpTestsSimpleChannelRequest *request,
+    Test *test)
+{
+  g_cancellable_cancel (test->cancellable);
+}
+
+static void
+test_cancel_after_create (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+
+  request = create_request ();
+
+  tp_account_create_and_handle_channel_async (test->account, request, 0,
+      test->cancellable, create_and_handle_cb, test);
+
+  g_signal_connect (test->cd_service, "channel-request-created",
+      G_CALLBACK (channel_request_created_cb), test);
+
+  g_hash_table_unref (request);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
+}
+
 int
 main (int argc,
       char **argv)
@@ -318,6 +348,8 @@ main (int argc,
       test_ensure_success, teardown);
   g_test_add ("/account-channels/cancel-before", Test, NULL, setup,
       test_cancel_before, teardown);
+  g_test_add ("/account-channels/after-create", Test, NULL, setup,
+      test_cancel_after_create, teardown);
 
   return g_test_run ();
 }

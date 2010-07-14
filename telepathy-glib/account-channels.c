@@ -37,6 +37,7 @@ typedef struct
   GSimpleAsyncResult *result;
   TpChannelRequest *chan_request;
   gulong invalidated_sig;
+  gulong cancel_id;
 } request_ctx;
 
 static request_ctx *
@@ -67,6 +68,10 @@ static void
 request_ctx_free (request_ctx *ctx)
 {
   request_ctx_disconnect (ctx);
+
+  if (ctx->cancel_id != 0)
+    g_cancellable_disconnect (ctx->cancellable, ctx->cancel_id);
+
   tp_clear_object (&ctx->cancellable);
   tp_clear_object (&ctx->handler);
   tp_clear_object (&ctx->result);
@@ -246,6 +251,39 @@ out:
 }
 
 static void
+channel_request_cancel_cb (TpChannelRequest *request,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  /* Don't do anything, we rely on the invalidation of the channel request to
+   * complete the operation */
+  if (error != NULL)
+    {
+      DEBUG ("ChannelRequest.Cancel() failed: %s", error->message);
+      return;
+    }
+
+  DEBUG ("ChannelRequest.Cancel() succeed");
+}
+
+static void
+operation_cancelled_cb (GCancellable *cancellable,
+    request_ctx *ctx)
+{
+  if (ctx->chan_request == NULL)
+    {
+      DEBUG ("ChannelRequest has been invalidated, we can't cancel any more");
+      return;
+    }
+
+  DEBUG ("Operation has been cancelled, cancel the channel request");
+
+  tp_cli_channel_request_call_cancel (ctx->chan_request, -1,
+      channel_request_cancel_cb, ctx, NULL, G_OBJECT (ctx->result));
+}
+
+static void
 request_and_handle_channel_cb (TpChannelDispatcher *cd,
     const gchar *channel_request_path,
     const GError *error,
@@ -295,6 +333,12 @@ request_and_handle_channel_cb (TpChannelDispatcher *cd,
 
   ctx->invalidated_sig = g_signal_connect (ctx->chan_request, "invalidated",
       G_CALLBACK (channel_request_invalidated_cb), ctx);
+
+  if (ctx->cancellable != NULL)
+    {
+      ctx->cancel_id =  g_cancellable_connect (ctx->cancellable,
+          G_CALLBACK (operation_cancelled_cb), ctx, NULL);
+    }
 
   DEBUG ("Calling ChannelRequest.Proceed()");
 
