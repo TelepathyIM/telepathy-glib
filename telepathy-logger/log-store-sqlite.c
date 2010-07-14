@@ -30,6 +30,7 @@
 #include "entry-text.h"
 #include "entry-text-internal.h"
 #include "log-store-sqlite-internal.h"
+#include "log-manager-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include "datetime-internal.h"
@@ -1144,7 +1145,7 @@ tpl_log_store_sqlite_get_chats (TplLogStore *self,
 
   while ((e = sqlite3_step (sql)) == SQLITE_ROW)
     {
-      TplLogSearchHit *hit = g_slice_new0 (TplLogSearchHit);
+      TplLogSearchHit *hit;
       const char *identifier;
       gboolean chatroom;
 
@@ -1154,8 +1155,8 @@ tpl_log_store_sqlite_get_chats (TplLogStore *self,
 
       DEBUG ("identifier = %s, chatroom = %i", identifier, chatroom);
 
-      hit->chat_id = g_strdup (identifier);
-      hit->is_chatroom = chatroom;
+      hit = _tpl_log_manager_search_hit_new (account, identifier, chatroom,
+          NULL, NULL);
 
       list = g_list_prepend (list, hit);
     }
