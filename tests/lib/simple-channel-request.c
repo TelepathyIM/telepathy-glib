@@ -198,12 +198,23 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
 }
 
 static void
+tp_tests_simple_channel_request_cancel (TpSvcChannelRequest *request,
+    DBusGMethodInvocation *context)
+{
+  tp_svc_channel_request_emit_failed (request, TP_ERROR_STR_CANCELLED,
+      "ChannelRequest has been cancelled");
+
+  tp_svc_channel_request_return_from_cancel (context);
+}
+
+static void
 channel_request_iface_init (gpointer klass,
     gpointer unused G_GNUC_UNUSED)
 {
 #define IMPLEMENT(x) tp_svc_channel_request_implement_##x (\
   klass, tp_tests_simple_channel_request_##x)
   IMPLEMENT (proceed);
+  IMPLEMENT (cancel);
 #undef IMPLEMENT
 }
 
