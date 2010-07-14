@@ -38,13 +38,13 @@ typedef struct
   TpChannelRequest *chan_request;
   gulong invalidated_sig;
   gulong cancel_id;
-} request_ctx;
+} RequestCtx;
 
-static request_ctx *
+static RequestCtx *
 request_ctx_new (GCancellable *cancellable,
     gboolean ensure)
 {
-  request_ctx *ctx = g_slice_new0 (request_ctx);
+  RequestCtx *ctx = g_slice_new0 (RequestCtx);
 
   if (cancellable != NULL)
     ctx->cancellable = g_object_ref (cancellable);
@@ -53,7 +53,7 @@ request_ctx_new (GCancellable *cancellable,
 }
 
 static void
-request_ctx_disconnect (request_ctx *ctx)
+request_ctx_disconnect (RequestCtx *ctx)
 {
   if (ctx->invalidated_sig == 0)
     return;
@@ -65,7 +65,7 @@ request_ctx_disconnect (request_ctx *ctx)
 }
 
 static void
-request_ctx_free (request_ctx *ctx)
+request_ctx_free (RequestCtx *ctx)
 {
   request_ctx_disconnect (ctx);
 
@@ -77,11 +77,11 @@ request_ctx_free (request_ctx *ctx)
   tp_clear_object (&ctx->result);
   tp_clear_object (&ctx->chan_request);
 
-  g_slice_free (request_ctx, ctx);
+  g_slice_free (RequestCtx, ctx);
 }
 
 static void
-request_ctx_fail (request_ctx *ctx,
+request_ctx_fail (RequestCtx *ctx,
     const GError *error)
 {
   request_ctx_disconnect (ctx);
@@ -90,7 +90,7 @@ request_ctx_fail (request_ctx *ctx,
 }
 
 static void
-request_ctx_complete (request_ctx *ctx,
+request_ctx_complete (RequestCtx *ctx,
     TpChannel *channel)
 {
   g_assert (ctx->result != NULL);
@@ -111,7 +111,7 @@ channel_invalidated_cb (TpProxy *chan,
     guint domain,
     gint code,
     gchar *message,
-    request_ctx *ctx)
+    RequestCtx *ctx)
 {
   /* Channel has been destroyed, we can remove the Handler */
   request_ctx_free (ctx);
@@ -127,7 +127,7 @@ handle_channels (TpSimpleHandler *handler,
     TpHandleChannelsContext *context,
     gpointer user_data)
 {
-  request_ctx *ctx = user_data;
+  RequestCtx *ctx = user_data;
   TpChannel *channel;
 
   if (G_UNLIKELY (g_list_length (channels) != 1))
@@ -167,7 +167,7 @@ out:
 }
 
 static void
-channel_request_succeeded (request_ctx *ctx)
+channel_request_succeeded (RequestCtx *ctx)
 {
   GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
       "Another Handler is handling this channel" };
@@ -188,7 +188,7 @@ channel_request_proceed_cb (TpChannelRequest *request,
   gpointer user_data,
   GObject *weak_object)
 {
-  request_ctx *ctx = user_data;
+  RequestCtx *ctx = user_data;
 
   if (error != NULL)
     {
@@ -207,7 +207,7 @@ channel_request_invalidated_cb (TpProxy *proxy,
     guint domain,
     gint code,
     gchar *message,
-    request_ctx *ctx)
+    RequestCtx *ctx)
 {
   GError *error = NULL;
 
@@ -248,7 +248,7 @@ channel_request_cancel_cb (TpChannelRequest *request,
 
 static void
 operation_cancelled_cb (GCancellable *cancellable,
-    request_ctx *ctx)
+    RequestCtx *ctx)
 {
   if (ctx->chan_request == NULL)
     {
@@ -269,7 +269,7 @@ request_and_handle_channel_cb (TpChannelDispatcher *cd,
     gpointer user_data,
     GObject *weak_object)
 {
-  request_ctx *ctx = user_data;
+  RequestCtx *ctx = user_data;
   GError *err = NULL;
 
   if (error != NULL)
@@ -328,7 +328,7 @@ request_and_handle_channel_async (TpAccount *account,
   GError *error = NULL;
   TpDBusDaemon *dbus;
   TpChannelDispatcher *cd;
-  request_ctx *ctx;
+  RequestCtx *ctx;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
   g_return_if_fail (request != NULL);
