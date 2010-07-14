@@ -1,5 +1,8 @@
 vapidir = $(datarootdir)/telepathy/vapi
-vapi_DATA = telepathy-glib.vapi
+vapi_DATA = \
+	telepathy-glib.vapi \
+	telepathy-glib.deps \
+	$(NULL)
 
 BUILT_SOURCES = \
 	telepathy-glib.vapi \
