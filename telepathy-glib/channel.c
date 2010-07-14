@@ -1631,7 +1631,7 @@ tp_channel_class_init (TpChannelClass *klass)
    *  #guint containing the local-pending members added
    * @remote_pending: (type GLib.Array) (element-type uint):  a #GArray of
    *  #guint containing the remote-pending members added
-   * @details: (type GLib.HashTable): (element-type utf8 GObject.Value):
+   * @details: (type GLib.HashTable) (element-type utf8 GObject.Value):
    *  a #GHashTable mapping (gchar *) to #GValue containing details
    *  about the change, as described in the specification of the
    *  MembersChangedDetailed signal.
