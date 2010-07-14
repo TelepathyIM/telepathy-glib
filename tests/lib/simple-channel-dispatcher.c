@@ -32,6 +32,13 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleChannelDispatcher,
         tp_dbus_properties_mixin_iface_init)
     )
 
+/* signals */
+enum {
+  CHANNEL_REQUEST_CREATED,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL];
 
 /* TP_IFACE_CHANNEL_DISPATCHER is implied */
 static const char *CHANNEL_DISPATCHER_INTERFACES[] = { NULL };
@@ -90,6 +97,8 @@ create_channel_request (TpTestsSimpleChannelDispatcher *self,
   tp_dbus_daemon_register_object (dbus, path, chan_request);
 
   g_object_unref (dbus);
+
+  g_signal_emit (self, signals[CHANNEL_REQUEST_CREATED], 0, chan_request);
 
   return path;
 }
@@ -265,6 +274,15 @@ tp_tests_simple_channel_dispatcher_class_init (
       TP_TESTS_TYPE_SIMPLE_CONNECTION,
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
+
+  /* Fired when we create a new channel request object. This can be used in
+   * test to track the progression of a request. */
+  signals[CHANNEL_REQUEST_CREATED] = g_signal_new ("channel-request-created",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      g_cclosure_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1, TP_TESTS_TYPE_SIMPLE_CHANNEL_REQUEST);
 
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
