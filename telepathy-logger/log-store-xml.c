@@ -1064,7 +1064,8 @@ log_store_xml_search_new (TplLogStore *store,
 static GList *
 log_store_xml_get_chats_for_dir (TplLogStoreXml *self,
     const gchar *dir,
-    gboolean is_chatroom)
+    gboolean is_chatroom,
+    TpAccount *account)
 {
   GDir *gdir;
   GList *hits = NULL;
@@ -1090,13 +1091,13 @@ log_store_xml_get_chats_for_dir (TplLogStoreXml *self,
         {
           gchar *filename = g_build_filename (dir, name, NULL);
           hits = g_list_concat (hits,
-                log_store_xml_get_chats_for_dir (self, filename, TRUE));
+              log_store_xml_get_chats_for_dir (self, filename, TRUE, account));
           g_free (filename);
           continue;
         }
-      hit = g_slice_new0 (TplLogSearchHit);
-      hit->chat_id = g_strdup (name);
-      hit->is_chatroom = is_chatroom;
+
+      hit = _tpl_log_manager_search_hit_new (account, name, is_chatroom,
+          NULL, NULL);
 
       hits = g_list_prepend (hits, hit);
     }
@@ -1146,7 +1147,7 @@ log_store_xml_get_chats (TplLogStore *store,
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
   dir = log_store_xml_get_dir (self, account, NULL, FALSE);
-  hits = log_store_xml_get_chats_for_dir (self, dir, FALSE);
+  hits = log_store_xml_get_chats_for_dir (self, dir, FALSE, account);
   g_free (dir);
 
   for (guint i = 0; i < g_list_length (hits); ++i)
