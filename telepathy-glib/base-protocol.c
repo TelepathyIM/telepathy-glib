@@ -366,6 +366,22 @@ tp_base_protocol_constructed (GObject *object)
 }
 
 /**
+ * tp_base_protocol_get_name: (skip)
+ * @self: a Protocol
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the value of #TpBaseProtocol:name
+ */
+const gchar *
+tp_base_protocol_get_name (TpBaseProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_PROTOCOL (self), NULL);
+
+  return self->priv->name;
+}
+
+/**
  * tp_base_protocol_get_immutable_properties:
  * @self: a Protocol
  *
