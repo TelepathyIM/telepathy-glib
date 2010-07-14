@@ -44,6 +44,7 @@
 #include <telepathy-logger/entry-text-internal.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store-internal.h>
+#include <telepathy-logger/log-manager-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/entity-internal.h>
@@ -708,6 +709,10 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   guint len;
   GList *accounts, *l;
   gchar *tmp;
+  TpAccount *account = NULL;
+  GDate *date;
+  const gchar *chat_id;
+  gboolean is_chatroom;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (filename), NULL);
@@ -717,16 +722,14 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   strv = g_strsplit (filename, G_DIR_SEPARATOR_S, -1);
   len = g_strv_length (strv);
 
-  hit = g_slice_new0 (TplLogSearchHit);
-
   end = strstr (strv[len - 1], LOG_FILENAME_SUFFIX);
   tmp = g_strndup (strv[len - 1], end - strv[len - 1]);
-  hit->date = create_date_from_string (tmp);
+  date = create_date_from_string (tmp);
   g_free (tmp);
-  hit->chat_id = g_strdup (strv[len - 2]);
-  hit->is_chatroom = (strcmp (strv[len - 3], LOG_DIR_CHATROOMS) == 0);
+  chat_id = strv[len - 2];
+  is_chatroom = (strcmp (strv[len - 3], LOG_DIR_CHATROOMS) == 0);
 
-  if (hit->is_chatroom)
+  if (is_chatroom)
     account_name = strv[len - 4];
   else
     account_name = strv[len - 3];
@@ -736,24 +739,23 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   accounts = tp_account_manager_get_valid_accounts (
       self->priv->account_manager);
 
-  for (l = accounts; l != NULL; l = g_list_next (l))
+  for (l = accounts; l != NULL && account == NULL; l = g_list_next (l))
     {
-      TpAccount *account = TP_ACCOUNT (l->data);
+      TpAccount *acc = TP_ACCOUNT (l->data);
       gchar *name;
 
-      name = log_store_account_to_dirname (account);
+      name = log_store_account_to_dirname (acc);
       if (!tp_strdiff (name, account_name))
-        {
-          g_assert (hit->account == NULL);
-          hit->account = g_object_ref (account);
-        }
+        account = acc;
       g_free (name);
     }
   g_list_free (accounts);
 
-  hit->filename = g_strdup (filename);
+  hit = _tpl_log_manager_search_hit_new (account, chat_id,
+    is_chatroom, filename, date);
 
   g_strfreev (strv);
+  g_date_free (date);
 
   return hit;
 }
