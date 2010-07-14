@@ -167,31 +167,8 @@ out:
 }
 
 static void
-channel_request_failed_cb (TpChannelRequest *request,
-  const gchar *error,
-  const gchar *message,
-  gpointer user_data,
-  GObject *weak_object)
+channel_request_succeeded (request_ctx *ctx)
 {
-  request_ctx *ctx = user_data;
-  GError *err = NULL;
-
-  DEBUG ("ChannelRequest failed: %s", message);
-
-  tp_proxy_dbus_error_to_gerror (TP_PROXY (request),
-    error, message, &err);
-
-  request_ctx_fail (ctx, err);
-  request_ctx_free (ctx);
-  g_error_free (err);
-}
-
-static void
-channel_request_succeeded_cb (TpChannelRequest *request,
-  gpointer user_data,
-  GObject *weak_object)
-{
-  request_ctx *ctx = user_data;
   GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
       "Another Handler is handling this channel" };
 
@@ -236,12 +213,14 @@ channel_request_invalidated_cb (TpProxy *proxy,
 
   error = g_error_new_literal (domain, code, message);
 
-  /* Ignore if the channel request has been removed by MC. We handle this case
-   * when catching the Succeeded and Failed signals. */
   if (g_error_matches (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED))
-    goto out;
+    {
+      /* Object has ben properly removed so ChannelRequest succeeded */
+      channel_request_succeeded (ctx);
+      goto out;
+    }
 
-  DEBUG ("MC seem to have crashed: %s", message);
+  DEBUG ("ChannelRequest has been invalidated: %s", message);
 
   request_ctx_fail (ctx, error);
   request_ctx_free (ctx);
@@ -312,22 +291,6 @@ request_and_handle_channel_cb (TpChannelDispatcher *cd,
   if (ctx->chan_request == NULL)
     {
       DEBUG ("Failed to create ChannelRequest: %s", err->message);
-      goto fail;
-    }
-
-  if (tp_cli_channel_request_connect_to_failed (ctx->chan_request,
-      channel_request_failed_cb, ctx, NULL,
-      G_OBJECT (ctx->result), &err) == NULL)
-    {
-      DEBUG ("Failed to connect the 'Failed' signal: %s", err->message);
-      goto fail;
-    }
-
-  if (tp_cli_channel_request_connect_to_succeeded (ctx->chan_request,
-      channel_request_succeeded_cb, ctx, NULL,
-      G_OBJECT (ctx->result), &err) == NULL)
-    {
-      DEBUG ("Failed to connect the 'Succeeded' signal: %s", err->message);
       goto fail;
     }
 
