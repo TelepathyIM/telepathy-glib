@@ -402,7 +402,7 @@ request_and_handle_channel_async (TpAccount *account,
  * channel with the properties provided in @request that you are going to handle
  * yourself.
  * When the operation is finished, @callback will be called. You can then call
- * tp_account_create_and_handle_channel_finish () to get the result of
+ * tp_account_create_and_handle_channel_finish() to get the result of
  * the operation.
  *
  * Since: 0.11.UNRELEASED
@@ -457,7 +457,7 @@ request_and_handle_channel_finish (TpAccount *account,
  * Finishes an async channel creation started using
  * tp_account_create_and_handle_channel_async().
  *
- * Returns: %TRUE if the channel was successful created and you are handling
+ * Returns: %TRUE if the channel was successfully created and you are handling
  * it, otherwise %FALSE
  *
  * Since: 0.11.UNRELEASED
@@ -487,8 +487,14 @@ tp_account_create_and_handle_channel_finish (TpAccount *account,
  * channel with the properties provided in @request that you are going to handle
  * yourself.
  * When the operation is finished, @callback will be called. You can then call
- * tp_account_ensure_and_handle_channel_finish () to get the result of
+ * tp_account_ensure_and_handle_channel_finish() to get the result of
  * the operation.
+ *
+ * If the channel already exists and is already being handled, or if a
+ * newly created channel is sent to a different handler, this operation
+ * will fail with the error %TP_ERROR_NOT_YOURS. The other handler
+ * will be notified that the channel was requested again, and can
+ * move its window to the foreground, if applicable.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -515,7 +521,11 @@ tp_account_ensure_and_handle_channel_async (TpAccount *account,
  * Finishes an async channel creation started using
  * tp_account_ensure_and_handle_channel_async().
  *
- * Returns: %TRUE if the channel was successful created and you are handling
+ * If the channel already exists and is already being handled, or if a
+ * newly created channel is sent to a different handler, this operation
+ * will fail with the error %TP_ERROR_NOT_YOURS.
+ *
+ * Returns: %TRUE if the channel was successfully created and you are handling
  * it, otherwise %FALSE
  *
  * Since: 0.11.UNRELEASED
