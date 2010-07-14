@@ -33,6 +33,8 @@ INTROSPECTION_FILES = \
 	$(srcdir)/observe-channels-context.c $(srcdir)/observe-channels-context.h \
 	$(srcdir)/add-dispatch-operation-context.c $(srcdir)/add-dispatch-operation-context.h \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
+	$(srcdir)/base-connection.c $(srcdir)/base-connection.h \
+	$(srcdir)/handle-repo.c $(srcdir)/handle-repo.h $(srcdir)/handle-set.c \
 	_gen/telepathy-enums.h \
 	_gen/telepathy-interfaces.h
 
