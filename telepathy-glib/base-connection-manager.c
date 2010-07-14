@@ -1070,6 +1070,12 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
       TpBaseProtocolClass *protocol_class =
         TP_BASE_PROTOCOL_GET_CLASS (protocol);
 
+      if (!tp_connection_manager_check_valid_protocol_name (name, &error))
+        {
+          g_critical ("%s", error->message);
+          goto except;
+        }
+
       /* don't export uninformative "stub" protocol objects on D-Bus */
       if (protocol_class->is_stub)
         continue;
