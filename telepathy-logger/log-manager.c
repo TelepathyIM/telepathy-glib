@@ -739,6 +739,32 @@ _tpl_log_manager_search (TplLogManager *manager,
   return out;
 }
 
+TplLogSearchHit *
+_tpl_log_manager_search_hit_new (TpAccount *account,
+    const gchar *chat_id,
+    gboolean is_chatroom,
+    const gchar *filename,
+    GDate *date)
+{
+  TplLogSearchHit *hit = g_slice_new0 (TplLogSearchHit);
+
+  g_assert (chat_id != NULL);
+
+  if (account != NULL)
+    hit->account = g_object_ref (account);
+
+  hit->chat_id = g_strdup (chat_id);
+  hit->is_chatroom = is_chatroom;
+
+  if (filename != NULL)
+    hit->filename = g_strdup (filename);
+
+  if (date != NULL)
+    hit->date = g_date_new_dmy (g_date_get_day (date), g_date_get_month (date),
+        g_date_get_year (date));
+
+  return hit;
+}
 
 void
 _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)

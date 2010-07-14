@@ -84,6 +84,12 @@ void _tpl_log_manager_search_in_identifier_chats_new_async (
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+TplLogSearchHit * _tpl_log_manager_search_hit_new (TpAccount *account,
+    const gchar *chat_id,
+    gboolean is_chatroom,
+    const gchar *filename,
+    GDate *date);
+
 void _tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
 
 gint _tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
