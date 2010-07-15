@@ -875,6 +875,103 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
   g_assert_not_reached ();
 }
 
+static GHashTable *
+tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
+    GHashTable *asv,
+    gboolean allow_omissions,
+    GError **error)
+{
+  GHashTable *combined;
+  const TpCMParamSpec *parameters;
+  guint i;
+  guint mandatory_flag;
+
+  parameters = tp_base_protocol_get_parameters (self);
+
+  combined = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, (GDestroyNotify) tp_g_value_slice_free);
+
+  if (!_tp_cm_param_spec_check_all_allowed (parameters, asv, error))
+    goto except;
+
+  if (tp_asv_get_boolean (asv, "register", NULL))
+    {
+      mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REGISTER;
+    }
+  else
+    {
+      mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REQUIRED;
+    }
+
+  for (i = 0; parameters[i].name != NULL; i++)
+    {
+      const gchar *name = parameters[i].name;
+
+      if (tp_asv_lookup (asv, name) != NULL)
+        {
+          /* coerce to the expected type */
+          GValue *coerced = _tp_cm_param_spec_coerce (parameters + i, asv,
+              error);
+
+          if (coerced == NULL)
+            goto except;
+
+          if (G_UNLIKELY (G_VALUE_TYPE (coerced) != parameters[i].gtype))
+            {
+              g_error ("parameter %s should have been coerced to %s, got %s",
+                  name, g_type_name (parameters[i].gtype),
+                    G_VALUE_TYPE_NAME (coerced));
+            }
+
+          if (parameters[i].filter != NULL)
+            {
+              if (!(parameters[i].filter (parameters + i, coerced, error)))
+                {
+                  DEBUG ("parameter %s rejected by filter function", name);
+                  tp_g_value_slice_free (coerced);
+                  goto except;
+                }
+            }
+
+          if (G_UNLIKELY (G_VALUE_TYPE (coerced) != parameters[i].gtype))
+            {
+              g_error ("parameter %s filter changed its type from %s to %s",
+                  name, g_type_name (parameters[i].gtype),
+                    G_VALUE_TYPE_NAME (coerced));
+            }
+
+          DEBUG ("using specified value for %s", name);
+          g_hash_table_insert (combined, g_strdup (name), coerced);
+        }
+      else if ((parameters[i].flags & mandatory_flag) != 0 &&
+          !allow_omissions)
+        {
+          DEBUG ("missing mandatory account parameter %s", name);
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+              "missing mandatory account parameter %s",
+              name);
+          goto except;
+        }
+      else if ((parameters[i].flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT) != 0)
+        {
+          GValue *value = param_default_value (parameters + i);
+
+          DEBUG ("using default value for %s", name);
+          g_hash_table_insert (combined, g_strdup (name), value);
+        }
+      else
+        {
+          DEBUG ("no default value for %s", name);
+        }
+    }
+
+  return combined;
+
+except:
+  g_hash_table_unref (combined);
+  return NULL;
+}
+
 /**
  * tp_base_protocol_new_connection:
  * @self: a Protocol object
@@ -905,97 +1002,18 @@ tp_base_protocol_new_connection (TpBaseProtocol *self,
 {
   TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
   GHashTable *combined;
-  const TpCMParamSpec *parameters;
-  guint i;
   TpBaseConnection *conn = NULL;
-  guint mandatory_flag;
 
   g_return_val_if_fail (cls != NULL, NULL);
   g_return_val_if_fail (cls->new_connection != NULL, NULL);
 
-  parameters = tp_base_protocol_get_parameters (self);
+  combined = tp_base_protocol_sanitize_parameters (self, asv, FALSE, error);
 
-  combined = g_hash_table_new_full (g_str_hash, g_str_equal,
-      g_free, (GDestroyNotify) tp_g_value_slice_free);
-
-  if (!_tp_cm_param_spec_check_all_allowed (parameters, asv, error))
-    goto finally;
-
-  if (tp_asv_get_boolean (asv, "register", NULL))
-    {
-      mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REGISTER;
-    }
-  else
-    {
-      mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REQUIRED;
-    }
-
-  for (i = 0; parameters[i].name != NULL; i++)
-    {
-      const gchar *name = parameters[i].name;
-
-      if (tp_asv_lookup (asv, name) != NULL)
-        {
-          /* coerce to the expected type */
-          GValue *coerced = _tp_cm_param_spec_coerce (parameters + i, asv,
-              error);
-
-          if (coerced == NULL)
-            goto finally;
-
-          if (G_UNLIKELY (G_VALUE_TYPE (coerced) != parameters[i].gtype))
-            {
-              g_error ("parameter %s should have been coerced to %s, got %s",
-                  name, g_type_name (parameters[i].gtype),
-                    G_VALUE_TYPE_NAME (coerced));
-            }
-
-          if (parameters[i].filter != NULL)
-            {
-              if (!(parameters[i].filter (parameters + i, coerced, error)))
-                {
-                  DEBUG ("parameter %s rejected by filter function", name);
-                  tp_g_value_slice_free (coerced);
-                  goto finally;
-                }
-            }
-
-          if (G_UNLIKELY (G_VALUE_TYPE (coerced) != parameters[i].gtype))
-            {
-              g_error ("parameter %s filter changed its type from %s to %s",
-                  name, g_type_name (parameters[i].gtype),
-                    G_VALUE_TYPE_NAME (coerced));
-            }
-
-          DEBUG ("using specified value for %s", name);
-          g_hash_table_insert (combined, g_strdup (name), coerced);
-        }
-      else if ((parameters[i].flags & mandatory_flag) != 0)
-        {
-          DEBUG ("missing mandatory account parameter %s", name);
-          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-              "missing mandatory account parameter %s",
-              name);
-          goto finally;
-        }
-      else if ((parameters[i].flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT) != 0)
-        {
-          GValue *value = param_default_value (parameters + i);
-
-          DEBUG ("using default value for %s", name);
-          g_hash_table_insert (combined, g_strdup (name), value);
-        }
-      else
-        {
-          DEBUG ("no default value for %s", name);
-        }
-    }
-
-  conn = cls->new_connection (self, combined, error);
-
-finally:
   if (combined != NULL)
-    g_hash_table_unref (combined);
+    {
+      conn = cls->new_connection (self, combined, error);
+      g_hash_table_unref (combined);
+    }
 
   return conn;
 }
