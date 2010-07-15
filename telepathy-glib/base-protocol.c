@@ -1046,14 +1046,14 @@ protocol_identify_account (TpSvcProtocol *protocol,
 
   g_return_if_fail (cls != NULL);
 
-  if (cls->normalize_contact != NULL)
+  if (cls->identify_account != NULL)
     {
       ret = cls->identify_account (self, parameters, &error);
     }
   else
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "This Protocol does not implement NormalizeContact");
+          "This Protocol does not implement IdentifyAccount");
     }
 
   if (ret == NULL)
