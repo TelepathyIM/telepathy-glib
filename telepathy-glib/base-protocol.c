@@ -878,7 +878,6 @@ _tp_cm_param_spec_coerce (const TpCMParamSpec *param_spec,
 static GHashTable *
 tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
     GHashTable *asv,
-    gboolean allow_omissions,
     GError **error)
 {
   GHashTable *combined;
@@ -943,8 +942,7 @@ tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
           DEBUG ("using specified value for %s", name);
           g_hash_table_insert (combined, g_strdup (name), coerced);
         }
-      else if ((parameters[i].flags & mandatory_flag) != 0 &&
-          !allow_omissions)
+      else if ((parameters[i].flags & mandatory_flag) != 0)
         {
           DEBUG ("missing mandatory account parameter %s", name);
           g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
@@ -1007,7 +1005,7 @@ tp_base_protocol_new_connection (TpBaseProtocol *self,
   g_return_val_if_fail (cls != NULL, NULL);
   g_return_val_if_fail (cls->new_connection != NULL, NULL);
 
-  combined = tp_base_protocol_sanitize_parameters (self, asv, FALSE, error);
+  combined = tp_base_protocol_sanitize_parameters (self, asv, error);
 
   if (combined != NULL)
     {
@@ -1067,7 +1065,7 @@ protocol_identify_account (TpSvcProtocol *protocol,
   if (cls->identify_account != NULL)
     {
       GHashTable *sanitized = tp_base_protocol_sanitize_parameters (self,
-          parameters, TRUE, &error);
+          parameters, &error);
 
       if (sanitized != NULL)
         {
