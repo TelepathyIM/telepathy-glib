@@ -1066,7 +1066,14 @@ protocol_identify_account (TpSvcProtocol *protocol,
 
   if (cls->identify_account != NULL)
     {
-      ret = cls->identify_account (self, parameters, &error);
+      GHashTable *sanitized = tp_base_protocol_sanitize_parameters (self,
+          parameters, TRUE, &error);
+
+      if (sanitized != NULL)
+        {
+          ret = cls->identify_account (self, sanitized, &error);
+          g_hash_table_unref (sanitized);
+        }
     }
   else
     {
