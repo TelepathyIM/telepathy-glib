@@ -1099,3 +1099,31 @@ protocol_iface_init (TpSvcProtocolClass *cls)
   IMPLEMENT (identify_account);
 #undef IMPLEMENT
 }
+
+static void
+append_to_ptr_array (GType type G_GNUC_UNUSED,
+    GHashTable *table,
+    const gchar * const *allowed,
+    gpointer user_data)
+{
+  g_ptr_array_add (user_data, tp_value_array_build (2,
+        TP_HASH_TYPE_CHANNEL_CLASS, table,
+        G_TYPE_STRV, allowed,
+        G_TYPE_INVALID));
+}
+
+GPtrArray *
+tp_base_protocol_build_requestable_channel_classes (GType *channel_managers,
+    gssize n)
+{
+  GPtrArray *ret = g_ptr_array_new ();
+  gssize i;
+
+  for (i = 0; i < n || (n < 0 && channel_managers[i] != G_TYPE_INVALID); i++)
+    {
+      tp_channel_manager_type_foreach_channel_class (channel_managers[i],
+          append_to_ptr_array, ret);
+    }
+
+  return ret;
+}

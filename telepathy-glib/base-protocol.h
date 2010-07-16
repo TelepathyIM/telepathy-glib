@@ -138,6 +138,9 @@ const TpCMParamSpec *tp_base_protocol_get_parameters (TpBaseProtocol *self);
 TpBaseConnection *tp_base_protocol_new_connection (TpBaseProtocol *self,
     GHashTable *asv, GError **error);
 
+GPtrArray *tp_base_protocol_build_requestable_channel_classes (
+    GType *channel_managers, gssize n);
+
 G_END_DECLS
 
 #endif
