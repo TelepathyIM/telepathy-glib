@@ -1,4 +1,4 @@
-vapidir = $(datarootdir)/telepathy/vapi
+vapidir = $(datarootdir)/vala/vapi
 vapi_DATA = \
 	telepathy-glib.vapi \
 	telepathy-glib.deps \
