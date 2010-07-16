@@ -123,9 +123,11 @@ get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
 
   if (requestable_channel_classes != NULL)
     {
-      *requestable_channel_classes = g_ptr_array_new ();
-      example_echo_2_im_manager_append_channel_classes (
-          *requestable_channel_classes);
+      GType types[] = { EXAMPLE_TYPE_ECHO_2_IM_MANAGER };
+
+      *requestable_channel_classes =
+        tp_base_protocol_build_requestable_channel_classes (types,
+            G_N_ELEMENTS (types));
     }
 
   if (icon_name != NULL)
