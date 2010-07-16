@@ -98,6 +98,31 @@ struct _TpBaseProtocol
   TpBaseProtocolPrivate *priv;
 };
 
+typedef const TpCMParamSpec *(*TpBaseProtocolGetParametersFunc) (
+    TpBaseProtocol *self);
+
+typedef TpBaseConnection *(*TpBaseProtocolNewConnectionFunc) (
+    TpBaseProtocol *self,
+    GHashTable *asv,
+    GError **error);
+
+typedef gchar *(*TpBaseProtocolNormalizeContactFunc) (TpBaseProtocol *self,
+    const gchar *contact,
+    GError **error);
+
+typedef gchar *(*TpBaseProtocolIdentifyAccountFunc) (TpBaseProtocol *self,
+    GHashTable *asv,
+    GError **error);
+
+typedef GStrv (*TpBaseProtocolGetInterfacesFunc) (TpBaseProtocol *self);
+
+typedef void (*TpBaseProtocolGetConnectionDetailsFunc) (TpBaseProtocol *self,
+    GStrv *connection_interfaces,
+    GType **channel_manager_types,
+    gchar **icon_name,
+    gchar **english_name,
+    gchar **vcard_field);
+
 struct _TpBaseProtocolClass
 {
   GObjectClass parent_class;

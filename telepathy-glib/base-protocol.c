@@ -275,6 +275,102 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
+ * TpBaseProtocolGetParametersFunc:
+ * @self: a protocol
+ *
+ * Signature of a virtual method to get the allowed parameters for connections
+ * to a protocol.
+ *
+ * Returns the parameters supported by this protocol, as an array of structs
+ * which must remain valid at least as long as @self exists (it will typically
+ * be a global static array).
+ *
+ * Returns: (transfer none) (array zero-terminated=1): a description of the
+ *  parameters supported by this protocol
+ */
+
+/**
+ * TpBaseProtocolNewConnectionFunc:
+ * @self: a protocol
+ * @asv: (transfer none) (element-type utf8 GObject.Value): the parameters
+ *  provided via D-Bus
+ * @error: used to return an error if %NULL is returned
+ *
+ * Signature of a virtual method to create a new connection to this protocol.
+ * This is used to implement the RequestConnection D-Bus method.
+ *
+ * Implementations of #TpBaseProtocolClass.new_connection may assume that
+ * the parameters in @asv conform to the specifications given by
+ * #TpBaseProtocolClass.get_parameters.
+ *
+ * Returns: (transfer full): a new connection, or %NULL on error
+ */
+
+/**
+ * TpBaseProtocolNormalizeContactFunc:
+ * @self: a protocol
+ * @contact: a contact's identifier
+ * @error: used to return an error if %NULL is returned
+ *
+ * Signature of a virtual method to perform best-effort offline normalization
+ * of a contact's identifier. It must either return a newly allocated string
+ * that is the normalized form of @contact, or raise an error and return %NULL.
+ *
+ * Returns: (transfer full): a normalized identifier, or %NULL on error
+ */
+
+/**
+ * TpBaseProtocolIdentifyAccountFunc:
+ * @self: a protocol
+ * @asv: parameters that might be passed to the RequestConnection D-Bus method
+ * @error: used to return an error if %NULL is returned
+ *
+ * Signature of a virtual method to choose a unique name for an account whose
+ * connection parameters are @asv. This will typically return a copy of
+ * the 'account' parameter from @asv, but may do something more complex (for
+ * instance, on IRC it could combine the nickname and the IRC network).
+ *
+ * Implementations of #TpBaseProtocolClass.identify_account may assume that
+ * the parameters in @asv conform to the specifications given by
+ * #TpBaseProtocolClass.get_parameters.
+ *
+ * Returns: (transfer full): a unique name for the account, or %NULL on error
+ */
+
+/**
+ * TpBaseProtocolGetInterfacesFunc:
+ * @self: a protocol
+ *
+ * Signature of a virtual method to get the D-Bus interfaces implemented by
+ * @self, in addition to the Protocol interface.
+ *
+ * Returns: (transfer full): a %NULL-terminated array of D-Bus interface names
+ */
+
+/**
+ * TpBaseProtocolGetConnectionDetailsFunc:
+ * @self: a protocol
+ * @connection_interfaces: (out) (transfer full): used to return a
+ *  %NULL-terminated array of interfaces which might be implemented on
+ *  connections to this protocol
+ * @channel_manager_types: (out) (transfer full) (array zero-terminated=1):
+ *  used to return a %G_TYPE_INVALID-terminated array of types that implement
+ *  #TpChannelManager, which must include all channel managers that might be
+ *  present on connections to this protocol; the channel managers should
+ *  all implement #TpChannelManagerIface.type_foreach_channel_class. The
+ *  array will be freed with g_free() by the caller.
+ * @icon_name: (out) (transfer full): used to return the name of an icon
+ *  for this protocol, such as "im-icq", or an empty string
+ * @english_name: (out) (transfer full): used to return a human-readable
+ *  but non-localized name for this protocol, or an empty string
+ * @vcard_field: (out) (transfer full): used to return the name of the vCard
+ *  field typically used with this protocol, or an empty string
+ *
+ * Signature of a virtual method to get the D-Bus interfaces implemented by
+ * @self, in addition to the Protocol interface.
+ */
+
+/**
  * TpBaseProtocolClass:
  * @parent_class: the parent class
  * @dbus_properties_class: a D-Bus properties mixin
@@ -289,7 +385,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * @normalize_contact: a callback used to implement the NormalizeContact
  *  D-Bus method; it must either return a newly allocated string that is the
  *  normalized version of @contact, or raise an error via @error and
- *  return %NULL
+ *  return %NULL. If not implemented, %TP_ERROR_NOT_IMPLEMENTED will be raised
+ *  instead.
  * @identify_account: a callback used to implement the IdentifyAccount
  *  D-Bus method; it takes as input a map from strings to #GValue<!---->s,
  *  and must either return a newly allocated string that represents the

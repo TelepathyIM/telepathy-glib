@@ -4110,11 +4110,18 @@ TpSimpleHandlerPrivate
 <FILE>base-protocol</FILE>
 <TITLE>base-protocol</TITLE>
 TpBaseProtocol
-TpBaseProtocolClass
 tp_base_protocol_get_name
 tp_base_protocol_get_immutable_properties
 tp_base_protocol_get_parameters
 tp_base_protocol_new_connection
+<SUBSECTION>
+TpBaseProtocolClass
+TpBaseProtocolGetParametersFunc
+TpBaseProtocolNewConnectionFunc
+TpBaseProtocolNormalizeContactFunc
+TpBaseProtocolIdentifyAccountFunc
+TpBaseProtocolGetInterfacesFunc
+TpBaseProtocolGetConnectionDetailsFunc
 <SUBSECTION Standard>
 tp_base_protocol_get_type
 TP_BASE_PROTOCOL
