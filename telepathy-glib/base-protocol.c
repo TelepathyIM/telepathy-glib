@@ -391,17 +391,32 @@ tp_base_protocol_constructed (GObject *object)
   if (cls->get_connection_details != NULL)
     {
       GType *channel_managers = NULL;
+      gchar *vcard_field = NULL;
 
       (cls->get_connection_details) (self,
           &self->priv->connection_interfaces,
           &channel_managers,
           &self->priv->icon,
           &self->priv->english_name,
-          &self->priv->vcard_field);
+          &vcard_field);
 
       self->priv->requestable_channel_classes =
         tp_base_protocol_build_requestable_channel_classes (channel_managers);
       g_free (channel_managers);
+
+      /* normalize the case-insensitive vCard field to lower-case, and make
+       * sure the strings are non-NULL */
+      if (self->priv->icon == NULL)
+        self->priv->icon = g_strdup ("");
+
+      if (self->priv->english_name == NULL)
+        self->priv->english_name = g_strdup ("");
+
+      if (vcard_field == NULL)
+        vcard_field = g_strdup ("");
+
+      self->priv->vcard_field = g_ascii_strdown (vcard_field, -1);
+      g_free (vcard_field);
     }
   else
     {
