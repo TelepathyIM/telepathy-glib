@@ -1610,11 +1610,12 @@ set_stream_sending (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
   else
     {
-      if (!self->priv->held) {
-        g_object_set (self->priv->fs_stream,
-            "direction", current_direction & ~(FS_DIRECTION_SEND),
-            NULL);
-      }
+      g_object_set (self->priv->fs_stream,
+          "direction", current_direction & ~(FS_DIRECTION_SEND),
+          NULL);
+
+      tf_stream_free_resource (self, FS_DIRECTION_SEND);
+
       self->priv->desired_direction &= ~(FS_DIRECTION_SEND);
     }
 }
