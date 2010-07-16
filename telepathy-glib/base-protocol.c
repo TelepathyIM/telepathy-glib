@@ -22,6 +22,7 @@
 #include <telepathy-glib/base-protocol-internal.h>
 
 #include <dbus/dbus-protocol.h>
+#include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/svc-protocol.h>
 #include <telepathy-glib/telepathy-glib.h>
 
@@ -332,6 +333,46 @@ enum
 };
 
 static void
+append_to_ptr_array (GType type G_GNUC_UNUSED,
+    GHashTable *table,
+    const gchar * const *allowed,
+    gpointer user_data)
+{
+  g_ptr_array_add (user_data, tp_value_array_build (2,
+        TP_HASH_TYPE_CHANNEL_CLASS, table,
+        G_TYPE_STRV, allowed,
+        G_TYPE_INVALID));
+}
+
+static GPtrArray *
+tp_base_protocol_build_requestable_channel_classes (
+    const GType *channel_managers)
+{
+  GPtrArray *ret = g_ptr_array_new ();
+  gsize i;
+
+  if (channel_managers != NULL)
+    {
+      for (i = 0; channel_managers[i] != G_TYPE_INVALID; i++)
+        {
+          if (!g_type_is_a (channel_managers[i], TP_TYPE_CHANNEL_MANAGER))
+            {
+              g_critical ("Channel manager type %s does not actually "
+                  "implement TpChannelManager",
+                  g_type_name (channel_managers[i]));
+            }
+          else
+            {
+              tp_channel_manager_type_foreach_channel_class (
+                  channel_managers[i], append_to_ptr_array, ret);
+            }
+        }
+    }
+
+  return ret;
+}
+
+static void
 tp_base_protocol_constructed (GObject *object)
 {
   TpBaseProtocol *self = (TpBaseProtocol *) object;
@@ -349,12 +390,18 @@ tp_base_protocol_constructed (GObject *object)
 
   if (cls->get_connection_details != NULL)
     {
+      GType *channel_managers = NULL;
+
       (cls->get_connection_details) (self,
           &self->priv->connection_interfaces,
-          &self->priv->requestable_channel_classes,
+          &channel_managers,
           &self->priv->icon,
           &self->priv->english_name,
           &self->priv->vcard_field);
+
+      self->priv->requestable_channel_classes =
+        tp_base_protocol_build_requestable_channel_classes (channel_managers);
+      g_free (channel_managers);
     }
   else
     {
@@ -1098,32 +1145,4 @@ protocol_iface_init (TpSvcProtocolClass *cls)
   IMPLEMENT (normalize_contact);
   IMPLEMENT (identify_account);
 #undef IMPLEMENT
-}
-
-static void
-append_to_ptr_array (GType type G_GNUC_UNUSED,
-    GHashTable *table,
-    const gchar * const *allowed,
-    gpointer user_data)
-{
-  g_ptr_array_add (user_data, tp_value_array_build (2,
-        TP_HASH_TYPE_CHANNEL_CLASS, table,
-        G_TYPE_STRV, allowed,
-        G_TYPE_INVALID));
-}
-
-GPtrArray *
-tp_base_protocol_build_requestable_channel_classes (GType *channel_managers,
-    gssize n)
-{
-  GPtrArray *ret = g_ptr_array_new ();
-  gssize i;
-
-  for (i = 0; i < n || (n < 0 && channel_managers[i] != G_TYPE_INVALID); i++)
-    {
-      tp_channel_manager_type_foreach_channel_class (channel_managers[i],
-          append_to_ptr_array, ret);
-    }
-
-  return ret;
 }

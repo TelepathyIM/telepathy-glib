@@ -120,7 +120,7 @@ struct _TpBaseProtocolClass
 
   void (*get_connection_details) (TpBaseProtocol *self,
       GStrv *connection_interfaces,
-      GPtrArray **requestable_channel_classes,
+      GType **channel_manager_types,
       gchar **icon_name,
       gchar **english_name,
       gchar **vcard_field);
@@ -137,9 +137,6 @@ const TpCMParamSpec *tp_base_protocol_get_parameters (TpBaseProtocol *self);
 
 TpBaseConnection *tp_base_protocol_new_connection (TpBaseProtocol *self,
     GHashTable *asv, GError **error);
-
-GPtrArray *tp_base_protocol_build_requestable_channel_classes (
-    GType *channel_managers, gssize n);
 
 G_END_DECLS
 

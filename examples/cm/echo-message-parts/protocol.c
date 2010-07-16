@@ -110,7 +110,7 @@ get_interfaces (TpBaseProtocol *self)
 static void
 get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
     GStrv *connection_interfaces,
-    GPtrArray **requestable_channel_classes,
+    GType **channel_managers,
     gchar **icon_name,
     gchar **english_name,
     gchar **vcard_field)
@@ -121,13 +121,11 @@ get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
           (GStrv) example_echo_2_connection_get_possible_interfaces ());
     }
 
-  if (requestable_channel_classes != NULL)
+  if (channel_managers != NULL)
     {
-      GType types[] = { EXAMPLE_TYPE_ECHO_2_IM_MANAGER };
+      GType types[] = { EXAMPLE_TYPE_ECHO_2_IM_MANAGER, G_TYPE_INVALID };
 
-      *requestable_channel_classes =
-        tp_base_protocol_build_requestable_channel_classes (types,
-            G_N_ELEMENTS (types));
+      *channel_managers = g_memdup (types, sizeof (types));
     }
 
   if (icon_name != NULL)
