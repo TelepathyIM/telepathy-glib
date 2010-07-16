@@ -130,6 +130,8 @@ TP_CHANNEL_FACTORY_IFACE_GET_CLASS
 <FILE>channel-manager</FILE>
 TpChannelManagerChannelClassFunc
 TpChannelManagerForeachChannelClassFunc
+TpChannelManagerTypeChannelClassFunc
+TpChannelManagerTypeForeachChannelClassFunc
 TpChannelManagerForeachChannelFunc
 TpChannelManagerRequestFunc
 <TITLE>TpChannelManager</TITLE>
@@ -147,6 +149,7 @@ tp_channel_manager_emit_request_failed_printf
 tp_channel_manager_ensure_channel
 tp_channel_manager_foreach_channel
 tp_channel_manager_foreach_channel_class
+tp_channel_manager_type_foreach_channel_class
 tp_channel_manager_request_channel
 <SUBSECTION Standard>
 TP_CHANNEL_MANAGER
