@@ -80,3 +80,7 @@ Makefile.in
 /tests/twisted/tools/exec-with-log.sh
 /tests/twisted/tools/org.freedesktop.Telepathy.Client.Logger.service
 /tests/twisted/tools/tmp-session-bus.conf
+
+/po/Makefile.in.in
+/po/POTFILES
+/po/stamp-it

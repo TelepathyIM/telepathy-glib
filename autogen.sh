@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 
+intltoolize --force --copy --automake || exit 1
 gtkdocize || exit 1
 
 if test -n "$AUTOMAKE"; then

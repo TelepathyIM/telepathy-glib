@@ -90,6 +90,7 @@ AM_PROG_LIBTOOL
 AM_PROG_MKDIR_P
 AM_PATH_GLIB_2_0
 AC_PATH_XTRA
+IT_PROG_INTLTOOL([0.35.0])
 GNOME_DOC_INIT([0.17.3])
 AC_PATH_PROG(DBUS_BINDING_TOOL, dbus-binding-tool)
 AC_PATH_PROG(GCONFTOOL, gconftool-2)
@@ -228,6 +229,7 @@ AC_OUTPUT([
    doc/reference/libtelepathy-logger/Makefile
    extensions/Makefile
    extensions/tpl-extensions.pc
+   po/Makefile.in
    src/Makefile
    telepathy-logger/Makefile
    telepathy-logger/telepathy-logger-0.1.pc
