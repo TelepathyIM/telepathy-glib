@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * Copyright (C) 2009 Collabora Ltd.
+ * Copyright (C) 2009-2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,12 +17,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
+ *          Danielle Madeley <danielle.madeley@collabora.co.uk>
  */
 
 #include "config.h"
 #include "conf-internal.h"
 
 #include <glib.h>
+#include <gio/gio.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CONF
 #include <telepathy-logger/debug-internal.h>
@@ -30,16 +33,16 @@
 
 #define GET_PRIV(o)     (G_TYPE_INSTANCE_GET_PRIVATE ((o), TPL_TYPE_CONF, TplConfPriv))
 
-#define GCONF_KEY_BASE "/apps/telepathy-logger/"
-#define GCONF_KEY_LOGGING_TURNED_ON GCONF_KEY_BASE "logging/turned_on"
-#define GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST GCONF_KEY_BASE "logging/accounts/ignorelist"
+#define GSETTINGS_SCHEMA "org.freedesktop.Telepathy.Logger"
+#define KEY_ENABLED "enabled"
+#define KEY_IGNORE_ACCOUNTS "ignore-accounts"
 
 G_DEFINE_TYPE (TplConf, _tpl_conf, G_TYPE_OBJECT)
 
 static TplConf *conf_singleton = NULL;
 
 typedef struct {
-    GConfClient *client;
+    GSettings *gsettings;
 } TplConfPriv;
 
 
@@ -50,10 +53,10 @@ tpl_conf_finalize (GObject *obj)
 
   priv = GET_PRIV (obj);
 
-  if (priv->client != NULL)
+  if (priv->gsettings != NULL)
     {
-      g_object_unref (priv->client);
-      priv->client = NULL;
+      g_object_unref (priv->gsettings);
+      priv->gsettings = NULL;
     }
 
   G_OBJECT_CLASS (_tpl_conf_parent_class)->finalize (obj);
@@ -89,7 +92,6 @@ tpl_conf_constructor (GType type,
 }
 
 
-
 static void
 _tpl_conf_class_init (TplConfClass *klass)
 {
@@ -102,29 +104,14 @@ _tpl_conf_class_init (TplConfClass *klass)
   g_type_class_add_private (object_class, sizeof (TplConfPriv));
 }
 
+
 static void
 _tpl_conf_init (TplConf *self)
 {
   TplConfPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_CONF, TplConfPriv);
 
-  priv->client = gconf_client_get_default ();
-}
-
-/**
- * _tpl_conf_get_gconf_client
- * @self: TplConf instance
- *
- * You probably won't need to and anyway you shoudln't access directly the
- * GConf client.
- * In case you *really* need, remember to ref/unref properly.
- *
- * Returns: an GConfClient instance, owned by the TplConfInstance.
- */
-GConfClient *
-_tpl_conf_get_gconf_client (TplConf *self)
-{
-  return GET_PRIV (self)->client;
+  priv->gsettings = g_settings_new (GSETTINGS_SCHEMA);
 }
 
 
@@ -147,54 +134,20 @@ _tpl_conf_dup (void)
 /**
  * _tpl_conf_is_globally_enabled
  * @self: a TplConf instance
- * @error: memory adress where to store a GError, in case of error, or %NULL
- * to ignore error reporting.
  *
- * Wether TPL is globally enabled or not. If it's not globally enabled, no
+ * Whether TPL is globally enabled or not. If it's not globally enabled, no
  * signals will be logged at all.
  * To enable/disable a single account use _tpl_conf_set_accounts_ignorelist()
  *
- * Returns: %TRUE if TPL logging is globally enable, otherwise returns %FALSE
- * and @error will be used.
+ * Returns: %TRUE if TPL logging is globally enabled, otherwise returns
+ * %FALSE.
  */
 gboolean
-_tpl_conf_is_globally_enabled (TplConf *self,
-    GError **error)
+_tpl_conf_is_globally_enabled (TplConf *self)
 {
-  GConfValue *value;
-  gboolean ret;
-  GError *loc_error = NULL;
+  g_return_val_if_fail (TPL_IS_CONF (self), FALSE);
 
-  if (!TPL_IS_CONF (self))
-    {
-      g_set_error_literal (error, TPL_CONF_ERROR, TPL_CONF_ERROR_GCONF_KEY,
-          "arg1 passed to tpl_conf_is_globally_enabled is not TplConf instance");
-      return FALSE;
-    }
-
-  value = gconf_client_get (GET_PRIV (self)->client,
-      GCONF_KEY_LOGGING_TURNED_ON, &loc_error);
-  if (loc_error != NULL)
-    {
-      DEBUG ("Accessing " GCONF_KEY_LOGGING_TURNED_ON ": %s",
-          loc_error->message);
-      g_propagate_error (error, loc_error);
-      g_error_free (loc_error);
-
-      return TRUE;
-    }
-
-  if (value == NULL)
-    {
-      /* built in default is to log */
-      DEBUG ("No value set or schema installed, defaulting to log");
-      return TRUE;
-    }
-
-  ret = gconf_value_get_bool (value);
-  gconf_value_free (value);
-
-  return ret;
+  return g_settings_get_boolean (GET_PRIV (self)->gsettings, KEY_ENABLED);
 }
 
 
@@ -202,8 +155,6 @@ _tpl_conf_is_globally_enabled (TplConf *self,
  * _tpl_conf_globally_enable
  * @self: a TplConf instance
  * @enable: wether to globally enable or globally disable logging.
- * @error: memory adress where to store a GError, in case of error, or %NULL
- * to ignore error reporting.
  *
  * Globally enables or disables logging for TPL. If it's globally disabled, no
  * signals will be logged at all.
@@ -213,67 +164,34 @@ _tpl_conf_is_globally_enabled (TplConf *self,
  */
 void
 _tpl_conf_globally_enable (TplConf *self,
-    gboolean enable,
-    GError **error)
+    gboolean enable)
 {
-  GError *loc_error = NULL;
-
   g_return_if_fail (TPL_IS_CONF (self));
 
-  gconf_client_set_bool (GET_PRIV (self)->client,
-      GCONF_KEY_LOGGING_TURNED_ON, enable, &loc_error);
-
-  /* According to GConf ref manual, an error is raised only if <key> is
-   * actually holding a different type than gboolean. It means something wrong
-   * is happening outside the library.
-   *
-   * TODO: is it better to return a GError as well? The above situation is not
-   * a real run-time error and can occur only on bad updated systems. 99.9% of
-   * times the schema+APIs will match and no error will be raised.
-   */
-  if (loc_error != NULL)
-    {
-      CRITICAL ("Probably the Telepathy-Logger GConf's schema has changed "
-          "and you're using an out of date library\n");
-      g_propagate_error (error, loc_error);
-      g_error_free (loc_error);
-      return;
-    }
+  g_settings_set_boolean (GET_PRIV (self)->gsettings,
+      KEY_ENABLED, enable);
 }
 
 
+#if 0
 /**
  * _tpl_conf_get_accounts_ignorelist
  * @self: a TplConf instance
- * @error: memory adress where to store a GError, in case of error, or %NULL
- * to ignore error reporting.
  *
  * The list of ignored accounts. If an account is ignored, no signals for this
  * account will be logged.
  *
- * Returns: a GList of (gchar *) contaning ignored accounts' object paths or
- * %NULL with @error set otherwise.
+ * Returns: a GList of (gchar *) contaning ignored accounts' object paths
  */
 GSList *
-_tpl_conf_get_accounts_ignorelist (TplConf *self,
-    GError **error)
+_tpl_conf_get_accounts_ignorelist (TplConf *self)
 {
-  GSList *ret;
-  GError *loc_error = NULL;
+  GSList *ret = NULL;
+  GVariant *v;
 
   g_return_val_if_fail (TPL_IS_CONF (self), NULL);
 
-  ret = gconf_client_get_list (GET_PRIV (self)->client,
-      GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST, GCONF_VALUE_STRING,
-      &loc_error);
-  if (loc_error != NULL)
-    {
-      g_warning ("Accessing " GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST": %s",
-          loc_error->message);
-      g_propagate_error (error, loc_error);
-      g_error_free (loc_error);
-      return NULL;
-    }
+  v = g_settings_get_value (GET_PRIV (self)->gsettings, KEY_IGNORE_ACCOUNTS);
 
   return ret;
 }
@@ -284,8 +202,6 @@ _tpl_conf_get_accounts_ignorelist (TplConf *self,
  * @self: a TplConf instance
  * @newlist: a new GList containing account's object paths (gchar *) to be
  * ignored
- * @error: memory adress where to store a GError, in case of error, or %NULL
- * to ignore error reporting.
  *
  * Globally disables logging for @newlist account's path. If an account is
  * disabled, no signals for such account will be logged.
@@ -296,78 +212,45 @@ _tpl_conf_get_accounts_ignorelist (TplConf *self,
  */
 void
 _tpl_conf_set_accounts_ignorelist (TplConf *self,
-    GSList *newlist,
-    GError **error)
+    GSList *newlist)
 {
-  GError *loc_error = NULL;
-
   g_return_if_fail (TPL_IS_CONF (self));
-
-  gconf_client_set_list (GET_PRIV (self)->client,
-      GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST, GCONF_VALUE_STRING,
-      newlist, &loc_error);
-
-  /* According to GConf ref manual, an error is raised only if <key> is
-   * actually holding a differnt type than list. It means something wrong
-   * is happening outside the library.
-   *
-   * The above situation can occur only on bad updated systems. 99.9% of times
-   * the schema+APIs will match and no error will be raised.
-   */
-  if (loc_error != NULL)
-    {
-      CRITICAL ("Probably the Telepathy-Logger GConf's schema has changed "
-          "and you're using an out of date library\n");
-      g_propagate_error (error, loc_error);
-      g_error_free (loc_error);
-      return;
-    }
 }
+#endif
 
 
 /**
  * _tpl_conf_is_account_ignored
  * @self: a TplConf instance
  * @account_path: a TpAccount object-path
- * @error: memory adress where to store a GError, in case of error, or %NULL
- * to ignore error reporting.
  *
- * Wether @account_path is enabled or disable (aka ignored).
+ * Whether @account_path is enabled or disabled (aka ignored).
  *
- * Returns: %TRUE if @account_path is ignored, %FALSE if it's not or %FALSE
- * and @error set if an error occurs.
+ * Returns: %TRUE if @account_path is ignored, %FALSE otherwise
  */
 gboolean
 _tpl_conf_is_account_ignored (TplConf *self,
-    const gchar *account_path,
-    GError **error)
+    const gchar *account_path)
 {
-  GError *loc_error = NULL;
-  GSList *ignored_list;
-  GSList *found_element;
+  GVariant *v, *child;
+  GVariantIter iter;
+  gboolean found = FALSE;
 
   g_return_val_if_fail (TPL_IS_CONF (self), FALSE);
   g_return_val_if_fail (!TPL_STR_EMPTY (account_path), FALSE);
 
-  ignored_list = gconf_client_get_list (GET_PRIV (self)->client,
-      GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST, GCONF_VALUE_STRING,
-      &loc_error);
-  if (loc_error != NULL)
+  v = g_settings_get_value (GET_PRIV (self)->gsettings, KEY_IGNORE_ACCOUNTS);
+  g_variant_iter_init (&iter, v);
+  while (!found && (child = g_variant_iter_next_value (&iter)))
     {
-      g_warning ("Accessing " GCONF_KEY_LOGGING_ACCOUNTS_IGNORELIST": %s",
-          loc_error->message);
-      g_propagate_error (error, loc_error);
-      g_clear_error (&loc_error);
-      g_error_free (loc_error);
-      return FALSE;
+      const gchar *o = g_variant_get_string (child, NULL);
+
+      found = !tp_strdiff (o, account_path);
+
+      g_variant_unref (child);
     }
 
-  found_element = g_slist_find_custom (ignored_list,
-        account_path, (GCompareFunc) g_strcmp0);
-  if (found_element != NULL)
-    {
-      return TRUE;
-    }
+  g_variant_unref (v);
 
-  return FALSE;
+  return found;
 }

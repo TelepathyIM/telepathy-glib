@@ -22,7 +22,6 @@
 #ifndef __TPL_CONF_H__
 #define __TPL_CONF_H__
 
-#include <gconf/gconf-client.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
@@ -33,16 +32,6 @@ G_BEGIN_DECLS
 #define TPL_IS_CONF(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CONF))
 #define TPL_IS_CONF_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CONF))
 #define TPL_CONF_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CONF, TplConfClass))
-
-#define TPL_CONF_ERROR g_quark_from_static_string ("tpl-conf-error-quark")
-
-typedef enum
-{
-  /* generic error */
-  TPL_CONF_ERROR_FAILED,
-  /* GCONF KEY ERROR */
-  TPL_CONF_ERROR_GCONF_KEY
-} TplConfError;
 
 typedef struct
 {
@@ -58,21 +47,15 @@ typedef struct
 } TplConfClass;
 
 GType _tpl_conf_get_type (void);
+TplConf *_tpl_conf_dup (void);
 
-TplConf * _tpl_conf_dup (void);
+gboolean  _tpl_conf_is_globally_enabled (TplConf *self);
+gboolean _tpl_conf_is_account_ignored (TplConf *self,
+    const gchar *account_path);
+// GSList *_tpl_conf_get_accounts_ignorelist (TplConf *self);
 
-GConfClient * _tpl_conf_get_gconf_client (TplConf *self);
-
-gboolean  _tpl_conf_is_globally_enabled (TplConf * self, GError **error);
-
-gboolean _tpl_conf_is_account_ignored (TplConf *self, const gchar *account_path, GError **error);
-
-GSList * _tpl_conf_get_accounts_ignorelist (TplConf * self, GError **error);
-
-void _tpl_conf_globally_enable (TplConf *self, gboolean enable, GError **error);
-
-void _tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist,
-    GError **error);
+void _tpl_conf_globally_enable (TplConf *self, gboolean enable);
+// void _tpl_conf_set_accounts_ignorelist (TplConf *self, GSList *newlist);
 G_END_DECLS
 
 #endif // __TPL_CONF_H__
