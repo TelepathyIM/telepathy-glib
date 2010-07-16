@@ -66,7 +66,7 @@ AC_COPYRIGHT([
 ])
 
 # Minimal version required
-GLIB_REQUIRED=2.22.0
+GLIB_REQUIRED=2.25.11
 DBUS_REQUIRED=1.1.0
 DBUS_GLIB_REQUIRED=0.82
 TELEPATHY_GLIB_REQUIRED=0.11.7
@@ -93,8 +93,7 @@ AC_PATH_XTRA
 IT_PROG_INTLTOOL([0.35.0])
 GNOME_DOC_INIT([0.17.3])
 AC_PATH_PROG(DBUS_BINDING_TOOL, dbus-binding-tool)
-AC_PATH_PROG(GCONFTOOL, gconftool-2)
-AM_GCONF_SOURCE_2
+GLIB_GSETTINGS
 GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
 AC_SUBST(GLIB_GENMARSHAL)
 
@@ -159,7 +158,6 @@ AC_SUBST(ERROR_CFLAGS)
 # -----------------------------------------------------------
 
 LIBTPL_MODULES="""
-               gconf-2.0
                gio-2.0
                glib-2.0 >= $GLIB_REQUIRED
                gobject-2.0

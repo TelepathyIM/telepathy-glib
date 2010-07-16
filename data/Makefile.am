@@ -1,5 +1,9 @@
-schemasdir	 = $(GCONF_SCHEMA_FILE_DIR)
-schemas_DATA 	 = telepathy-logger.schemas
+gsettings_files = \
+	org.freedesktop.Telepathy.Logger.gschema.xml.in \
+	$(NULL)
+gsettings_SCHEMAS = $(gsettings_files:.xml.in=.xml)
+@INTLTOOL_XML_NOMERGE_RULE@
+@GSETTINGS_RULES@
 
 servicefiledir = $(datadir)/dbus-1/services
 servicefile_in_files = \
@@ -12,22 +16,11 @@ servicefile_DATA = $(servicefile_in_files:.service.in=.service)
 clientfiledir = $(datarootdir)/telepathy/clients
 clientfile_DATA = Logger.client
 
-if GCONF_SCHEMAS_INSTALL
-install-data-local:
-	if test -z "$(DESTDIR)" ; then \
-	  for p in $(schemas_DATA) ; do \
-	    GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) $(GCONFTOOL) --makefile-install-rule $$p ; \
-	  done \
-	fi
-else
-install-data-local:
-endif
-
 EXTRA_DIST = 				\
-	$(schemas_in_files)		\
-	$(schemas_DATA)			\
+	$(gsettings_files)		\
 	$(clientfile_DATA)		\
 	$(servicefile_in_files)
 
-CLEANFILES = 		\
+CLEANFILES = \
+	$(gsettings_SCHEMAS) \
 	$(servicefile_DATA)

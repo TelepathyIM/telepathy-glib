@@ -48,6 +48,8 @@ Makefile.in
 
 /data/*.client
 /data/*.service
+/data/org.freedesktop.Telepathy.Logger.gschema.valid
+/data/org.freedesktop.Telepathy.Logger.gschema.xml
 
 /doc/reference/libtelepathy-logger/*.stamp
 /doc/reference/libtelepathy-logger/*.bak
