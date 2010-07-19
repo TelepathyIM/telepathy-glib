@@ -231,6 +231,17 @@ _tpl_observer_register_channel (TplObserver *self,
 }
 
 static void
+_globally_enabled_changed (TplConf *conf,
+    GParamSpec *pspec,
+    TplObserver *self)
+{
+  gboolean enabled = _tpl_conf_is_globally_enabled (conf);
+
+  DEBUG ("Globally %s all logging",
+      enabled ? "enabling" : "disabling");
+}
+
+static void
 got_tpl_channel_text_ready_cb (GObject *obj,
     GAsyncResult *result,
     gpointer user_data)
@@ -368,6 +379,9 @@ _tpl_observer_init (TplObserver *self)
       NULL, g_object_unref);
 
   priv->logmanager = tpl_log_manager_dup_singleton ();
+
+  g_signal_connect (priv->conf, "notify::globally-enabled",
+      G_CALLBACK (_globally_enabled_changed), self);
 
   /* Observe contact text channels */
   tp_base_client_take_observer_filter (TP_BASE_CLIENT (self),

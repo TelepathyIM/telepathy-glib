@@ -45,6 +45,65 @@ typedef struct {
 } TplConfPriv;
 
 
+enum /* properties */
+{
+  PROP_0,
+  PROP_GLOBALLY_ENABLED
+};
+
+
+static void
+_notify_globally_enable (GSettings *gsettings,
+    const gchar *key,
+    GObject *self)
+{
+  g_object_notify (self, "globally-enabled");
+}
+
+
+static void
+tpl_conf_get_property (GObject *self,
+    guint prop_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TplConfPriv *priv = GET_PRIV (self);
+
+  switch (prop_id)
+    {
+      case PROP_GLOBALLY_ENABLED:
+        g_value_set_boolean (value,
+            g_settings_get_boolean (priv->gsettings, KEY_ENABLED));
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (self, prop_id, pspec);
+        break;
+    }
+}
+
+static void
+tpl_conf_set_property (GObject *self,
+    guint prop_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TplConfPriv *priv = GET_PRIV (self);
+
+  switch (prop_id)
+    {
+      case PROP_GLOBALLY_ENABLED:
+        g_settings_set_boolean (priv->gsettings, KEY_ENABLED,
+            g_value_get_boolean (value));
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (self, prop_id, pspec);
+        break;
+    }
+}
+
+
 static void
 tpl_conf_finalize (GObject *obj)
 {
@@ -89,8 +148,17 @@ _tpl_conf_class_init (TplConfClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+  object_class->get_property = tpl_conf_get_property;
+  object_class->set_property = tpl_conf_set_property;
   object_class->finalize = tpl_conf_finalize;
   object_class->constructor = tpl_conf_constructor;
+
+  g_object_class_install_property (object_class, PROP_GLOBALLY_ENABLED,
+      g_param_spec_boolean ("globally-enabled",
+        "Globally Enabled",
+        "TRUE if logging is enabled (may still be disabled for specific users)",
+        TRUE,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE));
 
   g_type_class_add_private (object_class, sizeof (TplConfPriv));
 }
@@ -103,6 +171,9 @@ _tpl_conf_init (TplConf *self)
       TPL_TYPE_CONF, TplConfPriv);
 
   priv->gsettings = g_settings_new (GSETTINGS_SCHEMA);
+
+  g_signal_connect (priv->gsettings, "changed::" KEY_ENABLED,
+      G_CALLBACK (_notify_globally_enable), self);
 }
 
 
