@@ -1650,6 +1650,8 @@ tp_base_contact_list_set_list_pending (TpBaseContactList *self)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_WAITING;
+  tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
+      self->priv->conn, self->priv->state);
 }
 
 /**
@@ -1679,6 +1681,9 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
   self->priv->state = TP_CONTACT_LIST_STATE_FAILURE;
   g_assert (self->priv->failure == NULL);
   self->priv->failure = g_error_new_literal (domain, code, message);
+  tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
+      self->priv->conn, self->priv->state);
+
   tp_base_contact_list_fail_channel_requests (self, domain, code, message);
 }
 
@@ -1716,6 +1721,8 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_SUCCESS;
+  tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
+      self->priv->conn, self->priv->state);
 
   if (self->priv->lists[TP_LIST_HANDLE_SUBSCRIBE] == NULL)
     {
