@@ -96,8 +96,25 @@
       <tp:added version="0.19.UNRELEASED">(in draft 3)</tp:added>
       <tp:docstring>
         The progress made in retrieving the contact list.
+        Change notification is via
+        <tp:member-ref>ContactListStateChanged</tp:member-ref>.
       </tp:docstring>
     </property>
+
+    <signal name="ContactListStateChanged"
+      tp:name-for-bindings="Contact_List_State_Changed">
+      <tp:added version="0.19.UNRELEASED">(in draft 3)</tp:added>
+      <tp:docstring>
+        Emitted when <tp:member-ref>ContactListState</tp:member-ref>
+        changes.
+      </tp:docstring>
+
+      <arg name="Contact_List_State" type="u" tp:type="Contact_List_State">
+        <tp:docstring>
+          The new value of <tp:member-ref>ContactListState</tp:member-ref>.
+        </tp:docstring>
+      </arg>
+    </signal>
 
     <method name="GetContactListAttributes"
       tp:name-for-bindings="Get_Contact_List_Attributes">
