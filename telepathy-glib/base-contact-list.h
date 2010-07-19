@@ -58,6 +58,11 @@ GType tp_base_contact_list_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_CONTACT_LIST, \
                               TpBaseContactListClass))
 
+/* ---- Utility stuff which subclasses can use ---- */
+
+gboolean tp_base_contact_list_check_still_usable (TpBaseContactList *self,
+    GError **error);
+
 /* ---- Called by subclasses for ContactList (or both) ---- */
 
 void tp_base_contact_list_set_list_pending (TpBaseContactList *self);

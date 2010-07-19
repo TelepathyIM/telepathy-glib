@@ -439,10 +439,22 @@ tp_base_contact_list_init (TpBaseContactList *self)
   self->priv->channel_requests = g_hash_table_new (NULL, NULL);
 }
 
-static gboolean
+/**
+ * tp_base_contact_list_check_still_usable:
+ * @self: a contact list
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Return %FALSE and set @error if this contact list's connection has
+ * disconnected, or if retrieval of the contact list has failed.
+ *
+ * Returns: %TRUE if this contact list is still potentially usable
+ */
+gboolean
 tp_base_contact_list_check_still_usable (TpBaseContactList *self,
     GError **error)
 {
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
+
   if (self->priv->failure != NULL)
     {
       g_set_error_literal (error, self->priv->failure->domain,
