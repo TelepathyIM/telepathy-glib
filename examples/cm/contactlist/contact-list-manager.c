@@ -42,6 +42,7 @@ typedef struct {
     guint publish:1;
     guint pre_approved:1;
     guint subscribe_requested:1;
+    guint subscribe_rejected:1;
     guint publish_requested:1;
     gchar *publish_request;
 
@@ -580,7 +581,8 @@ send_updated_roster (ExampleContactListManager *self,
           (d->publish_requested ? "no, but has requested it" : "no"));
       g_message ("\tsends us presence = %s",
           d->subscribe ? "yes" :
-          (d->subscribe_requested ? "no, but we have requested it" : "no"));
+          (d->subscribe_requested ? "no, but we have requested it" :
+           (d->subscribe_rejected ? "no, request refused" : "no")));
 
       if (d->tags == NULL || g_hash_table_size (d->tags) == 0)
         {
@@ -860,6 +862,7 @@ receive_authorized (gpointer p)
     return FALSE;
 
   d->subscribe_requested = FALSE;
+  d->subscribe_rejected = FALSE;
   d->subscribe = TRUE;
 
   set = tp_handle_set_new (s->self->priv->contact_repo);
@@ -906,6 +909,7 @@ receive_unauthorized (gpointer p)
     return FALSE;
 
   d->subscribe_requested = FALSE;
+  d->subscribe_rejected = TRUE;
   d->subscribe = FALSE;
 
   set = tp_handle_set_new (s->self->priv->contact_repo);
@@ -1047,18 +1051,22 @@ static const ExampleContactDetails no_details = {
     FALSE,
     FALSE,
     FALSE,
+    FALSE,
     "",
     NULL
 };
 
 static inline TpSubscriptionState
 compose_presence (gboolean full,
-    gboolean ask)
+    gboolean ask,
+    gboolean rejected)
 {
   if (full)
     return TP_SUBSCRIPTION_STATE_YES;
   else if (ask)
     return TP_SUBSCRIPTION_STATE_ASK;
+  else if (rejected)
+    return TP_SUBSCRIPTION_STATE_REJECTED;
   else
     return TP_SUBSCRIPTION_STATE_NO;
 }
@@ -1078,10 +1086,11 @@ example_contact_list_manager_get_states (TpBaseContactList *manager,
 
   if (subscribe != NULL)
     *subscribe = compose_presence (details->subscribe,
-        details->subscribe_requested);
+        details->subscribe_requested, details->subscribe_rejected);
 
   if (publish != NULL)
-    *publish = compose_presence (details->publish, details->publish_requested);
+    *publish = compose_presence (details->publish, details->publish_requested,
+        FALSE);
 
   if (publish_request != NULL)
     *publish_request = g_strdup (details->publish_request);
@@ -1122,6 +1131,7 @@ example_contact_list_manager_request_subscription_async (
 
       if (created || !d->subscribe_requested)
         {
+          d->subscribe_rejected = FALSE;
           d->subscribe_requested = TRUE;
           send_updated_roster (self, member);
         }
@@ -1307,6 +1317,12 @@ example_contact_list_manager_unsubscribe_async (TpBaseContactList *manager,
               g_message ("Cancelling our authorization request to %s",
                   tp_handle_inspect (self->priv->contact_repo, member));
               d->subscribe_requested = FALSE;
+            }
+          else if (d->subscribe_rejected)
+            {
+              g_message ("Forgetting rejected authorization request to %s",
+                  tp_handle_inspect (self->priv->contact_repo, member));
+              d->subscribe_rejected = FALSE;
             }
           else if (d->subscribe)
             {

@@ -1425,9 +1425,9 @@ test_reject_subscribe_request (Test *test,
   test_assert_one_contact_changed (test, 0, test->ninja,
       TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, "");
   test_assert_one_contact_changed (test, 1, test->ninja,
-      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
+      TP_SUBSCRIPTION_STATE_REJECTED, TP_SUBSCRIPTION_STATE_NO, "");
   test_assert_contact_state (test, test->ninja,
-      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_REJECTED, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
