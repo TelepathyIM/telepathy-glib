@@ -146,14 +146,6 @@ tpl_observer_observe_channels (TpBaseClient *client,
 
       goto error;
     }
-  if (_tpl_conf_is_account_ignored (conf, tp_proxy_get_object_path (account)))
-    {
-      DEBUG ("Logging is disabled for account %s. "
-          "Channel associated to this account. "
-          "Skipping this channel logging.", tp_proxy_get_object_path (account));
-
-      goto error;
-    }
   g_object_unref (conf);
 
   /* Parallelize TplChannel preparations, when the last one will be ready, the

@@ -8,13 +8,5 @@
         "false" will completely disable all logging.
       </_description>
     </key>
-    <key name="ignore-accounts" type="ao">
-      <default>[]</default>
-      <_summary>Accounts for which logging is disabled</_summary>
-      <_description>
-        Disables logging for the named accounts, even when logging is globally
-        enabled. Object paths are Telepathy Account objects.
-      </_description>
-    </key>
   </schema>
 </schemalist>
