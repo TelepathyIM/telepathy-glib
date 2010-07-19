@@ -514,6 +514,8 @@ status_changed_cb (TpBaseConnection *conn,
           /* Do network I/O to get the contact list. This connection manager
            * doesn't really have a server, so simulate a small network delay
            * then invent a contact list */
+          tp_base_contact_list_set_list_pending ((TpBaseContactList *) self);
+
           g_timeout_add_full (G_PRIORITY_DEFAULT,
               2 * self->priv->simulation_delay, receive_contact_lists,
               g_object_ref (self), g_object_unref);
