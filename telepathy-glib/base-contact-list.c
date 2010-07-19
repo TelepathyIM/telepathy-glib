@@ -2820,6 +2820,9 @@ tp_base_contact_list_get_blocked_contacts (TpBaseContactList *self)
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->get_blocked_contacts != NULL, NULL);
+  g_return_val_if_fail (self->priv->had_contact_list, NULL);
+  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
+      NULL);
 
   return iface->get_blocked_contacts (self);
 }
@@ -3693,6 +3696,9 @@ tp_base_contact_list_get_groups (TpBaseContactList *self)
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->get_groups != NULL, NULL);
+  g_return_val_if_fail (self->priv->had_contact_list, NULL);
+  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
+      NULL);
 
   return iface->get_groups (self);
 }
@@ -3739,6 +3745,9 @@ tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->get_contact_groups != NULL, NULL);
+  g_return_val_if_fail (self->priv->had_contact_list, NULL);
+  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
+      NULL);
 
   return iface->get_contact_groups (self, contact);
 }
@@ -3781,6 +3790,9 @@ tp_base_contact_list_get_group_members (TpBaseContactList *self,
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->get_group_members != NULL, NULL);
+  g_return_val_if_fail (self->priv->had_contact_list, NULL);
+  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
+      NULL);
 
   return iface->get_group_members (self, group);
 }
