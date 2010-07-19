@@ -172,6 +172,9 @@
  *     that raising an error is preferable to disclosing the user's
  *     identity
  *     Since 0.11.7
+ * @TP_ERROR_NOT_YET: org.freedesktop.Telepathy.Error.NotYet:
+ *     Raised when a request has not finished yet, but will finish later
+ *     Since 0.11.UNRELEASED
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

@@ -1051,23 +1051,23 @@ static const ExampleContactDetails no_details = {
     NULL
 };
 
-static inline TpPresenceState
+static inline TpSubscriptionState
 compose_presence (gboolean full,
     gboolean ask)
 {
   if (full)
-    return TP_PRESENCE_STATE_YES;
+    return TP_SUBSCRIPTION_STATE_YES;
   else if (ask)
-    return TP_PRESENCE_STATE_ASK;
+    return TP_SUBSCRIPTION_STATE_ASK;
   else
-    return TP_PRESENCE_STATE_NO;
+    return TP_SUBSCRIPTION_STATE_NO;
 }
 
 static void
 example_contact_list_manager_get_states (TpBaseContactList *manager,
     TpHandle contact,
-    TpPresenceState *subscribe,
-    TpPresenceState *publish,
+    TpSubscriptionState *subscribe,
+    TpSubscriptionState *publish,
     gchar **publish_request)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
@@ -1627,7 +1627,7 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
   list_manager_class->get_states = example_contact_list_manager_get_states;
   /* for this example CM we pretend there is a server-stored contact list,
    * like in XMPP, even though there obviously isn't really */
-  list_manager_class->get_subscriptions_persist =
+  list_manager_class->get_contact_list_persists =
     tp_base_contact_list_true_func;
 
   g_type_class_add_private (klass, sizeof (ExampleContactListManagerPrivate));
@@ -1650,7 +1650,7 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
 static void
 mutable_contact_list_iface_init (TpMutableContactListInterface *iface)
 {
-  iface->can_change_subscriptions = tp_base_contact_list_true_func;
+  iface->can_change_contact_list = tp_base_contact_list_true_func;
   iface->get_request_uses_message = tp_base_contact_list_true_func;
   iface->request_subscription_async =
     example_contact_list_manager_request_subscription_async;

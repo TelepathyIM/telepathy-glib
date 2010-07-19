@@ -365,8 +365,8 @@ static void
 test_assert_one_contact_changed (Test *test,
     guint index,
     TpHandle handle,
-    TpPresenceState expected_sub_state,
-    TpPresenceState expected_pub_state,
+    TpSubscriptionState expected_sub_state,
+    TpSubscriptionState expected_pub_state,
     const gchar *expected_pub_request)
 {
   LogEntry *le;
@@ -561,8 +561,8 @@ test_properties (Test *test,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
   g_assert_no_error (error);
   g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
-  g_assert (tp_asv_get_boolean (asv, "SubscriptionsPersist", NULL));
-  g_assert (tp_asv_get_boolean (asv, "CanChangeSubscriptions", NULL));
+  g_assert (tp_asv_get_boolean (asv, "ContactListPersists", NULL));
+  g_assert (tp_asv_get_boolean (asv, "CanChangeContactList", NULL));
   g_assert (tp_asv_get_boolean (asv, "RequestUsesMessage", NULL));
   g_hash_table_unref (asv);
 
@@ -587,8 +587,8 @@ test_properties (Test *test,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
   g_assert_no_error (error);
   g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
-  g_assert (tp_asv_get_boolean (asv, "SubscriptionsPersist", NULL));
-  g_assert (tp_asv_get_boolean (asv, "CanChangeSubscriptions", NULL));
+  g_assert (tp_asv_get_boolean (asv, "ContactListPersists", NULL));
+  g_assert (tp_asv_get_boolean (asv, "CanChangeContactList", NULL));
   g_assert (tp_asv_get_boolean (asv, "RequestUsesMessage", NULL));
   g_hash_table_unref (asv);
 
@@ -626,8 +626,8 @@ contact_attrs_cb (TpConnection *conn G_GNUC_UNUSED,
 static void
 test_assert_contact_list_attrs (Test *test,
     TpHandle handle,
-    TpPresenceState expected_sub_state,
-    TpPresenceState expected_pub_state,
+    TpSubscriptionState expected_sub_state,
+    TpSubscriptionState expected_pub_state,
     const gchar *expected_pub_request)
 {
   GHashTable *asv;
@@ -689,8 +689,8 @@ test_assert_contact_groups_attr (Test *test,
 static void
 test_assert_contact_state (Test *test,
     TpHandle handle,
-    TpPresenceState expected_sub_state,
-    TpPresenceState expected_pub_state,
+    TpSubscriptionState expected_sub_state,
+    TpSubscriptionState expected_pub_state,
     const gchar *expected_pub_request,
     const gchar *expected_group)
 {
@@ -718,16 +718,16 @@ test_contacts (Test *test,
   test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
 
   test_assert_contact_state (test, test->sjoerd,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_YES, NULL, "Cambridge");
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
   test_assert_contact_state (test, test->wim,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_ASK,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_ASK,
       "I'm more metal than you!", NULL);
   test_assert_contact_state (test, test->helen,
-      TP_PRESENCE_STATE_ASK, TP_PRESENCE_STATE_NO, NULL, "Cambridge");
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, NULL, "Cambridge");
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
   test_assert_contact_state (test, test->bill,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -738,17 +738,17 @@ test_contact_list_attrs (Test *test,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
       NULL };
 
-  tp_connection_request_contact_list_attributes (test->conn, -1,
+  tp_connection_get_contact_list_attributes (test->conn, -1,
       interfaces, FALSE, contact_attrs_cb, test, test_quit_loop, NULL);
   g_main_loop_run (test->main_loop);
 
   test_assert_contact_list_attrs (test, test->sjoerd,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_YES, NULL);
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL);
   test_assert_contact_list_attrs (test, test->wim,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_ASK,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_ASK,
       "I'm more metal than you!");
   test_assert_contact_list_attrs (test, test->helen,
-      TP_PRESENCE_STATE_ASK, TP_PRESENCE_STATE_NO, NULL);
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, NULL);
 
   test_assert_contact_groups_attr (test, test->sjoerd, "Cambridge");
   test_assert_contact_groups_attr (test, test->wim, NULL);
@@ -801,10 +801,10 @@ test_accept_publish_request (Test *test,
         test->wim));
 
   g_assert_cmpuint (test->log->len, ==, 1);
-  test_assert_one_contact_changed (test, 0, test->wim, TP_PRESENCE_STATE_NO,
-      TP_PRESENCE_STATE_YES, "");
+  test_assert_one_contact_changed (test, 0, test->wim, TP_SUBSCRIPTION_STATE_NO,
+      TP_SUBSCRIPTION_STATE_YES, "");
   test_assert_contact_state (test, test->wim,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_YES, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_YES, NULL, NULL);
 }
 
 static void
@@ -860,13 +860,13 @@ test_reject_publish_request (Test *test,
   g_assert_cmpuint (test->log->len, ==, 1);
 
   if (!tp_strdiff (mode, "old") || !tp_strdiff (mode, "unpublish"))
-    test_assert_one_contact_changed (test, 0, test->wim, TP_PRESENCE_STATE_NO,
-        TP_PRESENCE_STATE_NO, "");
+    test_assert_one_contact_changed (test, 0, test->wim, TP_SUBSCRIPTION_STATE_NO,
+        TP_SUBSCRIPTION_STATE_NO, "");
   else
     test_assert_one_contact_removed (test, 0, test->wim);
 
   test_assert_contact_state (test, test->wim,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -953,15 +953,15 @@ test_add_to_publish_pre_approve (Test *test,
         test->ninja));
 
   g_assert_cmpuint (test->log->len, ==, 3);
-  test_assert_one_contact_changed (test, 0, test->ninja, TP_PRESENCE_STATE_ASK,
-      TP_PRESENCE_STATE_NO, "");
-  test_assert_one_contact_changed (test, 1, test->ninja, TP_PRESENCE_STATE_YES,
-      TP_PRESENCE_STATE_NO, "");
-  test_assert_one_contact_changed (test, 2, test->ninja, TP_PRESENCE_STATE_YES,
-      TP_PRESENCE_STATE_YES, "");
+  test_assert_one_contact_changed (test, 0, test->ninja, TP_SUBSCRIPTION_STATE_ASK,
+      TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->ninja, TP_SUBSCRIPTION_STATE_YES,
+      TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 2, test->ninja, TP_SUBSCRIPTION_STATE_YES,
+      TP_SUBSCRIPTION_STATE_YES, "");
 
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_YES, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, NULL);
 }
 
 static void
@@ -996,7 +996,7 @@ test_add_to_publish_no_op (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 0);
   test_assert_contact_state (test, test->sjoerd,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_YES, NULL, "Cambridge");
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
 }
 
 static void
@@ -1047,12 +1047,12 @@ test_remove_from_publish (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 2);
   test_assert_one_contact_changed (test, 0, test->sjoerd,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_NO, "");
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
   test_assert_one_contact_changed (test, 1, test->sjoerd,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_ASK,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
       "May I see your presence, please?");
   test_assert_contact_state (test, test->sjoerd,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_ASK,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
       "May I see your presence, please?", "Cambridge");
 }
 
@@ -1084,7 +1084,7 @@ test_remove_from_publish_no_op (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 0);
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -1146,9 +1146,9 @@ test_add_to_stored (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 1);
   test_assert_one_contact_changed (test, 0, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -1191,7 +1191,7 @@ test_add_to_stored_no_op (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 0);
   test_assert_contact_state (test, test->sjoerd,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_YES, NULL, "Cambridge");
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
 }
 
 static void
@@ -1235,7 +1235,7 @@ test_remove_from_stored (Test *test,
   g_assert_cmpuint (test->log->len, ==, 1);
   test_assert_one_contact_removed (test, 0, test->sjoerd);
   test_assert_contact_state (test, test->sjoerd,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -1266,7 +1266,7 @@ test_remove_from_stored_no_op (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 0);
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -1343,14 +1343,14 @@ test_accept_subscribe_request (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 3);
   test_assert_one_contact_changed (test, 0, test->ninja,
-      TP_PRESENCE_STATE_ASK, TP_PRESENCE_STATE_NO, "");
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, "");
   test_assert_one_contact_changed (test, 1, test->ninja,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_NO, "");
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
   test_assert_one_contact_changed (test, 2, test->ninja,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_ASK,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
       "May I see your presence, please?");
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_ASK,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
       "May I see your presence, please?", NULL);
 }
 
@@ -1423,11 +1423,11 @@ test_reject_subscribe_request (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 2);
   test_assert_one_contact_changed (test, 0, test->ninja,
-      TP_PRESENCE_STATE_ASK, TP_PRESENCE_STATE_NO, "");
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, "");
   test_assert_one_contact_changed (test, 1, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -1468,9 +1468,9 @@ test_remove_from_subscribe (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 1);
   test_assert_one_contact_changed (test, 0, test->sjoerd,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_YES, "");
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_YES, "");
   test_assert_contact_state (test, test->sjoerd,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_YES, NULL, "Cambridge");
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
 }
 
 static void
@@ -1514,9 +1514,9 @@ test_remove_from_subscribe_pending (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 1);
   test_assert_one_contact_changed (test, 0, test->helen,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
   test_assert_contact_state (test, test->helen,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, "Cambridge");
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, "Cambridge");
 }
 
 static void
@@ -1547,7 +1547,7 @@ test_remove_from_subscribe_no_op (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 0);
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -1609,13 +1609,13 @@ test_add_to_group (Test *test,
   if (le->type == CONTACTS_CHANGED)
     {
       test_assert_one_contact_changed (test, 0, test->ninja,
-          TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
+          TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
       i = 1;
     }
   else
     {
       test_assert_one_contact_changed (test, 1, test->ninja,
-          TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, "");
+          TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
       i = 0;
     }
 
@@ -1623,7 +1623,7 @@ test_add_to_group (Test *test,
   test_assert_one_group_joined (test, i, test->ninja, "Cambridge");
 
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, "Cambridge");
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, "Cambridge");
 }
 
 static void
@@ -1652,7 +1652,7 @@ test_add_to_group_no_op (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 0);
   test_assert_contact_state (test, test->sjoerd,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_YES, NULL, "Cambridge");
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
 }
 
 static void
@@ -1688,7 +1688,7 @@ test_remove_from_group (Test *test,
   g_assert_cmpuint (test->log->len, ==, 1);
   test_assert_one_group_left (test, 0, test->sjoerd, "Cambridge");
   test_assert_contact_state (test, test->sjoerd,
-      TP_PRESENCE_STATE_YES, TP_PRESENCE_STATE_YES, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, NULL);
 }
 
 static void
@@ -1717,7 +1717,7 @@ test_remove_from_group_no_op (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 0);
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -2035,7 +2035,7 @@ test_add_to_deny (Test *test,
         tp_channel_group_get_members (test->stored),
         test->ninja));
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -2059,7 +2059,7 @@ test_add_to_deny_no_op (Test *test,
         tp_channel_group_get_members (test->deny),
         test->bill));
   test_assert_contact_state (test, test->bill,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -2088,7 +2088,7 @@ test_remove_from_deny (Test *test,
         tp_channel_group_get_members (test->deny),
         test->bill));
   test_assert_contact_state (test, test->bill,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
@@ -2111,7 +2111,7 @@ test_remove_from_deny_no_op (Test *test,
         tp_channel_group_get_members (test->deny),
         test->ninja));
   test_assert_contact_state (test, test->ninja,
-      TP_PRESENCE_STATE_NO, TP_PRESENCE_STATE_NO, NULL, NULL);
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 int

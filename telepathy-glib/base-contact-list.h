@@ -75,7 +75,7 @@ typedef gboolean (*TpBaseContactListBooleanFunc) (
 gboolean tp_base_contact_list_true_func (TpBaseContactList *self);
 gboolean tp_base_contact_list_false_func (TpBaseContactList *self);
 
-gboolean tp_base_contact_list_get_subscriptions_persist (
+gboolean tp_base_contact_list_get_contact_list_persists (
     TpBaseContactList *self);
 
 typedef TpHandleSet *(*TpBaseContactListGetContactsFunc) (
@@ -86,14 +86,14 @@ TpHandleSet *tp_base_contact_list_get_contacts (TpBaseContactList *self);
 typedef void (*TpBaseContactListGetStatesFunc) (
     TpBaseContactList *self,
     TpHandle contact,
-    TpPresenceState *subscribe,
-    TpPresenceState *publish,
+    TpSubscriptionState *subscribe,
+    TpSubscriptionState *publish,
     gchar **publish_request);
 
 void tp_base_contact_list_get_states (TpBaseContactList *self,
     TpHandle contact,
-    TpPresenceState *subscribe,
-    TpPresenceState *publish,
+    TpSubscriptionState *subscribe,
+    TpSubscriptionState *publish,
     gchar **publish_request);
 
 struct _TpBaseContactListClass {
@@ -101,7 +101,7 @@ struct _TpBaseContactListClass {
 
     TpBaseContactListGetContactsFunc get_contacts;
     TpBaseContactListGetStatesFunc get_states;
-    TpBaseContactListBooleanFunc get_subscriptions_persist;
+    TpBaseContactListBooleanFunc get_contact_list_persists;
 
     /*<private>*/
     GCallback _padding[7];
@@ -166,13 +166,13 @@ struct _TpMutableContactListInterface {
     TpBaseContactListActOnContactsFunc store_contacts_async;
     TpBaseContactListAsyncFinishFunc store_contacts_finish;
 
-    TpBaseContactListBooleanFunc can_change_subscriptions;
+    TpBaseContactListBooleanFunc can_change_contact_list;
     TpBaseContactListBooleanFunc get_request_uses_message;
 };
 
 GType tp_mutable_contact_list_get_type (void) G_GNUC_CONST;
 
-gboolean tp_base_contact_list_can_change_subscriptions (
+gboolean tp_base_contact_list_can_change_contact_list (
     TpBaseContactList *self);
 
 gboolean tp_base_contact_list_get_request_uses_message (

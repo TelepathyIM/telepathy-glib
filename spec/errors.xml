@@ -433,6 +433,14 @@
     </tp:docstring>
   </tp:error>
 
+  <tp:error name="Not Yet">
+    <tp:added version="0.19.UNRELEASED"/>
+    <tp:docstring>
+      Raised when the requested functionality is not yet available, but is
+      likely to become available after some time has passed.
+    </tp:docstring>
+  </tp:error>
+
   <tp:copyright>Copyright © 2005-2010 Collabora Limited</tp:copyright>
   <tp:copyright>Copyright © 2005-2009 Nokia Corporation</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
