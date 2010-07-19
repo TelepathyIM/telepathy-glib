@@ -34,6 +34,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
+#include <telepathy-logger/conf-internal.h>
 #include <telepathy-logger/entry.h>
 #include <telepathy-logger/entry-internal.h>
 #include <telepathy-logger/log-store-internal.h>
@@ -75,6 +76,8 @@
 
 typedef struct
 {
+  TplConf *conf;
+
   GList *stores;
   GList *writable_stores;
   GList *readable_stores;
@@ -119,6 +122,8 @@ log_manager_finalize (GObject *object)
   TplLogManagerPriv *priv;
 
   priv = TPL_LOG_MANAGER (object)->priv;
+
+  g_object_unref (priv->conf);
 
   g_list_foreach (priv->stores, (GFunc) g_object_unref, NULL);
   g_list_free (priv->stores);
@@ -198,6 +203,15 @@ add_log_store (TplLogManager *self,
 }
 
 static void
+_globally_enabled_changed (TplConf *conf,
+    GParamSpec *pspec,
+    gpointer user_data)
+{
+  DEBUG ("Logging has been globally %s",
+      _tpl_conf_is_globally_enabled (conf) ? "enabled" : "disabled");
+}
+
+static void
 tpl_log_manager_init (TplLogManager *self)
 {
   TplLogStore *store;
@@ -207,6 +221,11 @@ tpl_log_manager_init (TplLogManager *self)
   self->priv = priv;
 
   DEBUG ("Initialising the Log Manager");
+
+  priv->conf = _tpl_conf_dup ();
+
+  g_signal_connect (priv->conf, "notify::globally-enabled",
+      G_CALLBACK (_globally_enabled_changed), NULL);
 
   /* The TPL's default read-write logstore */
   add_log_store (self, TPL_TYPE_LOG_STORE_XML, "TpLogger", TRUE, TRUE);
@@ -265,6 +284,12 @@ _tpl_log_manager_add_message (TplLogManager *manager,
   g_return_val_if_fail (TPL_IS_ENTRY (message), FALSE);
 
   priv = manager->priv;
+
+  if (!_tpl_conf_is_globally_enabled (priv->conf))
+    {
+      /* ignore message, logging is globally disabled */
+      return FALSE;
+    }
 
   /* send the message to any writable log store */
   for (l = priv->writable_stores; l != NULL; l = g_list_next (l))

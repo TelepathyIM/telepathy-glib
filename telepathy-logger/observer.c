@@ -31,7 +31,6 @@
 #include <telepathy-glib/svc-client.h>
 #include <telepathy-glib/account-manager.h>
 
-#include <telepathy-logger/conf-internal.h>
 #include <telepathy-logger/channel-internal.h>
 #include <telepathy-logger/channel-factory-internal.h>
 #include <telepathy-logger/log-manager.h>
@@ -128,25 +127,12 @@ tpl_observer_observe_channels (TpBaseClient *client,
 {
   TplObserver *self = TPL_OBSERVER (client);
   TplChannelFactory chan_factory;
-  TplConf *conf;
   GError *error = NULL;
   ObservingContext *observing_ctx = NULL;
   const gchar *chan_type;
   GList *l;
-  GError *err = NULL;
 
   chan_factory = tpl_observer_get_channel_factory (self);
-
-  /* Check if logging if enabled globally and for the given account_path,
-   * return imemdiatly if it's not */
-  conf = _tpl_conf_dup ();
-  if (!_tpl_conf_is_globally_enabled (conf))
-    {
-      DEBUG ("Logging is globally disabled. Skipping channel logging.");
-
-      goto error;
-    }
-  g_object_unref (conf);
 
   /* Parallelize TplChannel preparations, when the last one will be ready, the
    * counter will be 0 and tp_svc_client_observer_return_from_observe_channels
@@ -194,21 +180,6 @@ tpl_observer_observe_channels (TpBaseClient *client,
     }
 
   tp_observe_channels_context_delay (context);
-  return;
-
-error:
-  g_object_unref (conf);
-
-  err = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-      "Failed to observe channel: %s", error->message);
-
-  g_clear_error (&error);
-
-  DEBUG ("Returning from observe channels on error condition. "
-      "Unable to log the channel");
-
-  tp_observe_channels_context_fail (context, err);
-  g_error_free (err);
 }
 
 static gboolean
@@ -228,17 +199,6 @@ _tpl_observer_register_channel (TplObserver *self,
   g_object_notify (G_OBJECT (self), "registered-channels");
 
   return TRUE;
-}
-
-static void
-_globally_enabled_changed (TplConf *conf,
-    GParamSpec *pspec,
-    TplObserver *self)
-{
-  gboolean enabled = _tpl_conf_is_globally_enabled (conf);
-
-  DEBUG ("Globally %s all logging",
-      enabled ? "enabling" : "disabling");
 }
 
 static void
@@ -379,9 +339,6 @@ _tpl_observer_init (TplObserver *self)
       NULL, g_object_unref);
 
   priv->logmanager = tpl_log_manager_dup_singleton ();
-
-  g_signal_connect (priv->conf, "notify::globally-enabled",
-      G_CALLBACK (_globally_enabled_changed), self);
 
   /* Observe contact text channels */
   tp_base_client_take_observer_filter (TP_BASE_CLIENT (self),
