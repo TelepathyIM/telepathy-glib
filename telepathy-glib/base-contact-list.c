@@ -5434,3 +5434,54 @@ tp_base_contact_list_mixin_register_with_contacts_mixin (
           tp_base_contact_list_fill_groups_contact_attributes);
     }
 }
+
+/**
+ * tp_base_contact_list_get_state:
+ * @self: a contact list
+ * @error: used to raise an error if %TP_CONTACT_LIST_STATE_FAILURE is returned
+ *
+ * Return how much progress this object has made towards retrieving the
+ * contact list.
+ *
+ * If this contact list's connection has disconnected, or retrieving the
+ * contact list has failed, return %TP_CONTACT_LIST_STATE_FAILURE.
+ *
+ * Returns: the state of the contact list
+ */
+TpContactListState
+tp_base_contact_list_get_state (TpBaseContactList *self,
+    GError **error)
+{
+  /* this checks TP_IS_BASE_CONTACT_LIST */
+  if (!tp_base_contact_list_check_still_usable (self, error))
+    return TP_CONTACT_LIST_STATE_FAILURE;
+
+  return self->priv->state;
+}
+
+/**
+ * tp_base_contact_list_get_connection:
+ * @self: a contact list
+ * @error: used to raise an error if %NULL is returned
+ *
+ * Return the Connection this contact list uses. If this contact list's
+ * connection has already disconnected, return %NULL instead.
+ *
+ * Returns: (transfer none): the connection, or %NULL
+ */
+TpBaseConnection *
+tp_base_contact_list_get_connection (TpBaseContactList *self,
+    GError **error)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), NULL);
+
+  /* check this first, because we still have a connection if we're in state
+   * FAILURE */
+  if (self->priv->conn != NULL)
+    return self->priv->conn;
+
+  if (!tp_base_contact_list_check_still_usable (self, error))
+    return NULL;
+
+  g_assert_not_reached ();
+}
