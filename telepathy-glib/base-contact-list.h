@@ -60,6 +60,11 @@ GType tp_base_contact_list_get_type (void);
 
 /* ---- Called by subclasses for ContactList (or both) ---- */
 
+void tp_base_contact_list_set_list_pending (TpBaseContactList *self);
+void tp_base_contact_list_set_list_failed (TpBaseContactList *self,
+    GQuark domain,
+    gint code,
+    const gchar *message);
 void tp_base_contact_list_set_list_received (TpBaseContactList *self);
 
 void tp_base_contact_list_contacts_changed (TpBaseContactList *self,

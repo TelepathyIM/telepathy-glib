@@ -203,6 +203,8 @@ struct _TpBaseContactListPrivate
   TpHandleRepoIface *contact_repo;
 
   TpContactListState state;
+  /* NULL unless state = FAILURE */
+  GError *failure /* initially NULL */;
 
   /* values referenced; 0'th remains NULL */
   TpBaseContactListChannel *lists[NUM_TP_LIST_HANDLES];
@@ -441,18 +443,29 @@ static gboolean
 tp_base_contact_list_check_still_usable (TpBaseContactList *self,
     GError **error)
 {
-  if (self->priv->conn == NULL)
-    g_set_error_literal (error, TP_ERRORS, TP_ERROR_DISCONNECTED,
-        "Connection is no longer connected");
+  if (self->priv->failure != NULL)
+    {
+      g_set_error_literal (error, self->priv->failure->domain,
+          self->priv->failure->code, self->priv->failure->message);
+      return FALSE;
+    }
 
-  return (self->priv->conn != NULL);
+  if (self->priv->conn == NULL)
+    {
+      g_set_error_literal (error, TP_ERRORS, TP_ERROR_DISCONNECTED,
+          "Connection is no longer connected");
+      return FALSE;
+    }
+
+  return TRUE;
 }
 
 static void
-tp_base_contact_list_free_contents (TpBaseContactList *self)
+tp_base_contact_list_fail_channel_requests (TpBaseContactList *self,
+    GQuark domain,
+    gint code,
+    const gchar *message)
 {
-  guint i;
-
   if (self->priv->channel_requests != NULL)
     {
       GHashTable *tmp = self->priv->channel_requests;
@@ -472,8 +485,7 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
           for (slist = requests; slist != NULL; slist = slist->next)
             {
               tp_channel_manager_emit_request_failed (self,
-                  slist->data, TP_ERRORS, TP_ERROR_DISCONNECTED,
-                  "Unable to complete channel request due to disconnection");
+                  slist->data, domain, code, message);
             }
 
           g_slist_free (requests);
@@ -482,6 +494,16 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
 
       g_hash_table_destroy (tmp);
     }
+}
+
+static void
+tp_base_contact_list_free_contents (TpBaseContactList *self)
+{
+  guint i;
+
+  tp_base_contact_list_fail_channel_requests (self, TP_ERRORS,
+      TP_ERROR_DISCONNECTED,
+      "Unable to complete channel request due to disconnection");
 
   for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
     tp_clear_object (self->priv->lists + i);
@@ -1605,6 +1627,59 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
 
   tp_handle_set_destroy (contacts);
   return TRUE;
+}
+
+/**
+ * tp_base_contact_list_set_list_pending:
+ * @self: the contact list manager
+ * @domain: a #GError domain
+ * @code: a #GError code
+ * @message: a #GError message
+ *
+ * Record that receiving the initial contact list is in progress.
+ *
+ * This method can be called at most once for a contact list manager.
+ */
+void
+tp_base_contact_list_set_list_pending (TpBaseContactList *self)
+{
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_NONE);
+
+  if (!tp_base_contact_list_check_still_usable (self, NULL))
+    return;
+
+  self->priv->state = TP_CONTACT_LIST_STATE_WAITING;
+}
+
+/**
+ * tp_base_contact_list_set_list_failed:
+ * @self: the contact list manager
+ * @domain: a #GError domain
+ * @code: a #GError code
+ * @message: a #GError message
+ *
+ * Record that receiving the initial contact list has failed.
+ *
+ * This method can be called at most once for a contact list manager.
+ */
+void
+tp_base_contact_list_set_list_failed (TpBaseContactList *self,
+    GQuark domain,
+    gint code,
+    const gchar *message)
+{
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_NONE ||
+      self->priv->state == TP_CONTACT_LIST_STATE_WAITING);
+
+  if (!tp_base_contact_list_check_still_usable (self, NULL))
+    return;
+
+  self->priv->state = TP_CONTACT_LIST_STATE_FAILURE;
+  g_assert (self->priv->failure == NULL);
+  self->priv->failure = g_error_new_literal (domain, code, message);
+  tp_base_contact_list_fail_channel_requests (self, domain, code, message);
 }
 
 /**
