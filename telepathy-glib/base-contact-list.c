@@ -536,14 +536,14 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
       while (g_hash_table_iter_next (&iter, NULL, &value))
         {
           GSList *requests = value;
-          GSList *link;
+          GSList *slist;
 
           requests = g_slist_reverse (requests);
 
-          for (link = requests; link != NULL; link = link->next)
+          for (slist = requests; slist != NULL; slist = slist->next)
             {
               tp_channel_manager_emit_request_failed (self,
-                  link->data, TP_ERRORS, TP_ERROR_DISCONNECTED,
+                  slist->data, TP_ERRORS, TP_ERROR_DISCONNECTED,
                   "Unable to complete channel request due to disconnection");
             }
 
