@@ -32,6 +32,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/channel-request.c $(srcdir)/channel-request.h \
 	$(srcdir)/observe-channels-context.c $(srcdir)/observe-channels-context.h \
 	$(srcdir)/add-dispatch-operation-context.c $(srcdir)/add-dispatch-operation-context.h \
+	$(srcdir)/protocol.c $(srcdir)/protocol.h \
 	_gen/telepathy-enums.h \
 	_gen/telepathy-interfaces.h
 
