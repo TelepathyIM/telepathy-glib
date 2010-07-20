@@ -34,6 +34,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_MANAGER
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/protocol-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-connection-manager-body.h"
 
@@ -84,6 +85,10 @@
  * tp_connection_manager_dup_protocol_names()), and their available parameters,
  * will have been retrieved, either by activating the connection manager over
  * D-Bus or by reading the .manager file in which that information is cached.
+ *
+ * Since 0.11.UNRELEASED, this feature also finds any extra interfaces that
+ * this connection manager has, and adds them to #TpProxy:interfaces (where
+ * they can be queried with tp_proxy_has_interface()).
  *
  * (These are the same guarantees offered by the older
  * tp_connection_manager_call_when_ready() mechanism.)
@@ -217,6 +222,13 @@ enum
  * Since: 0.7.1
  */
 
+typedef enum {
+    INTROSPECT_IDLE,
+    INTROSPECT_GETTING_PROPERTIES,
+    INTROSPECT_LISTING_PROTOCOLS,
+    INTROSPECT_GETTING_PARAMETERS
+} IntrospectionStep;
+
 struct _TpConnectionManagerPrivate {
     /* absolute path to .manager file */
     gchar *manager_file;
@@ -230,27 +242,37 @@ struct _TpConnectionManagerPrivate {
     /* TRUE if dispose() has run already */
     unsigned disposed:1;
 
+    /* dup'd name => referenced TpProtocol, corresponding exactly to
+     * @protocol_structs */
+    GHashTable *protocol_objects;
+
     /* GPtrArray of TpConnectionManagerProtocol *. This is the implementation
-     * for self->protocols.
+     * for self->protocols. Each item is borrowed from the corresponding
+     * object in protocol_objects.
      *
      * NULL if file_info and live_info are both FALSE
      * Protocols from file, if file_info is TRUE but live_info is FALSE
      * Protocols from last time introspecting the CM succeeded, if live_info
      * is TRUE */
-    GPtrArray *protocols;
+    GPtrArray *protocol_structs;
 
     /* If we're waiting for a GetParameters, then GPtrArray of g_strdup'd
      * gchar * representing protocols we haven't yet introspected.
      * Otherwise NULL */
     GPtrArray *pending_protocols;
-    /* If we're waiting for a GetParameters, then GPtrArray of
-     * TpConnectionManagerProtocol * for the introspection that is in
-     * progress (will replace ->protocols when finished).
-     * Otherwise NULL */
-    GPtrArray *found_protocols;
+
+    /* dup'd name => referenced TpProtocol
+     *
+     * If we're waiting for a GetParameters, protocols we found so far for
+     * the introspection that is in progress (will replace protocol_objects
+     * when finished). Otherwise NULL */
+    GHashTable *found_protocols;
 
     /* list of WhenReadyContext */
     GList *waiting_for_ready;
+
+    /* things we introspected so far */
+    IntrospectionStep introspection_step;
 
     /* the method call currently pending, or NULL if none. */
     TpProxyPendingCall *introspection_call;
@@ -281,17 +303,6 @@ _tp_connection_manager_param_copy_contents (
       g_value_init (&out->default_value, G_VALUE_TYPE (&in->default_value));
       g_value_copy (&in->default_value, &out->default_value);
     }
-}
-
-
-static void
-_tp_connection_manager_param_free_contents (TpConnectionManagerParam *param)
-{
-  g_free (param->name);
-  g_free (param->dbus_signature);
-
-  if (G_IS_VALUE (&param->default_value))
-    g_value_unset (&param->default_value);
 }
 
 
@@ -380,16 +391,7 @@ tp_connection_manager_protocol_copy (const TpConnectionManagerProtocol *in)
 void
 tp_connection_manager_protocol_free (TpConnectionManagerProtocol *proto)
 {
-  TpConnectionManagerParam *param;
-
-  g_free (proto->name);
-
-  for (param = proto->params; param->name != NULL; param++)
-    {
-      _tp_connection_manager_param_free_contents (param);
-    }
-
-  g_free (proto->params);
+  _tp_connection_manager_protocol_free_contents (proto);
 
   g_slice_free (TpConnectionManagerProtocol, proto);
 }
@@ -608,12 +610,10 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
                                       GObject *user_object)
 {
   gchar *protocol = user_data;
-  GArray *output;
-  guint i;
-  TpConnectionManagerProtocol *proto_struct;
+  TpProtocol *proto_object;
+  GHashTable *immutables;
 
-  DEBUG ("Protocol name: %s", protocol);
-
+  g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PARAMETERS);
   g_assert (self->priv->introspection_call != NULL);
   self->priv->introspection_call = NULL;
 
@@ -623,94 +623,22 @@ tp_connection_manager_got_parameters (TpConnectionManager *self,
       goto out;
     }
 
-   output = g_array_sized_new (TRUE, TRUE,
-      sizeof (TpConnectionManagerParam), parameters->len);
+  immutables = tp_asv_new (
+      TP_PROP_PROTOCOL_PARAMETERS, TP_ARRAY_TYPE_PARAM_SPEC_LIST, parameters,
+      NULL);
+  proto_object = tp_protocol_new (tp_proxy_get_dbus_daemon (self),
+      self->name, protocol, immutables, NULL);
+  g_hash_table_unref (immutables);
 
-  for (i = 0; i < parameters->len; i++)
-    {
-      GValue structure = { 0 };
-      GValue *tmp;
-      /* Points to the zeroed entry just after the end of the array
-       * - but we're about to extend the array to make it valid */
-      TpConnectionManagerParam *param = &g_array_index (output,
-          TpConnectionManagerParam, output->len);
+  /* tp_protocol_new can currently only fail because of malformed names,
+   * and we already checked those */
+  g_assert (proto_object != NULL);
 
-      g_value_init (&structure, TP_STRUCT_TYPE_PARAM_SPEC);
-      g_value_set_static_boxed (&structure, g_ptr_array_index (parameters, i));
-
-      g_array_set_size (output, output->len + 1);
-
-      if (!dbus_g_type_struct_get (&structure,
-            0, &param->name,
-            1, &param->flags,
-            2, &param->dbus_signature,
-            3, &tmp,
-            G_MAXUINT))
-        {
-          DEBUG ("Unparseable parameter #%d for %s, ignoring", i, protocol);
-          /* *shrug* that one didn't work, let's skip it */
-          g_array_set_size (output, output->len - 1);
-          continue;
-        }
-
-      g_value_init (&param->default_value,
-          G_VALUE_TYPE (tmp));
-      g_value_copy (tmp, &param->default_value);
-      g_value_unset (tmp);
-      g_free (tmp);
-
-      param->priv = NULL;
-
-      DEBUG ("\tParam name: %s", param->name);
-      DEBUG ("\tParam flags: 0x%x", param->flags);
-      DEBUG ("\tParam sig: %s", param->dbus_signature);
-
-      if ((!tp_strdiff (param->name, "password") ||
-          g_str_has_suffix (param->name, "-password")) &&
-          (param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET) == 0)
-        {
-          DEBUG ("\tTreating as secret due to its name (please fix %s)",
-              self->name);
-          param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
-        }
-
-#ifdef ENABLE_DEBUG
-        {
-          gchar *repr = g_strdup_value_contents (&(param->default_value));
-
-          DEBUG ("\tParam default value: %s of type %s", repr,
-              G_VALUE_TYPE_NAME (&(param->default_value)));
-          g_free (repr);
-        }
-#endif
-    }
-
-  proto_struct = g_slice_new (TpConnectionManagerProtocol);
-  proto_struct->name = g_strdup (protocol);
-  proto_struct->params =
-      (TpConnectionManagerParam *) g_array_free (output, FALSE);
-  g_ptr_array_add (self->priv->found_protocols, proto_struct);
+  g_hash_table_insert (self->priv->found_protocols,
+      g_strdup (protocol), proto_object);
 
 out:
   tp_connection_manager_continue_introspection (self);
-}
-
-static void
-tp_connection_manager_free_protocols (GPtrArray *protocols)
-{
-  guint i;
-
-  for (i = 0; i < protocols->len; i++)
-    {
-      TpConnectionManagerProtocol *proto = g_ptr_array_index (protocols, i);
-
-      if (proto == NULL)
-        continue;
-
-      tp_connection_manager_protocol_free (proto);
-    }
-
-  g_ptr_array_free (protocols, TRUE);
 }
 
 static void tp_connection_manager_ready_or_failed (TpConnectionManager *self,
@@ -722,6 +650,8 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
 {
   guint i;
 
+  self->priv->introspection_step = INTROSPECT_IDLE;
+
   if (self->priv->introspection_call != NULL)
     {
       tp_proxy_pending_call_cancel (self->priv->introspection_call);
@@ -730,7 +660,7 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
 
   if (self->priv->found_protocols != NULL)
     {
-      tp_connection_manager_free_protocols (self->priv->found_protocols);
+      g_hash_table_unref (self->priv->found_protocols);
       self->priv->found_protocols = NULL;
     }
 
@@ -749,27 +679,178 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
 }
 
 static void
+tp_connection_manager_update_protocol_structs (TpConnectionManager *self)
+{
+  GHashTableIter iter;
+  gpointer protocol_object;
+
+  g_assert (self->priv->protocol_objects != NULL);
+
+  if (self->priv->protocol_structs != NULL)
+    g_ptr_array_free (self->priv->protocol_structs, TRUE);
+
+  self->priv->protocol_structs = g_ptr_array_sized_new (
+      g_hash_table_size (self->priv->protocol_objects) + 1);
+
+  g_hash_table_iter_init (&iter, self->priv->protocol_objects);
+
+  while (g_hash_table_iter_next (&iter, NULL, &protocol_object))
+    {
+      g_ptr_array_add (self->priv->protocol_structs,
+          _tp_protocol_get_struct (protocol_object));
+    }
+
+  g_ptr_array_add (self->priv->protocol_structs, NULL);
+  self->protocols = (const TpConnectionManagerProtocol * const *)
+      self->priv->protocol_structs->pdata;
+}
+
+static void
+tp_connection_manager_add_interfaces (TpConnectionManager *self,
+    const gchar * const * interfaces)
+{
+  if (interfaces == NULL)
+    return;
+
+  for (; *interfaces != NULL; interfaces++)
+    {
+      if (tp_dbus_check_valid_interface_name (*interfaces, NULL))
+        {
+          GQuark q = g_quark_from_string (*interfaces);
+
+          tp_proxy_add_interface_by_id ((TpProxy *) self, q);
+        }
+      else
+        {
+          DEBUG ("Ignoring invalid interface on %s: %s",
+              tp_proxy_get_object_path (self), *interfaces);
+        }
+    }
+}
+
+static void
+tp_connection_manager_get_all_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer nil G_GNUC_UNUSED,
+    GObject *object G_GNUC_UNUSED)
+{
+  TpConnectionManager *self = (TpConnectionManager *) proxy;
+
+  g_assert (TP_IS_CONNECTION_MANAGER (self));
+  g_assert (self->priv->introspection_step == INTROSPECT_GETTING_PROPERTIES);
+  g_assert (self->priv->introspection_call != NULL);
+  self->priv->introspection_call = NULL;
+
+  if (error == NULL)
+    {
+      GHashTable *protocols;
+
+      tp_connection_manager_add_interfaces (self,
+          tp_asv_get_strv (properties, "Interfaces"));
+
+      protocols = tp_asv_get_boxed (properties, "Protocols",
+          TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP);
+
+      if (protocols != NULL)
+        {
+          GHashTableIter iter;
+          gpointer k, v;
+
+          DEBUG ("%u Protocols from D-Bus", g_hash_table_size (protocols));
+
+          g_assert (self->priv->found_protocols == NULL);
+          self->priv->found_protocols = g_hash_table_new_full (g_str_hash,
+              g_str_equal, g_free, g_object_unref);
+
+          g_hash_table_iter_init (&iter, protocols);
+
+          while (g_hash_table_iter_next (&iter, &k, &v))
+            {
+              const gchar *name = k;
+              GHashTable *protocol_properties = v;
+
+              if (tp_connection_manager_check_valid_protocol_name (name, NULL))
+                {
+                  TpProtocol *proto_object = tp_protocol_new (
+                      tp_proxy_get_dbus_daemon (self), self->name, name,
+                      protocol_properties, NULL);
+
+                  /* tp_protocol_new can currently only fail because of
+                   * malformed names, and we already checked for that */
+                  g_assert (proto_object != NULL);
+
+                  g_hash_table_insert (self->priv->found_protocols,
+                      g_strdup (name), proto_object);
+                }
+              else
+                {
+                  INFO ("ignoring invalid Protocol name %s from %s",
+                      name, tp_proxy_get_object_path (self));
+                }
+            }
+        }
+    }
+  else
+    {
+      DEBUG ("Ignoring error getting ConnectionManager properties: %s %d: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+
+  tp_connection_manager_continue_introspection (self);
+}
+
+static void tp_connection_manager_got_protocols (TpConnectionManager *self,
+    const gchar **protocols,
+    const GError *error,
+    gpointer user_data,
+    GObject *user_object);
+
+static void
 tp_connection_manager_continue_introspection (TpConnectionManager *self)
 {
   gchar *next_protocol;
 
-  g_assert (self->priv->pending_protocols != NULL);
-
-  if (self->priv->pending_protocols->len == 0)
+  if (self->priv->introspection_step == INTROSPECT_IDLE)
     {
-      GPtrArray *tmp;
+      DEBUG ("calling GetAll on CM");
+      self->priv->introspection_step = INTROSPECT_GETTING_PROPERTIES;
+      self->priv->introspection_call = tp_cli_dbus_properties_call_get_all (
+          self, -1, TP_IFACE_CONNECTION_MANAGER,
+          tp_connection_manager_get_all_cb, NULL, NULL, NULL);
+      return;
+    }
+
+  if (self->priv->introspection_step == INTROSPECT_GETTING_PROPERTIES)
+    {
+      g_assert (self->priv->pending_protocols == NULL);
+
+      if (self->priv->found_protocols == NULL)
+        {
+          DEBUG ("calling ListProtocols on CM");
+          self->priv->introspection_step = INTROSPECT_LISTING_PROTOCOLS;
+          self->priv->introspection_call =
+            tp_cli_connection_manager_call_list_protocols (self, -1,
+                tp_connection_manager_got_protocols, NULL, NULL, NULL);
+          return;
+        }
+      /* else we already found the protocols and their parameters, so behave
+       * as though we'd already called GetParameters n times */
+    }
+
+  if (self->priv->pending_protocols == NULL ||
+      self->priv->pending_protocols->len == 0)
+    {
+      GHashTable *tmp;
       guint old;
 
-      g_ptr_array_add (self->priv->found_protocols, NULL);
-
-      /* swap found_protocols and protocols, so we'll free the old protocols
-       * as part of end_introspection */
-      tmp = self->priv->protocols;
-      self->priv->protocols = self->priv->found_protocols;
+      /* swap found_protocols and protocol_objects, so we'll free the old
+       * protocol_objects as part of end_introspection */
+      tmp = self->priv->protocol_objects;
+      self->priv->protocol_objects = self->priv->found_protocols;
       self->priv->found_protocols = tmp;
 
-      self->protocols = (const TpConnectionManagerProtocol * const *)
-          self->priv->protocols->pdata;
+      tp_connection_manager_update_protocol_structs (self);
 
       old = self->info_source;
       self->info_source = TP_CM_INFO_SOURCE_LIVE;
@@ -779,15 +860,18 @@ tp_connection_manager_continue_introspection (TpConnectionManager *self)
 
       tp_connection_manager_end_introspection (self, NULL);
 
-      return;
+      g_assert (self->priv->introspection_step == INTROSPECT_IDLE);
     }
-
-  next_protocol = g_ptr_array_remove_index_fast (self->priv->pending_protocols,
-      0);
-  self->priv->introspection_call =
-      tp_cli_connection_manager_call_get_parameters (self, -1, next_protocol,
-          tp_connection_manager_got_parameters, next_protocol, g_free,
-          NULL);
+  else
+    {
+      next_protocol = g_ptr_array_remove_index_fast (
+          self->priv->pending_protocols, 0);
+      self->priv->introspection_step = INTROSPECT_GETTING_PARAMETERS;
+      self->priv->introspection_call =
+          tp_cli_connection_manager_call_get_parameters (self, -1,
+              next_protocol, tp_connection_manager_got_parameters,
+              next_protocol, g_free, NULL);
+    }
 }
 
 static void
@@ -824,14 +908,20 @@ tp_connection_manager_got_protocols (TpConnectionManager *self,
   DEBUG ("Succeeded with %u protocols", i);
 
   g_assert (self->priv->found_protocols == NULL);
-  /* Allocate one more pointer - we're going to append NULL afterwards */
-  self->priv->found_protocols = g_ptr_array_sized_new (i + 1);
+  self->priv->found_protocols = g_hash_table_new_full (g_str_hash,
+      g_str_equal, g_free, g_object_unref);
 
   g_assert (self->priv->pending_protocols == NULL);
   self->priv->pending_protocols = g_ptr_array_sized_new (i);
 
   for (iter = protocols; *iter != NULL; iter++)
     {
+      if (!tp_connection_manager_check_valid_protocol_name (*iter, NULL))
+        {
+          DEBUG ("Protocol %s has an invalid name", *iter);
+          continue;
+        }
+
       g_ptr_array_add (self->priv->pending_protocols, g_strdup (*iter));
     }
 
@@ -855,10 +945,7 @@ tp_connection_manager_idle_introspect (gpointer data)
       (self->always_introspect ||
        self->info_source == TP_CM_INFO_SOURCE_NONE))
     {
-      DEBUG ("calling ListProtocols on CM");
-      self->priv->introspection_call =
-        tp_cli_connection_manager_call_list_protocols (self, -1,
-            tp_connection_manager_got_protocols, NULL, NULL, NULL);
+      tp_connection_manager_continue_introspection (self);
     }
 
   self->priv->introspect_idle_id = 0;
@@ -937,408 +1024,73 @@ tp_connection_manager_name_owner_changed_cb (TpDBusDaemon *bus,
 }
 
 static gboolean
-init_gvalue_from_dbus_sig (const gchar *sig,
-                           GValue *value)
-{
-  g_assert (!G_IS_VALUE (value));
-
-  switch (sig[0])
-    {
-    case 'b':
-      g_value_init (value, G_TYPE_BOOLEAN);
-      return TRUE;
-
-    case 's':
-      g_value_init (value, G_TYPE_STRING);
-      return TRUE;
-
-    case 'q':
-    case 'u':
-      g_value_init (value, G_TYPE_UINT);
-      return TRUE;
-
-    case 'y':
-      g_value_init (value, G_TYPE_UCHAR);
-      return TRUE;
-
-    case 'n':
-    case 'i':
-      g_value_init (value, G_TYPE_INT);
-      return TRUE;
-
-    case 'x':
-      g_value_init (value, G_TYPE_INT64);
-      return TRUE;
-
-    case 't':
-      g_value_init (value, G_TYPE_UINT64);
-      return TRUE;
-
-    case 'o':
-      g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-      g_value_set_static_boxed (value, "/");
-      return TRUE;
-
-    case 'd':
-      g_value_init (value, G_TYPE_DOUBLE);
-      return TRUE;
-
-    case 'v':
-      g_value_init (value, G_TYPE_VALUE);
-      return TRUE;
-
-    case 'a':
-      switch (sig[1])
-        {
-        case 's':
-          g_value_init (value, G_TYPE_STRV);
-          return TRUE;
-
-        case 'y':
-          g_value_init (value, DBUS_TYPE_G_UCHAR_ARRAY);
-          return TRUE;
-        }
-    }
-
-  return FALSE;
-}
-
-static gboolean
-parse_default_value (GValue *value,
-                     const gchar *sig,
-                     gchar *string,
-                     GKeyFile *file,
-                     const gchar *group,
-                     const gchar *key)
-{
-  GError *error = NULL;
-  gchar *s, *p;
-
-  switch (sig[0])
-    {
-    case 'b':
-      g_value_set_boolean (value, g_key_file_get_boolean (file, group, key,
-            &error));
-
-      if (error == NULL)
-        return TRUE;
-
-      /* In telepathy-glib < 0.7.26 we accepted true and false in
-       * any case combination, 0, and 1. The desktop file spec specifies
-       * "true" and "false" only, while GKeyFile currently accepts 0 and 1 too.
-       * So, on error, let's fall back to more lenient parsing that explicitly
-       * allows everything we historically allowed. */
-      g_error_free (error);
-      s = g_key_file_get_value (file, group, key, NULL);
-
-      if (s == NULL)
-        return FALSE;
-
-      for (p = s; *p != '\0'; p++)
-        {
-          *p = g_ascii_tolower (*p);
-        }
-
-      if (!tp_strdiff (s, "1") || !tp_strdiff (s, "true"))
-        {
-          g_value_set_boolean (value, TRUE);
-        }
-      else if (!tp_strdiff (s, "0") || !tp_strdiff (s, "false"))
-        {
-          g_value_set_boolean (value, TRUE);
-        }
-      else
-        {
-          g_free (s);
-          return FALSE;
-        }
-
-      g_free (s);
-      return TRUE;
-
-    case 's':
-      s = g_key_file_get_string (file, group, key, NULL);
-
-      g_value_take_string (value, s);
-      return (s != NULL);
-
-    case 'y':
-    case 'q':
-    case 'u':
-    case 't':
-        {
-          guint64 v = tp_g_key_file_get_uint64 (file, group, key, &error);
-
-          if (error != NULL)
-            {
-              g_error_free (error);
-              return FALSE;
-            }
-
-          if (sig[0] == 't')
-            {
-              g_value_set_uint64 (value, v);
-              return TRUE;
-            }
-
-          if (sig[0] == 'y')
-            {
-              if (v > G_MAXUINT8)
-                {
-                  return FALSE;
-                }
-
-              g_value_set_uchar (value, v);
-              return TRUE;
-            }
-
-          if (v > G_MAXUINT32 || (sig[0] == 'q' && v > G_MAXUINT16))
-            return FALSE;
-
-          g_value_set_uint (value, v);
-          return TRUE;
-        }
-
-    case 'n':
-    case 'i':
-    case 'x':
-      if (string[0] == '\0')
-        {
-          return FALSE;
-        }
-      else
-        {
-          gint64 v = tp_g_key_file_get_int64 (file, group, key, &error);
-
-          if (error != NULL)
-            {
-              g_error_free (error);
-              return FALSE;
-            }
-
-          if (sig[0] == 'x')
-            {
-              g_value_set_int64 (value, v);
-              return TRUE;
-            }
-
-          if (v > G_MAXINT32 || (sig[0] == 'q' && v > G_MAXINT16))
-            return FALSE;
-
-          if (v < G_MININT32 || (sig[0] == 'n' && v < G_MININT16))
-            return FALSE;
-
-          g_value_set_int (value, v);
-          return TRUE;
-        }
-
-    case 'o':
-      s = g_key_file_get_string (file, group, key, NULL);
-
-      if (s == NULL || !tp_dbus_check_valid_object_path (s, NULL))
-        {
-          g_free (s);
-          return FALSE;
-        }
-
-      g_value_take_boxed (value, s);
-
-      return TRUE;
-
-    case 'd':
-      g_value_set_double (value, g_key_file_get_double (file, group, key,
-            &error));
-
-      if (error != NULL)
-        {
-          g_error_free (error);
-          return FALSE;
-        }
-
-      return TRUE;
-
-    case 'a':
-      switch (sig[1])
-        {
-        case 's':
-            {
-              g_value_take_boxed (value,
-                  g_key_file_get_string_list (file, group, key, NULL, &error));
-
-              if (error != NULL)
-                {
-                  g_error_free (error);
-                  return FALSE;
-                }
-
-              return TRUE;
-            }
-        }
-    }
-
-  if (G_IS_VALUE (value))
-    g_value_unset (value);
-
-  return FALSE;
-}
-
-static GPtrArray *
-tp_connection_manager_read_file (const gchar *cm_name,
+tp_connection_manager_read_file (TpDBusDaemon *dbus_daemon,
+    const gchar *cm_name,
     const gchar *filename,
+    GHashTable **protocols_out,
+    GStrv *interfaces_out,
     GError **error)
 {
   GKeyFile *file;
-  gchar **groups, **group;
-  guint i;
-  TpConnectionManagerProtocol *proto_struct;
-  GPtrArray *protocols;
+  gchar **groups = NULL;
+  gchar **group;
+  TpProtocol *proto_object;
+  GHashTable *protocols = NULL;
+  GStrv interfaces = NULL;
 
   file = g_key_file_new ();
 
   if (!g_key_file_load_from_file (file, filename, G_KEY_FILE_NONE, error))
-    return NULL;
+    return FALSE;
+
+  /* if missing, it's not an error, so ignore @error */
+  interfaces = g_key_file_get_string_list (file, "ConnectionManager",
+      "Interfaces", NULL, NULL);
+
+  protocols = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+      g_object_unref);
 
   groups = g_key_file_get_groups (file, NULL);
 
-  if (groups == NULL || *groups == NULL)
-    return g_ptr_array_sized_new (1);
-
-  i = 0;
-  for (group = groups; *group != NULL; group++)
-    {
-      if (g_str_has_prefix (*group, "Protocol "))
-        i++;
-    }
-
-  /* Reserve space for the caller to add a NULL at the end, so +1 */
-  protocols = g_ptr_array_sized_new (i + 1);
+  if (groups == NULL)
+    goto success;
 
   for (group = groups; *group != NULL; group++)
     {
-      gchar **keys, **key;
-      GArray *output;
+      gchar *name;
+      GHashTable *immutables;
 
-      if (!g_str_has_prefix (*group, "Protocol "))
+      immutables = _tp_protocol_parse_manager_file (file, cm_name, *group,
+          &name);
+
+      if (immutables == NULL)
         continue;
 
-      proto_struct = g_slice_new (TpConnectionManagerProtocol);
+      proto_object = tp_protocol_new (dbus_daemon, cm_name, name,
+          immutables, NULL);
+      g_assert (proto_object != NULL);
 
-      keys = g_strsplit (*group, " ", 2);
-      proto_struct->name = g_strdup (keys[1]);
-      g_strfreev (keys);
+      /* steals @name */
+      g_hash_table_insert (protocols, name, proto_object);
 
-      DEBUG ("Protocol %s", proto_struct->name);
-
-      keys = g_key_file_get_keys (file, *group, NULL, NULL);
-
-      i = 0;
-      for (key = keys; key != NULL && *key != NULL; key++)
-        {
-          if (g_str_has_prefix (*key, "param-"))
-            i++;
-        }
-
-      output = g_array_sized_new (TRUE, TRUE,
-          sizeof (TpConnectionManagerParam), i);
-
-      for (key = keys; key != NULL && *key != NULL; key++)
-        {
-          if (g_str_has_prefix (*key, "param-"))
-            {
-              gchar **strv, **iter;
-              gchar *value, *def;
-              /* Points to the zeroed entry just after the end of the array
-               * - but we're about to extend the array to make it valid */
-              TpConnectionManagerParam *param = &g_array_index (output,
-                  TpConnectionManagerParam, output->len);
-
-              value = g_key_file_get_string (file, *group, *key, NULL);
-              if (value == NULL)
-                continue;
-
-              /* zero_terminated=TRUE and clear_=TRUE */
-              g_assert (param->name == NULL);
-
-              g_array_set_size (output, output->len + 1);
-
-              /* strlen ("param-") == 6 */
-              param->name = g_strdup (*key + 6);
-
-              strv = g_strsplit (value, " ", 0);
-              g_free (value);
-
-              param->dbus_signature = g_strdup (strv[0]);
-
-              for (iter = strv + 1; *iter != NULL; iter++)
-                {
-                  if (!tp_strdiff (*iter, "required"))
-                    param->flags |= TP_CONN_MGR_PARAM_FLAG_REQUIRED;
-                  if (!tp_strdiff (*iter, "register"))
-                    param->flags |= TP_CONN_MGR_PARAM_FLAG_REGISTER;
-                  if (!tp_strdiff (*iter, "secret"))
-                    param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
-                  if (!tp_strdiff (*iter, "dbus-property"))
-                    param->flags |= TP_CONN_MGR_PARAM_FLAG_DBUS_PROPERTY;
-                }
-
-              g_strfreev (strv);
-
-              if ((!tp_strdiff (param->name, "password") ||
-                  g_str_has_suffix (param->name, "-password")) &&
-                  (param->flags & TP_CONN_MGR_PARAM_FLAG_SECRET) == 0)
-                {
-                  DEBUG ("\tTreating %s as secret due to its name (please "
-                      "fix %s)", param->name, cm_name);
-                  param->flags |= TP_CONN_MGR_PARAM_FLAG_SECRET;
-                }
-
-              def = g_strdup_printf ("default-%s", param->name);
-              value = g_key_file_get_string (file, *group, def, NULL);
-
-              init_gvalue_from_dbus_sig (param->dbus_signature,
-                  &param->default_value);
-
-              if (value != NULL && parse_default_value (&param->default_value,
-                    param->dbus_signature, value, file, *group, def))
-                param->flags |= TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT;
-
-              g_free (value);
-              g_free (def);
-
-              DEBUG ("\tParam name: %s", param->name);
-              DEBUG ("\tParam flags: 0x%x", param->flags);
-              DEBUG ("\tParam sig: %s", param->dbus_signature);
-
-#ifdef ENABLE_DEBUG
-              if (G_IS_VALUE (&param->default_value))
-                {
-                  gchar *repr = g_strdup_value_contents
-                      (&(param->default_value));
-
-                  DEBUG ("\tParam default value: %s of type %s", repr,
-                      G_VALUE_TYPE_NAME (&(param->default_value)));
-                  g_free (repr);
-                }
-              else
-                {
-                  DEBUG ("\tParam default value: not set");
-                }
-#endif
-            }
-        }
-
-      g_strfreev (keys);
-
-      proto_struct->params =
-          (TpConnectionManagerParam *) g_array_free (output, FALSE);
-
-      g_ptr_array_add (protocols, proto_struct);
+      g_hash_table_unref (immutables);
     }
 
+success:
   g_strfreev (groups);
   g_key_file_free (file);
 
-  return protocols;
+  if (protocols_out != NULL)
+    *protocols_out = protocols;
+  else
+    g_hash_table_unref (protocols);
+
+  if (interfaces_out != NULL)
+    *interfaces_out = interfaces;
+  else
+    g_strfreev (interfaces);
+
+  return TRUE;
 }
 
 static gboolean
@@ -1348,18 +1100,21 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
 
   self->priv->manager_file_read_idle_id = 0;
 
-  if (self->priv->protocols == NULL)
+  if (self->priv->protocol_objects == NULL)
     {
       if (self->priv->manager_file != NULL &&
           self->priv->manager_file[0] != '\0')
         {
           GError *error = NULL;
-          GPtrArray *protocols = tp_connection_manager_read_file (
-              self->name, self->priv->manager_file, &error);
+          GHashTable *protocols;
+          GStrv interfaces = NULL;
 
-          DEBUG ("Read %s", self->priv->manager_file);
+          DEBUG ("Reading %s", self->priv->manager_file);
 
-          if (protocols == NULL)
+          if (!tp_connection_manager_read_file (
+              tp_proxy_get_dbus_daemon (self),
+              self->name, self->priv->manager_file, &protocols, &interfaces,
+              &error))
             {
               DEBUG ("Failed to load %s: %s", self->priv->manager_file,
                   error->message);
@@ -1368,11 +1123,12 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
             }
           else
             {
-              g_ptr_array_add (protocols, NULL);
-              self->priv->protocols = protocols;
+              tp_connection_manager_add_interfaces (self,
+                  (const gchar * const *) interfaces);
+              g_strfreev (interfaces);
 
-              self->protocols = (const TpConnectionManagerProtocol * const *)
-                  self->priv->protocols->pdata;
+              self->priv->protocol_objects = protocols;
+              tp_connection_manager_update_protocol_structs (self);
 
               DEBUG ("Got info from file");
               /* previously it must have been NONE */
@@ -1499,6 +1255,24 @@ tp_connection_manager_dispose (GObject *object)
       as_proxy->bus_name, tp_connection_manager_name_owner_changed_cb,
       object);
 
+  if (self->priv->protocol_structs != NULL)
+    {
+      g_ptr_array_free (self->priv->protocol_structs, TRUE);
+      self->priv->protocol_structs = NULL;
+    }
+
+  if (self->priv->protocol_objects != NULL)
+    {
+      g_hash_table_unref (self->priv->protocol_objects);
+      self->priv->protocol_objects = NULL;
+    }
+
+  if (self->priv->found_protocols != NULL)
+    {
+      g_hash_table_unref (self->priv->found_protocols);
+      self->priv->found_protocols = NULL;
+    }
+
 finally:
   G_OBJECT_CLASS (tp_connection_manager_parent_class)->dispose (object);
 }
@@ -1517,22 +1291,12 @@ tp_connection_manager_finalize (GObject *object)
   if (self->priv->introspect_idle_id != 0)
     g_source_remove (self->priv->introspect_idle_id);
 
-  if (self->priv->protocols != NULL)
-    {
-      tp_connection_manager_free_protocols (self->priv->protocols);
-    }
-
   if (self->priv->pending_protocols != NULL)
     {
       for (i = 0; i < self->priv->pending_protocols->len; i++)
         g_free (self->priv->pending_protocols->pdata[i]);
 
       g_ptr_array_free (self->priv->pending_protocols, TRUE);
-    }
-
-  if (self->priv->found_protocols != NULL)
-    {
-      tp_connection_manager_free_protocols (self->priv->found_protocols);
     }
 
   G_OBJECT_CLASS (tp_connection_manager_parent_class)->finalize (object);
@@ -2331,14 +2095,14 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
   if (self->info_source == TP_CM_INFO_SOURCE_NONE)
     return NULL;
 
-  g_assert (self->priv->protocols != NULL);
+  g_assert (self->priv->protocol_structs != NULL);
 
-  ret = g_ptr_array_sized_new (self->priv->protocols->len);
+  ret = g_ptr_array_sized_new (self->priv->protocol_structs->len);
 
-  for (i = 0; i < self->priv->protocols->len; i++)
+  for (i = 0; i < self->priv->protocol_structs->len; i++)
     {
       TpConnectionManagerProtocol *proto = g_ptr_array_index (
-          self->priv->protocols, i);
+          self->priv->protocol_structs, i);
 
       if (proto != NULL)
         g_ptr_array_add (ret, g_strdup (proto->name));
@@ -2358,6 +2122,9 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  * Returns a structure representing a protocol, or %NULL if this connection
  * manager does not support the specified protocol.
  *
+ * Since 0.11.UNRELEASED, you can get a #GObject version with more
+ * functionality by calling tp_connection_manager_get_protocol_object().
+ *
  * If this function is called before the connection manager information has
  * been obtained, the result is always %NULL. Use
  * tp_connection_manager_call_when_ready() to wait for this.
@@ -2371,27 +2138,48 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  */
 const TpConnectionManagerProtocol *
 tp_connection_manager_get_protocol (TpConnectionManager *self,
-                                    const gchar *protocol)
+    const gchar *protocol)
 {
-  guint i;
+  TpProtocol *object;
 
-  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
+  object = tp_connection_manager_get_protocol_object (self, protocol);
 
-  if (self->info_source == TP_CM_INFO_SOURCE_NONE)
+  if (object == NULL)
     return NULL;
 
-  g_assert (self->priv->protocols != NULL);
+  return _tp_protocol_get_struct (object);
+}
 
-  for (i = 0; i < self->priv->protocols->len; i++)
-    {
-      TpConnectionManagerProtocol *proto = g_ptr_array_index (
-          self->priv->protocols, i);
+/**
+ * tp_connection_manager_get_protocol_object:
+ * @self: a connection manager
+ * @protocol: the name of a protocol as defined in the Telepathy D-Bus API,
+ *            e.g. "jabber" or "msn"
+ *
+ * Returns an object representing a protocol, or %NULL if this connection
+ * manager does not support the specified protocol.
+ *
+ * If this function is called before the connection manager information has
+ * been obtained, the result is always %NULL. Use tp_proxy_prepare_async()
+ * to wait for this.
+ *
+ * The result should be referenced with g_object_ref() if it will be kept.
+ *
+ * Returns: (transfer none): an object representing the protocol, or %NULL
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpProtocol *
+tp_connection_manager_get_protocol_object (TpConnectionManager *self,
+    const gchar *protocol)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION_MANAGER (self), NULL);
+  g_return_val_if_fail (protocol != NULL, NULL);
 
-      if (proto != NULL && !tp_strdiff (proto->name, protocol))
-        return proto;
-    }
+  if (self->priv->protocol_objects == NULL)
+    return NULL;
 
-  return NULL;
+  return g_hash_table_lookup (self->priv->protocol_objects, protocol);
 }
 
 /**
@@ -2413,7 +2201,7 @@ gboolean
 tp_connection_manager_has_protocol (TpConnectionManager *self,
                                     const gchar *protocol)
 {
-  return (tp_connection_manager_get_protocol (self, protocol) != NULL);
+  return (tp_connection_manager_get_protocol_object (self, protocol) != NULL);
 }
 
 /**

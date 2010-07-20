@@ -8,8 +8,7 @@
  * notice and this notice are preserved.
  */
 
-#include <telepathy-glib/connection-manager.h>
-#include <telepathy-glib/debug.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "examples/cm/echo/connection-manager.h"
 
@@ -23,6 +22,69 @@ typedef struct {
     TpConnectionManager *cm;
     GError *error /* initialized where needed */;
 } Test;
+
+typedef ExampleEchoConnectionManager PropertylessConnectionManager;
+typedef ExampleEchoConnectionManagerClass PropertylessConnectionManagerClass;
+
+static void stub_properties_iface_init (gpointer iface);
+static GType propertyless_connection_manager_get_type (void);
+
+G_DEFINE_TYPE_WITH_CODE (PropertylessConnectionManager,
+    propertyless_connection_manager,
+    EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      stub_properties_iface_init))
+
+static void
+propertyless_connection_manager_class_init (
+    PropertylessConnectionManagerClass *cls)
+{
+}
+
+static void
+propertyless_connection_manager_init (PropertylessConnectionManager *self)
+{
+}
+
+static void
+stub_get (TpSvcDBusProperties *iface G_GNUC_UNUSED,
+    const gchar *i G_GNUC_UNUSED,
+    const gchar *p G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+stub_get_all (TpSvcDBusProperties *iface G_GNUC_UNUSED,
+    const gchar *i G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+stub_set (TpSvcDBusProperties *iface G_GNUC_UNUSED,
+    const gchar *i G_GNUC_UNUSED,
+    const gchar *p G_GNUC_UNUSED,
+    const GValue *v G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
+{
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+stub_properties_iface_init (gpointer iface)
+{
+  TpSvcDBusPropertiesClass *cls = iface;
+
+#define IMPLEMENT(x) \
+    tp_svc_dbus_properties_implement_##x (cls, stub_##x)
+  IMPLEMENT (get);
+  IMPLEMENT (get_all);
+  IMPLEMENT (set);
+#undef IMPLEMENT
+}
 
 static void
 setup (Test *test,
@@ -168,26 +230,35 @@ test_file_got_info (Test *test,
   g_assert (test->cm->protocols[1] != NULL);
   g_assert (test->cm->protocols[2] == NULL);
 
-  /* FIXME: it's not technically an API guarantee that protocols and params
-   * come out in this order... */
-
   strv = tp_connection_manager_dup_protocol_names (test->cm);
-  g_assert_cmpstr (strv[0], ==, "normal");
-  g_assert_cmpstr (strv[1], ==, "weird");
+
+  if (tp_strdiff (strv[0], "normal"))
+    {
+      g_assert_cmpstr (strv[0], ==, "weird");
+      g_assert_cmpstr (strv[1], ==, "normal");
+    }
+  else
+    {
+      g_assert_cmpstr (strv[0], ==, "normal");
+      g_assert_cmpstr (strv[1], ==, "weird");
+    }
+
   g_assert (strv[2] == NULL);
   g_strfreev (strv);
 
   g_assert (tp_connection_manager_has_protocol (test->cm, "normal"));
   g_assert (!tp_connection_manager_has_protocol (test->cm, "not-there"));
 
-  protocol = test->cm->protocols[0];
+  protocol = tp_connection_manager_get_protocol (test->cm, "normal");
+
   g_assert_cmpstr (protocol->name, ==, "normal");
-  g_assert (protocol == tp_connection_manager_get_protocol (test->cm,
-        "normal"));
   g_assert (tp_connection_manager_protocol_can_register (protocol));
 
   g_assert (tp_connection_manager_protocol_has_param (protocol, "account"));
   g_assert (!tp_connection_manager_protocol_has_param (protocol, "not-there"));
+
+  /* FIXME: it's not technically an API guarantee that params
+   * come out in this order... */
 
   param = &protocol->params[0];
   g_assert_cmpstr (param->name, ==, "account");
@@ -240,7 +311,17 @@ test_file_got_info (Test *test,
   g_assert (strv[3] == NULL);
   g_strfreev (strv);
 
-  protocol = test->cm->protocols[1];
+  /* switch to the other protocol, whichever one that actually is */
+  if (protocol == test->cm->protocols[0])
+    {
+      protocol = test->cm->protocols[1];
+    }
+  else
+    {
+      g_assert (protocol == test->cm->protocols[1]);
+      protocol = test->cm->protocols[0];
+    }
+
   g_assert_cmpstr (protocol->name, ==, "weird");
   g_assert (protocol == tp_connection_manager_get_protocol (test->cm,
         "weird"));
@@ -256,8 +337,7 @@ test_file_got_info (Test *test,
   param = &protocol->params[1];
   g_assert (param->name == NULL);
 
-  protocol = test->cm->protocols[2];
-  g_assert (protocol == NULL);
+  g_assert (test->cm->protocols[2] == NULL);
 }
 
 static void
@@ -291,10 +371,10 @@ test_complex_file_got_info (Test *test,
   g_assert (test->cm->protocols[2] != NULL);
   g_assert (test->cm->protocols[3] == NULL);
 
-  /* FIXME: it's not technically an API guarantee that protocols and params
+  /* FIXME: it's not technically an API guarantee that params
    * come out in this order... */
 
-  protocol = test->cm->protocols[0];
+  protocol = tp_connection_manager_get_protocol (test->cm, "foo");
 
   g_assert_cmpstr (protocol->name, ==, "foo");
 
@@ -346,7 +426,7 @@ test_complex_file_got_info (Test *test,
   param = &protocol->params[6];
   g_assert (param->name == NULL);
 
-  protocol = test->cm->protocols[1];
+  protocol = tp_connection_manager_get_protocol (test->cm, "bar");
   g_assert_cmpstr (protocol->name, ==, "bar");
 
   param = &protocol->params[0];
@@ -400,8 +480,9 @@ test_complex_file_got_info (Test *test,
   param = &protocol->params[6];
   g_assert (param->name == NULL);
 
-  protocol = test->cm->protocols[2];
-  g_assert_cmpstr (test->cm->protocols[2]->name, ==, "somewhat-pathological");
+  protocol = tp_connection_manager_get_protocol (test->cm,
+      "somewhat-pathological");
+  g_assert_cmpstr (protocol->name, ==, "somewhat-pathological");
 
   param = &protocol->params[0];
   g_assert_cmpstr (param->name, ==, "foo");
@@ -815,6 +896,75 @@ test_dbus_ready (Test *test,
 }
 
 static void
+test_dbus_fallback (Test *test,
+    gconstpointer data)
+{
+  gchar *name;
+  guint info_source;
+  const gboolean activate = GPOINTER_TO_INT (data);
+  TpBaseConnectionManager *service_cm_as_base;
+  gboolean ok;
+
+  /* Register a stub version of the CM that doesn't have Properties, to
+   * exercise the fallback path */
+  g_object_unref (test->service_cm);
+  test->service_cm = NULL;
+  test->service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (tp_tests_object_new_static_class (
+        propertyless_connection_manager_get_type (),
+        NULL));
+  g_assert (test->service_cm != NULL);
+  service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
+  g_assert (service_cm_as_base != NULL);
+  ok = tp_base_connection_manager_register (service_cm_as_base);
+  g_assert (ok);
+
+  test->error = NULL;
+  test->cm = tp_connection_manager_new (test->dbus,
+      TP_BASE_CONNECTION_MANAGER_GET_CLASS (test->service_cm)->cm_dbus_name,
+      NULL, &test->error);
+  g_assert (TP_IS_CONNECTION_MANAGER (test->cm));
+  g_assert (test->error == NULL);
+  g_test_queue_unref (test->cm);
+
+  if (activate)
+    {
+      g_test_bug ("23524");
+
+      /* The bug being tested here was caused by ListProtocols being called
+       * twice on the same CM; this can be triggered by _activate()ing at
+       * exactly the wrong moment. But the wrong moment involves racing an
+       * idle. This triggered the assertion about 1/3 of the time on my laptop.
+       * --wjt
+       */
+      g_idle_add (idle_activate, test->cm);
+    }
+  else
+    {
+      g_test_bug ("18291");
+    }
+
+  tp_connection_manager_call_when_ready (test->cm, ready_or_not,
+      test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert (test->error == NULL);
+
+  g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
+      "example_echo");
+  g_assert_cmpuint (tp_connection_manager_is_ready (test->cm), ==, TRUE);
+  g_assert_cmpuint (tp_connection_manager_is_running (test->cm), ==, TRUE);
+  g_assert_cmpuint (tp_connection_manager_get_info_source (test->cm), ==,
+      TP_CM_INFO_SOURCE_LIVE);
+
+  g_object_get (test->cm,
+      "info-source", &info_source,
+      "connection-manager", &name,
+      NULL);
+  g_assert_cmpstr (name, ==, "example_echo");
+  g_assert_cmpuint (info_source, ==, TP_CM_INFO_SOURCE_LIVE);
+  g_free (name);
+}
+
+static void
 on_listed_connection_managers (TpConnectionManager * const * cms,
                                gsize n_cms,
                                const GError *error,
@@ -891,6 +1041,10 @@ main (int argc,
       test_dbus_ready, teardown);
   g_test_add ("/cm/dbus-and-activate", Test, GINT_TO_POINTER (TRUE), setup,
       test_dbus_ready, teardown);
+  g_test_add ("/cm/dbus-fallback", Test, GINT_TO_POINTER (FALSE), setup,
+      test_dbus_fallback, teardown);
+  g_test_add ("/cm/dbus-fallback-activate", Test, GINT_TO_POINTER (TRUE),
+      setup, test_dbus_fallback, teardown);
 
   g_test_add ("/cm/list", Test, NULL, setup, test_list, teardown);
 

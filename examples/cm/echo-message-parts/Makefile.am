@@ -12,6 +12,8 @@ libexample_cm_echo_2_la_SOURCES = \
     chan.h \
     conn.c \
     conn.h \
+    protocol.c \
+    protocol.h \
     connection-manager.c \
     connection-manager.h \
     im-manager.c \

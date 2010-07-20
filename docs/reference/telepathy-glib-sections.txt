@@ -87,6 +87,7 @@ TpBaseConnectionManagerClass
 TpBaseConnectionManagerNewConnFunc
 tp_base_connection_manager_get_dbus_daemon
 tp_base_connection_manager_register
+tp_base_connection_manager_add_protocol
 <SUBSECTION Standard>
 TP_BASE_CONNECTION_MANAGER
 TP_IS_BASE_CONNECTION_MANAGER
@@ -129,6 +130,8 @@ TP_CHANNEL_FACTORY_IFACE_GET_CLASS
 <FILE>channel-manager</FILE>
 TpChannelManagerChannelClassFunc
 TpChannelManagerForeachChannelClassFunc
+TpChannelManagerTypeChannelClassFunc
+TpChannelManagerTypeForeachChannelClassFunc
 TpChannelManagerForeachChannelFunc
 TpChannelManagerRequestFunc
 <TITLE>TpChannelManager</TITLE>
@@ -146,6 +149,7 @@ tp_channel_manager_emit_request_failed_printf
 tp_channel_manager_ensure_channel
 tp_channel_manager_foreach_channel
 tp_channel_manager_foreach_channel_class
+tp_channel_manager_type_foreach_channel_class
 tp_channel_manager_request_channel
 <SUBSECTION Standard>
 TP_CHANNEL_MANAGER
@@ -1877,6 +1881,7 @@ tp_dbus_properties_mixin_class_init
 tp_dbus_properties_mixin_implement_interface
 tp_dbus_properties_mixin_iface_init
 tp_dbus_properties_mixin_get
+tp_dbus_properties_mixin_fill_properties_hash
 tp_dbus_properties_mixin_make_properties_hash
 <SUBSECTION Standard>
 tp_dbus_properties_mixin_flags_get_type
@@ -2137,6 +2142,8 @@ TP_IFACE_DEBUG
 TP_IFACE_QUARK_DEBUG
 TP_IFACE_CONNECTION_MANAGER
 TP_IFACE_QUARK_CONNECTION_MANAGER
+TP_IFACE_PROTOCOL
+TP_IFACE_QUARK_PROTOCOL
 TP_IFACE_CONNECTION
 TP_IFACE_QUARK_CONNECTION
 TP_IFACE_CONNECTION_INTERFACE_ALIASING
@@ -2366,6 +2373,13 @@ TP_PROP_MEDIA_STREAM_HANDLER_CREATED_LOCALLY
 TP_PROP_MEDIA_STREAM_HANDLER_NAT_TRAVERSAL
 TP_PROP_MEDIA_STREAM_HANDLER_RELAY_INFO
 TP_PROP_MEDIA_STREAM_HANDLER_STUN_SERVERS
+TP_PROP_PROTOCOL_CONNECTION_INTERFACES
+TP_PROP_PROTOCOL_ENGLISH_NAME
+TP_PROP_PROTOCOL_ICON
+TP_PROP_PROTOCOL_INTERFACES
+TP_PROP_PROTOCOL_PARAMETERS
+TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES
+TP_PROP_PROTOCOL_VCARD_FIELD
 TP_TOKEN_CONNECTION_CONTACT_ID
 TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS
 TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN
@@ -2432,6 +2446,7 @@ tp_iface_quark_dbus_daemon
 tp_iface_quark_media_session_handler
 tp_iface_quark_media_stream_handler
 tp_iface_quark_properties_interface
+tp_iface_quark_protocol
 tp_iface_quark_channel_interface_call_state
 tp_iface_quark_channel_interface_anonymity
 tp_iface_quark_channel_interface_service_point
@@ -3261,6 +3276,7 @@ tp_connection_manager_is_running
 tp_connection_manager_dup_protocol_names
 tp_connection_manager_has_protocol
 tp_connection_manager_get_protocol
+tp_connection_manager_get_protocol_object
 TpConnectionManagerProtocol
 tp_connection_manager_protocol_can_register
 tp_connection_manager_protocol_dup_param_names
@@ -4136,4 +4152,97 @@ TP_IS_SIMPLE_HANDLER
 TP_IS_SIMPLE_HANDLER_CLASS
 TpSimpleHandlerClass
 TpSimpleHandlerPrivate
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/base-protocol.h</INCLUDE>
+<FILE>base-protocol</FILE>
+<TITLE>base-protocol</TITLE>
+TpBaseProtocol
+tp_base_protocol_get_name
+tp_base_protocol_get_immutable_properties
+tp_base_protocol_get_parameters
+tp_base_protocol_new_connection
+<SUBSECTION>
+TpBaseProtocolClass
+TpBaseProtocolGetParametersFunc
+TpBaseProtocolNewConnectionFunc
+TpBaseProtocolNormalizeContactFunc
+TpBaseProtocolIdentifyAccountFunc
+TpBaseProtocolGetInterfacesFunc
+TpBaseProtocolGetConnectionDetailsFunc
+<SUBSECTION Standard>
+tp_base_protocol_get_type
+TP_BASE_PROTOCOL
+TP_BASE_PROTOCOL_CLASS
+TP_BASE_PROTOCOL_GET_CLASS
+TP_IS_BASE_PROTOCOL
+TP_IS_BASE_PROTOCOL_CLASS
+TP_TYPE_BASE_PROTOCOL
+<SUBSECTION Private>
+TpBaseProtocolPrivate
+TpBaseProtocolClassPrivate
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/svc-protocol.h</INCLUDE>
+<FILE>svc-protocol</FILE>
+<TITLE>svc-protocol</TITLE>
+TpSvcProtocol
+TpSvcProtocolClass
+<SUBSECTION>
+tp_svc_protocol_identify_account_impl
+tp_svc_protocol_implement_identify_account
+tp_svc_protocol_implement_normalize_contact
+tp_svc_protocol_normalize_contact_impl
+tp_svc_protocol_return_from_identify_account
+tp_svc_protocol_return_from_normalize_contact
+<SUBSECTION Standard>
+tp_svc_protocol_get_type
+TP_SVC_PROTOCOL
+TP_SVC_PROTOCOL_CLASS
+TP_SVC_PROTOCOL_GET_CLASS
+TP_IS_SVC_PROTOCOL
+TP_TYPE_SVC_PROTOCOL
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/protocol.h</INCLUDE>
+<FILE>protocol</FILE>
+<TITLE>protocol</TITLE>
+TpProtocol
+TpProtocolClass
+tp_protocol_new
+tp_protocol_get_name
+tp_protocol_init_known_interfaces
+<SUBSECTION>
+TP_PROTOCOL_FEATURE_PARAMETERS
+tp_protocol_dup_param_names
+tp_protocol_get_param
+tp_protocol_has_param
+tp_protocol_can_register
+<SUBSECTION>
+TP_PROTOCOL_FEATURE_CORE
+tp_protocol_get_capabilities
+tp_protocol_get_english_name
+tp_protocol_get_icon_name
+tp_protocol_get_vcard_field
+<SUBSECTION>
+tp_cli_protocol_call_identify_account
+tp_cli_protocol_call_normalize_contact
+tp_cli_protocol_callback_for_identify_account
+tp_cli_protocol_callback_for_normalize_contact
+<SUBSECTION Standard>
+tp_protocol_get_type
+TP_PROTOCOL
+TP_PROTOCOL_CLASS
+TP_PROTOCOL_GET_CLASS
+TP_IS_PROTOCOL
+TP_IS_PROTOCOL_CLASS
+TP_TYPE_PROTOCOL
+tp_protocol_get_feature_quark_core
+tp_protocol_get_feature_quark_parameters
+<SUBSECTION Private>
+TpProtocolPrivate
+TpProtocolClassPrivate
 </SECTION>

@@ -65,12 +65,14 @@ CFILE_GLOB=$(top_srcdir)/telepathy-glib/*.c $(top_builddir)/telepathy-glib/_gen/
 IGNORE_HFILES=\
     add-dispatch-operation-context-internal.h \
     channel-dispatch-operation-internal.h \
+    base-protocol-internal.h \
     channel-internal.h \
     connection-internal.h \
     debug-internal.h \
     handle-channels-context-internal.h \
     handle-repo-internal.h \
     observe-channels-context-internal.h \
+    protocol-internal.h \
     proxy-internal.h \
     proxy-introspectable.h
 
