@@ -244,6 +244,22 @@ main (int argc,
       "");
   g_assert_no_error (error);
 
+    {
+      GHashTable *properties = NULL;
+      GPtrArray *arr;
+
+      /* check that it has the requestable channel class */
+      tp_cli_dbus_properties_run_get_all (conn, -1,
+          TP_IFACE_CONNECTION_INTERFACE_REQUESTS, &properties, &error, NULL);
+      g_assert_no_error (error);
+
+      arr = tp_asv_get_boxed (properties, "RequestableChannelClasses",
+          TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
+      g_assert_cmpuint (arr->len, ==, 1);
+
+      g_hash_table_unref (properties);
+    }
+
   handle = tp_tests_connection_run_request_contact_handle (conn,
       "them@example.com");
 

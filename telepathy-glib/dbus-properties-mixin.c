@@ -771,8 +771,89 @@ tp_dbus_properties_mixin_get (GObject *self,
 }
 
 
+static void
+tp_dbus_properties_mixin_fill_properties_hash_va (
+    GObject *object,
+    GHashTable *table,
+    const gchar *first_interface,
+    const gchar *first_property,
+    va_list ap)
+{
+  const gchar *iface, *property;
+  gboolean first = TRUE;
+
+  for (iface = first_interface;
+       iface != NULL;
+       iface = va_arg (ap, gchar *))
+    {
+      GValue *value = g_slice_new0 (GValue);
+
+      if (first)
+        {
+          property = first_property;
+          first = FALSE;
+        }
+      else
+        {
+          property = va_arg (ap, gchar *);
+        }
+
+      /* If property is NULL, the caller might have omitted a comma or
+       * something; in any case, it shouldn't be.
+       */
+      g_assert (property != NULL);
+
+      tp_dbus_properties_mixin_get (object, iface, property,
+            value, NULL);
+      /* Fetching our immutable properties had better not fail... */
+      g_assert (G_IS_VALUE (value));
+
+      g_hash_table_insert (table,
+          g_strdup_printf ("%s.%s", iface, property), value);
+    }
+}
+
 /**
- * tp_dbus_properties_mixin_make_properties_hash:
+ * tp_dbus_properties_mixin_fill_properties_hash: (skip)
+ * @object: an object which uses the D-Bus properties mixin
+ * @table: (element-type utf8 GObject.Value): a hash table where the keys are
+ *  strings copied with g_strdup() and the values are slice-allocated
+ *  #GValue<!-- -->s
+ * @first_interface: the interface of the first property to be retrieved
+ * @first_property: the name of the first property to be retrieved
+ * @...: more (interface name, property name) pairs, terminated by %NULL.
+ *
+ * Retrieves the values of several D-Bus properties from an object, and adds
+ * them to a hash mapping the fully-qualified name of the property to its
+ * value. This is equivalent to calling tp_dbus_properties_mixin_get() for
+ * each property and adding it to the table yourself, with the proviso that
+ * this function will g_assert() if retrieving a property fails (for instance,
+ * because it does not exist).
+ *
+ * Note that in particular, @table does not have the same memory-allocation
+ * model as the hash tables required by tp_asv_set_string() and similar
+ * functions.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_dbus_properties_mixin_fill_properties_hash (
+    GObject *object,
+    GHashTable *table,
+    const gchar *first_interface,
+    const gchar *first_property,
+    ...)
+{
+  va_list ap;
+
+  va_start (ap, first_property);
+  tp_dbus_properties_mixin_fill_properties_hash_va (object, table,
+      first_interface, first_property, ap);
+  va_end (ap);
+}
+
+/**
+ * tp_dbus_properties_mixin_make_properties_hash: (skip)
  * @object: an object which uses the D-Bus properties mixin
  * @first_interface: the interface of the first property to be retrieved
  * @first_property: the name of the first property to be retrieved
@@ -805,46 +886,13 @@ tp_dbus_properties_mixin_make_properties_hash (
     const gchar *first_property,
     ...)
 {
-  va_list ap;
-  GHashTable *table;
-  const gchar *iface, *property;
-  gboolean first = TRUE;
-
-  table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+  GHashTable *table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
       (GDestroyNotify) tp_g_value_slice_free);
+  va_list ap;
 
   va_start (ap, first_property);
-
-  for (iface = first_interface;
-       iface != NULL;
-       iface = va_arg (ap, gchar *))
-    {
-      GValue *value = g_slice_new0 (GValue);
-
-      if (first)
-        {
-          property = first_property;
-          first = FALSE;
-        }
-      else
-        {
-          property = va_arg (ap, gchar *);
-        }
-
-      /* If property is NULL, the caller might have omitted a comma or
-       * something; in any case, it shouldn't be.
-       */
-      g_assert (property != NULL);
-
-      tp_dbus_properties_mixin_get (object, iface, property,
-            value, NULL);
-      /* Fetching our immutable properties had better not fail... */
-      g_assert (G_IS_VALUE (value));
-
-      g_hash_table_insert (table,
-          g_strdup_printf ("%s.%s", iface, property), value);
-    }
-
+  tp_dbus_properties_mixin_fill_properties_hash_va (object, table,
+      first_interface, first_property, ap);
   va_end (ap);
 
   return table;

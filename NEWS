@@ -1,7 +1,29 @@
 telepathy-glib 0.11.11 (UNRELEASED)
 ===================================
 
-…
+Enhancements:
+
+↭ Updated spec to 0.19.10 (smcv):
+  ↯ generate code for Protocol objects, and the ContactSearch channel type
+
+↭ fd.o #27997: add TpProtocol client-side API, and TpBaseProtocol service-side
+  base class, for Protocol objects (smcv)
+
+↭ fd.o #28751: tp_proxy_has_interface is now a real function, not a macro, for
+  better introspection (smcv)
+
+↭ TpBaseClient's properties now have accessor methods for convenient use in C
+  (smcv)
+
+↭ tp_capabilities_get_channel_classes is now visible to g-i (pwithnall)
+
+Fixes:
+
+↭ Install a .deps file for the Vala bindings (pwithnall)
+
+↭ Vala bindings now install to the normal location, making it unnecessary to
+  look up telepathy-vala in pkg-config; that pkg-config file will be removed
+  in a future version (treitter)
 
 telepathy-glib 0.11.10 (2010-07-12)
 ===================================

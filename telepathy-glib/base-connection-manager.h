@@ -26,52 +26,12 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/base-protocol.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/svc-connection-manager.h>
 
 G_BEGIN_DECLS
-
-typedef struct _TpCMParamSpec TpCMParamSpec;
-
-typedef gboolean (*TpCMParamFilter) (const TpCMParamSpec *paramspec,
-    GValue *value, GError **error);
-
-gboolean tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
-    GValue *value, GError **error);
-
-gboolean tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
-    GValue *value, GError **error);
-
-/* XXX: This should be driven by GTypes, but the GType is insufficiently
- * descriptive: if it's UINT we can't tell whether the D-Bus type is
- * UInt32, UInt16 or possibly even Byte. So we have the D-Bus type too.
- *
- * As it stands at the moment it could be driven by the *D-Bus* type, but
- * in future we may want to have more than one possible GType for a D-Bus
- * type, e.g. converting arrays of string into either a strv or a GPtrArray.
- * So, we keep the redundancy for future expansion.
- */
-
-struct _TpCMParamSpec {
-    const gchar *name;
-    const gchar *dtype;
-    GType gtype;
-    guint flags;
-    gconstpointer def;
-    gsize offset;
-
-    TpCMParamFilter filter;
-    gconstpointer filter_data;
-
-    gconstpointer setter_data;
-
-    /*<private>*/
-    gpointer _future1;
-};
-
-typedef void (*TpCMParamSetter) (const TpCMParamSpec *paramspec,
-    const GValue *value, gpointer params);
 
 void tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
     const GValue *value, gpointer params);
@@ -106,8 +66,9 @@ struct _TpBaseConnectionManagerClass {
     const TpCMProtocolSpec *protocol_params;
     TpBaseConnectionManagerNewConnFunc new_connection;
 
+    const gchar * const *interfaces;
+
     /*<private>*/
-    gpointer _future1;
     gpointer _future2;
     gpointer _future3;
     gpointer _future4;
@@ -126,8 +87,12 @@ GType tp_base_connection_manager_get_type (void);
 
 gboolean tp_base_connection_manager_register (TpBaseConnectionManager *self);
 
+
 TpDBusDaemon *tp_base_connection_manager_get_dbus_daemon (
     TpBaseConnectionManager *self);
+
+void tp_base_connection_manager_add_protocol (TpBaseConnectionManager *self,
+    TpBaseProtocol *protocol);
 
 /* TYPE MACROS */
 #define TP_TYPE_BASE_CONNECTION_MANAGER \

@@ -71,6 +71,18 @@ void tp_channel_manager_foreach_channel_class (
     TpChannelManager *manager,
     TpChannelManagerChannelClassFunc func, gpointer user_data);
 
+typedef void (*TpChannelManagerTypeChannelClassFunc) (GType type,
+    GHashTable *fixed_properties,
+    const gchar * const *allowed_properties,
+    gpointer user_data);
+
+typedef void (*TpChannelManagerTypeForeachChannelClassFunc) (
+    GType type, TpChannelManagerTypeChannelClassFunc func,
+    gpointer user_data);
+
+void tp_channel_manager_type_foreach_channel_class (GType type,
+    TpChannelManagerTypeChannelClassFunc func, gpointer user_data);
+
 
 typedef gboolean (*TpChannelManagerRequestFunc) (
     TpChannelManager *manager, gpointer request_token,
@@ -97,6 +109,8 @@ struct _TpChannelManagerIface {
     TpChannelManagerRequestFunc request_channel;
     TpChannelManagerRequestFunc ensure_channel;
 
+    TpChannelManagerTypeForeachChannelClassFunc type_foreach_channel_class;
+
     /*<private>*/
     /* We know that these two methods will be added in the near future, so
      * reserve extra space for them.
@@ -104,7 +118,7 @@ struct _TpChannelManagerIface {
     GCallback _reserved_for_foreach_contact_channel_class;
     GCallback _reserved_for_add_cap;
 
-    GCallback _future[8];
+    GCallback _future[7];
 };
 
 

@@ -20,6 +20,7 @@ codegen_extra_dist = \
     genums.h.template \
     media-session-handler.xml \
     media-stream-handler.xml \
+    protocol.xml \
     stable-interfaces.xml
 
 codegen_sources = \
@@ -48,6 +49,7 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-generic.h \
     _gen/tp-cli-media-session-handler.h \
     _gen/tp-cli-media-stream-handler.h \
+    _gen/tp-cli-protocol.h \
     _gen/tp-svc-account.h \
     _gen/tp-svc-account-manager.h \
     _gen/tp-svc-channel.h \
@@ -60,7 +62,8 @@ nodist_geninclude_HEADERS = \
     _gen/tp-svc-debug.h \
     _gen/tp-svc-generic.h \
     _gen/tp-svc-media-session-handler.h \
-    _gen/tp-svc-media-stream-handler.h
+    _gen/tp-svc-media-stream-handler.h \
+    _gen/tp-svc-protocol.h
 
 nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/error-str.c \
@@ -85,6 +88,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-generic-body.h \
     _gen/tp-cli-media-session-handler-body.h \
     _gen/tp-cli-media-stream-handler-body.h \
+    _gen/tp-cli-protocol-body.h \
     _gen/tp-svc-account.c \
     _gen/tp-svc-account-manager.c \
     _gen/tp-svc-channel.c \
@@ -97,7 +101,8 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-svc-debug.c \
     _gen/tp-svc-generic.c \
     _gen/tp-svc-media-session-handler.c \
-    _gen/tp-svc-media-stream-handler.c
+    _gen/tp-svc-media-stream-handler.c \
+    _gen/tp-svc-protocol.c
 
 # Generated stuff
 
