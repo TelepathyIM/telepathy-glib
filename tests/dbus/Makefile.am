@@ -37,6 +37,7 @@ noinst_PROGRAMS = \
     test-message-mixin \
     test-params-cm \
     test-properties \
+    test-protocol-objects \
     test-self-handle \
     test-self-presence \
     test-simple-approver \
@@ -155,6 +156,12 @@ test_properties_SOURCES = properties.c
 nodist_test_properties_SOURCES = \
     _gen/svc.h \
     _gen/svc.c
+
+test_protocol_objects_LDADD = \
+    $(LDADD) \
+    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la \
+    $(top_builddir)/examples/cm/echo-message-parts/libexample-cm-echo-2.la
+test_protocol_objects_SOURCES = protocol-objects.c
 
 test_self_handle_SOURCES = self-handle.c
 

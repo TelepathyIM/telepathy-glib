@@ -89,6 +89,31 @@
  */
 
 /**
+ * TpChannelManagerTypeChannelClassFunc:
+ * @type: A type whose instances implement #TpChannelManager
+ * @fixed_properties: A table mapping (const gchar *) property names to
+ *  GValues, representing the values those properties must take to request
+ *  channels of a particular class.
+ * @allowed_properties: A %NULL-terminated array of property names which may
+ *  appear in requests for a particular channel class.
+ * @user_data: Arbitrary user-supplied data.
+ *
+ * Signature of callbacks which act on each channel class potentially supported
+ * by instances of @type.
+ */
+
+/**
+ * TpChannelManagerTypeForeachChannelClassFunc:
+ * @type: A type whose instances implement #TpChannelManager
+ * @func: A function
+ * @user_data: Arbitrary data to be passed as the final argument of @func
+ *
+ * Signature of an implementation of type_foreach_channel_class, which must
+ * call func(type, fixed, allowed, user_data) for each channel class
+ * potentially understood by instances of @type.
+ */
+
+/**
  * TpChannelManagerRequestFunc:
  * @manager: An object implementing #TpChannelManager
  * @request_token: An opaque pointer representing this pending request.
@@ -104,7 +129,7 @@
  * it matches a channel class handled by this manager.  If so, they should
  * return %TRUE to accept responsibility for the request, and ultimately emit
  * exactly one of the #TpChannelManager::new-channels,
- * #TpChannelManager::already-satisfied and
+ * #TpChannelManager::request-already-satisfied and
  * #TpChannelManager::request-failed signals (including @request_token in
  * the appropriate argument).
  *
@@ -143,8 +168,9 @@
  *  this manager. If not implemented, the manager is assumed to manage no
  *  channels.
  * @foreach_channel_class: Call func(manager, fixed, allowed, user_data) for
- *  each class of channel that this manager can create. If not implemented, the
- *  manager is assumed to be able to create no classes of channels.
+ *  each class of channel that this instance can create (a subset of the
+ *  channel classes produced by @type_foreach_channel_class). If not
+ *  implemented, @type_foreach_channel_class is used.
  * @create_channel: Respond to a request for a new channel made with the
  *  Connection.Interface.Requests.CreateChannel method. See
  *  #TpChannelManagerRequestFunc for details.
@@ -155,6 +181,10 @@
  *  with the Connection.Interface.Requests.EnsureChannel method. See
  *  #TpChannelManagerRequestFunc for details.
  *  Since: 0.7.16
+ * @type_foreach_channel_class: Call func(cls, fixed, allowed, user_data)
+ *  for each class of channel that instances of this class might be able to
+ *  create.
+ *  Since: 0.11.UNRELEASED
  *
  * The vtable for a channel manager implementation.
  *
@@ -535,6 +565,23 @@ tp_channel_manager_foreach_channel (TpChannelManager *manager,
   /* ... else assume it has no channels, and do nothing */
 }
 
+typedef struct
+{
+  TpChannelManager *self;
+  TpChannelManagerChannelClassFunc func;
+  gpointer user_data;
+} ForeachAdaptor;
+
+static void
+foreach_adaptor (GType type G_GNUC_UNUSED,
+    GHashTable *fixed,
+    const gchar * const *allowed,
+    gpointer user_data)
+{
+  ForeachAdaptor *adaptor = user_data;
+
+  adaptor->func (adaptor->self, fixed, allowed, adaptor->user_data);
+}
 
 /**
  * tp_channel_manager_foreach_channel_class:
@@ -561,7 +608,49 @@ tp_channel_manager_foreach_channel_class (TpChannelManager *manager,
     {
       method (manager, func, user_data);
     }
+  else
+    {
+      ForeachAdaptor adaptor = { manager, func, user_data };
+
+      return tp_channel_manager_type_foreach_channel_class (
+          G_TYPE_FROM_INSTANCE (manager), foreach_adaptor, &adaptor);
+    }
+}
+
+
+/**
+ * tp_channel_manager_type_foreach_channel_class:
+ * @type: A type whose instances implement #TpChannelManager
+ * @func: A function
+ * @user_data: Arbitrary data to be passed as the final argument of @func
+ *
+ * Calls func(type, fixed, allowed, user_data) for each channel class
+ * potentially understood by instances of @type.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_channel_manager_type_foreach_channel_class (GType type,
+    TpChannelManagerTypeChannelClassFunc func,
+    gpointer user_data)
+{
+  GTypeClass *cls;
+  TpChannelManagerIface *iface;
+  TpChannelManagerTypeForeachChannelClassFunc method;
+
+  g_return_if_fail (g_type_is_a (type, TP_TYPE_CHANNEL_MANAGER));
+
+  cls = g_type_class_ref (type);
+  iface = g_type_interface_peek (cls, TP_TYPE_CHANNEL_MANAGER);
+  method = iface->type_foreach_channel_class;
+
+  if (method != NULL)
+    {
+      method (type, func, user_data);
+    }
   /* ... else assume it has no classes of requestable channel */
+
+  g_type_class_unref (cls);
 }
 
 

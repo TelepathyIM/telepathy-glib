@@ -1351,7 +1351,7 @@ tp_weak_ref_destroy (TpWeakRef *self)
  * The corresponding finish function should not call a function that attempts
  * to get a result, such as g_simple_async_result_get_op_res_gpointer().
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.9
  */
 void
 tp_simple_async_report_success_in_idle (GObject *source,

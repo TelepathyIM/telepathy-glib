@@ -126,6 +126,13 @@ GHashTable *tp_dbus_properties_mixin_make_properties_hash (
     const gchar *first_property, ...)
   G_GNUC_NULL_TERMINATED G_GNUC_WARN_UNUSED_RESULT;
 
+void tp_dbus_properties_mixin_fill_properties_hash (GObject *object,
+    GHashTable *table,
+    const gchar *first_interface,
+    const gchar *first_property,
+    ...)
+  G_GNUC_NULL_TERMINATED;
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_DBUS_PROPERTIES_MIXIN_H__ */

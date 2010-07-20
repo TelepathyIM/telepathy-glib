@@ -40,65 +40,8 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #define DEBUG_FLAG TP_DEBUG_PARAMS
+#include "telepathy-glib/base-protocol-internal.h"
 #include "telepathy-glib/debug-internal.h"
-
-/**
- * TpCMParamSpec:
- * @name: Name as passed over D-Bus
- * @dtype: D-Bus type signature. We currently support 16- and 32-bit integers
- *         (@gtype is INT), 16- and 32-bit unsigned integers (gtype is UINT),
- *         strings (gtype is STRING) and booleans (gtype is BOOLEAN).
- * @gtype: GLib type, derived from @dtype as above
- * @flags: Some combination of TP_CONN_MGR_PARAM_FLAG_foo
- * @def: Default value, as a (const gchar *) for string parameters, or
-         using #GINT_TO_POINTER or #GUINT_TO_POINTER for integer parameters
- * @offset: Offset of the parameter in the opaque data structure, if
- *          appropriate. The member at that offset is expected to be a gint,
- *          guint, (gchar *) or gboolean, depending on @gtype. The default
- *          parameter setter, #tp_cm_param_setter_offset, uses this field.
- * @filter: A callback which is used to validate or normalize the user-provided
- *          value before it is written into the opaque data structure
- * @filter_data: Arbitrary opaque data intended for use by the filter function
- * @setter_data: Arbitrary opaque data intended for use by the setter function
- *               instead of or in addition to @offset.
- *
- * Structure representing a connection manager parameter, as accepted by
- * RequestConnection.
- *
- * In addition to the fields documented here, there is one gpointer field
- * which must currently be %NULL. A meaning may be defined for it in a
- * future version of telepathy-glib.
- */
-
-/**
- * TpCMParamFilter:
- * @paramspec: The parameter specification. The filter is likely to use
- *  name (for the error message if the value is invalid) and filter_data.
- * @value: The value for that parameter provided by the user.
- *  May be changed to contain a different value of the same type, if
- *  some sort of normalization is required
- * @error: Used to raise %TP_ERROR_INVALID_ARGUMENT if the given value is
- *  rejected
- *
- * Signature of a callback used to validate and/or normalize user-provided
- * CM parameter values.
- *
- * Returns: %TRUE to accept, %FALSE (with @error set) to reject
- */
-
-/**
- * TpCMParamSetter:
- * @paramspec: The parameter specification.  The setter is likely to use
- *  some combination of the name, offset and setter_data fields.
- * @value: The value for that parameter provided by the user.
- * @params: An opaque data structure, created by
- *  #TpCMProtocolSpec.params_new.
- *
- * The signature of a callback used to set a parameter within the opaque
- * data structure used for a protocol.
- *
- * Since: 0.7.0
- */
 
 /**
  * TpCMProtocolSpec:
@@ -127,6 +70,129 @@
  * future version of telepathy-glib.
  */
 
+/*
+ * _TpLegacyProtocol:
+ *
+ * A limited implementation of TpProtocol, in terms of the ConnectionManager
+ * API from telepathy-spec 0.18.
+ */
+typedef struct {
+    TpBaseProtocol parent;
+    /* Really a TpBaseConnectionManager, but using that type with
+     * g_object_add_weak_pointer violates strict aliasing */
+    gpointer cm;
+    const TpCMProtocolSpec *protocol_spec;
+} _TpLegacyProtocol;
+
+typedef struct {
+    TpBaseProtocolClass parent;
+} _TpLegacyProtocolClass;
+
+#define _TP_TYPE_LEGACY_PROTOCOL (_tp_legacy_protocol_get_type ())
+GType _tp_legacy_protocol_get_type (void) G_GNUC_CONST;
+
+G_DEFINE_TYPE(_TpLegacyProtocol,
+    _tp_legacy_protocol,
+    TP_TYPE_BASE_PROTOCOL);
+
+static const TpCMParamSpec *
+_tp_legacy_protocol_get_parameters (TpBaseProtocol *protocol)
+{
+  _TpLegacyProtocol *self = (_TpLegacyProtocol *) protocol;
+
+  return self->protocol_spec->parameters;
+}
+
+static gboolean parse_parameters (const TpCMParamSpec *paramspec,
+    GHashTable *provided, TpIntSet *params_present,
+    const TpCMParamSetter set_param, void *params, GError **error);
+
+static TpBaseConnection *
+_tp_legacy_protocol_new_connection (TpBaseProtocol *protocol,
+    GHashTable *asv,
+    GError **error)
+{
+  _TpLegacyProtocol *self = (_TpLegacyProtocol *) protocol;
+  const TpCMProtocolSpec *protospec = self->protocol_spec;
+  TpBaseConnectionManagerClass *cls;
+  TpBaseConnection *conn = NULL;
+  void *params = NULL;
+  TpIntSet *params_present = NULL;
+  TpCMParamSetter set_param;
+
+  if (self->cm == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+          "Connection manager no longer available");
+      return NULL;
+    }
+
+  g_object_ref (self->cm);
+
+  g_assert (protospec->parameters != NULL);
+  g_assert (protospec->params_new != NULL);
+  g_assert (protospec->params_free != NULL);
+
+  cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self->cm);
+
+  params_present = tp_intset_new ();
+  params = protospec->params_new ();
+
+  set_param = protospec->set_param;
+
+  if (set_param == NULL)
+    set_param = tp_cm_param_setter_offset;
+
+  if (!parse_parameters (protospec->parameters, (GHashTable *) asv,
+        params_present, set_param, params, error))
+    {
+      goto finally;
+    }
+
+  conn = (cls->new_connection) (self->cm, protospec->name, params_present,
+      params, error);
+
+finally:
+  if (params_present != NULL)
+    tp_intset_destroy (params_present);
+
+  if (params != NULL)
+    protospec->params_free (params);
+
+  g_object_unref (self->cm);
+
+  return conn;
+}
+
+static void
+_tp_legacy_protocol_class_init (_TpLegacyProtocolClass *cls)
+{
+  TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) cls;
+
+  base_class->is_stub = TRUE;
+  base_class->get_parameters = _tp_legacy_protocol_get_parameters;
+  base_class->new_connection = _tp_legacy_protocol_new_connection;
+}
+
+static void
+_tp_legacy_protocol_init (_TpLegacyProtocol *self)
+{
+}
+
+static TpBaseProtocol *
+_tp_legacy_protocol_new (TpBaseConnectionManager *cm,
+    const TpCMProtocolSpec *protocol_spec)
+{
+  _TpLegacyProtocol *self = g_object_new (_TP_TYPE_LEGACY_PROTOCOL,
+      "name", protocol_spec->name,
+      NULL);
+
+  self->protocol_spec = protocol_spec;
+  self->cm = cm;
+  g_object_add_weak_pointer ((GObject *) cm, &(self->cm));
+  return (TpBaseProtocol *) self;
+}
+
 /**
  * TpBaseConnectionManager:
  *
@@ -143,19 +209,25 @@
  *  subclasses in their class_init function.
  * @protocol_params: An array of #TpCMProtocolSpec structures representing
  *  the protocols this connection manager supports, terminated by a structure
- *  whose name member is %NULL.
+ *  whose name member is %NULL; or %NULL if this CM uses Protocol objects.
  * @new_connection: A #TpBaseConnectionManagerNewConnFunc used to construct
- *  new connections. Must be filled in by subclasses in their class_init
- *  function.
+ *  new connections, or %NULL if this CM uses Protocol objects.
+ * @interfaces: A #GStrv of extra D-Bus interfaces implemented
+ *  by instances of this class, which may be filled in by subclasses. The
+ *  default is to list no additional interfaces. Since: 0.11.UNRELEASED
  *
  * The class structure for #TpBaseConnectionManager.
  *
- * In addition to the fields documented here, there are four gpointer fields
+ * In addition to the fields documented here, there are some gpointer fields
  * which must currently be %NULL (a meaning may be defined for these in a
- * future version of telepathy-glib), and a pointer to opaque private data.
+ * future version of telepathy-glib).
  *
  * Changed in 0.7.1: it is a fatal error for @cm_dbus_name not to conform to
  * the specification.
+ *
+ * Changed in 0.11.UNRELEASED: protocol_params and new_connection may both be
+ * %NULL. If so, this connection manager is assumed to use Protocol objects
+ * instead.
  */
 
 /**
@@ -185,6 +257,8 @@ static void service_iface_init (gpointer, gpointer);
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseConnectionManager,
     tp_base_connection_manager,
     G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
+      tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_MANAGER,
         service_iface_init))
 
@@ -196,12 +270,17 @@ struct _TpBaseConnectionManagerPrivate
   GHashTable *connections;
   /* true after tp_base_connection_manager_register is called */
   gboolean registered;
+   /* dup'd string => ref to TpBaseProtocol */
+  GHashTable *protocols;
+
   TpDBusDaemon *dbus_daemon;
 };
 
 enum
 {
     PROP_DBUS_DAEMON = 1,
+    PROP_INTERFACES,
+    PROP_PROTOCOLS,
     N_PROPS
 };
 
@@ -230,6 +309,12 @@ tp_base_connection_manager_dispose (GObject *object)
     {
       g_object_unref (priv->dbus_daemon);
       priv->dbus_daemon = NULL;
+    }
+
+  if (priv->protocols != NULL)
+    {
+      g_hash_table_destroy (priv->protocols);
+      priv->protocols = NULL;
     }
 
   if (dispose != NULL)
@@ -277,8 +362,10 @@ tp_base_connection_manager_constructor (GType type,
   GError *error = NULL;
 
   g_assert (tp_connection_manager_check_valid_name (cls->cm_dbus_name, NULL));
-  g_assert (cls->protocol_params != NULL);
-  g_assert (cls->new_connection != NULL);
+
+  /* if one of these is NULL, the other must be too */
+  g_assert (cls->new_connection == NULL || cls->protocol_params != NULL);
+  g_assert (cls->protocol_params == NULL || cls->new_connection != NULL);
 
   if (!tp_base_connection_manager_ensure_dbus (self, &error))
     {
@@ -296,11 +383,41 @@ tp_base_connection_manager_get_property (GObject *object,
     GParamSpec *pspec)
 {
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (object);
+  TpBaseConnectionManagerClass *cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (
+      object);
 
   switch (property_id)
     {
     case PROP_DBUS_DAEMON:
       g_value_set_object (value, self->priv->dbus_daemon);
+      break;
+
+    case PROP_INTERFACES:
+      g_value_set_boxed (value, cls->interfaces);
+      break;
+
+    case PROP_PROTOCOLS:
+        {
+          GHashTable *map = g_hash_table_new_full (g_str_hash, g_str_equal,
+              g_free, (GDestroyNotify) g_hash_table_unref);
+          GHashTableIter iter;
+          gpointer name, protocol;
+
+          g_hash_table_iter_init (&iter, self->priv->protocols);
+
+          while (g_hash_table_iter_next (&iter, &name, &protocol))
+            {
+              GHashTable *props;
+
+              g_object_get (protocol,
+                  "immutable-properties", &props,
+                  NULL);
+
+              g_hash_table_insert (map, g_strdup (name), props);
+            }
+
+          g_value_take_boxed (value, map);
+        }
       break;
 
     default:
@@ -339,6 +456,11 @@ tp_base_connection_manager_set_property (GObject *object,
 static void
 tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
 {
+  static TpDBusPropertiesMixinPropImpl cm_properties[] = {
+      { "Protocols", "protocols", NULL },
+      { "Interfaces", "interfaces", NULL },
+      { NULL }
+  };
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TpBaseConnectionManagerPrivate));
@@ -368,6 +490,36 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
+   * TpBaseConnectionManager:interfaces:
+   *
+   * The set of D-Bus interfaces available on this ConnectionManager, other
+   * than ConnectionManager itself.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_INTERFACES,
+      g_param_spec_boxed ("interfaces",
+        "ConnectionManager.Interfaces",
+        "The set of D-Bus interfaces available on this ConnectionManager, "
+        "other than ConnectionManager itself",
+        G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpBaseConnectionManager:protocols:
+   *
+   * The Protocol objects available on this ConnectionManager.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_PROTOCOLS,
+      g_param_spec_boxed ("protocols",
+        "ConnectionManager.Protocols",
+        "The set of protocols available on this Connection, other than "
+        "ConnectionManager itself",
+        TP_HASH_TYPE_PROTOCOL_PROPERTIES_MAP,
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
    * TpBaseConnectionManager::no-more-connections:
    *
    * Emitted when the table of active connections becomes empty.
@@ -382,6 +534,12 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
+
+  tp_dbus_properties_mixin_class_init (object_class, 0);
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CONNECTION_MANAGER,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      cm_properties);
 }
 
 static void
@@ -393,6 +551,8 @@ tp_base_connection_manager_init (TpBaseConnectionManager *self)
   self->priv = priv;
 
   priv->connections = g_hash_table_new (g_direct_hash, g_direct_equal);
+  priv->protocols = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, g_object_unref);
 }
 
 /**
@@ -425,126 +585,21 @@ connection_shutdown_finished_cb (TpBaseConnection *conn,
 
 /* Parameter parsing */
 
-static gboolean
-get_parameters (const TpCMProtocolSpec *protos,
-                const char *proto,
-                const TpCMProtocolSpec **ret,
-                GError **error)
+static TpBaseProtocol *
+tp_base_connection_manager_get_protocol (TpBaseConnectionManager *self,
+    const gchar *protocol_name,
+    GError **error)
 {
-  guint i;
+  TpBaseProtocol *protocol = g_hash_table_lookup (self->priv->protocols,
+      protocol_name);
 
-  for (i = 0; protos[i].name; i++)
-    {
-      if (!tp_strdiff (proto, protos[i].name))
-        {
-          *ret = protos + i;
-          return TRUE;
-        }
-    }
-
-  DEBUG ("unknown protocol %s", proto);
+  if (protocol != NULL)
+    return protocol;
 
   g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-      "unknown protocol %s", proto);
+      "unknown protocol %s", protocol_name);
 
-  return FALSE;
-}
-
-static GValue *
-param_default_value (const TpCMParamSpec *param)
-{
-  GValue *value;
-
-  value = tp_g_value_slice_new (param->gtype);
-
-  /* If HAS_DEFAULT is false, we don't really care what the value is, so we'll
-   * just use whatever's in the user-supplied param spec. As long as we're
-   * careful to accept NULL, that should be fine. */
-
-  switch (param->dtype[0])
-    {
-      case DBUS_TYPE_STRING:
-        g_assert (param->gtype == G_TYPE_STRING);
-        if (param->def == NULL)
-          g_value_set_static_string (value, "");
-        else
-          g_value_set_static_string (value, param->def);
-        break;
-
-      case DBUS_TYPE_INT16:
-      case DBUS_TYPE_INT32:
-        g_assert (param->gtype == G_TYPE_INT);
-        g_value_set_int (value, GPOINTER_TO_INT (param->def));
-        break;
-
-      case DBUS_TYPE_UINT16:
-      case DBUS_TYPE_UINT32:
-        g_assert (param->gtype == G_TYPE_UINT);
-        g_value_set_uint (value, GPOINTER_TO_UINT (param->def));
-        break;
-
-      case DBUS_TYPE_UINT64:
-        g_assert (param->gtype == G_TYPE_UINT64);
-        g_value_set_uint64 (value, param->def == NULL ? 0
-            : *(const guint64 *) param->def);
-        break;
-
-      case DBUS_TYPE_INT64:
-        g_assert (param->gtype == G_TYPE_INT64);
-        g_value_set_int64 (value, param->def == NULL ? 0
-            : *(const gint64 *) param->def);
-        break;
-
-      case DBUS_TYPE_DOUBLE:
-        g_assert (param->gtype == G_TYPE_DOUBLE);
-        g_value_set_double (value, param->def == NULL ? 0.0
-            : *(const double *) param->def);
-        break;
-
-      case DBUS_TYPE_OBJECT_PATH:
-        g_assert (param->gtype == DBUS_TYPE_G_OBJECT_PATH);
-        g_value_set_static_boxed (value, param->def == NULL ? "/"
-            : param->def);
-        break;
-
-      case DBUS_TYPE_ARRAY:
-        switch (param->dtype[1])
-          {
-          case DBUS_TYPE_STRING:
-            g_assert (param->gtype == G_TYPE_STRV);
-            g_value_set_static_boxed (value, param->def);
-            break;
-
-          case DBUS_TYPE_BYTE:
-            g_assert (param->gtype == DBUS_TYPE_G_UCHAR_ARRAY);
-            if (param->def == NULL)
-              {
-                GArray *array = g_array_new (FALSE, FALSE, sizeof (guint8));
-                g_value_take_boxed (value, array);
-              }
-            else
-              {
-                g_value_set_static_boxed (value, param->def);
-              }
-            break;
-
-          default:
-            ERROR ("encountered unknown type %s on argument %s",
-                param->dtype, param->name);
-          }
-        break;
-
-      case DBUS_TYPE_BOOLEAN:
-        g_assert (param->gtype == G_TYPE_BOOLEAN);
-        g_value_set_boolean (value, GPOINTER_TO_INT (param->def));
-        break;
-
-      default:
-        ERROR ("encountered unknown type %s on argument %s",
-            param->dtype, param->name);
-    }
-
-  return value;
+  return NULL;
 }
 
 /**
@@ -732,16 +787,6 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
     }
 }
 
-static void
-set_param_from_default (const TpCMParamSpec *paramspec,
-                        const TpCMParamSetter set_param,
-                        gpointer params)
-{
-  GValue *value = param_default_value (paramspec);
-  set_param (paramspec, value, params);
-  tp_g_value_slice_free (value);
-}
-
 static gboolean
 set_param_from_value (const TpCMParamSpec *paramspec,
                       GValue *value,
@@ -761,31 +806,9 @@ set_param_from_value (const TpCMParamSpec *paramspec,
       return FALSE;
     }
 
-  if (paramspec->filter != NULL)
-    {
-      if (!(paramspec->filter) (paramspec, value, error))
-        {
-          DEBUG ("parameter %s rejected by filter function: %s",
-              paramspec->name, error ? (*error)->message : "(error ignored)");
-          return FALSE;
-        }
-
-      /* the filter may not change the type of the GValue */
-      g_return_val_if_fail (G_VALUE_TYPE (value) == paramspec->gtype, FALSE);
-    }
-
   set_param (paramspec, value, params);
 
   return TRUE;
-}
-
-static void
-report_unknown_param (gpointer key, gpointer value, gpointer user_data)
-{
-  const char *arg = (const char *) key;
-  GString **error_str = (GString **) user_data;
-  *error_str = g_string_append_c (*error_str, ' ');
-  *error_str = g_string_append (*error_str, arg);
 }
 
 static gboolean
@@ -797,41 +820,13 @@ parse_parameters (const TpCMParamSpec *paramspec,
                   GError **error)
 {
   int i;
-  guint mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REQUIRED;
   GValue *value;
-
-  value = g_hash_table_lookup (provided, "register");
-  if (value != NULL && G_VALUE_TYPE(value) == G_TYPE_BOOLEAN &&
-      g_value_get_boolean (value))
-    {
-      mandatory_flag = TP_CONN_MGR_PARAM_FLAG_REGISTER;
-    }
 
   for (i = 0; paramspec[i].name; i++)
     {
       value = g_hash_table_lookup (provided, paramspec[i].name);
 
-      if (value == NULL)
-        {
-          if (paramspec[i].flags & mandatory_flag)
-            {
-              DEBUG ("missing mandatory param %s", paramspec[i].name);
-              g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-                  "missing mandatory account parameter %s", paramspec[i].name);
-              return FALSE;
-            }
-          else if (paramspec[i].flags & TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT)
-            {
-              set_param_from_default (&paramspec[i], set_param, params);
-              tp_intset_add (params_present, i);
-            }
-          else
-            {
-              DEBUG ("%s not given, using default behaviour",
-                  paramspec[i].name);
-            }
-        }
-      else
+      if (value != NULL)
         {
           if (!set_param_from_value (&paramspec[i], value, set_param, params,
                 error))
@@ -843,21 +838,6 @@ parse_parameters (const TpCMParamSpec *paramspec,
 
           g_hash_table_remove (provided, paramspec[i].name);
         }
-    }
-
-  if (g_hash_table_size (provided) != 0)
-    {
-      gchar *error_txt;
-      GString *error_str = g_string_new ("unknown parameters provided:");
-
-      g_hash_table_foreach (provided, report_unknown_param, &error_str);
-      error_txt = g_string_free (error_str, FALSE);
-
-      DEBUG ("%s", error_txt);
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "%s", error_txt);
-      g_free (error_txt);
-      return FALSE;
     }
 
   return TRUE;
@@ -877,54 +857,40 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
 {
   GPtrArray *ret;
   GError *error = NULL;
-  const TpCMProtocolSpec *protospec = NULL;
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (iface);
-  TpBaseConnectionManagerClass *cls =
-    TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
-  GType param_type = TP_STRUCT_TYPE_PARAM_SPEC;
   guint i;
+  TpBaseProtocol *protocol;
+  const TpCMParamSpec *parameters;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
-  g_assert (cls->protocol_params != NULL);
   /* a D-Bus method shouldn't be happening til we're on D-Bus */
   g_assert (self->priv->registered);
 
-  if (!get_parameters (cls->protocol_params, proto, &protospec, &error))
+  protocol = tp_base_connection_manager_get_protocol (self, proto, &error);
+
+  if (protocol == NULL)
     {
       dbus_g_method_return_error (context, error);
       g_error_free (error);
       return;
     }
 
+  parameters = tp_base_protocol_get_parameters (protocol);
+  g_assert (parameters != NULL);
+
   ret = g_ptr_array_new ();
 
-  for (i = 0; protospec->parameters[i].name != NULL; i++)
+  for (i = 0; parameters[i].name != NULL; i++)
     {
-      GValue *def_value;
-      GValue param = { 0, };
-
-      g_value_init (&param, param_type);
-      g_value_set_static_boxed (&param,
-        dbus_g_type_specialized_construct (param_type));
-
-      def_value = param_default_value (protospec->parameters + i);
-      dbus_g_type_struct_set (&param,
-        0, protospec->parameters[i].name,
-        1, protospec->parameters[i].flags,
-        2, protospec->parameters[i].dtype,
-        3, def_value,
-        G_MAXUINT);
-      g_value_unset (def_value);
-      g_slice_free (GValue, def_value);
-
-      g_ptr_array_add (ret, g_value_get_boxed (&param));
+      g_ptr_array_add (ret,
+          _tp_cm_param_spec_to_dbus (parameters + i));
     }
 
   tp_svc_connection_manager_return_from_get_parameters (context, ret);
 
   for (i = 0; i < ret->len; i++)
     {
-      g_boxed_free (param_type, g_ptr_array_index (ret, i));
+      g_value_array_free (g_ptr_array_index (ret, i));
     }
 
   g_ptr_array_free (ret, TRUE);
@@ -942,27 +908,28 @@ tp_base_connection_manager_list_protocols (TpSvcConnectionManager *iface,
                                            DBusGMethodInvocation *context)
 {
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (iface);
-  TpBaseConnectionManagerClass *cls =
-    TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
-  const char **protocols;
-  guint i = 0;
+  GPtrArray *protocols;
+  GHashTableIter iter;
+  gpointer name;
 
   /* a D-Bus method shouldn't be happening til we're on D-Bus */
   g_assert (self->priv->registered);
 
-  while (cls->protocol_params[i].name)
-    i++;
+  protocols = g_ptr_array_sized_new (
+      g_hash_table_size (self->priv->protocols) + 1);
 
-  protocols = g_new0 (const char *, i + 1);
-  for (i = 0; cls->protocol_params[i].name; i++)
+  g_hash_table_iter_init (&iter, self->priv->protocols);
+
+  while (g_hash_table_iter_next (&iter, &name, NULL))
     {
-      protocols[i] = cls->protocol_params[i].name;
+      g_ptr_array_add (protocols, name);
     }
-  g_assert (protocols[i] == NULL);
+
+  g_ptr_array_add (protocols, NULL);
 
   tp_svc_connection_manager_return_from_list_protocols (
-      context, protocols);
-  g_free (protocols);
+      context, (const gchar **) protocols->pdata);
+  g_ptr_array_free (protocols, TRUE);
 }
 
 
@@ -992,10 +959,7 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   gchar *bus_name;
   gchar *object_path;
   GError *error = NULL;
-  void *params = NULL;
-  TpIntSet *params_present = NULL;
-  const TpCMProtocolSpec *protospec = NULL;
-  TpCMParamSetter set_param;
+  TpBaseProtocol *protocol;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (iface));
 
@@ -1005,33 +969,15 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
   if (!tp_connection_manager_check_valid_protocol_name (proto, &error))
     goto ERROR;
 
-  if (!get_parameters (cls->protocol_params, proto, &protospec, &error))
-    {
-      goto ERROR;
-    }
+  protocol = tp_base_connection_manager_get_protocol (self, proto, &error);
 
-  g_assert (protospec->parameters != NULL);
-  g_assert (protospec->params_new != NULL);
-  g_assert (protospec->params_free != NULL);
+  if (protocol == NULL)
+    goto ERROR;
 
-  params_present = tp_intset_new ();
-  params = protospec->params_new ();
+  conn = tp_base_protocol_new_connection (protocol, parameters, &error);
 
-  set_param = protospec->set_param;
-  if (set_param == NULL)
-    set_param = tp_cm_param_setter_offset;
-
-  if (!parse_parameters (protospec->parameters, parameters, params_present,
-        set_param, params, &error))
-    {
-      goto ERROR;
-    }
-
-  conn = (cls->new_connection) (self, proto, params_present, params, &error);
-  if (!conn)
-    {
-      goto ERROR;
-    }
+  if (conn == NULL)
+    goto ERROR;
 
   /* register on bus and save bus name and object path */
   if (!tp_base_connection_register (conn, cls->cm_dbus_name,
@@ -1060,17 +1006,11 @@ tp_base_connection_manager_request_connection (TpSvcConnectionManager *iface,
 
   g_free (bus_name);
   g_free (object_path);
-  goto OUT;
+  return;
 
 ERROR:
   dbus_g_method_return_error (context, error);
   g_error_free (error);
-
-OUT:
-  if (params_present)
-    tp_intset_destroy (params_present);
-  if (params)
-    protospec->params_free (params);
 }
 
 /**
@@ -1091,12 +1031,24 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   GError *error = NULL;
   TpBaseConnectionManagerClass *cls;
   GString *string = NULL;
+  guint i;
+  GHashTableIter iter;
+  gpointer name, protocol;
 
   g_assert (TP_IS_BASE_CONNECTION_MANAGER (self));
   cls = TP_BASE_CONNECTION_MANAGER_GET_CLASS (self);
 
   if (!tp_base_connection_manager_ensure_dbus (self, &error))
     goto except;
+
+  if (cls->protocol_params != NULL)
+    {
+      for (i = 0; cls->protocol_params[i].name != NULL; i++)
+        {
+          tp_base_connection_manager_add_protocol (self,
+              _tp_legacy_protocol_new (self, cls->protocol_params + i));
+        }
+    }
 
   g_assert (self->priv->dbus_daemon != NULL);
 
@@ -1110,6 +1062,34 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   g_string_assign (string, TP_CM_OBJECT_PATH_BASE);
   g_string_append (string, cls->cm_dbus_name);
   tp_dbus_daemon_register_object (self->priv->dbus_daemon, string->str, self);
+
+  g_hash_table_iter_init (&iter, self->priv->protocols);
+
+  while (g_hash_table_iter_next (&iter, &name, &protocol))
+    {
+      TpBaseProtocolClass *protocol_class =
+        TP_BASE_PROTOCOL_GET_CLASS (protocol);
+
+      if (!tp_connection_manager_check_valid_protocol_name (name, &error))
+        {
+          g_critical ("%s", error->message);
+          goto except;
+        }
+
+      /* don't export uninformative "stub" protocol objects on D-Bus */
+      if (protocol_class->is_stub)
+        continue;
+
+      g_string_assign (string, TP_CM_OBJECT_PATH_BASE);
+      g_string_append (string, cls->cm_dbus_name);
+      g_string_append_c (string, '/');
+      g_string_append (string, name);
+
+      g_strdelimit (string->str, "-", '_');
+
+      tp_dbus_daemon_register_object (self->priv->dbus_daemon, string->str,
+          protocol);
+    }
 
   g_string_free (string, TRUE);
 
@@ -1141,58 +1121,6 @@ service_iface_init (gpointer g_iface, gpointer iface_data)
 }
 
 /**
- * tp_cm_param_filter_uint_nonzero:
- * @paramspec: The parameter specification for a guint parameter
- * @value: A GValue containing a guint, which will not be altered
- * @error: Used to return an error if the guint is 0
- *
- * A #TpCMParamFilter which rejects zero, useful for server port numbers.
- *
- * Returns: %TRUE to accept, %FALSE (with @error set) to reject
- */
-gboolean
-tp_cm_param_filter_uint_nonzero (const TpCMParamSpec *paramspec,
-                                 GValue *value,
-                                 GError **error)
-{
-  if (g_value_get_uint (value) == 0)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Account parameter '%s' may not be set to zero",
-          paramspec->name);
-      return FALSE;
-    }
-  return TRUE;
-}
-
-/**
- * tp_cm_param_filter_string_nonempty:
- * @paramspec: The parameter specification for a string parameter
- * @value: A GValue containing a string, which will not be altered
- * @error: Used to return an error if the string is empty
- *
- * A #TpCMParamFilter which rejects empty strings.
- *
- * Returns: %TRUE to accept, %FALSE (with @error set) to reject
- */
-gboolean
-tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
-                                    GValue *value,
-                                    GError **error)
-{
-  const gchar *str = g_value_get_string (value);
-
-  if (tp_str_empty (str))
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Account parameter '%s' may not be set to an empty string",
-          paramspec->name);
-      return FALSE;
-    }
-  return TRUE;
-}
-
-/**
  * tp_base_connection_manager_get_dbus_daemon:
  * @self: the connection manager
  *
@@ -1210,4 +1138,26 @@ tp_base_connection_manager_get_dbus_daemon (TpBaseConnectionManager *self)
   g_return_val_if_fail (TP_IS_BASE_CONNECTION_MANAGER (self), NULL);
 
   return self->priv->dbus_daemon;
+}
+
+/**
+ * tp_base_connection_manager_add_protocol:
+ * @self: a connection manager object which has not yet registered on D-Bus
+ *  (i.e. tp_base_connection_manager_register() must not have been called)
+ * @protocol: a protocol object, which must not have the same protocol name as
+ *  any that has already been added
+ *
+ * Add a protocol object to the set of supported protocols.
+ */
+void
+tp_base_connection_manager_add_protocol (TpBaseConnectionManager *self,
+    TpBaseProtocol *protocol)
+{
+  g_return_if_fail (TP_IS_BASE_CONNECTION_MANAGER (self));
+  g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (TP_IS_BASE_PROTOCOL (protocol));
+
+  g_hash_table_insert (self->priv->protocols,
+      g_strdup (tp_base_protocol_get_name (protocol)),
+      g_object_ref (protocol));
 }

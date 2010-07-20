@@ -1,7 +1,77 @@
-telepathy-glib 0.11.9 (UNRELEASED)
+telepathy-glib 0.11.11 (UNRELEASED)
+===================================
+
+Enhancements:
+
+↭ Updated spec to 0.19.10 (smcv):
+  ↯ generate code for Protocol objects, and the ContactSearch channel type
+
+↭ fd.o #27997: add TpProtocol client-side API, and TpBaseProtocol service-side
+  base class, for Protocol objects (smcv)
+
+↭ fd.o #28751: tp_proxy_has_interface is now a real function, not a macro, for
+  better introspection (smcv)
+
+↭ TpBaseClient's properties now have accessor methods for convenient use in C
+  (smcv)
+
+↭ tp_capabilities_get_channel_classes is now visible to g-i (pwithnall)
+
+Fixes:
+
+↭ Install a .deps file for the Vala bindings (pwithnall)
+
+↭ Vala bindings now install to the normal location, making it unnecessary to
+  look up telepathy-vala in pkg-config; that pkg-config file will be removed
+  in a future version (treitter)
+
+telepathy-glib 0.11.10 (2010-07-12)
+===================================
+
+The “as many fossils as last year” release.
+
+Enhancements:
+
+❱ Updated spec to 0.19.9 (wjt):
+  ❭ added support for Read and Deleted delivery reports
+
+Fixes:
+
+❱ Improved GObject-Introspection annotations to be sufficient for
+  libfolks (treitter)
+
+❱ Fixed a typo in the documentation (jonny)
+
+❱ fd.o #28920: fixed tp_contact_request_contact_info_async cancellation
+  handling when dealing with synchronous errors (pwithnall)
+
+telepathy-glib 0.11.9 (2010-07-02)
 ==================================
 
-…
+The “mistakenly displays 2 more bars than it should” release.
+
+Enhancements:
+
+❉ Updated spec to 0.19.8 (smcv):
+  ➠ generate code for some new properties, Conn.I.Cellular and
+    Account.I.Storage
+  ➠ add convenience methods to TpAccount to access Account.Service
+
+❉ Added tp_simple_async_report_success_in_idle, a convenience function to
+  return "void" from an async method (smcv)
+
+Fixes:
+
+❉ Fixed libdbus errors when unregistering a TpBaseClient that isn't a
+  Handler (cassidy)
+
+❉ Made some TpGroupMixin methods more const-correct (smcv)
+
+❉ Fixed some memory leaks in regression tests (smcv)
+
+❉ Suppressed more valgrind false-positives (smcv, cassidy)
+
+❉ Improved generation of experimental Vala bindings (treitter)
 
 telepathy-glib 0.11.8 (2010-06-22)
 ==================================

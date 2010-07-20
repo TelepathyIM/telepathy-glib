@@ -11,7 +11,7 @@ AC_PREREQ([2.59])
 
 m4_define([tp_glib_major_version], [0])
 m4_define([tp_glib_minor_version], [11])
-m4_define([tp_glib_micro_version], [8])
+m4_define([tp_glib_micro_version], [10])
 m4_define([tp_glib_nano_version], [1])
 
 # If library source has changed since last release, increment revision
@@ -27,7 +27,7 @@ m4_define([tp_glib_nano_version], [1])
 # never seen in a release).
 
 m4_define([tp_glib_lt_current], [39])
-m4_define([tp_glib_lt_revision], [1])
+m4_define([tp_glib_lt_revision], [2])
 m4_define([tp_glib_lt_age], [39])
 
 # Some magic
@@ -197,7 +197,7 @@ AC_ARG_ENABLE(vala-bindings,
 
 if test x$enable_vala_bindings = xyes; then
   PKG_CHECK_MODULES(VALA,
-                    [vala-1.0 >= 0.8.0.58-d033])
+                    [vala-1.0 >= 0.9.2.97-2b08])
   have_vala=yes
 
   AC_PATH_PROG(VALAC, valac, valac)

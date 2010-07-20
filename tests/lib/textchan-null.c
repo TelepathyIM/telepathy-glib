@@ -334,7 +334,7 @@ props_finalize (GObject *object)
 
   g_hash_table_unref (self->dbus_property_interfaces_retrieved);
 
-  ((GObjectClass *) tp_tests_text_channel_null_parent_class)->finalize (object);
+  ((GObjectClass *) tp_tests_props_text_channel_parent_class)->finalize (object);
 }
 
 static void
@@ -394,6 +394,8 @@ static void
 group_finalize (GObject *self)
 {
   tp_group_mixin_finalize (self);
+
+  ((GObjectClass *) tp_tests_props_group_text_channel_parent_class)->finalize (self);
 }
 
 static gboolean

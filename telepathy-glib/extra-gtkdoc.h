@@ -761,3 +761,56 @@
  *
  * Since: 0.11.7
  */
+
+/**
+ * SECTION:connection-cellular
+ * @title: Connection Cellular interface
+ * @short_description: client-side wrappers for the Cellular interface
+ * @see_also: #TpConnection
+ *
+ * An interface for connections to cellular telephony (GSM, CDMA etc.), which
+ * provides properties and signals that aren't applicable to other protocols.
+ *
+ * Since: 0.11.9
+ */
+
+/**
+ * SECTION:svc-protocol
+ * @title: Service-side Protocol interface
+ * @short_description: GInterface for Telepathy Protocol objects
+ * @see_also: #TpBaseProtocol
+ *
+ * The #TpSvcProtocol interface (auto-generated from the Telepathy
+ * spec) makes it easier to export an object implementing the Telepathy
+ * Protocol interface.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+/**
+ * SECTION:channel-contactsearch
+ * @title: Contact Search channels
+ * @short_description: client-side wrappers for the Contact Search channel type
+ * @see_also: #TpChannel
+ *
+ * Some instant messaging protocols allow searching for contacts by name or
+ * other details. In Telepathy, each search attempt is represented as a
+ * Channel.
+ *
+ * This section documents the auto-generated C wrappers for the Contact Search
+ * channel type.
+ */
+
+/**
+ * SECTION:svc-channel-contactsearch
+ * @title: Contact Search channels
+ * @short_description: service-side interface for the Contact Search channel
+ *  type
+ *
+ * Some instant messaging protocols allow searching for contacts by name or
+ * other details. In Telepathy, each search attempt is represented as a
+ * Channel.
+ *
+ * This section documents the auto-generated C wrappers for the Contact Search
+ * channel type.
+ */

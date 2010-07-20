@@ -136,14 +136,16 @@ void tp_base_client_set_handler_related_conferences_bypass_approval (
 gboolean tp_base_client_register (TpBaseClient *self,
     GError **error);
 
-const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
-
-const gchar *tp_base_client_get_object_path (TpBaseClient *self);
-
 /* Normal methods, can be called at any time */
 
 GList *tp_base_client_get_pending_requests (TpBaseClient *self);
 GList *tp_base_client_get_handled_channels (TpBaseClient *self);
+
+const gchar *tp_base_client_get_name (TpBaseClient *self);
+gboolean tp_base_client_get_uniquify_name (TpBaseClient *self);
+const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
+const gchar *tp_base_client_get_object_path (TpBaseClient *self);
+TpDBusDaemon *tp_base_client_get_dbus_daemon (TpBaseClient *self);
 
 void tp_base_client_unregister (TpBaseClient *self);
 

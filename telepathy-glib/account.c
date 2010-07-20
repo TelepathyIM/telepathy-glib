@@ -110,6 +110,7 @@ struct _TpAccountPrivate {
   gchar *cm_name;
   gchar *proto_name;
   gchar *icon_name;
+  gchar *service;
 
   gchar *display_name;
 
@@ -145,6 +146,7 @@ enum {
   PROP_ICON_NAME,
   PROP_CONNECT_AUTOMATICALLY,
   PROP_HAS_BEEN_ONLINE,
+  PROP_SERVICE,
   PROP_VALID,
   PROP_REQUESTED_PRESENCE_TYPE,
   PROP_REQUESTED_STATUS,
@@ -516,6 +518,24 @@ _tp_account_update (TpAccount *account,
         }
     }
 
+  if (g_hash_table_lookup (properties, "Service") != NULL)
+    {
+      const gchar *service;
+      gchar *old = priv->service;
+
+      service = tp_asv_get_string (properties, "Service");
+
+      if (tp_str_empty (service))
+        priv->service = g_strdup (priv->proto_name);
+      else
+        priv->service = g_strdup (service);
+
+      if (tp_strdiff (old, priv->service))
+        g_object_notify (G_OBJECT (account), "service");
+
+      g_free (old);
+    }
+
   if (g_hash_table_lookup (properties, "Valid") != NULL)
     {
       gboolean old = priv->valid;
@@ -679,6 +699,7 @@ _tp_account_constructed (GObject *object)
       &(priv->cm_name), &(priv->proto_name), NULL, NULL);
 
   priv->icon_name = g_strdup_printf ("im-%s", priv->proto_name);
+  priv->service = g_strdup (priv->proto_name);
 
   g_signal_connect (self, "invalidated",
       G_CALLBACK (_tp_account_invalidated_cb), NULL);
@@ -750,6 +771,9 @@ _tp_account_get_property (GObject *object,
     case PROP_HAS_BEEN_ONLINE:
       g_value_set_boolean (value, self->priv->has_been_online);
       break;
+    case PROP_SERVICE:
+      g_value_set_string (value, self->priv->service);
+      break;
     case PROP_VALID:
       g_value_set_boolean (value, self->priv->valid);
       break;
@@ -800,6 +824,7 @@ _tp_account_finalize (GObject *object)
   g_free (priv->message);
   g_free (priv->requested_status);
   g_free (priv->requested_message);
+  g_free (priv->error);
 
   g_free (priv->nickname);
 
@@ -807,6 +832,7 @@ _tp_account_finalize (GObject *object)
   g_free (priv->proto_name);
   g_free (priv->icon_name);
   g_free (priv->display_name);
+  g_free (priv->service);
 
   tp_clear_pointer (&priv->parameters, g_hash_table_unref);
   tp_clear_pointer (&priv->error_details, g_hash_table_unref);
@@ -1113,7 +1139,9 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:protocol:
    *
-   * The account's protocol name.
+   * The account's machine-readable protocol name, such as "jabber", "msn" or
+   * "local-xmpp". Recommended names for most protocols can be found in the
+   * Telepathy D-Bus Interface Specification.
    *
    * Since: 0.9.0
    */
@@ -1121,6 +1149,34 @@ tp_account_class_init (TpAccountClass *klass)
       g_param_spec_string ("protocol",
           "Protocol",
           "The account's protocol name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:service:
+   *
+   * A machine-readable name identifying a specific service to which this
+   * account connects, or a copy of #TpAccount:protocol if there is no more
+   * specific service.
+   *
+   * Well-known names for various services can be found in the Telepathy D-Bus
+   * Interface Specification.
+   *
+   * For instance, accounts for the "jabber" protocol should have the service
+   * names "google-talk", "ovi-chat", "facebook" and "lj-talk" for accounts
+   * that connect to Google Talk, Ovi Chat, Facebook and Livejournal,
+   * respectively, and this property will be "jabber" for accounts that
+   * connect to a generic Jabber server.
+   *
+   * To change this property, use
+   * tp_account_set_service_async().
+   *
+   * Since: 0.11.9
+   */
+  g_object_class_install_property (object_class, PROP_SERVICE,
+      g_param_spec_string ("service",
+          "Service",
+          "The account's service name",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -1567,6 +1623,24 @@ tp_account_get_protocol (TpAccount *account)
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
   return account->priv->proto_name;
+}
+
+/**
+ * tp_account_get_service:
+ * @self: an account
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpAccount:service property
+ *
+ * Since: 0.11.9
+ */
+const gchar *
+tp_account_get_service (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  return self->priv->service;
 }
 
 /**
@@ -2053,6 +2127,81 @@ tp_account_set_display_name_finish (TpAccount *account,
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
           G_OBJECT (account), tp_account_set_display_name_finish), FALSE);
+
+  return TRUE;
+}
+
+/**
+ * tp_account_set_service_async:
+ * @self: a #TpAccount
+ * @service: a new service name, or %NULL or the empty string to unset the
+ *  service name (which will result in the #TpAccount:service property
+ *  becoming the same as #TpAccount:protocol)
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous set of the Service property on @self. When
+ * the operation is finished, @callback will be called. You can then call
+ * tp_account_set_service_finish() to get the result of the operation.
+ *
+ * Since: 0.11.9
+ */
+void
+tp_account_set_service_async (TpAccount *self,
+    const char *service,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GValue value = {0, };
+
+  g_return_if_fail (TP_IS_ACCOUNT (self));
+
+  if (service == NULL)
+    service = "";
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_account_set_service_async);
+
+  g_value_init (&value, G_TYPE_STRING);
+  g_value_set_string (&value, service);
+
+  tp_cli_dbus_properties_call_set (self, -1, TP_IFACE_ACCOUNT,
+      "Service", &value, _tp_account_property_set_cb, result, NULL,
+      G_OBJECT (self));
+
+  g_value_unset (&value);
+}
+
+/**
+ * tp_account_set_service_finish:
+ * @self: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async set of the Service parameter.
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE
+ *
+ * Since: 0.11.9
+ */
+gboolean
+tp_account_set_service_finish (TpAccount *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (self), tp_account_set_service_async), FALSE);
 
   return TRUE;
 }

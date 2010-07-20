@@ -1155,6 +1155,9 @@ test_upgrade (TpTestsContactsConnection *service_conn,
     }
 
   /* remaining cleanup */
+  g_hash_table_unref (location_1);
+  g_hash_table_unref (location_2);
+  g_hash_table_unref (location_3);
   g_main_loop_unref (result.loop);
 }
 

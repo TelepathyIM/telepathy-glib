@@ -22,14 +22,29 @@
    fun:tp_handle_ensure
 }
 
+# default.supp has these for 2.10, but they're too specific
 {
-   ld.so initialization on glibc 2.9
+   Debian libc6 (2.10.x, 2.11.x) stripped dynamic linker
+   Memcheck:Cond
+   fun:index
+   fun:expand_dynamic_string_token
+   fun:_dl_map_object
+   fun:map_doit
+   fun:_dl_catch_error
+   fun:do_preload
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start
+   obj:/lib/ld-*.so
+}
+{
+   Debian libc6 (2.9.x - 2.11.x) stripped dynamic linker
    Memcheck:Cond
    fun:_dl_relocate_object
    fun:dl_main
    fun:_dl_sysdep_start
    fun:_dl_start
-   obj:/lib/ld-2.9.so
+   obj:/lib/ld-*.so
 }
 
 {
@@ -43,12 +58,33 @@
    obj:/lib/ld-2.9.so
 }
 
+# ======================= libselinux on Debian amd64 =====================
+
 {
-  selinux, we just don't know
-  Memcheck:Leak
-  fun:malloc
-  fun:getdelim
-  obj:/lib/libselinux.so.1
+   I have no idea what SELinux is doing but it's not my problem
+   Memcheck:Cond
+   ...
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
+}
+
+{
+   I have no idea what SELinux is doing but it's not my problem
+   Memcheck:Value8
+   ...
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
+}
+
+{
+   I have no idea what SELinux is doing but it's not my problem
+   Memcheck:Leak
+   ...
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
 }
 
 # ============================= GLib ==================================
@@ -167,7 +203,22 @@
    fun:g_type_add_interface_static
 }
 
+{
+   initialization of interfaces
+   Memcheck:Leak
+   ...
+   fun:type_iface_vtable_base_init_Wm
+   fun:g_type_class_ref
+}
+
 # ============================= GIO ===================================
+
+{
+   GIO init
+   Memcheck:Leak
+   ...
+   fun:g_inet_address_class_intern_init
+}
 
 {
    g_simple_async_result class
@@ -179,14 +230,6 @@
 }
 
 # ============================= dbus-glib =============================
-
-{
-   dbus-glib, https://bugs.freedesktop.org/show_bug.cgi?id=14125
-   Memcheck:Addr4
-   fun:g_hash_table_foreach
-   obj:/usr/lib/libdbus-glib-1.so.2.1.0
-   fun:g_object_run_dispose
-}
 
 {
    registering marshallers is permanent
@@ -232,6 +275,13 @@
    Memcheck:Leak
    ...
    fun:dbus_g_error_domain_register
+}
+
+{
+   DBusGProxy class init
+   Memcheck:Leak
+   ...
+   fun:dbus_g_proxy_class_init
 }
 
 # ============================= telepathy-glib ========================

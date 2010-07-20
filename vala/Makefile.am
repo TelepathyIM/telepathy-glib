@@ -1,7 +1,8 @@
-XSLTPROCFLAGS = --nonet --novalid
-
 vapidir = $(datarootdir)/telepathy/vapi
-vapi_DATA = telepathy-glib.vapi
+vapi_DATA = \
+	telepathy-glib.vapi \
+	telepathy-glib.deps \
+	$(NULL)
 
 BUILT_SOURCES = \
 	telepathy-glib.vapi \
@@ -16,18 +17,20 @@ telepathy-glib.vapi: $(top_srcdir)/telepathy-glib/TelepathyGLib-0.12.gir
 		--pkg gio-2.0 \
 		$< \
 		$(NULL)
+	@mv $@ telepathy-glib.vapi.tmp1
+	$(AM_V_GEN)sed -e \
+		's/TelepathyGLib-0.12.h/telepathy-glib\/telepathy-glib.h/' \
+		< telepathy-glib.vapi.tmp1 > telepathy-glib.vapi.tmp2
+	$(AM_V_GEN)sed -e \
+		's/cprefix = "tp"/cprefix = "Tp"/' \
+		< telepathy-glib.vapi.tmp2 > $@
+	@rm telepathy-glib.vapi.tmp*
 
 CLEANFILES = \
 	$(BUILT_SOURCES) \
 	$(NULL)
 
 # set up the verbosity rules to avoid some build noise
-# XXX: once automake >= 1.11 is common, remove these, push VALASOURCES files
-# into SOURCES and add AM_PROG_VALAC to configure.ac
 VAPIGEN_V = $(VAPIGEN_V_$(V))
 VAPIGEN_V_ = $(VAPIGEN_V_$(AM_DEFAULT_VERBOSITY))
 VAPIGEN_V_0 = @echo "  VAPIG " $^;
-
-VGI_V = $(VGI_V_$(V))
-VGI_V_ = $(VGI_V_$(AM_DEFAULT_VERBOSITY))
-VGI_V_0 = @echo "  VGI   " $^;
