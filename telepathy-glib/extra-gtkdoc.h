@@ -772,3 +772,31 @@
  *
  * Since: 0.11.UNRELEASED
  */
+
+/**
+ * SECTION:channel-contactsearch
+ * @title: Contact Search channels
+ * @short_description: client-side wrappers for the Contact Search channel type
+ * @see_also: #TpChannel
+ *
+ * Some instant messaging protocols allow searching for contacts by name or
+ * other details. In Telepathy, each search attempt is represented as a
+ * Channel.
+ *
+ * This section documents the auto-generated C wrappers for the Contact Search
+ * channel type.
+ */
+
+/**
+ * SECTION:svc-channel-contactsearch
+ * @title: Contact Search channels
+ * @short_description: service-side interface for the Contact Search channel
+ *  type
+ *
+ * Some instant messaging protocols allow searching for contacts by name or
+ * other details. In Telepathy, each search attempt is represented as a
+ * Channel.
+ *
+ * This section documents the auto-generated C wrappers for the Contact Search
+ * channel type.
+ */
