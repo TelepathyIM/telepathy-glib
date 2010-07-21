@@ -1,3 +1,5 @@
+SUBDIRS = stream-tubes
+
 EXAMPLES =
 
 EXAMPLES += telepathy-example-inspect-channel

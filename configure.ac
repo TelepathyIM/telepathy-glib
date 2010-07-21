@@ -276,6 +276,7 @@ AC_OUTPUT( Makefile \
 	   docs/reference/Makefile \
 	   examples/Makefile \
 	   examples/client/Makefile \
+	   examples/client/stream-tubes/Makefile \
 	   examples/cm/Makefile \
 	   examples/cm/callable/Makefile \
 	   examples/cm/channelspecific/Makefile \

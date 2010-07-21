@@ -39,6 +39,7 @@ our_headers = \
     channel-factory-iface.h \
     channel-manager.h \
     channel-request.h \
+    channel-view.h \
     client.h \
     connection.h \
     connection-manager.h \
@@ -79,6 +80,7 @@ our_headers = \
     simple-approver.h \
     simple-handler.h \
     simple-observer.h \
+    stream-tube.h \
     svc-account.h \
     svc-account-manager.h \
     svc-channel-dispatcher.h \
@@ -143,6 +145,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel-dispatch-operation-internal.h \
     channel-manager.c \
     channel-request.c \
+    channel-view.c \
     client.c \
     connection.c \
     connection-avatars.c \
@@ -197,6 +200,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     simple-approver.c \
     simple-handler.c \
     simple-observer.c \
+    stream-tube.c \
     text-mixin.c \
     util.c \
     util-internal.h
