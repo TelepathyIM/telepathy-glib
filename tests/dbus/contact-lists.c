@@ -859,11 +859,9 @@ test_reject_publish_request (Test *test,
 
   g_assert_cmpuint (test->log->len, ==, 1);
 
-  if (!tp_strdiff (mode, "old") || !tp_strdiff (mode, "unpublish"))
-    test_assert_one_contact_changed (test, 0, test->wim, TP_SUBSCRIPTION_STATE_NO,
-        TP_SUBSCRIPTION_STATE_NO, "");
-  else
-    test_assert_one_contact_removed (test, 0, test->wim);
+  /* because Wim wasn't really on our contact list, he's removed as a
+   * side-effect, even if we only unpublished */
+  test_assert_one_contact_removed (test, 0, test->wim);
 
   test_assert_contact_state (test, test->wim,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);

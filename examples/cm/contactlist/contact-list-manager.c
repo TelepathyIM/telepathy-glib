@@ -43,8 +43,6 @@ typedef struct {
     guint pre_approved:1;
     guint subscribe_requested:1;
     guint subscribe_rejected:1;
-    guint publish_requested:1;
-    gchar *publish_request;
 
     /* string borrowed from priv->all_tags => the same pointer */
     GHashTable *tags;
@@ -64,7 +62,6 @@ example_contact_details_destroy (gpointer p)
   tp_clear_pointer (&d->tags, g_hash_table_unref);
 
   g_free (d->alias);
-  g_free (d->publish_request);
   g_slice_free (ExampleContactDetails, d);
 }
 
@@ -111,10 +108,19 @@ struct _ExampleContactListManagerPrivate
   /* g_strdup (group name) => the same pointer */
   GHashTable *all_tags;
 
+  /* All contacts on our (fake) protocol-level contact list,
+   * plus all contacts who have requested presence */
   TpHandleSet *contacts;
-  /* GUINT_TO_POINTER (handle borrowed from contacts)
+
+  /* All contacts on our (fake) protocol-level contact list
+   * GUINT_TO_POINTER (handle borrowed from contacts)
    *    => ExampleContactDetails */
   GHashTable *contact_details;
+
+  /* Contacts who have requested presence (may or may not be in
+   * contact_details)
+   * handle borrowed from contacts => g_strdup (message) */
+  GHashTable *publish_requests;
 
   TpHandleSet *blocked_contacts;
 
@@ -129,6 +135,8 @@ example_contact_list_manager_init (ExampleContactListManager *self)
 
   self->priv->contact_details = g_hash_table_new_full (g_direct_hash,
       g_direct_equal, NULL, example_contact_details_destroy);
+  self->priv->publish_requests = g_hash_table_new_full (g_direct_hash,
+      g_direct_equal, NULL, g_free);
   self->priv->all_tags = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, NULL);
 
@@ -143,6 +151,7 @@ example_contact_list_manager_close_all (ExampleContactListManager *self)
 {
   tp_clear_pointer (&self->priv->contacts, tp_handle_set_destroy);
   tp_clear_pointer (&self->priv->blocked_contacts, tp_handle_set_destroy);
+  tp_clear_pointer (&self->priv->publish_requests, g_hash_table_unref);
   tp_clear_pointer (&self->priv->contact_details, g_hash_table_unref);
   /* this must come after freeing contact_details, because the strings are
    * borrowed */
@@ -231,8 +240,14 @@ ensure_contact (ExampleContactListManager *self,
       g_hash_table_insert (self->priv->contact_details,
           GUINT_TO_POINTER (contact), ret);
 
+      /* if we already had a publish request from them, then adding them to
+       * the protocol-level contact list doesn't alter the Telepathy contact
+       * list */
       if (created != NULL)
-        *created = TRUE;
+        {
+          *created = (g_hash_table_lookup (self->priv->publish_requests,
+                GUINT_TO_POINTER (contact)) == NULL);
+        }
     }
   else if (created != NULL)
     {
@@ -454,24 +469,22 @@ receive_contact_lists (gpointer p)
   tp_handle_unref (self->priv->contact_repo, handle);
 
   /* Receive a couple of authorization requests too. These people are
-   * local-pending in publish */
+   * local-pending in publish; they're not actually on our protocol-level
+   * contact list */
 
   handle = tp_handle_ensure (self->priv->contact_repo, "wim@example.com",
       NULL, NULL);
-  d = ensure_contact (self, handle, NULL);
-  g_free (d->alias);
-  d->alias = g_strdup ("Wim");
-  d->publish_requested = TRUE;
-  d->publish_request = g_strdup ("I'm more metal than you!");
+  tp_handle_set_add (self->priv->contacts, handle);
+  g_hash_table_insert (self->priv->publish_requests,
+      GUINT_TO_POINTER (handle), g_strdup ("I'm more metal than you!"));
   tp_handle_unref (self->priv->contact_repo, handle);
 
   handle = tp_handle_ensure (self->priv->contact_repo, "christian@example.com",
       NULL, NULL);
-  d = ensure_contact (self, handle, NULL);
-  g_free (d->alias);
-  d->alias = g_strdup ("Christian");
-  d->publish_requested = TRUE;
-  d->publish_request = g_strdup ("I have some fermented herring for you");
+  tp_handle_set_add (self->priv->contacts, handle);
+  g_hash_table_insert (self->priv->publish_requests,
+      GUINT_TO_POINTER (handle),
+      g_strdup ("I have some fermented herring for you"));
   tp_handle_unref (self->priv->contact_repo, handle);
 
   /* Add a couple of blocked contacts. */
@@ -564,6 +577,8 @@ send_updated_roster (ExampleContactListManager *self,
 {
   ExampleContactDetails *d = g_hash_table_lookup (self->priv->contact_details,
       GUINT_TO_POINTER (contact));
+  const gchar *request = g_hash_table_lookup (self->priv->publish_requests,
+      GUINT_TO_POINTER (contact));
   const gchar *identifier = tp_handle_inspect (self->priv->contact_repo,
       contact);
 
@@ -580,7 +595,7 @@ send_updated_roster (ExampleContactListManager *self,
       g_message ("\talias = %s", d->alias);
       g_message ("\tcan see our presence = %s",
           d->publish ? "yes" :
-          (d->publish_requested ? "no, but has requested it" : "no"));
+          (request != NULL ? "no, but has requested it" : "no"));
       g_message ("\tsends us presence = %s",
           d->subscribe ? "yes" :
           (d->subscribe_requested ? "no, but we have requested it" :
@@ -810,25 +825,27 @@ receive_auth_request (ExampleContactListManager *self,
   g_message ("From server: %s has sent us a publish request",
       tp_handle_inspect (self->priv->contact_repo, contact));
 
-  d = ensure_contact (self, contact, NULL);
+  d = lookup_contact (self, contact);
 
-  if (d->publish)
+  if (d != NULL && d->publish)
     return;
 
-  if (d->pre_approved)
+  if (d != NULL && d->pre_approved)
     {
       /* the user already said yes, no need to signal anything */
       g_message ("... this publish request was already approved");
       d->pre_approved = FALSE;
       d->publish = TRUE;
-      g_free (d->publish_request);
-      d->publish_request = NULL;
+      g_hash_table_remove (self->priv->publish_requests,
+          GUINT_TO_POINTER (contact));
       send_updated_roster (self, contact);
     }
   else
     {
-      d->publish_requested = TRUE;
-      d->publish_request = g_strdup ("May I see your presence, please?");
+      tp_handle_set_add (self->priv->contacts, contact);
+      g_hash_table_insert (self->priv->publish_requests,
+          GUINT_TO_POINTER (contact),
+          g_strdup ("May I see your presence, please?"));
     }
 
   set = tp_handle_set_new (self->priv->contact_repo);
@@ -1053,8 +1070,6 @@ static const ExampleContactDetails no_details = {
     FALSE,
     FALSE,
     FALSE,
-    FALSE,
-    "",
     NULL
 };
 
@@ -1082,6 +1097,8 @@ example_contact_list_manager_get_states (TpBaseContactList *manager,
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   const ExampleContactDetails *details = lookup_contact (self, contact);
+  const gchar *request = g_hash_table_lookup (self->priv->publish_requests,
+      GUINT_TO_POINTER (contact));
 
   if (details == NULL)
     details = &no_details;
@@ -1091,11 +1108,10 @@ example_contact_list_manager_get_states (TpBaseContactList *manager,
         details->subscribe_requested, details->subscribe_rejected);
 
   if (publish != NULL)
-    *publish = compose_presence (details->publish, details->publish_requested,
-        FALSE);
+    *publish = compose_presence (details->publish, (request != NULL), FALSE);
 
   if (publish_request != NULL)
-    *publish_request = g_strdup (details->publish_request);
+    *publish_request = g_strdup (request);
 }
 
 static void
@@ -1186,11 +1202,13 @@ example_contact_list_manager_authorize_publication_async (
   while (tp_intset_fast_iter_next (&iter, &member))
     {
       ExampleContactDetails *d = ensure_contact (self, member, NULL);
+      const gchar *request = g_hash_table_lookup (self->priv->publish_requests,
+          GUINT_TO_POINTER (member));
 
       /* We would like member to see our presence. In this simulated protocol,
        * this is meaningless, unless they have asked for it; but we can still
        * remember the pre-authorization in case they ask later. */
-      if (!d->publish_requested)
+      if (request == NULL)
         {
           d->pre_approved = TRUE;
           tp_handle_set_remove (changed, member);
@@ -1198,9 +1216,8 @@ example_contact_list_manager_authorize_publication_async (
       else if (!d->publish)
         {
           d->publish = TRUE;
-          d->publish_requested = FALSE;
-          g_free (d->publish_request);
-          d->publish_request = NULL;
+          g_hash_table_remove (self->priv->publish_requests,
+              GUINT_TO_POINTER (member));
           send_updated_roster (self, member);
         }
       else
@@ -1231,16 +1248,25 @@ example_contact_list_manager_store_contacts_async (
 
   while (tp_intset_fast_iter_next (&iter, &member))
     {
-      gboolean created;
+      /* We would like member to be on the roster, but nothing more. */
 
-      /* we would like member to be on the roster, but nothing more */
+      if (lookup_contact (self, member) == NULL)
+        {
+          gboolean created;
 
-      ensure_contact (self, member, &created);
+          ensure_contact (self, member, &created);
+          send_updated_roster (self, member);
 
-      if (created)
-        send_updated_roster (self, member);
+          /* If we'd had a publish request from this member, then adding them
+           * to the protocol-level contact list doesn't actually cause a
+           * state change visible on Telepathy. */
+          if (!created)
+            tp_handle_set_remove (changed, member);
+        }
       else
-        tp_handle_set_remove (changed, member);
+        {
+          tp_handle_set_remove (changed, member);
+        }
     }
 
   tp_base_contact_list_contacts_changed (manager, changed, NULL);
@@ -1265,9 +1291,13 @@ example_contact_list_manager_remove_contacts_async (TpBaseContactList *manager,
   while (tp_intset_fast_iter_next (&iter, &member))
     {
       /* we would like to remove member from the roster altogether */
-      if (lookup_contact (self, member) != NULL)
+      if (lookup_contact (self, member) != NULL
+          || g_hash_table_lookup (self->priv->publish_requests,
+            GUINT_TO_POINTER (member)) != NULL)
         {
           g_hash_table_remove (self->priv->contact_details,
+              GUINT_TO_POINTER (member));
+          g_hash_table_remove (self->priv->publish_requests,
               GUINT_TO_POINTER (member));
           send_updated_roster (self, member);
 
@@ -1367,6 +1397,7 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandleSet *removed = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
 
@@ -1375,23 +1406,34 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
   while (tp_intset_fast_iter_next (&iter, &member))
     {
       ExampleContactDetails *d = lookup_contact (self, member);
+      const gchar *request = g_hash_table_lookup (self->priv->publish_requests,
+          GUINT_TO_POINTER (member));
 
       /* we would like member not to see our presence any more, or we
        * would like to reject a request from them to see our presence */
+
+      if (request != NULL)
+        {
+          g_message ("Rejecting authorization request from %s",
+              tp_handle_inspect (self->priv->contact_repo, member));
+          g_hash_table_remove (self->priv->publish_requests,
+              GUINT_TO_POINTER (member));
+
+          if (d == NULL)
+            {
+              /* the contact wasn't actually on our protocol-level contact
+               * list, only on the Telepathy-level contact list, so rejecting
+               * authorization makes them disappear */
+              tp_handle_set_add (removed, member);
+              tp_handle_set_remove (changed, member);
+            }
+        }
 
       if (d != NULL)
         {
           d->pre_approved = FALSE;
 
-          if (d->publish_requested)
-            {
-              g_message ("Rejecting authorization request from %s",
-                  tp_handle_inspect (self->priv->contact_repo, member));
-              d->publish_requested = FALSE;
-              g_free (d->publish_request);
-              d->publish_request = NULL;
-            }
-          else if (d->publish)
+          if (d->publish)
             {
               g_message ("Removing authorization from %s",
                   tp_handle_inspect (self->priv->contact_repo, member));
@@ -1413,13 +1455,15 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
 
           send_updated_roster (self, member);
         }
-      else
+      else if (request == NULL)
         {
+          /* they weren't on our Telepathy-level contact list, i.e. neither
+           * on our protocol-level contact list, nor requesting publication */
           tp_handle_set_remove (changed, member);
         }
     }
 
-  tp_base_contact_list_contacts_changed (manager, changed, NULL);
+  tp_base_contact_list_contacts_changed (manager, changed, removed);
 
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
       user_data, example_contact_list_manager_unpublish_async);
