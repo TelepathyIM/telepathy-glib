@@ -1581,9 +1581,9 @@ squash_name (const gchar *name, guint length)
  * tp_base_connection_register:
  * @self: A connection
  * @cm_name: The name of the connection manager in the Telepathy protocol
- * @bus_name: Used to return the bus name corresponding to the connection
+ * @bus_name: (out): Used to return the bus name corresponding to the connection
  *  if %TRUE is returned; must not be %NULL. To be freed by the caller.
- * @object_path: Used to return the object path of the connection if
+ * @object_path: (out): Used to return the object path of the connection if
  *  %TRUE is returned; must not be %NULL. To be freed by the caller.
  * @error: Used to return an error if %FALSE is returned; may be %NULL
  *
