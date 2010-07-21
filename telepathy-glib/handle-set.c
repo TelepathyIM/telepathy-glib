@@ -42,7 +42,7 @@ struct _TpHandleSet
 };
 
 /**
- * TP_TYPE_HANDLE_SET:
+ * TP_TYPE_HANDLE_SET: (skip)
  *
  * The boxed type of a #TpHandleSet.
  *
@@ -66,7 +66,7 @@ tp_handle_set_get_type (void)
 }
 
 /**
- * tp_handle_set_new:
+ * tp_handle_set_new: (skip)
  * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
  *
  * Creates a new #TpHandleSet
@@ -87,7 +87,7 @@ tp_handle_set_new (TpHandleRepoIface *repo)
 }
 
 /**
- * tp_handle_set_new_from_array:
+ * tp_handle_set_new_from_array: (skip)
  * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
  * @array: array of handles to be referenced by this set
  *
@@ -116,7 +116,7 @@ freer (TpHandleSet *set, TpHandle handle, gpointer userdata)
 }
 
 /**
- * tp_handle_set_destroy:
+ * tp_handle_set_destroy: (skip)
  * @set:#TpHandleSet to destroy
  *
  * Delete a #TpHandleSet and unreference any handles that it holds
@@ -130,7 +130,7 @@ tp_handle_set_destroy (TpHandleSet *set)
 }
 
 /**
- * tp_handle_set_clear:
+ * tp_handle_set_clear: (skip)
  * @set:#TpHandleSet to clear
  *
  * Remove every handle from @set, releasing the references it holds.
@@ -145,7 +145,7 @@ tp_handle_set_clear (TpHandleSet *set)
 }
 
 /**
- * tp_handle_set_is_empty:
+ * tp_handle_set_is_empty: (skip)
  * @set:#TpHandleSet to check
  *
  * Return the same thing as <code>(tp_handle_set_size (set) == 0)</code>,
@@ -162,7 +162,7 @@ tp_handle_set_is_empty (const TpHandleSet *set)
 }
 
 /**
- * tp_handle_set_peek:
+ * tp_handle_set_peek: (skip)
  * @set:#TpHandleSet to peek at
  *
  * <!--Returns: says it all, this comment is just to keep gtkdoc happy-->
@@ -176,7 +176,7 @@ tp_handle_set_peek (TpHandleSet *set)
 }
 
 /**
- * tp_handle_set_add:
+ * tp_handle_set_add: (skip)
  * @set: #TpHandleSet to add this handle to
  * @handle: handle to add
  *
@@ -198,7 +198,7 @@ tp_handle_set_add (TpHandleSet *set, TpHandle handle)
 }
 
 /**
- * tp_handle_set_remove:
+ * tp_handle_set_remove: (skip)
  * @set: #TpHandleSet to remove this handle from
  * @handle: handle to remove
  *
@@ -225,7 +225,7 @@ tp_handle_set_remove (TpHandleSet *set, TpHandle handle)
 }
 
 /**
- * tp_handle_set_is_member:
+ * tp_handle_set_is_member: (skip)
  * @set: A #TpHandleSet
  * @handle: handle to check
  *
@@ -257,7 +257,7 @@ foreach_helper (guint i, gpointer userdata)
 }
 
 /**
- * tp_handle_set_foreach:
+ * tp_handle_set_foreach: (skip)
  * @set: A set of handles
  * @func: A callback
  * @userdata: Arbitrary data to pass to @func
@@ -276,7 +276,7 @@ tp_handle_set_foreach (TpHandleSet *set, TpHandleSetMemberFunc func,
 }
 
 /**
- * tp_handle_set_size:
+ * tp_handle_set_size: (skip)
  * @set: A set of handles
  *
  * <!--no further documentation needed-->
@@ -290,7 +290,7 @@ tp_handle_set_size (const TpHandleSet *set)
 }
 
 /**
- * tp_handle_set_to_array:
+ * tp_handle_set_to_array: (skip)
  * @set: A handle set
  *
  * <!--Returns: says it all, this comment is just to keep gtkdoc happy-->
@@ -314,7 +314,7 @@ ref_one (guint handle, gpointer data)
 }
 
 /**
- * tp_handle_set_copy:
+ * tp_handle_set_copy: (skip)
  * @other: another handle set
  *
  * Creates a new #TpHandleSet with the same contents as @other.
@@ -338,7 +338,7 @@ tp_handle_set_copy (const TpHandleSet *other)
 }
 
 /**
- * tp_handle_set_update:
+ * tp_handle_set_update: (skip)
  * @set: a #TpHandleSet to update
  * @add: a #TpIntSet of handles to add
  *
@@ -375,7 +375,7 @@ unref_one (guint handle, gpointer data)
 }
 
 /**
- * tp_handle_set_difference_update:
+ * tp_handle_set_difference_update: (skip)
  * @set: a #TpHandleSet to update
  * @remove: a #TpIntSet of handles to remove
  *

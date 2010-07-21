@@ -171,7 +171,7 @@
  */
 
 /**
- * TP_INTERNAL_CONNECTION_STATUS_NEW:
+ * TP_INTERNAL_CONNECTION_STATUS_NEW: (skip)
  *
  * A special value for #TpConnectionStatus, used within GLib connection
  * managers to indicate that the connection is disconnected because
@@ -210,7 +210,7 @@
  */
 
 /**
- * TpChannelManagerIter:
+ * TpChannelManagerIter: (skip)
  *
  * An iterator over the #TpChannelManager objects known to a #TpBaseConnection.
  * It has no public fields.
@@ -222,7 +222,7 @@
  */
 
 /**
- * TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED:
+ * TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED: (skip)
  * @conn: A TpBaseConnection
  * @context: A DBusGMethodInvocation
  *
@@ -1429,7 +1429,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   object_class->set_property = tp_base_connection_set_property;
 
   /**
-   * TpBaseConnection:protocol:
+   * TpBaseConnection:protocol: (skip)
    *
    * Identifier used in the Telepathy protocol when this connection's protocol
    * name is required.
@@ -1443,7 +1443,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_PROTOCOL, param_spec);
 
   /**
-   * TpBaseConnection:self-handle:
+   * TpBaseConnection:self-handle: (skip)
    *
    * The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.
    * Must be set nonzero by the subclass before moving to state CONNECTED.
@@ -1459,7 +1459,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_SELF_HANDLE, param_spec);
 
   /**
-   * TpBaseConnection:interfaces:
+   * TpBaseConnection:interfaces: (skip)
    *
    * The set of D-Bus interfaces available on this Connection, other than
    * Connection itself.
@@ -1475,7 +1475,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
 
   /**
-   * TpBaseConnection:dbus-status:
+   * TpBaseConnection:dbus-status: (skip)
    *
    * The Connection.Status as visible on D-Bus, which is the same as
    * #TpBaseConnection.status except that %TP_INTERNAL_CONNECTION_STATUS_NEW
@@ -1494,7 +1494,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
 
   /**
-   * TpBaseConnection:dbus-daemon:
+   * TpBaseConnection:dbus-daemon: (skip)
    *
    * #TpDBusDaemon object encapsulating this object's connection to D-Bus.
    * Read-only except during construction.
@@ -1514,7 +1514,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   /* signal definitions */
 
   /**
-   * TpBaseConnection::shutdown-finished:
+   * TpBaseConnection::shutdown-finished: (skip)
    *
    * Emitted by tp_base_connection_finish_shutdown() when the underlying
    * network connection has been closed; #TpBaseConnectionManager listens
@@ -1770,7 +1770,7 @@ conn_status_reason_from_g_error (GError *error)
 }
 
 /**
- * tp_base_connection_connect:
+ * tp_base_connection_connect: (skip)
  *
  * @context: Used to return the result onto D-Bus.
  *
@@ -1816,7 +1816,7 @@ tp_base_connection_connect (TpSvcConnection *iface,
 
 
 /**
- * tp_base_connection_disconnect
+ * tp_base_connection_disconnect: (skip)
  *
  * Implements D-Bus method Disconnect
  * on interface org.freedesktop.Telepathy.Connection
@@ -1879,7 +1879,7 @@ tp_base_connection_get_interfaces (TpBaseConnection *self)
 }
 
 /**
- * tp_base_connection_get_interfaces
+ * tp_base_connection_get_interfaces: (skip)
  *
  * Implements D-Bus method GetInterfaces
  * on interface org.freedesktop.Telepathy.Connection
@@ -1894,7 +1894,7 @@ tp_base_connection_dbus_get_interfaces (TpSvcConnection *iface,
 }
 
 /**
- * tp_base_connection_get_protocol
+ * tp_base_connection_get_protocol: (skip)
  *
  * Implements D-Bus method GetProtocol
  * on interface org.freedesktop.Telepathy.Connection
@@ -1922,7 +1922,7 @@ tp_base_connection_get_protocol (TpSvcConnection *iface,
 }
 
 /**
- * tp_base_connection_dbus_get_self_handle
+ * tp_base_connection_dbus_get_self_handle: (skip)
  *
  * Implements D-Bus method GetSelfHandle
  * on interface org.freedesktop.Telepathy.Connection
@@ -1978,7 +1978,7 @@ tp_base_connection_dbus_get_status (TpSvcConnection *iface,
 #include "telepathy-glib/debug-internal.h"
 
 /**
- * tp_base_connection_hold_handles
+ * tp_base_connection_hold_handles: (skip)
  *
  * Implements D-Bus method HoldHandles
  * on interface org.freedesktop.Telepathy.Connection
@@ -2030,7 +2030,7 @@ tp_base_connection_hold_handles (TpSvcConnection *iface,
 }
 
 /**
- * tp_base_connection_inspect_handles
+ * tp_base_connection_inspect_handles: (skip)
  *
  * Implements D-Bus method InspectHandles
  * on interface org.freedesktop.Telepathy.Connection
@@ -2089,7 +2089,7 @@ tp_base_connection_inspect_handles (TpSvcConnection *iface,
 #include "telepathy-glib/debug-internal.h"
 
 /**
- * list_channel_factory_foreach_one:
+ * list_channel_factory_foreach_one: (skip)
  * @chan: a channel
  * @data: a GPtrArray in which channel information should be stored
  *
@@ -2136,7 +2136,7 @@ list_channel_factory_foreach_one (TpChannelIface *chan,
 
 
 /**
- * list_channel_manager_foreach_one:
+ * list_channel_manager_foreach_one: (skip)
  * @chan: a channel
  * @data: a GPtrArray in which channel information should be stored
  *
@@ -2236,7 +2236,7 @@ tp_base_connection_list_channels (TpSvcConnection *iface,
 
 
 /**
- * tp_base_connection_request_channel
+ * tp_base_connection_request_channel: (skip)
  *
  * Implements D-Bus method RequestChannel
  * on interface org.freedesktop.Telepathy.Connection
@@ -2430,7 +2430,7 @@ ERROR:
 #include "telepathy-glib/debug-internal.h"
 
 /**
- * tp_base_connection_release_handles
+ * tp_base_connection_release_handles: (skip)
  *
  * Implements D-Bus method ReleaseHandles
  * on interface org.freedesktop.Telepathy.Connection
@@ -2480,7 +2480,7 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
 
 
 /**
- * tp_base_connection_dbus_request_handles:
+ * tp_base_connection_dbus_request_handles: (skip)
  * @iface: A pointer to #TpBaseConnection, cast to a pointer to
  *  #TpSvcConnection
  * @handle_type: The handle type (#TpHandleType) as a guint
@@ -2606,7 +2606,7 @@ tp_base_connection_get_handles (TpBaseConnection *self,
 
 
 /**
- * tp_base_connection_get_self_handle:
+ * tp_base_connection_get_self_handle: (skip)
  * @self: A connection
  *
  * Returns the #TpBaseConnection:self-handle property, which is guaranteed not
@@ -2643,7 +2643,7 @@ tp_base_connection_set_self_handle (TpBaseConnection *self,
 
 
 /**
- * tp_base_connection_finish_shutdown:
+ * tp_base_connection_finish_shutdown: (skip)
  * @self: The connection
  *
  * Tell the connection manager that this Connection has been disconnected,
@@ -2673,7 +2673,7 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 }
 
 /**
- * tp_base_connection_disconnect_with_dbus_error:
+ * tp_base_connection_disconnect_with_dbus_error: (skip)
  * @self: The connection
  * @error_name: The D-Bus error with which the connection changed status to
  *              Disconnected
@@ -2890,7 +2890,7 @@ tp_base_connection_change_status (TpBaseConnection *self,
 
 
 /**
- * tp_base_connection_add_interfaces:
+ * tp_base_connection_add_interfaces: (skip)
  * @self: A TpBaseConnection in state #TP_INTERNAL_CONNECTION_STATUS_NEW
  *  or #TP_CONNECTION_STATUS_CONNECTING
  * @interfaces: A %NULL-terminated array of D-Bus interface names, which
@@ -3318,7 +3318,7 @@ requests_iface_init (gpointer g_iface,
 
 
 /**
- * tp_base_connection_channel_manager_iter_init:
+ * tp_base_connection_channel_manager_iter_init: (skip)
  * @iter: an uninitialized #TpChannelManagerIter
  * @self: a connection
  *
@@ -3350,7 +3350,7 @@ tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
 
 
 /**
- * tp_base_connection_channel_manager_iter_next:
+ * tp_base_connection_channel_manager_iter_next: (skip)
  * @iter: an initialized #TpChannelManagerIter
  * @manager_out: a location to store the channel manager, or %NULL.
  *
@@ -3412,7 +3412,7 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
 }
 
 /**
- * tp_base_connection_register_with_contacts_mixin:
+ * tp_base_connection_register_with_contacts_mixin: (skip)
  * @self: An instance of the #TpBaseConnections that uses the Contacts
  * mixin
  *
@@ -3431,7 +3431,7 @@ tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
 }
 
 /**
- * tp_base_connection_get_dbus_daemon:
+ * tp_base_connection_get_dbus_daemon: (skip)
  * @self: the connection manager
  *
  * <!-- -->

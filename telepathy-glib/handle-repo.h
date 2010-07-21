@@ -150,7 +150,7 @@ TpIntSet *tp_handle_set_difference_update (TpHandleSet *set,
 
 /* static inline because it relies on NUM_TP_HANDLE_TYPES */
 /**
- * tp_handles_supported_and_valid:
+ * tp_handles_supported_and_valid: (skip)
  * @repos: An array of possibly null pointers to handle repositories, indexed
  *         by handle type, where a null pointer means an unsupported handle
  *         type
