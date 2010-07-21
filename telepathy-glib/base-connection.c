@@ -2589,8 +2589,8 @@ out:
  *
  * <!---->
  *
- * Returns: the handle repository corresponding to the given handle type,
- * or #NULL if it's unsupported or invalid.
+ * Returns: (transfer none): the handle repository corresponding to the given
+ * handle type, or #NULL if it's unsupported or invalid.
  */
 TpHandleRepoIface *
 tp_base_connection_get_handles (TpBaseConnection *self,
