@@ -634,6 +634,7 @@ example_contact_list_manager_set_group_members_async (
   TpHandleSet *removed = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
+  gchar *tag = ensure_tag (self, group, TRUE);
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
 
@@ -641,7 +642,6 @@ example_contact_list_manager_set_group_members_async (
     {
       gboolean created = FALSE, updated = FALSE;
       ExampleContactDetails *d = ensure_contact (self, member, &created);
-      gchar *tag = ensure_tag (self, group, TRUE);
 
       if (!created)
         tp_handle_set_remove (new_contacts, member);
@@ -704,6 +704,7 @@ example_contact_list_manager_add_to_group_async (TpBaseContactList *manager,
   TpHandleSet *new_to_group = tp_handle_set_copy (contacts);
   TpIntSetFastIter iter;
   TpHandle member;
+  gchar *tag = ensure_tag (self, group, TRUE);
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
 
@@ -711,7 +712,6 @@ example_contact_list_manager_add_to_group_async (TpBaseContactList *manager,
     {
       gboolean created = FALSE, updated = FALSE;
       ExampleContactDetails *d = ensure_contact (self, member, &created);
-      gchar *tag = ensure_tag (self, group, TRUE);
 
       if (!created)
         tp_handle_set_remove (new_contacts, member);
