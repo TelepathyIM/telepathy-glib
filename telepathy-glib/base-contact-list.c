@@ -4189,7 +4189,7 @@ tp_base_contact_list_remove_group_async (TpBaseContactList *self,
 
   mutable_group_iface = TP_MUTABLE_CONTACT_GROUP_LIST_GET_INTERFACE (self);
   g_return_if_fail (mutable_group_iface != NULL);
-  g_return_if_fail (mutable_group_iface->create_groups_async != NULL);
+  g_return_if_fail (mutable_group_iface->remove_group_async != NULL);
 
   mutable_group_iface->remove_group_async (self, group, callback, user_data);
 }
