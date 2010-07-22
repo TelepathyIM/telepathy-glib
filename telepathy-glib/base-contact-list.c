@@ -1044,7 +1044,7 @@ tp_base_contact_list_create_group_cb (GObject *source,
   TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
   GError *error = NULL;
 
-  if (tp_base_contact_list_create_groups_finish (self, result, &error))
+  if (tp_base_contact_list_add_to_group_finish (self, result, &error))
     {
       /* If all goes well, the channel should have been announced. */
       GSList *tokens = g_hash_table_lookup (self->priv->channel_requests,
@@ -1152,6 +1152,7 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
               const gchar *name = tp_handle_inspect (self->priv->group_repo,
                   handle);
               gpointer channel;
+              TpHandleSet *set = tp_handle_set_new (self->priv->contact_repo);
 
               /* make an object, don't announce it yet, and remember the
                * request token for when it's announced, if it's actually
@@ -1159,9 +1160,11 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
               channel = tp_base_contact_list_new_channel (self, handle_type,
                   handle, request_token);
 
-              /* this will announce the channel(s) later, if appropriate */
-              tp_base_contact_list_create_groups_async (self, &name, 1,
+              /* this will create the empty group, and announce the channel(s)
+               * later if appropriate */
+              tp_base_contact_list_add_to_group_async (self, name, set,
                   tp_base_contact_list_create_group_cb, channel);
+              tp_handle_set_destroy (set);
             }
           else
             {
@@ -3847,11 +3850,14 @@ tp_base_contact_list_get_group_members (TpBaseContactList *self,
  * tp_base_contact_list_add_to_group_async:
  * @self: a contact list manager
  * @group: the normalized name of a group
- * @contacts: some contacts
+ * @contacts: some contacts (may be an empty set)
  * @callback: a callback to call on success, failure or disconnection
  * @user_data: user data for the callback
  *
- * Add @contacts to @group.
+ * Add @contacts to @group, creating it if necessary.
+ *
+ * If @group does not exist, the implementation should create it, even if
+ * @contacts is empty.
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
@@ -4386,6 +4392,12 @@ tp_base_contact_list_set_contact_groups_finish (TpBaseContactList *self,
  * @contacts: the contacts who should be in the group
  * @callback: a callback to call on success, failure or disconnection
  * @user_data: user data for the callback
+ *
+ * Set the members of @normalized_group to be exactly @contacts (i.e.
+ * add @contacts, and simultaneously remove all members not in @contacts).
+ *
+ * If @normalized_group does not exist, the implementation should create it,
+ * even if @contacts is empty.
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
