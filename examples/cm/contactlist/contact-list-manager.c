@@ -1537,7 +1537,7 @@ static GStrv
 example_contact_list_manager_get_groups (TpBaseContactList *manager)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  GPtrArray *pa = g_ptr_array_sized_new (
+  GPtrArray *tags = g_ptr_array_sized_new (
       g_hash_table_size (self->priv->all_tags) + 1);
   GHashTableIter iter;
   gpointer tag;
@@ -1545,10 +1545,10 @@ example_contact_list_manager_get_groups (TpBaseContactList *manager)
   g_hash_table_iter_init (&iter, self->priv->all_tags);
 
   while (g_hash_table_iter_next (&iter, &tag, NULL))
-    g_ptr_array_add (pa, g_strdup (tag));
+    g_ptr_array_add (tags, g_strdup (tag));
 
-  g_ptr_array_add (pa, NULL);
-  return (GStrv) g_ptr_array_free (pa, FALSE);
+  g_ptr_array_add (tags, NULL);
+  return (GStrv) g_ptr_array_free (tags, FALSE);
 }
 
 static GStrv
@@ -1556,7 +1556,7 @@ example_contact_list_manager_get_contact_groups (TpBaseContactList *manager,
     TpHandle contact)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  GPtrArray *pa = g_ptr_array_sized_new (
+  GPtrArray *tags = g_ptr_array_sized_new (
       g_hash_table_size (self->priv->all_tags) + 1);
   ExampleContactDetails *d = lookup_contact (self, contact);
 
@@ -1568,11 +1568,11 @@ example_contact_list_manager_get_contact_groups (TpBaseContactList *manager,
       g_hash_table_iter_init (&iter, d->tags);
 
       while (g_hash_table_iter_next (&iter, &tag, NULL))
-        g_ptr_array_add (pa, g_strdup (tag));
+        g_ptr_array_add (tags, g_strdup (tag));
     }
 
-  g_ptr_array_add (pa, NULL);
-  return (GStrv) g_ptr_array_free (pa, FALSE);
+  g_ptr_array_add (tags, NULL);
+  return (GStrv) g_ptr_array_free (tags, FALSE);
 }
 
 static void
