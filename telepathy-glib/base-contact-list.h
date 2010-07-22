@@ -414,24 +414,6 @@ gboolean tp_base_contact_list_set_contact_groups_finish (
     GAsyncResult *result,
     GError **error);
 
-typedef void (*TpBaseContactListCreateGroupsFunc) (
-    TpBaseContactList *self,
-    const gchar * const *normalized_names,
-    gsize n_names,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-void tp_base_contact_list_create_groups_async (TpBaseContactList *self,
-    const gchar * const *normalized_names,
-    gsize n_names,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_base_contact_list_create_groups_finish (
-    TpBaseContactList *self,
-    GAsyncResult *result,
-    GError **error);
-
 typedef void (*TpBaseContactListGroupContactsFunc) (TpBaseContactList *self,
     const gchar *group,
     TpHandleSet *contacts,
@@ -524,9 +506,6 @@ struct _TpMutableContactGroupListInterface {
 
     TpBaseContactListSetContactGroupsFunc set_contact_groups_async;
     TpBaseContactListAsyncFinishFunc set_contact_groups_finish;
-
-    TpBaseContactListCreateGroupsFunc create_groups_async;
-    TpBaseContactListAsyncFinishFunc create_groups_finish;
 
     TpBaseContactListGroupContactsFunc set_group_members_async;
     TpBaseContactListAsyncFinishFunc set_group_members_finish;

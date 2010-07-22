@@ -279,24 +279,6 @@ ensure_tag (ExampleContactListManager *self,
 }
 
 static void
-example_contact_list_manager_create_groups_async (TpBaseContactList *manager,
-    const gchar * const *names,
-    gsize n,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  gsize i;
-
-  for (i = 0; i < n; i++)
-    ensure_tag (self, names[i], FALSE);
-
-  tp_base_contact_list_groups_created (manager, names, n);
-  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
-      user_data, example_contact_list_manager_create_groups_async);
-}
-
-static void
 example_contact_list_manager_set_contact_groups_async (
     TpBaseContactList *manager,
     TpHandle contact,
@@ -1757,8 +1739,6 @@ mutable_contact_group_list_iface_init (
   iface->remove_from_group_async =
     example_contact_list_manager_remove_from_group_async;
   iface->remove_group_async = example_contact_list_manager_remove_group_async;
-  iface->create_groups_async =
-    example_contact_list_manager_create_groups_async;
   iface->rename_group_async = example_contact_list_manager_rename_group_async;
   iface->set_contact_groups_async =
     example_contact_list_manager_set_contact_groups_async;
