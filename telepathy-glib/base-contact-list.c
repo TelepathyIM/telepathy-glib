@@ -4230,6 +4230,9 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
  * @callback: a callback to call on success, failure or disconnection
  * @user_data: user data for the callback
  *
+ * Add @contact to each group in @normalized_names, creating them if necessary,
+ * and remove @contact from any other groups of which they are a member.
+ *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
