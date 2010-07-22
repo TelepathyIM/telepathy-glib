@@ -15,8 +15,6 @@
 #include "conn.h"
 #include "im-manager.h"
 
-#include "_gen/param-spec-struct.h"
-
 G_DEFINE_TYPE (ExampleEcho2Protocol,
     example_echo_2_protocol,
     TP_TYPE_BASE_PROTOCOL)
@@ -26,6 +24,17 @@ example_echo_2_protocol_init (
     ExampleEcho2Protocol *self)
 {
 }
+
+static const TpCMParamSpec example_echo_2_example_params[] = {
+  { "account", "s", G_TYPE_STRING,
+    TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+    NULL, /* no default */
+    0, /* formerly struct offset, now unused */
+    tp_cm_param_filter_string_nonempty, /* filter - empty strings disallowed */
+    NULL, /* filter data, unused for our filter */
+    NULL /* setter data, now unused */ },
+  { NULL }
+};
 
 static const TpCMParamSpec *
 get_parameters (TpBaseProtocol *self)
