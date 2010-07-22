@@ -1728,8 +1728,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_SUCCESS;
-  tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
-      self->priv->conn, self->priv->state);
+  /* we emit the signal for this later */
 
   if (self->priv->lists[TP_LIST_HANDLE_SUBSCRIBE] == NULL)
     {
@@ -1825,6 +1824,11 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
     }
 
   tp_handle_set_destroy (contacts);
+
+  /* emit this last, so people can distinguish between the initial state
+   * and subsequent changes */
+  tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
+      self->priv->conn, self->priv->state);
 }
 
 #ifdef ENABLE_DEBUG
