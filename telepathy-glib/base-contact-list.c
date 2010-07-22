@@ -3068,7 +3068,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
     const gchar * const *created,
     gssize n_created)
 {
-  GPtrArray *pa;
+  GPtrArray *actually_created;
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -3092,7 +3092,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
   if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
     return;
 
-  pa = g_ptr_array_sized_new (n_created + 1);
+  actually_created = g_ptr_array_sized_new (n_created + 1);
 
   for (i = 0; i < n_created; i++)
     {
@@ -3113,7 +3113,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
             {
               /* the channel hasn't been announced yet: do so, and include
                * it in the GroupsCreated signal */
-              g_ptr_array_add (pa, (gchar *) tp_handle_inspect (
+              g_ptr_array_add (actually_created, (gchar *) tp_handle_inspect (
                     self->priv->group_repo, handle));
 
               tp_base_contact_list_announce_channel (self, c, NULL);
@@ -3123,20 +3123,20 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
         }
     }
 
-  if (pa->len > 0)
+  if (actually_created->len > 0)
     {
-      DEBUG ("GroupsCreated([%u including '%s'])", pa->len,
-          (gchar *) g_ptr_array_index (pa, 0));
+      DEBUG ("GroupsCreated([%u including '%s'])", actually_created->len,
+          (gchar *) g_ptr_array_index (actually_created, 0));
 
       if (self->priv->svc_contact_groups)
       {
-        g_ptr_array_add (pa, NULL);
+        g_ptr_array_add (actually_created, NULL);
         tp_svc_connection_interface_contact_groups_emit_groups_created (
-            self->priv->conn, (const gchar **) pa->pdata);
+            self->priv->conn, (const gchar **) actually_created->pdata);
       }
     }
 
-  g_ptr_array_unref (pa);
+  g_ptr_array_unref (actually_created);
 }
 
 /**
