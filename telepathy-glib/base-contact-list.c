@@ -4158,7 +4158,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
     {
       TpHandleSet *set;
       GArray *contacts;
-      GPtrArray *pa;
+      GPtrArray *interfaces_wanted;
       const gchar * empty_strv[] = { NULL };
       const gchar **p;
       gboolean have_cl = FALSE;
@@ -4166,11 +4166,12 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       if (interfaces == NULL)
         interfaces = empty_strv;
 
-      pa = g_ptr_array_sized_new (g_strv_length ((GStrv) interfaces) + 2);
+      interfaces_wanted = g_ptr_array_sized_new (
+          g_strv_length ((GStrv) interfaces) + 2);
 
       for (p = interfaces; *p != NULL; p++)
         {
-          g_ptr_array_add (pa, (gchar *) *p);
+          g_ptr_array_add (interfaces_wanted, (gchar *) *p);
 
           if (!tp_strdiff (*p, TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST))
             have_cl = TRUE;
@@ -4179,11 +4180,11 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       /* ContactList is implicitly included */
       if (!have_cl)
         {
-          g_ptr_array_add (pa,
+          g_ptr_array_add (interfaces_wanted,
               TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST);
         }
 
-      g_ptr_array_add (pa, NULL);
+      g_ptr_array_add (interfaces_wanted, NULL);
 
       set = tp_base_contact_list_get_contacts (self);
       contacts = tp_handle_set_to_array (set);
@@ -4191,11 +4192,11 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       /* RequestContactList returns the same data type as
        * GetContactAttributes, so this is OK to do. */
       _tp_contacts_mixin_get_contact_attributes (self->priv->conn,
-          contacts, (const gchar **) pa->pdata, hold, context);
+          contacts, (const gchar **) interfaces_wanted->pdata, hold, context);
 
       g_array_free (contacts, TRUE);
       tp_handle_set_destroy (set);
-      g_ptr_array_free (pa, TRUE);
+      g_ptr_array_free (interfaces_wanted, TRUE);
     }
   else
     {
