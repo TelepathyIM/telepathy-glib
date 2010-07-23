@@ -89,7 +89,7 @@ tp_handle_set_new (TpHandleRepoIface *repo)
 /**
  * tp_handle_set_new_from_array: (skip)
  * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
- * @array: array of handles to be referenced by this set
+ * @array: (element-type uint): array of handles to be referenced by this set
  *
  * Creates a new #TpHandleSet
  *
@@ -167,7 +167,7 @@ tp_handle_set_is_empty (const TpHandleSet *set)
  *
  * <!--Returns: says it all, this comment is just to keep gtkdoc happy-->
  *
- * Returns: the underlying #TpIntSet used by this #TpHandleSet
+ * Returns: (transfer none): the underlying #TpIntSet used by this #TpHandleSet
  */
 TpIntSet *
 tp_handle_set_peek (TpHandleSet *set)
@@ -259,8 +259,8 @@ foreach_helper (guint i, gpointer userdata)
 /**
  * tp_handle_set_foreach: (skip)
  * @set: A set of handles
- * @func: A callback
- * @userdata: Arbitrary data to pass to @func
+ * @func: (scope call): A callback
+ * @userdata: (closure): Arbitrary data to pass to @func
  *
  * Call @func(@set, @handle, @userdata) for each handle in @set.
  */
@@ -295,8 +295,8 @@ tp_handle_set_size (const TpHandleSet *set)
  *
  * <!--Returns: says it all, this comment is just to keep gtkdoc happy-->
  *
- * Returns: a newly-allocated GArray of guint representing the handles
- * in the set
+ * Returns: (element-type uint): a newly-allocated GArray of guint representing
+ * the handles in the set
  */
 GArray *
 tp_handle_set_to_array (const TpHandleSet *set)
