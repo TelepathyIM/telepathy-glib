@@ -2020,8 +2020,8 @@ tp_base_connection_inspect_handles (TpSvcConnection *iface,
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
 
-/**
- * list_channel_factory_foreach_one: (skip)
+/*
+ * list_channel_factory_foreach_one:
  * @chan: a channel
  * @data: a GPtrArray in which channel information should be stored
  *
@@ -2067,8 +2067,8 @@ list_channel_factory_foreach_one (TpChannelIface *chan,
 }
 
 
-/**
- * list_channel_manager_foreach_one: (skip)
+/*
+ * list_channel_manager_foreach_one:
  * @chan: a channel
  * @data: a GPtrArray in which channel information should be stored
  *
