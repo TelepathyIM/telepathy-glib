@@ -59,7 +59,11 @@ typedef gchar *(*TpBaseConnectionGetUniqueConnectionNameImpl) (
 struct _TpBaseConnectionClass {
     GObjectClass parent_class;
 
+#ifdef __GI_SCANNER__
+    GCallback _internal_create_handle_repos;
+#else
     TpBaseConnectionCreateHandleReposImpl create_handle_repos;
+#endif
 
     TpBaseConnectionCreateChannelFactoriesImpl create_channel_factories;
 

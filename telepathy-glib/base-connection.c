@@ -76,7 +76,7 @@
  */
 
 /**
- * TpBaseConnectionCreateHandleReposImpl:
+ * TpBaseConnectionCreateHandleReposImpl: (skip)
  * @self: The connection object
  * @repos: An array of pointers to be filled in; the implementation
  *         may assume all are initially NULL.
