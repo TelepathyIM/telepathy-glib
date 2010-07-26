@@ -83,7 +83,7 @@ tp_handle_repo_iface_get_type (void)
 
 
 /**
- * tp_handle_is_valid:
+ * tp_handle_is_valid: (skip)
  * @self: A handle repository implementation
  * @handle: A handle of the type stored in the repository @self
  * @error: Set to InvalidHandle if %FALSE is returned
@@ -105,7 +105,7 @@ tp_handle_is_valid (TpHandleRepoIface *self,
 
 
 /**
- * tp_handles_are_valid:
+ * tp_handles_are_valid: (skip)
  * @self: A handle repository implementation
  * @handles: Array of TpHandle representing handles of the type stored in
  *           the repository @self
@@ -129,7 +129,7 @@ tp_handles_are_valid (TpHandleRepoIface *self,
 
 
 /**
- * tp_handle_ref:
+ * tp_handle_ref: (skip)
  * @self: A handle repository implementation
  * @handle: A handle of the type stored in the repository
  *
@@ -147,7 +147,7 @@ tp_handle_ref (TpHandleRepoIface *self,
 
 
 /**
- * tp_handles_ref:
+ * tp_handles_ref: (skip)
  * @self: A handle repository implementation
  * @handles: A GArray of TpHandle representing handles
  *
@@ -175,7 +175,7 @@ tp_handles_ref (TpHandleRepoIface *self,
 
 
 /**
- * tp_handle_unref:
+ * tp_handle_unref: (skip)
  * @self: A handle repository implementation
  * @handle: A handle of the type stored in the repository
  *
@@ -196,7 +196,7 @@ tp_handle_unref (TpHandleRepoIface *self,
 
 
 /**
- * tp_handles_unref:
+ * tp_handles_unref: (skip)
  * @self: A handle repository implementation
  * @handles: A GArray of TpHandle representing handles
  *
@@ -224,7 +224,7 @@ tp_handles_unref (TpHandleRepoIface *self,
 
 
 /**
- * tp_handle_client_hold:
+ * tp_handle_client_hold: (skip)
  * @self: A handle repository implementation
  * @client: The unique bus name of a D-Bus peer
  * @handle: A handle of the type stored in the repository
@@ -258,7 +258,7 @@ typedef gboolean (*HoldReleaseFunc) (TpHandleRepoIface *, const gchar *,
     TpHandle, GError **);
 
 /**
- * tp_handles_client_hold:
+ * tp_handles_client_hold: (skip)
  * @self: A handle repository implementation
  * @client: The D-Bus unique name of a client
  * @handles: A GArray of TpHandle representing handles
@@ -315,7 +315,7 @@ tp_handles_client_hold (TpHandleRepoIface *self,
 
 
 /**
- * tp_handle_client_release:
+ * tp_handle_client_release: (skip)
  * @self: A handle repository implementation
  * @client: The unique bus name of a D-Bus peer
  * @handle: A handle of the type stored in the repository
@@ -343,7 +343,7 @@ tp_handle_client_release (TpHandleRepoIface *self,
 
 
 /**
- * tp_handles_client_release:
+ * tp_handles_client_release: (skip)
  * @self: A handle repository implementation
  * @client: The D-Bus unique name of a client
  * @handles: A GArray of TpHandle representing handles
@@ -407,7 +407,7 @@ out:
 
 
 /**
- * tp_handle_inspect:
+ * tp_handle_inspect: (skip)
  * @self: A handle repository implementation
  * @handle: A handle of the type stored in the repository
  *
@@ -454,7 +454,7 @@ tp_handle_ensure (TpHandleRepoIface *self,
 
 
 /**
- * tp_handle_lookup:
+ * tp_handle_lookup: (skip)
  * @self: A handle repository implementation
  * @id: A string whose handle is required
  * @context: User data to be passed to the normalization callback
@@ -480,7 +480,7 @@ tp_handle_lookup (TpHandleRepoIface *self,
 
 
 /**
- * tp_handle_set_qdata:
+ * tp_handle_set_qdata: (skip)
  * @repo: A handle repository implementation
  * @handle: A handle to set data on
  * @key_id: Key id to associate data with
@@ -505,7 +505,7 @@ tp_handle_set_qdata (TpHandleRepoIface *repo,
 }
 
 /**
- * tp_handle_get_qdata:
+ * tp_handle_get_qdata: (skip)
  * @repo: A handle repository implementation
  * @handle: A handle to get data from
  * @key_id: Key id of data to fetch
