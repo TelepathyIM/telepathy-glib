@@ -1,8 +1,8 @@
 /*
  * conn.h - header for an example connection
  *
- * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2007 Nokia Corporation
+ * Copyright © 2007-2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2007 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -14,6 +14,7 @@
 
 #include <glib-object.h>
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/contacts-mixin.h>
 
 G_BEGIN_DECLS
 
@@ -23,10 +24,12 @@ typedef struct _ExampleEcho2ConnectionPrivate ExampleEcho2ConnectionPrivate;
 
 struct _ExampleEcho2ConnectionClass {
     TpBaseConnectionClass parent_class;
+    TpContactsMixinClass contacts_mixin;
 };
 
 struct _ExampleEcho2Connection {
     TpBaseConnection parent;
+    TpContactsMixin contacts_mixin;
 
     ExampleEcho2ConnectionPrivate *priv;
 };
