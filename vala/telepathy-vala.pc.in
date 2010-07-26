@@ -4,8 +4,8 @@ libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
 datadir=@datadir@
-vapidir=@datadir@/telepathy/vapi
-valaflags=--vapidir=${vapidir}
+vapidir=@datadir@/vala/vapi
+valaflags=
 
 Name: Telepathy Vala bindings
 Description: Vala bindings for the Telepathy framework
