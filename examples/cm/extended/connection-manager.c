@@ -15,13 +15,11 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#include "conn.h"
+#include "protocol.h"
 
 G_DEFINE_TYPE (ExampleExtendedConnectionManager,
     example_extended_connection_manager,
     TP_TYPE_BASE_CONNECTION_MANAGER)
-
-/* type definition stuff */
 
 static void
 example_extended_connection_manager_init (
@@ -29,60 +27,34 @@ example_extended_connection_manager_init (
 {
 }
 
-/* private data */
-
-typedef struct {
-    gchar *account;
-} ExampleParams;
-
-static gpointer
-alloc_params (void)
-{
-  return g_slice_new0 (ExampleParams);
-}
-
 static void
-free_params (gpointer p)
+example_extended_connection_manager_constructed (GObject *object)
 {
-  ExampleParams *params = p;
+  ExampleExtendedConnectionManager *self =
+    EXAMPLE_EXTENDED_CONNECTION_MANAGER (object);
+  TpBaseConnectionManager *base = (TpBaseConnectionManager *) self;
+  void (*constructed) (GObject *) =
+    ((GObjectClass *) example_extended_connection_manager_parent_class)->constructed;
+  TpBaseProtocol *protocol;
 
-  g_free (params->account);
+  if (constructed != NULL)
+    constructed (object);
 
-  g_slice_free (ExampleParams, params);
-}
-
-#include "_gen/param-spec-struct.h"
-
-static const TpCMProtocolSpec example_protocols[] = {
-  { "example", example_extended_example_params, alloc_params, free_params },
-  { NULL, NULL }
-};
-
-static TpBaseConnection *
-new_connection (TpBaseConnectionManager *self,
-                const gchar *proto,
-                TpIntSet *params_present,
-                gpointer parsed_params,
-                GError **error)
-{
-  ExampleParams *params = parsed_params;
-  ExampleExtendedConnection *conn = EXAMPLE_EXTENDED_CONNECTION
-      (g_object_new (EXAMPLE_TYPE_EXTENDED_CONNECTION,
-          "account", params->account,
-          "protocol", proto,
-          NULL));
-
-  return (TpBaseConnection *) conn;
+  protocol = g_object_new (EXAMPLE_TYPE_EXTENDED_PROTOCOL,
+      "name", "example",
+      NULL);
+  tp_base_connection_manager_add_protocol (base, protocol);
+  g_object_unref (protocol);
 }
 
 static void
 example_extended_connection_manager_class_init (
     ExampleExtendedConnectionManagerClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
   TpBaseConnectionManagerClass *base_class =
       (TpBaseConnectionManagerClass *) klass;
 
-  base_class->new_connection = new_connection;
+  object_class->constructed = example_extended_connection_manager_constructed;
   base_class->cm_dbus_name = "example_extended";
-  base_class->protocol_params = example_protocols;
 }

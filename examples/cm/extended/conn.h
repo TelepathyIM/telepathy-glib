@@ -53,6 +53,9 @@ GType example_extended_connection_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_EXTENDED_CONNECTION, \
                               ExampleExtendedConnectionClass))
 
+const gchar * const *example_extended_connection_get_possible_interfaces (
+    void);
+
 G_END_DECLS
 
 #endif

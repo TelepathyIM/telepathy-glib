@@ -19,6 +19,8 @@
 /* This would conventionally be extensions/extensions.h */
 #include "examples/extensions/extensions.h"
 
+#include "protocol.h"
+
 static void _hats_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleExtendedConnection,
@@ -121,14 +123,7 @@ example_normalize_contact (TpHandleRepoIface *repo,
                            gpointer context,
                            GError **error)
 {
-  if (id[0] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "ID must not be empty");
-      return NULL;
-    }
-
-  return g_utf8_strdown (id, -1);
+  return example_extended_protocol_normalize_contact (id, error);
 }
 
 static void
@@ -190,6 +185,20 @@ constructed (GObject *object)
   tp_base_connection_register_with_contacts_mixin (base);
 }
 
+static const gchar *interfaces_always_present[] = {
+    TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
+    EXAMPLE_IFACE_CONNECTION_INTERFACE_HATS,
+    NULL };
+
+const gchar * const *
+example_extended_connection_get_possible_interfaces (void)
+{
+  /* in this example CM we don't have any extra interfaces that are sometimes,
+   * but not always, present */
+  return interfaces_always_present;
+}
+
 static void
 example_extended_connection_class_init (ExampleExtendedConnectionClass *klass)
 {
@@ -197,11 +206,6 @@ example_extended_connection_class_init (ExampleExtendedConnectionClass *klass)
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-      EXAMPLE_IFACE_CONNECTION_INTERFACE_HATS,
-      NULL };
 
   object_class->constructed = constructed;
   object_class->get_property = get_property;
