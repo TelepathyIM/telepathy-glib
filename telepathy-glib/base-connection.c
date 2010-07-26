@@ -1582,14 +1582,17 @@ squash_name (const gchar *name, guint length)
  * @self: A connection
  * @cm_name: The name of the connection manager in the Telepathy protocol
  * @bus_name: (out): Used to return the bus name corresponding to the connection
- *  if %TRUE is returned; must not be %NULL. To be freed by the caller.
+ *  if %TRUE is returned. To be freed by the caller.
  * @object_path: (out): Used to return the object path of the connection if
- *  %TRUE is returned; must not be %NULL. To be freed by the caller.
+ *  %TRUE is returned. To be freed by the caller.
  * @error: Used to return an error if %FALSE is returned; may be %NULL
  *
  * Make the connection object appear on the bus, returning the bus
  * name and object path used. If %TRUE is returned, the connection owns the
  * bus name, and will release it when destroyed.
+ *
+ * Since 0.11.UNRELEASED, @bus_name and @object_path may be %NULL if the
+ * strings are not needed.
  *
  * Returns: %TRUE on success, %FALSE on error.
  */
@@ -1610,8 +1613,6 @@ tp_base_connection_register (TpBaseConnection *self,
 
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
   g_return_val_if_fail (cm_name != NULL, FALSE);
-  g_return_val_if_fail (bus_name != NULL, FALSE);
-  g_return_val_if_fail (object_path != NULL, FALSE);
 
   if (tp_connection_manager_check_valid_protocol_name (priv->protocol, NULL))
     {
@@ -1691,8 +1692,11 @@ tp_base_connection_register (TpBaseConnection *self,
 
   tp_dbus_daemon_register_object (priv->bus_proxy, self->object_path, self);
 
-  *bus_name = g_strdup (self->bus_name);
-  *object_path = g_strdup (self->object_path);
+  if (bus_name != NULL)
+    *bus_name = g_strdup (self->bus_name);
+
+  if (object_path != NULL)
+    *object_path = g_strdup (self->object_path);
 
   return TRUE;
 }
