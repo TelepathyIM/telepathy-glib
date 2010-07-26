@@ -34,7 +34,16 @@ typedef struct {
     gchar *account;
 } ExampleParams;
 
-#include "_gen/param-spec-struct.h"
+static const TpCMParamSpec example_echo_example_params[] = {
+  { "account", "s", G_TYPE_STRING,
+    TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+    NULL, /* default */
+    G_STRUCT_OFFSET (ExampleParams, account), /* struct offset */
+    tp_cm_param_filter_string_nonempty, /* filter */
+    NULL, /* filter data */
+    NULL /* setter data */ },
+  { NULL }
+};
 
 static gpointer
 alloc_params (void)
