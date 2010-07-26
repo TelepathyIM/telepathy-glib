@@ -10,8 +10,7 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#include "examples/cm/echo/connection-manager.h"
-
+#include "tests/lib/echo-cm.h"
 #include "tests/lib/util.h"
 
 typedef struct {

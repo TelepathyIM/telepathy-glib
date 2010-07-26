@@ -10,7 +10,7 @@
 #include <telepathy-glib/protocol.h>
 #include <telepathy-glib/telepathy-glib.h>
 
-#include "examples/cm/echo/connection-manager.h"
+#include "tests/lib/echo-cm.h"
 
 #include "examples/cm/echo-message-parts/connection-manager.h"
 #include "examples/cm/echo-message-parts/chan.h"

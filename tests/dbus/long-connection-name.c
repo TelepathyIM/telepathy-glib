@@ -17,8 +17,8 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 
-#include "examples/cm/echo/chan.h"
-#include "examples/cm/echo/conn.h"
+#include "tests/lib/echo-chan.h"
+#include "tests/lib/echo-conn.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
