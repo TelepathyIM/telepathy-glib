@@ -29,26 +29,6 @@ example_no_protocols_connection_manager_init (
 
 /* private data */
 
-/* We don't actually support any protocols */
-
-#include "_gen/param-spec-struct.h"
-
-const TpCMProtocolSpec stub_protocols[] = {
-  { NULL, NULL }
-};
-
-static TpBaseConnection *
-new_connection (TpBaseConnectionManager *self,
-                const gchar *proto,
-                TpIntSet *params_present,
-                void *parsed_params,
-                GError **error)
-{
-  g_assert_not_reached ();
-
-  return NULL;
-}
-
 static void
 example_no_protocols_connection_manager_class_init (
     ExampleNoProtocolsConnectionManagerClass *klass)
@@ -56,7 +36,5 @@ example_no_protocols_connection_manager_class_init (
   TpBaseConnectionManagerClass *base_class =
       (TpBaseConnectionManagerClass *) klass;
 
-  base_class->new_connection = new_connection;
   base_class->cm_dbus_name = "example_no_protocols";
-  base_class->protocol_params = stub_protocols;
 }
