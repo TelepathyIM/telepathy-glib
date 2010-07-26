@@ -1769,14 +1769,6 @@ conn_status_reason_from_g_error (GError *error)
   return TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
 }
 
-/**
- * tp_base_connection_connect: (skip)
- *
- * @context: Used to return the result onto D-Bus.
- *
- * Implements D-Bus method Connect
- * on interface org.freedesktop.Telepathy.Connection
- */
 static void
 tp_base_connection_connect (TpSvcConnection *iface,
                             DBusGMethodInvocation *context)
@@ -1814,19 +1806,6 @@ tp_base_connection_connect (TpSvcConnection *iface,
   tp_svc_connection_return_from_connect (context);
 }
 
-
-/**
- * tp_base_connection_disconnect: (skip)
- *
- * Implements D-Bus method Disconnect
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occurred, D-Bus will throw the error only if this
- *         function returns FALSE.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
 static void
 tp_base_connection_disconnect (TpSvcConnection *iface,
                                DBusGMethodInvocation *context)
@@ -1878,12 +1857,6 @@ tp_base_connection_get_interfaces (TpBaseConnection *self)
     }
 }
 
-/**
- * tp_base_connection_get_interfaces: (skip)
- *
- * Implements D-Bus method GetInterfaces
- * on interface org.freedesktop.Telepathy.Connection
- */
 static void
 tp_base_connection_dbus_get_interfaces (TpSvcConnection *iface,
     DBusGMethodInvocation *context)
@@ -1893,18 +1866,6 @@ tp_base_connection_dbus_get_interfaces (TpSvcConnection *iface,
         (TpBaseConnection *) iface));
 }
 
-/**
- * tp_base_connection_get_protocol: (skip)
- *
- * Implements D-Bus method GetProtocol
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occurred, D-Bus will throw the error only if this
- *         function returns FALSE.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
 static void
 tp_base_connection_get_protocol (TpSvcConnection *iface,
                                  DBusGMethodInvocation *context)
@@ -1921,12 +1882,6 @@ tp_base_connection_get_protocol (TpSvcConnection *iface,
   tp_svc_connection_return_from_get_protocol (context, priv->protocol);
 }
 
-/**
- * tp_base_connection_dbus_get_self_handle: (skip)
- *
- * Implements D-Bus method GetSelfHandle
- * on interface org.freedesktop.Telepathy.Connection
- */
 static void
 tp_base_connection_dbus_get_self_handle (TpSvcConnection *iface,
                                          DBusGMethodInvocation *context)
@@ -1957,12 +1912,6 @@ tp_base_connection_get_dbus_status (TpBaseConnection *self)
     }
 }
 
-/*
- * tp_base_connection_dbus_get_status
- *
- * Implements D-Bus method GetStatus
- * on interface org.freedesktop.Telepathy.Connection
- */
 static void
 tp_base_connection_dbus_get_status (TpSvcConnection *iface,
     DBusGMethodInvocation *context)
@@ -1977,15 +1926,6 @@ tp_base_connection_dbus_get_status (TpSvcConnection *iface,
 #define DEBUG_FLAG TP_DEBUG_HANDLES
 #include "telepathy-glib/debug-internal.h"
 
-/**
- * tp_base_connection_hold_handles: (skip)
- *
- * Implements D-Bus method HoldHandles
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
- */
 static void
 tp_base_connection_hold_handles (TpSvcConnection *iface,
                                  guint handle_type,
@@ -2029,14 +1969,6 @@ tp_base_connection_hold_handles (TpSvcConnection *iface,
   tp_svc_connection_return_from_hold_handles (context);
 }
 
-/**
- * tp_base_connection_inspect_handles: (skip)
- *
- * Implements D-Bus method InspectHandles
- * on interface org.freedesktop.Telepathy.Connection
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
 static void
 tp_base_connection_inspect_handles (TpSvcConnection *iface,
                                     guint handle_type,
@@ -2234,16 +2166,6 @@ tp_base_connection_list_channels (TpSvcConnection *iface,
   g_ptr_array_free (values, TRUE);
 }
 
-
-/**
- * tp_base_connection_request_channel: (skip)
- *
- * Implements D-Bus method RequestChannel
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
- */
 static void
 tp_base_connection_request_channel (TpSvcConnection *iface,
                                     const gchar *type,
@@ -2429,15 +2351,6 @@ ERROR:
 #define DEBUG_FLAG TP_DEBUG_HANDLES
 #include "telepathy-glib/debug-internal.h"
 
-/**
- * tp_base_connection_release_handles: (skip)
- *
- * Implements D-Bus method ReleaseHandles
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
- */
 static void
 tp_base_connection_release_handles (TpSvcConnection *iface,
                                     guint handle_type,
