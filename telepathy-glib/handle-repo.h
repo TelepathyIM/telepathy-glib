@@ -108,15 +108,6 @@ gpointer tp_handle_get_qdata (TpHandleRepoIface *repo, TpHandle handle,
 
 /* Handle set helper class */
 
-/**
- * TpHandleSetMemberFunc:
- * @set: The set of handles on which tp_handle_set_foreach() was called
- * @handle: A handle in the set
- * @userdata: Arbitrary user data as supplied to tp_handle_set_foreach()
- *
- * Signature of the callback used to iterate over the handle set in
- * tp_handle_set_foreach().
- */
 typedef void (*TpHandleSetMemberFunc)(TpHandleSet *set, TpHandle handle,
     gpointer userdata);
 

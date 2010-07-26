@@ -257,6 +257,16 @@ foreach_helper (guint i, gpointer userdata)
 }
 
 /**
+ * TpHandleSetMemberFunc: (skip)
+ * @set: The set of handles on which tp_handle_set_foreach() was called
+ * @handle: A handle in the set
+ * @userdata: Arbitrary user data as supplied to tp_handle_set_foreach()
+ *
+ * Signature of the callback used to iterate over the handle set in
+ * tp_handle_set_foreach().
+ */
+
+/**
  * tp_handle_set_foreach: (skip)
  * @set: A set of handles
  * @func: (scope call): A callback
