@@ -279,7 +279,6 @@ AC_OUTPUT( Makefile \
 	   examples/cm/callable/Makefile \
 	   examples/cm/channelspecific/Makefile \
 	   examples/cm/contactlist/Makefile \
-	   examples/cm/echo/Makefile \
 	   examples/cm/echo-message-parts/Makefile \
 	   examples/cm/extended/Makefile \
 	   examples/cm/no-protocols/Makefile \
