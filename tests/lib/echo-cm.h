@@ -7,52 +7,52 @@
  * notice and this notice are preserved.
  */
 
-#ifndef __EXAMPLE_ECHO_CONNECTION_MANAGER_H__
-#define __EXAMPLE_ECHO_CONNECTION_MANAGER_H__
+#ifndef __TP_TESTS_ECHO_CONNECTION_MANAGER_H__
+#define __TP_TESTS_ECHO_CONNECTION_MANAGER_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/base-connection-manager.h>
 
 G_BEGIN_DECLS
 
-typedef struct _ExampleEchoConnectionManager ExampleEchoConnectionManager;
-typedef struct _ExampleEchoConnectionManagerPrivate
-    ExampleEchoConnectionManagerPrivate;
-typedef struct _ExampleEchoConnectionManagerClass
-    ExampleEchoConnectionManagerClass;
-typedef struct _ExampleEchoConnectionManagerClassPrivate
-    ExampleEchoConnectionManagerClassPrivate;
+typedef struct _TpTestsEchoConnectionManager TpTestsEchoConnectionManager;
+typedef struct _TpTestsEchoConnectionManagerPrivate
+    TpTestsEchoConnectionManagerPrivate;
+typedef struct _TpTestsEchoConnectionManagerClass
+    TpTestsEchoConnectionManagerClass;
+typedef struct _TpTestsEchoConnectionManagerClassPrivate
+    TpTestsEchoConnectionManagerClassPrivate;
 
-struct _ExampleEchoConnectionManagerClass {
+struct _TpTestsEchoConnectionManagerClass {
     TpBaseConnectionManagerClass parent_class;
 
-    ExampleEchoConnectionManagerClassPrivate *priv;
+    TpTestsEchoConnectionManagerClassPrivate *priv;
 };
 
-struct _ExampleEchoConnectionManager {
+struct _TpTestsEchoConnectionManager {
     TpBaseConnectionManager parent;
 
-    ExampleEchoConnectionManagerPrivate *priv;
+    TpTestsEchoConnectionManagerPrivate *priv;
 };
 
-GType example_echo_connection_manager_get_type (void);
+GType tp_tests_echo_connection_manager_get_type (void);
 
 /* TYPE MACROS */
-#define EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER \
-  (example_echo_connection_manager_get_type ())
-#define EXAMPLE_ECHO_CONNECTION_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER, \
-                              ExampleEchoConnectionManager))
-#define EXAMPLE_ECHO_CONNECTION_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER, \
-                           ExampleEchoConnectionManagerClass))
-#define EXAMPLE_IS_ECHO_CONNECTION_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER))
-#define EXAMPLE_IS_ECHO_CONNECTION_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER))
-#define EXAMPLE_ECHO_CONNECTION_MANAGER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER, \
-                              ExampleEchoConnectionManagerClass))
+#define TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER \
+  (tp_tests_echo_connection_manager_get_type ())
+#define TP_TESTS_ECHO_CONNECTION_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER, \
+                              TpTestsEchoConnectionManager))
+#define TP_TESTS_ECHO_CONNECTION_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER, \
+                           TpTestsEchoConnectionManagerClass))
+#define TP_TESTS_IS_ECHO_CONNECTION_MANAGER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER))
+#define TP_TESTS_IS_ECHO_CONNECTION_MANAGER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER))
+#define TP_TESTS_ECHO_CONNECTION_MANAGER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER, \
+                              TpTestsEchoConnectionManagerClass))
 
 G_END_DECLS
 

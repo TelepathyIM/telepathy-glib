@@ -38,7 +38,7 @@ typedef struct
   TpConnectionManager *cm;
   TpProtocol *protocol;
 
-  ExampleEchoConnectionManager *old_service_cm;
+  TpTestsEchoConnectionManager *old_service_cm;
   TpConnectionManager *old_cm;
   TpProtocol *old_protocol;
 } Test;
@@ -72,8 +72,8 @@ setup (Test *test,
   g_assert (test->cm != NULL);
   tp_tests_proxy_run_until_prepared (test->cm, NULL);
 
-  test->old_service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (g_object_new (
-        EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER,
+  test->old_service_cm = TP_TESTS_ECHO_CONNECTION_MANAGER (g_object_new (
+        TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER,
         NULL));
   g_assert (test->old_service_cm != NULL);
   service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->old_service_cm);

@@ -9,46 +9,46 @@
  * notice and this notice are preserved.
  */
 
-#ifndef __EXAMPLE_ECHO_CONN_H__
-#define __EXAMPLE_ECHO_CONN_H__
+#ifndef __TP_TESTS_ECHO_CONN_H__
+#define __TP_TESTS_ECHO_CONN_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/base-connection.h>
 
 G_BEGIN_DECLS
 
-typedef struct _ExampleEchoConnection ExampleEchoConnection;
-typedef struct _ExampleEchoConnectionClass ExampleEchoConnectionClass;
-typedef struct _ExampleEchoConnectionPrivate ExampleEchoConnectionPrivate;
+typedef struct _TpTestsEchoConnection TpTestsEchoConnection;
+typedef struct _TpTestsEchoConnectionClass TpTestsEchoConnectionClass;
+typedef struct _TpTestsEchoConnectionPrivate TpTestsEchoConnectionPrivate;
 
-struct _ExampleEchoConnectionClass {
+struct _TpTestsEchoConnectionClass {
     TpBaseConnectionClass parent_class;
 };
 
-struct _ExampleEchoConnection {
+struct _TpTestsEchoConnection {
     TpBaseConnection parent;
 
-    ExampleEchoConnectionPrivate *priv;
+    TpTestsEchoConnectionPrivate *priv;
 };
 
-GType example_echo_connection_get_type (void);
+GType tp_tests_echo_connection_get_type (void);
 
 /* TYPE MACROS */
-#define EXAMPLE_TYPE_ECHO_CONNECTION \
-  (example_echo_connection_get_type ())
-#define EXAMPLE_ECHO_CONNECTION(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_ECHO_CONNECTION, \
-                              ExampleEchoConnection))
-#define EXAMPLE_ECHO_CONNECTION_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_ECHO_CONNECTION, \
-                           ExampleEchoConnectionClass))
-#define EXAMPLE_IS_ECHO_CONNECTION(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_ECHO_CONNECTION))
-#define EXAMPLE_IS_ECHO_CONNECTION_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_ECHO_CONNECTION))
-#define EXAMPLE_ECHO_CONNECTION_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_ECHO_CONNECTION, \
-                              ExampleEchoConnectionClass))
+#define TP_TESTS_TYPE_ECHO_CONNECTION \
+  (tp_tests_echo_connection_get_type ())
+#define TP_TESTS_ECHO_CONNECTION(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TESTS_TYPE_ECHO_CONNECTION, \
+                              TpTestsEchoConnection))
+#define TP_TESTS_ECHO_CONNECTION_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TESTS_TYPE_ECHO_CONNECTION, \
+                           TpTestsEchoConnectionClass))
+#define TP_TESTS_IS_ECHO_CONNECTION(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TESTS_TYPE_ECHO_CONNECTION))
+#define TP_TESTS_IS_ECHO_CONNECTION_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TESTS_TYPE_ECHO_CONNECTION))
+#define TP_TESTS_ECHO_CONNECTION_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_ECHO_CONNECTION, \
+                              TpTestsEchoConnectionClass))
 
 G_END_DECLS
 

@@ -33,7 +33,7 @@ int
 main (int argc,
       char **argv)
 {
-  ExampleEchoConnection *service_conn;
+  TpTestsEchoConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   GError *error = NULL;
   gchar *name;
@@ -42,8 +42,8 @@ main (int argc,
   g_type_init ();
 
   MYASSERT (strlen (LONG_ACCOUNT_IS_LONG) == 256, "");
-  service_conn = EXAMPLE_ECHO_CONNECTION (tp_tests_object_new_static_class (
-        EXAMPLE_TYPE_ECHO_CONNECTION,
+  service_conn = TP_TESTS_ECHO_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_ECHO_CONNECTION,
         "account", LONG_ACCOUNT_IS_LONG,
         "protocol", "example",
         NULL));
