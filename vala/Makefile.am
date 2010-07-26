@@ -1,11 +1,13 @@
 vapidir = $(datarootdir)/vala/vapi
 vapi_DATA = \
 	telepathy-glib.vapi \
+	$(NULL)
+dist_vapi_DATA = \
 	telepathy-glib.deps \
 	$(NULL)
 
 BUILT_SOURCES = \
-	telepathy-glib.vapi \
+	$(vapi_DATA) \
 	$(NULL)
 
 pkgconfigdir = ${libdir}/pkgconfig
