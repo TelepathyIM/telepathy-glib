@@ -1,5 +1,7 @@
-telepathy-glib 0.11.11 (UNRELEASED)
+telepathy-glib 0.11.11 (2010-07-26)
 ===================================
+
+The “xev claims I'm typing in Japanese” release.
 
 Enhancements:
 
@@ -24,6 +26,9 @@ Fixes:
 ↭ Vala bindings now install to the normal location, making it unnecessary to
   look up telepathy-vala in pkg-config; that pkg-config file will be removed
   in a future version (treitter)
+
+↭ fd.o #29197: expand g-i coverage of connection manager code enough to
+  use it for libfolks' regression tests (pwithnall, smcv)
 
 telepathy-glib 0.11.10 (2010-07-12)
 ===================================

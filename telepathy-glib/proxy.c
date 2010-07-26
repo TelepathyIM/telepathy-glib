@@ -460,7 +460,7 @@ tp_proxy_has_interface_by_id (gpointer self,
  * @iface: the D-Bus interface required, as a string
  *
  * Return whether this proxy is known to have a particular interface. In
- * versions older than 0.11.UNRELEASED, this was a macro wrapper around
+ * versions older than 0.11.11, this was a macro wrapper around
  * tp_proxy_has_interface_by_id().
  *
  * For objects that discover their interfaces at runtime, this method will

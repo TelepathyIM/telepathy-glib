@@ -770,7 +770,7 @@
  * spec) makes it easier to export an object implementing the Telepathy
  * Protocol interface.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 
 /**
@@ -785,6 +785,8 @@
  *
  * This section documents the auto-generated C wrappers for the Contact Search
  * channel type.
+ *
+ * Since: 0.11.11
  */
 
 /**
@@ -799,4 +801,6 @@
  *
  * This section documents the auto-generated C wrappers for the Contact Search
  * channel type.
+ *
+ * Since: 0.11.11
  */

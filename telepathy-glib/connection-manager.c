@@ -86,7 +86,7 @@
  * will have been retrieved, either by activating the connection manager over
  * D-Bus or by reading the .manager file in which that information is cached.
  *
- * Since 0.11.UNRELEASED, this feature also finds any extra interfaces that
+ * Since 0.11.11, this feature also finds any extra interfaces that
  * this connection manager has, and adds them to #TpProxy:interfaces (where
  * they can be queried with tp_proxy_has_interface()).
  *
@@ -2122,7 +2122,7 @@ tp_connection_manager_dup_protocol_names (TpConnectionManager *self)
  * Returns a structure representing a protocol, or %NULL if this connection
  * manager does not support the specified protocol.
  *
- * Since 0.11.UNRELEASED, you can get a #GObject version with more
+ * Since 0.11.11, you can get a #GObject version with more
  * functionality by calling tp_connection_manager_get_protocol_object().
  *
  * If this function is called before the connection manager information has
@@ -2167,7 +2167,7 @@ tp_connection_manager_get_protocol (TpConnectionManager *self,
  *
  * Returns: (transfer none): an object representing the protocol, or %NULL
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 TpProtocol *
 tp_connection_manager_get_protocol_object (TpConnectionManager *self,

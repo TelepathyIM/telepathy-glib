@@ -214,7 +214,7 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  *  new connections, or %NULL if this CM uses Protocol objects.
  * @interfaces: A #GStrv of extra D-Bus interfaces implemented
  *  by instances of this class, which may be filled in by subclasses. The
- *  default is to list no additional interfaces. Since: 0.11.UNRELEASED
+ *  default is to list no additional interfaces. Since: 0.11.11
  *
  * The class structure for #TpBaseConnectionManager.
  *
@@ -225,7 +225,7 @@ _tp_legacy_protocol_new (TpBaseConnectionManager *cm,
  * Changed in 0.7.1: it is a fatal error for @cm_dbus_name not to conform to
  * the specification.
  *
- * Changed in 0.11.UNRELEASED: protocol_params and new_connection may both be
+ * Changed in 0.11.11: protocol_params and new_connection may both be
  * %NULL. If so, this connection manager is assumed to use Protocol objects
  * instead.
  */
@@ -495,7 +495,7 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
    * The set of D-Bus interfaces available on this ConnectionManager, other
    * than ConnectionManager itself.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_INTERFACES,
       g_param_spec_boxed ("interfaces",
@@ -509,7 +509,7 @@ tp_base_connection_manager_class_init (TpBaseConnectionManagerClass *klass)
    *
    * The Protocol objects available on this ConnectionManager.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_PROTOCOLS,
       g_param_spec_boxed ("protocols",

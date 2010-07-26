@@ -262,7 +262,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * Base class for Telepathy Protocol objects.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 
 /**
@@ -271,7 +271,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * An object providing static details of the implementation of one real-time
  * communications protocol.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 
 /**
@@ -287,6 +287,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * Returns: (transfer none) (array zero-terminated=1): a description of the
  *  parameters supported by this protocol
+ *
+ * Since: 0.11.11
  */
 
 /**
@@ -304,6 +306,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * #TpBaseProtocolClass.get_parameters.
  *
  * Returns: (transfer full): a new connection, or %NULL on error
+ *
+ * Since: 0.11.11
  */
 
 /**
@@ -317,6 +321,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * that is the normalized form of @contact, or raise an error and return %NULL.
  *
  * Returns: (transfer full): a normalized identifier, or %NULL on error
+ *
+ * Since: 0.11.11
  */
 
 /**
@@ -335,6 +341,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * #TpBaseProtocolClass.get_parameters.
  *
  * Returns: (transfer full): a unique name for the account, or %NULL on error
+ *
+ * Since: 0.11.11
  */
 
 /**
@@ -345,6 +353,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * @self, in addition to the Protocol interface.
  *
  * Returns: (transfer full): a %NULL-terminated array of D-Bus interface names
+ *
+ * Since: 0.11.11
  */
 
 /**
@@ -368,6 +378,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * Signature of a virtual method to get the D-Bus interfaces implemented by
  * @self, in addition to the Protocol interface.
+ *
+ * Since: 0.11.11
  */
 
 /**
@@ -400,7 +412,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * The class of a #TpBaseProtocol.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 
 static void protocol_iface_init (TpSvcProtocolClass *cls);
@@ -531,6 +543,8 @@ tp_base_protocol_constructed (GObject *object)
  * <!-- -->
  *
  * Returns: (transfer none): the value of #TpBaseProtocol:name
+ *
+ * Since: 0.11.11
  */
 const gchar *
 tp_base_protocol_get_name (TpBaseProtocol *self)
@@ -559,6 +573,8 @@ tp_base_protocol_get_name (TpBaseProtocol *self)
  * Returns: a hash table mapping (gchar *) fully-qualified property names to
  *          GValues, which must be freed by the caller (at which point its
  *          contents will also be freed).
+ *
+ * Since: 0.11.11
  */
 
 GHashTable *
@@ -781,6 +797,8 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
    * should use tp_base_protocol_get_immutable_properties(),
    * then augment the result using
    * tp_dbus_properties_mixin_fill_properties_hash().
+   *
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_IMMUTABLE_PROPERTIES,
       g_param_spec_boxed ("immutable-properties",
@@ -811,6 +829,8 @@ tp_base_protocol_init (TpBaseProtocol *self)
  *
  * Returns: (transfer none) (array zero-terminated=1): a description of the
  *  parameters supported by this protocol
+ *
+ * Since: 0.11.11
  */
 const TpCMParamSpec *
 tp_base_protocol_get_parameters (TpBaseProtocol *self)
@@ -1151,6 +1171,8 @@ except:
  * specified by #TpCMParamSpec.gtype.
  *
  * Returns: a new connection, or %NULL on error
+ *
+ * Since: 0.11.11
  */
 TpBaseConnection *
 tp_base_protocol_new_connection (TpBaseProtocol *self,

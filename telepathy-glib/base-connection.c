@@ -1591,7 +1591,7 @@ squash_name (const gchar *name, guint length)
  * name and object path used. If %TRUE is returned, the connection owns the
  * bus name, and will release it when destroyed.
  *
- * Since 0.11.UNRELEASED, @bus_name and @object_path may be %NULL if the
+ * Since 0.11.11, @bus_name and @object_path may be %NULL if the
  * strings are not needed.
  *
  * Returns: %TRUE on success, %FALSE on error.

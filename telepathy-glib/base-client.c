@@ -2051,7 +2051,7 @@ tp_base_client_get_object_path (TpBaseClient *self)
  * part of the bus name and object path.
  *
  * Returns: the value of #TpBaseClient:name
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 const gchar *
 tp_base_client_get_name (TpBaseClient *self)
@@ -2069,7 +2069,7 @@ tp_base_client_get_name (TpBaseClient *self)
  * a suffix that includes the D-Bus unique name and a per-process counter.
  *
  * Returns: the value of #TpBaseClient:uniquify-name
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 gboolean
 tp_base_client_get_uniquify_name (TpBaseClient *self)
@@ -2089,7 +2089,7 @@ tp_base_client_get_uniquify_name (TpBaseClient *self)
  * necessarily valid after @self is destroyed.
  *
  * Returns: (transfer none): the value of #TpBaseClient:dbus-daemon
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 TpDBusDaemon *
 tp_base_client_get_dbus_daemon (TpBaseClient *self)

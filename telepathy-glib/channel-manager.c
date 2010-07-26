@@ -184,7 +184,7 @@
  * @type_foreach_channel_class: Call func(cls, fixed, allowed, user_data)
  *  for each class of channel that instances of this class might be able to
  *  create.
- *  Since: 0.11.UNRELEASED
+ *  Since: 0.11.11
  *
  * The vtable for a channel manager implementation.
  *
@@ -627,7 +627,7 @@ tp_channel_manager_foreach_channel_class (TpChannelManager *manager,
  * Calls func(type, fixed, allowed, user_data) for each channel class
  * potentially understood by instances of @type.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 void
 tp_channel_manager_type_foreach_channel_class (GType type,
