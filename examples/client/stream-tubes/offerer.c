@@ -71,7 +71,7 @@ _channel_prepared (GObject *channel,
   g_signal_connect (tube, "incoming",
       G_CALLBACK (_incoming_iostream), NULL);
 
-  tp_stream_tube_offer_async (tube, _tube_offered, NULL);
+  tp_stream_tube_offer_async (tube, NULL, _tube_offered, NULL);
 }
 
 

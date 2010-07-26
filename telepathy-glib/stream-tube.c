@@ -448,12 +448,12 @@ _channel_offered (TpChannel *channel,
 
 static void
 _offer_with_address (TpStreamTube *self,
-    GSimpleAsyncResult *result)
+    GSimpleAsyncResult *result,
+    GHashTable *params)
 {
   TpStreamTubePrivate *priv = GET_PRIV (self);
   TpSocketAddressType socket_type;
   TpChannel *channel;
-  GHashTable *params;
   GValue *addressv = NULL;
   GError *error = NULL;
 
@@ -484,14 +484,17 @@ _offer_with_address (TpStreamTube *self,
       goto finally;
     }
 
-  params = tp_asv_new (NULL, NULL);
+  if (params != NULL)
+    g_hash_table_ref (params);
+  else
+    params = tp_asv_new (NULL, NULL);
 
   /* Call Offer */
   tp_cli_channel_type_stream_tube_call_offer (channel, -1,
       socket_type, addressv, TP_SOCKET_ACCESS_CONTROL_LOCALHOST, params,
       _channel_offered, result, NULL, G_OBJECT (self));
 
-  g_hash_table_destroy (params);
+  g_hash_table_unref (params);
 
 finally:
   if (addressv != NULL)
@@ -502,11 +505,13 @@ finally:
 /**
  * tp_stream_tube_offer_async:
  * @self:
+ * @params: (allow none) (transfer none):
  * @callback:
  * @user_data:
  */
 void
 tp_stream_tube_offer_async (TpStreamTube *self,
+    GHashTable *params,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -623,13 +628,14 @@ tp_stream_tube_offer_async (TpStreamTube *self,
         break;
     }
 
-  _offer_with_address (self, result);
+  _offer_with_address (self, result, params);
 }
 
 
 /**
  * tp_stream_tube_offer_existing_async:
  * @self:
+ * @params: (allow none) (transfer none):
  * @address: (tranfer none):
  * @callback:
  * @user_data:
@@ -641,6 +647,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
  */
 void
 tp_stream_tube_offer_existing_async (TpStreamTube *self,
+    GHashTable *params,
     GSocketAddress *address,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -664,7 +671,7 @@ tp_stream_tube_offer_existing_async (TpStreamTube *self,
 
   priv->address = g_object_ref (address);
 
-  _offer_with_address (self, result);
+  _offer_with_address (self, result, params);
 }
 
 

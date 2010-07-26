@@ -59,9 +59,11 @@ GIOStream *tp_stream_tube_accept_finish (TpStreamTube *self,
     GError **error);
 
 void tp_stream_tube_offer_async (TpStreamTube *self,
+    GHashTable *params,
     GAsyncReadyCallback callback,
     gpointer user_data);
 void tp_stream_tube_offer_existing_async (TpStreamTube *self,
+    GHashTable *params,
     GSocketAddress *address,
     GAsyncReadyCallback callback,
     gpointer user_data);
