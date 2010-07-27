@@ -18,6 +18,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 
+#include "protocol.h"
 #include "room-manager.h"
 
 G_DEFINE_TYPE_WITH_CODE (ExampleCSHConnection,
@@ -112,60 +113,18 @@ get_unique_connection_name (TpBaseConnection *conn)
   return g_strdup (self->priv->account);
 }
 
-gchar *
-example_csh_normalize_contact (TpHandleRepoIface *repo,
+static gchar *
+example_csh_normalize_contact (TpHandleRepoIface *repo G_GNUC_UNUSED,
                                const gchar *id,
-                               gpointer context,
+                               gpointer context G_GNUC_UNUSED,
                                GError **error)
 {
-  const gchar *at;
-  /* For this example, we imagine that global handles look like
-   * username@realm and channel-specific handles look like nickname@#chatroom,
-   * where username and nickname contain any UTF-8 except "@", and realm
-   * and chatroom contain any UTF-8 except "@" and "#".
-   *
-   * Additionally, we imagine that everything is case-sensitive but is
-   * required to be in NFKC.
-   */
+  gchar *normal = NULL;
 
-  if (id[0] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "ID must not be empty");
-      return NULL;
-    }
-
-  at = strchr (id, '@');
-
-  if (at == NULL || at == id || at[1] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "ID must look like aaa@bbb");
-      return NULL;
-    }
-
-  if (strchr (at + 1, '@') != NULL)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "ID cannot contain more than one '@'");
-      return NULL;
-    }
-
-  if (at[1] == '#' && at[2] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "chatroom name cannot be empty");
-      return NULL;
-    }
-
-  if (strchr (at + 2, '#') != NULL)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "realm/chatroom cannot contain '#' except at the beginning");
-      return NULL;
-    }
-
-  return g_utf8_normalize (id, -1, G_NORMALIZE_ALL_COMPOSE);
+  if (example_csh_protocol_check_contact_id (id, &normal, error))
+    return normal;
+  else
+    return NULL;
 }
 
 static gchar *
@@ -174,7 +133,7 @@ example_csh_normalize_room (TpHandleRepoIface *repo,
                             gpointer context,
                             GError **error)
 {
-  /* See example_csh_normalize_contact(). */
+  /* See example_csh_protocol_normalize_contact() for syntax. */
 
   if (id[0] != '#')
     {
@@ -272,13 +231,22 @@ constructed (GObject *object)
   tp_base_connection_register_with_contacts_mixin (base);
 }
 
+static const gchar *interfaces_always_present[] = {
+    TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
+    NULL };
+
+const gchar * const *
+example_csh_connection_get_possible_interfaces (void)
+{
+  /* in this example CM we don't have any extra interfaces that are sometimes,
+   * but not always, present */
+  return interfaces_always_present;
+}
+
 static void
 example_csh_connection_class_init (ExampleCSHConnectionClass *klass)
 {
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-      NULL };
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;

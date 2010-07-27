@@ -15,6 +15,8 @@ libexample_cm_csh_la_SOURCES = \
     conn.h \
     connection-manager.c \
     connection-manager.h \
+    protocol.c \
+    protocol.h \
     room.c \
     room.h \
     room-manager.c \
@@ -39,8 +41,6 @@ AM_CFLAGS = \
     $(GLIB_CFLAGS) \
     $(TP_GLIB_CFLAGS)
 
-EXTRA_DIST = manager-file.py
-
 servicedir = ${datadir}/dbus-1/services
 
 if INSTALL_EXAMPLES
@@ -52,16 +52,8 @@ $(service_DATA): %: Makefile
 	echo "Exec=${libexecdir}/telepathy-example-cm-csh"; } > $@
 
 managerdir = ${datadir}/telepathy/managers
-manager_DATA = _gen/example_csh.manager
+dist_manager_DATA = example_csh.manager
 endif
-
-_gen/example_csh.manager _gen/param-spec-struct.h: \
-		manager-file.py $(top_srcdir)/tools/manager-file.py
-	$(mkdir_p) _gen
-	$(PYTHON) $(top_srcdir)/tools/manager-file.py $(srcdir)/manager-file.py _gen
-
-BUILT_SOURCES = _gen/param-spec-struct.h
-CLEANFILES = $(BUILT_SOURCES)
 
 clean-local:
 	rm -rf _gen

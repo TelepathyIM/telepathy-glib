@@ -53,8 +53,7 @@ GType example_csh_connection_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CSH_CONNECTION, \
                               ExampleCSHConnectionClass))
 
-gchar *example_csh_normalize_contact (TpHandleRepoIface *repo,
-    const gchar *id, gpointer context, GError **error);
+const gchar * const * example_csh_connection_get_possible_interfaces (void);
 
 G_END_DECLS
 
