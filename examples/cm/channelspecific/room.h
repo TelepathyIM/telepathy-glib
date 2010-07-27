@@ -16,7 +16,7 @@
 
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/group-mixin.h>
-#include <telepathy-glib/text-mixin.h>
+#include <telepathy-glib/message-mixin.h>
 
 G_BEGIN_DECLS
 
@@ -45,7 +45,6 @@ GType example_csh_room_channel_get_type (void);
 struct _ExampleCSHRoomChannelClass {
     GObjectClass parent_class;
 
-    TpTextMixinClass text_class;
     TpGroupMixinClass group_class;
     TpDBusPropertiesMixinClass dbus_properties_class;
 };
@@ -53,7 +52,7 @@ struct _ExampleCSHRoomChannelClass {
 struct _ExampleCSHRoomChannel {
     GObject parent;
 
-    TpTextMixin text;
+    TpMessageMixin message_mixin;
     TpGroupMixin group;
 
     ExampleCSHRoomChannelPrivate *priv;
