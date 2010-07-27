@@ -49,7 +49,6 @@ new_connection (TpBaseProtocol *protocol,
 {
   ExampleEcho2Connection *conn;
   const gchar *account;
-  gchar *protocol_name;
 
   account = tp_asv_get_string (asv, "account");
 
@@ -60,16 +59,11 @@ new_connection (TpBaseProtocol *protocol,
       return NULL;
     }
 
-  g_object_get (protocol,
-      "name", &protocol_name,
-      NULL);
-
   conn = EXAMPLE_ECHO_2_CONNECTION (
       g_object_new (EXAMPLE_TYPE_ECHO_2_CONNECTION,
         "account", account,
-        "protocol", protocol_name,
+        "protocol", tp_base_protocol_get_name (protocol),
         NULL));
-  g_free (protocol_name);
 
   return (TpBaseConnection *) conn;
 }
