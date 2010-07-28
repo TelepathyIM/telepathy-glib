@@ -1881,8 +1881,9 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
   GHashTable *changes;
   GArray *removals;
   TpIntSetIter iter;
-  TpIntSet *pub, *sub, *sub_rp, *unpub, *unsub, *store;
+  TpIntSet *pub, *sub_rp, *unpub, *unsub, *store;
   GObject *sub_chan, *pub_chan, *stored_chan;
+  TpHandle self_handle;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
 
@@ -1892,6 +1893,8 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
       self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
     return;
 
+  self_handle = tp_base_connection_get_self_handle (self->priv->conn),
+
   sub_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_SUBSCRIBE];
   pub_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_PUBLISH];
   stored_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_STORED];
@@ -1900,8 +1903,10 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
   g_return_if_fail (G_IS_OBJECT (pub_chan));
   /* stored_chan can legitimately be NULL, though */
 
+  /* For some changes, we emit signals one by one, because the actor is
+   * different every time. However, for these sets of changes, we do them all
+   * at once, since they'll share an actor. */
   pub = tp_intset_new ();
-  sub = tp_intset_new ();
   unpub = tp_intset_new ();
   unsub = tp_intset_new ();
   sub_rp = tp_intset_new ();
@@ -1935,7 +1940,6 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
       switch (publish)
         {
         case TP_SUBSCRIPTION_STATE_NO:
-        case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
         case TP_SUBSCRIPTION_STATE_UNKNOWN:
           tp_intset_add (unpub, iter.element);
           break;
@@ -1949,6 +1953,21 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
               tp_group_mixin_change_members (pub_chan, publish_request,
                   NULL, NULL, pub_lp, NULL, iter.element,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+              tp_intset_destroy (pub_lp);
+            }
+          break;
+
+        case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
+            {
+              /* Also emit publication request cancellations as we go along:
+               * each one has a different actor */
+              TpIntSet *pub_cancelled = tp_intset_new_containing (
+                  iter.element);
+
+              tp_group_mixin_change_members (pub_chan, "",
+                  NULL, pub_cancelled, NULL, NULL, iter.element,
+                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+              tp_intset_destroy (pub_cancelled);
             }
           break;
 
@@ -1963,9 +1982,21 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
       switch (subscribe)
         {
         case TP_SUBSCRIPTION_STATE_NO:
-        case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
         case TP_SUBSCRIPTION_STATE_UNKNOWN:
           tp_intset_add (unsub, iter.element);
+          break;
+
+        case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
+            {
+              /* If our subscription request was rejected, the actor is the
+               * other guy, and PERMISSION_DENIED seems a reasonable reason */
+              TpIntSet *sub_rejected = tp_intset_new_containing (iter.element);
+
+              tp_group_mixin_change_members (sub_chan, "",
+                  NULL, sub_rejected, NULL, NULL, iter.element,
+                  TP_CHANNEL_GROUP_CHANGE_REASON_PERMISSION_DENIED);
+              tp_intset_destroy (sub_rejected);
+            }
           break;
 
         case TP_SUBSCRIPTION_STATE_ASK:
@@ -1973,7 +2004,16 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
           break;
 
         case TP_SUBSCRIPTION_STATE_YES:
-          tp_intset_add (sub, iter.element);
+            {
+              /* If our subscription request was accepted, the actor is the
+               * other guy accepting */
+              TpIntSet *sub = tp_intset_new_containing (iter.element);
+
+              tp_group_mixin_change_members (sub_chan, "",
+                  sub, NULL, NULL, NULL, iter.element,
+                  TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+              tp_intset_destroy (sub);
+            }
           break;
 
         default:
@@ -2008,12 +2048,27 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
       removals = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 0);
     }
 
-  /* FIXME: is there a better actor than 0 for these changes? */
+  /* The actor is 0 for removals from subscribe and publish: we don't know
+   * whether it was our idea, or caused by an unknown contact or by server
+   * failure, since those are all represented as No. */
   tp_group_mixin_change_members (sub_chan, "",
-      sub, unsub, NULL, sub_rp, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      NULL, unsub, NULL, NULL, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_group_mixin_change_members (pub_chan, "",
-      pub, unpub, NULL, NULL, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      NULL, unpub, NULL, NULL, 0, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
+  /* pub is the set of contacts changing to publish=Yes (i.e. contacts we'll
+   * allow to see our presence), which was presumably our idea. */
+  tp_group_mixin_change_members (pub_chan, "",
+      pub, NULL, NULL, NULL, self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  /* sub_rp is the set of contacts changing to subscribe=Ask, which was
+   * presumably our idea. */
+  tp_group_mixin_change_members (sub_chan, "", NULL, NULL, NULL, sub_rp,
+      self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
+  /* We use actor 0 for the stored list, since people can land on the stored
+   * list for a variety of reasons (if someone has requested we publish to
+   * them, they're temporarily claimed to be stored). */
   if (stored_chan != NULL)
     {
       tp_group_mixin_change_members (stored_chan, "",
@@ -2033,12 +2088,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
             self->priv->conn, changes, removals);
     }
 
-  /* FIXME: the new D-Bus API doesn't allow us to distinguish between
-   * added-by-user, added-by-server and added-by-remote, or between
-   * removed-by-user, removed-by-server and rejected-by-remote. Do we care? */
-
   tp_intset_destroy (pub);
-  tp_intset_destroy (sub);
   tp_intset_destroy (unpub);
   tp_intset_destroy (unsub);
   tp_intset_destroy (sub_rp);
