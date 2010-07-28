@@ -1141,7 +1141,7 @@ example_contact_list_manager_request_subscription_async (
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
 
@@ -1155,22 +1155,17 @@ example_contact_list_manager_request_subscription_async (
 
       /* if they already authorized us, it's a no-op */
       if (d->subscribe)
-        {
-          tp_handle_set_remove (changed, member);
-          continue;
-        }
+        continue;
 
       /* In a real connection manager we'd start a network request here */
       g_message ("Transmitting authorization request to %s: %s",
           tp_handle_inspect (self->priv->contact_repo, member),
           message);
 
-      if (created || !d->subscribe_requested)
-        {
-          d->subscribe_rejected = FALSE;
-          d->subscribe_requested = TRUE;
-          send_updated_roster (self, member);
-        }
+      tp_handle_set_add (changed, member);
+      d->subscribe_rejected = FALSE;
+      d->subscribe_requested = TRUE;
+      send_updated_roster (self, member);
 
       /* Pretend that after a delay, the contact notices the request
        * and allows or rejects it. In this example connection manager,
