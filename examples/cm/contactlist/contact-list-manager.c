@@ -1206,7 +1206,7 @@ example_contact_list_manager_authorize_publication_async (
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
 
@@ -1217,10 +1217,10 @@ example_contact_list_manager_authorize_publication_async (
       ExampleContactDetails *d = ensure_contact (self, member, NULL);
       const gchar *request = g_hash_table_lookup (self->priv->publish_requests,
           GUINT_TO_POINTER (member));
-      gboolean was_cancelled;
 
-      was_cancelled = tp_handle_set_remove (
-          self->priv->cancelled_publish_requests, member);
+      if (tp_handle_set_remove (self->priv->cancelled_publish_requests,
+            member))
+        tp_handle_set_add (changed, member);
 
       /* We would like member to see our presence. In this simulated protocol,
        * this is meaningless, unless they have asked for it; but we can still
@@ -1228,7 +1228,6 @@ example_contact_list_manager_authorize_publication_async (
       if (request == NULL)
         {
           d->pre_approved = TRUE;
-          tp_handle_set_remove (changed, member);
         }
       else if (!d->publish)
         {
@@ -1236,10 +1235,7 @@ example_contact_list_manager_authorize_publication_async (
           g_hash_table_remove (self->priv->publish_requests,
               GUINT_TO_POINTER (member));
           send_updated_roster (self, member);
-        }
-      else if (!was_cancelled)
-        {
-          tp_handle_set_remove (changed, member);
+          tp_handle_set_add (changed, member);
         }
     }
 
