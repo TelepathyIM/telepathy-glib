@@ -1880,10 +1880,11 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 {
   GHashTable *changes;
   GArray *removals;
-  TpIntSetIter iter;
+  TpIntSetFastIter iter;
   TpIntSet *pub, *sub_rp, *unpub, *unsub, *store;
   GObject *sub_chan, *pub_chan, *stored_chan;
   TpHandle self_handle;
+  TpHandle contact;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
 
@@ -1916,24 +1917,24 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
       (GDestroyNotify) g_value_array_free);
 
   if (changed != NULL)
-    tp_intset_iter_init (&iter, tp_handle_set_peek (changed));
+    tp_intset_fast_iter_init (&iter, tp_handle_set_peek (changed));
 
-  while (changed != NULL && tp_intset_iter_next (&iter))
+  while (changed != NULL && tp_intset_fast_iter_next (&iter, &contact))
     {
       TpSubscriptionState subscribe = TP_SUBSCRIPTION_STATE_NO;
       TpSubscriptionState publish = TP_SUBSCRIPTION_STATE_NO;
       gchar *publish_request = NULL;
 
-      tp_intset_add (store, iter.element);
+      tp_intset_add (store, contact);
 
-      tp_base_contact_list_get_states (self, iter.element,
+      tp_base_contact_list_get_states (self, contact,
           &subscribe, &publish, &publish_request);
 
       if (publish_request == NULL)
         publish_request = g_strdup ("");
 
       DEBUG ("Contact %s: subscribe=%c publish=%c '%s'",
-          tp_handle_inspect (self->priv->contact_repo, iter.element),
+          tp_handle_inspect (self->priv->contact_repo, contact),
           presence_state_to_letter (subscribe),
           presence_state_to_letter (publish), publish_request);
 
@@ -1941,17 +1942,17 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
         {
         case TP_SUBSCRIPTION_STATE_NO:
         case TP_SUBSCRIPTION_STATE_UNKNOWN:
-          tp_intset_add (unpub, iter.element);
+          tp_intset_add (unpub, contact);
           break;
 
         case TP_SUBSCRIPTION_STATE_ASK:
             {
               /* Emit any publication requests as we go along, since they can
                * each have a different message and actor */
-              TpIntSet *pub_lp = tp_intset_new_containing (iter.element);
+              TpIntSet *pub_lp = tp_intset_new_containing (contact);
 
               tp_group_mixin_change_members (pub_chan, publish_request,
-                  NULL, NULL, pub_lp, NULL, iter.element,
+                  NULL, NULL, pub_lp, NULL, contact,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
               tp_intset_destroy (pub_lp);
             }
@@ -1962,17 +1963,17 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
               /* Also emit publication request cancellations as we go along:
                * each one has a different actor */
               TpIntSet *pub_cancelled = tp_intset_new_containing (
-                  iter.element);
+                  contact);
 
               tp_group_mixin_change_members (pub_chan, "",
-                  NULL, pub_cancelled, NULL, NULL, iter.element,
+                  NULL, pub_cancelled, NULL, NULL, contact,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
               tp_intset_destroy (pub_cancelled);
             }
           break;
 
         case TP_SUBSCRIPTION_STATE_YES:
-          tp_intset_add (pub, iter.element);
+          tp_intset_add (pub, contact);
           break;
 
         default:
@@ -1983,34 +1984,34 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
         {
         case TP_SUBSCRIPTION_STATE_NO:
         case TP_SUBSCRIPTION_STATE_UNKNOWN:
-          tp_intset_add (unsub, iter.element);
+          tp_intset_add (unsub, contact);
           break;
 
         case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
             {
               /* If our subscription request was rejected, the actor is the
                * other guy, and PERMISSION_DENIED seems a reasonable reason */
-              TpIntSet *sub_rejected = tp_intset_new_containing (iter.element);
+              TpIntSet *sub_rejected = tp_intset_new_containing (contact);
 
               tp_group_mixin_change_members (sub_chan, "",
-                  NULL, sub_rejected, NULL, NULL, iter.element,
+                  NULL, sub_rejected, NULL, NULL, contact,
                   TP_CHANNEL_GROUP_CHANGE_REASON_PERMISSION_DENIED);
               tp_intset_destroy (sub_rejected);
             }
           break;
 
         case TP_SUBSCRIPTION_STATE_ASK:
-          tp_intset_add (sub_rp, iter.element);
+          tp_intset_add (sub_rp, contact);
           break;
 
         case TP_SUBSCRIPTION_STATE_YES:
             {
               /* If our subscription request was accepted, the actor is the
                * other guy accepting */
-              TpIntSet *sub = tp_intset_new_containing (iter.element);
+              TpIntSet *sub = tp_intset_new_containing (contact);
 
               tp_group_mixin_change_members (sub_chan, "",
-                  sub, NULL, NULL, NULL, iter.element,
+                  sub, NULL, NULL, NULL, contact,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
               tp_intset_destroy (sub);
             }
@@ -2020,7 +2021,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
           g_assert_not_reached ();
         }
 
-      g_hash_table_insert (changes, GUINT_TO_POINTER (iter.element),
+      g_hash_table_insert (changes, GUINT_TO_POINTER (contact),
           tp_value_array_build (3,
             G_TYPE_UINT, subscribe,
             G_TYPE_UINT, publish,
