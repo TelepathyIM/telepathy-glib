@@ -109,7 +109,7 @@ struct _ExampleContactListManagerPrivate
   GHashTable *all_tags;
 
   /* All contacts on our (fake) protocol-level contact list,
-   * plus all contacts who have requested presence */
+   * plus all contacts who have requested presence (even if they cancelled) */
   TpHandleSet *contacts;
 
   /* All contacts on our (fake) protocol-level contact list
@@ -117,10 +117,15 @@ struct _ExampleContactListManagerPrivate
    *    => ExampleContactDetails */
   GHashTable *contact_details;
 
-  /* Contacts who have requested presence (may or may not be in
-   * contact_details)
+  /* Contacts with an outstanding request for presence publication
+   * (may or may not be in contact_details)
    * handle borrowed from contacts => g_strdup (message) */
   GHashTable *publish_requests;
+
+  /* Contacts who have requested presence but then cancelled their request
+   * (may or may not be in contact_details)
+   * handle borrowed from contacts => g_strdup (message) */
+  TpHandleSet *cancelled_publish_requests;
 
   TpHandleSet *blocked_contacts;
 

@@ -281,6 +281,13 @@ setup (Test *test,
 }
 
 static void
+test_clear_log (Test *test)
+{
+  g_ptr_array_foreach (test->log, (GFunc) log_entry_free, NULL);
+  g_ptr_array_set_size (test->log, 0);
+}
+
+static void
 teardown (Test *test,
     gconstpointer data)
 {
@@ -290,7 +297,7 @@ teardown (Test *test,
 
   g_array_free (test->arr, TRUE);
 
-  g_ptr_array_foreach (test->log, (GFunc) log_entry_free, NULL);
+  test_clear_log (test);
   g_ptr_array_free (test->log, TRUE);
 
   tp_handle_unref (test->contact_repo, test->sjoerd);
@@ -1427,6 +1434,30 @@ test_reject_subscribe_request (Test *test,
   test_assert_contact_state (test, test->ninja,
       TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY, TP_SUBSCRIPTION_STATE_NO, NULL,
       NULL);
+
+  test_clear_log (test);
+
+  /* We can acknowledge the failure to subscribe with Unsubscribe() or
+   * RemoveContacts(). We can't use the old API here, because in the old API,
+   * the contact has already vanished from the Group */
+  if (!tp_strdiff (mode, "remove-after"))
+    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+        -1, test->arr, &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unsubscribe (
+        test->conn, -1, test->arr, &error, NULL);
+
+  /* the ninja falls off our subscribe list */
+  while (test->log->len < 1)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+
+  if (!tp_strdiff (mode, "remove-after"))
+    test_assert_one_contact_removed (test, 0, test->ninja);
+  else
+    test_assert_one_contact_changed (test, 0, test->ninja,
+        TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
 }
 
 static void
@@ -2198,6 +2229,9 @@ main (int argc,
       Test, "old", setup, test_remove_from_subscribe_pending, teardown);
   g_test_add ("/contact-lists/remove-from-subscribe/no-op/old",
       Test, "old", setup, test_remove_from_subscribe_no_op, teardown);
+
+  g_test_add ("/contact-lists/reject-subscribe-request/remove-after",
+      Test, "remove-after", setup, test_reject_subscribe_request, teardown);
 
   g_test_add ("/contact-lists/add-to-group",
       Test, NULL, setup, test_add_to_group, teardown);
