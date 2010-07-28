@@ -1253,7 +1253,7 @@ example_contact_list_manager_store_contacts_async (
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
 
@@ -1273,12 +1273,8 @@ example_contact_list_manager_store_contacts_async (
           /* If we'd had a publish request from this member, then adding them
            * to the protocol-level contact list doesn't actually cause a
            * state change visible on Telepathy. */
-          if (!created)
-            tp_handle_set_remove (changed, member);
-        }
-      else
-        {
-          tp_handle_set_remove (changed, member);
+          if (created)
+            tp_handle_set_add (changed, member);
         }
     }
 
