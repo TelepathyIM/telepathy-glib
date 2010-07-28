@@ -1522,7 +1522,7 @@ example_contact_list_manager_unblock_contacts_async (
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpIntSetFastIter iter;
-  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpHandle member;
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
@@ -1533,10 +1533,7 @@ example_contact_list_manager_unblock_contacts_async (
         {
           g_message ("Removing contact %s from blocked list",
               tp_handle_inspect (self->priv->contact_repo, member));
-        }
-      else
-        {
-          tp_handle_set_remove (changed, member);
+          tp_handle_set_add (changed, member);
         }
     }
 
