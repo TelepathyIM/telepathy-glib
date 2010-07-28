@@ -1338,7 +1338,7 @@ example_contact_list_manager_unsubscribe_async (TpBaseContactList *manager,
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
 
@@ -1359,12 +1359,18 @@ example_contact_list_manager_unsubscribe_async (TpBaseContactList *manager,
               g_message ("Cancelling our authorization request to %s",
                   tp_handle_inspect (self->priv->contact_repo, member));
               d->subscribe_requested = FALSE;
+
+              tp_handle_set_add (changed, member);
+              send_updated_roster (self, member);
             }
           else if (d->subscribe_rejected)
             {
               g_message ("Forgetting rejected authorization request to %s",
                   tp_handle_inspect (self->priv->contact_repo, member));
               d->subscribe_rejected = FALSE;
+
+              tp_handle_set_add (changed, member);
+              send_updated_roster (self, member);
             }
           else if (d->subscribe)
             {
@@ -1377,19 +1383,9 @@ example_contact_list_manager_unsubscribe_async (TpBaseContactList *manager,
                * UNKNOWN */
               g_signal_emit (self, signals[PRESENCE_UPDATED], 0, member);
 
+              tp_handle_set_add (changed, member);
+              send_updated_roster (self, member);
             }
-          else
-            {
-              /* nothing to do, avoid "updating the roster" */
-              tp_handle_set_remove (changed, member);
-              continue;
-            }
-
-          send_updated_roster (self, member);
-        }
-      else
-        {
-          tp_handle_set_remove (changed, member);
         }
     }
 
