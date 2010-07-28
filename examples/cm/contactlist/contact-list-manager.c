@@ -1291,7 +1291,7 @@ example_contact_list_manager_remove_contacts_async (TpBaseContactList *manager,
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpHandleSet *removed = tp_handle_set_copy (contacts);
+  TpHandleSet *removed = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
 
@@ -1306,25 +1306,22 @@ example_contact_list_manager_remove_contacts_async (TpBaseContactList *manager,
           || tp_handle_set_is_member (self->priv->cancelled_publish_requests,
             member))
         {
+          tp_handle_set_add (removed, member);
+
           g_hash_table_remove (self->priv->contact_details,
               GUINT_TO_POINTER (member));
           g_hash_table_remove (self->priv->publish_requests,
               GUINT_TO_POINTER (member));
-          send_updated_roster (self, member);
-
           tp_handle_set_remove (self->priv->contacts, member);
           tp_handle_set_remove (self->priv->cancelled_publish_requests,
               member);
+
+          send_updated_roster (self, member);
 
           /* since they're no longer on the subscribe list, we can't
            * see their presence, so emit a signal changing it to
            * UNKNOWN */
           g_signal_emit (self, signals[PRESENCE_UPDATED], 0, member);
-        }
-      else
-        {
-          /* no actual change */
-          tp_handle_set_remove (removed, member);
         }
     }
 
