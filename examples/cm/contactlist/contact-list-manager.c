@@ -1063,7 +1063,7 @@ example_contact_list_manager_get_group_members (TpBaseContactList *manager,
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpIntSetFastIter iter;
   TpHandle member;
-  TpHandleSet *members = tp_handle_set_copy (self->priv->contacts);
+  TpHandleSet *members = tp_handle_set_new (self->priv->contact_repo);
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (self->priv->contacts));
 
@@ -1071,9 +1071,9 @@ example_contact_list_manager_get_group_members (TpBaseContactList *manager,
     {
       ExampleContactDetails *d = lookup_contact (self, member);
 
-      if (d == NULL || d->tags == NULL ||
-          !g_hash_table_lookup_extended (d->tags, group, NULL, NULL))
-        tp_handle_set_remove (members, member);
+      if (d != NULL && d->tags != NULL &&
+          g_hash_table_lookup_extended (d->tags, group, NULL, NULL))
+        tp_handle_set_add (members, member);
     }
 
   return members;
