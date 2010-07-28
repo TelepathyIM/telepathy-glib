@@ -1065,7 +1065,7 @@ compose_presence (gboolean full,
   else if (ask)
     return TP_SUBSCRIPTION_STATE_ASK;
   else if (rejected)
-    return TP_SUBSCRIPTION_STATE_REJECTED;
+    return TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY;
   else
     return TP_SUBSCRIPTION_STATE_NO;
 }

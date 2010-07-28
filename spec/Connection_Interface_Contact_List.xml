@@ -77,17 +77,24 @@
           in this state, it will raise NotYet.</tp:docstring>
       </tp:enumvalue>
 
-      <tp:enumvalue suffix="Success" value="2">
+      <tp:enumvalue suffix="Failure" value="2">
+        <tp:docstring>
+          <p>The connection has tried and failed to retrieve the contact
+            list. If <tp:member-ref>GetContactListAttributes</tp:member-ref>
+            is called in this state, it will immediately raise an error
+            indicating the reason for failure.</p>
+
+          <p>The connection manager SHOULD try again to obtain the contact
+            list, if appropriate for the protocol. If it succeeds later,
+            the <tp:member-ref>ContactListState</tp:member-ref> MUST advance
+            to Success.</p>
+        </tp:docstring>
+      </tp:enumvalue>
+
+      <tp:enumvalue suffix="Success" value="3">
         <tp:docstring>The connection has successfully retrieved the contact
           list. If <tp:member-ref>GetContactListAttributes</tp:member-ref>
           is called in this state, it will return successfully.</tp:docstring>
-      </tp:enumvalue>
-
-      <tp:enumvalue suffix="Failure" value="3">
-        <tp:docstring>The connection has failed to retrieve the contact
-          list. If <tp:member-ref>GetContactListAttributes</tp:member-ref>
-          is called in this state, it will immediately raise an error
-          indicating the reason for failure.</tp:docstring>
       </tp:enumvalue>
     </tp:enum>
 
@@ -132,8 +139,10 @@
           at least the following:</p>
 
         <ul>
-          <li>all contacts whose "subscribe" attribute is Ask or Yes</li>
-          <li>all contacts whose "publish" attribute is Ask or Yes</li>
+          <li>all contacts whose <tp:token-ref>subscribe</tp:token-ref>
+            attribute is not No</li>
+          <li>all contacts whose <tp:token-ref>publish</tp:token-ref>
+            attribute is not No</li>
           <li>all contacts with a persistently-stored stored alias, if
             supported</li>
           <li>all contacts in user-defined contact groups, if supported</li>
@@ -207,12 +216,6 @@
             Equivalent to the corresponding argument to <tp:dbus-ref
               namespace="org.freedesktop.Telepathy.Connection.Interface.Contacts"
               >GetContactAttributes</tp:dbus-ref>.</p>
-
-          <p><em>FIXME: if we do distributed refcounting, we should probably
-              rename this to 'Reference' and implement handle-refcounting
-              semantics first? On the other hand, if we make handles persist
-              for the lifetime of the connection, we can just remove this
-              parameter.</em></p>
         </tp:docstring>
       </arg>
 
@@ -247,7 +250,10 @@
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>An enumeration indicating whether presence subscription is denied,
           denied but pending permission, or allowed. The exact semantics
-          vary according to where this type is used.</p>
+          vary according to where this type is used: see the
+          <tp:token-ref>subscribe</tp:token-ref> and
+          <tp:token-ref>publish</tp:token-ref> contact attributes for
+          details.</p>
       </tp:docstring>
 
       <tp:enumvalue suffix="Unknown" value="0">
@@ -256,16 +262,18 @@
       </tp:enumvalue>
 
       <tp:enumvalue suffix="No" value="1">
-        <tp:docstring>Presence information cannot be seen, and permission
-          to do so has not been requested recently. The precise meaning
-          is protocol-specific; in most protocols, the Rejected state
-          will change to No between sessions.</tp:docstring>
+        <tp:docstring>Presence information cannot be seen, and either the
+          subscription state Removed_Remotely does not apply, or it is
+          not known whether that state applies.
+        </tp:docstring>
       </tp:enumvalue>
 
-      <tp:enumvalue suffix="Rejected" value="2">
-        <tp:docstring>Presence information cannot be seen. Permission
-          to see presence information has been requested, but the request
-          was declined.</tp:docstring>
+      <tp:enumvalue suffix="Removed_Remotely" value="2">
+        <tp:docstring>Presence information cannot be seen because the
+          remote contact took action: either the local user's request to
+          see the remote contact's presence was denied, or the remote
+          contact requested to see the local user's presence but then
+          cancelled their request.</tp:docstring>
       </tp:enumvalue>
 
       <tp:enumvalue suffix="Ask" value="3">
@@ -314,14 +322,23 @@
             asked during the current session will ever have Ask status.</p>
         </tp:rationale>
 
-        <p>If this attribute is Rejected, this indicates that the local user
-          has asked to receive the contact's presence at some time, but the
-          remote contact has rejected that request. It is
-          implementation-dependent whether contacts' subscribe attributes
-          can remain set to Rejected, or are reset to No, when the connection
-          disconnects.</p>
+        <p>If this attribute is Removed_Remotely, this indicates that the
+          local user has asked to receive the contact's presence at some time,
+          but the remote contact has rejected that request, and a local
+          user interface has not yet acknowledged this. It is
+          implementation-dependent whether contacts' subscribe attributes can
+          remain set to Removed_Remotely, or are reset to No, when the
+          connection disconnects.</p>
 
-        <p>This attribute's value will be Unknown until the
+        <p>After notifying the user, user interfaces MAY acknowledge a change
+          to <tt>subscribe</tt>=Removed_Remotely by calling either
+          <tp:member-ref>Unsubscribe</tp:member-ref> or
+          <tp:member-ref>RemoveContacts</tp:member-ref>, which will set
+          <tt>subscribe</tt> to No (and perhaps remove the contact). This
+          allows user interfaces to detect that the user has been notified
+          about the rejected request.</p>
+
+        <p>This attribute's value will be Unknown or omitted until the
           <tp:member-ref>ContactListState</tp:member-ref> has changed to
           Success.</p>
       </tp:docstring>
@@ -347,7 +364,7 @@
           if it is Ask, the contact has requested that the local user's
           presence is made available to them.</p>
 
-        <p>It is implementation-dependent whether contacts' publish
+        <p>It is implementation-dependent whether contacts' <tt>publish</tt>
           attributes can remain set to Ask, or are reset to No, when the
           connection disconnects.</p>
 
@@ -358,9 +375,15 @@
             during the current session will ever have Ask status.</p>
         </tp:rationale>
 
-        <p><em>FIXME: do we want to allow Rejected here too?</em></p>
+        <p>If this attribute is Removed_Remotely, this indicates that the
+          remote contact has asked to receive the user's presence at some time,
+          but has then cancelled that request before a response was given by
+          the local user. User interfaces MAY reset <tt>publish</tt> from
+          Removed_Remotely to No, by calling either
+          <tp:member-ref>Unpublish</tp:member-ref> or
+          <tp:member-ref>RemoveContacts</tp:member-ref>.</p>
 
-        <p>This attribute's value will be Unknown until the
+        <p>This attribute's value will be Unknown or omitted until the
           <tp:member-ref>ContactListState</tp:member-ref> has changed to
           Success.</p>
       </tp:docstring>
@@ -368,9 +391,9 @@
 
     <tp:contact-attribute name="publish-request" type="s">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>If the "publish" attribute is Ask, an optional message that was
-          sent by the contact asking to receive the local user's presence;
-          omitted if none was given.</p>
+        <p>If the <tp:token-ref>publish</tp:token-ref> attribute is Ask, an
+          optional message that was sent by the contact asking to receive the
+          local user's presence; omitted if none was given.</p>
 
         <tp:rationale>
           <p>If the contact asking to receive our presence is also using
@@ -590,14 +613,27 @@
 
         <tp:rationale>
           <p>This provides change notification for that list, and for
-            contacts' "subscribe", "publish" and
-            "publish-request" attributes.</p>
+            contacts' <tp:token-ref>subscribe</tp:token-ref>,
+            <tp:token-ref>publish</tp:token-ref> and
+            <tp:token-ref>publish-request</tp:token-ref> attributes.</p>
+        </tp:rationale>
+
+        <p>Connection managers SHOULD also emit this signal when a contact
+          requests that the user's presence is published to them, even if
+          that contact's <tp:token>publish</tp:token> attribute is already
+          Ask and the <tp:token>publish-request</tp:token> has not changed.</p>
+
+        <tp:rationale>
+          <p>If the same contact sends 10 identical requests, 10 identical
+            signals should be emitted.</p>
         </tp:rationale>
       </tp:docstring>
 
       <arg type="a{u(uus)}" name="Changes" tp:type="Contact_Subscription_Map">
         <tp:docstring>
-          The new subscribe, publish and publish-request attributes of all the
+          The new <tp:token-ref>subscribe</tp:token-ref>,
+            <tp:token-ref>publish</tp:token-ref> and
+            <tp:token-ref>publish-request</tp:token-ref> attributes of all the
           contacts that have been added, and all the contacts for which those
           attributes have changed.
         </tp:docstring>

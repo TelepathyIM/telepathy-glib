@@ -1849,7 +1849,7 @@ presence_state_to_letter (TpSubscriptionState ps)
     case TP_SUBSCRIPTION_STATE_ASK:
       return 'A';
 
-    case TP_SUBSCRIPTION_STATE_REJECTED:
+    case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
       return 'R';
 
     default:
@@ -1935,7 +1935,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
       switch (publish)
         {
         case TP_SUBSCRIPTION_STATE_NO:
-        case TP_SUBSCRIPTION_STATE_REJECTED:
+        case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
         case TP_SUBSCRIPTION_STATE_UNKNOWN:
           tp_intset_add (unpub, iter.element);
           break;
@@ -1963,7 +1963,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
       switch (subscribe)
         {
         case TP_SUBSCRIPTION_STATE_NO:
-        case TP_SUBSCRIPTION_STATE_REJECTED:
+        case TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY:
         case TP_SUBSCRIPTION_STATE_UNKNOWN:
           tp_intset_add (unsub, iter.element);
           break;
