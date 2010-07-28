@@ -109,7 +109,7 @@ struct _ExampleContactListManagerPrivate
   GHashTable *all_tags;
 
   /* All contacts on our (fake) protocol-level contact list,
-   * plus all contacts who have requested presence (even if they cancelled) */
+   * plus all contacts in publish_requests or cancelled_publish_requests */
   TpHandleSet *contacts;
 
   /* All contacts on our (fake) protocol-level contact list
@@ -123,8 +123,7 @@ struct _ExampleContactListManagerPrivate
   GHashTable *publish_requests;
 
   /* Contacts who have requested presence but then cancelled their request
-   * (may or may not be in contact_details)
-   * handle borrowed from contacts => g_strdup (message) */
+   * (may or may not be in contact_details) */
   TpHandleSet *cancelled_publish_requests;
 
   TpHandleSet *blocked_contacts;
@@ -149,6 +148,7 @@ example_contact_list_manager_init (ExampleContactListManager *self)
   self->priv->contact_repo = NULL;
   self->priv->contacts = NULL;
   self->priv->blocked_contacts = NULL;
+  self->priv->cancelled_publish_requests = NULL;
 }
 
 static void
@@ -156,6 +156,8 @@ example_contact_list_manager_close_all (ExampleContactListManager *self)
 {
   tp_clear_pointer (&self->priv->contacts, tp_handle_set_destroy);
   tp_clear_pointer (&self->priv->blocked_contacts, tp_handle_set_destroy);
+  tp_clear_pointer (&self->priv->cancelled_publish_requests,
+      tp_handle_set_destroy);
   tp_clear_pointer (&self->priv->publish_requests, g_hash_table_unref);
   tp_clear_pointer (&self->priv->contact_details, g_hash_table_unref);
   /* this must come after freeing contact_details, because the strings are
@@ -553,6 +555,8 @@ constructed (GObject *object)
       TP_HANDLE_TYPE_CONTACT);
   self->priv->contacts = tp_handle_set_new (self->priv->contact_repo);
   self->priv->blocked_contacts = tp_handle_set_new (self->priv->contact_repo);
+  self->priv->cancelled_publish_requests = tp_handle_set_new (
+      self->priv->contact_repo);
 
   self->priv->status_changed_id = g_signal_connect (self->priv->conn,
       "status-changed", (GCallback) status_changed_cb, self);
@@ -825,6 +829,7 @@ receive_auth_request (ExampleContactListManager *self,
       d->publish = TRUE;
       g_hash_table_remove (self->priv->publish_requests,
           GUINT_TO_POINTER (contact));
+      tp_handle_set_remove (self->priv->cancelled_publish_requests, contact);
       send_updated_roster (self, contact);
     }
   else
@@ -840,6 +845,27 @@ receive_auth_request (ExampleContactListManager *self,
   tp_base_contact_list_contacts_changed ((TpBaseContactList *) self,
       set, NULL);
   tp_handle_set_destroy (set);
+
+  /* If the contact has a name ending with "@cancel.something", they
+   * immediately take it back; this is mainly for the regression test. */
+  if (strstr (tp_handle_inspect (self->priv->contact_repo, contact),
+        "@cancel.") != NULL)
+    {
+      g_message ("From server: %s has cancelled their publish request",
+          tp_handle_inspect (self->priv->contact_repo, contact));
+
+      d->publish = FALSE;
+      d->pre_approved = FALSE;
+      g_hash_table_remove (self->priv->publish_requests,
+          GUINT_TO_POINTER (contact));
+      tp_handle_set_add (self->priv->cancelled_publish_requests, contact);
+
+      set = tp_handle_set_new (self->priv->contact_repo);
+      tp_handle_set_add (set, contact);
+      tp_base_contact_list_contacts_changed ((TpBaseContactList *) self,
+          set, NULL);
+      tp_handle_set_destroy (set);
+    }
 }
 
 static gboolean
@@ -1063,13 +1089,13 @@ static const ExampleContactDetails no_details = {
 static inline TpSubscriptionState
 compose_presence (gboolean full,
     gboolean ask,
-    gboolean rejected)
+    gboolean removed_remotely)
 {
   if (full)
     return TP_SUBSCRIPTION_STATE_YES;
   else if (ask)
     return TP_SUBSCRIPTION_STATE_ASK;
-  else if (rejected)
+  else if (removed_remotely)
     return TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY;
   else
     return TP_SUBSCRIPTION_STATE_NO;
@@ -1095,7 +1121,9 @@ example_contact_list_manager_get_states (TpBaseContactList *manager,
         details->subscribe_requested, details->subscribe_rejected);
 
   if (publish != NULL)
-    *publish = compose_presence (details->publish, (request != NULL), FALSE);
+    *publish = compose_presence (details->publish, (request != NULL),
+        tp_handle_set_is_member (self->priv->cancelled_publish_requests,
+          contact));
 
   if (publish_request != NULL)
     *publish_request = g_strdup (request);
@@ -1191,6 +1219,10 @@ example_contact_list_manager_authorize_publication_async (
       ExampleContactDetails *d = ensure_contact (self, member, NULL);
       const gchar *request = g_hash_table_lookup (self->priv->publish_requests,
           GUINT_TO_POINTER (member));
+      gboolean was_cancelled;
+
+      was_cancelled = tp_handle_set_remove (
+          self->priv->cancelled_publish_requests, member);
 
       /* We would like member to see our presence. In this simulated protocol,
        * this is meaningless, unless they have asked for it; but we can still
@@ -1207,7 +1239,7 @@ example_contact_list_manager_authorize_publication_async (
               GUINT_TO_POINTER (member));
           send_updated_roster (self, member);
         }
-      else
+      else if (!was_cancelled)
         {
           tp_handle_set_remove (changed, member);
         }
@@ -1280,7 +1312,9 @@ example_contact_list_manager_remove_contacts_async (TpBaseContactList *manager,
       /* we would like to remove member from the roster altogether */
       if (lookup_contact (self, member) != NULL
           || g_hash_table_lookup (self->priv->publish_requests,
-            GUINT_TO_POINTER (member)) != NULL)
+            GUINT_TO_POINTER (member)) != NULL
+          || tp_handle_set_is_member (self->priv->cancelled_publish_requests,
+            member))
         {
           g_hash_table_remove (self->priv->contact_details,
               GUINT_TO_POINTER (member));
@@ -1289,6 +1323,8 @@ example_contact_list_manager_remove_contacts_async (TpBaseContactList *manager,
           send_updated_roster (self, member);
 
           tp_handle_set_remove (self->priv->contacts, member);
+          tp_handle_set_remove (self->priv->cancelled_publish_requests,
+              member);
 
           /* since they're no longer on the subscribe list, we can't
            * see their presence, so emit a signal changing it to
@@ -1395,6 +1431,7 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
       ExampleContactDetails *d = lookup_contact (self, member);
       const gchar *request = g_hash_table_lookup (self->priv->publish_requests,
           GUINT_TO_POINTER (member));
+      gboolean was_cancelled = FALSE;
 
       /* we would like member not to see our presence any more, or we
        * would like to reject a request from them to see our presence */
@@ -1416,6 +1453,12 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
             }
         }
 
+      was_cancelled = tp_handle_set_remove (
+          self->priv->cancelled_publish_requests, member);
+
+      if (was_cancelled)
+        g_message ("Acknowledging remotely-cancelled publish request");
+
       if (d != NULL)
         {
           d->pre_approved = FALSE;
@@ -1433,7 +1476,7 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
                   self_and_contact_new (self, member),
                   self_and_contact_destroy);
             }
-          else
+          else if (!was_cancelled)
             {
               /* nothing to do, avoid "updating the roster" */
               tp_handle_set_remove (changed, member);
@@ -1442,10 +1485,11 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
 
           send_updated_roster (self, member);
         }
-      else if (request == NULL)
+      else if (request == NULL && !was_cancelled)
         {
           /* they weren't on our Telepathy-level contact list, i.e. neither
-           * on our protocol-level contact list, nor requesting publication */
+           * on our protocol-level contact list, nor requesting publication,
+           * nor in Remotely_Removed state */
           tp_handle_set_remove (changed, member);
         }
     }
