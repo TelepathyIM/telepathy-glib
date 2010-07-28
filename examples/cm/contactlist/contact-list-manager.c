@@ -692,8 +692,8 @@ example_contact_list_manager_add_to_group_async (TpBaseContactList *manager,
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpHandleSet *new_contacts = tp_handle_set_copy (contacts);
-  TpHandleSet *new_to_group = tp_handle_set_copy (contacts);
+  TpHandleSet *new_contacts = tp_handle_set_new (self->priv->contact_repo);
+  TpHandleSet *new_to_group = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
   gchar *tag = ensure_tag (self, group, TRUE);
@@ -705,8 +705,8 @@ example_contact_list_manager_add_to_group_async (TpBaseContactList *manager,
       gboolean created = FALSE, updated = FALSE;
       ExampleContactDetails *d = ensure_contact (self, member, &created);
 
-      if (!created)
-        tp_handle_set_remove (new_contacts, member);
+      if (created)
+        tp_handle_set_add (new_contacts, member);
 
       if (d->tags == NULL)
         d->tags = g_hash_table_new (g_str_hash, g_str_equal);
@@ -718,9 +718,10 @@ example_contact_list_manager_add_to_group_async (TpBaseContactList *manager,
         }
 
       if (created || updated)
-        send_updated_roster (self, member);
-      else
-        tp_handle_set_remove (new_to_group, member);
+        {
+          send_updated_roster (self, member);
+          tp_handle_set_add (new_to_group, member);
+        }
     }
 
   if (!tp_handle_set_is_empty (new_contacts))
