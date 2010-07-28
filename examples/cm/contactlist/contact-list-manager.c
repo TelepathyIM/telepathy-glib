@@ -1402,7 +1402,7 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpHandleSet *removed = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
@@ -1414,7 +1414,6 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
       ExampleContactDetails *d = lookup_contact (self, member);
       const gchar *request = g_hash_table_lookup (self->priv->publish_requests,
           GUINT_TO_POINTER (member));
-      gboolean was_cancelled = FALSE;
 
       /* we would like member not to see our presence any more, or we
        * would like to reject a request from them to see our presence */
@@ -1432,15 +1431,19 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
                * list, only on the Telepathy-level contact list, so rejecting
                * authorization makes them disappear */
               tp_handle_set_add (removed, member);
-              tp_handle_set_remove (changed, member);
+            }
+          else
+            {
+              tp_handle_set_add (changed, member);
             }
         }
 
-      was_cancelled = tp_handle_set_remove (
-          self->priv->cancelled_publish_requests, member);
-
-      if (was_cancelled)
-        g_message ("Acknowledging remotely-cancelled publish request");
+      if (tp_handle_set_remove (self->priv->cancelled_publish_requests,
+            member))
+        {
+          g_message ("Acknowledging remotely-cancelled publish request");
+          tp_handle_set_add (changed, member);
+        }
 
       if (d != NULL)
         {
@@ -1451,6 +1454,8 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
               g_message ("Removing authorization from %s",
                   tp_handle_inspect (self->priv->contact_repo, member));
               d->publish = FALSE;
+              tp_handle_set_add (changed, member);
+              send_updated_roster (self, member);
 
               /* Pretend that after a delay, the contact notices the change
                * and asks for our presence again */
@@ -1459,21 +1464,6 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
                   self_and_contact_new (self, member),
                   self_and_contact_destroy);
             }
-          else if (!was_cancelled)
-            {
-              /* nothing to do, avoid "updating the roster" */
-              tp_handle_set_remove (changed, member);
-              continue;
-            }
-
-          send_updated_roster (self, member);
-        }
-      else if (request == NULL && !was_cancelled)
-        {
-          /* they weren't on our Telepathy-level contact list, i.e. neither
-           * on our protocol-level contact list, nor requesting publication,
-           * nor in Remotely_Removed state */
-          tp_handle_set_remove (changed, member);
         }
     }
 
