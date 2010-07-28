@@ -73,6 +73,7 @@ typedef struct {
     TpHandle wim;
     TpHandle bill;
     TpHandle ninja;
+    TpHandle canceller;
 
     GArray *arr;
 
@@ -276,6 +277,9 @@ setup (Test *test,
   test->ninja = tp_handle_ensure (test->contact_repo, "ninja@example.com",
       NULL, NULL);
   g_assert (test->ninja != 0);
+  test->canceller = tp_handle_ensure (test->contact_repo,
+      "canceller@cancel.example.com", NULL, NULL);
+  g_assert (test->canceller != 0);
 
   test->arr = g_array_new (FALSE, FALSE, sizeof (TpHandle));
 }
@@ -305,6 +309,7 @@ teardown (Test *test,
   tp_handle_unref (test->contact_repo, test->wim);
   tp_handle_unref (test->contact_repo, test->bill);
   tp_handle_unref (test->contact_repo, test->ninja);
+  tp_handle_unref (test->contact_repo, test->canceller);
 
   tp_clear_object (&test->conn);
   tp_clear_object (&test->publish);
@@ -1090,6 +1095,87 @@ test_remove_from_publish_no_op (Test *test,
   g_assert_cmpuint (test->log->len, ==, 0);
   test_assert_contact_state (test, test->ninja,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+}
+
+static void
+test_cancelled_publish_request (Test *test,
+    gconstpointer mode)
+{
+  GError *error = NULL;
+
+  test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "subscribe");
+  test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->subscribe)),
+      ==, 4);
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->subscribe),
+        test->canceller));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->subscribe),
+        test->canceller));
+
+  /* the example CM's fake contacts accept requests that contain "please" */
+  g_array_append_val (test->arr, test->canceller);
+
+  tp_cli_connection_interface_contact_list_run_request_subscription (
+      test->conn, -1, test->arr, "Please may I see your presence?",
+      &error, NULL);
+
+  /* It starts off the same as test_accept_subscribe_request, but because
+   * we're using an identifier with special significance, the contact cancels
+   * the request immediately after */
+  while (tp_intset_is_member (
+        tp_channel_group_get_local_pending (test->publish),
+        test->canceller) ||
+      test->log->len < 4)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->publish),
+        test->canceller));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_local_pending (test->publish),
+        test->canceller));
+
+  g_assert_cmpuint (test->log->len, ==, 4);
+  test_assert_one_contact_changed (test, 0, test->canceller,
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->canceller,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 2, test->canceller,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
+      "May I see your presence, please?");
+  test_assert_one_contact_changed (test, 3, test->canceller,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY, "");
+  test_assert_contact_state (test, test->canceller,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY,
+      NULL, NULL);
+
+  test_clear_log (test);
+
+  /* We can acknowledge the cancellation with Unpublish() or
+   * RemoveContacts(). We can't use the old API here, because in the old API,
+   * the contact has already vanished from the Group */
+  if (!tp_strdiff (mode, "remove-after"))
+    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+        -1, test->arr, &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unpublish (
+        test->conn, -1, test->arr, &error, NULL);
+
+  while (test->log->len < 1)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+
+  if (!tp_strdiff (mode, "remove-after"))
+    test_assert_one_contact_removed (test, 0, test->canceller);
+  else
+    test_assert_one_contact_changed (test, 0, test->canceller,
+        TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
 }
 
 static void
@@ -2189,6 +2275,11 @@ main (int argc,
       Test, "old", setup, test_remove_from_publish, teardown);
   g_test_add ("/contact-lists/remove-from-publish/no-op/old",
       Test, "old", setup, test_remove_from_publish_no_op, teardown);
+
+  g_test_add ("/contact-lists/cancelled-publish-request",
+      Test, NULL, setup, test_cancelled_publish_request, teardown);
+  g_test_add ("/contact-lists/cancelled-publish-request",
+      Test, "remove-after", setup, test_cancelled_publish_request, teardown);
 
   g_test_add ("/contact-lists/add-to-stored",
       Test, NULL, setup, test_add_to_stored, teardown);
