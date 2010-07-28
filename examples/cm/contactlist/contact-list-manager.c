@@ -1491,22 +1491,19 @@ example_contact_list_manager_block_contacts_async (
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpIntSetFastIter iter;
-  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpHandle member;
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
 
   while (tp_intset_fast_iter_next (&iter, &member))
     {
-      if (tp_handle_set_is_member (self->priv->blocked_contacts, member))
-        {
-          tp_handle_set_remove (changed, member);
-        }
-      else
+      if (!tp_handle_set_is_member (self->priv->blocked_contacts, member))
         {
           g_message ("Adding contact %s to blocked list",
               tp_handle_inspect (self->priv->contact_repo, member));
           tp_handle_set_add (self->priv->blocked_contacts, member);
+          tp_handle_set_add (changed, member);
         }
     }
 
