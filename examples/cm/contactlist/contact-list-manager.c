@@ -746,7 +746,7 @@ example_contact_list_manager_remove_from_group_async (
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpHandleSet *changed = tp_handle_set_copy (contacts);
+  TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpIntSetFastIter iter;
   TpHandle member;
 
@@ -758,9 +758,10 @@ example_contact_list_manager_remove_from_group_async (
 
       /* If not on the roster or not in any groups, we have nothing to do */
       if (d != NULL && d->tags != NULL && g_hash_table_remove (d->tags, group))
-        send_updated_roster (self, member);
-      else
-        tp_handle_set_remove (changed, member);
+        {
+          send_updated_roster (self, member);
+          tp_handle_set_add (changed, member);
+        }
     }
 
   if (!tp_handle_set_is_empty (changed))
