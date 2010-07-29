@@ -1730,7 +1730,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS);
 
-  if (!tp_base_contact_list_check_still_usable (self, NULL))
+  if (tp_base_contact_list_get_connection (self, NULL) == NULL)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_SUCCESS;
