@@ -1650,8 +1650,6 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
  * @message: a #GError message
  *
  * Record that receiving the initial contact list is in progress.
- *
- * This method can be called at most once for a contact list manager.
  */
 void
 tp_base_contact_list_set_list_pending (TpBaseContactList *self)
@@ -1659,7 +1657,8 @@ tp_base_contact_list_set_list_pending (TpBaseContactList *self)
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_NONE);
 
-  if (!tp_base_contact_list_check_still_usable (self, NULL))
+  if (tp_base_contact_list_get_connection (self, NULL) == NULL ||
+      self->priv->state != TP_CONTACT_LIST_STATE_NONE)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_WAITING;
