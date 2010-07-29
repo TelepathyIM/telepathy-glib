@@ -5414,7 +5414,8 @@ tp_base_contact_list_mixin_register_with_contacts_mixin (
 /**
  * tp_base_contact_list_get_state:
  * @self: a contact list
- * @error: used to raise an error if %TP_CONTACT_LIST_STATE_FAILURE is returned
+ * @error: used to raise an error if something other than
+ * %TP_CONTACT_LIST_STATE_SUCCESS is returned
  *
  * Return how much progress this object has made towards retrieving the
  * contact list.
@@ -5429,8 +5430,23 @@ tp_base_contact_list_get_state (TpBaseContactList *self,
     GError **error)
 {
   /* this checks TP_IS_BASE_CONTACT_LIST */
-  if (!tp_base_contact_list_check_still_usable (self, error))
+  if (tp_base_contact_list_get_connection (self, error) == NULL)
     return TP_CONTACT_LIST_STATE_FAILURE;
+
+  if (self->priv->failure != NULL)
+    {
+      g_set_error_literal (error, self->priv->failure->domain,
+          self->priv->failure->code, self->priv->failure->message);
+      return TP_CONTACT_LIST_STATE_FAILURE;
+    }
+
+  /* on failure, self->priv->failure was meant to be set */
+  g_return_val_if_fail (self->priv->state != TP_CONTACT_LIST_STATE_FAILURE,
+      TP_CONTACT_LIST_STATE_FAILURE);
+
+  if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
+    g_set_error (error, TP_ERRORS, TP_ERROR_NOT_YET,
+        "Contact list not downloaded yet");
 
   return self->priv->state;
 }
