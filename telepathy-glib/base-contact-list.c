@@ -5451,13 +5451,12 @@ tp_base_contact_list_get_connection (TpBaseContactList *self,
 {
   g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), NULL);
 
-  /* check this first, because we still have a connection if we're in state
-   * FAILURE */
-  if (self->priv->conn != NULL)
-    return self->priv->conn;
+  if (self->priv->conn == NULL)
+    {
+      g_set_error_literal (error, TP_ERRORS, TP_ERROR_DISCONNECTED,
+          "Connection is no longer connected");
+      return NULL;
+    }
 
-  if (!tp_base_contact_list_check_still_usable (self, error))
-    return NULL;
-
-  g_assert_not_reached ();
+  return self->priv->conn;
 }
