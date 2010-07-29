@@ -1896,8 +1896,8 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 
   /* don't do anything if we're disconnecting, or if we haven't had the
    * initial contact list yet */
-  if (!tp_base_contact_list_check_still_usable (self, NULL) ||
-      self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
+  if (tp_base_contact_list_get_state (self, NULL) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
     return;
 
   self_handle = tp_base_connection_get_self_handle (self->priv->conn),
@@ -2136,8 +2136,8 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 
   /* don't do anything if we're disconnecting, or if we haven't had the
    * initial contact list yet */
-  if (!tp_base_contact_list_check_still_usable (self, NULL) ||
-      self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
+  if (tp_base_contact_list_get_state (self, NULL) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
     return;
 
   g_return_if_fail (tp_base_contact_list_can_block (self));
@@ -2206,10 +2206,8 @@ tp_base_contact_list_get_contacts (TpBaseContactList *self)
 
   g_return_val_if_fail (cls != NULL, NULL);
   g_return_val_if_fail (cls->get_contacts != NULL, NULL);
-  g_return_val_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS,
-      NULL);
-  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
-      NULL);
+  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
+      TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
   return cls->get_contacts (self);
 }
@@ -2322,8 +2320,8 @@ tp_base_contact_list_get_states (TpBaseContactList *self,
 
   g_return_if_fail (cls != NULL);
   g_return_if_fail (cls->get_states != NULL);
-  g_return_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS);
-  g_return_if_fail (tp_base_contact_list_check_still_usable (self, NULL));
+  g_return_if_fail (tp_base_contact_list_get_state (self, NULL) ==
+      TP_CONTACT_LIST_STATE_SUCCESS);
 
   cls->get_states (self, contact, subscribe, publish, publish_request);
 
@@ -2907,10 +2905,8 @@ tp_base_contact_list_get_blocked_contacts (TpBaseContactList *self)
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->get_blocked_contacts != NULL, NULL);
-  g_return_val_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS,
-      NULL);
-  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
-      NULL);
+  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
+      TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
   return iface->get_blocked_contacts (self);
 }
@@ -3697,10 +3693,8 @@ tp_base_contact_list_get_groups (TpBaseContactList *self)
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->get_groups != NULL, NULL);
-  g_return_val_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS,
-      NULL);
-  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
-      NULL);
+  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
+      TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
   return iface->get_groups (self);
 }
@@ -3747,10 +3741,8 @@ tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->get_contact_groups != NULL, NULL);
-  g_return_val_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS,
-      NULL);
-  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
-      NULL);
+  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
+      TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
   return iface->get_contact_groups (self, contact);
 }
@@ -3793,10 +3785,8 @@ tp_base_contact_list_get_group_members (TpBaseContactList *self,
 
   g_return_val_if_fail (iface != NULL, NULL);
   g_return_val_if_fail (iface->get_group_members != NULL, NULL);
-  g_return_val_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS,
-      NULL);
-  g_return_val_if_fail (tp_base_contact_list_check_still_usable (self, NULL),
-      NULL);
+  g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
+      TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
   return iface->get_group_members (self, group);
 }
