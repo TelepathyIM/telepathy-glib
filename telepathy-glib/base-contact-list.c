@@ -1311,7 +1311,9 @@ _tp_base_contact_list_add_to_group (TpBaseContactList *self,
   TpHandleSet *contacts;
   const gchar *group_name;
 
-  if (!tp_base_contact_list_check_still_usable (self, error))
+  /* fail if not ready yet, failed, or disconnected */
+  if (tp_base_contact_list_get_state (self, error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
     return FALSE;
 
   if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
@@ -1367,7 +1369,8 @@ _tp_base_contact_list_remove_from_group (TpBaseContactList *self,
   TpHandleSet *contacts;
   const gchar *group_name;
 
-  if (!tp_base_contact_list_check_still_usable (self, error))
+  if (tp_base_contact_list_get_state (self, error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
     return FALSE;
 
   if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
@@ -1419,7 +1422,8 @@ _tp_base_contact_list_delete_group_by_handle (TpBaseContactList *self,
 {
   gchar *group_name;
 
-  if (!tp_base_contact_list_check_still_usable (self, NULL))
+  if (tp_base_contact_list_get_state (self, error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_DISCONNECTED, "Disconnected");
       return FALSE;
@@ -1498,7 +1502,8 @@ _tp_base_contact_list_add_to_list (TpBaseContactList *self,
 {
   TpHandleSet *contacts;
 
-  if (!tp_base_contact_list_check_still_usable (self, error))
+  if (tp_base_contact_list_get_state (self, error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
     return FALSE;
 
   if (!tp_base_contact_list_can_change_contact_list (self))
@@ -1596,7 +1601,8 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
 {
   TpHandleSet *contacts;
 
-  if (!tp_base_contact_list_check_still_usable (self, error))
+  if (tp_base_contact_list_get_state (self, error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
     return FALSE;
 
   if (!tp_base_contact_list_can_change_contact_list (self))
@@ -4431,7 +4437,8 @@ tp_base_contact_list_check_change (TpBaseContactList *self,
 {
   g_return_val_if_fail (TP_IS_BASE_CONTACT_LIST (self), FALSE);
 
-  if (!tp_base_contact_list_check_still_usable (self, error))
+  if (tp_base_contact_list_get_state (self, error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
     return FALSE;
 
   if (contacts_or_null != NULL &&
