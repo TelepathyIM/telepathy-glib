@@ -1676,7 +1676,8 @@ tp_base_contact_list_set_list_pending (TpBaseContactList *self)
  *
  * Record that receiving the initial contact list has failed.
  *
- * This method can be called at most once for a contact list manager.
+ * This method cannot be called after tp_base_contact_list_set_received()
+ * is called.
  */
 void
 tp_base_contact_list_set_list_failed (TpBaseContactList *self,
@@ -1685,14 +1686,13 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
     const gchar *message)
 {
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_NONE ||
-      self->priv->state == TP_CONTACT_LIST_STATE_WAITING);
+  g_return_if_fail (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS);
 
-  if (!tp_base_contact_list_check_still_usable (self, NULL))
+  if (tp_base_contact_list_get_connection (self, NULL) == NULL)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_FAILURE;
-  g_assert (self->priv->failure == NULL);
+  g_clear_error (&self->priv->failure);
   self->priv->failure = g_error_new_literal (domain, code, message);
   tp_svc_connection_interface_contact_list_emit_contact_list_state_changed (
       self->priv->conn, self->priv->state);
