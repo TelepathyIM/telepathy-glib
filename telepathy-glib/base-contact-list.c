@@ -1624,7 +1624,7 @@ tp_base_contact_list_set_list_pending (TpBaseContactList *self)
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (self->priv->state == TP_CONTACT_LIST_STATE_NONE);
 
-  if (tp_base_contact_list_get_connection (self, NULL) == NULL ||
+  if (self->priv->conn == NULL ||
       self->priv->state != TP_CONTACT_LIST_STATE_NONE)
     return;
 
@@ -1654,7 +1654,7 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS);
 
-  if (tp_base_contact_list_get_connection (self, NULL) == NULL)
+  if (self->priv->conn == NULL)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_FAILURE;
@@ -1696,7 +1696,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS);
 
-  if (tp_base_contact_list_get_connection (self, NULL) == NULL)
+  if (self->priv->conn == NULL)
     return;
 
   self->priv->state = TP_CONTACT_LIST_STATE_SUCCESS;
@@ -4672,7 +4672,7 @@ tp_base_contact_list_get_list_dbus_property (GObject *conn,
   TpBaseContactListClass *cls;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (tp_base_contact_list_get_connection (self, NULL) != NULL);
+  g_return_if_fail (self->priv->conn != NULL);
 
   cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
@@ -4712,7 +4712,7 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
-  g_return_if_fail (tp_base_contact_list_get_connection (self, NULL) != NULL);
+  g_return_if_fail (self->priv->conn != NULL);
 
   /* just omit the attributes if the contact list hasn't come in yet */
   if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
@@ -5190,7 +5190,7 @@ tp_base_contact_list_get_group_dbus_property (GObject *conn,
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
-  g_return_if_fail (tp_base_contact_list_get_connection (self, NULL) != NULL);
+  g_return_if_fail (self->priv->conn != NULL);
 
   cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
@@ -5232,7 +5232,7 @@ tp_base_contact_list_fill_groups_contact_attributes (GObject *obj,
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
-  g_return_if_fail (tp_base_contact_list_get_connection (self, NULL) != NULL);
+  g_return_if_fail (self->priv->conn != NULL);
 
   /* just omit the attributes if the contact list hasn't come in yet */
   if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
