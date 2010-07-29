@@ -4210,12 +4210,13 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (contacts_mixin != NULL);
 
-  if (!tp_base_contact_list_check_still_usable (self, &error))
+  if (tp_base_contact_list_get_state (self, &error)
+      != TP_CONTACT_LIST_STATE_SUCCESS)
     {
       dbus_g_method_return_error (context, error);
       g_clear_error (&error);
     }
-  else if (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS)
+  else
     {
       TpHandleSet *set;
       GArray *contacts;
@@ -4258,12 +4259,6 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       g_array_free (contacts, TRUE);
       tp_handle_set_destroy (set);
       g_ptr_array_free (interfaces_wanted, TRUE);
-    }
-  else
-    {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_YET, "Waiting for contact list" };
-
-      dbus_g_method_return_error (context, &e);
     }
 }
 
