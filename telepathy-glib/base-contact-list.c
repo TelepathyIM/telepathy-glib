@@ -1092,7 +1092,7 @@ tp_base_contact_list_request_helper (TpChannelManager *manager,
 
   if (tp_channel_manager_asv_has_unknown_properties (request_properties,
         fixed_properties, allowed_properties, &error) ||
-      !tp_base_contact_list_check_still_usable (self, &error))
+      tp_base_contact_list_get_connection (self, &error) == NULL)
     {
       goto error;
     }
