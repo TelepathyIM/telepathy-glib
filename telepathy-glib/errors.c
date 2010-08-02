@@ -35,7 +35,7 @@
  */
 
 /**
- * TP_ERRORS:
+ * TP_ERROR:
  *
  * The error domain for the D-Bus errors described in the Telepathy
  * specification. Error codes in this domain come from the #TpError
@@ -45,6 +45,11 @@
  * domain. Since 0.7.17, this function automatically registers the domain with
  * dbus-glib for server-side use (using dbus_g_error_domain_register()) when
  * called.
+ *
+ * This used to be called %TP_ERRORS. To be compatible with telepathy-glib
+ * 0.10.x, use %TP_ERRORS.
+ *
+ * Since: 0.11.7
  */
 
 /**
@@ -190,7 +195,7 @@
  */
 
 /**
- * tp_g_set_error_invalid_handle_type:
+ * tp_g_set_error_invalid_handle_type: (skip)
  * @type: An invalid handle type
  * @error: Either %NULL, or used to return an error (as for g_set_error)
  *
@@ -208,7 +213,7 @@ tp_g_set_error_invalid_handle_type (guint type, GError **error)
 }
 
 /**
- * tp_g_set_error_unsupported_handle_type:
+ * tp_g_set_error_unsupported_handle_type: (skip)
  * @type: An unsupported handle type
  * @error: Either %NULL, or used to return an error (as for g_set_error)
  *
@@ -239,13 +244,35 @@ tp_g_set_error_unsupported_handle_type (guint type, GError **error)
  * tools/glib-errors-str-gen.py.
  */
 
+/**
+ * tp_errors_quark: (skip)
+ *
+ * <!-- -->
+ *
+ * Deprecated: Use tp_error_quark() instead.
+ */
 GQuark
 tp_errors_quark (void)
+{
+  return tp_error_quark ();
+}
+
+/**
+ * tp_error_quark:
+ *
+ * Return the error domain quark for #TpError.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GQuark
+tp_error_quark (void)
 {
   static gsize quark = 0;
 
   if (g_once_init_enter (&quark))
     {
+      /* FIXME: When we next break API, this should be changed to
+       * "tp-error-quark" */
       GQuark domain = g_quark_from_static_string ("tp_errors");
 
       g_type_init ();

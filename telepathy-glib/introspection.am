@@ -36,6 +36,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
 	$(srcdir)/base-connection.c $(srcdir)/base-connection.h \
 	$(srcdir)/handle-repo.c $(srcdir)/handle-repo.h $(srcdir)/handle-set.c \
+	$(srcdir)/errors.c $(srcdir)/errors.h \
 	_gen/telepathy-enums.h \
 	_gen/telepathy-interfaces.h
 

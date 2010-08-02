@@ -1899,7 +1899,7 @@ tp_dbus_properties_mixin_flags_get_type
 <INCLUDE>telepathy-glib/errors.h</INCLUDE>
 <FILE>errors</FILE>
 TP_ERROR_PREFIX
-TP_ERRORS
+TP_ERROR
 TP_TYPE_ERROR
 TpError
 tp_g_set_error_invalid_handle_type
@@ -1950,8 +1950,9 @@ TP_ERROR_STR_CERT_LIMIT_EXCEEDED
 <SUBSECTION Standard>
 tp_error_get_type
 tp_errors_quark
+tp_error_quark
 <SUBSECTION Private>
-TP_ERROR
+TP_ERRORS
 </SECTION>
 
 <SECTION>
