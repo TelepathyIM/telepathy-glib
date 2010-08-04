@@ -146,7 +146,7 @@ handle_channels (TpSimpleHandler *handler,
     /* We are re-handling the channel, no async request to complete */
     goto out;
 
-  /* Request succeed */
+  /* Request succeeded */
   channel = channels->data;
 
   request_ctx_complete (ctx, channel);
@@ -199,7 +199,7 @@ channel_request_proceed_cb (TpChannelRequest *request,
       return;
     }
 
-  DEBUG ("Proceed sucess; waiting for the channel to be handled");
+  DEBUG ("Proceed succeeded; waiting for the channel to be handled");
 }
 
 static void
@@ -215,7 +215,7 @@ channel_request_invalidated_cb (TpProxy *proxy,
 
   if (g_error_matches (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED))
     {
-      /* Object has ben properly removed so ChannelRequest succeeded */
+      /* Object has been removed without error, so ChannelRequest succeeded */
       channel_request_succeeded (ctx);
       goto out;
     }
@@ -243,7 +243,7 @@ channel_request_cancel_cb (TpChannelRequest *request,
       return;
     }
 
-  DEBUG ("ChannelRequest.Cancel() succeed");
+  DEBUG ("ChannelRequest.Cancel() succeeded");
 }
 
 static void
