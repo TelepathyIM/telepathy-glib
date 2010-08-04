@@ -299,7 +299,7 @@ request_and_handle_channel_cb (TpChannelDispatcher *cd,
 
   if (ctx->cancellable != NULL)
     {
-      ctx->cancel_id =  g_cancellable_connect (ctx->cancellable,
+      ctx->cancel_id = g_cancellable_connect (ctx->cancellable,
           G_CALLBACK (operation_cancelled_cb), ctx, NULL);
     }
 
