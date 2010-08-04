@@ -301,6 +301,10 @@ request_and_handle_channel_cb (TpChannelDispatcher *cd,
     {
       ctx->cancel_id = g_cancellable_connect (ctx->cancellable,
           G_CALLBACK (operation_cancelled_cb), ctx, NULL);
+
+      /* We just aborted the operation so we're done */
+      if (g_cancellable_is_cancelled (ctx->cancellable))
+        return;
     }
 
   DEBUG ("Calling ChannelRequest.Proceed()");
