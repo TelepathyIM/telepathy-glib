@@ -28,6 +28,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/handle-channels-context.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
@@ -223,6 +224,7 @@ void tp_account_create_and_handle_channel_async (TpAccount *account,
 
 TpChannel * tp_account_create_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
+    TpHandleChannelsContext **context,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_ensure_and_handle_channel_async (TpAccount *account,
@@ -234,6 +236,7 @@ void tp_account_ensure_and_handle_channel_async (TpAccount *account,
 
 TpChannel * tp_account_ensure_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
+    TpHandleChannelsContext **context,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS

@@ -38,6 +38,8 @@ typedef struct
   TpChannelRequest *chan_request;
   gulong invalidated_sig;
   gulong cancel_id;
+  TpChannel *channel;
+  TpHandleChannelsContext *handle_context;
 } RequestCtx;
 
 static RequestCtx *
@@ -76,6 +78,8 @@ request_ctx_free (RequestCtx *ctx)
   tp_clear_object (&ctx->handler);
   tp_clear_object (&ctx->result);
   tp_clear_object (&ctx->chan_request);
+  tp_clear_object (&ctx->channel);
+  tp_clear_object (&ctx->handle_context);
 
   g_slice_free (RequestCtx, ctx);
 }
@@ -91,12 +95,15 @@ request_ctx_fail (RequestCtx *ctx,
 
 static void
 request_ctx_complete (RequestCtx *ctx,
-    TpChannel *channel)
+    TpChannel *channel,
+    TpHandleChannelsContext *handle_context)
 {
   g_assert (ctx->result != NULL);
 
-  g_simple_async_result_set_op_res_gpointer (ctx->result,
-      g_object_ref (channel), g_object_unref);
+  ctx->channel = g_object_ref (channel);
+  ctx->handle_context = g_object_ref (handle_context);
+
+  g_simple_async_result_set_op_res_gpointer (ctx->result, ctx, NULL);
 
   g_simple_async_result_complete (ctx->result);
 
@@ -149,7 +156,7 @@ handle_channels (TpSimpleHandler *handler,
   /* Request succeeded */
   channel = channels->data;
 
-  request_ctx_complete (ctx, channel);
+  request_ctx_complete (ctx, channel, context);
 
   if (tp_proxy_get_invalidated (channel) == NULL)
     {
@@ -421,10 +428,12 @@ tp_account_create_and_handle_channel_async (TpAccount *account,
 static TpChannel *
 request_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
+    TpHandleChannelsContext **context,
     gpointer source_tag,
     GError **error)
 {
   GSimpleAsyncResult *simple;
+  RequestCtx *ctx;
 
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
@@ -438,14 +447,20 @@ request_and_handle_channel_finish (TpAccount *account,
           G_OBJECT (account), source_tag),
       FALSE);
 
-  return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+  ctx = g_simple_async_result_get_op_res_gpointer (simple);
+
+  if (context != NULL)
+    *context = g_object_ref (ctx->handle_context);
+
+  return g_object_ref (ctx->channel);
 }
 
 /**
  * tp_account_create_and_handle_channel_finish:
  * @account: a #TpAccount
+ * @context: (out): pointer used to return a reference on the context of the
+ * HandleChannels() call, or %NULL
  * @result: a #GAsyncResult
- * #TpChannel having #TP_CHANNEL_FEATURE_CORE prepared if possible
  * @error: a #GError to fill
  *
  * Finishes an async channel creation started using
@@ -459,9 +474,10 @@ request_and_handle_channel_finish (TpAccount *account,
 TpChannel *
 tp_account_create_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
+    TpHandleChannelsContext **context,
     GError **error)
 {
-  return request_and_handle_channel_finish (account, result,
+  return request_and_handle_channel_finish (account, result, context,
       tp_account_create_and_handle_channel_async, error);
 }
 
@@ -506,9 +522,9 @@ tp_account_ensure_and_handle_channel_async (TpAccount *account,
 /**
  * tp_account_ensure_and_handle_channel_finish:
  * @account: a #TpAccount
+ * @context: (out): pointer used to return a reference on the context of the
+ * HandleChannels() call, or %NULL
  * @result: a #GAsyncResult
- * @channel: (out): a pointer used to return a reference on the newly created
- * #TpChannel having #TP_CHANNEL_FEATURE_CORE prepared if possible
  * @error: a #GError to fill
  *
  * Finishes an async channel creation started using
@@ -526,8 +542,9 @@ tp_account_ensure_and_handle_channel_async (TpAccount *account,
 TpChannel *
 tp_account_ensure_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
+    TpHandleChannelsContext **context,
     GError **error)
 {
-  return request_and_handle_channel_finish (account, result,
+  return request_and_handle_channel_finish (account, result, context,
       tp_account_ensure_and_handle_channel_async, error);
 }

@@ -127,14 +127,18 @@ create_and_handle_cb (GObject *source,
 
 {
   Test *test = user_data;
+  TpHandleChannelsContext *context = NULL;
 
   test->channel = tp_account_create_and_handle_channel_finish (
-      TP_ACCOUNT (source), result, &test->error);
+      TP_ACCOUNT (source), result, &context, &test->error);
   if (test->channel == NULL)
     goto out;
 
   g_assert (TP_IS_CHANNEL (test->channel));
   tp_clear_object (&test->channel);
+
+  g_assert (TP_IS_HANDLE_CHANNELS_CONTEXT (context));
+  g_object_unref (context);
 
 out:
   g_main_loop_quit (test->mainloop);
@@ -243,7 +247,7 @@ ensure_and_handle_cb (GObject *source,
   Test *test = user_data;
 
   test->channel = tp_account_ensure_and_handle_channel_finish (
-      TP_ACCOUNT (source), result, &test->error);
+      TP_ACCOUNT (source), result, NULL, &test->error);
   if (test->channel == NULL)
     goto out;
 
