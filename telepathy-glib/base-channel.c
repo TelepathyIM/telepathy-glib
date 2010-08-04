@@ -29,16 +29,13 @@
  * implementations by implementing some of its properties, and defining other
  * relevant properties.
  *
- * Subclasses must implement the Close method on #TpSvcChannel (setting
- * #TpBaseChannel:closed to %TRUE when it is called). The default
+ * Subclasses must implement the close() virtual function and either call
+ * tp_base_channel_destroyed() or tp_base_channel_reopened() to indicate that
+ * the channel will be re-spawned (NOTE: channels that support re-spawning
+ * must also implement #TpSvcChannelInterfaceDestroyable). The default
  * implementation for #TpExportableChannel:channel-properties just includes the
  * immutable properties from the Channel interface; subclasses will almost
- * certainly want to override this to include other immutable properties. The
- * default implementation for #TpExportableChannel:channel-destroyed is simply
- * the value of #TpBaseChannel:closed; this should be fine for channels
- * that don't respawn. They may also choose to override
- * #TpBaseChannel:requested, whose default implementation is "initiator ==
- * self_handle?".
+ * certainly want to override this to include other immutable properties.
  *
  * Subclasses should fill in #TpBaseChannelClass:channel_type,
  * #TpBaseChannelClass:target_type and #TpBaseChannelClass:interfaces;
@@ -50,6 +47,8 @@
  * the time construction is finished (if it is not set by the object's creator,
  * they must fill it in themself); #TpBaseChannel will take care of freeing
  * it.
+ *
+ * Since: 0.11.12
  */
 
 #include "config.h"
@@ -94,7 +93,7 @@ struct _TpBaseChannelPrivate
   TpHandle target;
   TpHandle initiator;
 
-  gboolean closed;
+  gboolean destroyed;
 
   gboolean dispose_has_run;
 };
@@ -114,7 +113,7 @@ G_DEFINE_TYPE_WITH_CODE (TpBaseChannel, tp_base_channel,
  * tp_base_channel_register:
  * @chan: a channel
  *
- * Make the channel appear on the bus.  @chan->object_path must have been set
+ * Make the channel appear on the bus.  #TpExportableChannel:object-path must have been set
  * to a valid path, which must not already be in use as another object's path.
  */
 void
@@ -126,6 +125,37 @@ tp_base_channel_register (TpBaseChannel *chan)
 
   dbus_g_connection_register_g_object (bus, chan->priv->object_path,
       (GObject *) chan);
+}
+
+/**
+ * tp_base_channel_destroyed:
+ * @chan: a channel
+ *
+ * Called by subclasses to indicate that this channel was destroyed and can be
+ * removed from the bus.  The "Closed" signal will be emitted and the
+ * #TpExportableChannel:channel-destroyed property will be set.
+ */
+void
+tp_base_channel_destroyed (TpBaseChannel *chan)
+{
+  chan->priv->destroyed = TRUE;
+  tp_svc_channel_emit_closed (chan);
+}
+
+/**
+ * tp_base_channel_reopened:
+ * @chan: a channel
+ *
+ * Called by subclasses to indicate that this channel was closed but was
+ * re-opened due to pending messages.  The "Closed" signal will be emitted, but
+ * the #TpExportableChannel:channel-destroyed property will not be set.  The
+ * channel's #TpBaseChannel:initiator-handle property will be set to
+ * @initiator.
+ */
+void
+tp_base_channel_reopened (TpBaseChannel *chan)
+{
+  tp_svc_channel_emit_closed (chan);
 }
 
 static void
@@ -230,7 +260,7 @@ tp_base_channel_get_property (GObject *object,
       g_value_set_boxed (value, chan->priv->interfaces);
       break;
     case PROP_CHANNEL_DESTROYED:
-      g_value_set_boolean (value, chan->priv->closed);
+      g_value_set_boolean (value, chan->priv->destroyed);
       break;
     case PROP_CHANNEL_PROPERTIES:
       g_value_take_boxed (value,
@@ -311,9 +341,9 @@ tp_base_channel_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
-  if (!chan->priv->closed)
+  if (!chan->priv->destroyed)
     {
-      chan->priv->closed = TRUE;
+      chan->priv->destroyed = TRUE;
       tp_svc_channel_emit_closed (chan);
     }
 
@@ -467,6 +497,18 @@ tp_base_channel_get_interfaces (TpSvcChannel *iface,
 }
 
 static void
+tp_base_channel_close (TpSvcChannel *iface,
+                       DBusGMethodInvocation *context)
+{
+  TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
+  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
+
+  klass->close (chan);
+
+  tp_svc_channel_return_from_close (context);
+}
+
+static void
 channel_iface_init (gpointer g_iface,
                     gpointer iface_data)
 {
@@ -477,5 +519,6 @@ channel_iface_init (gpointer g_iface,
   IMPLEMENT(get_channel_type);
   IMPLEMENT(get_handle);
   IMPLEMENT(get_interfaces);
+  IMPLEMENT(close);
 #undef IMPLEMENT
 }
