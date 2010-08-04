@@ -209,24 +209,19 @@ channel_request_invalidated_cb (TpProxy *proxy,
     gchar *message,
     RequestCtx *ctx)
 {
-  GError *error = NULL;
+  GError error = { domain, code, message };
 
-  error = g_error_new_literal (domain, code, message);
-
-  if (g_error_matches (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED))
+  if (g_error_matches (&error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED))
     {
       /* Object has been removed without error, so ChannelRequest succeeded */
       channel_request_succeeded (ctx);
-      goto out;
+      return;
     }
 
   DEBUG ("ChannelRequest has been invalidated: %s", message);
 
-  request_ctx_fail (ctx, error);
+  request_ctx_fail (ctx, &error);
   request_ctx_free (ctx);
-
-out:
-  g_error_free (error);
 }
 
 static void
