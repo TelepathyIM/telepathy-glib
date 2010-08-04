@@ -44,21 +44,13 @@ struct _TpBaseChannelClass
   const gchar **interfaces;
 
   TpDBusPropertiesMixinClass dbus_props_class;
+
+  gpointer reserved[10];
 };
 
 struct _TpBaseChannel
 {
   GObject parent;
-
-  TpBaseConnection *conn;
-
-  char *object_path;
-  const gchar **interfaces;
-
-  TpHandle target;
-  TpHandle initiator;
-
-  gboolean closed;
 
   TpBaseChannelPrivate *priv;
 };

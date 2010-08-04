@@ -86,6 +86,16 @@ enum
 
 struct _TpBaseChannelPrivate
 {
+  TpBaseConnection *conn;
+
+  char *object_path;
+  const gchar **interfaces;
+
+  TpHandle target;
+  TpHandle initiator;
+
+  gboolean closed;
+
   gboolean dispose_has_run;
 };
 
@@ -112,9 +122,9 @@ tp_base_channel_register (TpBaseChannel *chan)
 {
   DBusGConnection *bus = tp_get_bus ();
 
-  g_assert (chan->object_path != NULL);
+  g_assert (chan->priv->object_path != NULL);
 
-  dbus_g_connection_register_g_object (bus, chan->object_path,
+  dbus_g_connection_register_g_object (bus, chan->priv->object_path,
       (GObject *) chan);
 }
 
@@ -133,28 +143,28 @@ tp_base_channel_constructed (GObject *object)
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (object);
   GObjectClass *parent_class = tp_base_channel_parent_class;
   TpBaseChannel *chan = TP_BASE_CHANNEL (object);
-  TpBaseConnection *conn = (TpBaseConnection *) chan->conn;
+  TpBaseConnection *conn = (TpBaseConnection *) chan->priv->conn;
   TpHandleRepoIface *handles;
 
   if (parent_class->constructed != NULL)
     parent_class->constructed (object);
 
-  if (chan->interfaces == NULL)
-    chan->interfaces = klass->interfaces;
+  if (chan->priv->interfaces == NULL)
+    chan->priv->interfaces = klass->interfaces;
 
   if (klass->target_type != TP_HANDLE_TYPE_NONE)
     {
       handles = tp_base_connection_get_handles (conn, klass->target_type);
       g_assert (handles != NULL);
-      g_assert (chan->target != 0);
-      tp_handle_ref (handles, chan->target);
+      g_assert (chan->priv->target != 0);
+      tp_handle_ref (handles, chan->priv->target);
     }
 
-  if (chan->initiator != 0)
+  if (chan->priv->initiator != 0)
     {
       handles = tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
       g_assert (handles != NULL);
-      tp_handle_ref (handles, chan->initiator);
+      tp_handle_ref (handles, chan->priv->initiator);
     }
 }
 
@@ -166,11 +176,10 @@ tp_base_channel_get_property (GObject *object,
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (object);
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
-  TpBaseConnection *base_conn = (TpBaseConnection *) chan->conn;
 
   switch (property_id) {
     case PROP_OBJECT_PATH:
-      g_value_set_string (value, chan->object_path);
+      g_value_set_string (value, chan->priv->object_path);
       break;
     case PROP_CHANNEL_TYPE:
       g_value_set_static_string (value, klass->channel_type);
@@ -179,15 +188,15 @@ tp_base_channel_get_property (GObject *object,
       g_value_set_uint (value, klass->target_type);
       break;
     case PROP_HANDLE:
-      g_value_set_uint (value, chan->target);
+      g_value_set_uint (value, chan->priv->target);
       break;
     case PROP_TARGET_ID:
-      if (chan->target != 0)
+      if (chan->priv->target != 0)
         {
           TpHandleRepoIface *repo = tp_base_connection_get_handles (
-              base_conn, klass->target_type);
+              chan->priv->conn, klass->target_type);
 
-          g_value_set_string (value, tp_handle_inspect (repo, chan->target));
+          g_value_set_string (value, tp_handle_inspect (repo, chan->priv->target));
         }
       else
         {
@@ -195,16 +204,16 @@ tp_base_channel_get_property (GObject *object,
         }
       break;
     case PROP_INITIATOR_HANDLE:
-      g_value_set_uint (value, chan->initiator);
+      g_value_set_uint (value, chan->priv->initiator);
       break;
     case PROP_INITIATOR_ID:
-      if (chan->initiator != 0)
+      if (chan->priv->initiator != 0)
         {
           TpHandleRepoIface *repo = tp_base_connection_get_handles (
-              base_conn, TP_HANDLE_TYPE_CONTACT);
+              chan->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
-          g_assert (chan->initiator != 0);
-          g_value_set_string (value, tp_handle_inspect (repo, chan->initiator));
+          g_assert (chan->priv->initiator != 0);
+          g_value_set_string (value, tp_handle_inspect (repo, chan->priv->initiator));
         }
       else
         {
@@ -212,16 +221,16 @@ tp_base_channel_get_property (GObject *object,
         }
       break;
     case PROP_REQUESTED:
-      g_value_set_boolean (value, (chan->initiator == base_conn->self_handle));
+      g_value_set_boolean (value, (chan->priv->initiator == chan->priv->conn->self_handle));
       break;
     case PROP_CONNECTION:
-      g_value_set_object (value, chan->conn);
+      g_value_set_object (value, chan->priv->conn);
       break;
     case PROP_INTERFACES:
-      g_value_set_boxed (value, chan->interfaces);
+      g_value_set_boxed (value, chan->priv->interfaces);
       break;
     case PROP_CHANNEL_DESTROYED:
-      g_value_set_boolean (value, chan->closed);
+      g_value_set_boolean (value, chan->priv->closed);
       break;
     case PROP_CHANNEL_PROPERTIES:
       g_value_take_boxed (value,
@@ -253,18 +262,18 @@ tp_base_channel_set_property (GObject *object,
 
   switch (property_id) {
     case PROP_OBJECT_PATH:
-      g_free (chan->object_path);
-      chan->object_path = g_value_dup_string (value);
+      g_free (chan->priv->object_path);
+      chan->priv->object_path = g_value_dup_string (value);
       break;
     case PROP_HANDLE:
       /* we don't ref it here because we don't necessarily have access to the
        * contact repo yet - instead we ref it in constructed.
        */
-      chan->target = g_value_get_uint (value);
+      chan->priv->target = g_value_get_uint (value);
       break;
     case PROP_INITIATOR_HANDLE:
       /* similarly we can't ref this yet */
-      chan->initiator = g_value_get_uint (value);
+      chan->priv->initiator = g_value_get_uint (value);
       break;
     case PROP_HANDLE_TYPE:
     case PROP_CHANNEL_TYPE:
@@ -272,7 +281,7 @@ tp_base_channel_set_property (GObject *object,
        * meaningfully changeable on this channel, so we do nothing */
       break;
     case PROP_CONNECTION:
-      chan->conn = g_value_get_object (value);
+      chan->priv->conn = g_value_get_object (value);
       break;
     case PROP_REQUESTED:
       /* This property is writeable so that subclasses that have a more
@@ -302,9 +311,9 @@ tp_base_channel_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
-  if (!chan->closed)
+  if (!chan->priv->closed)
     {
-      chan->closed = TRUE;
+      chan->priv->closed = TRUE;
       tp_svc_channel_emit_closed (chan);
     }
 
@@ -317,22 +326,22 @@ tp_base_channel_finalize (GObject *object)
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (object);
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
-  TpBaseConnection *conn = (TpBaseConnection *) chan->conn;
+  TpBaseConnection *conn = (TpBaseConnection *) chan->priv->conn;
   TpHandleRepoIface *handles;
 
-  if (chan->target != 0)
+  if (chan->priv->target != 0)
     {
       handles = tp_base_connection_get_handles (conn, klass->target_type);
-      tp_handle_unref (handles, chan->target);
+      tp_handle_unref (handles, chan->priv->target);
     }
 
-  if (chan->initiator != 0)
+  if (chan->priv->initiator != 0)
     {
       handles = tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
-      tp_handle_unref (handles, chan->initiator);
+      tp_handle_unref (handles, chan->priv->initiator);
     }
 
-  g_free (chan->object_path);
+  g_free (chan->priv->object_path);
 
   G_OBJECT_CLASS (tp_base_channel_parent_class)->finalize (object);
 }
@@ -445,7 +454,7 @@ tp_base_channel_get_handle (TpSvcChannel *iface,
   TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
 
   tp_svc_channel_return_from_get_handle (context, klass->target_type,
-      chan->target);
+      chan->priv->target);
 }
 
 static void
@@ -454,7 +463,7 @@ tp_base_channel_get_interfaces (TpSvcChannel *iface,
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
 
-  tp_svc_channel_return_from_get_interfaces (context, chan->interfaces);
+  tp_svc_channel_return_from_get_interfaces (context, chan->priv->interfaces);
 }
 
 static void
@@ -470,4 +479,3 @@ channel_iface_init (gpointer g_iface,
   IMPLEMENT(get_interfaces);
 #undef IMPLEMENT
 }
-
