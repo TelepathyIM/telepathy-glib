@@ -347,7 +347,7 @@ request_and_handle_channel_async (TpAccount *account,
 
   /* Create a temp handler */
   ctx->handler = tp_simple_handler_new (dbus, TRUE, FALSE,
-      "TpGlibTempHandler", TRUE, handle_channels, ctx, NULL);
+      "TpGLibRequestAndHandle", TRUE, handle_channels, ctx, NULL);
 
   if (!tp_base_client_register (ctx->handler, &error))
     {
