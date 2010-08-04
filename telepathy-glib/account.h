@@ -221,10 +221,9 @@ void tp_account_create_and_handle_channel_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_account_create_and_handle_channel_finish (TpAccount *account,
+TpChannel * tp_account_create_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
-    TpChannel **channel,
-    GError **error);
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_account_ensure_and_handle_channel_async (TpAccount *account,
     GHashTable *request,
@@ -233,10 +232,9 @@ void tp_account_ensure_and_handle_channel_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_account_ensure_and_handle_channel_finish (TpAccount *account,
+TpChannel * tp_account_ensure_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
-    TpChannel **channel,
-    GError **error);
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 

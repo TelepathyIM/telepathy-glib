@@ -128,8 +128,9 @@ create_and_handle_cb (GObject *source,
 {
   Test *test = user_data;
 
-  if (!tp_account_create_and_handle_channel_finish (TP_ACCOUNT (source),
-        result, &test->channel, &test->error))
+  test->channel = tp_account_create_and_handle_channel_finish (
+      TP_ACCOUNT (source), result, &test->error);
+  if (test->channel == NULL)
     goto out;
 
   g_assert (TP_IS_CHANNEL (test->channel));
@@ -241,8 +242,9 @@ ensure_and_handle_cb (GObject *source,
 {
   Test *test = user_data;
 
-  if (!tp_account_ensure_and_handle_channel_finish (TP_ACCOUNT (source),
-        result, &test->channel, &test->error))
+  test->channel = tp_account_ensure_and_handle_channel_finish (
+      TP_ACCOUNT (source), result, &test->error);
+  if (test->channel == NULL)
     goto out;
 
   g_assert (TP_IS_CHANNEL (test->channel));

@@ -418,10 +418,9 @@ tp_account_create_and_handle_channel_async (TpAccount *account,
       cancellable, callback, user_data, FALSE);
 }
 
-static gboolean
+static TpChannel *
 request_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
-    TpChannel **channel,
     gpointer source_tag,
     GError **error)
 {
@@ -429,7 +428,6 @@ request_and_handle_channel_finish (TpAccount *account,
 
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  g_return_val_if_fail (channel != NULL, FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
@@ -440,34 +438,30 @@ request_and_handle_channel_finish (TpAccount *account,
           G_OBJECT (account), source_tag),
       FALSE);
 
-  *channel = g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
-
-  return TRUE;
+  return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 /**
  * tp_account_create_and_handle_channel_finish:
  * @account: a #TpAccount
  * @result: a #GAsyncResult
- * @channel: (out): a pointer used to return a reference on the newly created
  * #TpChannel having #TP_CHANNEL_FEATURE_CORE prepared if possible
  * @error: a #GError to fill
  *
  * Finishes an async channel creation started using
  * tp_account_create_and_handle_channel_async().
  *
- * Returns: %TRUE if the channel was successfully created and you are handling
- * it, otherwise %FALSE
+ * Returns: a new reference on a #TpChannel if the channel was successfully
+ * created and you are handling it, otherwise %NULL.
  *
  * Since: 0.11.UNRELEASED
  */
-gboolean
+TpChannel *
 tp_account_create_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
-    TpChannel **channel,
     GError **error)
 {
-  return request_and_handle_channel_finish (account, result, channel,
+  return request_and_handle_channel_finish (account, result,
       tp_account_create_and_handle_channel_async, error);
 }
 
@@ -524,17 +518,16 @@ tp_account_ensure_and_handle_channel_async (TpAccount *account,
  * newly created channel is sent to a different handler, this operation
  * will fail with the error %TP_ERROR_NOT_YOURS.
  *
- * Returns: %TRUE if the channel was successfully created and you are handling
- * it, otherwise %FALSE
+ * Returns: a new reference on a #TpChannel if the channel was successfully
+ * created and you are handling it, otherwise %NULL.
  *
  * Since: 0.11.UNRELEASED
  */
-gboolean
+TpChannel *
 tp_account_ensure_and_handle_channel_finish (TpAccount *account,
     GAsyncResult *result,
-    TpChannel **channel,
     GError **error)
 {
-  return request_and_handle_channel_finish (account, result, channel,
+  return request_and_handle_channel_finish (account, result,
       tp_account_ensure_and_handle_channel_async, error);
 }
