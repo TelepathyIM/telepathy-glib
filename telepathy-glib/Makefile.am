@@ -27,6 +27,7 @@ our_headers = \
     account-manager.h \
     add-dispatch-operation-context.h \
     base-client.h \
+    base-channel.h \
     base-connection.h \
     base-connection-manager.h \
     base-protocol.h \
@@ -121,6 +122,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-manager-internal.h \
     add-dispatch-operation-context-internal.h \
     add-dispatch-operation-context.c \
+    base-channel.c \
     base-client.c \
     base-connection.c \
     base-connection-manager.c \
