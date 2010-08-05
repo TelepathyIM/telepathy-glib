@@ -31,6 +31,8 @@
  * |[
  * static void
  * my_add_dispatch_operation (TpSimpleApprover *self,
+ *    TpAccount *account,
+ *    TpConnection *connection,
  *    GList *channels,
  *    TpChannelDispatchOperation *dispatch_operation,
  *    TpAddDispatchOperationContext *context,
