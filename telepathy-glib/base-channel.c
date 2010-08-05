@@ -162,6 +162,40 @@ tp_base_channel_reopened (TpBaseChannel *chan)
   tp_svc_channel_emit_closed (chan);
 }
 
+/**
+ * tp_base_channel_get_immutable_properties:
+ *
+ * Returns a basic set of immutable properties for this Channel object, by using
+ * tp_dbus_properties_mixin_make_properties_hash().
+ *
+ * Additional keys and values can be inserted into the returned hash table;
+ * if this is done, the inserted keys and values will be freed when the
+ * hash table is destroyed. The keys must be allocated with g_strdup() or
+ * equivalent, and the values must be slice-allocated (for instance with
+ * tp_g_value_slice_new_string() or a similar function).
+ *
+ * Note that in particular, tp_asv_set_string() and similar functions should
+ * not be used with this hash table.
+ *
+ * Returns: a hash table mapping (gchar *) fully-qualified property names to
+ *          GValues, which must be freed by the caller (at which point its
+ *          contents will also be freed).
+ */
+GHashTable *
+tp_base_channel_get_immutable_properties (TpBaseChannel *chan)
+{
+    return tp_dbus_properties_mixin_make_properties_hash (G_OBJECT (chan),
+            TP_IFACE_CHANNEL, "ChannelType",
+            TP_IFACE_CHANNEL, "TargetHandleType",
+            TP_IFACE_CHANNEL, "TargetHandle",
+            TP_IFACE_CHANNEL, "TargetID",
+            TP_IFACE_CHANNEL, "InitiatorHandle",
+            TP_IFACE_CHANNEL, "InitiatorID",
+            TP_IFACE_CHANNEL, "Requested",
+            TP_IFACE_CHANNEL, "Interfaces",
+            NULL);
+}
+
 static void
 tp_base_channel_init (TpBaseChannel *self)
 {
@@ -269,17 +303,7 @@ tp_base_channel_get_property (GObject *object,
       break;
     case PROP_CHANNEL_PROPERTIES:
       g_value_take_boxed (value,
-          tp_dbus_properties_mixin_make_properties_hash (
-              object,
-              TP_IFACE_CHANNEL, "TargetHandle",
-              TP_IFACE_CHANNEL, "TargetHandleType",
-              TP_IFACE_CHANNEL, "ChannelType",
-              TP_IFACE_CHANNEL, "TargetID",
-              TP_IFACE_CHANNEL, "InitiatorHandle",
-              TP_IFACE_CHANNEL, "InitiatorID",
-              TP_IFACE_CHANNEL, "Requested",
-              TP_IFACE_CHANNEL, "Interfaces",
-              NULL));
+              tp_base_channel_get_immutable_properties (chan));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
