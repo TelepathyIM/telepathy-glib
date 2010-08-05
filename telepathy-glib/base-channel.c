@@ -93,6 +93,7 @@ struct _TpBaseChannelPrivate
   TpHandle target;
   TpHandle initiator;
 
+  gboolean requested;
   gboolean destroyed;
 
   gboolean dispose_has_run;
@@ -251,7 +252,7 @@ tp_base_channel_get_property (GObject *object,
         }
       break;
     case PROP_REQUESTED:
-      g_value_set_boolean (value, (chan->priv->initiator == chan->priv->conn->self_handle));
+      g_value_set_boolean (value, (chan->priv->requested));
       break;
     case PROP_CONNECTION:
       g_value_set_object (value, chan->priv->conn);
@@ -314,15 +315,7 @@ tp_base_channel_set_property (GObject *object,
       chan->priv->conn = g_value_get_object (value);
       break;
     case PROP_REQUESTED:
-      /* This property is writeable so that subclasses that have a more
-       * complicated definition can use g_object_class_override_property() and
-       * actually implement setting it.
-       */
-      if (g_value_get_boolean (value))
-        g_warning ("%s: ignoring TRUE value for \"requested\". %s should have "
-            "overridden the property if it wanted it to be settable",
-            G_STRFUNC, G_OBJECT_TYPE_NAME (object));
-
+      chan->priv->requested = g_value_get_boolean (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
