@@ -169,6 +169,7 @@ tp_base_channel_init (TpBaseChannel *self)
       TP_TYPE_BASE_CHANNEL, TpBaseChannelPrivate);
 
   self->priv = priv;
+
 }
 
 static void
@@ -315,7 +316,7 @@ tp_base_channel_set_property (GObject *object,
        * meaningfully changeable on this channel, so we do nothing */
       break;
     case PROP_CONNECTION:
-      chan->priv->conn = g_value_get_object (value);
+      chan->priv->conn = g_value_dup_object (value);
       break;
     case PROP_REQUESTED:
       chan->priv->requested = g_value_get_boolean (value);
@@ -330,16 +331,40 @@ static void
 tp_base_channel_dispose (GObject *object)
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (object);
+  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
   TpBaseChannelPrivate *priv = chan->priv;
+  TpHandleRepoIface *handles;
 
   if (priv->dispose_has_run)
     return;
 
   priv->dispose_has_run = TRUE;
 
-  if (!chan->priv->destroyed)
+  if (!priv->destroyed)
     {
       tp_base_channel_destroyed (chan);
+    }
+
+  if (priv->target != 0)
+    {
+      handles = tp_base_connection_get_handles (priv->conn,
+                                                klass->target_type);
+      tp_handle_unref (handles, priv->target);
+      priv->target = 0;
+    }
+
+  if (priv->initiator != 0)
+    {
+      handles = tp_base_connection_get_handles (priv->conn,
+                                                TP_HANDLE_TYPE_CONTACT);
+      tp_handle_unref (handles, priv->initiator);
+      priv->initiator = 0;
+    }
+
+  if (priv->conn != NULL)
+    {
+      g_object_unref (priv->conn);
+      priv->conn = NULL;
     }
 
   if (G_OBJECT_CLASS (tp_base_channel_parent_class)->dispose)
@@ -350,21 +375,6 @@ static void
 tp_base_channel_finalize (GObject *object)
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (object);
-  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
-  TpBaseConnection *conn = (TpBaseConnection *) chan->priv->conn;
-  TpHandleRepoIface *handles;
-
-  if (chan->priv->target != 0)
-    {
-      handles = tp_base_connection_get_handles (conn, klass->target_type);
-      tp_handle_unref (handles, chan->priv->target);
-    }
-
-  if (chan->priv->initiator != 0)
-    {
-      handles = tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
-      tp_handle_unref (handles, chan->priv->initiator);
-    }
 
   g_free (chan->priv->object_path);
 
