@@ -149,6 +149,7 @@ tp_base_channel_destroyed (TpBaseChannel *chan)
 /**
  * tp_base_channel_reopened:
  * @chan: a channel
+ * @initiator: the handle of the contact that re-opened the channel
  *
  * Called by subclasses to indicate that this channel was closed but was
  * re-opened due to pending messages.  The "Closed" signal will be emitted, but
@@ -157,8 +158,22 @@ tp_base_channel_destroyed (TpBaseChannel *chan)
  * @initiator.
  */
 void
-tp_base_channel_reopened (TpBaseChannel *chan)
+tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
 {
+  if (chan->priv->initiator != initiator)
+    {
+      TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
+        (chan->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      TpHandle old_initiator = chan->priv->initiator;
+
+      if (initiator != 0)
+        tp_handle_ref (contact_repo, initiator);
+
+      chan->priv->initiator = initiator;
+
+      if (old_initiator != 0)
+        tp_handle_unref (contact_repo, old_initiator);
+    }
   tp_svc_channel_emit_closed (chan);
 }
 
