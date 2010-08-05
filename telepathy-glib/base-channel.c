@@ -120,12 +120,11 @@ G_DEFINE_TYPE_WITH_CODE (TpBaseChannel, tp_base_channel,
 void
 tp_base_channel_register (TpBaseChannel *chan)
 {
-  DBusGConnection *bus = tp_get_bus ();
+  TpDBusDaemon *bus = tp_base_connection_get_dbus_daemon (chan->priv->conn);
 
   g_assert (chan->priv->object_path != NULL);
 
-  dbus_g_connection_register_g_object (bus, chan->priv->object_path,
-      (GObject *) chan);
+  tp_dbus_daemon_register_object (bus, chan->priv->object_path, chan);
 }
 
 /**
@@ -139,8 +138,12 @@ tp_base_channel_register (TpBaseChannel *chan)
 void
 tp_base_channel_destroyed (TpBaseChannel *chan)
 {
+  TpDBusDaemon *bus = tp_base_connection_get_dbus_daemon (chan->priv->conn);
+
   chan->priv->destroyed = TRUE;
   tp_svc_channel_emit_closed (chan);
+
+  tp_dbus_daemon_unregister_object (bus, chan);
 }
 
 /**
@@ -336,8 +339,7 @@ tp_base_channel_dispose (GObject *object)
 
   if (!chan->priv->destroyed)
     {
-      chan->priv->destroyed = TRUE;
-      tp_svc_channel_emit_closed (chan);
+      tp_base_channel_destroyed (chan);
     }
 
   if (G_OBJECT_CLASS (tp_base_channel_parent_class)->dispose)
