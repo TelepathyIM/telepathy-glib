@@ -175,6 +175,24 @@ TP_EXPORTABLE_CHANNEL_GET_INTERFACE
 </SECTION>
 
 <SECTION>
+<INCLUDE>telepathy-glib/base-channel.h</INCLUDE>
+<FILE>base-channel</FILE>
+TpBaseChannel
+<TITLE>TpBaseChannel</TITLE>
+TpBaseChannel
+TpBaseChannelClass
+tp_base_channel_register
+tp_base_channel_destroyed
+tp_base_channel_reopened
+tp_base_channel_get_immutable_properties
+<SUBSECTION Standard>
+TP_BASE_CHANNEL
+TP_IS_BASE_CHANNEL
+TP_TYPE_BASE_CHANNEL
+tp_base_channel_get_type
+</SECTION>
+
+<SECTION>
 <FILE>handle-repo</FILE>
 <INCLUDE>telepathy-glib/handle-repo.h</INCLUDE>
 <TITLE>handle-repo</TITLE>
