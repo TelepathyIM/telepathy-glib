@@ -8,6 +8,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/proxy.c _gen/proxy-introspectable.h \
 	$(srcdir)/account.c $(srcdir)/account.h \
 	$(srcdir)/account-channels.c \
+	$(srcdir)/account-channel-request.c $(srcdir)/account-channel-request.h \
 	$(srcdir)/account-manager.c $(srcdir)/account-manager.h \
 	$(srcdir)/connection.c $(srcdir)/connection.h \
 	$(srcdir)/connection-handles.c \

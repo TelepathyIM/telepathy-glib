@@ -24,6 +24,7 @@ noinst_LTLIBRARIES = libtelepathy-glib-internal.la
 # headers that are subject to coding-style checks
 our_headers = \
     account.h \
+    account-channel-request.h \
     account-manager.h \
     add-dispatch-operation-context.h \
     base-client.h \
@@ -114,6 +115,8 @@ libtelepathy_glib_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_internal_la_SOURCES = \
     account.c \
     account-channels.c \
+    account-channel-request-internal.h \
+    account-channel-request.c \
     account-internal.h \
     account-manager.c \
     account-manager-internal.h \

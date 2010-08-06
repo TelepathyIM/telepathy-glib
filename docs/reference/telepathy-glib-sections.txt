@@ -4141,3 +4141,22 @@ TP_IS_SIMPLE_HANDLER_CLASS
 TpSimpleHandlerClass
 TpSimpleHandlerPrivate
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/account-channel-request.h</INCLUDE>
+<FILE>account-channel-request</FILE>
+<TITLE>account-channel-request</TITLE>
+TpAccountChannelRequest
+tp_account_channel_request_new
+tp_account_channel_request_get_request
+tp_account_channel_request_get_user_action_time
+tp_account_channel_request_get_account
+<SUBSECTION Standard>
+tp_account_channel_request_get_type
+TP_ACCOUNT_CHANNEL_REQUEST
+TP_ACCOUNT_CHANNEL_REQUEST_CLASS
+TP_ACCOUNT_CHANNEL_REQUEST_GET_CLASS
+TP_IS_ACCOUNT_CHANNEL_REQUEST
+TP_IS_ACCOUNT_CHANNEL_REQUEST_CLASS
+TP_TYPE_ACCOUNT_CHANNEL_REQUEST
+</SECTION>
