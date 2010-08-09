@@ -78,6 +78,9 @@ typedef enum {
     TP_ERROR_SERVICE_BUSY, /*< nick=ServiceBusy >*/
     TP_ERROR_RESOURCE_UNAVAILABLE, /*< nick=ResourceUnavailable >*/
     TP_ERROR_WOULD_BREAK_ANONYMITY, /*< nick=WouldBreakAnonymity >*/
+    TP_ERROR_CERT_REVOKED, /*< nick=Cert.Revoked >*/
+    TP_ERROR_CERT_INSECURE, /*< nick=Cert.Insecure >*/
+    TP_ERROR_CERT_LIMIT_EXCEEDED, /*< nick=Cert.LimitExceeded >*/
 } TpError;
 
 const gchar *tp_error_get_dbus_name (TpError error);
