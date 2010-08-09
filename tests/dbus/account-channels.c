@@ -32,6 +32,8 @@ typedef struct {
 
     GCancellable *cancellable;
 
+    gint count;
+
     GError *error /* initialized where needed */;
 } Test;
 
@@ -269,7 +271,9 @@ ensure_and_handle_cb (GObject *source,
   g_assert (TP_IS_CHANNEL (test->channel));
 
 out:
-  g_main_loop_quit (test->mainloop);
+  test->count--;
+  if (test->count <= 0)
+    g_main_loop_quit (test->mainloop);
 }
 
 static void
@@ -360,6 +364,57 @@ test_cancel_after_create (Test *test,
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
 }
 
+/* Test if re-handled is properly fired when a channel is
+ * re-handled */
+static void
+re_handled_cb (TpAccountChannelRequest *req,
+    gint64 timestamp,
+    TpHandleChannelsContext *context,
+    Test *test)
+{
+  g_assert_cmpint (timestamp, ==, 666);
+  g_assert (TP_IS_HANDLE_CHANNELS_CONTEXT (context));
+
+  g_print ("sig fired\n");
+  test->count--;
+  if (test->count <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_re_handle (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req, *req2;
+
+  request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_ensure_and_handle_channel_async (req,
+      NULL, ensure_and_handle_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_signal_connect (req, "re-handled",
+      G_CALLBACK (re_handled_cb), test);
+
+  /* Ensure the same channel to re-handle it */
+  req2 = tp_account_channel_request_new (test->account, request, 666);
+
+  tp_account_channel_request_ensure_and_handle_channel_async (req2,
+      NULL, ensure_and_handle_cb, test);
+
+  /* Wait that the operation finished and the sig has been fired */
+  test->count = 2;
+  g_main_loop_run (test->mainloop);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+  g_object_unref (req2);
+}
+
 int
 main (int argc,
       char **argv)
@@ -384,6 +439,8 @@ main (int argc,
       test_cancel_before, teardown);
   g_test_add ("/account-channels/after-create", Test, NULL, setup,
       test_cancel_after_create, teardown);
+  g_test_add ("/account-channels/re-handle", Test, NULL, setup,
+      test_re_handle, teardown);
 
   return g_test_run ();
 }

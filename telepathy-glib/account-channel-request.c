@@ -84,13 +84,12 @@ enum {
     N_PROPS
 };
 
-/*
 enum {
+  SIGNAL_RE_HANDLED,
   N_SIGNALS
 };
 
 static guint signals[N_SIGNALS] = { 0 };
-*/
 
 struct _TpAccountChannelRequestPrivate
 {
@@ -294,6 +293,26 @@ tp_account_channel_request_class_init (
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_USER_ACTION_TIME,
       param_spec);
+
+ /**
+   * TpAccountChannelRequest::re-handled:
+   * @self: a #TpAccountChannelRequest
+   * @user_action_time: the time at which user action occurred, or 0 if this
+   * channel is to be handled for some reason not involving user action.
+   * @context: a #TpHandleChannelsContext representing the context of
+   * the HandleChannels() call.
+   *
+   * Emitted when channel which has been created using @self has be re-handled.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  signals[SIGNAL_RE_HANDLED] = g_signal_new (
+      "re-handled", G_OBJECT_CLASS_TYPE (cls),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__INT64_OBJECT,
+      G_TYPE_NONE, 2, G_TYPE_INT64, TP_TYPE_HANDLE_CHANNELS_CONTEXT);
 }
 
 /**
@@ -441,8 +460,13 @@ handle_channels (TpSimpleHandler *handler,
     }
 
   if (self->priv->result == NULL)
-    /* We are re-handling the channel, no async request to complete */
-    goto out;
+    {
+      /* We are re-handling the channel, no async request to complete */
+      g_signal_emit (self, signals[SIGNAL_RE_HANDLED], 0, user_action_time,
+          context);
+
+      goto out;
+    }
 
   /* Request succeeded */
   channel = channels->data;
