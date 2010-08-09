@@ -114,7 +114,6 @@ check-local: check-coding-style
 libtelepathy_glib_internal_la_LIBADD = $(ALL_LIBS)
 libtelepathy_glib_internal_la_SOURCES = \
     account.c \
-    account-channels.c \
     account-channel-request-internal.h \
     account-channel-request.c \
     account-internal.h \

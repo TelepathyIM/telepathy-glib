@@ -23,8 +23,11 @@
 
 #include <gio/gio.h>
 #include <glib-object.h>
+#include <glib.h>
 
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/channel.h>
+#include <telepathy-glib/handle-channels-context.h>
 
 G_BEGIN_DECLS
 
@@ -65,6 +68,30 @@ GHashTable * tp_account_channel_request_get_request (
 
 gint64 tp_account_channel_request_get_user_action_time (
     TpAccountChannelRequest *self);
+
+void tp_account_channel_request_create_and_handle_channel_async (
+    TpAccountChannelRequest *self,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+TpChannel * tp_account_channel_request_create_and_handle_channel_finish (
+    TpAccountChannelRequest *self,
+    GAsyncResult *result,
+    TpHandleChannelsContext **context,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
+
+void tp_account_channel_request_ensure_and_handle_channel_async (
+    TpAccountChannelRequest *self,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+TpChannel * tp_account_channel_request_ensure_and_handle_channel_finish (
+    TpAccountChannelRequest *self,
+    GAsyncResult *result,
+    TpHandleChannelsContext **context,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 G_END_DECLS
 

@@ -213,32 +213,6 @@ gboolean tp_account_set_avatar_finish (TpAccount *self,
 
 gboolean tp_account_get_changing_presence (TpAccount *self);
 
-/* API to request channels - defined in account-channels.c */
-
-void tp_account_create_and_handle_channel_async (TpAccount *account,
-    GHashTable *request,
-    gint64 user_action_time,
-    GCancellable *cancellable,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-TpChannel * tp_account_create_and_handle_channel_finish (TpAccount *account,
-    GAsyncResult *result,
-    TpHandleChannelsContext **context,
-    GError **error) G_GNUC_WARN_UNUSED_RESULT;
-
-void tp_account_ensure_and_handle_channel_async (TpAccount *account,
-    GHashTable *request,
-    gint64 user_action_time,
-    GCancellable *cancellable,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-TpChannel * tp_account_ensure_and_handle_channel_finish (TpAccount *account,
-    GAsyncResult *result,
-    TpHandleChannelsContext **context,
-    GError **error) G_GNUC_WARN_UNUSED_RESULT;
-
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-account.h>

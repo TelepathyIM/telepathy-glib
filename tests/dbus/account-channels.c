@@ -129,8 +129,8 @@ create_and_handle_cb (GObject *source,
   Test *test = user_data;
   TpHandleChannelsContext *context = NULL;
 
-  test->channel = tp_account_create_and_handle_channel_finish (
-      TP_ACCOUNT (source), result, &context, &test->error);
+  test->channel = tp_account_channel_request_create_and_handle_channel_finish (
+      TP_ACCOUNT_CHANNEL_REQUEST (source), result, &context, &test->error);
   if (test->channel == NULL)
     goto out;
 
@@ -160,13 +160,16 @@ test_create_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
+  TpAccountChannelRequest *req;
 
   request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
 
-  tp_account_create_and_handle_channel_async (test->account, request, 0,
+  tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
+  g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
@@ -178,16 +181,20 @@ test_create_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
+  TpAccountChannelRequest *req;
 
   request = create_request ();
 
   /* Ask to the CD to fail */
   tp_asv_set_boolean (request, "CreateChannelFail", TRUE);
 
-  tp_account_create_and_handle_channel_async (test->account, request, 0,
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
+  g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
@@ -200,16 +207,20 @@ test_proceed_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
+  TpAccountChannelRequest *req;
 
   request = create_request ();
 
   /* Ask to the CD to fail */
   tp_asv_set_boolean (request, "ProceedFail", TRUE);
 
-  tp_account_create_and_handle_channel_async (test->account, request, 0,
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
+  g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
@@ -222,16 +233,20 @@ test_cr_failed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
+  TpAccountChannelRequest *req;
 
   request = create_request ();
 
   /* Ask to the CR to fire the signal */
   tp_asv_set_boolean (request, "FireFailed", TRUE);
 
-  tp_account_create_and_handle_channel_async (test->account, request, 0,
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
+  g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
@@ -246,8 +261,8 @@ ensure_and_handle_cb (GObject *source,
 {
   Test *test = user_data;
 
-  test->channel = tp_account_ensure_and_handle_channel_finish (
-      TP_ACCOUNT (source), result, NULL, &test->error);
+  test->channel = tp_account_channel_request_ensure_and_handle_channel_finish (
+      TP_ACCOUNT_CHANNEL_REQUEST (source), result, NULL, &test->error);
   if (test->channel == NULL)
     goto out;
 
@@ -262,20 +277,27 @@ test_ensure_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
+  TpAccountChannelRequest *req;
 
   request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
 
-  tp_account_ensure_and_handle_channel_async (test->account, request, 0,
+  tp_account_channel_request_ensure_and_handle_channel_async (req,
       NULL, ensure_and_handle_cb, test);
+
+  g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   /* Try again, now it will fail as the channel already exist */
-  tp_account_ensure_and_handle_channel_async (test->account, request, 0,
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_ensure_and_handle_channel_async (req,
       NULL, ensure_and_handle_cb, test);
 
   g_hash_table_unref (request);
+  g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_YOURS);
@@ -289,15 +311,18 @@ test_cancel_before (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
+  TpAccountChannelRequest *req;
 
   request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
 
   g_cancellable_cancel (test->cancellable);
 
-  tp_account_create_and_handle_channel_async (test->account, request, 0,
+  tp_account_channel_request_ensure_and_handle_channel_async (req,
       test->cancellable, create_and_handle_cb, test);
 
   g_hash_table_unref (request);
+  g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
@@ -317,16 +342,19 @@ test_cancel_after_create (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
+  TpAccountChannelRequest *req;
 
   request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
 
-  tp_account_create_and_handle_channel_async (test->account, request, 0,
+  tp_account_channel_request_ensure_and_handle_channel_async (req,
       test->cancellable, create_and_handle_cb, test);
 
   g_signal_connect (test->cd_service, "channel-request-created",
       G_CALLBACK (channel_request_created_cb), test);
 
   g_hash_table_unref (request);
+  g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
