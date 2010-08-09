@@ -122,6 +122,8 @@ teardown (Test *test,
   tp_clear_object (&test->cancellable);
 }
 
+/* Request and handle tests */
+
 static void
 create_and_handle_cb (GObject *source,
     GAsyncResult *result,
@@ -158,7 +160,7 @@ create_request (void)
 }
 
 static void
-test_create_success (Test *test,
+test_handle_create_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
@@ -179,7 +181,7 @@ test_create_success (Test *test,
 
 /* ChannelDispatcher.CreateChannel() call fails */
 static void
-test_create_fail (Test *test,
+test_handle_create_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
@@ -205,7 +207,7 @@ test_create_fail (Test *test,
 
 /* ChannelRequest.Proceed() call fails */
 static void
-test_proceed_fail (Test *test,
+test_handle_proceed_fail (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
@@ -231,7 +233,7 @@ test_proceed_fail (Test *test,
 
 /* ChannelRequest fire the 'Failed' signal */
 static void
-test_cr_failed (Test *test,
+test_handle_cr_failed (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
@@ -277,7 +279,7 @@ out:
 }
 
 static void
-test_ensure_success (Test *test,
+test_handle_ensure_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
@@ -311,7 +313,7 @@ test_ensure_success (Test *test,
 
 /* Cancel the operation before starting it */
 static void
-test_cancel_before (Test *test,
+test_handle_cancel_before (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
@@ -342,7 +344,7 @@ channel_request_created_cb (TpTestsSimpleChannelDispatcher *dispatcher,
 }
 
 static void
-test_cancel_after_create (Test *test,
+test_handle_cancel_after_create (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
@@ -382,7 +384,7 @@ re_handled_cb (TpAccountChannelRequest *req,
 }
 
 static void
-test_re_handle (Test *test,
+test_handle_re_handle (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *request;
@@ -425,22 +427,23 @@ main (int argc,
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  g_test_add ("/account-channels/create-success", Test, NULL, setup,
-      test_create_success, teardown);
-  g_test_add ("/account-channels/create-fail", Test, NULL, setup,
-      test_create_fail, teardown);
-  g_test_add ("/account-channels/proceed-fail", Test, NULL, setup,
-      test_proceed_fail, teardown);
-  g_test_add ("/account-channels/cr-failed", Test, NULL, setup,
-      test_cr_failed, teardown);
-  g_test_add ("/account-channels/ensure-success", Test, NULL, setup,
-      test_ensure_success, teardown);
-  g_test_add ("/account-channels/cancel-before", Test, NULL, setup,
-      test_cancel_before, teardown);
-  g_test_add ("/account-channels/after-create", Test, NULL, setup,
-      test_cancel_after_create, teardown);
-  g_test_add ("/account-channels/re-handle", Test, NULL, setup,
-      test_re_handle, teardown);
+  /* Request and handle tests */
+  g_test_add ("/account-channels-request-handle/create-success", Test, NULL,
+      setup, test_handle_create_success, teardown);
+  g_test_add ("/account-channels-request-handle/create-fail", Test, NULL,
+      setup, test_handle_create_fail, teardown);
+  g_test_add ("/account-channels-request-handle/proceed-fail", Test, NULL,
+      setup, test_handle_proceed_fail, teardown);
+  g_test_add ("/account-channels-request-handle/cr-failed", Test, NULL,
+      setup, test_handle_cr_failed, teardown);
+  g_test_add ("/account-channels-request-handle/ensure-success", Test, NULL,
+      setup, test_handle_ensure_success, teardown);
+  g_test_add ("/account-channels-request-handle/cancel-before", Test, NULL,
+      setup, test_handle_cancel_before, teardown);
+  g_test_add ("/account-channels-request-handle/after-create", Test, NULL,
+      setup, test_handle_cancel_after_create, teardown);
+  g_test_add ("/account-channels-request-handle/re-handle", Test, NULL,
+      setup, test_handle_re_handle, teardown);
 
   return g_test_run ();
 }
