@@ -106,6 +106,7 @@ struct _TpAccountChannelRequestPrivate
   gulong cancel_id;
   TpChannel *channel;
   TpHandleChannelsContext *handle_context;
+  TpDBusDaemon *dbus;
 
   /* TRUE if the channel has been requested (an _async function has been called
    * on the TpAccountChannelRequest) */
@@ -154,6 +155,7 @@ tp_account_channel_request_dispose (GObject *object)
   tp_clear_object (&self->priv->chan_request);
   tp_clear_object (&self->priv->channel);
   tp_clear_object (&self->priv->handle_context);
+  tp_clear_object (&self->priv->dbus);
 
   if (dispose != NULL)
     dispose (object);
@@ -231,6 +233,9 @@ tp_account_channel_request_constructed (GObject *object)
 
   g_assert (self->priv->account != NULL);
   g_assert (self->priv->request != NULL);
+
+  self->priv->dbus = g_object_ref (tp_proxy_get_dbus_daemon (
+        self->priv->account));
 }
 
 static void
@@ -602,8 +607,7 @@ request_cb (TpChannelDispatcher *cd,
   DEBUG ("Got ChannelRequest: %s", channel_request_path);
 
   self->priv->chan_request = tp_channel_request_new (
-      tp_base_client_get_dbus_daemon (self->priv->handler),
-      channel_request_path, NULL, &err);
+      self->priv->dbus, channel_request_path, NULL, &err);
 
   if (self->priv->chan_request == NULL)
     {
@@ -644,7 +648,6 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
     gboolean ensure)
 {
   GError *error = NULL;
-  TpDBusDaemon *dbus;
   TpChannelDispatcher *cd;
 
   g_return_if_fail (!self->priv->requested);
@@ -659,14 +662,12 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
       return;
     }
 
-  dbus = tp_proxy_get_dbus_daemon (self->priv->account);
-
   if (cancellable != NULL)
     self->priv->cancellable = g_object_ref (cancellable);
   self->priv->ensure = ensure;
 
   /* Create a temp handler */
-  self->priv->handler = tp_simple_handler_new (dbus, TRUE, FALSE,
+  self->priv->handler = tp_simple_handler_new (self->priv->dbus, TRUE, FALSE,
       "TpGLibRequestAndHandle", TRUE, handle_channels, self, NULL);
 
   if (!tp_base_client_register (self->priv->handler, &error))
@@ -680,7 +681,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
       return;
     }
 
-  cd = tp_channel_dispatcher_new (dbus);
+  cd = tp_channel_dispatcher_new (self->priv->dbus);
 
   if (ensure)
     {
