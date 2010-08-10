@@ -580,7 +580,7 @@ operation_cancelled_cb (GCancellable *cancellable,
 }
 
 static void
-request_and_handle_channel_cb (TpChannelDispatcher *cd,
+request_cb (TpChannelDispatcher *cd,
     const gchar *channel_request_path,
     const GError *error,
     gpointer user_data,
@@ -692,7 +692,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
           tp_proxy_get_object_path (self->priv->account), self->priv->request,
           self->priv->user_action_time,
           tp_base_client_get_bus_name (self->priv->handler),
-          request_and_handle_channel_cb, self, NULL, G_OBJECT (self));
+          request_cb, self, NULL, G_OBJECT (self));
     }
   else
     {
@@ -704,7 +704,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
           tp_proxy_get_object_path (self->priv->account), self->priv->request,
           self->priv->user_action_time,
           tp_base_client_get_bus_name (self->priv->handler),
-          request_and_handle_channel_cb, self, NULL, G_OBJECT (self));
+          request_cb, self, NULL, G_OBJECT (self));
     }
 
   g_object_unref (cd);
