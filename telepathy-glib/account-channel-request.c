@@ -795,8 +795,8 @@ tp_account_channel_request_create_and_handle_channel_async (
  * tp_account_channel_request_create_and_handle_channel_finish:
  * @self: a #TpAccountChannelRequest
  * @result: a #GAsyncResult
- * @context: (out): pointer used to return a reference on the context of the
- * HandleChannels() call, or %NULL
+ * @context: (out) (allow-none) (transfer full): pointer used to return a
+ * on the context of the HandleChannels() call, or %NULL
  * @error: a #GError to fill
  *
  * Finishes an async channel creation started using
@@ -855,8 +855,8 @@ tp_account_channel_request_ensure_and_handle_channel_async (
  * tp_account_channel_request_ensure_and_handle_channel_finish:
  * @self: a #TpAccountChannelRequest
  * @result: a #GAsyncResult
- * @context: (out): pointer used to return a reference on the context of the
- * HandleChannels() call, or %NULL
+ * @context: (out) (allow-none) (transfer full): pointer used to return a
+ * on the context of the HandleChannels() call, or %NULL
  * @error: a #GError to fill
  *
  * Finishes an async channel creation started using
