@@ -419,6 +419,76 @@ test_handle_re_handle (Test *test,
   g_object_unref (req2);
 }
 
+/* Request and forget tests */
+
+static void
+create_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+
+{
+  Test *test = user_data;
+
+  tp_account_channel_request_create_channel_finish (
+      TP_ACCOUNT_CHANNEL_REQUEST (source), result, &test->error);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_forget_create_success (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req;
+
+  request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_create_channel_async (req, "Fake", NULL, create_cb,
+      test);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+}
+
+static void
+ensure_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+
+{
+  Test *test = user_data;
+
+  tp_account_channel_request_ensure_channel_finish (
+      TP_ACCOUNT_CHANNEL_REQUEST (source), result, &test->error);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_forget_ensure_success (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req;
+
+  request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_ensure_channel_async (req, "Fake", NULL, ensure_cb,
+      test);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -446,6 +516,12 @@ main (int argc,
       setup, test_handle_cancel_after_create, teardown);
   g_test_add ("/account-channels-request-handle/re-handle", Test, NULL,
       setup, test_handle_re_handle, teardown);
+
+  /* Request and handle tests */
+  g_test_add ("/account-channels-request-forget/create-success", Test, NULL,
+      setup, test_forget_create_success, teardown);
+  g_test_add ("/account-channels-request-forget/ensure-success", Test, NULL,
+      setup, test_forget_ensure_success, teardown);
 
   return g_test_run ();
 }
