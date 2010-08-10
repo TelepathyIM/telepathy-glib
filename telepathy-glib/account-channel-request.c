@@ -116,6 +116,10 @@ struct _TpAccountChannelRequestPrivate
   /* TRUE if the channel has been requested (an _async function has been called
    * on the TpAccountChannelRequest) */
   gboolean requested;
+
+  /* TRUE if The TpAccountChannelRequest should handle the requested channel
+   * itself */
+  gboolean handle;
 };
 
 static void
@@ -508,16 +512,24 @@ out:
 static void
 channel_request_succeeded (TpAccountChannelRequest *self)
 {
-  GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
-      "Another Handler is handling this channel" };
+  if (self->priv->handle)
+    {
+      GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
+          "Another Handler is handling this channel" };
 
-  if (self->priv->result == NULL)
-    /* Our handler has been called, all good */
-    return;
+      if (self->priv->result == NULL)
+        /* Our handler has been called, all good */
+        return;
 
-  /* Our handler hasn't be called but the channel request is complete.
-   * That means another handler handled the channels so we don't own it. */
-  request_fail (self, &err);
+      /* Our handler hasn't be called but the channel request is complete.
+       * That means another handler handled the channels so we don't own it. */
+      request_fail (self, &err);
+    }
+  else
+    {
+      /* We don't have to handle the channel so we're done */
+      complete_result (self);
+    }
 }
 
 static void
@@ -536,7 +548,10 @@ acr_channel_request_proceed_cb (TpChannelRequest *request,
       return;
     }
 
-  DEBUG ("Proceed succeeded; waiting for the channel to be handled");
+  if (self->priv->handle)
+    DEBUG ("Proceed succeeded; waiting for the channel to be handled");
+  else
+    DEBUG ("Proceed succeeded; waiting the Succeeded signal");
 }
 
 static void
@@ -661,6 +676,8 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
 
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
+
+  self->priv->handle = TRUE;
 
   if (g_cancellable_is_cancelled (cancellable))
     {
@@ -863,4 +880,196 @@ tp_account_channel_request_ensure_and_handle_channel_finish (
 {
   return request_and_handle_channel_finish (self, result, context,
       tp_account_channel_request_ensure_and_handle_channel_async, error);
+}
+
+/* Request and forget API */
+
+static void
+request_channel_async (TpAccountChannelRequest *self,
+    const gchar *preferred_handler,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data,
+    gboolean ensure)
+{
+  TpChannelDispatcher *cd;
+
+  g_return_if_fail (!self->priv->requested);
+  self->priv->requested = TRUE;
+
+  self->priv->handle = FALSE;
+
+  if (g_cancellable_is_cancelled (cancellable))
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
+          user_data, G_IO_ERROR, G_IO_ERROR_CANCELLED,
+          "Operation has been cancelled");
+
+      return;
+    }
+
+  if (cancellable != NULL)
+    self->priv->cancellable = g_object_ref (cancellable);
+  self->priv->ensure = ensure;
+
+  cd = tp_channel_dispatcher_new (self->priv->dbus);
+
+  if (ensure)
+    {
+      self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
+          user_data, tp_account_channel_request_ensure_channel_async);
+
+      tp_cli_channel_dispatcher_call_ensure_channel (cd, -1,
+          tp_proxy_get_object_path (self->priv->account), self->priv->request,
+          self->priv->user_action_time,
+          preferred_handler == NULL ? "" : preferred_handler,
+          acr_request_cb, self, NULL, G_OBJECT (self));
+    }
+  else
+    {
+      self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
+          user_data, tp_account_channel_request_create_channel_async);
+
+      tp_cli_channel_dispatcher_call_create_channel (cd, -1,
+          tp_proxy_get_object_path (self->priv->account), self->priv->request,
+          self->priv->user_action_time,
+          preferred_handler == NULL ? "" : preferred_handler,
+          acr_request_cb, self, NULL, G_OBJECT (self));
+    }
+
+  g_object_unref (cd);
+}
+
+/**
+ * tp_account_channel_request_create_channel_async:
+ * @self: a #TpAccountChannelRequest
+ * @preferred_handler: Either the well-known bus name (starting with
+ * %TP_CLIENT_BUS_NAME_BASE) of the preferred handler for the channel,
+ * or %NULL to indicate that any handler would be acceptable.
+ * @cancellable: optional #GCancellable object, %NULL to ignore
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Asynchronously calls CreateChannel on the ChannelDispatcher to create a
+ * channel with the properties defined in #TpAccountChannelRequest:request
+ * and let the ChannelDispatcher dispatch it to an handler.
+ * When the channel has been created and dispatched, @callback will be called.
+ * You can then call tp_account_channel_request_create_channel_finish() to
+ * get the result of the operation.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_account_channel_request_create_channel_async (
+    TpAccountChannelRequest *self,
+    const gchar *preferred_handler,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  request_channel_async (self, preferred_handler, cancellable, callback,
+      user_data, FALSE);
+}
+
+static gboolean
+request_channel_finish (TpAccountChannelRequest *self,
+    GAsyncResult *result,
+    gpointer source_tag,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (self), source_tag),
+      FALSE);
+
+  return TRUE;
+}
+
+/**
+ * tp_account_channel_request_create_channel_finish:
+ * @self: a #TpAccountChannelRequest
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async channel creation started using
+ * tp_account_channel_request_create_channel_async().
+ *
+ * Returns: %TRUE if the channel was successfully created and dispatched,
+ * otherwise %NULL.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_account_channel_request_create_channel_finish (
+    TpAccountChannelRequest *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  return request_channel_finish (self, result,
+      tp_account_channel_request_create_channel_async, error);
+}
+
+/**
+ * tp_account_channel_request_ensure_channel_async:
+ * @self: a #TpAccountChannelRequest
+ * @preferred_handler: Either the well-known bus name (starting with
+ * %TP_CLIENT_BUS_NAME_BASE) of the preferred handler for the channel,
+ * or %NULL to indicate that any handler would be acceptable.
+ * @cancellable: optional #GCancellable object, %NULL to ignore
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Asynchronously calls EnsureChannel on the ChannelDispatcher to create a
+ * channel with the properties defined in #TpAccountChannelRequest:request
+ * and let the ChannelDispatcher dispatch it to an handler.
+ * When the channel has been ensure and dispatched (or re-dispatched if the
+ * channel already exists), @callback will be called.
+ * You can then call tp_account_channel_request_ensure_channel_finish() to
+ * get the result of the operation.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_account_channel_request_ensure_channel_async (
+    TpAccountChannelRequest *self,
+    const gchar *preferred_handler,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  request_channel_async (self, preferred_handler, cancellable, callback,
+      user_data, TRUE);
+}
+
+/**
+ * tp_account_channel_request_ensure_channel_finish:
+ * @self: a #TpAccountChannelRequest
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async channel creation started using
+ * tp_account_channel_request_ensure_channel_async().
+ *
+ * Returns: %TRUE if the channel was successfully ensure and (re-)dispatched,
+ * otherwise %NULL.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_account_channel_request_ensure_channel_finish (
+    TpAccountChannelRequest *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  return request_channel_finish (self, result,
+      tp_account_channel_request_ensure_channel_async, error);
 }

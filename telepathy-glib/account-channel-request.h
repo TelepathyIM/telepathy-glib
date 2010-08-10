@@ -69,6 +69,8 @@ GHashTable * tp_account_channel_request_get_request (
 gint64 tp_account_channel_request_get_user_action_time (
     TpAccountChannelRequest *self);
 
+/* Request and handle API */
+
 void tp_account_channel_request_create_and_handle_channel_async (
     TpAccountChannelRequest *self,
     GCancellable *cancellable,
@@ -92,6 +94,32 @@ TpChannel * tp_account_channel_request_ensure_and_handle_channel_finish (
     GAsyncResult *result,
     TpHandleChannelsContext **context,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
+
+/* Request and forget API */
+
+void tp_account_channel_request_create_channel_async (
+    TpAccountChannelRequest *self,
+    const gchar *preferred_handler,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_channel_request_create_channel_finish (
+    TpAccountChannelRequest *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_account_channel_request_ensure_channel_async (
+    TpAccountChannelRequest *self,
+    const gchar *preferred_handler,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_account_channel_request_ensure_channel_finish (
+    TpAccountChannelRequest *self,
+    GAsyncResult *result,
+    GError **error);
 
 G_END_DECLS
 
