@@ -1,7 +1,25 @@
 telepathy-glib 0.11.12 (UNRELEASED)
 ===================================
 
-…
+Enhancements:
+
+• Added TpAccountChannelRequest, a request to create or ensure a channel (cassidy)
+  ‣ fd.o #29456: tp_account_channel_request_create_async (plus an _ensure_
+    variant): create a channel which will be handled by an existing Handler,
+    probably another application
+  ‣ fd.o #13422: tp_account_channel_request_create_and_handle_async (plus an
+    _ensure_ variant): create a channel and handle it yourself
+
+• fd.o #29461: updated to telepathy-spec 0.19.11 (smcv)
+  ‣ more error codes for SSL/TLS - Insecure, Revoked, LimitExceeded
+  ‣ Conference_Host call state flag
+
+Fixes:
+
+• fd.o #29174: update example connection managers to follow current
+  telepathy-spec best practices, including Protocol objects (smcv)
+
+• fd.o #29268: fix compilation from a tarball with --enable-vala-bindings (smcv)
 
 telepathy-glib 0.11.11 (2010-07-26)
 ===================================
