@@ -4,6 +4,7 @@ EXTRA_DIST = \
     Account_Manager.xml \
     Account.xml \
     all.xml \
+    Authentication_TLS_Certificate.xml \
     Call_Content.xml \
     Call_Content_Interface_Media.xml \
     Call_Content_Interface_Mute.xml \
@@ -29,6 +30,7 @@ EXTRA_DIST = \
     Channel_Interface_Mergeable_Conference.xml \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
+    Channel_Interface_Room.xml \
     Channel_Interface_Service_Point.xml \
     Channel_Interface_Splittable.xml \
     Channel_Interface_Transfer.xml \
@@ -40,6 +42,7 @@ EXTRA_DIST = \
     Channel_Type_DBus_Tube.xml \
     Channel_Type_File_Transfer.xml \
     Channel_Type_Room_List.xml \
+    Channel_Type_Server_TLS_Connection.xml \
     Channel_Type_Stream_Tube.xml \
     Channel_Type_Streamed_Media.xml \
     Channel_Type_Text.xml \
@@ -58,6 +61,7 @@ EXTRA_DIST = \
     Connection_Interface_Balance.xml \
     Connection_Interface_Capabilities.xml \
     Connection_Interface_Cellular.xml \
+    Connection_Interface_Client_Types.xml \
     Connection_Interface_Contact_Capabilities.xml \
     Connection_Interface_Contact_Groups.xml \
     Connection_Interface_Contact_Info.xml \

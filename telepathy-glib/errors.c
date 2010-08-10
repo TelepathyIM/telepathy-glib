@@ -172,6 +172,19 @@
  *     that raising an error is preferable to disclosing the user's
  *     identity
  *     Since 0.11.7
+ * @TP_ERROR_CERT_REVOKED: org.freedesktop.Telepathy.Error.Cert.Revoked:
+ *     Raised if the server provided an SSL/TLS certificate that has been
+ *     revoked.
+ *     Since: 0.11.UNRELEASED
+ * @TP_ERROR_CERT_INSECURE: org.freedesktop.Telepathy.Error.Cert.Insecure:
+ *     Raised if the server provided an SSL/TLS certificate that uses an
+ *     insecure cipher algorithm or is cryptographically weak.
+ *     Since: 0.11.UNRELEASED
+ * @TP_ERROR_CERT_LIMIT_EXCEEDED: org.freedesktop.Telepathy.Error.Cert.LimitExceeded:
+ *     Raised if the length in bytes of the server certificate, or the depth
+ *     of the server certificate chain, exceed the limits imposed by the
+ *     crypto library.
+ *     Since: 0.11.UNRELEASED
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */
