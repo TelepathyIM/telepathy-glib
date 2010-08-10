@@ -106,6 +106,10 @@ struct _TpAccountChannelRequestPrivate
   gulong cancel_id;
   TpChannel *channel;
   TpHandleChannelsContext *handle_context;
+
+  /* TRUE if the channel has been requested (an _async function has been called
+   * on the TpAccountChannelRequest) */
+  gboolean requested;
 };
 
 static void
@@ -643,7 +647,8 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   TpDBusDaemon *dbus;
   TpChannelDispatcher *cd;
 
-  g_return_if_fail (self->priv->handler == NULL);
+  g_return_if_fail (!self->priv->requested);
+  self->priv->requested = TRUE;
 
   if (g_cancellable_is_cancelled (cancellable))
     {
