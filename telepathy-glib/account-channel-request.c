@@ -56,7 +56,6 @@
  */
 
 #include "telepathy-glib/account-channel-request.h"
-#include "telepathy-glib/account-channel-request-internal.h"
 
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-request.h>
@@ -72,6 +71,12 @@
 struct _TpAccountChannelRequestClass {
     /*<private>*/
     GObjectClass parent_class;
+};
+
+struct _TpAccountChannelRequest {
+  /*<private>*/
+  GObject parent;
+  TpAccountChannelRequestPrivate *priv;
 };
 
 G_DEFINE_TYPE(TpAccountChannelRequest,
