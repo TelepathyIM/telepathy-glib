@@ -158,6 +158,13 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
       return;
     }
 
+  if (!tp_strdiff (self->priv->preferred_handler, "Fake"))
+    {
+      /* Pretend that the channel has been handled */
+      tp_svc_channel_request_emit_succeeded (self);
+      return;
+    }
+
   /* Call HandleChannels() on the preferred handler */
   client_path = g_strdelimit (g_strdup_printf ("/%s",
         self->priv->preferred_handler), ".", '/');
