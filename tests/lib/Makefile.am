@@ -17,6 +17,10 @@ libtp_glib_tests_la_SOURCES = \
     simple-account-manager.h\
     simple-channel-dispatch-operation.c \
     simple-channel-dispatch-operation.h \
+    simple-channel-dispatcher.c \
+    simple-channel-dispatcher.h \
+    simple-channel-request.c \
+    simple-channel-request.h \
     simple-client.c \
     simple-client.h \
     simple-conn.c \
