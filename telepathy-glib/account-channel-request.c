@@ -437,7 +437,7 @@ handle_request_complete (TpAccountChannelRequest *self,
 }
 
 static void
-channel_invalidated_cb (TpProxy *chan,
+acr_channel_invalidated_cb (TpProxy *chan,
     guint domain,
     gint code,
     gchar *message,
@@ -491,7 +491,7 @@ handle_channels (TpSimpleHandler *handler,
       g_object_ref (self);
 
       g_signal_connect (channel, "invalidated",
-          G_CALLBACK (channel_invalidated_cb), self);
+          G_CALLBACK (acr_channel_invalidated_cb), self);
     }
 
   handle_request_complete (self, channel, context);
@@ -516,7 +516,7 @@ channel_request_succeeded (TpAccountChannelRequest *self)
 }
 
 static void
-channel_request_proceed_cb (TpChannelRequest *request,
+acr_channel_request_proceed_cb (TpChannelRequest *request,
   const GError *error,
   gpointer user_data,
   GObject *weak_object)
@@ -535,7 +535,7 @@ channel_request_proceed_cb (TpChannelRequest *request,
 }
 
 static void
-channel_request_invalidated_cb (TpProxy *proxy,
+acr_channel_request_invalidated_cb (TpProxy *proxy,
     guint domain,
     gint code,
     gchar *message,
@@ -556,7 +556,7 @@ channel_request_invalidated_cb (TpProxy *proxy,
 }
 
 static void
-channel_request_cancel_cb (TpChannelRequest *request,
+acr_channel_request_cancel_cb (TpChannelRequest *request,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
@@ -573,7 +573,7 @@ channel_request_cancel_cb (TpChannelRequest *request,
 }
 
 static void
-operation_cancelled_cb (GCancellable *cancellable,
+acr_operation_cancelled_cb (GCancellable *cancellable,
     TpAccountChannelRequest *self)
 {
   if (self->priv->chan_request == NULL)
@@ -585,11 +585,11 @@ operation_cancelled_cb (GCancellable *cancellable,
   DEBUG ("Operation has been cancelled, cancel the channel request");
 
   tp_cli_channel_request_call_cancel (self->priv->chan_request, -1,
-      channel_request_cancel_cb, self, NULL, G_OBJECT (self));
+      acr_channel_request_cancel_cb, self, NULL, G_OBJECT (self));
 }
 
 static void
-request_cb (TpChannelDispatcher *cd,
+acr_request_cb (TpChannelDispatcher *cd,
     const gchar *channel_request_path,
     const GError *error,
     gpointer user_data,
@@ -620,12 +620,12 @@ request_cb (TpChannelDispatcher *cd,
     }
 
   self->priv->invalidated_sig = g_signal_connect (self->priv->chan_request,
-      "invalidated", G_CALLBACK (channel_request_invalidated_cb), self);
+      "invalidated", G_CALLBACK (acr_channel_request_invalidated_cb), self);
 
   if (self->priv->cancellable != NULL)
     {
       self->priv->cancel_id = g_cancellable_connect (self->priv->cancellable,
-          G_CALLBACK (operation_cancelled_cb), self, NULL);
+          G_CALLBACK (acr_operation_cancelled_cb), self, NULL);
 
       /* We just aborted the operation so we're done */
       if (g_cancellable_is_cancelled (self->priv->cancellable))
@@ -635,7 +635,7 @@ request_cb (TpChannelDispatcher *cd,
   DEBUG ("Calling ChannelRequest.Proceed()");
 
   tp_cli_channel_request_call_proceed (self->priv->chan_request, -1,
-      channel_request_proceed_cb, self, NULL, G_OBJECT (self));
+      acr_channel_request_proceed_cb, self, NULL, G_OBJECT (self));
 
   return;
 
@@ -697,7 +697,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
           tp_proxy_get_object_path (self->priv->account), self->priv->request,
           self->priv->user_action_time,
           tp_base_client_get_bus_name (self->priv->handler),
-          request_cb, self, NULL, G_OBJECT (self));
+          acr_request_cb, self, NULL, G_OBJECT (self));
     }
   else
     {
@@ -709,7 +709,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
           tp_proxy_get_object_path (self->priv->account), self->priv->request,
           self->priv->user_action_time,
           tp_base_client_get_bus_name (self->priv->handler),
-          request_cb, self, NULL, G_OBJECT (self));
+          acr_request_cb, self, NULL, G_OBJECT (self));
     }
 
   g_object_unref (cd);
