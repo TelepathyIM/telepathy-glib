@@ -953,7 +953,8 @@ request_channel_async (TpAccountChannelRequest *self,
  * Asynchronously calls CreateChannel on the ChannelDispatcher to create a
  * channel with the properties defined in #TpAccountChannelRequest:request
  * and let the ChannelDispatcher dispatch it to an handler.
- * When the channel has been created and dispatched, @callback will be called.
+ * @callback will be called when the channel has been created and dispatched,
+ * or the request has failed.
  * You can then call tp_account_channel_request_create_channel_finish() to
  * get the result of the operation.
  *
@@ -1004,7 +1005,7 @@ request_channel_finish (TpAccountChannelRequest *self,
  * tp_account_channel_request_create_channel_async().
  *
  * Returns: %TRUE if the channel was successfully created and dispatched,
- * otherwise %NULL.
+ * otherwise %FALSE.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -1031,8 +1032,9 @@ tp_account_channel_request_create_channel_finish (
  * Asynchronously calls EnsureChannel on the ChannelDispatcher to create a
  * channel with the properties defined in #TpAccountChannelRequest:request
  * and let the ChannelDispatcher dispatch it to an handler.
- * When the channel has been ensure and dispatched (or re-dispatched if the
- * channel already exists), @callback will be called.
+ * @callback will be called when an existing channel's handler has been
+ * notified, a new channel has been created and dispatched, or the request
+ * has failed.
  * You can then call tp_account_channel_request_ensure_channel_finish() to
  * get the result of the operation.
  *
@@ -1059,8 +1061,8 @@ tp_account_channel_request_ensure_channel_async (
  * Finishes an async channel creation started using
  * tp_account_channel_request_ensure_channel_async().
  *
- * Returns: %TRUE if the channel was successfully ensure and (re-)dispatched,
- * otherwise %NULL.
+ * Returns: %TRUE if the channel was successfully ensured and (re-)dispatched,
+ * otherwise %FALSE.
  *
  * Since: 0.11.UNRELEASED
  */
