@@ -551,7 +551,7 @@ acr_channel_request_proceed_cb (TpChannelRequest *request,
   if (self->priv->should_handle)
     DEBUG ("Proceed succeeded; waiting for the channel to be handled");
   else
-    DEBUG ("Proceed succeeded; waiting the Succeeded signal");
+    DEBUG ("Proceed succeeded; waiting for the Succeeded signal");
 }
 
 static void
