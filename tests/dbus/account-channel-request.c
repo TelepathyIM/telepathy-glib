@@ -567,6 +567,52 @@ test_forget_cr_failed (Test *test,
   g_assert (test->channel == NULL);
 }
 
+/* Cancel the operation before starting it */
+static void
+test_forget_cancel_before (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req;
+
+  request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  g_cancellable_cancel (test->cancellable);
+
+  tp_account_channel_request_create_channel_async (req, "Fake",
+      test->cancellable, create_cb, test);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+}
+
+static void
+test_forget_cancel_after_create (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req;
+
+  request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_create_channel_async (req, "Fake",
+      test->cancellable, create_cb, test);
+
+  g_signal_connect (test->cd_service, "channel-request-created",
+      G_CALLBACK (channel_request_created_cb), test);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_CANCELLED);
+}
+
 int
 main (int argc,
       char **argv)
@@ -606,6 +652,10 @@ main (int argc,
       setup, test_forget_cr_failed, teardown);
   g_test_add ("/account-channels-request-forget/ensure-success", Test, NULL,
       setup, test_forget_ensure_success, teardown);
+  g_test_add ("/account-channels-request-forget/cancel-before", Test, NULL,
+      setup, test_forget_cancel_before, teardown);
+  g_test_add ("/account-channels-request-forget/after-create", Test, NULL,
+      setup, test_forget_cancel_after_create, teardown);
 
   return g_test_run ();
 }
