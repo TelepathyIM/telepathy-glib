@@ -292,8 +292,6 @@ tp_account_channel_request_class_init (
    * The user action time that will be passed to mission-control when
    * requesting the channel.
    *
-   * This property can't be %NULL.
-   *
    * Since: 0.11.UNRELEASED
    */
   param_spec = g_param_spec_int64 ("user-action-time", "user action time",
