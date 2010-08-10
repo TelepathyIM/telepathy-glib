@@ -10,28 +10,27 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#include "examples/cm/echo/connection-manager.h"
-
+#include "tests/lib/echo-cm.h"
 #include "tests/lib/util.h"
 
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
-    ExampleEchoConnectionManager *service_cm;
+    TpTestsEchoConnectionManager *service_cm;
 
     TpConnectionManager *cm;
     GError *error /* initialized where needed */;
 } Test;
 
-typedef ExampleEchoConnectionManager PropertylessConnectionManager;
-typedef ExampleEchoConnectionManagerClass PropertylessConnectionManagerClass;
+typedef TpTestsEchoConnectionManager PropertylessConnectionManager;
+typedef TpTestsEchoConnectionManagerClass PropertylessConnectionManagerClass;
 
 static void stub_properties_iface_init (gpointer iface);
 static GType propertyless_connection_manager_get_type (void);
 
 G_DEFINE_TYPE_WITH_CODE (PropertylessConnectionManager,
     propertyless_connection_manager,
-    EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER,
+    TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       stub_properties_iface_init))
 
@@ -99,9 +98,9 @@ setup (Test *test,
   test->mainloop = g_main_loop_new (NULL, FALSE);
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  test->service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (
+  test->service_cm = TP_TESTS_ECHO_CONNECTION_MANAGER (
       tp_tests_object_new_static_class (
-        EXAMPLE_TYPE_ECHO_CONNECTION_MANAGER,
+        TP_TESTS_TYPE_ECHO_CONNECTION_MANAGER,
         NULL));
   g_assert (test->service_cm != NULL);
   service_cm_as_base = TP_BASE_CONNECTION_MANAGER (test->service_cm);
@@ -909,7 +908,7 @@ test_dbus_fallback (Test *test,
    * exercise the fallback path */
   g_object_unref (test->service_cm);
   test->service_cm = NULL;
-  test->service_cm = EXAMPLE_ECHO_CONNECTION_MANAGER (tp_tests_object_new_static_class (
+  test->service_cm = TP_TESTS_ECHO_CONNECTION_MANAGER (tp_tests_object_new_static_class (
         propertyless_connection_manager_get_type (),
         NULL));
   g_assert (test->service_cm != NULL);

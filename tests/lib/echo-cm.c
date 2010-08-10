@@ -8,23 +8,23 @@
  * notice and this notice are preserved.
  */
 
-#include "connection-manager.h"
+#include "echo-cm.h"
 
 #include <dbus/dbus-protocol.h>
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#include "conn.h"
+#include "echo-conn.h"
 
-G_DEFINE_TYPE (ExampleEchoConnectionManager,
-    example_echo_connection_manager,
+G_DEFINE_TYPE (TpTestsEchoConnectionManager,
+    tp_tests_echo_connection_manager,
     TP_TYPE_BASE_CONNECTION_MANAGER)
 
 /* type definition stuff */
 
 static void
-example_echo_connection_manager_init (ExampleEchoConnectionManager *self)
+tp_tests_echo_connection_manager_init (TpTestsEchoConnectionManager *self)
 {
 }
 
@@ -34,7 +34,16 @@ typedef struct {
     gchar *account;
 } ExampleParams;
 
-#include "_gen/param-spec-struct.h"
+static const TpCMParamSpec tp_tests_echo_example_params[] = {
+  { "account", "s", G_TYPE_STRING,
+    TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+    NULL, /* default */
+    G_STRUCT_OFFSET (ExampleParams, account), /* struct offset */
+    tp_cm_param_filter_string_nonempty, /* filter */
+    NULL, /* filter data */
+    NULL /* setter data */ },
+  { NULL }
+};
 
 static gpointer
 alloc_params (void)
@@ -53,7 +62,7 @@ free_params (gpointer p)
 }
 
 static const TpCMProtocolSpec example_protocols[] = {
-  { "example", example_echo_example_params, alloc_params, free_params },
+  { "example", tp_tests_echo_example_params, alloc_params, free_params },
   { NULL, NULL }
 };
 
@@ -65,8 +74,8 @@ new_connection (TpBaseConnectionManager *self,
                 GError **error)
 {
   ExampleParams *params = parsed_params;
-  ExampleEchoConnection *conn = EXAMPLE_ECHO_CONNECTION
-      (g_object_new (EXAMPLE_TYPE_ECHO_CONNECTION,
+  TpTestsEchoConnection *conn = TP_TESTS_ECHO_CONNECTION
+      (g_object_new (TP_TESTS_TYPE_ECHO_CONNECTION,
           "account", params->account,
           "protocol", proto,
           NULL));
@@ -75,8 +84,8 @@ new_connection (TpBaseConnectionManager *self,
 }
 
 static void
-example_echo_connection_manager_class_init (
-    ExampleEchoConnectionManagerClass *klass)
+tp_tests_echo_connection_manager_class_init (
+    TpTestsEchoConnectionManagerClass *klass)
 {
   TpBaseConnectionManagerClass *base_class =
       (TpBaseConnectionManagerClass *) klass;

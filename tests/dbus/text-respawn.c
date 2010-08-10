@@ -15,8 +15,8 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 
-#include "examples/cm/echo/chan.h"
-#include "examples/cm/echo/conn.h"
+#include "tests/lib/echo-chan.h"
+#include "tests/lib/echo-conn.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
@@ -80,10 +80,10 @@ int
 main (int argc,
       char **argv)
 {
-  ExampleEchoConnection *service_conn;
+  TpTestsEchoConnection *service_conn;
   TpBaseConnection *service_conn_as_base;
   TpHandleRepoIface *contact_repo;
-  ExampleEchoChannel *service_chan;
+  TpTestsEchoChannel *service_chan;
   TpDBusDaemon *dbus;
   TpConnection *conn;
   TpChannel *chan;
@@ -97,8 +97,8 @@ main (int argc,
   /* tp_debug_set_flags ("all"); */
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 
-  service_conn = EXAMPLE_ECHO_CONNECTION (tp_tests_object_new_static_class (
-        EXAMPLE_TYPE_ECHO_CONNECTION,
+  service_conn = TP_TESTS_ECHO_CONNECTION (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_ECHO_CONNECTION,
         "account", "me@example.com",
         "protocol", "example",
         NULL));
@@ -129,8 +129,8 @@ main (int argc,
 
   chan_path = g_strdup_printf ("%s/Channel", conn_path);
 
-  service_chan = EXAMPLE_ECHO_CHANNEL (tp_tests_object_new_static_class (
-        EXAMPLE_TYPE_ECHO_CHANNEL,
+  service_chan = TP_TESTS_ECHO_CHANNEL (tp_tests_object_new_static_class (
+        TP_TESTS_TYPE_ECHO_CHANNEL,
         "connection", service_conn,
         "object-path", chan_path,
         "handle", handle,

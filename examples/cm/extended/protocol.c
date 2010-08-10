@@ -13,19 +13,18 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "conn.h"
-#include "im-manager.h"
 
-G_DEFINE_TYPE (ExampleEcho2Protocol,
-    example_echo_2_protocol,
+G_DEFINE_TYPE (ExampleExtendedProtocol,
+    example_extended_protocol,
     TP_TYPE_BASE_PROTOCOL)
 
 static void
-example_echo_2_protocol_init (
-    ExampleEcho2Protocol *self)
+example_extended_protocol_init (
+    ExampleExtendedProtocol *self)
 {
 }
 
-static const TpCMParamSpec example_echo_2_example_params[] = {
+static const TpCMParamSpec example_extended_example_params[] = {
   { "account", "s", G_TYPE_STRING,
     TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
     NULL, /* no default */
@@ -39,7 +38,7 @@ static const TpCMParamSpec example_echo_2_example_params[] = {
 static const TpCMParamSpec *
 get_parameters (TpBaseProtocol *self)
 {
-  return example_echo_2_example_params;
+  return example_extended_example_params;
 }
 
 static TpBaseConnection *
@@ -47,7 +46,7 @@ new_connection (TpBaseProtocol *protocol,
     GHashTable *asv,
     GError **error)
 {
-  ExampleEcho2Connection *conn;
+  ExampleExtendedConnection *conn;
   const gchar *account;
 
   account = tp_asv_get_string (asv, "account");
@@ -59,8 +58,8 @@ new_connection (TpBaseProtocol *protocol,
       return NULL;
     }
 
-  conn = EXAMPLE_ECHO_2_CONNECTION (
-      g_object_new (EXAMPLE_TYPE_ECHO_2_CONNECTION,
+  conn = EXAMPLE_EXTENDED_CONNECTION (
+      g_object_new (EXAMPLE_TYPE_EXTENDED_CONNECTION,
         "account", account,
         "protocol", tp_base_protocol_get_name (protocol),
         NULL));
@@ -69,7 +68,8 @@ new_connection (TpBaseProtocol *protocol,
 }
 
 gchar *
-example_echo_2_protocol_normalize_contact (const gchar *id, GError **error)
+example_extended_protocol_normalize_contact (const gchar *id,
+    GError **error)
 {
   if (id[0] == '\0')
     {
@@ -86,7 +86,7 @@ normalize_contact (TpBaseProtocol *self G_GNUC_UNUSED,
     const gchar *contact,
     GError **error)
 {
-  return example_echo_2_protocol_normalize_contact (contact, error);
+  return example_extended_protocol_normalize_contact (contact, error);
 }
 
 static gchar *
@@ -97,7 +97,7 @@ identify_account (TpBaseProtocol *self G_GNUC_UNUSED,
   const gchar *account = tp_asv_get_string (asv, "account");
 
   if (account != NULL)
-    return g_strdup (account);
+    return example_extended_protocol_normalize_contact (account, error);
 
   g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
       "'account' parameter not given");
@@ -121,28 +121,29 @@ get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
   if (connection_interfaces != NULL)
     {
       *connection_interfaces = g_strdupv (
-          (GStrv) example_echo_2_connection_get_possible_interfaces ());
+          (GStrv) example_extended_connection_get_possible_interfaces ());
     }
 
   if (channel_managers != NULL)
     {
-      GType types[] = { EXAMPLE_TYPE_ECHO_2_IM_MANAGER, G_TYPE_INVALID };
+      /* we don't have any channel managers */
+      GType types[] = { G_TYPE_INVALID };
 
       *channel_managers = g_memdup (types, sizeof (types));
     }
 
   if (icon_name != NULL)
     {
-      /* a real protocol would use its own icon name - for this example we
-       * borrow the one from ICQ */
-      *icon_name = g_strdup ("im-icq");
+      /* a real protocol would use its own icon name, probably im-something -
+       * for this example we use an emoticon instead */
+      *icon_name = g_strdup ("face-smile");
     }
 
   if (english_name != NULL)
     {
       /* in a real protocol this would be "ICQ" or
        * "Windows Live Messenger (MSN)" or something */
-      *english_name = g_strdup ("Echo II example");
+      *english_name = g_strdup ("Extended (hats) example");
     }
 
   if (vcard_field != NULL)
@@ -153,8 +154,8 @@ get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
 }
 
 static void
-example_echo_2_protocol_class_init (
-    ExampleEcho2ProtocolClass *klass)
+example_extended_protocol_class_init (
+    ExampleExtendedProtocolClass *klass)
 {
   TpBaseProtocolClass *base_class =
       (TpBaseProtocolClass *) klass;

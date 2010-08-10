@@ -9,17 +9,17 @@
  * notice and this notice are preserved.
  */
 
-#include "conn.h"
+#include "echo-conn.h"
 
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 
-#include "im-manager.h"
+#include "echo-im-manager.h"
 
-G_DEFINE_TYPE (ExampleEchoConnection,
-    example_echo_connection,
+G_DEFINE_TYPE (TpTestsEchoConnection,
+    tp_tests_echo_connection,
     TP_TYPE_BASE_CONNECTION)
 
 /* type definition stuff */
@@ -30,16 +30,16 @@ enum
   N_PROPS
 };
 
-struct _ExampleEchoConnectionPrivate
+struct _TpTestsEchoConnectionPrivate
 {
   gchar *account;
 };
 
 static void
-example_echo_connection_init (ExampleEchoConnection *self)
+tp_tests_echo_connection_init (TpTestsEchoConnection *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_ECHO_CONNECTION,
-      ExampleEchoConnectionPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_ECHO_CONNECTION,
+      TpTestsEchoConnectionPrivate);
 }
 
 static void
@@ -48,7 +48,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *spec)
 {
-  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (object);
+  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (object);
 
   switch (property_id) {
     case PROP_ACCOUNT:
@@ -65,7 +65,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *spec)
 {
-  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (object);
+  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (object);
 
   switch (property_id) {
     case PROP_ACCOUNT:
@@ -80,23 +80,23 @@ set_property (GObject *object,
 static void
 finalize (GObject *object)
 {
-  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (object);
+  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (object);
 
   g_free (self->priv->account);
 
-  G_OBJECT_CLASS (example_echo_connection_parent_class)->finalize (object);
+  G_OBJECT_CLASS (tp_tests_echo_connection_parent_class)->finalize (object);
 }
 
 static gchar *
 get_unique_connection_name (TpBaseConnection *conn)
 {
-  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (conn);
+  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (conn);
 
   return g_strdup (self->priv->account);
 }
 
 static gchar *
-example_echo_normalize_contact (TpHandleRepoIface *repo,
+tp_tests_echo_normalize_contact (TpHandleRepoIface *repo,
                            const gchar *id,
                            gpointer context,
                            GError **error)
@@ -116,7 +116,7 @@ create_handle_repos (TpBaseConnection *conn,
                      TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES])
 {
   repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new
-      (TP_HANDLE_TYPE_CONTACT, example_echo_normalize_contact, NULL);
+      (TP_HANDLE_TYPE_CONTACT, tp_tests_echo_normalize_contact, NULL);
 }
 
 static GPtrArray *
@@ -124,7 +124,7 @@ create_channel_managers (TpBaseConnection *conn)
 {
   GPtrArray *ret = g_ptr_array_sized_new (1);
 
-  g_ptr_array_add (ret, g_object_new (EXAMPLE_TYPE_ECHO_IM_MANAGER,
+  g_ptr_array_add (ret, g_object_new (TP_TESTS_TYPE_ECHO_IM_MANAGER,
         "connection", conn,
         NULL));
 
@@ -135,7 +135,7 @@ static gboolean
 start_connecting (TpBaseConnection *conn,
                   GError **error)
 {
-  ExampleEchoConnection *self = EXAMPLE_ECHO_CONNECTION (conn);
+  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (conn);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
       TP_HANDLE_TYPE_CONTACT);
 
@@ -162,7 +162,7 @@ shut_down (TpBaseConnection *conn)
 }
 
 static void
-example_echo_connection_class_init (ExampleEchoConnectionClass *klass)
+tp_tests_echo_connection_class_init (TpTestsEchoConnectionClass *klass)
 {
   static const gchar *interfaces_always_present[] = {
       TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
@@ -175,7 +175,7 @@ example_echo_connection_class_init (ExampleEchoConnectionClass *klass)
   object_class->get_property = get_property;
   object_class->set_property = set_property;
   object_class->finalize = finalize;
-  g_type_class_add_private (klass, sizeof (ExampleEchoConnectionPrivate));
+  g_type_class_add_private (klass, sizeof (TpTestsEchoConnectionPrivate));
 
   base_class->create_handle_repos = create_handle_repos;
   base_class->get_unique_connection_name = get_unique_connection_name;

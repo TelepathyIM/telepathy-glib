@@ -869,8 +869,8 @@ static const gchar * const allowed_properties[] = {
 };
 
 static void
-example_contact_list_manager_foreach_channel_class (TpChannelManager *manager,
-    TpChannelManagerChannelClassFunc func,
+example_contact_list_manager_type_foreach_channel_class (GType type,
+    TpChannelManagerTypeChannelClassFunc func,
     gpointer user_data)
 {
     GHashTable *table = tp_asv_new (
@@ -879,11 +879,11 @@ example_contact_list_manager_foreach_channel_class (TpChannelManager *manager,
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_LIST,
         NULL);
 
-    func (manager, table, allowed_properties, user_data);
+    func (type, table, allowed_properties, user_data);
 
     g_hash_table_insert (table, TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
         tp_g_value_slice_new_uint (TP_HANDLE_TYPE_GROUP));
-    func (manager, table, allowed_properties, user_data);
+    func (type, table, allowed_properties, user_data);
 
     g_hash_table_destroy (table);
 }
@@ -991,8 +991,8 @@ channel_manager_iface_init (gpointer g_iface,
   TpChannelManagerIface *iface = g_iface;
 
   iface->foreach_channel = example_contact_list_manager_foreach_channel;
-  iface->foreach_channel_class =
-      example_contact_list_manager_foreach_channel_class;
+  iface->type_foreach_channel_class =
+      example_contact_list_manager_type_foreach_channel_class;
   iface->create_channel = example_contact_list_manager_create_channel;
   iface->ensure_channel = example_contact_list_manager_ensure_channel;
   /* In this channel manager, Request has the same semantics as Ensure */

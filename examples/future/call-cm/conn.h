@@ -61,9 +61,6 @@ GType example_call_connection_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CALL_CONNECTION, \
                               ExampleCallConnectionClass))
 
-gchar *example_call_normalize_contact (TpHandleRepoIface *repo,
-    const gchar *id, gpointer context, GError **error);
-
 /* Must be kept in sync with the array presence_statuses in conn.c */
 typedef enum {
     EXAMPLE_CALL_PRESENCE_OFFLINE = 0,
@@ -72,6 +69,8 @@ typedef enum {
     EXAMPLE_CALL_PRESENCE_AWAY,
     EXAMPLE_CALL_PRESENCE_AVAILABLE
 } ExampleCallPresence;
+
+const gchar * const *example_call_connection_get_possible_interfaces (void);
 
 G_END_DECLS
 

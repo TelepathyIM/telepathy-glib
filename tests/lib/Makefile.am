@@ -8,6 +8,14 @@ libtp_glib_tests_la_SOURCES = \
     contacts-conn.c \
     contacts-conn.h \
     debug.h \
+    echo-chan.h \
+    echo-chan.c \
+    echo-cm.h \
+    echo-cm.c \
+    echo-conn.h \
+    echo-conn.c \
+    echo-im-manager.h \
+    echo-im-manager.c \
     myassert.h \
     params-cm.h \
     params-cm.c \

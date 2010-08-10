@@ -11,18 +11,18 @@
  * notice and this notice are preserved.
  */
 
-#include "im-manager.h"
+#include "echo-im-manager.h"
 
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#include "chan.h"
+#include "echo-chan.h"
 
 static void channel_manager_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE (ExampleEchoImManager,
-    example_echo_im_manager,
+G_DEFINE_TYPE_WITH_CODE (TpTestsEchoImManager,
+    tp_tests_echo_im_manager,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_MANAGER,
       channel_manager_iface_init))
@@ -35,36 +35,36 @@ enum
   N_PROPS
 };
 
-struct _ExampleEchoImManagerPrivate
+struct _TpTestsEchoImManagerPrivate
 {
   TpBaseConnection *conn;
 
-  /* GUINT_TO_POINTER (handle) => ExampleEchoChannel */
+  /* GUINT_TO_POINTER (handle) => TpTestsEchoChannel */
   GHashTable *channels;
   gulong status_changed_id;
 };
 
 static void
-example_echo_im_manager_init (ExampleEchoImManager *self)
+tp_tests_echo_im_manager_init (TpTestsEchoImManager *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_ECHO_IM_MANAGER,
-      ExampleEchoImManagerPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_ECHO_IM_MANAGER,
+      TpTestsEchoImManagerPrivate);
 
   self->priv->channels = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, g_object_unref);
 }
 
-static void example_echo_im_manager_close_all (ExampleEchoImManager *self);
+static void tp_tests_echo_im_manager_close_all (TpTestsEchoImManager *self);
 
 static void
 dispose (GObject *object)
 {
-  ExampleEchoImManager *self = EXAMPLE_ECHO_IM_MANAGER (object);
+  TpTestsEchoImManager *self = TP_TESTS_ECHO_IM_MANAGER (object);
 
-  example_echo_im_manager_close_all (self);
+  tp_tests_echo_im_manager_close_all (self);
   g_assert (self->priv->channels == NULL);
 
-  ((GObjectClass *) example_echo_im_manager_parent_class)->dispose (object);
+  ((GObjectClass *) tp_tests_echo_im_manager_parent_class)->dispose (object);
 }
 
 static void
@@ -73,7 +73,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-  ExampleEchoImManager *self = EXAMPLE_ECHO_IM_MANAGER (object);
+  TpTestsEchoImManager *self = TP_TESTS_ECHO_IM_MANAGER (object);
 
   switch (property_id)
     {
@@ -91,7 +91,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-  ExampleEchoImManager *self = EXAMPLE_ECHO_IM_MANAGER (object);
+  TpTestsEchoImManager *self = TP_TESTS_ECHO_IM_MANAGER (object);
 
   switch (property_id)
     {
@@ -110,18 +110,18 @@ static void
 status_changed_cb (TpBaseConnection *conn,
                    guint status,
                    guint reason,
-                   ExampleEchoImManager *self)
+                   TpTestsEchoImManager *self)
 {
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
-    example_echo_im_manager_close_all (self);
+    tp_tests_echo_im_manager_close_all (self);
 }
 
 static void
 constructed (GObject *object)
 {
-  ExampleEchoImManager *self = EXAMPLE_ECHO_IM_MANAGER (object);
+  TpTestsEchoImManager *self = TP_TESTS_ECHO_IM_MANAGER (object);
   void (*chain_up) (GObject *) =
-      ((GObjectClass *) example_echo_im_manager_parent_class)->constructed;
+      ((GObjectClass *) tp_tests_echo_im_manager_parent_class)->constructed;
 
   if (chain_up != NULL)
     {
@@ -133,7 +133,7 @@ constructed (GObject *object)
 }
 
 static void
-example_echo_im_manager_class_init (ExampleEchoImManagerClass *klass)
+tp_tests_echo_im_manager_class_init (TpTestsEchoImManagerClass *klass)
 {
   GParamSpec *param_spec;
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -150,11 +150,11 @@ example_echo_im_manager_class_init (ExampleEchoImManagerClass *klass)
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
-  g_type_class_add_private (klass, sizeof (ExampleEchoImManagerPrivate));
+  g_type_class_add_private (klass, sizeof (TpTestsEchoImManagerPrivate));
 }
 
 static void
-example_echo_im_manager_close_all (ExampleEchoImManager *self)
+tp_tests_echo_im_manager_close_all (TpTestsEchoImManager *self)
 {
   if (self->priv->channels != NULL)
     {
@@ -173,11 +173,11 @@ example_echo_im_manager_close_all (ExampleEchoImManager *self)
 }
 
 static void
-example_echo_im_manager_foreach_channel (TpChannelManager *iface,
+tp_tests_echo_im_manager_foreach_channel (TpChannelManager *iface,
                                          TpExportableChannelFunc callback,
                                          gpointer user_data)
 {
-  ExampleEchoImManager *self = EXAMPLE_ECHO_IM_MANAGER (iface);
+  TpTestsEchoImManager *self = TP_TESTS_ECHO_IM_MANAGER (iface);
   GHashTableIter iter;
   gpointer handle, channel;
 
@@ -190,8 +190,8 @@ example_echo_im_manager_foreach_channel (TpChannelManager *iface,
 }
 
 static void
-channel_closed_cb (ExampleEchoChannel *chan,
-                   ExampleEchoImManager *self)
+channel_closed_cb (TpTestsEchoChannel *chan,
+                   TpTestsEchoImManager *self)
 {
   tp_channel_manager_emit_channel_closed_for_object (self,
       TP_EXPORTABLE_CHANNEL (chan));
@@ -222,19 +222,19 @@ channel_closed_cb (ExampleEchoChannel *chan,
 }
 
 static void
-new_channel (ExampleEchoImManager *self,
+new_channel (TpTestsEchoImManager *self,
              TpHandle handle,
              TpHandle initiator,
              gpointer request_token)
 {
-  ExampleEchoChannel *chan;
+  TpTestsEchoChannel *chan;
   gchar *object_path;
   GSList *requests = NULL;
 
   object_path = g_strdup_printf ("%s/EchoChannel%u",
       self->priv->conn->object_path, handle);
 
-  chan = g_object_new (EXAMPLE_TYPE_ECHO_CHANNEL,
+  chan = g_object_new (TP_TESTS_TYPE_ECHO_CHANNEL,
       "connection", self->priv->conn,
       "object-path", object_path,
       "handle", handle,
@@ -269,7 +269,7 @@ static const gchar * const allowed_properties[] = {
 };
 
 static void
-example_echo_im_manager_foreach_channel_class (TpChannelManager *manager,
+tp_tests_echo_im_manager_foreach_channel_class (TpChannelManager *manager,
     TpChannelManagerChannelClassFunc func,
     gpointer user_data)
 {
@@ -286,13 +286,13 @@ example_echo_im_manager_foreach_channel_class (TpChannelManager *manager,
 }
 
 static gboolean
-example_echo_im_manager_request (ExampleEchoImManager *self,
+tp_tests_echo_im_manager_request (TpTestsEchoImManager *self,
                                  gpointer request_token,
                                  GHashTable *request_properties,
                                  gboolean require_new)
 {
   TpHandle handle;
-  ExampleEchoChannel *chan;
+  TpTestsEchoChannel *chan;
   GError *error = NULL;
 
   if (tp_strdiff (tp_asv_get_string (request_properties,
@@ -346,20 +346,20 @@ error:
 }
 
 static gboolean
-example_echo_im_manager_create_channel (TpChannelManager *manager,
+tp_tests_echo_im_manager_create_channel (TpChannelManager *manager,
                                         gpointer request_token,
                                         GHashTable *request_properties)
 {
-    return example_echo_im_manager_request (EXAMPLE_ECHO_IM_MANAGER (manager),
+    return tp_tests_echo_im_manager_request (TP_TESTS_ECHO_IM_MANAGER (manager),
         request_token, request_properties, TRUE);
 }
 
 static gboolean
-example_echo_im_manager_ensure_channel (TpChannelManager *manager,
+tp_tests_echo_im_manager_ensure_channel (TpChannelManager *manager,
                                         gpointer request_token,
                                         GHashTable *request_properties)
 {
-    return example_echo_im_manager_request (EXAMPLE_ECHO_IM_MANAGER (manager),
+    return tp_tests_echo_im_manager_request (TP_TESTS_ECHO_IM_MANAGER (manager),
         request_token, request_properties, FALSE);
 }
 
@@ -369,10 +369,10 @@ channel_manager_iface_init (gpointer g_iface,
 {
   TpChannelManagerIface *iface = g_iface;
 
-  iface->foreach_channel = example_echo_im_manager_foreach_channel;
-  iface->foreach_channel_class = example_echo_im_manager_foreach_channel_class;
-  iface->create_channel = example_echo_im_manager_create_channel;
-  iface->ensure_channel = example_echo_im_manager_ensure_channel;
+  iface->foreach_channel = tp_tests_echo_im_manager_foreach_channel;
+  iface->foreach_channel_class = tp_tests_echo_im_manager_foreach_channel_class;
+  iface->create_channel = tp_tests_echo_im_manager_create_channel;
+  iface->ensure_channel = tp_tests_echo_im_manager_ensure_channel;
   /* In this channel manager, Request has the same semantics as Ensure */
-  iface->request_channel = example_echo_im_manager_ensure_channel;
+  iface->request_channel = tp_tests_echo_im_manager_ensure_channel;
 }

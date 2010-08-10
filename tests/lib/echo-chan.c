@@ -11,7 +11,7 @@
  * notice and this notice are preserved.
  */
 
-#include "chan.h"
+#include "echo-chan.h"
 
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/channel-iface.h>
@@ -21,8 +21,8 @@ static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
 static void destroyable_iface_init (gpointer iface, gpointer data);
 
-G_DEFINE_TYPE_WITH_CODE (ExampleEchoChannel,
-    example_echo_channel,
+G_DEFINE_TYPE_WITH_CODE (TpTestsEchoChannel,
+    tp_tests_echo_channel,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
@@ -52,7 +52,7 @@ enum
   N_PROPS
 };
 
-struct _ExampleEchoChannelPrivate
+struct _TpTestsEchoChannelPrivate
 {
   TpBaseConnection *conn;
   gchar *object_path;
@@ -64,16 +64,16 @@ struct _ExampleEchoChannelPrivate
   unsigned disposed:1;
 };
 
-static const char * example_echo_channel_interfaces[] = {
+static const char * tp_tests_echo_channel_interfaces[] = {
     TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE,
     NULL
 };
 
 static void
-example_echo_channel_init (ExampleEchoChannel *self)
+tp_tests_echo_channel_init (TpTestsEchoChannel *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, EXAMPLE_TYPE_ECHO_CHANNEL,
-      ExampleEchoChannelPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_ECHO_CHANNEL,
+      TpTestsEchoChannelPrivate);
 }
 
 static GObject *
@@ -82,9 +82,9 @@ constructor (GType type,
              GObjectConstructParam *props)
 {
   GObject *object =
-      G_OBJECT_CLASS (example_echo_channel_parent_class)->constructor (type,
+      G_OBJECT_CLASS (tp_tests_echo_channel_parent_class)->constructor (type,
           n_props, props);
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (object);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (object);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
@@ -97,7 +97,7 @@ constructor (GType type,
       tp_base_connection_get_dbus_daemon (self->priv->conn),
       self->priv->object_path, self);
 
-  tp_text_mixin_init (object, G_STRUCT_OFFSET (ExampleEchoChannel, text),
+  tp_text_mixin_init (object, G_STRUCT_OFFSET (TpTestsEchoChannel, text),
       contact_repo);
 
   tp_text_mixin_set_message_types (object,
@@ -115,7 +115,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (object);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (object);
 
   switch (property_id)
     {
@@ -162,7 +162,7 @@ get_property (GObject *object,
       g_value_set_object (value, self->priv->conn);
       break;
     case PROP_INTERFACES:
-      g_value_set_boxed (value, example_echo_channel_interfaces);
+      g_value_set_boxed (value, tp_tests_echo_channel_interfaces);
       break;
     case PROP_CHANNEL_DESTROYED:
       g_value_set_boolean (value, self->priv->closed);
@@ -192,7 +192,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (object);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (object);
 
   switch (property_id)
     {
@@ -227,7 +227,7 @@ set_property (GObject *object,
 static void
 dispose (GObject *object)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (object);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (object);
 
   if (self->priv->disposed)
     return;
@@ -240,13 +240,13 @@ dispose (GObject *object)
       tp_svc_channel_emit_closed (self);
     }
 
-  ((GObjectClass *) example_echo_channel_parent_class)->dispose (object);
+  ((GObjectClass *) tp_tests_echo_channel_parent_class)->dispose (object);
 }
 
 static void
 finalize (GObject *object)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (object);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (object);
   TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
@@ -259,11 +259,11 @@ finalize (GObject *object)
 
   tp_text_mixin_finalize (object);
 
-  ((GObjectClass *) example_echo_channel_parent_class)->finalize (object);
+  ((GObjectClass *) tp_tests_echo_channel_parent_class)->finalize (object);
 }
 
 static void
-example_echo_channel_class_init (ExampleEchoChannelClass *klass)
+tp_tests_echo_channel_class_init (TpTestsEchoChannelClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl channel_props[] = {
       { "TargetHandleType", "handle-type", NULL },
@@ -287,7 +287,7 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
-  g_type_class_add_private (klass, sizeof (ExampleEchoChannelPrivate));
+  g_type_class_add_private (klass, sizeof (TpTestsEchoChannelPrivate));
 
   object_class->constructor = constructor;
   object_class->set_property = set_property;
@@ -347,15 +347,15 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
   g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
 
   tp_text_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleEchoChannelClass, text_class));
+      G_STRUCT_OFFSET (TpTestsEchoChannelClass, text_class));
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleEchoChannelClass, dbus_properties_class));
+      G_STRUCT_OFFSET (TpTestsEchoChannelClass, dbus_properties_class));
 }
 
 static void
-example_echo_channel_close (ExampleEchoChannel *self)
+tp_tests_echo_channel_close (TpTestsEchoChannel *self)
 {
   GObject *object = (GObject *) self;
 
@@ -401,9 +401,9 @@ static void
 channel_close (TpSvcChannel *iface,
                DBusGMethodInvocation *context)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (iface);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (iface);
 
-  example_echo_channel_close (self);
+  tp_tests_echo_channel_close (self);
   tp_svc_channel_return_from_close (context);
 }
 
@@ -419,7 +419,7 @@ static void
 channel_get_handle (TpSvcChannel *iface,
                     DBusGMethodInvocation *context)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (iface);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (iface);
 
   tp_svc_channel_return_from_get_handle (context, TP_HANDLE_TYPE_CONTACT,
       self->priv->handle);
@@ -430,7 +430,7 @@ channel_get_interfaces (TpSvcChannel *iface,
                         DBusGMethodInvocation *context)
 {
   tp_svc_channel_return_from_get_interfaces (context,
-      example_echo_channel_interfaces);
+      tp_tests_echo_channel_interfaces);
 }
 
 static void
@@ -453,7 +453,7 @@ text_send (TpSvcChannelTypeText *iface,
            const gchar *text,
            DBusGMethodInvocation *context)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (iface);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (iface);
   time_t timestamp = time (NULL);
   gchar *echo;
   guint echo_type = type;
@@ -507,10 +507,10 @@ static void
 destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
                      DBusGMethodInvocation *context)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (iface);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (iface);
 
   tp_text_mixin_clear ((GObject *) self);
-  example_echo_channel_close (self);
+  tp_tests_echo_channel_close (self);
   g_assert (self->priv->closed);
   tp_svc_channel_interface_destroyable_return_from_destroy (context);
 }
