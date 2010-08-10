@@ -360,7 +360,7 @@ tp_account_channel_request_new (
  *
  * Return the #TpAccountChannelRequest:account construct-only property
  *
- * Returns: the value of #TpAccountChannelRequest:account
+ * Returns: (transfer none): the value of #TpAccountChannelRequest:account
  *
  * Since: 0.11.UNRELEASED
  */
@@ -377,7 +377,7 @@ tp_account_channel_request_get_account (
  *
  * Return the #TpAccountChannelRequest:request construct-only property
  *
- * Returns: the value of #TpAccountChannelRequest:request
+ * Returns: (transfer none): the value of #TpAccountChannelRequest:request
  *
  * Since: 0.11.UNRELEASED
  */
@@ -780,8 +780,8 @@ tp_account_channel_request_create_and_handle_channel_async (
  * Finishes an async channel creation started using
  * tp_account_channel_request_create_and_handle_channel_async().
  *
- * Returns: a new reference on a #TpChannel if the channel was successfully
- * created and you are handling it, otherwise %NULL.
+ * Returns: (transfer full): a new reference on a #TpChannel if the channel was
+ * successfully created and you are handling it, otherwise %NULL.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -844,8 +844,8 @@ tp_account_channel_request_ensure_and_handle_channel_async (
  * newly created channel is sent to a different handler, this operation
  * will fail with the error %TP_ERROR_NOT_YOURS.
  *
- * Returns: a new reference on a #TpChannel if the channel was successfully
- * created and you are handling it, otherwise %NULL.
+ * Returns: (transfer full): a new reference on a #TpChannel if the channel was
+ * successfully created and you are handling it, otherwise %NULL.
  *
  * Since: 0.11.UNRELEASED
  */
