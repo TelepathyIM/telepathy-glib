@@ -1,5 +1,7 @@
-telepathy-glib 0.11.12 (UNRELEASED)
+telepathy-glib 0.11.12 (2010-08-10)
 ===================================
+
+The “Fire and Forget” release.
 
 Enhancements:
 

@@ -36,7 +36,7 @@
  * has to be re-handled. This can be useful for example to move its window
  * to the foreground, if applicable.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 
 /**
@@ -44,7 +44,7 @@
  *
  * Data structure representing a #TpAccountChannelRequest object.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 
 /**
@@ -52,7 +52,7 @@
  *
  * The class of a #TpAccountChannelRequest.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 
 #include "telepathy-glib/account-channel-request.h"
@@ -269,7 +269,7 @@ tp_account_channel_request_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.12
    */
   param_spec = g_param_spec_object ("account", "TpAccount",
       "The TpAccount used to request the channel",
@@ -286,7 +286,7 @@ tp_account_channel_request_class_init (
    *
    * This property can't be %NULL.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.12
    */
   param_spec = g_param_spec_boxed ("request", "GHashTable",
       "A dictionary containing desirable properties for the channel",
@@ -301,7 +301,7 @@ tp_account_channel_request_class_init (
    * The user action time that will be passed to mission-control when
    * requesting the channel.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.12
    */
   param_spec = g_param_spec_int64 ("user-action-time", "user action time",
       "UserActionTime",
@@ -321,7 +321,7 @@ tp_account_channel_request_class_init (
    *
    * Emitted when channel which has been created using @self has be re-handled.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.12
    */
   signals[SIGNAL_RE_HANDLED] = g_signal_new (
       "re-handled", G_OBJECT_CLASS_TYPE (cls),
@@ -345,7 +345,7 @@ tp_account_channel_request_class_init (
  *
  * Returns: a new #TpAccountChannelRequest object
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 TpAccountChannelRequest *
 tp_account_channel_request_new (
@@ -371,7 +371,7 @@ tp_account_channel_request_new (
  *
  * Returns: (transfer none): the value of #TpAccountChannelRequest:account
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 TpAccount *
 tp_account_channel_request_get_account (
@@ -388,7 +388,7 @@ tp_account_channel_request_get_account (
  *
  * Returns: (transfer none): the value of #TpAccountChannelRequest:request
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 GHashTable *
 tp_account_channel_request_get_request (
@@ -405,7 +405,7 @@ tp_account_channel_request_get_request (
  *
  * Returns: the value of #TpAccountChannelRequest:user-action-time
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 gint64
 tp_account_channel_request_get_user_action_time (
@@ -778,7 +778,7 @@ request_and_handle_channel_finish (TpAccountChannelRequest *self,
  * tp_account_channel_request_create_and_handle_channel_finish() to get the
  * result of the operation.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 void
 tp_account_channel_request_create_and_handle_channel_async (
@@ -805,7 +805,7 @@ tp_account_channel_request_create_and_handle_channel_async (
  * Returns: (transfer full) (allow-none): a new reference on a #TpChannel if the
  * channel was successfully created and you are handling it, otherwise %NULL.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 TpChannel *
 tp_account_channel_request_create_and_handle_channel_finish (
@@ -838,7 +838,7 @@ tp_account_channel_request_create_and_handle_channel_finish (
  * will be notified that the channel was requested again, and can
  * move its window to the foreground, if applicable.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 void
 tp_account_channel_request_ensure_and_handle_channel_async (
@@ -869,7 +869,7 @@ tp_account_channel_request_ensure_and_handle_channel_async (
  * Returns: (transfer full) (allow-none): a new reference on a #TpChannel if the
  * channel was successfully created and you are handling it, otherwise %NULL.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 TpChannel *
 tp_account_channel_request_ensure_and_handle_channel_finish (
@@ -958,7 +958,7 @@ request_channel_async (TpAccountChannelRequest *self,
  * You can then call tp_account_channel_request_create_channel_finish() to
  * get the result of the operation.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 void
 tp_account_channel_request_create_channel_async (
@@ -1007,7 +1007,7 @@ request_channel_finish (TpAccountChannelRequest *self,
  * Returns: %TRUE if the channel was successfully created and dispatched,
  * otherwise %FALSE.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 gboolean
 tp_account_channel_request_create_channel_finish (
@@ -1038,7 +1038,7 @@ tp_account_channel_request_create_channel_finish (
  * You can then call tp_account_channel_request_ensure_channel_finish() to
  * get the result of the operation.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 void
 tp_account_channel_request_ensure_channel_async (
@@ -1064,7 +1064,7 @@ tp_account_channel_request_ensure_channel_async (
  * Returns: %TRUE if the channel was successfully ensured and (re-)dispatched,
  * otherwise %FALSE.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.12
  */
 gboolean
 tp_account_channel_request_ensure_channel_finish (
