@@ -68,7 +68,8 @@ new_connection (TpBaseProtocol *protocol,
 }
 
 gchar *
-example_extended_protocol_normalize_contact (const gchar *id, GError **error)
+example_extended_protocol_normalize_contact (const gchar *id,
+    GError **error)
 {
   if (id[0] == '\0')
     {
