@@ -58,7 +58,7 @@ GType tp_account_channel_request_get_type (void);
 TpAccountChannelRequest * tp_account_channel_request_new (
     TpAccount *account,
     GHashTable *request,
-    gint64 user_action_time);
+    gint64 user_action_time) G_GNUC_WARN_UNUSED_RESULT;
 
 TpAccount * tp_account_channel_request_get_account (
     TpAccountChannelRequest *self);
