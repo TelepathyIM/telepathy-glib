@@ -306,6 +306,7 @@ tp_account_channel_request_class_init (
  /**
    * TpAccountChannelRequest::re-handled:
    * @self: a #TpAccountChannelRequest
+   * @channel: the #TpChannel being re-handled
    * @user_action_time: the time at which user action occurred, or 0 if this
    * channel is to be handled for some reason not involving user action.
    * @context: a #TpHandleChannelsContext representing the context of
@@ -320,8 +321,9 @@ tp_account_channel_request_class_init (
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
       NULL, NULL,
-      _tp_marshal_VOID__INT64_OBJECT,
-      G_TYPE_NONE, 2, G_TYPE_INT64, TP_TYPE_HANDLE_CHANNELS_CONTEXT);
+      _tp_marshal_VOID__OBJECT_INT64_OBJECT,
+      G_TYPE_NONE, 3, TP_TYPE_CHANNEL, G_TYPE_INT64,
+      TP_TYPE_HANDLE_CHANNELS_CONTEXT);
 }
 
 /**
@@ -475,8 +477,8 @@ handle_channels (TpSimpleHandler *handler,
   if (self->priv->result == NULL)
     {
       /* We are re-handling the channel, no async request to complete */
-      g_signal_emit (self, signals[SIGNAL_RE_HANDLED], 0, user_action_time,
-          context);
+      g_signal_emit (self, signals[SIGNAL_RE_HANDLED], 0, self->priv->channel,
+          user_action_time, context);
 
       goto out;
     }

@@ -370,10 +370,12 @@ test_handle_cancel_after_create (Test *test,
  * re-handled */
 static void
 re_handled_cb (TpAccountChannelRequest *req,
+    TpChannel *channel,
     gint64 timestamp,
     TpHandleChannelsContext *context,
     Test *test)
 {
+  g_assert (TP_IS_CHANNEL (channel));
   g_assert_cmpint (timestamp, ==, 666);
   g_assert (TP_IS_HANDLE_CHANNELS_CONTEXT (context));
 
