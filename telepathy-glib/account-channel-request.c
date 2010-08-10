@@ -785,8 +785,8 @@ tp_account_channel_request_create_and_handle_channel_async (
  * Finishes an async channel creation started using
  * tp_account_channel_request_create_and_handle_channel_async().
  *
- * Returns: (transfer full): a new reference on a #TpChannel if the channel was
- * successfully created and you are handling it, otherwise %NULL.
+ * Returns: (transfer full) (allow-none): a new reference on a #TpChannel if the
+ * channel was successfully created and you are handling it, otherwise %NULL.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -849,8 +849,8 @@ tp_account_channel_request_ensure_and_handle_channel_async (
  * newly created channel is sent to a different handler, this operation
  * will fail with the error %TP_ERROR_NOT_YOURS.
  *
- * Returns: (transfer full): a new reference on a #TpChannel if the channel was
- * successfully created and you are handling it, otherwise %NULL.
+ * Returns: (transfer full) (allow-none): a new reference on a #TpChannel if the
+ * channel was successfully created and you are handling it, otherwise %NULL.
  *
  * Since: 0.11.UNRELEASED
  */
