@@ -119,7 +119,7 @@ struct _TpAccountChannelRequestPrivate
 
   /* TRUE if The TpAccountChannelRequest should handle the requested channel
    * itself */
-  gboolean handle;
+  gboolean should_handle;
 };
 
 static void
@@ -512,7 +512,7 @@ out:
 static void
 channel_request_succeeded (TpAccountChannelRequest *self)
 {
-  if (self->priv->handle)
+  if (self->priv->should_handle)
     {
       GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
           "Another Handler is handling this channel" };
@@ -548,7 +548,7 @@ acr_channel_request_proceed_cb (TpChannelRequest *request,
       return;
     }
 
-  if (self->priv->handle)
+  if (self->priv->should_handle)
     DEBUG ("Proceed succeeded; waiting for the channel to be handled");
   else
     DEBUG ("Proceed succeeded; waiting the Succeeded signal");
@@ -677,7 +677,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
 
-  self->priv->handle = TRUE;
+  self->priv->should_handle = TRUE;
 
   if (g_cancellable_is_cancelled (cancellable))
     {
@@ -897,7 +897,7 @@ request_channel_async (TpAccountChannelRequest *self,
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
 
-  self->priv->handle = FALSE;
+  self->priv->should_handle = FALSE;
 
   if (g_cancellable_is_cancelled (cancellable))
     {
