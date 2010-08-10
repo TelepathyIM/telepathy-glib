@@ -489,6 +489,84 @@ test_forget_ensure_success (Test *test,
   g_assert_no_error (test->error);
 }
 
+/* ChannelDispatcher.CreateChannel() call fails */
+static void
+test_forget_create_fail (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req;
+
+  request = create_request ();
+
+  /* Ask to the CD to fail */
+  tp_asv_set_boolean (request, "CreateChannelFail", TRUE);
+
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_create_channel_async (req, "Fake", NULL, create_cb,
+      test);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+}
+
+/* ChannelRequest.Proceed() call fails */
+static void
+test_forget_proceed_fail (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req;
+
+  request = create_request ();
+
+  /* Ask to the CD to fail */
+  tp_asv_set_boolean (request, "ProceedFail", TRUE);
+
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_create_channel_async (req, "Fake", NULL, create_cb,
+      test);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+}
+
+/* ChannelRequest fire the 'Failed' signal */
+static void
+test_forget_cr_failed (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req;
+
+  request = create_request ();
+
+  /* Ask to the CR to fire the signal */
+  tp_asv_set_boolean (request, "FireFailed", TRUE);
+
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  tp_account_channel_request_create_channel_async (req, "Fake", NULL, create_cb,
+      test);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+  g_assert (test->channel == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -520,6 +598,12 @@ main (int argc,
   /* Request and handle tests */
   g_test_add ("/account-channels-request-forget/create-success", Test, NULL,
       setup, test_forget_create_success, teardown);
+  g_test_add ("/account-channels-request-forget/create-fail", Test, NULL,
+      setup, test_forget_create_fail, teardown);
+  g_test_add ("/account-channels-request-foget/proceed-fail", Test, NULL,
+      setup, test_forget_proceed_fail, teardown);
+  g_test_add ("/account-channels-request-forget/cr-failed", Test, NULL,
+      setup, test_forget_cr_failed, teardown);
   g_test_add ("/account-channels-request-forget/ensure-success", Test, NULL,
       setup, test_forget_ensure_success, teardown);
 
