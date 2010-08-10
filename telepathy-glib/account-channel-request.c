@@ -410,7 +410,7 @@ request_fail (TpAccountChannelRequest *self,
 }
 
 static void
-request_complete (TpAccountChannelRequest *self,
+handle_request_complete (TpAccountChannelRequest *self,
     TpChannel *channel,
     TpHandleChannelsContext *handle_context)
 {
@@ -485,7 +485,7 @@ handle_channels (TpSimpleHandler *handler,
           G_CALLBACK (channel_invalidated_cb), self);
     }
 
-  request_complete (self, channel, context);
+  handle_request_complete (self, channel, context);
 
 out:
   tp_handle_channels_context_accept (context);
