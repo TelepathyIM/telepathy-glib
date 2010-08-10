@@ -746,8 +746,8 @@ request_and_handle_channel_finish (TpAccountChannelRequest *self,
 {
   GSimpleAsyncResult *simple;
 
-  g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), NULL);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
@@ -756,7 +756,7 @@ request_and_handle_channel_finish (TpAccountChannelRequest *self,
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
           G_OBJECT (self), source_tag),
-      FALSE);
+      NULL);
 
   if (context != NULL)
     *context = g_object_ref (self->priv->handle_context);
