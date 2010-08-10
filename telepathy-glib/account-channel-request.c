@@ -406,12 +406,23 @@ tp_account_channel_request_get_user_action_time (
 }
 
 static void
+complete_result (TpAccountChannelRequest *self)
+{
+  g_assert (self->priv->result != NULL);
+
+  request_disconnect (self);
+
+  g_simple_async_result_complete (self->priv->result);
+
+  tp_clear_object (&self->priv->result);
+}
+
+static void
 request_fail (TpAccountChannelRequest *self,
     const GError *error)
 {
-  request_disconnect (self);
   g_simple_async_result_set_from_error (self->priv->result, error);
-  g_simple_async_result_complete (self->priv->result);
+  complete_result (self);
 }
 
 static void
@@ -419,17 +430,10 @@ handle_request_complete (TpAccountChannelRequest *self,
     TpChannel *channel,
     TpHandleChannelsContext *handle_context)
 {
-  g_assert (self->priv->result != NULL);
-
   self->priv->channel = g_object_ref (channel);
   self->priv->handle_context = g_object_ref (handle_context);
 
-  g_simple_async_result_complete (self->priv->result);
-
-  /* We just need to keep the Handler around. */
-  request_disconnect (self);
-  tp_clear_object (&self->priv->result);
-  tp_clear_object (&self->priv->chan_request);
+  complete_result (self);
 }
 
 static void
