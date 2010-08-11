@@ -1684,7 +1684,7 @@ handle_channels_context_prepare_cb (GObject *source,
   g_list_free (requests_list);
 
   if (_tp_handle_channels_context_get_state (ctx) ==
-      TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE)
+      TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE)
     {
       error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Implementation of HandledChannels in %s didn't call "
