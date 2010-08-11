@@ -95,8 +95,8 @@
  * @parent_class: the parent class
  * @dup_contacts: the implementation of tp_base_contact_list_dup_contacts();
  *  every subclass must implement this itself
- * @get_states: the implementation of
- *  tp_base_contact_list_get_states(); every subclass must implement
+ * @dup_states: the implementation of
+ *  tp_base_contact_list_dup_states(); every subclass must implement
  *  this itself
  * @get_contact_list_persists: the implementation of
  *  tp_base_contact_list_get_contact_list_persists(); if a subclass does not
@@ -130,7 +130,7 @@
  */
 
 /**
- * TpBaseContactListGetStatesFunc:
+ * TpBaseContactListDupStatesFunc:
  * @self: the contact list manager
  * @contact: the contact
  * @subscribe: (out) (allow-none): used to return the state of the user's
@@ -632,7 +632,7 @@ tp_base_contact_list_constructed (GObject *object)
   g_assert (self->priv->conn != NULL);
 
   g_return_if_fail (cls->dup_contacts != NULL);
-  g_return_if_fail (cls->get_states != NULL);
+  g_return_if_fail (cls->dup_states != NULL);
   g_return_if_fail (cls->get_contact_list_persists != NULL);
 
   self->priv->svc_contact_list =
@@ -1681,7 +1681,7 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
  * method may be called immediately.
  *
  * The #TpBaseContactListDupContactsFunc and
- * #TpBaseContactListGetStatesFunc must already give correct
+ * #TpBaseContactListDupStatesFunc must already give correct
  * results when entering this method.
  *
  * If implemented, tp_base_contact_list_dup_blocked_contacts() must also
@@ -1840,7 +1840,7 @@ presence_state_to_letter (TpSubscriptionState ps)
  * Emit signals for a change to the contact list.
  *
  * The results of #TpBaseContactListDupContactsFunc and
- * #TpBaseContactListGetStatesFunc must already reflect
+ * #TpBaseContactListDupStatesFunc must already reflect
  * the contacts' new statuses when entering this method (in practice, this
  * means that implementations must update their own cache of contacts
  * before calling this method).
@@ -1899,7 +1899,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 
       tp_intset_add (store, contact);
 
-      tp_base_contact_list_get_states (self, contact,
+      tp_base_contact_list_dup_states (self, contact,
           &subscribe, &publish, &publish_request);
 
       if (publish_request == NULL)
@@ -2255,7 +2255,7 @@ tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
 }
 
 /**
- * tp_base_contact_list_get_states:
+ * tp_base_contact_list_dup_states:
  * @self: a contact list manager
  * @contact: the contact
  * @subscribe: (out) (allow-none): used to return the state of the user's
@@ -2272,11 +2272,11 @@ tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
  * called, or after the connection has disconnected.
  *
  * This is a virtual method, implemented using
- * #TpBaseContactListClass.get_states. Every subclass of #TpBaseContactList
+ * #TpBaseContactListClass.dup_states. Every subclass of #TpBaseContactList
  * must implement this method.
  */
 void
-tp_base_contact_list_get_states (TpBaseContactList *self,
+tp_base_contact_list_dup_states (TpBaseContactList *self,
     TpHandle contact,
     TpSubscriptionState *subscribe,
     TpSubscriptionState *publish,
@@ -2285,11 +2285,11 @@ tp_base_contact_list_get_states (TpBaseContactList *self,
   TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
   g_return_if_fail (cls != NULL);
-  g_return_if_fail (cls->get_states != NULL);
+  g_return_if_fail (cls->dup_states != NULL);
   g_return_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS);
 
-  cls->get_states (self, contact, subscribe, publish, publish_request);
+  cls->dup_states (self, contact, subscribe, publish, publish_request);
 
   if (publish_request != NULL && *publish_request == NULL)
     *publish_request = g_strdup ("");
@@ -4729,7 +4729,7 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
 
       handle = g_array_index (contacts, TpHandle, i);
 
-      tp_base_contact_list_get_states (self, handle,
+      tp_base_contact_list_dup_states (self, handle,
           &subscribe, &publish, &publish_request);
 
       tp_contacts_mixin_set_contact_attribute (attributes_hash,

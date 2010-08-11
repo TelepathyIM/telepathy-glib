@@ -95,14 +95,14 @@ typedef TpHandleSet *(*TpBaseContactListDupContactsFunc) (
 
 TpHandleSet *tp_base_contact_list_dup_contacts (TpBaseContactList *self);
 
-typedef void (*TpBaseContactListGetStatesFunc) (
+typedef void (*TpBaseContactListDupStatesFunc) (
     TpBaseContactList *self,
     TpHandle contact,
     TpSubscriptionState *subscribe,
     TpSubscriptionState *publish,
     gchar **publish_request);
 
-void tp_base_contact_list_get_states (TpBaseContactList *self,
+void tp_base_contact_list_dup_states (TpBaseContactList *self,
     TpHandle contact,
     TpSubscriptionState *subscribe,
     TpSubscriptionState *publish,
@@ -112,7 +112,7 @@ struct _TpBaseContactListClass {
     GObjectClass parent_class;
 
     TpBaseContactListDupContactsFunc dup_contacts;
-    TpBaseContactListGetStatesFunc get_states;
+    TpBaseContactListDupStatesFunc dup_states;
     TpBaseContactListBooleanFunc get_contact_list_persists;
 
     /*<private>*/

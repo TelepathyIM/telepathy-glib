@@ -1105,7 +1105,7 @@ compose_presence (gboolean full,
 }
 
 static void
-example_contact_list_manager_get_states (TpBaseContactList *manager,
+example_contact_list_manager_dup_states (TpBaseContactList *manager,
     TpHandle contact,
     TpSubscriptionState *subscribe,
     TpSubscriptionState *publish,
@@ -1684,7 +1684,7 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   list_manager_class->dup_contacts = example_contact_list_manager_dup_contacts;
-  list_manager_class->get_states = example_contact_list_manager_get_states;
+  list_manager_class->dup_states = example_contact_list_manager_dup_states;
   /* for this example CM we pretend there is a server-stored contact list,
    * like in XMPP, even though there obviously isn't really */
   list_manager_class->get_contact_list_persists =
