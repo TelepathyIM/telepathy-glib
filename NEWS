@@ -1,3 +1,21 @@
+telepathy-logger 0.1.5 (2010-08-11)
+===================================
+
+Dependencies:
+
+* GLib ≥ 2.25.11
+* No more dependency on GConf
+
+Enhancements:
+
+* The logger uses GSettings instead of GConf for preferences (fdo #28602). The
+  ignore-accounts key has been removed for now as it was unused and broken.
+
+Fix:
+
+* Make sure that TplLogSearchHit always contains the account if
+  known (fdo #29058).
+
 telepathy-logger 0.1.4 (2010-07-08)
 ===================================
 
