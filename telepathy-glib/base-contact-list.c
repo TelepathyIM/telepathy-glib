@@ -3639,7 +3639,8 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
  * Signature of a virtual method that lists every group that exists on a
  * connection.
  *
- * Returns: (array zero-terminated=1) (element-type utf8): an array of groups
+ * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
+ *  array of groups
  */
 
 /**
@@ -3655,7 +3656,8 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
  * method, implemented using #TpContactGroupListInterface.get_groups.
  * It must always be implemented.
  *
- * Returns: (array zero-terminated=1) (element-type utf8): an array of groups
+ * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
+ *  array of groups
  */
 GStrv
 tp_base_contact_list_get_groups (TpBaseContactList *self)
@@ -3682,7 +3684,8 @@ tp_base_contact_list_get_groups (TpBaseContactList *self)
  * If @contact is not on the contact list, this method must return either
  * %NULL or an empty array, without error.
  *
- * Returns: (array zero-terminated=1) (element-type utf8): an array of groups
+ * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
+ *  array of groups
  */
 
 /**
@@ -3702,7 +3705,8 @@ tp_base_contact_list_get_groups (TpBaseContactList *self)
  * method, implemented using #TpContactGroupListInterface.get_contact_groups.
  * It must always be implemented.
  *
- * Returns: (array zero-terminated=1) (element-type utf8): an array of groups
+ * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
+ *  array of groups
  */
 GStrv
 tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
@@ -3726,7 +3730,7 @@ tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
  *
  * Signature of a virtual method that lists the members of a group.
  *
- * Returns: a set of contact (%TP_HANDLE_TYPE_CONTACT) handles
+ * Returns: (transfer full): a set of contact (%TP_HANDLE_TYPE_CONTACT) handles
  */
 
 /**
