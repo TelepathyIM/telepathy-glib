@@ -344,12 +344,12 @@ G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
 /**
  * TpContactGroupListInterface:
  * @parent: the parent interface
- * @get_groups: the implementation of
- *  tp_base_contact_list_get_groups(); must always be implemented
- * @get_group_members: the implementation of
- *  tp_base_contact_list_get_group_members(); must always be implemented
- * @get_contact_groups: the implementation of
- *  tp_base_contact_list_get_contact_groups(); must always be implemented
+ * @dup_groups: the implementation of
+ *  tp_base_contact_list_dup_groups(); must always be implemented
+ * @dup_group_members: the implementation of
+ *  tp_base_contact_list_dup_group_members(); must always be implemented
+ * @dup_contact_groups: the implementation of
+ *  tp_base_contact_list_dup_contact_groups(); must always be implemented
  * @has_disjoint_groups: the implementation of
  *  tp_base_contact_list_has_disjoint_groups(); if not reimplemented,
  *  the default implementation always returns %FALSE
@@ -687,9 +687,9 @@ tp_base_contact_list_constructed (GObject *object)
         TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
 
       g_return_if_fail (iface->has_disjoint_groups != NULL);
-      g_return_if_fail (iface->get_groups != NULL);
-      g_return_if_fail (iface->get_contact_groups != NULL);
-      g_return_if_fail (iface->get_group_members != NULL);
+      g_return_if_fail (iface->dup_groups != NULL);
+      g_return_if_fail (iface->dup_contact_groups != NULL);
+      g_return_if_fail (iface->dup_group_members != NULL);
 
       self->priv->group_repo = tp_dynamic_handle_repo_new (TP_HANDLE_TYPE_GROUP,
           tp_base_contact_list_repo_normalize_group, NULL);
@@ -1778,7 +1778,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
    * can put them in batches for legacy Group channels). */
   if (TP_IS_CONTACT_GROUP_LIST (self))
     {
-      GStrv groups = tp_base_contact_list_get_groups (self);
+      GStrv groups = tp_base_contact_list_dup_groups (self);
       GHashTableIter h_iter;
       gpointer channel;
 
@@ -1787,7 +1787,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
       for (i = 0; groups != NULL && groups[i] != NULL; i++)
         {
-          TpHandleSet *members = tp_base_contact_list_get_group_members (self,
+          TpHandleSet *members = tp_base_contact_list_dup_group_members (self,
               groups[i]);
 
           tp_base_contact_list_groups_changed (self, members,
@@ -3178,7 +3178,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
  *
  * Called by subclasses when groups have been removed.
  *
- * Calling tp_base_contact_list_get_group_members() during this method should
+ * Calling tp_base_contact_list_dup_group_members() during this method should
  * return the groups' old members. If this is done correctly by a subclass,
  * then tp_base_contact_list_groups_changed() will automatically be emitted
  * for the old members, and the subclass does not need to do so.
@@ -3243,7 +3243,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
               name = g_strdup (tp_handle_inspect (self->priv->group_repo,
                     handle));
               g_ptr_array_add (actually_removed, name);
-              group_members = tp_base_contact_list_get_group_members (self,
+              group_members = tp_base_contact_list_dup_group_members (self,
                   name);
 
               tp_intset_fast_iter_init (&iter,
@@ -3311,7 +3311,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
  *
  * Called by subclasses when a group has been renamed.
  *
- * Calling tp_base_contact_list_get_group_members() for @old_name during this
+ * Calling tp_base_contact_list_dup_group_members() for @old_name during this
  * method should return the group's old members. If this is done correctly by
  * a subclass, then tp_base_contact_list_groups_changed() will automatically
  * be emitted for the members, and the subclass does not need to do so.
@@ -3369,7 +3369,7 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
       tp_base_contact_list_announce_channel (self, new_chan, NULL);
     }
 
-  old_members = tp_base_contact_list_get_group_members (self, old_name);
+  old_members = tp_base_contact_list_dup_group_members (self, old_name);
 
   /* move the members - presumably the self-handle is the actor */
   set = tp_handle_set_peek (old_members);
@@ -3633,7 +3633,7 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
 }
 
 /**
- * TpBaseContactListGetGroupsFunc:
+ * TpBaseContactListDupGroupsFunc:
  * @self: a contact list manager
  *
  * Signature of a virtual method that lists every group that exists on a
@@ -3644,7 +3644,7 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
  */
 
 /**
- * tp_base_contact_list_get_groups:
+ * tp_base_contact_list_dup_groups:
  * @self: a contact list manager
  *
  * Return a list of all groups on this connection. It is incorrect to call
@@ -3653,28 +3653,28 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
  * that does not implement %TP_TYPE_CONTACT_GROUP_LIST.
  *
  * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
- * method, implemented using #TpContactGroupListInterface.get_groups.
+ * method, implemented using #TpContactGroupListInterface.dup_groups.
  * It must always be implemented.
  *
  * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
  *  array of groups
  */
 GStrv
-tp_base_contact_list_get_groups (TpBaseContactList *self)
+tp_base_contact_list_dup_groups (TpBaseContactList *self)
 {
   TpContactGroupListInterface *iface =
     TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
 
   g_return_val_if_fail (iface != NULL, NULL);
-  g_return_val_if_fail (iface->get_groups != NULL, NULL);
+  g_return_val_if_fail (iface->dup_groups != NULL, NULL);
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
-  return iface->get_groups (self);
+  return iface->dup_groups (self);
 }
 
 /**
- * TpBaseContactListGetContactGroupsFunc:
+ * TpBaseContactListDupContactGroupsFunc:
  * @self: a contact list manager
  * @contact: a non-zero contact handle
  *
@@ -3689,7 +3689,7 @@ tp_base_contact_list_get_groups (TpBaseContactList *self)
  */
 
 /**
- * tp_base_contact_list_get_contact_groups:
+ * tp_base_contact_list_dup_contact_groups:
  * @self: a contact list manager
  * @contact: a contact handle
  *
@@ -3702,29 +3702,29 @@ tp_base_contact_list_get_groups (TpBaseContactList *self)
  * %NULL or an empty array.
  *
  * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
- * method, implemented using #TpContactGroupListInterface.get_contact_groups.
+ * method, implemented using #TpContactGroupListInterface.dup_contact_groups.
  * It must always be implemented.
  *
  * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
  *  array of groups
  */
 GStrv
-tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
+tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
     TpHandle contact)
 {
   TpContactGroupListInterface *iface =
     TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
 
   g_return_val_if_fail (iface != NULL, NULL);
-  g_return_val_if_fail (iface->get_contact_groups != NULL, NULL);
+  g_return_val_if_fail (iface->dup_contact_groups != NULL, NULL);
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
-  return iface->get_contact_groups (self, contact);
+  return iface->dup_contact_groups (self, contact);
 }
 
 /**
- * TpBaseContactListGetGroupMembersFunc:
+ * TpBaseContactListDupGroupMembersFunc:
  * @self: a contact list manager
  * @group: a normalized group name
  *
@@ -3734,7 +3734,7 @@ tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
  */
 
 /**
- * tp_base_contact_list_get_group_members:
+ * tp_base_contact_list_dup_group_members:
  * @self: a contact list manager
  * @group: a normalized group name
  *
@@ -3747,24 +3747,24 @@ tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
  * set, without error.
  *
  * For implementations of %TP_TYPE_CONTACT_GROUP_LIST, this is a virtual
- * method, implemented using #TpContactGroupListInterface.get_group_members.
+ * method, implemented using #TpContactGroupListInterface.dup_group_members.
  * It must always be implemented.
  *
  * Returns: a set of contact (%TP_HANDLE_TYPE_CONTACT) handles
  */
 TpHandleSet *
-tp_base_contact_list_get_group_members (TpBaseContactList *self,
+tp_base_contact_list_dup_group_members (TpBaseContactList *self,
     const gchar *group)
 {
   TpContactGroupListInterface *iface =
     TP_CONTACT_GROUP_LIST_GET_INTERFACE (self);
 
   g_return_val_if_fail (iface != NULL, NULL);
-  g_return_val_if_fail (iface->get_group_members != NULL, NULL);
+  g_return_val_if_fail (iface->dup_group_members != NULL, NULL);
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
-  return iface->get_group_members (self, group);
+  return iface->dup_group_members (self, group);
 }
 
 /**
@@ -3972,7 +3972,7 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
   g_simple_async_result_set_op_res_gpointer (result, g_strdup (old_name),
       g_free);
 
-  old_members = tp_base_contact_list_get_group_members (self, old_name);
+  old_members = tp_base_contact_list_dup_group_members (self, old_name);
   tp_base_contact_list_add_to_group_async (self, new_name, old_members,
       emulate_rename_group_add_cb, result);
   g_object_unref (result);
@@ -5221,7 +5221,7 @@ tp_base_contact_list_get_group_dbus_property (GObject *conn,
       g_return_if_fail (G_VALUE_HOLDS (value, G_TYPE_STRV));
 
       if (self->priv->state == TP_CONTACT_LIST_STATE_SUCCESS)
-        g_value_take_boxed (value, tp_base_contact_list_get_groups (self));
+        g_value_take_boxed (value, tp_base_contact_list_dup_groups (self));
 
       break;
 
@@ -5259,7 +5259,7 @@ tp_base_contact_list_fill_groups_contact_attributes (GObject *obj,
       tp_contacts_mixin_set_contact_attribute (attributes_hash,
           handle, TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS,
           tp_g_value_slice_new_take_boxed (G_TYPE_STRV,
-            tp_base_contact_list_get_contact_groups (self, handle)));
+            tp_base_contact_list_dup_contact_groups (self, handle)));
     }
 }
 

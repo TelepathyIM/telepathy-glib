@@ -332,23 +332,23 @@ void tp_base_contact_list_groups_changed (TpBaseContactList *self,
 
 gboolean tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self);
 
-typedef GStrv (*TpBaseContactListGetGroupsFunc) (
+typedef GStrv (*TpBaseContactListDupGroupsFunc) (
     TpBaseContactList *self);
 
-GStrv tp_base_contact_list_get_groups (TpBaseContactList *self);
+GStrv tp_base_contact_list_dup_groups (TpBaseContactList *self);
 
-typedef GStrv (*TpBaseContactListGetContactGroupsFunc) (
+typedef GStrv (*TpBaseContactListDupContactGroupsFunc) (
     TpBaseContactList *self,
     TpHandle contact);
 
-GStrv tp_base_contact_list_get_contact_groups (TpBaseContactList *self,
+GStrv tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
     TpHandle contact);
 
-typedef TpHandleSet *(*TpBaseContactListGetGroupMembersFunc) (
+typedef TpHandleSet *(*TpBaseContactListDupGroupMembersFunc) (
     TpBaseContactList *self,
     const gchar *group);
 
-TpHandleSet *tp_base_contact_list_get_group_members (TpBaseContactList *self,
+TpHandleSet *tp_base_contact_list_dup_group_members (TpBaseContactList *self,
     const gchar *group);
 
 typedef gchar *(*TpBaseContactListNormalizeFunc) (
@@ -377,9 +377,9 @@ typedef struct _TpContactGroupListInterface
 struct _TpContactGroupListInterface {
     GTypeInterface parent;
     /* mandatory to implement */
-    TpBaseContactListGetGroupsFunc get_groups;
-    TpBaseContactListGetGroupMembersFunc get_group_members;
-    TpBaseContactListGetContactGroupsFunc get_contact_groups;
+    TpBaseContactListDupGroupsFunc dup_groups;
+    TpBaseContactListDupGroupMembersFunc dup_group_members;
+    TpBaseContactListDupContactGroupsFunc dup_contact_groups;
     /* optional to implement */
     TpBaseContactListBooleanFunc has_disjoint_groups;
     TpBaseContactListNormalizeFunc normalize_group;

@@ -1057,7 +1057,7 @@ example_contact_list_manager_dup_contacts (TpBaseContactList *manager)
 }
 
 static TpHandleSet *
-example_contact_list_manager_get_group_members (TpBaseContactList *manager,
+example_contact_list_manager_dup_group_members (TpBaseContactList *manager,
     const gchar *group)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
@@ -1550,7 +1550,7 @@ example_contact_list_manager_get_group_storage (TpBaseContactList *manager)
 }
 
 static GStrv
-example_contact_list_manager_get_groups (TpBaseContactList *manager)
+example_contact_list_manager_dup_groups (TpBaseContactList *manager)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   GPtrArray *tags = g_ptr_array_sized_new (
@@ -1568,7 +1568,7 @@ example_contact_list_manager_get_groups (TpBaseContactList *manager)
 }
 
 static GStrv
-example_contact_list_manager_get_contact_groups (TpBaseContactList *manager,
+example_contact_list_manager_dup_contact_groups (TpBaseContactList *manager,
     TpHandle contact)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
@@ -1739,9 +1739,9 @@ blockable_contact_list_iface_init (TpBlockableContactListInterface *iface)
 static void
 contact_group_list_iface_init (TpContactGroupListInterface *iface)
 {
-  iface->get_groups = example_contact_list_manager_get_groups;
-  iface->get_group_members = example_contact_list_manager_get_group_members;
-  iface->get_contact_groups = example_contact_list_manager_get_contact_groups;
+  iface->dup_groups = example_contact_list_manager_dup_groups;
+  iface->dup_group_members = example_contact_list_manager_dup_group_members;
+  iface->dup_contact_groups = example_contact_list_manager_dup_contact_groups;
   iface->normalize_group = example_contact_list_manager_normalize_group;
 }
 
