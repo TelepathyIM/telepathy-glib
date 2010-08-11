@@ -133,14 +133,14 @@
  * TpBaseContactListGetStatesFunc:
  * @self: the contact list manager
  * @contact: the contact
- * @subscribe: (out): used to return the state of the user's subscription to
- *  @contact's presence
- * @publish: (out): used to return the state of @contact's subscription to
- *  the user's presence
- * @publish_request: (out): if @publish will be set to %TP_SUBSCRIPTION_STATE_ASK,
- *  used to return the message that @contact sent when they requested
- *  permission to see the user's presence; otherwise, used to return an empty
- *  string
+ * @subscribe: (out) (allow-none): used to return the state of the user's
+ *  subscription to @contact's presence
+ * @publish: (out) (allow-none): used to return the state of @contact's
+ *  subscription to the user's presence
+ * @publish_request: (out) (allow-none) (transfer full): if @publish will be
+ *  set to %TP_SUBSCRIPTION_STATE_ASK, used to return the message that
+ *  @contact sent when they requested permission to see the user's presence;
+ *  otherwise, used to return an empty string
  *
  * Signature of a virtual method to get contacts' presences. It should return
  * @subscribe = %TP_SUBSCRIPTION_STATE_NO, @publish = %TP_SUBSCRIPTION_STATE_NO
@@ -2258,14 +2258,14 @@ tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
  * tp_base_contact_list_get_states:
  * @self: a contact list manager
  * @contact: the contact
- * @subscribe: (out): used to return the state of the user's subscription to
- *  @contact's presence
- * @publish: (out): used to return the state of @contact's subscription to
- *  the user's presence
- * @publish_request: (out) (transfer full): if @publish will be set to
- *  %TP_SUBSCRIPTION_STATE_ASK, used to return the message that @contact sent when
- *  they requested permission to see the user's presence; otherwise, used to
- *  return an empty string
+ * @subscribe: (out) (allow-none): used to return the state of the user's
+ *  subscription to @contact's presence
+ * @publish: (out) (allow-none): used to return the state of @contact's
+ *  subscription to the user's presence
+ * @publish_request: (out) (allow-none) (transfer full): if @publish will be
+ *  set to %TP_SUBSCRIPTION_STATE_ASK, used to return the message that
+ *  @contact sent when they requested permission to see the user's presence;
+ *  otherwise, used to return an empty string
  *
  * Return the presence subscription state of @contact. It is incorrect to call
  * this method before tp_base_contact_list_set_list_retrieved() has been
