@@ -72,8 +72,10 @@ libtelepathy_logger_la_SOURCES = \
 		observer-internal.h			\
 		util-internal.h			\
 		util.c				\
-		$(BUILT_SOURCES)
 		$(NULL)
+
+nodist_libtelepathy_logger_la_SOURCES = \
+		$(BUILT_SOURCES)
 
 EXTRA_DIST = \
 	tpl-marshal.list \
