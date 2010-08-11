@@ -93,7 +93,7 @@
 /**
  * TpBaseContactListClass:
  * @parent_class: the parent class
- * @get_contacts: the implementation of tp_base_contact_list_get_contacts();
+ * @dup_contacts: the implementation of tp_base_contact_list_dup_contacts();
  *  every subclass must implement this itself
  * @get_states: the implementation of
  *  tp_base_contact_list_get_states(); every subclass must implement
@@ -116,7 +116,7 @@
  */
 
 /**
- * TpBaseContactListGetContactsFunc:
+ * TpBaseContactListDupContactsFunc:
  * @self: the contact list manager
  *
  * Signature of a virtual method to list contacts with a particular state;
@@ -310,8 +310,8 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
 /**
  * TpBlockableContactListInterface:
  * @parent: the parent interface
- * @get_blocked_contacts: the implementation of
- *  tp_base_contact_list_get_blocked_contacts(); must always be provided
+ * @dup_blocked_contacts: the implementation of
+ *  tp_base_contact_list_dup_blocked_contacts(); must always be provided
  * @block_contacts_async: the implementation of
  *  tp_base_contact_list_block_contacts_async(); must always be provided
  * @block_contacts_finish: the implementation of
@@ -631,7 +631,7 @@ tp_base_contact_list_constructed (GObject *object)
 
   g_assert (self->priv->conn != NULL);
 
-  g_return_if_fail (cls->get_contacts != NULL);
+  g_return_if_fail (cls->dup_contacts != NULL);
   g_return_if_fail (cls->get_states != NULL);
   g_return_if_fail (cls->get_contact_list_persists != NULL);
 
@@ -667,7 +667,7 @@ tp_base_contact_list_constructed (GObject *object)
         TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
 
       g_return_if_fail (iface->can_block != NULL);
-      g_return_if_fail (iface->get_blocked_contacts != NULL);
+      g_return_if_fail (iface->dup_blocked_contacts != NULL);
       g_return_if_fail (iface->block_contacts_async != NULL);
       g_return_if_fail (iface->block_contacts_finish != NULL);
       g_return_if_fail (iface->unblock_contacts_async != NULL);
@@ -1680,11 +1680,11 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
  * initial contact list has been received (such as link-local XMPP), this
  * method may be called immediately.
  *
- * The #TpBaseContactListGetContactsFunc and
+ * The #TpBaseContactListDupContactsFunc and
  * #TpBaseContactListGetStatesFunc must already give correct
  * results when entering this method.
  *
- * If implemented, tp_base_contact_list_get_blocked_contacts() must also
+ * If implemented, tp_base_contact_list_dup_blocked_contacts() must also
  * give correct results when entering this method.
  */
 void
@@ -1721,7 +1721,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
           TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_STORED, NULL);
     }
 
-  contacts = tp_base_contact_list_get_contacts (self);
+  contacts = tp_base_contact_list_dup_contacts (self);
   g_return_if_fail (contacts != NULL);
 
   if (DEBUGGING)
@@ -1744,7 +1744,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
               TP_HANDLE_TYPE_LIST, TP_LIST_HANDLE_DENY, NULL);
         }
 
-      blocked = tp_base_contact_list_get_blocked_contacts (self);
+      blocked = tp_base_contact_list_dup_blocked_contacts (self);
 
       if (DEBUGGING)
         {
@@ -1839,7 +1839,7 @@ presence_state_to_letter (TpSubscriptionState ps)
  *
  * Emit signals for a change to the contact list.
  *
- * The results of #TpBaseContactListGetContactsFunc and
+ * The results of #TpBaseContactListDupContactsFunc and
  * #TpBaseContactListGetStatesFunc must already reflect
  * the contacts' new statuses when entering this method (in practice, this
  * means that implementations must update their own cache of contacts
@@ -2078,7 +2078,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
  *
  * Emit signals for a change to the blocked contacts list.
  *
- * tp_base_contact_list_get_blocked_contacts()
+ * tp_base_contact_list_dup_blocked_contacts()
  * must already reflect the contacts' new statuses when entering this method
  * (in practice, this means that implementations must update their own cache
  * of contacts before calling this method).
@@ -2111,7 +2111,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
   deny_chan = (GObject *) self->priv->lists[TP_LIST_HANDLE_DENY];
   g_return_if_fail (G_IS_OBJECT (deny_chan));
 
-  now_blocked = tp_base_contact_list_get_blocked_contacts (self);
+  now_blocked = tp_base_contact_list_dup_blocked_contacts (self);
 
   blocked = tp_intset_new ();
   unblocked = tp_intset_new ();
@@ -2148,7 +2148,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 }
 
 /**
- * tp_base_contact_list_get_contacts:
+ * tp_base_contact_list_dup_contacts:
  * @self: a contact list manager
  *
  * Return the contact list. It is incorrect to call this method before
@@ -2156,7 +2156,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
  * connection has disconnected.
  *
  * This is a virtual method, implemented using
- * #TpBaseContactListClass.get_contacts. Every subclass of #TpBaseContactList
+ * #TpBaseContactListClass.dup_contacts. Every subclass of #TpBaseContactList
  * must implement this method.
  *
  * If the contact list implements %TP_TYPE_BLOCKABLE_CONTACT_LIST, blocked
@@ -2166,16 +2166,16 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
  * Returns: (transfer full): a new #TpHandleSet of contact handles
  */
 TpHandleSet *
-tp_base_contact_list_get_contacts (TpBaseContactList *self)
+tp_base_contact_list_dup_contacts (TpBaseContactList *self)
 {
   TpBaseContactListClass *cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
   g_return_val_if_fail (cls != NULL, NULL);
-  g_return_val_if_fail (cls->get_contacts != NULL, NULL);
+  g_return_val_if_fail (cls->dup_contacts != NULL, NULL);
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
-  return cls->get_contacts (self);
+  return cls->dup_contacts (self);
 }
 
 /**
@@ -2848,7 +2848,7 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
 }
 
 /**
- * tp_base_contact_list_get_blocked_contacts:
+ * tp_base_contact_list_dup_blocked_contacts:
  * @self: a contact list manager
  *
  * Return the list of blocked contacts. It is incorrect to call this method
@@ -2858,23 +2858,23 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
  *
  * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
  * method, implemented using
- * #TpBlockableContactListInterface.get_blocked_contacts.
+ * #TpBlockableContactListInterface.dup_blocked_contacts.
  * It must always be implemented.
  *
  * Returns: (transfer full): a new #TpHandleSet of contact handles
  */
 TpHandleSet *
-tp_base_contact_list_get_blocked_contacts (TpBaseContactList *self)
+tp_base_contact_list_dup_blocked_contacts (TpBaseContactList *self)
 {
   TpBlockableContactListInterface *iface =
     TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
 
   g_return_val_if_fail (iface != NULL, NULL);
-  g_return_val_if_fail (iface->get_blocked_contacts != NULL, NULL);
+  g_return_val_if_fail (iface->dup_blocked_contacts != NULL, NULL);
   g_return_val_if_fail (tp_base_contact_list_get_state (self, NULL) ==
       TP_CONTACT_LIST_STATE_SUCCESS, NULL);
 
-  return iface->get_blocked_contacts (self);
+  return iface->dup_blocked_contacts (self);
 }
 
 /**
@@ -4204,7 +4204,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
 
       g_ptr_array_add (interfaces_wanted, NULL);
 
-      set = tp_base_contact_list_get_contacts (self);
+      set = tp_base_contact_list_dup_contacts (self);
       contacts = tp_handle_set_to_array (set);
 
       /* RequestContactList returns the same data type as

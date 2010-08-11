@@ -1049,7 +1049,7 @@ example_contact_list_manager_set_alias (ExampleContactListManager *self,
 }
 
 static TpHandleSet *
-example_contact_list_manager_get_contacts (TpBaseContactList *manager)
+example_contact_list_manager_dup_contacts (TpBaseContactList *manager)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
 
@@ -1474,7 +1474,7 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
 }
 
 static TpHandleSet *
-example_contact_list_manager_get_blocked_contacts (
+example_contact_list_manager_dup_blocked_contacts (
     TpBaseContactList *manager)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
@@ -1683,7 +1683,7 @@ example_contact_list_manager_class_init (ExampleContactListManagerClass *klass)
         0, G_MAXUINT32, 1000,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  list_manager_class->get_contacts = example_contact_list_manager_get_contacts;
+  list_manager_class->dup_contacts = example_contact_list_manager_dup_contacts;
   list_manager_class->get_states = example_contact_list_manager_get_states;
   /* for this example CM we pretend there is a server-stored contact list,
    * like in XMPP, even though there obviously isn't really */
@@ -1728,8 +1728,8 @@ static void
 blockable_contact_list_iface_init (TpBlockableContactListInterface *iface)
 {
   iface->can_block = tp_base_contact_list_true_func;
-  iface->get_blocked_contacts =
-    example_contact_list_manager_get_blocked_contacts;
+  iface->dup_blocked_contacts =
+    example_contact_list_manager_dup_blocked_contacts;
   iface->block_contacts_async =
     example_contact_list_manager_block_contacts_async;
   iface->unblock_contacts_async =

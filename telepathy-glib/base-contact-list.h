@@ -90,10 +90,10 @@ gboolean tp_base_contact_list_false_func (TpBaseContactList *self);
 gboolean tp_base_contact_list_get_contact_list_persists (
     TpBaseContactList *self);
 
-typedef TpHandleSet *(*TpBaseContactListGetContactsFunc) (
+typedef TpHandleSet *(*TpBaseContactListDupContactsFunc) (
     TpBaseContactList *self);
 
-TpHandleSet *tp_base_contact_list_get_contacts (TpBaseContactList *self);
+TpHandleSet *tp_base_contact_list_dup_contacts (TpBaseContactList *self);
 
 typedef void (*TpBaseContactListGetStatesFunc) (
     TpBaseContactList *self,
@@ -111,7 +111,7 @@ void tp_base_contact_list_get_states (TpBaseContactList *self,
 struct _TpBaseContactListClass {
     GObjectClass parent_class;
 
-    TpBaseContactListGetContactsFunc get_contacts;
+    TpBaseContactListDupContactsFunc dup_contacts;
     TpBaseContactListGetStatesFunc get_states;
     TpBaseContactListBooleanFunc get_contact_list_persists;
 
@@ -270,7 +270,7 @@ void tp_base_contact_list_contact_blocking_changed (
 
 gboolean tp_base_contact_list_can_block (TpBaseContactList *self);
 
-TpHandleSet *tp_base_contact_list_get_blocked_contacts (
+TpHandleSet *tp_base_contact_list_dup_blocked_contacts (
     TpBaseContactList *self);
 
 void tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
@@ -296,7 +296,7 @@ struct _TpBlockableContactListInterface {
 
     /* mandatory to implement */
 
-    TpBaseContactListGetContactsFunc get_blocked_contacts;
+    TpBaseContactListDupContactsFunc dup_blocked_contacts;
 
     /* _async mandatory-to-implement, _finish has a default implementation
      * suitable for a GSimpleAsyncResult */
