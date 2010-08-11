@@ -34,7 +34,6 @@ G_BEGIN_DECLS
 #define _TPL_TIME_FORMAT_DISPLAY_SHORT "%H:%M"
 #define _TPL_TIME_FORMAT_DISPLAY_LONG  "%a %d %b %Y"
 time_t _tpl_time_get_current (void);
-time_t _tpl_time_get_local_time (struct tm *tm);
 time_t _tpl_time_parse (const gchar * str);
 gchar *_tpl_time_to_string_utc (time_t t, const gchar * format);
 gchar *_tpl_time_to_string_local (time_t t, const gchar * format);

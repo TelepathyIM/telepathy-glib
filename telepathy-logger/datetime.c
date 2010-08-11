@@ -38,7 +38,7 @@ _tpl_time_get_current (void)
   return time (NULL);
 }
 
-time_t
+static time_t
 _tpl_time_get_local_time (struct tm *tm)
 {
   const gchar *tz;
