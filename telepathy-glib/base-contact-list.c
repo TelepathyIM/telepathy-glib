@@ -1724,6 +1724,12 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
   contacts = tp_base_contact_list_dup_contacts (self);
   g_return_if_fail (contacts != NULL);
 
+  /* A quick sanity check to make sure that faulty implementations crash
+   * during development :-) */
+  tp_base_contact_list_dup_states (self,
+      tp_base_connection_get_self_handle (self->priv->conn),
+      NULL, NULL, NULL);
+
   if (DEBUGGING)
     {
       gchar *tmp = tp_intset_dump (tp_handle_set_peek (contacts));
