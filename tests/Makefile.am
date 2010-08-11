@@ -10,25 +10,14 @@ LDADD = \
 
 noinst_PROGRAMS = \
 	test-tpl-channel	\
-	test-tpl-conf		\
 	test-tpl-log-store-sqlite \
 	test-tpl-log-manager	\
-	test-tpl-observer	\
-	test-searches		\
 	$(NULL)
 
 test_tpl_channel_SOURCES = \
 	test-tpl-channel.c	\
 	tpl-channel-test.c	\
 	tpl-channel-test.h
-
-test_tpl_observer_SOURCES = \
-	test-tpl-observer.c	\
-	tpl-channel-test.c
-
-test_searches_SOURCES = \
-	test-searches.c \
-	constants.h
 
 AM_CFLAGS = \
 	$(ERROR_CFLAGS) \
