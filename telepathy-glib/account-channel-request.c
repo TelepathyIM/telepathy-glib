@@ -812,6 +812,10 @@ request_and_handle_channel_finish (TpAccountChannelRequest *self,
  * tp_account_channel_request_create_and_handle_channel_finish() to get the
  * result of the operation.
  *
+ * (Behind the scenes, this works by creating a temporary #TpBaseClient, then
+ * acting like tp_account_channel_request_create_channel_async() with the
+ * temporary #TpBaseClient as the @preferred_handler.)
+ *
  * Since: 0.11.12
  */
 void
@@ -873,6 +877,10 @@ tp_account_channel_request_create_and_handle_channel_finish (
  * with #TpAccountChannelRequest::re-handled,
  * #TpBaseClientClassHandleChannelsImpl or #TpSimpleHandler:callback),
  * and can move its window to the foreground, if applicable.
+ *
+ * (Behind the scenes, this works by creating a temporary #TpBaseClient, then
+ * acting like tp_account_channel_request_ensure_channel_async() with the
+ * temporary #TpBaseClient as the @preferred_handler.)
  *
  * Since: 0.11.12
  */
