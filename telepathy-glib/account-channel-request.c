@@ -305,9 +305,22 @@ tp_account_channel_request_class_init (
    * values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
    * %TP_USER_ACTION_TIME_CURRENT_TIME.
    *
+   * If %TP_USER_ACTION_TIME_NOT_USER_ACTION, the action doesn't involve any
+   * user action. Clients should avoid stealing focus when presenting the
+   * channel.
+   *
+   * If %TP_USER_ACTION_TIME_CURRENT_TIME, clients SHOULD behave as though the
+   * user action happened at the current time, e.g. a client may
+   * request that its window gains focus.
+   *
    * On X11-based systems, Gdk 2.x, Clutter 1.0 etc.,
    * tp_user_action_time_from_x11() can be used to convert an X11 timestamp to
    * a Telepathy user action time.
+   *
+   * If the channel request succeeds, this user action time will be passed on
+   * to the channel's handler. If the handler is a GUI, it may use
+   * tp_user_action_time_should_present() to decide whether to bring its
+   * window to the foreground.
    *
    * Since: 0.11.12
    */
@@ -324,7 +337,8 @@ tp_account_channel_request_class_init (
    * @channel: the #TpChannel being re-handled
    * @user_action_time: the time at which user action occurred, or one of the
    *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
-   *  %TP_USER_ACTION_TIME_CURRENT_TIME
+   *  %TP_USER_ACTION_TIME_CURRENT_TIME; see
+   *  #TpAccountChannelRequest:user-action-time
    * @context: a #TpHandleChannelsContext representing the context of
    * the HandleChannels() call.
    *
@@ -335,10 +349,6 @@ tp_account_channel_request_class_init (
    * tp_account_channel_request_ensure_channel_async(), while the channel
    * still exists. Instead of creating a new channel, the channel dispatcher
    * notifies the existing handler of @channel, resulting in this signal.
-   *
-   * If the handler is a GUI, it may use @user_action_time and
-   * tp_user_action_time_should_present() to decide whether to bring its
-   * window to the foreground.
    *
    * Since: 0.11.12
    */
