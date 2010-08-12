@@ -196,8 +196,8 @@ AC_ARG_ENABLE(vala-bindings,
                   enable_vala_bindings=no )
 
 if test x$enable_vala_bindings = xyes; then
-  PKG_CHECK_MODULES(VALA,
-                    [vala-1.0 >= 0.9.2.97-2b08])
+  m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.9.5)],
+           [AC_MSG_ERROR([Automake >= 1.11 required for Vala bindings])])
   have_vala=yes
 
   AC_PATH_PROG(VALAC, valac, valac)
