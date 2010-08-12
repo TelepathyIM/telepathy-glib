@@ -141,6 +141,10 @@ void tp_weak_ref_destroy (TpWeakRef *self);
 void tp_simple_async_report_success_in_idle (GObject *source,
     GAsyncReadyCallback callback, gpointer user_data, gpointer source_tag);
 
+gint64 tp_user_action_time_from_x11 (guint32 x11_time);
+gboolean tp_user_action_time_should_present (gint64 user_action_time,
+    guint32 *x11_time);
+
 G_END_DECLS
 
 #undef  __TP_IN_UTIL_H__
