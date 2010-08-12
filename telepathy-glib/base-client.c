@@ -113,6 +113,7 @@
  * @user_action_time: the time at which user action occurred, or one of the
  *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
  *  %TP_USER_ACTION_TIME_CURRENT_TIME
+ *  (see #TpAccountChannelRequest:user-action-time for details)
  * @context: a #TpHandleChannelsContext representing the context of this
  *  D-Bus call
  *

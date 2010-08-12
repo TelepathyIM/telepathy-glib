@@ -116,7 +116,9 @@ G_BEGIN_DECLS
  * tp_account_channel_request_new() to represent channel requests that are
  * not a result of user action.
  *
- * See also %TP_USER_ACTION_TIME_CURRENT_TIME.
+ * See also #TpAccountChannelRequest:user-action-time,
+ * tp_user_action_time_from_x11(), tp_user_action_time_should_present() and
+ * %TP_USER_ACTION_TIME_CURRENT_TIME.
  *
  * Since: 0.11.UNRELEASED
  */
@@ -131,7 +133,9 @@ G_BEGIN_DECLS
  * concept as %GDK_CURRENT_TIME in Gdk (but note that the numerical value used
  * in Telepathy is not the same).
  *
- * See also %TP_USER_ACTION_TIME_NOT_USER_ACTION.
+ * See also #TpAccountChannelRequest:user-action-time,
+ * tp_user_action_time_from_x11(), tp_user_action_time_should_present() and
+ * %TP_USER_ACTION_TIME_NOT_USER_ACTION.
  *
  * Since: 0.11.UNRELEASED
  */

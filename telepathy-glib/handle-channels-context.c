@@ -371,14 +371,7 @@ tp_handle_channels_context_class_init (
    * The time at which user action occurred, or one of the
    * special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
    * %TP_USER_ACTION_TIME_CURRENT_TIME
-   *
-   * If %TP_USER_ACTION_TIME_NOT_USER_ACTION, the action doesn't involve any
-   * user action. Clients SHOULD avoid stealing focus when presenting the
-   * channel.
-   *
-   * If %TP_USER_ACTION_TIME_CURRENT_TIME, clients SHOULD behave as though the
-   * user action happened at the current time, e.g. a client MAY
-   * request that its window gains focus.
+   * (see #TpAccountChannelRequest:user-action-time for details)
    *
    * Read-only except during construction.
    *
