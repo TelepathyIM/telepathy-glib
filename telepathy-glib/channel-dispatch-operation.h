@@ -121,7 +121,7 @@ gboolean tp_channel_dispatch_operation_claim_finish (
 void tp_channel_dispatch_operation_handle_with_time_async (
     TpChannelDispatchOperation *self,
     const gchar *handler,
-    gint64 user_action_timestamp,
+    gint64 user_action_time,
     GAsyncReadyCallback callback,
     gpointer user_data);
 

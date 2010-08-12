@@ -298,8 +298,11 @@ tp_account_channel_request_class_init (
   /**
    * TpAccountChannelRequest:user-action-time:
    *
-   * The user action time that will be passed to mission-control when
-   * requesting the channel.
+   * The user action time that will be passed to the channel dispatcher when
+   * requesting the channel. This may be the time at which user action
+   * occurred, or one of the special values
+   * %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+   * %TP_USER_ACTION_TIME_CURRENT_TIME.
    *
    * Since: 0.11.12
    */
@@ -314,8 +317,9 @@ tp_account_channel_request_class_init (
    * TpAccountChannelRequest::re-handled:
    * @self: a #TpAccountChannelRequest
    * @channel: the #TpChannel being re-handled
-   * @user_action_time: the time at which user action occurred, or 0 if this
-   * channel is to be handled for some reason not involving user action.
+   * @user_action_time: the time at which user action occurred, or one of the
+   *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+   *  %TP_USER_ACTION_TIME_CURRENT_TIME
    * @context: a #TpHandleChannelsContext representing the context of
    * the HandleChannels() call.
    *
@@ -338,8 +342,9 @@ tp_account_channel_request_class_init (
  * @account: a #TpAccount
  * @request: (transfer none) (element-type utf8 GObject.Value): the requested
  * properties of the channel
- * @user_action_time: the user action time to pass to the channel dispatcher
- * when requesting the channel
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME
  *
  * Convenience function to create a new #TpAccountChannelRequest object.
  *

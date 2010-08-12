@@ -88,8 +88,9 @@
  * @requests_satisfied: (element-type TelepathyGLib.ChannelRequest): a #GList of
  * #TpChannelRequest having their object-path defined but are not guaranteed
  * to be prepared.
- * @user_action_time: the time at which user action occurred, or 0 if this
- * channel is to be handled for some reason not involving user action.
+ * @user_action_time: the time at which user action occurred, or one of the
+ *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME
  * @context: a #TpHandleChannelsContext representing the context of this
  *  D-Bus call
  * @user_data: arbitrary user-supplied data passed to tp_simple_handler_new()
