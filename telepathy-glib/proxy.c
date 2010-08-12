@@ -1578,7 +1578,7 @@ _tp_proxy_is_preparing (gpointer self,
  * TpChannel *channel = ...;
  * GQuark features[] = { TP_CHANNEL_FEATURE_CORE, 0 };
  *
- * tp_proxy_prepare_async (channel, features, NULL, callback, user_data);
+ * tp_proxy_prepare_async (channel, features, callback, user_data);
  * ]|
  *
  * If a feature represents core functionality (like %TP_CHANNEL_FEATURE_CORE),
