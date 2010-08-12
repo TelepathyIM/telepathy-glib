@@ -281,8 +281,8 @@ tp_account_channel_request_class_init (
   /**
    * TpAccountChannelRequest:request:
    *
-   * The #TpAccount used to request the channel.
-   * Read-only except during construction.
+   * The desired D-Bus properties for the channel, represented as a
+   * #GHashTable where the keys are strings and the values are #GValue.
    *
    * This property can't be %NULL.
    *
