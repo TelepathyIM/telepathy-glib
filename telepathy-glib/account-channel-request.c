@@ -366,10 +366,11 @@ tp_account_channel_request_class_init (
  * tp_account_channel_request_new:
  * @account: a #TpAccount
  * @request: (transfer none) (element-type utf8 GObject.Value): the requested
- * properties of the channel
+ *  properties of the channel (see #TpAccountChannelRequest:request)
  * @user_action_time: the time of the user action that caused this request,
  *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
- *  %TP_USER_ACTION_TIME_CURRENT_TIME
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
  *
  * Convenience function to create a new #TpAccountChannelRequest object.
  *
