@@ -299,10 +299,15 @@ tp_account_channel_request_class_init (
    * TpAccountChannelRequest:user-action-time:
    *
    * The user action time that will be passed to the channel dispatcher when
-   * requesting the channel. This may be the time at which user action
-   * occurred, or one of the special values
-   * %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+   * requesting the channel.
+   *
+   * This may be the time at which user action occurred, or one of the special
+   * values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
    * %TP_USER_ACTION_TIME_CURRENT_TIME.
+   *
+   * On X11-based systems, Gdk 2.x, Clutter 1.0 etc.,
+   * tp_user_action_time_from_x11() can be used to convert an X11 timestamp to
+   * a Telepathy user action time.
    *
    * Since: 0.11.12
    */
