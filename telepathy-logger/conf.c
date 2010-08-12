@@ -40,8 +40,10 @@ G_DEFINE_TYPE (TplConf, _tpl_conf, G_TYPE_OBJECT)
 
 static TplConf *conf_singleton = NULL;
 
-typedef struct {
-    GSettings *gsettings;
+typedef struct
+{
+  gboolean test_mode;
+  GSettings *gsettings;
 } TplConfPriv;
 
 
@@ -67,13 +69,11 @@ tpl_conf_get_property (GObject *self,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplConfPriv *priv = GET_PRIV (self);
-
   switch (prop_id)
     {
       case PROP_GLOBALLY_ENABLED:
         g_value_set_boolean (value,
-            g_settings_get_boolean (priv->gsettings, KEY_ENABLED));
+            _tpl_conf_is_globally_enabled (TPL_CONF (self)));
         break;
 
       default:
@@ -88,12 +88,10 @@ tpl_conf_set_property (GObject *self,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TplConfPriv *priv = GET_PRIV (self);
-
   switch (prop_id)
     {
       case PROP_GLOBALLY_ENABLED:
-        g_settings_set_boolean (priv->gsettings, KEY_ENABLED,
+        _tpl_conf_globally_enable (TPL_CONF (self),
             g_value_get_boolean (value));
         break;
 
@@ -170,10 +168,17 @@ _tpl_conf_init (TplConf *self)
   TplConfPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TPL_TYPE_CONF, TplConfPriv);
 
-  priv->gsettings = g_settings_new (GSETTINGS_SCHEMA);
+  if (g_getenv ("TPL_TEST_MODE") != NULL)
+    {
+      priv->test_mode = TRUE;
+    }
+  else
+    {
+      priv->gsettings = g_settings_new (GSETTINGS_SCHEMA);
 
-  g_signal_connect (priv->gsettings, "changed::" KEY_ENABLED,
-      G_CALLBACK (_notify_globally_enable), self);
+      g_signal_connect (priv->gsettings, "changed::" KEY_ENABLED,
+          G_CALLBACK (_notify_globally_enable), self);
+    }
 }
 
 
@@ -209,7 +214,10 @@ _tpl_conf_is_globally_enabled (TplConf *self)
 {
   g_return_val_if_fail (TPL_IS_CONF (self), FALSE);
 
-  return g_settings_get_boolean (GET_PRIV (self)->gsettings, KEY_ENABLED);
+  if (GET_PRIV (self)->test_mode)
+    return TRUE;
+  else
+    return g_settings_get_boolean (GET_PRIV (self)->gsettings, KEY_ENABLED);
 }
 
 
@@ -229,6 +237,9 @@ _tpl_conf_globally_enable (TplConf *self,
     gboolean enable)
 {
   g_return_if_fail (TPL_IS_CONF (self));
+
+  if (GET_PRIV (self)->test_mode)
+    return;
 
   g_settings_set_boolean (GET_PRIV (self)->gsettings,
       KEY_ENABLED, enable);

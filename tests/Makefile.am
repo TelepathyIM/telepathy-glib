@@ -38,7 +38,10 @@ AM_CFLAGS = \
 
 TESTS = $(noinst_PROGRAMS)
 
-TESTS_ENVIRONMENT = G_DEBUG=fatal-warnings,fatal-criticals
+TESTS_ENVIRONMENT = \
+	G_DEBUG=fatal-warnings,fatal-criticals \
+	TPL_TEST_MODE=true \
+	$(NULL)
 
 check-valgrind: $(TESTS)
 	G_SLICE=always-malloc \
