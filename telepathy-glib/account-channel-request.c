@@ -850,8 +850,10 @@ tp_account_channel_request_create_and_handle_channel_finish (
  * If the channel already exists and is already being handled, or if a
  * newly created channel is sent to a different handler, this operation
  * will fail with the error %TP_ERROR_NOT_YOURS. The other handler
- * will be notified that the channel was requested again, and can
- * move its window to the foreground, if applicable.
+ * will be notified that the channel was requested again (for instance
+ * with #TpAccountChannelRequest::re-handled,
+ * #TpBaseClientClassHandleChannelsImpl or #TpSimpleHandler:callback),
+ * and can move its window to the foreground, if applicable.
  *
  * Since: 0.11.12
  */
