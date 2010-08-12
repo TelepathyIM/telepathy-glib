@@ -605,7 +605,7 @@ out:
 }
 
 static void
-channel_prepare_cb (GObject *source,
+hcc_channel_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
@@ -652,7 +652,7 @@ context_prepare (TpHandleChannelsContext *self)
       self->priv->num_pending++;
 
       tp_proxy_prepare_async (channel, channel_features,
-          channel_prepare_cb, g_object_ref (self));
+          hcc_channel_prepare_cb, g_object_ref (self));
     }
 }
 
