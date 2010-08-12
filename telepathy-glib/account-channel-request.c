@@ -350,6 +350,9 @@ tp_account_channel_request_class_init (
    * still exists. Instead of creating a new channel, the channel dispatcher
    * notifies the existing handler of @channel, resulting in this signal.
    *
+   * Most GUI handlers should respond to this signal by checking
+   * @user_action_time, and if appropriate, moving to the foreground.
+   *
    * Since: 0.11.12
    */
   signals[SIGNAL_RE_HANDLED] = g_signal_new (
