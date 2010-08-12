@@ -1076,6 +1076,14 @@ tp_account_channel_request_create_channel_finish (
  * Asynchronously calls EnsureChannel on the ChannelDispatcher to create a
  * channel with the properties defined in #TpAccountChannelRequest:request
  * and let the ChannelDispatcher dispatch it to an handler.
+ *
+ * If a suitable channel already existed, its handler will be notified that
+ * the channel was requested again (for instance with
+ * #TpAccountChannelRequest::re-handled, #TpBaseClientClassHandleChannelsImpl
+ * or #TpSimpleHandler:callback), and can move its window to the foreground,
+ * if applicable. Otherwise, a new channel will be created and dispatched to
+ * a handler.
+ *
  * @callback will be called when an existing channel's handler has been
  * notified, a new channel has been created and dispatched, or the request
  * has failed.
