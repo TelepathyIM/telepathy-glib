@@ -41,10 +41,40 @@ typedef struct _TpBaseClientClass TpBaseClientClass;
 typedef struct _TpBaseClientPrivate TpBaseClientPrivate;
 typedef struct _TpBaseClientClassPrivate TpBaseClientClassPrivate;
 
+typedef void (*TpBaseClientClassObserveChannelsImpl) (
+    TpBaseClient *client,
+    TpAccount *account,
+    TpConnection *connection,
+    GList *channels,
+    TpChannelDispatchOperation *dispatch_operation,
+    GList *requests,
+    TpObserveChannelsContext *context);
+
+typedef void (*TpBaseClientClassAddDispatchOperationImpl) (
+    TpBaseClient *client,
+    TpAccount *account,
+    TpConnection *connection,
+    GList *channels,
+    TpChannelDispatchOperation *dispatch_operation,
+    TpAddDispatchOperationContext *context);
+
+typedef void (*TpBaseClientClassHandleChannelsImpl) (
+    TpBaseClient *client,
+    TpAccount *account,
+    TpConnection *connection,
+    GList *channels,
+    GList *requests_satisfied,
+    gint64 user_action_time,
+    TpHandleChannelsContext *context);
+
 struct _TpBaseClientClass {
-    /*<private>*/
+    /*<public>*/
     GObjectClass parent_class;
-    GCallback _padding[7];
+    TpBaseClientClassObserveChannelsImpl observe_channels;
+    TpBaseClientClassAddDispatchOperationImpl add_dispatch_operation;
+    TpBaseClientClassHandleChannelsImpl handle_channels;
+    /*<private>*/
+    GCallback _padding[4];
     TpDBusPropertiesMixinClass dbus_properties_class;
     TpBaseClientClassPrivate *priv;
 };
@@ -59,37 +89,11 @@ GType tp_base_client_get_type (void);
 
 /* Protected methods; should be called only by subclasses */
 
-typedef void (*TpBaseClientClassObserveChannelsImpl) (
-    TpBaseClient *client,
-    TpAccount *account,
-    TpConnection *connection,
-    GList *channels,
-    TpChannelDispatchOperation *dispatch_operation,
-    GList *requests,
-    TpObserveChannelsContext *context);
-
 void tp_base_client_implement_observe_channels (TpBaseClientClass *klass,
     TpBaseClientClassObserveChannelsImpl impl);
 
-typedef void (*TpBaseClientClassAddDispatchOperationImpl) (
-    TpBaseClient *client,
-    TpAccount *account,
-    TpConnection *connection,
-    GList *channels,
-    TpChannelDispatchOperation *dispatch_operation,
-    TpAddDispatchOperationContext *context);
-
 void tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *klass,
     TpBaseClientClassAddDispatchOperationImpl impl);
-
-typedef void (*TpBaseClientClassHandleChannelsImpl) (
-    TpBaseClient *client,
-    TpAccount *account,
-    TpConnection *connection,
-    GList *channels,
-    GList *requests_satisfied,
-    gint64 user_action_time,
-    TpHandleChannelsContext *context);
 
 void tp_base_client_implement_handle_channels (TpBaseClientClass *klass,
     TpBaseClientClassHandleChannelsImpl impl);

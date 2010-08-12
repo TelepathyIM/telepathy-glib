@@ -256,8 +256,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
   g_object_class_install_property (object_class, PROP_DESTROY,
       param_spec);
 
-  tp_base_client_implement_add_dispatch_operation (base_clt_cls,
-      add_dispatch_operation);
+  base_clt_cls->add_dispatch_operation = add_dispatch_operation;
 }
 
 /**

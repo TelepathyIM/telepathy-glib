@@ -306,7 +306,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
   g_object_class_install_property (object_class, PROP_DESTROY,
       param_spec);
 
-  tp_base_client_implement_handle_channels (base_clt_cls, handle_channels);
+  base_clt_cls->handle_channels = handle_channels;
 }
 
 /**
