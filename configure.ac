@@ -204,8 +204,7 @@ if test x$enable_vala_bindings = xyes; then
   AC_SUBST(VALAC)
   AC_SUBST(VALAFLAGS)
 
-  AC_MSG_CHECKING([for vapigen])
-  VAPIGEN=`$PKG_CONFIG --variable=vapigen vala-1.0`
+  AC_PATH_PROG([VAPIGEN], [vapigen], [false])
 
   if test "x$VAPIGEN" = "x"; then
     AC_MSG_ERROR([not found. Was vala compiled with --enable-vapigen?])
