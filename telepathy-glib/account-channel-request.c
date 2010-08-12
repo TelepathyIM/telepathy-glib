@@ -323,7 +323,17 @@ tp_account_channel_request_class_init (
    * @context: a #TpHandleChannelsContext representing the context of
    * the HandleChannels() call.
    *
-   * Emitted when channel which has been created using @self has be re-handled.
+   * Emitted when the channel created using @self has been "re-handled".
+   *
+   * This means that a Telepathy client has made another request for a
+   * matching channel using an "ensure" API like
+   * tp_account_channel_request_ensure_channel_async(), while the channel
+   * still exists. Instead of creating a new channel, the channel dispatcher
+   * notifies the existing handler of @channel, resulting in this signal.
+   *
+   * If the handler is a GUI, it may use @user_action_time and
+   * tp_user_action_time_should_present() to decide whether to bring its
+   * window to the foreground.
    *
    * Since: 0.11.12
    */
