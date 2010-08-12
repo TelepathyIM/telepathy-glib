@@ -281,8 +281,8 @@ tp_account_channel_request_class_init (
   /**
    * TpAccountChannelRequest:request:
    *
-   * The #TpAccount used to request the channel.
-   * Read-only except during construction.
+   * The desired D-Bus properties for the channel, represented as a
+   * #GHashTable where the keys are strings and the values are #GValue.
    *
    * This property can't be %NULL.
    *
@@ -298,8 +298,29 @@ tp_account_channel_request_class_init (
   /**
    * TpAccountChannelRequest:user-action-time:
    *
-   * The user action time that will be passed to mission-control when
+   * The user action time that will be passed to the channel dispatcher when
    * requesting the channel.
+   *
+   * This may be the time at which user action occurred, or one of the special
+   * values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+   * %TP_USER_ACTION_TIME_CURRENT_TIME.
+   *
+   * If %TP_USER_ACTION_TIME_NOT_USER_ACTION, the action doesn't involve any
+   * user action. Clients should avoid stealing focus when presenting the
+   * channel.
+   *
+   * If %TP_USER_ACTION_TIME_CURRENT_TIME, clients SHOULD behave as though the
+   * user action happened at the current time, e.g. a client may
+   * request that its window gains focus.
+   *
+   * On X11-based systems, Gdk 2.x, Clutter 1.0 etc.,
+   * tp_user_action_time_from_x11() can be used to convert an X11 timestamp to
+   * a Telepathy user action time.
+   *
+   * If the channel request succeeds, this user action time will be passed on
+   * to the channel's handler. If the handler is a GUI, it may use
+   * tp_user_action_time_should_present() to decide whether to bring its
+   * window to the foreground.
    *
    * Since: 0.11.12
    */
@@ -314,12 +335,23 @@ tp_account_channel_request_class_init (
    * TpAccountChannelRequest::re-handled:
    * @self: a #TpAccountChannelRequest
    * @channel: the #TpChannel being re-handled
-   * @user_action_time: the time at which user action occurred, or 0 if this
-   * channel is to be handled for some reason not involving user action.
+   * @user_action_time: the time at which user action occurred, or one of the
+   *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+   *  %TP_USER_ACTION_TIME_CURRENT_TIME; see
+   *  #TpAccountChannelRequest:user-action-time
    * @context: a #TpHandleChannelsContext representing the context of
    * the HandleChannels() call.
    *
-   * Emitted when channel which has been created using @self has be re-handled.
+   * Emitted when the channel created using @self has been "re-handled".
+   *
+   * This means that a Telepathy client has made another request for a
+   * matching channel using an "ensure" API like
+   * tp_account_channel_request_ensure_channel_async(), while the channel
+   * still exists. Instead of creating a new channel, the channel dispatcher
+   * notifies the existing handler of @channel, resulting in this signal.
+   *
+   * Most GUI handlers should respond to this signal by checking
+   * @user_action_time, and if appropriate, moving to the foreground.
    *
    * Since: 0.11.12
    */
@@ -337,9 +369,11 @@ tp_account_channel_request_class_init (
  * tp_account_channel_request_new:
  * @account: a #TpAccount
  * @request: (transfer none) (element-type utf8 GObject.Value): the requested
- * properties of the channel
- * @user_action_time: the user action time to pass to the channel dispatcher
- * when requesting the channel
+ *  properties of the channel (see #TpAccountChannelRequest:request)
+ * @user_action_time: the time of the user action that caused this request,
+ *  or one of the special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME (see
+ *  #TpAccountChannelRequest:user-action-time)
  *
  * Convenience function to create a new #TpAccountChannelRequest object.
  *
@@ -778,6 +812,10 @@ request_and_handle_channel_finish (TpAccountChannelRequest *self,
  * tp_account_channel_request_create_and_handle_channel_finish() to get the
  * result of the operation.
  *
+ * (Behind the scenes, this works by creating a temporary #TpBaseClient, then
+ * acting like tp_account_channel_request_create_channel_async() with the
+ * temporary #TpBaseClient as the @preferred_handler.)
+ *
  * Since: 0.11.12
  */
 void
@@ -835,8 +873,14 @@ tp_account_channel_request_create_and_handle_channel_finish (
  * If the channel already exists and is already being handled, or if a
  * newly created channel is sent to a different handler, this operation
  * will fail with the error %TP_ERROR_NOT_YOURS. The other handler
- * will be notified that the channel was requested again, and can
- * move its window to the foreground, if applicable.
+ * will be notified that the channel was requested again (for instance
+ * with #TpAccountChannelRequest::re-handled,
+ * #TpBaseClientClassHandleChannelsImpl or #TpSimpleHandler:callback),
+ * and can move its window to the foreground, if applicable.
+ *
+ * (Behind the scenes, this works by creating a temporary #TpBaseClient, then
+ * acting like tp_account_channel_request_ensure_channel_async() with the
+ * temporary #TpBaseClient as the @preferred_handler.)
  *
  * Since: 0.11.12
  */
@@ -1032,6 +1076,14 @@ tp_account_channel_request_create_channel_finish (
  * Asynchronously calls EnsureChannel on the ChannelDispatcher to create a
  * channel with the properties defined in #TpAccountChannelRequest:request
  * and let the ChannelDispatcher dispatch it to an handler.
+ *
+ * If a suitable channel already existed, its handler will be notified that
+ * the channel was requested again (for instance with
+ * #TpAccountChannelRequest::re-handled, #TpBaseClientClassHandleChannelsImpl
+ * or #TpSimpleHandler:callback), and can move its window to the foreground,
+ * if applicable. Otherwise, a new channel will be created and dispatched to
+ * a handler.
+ *
  * @callback will be called when an existing channel's handler has been
  * notified, a new channel has been created and dispatched, or the request
  * has failed.
