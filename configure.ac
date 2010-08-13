@@ -196,21 +196,18 @@ AC_ARG_ENABLE(vala-bindings,
                   enable_vala_bindings=no )
 
 if test x$enable_vala_bindings = xyes; then
-  PKG_CHECK_MODULES(VALA,
-                    [vala-1.0 >= 0.9.2.97-2b08])
+  m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.9.3)],
+           [AC_MSG_ERROR([Automake >= 1.11 required for Vala bindings])])
   have_vala=yes
 
   AC_PATH_PROG(VALAC, valac, valac)
   AC_SUBST(VALAC)
   AC_SUBST(VALAFLAGS)
 
-  AC_MSG_CHECKING([for vapigen])
-  VAPIGEN=`$PKG_CONFIG --variable=vapigen vala-1.0`
+  AC_PATH_PROG([VAPIGEN], [vapigen], [false])
 
-  if test "x$VAPIGEN" = "x"; then
-    AC_MSG_ERROR([not found. Was vala compiled with --enable-vapigen?])
-  else
-    AC_MSG_RESULT([$VAPIGEN])
+  if test "x$VAPIGEN" = "xfalse"; then
+    AC_MSG_ERROR([vapigen not found. Was vala compiled with --enable-vapigen?])
   fi
 
   AC_SUBST(VAPIGEN)
