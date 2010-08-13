@@ -196,7 +196,7 @@ AC_ARG_ENABLE(vala-bindings,
                   enable_vala_bindings=no )
 
 if test x$enable_vala_bindings = xyes; then
-  m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.9.5)],
+  m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.9.3)],
            [AC_MSG_ERROR([Automake >= 1.11 required for Vala bindings])])
   have_vala=yes
 
