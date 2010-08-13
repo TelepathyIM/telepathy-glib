@@ -206,8 +206,8 @@ if test x$enable_vala_bindings = xyes; then
 
   AC_PATH_PROG([VAPIGEN], [vapigen], [false])
 
-  if test "x$VAPIGEN" = "x"; then
-    AC_MSG_ERROR([not found. Was vala compiled with --enable-vapigen?])
+  if test "x$VAPIGEN" = "xfalse"; then
+    AC_MSG_ERROR([vapigen not found. Was vala compiled with --enable-vapigen?])
   else
     AC_MSG_RESULT([$VAPIGEN])
   fi
