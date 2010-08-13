@@ -208,8 +208,6 @@ if test x$enable_vala_bindings = xyes; then
 
   if test "x$VAPIGEN" = "xfalse"; then
     AC_MSG_ERROR([vapigen not found. Was vala compiled with --enable-vapigen?])
-  else
-    AC_MSG_RESULT([$VAPIGEN])
   fi
 
   AC_SUBST(VAPIGEN)
