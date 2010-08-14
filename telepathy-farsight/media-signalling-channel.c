@@ -51,7 +51,8 @@ struct _TfMediaSignallingChannel{
   guint prop_id_gtalk_p2p_relay_token;
 
   /* sessions is NULL until we've had a reply from GetSessionHandlers */
-  GPtrArray *sessions;
+  TfSession *session;
+  gboolean got_sessions;
   GPtrArray *streams;
 };
 
@@ -138,8 +139,8 @@ tf_media_signalling_channel_class_init (TfMediaSignallingChannelClass *klass)
           G_SIGNAL_RUN_LAST,
           0,
           NULL, NULL,
-          _tf_marshal_VOID__OBJECT_OBJECT,
-          G_TYPE_NONE, 2, FS_TYPE_CONFERENCE, FS_TYPE_PARTICIPANT);
+          _tf_marshal_VOID__OBJECT,
+          G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
   /**
    * TfMediaSignallingChannel::session-invalidated:
@@ -175,7 +176,6 @@ tf_media_signalling_channel_class_init (TfMediaSignallingChannelClass *klass)
 static void
 tf_media_signalling_channel_init (TfMediaSignallingChannel *self)
 {
-  self->sessions = NULL;
   self->streams = g_ptr_array_new ();
 }
 
@@ -387,35 +387,13 @@ tf_media_signalling_channel_dispose (GObject *object)
       self->streams = NULL;
     }
 
-  if (self->sessions != NULL)
+  if (self->session)
     {
-      guint i;
+      g_signal_handlers_disconnect_by_func (self->session, new_stream_cb, self);
 
-      for (i = 0; i < self->sessions->len; i++)
-        {
-          GObject *obj = g_ptr_array_index (self->sessions, i);
-          FsConference *conf = NULL;
-          FsParticipant *part = NULL;
-
-          g_signal_handlers_disconnect_by_func (obj, new_stream_cb, self);
-
-          g_object_get (obj,
-              "farsight-conference", &conf,
-              "farsight-participant", &part,
-              NULL);
-
-          g_signal_emit (self, signals[SESSION_INVALIDATED], 0, conf, part);
-
-          g_object_unref (conf);
-          g_object_unref (part);
-
-          g_object_unref (g_ptr_array_index (self->sessions, i));
-        }
-
-      g_ptr_array_free (self->sessions, TRUE);
-      self->sessions = NULL;
+      g_object_unref (self->session);
+      self->session = NULL;
     }
-
 
   g_free (self->nat_props.nat_traversal);
   self->nat_props.nat_traversal = NULL;
@@ -533,10 +511,12 @@ session_invalidated_cb (TfSession *session, gpointer user_data)
 {
   TfMediaSignallingChannel *self = TF_MEDIA_SIGNALLING_CHANNEL (user_data);
 
+  g_assert (session == self->session);
+
   g_signal_handlers_disconnect_by_func (session, new_stream_cb, self);
 
   g_object_unref (session);
-  g_ptr_array_remove_fast (self->sessions, session);
+  self->session = NULL;
 }
 
 static void
@@ -544,16 +524,14 @@ add_session (TfMediaSignallingChannel *self,
     const gchar *object_path,
     const gchar *session_type)
 {
-  TfSession *session;
   GError *error = NULL;
   TpProxy *channel_as_proxy = (TpProxy *) self->channel_proxy;
   TpMediaSessionHandler *proxy;
   FsConference *conf = NULL;
-  FsParticipant *part = NULL;
 
   g_debug ("adding session handler %s, type %s", object_path, session_type);
 
-  g_assert (self->sessions != NULL);
+  g_assert (self->session == NULL);
 
   proxy = tp_media_session_handler_new (channel_as_proxy->dbus_daemon,
       channel_as_proxy->bus_name, object_path, &error);
@@ -568,9 +546,9 @@ add_session (TfMediaSignallingChannel *self,
       return;
     }
 
-  session = _tf_session_new (proxy, session_type, &error);
+  self->session = _tf_session_new (proxy, session_type, &error);
 
-  if (session == NULL)
+  if (self->session == NULL)
     {
       g_prefix_error (&error, "failed to create session: ");
       g_warning ("%s", error->message);
@@ -579,20 +557,17 @@ add_session (TfMediaSignallingChannel *self,
       return;
     }
 
-  g_signal_connect (session, "new-stream", G_CALLBACK (new_stream_cb), self);
-  g_signal_connect (session, "invalidated",
+  g_signal_connect (self->session, "new-stream", G_CALLBACK (new_stream_cb),
+      self);
+  g_signal_connect (self->session, "invalidated",
       G_CALLBACK (session_invalidated_cb), self);
 
-  g_ptr_array_add (self->sessions, session);
-
-  g_object_get (session,
+  g_object_get (self->session,
       "farsight-conference", &conf,
-      "farsight-participant", &part,
       NULL);
 
-  g_signal_emit (self, signals[SESSION_CREATED], 0, conf, part);
+  g_signal_emit (self, signals[SESSION_CREATED], 0, conf);
   g_object_unref (conf);
-  g_object_unref (part);
 }
 
 static void
@@ -609,8 +584,11 @@ new_media_session_handler (TpChannel *channel_proxy G_GNUC_UNUSED,
    * we think the CM is asking us to add the same session twice, and get
    * very confused
    */
-  if (self->sessions != NULL)
-    add_session (self, session_handler_path, type);
+
+  if (!self->got_sessions)
+    return;
+
+  add_session (self, session_handler_path, type);
 }
 
 
@@ -622,7 +600,6 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
     GObject *weak_object)
 {
   TfMediaSignallingChannel *self = TF_MEDIA_SIGNALLING_CHANNEL (weak_object);
-  guint i;
 
   if (error)
     {
@@ -630,32 +607,37 @@ get_session_handlers_reply (TpChannel *channel_proxy G_GNUC_UNUSED,
       return;
     }
 
-  self->sessions = g_ptr_array_sized_new (session_handlers->len);
-
   if (session_handlers->len == 0)
     {
       g_debug ("GetSessionHandlers returned 0 sessions");
     }
-  else
+  else if (session_handlers->len == 1)
     {
+      GValueArray *session;
+      GValue *obj;
+      GValue *type;
+
       g_debug ("GetSessionHandlers replied: ");
 
-      for (i = 0; i < session_handlers->len; i++)
-        {
-          GValueArray *session = g_ptr_array_index (session_handlers, i);
-          GValue *obj = g_value_array_get_nth (session, 0);
-          GValue *type = g_value_array_get_nth (session, 1);
+      session = g_ptr_array_index (session_handlers, 0);
+      obj = g_value_array_get_nth (session, 0);
+      type = g_value_array_get_nth (session, 1);
 
-          g_assert (G_VALUE_TYPE (obj) == DBUS_TYPE_G_OBJECT_PATH);
-          g_assert (G_VALUE_HOLDS_STRING (type));
+      g_assert (G_VALUE_TYPE (obj) == DBUS_TYPE_G_OBJECT_PATH);
+      g_assert (G_VALUE_HOLDS_STRING (type));
 
-          g_debug ("  - session %s", (char *)g_value_get_boxed (obj));
-          g_debug ("    type %s", g_value_get_string (type));
+      g_debug ("  - session %s", (char *)g_value_get_boxed (obj));
+      g_debug ("    type %s", g_value_get_string (type));
 
-          add_session (self,
-              g_value_get_boxed (obj), g_value_get_string (type));
-        }
+      add_session (self,
+          g_value_get_boxed (obj), g_value_get_string (type));
     }
+  else
+    {
+      g_error ("Got more than one session");
+    }
+
+  self->got_sessions = TRUE;
 }
 
 
@@ -677,18 +659,11 @@ tf_media_signalling_channel_bus_message (TfMediaSignallingChannel *channel,
   guint i;
   gboolean ret = FALSE;
 
-  if (channel->sessions == NULL)
+  if (channel->session == NULL)
     return FALSE;
 
-  for (i = 0; i < channel->sessions->len; i++)
-    {
-      TfSession *session = g_ptr_array_index (
-          channel->sessions, i);
-
-      if (session != NULL)
-        if (_tf_session_bus_message (session, message))
-          ret = TRUE;
-    }
+  if (_tf_session_bus_message (channel->session, message))
+    ret = TRUE;
 
   for (i = 0; i < channel->streams->len; i++)
     {
