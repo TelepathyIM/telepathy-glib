@@ -62,8 +62,9 @@ struct _TfChannelPrivate
   GPtrArray *streams;
 
   gulong channel_invalidated_handler;
-  gulong channel_ready_handler;
   guint  channel_ready_idle;
+
+  gboolean channel_handled;
 };
 
 enum
@@ -84,6 +85,9 @@ enum
   PROP_CHANNEL = 1,
   PROP_OBJECT_PATH
 };
+
+static void shutdown_channel (TfChannel *self);
+
 
 static void
 tf_channel_init (TfChannel *self)
@@ -294,15 +298,23 @@ cb_properties_listed (TpProxy *proxy,
 
 static void
 channel_ready (TpChannel *channel_proxy,
-               GParamSpec *unused G_GNUC_UNUSED,
-               TfChannel *self)
+               const GError *error,
+               gpointer user_data)
 {
+  TfChannel *self = TF_CHANNEL (user_data);
   TpProxy *as_proxy = (TpProxy *) channel_proxy;
 
-  if (self->priv->channel_ready_handler)
-    g_signal_handler_disconnect (channel_proxy,
-        self->priv->channel_ready_handler);
-  self->priv->channel_ready_handler = 0;
+  if (error)
+    {
+      self->priv->channel_handled = TRUE;
+      g_signal_emit (self, signals[HANDLER_RESULT], 0, error);
+
+      shutdown_channel (self);
+      return;
+    }
+
+  if (self->priv->channel_handled)
+    return;
 
   if (!tp_proxy_has_interface_by_id (as_proxy,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING))
@@ -312,10 +324,12 @@ channel_ready (TpChannel *channel_proxy,
         TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING };
 
       g_message ("%s", e.message);
+      self->priv->channel_handled = TRUE;
       g_signal_emit (self, signals[HANDLER_RESULT], 0, &e);
       return;
     }
 
+  self->priv->channel_handled = TRUE;
   g_signal_emit (self, signals[HANDLER_RESULT], 0, NULL);
 
   if (!tp_proxy_has_interface_by_id (as_proxy,
@@ -340,6 +354,10 @@ channel_ready (TpChannel *channel_proxy,
   tp_cli_channel_interface_media_signalling_call_get_session_handlers
       (channel_proxy, -1, get_session_handlers_reply, NULL, NULL,
        (GObject *) self);
+
+  self->priv->channel_invalidated_handler = g_signal_connect (
+      self->priv->channel_proxy,
+      "invalidated", G_CALLBACK (channel_invalidated), self);
 }
 
 static gboolean
@@ -347,11 +365,7 @@ channel_ready_idle (gpointer data)
 {
   TfChannel *self = data;
 
-  if (self->priv->channel_ready_idle)
-    g_source_remove (self->priv->channel_ready_idle);
-  self->priv->channel_ready_idle = 0;
-
-  channel_ready (self->priv->channel_proxy, NULL, self);
+  tp_channel_call_when_ready (self->priv->channel_proxy, channel_ready, self);
 
   return FALSE;
 }
@@ -363,25 +377,12 @@ tf_channel_constructor (GType type,
 {
   GObject *obj;
   TfChannel *self;
-  gboolean ready;
 
   obj = G_OBJECT_CLASS (tf_channel_parent_class)->
            constructor (type, n_props, props);
   self = (TfChannel *) obj;
 
-  g_object_get (self->priv->channel_proxy, "channel-ready", &ready, NULL);
-
-  if (ready)
-    self->priv->channel_ready_idle = g_idle_add (channel_ready_idle,
-        self);
-  else
-    self->priv->channel_ready_handler = g_signal_connect (
-        self->priv->channel_proxy,
-        "notify::channel-ready", G_CALLBACK (channel_ready), obj);
-
-  self->priv->channel_invalidated_handler = g_signal_connect (
-      self->priv->channel_proxy,
-      "invalidated", G_CALLBACK (channel_invalidated), obj);
+  self->priv->channel_ready_idle = g_idle_add (channel_ready_idle, self);
 
   return obj;
 }
@@ -464,10 +465,6 @@ tf_channel_dispose (GObject *object)
   if (self->priv->channel_proxy)
     {
       TpChannel *tmp;
-
-      if (self->priv->channel_ready_handler != 0)
-        g_signal_handler_disconnect (self->priv->channel_proxy,
-            self->priv->channel_ready_handler);
 
       if (self->priv->channel_invalidated_handler != 0)
         g_signal_handler_disconnect (self->priv->channel_proxy,
@@ -823,8 +820,7 @@ shutdown_channel (TfChannel *self)
   if (self->priv->channel_proxy != NULL)
     {
       /* I've ensured that this is true everywhere this function is called */
-      g_assert (self->priv->channel_ready_handler == 0 &&
-          self->priv->channel_ready_idle == 0);
+      g_assert (self->priv->channel_ready_idle == 0);
 
       if (self->priv->channel_invalidated_handler)
         {
@@ -846,13 +842,9 @@ channel_invalidated (TpChannel *channel_proxy,
 {
   GError e = { domain, code, message };
 
-  if (self->priv->channel_ready_handler != 0)
+  if (!self->priv->channel_handled)
     {
-      /* we haven't yet decided whether to handle this channel - do it now */
-      g_signal_handler_disconnect (channel_proxy,
-          self->priv->channel_ready_handler);
-      self->priv->channel_ready_handler = 0;
-
+      self->priv->channel_handled = TRUE;
       g_signal_emit (self, signals[HANDLER_RESULT], 0, &e);
     }
 
@@ -948,21 +940,17 @@ tf_channel_error (TfChannel *chan,
       tf_stream_error (g_ptr_array_index (chan->priv->streams, i),
           error, message);
 
-  if (chan->priv->channel_ready_handler != 0 ||
-      chan->priv->channel_ready_idle != 0)
+  if (!chan->priv->channel_handled)
     {
       /* we haven't yet decided whether we're handling this channel. This
        * seems an unlikely situation at this point, but for the sake of
        * returning *something* from HandleChannel, let's claim we are */
 
       g_signal_emit (chan, signals[HANDLER_RESULT], 0, NULL);
+    }
 
-      /* if the channel becomes ready, we no longer want to know */
-      if (chan->priv->channel_ready_handler)
-        g_signal_handler_disconnect (chan->priv->channel_proxy,
-            chan->priv->channel_ready_handler);
-      chan->priv->channel_ready_handler = 0;
-
+  if (chan->priv->channel_ready_idle != 0)
+    {
       if (chan->priv->channel_ready_idle)
         g_source_remove (chan->priv->channel_ready_idle);
       chan->priv->channel_ready_idle = 0;
