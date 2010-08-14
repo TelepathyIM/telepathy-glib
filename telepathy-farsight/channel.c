@@ -50,7 +50,6 @@ G_DEFINE_TYPE (TfChannel, tf_channel, G_TYPE_OBJECT);
 struct _TfChannelPrivate
 {
   TpChannel *channel_proxy;
-  DBusGProxy *media_signalling_proxy;
 
   TfNatProperties nat_props;
   guint prop_id_nat_traversal;
