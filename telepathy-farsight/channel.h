@@ -5,8 +5,6 @@
 
 #include <telepathy-glib/channel.h>
 
-#include "stream.h"
-
 G_BEGIN_DECLS
 
 #define TF_TYPE_CHANNEL tf_channel_get_type()
@@ -56,28 +54,6 @@ TfChannel *tf_channel_new (TpChannel *channel_proxy);
 void tf_channel_error (TfChannel *chan,
   TpMediaStreamError error,
   const gchar *message);
-
-TfStream *tf_channel_lookup_stream (TfChannel *chan,
-  guint stream_id);
-
-/**
- * TfChannelStreamFunc:
- * @chan: The #TpMediaChannel
- * @stream_id: the id of the stream
- * @stream: the #TfStream
- * @user_data: the passed user data
- *
- * Callback function called on every stream by tf_channel_foreach_stream()
- */
-
-typedef void (* TfChannelStreamFunc) (TfChannel *chan,
-    guint stream_id,
-    TfStream *stream,
-    gpointer user_data);
-
-void tf_channel_foreach_stream (TfChannel *chan,
-    TfChannelStreamFunc func,
-    gpointer user_data);
 
 gboolean tf_channel_bus_message (TfChannel *channel,
     GstMessage *message);

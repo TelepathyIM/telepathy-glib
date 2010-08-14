@@ -16,7 +16,9 @@ libtelepathy_farsight_la_SOURCES = \
 	channel.h \
 	stream-priv.h \
 	session-priv.h \
-	channel-priv.h
+	channel-priv.h \
+	media-signalling-channel.c \
+	media-signalling-channel.h
 
 nodist_libtelepathy_farsight_la_SOURCES = $(BUILT_SOURCES)
 
