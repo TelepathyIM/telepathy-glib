@@ -36,7 +36,7 @@
 
 #include "extensions/extensions.h"
 
-#include "content.h"
+#include "call-content.h"
 #include "tf-signals-marshal.h"
 
 
@@ -137,7 +137,7 @@ static gboolean
 add_content (TfCallChannel *self, const gchar *content_path)
 {
   GError *error = NULL;
-  TfContent *content = tf_content_new (self, content_path, &error);
+  TfCallContent *content = tf_call_content_new (self, content_path, &error);
 
   if (error)
     {

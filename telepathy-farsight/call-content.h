@@ -1,5 +1,5 @@
 /*
- * content.c - Source for TfContent
+ * call-content.h - Source for TfCallContent
  * Copyright (C) 2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TF_CONTENT_H__
-#define __TF_CONTENT_H__
+#ifndef __TF_CALL_CONTENT_H__
+#define __TF_CALL_CONTENT_H__
 
 #include <glib-object.h>
 
@@ -29,15 +29,15 @@
 
 G_BEGIN_DECLS
 
-#define TF_TYPE_CONTENT tf_content_get_type()
+#define TF_TYPE_CONTENT tf_call_content_get_type()
 
-#define TF_CONTENT(obj) \
+#define TF_CALL_CONTENT(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-  TF_TYPE_CONTENT, TfContent))
+  TF_TYPE_CONTENT, TfCallContent))
 
-#define TF_CONTENT_CLASS(klass) \
+#define TF_CALL_CONTENT_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
-  TF_TYPE_CONTENT, TfContentClass))
+  TF_TYPE_CONTENT, TfCallContentClass))
 
 #define TF_IS_CONTENT(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TF_TYPE_CONTENT))
@@ -45,40 +45,40 @@ G_BEGIN_DECLS
 #define TF_IS_CONTENT_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), TF_TYPE_CONTENT))
 
-#define TF_CONTENT_GET_CLASS(obj) \
+#define TF_CALL_CONTENT_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
-  TF_TYPE_CONTENT, TfContentClass))
+  TF_TYPE_CONTENT, TfCallContentClass))
 
-typedef struct _TfContentPrivate TfContentPrivate;
+typedef struct _TfCallContentPrivate TfCallContentPrivate;
 
 /**
- * TfContent:
+ * TfCallContent:
  *
  * All members of the object are private
  */
 
-typedef struct _TfContent TfContent;
+typedef struct _TfCallContent TfCallContent;
 
 /**
- * TfContentClass:
+ * TfCallContentClass:
  * @parent_class: the parent #GObjecClass
  *
  * There are no overridable functions
  */
 
-typedef struct _TfContentClass TfContentClass;
+typedef struct _TfCallContentClass TfCallContentClass;
 
-GType tf_content_get_type (void);
+GType tf_call_content_get_type (void);
 
-TfContent *tf_content_new (
+TfCallContent *tf_call_content_new (
     TfCallChannel *callchannel,
     const gchar *object_path,
     GError **error);
 
-gboolean tf_content_bus_message (TfContent *content,
+gboolean tf_call_content_bus_message (TfCallContent *content,
     GstMessage *message);
 
 G_END_DECLS
 
-#endif /* __TF_CONTENT_H__ */
+#endif /* __TF_CALL_CONTENT_H__ */
 

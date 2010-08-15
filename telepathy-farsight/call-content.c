@@ -1,5 +1,5 @@
 /*
- * content.c - Source for TfContent
+ * call-content.c - Source for TfCallContent
  * Copyright (C) 2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@
  */
 
 
-#include "content.h"
+#include "call-content.h"
 
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
@@ -36,13 +36,15 @@
 
 #include <string.h>
 
+#include <telepathy-glib/proxy-subclass.h>
+
 #include "extensions/extensions.h"
 
 #include "tf-signals-marshal.h"
 #include "utils.h"
 
 
-struct _TfContent {
+struct _TfCallContent {
   GObject parent;
 
   TfCallChannel *call_channel;
@@ -55,12 +57,12 @@ struct _TfContent {
   GHashTable *streams; /* NULL before getting the first streams */
 };
 
-struct _TfContentClass{
+struct _TfCallContentClass{
   GObjectClass parent_class;
 };
 
 
-G_DEFINE_TYPE (TfContent, tf_content, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TfCallContent, tf_call_content, G_TYPE_OBJECT);
 
 
 enum
@@ -77,22 +79,22 @@ enum
 // static guint signals[SIGNAL_COUNT] = {0};
 
 static void
-tf_content_get_property (GObject    *object,
+tf_call_content_get_property (GObject    *object,
     guint       property_id,
     GValue     *value,
     GParamSpec *pspec);
 
-static void tf_content_dispose (GObject *object);
+static void tf_call_content_dispose (GObject *object);
 
 
 
 static void
-tf_content_class_init (TfContentClass *klass)
+tf_call_content_class_init (TfCallContentClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  object_class->dispose = tf_content_dispose;
-  object_class->get_property = tf_content_get_property;
+  object_class->dispose = tf_call_content_dispose;
+  object_class->get_property = tf_call_content_get_property;
 
   g_object_class_install_property (object_class, PROP_FS_SESSION,
       g_param_spec_object ("fs-session",
@@ -105,14 +107,14 @@ tf_content_class_init (TfContentClass *klass)
 
 
 static void
-tf_content_init (TfContent *self)
+tf_call_content_init (TfCallContent *self)
 {
 }
 
 static void
-tf_content_dispose (GObject *object)
+tf_call_content_dispose (GObject *object)
 {
-  TfContent *self = TF_CONTENT (object);
+  TfCallContent *self = TF_CALL_CONTENT (object);
 
   g_debug (G_STRFUNC);
 
@@ -128,17 +130,17 @@ tf_content_dispose (GObject *object)
     g_object_unref (self->proxy);
   self->proxy = NULL;
 
-  if (G_OBJECT_CLASS (tf_content_parent_class)->dispose)
-    G_OBJECT_CLASS (tf_content_parent_class)->dispose (object);
+  if (G_OBJECT_CLASS (tf_call_content_parent_class)->dispose)
+    G_OBJECT_CLASS (tf_call_content_parent_class)->dispose (object);
 }
 
 static void
-tf_content_get_property (GObject    *object,
+tf_call_content_get_property (GObject    *object,
     guint       property_id,
     GValue     *value,
     GParamSpec *pspec)
 {
-  TfContent *self = TF_CONTENT (object);
+  TfCallContent *self = TF_CALL_CONTENT (object);
 
   switch (property_id)
     {
@@ -153,7 +155,7 @@ tf_content_get_property (GObject    *object,
 }
 
 static gboolean
-add_stream (TfContent *self, const gchar *stream_path)
+add_stream (TfCallContent *self, const gchar *stream_path)
 {
   GError *error = NULL;
   // TfCallStream *stream = tf_call_stream_new (self,
@@ -176,8 +178,7 @@ static void
 got_content_media_properties (TpProxy *proxy, GHashTable *out_Properties,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
-  TfContent *self = TF_CONTENT (weak_object);
-
+  // TfCallContent *self = TF_CALL_CONTENT (weak_object);
 
 }
 
@@ -186,7 +187,7 @@ static void
 got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
-  TfContent *self = TF_CONTENT (weak_object);
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
   gboolean valid;
   GPtrArray *streams;
   GError *myerror = NULL;
@@ -255,7 +256,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
     if (!add_stream (self, g_ptr_array_index (streams, i)))
       break;
 
-  tp_proxy_add_interface_by_id (self->proxy,
+  tp_proxy_add_interface_by_id (TP_PROXY (self->proxy),
       TF_FUTURE_IFACE_QUARK_CALL_CONTENT_INTERFACE_MEDIA);
 
   tp_cli_dbus_properties_call_get_all (proxy, -1,
@@ -277,7 +278,7 @@ stream_added (TfFutureCallContent *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  TfContent *self = TF_CONTENT (weak_object);
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
 
   /* Ignore signals before we got the "Contents" property to avoid races that
    * could cause the same content to be added twice
@@ -295,7 +296,7 @@ stream_removed (TfFutureCallContent *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  TfContent *self = TF_CONTENT (weak_object);
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
 
   if (!self->streams)
     return;
@@ -304,12 +305,12 @@ stream_removed (TfFutureCallContent *proxy,
 }
 
 
-TfContent *
-tf_content_new (TfCallChannel *call_channel,
+TfCallContent *
+tf_call_content_new (TfCallChannel *call_channel,
     const gchar *object_path,
     GError **error)
 {
-  TfContent *self;
+  TfCallContent *self;
   TfFutureCallContent *proxy = tf_future_call_content_new (
       call_channel->proxy, object_path, error);
   GError *myerror = NULL;
@@ -355,7 +356,7 @@ tf_content_new (TfCallChannel *call_channel,
 }
 
 gboolean
-tf_content_bus_message (TfContent *channel,
+tf_call_content_bus_message (TfCallContent *channel,
     GstMessage *message)
 {
 
