@@ -34,6 +34,8 @@
 #include <telepathy-glib/interfaces.h>
 #include <gst/farsight/fs-conference-iface.h>
 
+#include <string.h>
+
 #include "extensions/extensions.h"
 
 #include "tf-signals-marshal.h"
@@ -178,6 +180,8 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   GPtrArray *streams;
   GError *myerror = NULL;
   guint i;
+  const gchar * const *interfaces;
+  gboolean got_media_interface = FALSE;;
 
   if (error)
     {
@@ -193,6 +197,23 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
       tf_call_channel_error (self->call_channel);
       return;
     }
+
+  interfaces = tp_asv_get_strv (out_Properties, "Interfaces");
+
+  for (i = 0; interfaces[i]; i++)
+    if (!strcmp (interfaces[i], TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA))
+      {
+        got_media_interface = TRUE;
+        break;
+      }
+
+  if (!got_media_interface)
+    {
+      g_warning ("Content does not have the media interface,"
+          " but HardwareStreaming was NOT true");
+      tf_call_channel_error (self->call_channel);
+    }
+
 
   self->media_type = tp_asv_get_uint32 (out_Properties, "Type", &valid);
   if (!valid)
