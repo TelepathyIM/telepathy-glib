@@ -20,7 +20,7 @@ G_BEGIN_DECLS
 #include "extensions/_gen/gtypes.h"
 #include "extensions/_gen/interfaces.h"
 
-void future_cli_init (void);
+void tf_future_cli_init (void);
 
 G_END_DECLS
 

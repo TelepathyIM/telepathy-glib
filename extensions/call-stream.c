@@ -31,7 +31,7 @@
 
 /**
  * SECTION:call-stream
- * @title: FutureCallStream
+ * @title: TfFutureCallStream
  * @short_description: proxy for a Stream in a Call channel
  * @see_also: #TpChannel
  *
@@ -41,60 +41,60 @@
  */
 
 /**
- * FutureCallStreamClass:
+ * TfFutureCallStreamClass:
  *
- * The class of a #FutureCallStream.
+ * The class of a #TfFutureCallStream.
  *
  * Since: FIXME
  */
-struct _FutureCallStreamClass {
+struct _TfFutureCallStreamClass {
     TpProxyClass parent_class;
     /*<private>*/
     gpointer priv;
 };
 
 /**
- * FutureCallStream:
+ * TfFutureCallStream:
  *
  * A proxy object for a Telepathy connection manager.
  *
  * Since: FIXME
  */
-struct _FutureCallStream {
+struct _TfFutureCallStream {
     TpProxy parent;
     /*<private>*/
-    FutureCallStreamPrivate *priv;
+    TfFutureCallStreamPrivate *priv;
 };
 
-struct _FutureCallStreamPrivate {
+struct _TfFutureCallStreamPrivate {
     int dummy;
 };
 
-G_DEFINE_TYPE (FutureCallStream,
-    future_call_stream,
+G_DEFINE_TYPE (TfFutureCallStream,
+    tf_future_call_stream,
     TP_TYPE_PROXY);
 
 static void
-future_call_stream_init (FutureCallStream *self)
+tf_future_call_stream_init (TfFutureCallStream *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, FUTURE_TYPE_CALL_STREAM,
-      FutureCallStreamPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TF_FUTURE_TYPE_CALL_STREAM,
+      TfFutureCallStreamPrivate);
 }
 
 static void
-future_call_stream_class_init (FutureCallStreamClass *klass)
+tf_future_call_stream_class_init (TfFutureCallStreamClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
-  g_type_class_add_private (klass, sizeof (FutureCallStreamPrivate));
+  g_type_class_add_private (klass, sizeof (TfFutureCallStreamPrivate));
 
   proxy_class->must_have_unique_name = TRUE;
-  proxy_class->interface = FUTURE_IFACE_QUARK_CALL_STREAM;
-  future_call_stream_init_known_interfaces ();
+  proxy_class->interface = TF_FUTURE_IFACE_QUARK_CALL_STREAM;
+  tf_future_call_stream_init_known_interfaces ();
 }
 
 /**
- * future_call_stream_new:
+ * tf_future_call_stream_new:
  * @channel: the Call channel
  * @object_path: the object path of the stream; may not be %NULL
  * @error: used to indicate the error if %NULL is returned
@@ -105,12 +105,12 @@ future_call_stream_class_init (FutureCallStreamClass *klass)
  *
  * Since: FIXME
  */
-FutureCallStream *
-future_call_stream_new (TpChannel *channel,
+TfFutureCallStream *
+tf_future_call_stream_new (TpChannel *channel,
     const gchar *object_path,
     GError **error)
 {
-  FutureCallStream *ret = NULL;
+  TfFutureCallStream *ret = NULL;
 
   g_return_val_if_fail (TP_IS_CHANNEL (channel), NULL);
   g_return_val_if_fail (object_path != NULL, NULL);
@@ -118,7 +118,7 @@ future_call_stream_new (TpChannel *channel,
   if (!tp_dbus_check_valid_object_path (object_path, error))
     goto finally;
 
-  ret = FUTURE_CALL_STREAM (g_object_new (FUTURE_TYPE_CALL_STREAM,
+  ret = TF_FUTURE_CALL_STREAM (g_object_new (TF_FUTURE_TYPE_CALL_STREAM,
         /* FIXME: pass in the Channel as a property? */
         "dbus-daemon", tp_proxy_get_dbus_daemon (channel),
         "bus-name", tp_proxy_get_bus_name (channel),
@@ -130,29 +130,29 @@ finally:
 }
 
 /**
- * future_call_stream_init_known_interfaces:
+ * tf_future_call_stream_init_known_interfaces:
  *
- * Ensure that the known interfaces for FutureCallStream have been set up.
+ * Ensure that the known interfaces for TfFutureCallStream have been set up.
  * This is done automatically when necessary, but for correct
  * overriding of library interfaces by local extensions, you should
  * call this function before calling
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
- * %FUTURE_TYPE_CALL_STREAM.
+ * %TF_FUTURE_TYPE_CALL_STREAM.
  *
  * Since: 0.7.32
  */
 void
-future_call_stream_init_known_interfaces (void)
+tf_future_call_stream_init_known_interfaces (void)
 {
   static gsize once = 0;
 
   if (g_once_init_enter (&once))
     {
-      GType tp_type = FUTURE_TYPE_CALL_STREAM;
+      GType tp_type = TF_FUTURE_TYPE_CALL_STREAM;
 
       tp_proxy_init_known_interfaces ();
       tp_proxy_or_subclass_hook_on_interface_add (tp_type,
-          future_cli_call_stream_add_signals);
+          tf_future_cli_call_stream_add_signals);
       tp_proxy_subclass_add_error_mapping (tp_type,
           TP_ERROR_PREFIX, TP_ERRORS, TP_TYPE_ERROR);
 

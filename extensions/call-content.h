@@ -19,41 +19,41 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef FUTURE_CALL_CONTENT_H
-#define FUTURE_CALL_CONTENT_H
+#ifndef TF_FUTURE_CALL_CONTENT_H
+#define TF_FUTURE_CALL_CONTENT_H
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
 
-typedef struct _FutureCallContent FutureCallContent;
-typedef struct _FutureCallContentPrivate FutureCallContentPrivate;
-typedef struct _FutureCallContentClass FutureCallContentClass;
+typedef struct _TfFutureCallContent TfFutureCallContent;
+typedef struct _TfFutureCallContentPrivate TfFutureCallContentPrivate;
+typedef struct _TfFutureCallContentClass TfFutureCallContentClass;
 
-GType future_call_content_get_type (void);
+GType tf_future_call_content_get_type (void);
 
 /* TYPE MACROS */
-#define FUTURE_TYPE_CALL_CONTENT \
-  (future_call_content_get_type ())
-#define FUTURE_CALL_CONTENT(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), FUTURE_TYPE_CALL_CONTENT, \
-                              FutureCallContent))
-#define FUTURE_CALL_CONTENT_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), FUTURE_TYPE_CALL_CONTENT, \
-                           FutureCallContentClass))
-#define FUTURE_IS_CALL_CONTENT(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), FUTURE_TYPE_CALL_CONTENT))
-#define FUTURE_IS_CALL_CONTENT_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), FUTURE_TYPE_CALL_CONTENT))
-#define FUTURE_CALL_CONTENT_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), FUTURE_TYPE_CALL_CONTENT, \
-                              FutureCallContentClass))
+#define TF_FUTURE_TYPE_CALL_CONTENT \
+  (tf_future_call_content_get_type ())
+#define TF_FUTURE_CALL_CONTENT(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TF_FUTURE_TYPE_CALL_CONTENT, \
+                              TfFutureCallContent))
+#define TF_FUTURE_CALL_CONTENT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TF_FUTURE_TYPE_CALL_CONTENT, \
+                           TfFutureCallContentClass))
+#define TF_FUTURE_IS_CALL_CONTENT(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TF_FUTURE_TYPE_CALL_CONTENT))
+#define TF_FUTURE_IS_CALL_CONTENT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TF_FUTURE_TYPE_CALL_CONTENT))
+#define TF_FUTURE_CALL_CONTENT_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TF_FUTURE_TYPE_CALL_CONTENT, \
+                              TfFutureCallContentClass))
 
-FutureCallContent *future_call_content_new (TpChannel *channel,
+TfFutureCallContent *tf_future_call_content_new (TpChannel *channel,
     const gchar *object_path, GError **error);
 
-void future_call_content_init_known_interfaces (void);
+void tf_future_call_content_init_known_interfaces (void);
 
 G_END_DECLS
 

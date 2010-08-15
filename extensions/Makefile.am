@@ -84,34 +84,34 @@ _gen/all.xml: all.xml $(wildcard $(srcdir)/*.xml) $(wildcard $(top_srcdir)/spec/
 _gen/gtypes.h _gen/gtypes-body.h: _gen/all.xml \
 	$(top_srcdir)/tools/glib-gtypes-generator.py
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-gtypes-generator.py \
-		$< _gen/gtypes Future
+		$< _gen/gtypes TfFuture
 
 _gen/signals-marshal.list: _gen/all.xml \
 	$(tools_dir)/glib-signals-marshal-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-signals-marshal-gen.py $< > $@
 
 _gen/signals-marshal.h: _gen/signals-marshal.list Makefile.am
-	$(AM_V_GEN)$(GLIB_GENMARSHAL) --header --prefix=_future_ext_marshal $< > $@
+	$(AM_V_GEN)$(GLIB_GENMARSHAL) --header --prefix=_tf_future_ext_marshal $< > $@
 
 _gen/signals-marshal.c: _gen/signals-marshal.list Makefile.am
 	$(AM_V_GEN){ echo '#include "_gen/signals-marshal.h"' && \
-	$(GLIB_GENMARSHAL) --body --prefix=_future_ext_marshal $< ; } > $@
+	$(GLIB_GENMARSHAL) --body --prefix=_tf_future_ext_marshal $< ; } > $@
 
 _gen/register-dbus-glib-marshallers-body.h: _gen/all.xml \
 	$(tools_dir)/glib-client-marshaller-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-marshaller-gen.py $< \
-		_future_ext > $@
+		_tf_future_ext > $@
 
 _gen/enums.h: _gen/all.xml \
 	$(tools_dir)/c-constants-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/c-constants-gen.py \
-		Future \
+		TfFuture \
 		$< _gen/enums
 
 _gen/interfaces-body.h _gen/interfaces.h: _gen/all.xml \
 	$(tools_dir)/glib-interfaces-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-interfaces-gen.py \
-		Future _gen/interfaces-body.h _gen/interfaces.h $<
+		Tf_Future _gen/interfaces-body.h _gen/interfaces.h $<
 
 # Generated files which must be generated per "category". Each TpProxy
 # subclass you want to use with --subclass will need to have its own category,
@@ -125,12 +125,12 @@ _gen/svc-%.c _gen/svc-%.h: _gen/%.xml \
 	$(tools_dir)/glib-ginterface-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
 		--filename=_gen/svc-$* \
-		--signal-marshal-prefix=_future_ext \
+		--signal-marshal-prefix=_tf_future_ext \
 		--include='<telepathy-glib/dbus.h>' \
 		--include='"_gen/signals-marshal.h"' \
 		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
 		--allow-unstable \
-		$< Future_Svc_
+		$< Tf_Future_Svc_
 
 _gen/cli-channel-body.h _gen/cli-channel.h: _gen/channel.xml \
 	$(tools_dir)/glib-client-gen.py Makefile.am
@@ -138,29 +138,29 @@ _gen/cli-channel-body.h _gen/cli-channel.h: _gen/channel.xml \
 		--group=channel \
 		--subclass=TpChannel \
 		--subclass-assert=TP_IS_CHANNEL \
-		--iface-quark-prefix=FUTURE_IFACE_QUARK \
+		--iface-quark-prefix=TF_FUTURE_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
-		$< Future_Cli _gen/cli-channel
+		$< Tf_Future_Cli _gen/cli-channel
 
 _gen/cli-call-content-body.h _gen/cli-call-content.h: _gen/call-content.xml \
 	$(tools_dir)/glib-client-gen.py Makefile.am
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
 		--group=call_content \
-		--subclass=FutureCallContent \
-		--subclass-assert=FUTURE_IS_CALL_CONTENT \
-		--iface-quark-prefix=FUTURE_IFACE_QUARK \
+		--subclass=TfFutureCallContent \
+		--subclass-assert=TF_FUTURE_IS_CALL_CONTENT \
+		--iface-quark-prefix=TF_FUTURE_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
-		$< Future_Cli _gen/cli-call-content
+		$< Tf_Future_Cli _gen/cli-call-content
 
 _gen/cli-call-stream-body.h _gen/cli-call-stream.h: _gen/call-stream.xml \
 	$(tools_dir)/glib-client-gen.py Makefile.am
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
 		--group=call_stream \
-		--subclass=FutureCallStream \
-		--subclass-assert=FUTURE_IS_CALL_STREAM \
-		--iface-quark-prefix=FUTURE_IFACE_QUARK \
+		--subclass=TfFutureCallStream \
+		--subclass-assert=TF_FUTURE_IS_CALL_STREAM \
+		--iface-quark-prefix=TF_FUTURE_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
-		$< Future_Cli _gen/cli-call-stream
+		$< Tf_Future_Cli _gen/cli-call-stream
 
 # for now the Endpoint etc. interfaces are on every TpProxy - when we
 # have a TpCallEndpoint etc., they should appear on that
@@ -169,6 +169,6 @@ _gen/cli-misc-body.h _gen/cli-misc.h: _gen/misc.xml \
 	$(tools_dir)/glib-client-gen.py Makefile.am
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-client-gen.py \
 		--group=misc \
-		--iface-quark-prefix=FUTURE_IFACE_QUARK \
+		--iface-quark-prefix=TF_FUTURE_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
-		$< Future_Cli _gen/cli-misc
+		$< Tf_Future_Cli _gen/cli-misc

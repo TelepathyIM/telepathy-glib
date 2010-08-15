@@ -19,41 +19,41 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef FUTURE_CALL_STREAM_H
-#define FUTURE_CALL_STREAM_H
+#ifndef TF_FUTURE_CALL_STREAM_H
+#define TF_FUTURE_CALL_STREAM_H
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
 
-typedef struct _FutureCallStream FutureCallStream;
-typedef struct _FutureCallStreamPrivate FutureCallStreamPrivate;
-typedef struct _FutureCallStreamClass FutureCallStreamClass;
+typedef struct _TfFutureCallStream TfFutureCallStream;
+typedef struct _TfFutureCallStreamPrivate TfFutureCallStreamPrivate;
+typedef struct _TfFutureCallStreamClass TfFutureCallStreamClass;
 
-GType future_call_stream_get_type (void);
+GType tf_future_call_stream_get_type (void);
 
 /* TYPE MACROS */
-#define FUTURE_TYPE_CALL_STREAM \
-  (future_call_stream_get_type ())
-#define FUTURE_CALL_STREAM(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), FUTURE_TYPE_CALL_STREAM, \
-                              FutureCallStream))
-#define FUTURE_CALL_STREAM_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), FUTURE_TYPE_CALL_STREAM, \
-                           FutureCallStreamClass))
-#define FUTURE_IS_CALL_STREAM(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), FUTURE_TYPE_CALL_STREAM))
-#define FUTURE_IS_CALL_STREAM_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), FUTURE_TYPE_CALL_STREAM))
-#define FUTURE_CALL_STREAM_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), FUTURE_TYPE_CALL_STREAM, \
-                              FutureCallStreamClass))
+#define TF_FUTURE_TYPE_CALL_STREAM \
+  (tf_future_call_stream_get_type ())
+#define TF_FUTURE_CALL_STREAM(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TF_FUTURE_TYPE_CALL_STREAM, \
+                              TfFutureCallStream))
+#define TF_FUTURE_CALL_STREAM_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TF_FUTURE_TYPE_CALL_STREAM, \
+                           TfFutureCallStreamClass))
+#define TF_FUTURE_IS_CALL_STREAM(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TF_FUTURE_TYPE_CALL_STREAM))
+#define TF_FUTURE_IS_CALL_STREAM_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TF_FUTURE_TYPE_CALL_STREAM))
+#define TF_FUTURE_CALL_STREAM_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TF_FUTURE_TYPE_CALL_STREAM, \
+                              TfFutureCallStreamClass))
 
-FutureCallStream *future_call_stream_new (TpChannel *channel,
+TfFutureCallStream *tf_future_call_stream_new (TpChannel *channel,
     const gchar *object_path, GError **error);
 
-void future_call_stream_init_known_interfaces (void);
+void tf_future_call_stream_init_known_interfaces (void);
 
 G_END_DECLS
 
