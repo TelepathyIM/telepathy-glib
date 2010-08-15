@@ -290,6 +290,8 @@ tf_call_channel_bus_message (TfCallChannel *channel,
 {
   GError *error = NULL;
   gchar *debug;
+  GHashTableIter iter;
+  gpointer key, value;
 
   if (!channel->fsconference ||
       GST_MESSAGE_SRC (message) != GST_OBJECT_CAST (channel->fsconference))
@@ -318,6 +320,12 @@ tf_call_channel_bus_message (TfCallChannel *channel,
     default:
       break;
     }
+
+  g_hash_table_iter_init (&iter, channel->contents);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    if (tf_call_channel_bus_message (value, message))
+      return TRUE;
 
   return FALSE;
 }
