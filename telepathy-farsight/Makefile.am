@@ -45,7 +45,8 @@ libtelepathy_farsight_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GST_LIBS) \
 	$(FARSIGHT2_LIBS) \
-	$(TELEPATHY_LIBS)
+	$(TELEPATHY_LIBS) \
+	../extensions/libfuture-extensions.la
 
 libtelepathy_farsight_la_LDFLAGS =  -no-undefined \
 	-export-symbols-regex "^tf_.*" \
