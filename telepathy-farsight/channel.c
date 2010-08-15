@@ -38,10 +38,13 @@
 
 #include <gst/farsight/fs-conference-iface.h>
 
+#include "extensions/extensions.h"
+
 #include "channel.h"
 #include "channel-priv.h"
 #include "tf-signals-marshal.h"
 #include "media-signalling-channel.h"
+#include "call-channel.h"
 
 G_DEFINE_TYPE (TfChannel, tf_channel, G_TYPE_OBJECT);
 
@@ -51,6 +54,8 @@ struct _TfChannelPrivate
 
   TfMediaSignallingChannel *media_signalling_channel;
   FsConference *fsconference;
+
+  TfCallChannel *call_channel;
 
   gulong channel_invalidated_handler;
   guint  channel_ready_idle;
@@ -155,24 +160,55 @@ channel_ready (TpChannel *channel_proxy,
   TfChannel *self = TF_CHANNEL (user_data);
   TpProxy *as_proxy = (TpProxy *) channel_proxy;
 
+
   if (error)
     {
-      self->priv->channel_handled = TRUE;
-      g_signal_emit (self, signals[HANDLER_RESULT], 0, error);
+      if (!self->priv->channel_handled)
+        {
+          self->priv->channel_handled = TRUE;
+          g_signal_emit (self, signals[HANDLER_RESULT], 0, error);
+        }
 
       shutdown_channel (self);
       return;
     }
 
+
   if (self->priv->channel_handled)
     return;
 
-  if (!tp_proxy_has_interface_by_id (as_proxy,
+
+  if (tp_proxy_has_interface_by_id (as_proxy,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING))
+    {
+
+      self->priv->media_signalling_channel =
+          tf_media_signalling_channel_new (channel_proxy);
+
+      tp_g_signal_connect_object (self->priv->media_signalling_channel,
+          "get-codec-config", G_CALLBACK (media_signalling_channel_get_config),
+          self, 0);
+
+      tp_g_signal_connect_object (self->priv->media_signalling_channel,
+          "session-created", G_CALLBACK (media_signalling_session_created),
+          self, 0);
+
+    }
+  else if (tp_proxy_has_interface_by_id (as_proxy,
+          TF_FUTURE_IFACE_QUARK_CHANNEL_TYPE_CALL))
+    {
+      self->priv->call_channel = tf_call_channel_new (channel_proxy);
+
+      tp_g_signal_connect_object (self->priv->media_signalling_channel,
+          "get-codec-config", G_CALLBACK (media_signalling_channel_get_config),
+          self, 0);
+    }
+  else
     {
       GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
         "Channel does not implement "
-        TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING };
+        TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING " or "
+                   TF_FUTURE_IFACE_CHANNEL_TYPE_CALL};
 
       g_message ("%s", e.message);
       self->priv->channel_handled = TRUE;
@@ -183,20 +219,11 @@ channel_ready (TpChannel *channel_proxy,
   self->priv->channel_handled = TRUE;
   g_signal_emit (self, signals[HANDLER_RESULT], 0, NULL);
 
-  self->priv->media_signalling_channel =
-      tf_media_signalling_channel_new (channel_proxy);
-
-  tp_g_signal_connect_object (self->priv->media_signalling_channel,
-      "get-codec-config", G_CALLBACK (media_signalling_channel_get_config),
-      self, 0);
-
-  tp_g_signal_connect_object (self->priv->media_signalling_channel,
-      "session-created", G_CALLBACK (media_signalling_session_created),
-      self, 0);
 
   self->priv->channel_invalidated_handler = g_signal_connect (
       self->priv->channel_proxy,
       "invalidated", G_CALLBACK (channel_invalidated), self);
+
 }
 
 static gboolean

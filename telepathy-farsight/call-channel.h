@@ -71,9 +71,7 @@ GType tf_call_channel_get_type (void);
 TfCallChannel *tf_call_channel_new (
     TpChannel *channel_proxy);
 
-void tf_call_channel_error (TfCallChannel *chan,
-  TpMediaStreamError error,
-  const gchar *message);
+void tf_call_channel_error (TfCallChannel *channel);
 
 gboolean tf_call_channel_bus_message (TfCallChannel *channel,
     GstMessage *message);

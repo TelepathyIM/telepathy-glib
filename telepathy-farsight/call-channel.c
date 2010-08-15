@@ -33,9 +33,8 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
 
-#include "stream.h"
-#include "session-priv.h"
-#include "stream-priv.h"
+#include "extensions/extensions.h"
+
 #include "tf-signals-marshal.h"
 
 
@@ -44,16 +43,7 @@ struct _TfCallChannel {
 
   TpChannel *channel_proxy;
 
-  TfNatProperties nat_props;
-  guint prop_id_nat_traversal;
-  guint prop_id_stun_server;
-  guint prop_id_stun_port;
-  guint prop_id_gtalk_p2p_relay_token;
-
-  /* sessions is NULL until we've had a reply from GetSessionHandlers */
-  TfSession *session;
-  gboolean got_sessions;
-  GPtrArray *streams;
+  GHashTable *contents; /* NULL before getting the first contents */
 };
 
 struct _TfCallChannelClass{
@@ -89,7 +79,151 @@ tf_call_channel_init (TfCallChannel *self)
 {
 }
 
+static void
+tf_call_channel_dispose (GObject *object)
+{
+  TfCallChannel *self = TF_CALL_CHANNEL (object);
 
+  g_debug (G_STRFUNC);
+
+  if (self->contents)
+    g_hash_table_destroy (self->contents);
+  self->contents = NULL;
+
+  if (G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose)
+    G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose (object);
+}
+
+static gboolean
+add_content (TfCallChannel *self, const gchar *content_path)
+{
+  GError *error = NULL;
+  // TfCallContent *content = tf_call_content_new (self->channel_proxy,
+  //    content_path, &error);
+
+  if (error)
+    {
+      g_warning ("Error creating the content object: %s", error->message);
+      tf_call_channel_error (self);
+      return FALSE;
+    }
+
+  // g_hash_table_insert (self->contents, g_strdup (content_path), content);
+
+  return TRUE;
+}
+
+static void
+got_contents (TpProxy *proxy, const GValue *out_value,
+    const GError *error, gpointer user_data, GObject *weak_object)
+{
+  TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
+  GPtrArray *contents;
+  guint i;
+
+  if (error)
+    {
+      g_warning ("Error getting the Contents property: %s",
+          error->message);
+      tf_call_channel_error (self);
+      return;
+    }
+
+  contents = g_value_get_boxed (out_value);
+
+  self->contents = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, g_object_unref);
+
+  for (i = 0; i < contents->len; i++)
+    if (!add_content (self, g_ptr_array_index (contents, i)))
+      break;
+}
+
+static void
+content_added (TpChannel *proxy,
+    const gchar *arg_Content,
+    guint arg_Content_Type,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
+
+  /* Ignore signals before we got the "Contents" property to avoid races that
+   * could cause the same content to be added twice
+   */
+
+  if (!self->contents)
+    return;
+
+  add_content (self, arg_Content);
+}
+
+static void
+content_removed (TpChannel *proxy,
+    const gchar *arg_Content,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
+
+  if (!self->contents)
+    return;
+
+  g_hash_table_remove (self->contents, arg_Content);
+}
+
+
+static void
+got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
+    const GError *error, gpointer user_data, GObject *weak_object)
+{
+  TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
+  GError *myerror = NULL;
+
+  if (error)
+    {
+      g_warning ("Error getting the hardware streaming property: %s",
+          error->message);
+      tf_call_channel_error (self);
+      return;
+    }
+
+  if (!g_value_get_boolean (out_value))
+    {
+      g_warning ("Hardware streaming property is not a boolean");
+      tf_call_channel_error (self);
+      return;
+    }
+
+  tp_cli_dbus_properties_call_get (proxy, -1,
+      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
+      TF_FUTURE_PROP_CHANNEL_TYPE_CALL_CONTENTS,
+      got_contents, NULL, NULL, G_OBJECT (self));
+
+  tf_future_cli_channel_type_call_connect_to_content_added (TP_CHANNEL (proxy),
+      content_added, NULL, NULL, G_OBJECT (self), &myerror);
+  if (myerror)
+    {
+      g_warning ("Error connectiong to ContentAdded signal: %s",
+          myerror->message);
+      g_clear_error (&myerror);
+      tf_call_channel_error (self);
+      return;
+    }
+
+  tf_future_cli_channel_type_call_connect_to_content_removed (
+      TP_CHANNEL (proxy), content_removed, NULL, NULL, G_OBJECT (self),
+      &myerror);
+  if (myerror)
+    {
+      g_warning ("Error connectiong to ContentRemove signal: %s",
+          myerror->message);
+      g_clear_error (&myerror);
+      tf_call_channel_error (self);
+      return;
+    }
+
+}
 
 TfCallChannel *
 tf_call_channel_new (TpChannel *channel)
@@ -97,26 +231,14 @@ tf_call_channel_new (TpChannel *channel)
   TfCallChannel *self = g_object_new (
       TF_TYPE_CALL_CHANNEL, NULL);
 
+  self->channel_proxy = channel;
+
+  tp_cli_dbus_properties_call_get (channel, -1,
+      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
+      TF_FUTURE_PROP_CHANNEL_TYPE_CALL_HARDWARE_STREAMING,
+      got_hardware_streaming, NULL, NULL, G_OBJECT (self));
+
   return self;
-}
-
-
-static void
-tf_call_channel_dispose (GObject *object)
-{
-  // TfCallChannel *self = TF_CALL_CHANNEL (object);
-
-  g_debug (G_STRFUNC);
-
-  if (G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose)
-    G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose (object);
-}
-
-void
-tf_call_channel_error (TfCallChannel *chan,
-  TpMediaStreamError error,
-  const gchar *message)
-{
 }
 
 gboolean
@@ -124,4 +246,12 @@ tf_call_channel_bus_message (TfCallChannel *channel,
     GstMessage *message)
 {
   return FALSE;
+}
+
+void
+tf_call_channel_error (TfCallChannel *channel)
+{
+  tf_future_cli_channel_type_call_call_hangup (channel->channel_proxy,
+      -1, TFFUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "",
+      NULL, NULL, NULL, NULL);
 }
