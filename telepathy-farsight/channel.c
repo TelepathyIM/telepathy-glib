@@ -50,6 +50,7 @@ struct _TfChannelPrivate
   TpChannel *channel_proxy;
 
   TfMediaSignallingChannel *media_signalling_channel;
+  FsConference *fsconference;
 
   gulong channel_invalidated_handler;
   guint  channel_ready_idle;
@@ -62,6 +63,7 @@ enum
   CLOSED,
   HANDLER_RESULT,
   GET_CODEC_CONFIG,
+  FS_CONFERENCE_READY,
   SIGNAL_COUNT
 };
 
@@ -70,12 +72,15 @@ static guint signals[SIGNAL_COUNT] = {0};
 enum
 {
   PROP_CHANNEL = 1,
-  PROP_OBJECT_PATH
+  PROP_OBJECT_PATH,
+  PROP_FS_CONFERENCE
 };
 
 static GList *media_signalling_channel_get_config (
     TfMediaSignallingChannel *msc,
     guint media_type, TfChannel *self);
+static void media_signalling_session_created (TfMediaSignallingChannel *msc,
+    FsConference *fsconference, TfChannel *self);
 
 static void shutdown_channel (TfChannel *self);
 
@@ -108,6 +113,10 @@ tf_channel_get_property (GObject    *object,
 
           g_value_set_string (value, as_proxy->object_path);
         }
+      break;
+    case PROP_FS_CONFERENCE:
+      if (self->priv->fsconference)
+        g_value_set_object (value, self->priv->fsconference);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -179,6 +188,10 @@ channel_ready (TpChannel *channel_proxy,
 
   tp_g_signal_connect_object (self->priv->media_signalling_channel,
       "get-codec-config", G_CALLBACK (media_signalling_channel_get_config),
+      self, 0);
+
+  tp_g_signal_connect_object (self->priv->media_signalling_channel,
+      "session-created", G_CALLBACK (media_signalling_session_created),
       self, 0);
 
   self->priv->channel_invalidated_handler = g_signal_connect (
@@ -278,6 +291,14 @@ tf_channel_class_init (TfChannelClass *klass)
           NULL,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
+
+  g_object_class_install_property (object_class, PROP_FS_CONFERENCE,
+      g_param_spec_object ("fs-conference",
+          "Farsight2 FsConference ",
+          "The Farsight2 conference for this channel",
+          FS_TYPE_CONFERENCE,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
   /**
    * TfChannel::handler-result:
    * @error: a #GError containing the error or %NULL if there was no error
@@ -331,6 +352,25 @@ tf_channel_class_init (TfChannelClass *klass)
           NULL, NULL,
           _tf_marshal_BOXED__UINT,
           FS_TYPE_CODEC_LIST, 1, G_TYPE_UINT);
+
+
+  /**
+   * TfChannel::fs-conference-ready
+   * @tfchannel: the #TfChannel
+   * @fsconference: the #FsConference object
+   *
+   * This is emitted when the #FsConference object is created and is ready
+   * to be added to the pipeline
+   */
+
+  signals[FS_CONFERENCE_READY] =
+      g_signal_new ("fs-conference-ready",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          _tf_marshal_VOID__OBJECT,
+          G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 }
 
 static void
@@ -470,4 +510,16 @@ media_signalling_channel_get_config (TfMediaSignallingChannel *msc,
       &local_codec_config);
 
   return local_codec_config;
+}
+
+static void
+media_signalling_session_created (TfMediaSignallingChannel *msc,
+    FsConference *fsconference, TfChannel *self)
+{
+  g_assert (self->priv->fsconference == NULL);
+
+  self->priv->fsconference = fsconference;
+
+  g_object_notify (G_OBJECT (self), "fs-conference");
+  g_signal_emit (self, signals[FS_CONFERENCE_READY], 0, fsconference);
 }
