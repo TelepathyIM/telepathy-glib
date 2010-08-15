@@ -61,4 +61,3 @@ gboolean tf_channel_bus_message (TfChannel *channel,
 G_END_DECLS
 
 #endif /* __TF_CHANNEL_H__ */
-

@@ -1,5 +1,5 @@
 /*
- * channel.c - Source for TfMediaSignallingChannel
+ * media-signalling-channel.c - Source for TfMediaSignallingChannel
  * Copyright (C) 2006-2010 Collabora Ltd.
  * Copyright (C) 2006-2010 Nokia Corporation
  *
@@ -39,7 +39,7 @@
 #include "tf-signals-marshal.h"
 
 
-struct _TfMediaSignallingChannel{
+struct _TfMediaSignallingChannel {
   GObject parent;
 
   TpChannel *channel_proxy;
@@ -403,8 +403,6 @@ tf_media_signalling_channel_dispose (GObject *object)
 
   g_free (self->nat_props.relay_token);
   self->nat_props.relay_token = NULL;
-
-
 
   if (G_OBJECT_CLASS (tf_media_signalling_channel_parent_class)->dispose)
     G_OBJECT_CLASS (tf_media_signalling_channel_parent_class)->dispose (object);
