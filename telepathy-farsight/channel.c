@@ -89,6 +89,8 @@ static void media_signalling_session_created (TfMediaSignallingChannel *msc,
 
 static void shutdown_channel (TfChannel *self);
 
+static void call_channel_got_conference (TfCallChannel *cc,
+    GParamSpec *paramspec, TfChannel *self);
 
 static void
 tf_channel_init (TfChannel *self)
@@ -199,8 +201,8 @@ channel_ready (TpChannel *channel_proxy,
     {
       self->priv->call_channel = tf_call_channel_new (channel_proxy);
 
-      tp_g_signal_connect_object (self->priv->media_signalling_channel,
-          "get-codec-config", G_CALLBACK (media_signalling_channel_get_config),
+      tp_g_signal_connect_object (self->priv->call_channel,
+          "notify::fs-conference", G_CALLBACK (call_channel_got_conference),
           self, 0);
     }
   else
@@ -549,4 +551,21 @@ media_signalling_session_created (TfMediaSignallingChannel *msc,
 
   g_object_notify (G_OBJECT (self), "fs-conference");
   g_signal_emit (self, signals[FS_CONFERENCE_READY], 0, fsconference);
+}
+
+static void
+call_channel_got_conference (TfCallChannel *cc, GParamSpec *paramspec,
+    TfChannel *self)
+{
+  if (self->priv->fsconference)
+    return;
+
+  g_object_get (cc, "fs-conference", &self->priv->fsconference, NULL);
+
+  if (!self->priv->fsconference)
+    return;
+
+  g_object_notify (G_OBJECT (self), "fs-conference");
+  g_signal_emit (self, signals[FS_CONFERENCE_READY], 0,
+      &self->priv->fsconference);
 }

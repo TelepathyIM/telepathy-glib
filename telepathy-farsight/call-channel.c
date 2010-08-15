@@ -32,6 +32,7 @@
 
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
+#include <gst/farsight/fs-conference-iface.h>
 
 #include "extensions/extensions.h"
 
@@ -42,6 +43,8 @@ struct _TfCallChannel {
   GObject parent;
 
   TpChannel *channel_proxy;
+
+  FsConference *fsconference;
 
   GHashTable *contents; /* NULL before getting the first contents */
 };
@@ -54,12 +57,25 @@ struct _TfCallChannelClass{
 G_DEFINE_TYPE (TfCallChannel, tf_call_channel,
     G_TYPE_OBJECT);
 
+
+enum
+{
+  PROP_FS_CONFERENCE = 1
+};
+
+
 enum
 {
   SIGNAL_COUNT
 };
 
 // static guint signals[SIGNAL_COUNT] = {0};
+
+static void
+tf_call_channel_get_property (GObject    *object,
+    guint       property_id,
+    GValue     *value,
+    GParamSpec *pspec);
 
 static void tf_call_channel_dispose (GObject *object);
 
@@ -71,6 +87,15 @@ tf_call_channel_class_init (TfCallChannelClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->dispose = tf_call_channel_dispose;
+  object_class->get_property = tf_call_channel_get_property;
+
+  g_object_class_install_property (object_class, PROP_FS_CONFERENCE,
+      g_param_spec_object ("fs-conference",
+          "Farsight2 FsConference ",
+          "The Farsight2 conference for this channel",
+          FS_TYPE_CONFERENCE,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
 }
 
 
@@ -92,6 +117,26 @@ tf_call_channel_dispose (GObject *object)
 
   if (G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose (object);
+}
+
+static void
+tf_call_channel_get_property (GObject    *object,
+    guint       property_id,
+    GValue     *value,
+    GParamSpec *pspec)
+{
+  TfCallChannel *self = TF_CALL_CHANNEL (object);
+
+  switch (property_id)
+    {
+    case PROP_FS_CONFERENCE:
+      if (self->fsconference)
+        g_value_set_object (value, self->fsconference);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
 }
 
 static gboolean
@@ -223,6 +268,10 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       return;
     }
 
+  /* FIXME: Hardcode RTP because nothing else is supported for now */
+  self->fsconference = FS_CONFERENCE (gst_element_factory_make ("fsrtpconference", NULL));
+
+  g_object_notify (G_OBJECT (self), "fs-conference");
 }
 
 TfCallChannel *
