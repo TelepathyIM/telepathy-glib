@@ -477,7 +477,7 @@ tf_call_content_bus_message (TfCallContent *content,
           errorno = g_value_get_enum (value);
           msg = gst_structure_get_string (s, "error-msg");
           debug = gst_structure_get_string (s, "debug-msg");
-          
+
           /*
            * We ignore the Unknown Cname error because current signalling
            * does no provide us with a cname
