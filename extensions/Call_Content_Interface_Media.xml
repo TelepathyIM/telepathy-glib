@@ -184,7 +184,8 @@
         </tp:docstring>
       </arg>
 
-      <arg name="Codecs" type="a{ua(usuua{ss})}" tp:type="Contact_Codec_Map">
+      <arg name="Codecs" type="(ua(usuua{ss}))"
+        tp:type="Contact_Codec_Map">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The <tp:dbus-ref namespace="org.freedesktop.Telepathy.Call.Content"
               >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property
@@ -200,7 +201,7 @@
     </signal>
 
     <property name="CodecOffer" tp:name-for-bindings="Codec_Offer"
-      type="(oa{ua(usuua{ss})})" tp:type="Codec_Offering" access="read">
+      type="(oua(usuua{ss}))" tp:type="Codec_Offering" access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The object path to the current
           <tp:dbus-ref

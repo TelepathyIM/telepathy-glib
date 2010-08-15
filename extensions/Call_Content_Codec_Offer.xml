@@ -46,7 +46,7 @@
 
     <property name="RemoteContactCodecMap"
       tp:name-for-bindings="Remote_Contact_Codec_Map"
-      type="a{ua(usuua{ss})}" tp:type="Contact_Codec_Map" access="read">
+      type="(ua(usuua{ss}))" tp:type="Contact_Codec_Map" access="read">
       <tp:docstring>
         A map from remote contacts to the lists of codecs they support.
       </tp:docstring>
