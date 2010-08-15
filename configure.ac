@@ -109,6 +109,9 @@ PKG_CHECK_MODULES(FARSIGHT2, [farsight2-0.10 >= 0.0.17])
 AC_SUBST(FARSIGHT2_CFLAGS)
 AC_SUBST(FARSIGHT2_LIBS)
 
+dnl Always required to generate extensions
+AM_PATH_PYTHON([2.5])
+
 AC_ARG_ENABLE([python],
   AC_HELP_STRING([--disable-python], [Disable Python bindings]),
   [case "${enableval}" in
@@ -119,7 +122,6 @@ AC_ARG_ENABLE([python],
   WANT_PYTHON=yes)
 
 if test "x$WANT_PYTHON" = "xyes"; then
-   AM_PATH_PYTHON
    AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(could not find Python headers)])
    PKG_CHECK_MODULES(PYTPFARSIGHT, [ pygobject-2.0 >= 2.12.0
       gst-python-0.10 >= 0.10.10 ])
@@ -140,6 +142,7 @@ AC_OUTPUT( Makefile \
           doc/Makefile \
           doc/lib/Makefile \
           m4/Makefile \
+	  extensions/Makefile \
           telepathy-farsight/Makefile  \
           telepathy-farsight/telepathy-farsight.pc \
           telepathy-farsight/telepathy-farsight-uninstalled.pc

@@ -5,7 +5,7 @@ if WANT_PYTHON
   PYTHON_SUBDIR = python
 endif
 
-SUBDIRS = m4 tools telepathy-farsight doc $(PYTHON_SUBDIR)
+SUBDIRS = m4 tools extensions telepathy-farsight doc $(PYTHON_SUBDIR)
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
 
