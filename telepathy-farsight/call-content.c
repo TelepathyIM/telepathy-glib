@@ -54,6 +54,9 @@ struct _TfCallContent {
   FsSession *fssession;
   TpMediaStreamType media_type;
 
+  GList *current_codecs;
+  TpProxy *current_offer;
+
   GHashTable *streams; /* NULL before getting the first streams */
 };
 
@@ -69,7 +72,6 @@ enum
 {
   PROP_FS_SESSION = 1
 };
-
 
 enum
 {
@@ -355,13 +357,163 @@ tf_call_content_new (TfCallChannel *call_channel,
   return self;
 }
 
+static GPtrArray *
+fscodecs_to_tpcodecs (GList *codecs)
+{
+  GPtrArray *tpcodecs = g_ptr_array_new ();
+  GList *item;
+
+  for (item = codecs; item; item = item->next)
+    {
+      FsCodec *fscodec = item->data;
+      GValue tpcodec = { 0, };
+      GHashTable *params;
+      GList *param_item;
+
+      params = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
+      for (param_item = fscodec->optional_params;
+           param_item;
+           param_item = param_item->next)
+        {
+          FsCodecParameter *param = (FsCodecParameter *) param_item->data;
+
+          g_hash_table_insert (params, g_strdup (param->name),
+                               g_strdup (param->value));
+        }
+
+      g_value_init (&tpcodec, TF_FUTURE_STRUCT_TYPE_CODEC);
+      g_value_take_boxed (&tpcodec,
+          dbus_g_type_specialized_construct (TF_FUTURE_STRUCT_TYPE_CODEC));
+
+      dbus_g_type_struct_set (&tpcodec,
+          0, fscodec->id,
+          1, fscodec->encoding_name,
+          2, fscodec->clock_rate,
+          3, fscodec->channels,
+          4, params,
+          G_MAXUINT);
+
+
+      g_hash_table_destroy (params);
+
+      g_ptr_array_add (tpcodecs, g_value_get_boxed (&tpcodec));
+    }
+
+  return tpcodecs;
+}
+
+static void
+try_sending_codecs (TfCallContent *self)
+{
+  gboolean ready;
+  GList *codecs;
+  GPtrArray *tpcodecs;
+
+  g_debug ("new local codecs");
+
+  g_object_get (self->fssession, "ready", &ready, NULL);
+
+  if (ready)
+    g_object_get (self->fssession, "codecs", &codecs, NULL);
+  else
+    g_object_get (self->fssession, "codecs-without-config", &codecs, NULL);
+
+  if (fs_codec_list_are_equal (codecs, self->current_codecs))
+    {
+      fs_codec_list_destroy (codecs);
+      return;
+    }
+
+  tpcodecs = fscodecs_to_tpcodecs (codecs);
+
+  if (self->current_offer)
+    {
+      tf_future_cli_call_content_codec_offer_call_accept (self->current_offer,
+          -1, tpcodecs, NULL, NULL, NULL, NULL);
+      self->current_offer = NULL;
+    }
+  else
+    {
+      tf_future_cli_call_content_interface_media_call_set_codecs (self->proxy,
+          -1, tpcodecs, NULL, NULL, NULL, NULL);
+    }
+
+  g_boxed_free (TF_FUTURE_ARRAY_TYPE_CODEC_LIST, tpcodecs);
+}
+
 gboolean
-tf_call_content_bus_message (TfCallContent *channel,
+tf_call_content_bus_message (TfCallContent *content,
     GstMessage *message)
 {
+  const GstStructure *s;
+  gboolean ret = FALSE;
+  const gchar *debug;
 
-  if (!channel->fssession)
+  if (!content->fssession)
     return FALSE;
 
-  return FALSE;
+  if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
+    return FALSE;
+
+  s = gst_message_get_structure (message);
+
+  if (gst_structure_has_name (s, "farsight-error"))
+    {
+      GObject *object;
+      const GValue *value = NULL;
+
+      value = gst_structure_get_value (s, "src-object");
+      object = g_value_get_object (value);
+
+      if (object == (GObject*) content->fssession)
+        {
+          const gchar *msg;
+          FsError errorno;
+          GEnumClass *enumclass;
+          GEnumValue *enumvalue;
+
+          value = gst_structure_get_value (s, "error-no");
+          errorno = g_value_get_enum (value);
+          msg = gst_structure_get_string (s, "error-msg");
+          debug = gst_structure_get_string (s, "debug-msg");
+          
+          /*
+           * We ignore the Unknown Cname error because current signalling
+           * does no provide us with a cname
+           */
+          if (errorno == FS_ERROR_UNKNOWN_CNAME)
+            return TRUE;
+
+
+          enumclass = g_type_class_ref (FS_TYPE_ERROR);
+          enumvalue = g_enum_get_value (enumclass, errorno);
+          g_warning ("error (%s (%d)): %s : %s",
+              enumvalue->value_nick, errorno, msg, debug);
+          g_type_class_unref (enumclass);
+
+          /* FIXME: Error propagation not possible */
+          g_warning ("ERROR propagation not possible");
+          ret = TRUE;
+        }
+    }
+  else if (gst_structure_has_name (s, "farsight-codecs-changed"))
+    {
+      FsSession *fssession;
+      const GValue *value;
+
+      value = gst_structure_get_value (s, "session");
+      fssession = g_value_get_object (value);
+
+      if (fssession != content->fssession)
+        return FALSE;
+
+      g_debug ("Codecs changed");
+
+      try_sending_codecs (content);
+
+      ret = TRUE;
+    }
+
+  return ret;
 }

@@ -326,6 +326,6 @@ void
 tf_call_channel_error (TfCallChannel *channel)
 {
   tf_future_cli_channel_type_call_call_hangup (channel->proxy,
-      -1, TFFUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "",
+      -1, TF_FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "",
       NULL, NULL, NULL, NULL);
 }

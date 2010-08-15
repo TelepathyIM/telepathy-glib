@@ -84,7 +84,7 @@ _gen/all.xml: all.xml $(wildcard $(srcdir)/*.xml) $(wildcard $(top_srcdir)/spec/
 _gen/gtypes.h _gen/gtypes-body.h: _gen/all.xml \
 	$(top_srcdir)/tools/glib-gtypes-generator.py
 	$(AM_V_GEN)$(PYTHON) $(top_srcdir)/tools/glib-gtypes-generator.py \
-		$< _gen/gtypes TfFuture
+		$< _gen/gtypes Tf_Future
 
 _gen/signals-marshal.list: _gen/all.xml \
 	$(tools_dir)/glib-signals-marshal-gen.py
@@ -105,7 +105,7 @@ _gen/register-dbus-glib-marshallers-body.h: _gen/all.xml \
 _gen/enums.h: _gen/all.xml \
 	$(tools_dir)/c-constants-gen.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/c-constants-gen.py \
-		TfFuture \
+		Tf_Future \
 		$< _gen/enums
 
 _gen/interfaces-body.h _gen/interfaces.h: _gen/all.xml \
