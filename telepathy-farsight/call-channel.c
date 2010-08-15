@@ -294,6 +294,37 @@ gboolean
 tf_call_channel_bus_message (TfCallChannel *channel,
     GstMessage *message)
 {
+  GError *error = NULL;
+  gchar *debug;
+
+  if (!channel->fsconference ||
+      GST_MESSAGE_SRC (message) != GST_OBJECT_CAST (channel->fsconference))
+    return FALSE;
+
+  switch (GST_MESSAGE_TYPE (message))
+    {
+    case GST_MESSAGE_WARNING:
+      gst_message_parse_warning (message, &error, &debug);
+
+      g_warning ("session: %s (%s)", error->message, debug);
+
+      g_error_free (error);
+      g_free (debug);
+      return TRUE;
+    case GST_MESSAGE_ERROR:
+      gst_message_parse_error (message, &error, &debug);
+
+      g_warning ("session ERROR: %s (%s)", error->message, debug);
+
+      tf_call_channel_error (channel);
+
+      g_error_free (error);
+      g_free (debug);
+      return TRUE;
+    default:
+      break;
+    }
+
   return FALSE;
 }
 
