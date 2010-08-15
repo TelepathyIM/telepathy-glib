@@ -171,6 +171,17 @@ add_stream (TfContent *self, const gchar *stream_path)
   return TRUE;
 }
 
+
+static void
+got_content_media_properties (TpProxy *proxy, GHashTable *out_Properties,
+    const GError *error, gpointer user_data, GObject *weak_object)
+{
+  TfContent *self = TF_CONTENT (weak_object);
+
+
+}
+
+
 static void
 got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
     const GError *error, gpointer user_data, GObject *weak_object)
@@ -243,6 +254,14 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   for (i = 0; i < streams->len; i++)
     if (!add_stream (self, g_ptr_array_index (streams, i)))
       break;
+
+  tp_proxy_add_interface_by_id (self->proxy,
+      TF_FUTURE_IFACE_QUARK_CALL_CONTENT_INTERFACE_MEDIA);
+
+  tp_cli_dbus_properties_call_get_all (proxy, -1,
+      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
+      got_content_media_properties, NULL, NULL, G_OBJECT (self));
+
 
   return;
 
