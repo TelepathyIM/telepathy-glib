@@ -36,26 +36,12 @@
 
 #include "extensions/extensions.h"
 
+#include "content.h"
 #include "tf-signals-marshal.h"
 
 
-struct _TfCallChannel {
-  GObject parent;
 
-  TpChannel *channel_proxy;
-
-  FsConference *fsconference;
-
-  GHashTable *contents; /* NULL before getting the first contents */
-};
-
-struct _TfCallChannelClass{
-  GObjectClass parent_class;
-};
-
-
-G_DEFINE_TYPE (TfCallChannel, tf_call_channel,
-    G_TYPE_OBJECT);
+G_DEFINE_TYPE (TfCallChannel, tf_call_channel, G_TYPE_OBJECT);
 
 
 enum
@@ -115,6 +101,14 @@ tf_call_channel_dispose (GObject *object)
     g_hash_table_destroy (self->contents);
   self->contents = NULL;
 
+  if (self->fsconference)
+    g_object_unref (self->fsconference);
+  self->fsconference = NULL;
+
+  if (self->proxy)
+    g_object_unref (self->proxy);
+  self->proxy = NULL;
+
   if (G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose (object);
 }
@@ -143,8 +137,7 @@ static gboolean
 add_content (TfCallChannel *self, const gchar *content_path)
 {
   GError *error = NULL;
-  // TfCallContent *content = tf_call_content_new (self->channel_proxy,
-  //    content_path, &error);
+  TfContent *content = tf_content_new (self, content_path, &error);
 
   if (error)
     {
@@ -153,7 +146,7 @@ add_content (TfCallChannel *self, const gchar *content_path)
       return FALSE;
     }
 
-  // g_hash_table_insert (self->contents, g_strdup (content_path), content);
+  g_hash_table_insert (self->contents, g_strdup (content_path), content);
 
   return TRUE;
 }
@@ -261,7 +254,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       &myerror);
   if (myerror)
     {
-      g_warning ("Error connectiong to ContentRemove signal: %s",
+      g_warning ("Error connectiong to ContentRemoved signal: %s",
           myerror->message);
       g_clear_error (&myerror);
       tf_call_channel_error (self);
@@ -270,6 +263,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
 
   /* FIXME: Hardcode RTP because nothing else is supported for now */
   self->fsconference = FS_CONFERENCE (gst_element_factory_make ("fsrtpconference", NULL));
+  g_object_ref (self->fsconference);
 
   g_object_notify (G_OBJECT (self), "fs-conference");
 }
@@ -280,7 +274,7 @@ tf_call_channel_new (TpChannel *channel)
   TfCallChannel *self = g_object_new (
       TF_TYPE_CALL_CHANNEL, NULL);
 
-  self->channel_proxy = channel;
+  self->proxy = g_object_ref (channel);
 
   tp_cli_dbus_properties_call_get (channel, -1,
       TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
@@ -331,7 +325,7 @@ tf_call_channel_bus_message (TfCallChannel *channel,
 void
 tf_call_channel_error (TfCallChannel *channel)
 {
-  tf_future_cli_channel_type_call_call_hangup (channel->channel_proxy,
+  tf_future_cli_channel_type_call_call_hangup (channel->proxy,
       -1, TFFUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "",
       NULL, NULL, NULL, NULL);
 }

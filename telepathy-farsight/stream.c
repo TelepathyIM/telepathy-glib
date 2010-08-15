@@ -46,6 +46,7 @@
 #include "stream-priv.h"
 #include "channel.h"
 #include "tf-signals-marshal.h"
+#include "utils.h"
 
 G_DEFINE_TYPE (TfStream, tf_stream, G_TYPE_OBJECT);
 
@@ -187,8 +188,6 @@ static void stream_close (TpMediaStreamHandler *proxy,
 
 static void invalidated_cb (TpMediaStreamHandler *proxy,
     guint domain, gint code, gchar *message, gpointer user_data);
-
-static FsMediaType tp_media_type_to_fs (TpMediaStreamType type);
 
 static GPtrArray *fs_codecs_to_tp (TfStream *stream,
     const GList *codecs);
@@ -1240,20 +1239,6 @@ tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
   fs_trans_list = g_list_reverse (fs_trans_list);
 
   return fs_trans_list;
-}
-
-static FsMediaType
-tp_media_type_to_fs (TpMediaStreamType type)
-{
-  switch (type)
-    {
-    case TP_MEDIA_STREAM_TYPE_AUDIO:
-      return FS_MEDIA_TYPE_AUDIO;
-    case TP_MEDIA_STREAM_TYPE_VIDEO:
-      return FS_MEDIA_TYPE_VIDEO;
-    default:
-      g_return_val_if_reached(0);
-    }
 }
 
 /*

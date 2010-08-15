@@ -23,6 +23,7 @@
 #include <glib-object.h>
 
 #include <gst/gst.h>
+#include <gst/farsight/fs-conference-iface.h>
 #include <telepathy-glib/channel.h>
 
 G_BEGIN_DECLS
@@ -65,6 +66,23 @@ typedef struct _TfCallChannel TfCallChannel;
  */
 
 typedef struct _TfCallChannelClass TfCallChannelClass;
+
+
+
+struct _TfCallChannel {
+  GObject parent;
+
+  TpChannel *proxy;
+
+  FsConference *fsconference;
+
+  GHashTable *contents; /* NULL before getting the first contents */
+};
+
+struct _TfCallChannelClass{
+  GObjectClass parent_class;
+};
+
 
 GType tf_call_channel_get_type (void);
 
