@@ -177,38 +177,26 @@ tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
   tp_svc_channel_emit_closed (chan);
 }
 
-/**
- * tp_base_channel_get_immutable_properties:
+/*
+ * tp_base_channel_add_properties:
  *
- * Returns a basic set of immutable properties for this Channel object, by using
- * tp_dbus_properties_mixin_make_properties_hash().
- *
- * Additional keys and values can be inserted into the returned hash table;
- * if this is done, the inserted keys and values will be freed when the
- * hash table is destroyed. The keys must be allocated with g_strdup() or
- * equivalent, and the values must be slice-allocated (for instance with
- * tp_g_value_slice_new_string() or a similar function).
- *
- * Note that in particular, tp_asv_set_string() and similar functions should
- * not be used with this hash table.
- *
- * Returns: a hash table mapping (gchar *) fully-qualified property names to
- *          GValues, which must be freed by the caller (at which point its
- *          contents will also be freed).
+ * Specifies the immutable properties supported for this Channel object, by
+ * using tp_dbus_properties_mixin_fill_properties_hash().
  */
-GHashTable *
-tp_base_channel_get_immutable_properties (TpBaseChannel *chan)
+static void
+tp_base_channel_add_properties (TpBaseChannel *chan, GHashTable *properties)
 {
-    return tp_dbus_properties_mixin_make_properties_hash (G_OBJECT (chan),
-            TP_IFACE_CHANNEL, "ChannelType",
-            TP_IFACE_CHANNEL, "TargetHandleType",
-            TP_IFACE_CHANNEL, "TargetHandle",
-            TP_IFACE_CHANNEL, "TargetID",
-            TP_IFACE_CHANNEL, "InitiatorHandle",
-            TP_IFACE_CHANNEL, "InitiatorID",
-            TP_IFACE_CHANNEL, "Requested",
-            TP_IFACE_CHANNEL, "Interfaces",
-            NULL);
+  tp_dbus_properties_mixin_fill_properties_hash (G_OBJECT (chan),
+      properties,
+      TP_IFACE_CHANNEL, "ChannelType",
+      TP_IFACE_CHANNEL, "TargetHandleType",
+      TP_IFACE_CHANNEL, "TargetHandle",
+      TP_IFACE_CHANNEL, "TargetID",
+      TP_IFACE_CHANNEL, "InitiatorHandle",
+      TP_IFACE_CHANNEL, "InitiatorID",
+      TP_IFACE_CHANNEL, "Requested",
+      TP_IFACE_CHANNEL, "Interfaces",
+      NULL);
 }
 
 static void
@@ -317,8 +305,15 @@ tp_base_channel_get_property (GObject *object,
       g_value_set_boolean (value, chan->priv->destroyed);
       break;
     case PROP_CHANNEL_PROPERTIES:
-      g_value_take_boxed (value,
-              tp_base_channel_get_immutable_properties (chan));
+        {
+          /* create an empty properties hash for subclasses to fill */
+          GHashTable *properties =
+            tp_dbus_properties_mixin_make_properties_hash (G_OBJECT (chan), NULL, NULL, NULL);
+          if (klass->add_properties)
+            klass->add_properties (chan, properties);
+
+          g_value_take_boxed (value, properties);
+        }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -509,6 +504,7 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
   tp_base_channel_class->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseChannelClass, dbus_props_class));
+  tp_base_channel_class->add_properties = tp_base_channel_add_properties;
 }
 
 static void

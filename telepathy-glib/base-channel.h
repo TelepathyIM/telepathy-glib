@@ -43,6 +43,7 @@ struct _TpBaseChannelClass
   TpHandleType target_type;
   const gchar **interfaces;
   void (*close) (TpBaseChannel *chan);
+  void (*add_properties) (TpBaseChannel *chan, GHashTable *properties);
 
   TpDBusPropertiesMixinClass dbus_props_class;
 
@@ -59,7 +60,6 @@ struct _TpBaseChannel
 void tp_base_channel_register (TpBaseChannel *chan);
 void tp_base_channel_destroyed (TpBaseChannel *chan);
 void tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator);
-GHashTable *tp_base_channel_get_immutable_properties (TpBaseChannel *chan);
 
 GType tp_base_channel_get_type (void);
 
