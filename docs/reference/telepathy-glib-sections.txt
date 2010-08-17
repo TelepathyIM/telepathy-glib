@@ -4087,6 +4087,7 @@ TpObserveChannelsContextPrivate
 TpSimpleObserver
 TpSimpleObserverObserveChannelsImpl
 tp_simple_observer_new
+tp_simple_observer_new_with_am
 <SUBSECTION Standard>
 tp_simple_observer_get_type
 TP_TYPE_SIMPLE_OBSERVER
@@ -4126,6 +4127,7 @@ TP_TYPE_ADD_DISPATCH_OPERATION_CONTEXT
 TpSimpleApprover
 TpSimpleApproverAddDispatchOperationImpl
 tp_simple_approver_new
+tp_simple_approver_new_with_am
 <SUBSECTION Standard>
 tp_simple_approver_get_type
 TP_TYPE_SIMPLE_APPROVER
@@ -4165,6 +4167,7 @@ TP_TYPE_HANDLE_CHANNELS_CONTEXT
 TpSimpleHandler
 TpSimpleHandlerHandleChannelsImpl
 tp_simple_handler_new
+tp_simple_handler_new_with_am
 <SUBSECTION Standard>
 tp_simple_handler_get_type
 TP_TYPE_SIMPLE_HANDLER

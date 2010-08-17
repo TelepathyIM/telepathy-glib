@@ -270,6 +270,8 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleApprover instance.
+ * If you have a particular #TpAccountManager that you want to use,
+ * call tp_simple_handler_new_with_am() instead.
  *
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
@@ -285,6 +287,41 @@ tp_simple_approver_new (TpDBusDaemon *dbus,
 {
   return g_object_new (TP_TYPE_SIMPLE_APPROVER,
       "dbus-daemon", dbus,
+      "name", name,
+      "uniquify-name", unique,
+      "callback", callback,
+      "user-data", user_data,
+      "destroy", destroy,
+      NULL);
+}
+
+/**
+ * tp_simple_approver_new_with_am:
+ * @account_manager: an account manager, which may not be %NULL
+ * @name: the name of the Approver (see #TpBaseClient:name: for details)
+ * @unique: the value of the TpBaseClient:uniquify-name: property
+ * @callback: the function called when ApproverChannels is called
+ * @user_data: arbitrary user-supplied data passed to @callback
+ * @destroy: called with the user_data as argument, when the #TpSimpleApprover
+ * is destroyed
+ *
+ * Convenient function to create a new #TpSimpleApprover instance with a
+ * specified #TpAccountManager.
+ *
+ * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpBaseClient *
+tp_simple_approver_new_with_am (TpAccountManager *account_manager,
+    const gchar *name,
+    gboolean unique,
+    TpSimpleApproverAddDispatchOperationImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy)
+{
+  return g_object_new (TP_TYPE_SIMPLE_APPROVER,
+      "account-manager", account_manager,
       "name", name,
       "uniquify-name", unique,
       "callback", callback,
