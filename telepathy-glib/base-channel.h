@@ -38,15 +38,16 @@ typedef struct _TpBaseChannelPrivate TpBaseChannelPrivate;
 struct _TpBaseChannelClass
 {
   GObjectClass parent_class;
+  TpDBusPropertiesMixinClass dbus_props_class;
 
   const gchar *channel_type;
   TpHandleType target_type;
   const gchar **interfaces;
+
   void (*close) (TpBaseChannel *chan);
   void (*add_properties) (TpBaseChannel *chan, GHashTable *properties);
 
-  TpDBusPropertiesMixinClass dbus_props_class;
-
+  /*< private >*/
   gpointer reserved[10];
 };
 
@@ -54,6 +55,7 @@ struct _TpBaseChannel
 {
   GObject parent;
 
+  /*< private >*/
   TpBaseChannelPrivate *priv;
 };
 

@@ -29,19 +29,9 @@
  * implementations by implementing some of its properties, and defining other
  * relevant properties.
  *
- * Subclasses must implement the close() virtual function and either call
- * tp_base_channel_destroyed() or tp_base_channel_reopened() to indicate that
- * the channel will be re-spawned (NOTE: channels that support re-spawning
- * must also implement #TpSvcChannelInterfaceDestroyable). The default
- * implementation for #TpExportableChannel:channel-properties just includes the
- * immutable properties from the Channel interface; subclasses will almost
- * certainly want to override this to include other immutable properties.
- *
  * Subclasses should fill in #TpBaseChannelClass:channel_type,
- * #TpBaseChannelClass:target_type and #TpBaseChannelClass:interfaces;
- * if some instances of the channel need a different set of interfaces, they
- * may set #TpBaseChannel:interfaces to override the default set for the
- * class.
+ * #TpBaseChannelClass:target_type and #TpBaseChannelClass:interfaces, and
+ * implement the close() and add_properties() virtual functions.
  *
  * Subclasses should ensure that #TpBaseChannel:object_path is not %NULL by
  * the time construction is finished (if it is not set by the object's creator,
@@ -49,6 +39,34 @@
  * it.
  *
  * Since: 0.11.12
+ */
+
+/**
+ * TpBaseChannel:
+ * @parent: fields shared by the superclass
+ *
+ * A base class for channel implementations
+ */
+
+/**
+ * TpBaseChannelClass:
+ * @parent_class: The superclass' structure
+ * @dbus_props_class: The class structure for the DBus properties mixin
+ * @channel_type: The type of channel that instances of this class represent
+ * (e.g. #TP_IFACE_CHANNEL_TYPE_TEXT)
+ * @target_type: The type of handle that is the target of channels of this
+ * type
+ * @interfaces: Extra interfaces provided by this channel (this SHOULD NOT
+ * include the channel type and interface itself)
+ * @close: A virtual function called to close the channel. Implementations
+ * should generally call either tp_base_channel_destroyed() or
+ * tp_base_channel_reopened() from close() to indicate that the channel will
+ * be re-spawned (NOTE: channels that support re-spawning must also implement
+ * #TpSvcChannelInterfaceDestroyable).
+ * @add_properties: A virtual function called to add custom properties to the
+ * DBus properties hash.  Implementations must chain up to the parent class
+ * implementation and call tp_dbus_properties_mixin_fill_properties_hash() on
+ * the supplied hash table
  */
 
 #include "config.h"
