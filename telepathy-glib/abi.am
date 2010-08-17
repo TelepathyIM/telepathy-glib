@@ -45,7 +45,8 @@ ABI_LISTS = \
     versions/0.11.7.abi \
     versions/0.11.9.abi \
     versions/0.11.11.abi \
-    versions/0.11.12.abi
+    versions/0.11.12.abi \
+    versions/0.11.13.abi
 
 # The quoting here is unnecessary but harmless, and has the useful side-effect
 # that vim quickfix mode (:make) doesn't interpret the libtool --mode=link

@@ -29,7 +29,7 @@
  * SimplePresence and/or Presence interfaces. Implementing both interfaces
  * (as described below) is recommended. In particular, you must implement the
  * old-style Presence interface if compatibility with telepathy-glib
- * versions older than 0.11.UNRELEASED is required.
+ * versions older than 0.11.13 is required.
  *
  * To use the presence mixin, include a #TpPresenceMixinClass somewhere in your
  * class structure and a #TpPresenceMixin somewhere in your instance structure,
@@ -82,10 +82,10 @@
  *   interface.
  * </para>
  * <para>
- *   In telepathy-glib versions older than 0.11.UNRELEASED, every connection
+ *   In telepathy-glib versions older than 0.11.13, every connection
  *   that used the #TpPresenceMixin was required to implement
  *   #TpSvcConnectionInterfacePresence; failing to do so would lead to an
- *   assertion failure. Since 0.11.UNRELEASED, this is no longer required.
+ *   assertion failure. Since 0.11.13, this is no longer required.
  * </para>
  * </section> <!-- complex Presence -->
  *

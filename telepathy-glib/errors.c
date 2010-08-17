@@ -262,7 +262,7 @@ tp_errors_quark (void)
  *
  * Return the error domain quark for #TpError.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.13
  */
 GQuark
 tp_error_quark (void)

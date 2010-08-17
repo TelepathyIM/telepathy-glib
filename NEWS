@@ -1,7 +1,41 @@
-telepathy-glib 0.11.13 (UNRELEASED)
+telepathy-glib 0.11.13 (2010-08-17)
 ===================================
 
-…
+Dependencies:
+
+• When building from git or otherwise running automake, automake 1.11 is
+  strongly recommended. If an older version is used, it will not be possible
+  to generate Vala bindings, or to make tarball distributions.
+
+Changes to experimental API:
+
+• fd.o #29070: remove telepathy-vala.pc. Vala bindings should ask pkg-config
+  for telepathy-glib, and can check that the VAPI file exists by attempting
+  to link a trivial Vala program; see libfolks for example code (cassidy)
+
+Enhancements:
+
+• fd.o #29358: add TP_ERROR as an alias for TP_ERRORS, for introspectability
+  (pwithnall)
+
+• add TP_USER_ACTION_TIME_NOT_USER_ACTION, TP_USER_ACTION_TIME_CURRENT_TIME,
+  tp_user_action_time_from_x11, tp_user_action_time_should_present (smcv)
+
+• improve various documentation (smcv, danni)
+
+• convert TpBaseClient virtual methods into normal GObject virtual methods
+  so they can be introspected (smcv)
+
+Fixes:
+
+• Don't rely on vala-1.0.pc to check for vala version and vapigen (treitter)
+
+• fd.o #25019: let the TpPresenceMixin work on connections that implement
+  SimplePresence but not complex Presence (Butch Howard)
+
+• Fix a harmless misuse of enums that caused warnings on gcc 4.5 (smcv)
+
+• Fix out-of-tree builds with Vala enabled (smcv)
 
 telepathy-glib 0.11.12 (2010-08-10)
 ===================================

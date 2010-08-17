@@ -1377,6 +1377,8 @@ tp_simple_async_report_success_in_idle (GObject *source,
  *
  * Returns: a nonzero Telepathy user action time, or
  *  %TP_USER_ACTION_TIME_CURRENT_TIME
+ *
+ * Since: 0.11.13
  */
 gint64
 tp_user_action_time_from_x11 (guint32 x11_time)
@@ -1405,6 +1407,8 @@ tp_user_action_time_from_x11 (guint32 x11_time)
  * versions.
  *
  * Returns: %TRUE if it would be appropriate to present a window
+ *
+ * Since: 0.11.13
  */
 
 gboolean

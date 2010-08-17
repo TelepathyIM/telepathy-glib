@@ -120,7 +120,7 @@ G_BEGIN_DECLS
  * tp_user_action_time_from_x11(), tp_user_action_time_should_present() and
  * %TP_USER_ACTION_TIME_CURRENT_TIME.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.13
  */
 #define TP_USER_ACTION_TIME_NOT_USER_ACTION (G_GINT64_CONSTANT (0))
 
@@ -137,7 +137,7 @@ G_BEGIN_DECLS
  * tp_user_action_time_from_x11(), tp_user_action_time_should_present() and
  * %TP_USER_ACTION_TIME_NOT_USER_ACTION.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.13
  */
 #define TP_USER_ACTION_TIME_CURRENT_TIME (G_MAXINT64)
 

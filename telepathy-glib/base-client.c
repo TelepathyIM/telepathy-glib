@@ -43,13 +43,21 @@
  * TpBaseClientClass:
  * @parent_class: the parent class
  * @observe_channels: the function called to observe newly-created channels
- *  matching this client's observer filter
+ *  matching this client's observer filter (since 0.11.13)
  * @add_dispatch_operation: the function called to request user approval of
  *  unrequested (incoming) channels matching this client's approver filter
+ *  (since 0.11.13)
  * @handle_channels: the function called to handle channels matching this
- *  client's handler filter
+ *  client's handler filter (since 0.11.13)
  *
  * The class of a #TpBaseClient.
+ *
+ * The virtual methods @observe_channels, @add_dispatch_operation and
+ * @handle_channels can be also implemented by calling
+ * tp_base_client_implement_observe_channels(),
+ * tp_base_client_implement_add_dispatch_operation() and
+ * tp_base_client_implement_handle_channels(). This is compatible with
+ * telepathy-glib versions older than 0.11.13.
  *
  * Since: 0.11.5
  */
@@ -1990,7 +1998,7 @@ requests_iface_init (gpointer g_iface,
  * Called by subclasses to define the actual implementation of the
  * ObserveChannels() D-Bus method.
  *
- * Since 0.11.UNRELEASED this is exactly equivalent to setting the
+ * Since 0.11.13 this is exactly equivalent to setting the
  * #TpBaseClientClass.observe_channels function pointer.
  *
  * Since: 0.11.5
@@ -2104,7 +2112,7 @@ tp_base_client_get_dbus_daemon (TpBaseClient *self)
  * Called by subclasses to define the actual implementation of the
  * AddDispatchOperation() D-Bus method.
  *
- * Since 0.11.UNRELEASED this is exactly equivalent to setting the
+ * Since 0.11.13 this is exactly equivalent to setting the
  * #TpBaseClientClass.add_dispatch_operation function pointer.
  *
  * Since: 0.11.5
@@ -2125,7 +2133,7 @@ tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *cls,
  * Called by subclasses to define the actual implementation of the
  * HandleChannels() D-Bus method.
  *
- * Since 0.11.UNRELEASED this is exactly equivalent to setting the
+ * Since 0.11.13 this is exactly equivalent to setting the
  * #TpBaseClientClass.handle_channels function pointer.
  *
  * Since: 0.11.6
