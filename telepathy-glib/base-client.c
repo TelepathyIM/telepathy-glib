@@ -838,27 +838,14 @@ tp_base_client_dispose (GObject *object)
 
   tp_base_client_unregister (self);
 
-  if (self->priv->dbus != NULL)
-    {
-      g_object_unref (self->priv->dbus);
-      self->priv->dbus = NULL;
-    }
-
-  if (self->priv->account_mgr != NULL)
-    {
-      g_object_unref (self->priv->account_mgr);
-      self->priv->account_mgr = NULL;
-    }
+  tp_clear_object (&self->priv->dbus);
+  tp_clear_object (&self->priv->account_mgr);
 
   g_list_foreach (self->priv->pending_requests, (GFunc) g_object_unref, NULL);
   g_list_free (self->priv->pending_requests);
   self->priv->pending_requests = NULL;
 
-  if (self->priv->my_chans != NULL)
-    {
-      g_hash_table_unref (self->priv->my_chans);
-      self->priv->my_chans = NULL;
-    }
+  tp_clear_pointer (&self->priv->my_chans, g_hash_table_unref);
 
   if (dispose != NULL)
     dispose (object);
