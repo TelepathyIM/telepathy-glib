@@ -146,7 +146,6 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/channel-dispatch-operation-internal.h>
 #include <telepathy-glib/channel-request.h>
@@ -180,6 +179,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
 
 enum {
     PROP_DBUS_DAEMON = 1,
+    PROP_ACCOUNT_MANAGER,
     PROP_NAME,
     PROP_UNIQUIFY_NAME,
     N_PROPS
@@ -886,6 +886,10 @@ tp_base_client_get_property (GObject *object,
         g_value_set_object (value, self->priv->dbus);
         break;
 
+      case PROP_ACCOUNT_MANAGER:
+        g_value_set_object (value, self->priv->account_mgr);
+        break;
+
       case PROP_NAME:
         g_value_set_string (value, self->priv->name);
         break;
@@ -915,6 +919,11 @@ tp_base_client_set_property (GObject *object,
         self->priv->dbus = g_value_dup_object (value);
         break;
 
+      case PROP_ACCOUNT_MANAGER:
+        g_assert (self->priv->account_mgr == NULL); /* construct-only */
+        self->priv->account_mgr = g_value_dup_object (value);
+        break;
+
       case PROP_NAME:
         g_assert (self->priv->name == NULL);    /* construct-only */
         self->priv->name = g_value_dup_string (value);
@@ -942,8 +951,28 @@ tp_base_client_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  g_assert (self->priv->dbus != NULL);
+  g_assert (self->priv->dbus != NULL || self->priv->account_mgr != NULL);
   g_assert (self->priv->name != NULL);
+
+  if (self->priv->account_mgr == NULL)
+    {
+      if (_tp_dbus_daemon_is_the_shared_one (self->priv->dbus))
+        {
+          /* The AM is guaranteed to be the one from
+           * tp_account_manager_dup() */
+          self->priv->account_mgr = tp_account_manager_dup ();
+        }
+      else
+        {
+          /* No guarantee, create a new AM */
+          self->priv->account_mgr = tp_account_manager_new (self->priv->dbus);
+        }
+    }
+  else if (self->priv->dbus == NULL)
+    {
+      self->priv->dbus = g_object_ref (tp_proxy_get_dbus_daemon (
+            self->priv->account_mgr));
+    }
 
   /* Bus name */
   string = g_string_new (TP_CLIENT_BUS_NAME_BASE);
@@ -965,17 +994,6 @@ tp_base_client_constructed (GObject *object)
   g_strdelimit (self->priv->object_path, ".", '/');
 
   self->priv->bus_name = g_string_free (string, FALSE);
-
-  if (_tp_dbus_daemon_is_the_shared_one (self->priv->dbus))
-    {
-      /* The AM is guaranteed to be the one from tp_account_manager_dup() */
-      self->priv->account_mgr = tp_account_manager_dup ();
-    }
-  else
-    {
-      /* No guarantee, create a new AM */
-      self->priv->account_mgr = tp_account_manager_new (self->priv->dbus);
-    }
 }
 
 typedef enum {
@@ -1128,7 +1146,12 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * #TpDBusDaemon object encapsulating this object's connection to D-Bus.
    * Read-only except during construction.
    *
-   * This property can't be %NULL.
+   * This property can't be %NULL after construction.
+   *
+   * Since 0.11.UNRELEASED this property may be %NULL or unspecified in
+   * g_object_new(), but only if #TpBaseClient:account-manager is provided
+   * instead, in which case its #TpProxy:dbus-daemon property will be
+   * used.
    *
    * Since: 0.11.5
    */
@@ -1137,6 +1160,25 @@ tp_base_client_class_init (TpBaseClientClass *cls)
       TP_TYPE_DBUS_DAEMON,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_DAEMON, param_spec);
+
+  /**
+   * TpBaseClient:account-manager:
+   *
+   * Account manager for this base client, used to look up or create
+   * #TpAccount objects. This may be specified in the constructor in order
+   * to get existing #TpAccount objects.
+   *
+   * This property may be %NULL initially, but will always be non-%NULL
+   * after the #TpBaseClient has been constructed.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("account-manager", "TpAccountManager",
+      "The TpAccountManager used look up or create TpAccount objects",
+      TP_TYPE_ACCOUNT_MANAGER,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ACCOUNT_MANAGER,
+      param_spec);
 
   /**
    * TpBaseClient:name:
@@ -2088,6 +2130,26 @@ tp_base_client_get_dbus_daemon (TpBaseClient *self)
 {
   g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
   return self->priv->dbus;
+}
+
+/**
+ * tp_base_client_get_account_manager: (skip)
+ * @self: a #TpBaseClient
+ *
+ * Return the #TpBaseClient:account-manager construct-only property, which
+ * is the account manager used to look up or create #TpAccount objects.
+ *
+ * The returned object's reference count is not incremented, so it is not
+ * necessarily valid after @self is destroyed.
+ *
+ * Returns: (transfer none): the value of #TpBaseClient:account-manager
+ * Since: 0.11.UNRELEASED
+ */
+TpAccountManager *
+tp_base_client_get_account_manager (TpBaseClient *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
+  return self->priv->account_mgr;
 }
 
 /**

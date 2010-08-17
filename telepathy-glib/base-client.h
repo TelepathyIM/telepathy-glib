@@ -25,6 +25,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
 #include <telepathy-glib/handle-channels-context.h>
 #include <telepathy-glib/observe-channels-context.h>
@@ -150,6 +151,7 @@ gboolean tp_base_client_get_uniquify_name (TpBaseClient *self);
 const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
 const gchar *tp_base_client_get_object_path (TpBaseClient *self);
 TpDBusDaemon *tp_base_client_get_dbus_daemon (TpBaseClient *self);
+TpAccountManager *tp_base_client_get_account_manager (TpBaseClient *self);
 
 void tp_base_client_unregister (TpBaseClient *self);
 
