@@ -45,7 +45,14 @@ AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.9 -Wno-portability])
 AM_CONFIG_HEADER(config.h)
 
+dnl We're compatible with automake 1.9 (to be nice to Maemo 5), but with
+dnl reduced functionality
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+m4_ifdef([AM_PROG_VALAC],
+	 [have_automake_for_dist=true],
+         [AC_MSG_WARN([You have Automake < 1.11, 'make dist' will not work])
+	  have_automake_for_dist=false])
+AM_CONDITIONAL([HAVE_AUTOMAKE_FOR_DIST], [$have_automake_for_dist])
 
 dnl check for tools
 AC_PROG_CC
