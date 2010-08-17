@@ -157,25 +157,15 @@ AC_SUBST(ERROR_CFLAGS)
 # Pkg-Config dependency checks
 # -----------------------------------------------------------
 
-# Modules used by the library
-PKG_CHECK_MODULES(LIBTPL,
-[
-    gio-2.0
-    glib-2.0 >= $GLIB_REQUIRED
-    gobject-2.0
-    libxml-2.0
-    telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
-    sqlite3
-])
-
-# Modules used by the logger daemon
 PKG_CHECK_MODULES(TPL,
 [
    dbus-1 >= $DBUS_REQUIRED
    dbus-glib-1 >= $DBUS_GLIB_REQUIRED
+   gio-2.0
    glib-2.0 >= $GLIB_REQUIRED
    gobject-2.0
    libxml-2.0
+   sqlite3
    telepathy-glib >= $TELEPATHY_GLIB_REQUIRED
 ])
 

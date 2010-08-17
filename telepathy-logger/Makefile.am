@@ -6,7 +6,7 @@ AM_CPPFLAGS =						\
 	$(ERROR_CFLAGS)					\
 	-DG_LOG_DOMAIN=\"tp-logger\"			\
 	-DTPL_DATA_DIR=\"$(PACKAGE_NAME)\"		\
-	$(LIBTPL_CFLAGS)				\
+	$(TPL_CFLAGS)				\
 	$(DISABLE_DEPRECATED)				\
 	$(WARN_CFLAGS)
 

@@ -18,7 +18,7 @@ EXTRA_DIST = \
 
 noinst_LTLIBRARIES = libtpl-extensions-convenience.la
 libtpl_extensions_convenience_la_LIBADD = \
-    @LIBTPL_LIBS@
+    @TPL_LIBS@
 
 gen_headers = \
     _gen/cli-misc.h \
@@ -78,7 +78,7 @@ libtpl_extensions_la_LDFLAGS = \
     -version-info "$(TPL_EXT_LT_CURRENT)":"$(TPL_EXT_LT_REVISION)":"$(TPL_EXT_LT_AGE)"
 endif # ENABLE_PUBLIC_EXTENSIONS
 
-AM_CFLAGS = $(ERROR_CFLAGS) @LIBTPL_CFLAGS@
+AM_CFLAGS = $(ERROR_CFLAGS) @TPL_CFLAGS@
 
 # Generated stuff
 

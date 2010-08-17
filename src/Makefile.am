@@ -23,7 +23,7 @@ telepathy_logger_LDADD = \
 
 test_api_LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-	$(LIBTPL_LIBS)
+	$(TPL_LIBS)
 
 
 check_c_sources = \

@@ -6,7 +6,7 @@ SUBDIRS = $(CHECKTWISTED) suppressions
 
 LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-	$(LIBTPL_LIBS)
+	$(TPL_LIBS)
 
 noinst_PROGRAMS = \
 	test-tpl-channel	\
@@ -32,7 +32,7 @@ test_searches_SOURCES = \
 
 AM_CFLAGS = \
 	$(ERROR_CFLAGS) \
-	$(LIBTPL_CFLAGS) \
+	$(TPL_CFLAGS) \
 	-I$(top_srcdir) \
 	-I$(top_builddir)
 

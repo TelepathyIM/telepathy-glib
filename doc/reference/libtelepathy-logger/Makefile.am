@@ -95,9 +95,9 @@ expand_content_files=
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
 INCLUDES= \
 	-I$(top_srcdir) -I$(top_builddir) \
-	$(LIBTPL_CFLAGS)
+	$(TPL_CFLAGS)
 GTKDOC_LIBS= \
-	$(LIBTPL_LIBS) \
+	$(TPL_LIBS) \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
