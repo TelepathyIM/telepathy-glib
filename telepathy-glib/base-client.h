@@ -133,6 +133,21 @@ void tp_base_client_add_handler_capabilities (TpBaseClient *self,
 void tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
     const gchar *first_token, ...) G_GNUC_NULL_TERMINATED;
 
+void tp_base_client_add_account_features (TpBaseClient *self,
+    const GQuark *features, gssize n);
+void tp_base_client_add_account_features_varargs (TpBaseClient *self,
+    GQuark feature, ...);
+
+void tp_base_client_add_channel_features (TpBaseClient *self,
+    const GQuark *features, gssize n);
+void tp_base_client_add_channel_features_varargs (TpBaseClient *self,
+    GQuark feature, ...);
+
+void tp_base_client_add_connection_features (TpBaseClient *self,
+    const GQuark *features, gssize n);
+void tp_base_client_add_connection_features_varargs (TpBaseClient *self,
+    GQuark feature, ...);
+
 /* future, potentially (currently in spec as a draft):
 void tp_base_client_set_handler_related_conferences_bypass_approval (
     TpBaseClient *self, gboolean bypass_approval);

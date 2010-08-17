@@ -24,5 +24,6 @@
 #include <glib.h>
 
 GArray *_tp_quark_array_copy (const GQuark *quarks) G_GNUC_WARN_UNUSED_RESULT;
+void _tp_quark_array_merge (GArray *array, const GQuark *quarks, gssize n);
 
 #endif /* __TP_UTIL_INTERNAL_H__ */

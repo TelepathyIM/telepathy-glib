@@ -1437,3 +1437,56 @@ tp_user_action_time_should_present (gint64 user_action_time,
 
   return ret;
 }
+
+/* Add each of @quarks to @array if it isn't already present.
+ *
+ * There are @n quarks, or if @n == -1, the array is 0-terminated. */
+void
+_tp_quark_array_merge (GArray *array,
+    const GQuark *quarks,
+    gssize n)
+{
+  gssize i;
+  guint j;
+
+  g_return_if_fail (array != NULL);
+  g_return_if_fail (g_array_get_element_size (array) == sizeof (GQuark));
+  g_return_if_fail (n >= -1);
+  g_return_if_fail (n <= 0 || quarks != NULL);
+
+  if (quarks == NULL || n == 0)
+    return;
+
+  if (n < 0)
+    {
+      n = 0;
+
+      for (i = 0; quarks[i] != 0; i++)
+        n++;
+    }
+  else
+    {
+      for (i = 0; i < n; i++)
+        g_return_if_fail (quarks[i] != 0);
+    }
+
+  if (array->len == 0)
+    {
+      /* fast-path for the common case: there's nothing to merge with */
+      g_array_append_vals (array, quarks, n);
+      return;
+    }
+
+  for (i = 0; i < n; i++)
+    {
+      for (j = 0; j < array->len; j++)
+        {
+          if (g_array_index (array, GQuark, j) == quarks[i])
+            goto next_i;
+        }
+
+      g_array_append_val (array, quarks[i]);
+next_i:
+      continue;
+    }
+}

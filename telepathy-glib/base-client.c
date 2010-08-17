@@ -65,11 +65,16 @@
 /**
  * TpBaseClientClassObserveChannelsImpl:
  * @client: a #TpBaseClient instance
- * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
- * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
- * if possible
+ * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
+ *  features added via tp_base_client_add_account_features(), prepared if
+ *  possible
+ * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
+ *  and any other features added via tp_base_client_add_connection_features(),
+ *  prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
- *  all having %TP_CHANNEL_FEATURE_CORE prepared if possible
+ *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
+ *  tp_base_client_add_channel_features(),
+ *  prepared if possible
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  *  the dispatch_operation is not guaranteed to be prepared
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
@@ -90,11 +95,16 @@
 /**
  * TpBaseClientClassAddDispatchOperationImpl:
  * @client: a #TpBaseClient instance
- * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
- * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
- * if possible
+ * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
+ *  features added via tp_base_client_add_account_features(), prepared if
+ *  possible
+ * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
+ *  and any other features added via tp_base_client_add_connection_features(),
+ *  prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
- *  all having %TP_CHANNEL_FEATURE_CORE prepared if possible
+ *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
+ *  tp_base_client_add_channel_features(),
+ *  prepared if possible
  * @dispatch_operation: a #TpChannelDispatchOperation having
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE prepared if possible
  * @context: a #TpObserveChannelsContext representing the context of this
@@ -117,11 +127,16 @@
 /**
  * TpBaseClientClassHandleChannelsImpl:
  * @client: a #TpBaseClient instance
- * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
- * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
- * if possible
+ * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
+ *  features added via tp_base_client_add_account_features(), prepared if
+ *  possible
+ * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
+ *  and any other features added via tp_base_client_add_connection_features(),
+ *  prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
- *  all having %TP_CHANNEL_FEATURE_CORE prepared if possible
+ *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
+ *  tp_base_client_add_channel_features(),
+ *  prepared if possible
  * @requests_satisfied: (element-type TelepathyGLib.ChannelRequest): a #GList of
  *  #TpChannelRequest having their object-path defined but are not guaranteed
  *  to be prepared.
@@ -144,6 +159,8 @@
 #include "telepathy-glib/base-client.h"
 #include "telepathy-glib/base-client-internal.h"
 
+#include <stdarg.h>
+
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
@@ -162,6 +179,7 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
+#include "telepathy-glib/util-internal.h"
 
 static void observer_iface_init (gpointer, gpointer);
 static void approver_iface_init (gpointer, gpointer);
@@ -234,6 +252,11 @@ struct _TpBaseClientPrivate
 
   TpAccountManager *account_mgr;
   TpAccount *likely_account;
+
+  /* array of GQuark or NULL */
+  GArray *account_features;
+  GArray *connection_features;
+  GArray *channel_features;
 };
 
 void
@@ -1238,8 +1261,9 @@ tp_base_client_class_init (TpBaseClientClass *cls)
  /**
    * TpBaseClient::request-added:
    * @self: a #TpBaseClient
-   * @account: the #TpAccount on which the request was made
-   * having %TP_ACCOUNT_FEATURE_CORE prepared if possible
+   * @account: the #TpAccount on which the request was made,
+   *  with %TP_ACCOUNT_FEATURE_CORE, and any other features added via
+   *  tp_base_client_add_account_features(), prepared if possible
    * @request: a #TpChannelRequest having its object-path defined but
    * is not guaranteed to be prepared.
    *
@@ -1343,6 +1367,15 @@ context_prepare_cb (GObject *source,
       tp_observe_channels_context_fail (ctx, error);
       g_error_free (error);
     }
+}
+
+static inline gpointer
+array_data_or_null (GArray *array)
+{
+  if (array == NULL)
+    return NULL;
+  else
+    return array->data;
 }
 
 static void
@@ -1457,7 +1490,11 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   ctx = _tp_observe_channels_context_new (account, connection, channels,
       dispatch_operation, requests, observer_info, context);
 
-  _tp_observe_channels_context_prepare_async (ctx, context_prepare_cb, self);
+  _tp_observe_channels_context_prepare_async (ctx,
+      array_data_or_null (self->priv->account_features),
+      array_data_or_null (self->priv->connection_features),
+      array_data_or_null (self->priv->channel_features),
+      context_prepare_cb, self);
 
   g_object_unref (ctx);
 
@@ -1639,6 +1676,9 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       dispatch_operation, context);
 
   _tp_add_dispatch_operation_context_prepare_async (ctx,
+      array_data_or_null (self->priv->account_features),
+      array_data_or_null (self->priv->connection_features),
+      array_data_or_null (self->priv->channel_features),
       add_dispatch_context_prepare_cb, self);
 
   g_object_unref (ctx);
@@ -1870,6 +1910,9 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       requests, user_action_time, handler_info, context);
 
   _tp_handle_channels_context_prepare_async (ctx,
+      array_data_or_null (self->priv->account_features),
+      array_data_or_null (self->priv->connection_features),
+      array_data_or_null (self->priv->channel_features),
       handle_channels_context_prepare_cb, self);
 
   g_object_unref (ctx);
@@ -1956,7 +1999,6 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   TpChannelRequest *request;
   TpAccount *account;
   GError *error = NULL;
-  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
   channel_request_prepare_account_ctx *ctx;
 
   request = tp_channel_request_new (self->priv->dbus, path, properties, &error);
@@ -1989,7 +2031,8 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
 
   ctx = channel_request_prepare_account_ctx_new (self, request);
 
-  tp_proxy_prepare_async (account, account_features,
+  tp_proxy_prepare_async (account,
+      array_data_or_null (self->priv->account_features),
       channel_request_account_prepare_cb, ctx);
 
   tp_svc_client_interface_requests_return_from_add_request (context);
@@ -2267,4 +2310,171 @@ tp_base_client_unregister (TpBaseClient *self)
     }
 
   self->priv->registered = FALSE;
+}
+
+static void
+varargs_helper (TpBaseClient *self,
+    GQuark feature,
+    va_list ap,
+    void (*method) (TpBaseClient *, const GQuark *, gssize))
+{
+  GQuark f;
+  gsize n = 0;
+  va_list ap_copy;
+
+  va_copy (ap_copy, ap);
+
+  for (f = feature; f != 0; f = va_arg (ap, GQuark))
+    n++;
+
+  /* block to provide a scope for @features on the stack */
+    {
+      GQuark features[n];
+
+      n = 0;
+
+      for (f = feature; f != 0; f = va_arg (ap_copy, GQuark))
+        features[n++] = f;
+
+      method (self, features, n);
+    }
+}
+
+/**
+ * tp_base_client_add_account_features_varargs: (skip)
+ * @self: a client
+ * @feature: the first feature
+ * @...: the second and subsequent features, if any, ending with 0
+ *
+ * The same as tp_base_client_add_account_features(), but with a more
+ * convenient calling convention from C.
+ */
+void
+tp_base_client_add_account_features_varargs (TpBaseClient *self,
+    GQuark feature,
+    ...)
+{
+  va_list ap;
+
+  va_start (ap, feature);
+  varargs_helper (self, feature, ap, tp_base_client_add_account_features);
+  va_end (ap);
+}
+
+/**
+ * tp_base_client_add_connection_features_varargs: (skip)
+ * @self: a client
+ * @feature: the first feature
+ * @...: the second and subsequent features, if any, ending with 0
+ *
+ * The same as tp_base_client_add_connection_features(), but with a more
+ * convenient calling convention from C.
+ */
+void
+tp_base_client_add_connection_features_varargs (TpBaseClient *self,
+    GQuark feature,
+    ...)
+{
+  va_list ap;
+
+  va_start (ap, feature);
+  varargs_helper (self, feature, ap, tp_base_client_add_connection_features);
+  va_end (ap);
+}
+
+/**
+ * tp_base_client_add_channel_features_varargs: (skip)
+ * @self: a client
+ * @feature: the first feature
+ * @...: the second and subsequent features, if any, ending with 0
+ *
+ * The same as tp_base_client_add_channel_features(), but with a more
+ * convenient calling convention from C.
+ */
+void
+tp_base_client_add_channel_features_varargs (TpBaseClient *self,
+    GQuark feature,
+    ...)
+{
+  va_list ap;
+
+  va_start (ap, feature);
+  varargs_helper (self, feature, ap, tp_base_client_add_channel_features);
+  va_end (ap);
+}
+
+/**
+ * tp_base_client_add_account_features:
+ * @self: a client
+ * @features: (array length=n): the features
+ * @n: the number of features, or -1 if @features is 0-terminated
+ *
+ * Request that the given features are prepared on each #TpAccount (in
+ * addition to %TP_ACCOUNT_FEATURE_CORE) before calling
+ * #TpBaseClient.observe_channels, #TpBaseClient.add_dispatch_operation or
+ * #TpBaseClient.handle_channels, or emitting #TpBaseClient::request-added.
+ */
+void
+tp_base_client_add_account_features (TpBaseClient *self,
+    const GQuark *features,
+    gssize n)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  if (self->priv->account_features == NULL)
+    self->priv->account_features = g_array_new (TRUE, TRUE, sizeof (GQuark));
+
+  _tp_quark_array_merge (self->priv->account_features, features, n);
+}
+
+/**
+ * tp_base_client_add_channel_features:
+ * @self: a client
+ * @features: (array length=n): the features
+ * @n: the number of features, or -1 if @features is 0-terminated
+ *
+ * Request that the given features are prepared on each #TpChannel (in
+ * addition to %TP_CHANNEL_FEATURE_CORE) before calling
+ * #TpBaseClient.observe_channels, #TpBaseClient.add_dispatch_operation or
+ * #TpBaseClient.handle_channels.
+ */
+void
+tp_base_client_add_channel_features (TpBaseClient *self,
+    const GQuark *features,
+    gssize n)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  if (self->priv->channel_features == NULL)
+    self->priv->channel_features = g_array_new (TRUE, TRUE, sizeof (GQuark));
+
+  _tp_quark_array_merge (self->priv->channel_features, features, n);
+}
+
+/**
+ * tp_base_client_add_connection_features:
+ * @self: a client
+ * @features: (array length=n): the features
+ * @n: the number of features, or -1 if @features is 0-terminated
+ *
+ * Request that the given features are prepared on each #TpConnection (in
+ * addition to %TP_CONNECTION_FEATURE_CORE) before calling
+ * #TpBaseClient.observe_channels, #TpBaseClient.add_dispatch_operation or
+ * #TpBaseClient.handle_channels.
+ */
+void
+tp_base_client_add_connection_features (TpBaseClient *self,
+    const GQuark *features,
+    gssize n)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
+  if (self->priv->connection_features == NULL)
+    self->priv->connection_features = g_array_new (TRUE, TRUE,
+        sizeof (GQuark));
+
+  _tp_quark_array_merge (self->priv->connection_features, features, n);
 }

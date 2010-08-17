@@ -601,11 +601,11 @@ out:
 }
 
 static void
-context_prepare (TpObserveChannelsContext *self)
+context_prepare (TpObserveChannelsContext *self,
+    const GQuark *account_features,
+    const GQuark *connection_features,
+    const GQuark *channel_features)
 {
-  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
-  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CORE, 0 };
-  GQuark channel_features[] = { TP_CHANNEL_FEATURE_CORE, 0 };
   guint i;
 
   self->priv->num_pending = 2;
@@ -613,7 +613,7 @@ context_prepare (TpObserveChannelsContext *self)
   tp_proxy_prepare_async (self->account, account_features,
       account_prepare_cb, g_object_ref (self));
 
-  tp_proxy_prepare_async (self->connection, conn_features,
+  tp_proxy_prepare_async (self->connection, connection_features,
       conn_prepare_cb, g_object_ref (self));
 
   for (i = 0; i < self->channels->len; i++)
@@ -629,6 +629,9 @@ context_prepare (TpObserveChannelsContext *self)
 
 void
 _tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
+    const GQuark *account_features,
+    const GQuark *connection_features,
+    const GQuark *channel_features,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -640,7 +643,8 @@ _tp_observe_channels_context_prepare_async (TpObserveChannelsContext *self,
   self->priv->result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data, _tp_observe_channels_context_prepare_async);
 
-  context_prepare (self);
+  context_prepare (self, account_features, connection_features,
+      channel_features);
 }
 
 gboolean
