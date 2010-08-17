@@ -88,7 +88,6 @@ struct _TpBaseChannelPrivate
   TpBaseConnection *conn;
 
   char *object_path;
-  const gchar **interfaces;
 
   TpHandle target;
   TpHandle initiator;
@@ -221,9 +220,6 @@ tp_base_channel_constructed (GObject *object)
   if (parent_class->constructed != NULL)
     parent_class->constructed (object);
 
-  if (chan->priv->interfaces == NULL)
-    chan->priv->interfaces = klass->interfaces;
-
   if (klass->target_type != TP_HANDLE_TYPE_NONE)
     {
       handles = tp_base_connection_get_handles (conn, klass->target_type);
@@ -299,7 +295,7 @@ tp_base_channel_get_property (GObject *object,
       g_value_set_object (value, chan->priv->conn);
       break;
     case PROP_INTERFACES:
-      g_value_set_boxed (value, chan->priv->interfaces);
+      g_value_set_boxed (value, klass->interfaces);
       break;
     case PROP_CHANNEL_DESTROYED:
       g_value_set_boolean (value, chan->priv->destroyed);
@@ -532,8 +528,9 @@ tp_base_channel_get_interfaces (TpSvcChannel *iface,
                                 DBusGMethodInvocation *context)
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
+  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
 
-  tp_svc_channel_return_from_get_interfaces (context, chan->priv->interfaces);
+  tp_svc_channel_return_from_get_interfaces (context, klass->interfaces);
 }
 
 static void
