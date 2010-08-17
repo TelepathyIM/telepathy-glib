@@ -142,6 +142,7 @@
  */
 
 #include "telepathy-glib/base-client.h"
+#include "telepathy-glib/base-client-internal.h"
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -232,7 +233,29 @@ struct _TpBaseClientPrivate
   gchar *object_path;
 
   TpAccountManager *account_mgr;
+  TpAccount *likely_account;
 };
+
+void
+_tp_base_client_set_likely_account (TpBaseClient *self,
+    TpAccount *account)
+{
+  g_return_if_fail (self->priv->likely_account == NULL);
+  self->priv->likely_account = g_object_ref (account);
+}
+
+static TpAccount *
+tp_base_client_get_account (TpBaseClient *self,
+    const gchar *path)
+{
+  if (self->priv->likely_account != NULL &&
+      !tp_strdiff (tp_proxy_get_object_path (self->priv->likely_account),
+        path))
+    return self->priv->likely_account;
+  else
+    return tp_account_manager_ensure_account (self->priv->account_mgr,
+        path);
+}
 
 static GHashTable *
 _tp_base_client_copy_filter (GHashTable *filter)
@@ -840,6 +863,7 @@ tp_base_client_dispose (GObject *object)
 
   tp_clear_object (&self->priv->dbus);
   tp_clear_object (&self->priv->account_mgr);
+  tp_clear_object (&self->priv->likely_account);
 
   g_list_foreach (self->priv->pending_requests, (GFunc) g_object_unref, NULL);
   g_list_free (self->priv->pending_requests);
@@ -1366,9 +1390,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       goto out;
     }
 
-  account = tp_account_manager_ensure_account (self->priv->account_mgr,
-      account_path);
-
+  account = tp_base_client_get_account (self, account_path);
   connection = tp_account_ensure_connection (account, connection_path);
   if (connection == NULL)
     {
@@ -1556,9 +1578,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  account = tp_account_manager_ensure_account (self->priv->account_mgr,
-      path);
-
+  account = tp_base_client_get_account (self, path);
   path = tp_asv_get_object_path (properties,
       TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION);
   if (path == NULL)
@@ -1790,9 +1810,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       goto out;
     }
 
-  account = tp_account_manager_ensure_account (self->priv->account_mgr,
-      account_path);
-
+  account = tp_base_client_get_account (self, account_path);
   connection = tp_account_ensure_connection (account, connection_path);
   if (connection == NULL)
     {
@@ -1964,8 +1982,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
       return;
     }
 
-  account = tp_account_manager_ensure_account (self->priv->account_mgr,
-      path);
+  account = tp_base_client_get_account (self, path);
 
   self->priv->pending_requests = g_list_append (self->priv->pending_requests,
       request);
