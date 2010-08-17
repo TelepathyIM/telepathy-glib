@@ -293,7 +293,5 @@ AC_OUTPUT( Makefile \
 	   tests/tools/Makefile \
 	   tools/Makefile \
 	   m4/Makefile \
-	   vala/Makefile \
-	   vala/telepathy-vala.pc \
-	   vala/telepathy-vala-uninstalled.pc
+	   vala/Makefile
 )

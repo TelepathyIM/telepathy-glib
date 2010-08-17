@@ -11,7 +11,6 @@ BUILT_SOURCES = \
 	$(NULL)
 
 pkgconfigdir = ${libdir}/pkgconfig
-pkgconfig_DATA = telepathy-vala.pc
 
 telepathy-glib.vapi: $(top_builddir)/telepathy-glib/TelepathyGLib-0.12.gir
 	$(VAPIGEN_V)$(VAPIGEN) \
