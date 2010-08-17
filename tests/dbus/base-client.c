@@ -69,6 +69,8 @@ setup (Test *test,
   test->error = NULL;
   test->interfaces = NULL;
 
+  /* The case of a non-shared TpAccountManager is tested in
+   * simple-approver.c */
   test->account_mgr = tp_account_manager_dup ();
   g_assert (test->account_mgr != NULL);
 
@@ -232,20 +234,30 @@ static void
 test_basics (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  TpAccountManager *account_manager;
   TpDBusDaemon *dbus;
   gchar *name;
   gboolean unique;
 
   g_object_get (test->base_client,
+      "account-manager", &account_manager,
       "dbus-daemon", &dbus,
       "name", &name,
       "uniquify-name", &unique,
       NULL);
 
+  g_assert (test->account_mgr == account_manager);
   g_assert (test->dbus == dbus);
   g_assert_cmpstr ("Test", ==, name);
   g_assert (!unique);
 
+  g_assert (test->account_mgr == tp_base_client_get_account_manager (
+        test->base_client));
+  g_assert (test->dbus == tp_base_client_get_dbus_daemon (test->base_client));
+  g_assert_cmpstr ("Test", ==, tp_base_client_get_name (test->base_client));
+  g_assert (!tp_base_client_get_uniquify_name (test->base_client));
+
+  g_object_unref (account_manager);
   g_object_unref (dbus);
   g_free (name);
 }

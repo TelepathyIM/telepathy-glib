@@ -34,6 +34,7 @@ typedef struct {
     TpClient *client;
     TpConnection *connection;
     TpAccount *account;
+    TpAccountManager *account_manager;
     TpChannel *text_chan;
 
     GError *error /* initialized where needed */;
@@ -67,9 +68,14 @@ setup (Test *test,
   tp_dbus_daemon_register_object (test->dbus, ACCOUNT_PATH,
       test->account_service);
 
+  test->account_manager = tp_account_manager_new (test->dbus);
+  g_assert (test->account_manager != NULL);
+
    /* Create client-side Account object */
-  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  test->account = tp_account_manager_ensure_account (test->account_manager,
+      ACCOUNT_PATH);
   g_assert (test->account != NULL);
+  g_object_ref (test->account);
 
   /* Create (service and client sides) connection objects */
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
@@ -165,15 +171,8 @@ create_simple_approver (Test *test,
     TpSimpleApproverAddDispatchOperationImpl impl)
 {
   /* Create service-side Client object */
-  test->simple_approver = tp_tests_object_new_static_class (
-      TP_TYPE_SIMPLE_APPROVER,
-      "dbus-daemon", test->dbus,
-      "name", "MySimpleApprover",
-      "uniquify-name", FALSE,
-      "callback", impl,
-      "user-data", test,
-      "destroy", NULL,
-      NULL);
+  test->simple_approver = tp_simple_approver_new_with_am (
+      test->account_manager, "MySimpleApprover", FALSE, impl, test, NULL);
   g_assert (test->simple_approver != NULL);
 
   /* Create client-side Client object */
@@ -426,7 +425,11 @@ add_dispatch_async (
     TpAddDispatchOperationContext *context,
     gpointer user_data)
 {
+  Test *test = user_data;
+
   g_idle_add (accept_idle_cb, g_object_ref (context));
+
+  g_assert (account == test->account);
 
   tp_add_dispatch_operation_context_delay (context);
 }
