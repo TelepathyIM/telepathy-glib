@@ -57,13 +57,18 @@ tp_channel_iface_base_init (gpointer klass)
      * TpChannelIface:channel-type:
      *
      * The D-Bus interface representing the type of this channel. Read-only
-     * except during construction (and in connection managers, attempts to
-     * set it during construction will usually be ignored or treated as an
-     * error).
+     * except during construction.
      *
-     * This is really only read-write for the benefit of #TpChannel -
-     * GLib considers CONSTRUCT_ONLY|READWRITE to be incompatible with
-     * READONLY, because CONSTRUCT_ONLY is a restriction (arguably a GLib bug)
+     * In #TpChannel this property is read-only except during construction;
+     * if %NULL during construction (the default), we ask the remote D-Bus
+     * object what its channel type is, and reading this property will yield
+     * %NULL until a reply is received. This is not guaranteed to have happened
+     * until tp_proxy_prepare_async() has finished preparing
+     * %TP_CHANNEL_FEATURE_CORE.
+     *
+     * In connection manager implementations, attempts to set this property
+     * during construction will usually be ignored or treated as an
+     * error.
      */
     param_spec = g_param_spec_string ("channel-type", "Telepathy channel type",
         "The D-Bus interface representing the type of this channel.",
@@ -75,12 +80,19 @@ tp_channel_iface_base_init (gpointer klass)
     /**
      * TpChannelIface:handle-type:
      *
-     * The type (#TpHandleType) of this channel's associated
-     * handle, or 0 if there is no associated handle. Read-only except during
-     * construction (and depending on the channel type, attempts to set it
-     * during construction might also be ignored).
+     * The #TpHandleType of this channel's associated handle, or
+     * %TP_HANDLE_TYPE_NONE (which is numerically 0) if no handle.
+     *
+     * In #TpChannel, if this is TP_UNKNOWN_HANDLE_TYPE
+     * during construction, we ask the remote D-Bus object what its
+     * handle type is; reading this property will yield TP_UNKNOWN_HANDLE_TYPE
+     * until we get the reply. This is not guaranteed to be have happened
+     * until tp_proxy_prepare_async() has finished preparing
+     * %TP_CHANNEL_FEATURE_CORE.
+     *
+     * In connection manager implementations, attempts to set this during
+     * construction might also be ignored.
      */
-
     param_spec = g_param_spec_uint ("handle-type", "Handle type",
         "The TpHandleType of this channel's associated handle.",
         0, G_MAXUINT32, 0,
@@ -91,12 +103,19 @@ tp_channel_iface_base_init (gpointer klass)
     /**
      * TpChannelIface:handle:
      *
-     * This channel's associated
-     * handle, or 0 if there is no associated handle. Read-only except during
-     * construction (and depending on the channel type, attempts to set it
-     * during construction might also be ignored).
+     * This channel's associated handle, or 0 if no handle or unknown.
+     * Read-only except during construction.
+     *
+     * In #TpChannel, if this is 0
+     * during construction, and handle-type is not TP_HANDLE_TYPE_NONE (== 0),
+     * we ask the remote D-Bus object what its handle type is; reading this
+     * property will yield 0 until we get the reply, or if GetHandle()
+     * fails. This is not guaranteed to be set until tp_proxy_prepare_async()
+     * has finished preparing %TP_CHANNEL_FEATURE_CORE.
+     *
+     * In connection manager implementations, attempts to set this during
+     * construction might be ignored, depending on the channel type.
      */
-
     param_spec = g_param_spec_uint ("handle", "Handle",
         "The TpHandle representing the contact, group, etc. with which "
         "this channel communicates, whose type is given by the handle-type "

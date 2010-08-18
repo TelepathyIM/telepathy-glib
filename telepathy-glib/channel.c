@@ -1401,53 +1401,10 @@ tp_channel_class_init (TpChannelClass *klass)
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->list_features = tp_channel_list_features;
 
-  /**
-   * TpChannel:channel-type:
-   *
-   * The D-Bus interface representing the type of this channel.
-   *
-   * Read-only except during construction. If %NULL during construction
-   * (default), we ask the remote D-Bus object what its channel type is;
-   * reading this property will yield %NULL until we get the reply, or if
-   * GetChannelType() fails.
-   *
-   * This is not guaranteed to be set until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CORE.
-   */
   g_object_class_override_property (object_class, PROP_CHANNEL_TYPE,
       "channel-type");
-
-  /**
-   * TpChannel:handle-type:
-   *
-   * The #TpHandleType of this channel's associated handle, or 0 if no
-   * handle, or TP_UNKNOWN_HANDLE_TYPE if unknown.
-   *
-   * Read-only except during construction. If this is TP_UNKNOWN_HANDLE_TYPE
-   * during construction (default), we ask the remote D-Bus object what its
-   * handle type is; reading this property will yield TP_UNKNOWN_HANDLE_TYPE
-   * until we get the reply.
-   *
-   * This is not guaranteed to be set until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CORE.
-   */
   g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
       "handle-type");
-
-  /**
-   * TpChannel:handle:
-   *
-   * This channel's associated handle, or 0 if no handle or unknown.
-   *
-   * Read-only except during construction. If this is 0
-   * during construction, and handle-type is not TP_HANDLE_TYPE_NONE (== 0),
-   * we ask the remote D-Bus object what its handle type is; reading this
-   * property will yield 0 until we get the reply, or if GetHandle()
-   * fails.
-   *
-   * This is not guaranteed to be set until tp_proxy_prepare_async() has
-   * finished preparing %TP_CHANNEL_FEATURE_CORE.
-   */
   g_object_class_override_property (object_class, PROP_HANDLE,
       "handle");
 
