@@ -91,13 +91,19 @@ tp_dbus_errors_quark (void)
  *  loop (*_run_*) if they are cancelled
  * @TP_DBUS_ERROR_INCONSISTENT: Raised if information received from a remote
  *  object is inconsistent or otherwise obviously wrong (added in 0.7.17)
- * @NUM_TP_DBUS_ERRORS: 1 more than the highest valid #TpDBusError at the
- *  time of compilation
  *
  * #GError codes for use with the %TP_DBUS_ERRORS domain.
  *
  * Since 0.11.5, there is a corresponding #GEnumClass type,
  * %TP_TYPE_DBUS_ERROR.
+ *
+ * Since: 0.7.1
+ */
+
+/**
+ * NUM_TP_DBUS_ERRORS:
+ *
+ * 1 more than the highest valid #TpDBusError at the time of compilation
  *
  * Since: 0.7.1
  */

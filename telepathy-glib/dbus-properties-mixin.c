@@ -43,7 +43,7 @@
  *
  * To register D-Bus properties in a GInterface to be implementable with this
  * mixin, either use the code-generation tools from telepathy-glib >= 0.7.3,
- * or call tp_svc_interface_set_properties_info() from a section of the
+ * or call tp_svc_interface_set_dbus_properties_info() from a section of the
  * base_init function that only runs once.
  *
  * To use this mixin, include a #TpDBusPropertiesMixinClass somewhere

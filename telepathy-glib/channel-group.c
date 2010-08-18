@@ -263,7 +263,8 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
  *   result is undefined;
  * - if %TP_CHANNEL_FEATURE_GROUP has not yet been prepared, result is
  *   undefined;
- * - if @self does not have flags that include %TP_CHANNEL_FLAG_PROPERTIES,
+ * - if @self does not have flags that include
+ *   %TP_CHANNEL_GROUP_FLAG_PROPERTIES,
  *   result is undefined;
  * - if @handle is channel-specific and its globally valid "owner" is known,
  *   return that owner;
@@ -272,7 +273,7 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
  * - if @handle is globally valid, return @handle itself
  *
  * Some channels (those with flags that include
- * %TP_CHANNEL_FLAG_CHANNEL_SPECIFIC_HANDLES) have a concept of
+ * %TP_CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES) have a concept of
  * "channel-specific handles". These are handles that only have meaning within
  * the context of the channel - for instance, in XMPP Multi-User Chat,
  * participants in a chatroom are identified by an in-room JID consisting
@@ -291,7 +292,7 @@ tp_channel_group_get_local_pending_info (TpChannel *self,
  * Group's remote-pending set).
  *
  * This function's result is undefined unless the channel is ready
- * and its flags include %TP_CHANNEL_FLAG_PROPERTIES (an implementation
+ * and its flags include %TP_CHANNEL_GROUP_FLAG_PROPERTIES (an implementation
  * without extra D-Bus round trips is not possible using the older API).
  *
  * Returns: the global handle that owns the given handle, or 0

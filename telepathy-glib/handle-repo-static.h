@@ -47,7 +47,7 @@ G_BEGIN_DECLS
  * same order as the string vector, to avoid having to look up handles
  * internally.
  *
- * This is intended for handles of type %TP_HANDLE_TYPE_CONTACT_LIST,
+ * This is intended for handles of type %TP_HANDLE_TYPE_LIST,
  * for which the connection manager should only accept a static list of
  * supported handle names.
  *

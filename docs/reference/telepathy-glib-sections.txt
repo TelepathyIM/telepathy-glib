@@ -2503,6 +2503,7 @@ tp_proxy_get_invalidated
 tp_proxy_dbus_error_to_gerror
 TP_DBUS_ERRORS
 TpDBusError
+NUM_TP_DBUS_ERRORS
 TP_TYPE_DBUS_ERROR
 <SUBSECTION Standard>
 tp_dbus_error_get_type
@@ -3457,6 +3458,7 @@ tp_cli_media_stream_handler_run_codecs_updated
 <TITLE>contact</TITLE>
 TpContact
 TpContactFeature
+NUM_TP_CONTACT_FEATURES
 TP_TYPE_CONTACT_FEATURE
 TpConnectionContactsByHandleCb
 tp_connection_get_contacts_by_handle

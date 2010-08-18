@@ -215,10 +215,10 @@
  * An iterator over the #TpChannelManager objects known to a #TpBaseConnection.
  * It has no public fields.
  *
- * Since: 0.7.15
+ * Use tp_base_connection_channel_manager_iter_init() to start iteration and
+ * tp_base_connection_channel_manager_iter_next() to continue.
  *
- * @see_also: tp_base_connection_channel_manager_iter_init(),
- *            tp_base_connection_channel_manager_iter_next()
+ * Since: 0.7.15
  */
 
 /**
