@@ -834,7 +834,7 @@ tp_dbus_properties_mixin_fill_properties_hash_va (
  * model as the hash tables required by tp_asv_set_string() and similar
  * functions.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 void
 tp_dbus_properties_mixin_fill_properties_hash (

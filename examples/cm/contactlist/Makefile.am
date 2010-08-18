@@ -15,7 +15,9 @@ libexample_cm_contactlist_la_SOURCES = \
     connection-manager.c \
     connection-manager.h \
     contact-list-manager.c \
-    contact-list-manager.h
+    contact-list-manager.h \
+    protocol.c \
+    protocol.h
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
 # pkg-config via autoconf) instead of the .la path
@@ -36,8 +38,6 @@ AM_CFLAGS = \
     $(GLIB_CFLAGS) \
     $(TP_GLIB_CFLAGS)
 
-EXTRA_DIST = manager-file.py
-
 if INSTALL_EXAMPLES
 servicedir = ${datadir}/dbus-1/services
 service_DATA = _gen/org.freedesktop.Telepathy.ConnectionManager.example_contact_list.service
@@ -48,16 +48,8 @@ $(service_DATA): %: Makefile
 	echo "Exec=${libexecdir}/telepathy-example-cm-contactlist"; } > $@
 
 managerdir = ${datadir}/telepathy/managers
-manager_DATA = _gen/example_contact_list.manager
+dist_manager_DATA = example_contact_list.manager
 endif
-
-_gen/example_contact_list.manager _gen/param-spec-struct.h: \
-		manager-file.py $(top_srcdir)/tools/manager-file.py
-	$(mkdir_p) _gen
-	$(PYTHON) $(top_srcdir)/tools/manager-file.py $(srcdir)/manager-file.py _gen
-
-BUILT_SOURCES = _gen/param-spec-struct.h
-CLEANFILES = $(BUILT_SOURCES)
 
 clean-local:
 	rm -rf _gen

@@ -49,22 +49,6 @@ example_echo_2_connection_manager_constructed (GObject *object)
   g_object_unref (protocol);
 }
 
-static const TpCMProtocolSpec no_protocols[] = {
-  { NULL, NULL }
-};
-
-static TpBaseConnection *
-new_connection (TpBaseConnectionManager *self,
-                const gchar *proto,
-                TpIntSet *params_present,
-                gpointer parsed_params,
-                GError **error)
-{
-  g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-      "Protocol's new_connection() should be called instead");
-  return NULL;
-}
-
 static void
 example_echo_2_connection_manager_class_init (
     ExampleEcho2ConnectionManagerClass *klass)
@@ -75,7 +59,5 @@ example_echo_2_connection_manager_class_init (
 
   object_class->constructed = example_echo_2_connection_manager_constructed;
 
-  base_class->new_connection = new_connection;
   base_class->cm_dbus_name = "example_echo_2";
-  base_class->protocol_params = no_protocols;
 }

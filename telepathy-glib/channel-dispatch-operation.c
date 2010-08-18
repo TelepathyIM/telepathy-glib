@@ -1330,7 +1330,9 @@ _tp_channel_dispatch_operation_new_with_objects (TpDBusDaemon *bus_daemon,
  * @handler: (allow-none): The well-known bus name (starting with
  * #TP_CLIENT_BUS_NAME_BASE) of the channel handler that should handle the
  * channel, or %NULL if the client has no preferred channel handler
- * @user_action_timestamp: the time at which user action occurred
+ * @user_action_time: the time at which user action occurred, or one of the
+ *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME
  * @callback: a callback to call when the call returns
  * @user_data: data to pass to @callback
  *
@@ -1339,11 +1341,13 @@ _tp_channel_dispatch_operation_new_with_objects (TpDBusDaemon *bus_daemon,
  * This timestamp will be passed to the Handler when HandleChannels is called.
  *
  * If an X server timestamp for the user action causing this method call is
- * available, @user_action_timestamp should be this timestamp (for instance, the
+ * available, @user_action_time should be this timestamp (for instance, the
  * result of gdk_event_get_time() if it is not %GDK_CURRENT_TIME). Otherwise, it
- * may be 0 to behave as if there was no user action or it happened a long time
- * ago, or %G_MAXINT64 to have the Handler behave as though the user action had
- * just happened (resembling, but not numerically equal to, %GDK_CURRENT_TIME).
+ * may be %TP_USER_ACTION_TIME_NOT_USER_ACTION to behave as if there was no
+ * user action or it happened a long time ago, or
+ * %TP_USER_ACTION_TIME_CURRENT_TIME to have the Handler behave as though the
+ * user action had just happened (resembling, but not numerically equal to,
+ * %GDK_CURRENT_TIME).
  *
  * This method has been introduced in telepathy-mission-control 5.5.0.
  *
@@ -1353,7 +1357,7 @@ void
 tp_channel_dispatch_operation_handle_with_time_async (
     TpChannelDispatchOperation *self,
     const gchar *handler,
-    gint64 user_action_timestamp,
+    gint64 user_action_time,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -1366,7 +1370,7 @@ tp_channel_dispatch_operation_handle_with_time_async (
       tp_channel_dispatch_operation_handle_with_time_async);
 
   tp_cli_channel_dispatch_operation_call_handle_with_time (self, -1,
-      handler != NULL ? handler: "", user_action_timestamp,
+      handler != NULL ? handler: "", user_action_time,
       handle_with_cb, result, NULL, G_OBJECT (self));
 }
 

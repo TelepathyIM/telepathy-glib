@@ -1,0 +1,16 @@
+[ConnectionManager]
+Interfaces=
+
+[Protocol example]
+Interfaces=
+ConnectionInterfaces=org.freedesktop.Telepathy.Connection.Interface.Requests;org.freedesktop.Telepathy.Connection.Interface.Contacts;
+param-account=s required register
+RequestableChannelClasses=1-1-text;
+VCardField=x-telepathy-example
+EnglishName=Echo II example
+Icon=im-icq
+
+[1-1-text]
+org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Text
+org.freedesktop.Telepathy.Channel.TargetHandleType u=1
+allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;

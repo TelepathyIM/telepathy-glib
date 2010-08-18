@@ -11,6 +11,8 @@ telepathy_example_cm_extended_SOURCES = \
     conn.h \
     connection-manager.c \
     connection-manager.h \
+    protocol.c \
+    protocol.h \
     main.c
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
@@ -27,8 +29,6 @@ AM_CFLAGS = \
     $(GLIB_CFLAGS) \
     $(TP_GLIB_CFLAGS)
 
-EXTRA_DIST = manager-file.py
-
 if INSTALL_EXAMPLES
 servicedir = ${datadir}/dbus-1/services
 service_DATA = _gen/org.freedesktop.Telepathy.ConnectionManager.example_extended.service
@@ -39,16 +39,8 @@ $(service_DATA): %: Makefile
 	echo "Exec=${libexecdir}/telepathy-example-cm-extended"; } > $@
 
 managerdir = ${datadir}/telepathy/managers
-manager_DATA = _gen/example_extended.manager
+dist_manager_DATA = example_extended.manager
 endif
-
-_gen/example_extended.manager _gen/param-spec-struct.h: \
-		manager-file.py $(top_srcdir)/tools/manager-file.py
-	$(mkdir_p) _gen
-	$(PYTHON) $(top_srcdir)/tools/manager-file.py $(srcdir)/manager-file.py _gen
-
-BUILT_SOURCES = _gen/param-spec-struct.h
-CLEANFILES = $(BUILT_SOURCES)
 
 clean-local:
 	rm -rf _gen

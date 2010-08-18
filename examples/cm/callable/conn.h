@@ -73,6 +73,9 @@ typedef enum {
     EXAMPLE_CALLABLE_PRESENCE_AVAILABLE
 } ExampleCallablePresence;
 
+const gchar * const * example_callable_connection_get_possible_interfaces (
+    void);
+
 G_END_DECLS
 
 #endif

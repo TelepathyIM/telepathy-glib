@@ -1,8 +1,8 @@
 /*
  * conn.c - an example connection
  *
- * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2007 Nokia Corporation
+ * Copyright © 2007-2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2007 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -19,9 +19,11 @@
 #include "im-manager.h"
 #include "protocol.h"
 
-G_DEFINE_TYPE (ExampleEcho2Connection,
+G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Connection,
     example_echo_2_connection,
-    TP_TYPE_BASE_CONNECTION)
+    TP_TYPE_BASE_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
+      tp_contacts_mixin_iface_init))
 
 enum
 {
@@ -82,6 +84,7 @@ finalize (GObject *object)
 {
   ExampleEcho2Connection *self = EXAMPLE_ECHO_2_CONNECTION (object);
 
+  tp_contacts_mixin_finalize (object);
   g_free (self->priv->account);
 
   G_OBJECT_CLASS (example_echo_2_connection_parent_class)->finalize (object);
@@ -156,6 +159,7 @@ shut_down (TpBaseConnection *conn)
 
 static const gchar *interfaces_always_present[] = {
     TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
     NULL };
 
 const gchar * const *
@@ -167,6 +171,21 @@ example_echo_2_connection_get_possible_interfaces (void)
 }
 
 static void
+constructed (GObject *object)
+{
+  TpBaseConnection *base = TP_BASE_CONNECTION (object);
+  void (*chain_up) (GObject *) =
+    G_OBJECT_CLASS (example_echo_2_connection_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  tp_contacts_mixin_init (object,
+      G_STRUCT_OFFSET (ExampleEcho2Connection, contacts_mixin));
+  tp_base_connection_register_with_contacts_mixin (base);
+}
+
+static void
 example_echo_2_connection_class_init (ExampleEcho2ConnectionClass *klass)
 {
   TpBaseConnectionClass *base_class =
@@ -174,6 +193,7 @@ example_echo_2_connection_class_init (ExampleEcho2ConnectionClass *klass)
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
+  object_class->constructed = constructed;
   object_class->get_property = get_property;
   object_class->set_property = set_property;
   object_class->finalize = finalize;
@@ -191,4 +211,7 @@ example_echo_2_connection_class_init (ExampleEcho2ConnectionClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+
+  tp_contacts_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ExampleEcho2ConnectionClass, contacts_mixin));
 }

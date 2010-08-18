@@ -15,8 +15,6 @@
 #include "conn.h"
 #include "im-manager.h"
 
-#include "_gen/param-spec-struct.h"
-
 G_DEFINE_TYPE (ExampleEcho2Protocol,
     example_echo_2_protocol,
     TP_TYPE_BASE_PROTOCOL)
@@ -26,6 +24,17 @@ example_echo_2_protocol_init (
     ExampleEcho2Protocol *self)
 {
 }
+
+static const TpCMParamSpec example_echo_2_example_params[] = {
+  { "account", "s", G_TYPE_STRING,
+    TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+    NULL, /* no default */
+    0, /* formerly struct offset, now unused */
+    tp_cm_param_filter_string_nonempty, /* filter - empty strings disallowed */
+    NULL, /* filter data, unused for our filter */
+    NULL /* setter data, now unused */ },
+  { NULL }
+};
 
 static const TpCMParamSpec *
 get_parameters (TpBaseProtocol *self)
@@ -40,7 +49,6 @@ new_connection (TpBaseProtocol *protocol,
 {
   ExampleEcho2Connection *conn;
   const gchar *account;
-  gchar *protocol_name;
 
   account = tp_asv_get_string (asv, "account");
 
@@ -51,16 +59,11 @@ new_connection (TpBaseProtocol *protocol,
       return NULL;
     }
 
-  g_object_get (protocol,
-      "name", &protocol_name,
-      NULL);
-
   conn = EXAMPLE_ECHO_2_CONNECTION (
       g_object_new (EXAMPLE_TYPE_ECHO_2_CONNECTION,
         "account", account,
-        "protocol", protocol_name,
+        "protocol", tp_base_protocol_get_name (protocol),
         NULL));
-  g_free (protocol_name);
 
   return (TpBaseConnection *) conn;
 }

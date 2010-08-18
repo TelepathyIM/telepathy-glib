@@ -460,7 +460,7 @@ tp_proxy_has_interface_by_id (gpointer self,
  * @iface: the D-Bus interface required, as a string
  *
  * Return whether this proxy is known to have a particular interface. In
- * versions older than 0.11.UNRELEASED, this was a macro wrapper around
+ * versions older than 0.11.11, this was a macro wrapper around
  * tp_proxy_has_interface_by_id().
  *
  * For objects that discover their interfaces at runtime, this method will
@@ -1578,7 +1578,7 @@ _tp_proxy_is_preparing (gpointer self,
  * TpChannel *channel = ...;
  * GQuark features[] = { TP_CHANNEL_FEATURE_CORE, 0 };
  *
- * tp_proxy_prepare_async (channel, features, NULL, callback, user_data);
+ * tp_proxy_prepare_async (channel, features, callback, user_data);
  * ]|
  *
  * If a feature represents core functionality (like %TP_CHANNEL_FEATURE_CORE),

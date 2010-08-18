@@ -60,6 +60,9 @@ GType example_contact_list_connection_get_type (void);
 gchar *example_contact_list_normalize_contact (TpHandleRepoIface *repo,
     const gchar *id, gpointer context, GError **error);
 
+const gchar * const * example_contact_list_connection_get_possible_interfaces (
+    void);
+
 G_END_DECLS
 
 #endif

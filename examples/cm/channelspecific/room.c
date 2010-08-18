@@ -15,14 +15,16 @@
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>
 
-static void text_iface_init (gpointer iface, gpointer data);
 static void channel_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleCSHRoomChannel,
     example_csh_room_channel,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
+      tp_message_mixin_text_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
+      tp_message_mixin_messages_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
       tp_group_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
@@ -66,6 +68,7 @@ struct _ExampleCSHRoomChannelPrivate
 
 static const char * example_csh_room_channel_interfaces[] = {
     TP_IFACE_CHANNEL_INTERFACE_GROUP,
+    TP_IFACE_CHANNEL_INTERFACE_MESSAGES,
     NULL
 };
 
@@ -239,12 +242,27 @@ join_room (ExampleCSHRoomChannel *self)
       self);
 }
 
+static void
+send_message (GObject *object,
+    TpMessage *message,
+    TpMessageSendingFlags flags)
+{
+  /* The /dev/null of text channels - we claim to have sent the message,
+   * but nothing more happens */
+  tp_message_mixin_sent (object, message, flags, "", NULL);
+}
 
 static GObject *
 constructor (GType type,
              guint n_props,
              GObjectConstructParam *props)
 {
+  static TpChannelTextMessageType const types[] = {
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE
+  };
+  static const gchar * const content_types[] = { "*/*", NULL };
   GObject *object =
       G_OBJECT_CLASS (example_csh_room_channel_parent_class)->constructor (type,
           n_props, props);
@@ -264,13 +282,15 @@ constructor (GType type,
       tp_base_connection_get_dbus_daemon (self->priv->conn),
       self->priv->object_path, self);
 
-  tp_text_mixin_init (object, G_STRUCT_OFFSET (ExampleCSHRoomChannel, text),
-      contact_repo);
+  tp_message_mixin_init (object, G_STRUCT_OFFSET (ExampleCSHRoomChannel,
+        message_mixin), self->priv->conn);
 
-  tp_text_mixin_set_message_types (object,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
-      G_MAXUINT);
+  tp_message_mixin_implement_sending (object, send_message,
+      G_N_ELEMENTS (types), types,
+      TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT |
+        TP_MESSAGE_PART_SUPPORT_FLAG_MULTIPLE_ATTACHMENTS,
+      0, /* no TpDeliveryReportingSupportFlags */
+      content_types);
 
   /* We start off remote-pending (if this CM supported other people inviting
    * us, we'd start off local-pending in that case instead - but it doesn't),
@@ -456,7 +476,7 @@ finalize (GObject *object)
   tp_handle_unref (room_handles, self->priv->handle);
   g_free (self->priv->object_path);
 
-  tp_text_mixin_finalize (object);
+  tp_message_mixin_finalize (object);
 
   ((GObjectClass *) example_csh_room_channel_parent_class)->finalize (object);
 }
@@ -593,9 +613,6 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
       param_spec);
 
-  tp_text_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, text_class));
-
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, dbus_properties_class));
@@ -608,6 +625,8 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
   tp_group_mixin_class_set_remove_with_reason_func (object_class,
       remove_member_with_reason);
   tp_group_mixin_init_dbus_properties (object_class);
+
+  tp_message_mixin_init_dbus_properties (object_class);
 }
 
 
@@ -663,34 +682,5 @@ channel_iface_init (gpointer iface,
   IMPLEMENT (get_channel_type);
   IMPLEMENT (get_handle);
   IMPLEMENT (get_interfaces);
-#undef IMPLEMENT
-}
-
-
-static void
-text_send (TpSvcChannelTypeText *iface,
-           guint type,
-           const gchar *text,
-           DBusGMethodInvocation *context)
-{
-  ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (iface);
-  time_t timestamp = time (NULL);
-
-  /* The /dev/null of text channels - we claim to have sent the message,
-   * but nothing more happens */
-  tp_svc_channel_type_text_emit_sent ((GObject *) self, timestamp, type, text);
-  tp_svc_channel_type_text_return_from_send (context);
-}
-
-
-static void
-text_iface_init (gpointer iface,
-                 gpointer data)
-{
-  TpSvcChannelTypeTextClass *klass = iface;
-
-  tp_text_mixin_iface_init (iface, data);
-#define IMPLEMENT(x) tp_svc_channel_type_text_implement_##x (klass, text_##x)
-  IMPLEMENT (send);
 #undef IMPLEMENT
 }

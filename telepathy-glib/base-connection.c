@@ -76,7 +76,7 @@
  */
 
 /**
- * TpBaseConnectionCreateHandleReposImpl:
+ * TpBaseConnectionCreateHandleReposImpl: (skip)
  * @self: The connection object
  * @repos: An array of pointers to be filled in; the implementation
  *         may assume all are initially NULL.
@@ -171,7 +171,7 @@
  */
 
 /**
- * TP_INTERNAL_CONNECTION_STATUS_NEW:
+ * TP_INTERNAL_CONNECTION_STATUS_NEW: (skip)
  *
  * A special value for #TpConnectionStatus, used within GLib connection
  * managers to indicate that the connection is disconnected because
@@ -210,7 +210,7 @@
  */
 
 /**
- * TpChannelManagerIter:
+ * TpChannelManagerIter: (skip)
  *
  * An iterator over the #TpChannelManager objects known to a #TpBaseConnection.
  * It has no public fields.
@@ -222,7 +222,7 @@
  */
 
 /**
- * TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED:
+ * TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED: (skip)
  * @conn: A TpBaseConnection
  * @context: A DBusGMethodInvocation
  *
@@ -1454,7 +1454,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   object_class->set_property = tp_base_connection_set_property;
 
   /**
-   * TpBaseConnection:protocol:
+   * TpBaseConnection:protocol: (skip)
    *
    * Identifier used in the Telepathy protocol when this connection's protocol
    * name is required.
@@ -1468,7 +1468,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_PROTOCOL, param_spec);
 
   /**
-   * TpBaseConnection:self-handle:
+   * TpBaseConnection:self-handle: (skip)
    *
    * The handle of type %TP_HANDLE_TYPE_CONTACT representing the local user.
    * Must be set nonzero by the subclass before moving to state CONNECTED.
@@ -1484,7 +1484,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_SELF_HANDLE, param_spec);
 
   /**
-   * TpBaseConnection:interfaces:
+   * TpBaseConnection:interfaces: (skip)
    *
    * The set of D-Bus interfaces available on this Connection, other than
    * Connection itself.
@@ -1500,7 +1500,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
 
   /**
-   * TpBaseConnection:dbus-status:
+   * TpBaseConnection:dbus-status: (skip)
    *
    * The Connection.Status as visible on D-Bus, which is the same as
    * #TpBaseConnection.status except that %TP_INTERNAL_CONNECTION_STATUS_NEW
@@ -1519,7 +1519,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
 
   /**
-   * TpBaseConnection:dbus-daemon:
+   * TpBaseConnection:dbus-daemon: (skip)
    *
    * #TpDBusDaemon object encapsulating this object's connection to D-Bus.
    * Read-only except during construction.
@@ -1539,7 +1539,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
   /* signal definitions */
 
   /**
-   * TpBaseConnection::shutdown-finished:
+   * TpBaseConnection::shutdown-finished: (skip)
    *
    * Emitted by tp_base_connection_finish_shutdown() when the underlying
    * network connection has been closed; #TpBaseConnectionManager listens
@@ -1606,15 +1606,18 @@ squash_name (const gchar *name, guint length)
  * tp_base_connection_register:
  * @self: A connection
  * @cm_name: The name of the connection manager in the Telepathy protocol
- * @bus_name: Used to return the bus name corresponding to the connection
- *  if %TRUE is returned; must not be %NULL. To be freed by the caller.
- * @object_path: Used to return the object path of the connection if
- *  %TRUE is returned; must not be %NULL. To be freed by the caller.
+ * @bus_name: (out): Used to return the bus name corresponding to the connection
+ *  if %TRUE is returned. To be freed by the caller.
+ * @object_path: (out): Used to return the object path of the connection if
+ *  %TRUE is returned. To be freed by the caller.
  * @error: Used to return an error if %FALSE is returned; may be %NULL
  *
  * Make the connection object appear on the bus, returning the bus
  * name and object path used. If %TRUE is returned, the connection owns the
  * bus name, and will release it when destroyed.
+ *
+ * Since 0.11.11, @bus_name and @object_path may be %NULL if the
+ * strings are not needed.
  *
  * Returns: %TRUE on success, %FALSE on error.
  */
@@ -1635,8 +1638,6 @@ tp_base_connection_register (TpBaseConnection *self,
 
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
   g_return_val_if_fail (cm_name != NULL, FALSE);
-  g_return_val_if_fail (bus_name != NULL, FALSE);
-  g_return_val_if_fail (object_path != NULL, FALSE);
 
   if (tp_connection_manager_check_valid_protocol_name (priv->protocol, NULL))
     {
@@ -1716,8 +1717,11 @@ tp_base_connection_register (TpBaseConnection *self,
 
   tp_dbus_daemon_register_object (priv->bus_proxy, self->object_path, self);
 
-  *bus_name = g_strdup (self->bus_name);
-  *object_path = g_strdup (self->object_path);
+  if (bus_name != NULL)
+    *bus_name = g_strdup (self->bus_name);
+
+  if (object_path != NULL)
+    *object_path = g_strdup (self->object_path);
 
   return TRUE;
 }
@@ -1794,14 +1798,6 @@ conn_status_reason_from_g_error (GError *error)
   return TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
 }
 
-/**
- * tp_base_connection_connect:
- *
- * @context: Used to return the result onto D-Bus.
- *
- * Implements D-Bus method Connect
- * on interface org.freedesktop.Telepathy.Connection
- */
 static void
 tp_base_connection_connect (TpSvcConnection *iface,
                             DBusGMethodInvocation *context)
@@ -1839,19 +1835,6 @@ tp_base_connection_connect (TpSvcConnection *iface,
   tp_svc_connection_return_from_connect (context);
 }
 
-
-/**
- * tp_base_connection_disconnect
- *
- * Implements D-Bus method Disconnect
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occurred, D-Bus will throw the error only if this
- *         function returns FALSE.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
 static void
 tp_base_connection_disconnect (TpSvcConnection *iface,
                                DBusGMethodInvocation *context)
@@ -1903,12 +1886,6 @@ tp_base_connection_get_interfaces (TpBaseConnection *self)
     }
 }
 
-/**
- * tp_base_connection_get_interfaces
- *
- * Implements D-Bus method GetInterfaces
- * on interface org.freedesktop.Telepathy.Connection
- */
 static void
 tp_base_connection_dbus_get_interfaces (TpSvcConnection *iface,
     DBusGMethodInvocation *context)
@@ -1918,18 +1895,6 @@ tp_base_connection_dbus_get_interfaces (TpSvcConnection *iface,
         (TpBaseConnection *) iface));
 }
 
-/**
- * tp_base_connection_get_protocol
- *
- * Implements D-Bus method GetProtocol
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @error: Used to return a pointer to a GError detailing any error
- *         that occurred, D-Bus will throw the error only if this
- *         function returns FALSE.
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
 static void
 tp_base_connection_get_protocol (TpSvcConnection *iface,
                                  DBusGMethodInvocation *context)
@@ -1946,12 +1911,6 @@ tp_base_connection_get_protocol (TpSvcConnection *iface,
   tp_svc_connection_return_from_get_protocol (context, priv->protocol);
 }
 
-/**
- * tp_base_connection_dbus_get_self_handle
- *
- * Implements D-Bus method GetSelfHandle
- * on interface org.freedesktop.Telepathy.Connection
- */
 static void
 tp_base_connection_dbus_get_self_handle (TpSvcConnection *iface,
                                          DBusGMethodInvocation *context)
@@ -1982,12 +1941,6 @@ tp_base_connection_get_dbus_status (TpBaseConnection *self)
     }
 }
 
-/*
- * tp_base_connection_dbus_get_status
- *
- * Implements D-Bus method GetStatus
- * on interface org.freedesktop.Telepathy.Connection
- */
 static void
 tp_base_connection_dbus_get_status (TpSvcConnection *iface,
     DBusGMethodInvocation *context)
@@ -2002,15 +1955,6 @@ tp_base_connection_dbus_get_status (TpSvcConnection *iface,
 #define DEBUG_FLAG TP_DEBUG_HANDLES
 #include "telepathy-glib/debug-internal.h"
 
-/**
- * tp_base_connection_hold_handles
- *
- * Implements D-Bus method HoldHandles
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
- */
 static void
 tp_base_connection_hold_handles (TpSvcConnection *iface,
                                  guint handle_type,
@@ -2054,14 +1998,6 @@ tp_base_connection_hold_handles (TpSvcConnection *iface,
   tp_svc_connection_return_from_hold_handles (context);
 }
 
-/**
- * tp_base_connection_inspect_handles
- *
- * Implements D-Bus method InspectHandles
- * on interface org.freedesktop.Telepathy.Connection
- *
- * Returns: TRUE if successful, FALSE if an error was thrown.
- */
 static void
 tp_base_connection_inspect_handles (TpSvcConnection *iface,
                                     guint handle_type,
@@ -2113,7 +2049,7 @@ tp_base_connection_inspect_handles (TpSvcConnection *iface,
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
 
-/**
+/*
  * list_channel_factory_foreach_one:
  * @chan: a channel
  * @data: a GPtrArray in which channel information should be stored
@@ -2160,7 +2096,7 @@ list_channel_factory_foreach_one (TpChannelIface *chan,
 }
 
 
-/**
+/*
  * list_channel_manager_foreach_one:
  * @chan: a channel
  * @data: a GPtrArray in which channel information should be stored
@@ -2259,16 +2195,6 @@ tp_base_connection_list_channels (TpSvcConnection *iface,
   g_ptr_array_free (values, TRUE);
 }
 
-
-/**
- * tp_base_connection_request_channel
- *
- * Implements D-Bus method RequestChannel
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
- */
 static void
 tp_base_connection_request_channel (TpSvcConnection *iface,
                                     const gchar *type,
@@ -2454,15 +2380,6 @@ ERROR:
 #define DEBUG_FLAG TP_DEBUG_HANDLES
 #include "telepathy-glib/debug-internal.h"
 
-/**
- * tp_base_connection_release_handles
- *
- * Implements D-Bus method ReleaseHandles
- * on interface org.freedesktop.Telepathy.Connection
- *
- * @context: The D-Bus invocation context to use to return values
- *           or throw an error.
- */
 static void
 tp_base_connection_release_handles (TpSvcConnection *iface,
                                     guint handle_type,
@@ -2505,7 +2422,7 @@ tp_base_connection_release_handles (TpSvcConnection *iface,
 
 
 /**
- * tp_base_connection_dbus_request_handles:
+ * tp_base_connection_dbus_request_handles: (skip)
  * @iface: A pointer to #TpBaseConnection, cast to a pointer to
  *  #TpSvcConnection
  * @handle_type: The handle type (#TpHandleType) as a guint
@@ -2614,8 +2531,8 @@ out:
  *
  * <!---->
  *
- * Returns: the handle repository corresponding to the given handle type,
- * or #NULL if it's unsupported or invalid.
+ * Returns: (transfer none): the handle repository corresponding to the given
+ * handle type, or #NULL if it's unsupported or invalid.
  */
 TpHandleRepoIface *
 tp_base_connection_get_handles (TpBaseConnection *self,
@@ -2631,7 +2548,7 @@ tp_base_connection_get_handles (TpBaseConnection *self,
 
 
 /**
- * tp_base_connection_get_self_handle:
+ * tp_base_connection_get_self_handle: (skip)
  * @self: A connection
  *
  * Returns the #TpBaseConnection:self-handle property, which is guaranteed not
@@ -2668,7 +2585,7 @@ tp_base_connection_set_self_handle (TpBaseConnection *self,
 
 
 /**
- * tp_base_connection_finish_shutdown:
+ * tp_base_connection_finish_shutdown: (skip)
  * @self: The connection
  *
  * Tell the connection manager that this Connection has been disconnected,
@@ -2698,7 +2615,7 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
 }
 
 /**
- * tp_base_connection_disconnect_with_dbus_error:
+ * tp_base_connection_disconnect_with_dbus_error: (skip)
  * @self: The connection
  * @error_name: The D-Bus error with which the connection changed status to
  *              Disconnected
@@ -2915,7 +2832,7 @@ tp_base_connection_change_status (TpBaseConnection *self,
 
 
 /**
- * tp_base_connection_add_interfaces:
+ * tp_base_connection_add_interfaces: (skip)
  * @self: A TpBaseConnection in state #TP_INTERNAL_CONNECTION_STATUS_NEW
  *  or #TP_CONNECTION_STATUS_CONNECTING
  * @interfaces: A %NULL-terminated array of D-Bus interface names, which
@@ -3343,7 +3260,7 @@ requests_iface_init (gpointer g_iface,
 
 
 /**
- * tp_base_connection_channel_manager_iter_init:
+ * tp_base_connection_channel_manager_iter_init: (skip)
  * @iter: an uninitialized #TpChannelManagerIter
  * @self: a connection
  *
@@ -3375,7 +3292,7 @@ tp_base_connection_channel_manager_iter_init (TpChannelManagerIter *iter,
 
 
 /**
- * tp_base_connection_channel_manager_iter_next:
+ * tp_base_connection_channel_manager_iter_next: (skip)
  * @iter: an initialized #TpChannelManagerIter
  * @manager_out: a location to store the channel manager, or %NULL.
  *
@@ -3437,7 +3354,7 @@ tp_base_connection_fill_contact_attributes (GObject *obj,
 }
 
 /**
- * tp_base_connection_register_with_contacts_mixin:
+ * tp_base_connection_register_with_contacts_mixin: (skip)
  * @self: An instance of the #TpBaseConnections that uses the Contacts
  * mixin
  *
@@ -3456,7 +3373,7 @@ tp_base_connection_register_with_contacts_mixin (TpBaseConnection *self)
 }
 
 /**
- * tp_base_connection_get_dbus_daemon:
+ * tp_base_connection_get_dbus_daemon: (skip)
  * @self: the connection manager
  *
  * <!-- -->

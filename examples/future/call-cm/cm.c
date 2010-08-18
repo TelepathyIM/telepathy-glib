@@ -27,6 +27,7 @@
 #include <telepathy-glib/errors.h>
 
 #include "conn.h"
+#include "protocol.h"
 
 G_DEFINE_TYPE (ExampleCallConnectionManager,
     example_call_connection_manager,
@@ -45,85 +46,37 @@ example_call_connection_manager_init (ExampleCallConnectionManager *self)
       ExampleCallConnectionManagerPrivate);
 }
 
-typedef struct {
-    gchar *account;
-    guint simulation_delay;
-} ExampleParams;
-
-static gboolean
-account_param_filter (const TpCMParamSpec *paramspec,
-    GValue *value,
-    GError **error)
-{
-  const gchar *id = g_value_get_string (value);
-
-  g_value_take_string (value,
-      example_call_normalize_contact (NULL, id, NULL, error));
-
-  if (g_value_get_string (value) == NULL)
-    return FALSE;
-
-  return TRUE;
-}
-
-#include "_gen/param-spec-struct.h"
-
-static gpointer
-alloc_params (void)
-{
-  ExampleParams *params = g_slice_new0 (ExampleParams);
-
-  params->simulation_delay = 1000;
-  return params;
-}
-
 static void
-free_params (gpointer p)
+example_call_connection_manager_constructed (GObject *object)
 {
-  ExampleParams *params = p;
+  ExampleCallConnectionManager *self =
+    EXAMPLE_CALL_CONNECTION_MANAGER (object);
+  TpBaseConnectionManager *base = (TpBaseConnectionManager *) self;
+  void (*constructed) (GObject *) =
+    ((GObjectClass *) example_call_connection_manager_parent_class)->constructed;
+  TpBaseProtocol *protocol;
 
-  g_free (params->account);
+  if (constructed != NULL)
+    constructed (object);
 
-  g_slice_free (ExampleParams, params);
-}
-
-static const TpCMProtocolSpec example_protocols[] = {
-  { "example", example_call_example_params,
-    alloc_params, free_params },
-  { NULL, NULL }
-};
-
-static TpBaseConnection *
-new_connection (TpBaseConnectionManager *self,
-    const gchar *proto,
-    TpIntSet *params_present,
-    gpointer parsed_params,
-    GError **error)
-{
-  ExampleParams *params = parsed_params;
-  ExampleCallConnection *conn;
-
-  conn = EXAMPLE_CALL_CONNECTION
-      (g_object_new (EXAMPLE_TYPE_CALL_CONNECTION,
-          "account", params->account,
-          "simulation-delay", params->simulation_delay,
-          "protocol", proto,
-          NULL));
-
-  return (TpBaseConnection *) conn;
+  protocol = g_object_new (EXAMPLE_TYPE_CALL_PROTOCOL,
+      "name", "example",
+      NULL);
+  tp_base_connection_manager_add_protocol (base, protocol);
+  g_object_unref (protocol);
 }
 
 static void
 example_call_connection_manager_class_init (
     ExampleCallConnectionManagerClass *klass)
 {
+  GObjectClass *object_class = (GObjectClass *) klass;
   TpBaseConnectionManagerClass *base_class =
       (TpBaseConnectionManagerClass *) klass;
 
   g_type_class_add_private (klass,
       sizeof (ExampleCallConnectionManagerPrivate));
 
-  base_class->new_connection = new_connection;
+  object_class->constructed = example_call_connection_manager_constructed;
   base_class->cm_dbus_name = "example_call";
-  base_class->protocol_params = example_protocols;
 }

@@ -28,6 +28,8 @@
  * represented by a D-Bus object; in older connection managers, the protocols
  * are represented by data structures, and this object merely emulates a D-Bus
  * object.
+ *
+ * Since: 0.11.11
  */
 
 #include <telepathy-glib/protocol.h>
@@ -58,7 +60,7 @@ struct _TpProtocolClass
  *
  * A base class for connection managers' protocols.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 
 /**
@@ -66,7 +68,7 @@ struct _TpProtocolClass
  *
  * The class of a #TpProtocol.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 
 G_DEFINE_TYPE(TpProtocol, tp_protocol, TP_TYPE_PROXY);
@@ -88,7 +90,7 @@ G_DEFINE_TYPE(TpProtocol, tp_protocol, TP_TYPE_PROXY);
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 
 GQuark
@@ -122,7 +124,7 @@ tp_protocol_get_feature_quark_parameters (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 
 GQuark
@@ -527,7 +529,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * The machine-readable name of the protocol, taken from the Telepathy
    * D-Bus Interface Specification, such as "jabber" or "local-xmpp".
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_PROTOCOL_NAME,
       g_param_spec_string ("protocol-name",
@@ -547,7 +549,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * will both be unavailable, and this #TpProtocol object will only be useful
    * as a way to access lower-level D-Bus calls.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_PROTOCOL_PROPERTIES,
       g_param_spec_boxed ("protocol-properties",
@@ -571,7 +573,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * #TpProtocol:english-name, but should use this English version as a
    * fallback if no translated version can be found.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_ENGLISH_NAME,
       g_param_spec_string ("english-name",
@@ -586,7 +588,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * identifiers, normalized to lower case, or %NULL if there is no such field
    * or the %TP_PROTOCOL_FEATURE_CORE feature has not been prepared.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_VCARD_FIELD,
       g_param_spec_string ("vcard-field",
@@ -602,7 +604,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * prepared, a default is used; currently, this is "im-" plus
    * #TpProtocol:name.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_ICON_NAME,
       g_param_spec_string ("icon-name",
@@ -617,7 +619,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * protocol, or %NULL if this is unknown or the %TP_PROTOCOL_FEATURE_CORE
    * feature has not been prepared.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_CAPABILITIES,
       g_param_spec_object ("capabilities",
@@ -632,7 +634,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * for this protocol, or %NULL if %TP_PROTOCOL_FEATURE_PARAMETERS has not
    * been prepared.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.11
    */
   g_object_class_install_property (object_class, PROP_PARAM_NAMES,
       g_param_spec_boxed ("param-names",
@@ -665,7 +667,7 @@ tp_protocol_init (TpProtocol *self)
  *
  * Returns: a new protocol proxy, or %NULL on invalid arguments
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 TpProtocol *
 tp_protocol_new (TpDBusDaemon *dbus,
@@ -716,7 +718,7 @@ finally:
  * tp_proxy_or_subclass_hook_on_interface_add() with first argument
  * %TP_TYPE_PROTOCOL.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 void
 tp_protocol_init_known_interfaces (void)
@@ -753,7 +755,7 @@ _tp_protocol_get_struct (TpProtocol *self)
  *
  * Returns: the value of the #TpProtocol:protocol-name property
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 const gchar *
 tp_protocol_get_name (TpProtocol *self)
@@ -771,7 +773,7 @@ tp_protocol_get_name (TpProtocol *self)
  *
  * Returns: %TRUE if @self supports the parameter @param.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 gboolean
 tp_protocol_has_param (TpProtocol *self,
@@ -790,7 +792,7 @@ tp_protocol_has_param (TpProtocol *self,
  * Returns: a structure representing the parameter @param, or %NULL if not
  *          supported
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
     const gchar *param)
@@ -809,7 +811,7 @@ const TpConnectionManagerParam *tp_protocol_get_param (TpProtocol *self,
  *
  * Returns: %TRUE if @protocol supports the parameter "register"
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 gboolean
 tp_protocol_can_register (TpProtocol *self)
@@ -829,7 +831,7 @@ tp_protocol_can_register (TpProtocol *self)
  * Returns: (type GObject.Strv) (transfer full): a copy of
  *  #TpProtocol:param-names
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 GStrv
 tp_protocol_dup_param_names (TpProtocol *self)
@@ -847,7 +849,7 @@ tp_protocol_dup_param_names (TpProtocol *self)
  *
  * Returns: the value of #TpProtocol:vcard-field
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 const gchar *
 tp_protocol_get_vcard_field (TpProtocol *self)
@@ -864,7 +866,7 @@ tp_protocol_get_vcard_field (TpProtocol *self)
  *
  * Returns: the non-%NULL, non-empty value of #TpProtocol:english-name
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 const gchar *
 tp_protocol_get_english_name (TpProtocol *self)
@@ -881,7 +883,7 @@ tp_protocol_get_english_name (TpProtocol *self)
  *
  * Returns: the non-%NULL, non-empty value of #TpProtocol:icon-name
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 const gchar *
 tp_protocol_get_icon_name (TpProtocol *self)
@@ -899,7 +901,7 @@ tp_protocol_get_icon_name (TpProtocol *self)
  * Returns: (transfer none): #TpProtocol:capabilities, which must be referenced
  *  (if non-%NULL) if it will be kept
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.11
  */
 TpCapabilities *
 tp_protocol_get_capabilities (TpProtocol *self)
