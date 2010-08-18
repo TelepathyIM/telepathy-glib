@@ -51,7 +51,7 @@
  *    in #TpBaseConnection (service) and #TpConnection (client)</listitem>
  * <listitem><literal>accounts</literal> - the #TpAccountManager and
  *     #TpAccount objects (client)</listitem>
- * <listitem><literal>contact-lists</literal> - the #TpContactListManager
+ * <listitem><literal>contact-lists</literal> - the #TpBaseContactList
  *    (service)</listitem>
  * <listitem><literal>all</literal> - all of the above</listitem>
  * </itemizedlist>

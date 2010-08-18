@@ -47,14 +47,14 @@
  * tp_base_contact_list_mixin_class_init() after tp_contacts_mixin_class_init()
  * in the #TpBaseConnection's #GTypeClass.class_init method, create a
  * #TpBaseContactList in the #TpBaseConnectionClass.create_channel_managers
- * method, then call tp_base_contact_list_register_with_contacts_mixin() after
- * tp_contacts_mixin_init() in the #ObjectClass.constructor or
+ * method, then call tp_base_contact_list_mixin_register_with_contacts_mixin()
+ * after tp_contacts_mixin_init() in the #GObjectClass.constructor or
  * #GObjectClass.constructed method.
  *
  * Also add the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
  * interface to the #TpBaseConnectionClass.interfaces_always_present,
  * and implement the %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST #GInterface
- * by passing tp_base_contact_list_mixin_implement_list() to
+ * by passing tp_base_contact_list_mixin_list_iface_init() to
  * G_IMPLEMENT_INTERFACE().
  *
  * To support user-defined contact groups too, do the same, but additionally
@@ -62,7 +62,7 @@
  * add the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS
  * interface to the #TpBaseConnectionClass.interfaces_always_present,
  * and implement %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS using
- * tp_base_contact_list_mixin_implement_groups().
+ * tp_base_contact_list_mixin_groups_iface_init().
  *
  * In versions of the Telepathy D-Bus Interface Specification prior to
  * 0.19.UNRELEASED, this functionality was provided as a collection of
@@ -1612,9 +1612,6 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
 /**
  * tp_base_contact_list_set_list_pending:
  * @self: the contact list manager
- * @domain: a #GError domain
- * @code: a #GError code
- * @message: a #GError message
  *
  * Record that receiving the initial contact list is in progress.
  */
@@ -1642,7 +1639,7 @@ tp_base_contact_list_set_list_pending (TpBaseContactList *self)
  *
  * Record that receiving the initial contact list has failed.
  *
- * This method cannot be called after tp_base_contact_list_set_received()
+ * This method cannot be called after tp_base_contact_list_set_list_received()
  * is called.
  */
 void
@@ -2158,7 +2155,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
  * @self: a contact list manager
  *
  * Return the contact list. It is incorrect to call this method before
- * tp_base_contact_list_set_list_retrieved() has been called, or after the
+ * tp_base_contact_list_set_list_received() has been called, or after the
  * connection has disconnected.
  *
  * This is a virtual method, implemented using
@@ -2274,7 +2271,7 @@ tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
  *  otherwise, used to return an empty string
  *
  * Return the presence subscription state of @contact. It is incorrect to call
- * this method before tp_base_contact_list_set_list_retrieved() has been
+ * this method before tp_base_contact_list_set_list_received() has been
  * called, or after the connection has disconnected.
  *
  * This is a virtual method, implemented using
@@ -2315,7 +2312,7 @@ tp_base_contact_list_dup_states (TpBaseContactList *self,
  *
  * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
- * #TpMutableContactListInterface.authorize_publication.
+ * #TpMutableContactListInterface.authorize_publication_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before it calls @callback.
  */
@@ -2858,7 +2855,7 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
  * @self: a contact list manager
  *
  * Return the list of blocked contacts. It is incorrect to call this method
- * before tp_base_contact_list_set_list_retrieved() has been called, after
+ * before tp_base_contact_list_set_list_received() has been called, after
  * the connection has disconnected, or on a #TpBaseContactList that does
  * not implement %TP_TYPE_BLOCKABLE_CONTACT_LIST.
  *
@@ -2930,11 +2927,11 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
  * tp_base_contact_list_block_contacts_async().
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
  *
- * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
  * method which may be implemented using
- * #TpMutableContactListInterface.block_contacts_finish. If the @result
+ * #TpBlockableContactListInterface.block_contacts_finish. If the @result
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
@@ -2998,11 +2995,11 @@ tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
  * tp_base_contact_list_unblock_contacts_async().
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
  *
- * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
  * method which may be implemented using
- * #TpMutableContactListInterface.unblock_contacts_finish. If the @result
+ * #TpBlockableContactListInterface.unblock_contacts_finish. If the @result
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
@@ -3648,7 +3645,7 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
  * @self: a contact list manager
  *
  * Return a list of all groups on this connection. It is incorrect to call
- * this method before tp_base_contact_list_set_list_retrieved() has been
+ * this method before tp_base_contact_list_set_list_received() has been
  * called, after the connection has disconnected, or on a #TpBaseContactList
  * that does not implement %TP_TYPE_CONTACT_GROUP_LIST.
  *
@@ -3694,7 +3691,7 @@ tp_base_contact_list_dup_groups (TpBaseContactList *self)
  * @contact: a contact handle
  *
  * Return a list of groups of which @contact is a member. It is incorrect to
- * call this method before tp_base_contact_list_set_list_retrieved() has been
+ * call this method before tp_base_contact_list_set_list_received() has been
  * called, after the connection has disconnected, or on a #TpBaseContactList
  * that does not implement %TP_TYPE_CONTACT_GROUP_LIST.
  *
@@ -3739,7 +3736,7 @@ tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
  * @group: a normalized group name
  *
  * Return the set of members of @group. It is incorrect to
- * call this method before tp_base_contact_list_set_list_retrieved() has been
+ * call this method before tp_base_contact_list_set_list_received() has been
  * called, after the connection has disconnected, or on a #TpBaseContactList
  * that does not implement %TP_TYPE_CONTACT_GROUP_LIST.
  *
@@ -3827,11 +3824,11 @@ tp_base_contact_list_add_to_group_async (TpBaseContactList *self,
  * tp_base_contact_list_add_to_group_async().
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
- * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
- * method which may be implemented using
- * #TpMutableContactListInterface.add_to_group_finish. If the @result
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which may be implemented using
+ * #TpMutableContactGroupListInterface.add_to_group_finish. If the @result
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
@@ -3885,7 +3882,7 @@ tp_base_contact_list_add_to_group_finish (TpBaseContactList *self,
  * members to it, and removing the old group: this is appropriate for protocols
  * like XMPP, in which groups behave more like tags.
  *
- * The implementation should call tp_base_contact_list_groups_renamed() before
+ * The implementation should call tp_base_contact_list_group_renamed() before
  * calling @callback.
  */
 void
@@ -3990,11 +3987,11 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
  * tp_base_contact_list_rename_group_async().
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
- * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
- * method which may be implemented using
- * #TpMutableContactListInterface.rename_group_finish. If the @result
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which may be implemented using
+ * #TpMutableContactGroupListInterface.rename_group_finish. If the @result
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
@@ -4059,11 +4056,11 @@ void tp_base_contact_list_remove_from_group_async (TpBaseContactList *self,
  * tp_base_contact_list_remove_from_group_async().
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
- * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
- * method which may be implemented using
- * #TpMutableContactListInterface.remove_from_group_finish. If the @result
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which may be implemented using
+ * #TpMutableContactGroupListInterface.remove_from_group_finish. If the @result
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
@@ -4137,11 +4134,11 @@ tp_base_contact_list_remove_group_async (TpBaseContactList *self,
  * tp_base_contact_list_remove_group_async().
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
- * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
- * method which may be implemented using
- * #TpMutableContactListInterface.remove_group_finish. If the @result
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which may be implemented using
+ * #TpMutableContactGroupListInterface.remove_group_finish. If the @result
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
@@ -4292,12 +4289,13 @@ void tp_base_contact_list_set_contact_groups_async (TpBaseContactList *self,
  * tp_base_contact_list_set_contact_groups_async().
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
- * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
- * method which may be implemented using
- * #TpMutableContactListInterface.set_contact_groups_finish. If the @result
- * will be a #GSimpleAsyncResult, the default implementation may be used.
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a
+ * virtual method which may be implemented using
+ * #TpMutableContactGroupListInterface.set_contact_groups_finish. If the
+ * @result will be a #GSimpleAsyncResult, the default implementation may be
+ * used.
  *
  * Returns: %TRUE on success or %FALSE on error
  */
@@ -4367,11 +4365,11 @@ tp_base_contact_list_set_group_members_async (TpBaseContactList *self,
  * tp_base_contact_list_set_group_members_async().
  *
  * If the #TpBaseContactList subclass does not implement
- * %TP_TYPE_MUTABLE_CONTACT_LIST, it is an error to call this method.
+ * %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, it is an error to call this method.
  *
- * For implementations of %TP_TYPE_MUTABLE_CONTACT_LIST, this is a virtual
+ * For implementations of %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, this is a virtual
  * method which may be implemented using
- * #TpMutableContactListInterface.set_group_members_finish. If the @result
+ * #TpMutableContactGroupListInterface.set_group_members_finish. If the @result
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
@@ -5298,7 +5296,7 @@ tp_base_contact_list_mixin_groups_iface_init (
  *
  * Register the #TpBaseContactList to be used like a mixin in @cls.
  * Before this function is called, the #TpContactsMixin must be initialized
- * with tp_contact_list_mixin_class_init().
+ * with tp_contacts_mixin_class_init().
  *
  * If the connection implements #TpSvcConnectionInterfaceContactGroups, this
  * function automatically sets up that interface as well as ContactList.
@@ -5340,7 +5338,7 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
  *
  * Register the ContactList interface with the Contacts interface to make it
  * inspectable. Before this function is called, the #TpContactsMixin must be
- * initialized with tp_contact_list_mixin_init(), and @conn must have a
+ * initialized with tp_contacts_mixin_init(), and @conn must have a
  * #TpBaseContactList in its list of channel managers (by creating it in
  * its #TpBaseConnectionClass.create_channel_managers implementation).
  *
