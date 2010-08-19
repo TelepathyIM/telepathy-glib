@@ -67,6 +67,7 @@ const gchar *tp_base_channel_get_object_path (TpBaseChannel *chan);
 TpBaseConnection *tp_base_channel_get_connection (TpBaseChannel *chan);
 TpHandle tp_base_channel_get_target (TpBaseChannel *chan);
 TpHandle tp_base_channel_get_initiator (TpBaseChannel *chan);
+gboolean tp_base_channel_is_requested (TpBaseChannel *chan);
 
 GType tp_base_channel_get_type (void);
 

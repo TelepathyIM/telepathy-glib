@@ -264,6 +264,23 @@ tp_base_channel_get_initiator (TpBaseChannel *chan)
   return chan->priv->initiator;
 }
 
+/**
+ * tp_base_channel_is_requested:
+ * @chan: a channel
+ *
+ * Returns whether or not @chan was requested, as a shortcut for retrieving the
+ * #TpBaseChannel:requested property.
+ *
+ * Returns: whether or not @chan was requested.
+ */
+gboolean
+tp_base_channel_is_requested (TpBaseChannel *chan)
+{
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), 0);
+
+  return chan->priv->requested;
+}
+
 /*
  * tp_base_channel_add_properties:
  *
