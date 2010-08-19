@@ -43,6 +43,7 @@
 
 /**
  * TpBaseChannel:
+ *
  * @parent: fields shared by the superclass
  *
  * A base class for channel implementations
@@ -68,6 +69,8 @@
  * DBus properties hash.  Implementations must chain up to the parent class
  * implementation and call tp_dbus_properties_mixin_fill_properties_hash() on
  * the supplied hash table
+ *
+ * The class structure for #TpBaseChannel
  */
 
 /**
