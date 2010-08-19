@@ -183,6 +183,7 @@ TpBaseChannelClass
 tp_base_channel_register
 tp_base_channel_destroyed
 tp_base_channel_reopened
+tp_base_channel_get_object_path
 <SUBSECTION Standard>
 TP_BASE_CHANNEL
 TP_IS_BASE_CHANNEL

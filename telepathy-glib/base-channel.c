@@ -194,6 +194,23 @@ tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
   tp_svc_channel_emit_closed (chan);
 }
 
+/**
+ * tp_base_channel_get_object_path:
+ * @chan: a channel
+ *
+ * Returns @chan's object path, as a shortcut for retrieving the
+ * #TpChannelIface:object-path property.
+ *
+ * Returns: @chan's object path
+ */
+const gchar *
+tp_base_channel_get_object_path (TpBaseChannel *chan)
+{
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), NULL);
+
+  return chan->priv->object_path;
+}
+
 /*
  * tp_base_channel_add_properties:
  *
