@@ -35,6 +35,10 @@ typedef struct _TpBaseChannel TpBaseChannel;
 typedef struct _TpBaseChannelClass TpBaseChannelClass;
 typedef struct _TpBaseChannelPrivate TpBaseChannelPrivate;
 
+typedef void (*TpBaseChannelCloseFunc) (TpBaseChannel *chan);
+typedef void (*TpBaseChannelAddPropertiesFunc) (TpBaseChannel *chan,
+    GHashTable *properties);
+
 struct _TpBaseChannelClass
 {
   GObjectClass parent_class;
@@ -44,8 +48,8 @@ struct _TpBaseChannelClass
   TpHandleType target_type;
   const gchar **interfaces;
 
-  void (*close) (TpBaseChannel *chan);
-  void (*add_properties) (TpBaseChannel *chan, GHashTable *properties);
+  TpBaseChannelCloseFunc close;
+  TpBaseChannelAddPropertiesFunc add_properties;
 
   /*< private >*/
   gpointer reserved[10];

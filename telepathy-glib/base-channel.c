@@ -70,6 +70,25 @@
  * the supplied hash table
  */
 
+/**
+ * TpBaseChannelCloseFunc:
+ * @chan: a channel
+ *
+ * Signature of an implementation of the #TpBaseChannelClass.close virtual
+ * function.
+ */
+
+/**
+ * TpBaseChannelAddPropertiesFunc:
+ * @chan: a channel
+ * @properties: a dictionary of @chan's immutable properties, which the
+ *  implementation may add to using
+ *  tp_dbus_properties_mixin_fill_properties_hash()
+ *
+ * Signature of an implementation of the #TpBaseChannelClass.add_properties
+ * virtual function.
+ */
+
 #include "config.h"
 #include "base-channel.h"
 
