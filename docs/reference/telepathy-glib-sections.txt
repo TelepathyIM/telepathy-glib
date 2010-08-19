@@ -185,6 +185,8 @@ tp_base_channel_destroyed
 tp_base_channel_reopened
 tp_base_channel_get_object_path
 tp_base_channel_get_connection
+tp_base_channel_get_target
+tp_base_channel_get_initiator
 <SUBSECTION Standard>
 TP_BASE_CHANNEL
 TP_IS_BASE_CHANNEL

@@ -65,6 +65,8 @@ void tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator);
 
 const gchar *tp_base_channel_get_object_path (TpBaseChannel *chan);
 TpBaseConnection *tp_base_channel_get_connection (TpBaseChannel *chan);
+TpHandle tp_base_channel_get_target (TpBaseChannel *chan);
+TpHandle tp_base_channel_get_initiator (TpBaseChannel *chan);
 
 GType tp_base_channel_get_type (void);
 

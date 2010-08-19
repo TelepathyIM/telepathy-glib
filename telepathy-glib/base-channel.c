@@ -228,6 +228,42 @@ tp_base_channel_get_connection (TpBaseChannel *chan)
   return chan->priv->conn;
 }
 
+/**
+ * tp_base_channel_get_target:
+ * @chan: a channel
+ *
+ * Returns the target handle of @chan, which will be 0 if
+ * #TpBaseChannelClass.target_type is #TP_HANDLE_TYPE_NONE for this class, and
+ * non-zero otherwise. This is a shortcut for retrieving the
+ * #TpChannelIface:handle property.
+ *
+ * Returns: (transfer none): the target handle of @chan
+ */
+TpHandle
+tp_base_channel_get_target (TpBaseChannel *chan)
+{
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), 0);
+
+  return chan->priv->target;
+}
+
+/**
+ * tp_base_channel_get_initiator:
+ * @chan: a channel
+ *
+ * Returns the initiator handle of @chan, as a shortcut for retrieving the
+ * #TpBaseChannel:initiator property.
+ *
+ * Returns: (transfer none): the initiator handle of @chan
+ */
+TpHandle
+tp_base_channel_get_initiator (TpBaseChannel *chan)
+{
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), 0);
+
+  return chan->priv->initiator;
+}
+
 /*
  * tp_base_channel_add_properties:
  *
