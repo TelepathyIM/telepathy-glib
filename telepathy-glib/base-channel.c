@@ -211,6 +211,23 @@ tp_base_channel_get_object_path (TpBaseChannel *chan)
   return chan->priv->object_path;
 }
 
+/**
+ * tp_base_channel_get_connection:
+ * @chan: a channel
+ *
+ * Returns the connection to which @chan is attached, as a shortcut for
+ * retrieving the #TpBaseChannel:connection property.
+ *
+ * Returns: (tranfer none): the connection to which @chan is attached.
+ */
+TpBaseConnection *
+tp_base_channel_get_connection (TpBaseChannel *chan)
+{
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), NULL);
+
+  return chan->priv->conn;
+}
+
 /*
  * tp_base_channel_add_properties:
  *
