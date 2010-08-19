@@ -29,14 +29,14 @@
  * implementations by implementing some of its properties, and defining other
  * relevant properties.
  *
- * Subclasses should fill in #TpBaseChannelClass:channel_type,
- * #TpBaseChannelClass:target_type and #TpBaseChannelClass:interfaces, and
- * implement the close() and add_properties() virtual functions.
+ * Subclasses should fill in #TpBaseChannelClass.channel_type,
+ * #TpBaseChannelClass.target_type and #TpBaseChannelClass.interfaces, and
+ * implement the #TpBaseChannelClass.close and
+ * #TpBaseChannelClass.add_properties virtual functions.
  *
- * Subclasses should ensure that #TpBaseChannel:object_path is not %NULL by
- * the time construction is finished (if it is not set by the object's creator,
- * they must fill it in themself); #TpBaseChannel will take care of freeing
- * it.
+ * Subclasses should ensure that the #TpExportableChannel:object-path property
+ * is not %NULL by the time construction is finished; if it is not set by the
+ * object's creator, they must set it themself.
  *
  * Since: 0.11.12
  */
@@ -59,10 +59,11 @@
  * @interfaces: Extra interfaces provided by this channel (this SHOULD NOT
  * include the channel type and interface itself)
  * @close: A virtual function called to close the channel. Implementations
- * should generally call either tp_base_channel_destroyed() or
- * tp_base_channel_reopened() from close() to indicate that the channel will
- * be re-spawned (NOTE: channels that support re-spawning must also implement
- * #TpSvcChannelInterfaceDestroyable).
+ *  should generally call either tp_base_channel_destroyed() if the channel is
+ *  really closed as a result, or tp_base_channel_reopened() if the channel
+ *  will be re-spawned (for instance, due to unacknowledged messages). Note
+ *  that channels that support re-spawning must also implement
+ *  #TpSvcChannelInterfaceDestroyable.
  * @add_properties: A virtual function called to add custom properties to the
  * DBus properties hash.  Implementations must chain up to the parent class
  * implementation and call tp_dbus_properties_mixin_fill_properties_hash() on
