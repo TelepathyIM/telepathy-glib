@@ -127,6 +127,7 @@
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/debug-internal.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 
@@ -458,6 +459,7 @@ tp_base_channel_get_property (GObject *object,
           /* create an empty properties hash for subclasses to fill */
           GHashTable *properties =
             tp_dbus_properties_mixin_make_properties_hash (G_OBJECT (chan), NULL, NULL, NULL);
+
           if (klass->add_properties)
             klass->add_properties (chan, properties);
 
@@ -544,11 +546,7 @@ tp_base_channel_dispose (GObject *object)
       priv->initiator = 0;
     }
 
-  if (priv->conn != NULL)
-    {
-      g_object_unref (priv->conn);
-      priv->conn = NULL;
-    }
+  tp_clear_object (&priv->conn);
 
   if (G_OBJECT_CLASS (tp_base_channel_parent_class)->dispose)
     G_OBJECT_CLASS (tp_base_channel_parent_class)->dispose (object);
