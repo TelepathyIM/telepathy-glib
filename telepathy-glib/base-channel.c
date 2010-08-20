@@ -86,7 +86,30 @@
  *  tp_dbus_properties_mixin_fill_properties_hash()
  *
  * Signature of an implementation of the #TpBaseChannelClass.add_properties
- * virtual function.
+ * virtual function. A typical implementation, for a channel implementing
+ * #TpSvcChannelTypeContactSearch, would be:
+ *
+ * |[
+ * static void
+ * my_search_channel_add_properties (
+ *     TpBaseChannel *chan,
+ *     GHashTable *properties)
+ * {
+ *   TP_BASE_CHANNEL_CLASS (my_search_channel_parent_class)->add_properties (
+ *       chan, properties);
+ *
+ *   tp_dbus_properties_mixin_fill_properties_hash (
+ *       G_OBJECT (chan), properties,
+ *       TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH, "Limit",
+ *       TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH, "AvailableSearchKeys",
+ *       TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH, "Server",
+ *       NULL);
+ * }
+ * ]|
+ *
+ * Note that the SearchState property is <emphasis>not</emphasis> added to
+ * @properties, since only immutable properties (whose value cannot change over
+ * the lifetime of @chan) should be included.
  */
 
 #include "config.h"
