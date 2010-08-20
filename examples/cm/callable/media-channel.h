@@ -22,7 +22,7 @@
 #ifndef __EXAMPLE_CALLABLE_MEDIA_CHANNEL_H__
 #define __EXAMPLE_CALLABLE_MEDIA_CHANNEL_H__
 
-#include <glib-object.h>
+#include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/group-mixin.h>
 
 G_BEGIN_DECLS
@@ -55,15 +55,14 @@ GType example_callable_media_channel_get_type (void);
                               ExampleCallableMediaChannelClass))
 
 struct _ExampleCallableMediaChannelClass {
-    GObjectClass parent_class;
+    TpBaseChannelClass parent_class;
     TpGroupMixinClass group_class;
-    TpDBusPropertiesMixinClass dbus_properties_class;
 
     ExampleCallableMediaChannelClassPrivate *priv;
 };
 
 struct _ExampleCallableMediaChannel {
-    GObject parent;
+    TpBaseChannel parent;
     TpGroupMixin group;
 
     ExampleCallableMediaChannelPrivate *priv;
