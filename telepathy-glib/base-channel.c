@@ -92,6 +92,8 @@
 #include "config.h"
 #include "base-channel.h"
 
+#include <dbus/dbus-glib-lowlevel.h>
+
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/exportable-channel.h>
@@ -102,7 +104,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 
-#include "debug.h"
+#include "debug-internal.h"
 
 enum
 {
@@ -664,6 +666,14 @@ tp_base_channel_close (TpSvcChannel *iface,
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
+
+  if (DEBUGGING)
+    {
+      gchar *caller = dbus_g_method_get_sender (context);
+
+      DEBUG ("called by %s", caller);
+      g_free (caller);
+    }
 
   klass->close (chan);
 
