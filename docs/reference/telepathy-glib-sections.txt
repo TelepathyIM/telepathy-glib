@@ -190,6 +190,7 @@ tp_base_channel_get_connection
 tp_base_channel_get_target
 tp_base_channel_get_initiator
 tp_base_channel_is_requested
+tp_base_channel_is_destroyed
 <SUBSECTION Standard>
 TP_BASE_CHANNEL
 TP_IS_BASE_CHANNEL

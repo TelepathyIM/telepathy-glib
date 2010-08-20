@@ -337,6 +337,25 @@ tp_base_channel_is_requested (TpBaseChannel *chan)
   return chan->priv->requested;
 }
 
+/**
+ * tp_base_channel_is_destroyed:
+ * @chan: a channel
+ *
+ * Returns the value of the #TpExportableChannel:channel-destroyed property,
+ * which is TRUE if tp_base_channel_destroyed() has been called (and thus the
+ * channel has been removed from the bus).
+ *
+ * Returns: TRUE if tp_base_channel_destroyed() has been called.
+ */
+gboolean
+tp_base_channel_is_destroyed (TpBaseChannel *chan)
+{
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), 0);
+
+  return chan->priv->destroyed;
+}
+
+
 /*
  * tp_base_channel_fill_immutable_properties:
  *
