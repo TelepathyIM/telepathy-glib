@@ -32,7 +32,7 @@
  * Subclasses should fill in #TpBaseChannelClass.channel_type,
  * #TpBaseChannelClass.target_type and #TpBaseChannelClass.interfaces, and
  * implement the #TpBaseChannelClass.close and
- * #TpBaseChannelClass.add_properties virtual functions.
+ * #TpBaseChannelClass.fill_immutable_properties virtual functions.
  *
  * Subclasses should ensure that the #TpExportableChannel:object-path property
  * is not %NULL by the time construction is finished; if it is not set by the
@@ -65,10 +65,10 @@
  *  will be re-spawned (for instance, due to unacknowledged messages). Note
  *  that channels that support re-spawning must also implement
  *  #TpSvcChannelInterfaceDestroyable.
- * @add_properties: A virtual function called to add custom properties to the
- * DBus properties hash.  Implementations must chain up to the parent class
- * implementation and call tp_dbus_properties_mixin_fill_properties_hash() on
- * the supplied hash table
+ * @fill_immutable_properties: A virtual function called to add custom
+ * properties to the DBus properties hash.  Implementations must chain up to the
+ * parent class implementation and call
+ * tp_dbus_properties_mixin_fill_properties_hash() on the supplied hash table
  *
  * The class structure for #TpBaseChannel
  */
@@ -82,24 +82,26 @@
  */
 
 /**
- * TpBaseChannelAddPropertiesFunc:
+ * TpBaseChannelFillPropertiesFunc:
  * @chan: a channel
  * @properties: a dictionary of @chan's immutable properties, which the
  *  implementation may add to using
  *  tp_dbus_properties_mixin_fill_properties_hash()
  *
- * Signature of an implementation of the #TpBaseChannelClass.add_properties
+ * Signature of an implementation of the
+ * #TpBaseChannelClass.fill_immutable_properties
  * virtual function. A typical implementation, for a channel implementing
  * #TpSvcChannelTypeContactSearch, would be:
  *
  * |[
  * static void
- * my_search_channel_add_properties (
+ * my_search_channel_fill_properties (
  *     TpBaseChannel *chan,
  *     GHashTable *properties)
  * {
- *   TP_BASE_CHANNEL_CLASS (my_search_channel_parent_class)->add_properties (
- *       chan, properties);
+ *   TpBaseChannelClass *klass = TP_BASE_CHANNEL_CLASS (my_search_channel_parent_class);
+ *
+ *   klass->fill_immutable_properties (chan, properties);
  *
  *   tp_dbus_properties_mixin_fill_properties_hash (
  *       G_OBJECT (chan), properties,
@@ -331,13 +333,13 @@ tp_base_channel_is_requested (TpBaseChannel *chan)
 }
 
 /*
- * tp_base_channel_add_properties:
+ * tp_base_channel_fill_immutable_properties:
  *
  * Specifies the immutable properties supported for this Channel object, by
  * using tp_dbus_properties_mixin_fill_properties_hash().
  */
 static void
-tp_base_channel_add_properties (TpBaseChannel *chan, GHashTable *properties)
+tp_base_channel_fill_immutable_properties (TpBaseChannel *chan, GHashTable *properties)
 {
   tp_dbus_properties_mixin_fill_properties_hash (G_OBJECT (chan),
       properties,
@@ -460,8 +462,8 @@ tp_base_channel_get_property (GObject *object,
           GHashTable *properties =
             tp_dbus_properties_mixin_make_properties_hash (G_OBJECT (chan), NULL, NULL, NULL);
 
-          if (klass->add_properties)
-            klass->add_properties (chan, properties);
+          if (klass->fill_immutable_properties)
+            klass->fill_immutable_properties (chan, properties);
 
           g_value_take_boxed (value, properties);
         }
@@ -651,7 +653,7 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
   tp_base_channel_class->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseChannelClass, dbus_props_class));
-  tp_base_channel_class->add_properties = tp_base_channel_add_properties;
+  tp_base_channel_class->fill_immutable_properties = tp_base_channel_fill_immutable_properties;
 }
 
 static void

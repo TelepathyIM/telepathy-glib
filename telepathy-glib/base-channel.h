@@ -36,7 +36,7 @@ typedef struct _TpBaseChannelClass TpBaseChannelClass;
 typedef struct _TpBaseChannelPrivate TpBaseChannelPrivate;
 
 typedef void (*TpBaseChannelCloseFunc) (TpBaseChannel *chan);
-typedef void (*TpBaseChannelAddPropertiesFunc) (TpBaseChannel *chan,
+typedef void (*TpBaseChannelFillPropertiesFunc) (TpBaseChannel *chan,
     GHashTable *properties);
 
 struct _TpBaseChannelClass
@@ -49,7 +49,7 @@ struct _TpBaseChannelClass
   const gchar **interfaces;
 
   TpBaseChannelCloseFunc close;
-  TpBaseChannelAddPropertiesFunc add_properties;
+  TpBaseChannelFillPropertiesFunc fill_immutable_properties;
 
   /*< private >*/
   gpointer reserved[10];

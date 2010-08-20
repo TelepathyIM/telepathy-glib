@@ -180,7 +180,7 @@ TP_EXPORTABLE_CHANNEL_GET_INTERFACE
 <TITLE>TpBaseChannel</TITLE>
 TpBaseChannel
 TpBaseChannelClass
-TpBaseChannelAddPropertiesFunc
+TpBaseChannelFillPropertiesFunc
 TpBaseChannelCloseFunc
 tp_base_channel_register
 tp_base_channel_destroyed
