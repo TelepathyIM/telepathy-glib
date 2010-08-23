@@ -30,8 +30,8 @@
  * relevant properties.
  *
  * Subclasses should fill in #TpBaseChannelClass.channel_type,
- * #TpBaseChannelClass.target_type and #TpBaseChannelClass.interfaces, and
- * implement the #TpBaseChannelClass.close and
+ * #TpBaseChannelClass.target_handle_type and #TpBaseChannelClass.interfaces,
+ * and implement the #TpBaseChannelClass.close and
  * #TpBaseChannelClass.fill_immutable_properties virtual functions.
  *
  * Subclasses should ensure that the #TpExportableChannel:object-path property
@@ -52,8 +52,8 @@
  * @dbus_props_class: The class structure for the DBus properties mixin
  * @channel_type: The type of channel that instances of this class represent
  * (e.g. #TP_IFACE_CHANNEL_TYPE_TEXT)
- * @target_type: The type of handle that is the target of channels of this
- * type
+ * @target_handle_type: The type of handle that is the target of channels of
+ * this type
  * @interfaces: Extra interfaces provided by this channel (this SHOULD NOT
  * include the channel type and interface itself)
  * @close: A virtual function called to close the channel. Implementations
@@ -282,18 +282,18 @@ tp_base_channel_get_connection (TpBaseChannel *chan)
 }
 
 /**
- * tp_base_channel_get_target:
+ * tp_base_channel_get_target_handle:
  * @chan: a channel
  *
  * Returns the target handle of @chan (without a reference), which will be 0
- * if #TpBaseChannelClass.target_type is #TP_HANDLE_TYPE_NONE for this class,
- * and non-zero otherwise. This is a shortcut for retrieving the
+ * if #TpBaseChannelClass.target_handle_type is #TP_HANDLE_TYPE_NONE for this
+ * class, and non-zero otherwise. This is a shortcut for retrieving the
  * #TpChannelIface:handle property.
  *
  * Returns: the target handle of @chan
  */
 TpHandle
-tp_base_channel_get_target (TpBaseChannel *chan)
+tp_base_channel_get_target_handle (TpBaseChannel *chan)
 {
   g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), 0);
 
@@ -397,9 +397,9 @@ tp_base_channel_constructed (GObject *object)
   if (parent_class->constructed != NULL)
     parent_class->constructed (object);
 
-  if (klass->target_type != TP_HANDLE_TYPE_NONE)
+  if (klass->target_handle_type != TP_HANDLE_TYPE_NONE)
     {
-      handles = tp_base_connection_get_handles (conn, klass->target_type);
+      handles = tp_base_connection_get_handles (conn, klass->target_handle_type);
       g_assert (handles != NULL);
       g_assert (chan->priv->target != 0);
       tp_handle_ref (handles, chan->priv->target);
@@ -430,7 +430,7 @@ tp_base_channel_get_property (GObject *object,
       g_value_set_static_string (value, klass->channel_type);
       break;
     case PROP_HANDLE_TYPE:
-      g_value_set_uint (value, klass->target_type);
+      g_value_set_uint (value, klass->target_handle_type);
       break;
     case PROP_HANDLE:
       g_value_set_uint (value, chan->priv->target);
@@ -439,7 +439,7 @@ tp_base_channel_get_property (GObject *object,
       if (chan->priv->target != 0)
         {
           TpHandleRepoIface *repo = tp_base_connection_get_handles (
-              chan->priv->conn, klass->target_type);
+              chan->priv->conn, klass->target_handle_type);
 
           g_value_set_string (value, tp_handle_inspect (repo, chan->priv->target));
         }
@@ -556,7 +556,7 @@ tp_base_channel_dispose (GObject *object)
   if (priv->target != 0)
     {
       handles = tp_base_connection_get_handles (priv->conn,
-                                                klass->target_type);
+                                                klass->target_handle_type);
       tp_handle_unref (handles, priv->target);
       priv->target = 0;
     }
@@ -693,7 +693,7 @@ tp_base_channel_get_handle (TpSvcChannel *iface,
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (iface);
   TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
 
-  tp_svc_channel_return_from_get_handle (context, klass->target_type,
+  tp_svc_channel_return_from_get_handle (context, klass->target_handle_type,
       chan->priv->target);
 }
 

@@ -122,7 +122,7 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
   object_class->finalize = finalize;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
-  base_class->target_type = TP_HANDLE_TYPE_CONTACT;
+  base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
   base_class->interfaces = example_echo_channel_interfaces;
   base_class->close = channel_close;
 
@@ -140,7 +140,7 @@ text_send (TpSvcChannelTypeText *iface,
   time_t timestamp = time (NULL);
   gchar *echo;
   guint echo_type = type;
-  TpHandle target = tp_base_channel_get_target (TP_BASE_CHANNEL (self));
+  TpHandle target = tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self));
 
   /* Send should return just before Sent is emitted. */
   tp_svc_channel_type_text_return_from_send (context);

@@ -48,7 +48,7 @@ struct _TpBaseChannelClass
   TpDBusPropertiesMixinClass dbus_props_class;
 
   const gchar *channel_type;
-  TpHandleType target_type;
+  TpHandleType target_handle_type;
   const gchar **interfaces;
 
   TpBaseChannelCloseFunc close;
@@ -72,7 +72,7 @@ void tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator);
 
 const gchar *tp_base_channel_get_object_path (TpBaseChannel *chan);
 TpBaseConnection *tp_base_channel_get_connection (TpBaseChannel *chan);
-TpHandle tp_base_channel_get_target (TpBaseChannel *chan);
+TpHandle tp_base_channel_get_target_handle (TpBaseChannel *chan);
 TpHandle tp_base_channel_get_initiator (TpBaseChannel *chan);
 gboolean tp_base_channel_is_requested (TpBaseChannel *chan);
 gboolean tp_base_channel_is_destroyed (TpBaseChannel *chan);
