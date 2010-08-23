@@ -1239,6 +1239,12 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * #TpAccount objects. This may be specified in the constructor in order
    * to get existing #TpAccount objects.
    *
+   * Clients that interact with the #TpAccount should usually
+   * set this property instead of #TpBaseClient:dbus-daemon. Doing this
+   * will ensure that each account, connection or contact is represented by
+   * a single #TpAccount, #TpConnection or #TpContact object, shared between
+   * all the cooperating modules that have the same #TpAccountManager.
+   *
    * This property may be %NULL initially, but will always be non-%NULL
    * after the #TpBaseClient has been constructed.
    *
