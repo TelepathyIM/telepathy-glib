@@ -115,7 +115,7 @@ _tp_dbus_starter_bus_conn (GError **error)
  * activated if it was launched by D-Bus service activation, or the session
  * bus otherwise.
  *
- * If dbus_bus_get() fails, exit with error code 1.
+ * If dbus_g_bus_get() fails, exit with error code 1.
  *
  * Note that this function is not suitable for use in applications which can
  * be useful even in the absence of D-Bus - it is designed for use in

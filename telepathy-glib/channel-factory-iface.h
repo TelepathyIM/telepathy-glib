@@ -172,7 +172,7 @@ typedef void (*TpChannelFactoryIfaceForeachImpl) (TpChannelFactoryIface *self,
  * @connected: Called just after the connection goes from connecting to
  *  connected state. May be NULL if nothing special needs to happen.
  * @disconnected: Called just after the connection goes to disconnected state.
- *  This is always called after close_all(). May be NULL if nothing special
+ *  This is always called after @close_all. May be NULL if nothing special
  *  needs to happen.
  * @foreach: Call func(channel, data) for each channel managed by this
  *  factory. Must be filled in by implementations.

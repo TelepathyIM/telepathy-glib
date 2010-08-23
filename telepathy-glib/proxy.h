@@ -52,8 +52,8 @@ typedef enum {
     TP_DBUS_ERROR_OBJECT_REMOVED = 8,
     TP_DBUS_ERROR_CANCELLED = 9,
     TP_DBUS_ERROR_INCONSISTENT = 10,
-#define NUM_TP_DBUS_ERRORS (TP_DBUS_ERROR_INCONSISTENT + 1)
 } TpDBusError;
+#define NUM_TP_DBUS_ERRORS (TP_DBUS_ERROR_INCONSISTENT + 1)
 
 struct _TpProxy {
     /*<private>*/

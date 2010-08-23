@@ -62,8 +62,8 @@ typedef enum {
     TP_CONTACT_FEATURE_CAPABILITIES,
     TP_CONTACT_FEATURE_AVATAR_DATA,
     TP_CONTACT_FEATURE_CONTACT_INFO,
-#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_INFO + 1)
 } TpContactFeature;
+#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_INFO + 1)
 
 /* Basic functionality, always available */
 TpConnection *tp_contact_get_connection (TpContact *self);

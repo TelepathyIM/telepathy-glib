@@ -562,14 +562,14 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * TpProtocol:english-name:
    *
    * The name of the protocol in a form suitable for display to users,
-   * such as "AIM" or "Yahoo!", or a string based on #TpProtocol:name
+   * such as "AIM" or "Yahoo!", or a string based on #TpProtocol:protocol-name
    * (currently constructed by putting the first character in title case,
    * but this is not guaranteed) if no better name is available or the
    * %TP_PROTOCOL_FEATURE_CORE feature has not been prepared.
    *
    * This is effectively in the C locale (international English); user
    * interfaces requiring a localized protocol name should look one up in their
-   * own message catalog based on either #TpProtocol:name or
+   * own message catalog based on either #TpProtocol:protocol-name or
    * #TpProtocol:english-name, but should use this English version as a
    * fallback if no translated version can be found.
    *
