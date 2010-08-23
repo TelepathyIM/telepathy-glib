@@ -324,8 +324,10 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleHandler instance.
- * If you have a particular #TpAccountManager that you want to use,
- * call tp_simple_handler_new_with_am() instead.
+ *
+ * If @dbus is not the result of tp_dbus_daemon_dup(), you should call
+ * tp_simple_handler_new_with_am() instead, so that #TpAccount,
+ * #TpConnection and #TpContact instances can be shared between modules.
  *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *

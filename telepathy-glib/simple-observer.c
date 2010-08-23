@@ -295,8 +295,10 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleObserver instance.
- * If you have a particular #TpAccountManager that you want to use,
- * call tp_simple_observer_new_with_am() instead.
+ *
+ * If @dbus is not the result of tp_dbus_daemon_dup(), you should call
+ * tp_simple_observer_new_with_am() instead, so that #TpAccount,
+ * #TpConnection and #TpContact instances can be shared between modules.
  *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
