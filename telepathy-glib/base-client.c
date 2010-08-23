@@ -1245,6 +1245,10 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * a single #TpAccount, #TpConnection or #TpContact object, shared between
    * all the cooperating modules that have the same #TpAccountManager.
    *
+   * If the #TpBaseClient:dbus-daemon is set to the result of
+   * tp_dbus_daemon_dup(), then this property defaults to
+   * the result of tp_account_manager_dup().
+   *
    * This property may be %NULL initially, but will always be non-%NULL
    * after the #TpBaseClient has been constructed.
    *
