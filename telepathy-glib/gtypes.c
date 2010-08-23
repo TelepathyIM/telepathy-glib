@@ -85,6 +85,9 @@ tp_dbus_specialized_value_slice_new (GType type)
  * that returns the #GType of a #GArray
  * of %G_TYPE_UCHAR, i.e. the same thing as %DBUS_TYPE_G_UCHAR_ARRAY
  *
+ * This is the type used in dbus-glib to represent a byte array, signature
+ * 'ay'. (Note that the #GByteArray type is not used with dbus-glib.)
+ *
  * Since: 0.11.1
  */
 
