@@ -251,7 +251,7 @@ struct _TpBaseClientPrivate
   gchar *object_path;
 
   TpAccountManager *account_mgr;
-  TpAccount *likely_account;
+  TpAccount *only_for_account;
 
   /* array of GQuark or NULL */
   GArray *account_features;
@@ -259,25 +259,44 @@ struct _TpBaseClientPrivate
   GArray *channel_features;
 };
 
+/*
+ * _tp_base_client_set_only_for_account:
+ *
+ * Set the account to be used for this TpBaseClient. Channels from any other
+ * account will be rejected.
+ *
+ * This is for internal use by TpAccountChannelRequest, which sets up a
+ * temporary Handler solely to be the preferred handler for that request.
+ * See https://bugs.freedesktop.org/show_bug.cgi?id=29614
+ */
 void
-_tp_base_client_set_likely_account (TpBaseClient *self,
+_tp_base_client_set_only_for_account (TpBaseClient *self,
     TpAccount *account)
 {
-  g_return_if_fail (self->priv->likely_account == NULL);
-  self->priv->likely_account = g_object_ref (account);
+  g_return_if_fail (self->priv->only_for_account == NULL);
+  self->priv->only_for_account = g_object_ref (account);
 }
 
 static TpAccount *
 tp_base_client_get_account (TpBaseClient *self,
-    const gchar *path)
+    const gchar *path,
+    GError **error)
 {
-  if (self->priv->likely_account != NULL &&
-      !tp_strdiff (tp_proxy_get_object_path (self->priv->likely_account),
-        path))
-    return self->priv->likely_account;
-  else
-    return tp_account_manager_ensure_account (self->priv->account_mgr,
-        path);
+  if (self->priv->only_for_account != NULL)
+    {
+      if (G_UNLIKELY (tp_strdiff (tp_proxy_get_object_path (
+                self->priv->only_for_account), path)))
+        {
+          g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+              "This client only deals with channels from account %s",
+              tp_proxy_get_object_path (self->priv->only_for_account));
+          return NULL;
+        }
+
+      return self->priv->only_for_account;
+    }
+
+  return tp_account_manager_ensure_account (self->priv->account_mgr, path);
 }
 
 static GHashTable *
@@ -886,7 +905,7 @@ tp_base_client_dispose (GObject *object)
 
   tp_clear_object (&self->priv->dbus);
   tp_clear_object (&self->priv->account_mgr);
-  tp_clear_object (&self->priv->likely_account);
+  tp_clear_object (&self->priv->only_for_account);
 
   g_list_foreach (self->priv->pending_requests, (GFunc) g_object_unref, NULL);
   g_list_free (self->priv->pending_requests);
@@ -1432,7 +1451,11 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       goto out;
     }
 
-  account = tp_base_client_get_account (self, account_path);
+  account = tp_base_client_get_account (self, account_path, &error);
+
+  if (account == NULL)
+    goto out;
+
   connection = tp_account_ensure_connection (account, connection_path);
   if (connection == NULL)
     {
@@ -1624,7 +1647,11 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  account = tp_base_client_get_account (self, path);
+  account = tp_base_client_get_account (self, path, &error);
+
+  if (account == NULL)
+    goto out;
+
   path = tp_asv_get_object_path (properties,
       TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION);
   if (path == NULL)
@@ -1859,7 +1886,11 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       goto out;
     }
 
-  account = tp_base_client_get_account (self, account_path);
+  account = tp_base_client_get_account (self, account_path, &error);
+
+  if (account == NULL)
+    goto out;
+
   connection = tp_account_ensure_connection (account, connection_path);
   if (connection == NULL)
     {
@@ -2014,10 +2045,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   if (request == NULL)
     {
       DEBUG ("Failed to create TpChannelRequest: %s", error->message);
-
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      return;
+      goto err;
     }
 
   path = tp_asv_get_object_path (properties, TP_PROP_CHANNEL_REQUEST_ACCOUNT);
@@ -2027,13 +2055,13 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
           "Mandatory 'Account' property is missing");
 
       DEBUG ("%s", error->message);
-
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-      return;
+      goto err;
     }
 
-  account = tp_base_client_get_account (self, path);
+  account = tp_base_client_get_account (self, path, &error);
+
+  if (account == NULL)
+    goto err;
 
   self->priv->pending_requests = g_list_append (self->priv->pending_requests,
       request);
@@ -2045,6 +2073,11 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
       channel_request_account_prepare_cb, ctx);
 
   tp_svc_client_interface_requests_return_from_add_request (context);
+  return;
+
+err:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void

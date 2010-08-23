@@ -25,7 +25,7 @@
 
 G_BEGIN_DECLS
 
-void _tp_base_client_set_likely_account (TpBaseClient *self,
+void _tp_base_client_set_only_for_account (TpBaseClient *self,
     TpAccount *account);
 
 G_END_DECLS
