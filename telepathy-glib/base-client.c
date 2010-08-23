@@ -1020,6 +1020,11 @@ tp_base_client_constructed (GObject *object)
       self->priv->dbus = g_object_ref (tp_proxy_get_dbus_daemon (
             self->priv->account_mgr));
     }
+  else
+    {
+      g_assert (self->priv->dbus ==
+          tp_proxy_get_dbus_daemon (self->priv->account_mgr));
+    }
 
   /* Bus name */
   string = g_string_new (TP_CLIENT_BUS_NAME_BASE);
@@ -1217,6 +1222,10 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    *
    * This property may be %NULL initially, but will always be non-%NULL
    * after the #TpBaseClient has been constructed.
+   *
+   * It is an error to specify both a non-%NULL account manager, and a
+   * non-%NULL #TpBaseClient:dbus-daemon that is not the same as the
+   * account manager's #TpProxy:dbus-daemon.
    *
    * Since: 0.11.UNRELEASED
    */
