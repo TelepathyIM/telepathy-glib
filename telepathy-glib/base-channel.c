@@ -34,10 +34,6 @@
  * and implement the #TpBaseChannelClass.close and
  * #TpBaseChannelClass.fill_immutable_properties virtual functions.
  *
- * Subclasses should ensure that the #TpExportableChannel:object-path property
- * is not %NULL by the time construction is finished; if it is not set by the
- * object's creator, they must set it themself.
- *
  * Since: 0.11.UNRELEASED
  */
 
@@ -66,6 +62,12 @@
  * properties to the DBus properties hash.  Implementations must chain up to the
  * parent class implementation and call
  * tp_dbus_properties_mixin_fill_properties_hash() on the supplied hash table
+ * @get_object_path_suffix: Returns a string that will be appended to the
+ * Connection objects's object path to get the Channel's object path.  This
+ * function will only be called as a fallback if the
+ * #TpExportableChannel:object-path property is not set.  The default
+ * implementation simply generates a unique path based on the object's address
+ * in memory.  The returned string will be freed automatically.
  *
  * The class structure for #TpBaseChannel
  */
@@ -112,6 +114,14 @@
  * Note that the SearchState property is <emphasis>not</emphasis> added to
  * @properties, since only immutable properties (whose value cannot change over
  * the lifetime of @chan) should be included.
+ */
+
+/**
+ * TpBaseChannelGetPathFunc:
+ * @chan a channel
+ *
+ * Returns: (transfer full): a string that will be appended to the Connection
+ * objects's object path to get the Channel's object path.
  */
 
 #include "config.h"
@@ -378,6 +388,15 @@ tp_base_channel_fill_basic_immutable_properties (TpBaseChannel *chan, GHashTable
       NULL);
 }
 
+static gchar *
+tp_base_channel_get_object_path_suffix (TpBaseChannel *self)
+{
+  gchar * obj_path = g_strdup_printf ("channel%p", self);
+  gchar * escaped = tp_escape_as_identifier (obj_path);
+  g_free (obj_path);
+  return escaped;
+}
+
 static void
 tp_base_channel_init (TpBaseChannel *self)
 {
@@ -413,6 +432,15 @@ tp_base_channel_constructed (GObject *object)
       handles = tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
       g_assert (handles != NULL);
       tp_handle_ref (handles, chan->priv->initiator);
+    }
+
+  if (chan->priv->object_path == NULL)
+    {
+      gchar *base_path = klass->get_object_path_suffix (chan);
+      g_assert (base_path != NULL && *base_path != '\0');
+      chan->priv->object_path = g_strdup_printf ("%s/%s",
+          conn->object_path, base_path);
+      g_free (base_path);
     }
 }
 
@@ -508,7 +536,7 @@ tp_base_channel_set_property (GObject *object,
 
   switch (property_id) {
     case PROP_OBJECT_PATH:
-      g_free (chan->priv->object_path);
+      g_assert (chan->priv->object_path == NULL);
       chan->priv->object_path = g_value_dup_string (value);
       break;
     case PROP_HANDLE:
@@ -678,6 +706,7 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseChannelClass, dbus_props_class));
   tp_base_channel_class->fill_immutable_properties = tp_base_channel_fill_basic_immutable_properties;
+  tp_base_channel_class->get_object_path_suffix = tp_base_channel_get_object_path_suffix;
 }
 
 static void
