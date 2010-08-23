@@ -12,7 +12,7 @@
 #ifndef EXAMPLE_ECHO_MESSAGE_PARTS_CHAN_H
 #define EXAMPLE_ECHO_MESSAGE_PARTS_CHAN_H
 
-#include <glib-object.h>
+#include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/message-mixin.h>
 
@@ -20,7 +20,6 @@ G_BEGIN_DECLS
 
 typedef struct _ExampleEcho2Channel ExampleEcho2Channel;
 typedef struct _ExampleEcho2ChannelClass ExampleEcho2ChannelClass;
-typedef struct _ExampleEcho2ChannelPrivate ExampleEcho2ChannelPrivate;
 
 GType example_echo_2_channel_get_type (void);
 
@@ -41,16 +40,12 @@ GType example_echo_2_channel_get_type (void);
                               ExampleEcho2ChannelClass))
 
 struct _ExampleEcho2ChannelClass {
-    GObjectClass parent_class;
-
-    TpDBusPropertiesMixinClass dbus_properties_class;
+    TpBaseChannelClass parent_class;
 };
 
 struct _ExampleEcho2Channel {
-    GObject parent;
+    TpBaseChannel parent;
     TpMessageMixin text;
-
-    ExampleEcho2ChannelPrivate *priv;
 };
 
 G_END_DECLS
