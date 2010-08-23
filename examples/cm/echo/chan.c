@@ -49,13 +49,11 @@ constructor (GType type,
       G_OBJECT_CLASS (example_echo_channel_parent_class)->constructor (type,
           n_props, props);
   ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (object);
-  TpBaseConnection *conn = NULL;
   TpHandleRepoIface *contact_repo = NULL;
-
-  g_object_get (object, "connection", &conn, NULL);
+  TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
   g_assert (conn != NULL);
+
   contact_repo = tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
-  g_object_unref (conn);
 
   tp_base_channel_register (TP_BASE_CHANNEL (self));
 
@@ -83,11 +81,7 @@ static void
 example_echo_channel_close (ExampleEchoChannel *self)
 {
   GObject *object = (GObject *) self;
-  gboolean closed = FALSE;
-
-  g_object_get (self,
-          "channel-destroyed", &closed,
-          NULL);
+  gboolean closed = tp_base_channel_is_destroyed (TP_BASE_CHANNEL (self));
 
   if (!closed)
     {
@@ -146,7 +140,7 @@ text_send (TpSvcChannelTypeText *iface,
   time_t timestamp = time (NULL);
   gchar *echo;
   guint echo_type = type;
-  TpHandle target = 0;
+  TpHandle target = tp_base_channel_get_target (TP_BASE_CHANNEL (self));
 
   /* Send should return just before Sent is emitted. */
   tp_svc_channel_type_text_return_from_send (context);
@@ -175,9 +169,6 @@ text_send (TpSvcChannelTypeText *iface,
       echo_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
     }
 
-  g_object_get (self,
-      "handle", &target,
-      NULL);
   tp_text_mixin_receive ((GObject *) self, echo_type, target, timestamp, echo);
 
   g_free (echo);
