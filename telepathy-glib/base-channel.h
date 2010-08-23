@@ -55,7 +55,7 @@ struct _TpBaseChannelClass
   TpBaseChannelFillPropertiesFunc fill_immutable_properties;
 
   /*< private >*/
-  gpointer reserved[10];
+  GCallback _reserved[10];
 };
 
 struct _TpBaseChannel

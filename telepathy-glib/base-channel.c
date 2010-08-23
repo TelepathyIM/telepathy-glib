@@ -332,7 +332,7 @@ tp_base_channel_get_initiator (TpBaseChannel *chan)
 gboolean
 tp_base_channel_is_requested (TpBaseChannel *chan)
 {
-  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), 0);
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), FALSE);
 
   return chan->priv->requested;
 }
@@ -357,13 +357,13 @@ tp_base_channel_is_destroyed (TpBaseChannel *chan)
 
 
 /*
- * tp_base_channel_fill_immutable_properties:
+ * tp_base_channel_fill_basic_immutable_properties:
  *
  * Specifies the immutable properties supported for this Channel object, by
  * using tp_dbus_properties_mixin_fill_properties_hash().
  */
 static void
-tp_base_channel_fill_immutable_properties (TpBaseChannel *chan, GHashTable *properties)
+tp_base_channel_fill_basic_immutable_properties (TpBaseChannel *chan, GHashTable *properties)
 {
   tp_dbus_properties_mixin_fill_properties_hash (G_OBJECT (chan),
       properties,
@@ -394,7 +394,7 @@ tp_base_channel_constructed (GObject *object)
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (object);
   GObjectClass *parent_class = tp_base_channel_parent_class;
   TpBaseChannel *chan = TP_BASE_CHANNEL (object);
-  TpBaseConnection *conn = (TpBaseConnection *) chan->priv->conn;
+  TpBaseConnection *conn = chan->priv->conn;
   TpHandleRepoIface *handles;
 
   if (parent_class->constructed != NULL)
@@ -677,7 +677,7 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
   tp_base_channel_class->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseChannelClass, dbus_props_class));
-  tp_base_channel_class->fill_immutable_properties = tp_base_channel_fill_immutable_properties;
+  tp_base_channel_class->fill_immutable_properties = tp_base_channel_fill_basic_immutable_properties;
 }
 
 static void
