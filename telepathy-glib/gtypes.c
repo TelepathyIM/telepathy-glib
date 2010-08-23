@@ -102,5 +102,30 @@ tp_type_dbus_array_of_y (void)
   return t;
 }
 
+/**
+ * TP_ARRAY_TYPE_UCHAR_ARRAY_LIST:
+ *
+ * Expands to a call to a function
+ * that returns the #GType of a #GPtrArray of %TP_TYPE_UCHAR_ARRAY, i.e.
+ * a #GPtrArray of #GArray of #guchar.
+ *
+ * This is the type used in dbus-glib to represent an array of byte arrays,
+ * signature 'aay'. (Note that the #GByteArray type is not used with
+ * dbus-glib.)
+ *
+ * Since: 0.11.UNRELEASED
+ */
+
+GType
+tp_type_dbus_array_of_ay (void)
+{
+  static GType t = 0;
+
+  if (G_UNLIKELY (t == 0))
+    t = dbus_g_type_get_collection ("GPtrArray", TP_TYPE_UCHAR_ARRAY);
+
+  return t;
+}
+
 /* auto-generated implementation stubs */
 #include "_gen/gtypes-body.h"
