@@ -38,20 +38,17 @@
  * is not %NULL by the time construction is finished; if it is not set by the
  * object's creator, they must set it themself.
  *
- * Since: 0.11.12
+ * Since: 0.11.UNRELEASED
  */
 
 /**
  * TpBaseChannel:
- *
- * @parent: fields shared by the superclass
  *
  * A base class for channel implementations
  */
 
 /**
  * TpBaseChannelClass:
- * @parent_class: The superclass' structure
  * @dbus_props_class: The class structure for the DBus properties mixin
  * @channel_type: The type of channel that instances of this class represent
  * (e.g. #TP_IFACE_CHANNEL_TYPE_TEXT)
@@ -288,12 +285,12 @@ tp_base_channel_get_connection (TpBaseChannel *chan)
  * tp_base_channel_get_target:
  * @chan: a channel
  *
- * Returns the target handle of @chan, which will be 0 if
- * #TpBaseChannelClass.target_type is #TP_HANDLE_TYPE_NONE for this class, and
- * non-zero otherwise. This is a shortcut for retrieving the
+ * Returns the target handle of @chan (without a reference), which will be 0
+ * if #TpBaseChannelClass.target_type is #TP_HANDLE_TYPE_NONE for this class,
+ * and non-zero otherwise. This is a shortcut for retrieving the
  * #TpChannelIface:handle property.
  *
- * Returns: (transfer none): the target handle of @chan
+ * Returns: the target handle of @chan
  */
 TpHandle
 tp_base_channel_get_target (TpBaseChannel *chan)

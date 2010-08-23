@@ -41,7 +41,10 @@ typedef void (*TpBaseChannelFillPropertiesFunc) (TpBaseChannel *chan,
 
 struct _TpBaseChannelClass
 {
+  /*< private >*/
   GObjectClass parent_class;
+
+  /*< public >*/
   TpDBusPropertiesMixinClass dbus_props_class;
 
   const gchar *channel_type;
@@ -57,9 +60,9 @@ struct _TpBaseChannelClass
 
 struct _TpBaseChannel
 {
+  /*< private >*/
   GObject parent;
 
-  /*< private >*/
   TpBaseChannelPrivate *priv;
 };
 
