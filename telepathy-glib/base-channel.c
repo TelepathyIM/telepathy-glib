@@ -31,8 +31,16 @@
  *
  * Subclasses should fill in #TpBaseChannelClass.channel_type,
  * #TpBaseChannelClass.target_handle_type and #TpBaseChannelClass.interfaces,
- * and implement the #TpBaseChannelClass.close and
- * #TpBaseChannelClass.fill_immutable_properties virtual functions.
+ * and implement the #TpBaseChannelClass.close virtual function.
+ *
+ * If the channel type and/or interfaces being implemented define immutable
+ * D-Bus properties besides those on the Channel interface, the subclass should
+ * implement the #TpBaseChannelClass.fill_immutable_properties virtual function.
+ *
+ * If the #TpExportableChannel:object-path property is not set at construct
+ * time, the #TpBaseChannelClass.get_object_path_suffix virtual function will
+ * be called to determine the channel's path, whose default implementation
+ * simply generates a unique path based on the object's address in memory.
  *
  * Since: 0.11.UNRELEASED
  */
