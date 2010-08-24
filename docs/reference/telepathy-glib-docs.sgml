@@ -103,6 +103,7 @@
     <xi:include href="xml/contacts-mixin.xml"/>
     <xi:include href="xml/dbus-properties-mixin.xml"/>
     <xi:include href="xml/exportable-channel.xml"/>
+    <xi:include href="xml/base-channel.xml"/>
     <xi:include href="xml/presence-mixin.xml"/>
     <xi:include href="xml/properties-mixin.xml"/>
     <xi:include href="xml/group-mixin.xml"/>

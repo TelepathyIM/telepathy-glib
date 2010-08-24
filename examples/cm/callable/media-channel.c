@@ -48,16 +48,12 @@
 #include <telepathy-glib/svc-generic.h>
 
 static void media_iface_init (gpointer iface, gpointer data);
-static void channel_iface_init (gpointer iface, gpointer data);
 static void hold_iface_init (gpointer iface, gpointer data);
 static void dtmf_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleCallableMediaChannel,
     example_callable_media_channel,
-    G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-      tp_dbus_properties_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
+    TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_STREAMED_MEDIA,
       media_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
@@ -65,25 +61,11 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallableMediaChannel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
       hold_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DTMF,
-      dtmf_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL))
+      dtmf_iface_init);)
 
 enum
 {
-  PROP_OBJECT_PATH = 1,
-  PROP_CHANNEL_TYPE,
-  PROP_HANDLE_TYPE,
-  PROP_HANDLE,
-  PROP_TARGET_ID,
-  PROP_REQUESTED,
-  PROP_INITIATOR_HANDLE,
-  PROP_INITIATOR_ID,
-  PROP_CONNECTION,
-  PROP_INTERFACES,
-  PROP_CHANNEL_DESTROYED,
-  PROP_CHANNEL_PROPERTIES,
-  PROP_SIMULATION_DELAY,
+  PROP_SIMULATION_DELAY = 1,
   PROP_INITIAL_AUDIO,
   PROP_INITIAL_VIDEO,
   N_PROPS
@@ -106,10 +88,6 @@ static guint signals[N_SIGNALS] = { 0 };
 
 struct _ExampleCallableMediaChannelPrivate
 {
-  TpBaseConnection *conn;
-  gchar *object_path;
-  TpHandle handle;
-  TpHandle initiator;
   ExampleCallableCallProgress progress;
 
   guint simulation_delay;
@@ -121,7 +99,6 @@ struct _ExampleCallableMediaChannelPrivate
   guint hold_state;
   guint hold_state_reason;
 
-  gboolean locally_requested;
   gboolean initial_audio;
   gboolean initial_video;
   gboolean disposed;
@@ -159,31 +136,31 @@ constructed (GObject *object)
   void (*chain_up) (GObject *) =
       ((GObjectClass *) example_callable_media_channel_parent_class)->constructed;
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (object);
+  TpBaseChannel *base_chan = TP_BASE_CHANNEL (self);
+  TpBaseConnection *connection = tp_base_channel_get_connection (base_chan);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      (connection, TP_HANDLE_TYPE_CONTACT);
   TpIntSet *members;
   TpIntSet *local_pending;
+  gboolean requested;
 
   if (chain_up != NULL)
     chain_up (object);
 
-  tp_handle_ref (contact_repo, self->priv->handle);
-  tp_handle_ref (contact_repo, self->priv->initiator);
-
-  tp_dbus_daemon_register_object (
-      tp_base_connection_get_dbus_daemon (self->priv->conn),
-      self->priv->object_path, self);
+  tp_base_channel_register (base_chan);
 
   tp_group_mixin_init (object,
       G_STRUCT_OFFSET (ExampleCallableMediaChannel, group),
-      contact_repo, self->priv->conn->self_handle);
+      contact_repo,
+      connection->self_handle);
 
   /* Initially, the channel contains the initiator as a member; they are also
    * the actor for the change that adds any initial members. */
 
-  members = tp_intset_new_containing (self->priv->initiator);
+  members = tp_intset_new_containing (tp_base_channel_get_initiator (base_chan));
+  requested = tp_base_channel_is_requested (base_chan);
 
-  if (self->priv->locally_requested)
+  if (requested)
     {
       /* Nobody is locally pending. The remote peer will turn up in
        * remote-pending state when we actually contact them, which is done
@@ -196,7 +173,7 @@ constructed (GObject *object)
       /* This is an incoming call, so the self-handle is locally
        * pending, to indicate that we need to answer. */
       self->priv->progress = PROGRESS_CALLING;
-      local_pending = tp_intset_new_containing (self->priv->conn->self_handle);
+      local_pending = tp_intset_new_containing (connection->self_handle);
     }
 
   tp_group_mixin_change_members (object, "",
@@ -204,7 +181,8 @@ constructed (GObject *object)
       NULL /* nobody removed */,
       local_pending, /* added to local-pending */
       NULL /* nobody added to remote-pending */,
-      self->priv->initiator /* actor */, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      tp_base_channel_get_initiator (base_chan) /* actor */,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (members);
 
   if (local_pending != NULL)
@@ -236,10 +214,10 @@ constructed (GObject *object)
    * stream", which would be represented like this; we don't support this
    * usage yet, though, so ExampleCallableMediaManager will never invoke
    * our constructor in this way. */
-  g_assert (!(self->priv->locally_requested && self->priv->initial_audio));
-  g_assert (!(self->priv->locally_requested && self->priv->initial_video));
+  g_assert (!(requested && self->priv->initial_audio));
+  g_assert (!(requested && self->priv->initial_video));
 
-  if (!self->priv->locally_requested)
+  if (!requested)
     {
       /* the caller has almost certainly asked us for some streams - there's
        * not much point in having a call otherwise */
@@ -270,76 +248,6 @@ get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_OBJECT_PATH:
-      g_value_set_string (value, self->priv->object_path);
-      break;
-
-    case PROP_CHANNEL_TYPE:
-      g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
-      break;
-
-    case PROP_HANDLE_TYPE:
-      g_value_set_uint (value, TP_HANDLE_TYPE_CONTACT);
-      break;
-
-    case PROP_HANDLE:
-      g_value_set_uint (value, self->priv->handle);
-      break;
-
-    case PROP_TARGET_ID:
-        {
-          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-          g_value_set_string (value,
-              tp_handle_inspect (contact_repo, self->priv->handle));
-        }
-      break;
-
-    case PROP_REQUESTED:
-      g_value_set_boolean (value, self->priv->locally_requested);
-      break;
-
-    case PROP_INITIATOR_HANDLE:
-      g_value_set_uint (value, self->priv->initiator);
-      break;
-
-    case PROP_INITIATOR_ID:
-        {
-          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-          g_value_set_string (value,
-              tp_handle_inspect (contact_repo, self->priv->initiator));
-        }
-      break;
-
-    case PROP_CONNECTION:
-      g_value_set_object (value, self->priv->conn);
-      break;
-
-    case PROP_INTERFACES:
-      g_value_set_boxed (value, example_callable_media_channel_interfaces);
-      break;
-
-    case PROP_CHANNEL_DESTROYED:
-      g_value_set_boolean (value, (self->priv->progress == PROGRESS_ENDED));
-      break;
-
-    case PROP_CHANNEL_PROPERTIES:
-      g_value_take_boxed (value,
-          tp_dbus_properties_mixin_make_properties_hash (object,
-              TP_IFACE_CHANNEL, "ChannelType",
-              TP_IFACE_CHANNEL, "TargetHandleType",
-              TP_IFACE_CHANNEL, "TargetHandle",
-              TP_IFACE_CHANNEL, "TargetID",
-              TP_IFACE_CHANNEL, "InitiatorHandle",
-              TP_IFACE_CHANNEL, "InitiatorID",
-              TP_IFACE_CHANNEL, "Requested",
-              TP_IFACE_CHANNEL, "Interfaces",
-              NULL));
-      break;
-
     case PROP_SIMULATION_DELAY:
       g_value_set_uint (value, self->priv->simulation_delay);
       break;
@@ -368,37 +276,6 @@ set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_OBJECT_PATH:
-      g_assert (self->priv->object_path == NULL);
-      self->priv->object_path = g_value_dup_string (value);
-      break;
-
-    case PROP_HANDLE:
-      /* we don't ref it here because we don't necessarily have access to the
-       * contact repo yet - instead we ref it in the constructor.
-       */
-      self->priv->handle = g_value_get_uint (value);
-      break;
-
-    case PROP_INITIATOR_HANDLE:
-      /* likewise */
-      self->priv->initiator = g_value_get_uint (value);
-      break;
-
-    case PROP_REQUESTED:
-      self->priv->locally_requested = g_value_get_boolean (value);
-      break;
-
-    case PROP_HANDLE_TYPE:
-    case PROP_CHANNEL_TYPE:
-      /* these properties are writable in the interface, but not actually
-       * meaningfully changable on this channel, so we do nothing */
-      break;
-
-    case PROP_CONNECTION:
-      self->priv->conn = g_value_get_object (value);
-      break;
-
     case PROP_SIMULATION_DELAY:
       self->priv->simulation_delay = g_value_get_uint (value);
       break;
@@ -451,7 +328,8 @@ example_callable_media_channel_close (ExampleCallableMediaChannel *self,
           g_message ("SIGNALLING: send: Terminating call: %s", send_reason);
         }
 
-      everyone = tp_intset_new_containing (self->priv->handle);
+      everyone = tp_intset_new_containing (tp_base_channel_get_target_handle
+              (TP_BASE_CHANNEL (self)));
       tp_intset_add (everyone, self->group.self_handle);
       tp_group_mixin_change_members ((GObject *) self, "",
           NULL /* nobody added */,
@@ -463,7 +341,7 @@ example_callable_media_channel_close (ExampleCallableMediaChannel *self,
       tp_intset_destroy (everyone);
 
       g_signal_emit (self, signals[SIGNAL_CALL_TERMINATED], 0);
-      tp_svc_channel_emit_closed (self);
+      tp_base_channel_destroyed (TP_BASE_CHANNEL (self));
     }
 }
 
@@ -489,15 +367,6 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-  ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (object);
-  TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-  tp_handle_unref (contact_handles, self->priv->handle);
-  tp_handle_unref (contact_handles, self->priv->initiator);
-
-  g_free (self->priv->object_path);
-
   tp_group_mixin_finalize (object);
 
   ((GObjectClass *) example_callable_media_channel_parent_class)->finalize (object);
@@ -511,7 +380,8 @@ add_member (GObject *object,
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (object);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+    (tp_base_channel_get_connection (TP_BASE_CHANNEL (self)),
+     TP_HANDLE_TYPE_CONTACT);
 
   /* In connection managers that supported the RequestChannel method for
    * streamed media channels, it would be necessary to support adding the
@@ -531,7 +401,8 @@ add_member (GObject *object,
       g_assert (self->priv->progress == PROGRESS_CALLING);
 
       g_message ("SIGNALLING: send: Accepting incoming call from %s",
-          tp_handle_inspect (contact_repo, self->priv->handle));
+          tp_handle_inspect (contact_repo, tp_base_channel_get_target_handle
+              (TP_BASE_CHANNEL (self))));
 
       self->priv->progress = PROGRESS_ACTIVE;
 
@@ -584,29 +455,20 @@ remove_member_with_reason (GObject *object,
 }
 
 static void
+channel_close (TpBaseChannel *channel)
+{
+  ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (channel);
+
+  example_callable_media_channel_close (self, self->group.self_handle,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+}
+
+static void
 example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *klass)
 {
-  static TpDBusPropertiesMixinPropImpl channel_props[] = {
-      { "TargetHandleType", "handle-type", NULL },
-      { "TargetHandle", "handle", NULL },
-      { "ChannelType", "channel-type", NULL },
-      { "Interfaces", "interfaces", NULL },
-      { "TargetID", "target-id", NULL },
-      { "Requested", "requested", NULL },
-      { "InitiatorHandle", "initiator-handle", NULL },
-      { "InitiatorID", "initiator-id", NULL },
-      { NULL }
-  };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CHANNEL,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        channel_props,
-      },
-      { NULL }
-  };
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
+  TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
 
   g_type_class_add_private (klass,
       sizeof (ExampleCallableMediaChannelPrivate));
@@ -617,56 +479,11 @@ example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *kla
   object_class->dispose = dispose;
   object_class->finalize = finalize;
 
-  g_object_class_override_property (object_class, PROP_OBJECT_PATH,
-      "object-path");
-  g_object_class_override_property (object_class, PROP_CHANNEL_TYPE,
-      "channel-type");
-  g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
-      "handle-type");
-  g_object_class_override_property (object_class, PROP_HANDLE, "handle");
+  base_class->channel_type = TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA;
+  base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
+  base_class->interfaces = example_callable_media_channel_interfaces;
 
-  g_object_class_override_property (object_class, PROP_CHANNEL_DESTROYED,
-      "channel-destroyed");
-  g_object_class_override_property (object_class, PROP_CHANNEL_PROPERTIES,
-      "channel-properties");
-
-  param_spec = g_param_spec_object ("connection", "TpBaseConnection object",
-      "Connection object that owns this channel",
-      TP_TYPE_BASE_CONNECTION,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
-
-  param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
-      "Additional Channel.Interface.* interfaces",
-      G_TYPE_STRV,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
-
-  param_spec = g_param_spec_string ("target-id", "Peer's ID",
-      "The string obtained by inspecting the target handle",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TARGET_ID, param_spec);
-
-  param_spec = g_param_spec_uint ("initiator-handle", "Initiator's handle",
-      "The contact who initiated the channel",
-      0, G_MAXUINT32, 0,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIATOR_HANDLE,
-      param_spec);
-
-  param_spec = g_param_spec_string ("initiator-id", "Initiator's ID",
-      "The string obtained by inspecting the initiator-handle",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIATOR_ID,
-      param_spec);
-
-  param_spec = g_param_spec_boolean ("requested", "Requested?",
-      "True if this channel was requested by the local user",
-      FALSE,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
+  base_class->close = channel_close;
 
   param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
       "Delay between simulated network events",
@@ -694,11 +511,6 @@ example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *kla
       g_cclosure_marshal_VOID__VOID,
       G_TYPE_NONE, 0);
 
-  klass->dbus_properties_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCallableMediaChannelClass,
-        dbus_properties_class));
-
   tp_group_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCallableMediaChannelClass, group_class),
       add_member,
@@ -707,57 +519,6 @@ example_callable_media_channel_class_init (ExampleCallableMediaChannelClass *kla
   tp_group_mixin_class_set_remove_with_reason_func (object_class,
       remove_member_with_reason);
   tp_group_mixin_init_dbus_properties (object_class);
-}
-
-static void
-channel_close (TpSvcChannel *iface,
-               DBusGMethodInvocation *context)
-{
-  ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
-
-  example_callable_media_channel_close (self, self->group.self_handle,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-  tp_svc_channel_return_from_close (context);
-}
-
-static void
-channel_get_channel_type (TpSvcChannel *iface G_GNUC_UNUSED,
-                          DBusGMethodInvocation *context)
-{
-  tp_svc_channel_return_from_get_channel_type (context,
-      TP_IFACE_CHANNEL_TYPE_STREAMED_MEDIA);
-}
-
-static void
-channel_get_handle (TpSvcChannel *iface,
-                    DBusGMethodInvocation *context)
-{
-  ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
-
-  tp_svc_channel_return_from_get_handle (context, TP_HANDLE_TYPE_CONTACT,
-      self->priv->handle);
-}
-
-static void
-channel_get_interfaces (TpSvcChannel *iface G_GNUC_UNUSED,
-                        DBusGMethodInvocation *context)
-{
-  tp_svc_channel_return_from_get_interfaces (context,
-      example_callable_media_channel_interfaces);
-}
-
-static void
-channel_iface_init (gpointer iface,
-                    gpointer data)
-{
-  TpSvcChannelClass *klass = iface;
-
-#define IMPLEMENT(x) tp_svc_channel_implement_##x (klass, channel_##x)
-  IMPLEMENT (close);
-  IMPLEMENT (get_channel_type);
-  IMPLEMENT (get_handle);
-  IMPLEMENT (get_interfaces);
-#undef IMPLEMENT
 }
 
 static void
@@ -948,7 +709,8 @@ simulate_contact_ended_cb (gpointer p)
 
   g_message ("SIGNALLING: receive: call terminated: <call-terminated/>");
 
-  example_callable_media_channel_close (self, self->priv->handle,
+  example_callable_media_channel_close (self,
+      tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self)),
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   return FALSE;
@@ -963,6 +725,7 @@ simulate_contact_answered_cb (gpointer p)
   gpointer v;
   TpHandleRepoIface *contact_repo;
   const gchar *peer;
+  TpHandle target;
 
   /* if the call has been cancelled while we were waiting for the
    * contact to answer, do nothing */
@@ -977,13 +740,14 @@ simulate_contact_answered_cb (gpointer p)
 
   self->priv->progress = PROGRESS_ACTIVE;
 
-  peer_set = tp_intset_new_containing (self->priv->handle);
+  target = tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self));
+  peer_set = tp_intset_new_containing (target);
   tp_group_mixin_change_members ((GObject *) self, "",
       peer_set /* added */,
       NULL /* nobody removed */,
       NULL /* nobody added to local-pending */,
       NULL /* nobody added to remote-pending */,
-      self->priv->handle /* actor */,
+      target /* actor */,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (peer_set);
 
@@ -998,8 +762,9 @@ simulate_contact_answered_cb (gpointer p)
     }
 
   contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  peer = tp_handle_inspect (contact_repo, self->priv->handle);
+      (tp_base_channel_get_connection (TP_BASE_CHANNEL (self)),
+       TP_HANDLE_TYPE_CONTACT);
+  peer = tp_handle_inspect (contact_repo, target);
 
   /* If the contact's ID contains the magic string "(terminate)", simulate
    * them hanging up after a moment. */
@@ -1030,7 +795,8 @@ simulate_contact_busy_cb (gpointer p)
 
   g_message ("SIGNALLING: receive: call terminated: <user-is-busy/>");
 
-  example_callable_media_channel_close (self, self->priv->handle,
+  example_callable_media_channel_close (self,
+      tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self)),
       TP_CHANNEL_GROUP_CHANGE_REASON_BUSY);
 
   return FALSE;
@@ -1044,6 +810,7 @@ example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
   ExampleCallableMediaStream *stream;
   guint id = self->priv->next_stream_id++;
   guint state, direction, pending_send;
+  TpHandle target;
 
   if (locally_requested)
     {
@@ -1051,10 +818,11 @@ example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
           media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
     }
 
+  target = tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self));
   stream = g_object_new (EXAMPLE_TYPE_CALLABLE_MEDIA_STREAM,
       "channel", self,
       "id", id,
-      "handle", self->priv->handle,
+      "handle", target,
       "type", media_type,
       "locally-requested", locally_requested,
       NULL);
@@ -1062,7 +830,7 @@ example_callable_media_channel_add_stream (ExampleCallableMediaChannel *self,
   g_hash_table_insert (self->priv->streams, GUINT_TO_POINTER (id), stream);
 
   tp_svc_channel_type_streamed_media_emit_stream_added (self, id,
-      self->priv->handle, media_type);
+      target, media_type);
 
   g_object_get (stream,
       "state", &state,
@@ -1108,19 +876,22 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      (tp_base_channel_get_connection (TP_BASE_CHANNEL (self)),
+       TP_HANDLE_TYPE_CONTACT);
   GPtrArray *array;
   guint i;
   GError *error = NULL;
+  TpHandle target;
 
   if (!tp_handle_is_valid (contact_repo, contact_handle, &error))
     goto error;
 
-  if (contact_handle != self->priv->handle)
+  target = tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self));
+  if (contact_handle != target)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "This channel is for handle #%u, we can't make a stream to #%u",
-          self->priv->handle, contact_handle);
+          target, contact_handle);
       goto error;
     }
 
@@ -1157,7 +928,7 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
 
       if (self->priv->progress < PROGRESS_CALLING)
         {
-          TpIntSet *peer_set = tp_intset_new_containing (self->priv->handle);
+          TpIntSet *peer_set = tp_intset_new_containing (target);
           const gchar *peer;
 
           g_message ("SIGNALLING: send: new streamed media call");
@@ -1177,7 +948,7 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
            * answering after a short time - unless the contact's name
            * contains "(no answer)" or "(busy)" */
 
-          peer = tp_handle_inspect (contact_repo, self->priv->handle);
+          peer = tp_handle_inspect (contact_repo, target);
 
           if (strstr (peer, "(busy)") != NULL)
             {
@@ -1294,10 +1065,12 @@ hold_request_hold (TpSvcChannelInterfaceHold *iface,
 {
   ExampleCallableMediaChannel *self = EXAMPLE_CALLABLE_MEDIA_CHANNEL (iface);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      (tp_base_channel_get_connection (TP_BASE_CHANNEL (self)),
+       TP_HANDLE_TYPE_CONTACT);
   GError *error = NULL;
   const gchar *peer;
   GSourceFunc callback;
+  TpHandle target;
 
   if ((hold && self->priv->hold_state == TP_LOCAL_HOLD_STATE_HELD) ||
       (!hold && self->priv->hold_state == TP_LOCAL_HOLD_STATE_UNHELD))
@@ -1306,7 +1079,8 @@ hold_request_hold (TpSvcChannelInterfaceHold *iface,
       return;
     }
 
-  peer = tp_handle_inspect (contact_repo, self->priv->handle);
+  target = tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self));
+  peer = tp_handle_inspect (contact_repo, target);
 
   if (!hold && strstr (peer, "(no unhold)") != NULL)
     {
@@ -1326,7 +1100,7 @@ hold_request_hold (TpSvcChannelInterfaceHold *iface,
     {
       self->priv->hold_state = TP_LOCAL_HOLD_STATE_PENDING_UNHOLD;
 
-      peer = tp_handle_inspect (contact_repo, self->priv->handle);
+      peer = tp_handle_inspect (contact_repo, target);
 
       if (strstr (peer, "(inability to unhold)") != NULL)
         {
@@ -1415,7 +1189,8 @@ dtmf_stop_tone (TpSvcChannelInterfaceDTMF *iface,
   ExampleCallableMediaStream *stream = g_hash_table_lookup (self->priv->streams,
       GUINT_TO_POINTER (stream_id));
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+      (tp_base_channel_get_connection (TP_BASE_CHANNEL (self)),
+       TP_HANDLE_TYPE_CONTACT);
   GError *error = NULL;
   const gchar *peer;
   guint media_type;
@@ -1435,7 +1210,8 @@ dtmf_stop_tone (TpSvcChannelInterfaceDTMF *iface,
       goto error;
     }
 
-  peer = tp_handle_inspect (contact_repo, self->priv->handle);
+  peer = tp_handle_inspect (contact_repo,
+      tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self)));
   if (strstr (peer, "(no continuous tone)") != NULL)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,

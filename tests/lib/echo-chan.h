@@ -13,6 +13,7 @@
 #define __TP_TESTS_CHAN_H__
 
 #include <glib-object.h>
+#include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/text-mixin.h>
 
@@ -41,13 +42,13 @@ GType tp_tests_echo_channel_get_type (void);
                               TpTestsEchoChannelClass))
 
 struct _TpTestsEchoChannelClass {
-    GObjectClass parent_class;
+    TpBaseChannelClass parent_class;
     TpTextMixinClass text_class;
     TpDBusPropertiesMixinClass dbus_properties_class;
 };
 
 struct _TpTestsEchoChannel {
-    GObject parent;
+    TpBaseChannel parent;
     TpTextMixin text;
 
     TpTestsEchoChannelPrivate *priv;

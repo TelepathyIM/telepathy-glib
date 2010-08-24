@@ -15,54 +15,27 @@
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>
 
-static void channel_iface_init (gpointer iface, gpointer data);
-
 G_DEFINE_TYPE_WITH_CODE (ExampleCSHRoomChannel,
     example_csh_room_channel,
-    G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
+    TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT,
       tp_message_mixin_text_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
       tp_message_mixin_messages_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
-      tp_group_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-      tp_dbus_properties_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL))
+      tp_group_mixin_iface_init);)
 
 /* type definition stuff */
 
 enum
 {
-  PROP_OBJECT_PATH = 1,
-  PROP_CHANNEL_TYPE,
-  PROP_HANDLE_TYPE,
-  PROP_HANDLE,
-  PROP_TARGET_ID,
-  PROP_REQUESTED,
-  PROP_INITIATOR_HANDLE,
-  PROP_INITIATOR_ID,
-  PROP_CONNECTION,
-  PROP_INTERFACES,
-  PROP_CHANNEL_DESTROYED,
-  PROP_CHANNEL_PROPERTIES,
-  PROP_SIMULATION_DELAY,
+  PROP_SIMULATION_DELAY = 1,
   N_PROPS
 };
 
 struct _ExampleCSHRoomChannelPrivate
 {
-  TpBaseConnection *conn;
-  gchar *object_path;
-  TpHandle handle;
-  TpHandle initiator;
   guint simulation_delay;
-
-  /* These are really booleans, but gboolean is signed. Thanks, GLib */
-  unsigned closed:1;
-  unsigned disposed:1;
 };
 
 
@@ -83,18 +56,19 @@ example_csh_room_channel_init (ExampleCSHRoomChannel *self)
 static TpHandle
 suggest_room_identity (ExampleCSHRoomChannel *self)
 {
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  TpHandleRepoIface *room_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_ROOM);
+  TpBaseConnection *connection =
+    tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
+  TpHandleRepoIface *contact_repo =
+    tp_base_connection_get_handles (connection, TP_HANDLE_TYPE_CONTACT);
+  TpHandleRepoIface *room_repo =
+    tp_base_connection_get_handles (connection, TP_HANDLE_TYPE_ROOM);
   gchar *nick, *id;
   TpHandle ret;
 
-  nick = g_strdup (tp_handle_inspect (contact_repo,
-        self->priv->conn->self_handle));
+  nick = g_strdup (tp_handle_inspect (contact_repo, connection->self_handle));
   g_strdelimit (nick, "@", '\0');
   id = g_strdup_printf ("%s@%s", nick, tp_handle_inspect (room_repo,
-        self->priv->handle));
+        tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self))));
   g_free (nick);
 
   ret = tp_handle_ensure (contact_repo, id, NULL, NULL);
@@ -110,11 +84,13 @@ suggest_room_identity (ExampleCSHRoomChannel *self)
 static void
 complete_join (ExampleCSHRoomChannel *self)
 {
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  TpHandleRepoIface *room_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_ROOM);
-  const gchar *room_name = tp_handle_inspect (room_repo, self->priv->handle);
+  TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
+  TpHandleRepoIface *contact_repo =
+    tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_CONTACT);
+  TpHandleRepoIface *room_repo =
+    tp_base_connection_get_handles (conn, TP_HANDLE_TYPE_ROOM);
+  const gchar *room_name = tp_handle_inspect (room_repo,
+      tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self)));
   gchar *str;
   TpHandle alice_local, bob_local, chris_local, anon_local;
   TpHandle alice_global, bob_global, chris_global;
@@ -163,7 +139,7 @@ complete_join (ExampleCSHRoomChannel *self)
       tp_intset_add (removed, mixin->self_handle);
 
       tp_group_mixin_add_handle_owner ((GObject *) self, new_self,
-          self->priv->conn->self_handle);
+          conn->self_handle);
       tp_group_mixin_change_self_handle ((GObject *) self, new_self);
 
       tp_group_mixin_change_members ((GObject *) self, "", NULL, removed, NULL,
@@ -214,6 +190,7 @@ complete_join (ExampleCSHRoomChannel *self)
 static void
 join_room (ExampleCSHRoomChannel *self)
 {
+  TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
   TpGroupMixin *mixin = TP_GROUP_MIXIN (self);
   GObject *object = (GObject *) self;
   TpIntSet *add_remote_pending;
@@ -228,9 +205,9 @@ join_room (ExampleCSHRoomChannel *self)
   tp_intset_add (add_remote_pending, mixin->self_handle);
 
   tp_group_mixin_add_handle_owner (object, mixin->self_handle,
-      self->priv->conn->self_handle);
+      conn->self_handle);
   tp_group_mixin_change_members (object, "", NULL, NULL, NULL,
-      add_remote_pending, self->priv->conn->self_handle,
+      add_remote_pending, conn->self_handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
   tp_intset_destroy (add_remote_pending);
@@ -267,23 +244,15 @@ constructor (GType type,
       G_OBJECT_CLASS (example_csh_room_channel_parent_class)->constructor (type,
           n_props, props);
   ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (object);
+  TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  TpHandleRepoIface *room_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_ROOM);
+      (conn, TP_HANDLE_TYPE_CONTACT);
   TpHandle self_handle;
 
-  tp_handle_ref (room_repo, self->priv->handle);
-
-  if (self->priv->initiator != 0)
-    tp_handle_ref (contact_repo, self->priv->initiator);
-
-  tp_dbus_daemon_register_object (
-      tp_base_connection_get_dbus_daemon (self->priv->conn),
-      self->priv->object_path, self);
+  tp_base_channel_register (TP_BASE_CHANNEL (self));
 
   tp_message_mixin_init (object, G_STRUCT_OFFSET (ExampleCSHRoomChannel,
-        message_mixin), self->priv->conn);
+        message_mixin), conn);
 
   tp_message_mixin_implement_sending (object, send_message,
       G_N_ELEMENTS (types), types,
@@ -324,68 +293,6 @@ get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_OBJECT_PATH:
-      g_value_set_string (value, self->priv->object_path);
-      break;
-    case PROP_CHANNEL_TYPE:
-      g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_TEXT);
-      break;
-    case PROP_HANDLE_TYPE:
-      g_value_set_uint (value, TP_HANDLE_TYPE_ROOM);
-      break;
-    case PROP_HANDLE:
-      g_value_set_uint (value, self->priv->handle);
-      break;
-    case PROP_TARGET_ID:
-        {
-          TpHandleRepoIface *room_repo = tp_base_connection_get_handles (
-              self->priv->conn, TP_HANDLE_TYPE_ROOM);
-
-          g_value_set_string (value,
-              tp_handle_inspect (room_repo, self->priv->handle));
-        }
-      break;
-    case PROP_REQUESTED:
-      /* this example CM doesn't yet support being invited into a chatroom,
-       * so the only way a channel can exist is if the user asked for it */
-      g_value_set_boolean (value, TRUE);
-      break;
-    case PROP_INITIATOR_HANDLE:
-      g_value_set_uint (value, self->priv->initiator);
-      break;
-    case PROP_INITIATOR_ID:
-        {
-          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-          g_value_set_string (value,
-              self->priv->initiator == 0
-                  ? ""
-                  : tp_handle_inspect (contact_repo, self->priv->initiator));
-        }
-      break;
-    case PROP_CONNECTION:
-      g_value_set_object (value, self->priv->conn);
-      break;
-    case PROP_INTERFACES:
-      g_value_set_boxed (value, example_csh_room_channel_interfaces);
-      break;
-    case PROP_CHANNEL_DESTROYED:
-      g_value_set_boolean (value, self->priv->closed);
-      break;
-    case PROP_CHANNEL_PROPERTIES:
-      g_value_take_boxed (value,
-          tp_dbus_properties_mixin_make_properties_hash (object,
-              TP_IFACE_CHANNEL, "ChannelType",
-              TP_IFACE_CHANNEL, "TargetHandleType",
-              TP_IFACE_CHANNEL, "TargetHandle",
-              TP_IFACE_CHANNEL, "TargetID",
-              TP_IFACE_CHANNEL, "InitiatorHandle",
-              TP_IFACE_CHANNEL, "InitiatorID",
-              TP_IFACE_CHANNEL, "Requested",
-              TP_IFACE_CHANNEL, "Interfaces",
-              NULL));
-      break;
     case PROP_SIMULATION_DELAY:
       g_value_set_uint (value, self->priv->simulation_delay);
       break;
@@ -405,28 +312,6 @@ set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_OBJECT_PATH:
-      g_free (self->priv->object_path);
-      self->priv->object_path = g_value_dup_string (value);
-      break;
-    case PROP_HANDLE:
-      /* we don't ref it here because we don't necessarily have access to the
-       * room repo yet - instead we ref it in the constructor.
-       */
-      self->priv->handle = g_value_get_uint (value);
-      break;
-    case PROP_INITIATOR_HANDLE:
-      /* similarly, we don't yet have the contact repo */
-      self->priv->initiator = g_value_get_uint (value);
-      break;
-    case PROP_HANDLE_TYPE:
-    case PROP_CHANNEL_TYPE:
-      /* these properties are writable in the interface, but not actually
-       * meaningfully changable on this channel, so we do nothing */
-      break;
-    case PROP_CONNECTION:
-      self->priv->conn = g_value_get_object (value);
-      break;
     case PROP_SIMULATION_DELAY:
       self->priv->simulation_delay = g_value_get_uint (value);
       break;
@@ -437,45 +322,14 @@ set_property (GObject *object,
 }
 
 static void
-example_csh_room_channel_close (ExampleCSHRoomChannel *self)
+example_csh_room_channel_close (TpBaseChannel *self)
 {
-  if (!self->priv->closed)
-    {
-      self->priv->closed = TRUE;
-      tp_svc_channel_emit_closed (self);
-    }
-}
-
-static void
-dispose (GObject *object)
-{
-  ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (object);
-
-  if (self->priv->disposed)
-    return;
-
-  self->priv->disposed = TRUE;
-
-  example_csh_room_channel_close (self);
-
-  ((GObjectClass *) example_csh_room_channel_parent_class)->dispose (object);
+  tp_base_channel_destroyed (self);
 }
 
 static void
 finalize (GObject *object)
 {
-  ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (object);
-  TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  TpHandleRepoIface *room_handles = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_ROOM);
-
-  if (self->priv->initiator != 0)
-    tp_handle_unref (contact_handles, self->priv->initiator);
-
-  tp_handle_unref (room_handles, self->priv->handle);
-  g_free (self->priv->object_path);
-
   tp_message_mixin_finalize (object);
 
   ((GObjectClass *) example_csh_room_channel_parent_class)->finalize (object);
@@ -509,7 +363,7 @@ remove_member_with_reason (GObject *object,
        * kick themselves (like in IRC), resulting in different "network"
        * messages */
 
-      example_csh_room_channel_close (self);
+      example_csh_room_channel_close (TP_BASE_CHANNEL (self));
       return TRUE;
     }
   else
@@ -525,26 +379,8 @@ remove_member_with_reason (GObject *object,
 static void
 example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
 {
-  static TpDBusPropertiesMixinPropImpl channel_props[] = {
-      { "TargetHandleType", "handle-type", NULL },
-      { "TargetHandle", "handle", NULL },
-      { "ChannelType", "channel-type", NULL },
-      { "Interfaces", "interfaces", NULL },
-      { "TargetID", "target-id", NULL },
-      { "Requested", "requested", NULL },
-      { "InitiatorHandle", "initiator-handle", NULL },
-      { "InitiatorID", "initiator-id", NULL },
-      { NULL }
-  };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CHANNEL,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        channel_props,
-      },
-      { NULL }
-  };
   GObjectClass *object_class = (GObjectClass *) klass;
+  TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
   GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (ExampleCSHRoomChannelPrivate));
@@ -552,59 +388,13 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
   object_class->constructor = constructor;
   object_class->set_property = set_property;
   object_class->get_property = get_property;
-  object_class->dispose = dispose;
   object_class->finalize = finalize;
 
-  g_object_class_override_property (object_class, PROP_OBJECT_PATH,
-      "object-path");
-  g_object_class_override_property (object_class, PROP_CHANNEL_TYPE,
-      "channel-type");
-  g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
-      "handle-type");
-  g_object_class_override_property (object_class, PROP_HANDLE, "handle");
+  base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
+  base_class->target_handle_type = TP_HANDLE_TYPE_ROOM;
+  base_class->interfaces = example_csh_room_channel_interfaces;
 
-  g_object_class_override_property (object_class, PROP_CHANNEL_DESTROYED,
-      "channel-destroyed");
-  g_object_class_override_property (object_class, PROP_CHANNEL_PROPERTIES,
-      "channel-properties");
-
-  param_spec = g_param_spec_object ("connection", "TpBaseConnection object",
-      "Connection object that owns this channel",
-      TP_TYPE_BASE_CONNECTION,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
-
-  param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
-      "Additional Channel.Interface.* interfaces",
-      G_TYPE_STRV,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
-
-  param_spec = g_param_spec_string ("target-id", "Chatroom's ID",
-      "The string obtained by inspecting the MUC's handle",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TARGET_ID, param_spec);
-
-  param_spec = g_param_spec_uint ("initiator-handle", "Initiator's handle",
-      "The contact who initiated the channel",
-      0, G_MAXUINT32, 0,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIATOR_HANDLE,
-      param_spec);
-
-  param_spec = g_param_spec_string ("initiator-id", "Initiator's ID",
-      "The string obtained by inspecting the initiator-handle",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIATOR_ID,
-      param_spec);
-
-  param_spec = g_param_spec_boolean ("requested", "Requested?",
-      "True if this channel was requested by the local user",
-      FALSE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
+  base_class->close = example_csh_room_channel_close;
 
   param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
       "Delay between simulated network events",
@@ -612,10 +402,6 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
       param_spec);
-
-  klass->dbus_properties_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, dbus_properties_class));
 
   tp_group_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleCSHRoomChannelClass, group_class),
@@ -627,60 +413,4 @@ example_csh_room_channel_class_init (ExampleCSHRoomChannelClass *klass)
   tp_group_mixin_init_dbus_properties (object_class);
 
   tp_message_mixin_init_dbus_properties (object_class);
-}
-
-
-static void
-channel_close (TpSvcChannel *iface,
-               DBusGMethodInvocation *context)
-{
-  ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (iface);
-
-  example_csh_room_channel_close (self);
-
-  tp_svc_channel_return_from_close (context);
-}
-
-
-static void
-channel_get_channel_type (TpSvcChannel *iface,
-                          DBusGMethodInvocation *context)
-{
-  tp_svc_channel_return_from_get_channel_type (context,
-      TP_IFACE_CHANNEL_TYPE_TEXT);
-}
-
-
-static void
-channel_get_handle (TpSvcChannel *iface,
-                    DBusGMethodInvocation *context)
-{
-  ExampleCSHRoomChannel *self = EXAMPLE_CSH_ROOM_CHANNEL (iface);
-
-  tp_svc_channel_return_from_get_handle (context, TP_HANDLE_TYPE_ROOM,
-      self->priv->handle);
-}
-
-
-static void
-channel_get_interfaces (TpSvcChannel *iface,
-                        DBusGMethodInvocation *context)
-{
-  tp_svc_channel_return_from_get_interfaces (context,
-      example_csh_room_channel_interfaces);
-}
-
-
-static void
-channel_iface_init (gpointer iface,
-                    gpointer data)
-{
-  TpSvcChannelClass *klass = iface;
-
-#define IMPLEMENT(x) tp_svc_channel_implement_##x (klass, channel_##x)
-  IMPLEMENT (close);
-  IMPLEMENT (get_channel_type);
-  IMPLEMENT (get_handle);
-  IMPLEMENT (get_interfaces);
-#undef IMPLEMENT
 }
