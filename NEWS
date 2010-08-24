@@ -1,6 +1,15 @@
 telepathy-glib 0.11.14 (UNRELEASED)
 ===================================
 
+The “One hundred men can skin 5,000 cats a day.” release.
+
+Enhancements:
+
+• fd.o #29375: there's now a TpBaseChannel class which deals with all the
+  boring boilerplate previously needed to implement channels. Public response
+  to the class has been uniform. "The class is perfect", said one passer-by.
+  (jonner, wjt)
+
 …
 
 telepathy-glib 0.11.13 (2010-08-17)
