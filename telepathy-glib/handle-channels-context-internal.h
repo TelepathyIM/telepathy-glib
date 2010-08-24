@@ -65,6 +65,9 @@ TpHandleChannelsContextState _tp_handle_channels_context_get_state
 
 void _tp_handle_channels_context_prepare_async (
     TpHandleChannelsContext *self,
+    const GQuark *account_features,
+    const GQuark *connection_features,
+    const GQuark *channel_features,
     GAsyncReadyCallback callback,
     gpointer user_data);
 

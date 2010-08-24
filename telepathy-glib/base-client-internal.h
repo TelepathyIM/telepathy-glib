@@ -1,7 +1,7 @@
 /*
- * util-internal.h - Headers for non-public telepathy-glib utility functions
+ * Base class for Client implementations
  *
- * Copyright (C) 2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,12 +18,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_UTIL_INTERNAL_H__
-#define __TP_UTIL_INTERNAL_H__
+#ifndef __TP_BASE_CLIENT_INTERNAL_H__
+#define __TP_BASE_CLIENT_INTERNAL_H__
 
-#include <glib.h>
+#include <telepathy-glib/base-client.h>
 
-GArray *_tp_quark_array_copy (const GQuark *quarks) G_GNUC_WARN_UNUSED_RESULT;
-void _tp_quark_array_merge (GArray *array, const GQuark *quarks, gssize n);
+G_BEGIN_DECLS
 
-#endif /* __TP_UTIL_INTERNAL_H__ */
+void _tp_base_client_set_only_for_account (TpBaseClient *self,
+    TpAccount *account);
+
+G_END_DECLS
+
+#endif

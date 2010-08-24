@@ -57,6 +57,7 @@
 
 #include "telepathy-glib/account-channel-request.h"
 
+#include "telepathy-glib/base-client-internal.h"
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
@@ -729,6 +730,8 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   /* Create a temp handler */
   self->priv->handler = tp_simple_handler_new (self->priv->dbus, TRUE, FALSE,
       "TpGLibRequestAndHandle", TRUE, handle_channels, self, NULL);
+  _tp_base_client_set_only_for_account (self->priv->handler,
+      self->priv->account);
 
   if (!tp_base_client_register (self->priv->handler, &error))
     {

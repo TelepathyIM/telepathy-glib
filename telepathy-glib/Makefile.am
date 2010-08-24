@@ -124,6 +124,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     add-dispatch-operation-context-internal.h \
     add-dispatch-operation-context.c \
     base-client.c \
+    base-client-internal.h \
     base-connection.c \
     base-connection-manager.c \
     base-protocol-internal.h \
