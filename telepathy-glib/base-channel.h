@@ -38,7 +38,7 @@ typedef struct _TpBaseChannelPrivate TpBaseChannelPrivate;
 typedef void (*TpBaseChannelCloseFunc) (TpBaseChannel *chan);
 typedef void (*TpBaseChannelFillPropertiesFunc) (TpBaseChannel *chan,
     GHashTable *properties);
-typedef gchar* (*TpBaseChannelGetPathFunc) (TpBaseChannel *chan);
+typedef gchar *(*TpBaseChannelGetPathFunc) (TpBaseChannel *chan);
 
 struct _TpBaseChannelClass
 {

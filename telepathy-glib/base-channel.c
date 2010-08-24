@@ -416,11 +416,13 @@ tp_base_channel_fill_basic_immutable_properties (TpBaseChannel *chan, GHashTable
 }
 
 static gchar *
-tp_base_channel_get_object_path_suffix (TpBaseChannel *self)
+tp_base_channel_get_basic_object_path_suffix (TpBaseChannel *self)
 {
-  gchar * obj_path = g_strdup_printf ("channel%p", self);
-  gchar * escaped = tp_escape_as_identifier (obj_path);
+  gchar *obj_path = g_strdup_printf ("channel%p", self);
+  gchar *escaped = tp_escape_as_identifier (obj_path);
+
   g_free (obj_path);
+
   return escaped;
 }
 
@@ -464,7 +466,10 @@ tp_base_channel_constructed (GObject *object)
   if (chan->priv->object_path == NULL)
     {
       gchar *base_path = klass->get_object_path_suffix (chan);
-      g_assert (base_path != NULL && *base_path != '\0');
+
+      g_assert (base_path != NULL);
+      g_assert (*base_path != '\0');
+
       chan->priv->object_path = g_strdup_printf ("%s/%s",
           conn->object_path, base_path);
       g_free (base_path);
@@ -732,8 +737,10 @@ tp_base_channel_class_init (TpBaseChannelClass *tp_base_channel_class)
   tp_base_channel_class->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseChannelClass, dbus_props_class));
-  tp_base_channel_class->fill_immutable_properties = tp_base_channel_fill_basic_immutable_properties;
-  tp_base_channel_class->get_object_path_suffix = tp_base_channel_get_object_path_suffix;
+  tp_base_channel_class->fill_immutable_properties =
+      tp_base_channel_fill_basic_immutable_properties;
+  tp_base_channel_class->get_object_path_suffix =
+      tp_base_channel_get_basic_object_path_suffix;
 }
 
 static void
