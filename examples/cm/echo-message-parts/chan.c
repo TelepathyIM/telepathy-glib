@@ -27,7 +27,8 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Channel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_MESSAGES,
       tp_message_mixin_messages_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE,
-      destroyable_iface_init);)
+      destroyable_iface_init)
+    )
 
 /* type definition stuff */
 
