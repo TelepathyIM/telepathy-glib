@@ -221,7 +221,11 @@ tp_base_channel_destroyed (TpBaseChannel *chan)
   chan->priv->destroyed = TRUE;
   tp_svc_channel_emit_closed (chan);
 
-  tp_dbus_daemon_unregister_object (bus, chan);
+  if (chan->priv->registered)
+    {
+      tp_dbus_daemon_unregister_object (bus, chan);
+      chan->priv->registered = FALSE;
+    }
 }
 
 /**
