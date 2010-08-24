@@ -375,6 +375,24 @@ tp_base_channel_is_requested (TpBaseChannel *chan)
 }
 
 /**
+ * tp_base_channel_is_registered:
+ * @chan: a channel
+ *
+ * Returns whether or not @chan is visible on the bus; that is, whether
+ * tp_base_channel_register() has been called and tp_base_channel_destroyed()
+ * has not been called.
+ *
+ * Returns: TRUE if @chan is visible on the bus
+ */
+gboolean
+tp_base_channel_is_registered (TpBaseChannel *chan)
+{
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), FALSE);
+
+  return chan->priv->registered;
+}
+
+/**
  * tp_base_channel_is_destroyed:
  * @chan: a channel
  *

@@ -77,6 +77,7 @@ TpBaseConnection *tp_base_channel_get_connection (TpBaseChannel *chan);
 TpHandle tp_base_channel_get_target_handle (TpBaseChannel *chan);
 TpHandle tp_base_channel_get_initiator (TpBaseChannel *chan);
 gboolean tp_base_channel_is_requested (TpBaseChannel *chan);
+gboolean tp_base_channel_is_registered (TpBaseChannel *chan);
 gboolean tp_base_channel_is_destroyed (TpBaseChannel *chan);
 
 GType tp_base_channel_get_type (void);
