@@ -1,8 +1,8 @@
 /*
  * conn.c - an example connection
  *
- * Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2007 Nokia Corporation
+ * Copyright © 2007-2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2007 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -19,11 +19,15 @@
 /* This would conventionally be extensions/extensions.h */
 #include "examples/extensions/extensions.h"
 
+#include "protocol.h"
+
 static void _hats_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleExtendedConnection,
     example_extended_connection,
     TP_TYPE_BASE_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
+      tp_contacts_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (EXAMPLE_TYPE_SVC_CONNECTION_INTERFACE_HATS,
       _hats_iface_init))
 
@@ -97,6 +101,7 @@ finalize (GObject *object)
 {
   ExampleExtendedConnection *self = EXAMPLE_EXTENDED_CONNECTION (object);
 
+  tp_contacts_mixin_finalize (object);
   g_free (self->priv->account);
   g_free (self->priv->hat_color);
   g_hash_table_destroy (self->priv->hat_properties);
@@ -118,14 +123,7 @@ example_normalize_contact (TpHandleRepoIface *repo,
                            gpointer context,
                            GError **error)
 {
-  if (id[0] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "ID must not be empty");
-      return NULL;
-    }
-
-  return g_utf8_strdown (id, -1);
+  return example_extended_protocol_normalize_contact (id, error);
 }
 
 static void
@@ -173,16 +171,43 @@ shut_down (TpBaseConnection *conn)
 }
 
 static void
+constructed (GObject *object)
+{
+  TpBaseConnection *base = TP_BASE_CONNECTION (object);
+  void (*chain_up) (GObject *) =
+    G_OBJECT_CLASS (example_extended_connection_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  tp_contacts_mixin_init (object,
+      G_STRUCT_OFFSET (ExampleExtendedConnection, contacts_mixin));
+  tp_base_connection_register_with_contacts_mixin (base);
+}
+
+static const gchar *interfaces_always_present[] = {
+    TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
+    EXAMPLE_IFACE_CONNECTION_INTERFACE_HATS,
+    NULL };
+
+const gchar * const *
+example_extended_connection_get_possible_interfaces (void)
+{
+  /* in this example CM we don't have any extra interfaces that are sometimes,
+   * but not always, present */
+  return interfaces_always_present;
+}
+
+static void
 example_extended_connection_class_init (ExampleExtendedConnectionClass *klass)
 {
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
-  static const gchar *interfaces_always_present[] = {
-      EXAMPLE_IFACE_CONNECTION_INTERFACE_HATS,
-      NULL };
 
+  object_class->constructed = constructed;
   object_class->get_property = get_property;
   object_class->set_property = set_property;
   object_class->finalize = finalize;
@@ -201,6 +226,9 @@ example_extended_connection_class_init (ExampleExtendedConnectionClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+
+  tp_contacts_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ExampleExtendedConnectionClass, contacts_mixin));
 }
 
 static void

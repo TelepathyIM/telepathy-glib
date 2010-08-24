@@ -61,6 +61,7 @@
     <xi:include href="xml/channel-dispatch-operation.xml"/>
     <xi:include href="xml/channel-request.xml"/>
     <xi:include href="xml/client.xml"/>
+    <xi:include href="xml/account-channel-request.xml"/>
   </chapter>
 
   <chapter id="ch-service-dbus">

@@ -11,7 +11,7 @@
  * notice and this notice are preserved.
  */
 
-#include "chan.h"
+#include "echo-chan.h"
 
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/channel-iface.h>
@@ -20,8 +20,8 @@
 static void text_iface_init (gpointer iface, gpointer data);
 static void destroyable_iface_init (gpointer iface, gpointer data);
 
-G_DEFINE_TYPE_WITH_CODE (ExampleEchoChannel,
-    example_echo_channel,
+G_DEFINE_TYPE_WITH_CODE (TpTestsEchoChannel,
+    tp_tests_echo_channel,
     TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_DESTROYABLE,
@@ -30,13 +30,13 @@ G_DEFINE_TYPE_WITH_CODE (ExampleEchoChannel,
 
 /* type definition stuff */
 
-static const char * example_echo_channel_interfaces[] = {
+static const char * tp_tests_echo_channel_interfaces[] = {
     TP_IFACE_CHANNEL_INTERFACE_DESTROYABLE,
     NULL
 };
 
 static void
-example_echo_channel_init (ExampleEchoChannel *self)
+tp_tests_echo_channel_init (TpTestsEchoChannel *self)
 {
 }
 
@@ -46,9 +46,9 @@ constructor (GType type,
              GObjectConstructParam *props)
 {
   GObject *object =
-      G_OBJECT_CLASS (example_echo_channel_parent_class)->constructor (type,
+      G_OBJECT_CLASS (tp_tests_echo_channel_parent_class)->constructor (type,
           n_props, props);
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (object);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (object);
   TpHandleRepoIface *contact_repo = NULL;
   TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
   g_assert (conn != NULL);
@@ -57,7 +57,7 @@ constructor (GType type,
 
   tp_base_channel_register (TP_BASE_CHANNEL (self));
 
-  tp_text_mixin_init (object, G_STRUCT_OFFSET (ExampleEchoChannel, text),
+  tp_text_mixin_init (object, G_STRUCT_OFFSET (TpTestsEchoChannel, text),
       contact_repo);
 
   tp_text_mixin_set_message_types (object,
@@ -74,11 +74,11 @@ finalize (GObject *object)
 {
   tp_text_mixin_finalize (object);
 
-  ((GObjectClass *) example_echo_channel_parent_class)->finalize (object);
+  ((GObjectClass *) tp_tests_echo_channel_parent_class)->finalize (object);
 }
 
 static void
-example_echo_channel_close (ExampleEchoChannel *self)
+tp_tests_echo_channel_close (TpTestsEchoChannel *self)
 {
   GObject *object = (GObject *) self;
   gboolean closed = tp_base_channel_is_destroyed (TP_BASE_CHANNEL (self));
@@ -107,13 +107,13 @@ example_echo_channel_close (ExampleEchoChannel *self)
 static void
 channel_close (TpBaseChannel *channel)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (channel);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (channel);
 
-  example_echo_channel_close (self);
+  tp_tests_echo_channel_close (self);
 }
 
 static void
-example_echo_channel_class_init (ExampleEchoChannelClass *klass)
+tp_tests_echo_channel_class_init (TpTestsEchoChannelClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
   TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
@@ -123,11 +123,11 @@ example_echo_channel_class_init (ExampleEchoChannelClass *klass)
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_TEXT;
   base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
-  base_class->interfaces = example_echo_channel_interfaces;
+  base_class->interfaces = tp_tests_echo_channel_interfaces;
   base_class->close = channel_close;
 
   tp_text_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleEchoChannelClass, text_class));
+      G_STRUCT_OFFSET (TpTestsEchoChannelClass, text_class));
 }
 
 static void
@@ -136,7 +136,7 @@ text_send (TpSvcChannelTypeText *iface,
            const gchar *text,
            DBusGMethodInvocation *context)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (iface);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (iface);
   time_t timestamp = time (NULL);
   gchar *echo;
   guint echo_type = type;
@@ -190,10 +190,11 @@ static void
 destroyable_destroy (TpSvcChannelInterfaceDestroyable *iface,
                      DBusGMethodInvocation *context)
 {
-  ExampleEchoChannel *self = EXAMPLE_ECHO_CHANNEL (iface);
+  TpTestsEchoChannel *self = TP_TESTS_ECHO_CHANNEL (iface);
 
   tp_text_mixin_clear ((GObject *) self);
   tp_base_channel_destroyed (TP_BASE_CHANNEL (self));
+
   tp_svc_channel_interface_destroyable_return_from_destroy (context);
 }
 

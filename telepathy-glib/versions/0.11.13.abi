@@ -1,0 +1,7 @@
+Version: TELEPATHY_GLIB_0.11.13
+Extends: TELEPATHY_GLIB_0.11.12
+Release: 0.11.13
+
+tp_error_quark
+tp_user_action_time_from_x11
+tp_user_action_time_should_present

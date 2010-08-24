@@ -39,6 +39,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/account-channel-request.h>
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-dispatch-operation.h>

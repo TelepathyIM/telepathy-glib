@@ -8,6 +8,14 @@ libtp_glib_tests_la_SOURCES = \
     contacts-conn.c \
     contacts-conn.h \
     debug.h \
+    echo-chan.h \
+    echo-chan.c \
+    echo-cm.h \
+    echo-cm.c \
+    echo-conn.h \
+    echo-conn.c \
+    echo-im-manager.h \
+    echo-im-manager.c \
     myassert.h \
     params-cm.h \
     params-cm.c \
@@ -17,6 +25,10 @@ libtp_glib_tests_la_SOURCES = \
     simple-account-manager.h\
     simple-channel-dispatch-operation.c \
     simple-channel-dispatch-operation.h \
+    simple-channel-dispatcher.c \
+    simple-channel-dispatcher.h \
+    simple-channel-request.c \
+    simple-channel-request.h \
     simple-client.c \
     simple-client.h \
     simple-conn.c \

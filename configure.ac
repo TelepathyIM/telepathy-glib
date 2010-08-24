@@ -11,7 +11,7 @@ AC_PREREQ([2.59])
 
 m4_define([tp_glib_major_version], [0])
 m4_define([tp_glib_minor_version], [11])
-m4_define([tp_glib_micro_version], [11])
+m4_define([tp_glib_micro_version], [13])
 m4_define([tp_glib_nano_version], [1])
 
 # If library source has changed since last release, increment revision
@@ -26,9 +26,9 @@ m4_define([tp_glib_nano_version], [1])
 # (we don't guarantee that we won't add ABI then remove it again, if it was
 # never seen in a release).
 
-m4_define([tp_glib_lt_current], [40])
+m4_define([tp_glib_lt_current], [42])
 m4_define([tp_glib_lt_revision], [0])
-m4_define([tp_glib_lt_age], [40])
+m4_define([tp_glib_lt_age], [42])
 
 # Some magic
 m4_define([tp_glib_base_version],
@@ -45,7 +45,14 @@ AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.9 -Wno-portability])
 AM_CONFIG_HEADER(config.h)
 
+dnl We're compatible with automake 1.9 (to be nice to Maemo 5), but with
+dnl reduced functionality
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+m4_ifdef([AM_PROG_VALAC],
+	 [have_automake_for_dist=true],
+         [AC_MSG_WARN([You have Automake < 1.11, 'make dist' will not work])
+	  have_automake_for_dist=false])
+AM_CONDITIONAL([HAVE_AUTOMAKE_FOR_DIST], [$have_automake_for_dist])
 
 dnl check for tools
 AC_PROG_CC
@@ -196,21 +203,18 @@ AC_ARG_ENABLE(vala-bindings,
                   enable_vala_bindings=no )
 
 if test x$enable_vala_bindings = xyes; then
-  PKG_CHECK_MODULES(VALA,
-                    [vala-1.0 >= 0.9.2.97-2b08])
+  m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.9.3)],
+           [AC_MSG_ERROR([Automake >= 1.11 required for Vala bindings])])
   have_vala=yes
 
   AC_PATH_PROG(VALAC, valac, valac)
   AC_SUBST(VALAC)
   AC_SUBST(VALAFLAGS)
 
-  AC_MSG_CHECKING([for vapigen])
-  VAPIGEN=`$PKG_CONFIG --variable=vapigen vala-1.0`
+  AC_PATH_PROG([VAPIGEN], [vapigen], [false])
 
-  if test "x$VAPIGEN" = "x"; then
-    AC_MSG_ERROR([not found. Was vala compiled with --enable-vapigen?])
-  else
-    AC_MSG_RESULT([$VAPIGEN])
+  if test "x$VAPIGEN" = "xfalse"; then
+    AC_MSG_ERROR([vapigen not found. Was vala compiled with --enable-vapigen?])
   fi
 
   AC_SUBST(VAPIGEN)
@@ -279,7 +283,6 @@ AC_OUTPUT( Makefile \
 	   examples/cm/callable/Makefile \
 	   examples/cm/channelspecific/Makefile \
 	   examples/cm/contactlist/Makefile \
-	   examples/cm/echo/Makefile \
 	   examples/cm/echo-message-parts/Makefile \
 	   examples/cm/extended/Makefile \
 	   examples/cm/no-protocols/Makefile \
@@ -297,7 +300,5 @@ AC_OUTPUT( Makefile \
 	   tests/tools/Makefile \
 	   tools/Makefile \
 	   m4/Makefile \
-	   vala/Makefile \
-	   vala/telepathy-vala.pc \
-	   vala/telepathy-vala-uninstalled.pc
+	   vala/Makefile
 )

@@ -41,8 +41,23 @@
 
 /**
  * TpBaseClientClass:
+ * @parent_class: the parent class
+ * @observe_channels: the function called to observe newly-created channels
+ *  matching this client's observer filter (since 0.11.13)
+ * @add_dispatch_operation: the function called to request user approval of
+ *  unrequested (incoming) channels matching this client's approver filter
+ *  (since 0.11.13)
+ * @handle_channels: the function called to handle channels matching this
+ *  client's handler filter (since 0.11.13)
  *
  * The class of a #TpBaseClient.
+ *
+ * The virtual methods @observe_channels, @add_dispatch_operation and
+ * @handle_channels can be also implemented by calling
+ * tp_base_client_implement_observe_channels(),
+ * tp_base_client_implement_add_dispatch_operation() and
+ * tp_base_client_implement_handle_channels(). This is compatible with
+ * telepathy-glib versions older than 0.11.13.
  *
  * Since: 0.11.5
  */
@@ -110,8 +125,10 @@
  * @requests_satisfied: (element-type TelepathyGLib.ChannelRequest): a #GList of
  *  #TpChannelRequest having their object-path defined but are not guaranteed
  *  to be prepared.
- * @user_action_time: the time at which user action occurred, or 0 if this
- * channel is to be handled for some reason not involving user action.
+ * @user_action_time: the time at which user action occurred, or one of the
+ *  special values %TP_USER_ACTION_TIME_NOT_USER_ACTION or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME
+ *  (see #TpAccountChannelRequest:user-action-time for details)
  * @context: a #TpHandleChannelsContext representing the context of this
  *  D-Bus call
  *
@@ -146,13 +163,6 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 
-struct _TpBaseClientClassPrivate {
-    /*<private>*/
-    TpBaseClientClassObserveChannelsImpl observe_channels_impl;
-    TpBaseClientClassAddDispatchOperationImpl add_dispatch_operation_impl;
-    TpBaseClientClassHandleChannelsImpl handle_channels_impl;
-};
-
 static void observer_iface_init (gpointer, gpointer);
 static void approver_iface_init (gpointer, gpointer);
 static void handler_iface_init (gpointer, gpointer);
@@ -166,9 +176,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_APPROVER, approver_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_HANDLER, handler_iface_init);
     G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CLIENT_INTERFACE_REQUESTS,
-      requests_iface_init);
-    g_type_add_class_private (g_define_type_id, sizeof (
-        TpBaseClientClassPrivate)))
+      requests_iface_init))
 
 enum {
     PROP_DBUS_DAEMON = 1,
@@ -245,13 +253,12 @@ _tp_base_client_copy_filter (GHashTable *filter)
  * a %TP_HASH_TYPE_CHANNEL_CLASS
  *
  * Register a new channel class as Observer.ObserverChannelFilter.
- * The @observe_channels virtual method set up using
- * tp_base_client_implement_observe_channels() will be called whenever
- * a new channel's properties match the ones in @filter.
+ * The #TpBaseClientClass.observe_channels virtual method will be called
+ * whenever a new channel's properties match the ones in @filter.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
- * tp_base_client_implement_observe_channels().
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.observe_channels.
  *
  * Since: 0.11.5
  */
@@ -293,7 +300,7 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->priv->observe_channels_impl != NULL);
+  g_return_if_fail (cls->observe_channels != NULL);
 
   self->priv->flags |= CLIENT_IS_OBSERVER;
   g_ptr_array_add (self->priv->observer_filters, filter);
@@ -318,8 +325,8 @@ tp_base_client_take_observer_filter (TpBaseClient *self,
  * its filter, it will automatically be restarted by service-activation.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
- * tp_base_client_implement_observe_channels().
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.observe_channels.
  *
  * Since: 0.11.5
  */
@@ -331,7 +338,7 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->priv->observe_channels_impl != NULL);
+  g_return_if_fail (cls->observe_channels != NULL);
 
   self->priv->flags |= (CLIENT_IS_OBSERVER | CLIENT_OBSERVER_RECOVER);
 }
@@ -343,13 +350,12 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
  * a %TP_HASH_TYPE_CHANNEL_CLASS
  *
  * Register a new channel class as Approver.ApproverChannelFilter.
- * The @add_dispatch_operation virtual method set up using
- * tp_base_client_implement_add_dispatch_operation() will be called whenever
- * a new channel's properties match the ones in @filter.
+ * The #TpBaseClientClass.add_dispatch_operation virtual method will be called
+ * whenever a new channel's properties match the ones in @filter.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
- * tp_base_client_implement_add_dispatch_operation().
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.add_dispatch_operation.
  *
  * Since: 0.11.5
  */
@@ -391,7 +397,7 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->priv->add_dispatch_operation_impl != NULL);
+  g_return_if_fail (cls->add_dispatch_operation != NULL);
 
   self->priv->flags |= CLIENT_IS_APPROVER;
   g_ptr_array_add (self->priv->approver_filters, filter);
@@ -407,7 +413,7 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
  *
  * This method may only be called before tp_base_client_register() is
  * called, and may only be called on objects whose class has called
- * tp_base_client_implement_handle_channels().
+ * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.6
  */
@@ -418,7 +424,7 @@ tp_base_client_be_a_handler (TpBaseClient *self)
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
+  g_return_if_fail (cls->handle_channels != NULL);
 
   self->priv->flags |= CLIENT_IS_HANDLER;
 }
@@ -430,13 +436,12 @@ tp_base_client_be_a_handler (TpBaseClient *self)
  * a %TP_HASH_TYPE_CHANNEL_CLASS
  *
  * Register a new channel class as Handler.HandlerChannelFilter.
- * The @handle_channels virtual method set up using
- * tp_base_client_implement_handle_channels() will be called whenever
- * a new channel's properties match the ones in @filter.
+ * The #TpBaseClientClass.handle_channels virtual method will be called
+ * whenever a new channel's properties match the ones in @filter.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
- * tp_base_client_implement_handle_channels().
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.6
  */
@@ -479,7 +484,7 @@ tp_base_client_take_handler_filter (TpBaseClient *self,
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
+  g_return_if_fail (cls->handle_channels != NULL);
 
   self->priv->flags |= CLIENT_IS_HANDLER;
   g_ptr_array_add (self->priv->handler_filters, filter);
@@ -496,8 +501,8 @@ tp_base_client_take_handler_filter (TpBaseClient *self,
  * D-Bus property.)
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
- * tp_base_client_implement_handle_channels().
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.6
  */
@@ -509,7 +514,7 @@ tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
+  g_return_if_fail (cls->handle_channels != NULL);
 
   if (bypass_approval)
     {
@@ -534,8 +539,8 @@ tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
  * return the list of pending requests.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
- * tp_base_client_implement_handle_channels().
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.6
  */
@@ -546,7 +551,7 @@ tp_base_client_set_handler_request_notification (TpBaseClient *self)
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
+  g_return_if_fail (cls->handle_channels != NULL);
 
   self->priv->flags |= (CLIENT_IS_HANDLER | CLIENT_HANDLER_WANTS_REQUESTS);
 }
@@ -557,7 +562,7 @@ _tp_base_client_add_handler_capability (TpBaseClient *self,
 {
   TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
 
-  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
+  g_return_if_fail (cls->handle_channels != NULL);
 
   self->priv->flags |= CLIENT_IS_HANDLER;
 
@@ -579,8 +584,8 @@ _tp_base_client_add_handler_capability (TpBaseClient *self,
  * tp_base_client_add_handler_capabilities().
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
- * tp_base_client_implement_handle_channels().
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.6
  */
@@ -592,7 +597,7 @@ tp_base_client_add_handler_capability (TpBaseClient *self,
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (cls->priv->handle_channels_impl != NULL);
+  g_return_if_fail (cls->handle_channels != NULL);
 
   _tp_base_client_add_handler_capability (self, token);
 }
@@ -610,8 +615,8 @@ tp_base_client_add_handler_capability (TpBaseClient *self,
  * particular streaming protocols and codecs.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
- * tp_base_client_implement_handle_channels().
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.6
  */
@@ -642,8 +647,8 @@ tp_base_client_add_handler_capabilities (TpBaseClient *self,
  * tp_base_client_add_handler_capability() for each capability token.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
- * tp_base_client_implement_handle_channels().
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.6
  */
@@ -1230,9 +1235,6 @@ tp_base_client_class_init (TpBaseClientClass *cls)
   cls->dbus_properties_class.interfaces = prop_ifaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpBaseClientClass, dbus_properties_class));
-
-  cls->priv = G_TYPE_CLASS_GET_PRIVATE (cls, TP_TYPE_BASE_CLIENT,
-      TpBaseClientClassPrivate);
 }
 
 static GList *
@@ -1269,7 +1271,7 @@ context_prepare_cb (GObject *source,
   channels_list = ptr_array_to_list (ctx->channels);
   requests_list = ptr_array_to_list (ctx->requests);
 
-  cls->priv->observe_channels_impl (self, ctx->account, ctx->connection,
+  cls->observe_channels (self, ctx->account, ctx->connection,
       channels_list, ctx->dispatch_operation, requests_list, ctx);
 
   g_list_free (channels_list);
@@ -1318,7 +1320,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       return;
     }
 
-  if (cls->priv->observe_channels_impl == NULL)
+  if (cls->observe_channels == NULL)
     {
       WARNING ("class %s does not implement ObserveChannels",
           G_OBJECT_TYPE_NAME (self));
@@ -1460,7 +1462,7 @@ add_dispatch_context_prepare_cb (GObject *source,
 
   channels_list = ptr_array_to_list (ctx->channels);
 
-  cls->priv->add_dispatch_operation_impl (self, ctx->account, ctx->connection,
+  cls->add_dispatch_operation (self, ctx->account, ctx->connection,
       channels_list, ctx->dispatch_operation, ctx);
 
   g_list_free (channels_list);
@@ -1506,7 +1508,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       return;
     }
 
-  if (cls->priv->add_dispatch_operation_impl == NULL)
+  if (cls->add_dispatch_operation == NULL)
     {
       WARNING ("class %s does not implement AddDispatchOperation",
           G_OBJECT_TYPE_NAME (self));
@@ -1677,14 +1679,14 @@ handle_channels_context_prepare_cb (GObject *source,
   tp_g_signal_connect_object (ctx, "done", G_CALLBACK (ctx_done_cb),
       self, 0);
 
-  cls->priv->handle_channels_impl (self, ctx->account, ctx->connection,
+  cls->handle_channels (self, ctx->account, ctx->connection,
       channels_list, requests_list, ctx->user_action_time, ctx);
 
   g_list_free (channels_list);
   g_list_free (requests_list);
 
   if (_tp_handle_channels_context_get_state (ctx) ==
-      TP_OBSERVE_CHANNELS_CONTEXT_STATE_NONE)
+      TP_HANDLE_CHANNELS_CONTEXT_STATE_NONE)
     {
       error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Implementation of HandledChannels in %s didn't call "
@@ -1742,7 +1744,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       return;
     }
 
-  if (cls->priv->handle_channels_impl == NULL)
+  if (cls->handle_channels == NULL)
     {
       DEBUG ("class %s does not implement HandleChannels",
           G_OBJECT_TYPE_NAME (self));
@@ -1996,13 +1998,16 @@ requests_iface_init (gpointer g_iface,
  * Called by subclasses to define the actual implementation of the
  * ObserveChannels() D-Bus method.
  *
+ * Since 0.11.13 this is exactly equivalent to setting the
+ * #TpBaseClientClass.observe_channels function pointer.
+ *
  * Since: 0.11.5
  */
 void
 tp_base_client_implement_observe_channels (TpBaseClientClass *cls,
     TpBaseClientClassObserveChannelsImpl impl)
 {
-  cls->priv->observe_channels_impl = impl;
+  cls->observe_channels = impl;
 }
 
 /**
@@ -2107,13 +2112,16 @@ tp_base_client_get_dbus_daemon (TpBaseClient *self)
  * Called by subclasses to define the actual implementation of the
  * AddDispatchOperation() D-Bus method.
  *
+ * Since 0.11.13 this is exactly equivalent to setting the
+ * #TpBaseClientClass.add_dispatch_operation function pointer.
+ *
  * Since: 0.11.5
  */
 void
 tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *cls,
     TpBaseClientClassAddDispatchOperationImpl impl)
 {
-  cls->priv->add_dispatch_operation_impl = impl;
+  cls->add_dispatch_operation = impl;
 }
 
 /**
@@ -2125,13 +2133,16 @@ tp_base_client_implement_add_dispatch_operation (TpBaseClientClass *cls,
  * Called by subclasses to define the actual implementation of the
  * HandleChannels() D-Bus method.
  *
+ * Since 0.11.13 this is exactly equivalent to setting the
+ * #TpBaseClientClass.handle_channels function pointer.
+ *
  * Since: 0.11.6
  */
 void
 tp_base_client_implement_handle_channels (TpBaseClientClass *cls,
     TpBaseClientClassHandleChannelsImpl impl)
 {
-  cls->priv->handle_channels_impl = impl;
+  cls->handle_channels = impl;
 }
 
 /**

@@ -1365,3 +1365,75 @@ tp_simple_async_report_success_in_idle (GObject *source,
   g_simple_async_result_complete_in_idle (simple);
   g_object_unref (simple);
 }
+
+/**
+ * tp_user_action_time_from_x11:
+ * @x11_time: an X11 timestamp, or 0 to indicate the current time
+ *
+ * Convert an X11 timestamp into a user action time as used in Telepathy.
+ *
+ * This also works for the timestamps used by Gdk 2.x and Clutter 1.0;
+ * it may or may not work with other toolkits or versions.
+ *
+ * Returns: a nonzero Telepathy user action time, or
+ *  %TP_USER_ACTION_TIME_CURRENT_TIME
+ *
+ * Since: 0.11.13
+ */
+gint64
+tp_user_action_time_from_x11 (guint32 x11_time)
+{
+  if (x11_time == 0)
+    {
+      return TP_USER_ACTION_TIME_CURRENT_TIME;
+    }
+
+  return x11_time;
+}
+
+/**
+ * tp_user_action_time_should_present:
+ * @user_action_time: (type gint64): the Telepathy user action time
+ * @x11_time: (out) (allow-none): a pointer to guint32 used to
+ *  return an X11 timestamp, or 0 to indicate the current time; if
+ *  %FALSE is returned, the value placed here is not meaningful
+ *
+ * Interpret a Telepathy user action time to decide whether a Handler should
+ * attempt to gain focus. If %TRUE is returned, it would be appropriate to
+ * call gtk_window_present_with_time() using @x11_time as input, for instance.
+ *
+ * @x11_time is used to return a timestamp in the right format for X11,
+ * Gdk 2.x and Clutter 1.0; it may or may not work with other toolkits or
+ * versions.
+ *
+ * Returns: %TRUE if it would be appropriate to present a window
+ *
+ * Since: 0.11.13
+ */
+
+gboolean
+tp_user_action_time_should_present (gint64 user_action_time,
+    guint32 *x11_time)
+{
+  guint32 when = 0;
+  gboolean ret;
+
+  if (user_action_time > 0 && user_action_time <= G_MAXUINT32)
+    {
+      when = (guint32) user_action_time;
+      ret = TRUE;
+    }
+  else if (user_action_time == TP_USER_ACTION_TIME_CURRENT_TIME)
+    {
+      ret = TRUE;
+    }
+  else
+    {
+      ret = FALSE;
+    }
+
+  if (ret && x11_time != NULL)
+    *x11_time = when;
+
+  return ret;
+}

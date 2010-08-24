@@ -1,5 +1,6 @@
 noinst_PROGRAMS = \
     test-account \
+    test-account-channel-request \
     test-account-manager \
     test-base-client \
     test-call-cancellation \
@@ -57,6 +58,8 @@ LDADD = \
 
 test_account_SOURCES = account.c
 
+test_account_channel_request_SOURCES = account-channel-request.c
+
 test_account_manager_SOURCES = account-manager.c
 
 test_base_client_SOURCES = base-client.c
@@ -86,9 +89,6 @@ test_client_SOURCES = client.c
 test_cli_group_SOURCES = cli-group.c
 
 test_cm_SOURCES = cm.c
-test_cm_LDADD = \
-    $(LDADD) \
-    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
 
 test_connection_SOURCES = connection.c
 
@@ -140,10 +140,6 @@ test_handle_set_SOURCES = handle-set.c
 test_invalidated_while_invoking_signals_SOURCES = \
     invalidated-while-invoking-signals.c
 
-test_long_connection_name_LDADD = \
-    $(LDADD) \
-    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
-
 test_long_connection_name_SOURCES = long-connection-name.c
 
 test_message_mixin_LDADD = \
@@ -159,7 +155,6 @@ nodist_test_properties_SOURCES = \
 
 test_protocol_objects_LDADD = \
     $(LDADD) \
-    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la \
     $(top_builddir)/examples/cm/echo-message-parts/libexample-cm-echo-2.la
 test_protocol_objects_SOURCES = protocol-objects.c
 
@@ -167,14 +162,8 @@ test_self_handle_SOURCES = self-handle.c
 
 test_self_presence_SOURCES = self-presence.c
 
-test_text_mixin_LDADD = \
-    $(LDADD) \
-    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
 test_text_mixin_SOURCES = text-mixin.c
 
-test_text_respawn_LDADD = \
-    $(LDADD) \
-    $(top_builddir)/examples/cm/echo/libexample-cm-echo.la
 test_text_respawn_SOURCES = text-respawn.c
 
 test_unsupported_interface_SOURCES = unsupported-interface.c

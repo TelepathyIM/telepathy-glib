@@ -22,6 +22,9 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
+#include "textchan-null.h"
+#include "util.h"
+
 G_DEFINE_TYPE (TpTestsSimpleConnection, tp_tests_simple_connection,
     TP_TYPE_BASE_CONNECTION);
 
@@ -38,6 +41,9 @@ struct _TpTestsSimpleConnectionPrivate
   gchar *account;
   guint connect_source;
   guint disconnect_source;
+
+  /* TpHandle => reffed TpTestsTextChannelNull */
+  GHashTable *channels;
 };
 
 static void
@@ -45,6 +51,9 @@ tp_tests_simple_connection_init (TpTestsSimpleConnection *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TESTS_TYPE_SIMPLE_CONNECTION, TpTestsSimpleConnectionPrivate);
+
+  self->priv->channels = g_hash_table_new_full (NULL, NULL, NULL,
+      (GDestroyNotify) g_object_unref);
 }
 
 static void
@@ -80,6 +89,16 @@ set_property (GObject *object,
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
   }
+}
+
+static void
+dispose (GObject *object)
+{
+  TpTestsSimpleConnection *self = TP_TESTS_SIMPLE_CONNECTION (object);
+
+  g_hash_table_unref (self->priv->channels);
+
+  G_OBJECT_CLASS (tp_tests_simple_connection_parent_class)->dispose (object);
 }
 
 static void
@@ -229,6 +248,7 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
 
   object_class->get_property = get_property;
   object_class->set_property = set_property;
+  object_class->dispose = dispose;
   object_class->finalize = finalize;
   g_type_class_add_private (klass, sizeof (TpTestsSimpleConnectionPrivate));
 
@@ -272,4 +292,54 @@ tp_tests_simple_connection_new (const gchar *account,
       "account", account,
       "protocol", protocol,
       NULL));
+}
+
+gchar *
+tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
+    const gchar *target_id,
+    GHashTable **props)
+{
+  TpTestsTextChannelNull *chan;
+  gchar *chan_path;
+  TpHandleRepoIface *contact_repo;
+  TpHandle handle;
+  static guint count = 0;
+  TpBaseConnection *base_conn = (TpBaseConnection *) self;
+
+  /* Get contact handle */
+  contact_repo = tp_base_connection_get_handles (base_conn,
+      TP_HANDLE_TYPE_CONTACT);
+  g_assert (contact_repo != NULL);
+
+  handle = tp_handle_ensure (contact_repo, target_id, NULL, NULL);
+
+  chan = g_hash_table_lookup (self->priv->channels, GUINT_TO_POINTER (handle));
+  if (chan != NULL)
+    {
+      /* Channel already exist, reuse it */
+      g_object_get (chan, "object-path", &chan_path, NULL);
+    }
+  else
+    {
+      chan_path = g_strdup_printf ("%s/Channel%u", base_conn->object_path,
+          count++);
+
+       chan = TP_TESTS_TEXT_CHANNEL_NULL (
+          tp_tests_object_new_static_class (
+            TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
+            "connection", self,
+            "object-path", chan_path,
+            "handle", handle,
+            NULL));
+
+      g_hash_table_insert (self->priv->channels, GUINT_TO_POINTER (handle),
+          chan);
+    }
+
+  tp_handle_unref (contact_repo, handle);
+
+  if (props != NULL)
+    *props = tp_tests_text_channel_get_props (chan);
+
+  return chan_path;
 }

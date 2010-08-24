@@ -280,7 +280,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
   g_object_class_install_property (object_class, PROP_DESTROY,
       param_spec);
 
-  tp_base_client_implement_observe_channels (base_clt_cls, observe_channels);
+  base_clt_cls->observe_channels = observe_channels;
 }
 
 /**

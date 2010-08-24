@@ -11,8 +11,6 @@
 
 #include "conn.h"
 
-#include <string.h>
-
 #include <dbus/dbus-glib.h>
 
 #include <telepathy-glib/telepathy-glib.h>
@@ -20,6 +18,7 @@
 #include <telepathy-glib/handle-repo-static.h>
 
 #include "contact-list-manager.h"
+#include "protocol.h"
 
 static void init_aliasing (gpointer, gpointer);
 
@@ -134,14 +133,12 @@ example_contact_list_normalize_contact (TpHandleRepoIface *repo,
                                         gpointer context,
                                         GError **error)
 {
-  if (id[0] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "Contact ID must not be empty");
-      return NULL;
-    }
+  gchar *normal = NULL;
 
-  return g_utf8_normalize (id, -1, G_NORMALIZE_ALL_COMPOSE);
+  if (example_contact_list_protocol_check_contact_id (id, &normal, error))
+    return normal;
+  else
+    return NULL;
 }
 
 static gchar *
@@ -407,17 +404,26 @@ set_own_status (GObject *object,
   return TRUE;
 }
 
+static const gchar *interfaces_always_present[] = {
+    TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
+    TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+    TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+    TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+    NULL };
+
+const gchar * const *
+example_contact_list_connection_get_possible_interfaces (void)
+{
+  /* in this example CM we don't have any extra interfaces that are sometimes,
+   * but not always, present */
+  return interfaces_always_present;
+}
+
 static void
 example_contact_list_connection_class_init (
     ExampleContactListConnectionClass *klass)
 {
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
-      NULL };
   TpBaseConnectionClass *base_class = (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;

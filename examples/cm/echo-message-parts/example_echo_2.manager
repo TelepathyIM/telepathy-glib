@@ -3,7 +3,7 @@ Interfaces=
 
 [Protocol example]
 Interfaces=
-ConnectionInterfaces=org.freedesktop.Telepathy.Connection.Interface.Requests;
+ConnectionInterfaces=org.freedesktop.Telepathy.Connection.Interface.Requests;org.freedesktop.Telepathy.Connection.Interface.Contacts;
 param-account=s required register
 RequestableChannelClasses=1-1-text;
 VCardField=x-telepathy-example

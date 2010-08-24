@@ -29,6 +29,8 @@ TP_CHANNEL_DISPATCHER_BUS_NAME
 TP_CHANNEL_DISPATCHER_OBJECT_PATH
 TP_CLIENT_BUS_NAME_BASE
 TP_CLIENT_OBJECT_PATH_BASE
+TP_USER_ACTION_TIME_NOT_USER_ACTION
+TP_USER_ACTION_TIME_CURRENT_TIME
 </SECTION>
 
 <SECTION>
@@ -1236,6 +1238,8 @@ tp_clear_pointer
 tp_clear_object
 tp_clear_boxed
 tp_simple_async_report_success_in_idle
+tp_user_action_time_from_x11
+tp_user_action_time_should_present
 </SECTION>
 
 <SECTION>
@@ -1929,7 +1933,7 @@ tp_dbus_properties_mixin_flags_get_type
 <INCLUDE>telepathy-glib/errors.h</INCLUDE>
 <FILE>errors</FILE>
 TP_ERROR_PREFIX
-TP_ERRORS
+TP_ERROR
 TP_TYPE_ERROR
 TpError
 tp_g_set_error_invalid_handle_type
@@ -1974,11 +1978,15 @@ TP_ERROR_STR_REGISTRATION_EXISTS
 TP_ERROR_STR_SERVICE_BUSY
 TP_ERROR_STR_RESOURCE_UNAVAILABLE
 TP_ERROR_STR_WOULD_BREAK_ANONYMITY
+TP_ERROR_STR_CERT_REVOKED
+TP_ERROR_STR_CERT_INSECURE
+TP_ERROR_STR_CERT_LIMIT_EXCEEDED
 <SUBSECTION Standard>
 tp_error_get_type
 tp_errors_quark
+tp_error_quark
 <SUBSECTION Private>
-TP_ERROR
+TP_ERRORS
 </SECTION>
 
 <SECTION>
@@ -4333,4 +4341,31 @@ TP_SVC_CHANNEL_TYPE_CONTACT_SEARCH
 TP_SVC_CHANNEL_TYPE_CONTACT_SEARCH_GET_CLASS
 TP_TYPE_SVC_CHANNEL_TYPE_CONTACT_SEARCH
 tp_svc_channel_type_contact_search_get_type
+</SECTION>
+
+<SECTION>
+<FILE>account-channel-request</FILE>
+<TITLE>account-channel-request</TITLE>
+<INCLUDE>telepathy-glib/account-channel-request.h</INCLUDE>
+TpAccountChannelRequest
+tp_account_channel_request_new
+tp_account_channel_request_get_request
+tp_account_channel_request_get_user_action_time
+tp_account_channel_request_get_account
+tp_account_channel_request_create_and_handle_channel_async
+tp_account_channel_request_create_and_handle_channel_finish
+tp_account_channel_request_ensure_and_handle_channel_async
+tp_account_channel_request_ensure_and_handle_channel_finish
+tp_account_channel_request_create_channel_async
+tp_account_channel_request_create_channel_finish
+tp_account_channel_request_ensure_channel_async
+tp_account_channel_request_ensure_channel_finish
+<SUBSECTION Standard>
+tp_account_channel_request_get_type
+TP_ACCOUNT_CHANNEL_REQUEST
+TP_ACCOUNT_CHANNEL_REQUEST_CLASS
+TP_ACCOUNT_CHANNEL_REQUEST_GET_CLASS
+TP_IS_ACCOUNT_CHANNEL_REQUEST
+TP_IS_ACCOUNT_CHANNEL_REQUEST_CLASS
+TP_TYPE_ACCOUNT_CHANNEL_REQUEST
 </SECTION>

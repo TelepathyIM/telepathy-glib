@@ -1,0 +1,11 @@
+[ConnectionManager]
+Interfaces=
+
+[Protocol example]
+Interfaces=
+ConnectionInterfaces=org.freedesktop.Telepathy.Connection.Interface.Requests;org.freedesktop.Telepathy.Connection.Interface.Contacts;com.example.Telepathy.Connection.Interface.Hats;
+param-account=s required register
+RequestableChannelClasses=
+VCardField=x-telepathy-example
+EnglishName=Extended (hats) example
+Icon=face-smile

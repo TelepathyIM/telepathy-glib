@@ -382,9 +382,8 @@ static const gchar * const video_allowed_properties[] = {
 };
 
 static void
-example_call_manager_foreach_channel_class (
-    TpChannelManager *manager,
-    TpChannelManagerChannelClassFunc func,
+example_call_manager_type_foreach_channel_class (GType type,
+    TpChannelManagerTypeChannelClassFunc func,
     gpointer user_data)
 {
   GHashTable *table = tp_asv_new (
@@ -394,13 +393,13 @@ example_call_manager_foreach_channel_class (
     FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
       NULL);
 
-  func (manager, table, audio_allowed_properties, user_data);
+  func (type, table, audio_allowed_properties, user_data);
 
   g_hash_table_remove (table, FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO);
   tp_asv_set_boolean (table, FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
       TRUE);
 
-  func (manager, table, video_allowed_properties, user_data);
+  func (type, table, video_allowed_properties, user_data);
 
   g_hash_table_destroy (table);
 }
@@ -528,7 +527,8 @@ channel_manager_iface_init (gpointer g_iface,
   TpChannelManagerIface *iface = g_iface;
 
   iface->foreach_channel = example_call_manager_foreach_channel;
-  iface->foreach_channel_class = example_call_manager_foreach_channel_class;
+  iface->type_foreach_channel_class =
+    example_call_manager_type_foreach_channel_class;
   iface->create_channel = example_call_manager_create_channel;
   iface->ensure_channel = example_call_manager_ensure_channel;
   /* In this channel manager, RequestChannel is not supported; Call is not

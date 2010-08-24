@@ -1,8 +1,8 @@
 /*
  * conn.c - an example connection
  *
- * Copyright (C) 2007-2008 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2007-2008 Nokia Corporation
+ * Copyright © 2007-2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2007-2008 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -18,11 +18,14 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 
+#include "protocol.h"
 #include "room-manager.h"
 
-G_DEFINE_TYPE (ExampleCSHConnection,
+G_DEFINE_TYPE_WITH_CODE (ExampleCSHConnection,
     example_csh_connection,
-    TP_TYPE_BASE_CONNECTION)
+    TP_TYPE_BASE_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
+      tp_contacts_mixin_iface_init))
 
 /* type definition stuff */
 
@@ -96,6 +99,7 @@ finalize (GObject *object)
 {
   ExampleCSHConnection *self = EXAMPLE_CSH_CONNECTION (object);
 
+  tp_contacts_mixin_finalize (object);
   g_free (self->priv->account);
 
   G_OBJECT_CLASS (example_csh_connection_parent_class)->finalize (object);
@@ -109,60 +113,18 @@ get_unique_connection_name (TpBaseConnection *conn)
   return g_strdup (self->priv->account);
 }
 
-gchar *
-example_csh_normalize_contact (TpHandleRepoIface *repo,
+static gchar *
+example_csh_normalize_contact (TpHandleRepoIface *repo G_GNUC_UNUSED,
                                const gchar *id,
-                               gpointer context,
+                               gpointer context G_GNUC_UNUSED,
                                GError **error)
 {
-  const gchar *at;
-  /* For this example, we imagine that global handles look like
-   * username@realm and channel-specific handles look like nickname@#chatroom,
-   * where username and nickname contain any UTF-8 except "@", and realm
-   * and chatroom contain any UTF-8 except "@" and "#".
-   *
-   * Additionally, we imagine that everything is case-sensitive but is
-   * required to be in NFKC.
-   */
+  gchar *normal = NULL;
 
-  if (id[0] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "ID must not be empty");
-      return NULL;
-    }
-
-  at = strchr (id, '@');
-
-  if (at == NULL || at == id || at[1] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "ID must look like aaa@bbb");
-      return NULL;
-    }
-
-  if (strchr (at + 1, '@') != NULL)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "ID cannot contain more than one '@'");
-      return NULL;
-    }
-
-  if (at[1] == '#' && at[2] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "chatroom name cannot be empty");
-      return NULL;
-    }
-
-  if (strchr (at + 2, '#') != NULL)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "realm/chatroom cannot contain '#' except at the beginning");
-      return NULL;
-    }
-
-  return g_utf8_normalize (id, -1, G_NORMALIZE_ALL_COMPOSE);
+  if (example_csh_protocol_check_contact_id (id, &normal, error))
+    return normal;
+  else
+    return NULL;
 }
 
 static gchar *
@@ -171,7 +133,7 @@ example_csh_normalize_room (TpHandleRepoIface *repo,
                             gpointer context,
                             GError **error)
 {
-  /* See example_csh_normalize_contact(). */
+  /* See example_csh_protocol_normalize_contact() for syntax. */
 
   if (id[0] != '#')
     {
@@ -255,16 +217,42 @@ shut_down (TpBaseConnection *conn)
 }
 
 static void
+constructed (GObject *object)
+{
+  TpBaseConnection *base = TP_BASE_CONNECTION (object);
+  void (*chain_up) (GObject *) =
+    G_OBJECT_CLASS (example_csh_connection_parent_class)->constructed;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  tp_contacts_mixin_init (object,
+      G_STRUCT_OFFSET (ExampleCSHConnection, contacts_mixin));
+  tp_base_connection_register_with_contacts_mixin (base);
+}
+
+static const gchar *interfaces_always_present[] = {
+    TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
+    NULL };
+
+const gchar * const *
+example_csh_connection_get_possible_interfaces (void)
+{
+  /* in this example CM we don't have any extra interfaces that are sometimes,
+   * but not always, present */
+  return interfaces_always_present;
+}
+
+static void
 example_csh_connection_class_init (ExampleCSHConnectionClass *klass)
 {
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-      NULL };
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
 
+  object_class->constructed = constructed;
   object_class->get_property = get_property;
   object_class->set_property = set_property;
   object_class->finalize = finalize;
@@ -289,4 +277,7 @@ example_csh_connection_class_init (ExampleCSHConnectionClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
       param_spec);
+
+  tp_contacts_mixin_class_init (object_class,
+      G_STRUCT_OFFSET (ExampleCSHConnectionClass, contacts_mixin));
 }
