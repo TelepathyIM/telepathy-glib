@@ -218,6 +218,10 @@ tp_base_channel_destroyed (TpBaseChannel *chan)
 {
   TpDBusDaemon *bus = tp_base_connection_get_dbus_daemon (chan->priv->conn);
 
+  /* Take a ref to ourself: the 'closed' handler might drop its reference on us.
+   */
+  g_object_ref (chan);
+
   chan->priv->destroyed = TRUE;
   tp_svc_channel_emit_closed (chan);
 
@@ -226,6 +230,8 @@ tp_base_channel_destroyed (TpBaseChannel *chan)
       tp_dbus_daemon_unregister_object (bus, chan);
       chan->priv->registered = FALSE;
     }
+
+  g_object_unref (chan);
 }
 
 /**
@@ -243,6 +249,10 @@ void
 tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
 {
   TpBaseChannelPrivate *priv = chan->priv;
+
+  /* Take a ref to ourself: the 'closed' handler might drop its reference on us.
+   */
+  g_object_ref (chan);
 
   if (priv->initiator != initiator)
     {
@@ -262,6 +272,8 @@ tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
   chan->priv->requested = FALSE;
 
   tp_svc_channel_emit_closed (chan);
+
+  g_object_unref (chan);
 }
 
 /**
