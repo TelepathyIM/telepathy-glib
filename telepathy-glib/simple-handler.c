@@ -372,6 +372,9 @@ tp_simple_handler_new (TpDBusDaemon *dbus,
  * Convenient function to create a new #TpSimpleHandler instance with a
  * specified #TpAccountManager.
  *
+ * It is not necessary to prepare any features on @account_manager before
+ * calling this function.
+ *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
  * Since: 0.11.UNRELEASED

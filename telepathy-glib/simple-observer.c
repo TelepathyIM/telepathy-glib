@@ -338,6 +338,9 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
  * Convenient function to create a new #TpSimpleObserver instance with a
  * specified #TpAccountManager.
  *
+ * It is not necessary to prepare any features on @account_manager before
+ * calling this function.
+ *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
  * Since: 0.11.UNRELEASED

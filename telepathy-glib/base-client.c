@@ -1239,6 +1239,10 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * #TpAccount objects. This may be specified in the constructor in order
    * to get existing #TpAccount objects.
    *
+   * It is not guaranteed that any of its features have been prepared, and
+   * it is not necessary to wait for any features before specifying this
+   * property in the constructor.
+   *
    * Clients that interact with the #TpAccount should usually
    * set this property instead of #TpBaseClient:dbus-daemon. Doing this
    * will ensure that each account, connection or contact is represented by
@@ -2253,6 +2257,9 @@ tp_base_client_get_dbus_daemon (TpBaseClient *self)
  *
  * The returned object's reference count is not incremented, so it is not
  * necessarily valid after @self is destroyed.
+ *
+ * It is not guaranteed that any particular features are prepared on this
+ * object; enable and wait for features with tp_proxy_prepare_async().
  *
  * Returns: (transfer none): the value of #TpBaseClient:account-manager
  * Since: 0.11.UNRELEASED

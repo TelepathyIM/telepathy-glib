@@ -310,6 +310,9 @@ tp_simple_approver_new (TpDBusDaemon *dbus,
  * Convenient function to create a new #TpSimpleApprover instance with a
  * specified #TpAccountManager.
  *
+ * It is not necessary to prepare any features on @account_manager before
+ * calling this function.
+ *
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
  * Since: 0.11.UNRELEASED
