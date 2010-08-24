@@ -48,6 +48,7 @@ send_message (GObject *object,
               TpMessageSendingFlags flags)
 {
   ExampleEcho2Channel *self = EXAMPLE_ECHO_2_CHANNEL (object);
+  TpBaseChannel *base = TP_BASE_CHANNEL (self);
   time_t timestamp = time (NULL);
   guint len = tp_message_count_parts (message);
   TpMessage *received = NULL;
@@ -59,8 +60,7 @@ send_message (GObject *object,
       goto finally;
     }
 
-  received = tp_message_new (tp_base_channel_get_connection (
-        TP_BASE_CHANNEL (self)), 1, len);
+  received = tp_message_new (tp_base_channel_get_connection (base), 1, len);
 
   /* Copy/modify the headers for the "received" message */
     {
@@ -69,7 +69,7 @@ send_message (GObject *object,
 
       tp_message_set_handle (received, 0, "message-sender",
           TP_HANDLE_TYPE_CONTACT,
-          tp_base_channel_get_target_handle (TP_BASE_CHANNEL (self)));
+          tp_base_channel_get_target_handle (base));
 
       message_type = tp_asv_get_uint32 (tp_message_peek (message, 0),
           "message-type", &valid);
@@ -157,6 +157,7 @@ constructor (GType type,
       G_OBJECT_CLASS (example_echo_2_channel_parent_class)->constructor (type,
           n_props, props);
   ExampleEcho2Channel *self = EXAMPLE_ECHO_2_CHANNEL (object);
+  TpBaseChannel *base = TP_BASE_CHANNEL (self);
   static TpChannelTextMessageType const types[] = {
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
@@ -164,10 +165,10 @@ constructor (GType type,
   };
   static const char * const content_types[] = { "*/*", NULL };
 
-  tp_base_channel_register (TP_BASE_CHANNEL (self));
+  tp_base_channel_register (base);
 
   tp_message_mixin_init (object, G_STRUCT_OFFSET (ExampleEcho2Channel, text),
-      tp_base_channel_get_connection (TP_BASE_CHANNEL (self)));
+      tp_base_channel_get_connection (base));
 
   tp_message_mixin_implement_sending (object, send_message,
       (sizeof (types) / sizeof (types[0])), types,

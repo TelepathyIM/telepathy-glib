@@ -181,7 +181,7 @@ constructed (GObject *object)
       NULL /* nobody removed */,
       local_pending, /* added to local-pending */
       NULL /* nobody added to remote-pending */,
-      tp_base_channel_get_initiator (TP_BASE_CHANNEL (self)) /* actor */,
+      tp_base_channel_get_initiator (base_chan) /* actor */,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
   tp_intset_destroy (members);
 
