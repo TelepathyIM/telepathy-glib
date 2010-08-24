@@ -126,7 +126,10 @@
 
 /**
  * TpBaseChannelGetPathFunc:
- * @chan a channel
+ * @chan: a channel
+ *
+ * Signature of an implementation of the
+ * #TpBaseChannelClass.get_object_path_suffix virtual function.
  *
  * Returns: (transfer full): a string that will be appended to the Connection
  * objects's object path to get the Channel's object path.
