@@ -99,7 +99,6 @@ struct _ExampleCallableMediaChannelPrivate
   guint hold_state;
   guint hold_state_reason;
 
-  gboolean locally_requested;
   gboolean initial_audio;
   gboolean initial_video;
   gboolean disposed;
@@ -143,6 +142,7 @@ constructed (GObject *object)
       (connection, TP_HANDLE_TYPE_CONTACT);
   TpIntSet *members;
   TpIntSet *local_pending;
+  gboolean requested;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -158,8 +158,9 @@ constructed (GObject *object)
    * the actor for the change that adds any initial members. */
 
   members = tp_intset_new_containing (tp_base_channel_get_initiator (base_chan));
+  requested = tp_base_channel_is_requested (base_chan);
 
-  if (self->priv->locally_requested)
+  if (requested)
     {
       /* Nobody is locally pending. The remote peer will turn up in
        * remote-pending state when we actually contact them, which is done
@@ -213,10 +214,10 @@ constructed (GObject *object)
    * stream", which would be represented like this; we don't support this
    * usage yet, though, so ExampleCallableMediaManager will never invoke
    * our constructor in this way. */
-  g_assert (!(self->priv->locally_requested && self->priv->initial_audio));
-  g_assert (!(self->priv->locally_requested && self->priv->initial_video));
+  g_assert (!(requested && self->priv->initial_audio));
+  g_assert (!(requested && self->priv->initial_video));
 
-  if (!self->priv->locally_requested)
+  if (!requested)
     {
       /* the caller has almost certainly asked us for some streams - there's
        * not much point in having a call otherwise */
