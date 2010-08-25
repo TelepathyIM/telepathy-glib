@@ -35,7 +35,7 @@ check-valgrind:
 
 maintainer-upload-release: _maintainer-upload-release-local
 _maintainer-upload-release-local: _maintainer-upload-release-check
-	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX docs/reference/html/ \
+	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX $(srcdir)/docs/reference/html/ \
 	telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-glib/
 
 BRANCH = $(shell sh tools/git-which-branch.sh misc | tr -d '\n' | tr -C "[:alnum:]" _)
