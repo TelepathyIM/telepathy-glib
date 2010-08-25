@@ -354,6 +354,12 @@ tp_account_channel_request_class_init (
    * Most GUI handlers should respond to this signal by checking
    * @user_action_time, and if appropriate, moving to the foreground.
    *
+   * @context can be used to obtain extensible information about the channel
+   * via tp_handle_channels_context_get_handler_info(), and any similar methods
+   * that are added in future. It is not valid for the receiver of this signal
+   * to call tp_handle_channels_context_accept(),
+   * tp_handle_channels_context_delay() or tp_handle_channels_context_fail().
+   *
    * Since: 0.11.12
    */
   signals[SIGNAL_RE_HANDLED] = g_signal_new (
@@ -843,6 +849,9 @@ tp_account_channel_request_create_and_handle_channel_async (
  * Finishes an async channel creation started using
  * tp_account_channel_request_create_and_handle_channel_async().
  *
+ * See tp_account_channel_request_ensure_and_handle_channel_finish()
+ * for details of how @context can be used.
+ *
  * Returns: (transfer full) (allow-none): a new reference on a #TpChannel if the
  * channel was successfully created and you are handling it, otherwise %NULL.
  *
@@ -912,6 +921,12 @@ tp_account_channel_request_ensure_and_handle_channel_async (
  * If the channel already exists and is already being handled, or if a
  * newly created channel is sent to a different handler, this operation
  * will fail with the error %TP_ERROR_NOT_YOURS.
+ *
+ * @context can be used to obtain extensible information about the channel
+ * via tp_handle_channels_context_get_handler_info(), and any similar methods
+ * that are added in future. It is not valid for the caller of this method
+ * to call tp_handle_channels_context_accept(),
+ * tp_handle_channels_context_delay() or tp_handle_channels_context_fail().
  *
  * Returns: (transfer full) (allow-none): a new reference on a #TpChannel if the
  * channel was successfully created and you are handling it, otherwise %NULL.
