@@ -42,13 +42,15 @@
  * be called to determine the channel's path, whose default implementation
  * simply generates a unique path based on the object's address in memory.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.14
  */
 
 /**
  * TpBaseChannel:
  *
  * A base class for channel implementations
+ *
+ * Since: 0.11.14
  */
 
 /**
@@ -75,6 +77,8 @@
  * in memory.  The returned string will be freed automatically.
  *
  * The class structure for #TpBaseChannel
+ *
+ * Since: 0.11.14
  */
 
 /**
@@ -140,6 +144,8 @@
  *   // ...
  * }
  * ]|
+ *
+ * Since: 0.11.14
  */
 
 /**
@@ -176,6 +182,8 @@
  * Note that the SearchState property is <emphasis>not</emphasis> added to
  * @properties, since only immutable properties (whose value cannot change over
  * the lifetime of @chan) should be included.
+ *
+ * Since: 0.11.14
  */
 
 /**
@@ -187,6 +195,8 @@
  *
  * Returns: (transfer full): a string that will be appended to the Connection
  * objects's object path to get the Channel's object path.
+ *
+ * Since: 0.11.14
  */
 
 #include "config.h"
@@ -257,6 +267,8 @@ G_DEFINE_TYPE_WITH_CODE (TpBaseChannel, tp_base_channel,
  *
  * Make the channel appear on the bus.  #TpExportableChannel:object-path must have been set
  * to a valid path, which must not already be in use as another object's path.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_channel_register (TpBaseChannel *chan)
@@ -277,6 +289,8 @@ tp_base_channel_register (TpBaseChannel *chan)
  * Called by subclasses to indicate that this channel was destroyed and can be
  * removed from the bus.  The "Closed" signal will be emitted and the
  * #TpExportableChannel:channel-destroyed property will be set.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_channel_destroyed (TpBaseChannel *chan)
@@ -309,6 +323,8 @@ tp_base_channel_destroyed (TpBaseChannel *chan)
  * the #TpExportableChannel:channel-destroyed property will not be set.  The
  * channel's #TpBaseChannel:initiator-handle property will be set to
  * @initiator, and the #TpBaseChannel:requested property will be set to FALSE.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
@@ -354,6 +370,8 @@ tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
  * channel may respawn when Close is called, an equivalent of the Destroy D-Bus
  * method would be more appropriate during teardown, since the intention is to
  * forcibly terminate all channels.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_channel_close (TpBaseChannel *chan)
@@ -372,6 +390,8 @@ tp_base_channel_close (TpBaseChannel *chan)
  * #TpChannelIface:object-path property.
  *
  * Returns: @chan's object path
+ *
+ * Since: 0.11.14
  */
 const gchar *
 tp_base_channel_get_object_path (TpBaseChannel *chan)
@@ -389,6 +409,8 @@ tp_base_channel_get_object_path (TpBaseChannel *chan)
  * retrieving the #TpBaseChannel:connection property.
  *
  * Returns: (tranfer none): the connection to which @chan is attached.
+ *
+ * Since: 0.11.14
  */
 TpBaseConnection *
 tp_base_channel_get_connection (TpBaseChannel *chan)
@@ -410,6 +432,8 @@ tp_base_channel_get_connection (TpBaseChannel *chan)
  * of it.
  *
  * Returns: the target handle of @chan
+ *
+ * Since: 0.11.14
  */
 TpHandle
 tp_base_channel_get_target_handle (TpBaseChannel *chan)
@@ -429,6 +453,8 @@ tp_base_channel_get_target_handle (TpBaseChannel *chan)
  * of it.
  *
  * Returns: the initiator handle of @chan
+ *
+ * Since: 0.11.14
  */
 TpHandle
 tp_base_channel_get_initiator (TpBaseChannel *chan)
@@ -446,6 +472,8 @@ tp_base_channel_get_initiator (TpBaseChannel *chan)
  * #TpBaseChannel:requested property.
  *
  * Returns: whether or not @chan was requested.
+ *
+ * Since: 0.11.14
  */
 gboolean
 tp_base_channel_is_requested (TpBaseChannel *chan)
@@ -464,6 +492,8 @@ tp_base_channel_is_requested (TpBaseChannel *chan)
  * has not been called.
  *
  * Returns: TRUE if @chan is visible on the bus
+ *
+ * Since: 0.11.14
  */
 gboolean
 tp_base_channel_is_registered (TpBaseChannel *chan)
@@ -482,6 +512,8 @@ tp_base_channel_is_registered (TpBaseChannel *chan)
  * channel has been removed from the bus).
  *
  * Returns: TRUE if tp_base_channel_destroyed() has been called.
+ *
+ * Since: 0.11.14
  */
 gboolean
 tp_base_channel_is_destroyed (TpBaseChannel *chan)

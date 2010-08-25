@@ -1219,7 +1219,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    *
    * This property can't be %NULL after construction.
    *
-   * Since 0.11.UNRELEASED this property may be %NULL or unspecified in
+   * Since 0.11.14 this property may be %NULL or unspecified in
    * g_object_new(), but only if #TpBaseClient:account-manager is provided
    * instead, in which case its #TpProxy:dbus-daemon property will be
    * used.
@@ -1260,7 +1260,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * non-%NULL #TpBaseClient:dbus-daemon that is not the same as the
    * account manager's #TpProxy:dbus-daemon.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.14
    */
   param_spec = g_param_spec_object ("account-manager", "TpAccountManager",
       "The TpAccountManager used look up or create TpAccount objects",
@@ -2262,7 +2262,7 @@ tp_base_client_get_dbus_daemon (TpBaseClient *self)
  * object; enable and wait for features with tp_proxy_prepare_async().
  *
  * Returns: (transfer none): the value of #TpBaseClient:account-manager
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.14
  */
 TpAccountManager *
 tp_base_client_get_account_manager (TpBaseClient *self)
@@ -2407,6 +2407,8 @@ varargs_helper (TpBaseClient *self,
  *
  * The same as tp_base_client_add_account_features(), but with a more
  * convenient calling convention from C.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_client_add_account_features_varargs (TpBaseClient *self,
@@ -2428,6 +2430,8 @@ tp_base_client_add_account_features_varargs (TpBaseClient *self,
  *
  * The same as tp_base_client_add_connection_features(), but with a more
  * convenient calling convention from C.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_client_add_connection_features_varargs (TpBaseClient *self,
@@ -2449,6 +2453,8 @@ tp_base_client_add_connection_features_varargs (TpBaseClient *self,
  *
  * The same as tp_base_client_add_channel_features(), but with a more
  * convenient calling convention from C.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_client_add_channel_features_varargs (TpBaseClient *self,
@@ -2472,6 +2478,8 @@ tp_base_client_add_channel_features_varargs (TpBaseClient *self,
  * addition to %TP_ACCOUNT_FEATURE_CORE) before calling
  * #TpBaseClient.observe_channels, #TpBaseClient.add_dispatch_operation or
  * #TpBaseClient.handle_channels, or emitting #TpBaseClient::request-added.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_client_add_account_features (TpBaseClient *self,
@@ -2497,6 +2505,8 @@ tp_base_client_add_account_features (TpBaseClient *self,
  * addition to %TP_CHANNEL_FEATURE_CORE) before calling
  * #TpBaseClient.observe_channels, #TpBaseClient.add_dispatch_operation or
  * #TpBaseClient.handle_channels.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_client_add_channel_features (TpBaseClient *self,
@@ -2522,6 +2532,8 @@ tp_base_client_add_channel_features (TpBaseClient *self,
  * addition to %TP_CONNECTION_FEATURE_CORE) before calling
  * #TpBaseClient.observe_channels, #TpBaseClient.add_dispatch_operation or
  * #TpBaseClient.handle_channels.
+ *
+ * Since: 0.11.14
  */
 void
 tp_base_client_add_connection_features (TpBaseClient *self,

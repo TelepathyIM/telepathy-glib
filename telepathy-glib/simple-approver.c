@@ -315,7 +315,7 @@ tp_simple_approver_new (TpDBusDaemon *dbus,
  *
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.14
  */
 TpBaseClient *
 tp_simple_approver_new_with_am (TpAccountManager *account_manager,

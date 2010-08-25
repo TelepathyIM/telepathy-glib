@@ -377,7 +377,7 @@ tp_simple_handler_new (TpDBusDaemon *dbus,
  *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.14
  */
 TpBaseClient *
 tp_simple_handler_new_with_am (TpAccountManager *account_manager,

@@ -343,7 +343,7 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
  *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.14
  */
 TpBaseClient *
 tp_simple_observer_new_with_am (TpAccountManager *account_manager,

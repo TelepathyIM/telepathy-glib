@@ -113,7 +113,7 @@ tp_type_dbus_array_of_y (void)
  * signature 'aay'. (Note that the #GByteArray type is not used with
  * dbus-glib.)
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.14
  */
 
 GType

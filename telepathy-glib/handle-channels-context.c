@@ -711,6 +711,8 @@ _tp_handle_channels_context_prepare_finish (
  * Returns: (transfer none) (element-type utf8 GObject.Value): extensible
  *  extra handler information, in a form suitable for use with
  *  tp_asv_get_string() etc.
+ *
+ * Since: 0.11.14
  */
 const GHashTable *
 tp_handle_channels_context_get_handler_info (TpHandleChannelsContext *self)

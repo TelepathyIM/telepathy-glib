@@ -115,6 +115,8 @@ struct _TpContact {
  *
  * 1 higher than the highest #TpContactFeature supported by this version of
  * telepathy-glib.
+ *
+ * Since: 0.7.18
  */
 
 /**
