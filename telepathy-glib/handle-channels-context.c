@@ -696,3 +696,25 @@ _tp_handle_channels_context_prepare_finish (
 
   return TRUE;
 }
+
+/**
+ * tp_handle_channels_context_get_handler_info:
+ * @self: a channel-handling context
+ *
+ * Return any extra information that accompanied this request to handle
+ * channels (the Handler_Info argument from the HandleChannels D-Bus method).
+ * Well-known keys for this map will be defined by the Telepathy D-Bus
+ * Interface Specification; at the time of writing, none have been defined.
+ *
+ * The returned hash table is only valid for as long as @self is.
+ *
+ * Returns: (transfer none) (element-type utf8 GObject.Value): extensible
+ *  extra handler information, in a form suitable for use with
+ *  tp_asv_get_string() etc.
+ */
+const GHashTable *
+tp_handle_channels_context_get_handler_info (TpHandleChannelsContext *self)
+{
+  g_return_val_if_fail (TP_IS_HANDLE_CHANNELS_CONTEXT (self), NULL);
+  return self->handler_info;
+}

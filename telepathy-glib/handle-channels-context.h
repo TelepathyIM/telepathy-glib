@@ -60,6 +60,9 @@ void tp_handle_channels_context_fail (
 void tp_handle_channels_context_delay (
     TpHandleChannelsContext *self);
 
+const GHashTable *tp_handle_channels_context_get_handler_info (
+    TpHandleChannelsContext *self);
+
 G_END_DECLS
 
 #endif
