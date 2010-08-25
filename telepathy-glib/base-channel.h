@@ -69,6 +69,7 @@ struct _TpBaseChannel
 };
 
 void tp_base_channel_register (TpBaseChannel *chan);
+void tp_base_channel_close (TpBaseChannel *chan);
 void tp_base_channel_destroyed (TpBaseChannel *chan);
 void tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator);
 
