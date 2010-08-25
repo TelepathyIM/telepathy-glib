@@ -80,6 +80,15 @@ TpBaseClient * tp_simple_observer_new (TpDBusDaemon *dbus,
     gpointer user_data,
     GDestroyNotify destroy);
 
+TpBaseClient *tp_simple_observer_new_with_am (
+    TpAccountManager *account_manager,
+    gboolean recover,
+    const gchar *name,
+    gboolean unique,
+    TpSimpleObserverObserveChannelsImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy);
+
 G_END_DECLS
 
 #endif

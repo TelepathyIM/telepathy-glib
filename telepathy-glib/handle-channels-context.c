@@ -627,11 +627,11 @@ out:
 }
 
 static void
-context_prepare (TpHandleChannelsContext *self)
+context_prepare (TpHandleChannelsContext *self,
+    const GQuark *account_features,
+    const GQuark *connection_features,
+    const GQuark *channel_features)
 {
-  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
-  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CORE, 0 };
-  GQuark channel_features[] = { TP_CHANNEL_FEATURE_CORE, 0 };
   guint i;
 
   self->priv->num_pending = 2;
@@ -639,7 +639,7 @@ context_prepare (TpHandleChannelsContext *self)
   tp_proxy_prepare_async (self->account, account_features,
       account_prepare_cb, g_object_ref (self));
 
-  tp_proxy_prepare_async (self->connection, conn_features,
+  tp_proxy_prepare_async (self->connection, connection_features,
       conn_prepare_cb, g_object_ref (self));
 
   for (i = 0; i < self->channels->len; i++)
@@ -656,6 +656,9 @@ context_prepare (TpHandleChannelsContext *self)
 void
 _tp_handle_channels_context_prepare_async (
     TpHandleChannelsContext *self,
+    const GQuark *account_features,
+    const GQuark *connection_features,
+    const GQuark *channel_features,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -667,7 +670,8 @@ _tp_handle_channels_context_prepare_async (
   self->priv->result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data, _tp_handle_channels_context_prepare_async);
 
-  context_prepare (self);
+  context_prepare (self, account_features, connection_features,
+      channel_features);
 }
 
 gboolean
@@ -691,4 +695,28 @@ _tp_handle_channels_context_prepare_finish (
       FALSE);
 
   return TRUE;
+}
+
+/**
+ * tp_handle_channels_context_get_handler_info:
+ * @self: a channel-handling context
+ *
+ * Return any extra information that accompanied this request to handle
+ * channels (the Handler_Info argument from the HandleChannels D-Bus method).
+ * Well-known keys for this map will be defined by the Telepathy D-Bus
+ * Interface Specification; at the time of writing, none have been defined.
+ *
+ * The returned hash table is only valid for as long as @self is.
+ *
+ * Returns: (transfer none) (element-type utf8 GObject.Value): extensible
+ *  extra handler information, in a form suitable for use with
+ *  tp_asv_get_string() etc.
+ *
+ * Since: 0.11.14
+ */
+const GHashTable *
+tp_handle_channels_context_get_handler_info (TpHandleChannelsContext *self)
+{
+  g_return_val_if_fail (TP_IS_HANDLE_CHANNELS_CONTEXT (self), NULL);
+  return self->handler_info;
 }

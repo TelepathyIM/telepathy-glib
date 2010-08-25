@@ -325,6 +325,10 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  *
  * Convenient function to create a new #TpSimpleHandler instance.
  *
+ * If @dbus is not the result of tp_dbus_daemon_dup(), you should call
+ * tp_simple_handler_new_with_am() instead, so that #TpAccount,
+ * #TpConnection and #TpContact instances can be shared between modules.
+ *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
  * Since: 0.11.6
@@ -341,6 +345,52 @@ tp_simple_handler_new (TpDBusDaemon *dbus,
 {
   return g_object_new (TP_TYPE_SIMPLE_HANDLER,
       "dbus-daemon", dbus,
+      "bypass-approval", bypass_approval,
+      "requests", requests,
+      "name", name,
+      "uniquify-name", unique,
+      "callback", callback,
+      "user-data", user_data,
+      "destroy", destroy,
+      NULL);
+}
+
+/**
+ * tp_simple_handler_new_with_am:
+ * @account_manager: an account manager, which may not be %NULL
+ * @bypass_approval: the value of the Handler.BypassApproval D-Bus property
+ * (see tp_base_client_set_handler_bypass_approval() for details)
+ * @requests: if this handler implement Requests (see
+ * tp_base_client_set_handler_request_notification() for details)
+ * @name: the name of the Handler (see #TpBaseClient:name: for details)
+ * @unique: the value of the TpBaseClient:uniquify-name: property
+ * @callback: the function called when HandleChannels is called
+ * @user_data: arbitrary user-supplied data passed to @callback
+ * @destroy: called with the user_data as argument, when the #TpSimpleHandler
+ * is destroyed
+ *
+ * Convenient function to create a new #TpSimpleHandler instance with a
+ * specified #TpAccountManager.
+ *
+ * It is not necessary to prepare any features on @account_manager before
+ * calling this function.
+ *
+ * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
+ *
+ * Since: 0.11.14
+ */
+TpBaseClient *
+tp_simple_handler_new_with_am (TpAccountManager *account_manager,
+    gboolean bypass_approval,
+    gboolean requests,
+    const gchar *name,
+    gboolean unique,
+    TpSimpleHandlerHandleChannelsImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy)
+{
+  return g_object_new (TP_TYPE_SIMPLE_HANDLER,
+      "account-manager", account_manager,
       "bypass-approval", bypass_approval,
       "requests", requests,
       "name", name,

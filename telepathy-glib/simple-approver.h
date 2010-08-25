@@ -78,6 +78,14 @@ TpBaseClient * tp_simple_approver_new (TpDBusDaemon *dbus,
     gpointer user_data,
     GDestroyNotify destroy);
 
+TpBaseClient *tp_simple_approver_new_with_am (
+    TpAccountManager *account_manager,
+    const gchar *name,
+    gboolean unique,
+    TpSimpleApproverAddDispatchOperationImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy);
+
 G_END_DECLS
 
 #endif

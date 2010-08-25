@@ -1,7 +1,29 @@
-telepathy-glib 0.11.14 (UNRELEASED)
+telepathy-glib 0.11.14 (2010-08-25)
 ===================================
 
-…
+The “One hundred men can skin 5,000 cats a day.” release.
+
+Enhancements:
+
+• fd.o #29375: there's now a TpBaseChannel class which deals with all the
+  boring boilerplate previously needed to implement channels. Public response
+  to the class has been uniform. "The class is perfect", said one passer-by.
+  (jonner, wjt)
+
+• fd.o #29614: add TpBaseClient:account-manager (smcv)
+
+• Allow TpBaseClient instances to wait for any desired set of TpAccount,
+  TpConnection and TpChannel features (smcv)
+
+• fd.o #29671: add TP_ARRAY_TYPE_UCHAR_ARRAY_LIST, i.e. signature 'aay' in
+  dbus-glib (smcv)
+
+Fixes:
+
+• Ensure that when a TpAccountChannelRequest produces a connection and
+  a channel, they're obtained from the same TpAccount we started from (smcv)
+
+• fd.o #29756, #29795: various documentation improvements (smcv)
 
 telepathy-glib 0.11.13 (2010-08-17)
 ===================================

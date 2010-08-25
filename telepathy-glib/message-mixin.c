@@ -24,7 +24,7 @@
  * @short_description: a mixin implementation of the text channel type and the
  *  Messages interface
  * @see_also: #TpSvcChannelTypeText, #TpSvcChannelInterfaceMessages,
- *  <link linkend="dbus-properties-mixin">TpDBusPropertiesMixin</link>
+ *  <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link>
  *
  * This mixin can be added to a channel GObject class to implement the
  * text channel type (with the Messages interface) in a general way.

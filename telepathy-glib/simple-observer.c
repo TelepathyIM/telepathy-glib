@@ -296,6 +296,10 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  *
  * Convenient function to create a new #TpSimpleObserver instance.
  *
+ * If @dbus is not the result of tp_dbus_daemon_dup(), you should call
+ * tp_simple_observer_new_with_am() instead, so that #TpAccount,
+ * #TpConnection and #TpContact instances can be shared between modules.
+ *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
  * Since: 0.11.5
@@ -311,6 +315,47 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
 {
   return g_object_new (TP_TYPE_SIMPLE_OBSERVER,
       "dbus-daemon", dbus,
+      "recover", recover,
+      "name", name,
+      "uniquify-name", unique,
+      "callback", callback,
+      "user-data", user_data,
+      "destroy", destroy,
+      NULL);
+}
+
+/**
+ * tp_simple_observer_new_with_am:
+ * @account_manager: an account manager, which may not be %NULL
+ * @recover: the value of the Observer.Recover D-Bus property
+ * @name: the name of the Observer (see #TpBaseClient:name: for details)
+ * @unique: the value of the TpBaseClient:uniquify-name: property
+ * @callback: the function called when ObserverChannels is called
+ * @user_data: arbitrary user-supplied data passed to @callback
+ * @destroy: called with the user_data as argument, when the #TpSimpleObserver
+ * is destroyed
+ *
+ * Convenient function to create a new #TpSimpleObserver instance with a
+ * specified #TpAccountManager.
+ *
+ * It is not necessary to prepare any features on @account_manager before
+ * calling this function.
+ *
+ * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
+ *
+ * Since: 0.11.14
+ */
+TpBaseClient *
+tp_simple_observer_new_with_am (TpAccountManager *account_manager,
+    gboolean recover,
+    const gchar *name,
+    gboolean unique,
+    TpSimpleObserverObserveChannelsImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy)
+{
+  return g_object_new (TP_TYPE_SIMPLE_OBSERVER,
+      "account-manager", account_manager,
       "recover", recover,
       "name", name,
       "uniquify-name", unique,

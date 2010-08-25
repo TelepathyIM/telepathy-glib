@@ -211,7 +211,7 @@ _tp_proxy_pending_call_dgproxy_destroy (DBusGProxy *iface_proxy,
  *   automatically be cancelled
  * @cancel_must_raise: if %TRUE, the @invoke_callback will be run with
  *  error %TP_DBUS_ERROR_CANCELLED if the call is cancelled by a call to
- *  tp_proxy_pending_call_cancel() or by destruction of the weak_object();
+ *  tp_proxy_pending_call_cancel() or by destruction of the @weak_object;
  *  if %FALSE, the @invoke_callback will not be run at all in these cases
  *
  * Allocate a new pending call structure. After calling this function, the
@@ -386,7 +386,7 @@ tp_proxy_pending_call_free (TpProxyPendingCall *pc)
 
 /**
  * tp_proxy_pending_call_v0_completed:
- * @p: a #TpProxyPendingCall allocated with tp_proxy_pending_call_new()
+ * @p: a #TpProxyPendingCall allocated with tp_proxy_pending_call_new_v0()
  *
  * Indicate that dbus-glib has finished with this pending call, and therefore
  * either tp_proxy_pending_call_v0_take_results() has already been called,

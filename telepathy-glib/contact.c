@@ -98,8 +98,6 @@ struct _TpContact {
  *  (available since 0.11.6)
  * @TP_CONTACT_FEATURE_CONTACT_INFO: #TpContact:contact-info
  *  (available since 0.11.7)
- * @NUM_TP_CONTACT_FEATURES: 1 higher than the highest TpContactFeature
- *  supported by this version of telepathy-glib
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -108,6 +106,15 @@ struct _TpContact {
  *
  * Since 0.11.5, there is a corresponding #GEnumClass type,
  * %TP_TYPE_CONTACT_FEATURE.
+ *
+ * Since: 0.7.18
+ */
+
+/**
+ * NUM_TP_CONTACT_FEATURES:
+ *
+ * 1 higher than the highest #TpContactFeature supported by this version of
+ * telepathy-glib.
  *
  * Since: 0.7.18
  */

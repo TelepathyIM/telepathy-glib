@@ -66,8 +66,7 @@
  * Signature of the callback supplied to tp_list_connection_managers().
  *
  * Since 0.11.3, tp_list_connection_managers() will
- * wait for %TP_CONNECTION_MANAGER_FEATURE_CORE to be prepared (so
- * tp_connection_manager_is_prepared() will return %TRUE) on each
+ * wait for %TP_CONNECTION_MANAGER_FEATURE_CORE to be prepared on each
  * connection manager passed to @callback, unless an error occurred while
  * launching that connection manager.
  *

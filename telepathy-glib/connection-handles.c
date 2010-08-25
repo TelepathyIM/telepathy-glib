@@ -752,7 +752,7 @@ connection_got_contact_attributes (TpConnection *self,
  *
  * This is a thin wrapper around the GetContactAttributes D-Bus method, and
  * should be used in preference to
- * tp_cli_connection_interface_contacts_get_contact_attributes(); mixing this
+ * tp_cli_connection_interface_contacts_call_get_contact_attributes(); mixing this
  * function, tp_connection_hold_handles(), tp_connection_unref_handles(), and
  * #TpContact with direct use of the RequestHandles, HoldHandles and
  * GetContactAttributes D-Bus methods is unwise, as #TpConnection and

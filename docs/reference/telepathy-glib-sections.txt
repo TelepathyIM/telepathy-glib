@@ -177,6 +177,38 @@ TP_EXPORTABLE_CHANNEL_GET_INTERFACE
 </SECTION>
 
 <SECTION>
+<INCLUDE>telepathy-glib/base-channel.h</INCLUDE>
+<FILE>base-channel</FILE>
+<TITLE>TpBaseChannel</TITLE>
+TpBaseChannel
+TpBaseChannelClass
+TpBaseChannelFillPropertiesFunc
+TpBaseChannelCloseFunc
+TpBaseChannelGetPathFunc
+tp_base_channel_register
+tp_base_channel_close
+tp_base_channel_destroyed
+tp_base_channel_reopened
+tp_base_channel_get_object_path
+tp_base_channel_get_connection
+tp_base_channel_get_target_handle
+tp_base_channel_get_initiator
+tp_base_channel_is_requested
+tp_base_channel_is_registered
+tp_base_channel_is_destroyed
+<SUBSECTION Standard>
+TP_BASE_CHANNEL
+TP_IS_BASE_CHANNEL
+TP_TYPE_BASE_CHANNEL
+TP_BASE_CHANNEL_CLASS
+TP_BASE_CHANNEL_GET_CLASS
+TP_IS_BASE_CHANNEL_CLASS
+tp_base_channel_get_type
+<SUBSECTION Private>
+TpBaseChannelPrivate
+</SECTION>
+
+<SECTION>
 <FILE>handle-repo</FILE>
 <INCLUDE>telepathy-glib/handle-repo.h</INCLUDE>
 <TITLE>handle-repo</TITLE>
@@ -1287,6 +1319,7 @@ tp_address_variant_from_g_socket_address
 tp_dbus_specialized_value_slice_new
 TP_TYPE_UCHAR_ARRAY
 TP_ARRAY_TYPE_OBJECT_PATH_LIST
+TP_ARRAY_TYPE_UCHAR_ARRAY_LIST
 TP_HASH_TYPE_STRING_STRING_MAP
 TP_ARRAY_TYPE_STRING_STRING_MAP_LIST
 TP_HASH_TYPE_STRING_VARIANT_MAP
@@ -1453,6 +1486,7 @@ tp_type_dbus_array_oa_7bsv_7d
 tp_type_dbus_array_of_a_7bss_7d
 tp_type_dbus_array_of_a_7bsv_7d
 tp_type_dbus_array_of_a_7bua_28a_7bsv_7das_29_7d
+tp_type_dbus_array_of_ay
 tp_type_dbus_array_of_o
 tp_type_dbus_array_of_y
 tp_type_dbus_array_os
@@ -2589,6 +2623,7 @@ tp_proxy_get_invalidated
 tp_proxy_dbus_error_to_gerror
 TP_DBUS_ERRORS
 TpDBusError
+NUM_TP_DBUS_ERRORS
 TP_TYPE_DBUS_ERROR
 <SUBSECTION Standard>
 tp_dbus_error_get_type
@@ -3602,6 +3637,7 @@ tp_cli_media_stream_handler_run_codecs_updated
 <TITLE>contact</TITLE>
 TpContact
 TpContactFeature
+NUM_TP_CONTACT_FEATURES
 TP_TYPE_CONTACT_FEATURE
 TpConnectionContactsByHandleCb
 tp_connection_get_contacts_by_handle
@@ -4177,14 +4213,20 @@ tp_base_client_add_handler_capabilities
 tp_base_client_add_handler_capabilities_varargs
 tp_base_client_add_handler_capability
 tp_base_client_add_handler_filter
+tp_base_client_take_handler_filter
 tp_base_client_be_a_handler
 TpBaseClientClassHandleChannelsImpl
 tp_base_client_implement_handle_channels
+tp_base_client_add_account_features
+tp_base_client_add_account_features_varargs
+tp_base_client_add_connection_features
+tp_base_client_add_connection_features_varargs
+tp_base_client_add_channel_features
+tp_base_client_add_channel_features_varargs
 tp_base_client_get_handled_channels
 tp_base_client_get_pending_requests
 tp_base_client_set_handler_bypass_approval
 tp_base_client_set_handler_request_notification
-tp_base_client_take_handler_filter
 tp_base_client_register
 tp_base_client_unregister
 tp_base_client_get_bus_name
@@ -4192,6 +4234,7 @@ tp_base_client_get_object_path
 tp_base_client_get_dbus_daemon
 tp_base_client_get_name
 tp_base_client_get_uniquify_name
+tp_base_client_get_account_manager
 <SUBSECTION Standard>
 tp_base_client_get_type
 TP_BASE_CLIENT
@@ -4233,6 +4276,7 @@ TpObserveChannelsContextPrivate
 TpSimpleObserver
 TpSimpleObserverObserveChannelsImpl
 tp_simple_observer_new
+tp_simple_observer_new_with_am
 <SUBSECTION Standard>
 tp_simple_observer_get_type
 TP_TYPE_SIMPLE_OBSERVER
@@ -4272,6 +4316,7 @@ TP_TYPE_ADD_DISPATCH_OPERATION_CONTEXT
 TpSimpleApprover
 TpSimpleApproverAddDispatchOperationImpl
 tp_simple_approver_new
+tp_simple_approver_new_with_am
 <SUBSECTION Standard>
 tp_simple_approver_get_type
 TP_TYPE_SIMPLE_APPROVER
@@ -4292,6 +4337,7 @@ TpHandleChannelsContext
 tp_handle_channels_context_accept
 tp_handle_channels_context_delay
 tp_handle_channels_context_fail
+tp_handle_channels_context_get_handler_info
 <SUBSECTION Standard>
 tp_handle_channels_context_get_type
 TP_HANDLE_CHANNELS_CONTEXT
@@ -4311,6 +4357,7 @@ TP_TYPE_HANDLE_CHANNELS_CONTEXT
 TpSimpleHandler
 TpSimpleHandlerHandleChannelsImpl
 tp_simple_handler_new
+tp_simple_handler_new_with_am
 <SUBSECTION Standard>
 tp_simple_handler_get_type
 TP_TYPE_SIMPLE_HANDLER

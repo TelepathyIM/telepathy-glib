@@ -25,6 +25,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
 #include <telepathy-glib/handle-channels-context.h>
 #include <telepathy-glib/observe-channels-context.h>
@@ -132,6 +133,21 @@ void tp_base_client_add_handler_capabilities (TpBaseClient *self,
 void tp_base_client_add_handler_capabilities_varargs (TpBaseClient *self,
     const gchar *first_token, ...) G_GNUC_NULL_TERMINATED;
 
+void tp_base_client_add_account_features (TpBaseClient *self,
+    const GQuark *features, gssize n);
+void tp_base_client_add_account_features_varargs (TpBaseClient *self,
+    GQuark feature, ...);
+
+void tp_base_client_add_channel_features (TpBaseClient *self,
+    const GQuark *features, gssize n);
+void tp_base_client_add_channel_features_varargs (TpBaseClient *self,
+    GQuark feature, ...);
+
+void tp_base_client_add_connection_features (TpBaseClient *self,
+    const GQuark *features, gssize n);
+void tp_base_client_add_connection_features_varargs (TpBaseClient *self,
+    GQuark feature, ...);
+
 /* future, potentially (currently in spec as a draft):
 void tp_base_client_set_handler_related_conferences_bypass_approval (
     TpBaseClient *self, gboolean bypass_approval);
@@ -150,6 +166,7 @@ gboolean tp_base_client_get_uniquify_name (TpBaseClient *self);
 const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
 const gchar *tp_base_client_get_object_path (TpBaseClient *self);
 TpDBusDaemon *tp_base_client_get_dbus_daemon (TpBaseClient *self);
+TpAccountManager *tp_base_client_get_account_manager (TpBaseClient *self);
 
 void tp_base_client_unregister (TpBaseClient *self);
 

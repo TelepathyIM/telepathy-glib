@@ -85,6 +85,9 @@ tp_dbus_specialized_value_slice_new (GType type)
  * that returns the #GType of a #GArray
  * of %G_TYPE_UCHAR, i.e. the same thing as %DBUS_TYPE_G_UCHAR_ARRAY
  *
+ * This is the type used in dbus-glib to represent a byte array, signature
+ * 'ay'. (Note that the #GByteArray type is not used with dbus-glib.)
+ *
  * Since: 0.11.1
  */
 
@@ -95,6 +98,31 @@ tp_type_dbus_array_of_y (void)
 
   if (G_UNLIKELY (t == 0))
     t = DBUS_TYPE_G_UCHAR_ARRAY;
+
+  return t;
+}
+
+/**
+ * TP_ARRAY_TYPE_UCHAR_ARRAY_LIST:
+ *
+ * Expands to a call to a function
+ * that returns the #GType of a #GPtrArray of %TP_TYPE_UCHAR_ARRAY, i.e.
+ * a #GPtrArray of #GArray of #guchar.
+ *
+ * This is the type used in dbus-glib to represent an array of byte arrays,
+ * signature 'aay'. (Note that the #GByteArray type is not used with
+ * dbus-glib.)
+ *
+ * Since: 0.11.14
+ */
+
+GType
+tp_type_dbus_array_of_ay (void)
+{
+  static GType t = 0;
+
+  if (G_UNLIKELY (t == 0))
+    t = dbus_g_type_get_collection ("GPtrArray", TP_TYPE_UCHAR_ARRAY);
 
   return t;
 }

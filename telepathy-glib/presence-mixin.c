@@ -44,7 +44,8 @@
  *   You can implement #TpSvcConnectionInterfaceSimplePresence as follows:
  *   <itemizedlist>
  *     <listitem>
- *       <para>use the #TpContactsMixin and #TpDBusPropertiesMixin</para>
+ *       <para>use the #TpContactsMixin and
+ *        <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link></para>
  *     </listitem>
  *     <listitem>
  *       <para>pass tp_presence_mixin_simple_presence_iface_init() as an
@@ -1168,8 +1169,8 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
  * Set up #TpDBusPropertiesMixinClass to use this mixin's implementation of
  * the SimplePresence interface's properties.
  *
- * This uses tp_presence_mixin_get_simple_dbus_property() as the property
- * getter and sets up a list of the supported properties for it.
+ * This automatically sets up a list of the supported properties for the
+ * SimplePresence interface.
  *
  * Since: 0.7.13
  */
