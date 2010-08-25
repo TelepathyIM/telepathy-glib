@@ -288,6 +288,29 @@ tp_base_channel_reopened (TpBaseChannel *chan, TpHandle initiator)
 }
 
 /**
+ * tp_base_channel_close:
+ * @chan: a channel
+ *
+ * Asks @chan to close, just as if the Close D-Bus method had been called. If
+ * #TpExportableChannel:channel-destroyed is TRUE, this is a no-op.
+ *
+ * Note that, depending on the subclass's implementation of
+ * #TpBaseChannelClass.close and internal behaviour, this may or may not be a
+ * suitable method to use during connection teardown. For instance, if the
+ * channel may respawn when Close is called, an equivalent of the Destroy D-Bus
+ * method would be more appropriate during teardown, since the intention is to
+ * forcibly terminate all channels.
+ */
+void
+tp_base_channel_close (TpBaseChannel *chan)
+{
+  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
+
+  if (!tp_base_channel_is_destroyed (chan))
+    klass->close (chan);
+}
+
+/**
  * tp_base_channel_get_object_path:
  * @chan: a channel
  *
@@ -328,7 +351,9 @@ tp_base_channel_get_connection (TpBaseChannel *chan)
  * Returns the target handle of @chan (without a reference), which will be 0
  * if #TpBaseChannelClass.target_handle_type is #TP_HANDLE_TYPE_NONE for this
  * class, and non-zero otherwise. This is a shortcut for retrieving the
- * #TpChannelIface:handle property.
+ * #TpChannelIface:handle property. The reference count of the handle
+ * is not increased; you should use tp_handle_ref() if you want to keep a hold
+ * of it.
  *
  * Returns: the target handle of @chan
  */
@@ -345,9 +370,11 @@ tp_base_channel_get_target_handle (TpBaseChannel *chan)
  * @chan: a channel
  *
  * Returns the initiator handle of @chan, as a shortcut for retrieving the
- * #TpBaseChannel:initiator property.
+ * #TpBaseChannel:initiator-handle property. The reference count of the handle
+ * is not increased; you should use tp_handle_ref() if you want to keep a hold
+ * of it.
  *
- * Returns: (transfer none): the initiator handle of @chan
+ * Returns: the initiator handle of @chan
  */
 TpHandle
 tp_base_channel_get_initiator (TpBaseChannel *chan)
@@ -375,6 +402,24 @@ tp_base_channel_is_requested (TpBaseChannel *chan)
 }
 
 /**
+ * tp_base_channel_is_registered:
+ * @chan: a channel
+ *
+ * Returns whether or not @chan is visible on the bus; that is, whether
+ * tp_base_channel_register() has been called and tp_base_channel_destroyed()
+ * has not been called.
+ *
+ * Returns: TRUE if @chan is visible on the bus
+ */
+gboolean
+tp_base_channel_is_registered (TpBaseChannel *chan)
+{
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), FALSE);
+
+  return chan->priv->registered;
+}
+
+/**
  * tp_base_channel_is_destroyed:
  * @chan: a channel
  *
@@ -387,7 +432,7 @@ tp_base_channel_is_requested (TpBaseChannel *chan)
 gboolean
 tp_base_channel_is_destroyed (TpBaseChannel *chan)
 {
-  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), 0);
+  g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), FALSE);
 
   return chan->priv->destroyed;
 }
@@ -774,11 +819,11 @@ tp_base_channel_get_interfaces (TpSvcChannel *iface,
 }
 
 static void
-tp_base_channel_close (TpSvcChannel *iface,
-                       DBusGMethodInvocation *context)
+tp_base_channel_close_dbus (
+    TpSvcChannel *iface,
+    DBusGMethodInvocation *context)
 {
   TpBaseChannel *chan = TP_BASE_CHANNEL (iface);
-  TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
 
   if (DEBUGGING)
     {
@@ -788,8 +833,7 @@ tp_base_channel_close (TpSvcChannel *iface,
       g_free (caller);
     }
 
-  klass->close (chan);
-
+  tp_base_channel_close (chan);
   tp_svc_channel_return_from_close (context);
 }
 
@@ -804,6 +848,7 @@ channel_iface_init (gpointer g_iface,
   IMPLEMENT(get_channel_type);
   IMPLEMENT(get_handle);
   IMPLEMENT(get_interfaces);
-  IMPLEMENT(close);
 #undef IMPLEMENT
+
+  tp_svc_channel_implement_close (klass, tp_base_channel_close_dbus);
 }
