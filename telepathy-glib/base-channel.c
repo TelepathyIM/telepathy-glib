@@ -60,12 +60,9 @@
  * this type
  * @interfaces: Extra interfaces provided by this channel (this SHOULD NOT
  * include the channel type and interface itself)
- * @close: A virtual function called to close the channel. Implementations
- *  should generally call either tp_base_channel_destroyed() if the channel is
- *  really closed as a result, or tp_base_channel_reopened() if the channel
- *  will be re-spawned (for instance, due to unacknowledged messages). Note
- *  that channels that support re-spawning must also implement
- *  #TpSvcChannelInterfaceDestroyable.
+ * @close: A virtual function called to close the channel, which will be called
+ *  by tp_base_channel_close() and by the implementation of the Closed D-Bus
+ *  method.
  * @fill_immutable_properties: A virtual function called to add custom
  * properties to the DBus properties hash.  Implementations must chain up to the
  * parent class implementation and call
@@ -85,7 +82,64 @@
  * @chan: a channel
  *
  * Signature of an implementation of the #TpBaseChannelClass.close virtual
- * function.
+ * function. Implementations should eventually call either
+ * tp_base_channel_destroyed() if the channel is really closed as a result, or
+ * tp_base_channel_reopened() if the channel will be re-spawned (for instance,
+ * due to unacknowledged messages on a text channel), but need not do so before
+ * returning. Note that channels that support re-spawning must also implement
+ * #TpSvcChannelInterfaceDestroyable.
+ *
+ * Implementations may assume that tp_base_channel_is_destroyed() is FALSE for
+ * @chan when called.  Note that if this function is implemented
+ * asynchronously, it may be called more than once. A subclass which needs to
+ * perform some asynchronous clean-up in order to close might implement this
+ * function as follows:
+ *
+ * |[
+ * static void
+ * my_channel_close (TpBaseChannel *chan)
+ * {
+ *   MyChannel *self = MY_CHANNEL (chan);
+ *
+ *   if (self->priv->closing)
+ *     return;
+ *
+ *   self->priv->closing = TRUE;
+ *
+ *   // some hypothetical channel-specific clean-up function:
+ *   clean_up (self, cleaned_up_cb);
+ * }
+ *
+ * static void
+ * cleaned_up_cb (MyChannel *self)
+ * {
+ *   // all done, we can finish closing now
+ *   tp_base_channel_destroyed (TP_BASE_CHANNEL (self));
+ * }
+ * static void
+ * my_channel_class_init (MyChannelClass *klass)
+ * {
+ *   TpBaseChannelClass *base_channel_class = TP_BASE_CHANNEL_CLASS (klass);
+ *
+ *   klass->close = my_channel_close;
+ *   // ...
+ * }
+ * ]|
+ *
+ * If a subclass does not need to do anything to clean itself up, it may
+ * implement #TpBaseChannelClass.close using tp_base_channel_destroyed()
+ * directly:
+ *
+ * |[
+ * static void
+ * my_channel_class_init (MyChannelClass *klass)
+ * {
+ *   TpBaseChannelClass *base_channel_class = TP_BASE_CHANNEL_CLASS (klass);
+ *
+ *   klass->close = tp_base_channel_destroyed;
+ *   // ...
+ * }
+ * ]|
  */
 
 /**
