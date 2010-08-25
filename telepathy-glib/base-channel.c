@@ -389,7 +389,7 @@ tp_base_channel_close (TpBaseChannel *chan)
  * Returns @chan's object path, as a shortcut for retrieving the
  * #TpChannelIface:object-path property.
  *
- * Returns: @chan's object path
+ * Returns: (transfer none): @chan's object path
  *
  * Since: 0.11.14
  */
@@ -408,7 +408,7 @@ tp_base_channel_get_object_path (TpBaseChannel *chan)
  * Returns the connection to which @chan is attached, as a shortcut for
  * retrieving the #TpBaseChannel:connection property.
  *
- * Returns: (tranfer none): the connection to which @chan is attached.
+ * Returns: (transfer none): the connection to which @chan is attached.
  *
  * Since: 0.11.14
  */
