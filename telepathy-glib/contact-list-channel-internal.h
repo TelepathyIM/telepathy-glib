@@ -23,6 +23,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-contact-list.h>
 #include <telepathy-glib/group-mixin.h>
@@ -94,26 +95,20 @@ GType _tp_contact_group_channel_get_type (void);
 
 struct _TpBaseContactListChannelClass
 {
-  GObjectClass parent_class;
+  TpBaseChannelClass parent_class;
   TpGroupMixinClass group_class;
-  TpDBusPropertiesMixinClass dbus_properties_class;
 };
 
 struct _TpBaseContactListChannel
 {
-  GObject parent;
+  TpBaseChannel parent;
   TpGroupMixin group;
 
   /*<private>*/
   /* these would be in priv if this was a public object */
 
   /* set to NULL after channel is closed */
-  TpBaseConnection *conn;
   TpBaseContactList *manager;
-
-  gchar *object_path;
-  TpHandleType handle_type;
-  TpHandle handle;
 };
 
 void _tp_base_contact_list_channel_close (TpBaseContactListChannel *self);
