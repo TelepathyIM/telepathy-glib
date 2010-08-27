@@ -7,7 +7,7 @@ if ENABLE_PUBLIC_EXTENSIONS
 pkgconfig_DATA += tpl-extensions.pc
 endif # ENABLE_PUBLIC_EXTENSIONS
 
-$(pkgconfig_DATA): $(top_srcdir)/config.status
+$(pkgconfig_DATA): $(top_builddir)/config.status
 
 EXTRA_DIST = \
     all.xml \

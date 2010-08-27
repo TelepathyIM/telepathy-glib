@@ -2,6 +2,7 @@ include $(top_srcdir)/tools/flymake.mk
 
 AM_CPPFLAGS =						\
 	-I$(top_builddir)				\
+	-I$(top_builddir)/extensions			\
 	-I$(top_srcdir)					\
 	$(ERROR_CFLAGS)					\
 	-DG_LOG_DOMAIN=\"tp-logger\"			\
