@@ -130,7 +130,7 @@ tp_presence_mixin_get_contacts_dbus_property (GObject *object,
 
 
 /**
- * tp_contacts_mixin_class_get_offset_quark:
+ * tp_contacts_mixin_class_get_offset_quark: (skip)
  *
  * <!--no documentation beyond Returns: needed-->
  *
@@ -152,7 +152,7 @@ tp_contacts_mixin_class_get_offset_quark ()
 }
 
 /**
- * tp_contacts_mixin_get_offset_quark:
+ * tp_contacts_mixin_get_offset_quark: (skip)
  *
  * <!--no documentation beyond Returns: needed-->
  *
@@ -174,7 +174,7 @@ tp_contacts_mixin_get_offset_quark ()
 
 
 /**
- * tp_contacts_mixin_class_init:
+ * tp_contacts_mixin_class_init: (skip)
  * @obj_cls: The class of the implementation that uses this mixin
  * @offset: The byte offset of the TpContactsMixinClass within the class
  *          structure
@@ -208,7 +208,7 @@ tp_contacts_mixin_class_init (GObjectClass *obj_cls, glong offset)
 
 
 /**
- * tp_contacts_mixin_init:
+ * tp_contacts_mixin_init: (skip)
  * @obj: An instance of the implementation that uses this mixin
  * @offset: The byte offset of the TpContactsMixin within the object structure
  *
@@ -242,7 +242,7 @@ tp_contacts_mixin_init (GObject *obj, gsize offset)
 }
 
 /**
- * tp_contacts_mixin_finalize:
+ * tp_contacts_mixin_finalize: (skip)
  * @obj: An object with this mixin.
  *
  * Free resources held by the contacts mixin.
@@ -335,7 +335,7 @@ tp_contacts_mixin_get_contact_attributes (
 }
 
 /**
- * tp_contacts_mixin_iface_init:
+ * tp_contacts_mixin_iface_init: (skip)
  * @g_iface: A pointer to the #TpSvcConnectionInterfaceContacts in an object
  * class
  * @iface_data: Ignored
@@ -360,7 +360,7 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 }
 
 /**
- * tp_contacts_mixin_add_contact_attributes_iface:
+ * tp_contacts_mixin_add_contact_attributes_iface: (skip)
  * @obj: An instance of the implementation that uses this mixin
  * @interface: Name of the interface that has ContactAttributes
  * @fill_contact_attributes: Contact attribute filler function
@@ -389,7 +389,7 @@ tp_contacts_mixin_add_contact_attributes_iface (GObject *obj,
 }
 
 /**
- * tp_contacts_mixin_set_contact_attribute:
+ * tp_contacts_mixin_set_contact_attribute: (skip)
  * @contact_attributes: contacts attribute hash as passed to
  *   TpContactsMixinFillContactAttributesFunc
  * @handle: Handle to set the attribute on
