@@ -83,6 +83,10 @@ int main (int argc, char **argv)
   g_assert (!tp_strdiff (string, "_30123abc_5fxyz_01_ff"));
   g_free (string);
 
+  string = tp_escape_as_identifier ("©");
+  g_assert (!tp_strdiff (string,  "_c2_a9"));
+  g_free (string);
+
   test_strv_contains ();
 
   test_value_array_build ();
