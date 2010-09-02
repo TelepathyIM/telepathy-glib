@@ -134,7 +134,7 @@ deep_copy_hashtable (GHashTable *hash_table)
 
 
 /**
- * tp_presence_status_new
+ * tp_presence_status_new: (skip)
  * @which: Index of the presence status in the provided supported presence
  *  statuses array
  * @optional_arguments: Optional arguments for the presence statuses. Can be
@@ -160,7 +160,7 @@ tp_presence_status_new (guint which,
 
 
 /**
- * tp_presence_status_free
+ * tp_presence_status_free: (skip)
  * @status: A pointer to the presence status structure to free.
  *
  * Deallocate all resources associated with a presence status structure.
@@ -179,7 +179,7 @@ tp_presence_status_free (TpPresenceStatus *status)
 
 
 /**
- * tp_presence_mixin_class_get_offset_quark:
+ * tp_presence_mixin_class_get_offset_quark: (skip)
  *
  * <!--no documentation beyond Returns: needed-->
  *
@@ -195,7 +195,7 @@ tp_presence_mixin_class_get_offset_quark ()
 }
 
 /**
- * tp_presence_mixin_get_offset_quark:
+ * tp_presence_mixin_get_offset_quark: (skip)
  *
  * <!--no documentation beyond Returns: needed-->
  *
@@ -212,7 +212,7 @@ tp_presence_mixin_get_offset_quark ()
 
 
 /**
- * tp_presence_mixin_class_init:
+ * tp_presence_mixin_class_init: (skip)
  * @obj_cls: The class of the implementation that uses this mixin
  * @offset: The byte offset of the TpPresenceMixinClass within the class
  * structure
@@ -292,7 +292,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
 
 
 /**
- * tp_presence_mixin_init:
+ * tp_presence_mixin_init: (skip)
  * @obj: An instance of the implementation that uses this mixin
  * @offset: The byte offset of the TpPresenceMixin within the object structure
  *
@@ -318,7 +318,7 @@ tp_presence_mixin_init (GObject *obj,
 }
 
 /**
- * tp_presence_mixin_finalize:
+ * tp_presence_mixin_finalize: (skip)
  * @obj: An object with this mixin.
  *
  * Free resources held by the presence mixin.
@@ -399,7 +399,7 @@ construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
 
 
 /**
- * tp_presence_mixin_emit_presence_update:
+ * tp_presence_mixin_emit_presence_update: (skip)
  * @obj: A connection object with this mixin
  * @contact_presences: A mapping of contact handles to #TpPresenceStatus
  *  structures with the presence data to emit
@@ -443,7 +443,7 @@ tp_presence_mixin_emit_presence_update (GObject *obj,
 
 
 /**
- * tp_presence_mixin_emit_one_presence_update:
+ * tp_presence_mixin_emit_one_presence_update: (skip)
  * @obj: A connection object with this mixin
  * @handle: The handle of the contact to emit the signal for
  * @status: The new status to emit
@@ -470,7 +470,7 @@ tp_presence_mixin_emit_one_presence_update (GObject *obj,
 
 
 /**
- * tp_presence_mixin_add_status:
+ * tp_presence_mixin_add_status: (skip)
  *
  * Implements D-Bus method AddStatus
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
@@ -497,7 +497,7 @@ tp_presence_mixin_add_status (TpSvcConnectionInterfacePresence *iface,
 
 
 /**
- * tp_presence_mixin_clear_status:
+ * tp_presence_mixin_clear_status: (skip)
  *
  * Implements D-Bus method ClearStatus
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
@@ -531,7 +531,7 @@ tp_presence_mixin_clear_status (TpSvcConnectionInterfacePresence *iface,
 
 
 /**
- * tp_presence_mixin_get_presence:
+ * tp_presence_mixin_get_presence: (skip)
  *
  * Implements D-Bus method GetPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
@@ -654,7 +654,7 @@ check_status_available (GObject *object,
 }
 
 /**
- * tp_presence_mixin_get_statuses:
+ * tp_presence_mixin_get_statuses: (skip)
  *
  * Implements D-Bus method GetStatuses
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
@@ -722,7 +722,7 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
 
 
 /**
- * tp_presence_mixin_set_last_activity_time
+ * tp_presence_mixin_set_last_activity_time: (skip)
  *
  * Implements D-Bus method SetLastActivityTime
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
@@ -745,7 +745,7 @@ tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *ifac
 
 
 /**
- * tp_presence_mixin_remove_status:
+ * tp_presence_mixin_remove_status: (skip)
  *
  * Implements D-Bus method GetStatuses
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
@@ -821,7 +821,7 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
 
 
 /**
- * tp_presence_mixin_request_presence
+ * tp_presence_mixin_request_presence: (skip)
  *
  * Implements D-Bus method RequestPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
@@ -995,7 +995,7 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
 
 
 /**
- * tp_presence_mixin_set_status
+ * tp_presence_mixin_set_status: (skip)
  *
  * Implements D-Bus method SetStatus
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
@@ -1044,7 +1044,7 @@ tp_presence_mixin_set_status (TpSvcConnectionInterfacePresence *iface,
 
 
 /**
- * tp_presence_mixin_iface_init:
+ * tp_presence_mixin_iface_init: (skip)
  * @g_iface: A pointer to the #TpSvcConnectionInterfacePresenceClass in an
  *  object class
  * @iface_data: Ignored
@@ -1163,7 +1163,7 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
 }
 
 /**
- * tp_presence_mixin_simple_presence_init_dbus_properties:
+ * tp_presence_mixin_simple_presence_init_dbus_properties: (skip)
  * @cls: The class of an object with this mixin
  *
  * Set up #TpDBusPropertiesMixinClass to use this mixin's implementation of
@@ -1185,7 +1185,7 @@ tp_presence_mixin_simple_presence_init_dbus_properties (GObjectClass *cls)
 }
 
 /**
- * tp_presence_mixin_simple_presence_set_presence
+ * tp_presence_mixin_simple_presence_set_presence: (skip)
  *
  * Implements D-Bus method SetPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.SimplePresence
@@ -1320,7 +1320,7 @@ construct_simple_presence_hash (const TpPresenceStatusSpec *supported_statuses,
 }
 
 /**
- * tp_presence_mixin_get_simple_presence:
+ * tp_presence_mixin_get_simple_presence: (skip)
  *
  * Implements D-Bus method GetPresence
  * on interface org.freedesktop.Telepathy.Connection.Interface.SimplePresence
@@ -1382,7 +1382,7 @@ tp_presence_mixin_simple_presence_get_presences (
 }
 
 /**
- * tp_presence_mixin_simple_presence_iface_init:
+ * tp_presence_mixin_simple_presence_iface_init: (skip)
  * @g_iface: A pointer to the #TpSvcConnectionInterfaceSimplePresenceClass in
  * an object class
  * @iface_data: Ignored
@@ -1455,7 +1455,7 @@ tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
 }
 
 /**
- * tp_presence_mixin_simple_presence_register_with_contacts_mixin:
+ * tp_presence_mixin_simple_presence_register_with_contacts_mixin: (skip)
  * @obj: An instance that of the implementation that uses both the Contacts
  * mixin and this mixin
  *

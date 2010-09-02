@@ -158,7 +158,7 @@ struct _TpGroupMixinPrivate {
 
 
 /**
- * tp_group_mixin_class_get_offset_quark:
+ * tp_group_mixin_class_get_offset_quark: (skip)
  *
  * <!--Returns: says it all-->
  *
@@ -174,7 +174,7 @@ tp_group_mixin_class_get_offset_quark ()
 }
 
 /**
- * tp_group_mixin_get_offset_quark:
+ * tp_group_mixin_get_offset_quark: (skip)
  *
  * <!--Returns: says it all-->
  *
@@ -190,7 +190,7 @@ tp_group_mixin_get_offset_quark ()
 }
 
 /**
- * tp_group_mixin_class_set_remove_with_reason_func:
+ * tp_group_mixin_class_set_remove_with_reason_func: (skip)
  * @cls: The class of an object implementing the group interface using this
  *  mixin
  * @func: A callback to be used to remove contacts from this group with a
@@ -216,7 +216,7 @@ tp_group_mixin_class_set_remove_with_reason_func (GObjectClass *cls,
 }
 
 /**
- * tp_group_mixin_class_init:
+ * tp_group_mixin_class_init: (skip)
  * @obj_cls: The class of an object implementing the group interface using this
  *  mixin
  * @offset: The offset of the TpGroupMixinClass structure within the class
@@ -251,7 +251,7 @@ tp_group_mixin_class_init (GObjectClass *obj_cls,
 }
 
 /**
- * tp_group_mixin_class_allow_self_removal:
+ * tp_group_mixin_class_allow_self_removal: (skip)
  * @obj_cls: The class of an object implementing the group interface using this
  *  mixin
  *
@@ -284,7 +284,7 @@ tp_group_mixin_class_allow_self_removal (GObjectClass *obj_cls)
 }
 
 /**
- * tp_group_mixin_init:
+ * tp_group_mixin_init: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @offset: The offset of the TpGroupMixin structure within the instance
  *  structure
@@ -363,7 +363,7 @@ handle_owners_foreach_unref (gpointer key,
 }
 
 /**
- * tp_group_mixin_finalize:
+ * tp_group_mixin_finalize: (skip)
  * @obj: An object implementing the group interface using this mixin
  *
  * Unreference handles and free resources used by this mixin.
@@ -396,7 +396,7 @@ tp_group_mixin_finalize (GObject *obj)
 }
 
 /**
- * tp_group_mixin_get_self_handle:
+ * tp_group_mixin_get_self_handle: (skip)
  * @obj: An object implementing the group mixin using this interface
  * @ret: Used to return the local user's handle in this group
  * @error: Unused
@@ -429,7 +429,7 @@ tp_group_mixin_get_self_handle (GObject *obj,
 
 
 /**
- * tp_group_mixin_change_self_handle:
+ * tp_group_mixin_change_self_handle: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @new_self_handle: The new self-handle for this group
  *
@@ -478,7 +478,7 @@ tp_group_mixin_get_self_handle_async (TpSvcChannelInterfaceGroup *obj,
 }
 
 /**
- * tp_group_mixin_get_group_flags:
+ * tp_group_mixin_get_group_flags: (skip)
  * @obj: An object implementing the group mixin using this interface
  * @ret: Used to return the flags
  * @error: Unused
@@ -520,7 +520,7 @@ tp_group_mixin_get_group_flags_async (TpSvcChannelInterfaceGroup *obj,
 }
 
 /**
- * tp_group_mixin_add_members:
+ * tp_group_mixin_add_members: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @contacts: A GArray of guint representing contacts
  * @message: A message associated with the addition request, if supported
@@ -616,7 +616,7 @@ tp_group_mixin_add_members_async (TpSvcChannelInterfaceGroup *obj,
 }
 
 /**
- * tp_group_mixin_remove_members:
+ * tp_group_mixin_remove_members: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @contacts: A GArray of guint representing contacts
  * @message: A message to be sent to those contacts, if supported
@@ -642,7 +642,7 @@ tp_group_mixin_remove_members (GObject *obj,
 }
 
 /**
- * tp_group_mixin_remove_members_with_reason:
+ * tp_group_mixin_remove_members_with_reason: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @contacts: A GArray of guint representing contacts
  * @message: A message to be sent to those contacts, if supported
@@ -803,7 +803,7 @@ tp_group_mixin_remove_members_async (TpSvcChannelInterfaceGroup *obj,
 }
 
 /**
- * tp_group_mixin_get_members:
+ * tp_group_mixin_get_members: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @ret: Used to return a newly-allocated GArray of guint contact handles
  * @error: Unused
@@ -845,7 +845,7 @@ tp_group_mixin_get_members_async (TpSvcChannelInterfaceGroup *obj,
 }
 
 /**
- * tp_group_mixin_get_local_pending_members:
+ * tp_group_mixin_get_local_pending_members: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @ret: Used to return a newly-allocated GArray of guint contact handles
  * @error: Unused
@@ -918,7 +918,7 @@ local_pending_members_with_info_foreach (TpHandleSet *set,
 }
 
 /**
- * tp_group_mixin_get_local_pending_members_with_info:
+ * tp_group_mixin_get_local_pending_members_with_info: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @ret: Used to return a newly-allocated GPtrArray of D-Bus structures each
  * containing the handle of a local-pending contact, the handle of a contact
@@ -976,7 +976,7 @@ tp_group_mixin_get_local_pending_members_with_info_async (
 }
 
 /**
- * tp_group_mixin_get_remote_pending_members:
+ * tp_group_mixin_get_remote_pending_members: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @ret: Used to return a newly-allocated GArray of guint representing the
  * handles of the group's remote pending members
@@ -1020,7 +1020,7 @@ tp_group_mixin_get_remote_pending_members_async (TpSvcChannelInterfaceGroup *obj
 }
 
 /**
- * tp_group_mixin_get_all_members:
+ * tp_group_mixin_get_all_members: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @members: Used to return a newly-allocated GArray of guint representing
  * the handles of the group's members
@@ -1074,7 +1074,7 @@ tp_group_mixin_get_all_members_async (TpSvcChannelInterfaceGroup *obj,
 }
 
 /**
- * tp_group_mixin_get_handle_owners:
+ * tp_group_mixin_get_handle_owners: (skip)
  * @obj: An object implementing the group interface with this mixin
  * @handles: An array of guint representing locally valid handles
  * @ret: Used to return an array of guint representing globally valid
@@ -1210,7 +1210,7 @@ group_flags_to_string (TpChannelGroupFlags flags)
 }
 
 /**
- * tp_group_mixin_change_flags:
+ * tp_group_mixin_change_flags: (skip)
  * @obj: An object implementing the groups interface using this mixin
  * @add: Flags to be added
  * @del: Flags to be removed
@@ -1684,7 +1684,7 @@ change_members (GObject *obj,
 
 
 /**
- * tp_group_mixin_change_members:
+ * tp_group_mixin_change_members: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @message: A message to be sent to the affected contacts if possible;
  *  %NULL is allowed, and is mapped to an empty string
@@ -1758,7 +1758,7 @@ tp_group_mixin_change_members (GObject *obj,
 }
 
 /**
- * tp_group_mixin_change_members_detailed:
+ * tp_group_mixin_change_members_detailed: (skip)
  * @obj: An object implementing the group interface using this mixin
  * @add: A set of contact handles to be added to the members (if not
  *  already present) and removed from local pending and remote pending
@@ -1842,7 +1842,7 @@ tp_group_mixin_change_members_detailed (GObject *obj,
 }
 
 /**
- * tp_group_mixin_add_handle_owner:
+ * tp_group_mixin_add_handle_owner: (skip)
  * @obj: A GObject implementing the group interface with this mixin
  * @local_handle: A contact handle valid within this group (may not be 0)
  * @owner_handle: A contact handle valid globally, or 0 if the owner of the
@@ -1909,7 +1909,7 @@ add_handle_owners_helper (gpointer key,
 
 
 /**
- * tp_group_mixin_add_handle_owners:
+ * tp_group_mixin_add_handle_owners: (skip)
  * @obj: A GObject implementing the group interface with this mixin
  * @local_to_owner_handle: A map from contact handles valid within this group
  *  (which may not be 0) to either contact handles valid globally, or 0 if the
@@ -1986,7 +1986,7 @@ remove_handle_owners_if_exist (GObject *obj,
 }
 
 /**
- * tp_group_mixin_iface_init:
+ * tp_group_mixin_iface_init: (skip)
  * @g_iface: A #TpSvcChannelInterfaceGroupClass
  * @iface_data: Unused
  *
@@ -2028,7 +2028,7 @@ enum {
 
 
 /**
- * tp_group_mixin_get_dbus_property:
+ * tp_group_mixin_get_dbus_property: (skip)
  * @object: An object with this mixin
  * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP
  * @name: A quark representing the D-Bus property name, either
@@ -2136,7 +2136,7 @@ static TpDBusPropertiesMixinPropImpl known_group_props[] = {
 };
 
 /**
- * tp_group_mixin_init_dbus_properties:
+ * tp_group_mixin_init_dbus_properties: (skip)
  * @cls: The class of an object with this mixin
  *
  * Set up #TpDBusPropertiesMixinClass to use this mixin's implementation of
@@ -2175,7 +2175,7 @@ _external_group_mixin_get_obj_quark (void)
 }
 
 /**
- * tp_external_group_mixin_init:
+ * tp_external_group_mixin_init: (skip)
  * @obj: An object implementing the groups interface using an external group
  *    mixin
  * @obj_with_mixin: A GObject with the group mixin
@@ -2196,7 +2196,7 @@ tp_external_group_mixin_init (GObject *obj, GObject *obj_with_mixin)
 }
 
 /**
- * tp_external_group_mixin_finalize:
+ * tp_external_group_mixin_finalize: (skip)
  * @obj: An object implementing the groups interface using an external group
  *    mixin
  *
@@ -2216,7 +2216,7 @@ tp_external_group_mixin_finalize (GObject *obj)
 }
 
 /**
- * tp_external_group_mixin_init_dbus_properties:
+ * tp_external_group_mixin_init_dbus_properties: (skip)
  * @cls: The class of an object with this mixin
  *
  * Set up #TpDBusPropertiesMixinClass to use this mixin's implementation of
@@ -2241,7 +2241,7 @@ tp_external_group_mixin_init_dbus_properties (GObjectClass *cls)
 }
 
 /**
- * tp_external_group_mixin_get_dbus_property:
+ * tp_external_group_mixin_get_dbus_property: (skip)
  * @object: An object with this mixin
  * @interface: Must be %TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP
  * @name: A quark representing the D-Bus property name, either
@@ -2408,7 +2408,7 @@ tp_external_group_mixin_remove_members_with_reason_async
        context);
 }
 /**
- * tp_external_group_mixin_iface_init:
+ * tp_external_group_mixin_iface_init: (skip)
  * @g_iface: A #TpSvcChannelInterfaceGroupClass
  * @iface_data: Unused
  *
