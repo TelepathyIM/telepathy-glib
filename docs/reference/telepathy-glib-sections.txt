@@ -4864,3 +4864,20 @@ TP_IS_CLIENT_CHANNEL_FACTORY
 TP_TYPE_CLIENT_CHANNEL_FACTORY
 tp_client_channel_factory_get_type
 </SECTION>
+
+<SECTION>
+<FILE>basic-channel-factory</FILE>
+<TITLE>basic-channel-factory</TITLE>
+<INCLUDE>telepathy-glib/basic-channel-factory.h</INCLUDE>
+TpBasicChannelFactory
+TpBasicChannelFactoryClass
+tp_basic_channel_factory_new
+<SUBSECTION Standard>
+TP_BASIC_CHANNEL_FACTORY
+TP_BASIC_CHANNEL_FACTORY_GET_CLASS
+TP_IS_BASIC_CHANNEL_FACTORY
+TP_TYPE_BASIC_CHANNEL_FACTORY
+TP_BASIC_CHANNEL_FACTORY_CLASS
+TP_IS_BASIC_CHANNEL_FACTORY_CLASS
+tp_basic_channel_factory_get_type
+</SECTION>
