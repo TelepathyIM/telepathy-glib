@@ -40,6 +40,7 @@ our_headers = \
     channel-manager.h \
     channel-request.h \
     client.h \
+    client-channel-factory.h \
     connection.h \
     connection-manager.h \
     capabilities.h \
@@ -147,6 +148,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel-manager.c \
     channel-request.c \
     client.c \
+    client-channel-factory.c \
     connection.c \
     connection-avatars.c \
     connection-contact-info.c \

@@ -52,6 +52,7 @@
 #include <telepathy-glib/simple-observer.h>
 #include <telepathy-glib/stream-tube-channel.h>
 #include <telepathy-glib/stream-tube-connection.h>
+#include <telepathy-glib/client-channel-factory.h>
 
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>

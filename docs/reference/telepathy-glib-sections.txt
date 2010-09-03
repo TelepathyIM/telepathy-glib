@@ -4850,4 +4850,17 @@ TP_STREAM_TUBE_CONNECTION_GET_CLASS
 TP_TYPE_STREAM_TUBE_CONNECTION
 tp_stream_tube_connection_get_type
 TpStreamTubeConnectionPrivate
+
+<SECTION>
+<FILE>client-channel-factory</FILE>
+<TITLE>client-channel-factory</TITLE>
+<INCLUDE>telepathy-glib/client-channel-factory.h</INCLUDE>
+TpClientChannelFactoryInterface
+tp_client_channel_factory_create_channel
+<SUBSECTION Standard>
+TP_CLIENT_CHANNEL_FACTORY
+TP_CLIENT_CHANNEL_FACTORY_GET_IFACE
+TP_IS_CLIENT_CHANNEL_FACTORY
+TP_TYPE_CLIENT_CHANNEL_FACTORY
+tp_client_channel_factory_get_type
 </SECTION>
