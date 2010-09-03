@@ -165,6 +165,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
+#include <telepathy-glib/basic-channel-factory.h>
 #include <telepathy-glib/channel-dispatch-operation-internal.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
@@ -201,6 +202,7 @@ enum {
     PROP_ACCOUNT_MANAGER,
     PROP_NAME,
     PROP_UNIQUIFY_NAME,
+    PROP_CHANNEL_FACTORY,
     N_PROPS
 };
 
@@ -252,6 +254,7 @@ struct _TpBaseClientPrivate
 
   TpAccountManager *account_mgr;
   TpAccount *only_for_account;
+  TpClientChannelFactoryInterface *channel_factory;
 
   /* array of GQuark or NULL */
   GArray *account_features;
@@ -906,6 +909,7 @@ tp_base_client_dispose (GObject *object)
   tp_clear_object (&self->priv->dbus);
   tp_clear_object (&self->priv->account_mgr);
   tp_clear_object (&self->priv->only_for_account);
+  tp_clear_object (&self->priv->channel_factory);
 
   g_list_foreach (self->priv->pending_requests, (GFunc) g_object_unref, NULL);
   g_list_free (self->priv->pending_requests);
@@ -964,6 +968,10 @@ tp_base_client_get_property (GObject *object,
         g_value_set_boolean (value, self->priv->uniquify_name);
         break;
 
+      case PROP_CHANNEL_FACTORY:
+        g_value_set_object (value, self->priv->channel_factory);
+        break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -997,6 +1005,11 @@ tp_base_client_set_property (GObject *object,
 
       case PROP_UNIQUIFY_NAME:
         self->priv->uniquify_name = g_value_get_boolean (value);
+        break;
+
+      case PROP_CHANNEL_FACTORY:
+        g_assert (self->priv->channel_factory == NULL);    /* construct-only */
+        self->priv->channel_factory = g_value_dup_object (value);
         break;
 
       default:
@@ -1065,6 +1078,16 @@ tp_base_client_constructed (GObject *object)
   g_strdelimit (self->priv->object_path, ".", '/');
 
   self->priv->bus_name = g_string_free (string, FALSE);
+
+  if (self->priv->channel_factory == NULL)
+    {
+      self->priv->channel_factory = TP_CLIENT_CHANNEL_FACTORY (
+          tp_basic_channel_factory_new ());
+    }
+  else
+    {
+      g_assert (TP_IS_CLIENT_CHANNEL_FACTORY (self->priv->channel_factory));
+    }
 }
 
 typedef enum {
@@ -1300,6 +1323,25 @@ tp_base_client_class_init (TpBaseClientClass *cls)
   g_object_class_install_property (object_class, PROP_UNIQUIFY_NAME,
       param_spec);
 
+  /**
+   * TpBaseClient:channel-factory:
+   *
+   * The object implementing the #TpClientChannelFactoryInterface interface
+   * that will be used to create channel proxies.
+   * While the client has not been registerd, this property can be changed
+   * using tp_base_client_set_channel_factory().
+   *
+   * If no channel factory is specified then #TpBasicChannelFactory is used.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("channel-factory", "Channel factory",
+      "Object implementing TpClientChannelFactoryInterface",
+      G_TYPE_OBJECT,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_FACTORY,
+      param_spec);
+
  /**
    * TpBaseClient::request-added:
    * @self: a #TpBaseClient
@@ -1488,8 +1530,9 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
           &chan_path, &chan_props);
 
-      channel = tp_channel_new_from_properties (connection,
-          chan_path, chan_props, &error);
+      channel = tp_client_channel_factory_create_channel (
+          self->priv->channel_factory, connection, chan_path, chan_props,
+          &error);
       if (channel == NULL)
         {
           DEBUG ("Failed to create TpChannel: %s", error->message);
@@ -1702,8 +1745,9 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
           &chan_path, &chan_props);
 
-      channel = tp_channel_new_from_properties (connection,
-          chan_path, chan_props, &error);
+      channel = tp_client_channel_factory_create_channel (
+          self->priv->channel_factory, connection, chan_path, chan_props,
+          &error);
       if (channel == NULL)
         {
           DEBUG ("Failed to create TpChannel: %s", error->message);
@@ -1923,8 +1967,9 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
           &chan_path, &chan_props);
 
-      channel = tp_channel_new_from_properties (connection,
-          chan_path, chan_props, &error);
+      channel = tp_client_channel_factory_create_channel (
+          self->priv->channel_factory, connection, chan_path, chan_props,
+          &error);
       if (channel == NULL)
         {
           DEBUG ("Failed to create TpChannel: %s", error->message);
@@ -2548,4 +2593,46 @@ tp_base_client_add_connection_features (TpBaseClient *self,
         sizeof (GQuark));
 
   _tp_quark_array_merge (self->priv->connection_features, features, n);
+}
+
+/**
+ * tp_base_client_set_channel_factory:
+ * @self: a #TpBaseClient
+ * @factory: an object implementing the #TpClientChannelFactoryInterface
+ * interface
+ *
+ * Change the value of the #TpBaseClient:channel-factory property.
+ * It can't be changed once @self has been registered.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_base_client_set_channel_factory (TpBaseClient *self,
+    TpClientChannelFactoryInterface *factory)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (TP_IS_CLIENT_CHANNEL_FACTORY (factory));
+
+  tp_clear_object (&self->priv->channel_factory);
+
+  self->priv->channel_factory = g_object_ref (self->priv->channel_factory);
+  g_object_notify (G_OBJECT (self), "channel-factory");
+}
+
+/**
+ * tp_base_client_get_channel_factory: (skip)
+ * @self: a #TpBaseClient
+ *
+ * Return the #TpBaseClient:channel-factory property.
+ *
+ * Returns: the value of #TpBaseClient:channel-factory
+ * Since: 0.13.UNRELEASED
+ */
+TpClientChannelFactoryInterface *
+tp_base_client_get_channel_factory (TpBaseClient *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CLIENT (self), NULL);
+
+  return self->priv->channel_factory;
 }

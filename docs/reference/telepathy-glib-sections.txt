@@ -4358,6 +4358,8 @@ tp_base_client_get_dbus_daemon
 tp_base_client_get_name
 tp_base_client_get_uniquify_name
 tp_base_client_get_account_manager
+tp_base_client_set_channel_factory
+tp_base_client_get_channel_factory
 <SUBSECTION Standard>
 tp_base_client_get_type
 TP_BASE_CLIENT
