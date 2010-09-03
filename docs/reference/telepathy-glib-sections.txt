@@ -4881,3 +4881,20 @@ TP_BASIC_CHANNEL_FACTORY_CLASS
 TP_IS_BASIC_CHANNEL_FACTORY_CLASS
 tp_basic_channel_factory_get_type
 </SECTION>
+
+<SECTION>
+<FILE>automatic-channel-factory</FILE>
+<TITLE>automatic-channel-factory</TITLE>
+<INCLUDE>telepathy-glib/automatic-channel-factory.h</INCLUDE>
+TpAutomaticChannelFactory
+TpAutomaticChannelFactoryClass
+tp_automatic_channel_factory_new
+<SUBSECTION Standard>
+TP_AUTOMATIC_CHANNEL_FACTORY
+TP_AUTOMATIC_CHANNEL_FACTORY_CLASS
+TP_AUTOMATIC_CHANNEL_FACTORY_GET_CLASS
+TP_IS_AUTOMATIC_CHANNEL_FACTORY
+TP_IS_AUTOMATIC_CHANNEL_FACTORY_CLASS
+TP_TYPE_AUTOMATIC_CHANNEL_FACTORY
+tp_automatic_channel_factory_get_type
+</SECTION>
