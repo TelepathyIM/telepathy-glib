@@ -283,6 +283,15 @@ operation_failed (GSimpleAsyncResult *result,
 }
 
 static void
+complete_accept_operation (GSimpleAsyncResult *result,
+    GSocketConnection *conn)
+{
+  g_simple_async_result_set_op_res_gpointer (result, conn, NULL);
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+static void
 _socket_connected (GObject *client,
     GAsyncResult *result,
     gpointer user_data)
@@ -304,9 +313,7 @@ _socket_connected (GObject *client,
 
   DEBUG ("Stream Tube socket connected");
 
-  g_simple_async_result_set_op_res_gpointer (simple_result, conn, NULL);
-  g_simple_async_result_complete (simple_result);
-  g_object_unref (simple_result);
+  complete_accept_operation (simple_result, conn);
   g_object_unref (client);
 }
 
