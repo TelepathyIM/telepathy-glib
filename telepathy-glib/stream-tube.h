@@ -46,6 +46,8 @@ struct _TpStreamTube
 struct _TpStreamTubeClass
 {
   TpChannelClass parent_class;
+  /*<private>*/
+  GCallback _padding[7];
 };
 
 GType tp_stream_tube_get_type (void);
