@@ -488,12 +488,42 @@ _new_remote_connection_with_contact (TpConnection *conn,
   if (error != NULL)
     {
       DEBUG ("Failed to accept incoming socket: %s", error->message);
+
+      g_error_free (error);
       return;
     }
+
+#ifdef HAVE_GIO_UNIX
+  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
+    {
+      GCredentials *creds;
+      uid_t uid;
+
+      creds = g_unix_connection_receive_credentials (
+          G_UNIX_CONNECTION (sockconn), NULL, &error);
+      if (creds == NULL)
+        {
+          DEBUG ("Failed to receive credentials: %s", error->message);
+
+          g_error_free (error);
+          goto out;
+        }
+
+      uid = g_credentials_get_unix_user (creds, &error);
+      g_object_unref  (creds);
+
+      if (uid != geteuid ())
+        {
+          DEBUG ("Wrong credentials received (user: %u)", uid);
+          goto out;
+        }
+    }
+#endif
 
   g_signal_emit (self, _signals[INCOMING], 0, contact, sockconn);
 
   /* anyone receiving the signal is required to hold their own reference */
+out:
   g_object_unref (sockconn);
 }
 
@@ -574,7 +604,7 @@ _offer_with_address (TpStreamTube *self,
 
   /* Call Offer */
   tp_cli_channel_type_stream_tube_call_offer (TP_CHANNEL (self), -1,
-      self->priv->socket_type, addressv, TP_SOCKET_ACCESS_CONTROL_LOCALHOST,
+      self->priv->socket_type, addressv, self->priv->access_control,
       params, _channel_offered, NULL, NULL, G_OBJECT (self));
 
   g_hash_table_unref (params);
