@@ -40,6 +40,7 @@
 
 #ifdef HAVE_GIO_UNIX
 #include <gio/gunixsocketaddress.h>
+#include <gio/gunixconnection.h>
 #endif /* HAVE_GIO_UNIX */
 
 G_DEFINE_TYPE (TpStreamTube, tp_stream_tube, TP_TYPE_CHANNEL);
@@ -316,6 +317,21 @@ _socket_connected (GObject *client,
 
   DEBUG ("Stream Tube socket connected");
 
+#ifdef HAVE_GIO_UNIX
+  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
+    {
+      if (!g_unix_connection_send_credentials (G_UNIX_CONNECTION (conn), NULL,
+            &error))
+        {
+          DEBUG ("Failed to send credentials: %s", error->message);
+
+          operation_failed (self, error);
+          g_clear_error (&error);
+          return;
+        }
+    }
+#endif
+
   complete_accept_operation (self, conn);
   g_object_unref (client);
 }
@@ -397,7 +413,7 @@ tp_stream_tube_accept_async (TpStreamTube *self,
 
   /* Call Accept */
   tp_cli_channel_type_stream_tube_call_accept (TP_CHANNEL (self), -1,
-      self->priv->socket_type, TP_SOCKET_ACCESS_CONTROL_LOCALHOST, &value,
+      self->priv->socket_type, self->priv->access_control, &value,
       _channel_accepted, NULL, NULL, G_OBJECT (self));
 
   g_value_unset (&value);
