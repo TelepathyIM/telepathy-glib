@@ -272,6 +272,15 @@ determine_socket_type (TpStreamTube *self,
     }
 }
 
+static void
+operation_failed (GSimpleAsyncResult *result,
+    const GError *error)
+{
+  g_simple_async_result_set_from_error (result, error);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
 
 static void
 _socket_connected (GObject *client,
@@ -288,11 +297,8 @@ _socket_connected (GObject *client,
     {
       DEBUG ("Failed to connect socket: %s", error->message);
 
-      g_simple_async_result_set_from_error (simple_result, error);
-      g_simple_async_result_complete (simple_result);
-      g_object_unref (simple_result);
+      operation_failed (simple_result, error);
       g_clear_error (&error);
-
       return;
     }
 
@@ -322,10 +328,7 @@ _channel_accepted (TpChannel *channel,
     {
       DEBUG ("Failed to Accept Stream Tube: %s", in_error->message);
 
-      g_simple_async_result_set_from_error (result, in_error);
-      g_simple_async_result_complete (result);
-      g_object_unref (result);
-
+      operation_failed (result, in_error);
       return;
     }
 
@@ -335,11 +338,9 @@ _channel_accepted (TpChannel *channel,
     {
       DEBUG ("Failed to convert address: %s", error->message);
 
-      g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete (result);
-      g_object_unref (result);
-      g_clear_error (&error);
+      operation_failed (result, in_error);
 
+      g_clear_error (&error);
       return;
     }
 
@@ -374,11 +375,9 @@ tp_stream_tube_accept_async (TpStreamTube *self,
   self->priv->socket_type = determine_socket_type (self, &error);
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete (result);
-      g_object_unref (result);
-      g_clear_error (&error);
+      operation_failed (result, error);
 
+      g_clear_error (&error);
       return;
     }
 
@@ -502,10 +501,7 @@ _channel_offered (TpChannel *channel,
     {
       DEBUG ("Failed to Offer Stream Tube: %s", in_error->message);
 
-      g_simple_async_result_set_from_error (result, in_error);
-      g_simple_async_result_complete (result);
-      g_object_unref (result);
-
+      operation_failed (result, in_error);
       return;
     }
 
@@ -529,11 +525,9 @@ _offer_with_address (TpStreamTube *self,
       &self->priv->socket_type, &error);
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete (result);
-      g_object_unref (result);
-      g_clear_error (&error);
+      operation_failed (result, error);
 
+      g_clear_error (&error);
       goto finally;
     }
 
@@ -543,11 +537,9 @@ _offer_with_address (TpStreamTube *self,
       NULL, NULL, G_OBJECT (self), &error);
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete (result);
-      g_object_unref (result);
-      g_clear_error (&error);
+      operation_failed (result, error);
 
+      g_clear_error (&error);
       goto finally;
     }
 
@@ -600,11 +592,9 @@ tp_stream_tube_offer_async (TpStreamTube *self,
   socket_type = determine_socket_type (self, &error);
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete (result);
-      g_object_unref (result);
-      g_clear_error (&error);
+      operation_failed (result, error);
 
+      g_clear_error (&error);
       return;
     }
 
@@ -644,11 +634,9 @@ tp_stream_tube_offer_async (TpStreamTube *self,
           /* check there wasn't an error on the final attempt */
           if (error != NULL)
             {
-              g_simple_async_result_set_from_error (result, error);
-              g_simple_async_result_complete (result);
-              g_object_unref (result);
-              g_clear_error (&error);
+              operation_failed (result, error);
 
+              g_clear_error (&error);
               return;
             }
         }
@@ -673,11 +661,9 @@ tp_stream_tube_offer_async (TpStreamTube *self,
 
           if (error != NULL)
             {
-              g_simple_async_result_set_from_error (result, error);
-              g_simple_async_result_complete (result);
-              g_object_unref (result);
-              g_clear_error (&error);
+              operation_failed (result, error);
 
+              g_clear_error (&error);
               return;
             }
 
