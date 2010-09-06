@@ -21,7 +21,7 @@
 #ifndef __TP_STREAM_TUBE_H__
 #define __TP_STREAM_TUBE_H__
 
-#include <telepathy-glib/channel-view.h>
+#include <telepathy-glib/channel.h>
 #include <gio/gio.h>
 
 G_BEGIN_DECLS
@@ -39,17 +39,21 @@ typedef struct _TpStreamTubePrivate TpStreamTubePrivate;
 
 struct _TpStreamTube
 {
-  TpChannelView parent;
+  TpChannel parent;
   TpStreamTubePrivate *priv;
 };
 
 struct _TpStreamTubeClass
 {
-  TpChannelViewClass parent_class;
+  TpChannelClass parent_class;
 };
 
 GType tp_stream_tube_get_type (void);
-TpStreamTube *tp_stream_tube_new (TpChannel *channel);
+
+TpStreamTube *tp_stream_tube_new (TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *immutable_properties,
+    GError **error);
 
 void tp_stream_tube_accept_async (TpStreamTube *self,
     GAsyncReadyCallback callback,

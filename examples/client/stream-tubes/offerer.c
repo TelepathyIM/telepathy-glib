@@ -65,8 +65,12 @@ _channel_created (GObject *source,
 
   g_debug ("Channel created: %s", tp_proxy_get_object_path (channel));
 
-  tube = tp_stream_tube_new (TP_CHANNEL (channel));
-  /* the TpStreamTube holds the only reference to @channel */
+  tube = tp_stream_tube_new (tp_channel_borrow_connection (channel),
+      tp_proxy_get_object_path (channel),
+      tp_channel_borrow_immutable_properties (channel),
+      &error);
+  g_assert_no_error (error);
+
   g_object_unref (channel);
 
   g_signal_connect (tube, "incoming",

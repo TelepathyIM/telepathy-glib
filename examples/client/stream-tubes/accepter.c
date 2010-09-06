@@ -70,6 +70,7 @@ _handle_channels (TpSimpleHandler *handler,
     {
       TpChannel *channel = l->data;
       GHashTable *props = tp_channel_borrow_immutable_properties (channel);
+      GError *error = NULL;
 
       if (tp_channel_get_channel_type_id (channel) !=
           TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE)
@@ -82,8 +83,12 @@ _handle_channels (TpSimpleHandler *handler,
 
       g_debug ("Accepting tube");
 
-      /* the TpStreamTube holds the only ref to @channel */
-      tube = tp_stream_tube_new (channel);
+      tube = tp_stream_tube_new (tp_channel_borrow_connection (channel),
+          tp_proxy_get_object_path (channel),
+          tp_channel_borrow_immutable_properties (channel),
+          &error);
+      g_assert_no_error (error);
+
       tp_stream_tube_accept_async (tube, _tube_accepted, context);
 
       delay = TRUE;

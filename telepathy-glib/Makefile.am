@@ -39,7 +39,6 @@ our_headers = \
     channel-factory-iface.h \
     channel-manager.h \
     channel-request.h \
-    channel-view.h \
     client.h \
     connection.h \
     connection-manager.h \
@@ -145,7 +144,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel-dispatch-operation-internal.h \
     channel-manager.c \
     channel-request.c \
-    channel-view.c \
     client.c \
     connection.c \
     connection-avatars.c \

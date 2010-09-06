@@ -44,7 +44,7 @@
 
 #define GET_PRIV(o) (((TpStreamTube *)o)->priv)
 
-G_DEFINE_TYPE (TpStreamTube, tp_stream_tube, TP_TYPE_CHANNEL_VIEW);
+G_DEFINE_TYPE (TpStreamTube, tp_stream_tube, TP_TYPE_CHANNEL);
 
 struct _TpStreamTubePrivate
 {
@@ -137,18 +137,29 @@ tp_stream_tube_init (TpStreamTube *self)
  * Returns: a newly created #TpStreamTube
  */
 TpStreamTube *
-tp_stream_tube_new (TpChannel *channel)
+tp_stream_tube_new (TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *immutable_properties,
+    GError **error)
 {
-  g_return_val_if_fail (tp_proxy_is_prepared (channel, TP_CHANNEL_FEATURE_CORE),
-      NULL);
-  g_return_val_if_fail (tp_channel_get_channel_type_id (channel) ==
-      TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE, NULL);
+  TpProxy *conn_proxy = (TpProxy *) conn;
+
+  g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
+  g_return_val_if_fail (object_path != NULL, NULL);
+  g_return_val_if_fail (immutable_properties != NULL, NULL);
+
+  if (!tp_dbus_check_valid_object_path (object_path, error))
+    return NULL;
 
   return g_object_new (TP_TYPE_STREAM_TUBE,
-      "channel", channel,
-      NULL);
+      "connection", conn,
+       "dbus-daemon", conn_proxy->dbus_daemon,
+       "bus-name", conn_proxy->bus_name,
+       "object-path", object_path,
+       "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
+       "channel-properties", immutable_properties,
+       NULL);
 }
-
 
 static TpSocketAddressType
 determine_socket_type (TpChannel *channel,
@@ -290,7 +301,6 @@ tp_stream_tube_accept_async (TpStreamTube *self,
     gpointer user_data)
 {
   GSimpleAsyncResult *result;
-  TpChannel *channel;
   TpSocketAddressType socket_type;
   GValue value = { 0, };
   GError *error = NULL;
@@ -300,8 +310,7 @@ tp_stream_tube_accept_async (TpStreamTube *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_stream_tube_accept_finish);
 
-  channel = tp_channel_view_borrow_channel (TP_CHANNEL_VIEW (self));
-  socket_type = determine_socket_type (channel, &error);
+  socket_type = determine_socket_type (TP_CHANNEL (self), &error);
   if (error != NULL)
     {
       g_simple_async_result_set_from_error (result, error);
@@ -318,7 +327,7 @@ tp_stream_tube_accept_async (TpStreamTube *self,
   g_value_set_uint (&value, 0);
 
   /* Call Accept */
-  tp_cli_channel_type_stream_tube_call_accept (channel, -1,
+  tp_cli_channel_type_stream_tube_call_accept (TP_CHANNEL (self), -1,
       socket_type, TP_SOCKET_ACCESS_CONTROL_LOCALHOST, &value,
       _channel_accepted, result, NULL, G_OBJECT (self));
 
@@ -453,11 +462,9 @@ _offer_with_address (TpStreamTube *self,
 {
   TpStreamTubePrivate *priv = GET_PRIV (self);
   TpSocketAddressType socket_type;
-  TpChannel *channel;
   GValue *addressv = NULL;
   GError *error = NULL;
 
-  channel = tp_channel_view_borrow_channel (TP_CHANNEL_VIEW (self));
   addressv = tp_address_variant_from_g_socket_address (priv->address,
       &socket_type, &error);
   if (error != NULL)
@@ -471,8 +478,8 @@ _offer_with_address (TpStreamTube *self,
     }
 
   /* Connect the NewRemoteConnection signal */
-  tp_cli_channel_type_stream_tube_connect_to_new_remote_connection (channel,
-      _new_remote_connection,
+  tp_cli_channel_type_stream_tube_connect_to_new_remote_connection (
+      TP_CHANNEL (self), _new_remote_connection,
       NULL, NULL, G_OBJECT (self), &error);
   if (error != NULL)
     {
@@ -490,7 +497,7 @@ _offer_with_address (TpStreamTube *self,
     params = tp_asv_new (NULL, NULL);
 
   /* Call Offer */
-  tp_cli_channel_type_stream_tube_call_offer (channel, -1,
+  tp_cli_channel_type_stream_tube_call_offer (TP_CHANNEL (self), -1,
       socket_type, addressv, TP_SOCKET_ACCESS_CONTROL_LOCALHOST, params,
       _channel_offered, result, NULL, G_OBJECT (self));
 
@@ -517,7 +524,6 @@ tp_stream_tube_offer_async (TpStreamTube *self,
 {
   TpStreamTubePrivate *priv;
   GSimpleAsyncResult *result;
-  TpChannel *channel;
   TpSocketAddressType socket_type;
   GError *error = NULL;
 
@@ -534,8 +540,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_stream_tube_offer_finish);
 
-  channel = tp_channel_view_borrow_channel (TP_CHANNEL_VIEW (self));
-  socket_type = determine_socket_type (channel, &error);
+  socket_type = determine_socket_type (TP_CHANNEL (self), &error);
   if (error != NULL)
     {
       g_simple_async_result_set_from_error (result, error);
