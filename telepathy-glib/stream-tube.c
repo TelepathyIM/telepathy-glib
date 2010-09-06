@@ -51,6 +51,8 @@ struct _TpStreamTubePrivate
 
   TpSocketAddressType socket_type;
   TpSocketAccessControl access_control;
+
+  GSimpleAsyncResult *result;
 };
 
 
@@ -69,6 +71,7 @@ tp_stream_tube_dispose (GObject *obj)
   TpStreamTube *self = (TpStreamTube *) obj;
 
   tp_clear_object (&self->priv->listener);
+  tp_clear_object (&self->priv->result);
 
   if (self->priv->address != NULL)
     {
@@ -273,22 +276,22 @@ determine_socket_type (TpStreamTube *self,
 }
 
 static void
-operation_failed (GSimpleAsyncResult *result,
+operation_failed (TpStreamTube *self,
     const GError *error)
 {
-  g_simple_async_result_set_from_error (result, error);
+  g_simple_async_result_set_from_error (self->priv->result, error);
 
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
+  g_simple_async_result_complete (self->priv->result);
+  tp_clear_object (&self->priv->result);
 }
 
 static void
-complete_accept_operation (GSimpleAsyncResult *result,
+complete_accept_operation (TpStreamTube *self,
     GSocketConnection *conn)
 {
-  g_simple_async_result_set_op_res_gpointer (result, conn, NULL);
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
+  g_simple_async_result_set_op_res_gpointer (self->priv->result, conn, NULL);
+  g_simple_async_result_complete (self->priv->result);
+  tp_clear_object (&self->priv->result);
 }
 
 static void
@@ -296,8 +299,8 @@ _socket_connected (GObject *client,
     GAsyncResult *result,
     gpointer user_data)
 {
+  TpStreamTube *self = user_data;
   GSocketConnection *conn;
-  GSimpleAsyncResult *simple_result = user_data;
   GError *error = NULL;
 
   conn = g_socket_client_connect_finish (G_SOCKET_CLIENT (client), result,
@@ -306,14 +309,14 @@ _socket_connected (GObject *client,
     {
       DEBUG ("Failed to connect socket: %s", error->message);
 
-      operation_failed (simple_result, error);
+      operation_failed (self, error);
       g_clear_error (&error);
       return;
     }
 
   DEBUG ("Stream Tube socket connected");
 
-  complete_accept_operation (simple_result, conn);
+  complete_accept_operation (self, conn);
   g_object_unref (client);
 }
 
@@ -326,7 +329,6 @@ _channel_accepted (TpChannel *channel,
     GObject *obj)
 {
   TpStreamTube *self = (TpStreamTube *) obj;
-  GSimpleAsyncResult *result = user_data;
   GSocketAddress *address;
   GSocketClient *client;
   GError *error = NULL;
@@ -335,7 +337,7 @@ _channel_accepted (TpChannel *channel,
     {
       DEBUG ("Failed to Accept Stream Tube: %s", in_error->message);
 
-      operation_failed (result, in_error);
+      operation_failed (self, in_error);
       return;
     }
 
@@ -345,7 +347,7 @@ _channel_accepted (TpChannel *channel,
     {
       DEBUG ("Failed to convert address: %s", error->message);
 
-      operation_failed (result, in_error);
+      operation_failed (self, in_error);
 
       g_clear_error (&error);
       return;
@@ -353,7 +355,7 @@ _channel_accepted (TpChannel *channel,
 
   client = g_socket_client_new ();
   g_socket_client_connect_async (client, G_SOCKET_CONNECTABLE (address),
-      NULL, _socket_connected, result);
+      NULL, _socket_connected, self);
 
   g_object_unref (address);
 }
@@ -370,19 +372,19 @@ tp_stream_tube_accept_async (TpStreamTube *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GSimpleAsyncResult *result;
   GValue value = { 0, };
   GError *error = NULL;
 
   g_return_if_fail (TP_IS_STREAM_TUBE (self));
+  g_return_if_fail (self->priv->result == NULL);
 
-  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_stream_tube_accept_async);
+  self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_stream_tube_accept_async);
 
   self->priv->socket_type = determine_socket_type (self, &error);
   if (error != NULL)
     {
-      operation_failed (result, error);
+      operation_failed (self, error);
 
       g_clear_error (&error);
       return;
@@ -396,7 +398,7 @@ tp_stream_tube_accept_async (TpStreamTube *self,
   /* Call Accept */
   tp_cli_channel_type_stream_tube_call_accept (TP_CHANNEL (self), -1,
       self->priv->socket_type, TP_SOCKET_ACCESS_CONTROL_LOCALHOST, &value,
-      _channel_accepted, result, NULL, G_OBJECT (self));
+      _channel_accepted, NULL, NULL, G_OBJECT (self));
 
   g_value_unset (&value);
 }
@@ -500,29 +502,28 @@ static void
 _channel_offered (TpChannel *channel,
     const GError *in_error,
     gpointer user_data,
-    GObject *self)
+    GObject *obj)
 {
-  GSimpleAsyncResult *result = user_data;
+  TpStreamTube *self = (TpStreamTube *) obj;
 
   if (in_error != NULL)
     {
       DEBUG ("Failed to Offer Stream Tube: %s", in_error->message);
 
-      operation_failed (result, in_error);
+      operation_failed (self, in_error);
       return;
     }
 
   DEBUG ("Stream Tube offered");
 
-  g_simple_async_result_set_op_res_gboolean (result, TRUE);
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
+  g_simple_async_result_set_op_res_gboolean (self->priv->result, TRUE);
+  g_simple_async_result_complete (self->priv->result);
+  tp_clear_object (&self->priv->result);
 }
 
 
 static void
 _offer_with_address (TpStreamTube *self,
-    GSimpleAsyncResult *result,
     GHashTable *params)
 {
   GValue *addressv = NULL;
@@ -532,7 +533,7 @@ _offer_with_address (TpStreamTube *self,
       &self->priv->socket_type, &error);
   if (error != NULL)
     {
-      operation_failed (result, error);
+      operation_failed (self, error);
 
       g_clear_error (&error);
       goto finally;
@@ -544,7 +545,7 @@ _offer_with_address (TpStreamTube *self,
       NULL, NULL, G_OBJECT (self), &error);
   if (error != NULL)
     {
-      operation_failed (result, error);
+      operation_failed (self, error);
 
       g_clear_error (&error);
       goto finally;
@@ -558,7 +559,7 @@ _offer_with_address (TpStreamTube *self,
   /* Call Offer */
   tp_cli_channel_type_stream_tube_call_offer (TP_CHANNEL (self), -1,
       self->priv->socket_type, addressv, TP_SOCKET_ACCESS_CONTROL_LOCALHOST,
-      params, _channel_offered, result, NULL, G_OBJECT (self));
+      params, _channel_offered, NULL, NULL, G_OBJECT (self));
 
   g_hash_table_unref (params);
 
@@ -581,11 +582,11 @@ tp_stream_tube_offer_async (TpStreamTube *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GSimpleAsyncResult *result;
   TpSocketAddressType socket_type;
   GError *error = NULL;
 
   g_return_if_fail (TP_IS_STREAM_TUBE (self));
+  g_return_if_fail (self->priv->result == NULL);
 
   if (self->priv->listener != NULL)
     {
@@ -593,13 +594,13 @@ tp_stream_tube_offer_async (TpStreamTube *self,
       return;
     }
 
-  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_stream_tube_offer_async);
+  self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_stream_tube_offer_async);
 
   socket_type = determine_socket_type (self, &error);
   if (error != NULL)
     {
-      operation_failed (result, error);
+      operation_failed (self, error);
 
       g_clear_error (&error);
       return;
@@ -641,7 +642,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
           /* check there wasn't an error on the final attempt */
           if (error != NULL)
             {
-              operation_failed (result, error);
+              operation_failed (self, error);
 
               g_clear_error (&error);
               return;
@@ -668,7 +669,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
 
           if (error != NULL)
             {
-              operation_failed (result, error);
+              operation_failed (self, error);
 
               g_clear_error (&error);
               return;
@@ -683,7 +684,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
         break;
     }
 
-  _offer_with_address (self, result, params);
+  _offer_with_address (self, params);
 }
 
 
@@ -707,10 +708,9 @@ tp_stream_tube_offer_existing_async (TpStreamTube *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GSimpleAsyncResult *result;
-
   g_return_if_fail (TP_IS_STREAM_TUBE (self));
   g_return_if_fail (G_IS_SOCKET_ADDRESS (address));
+  g_return_if_fail (self->priv->result == NULL);
 
   if (self->priv->listener != NULL)
     {
@@ -718,12 +718,12 @@ tp_stream_tube_offer_existing_async (TpStreamTube *self,
       return;
     }
 
-  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_stream_tube_offer_existing_async);
+  self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_stream_tube_offer_existing_async);
 
   self->priv->address = g_object_ref (address);
 
-  _offer_with_address (self, result, params);
+  _offer_with_address (self, params);
 }
 
 
