@@ -42,8 +42,6 @@
 #include <gio/gunixsocketaddress.h>
 #endif /* HAVE_GIO_UNIX */
 
-#define GET_PRIV(o) (((TpStreamTube *)o)->priv)
-
 G_DEFINE_TYPE (TpStreamTube, tp_stream_tube, TP_TYPE_CHANNEL);
 
 struct _TpStreamTubePrivate
@@ -63,31 +61,31 @@ static guint _signals[LAST_SIGNAL] = { 0, };
 
 
 static void
-tp_stream_tube_finalize (GObject *self)
+tp_stream_tube_finalize (GObject *obj)
 {
-  TpStreamTubePrivate *priv = GET_PRIV (self);
+  TpStreamTube *self = (TpStreamTube *) obj;
 
-  tp_clear_object (&priv->listener);
+  tp_clear_object (&self->priv->listener);
 
-  if (priv->address != NULL)
+  if (self->priv->address != NULL)
     {
 #ifdef HAVE_GIO_UNIX
       /* check if we need to remove the temporary file we created */
-      if (G_IS_UNIX_SOCKET_ADDRESS (priv->address))
+      if (G_IS_UNIX_SOCKET_ADDRESS (self->priv->address))
         {
           const gchar *path;
 
           path = g_unix_socket_address_get_path (
-              G_UNIX_SOCKET_ADDRESS (priv->address));
+              G_UNIX_SOCKET_ADDRESS (self->priv->address));
           g_unlink (path);
         }
 #endif /* HAVE_GIO_UNIX */
 
-      g_object_unref (priv->address);
-      priv->address = NULL;
+      g_object_unref (self->priv->address);
+      self->priv->address = NULL;
     }
 
-  G_OBJECT_CLASS (tp_stream_tube_parent_class)->finalize (self);
+  G_OBJECT_CLASS (tp_stream_tube_parent_class)->finalize (obj);
 }
 
 
@@ -373,9 +371,9 @@ _new_remote_connection_with_contact (TpConnection *conn,
     const TpHandle *failed,
     const GError *in_error,
     gpointer user_data,
-    GObject *self)
+    GObject *obj)
 {
-  TpStreamTubePrivate *priv = GET_PRIV (self);
+  TpStreamTube *self = (TpStreamTube *) obj;
   TpContact *contact;
   GSocketConnection *sockconn;
   GError *error = NULL;
@@ -398,7 +396,8 @@ _new_remote_connection_with_contact (TpConnection *conn,
   DEBUG ("Accepting incoming GIOStream from %s",
       tp_contact_get_identifier (contact));
 
-  sockconn = g_socket_listener_accept (priv->listener, NULL, NULL, &error);
+  sockconn = g_socket_listener_accept (self->priv->listener, NULL, NULL,
+      &error);
   if (error != NULL)
     {
       DEBUG ("Failed to accept incoming socket: %s", error->message);
@@ -460,12 +459,11 @@ _offer_with_address (TpStreamTube *self,
     GSimpleAsyncResult *result,
     GHashTable *params)
 {
-  TpStreamTubePrivate *priv = GET_PRIV (self);
   TpSocketAddressType socket_type;
   GValue *addressv = NULL;
   GError *error = NULL;
 
-  addressv = tp_address_variant_from_g_socket_address (priv->address,
+  addressv = tp_address_variant_from_g_socket_address (self->priv->address,
       &socket_type, &error);
   if (error != NULL)
     {
@@ -522,16 +520,13 @@ tp_stream_tube_offer_async (TpStreamTube *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpStreamTubePrivate *priv;
   GSimpleAsyncResult *result;
   TpSocketAddressType socket_type;
   GError *error = NULL;
 
   g_return_if_fail (TP_IS_STREAM_TUBE (self));
 
-  priv = GET_PRIV (self);
-
-  if (priv->listener != NULL)
+  if (self->priv->listener != NULL)
     {
       g_critical ("Can't reoffer Tube!");
       return;
@@ -553,7 +548,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
 
   DEBUG ("Using socket type %u", socket_type);
 
-  priv->listener = g_socket_listener_new ();
+  self->priv->listener = g_socket_listener_new ();
 
   switch (socket_type)
     {
@@ -568,10 +563,10 @@ tp_stream_tube_offer_async (TpStreamTube *self,
            * Try a maximum of 10 times to get a socket */
           for (i = 0; i < 10; i++)
             {
-              priv->address = g_unix_socket_address_new (tmpnam (NULL));
+              self->priv->address = g_unix_socket_address_new (tmpnam (NULL));
 
-              if (g_socket_listener_add_address (priv->listener,
-                    priv->address, G_SOCKET_TYPE_STREAM,
+              if (g_socket_listener_add_address (self->priv->listener,
+                    self->priv->address, G_SOCKET_TYPE_STREAM,
                     G_SOCKET_PROTOCOL_DEFAULT,
                     NULL, NULL, &error))
                 {
@@ -579,7 +574,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
                 }
               else
                 {
-                  g_object_unref (priv->address);
+                  g_object_unref (self->priv->address);
                   g_clear_error (&error);
                 }
             }
@@ -607,9 +602,9 @@ tp_stream_tube_offer_async (TpStreamTube *self,
           localhost = g_inet_address_new_loopback (G_SOCKET_FAMILY_IPV4);
           in_address = g_inet_socket_address_new (localhost, 0);
 
-          g_socket_listener_add_address (priv->listener, in_address,
+          g_socket_listener_add_address (self->priv->listener, in_address,
               G_SOCKET_TYPE_STREAM, G_SOCKET_PROTOCOL_DEFAULT,
-              NULL, &priv->address, &error);
+              NULL, &self->priv->address, &error);
 
           g_object_unref (localhost);
           g_object_unref (in_address);
@@ -657,15 +652,12 @@ tp_stream_tube_offer_existing_async (TpStreamTube *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpStreamTubePrivate *priv;
   GSimpleAsyncResult *result;
 
   g_return_if_fail (TP_IS_STREAM_TUBE (self));
   g_return_if_fail (G_IS_SOCKET_ADDRESS (address));
 
-  priv = GET_PRIV (self);
-
-  if (priv->listener != NULL)
+  if (self->priv->listener != NULL)
     {
       g_critical ("Can't reoffer Tube!");
       return;
@@ -674,7 +666,7 @@ tp_stream_tube_offer_existing_async (TpStreamTube *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_stream_tube_offer_finish);
 
-  priv->address = g_object_ref (address);
+  self->priv->address = g_object_ref (address);
 
   _offer_with_address (self, result, params);
 }
