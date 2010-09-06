@@ -64,7 +64,7 @@ static guint _signals[LAST_SIGNAL] = { 0, };
 
 
 static void
-tp_stream_tube_finalize (GObject *obj)
+tp_stream_tube_dispose (GObject *obj)
 {
   TpStreamTube *self = (TpStreamTube *) obj;
 
@@ -88,7 +88,7 @@ tp_stream_tube_finalize (GObject *obj)
       self->priv->address = NULL;
     }
 
-  G_OBJECT_CLASS (tp_stream_tube_parent_class)->finalize (obj);
+  G_OBJECT_CLASS (tp_stream_tube_parent_class)->dispose (obj);
 }
 
 
@@ -97,7 +97,7 @@ tp_stream_tube_class_init (TpStreamTubeClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-  gobject_class->finalize = tp_stream_tube_finalize;
+  gobject_class->dispose = tp_stream_tube_dispose;
 
   /**
    * TpStreamTube::incoming
