@@ -191,8 +191,7 @@ determine_socket_type (TpChannel *channel,
       DEBUG ("Unable to find a supported socket type");
 
       g_set_error (error, TP_ERRORS,
-          TP_ERROR_RESOURCE_UNAVAILABLE,
-          "No supported socket types");
+          TP_ERROR_NOT_IMPLEMENTED, "No supported socket types");
 
       return 0;
     }
