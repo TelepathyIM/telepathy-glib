@@ -48,6 +48,8 @@ struct _TpStreamTubePrivate
 {
   GSocketListener *listener;
   GSocketAddress *address;
+
+  TpSocketAddressType socket_type;
 };
 
 
@@ -235,10 +237,10 @@ _channel_accepted (TpChannel *channel,
     const GValue *addressv,
     const GError *in_error,
     gpointer user_data,
-    GObject *self)
+    GObject *obj)
 {
+  TpStreamTube *self = (TpStreamTube *) obj;
   GSimpleAsyncResult *result = user_data;
-  TpSocketAddressType socket_type;
   GSocketAddress *address;
   GSocketClient *client;
   GError *error = NULL;
@@ -254,18 +256,8 @@ _channel_accepted (TpChannel *channel,
       return;
     }
 
-  socket_type = determine_socket_type (channel, &error);
-  if (error != NULL)
-    {
-      g_simple_async_result_set_from_error (result, error);
-      g_simple_async_result_complete (result);
-      g_object_unref (result);
-      g_clear_error (&error);
-
-      return;
-    }
-
-  address = tp_g_socket_address_from_variant (socket_type, addressv, &error);
+  address = tp_g_socket_address_from_variant (self->priv->socket_type,
+      addressv, &error);
   if (error != NULL)
     {
       DEBUG ("Failed to convert address: %s", error->message);
@@ -298,7 +290,6 @@ tp_stream_tube_accept_async (TpStreamTube *self,
     gpointer user_data)
 {
   GSimpleAsyncResult *result;
-  TpSocketAddressType socket_type;
   GValue value = { 0, };
   GError *error = NULL;
 
@@ -307,7 +298,7 @@ tp_stream_tube_accept_async (TpStreamTube *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_stream_tube_accept_async);
 
-  socket_type = determine_socket_type (TP_CHANNEL (self), &error);
+  self->priv->socket_type = determine_socket_type (TP_CHANNEL (self), &error);
   if (error != NULL)
     {
       g_simple_async_result_set_from_error (result, error);
@@ -318,14 +309,14 @@ tp_stream_tube_accept_async (TpStreamTube *self,
       return;
     }
 
-  DEBUG ("Using socket type %u", socket_type);
+  DEBUG ("Using socket type %u", self->priv->socket_type);
 
   g_value_init (&value, G_TYPE_UINT);
   g_value_set_uint (&value, 0);
 
   /* Call Accept */
   tp_cli_channel_type_stream_tube_call_accept (TP_CHANNEL (self), -1,
-      socket_type, TP_SOCKET_ACCESS_CONTROL_LOCALHOST, &value,
+      self->priv->socket_type, TP_SOCKET_ACCESS_CONTROL_LOCALHOST, &value,
       _channel_accepted, result, NULL, G_OBJECT (self));
 
   g_value_unset (&value);
@@ -458,12 +449,11 @@ _offer_with_address (TpStreamTube *self,
     GSimpleAsyncResult *result,
     GHashTable *params)
 {
-  TpSocketAddressType socket_type;
   GValue *addressv = NULL;
   GError *error = NULL;
 
   addressv = tp_address_variant_from_g_socket_address (self->priv->address,
-      &socket_type, &error);
+      &self->priv->socket_type, &error);
   if (error != NULL)
     {
       g_simple_async_result_set_from_error (result, error);
@@ -495,8 +485,8 @@ _offer_with_address (TpStreamTube *self,
 
   /* Call Offer */
   tp_cli_channel_type_stream_tube_call_offer (TP_CHANNEL (self), -1,
-      socket_type, addressv, TP_SOCKET_ACCESS_CONTROL_LOCALHOST, params,
-      _channel_offered, result, NULL, G_OBJECT (self));
+      self->priv->socket_type, addressv, TP_SOCKET_ACCESS_CONTROL_LOCALHOST,
+      params, _channel_offered, result, NULL, G_OBJECT (self));
 
   g_hash_table_unref (params);
 
