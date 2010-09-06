@@ -57,23 +57,34 @@ TpStreamTube *tp_stream_tube_new (TpConnection *conn,
     const GHashTable *immutable_properties,
     GError **error);
 
+/* Incoming tube methods */
+
 void tp_stream_tube_accept_async (TpStreamTube *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
+
 GIOStream *tp_stream_tube_accept_finish (TpStreamTube *self,
     GAsyncResult *result,
     GError **error);
+
+/* Outgoing tube methods */
 
 void tp_stream_tube_offer_async (TpStreamTube *self,
     GHashTable *params,
     GAsyncReadyCallback callback,
     gpointer user_data);
+
+gboolean tp_stream_tube_offer_finish (TpStreamTube *self,
+    GAsyncResult *result,
+    GError **error);
+
 void tp_stream_tube_offer_existing_async (TpStreamTube *self,
     GHashTable *params,
     GSocketAddress *address,
     GAsyncReadyCallback callback,
     gpointer user_data);
-gboolean tp_stream_tube_offer_finish (TpStreamTube *self,
+
+gboolean tp_stream_tube_offer_existing_finish (TpStreamTube *self,
     GAsyncResult *result,
     GError **error);
 

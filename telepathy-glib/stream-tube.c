@@ -306,7 +306,7 @@ tp_stream_tube_accept_async (TpStreamTube *self,
   g_return_if_fail (TP_IS_STREAM_TUBE (self));
 
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_stream_tube_accept_finish);
+      tp_stream_tube_accept_async);
 
   socket_type = determine_socket_type (TP_CHANNEL (self), &error);
   if (error != NULL)
@@ -357,7 +357,7 @@ tp_stream_tube_accept_finish (TpStreamTube *self,
     return NULL;
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_stream_tube_accept_finish), NULL);
+          G_OBJECT (self), tp_stream_tube_accept_async), NULL);
 
   return g_simple_async_result_get_op_res_gpointer (simple);
 }
@@ -533,7 +533,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
     }
 
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_stream_tube_offer_finish);
+      tp_stream_tube_offer_async);
 
   socket_type = determine_socket_type (TP_CHANNEL (self), &error);
   if (error != NULL)
@@ -664,7 +664,7 @@ tp_stream_tube_offer_existing_async (TpStreamTube *self,
     }
 
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-      tp_stream_tube_offer_finish);
+      tp_stream_tube_offer_existing_async);
 
   self->priv->address = g_object_ref (address);
 
@@ -696,7 +696,28 @@ tp_stream_tube_offer_finish (TpStreamTube *self,
     return FALSE;
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_stream_tube_offer_finish), FALSE);
+          G_OBJECT (self), tp_stream_tube_offer_async), FALSE);
+
+  return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+gboolean
+tp_stream_tube_offer_existing_finish (TpStreamTube *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_STREAM_TUBE (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (self), tp_stream_tube_offer_existing_async), FALSE);
 
   return g_simple_async_result_get_op_res_gboolean (simple);
 }
