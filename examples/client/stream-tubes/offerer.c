@@ -56,6 +56,16 @@ _tube_offered (GObject *tube,
 }
 
 static void
+tube_invalidated_cb (TpStreamTube *tube,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
+{
+  g_debug ("Tube has been invalidated: %s", message);
+}
+
+static void
 _channel_created (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -86,6 +96,8 @@ _channel_created (GObject *source,
 
   g_signal_connect (tube, "incoming",
       G_CALLBACK (_incoming_iostream), NULL);
+  g_signal_connect (tube, "invalidated",
+      G_CALLBACK (tube_invalidated_cb), NULL);
 
   tp_stream_tube_offer_async (tube, NULL, _tube_offered, NULL);
 }
