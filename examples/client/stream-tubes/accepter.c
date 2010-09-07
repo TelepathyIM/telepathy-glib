@@ -50,6 +50,15 @@ _tube_accepted (GObject *tube,
   g_main_loop_quit (loop);
 }
 
+static void
+tube_invalidated_cb (TpStreamTube *tube,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
+{
+  g_debug ("Tube has been invalidated: %s", message);
+}
 
 static void
 _handle_channels (TpSimpleHandler *handler,
@@ -89,6 +98,9 @@ _handle_channels (TpSimpleHandler *handler,
           tp_channel_borrow_immutable_properties (channel),
           &error);
       g_assert_no_error (error);
+
+      g_signal_connect (tube, "invalidated",
+          G_CALLBACK (tube_invalidated_cb), NULL);
 
       tp_stream_tube_accept_async (tube, _tube_accepted, context);
 
