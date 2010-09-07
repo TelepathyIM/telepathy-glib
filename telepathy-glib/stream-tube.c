@@ -59,6 +59,10 @@ struct _TpStreamTubePrivate
   GHashTable *remote_connections;
 };
 
+enum
+{
+  PROP_SERVICE = 1
+};
 
 enum /* signals */
 {
@@ -131,13 +135,47 @@ tp_stream_tube_dispose (GObject *obj)
   G_OBJECT_CLASS (tp_stream_tube_parent_class)->dispose (obj);
 }
 
+static void
+tp_stream_tube_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpStreamTube *self = (TpStreamTube *) object;
+
+  switch (property_id)
+    {
+      case PROP_SERVICE:
+        g_value_set_string (value, tp_stream_tube_get_service (self));
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+    }
+}
 
 static void
 tp_stream_tube_class_init (TpStreamTubeClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  GParamSpec *param_spec;
 
+  gobject_class->get_property = tp_stream_tube_get_property;
   gobject_class->dispose = tp_stream_tube_dispose;
+
+  /**
+   * TpStreamTube:service:
+   *
+   * A string representing the service name that will be used over the tube.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_string ("service", "Service",
+      "The service of the stream tube",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_SERVICE, param_spec);
 
   /**
    * TpStreamTube::incoming
@@ -886,4 +924,24 @@ tp_stream_tube_offer_existing_finish (TpStreamTube *self,
           G_OBJECT (self), tp_stream_tube_offer_existing_async), FALSE);
 
   return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+/**
+ * tp_stream_tube_get_service: (skip)
+ * @self: a #TpStreamTube
+ *
+ * Return the #TpStreamTube:service property
+ *
+ * Returns: (transfer none): the value of #TpStreamTube:service
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_stream_tube_get_service (TpStreamTube *self)
+{
+  GHashTable *props;
+
+  props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+
+  return tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE);
 }

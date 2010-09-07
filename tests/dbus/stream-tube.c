@@ -125,6 +125,21 @@ test_creation (Test *test,
   g_assert (TP_IS_CHANNEL (test->tube));
 }
 
+static void
+test_properties (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  gchar *service;
+
+  create_tube_service (test, TRUE);
+
+  /* Service */
+  g_assert_cmpstr (tp_stream_tube_get_service (test->tube), ==, "test-service");
+  g_object_get (test->tube, "service", &service, NULL);
+  g_assert_cmpstr (service, ==, "test-service");
+  g_free (service);
+}
+
 int
 main (int argc,
       char **argv)
@@ -136,6 +151,8 @@ main (int argc,
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/stream-tube/creation", Test, NULL, setup, test_creation,
+      teardown);
+  g_test_add ("/stream-tube/properties", Test, NULL, setup, test_properties,
       teardown);
 
   return g_test_run ();

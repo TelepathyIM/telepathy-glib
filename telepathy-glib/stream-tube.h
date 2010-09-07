@@ -57,6 +57,8 @@ TpStreamTube *tp_stream_tube_new (TpConnection *conn,
     const GHashTable *immutable_properties,
     GError **error);
 
+const gchar * tp_stream_tube_get_service (TpStreamTube *self);
+
 /* Incoming tube methods */
 
 void tp_stream_tube_accept_async (TpStreamTube *self,
