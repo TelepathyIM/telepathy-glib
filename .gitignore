@@ -54,6 +54,8 @@ examples/client/telepathy-example-*
 examples/cm/*/telepathy-example-*
 examples/extensions/extensions.html
 /examples/future/*/telepathy-example-*
+examples/client/stream-tubes/accepter
+examples/client/stream-tubes/offerer
 /extensions/extensions.html
 gtk-doc.make
 install-sh
