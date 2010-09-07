@@ -44,8 +44,13 @@ _tube_offered (GObject *tube,
 {
   GError *error = NULL;
 
-  tp_stream_tube_offer_finish (TP_STREAM_TUBE (tube), res, &error);
-  g_assert_no_error (error);
+  if (!tp_stream_tube_offer_finish (TP_STREAM_TUBE (tube), res, &error))
+    {
+      g_debug ("Failed to offer tube: %s", error->message);
+
+      g_error_free (error);
+      return;
+    }
 
   g_debug ("Tube offered");
 }
@@ -61,7 +66,13 @@ _channel_created (GObject *source,
 
   channel = tp_account_channel_request_create_and_handle_channel_finish (
       TP_ACCOUNT_CHANNEL_REQUEST (source), result, NULL, &error);
-  g_assert_no_error (error);
+  if (channel == NULL)
+    {
+      g_debug ("Failed to create channel: %s", error->message);
+
+      g_error_free (error);
+      return;
+    }
 
   g_debug ("Channel created: %s", tp_proxy_get_object_path (channel));
 
