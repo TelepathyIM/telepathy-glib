@@ -54,6 +54,9 @@ struct _TpStreamTubePrivate
   TpSocketAccessControl access_control;
 
   GSimpleAsyncResult *result;
+
+  /* (guint) connection ID => weakly reffed GSocketConnection */
+  GHashTable *remote_connections;
 };
 
 
@@ -65,6 +68,24 @@ enum /* signals */
 
 static guint _signals[LAST_SIGNAL] = { 0, };
 
+static gboolean
+is_connection (gpointer key,
+    gpointer value,
+    gpointer user_data)
+{
+  return value == user_data;
+}
+
+static void
+remote_connection_destroyed_cb (gpointer user_data,
+    GObject *conn)
+{
+  /* The GSocketConnection has been destroyed, removing it from the hash */
+  TpStreamTube *self = user_data;
+
+  g_hash_table_foreach_remove (self->priv->remote_connections, is_connection,
+      conn);
+}
 
 static void
 tp_stream_tube_dispose (GObject *obj)
@@ -73,6 +94,21 @@ tp_stream_tube_dispose (GObject *obj)
 
   tp_clear_object (&self->priv->listener);
   tp_clear_object (&self->priv->result);
+
+  if (self->priv->remote_connections != NULL)
+    {
+      GHashTableIter iter;
+      gpointer conn;
+
+      g_hash_table_iter_init (&iter, self->priv->remote_connections);
+      while (g_hash_table_iter_next (&iter, NULL, &conn))
+        {
+          g_object_weak_unref (conn, remote_connection_destroyed_cb, self);
+        }
+
+      g_hash_table_unref (self->priv->remote_connections);
+      self->priv->remote_connections = NULL;
+    }
 
   if (self->priv->address != NULL)
     {
@@ -126,12 +162,13 @@ tp_stream_tube_class_init (TpStreamTubeClass *klass)
   g_type_class_add_private (gobject_class, sizeof (TpStreamTubePrivate));
 }
 
-
 static void
 tp_stream_tube_init (TpStreamTube *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_STREAM_TUBE,
       TpStreamTubePrivate);
+
+  self->priv->remote_connections = g_hash_table_new (NULL, NULL);
 }
 
 
@@ -450,7 +487,8 @@ tp_stream_tube_accept_finish (TpStreamTube *self,
 }
 
 static GSocketConnection *
-accept_incoming_connection (TpStreamTube *self)
+accept_incoming_connection (TpStreamTube *self,
+    guint connection_id)
 {
   GSocketConnection *sockconn;
   GError *error = NULL;
@@ -492,6 +530,11 @@ accept_incoming_connection (TpStreamTube *self)
     }
 #endif
 
+  g_hash_table_insert (self->priv->remote_connections,
+      GUINT_TO_POINTER (connection_id), sockconn);
+
+  g_object_weak_ref (G_OBJECT (sockconn), remote_connection_destroyed_cb, self);
+
   return sockconn;
 
 #ifdef HAVE_GIO_UNIX
@@ -514,18 +557,18 @@ _new_remote_connection_with_contact (TpConnection *conn,
 {
   TpStreamTube *self = (TpStreamTube *) obj;
   TpContact *contact;
-  GSocketConnection *sockconn;
+  GSocketConnection *sockconn = user_data;
 
   if (in_error != NULL)
     {
       DEBUG ("Failed to prepare TpContact: %s", in_error->message);
-      return;
+      goto out;
     }
 
   if (n_failed > 0)
     {
       DEBUG ("Failed to prepare TpContact (unspecified error)");
-      return;
+      goto out;
     }
 
   /* accept the incoming socket to bring up the connection */
@@ -534,13 +577,10 @@ _new_remote_connection_with_contact (TpConnection *conn,
   DEBUG ("Accepting incoming GIOStream from %s",
       tp_contact_get_identifier (contact));
 
-  sockconn = accept_incoming_connection (self);
-  if (sockconn == NULL)
-    return;
-
   g_signal_emit (self, _signals[INCOMING], 0, contact, sockconn);
 
   /* anyone receiving the signal is required to hold their own reference */
+out:
   g_object_unref (sockconn);
 }
 
@@ -551,13 +591,21 @@ _new_remote_connection (TpChannel *channel,
     const GValue *param,
     guint connection_id,
     gpointer user_data,
-    GObject *self)
+    GObject *obj)
 {
+  TpStreamTube *self = (TpStreamTube *) obj;
+  GSocketConnection *sockconn;
+
+  /* The GSocketConnection is unreffed in _new_remote_connection */
+  sockconn = accept_incoming_connection (self, connection_id);
+  if (sockconn == NULL)
+    return;
+
   /* look up the handle */
   tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (channel),
       1, &handle, 0, NULL,
       _new_remote_connection_with_contact,
-      NULL, NULL, self);
+      sockconn, NULL, obj);
 }
 
 
