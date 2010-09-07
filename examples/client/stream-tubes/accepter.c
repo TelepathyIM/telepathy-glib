@@ -19,6 +19,7 @@ _tube_accepted (GObject *tube,
 
   if (error != NULL)
     {
+      g_debug ("Can't accept the tube: %s", error->message);
       tp_handle_channels_context_fail (context, error);
       g_error_free (error);
       return;
