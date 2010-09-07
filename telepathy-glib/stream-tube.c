@@ -449,6 +449,58 @@ tp_stream_tube_accept_finish (TpStreamTube *self,
   return g_simple_async_result_get_op_res_gpointer (simple);
 }
 
+static GSocketConnection *
+accept_incoming_connection (TpStreamTube *self)
+{
+  GSocketConnection *sockconn;
+  GError *error = NULL;
+
+  sockconn = g_socket_listener_accept (self->priv->listener, NULL, NULL,
+      &error);
+  if (error != NULL)
+    {
+      DEBUG ("Failed to accept incoming socket: %s", error->message);
+
+      g_error_free (error);
+      return NULL;
+    }
+
+#ifdef HAVE_GIO_UNIX
+  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
+    {
+      GCredentials *creds;
+      uid_t uid;
+
+      creds = g_unix_connection_receive_credentials (
+          G_UNIX_CONNECTION (sockconn), NULL, &error);
+      if (creds == NULL)
+        {
+          DEBUG ("Failed to receive credentials: %s", error->message);
+
+          g_error_free (error);
+          goto failed;
+        }
+
+      uid = g_credentials_get_unix_user (creds, &error);
+      g_object_unref  (creds);
+
+      if (uid != geteuid ())
+        {
+          DEBUG ("Wrong credentials received (user: %u)", uid);
+          goto failed;
+        }
+    }
+#endif
+
+  return sockconn;
+
+#ifdef HAVE_GIO_UNIX
+failed:
+  g_object_unref (sockconn);
+  return NULL;
+#endif
+}
+
 
 static void
 _new_remote_connection_with_contact (TpConnection *conn,
@@ -463,7 +515,6 @@ _new_remote_connection_with_contact (TpConnection *conn,
   TpStreamTube *self = (TpStreamTube *) obj;
   TpContact *contact;
   GSocketConnection *sockconn;
-  GError *error = NULL;
 
   if (in_error != NULL)
     {
@@ -483,47 +534,13 @@ _new_remote_connection_with_contact (TpConnection *conn,
   DEBUG ("Accepting incoming GIOStream from %s",
       tp_contact_get_identifier (contact));
 
-  sockconn = g_socket_listener_accept (self->priv->listener, NULL, NULL,
-      &error);
-  if (error != NULL)
-    {
-      DEBUG ("Failed to accept incoming socket: %s", error->message);
-
-      g_error_free (error);
-      return;
-    }
-
-#ifdef HAVE_GIO_UNIX
-  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
-    {
-      GCredentials *creds;
-      uid_t uid;
-
-      creds = g_unix_connection_receive_credentials (
-          G_UNIX_CONNECTION (sockconn), NULL, &error);
-      if (creds == NULL)
-        {
-          DEBUG ("Failed to receive credentials: %s", error->message);
-
-          g_error_free (error);
-          goto out;
-        }
-
-      uid = g_credentials_get_unix_user (creds, &error);
-      g_object_unref  (creds);
-
-      if (uid != geteuid ())
-        {
-          DEBUG ("Wrong credentials received (user: %u)", uid);
-          goto out;
-        }
-    }
-#endif
+  sockconn = accept_incoming_connection (self);
+  if (sockconn == NULL)
+    return;
 
   g_signal_emit (self, _signals[INCOMING], 0, contact, sockconn);
 
   /* anyone receiving the signal is required to hold their own reference */
-out:
   g_object_unref (sockconn);
 }
 
