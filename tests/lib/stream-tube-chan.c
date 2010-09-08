@@ -27,6 +27,14 @@ enum
   PROP_STATE,
 };
 
+enum
+{
+  SIG_INCOMING_CONNECTION,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = {0, };
+
 
 struct _TpTestsStreamTubeChannelPrivate {
     TpTubeChannelState state;
@@ -252,6 +260,14 @@ tp_tests_stream_tube_channel_class_init (TpTestsStreamTubeChannelClass *klass)
   g_object_class_install_property (object_class, PROP_STATE,
       param_spec);
 
+  signals[SIG_INCOMING_CONNECTION] = g_signal_new ("incoming-connection",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      g_cclosure_marshal_VOID__OBJECT,
+      G_TYPE_NONE,
+      1, G_TYPE_IO_STREAM);
+
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL,
@@ -307,6 +323,24 @@ fail:
   g_error_free (error);
 }
 
+static void
+listener_accept_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpTestsStreamTubeChannel *self = user_data;
+  GError *error = NULL;
+  GSocketConnection *connection;
+
+  connection = g_socket_listener_accept_finish (G_SOCKET_LISTENER (source),
+      result, NULL, &error);
+  g_assert_no_error (error);
+
+  g_signal_emit (self, signals[SIG_INCOMING_CONNECTION], 0, connection);
+
+  g_object_unref (connection);
+}
+
 static GValue *
 create_local_socket (TpTestsStreamTubeChannel *self,
     TpSocketAddressType address_type,
@@ -340,6 +374,9 @@ create_local_socket (TpTestsStreamTubeChannel *self,
       G_SOCKET_PROTOCOL_DEFAULT,
       NULL, NULL, NULL);
   g_assert (success);
+
+  g_socket_listener_accept_async (self->priv->listener, NULL,
+      listener_accept_cb, self);
 
   address_gvalue =  tp_g_value_slice_new_bytes (
       g_unix_socket_address_get_path_len (G_UNIX_SOCKET_ADDRESS (address)),
