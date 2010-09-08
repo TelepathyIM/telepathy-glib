@@ -7,6 +7,8 @@
  * notice and this notice are preserved.
  */
 
+#include <string.h>
+
 #include <telepathy-glib/stream-tube.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
@@ -15,6 +17,8 @@
 #include "tests/lib/util.h"
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/stream-tube-chan.h"
+
+#define BUFFER_SIZE 128
 
 typedef struct {
     GMainLoop *mainloop;
@@ -29,6 +33,7 @@ typedef struct {
     TpStreamTube *tube;
 
     GIOStream *stream;
+    GIOStream *cm_stream;
 
     GError *error /* initialized where needed */;
     gint wait;
@@ -61,6 +66,7 @@ teardown (Test *test,
   tp_clear_object (&test->tube_chan_service);
   tp_clear_object (&test->tube);
   tp_clear_object (&test->stream);
+  tp_clear_object (&test->cm_stream);
 
   tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
   g_assert_no_error (test->error);
@@ -188,19 +194,115 @@ tube_accept_cb (GObject *source,
 }
 
 static void
+write_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_output_stream_write_finish (G_OUTPUT_STREAM (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+read_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_input_stream_read_finish (G_INPUT_STREAM (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+chan_incoming_connection_cb (TpTestsStreamTubeChannel *chan,
+    GIOStream *stream,
+    Test *test)
+{
+  test->cm_stream = g_object_ref (stream);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+use_tube (Test *test)
+{
+  GOutputStream *out;
+  GInputStream *in;
+  gchar buffer[BUFFER_SIZE];
+  gchar cm_buffer[BUFFER_SIZE];
+
+  g_assert (test->stream != NULL);
+  g_assert (test->cm_stream != NULL);
+
+  /* User sends something through the tube */
+  out = g_io_stream_get_output_stream (test->stream);
+
+  strcpy (buffer, "badger");
+
+  g_output_stream_write_async (out, buffer, BUFFER_SIZE, G_PRIORITY_DEFAULT,
+      NULL, write_cb, test);
+
+  /* ...CM reads them */
+  in = g_io_stream_get_input_stream (test->cm_stream);
+
+  g_input_stream_read_async (in, cm_buffer, BUFFER_SIZE,
+      G_PRIORITY_DEFAULT, NULL, read_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* CM received the right data */
+  g_assert_cmpstr (buffer, ==, cm_buffer);
+
+  /* Now the CM writes some data to the tube */
+  out = g_io_stream_get_output_stream (test->cm_stream);
+
+  strcpy (cm_buffer, "mushroom");
+
+  g_output_stream_write_async (out, cm_buffer, BUFFER_SIZE, G_PRIORITY_DEFAULT,
+      NULL, write_cb, test);
+
+  /* ...users reads them */
+  in = g_io_stream_get_input_stream (test->stream);
+
+  g_input_stream_read_async (in, buffer, BUFFER_SIZE,
+      G_PRIORITY_DEFAULT, NULL, read_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* client reads the right data */
+  g_assert_cmpstr (buffer, ==, cm_buffer);
+}
+
+static void
 test_accept_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   create_tube_service (test, FALSE);
 
+  g_signal_connect (test->tube_chan_service, "incoming-connection",
+      G_CALLBACK (chan_incoming_connection_cb), test);
+
   tp_stream_tube_accept_async (test->tube, tube_accept_cb, test);
 
-  test->wait = 1;
+  test->wait = 2;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
-  g_assert (test->stream != NULL);
 
-  /* TODO: try to use the tube */
+  use_tube (test);
 }
 
 static void
