@@ -1,3 +1,17 @@
+telepathy-glib 0.11.15 (UNRELEASED)
+===================================
+
+Enhancements:
+
+• fd.o #28420: add tp_channel_get_requested() etc. (cassidy)
+
+• Add basic introspectability for the Connection mixins (treitter)
+
+Fixes:
+
+• fd.o #30090: fix parsing TpProtocol information from .manager files
+  (fledermaus, smcv)
+
 telepathy-glib 0.11.14 (2010-08-25)
 ===================================
 
