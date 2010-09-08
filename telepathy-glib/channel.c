@@ -96,6 +96,9 @@ enum
   PROP_CHANNEL_PROPERTIES,
   PROP_GROUP_SELF_HANDLE,
   PROP_GROUP_FLAGS,
+  PROP_REQUESTED,
+  PROP_INITIATOR_HANDLE,
+  PROP_INITIATOR_IDENTIFIER,
   N_PROPS
 };
 
@@ -436,6 +439,15 @@ tp_channel_get_property (GObject *object,
       break;
     case PROP_GROUP_FLAGS:
       g_value_set_uint (value, self->priv->group_flags);
+      break;
+    case PROP_REQUESTED:
+      g_value_set_boolean (value, tp_channel_get_requested (self));
+      break;
+    case PROP_INITIATOR_HANDLE:
+      g_value_set_uint (value, tp_channel_get_initiator_handle (self));
+      break;
+    case PROP_INITIATOR_IDENTIFIER:
+      g_value_set_string (value, tp_channel_get_initiator_identifier (self));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1533,6 +1545,84 @@ tp_channel_class_init (TpChannelClass *klass)
       param_spec);
 
   /**
+   * TpChannel:requested:
+   *
+   * %TRUE if this channel was created in response to a local request, such
+   * as a call to tp_account_channel_request_create_channel_async(). %FALSE
+   * if this channel was initiated by a remote contact
+   * (the #TpChannel:initiator-handle), or if it appeared as a side-effect
+   * of some other action.
+   *
+   * For instance, this is %FALSE on incoming calls and file transfers,
+   * remotely-initiated 1-1 text conversations, and invitations to chatrooms,
+   * and %TRUE on outgoing calls and file transfers, locally-initiated 1-1
+   * text conversations, and chatrooms joined by local user action.
+   *
+   * This is not guaranteed to be meaningful until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may return
+   * %FALSE even if the channel was actually requested.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("requested", "Requested",
+      "TRUE if the channel has been requested",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_REQUESTED,
+      param_spec);
+
+  /**
+   * TpChannel:initiator-handle:
+   *
+   * The %TP_HANDLE_TYPE_CONTACT #TpHandle of the initiator of this
+   * channel, or 0 if there is no particular initiator.
+   *
+   * If the channel was initiated by a remote contact, this handle represents
+   * that contact, and #TpChannel:requested will be %FALSE. For instance,
+   * for an incoming call this property indicates the caller, and for a
+   * chatroom invitation this property indicates who sent the invitation.
+   *
+   * If the channel was requested by the local user, #TpChannel:requested
+   * will be %TRUE, and this property may be the #TpChannel:group-self-handle
+   * or #TpConnection:self-handle.
+   *
+   * If the channel appeared for some other reason (for instance as a
+   * side-effect of connecting to the server), this property may be 0.
+   *
+   * This is not guaranteed to be set until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be 0.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_uint ("initiator-handle", "TpHandle",
+      "The handle of the initiator of the channel",
+      0, G_MAXUINT32, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIATOR_HANDLE,
+      param_spec);
+
+  /**
+   * TpChannel:initiator-identifier:
+   *
+   * If #TpChannel:initiator-handle is 0, this will always be "".
+   * Otherwise, this will be the #TpContact:identifier of the contact
+   * with that handle.
+   *
+   * This is not guaranteed to be set until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be
+   * the empty string.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_string ("initiator-identifier",
+      "Initiator identifier",
+      "The identifier of the initiator of the channel",
+      "",
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIATOR_IDENTIFIER,
+      param_spec);
+
+  /**
    * TpChannel::group-flags-changed:
    * @self: a channel
    * @added: #TpChannelGroupFlags which are newly set
@@ -1976,4 +2066,59 @@ tp_channel_init_known_interfaces (void)
   static GOnce once = G_ONCE_INIT;
 
   g_once (&once, tp_channel_once, NULL);
+}
+
+/**
+ * tp_channel_get_requested: (skip)
+ * @self: a #TpChannel
+ *
+ * Return the #TpChannel:requested property
+ *
+ * Returns: the value of #TpChannel:requested
+ *
+ * Since: 0.11.UNRELEASED
+ */
+gboolean
+tp_channel_get_requested (TpChannel *self)
+{
+  return tp_asv_get_boolean (self->priv->channel_properties,
+      TP_PROP_CHANNEL_REQUESTED, NULL);
+}
+
+/**
+ * tp_channel_get_initiator_handle: (skip)
+ * @self: a #TpChannel
+ *
+ * Return the #TpChannel:initiator-handle property
+ *
+ * Returns: the value of #TpChannel:initiator-handle
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpHandle
+tp_channel_get_initiator_handle (TpChannel *self)
+{
+  return tp_asv_get_uint32 (self->priv->channel_properties,
+      TP_PROP_CHANNEL_INITIATOR_HANDLE, NULL);
+}
+
+/**
+ * tp_channel_get_initiator_identifier: (skip)
+ * @self: a #TpChannel
+ *
+ * Return the #TpChannel:initiator-identifier property
+ *
+ * Returns: the value of #TpChannel:initiator-identifier
+ *
+ * Since: 0.11.UNRELEASED
+ */
+const gchar *
+tp_channel_get_initiator_identifier (TpChannel *self)
+{
+  const gchar *id;
+
+  id = tp_asv_get_string (self->priv->channel_properties,
+      TP_PROP_CHANNEL_INITIATOR_ID);
+
+  return id != NULL ? id : "";
 }

@@ -114,6 +114,11 @@ gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
 
 TpHandle tp_channel_group_get_handle_owner (TpChannel *self, TpHandle handle);
 
+gboolean tp_channel_get_requested (TpChannel *self);
+
+TpHandle tp_channel_get_initiator_handle (TpChannel *self);
+const gchar * tp_channel_get_initiator_identifier (TpChannel *self);
+
 #define TP_CHANNEL_FEATURE_CORE \
   tp_channel_get_feature_quark_core ()
 
