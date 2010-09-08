@@ -14,6 +14,11 @@
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>
 
+#include <gio/gunixsocketaddress.h>
+#include <gio/gunixconnection.h>
+
+#include <stdio.h>
+
 enum
 {
   PROP_SERVICE = 1,
@@ -25,6 +30,9 @@ enum
 
 struct _TpTestsStreamTubeChannelPrivate {
     TpTubeChannelState state;
+
+    /* Accepting side */
+    GSocketListener *listener;
 };
 
 static void
@@ -137,9 +145,13 @@ constructor (GType type,
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
-  ((GObjectClass *) tp_tests_stream_tube_channel_parent_class)->finalize (
+  TpTestsStreamTubeChannel *self = (TpTestsStreamTubeChannel *) object;
+
+  tp_clear_object (&self->priv->listener);
+
+  ((GObjectClass *) tp_tests_stream_tube_channel_parent_class)->dispose (
     object);
 }
 
@@ -193,7 +205,7 @@ tp_tests_stream_tube_channel_class_init (TpTestsStreamTubeChannelClass *klass)
 
   object_class->constructor = constructor;
   object_class->get_property = tp_tests_stream_tube_channel_get_property;
-  object_class->finalize = finalize;
+  object_class->dispose = dispose;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_STREAM_TUBE;
   base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
@@ -249,6 +261,15 @@ tp_tests_stream_tube_channel_class_init (TpTestsStreamTubeChannelClass *klass)
 }
 
 static void
+change_state (TpTestsStreamTubeChannel *self,
+  TpTubeChannelState state)
+{
+  self->priv->state = state;
+
+  tp_svc_channel_interface_tube_emit_tube_channel_state_changed (self, state);
+}
+
+static void
 stream_tube_offer (TpSvcChannelTypeStreamTube *iface,
     guint address_type,
     const GValue *address,
@@ -258,6 +279,48 @@ stream_tube_offer (TpSvcChannelTypeStreamTube *iface,
 {
 }
 
+static GValue *
+create_local_socket (TpTestsStreamTubeChannel *self,
+    TpSocketAddressType address_type,
+    TpSocketAccessControl access_control,
+    const GValue *access_control_param,
+    GError **error)
+{
+  gboolean success;
+  GSocketAddress *address;
+  GValue *address_gvalue;
+
+  if (address_type != TP_SOCKET_ADDRESS_TYPE_UNIX)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Unsupported address type");
+      return NULL;
+    }
+
+  if (access_control != TP_SOCKET_ACCESS_CONTROL_LOCALHOST)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Unsupported access control");
+      return NULL;
+    }
+
+  self->priv->listener = g_socket_listener_new ();
+  address = g_unix_socket_address_new (tmpnam (NULL));
+
+  success = g_socket_listener_add_address (self->priv->listener,
+      address, G_SOCKET_TYPE_STREAM,
+      G_SOCKET_PROTOCOL_DEFAULT,
+      NULL, NULL, NULL);
+  g_assert (success);
+
+  address_gvalue =  tp_g_value_slice_new_bytes (
+      g_unix_socket_address_get_path_len (G_UNIX_SOCKET_ADDRESS (address)),
+      g_unix_socket_address_get_path (G_UNIX_SOCKET_ADDRESS (address)));
+
+  g_object_unref (address);
+  return address_gvalue;
+}
+
 static void
 stream_tube_accept (TpSvcChannelTypeStreamTube *iface,
     TpSocketAddressType address_type,
@@ -265,6 +328,32 @@ stream_tube_accept (TpSvcChannelTypeStreamTube *iface,
     const GValue *access_control_param,
     DBusGMethodInvocation *context)
 {
+  TpTestsStreamTubeChannel *self = (TpTestsStreamTubeChannel *) iface;
+  GError *error = NULL;
+  GValue *address;
+
+  if (self->priv->state != TP_TUBE_CHANNEL_STATE_LOCAL_PENDING)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Tube is not in the local pending state");
+      goto fail;
+    }
+
+  address = create_local_socket (self, address_type, access_control,
+      access_control_param, &error);
+  if (address == NULL)
+    goto fail;
+
+  change_state (self, TP_TUBE_CHANNEL_STATE_OPEN);
+
+  tp_svc_channel_type_stream_tube_return_from_accept (context, address);
+
+  tp_g_value_slice_free (address);
+  return;
+
+fail:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void
