@@ -1208,7 +1208,12 @@ _tp_protocol_parse_channel_class (GKeyFile *file,
 
 cleanup:
       if (v != NULL)
-        tp_g_value_slice_free (v);
+        {
+          if (G_IS_VALUE (v))
+            tp_g_value_slice_free (v);
+          else
+            g_slice_free (GValue, v);
+        }
 
       g_free (property);
       g_free (value);
