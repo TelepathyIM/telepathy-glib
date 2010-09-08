@@ -1184,7 +1184,7 @@ _tp_protocol_parse_channel_class (GKeyFile *file,
       gchar *value = NULL;
       gchar *property = NULL;
       const gchar *dbus_type;
-      GValue *v = NULL;
+      GValue *v = g_slice_new0 (GValue);
 
       value = g_key_file_get_string (file, group, *key, NULL);
 
