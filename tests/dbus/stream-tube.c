@@ -203,6 +203,45 @@ test_accept_success (Test *test,
   /* TODO: try to use the tube */
 }
 
+static void
+tube_offer_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_stream_tube_offer_finish (TP_STREAM_TUBE (source), result,
+      &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_offer_success (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *params;
+
+  create_tube_service (test, TRUE);
+
+  params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
+
+  g_assert (tp_stream_tube_get_parameters (test->tube) == NULL);
+
+  tp_stream_tube_offer_async (test->tube, params, tube_offer_cb, test);
+  g_hash_table_unref (params);
+
+  check_parameters (tp_stream_tube_get_parameters (test->tube));
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* TODO: try to use the tube */
+}
+
 int
 main (int argc,
       char **argv)
@@ -219,6 +258,8 @@ main (int argc,
       teardown);
   g_test_add ("/stream-tube/accept/success", Test, NULL, setup,
       test_accept_success, teardown);
+  g_test_add ("/stream-tube/offer/success", Test, NULL, setup,
+      test_offer_success, teardown);
 
   return g_test_run ();
 }
