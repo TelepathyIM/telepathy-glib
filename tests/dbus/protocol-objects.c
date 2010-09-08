@@ -18,15 +18,6 @@
 
 #include "tests/lib/util.h"
 
-#define CLEAR_OBJECT(o) \
-  G_STMT_START { \
-      if (*(o) != NULL) \
-        { \
-          g_object_unref (*(o)); \
-          *(o) = NULL; \
-        } \
-  } G_STMT_END
-
 typedef struct
 {
   GMainLoop *mainloop;
@@ -94,12 +85,14 @@ static void
 teardown (Test *test,
           gconstpointer data G_GNUC_UNUSED)
 {
-  CLEAR_OBJECT (&test->protocol);
-  CLEAR_OBJECT (&test->cm);
-  CLEAR_OBJECT (&test->service_cm);
-  CLEAR_OBJECT (&test->old_service_cm);
+  tp_clear_object (&test->protocol);
+  tp_clear_object (&test->cm);
+  tp_clear_object (&test->service_cm);
+  tp_clear_object (&test->old_service_cm);
+  tp_clear_object (&test->old_cm);
+  tp_clear_object (&test->old_protocol);
 
-  CLEAR_OBJECT (&test->dbus);
+  tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 }
