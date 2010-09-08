@@ -1404,6 +1404,9 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
 
   g_strfreev (rcc_groups);
 
+  tp_asv_take_boxed (immutables, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
+      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, rccs);
+
   if (protocol_name != NULL)
     *protocol_name = g_strdup (name);
 
