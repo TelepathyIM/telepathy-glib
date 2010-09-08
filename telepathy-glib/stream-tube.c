@@ -47,6 +47,8 @@ G_DEFINE_TYPE (TpStreamTube, tp_stream_tube, TP_TYPE_CHANNEL);
 
 struct _TpStreamTubePrivate
 {
+  GHashTable *parameters;
+
   GSocketListener *listener;
   GSocketAddress *address;
 
@@ -61,7 +63,8 @@ struct _TpStreamTubePrivate
 
 enum
 {
-  PROP_SERVICE = 1
+  PROP_SERVICE = 1,
+  PROP_PARAMETERS
 };
 
 enum /* signals */
@@ -98,6 +101,7 @@ tp_stream_tube_dispose (GObject *obj)
 
   tp_clear_object (&self->priv->listener);
   tp_clear_object (&self->priv->result);
+  tp_clear_pointer (&self->priv->parameters, g_hash_table_unref);
 
   if (self->priv->remote_connections != NULL)
     {
@@ -149,9 +153,45 @@ tp_stream_tube_get_property (GObject *object,
         g_value_set_string (value, tp_stream_tube_get_service (self));
         break;
 
+      case PROP_PARAMETERS:
+        g_value_set_boxed (value, self->priv->parameters);
+        break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
+    }
+}
+
+static void
+tp_stream_tube_constructed (GObject *obj)
+{
+  TpStreamTube *self = (TpStreamTube *) obj;
+
+   /*  Tube.Parameters is immutable for incoming tubes. For outgoing ones,
+    *  it's defined when offering the tube. */
+  if (!tp_channel_get_requested (TP_CHANNEL (self)))
+    {
+      GHashTable *props;
+      GHashTable *params;
+
+      props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+
+      params = tp_asv_get_boxed (props,
+          TP_PROP_CHANNEL_INTERFACE_TUBE_PARAMETERS,
+          TP_HASH_TYPE_STRING_VARIANT_MAP);
+
+      if (params == NULL)
+        {
+          DEBUG ("Incoming tube doesn't have Tube.Parameters property");
+
+          self->priv->parameters = tp_asv_new (NULL, NULL);
+        }
+      else
+        {
+          self->priv->parameters = g_boxed_copy (
+              TP_HASH_TYPE_STRING_VARIANT_MAP, params);
+        }
     }
 }
 
@@ -161,6 +201,7 @@ tp_stream_tube_class_init (TpStreamTubeClass *klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
+  gobject_class->constructed = tp_stream_tube_constructed;
   gobject_class->get_property = tp_stream_tube_get_property;
   gobject_class->dispose = tp_stream_tube_dispose;
 
@@ -176,6 +217,21 @@ tp_stream_tube_class_init (TpStreamTubeClass *klass)
       NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class, PROP_SERVICE, param_spec);
+
+  /**
+   * TpStreamTube:parameters:
+   *
+   * A string to #GValue #GHashTable representing the parameters of the tube.
+   *
+   * Will be %NULL for outgoing tubes until the tube has been offered.
+   *
+   * Since: 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("parameters", "Parameters",
+      "The parameters of the stream tube",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_PARAMETERS, param_spec);
 
   /**
    * TpStreamTube::incoming
@@ -701,16 +757,16 @@ _offer_with_address (TpStreamTube *self,
     }
 
   if (params != NULL)
-    g_hash_table_ref (params);
+    self->priv->parameters = g_hash_table_ref (params);
   else
-    params = tp_asv_new (NULL, NULL);
+    self->priv->parameters = tp_asv_new (NULL, NULL);
+
+  g_object_notify (G_OBJECT (self), "parameters");
 
   /* Call Offer */
   tp_cli_channel_type_stream_tube_call_offer (TP_CHANNEL (self), -1,
       self->priv->socket_type, addressv, self->priv->access_control,
-      params, _channel_offered, NULL, NULL, G_OBJECT (self));
-
-  g_hash_table_unref (params);
+      self->priv->parameters, _channel_offered, NULL, NULL, G_OBJECT (self));
 
 finally:
   if (addressv != NULL)
@@ -944,4 +1000,21 @@ tp_stream_tube_get_service (TpStreamTube *self)
   props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
 
   return tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE);
+}
+
+/**
+ * tp_stream_tube_get_parameters: (skip)
+ * @self: a #TpStreamTube
+ *
+ * Return the #TpStreamTube:parameters property
+ *
+ * Returns: (transfer none) (element-type utf8 GObject.Value):
+ * the value of #TpStreamTube:parameters
+ *
+ * Since: 0.11.UNRELEASED
+ */
+GHashTable *
+tp_stream_tube_get_parameters (TpStreamTube *self)
+{
+  return self->priv->parameters;
 }

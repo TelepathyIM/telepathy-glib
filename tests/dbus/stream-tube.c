@@ -10,6 +10,7 @@
 #include <telepathy-glib/stream-tube.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/dbus.h>
 
 #include "tests/lib/util.h"
 #include "tests/lib/simple-conn.h"
@@ -126,11 +127,22 @@ test_creation (Test *test,
 }
 
 static void
+check_parameters (GHashTable *parameters)
+{
+  g_assert (parameters != NULL);
+
+  g_assert_cmpuint (g_hash_table_size (parameters), ==, 1);
+  g_assert_cmpuint (tp_asv_get_uint32 (parameters, "badger", NULL), ==, 42);
+}
+
+static void
 test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   gchar *service;
+  GHashTable *parameters;
 
+  /* Outgoing tube */
   create_tube_service (test, TRUE);
 
   /* Service */
@@ -138,6 +150,23 @@ test_properties (Test *test,
   g_object_get (test->tube, "service", &service, NULL);
   g_assert_cmpstr (service, ==, "test-service");
   g_free (service);
+
+  /* Parameters */
+  parameters = tp_stream_tube_get_parameters (test->tube);
+  /* NULL as the tube has not be offered yet */
+  g_assert (parameters == NULL);
+  g_object_get (test->tube, "parameters", &parameters, NULL);
+  g_assert (parameters == NULL);
+
+  /* Incoming tube */
+  create_tube_service (test, FALSE);
+
+  /* Parameters */
+  parameters = tp_stream_tube_get_parameters (test->tube);
+  check_parameters (parameters);
+  g_object_get (test->tube, "parameters", &parameters, NULL);
+  check_parameters (parameters);
+  g_hash_table_unref (parameters);
 }
 
 int
