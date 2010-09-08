@@ -33,6 +33,11 @@ struct _TpTestsStreamTubeChannelPrivate {
 
     /* Accepting side */
     GSocketListener *listener;
+
+    /* Offering side */
+    TpSocketAddressType address_type;
+    GValue *address;
+    TpSocketAccessControl access_control;
 };
 
 static void
@@ -150,6 +155,7 @@ dispose (GObject *object)
   TpTestsStreamTubeChannel *self = (TpTestsStreamTubeChannel *) object;
 
   tp_clear_object (&self->priv->listener);
+  tp_clear_pointer (&self->priv->address, tp_g_value_slice_free);
 
   ((GObjectClass *) tp_tests_stream_tube_channel_parent_class)->dispose (
     object);
@@ -277,6 +283,28 @@ stream_tube_offer (TpSvcChannelTypeStreamTube *iface,
     GHashTable *parameters,
     DBusGMethodInvocation *context)
 {
+  TpTestsStreamTubeChannel *self = (TpTestsStreamTubeChannel *) iface;
+  GError *error = NULL;
+
+  if (self->priv->state != TP_TUBE_CHANNEL_STATE_NOT_OFFERED)
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Tube is not in the not offered state");
+      goto fail;
+    }
+
+  self->priv->address_type = address_type;
+  self->priv->address = tp_g_value_slice_dup (address);
+  self->priv->access_control = access_control;
+
+  change_state (self, TP_TUBE_CHANNEL_STATE_REMOTE_PENDING);
+
+  tp_svc_channel_type_stream_tube_return_from_offer (context);
+  return;
+
+fail:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static GValue *
