@@ -414,6 +414,25 @@ test_offer_success (Test *test,
   tp_handle_unref (test->contact_repo, alice_handle);
 }
 
+static void
+test_accept_twice (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  create_tube_service (test, FALSE);
+
+  tp_stream_tube_accept_async (test->tube, tube_accept_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Try to re-accept the tube */
+  tp_stream_tube_accept_async (test->tube, tube_accept_cb, test);
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+}
+
 int
 main (int argc,
       char **argv)
@@ -432,6 +451,8 @@ main (int argc,
       test_accept_success, teardown);
   g_test_add ("/stream-tube/offer/success", Test, NULL, setup,
       test_offer_success, teardown);
+  g_test_add ("/stream-tube/accept/twice", Test, NULL, setup,
+      test_accept_twice, teardown);
 
   return g_test_run ();
 }
