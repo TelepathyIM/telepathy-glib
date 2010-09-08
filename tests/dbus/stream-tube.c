@@ -28,6 +28,8 @@ typedef struct {
     TpConnection *connection;
     TpStreamTube *tube;
 
+    GIOStream *stream;
+
     GError *error /* initialized where needed */;
     gint wait;
 } Test;
@@ -58,6 +60,7 @@ teardown (Test *test,
 
   tp_clear_object (&test->tube_chan_service);
   tp_clear_object (&test->tube);
+  tp_clear_object (&test->stream);
 
   tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
   g_assert_no_error (test->error);
@@ -169,6 +172,37 @@ test_properties (Test *test,
   g_hash_table_unref (parameters);
 }
 
+static void
+tube_accept_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  test->stream = tp_stream_tube_accept_finish (TP_STREAM_TUBE (source), result,
+      &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_accept_success (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  create_tube_service (test, FALSE);
+
+  tp_stream_tube_accept_async (test->tube, tube_accept_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert (test->stream != NULL);
+
+  /* TODO: try to use the tube */
+}
+
 int
 main (int argc,
       char **argv)
@@ -183,6 +217,8 @@ main (int argc,
       teardown);
   g_test_add ("/stream-tube/properties", Test, NULL, setup, test_properties,
       teardown);
+  g_test_add ("/stream-tube/accept/success", Test, NULL, setup,
+      test_accept_success, teardown);
 
   return g_test_run ();
 }
