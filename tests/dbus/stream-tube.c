@@ -433,6 +433,34 @@ test_accept_twice (Test *test,
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
 }
 
+static void
+test_accept_outgoing (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Try to accept an outgoing channel */
+  create_tube_service (test, TRUE);
+
+  tp_stream_tube_accept_async (test->tube, tube_accept_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+}
+
+static void
+test_offer_incoming (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Try to offer an incoming channel */
+  create_tube_service (test, FALSE);
+
+  tp_stream_tube_offer_async (test->tube, NULL, tube_offer_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
+}
+
 int
 main (int argc,
       char **argv)
@@ -453,6 +481,10 @@ main (int argc,
       test_offer_success, teardown);
   g_test_add ("/stream-tube/accept/twice", Test, NULL, setup,
       test_accept_twice, teardown);
+  g_test_add ("/stream-tube/accept/outgoing", Test, NULL, setup,
+      test_accept_outgoing, teardown);
+  g_test_add ("/stream-tube/offer/incoming", Test, NULL, setup,
+      test_offer_incoming, teardown);
 
   return g_test_run ();
 }
