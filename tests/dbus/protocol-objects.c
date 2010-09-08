@@ -32,6 +32,9 @@ typedef struct
   TpTestsEchoConnectionManager *old_service_cm;
   TpConnectionManager *old_cm;
   TpProtocol *old_protocol;
+
+  TpConnectionManager *file_cm;
+  TpProtocol *file_protocol;
 } Test;
 
 static void
@@ -78,6 +81,11 @@ setup (Test *test,
   g_assert (test->old_cm != NULL);
   tp_tests_proxy_run_until_prepared (test->old_cm, NULL);
 
+  test->file_cm = tp_connection_manager_new (test->dbus, "test_manager_file",
+      NULL, &test->error);
+  g_assert (test->file_cm != NULL);
+  tp_tests_proxy_run_until_prepared (test->file_cm, NULL);
+
   test->old_protocol = NULL;
 }
 
@@ -91,6 +99,8 @@ teardown (Test *test,
   tp_clear_object (&test->old_service_cm);
   tp_clear_object (&test->old_cm);
   tp_clear_object (&test->old_protocol);
+  tp_clear_object (&test->file_cm);
+  tp_clear_object (&test->file_protocol);
 
   tp_clear_object (&test->dbus);
   g_main_loop_unref (test->mainloop);
@@ -312,6 +322,45 @@ test_protocol_object_old (Test *test,
   g_assert (tp_protocol_get_capabilities (test->old_protocol) == NULL);
 }
 
+static void
+test_protocol_object_from_file (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_PROTOCOL_FEATURE_CORE, 0 };
+  TpCapabilities *caps;
+
+  g_assert_cmpstr (tp_connection_manager_get_name (test->file_cm), ==,
+      "test_manager_file");
+  tp_tests_proxy_run_until_prepared (test->file_cm, NULL);
+  test->file_protocol = g_object_ref (
+      tp_connection_manager_get_protocol_object (test->file_cm, "foo"));
+
+  g_assert_cmpstr (tp_protocol_get_name (test->file_protocol), ==, "foo");
+
+  g_assert (tp_proxy_is_prepared (test->file_protocol,
+        TP_PROTOCOL_FEATURE_PARAMETERS));
+
+  g_assert (tp_protocol_has_param (test->file_protocol, "account"));
+  g_assert (!tp_protocol_has_param (test->file_protocol, "no-way"));
+
+  tp_tests_proxy_run_until_prepared (test->file_protocol, features);
+  g_assert (tp_proxy_is_prepared (test->file_protocol,
+        TP_PROTOCOL_FEATURE_CORE));
+
+  g_assert_cmpstr (tp_protocol_get_icon_name (test->file_protocol), ==,
+      "im-icq");
+  g_assert_cmpstr (tp_protocol_get_english_name (test->file_protocol), ==,
+      "Regression tests");
+  g_assert_cmpstr (tp_protocol_get_vcard_field (test->file_protocol), ==,
+      "x-telepathy-tests");
+
+  g_assert (tp_protocol_get_capabilities (test->file_protocol) != NULL);
+  caps = tp_protocol_get_capabilities (test->file_protocol);
+  g_assert (!tp_capabilities_is_specific_to_contact (caps));
+  g_assert (tp_capabilities_supports_text_chats (caps));
+  g_assert (!tp_capabilities_supports_text_chatrooms (caps));
+}
+
 int
 main (int argc,
       char **argv)
@@ -329,6 +378,8 @@ main (int argc,
       test_protocol_object, teardown);
   g_test_add ("/protocol-objects/object-old", Test, NULL, setup,
       test_protocol_object_old, teardown);
+  g_test_add ("/protocol-objects/object-from-file", Test, NULL, setup,
+      test_protocol_object_from_file, teardown);
 
   return g_test_run ();
 }
