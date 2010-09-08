@@ -66,7 +66,10 @@ channel_prepared_cb (GObject *object,
 
 static void
 assert_chan_sane (TpChannel *chan,
-                  TpHandle handle)
+    TpHandle handle,
+    gboolean requested,
+    TpHandle initiator_handle,
+    const gchar *initiator_id)
 {
   GHashTable *asv;
   TpHandleType type;
@@ -81,6 +84,11 @@ assert_chan_sane (TpChannel *chan,
         TP_IFACE_QUARK_CHANNEL_TYPE_TEXT, "");
   MYASSERT (TP_IS_CONNECTION (tp_channel_borrow_connection (chan)), "");
   g_assert_cmpstr (tp_channel_get_identifier (chan), ==, IDENTIFIER);
+  g_assert (tp_channel_get_requested (chan) == requested);
+  g_assert_cmpuint (tp_channel_get_initiator_handle (chan), ==,
+      initiator_handle);
+  g_assert_cmpstr (tp_channel_get_initiator_identifier (chan), ==,
+      initiator_id);
 
   asv = tp_channel_borrow_immutable_properties (chan);
   MYASSERT (asv != NULL, "");
@@ -128,7 +136,6 @@ main (int argc,
       TP_CHANNEL_FEATURE_CHAT_STATES, 0 };
 
   g_type_init ();
-  tp_debug_set_flags ("all");
   dbus = tp_tests_dbus_daemon_dup_or_die ();
 
   service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
@@ -310,7 +317,9 @@ main (int argc,
   g_object_unref (prepare_result);
   prepare_result = NULL;
 
-  assert_chan_sane (chan, handle);
+  /* No property so we can't know if the channel was requested and its
+   * initiator */
+  assert_chan_sane (chan, handle, FALSE, 0, "");
 
   g_object_unref (chan);
   chan = NULL;
@@ -363,7 +372,8 @@ main (int argc,
   g_object_unref (prepare_result);
   prepare_result = NULL;
 
-  assert_chan_sane (chan, handle);
+  assert_chan_sane (chan, handle, TRUE, service_conn_as_base->self_handle,
+      tp_handle_inspect (contact_repo, service_conn_as_base->self_handle));
 
   /* no way to see what this is doing - just make sure it doesn't crash */
   tp_proxy_prepare_async (chan, some_features, NULL, NULL);
@@ -430,7 +440,7 @@ main (int argc,
       ==, 0);
    */
 
-  assert_chan_sane (chan, handle);
+  assert_chan_sane (chan, handle, FALSE, handle, IDENTIFIER);
 
   g_object_unref (chan);
   chan = NULL;
@@ -492,7 +502,7 @@ main (int argc,
       GUINT_TO_POINTER (TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)) != NULL,
       "Only Chan.I.Group's properties should have been retrieved");
 
-  assert_chan_sane (chan, handle);
+  assert_chan_sane (chan, handle, FALSE, handle, IDENTIFIER);
 
   g_object_unref (chan);
   chan = NULL;
@@ -516,7 +526,7 @@ main (int argc,
   g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
   g_assert_cmpuint (service_chan->get_channel_type_called, ==, 1);
 
-  assert_chan_sane (chan, handle);
+  assert_chan_sane (chan, handle, FALSE, 0, "");
 
   g_object_unref (chan);
   chan = NULL;
@@ -540,7 +550,7 @@ main (int argc,
   g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
   g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
-  assert_chan_sane (chan, handle);
+  assert_chan_sane (chan, handle, FALSE, 0, "");
 
   g_object_unref (chan);
   chan = NULL;
@@ -564,7 +574,7 @@ main (int argc,
   g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
   g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
-  assert_chan_sane (chan, handle);
+  assert_chan_sane (chan, handle, FALSE, 0, "");
 
   g_object_unref (chan);
   chan = NULL;
@@ -691,7 +701,7 @@ main (int argc,
   g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
   g_assert_cmpuint (service_chan->get_channel_type_called, ==, 0);
 
-  assert_chan_sane (chan, handle);
+  assert_chan_sane (chan, handle, FALSE, 0, "");
 
   /* ... keep the same channel for the next test */
 
@@ -702,7 +712,7 @@ main (int argc,
   MYASSERT (was_ready == TRUE, "");
   g_assert_no_error (invalidated);
 
-  assert_chan_sane (chan, handle);
+  assert_chan_sane (chan, handle, FALSE, 0, "");
 
   /* ... keep the same channel for the next test */
 
