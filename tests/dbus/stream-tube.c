@@ -27,6 +27,7 @@ typedef struct {
     /* Service side objects */
     TpBaseConnection *base_connection;
     TpTestsStreamTubeChannel *tube_chan_service;
+    TpHandleRepoIface *contact_repo;
 
     /* Client side objects */
     TpConnection *connection;
@@ -34,6 +35,7 @@ typedef struct {
 
     GIOStream *stream;
     GIOStream *cm_stream;
+    TpContact *contact;
 
     GError *error /* initialized where needed */;
     gint wait;
@@ -67,6 +69,7 @@ teardown (Test *test,
   tp_clear_object (&test->tube);
   tp_clear_object (&test->stream);
   tp_clear_object (&test->cm_stream);
+  tp_clear_object (&test->contact);
 
   tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
   g_assert_no_error (test->error);
@@ -81,7 +84,6 @@ create_tube_service (Test *test,
 {
   gchar *chan_path;
   TpHandle handle;
-  TpHandleRepoIface *contact_repo;
   GHashTable *props;
 
   tp_clear_object (&test->tube_chan_service);
@@ -91,11 +93,11 @@ create_tube_service (Test *test,
   chan_path = g_strdup_printf ("%s/Channel",
       tp_proxy_get_object_path (test->connection));
 
-  contact_repo = tp_base_connection_get_handles (test->base_connection,
+  test->contact_repo = tp_base_connection_get_handles (test->base_connection,
       TP_HANDLE_TYPE_CONTACT);
-  g_assert (contact_repo != NULL);
+  g_assert (test->contact_repo != NULL);
 
-  handle = tp_handle_ensure (contact_repo, "bob", NULL, &test->error);
+  handle = tp_handle_ensure (test->contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
 
   test->tube_chan_service = g_object_new (TP_TESTS_TYPE_STREAM_TUBE_CHANNEL,
@@ -115,7 +117,7 @@ create_tube_service (Test *test,
 
   g_free (chan_path);
   g_hash_table_unref (props);
-  tp_handle_unref (contact_repo, handle);
+  tp_handle_unref (test->contact_repo, handle);
 }
 
 /* Test Basis */
@@ -321,10 +323,42 @@ tube_offer_cb (GObject *source,
 }
 
 static void
+tube_incoming_cb (TpStreamTube *tube,
+    TpContact *contact,
+    GIOStream *stream,
+    Test *test)
+{
+  test->stream = g_object_ref (stream);
+  test->contact = g_object_ref (contact);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+socket_connected (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  test->cm_stream = G_IO_STREAM (g_socket_client_connect_finish (
+        G_SOCKET_CLIENT (source), result, &test->error));
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_offer_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GHashTable *params;
+  GSocketAddress *address;
+  GSocketClient *client;
+  TpHandle alice_handle;
 
   create_tube_service (test, TRUE);
 
@@ -341,7 +375,43 @@ test_offer_success (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  /* TODO: try to use the tube */
+  /* A client connects to the tube */
+  address = tp_tests_stream_tube_channel_get_server_address (
+      test->tube_chan_service);
+  g_assert (address != NULL);
+
+  client = g_socket_client_new ();
+
+  g_socket_client_connect_async (client, G_SOCKET_CONNECTABLE (address),
+      NULL, socket_connected, test);
+
+  g_object_unref (client);
+  g_object_unref (address);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert (test->cm_stream != NULL);
+
+  /* The connection is announced on TpStreamTube */
+  g_signal_connect (test->tube, "incoming",
+      G_CALLBACK (tube_incoming_cb), test);
+
+  alice_handle = tp_handle_ensure (test->contact_repo, "alice", NULL, NULL);
+
+  tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
+      test->cm_stream, alice_handle);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert (test->stream != NULL);
+  g_assert (test->contact != NULL);
+
+  g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "alice");
+
+  use_tube (test);
+
+  tp_handle_unref (test->contact_repo, alice_handle);
 }
 
 int
