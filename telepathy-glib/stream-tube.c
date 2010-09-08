@@ -305,7 +305,7 @@ find_best_access_control (GArray *arr,
     GError **error)
 {
   gboolean support_localhost = FALSE;
-  TpSocketAccessControl best;
+  TpSocketAccessControl best = TP_SOCKET_ACCESS_CONTROL_LOCALHOST;
   guint i;
 
   switch (socket_type)
@@ -355,7 +355,7 @@ find_best_access_control (GArray *arr,
           TP_ERROR_NOT_IMPLEMENTED, "No supported access control");
     }
 
-  return 0;
+  return TP_SOCKET_ACCESS_CONTROL_LOCALHOST;
 }
 
 static TpSocketAddressType
@@ -537,7 +537,8 @@ tp_stream_tube_accept_async (TpStreamTube *self,
       return;
     }
 
-  DEBUG ("Using socket type %u", self->priv->socket_type);
+  DEBUG ("Using socket type %u with access control %u", self->priv->socket_type,
+      self->priv->access_control);
 
   g_value_init (&value, G_TYPE_UINT);
   g_value_set_uint (&value, 0);
@@ -811,7 +812,8 @@ tp_stream_tube_offer_async (TpStreamTube *self,
       return;
     }
 
-  DEBUG ("Using socket type %u", socket_type);
+  DEBUG ("Using socket type %u with access control %u", self->priv->socket_type,
+      self->priv->access_control);
 
   self->priv->listener = g_socket_listener_new ();
 
