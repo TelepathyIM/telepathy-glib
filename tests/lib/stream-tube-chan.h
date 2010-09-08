@@ -53,6 +53,14 @@ struct _TpTestsStreamTubeChannel {
     TpTestsStreamTubeChannelPrivate *priv;
 };
 
+GSocketAddress * tp_tests_stream_tube_channel_get_server_address (
+    TpTestsStreamTubeChannel *self);
+
+void tp_tests_stream_tube_channel_peer_connected (
+    TpTestsStreamTubeChannel *self,
+    GIOStream *stream,
+    TpHandle handle);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_STREAM_TUBE_CHAN_H__ */

@@ -46,6 +46,7 @@ struct _TpTestsStreamTubeChannelPrivate {
     TpSocketAddressType address_type;
     GValue *address;
     TpSocketAccessControl access_control;
+    guint connection_id;
 };
 
 static void
@@ -291,6 +292,14 @@ change_state (TpTestsStreamTubeChannel *self,
   tp_svc_channel_interface_tube_emit_tube_channel_state_changed (self, state);
 }
 
+/* Return the address of the socket which has been shared over the tube */
+GSocketAddress *
+tp_tests_stream_tube_channel_get_server_address (TpTestsStreamTubeChannel *self)
+{
+  return tp_g_socket_address_from_variant (self->priv->address_type,
+      self->priv->address, NULL);
+}
+
 static void
 stream_tube_offer (TpSvcChannelTypeStreamTube *iface,
     guint address_type,
@@ -431,4 +440,28 @@ stream_tube_iface_init (gpointer iface,
   IMPLEMENT(offer);
   IMPLEMENT(accept);
 #undef IMPLEMENT
+}
+
+/* Called to emulate a peer connecting to an offered tube */
+void
+tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
+    GIOStream *stream,
+    TpHandle handle)
+{
+  GValue *connection_param;
+
+  if (self->priv->state == TP_TUBE_CHANNEL_STATE_REMOTE_PENDING)
+    change_state (self, TP_TUBE_CHANNEL_STATE_OPEN);
+
+  g_assert (self->priv->state == TP_TUBE_CHANNEL_STATE_OPEN);
+
+  /* TODO: use self->priv->access_control */
+  connection_param = tp_g_value_slice_new_static_string ("dummy");
+
+  tp_svc_channel_type_stream_tube_emit_new_remote_connection (self, handle,
+      connection_param, self->priv->connection_id);
+
+  self->priv->connection_id++;
+
+  tp_g_value_slice_free (connection_param);
 }
