@@ -1184,7 +1184,7 @@ _tp_protocol_parse_channel_class (GKeyFile *file,
       gchar *value = NULL;
       gchar *property = NULL;
       const gchar *dbus_type;
-      GValue *v = NULL;
+      GValue *v = g_slice_new0 (GValue);
 
       value = g_key_file_get_string (file, group, *key, NULL);
 
@@ -1208,7 +1208,12 @@ _tp_protocol_parse_channel_class (GKeyFile *file,
 
 cleanup:
       if (v != NULL)
-        tp_g_value_slice_free (v);
+        {
+          if (G_IS_VALUE (v))
+            tp_g_value_slice_free (v);
+          else
+            g_slice_free (GValue, v);
+        }
 
       g_free (property);
       g_free (value);
@@ -1398,6 +1403,9 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
     }
 
   g_strfreev (rcc_groups);
+
+  tp_asv_take_boxed (immutables, TP_PROP_PROTOCOL_REQUESTABLE_CHANNEL_CLASSES,
+      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST, rccs);
 
   if (protocol_name != NULL)
     *protocol_name = g_strdup (name);

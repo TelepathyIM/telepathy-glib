@@ -1,3 +1,6 @@
+[ConnectionManager]
+Interfaces=
+
 [Protocol foo]
 param-account = s required
 param-password = s required
@@ -8,6 +11,17 @@ param-server-list = as
 default-account = foo@default
 default-port = 1234
 default-server-list = foo;bar;
+Interfaces=
+ConnectionInterfaces=org.freedesktop.Telepathy.Connection.Interface.Requests;org.freedesktop.Telepathy.Connection.Interface.Contacts;
+RequestableChannelClasses=1-1-text;
+VCardField=x-telepathy-tests
+EnglishName=Regression tests
+Icon=im-icq
+
+[1-1-text]
+org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Text
+org.freedesktop.Telepathy.Channel.TargetHandleType u=1
+allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;
 
 [Protocol bar]
 param-account = s required
