@@ -382,15 +382,8 @@ create_local_socket (TpTestsStreamTubeChannel *self,
     GError **error)
 {
   gboolean success;
-  GSocketAddress *address;
+  GSocketAddress *address, *effective_address;
   GValue *address_gvalue;
-
-  if (address_type != TP_SOCKET_ADDRESS_TYPE_UNIX)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Unsupported address type");
-      return NULL;
-    }
 
   if (access_control != TP_SOCKET_ACCESS_CONTROL_LOCALHOST)
     {
@@ -399,23 +392,72 @@ create_local_socket (TpTestsStreamTubeChannel *self,
       return NULL;
     }
 
+  switch (address_type)
+    {
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+        {
+          address = g_unix_socket_address_new (tmpnam (NULL));
+          break;
+        }
+
+      case TP_SOCKET_ADDRESS_TYPE_IPV4:
+        {
+          GInetAddress *localhost;
+
+          localhost = g_inet_address_new_loopback (G_SOCKET_FAMILY_IPV4);
+          address = g_inet_socket_address_new (localhost, 0);
+
+          g_object_unref (localhost);
+          break;
+        }
+
+      default:
+        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            "Unsupported address type");
+      return NULL;
+    }
+
   self->priv->listener = g_socket_listener_new ();
-  address = g_unix_socket_address_new (tmpnam (NULL));
 
   success = g_socket_listener_add_address (self->priv->listener,
       address, G_SOCKET_TYPE_STREAM,
       G_SOCKET_PROTOCOL_DEFAULT,
-      NULL, NULL, NULL);
+      NULL, &effective_address, NULL);
   g_assert (success);
 
   g_socket_listener_accept_async (self->priv->listener, NULL,
       listener_accept_cb, self);
 
-  address_gvalue =  tp_g_value_slice_new_bytes (
-      g_unix_socket_address_get_path_len (G_UNIX_SOCKET_ADDRESS (address)),
-      g_unix_socket_address_get_path (G_UNIX_SOCKET_ADDRESS (address)));
+  switch (address_type)
+    {
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+        address_gvalue =  tp_g_value_slice_new_bytes (
+            g_unix_socket_address_get_path_len (
+              G_UNIX_SOCKET_ADDRESS (effective_address)),
+            g_unix_socket_address_get_path (
+              G_UNIX_SOCKET_ADDRESS (effective_address)));
+        break;
+
+      case TP_SOCKET_ADDRESS_TYPE_IPV4:
+        address_gvalue = tp_g_value_slice_new_take_boxed (
+            TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4,
+            dbus_g_type_specialized_construct (
+              TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4));
+
+        dbus_g_type_struct_set (address_gvalue,
+            0, "127.0.0.1",
+            1, g_inet_socket_address_get_port (
+              G_INET_SOCKET_ADDRESS (effective_address)),
+            G_MAXUINT);
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
+
 
   g_object_unref (address);
+  g_object_unref (effective_address);
   return address_gvalue;
 }
 
