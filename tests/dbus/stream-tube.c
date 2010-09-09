@@ -25,11 +25,12 @@ typedef struct {
     TpSocketAccessControl access_control;
 } SocketPair;
 
-#define NUM_SOCKET_PAIR 2
+#define NUM_SOCKET_PAIR 3
 
 SocketPair socket_pairs[NUM_SOCKET_PAIR] = {
   { TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
   { TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
 };
 
 typedef struct {
