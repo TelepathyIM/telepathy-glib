@@ -38,6 +38,7 @@ static guint signals[LAST_SIGNAL] = {0, };
 
 struct _TpTestsStreamTubeChannelPrivate {
     TpTubeChannelState state;
+    GHashTable *supported_socket_types;
 
     /* Accepting side */
     GSocketListener *listener;
@@ -56,14 +57,15 @@ destroy_socket_control_list (gpointer data)
   g_array_free (tab, TRUE);
 }
 
-static GHashTable *
-get_supported_socket_types (void)
+static void
+create_supported_socket_types (TpTestsStreamTubeChannel *self)
 {
-  GHashTable *ret;
   TpSocketAccessControl access_control;
   GArray *unix_tab;
 
-  ret = g_hash_table_new_full (NULL, NULL, NULL, destroy_socket_control_list);
+  g_assert (self->priv->supported_socket_types == NULL);
+  self->priv->supported_socket_types = g_hash_table_new_full (NULL, NULL,
+      NULL, destroy_socket_control_list);
 
   /* Socket_Address_Type_Unix */
   unix_tab = g_array_sized_new (FALSE, FALSE, sizeof (TpSocketAccessControl),
@@ -71,10 +73,8 @@ get_supported_socket_types (void)
   access_control = TP_SOCKET_ACCESS_CONTROL_LOCALHOST;
   g_array_append_val (unix_tab, access_control);
 
-  g_hash_table_insert (ret, GUINT_TO_POINTER (TP_SOCKET_ADDRESS_TYPE_UNIX),
-      unix_tab);
-
-  return ret;
+  g_hash_table_insert (self->priv->supported_socket_types,
+      GUINT_TO_POINTER (TP_SOCKET_ADDRESS_TYPE_UNIX), unix_tab);
 }
 
 static void
@@ -92,8 +92,8 @@ tp_tests_stream_tube_channel_get_property (GObject *object,
         break;
 
       case PROP_SUPPORTED_SOCKET_TYPES:
-        g_value_take_boxed (value,
-            get_supported_socket_types ());
+        g_value_set_boxed (value,
+            self->priv->supported_socket_types);
         break;
 
       case PROP_PARAMETERS:
@@ -112,6 +112,25 @@ tp_tests_stream_tube_channel_get_property (GObject *object,
     }
 }
 
+static void
+tp_tests_stream_tube_channel_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpTestsStreamTubeChannel *self = (TpTestsStreamTubeChannel *) object;
+
+  switch (property_id)
+    {
+      case PROP_SUPPORTED_SOCKET_TYPES:
+        self->priv->supported_socket_types = g_value_dup_boxed (value);
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+    }
+}
 
 static void stream_tube_iface_init (gpointer iface, gpointer data);
 
@@ -153,6 +172,9 @@ constructor (GType type,
   else
     self->priv->state = TP_TUBE_CHANNEL_STATE_LOCAL_PENDING;
 
+  if (self->priv->supported_socket_types == NULL)
+    create_supported_socket_types (self);
+
   tp_base_channel_register (TP_BASE_CHANNEL (self));
 
   return object;
@@ -165,6 +187,7 @@ dispose (GObject *object)
 
   tp_clear_object (&self->priv->listener);
   tp_clear_pointer (&self->priv->address, tp_g_value_slice_free);
+  tp_clear_pointer (&self->priv->supported_socket_types, g_hash_table_unref);
 
   ((GObjectClass *) tp_tests_stream_tube_channel_parent_class)->dispose (
     object);
@@ -220,6 +243,7 @@ tp_tests_stream_tube_channel_class_init (TpTestsStreamTubeChannelClass *klass)
 
   object_class->constructor = constructor;
   object_class->get_property = tp_tests_stream_tube_channel_get_property;
+  object_class->set_property = tp_tests_stream_tube_channel_set_property;
   object_class->dispose = dispose;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_STREAM_TUBE;
@@ -241,7 +265,7 @@ tp_tests_stream_tube_channel_class_init (TpTestsStreamTubeChannelClass *klass)
       "supported-socket-types", "Supported socket types",
       "GHashTable containing supported socket types.",
       TP_HASH_TYPE_SUPPORTED_SOCKET_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SUPPORTED_SOCKET_TYPES,
       param_spec);
 
