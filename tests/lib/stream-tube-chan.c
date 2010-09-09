@@ -46,8 +46,9 @@ struct _TpTestsStreamTubeChannelPrivate {
     /* Offering side */
     TpSocketAddressType address_type;
     GValue *address;
-    TpSocketAccessControl access_control;
     guint connection_id;
+
+    TpSocketAccessControl access_control;
 };
 
 static void
@@ -369,6 +370,15 @@ listener_accept_cb (GObject *source,
       result, NULL, &error);
   g_assert_no_error (error);
 
+  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
+    {
+      GCredentials *creds;
+
+      creds = g_unix_connection_receive_credentials (
+              G_UNIX_CONNECTION (connection), NULL, &error);
+      g_assert_no_error (error);
+    }
+
   g_signal_emit (self, signals[SIG_INCOMING_CONNECTION], 0, connection);
 
   g_object_unref (connection);
@@ -385,11 +395,16 @@ create_local_socket (TpTestsStreamTubeChannel *self,
   GSocketAddress *address, *effective_address;
   GValue *address_gvalue;
 
-  if (access_control != TP_SOCKET_ACCESS_CONTROL_LOCALHOST)
+  switch (access_control)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Unsupported access control");
-      return NULL;
+      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
+      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
+        break;
+
+      default:
+        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+            "Unsupported access control");
+        return NULL;
     }
 
   switch (address_type)
@@ -489,6 +504,8 @@ stream_tube_accept (TpSvcChannelTypeStreamTube *iface,
   if (address == NULL)
     goto fail;
 
+  self->priv->access_control = access_control;
+
   change_state (self, TP_TUBE_CHANNEL_STATE_OPEN);
 
   tp_svc_channel_type_stream_tube_return_from_accept (context, address);
@@ -526,8 +543,29 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
 
   g_assert (self->priv->state == TP_TUBE_CHANNEL_STATE_OPEN);
 
-  /* TODO: use self->priv->access_control */
-  connection_param = tp_g_value_slice_new_static_string ("dummy");
+  switch (self->priv->access_control)
+    {
+      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
+        connection_param = tp_g_value_slice_new_static_string ("dummy");
+        break;
+
+      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
+        {
+          GError *error = NULL;
+
+          g_unix_connection_send_credentials (G_UNIX_CONNECTION (stream),
+              NULL, &error);
+          g_assert_no_error (error);
+
+          /* FIXME: ideally we should send a non NULL byte to let client
+           * identify connections. */
+          connection_param = tp_g_value_slice_new_byte (0);
+        }
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
 
   tp_svc_channel_type_stream_tube_emit_new_remote_connection (self, handle,
       connection_param, self->priv->connection_id);
