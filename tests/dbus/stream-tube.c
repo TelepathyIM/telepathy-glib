@@ -25,12 +25,11 @@ typedef struct {
     TpSocketAccessControl access_control;
 } SocketPair;
 
-#define NUM_SOCKET_PAIR 3
-
-SocketPair socket_pairs[NUM_SOCKET_PAIR] = {
+SocketPair socket_pairs[] = {
   { TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
   { TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
   { TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { NUM_TP_SOCKET_ADDRESS_TYPES, NUM_TP_SOCKET_ACCESS_CONTROLS }
 };
 
 typedef struct {
@@ -527,7 +526,7 @@ run_tube_test (const char *test_path,
 {
   guint i;
 
-  for (i = 0; i < NUM_SOCKET_PAIR; i++)
+  for (i = 0; socket_pairs[i].address_type != NUM_TP_SOCKET_ADDRESS_TYPES; i++)
     {
       g_test_add (test_path, Test, GUINT_TO_POINTER (i), setup, ftest,
           teardown);
