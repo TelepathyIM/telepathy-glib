@@ -21,6 +21,17 @@
 #define BUFFER_SIZE 128
 
 typedef struct {
+    TpSocketAddressType address_type;
+    TpSocketAccessControl access_control;
+} SocketPair;
+
+#define NUM_SOCKET_PAIR 1
+
+SocketPair socket_pairs[NUM_SOCKET_PAIR] = {
+  { TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_LOCALHOST }
+};
+
+typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
 
@@ -329,8 +340,10 @@ static void
 test_accept_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+  guint i = GPOINTER_TO_UINT (data);
+
+  create_tube_service (test, FALSE, socket_pairs[i].address_type,
+      socket_pairs[i].access_control);
 
   g_signal_connect (test->tube_chan_service, "incoming-connection",
       G_CALLBACK (chan_incoming_connection_cb), test);
@@ -392,13 +405,14 @@ static void
 test_offer_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  guint i = GPOINTER_TO_UINT (data);
   GHashTable *params;
   GSocketAddress *address;
   GSocketClient *client;
   TpHandle alice_handle;
 
-  create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+  create_tube_service (test, TRUE, socket_pairs[i].address_type,
+      socket_pairs[i].access_control);
 
   params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
 
@@ -502,6 +516,22 @@ test_offer_incoming (Test *test,
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
 }
 
+typedef void (*TestFunc) (Test *, gconstpointer);
+
+/* Run a test with each SocketPair defined in socket_pairs */
+static void
+run_tube_test (const char *test_path,
+    TestFunc ftest)
+{
+  guint i;
+
+  for (i = 0; i < NUM_SOCKET_PAIR; i++)
+    {
+      g_test_add (test_path, Test, GUINT_TO_POINTER (i), setup, ftest,
+          teardown);
+    }
+}
+
 int
 main (int argc,
       char **argv)
@@ -516,16 +546,15 @@ main (int argc,
       teardown);
   g_test_add ("/stream-tube/properties", Test, NULL, setup, test_properties,
       teardown);
-  g_test_add ("/stream-tube/accept/success", Test, NULL, setup,
-      test_accept_success, teardown);
-  g_test_add ("/stream-tube/offer/success", Test, NULL, setup,
-      test_offer_success, teardown);
   g_test_add ("/stream-tube/accept/twice", Test, NULL, setup,
       test_accept_twice, teardown);
   g_test_add ("/stream-tube/accept/outgoing", Test, NULL, setup,
       test_accept_outgoing, teardown);
   g_test_add ("/stream-tube/offer/incoming", Test, NULL, setup,
       test_offer_incoming, teardown);
+
+  run_tube_test ("/stream-tube/accept/success", test_accept_success);
+  run_tube_test ("/stream-tube/offer/success", test_offer_success);
 
   return g_test_run ();
 }
