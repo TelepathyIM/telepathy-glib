@@ -401,10 +401,13 @@ create_local_socket (TpTestsStreamTubeChannel *self,
         }
 
       case TP_SOCKET_ADDRESS_TYPE_IPV4:
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
         {
           GInetAddress *localhost;
 
-          localhost = g_inet_address_new_loopback (G_SOCKET_FAMILY_IPV4);
+          localhost = g_inet_address_new_loopback (
+              address_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ?
+              G_SOCKET_FAMILY_IPV4 : G_SOCKET_FAMILY_IPV6);
           address = g_inet_socket_address_new (localhost, 0);
 
           g_object_unref (localhost);
@@ -439,13 +442,15 @@ create_local_socket (TpTestsStreamTubeChannel *self,
         break;
 
       case TP_SOCKET_ADDRESS_TYPE_IPV4:
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
         address_gvalue = tp_g_value_slice_new_take_boxed (
             TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4,
             dbus_g_type_specialized_construct (
               TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4));
 
         dbus_g_type_struct_set (address_gvalue,
-            0, "127.0.0.1",
+            0, address_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ?
+              "127.0.0.1" : "::1",
             1, g_inet_socket_address_get_port (
               G_INET_SOCKET_ADDRESS (effective_address)),
             G_MAXUINT);
