@@ -325,6 +325,28 @@ tp_tests_stream_tube_channel_get_server_address (TpTestsStreamTubeChannel *self)
       self->priv->address, NULL);
 }
 
+static gboolean
+check_address_type (TpTestsStreamTubeChannel *self,
+    TpSocketAddressType address_type,
+    TpSocketAccessControl access_control)
+{
+  GArray *arr;
+  guint i;
+
+  arr = g_hash_table_lookup (self->priv->supported_socket_types,
+      GUINT_TO_POINTER (address_type));
+  if (arr == NULL)
+    return FALSE;
+
+  for (i = 0; i < arr->len; i++)
+    {
+      if (g_array_index (arr, TpSocketAccessControl, i) == access_control)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
 static void
 stream_tube_offer (TpSvcChannelTypeStreamTube *iface,
     guint address_type,
@@ -340,6 +362,13 @@ stream_tube_offer (TpSvcChannelTypeStreamTube *iface,
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Tube is not in the not offered state");
+      goto fail;
+    }
+
+  if (!check_address_type (self, address_type, access_control))
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Address type not supported with this access control");
       goto fail;
     }
 
@@ -402,9 +431,7 @@ create_local_socket (TpTestsStreamTubeChannel *self,
         break;
 
       default:
-        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "Unsupported access control");
-        return NULL;
+        g_assert_not_reached ();
     }
 
   switch (address_type)
@@ -430,9 +457,7 @@ create_local_socket (TpTestsStreamTubeChannel *self,
         }
 
       default:
-        g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-            "Unsupported address type");
-      return NULL;
+        g_assert_not_reached ();
     }
 
   self->priv->listener = g_socket_listener_new ();
@@ -499,10 +524,15 @@ stream_tube_accept (TpSvcChannelTypeStreamTube *iface,
       goto fail;
     }
 
+  if (!check_address_type (self, address_type, access_control))
+    {
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Address type not supported with this access control");
+      goto fail;
+    }
+
   address = create_local_socket (self, address_type, access_control,
       access_control_param, &error);
-  if (address == NULL)
-    goto fail;
 
   self->priv->access_control = access_control;
 
