@@ -428,6 +428,7 @@ create_local_socket (TpTestsStreamTubeChannel *self,
     {
       case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
       case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
+      case TP_SOCKET_ACCESS_CONTROL_PORT:
         break;
 
       default:
@@ -590,6 +591,30 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
           /* FIXME: ideally we should send a non NULL byte to let client
            * identify connections. */
           connection_param = tp_g_value_slice_new_byte (0);
+        }
+        break;
+
+      case TP_SOCKET_ACCESS_CONTROL_PORT:
+        {
+          GSocketAddress *addr;
+          GError *error = NULL;
+
+          addr = g_socket_connection_get_local_address (
+              G_SOCKET_CONNECTION (stream), &error);
+          g_assert_no_error (error);
+
+          connection_param = tp_g_value_slice_new_take_boxed (
+              TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4,
+              dbus_g_type_specialized_construct (
+                TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4));
+
+          dbus_g_type_struct_set (connection_param,
+              0, "badger",
+              1, g_inet_socket_address_get_port (
+                G_INET_SOCKET_ADDRESS (addr)),
+              G_MAXUINT);
+
+          g_object_unref (addr);
         }
         break;
 
