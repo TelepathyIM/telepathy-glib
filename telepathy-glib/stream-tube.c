@@ -395,16 +395,23 @@ determine_socket_type (TpStreamTube *self,
       return TP_SOCKET_ADDRESS_TYPE_IPV4;
     }
 
-  else
+  arr = g_hash_table_lookup (supported_sockets,
+      GUINT_TO_POINTER (TP_SOCKET_ADDRESS_TYPE_IPV6));
+  if (arr != NULL)
     {
-      /* this should never happen */
-      DEBUG ("Unable to find a supported socket type");
+      self->priv->access_control = find_best_access_control (arr,
+          TP_SOCKET_ADDRESS_TYPE_IPV6, error);
 
-      g_set_error (error, TP_ERRORS,
-          TP_ERROR_NOT_IMPLEMENTED, "No supported socket types");
-
-      return 0;
+      return TP_SOCKET_ADDRESS_TYPE_IPV6;
     }
+
+  /* this should never happen */
+  DEBUG ("Unable to find a supported socket type");
+
+  g_set_error (error, TP_ERRORS,
+      TP_ERROR_NOT_IMPLEMENTED, "No supported socket types");
+
+  return 0;
 }
 
 static void
@@ -860,11 +867,14 @@ tp_stream_tube_offer_async (TpStreamTube *self,
 #endif /* HAVE_GIO_UNIX */
 
       case TP_SOCKET_ADDRESS_TYPE_IPV4:
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
         {
           GInetAddress *localhost;
           GSocketAddress *in_address;
 
-          localhost = g_inet_address_new_loopback (G_SOCKET_FAMILY_IPV4);
+          localhost = g_inet_address_new_loopback (
+              socket_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ?
+              G_SOCKET_FAMILY_IPV4 : G_SOCKET_FAMILY_IPV6);
           in_address = g_inet_socket_address_new (localhost, 0);
 
           g_socket_listener_add_address (self->priv->listener, in_address,
