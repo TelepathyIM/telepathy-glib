@@ -757,6 +757,7 @@ main (int argc,
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
   g_assert_error (error, invalidated->domain, invalidated->code);
   g_assert_cmpstr (error->message, ==, invalidated->message);
+  tp_clear_object (&prepare_result);
 
   g_clear_error (&error);
   g_clear_error (&invalidated);
