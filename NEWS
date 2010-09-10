@@ -3,6 +3,11 @@ telepathy-glib 0.11.15 (UNRELEASED)
 
 Enhancements:
 
+• Update to spec 0.19.12 (smcv)
+  - generate code for SMS interface for Text channels, NotYet error,
+    Object_Immutable_Properties type and
+    TP_PROP_CONNECTION_INTERFACE_CELLULAR_OVERRIDE_MESSAGE_SERVICE_CENTRE
+
 • fd.o #28420: add tp_channel_get_requested() etc. (cassidy)
 
 • Add basic introspectability for the Connection mixins (treitter)
@@ -11,6 +16,10 @@ Fixes:
 
 • fd.o #30090: fix parsing TpProtocol information from .manager files
   (fledermaus, smcv)
+
+• fd.o #25582: fix a memory leak in the old TpPropertiesMixin (smcv)
+
+• fd.o #29943: make tp_debug_sender_log_handler thread-safe (smcv)
 
 telepathy-glib 0.11.14 (2010-08-25)
 ===================================
