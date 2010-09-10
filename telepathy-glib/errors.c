@@ -190,6 +190,10 @@
  *     of the server certificate chain, exceed the limits imposed by the
  *     crypto library.
  *     Since: 0.11.12
+ * @TP_ERROR_NOT_YET: org.freedesktop.Telepathy.Error.NotYet:
+ *     Raised when the requested functionality is not yet available, but is
+ *     likely to become available after some time has passed.
+ *     Since: 0.11.UNRELEASED
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

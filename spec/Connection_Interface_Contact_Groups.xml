@@ -21,7 +21,7 @@
   <interface name="org.freedesktop.Telepathy.Connection.Interface.ContactGroups.DRAFT"
     tp:causes-havoc="experimental">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
-    <tp:requires interface="org.freedesktop.Telepathy.Connection.Interface.ContactList.DRAFT2"/>
+    <tp:requires interface="org.freedesktop.Telepathy.Connection.Interface.ContactList.DRAFT3"/>
     <tp:added version="0.19.6">(draft 1)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -79,11 +79,9 @@
           distinguish between a create/remove pair and a renamed group by
           receiving <tp:member-ref>GroupRenamed</tp:member-ref>.</p>
 
-        <p>This property's value is not meaningful until the initial contact
-          list has been received, in protocols where this is applicable.
-          Clients MAY wait for this property to be meaningful by calling
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Connection.Interface.ContactList.DRAFT2"
-            >RequestContactList</tp:dbus-ref>.</p>
+        <p>This property's value is not meaningful until the
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >ContactListState</tp:dbus-ref> has become Success.</p>
       </tp:docstring>
     </property>
 
@@ -213,6 +211,14 @@
           <tp:member-ref>GroupsChanged</tp:member-ref> and
           <tp:member-ref>GroupsRemoved</tp:member-ref> signals that result from
           this method call MUST be emitted before the method returns.</p>
+
+        <p>This method SHOULD NOT be called until the
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >ContactListState</tp:dbus-ref> changes to Success.
+          If the ContactListState is Failure, this method SHOULD raise the
+          same error as
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >GetContactListAttributes</tp:dbus-ref>.</p>
       </tp:docstring>
 
       <arg name="Contact" type="u" tp:type="Contact_Handle" direction="in">
@@ -239,6 +245,7 @@
             is Contact_Metadata_Storage_Type_None, i.e. groups cannot be edited.
           </tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotYet"/>
       </tp:possible-errors>
     </method>
 
@@ -265,6 +272,14 @@
           <tp:member-ref>GroupsChanged</tp:member-ref> and
           <tp:member-ref>GroupsRemoved</tp:member-ref> signals that result from
           this method call MUST be emitted before the method returns.</p>
+
+        <p>This method SHOULD NOT be called until the
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >ContactListState</tp:dbus-ref> changes to Success.
+          If the ContactListState is Failure, this method SHOULD raise the
+          same error as
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >GetContactListAttributes</tp:dbus-ref>.</p>
       </tp:docstring>
 
       <arg name="Group" type="s" direction="in">
@@ -286,6 +301,7 @@
             is Contact_Metadata_Storage_Type_None, i.e. groups cannot be edited.
           </tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotYet"/>
       </tp:possible-errors>
     </method>
 
@@ -306,6 +322,14 @@
           <tp:member-ref>GroupsChanged</tp:member-ref> and
           <tp:member-ref>GroupsRemoved</tp:member-ref> signals that result from
           this method call MUST be emitted before the method returns.</p>
+
+        <p>This method SHOULD NOT be called until the
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >ContactListState</tp:dbus-ref> changes to Success.
+          If the ContactListState is Failure, this method SHOULD raise the
+          same error as
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >GetContactListAttributes</tp:dbus-ref>.</p>
       </tp:docstring>
 
       <arg name="Group" type="s" direction="in">
@@ -326,6 +350,7 @@
             is Contact_Metadata_Storage_Type_None, i.e. groups cannot be edited.
           </tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotYet"/>
       </tp:possible-errors>
     </method>
 
@@ -341,6 +366,14 @@
         <p>Any <tp:member-ref>GroupsChanged</tp:member-ref> or
           <tp:member-ref>GroupsRemoved</tp:member-ref> signals that result from
           this method call MUST be emitted before the method returns.</p>
+
+        <p>This method SHOULD NOT be called until the
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >ContactListState</tp:dbus-ref> changes to Success.
+          If the ContactListState is Failure, this method SHOULD raise the
+          same error as
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >GetContactListAttributes</tp:dbus-ref>.</p>
       </tp:docstring>
 
       <arg name="Group" type="s" direction="in">
@@ -366,6 +399,7 @@
             is Contact_Metadata_Storage_Type_None, i.e. groups cannot be edited.
           </tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotYet"/>
       </tp:possible-errors>
     </method>
 
@@ -378,6 +412,14 @@
         <p>Any <tp:member-ref>GroupsChanged</tp:member-ref> or
           <tp:member-ref>GroupsRemoved</tp:member-ref> signals that result from
           this method call MUST be emitted before the method returns.</p>
+
+        <p>This method SHOULD NOT be called until the
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >ContactListState</tp:dbus-ref> changes to Success.
+          If the ContactListState is Failure, this method SHOULD raise the
+          same error as
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >GetContactListAttributes</tp:dbus-ref>.</p>
       </tp:docstring>
 
       <arg name="Group" type="s" direction="in">
@@ -393,6 +435,7 @@
             is Contact_Metadata_Storage_Type_None, i.e. groups cannot be edited.
           </tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotYet"/>
       </tp:possible-errors>
     </method>
 
@@ -412,6 +455,14 @@
         <p>Any <tp:member-ref>GroupRenamed</tp:member-ref> or
           <tp:member-ref>GroupsRemoved</tp:member-ref> signals that result from
           this method call MUST be emitted before the method returns.</p>
+
+        <p>This method SHOULD NOT be called until the
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >ContactListState</tp:dbus-ref> changes to Success.
+          If the ContactListState is Failure, this method SHOULD raise the
+          same error as
+          <tp:dbus-ref namespace="ofdT.Connection.Interface.ContactList.DRAFT3"
+            >GetContactListAttributes</tp:dbus-ref>.</p>
       </tp:docstring>
 
       <arg name="Old_Name" type="s" direction="in">
@@ -439,6 +490,7 @@
           <tp:docstring>Raised if there is already a group with the new
             name.</tp:docstring>
         </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NotYet"/>
       </tp:possible-errors>
     </method>
 
