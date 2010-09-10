@@ -13,6 +13,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/gnio-util.h>
 
 #include <gio/gunixsocketaddress.h>
 #include <gio/gunixconnection.h>
@@ -583,14 +584,13 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
       case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
         {
           GError *error = NULL;
+          guchar byte = g_random_int_range (0, G_MAXUINT8);
 
-          g_unix_connection_send_credentials (G_UNIX_CONNECTION (stream),
-              NULL, &error);
+          tp_unix_connection_send_credentials_with_byte (
+              G_UNIX_CONNECTION (stream), byte, NULL, &error);
           g_assert_no_error (error);
 
-          /* FIXME: ideally we should send a non NULL byte to let client
-           * identify connections. */
-          connection_param = tp_g_value_slice_new_byte (0);
+          connection_param = tp_g_value_slice_new_byte (byte);
         }
         break;
 
