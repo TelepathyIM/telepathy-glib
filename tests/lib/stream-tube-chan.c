@@ -41,7 +41,7 @@ struct _TpTestsStreamTubeChannelPrivate {
     GHashTable *supported_socket_types;
 
     /* Accepting side */
-    GSocketListener *listener;
+    GSocketService *service;
 
     /* Offering side */
     TpSocketAddressType address_type;
@@ -186,7 +186,12 @@ dispose (GObject *object)
 {
   TpTestsStreamTubeChannel *self = (TpTestsStreamTubeChannel *) object;
 
-  tp_clear_object (&self->priv->listener);
+  if (self->priv->service != NULL)
+    {
+      g_socket_service_stop (self->priv->service);
+      tp_clear_object (&self->priv->service);
+    }
+
   tp_clear_pointer (&self->priv->address, tp_g_value_slice_free);
   tp_clear_pointer (&self->priv->supported_socket_types, g_hash_table_unref);
 
@@ -387,17 +392,13 @@ fail:
 }
 
 static void
-listener_accept_cb (GObject *source,
-    GAsyncResult *result,
+service_incoming_cb (GSocketService *service,
+    GSocketConnection *connection,
+    GObject *source_object,
     gpointer user_data)
 {
   TpTestsStreamTubeChannel *self = user_data;
   GError *error = NULL;
-  GSocketConnection *connection;
-
-  connection = g_socket_listener_accept_finish (G_SOCKET_LISTENER (source),
-      result, NULL, &error);
-  g_assert_no_error (error);
 
   if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
     {
@@ -409,8 +410,6 @@ listener_accept_cb (GObject *source,
     }
 
   g_signal_emit (self, signals[SIG_INCOMING_CONNECTION], 0, connection);
-
-  g_object_unref (connection);
 }
 
 static GValue *
@@ -461,16 +460,17 @@ create_local_socket (TpTestsStreamTubeChannel *self,
         g_assert_not_reached ();
     }
 
-  self->priv->listener = g_socket_listener_new ();
+  self->priv->service = g_socket_service_new ();
 
-  success = g_socket_listener_add_address (self->priv->listener,
+  success = g_socket_listener_add_address (
+      G_SOCKET_LISTENER (self->priv->service),
       address, G_SOCKET_TYPE_STREAM,
       G_SOCKET_PROTOCOL_DEFAULT,
       NULL, &effective_address, NULL);
   g_assert (success);
 
-  g_socket_listener_accept_async (self->priv->listener, NULL,
-      listener_accept_cb, self);
+  tp_g_signal_connect_object (self->priv->service, "incoming",
+      G_CALLBACK (service_incoming_cb), self, 0);
 
   switch (address_type)
     {
