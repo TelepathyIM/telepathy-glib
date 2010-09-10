@@ -431,8 +431,7 @@ tp_properties_mixin_set_properties (GObject *obj,
       /* Valid? */
       if (prop_id >= mixin_cls->num_props)
         {
-          g_value_unset (prop_val);
-
+          g_boxed_free (G_TYPE_VALUE, prop_val);
           error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
                                "invalid property identifier %d", prop_id);
           goto ERROR;
