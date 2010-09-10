@@ -45,12 +45,50 @@
 
 G_DEFINE_TYPE (TpStreamTube, tp_stream_tube, TP_TYPE_CHANNEL);
 
+/* Used to store the data of a NewRemoteConnection signal while we are waiting
+ * for the TCP connection identified by this signal */
+typedef struct
+{
+  TpHandle handle;
+  GValue *param;
+  guint connection_id;
+} SigWaitingConn;
+
+static SigWaitingConn *
+sig_waiting_conn_new (TpHandle handle,
+    const GValue *param,
+    guint connection_id)
+{
+  SigWaitingConn *ret = g_slice_new0 (SigWaitingConn);
+
+  ret->handle = handle;
+  ret->param = tp_g_value_slice_dup (param);
+  ret->connection_id = connection_id;
+  return ret;
+}
+
+static void
+sig_waiting_conn_free (SigWaitingConn *sig)
+{
+  g_assert (sig != NULL);
+
+  tp_g_value_slice_free (sig->param);
+  g_slice_free (SigWaitingConn, sig);
+}
+
 struct _TpStreamTubePrivate
 {
   GHashTable *parameters;
 
+  /* Offering side */
   GSocketListener *listener;
   GSocketAddress *address;
+  /* list of reffed GSocketConnection we have accepted but are still waiting a
+   * NewRemoteConnection to identify them. */
+  GSList *conn_waiting_sig;
+  /* NewRemoteConnection signals we have received but didn't accept their TCP
+   * connection yet */
+  GSList *sig_waiting_conn;
 
   TpSocketAddressType socket_type;
   TpSocketAccessControl access_control;
@@ -102,6 +140,13 @@ tp_stream_tube_dispose (GObject *obj)
   tp_clear_object (&self->priv->listener);
   tp_clear_object (&self->priv->result);
   tp_clear_pointer (&self->priv->parameters, g_hash_table_unref);
+
+  g_slist_foreach (self->priv->conn_waiting_sig, (GFunc) g_object_unref, NULL);
+  tp_clear_pointer (&self->priv->conn_waiting_sig, g_slist_free);
+
+  g_slist_foreach (self->priv->sig_waiting_conn, (GFunc) sig_waiting_conn_free,
+      NULL);
+  tp_clear_pointer (&self->priv->sig_waiting_conn, g_slist_free);
 
   if (self->priv->remote_connections != NULL)
     {
@@ -588,65 +633,6 @@ tp_stream_tube_accept_finish (TpStreamTube *self,
   return g_simple_async_result_get_op_res_gpointer (simple);
 }
 
-static GSocketConnection *
-accept_incoming_connection (TpStreamTube *self,
-    guint connection_id)
-{
-  GSocketConnection *sockconn;
-  GError *error = NULL;
-
-  sockconn = g_socket_listener_accept (self->priv->listener, NULL, NULL,
-      &error);
-  if (error != NULL)
-    {
-      DEBUG ("Failed to accept incoming socket: %s", error->message);
-
-      g_error_free (error);
-      return NULL;
-    }
-
-#ifdef HAVE_GIO_UNIX
-  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
-    {
-      GCredentials *creds;
-      uid_t uid;
-
-      creds = g_unix_connection_receive_credentials (
-          G_UNIX_CONNECTION (sockconn), NULL, &error);
-      if (creds == NULL)
-        {
-          DEBUG ("Failed to receive credentials: %s", error->message);
-
-          g_error_free (error);
-          goto failed;
-        }
-
-      uid = g_credentials_get_unix_user (creds, &error);
-      g_object_unref  (creds);
-
-      if (uid != geteuid ())
-        {
-          DEBUG ("Wrong credentials received (user: %u)", uid);
-          goto failed;
-        }
-    }
-#endif
-
-  g_hash_table_insert (self->priv->remote_connections,
-      GUINT_TO_POINTER (connection_id), sockconn);
-
-  g_object_weak_ref (G_OBJECT (sockconn), remote_connection_destroyed_cb, self);
-
-  return sockconn;
-
-#ifdef HAVE_GIO_UNIX
-failed:
-  g_object_unref (sockconn);
-  return NULL;
-#endif
-}
-
-
 static void
 _new_remote_connection_with_contact (TpConnection *conn,
     guint n_contacts,
@@ -686,6 +672,98 @@ out:
   g_object_unref (sockconn);
 }
 
+static gboolean
+sig_match_conn (TpStreamTube *self,
+    SigWaitingConn *sig,
+    GSocketConnection *conn)
+{
+  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_PORT)
+    {
+      /* Use the port to identify the connection */
+      guint port;
+      GSocketAddress *address;
+      GError *error = NULL;
+
+      address = g_socket_connection_get_remote_address (conn, &error);
+      if (address == NULL)
+        {
+          DEBUG ("Failed to get connection address: %s", error->message);
+
+          g_error_free (error);
+          return FALSE;
+        }
+
+      dbus_g_type_struct_get (sig->param, 1, &port, G_MAXINT);
+
+      if (port == g_inet_socket_address_get_port (
+            G_INET_SOCKET_ADDRESS (address)))
+        {
+          DEBUG ("Identified connection %u using port %u",
+              port, sig->connection_id);
+          return TRUE;
+        }
+
+      g_object_unref (address);
+    }
+  else
+    {
+      DEBUG ("Can't properly identify connection as we are using "
+          "access control %u. Assume it's the head of the list",
+          self->priv->access_control);
+
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
+static void
+connection_identified (TpStreamTube *self,
+    GSocketConnection *conn,
+    TpHandle handle,
+    guint connection_id)
+{
+  GError *error = NULL;
+
+  /* Check the credentials if needed */
+#ifdef HAVE_GIO_UNIX
+  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
+    {
+      GCredentials *creds;
+      uid_t uid;
+
+      creds = g_unix_connection_receive_credentials (
+          G_UNIX_CONNECTION (conn), NULL, &error);
+      if (creds == NULL)
+        {
+          DEBUG ("Failed to receive credentials: %s", error->message);
+
+          g_error_free (error);
+          return;
+        }
+
+      uid = g_credentials_get_unix_user (creds, &error);
+      g_object_unref  (creds);
+
+      if (uid != geteuid ())
+        {
+          DEBUG ("Wrong credentials received (user: %u)", uid);
+          return;
+        }
+    }
+#endif
+
+  g_hash_table_insert (self->priv->remote_connections,
+      GUINT_TO_POINTER (connection_id), conn);
+
+  g_object_weak_ref (G_OBJECT (conn), remote_connection_destroyed_cb, self);
+
+  tp_connection_get_contacts_by_handle (
+      tp_channel_borrow_connection (TP_CHANNEL (self)),
+      1, &handle, 0, NULL,
+      _new_remote_connection_with_contact,
+      g_object_ref (conn), NULL, G_OBJECT (self));
+}
 
 static void
 _new_remote_connection (TpChannel *channel,
@@ -696,20 +774,42 @@ _new_remote_connection (TpChannel *channel,
     GObject *obj)
 {
   TpStreamTube *self = (TpStreamTube *) obj;
-  GSocketConnection *sockconn;
+  GSList *l;
+  GSocketConnection *found_conn = NULL;
+  SigWaitingConn *sig;
 
-  /* The GSocketConnection is unreffed in _new_remote_connection */
-  sockconn = accept_incoming_connection (self, connection_id);
-  if (sockconn == NULL)
-    return;
+  sig = sig_waiting_conn_new (handle, param, connection_id);
 
-  /* look up the handle */
-  tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (channel),
-      1, &handle, 0, NULL,
-      _new_remote_connection_with_contact,
-      sockconn, NULL, obj);
+  for (l = self->priv->conn_waiting_sig; l != NULL && found_conn == NULL;
+      l = g_slist_next (l))
+    {
+      GSocketConnection *conn = l->data;
+
+      if (sig_match_conn (self, sig, conn))
+        found_conn = conn;
+
+    }
+
+  if (found_conn == NULL)
+    {
+      DEBUG ("Didn't find any connection for %u. Waiting for more",
+          connection_id);
+
+      /* Pass ownership of sig to the list */
+      self->priv->sig_waiting_conn = g_slist_append (
+          self->priv->sig_waiting_conn, sig);
+      return;
+    }
+
+  /* We found a connection */
+  self->priv->conn_waiting_sig = g_slist_remove (
+      self->priv->conn_waiting_sig, found_conn);
+
+  connection_identified (self, found_conn, handle, connection_id);
+
+  sig_waiting_conn_free (sig);
+  g_object_unref (found_conn);
 }
-
 
 static void
 _channel_offered (TpChannel *channel,
@@ -781,6 +881,71 @@ finally:
     tp_g_value_slice_free (addressv);
 }
 
+static SigWaitingConn *
+find_sig_for_conn (TpStreamTube *self,
+    GSocketConnection *conn)
+{
+  GSList *l;
+
+  for (l = self->priv->sig_waiting_conn; l != NULL; l = g_slist_next (l))
+    {
+      SigWaitingConn *sig = l->data;
+
+      if (sig_match_conn (self, sig, conn))
+        return sig;
+    }
+
+  return NULL;
+}
+
+static void
+listener_accept_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpStreamTube *self = user_data;
+  GSocketConnection *conn;
+  GError *error = NULL;
+  SigWaitingConn *sig;
+
+  conn = g_socket_listener_accept_finish (G_SOCKET_LISTENER (source), result,
+      NULL, &error);
+  if (conn == NULL)
+    {
+      DEBUG ("Failed to accept incoming connection: %s", error->message);
+
+      g_error_free (error);
+      goto out;
+    }
+
+  DEBUG ("New incoming connection");
+
+  sig = find_sig_for_conn (self, conn);
+  if (sig == NULL)
+    {
+      DEBUG ("Can't identify the connection, wait for NewRemoteConnection sig");
+
+      /* Pass the reference to the list */
+      self->priv->conn_waiting_sig = g_slist_append (
+          self->priv->conn_waiting_sig, conn);
+
+      goto out;
+    }
+
+  /* Connection has been identified */
+  self->priv->sig_waiting_conn = g_slist_remove (self->priv->sig_waiting_conn,
+      sig);
+
+  connection_identified (self, conn, sig->handle, sig->connection_id);
+
+  g_object_unref (conn);
+  sig_waiting_conn_free (sig);
+
+out:
+  /* Wait for next connection */
+  g_socket_listener_accept_async (self->priv->listener, NULL,
+      listener_accept_cb, self);
+}
 
 /**
  * tp_stream_tube_offer_async:
@@ -900,6 +1065,9 @@ tp_stream_tube_offer_async (TpStreamTube *self,
         g_assert_not_reached ();
         break;
     }
+
+  g_socket_listener_accept_async (self->priv->listener, NULL,
+      listener_accept_cb, self);
 
   _offer_with_address (self, params);
 }
