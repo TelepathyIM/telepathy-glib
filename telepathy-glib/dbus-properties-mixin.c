@@ -763,6 +763,13 @@ tp_dbus_properties_mixin_get (GObject *self,
       return FALSE;
     }
 
+  if (iface_impl->getter == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Getting properties on %s is unimplemented", interface_name);
+      return FALSE;
+    }
+
   g_value_init (value, prop_info->type);
   iface_impl->getter (self, iface_info->dbus_interface,
       prop_info->name, value, prop_impl->getter_data);
@@ -938,7 +945,7 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
   iface_impl = _tp_dbus_properties_mixin_find_iface_impl (self,
       interface_name);
 
-  if (iface_impl == NULL)
+  if (iface_impl == NULL || iface_impl->getter == NULL)
     goto out;   /* no properties, but we need to return that */
 
   iface_info = iface_impl->mixin_priv;
@@ -1011,6 +1018,15 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
     {
       GError e = { TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
           "This property is read-only" };
+
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
+  if (iface_impl->setter == NULL)
+    {
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Setting properties on this interface is unimplemented" };
 
       dbus_g_method_return_error (context, &e);
       return;
