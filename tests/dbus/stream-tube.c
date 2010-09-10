@@ -286,18 +286,20 @@ chan_incoming_connection_cb (TpTestsStreamTubeChannel *chan,
 }
 
 static void
-use_tube (Test *test)
+use_tube_with_streams (Test *test,
+    GIOStream *stream,
+    GIOStream *cm_stream)
 {
   GOutputStream *out;
   GInputStream *in;
   gchar buffer[BUFFER_SIZE];
   gchar cm_buffer[BUFFER_SIZE];
 
-  g_assert (test->stream != NULL);
-  g_assert (test->cm_stream != NULL);
+  g_assert (stream != NULL);
+  g_assert (cm_stream != NULL);
 
   /* User sends something through the tube */
-  out = g_io_stream_get_output_stream (test->stream);
+  out = g_io_stream_get_output_stream (stream);
 
   strcpy (buffer, "badger");
 
@@ -305,7 +307,7 @@ use_tube (Test *test)
       NULL, write_cb, test);
 
   /* ...CM reads them */
-  in = g_io_stream_get_input_stream (test->cm_stream);
+  in = g_io_stream_get_input_stream (cm_stream);
 
   g_input_stream_read_async (in, cm_buffer, BUFFER_SIZE,
       G_PRIORITY_DEFAULT, NULL, read_cb, test);
@@ -318,7 +320,7 @@ use_tube (Test *test)
   g_assert_cmpstr (buffer, ==, cm_buffer);
 
   /* Now the CM writes some data to the tube */
-  out = g_io_stream_get_output_stream (test->cm_stream);
+  out = g_io_stream_get_output_stream (cm_stream);
 
   strcpy (cm_buffer, "mushroom");
 
@@ -326,7 +328,7 @@ use_tube (Test *test)
       NULL, write_cb, test);
 
   /* ...users reads them */
-  in = g_io_stream_get_input_stream (test->stream);
+  in = g_io_stream_get_input_stream (stream);
 
   g_input_stream_read_async (in, buffer, BUFFER_SIZE,
       G_PRIORITY_DEFAULT, NULL, read_cb, test);
@@ -337,6 +339,12 @@ use_tube (Test *test)
 
   /* client reads the right data */
   g_assert_cmpstr (buffer, ==, cm_buffer);
+}
+
+static void
+use_tube (Test *test)
+{
+  use_tube_with_streams (test, test->stream, test->cm_stream);
 }
 
 static void
@@ -535,6 +543,102 @@ run_tube_test (const char *test_path,
     }
 }
 
+static void
+test_offer_race (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Two clients connect to the tube we offered but they are announced in a
+   * racy way. */
+  guint i = GPOINTER_TO_UINT (data);
+  GSocketAddress *address;
+  GSocketClient *client;
+  TpHandle alice_handle, bob_handle;
+  GIOStream *alice_cm_stream, *bob_cm_stream;
+  GIOStream *alice_stream, *bob_stream;
+
+  /* We can't break the race with other access controles :( */
+  if (socket_pairs[i].access_control != TP_SOCKET_ACCESS_CONTROL_PORT)
+    return;
+
+  create_tube_service (test, TRUE, socket_pairs[i].address_type,
+      socket_pairs[i].access_control);
+
+  tp_stream_tube_offer_async (test->tube, NULL, tube_offer_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_signal_connect (test->tube, "incoming",
+      G_CALLBACK (tube_incoming_cb), test);
+
+  alice_handle = tp_handle_ensure (test->contact_repo, "alice", NULL, NULL);
+  bob_handle = tp_handle_ensure (test->contact_repo, "bob", NULL, NULL);
+
+  /* Alice connects to the tube */
+  address = tp_tests_stream_tube_channel_get_server_address (
+      test->tube_chan_service);
+  g_assert (address != NULL);
+
+  client = g_socket_client_new ();
+
+  g_socket_client_connect_async (client, G_SOCKET_CONNECTABLE (address),
+      NULL, socket_connected, test);
+
+  g_object_unref (client);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert (test->cm_stream != NULL);
+  alice_cm_stream = g_object_ref (test->cm_stream);
+
+  /* Now Bob connects to the tube */
+  client = g_socket_client_new ();
+
+  g_socket_client_connect_async (client, G_SOCKET_CONNECTABLE (address),
+      NULL, socket_connected, test);
+
+  g_object_unref (client);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert (test->cm_stream != NULL);
+  bob_cm_stream = g_object_ref (test->cm_stream);
+
+  /* The CM detects Bob's connection first */
+  tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
+      bob_cm_stream, bob_handle);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert (test->stream != NULL);
+  g_assert (test->contact != NULL);
+  bob_stream = g_object_ref (test->stream);
+
+  g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "bob");
+
+  /* ...and then detects Alice's connection */
+  tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
+      alice_cm_stream, alice_handle);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert (test->stream != NULL);
+  g_assert (test->contact != NULL);
+  alice_stream = g_object_ref (test->stream);
+
+  g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "alice");
+
+  /* Check that the streams have been mapped to the right contact */
+  use_tube_with_streams (test, alice_stream, alice_cm_stream);
+  use_tube_with_streams (test, bob_stream, bob_cm_stream);
+
+  tp_handle_unref (test->contact_repo, alice_handle);
+  g_object_unref (address);
+}
+
 int
 main (int argc,
       char **argv)
@@ -558,6 +662,7 @@ main (int argc,
 
   run_tube_test ("/stream-tube/accept/success", test_accept_success);
   run_tube_test ("/stream-tube/offer/success", test_offer_success);
+  run_tube_test ("/stream-tube/offer/race", test_offer_race);
 
   return g_test_run ();
 }
