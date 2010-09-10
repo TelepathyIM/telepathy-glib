@@ -81,7 +81,7 @@ struct _TpStreamTubePrivate
   GHashTable *parameters;
 
   /* Offering side */
-  GSocketListener *listener;
+  GSocketService *service;
   GSocketAddress *address;
   /* list of reffed GSocketConnection we have accepted but are still waiting a
    * NewRemoteConnection to identify them. */
@@ -138,7 +138,13 @@ tp_stream_tube_dispose (GObject *obj)
 {
   TpStreamTube *self = (TpStreamTube *) obj;
 
-  tp_clear_object (&self->priv->listener);
+  if (self->priv->service != NULL)
+    {
+      g_socket_service_stop (self->priv->service);
+
+      tp_clear_object (&self->priv->service);
+    }
+
   tp_clear_object (&self->priv->result);
   tp_clear_pointer (&self->priv->parameters, g_hash_table_unref);
 
@@ -906,24 +912,13 @@ find_sig_for_conn (TpStreamTube *self,
 }
 
 static void
-listener_accept_cb (GObject *source,
-    GAsyncResult *result,
+service_incoming_cb (GSocketService *service,
+    GSocketConnection *conn,
+    GObject *source_object,
     gpointer user_data)
 {
   TpStreamTube *self = user_data;
-  GSocketConnection *conn;
-  GError *error = NULL;
   SigWaitingConn *sig;
-
-  conn = g_socket_listener_accept_finish (G_SOCKET_LISTENER (source), result,
-      NULL, &error);
-  if (conn == NULL)
-    {
-      DEBUG ("Failed to accept incoming connection: %s", error->message);
-
-      g_error_free (error);
-      goto out;
-    }
 
   DEBUG ("New incoming connection");
 
@@ -934,9 +929,9 @@ listener_accept_cb (GObject *source,
 
       /* Pass the reference to the list */
       self->priv->conn_waiting_sig = g_slist_append (
-          self->priv->conn_waiting_sig, conn);
+          self->priv->conn_waiting_sig, g_object_ref (conn));
 
-      goto out;
+      return;
     }
 
   /* Connection has been identified */
@@ -945,13 +940,7 @@ listener_accept_cb (GObject *source,
 
   connection_identified (self, conn, sig->handle, sig->connection_id);
 
-  g_object_unref (conn);
   sig_waiting_conn_free (sig);
-
-out:
-  /* Wait for next connection */
-  g_socket_listener_accept_async (self->priv->listener, self->priv->cancellable,
-      listener_accept_cb, self);
 }
 
 /**
@@ -973,7 +962,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
   g_return_if_fail (TP_IS_STREAM_TUBE (self));
   g_return_if_fail (self->priv->result == NULL);
 
-  if (self->priv->listener != NULL)
+  if (self->priv->service != NULL)
     {
       g_critical ("Can't reoffer Tube!");
       return;
@@ -994,7 +983,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
   DEBUG ("Using socket type %u with access control %u", self->priv->socket_type,
       self->priv->access_control);
 
-  self->priv->listener = g_socket_listener_new ();
+  self->priv->service = g_socket_service_new ();
 
   switch (socket_type)
     {
@@ -1011,7 +1000,8 @@ tp_stream_tube_offer_async (TpStreamTube *self,
             {
               self->priv->address = g_unix_socket_address_new (tmpnam (NULL));
 
-              if (g_socket_listener_add_address (self->priv->listener,
+              if (g_socket_listener_add_address (
+                    G_SOCKET_LISTENER (self->priv->service),
                     self->priv->address, G_SOCKET_TYPE_STREAM,
                     G_SOCKET_PROTOCOL_DEFAULT,
                     NULL, NULL, &error))
@@ -1049,7 +1039,8 @@ tp_stream_tube_offer_async (TpStreamTube *self,
               G_SOCKET_FAMILY_IPV4 : G_SOCKET_FAMILY_IPV6);
           in_address = g_inet_socket_address_new (localhost, 0);
 
-          g_socket_listener_add_address (self->priv->listener, in_address,
+          g_socket_listener_add_address (
+              G_SOCKET_LISTENER (self->priv->service), in_address,
               G_SOCKET_TYPE_STREAM, G_SOCKET_PROTOCOL_DEFAULT,
               NULL, &self->priv->address, &error);
 
@@ -1073,8 +1064,10 @@ tp_stream_tube_offer_async (TpStreamTube *self,
         break;
     }
 
-  g_socket_listener_accept_async (self->priv->listener, self->priv->cancellable,
-      listener_accept_cb, self);
+  tp_g_signal_connect_object (self->priv->service, "incoming",
+      G_CALLBACK (service_incoming_cb), self, 0);
+
+  g_socket_service_start (self->priv->service);
 
   _offer_with_address (self, params);
 }
@@ -1104,7 +1097,7 @@ tp_stream_tube_offer_existing_async (TpStreamTube *self,
   g_return_if_fail (G_IS_SOCKET_ADDRESS (address));
   g_return_if_fail (self->priv->result == NULL);
 
-  if (self->priv->listener != NULL)
+  if (self->priv->service != NULL)
     {
       g_critical ("Can't reoffer Tube!");
       return;
