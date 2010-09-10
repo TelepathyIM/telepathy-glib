@@ -104,6 +104,13 @@
 }
 
 {
+   one g_get_home_dir per process
+   Memcheck:Leak
+   ...
+   fun:g_get_home_dir
+}
+
+{
    GQuarks can't be freed
    Memcheck:Leak
    ...
