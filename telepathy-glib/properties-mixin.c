@@ -431,20 +431,16 @@ tp_properties_mixin_set_properties (GObject *obj,
       /* Valid? */
       if (prop_id >= mixin_cls->num_props)
         {
-          g_value_unset (prop_val);
-
+          g_boxed_free (G_TYPE_VALUE, prop_val);
           error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
                                "invalid property identifier %d", prop_id);
           goto ERROR;
         }
 
-      /* Store the value in the context */
-      tp_intset_add (ctx->remaining, prop_id);
-      ctx->values[prop_id] = prop_val;
-
       /* Permitted? */
       if (!tp_properties_mixin_is_writable (obj, prop_id))
         {
+          g_boxed_free (G_TYPE_VALUE, prop_val);
           error = g_error_new (TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
                                "permission denied for property identifier %d",
                                prop_id);
@@ -455,11 +451,16 @@ tp_properties_mixin_set_properties (GObject *obj,
       if (!g_value_type_compatible (G_VALUE_TYPE (prop_val),
                                     mixin_cls->signatures[prop_id].type))
         {
+          g_boxed_free (G_TYPE_VALUE, prop_val);
           error = g_error_new (TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
                                "incompatible value type for property "
                                "identifier %d", prop_id);
           goto ERROR;
         }
+
+      /* Store the value in the context */
+      tp_intset_add (ctx->remaining, prop_id);
+      ctx->values[prop_id] = prop_val;
     }
 
   if (mixin_cls->set_properties)
