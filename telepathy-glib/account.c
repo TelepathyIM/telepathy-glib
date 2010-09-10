@@ -1790,12 +1790,6 @@ tp_account_set_enabled_async (TpAccount *account,
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_set_enabled_finish);
 
-  if (priv->enabled == enabled)
-    {
-      g_simple_async_result_complete_in_idle (result);
-      return;
-    }
-
   g_value_init (&value, G_TYPE_BOOLEAN);
   g_value_set_boolean (&value, enabled);
 
