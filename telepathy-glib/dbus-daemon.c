@@ -94,8 +94,8 @@ static gpointer starter_bus_daemon = NULL;
  * be returned by this function repeatedly, as long as at least one reference
  * exists.
  *
- * Returns: a reference to a proxy for signals and method calls on the bus
- *  daemon, or %NULL
+ * Returns: (transfer full): a reference to a proxy for signals and method
+ *  calls on the bus daemon, or %NULL
  *
  * Since: 0.7.26
  */
