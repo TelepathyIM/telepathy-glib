@@ -1,5 +1,6 @@
 EXTRA_DIST = \
     Account_Interface_Avatar.xml \
+    Account_Interface_Minimum_Presence.xml \
     Account_Interface_Storage.xml \
     Account_Manager.xml \
     Account.xml \
@@ -14,9 +15,11 @@ EXTRA_DIST = \
     Call_Stream_Endpoint.xml \
     Channel_Dispatch_Operation.xml \
     Channel_Dispatcher.xml \
+    Channel_Dispatcher_Future.xml \
     Channel_Dispatcher_Interface_Operation_List.xml \
     Channel_Future.xml \
     Channel_Handler.xml \
+    Channel_Interface_Addressing.xml \
     Channel_Interface_Anonymity.xml \
     Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
@@ -32,10 +35,12 @@ EXTRA_DIST = \
     Channel_Interface_Password.xml \
     Channel_Interface_Room.xml \
     Channel_Interface_Service_Point.xml \
+    Channel_Interface_SMS.xml \
     Channel_Interface_Splittable.xml \
     Channel_Interface_Transfer.xml \
     Channel_Interface_Tube.xml \
     Channel_Request.xml \
+    Channel_Request_Future.xml \
     Channel_Type_Call.xml \
     Channel_Type_Contact_List.xml \
     Channel_Type_Contact_Search.xml \
@@ -55,6 +60,7 @@ EXTRA_DIST = \
     Client_Interface_Requests.xml \
     Client_Observer.xml \
     Connection_Future.xml \
+    Connection_Interface_Addressing.xml \
     Connection_Interface_Aliasing.xml \
     Connection_Interface_Anonymity.xml \
     Connection_Interface_Avatars.xml \
@@ -70,6 +76,7 @@ EXTRA_DIST = \
     Connection_Interface_Forwarding.xml \
     Connection_Interface_Location.xml \
     Connection_Interface_Mail_Notification.xml \
+    Connection_Interface_Power_Saving.xml \
     Connection_Interface_Presence.xml \
     Connection_Interface_Privacy.xml \
     Connection_Interface_Renaming.xml \
@@ -85,6 +92,7 @@ EXTRA_DIST = \
     Media_Stream_Handler.xml \
     Properties_Interface.xml \
     Protocol.xml \
+    Protocol_Interface_Addressing.xml \
     Protocol_Interface_Avatars.xml \
     Protocol_Interface_Presence.xml \
     template.xml
