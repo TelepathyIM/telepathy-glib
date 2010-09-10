@@ -398,6 +398,17 @@ tp_debug_sender_add_message (TpDebugSender *self,
       debug_message_new (timestamp, domain, level, string));
 }
 
+static gboolean
+tp_debug_sender_idle (gpointer data)
+{
+  if (debug_sender == NULL)
+    debug_message_free (data);
+  else
+    _tp_debug_sender_take (debug_sender, data);
+
+  return FALSE;
+}
+
 /**
  * tp_debug_sender_log_handler:
  * @log_domain: domain of the message
@@ -445,6 +456,8 @@ tp_debug_sender_add_message (TpDebugSender *self,
  * It can easily be re-implemented in services, and does not need to be
  * used.
  *
+ * Since version 0.11.UNRELEASED, this function can be called from any thread.
+ *
  * Since: 0.7.36
  */
 void
@@ -455,15 +468,13 @@ tp_debug_sender_log_handler (const gchar *log_domain,
 {
   g_log_default_handler (log_domain, log_level, message, NULL);
 
-  if (debug_sender == NULL)
-    return;
-
   if (exclude == NULL || tp_strdiff (log_domain, exclude))
     {
       GTimeVal now;
       g_get_current_time (&now);
 
-      tp_debug_sender_add_message (debug_sender, &now, log_domain, log_level,
-          message);
+      g_idle_add_full (G_PRIORITY_HIGH, tp_debug_sender_idle,
+          debug_message_new (&now, log_domain, log_level, message),
+          NULL);
     }
 }
