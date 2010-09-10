@@ -85,6 +85,7 @@ typedef struct {
     gulong notify_id;
     /* g_strdup (property name) => GUINT_TO_POINTER (counter) */
     GHashTable *times_notified;
+    GAsyncResult *result;
     GError *error /* initialized where needed */;
 
     TpTestsSimpleAccount *account_service /* initialized in prepare_service */;
@@ -189,6 +190,9 @@ teardown (Test *test,
   test->dbus = NULL;
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
+
+  g_clear_error (&test->error);
+  tp_clear_object (&test->result);
 }
 
 static void
@@ -228,6 +232,23 @@ test_new (Test *test,
   test->account = tp_account_new (test->dbus,
       "/org/freedesktop/Telepathy/Account/what/ev/er", NULL);
   g_assert (test->account != NULL);
+}
+
+static void
+test_setters (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  test->account = tp_account_new (test->dbus,
+      "/org/freedesktop/Telepathy/Account/what/ev/er", NULL);
+  g_assert (test->account != NULL);
+
+  tp_account_set_enabled_async (test->account, TRUE, tp_tests_result_ready_cb,
+    &test->result);
+  tp_tests_run_until_result (&test->result);
+  tp_account_set_enabled_finish (test->account, test->result, &test->error);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED);
+  g_clear_error (&test->error);
+  tp_clear_object (&test->result);
 }
 
 static void
@@ -529,6 +550,9 @@ main (int argc,
       test_parse_success);
 
   g_test_add ("/account/new", Test, NULL, setup, test_new, teardown);
+
+  g_test_add ("/account/setters", Test, NULL, setup_service, test_setters,
+      teardown_service);
 
   g_test_add ("/account/prepare/success", Test, NULL, setup_service,
               test_prepare_success, teardown_service);
