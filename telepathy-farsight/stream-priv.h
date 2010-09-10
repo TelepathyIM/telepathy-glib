@@ -7,7 +7,7 @@ G_BEGIN_DECLS
 
 typedef struct _TfStreamPrivate TfStreamPrivate;
 
-/**
+/*
  * TfStream:
  * @parent: the parent #GObject
  * @stream_id: the ID of the stream (READ-ONLY)
@@ -26,7 +26,7 @@ struct _TfStream {
   TfStreamPrivate *priv;
 };
 
-/**
+/*
  * TfStreamClass:
  * @parent_class: the parent #GObjecClass
  *
