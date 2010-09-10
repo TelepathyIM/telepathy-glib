@@ -92,6 +92,7 @@ struct _TpStreamTubePrivate
 
   TpSocketAddressType socket_type;
   TpSocketAccessControl access_control;
+  GCancellable *cancellable;
 
   GSimpleAsyncResult *result;
 
@@ -147,6 +148,12 @@ tp_stream_tube_dispose (GObject *obj)
   g_slist_foreach (self->priv->sig_waiting_conn, (GFunc) sig_waiting_conn_free,
       NULL);
   tp_clear_pointer (&self->priv->sig_waiting_conn, g_slist_free);
+
+  if (self->priv->cancellable != NULL)
+    {
+      g_cancellable_cancel (self->priv->cancellable);
+      tp_clear_object (&self->priv->cancellable);
+    }
 
   if (self->priv->remote_connections != NULL)
     {
@@ -554,7 +561,7 @@ _channel_accepted (TpChannel *channel,
 
   client = g_socket_client_new ();
   g_socket_client_connect_async (client, G_SOCKET_CONNECTABLE (address),
-      NULL, _socket_connected, self);
+      self->priv->cancellable, _socket_connected, self);
 
   g_object_unref (address);
 }
@@ -943,7 +950,7 @@ listener_accept_cb (GObject *source,
 
 out:
   /* Wait for next connection */
-  g_socket_listener_accept_async (self->priv->listener, NULL,
+  g_socket_listener_accept_async (self->priv->listener, self->priv->cancellable,
       listener_accept_cb, self);
 }
 
@@ -1066,7 +1073,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
         break;
     }
 
-  g_socket_listener_accept_async (self->priv->listener, NULL,
+  g_socket_listener_accept_async (self->priv->listener, self->priv->cancellable,
       listener_accept_cb, self);
 
   _offer_with_address (self, params);
