@@ -1,6 +1,8 @@
 telepathy-glib 0.11.15 (UNRELEASED)
 ===================================
 
+The “Castle Turing” release.
+
 Enhancements:
 
 • Update to spec 0.19.12 (smcv)
@@ -17,9 +19,15 @@ Fixes:
 • fd.o #30090: fix parsing TpProtocol information from .manager files
   (fledermaus, smcv)
 
-• fd.o #25582: fix a memory leak in the old TpPropertiesMixin (smcv)
-
 • fd.o #29943: make tp_debug_sender_log_handler thread-safe (smcv)
+
+• fd.o #30111: make GObject-Introspection work again with g-i >= 0.9.5
+  (danni, smcv)
+
+• fd.o #30134: make configure fail if Vala bindings are enabled but g-i is
+  disabled, which can't work (smcv)
+
+• fd.o #25582, #27806, #30118: fix miscellaneous memory leaks (smcv)
 
 telepathy-glib 0.11.14 (2010-08-25)
 ===================================

@@ -1,0 +1,11 @@
+Version: TELEPATHY_GLIB_0.11.15
+Extends: TELEPATHY_GLIB_0.11.14
+Release: 0.11.15
+
+tp_channel_get_initiator_handle
+tp_channel_get_initiator_identifier
+tp_channel_get_requested
+tp_iface_quark_channel_interface_sms
+tp_svc_channel_interface_sms_get_type
+tp_type_dbus_array_of_a_7boa_7bsv_7d_7d
+tp_type_dbus_hash_oa_7bsv_7d
