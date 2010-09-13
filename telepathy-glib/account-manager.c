@@ -700,9 +700,9 @@ static gpointer starter_account_manager_proxy = NULL;
  * reference exists. Note that the returned #TpAccountManager is not guaranteed
  * to be ready on return.
  *
- * Returns: an account manager proxy on the starter or session bus, or %NULL
- *          if it wasn't possible to get a dbus daemon proxy for the
- *          appropriate bus
+ * Returns: (transfer full): an account manager proxy on the starter or session
+ *          bus, or %NULL if it wasn't possible to get a dbus daemon proxy for
+ *          the appropriate bus
  *
  * Since: 0.9.0
  */

@@ -10,7 +10,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/account-channel-request.c $(srcdir)/account-channel-request.h \
 	$(srcdir)/account-manager.c $(srcdir)/account-manager.h \
 	$(srcdir)/connection.c $(srcdir)/connection.h \
-	$(srcdir)/connection-handles.c \
+	$(srcdir)/connection-handles.c $(srcdir)/connection-contact-info.c \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
 	$(srcdir)/connection-manager.c $(srcdir)/connection-manager.h \
 	$(srcdir)/channel.c $(srcdir)/channel.h \
@@ -41,11 +41,19 @@ INTROSPECTION_FILES = \
 	$(srcdir)/handle-repo.c $(srcdir)/handle-repo.h $(srcdir)/handle-set.c \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
 	_gen/telepathy-enums.h \
-	_gen/telepathy-interfaces.h
+	$(NULL)
 
 _gen/proxy-introspectable.h: proxy.h introspection.am
 	@$(mkdir_p) _gen
 	$(AM_V_GEN)sed -e 's/gpointer self/TpProxy *self/' < $< > $@
+
+if G_IR_SCANNER_NEW_ARGS
+gi_identifier_prefix_arg = --identifier-prefix
+gi_warn_all_arg = --warn-all
+else
+gi_identifier_prefix_arg = --strip-prefix
+gi_warn_all_arg =
+endif
 
 TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		libtelepathy-glib.la \
@@ -54,7 +62,7 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 	$(AM_V_GEN)$(INTROSPECTION_SCANNER) -v \
 		--namespace TelepathyGLib \
 		--nsversion=0.12 \
-		--strip-prefix=tp \
+		$(gi_identifier_prefix_arg)=Tp \
 		-I$(top_builddir) \
 		-I$(top_srcdir) \
 		--include=GLib-2.0 \
@@ -63,6 +71,7 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		--library=libtelepathy-glib.la \
 		--pkg gio-2.0 \
 		--pkg dbus-glib-1 \
+		$(gi_warn_all_arg) \
 		--output _gen/$@.tmp \
 		$(INTROSPECTION_FILES)
 	@xsltproc $(srcdir)/kludge-616375.xsl _gen/$@.tmp > $@

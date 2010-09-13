@@ -7,8 +7,10 @@ SUBDIRS = \
     telepathy-glib \
     $(NULL)
 
+if HAVE_INTROSPECTION
 if HAVE_VALA
 SUBDIRS += vala
+endif
 endif
 
 SUBDIRS += \

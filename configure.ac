@@ -64,8 +64,18 @@ AM_PROG_MKDIR_P
 # pkg-config 0.21 adds CFLAGS from Requires.private, which we need
 PKG_PROG_PKG_CONFIG([0.21])
 
-GOBJECT_INTROSPECTION_CHECK([0.6.14])
 GTK_DOC_CHECK([1.15])
+
+GOBJECT_INTROSPECTION_CHECK([0.6.14])
+# Check if we have a new gobject-introspection, with different command-line
+# arguments. Eventually this will go away and we can only depend on the new
+# version
+AC_MSG_CHECKING([what arguments g-ir-scanner requires])
+PKG_CHECK_EXISTS([gobject-introspection-1.0 >= 0.9.5],
+                 g_ir_scanner_args=new,
+		 g_ir_scanner_args=old)
+AC_MSG_RESULT([$g_ir_scanner_args])
+AM_CONDITIONAL(G_IR_SCANNER_NEW_ARGS, test "x$g_ir_scanner_args" = "xnew")
 
 LT_CURRENT=tp_glib_lt_current
 LT_REVISION=tp_glib_lt_revision
@@ -203,6 +213,10 @@ AC_ARG_ENABLE(vala-bindings,
                   enable_vala_bindings=no )
 
 if test x$enable_vala_bindings = xyes; then
+  if test "x$INTROSPECTION_SCANNER" = x; then
+    AC_MSG_ERROR([GObject-Introspection must be enabled for Vala bindings])
+  fi
+
   m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.9.3)],
            [AC_MSG_ERROR([Automake >= 1.11 required for Vala bindings])])
   have_vala=yes

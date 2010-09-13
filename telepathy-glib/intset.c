@@ -355,7 +355,7 @@ tp_intset_is_member (const TpIntSet *set, guint element)
 /**
  * tp_intset_foreach:
  * @set: set
- * @func: @TpIntFunc to use to iterate the set
+ * @func: (scope call): @TpIntFunc to use to iterate the set
  * @userdata: user data to pass to each call of @func
  *
  * Call @func(element, @userdata) for each element of @set, in order.
@@ -404,8 +404,8 @@ addint (guint i, gpointer data)
  *
  * <!--Returns: says it all-->
  *
- * Returns: (element-type uint): a GArray of guint (which must be freed by the caller) containing
- * the same integers as @set.
+ * Returns: (element-type uint) (transfer full): a GArray of guint (which must
+ *  be freed by the caller) containing the same integers as @set.
  */
 GArray *
 tp_intset_to_array (const TpIntSet *set)
