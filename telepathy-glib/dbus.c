@@ -790,7 +790,7 @@ tp_asv_new (const gchar *first_key, ...)
  * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
  * strings and the values are GValues
  * @key: The key to look up
- * @valid: Either %NULL, or a location to store %TRUE if the key actually
+ * @valid: (out): Either %NULL, or a location to store %TRUE if the key actually
  *  exists and has a boolean value
  *
  * If a value for @key in @asv is present and boolean, return it,
@@ -1058,8 +1058,8 @@ tp_asv_set_static_string (GHashTable *asv,
  * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
  * strings and the values are GValues
  * @key: The key to look up
- * @valid: Either %NULL, or a location in which to store %TRUE on success or
- *    %FALSE on failure
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
  *
  * If a value for @key in @asv is present, has an integer type used by
  * dbus-glib (guchar, gint, guint, gint64 or guint64) and fits in the
@@ -1171,8 +1171,8 @@ tp_asv_set_int32 (GHashTable *asv,
  * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
  * strings and the values are GValues
  * @key: The key to look up
- * @valid: Either %NULL, or a location in which to store %TRUE on success or
- *    %FALSE on failure
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
  *
  * If a value for @key in @asv is present, has an integer type used by
  * dbus-glib (guchar, gint, guint, gint64 or guint64) and fits in the
@@ -1284,8 +1284,8 @@ tp_asv_set_uint32 (GHashTable *asv,
  * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
  * strings and the values are GValues
  * @key: The key to look up
- * @valid: Either %NULL, or a location in which to store %TRUE on success or
- *    %FALSE on failure
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
  *
  * If a value for @key in @asv is present, has an integer type used by
  * dbus-glib (guchar, gint, guint, gint64 or guint64) and fits in the
@@ -1386,8 +1386,8 @@ tp_asv_set_int64 (GHashTable *asv,
  * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
  * strings and the values are GValues
  * @key: The key to look up
- * @valid: Either %NULL, or a location in which to store %TRUE on success or
- *    %FALSE on failure
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
  *
  * If a value for @key in @asv is present, has an integer type used by
  * dbus-glib (guchar, gint, guint, gint64 or guint64) and is non-negative,
@@ -1492,8 +1492,8 @@ tp_asv_set_uint64 (GHashTable *asv,
  * @asv: (element-type utf8 GObject.Value): A GHashTable where the keys are
  * strings and the values are GValues
  * @key: The key to look up
- * @valid: Either %NULL, or a location in which to store %TRUE on success or
- *    %FALSE on failure
+ * @valid: (out): Either %NULL, or a location in which to store %TRUE on success
+ * or %FALSE on failure
  *
  * If a value for @key in @asv is present and has any numeric type used by
  * dbus-glib (guchar, gint, guint, gint64, guint64 or gdouble),
