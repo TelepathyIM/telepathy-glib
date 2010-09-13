@@ -76,6 +76,34 @@ sig_waiting_conn_free (SigWaitingConn *sig)
   g_slice_free (SigWaitingConn, sig);
 }
 
+typedef struct
+{
+  GSocketConnection *conn;
+  /* Used only with TP_SOCKET_ACCESS_CONTROL_CREDENTIALS to store the byte
+   * read with the credentials. */
+  guchar byte;
+} ConnWaitingSig;
+
+static ConnWaitingSig *
+conn_waiting_sig_new (GSocketConnection *conn,
+    guchar byte)
+{
+  ConnWaitingSig *ret = g_slice_new0 (ConnWaitingSig);
+
+  ret->conn = g_object_ref (conn);
+  ret->byte = byte;
+  return ret;
+}
+
+static void
+conn_waiting_sig_free (ConnWaitingSig *c)
+{
+  g_assert (c != NULL);
+
+  g_object_unref (c->conn);
+  g_slice_free (ConnWaitingSig, c);
+}
+
 struct _TpStreamTubePrivate
 {
   GHashTable *parameters;
@@ -83,11 +111,11 @@ struct _TpStreamTubePrivate
   /* Offering side */
   GSocketService *service;
   GSocketAddress *address;
-  /* list of reffed GSocketConnection we have accepted but are still waiting a
-   * NewRemoteConnection to identify them. */
+  /* GSocketConnection we have accepted but are still waiting a
+   * NewRemoteConnection to identify them. Owned ConnWaitingSig. */
   GSList *conn_waiting_sig;
   /* NewRemoteConnection signals we have received but didn't accept their TCP
-   * connection yet */
+   * connection yet. Owned SigWaitingConn. */
   GSList *sig_waiting_conn;
 
   TpSocketAddressType socket_type;
@@ -148,7 +176,8 @@ tp_stream_tube_dispose (GObject *obj)
   tp_clear_object (&self->priv->result);
   tp_clear_pointer (&self->priv->parameters, g_hash_table_unref);
 
-  g_slist_foreach (self->priv->conn_waiting_sig, (GFunc) g_object_unref, NULL);
+  g_slist_foreach (self->priv->conn_waiting_sig, (GFunc) conn_waiting_sig_free,
+      NULL);
   tp_clear_pointer (&self->priv->conn_waiting_sig, g_slist_free);
 
   g_slist_foreach (self->priv->sig_waiting_conn, (GFunc) sig_waiting_conn_free,
@@ -688,7 +717,7 @@ out:
 static gboolean
 sig_match_conn (TpStreamTube *self,
     SigWaitingConn *sig,
-    GSocketConnection *conn)
+    ConnWaitingSig *c)
 {
   if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_PORT)
     {
@@ -697,7 +726,7 @@ sig_match_conn (TpStreamTube *self,
       GSocketAddress *address;
       GError *error = NULL;
 
-      address = g_socket_connection_get_remote_address (conn, &error);
+      address = g_socket_connection_get_remote_address (c->conn, &error);
       if (address == NULL)
         {
           DEBUG ("Failed to get connection address: %s", error->message);
@@ -736,36 +765,6 @@ connection_identified (TpStreamTube *self,
     TpHandle handle,
     guint connection_id)
 {
-  GError *error = NULL;
-
-  /* Check the credentials if needed */
-#ifdef HAVE_GIO_UNIX
-  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
-    {
-      GCredentials *creds;
-      uid_t uid;
-
-      creds = g_unix_connection_receive_credentials (
-          G_UNIX_CONNECTION (conn), NULL, &error);
-      if (creds == NULL)
-        {
-          DEBUG ("Failed to receive credentials: %s", error->message);
-
-          g_error_free (error);
-          return;
-        }
-
-      uid = g_credentials_get_unix_user (creds, &error);
-      g_object_unref  (creds);
-
-      if (uid != geteuid ())
-        {
-          DEBUG ("Wrong credentials received (user: %u)", uid);
-          return;
-        }
-    }
-#endif
-
   g_hash_table_insert (self->priv->remote_connections,
       GUINT_TO_POINTER (connection_id), conn);
 
@@ -788,7 +787,7 @@ _new_remote_connection (TpChannel *channel,
 {
   TpStreamTube *self = (TpStreamTube *) obj;
   GSList *l;
-  GSocketConnection *found_conn = NULL;
+  ConnWaitingSig *found_conn = NULL;
   SigWaitingConn *sig;
 
   sig = sig_waiting_conn_new (handle, param, connection_id);
@@ -796,7 +795,7 @@ _new_remote_connection (TpChannel *channel,
   for (l = self->priv->conn_waiting_sig; l != NULL && found_conn == NULL;
       l = g_slist_next (l))
     {
-      GSocketConnection *conn = l->data;
+      ConnWaitingSig *conn = l->data;
 
       if (sig_match_conn (self, sig, conn))
         found_conn = conn;
@@ -818,10 +817,10 @@ _new_remote_connection (TpChannel *channel,
   self->priv->conn_waiting_sig = g_slist_remove (
       self->priv->conn_waiting_sig, found_conn);
 
-  connection_identified (self, found_conn, handle, connection_id);
+  connection_identified (self, found_conn->conn, handle, connection_id);
 
   sig_waiting_conn_free (sig);
-  g_object_unref (found_conn);
+  conn_waiting_sig_free (found_conn);
 }
 
 static void
@@ -896,7 +895,7 @@ finally:
 
 static SigWaitingConn *
 find_sig_for_conn (TpStreamTube *self,
-    GSocketConnection *conn)
+    ConnWaitingSig *c)
 {
   GSList *l;
 
@@ -904,7 +903,7 @@ find_sig_for_conn (TpStreamTube *self,
     {
       SigWaitingConn *sig = l->data;
 
-      if (sig_match_conn (self, sig, conn))
+      if (sig_match_conn (self, sig, c))
         return sig;
     }
 
@@ -919,17 +918,50 @@ service_incoming_cb (GSocketService *service,
 {
   TpStreamTube *self = user_data;
   SigWaitingConn *sig;
+  ConnWaitingSig *c;
+  guchar byte = 0;
 
   DEBUG ("New incoming connection");
 
-  sig = find_sig_for_conn (self, conn);
+#ifdef HAVE_GIO_UNIX
+  /* Check the credentials if needed */
+  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
+    {
+      GCredentials *creds;
+      uid_t uid;
+      GError *error = NULL;
+
+      creds = tp_unix_connection_receive_credentials_with_byte (
+          G_UNIX_CONNECTION (conn), &byte, NULL, &error);
+      if (creds == NULL)
+        {
+          DEBUG ("Failed to receive credentials: %s", error->message);
+
+          g_error_free (error);
+          return;
+        }
+
+      uid = g_credentials_get_unix_user (creds, &error);
+      g_object_unref (creds);
+
+      if (uid != geteuid ())
+        {
+          DEBUG ("Wrong credentials received (user: %u)", uid);
+          return;
+        }
+    }
+#endif
+
+  c = conn_waiting_sig_new (conn, byte);
+
+  sig = find_sig_for_conn (self, c);
   if (sig == NULL)
     {
       DEBUG ("Can't identify the connection, wait for NewRemoteConnection sig");
 
-      /* Pass the reference to the list */
+      /* Pass ownership to the list */
       self->priv->conn_waiting_sig = g_slist_append (
-          self->priv->conn_waiting_sig, g_object_ref (conn));
+          self->priv->conn_waiting_sig, c);
 
       return;
     }
@@ -941,6 +973,7 @@ service_incoming_cb (GSocketService *service,
   connection_identified (self, conn, sig->handle, sig->connection_id);
 
   sig_waiting_conn_free (sig);
+  conn_waiting_sig_free (c);
 }
 
 /**
