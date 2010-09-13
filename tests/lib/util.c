@@ -20,14 +20,28 @@ tp_tests_proxy_run_until_prepared (gpointer proxy,
   g_assert_no_error (error);
 }
 
-static void
-prepared_cb (GObject *object,
+/* A GAsyncReadyCallback whose user_data is a GAsyncResult **. It writes a
+ * reference to the result into that pointer. */
+void
+tp_tests_result_ready_cb (GObject *object,
     GAsyncResult *res,
     gpointer user_data)
 {
   GAsyncResult **result = user_data;
 
   *result = g_object_ref (res);
+}
+
+/* Run until *result contains a result. Intended to be used with a pending
+ * async call that uses tp_tests_result_ready_cb. */
+void
+tp_tests_run_until_result (GAsyncResult **result)
+{
+  /* not synchronous */
+  g_assert (*result == NULL);
+
+  while (*result == NULL)
+    g_main_context_iteration (NULL, TRUE);
 }
 
 gboolean
@@ -38,12 +52,9 @@ tp_tests_proxy_run_until_prepared_or_failed (gpointer proxy,
   GAsyncResult *result = NULL;
   gboolean r;
 
-  tp_proxy_prepare_async (proxy, features, prepared_cb, &result);
-  /* not synchronous */
-  g_assert (result == NULL);
+  tp_proxy_prepare_async (proxy, features, tp_tests_result_ready_cb, &result);
 
-  while (result == NULL)
-    g_main_context_iteration (NULL, TRUE);
+  tp_tests_run_until_result (&result);
 
   r =  tp_proxy_prepare_finish (proxy, result, error);
   g_object_unref (result);

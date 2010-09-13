@@ -360,6 +360,7 @@ tp_protocol_finalize (GObject *object)
   _tp_connection_manager_protocol_free_contents (&self->priv->protocol_struct);
   g_free (self->priv->vcard_field);
   g_free (self->priv->english_name);
+  g_free (self->priv->icon_name);
 
   if (self->priv->protocol_properties != NULL)
     g_hash_table_unref (self->priv->protocol_properties);

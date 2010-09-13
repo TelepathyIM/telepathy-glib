@@ -48,4 +48,8 @@ void tp_tests_create_and_connect_conn (GType conn_type,
 gpointer tp_tests_object_new_static_class (GType type,
     ...) G_GNUC_NULL_TERMINATED;
 
+void tp_tests_run_until_result (GAsyncResult **result);
+void tp_tests_result_ready_cb (GObject *object,
+    GAsyncResult *res, gpointer user_data);
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */

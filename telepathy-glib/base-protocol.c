@@ -850,6 +850,7 @@ _tp_cm_param_spec_check_all_allowed (const TpCMParamSpec *parameters,
 {
   GHashTable *tmp = g_hash_table_new (g_str_hash, g_str_equal);
   const TpCMParamSpec *iter;
+  gboolean ret = TRUE;
 
   tp_g_hash_table_update (tmp, asv, NULL, NULL);
 
@@ -879,10 +880,12 @@ _tp_cm_param_spec_check_all_allowed (const TpCMParamSpec *parameters,
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "%s", error_txt);
       g_free (error_txt);
-      return FALSE;
+      ret = FALSE;
     }
 
-  return TRUE;
+  g_hash_table_unref (tmp);
+
+  return ret;
 }
 
 static GValue *
