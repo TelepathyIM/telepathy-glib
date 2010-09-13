@@ -47,6 +47,7 @@ _gen/proxy-introspectable.h: proxy.h introspection.am
 	@$(mkdir_p) _gen
 	$(AM_V_GEN)sed -e 's/gpointer self/TpProxy *self/' < $< > $@
 
+if G_IR_SCANNER_NEW_ARGS
 TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		libtelepathy-glib.la \
 		$(srcdir)/kludge-616375.xsl \
@@ -68,6 +69,28 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		$(INTROSPECTION_FILES)
 	@xsltproc $(srcdir)/kludge-616375.xsl _gen/$@.tmp > $@
 	@rm -f _gen/$@.tmp
+else
+TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
+		libtelepathy-glib.la \
+		$(srcdir)/kludge-616375.xsl \
+		$(INTROSPECTION_FILES)
+	$(AM_V_GEN)$(INTROSPECTION_SCANNER) -v \
+		--namespace TelepathyGLib \
+		--nsversion=0.12 \
+		--strip-prefix=Tp \
+		-I$(top_builddir) \
+		-I$(top_srcdir) \
+		--include=GLib-2.0 \
+		--include=Gio-2.0 \
+		--libtool="$(top_builddir)/libtool" \
+		--library=libtelepathy-glib.la \
+		--pkg gio-2.0 \
+		--pkg dbus-glib-1 \
+		--output _gen/$@.tmp \
+		$(INTROSPECTION_FILES)
+	@xsltproc $(srcdir)/kludge-616375.xsl _gen/$@.tmp > $@
+	@rm -f _gen/$@.tmp
+endif
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = TelepathyGLib-0.12.gir
