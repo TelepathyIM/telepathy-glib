@@ -1562,7 +1562,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may return
    * %FALSE even if the channel was actually requested.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.15
    */
   param_spec = g_param_spec_boolean ("requested", "Requested",
       "TRUE if the channel has been requested",
@@ -1592,7 +1592,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * This is not guaranteed to be set until tp_proxy_prepare_async() has
    * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be 0.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.15
    */
   param_spec = g_param_spec_uint ("initiator-handle", "TpHandle",
       "The handle of the initiator of the channel",
@@ -1612,7 +1612,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * finished preparing %TP_CHANNEL_FEATURE_CORE; until then, it may be
    * the empty string.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.11.15
    */
   param_spec = g_param_spec_string ("initiator-identifier",
       "Initiator identifier",
@@ -2076,7 +2076,7 @@ tp_channel_init_known_interfaces (void)
  *
  * Returns: the value of #TpChannel:requested
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.15
  */
 gboolean
 tp_channel_get_requested (TpChannel *self)
@@ -2093,7 +2093,7 @@ tp_channel_get_requested (TpChannel *self)
  *
  * Returns: the value of #TpChannel:initiator-handle
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.15
  */
 TpHandle
 tp_channel_get_initiator_handle (TpChannel *self)
@@ -2110,7 +2110,7 @@ tp_channel_get_initiator_handle (TpChannel *self)
  *
  * Returns: the value of #TpChannel:initiator-identifier
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.15
  */
 const gchar *
 tp_channel_get_initiator_identifier (TpChannel *self)

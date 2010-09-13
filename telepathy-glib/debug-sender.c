@@ -456,7 +456,7 @@ tp_debug_sender_idle (gpointer data)
  * It can easily be re-implemented in services, and does not need to be
  * used.
  *
- * Since version 0.11.UNRELEASED, this function can be called from any thread.
+ * Since version 0.11.15, this function can be called from any thread.
  *
  * Since: 0.7.36
  */

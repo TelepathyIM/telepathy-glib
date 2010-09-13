@@ -193,7 +193,7 @@
  * @TP_ERROR_NOT_YET: org.freedesktop.Telepathy.Error.NotYet:
  *     Raised when the requested functionality is not yet available, but is
  *     likely to become available after some time has passed.
- *     Since: 0.11.UNRELEASED
+ *     Since: 0.11.15
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */
