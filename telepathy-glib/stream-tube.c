@@ -118,6 +118,10 @@ struct _TpStreamTubePrivate
    * connection yet. Owned SigWaitingConn. */
   GSList *sig_waiting_conn;
 
+  /* Accepting side */
+  /* The access_control_param we passed to Accept */
+  GValue *access_control_param;
+
   TpSocketAddressType socket_type;
   TpSocketAccessControl access_control;
   GCancellable *cancellable;
@@ -222,6 +226,8 @@ tp_stream_tube_dispose (GObject *obj)
       g_object_unref (self->priv->address);
       self->priv->address = NULL;
     }
+
+  tp_clear_pointer (&self->priv->access_control_param, tp_g_value_slice_free);
 
   G_OBJECT_CLASS (tp_stream_tube_parent_class)->dispose (obj);
 }
@@ -545,9 +551,13 @@ _socket_connected (GObject *client,
 #ifdef HAVE_GIO_UNIX
   if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
     {
+      guchar byte;
+
+      byte = g_value_get_uchar (self->priv->access_control_param);
+
       /* FIXME: we should an async version of this API (bgo #629503) */
-      if (!g_unix_connection_send_credentials (G_UNIX_CONNECTION (conn), NULL,
-            &error))
+      if (!tp_unix_connection_send_credentials_with_byte (
+            G_UNIX_CONNECTION (conn), byte, NULL, &error))
         {
           DEBUG ("Failed to send credentials: %s", error->message);
 
@@ -614,11 +624,18 @@ tp_stream_tube_accept_async (TpStreamTube *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GValue value = { 0, };
   GError *error = NULL;
 
   g_return_if_fail (TP_IS_STREAM_TUBE (self));
   g_return_if_fail (self->priv->result == NULL);
+
+  if (self->priv->access_control_param != NULL)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback, user_data,
+          TP_ERRORS, TP_ERROR_INVALID_ARGUMENT, "Tube has already be accepted");
+
+      return;
+    }
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_stream_tube_accept_async);
@@ -635,15 +652,34 @@ tp_stream_tube_accept_async (TpStreamTube *self,
   DEBUG ("Using socket type %u with access control %u", self->priv->socket_type,
       self->priv->access_control);
 
-  g_value_init (&value, G_TYPE_UINT);
-  g_value_set_uint (&value, 0);
+  switch (self->priv->access_control)
+    {
+      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
+        /* Put a dummy value */
+        self->priv->access_control_param = tp_g_value_slice_new_uint (0);
+        break;
+
+      case TP_SOCKET_ACCESS_CONTROL_PORT:
+        /* FIXME: set the address of the socket. Gio doesn't seem to have API
+         * to get the port before connecting without specifying the whole
+         * adress (we can't as we don't know which ports are available). */
+        self->priv->access_control_param = tp_g_value_slice_new_uint (0);
+        break;
+
+      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
+        self->priv->access_control_param = tp_g_value_slice_new_byte (
+            g_random_int_range (0, G_MAXUINT8));
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
 
   /* Call Accept */
   tp_cli_channel_type_stream_tube_call_accept (TP_CHANNEL (self), -1,
-      self->priv->socket_type, self->priv->access_control, &value,
-      _channel_accepted, NULL, NULL, G_OBJECT (self));
-
-  g_value_unset (&value);
+      self->priv->socket_type, self->priv->access_control,
+      self->priv->access_control_param, _channel_accepted,
+      NULL, NULL, G_OBJECT (self));
 }
 
 
