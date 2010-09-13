@@ -1121,7 +1121,18 @@ tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
                     G_VALUE_TYPE_NAME (coerced));
             }
 
-          DEBUG ("using specified value for %s", name);
+          if (DEBUGGING)
+            {
+              gchar *to_free = NULL;
+              const gchar *contents = "<secret>";
+
+              if (!(parameters[i].flags & TP_CONN_MGR_PARAM_FLAG_SECRET))
+                contents = to_free = g_strdup_value_contents (coerced);
+
+              DEBUG ("using specified value for %s: %s", name, contents);
+              g_free (to_free);
+            }
+
           g_hash_table_insert (combined, g_strdup (name), coerced);
         }
       else if ((parameters[i].flags & mandatory_flag) != 0)
