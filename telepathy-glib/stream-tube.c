@@ -747,6 +747,14 @@ sig_match_conn (TpStreamTube *self,
 
       g_object_unref (address);
     }
+  else if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
+    {
+      guchar byte;
+
+      byte = g_value_get_uchar (sig->param);
+
+      return byte == c->byte;
+    }
   else
     {
       DEBUG ("Can't properly identify connection as we are using "
