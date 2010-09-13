@@ -43,6 +43,7 @@ struct _TpTestsStreamTubeChannelPrivate {
 
     /* Accepting side */
     GSocketService *service;
+    GValue *access_control_param;
 
     /* Offering side */
     TpSocketAddressType address_type;
@@ -195,6 +196,7 @@ dispose (GObject *object)
 
   tp_clear_pointer (&self->priv->address, tp_g_value_slice_free);
   tp_clear_pointer (&self->priv->supported_socket_types, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->access_control_param, tp_g_value_slice_free);
 
   ((GObjectClass *) tp_tests_stream_tube_channel_parent_class)->dispose (
     object);
@@ -404,11 +406,15 @@ service_incoming_cb (GSocketService *service,
   if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
     {
       GCredentials *creds;
+      guchar byte;
 
       /* FIXME: we should an async version of this API (bgo #629503) */
-      creds = g_unix_connection_receive_credentials (
-              G_UNIX_CONNECTION (connection), NULL, &error);
+      creds = tp_unix_connection_receive_credentials_with_byte (
+              G_UNIX_CONNECTION (connection), &byte, NULL, &error);
       g_assert_no_error (error);
+
+      g_assert_cmpuint (byte, ==,
+          g_value_get_uchar (self->priv->access_control_param));
     }
 
   g_signal_emit (self, signals[SIG_INCOMING_CONNECTION], 0, connection);
@@ -418,7 +424,6 @@ static GValue *
 create_local_socket (TpTestsStreamTubeChannel *self,
     TpSocketAddressType address_type,
     TpSocketAccessControl access_control,
-    const GValue *access_control_param,
     GError **error)
 {
   gboolean success;
@@ -534,10 +539,11 @@ stream_tube_accept (TpSvcChannelTypeStreamTube *iface,
       goto fail;
     }
 
-  address = create_local_socket (self, address_type, access_control,
-      access_control_param, &error);
+  address = create_local_socket (self, address_type, access_control, &error);
 
   self->priv->access_control = access_control;
+  self->priv->access_control_param = tp_g_value_slice_dup (
+      access_control_param);
 
   change_state (self, TP_TUBE_CHANNEL_STATE_OPEN);
 
