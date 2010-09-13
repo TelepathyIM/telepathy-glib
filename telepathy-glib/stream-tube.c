@@ -545,6 +545,7 @@ _socket_connected (GObject *client,
 #ifdef HAVE_GIO_UNIX
   if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
     {
+      /* FIXME: we should an async version of this API (bgo #629503) */
       if (!g_unix_connection_send_credentials (G_UNIX_CONNECTION (conn), NULL,
             &error))
         {
@@ -939,6 +940,7 @@ service_incoming_cb (GSocketService *service,
       uid_t uid;
       GError *error = NULL;
 
+      /* FIXME: we should an async version of this API (bgo #629503) */
       creds = tp_unix_connection_receive_credentials_with_byte (
           G_UNIX_CONNECTION (conn), &byte, NULL, &error);
       if (creds == NULL)

@@ -557,6 +557,11 @@ test_offer_race (Test *test,
   GIOStream *alice_stream, *bob_stream;
 
   /* We can't break the race with other access controles :( */
+  /* FIXME: Actually TP_SOCKET_ACCESS_CONTROL_CREDENTIALS is also able to
+   * properly identify connections and our code should be able to.
+   * But we can't test it as we currently use sync calls to send and
+   * receive credentials. We should change that once bgo #629503
+   * has been fixed. */
   if (socket_pairs[i].access_control != TP_SOCKET_ACCESS_CONTROL_PORT)
     return;
 

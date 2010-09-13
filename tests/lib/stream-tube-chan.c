@@ -405,6 +405,7 @@ service_incoming_cb (GSocketService *service,
     {
       GCredentials *creds;
 
+      /* FIXME: we should an async version of this API (bgo #629503) */
       creds = g_unix_connection_receive_credentials (
               G_UNIX_CONNECTION (connection), NULL, &error);
       g_assert_no_error (error);
@@ -586,6 +587,7 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
           GError *error = NULL;
           guchar byte = g_random_int_range (0, G_MAXUINT8);
 
+          /* FIXME: we should an async version of this API (bgo #629503) */
           tp_unix_connection_send_credentials_with_byte (
               G_UNIX_CONNECTION (stream), byte, NULL, &error);
           g_assert_no_error (error);
