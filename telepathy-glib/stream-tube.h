@@ -82,16 +82,6 @@ gboolean tp_stream_tube_offer_finish (TpStreamTube *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_stream_tube_offer_existing_async (TpStreamTube *self,
-    GHashTable *params,
-    GSocketAddress *address,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean tp_stream_tube_offer_existing_finish (TpStreamTube *self,
-    GAsyncResult *result,
-    GError **error);
-
 G_END_DECLS
 
 #endif

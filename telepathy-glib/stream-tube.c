@@ -1151,46 +1151,6 @@ tp_stream_tube_offer_async (TpStreamTube *self,
   _offer_with_address (self, params);
 }
 
-
-/**
- * tp_stream_tube_offer_existing_async:
- * @self:
- * @params: (allow none) (transfer none):
- * @address: (tranfer none):
- * @callback:
- * @user_data:
- *
- * Offer an existing service over a Stream Tube.
- *
- * @address must be a valid GSocketAddress pointing to a service to be
- * offered.
- */
-void
-tp_stream_tube_offer_existing_async (TpStreamTube *self,
-    GHashTable *params,
-    GSocketAddress *address,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  g_return_if_fail (TP_IS_STREAM_TUBE (self));
-  g_return_if_fail (G_IS_SOCKET_ADDRESS (address));
-  g_return_if_fail (self->priv->result == NULL);
-
-  if (self->priv->service != NULL)
-    {
-      g_critical ("Can't reoffer Tube!");
-      return;
-    }
-
-  self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
-      user_data, tp_stream_tube_offer_existing_async);
-
-  self->priv->address = g_object_ref (address);
-
-  _offer_with_address (self, params);
-}
-
-
 /**
  * tp_stream_tube_offer_finish:
  * @self:
@@ -1216,27 +1176,6 @@ tp_stream_tube_offer_finish (TpStreamTube *self,
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
           G_OBJECT (self), tp_stream_tube_offer_async), FALSE);
-
-  return g_simple_async_result_get_op_res_gboolean (simple);
-}
-
-gboolean
-tp_stream_tube_offer_existing_finish (TpStreamTube *self,
-    GAsyncResult *result,
-    GError **error)
-{
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_STREAM_TUBE (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_stream_tube_offer_existing_async), FALSE);
 
   return g_simple_async_result_get_op_res_gboolean (simple);
 }
