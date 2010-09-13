@@ -213,6 +213,10 @@ AC_ARG_ENABLE(vala-bindings,
                   enable_vala_bindings=no )
 
 if test x$enable_vala_bindings = xyes; then
+  if test "x$INTROSPECTION_SCANNER" = x; then
+    AC_MSG_ERROR([GObject-Introspection must be enabled for Vala bindings])
+  fi
+
   m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.9.3)],
            [AC_MSG_ERROR([Automake >= 1.11 required for Vala bindings])])
   have_vala=yes
