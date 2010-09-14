@@ -63,7 +63,7 @@
 
 /**
  * SECTION:svc-channel-group
- * @title: Service-side Channel Group interface
+ * @title: Service-side Channel Group and Conference interfaces
  * @short_description: Groups of contacts
  * @see_also: #TpGroupMixin
  *
@@ -89,6 +89,10 @@
  * contacts who've requested permission to join, are remote pending. If the
  * local user has been invited by another contact, they will appear in the
  * local-pending set until they accept or decline the invitation.
+ *
+ * Since 0.11.UNRELEASED, telepathy-glib also includes basic support for the
+ * Conference interface, which represents a Group channel that can be
+ * initiated by merging or upgrading individual 1-1 channels.
  */
 
 /**
@@ -415,8 +419,8 @@
 
 /**
  * SECTION:channel-group
- * @title: Group interface on Channels
- * @short_description: client-side wrappers for the Group interface
+ * @title: Group and Conference interfaces on Channels
+ * @short_description: client-side wrappers for Group and Conference
  * @see_also: #TpChannel
  *
  * Many Telepathy Channel objects can be seen as representing groups or
@@ -441,6 +445,10 @@
  * contacts who've requested permission to join, are remote pending. If the
  * local user has been invited by another contact, they will appear in the
  * local-pending set until they accept or decline the invitation.
+ *
+ * Some Group channels also have the Conference interface, representing a
+ * group which can be initiated by upgrading or merging one or more 1-1
+ * channels.
  */
 
 /**
