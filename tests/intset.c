@@ -3,9 +3,9 @@
 #include <telepathy-glib/util.h>
 
 static void
-iterate_in_order (TpIntSet *set)
+iterate_in_order (TpIntset *set)
 {
-  TpIntSetIter iter;
+  TpIntsetIter iter;
   guint n = 0;
   gint64 prev = (guint) -1;
 
@@ -26,9 +26,9 @@ iterate_in_order (TpIntSet *set)
 }
 
 static void
-iterate_fast (TpIntSet *set)
+iterate_fast (TpIntset *set)
 {
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   guint n = 0;
   guint i;
 
@@ -44,7 +44,7 @@ iterate_fast (TpIntSet *set)
 }
 
 static void
-test_iteration (TpIntSet *set)
+test_iteration (TpIntset *set)
 {
   iterate_fast (set);
   iterate_in_order (set);
@@ -52,13 +52,13 @@ test_iteration (TpIntSet *set)
 
 int main (int argc, char **argv)
 {
-  TpIntSet *set1 = tp_intset_new ();
-  TpIntSet *a, *b, *copy;
-  TpIntSet *ab_union, *ab_expected_union;
-  TpIntSet *ab_inter, *ab_expected_inter;
-  TpIntSet *a_diff_b, *a_expected_diff_b;
-  TpIntSet *b_diff_a, *b_expected_diff_a;
-  TpIntSet *ab_symmdiff, *ab_expected_symmdiff;
+  TpIntset *set1 = tp_intset_new ();
+  TpIntset *a, *b, *copy;
+  TpIntset *ab_union, *ab_expected_union;
+  TpIntset *ab_inter, *ab_expected_inter;
+  TpIntset *a_diff_b, *a_expected_diff_b;
+  TpIntset *b_diff_a, *b_expected_diff_a;
+  TpIntset *ab_symmdiff, *ab_expected_symmdiff;
   GValue *value;
 
   g_type_init ();
@@ -191,7 +191,7 @@ int main (int argc, char **argv)
 
   {
     GArray *arr;
-    TpIntSet *tmp;
+    TpIntset *tmp;
 
     arr = tp_intset_to_array (a);
     tmp = tp_intset_from_array (arr);

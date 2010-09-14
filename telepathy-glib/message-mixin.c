@@ -393,9 +393,9 @@ tp_message_ref_handle (TpMessage *self,
 static void
 tp_message_ref_handles (TpMessage *self,
                         TpHandleType handle_type,
-                        TpIntSet *handles)
+                        TpIntset *handles)
 {
-  TpIntSet *updated;
+  TpIntset *updated;
 
   g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
   g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);

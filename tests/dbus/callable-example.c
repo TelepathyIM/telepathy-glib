@@ -48,10 +48,10 @@ test_assert_uu_hash_contains (GHashTable *hash,
 
 typedef struct
 {
-  TpIntSet *added;
-  TpIntSet *removed;
-  TpIntSet *local_pending;
-  TpIntSet *remote_pending;
+  TpIntset *added;
+  TpIntset *removed;
+  TpIntset *local_pending;
+  TpIntset *remote_pending;
   GHashTable *details;
 } GroupEvent;
 

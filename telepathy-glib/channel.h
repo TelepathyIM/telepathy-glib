@@ -105,9 +105,9 @@ GHashTable *tp_channel_borrow_immutable_properties (TpChannel *self);
 
 TpHandle tp_channel_group_get_self_handle (TpChannel *self);
 TpChannelGroupFlags tp_channel_group_get_flags (TpChannel *self);
-const TpIntSet *tp_channel_group_get_members (TpChannel *self);
-const TpIntSet *tp_channel_group_get_local_pending (TpChannel *self);
-const TpIntSet *tp_channel_group_get_remote_pending (TpChannel *self);
+const TpIntset *tp_channel_group_get_members (TpChannel *self);
+const TpIntset *tp_channel_group_get_local_pending (TpChannel *self);
+const TpIntset *tp_channel_group_get_remote_pending (TpChannel *self);
 gboolean tp_channel_group_get_local_pending_info (TpChannel *self,
     TpHandle local_pending, TpHandle *actor,
     TpChannelGroupChangeReason *reason, const gchar **message);

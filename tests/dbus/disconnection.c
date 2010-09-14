@@ -24,8 +24,8 @@ static TpDBusDaemon *f;
 static TpDBusDaemon *g;
 static TpDBusDaemon *h;
 static TpDBusDaemon *z;
-static TpIntSet *caught_signal;
-static TpIntSet *freed_user_data;
+static TpIntset *caught_signal;
+static TpIntset *freed_user_data;
 
 enum {
     TEST_A,

@@ -44,42 +44,42 @@ typedef TpIntset TpIntSet;
 
 typedef void (*TpIntFunc) (guint i, gpointer userdata);
 
-TpIntSet *tp_intset_new (void) G_GNUC_WARN_UNUSED_RESULT;
-TpIntSet *tp_intset_sized_new (guint size) G_GNUC_WARN_UNUSED_RESULT;
-TpIntSet *tp_intset_new_containing (guint element) G_GNUC_WARN_UNUSED_RESULT;
-void tp_intset_destroy (TpIntSet *set);
-void tp_intset_clear (TpIntSet *set);
+TpIntset *tp_intset_new (void) G_GNUC_WARN_UNUSED_RESULT;
+TpIntset *tp_intset_sized_new (guint size) G_GNUC_WARN_UNUSED_RESULT;
+TpIntset *tp_intset_new_containing (guint element) G_GNUC_WARN_UNUSED_RESULT;
+void tp_intset_destroy (TpIntset *set);
+void tp_intset_clear (TpIntset *set);
 
-void tp_intset_add (TpIntSet *set, guint element);
-gboolean tp_intset_remove (TpIntSet *set, guint element);
-gboolean tp_intset_is_member (const TpIntSet *set, guint element)
+void tp_intset_add (TpIntset *set, guint element);
+gboolean tp_intset_remove (TpIntset *set, guint element);
+gboolean tp_intset_is_member (const TpIntset *set, guint element)
   G_GNUC_WARN_UNUSED_RESULT;
 
-void tp_intset_foreach (const TpIntSet *set, TpIntFunc func,
+void tp_intset_foreach (const TpIntset *set, TpIntFunc func,
     gpointer userdata);
-GArray *tp_intset_to_array (const TpIntSet *set) G_GNUC_WARN_UNUSED_RESULT;
-TpIntSet *tp_intset_from_array (const GArray *array) G_GNUC_WARN_UNUSED_RESULT;
+GArray *tp_intset_to_array (const TpIntset *set) G_GNUC_WARN_UNUSED_RESULT;
+TpIntset *tp_intset_from_array (const GArray *array) G_GNUC_WARN_UNUSED_RESULT;
 
-gboolean tp_intset_is_empty (const TpIntSet *set) G_GNUC_WARN_UNUSED_RESULT;
-guint tp_intset_size (const TpIntSet *set) G_GNUC_WARN_UNUSED_RESULT;
+gboolean tp_intset_is_empty (const TpIntset *set) G_GNUC_WARN_UNUSED_RESULT;
+guint tp_intset_size (const TpIntset *set) G_GNUC_WARN_UNUSED_RESULT;
 
-gboolean tp_intset_is_equal (const TpIntSet *left, const TpIntSet *right)
+gboolean tp_intset_is_equal (const TpIntset *left, const TpIntset *right)
   G_GNUC_WARN_UNUSED_RESULT;
 
-TpIntSet *tp_intset_copy (const TpIntSet *orig) G_GNUC_WARN_UNUSED_RESULT;
-TpIntSet *tp_intset_intersection (const TpIntSet *left, const TpIntSet *right)
+TpIntset *tp_intset_copy (const TpIntset *orig) G_GNUC_WARN_UNUSED_RESULT;
+TpIntset *tp_intset_intersection (const TpIntset *left, const TpIntset *right)
   G_GNUC_WARN_UNUSED_RESULT;
-TpIntSet *tp_intset_union (const TpIntSet *left, const TpIntSet *right)
+TpIntset *tp_intset_union (const TpIntset *left, const TpIntset *right)
   G_GNUC_WARN_UNUSED_RESULT;
-TpIntSet *tp_intset_difference (const TpIntSet *left, const TpIntSet *right)
+TpIntset *tp_intset_difference (const TpIntset *left, const TpIntset *right)
   G_GNUC_WARN_UNUSED_RESULT;
-TpIntSet *tp_intset_symmetric_difference (const TpIntSet *left,
-    const TpIntSet *right) G_GNUC_WARN_UNUSED_RESULT;
+TpIntset *tp_intset_symmetric_difference (const TpIntset *left,
+    const TpIntset *right) G_GNUC_WARN_UNUSED_RESULT;
 
-gchar *tp_intset_dump (const TpIntSet *set) G_GNUC_WARN_UNUSED_RESULT;
+gchar *tp_intset_dump (const TpIntset *set) G_GNUC_WARN_UNUSED_RESULT;
 
 typedef struct {
-    const TpIntSet *set;
+    const TpIntset *set;
     guint element;
 } TpIntsetIter;
 
@@ -95,7 +95,7 @@ typedef TpIntsetIter TpIntSetIter;
 
 #define tp_intset_iter_init(iter, set) tp_intset_iter_init_inline (iter, set)
 static inline void
-tp_intset_iter_init_inline (TpIntSetIter *iter, const TpIntSet *set)
+tp_intset_iter_init_inline (TpIntsetIter *iter, const TpIntset *set)
 {
   g_return_if_fail (iter != NULL);
   iter->set = set;
@@ -104,14 +104,14 @@ tp_intset_iter_init_inline (TpIntSetIter *iter, const TpIntSet *set)
 
 #define tp_intset_iter_reset(iter) tp_intset_iter_reset_inline (iter)
 static inline void
-tp_intset_iter_reset_inline (TpIntSetIter *iter)
+tp_intset_iter_reset_inline (TpIntsetIter *iter)
 {
   g_return_if_fail (iter != NULL);
   g_return_if_fail (iter->set != NULL);
   iter->element = (guint)(-1);
 }
 
-gboolean tp_intset_iter_next (TpIntSetIter *iter);
+gboolean tp_intset_iter_next (TpIntsetIter *iter);
 
 typedef struct {
     /*<private>*/
@@ -126,10 +126,10 @@ typedef struct {
  */
 typedef TpIntsetFastIter TpIntSetFastIter;
 
-void tp_intset_fast_iter_init (TpIntSetFastIter *iter,
-    const TpIntSet *set);
+void tp_intset_fast_iter_init (TpIntsetFastIter *iter,
+    const TpIntset *set);
 
-gboolean tp_intset_fast_iter_next (TpIntSetFastIter *iter,
+gboolean tp_intset_fast_iter_next (TpIntsetFastIter *iter,
     guint *output);
 
 G_END_DECLS

@@ -83,7 +83,7 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
                     gboolean detailed,
                     gboolean properties)
 {
-  TpIntSet *add, *rem, *expected_members;
+  TpIntset *add, *rem, *expected_members;
   GArray *arr, *yarr;
   GError *error = NULL;
   TpChannelGroupFlags flags;
@@ -333,7 +333,7 @@ check_removed_unknown_error_in_invalidated (void)
   gchar *chan_path;
   TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
-  TpIntSet *self_handle_singleton = tp_intset_new ();
+  TpIntset *self_handle_singleton = tp_intset_new ();
   GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
   gboolean invalidated = FALSE;
@@ -423,7 +423,7 @@ check_removed_known_error_in_invalidated (void)
   gchar *chan_path;
   TpTestsTextChannelGroup *service_chan;
   TpChannel *chan;
-  TpIntSet *self_handle_singleton = tp_intset_new ();
+  TpIntset *self_handle_singleton = tp_intset_new ();
   GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
       (GDestroyNotify) tp_g_value_slice_free);
   gboolean invalidated = FALSE;

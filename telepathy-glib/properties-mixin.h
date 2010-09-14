@@ -257,11 +257,11 @@ void tp_properties_context_return (TpPropertiesContext *ctx, GError *error);
 gboolean tp_properties_context_return_if_done (TpPropertiesContext *ctx);
 
 void tp_properties_mixin_change_value (GObject *obj, guint prop_id,
-    const GValue *new_value, TpIntSet *props);
+    const GValue *new_value, TpIntset *props);
 void tp_properties_mixin_change_flags (GObject *obj, guint prop_id,
-    TpPropertyFlags add, TpPropertyFlags del, TpIntSet *props);
-void tp_properties_mixin_emit_changed (GObject *obj, const TpIntSet *props);
-void tp_properties_mixin_emit_flags (GObject *obj, const TpIntSet *props);
+    TpPropertyFlags add, TpPropertyFlags del, TpIntset *props);
+void tp_properties_mixin_emit_changed (GObject *obj, const TpIntset *props);
+void tp_properties_mixin_emit_flags (GObject *obj, const TpIntset *props);
 
 gboolean tp_properties_mixin_is_readable (GObject *obj, guint prop_id);
 gboolean tp_properties_mixin_is_writable (GObject *obj, guint prop_id);

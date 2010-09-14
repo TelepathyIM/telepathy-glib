@@ -17,7 +17,7 @@ main (int argc,
 {
   TpHandleRepoIface *repo = NULL;
   TpHandleSet *set = NULL;
-  TpIntSet *iset = NULL, *result = NULL;
+  TpIntset *iset = NULL, *result = NULL;
   GError *error = NULL;
 
   TpHandle h1, h2, h3, h4;

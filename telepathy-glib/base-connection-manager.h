@@ -57,7 +57,7 @@ typedef struct _TpBaseConnectionManagerClassPrivate
 
 typedef TpBaseConnection *(*TpBaseConnectionManagerNewConnFunc)(
     TpBaseConnectionManager *self, const gchar *proto,
-    TpIntSet *params_present, void *parsed_params, GError **error);
+    TpIntset *params_present, void *parsed_params, GError **error);
 
 struct _TpBaseConnectionManagerClass {
     GObjectClass parent_class;

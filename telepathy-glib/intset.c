@@ -103,7 +103,7 @@ tp_intset_get_type (void)
  * A structure representing iteration over a set of integers. Must be
  * initialized with either TP_INTSET_ITER_INIT() or tp_intset_iter_init().
  *
- * Since 0.11.6, consider using #TpIntSetFastIter if iteration in
+ * Since 0.11.6, consider using #TpIntsetFastIter if iteration in
  * numerical order is not required.
  *
  * Before 0.11.UNRELEASED, this type was called <type>TpIntSetIter</type>,
@@ -115,18 +115,18 @@ tp_intset_get_type (void)
  * TP_INTSET_ITER_INIT:
  * @set: A set of integers
  *
- * A suitable static initializer for a #TpIntSetIter, to be used as follows:
+ * A suitable static initializer for a #TpIntsetIter, to be used as follows:
  *
  * <informalexample><programlisting>
  * void
- * do_something (const TpIntSet *intset)
+ * do_something (const TpIntset *intset)
  * {
- *   TpIntSetIter iter = TP_INTSET_ITER_INIT (intset);
+ *   TpIntsetIter iter = TP_INTSET_ITER_INIT (intset);
  *   /<!-- -->* ... do something with iter ... *<!-- -->/
  * }
  * </programlisting></informalexample>
  *
- * Since 0.11.6, consider using #TpIntSetFastIter if iteration in
+ * Since 0.11.6, consider using #TpIntsetFastIter if iteration in
  * numerical order is not required.
  *
  */
@@ -176,11 +176,11 @@ struct _TpIntset
  *
  * We could use g_bit_nth_msf (value, BITFIELD_BITS) instead of LOW_MASK if we
  * wanted to get largest_ever exactly right, but we just need something
- * reasonable to make TpIntSetIter terminate early, and carrying on for up to
+ * reasonable to make TpIntsetIter terminate early, and carrying on for up to
  * BITFIELD_BITS extra iterations isn't a problem.
  */
 static inline void
-intset_update_largest_ever (TpIntSet *set,
+intset_update_largest_ever (TpIntset *set,
     gpointer key)
 {
   guint upper_bound = GPOINTER_TO_UINT (key) | LOW_MASK;
@@ -198,7 +198,7 @@ intset_update_largest_ever (TpIntSet *set,
  *
  * Returns: a new, empty integer set to be destroyed with tp_intset_destroy()
  */
-TpIntSet *
+TpIntset *
 tp_intset_sized_new (guint size G_GNUC_UNUSED)
 {
   return tp_intset_new ();
@@ -211,10 +211,10 @@ tp_intset_sized_new (guint size G_GNUC_UNUSED)
  *
  * Returns: a new, empty integer set to be destroyed with tp_intset_destroy()
  */
-TpIntSet *
+TpIntset *
 tp_intset_new ()
 {
-  TpIntSet *set = g_slice_new (TpIntSet);
+  TpIntset *set = g_slice_new (TpIntset);
 
   set->table = g_hash_table_new (NULL, NULL);
   set->largest_ever = 0;
@@ -232,10 +232,10 @@ tp_intset_new ()
  *
  * @since 0.7.26
  */
-TpIntSet *
+TpIntset *
 tp_intset_new_containing (guint element)
 {
-  TpIntSet *ret = tp_intset_new ();
+  TpIntset *ret = tp_intset_new ();
 
   tp_intset_add (ret, element);
 
@@ -249,12 +249,12 @@ tp_intset_new_containing (guint element)
  * Free all memory used by the set.
  */
 void
-tp_intset_destroy (TpIntSet *set)
+tp_intset_destroy (TpIntset *set)
 {
   g_return_if_fail (set != NULL);
 
   g_hash_table_destroy (set->table);
-  g_slice_free (TpIntSet, set);
+  g_slice_free (TpIntset, set);
 }
 
 /**
@@ -264,7 +264,7 @@ tp_intset_destroy (TpIntSet *set)
  * Unset every integer in the set.
  */
 void
-tp_intset_clear (TpIntSet *set)
+tp_intset_clear (TpIntset *set)
 {
   g_return_if_fail (set != NULL);
 
@@ -276,10 +276,10 @@ tp_intset_clear (TpIntSet *set)
  * @set: set
  * @element: integer to add
  *
- * Add an integer into a TpIntSet.
+ * Add an integer into a TpIntset.
  */
 void
-tp_intset_add (TpIntSet *set,
+tp_intset_add (TpIntset *set,
     guint element)
 {
   gpointer key = GSIZE_TO_POINTER ((gsize) HIGH_PART (element));
@@ -303,12 +303,12 @@ tp_intset_add (TpIntSet *set,
  * @set: set
  * @element: integer to add
  *
- * Remove an integer from a TpIntSet
+ * Remove an integer from a TpIntset
  *
  * Returns: %TRUE if @element was previously in @set
  */
 gboolean
-tp_intset_remove (TpIntSet *set,
+tp_intset_remove (TpIntset *set,
     guint element)
 {
   gpointer key = GSIZE_TO_POINTER ((gsize) HIGH_PART (element));
@@ -334,7 +334,7 @@ tp_intset_remove (TpIntSet *set,
 }
 
 static inline gboolean
-_tp_intset_is_member (const TpIntSet *set,
+_tp_intset_is_member (const TpIntset *set,
     guint element)
 {
   gpointer key = GSIZE_TO_POINTER ((gsize) HIGH_PART (element));
@@ -355,7 +355,7 @@ _tp_intset_is_member (const TpIntSet *set,
  * Returns: %TRUE if @element is in @set
  */
 gboolean
-tp_intset_is_member (const TpIntSet *set, guint element)
+tp_intset_is_member (const TpIntset *set, guint element)
 {
   g_return_val_if_fail (set != NULL, FALSE);
 
@@ -372,7 +372,7 @@ tp_intset_is_member (const TpIntSet *set, guint element)
  */
 
 void
-tp_intset_foreach (const TpIntSet *set,
+tp_intset_foreach (const TpIntset *set,
     TpIntFunc func,
     gpointer userdata)
 {
@@ -418,7 +418,7 @@ addint (guint i, gpointer data)
  *  be freed by the caller) containing the same integers as @set.
  */
 GArray *
-tp_intset_to_array (const TpIntSet *set)
+tp_intset_to_array (const TpIntset *set)
 {
   GArray *array;
 
@@ -441,10 +441,10 @@ tp_intset_to_array (const TpIntSet *set)
  * Returns: A set containing the same integers as @array.
  */
 
-TpIntSet *
+TpIntset *
 tp_intset_from_array (const GArray *array)
 {
-  TpIntSet *set;
+  TpIntset *set;
   guint i;
 
   g_return_val_if_fail (array != NULL, NULL);
@@ -479,7 +479,7 @@ count_bits32 (guint32 n)
  */
 
 guint
-tp_intset_size (const TpIntSet *set)
+tp_intset_size (const TpIntset *set)
 {
   guint count = 0;
   gpointer entry;
@@ -509,7 +509,7 @@ tp_intset_size (const TpIntSet *set)
  * Since: 0.11.6
  */
 gboolean
-tp_intset_is_empty (const TpIntSet *set)
+tp_intset_is_empty (const TpIntset *set)
 {
   g_return_val_if_fail (set != NULL, TRUE);
   return (g_hash_table_size (set->table) == 0);
@@ -526,8 +526,8 @@ tp_intset_is_empty (const TpIntSet *set)
  */
 
 gboolean
-tp_intset_is_equal (const TpIntSet *left,
-    const TpIntSet *right)
+tp_intset_is_equal (const TpIntset *left,
+    const TpIntset *right)
 {
   gpointer key, value;
   GHashTableIter iter;
@@ -562,12 +562,12 @@ tp_intset_is_equal (const TpIntSet *left,
  * tp_intset_destroy() by the caller
  */
 
-TpIntSet *
-tp_intset_copy (const TpIntSet *orig)
+TpIntset *
+tp_intset_copy (const TpIntset *orig)
 {
   gpointer key, value;
   GHashTableIter iter;
-  TpIntSet *ret;
+  TpIntset *ret;
 
   g_return_val_if_fail (orig != NULL, NULL);
 
@@ -597,12 +597,12 @@ tp_intset_copy (const TpIntSet *orig)
  * tp_intset_destroy() by the caller
  */
 
-TpIntSet *
-tp_intset_intersection (const TpIntSet *left, const TpIntSet *right)
+TpIntset *
+tp_intset_intersection (const TpIntset *left, const TpIntset *right)
 {
   gpointer key, value;
   GHashTableIter iter;
-  TpIntSet *ret;
+  TpIntset *ret;
 
   ret = tp_intset_new ();
 
@@ -637,12 +637,12 @@ tp_intset_intersection (const TpIntSet *left, const TpIntSet *right)
  * tp_intset_destroy() by the caller
  */
 
-TpIntSet *
-tp_intset_union (const TpIntSet *left, const TpIntSet *right)
+TpIntset *
+tp_intset_union (const TpIntset *left, const TpIntset *right)
 {
   gpointer key, value;
   GHashTableIter iter;
-  TpIntSet *ret;
+  TpIntset *ret;
 
   ret = tp_intset_copy (left);
 
@@ -673,10 +673,10 @@ tp_intset_union (const TpIntSet *left, const TpIntSet *right)
  * tp_intset_destroy() by the caller
  */
 
-TpIntSet *
-tp_intset_difference (const TpIntSet *left, const TpIntSet *right)
+TpIntset *
+tp_intset_difference (const TpIntset *left, const TpIntset *right)
 {
-  TpIntSet *ret;
+  TpIntset *ret;
   gpointer key, value;
   GHashTableIter iter;
 
@@ -716,10 +716,10 @@ tp_intset_difference (const TpIntSet *left, const TpIntSet *right)
  * with tp_intset_destroy() by the caller
  */
 
-TpIntSet *
-tp_intset_symmetric_difference (const TpIntSet *left, const TpIntSet *right)
+TpIntset *
+tp_intset_symmetric_difference (const TpIntset *left, const TpIntset *right)
 {
-  TpIntSet *ret;
+  TpIntset *ret;
   gpointer key, value;
   GHashTableIter iter;
 
@@ -767,7 +767,7 @@ _dump_foreach (guint i, gpointer data)
  * numbers in @set in a human-readable format
  */
 gchar *
-tp_intset_dump (const TpIntSet *set)
+tp_intset_dump (const TpIntset *set)
 {
   GString *tmp = g_string_new ("");
 
@@ -785,20 +785,20 @@ tp_intset_dump (const TpIntSet *set)
  * Usage:
  *
  * <informalexample><programlisting>
- * TpIntSetIter iter = TP_INTSET_INIT (intset);
+ * TpIntsetIter iter = TP_INTSET_INIT (intset);
  * while (tp_intset_iter_next (&amp;iter))
  * {
  *   printf ("%u is in the intset\n", iter.element);
  * }
  * </programlisting></informalexample>
  *
- * Since 0.11.6, consider using #TpIntSetFastIter if iteration in
+ * Since 0.11.6, consider using #TpIntsetFastIter if iteration in
  * numerical order is not required.
  *
  * Returns: %TRUE if (@iter->element) has been advanced
  */
 gboolean
-tp_intset_iter_next (TpIntSetIter *iter)
+tp_intset_iter_next (TpIntsetIter *iter)
 {
   g_return_val_if_fail (iter != NULL, FALSE);
   g_return_val_if_fail (iter->set != NULL, FALSE);
@@ -826,7 +826,7 @@ tp_intset_iter_next (TpIntSetIter *iter)
 }
 
 /**
- * TpIntSetFastIter:
+ * TpIntsetFastIter:
  *
  * An opaque structure representing iteration in undefined order over a set of
  * integers. Must be initialized with tp_intset_fast_iter_init().
@@ -837,7 +837,7 @@ tp_intset_iter_next (TpIntSetIter *iter)
  * Usage is similar to #GHashTableIter:
  *
  * <informalexample><programlisting>
- * TpIntSetFastIter iter;
+ * TpIntsetFastIter iter;
  * guint element;
  *
  * tp_intset_fast_iter_init (&amp;iter, intset);
@@ -858,7 +858,7 @@ typedef struct {
     gsize bitfield;
 } RealFastIter;
 
-G_STATIC_ASSERT (sizeof (TpIntSetFastIter) >= sizeof (RealFastIter));
+G_STATIC_ASSERT (sizeof (TpIntsetFastIter) >= sizeof (RealFastIter));
 
 /**
  * tp_intset_fast_iter_init:
@@ -871,8 +871,8 @@ G_STATIC_ASSERT (sizeof (TpIntSetFastIter) >= sizeof (RealFastIter));
  * Since: 0.11.6
  */
 void
-tp_intset_fast_iter_init (TpIntSetFastIter *iter,
-    const TpIntSet *set)
+tp_intset_fast_iter_init (TpIntsetFastIter *iter,
+    const TpIntset *set)
 {
   RealFastIter *real = (RealFastIter *) iter;
   g_return_if_fail (set != NULL);
@@ -897,7 +897,7 @@ tp_intset_fast_iter_init (TpIntSetFastIter *iter,
  * Since: 0.11.6
  */
 gboolean
-tp_intset_fast_iter_next (TpIntSetFastIter *iter,
+tp_intset_fast_iter_next (TpIntsetFastIter *iter,
     guint *output)
 {
   RealFastIter *real = (RealFastIter *) iter;

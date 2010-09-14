@@ -76,7 +76,7 @@ add_member (GObject *obj,
             GError **error)
 {
   TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (obj);
-  TpIntSet *add = tp_intset_new ();
+  TpIntset *add = tp_intset_new ();
 
   tp_intset_add (add, handle);
   tp_group_mixin_change_members (obj, message, add, NULL, NULL, NULL,
