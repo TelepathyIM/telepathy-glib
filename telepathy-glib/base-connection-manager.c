@@ -104,7 +104,7 @@ _tp_legacy_protocol_get_parameters (TpBaseProtocol *protocol)
 }
 
 static gboolean parse_parameters (const TpCMParamSpec *paramspec,
-    GHashTable *provided, TpIntSet *params_present,
+    GHashTable *provided, TpIntset *params_present,
     const TpCMParamSetter set_param, void *params, GError **error);
 
 static TpBaseConnection *
@@ -117,7 +117,7 @@ _tp_legacy_protocol_new_connection (TpBaseProtocol *protocol,
   TpBaseConnectionManagerClass *cls;
   TpBaseConnection *conn = NULL;
   void *params = NULL;
-  TpIntSet *params_present = NULL;
+  TpIntset *params_present = NULL;
   TpCMParamSetter set_param;
 
   if (self->cm == NULL)
@@ -814,7 +814,7 @@ set_param_from_value (const TpCMParamSpec *paramspec,
 static gboolean
 parse_parameters (const TpCMParamSpec *paramspec,
                   GHashTable *provided,
-                  TpIntSet *params_present,
+                  TpIntset *params_present,
                   const TpCMParamSetter set_param,
                   void *params,
                   GError **error)

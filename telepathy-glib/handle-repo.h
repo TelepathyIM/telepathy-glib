@@ -118,7 +118,7 @@ TpHandleSet *tp_handle_set_copy (const TpHandleSet *other)
 void tp_handle_set_clear (TpHandleSet *set);
 void tp_handle_set_destroy (TpHandleSet *set);
 
-TpIntSet *tp_handle_set_peek (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
+TpIntset *tp_handle_set_peek (TpHandleSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_handle_set_add (TpHandleSet *set, TpHandle handle);
 gboolean tp_handle_set_remove (TpHandleSet *set, TpHandle handle);
@@ -134,10 +134,10 @@ GArray *tp_handle_set_to_array (const TpHandleSet *set)
 TpHandleSet *tp_handle_set_new_from_array (TpHandleRepoIface *repo,
     const GArray *array) G_GNUC_WARN_UNUSED_RESULT;
 
-TpIntSet *tp_handle_set_update (TpHandleSet *set, const TpIntSet *add)
+TpIntset *tp_handle_set_update (TpHandleSet *set, const TpIntset *add)
   G_GNUC_WARN_UNUSED_RESULT;
-TpIntSet *tp_handle_set_difference_update (TpHandleSet *set,
-    const TpIntSet *remove) G_GNUC_WARN_UNUSED_RESULT;
+TpIntset *tp_handle_set_difference_update (TpHandleSet *set,
+    const TpIntset *remove) G_GNUC_WARN_UNUSED_RESULT;
 
 /* static inline because it relies on NUM_TP_HANDLE_TYPES */
 /**

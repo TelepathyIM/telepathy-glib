@@ -70,7 +70,7 @@ static const TpCMProtocolSpec simple_protocols[] = {
 static TpBaseConnection *
 new_connection (TpBaseConnectionManager *self,
                 const gchar *proto,
-                TpIntSet *params_present,
+                TpIntset *params_present,
                 gpointer parsed_params,
                 GError **error)
 {

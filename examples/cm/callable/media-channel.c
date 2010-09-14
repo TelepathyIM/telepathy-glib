@@ -140,8 +140,8 @@ constructed (GObject *object)
   TpBaseConnection *connection = tp_base_channel_get_connection (base_chan);
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (connection, TP_HANDLE_TYPE_CONTACT);
-  TpIntSet *members;
-  TpIntSet *local_pending;
+  TpIntset *members;
+  TpIntset *local_pending;
   gboolean requested;
 
   if (chain_up != NULL)
@@ -301,7 +301,7 @@ example_callable_media_channel_close (ExampleCallableMediaChannel *self,
 {
   if (self->priv->progress != PROGRESS_ENDED)
     {
-      TpIntSet *everyone;
+      TpIntset *everyone;
 
       self->priv->progress = PROGRESS_ENDED;
 
@@ -394,7 +394,7 @@ add_member (GObject *object,
       tp_handle_set_is_member (self->group.local_pending, member))
     {
       /* We're in local-pending, move to members to accept. */
-      TpIntSet *set = tp_intset_new_containing (member);
+      TpIntset *set = tp_intset_new_containing (member);
       GHashTableIter iter;
       gpointer v;
 
@@ -720,7 +720,7 @@ static gboolean
 simulate_contact_answered_cb (gpointer p)
 {
   ExampleCallableMediaChannel *self = p;
-  TpIntSet *peer_set;
+  TpIntset *peer_set;
   GHashTableIter iter;
   gpointer v;
   TpHandleRepoIface *contact_repo;
@@ -928,7 +928,7 @@ media_request_streams (TpSvcChannelTypeStreamedMedia *iface,
 
       if (self->priv->progress < PROGRESS_CALLING)
         {
-          TpIntSet *peer_set = tp_intset_new_containing (target);
+          TpIntset *peer_set = tp_intset_new_containing (target);
           const gchar *peer;
 
           g_message ("SIGNALLING: send: new streamed media call");

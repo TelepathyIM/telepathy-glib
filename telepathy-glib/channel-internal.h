@@ -58,9 +58,9 @@ struct _TpChannelPrivate {
     TpHandle group_self_handle;
     TpChannelGroupFlags group_flags;
     /* NULL if members not discovered yet */
-    TpIntSet *group_members;
-    TpIntSet *group_local_pending;
-    TpIntSet *group_remote_pending;
+    TpIntset *group_members;
+    TpIntset *group_local_pending;
+    TpIntset *group_remote_pending;
     /* (TpHandle => LocalPendingInfo), or NULL if members not discovered yet */
     GHashTable *group_local_pending_info;
 

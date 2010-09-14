@@ -1337,7 +1337,7 @@ local_pending_added_foreach (guint i,
 
 static void
 local_pending_added (TpGroupMixin *mixin,
-    const TpIntSet *added,
+    const TpIntset *added,
     TpHandle actor,
     guint reason,
     const gchar *message)
@@ -1363,7 +1363,7 @@ local_pending_remove_foreach (guint i,
 
 static void
 local_pending_remove (TpGroupMixin *mixin,
-                     TpIntSet *removed)
+                     TpIntset *removed)
 {
   tp_intset_foreach (removed, local_pending_remove_foreach, mixin);
 }
@@ -1514,16 +1514,16 @@ emit_members_changed_signals (GObject *channel,
 static gboolean
 change_members (GObject *obj,
                 const gchar *message,
-                const TpIntSet *add,
-                const TpIntSet *del,
-                const TpIntSet *add_local_pending,
-                const TpIntSet *add_remote_pending,
+                const TpIntset *add,
+                const TpIntset *del,
+                const TpIntset *add_local_pending,
+                const TpIntset *add_remote_pending,
                 TpHandle actor,
                 TpChannelGroupChangeReason reason,
                 const GHashTable *details)
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
-  TpIntSet *new_add, *new_remove, *new_local_pending,
+  TpIntset *new_add, *new_remove, *new_local_pending,
            *new_remote_pending, *tmp, *tmp2, *empty;
   gboolean ret;
 
@@ -1711,7 +1711,7 @@ change_members (GObject *obj,
  * If any two of add, del, add_local_pending and add_remote_pending have
  * a non-empty intersection, the result is undefined. Don't do that.
  *
- * Each of the TpIntSet arguments may be %NULL, which is treated as
+ * Each of the TpIntset arguments may be %NULL, which is treated as
  * equivalent to an empty set.
  *
  * Returns: %TRUE if the group was changed and the MembersChanged(Detailed)
@@ -1721,10 +1721,10 @@ change_members (GObject *obj,
 gboolean
 tp_group_mixin_change_members (GObject *obj,
                                const gchar *message,
-                               const TpIntSet *add,
-                               const TpIntSet *del,
-                               const TpIntSet *add_local_pending,
-                               const TpIntSet *add_remote_pending,
+                               const TpIntset *add,
+                               const TpIntset *del,
+                               const TpIntset *add_local_pending,
+                               const TpIntset *add_remote_pending,
                                TpHandle actor,
                                TpChannelGroupChangeReason reason)
 {
@@ -1782,7 +1782,7 @@ tp_group_mixin_change_members (GObject *obj,
  * If any two of add, del, add_local_pending and add_remote_pending have
  * a non-empty intersection, the result is undefined. Don't do that.
  *
- * Each of the TpIntSet arguments may be %NULL, which is treated as
+ * Each of the TpIntset arguments may be %NULL, which is treated as
  * equivalent to an empty set.
  *
  * details may contain, among other entries, the well-known
@@ -1808,10 +1808,10 @@ tp_group_mixin_change_members (GObject *obj,
  */
 gboolean
 tp_group_mixin_change_members_detailed (GObject *obj,
-                                        const TpIntSet *add,
-                                        const TpIntSet *del,
-                                        const TpIntSet *add_local_pending,
-                                        const TpIntSet *add_remote_pending,
+                                        const TpIntset *add,
+                                        const TpIntset *del,
+                                        const TpIntset *add_local_pending,
+                                        const TpIntset *add_remote_pending,
                                         const GHashTable *details)
 {
   const gchar *message;

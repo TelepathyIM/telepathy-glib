@@ -378,8 +378,8 @@ receive_contact_lists (gpointer p)
   ExampleContactListManager *self = p;
   TpHandle handle, cambridge, montreal, francophones;
   ExampleContactDetails *d;
-  TpIntSet *set, *cam_set, *mtl_set, *fr_set;
-  TpIntSetFastIter iter;
+  TpIntset *set, *cam_set, *mtl_set, *fr_set;
+  TpIntsetFastIter iter;
   ExampleContactList *subscribe, *publish, *stored;
   ExampleContactGroup *cambridge_group, *montreal_group,
       *francophones_group;
@@ -1032,8 +1032,8 @@ send_updated_roster (ExampleContactListManager *self,
         }
       else
         {
-          TpIntSet *set = tp_handle_set_peek (d->tags);
-          TpIntSetFastIter iter;
+          TpIntset *set = tp_handle_set_peek (d->tags);
+          TpIntsetFastIter iter;
           TpHandle member;
 
           tp_intset_fast_iter_init (&iter, set);
@@ -1071,7 +1071,7 @@ example_contact_list_manager_add_to_group (ExampleContactListManager *self,
 
   if (updated)
     {
-      TpIntSet *added = tp_intset_new_containing (member);
+      TpIntset *added = tp_intset_new_containing (member);
 
       send_updated_roster (self, member);
       tp_group_mixin_change_members (channel, "", added, NULL, NULL, NULL,
@@ -1102,7 +1102,7 @@ example_contact_list_manager_remove_from_group (
 
   if (tp_handle_set_remove (d->tags, group))
     {
-      TpIntSet *removed = tp_intset_new_containing (member);
+      TpIntset *removed = tp_intset_new_containing (member);
 
       send_updated_roster (self, member);
       tp_group_mixin_change_members (channel, "", NULL, removed, NULL, NULL,
@@ -1145,7 +1145,7 @@ receive_auth_request (ExampleContactListManager *self,
                       TpHandle contact)
 {
   ExampleContactDetails *d;
-  TpIntSet *set;
+  TpIntset *set;
   ExampleContactList *publish = self->priv->lists[
     EXAMPLE_CONTACT_LIST_PUBLISH];
   ExampleContactList *stored = self->priv->lists[
@@ -1186,7 +1186,7 @@ receive_authorized (gpointer p)
 {
   SelfAndContact *s = p;
   ExampleContactDetails *d;
-  TpIntSet *set;
+  TpIntset *set;
   ExampleContactList *subscribe = s->self->priv->lists[
     EXAMPLE_CONTACT_LIST_SUBSCRIBE];
   ExampleContactList *stored = s->self->priv->lists[
@@ -1236,7 +1236,7 @@ receive_unauthorized (gpointer p)
 {
   SelfAndContact *s = p;
   ExampleContactDetails *d;
-  TpIntSet *set;
+  TpIntset *set;
   ExampleContactList *subscribe = s->self->priv->lists[
     EXAMPLE_CONTACT_LIST_SUBSCRIBE];
 
@@ -1280,7 +1280,7 @@ example_contact_list_manager_add_to_list (ExampleContactListManager *self,
                                           const gchar *message,
                                           GError **error)
 {
-  TpIntSet *set;
+  TpIntset *set;
   ExampleContactList *stored = self->priv->lists[EXAMPLE_CONTACT_LIST_STORED];
 
   switch (list)
@@ -1422,7 +1422,7 @@ example_contact_list_manager_remove_from_list (ExampleContactListManager *self,
                                                const gchar *message,
                                                GError **error)
 {
-  TpIntSet *set;
+  TpIntset *set;
 
   switch (list)
     {
@@ -1625,7 +1625,7 @@ example_contact_list_manager_set_alias (ExampleContactListManager *self,
   ExampleContactList *stored = self->priv->lists[
     EXAMPLE_CONTACT_LIST_STORED];
   gchar *old = d->alias;
-  TpIntSet *set;
+  TpIntset *set;
 
   /* FIXME: if stored list hasn't been retrieved yet, queue the change for
    * later */

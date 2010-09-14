@@ -95,7 +95,7 @@ complete_join (ExampleCSHRoomChannel *self)
   TpHandle alice_local, bob_local, chris_local, anon_local;
   TpHandle alice_global, bob_global, chris_global;
   TpGroupMixin *mixin = TP_GROUP_MIXIN (self);
-  TpIntSet *added;
+  TpIntset *added;
 
   /* For this example, we assume that all chatrooms initially contain
    * Alice, Bob and Chris (and that their global IDs are also known),
@@ -128,8 +128,8 @@ complete_join (ExampleCSHRoomChannel *self)
       mixin->self_handle == anon_local)
     {
       TpHandle new_self;
-      TpIntSet *rp = tp_intset_new ();
-      TpIntSet *removed = tp_intset_new ();
+      TpIntset *rp = tp_intset_new ();
+      TpIntset *removed = tp_intset_new ();
 
       str = g_strdup_printf ("renamed by server@%s", room_name);
       new_self = tp_handle_ensure (contact_repo, str, NULL, NULL);
@@ -193,7 +193,7 @@ join_room (ExampleCSHRoomChannel *self)
   TpBaseConnection *conn = tp_base_channel_get_connection (TP_BASE_CHANNEL (self));
   TpGroupMixin *mixin = TP_GROUP_MIXIN (self);
   GObject *object = (GObject *) self;
-  TpIntSet *add_remote_pending;
+  TpIntset *add_remote_pending;
 
   g_assert (!tp_handle_set_is_member (mixin->members, mixin->self_handle));
   g_assert (!tp_handle_set_is_member (mixin->remote_pending,

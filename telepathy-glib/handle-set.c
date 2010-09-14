@@ -32,13 +32,13 @@
 /**
  * TpHandleSet:
  *
- * A set of handles. This is similar to a #TpIntSet (and implemented using
+ * A set of handles. This is similar to a #TpIntset (and implemented using
  * one), but adding a handle to the set also references it.
  */
 struct _TpHandleSet
 {
   TpHandleRepoIface *repo;
-  TpIntSet *intset;
+  TpIntset *intset;
 };
 
 /**
@@ -102,7 +102,7 @@ tp_handle_set_new_from_array (TpHandleRepoIface *repo,
     const GArray *array)
 {
   TpHandleSet *set = tp_handle_set_new (repo);
-  TpIntSet *tmp = tp_intset_from_array (array);
+  TpIntset *tmp = tp_intset_from_array (array);
 
   tp_intset_destroy (tp_handle_set_update (set, tmp));
   tp_intset_destroy (tmp);
@@ -167,9 +167,9 @@ tp_handle_set_is_empty (const TpHandleSet *set)
  *
  * <!--Returns: says it all, this comment is just to keep gtkdoc happy-->
  *
- * Returns: (transfer none): the underlying #TpIntSet used by this #TpHandleSet
+ * Returns: (transfer none): the underlying #TpIntset used by this #TpHandleSet
  */
-TpIntSet *
+TpIntset *
 tp_handle_set_peek (TpHandleSet *set)
 {
   return set->intset;
@@ -350,17 +350,17 @@ tp_handle_set_copy (const TpHandleSet *other)
 /**
  * tp_handle_set_update: (skip)
  * @set: a #TpHandleSet to update
- * @add: a #TpIntSet of handles to add
+ * @add: a #TpIntset of handles to add
  *
  * Add a set of handles to a handle set, referencing those which are not
- * already members. The TpIntSet returned must be freed with tp_intset_destroy.
+ * already members. The TpIntset returned must be freed with tp_intset_destroy.
  *
  * Returns: the handles which were added (some subset of @add)
  */
-TpIntSet *
-tp_handle_set_update (TpHandleSet *set, const TpIntSet *add)
+TpIntset *
+tp_handle_set_update (TpHandleSet *set, const TpIntset *add)
 {
-  TpIntSet *ret, *tmp;
+  TpIntset *ret, *tmp;
 
   g_return_val_if_fail (set != NULL, NULL);
   g_return_val_if_fail (add != NULL, NULL);
@@ -387,10 +387,10 @@ unref_one (guint handle, gpointer data)
 /**
  * tp_handle_set_difference_update: (skip)
  * @set: a #TpHandleSet to update
- * @remove: a #TpIntSet of handles to remove
+ * @remove: a #TpIntset of handles to remove
  *
  * Remove a set of handles from a handle set, dereferencing those which are
- * members. The TpIntSet returned must be freed with tp_intset_destroy.
+ * members. The TpIntset returned must be freed with tp_intset_destroy.
  *
  * If you want to be able to inspect the handles in the set returned,
  * you must ensure that this function does not cause their refcount to drop
@@ -401,10 +401,10 @@ unref_one (guint handle, gpointer data)
  * Returns: the handles which were dereferenced and removed (some subset
  *  of @remove).
  */
-TpIntSet *
-tp_handle_set_difference_update (TpHandleSet *set, const TpIntSet *remove)
+TpIntset *
+tp_handle_set_difference_update (TpHandleSet *set, const TpIntset *remove)
 {
-  TpIntSet *ret, *tmp;
+  TpIntset *ret, *tmp;
 
   g_return_val_if_fail (set != NULL, NULL);
   g_return_val_if_fail (remove != NULL, NULL);

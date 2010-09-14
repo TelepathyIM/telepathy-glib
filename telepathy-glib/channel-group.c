@@ -110,7 +110,7 @@ tp_channel_group_get_flags (TpChannel *self)
  * @self: a channel
  *
  * If @self is a group and the %TP_CHANNEL_FEATURE_GROUP feature has been
- * prepared, return a #TpIntSet containing its members.
+ * prepared, return a #TpIntset containing its members.
  *
  * If @self is a group but %TP_CHANNEL_FEATURE_GROUP has not been prepared,
  * the result may either be a set of members, or %NULL.
@@ -120,7 +120,7 @@ tp_channel_group_get_flags (TpChannel *self)
  * Returns: the members, or %NULL
  * Since: 0.7.12
  */
-const TpIntSet *
+const TpIntset *
 tp_channel_group_get_members (TpChannel *self)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
@@ -134,7 +134,7 @@ tp_channel_group_get_members (TpChannel *self)
  * @self: a channel
  *
  * If @self is a group and the %TP_CHANNEL_FEATURE_GROUP feature has been
- * prepared, return a #TpIntSet containing its local-pending members.
+ * prepared, return a #TpIntset containing its local-pending members.
  *
  * If @self is a group but %TP_CHANNEL_FEATURE_GROUP has not been prepared,
  * the result may either be a set of local-pending members, or %NULL.
@@ -144,7 +144,7 @@ tp_channel_group_get_members (TpChannel *self)
  * Returns: the local-pending members, or %NULL
  * Since: 0.7.12
  */
-const TpIntSet *
+const TpIntset *
 tp_channel_group_get_local_pending (TpChannel *self)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
@@ -158,7 +158,7 @@ tp_channel_group_get_local_pending (TpChannel *self)
  * @self: a channel
  *
  * If @self is a group and the %TP_CHANNEL_FEATURE_GROUP feature has been
- * prepared, return a #TpIntSet containing its remote-pending members.
+ * prepared, return a #TpIntset containing its remote-pending members.
  *
  * If @self is a group but %TP_CHANNEL_FEATURE_GROUP has not been prepared,
  * the result may either be a set of remote-pending members, or %NULL.
@@ -168,7 +168,7 @@ tp_channel_group_get_local_pending (TpChannel *self)
  * Returns: the remote-pending members, or %NULL
  * Since: 0.7.12
   */
-const TpIntSet *
+const TpIntset *
 tp_channel_group_get_remote_pending (TpChannel *self)
 {
   g_return_val_if_fail (TP_IS_CHANNEL (self), NULL);
@@ -669,7 +669,7 @@ _tp_channel_emit_initial_sets (TpChannel *self)
 {
   GArray *added, *remote_pending;
   GArray empty_array = { NULL, 0 };
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle handle;
 
   tp_intset_fast_iter_init (&iter, self->priv->group_local_pending);

@@ -59,8 +59,8 @@ channel_ready_cb (TpChannel *channel,
   if (tp_proxy_has_interface_by_id (channel,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
     {
-      const TpIntSet *members = tp_channel_group_get_members (channel);
-      TpIntSetFastIter group_iter;
+      const TpIntset *members = tp_channel_group_get_members (channel);
+      TpIntsetFastIter group_iter;
       TpHandle member;
 
       printf ("Group members:\n");
