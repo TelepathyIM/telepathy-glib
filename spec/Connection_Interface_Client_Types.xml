@@ -56,21 +56,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         details about the contact's client types are unknown. If there are
         multiple resources of a contact online at one point in time, the
         client types of the most available resource will be returned. In
-        other words, the client types are the types of the client whose
-        SimplePresence we see. For example, if a contact has two
-        resources:</p>
+        other words, the returned client types are those for the resource whose
+        presence will be retreived using the
+        <tp:dbus-ref namespace="ofdT.Connection.Interface">SimplePresence</tp:dbus-ref>
+        interface.</p>
+
+      <p>For example, if a contact has two resources:</p>
 
       <ul>
-        <li>one his phone, with presence "available", and</li>
-        <li>one his pc, with presence "busy",</li>
+        <li>their phone, with presence "available"; and</li>
+        <li>their pc, with presence "busy";</li>
       </ul>
 
       <p>then the methods in this interface will return an array (with
-      one element: "phone") as the client types as that is the more
-      available resource. If some time later his phone's presence
-      moves to "away", then the
+      one element: "phone") as the client types because that is the more
+      available resource. If at some later time the contact's phone's presence
+      changes to "away", the
       <tp:member-ref>ClientTypesUpdated</tp:member-ref> signal will
-      notify that his client type have changed from "phone" to "pc",
+      notify that the contact's client types attribute has changed from
+      ["phone"] to ["pc"],
       because "busy" is a more available presence than "away".</p>
 
     </tp:docstring>
