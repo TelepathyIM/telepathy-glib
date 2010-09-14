@@ -23,11 +23,11 @@
 
 /**
  * SECTION:intset
- * @title: TpIntSet
+ * @title: TpIntset
  * @short_description: a set of unsigned integers
  * @see_also: #TpHandleSet
  *
- * A #TpIntSet is a set of unsigned integers, implemented as a
+ * A #TpIntset is a set of unsigned integers, implemented as a
  * dynamically-allocated sparse bitfield.
  */
 
@@ -59,7 +59,7 @@ G_STATIC_ASSERT (sizeof (gpointer) >= sizeof (gsize));
 /**
  * TP_TYPE_INTSET:
  *
- * The boxed type of a #TpIntSet.
+ * The boxed type of a #TpIntset.
  *
  * Since: 0.11.3
  */
@@ -71,7 +71,12 @@ tp_intset_get_type (void)
 
   if (G_UNLIKELY (type == 0))
     {
-      type = g_boxed_type_register_static (g_intern_static_string ("TpIntSet"),
+      /* The "TpIntSet" type has to be registered for backwards compatibility.
+       * The canonical name of the type is now "TpIntset"; see fdo#30134. */
+      g_boxed_type_register_static (g_intern_static_string ("TpIntSet"),
+          (GBoxedCopyFunc) tp_intset_copy,
+          (GBoxedFreeFunc) tp_intset_destroy);
+      type = g_boxed_type_register_static (g_intern_static_string ("TpIntset"),
           (GBoxedCopyFunc) tp_intset_copy,
           (GBoxedFreeFunc) tp_intset_destroy);
     }
@@ -89,7 +94,7 @@ tp_intset_get_type (void)
 /* (typedef, see header) */
 
 /**
- * TpIntSetIter:
+ * TpIntsetIter:
  * @set: The set iterated over.
  * @element: Must be (guint)(-1) before iteration starts. Set to the next
  *  element in the set by tp_intset_iter_next(); undefined after
@@ -101,6 +106,8 @@ tp_intset_get_type (void)
  * Since 0.11.6, consider using #TpIntSetFastIter if iteration in
  * numerical order is not required.
  *
+ * Before 0.11.UNRELEASED, this type was called <type>TpIntSetIter</type>,
+ * which is now a backwards compatibility typedef.
  */
 /* (public, see header) */
 
@@ -144,12 +151,15 @@ tp_intset_get_type (void)
 /* (inline, see header) */
 
 /**
- * TpIntSet:
+ * TpIntset:
  *
  * Opaque type representing a set of unsigned integers.
+ *
+ * Before 0.11.UNRELEASED, this type was called <type>TpIntSet</type>, which is
+ * now a backwards compatibility typedef.
  */
 
-struct _TpIntSet
+struct _TpIntset
 {
   /* HIGH_PART(n) => bitfield where bit LOW_PART(n) is set if n is present.
    *
@@ -820,6 +830,9 @@ tp_intset_iter_next (TpIntSetIter *iter)
  *
  * An opaque structure representing iteration in undefined order over a set of
  * integers. Must be initialized with tp_intset_fast_iter_init().
+ *
+ * Before 0.11.UNRELEASED, this type was called <type>TpIntSetFastIter</type>,
+ * which is now a backwards compatibility typedef.
  *
  * Usage is similar to #GHashTableIter:
  *

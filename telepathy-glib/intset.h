@@ -30,7 +30,17 @@ G_BEGIN_DECLS
 #define TP_TYPE_INTSET (tp_intset_get_type ())
 GType tp_intset_get_type (void);
 
-typedef struct _TpIntSet TpIntSet;
+typedef struct _TpIntset TpIntset;
+
+/* See fdo#30134 for the reasoning behind the rename of TpIntSet to TpIntset */
+
+/**
+ * TpIntSet: (skip)
+ *
+ * Before 0.11.UNRELEASED, this was the name for <type>TpIntset</type>, but it's
+ * now just a backwards compatibility typedef.
+ */
+typedef TpIntset TpIntSet;
 
 typedef void (*TpIntFunc) (guint i, gpointer userdata);
 
@@ -68,13 +78,18 @@ TpIntSet *tp_intset_symmetric_difference (const TpIntSet *left,
 
 gchar *tp_intset_dump (const TpIntSet *set) G_GNUC_WARN_UNUSED_RESULT;
 
-typedef struct _TpIntSetIter TpIntSetIter;
-
-struct _TpIntSetIter
-{
+typedef struct {
     const TpIntSet *set;
     guint element;
-};
+} TpIntsetIter;
+
+/**
+ * TpIntSetIter: (skip)
+ *
+ * Before 0.11.UNRELEASED, this was the name for <type>TpIntsetIter</type>, but
+ * it's now just a backwards compatibility typedef.
+ */
+typedef TpIntsetIter TpIntSetIter;
 
 #define TP_INTSET_ITER_INIT(set) { (set), (guint)(-1) }
 
@@ -101,7 +116,15 @@ gboolean tp_intset_iter_next (TpIntSetIter *iter);
 typedef struct {
     /*<private>*/
     gpointer _dummy[16];
-} TpIntSetFastIter;
+} TpIntsetFastIter;
+
+/**
+ * TpIntSetFastIter: (skip)
+ *
+ * Before 0.11.UNRELEASED, this was the name for <type>TpIntsetFastIter</type>,
+ * but it's now just a backwards compatibility typedef.
+ */
+typedef TpIntsetFastIter TpIntSetFastIter;
 
 void tp_intset_fast_iter_init (TpIntSetFastIter *iter,
     const TpIntSet *set);

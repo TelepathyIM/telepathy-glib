@@ -1741,8 +1741,8 @@ TP_GROUP_MIXIN
 <SECTION>
 <FILE>intset</FILE>
 <INCLUDE>telepathy-glib/intset.h</INCLUDE>
-<TITLE>TpIntSet</TITLE>
-TpIntSet
+<TITLE>TpIntset</TITLE>
+TpIntset
 TP_TYPE_INTSET
 TpIntFunc
 tp_intset_sized_new
@@ -1765,16 +1765,20 @@ tp_intset_union
 tp_intset_difference
 tp_intset_symmetric_difference
 tp_intset_dump
-TpIntSetFastIter
+TpIntsetFastIter
 tp_intset_fast_iter_init
 tp_intset_fast_iter_next
 TP_INTSET_ITER_INIT
-TpIntSetIter
+TpIntsetIter
 tp_intset_iter_init
 tp_intset_iter_next
 tp_intset_iter_reset
 <SUBSECTION Standard>
 tp_intset_get_type
+<SUBSECTION Private>
+TpIntSet
+TpIntSetIter
+TpIntSetFastIter
 </SECTION>
 
 <SECTION>
