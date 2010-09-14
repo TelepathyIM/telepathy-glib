@@ -13,6 +13,11 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="gi:alias[@name='IntSet' or @name='IntSetIter' or
+    @name='IntSetFastIter']">
+   <xsl:message>Kludged around GNOME Bug #629668</xsl:message>
+  </xsl:template>
+
   <xsl:template match="gi:field[@name='dbus_connection']">
    <xsl:message>Kludged around GNOME Bug #616375</xsl:message>
   </xsl:template>

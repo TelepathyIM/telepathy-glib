@@ -1,6 +1,6 @@
 # To be included by Makefile.am.
 
-introspection_extra_dist = kludge-616375.xsl
+introspection_extra_dist = kludge.xsl
 
 if HAVE_INTROSPECTION
 
@@ -57,7 +57,7 @@ endif
 
 TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		libtelepathy-glib.la \
-		$(srcdir)/kludge-616375.xsl \
+		$(srcdir)/kludge.xsl \
 		$(INTROSPECTION_FILES)
 	$(AM_V_GEN)$(INTROSPECTION_SCANNER) -v \
 		--namespace TelepathyGLib \
@@ -74,7 +74,7 @@ TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
 		$(gi_warn_all_arg) \
 		--output _gen/$@.tmp \
 		$(INTROSPECTION_FILES)
-	@xsltproc $(srcdir)/kludge-616375.xsl _gen/$@.tmp > $@
+	@xsltproc $(srcdir)/kludge.xsl _gen/$@.tmp > $@
 	@rm -f _gen/$@.tmp
 
 girdir = $(datadir)/gir-1.0
