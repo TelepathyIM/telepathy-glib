@@ -579,6 +579,9 @@ tp_base_channel_constructed (GObject *object)
   if (parent_class->constructed != NULL)
     parent_class->constructed (object);
 
+  g_return_if_fail (conn != NULL);
+  g_return_if_fail (TP_IS_CONNECTION (conn));
+
   if (klass->target_handle_type != TP_HANDLE_TYPE_NONE)
     {
       handles = tp_base_connection_get_handles (conn, klass->target_handle_type);
