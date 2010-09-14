@@ -580,7 +580,7 @@ tp_base_channel_constructed (GObject *object)
     parent_class->constructed (object);
 
   g_return_if_fail (conn != NULL);
-  g_return_if_fail (TP_IS_CONNECTION (conn));
+  g_return_if_fail (TP_IS_BASE_CONNECTION (conn));
 
   if (klass->target_handle_type != TP_HANDLE_TYPE_NONE)
     {
