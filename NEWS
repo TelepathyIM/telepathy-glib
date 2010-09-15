@@ -3,10 +3,11 @@ telepathy-glib 0.11.16 (UNRELEASED)
 
 Enhancements:
 
-• Update to stable spec 0.20.0 (smcv)
+• Update to stable spec 0.20.1 (smcv)
   - generate basic API for Chan.I.Conference
-  - code is not generated for Chan.T.ServerTLSConnection or TLSCertificate yet,
-    since adding TLSCertificate requires a new TpProxy subclass
+  - generate basic API for Chan.T.ServerTLSConnection and TLSCertificate
+    (server-side only for now, since TLSCertificate will require a new TpProxy
+    subclass)
 
 • When connections are created in a CM, debug-log the sanitized parameter
   values (wjt)
