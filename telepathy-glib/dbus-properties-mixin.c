@@ -408,8 +408,10 @@ link_interface (GType type,
  * architecture, so do some evil trick with unions or something */
 G_STATIC_ASSERT (sizeof (GCallback) == sizeof (gpointer));
 
+/* FIXME: GNOME#556489: getter and setter should be (scope infinite) if that
+ * existed */
 /**
- * tp_dbus_properties_mixin_implement_interface:
+ * tp_dbus_properties_mixin_implement_interface: (skip)
  * @cls: a subclass of #GObjectClass
  * @iface: a quark representing the the name of the interface to implement
  * @getter: a callback to get properties on this interface, or %NULL if they
