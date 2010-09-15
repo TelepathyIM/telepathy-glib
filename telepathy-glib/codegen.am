@@ -21,7 +21,8 @@ codegen_extra_dist = \
     media-session-handler.xml \
     media-stream-handler.xml \
     protocol.xml \
-    stable-interfaces.xml
+    stable-interfaces.xml \
+    tls-cert.xml
 
 codegen_sources = \
     $(nodist_libtelepathy_glib_internal_la_SOURCES) \
@@ -63,7 +64,8 @@ nodist_geninclude_HEADERS = \
     _gen/tp-svc-generic.h \
     _gen/tp-svc-media-session-handler.h \
     _gen/tp-svc-media-stream-handler.h \
-    _gen/tp-svc-protocol.h
+    _gen/tp-svc-protocol.h \
+    _gen/tp-svc-tls-cert.h
 
 nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/error-str.c \
@@ -102,7 +104,8 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-svc-generic.c \
     _gen/tp-svc-media-session-handler.c \
     _gen/tp-svc-media-stream-handler.c \
-    _gen/tp-svc-protocol.c
+    _gen/tp-svc-protocol.c \
+    _gen/tp-svc-tls-cert.c
 
 # Generated stuff
 

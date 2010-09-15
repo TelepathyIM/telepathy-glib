@@ -812,3 +812,15 @@
  *
  * Since: 0.11.11
  */
+
+/**
+ * SECTION:svc-tls
+ * @title: Service-side TLS interfaces
+ * @short_description: GInterfaces to implement Chan.T.ServerTLSConnection
+ *
+ * Channel.Type.ServerTLSConnection can be handled by clients to check
+ * servers' TLS certificates interactively. The actual certificates are
+ * represented by a separate TLSCertificate object.
+ *
+ * Since: 0.11.UNRELEASED
+ */

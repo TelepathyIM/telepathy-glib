@@ -24,6 +24,8 @@
 
 <xi:include href="debug.xml"/>
 
+<xi:include href="tls-cert.xml"/>
+
 <xi:include href="../spec/generic-types.xml"/>
 <xi:include href="../spec/errors.xml"/>
 

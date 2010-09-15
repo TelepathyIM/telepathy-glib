@@ -92,6 +92,7 @@ our_headers = \
     svc-media-interfaces.h \
     svc-properties-interface.h \
     svc-protocol.h \
+    svc-tls.h \
     telepathy-glib.h \
     text-mixin.h \
     util.h
