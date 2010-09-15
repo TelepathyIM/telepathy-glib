@@ -141,7 +141,8 @@ typedef gboolean (*TpPresenceMixinStatusAvailableFunc) (GObject *obj,
  * callback is responsible for ensuring that this does any cleanup that
  * may be necessary.
  *
- * Returns: The contact presence on success, %NULL with error set on error
+ * Returns: (transfer full): The contact presence on success, %NULL with
+ *  error set on error
  */
 typedef GHashTable *(*TpPresenceMixinGetContactStatusesFunc) (GObject *obj,
     const GArray *contacts, GError **error);

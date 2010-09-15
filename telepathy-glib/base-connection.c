@@ -92,9 +92,9 @@
  * Signature of an implementation of the create_channel_factories method
  * of #TpBaseConnection.
  *
- * Returns: a GPtrArray of objects implementing #TpChannelFactoryIface
- * which, between them, implement all channel types this Connection
- * supports.
+ * Returns: (transfer full): a GPtrArray of objects implementing
+ *  #TpChannelFactoryIface which, between them, implement all channel types
+ *  this Connection supports.
  */
 
 /**
@@ -104,9 +104,9 @@
  * Signature of an implementation of the create_channel_managers method
  * of #TpBaseConnection.
  *
- * Returns: a GPtrArray of objects implementing #TpChannelManager
- * which, between them, implement all channel types this Connection
- * supports.
+ * Returns: (transfer full): a GPtrArray of objects implementing
+ *  #TpChannelManager which, between them, implement all channel types this
+ *  Connection supports.
  */
 
 /**
@@ -116,9 +116,9 @@
  * Signature of the @get_unique_connection_name virtual method
  * on #TpBaseConnection.
  *
- * Returns: a name for this connection which will be unique within this
- * connection manager process, as a string which the caller must free
- * with #g_free.
+ * Returns: (transfer full): a name for this connection which will be unique
+ *  within this connection manager process, as a string which the caller must
+ *  free with #g_free.
  */
 
 /**
