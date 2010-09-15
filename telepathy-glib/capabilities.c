@@ -355,3 +355,121 @@ tp_capabilities_supports_text_chatrooms (TpCapabilities *self)
   return supports_simple_channel (self, TP_IFACE_CHANNEL_TYPE_TEXT,
       TP_HANDLE_TYPE_ROOM);
 }
+
+static gboolean
+tp_capabilities_supports_tubes_common (TpCapabilities *self,
+    const gchar *expected_channel_type,
+    TpHandleType expected_handle_type,
+    const gchar *service_prop,
+    const gchar *expected_service)
+{
+  guint i;
+
+  g_return_val_if_fail (expected_handle_type == TP_HANDLE_TYPE_CONTACT ||
+      expected_handle_type == TP_HANDLE_TYPE_ROOM, FALSE);
+
+  for (i = 0; i < self->priv->classes->len; i++)
+    {
+      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
+      GHashTable *fixed;
+      const gchar *chan_type;
+      TpHandleType handle_type;
+      gboolean valid;
+      const gchar *service;
+
+      fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
+
+      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+
+      if (tp_strdiff (chan_type, expected_channel_type))
+        continue;
+
+      handle_type = tp_asv_get_uint32 (fixed,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+
+      if (!valid)
+        continue;
+
+      if (handle_type != expected_handle_type)
+        continue;
+
+      if (expected_service == NULL || !self->priv->contact_specific)
+        /* No need to check the service */
+        return TRUE;
+
+      service = tp_asv_get_string (fixed, service_prop);
+
+      if (tp_strdiff (service, expected_service))
+        continue;
+
+      /* We found the right service */
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
+/**
+ * tp_capabilities_supports_stream_tubes:
+ * @self: a #TpCapabilities object
+ * @handle_type: the handle type of the tube (either #TP_HANDLE_TYPE_CONTACT
+ * or #TP_HANDLE_TYPE_ROOM)
+ * @service: the service of the tube, or %NULL
+ *
+ * If the #TpCapabilities:contact-specific property is %TRUE, this function
+ * checks if the contact associated with this #TpCapabilities supports
+ * stream tubes with @handle_type as TargetHandleType.
+ * If @service is not %NULL, it also checks if it supports stream tubes
+ * with @service as #TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE.
+ *
+ * If the #TpCapabilities:contact-specific property is %FALSE, this function
+ * checks if the connection supports requesting stream tube channels with
+ * @handle_type as ChannelType. The @service argument is unused in this case.
+ *
+ * Returns: %TRUE if the contact or connection supports this type of stream
+ * tubes.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_stream_tubes (TpCapabilities *self,
+    TpHandleType handle_type,
+    const gchar *service)
+{
+  return tp_capabilities_supports_tubes_common (self,
+      TP_IFACE_CHANNEL_TYPE_STREAM_TUBE, handle_type,
+      TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE, service);
+}
+
+/**
+ * tp_capabilities_supports_dbus_tubes:
+ * @self: a #TpCapabilities object
+ * @handle_type: the handle type of the tube (either #TP_HANDLE_TYPE_CONTACT
+ * or #TP_HANDLE_TYPE_ROOM)
+ * @service_name: the service name of the tube, or %NULL
+ *
+ * If the #TpCapabilities:contact-specific property is %TRUE, this function
+ * checks if the contact associated with this #TpCapabilities supports
+ * D-Bus tubes with @handle_type as TargetHandleType.
+ * If @service_name is not %NULL, it also checks if it supports stream tubes
+ * with @service as #TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME.
+ *
+ * If the #TpCapabilities:contact-specific property is %FALSE, this function
+ * checks if the connection supports requesting D-Bus tube channels with
+ * @handle_type as ChannelType. The @service_name argument is unused in
+ * this case.
+ *
+ * Returns: %TRUE if the contact or connection supports this type of D-Bus
+ * tubes.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_dbus_tubes (TpCapabilities *self,
+    TpHandleType handle_type,
+    const gchar *service_name)
+{
+  return tp_capabilities_supports_tubes_common (self,
+      TP_IFACE_CHANNEL_TYPE_DBUS_TUBE, handle_type,
+      TP_PROP_CHANNEL_TYPE_DBUS_TUBE_SERVICE_NAME, service_name);
+}

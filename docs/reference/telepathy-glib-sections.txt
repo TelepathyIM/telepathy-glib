@@ -3610,6 +3610,8 @@ tp_capabilities_get_channel_classes
 tp_capabilities_is_specific_to_contact
 tp_capabilities_supports_text_chatrooms
 tp_capabilities_supports_text_chats
+tp_capabilities_supports_stream_tubes
+tp_capabilities_supports_dbus_tubes
 <SUBSECTION Standard>
 tp_capabilities_get_type
 TP_CAPABILITIES
