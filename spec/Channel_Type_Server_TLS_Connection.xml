@@ -44,7 +44,7 @@
     </tp:docstring>
 
     <property name="ServerCertificate" type="o" access="read"
-              tp:name-for-bindings="ServerCertificate">
+              tp:name-for-bindings="Server_Certificate">
       <tp:docstring>
         <p>A <tp:dbus-ref
         namespace="org.freedesktop.Telepathy.Authentication">TLSCertificate</tp:dbus-ref>
