@@ -1,0 +1,11 @@
+Version: TELEPATHY_GLIB_0.11.16
+Extends: TELEPATHY_GLIB_0.11.15
+Release: 0.11.16
+
+tp_svc_channel_interface_conference_emit_channel_removed
+tp_type_dbus_hash_uo
+tp_cli_channel_interface_conference_connect_to_channel_removed
+tp_cli_channel_interface_conference_connect_to_channel_merged
+tp_svc_channel_interface_conference_emit_channel_merged
+tp_iface_quark_channel_interface_conference
+tp_svc_channel_interface_conference_get_type

@@ -1,7 +1,33 @@
 telepathy-glib 0.11.16 (UNRELEASED)
 ===================================
 
-…
+Enhancements:
+
+• Update to stable spec 0.20.0 (smcv)
+  - generate basic API for Chan.I.Conference
+  - code is not generated for Chan.T.ServerTLSConnection or TLSCertificate yet,
+    since adding TLSCertificate requires a new TpProxy subclass
+
+• When connections are created in a CM, debug-log the sanitized parameter
+  values (wjt)
+
+• When a TpBaseChannel is created, log an error if it doesn't have a parent
+  connection (wjt)
+
+Fixes:
+
+• fd.o #30134: rename TpIntSet to TpIntset, with compatibility typedefs for
+  the old name, to avoid breaking recent gobject-introspection (pwithnall)
+
+• fd.o #30134: add more gobject-introspection annotations to work better
+  with recent versions, and work around another case of (skip) not working
+  in older versions (pwithnall, treitter, smcv)
+
+Compatibility notes:
+
+• If the Vala bindings are enabled, either GObject-Introspection must be
+  older than 0.9.5, or GObject-Introspection and Vala must both be very
+  recent (g-i newer than 0.9.5 and Vala newer than 0.9.8).
 
 telepathy-glib 0.11.15 (2010-09-13)
 ===================================
