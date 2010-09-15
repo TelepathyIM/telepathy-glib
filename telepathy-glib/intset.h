@@ -37,7 +37,7 @@ typedef struct _TpIntset TpIntset;
 /**
  * TpIntSet: (skip)
  *
- * Before 0.11.UNRELEASED, this was the name for <type>TpIntset</type>, but it's
+ * Before 0.11.16, this was the name for <type>TpIntset</type>, but it's
  * now just a backwards compatibility typedef.
  */
 typedef TpIntset TpIntSet;
@@ -86,7 +86,7 @@ typedef struct {
 /**
  * TpIntSetIter: (skip)
  *
- * Before 0.11.UNRELEASED, this was the name for <type>TpIntsetIter</type>, but
+ * Before 0.11.16, this was the name for <type>TpIntsetIter</type>, but
  * it's now just a backwards compatibility typedef.
  */
 typedef TpIntsetIter TpIntSetIter;
@@ -121,7 +121,7 @@ typedef struct {
 /**
  * TpIntSetFastIter: (skip)
  *
- * Before 0.11.UNRELEASED, this was the name for <type>TpIntsetFastIter</type>,
+ * Before 0.11.16, this was the name for <type>TpIntsetFastIter</type>,
  * but it's now just a backwards compatibility typedef.
  */
 typedef TpIntsetFastIter TpIntSetFastIter;

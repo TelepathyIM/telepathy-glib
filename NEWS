@@ -1,5 +1,7 @@
-telepathy-glib 0.11.16 (UNRELEASED)
+telepathy-glib 0.11.16 (2010-09-15)
 ===================================
+
+The "Fear my moo of fury!" release.
 
 Enhancements:
 
@@ -28,7 +30,7 @@ Compatibility notes:
 
 • If the Vala bindings are enabled, either GObject-Introspection must be
   older than 0.9.5, or GObject-Introspection and Vala must both be very
-  recent (g-i newer than 0.9.5 and Vala newer than 0.9.8).
+  recent (g-i 0.9.6 and Vala 0.9.9 will hopefully be suitable).
 
 telepathy-glib 0.11.15 (2010-09-13)
 ===================================

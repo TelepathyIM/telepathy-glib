@@ -106,7 +106,7 @@ tp_intset_get_type (void)
  * Since 0.11.6, consider using #TpIntsetFastIter if iteration in
  * numerical order is not required.
  *
- * Before 0.11.UNRELEASED, this type was called <type>TpIntSetIter</type>,
+ * Before 0.11.16, this type was called <type>TpIntSetIter</type>,
  * which is now a backwards compatibility typedef.
  */
 /* (public, see header) */
@@ -155,7 +155,7 @@ tp_intset_get_type (void)
  *
  * Opaque type representing a set of unsigned integers.
  *
- * Before 0.11.UNRELEASED, this type was called <type>TpIntSet</type>, which is
+ * Before 0.11.16, this type was called <type>TpIntSet</type>, which is
  * now a backwards compatibility typedef.
  */
 
@@ -831,7 +831,7 @@ tp_intset_iter_next (TpIntsetIter *iter)
  * An opaque structure representing iteration in undefined order over a set of
  * integers. Must be initialized with tp_intset_fast_iter_init().
  *
- * Before 0.11.UNRELEASED, this type was called <type>TpIntSetFastIter</type>,
+ * Before 0.11.16, this type was called <type>TpIntSetFastIter</type>,
  * which is now a backwards compatibility typedef.
  *
  * Usage is similar to #GHashTableIter:

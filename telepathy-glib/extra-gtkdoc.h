@@ -90,7 +90,7 @@
  * local user has been invited by another contact, they will appear in the
  * local-pending set until they accept or decline the invitation.
  *
- * Since 0.11.UNRELEASED, telepathy-glib also includes basic support for the
+ * Since 0.11.16, telepathy-glib also includes basic support for the
  * Conference interface, which represents a Group channel that can be
  * initiated by merging or upgrading individual 1-1 channels.
  */
@@ -822,5 +822,5 @@
  * servers' TLS certificates interactively. The actual certificates are
  * represented by a separate TLSCertificate object.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.16
  */
