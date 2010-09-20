@@ -1,9 +1,16 @@
 <?xml version="1.0"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" 
-               "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+               "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+  <!ENTITY tpglibversion SYSTEM "version.xml">
+]>
 <book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
   <bookinfo>
-    <title>telepathy-glib Reference Manual</title>
+    <title>telepathy-glib API Reference Manual</title>
+    <releaseinfo>
+      for telepathy-glib version &tpglibversion;.
+      The latest development version of this documentation can be found here:
+      <ulink role="online-location" url="http://telepathy.freedesktop.org/doc/telepathy-glib/">online copy of the telepathy-glib API Reference Manual</ulink>.
+    </releaseinfo>
   </bookinfo>
 
   <chapter id="ch-dbus">
