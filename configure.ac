@@ -220,6 +220,10 @@ if test x$enable_vala_bindings = xyes; then
     AC_MSG_ERROR([GObject-Introspection must be enabled for Vala bindings])
   fi
 
+  PKG_CHECK_EXISTS([gobject-introspection-1.0 >= 0.9.6],
+    [],
+    [AC_MSG_ERROR([gobject-introspection 0.9.6 required for Vala bindings])])
+
   m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.9.3)],
            [AC_MSG_ERROR([Automake >= 1.11 required for Vala bindings])])
   have_vala=yes
