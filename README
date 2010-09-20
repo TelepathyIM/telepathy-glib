@@ -30,6 +30,7 @@ Building telepathy-glib requires:
 
 and can also make use of:
   GObject-Introspection <http://ftp.gnome.org/pub/GNOME/sources/gobject-introspection/>
+  Vala <http://ftp.gnome.org/pub/GNOME/sources/vala/>
   gtkdoc <http://ftp.gnome.org/pub/GNOME/sources/gtk-doc/>
 
 See configure.ac for full details, including versions required.
