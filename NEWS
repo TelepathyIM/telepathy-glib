@@ -1,7 +1,45 @@
-telepathy-glib 0.11.17 (UNRELEASED)
-===================================
+telepathy-glib 0.12.0 (2010-09-20)
+==================================
 
-…
+The "you rang?" release, starting a 0.12.0 stable branch.
+
+Highlights since 0.10.x
+-----------------------
+
+Changes:
+
+• when the local user is removed from a Group Channel, the GError used to
+  invalidate the TpChannel has changed
+
+New features:
+
+• the TpProxy "feature" (prepare_async) mechanism
+• high-level bindings for ChatStates, ContactCapabilities, ContactInfo, Avatars,
+  detailed connection errors, and Protocol objects
+• TpAccountChannelRequest, a high-level channel-requesting mechanism
+• TpBaseClient, a base class for Observers, Approvers and Handlers
+• generated constants for contact attributes and handler capability tokens
+• base classes for Channel and Protocol in connection managers
+• TpWeakRef, a wrapper for a weak reference and optional extra pointer
+• experimental GObject-Introspection bindings, requiring version 0.6.14 or later
+• experimental Vala bindings, requiring GObject-Introspection 0.9.6 and Vala
+  0.10.0 or later
+• generated code for all stable APIs in telepathy-spec 0.20, apart from
+  client code for Channel.Type.ServerTLSConnection (which will follow in 0.13.x)
+
+Note that the GObject-Introspection and Vala bindings are not subject to the
+same API guarantees as the C API, and are likely to have incompatible changes
+during the 0.13.x series.
+
+Changes since 0.11.16
+---------------------
+
+• Disable documentation completeness checks and redirect documentation uploads
+  for stable branch
+• Add the version number, and a link to the latest version, to the documentation
+• Increase dependencies for Vala bindings to versions that the libfolks
+  developers have verified to work: gobject-introspection 0.9.6 and
+  Vala 0.10.0
 
 telepathy-glib 0.11.16 (2010-09-15)
 ===================================
