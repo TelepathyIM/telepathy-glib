@@ -144,14 +144,16 @@ ifelse(tp_glib_nano_version, 0,
     [ENABLE_DOC_CHECKS=$enableval], [ENABLE_DOC_CHECKS=no] )
 ],
 [ # tp-glib is version x.y.z.1 - enable extra checks by default
+  # (but only partially, because this is a stable branch and gtk-doc's
+  # definition of "complete" sometimes changes)
   AC_ARG_ENABLE(coding-style-checks,
     AC_HELP_STRING([--disable-coding-style-checks],
                    [do not check coding style using grep]),
     [ENABLE_CODING_STYLE_CHECKS=$enableval], [ENABLE_CODING_STYLE_CHECKS=yes])
   AC_ARG_ENABLE(doc-checks,
-    AC_HELP_STRING([--disable-doc-checks],
-                   [do not check for complete documentation coverage]),
-    [ENABLE_DOC_CHECKS=$enableval], [ENABLE_DOC_CHECKS=yes])
+    AC_HELP_STRING([--enable-doc-checks],
+                   [check for complete documentation coverage]),
+    [ENABLE_DOC_CHECKS=$enableval], [ENABLE_DOC_CHECKS=no])
 ])
 
 AC_SUBST([ENABLE_CODING_STYLE_CHECKS])
