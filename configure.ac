@@ -224,7 +224,7 @@ if test x$enable_vala_bindings = xyes; then
     [],
     [AC_MSG_ERROR([gobject-introspection 0.9.6 required for Vala bindings])])
 
-  m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.9.3)],
+  m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.10.0)],
            [AC_MSG_ERROR([Automake >= 1.11 required for Vala bindings])])
   have_vala=yes
 
