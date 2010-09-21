@@ -4868,20 +4868,20 @@ tp_client_channel_factory_get_type
 </SECTION>
 
 <SECTION>
-<FILE>basic-channel-factory</FILE>
-<TITLE>basic-channel-factory</TITLE>
-<INCLUDE>telepathy-glib/basic-channel-factory.h</INCLUDE>
-TpBasicChannelFactory
-TpBasicChannelFactoryClass
-tp_basic_channel_factory_new
+<FILE>basic-proxy-factory</FILE>
+<TITLE>basic-proxy-factory</TITLE>
+<INCLUDE>telepathy-glib/basic-proxy-factory.h</INCLUDE>
+TpBasicProxyFactory
+TpBasicProxyFactoryClass
+tp_basic_proxy_factory_new
 <SUBSECTION Standard>
-TP_BASIC_CHANNEL_FACTORY
-TP_BASIC_CHANNEL_FACTORY_GET_CLASS
-TP_IS_BASIC_CHANNEL_FACTORY
-TP_TYPE_BASIC_CHANNEL_FACTORY
-TP_BASIC_CHANNEL_FACTORY_CLASS
-TP_IS_BASIC_CHANNEL_FACTORY_CLASS
-tp_basic_channel_factory_get_type
+TP_BASIC_PROXY_FACTORY
+TP_BASIC_PROXY_FACTORY_GET_CLASS
+TP_IS_BASIC_PROXY_FACTORY
+TP_TYPE_BASIC_PROXY_FACTORY
+TP_BASIC_PROXY_FACTORY_CLASS
+TP_IS_BASIC_PROXY_FACTORY_CLASS
+tp_basic_proxy_factory_get_type
 </SECTION>
 
 <SECTION>

@@ -165,7 +165,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
-#include <telepathy-glib/basic-channel-factory.h>
+#include <telepathy-glib/basic-proxy-factory.h>
 #include <telepathy-glib/channel-dispatch-operation-internal.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
@@ -1082,7 +1082,7 @@ tp_base_client_constructed (GObject *object)
   if (self->priv->channel_factory == NULL)
     {
       self->priv->channel_factory = TP_CLIENT_CHANNEL_FACTORY (
-          tp_basic_channel_factory_new ());
+          tp_basic_proxy_factory_new ());
     }
   else
     {
@@ -1331,7 +1331,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * While the client has not been registerd, this property can be changed
    * using tp_base_client_set_channel_factory().
    *
-   * If no channel factory is specified then #TpBasicChannelFactory is used.
+   * If no channel factory is specified then #TpBasicProxyFactory is used.
    *
    * Since: 0.13.UNRELEASED
    */

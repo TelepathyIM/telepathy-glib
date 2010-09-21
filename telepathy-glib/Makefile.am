@@ -139,8 +139,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     base-connection-manager.c \
     base-protocol-internal.h \
     base-protocol.c \
-    basic-channel-factory.c \
-    basic-channel-factory.h \
+    basic-proxy-factory.c \
+    basic-proxy-factory.h \
     capabilities.c \
     capabilities-internal.h \
     channel.c \

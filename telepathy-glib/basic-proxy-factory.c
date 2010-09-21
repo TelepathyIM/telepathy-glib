@@ -19,8 +19,8 @@
  */
 
 /**
- * SECTION:basic-channel-factory
- * @title: TpBasicChannelFactory
+ * SECTION:basic-proxy-factory
+ * @title: TpBasicProxyFactory
  * @short_description: channel factory creating TpChannel objects
  *
  * This factory implements the #TpClientChannelFactory interface to create
@@ -29,23 +29,23 @@
  */
 
 /**
- * TpBasicChannelFactory:
+ * TpBasicProxyFactory:
  *
- * Data structure representing a #TpBasicChannelFactory
+ * Data structure representing a #TpBasicProxyFactory
  *
  * Since: 0.13.UNRELEASED
  */
 
 /**
- * TpBasicChannelFactoryClass:
+ * TpBasicProxyFactoryClass:
  * @parent_class: the parent class
  *
- * The class of a #TpBasicChannelFactory.
+ * The class of a #TpBasicProxyFactory.
  *
  * Since: 0.13.UNRELEASED
  */
 
-#include "telepathy-glib/basic-channel-factory.h"
+#include "telepathy-glib/basic-proxy-factory.h"
 
 #include <telepathy-glib/client-channel-factory.h>
 
@@ -54,17 +54,17 @@
 
 static void client_channel_factory_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE(TpBasicChannelFactory, tp_basic_channel_factory, G_TYPE_OBJECT,
+G_DEFINE_TYPE_WITH_CODE(TpBasicProxyFactory, tp_basic_proxy_factory, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CLIENT_CHANNEL_FACTORY,
       client_channel_factory_iface_init))
 
 static void
-tp_basic_channel_factory_init (TpBasicChannelFactory *self)
+tp_basic_proxy_factory_init (TpBasicProxyFactory *self)
 {
 }
 
 static void
-tp_basic_channel_factory_class_init (TpBasicChannelFactoryClass *cls)
+tp_basic_proxy_factory_class_init (TpBasicProxyFactoryClass *cls)
 {
 }
 
@@ -79,17 +79,17 @@ client_channel_factory_iface_init (gpointer g_iface,
 }
 
 /**
- * tp_basic_channel_factory_new:
+ * tp_basic_proxy_factory_new:
  *
- * Convenient function to create a new #TpBasicChannelFactory instance.
+ * Convenient function to create a new #TpBasicProxyFactory instance.
  *
- * Returns: a new #TpBasicChannelFactory
+ * Returns: a new #TpBasicProxyFactory
  *
  * Since: 0.13.UNRELEASED
  */
-TpBasicChannelFactory *
-tp_basic_channel_factory_new (void)
+TpBasicProxyFactory *
+tp_basic_proxy_factory_new (void)
 {
-  return g_object_new (TP_TYPE_BASIC_CHANNEL_FACTORY,
+  return g_object_new (TP_TYPE_BASIC_PROXY_FACTORY,
       NULL);
 }

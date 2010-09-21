@@ -54,7 +54,7 @@
 #include <telepathy-glib/stream-tube-connection.h>
 #include <telepathy-glib/client-channel-factory.h>
 #include <telepathy-glib/automatic-channel-factory.h>
-#include <telepathy-glib/basic-channel-factory.h>
+#include <telepathy-glib/basic-proxy-factory.h>
 
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>
