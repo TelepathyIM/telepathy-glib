@@ -262,6 +262,24 @@ tp_contacts_mixin_finalize (GObject *obj)
   g_slice_free (TpContactsMixinPrivate, mixin->priv);
 }
 
+/**
+ * tp_contacts_mixin_get_contacts_attributes:
+ * @obj: An instance of the implementation that uses this mixin
+ * @handles: List of handles to retrieve contacts for. And non-valid handles will be
+ * dropped from the returned mapping.
+ * @interfaces: A list of interfaces to retrieve attributes for. The Connection
+ * interface will always be included.
+ * @sender: The DBus client's unique name. If this is not NULL, the requested handles
+ * will be held by this client.
+ *
+ * Get contact attributes for the given contacts. Provide attributs for all requested
+ * interfaces. If contact attributes are not immediately known, the behaviour is defined
+ * by the interface; the attribute should either be omitted from the result or replaced
+ * with a default value.
+ *
+ * Returns: A dictionary mapping the contact handles to contact attributes.
+ *
+ */
 GHashTable *
 tp_contacts_mixin_get_contacts_attributes (GObject *obj,
     const GArray *handles, const gchar **interfaces, const gchar *sender)
@@ -324,7 +342,7 @@ tp_contacts_mixin_get_contacts_attributes (GObject *obj,
 }
 
 static void
-tp_contacts_mixin_get_contact_attributes (
+tp_contacts_mixin_get_contact_attributes_impl (
     TpSvcConnectionInterfaceContacts *iface, const GArray *handles,
     const gchar **interfaces, gboolean hold, DBusGMethodInvocation *context)
 {
@@ -367,7 +385,7 @@ tp_contacts_mixin_iface_init (gpointer g_iface, gpointer iface_data)
     (TpSvcConnectionInterfaceContactsClass *) g_iface;
 
 #define IMPLEMENT(x) tp_svc_connection_interface_contacts_implement_##x ( \
-    klass, tp_contacts_mixin_##x)
+    klass, tp_contacts_mixin_##x##_impl)
   IMPLEMENT(get_contact_attributes);
 #undef IMPLEMENT
 }
