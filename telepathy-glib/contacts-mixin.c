@@ -263,7 +263,7 @@ tp_contacts_mixin_finalize (GObject *obj)
 }
 
 /**
- * tp_contacts_mixin_get_contacts_attributes:
+ * tp_contacts_mixin_get_contact_attributes:
  * @obj: An instance of the implementation that uses this mixin
  * @handles: List of handles to retrieve contacts for. And non-valid handles will be
  * dropped from the returned mapping.
@@ -281,7 +281,7 @@ tp_contacts_mixin_finalize (GObject *obj)
  *
  */
 GHashTable *
-tp_contacts_mixin_get_contacts_attributes (GObject *obj,
+tp_contacts_mixin_get_contact_attributes (GObject *obj,
     const GArray *handles, const gchar **interfaces, const gchar *sender)
 {
   GHashTable *result;
@@ -355,7 +355,7 @@ tp_contacts_mixin_get_contact_attributes_impl (
   if (hold)
     sender = dbus_g_method_get_sender (context);
 
-  result = tp_contacts_mixin_get_contacts_attributes (G_OBJECT (iface),
+  result = tp_contacts_mixin_get_contact_attributes (G_OBJECT (iface),
       handles, interfaces, sender);
 
   tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
