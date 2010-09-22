@@ -270,7 +270,8 @@ list_remove_member (GObject *object,
 }
 
 /* We don't use this: #TpBaseChannelClass.close doesn't allow us to fail to
- * close, which is a quirk of the old ContactList design. */
+ * close, which is a quirk of the old ContactList design, so subclasses must
+ * IMPLEMENT (close) manually. */
 static void
 stub_close (TpBaseChannel *channel G_GNUC_UNUSED)
 {
