@@ -18,10 +18,9 @@
       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
       USA.</p>
   </tp:license>
-  <interface name="org.freedesktop.Telepathy.Connection.Interface.ContactList.DRAFT3"
-    tp:causes-havoc="experimental">
+  <interface name="org.freedesktop.Telepathy.Connection.Interface.ContactList">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
-    <tp:added version="0.19.12">(draft 3)</tp:added>
+    <tp:added version="0.21.0">(as stable API)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>An interface for connections that have any concept of a list of
@@ -35,7 +34,7 @@
         <p>In some protocols (like link-local XMPP), while there might not be
           any server or roster, it's possible to list "nearby" contacts.</p>
 
-        <p>In Telepathy 0.18 and older, we represented contact lists as a
+        <p>In Telepathy 0.20 and older, we represented contact lists as a
           collection of <tp:dbus-ref
             namespace="org.freedesktop.Telepathy.Channel.Type"
             >ContactList</tp:dbus-ref> channels. This is remarkably difficult to
@@ -100,7 +99,6 @@
 
     <property name="ContactListState" tp:name-for-bindings="Contact_List_State"
       type="u" tp:type="Contact_List_State" access="read">
-      <tp:added version="0.19.12">(in draft 3)</tp:added>
       <tp:docstring>
         The progress made in retrieving the contact list.
         Change notification is via
@@ -110,7 +108,6 @@
 
     <signal name="ContactListStateChanged"
       tp:name-for-bindings="Contact_List_State_Changed">
-      <tp:added version="0.19.12">(in draft 3)</tp:added>
       <tp:docstring>
         Emitted when <tp:member-ref>ContactListState</tp:member-ref>
         changes.
@@ -125,8 +122,6 @@
 
     <method name="GetContactListAttributes"
       tp:name-for-bindings="Get_Contact_List_Attributes">
-      <tp:changed version="0.19.12">(semantics changed in draft
-        3)</tp:changed>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Return some contact attributes for a list of contacts
           associated with the user. This list MUST include at least:</p>
@@ -384,7 +379,6 @@
 
     <property name="ContactListPersists"
       tp:name-for-bindings="Contact_List_Persists" type="b" access="read">
-      <tp:changed version="0.19.12">(renamed in draft 3)</tp:changed>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>If true, presence subscriptions (in both directions) on this
           connection are stored by the server or other infrastructure.</p>
@@ -439,10 +433,45 @@
     </property>
 
     <tp:enum name="Contact_Metadata_Storage_Type" type="u">
-      <tp:docstring>
-        Values of this enumeration indicate the extent to which metadata
-        such as aliases and group memberships can be stored for the contacts
-        on a particular connection.
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Values of this enumeration indicate the extent to which metadata
+          such as aliases and group memberships can be stored for the contacts
+          on a particular connection.</p>
+
+        <p>On some protocols, certain metadata (for instance, contact aliases)
+          can only be stored for contacts on the contact list, or contacts
+          with a particular contact list state.</p>
+
+        <p>To make it easier to deal with such protocols, if clients set
+          metadata on a contact who is not in the required state, the
+          Connection MUST cache the metadata for the duration of the session.
+          If clients request the attributes of that contact after the
+          appropriate "set" method has returned successfully, the Connection
+          MUST return the new (cached) value.</p>
+
+        <p>If the contact is later placed in the required state to store
+          metadata (for instance, if subscription to the contact's presence
+          is requested, on a protocol like MSN where the alias has storage type
+          Subscribed_Or_Pending), the connection MUST store the cached
+          metadata at that time.</p>
+
+        <tp:rationale>
+          <p>If the Connection didn't cache changes in this way, a client
+            intending to change the alias on MSN would have to wait until
+            the server acknowledged the subscription request; in the meantime,
+            other clients would still display the old alias.</p>
+        </tp:rationale>
+
+        <p>The only exception to that general rule is that if the Connection
+          cannot store particular metadata at all (i.e. the
+          storage type is None), it MUST reject attempts to set it.</p>
+
+        <tp:rationale>
+          <p>If the implementation knows that metadata can't be stored at
+            all, it's useful to report that, which can be done
+            synchronously. In general, user interfaces should detect
+            storage type None and not display editing controls at all.</p>
+        </tp:rationale>
       </tp:docstring>
 
       <tp:enumvalue suffix="None" value="0">
@@ -471,23 +500,6 @@
           <tp:rationale>
             <p>Contact aliases and groups on MSN have this behaviour.</p>
           </tp:rationale>
-
-          <p>If this type of metadata is set on a contact with subscribe=No
-            or subscribe=Rejected, the Connection MUST cache it until
-            disconnected, and return it if requested. If subscription to the
-            contact's presence is subsequently requested, making it possible
-            to store this metadata, the Connection MUST store the cached
-            value at that time.</p>
-
-          <tp:rationale>
-            <p>This supports the recommended calling pattern for adding a
-              new contact, in which alias and groups are set (without
-              necessarily waiting for a reply) before requesting the
-              contact's presence. Until the subscription request is
-              processed by the server, the alias and groups will be cached
-              in memory; when the subscription request has been processed,
-              the connection manager will store the metadata on the server.</p>
-          </tp:rationale>
         </tp:docstring>
       </tp:enumvalue>
 
@@ -499,19 +511,6 @@
           <tp:rationale>
             <p>No service with this behaviour is currently known, but it's a
               stricter form of Subscribed_Or_Pending.</p>
-          </tp:rationale>
-
-          <p>If this type of metadata is set on a contact with subscribe != Yes,
-            the Connection MUST cache it until disconnected, and return it
-            if requested. If subscription to the contact's presence is
-            subsequently allowed, making it possible to store this metadata,
-            the Connection MUST store the cached value at that time.</p>
-
-          <tp:rationale>
-            <p>The same rationale applies as for Subscribed_Or_Pending,
-              except that metadata must be stored until the subscription
-              request is not only processed by the server, but also allowed
-              by the remote user.</p>
           </tp:rationale>
         </tp:docstring>
       </tp:enumvalue>
