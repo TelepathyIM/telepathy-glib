@@ -71,7 +71,7 @@ tp_handle_set_get_type (void)
  *
  * Creates a new #TpHandleSet
  *
- * Returns: A new #TpHandleSet
+ * Returns: (transfer full): A new #TpHandleSet
  */
 TpHandleSet *
 tp_handle_set_new (TpHandleRepoIface *repo)
@@ -93,7 +93,7 @@ tp_handle_set_new (TpHandleRepoIface *repo)
  *
  * Creates a new #TpHandleSet
  *
- * Returns: A new #TpHandleSet
+ * Returns: (transfer full): A new #TpHandleSet
  *
  * Since: 0.11.7
  */
@@ -342,14 +342,14 @@ tp_handle_set_copy (const TpHandleSet *other)
 }
 
 /**
- * tp_handle_set_new_containing:
+ * tp_handle_set_new_containing: (skip)
  * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
  * @handle: a valid handle
  *
  * Creates a new #TpHandleSet from a specified handle repository and single
  * handle.
  *
- * Returns: A new #TpHandleSet
+ * Returns: (transfer full): A new #TpHandleSet
  *
  * Since: 0.13.UNRELEASED
  */
@@ -364,14 +364,14 @@ tp_handle_set_new_containing (TpHandleRepoIface *repo,
 }
 
 /**
- * tp_handle_set_new_from_intset:
+ * tp_handle_set_new_from_intset: (skip)
  * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
  * @intset: a set of handles, which must all be valid
  *
  * Creates a new #TpHandleSet from a specified handle repository and
  * set of handles.
  *
- * Returns: A new #TpHandleSet
+ * Returns: (transfer full): A new #TpHandleSet
  *
  * Since: 0.13.UNRELEASED
  */
