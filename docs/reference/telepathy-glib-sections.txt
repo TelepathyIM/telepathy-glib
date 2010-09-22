@@ -258,6 +258,7 @@ tp_handle_set_size
 tp_handle_set_to_array
 tp_handle_set_update
 tp_handle_set_difference_update
+tp_handle_set_dump
 </SECTION>
 
 <SECTION>

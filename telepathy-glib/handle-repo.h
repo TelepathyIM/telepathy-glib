@@ -144,6 +144,9 @@ TpIntset *tp_handle_set_update (TpHandleSet *set, const TpIntset *add)
 TpIntset *tp_handle_set_difference_update (TpHandleSet *set,
     const TpIntset *remove) G_GNUC_WARN_UNUSED_RESULT;
 
+gchar *tp_handle_set_dump (const TpHandleSet *self,
+    gchar spacer) G_GNUC_WARN_UNUSED_RESULT;
+
 /* static inline because it relies on NUM_TP_HANDLE_TYPES */
 /**
  * tp_handles_supported_and_valid: (skip)
