@@ -3654,6 +3654,10 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
  *
  * Convenience wrapper around tp_base_contact_list_groups_changed() for a
  * single handle in the 'contacts' set.
+ *
+ * (There is no equivalent function for @added and @removed having trivial
+ * contents, because you can already use <code>NULL, 0</code> for an empty
+ * list or <code>&group_name, 1</code> for a single group.)
  */
 void
 tp_base_contact_list_one_contact_groups_changed (TpBaseContactList *self,
