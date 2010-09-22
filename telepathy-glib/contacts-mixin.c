@@ -282,7 +282,10 @@ tp_contacts_mixin_finalize (GObject *obj)
  */
 GHashTable *
 tp_contacts_mixin_get_contact_attributes (GObject *obj,
-    const GArray *handles, const gchar **interfaces, const gchar *sender)
+    const GArray *handles,
+    const gchar **interfaces,
+    const gchar **assumed_interfaces,
+    const gchar *sender)
 {
   GHashTable *result;
   guint i;
@@ -323,10 +326,16 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
    */
   tp_handles_ref (contact_repo, valid_handles);
 
-  func = g_hash_table_lookup (self->priv->interfaces, TP_IFACE_CONNECTION);
+  for (i = 0; assumed_interfaces[i] != NULL; i++)
+    {
+      func = g_hash_table_lookup (self->priv->interfaces, assumed_interfaces[i]);
 
-  if (func != NULL)
-    func (obj, valid_handles, result);
+      if (func == NULL)
+        DEBUG ("non-inspectable assumed interface %s given; ignoring",
+            assumed_interfaces[i]);
+      else
+        func (obj, valid_handles, result);
+    }
 
   for (i = 0; interfaces[i] != NULL; i++)
     {
@@ -353,6 +362,10 @@ tp_contacts_mixin_get_contact_attributes_impl (
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   GHashTable *result;
   gchar *sender = NULL;
+  const gchar *assumed_interfaces[] = {
+    TP_IFACE_CONNECTION,
+    NULL
+  };
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
@@ -360,7 +373,7 @@ tp_contacts_mixin_get_contact_attributes_impl (
     sender = dbus_g_method_get_sender (context);
 
   result = tp_contacts_mixin_get_contact_attributes (G_OBJECT (iface),
-      handles, interfaces, sender);
+      handles, interfaces, assumed_interfaces, sender);
 
   tp_svc_connection_interface_contacts_return_from_get_contact_attributes (
       context, result);
