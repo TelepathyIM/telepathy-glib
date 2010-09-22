@@ -264,7 +264,7 @@ tp_contacts_mixin_finalize (GObject *obj)
 
 /**
  * tp_contacts_mixin_get_contact_attributes:
- * @obj: An instance of the implementation that uses this mixin
+ * @obj: A connection instance that uses this mixin. The connection must be connected.
  * @handles: List of handles to retrieve contacts for. And non-valid handles will be
  * dropped from the returned mapping.
  * @interfaces: A list of interfaces to retrieve attributes for. The Connection
@@ -295,6 +295,7 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
 
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (obj), NULL);
   g_return_val_if_fail (TP_CONTACTS_MIXIN_OFFSET (obj) != 0, NULL);
+  g_return_val_if_fail (conn->status == TP_CONNECTION_STATUS_CONNECTED, NULL);
 
   /* Setup handle array and hash with valid handles, optionally holding them */
   valid_handles = g_array_sized_new (TRUE, TRUE, sizeof (TpHandle),
