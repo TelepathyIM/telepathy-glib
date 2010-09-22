@@ -295,7 +295,6 @@ example_contact_list_manager_set_contact_groups_async (
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpHandleSet *set = tp_handle_set_new (self->priv->contact_repo);
   gboolean created;
   gsize i;
   ExampleContactDetails *d;
@@ -308,12 +307,10 @@ example_contact_list_manager_set_contact_groups_async (
 
   tp_base_contact_list_groups_created (manager, names, n);
 
-  tp_handle_set_add (set, contact);
-
   d = ensure_contact (self, contact, &created);
 
   if (created)
-    tp_base_contact_list_contacts_changed (manager, set, NULL);
+    tp_base_contact_list_one_contact_changed (manager, contact);
 
   if (d->tags == NULL)
     d->tags = g_hash_table_new (g_str_hash, g_str_equal);
@@ -351,7 +348,7 @@ next_hash_element:
       continue;
     }
 
-  tp_base_contact_list_groups_changed (manager, set,
+  tp_base_contact_list_one_contact_groups_changed (manager, contact,
       (const gchar * const *) new_names->pdata, new_names->len,
       (const gchar * const *) old_names->pdata, old_names->len);
   g_ptr_array_unref (old_names);
@@ -805,7 +802,6 @@ receive_auth_request (ExampleContactListManager *self,
                       TpHandle contact)
 {
   ExampleContactDetails *d;
-  TpHandleSet *set;
 
   /* if shutting down, do nothing */
   if (self->priv->conn == NULL)
@@ -843,11 +839,8 @@ receive_auth_request (ExampleContactListManager *self,
           g_strdup ("May I see your presence, please?"));
     }
 
-  set = tp_handle_set_new (self->priv->contact_repo);
-  tp_handle_set_add (set, contact);
-  tp_base_contact_list_contacts_changed ((TpBaseContactList *) self,
-      set, NULL);
-  tp_handle_set_destroy (set);
+  tp_base_contact_list_one_contact_changed ((TpBaseContactList *) self,
+      contact);
 
   /* If the contact has a name ending with "@cancel.something", they
    * immediately take it back; this is mainly for the regression test. */
@@ -863,11 +856,8 @@ receive_auth_request (ExampleContactListManager *self,
           GUINT_TO_POINTER (contact));
       tp_handle_set_add (self->priv->cancelled_publish_requests, contact);
 
-      set = tp_handle_set_new (self->priv->contact_repo);
-      tp_handle_set_add (set, contact);
-      tp_base_contact_list_contacts_changed ((TpBaseContactList *) self,
-          set, NULL);
-      tp_handle_set_destroy (set);
+      tp_base_contact_list_one_contact_changed ((TpBaseContactList *) self,
+          contact);
     }
 }
 
@@ -876,7 +866,6 @@ receive_authorized (gpointer p)
 {
   SelfAndContact *s = p;
   ExampleContactDetails *d;
-  TpHandleSet *set;
 
   /* if shutting down, do nothing */
   if (s->self->priv->conn == NULL)
@@ -900,11 +889,8 @@ receive_authorized (gpointer p)
   d->subscribe_rejected = FALSE;
   d->subscribe = TRUE;
 
-  set = tp_handle_set_new (s->self->priv->contact_repo);
-  tp_handle_set_add (set, s->contact);
-  tp_base_contact_list_contacts_changed ((TpBaseContactList *) s->self,
-      set, NULL);
-  tp_handle_set_destroy (set);
+  tp_base_contact_list_one_contact_changed ((TpBaseContactList *) s->self,
+      s->contact);
 
   /* their presence changes to something other than UNKNOWN */
   g_signal_emit (s->self, signals[PRESENCE_UPDATED], 0, s->contact);
@@ -924,7 +910,6 @@ receive_unauthorized (gpointer p)
 {
   SelfAndContact *s = p;
   ExampleContactDetails *d;
-  TpHandleSet *set;
 
   /* if shutting down, do nothing */
   if (s->self->priv->conn == NULL)
@@ -947,11 +932,8 @@ receive_unauthorized (gpointer p)
   d->subscribe_rejected = TRUE;
   d->subscribe = FALSE;
 
-  set = tp_handle_set_new (s->self->priv->contact_repo);
-  tp_handle_set_add (set, s->contact);
-  tp_base_contact_list_contacts_changed ((TpBaseContactList *) s->self,
-      set, NULL);
-  tp_handle_set_destroy (set);
+  tp_base_contact_list_one_contact_changed ((TpBaseContactList *) s->self,
+      s->contact);
 
   /* their presence changes to UNKNOWN */
   g_signal_emit (s->self, signals[PRESENCE_UPDATED], 0, s->contact);
@@ -1028,12 +1010,8 @@ example_contact_list_manager_set_alias (ExampleContactListManager *self,
 
   if (created)
     {
-      TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
-
-      tp_handle_set_add (changed, contact);
-      tp_base_contact_list_contacts_changed (
-          (TpBaseContactList *) self, changed, NULL);
-      tp_handle_set_destroy (changed);
+      tp_base_contact_list_one_contact_changed (
+          (TpBaseContactList *) self, contact);
     }
 
   /* FIXME: if stored list hasn't been retrieved yet, queue the change for
