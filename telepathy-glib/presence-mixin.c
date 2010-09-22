@@ -747,7 +747,7 @@ tp_presence_mixin_set_last_activity_time (TpSvcConnectionInterfacePresence *ifac
 /**
  * tp_presence_mixin_remove_status: (skip)
  *
- * Implements D-Bus method GetStatuses
+ * Implements D-Bus method RemoveStatus
  * on interface org.freedesktop.Telepathy.Connection.Interface.Presence
  *
  * @context: The D-Bus invocation context to use to return values
