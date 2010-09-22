@@ -76,6 +76,12 @@ struct _TpHandleRepoIfaceClass {
         GQuark key_id);
 };
 
+gpointer _tp_dynamic_handle_repo_get_normalization_data (
+    TpHandleRepoIface *irepo);
+void _tp_dynamic_handle_repo_set_normalization_data (TpHandleRepoIface *irepo,
+    gpointer data,
+    GDestroyNotify destroy);
+
 G_END_DECLS
 
 #endif /*__TP_INTERNAL_HANDLE_REPO_H__ */

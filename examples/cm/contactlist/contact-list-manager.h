@@ -14,6 +14,7 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/base-contact-list.h>
 #include <telepathy-glib/channel-manager.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/presence-mixin.h>
@@ -25,11 +26,11 @@ typedef struct _ExampleContactListManagerClass ExampleContactListManagerClass;
 typedef struct _ExampleContactListManagerPrivate ExampleContactListManagerPrivate;
 
 struct _ExampleContactListManagerClass {
-    GObjectClass parent_class;
+    TpBaseContactListClass parent_class;
 };
 
 struct _ExampleContactListManager {
-    GObject parent;
+    TpBaseContactList parent;
 
     ExampleContactListManagerPrivate *priv;
 };
@@ -52,24 +53,6 @@ GType example_contact_list_manager_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CONTACT_LIST_MANAGER, \
                               ExampleContactListManagerClass))
 
-gboolean example_contact_list_manager_add_to_group (
-    ExampleContactListManager *self, GObject *channel,
-    TpHandle group, TpHandle member, const gchar *message, GError **error);
-
-gboolean example_contact_list_manager_remove_from_group (
-    ExampleContactListManager *self, GObject *channel,
-    TpHandle group, TpHandle member, const gchar *message, GError **error);
-
-/* elements 1, 2... of this enum must be kept in sync with elements 0, 1...
- * of the array _contact_lists in contact-list-manager.h */
-typedef enum {
-    INVALID_EXAMPLE_CONTACT_LIST,
-    EXAMPLE_CONTACT_LIST_SUBSCRIBE = 1,
-    EXAMPLE_CONTACT_LIST_PUBLISH,
-    EXAMPLE_CONTACT_LIST_STORED,
-    NUM_EXAMPLE_CONTACT_LISTS
-} ExampleContactListHandle;
-
 /* this enum must be kept in sync with the array _statuses in
  * contact-list-manager.c */
 typedef enum {
@@ -82,18 +65,6 @@ typedef enum {
 
 const TpPresenceStatusSpec *example_contact_list_presence_statuses (
     void);
-
-gboolean example_contact_list_manager_add_to_list (
-    ExampleContactListManager *self, GObject *channel,
-    ExampleContactListHandle list, TpHandle member, const gchar *message,
-    GError **error);
-
-gboolean example_contact_list_manager_remove_from_list (
-    ExampleContactListManager *self, GObject *channel,
-    ExampleContactListHandle list, TpHandle member, const gchar *message,
-    GError **error);
-
-const gchar **example_contact_lists (void);
 
 ExampleContactListPresence example_contact_list_manager_get_presence (
     ExampleContactListManager *self, TpHandle contact);

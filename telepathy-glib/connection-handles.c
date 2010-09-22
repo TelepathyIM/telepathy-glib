@@ -809,3 +809,62 @@ tp_connection_get_contact_attributes (TpConnection *self,
       c, get_contact_attributes_context_free, weak_object);
   g_array_free (a, TRUE);
 }
+
+/**
+ * tp_connection_get_contact_list_attributes:
+ * @self: a connection
+ * @timeout_ms: the timeout in milliseconds (using a large timeout is
+ *  recommended)
+ * @interfaces: a #GStrv of interfaces
+ * @hold: if %TRUE, the callback will hold one reference to each handle it
+ *  receives
+ * @callback: (type GObject.Callback): called on success or
+ *  failure (unless @weak_object has become unreferenced)
+ * @user_data: arbitrary user-supplied data
+ * @destroy: called to destroy @user_data after calling @callback, or when
+ *  @weak_object becomes unreferenced (whichever occurs sooner)
+ * @weak_object: if not %NULL, an object to be weakly referenced: if it is
+ *  destroyed, @callback will not be called
+ *
+ * Return (via a callback) the contacts on the contact list and any number of
+ * their attributes, and if @hold is TRUE, hold a reference to them.
+ *
+ * This is a thin wrapper around the RequestContactList D-Bus method,
+ * and should be used in preference to lower-level functions; it is similar
+ * to tp_connection_get_contact_attributes().
+ *
+ * The #TpContact API provides a higher-level abstraction which should
+ * usually be used instead.
+ *
+ * If @hold is %TRUE, the @callback is given one reference to each handle
+ * that appears as a key in the callback's @attributes parameter.
+ */
+void
+tp_connection_get_contact_list_attributes (TpConnection *self,
+    gint timeout_ms,
+    const gchar * const *interfaces,
+    gboolean hold,
+    tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
+    gpointer user_data,
+    GDestroyNotify destroy,
+    GObject *weak_object)
+{
+  GetContactAttributesContext *c;
+
+  DEBUG ("hold=%c", hold ? 'T' : 'F');
+
+  g_return_if_fail (TP_IS_CONNECTION (self));
+  g_return_if_fail (callback != NULL);
+
+  c = g_slice_new0 (GetContactAttributesContext);
+
+  c->destroy = destroy;
+  c->user_data = user_data;
+  c->callback = callback;
+  c->hold = hold;
+
+  tp_cli_connection_interface_contact_list_call_get_contact_list_attributes (
+      self, -1, (const gchar **) interfaces, hold,
+      connection_got_contact_attributes,
+      c, get_contact_attributes_context_free, weak_object);
+}

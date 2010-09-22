@@ -29,6 +29,10 @@ G_DEFINE_TYPE_WITH_CODE (ExampleContactListConnection,
       init_aliasing);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
       tp_contacts_mixin_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST,
+      tp_base_contact_list_mixin_list_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      tp_base_contact_list_mixin_groups_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
       tp_presence_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
@@ -141,34 +145,12 @@ example_contact_list_normalize_contact (TpHandleRepoIface *repo,
     return NULL;
 }
 
-static gchar *
-example_contact_list_normalize_group (TpHandleRepoIface *repo,
-                                      const gchar *id,
-                                      gpointer context,
-                                      GError **error)
-{
-  if (id[0] == '\0')
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
-          "Contact group name cannot be empty");
-      return NULL;
-    }
-
-  return g_utf8_normalize (id, -1, G_NORMALIZE_ALL_COMPOSE);
-}
-
 static void
 create_handle_repos (TpBaseConnection *conn,
                      TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES])
 {
   repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new
       (TP_HANDLE_TYPE_CONTACT, example_contact_list_normalize_contact, NULL);
-
-  repos[TP_HANDLE_TYPE_LIST] = tp_static_handle_repo_new
-      (TP_HANDLE_TYPE_LIST, example_contact_lists ());
-
-  repos[TP_HANDLE_TYPE_GROUP] = tp_dynamic_handle_repo_new
-      (TP_HANDLE_TYPE_GROUP, example_contact_list_normalize_group, NULL);
 }
 
 static void
@@ -307,7 +289,10 @@ constructed (GObject *object)
 
   tp_contacts_mixin_init (object,
       G_STRUCT_OFFSET (ExampleContactListConnection, contacts_mixin));
+
   tp_base_connection_register_with_contacts_mixin (base);
+  tp_base_contact_list_mixin_register_with_contacts_mixin (base);
+
   tp_contacts_mixin_add_contact_attributes_iface (object,
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       aliasing_fill_contact_attributes);
@@ -407,6 +392,8 @@ set_own_status (GObject *object,
 static const gchar *interfaces_always_present[] = {
     TP_IFACE_CONNECTION_INTERFACE_ALIASING,
     TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
+    TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
     TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
     TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
     TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
@@ -457,11 +444,14 @@ example_contact_list_connection_class_init (
 
   tp_contacts_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleContactListConnectionClass, contacts_mixin));
+
   tp_presence_mixin_class_init (object_class,
       G_STRUCT_OFFSET (ExampleContactListConnectionClass, presence_mixin),
       status_available, get_contact_statuses, set_own_status,
       example_contact_list_presence_statuses ());
   tp_presence_mixin_simple_presence_init_dbus_properties (object_class);
+
+  tp_base_contact_list_mixin_class_init (base_class);
 }
 
 static void

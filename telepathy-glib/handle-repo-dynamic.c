@@ -216,6 +216,12 @@ struct _TpDynamicHandleRepo {
    * _lookup
    */
   gpointer default_normalize_context;
+
+  /* Extra data for normalization */
+  gpointer normalization_data;
+  /* Destructor for extra data */
+  GDestroyNotify free_normalization_data;
+
   TpDBusDaemon *bus_daemon;
 };
 
@@ -419,6 +425,9 @@ static void
 dynamic_dispose (GObject *obj)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (obj);
+
+  _tp_dynamic_handle_repo_set_normalization_data ((TpHandleRepoIface *) obj,
+      NULL, NULL);
 
   if (self->bus_daemon != NULL)
     {
@@ -879,4 +888,53 @@ dynamic_repo_iface_init (gpointer g_iface,
   klass->ensure_handle = dynamic_ensure_handle;
   klass->set_qdata = dynamic_set_qdata;
   klass->get_qdata = dynamic_get_qdata;
+}
+
+/*
+ * _tp_dynamic_handle_repo_set_normalization_data:
+ * @irepo: (type TelepathyGLib.DynamicHandleRepo): a #TpDynamicHandleRepo
+ *
+ * Get the normalization data set with
+ * _tp_dynamic_handle_repo_set_normalization_data().
+ *
+ * Returns: (transfer none): the data
+ */
+gpointer
+_tp_dynamic_handle_repo_get_normalization_data (
+    TpHandleRepoIface *irepo)
+{
+  TpDynamicHandleRepo *self = (TpDynamicHandleRepo *) irepo;
+
+  g_return_val_if_fail (TP_IS_DYNAMIC_HANDLE_REPO (self), NULL);
+
+  return self->normalization_data;
+}
+
+/*
+ * _tp_dynamic_handle_repo_set_normalization_data:
+ * @irepo: (type TelepathyGLib.DynamicHandleRepo): a #TpDynamicHandleRepo
+ * @data: (allow-none): data to use during normalization
+ * @destroy: (allow-none): destructor for @data, or %NULL
+ *
+ * Attach extra data to a handle repository which can be used during
+ * handle normalization. For instance, this could be a weak reference to
+ * the #TpBaseConnection or a #TpChannelManager.
+ *
+ * The normalization function can retrieve that data using
+ * _tp_dynamic_handle_repo_get_normalization_data().
+ */
+void
+_tp_dynamic_handle_repo_set_normalization_data (TpHandleRepoIface *irepo,
+    gpointer data,
+    GDestroyNotify destroy)
+{
+  TpDynamicHandleRepo *self = (TpDynamicHandleRepo *) irepo;
+
+  g_return_if_fail (TP_IS_DYNAMIC_HANDLE_REPO (self));
+
+  if (self->free_normalization_data != NULL)
+    self->free_normalization_data (self->normalization_data);
+
+  self->normalization_data = data;
+  self->free_normalization_data = destroy;
 }

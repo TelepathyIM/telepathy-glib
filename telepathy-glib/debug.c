@@ -51,6 +51,8 @@
  *    in #TpBaseConnection (service) and #TpConnection (client)</listitem>
  * <listitem><literal>accounts</literal> - the #TpAccountManager and
  *     #TpAccount objects (client)</listitem>
+ * <listitem><literal>contact-lists</literal> - the #TpBaseContactList
+ *    (service)</listitem>
  * <listitem><literal>all</literal> - all of the above</listitem>
  * </itemizedlist>
  */
@@ -109,6 +111,7 @@ static GDebugKey keys[] = {
   { "accounts",      TP_DEBUG_ACCOUNTS },
   { "dispatcher",    TP_DEBUG_DISPATCHER },
   { "client",        TP_DEBUG_CLIENT },
+  { "contact-lists", TP_DEBUG_CONTACT_LISTS },
   { 0, }
 };
 
@@ -139,6 +142,7 @@ static DebugKeyToDomain key_to_domain[] = {
   { TP_DEBUG_ACCOUNTS,   G_LOG_DOMAIN "/accounts" },
   { TP_DEBUG_DISPATCHER, G_LOG_DOMAIN "/dispatcher" },
   { TP_DEBUG_CLIENT,     G_LOG_DOMAIN "/client" },
+  { TP_DEBUG_CONTACT_LISTS, G_LOG_DOMAIN "/contact-lists" },
   { 0, NULL }
 };
 

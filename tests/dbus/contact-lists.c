@@ -13,6 +13,45 @@
 #include "examples/cm/contactlist/conn.h"
 #include "tests/lib/util.h"
 
+typedef enum {
+    CONTACTS_CHANGED,
+    GROUPS_CHANGED,
+    GROUPS_CREATED,
+    GROUPS_REMOVED,
+    GROUP_RENAMED
+} LogEntryType;
+
+typedef struct {
+    LogEntryType type;
+    /* ContactsChanged */
+    GHashTable *contacts_changed;
+    GArray *contacts_removed;
+    /* GroupsChanged */
+    GArray *contacts;
+    /* GroupsChanged, GroupsCreated, GroupRenamed */
+    GStrv groups_added;
+    /* GroupsChanged, GroupsRemoved, GroupRenamed */
+    GStrv groups_removed;
+} LogEntry;
+
+static void
+log_entry_free (LogEntry *le)
+{
+  if (le->contacts_changed != NULL)
+    g_hash_table_unref (le->contacts_changed);
+
+  if (le->contacts_removed != NULL)
+    g_array_unref (le->contacts_removed);
+
+  if (le->contacts != NULL)
+    g_array_unref (le->contacts);
+
+  g_strfreev (le->groups_added);
+  g_strfreev (le->groups_removed);
+
+  g_slice_free (LogEntry, le);
+}
+
 typedef struct {
     TpDBusDaemon *dbus;
     ExampleContactListConnection *service_conn;
@@ -24,6 +63,7 @@ typedef struct {
     TpChannel *publish;
     TpChannel *subscribe;
     TpChannel *stored;
+    TpChannel *deny;
 
     TpChannel *group;
 
@@ -31,12 +71,138 @@ typedef struct {
     TpHandle sjoerd;
     TpHandle helen;
     TpHandle wim;
+    TpHandle bill;
     TpHandle ninja;
+    TpHandle canceller;
 
     GArray *arr;
 
+    /* list of LogEntry */
+    GPtrArray *log;
+
     GAsyncResult *prepare_result;
+    GHashTable *contact_attributes;
+
+    GMainLoop *main_loop;
 } Test;
+
+static void
+test_quit_loop (gpointer p)
+{
+  Test *test = p;
+
+  g_main_loop_quit (test->main_loop);
+}
+
+static void
+contacts_changed_cb (TpConnection *connection,
+    GHashTable *changes,
+    const GArray *removals,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  g_assert (g_hash_table_size (changes) > 0 || removals->len > 0);
+
+  le->type = CONTACTS_CHANGED;
+  le->contacts_changed = g_boxed_copy (TP_HASH_TYPE_CONTACT_SUBSCRIPTION_MAP,
+      changes);
+  le->contacts_removed = g_array_sized_new (FALSE, FALSE, sizeof (guint),
+      removals->len);
+  g_array_append_vals (le->contacts_removed, removals->data, removals->len);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
+groups_changed_cb (TpConnection *connection,
+    const GArray *contacts,
+    const gchar **groups_added,
+    const gchar **groups_removed,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  g_assert (contacts->len > 0);
+  g_assert ((groups_added != NULL && groups_added[0] != NULL) ||
+      (groups_removed != NULL && groups_removed[0] != NULL));
+
+  le->type = GROUPS_CHANGED;
+  le->contacts = g_array_sized_new (FALSE, FALSE, sizeof (guint),
+      contacts->len);
+  g_array_append_vals (le->contacts, contacts->data, contacts->len);
+  le->groups_added = g_strdupv ((GStrv) groups_added);
+  le->groups_removed = g_strdupv ((GStrv) groups_removed);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
+groups_created_cb (TpConnection *connection,
+    const gchar **groups_added,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  g_assert (groups_added != NULL);
+  g_assert (groups_added[0] != NULL);
+
+  le->type = GROUPS_CREATED;
+  le->groups_added = g_strdupv ((GStrv) groups_added);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
+groups_removed_cb (TpConnection *connection,
+    const gchar **groups_removed,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  g_assert (groups_removed != NULL);
+  g_assert (groups_removed[0] != NULL);
+
+  le->type = GROUPS_REMOVED;
+  le->groups_removed = g_strdupv ((GStrv) groups_removed);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
+group_renamed_cb (TpConnection *connection,
+    const gchar *old_name,
+    const gchar *new_name,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  le->type = GROUP_RENAMED;
+  le->groups_added = g_new0 (gchar *, 2);
+  le->groups_added[0] = g_strdup (new_name);
+  le->groups_removed = g_new0 (gchar *, 2);
+  le->groups_removed[0] = g_strdup (old_name);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
+maybe_queue_disconnect (TpProxySignalConnection *sc)
+{
+  if (sc != NULL)
+    g_test_queue_destroy (
+        (GDestroyNotify) tp_proxy_signal_connection_disconnect, sc);
+}
 
 static void
 setup (Test *test,
@@ -48,6 +214,7 @@ setup (Test *test,
   g_type_init ();
   tp_debug_set_flags ("all");
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+  test->main_loop = g_main_loop_new (NULL, FALSE);
 
   test->service_conn = tp_tests_object_new_static_class (
         EXAMPLE_TYPE_CONTACT_LIST_CONNECTION,
@@ -77,6 +244,24 @@ setup (Test *test,
   g_assert (tp_proxy_is_prepared (test->conn,
         TP_CONNECTION_FEATURE_CONNECTED));
 
+  test->log = g_ptr_array_new ();
+
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_list_connect_to_contacts_changed (
+        test->conn, contacts_changed_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_groups_connect_to_groups_changed (
+        test->conn, groups_changed_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_groups_connect_to_groups_created (
+        test->conn, groups_created_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_groups_connect_to_groups_removed (
+        test->conn, groups_removed_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_groups_connect_to_group_renamed (
+        test->conn, group_renamed_cb, test, NULL, NULL, NULL));
+
   test->sjoerd = tp_handle_ensure (test->contact_repo, "sjoerd@example.com",
       NULL, NULL);
   g_assert (test->sjoerd != 0);
@@ -86,11 +271,24 @@ setup (Test *test,
   test->wim = tp_handle_ensure (test->contact_repo, "wim@example.com",
       NULL, NULL);
   g_assert (test->wim != 0);
+  test->bill = tp_handle_ensure (test->contact_repo, "bill@example.com",
+      NULL, NULL);
+  g_assert (test->bill != 0);
   test->ninja = tp_handle_ensure (test->contact_repo, "ninja@example.com",
       NULL, NULL);
   g_assert (test->ninja != 0);
+  test->canceller = tp_handle_ensure (test->contact_repo,
+      "canceller@cancel.example.com", NULL, NULL);
+  g_assert (test->canceller != 0);
 
   test->arr = g_array_new (FALSE, FALSE, sizeof (TpHandle));
+}
+
+static void
+test_clear_log (Test *test)
+{
+  g_ptr_array_foreach (test->log, (GFunc) log_entry_free, NULL);
+  g_ptr_array_set_size (test->log, 0);
 }
 
 static void
@@ -103,10 +301,15 @@ teardown (Test *test,
 
   g_array_free (test->arr, TRUE);
 
+  test_clear_log (test);
+  g_ptr_array_free (test->log, TRUE);
+
   tp_handle_unref (test->contact_repo, test->sjoerd);
   tp_handle_unref (test->contact_repo, test->helen);
   tp_handle_unref (test->contact_repo, test->wim);
+  tp_handle_unref (test->contact_repo, test->bill);
   tp_handle_unref (test->contact_repo, test->ninja);
+  tp_handle_unref (test->contact_repo, test->canceller);
 
   tp_clear_object (&test->conn);
   tp_clear_object (&test->publish);
@@ -132,8 +335,9 @@ teardown (Test *test,
   g_free (test->conn_name);
   g_free (test->conn_path);
 
-  g_object_unref (test->dbus);
-  test->dbus = NULL;
+  tp_clear_object (&test->dbus);
+  tp_clear_pointer (&test->main_loop, g_main_loop_unref);
+  tp_clear_pointer (&test->contact_attributes, g_hash_table_unref);
 }
 
 static TpChannel *
@@ -170,6 +374,117 @@ test_ensure_channel (Test *test,
 }
 
 static void
+test_assert_one_contact_changed (Test *test,
+    guint index,
+    TpHandle handle,
+    TpSubscriptionState expected_sub_state,
+    TpSubscriptionState expected_pub_state,
+    const gchar *expected_pub_request)
+{
+  LogEntry *le;
+  GValueArray *va;
+  guint sub_state;
+  guint pub_state;
+  const gchar *pub_request;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, CONTACTS_CHANGED);
+
+  g_assert_cmpuint (g_hash_table_size (le->contacts_changed), ==, 1);
+  va = g_hash_table_lookup (le->contacts_changed, GUINT_TO_POINTER (handle));
+  g_assert (va != NULL);
+  tp_value_array_unpack (va, 3,
+      &sub_state,
+      &pub_state,
+      &pub_request);
+  g_assert_cmpuint (sub_state, ==, expected_sub_state);
+  g_assert_cmpuint (pub_state, ==, expected_pub_state);
+  g_assert_cmpstr (pub_request, ==, expected_pub_request);
+
+  g_assert_cmpuint (le->contacts_removed->len, ==, 0);
+}
+
+static void
+test_assert_one_contact_removed (Test *test,
+    guint index,
+    TpHandle handle)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, CONTACTS_CHANGED);
+
+  g_assert_cmpuint (g_hash_table_size (le->contacts_changed), ==, 0);
+  g_assert_cmpuint (le->contacts_removed->len, ==, 1);
+  g_assert_cmpuint (g_array_index (le->contacts_removed, guint, 0), ==,
+      handle);
+}
+
+static void
+test_assert_one_group_joined (Test *test,
+    guint index,
+    TpHandle handle,
+    const gchar *group)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 1);
+  g_assert_cmpuint (g_array_index (le->contacts, guint, 0), ==, handle);
+  g_assert (le->groups_added != NULL);
+  g_assert_cmpstr (le->groups_added[0], ==, group);
+  g_assert_cmpstr (le->groups_added[1], ==, NULL);
+  g_assert (le->groups_removed == NULL || le->groups_removed[0] == NULL);
+}
+
+static void
+test_assert_one_group_left (Test *test,
+    guint index,
+    TpHandle handle,
+    const gchar *group)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 1);
+  g_assert_cmpuint (g_array_index (le->contacts, guint, 0), ==, handle);
+  g_assert (le->groups_added == NULL || le->groups_added[0] == NULL);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, group);
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+}
+
+static void
+test_assert_one_group_created (Test *test,
+    guint index,
+    const gchar *group)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, GROUPS_CREATED);
+  g_assert (le->groups_added != NULL);
+  g_assert_cmpstr (le->groups_added[0], ==, group);
+  g_assert_cmpstr (le->groups_added[1], ==, NULL);
+}
+
+static void
+test_assert_one_group_removed (Test *test,
+    guint index,
+    const gchar *group)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, GROUPS_REMOVED);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, group);
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+}
+
+static void
 test_nothing (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
@@ -185,6 +500,7 @@ test_initial_channels (Test *test,
   test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST,
       "subscribe");
   test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
 
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->publish)), ==, 4);
@@ -233,11 +549,234 @@ test_initial_channels (Test *test,
         test->ninja));
   g_assert (!tp_intset_is_member (tp_channel_group_get_members (test->stored),
         test->ninja));
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->deny)), ==, 2);
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_local_pending (test->deny)),
+      ==, 0);
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_remote_pending (test->deny)),
+      ==, 0);
+  g_assert (tp_intset_is_member (tp_channel_group_get_members (test->deny),
+        test->bill));
+}
+
+static void
+test_properties (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GHashTable *asv;
+  GError *error = NULL;
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
+  g_assert (tp_asv_get_boolean (asv, "ContactListPersists", NULL));
+  g_assert (tp_asv_get_boolean (asv, "CanChangeContactList", NULL));
+  g_assert (tp_asv_get_boolean (asv, "RequestUsesMessage", NULL));
+  g_hash_table_unref (asv);
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
+  g_assert (G_VALUE_HOLDS_BOOLEAN (tp_asv_lookup (asv, "DisjointGroups")));
+  g_assert (!tp_asv_get_boolean (asv, "DisjointGroups", NULL));
+  g_assert (G_VALUE_HOLDS_UINT (tp_asv_lookup (asv, "GroupStorage")));
+  g_assert_cmpuint (tp_asv_get_uint32 (asv, "GroupStorage", NULL), ==,
+      TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE);
+  /* Don't assert about the contents yet - we might not have received the
+   * contact list yet */
+  g_assert (G_VALUE_HOLDS (tp_asv_lookup (asv, "Groups"), G_TYPE_STRV));
+  g_hash_table_unref (asv);
+
+  /* this has the side-effect of waiting for the contact list to be received */
+  test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
+  g_assert (tp_asv_get_boolean (asv, "ContactListPersists", NULL));
+  g_assert (tp_asv_get_boolean (asv, "CanChangeContactList", NULL));
+  g_assert (tp_asv_get_boolean (asv, "RequestUsesMessage", NULL));
+  g_hash_table_unref (asv);
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), >=, 3);
+  g_assert (G_VALUE_HOLDS_BOOLEAN (tp_asv_lookup (asv, "DisjointGroups")));
+  g_assert (G_VALUE_HOLDS_UINT (tp_asv_lookup (asv, "GroupStorage")));
+  g_assert (tp_asv_get_strv (asv, "Groups") != NULL);
+  g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"), "Cambridge"));
+  g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"), "Montreal"));
+  g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"),
+        "Francophones"));
+  g_hash_table_unref (asv);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
+}
+
+static void
+contact_attrs_cb (TpConnection *conn G_GNUC_UNUSED,
+    GHashTable *attributes,
+    const GError *error,
+    gpointer user_data,
+    GObject *object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+
+  g_assert_no_error ((GError *) error);
+  tp_clear_pointer (&test->contact_attributes, g_hash_table_unref);
+  test->contact_attributes = g_boxed_copy (TP_HASH_TYPE_CONTACT_ATTRIBUTES_MAP,
+      attributes);
+}
+
+static void
+test_assert_contact_list_attrs (Test *test,
+    TpHandle handle,
+    TpSubscriptionState expected_sub_state,
+    TpSubscriptionState expected_pub_state,
+    const gchar *expected_pub_request)
+{
+  GHashTable *asv;
+  gboolean valid;
+
+  g_assert_cmpuint (g_hash_table_size (test->contact_attributes), >=, 1);
+  asv = g_hash_table_lookup (test->contact_attributes,
+      GUINT_TO_POINTER (handle));
+  g_assert (asv != NULL);
+  g_assert_cmpuint (tp_asv_get_uint32 (asv,
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE, &valid), ==,
+      expected_sub_state);
+  g_assert (valid);
+  g_assert_cmpuint (tp_asv_get_uint32 (asv,
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH, &valid), ==,
+      expected_pub_state);
+  g_assert (valid);
+  g_assert_cmpstr (tp_asv_get_string (asv,
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST), ==,
+      expected_pub_request);
+  g_assert (valid);
+}
+
+/* We simplify here by assuming that contacts are in at most one group,
+ * which happens to be true for all of these tests. */
+static void
+test_assert_contact_groups_attr (Test *test,
+    TpHandle handle,
+    const gchar *group)
+{
+  GHashTable *asv;
+  const gchar * const *strv;
+
+  g_assert_cmpuint (g_hash_table_size (test->contact_attributes), >=, 1);
+  asv = g_hash_table_lookup (test->contact_attributes,
+      GUINT_TO_POINTER (handle));
+  g_assert (asv != NULL);
+  tp_asv_dump (asv);
+  g_assert (tp_asv_lookup (asv,
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS) != NULL);
+  g_assert (G_VALUE_HOLDS (tp_asv_lookup (asv,
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS), G_TYPE_STRV));
+  strv = tp_asv_get_strv (asv,
+        TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS);
+
+  if (group == NULL)
+    {
+      if (strv != NULL)
+        g_assert_cmpstr (strv[0], ==, NULL);
+    }
+  else
+    {
+      g_assert (strv != NULL);
+      g_assert_cmpstr (strv[0], ==, group);
+      g_assert_cmpstr (strv[1], ==, NULL);
+    }
+}
+
+static void
+test_assert_contact_state (Test *test,
+    TpHandle handle,
+    TpSubscriptionState expected_sub_state,
+    TpSubscriptionState expected_pub_state,
+    const gchar *expected_pub_request,
+    const gchar *expected_group)
+{
+  const gchar * const interfaces[] = {
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      NULL };
+
+  tp_connection_get_contact_attributes (test->conn, -1,
+      1, &handle, interfaces, FALSE, contact_attrs_cb,
+      test, test_quit_loop, NULL);
+  g_main_loop_run (test->main_loop);
+
+  g_assert_cmpuint (g_hash_table_size (test->contact_attributes), ==, 1);
+  test_assert_contact_list_attrs (test, handle, expected_sub_state,
+      expected_pub_state, expected_pub_request);
+  test_assert_contact_groups_attr (test, handle, expected_group);
+}
+
+static void
+test_contacts (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  /* ensure the contact list has been received */
+  test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+
+  test_assert_contact_state (test, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
+  test_assert_contact_state (test, test->wim,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_ASK,
+      "I'm more metal than you!", NULL);
+  test_assert_contact_state (test, test->helen,
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, NULL, "Cambridge");
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+  test_assert_contact_state (test, test->bill,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+}
+
+static void
+test_contact_list_attrs (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  const gchar * const interfaces[] = {
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      NULL };
+
+  tp_connection_get_contact_list_attributes (test->conn, -1,
+      interfaces, FALSE, contact_attrs_cb, test, test_quit_loop, NULL);
+  g_main_loop_run (test->main_loop);
+
+  test_assert_contact_list_attrs (test, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL);
+  test_assert_contact_list_attrs (test, test->wim,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_ASK,
+      "I'm more metal than you!");
+  test_assert_contact_list_attrs (test, test->helen,
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, NULL);
+
+  test_assert_contact_groups_attr (test, test->sjoerd, "Cambridge");
+  test_assert_contact_groups_attr (test, test->wim, NULL);
+  test_assert_contact_groups_attr (test, test->helen, "Cambridge");
+
+  /* bill is blocked, but is not on the contact list as such; the ninja isn't
+   * in the initial state at all */
+  g_assert (g_hash_table_lookup (test->contact_attributes,
+        GUINT_TO_POINTER (test->bill)) == NULL);
+  g_assert (g_hash_table_lookup (test->contact_attributes,
+        GUINT_TO_POINTER (test->ninja)) == NULL);
 }
 
 static void
 test_accept_publish_request (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -251,8 +790,14 @@ test_accept_publish_request (Test *test,
         test->wim));
 
   g_array_append_val (test->arr, test->wim);
-  tp_cli_channel_interface_group_run_add_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_authorize_publication (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -266,11 +811,17 @@ test_accept_publish_request (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->wim));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_changed (test, 0, test->wim, TP_SUBSCRIPTION_STATE_NO,
+      TP_SUBSCRIPTION_STATE_YES, "");
+  test_assert_contact_state (test, test->wim,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_YES, NULL, NULL);
 }
 
 static void
 test_reject_publish_request (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -284,8 +835,27 @@ test_reject_publish_request (Test *test,
         test->wim));
 
   g_array_append_val (test->arr, test->wim);
-  tp_cli_channel_interface_group_run_remove_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    {
+      tp_cli_channel_interface_group_run_remove_members (test->publish,
+          -1, test->arr, "", &error, NULL);
+    }
+  else if (!tp_strdiff (mode, "unpublish"))
+    {
+      /* directly equivalent, but in practice people won't do this */
+      tp_cli_connection_interface_contact_list_run_unpublish (
+          test->conn, -1, test->arr, &error, NULL);
+    }
+  else
+    {
+      /* this isn't directly equivalent, but in practice it's what people
+       * will do */
+      tp_cli_connection_interface_contact_list_run_remove_contacts (
+          test->conn, -1, test->arr, &error, NULL);
+    }
+
+  g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
    * removal-notification, too */
@@ -298,36 +868,115 @@ test_reject_publish_request (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->wim));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+
+  /* because Wim wasn't really on our contact list, he's removed as a
+   * side-effect, even if we only unpublished */
+  test_assert_one_contact_removed (test, 0, test->wim);
+
+  test_assert_contact_state (test, test->wim,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
-test_add_to_publish_invalid (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+test_add_to_publish_pre_approve (Test *test,
+    gconstpointer mode)
 {
   GError *error = NULL;
 
-  /* Unilaterally adding a member to the publish channel doesn't work. */
+  /* Unilaterally adding a member to the publish channel doesn't work, but
+   * in the new contact list manager the method "succeeds" anyway, and
+   * any subsequent subscription request succeeds instantly. */
 
   test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
-
-  g_assert (!tp_intset_is_member (
-        tp_channel_group_get_local_pending (test->publish),
-        test->ninja));
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
+  test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "subscribe");
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->publish,
-      -1, test->arr, "", &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED);
-  g_clear_error (&error);
 
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->ninja));
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_authorize_publication (
+        test->conn, -1, test->arr, &error, NULL);
+
+  g_assert_no_error (error);
+
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_local_pending (test->publish),
+        test->ninja));
+
+  /* the example CM's fake contacts accept requests that contain "please" */
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->subscribe,
+        -1, test->arr, "Please may I see your presence?", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_request_subscription (
+        test->conn, -1, test->arr, "Please may I see your presence?", &error,
+        NULL);
+
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * change-notification, too */
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->subscribe),
+        test->ninja));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->stored),
+        test->ninja));
+
+  /* after a short delay, the contact accepts our request */
+  while (tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->subscribe),
+        test->ninja))
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->subscribe),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->subscribe),
+        test->ninja));
+
+  /* the contact also requests our presence after a short delay - we
+   * pre-approved, so they go straight to full membership */
+  while (!tp_intset_is_member (
+        tp_channel_group_get_members (test->publish),
+        test->ninja) || test->log->len < 3)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->publish),
+        test->ninja));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_local_pending (test->publish),
+        test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 3);
+  test_assert_one_contact_changed (test, 0, test->ninja, TP_SUBSCRIPTION_STATE_ASK,
+      TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->ninja, TP_SUBSCRIPTION_STATE_YES,
+      TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 2, test->ninja, TP_SUBSCRIPTION_STATE_YES,
+      TP_SUBSCRIPTION_STATE_YES, "");
+
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, NULL);
 }
 
 static void
 test_add_to_publish_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -341,18 +990,28 @@ test_add_to_publish_no_op (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_add_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_authorize_publication (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   g_assert (tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 0);
+  test_assert_contact_state (test, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
 }
 
 static void
 test_remove_from_publish (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -366,8 +1025,14 @@ test_remove_from_publish (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_remove_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unpublish (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -379,7 +1044,8 @@ test_remove_from_publish (Test *test,
   /* the contact re-requests our presence after a short delay */
   while (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
-        test->sjoerd))
+        test->sjoerd) ||
+      test->log->len < 2)
     g_main_context_iteration (NULL, TRUE);
 
   g_assert (!tp_intset_is_member (
@@ -388,11 +1054,21 @@ test_remove_from_publish (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+  test_assert_one_contact_changed (test, 0, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
+      "May I see your presence, please?");
+  test_assert_contact_state (test, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
+      "May I see your presence, please?", "Cambridge");
 }
 
 static void
 test_remove_from_publish_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -406,14 +1082,105 @@ test_remove_from_publish_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->publish,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->publish,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unpublish (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+}
+
+static void
+test_cancelled_publish_request (Test *test,
+    gconstpointer mode)
+{
+  GError *error = NULL;
+
+  test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "subscribe");
+  test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->subscribe)),
+      ==, 4);
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->subscribe),
+        test->canceller));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_remote_pending (test->subscribe),
+        test->canceller));
+
+  /* the example CM's fake contacts accept requests that contain "please" */
+  g_array_append_val (test->arr, test->canceller);
+
+  tp_cli_connection_interface_contact_list_run_request_subscription (
+      test->conn, -1, test->arr, "Please may I see your presence?",
+      &error, NULL);
+
+  /* It starts off the same as test_accept_subscribe_request, but because
+   * we're using an identifier with special significance, the contact cancels
+   * the request immediately after */
+  while (tp_intset_is_member (
+        tp_channel_group_get_local_pending (test->publish),
+        test->canceller) ||
+      test->log->len < 4)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->publish),
+        test->canceller));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_local_pending (test->publish),
+        test->canceller));
+
+  g_assert_cmpuint (test->log->len, ==, 4);
+  test_assert_one_contact_changed (test, 0, test->canceller,
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->canceller,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 2, test->canceller,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
+      "May I see your presence, please?");
+  test_assert_one_contact_changed (test, 3, test->canceller,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY, "");
+  test_assert_contact_state (test, test->canceller,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY,
+      NULL, NULL);
+
+  test_clear_log (test);
+
+  /* We can acknowledge the cancellation with Unpublish() or
+   * RemoveContacts(). We can't use the old API here, because in the old API,
+   * the contact has already vanished from the Group */
+  if (!tp_strdiff (mode, "remove-after"))
+    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+        -1, test->arr, &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unpublish (
+        test->conn, -1, test->arr, &error, NULL);
+
+  while (test->log->len < 1)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+
+  if (!tp_strdiff (mode, "remove-after"))
+    test_assert_one_contact_removed (test, 0, test->canceller);
+  else
+    test_assert_one_contact_changed (test, 0, test->canceller,
+        TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
 }
 
 static void
 test_add_to_stored (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -430,8 +1197,26 @@ test_add_to_stored (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->stored,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    {
+      tp_cli_channel_interface_group_run_add_members (test->stored,
+          -1, test->arr, "", &error, NULL);
+    }
+  else
+    {
+      /* there's no specific API for adding contacts to stored (it's not a
+       * very useful action in general), but setting an alias has it as a
+       * side-effect */
+      GHashTable *table = g_hash_table_new (NULL, NULL);
+
+      g_hash_table_insert (table, GUINT_TO_POINTER (test->ninja),
+          "The Wee Ninja");
+      tp_cli_connection_interface_aliasing_run_set_aliases (test->conn,
+          -1, table, &error, NULL);
+      g_hash_table_unref (table);
+    }
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -449,11 +1234,17 @@ test_add_to_stored (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
         test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_changed (test, 0, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
 test_add_to_stored_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -467,14 +1258,36 @@ test_add_to_stored_no_op (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_add_members (test->stored,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    {
+      tp_cli_channel_interface_group_run_add_members (test->stored,
+          -1, test->arr, "", &error, NULL);
+    }
+  else
+    {
+      /* there's no specific API for adding contacts to stored (it's not a
+       * very useful action in general), but setting an alias has it as a
+       * side-effect */
+      GHashTable *table = g_hash_table_new (NULL, NULL);
+
+      g_hash_table_insert (table, GUINT_TO_POINTER (test->sjoerd),
+          "Sjoerd");
+      tp_cli_connection_interface_aliasing_run_set_aliases (test->conn,
+          -1, table, &error, NULL);
+      g_hash_table_unref (table);
+    }
+
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
+  test_assert_contact_state (test, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
 }
 
 static void
 test_remove_from_stored (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -488,8 +1301,14 @@ test_remove_from_stored (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_remove_members (test->stored,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->stored,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+        -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -503,11 +1322,16 @@ test_remove_from_stored (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_removed (test, 0, test->sjoerd);
+  test_assert_contact_state (test, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
 test_remove_from_stored_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -521,14 +1345,24 @@ test_remove_from_stored_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->stored,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->stored,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+        -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
 test_accept_subscribe_request (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -548,8 +1382,15 @@ test_accept_subscribe_request (Test *test,
 
   /* the example CM's fake contacts accept requests that contain "please" */
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->subscribe,
-      -1, test->arr, "Please may I see your presence?", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->subscribe,
+        -1, test->arr, "Please may I see your presence?", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_request_subscription (
+        test->conn, -1, test->arr, "Please may I see your presence?",
+        &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -580,7 +1421,8 @@ test_accept_subscribe_request (Test *test,
   /* the contact also requests our presence after a short delay */
   while (!tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
-        test->ninja))
+        test->ninja) ||
+      test->log->len < 3)
     g_main_context_iteration (NULL, TRUE);
 
   g_assert (!tp_intset_is_member (
@@ -589,11 +1431,23 @@ test_accept_subscribe_request (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_local_pending (test->publish),
         test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 3);
+  test_assert_one_contact_changed (test, 0, test->ninja,
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->ninja,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 2, test->ninja,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
+      "May I see your presence, please?");
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_ASK,
+      "May I see your presence, please?", NULL);
 }
 
 static void
 test_reject_subscribe_request (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -613,8 +1467,15 @@ test_reject_subscribe_request (Test *test,
   /* the example CM's fake contacts reject requests that don't contain
    * "please" */
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->subscribe,
-      -1, test->arr, "I demand to see your presence", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->subscribe,
+        -1, test->arr, "I demand to see your presence?", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_request_subscription (
+        test->conn, -1, test->arr, "I demand to see your presence?",
+        &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -632,7 +1493,8 @@ test_reject_subscribe_request (Test *test,
   /* after a short delay, the contact rejects our request. Say please! */
   while (tp_intset_is_member (
         tp_channel_group_get_remote_pending (test->subscribe),
-        test->ninja))
+        test->ninja) ||
+      test->log->len < 2)
     g_main_context_iteration (NULL, TRUE);
 
   g_assert (!tp_intset_is_member (
@@ -649,11 +1511,44 @@ test_reject_subscribe_request (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_remote_pending (test->stored),
         test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+  test_assert_one_contact_changed (test, 0, test->ninja,
+      TP_SUBSCRIPTION_STATE_ASK, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_one_contact_changed (test, 1, test->ninja,
+      TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_REMOVED_REMOTELY, TP_SUBSCRIPTION_STATE_NO, NULL,
+      NULL);
+
+  test_clear_log (test);
+
+  /* We can acknowledge the failure to subscribe with Unsubscribe() or
+   * RemoveContacts(). We can't use the old API here, because in the old API,
+   * the contact has already vanished from the Group */
+  if (!tp_strdiff (mode, "remove-after"))
+    tp_cli_connection_interface_contact_list_run_remove_contacts (test->conn,
+        -1, test->arr, &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unsubscribe (
+        test->conn, -1, test->arr, &error, NULL);
+
+  /* the ninja falls off our subscribe list */
+  while (test->log->len < 1)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+
+  if (!tp_strdiff (mode, "remove-after"))
+    test_assert_one_contact_removed (test, 0, test->ninja);
+  else
+    test_assert_one_contact_changed (test, 0, test->ninja,
+        TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
 }
 
 static void
 test_remove_from_subscribe (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -668,8 +1563,14 @@ test_remove_from_subscribe (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_remove_members (test->subscribe,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->subscribe,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unsubscribe (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -680,11 +1581,17 @@ test_remove_from_subscribe (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_members (test->stored),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_changed (test, 0, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_YES, "");
+  test_assert_contact_state (test, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
 }
 
 static void
 test_remove_from_subscribe_pending (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -699,8 +1606,14 @@ test_remove_from_subscribe_pending (Test *test,
         test->helen));
 
   g_array_append_val (test->arr, test->helen);
-  tp_cli_channel_interface_group_run_remove_members (test->subscribe,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->subscribe,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unsubscribe (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -714,11 +1627,17 @@ test_remove_from_subscribe_pending (Test *test,
   g_assert (tp_intset_is_member (
         tp_channel_group_get_members (test->stored),
         test->helen));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_changed (test, 0, test->helen,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
+  test_assert_contact_state (test, test->helen,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, "Cambridge");
 }
 
 static void
 test_remove_from_subscribe_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -732,16 +1651,28 @@ test_remove_from_subscribe_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->subscribe,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->subscribe,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_list_run_unsubscribe (
+        test->conn, -1, test->arr, &error, NULL);
+
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
 test_add_to_group (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
+  LogEntry *le;
+  guint i;
 
   test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
       "Cambridge");
@@ -758,8 +1689,14 @@ test_add_to_group (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->group,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->group,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_groups_run_add_to_group (test->conn,
+        -1, "Cambridge", test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -780,11 +1717,34 @@ test_add_to_group (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->publish),
         test->ninja));
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+
+  le = g_ptr_array_index (test->log, 0);
+
+  if (le->type == CONTACTS_CHANGED)
+    {
+      test_assert_one_contact_changed (test, 0, test->ninja,
+          TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
+      i = 1;
+    }
+  else
+    {
+      test_assert_one_contact_changed (test, 1, test->ninja,
+          TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, "");
+      i = 0;
+    }
+
+  /* either way, the i'th entry is now the GroupsChanged signal */
+  test_assert_one_group_joined (test, i, test->ninja, "Cambridge");
+
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, "Cambridge");
 }
 
 static void
 test_add_to_group_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -796,14 +1756,24 @@ test_add_to_group_no_op (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_add_members (test->group,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_add_members (test->group,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_groups_run_add_to_group (test->conn,
+        -1, "Cambridge", test->arr, &error, NULL);
+
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
+  test_assert_contact_state (test, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, "Cambridge");
 }
 
 static void
 test_remove_from_group (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -815,8 +1785,14 @@ test_remove_from_group (Test *test,
         test->sjoerd));
 
   g_array_append_val (test->arr, test->sjoerd);
-  tp_cli_channel_interface_group_run_remove_members (test->group,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->group,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_groups_run_remove_from_group (
+        test->conn, -1, "Cambridge", test->arr, &error, NULL);
+
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -824,11 +1800,16 @@ test_remove_from_group (Test *test,
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->group),
         test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_group_left (test, 0, test->sjoerd, "Cambridge");
+  test_assert_contact_state (test, test->sjoerd,
+      TP_SUBSCRIPTION_STATE_YES, TP_SUBSCRIPTION_STATE_YES, NULL, NULL);
 }
 
 static void
 test_remove_from_group_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -840,14 +1821,24 @@ test_remove_from_group_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->group,
-      -1, test->arr, "", &error, NULL);
+
+  if (!tp_strdiff (mode, "old"))
+    tp_cli_channel_interface_group_run_remove_members (test->group,
+        -1, test->arr, "", &error, NULL);
+  else
+    tp_cli_connection_interface_contact_groups_run_remove_from_group (
+        test->conn, -1, "Cambridge", test->arr, &error, NULL);
+
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 0);
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 static void
 test_remove_group (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+    gconstpointer mode)
 {
   GError *error = NULL;
 
@@ -857,24 +1848,386 @@ test_remove_group (Test *test,
   g_assert (!tp_intset_is_empty (
         tp_channel_group_get_members (test->group)));
 
-  tp_cli_channel_run_close (test->group, -1, &error, NULL);
-  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  if (!tp_strdiff (mode, "old"))
+    {
+      /* The old API can't remove non-empty groups... */
+      tp_cli_channel_run_close (test->group, -1, &error, NULL);
+      g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+
+      g_assert_cmpuint (test->log->len, ==, 0);
+    }
+  else
+    {
+      /* ... but the new API can */
+      LogEntry *le;
+
+      tp_cli_connection_interface_contact_groups_run_remove_group (test->conn,
+          -1, "Cambridge", &error, NULL);
+      g_assert_no_error (error);
+
+      g_assert (tp_proxy_get_invalidated (test->group) != NULL);
+      g_assert_cmpuint (test->log->len, ==, 2);
+      test_assert_one_group_removed (test, 0, "Cambridge");
+
+      le = g_ptr_array_index (test->log, 1);
+      g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+      g_assert_cmpuint (le->contacts->len, ==, 4);
+      g_assert (le->groups_added == NULL || le->groups_added[0] == NULL);
+      g_assert (le->groups_removed != NULL);
+      g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
+      g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+    }
 }
 
 static void
-test_remove_group_non_empty (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+test_remove_group_empty (Test *test,
+    gconstpointer mode)
 {
   GError *error = NULL;
 
+  g_assert_cmpuint (test->log->len, ==, 0);
   test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
       "people who understand const in C");
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_group_created (test, 0, "people who understand const in C");
 
   g_assert (tp_intset_is_empty (
         tp_channel_group_get_members (test->group)));
 
   tp_cli_channel_run_close (test->group, -1, &error, NULL);
   g_assert_no_error (error);
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+  test_assert_one_group_removed (test, 1, "people who understand const in C");
+}
+
+static void
+test_set_contact_groups (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+  LogEntry *le;
+  const gchar *montreal_strv[] = { "Montreal", NULL };
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 4);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+
+  g_array_append_val (test->arr, test->sjoerd);
+  g_array_append_val (test->arr, test->wim);
+
+  tp_cli_connection_interface_contact_groups_run_set_contact_groups (
+      test->conn, -1, test->sjoerd, montreal_strv, &error, NULL);
+
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * change-notification, too */
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 3);
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+
+  le = g_ptr_array_index (test->log, 0);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 1);
+  g_assert_cmpuint (g_array_index (le->contacts, guint, 0), ==, test->sjoerd);
+  g_assert (le->groups_added != NULL);
+  g_assert_cmpstr (le->groups_added[0], ==, "Montreal");
+  g_assert_cmpstr (le->groups_added[1], ==, NULL);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+}
+
+static void
+test_set_contact_groups_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+  const gchar *cambridge_strv[] = { "Cambridge", NULL };
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 4);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+
+  g_array_append_val (test->arr, test->sjoerd);
+  g_array_append_val (test->arr, test->wim);
+
+  tp_cli_connection_interface_contact_groups_run_set_contact_groups (
+      test->conn, -1, test->sjoerd, cambridge_strv, &error, NULL);
+
+  g_assert_no_error (error);
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 4);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+
+  g_assert_cmpuint (test->log->len, ==, 0);
+}
+
+static void
+test_set_group_members (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+  LogEntry *le;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 4);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->helen));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->wim));
+
+  g_array_append_val (test->arr, test->sjoerd);
+  g_array_append_val (test->arr, test->wim);
+
+  tp_cli_connection_interface_contact_groups_run_set_group_members (test->conn,
+      -1, "Cambridge", test->arr, &error, NULL);
+
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * change-notification, too */
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 2);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->wim));
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->sjoerd));
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->group),
+        test->helen));
+
+  g_assert_cmpuint (test->log->len, ==, 2);
+
+  /* Wim was added */
+  test_assert_one_group_joined (test, 0, test->wim, "Cambridge");
+
+  /* The three other members, other than Sjoerd, left */
+  le = g_ptr_array_index (test->log, 1);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 3);
+  g_assert (le->groups_added == NULL || le->groups_added[0] == NULL);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+}
+
+static void
+test_rename_group (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  LogEntry *le;
+  GError *error = NULL;
+
+  test->group = test_ensure_channel (test, TP_HANDLE_TYPE_GROUP,
+      "Cambridge");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->group)),
+      ==, 4);
+
+  tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
+      -1, "Cambridge", "Grantabrugge", &error, NULL);
+  g_assert_no_error (error);
+
+  g_assert (tp_proxy_get_invalidated (test->group) != NULL);
+  g_assert_cmpuint (test->log->len, ==, 4);
+
+  le = g_ptr_array_index (test->log, 0);
+  g_assert_cmpint (le->type, ==, GROUP_RENAMED);
+  g_assert (le->groups_added != NULL);
+  g_assert_cmpstr (le->groups_added[0], ==, "Grantabrugge");
+  g_assert_cmpstr (le->groups_added[1], ==, NULL);
+  g_assert (le->groups_removed != NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+
+  test_assert_one_group_created (test, 1, "Grantabrugge");
+
+  test_assert_one_group_removed (test, 2, "Cambridge");
+
+  le = g_ptr_array_index (test->log, 3);
+  g_assert_cmpint (le->type, ==, GROUPS_CHANGED);
+  g_assert_cmpuint (le->contacts->len, ==, 4);
+  g_assert (le->groups_added != NULL);
+  g_assert_cmpstr (le->groups_added[0], ==, "Grantabrugge");
+  g_assert_cmpstr (le->groups_added[1], ==, NULL);
+  g_assert_cmpstr (le->groups_removed[0], ==, "Cambridge");
+  g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+}
+
+static void
+test_rename_group_overwrite (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
+      -1, "Cambridge", "Montreal", &error, NULL);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
+  g_assert_cmpuint (test->log->len, ==, 0);
+  g_clear_error (&error);
+}
+
+static void
+test_rename_group_absent (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  tp_cli_connection_interface_contact_groups_run_rename_group (test->conn,
+      -1, "Badgers", "Mushrooms", &error, NULL);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_DOES_NOT_EXIST);
+  g_assert_cmpuint (test->log->len, ==, 0);
+  g_clear_error (&error);
+}
+
+static void
+test_add_to_deny (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
+  test->stored = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "stored");
+
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->deny)),
+      ==, 2);
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->ninja));
+
+  g_array_append_val (test->arr, test->ninja);
+  tp_cli_channel_interface_group_run_add_members (test->deny,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * change-notification, too */
+  g_assert_cmpuint (
+      tp_intset_size (tp_channel_group_get_members (test->deny)),
+      ==, 3);
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->ninja));
+
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->stored),
+        test->ninja));
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+}
+
+static void
+test_add_to_deny_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->bill));
+
+  g_array_append_val (test->arr, test->bill);
+  tp_cli_channel_interface_group_run_add_members (test->deny,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->bill));
+  test_assert_contact_state (test, test->bill,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+}
+
+static void
+test_remove_from_deny (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
+  test->publish = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "publish");
+  test->subscribe = test_ensure_channel (test, TP_HANDLE_TYPE_LIST,
+      "subscribe");
+
+  g_assert (tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->bill));
+
+  g_array_append_val (test->arr, test->bill);
+  tp_cli_channel_interface_group_run_remove_members (test->deny,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+
+  /* by the time the method returns, we should have had the
+   * removal-notification, too */
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->bill));
+  test_assert_contact_state (test, test->bill,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+}
+
+static void
+test_remove_from_deny_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GError *error = NULL;
+
+  test->deny = test_ensure_channel (test, TP_HANDLE_TYPE_LIST, "deny");
+
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->ninja));
+
+  g_array_append_val (test->arr, test->ninja);
+  tp_cli_channel_interface_group_run_remove_members (test->deny,
+      -1, test->arr, "", &error, NULL);
+  g_assert_no_error (error);
+  g_assert (!tp_intset_is_member (
+        tp_channel_group_get_members (test->deny),
+        test->ninja));
+  test_assert_contact_state (test, test->ninja,
+      TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
 }
 
 int
@@ -888,18 +2241,46 @@ main (int argc,
 
   g_test_add ("/contact-lists/initial-channels",
       Test, NULL, setup, test_initial_channels, teardown);
+  g_test_add ("/contact-lists/properties",
+      Test, NULL, setup, test_properties, teardown);
+  g_test_add ("/contact-lists/contacts",
+      Test, NULL, setup, test_contacts, teardown);
+  g_test_add ("/contact-lists/contact-list-attrs",
+      Test, NULL, setup, test_contact_list_attrs, teardown);
+
   g_test_add ("/contact-lists/accept-publish-request",
       Test, NULL, setup, test_accept_publish_request, teardown);
   g_test_add ("/contact-lists/reject-publish-request",
       Test, NULL, setup, test_reject_publish_request, teardown);
-  g_test_add ("/contact-lists/add-to-publish/invalid",
-      Test, NULL, setup, test_add_to_publish_invalid, teardown);
+  g_test_add ("/contact-lists/reject-publish-request/unpublish",
+      Test, "unpublish", setup, test_reject_publish_request, teardown);
+  g_test_add ("/contact-lists/add-to-publish/pre-approve",
+      Test, NULL, setup, test_add_to_publish_pre_approve, teardown);
   g_test_add ("/contact-lists/add-to-publish/no-op",
       Test, NULL, setup, test_add_to_publish_no_op, teardown);
   g_test_add ("/contact-lists/remove-from-publish",
       Test, NULL, setup, test_remove_from_publish, teardown);
   g_test_add ("/contact-lists/remove-from-publish/no-op",
       Test, NULL, setup, test_remove_from_publish_no_op, teardown);
+
+  g_test_add ("/contact-lists/accept-publish-request/old",
+      Test, "old", setup, test_accept_publish_request, teardown);
+  g_test_add ("/contact-lists/reject-publish-request/old",
+      Test, "old", setup, test_reject_publish_request, teardown);
+  g_test_add ("/contact-lists/add-to-publish/pre-approve/old",
+      Test, "old", setup, test_add_to_publish_pre_approve, teardown);
+  g_test_add ("/contact-lists/add-to-publish/no-op/old",
+      Test, "old", setup, test_add_to_publish_no_op, teardown);
+  g_test_add ("/contact-lists/remove-from-publish/old",
+      Test, "old", setup, test_remove_from_publish, teardown);
+  g_test_add ("/contact-lists/remove-from-publish/no-op/old",
+      Test, "old", setup, test_remove_from_publish_no_op, teardown);
+
+  g_test_add ("/contact-lists/cancelled-publish-request",
+      Test, NULL, setup, test_cancelled_publish_request, teardown);
+  g_test_add ("/contact-lists/cancelled-publish-request",
+      Test, "remove-after", setup, test_cancelled_publish_request, teardown);
+
   g_test_add ("/contact-lists/add-to-stored",
       Test, NULL, setup, test_add_to_stored, teardown);
   g_test_add ("/contact-lists/add-to-stored/no-op",
@@ -908,6 +2289,16 @@ main (int argc,
       Test, NULL, setup, test_remove_from_stored, teardown);
   g_test_add ("/contact-lists/remove-from-stored/no-op",
       Test, NULL, setup, test_remove_from_stored_no_op, teardown);
+
+  g_test_add ("/contact-lists/add-to-stored/old",
+      Test, "old", setup, test_add_to_stored, teardown);
+  g_test_add ("/contact-lists/add-to-stored/no-op/old",
+      Test, "old", setup, test_add_to_stored_no_op, teardown);
+  g_test_add ("/contact-lists/remove-from-stored/old",
+      Test, "old", setup, test_remove_from_stored, teardown);
+  g_test_add ("/contact-lists/remove-from-stored/no-op/old",
+      Test, "old", setup, test_remove_from_stored_no_op, teardown);
+
   g_test_add ("/contact-lists/accept-subscribe-request",
       Test, NULL, setup, test_accept_subscribe_request, teardown);
   g_test_add ("/contact-lists/reject-subscribe-request",
@@ -919,6 +2310,20 @@ main (int argc,
   g_test_add ("/contact-lists/remove-from-subscribe/no-op",
       Test, NULL, setup, test_remove_from_subscribe_no_op, teardown);
 
+  g_test_add ("/contact-lists/accept-subscribe-request/old",
+      Test, "old", setup, test_accept_subscribe_request, teardown);
+  g_test_add ("/contact-lists/reject-subscribe-request/old",
+      Test, "old", setup, test_reject_subscribe_request, teardown);
+  g_test_add ("/contact-lists/remove-from-subscribe/old",
+      Test, "old", setup, test_remove_from_subscribe, teardown);
+  g_test_add ("/contact-lists/remove-from-subscribe/pending/old",
+      Test, "old", setup, test_remove_from_subscribe_pending, teardown);
+  g_test_add ("/contact-lists/remove-from-subscribe/no-op/old",
+      Test, "old", setup, test_remove_from_subscribe_no_op, teardown);
+
+  g_test_add ("/contact-lists/reject-subscribe-request/remove-after",
+      Test, "remove-after", setup, test_reject_subscribe_request, teardown);
+
   g_test_add ("/contact-lists/add-to-group",
       Test, NULL, setup, test_add_to_group, teardown);
   g_test_add ("/contact-lists/add-to-group/no-op",
@@ -929,8 +2334,44 @@ main (int argc,
       Test, NULL, setup, test_remove_from_group_no_op, teardown);
   g_test_add ("/contact-lists/remove-group",
       Test, NULL, setup, test_remove_group, teardown);
-  g_test_add ("/contact-lists/remove-group/non-empty",
-      Test, NULL, setup, test_remove_group_non_empty, teardown);
+  g_test_add ("/contact-lists/remove-group/empty",
+      Test, NULL, setup, test_remove_group_empty, teardown);
+
+  g_test_add ("/contact-lists/add-to-group/old",
+      Test, "old", setup, test_add_to_group, teardown);
+  g_test_add ("/contact-lists/add-to-group/no-op/old",
+      Test, "old", setup, test_add_to_group_no_op, teardown);
+  g_test_add ("/contact-lists/remove-from-group/old",
+      Test, "old", setup, test_remove_from_group, teardown);
+  g_test_add ("/contact-lists/remove-from-group/no-op/old",
+      Test, "old", setup, test_remove_from_group_no_op, teardown);
+  g_test_add ("/contact-lists/remove-group/old",
+      Test, "old", setup, test_remove_group, teardown);
+  g_test_add ("/contact-lists/remove-group/empty/old",
+      Test, "old", setup, test_remove_group_empty, teardown);
+
+  g_test_add ("/contact-lists/set_contact_groups",
+      Test, NULL, setup, test_set_contact_groups, teardown);
+  g_test_add ("/contact-lists/set_contact_groups/no-op",
+      Test, NULL, setup, test_set_contact_groups_no_op, teardown);
+  g_test_add ("/contact-lists/set_group_members",
+      Test, NULL, setup, test_set_group_members, teardown);
+
+  g_test_add ("/contact-lists/rename_group",
+      Test, NULL, setup, test_rename_group, teardown);
+  g_test_add ("/contact-lists/rename_group/absent",
+      Test, NULL, setup, test_rename_group_absent, teardown);
+  g_test_add ("/contact-lists/rename_group/overwrite",
+      Test, NULL, setup, test_rename_group_overwrite, teardown);
+
+  g_test_add ("/contact-lists/add-to-deny",
+      Test, NULL, setup, test_add_to_deny, teardown);
+  g_test_add ("/contact-lists/add-to-deny/no-op",
+      Test, NULL, setup, test_add_to_deny_no_op, teardown);
+  g_test_add ("/contact-lists/remove-from-deny",
+      Test, NULL, setup, test_remove_from_deny, teardown);
+  g_test_add ("/contact-lists/remove-from-deny/no-op",
+      Test, NULL, setup, test_remove_from_deny_no_op, teardown);
 
   return g_test_run ();
 }
