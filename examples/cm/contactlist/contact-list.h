@@ -21,37 +21,37 @@
 
 G_BEGIN_DECLS
 
-typedef struct _ExampleContactListManager ExampleContactListManager;
-typedef struct _ExampleContactListManagerClass ExampleContactListManagerClass;
-typedef struct _ExampleContactListManagerPrivate ExampleContactListManagerPrivate;
+typedef struct _ExampleContactList ExampleContactList;
+typedef struct _ExampleContactListClass ExampleContactListClass;
+typedef struct _ExampleContactListPrivate ExampleContactListPrivate;
 
-struct _ExampleContactListManagerClass {
+struct _ExampleContactListClass {
     TpBaseContactListClass parent_class;
 };
 
-struct _ExampleContactListManager {
+struct _ExampleContactList {
     TpBaseContactList parent;
 
-    ExampleContactListManagerPrivate *priv;
+    ExampleContactListPrivate *priv;
 };
 
-GType example_contact_list_manager_get_type (void);
+GType example_contact_list_get_type (void);
 
-#define EXAMPLE_TYPE_CONTACT_LIST_MANAGER \
-  (example_contact_list_manager_get_type ())
-#define EXAMPLE_CONTACT_LIST_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_CONTACT_LIST_MANAGER, \
-                              ExampleContactListManager))
-#define EXAMPLE_CONTACT_LIST_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_CONTACT_LIST_MANAGER, \
-                           ExampleContactListManagerClass))
-#define EXAMPLE_IS_CONTACT_LIST_MANAGER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_CONTACT_LIST_MANAGER))
-#define EXAMPLE_IS_CONTACT_LIST_MANAGER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_CONTACT_LIST_MANAGER))
-#define EXAMPLE_CONTACT_LIST_MANAGER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CONTACT_LIST_MANAGER, \
-                              ExampleContactListManagerClass))
+#define EXAMPLE_TYPE_CONTACT_LIST \
+  (example_contact_list_get_type ())
+#define EXAMPLE_CONTACT_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), EXAMPLE_TYPE_CONTACT_LIST, \
+                              ExampleContactList))
+#define EXAMPLE_CONTACT_LIST_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), EXAMPLE_TYPE_CONTACT_LIST, \
+                           ExampleContactListClass))
+#define EXAMPLE_IS_CONTACT_LIST(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), EXAMPLE_TYPE_CONTACT_LIST))
+#define EXAMPLE_IS_CONTACT_LIST_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), EXAMPLE_TYPE_CONTACT_LIST))
+#define EXAMPLE_CONTACT_LIST_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), EXAMPLE_TYPE_CONTACT_LIST, \
+                              ExampleContactListClass))
 
 /* this enum must be kept in sync with the array _statuses in
  * contact-list.c */
@@ -66,12 +66,12 @@ typedef enum {
 const TpPresenceStatusSpec *example_contact_list_presence_statuses (
     void);
 
-ExampleContactListPresence example_contact_list_manager_get_presence (
-    ExampleContactListManager *self, TpHandle contact);
-const gchar *example_contact_list_manager_get_alias (
-    ExampleContactListManager *self, TpHandle contact);
-void example_contact_list_manager_set_alias (
-    ExampleContactListManager *self, TpHandle contact, const gchar *alias);
+ExampleContactListPresence example_contact_list_get_presence (
+    ExampleContactList *self, TpHandle contact);
+const gchar *example_contact_list_get_alias (
+    ExampleContactList *self, TpHandle contact);
+void example_contact_list_set_alias (
+    ExampleContactList *self, TpHandle contact, const gchar *alias);
 
 G_END_DECLS
 
