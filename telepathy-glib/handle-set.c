@@ -336,13 +336,57 @@ ref_one (guint handle, gpointer data)
 TpHandleSet *
 tp_handle_set_copy (const TpHandleSet *other)
 {
-  TpHandleSet *set;
-
   g_return_val_if_fail (other != NULL, NULL);
 
+  return tp_handle_set_new_from_intset (other->repo, other->intset);
+}
+
+/**
+ * tp_handle_set_new_containing:
+ * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
+ * @handle: a valid handle
+ *
+ * Creates a new #TpHandleSet from a specified handle repository and single
+ * handle.
+ *
+ * Returns: A new #TpHandleSet
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpHandleSet *
+tp_handle_set_new_containing (TpHandleRepoIface *repo,
+    TpHandle handle)
+{
+  TpHandleSet *set = tp_handle_set_new (repo);
+
+  tp_handle_set_add (set, handle);
+  return set;
+}
+
+/**
+ * tp_handle_set_new_from_intset:
+ * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
+ * @intset: a set of handles, which must all be valid
+ *
+ * Creates a new #TpHandleSet from a specified handle repository and
+ * set of handles.
+ *
+ * Returns: A new #TpHandleSet
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpHandleSet *
+tp_handle_set_new_from_intset (TpHandleRepoIface *repo,
+    const TpIntset *intset)
+{
+  TpHandleSet *set;
+
+  g_return_val_if_fail (repo != NULL, NULL);
+  g_return_val_if_fail (intset != NULL, NULL);
+
   set = g_slice_new0 (TpHandleSet);
-  set->repo = other->repo;
-  set->intset = tp_intset_copy (other->intset);
+  set->repo = repo;
+  set->intset = tp_intset_copy (intset);
   tp_intset_foreach (set->intset, ref_one, set);
   return set;
 }
