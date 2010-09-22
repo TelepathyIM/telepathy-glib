@@ -623,7 +623,7 @@ example_contact_list_manager_set_group_members_async (
   TpHandleSet *new_contacts = tp_handle_set_new (self->priv->contact_repo);
   TpHandleSet *added = tp_handle_set_new (self->priv->contact_repo);
   TpHandleSet *removed = tp_handle_set_new (self->priv->contact_repo);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
   gchar *tag = ensure_tag (self, group, TRUE);
 
@@ -694,7 +694,7 @@ example_contact_list_manager_add_to_group_async (TpBaseContactList *manager,
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *new_contacts = tp_handle_set_new (self->priv->contact_repo);
   TpHandleSet *new_to_group = tp_handle_set_new (self->priv->contact_repo);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
   gchar *tag = ensure_tag (self, group, TRUE);
 
@@ -747,7 +747,7 @@ example_contact_list_manager_remove_from_group_async (
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
@@ -1061,7 +1061,7 @@ example_contact_list_manager_dup_group_members (TpBaseContactList *manager,
     const gchar *group)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
   TpHandleSet *members = tp_handle_set_new (self->priv->contact_repo);
 
@@ -1142,7 +1142,7 @@ example_contact_list_manager_request_subscription_async (
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
@@ -1207,7 +1207,7 @@ example_contact_list_manager_authorize_publication_async (
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
@@ -1254,7 +1254,7 @@ example_contact_list_manager_store_contacts_async (
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
@@ -1292,7 +1292,7 @@ example_contact_list_manager_remove_contacts_async (TpBaseContactList *manager,
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *removed = tp_handle_set_new (self->priv->contact_repo);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
@@ -1339,7 +1339,7 @@ example_contact_list_manager_unsubscribe_async (TpBaseContactList *manager,
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
@@ -1404,7 +1404,7 @@ example_contact_list_manager_unpublish_async (TpBaseContactList *manager,
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
   TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpHandleSet *removed = tp_handle_set_new (self->priv->contact_repo);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (contacts));
@@ -1490,7 +1490,7 @@ example_contact_list_manager_block_contacts_async (
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpHandle member;
 
@@ -1521,7 +1521,7 @@ example_contact_list_manager_unblock_contacts_async (
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandleSet *changed = tp_handle_set_new (self->priv->contact_repo);
   TpHandle member;
 
@@ -1598,7 +1598,7 @@ example_contact_list_manager_remove_group_async (TpBaseContactList *manager,
     gpointer user_data)
 {
   ExampleContactListManager *self = EXAMPLE_CONTACT_LIST_MANAGER (manager);
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   TpHandle member;
 
   /* signal the deletion */

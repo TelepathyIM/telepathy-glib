@@ -1855,8 +1855,8 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 {
   GHashTable *changes;
   GArray *removals;
-  TpIntSetFastIter iter;
-  TpIntSet *pub, *sub_rp, *unpub, *unsub, *store;
+  TpIntsetFastIter iter;
+  TpIntset *pub, *sub_rp, *unpub, *unsub, *store;
   GObject *sub_chan, *pub_chan, *stored_chan;
   TpHandle self_handle;
   TpHandle contact;
@@ -1924,7 +1924,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
             {
               /* Emit any publication requests as we go along, since they can
                * each have a different message and actor */
-              TpIntSet *pub_lp = tp_intset_new_containing (contact);
+              TpIntset *pub_lp = tp_intset_new_containing (contact);
 
               tp_group_mixin_change_members (pub_chan, publish_request,
                   NULL, NULL, pub_lp, NULL, contact,
@@ -1937,7 +1937,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
             {
               /* Also emit publication request cancellations as we go along:
                * each one has a different actor */
-              TpIntSet *pub_cancelled = tp_intset_new_containing (
+              TpIntset *pub_cancelled = tp_intset_new_containing (
                   contact);
 
               tp_group_mixin_change_members (pub_chan, "",
@@ -1966,7 +1966,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
             {
               /* If our subscription request was rejected, the actor is the
                * other guy, and PERMISSION_DENIED seems a reasonable reason */
-              TpIntSet *sub_rejected = tp_intset_new_containing (contact);
+              TpIntset *sub_rejected = tp_intset_new_containing (contact);
 
               tp_group_mixin_change_members (sub_chan, "",
                   NULL, sub_rejected, NULL, NULL, contact,
@@ -1983,7 +1983,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
             {
               /* If our subscription request was accepted, the actor is the
                * other guy accepting */
-              TpIntSet *sub = tp_intset_new_containing (contact);
+              TpIntset *sub = tp_intset_new_containing (contact);
 
               tp_group_mixin_change_members (sub_chan, "",
                   sub, NULL, NULL, NULL, contact,
@@ -2007,7 +2007,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 
   if (removed != NULL)
     {
-      TpIntSet *tmp;
+      TpIntset *tmp;
 
       tmp = unsub;
       unsub = tp_intset_union (tmp, tp_handle_set_peek (removed));
@@ -2094,9 +2094,9 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
     TpHandleSet *changed)
 {
   TpHandleSet *now_blocked;
-  TpIntSet *blocked, *unblocked;
+  TpIntset *blocked, *unblocked;
   GArray *blocked_arr, *unblocked_arr;
-  TpIntSetFastIter iter;
+  TpIntsetFastIter iter;
   GObject *deny_chan;
   TpHandle handle;
 
@@ -3233,7 +3233,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
               gchar *name;
               TpHandleSet *group_members;
               TpHandle contact;
-              TpIntSetFastIter iter;
+              TpIntsetFastIter iter;
 
               /* the handle might get unref'd by closing the channel, so copy
                * the string */
@@ -3325,7 +3325,7 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
   gpointer old_chan, new_chan;
   const gchar *old_names[] = { old_name, NULL };
   const gchar *new_names[] = { new_name, NULL };
-  const TpIntSet *set;
+  const TpIntset *set;
   TpHandleSet *old_members;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
