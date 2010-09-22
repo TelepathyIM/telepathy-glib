@@ -2075,6 +2075,58 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 }
 
 /**
+ * tp_base_contact_list_one_contact_changed:
+ * @self: the contact list manager
+ * @changed: a contact handle
+ *
+ * Convenience wrapper around tp_base_contact_list_contacts_changed() for a
+ * single handle in the 'changed' set and no 'removed' set.
+ */
+void
+tp_base_contact_list_one_contact_changed (TpBaseContactList *self,
+    TpHandle changed)
+{
+  TpHandleSet *set;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  /* if we're disconnecting, we might not have a handle repository any more:
+   * tp_base_contact_list_contacts_changed does nothing in that situation */
+  if (self->priv->contact_repo == NULL)
+    return;
+
+  set = tp_handle_set_new_containing (self->priv->contact_repo, changed);
+  tp_base_contact_list_contacts_changed (self, set, NULL);
+  tp_handle_set_destroy (set);
+}
+
+/**
+ * tp_base_contact_list_one_contact_removed:
+ * @self: the contact list manager
+ * @removed: a contact handle
+ *
+ * Convenience wrapper around tp_base_contact_list_contacts_changed() for a
+ * single handle in the 'removed' set and no 'changed' set.
+ */
+void
+tp_base_contact_list_one_contact_removed (TpBaseContactList *self,
+    TpHandle removed)
+{
+  TpHandleSet *set;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  /* if we're disconnecting, we might not have a handle repository any more:
+   * tp_base_contact_list_contacts_changed does nothing in that situation */
+  if (self->priv->contact_repo == NULL)
+    return;
+
+  set = tp_handle_set_new_containing (self->priv->contact_repo, removed);
+  tp_base_contact_list_contacts_changed (self, NULL, set);
+  tp_handle_set_destroy (set);
+}
+
+/**
  * tp_base_contact_list_contact_blocking_changed:
  * @self: the contact list manager
  * @changed: a set of contacts who were blocked or unblocked
@@ -3586,6 +3638,44 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
 
   g_ptr_array_unref (really_added);
   g_ptr_array_unref (really_removed);
+}
+
+/**
+ * tp_base_contact_list_one_contact_groups_changed:
+ * @self: the contact list manager
+ * @contact: a contact handle
+ * @added: (array length=n_added) (element-type utf8) (allow-none): zero or
+ *  more groups to which @contact was added, or %NULL
+ * @n_added: the number of groups added, or -1 if @added is %NULL-terminated
+ * @removed: (array zero-terminated=1) (element-type utf8) (allow-none): zero
+ *  or more groups from which the @contact was removed, or %NULL
+ * @n_removed: the number of groups removed, or -1 if @removed is
+ *  %NULL-terminated
+ *
+ * Convenience wrapper around tp_base_contact_list_groups_changed() for a
+ * single handle in the 'contacts' set.
+ */
+void
+tp_base_contact_list_one_contact_groups_changed (TpBaseContactList *self,
+    TpHandle contact,
+    const gchar * const *added,
+    gssize n_added,
+    const gchar * const *removed,
+    gssize n_removed)
+{
+  TpHandleSet *set;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+
+  /* if we're disconnecting, we might not have a handle repository any more:
+   * tp_base_contact_list_groups_changed does nothing in that situation */
+  if (self->priv->contact_repo == NULL)
+    return;
+
+  set = tp_handle_set_new_containing (self->priv->contact_repo, contact);
+  tp_base_contact_list_groups_changed (self, set, added, n_added, removed,
+      n_removed);
+  tp_handle_set_destroy (set);
 }
 
 /**
