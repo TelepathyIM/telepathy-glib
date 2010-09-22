@@ -17,7 +17,7 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>
 
-#include "contact-list-manager.h"
+#include "contact-list.h"
 #include "protocol.h"
 
 static void init_aliasing (gpointer, gpointer);

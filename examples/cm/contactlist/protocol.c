@@ -13,7 +13,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "conn.h"
-#include "contact-list-manager.h"
+#include "contact-list.h"
 
 G_DEFINE_TYPE (ExampleContactListProtocol,
     example_contact_list_protocol,

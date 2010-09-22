@@ -1,7 +1,7 @@
 /*
  * Example channel manager for contact lists
  *
- * Copyright © 2007-2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2007-2010 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright © 2007-2009 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
@@ -9,8 +9,8 @@
  * notice and this notice are preserved.
  */
 
-#ifndef __EXAMPLE_CONTACT_LIST_MANAGER_H__
-#define __EXAMPLE_CONTACT_LIST_MANAGER_H__
+#ifndef __EXAMPLE_CONTACT_LIST_H__
+#define __EXAMPLE_CONTACT_LIST_H__
 
 #include <glib-object.h>
 
@@ -54,7 +54,7 @@ GType example_contact_list_manager_get_type (void);
                               ExampleContactListManagerClass))
 
 /* this enum must be kept in sync with the array _statuses in
- * contact-list-manager.c */
+ * contact-list.c */
 typedef enum {
     EXAMPLE_CONTACT_LIST_PRESENCE_OFFLINE = 0,
     EXAMPLE_CONTACT_LIST_PRESENCE_UNKNOWN,

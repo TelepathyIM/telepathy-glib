@@ -9,7 +9,7 @@
  * notice and this notice are preserved.
  */
 
-#include "contact-list-manager.h"
+#include "contact-list.h"
 
 #include <string.h>
 
@@ -19,7 +19,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 /* this array must be kept in sync with the enum
- * ExampleContactListPresence in contact-list-manager.h */
+ * ExampleContactListPresence in contact-list.h */
 static const TpPresenceStatusSpec _statuses[] = {
       { "offline", TP_CONNECTION_PRESENCE_TYPE_OFFLINE, FALSE, NULL },
       { "unknown", TP_CONNECTION_PRESENCE_TYPE_UNKNOWN, FALSE, NULL },
