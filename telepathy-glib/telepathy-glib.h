@@ -70,6 +70,7 @@
 #include <telepathy-glib/stream-tube-channel.h>
 #include <telepathy-glib/stream-tube-connection.h>
 #include <telepathy-glib/text-channel.h>
+#include <telepathy-glib/room-list-channel.h>
 
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>

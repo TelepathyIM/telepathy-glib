@@ -74,6 +74,7 @@ TelepathyGLib_0_12_gir_FILES = \
 	$(srcdir)/debug-client.c $(srcdir)/debug-client.h \
 	$(srcdir)/debug-message.c $(srcdir)/debug-message.h \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
+	$(srcdir)/room-list-channel.c $(srcdir)/room-list-channel.h \
 	_gen/telepathy-enums.h _gen/telepathy-enums-gtk-doc.h \
 	_gen/telepathy-interfaces.h \
 	$(NULL)
