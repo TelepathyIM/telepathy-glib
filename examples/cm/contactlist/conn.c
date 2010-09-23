@@ -17,7 +17,7 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>
 
-#include "contact-list-manager.h"
+#include "contact-list.h"
 #include "protocol.h"
 
 static void init_aliasing (gpointer, gpointer);
@@ -49,7 +49,7 @@ struct _ExampleContactListConnectionPrivate
 {
   gchar *account;
   guint simulation_delay;
-  ExampleContactListManager *list_manager;
+  ExampleContactList *contact_list;
   gboolean away;
 };
 
@@ -154,7 +154,7 @@ create_handle_repos (TpBaseConnection *conn,
 }
 
 static void
-alias_updated_cb (ExampleContactListManager *manager,
+alias_updated_cb (ExampleContactList *contact_list,
                   TpHandle contact,
                   ExampleContactListConnection *self)
 {
@@ -168,7 +168,7 @@ alias_updated_cb (ExampleContactListManager *manager,
   g_value_init (pair->values + 1, G_TYPE_STRING);
   g_value_set_uint (pair->values + 0, contact);
   g_value_set_string (pair->values + 1,
-      example_contact_list_manager_get_alias (manager, contact));
+      example_contact_list_get_alias (contact_list, contact));
 
   aliases = g_ptr_array_sized_new (1);
   g_ptr_array_add (aliases, pair);
@@ -180,7 +180,7 @@ alias_updated_cb (ExampleContactListManager *manager,
 }
 
 static void
-presence_updated_cb (ExampleContactListManager *manager,
+presence_updated_cb (ExampleContactList *contact_list,
                      TpHandle contact,
                      ExampleContactListConnection *self)
 {
@@ -192,7 +192,7 @@ presence_updated_cb (ExampleContactListManager *manager,
     return;
 
   status = tp_presence_status_new (
-      example_contact_list_manager_get_presence (manager, contact),
+      example_contact_list_get_presence (contact_list, contact),
       NULL);
   tp_presence_mixin_emit_one_presence_update ((GObject *) self,
       contact, status);
@@ -206,19 +206,18 @@ create_channel_managers (TpBaseConnection *conn)
     EXAMPLE_CONTACT_LIST_CONNECTION (conn);
   GPtrArray *ret = g_ptr_array_sized_new (1);
 
-  self->priv->list_manager =
-    EXAMPLE_CONTACT_LIST_MANAGER (g_object_new (
-          EXAMPLE_TYPE_CONTACT_LIST_MANAGER,
+  self->priv->contact_list = EXAMPLE_CONTACT_LIST (g_object_new (
+          EXAMPLE_TYPE_CONTACT_LIST,
           "connection", conn,
           "simulation-delay", self->priv->simulation_delay,
           NULL));
 
-  g_signal_connect (self->priv->list_manager, "alias-updated",
+  g_signal_connect (self->priv->contact_list, "alias-updated",
       G_CALLBACK (alias_updated_cb), self);
-  g_signal_connect (self->priv->list_manager, "presence-updated",
+  g_signal_connect (self->priv->contact_list, "presence-updated",
       G_CALLBACK (presence_updated_cb), self);
 
-  g_ptr_array_add (ret, self->priv->list_manager);
+  g_ptr_array_add (ret, self->priv->contact_list);
 
   return ret;
 }
@@ -272,7 +271,7 @@ aliasing_fill_contact_attributes (GObject *object,
       tp_contacts_mixin_set_contact_attribute (attributes, contact,
           TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS,
           tp_g_value_slice_new_string (
-            example_contact_list_manager_get_alias (self->priv->list_manager,
+            example_contact_list_get_alias (self->priv->contact_list,
               contact)));
     }
 }
@@ -341,8 +340,8 @@ get_contact_statuses (GObject *object,
         }
       else
         {
-          presence = example_contact_list_manager_get_presence (
-              self->priv->list_manager, contact);
+          presence = example_contact_list_get_presence (
+              self->priv->contact_list, contact);
         }
 
       parameters = g_hash_table_new_full (g_str_hash,
@@ -493,8 +492,8 @@ get_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
   for (i = 0; i < contacts->len; i++)
     {
       TpHandle contact = g_array_index (contacts, TpHandle, i);
-      const gchar *alias = example_contact_list_manager_get_alias (
-          self->priv->list_manager, contact);
+      const gchar *alias = example_contact_list_get_alias (
+          self->priv->contact_list, contact);
 
       g_hash_table_insert (result, GUINT_TO_POINTER (contact),
           (gchar *) alias);
@@ -534,8 +533,8 @@ request_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
   for (i = 0; i < contacts->len; i++)
     {
       TpHandle contact = g_array_index (contacts, TpHandle, i);
-      const gchar *alias = example_contact_list_manager_get_alias (
-          self->priv->list_manager, contact);
+      const gchar *alias = example_contact_list_get_alias (
+          self->priv->contact_list, contact);
 
       g_ptr_array_add (result, (gchar *) alias);
     }
@@ -579,7 +578,7 @@ set_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
 
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      example_contact_list_manager_set_alias (self->priv->list_manager,
+      example_contact_list_set_alias (self->priv->contact_list,
           GPOINTER_TO_UINT (key), value);
     }
 

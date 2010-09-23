@@ -17,8 +17,10 @@ main (int argc,
 {
   TpHandleRepoIface *repo = NULL;
   TpHandleSet *set = NULL;
+  TpHandleSet *other = NULL;
   TpIntset *iset = NULL, *result = NULL;
   GError *error = NULL;
+  gchar *s;
 
   TpHandle h1, h2, h3, h4;
 
@@ -88,6 +90,12 @@ main (int argc,
   /* h1 should be removed, h4 not */
   MYASSERT (tp_intset_is_member (result, h1), "");
   MYASSERT (!tp_intset_is_member (result, h4), "");
+
+  other = tp_handle_set_new_from_intset (repo, result);
+  g_assert (tp_intset_is_equal (tp_handle_set_peek (other),
+        result));
+  tp_clear_pointer (&other, tp_handle_set_destroy);
+
   tp_intset_destroy (result);
 
   /* Removing a member should succeed */
@@ -97,6 +105,15 @@ main (int argc,
   MYASSERT (tp_handle_set_is_member (set, h3), "");
   MYASSERT (tp_handle_set_size (set) == 1,
       ": size really %i", tp_handle_set_size (set));
+
+  other = tp_handle_set_new_containing (repo, h3);
+  g_assert (tp_intset_is_equal (tp_handle_set_peek (set),
+        tp_handle_set_peek (other)));
+  tp_clear_pointer (&other, tp_handle_set_destroy);
+
+  /* can't really assert about the contents */
+  s = tp_handle_set_dump (set);
+  g_free (s);
 
   MYASSERT (tp_handle_set_remove (set, h3) == TRUE, "");
 

@@ -115,6 +115,11 @@ TpHandleSet * tp_handle_set_new (TpHandleRepoIface *repo)
   G_GNUC_WARN_UNUSED_RESULT;
 TpHandleSet *tp_handle_set_copy (const TpHandleSet *other)
   G_GNUC_WARN_UNUSED_RESULT;
+TpHandleSet *tp_handle_set_new_from_intset (TpHandleRepoIface *repo,
+    const TpIntset *intset);
+TpHandleSet *tp_handle_set_new_containing (TpHandleRepoIface *repo,
+    TpHandle handle);
+
 void tp_handle_set_clear (TpHandleSet *set);
 void tp_handle_set_destroy (TpHandleSet *set);
 
@@ -138,6 +143,8 @@ TpIntset *tp_handle_set_update (TpHandleSet *set, const TpIntset *add)
   G_GNUC_WARN_UNUSED_RESULT;
 TpIntset *tp_handle_set_difference_update (TpHandleSet *set,
     const TpIntset *remove) G_GNUC_WARN_UNUSED_RESULT;
+
+gchar *tp_handle_set_dump (const TpHandleSet *self) G_GNUC_WARN_UNUSED_RESULT;
 
 /* static inline because it relies on NUM_TP_HANDLE_TYPES */
 /**

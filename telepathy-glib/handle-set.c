@@ -71,7 +71,7 @@ tp_handle_set_get_type (void)
  *
  * Creates a new #TpHandleSet
  *
- * Returns: A new #TpHandleSet
+ * Returns: (transfer full): A new #TpHandleSet
  */
 TpHandleSet *
 tp_handle_set_new (TpHandleRepoIface *repo)
@@ -93,7 +93,7 @@ tp_handle_set_new (TpHandleRepoIface *repo)
  *
  * Creates a new #TpHandleSet
  *
- * Returns: A new #TpHandleSet
+ * Returns: (transfer full): A new #TpHandleSet
  *
  * Since: 0.11.7
  */
@@ -336,13 +336,57 @@ ref_one (guint handle, gpointer data)
 TpHandleSet *
 tp_handle_set_copy (const TpHandleSet *other)
 {
-  TpHandleSet *set;
-
   g_return_val_if_fail (other != NULL, NULL);
 
+  return tp_handle_set_new_from_intset (other->repo, other->intset);
+}
+
+/**
+ * tp_handle_set_new_containing: (skip)
+ * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
+ * @handle: a valid handle
+ *
+ * Creates a new #TpHandleSet from a specified handle repository and single
+ * handle.
+ *
+ * Returns: (transfer full): A new #TpHandleSet
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpHandleSet *
+tp_handle_set_new_containing (TpHandleRepoIface *repo,
+    TpHandle handle)
+{
+  TpHandleSet *set = tp_handle_set_new (repo);
+
+  tp_handle_set_add (set, handle);
+  return set;
+}
+
+/**
+ * tp_handle_set_new_from_intset: (skip)
+ * @repo: #TpHandleRepoIface that holds the handles to be reffed by this set
+ * @intset: a set of handles, which must all be valid
+ *
+ * Creates a new #TpHandleSet from a specified handle repository and
+ * set of handles.
+ *
+ * Returns: (transfer full): A new #TpHandleSet
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpHandleSet *
+tp_handle_set_new_from_intset (TpHandleRepoIface *repo,
+    const TpIntset *intset)
+{
+  TpHandleSet *set;
+
+  g_return_val_if_fail (repo != NULL, NULL);
+  g_return_val_if_fail (intset != NULL, NULL);
+
   set = g_slice_new0 (TpHandleSet);
-  set->repo = other->repo;
-  set->intset = tp_intset_copy (other->intset);
+  set->repo = repo;
+  set->intset = tp_intset_copy (intset);
   tp_intset_foreach (set->intset, ref_one, set);
   return set;
 }
@@ -419,4 +463,40 @@ tp_handle_set_difference_update (TpHandleSet *set, const TpIntset *remove)
   set->intset = tmp;
 
   return ret;
+}
+
+/**
+ * tp_handle_set_dump:
+ * @self: a handle set
+ *
+ * Format a #TpHandleSet for debug output.
+ *
+ * Returns: (transfer full) (type utf8): a string representation of the
+ *  handle set suitable for debug output
+ */
+gchar *
+tp_handle_set_dump (const TpHandleSet *self)
+{
+  TpIntsetFastIter iter;
+  guint handle;
+  GString *string = g_string_new ("{ ");
+
+  tp_intset_fast_iter_init (&iter, self->intset);
+
+  while (tp_intset_fast_iter_next (&iter, &handle))
+    {
+      if (handle == 0 || !tp_handle_is_valid (self->repo, handle, NULL))
+        {
+          g_string_append_printf (string, "#%u <invalid>, ", handle);
+        }
+      else
+        {
+          g_string_append_printf (string, "#%u '%s', ", handle,
+              tp_handle_inspect (self->repo, handle));
+        }
+    }
+
+  g_string_append_c (string, '}');
+
+  return g_string_free (string, FALSE);
 }

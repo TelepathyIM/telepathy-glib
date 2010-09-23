@@ -13,7 +13,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "conn.h"
-#include "contact-list-manager.h"
+#include "contact-list.h"
 
 G_DEFINE_TYPE (ExampleContactListProtocol,
     example_contact_list_protocol,
@@ -154,7 +154,7 @@ get_connection_details (TpBaseProtocol *self G_GNUC_UNUSED,
 
   if (channel_managers != NULL)
     {
-      GType types[] = { EXAMPLE_TYPE_CONTACT_LIST_MANAGER, G_TYPE_INVALID };
+      GType types[] = { EXAMPLE_TYPE_CONTACT_LIST, G_TYPE_INVALID };
 
       *channel_managers = g_memdup (types, sizeof (types));
     }

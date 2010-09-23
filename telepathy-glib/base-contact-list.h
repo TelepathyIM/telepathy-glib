@@ -77,6 +77,10 @@ void tp_base_contact_list_set_list_received (TpBaseContactList *self);
 void tp_base_contact_list_contacts_changed (TpBaseContactList *self,
     TpHandleSet *changed,
     TpHandleSet *removed);
+void tp_base_contact_list_one_contact_changed (TpBaseContactList *self,
+    TpHandle changed);
+void tp_base_contact_list_one_contact_removed (TpBaseContactList *self,
+    TpHandle removed);
 
 /* ---- Implemented by subclasses for ContactList (mandatory read-only
  * things) ---- */
@@ -325,6 +329,11 @@ void tp_base_contact_list_group_renamed (TpBaseContactList *self,
 
 void tp_base_contact_list_groups_changed (TpBaseContactList *self,
     TpHandleSet *contacts,
+    const gchar * const *added, gssize n_added,
+    const gchar * const *removed, gssize n_removed);
+
+void tp_base_contact_list_one_contact_groups_changed (TpBaseContactList *self,
+    TpHandle contact,
     const gchar * const *added, gssize n_added,
     const gchar * const *removed, gssize n_removed);
 
