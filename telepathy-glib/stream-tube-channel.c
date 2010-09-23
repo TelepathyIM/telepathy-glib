@@ -28,6 +28,7 @@
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
@@ -260,6 +261,20 @@ static void
 tp_stream_tube_channel_constructed (GObject *obj)
 {
   TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
+  TpChannel *chan = (TpChannel *) obj;
+
+  if (tp_channel_get_channel_type_id (chan) !=
+      TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE)
+    {
+      GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "Channel is not a stream tube" };
+
+      DEBUG ("Channel is not a stream tube: %s", tp_channel_get_channel_type (
+            chan));
+
+      tp_proxy_invalidate (TP_PROXY (self), &error);
+      return;
+    }
 
    /*  Tube.Parameters is immutable for incoming tubes. For outgoing ones,
     *  it's defined when offering the tube. */
