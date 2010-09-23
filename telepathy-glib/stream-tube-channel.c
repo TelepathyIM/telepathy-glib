@@ -902,7 +902,6 @@ _channel_offered (TpChannel *channel,
 
   DEBUG ("Stream Tube offered");
 
-  g_simple_async_result_set_op_res_gboolean (self->priv->result, TRUE);
   g_simple_async_result_complete (self->priv->result);
   tp_clear_object (&self->priv->result);
 }
