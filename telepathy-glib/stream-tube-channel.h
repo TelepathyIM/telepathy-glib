@@ -18,67 +18,67 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_STREAM_TUBE_H__
-#define __TP_STREAM_TUBE_H__
+#ifndef __TP_STREAM_TUBE_CHANNEL_H__
+#define __TP_STREAM_TUBE_CHANNEL_H__
 
 #include <telepathy-glib/channel.h>
 #include <gio/gio.h>
 
 G_BEGIN_DECLS
 
-#define TP_TYPE_STREAM_TUBE	(tp_stream_tube_get_type ())
-#define TP_STREAM_TUBE(obj)	(G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_STREAM_TUBE, TpStreamTube))
-#define TP_STREAM_TUBE_CLASS(obj)	(G_TYPE_CHECK_CLASS_CAST ((obj), TP_TYPE_STREAM_TUBE, TpStreamTubeClass))
-#define TP_IS_STREAM_TUBE(obj)	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_STREAM_TUBE))
-#define TP_IS_STREAM_TUBE_CLASS(obj)	(G_TYPE_CHECK_CLASS_TYPE ((obj), TP_TYPE_STREAM_TUBE))
-#define TP_STREAM_TUBE_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_STREAM_TUBE, TpStreamTubeClass))
+#define TP_TYPE_STREAM_TUBE_CHANNEL	(tp_stream_tube_channel_get_type ())
+#define TP_STREAM_TUBE_CHANNEL(obj)	(G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannel))
+#define TP_STREAM_TUBE_CHANNEL_CLASS(obj)	(G_TYPE_CHECK_CLASS_CAST ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannelClass))
+#define TP_IS_STREAM_TUBE_CHANNEL(obj)	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_STREAM_TUBE_CHANNEL))
+#define TP_IS_STREAM_TUBE_CHANNEL_CLASS(obj)	(G_TYPE_CHECK_CLASS_TYPE ((obj), TP_TYPE_STREAM_TUBE_CHANNEL))
+#define TP_STREAM_TUBE_CHANNEL_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannelClass))
 
-typedef struct _TpStreamTube TpStreamTube;
-typedef struct _TpStreamTubeClass TpStreamTubeClass;
-typedef struct _TpStreamTubePrivate TpStreamTubePrivate;
+typedef struct _TpStreamTubeChannel TpStreamTubeChannel;
+typedef struct _TpStreamTubeChannelClass TpStreamTubeChannelClass;
+typedef struct _TpStreamTubeChannelPrivate TpStreamTubeChannelPrivate;
 
-struct _TpStreamTube
+struct _TpStreamTubeChannel
 {
   TpChannel parent;
-  TpStreamTubePrivate *priv;
+  TpStreamTubeChannelPrivate *priv;
 };
 
-struct _TpStreamTubeClass
+struct _TpStreamTubeChannelClass
 {
   TpChannelClass parent_class;
   /*<private>*/
   GCallback _padding[7];
 };
 
-GType tp_stream_tube_get_type (void);
+GType tp_stream_tube_channel_get_type (void);
 
-TpStreamTube *tp_stream_tube_new (TpConnection *conn,
+TpStreamTubeChannel *tp_stream_tube_channel_new (TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,
     GError **error);
 
-const gchar * tp_stream_tube_get_service (TpStreamTube *self);
+const gchar * tp_stream_tube_channel_get_service (TpStreamTubeChannel *self);
 
-GHashTable * tp_stream_tube_get_parameters (TpStreamTube *self);
+GHashTable * tp_stream_tube_channel_get_parameters (TpStreamTubeChannel *self);
 
 /* Incoming tube methods */
 
-void tp_stream_tube_accept_async (TpStreamTube *self,
+void tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-GIOStream *tp_stream_tube_accept_finish (TpStreamTube *self,
+GIOStream *tp_stream_tube_channel_accept_finish (TpStreamTubeChannel *self,
     GAsyncResult *result,
     GError **error);
 
 /* Outgoing tube methods */
 
-void tp_stream_tube_offer_async (TpStreamTube *self,
+void tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
     GHashTable *params,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_stream_tube_offer_finish (TpStreamTube *self,
+gboolean tp_stream_tube_channel_offer_finish (TpStreamTubeChannel *self,
     GAsyncResult *result,
     GError **error);
 

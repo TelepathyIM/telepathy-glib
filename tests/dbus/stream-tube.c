@@ -1,4 +1,4 @@
-/* Tests of TpStreamTube
+/* Tests of TpStreamTubeChannel
  *
  * Copyright © 2010 Collabora Ltd. <http://www.collabora.co.uk/>
  *
@@ -45,7 +45,7 @@ typedef struct {
 
     /* Client side objects */
     TpConnection *connection;
-    TpStreamTube *tube;
+    TpStreamTubeChannel *tube;
 
     GIOStream *stream;
     GIOStream *cm_stream;
@@ -155,7 +155,7 @@ create_tube_service (Test *test,
   /* Create client-side tube channel object */
   g_object_get (test->tube_chan_service, "channel-properties", &props, NULL);
 
-  test->tube = tp_stream_tube_new (test->connection,
+  test->tube = tp_stream_tube_channel_new (test->connection,
       chan_path, props, &test->error);
 
   g_assert_no_error (test->error);
@@ -175,13 +175,13 @@ test_creation (Test *test,
   create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
 
-  g_assert (TP_IS_STREAM_TUBE (test->tube));
+  g_assert (TP_IS_STREAM_TUBE_CHANNEL (test->tube));
   g_assert (TP_IS_CHANNEL (test->tube));
 
   create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
 
-  g_assert (TP_IS_STREAM_TUBE (test->tube));
+  g_assert (TP_IS_STREAM_TUBE_CHANNEL (test->tube));
   g_assert (TP_IS_CHANNEL (test->tube));
 }
 
@@ -206,13 +206,13 @@ test_properties (Test *test,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
 
   /* Service */
-  g_assert_cmpstr (tp_stream_tube_get_service (test->tube), ==, "test-service");
+  g_assert_cmpstr (tp_stream_tube_channel_get_service (test->tube), ==, "test-service");
   g_object_get (test->tube, "service", &service, NULL);
   g_assert_cmpstr (service, ==, "test-service");
   g_free (service);
 
   /* Parameters */
-  parameters = tp_stream_tube_get_parameters (test->tube);
+  parameters = tp_stream_tube_channel_get_parameters (test->tube);
   /* NULL as the tube has not be offered yet */
   g_assert (parameters == NULL);
   g_object_get (test->tube, "parameters", &parameters, NULL);
@@ -223,7 +223,7 @@ test_properties (Test *test,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
 
   /* Parameters */
-  parameters = tp_stream_tube_get_parameters (test->tube);
+  parameters = tp_stream_tube_channel_get_parameters (test->tube);
   check_parameters (parameters);
   g_object_get (test->tube, "parameters", &parameters, NULL);
   check_parameters (parameters);
@@ -237,7 +237,7 @@ tube_accept_cb (GObject *source,
 {
   Test *test = user_data;
 
-  test->stream = tp_stream_tube_accept_finish (TP_STREAM_TUBE (source), result,
+  test->stream = tp_stream_tube_channel_accept_finish (TP_STREAM_TUBE_CHANNEL (source), result,
       &test->error);
 
   test->wait--;
@@ -359,7 +359,7 @@ test_accept_success (Test *test,
   g_signal_connect (test->tube_chan_service, "incoming-connection",
       G_CALLBACK (chan_incoming_connection_cb), test);
 
-  tp_stream_tube_accept_async (test->tube, tube_accept_cb, test);
+  tp_stream_tube_channel_accept_async (test->tube, tube_accept_cb, test);
 
   test->wait = 2;
   g_main_loop_run (test->mainloop);
@@ -375,7 +375,7 @@ tube_offer_cb (GObject *source,
 {
   Test *test = user_data;
 
-  tp_stream_tube_offer_finish (TP_STREAM_TUBE (source), result,
+  tp_stream_tube_channel_offer_finish (TP_STREAM_TUBE_CHANNEL (source), result,
       &test->error);
 
   test->wait--;
@@ -384,7 +384,7 @@ tube_offer_cb (GObject *source,
 }
 
 static void
-tube_incoming_cb (TpStreamTube *tube,
+tube_incoming_cb (TpStreamTubeChannel *tube,
     TpContact *contact,
     GIOStream *stream,
     Test *test)
@@ -427,12 +427,12 @@ test_offer_success (Test *test,
 
   params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
 
-  g_assert (tp_stream_tube_get_parameters (test->tube) == NULL);
+  g_assert (tp_stream_tube_channel_get_parameters (test->tube) == NULL);
 
-  tp_stream_tube_offer_async (test->tube, params, tube_offer_cb, test);
+  tp_stream_tube_channel_offer_async (test->tube, params, tube_offer_cb, test);
   g_hash_table_unref (params);
 
-  check_parameters (tp_stream_tube_get_parameters (test->tube));
+  check_parameters (tp_stream_tube_channel_get_parameters (test->tube));
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
@@ -456,7 +456,7 @@ test_offer_success (Test *test,
   g_assert_no_error (test->error);
   g_assert (test->cm_stream != NULL);
 
-  /* The connection is announced on TpStreamTube */
+  /* The connection is announced on TpStreamTubeChannel */
   g_signal_connect (test->tube, "incoming",
       G_CALLBACK (tube_incoming_cb), test);
 
@@ -484,14 +484,14 @@ test_accept_twice (Test *test,
   create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
 
-  tp_stream_tube_accept_async (test->tube, tube_accept_cb, test);
+  tp_stream_tube_channel_accept_async (test->tube, tube_accept_cb, test);
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   /* Try to re-accept the tube */
-  tp_stream_tube_accept_async (test->tube, tube_accept_cb, test);
+  tp_stream_tube_channel_accept_async (test->tube, tube_accept_cb, test);
   test->wait = 1;
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
@@ -505,7 +505,7 @@ test_accept_outgoing (Test *test,
   create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
 
-  tp_stream_tube_accept_async (test->tube, tube_accept_cb, test);
+  tp_stream_tube_channel_accept_async (test->tube, tube_accept_cb, test);
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
@@ -520,7 +520,7 @@ test_offer_incoming (Test *test,
   create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
 
-  tp_stream_tube_offer_async (test->tube, NULL, tube_offer_cb, test);
+  tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
@@ -568,7 +568,7 @@ test_offer_race (Test *test,
   create_tube_service (test, TRUE, socket_pairs[i].address_type,
       socket_pairs[i].access_control);
 
-  tp_stream_tube_offer_async (test->tube, NULL, tube_offer_cb, test);
+  tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);

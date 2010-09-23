@@ -15,7 +15,7 @@ _tube_accepted (GObject *tube,
   char buf[128] = { 0, };
   GError *error = NULL;
 
-  iostream = tp_stream_tube_accept_finish (TP_STREAM_TUBE (tube), res, &error);
+  iostream = tp_stream_tube_channel_accept_finish (TP_STREAM_TUBE_CHANNEL (tube), res, &error);
 
   if (error != NULL)
     {
@@ -51,7 +51,7 @@ _tube_accepted (GObject *tube,
 }
 
 static void
-tube_invalidated_cb (TpStreamTube *tube,
+tube_invalidated_cb (TpStreamTubeChannel *tube,
     guint domain,
     gint code,
     gchar *message,
@@ -70,7 +70,7 @@ _handle_channels (TpSimpleHandler *handler,
     TpHandleChannelsContext *context,
     gpointer user_data)
 {
-  TpStreamTube *tube;
+  TpStreamTubeChannel *tube;
   gboolean delay = FALSE;
   GList *l;
 
@@ -93,7 +93,7 @@ _handle_channels (TpSimpleHandler *handler,
 
       g_debug ("Accepting tube");
 
-      tube = tp_stream_tube_new (tp_channel_borrow_connection (channel),
+      tube = tp_stream_tube_channel_new (tp_channel_borrow_connection (channel),
           tp_proxy_get_object_path (channel),
           tp_channel_borrow_immutable_properties (channel),
           &error);
@@ -102,7 +102,7 @@ _handle_channels (TpSimpleHandler *handler,
       g_signal_connect (tube, "invalidated",
           G_CALLBACK (tube_invalidated_cb), NULL);
 
-      tp_stream_tube_accept_async (tube, _tube_accepted, context);
+      tp_stream_tube_channel_accept_async (tube, _tube_accepted, context);
 
       delay = TRUE;
     }

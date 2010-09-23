@@ -4,7 +4,7 @@ static GMainLoop *loop = NULL;
 
 
 static void
-_incoming_iostream (TpStreamTube *tube,
+_incoming_iostream (TpStreamTubeChannel *tube,
     TpContact *contact,
     GIOStream *iostream,
     gpointer user_data)
@@ -44,7 +44,7 @@ _tube_offered (GObject *tube,
 {
   GError *error = NULL;
 
-  if (!tp_stream_tube_offer_finish (TP_STREAM_TUBE (tube), res, &error))
+  if (!tp_stream_tube_channel_offer_finish (TP_STREAM_TUBE_CHANNEL (tube), res, &error))
     {
       g_debug ("Failed to offer tube: %s", error->message);
 
@@ -56,7 +56,7 @@ _tube_offered (GObject *tube,
 }
 
 static void
-tube_invalidated_cb (TpStreamTube *tube,
+tube_invalidated_cb (TpStreamTubeChannel *tube,
     guint domain,
     gint code,
     gchar *message,
@@ -72,7 +72,7 @@ _channel_created (GObject *source,
 {
   TpChannel *channel;
   GError *error = NULL;
-  TpStreamTube *tube;
+  TpStreamTubeChannel *tube;
 
   channel = tp_account_channel_request_create_and_handle_channel_finish (
       TP_ACCOUNT_CHANNEL_REQUEST (source), result, NULL, &error);
@@ -86,7 +86,7 @@ _channel_created (GObject *source,
 
   g_debug ("Channel created: %s", tp_proxy_get_object_path (channel));
 
-  tube = tp_stream_tube_new (tp_channel_borrow_connection (channel),
+  tube = tp_stream_tube_channel_new (tp_channel_borrow_connection (channel),
       tp_proxy_get_object_path (channel),
       tp_channel_borrow_immutable_properties (channel),
       &error);
@@ -99,7 +99,7 @@ _channel_created (GObject *source,
   g_signal_connect (tube, "invalidated",
       G_CALLBACK (tube_invalidated_cb), NULL);
 
-  tp_stream_tube_offer_async (tube, NULL, _tube_offered, NULL);
+  tp_stream_tube_channel_offer_async (tube, NULL, _tube_offered, NULL);
 }
 
 int

@@ -43,7 +43,7 @@
 #include <gio/gunixconnection.h>
 #endif /* HAVE_GIO_UNIX */
 
-G_DEFINE_TYPE (TpStreamTube, tp_stream_tube, TP_TYPE_CHANNEL);
+G_DEFINE_TYPE (TpStreamTubeChannel, tp_stream_tube_channel, TP_TYPE_CHANNEL);
 
 /* Used to store the data of a NewRemoteConnection signal while we are waiting
  * for the TCP connection identified by this signal */
@@ -104,7 +104,7 @@ conn_waiting_sig_free (ConnWaitingSig *c)
   g_slice_free (ConnWaitingSig, c);
 }
 
-struct _TpStreamTubePrivate
+struct _TpStreamTubeChannelPrivate
 {
   GHashTable *parameters;
 
@@ -159,16 +159,16 @@ remote_connection_destroyed_cb (gpointer user_data,
     GObject *conn)
 {
   /* The GSocketConnection has been destroyed, removing it from the hash */
-  TpStreamTube *self = user_data;
+  TpStreamTubeChannel *self = user_data;
 
   g_hash_table_foreach_remove (self->priv->remote_connections, is_connection,
       conn);
 }
 
 static void
-tp_stream_tube_dispose (GObject *obj)
+tp_stream_tube_channel_dispose (GObject *obj)
 {
-  TpStreamTube *self = (TpStreamTube *) obj;
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
 
   if (self->priv->service != NULL)
     {
@@ -229,21 +229,21 @@ tp_stream_tube_dispose (GObject *obj)
 
   tp_clear_pointer (&self->priv->access_control_param, tp_g_value_slice_free);
 
-  G_OBJECT_CLASS (tp_stream_tube_parent_class)->dispose (obj);
+  G_OBJECT_CLASS (tp_stream_tube_channel_parent_class)->dispose (obj);
 }
 
 static void
-tp_stream_tube_get_property (GObject *object,
+tp_stream_tube_channel_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpStreamTube *self = (TpStreamTube *) object;
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) object;
 
   switch (property_id)
     {
       case PROP_SERVICE:
-        g_value_set_string (value, tp_stream_tube_get_service (self));
+        g_value_set_string (value, tp_stream_tube_channel_get_service (self));
         break;
 
       case PROP_PARAMETERS:
@@ -257,9 +257,9 @@ tp_stream_tube_get_property (GObject *object,
 }
 
 static void
-tp_stream_tube_constructed (GObject *obj)
+tp_stream_tube_channel_constructed (GObject *obj)
 {
-  TpStreamTube *self = (TpStreamTube *) obj;
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
 
    /*  Tube.Parameters is immutable for incoming tubes. For outgoing ones,
     *  it's defined when offering the tube. */
@@ -289,17 +289,17 @@ tp_stream_tube_constructed (GObject *obj)
 }
 
 static void
-tp_stream_tube_class_init (TpStreamTubeClass *klass)
+tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
-  gobject_class->constructed = tp_stream_tube_constructed;
-  gobject_class->get_property = tp_stream_tube_get_property;
-  gobject_class->dispose = tp_stream_tube_dispose;
+  gobject_class->constructed = tp_stream_tube_channel_constructed;
+  gobject_class->get_property = tp_stream_tube_channel_get_property;
+  gobject_class->dispose = tp_stream_tube_channel_dispose;
 
   /**
-   * TpStreamTube:service:
+   * TpStreamTubeChannel:service:
    *
    * A string representing the service name that will be used over the tube.
    *
@@ -312,7 +312,7 @@ tp_stream_tube_class_init (TpStreamTubeClass *klass)
   g_object_class_install_property (gobject_class, PROP_SERVICE, param_spec);
 
   /**
-   * TpStreamTube:parameters:
+   * TpStreamTubeChannel:parameters:
    *
    * A string to #GValue #GHashTable representing the parameters of the tube.
    *
@@ -327,8 +327,8 @@ tp_stream_tube_class_init (TpStreamTubeClass *klass)
   g_object_class_install_property (gobject_class, PROP_PARAMETERS, param_spec);
 
   /**
-   * TpStreamTube::incoming
-   * @self: the #TpStreamTube
+   * TpStreamTubeChannel::incoming
+   * @self: the #TpStreamTubeChannel
    * @contact: (transfer none): the #TpContact making the connection
    * @stream: (transfer none): the #GIOStream for the connection
    *
@@ -346,27 +346,27 @@ tp_stream_tube_class_init (TpStreamTubeClass *klass)
       G_TYPE_NONE,
       2, TP_TYPE_CONTACT, G_TYPE_IO_STREAM);
 
-  g_type_class_add_private (gobject_class, sizeof (TpStreamTubePrivate));
+  g_type_class_add_private (gobject_class, sizeof (TpStreamTubeChannelPrivate));
 }
 
 static void
-tp_stream_tube_init (TpStreamTube *self)
+tp_stream_tube_channel_init (TpStreamTubeChannel *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_STREAM_TUBE,
-      TpStreamTubePrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_STREAM_TUBE_CHANNEL,
+      TpStreamTubeChannelPrivate);
 
   self->priv->remote_connections = g_hash_table_new (NULL, NULL);
 }
 
 
 /**
- * tp_stream_tube_new:
+ * tp_stream_tube_channel_new:
  * @channel: a #TpChannel that has had %TP_CHANNEL_FEATURE_CORE prepared
  *
- * Returns: a newly created #TpStreamTube
+ * Returns: a newly created #TpStreamTubeChannel
  */
-TpStreamTube *
-tp_stream_tube_new (TpConnection *conn,
+TpStreamTubeChannel *
+tp_stream_tube_channel_new (TpConnection *conn,
     const gchar *object_path,
     const GHashTable *immutable_properties,
     GError **error)
@@ -380,7 +380,7 @@ tp_stream_tube_new (TpConnection *conn,
   if (!tp_dbus_check_valid_object_path (object_path, error))
     return NULL;
 
-  return g_object_new (TP_TYPE_STREAM_TUBE,
+  return g_object_new (TP_TYPE_STREAM_TUBE_CHANNEL,
       "connection", conn,
        "dbus-daemon", conn_proxy->dbus_daemon,
        "bus-name", conn_proxy->bus_name,
@@ -452,7 +452,7 @@ find_best_access_control (GArray *arr,
 }
 
 static TpSocketAddressType
-determine_socket_type (TpStreamTube *self,
+determine_socket_type (TpStreamTubeChannel *self,
     GError **error)
 {
   GHashTable *properties;
@@ -508,7 +508,7 @@ determine_socket_type (TpStreamTube *self,
 }
 
 static void
-operation_failed (TpStreamTube *self,
+operation_failed (TpStreamTubeChannel *self,
     const GError *error)
 {
   g_simple_async_result_set_from_error (self->priv->result, error);
@@ -518,7 +518,7 @@ operation_failed (TpStreamTube *self,
 }
 
 static void
-complete_accept_operation (TpStreamTube *self,
+complete_accept_operation (TpStreamTubeChannel *self,
     GSocketConnection *conn)
 {
   g_simple_async_result_set_op_res_gpointer (self->priv->result, conn, NULL);
@@ -531,7 +531,7 @@ _socket_connected (GObject *client,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpStreamTube *self = user_data;
+  TpStreamTubeChannel *self = user_data;
   GSocketConnection *conn;
   GError *error = NULL;
 
@@ -580,7 +580,7 @@ _channel_accepted (TpChannel *channel,
     gpointer user_data,
     GObject *obj)
 {
-  TpStreamTube *self = (TpStreamTube *) obj;
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
   GSocketAddress *address;
   GSocketClient *client;
   GError *error = NULL;
@@ -614,19 +614,19 @@ _channel_accepted (TpChannel *channel,
 
 
 /**
- * tp_stream_tube_accept_async:
+ * tp_stream_tube_channel_accept_async:
  * @self:
  * @callback:
  * @user_data:
  */
 void
-tp_stream_tube_accept_async (TpStreamTube *self,
+tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
   GError *error = NULL;
 
-  g_return_if_fail (TP_IS_STREAM_TUBE (self));
+  g_return_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self));
   g_return_if_fail (self->priv->result == NULL);
 
   if (self->priv->access_control_param != NULL)
@@ -638,7 +638,7 @@ tp_stream_tube_accept_async (TpStreamTube *self,
     }
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
-      user_data, tp_stream_tube_accept_async);
+      user_data, tp_stream_tube_channel_accept_async);
 
   self->priv->socket_type = determine_socket_type (self, &error);
   if (error != NULL)
@@ -684,7 +684,7 @@ tp_stream_tube_accept_async (TpStreamTube *self,
 
 
 /*
- * tp_stream_tube_accept_finish:
+ * tp_stream_tube_channel_accept_finish:
  * @self:
  * @result:
  * @error:
@@ -692,13 +692,13 @@ tp_stream_tube_accept_async (TpStreamTube *self,
  * Returns:
  */
 GIOStream *
-tp_stream_tube_accept_finish (TpStreamTube *self,
+tp_stream_tube_channel_accept_finish (TpStreamTubeChannel *self,
     GAsyncResult *result,
     GError **error)
 {
   GSimpleAsyncResult *simple;
 
-  g_return_val_if_fail (TP_IS_STREAM_TUBE (self), NULL);
+  g_return_val_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self), NULL);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
@@ -707,7 +707,7 @@ tp_stream_tube_accept_finish (TpStreamTube *self,
     return NULL;
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_stream_tube_accept_async), NULL);
+          G_OBJECT (self), tp_stream_tube_channel_accept_async), NULL);
 
   return g_simple_async_result_get_op_res_gpointer (simple);
 }
@@ -722,7 +722,7 @@ _new_remote_connection_with_contact (TpConnection *conn,
     gpointer user_data,
     GObject *obj)
 {
-  TpStreamTube *self = (TpStreamTube *) obj;
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
   TpContact *contact;
   GSocketConnection *sockconn = user_data;
 
@@ -752,7 +752,7 @@ out:
 }
 
 static gboolean
-sig_match_conn (TpStreamTube *self,
+sig_match_conn (TpStreamTubeChannel *self,
     SigWaitingConn *sig,
     ConnWaitingSig *c)
 {
@@ -805,7 +805,7 @@ sig_match_conn (TpStreamTube *self,
 }
 
 static void
-connection_identified (TpStreamTube *self,
+connection_identified (TpStreamTubeChannel *self,
     GSocketConnection *conn,
     TpHandle handle,
     guint connection_id)
@@ -830,7 +830,7 @@ _new_remote_connection (TpChannel *channel,
     gpointer user_data,
     GObject *obj)
 {
-  TpStreamTube *self = (TpStreamTube *) obj;
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
   GSList *l;
   ConnWaitingSig *found_conn = NULL;
   SigWaitingConn *sig;
@@ -874,7 +874,7 @@ _channel_offered (TpChannel *channel,
     gpointer user_data,
     GObject *obj)
 {
-  TpStreamTube *self = (TpStreamTube *) obj;
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
 
   if (in_error != NULL)
     {
@@ -893,7 +893,7 @@ _channel_offered (TpChannel *channel,
 
 
 static void
-_offer_with_address (TpStreamTube *self,
+_offer_with_address (TpStreamTubeChannel *self,
     GHashTable *params)
 {
   GValue *addressv = NULL;
@@ -939,7 +939,7 @@ finally:
 }
 
 static SigWaitingConn *
-find_sig_for_conn (TpStreamTube *self,
+find_sig_for_conn (TpStreamTubeChannel *self,
     ConnWaitingSig *c)
 {
   GSList *l;
@@ -961,7 +961,7 @@ service_incoming_cb (GSocketService *service,
     GObject *source_object,
     gpointer user_data)
 {
-  TpStreamTube *self = user_data;
+  TpStreamTubeChannel *self = user_data;
   SigWaitingConn *sig;
   ConnWaitingSig *c;
   guchar byte = 0;
@@ -1023,14 +1023,14 @@ service_incoming_cb (GSocketService *service,
 }
 
 /**
- * tp_stream_tube_offer_async:
+ * tp_stream_tube_channel_offer_async:
  * @self:
  * @params: (allow none) (transfer none):
  * @callback:
  * @user_data:
  */
 void
-tp_stream_tube_offer_async (TpStreamTube *self,
+tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
     GHashTable *params,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1038,7 +1038,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
   TpSocketAddressType socket_type;
   GError *error = NULL;
 
-  g_return_if_fail (TP_IS_STREAM_TUBE (self));
+  g_return_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self));
   g_return_if_fail (self->priv->result == NULL);
 
   if (self->priv->service != NULL)
@@ -1048,7 +1048,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
     }
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
-      user_data, tp_stream_tube_offer_async);
+      user_data, tp_stream_tube_channel_offer_async);
 
   socket_type = determine_socket_type (self, &error);
   if (error != NULL)
@@ -1152,7 +1152,7 @@ tp_stream_tube_offer_async (TpStreamTube *self,
 }
 
 /**
- * tp_stream_tube_offer_finish:
+ * tp_stream_tube_channel_offer_finish:
  * @self:
  * @result:
  * @error:
@@ -1160,13 +1160,13 @@ tp_stream_tube_offer_async (TpStreamTube *self,
  * Returns: %TRUE when a Tube has been successfully offered; %FALSE otherwise
  */
 gboolean
-tp_stream_tube_offer_finish (TpStreamTube *self,
+tp_stream_tube_channel_offer_finish (TpStreamTubeChannel *self,
     GAsyncResult *result,
     GError **error)
 {
   GSimpleAsyncResult *simple;
 
-  g_return_val_if_fail (TP_IS_STREAM_TUBE (self), FALSE);
+  g_return_val_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
@@ -1175,23 +1175,23 @@ tp_stream_tube_offer_finish (TpStreamTube *self,
     return FALSE;
 
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_stream_tube_offer_async), FALSE);
+          G_OBJECT (self), tp_stream_tube_channel_offer_async), FALSE);
 
   return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
 /**
- * tp_stream_tube_get_service: (skip)
- * @self: a #TpStreamTube
+ * tp_stream_tube_channel_get_service: (skip)
+ * @self: a #TpStreamTubeChannel
  *
- * Return the #TpStreamTube:service property
+ * Return the #TpStreamTubeChannel:service property
  *
- * Returns: (transfer none): the value of #TpStreamTube:service
+ * Returns: (transfer none): the value of #TpStreamTubeChannel:service
  *
  * Since: 0.11.UNRELEASED
  */
 const gchar *
-tp_stream_tube_get_service (TpStreamTube *self)
+tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
 {
   GHashTable *props;
 
@@ -1201,18 +1201,18 @@ tp_stream_tube_get_service (TpStreamTube *self)
 }
 
 /**
- * tp_stream_tube_get_parameters: (skip)
- * @self: a #TpStreamTube
+ * tp_stream_tube_channel_get_parameters: (skip)
+ * @self: a #TpStreamTubeChannel
  *
- * Return the #TpStreamTube:parameters property
+ * Return the #TpStreamTubeChannel:parameters property
  *
  * Returns: (transfer none) (element-type utf8 GObject.Value):
- * the value of #TpStreamTube:parameters
+ * the value of #TpStreamTubeChannel:parameters
  *
  * Since: 0.11.UNRELEASED
  */
 GHashTable *
-tp_stream_tube_get_parameters (TpStreamTube *self)
+tp_stream_tube_channel_get_parameters (TpStreamTubeChannel *self)
 {
   return self->priv->parameters;
 }
