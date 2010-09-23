@@ -22,9 +22,15 @@
 #define __TP_UTIL_INTERNAL_H__
 
 #include <glib.h>
+#include <gio/gio.h>
 
 GArray *_tp_quark_array_copy (const GQuark *quarks) G_GNUC_WARN_UNUSED_RESULT;
 void _tp_quark_array_merge (GArray *array, const GQuark *quarks, gssize n);
+
+#ifdef HAVE_GIO_UNIX
+GSocketAddress * _tp_create_temp_unix_socket (GSocketService *service,
+    GError **error);
+#endif /* HAVE_GIO_UNIX */
 
 /* Copied from wocky/wocky-utils.h */
 

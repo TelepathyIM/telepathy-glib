@@ -1084,33 +1084,11 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
 #ifdef HAVE_GIO_UNIX
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
         {
-          guint i;
-
-          /* why doesn't GIO provide a method to create a socket we don't
-           * care about? Iterate until we find a valid temporary name.
-           *
-           * Try a maximum of 10 times to get a socket */
-          for (i = 0; i < 10; i++)
-            {
-              self->priv->address = g_unix_socket_address_new (tmpnam (NULL));
-
-              if (g_socket_listener_add_address (
-                    G_SOCKET_LISTENER (self->priv->service),
-                    self->priv->address, G_SOCKET_TYPE_STREAM,
-                    G_SOCKET_PROTOCOL_DEFAULT,
-                    NULL, NULL, &error))
-                {
-                  break;
-                }
-              else
-                {
-                  g_object_unref (self->priv->address);
-                  g_clear_error (&error);
-                }
-            }
+          self->priv->address = _tp_create_temp_unix_socket (
+              self->priv->service, &error);
 
           /* check there wasn't an error on the final attempt */
-          if (error != NULL)
+          if (self->priv->address == NULL)
             {
               operation_failed (self, error);
 
