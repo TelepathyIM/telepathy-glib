@@ -29,6 +29,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
@@ -548,7 +549,8 @@ static void
 complete_accept_operation (TpStreamTubeChannel *self,
     GSocketConnection *conn)
 {
-  g_simple_async_result_set_op_res_gpointer (self->priv->result, conn, NULL);
+  g_simple_async_result_set_op_res_gpointer (self->priv->result, conn,
+      g_object_unref);
   g_simple_async_result_complete (self->priv->result);
   tp_clear_object (&self->priv->result);
 }
@@ -723,20 +725,7 @@ tp_stream_tube_channel_accept_finish (TpStreamTubeChannel *self,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self), NULL);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_stream_tube_channel_accept_async), NULL);
-
-  return g_simple_async_result_get_op_res_gpointer (simple);
+  _tp_implement_finish_return_copy_pointer (self, tp_stream_tube_channel_accept_async, g_object_ref)
 }
 
 static void
@@ -1191,20 +1180,7 @@ tp_stream_tube_channel_offer_finish (TpStreamTubeChannel *self,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_stream_tube_channel_offer_async), FALSE);
-
-  return g_simple_async_result_get_op_res_gboolean (simple);
+  _tp_implement_finish_void (self, tp_stream_tube_channel_offer_async)
 }
 
 /**
