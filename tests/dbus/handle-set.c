@@ -112,7 +112,7 @@ main (int argc,
   tp_clear_pointer (&other, tp_handle_set_destroy);
 
   /* can't really assert about the contents */
-  s = tp_handle_set_dump (set, ' ');
+  s = tp_handle_set_dump (set);
   g_free (s);
 
   MYASSERT (tp_handle_set_remove (set, h3) == TRUE, "");

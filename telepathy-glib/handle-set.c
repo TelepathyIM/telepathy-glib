@@ -468,7 +468,6 @@ tp_handle_set_difference_update (TpHandleSet *set, const TpIntset *remove)
 /**
  * tp_handle_set_dump:
  * @self: a handle set
- * @spacer: ' ' for single-line output or '\n' for multi-line output
  *
  * Format a #TpHandleSet for debug output.
  *
@@ -476,14 +475,11 @@ tp_handle_set_difference_update (TpHandleSet *set, const TpIntset *remove)
  *  handle set suitable for debug output
  */
 gchar *
-tp_handle_set_dump (const TpHandleSet *self,
-    gchar spacer)
+tp_handle_set_dump (const TpHandleSet *self)
 {
   TpIntsetFastIter iter;
   guint handle;
-  GString *string = g_string_new ("{");
-
-  g_string_append_c (string, spacer);
+  GString *string = g_string_new ("{ ");
 
   tp_intset_fast_iter_init (&iter, self->intset);
 
@@ -491,15 +487,13 @@ tp_handle_set_dump (const TpHandleSet *self,
     {
       if (handle == 0 || !tp_handle_is_valid (self->repo, handle, NULL))
         {
-          g_string_append_printf (string, "#%u <invalid>,", handle);
+          g_string_append_printf (string, "#%u <invalid>, ", handle);
         }
       else
         {
-          g_string_append_printf (string, "#%u '%s',", handle,
+          g_string_append_printf (string, "#%u '%s', ", handle,
               tp_handle_inspect (self->repo, handle));
         }
-
-      g_string_append_c (string, spacer);
     }
 
   g_string_append_c (string, '}');
