@@ -1,5 +1,5 @@
 /*
- * stream-tube.h - high level API for StreamTube channels
+ * stream-tube-channel.h - high level API for StreamTube channels
  *
  * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
  *

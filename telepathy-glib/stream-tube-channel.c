@@ -1,5 +1,5 @@
 /*
- * stream-tube.h - high level API for StreamTube channels
+ * stream-tube-channel.h - high level API for StreamTube channels
  *
  * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
  *
@@ -20,7 +20,7 @@
 
 #include <config.h>
 
-#include "telepathy-glib/stream-tube.h"
+#include "telepathy-glib/stream-tube-channel.h"
 
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus.h>
