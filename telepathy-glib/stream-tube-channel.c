@@ -262,6 +262,7 @@ tp_stream_tube_channel_constructed (GObject *obj)
 {
   TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
   TpChannel *chan = (TpChannel *) obj;
+  GHashTable *props;
 
   if (tp_channel_get_channel_type_id (chan) !=
       TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE)
@@ -276,14 +277,25 @@ tp_stream_tube_channel_constructed (GObject *obj)
       return;
     }
 
+  props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+
+  if (tp_asv_get_string (props, TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SERVICE)
+      == NULL)
+    {
+      GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "Tube doesn't have StreamTube.Service property" };
+
+      DEBUG ("%s", error.message);
+
+      tp_proxy_invalidate (TP_PROXY (self), &error);
+      return;
+    }
+
    /*  Tube.Parameters is immutable for incoming tubes. For outgoing ones,
     *  it's defined when offering the tube. */
   if (!tp_channel_get_requested (TP_CHANNEL (self)))
     {
-      GHashTable *props;
       GHashTable *params;
-
-      props = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
 
       params = tp_asv_get_boxed (props,
           TP_PROP_CHANNEL_INTERFACE_TUBE_PARAMETERS,
