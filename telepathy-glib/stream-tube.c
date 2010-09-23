@@ -1,5 +1,5 @@
 /*
- * stream-tube.c - high-level wrapper for a Stream Tube
+ * stream-tube.h - high level API for StreamTube channels
  *
  * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
  *

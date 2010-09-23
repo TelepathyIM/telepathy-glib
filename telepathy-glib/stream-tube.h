@@ -1,5 +1,5 @@
 /*
- * stream-tube.h - a view for the TpChannel proxy
+ * stream-tube.h - high level API for StreamTube channels
  *
  * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
  *
