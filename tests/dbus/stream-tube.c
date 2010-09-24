@@ -21,17 +21,26 @@
 #define BUFFER_SIZE 128
 
 typedef struct {
+    gboolean contact;
+
     TpSocketAddressType address_type;
     TpSocketAccessControl access_control;
-} SocketPair;
+} TestContext;
 
-SocketPair socket_pairs[] = {
-  { TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
-  { TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
-  { TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
-  { TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS },
-  { TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_PORT },
-  { NUM_TP_SOCKET_ADDRESS_TYPES, NUM_TP_SOCKET_ACCESS_CONTROLS }
+TestContext contexts[] = {
+  { FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { FALSE, TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { FALSE, TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS },
+  { FALSE, TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_PORT },
+
+  { TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { TRUE, TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { TRUE, TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS },
+  { TRUE, TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_PORT },
+
+  { FALSE, NUM_TP_SOCKET_ADDRESS_TYPES, NUM_TP_SOCKET_ACCESS_CONTROLS }
 };
 
 typedef struct {
@@ -377,12 +386,12 @@ use_tube (Test *test)
 
 static void
 test_accept_success (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
+    gconstpointer data)
 {
   guint i = GPOINTER_TO_UINT (data);
 
-  create_tube_service (test, FALSE, socket_pairs[i].address_type,
-      socket_pairs[i].access_control, FALSE);
+  create_tube_service (test, FALSE, contexts[i].address_type,
+      contexts[i].access_control, contexts[i].contact);
 
   g_signal_connect (test->tube_chan_service, "incoming-connection",
       G_CALLBACK (chan_incoming_connection_cb), test);
@@ -463,10 +472,10 @@ test_offer_success (Test *test,
   GHashTable *params;
   GSocketAddress *address;
   GSocketClient *client;
-  TpHandle alice_handle;
+  TpHandle bob_handle;
 
-  create_tube_service (test, TRUE, socket_pairs[i].address_type,
-      socket_pairs[i].access_control, FALSE);
+  create_tube_service (test, TRUE, contexts[i].address_type,
+      contexts[i].access_control, contexts[i].contact);
 
   params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
 
@@ -503,19 +512,19 @@ test_offer_success (Test *test,
   g_signal_connect (test->tube, "incoming",
       G_CALLBACK (tube_incoming_cb), test);
 
-  alice_handle = tp_handle_ensure (test->contact_repo, "alice", NULL, NULL);
+  bob_handle = tp_handle_ensure (test->contact_repo, "bob", NULL, NULL);
 
   tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
-      test->cm_stream, alice_handle);
+      test->cm_stream, bob_handle);
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
   g_assert (test->stream != NULL);
 
-  if (can_identify_contacts (FALSE, socket_pairs[i].access_control))
+  if (can_identify_contacts (contexts[i].contact, contexts[i].access_control))
     {
       g_assert (test->contact != NULL);
-      g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "alice");
+      g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "bob");
     }
   else
     {
@@ -524,7 +533,7 @@ test_offer_success (Test *test,
 
   use_tube (test);
 
-  tp_handle_unref (test->contact_repo, alice_handle);
+  tp_handle_unref (test->contact_repo, bob_handle);
 }
 
 static void
@@ -579,14 +588,14 @@ test_offer_incoming (Test *test,
 
 typedef void (*TestFunc) (Test *, gconstpointer);
 
-/* Run a test with each SocketPair defined in socket_pairs */
+/* Run a test with each TestContext defined in contexts */
 static void
 run_tube_test (const char *test_path,
     TestFunc ftest)
 {
   guint i;
 
-  for (i = 0; socket_pairs[i].address_type != NUM_TP_SOCKET_ADDRESS_TYPES; i++)
+  for (i = 0; contexts[i].address_type != NUM_TP_SOCKET_ADDRESS_TYPES; i++)
     {
       g_test_add (test_path, Test, GUINT_TO_POINTER (i), setup, ftest,
           teardown);
@@ -606,17 +615,21 @@ test_offer_race (Test *test,
   GIOStream *alice_cm_stream, *bob_cm_stream;
   GIOStream *alice_stream, *bob_stream;
 
+  /* The race only appear in room stream tubes */
+  if (contexts[i].contact)
+    return;
+
   /* We can't break the race with other access controles :( */
   /* FIXME: Actually TP_SOCKET_ACCESS_CONTROL_CREDENTIALS is also able to
    * properly identify connections and our code should be able to.
    * But we can't test it as we currently use sync calls to send and
    * receive credentials. We should change that once bgo #629503
    * has been fixed. */
-  if (socket_pairs[i].access_control != TP_SOCKET_ACCESS_CONTROL_PORT)
+  if (contexts[i].access_control != TP_SOCKET_ACCESS_CONTROL_PORT)
     return;
 
-  create_tube_service (test, TRUE, socket_pairs[i].address_type,
-      socket_pairs[i].access_control, FALSE);
+  create_tube_service (test, TRUE, contexts[i].address_type,
+      contexts[i].access_control, contexts[i].contact);
 
   tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
 
