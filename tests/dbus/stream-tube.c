@@ -42,6 +42,7 @@ typedef struct {
     TpBaseConnection *base_connection;
     TpTestsStreamTubeChannel *tube_chan_service;
     TpHandleRepoIface *contact_repo;
+    TpHandleRepoIface *room_repo;
 
     /* Client side objects */
     TpConnection *connection;
@@ -121,12 +122,14 @@ static void
 create_tube_service (Test *test,
     gboolean requested,
     TpSocketAddressType address_type,
-    TpSocketAccessControl access_control)
+    TpSocketAccessControl access_control,
+    gboolean contact)
 {
   gchar *chan_path;
   TpHandle handle;
   GHashTable *props;
   GHashTable *sockets;
+  GType type;
 
   tp_clear_object (&test->tube_chan_service);
   tp_clear_object (&test->tube);
@@ -139,13 +142,27 @@ create_tube_service (Test *test,
       TP_HANDLE_TYPE_CONTACT);
   g_assert (test->contact_repo != NULL);
 
-  handle = tp_handle_ensure (test->contact_repo, "bob", NULL, &test->error);
+  test->room_repo = tp_base_connection_get_handles (test->base_connection,
+      TP_HANDLE_TYPE_ROOM);
+  g_assert (test->room_repo != NULL);
+
+  if (contact)
+    {
+      handle = tp_handle_ensure (test->contact_repo, "bob", NULL, &test->error);
+      type = TP_TESTS_TYPE_CONTACT_STREAM_TUBE_CHANNEL;
+    }
+  else
+    {
+      handle = tp_handle_ensure (test->room_repo, "#test", NULL, &test->error);
+      type = TP_TESTS_TYPE_ROOM_STREAM_TUBE_CHANNEL;
+    }
+
   g_assert_no_error (test->error);
 
   sockets = create_supported_socket_types_hash (address_type, access_control);
 
   test->tube_chan_service = g_object_new (
-      TP_TESTS_TYPE_CONTACT_STREAM_TUBE_CHANNEL,
+      type,
       "connection", test->base_connection,
       "handle", handle,
       "requested", requested,
@@ -163,8 +180,12 @@ create_tube_service (Test *test,
 
   g_free (chan_path);
   g_hash_table_unref (props);
-  tp_handle_unref (test->contact_repo, handle);
   g_hash_table_unref (sockets);
+
+  if (contact)
+    tp_handle_unref (test->contact_repo, handle);
+  else
+    tp_handle_unref (test->room_repo, handle);
 }
 
 /* Test Basis */
@@ -174,13 +195,13 @@ test_creation (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, TRUE);
 
   g_assert (TP_IS_STREAM_TUBE_CHANNEL (test->tube));
   g_assert (TP_IS_CHANNEL (test->tube));
 
   create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
 
   g_assert (TP_IS_STREAM_TUBE_CHANNEL (test->tube));
   g_assert (TP_IS_CHANNEL (test->tube));
@@ -204,7 +225,7 @@ test_properties (Test *test,
 
   /* Outgoing tube */
   create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, TRUE);
 
   /* Service */
   g_assert_cmpstr (tp_stream_tube_channel_get_service (test->tube), ==,
@@ -222,7 +243,7 @@ test_properties (Test *test,
 
   /* Incoming tube */
   create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
 
   /* Parameters */
   parameters = tp_stream_tube_channel_get_parameters (test->tube);
@@ -356,7 +377,7 @@ test_accept_success (Test *test,
   guint i = GPOINTER_TO_UINT (data);
 
   create_tube_service (test, FALSE, socket_pairs[i].address_type,
-      socket_pairs[i].access_control);
+      socket_pairs[i].access_control, FALSE);
 
   g_signal_connect (test->tube_chan_service, "incoming-connection",
       G_CALLBACK (chan_incoming_connection_cb), test);
@@ -425,7 +446,7 @@ test_offer_success (Test *test,
   TpHandle alice_handle;
 
   create_tube_service (test, TRUE, socket_pairs[i].address_type,
-      socket_pairs[i].access_control);
+      socket_pairs[i].access_control, FALSE);
 
   params = tp_asv_new ("badger", G_TYPE_UINT, 42, NULL);
 
@@ -484,7 +505,7 @@ test_accept_twice (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
 
   tp_stream_tube_channel_accept_async (test->tube, tube_accept_cb, test);
 
@@ -505,7 +526,7 @@ test_accept_outgoing (Test *test,
 {
   /* Try to accept an outgoing channel */
   create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
 
   tp_stream_tube_channel_accept_async (test->tube, tube_accept_cb, test);
 
@@ -520,7 +541,7 @@ test_offer_incoming (Test *test,
 {
   /* Try to offer an incoming channel */
   create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
 
   tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
 
@@ -568,7 +589,7 @@ test_offer_race (Test *test,
     return;
 
   create_tube_service (test, TRUE, socket_pairs[i].address_type,
-      socket_pairs[i].access_control);
+      socket_pairs[i].access_control, FALSE);
 
   tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
 
