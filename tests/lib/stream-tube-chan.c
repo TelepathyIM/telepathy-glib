@@ -137,7 +137,7 @@ tp_tests_stream_tube_channel_set_property (GObject *object,
 
 static void stream_tube_iface_init (gpointer iface, gpointer data);
 
-G_DEFINE_TYPE_WITH_CODE (TpTestsStreamTubeChannel,
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpTestsStreamTubeChannel,
     tp_tests_stream_tube_channel,
     TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_STREAM_TUBE,
@@ -256,10 +256,11 @@ tp_tests_stream_tube_channel_class_init (TpTestsStreamTubeChannelClass *klass)
   object_class->dispose = dispose;
 
   base_class->channel_type = TP_IFACE_CHANNEL_TYPE_STREAM_TUBE;
-  base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
   base_class->interfaces = tp_tests_stream_tube_channel_interfaces;
   base_class->close = channel_close;
   base_class->fill_immutable_properties = fill_immutable_properties;
+
+  /* base_class->target_handle_type is defined in subclasses */
 
   tp_text_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsStreamTubeChannelClass, text_class));
@@ -636,4 +637,25 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
   self->priv->connection_id++;
 
   tp_g_value_slice_free (connection_param);
+}
+
+/* Contact Stream Tube */
+
+G_DEFINE_TYPE (TpTestsContactStreamTubeChannel,
+    tp_tests_contact_stream_tube_channel,
+    TP_TESTS_TYPE_STREAM_TUBE_CHANNEL)
+
+static void
+tp_tests_contact_stream_tube_channel_init (
+    TpTestsContactStreamTubeChannel *self)
+{
+}
+
+static void
+tp_tests_contact_stream_tube_channel_class_init (
+    TpTestsContactStreamTubeChannelClass *klass)
+{
+  TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
+
+  base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
 }

@@ -144,7 +144,8 @@ create_tube_service (Test *test,
 
   sockets = create_supported_socket_types_hash (address_type, access_control);
 
-  test->tube_chan_service = g_object_new (TP_TESTS_TYPE_STREAM_TUBE_CHANNEL,
+  test->tube_chan_service = g_object_new (
+      TP_TESTS_TYPE_CONTACT_STREAM_TUBE_CHANNEL,
       "connection", test->base_connection,
       "handle", handle,
       "requested", requested,
