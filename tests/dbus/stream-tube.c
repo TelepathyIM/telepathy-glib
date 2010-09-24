@@ -288,8 +288,13 @@ read_cb (GObject *source,
     gpointer user_data)
 {
   Test *test = user_data;
+  gssize size;
 
-  g_input_stream_read_finish (G_INPUT_STREAM (source), result, &test->error);
+  size = g_input_stream_read_finish (G_INPUT_STREAM (source), result,
+      &test->error);
+
+  g_assert_no_error (test->error);
+  g_assert_cmpuint (size, !=, 0);
 
   test->wait--;
   if (test->wait <= 0)
@@ -667,6 +672,152 @@ test_offer_race (Test *test,
   g_object_unref (address);
 }
 
+static void
+read_eof_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+  gssize size;
+
+  size = g_input_stream_read_finish (G_INPUT_STREAM (source), result,
+      &test->error);
+
+  g_assert_no_error (test->error);
+  g_assert_cmpuint (size, ==, 0);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+/* We offer a contact stream tube to bob. The CM is bugged and claim that
+ * another contact has connected to the tube. Tp-glib ignores it. */
+static void
+test_offer_bad_connection_conn_first (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GSocketAddress *address;
+  GSocketClient *client;
+  TpHandle alice_handle;
+  GInputStream *in;
+  gchar cm_buffer[BUFFER_SIZE];
+
+  /* Offer a tube to Bob */
+  create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, TRUE);
+
+  tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Alice client connects to the tube */
+  address = tp_tests_stream_tube_channel_get_server_address (
+      test->tube_chan_service);
+  g_assert (address != NULL);
+
+  client = g_socket_client_new ();
+
+  g_socket_client_connect_async (client, G_SOCKET_CONNECTABLE (address),
+      NULL, socket_connected, test);
+
+  g_object_unref (client);
+  g_object_unref (address);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert (test->cm_stream != NULL);
+
+  /* The connection is *not* announced on TpStreamTubeChannel */
+  g_signal_connect (test->tube, "incoming",
+      G_CALLBACK (tube_incoming_cb), test);
+
+  /* Try to read on the stream to get EOF when it's closed */
+  in = g_io_stream_get_input_stream (test->cm_stream);
+
+  g_input_stream_read_async (in, cm_buffer, BUFFER_SIZE,
+      G_PRIORITY_DEFAULT, NULL, read_eof_cb, test);
+
+  alice_handle = tp_handle_ensure (test->contact_repo, "alice", NULL, NULL);
+
+  tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
+      test->cm_stream, alice_handle);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+
+  /* "incoming" has not be fired */
+  g_assert (test->stream == NULL);
+  g_assert (test->contact == NULL);
+}
+
+/* Same test but now NewRemoteConnection is fired before the socket
+ * connects */
+static void
+test_offer_bad_connection_sig_first (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GSocketAddress *address;
+  GSocketClient *client;
+  TpHandle alice_handle;
+  GInputStream *in;
+  gchar cm_buffer[BUFFER_SIZE];
+
+  /* Offer a tube to Bob */
+  create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, TRUE);
+
+  tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* CM announces that Alice is connected */
+  alice_handle = tp_handle_ensure (test->contact_repo, "alice", NULL, NULL);
+
+  tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
+      test->cm_stream, alice_handle);
+
+  /* Alice client connects to the tube */
+  address = tp_tests_stream_tube_channel_get_server_address (
+      test->tube_chan_service);
+  g_assert (address != NULL);
+
+  client = g_socket_client_new ();
+
+  g_socket_client_connect_async (client, G_SOCKET_CONNECTABLE (address),
+      NULL, socket_connected, test);
+
+  g_object_unref (client);
+  g_object_unref (address);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert (test->cm_stream != NULL);
+
+  /* The connection is *not* announced on TpStreamTubeChannel */
+  g_signal_connect (test->tube, "incoming",
+      G_CALLBACK (tube_incoming_cb), test);
+
+  /* Try to read on the stream to get EOF when it's closed */
+  in = g_io_stream_get_input_stream (test->cm_stream);
+
+  g_input_stream_read_async (in, cm_buffer, BUFFER_SIZE,
+      G_PRIORITY_DEFAULT, NULL, read_eof_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+
+  /* "incoming" has not be fired */
+  g_assert (test->stream == NULL);
+  g_assert (test->contact == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -691,6 +842,11 @@ main (int argc,
   run_tube_test ("/stream-tube/accept/success", test_accept_success);
   run_tube_test ("/stream-tube/offer/success", test_offer_success);
   run_tube_test ("/stream-tube/offer/race", test_offer_race);
+
+  g_test_add ("/stream-tube/offer/bad-connection/conn-first", Test, NULL, setup,
+      test_offer_bad_connection_conn_first, teardown);
+  g_test_add ("/stream-tube/offer/bad-connection/sig-first", Test, NULL, setup,
+      test_offer_bad_connection_sig_first, teardown);
 
   return g_test_run ();
 }
