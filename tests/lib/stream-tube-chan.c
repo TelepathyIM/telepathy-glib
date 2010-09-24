@@ -659,3 +659,24 @@ tp_tests_contact_stream_tube_channel_class_init (
 
   base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
 }
+
+/* Room Stream Tube */
+
+G_DEFINE_TYPE (TpTestsRoomStreamTubeChannel,
+    tp_tests_room_stream_tube_channel,
+    TP_TESTS_TYPE_STREAM_TUBE_CHANNEL)
+
+static void
+tp_tests_room_stream_tube_channel_init (
+    TpTestsRoomStreamTubeChannel *self)
+{
+}
+
+static void
+tp_tests_room_stream_tube_channel_class_init (
+    TpTestsRoomStreamTubeChannelClass *klass)
+{
+  TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
+
+  base_class->target_handle_type = TP_HANDLE_TYPE_ROOM;
+}

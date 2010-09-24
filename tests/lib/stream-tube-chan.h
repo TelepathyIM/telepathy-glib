@@ -93,6 +93,37 @@ struct _TpTestsContactStreamTubeChannel {
     TpTestsStreamTubeChannel parent;
 };
 
+/* Room Stream Tube */
+
+typedef struct _TpTestsRoomStreamTubeChannel TpTestsRoomStreamTubeChannel;
+typedef struct _TpTestsRoomStreamTubeChannelClass TpTestsRoomStreamTubeChannelClass;
+
+GType tp_tests_room_stream_tube_channel_get_type (void);
+
+#define TP_TESTS_TYPE_ROOM_STREAM_TUBE_CHANNEL \
+  (tp_tests_room_stream_tube_channel_get_type ())
+#define TP_TESTS_ROOM_STREAM_TUBE_CHANNEL(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TESTS_TYPE_ROOM_STREAM_TUBE_CHANNEL, \
+                               TpTestsRoomStreamTubeChannel))
+#define TP_TESTS_ROOM_STREAM_TUBE_CHANNEL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TESTS_TYPE_ROOM_STREAM_TUBE_CHANNEL, \
+                            TpTestsRoomStreamTubeChannelClass))
+#define TP_TESTS_IS_ROOM_STREAM_TUBE_CHANNEL(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TESTS_TYPE_ROOM_STREAM_TUBE_CHANNEL))
+#define TP_TESTS_IS_ROOM_STREAM_TUBE_CHANNEL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TESTS_TYPE_ROOM_STREAM_TUBE_CHANNEL))
+#define TP_TESTS_ROOM_STREAM_TUBE_CHANNEL_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_ROOM_STREAM_TUBE_CHANNEL, \
+                              TpTestsRoomStreamTubeChannelClass))
+
+struct _TpTestsRoomStreamTubeChannelClass {
+    TpTestsStreamTubeChannelClass parent_class;
+};
+
+struct _TpTestsRoomStreamTubeChannel {
+    TpTestsStreamTubeChannel parent;
+};
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_STREAM_TUBE_CHAN_H__ */
