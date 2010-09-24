@@ -588,6 +588,50 @@ test_offer_incoming (Test *test,
 
 typedef void (*TestFunc) (Test *, gconstpointer);
 
+static gchar *
+test_context_to_str (TestContext *ctx,
+    const gchar *base)
+{
+  const gchar *type, *socket, *access_control;
+
+  if (ctx->contact)
+    type = "contact";
+  else
+    type = "room";
+
+  switch (ctx->address_type)
+    {
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+        socket = "unix";
+        break;
+      case TP_SOCKET_ADDRESS_TYPE_IPV4:
+        socket = "ipv4";
+        break;
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
+        socket = "ipv6";
+        break;
+      default:
+        g_assert_not_reached ();
+    }
+
+  switch (ctx->access_control)
+    {
+      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
+        access_control = "localhost";
+        break;
+      case TP_SOCKET_ACCESS_CONTROL_PORT:
+        access_control = "port";
+        break;
+      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
+        access_control = "credentials";
+        break;
+      default:
+        g_assert_not_reached ();
+    }
+
+  return g_strdup_printf ("%s/%s/%s/%s", base, type, socket, access_control);
+}
+
 /* Run a test with each TestContext defined in contexts */
 static void
 run_tube_test (const char *test_path,
@@ -597,8 +641,11 @@ run_tube_test (const char *test_path,
 
   for (i = 0; contexts[i].address_type != NUM_TP_SOCKET_ADDRESS_TYPES; i++)
     {
-      g_test_add (test_path, Test, GUINT_TO_POINTER (i), setup, ftest,
-          teardown);
+      gchar *path = test_context_to_str (&contexts[i], test_path);
+
+      g_test_add (path, Test, GUINT_TO_POINTER (i), setup, ftest, teardown);
+
+      g_free (path);
     }
 }
 
