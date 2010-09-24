@@ -206,7 +206,8 @@ test_properties (Test *test,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
 
   /* Service */
-  g_assert_cmpstr (tp_stream_tube_channel_get_service (test->tube), ==, "test-service");
+  g_assert_cmpstr (tp_stream_tube_channel_get_service (test->tube), ==,
+      "test-service");
   g_object_get (test->tube, "service", &service, NULL);
   g_assert_cmpstr (service, ==, "test-service");
   g_free (service);
@@ -237,8 +238,8 @@ tube_accept_cb (GObject *source,
 {
   Test *test = user_data;
 
-  test->stream = tp_stream_tube_channel_accept_finish (TP_STREAM_TUBE_CHANNEL (source), result,
-      &test->error);
+  test->stream = tp_stream_tube_channel_accept_finish (
+      TP_STREAM_TUBE_CHANNEL (source), result, &test->error);
 
   test->wait--;
   if (test->wait <= 0)
