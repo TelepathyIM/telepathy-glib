@@ -54,18 +54,21 @@ typedef struct
   TpHandle handle;
   GValue *param;
   guint connection_id;
+  gboolean rejected;
 } SigWaitingConn;
 
 static SigWaitingConn *
 sig_waiting_conn_new (TpHandle handle,
     const GValue *param,
-    guint connection_id)
+    guint connection_id,
+    gboolean rejected)
 {
   SigWaitingConn *ret = g_slice_new0 (SigWaitingConn);
 
   ret->handle = handle;
   ret->param = tp_g_value_slice_dup (param);
   ret->connection_id = connection_id;
+  ret->rejected = rejected;
   return ret;
 }
 
@@ -839,6 +842,34 @@ connection_identified (TpStreamTubeChannel *self,
 }
 
 static void
+stream_tube_connection_closed_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  GError *error = NULL;
+
+  if (!g_io_stream_close_finish (G_IO_STREAM (source), result, &error))
+    {
+      DEBUG ("Failed to close connection: %s", error->message);
+
+      g_error_free (error);
+      return;
+    }
+}
+
+static void
+connection_rejected (TpStreamTubeChannel *self,
+    GSocketConnection *conn,
+    TpHandle handle,
+    guint connection_id)
+{
+  DEBUG ("Reject connection %u with contact %u", connection_id, handle);
+
+  g_io_stream_close_async (G_IO_STREAM (conn), G_PRIORITY_DEFAULT, NULL,
+      stream_tube_connection_closed_cb, self);
+}
+
+static void
 _new_remote_connection (TpChannel *channel,
     guint handle,
     const GValue *param,
@@ -850,8 +881,22 @@ _new_remote_connection (TpChannel *channel,
   GSList *l;
   ConnWaitingSig *found_conn = NULL;
   SigWaitingConn *sig;
+  TpHandle chan_handle;
+  TpHandleType handle_type;
+  gboolean rejected = FALSE;
 
-  sig = sig_waiting_conn_new (handle, param, connection_id);
+  chan_handle = tp_channel_get_handle (channel, &handle_type);
+  if (handle_type == TP_HANDLE_TYPE_CONTACT &&
+      handle != chan_handle)
+    {
+      DEBUG ("CM claimed that handle %u connected to the stream tube, "
+          "but as a contact stream tube we should only get connection from "
+          "handle %u", handle, chan_handle);
+
+      rejected = TRUE;
+    }
+
+  sig = sig_waiting_conn_new (handle, param, connection_id, rejected);
 
   for (l = self->priv->conn_waiting_sig; l != NULL && found_conn == NULL;
       l = g_slist_next (l))
@@ -878,7 +923,10 @@ _new_remote_connection (TpChannel *channel,
   self->priv->conn_waiting_sig = g_slist_remove (
       self->priv->conn_waiting_sig, found_conn);
 
-  connection_identified (self, found_conn->conn, handle, connection_id);
+  if (rejected)
+    connection_rejected (self, found_conn->conn, handle, connection_id);
+  else
+    connection_identified (self, found_conn->conn, handle, connection_id);
 
   sig_waiting_conn_free (sig);
   conn_waiting_sig_free (found_conn);
@@ -1031,7 +1079,10 @@ service_incoming_cb (GSocketService *service,
   self->priv->sig_waiting_conn = g_slist_remove (self->priv->sig_waiting_conn,
       sig);
 
-  connection_identified (self, conn, sig->handle, sig->connection_id);
+  if (sig->rejected)
+    connection_rejected (self, conn, sig->handle, sig->connection_id);
+  else
+    connection_identified (self, conn, sig->handle, sig->connection_id);
 
   sig_waiting_conn_free (sig);
   conn_waiting_sig_free (c);
