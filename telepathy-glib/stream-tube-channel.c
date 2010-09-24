@@ -823,6 +823,27 @@ sig_match_conn (TpStreamTubeChannel *self,
   return FALSE;
 }
 
+static gboolean
+can_identify_contact (TpStreamTubeChannel *self)
+{
+  TpHandleType handle_type;
+
+  tp_channel_get_handle (TP_CHANNEL (self), &handle_type);
+
+  /* With contact stream tube, it's always the same contact connecting to the
+   * tube */
+  if (handle_type == TP_HANDLE_TYPE_CONTACT)
+    return TRUE;
+
+  /* Room stream tube, we need either the Credentials or Port access control
+   * to properly identify connections. */
+  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS ||
+      self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_PORT)
+    return TRUE;
+
+  return FALSE;
+}
+
 static void
 connection_identified (TpStreamTubeChannel *self,
     GSocketConnection *conn,
@@ -834,11 +855,18 @@ connection_identified (TpStreamTubeChannel *self,
 
   g_object_weak_ref (G_OBJECT (conn), remote_connection_destroyed_cb, self);
 
-  tp_connection_get_contacts_by_handle (
-      tp_channel_borrow_connection (TP_CHANNEL (self)),
-      1, &handle, 0, NULL,
-      _new_remote_connection_with_contact,
-      g_object_ref (conn), NULL, G_OBJECT (self));
+  if (can_identify_contact (self))
+    {
+      tp_connection_get_contacts_by_handle (
+          tp_channel_borrow_connection (TP_CHANNEL (self)),
+          1, &handle, 0, NULL,
+          _new_remote_connection_with_contact,
+          g_object_ref (conn), NULL, G_OBJECT (self));
+    }
+  else
+    {
+      g_signal_emit (self, _signals[INCOMING], 0, NULL, conn);
+    }
 }
 
 static void

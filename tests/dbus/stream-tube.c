@@ -418,7 +418,11 @@ tube_incoming_cb (TpStreamTubeChannel *tube,
     Test *test)
 {
   test->stream = g_object_ref (stream);
-  test->contact = g_object_ref (contact);
+
+  if (contact != NULL)
+    test->contact = g_object_ref (contact);
+  else
+    test->contact = NULL;
 
   test->wait--;
   if (test->wait <= 0)
@@ -438,6 +442,17 @@ socket_connected (GObject *source,
   test->wait--;
   if (test->wait <= 0)
     g_main_loop_quit (test->mainloop);
+}
+
+static gboolean
+can_identify_contacts (gboolean contact,
+    TpSocketAccessControl access_control)
+{
+  if (contact)
+    return TRUE;
+
+  return access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS ||
+    access_control == TP_SOCKET_ACCESS_CONTROL_PORT;
 }
 
 static void
@@ -496,9 +511,16 @@ test_offer_success (Test *test,
   test->wait = 1;
   g_main_loop_run (test->mainloop);
   g_assert (test->stream != NULL);
-  g_assert (test->contact != NULL);
 
-  g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "alice");
+  if (can_identify_contacts (FALSE, socket_pairs[i].access_control))
+    {
+      g_assert (test->contact != NULL);
+      g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "alice");
+    }
+  else
+    {
+      g_assert (test->contact == NULL);
+    }
 
   use_tube (test);
 
