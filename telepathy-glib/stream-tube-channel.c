@@ -144,7 +144,7 @@ struct _TpStreamTubeChannelPrivate
   GSimpleAsyncResult *result;
 
   /* (guint) connection ID => weakly reffed TpStreamTubeConnection */
-  GHashTable *remote_connections;
+  GHashTable *tube_connections;
 };
 
 enum
@@ -176,7 +176,7 @@ remote_connection_destroyed_cb (gpointer user_data,
   /* The GSocketConnection has been destroyed, removing it from the hash */
   TpStreamTubeChannel *self = user_data;
 
-  g_hash_table_foreach_remove (self->priv->remote_connections, is_connection,
+  g_hash_table_foreach_remove (self->priv->tube_connections, is_connection,
       conn);
 }
 
@@ -209,19 +209,19 @@ tp_stream_tube_channel_dispose (GObject *obj)
       tp_clear_object (&self->priv->cancellable);
     }
 
-  if (self->priv->remote_connections != NULL)
+  if (self->priv->tube_connections != NULL)
     {
       GHashTableIter iter;
       gpointer conn;
 
-      g_hash_table_iter_init (&iter, self->priv->remote_connections);
+      g_hash_table_iter_init (&iter, self->priv->tube_connections);
       while (g_hash_table_iter_next (&iter, NULL, &conn))
         {
           g_object_weak_unref (conn, remote_connection_destroyed_cb, self);
         }
 
-      g_hash_table_unref (self->priv->remote_connections);
-      self->priv->remote_connections = NULL;
+      g_hash_table_unref (self->priv->tube_connections);
+      self->priv->tube_connections = NULL;
     }
 
   if (self->priv->address != NULL)
@@ -396,7 +396,7 @@ tp_stream_tube_channel_init (TpStreamTubeChannel *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_STREAM_TUBE_CHANNEL,
       TpStreamTubeChannelPrivate);
 
-  self->priv->remote_connections = g_hash_table_new (NULL, NULL);
+  self->priv->tube_connections = g_hash_table_new (NULL, NULL);
 }
 
 
@@ -612,6 +612,12 @@ new_local_connection_identified (TpStreamTubeChannel *self,
   TpStreamTubeConnection *tube_conn;
 
   tube_conn = _tp_stream_tube_connection_new (conn);
+
+  g_hash_table_insert (self->priv->tube_connections,
+      GUINT_TO_POINTER (connection_id), tube_conn);
+
+  g_object_weak_ref (G_OBJECT (tube_conn), remote_connection_destroyed_cb,
+      self);
 
   /* We are accepting a tube so the contact of the connection is the
    * initiator of the tube */
@@ -975,7 +981,7 @@ connection_identified (TpStreamTubeChannel *self,
 
   tube_conn = _tp_stream_tube_connection_new (conn);
 
-  g_hash_table_insert (self->priv->remote_connections,
+  g_hash_table_insert (self->priv->tube_connections,
       GUINT_TO_POINTER (connection_id), tube_conn);
 
   g_object_weak_ref (G_OBJECT (tube_conn), remote_connection_destroyed_cb,
