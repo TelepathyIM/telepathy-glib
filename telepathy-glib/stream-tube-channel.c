@@ -334,7 +334,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
    *
    * A string representing the service name that will be used over the tube.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.13.UNRELEASED
    */
   param_spec = g_param_spec_string ("service", "Service",
       "The service of the stream tube",
@@ -349,7 +349,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
    *
    * Will be %NULL for outgoing tubes until the tube has been offered.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.13.UNRELEASED
    */
   param_spec = g_param_spec_boxed ("parameters", "Parameters",
       "The parameters of the stream tube",
@@ -1247,7 +1247,7 @@ tp_stream_tube_channel_offer_finish (TpStreamTubeChannel *self,
  *
  * Returns: (transfer none): the value of #TpStreamTubeChannel:service
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.13.UNRELEASED
  */
 const gchar *
 tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
@@ -1268,7 +1268,7 @@ tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
  * Returns: (transfer none) (element-type utf8 GObject.Value):
  * the value of #TpStreamTubeChannel:parameters
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.13.UNRELEASED
  */
 GHashTable *
 tp_stream_tube_channel_get_parameters (TpStreamTubeChannel *self)
