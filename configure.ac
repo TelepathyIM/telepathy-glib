@@ -42,17 +42,10 @@ AC_INIT([Telepathy-GLib], [tp_glib_version],
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.9 -Wno-portability])
+AM_INIT_AUTOMAKE([1.11 -Wno-portability])
 AM_CONFIG_HEADER(config.h)
 
-dnl We're compatible with automake 1.9 (to be nice to Maemo 5), but with
-dnl reduced functionality
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
-m4_ifdef([AM_PROG_VALAC],
-	 [have_automake_for_dist=true],
-         [AC_MSG_WARN([You have Automake < 1.11, 'make dist' will not work])
-	  have_automake_for_dist=false])
-AM_CONDITIONAL([HAVE_AUTOMAKE_FOR_DIST], [$have_automake_for_dist])
+AM_SILENT_RULES
 
 dnl check for tools
 AC_PROG_CC
@@ -66,16 +59,7 @@ PKG_PROG_PKG_CONFIG([0.21])
 
 GTK_DOC_CHECK([1.15])
 
-GOBJECT_INTROSPECTION_CHECK([0.6.14])
-# Check if we have a new gobject-introspection, with different command-line
-# arguments. Eventually this will go away and we can only depend on the new
-# version
-AC_MSG_CHECKING([what arguments g-ir-scanner requires])
-PKG_CHECK_EXISTS([gobject-introspection-1.0 >= 0.9.5],
-                 g_ir_scanner_args=new,
-		 g_ir_scanner_args=old)
-AC_MSG_RESULT([$g_ir_scanner_args])
-AM_CONDITIONAL(G_IR_SCANNER_NEW_ARGS, test "x$g_ir_scanner_args" = "xnew")
+GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
 LT_CURRENT=tp_glib_lt_current
 LT_REVISION=tp_glib_lt_revision
@@ -217,12 +201,7 @@ if test x$enable_vala_bindings = xyes; then
     AC_MSG_ERROR([GObject-Introspection must be enabled for Vala bindings])
   fi
 
-  PKG_CHECK_EXISTS([gobject-introspection-1.0 >= 0.9.6],
-    [],
-    [AC_MSG_ERROR([gobject-introspection 0.9.6 required for Vala bindings])])
-
-  m4_ifdef([AM_PROG_VALAC], [AM_PROG_VALAC(0.10.0)],
-           [AC_MSG_ERROR([Automake >= 1.11 required for Vala bindings])])
+  AM_PROG_VALAC([0.10.0])
   have_vala=yes
 
   AC_PATH_PROG(VALAC, valac, valac)
