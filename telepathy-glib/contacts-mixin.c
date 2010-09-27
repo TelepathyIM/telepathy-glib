@@ -359,11 +359,15 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
   return result;
 }
 
-void
-_tp_contacts_mixin_get_contact_attributes (
-    TpBaseConnection *conn, const GArray *handles,
-    const gchar **interfaces, gboolean hold, DBusGMethodInvocation *context)
+static void
+tp_contacts_mixin_get_contact_attributes_impl (
+  TpSvcConnectionInterfaceContacts *iface,
+  const GArray *handles,
+  const char **interfaces,
+  gboolean hold,
+  DBusGMethodInvocation *context)
 {
+  TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
   GHashTable *result;
   gchar *sender = NULL;
   const gchar *assumed_interfaces[] = {
@@ -384,18 +388,6 @@ _tp_contacts_mixin_get_contact_attributes (
 
   g_free (sender);
   g_hash_table_destroy (result);
-}
-
-static void
-tp_contacts_mixin_get_contact_attributes_impl (
-  TpSvcConnectionInterfaceContacts *iface,
-  const GArray *handles,
-  const char **interfaces,
-  gboolean hold,
-  DBusGMethodInvocation *context)
-{
-  _tp_contacts_mixin_get_contact_attributes (
-      TP_BASE_CONNECTION (iface), handles, interfaces, hold, context);
 }
 
 /**

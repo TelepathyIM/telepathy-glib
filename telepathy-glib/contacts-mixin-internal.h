@@ -26,12 +26,6 @@
 
 G_BEGIN_DECLS
 
-void _tp_contacts_mixin_get_contact_attributes (TpBaseConnection *conn,
-  const GArray *handles,
-  const char **interfaces,
-  gboolean hold,
-  DBusGMethodInvocation *context);
-
 G_END_DECLS
 
 #endif
