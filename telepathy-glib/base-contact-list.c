@@ -3147,7 +3147,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
     gssize n_created)
 {
   GPtrArray *actually_created;
-  guint i;
+  gssize i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
@@ -3241,7 +3241,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
     gssize n_removed)
 {
   GPtrArray *actually_removed;
-  guint i;
+  gssize i;
   TpHandleSet *old_members;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -3504,7 +3504,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
     const gchar * const *removed,
     gssize n_removed)
 {
-  guint i;
+  gssize i;
   GPtrArray *really_added, *really_removed;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
