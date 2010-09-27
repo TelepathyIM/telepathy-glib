@@ -268,8 +268,12 @@ tp_contacts_mixin_finalize (GObject *obj)
  * @obj: A connection instance that uses this mixin. The connection must be connected.
  * @handles: List of handles to retrieve contacts for. Any invalid handles will be
  * dropped from the returned mapping.
- * @interfaces: A list of interfaces to retrieve attributes for. The Connection
- * interface will always be included.
+ * @interfaces: A list of interfaces to retrieve attributes from.
+ * @assumed_interfaces: A list of additional interfaces to retrieve attributes
+ *  from. This can be used for interfaces documented as automatically included,
+ *  like %TP_IFACE_CONNECTION for GetContactAttributes,
+ *  or %TP_IFACE_CONNECTION and %TP_IFACE_CONNECTION_CONTACT_LIST for
+ *  GetContactListAttributes.
  * @sender: The DBus client's unique name. If this is not NULL, the requested handles
  * will be held on behalf of this client.
  *
