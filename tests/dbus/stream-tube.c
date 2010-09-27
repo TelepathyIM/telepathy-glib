@@ -133,7 +133,7 @@ create_tube_service (Test *test,
     gboolean contact)
 {
   gchar *chan_path;
-  TpHandle handle;
+  TpHandle handle, alf_handle;
   GHashTable *props;
   GHashTable *sockets;
   GType type;
@@ -166,6 +166,9 @@ create_tube_service (Test *test,
 
   g_assert_no_error (test->error);
 
+  alf_handle = tp_handle_ensure (test->contact_repo, "alf", NULL, &test->error);
+  g_assert_no_error (test->error);
+
   sockets = create_supported_socket_types_hash (address_type, access_control);
 
   test->tube_chan_service = g_object_new (
@@ -175,6 +178,7 @@ create_tube_service (Test *test,
       "requested", requested,
       "object-path", chan_path,
       "supported-socket-types", sockets,
+      "initiator-handle", alf_handle,
       NULL);
 
   /* Create client-side tube channel object */
@@ -391,6 +395,7 @@ test_accept_success (Test *test,
     gconstpointer data)
 {
   guint i = GPOINTER_TO_UINT (data);
+  TpContact *contact;
 
   create_tube_service (test, FALSE, contexts[i].address_type,
       contexts[i].access_control, contexts[i].contact);
@@ -403,6 +408,12 @@ test_accept_success (Test *test,
   test->wait = 2;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
+
+  g_assert (test->tube_conn != NULL);
+
+  contact = tp_stream_tube_connection_get_contact (test->tube_conn);
+  g_assert (contact != NULL);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "alf");
 
   use_tube (test);
 }

@@ -559,6 +559,41 @@ complete_accept_operation (TpStreamTubeChannel *self,
 }
 
 static void
+new_local_connection_with_contact (TpConnection *conn,
+    guint n_contacts,
+    TpContact * const *contacts,
+    guint n_failed,
+    const TpHandle *failed,
+    const GError *in_error,
+    gpointer user_data,
+    GObject *obj)
+{
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
+  TpContact *contact;
+  TpStreamTubeConnection *tube_conn = user_data;
+
+  if (in_error != NULL)
+    {
+      DEBUG ("Failed to prepare TpContact: %s", in_error->message);
+      goto out;
+    }
+
+  if (n_failed > 0)
+    {
+      DEBUG ("Failed to prepare TpContact (unspecified error)");
+      goto out;
+    }
+
+  contact = contacts[0];
+  _tp_stream_tube_connection_set_contact (tube_conn, contact);
+
+  complete_accept_operation (self, tube_conn);
+
+out:
+  g_object_unref (tube_conn);
+}
+
+static void
 _socket_connected (GObject *client,
     GAsyncResult *result,
     gpointer user_data)
@@ -567,6 +602,7 @@ _socket_connected (GObject *client,
   GSocketConnection *conn;
   GError *error = NULL;
   TpStreamTubeConnection *tube_conn;
+  TpHandle initiator_handle;
 
   conn = g_socket_client_connect_finish (G_SOCKET_CLIENT (client), result,
       &error);
@@ -603,10 +639,17 @@ _socket_connected (GObject *client,
 
   tube_conn = _tp_stream_tube_connection_new (conn);
 
-  /* FIXME: set TpContact */
-  complete_accept_operation (self, tube_conn);
+  /* We are accepting a tube so the contact of the connection is the
+   * initiator of the tube */
+  initiator_handle = tp_channel_get_initiator_handle (TP_CHANNEL (self));
 
-  g_object_unref (tube_conn);
+  /* Pass ownership of tube_conn to the callback */
+  tp_connection_get_contacts_by_handle (
+      tp_channel_borrow_connection (TP_CHANNEL (self)),
+      1, &initiator_handle, 0, NULL,
+      new_local_connection_with_contact,
+      tube_conn, NULL, G_OBJECT (self));
+
   g_object_unref (conn);
   g_object_unref (client);
 }
