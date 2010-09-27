@@ -80,6 +80,7 @@ our_headers = \
     simple-handler.h \
     simple-observer.h \
     stream-tube-channel.h \
+    stream-tube-connection.h \
     svc-account.h \
     svc-account-manager.h \
     svc-channel-dispatcher.h \
@@ -199,6 +200,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     simple-handler.c \
     simple-observer.c \
     stream-tube-channel.c \
+    stream-tube-connection-internal.h \
+    stream-tube-connection.c \
     text-mixin.c \
     util.c \
     util-internal.h
