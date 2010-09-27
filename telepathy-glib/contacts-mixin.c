@@ -331,7 +331,7 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
    */
   tp_handles_ref (contact_repo, valid_handles);
 
-  for (i = 0; assumed_interfaces[i] != NULL; i++)
+  for (i = 0; assumed_interfaces != NULL && assumed_interfaces[i] != NULL; i++)
     {
       func = g_hash_table_lookup (self->priv->interfaces, assumed_interfaces[i]);
 
@@ -342,7 +342,7 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
         func (obj, valid_handles, result);
     }
 
-  for (i = 0; interfaces[i] != NULL; i++)
+  for (i = 0; interfaces != NULL && interfaces[i] != NULL; i++)
     {
 
       func = g_hash_table_lookup (self->priv->interfaces, interfaces[i]);
