@@ -9,13 +9,15 @@ _tube_accepted (GObject *tube,
     gpointer user_data)
 {
   TpHandleChannelsContext *context = user_data;
-  GIOStream *iostream;
+  TpStreamTubeConnection *tube_conn;
+  GSocketConnection *conn;
   GInputStream *in;
   GOutputStream *out;
   char buf[128] = { 0, };
   GError *error = NULL;
 
-  iostream = tp_stream_tube_channel_accept_finish (TP_STREAM_TUBE_CHANNEL (tube), res, &error);
+  tube_conn = tp_stream_tube_channel_accept_finish (
+      TP_STREAM_TUBE_CHANNEL (tube), res, &error);
 
   if (error != NULL)
     {
@@ -30,8 +32,10 @@ _tube_accepted (GObject *tube,
 
   g_debug ("Tube open, have IOStream");
 
-  in = g_io_stream_get_input_stream (iostream);
-  out = g_io_stream_get_output_stream (iostream);
+  conn = tp_stream_tube_connection_get_connection (tube_conn);
+
+  in = g_io_stream_get_input_stream (G_IO_STREAM (conn));
+  out = g_io_stream_get_output_stream (G_IO_STREAM (conn));
 
   /* this bit is not a good example */
   g_output_stream_write (out, "Ping", 4, NULL, &error);
@@ -44,7 +48,7 @@ _tube_accepted (GObject *tube,
 
   // FIXME: close the channel
 
-  g_object_unref (iostream);
+  g_object_unref (tube_conn);
   g_object_unref (tube);
 
   g_main_loop_quit (loop);

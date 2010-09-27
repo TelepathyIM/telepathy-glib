@@ -22,7 +22,7 @@
 #define __TP_STREAM_TUBE_CHANNEL_H__
 
 #include <telepathy-glib/channel.h>
-#include <gio/gio.h>
+#include <telepathy-glib/stream-tube-connection.h>
 
 G_BEGIN_DECLS
 
@@ -67,7 +67,8 @@ void tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-GIOStream *tp_stream_tube_channel_accept_finish (TpStreamTubeChannel *self,
+TpStreamTubeConnection * tp_stream_tube_channel_accept_finish (
+    TpStreamTubeChannel *self,
     GAsyncResult *result,
     GError **error);
 

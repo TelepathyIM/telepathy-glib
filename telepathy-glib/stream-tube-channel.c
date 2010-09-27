@@ -29,6 +29,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/stream-tube-connection-internal.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
@@ -133,7 +134,7 @@ struct _TpStreamTubeChannelPrivate
 
   GSimpleAsyncResult *result;
 
-  /* (guint) connection ID => weakly reffed GSocketConnection */
+  /* (guint) connection ID => weakly reffed TpStreamTubeConnection */
   GHashTable *remote_connections;
 };
 
@@ -360,8 +361,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
   /**
    * TpStreamTubeChannel::incoming
    * @self: the #TpStreamTubeChannel
-   * @contact: (transfer none): the #TpContact making the connection
-   * @stream: (transfer none): the #GIOStream for the connection
+   * @stream: (transfer none): the #TpStreamTubeConnection for the connection
    *
    * The ::incoming signal is emitted on offered Tubes when a new incoming
    * connection is made from a remote user (one accepting the Tube).
@@ -373,9 +373,9 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL,
-      _tp_marshal_VOID__OBJECT_OBJECT,
+      g_cclosure_marshal_VOID__OBJECT,
       G_TYPE_NONE,
-      2, TP_TYPE_CONTACT, G_TYPE_IO_STREAM);
+      1, TP_TYPE_STREAM_TUBE_CONNECTION);
 
   g_type_class_add_private (gobject_class, sizeof (TpStreamTubeChannelPrivate));
 }
@@ -550,10 +550,10 @@ operation_failed (TpStreamTubeChannel *self,
 
 static void
 complete_accept_operation (TpStreamTubeChannel *self,
-    GSocketConnection *conn)
+    TpStreamTubeConnection *tube_conn)
 {
-  g_simple_async_result_set_op_res_gpointer (self->priv->result, conn,
-      g_object_unref);
+  g_simple_async_result_set_op_res_gpointer (self->priv->result,
+      g_object_ref (tube_conn), g_object_unref);
   g_simple_async_result_complete (self->priv->result);
   tp_clear_object (&self->priv->result);
 }
@@ -566,6 +566,7 @@ _socket_connected (GObject *client,
   TpStreamTubeChannel *self = user_data;
   GSocketConnection *conn;
   GError *error = NULL;
+  TpStreamTubeConnection *tube_conn;
 
   conn = g_socket_client_connect_finish (G_SOCKET_CLIENT (client), result,
       &error);
@@ -600,7 +601,13 @@ _socket_connected (GObject *client,
     }
 #endif
 
-  complete_accept_operation (self, conn);
+  tube_conn = _tp_stream_tube_connection_new (conn);
+
+  /* FIXME: set TpContact */
+  complete_accept_operation (self, tube_conn);
+
+  g_object_unref (tube_conn);
+  g_object_unref (conn);
   g_object_unref (client);
 }
 
@@ -723,12 +730,13 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
  *
  * Returns:
  */
-GIOStream *
+TpStreamTubeConnection *
 tp_stream_tube_channel_accept_finish (TpStreamTubeChannel *self,
     GAsyncResult *result,
     GError **error)
 {
-  _tp_implement_finish_return_copy_pointer (self, tp_stream_tube_channel_accept_async, g_object_ref)
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_stream_tube_channel_accept_async, g_object_ref)
 }
 
 static void
@@ -743,7 +751,7 @@ _new_remote_connection_with_contact (TpConnection *conn,
 {
   TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
   TpContact *contact;
-  GSocketConnection *sockconn = user_data;
+  TpStreamTubeConnection *tube_conn = user_data;
 
   if (in_error != NULL)
     {
@@ -760,14 +768,16 @@ _new_remote_connection_with_contact (TpConnection *conn,
   /* accept the incoming socket to bring up the connection */
   contact = contacts[0];
 
+  _tp_stream_tube_connection_set_contact (tube_conn, contact);
+
   DEBUG ("Accepting incoming GIOStream from %s",
       tp_contact_get_identifier (contact));
 
-  g_signal_emit (self, _signals[INCOMING], 0, contact, sockconn);
+  g_signal_emit (self, _signals[INCOMING], 0, tube_conn);
 
   /* anyone receiving the signal is required to hold their own reference */
 out:
-  g_object_unref (sockconn);
+  g_object_unref (tube_conn);
 }
 
 static gboolean
@@ -850,22 +860,31 @@ connection_identified (TpStreamTubeChannel *self,
     TpHandle handle,
     guint connection_id)
 {
-  g_hash_table_insert (self->priv->remote_connections,
-      GUINT_TO_POINTER (connection_id), conn);
+  TpStreamTubeConnection *tube_conn;
 
-  g_object_weak_ref (G_OBJECT (conn), remote_connection_destroyed_cb, self);
+  tube_conn = _tp_stream_tube_connection_new (conn);
+
+  g_hash_table_insert (self->priv->remote_connections,
+      GUINT_TO_POINTER (connection_id), tube_conn);
+
+  g_object_weak_ref (G_OBJECT (tube_conn), remote_connection_destroyed_cb,
+      self);
 
   if (can_identify_contact (self))
     {
+      /* Pass the ref on tube_conn to the callback */
+
       tp_connection_get_contacts_by_handle (
           tp_channel_borrow_connection (TP_CHANNEL (self)),
           1, &handle, 0, NULL,
           _new_remote_connection_with_contact,
-          g_object_ref (conn), NULL, G_OBJECT (self));
+          tube_conn, NULL, G_OBJECT (self));
     }
   else
     {
-      g_signal_emit (self, _signals[INCOMING], 0, NULL, conn);
+      g_signal_emit (self, _signals[INCOMING], 0, tube_conn);
+
+      g_object_unref (tube_conn);
     }
 }
 

@@ -57,9 +57,8 @@ typedef struct {
     TpConnection *connection;
     TpStreamTubeChannel *tube;
 
-    GIOStream *stream;
+    TpStreamTubeConnection *tube_conn;
     GIOStream *cm_stream;
-    TpContact *contact;
 
     GError *error /* initialized where needed */;
     gint wait;
@@ -91,9 +90,8 @@ teardown (Test *test,
 
   tp_clear_object (&test->tube_chan_service);
   tp_clear_object (&test->tube);
-  tp_clear_object (&test->stream);
+  tp_clear_object (&test->tube_conn);
   tp_clear_object (&test->cm_stream);
-  tp_clear_object (&test->contact);
 
   tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
   g_assert_no_error (test->error);
@@ -269,7 +267,7 @@ tube_accept_cb (GObject *source,
 {
   Test *test = user_data;
 
-  test->stream = tp_stream_tube_channel_accept_finish (
+  test->tube_conn = tp_stream_tube_channel_accept_finish (
       TP_STREAM_TUBE_CHANNEL (source), result, &test->error);
 
   test->wait--;
@@ -381,7 +379,11 @@ use_tube_with_streams (Test *test,
 static void
 use_tube (Test *test)
 {
-  use_tube_with_streams (test, test->stream, test->cm_stream);
+  GSocketConnection *conn;
+
+  conn = tp_stream_tube_connection_get_connection (test->tube_conn);
+
+  use_tube_with_streams (test, G_IO_STREAM (conn), test->cm_stream);
 }
 
 static void
@@ -422,16 +424,10 @@ tube_offer_cb (GObject *source,
 
 static void
 tube_incoming_cb (TpStreamTubeChannel *tube,
-    TpContact *contact,
-    GIOStream *stream,
+    TpStreamTubeConnection *tube_conn,
     Test *test)
 {
-  test->stream = g_object_ref (stream);
-
-  if (contact != NULL)
-    test->contact = g_object_ref (contact);
-  else
-    test->contact = NULL;
+  test->tube_conn = g_object_ref (tube_conn);
 
   test->wait--;
   if (test->wait <= 0)
@@ -473,6 +469,7 @@ test_offer_success (Test *test,
   GSocketAddress *address;
   GSocketClient *client;
   TpHandle bob_handle;
+  TpContact *contact;
 
   create_tube_service (test, TRUE, contexts[i].address_type,
       contexts[i].access_control, contexts[i].contact);
@@ -519,16 +516,18 @@ test_offer_success (Test *test,
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
-  g_assert (test->stream != NULL);
+  g_assert (test->tube_conn != NULL);
+
+  contact = tp_stream_tube_connection_get_contact (test->tube_conn);
 
   if (can_identify_contacts (contexts[i].contact, contexts[i].access_control))
     {
-      g_assert (test->contact != NULL);
-      g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "bob");
+      g_assert (contact != NULL);
+      g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "bob");
     }
   else
     {
-      g_assert (test->contact == NULL);
+      g_assert (contact == NULL);
     }
 
   use_tube (test);
@@ -661,6 +660,8 @@ test_offer_race (Test *test,
   TpHandle alice_handle, bob_handle;
   GIOStream *alice_cm_stream, *bob_cm_stream;
   GIOStream *alice_stream, *bob_stream;
+  GSocketConnection *conn;
+  TpContact *contact;
 
   /* The race only appear in room stream tubes */
   if (contexts[i].contact)
@@ -728,11 +729,13 @@ test_offer_race (Test *test,
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
-  g_assert (test->stream != NULL);
-  g_assert (test->contact != NULL);
-  bob_stream = g_object_ref (test->stream);
+  g_assert (test->tube_conn != NULL);
 
-  g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "bob");
+  conn = tp_stream_tube_connection_get_connection (test->tube_conn);
+  bob_stream = g_object_ref (conn);
+  contact = tp_stream_tube_connection_get_contact (test->tube_conn);
+
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "bob");
 
   /* ...and then detects Alice's connection */
   tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
@@ -740,11 +743,13 @@ test_offer_race (Test *test,
 
   test->wait = 1;
   g_main_loop_run (test->mainloop);
-  g_assert (test->stream != NULL);
-  g_assert (test->contact != NULL);
-  alice_stream = g_object_ref (test->stream);
+  g_assert (test->tube_conn != NULL);
 
-  g_assert_cmpstr (tp_contact_get_identifier (test->contact), ==, "alice");
+  conn = tp_stream_tube_connection_get_connection (test->tube_conn);
+  alice_stream = g_object_ref (conn);
+  contact = tp_stream_tube_connection_get_contact (test->tube_conn);
+
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "alice");
 
   /* Check that the streams have been mapped to the right contact */
   use_tube_with_streams (test, alice_stream, alice_cm_stream);
@@ -832,8 +837,7 @@ test_offer_bad_connection_conn_first (Test *test,
   g_main_loop_run (test->mainloop);
 
   /* "incoming" has not be fired */
-  g_assert (test->stream == NULL);
-  g_assert (test->contact == NULL);
+  g_assert (test->tube_conn == NULL);
 }
 
 /* Same test but now NewRemoteConnection is fired before the socket
@@ -896,8 +900,7 @@ test_offer_bad_connection_sig_first (Test *test,
   g_main_loop_run (test->mainloop);
 
   /* "incoming" has not be fired */
-  g_assert (test->stream == NULL);
-  g_assert (test->contact == NULL);
+  g_assert (test->tube_conn == NULL);
 }
 
 int

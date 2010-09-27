@@ -195,7 +195,8 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
   g_object_class_install_property (object_class, PROP_CONTACT, param_spec);
 }
 
-TpStreamTubeConnection * _tp_stream_tube_connection_new (
+TpStreamTubeConnection *
+_tp_stream_tube_connection_new (
     GSocketConnection *connection)
 {
   return g_object_new (TP_TYPE_STREAM_TUBE_CONNECTION,

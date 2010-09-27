@@ -5,20 +5,25 @@ static GMainLoop *loop = NULL;
 
 static void
 _incoming_iostream (TpStreamTubeChannel *tube,
-    TpContact *contact,
-    GIOStream *iostream,
+    TpStreamTubeConnection* tube_conn,
     gpointer user_data)
 {
   GInputStream *in;
   GOutputStream *out;
   char buf[128] = { 0, };
   GError *error = NULL;
+  TpContact *contact;
+  GSocketConnection *conn;
+
+  contact = tp_stream_tube_connection_get_contact (tube_conn);
 
   g_debug ("Got IOStream from %s",
       tp_contact_get_identifier (contact));
 
-  in = g_io_stream_get_input_stream (iostream);
-  out = g_io_stream_get_output_stream (iostream);
+  conn = tp_stream_tube_connection_get_connection (tube_conn);
+
+  in = g_io_stream_get_input_stream (G_IO_STREAM (conn));
+  out = g_io_stream_get_output_stream (G_IO_STREAM (conn));
 
   /* this bit is not a good example */
   g_output_stream_write (out, "Pong", 4, NULL, &error);
