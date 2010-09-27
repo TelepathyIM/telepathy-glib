@@ -3147,7 +3147,7 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
     gssize n_created)
 {
   GPtrArray *actually_created;
-  guint i;
+  gssize i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
@@ -3160,6 +3160,8 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
   if (n_created < 0)
     {
       n_created = (gssize) g_strv_length ((GStrv) created);
+
+      g_return_if_fail (n_created >= 0);
     }
   else
     {
@@ -3241,7 +3243,7 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
     gssize n_removed)
 {
   GPtrArray *actually_removed;
-  guint i;
+  gssize i;
   TpHandleSet *old_members;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -3256,6 +3258,8 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
   if (n_removed < 0)
     {
       n_removed = (gssize) g_strv_length ((GStrv) removed);
+
+      g_return_if_fail (n_removed >= 0);
     }
   else
     {
@@ -3504,7 +3508,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
     const gchar * const *removed,
     gssize n_removed)
 {
-  guint i;
+  gssize i;
   GPtrArray *really_added, *really_removed;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -3528,7 +3532,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
       else
         n_added = (gssize) g_strv_length ((GStrv) added);
 
-      g_return_if_fail (n_added < 0);
+      g_return_if_fail (n_added >= 0);
     }
   else
     {
@@ -3543,7 +3547,7 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
       else
         n_removed = (gssize) g_strv_length ((GStrv) added);
 
-      g_return_if_fail (n_removed < 0);
+      g_return_if_fail (n_removed >= 0);
     }
   else
     {
