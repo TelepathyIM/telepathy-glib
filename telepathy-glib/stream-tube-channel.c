@@ -594,6 +594,27 @@ out:
 }
 
 static void
+new_local_connection (TpStreamTubeChannel *self,
+    GSocketConnection *conn)
+{
+  TpHandle initiator_handle;
+  TpStreamTubeConnection *tube_conn;
+
+  tube_conn = _tp_stream_tube_connection_new (conn);
+
+  /* We are accepting a tube so the contact of the connection is the
+   * initiator of the tube */
+  initiator_handle = tp_channel_get_initiator_handle (TP_CHANNEL (self));
+
+  /* Pass ownership of tube_conn to the callback */
+  tp_connection_get_contacts_by_handle (
+      tp_channel_borrow_connection (TP_CHANNEL (self)),
+      1, &initiator_handle, 0, NULL,
+      new_local_connection_with_contact,
+      tube_conn, NULL, G_OBJECT (self));
+}
+
+static void
 _socket_connected (GObject *client,
     GAsyncResult *result,
     gpointer user_data)
@@ -601,8 +622,6 @@ _socket_connected (GObject *client,
   TpStreamTubeChannel *self = user_data;
   GSocketConnection *conn;
   GError *error = NULL;
-  TpStreamTubeConnection *tube_conn;
-  TpHandle initiator_handle;
 
   conn = g_socket_client_connect_finish (G_SOCKET_CLIENT (client), result,
       &error);
@@ -637,18 +656,7 @@ _socket_connected (GObject *client,
     }
 #endif
 
-  tube_conn = _tp_stream_tube_connection_new (conn);
-
-  /* We are accepting a tube so the contact of the connection is the
-   * initiator of the tube */
-  initiator_handle = tp_channel_get_initiator_handle (TP_CHANNEL (self));
-
-  /* Pass ownership of tube_conn to the callback */
-  tp_connection_get_contacts_by_handle (
-      tp_channel_borrow_connection (TP_CHANNEL (self)),
-      1, &initiator_handle, 0, NULL,
-      new_local_connection_with_contact,
-      tube_conn, NULL, G_OBJECT (self));
+  new_local_connection (self, conn);
 
   g_object_unref (conn);
   g_object_unref (client);
