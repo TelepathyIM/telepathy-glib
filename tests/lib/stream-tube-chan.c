@@ -418,6 +418,11 @@ service_incoming_cb (GSocketService *service,
           g_value_get_uchar (self->priv->access_control_param));
     }
 
+  tp_svc_channel_type_stream_tube_emit_new_local_connection (self,
+      self->priv->connection_id);
+
+  self->priv->connection_id++;
+
   g_signal_emit (self, signals[SIG_INCOMING_CONNECTION], 0, connection);
 }
 
