@@ -365,6 +365,10 @@ tp_dbus_check_valid_bus_name (const gchar *name,
  * Check that the given string is a valid D-Bus interface name. This is
  * also appropriate to use to check for valid error names.
  *
+ * Since GIO 2.26, g_dbus_is_interface_name() should always return the same
+ * thing, although the GLib function does not raise an error explaining why
+ * the interface name is incorrect.
+ *
  * Returns: %TRUE if @name is valid
  *
  * Since: 0.7.1
@@ -473,6 +477,10 @@ tp_dbus_check_valid_interface_name (const gchar *name,
  *
  * Check that the given string is a valid D-Bus member (method or signal) name.
  *
+ * Since GIO 2.26, g_dbus_is_member_name() should always return the same
+ * thing, although the GLib function does not raise an error explaining why
+ * the interface name is incorrect.
+ *
  * Returns: %TRUE if @name is valid
  *
  * Since: 0.7.1
@@ -532,7 +540,10 @@ tp_dbus_check_valid_member_name (const gchar *name,
  * @error: used to raise %TP_DBUS_ERROR_INVALID_OBJECT_PATH if %FALSE is
  *  returned
  *
- * Check that the given string is a valid D-Bus object path.
+ * Check that the given string is a valid D-Bus object path. Since GLib 2.24,
+ * g_variant_is_object_path() should always return the same thing as this
+ * function, although it doesn't provide an error explaining why the object
+ * path is invalid.
  *
  * Returns: %TRUE if @path is valid
  *
