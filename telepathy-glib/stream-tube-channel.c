@@ -765,7 +765,6 @@ _new_remote_connection_with_contact (TpConnection *conn,
       goto out;
     }
 
-  /* accept the incoming socket to bring up the connection */
   contact = contacts[0];
 
   _tp_stream_tube_connection_set_contact (tube_conn, contact);
