@@ -157,7 +157,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     base-contact-list.c \
     base-contact-list-internal.h \
     contacts-mixin.c \
-    contacts-mixin-internal.h \
     dbus.c \
     dbus-daemon.c \
     dbus-internal.h \

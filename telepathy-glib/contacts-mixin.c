@@ -49,7 +49,6 @@
  */
 
 #include <telepathy-glib/contacts-mixin.h>
-#include <telepathy-glib/contacts-mixin-internal.h>
 
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>

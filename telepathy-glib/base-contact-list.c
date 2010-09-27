@@ -31,7 +31,6 @@
 
 #include <telepathy-glib/base-connection-internal.h>
 #include <telepathy-glib/contact-list-channel-internal.h>
-#include <telepathy-glib/contacts-mixin-internal.h>
 #include <telepathy-glib/handle-repo-internal.h>
 
 /**
