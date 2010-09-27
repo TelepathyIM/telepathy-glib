@@ -20,8 +20,10 @@
 #include <config.h>
 #include <telepathy-glib/base-contact-list.h>
 #include <telepathy-glib/base-contact-list-internal.h>
-#include <telepathy-glib/contacts-mixin.h>
 
+#include <dbus/dbus-glib-lowlevel.h>
+
+#include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/handle-repo-static.h>
@@ -4281,45 +4283,26 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
     {
       TpHandleSet *set;
       GArray *contacts;
-      GPtrArray *interfaces_wanted;
-      const gchar * empty_strv[] = { NULL };
-      const gchar **p;
-      gboolean have_cl = FALSE;
+      const gchar *assumed[] = { TP_IFACE_CONNECTION,
+          TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, NULL };
+      gchar *sender = NULL;
+      GHashTable *result;
 
-      if (interfaces == NULL)
-        interfaces = empty_strv;
-
-      interfaces_wanted = g_ptr_array_sized_new (
-          g_strv_length ((GStrv) interfaces) + 2);
-
-      for (p = interfaces; *p != NULL; p++)
-        {
-          g_ptr_array_add (interfaces_wanted, (gchar *) *p);
-
-          if (!tp_strdiff (*p, TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST))
-            have_cl = TRUE;
-        }
-
-      /* ContactList is implicitly included */
-      if (!have_cl)
-        {
-          g_ptr_array_add (interfaces_wanted,
-              TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST);
-        }
-
-      g_ptr_array_add (interfaces_wanted, NULL);
+      if (hold)
+        sender = dbus_g_method_get_sender (context);
 
       set = tp_base_contact_list_dup_contacts (self);
       contacts = tp_handle_set_to_array (set);
-
-      /* RequestContactList returns the same data type as
-       * GetContactAttributes, so this is OK to do. */
-      _tp_contacts_mixin_get_contact_attributes (self->priv->conn,
-          contacts, (const gchar **) interfaces_wanted->pdata, hold, context);
+      result = tp_contacts_mixin_get_contact_attributes (
+          (GObject *) self->priv->conn, contacts, interfaces, assumed,
+          sender);
+      tp_svc_connection_interface_contact_list_return_from_get_contact_list_attributes (
+          context, result);
 
       g_array_free (contacts, TRUE);
       tp_handle_set_destroy (set);
-      g_ptr_array_free (interfaces_wanted, TRUE);
+      g_free (sender);
+      g_hash_table_unref (result);
     }
 }
 
