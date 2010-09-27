@@ -127,6 +127,15 @@ struct _TpStreamTubeChannelPrivate
   /* Accepting side */
   /* The access_control_param we passed to Accept */
   GValue *access_control_param;
+  /* Connection to the CM while we are waiting for its
+   * ID (NewLocalConnection) */
+  GSocketConnection *local_conn_waiting_id;
+  /* ID received from NewLocalConnection stored while the connection has not
+   * be connected yet. */
+  guint local_conn_id;
+  /* TRUE if local_conn_id is meaningfull (0 can be a valid ID so we can't use
+   * it to check if NewLocalConnection has been received :\ ) */
+  gboolean local_conn_id_set;
 
   TpSocketAddressType socket_type;
   TpSocketAccessControl access_control;
@@ -234,6 +243,7 @@ tp_stream_tube_channel_dispose (GObject *obj)
     }
 
   tp_clear_pointer (&self->priv->access_control_param, tp_g_value_slice_free);
+  tp_clear_object (&self->priv->local_conn_waiting_id);
 
   G_OBJECT_CLASS (tp_stream_tube_channel_parent_class)->dispose (obj);
 }
@@ -594,8 +604,9 @@ out:
 }
 
 static void
-new_local_connection (TpStreamTubeChannel *self,
-    GSocketConnection *conn)
+new_local_connection_identified (TpStreamTubeChannel *self,
+    GSocketConnection *conn,
+    guint connection_id)
 {
   TpHandle initiator_handle;
   TpStreamTubeConnection *tube_conn;
@@ -656,12 +667,49 @@ _socket_connected (GObject *client,
     }
 #endif
 
-  new_local_connection (self, conn);
+  if (self->priv->local_conn_id_set)
+    {
+      new_local_connection_identified (self, conn, self->priv->local_conn_id);
+
+      self->priv->local_conn_id_set = FALSE;
+    }
+  else
+    {
+      /* Wait for NewLocalConnection signal */
+
+      /* This assume that we never connect more than once. Or at least that we
+       * wait to have identify a connection before making a new connection. */
+      g_assert (self->priv->local_conn_waiting_id == NULL);
+      self->priv->local_conn_waiting_id = g_object_ref (conn);
+    }
 
   g_object_unref (conn);
   g_object_unref (client);
 }
 
+static void
+new_local_connection_cb (TpChannel *proxy,
+    guint connection_id,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) weak_object;
+
+  if (self->priv->local_conn_waiting_id != NULL)
+    {
+      /* We got the ID of the connection */
+
+      new_local_connection_identified (self, self->priv->local_conn_waiting_id,
+          connection_id);
+
+      tp_clear_object (&self->priv->local_conn_waiting_id);
+      return;
+    }
+
+  /* Wait that the connection is connected */
+  self->priv->local_conn_id = connection_id;
+  self->priv->local_conn_id_set = TRUE;
+}
 
 static void
 _channel_accepted (TpChannel *channel,
@@ -680,6 +728,19 @@ _channel_accepted (TpChannel *channel,
       DEBUG ("Failed to Accept Stream Tube: %s", in_error->message);
 
       operation_failed (self, in_error);
+      return;
+    }
+
+  tp_cli_channel_type_stream_tube_connect_to_new_local_connection (
+      TP_CHANNEL (self), new_local_connection_cb, NULL, NULL,
+      G_OBJECT (self), &error);
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to connect to NewLocalConnection signal");
+      operation_failed (self, error);
+
+      g_error_free (error);
       return;
     }
 
