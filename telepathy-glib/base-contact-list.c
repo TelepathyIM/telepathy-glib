@@ -4899,7 +4899,8 @@ tp_base_contact_list_mixin_list_iface_init (
  * implementation that always returns %TP_CONTACT_METADATA_STORAGE_TYPE_ANYONE.
  * A custom implementation can also be used.
  *
- * Returns: %TRUE if groups are disjoint
+ * Returns: a #TpContactMetadataStorageType
+ *
  */
 TpContactMetadataStorageType
 tp_base_contact_list_get_group_storage (TpBaseContactList *self)
