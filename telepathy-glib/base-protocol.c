@@ -1106,10 +1106,14 @@ tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
 
           if (parameters[i].filter != NULL)
             {
-              if (!(parameters[i].filter (parameters + i, coerced, error)))
+              GError *error2 = NULL;
+
+              if (!(parameters[i].filter (parameters + i, coerced, &error2)))
                 {
-                  DEBUG ("parameter %s rejected by filter function", name);
+                  DEBUG ("parameter %s rejected by filter: %s", name,
+                      error2->message);
                   tp_g_value_slice_free (coerced);
+                  g_propagate_error (error, error2);
                   goto except;
                 }
             }
