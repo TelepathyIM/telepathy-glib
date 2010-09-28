@@ -25,10 +25,12 @@
 #include <gio/gio.h>
 
 #include <telepathy-glib/contact.h>
+#include <telepathy-glib/stream-tube-channel.h>
 
 G_BEGIN_DECLS
 
-typedef struct _TpStreamTubeConnection TpStreamTubeConnection;
+/* TpStreamTubeConnection is defined in stream-tube-channel.h to break
+ * circular includes */
 typedef struct _TpStreamTubeConnectionClass TpStreamTubeConnectionClass;
 typedef struct _TpStreamTubeConnectionPrivate TpStreamTubeConnectionPrivate;
 
@@ -51,6 +53,9 @@ GType tp_stream_tube_connection_get_type (void);
                               TpStreamTubeConnectionClass))
 
 GSocketConnection * tp_stream_tube_connection_get_connection (
+    TpStreamTubeConnection *self);
+
+TpStreamTubeChannel * tp_stream_tube_connection_get_channel (
     TpStreamTubeConnection *self);
 
 TpContact * tp_stream_tube_connection_get_contact (

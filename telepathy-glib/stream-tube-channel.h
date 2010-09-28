@@ -22,9 +22,11 @@
 #define __TP_STREAM_TUBE_CHANNEL_H__
 
 #include <telepathy-glib/channel.h>
-#include <telepathy-glib/stream-tube-connection.h>
 
 G_BEGIN_DECLS
+
+/* Forward declaration of a subclass - from stream-tube-connection.h */
+typedef struct _TpStreamTubeConnection TpStreamTubeConnection;
 
 #define TP_TYPE_STREAM_TUBE_CHANNEL	(tp_stream_tube_channel_get_type ())
 #define TP_STREAM_TUBE_CHANNEL(obj)	(G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannel))

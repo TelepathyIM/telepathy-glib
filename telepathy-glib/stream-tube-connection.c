@@ -60,6 +60,7 @@ G_DEFINE_TYPE(TpStreamTubeConnection, tp_stream_tube_connection,
 
 enum {
     PROP_CONNECTION = 1,
+    PROP_CHANNEL,
     PROP_CONTACT,
     N_PROPS
 };
@@ -75,6 +76,9 @@ static guint _signals[LAST_SIGNAL] = { 0, };
 struct _TpStreamTubeConnectionPrivate
 {
   GSocketConnection *connection;
+  /* We don't introduce a circular reference as the channel keeps a weak ref
+   * on us */
+  TpStreamTubeChannel *channel;
   TpContact *contact;
 };
 
@@ -93,6 +97,7 @@ tp_stream_tube_connection_dispose (GObject *object)
     G_OBJECT_CLASS (tp_stream_tube_connection_parent_class)->dispose;
 
   tp_clear_object (&self->priv->connection);
+  tp_clear_object (&self->priv->channel);
   tp_clear_object (&self->priv->contact);
 
   if (dispose != NULL)
@@ -111,6 +116,9 @@ tp_stream_tube_connection_get_property (GObject *object,
     {
       case PROP_CONNECTION:
         g_value_set_object (value, self->priv->connection);
+        break;
+      case PROP_CHANNEL:
+        g_value_set_object (value, self->priv->channel);
         break;
       case PROP_CONTACT:
         g_value_set_object (value, self->priv->contact);
@@ -134,6 +142,10 @@ tp_stream_tube_connection_set_property (GObject *object,
       case PROP_CONNECTION:
         g_assert (self->priv->connection == NULL); /* construct only */
         self->priv->connection = g_value_dup_object (value);
+        break;
+      case PROP_CHANNEL:
+        g_assert (self->priv->channel == NULL); /* construct only */
+        self->priv->channel = g_value_dup_object (value);
         break;
       case PROP_CONTACT:
         g_assert (self->priv->contact == NULL); /* construct only */
@@ -189,6 +201,22 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
       param_spec);
 
   /**
+   * TpStreamTubeConnection:channel:
+   *
+   * The #TpStreamTubeChannel channel associated with this connection
+   *
+   * This property can't be %NULL.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("channel", "TpStreamTubeChannel",
+      "The channel associated with this connection",
+      TP_TYPE_STREAM_TUBE_CHANNEL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL,
+      param_spec);
+
+  /**
    * TpStreamTubeConnection:contact:
    *
    * The #TpContact with who we are exchanging data through this tube, or
@@ -223,10 +251,12 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
 
 TpStreamTubeConnection *
 _tp_stream_tube_connection_new (
-    GSocketConnection *connection)
+    GSocketConnection *connection,
+    TpStreamTubeChannel *channel)
 {
   return g_object_new (TP_TYPE_STREAM_TUBE_CONNECTION,
       "connection", connection,
+      "channel", channel,
       NULL);
 }
 
@@ -244,6 +274,23 @@ GSocketConnection *
 tp_stream_tube_connection_get_connection (TpStreamTubeConnection *self)
 {
   return self->priv->connection;
+}
+
+/**
+ * tp_stream_tube_connection_get_channel: (skip)
+ * @self: a #TpStreamTubeConnection
+ *
+ * Return the #TpStreamTubeConnection:channel property
+ *
+ * Returns: (transfer none): the value of #TpStreamTubeConnection:channel
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpStreamTubeChannel *
+tp_stream_tube_connection_get_channel (
+    TpStreamTubeConnection *self)
+{
+  return self->priv->channel;
 }
 
 /**

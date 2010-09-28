@@ -654,7 +654,7 @@ new_local_connection_identified (TpStreamTubeChannel *self,
   TpHandle initiator_handle;
   TpStreamTubeConnection *tube_conn;
 
-  tube_conn = _tp_stream_tube_connection_new (conn);
+  tube_conn = _tp_stream_tube_connection_new (conn, self);
 
   g_hash_table_insert (self->priv->tube_connections,
       GUINT_TO_POINTER (connection_id), tube_conn);
@@ -1022,7 +1022,7 @@ connection_identified (TpStreamTubeChannel *self,
 {
   TpStreamTubeConnection *tube_conn;
 
-  tube_conn = _tp_stream_tube_connection_new (conn);
+  tube_conn = _tp_stream_tube_connection_new (conn, self);
 
   g_hash_table_insert (self->priv->tube_connections,
       GUINT_TO_POINTER (connection_id), tube_conn);
