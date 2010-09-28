@@ -644,6 +644,15 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
   tp_g_value_slice_free (connection_param);
 }
 
+void
+tp_tests_stream_tube_channel_last_connection_disconnected (
+    TpTestsStreamTubeChannel *self,
+    const gchar *error)
+{
+  tp_svc_channel_type_stream_tube_emit_connection_closed (self,
+      self->priv->connection_id - 1, error, "kaboum");
+}
+
 /* Contact Stream Tube */
 
 G_DEFINE_TYPE (TpTestsContactStreamTubeChannel,
