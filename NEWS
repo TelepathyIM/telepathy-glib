@@ -1,7 +1,27 @@
 telepathy-glib 0.13.0 (UNRELEASED)
 ==================================
 
-…
+Dependencies:
+
+• Automake ≥ 1.11 is now required (when building from git or changing the
+  build system)
+• If GObject-Introspection is enabled, it must be version 0.9.6 or later
+
+Enhancements:
+
+• Update to spec 0.21.0 (smcv)
+  · generate code for the ContactList and ContactGroups interfaces
+
+• fd.o #28200: add TpBaseContactList, a base class for contact list/contact
+  groups implementations (smcv)
+
+• fd.o #30204: add checks for stream and D-Bus tubes to
+  TpCapabilities (cassidy)
+
+• fd.o #30327: add some new utility functions for TpHandleSet (smcv)
+
+• fd.o #30310: make tp_contacts_mixin_get_contact_attributes public for
+  re-use (eeejay)
 
 telepathy-glib 0.12.0 (2010-09-20)
 ==================================
