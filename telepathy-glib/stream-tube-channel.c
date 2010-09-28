@@ -273,11 +273,42 @@ tp_stream_tube_channel_get_property (GObject *object,
 }
 
 static void
+connection_closed_cb (TpChannel *channel,
+    guint connection_id,
+    const gchar *err,
+    const gchar *message,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpStreamTubeChannel *self = (TpStreamTubeChannel *) weak_object;
+  TpStreamTubeConnection *tube_conn;
+  GError *error = NULL;
+
+  DEBUG ("Got ConnectionClosed signal on connection %u: %s (%s)",
+      connection_id, err, message);
+
+  tube_conn = g_hash_table_lookup (self->priv->tube_connections,
+      GUINT_TO_POINTER (connection_id));
+  if (tube_conn == NULL)
+    {
+      DEBUG ("No connection with ID %u; ignoring", connection_id);
+      return;
+    }
+
+  tp_proxy_dbus_error_to_gerror (self, err, message, &error);
+
+  _tp_stream_tube_connection_fire_closed (tube_conn, error);
+
+  g_error_free (error);
+}
+
+static void
 tp_stream_tube_channel_constructed (GObject *obj)
 {
   TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
   TpChannel *chan = (TpChannel *) obj;
   GHashTable *props;
+  GError *err = NULL;
 
   if (tp_channel_get_channel_type_id (chan) !=
       TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE)
@@ -327,6 +358,18 @@ tp_stream_tube_channel_constructed (GObject *obj)
           self->priv->parameters = g_boxed_copy (
               TP_HASH_TYPE_STRING_VARIANT_MAP, params);
         }
+    }
+
+  tp_cli_channel_type_stream_tube_connect_to_connection_closed (
+      TP_CHANNEL (self), connection_closed_cb, NULL, NULL,
+      G_OBJECT (self), &err);
+
+  if (err != NULL)
+    {
+      DEBUG ("Failed to connect to ConnectionClosed signal: %s",
+          err->message);
+
+      g_error_free (err);
     }
 }
 
