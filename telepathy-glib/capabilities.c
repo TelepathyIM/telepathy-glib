@@ -429,7 +429,7 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
  * Returns: %TRUE if the contact or connection supports this type of stream
  * tubes.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.0
  */
 gboolean
 tp_capabilities_supports_stream_tubes (TpCapabilities *self,
@@ -462,7 +462,7 @@ tp_capabilities_supports_stream_tubes (TpCapabilities *self,
  * Returns: %TRUE if the contact or connection supports this type of D-Bus
  * tubes.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.0
  */
 gboolean
 tp_capabilities_supports_dbus_tubes (TpCapabilities *self,

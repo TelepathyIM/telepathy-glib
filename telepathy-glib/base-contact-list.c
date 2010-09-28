@@ -71,6 +71,8 @@
  * the #TpChannelManager interface, so that it can provide those channels.
  * The channel objects are internal to this object, and not considered to be
  * part of the API.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -88,7 +90,7 @@
  * exactly once, when the initial set of contacts has been received (or
  * immediately, if that condition is not meaningful for the protocol).
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.13.0
  */
 
 /**
@@ -113,7 +115,7 @@
  * Subclasses may implement %TP_TYPE_BLOCKABLE_CONTACT_LIST if contacts can
  * be blocked from communicating with the user.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.13.0
  */
 
 /**
@@ -128,6 +130,8 @@
  * list, which is updated based on protocol events.
  *
  * Returns: (transfer full): a set of contacts with the desired state
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -147,6 +151,8 @@
  * @subscribe = %TP_SUBSCRIPTION_STATE_NO, @publish = %TP_SUBSCRIPTION_STATE_NO
  * and @publish_request = "", without error, for any contact not on the
  * contact list.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -163,6 +169,8 @@
  *
  * The virtual method should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before returning.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -178,6 +186,8 @@
  *
  * The virtual method should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before it calls @callback.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -189,6 +199,8 @@
  * Signature of a virtual method to finish an async operation.
  *
  * Returns: %TRUE on success, or %FALSE if @error is set
+ *
+ * Since: 0.13.0
  */
 
 #include <telepathy-glib/base-connection.h>
@@ -252,6 +264,8 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseContactList,
  *
  * Interface representing a #TpBaseContactList on which the contact list can
  * potentially be changed.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -296,6 +310,8 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseContactList,
  *  the default implementation always returns %TRUE
  *
  * The interface vtable for a %TP_TYPE_MUTABLE_CONTACT_LIST.
+ *
+ * Since: 0.13.0
  */
 
 G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
@@ -306,6 +322,8 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  *
  * Interface representing a #TpBaseContactList on which contacts can
  * be blocked from communicating with the user.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -328,6 +346,8 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  *  the default implementation always returns %TRUE
  *
  * The interface vtable for a %TP_TYPE_BLOCKABLE_CONTACT_LIST.
+ *
+ * Since: 0.13.0
  */
 
 G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
@@ -340,6 +360,8 @@ G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
  * be in user-defined groups, which cannot necessarily be edited
  * (%TP_TYPE_MUTABLE_CONTACT_GROUP_LIST represents a list where these
  * groups exist and can also be edited).
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -361,6 +383,8 @@ G_DEFINE_INTERFACE (TpBlockableContactList, tp_blockable_contact_list,
  *  group names can coexist
  *
  * The interface vtable for a %TP_TYPE_CONTACT_GROUP_LIST.
+ *
+ * Since: 0.13.0
  */
 
 G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
@@ -372,6 +396,8 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  * Interface representing a #TpBaseContactList on which user-defined contact
  * groups can potentially be changed. %TP_TYPE_CONTACT_GROUP_LIST is a
  * prerequisite for this interface.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -415,6 +441,8 @@ G_DEFINE_INTERFACE (TpContactGroupList, tp_contact_group_list,
  *  implementation may be used if @result is a #GSimpleAsyncResult
  *
  * The interface vtable for a %TP_TYPE_MUTABLE_CONTACT_GROUP_LIST.
+ *
+ * Since: 0.13.0
  */
 
 G_DEFINE_INTERFACE (TpMutableContactGroupList, tp_mutable_contact_group_list,
@@ -819,7 +847,7 @@ tp_base_contact_list_class_init (TpBaseContactListClass *cls)
    * The connection that owns this channel manager.
    * Read-only except during construction.
    *
-   * Since: 0.11.UNRELEASED
+   * Since: 0.13.0
    */
   g_object_class_install_property (object_class, PROP_CONNECTION,
       g_param_spec_object ("connection", "Connection",
@@ -1615,6 +1643,8 @@ _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
  * @self: the contact list manager
  *
  * Record that receiving the initial contact list is in progress.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_set_list_pending (TpBaseContactList *self)
@@ -1642,6 +1672,8 @@ tp_base_contact_list_set_list_pending (TpBaseContactList *self)
  *
  * This method cannot be called after tp_base_contact_list_set_list_received()
  * is called.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_set_list_failed (TpBaseContactList *self,
@@ -1684,6 +1716,8 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
  *
  * If implemented, tp_base_contact_list_dup_blocked_contacts() must also
  * give correct results when entering this method.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_set_list_received (TpBaseContactList *self)
@@ -1848,6 +1882,8 @@ presence_state_to_letter (TpSubscriptionState ps)
  * the contacts' new statuses when entering this method (in practice, this
  * means that implementations must update their own cache of contacts
  * before calling this method).
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_contacts_changed (TpBaseContactList *self,
@@ -2082,6 +2118,8 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
  *
  * Convenience wrapper around tp_base_contact_list_contacts_changed() for a
  * single handle in the 'changed' set and no 'removed' set.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_one_contact_changed (TpBaseContactList *self,
@@ -2108,6 +2146,8 @@ tp_base_contact_list_one_contact_changed (TpBaseContactList *self,
  *
  * Convenience wrapper around tp_base_contact_list_contacts_changed() for a
  * single handle in the 'removed' set and no 'changed' set.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_one_contact_removed (TpBaseContactList *self,
@@ -2141,6 +2181,8 @@ tp_base_contact_list_one_contact_removed (TpBaseContactList *self,
  *
  * It is an error to call this method if tp_base_contact_list_can_block()
  * would return %FALSE.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
@@ -2220,6 +2262,8 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
  * considered to be on the contact list for some other reason.
  *
  * Returns: (transfer full): a new #TpHandleSet of contact handles
+ *
+ * Since: 0.13.0
  */
 TpHandleSet *
 tp_base_contact_list_dup_contacts (TpBaseContactList *self)
@@ -2257,6 +2301,8 @@ tp_base_contact_list_dup_contacts (TpBaseContactList *self)
  * If @message will be ignored,
  * #TpMutableContactListInterface.get_request_uses_message should also be
  * reimplemented to return %FALSE.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
@@ -2294,6 +2340,8 @@ tp_base_contact_list_request_subscription_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
@@ -2330,6 +2378,8 @@ tp_base_contact_list_request_subscription_finish (TpBaseContactList *self,
  * This is a virtual method, implemented using
  * #TpBaseContactListClass.dup_states. Every subclass of #TpBaseContactList
  * must implement this method.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_dup_states (TpBaseContactList *self,
@@ -2368,6 +2418,8 @@ tp_base_contact_list_dup_states (TpBaseContactList *self,
  * #TpMutableContactListInterface.authorize_publication_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before it calls @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_authorize_publication_async (TpBaseContactList *self,
@@ -2404,6 +2456,8 @@ tp_base_contact_list_authorize_publication_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_authorize_publication_finish (TpBaseContactList *self,
@@ -2443,6 +2497,8 @@ tp_base_contact_list_authorize_publication_finish (TpBaseContactList *self,
  * #TpMutableContactListInterface.store_contacts_async is %NULL (which is
  * the default), this method calls @callback to signal success, but does
  * nothing in the underlying protocol.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
@@ -2481,6 +2537,8 @@ tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_store_contacts_finish (TpBaseContactList *self,
@@ -2516,6 +2574,8 @@ tp_base_contact_list_store_contacts_finish (TpBaseContactList *self,
  * #TpMutableContactListInterface.remove_contacts_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before calling @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_remove_contacts_async (TpBaseContactList *self,
@@ -2551,6 +2611,8 @@ tp_base_contact_list_remove_contacts_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_remove_contacts_finish (TpBaseContactList *self,
@@ -2584,6 +2646,8 @@ tp_base_contact_list_remove_contacts_finish (TpBaseContactList *self,
  * #TpMutableContactListInterface.unsubscribe_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before calling @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_unsubscribe_async (TpBaseContactList *self,
@@ -2619,6 +2683,8 @@ tp_base_contact_list_unsubscribe_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_unsubscribe_finish (TpBaseContactList *self,
@@ -2652,6 +2718,8 @@ tp_base_contact_list_unsubscribe_finish (TpBaseContactList *self,
  * #TpMutableContactListInterface.unpublish_async.
  * The implementation should call tp_base_contact_list_contacts_changed()
  * for any contacts it has changed, before calling @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_unpublish_async (TpBaseContactList *self,
@@ -2687,6 +2755,8 @@ tp_base_contact_list_unpublish_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
@@ -2713,6 +2783,8 @@ tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
  * tp_base_contact_list_true_func() or tp_base_contact_list_false_func().
  *
  * Returns: a boolean result
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -2723,6 +2795,8 @@ tp_base_contact_list_unpublish_finish (TpBaseContactList *self,
  * for use in simple cases.
  *
  * Returns: %TRUE
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_true_func (TpBaseContactList *self G_GNUC_UNUSED)
@@ -2738,6 +2812,8 @@ tp_base_contact_list_true_func (TpBaseContactList *self G_GNUC_UNUSED)
  * for use in simple cases.
  *
  * Returns: %FALSE
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_false_func (TpBaseContactList *self G_GNUC_UNUSED)
@@ -2771,6 +2847,8 @@ tp_base_contact_list_false_func (TpBaseContactList *self G_GNUC_UNUSED)
  * not actually supported.)
  *
  * Returns: %TRUE if the contact list can be changed
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_can_change_contact_list (TpBaseContactList *self)
@@ -2810,6 +2888,8 @@ tp_base_contact_list_can_change_contact_list (TpBaseContactList *self)
  * %TP_CONNECTION_STATUS_CONNECTED), and use that as the implementation.
  *
  * Returns: %TRUE if subscriptions persist
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_get_contact_list_persists (TpBaseContactList *self)
@@ -2842,6 +2922,8 @@ tp_base_contact_list_get_contact_list_persists (TpBaseContactList *self)
  *
  * Returns: %TRUE if tp_base_contact_list_request_subscription_async() will not
  *  ignore its @message argument
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
@@ -2885,6 +2967,8 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
  * connections to Google Talk servers, but not for any other server.)
  *
  * Returns: %TRUE if communication from contacts can be blocked
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_can_block (TpBaseContactList *self)
@@ -2918,6 +3002,8 @@ tp_base_contact_list_can_block (TpBaseContactList *self)
  * It must always be implemented.
  *
  * Returns: (transfer full): a new #TpHandleSet of contact handles
+ *
+ * Since: 0.13.0
  */
 TpHandleSet *
 tp_base_contact_list_dup_blocked_contacts (TpBaseContactList *self)
@@ -2953,6 +3039,8 @@ tp_base_contact_list_dup_blocked_contacts (TpBaseContactList *self)
  * The implementation should call
  * tp_base_contact_list_contact_blocking_changed()
  * for any contacts it has changed, before calling @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
@@ -2988,6 +3076,8 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
@@ -3021,6 +3111,8 @@ tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
  * The implementation should call
  * tp_base_contact_list_contact_blocking_changed()
  * for any contacts it has changed, before calling @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
@@ -3056,6 +3148,8 @@ tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
@@ -3081,6 +3175,8 @@ tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
  * manager.
  *
  * Returns: a normalized form of @s, or %NULL on error
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -3105,6 +3201,8 @@ tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
  * this virtual method.
  *
  * Returns: a normalized form of @s, or %NULL on error
+ *
+ * Since: 0.13.0
  */
 gchar *
 tp_base_contact_list_normalize_group (TpBaseContactList *self,
@@ -3141,6 +3239,8 @@ tp_base_contact_list_normalize_group (TpBaseContactList *self,
  *
  * It is an error to call this method on a contact list that
  * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_groups_created (TpBaseContactList *self,
@@ -3237,6 +3337,8 @@ tp_base_contact_list_groups_created (TpBaseContactList *self,
  *
  * It is an error to call this method on a contact list that
  * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_groups_removed (TpBaseContactList *self,
@@ -3372,6 +3474,8 @@ tp_base_contact_list_groups_removed (TpBaseContactList *self,
  *
  * It is an error to call this method on a contact list that
  * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_group_renamed (TpBaseContactList *self,
@@ -3500,6 +3604,8 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
  *
  * It is an error to call this method on a contact list that
  * does not implement %TP_TYPE_CONTACT_GROUP_LIST.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_groups_changed (TpBaseContactList *self,
@@ -3663,6 +3769,8 @@ tp_base_contact_list_groups_changed (TpBaseContactList *self,
  * (There is no equivalent function for @added and @removed having trivial
  * contents, because you can already use <code>NULL, 0</code> for an empty
  * list or <code>&group_name, 1</code> for a single group.)
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_one_contact_groups_changed (TpBaseContactList *self,
@@ -3710,6 +3818,8 @@ tp_base_contact_list_one_contact_groups_changed (TpBaseContactList *self,
  * determined at runtime, it can use a custom implementation.
  *
  * Returns: %TRUE if groups are disjoint
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
@@ -3737,6 +3847,8 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
  *
  * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
  *  array of groups
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -3754,6 +3866,8 @@ tp_base_contact_list_has_disjoint_groups (TpBaseContactList *self)
  *
  * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
  *  array of groups
+ *
+ * Since: 0.13.0
  */
 GStrv
 tp_base_contact_list_dup_groups (TpBaseContactList *self)
@@ -3782,6 +3896,8 @@ tp_base_contact_list_dup_groups (TpBaseContactList *self)
  *
  * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
  *  array of groups
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -3803,6 +3919,8 @@ tp_base_contact_list_dup_groups (TpBaseContactList *self)
  *
  * Returns: (array zero-terminated=1) (element-type utf8) (transfer full): an
  *  array of groups
+ *
+ * Since: 0.13.0
  */
 GStrv
 tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
@@ -3827,6 +3945,8 @@ tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
  * Signature of a virtual method that lists the members of a group.
  *
  * Returns: (transfer full): a set of contact (%TP_HANDLE_TYPE_CONTACT) handles
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -3847,6 +3967,8 @@ tp_base_contact_list_dup_contact_groups (TpBaseContactList *self,
  * It must always be implemented.
  *
  * Returns: a set of contact (%TP_HANDLE_TYPE_CONTACT) handles
+ *
+ * Since: 0.13.0
  */
 TpHandleSet *
 tp_base_contact_list_dup_group_members (TpBaseContactList *self,
@@ -3872,6 +3994,8 @@ tp_base_contact_list_dup_group_members (TpBaseContactList *self,
  * @user_data: user data for the callback
  *
  * Signature of a virtual method that alters a group's members.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -3895,6 +4019,8 @@ tp_base_contact_list_dup_group_members (TpBaseContactList *self,
  * #TpMutableContactGroupListInterface.add_to_group_async.
  * The implementation should call tp_base_contact_list_groups_changed()
  * for any changes it successfully made, before calling @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_add_to_group_async (TpBaseContactList *self,
@@ -3931,6 +4057,8 @@ tp_base_contact_list_add_to_group_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_add_to_group_finish (TpBaseContactList *self,
@@ -3956,6 +4084,8 @@ tp_base_contact_list_add_to_group_finish (TpBaseContactList *self,
  * @user_data: user data for the callback
  *
  * Signature of a method that renames groups.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -3983,6 +4113,8 @@ tp_base_contact_list_add_to_group_finish (TpBaseContactList *self,
  *
  * The implementation should call tp_base_contact_list_group_renamed() before
  * calling @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_rename_group_async (TpBaseContactList *self,
@@ -4094,6 +4226,8 @@ tp_base_contact_list_emulate_rename_group (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_rename_group_finish (TpBaseContactList *self,
@@ -4128,6 +4262,8 @@ tp_base_contact_list_rename_group_finish (TpBaseContactList *self,
  * #TpMutableContactGroupListInterface.remove_from_group_async.
  * The implementation should call tp_base_contact_list_groups_changed()
  * for any changes it successfully made, before calling @callback.
+ *
+ * Since: 0.13.0
  */
 void tp_base_contact_list_remove_from_group_async (TpBaseContactList *self,
     const gchar *group,
@@ -4163,6 +4299,8 @@ void tp_base_contact_list_remove_from_group_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_remove_from_group_finish (TpBaseContactList *self,
@@ -4187,6 +4325,8 @@ tp_base_contact_list_remove_from_group_finish (TpBaseContactList *self,
  * @user_data: user data for the callback
  *
  * Signature of a method that deletes groups.
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -4206,6 +4346,8 @@ tp_base_contact_list_remove_from_group_finish (TpBaseContactList *self,
  * #TpMutableContactGroupListInterface.remove_group_async.
  * The implementation should call tp_base_contact_list_groups_removed()
  * for any groups it successfully removed, before calling @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_remove_group_async (TpBaseContactList *self,
@@ -4241,6 +4383,8 @@ tp_base_contact_list_remove_group_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_remove_group_finish (TpBaseContactList *self,
@@ -4317,6 +4461,8 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
  *
  * Signature of an implementation of
  * tp_base_contact_list_set_contact_groups_async().
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -4340,6 +4486,8 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
  * #TpMutableContactGroupListInterface.set_contact_groups_async.
  * The implementation should call tp_base_contact_list_groups_changed()
  * for any changes it successfully made, before returning.
+ *
+ * Since: 0.13.0
  */
 void tp_base_contact_list_set_contact_groups_async (TpBaseContactList *self,
     TpHandle contact,
@@ -4378,6 +4526,8 @@ void tp_base_contact_list_set_contact_groups_async (TpBaseContactList *self,
  * used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_set_contact_groups_finish (TpBaseContactList *self,
@@ -4416,6 +4566,8 @@ tp_base_contact_list_set_contact_groups_finish (TpBaseContactList *self,
  * #TpMutableContactGroupListInterface.set_group_members_async.
  * The implementation should call tp_base_contact_list_groups_changed()
  * for any changes it successfully made, before calling @callback.
+ *
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_set_group_members_async (TpBaseContactList *self,
@@ -4453,6 +4605,8 @@ tp_base_contact_list_set_group_members_async (TpBaseContactList *self,
  * will be a #GSimpleAsyncResult, the default implementation may be used.
  *
  * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.13.0
  */
 gboolean
 tp_base_contact_list_set_group_members_finish (TpBaseContactList *self,
@@ -4852,7 +5006,7 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
  * This function should be passed to G_IMPLEMENT_INTERFACE() for
  * #TpSvcConnectionInterfaceContactList.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_mixin_list_iface_init (
@@ -4877,6 +5031,8 @@ tp_base_contact_list_mixin_list_iface_init (
  * These are used for feature-discovery.
  *
  * Returns: an unsigned integer result
+ *
+ * Since: 0.13.0
  */
 
 /**
@@ -4901,6 +5057,7 @@ tp_base_contact_list_mixin_list_iface_init (
  *
  * Returns: a #TpContactMetadataStorageType
  *
+ * Since: 0.13.0
  */
 TpContactMetadataStorageType
 tp_base_contact_list_get_group_storage (TpBaseContactList *self)
@@ -5352,7 +5509,7 @@ tp_base_contact_list_fill_groups_contact_attributes (GObject *obj,
  * This function should be passed to G_IMPLEMENT_INTERFACE() for
  * #TpSvcConnectionInterfaceContactGroups.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_mixin_groups_iface_init (
@@ -5384,7 +5541,7 @@ tp_base_contact_list_mixin_groups_iface_init (
  * In this case, when the #TpBaseContactList is created later, it must
  * implement %TP_TYPE_CONTACT_GROUP_LIST.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
@@ -5428,7 +5585,7 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
  * this function automatically also registers the ContactGroups interface
  * with the contacts mixin.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.13.0
  */
 void
 tp_base_contact_list_mixin_register_with_contacts_mixin (
@@ -5471,6 +5628,8 @@ tp_base_contact_list_mixin_register_with_contacts_mixin (
  * contact list has failed, return %TP_CONTACT_LIST_STATE_FAILURE.
  *
  * Returns: the state of the contact list
+ *
+ * Since: 0.13.0
  */
 TpContactListState
 tp_base_contact_list_get_state (TpBaseContactList *self,
@@ -5507,6 +5666,8 @@ tp_base_contact_list_get_state (TpBaseContactList *self,
  * connection has already disconnected, return %NULL instead.
  *
  * Returns: (transfer none): the connection, or %NULL
+ *
+ * Since: 0.13.0
  */
 TpBaseConnection *
 tp_base_contact_list_get_connection (TpBaseContactList *self,

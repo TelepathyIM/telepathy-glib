@@ -351,7 +351,7 @@ tp_handle_set_copy (const TpHandleSet *other)
  *
  * Returns: (transfer full): A new #TpHandleSet
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.0
  */
 TpHandleSet *
 tp_handle_set_new_containing (TpHandleRepoIface *repo,
@@ -373,7 +373,7 @@ tp_handle_set_new_containing (TpHandleRepoIface *repo,
  *
  * Returns: (transfer full): A new #TpHandleSet
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.0
  */
 TpHandleSet *
 tp_handle_set_new_from_intset (TpHandleRepoIface *repo,

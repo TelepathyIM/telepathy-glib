@@ -1,5 +1,7 @@
-telepathy-glib 0.13.0 (UNRELEASED)
+telepathy-glib 0.13.0 (2010-09-28)
 ==================================
+
+The "this whiteboard needs scrollbars" release.
 
 Dependencies:
 
@@ -22,6 +24,8 @@ Enhancements:
 
 • fd.o #30310: make tp_contacts_mixin_get_contact_attributes public for
   re-use (eeejay)
+
+• debug-log the error message when a Protocol filter rejects a parameter (wjt)
 
 telepathy-glib 0.12.0 (2010-09-20)
 ==================================
