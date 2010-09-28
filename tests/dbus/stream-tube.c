@@ -391,6 +391,18 @@ use_tube (Test *test)
 }
 
 static void
+tube_conn_closed_cb (TpStreamTubeConnection *conn,
+    GError *error,
+    Test *test)
+{
+  test->error = g_error_copy (error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_accept_success (Test *test,
     gconstpointer data)
 {
@@ -416,6 +428,18 @@ test_accept_success (Test *test,
   g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "alf");
 
   use_tube (test);
+
+  /* Connection is closed */
+  g_signal_connect (test->tube_conn, "closed",
+      G_CALLBACK (tube_conn_closed_cb), test);
+
+  tp_tests_stream_tube_channel_last_connection_disconnected (
+      test->tube_chan_service, TP_ERROR_STR_DISCONNECTED);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_DISCONNECTED);
 }
 
 static void
@@ -542,6 +566,18 @@ test_offer_success (Test *test,
     }
 
   use_tube (test);
+
+  /* Connection is closed */
+  g_signal_connect (test->tube_conn, "closed",
+      G_CALLBACK (tube_conn_closed_cb), test);
+
+  tp_tests_stream_tube_channel_last_connection_disconnected (
+      test->tube_chan_service, TP_ERROR_STR_DISCONNECTED);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_DISCONNECTED);
 
   tp_handle_unref (test->contact_repo, bob_handle);
 }
