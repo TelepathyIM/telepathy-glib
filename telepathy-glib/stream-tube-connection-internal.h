@@ -41,6 +41,9 @@ TpStreamTubeConnection * _tp_stream_tube_connection_new (
 void _tp_stream_tube_connection_set_contact (TpStreamTubeConnection *self,
     TpContact *contact);
 
+void _tp_stream_tube_connection_fire_closed (TpStreamTubeConnection *self,
+    GError *error);
+
 G_END_DECLS
 
 #endif

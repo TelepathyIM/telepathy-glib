@@ -64,6 +64,14 @@ enum {
     N_PROPS
 };
 
+enum /* signals */
+{
+  CLOSED,
+  LAST_SIGNAL
+};
+
+static guint _signals[LAST_SIGNAL] = { 0, };
+
 struct _TpStreamTubeConnectionPrivate
 {
   GSocketConnection *connection;
@@ -193,6 +201,24 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
       TP_TYPE_CONTACT,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONTACT, param_spec);
+
+  /**
+   * TpStreamTubeConnection::closed
+   * @self: the #TpStreamTubeConnection
+   * @error: (transfer none): the error reported by the connection manager
+   *
+   * The ::closed signal is emitted when the connection manager reports that
+   * a tube connection has been closed.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  _signals[CLOSED] = g_signal_new ("closed",
+      G_OBJECT_CLASS_TYPE (cls),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      g_cclosure_marshal_VOID__POINTER,
+      G_TYPE_NONE,
+      1, G_TYPE_POINTER);
 }
 
 TpStreamTubeConnection *
@@ -244,4 +270,11 @@ _tp_stream_tube_connection_set_contact (TpStreamTubeConnection *self,
 
   self->priv->contact = g_object_ref (contact);
   g_object_notify (G_OBJECT (self), "contact");
+}
+
+void
+_tp_stream_tube_connection_fire_closed (TpStreamTubeConnection *self,
+    GError *error)
+{
+  g_signal_emit (self, _signals[CLOSED], 0, error);
 }
