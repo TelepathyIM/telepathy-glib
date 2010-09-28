@@ -66,7 +66,7 @@
  * tp_base_contact_list_mixin_groups_iface_init().
  *
  * In versions of the Telepathy D-Bus Interface Specification prior to
- * 0.19.UNRELEASED, this functionality was provided as a collection of
+ * 0.21.0, this functionality was provided as a collection of
  * individual ContactList channels. As a result, this object also implements
  * the #TpChannelManager interface, so that it can provide those channels.
  * The channel objects are internal to this object, and not considered to be
