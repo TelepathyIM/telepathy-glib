@@ -3,7 +3,7 @@
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <tp:title>Telepathy D-Bus Interface Specification</tp:title>
-<tp:version>0.21.0</tp:version>
+<tp:version>0.21.1</tp:version>
 
 <tp:copyright>Copyright © 2005-2010 Collabora Limited</tp:copyright>
 <tp:copyright>Copyright © 2005-2010 Nokia Corporation</tp:copyright>
@@ -53,6 +53,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <xi:include href="Connection_Interface_Capabilities.xml"/>
   <xi:include href="Connection_Interface_Cellular.xml"/>
   <xi:include href="Connection_Interface_Client_Types.xml"/>
+  <xi:include href="Connection_Interface_Communication_Policy.xml"/>
   <xi:include href="Connection_Interface_Contact_Capabilities.xml"/>
   <xi:include href="Connection_Interface_Contact_Groups.xml"/>
   <xi:include href="Connection_Interface_Contact_Info.xml"/>
@@ -64,6 +65,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <xi:include href="Connection_Interface_Power_Saving.xml"/>
   <xi:include href="Connection_Interface_Presence.xml"/>
   <xi:include href="Connection_Interface_Renaming.xml"/>
+  <xi:include href="Connection_Interface_Resources.xml"/>
   <xi:include href="Connection_Interface_Requests.xml"/>
   <xi:include href="Connection_Interface_Service_Point.xml"/>
   <xi:include href="Connection_Interface_Simple_Presence.xml"/>

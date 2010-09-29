@@ -838,3 +838,19 @@
  *
  * Since: 0.11.16
  */
+
+/**
+ * SECTION:connection-client-types
+ * @title: Connection ClientTypes interface
+ * @short_description: client-side wrappers for the ClientTypes interface
+ *
+ * On some protocols it's possible to determine the type of client another
+ * user is using, ranging from a simple "phone or not?" indicator to a
+ * classification into several types of user interface. Telepathy represents
+ * these using the client types defined by XMPP.
+ *
+ * This section documents the auto-generated C wrappers for the
+ * ClientTypes interface, used with #TpConnection objects.
+ *
+ * Since: 0.13.UNRELEASED
+ */
