@@ -68,6 +68,7 @@ EXTRA_DIST = \
     Connection_Interface_Capabilities.xml \
     Connection_Interface_Cellular.xml \
     Connection_Interface_Client_Types.xml \
+    Connection_Interface_Communication_Policy.xml \
     Connection_Interface_Contact_Capabilities.xml \
     Connection_Interface_Contact_Groups.xml \
     Connection_Interface_Contact_Info.xml \
@@ -81,6 +82,7 @@ EXTRA_DIST = \
     Connection_Interface_Privacy.xml \
     Connection_Interface_Renaming.xml \
     Connection_Interface_Requests.xml \
+    Connection_Interface_Resources.xml \
     Connection_Interface_Service_Point.xml \
     Connection_Interface_Simple_Presence.xml \
     Connection_Manager.xml \
