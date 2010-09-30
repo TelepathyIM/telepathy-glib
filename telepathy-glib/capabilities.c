@@ -367,6 +367,7 @@ tp_capabilities_supports_tubes_common (TpCapabilities *self,
 {
   guint i;
 
+  g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
   g_return_val_if_fail (expected_handle_type == TP_HANDLE_TYPE_CONTACT ||
       expected_handle_type == TP_HANDLE_TYPE_ROOM, FALSE);
 
