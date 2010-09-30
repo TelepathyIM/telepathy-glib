@@ -2052,62 +2052,6 @@ contacts_bind_to_client_types_updated (TpConnection *connection)
 }
 
 static void
-contacts_got_client_types (TpConnection *connection,
-    GHashTable *types,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  if (error != NULL)
-    {
-      DEBUG ("GetClientTypes failed with %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-    }
-  else
-    {
-      GHashTableIter iter;
-      gpointer key, value;
-
-      g_hash_table_iter_init (&iter, types);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          contacts_client_types_updated (connection, GPOINTER_TO_UINT (key),
-              value, NULL, NULL);
-        }
-    }
-
-  contacts_context_continue (c);
-}
-
-static void
-contacts_get_client_types (ContactsContext *c)
-{
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  contacts_bind_to_client_types_updated (c->connection);
-
-  for (i = 0; i < c->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_CLIENT_TYPES) == 0)
-        {
-          c->refcount++;
-          tp_cli_connection_interface_client_types_call_get_client_types (
-              c->connection, -1, c->handles, contacts_got_client_types,
-              c, contacts_context_unref, c->weak_object);
-          return;
-        }
-    }
-
-  contacts_context_continue (c);
-}
-
-static void
 set_conn_capabilities_on_contacts (GPtrArray *contacts,
     TpConnection *connection)
 {
@@ -2996,15 +2940,6 @@ contacts_context_queue_features (ContactsContext *context,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO))
     {
       g_queue_push_tail (&context->todo, contacts_get_contact_info);
-    }
-
-  if ((feature_flags & CONTACT_FEATURE_FLAG_CLIENT_TYPES) != 0 &&
-      !contacts_context_supports_iface (context,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES) &&
-      tp_proxy_has_interface_by_id (context->connection,
-          TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES))
-    {
-      g_queue_push_tail (&context->todo, contacts_get_client_types);
     }
 }
 
