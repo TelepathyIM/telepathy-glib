@@ -71,6 +71,7 @@ struct _TpConnectionPrivate {
     unsigned tracking_contact_caps_changed:1;
     unsigned tracking_contact_info_changed:1;
     unsigned introspecting_after_connected:1;
+    unsigned tracking_client_types_updated:1;
 };
 
 void _tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,

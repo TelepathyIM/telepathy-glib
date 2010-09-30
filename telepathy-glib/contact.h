@@ -62,8 +62,9 @@ typedef enum {
     TP_CONTACT_FEATURE_CAPABILITIES,
     TP_CONTACT_FEATURE_AVATAR_DATA,
     TP_CONTACT_FEATURE_CONTACT_INFO,
+    TP_CONTACT_FEATURE_CLIENT_TYPES,
 } TpContactFeature;
-#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_INFO + 1)
+#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CLIENT_TYPES + 1)
 
 /* Basic functionality, always available */
 TpConnection *tp_contact_get_connection (TpContact *self);
@@ -104,6 +105,9 @@ gboolean tp_contact_request_contact_info_finish (TpContact *self,
 
 void tp_connection_refresh_contact_info (TpConnection *self,
     guint n_contacts, TpContact * const *contacts);
+
+/* TP_CONTACT_FEATURE_CLIENT_TYPES */
+const gchar * const *tp_contact_get_client_types (TpContact *self);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,

@@ -98,6 +98,8 @@ struct _TpContact {
  *  (available since 0.11.6)
  * @TP_CONTACT_FEATURE_CONTACT_INFO: #TpContact:contact-info
  *  (available since 0.11.7)
+ * @TP_CONTACT_FEATURE_CLIENT_TYPES: #TpContact:client-types
+ *  (available since 0.13.UNRELEASED)
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -144,6 +146,7 @@ enum {
     PROP_LOCATION,
     PROP_CAPABILITIES,
     PROP_CONTACT_INFO,
+    PROP_CLIENT_TYPES,
     N_PROPS
 };
 
@@ -164,6 +167,7 @@ typedef enum {
     CONTACT_FEATURE_FLAG_CAPABILITIES = 1 << TP_CONTACT_FEATURE_CAPABILITIES,
     CONTACT_FEATURE_FLAG_AVATAR_DATA = 1 << TP_CONTACT_FEATURE_AVATAR_DATA,
     CONTACT_FEATURE_FLAG_CONTACT_INFO = 1 << TP_CONTACT_FEATURE_CONTACT_INFO,
+    CONTACT_FEATURE_FLAG_CLIENT_TYPES = 1 << TP_CONTACT_FEATURE_CLIENT_TYPES,
 } ContactFeatureFlags;
 
 struct _TpContactPrivate {
@@ -188,6 +192,9 @@ struct _TpContactPrivate {
 
     /* location */
     GHashTable *location;
+
+    /* client types */
+    gchar **client_types;
 
     /* capabilities */
     TpCapabilities *capabilities;
@@ -473,6 +480,26 @@ tp_contact_get_location (TpContact *self)
 }
 
 /**
+ * tp_contact_get_client_types:
+ * @self: a contact
+ *
+ * Return the contact's client types or %NULL if the client types are
+ * unspecified.
+ *
+ * Returns: (element-type utf8 GObject.Value) (transfer none): the same
+ *  #GStrv as the #TpContact:client-types property
+ *
+ * Since: 0.13.UNRELEASED
+ */
+const gchar * const *
+tp_contact_get_client_types (TpContact *self)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+
+  return (const gchar * const *) self->priv->client_types;
+}
+
+/**
  * tp_contact_get_capabilities:
  * @self: a contact
  *
@@ -565,6 +592,7 @@ tp_contact_finalize (GObject *object)
   g_free (self->priv->avatar_mime_type);
   g_free (self->priv->presence_status);
   g_free (self->priv->presence_message);
+  g_strfreev (self->priv->client_types);
   tp_contact_info_list_free (self->priv->contact_info);
 
   ((GObjectClass *) tp_contact_parent_class)->finalize (object);
@@ -634,6 +662,10 @@ tp_contact_get_property (GObject *object,
 
     case PROP_CONTACT_INFO:
       g_value_set_boxed (value, self->priv->contact_info);
+      break;
+
+    case PROP_CLIENT_TYPES:
+      g_value_set_boxed (value, tp_contact_get_client_types (self));
       break;
 
     default:
@@ -912,6 +944,24 @@ tp_contact_class_init (TpContactClass *klass)
       param_spec);
 
   /**
+   * TpContact:client-types:
+   *
+   * A #GStrv containing the client types of this contact.
+   *
+   * This is set to %NULL if %TP_CONTACT_FEATURE_CLIENT_TYPES is not
+   * set on this contact.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("client-types",
+      "Client types",
+      "Client types of the contact, or an empty list",
+      G_TYPE_STRV,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CLIENT_TYPES,
+      param_spec);
+
+  /**
    * TpContact::presence-changed:
    * @contact: A #TpContact
    * @type: The new value of #TpContact:presence-type
@@ -965,6 +1015,8 @@ tp_contact_init (TpContact *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONTACT,
       TpContactPrivate);
+
+  self->priv->client_types = NULL;
 }
 
 
@@ -1960,6 +2012,102 @@ contacts_get_locations (ContactsContext *c)
 }
 
 static void
+contact_maybe_set_client_types (TpContact *self,
+    const gchar * const *types)
+{
+  if (self == NULL || types == NULL)
+    return;
+
+  if (self->priv->client_types != NULL)
+    g_strfreev (self->priv->client_types);
+
+  self->priv->has_features |= CONTACT_FEATURE_FLAG_CLIENT_TYPES;
+  self->priv->client_types = g_strdupv ((gchar **) types);
+  g_object_notify ((GObject *) self, "client-types");
+}
+
+static void
+contacts_client_types_updated (TpConnection *connection,
+    guint handle,
+    const gchar **types,
+    gpointer user_data G_GNUC_UNUSED,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  TpContact *contact = _tp_connection_lookup_contact (connection,
+          GPOINTER_TO_UINT (handle));
+
+  contact_maybe_set_client_types (contact, types);
+}
+
+static void
+contacts_bind_to_client_types_updated (TpConnection *connection)
+{
+  if (!connection->priv->tracking_client_types_updated)
+    {
+      connection->priv->tracking_client_types_updated = TRUE;
+
+      tp_cli_connection_interface_client_types_connect_to_client_types_updated
+        (connection, contacts_client_types_updated, NULL, NULL, NULL, NULL);
+    }
+}
+
+static void
+contacts_got_client_types (TpConnection *connection,
+    GHashTable *types,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  ContactsContext *c = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("GetClientTypes failed with %s %u: %s",
+          g_quark_to_string (error->domain), error->code, error->message);
+    }
+  else
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+
+      g_hash_table_iter_init (&iter, types);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          contacts_client_types_updated (connection, GPOINTER_TO_UINT (key),
+              value, NULL, NULL);
+        }
+    }
+
+  contacts_context_continue (c);
+}
+
+static void
+contacts_get_client_types (ContactsContext *c)
+{
+  guint i;
+
+  g_assert (c->handles->len == c->contacts->len);
+
+  contacts_bind_to_client_types_updated (c->connection);
+
+  for (i = 0; i < c->contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (c->contacts, i);
+
+      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_CLIENT_TYPES) == 0)
+        {
+          c->refcount++;
+          tp_cli_connection_interface_client_types_call_get_client_types (
+              c->connection, -1, c->handles, contacts_got_client_types,
+              c, contacts_context_unref, c->weak_object);
+          return;
+        }
+    }
+
+  contacts_context_continue (c);
+}
+
+static void
 set_conn_capabilities_on_contacts (GPtrArray *contacts,
     TpConnection *connection)
 {
@@ -2849,8 +2997,16 @@ contacts_context_queue_features (ContactsContext *context,
     {
       g_queue_push_tail (&context->todo, contacts_get_contact_info);
     }
-}
 
+  if ((feature_flags & CONTACT_FEATURE_FLAG_CLIENT_TYPES) != 0 &&
+      !contacts_context_supports_iface (context,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES) &&
+      tp_proxy_has_interface_by_id (context->connection,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES))
+    {
+      g_queue_push_tail (&context->todo, contacts_get_client_types);
+    }
+}
 
 static void
 contacts_got_attributes (TpConnection *connection,
@@ -3006,6 +3162,12 @@ contacts_got_attributes (TpConnection *connection,
           TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO_INFO,
           TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
       contact_maybe_set_info (contact, boxed);
+
+      /* ClientTypes */
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES_CLIENT_TYPES,
+          G_TYPE_STRV);
+      contact_maybe_set_client_types (contact, boxed);
     }
 
   contacts_context_continue (c);
@@ -3091,6 +3253,15 @@ contacts_get_attributes (ContactsContext *context)
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO);
               contacts_bind_to_contact_info_changed (context->connection);
+            }
+        }
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES)
+        {
+          if ((context->wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES) != 0)
+            {
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES);
+              contacts_bind_to_client_types_updated (context->connection);
             }
         }
     }
