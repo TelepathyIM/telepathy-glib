@@ -26,12 +26,16 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleAccount,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT,
         account_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_ACCOUNT_INTERFACE_STORAGE,
+        NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
         tp_dbus_properties_mixin_iface_init)
     )
 
 /* TP_IFACE_ACCOUNT is implied */
-static const char *ACCOUNT_INTERFACES[] = { NULL };
+static const char *ACCOUNT_INTERFACES[] = {
+    TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
+    NULL };
 
 enum
 {
@@ -52,6 +56,10 @@ enum
   PROP_REQUESTED_PRESENCE,
   PROP_NORMALIZED_NAME,
   PROP_HAS_BEEN_ONLINE,
+  PROP_STORAGE_PROVIDER,
+  PROP_STORAGE_IDENTIFIER,
+  PROP_STORAGE_SPECIFIC_INFORMATION,
+  PROP_STORAGE_RESTRICTIONS
 };
 
 struct _TpTestsSimpleAccountPrivate
@@ -84,12 +92,16 @@ tp_tests_simple_account_get_property (GObject *object,
               GParamSpec *spec)
 {
   GValueArray *presence;
+  GValue identifier = { 0, };
 
   presence = tp_value_array_build (3,
       G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
       G_TYPE_STRING, "available",
       G_TYPE_STRING, "",
       G_TYPE_INVALID);
+
+  g_value_init (&identifier, G_TYPE_STRING);
+  g_value_set_string (&identifier, "unique-identifier");
 
   switch (property_id) {
     case PROP_INTERFACES:
@@ -140,12 +152,31 @@ tp_tests_simple_account_get_property (GObject *object,
     case PROP_HAS_BEEN_ONLINE:
       g_value_set_boolean (value, TRUE);
       break;
+    case PROP_STORAGE_PROVIDER:
+      g_value_set_string (value, "org.freedesktop.Telepathy.glib.test");
+      break;
+    case PROP_STORAGE_IDENTIFIER:
+      g_value_set_boxed (value, &identifier);
+      break;
+    case PROP_STORAGE_SPECIFIC_INFORMATION:
+      g_value_take_boxed (value, tp_asv_new (
+            "one", G_TYPE_INT, 1,
+            "two", G_TYPE_UINT, 2,
+            "marco", G_TYPE_STRING, "polo",
+            NULL));
+      break;
+    case PROP_STORAGE_RESTRICTIONS:
+      g_value_set_uint (value,
+          TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_ENABLED |
+          TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_PARAMETERS);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
       break;
   }
 
   g_boxed_free (TP_STRUCT_TYPE_SIMPLE_PRESENCE, presence);
+  g_value_unset (&identifier);
 }
 
 /**
@@ -179,11 +210,25 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
         { NULL }
   };
 
+  static TpDBusPropertiesMixinPropImpl ais_props[] = {
+        { "StorageProvider", "storage-provider", NULL },
+        { "StorageIdentifier", "storage-identifier", NULL },
+        { "StorageSpecificInformation", "storage-specific-information", NULL },
+        { "StorageRestrictions", "storage-restrictions", NULL },
+        { NULL },
+  };
+
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
         { TP_IFACE_ACCOUNT,
           tp_dbus_properties_mixin_getter_gobject_properties,
           NULL,
           a_props
+        },
+        {
+          TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
+          tp_dbus_properties_mixin_getter_gobject_properties,
+          NULL,
+          ais_props
         },
         { NULL },
   };
@@ -293,6 +338,34 @@ tp_tests_simple_account_class_init (TpTestsSimpleAccountClass *klass)
       FALSE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_HAS_BEEN_ONLINE,
+      param_spec);
+
+  param_spec = g_param_spec_string ("storage-provider", "storage provider",
+      "StorageProvider property",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_STORAGE_PROVIDER,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("storage-identifier", "storage identifier",
+      "StorageIdentifier property",
+      G_TYPE_VALUE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_STORAGE_IDENTIFIER,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("storage-specific-information",
+      "storage specific information", "StorageSpecificInformation property",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class,
+      PROP_STORAGE_SPECIFIC_INFORMATION, param_spec);
+
+  param_spec = g_param_spec_uint ("storage-restrictions",
+      "storage restrictions", "StorageRestrictions property",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_STORAGE_RESTRICTIONS,
       param_spec);
 
   klass->dbus_props_class.interfaces = prop_interfaces;

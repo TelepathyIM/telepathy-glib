@@ -12,6 +12,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/svc-account.h>
+#include <telepathy-glib/enums.h>
 
 #include "tests/lib/simple-account.h"
 #include "tests/lib/util.h"
@@ -269,7 +270,8 @@ static void
 test_prepare_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE,
+      TP_ACCOUNT_FEATURE_STORAGE, 0 };
   TpConnectionStatusReason reason;
   gchar *status = NULL;
   gchar *message = NULL;
@@ -338,6 +340,16 @@ test_prepare_success (Test *test,
   g_free (message);
 
   /* NormalizedName and AutomaticPresence aren't available yet */
+
+  /* test Acct.I.Storage features */
+  g_assert_cmpstr (tp_account_get_storage_provider (test->account), ==,
+      "org.freedesktop.Telepathy.glib.test");
+  g_assert_cmpstr (
+      g_value_get_string (tp_account_get_storage_identifier (test->account)),
+      ==, "unique-identifier");
+  g_assert_cmpuint (tp_account_get_storage_restrictions (test->account), ==,
+      TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_ENABLED |
+      TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_PARAMETERS);
 }
 
 static void
