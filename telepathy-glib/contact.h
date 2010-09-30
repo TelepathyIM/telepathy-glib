@@ -107,7 +107,9 @@ void tp_connection_refresh_contact_info (TpConnection *self,
     guint n_contacts, TpContact * const *contacts);
 
 /* TP_CONTACT_FEATURE_CLIENT_TYPES */
-const gchar * const *tp_contact_get_client_types (TpContact *self);
+const gchar * const *
+/* this comment stops gtkdoc denying that this function exists */
+tp_contact_get_client_types (TpContact *self);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,
