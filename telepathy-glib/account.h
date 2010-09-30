@@ -69,8 +69,11 @@ GType tp_account_get_type (void);
 
 #define TP_ACCOUNT_FEATURE_CORE \
   tp_account_get_feature_quark_core ()
+#define TP_ACCOUNT_FEATURE_STORAGE \
+  tp_account_get_feature_quark_storage ()
 
 GQuark tp_account_get_feature_quark_core (void) G_GNUC_CONST;
+GQuark tp_account_get_feature_quark_storage (void) G_GNUC_CONST;
 
 TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
@@ -210,6 +213,10 @@ gboolean tp_account_set_avatar_finish (TpAccount *self,
     GError **error);
 
 gboolean tp_account_get_changing_presence (TpAccount *self);
+
+const gchar *tp_account_get_storage_provider (TpAccount *self);
+const GValue *tp_account_get_storage_identifier (TpAccount *self);
+TpStorageRestrictionFlags tp_account_get_storage_restrictions (TpAccount *self);
 
 G_END_DECLS
 

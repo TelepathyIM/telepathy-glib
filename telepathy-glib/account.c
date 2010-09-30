@@ -115,6 +115,10 @@ struct _TpAccountPrivate {
   gchar *display_name;
 
   GHashTable *parameters;
+
+  gchar *storage_provider;
+  GValue *storage_identifier;
+  TpStorageRestrictionFlags storage_restrictions;
 };
 
 G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY);
@@ -151,8 +155,13 @@ enum {
   PROP_REQUESTED_PRESENCE_TYPE,
   PROP_REQUESTED_STATUS,
   PROP_REQUESTED_STATUS_MESSAGE,
-  PROP_NICKNAME
+  PROP_NICKNAME,
+  PROP_STORAGE_PROVIDER,
+  PROP_STORAGE_IDENTIFIER,
+  PROP_STORAGE_RESTRICTIONS
 };
+
+static void tp_account_maybe_prepare_storage (TpProxy *proxy);
 
 /**
  * TP_ACCOUNT_FEATURE_CORE:
@@ -171,6 +180,21 @@ enum {
  */
 
 /**
+ * TP_ACCOUNT_FEATURE_STORAGE:
+ *
+ * Expands to a call to a function that returns a quark for the "storage"
+ * feature on a #TpAccount.
+ *
+ * When this feature is prepared, the Account.Interface.Storage properties have
+ * been retrieved and are available for use.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: UNRELEASED
+ */
+
+/**
  * tp_account_get_feature_quark_core:
  *
  * <!-- -->
@@ -186,8 +210,25 @@ tp_account_get_feature_quark_core (void)
   return g_quark_from_static_string ("tp-account-feature-core");
 }
 
+/**
+ * tp_account_get_feature_quark_storage:
+ *
+ * <!-- -->
+ *
+ * Returns: the quark used for representing the storage interface of a
+ *          #TpAccount
+ *
+ * Since: UNRELEASED
+ */
+GQuark
+tp_account_get_feature_quark_storage (void)
+{
+  return g_quark_from_static_string ("tp-account-feature-storage");
+}
+
 enum {
     FEAT_CORE,
+    FEAT_STORAGE,
     N_FEAT
 };
 
@@ -201,6 +242,10 @@ _tp_account_list_features (TpProxyClass *cls G_GNUC_UNUSED)
       features[FEAT_CORE].name = TP_ACCOUNT_FEATURE_CORE;
       features[FEAT_CORE].core = TRUE;
       /* no need for a start_preparing function - the constructor starts it */
+
+      features[FEAT_STORAGE].name = TP_ACCOUNT_FEATURE_STORAGE;
+      features[FEAT_STORAGE].start_preparing =
+        tp_account_maybe_prepare_storage;
 
       /* assert that the terminator at the end is there */
       g_assert (features[N_FEAT].name == 0);
@@ -320,6 +365,51 @@ _tp_account_set_connection (TpAccount *account,
       priv->connection_object_path = g_strdup (path);
       g_object_notify (G_OBJECT (account), "connection");
     }
+}
+
+static void
+_tp_account_got_all_storage_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *object)
+{
+  TpAccount *self = TP_ACCOUNT (proxy);
+
+  if (error != NULL)
+    {
+      DEBUG ("Error getting Storage properties: %s", error->message);
+      _tp_proxy_set_feature_prepared (proxy, TP_ACCOUNT_FEATURE_STORAGE,
+          FALSE);
+      return;
+    }
+
+  self->priv->storage_provider = g_strdup (tp_asv_get_string (properties,
+        "StorageProvider"));
+
+  if (self->priv->storage_provider != NULL &&
+      strlen (self->priv->storage_provider) > 0)
+    {
+      self->priv->storage_identifier = tp_g_value_slice_dup (
+          tp_asv_get_boxed (properties, "StorageIdentifier", G_TYPE_VALUE));
+      self->priv->storage_restrictions = tp_asv_get_uint32 (properties,
+          "StorageRestrictions", NULL);
+    }
+
+  _tp_proxy_set_feature_prepared (proxy, TP_ACCOUNT_FEATURE_STORAGE, TRUE);
+}
+
+static void
+tp_account_maybe_prepare_storage (TpProxy *proxy)
+{
+  TpAccount *self = TP_ACCOUNT (proxy);
+
+  if (self->priv->storage_provider != NULL)
+    return;
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
+      _tp_account_got_all_storage_cb, NULL, NULL, G_OBJECT (self));
 }
 
 static void
@@ -789,6 +879,15 @@ _tp_account_get_property (GObject *object,
     case PROP_NICKNAME:
       g_value_set_string (value, self->priv->nickname);
       break;
+    case PROP_STORAGE_PROVIDER:
+      g_value_set_string (value, self->priv->storage_provider);
+      break;
+    case PROP_STORAGE_IDENTIFIER:
+      g_value_set_boxed (value, self->priv->storage_identifier);
+      break;
+    case PROP_STORAGE_RESTRICTIONS:
+      g_value_set_uint (value, self->priv->storage_restrictions);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -836,6 +935,9 @@ _tp_account_finalize (GObject *object)
 
   tp_clear_pointer (&priv->parameters, g_hash_table_unref);
   tp_clear_pointer (&priv->error_details, g_hash_table_unref);
+
+  g_free (priv->storage_provider);
+  tp_clear_pointer (&priv->storage_identifier, tp_g_value_slice_free);
 
   /* free any data held directly by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->finalize != NULL)
@@ -1347,6 +1449,77 @@ tp_account_class_init (TpAccountClass *klass)
           "The account's nickname",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:storage-provider
+   *
+   * The storage provider for this account.
+   *
+   * The name of the account storage implementation. When this
+   * is the empty string the account is internally stored.
+   *
+   * This property cannot change once an Account has been created.
+   *
+   * This is not guaranteed to have been retrieved until the
+   * %TP_ACCOUNT_FEATURE_STORAGE feature has been prepared; until then,
+   * the value is %NULL.
+   *
+   * Since: UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_STORAGE_PROVIDER,
+      g_param_spec_string ("storage-provider",
+        "StorageProvider",
+        "The storage provider for this account",
+        NULL,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:storage-identifier
+   *
+   * The storage identifier for this account.
+   *
+   * A provider-specific variant type used to identify this account with the
+   * provider. This value will be %NULL if #TpAccount::storage-provider is
+   * an empty string.
+   *
+   * This property cannot change once an Account has been created.
+   *
+   * This is not guaranteed to have been retrieved until the
+   * %TP_ACCOUNT_FEATURE_STORAGE feature has been prepared; until then,
+   * the value is %NULL.
+   *
+   * Since: UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_STORAGE_IDENTIFIER,
+      g_param_spec_boxed ("storage-identifier",
+        "StorageIdentifier",
+        "The storage identifier for this account",
+        G_TYPE_VALUE,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:storage-restrictions
+   *
+   * The storage restrictions for this account.
+   *
+   * A bitfield of #TpStorageRestrictionFlags that give the limitations of
+   * this account imposed by the storage provider. This value will be %NULL
+   * if #TpAccount::storage-provider is an empty string.
+   *
+   * This property cannot change once an Account has been created.
+   *
+   * This is not guaranteed to have been retrieved until the
+   * %TP_ACCOUNT_FEATURE_STORAGE feature has been prepared; until then,
+   * the value is %NULL.
+   *
+   * Since: UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_STORAGE_RESTRICTIONS,
+      g_param_spec_uint ("storage-restrictions",
+        "StorageRestrictions",
+        "The storage restrictions for this account",
+        0, G_MAXUINT, 0,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
    * TpAccount::status-changed:
@@ -3082,4 +3255,58 @@ tp_account_get_detailed_error (TpAccount *self,
     *details = self->priv->error_details;
 
   return self->priv->error;
+}
+
+/**
+ * tp_account_get_storage_provider:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpAccount:storage-provider property
+ *
+ * Since: UNRELEASED
+ */
+const gchar *
+tp_account_get_storage_provider (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  return self->priv->storage_provider;
+}
+
+/**
+ * tp_account_get_storage_identifier:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpAccount:storage-identifier property
+ *
+ * Since: UNRELEASED
+ */
+const GValue *
+tp_account_get_storage_identifier (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  return self->priv->storage_identifier;
+}
+
+/**
+ * tp_account_get_storage_restrictions:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: the same as the #TpAccount:storage-restrictions property
+ *
+ * Since: UNRELEASED
+ */
+TpStorageRestrictionFlags
+tp_account_get_storage_restrictions (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), 0);
+
+  return self->priv->storage_restrictions;
 }
