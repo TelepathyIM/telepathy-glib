@@ -267,6 +267,28 @@ account_prepare_cb (GObject *source,
 }
 
 static void
+get_storage_specific_info_cb (GObject *account,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+  GHashTable *info;
+  GError *error = NULL;
+
+  info = tp_account_get_storage_specific_information_finish (
+      TP_ACCOUNT (account), result, &error);
+  g_assert_no_error (error);
+
+  g_assert_cmpuint (g_hash_table_size (info), ==, 3);
+
+  g_assert_cmpint (tp_asv_get_int32 (info, "one", NULL), ==, 1);
+  g_assert_cmpuint (tp_asv_get_uint32 (info, "two", NULL), ==, 2);
+  g_assert_cmpstr (tp_asv_get_string (info, "marco"), ==, "polo");
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_prepare_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -350,6 +372,11 @@ test_prepare_success (Test *test,
   g_assert_cmpuint (tp_account_get_storage_restrictions (test->account), ==,
       TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_ENABLED |
       TP_STORAGE_RESTRICTION_FLAG_CANNOT_SET_PARAMETERS);
+
+  /* request the StorageSpecificProperties hash */
+  tp_account_get_storage_specific_information_async (test->account,
+      get_storage_specific_info_cb, test);
+  g_main_loop_run (test->mainloop);
 }
 
 static void
