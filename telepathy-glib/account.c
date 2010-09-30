@@ -3310,3 +3310,97 @@ tp_account_get_storage_restrictions (TpAccount *self)
 
   return self->priv->storage_restrictions;
 }
+
+static void
+_tp_account_get_storage_specific_information_cb (TpProxy *self,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_obj)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to retrieve StorageSpecificInformation: %s",
+          error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+  else
+    {
+      GHashTable *info;
+
+      info = g_value_get_boxed (value);
+      g_simple_async_result_set_op_res_gpointer (result, info, NULL);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_account_get_storage_specific_information_async:
+ * @self: a #TpAccount
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Makes an asynchronous request of @self's StorageSpecificInformation
+ * property (part of the Account.Interface.Storage interface).
+ *
+ * When the operation is finished, @callback will be called. You must then
+ * call tp_account_get_storage_specific_information_finish() to get the
+ * result of the request.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_account_get_storage_specific_information_async (TpAccount *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_ACCOUNT (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data, tp_account_get_storage_specific_information_async);
+
+  tp_cli_dbus_properties_call_get (self, -1,
+      TP_IFACE_ACCOUNT_INTERFACE_STORAGE, "StorageSpecificInformation",
+      _tp_account_get_storage_specific_information_cb, result, NULL, NULL);
+}
+
+/**
+ * tp_account_get_storage_specific_information_finish:
+ * @self: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Retrieve the value of the request begun with
+ * tp_account_get_storage_specific_information_async().
+ *
+ * Returns: (element-type utf8 GObject.Value) (transfer none): a #GHashTable
+ *  of strings to GValues representing the D-Bus type a{sv}.
+ *
+ * Since: UNRELEASED
+ */
+GHashTable *
+tp_account_get_storage_specific_information_finish (TpAccount *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return NULL;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self),
+        tp_account_get_storage_specific_information_async), NULL);
+
+  return g_simple_async_result_get_op_res_gpointer (simple);
+}

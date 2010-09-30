@@ -217,6 +217,10 @@ gboolean tp_account_get_changing_presence (TpAccount *self);
 const gchar *tp_account_get_storage_provider (TpAccount *self);
 const GValue *tp_account_get_storage_identifier (TpAccount *self);
 TpStorageRestrictionFlags tp_account_get_storage_restrictions (TpAccount *self);
+void tp_account_get_storage_specific_information_async (TpAccount *self,
+    GAsyncReadyCallback callback, gpointer user_data);
+GHashTable *tp_account_get_storage_specific_information_finish (TpAccount *self,
+    GAsyncResult *result, GError **error);
 
 G_END_DECLS
 
