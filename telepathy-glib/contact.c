@@ -955,7 +955,7 @@ tp_contact_class_init (TpContactClass *klass)
    */
   param_spec = g_param_spec_boxed ("client-types",
       "Client types",
-      "Client types of the contact, or an empty list",
+      "Client types of the contact, or NULL",
       G_TYPE_STRV,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CLIENT_TYPES,
