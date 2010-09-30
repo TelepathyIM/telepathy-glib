@@ -486,7 +486,7 @@ tp_contact_get_location (TpContact *self)
  * Return the contact's client types or %NULL if the client types are
  * unspecified.
  *
- * Returns: (element-type utf8 GObject.Value) (transfer none): the same
+ * Returns: (array zero-terminated=1) (transfer none): the same
  *  #GStrv as the #TpContact:client-types property
  *
  * Since: 0.13.UNRELEASED
