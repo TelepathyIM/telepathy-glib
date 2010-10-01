@@ -27,6 +27,7 @@ EXTRA_DIST = \
     lcov.am \
     libtpcodegen.py \
     libglibcodegen.py \
+    make-release-mail.py \
     make-version-script.py \
     manager-file.py \
     shave.mk \
