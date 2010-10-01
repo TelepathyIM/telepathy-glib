@@ -1308,7 +1308,6 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpSocketAddressType socket_type;
   GError *error = NULL;
 
   g_return_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self));
@@ -1323,7 +1322,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_stream_tube_channel_offer_async);
 
-  socket_type = determine_socket_type (self, &error);
+  self->priv->socket_type = determine_socket_type (self, &error);
   if (error != NULL)
     {
       operation_failed (self, error);
@@ -1337,7 +1336,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
 
   self->priv->service = g_socket_service_new ();
 
-  switch (socket_type)
+  switch (self->priv->socket_type)
     {
 #ifdef HAVE_GIO_UNIX
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
@@ -1365,7 +1364,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
           GSocketAddress *in_address;
 
           localhost = g_inet_address_new_loopback (
-              socket_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ?
+              self->priv->socket_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ?
               G_SOCKET_FAMILY_IPV4 : G_SOCKET_FAMILY_IPV6);
           in_address = g_inet_socket_address_new (localhost, 0);
 
