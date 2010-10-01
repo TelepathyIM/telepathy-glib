@@ -104,7 +104,7 @@ tp_capabilities_get_channel_classes (TpCapabilities *self)
 gboolean
 tp_capabilities_is_specific_to_contact (TpCapabilities *self)
 {
-  g_return_val_if_fail (self != NULL, FALSE);
+  g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
 
   return self->priv->contact_specific;
 }
@@ -274,6 +274,8 @@ supports_simple_channel (TpCapabilities *self,
     TpHandleType expected_handle_type)
 {
   guint i;
+
+  g_return_val_if_fail (TP_IS_CAPABILITIES (self), FALSE);
 
   for (i = 0; i < self->priv->classes->len; i++)
     {
