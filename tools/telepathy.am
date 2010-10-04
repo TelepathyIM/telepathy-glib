@@ -60,6 +60,6 @@ maintainer-make-release: maintainer-prepare-release maintainer-upload-release
 	@echo "Now:"
 	@echo " • bump the nano-version;"
 	@echo " • push the branch and tags upstream; and"
-	@echo " • send release-mail to <telepathy@freedesktop.org>."
+	@echo " • send release-mail to <telepathy@lists.freedesktop.org>."
 
 ## vim:set ft=automake:
