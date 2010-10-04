@@ -20,7 +20,7 @@ _incoming_iostream (TpStreamTubeChannel *tube,
   g_debug ("Got IOStream from %s",
       tp_contact_get_identifier (contact));
 
-  conn = tp_stream_tube_connection_get_connection (tube_conn);
+  conn = tp_stream_tube_connection_get_socket_connection (tube_conn);
 
   in = g_io_stream_get_input_stream (G_IO_STREAM (conn));
   out = g_io_stream_get_output_stream (G_IO_STREAM (conn));

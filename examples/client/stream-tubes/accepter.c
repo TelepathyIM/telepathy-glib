@@ -32,7 +32,7 @@ _tube_accepted (GObject *tube,
 
   g_debug ("Tube open, have IOStream");
 
-  conn = tp_stream_tube_connection_get_connection (tube_conn);
+  conn = tp_stream_tube_connection_get_socket_connection (tube_conn);
 
   in = g_io_stream_get_input_stream (G_IO_STREAM (conn));
   out = g_io_stream_get_output_stream (G_IO_STREAM (conn));

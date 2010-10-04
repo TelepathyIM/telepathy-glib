@@ -36,7 +36,7 @@ struct _TpStreamTubeConnection {
 };
 
 TpStreamTubeConnection * _tp_stream_tube_connection_new (
-    GSocketConnection *connection,
+    GSocketConnection *socket_connection,
     TpStreamTubeChannel *channel);
 
 void _tp_stream_tube_connection_set_contact (TpStreamTubeConnection *self,

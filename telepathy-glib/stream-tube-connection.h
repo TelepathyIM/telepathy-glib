@@ -52,7 +52,7 @@ GType tp_stream_tube_connection_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_STREAM_TUBE_CONNECTION, \
                               TpStreamTubeConnectionClass))
 
-GSocketConnection * tp_stream_tube_connection_get_connection (
+GSocketConnection * tp_stream_tube_connection_get_socket_connection (
     TpStreamTubeConnection *self);
 
 TpStreamTubeChannel * tp_stream_tube_connection_get_channel (

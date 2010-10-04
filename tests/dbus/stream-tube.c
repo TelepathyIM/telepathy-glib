@@ -385,7 +385,7 @@ use_tube (Test *test)
 {
   GSocketConnection *conn;
 
-  conn = tp_stream_tube_connection_get_connection (test->tube_conn);
+  conn = tp_stream_tube_connection_get_socket_connection (test->tube_conn);
 
   use_tube_with_streams (test, G_IO_STREAM (conn), test->cm_stream);
 }
@@ -778,7 +778,7 @@ test_offer_race (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert (test->tube_conn != NULL);
 
-  conn = tp_stream_tube_connection_get_connection (test->tube_conn);
+  conn = tp_stream_tube_connection_get_socket_connection (test->tube_conn);
   bob_stream = g_object_ref (conn);
   contact = tp_stream_tube_connection_get_contact (test->tube_conn);
 
@@ -792,7 +792,7 @@ test_offer_race (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert (test->tube_conn != NULL);
 
-  conn = tp_stream_tube_connection_get_connection (test->tube_conn);
+  conn = tp_stream_tube_connection_get_socket_connection (test->tube_conn);
   alice_stream = g_object_ref (conn);
   contact = tp_stream_tube_connection_get_contact (test->tube_conn);
 

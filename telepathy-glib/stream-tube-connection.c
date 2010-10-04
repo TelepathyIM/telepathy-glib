@@ -59,7 +59,7 @@ G_DEFINE_TYPE(TpStreamTubeConnection, tp_stream_tube_connection,
     G_TYPE_OBJECT)
 
 enum {
-    PROP_CONNECTION = 1,
+    PROP_SOCKET_CONNECTION = 1,
     PROP_CHANNEL,
     PROP_CONTACT,
     N_PROPS
@@ -75,7 +75,7 @@ static guint _signals[LAST_SIGNAL] = { 0, };
 
 struct _TpStreamTubeConnectionPrivate
 {
-  GSocketConnection *connection;
+  GSocketConnection *socket_connection;
   /* We don't introduce a circular reference as the channel keeps a weak ref
    * on us */
   TpStreamTubeChannel *channel;
@@ -96,7 +96,7 @@ tp_stream_tube_connection_dispose (GObject *object)
   void (*dispose) (GObject *) =
     G_OBJECT_CLASS (tp_stream_tube_connection_parent_class)->dispose;
 
-  tp_clear_object (&self->priv->connection);
+  tp_clear_object (&self->priv->socket_connection);
   tp_clear_object (&self->priv->channel);
   tp_clear_object (&self->priv->contact);
 
@@ -114,8 +114,8 @@ tp_stream_tube_connection_get_property (GObject *object,
 
   switch (property_id)
     {
-      case PROP_CONNECTION:
-        g_value_set_object (value, self->priv->connection);
+      case PROP_SOCKET_CONNECTION:
+        g_value_set_object (value, self->priv->socket_connection);
         break;
       case PROP_CHANNEL:
         g_value_set_object (value, self->priv->channel);
@@ -139,9 +139,9 @@ tp_stream_tube_connection_set_property (GObject *object,
 
   switch (property_id)
     {
-      case PROP_CONNECTION:
-        g_assert (self->priv->connection == NULL); /* construct only */
-        self->priv->connection = g_value_dup_object (value);
+      case PROP_SOCKET_CONNECTION:
+        g_assert (self->priv->socket_connection == NULL); /* construct only */
+        self->priv->socket_connection = g_value_dup_object (value);
         break;
       case PROP_CHANNEL:
         g_assert (self->priv->channel == NULL); /* construct only */
@@ -167,7 +167,7 @@ tp_stream_tube_connection_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  g_assert (self->priv->connection != NULL);
+  g_assert (G_IS_SOCKET_CONNECTION (self->priv->socket_connection));
 }
 
 static void
@@ -184,7 +184,7 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
   object_class->dispose = tp_stream_tube_connection_dispose;
 
   /**
-   * TpStreamTubeConnection:connection:
+   * TpStreamTubeConnection:socket-connection:
    *
    * The #GSocketConnection used to transfer data through this connection.
    * Read-only except during construction.
@@ -193,11 +193,11 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
    *
    * Since: 0.13.UNRELEASED
    */
-  param_spec = g_param_spec_object ("connection", "GSocketConnection",
+  param_spec = g_param_spec_object ("socket-connection", "GSocketConnection",
       "GSocketConnection used to transfer data",
       G_TYPE_SOCKET_CONNECTION,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CONNECTION,
+  g_object_class_install_property (object_class, PROP_SOCKET_CONNECTION,
       param_spec);
 
   /**
@@ -251,11 +251,11 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
 
 TpStreamTubeConnection *
 _tp_stream_tube_connection_new (
-    GSocketConnection *connection,
+    GSocketConnection *socket_connection,
     TpStreamTubeChannel *channel)
 {
   return g_object_new (TP_TYPE_STREAM_TUBE_CONNECTION,
-      "connection", connection,
+      "socket-connection", socket_connection,
       "channel", channel,
       NULL);
 }
@@ -271,9 +271,9 @@ _tp_stream_tube_connection_new (
  * Since: 0.13.UNRELEASED
  */
 GSocketConnection *
-tp_stream_tube_connection_get_connection (TpStreamTubeConnection *self)
+tp_stream_tube_connection_get_socket_connection (TpStreamTubeConnection *self)
 {
-  return self->priv->connection;
+  return self->priv->socket_connection;
 }
 
 /**
