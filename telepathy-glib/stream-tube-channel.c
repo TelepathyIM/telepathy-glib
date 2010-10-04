@@ -419,7 +419,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
   /**
    * TpStreamTubeChannel::incoming
    * @self: the #TpStreamTubeChannel
-   * @stream: (transfer none): the #TpStreamTubeConnection for the connection
+   * @stream: the #TpStreamTubeConnection for the connection
    *
    * The ::incoming signal is emitted on offered Tubes when a new incoming
    * connection is made from a remote user (one accepting the Tube).
