@@ -362,7 +362,8 @@ link_interface (GType type,
 
   if (iface_info == NULL)
     {
-      CRITICAL ("%s tried to implement undefined interface %s",
+      CRITICAL ("%s tried to implement undefined interface %s "
+          "(perhaps you forgot to call G_IMPLEMENT_INTERFACE?)",
           g_type_name (type), iface_impl->name);
       return FALSE;
     }
