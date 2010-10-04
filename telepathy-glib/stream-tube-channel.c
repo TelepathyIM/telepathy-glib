@@ -633,22 +633,19 @@ new_local_connection_with_contact (TpConnection *conn,
   if (in_error != NULL)
     {
       DEBUG ("Failed to prepare TpContact: %s", in_error->message);
-      goto out;
+      return;
     }
 
   if (n_failed > 0)
     {
       DEBUG ("Failed to prepare TpContact (InvalidHandle)");
-      goto out;
+      return;
     }
 
   contact = contacts[0];
   _tp_stream_tube_connection_set_contact (tube_conn, contact);
 
   complete_accept_operation (self, tube_conn);
-
-out:
-  g_object_unref (tube_conn);
 }
 
 static void
@@ -671,12 +668,12 @@ new_local_connection_identified (TpStreamTubeChannel *self,
    * initiator of the tube */
   initiator_handle = tp_channel_get_initiator_handle (TP_CHANNEL (self));
 
-  /* Pass ownership of tube_conn to the callback */
+  /* Pass ownership of tube_conn to the function */
   tp_connection_get_contacts_by_handle (
       tp_channel_borrow_connection (TP_CHANNEL (self)),
       1, &initiator_handle, 0, NULL,
       new_local_connection_with_contact,
-      tube_conn, NULL, G_OBJECT (self));
+      tube_conn, g_object_unref, G_OBJECT (self));
 }
 
 static void
@@ -922,13 +919,13 @@ _new_remote_connection_with_contact (TpConnection *conn,
   if (in_error != NULL)
     {
       DEBUG ("Failed to prepare TpContact: %s", in_error->message);
-      goto out;
+      return;
     }
 
   if (n_failed > 0)
     {
       DEBUG ("Failed to prepare TpContact (InvalidHandle)");
-      goto out;
+      return;
     }
 
   contact = contacts[0];
@@ -941,8 +938,6 @@ _new_remote_connection_with_contact (TpConnection *conn,
   g_signal_emit (self, _signals[INCOMING], 0, tube_conn);
 
   /* anyone receiving the signal is required to hold their own reference */
-out:
-  g_object_unref (tube_conn);
 }
 
 static gboolean
@@ -1037,13 +1032,12 @@ connection_identified (TpStreamTubeChannel *self,
 
   if (can_identify_contact (self))
     {
-      /* Pass the ref on tube_conn to the callback */
-
+      /* Pass the ref on tube_conn to the function */
       tp_connection_get_contacts_by_handle (
           tp_channel_borrow_connection (TP_CHANNEL (self)),
           1, &handle, 0, NULL,
           _new_remote_connection_with_contact,
-          tube_conn, NULL, G_OBJECT (self));
+          tube_conn, g_object_unref, G_OBJECT (self));
     }
   else
     {
