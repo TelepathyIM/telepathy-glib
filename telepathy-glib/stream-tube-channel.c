@@ -864,7 +864,8 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
       case TP_SOCKET_ACCESS_CONTROL_PORT:
         /* FIXME: set the address of the socket. Gio doesn't seem to have API
          * to get the port before connecting without specifying the whole
-         * adress (we can't as we don't know which ports are available). */
+         * adress (we can't as we don't know which ports are available).
+         * See https://bugzilla.gnome.org/show_bug.cgi?id=631316 */
         self->priv->access_control_param = tp_g_value_slice_new_uint (0);
         break;
 
