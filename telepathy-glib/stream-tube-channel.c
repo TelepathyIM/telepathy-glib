@@ -638,7 +638,7 @@ new_local_connection_with_contact (TpConnection *conn,
 
   if (n_failed > 0)
     {
-      DEBUG ("Failed to prepare TpContact (unspecified error)");
+      DEBUG ("Failed to prepare TpContact (InvalidHandle)");
       goto out;
     }
 
@@ -927,7 +927,7 @@ _new_remote_connection_with_contact (TpConnection *conn,
 
   if (n_failed > 0)
     {
-      DEBUG ("Failed to prepare TpContact (unspecified error)");
+      DEBUG ("Failed to prepare TpContact (InvalidHandle)");
       goto out;
     }
 
