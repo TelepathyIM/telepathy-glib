@@ -411,7 +411,7 @@ service_incoming_cb (GSocketService *service,
 
       /* FIXME: we should an async version of this API (bgo #629503) */
       creds = tp_unix_connection_receive_credentials_with_byte (
-              G_UNIX_CONNECTION (connection), &byte, NULL, &error);
+              connection, &byte, NULL, &error);
       g_assert_no_error (error);
 
       g_assert_cmpuint (byte, ==,
@@ -601,7 +601,7 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
 
           /* FIXME: we should an async version of this API (bgo #629503) */
           tp_unix_connection_send_credentials_with_byte (
-              G_UNIX_CONNECTION (stream), byte, NULL, &error);
+              G_SOCKET_CONNECTION (stream), byte, NULL, &error);
           g_assert_no_error (error);
 
           connection_param = tp_g_value_slice_new_byte (byte);

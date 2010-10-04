@@ -21,7 +21,6 @@
 
 #include <glib-object.h>
 #include <gio/gio.h>
-#include <gio/gunixconnection.h>
 
 #include <telepathy-glib/enums.h>
 
@@ -38,13 +37,13 @@ GValue *tp_address_variant_from_g_socket_address (GSocketAddress *address,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
 gboolean tp_unix_connection_send_credentials_with_byte (
-    GUnixConnection *connection,
+    GSocketConnection *connection,
     guchar byte,
     GCancellable *cancellable,
     GError **error);
 
 GCredentials * tp_unix_connection_receive_credentials_with_byte (
-    GUnixConnection *connection,
+    GSocketConnection *connection,
     guchar *byte,
     GCancellable *cancellable,
     GError **error);

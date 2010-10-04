@@ -57,6 +57,7 @@
 #include <dbus/dbus-glib.h>
 
 #ifdef HAVE_GIO_UNIX
+#include <gio/gunixconnection.h>
 #include <gio/gunixsocketaddress.h>
 #endif /* HAVE_GIO_UNIX */
 
@@ -274,8 +275,9 @@ tp_address_variant_from_g_socket_address (GSocketAddress *address,
   return variant;
 }
 
-gboolean
-tp_unix_connection_send_credentials_with_byte (GUnixConnection *connection,
+#ifdef HAVE_GIO_UNIX
+static gboolean
+_tp_unix_connection_send_credentials_with_byte (GUnixConnection *connection,
     guchar byte,
     GCancellable *cancellable,
     GError **error)
@@ -326,9 +328,27 @@ tp_unix_connection_send_credentials_with_byte (GUnixConnection *connection,
   g_object_unref (credentials);
   return ret;
 }
+#endif
 
-GCredentials *
-tp_unix_connection_receive_credentials_with_byte (GUnixConnection *connection,
+gboolean
+tp_unix_connection_send_credentials_with_byte (GSocketConnection *connection,
+    guchar byte,
+    GCancellable *cancellable,
+    GError **error)
+{
+#ifdef HAVE_GIO_UNIX
+  return _tp_unix_connection_send_credentials_with_byte (
+      G_UNIX_CONNECTION (connection), byte, cancellable, error);
+#else
+  g_set_error (G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+      "Unix sockets not supported");
+  return FALSE;
+#endif
+}
+
+#ifdef HAVE_GIO_UNIX
+static GCredentials *
+_tp_unix_connection_receive_credentials_with_byte (GUnixConnection *connection,
     guchar *byte,
     GCancellable *cancellable,
     GError **error)
@@ -504,4 +524,21 @@ tp_unix_connection_receive_credentials_with_byte (GUnixConnection *connection,
     }
   g_object_unref (_socket);
   return ret;
+}
+#endif
+
+GCredentials *
+tp_unix_connection_receive_credentials_with_byte (GSocketConnection *connection,
+    guchar *byte,
+    GCancellable *cancellable,
+    GError **error)
+{
+#ifdef HAVE_GIO_UNIX
+  return _tp_unix_connection_receive_credentials_with_byte (
+      G_UNIX_CONNECTION (connection), byte, cancellable, error);
+#else
+  g_set_error (G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+      "Unix sockets not supported");
+  return FALSE;
+#endif
 }
