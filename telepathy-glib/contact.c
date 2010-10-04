@@ -99,7 +99,7 @@ struct _TpContact {
  * @TP_CONTACT_FEATURE_CONTACT_INFO: #TpContact:contact-info
  *  (available since 0.11.7)
  * @TP_CONTACT_FEATURE_CLIENT_TYPES: #TpContact:client-types
- *  (available since 0.13.UNRELEASED)
+ *  (available since 0.13.1)
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -489,7 +489,7 @@ tp_contact_get_location (TpContact *self)
  * Returns: (array zero-terminated=1) (transfer none): the same
  *  #GStrv as the #TpContact:client-types property
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.1
  */
 const gchar * const *
 tp_contact_get_client_types (TpContact *self)
@@ -951,7 +951,7 @@ tp_contact_class_init (TpContactClass *klass)
    * This is set to %NULL if %TP_CONTACT_FEATURE_CLIENT_TYPES is not
    * set on this contact.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.1
    */
   param_spec = g_param_spec_boxed ("client-types",
       "Client types",

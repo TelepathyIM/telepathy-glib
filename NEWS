@@ -1,7 +1,18 @@
-telepathy-glib 0.13.1 (UNRELEASED)
+telepathy-glib 0.13.1 (2010-10-04)
 ==================================
 
-…
+The "we're out of bear-shaped biscuits" release.
+
+Enhancements:
+
+• Update to spec 0.21.1 (smcv):
+  - add Access_Control, Access_Control_Type, Conn.I.ClientTypes
+
+• Add ClientTypes support to TpContact (jonny)
+
+Fixes:
+
+• In TpCapabilities, do more checks on the self pointer (cassidy)
 
 telepathy-glib 0.13.0 (2010-09-28)
 ==================================

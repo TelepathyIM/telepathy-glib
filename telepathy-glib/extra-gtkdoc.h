@@ -852,5 +852,5 @@
  * This section documents the auto-generated C wrappers for the
  * ClientTypes interface, used with #TpConnection objects.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.1
  */
