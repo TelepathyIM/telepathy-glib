@@ -9,7 +9,7 @@ dist-hook:
 distcheck-hook:
 	@test "z$(CHECK_FOR_UNRELEASED)" = z || \
 	case @VERSION@ in \
-		*.*.*.*) ;; \
+		*.*.*.*|*+) ;; \
 		*) \
 			if grep -r UNRELEASED $(CHECK_FOR_UNRELEASED); \
 			then \
@@ -21,7 +21,7 @@ distcheck-hook:
 
 _is-release-check:
 	@case @VERSION@ in \
-		(*.*.*.*) \
+		(*.*.*.*|*+) \
 			echo "Hey! @VERSION@ is not a release!" >&2; \
 			exit 2; \
 			;; \
