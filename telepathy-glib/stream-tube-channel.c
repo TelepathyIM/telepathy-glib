@@ -306,9 +306,14 @@ static void
 tp_stream_tube_channel_constructed (GObject *obj)
 {
   TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
+  void (*chain_up) (GObject *) =
+    ((GObjectClass *) tp_stream_tube_channel_parent_class)->constructed;
   TpChannel *chan = (TpChannel *) obj;
   GHashTable *props;
   GError *err = NULL;
+
+  if (chain_up != NULL)
+    chain_up (obj);
 
   if (tp_channel_get_channel_type_id (chan) !=
       TP_IFACE_QUARK_CHANNEL_TYPE_STREAM_TUBE)
