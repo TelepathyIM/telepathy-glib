@@ -728,14 +728,20 @@ protocol_prop_presence_getter (GObject *object,
 
               key = g_strdup (status->name);
 
-              /* assuming the string arg of a status is a message */
+              /* look for a string argument named 'message' */
               if (settable && status->optional_arguments != NULL)
                 {
                   const TpPresenceStatusOptionalArgumentSpec *arg =
                     status->optional_arguments;
 
                   for (; !message && arg->name != NULL; arg++)
-                    message = !tp_strdiff (arg->dtype, "s");
+                    {
+                      if (tp_strdiff (arg->dtype, "s") ||
+                          tp_strdiff (arg->name, "message"))
+                        continue;
+
+                      message = TRUE;
+                    }
                 }
 
               val = tp_value_array_build (3,
