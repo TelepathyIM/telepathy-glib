@@ -883,8 +883,6 @@ _channel_accepted (TpChannel *channel,
       return;
     }
 
-  create_client_socket (self);
-
   /* Connect to CM */
   g_socket_set_blocking (self->priv->client_socket, FALSE);
   g_socket_connect (self->priv->client_socket, remote_address, NULL, &error);
@@ -964,6 +962,8 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
   DEBUG ("Using socket type %u with access control %u", self->priv->socket_type,
       self->priv->access_control);
 
+  create_client_socket (self);
+
   switch (self->priv->access_control)
     {
       case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
@@ -972,11 +972,26 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
         break;
 
       case TP_SOCKET_ACCESS_CONTROL_PORT:
-        /* FIXME: set the address of the socket. Gio doesn't seem to have API
-         * to get the port before connecting without specifying the whole
-         * adress (we can't as we don't know which ports are available).
-         * See https://bugzilla.gnome.org/show_bug.cgi?id=631316 */
-        self->priv->access_control_param = tp_g_value_slice_new_uint (0);
+        {
+          GSocketAddress *addr;
+          guint16 port;
+
+          addr = g_socket_get_local_address (self->priv->client_socket, &error);
+          if (addr == NULL)
+            {
+              DEBUG ("Failed to get local address of client socket: %s",
+                  error->message);
+
+              operation_failed (self, error);
+              g_error_free (error);
+              return;
+            }
+
+          port = g_inet_socket_address_get_port (G_INET_SOCKET_ADDRESS (addr));
+          self->priv->access_control_param = tp_g_value_slice_new_uint (port);
+
+          g_object_unref (addr);
+        }
         break;
 
       case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
