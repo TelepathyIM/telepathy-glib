@@ -1316,6 +1316,7 @@ _offer_with_address (TpStreamTubeChannel *self,
       goto finally;
     }
 
+  g_assert (self->priv->parameters == NULL);
   if (params != NULL)
     self->priv->parameters = g_hash_table_ref (params);
   else
@@ -1437,6 +1438,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
 
   g_return_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self));
   g_return_if_fail (self->priv->result == NULL);
+  g_return_if_fail (tp_channel_get_requested (TP_CHANNEL (self)));
 
   if (self->priv->service != NULL)
     {

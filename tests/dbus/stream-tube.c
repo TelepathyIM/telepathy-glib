@@ -617,21 +617,6 @@ test_accept_outgoing (Test *test,
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
 }
 
-static void
-test_offer_incoming (Test *test,
-    gconstpointer data G_GNUC_UNUSED)
-{
-  /* Try to offer an incoming channel */
-  create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
-      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
-
-  tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
-
-  test->wait = 1;
-  g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
-}
-
 typedef void (*TestFunc) (Test *, gconstpointer);
 
 static gchar *
@@ -968,8 +953,6 @@ main (int argc,
       test_accept_twice, teardown);
   g_test_add ("/stream-tube/accept/outgoing", Test, NULL, setup,
       test_accept_outgoing, teardown);
-  g_test_add ("/stream-tube/offer/incoming", Test, NULL, setup,
-      test_offer_incoming, teardown);
 
   run_tube_test ("/stream-tube/accept/success", test_accept_success);
   run_tube_test ("/stream-tube/offer/success", test_offer_success);
