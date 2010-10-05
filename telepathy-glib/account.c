@@ -377,24 +377,22 @@ _tp_account_got_all_storage_cb (TpProxy *proxy,
   TpAccount *self = TP_ACCOUNT (proxy);
 
   if (error != NULL)
-    {
-      DEBUG ("Error getting Storage properties: %s", error->message);
-      _tp_proxy_set_feature_prepared (proxy, TP_ACCOUNT_FEATURE_STORAGE,
-          FALSE);
-      return;
-    }
+    DEBUG ("Error getting Storage properties: %s", error->message);
 
   self->priv->storage_provider = g_strdup (tp_asv_get_string (properties,
         "StorageProvider"));
 
-  if (self->priv->storage_provider != NULL &&
-      strlen (self->priv->storage_provider) > 0)
+  if (!tp_str_empty (self->priv->storage_provider))
     {
       self->priv->storage_identifier = tp_g_value_slice_dup (
           tp_asv_get_boxed (properties, "StorageIdentifier", G_TYPE_VALUE));
       self->priv->storage_restrictions = tp_asv_get_uint32 (properties,
           "StorageRestrictions", NULL);
     }
+
+  /* if the StorageProvider isn't known, set it to the empty string */
+  if (self->priv->storage_provider == NULL)
+    self->priv->storage_provider = g_strdup ("");
 
   _tp_proxy_set_feature_prepared (proxy, TP_ACCOUNT_FEATURE_STORAGE, TRUE);
 }
@@ -1503,14 +1501,14 @@ tp_account_class_init (TpAccountClass *klass)
    * The storage restrictions for this account.
    *
    * A bitfield of #TpStorageRestrictionFlags that give the limitations of
-   * this account imposed by the storage provider. This value will be %NULL
+   * this account imposed by the storage provider. This value will be 0
    * if #TpAccount::storage-provider is an empty string.
    *
    * This property cannot change once an Account has been created.
    *
    * This is not guaranteed to have been retrieved until the
    * %TP_ACCOUNT_FEATURE_STORAGE feature has been prepared; until then,
-   * the value is %NULL.
+   * the value is 0.
    *
    * Since: UNRELEASED
    */
