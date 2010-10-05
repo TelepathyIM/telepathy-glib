@@ -2,6 +2,14 @@
 
 static GMainLoop *loop = NULL;
 
+static void
+channel_closed_cb (TpChannel *channel,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  g_debug ("Tube channel closed");
+}
 
 static void
 _incoming_iostream (TpStreamTubeChannel *tube,
@@ -34,13 +42,11 @@ _incoming_iostream (TpStreamTubeChannel *tube,
 
   g_debug ("Send Pong got: %s", buf);
 
-  // FIXME: close the channel
+  tp_cli_channel_call_close (TP_CHANNEL (tube), -1, channel_closed_cb,
+      NULL, NULL, NULL);
 
   g_object_unref (tube);
-
-  g_main_loop_quit (loop);
 }
-
 
 static void
 _tube_offered (GObject *tube,
@@ -68,6 +74,7 @@ tube_invalidated_cb (TpStreamTubeChannel *tube,
     gpointer user_data)
 {
   g_debug ("Tube has been invalidated: %s", message);
+  g_main_loop_quit (loop);
 }
 
 static void

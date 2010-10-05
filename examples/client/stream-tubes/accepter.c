@@ -2,7 +2,6 @@
 
 static GMainLoop *loop = NULL;
 
-
 static void
 _tube_accepted (GObject *tube,
     GAsyncResult *res,
@@ -46,12 +45,8 @@ _tube_accepted (GObject *tube,
 
   g_debug ("Sent Ping got: %s", buf);
 
-  // FIXME: close the channel
-
   g_object_unref (tube_conn);
   g_object_unref (tube);
-
-  g_main_loop_quit (loop);
 }
 
 static void
@@ -62,6 +57,7 @@ tube_invalidated_cb (TpStreamTubeChannel *tube,
     gpointer user_data)
 {
   g_debug ("Tube has been invalidated: %s", message);
+  g_main_loop_quit (loop);
 }
 
 static void
@@ -166,6 +162,8 @@ main (int argc,
 
   tp_base_client_register (handler, &error);
   g_assert_no_error (error);
+
+  g_debug ("Waiting for tube offer");
 
   loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (loop);
