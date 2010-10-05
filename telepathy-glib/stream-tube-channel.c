@@ -125,6 +125,7 @@ struct _TpStreamTubeChannelPrivate
   GSList *sig_waiting_conn;
 
   /* Accepting side */
+  GSocket *client_socket;
   /* The access_control_param we passed to Accept */
   GValue *access_control_param;
   /* Connection to the CM while we are waiting for its
@@ -244,6 +245,7 @@ tp_stream_tube_channel_dispose (GObject *obj)
 
   tp_clear_pointer (&self->priv->access_control_param, tp_g_value_slice_free);
   tp_clear_object (&self->priv->local_conn_waiting_id);
+  tp_clear_object (&self->priv->client_socket);
 
   G_OBJECT_CLASS (tp_stream_tube_channel_parent_class)->dispose (obj);
 }
@@ -677,24 +679,13 @@ new_local_connection_identified (TpStreamTubeChannel *self,
 }
 
 static void
-_socket_connected (GObject *client,
-    GAsyncResult *result,
-    gpointer user_data)
+client_socket_connected (TpStreamTubeChannel *self)
 {
-  TpStreamTubeChannel *self = user_data;
   GSocketConnection *conn;
-  GError *error = NULL;
 
-  conn = g_socket_client_connect_finish (G_SOCKET_CLIENT (client), result,
-      &error);
-  if (error != NULL)
-    {
-      DEBUG ("Failed to connect socket: %s", error->message);
-
-      operation_failed (self, error);
-      g_clear_error (&error);
-      return;
-    }
+  conn = g_socket_connection_factory_create_connection (
+      self->priv->client_socket);
+  g_assert (conn);
 
   DEBUG ("Stream Tube socket connected");
 
@@ -702,6 +693,7 @@ _socket_connected (GObject *client,
   if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
     {
       guchar byte;
+      GError *error = NULL;
 
       byte = g_value_get_uchar (self->priv->access_control_param);
 
@@ -735,7 +727,27 @@ _socket_connected (GObject *client,
     }
 
   g_object_unref (conn);
-  g_object_unref (client);
+}
+
+static gboolean
+client_socket_cb (GSocket *socket,
+    GIOCondition condition,
+    TpStreamTubeChannel *self)
+{
+  GError *error = NULL;
+
+  if (!g_socket_check_connect_result (socket, &error))
+    {
+      DEBUG ("Failed to connect to socket: %s", error->message);
+
+      operation_failed (self, error);
+      g_error_free (error);
+      return FALSE;
+    }
+
+  client_socket_connected (self);
+
+  return FALSE;
 }
 
 static void
@@ -763,6 +775,72 @@ new_local_connection_cb (TpChannel *proxy,
 }
 
 static void
+create_client_socket (TpStreamTubeChannel *self)
+{
+  GSocketFamily family;
+  GError *error = NULL;
+
+  g_assert (self->priv->client_socket == NULL);
+
+  switch (self->priv->socket_type)
+    {
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+        family = G_SOCKET_FAMILY_UNIX;
+        break;
+
+      case TP_SOCKET_ADDRESS_TYPE_IPV4:
+        family = G_SOCKET_FAMILY_IPV4;
+        break;
+
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
+        family = G_SOCKET_FAMILY_IPV6;
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
+
+  /* Create socket to connect to the CM */
+  self->priv->client_socket = g_socket_new (family, G_SOCKET_TYPE_STREAM,
+      G_SOCKET_PROTOCOL_DEFAULT, &error);
+  if (self->priv->client_socket == NULL)
+    {
+      DEBUG ("Failed to create socket: %s", error->message);
+
+      operation_failed (self, error);
+      g_error_free (error);
+      return;
+    }
+
+  if (self->priv->socket_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ||
+      self->priv->socket_type == TP_SOCKET_ADDRESS_TYPE_IPV6)
+    {
+      /* Bind local address */
+      GSocketAddress *local_address;
+      GInetAddress *tmp;
+      gboolean success;
+
+      tmp = g_inet_address_new_any (family);
+      local_address = g_inet_socket_address_new (tmp, 0);
+
+      success = g_socket_bind (self->priv->client_socket, local_address,
+          TRUE, &error);
+
+      g_object_unref (tmp);
+      g_object_unref (local_address);
+
+      if (!success)
+        {
+          DEBUG ("Failed to bind local address: %s", error->message);
+
+          operation_failed (self, error);
+          g_error_free (error);
+          return;
+        }
+    }
+}
+
+static void
 _channel_accepted (TpChannel *channel,
     const GValue *addressv,
     const GError *in_error,
@@ -770,8 +848,7 @@ _channel_accepted (TpChannel *channel,
     GObject *obj)
 {
   TpStreamTubeChannel *self = (TpStreamTubeChannel *) obj;
-  GSocketAddress *address;
-  GSocketClient *client;
+  GSocketAddress *remote_address;
   GError *error = NULL;
 
   if (in_error != NULL)
@@ -795,23 +872,56 @@ _channel_accepted (TpChannel *channel,
       return;
     }
 
-  address = tp_g_socket_address_from_variant (self->priv->socket_type,
+  remote_address = tp_g_socket_address_from_variant (self->priv->socket_type,
       addressv, &error);
   if (error != NULL)
     {
       DEBUG ("Failed to convert address: %s", error->message);
 
-      operation_failed (self, in_error);
-
-      g_clear_error (&error);
+      operation_failed (self, error);
+      g_error_free (error);
       return;
     }
 
-  client = g_socket_client_new ();
-  g_socket_client_connect_async (client, G_SOCKET_CONNECTABLE (address),
-      self->priv->cancellable, _socket_connected, self);
+  create_client_socket (self);
 
-  g_object_unref (address);
+  /* Connect to CM */
+  g_socket_set_blocking (self->priv->client_socket, FALSE);
+  g_socket_connect (self->priv->client_socket, remote_address, NULL, &error);
+
+  if (error == NULL)
+    {
+      /* Socket is connected */
+      client_socket_connected (self);
+      goto out;
+    }
+  else if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_PENDING))
+    {
+      /* We have to wait that the socket is connected */
+      GSource *source;
+
+      source = g_socket_create_source (self->priv->client_socket,
+          G_IO_OUT, NULL);
+
+      g_source_attach (source, g_main_context_get_thread_default ());
+
+      g_source_set_callback (source, (GSourceFunc) client_socket_cb,
+          self, NULL);
+
+      g_error_free (error);
+      g_source_unref (source);
+    }
+  else
+    {
+      DEBUG ("Failed to connect to CM: %s", error->message);
+
+      operation_failed (self, error);
+
+      g_error_free (error);
+    }
+
+out:
+  g_object_unref (remote_address);
 }
 
 
