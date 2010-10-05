@@ -18,6 +18,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:stream-tube-channel
+ * @title: TpStreamTubeChannel
+ * @short_description: proxy object for a stream tube channel
+ *
+ * #TpStreamTubeChannel is a sub-class of #TpChannel providing convenient API
+ * to offer and accept a stream tube.
+ */
+
+/**
+ * TpStreamTubeChannel:
+ *
+ * Data structure representing a #TpStreamTubeChannel.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpStreamTubeChannelClass:
+ *
+ * The class of a #TpStreamTubeChannel.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
 #include <config.h>
 
 #include "telepathy-glib/stream-tube-channel.h"
@@ -421,13 +446,13 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
   /**
    * TpStreamTubeChannel::incoming
    * @self: the #TpStreamTubeChannel
-   * @stream: the #TpStreamTubeConnection for the connection
+   * @tube_connection: the #TpStreamTubeConnection for the connection
    *
    * The ::incoming signal is emitted on offered Tubes when a new incoming
    * connection is made from a remote user (one accepting the Tube).
    *
-   * Consumers of this signal must take their own references to @contact and
-   * @stream.
+   * Consumers of this signal must take their own references to
+   * @tube_connection
    */
   _signals[INCOMING] = g_signal_new ("incoming",
       G_OBJECT_CLASS_TYPE (klass),
@@ -452,9 +477,20 @@ tp_stream_tube_channel_init (TpStreamTubeChannel *self)
 
 /**
  * tp_stream_tube_channel_new:
- * @channel: a #TpChannel that has had %TP_CHANNEL_FEATURE_CORE prepared
+ * @conn: a #TpConnection; may not be %NULL
+ * @object_path: the object path of the channel; may not be %NULL
+ * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
+ *  the immutable properties of the channel,
+ *  as signalled by the NewChannel D-Bus signal or returned by the
+ *  CreateChannel and EnsureChannel D-Bus methods: a mapping from
+ *  strings (D-Bus interface name + "." + property name) to #GValue instances
+ * @error: used to indicate the error if %NULL is returned
  *
- * Returns: a newly created #TpStreamTubeChannel
+ * Convenient function to create a new #TpStreamTubeChannel
+ *
+ * Returns: (transfer full): a newly created #TpStreamTubeChannel
+ *
+ * Since: 0.13.UNRELEASED
  */
 TpStreamTubeChannel *
 tp_stream_tube_channel_new (TpConnection *conn,
@@ -925,9 +961,15 @@ out:
 
 /**
  * tp_stream_tube_channel_accept_async:
- * @self:
- * @callback:
- * @user_data:
+ * @self: an incoming #TpStreamTubeChannel
+ * @callback: a callback to call when the tube has been accepted
+ * @user_data: data to pass to @callback
+ *
+ * Accept an incoming stream tube. When the tube has been accepted, @callback
+ * will be called. You can then call tp_stream_tube_channel_accept_finish()
+ * to get a #TpStreamTubeConnection connected to the tube.
+ *
+ * Since: 0.13.UNRELEASED
  */
 void
 tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
@@ -1011,13 +1053,18 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
 }
 
 
-/*
+/**
  * tp_stream_tube_channel_accept_finish:
- * @self:
- * @result:
- * @error:
+ * @self: a #TpStreamTubeChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
  *
- * Returns:
+ * Finishes to accept an incoming stream tube. The returned
+ * #TpStreamTubeConnection can then be used to exchange data through the tube.
+ *
+ * Returns: (transfer full): a newly created #TpStreamTubeConnection
+ *
+ * Since: 0.13.UNRELEASED
  */
 TpStreamTubeConnection *
 tp_stream_tube_channel_accept_finish (TpStreamTubeChannel *self,
@@ -1425,10 +1472,20 @@ service_incoming_cb (GSocketService *service,
 
 /**
  * tp_stream_tube_channel_offer_async:
- * @self:
- * @params: (allow none) (transfer none):
- * @callback:
- * @user_data:
+ * @self: an outgoing #TpStreamTubeChannel
+ * @params: (allow none) (transfer none): parameters of the tube, or %NULL
+ * @callback: a callback to call when the tube has been offered
+ * @user_data: data to pass to @callback
+ *
+ * Offer an outgoing stream tube. When the tube has been offered, @callback
+ * will be called. You can then call tp_stream_tube_channel_offer_finish()
+ * to get the result of the operation.
+ *
+ * You have to connect to the #TpStreamTubeChannel::incoming signal to get a
+ * #TpStreamTubeConnection each time a contact establishes a connection to
+ * the tube.
+ *
+ * Since: 0.13.UNRELEASED
  */
 void
 tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
@@ -1532,11 +1589,15 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
 
 /**
  * tp_stream_tube_channel_offer_finish:
- * @self:
- * @result:
- * @error:
+ * @self: a #TpStreamTubeChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to offer an outgoing stream tube.
  *
  * Returns: %TRUE when a Tube has been successfully offered; %FALSE otherwise
+ *
+ * Since: 0.13.UNRELEASED
  */
 gboolean
 tp_stream_tube_channel_offer_finish (TpStreamTubeChannel *self,

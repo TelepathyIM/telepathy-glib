@@ -41,14 +41,15 @@ typedef struct _TpStreamTubeChannelPrivate TpStreamTubeChannelPrivate;
 
 struct _TpStreamTubeChannel
 {
+  /*<private>*/
   TpChannel parent;
   TpStreamTubeChannelPrivate *priv;
 };
 
 struct _TpStreamTubeChannelClass
 {
-  TpChannelClass parent_class;
   /*<private>*/
+  TpChannelClass parent_class;
   GCallback _padding[7];
 };
 
