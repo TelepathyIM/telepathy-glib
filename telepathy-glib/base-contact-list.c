@@ -4888,6 +4888,7 @@ error:
 }
 
 typedef enum {
+    LP_CONTACT_LIST_STATE,
     LP_CONTACT_LIST_PERSISTS,
     LP_CAN_CHANGE_CONTACT_LIST,
     LP_REQUEST_USES_MESSAGE,
@@ -4895,6 +4896,7 @@ typedef enum {
 } ListProp;
 
 static TpDBusPropertiesMixinPropImpl known_list_props[] = {
+    { "ContactListState", GINT_TO_POINTER (LP_CONTACT_LIST_STATE), },
     { "ContactListPersists", GINT_TO_POINTER (LP_CONTACT_LIST_PERSISTS), },
     { "CanChangeContactList", GINT_TO_POINTER (LP_CAN_CHANGE_CONTACT_LIST) },
     { "RequestUsesMessage", GINT_TO_POINTER (LP_REQUEST_USES_MESSAGE) },
@@ -4920,6 +4922,11 @@ tp_base_contact_list_get_list_dbus_property (GObject *conn,
 
   switch (p)
     {
+    case LP_CONTACT_LIST_STATE:
+      g_return_if_fail (G_VALUE_HOLDS_UINT (value));
+      g_value_set_uint (value, self->priv->state);
+      break;
+
     case LP_CONTACT_LIST_PERSISTS:
       g_return_if_fail (G_VALUE_HOLDS_BOOLEAN (value));
       g_value_set_boolean (value,
