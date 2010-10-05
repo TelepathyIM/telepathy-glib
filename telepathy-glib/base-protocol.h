@@ -24,6 +24,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/presence-mixin.h>
 
 G_BEGIN_DECLS
 
@@ -150,8 +151,10 @@ struct _TpBaseProtocolClass
       gchar **english_name,
       gchar **vcard_field);
 
+  const TpPresenceStatusSpec * (*get_statuses) (TpBaseProtocol *self);
+
   /*<private>*/
-  GCallback padding[8];
+  GCallback padding[7];
   TpBaseProtocolClassPrivate *priv;
 };
 
@@ -159,6 +162,7 @@ const gchar *tp_base_protocol_get_name (TpBaseProtocol *self);
 GHashTable *tp_base_protocol_get_immutable_properties (TpBaseProtocol *self);
 
 const TpCMParamSpec *tp_base_protocol_get_parameters (TpBaseProtocol *self);
+const TpPresenceStatusSpec *tp_base_protocol_get_statuses (TpBaseProtocol *self);
 
 TpBaseConnection *tp_base_protocol_new_connection (TpBaseProtocol *self,
     GHashTable *asv, GError **error);

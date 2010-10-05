@@ -409,6 +409,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * @get_connection_details: a callback used to implement the Protocol D-Bus
  *  properties that represent details of the connections provided by this
  *  protocol
+ * @get_statuses: a callback used to implement the Protocol.Interface.Presence
+ * interface's Statuses property.
  *
  * The class of a #TpBaseProtocol.
  *
@@ -416,12 +418,15 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 static void protocol_iface_init (TpSvcProtocolClass *cls);
+static void presence_iface_init (TpSvcProtocolInterfacePresenceClass *cls);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseProtocol, tp_base_protocol,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL, protocol_iface_init));
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL, protocol_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_PRESENCE,
+      presence_iface_init));
 
 struct _TpBaseProtocolPrivate
 {
@@ -688,6 +693,69 @@ typedef enum {
     N_PP
 } ProtocolProp;
 
+typedef enum {
+    PPP_STATUSES,
+    N_PPP
+} ProtocolPresenceProp;
+
+
+static void
+protocol_prop_presence_getter (GObject *object,
+    GQuark iface G_GNUC_UNUSED,
+    GQuark name G_GNUC_UNUSED,
+    GValue *value,
+    gpointer getter_data)
+{
+  TpBaseProtocol *self = (TpBaseProtocol *) object;
+
+  switch (GPOINTER_TO_INT (getter_data))
+    {
+      case PPP_STATUSES:
+        {
+          const TpPresenceStatusSpec *status =
+            tp_base_protocol_get_statuses (self);
+          GHashTable *ret = g_hash_table_new_full (
+              g_str_hash, g_str_equal,
+              g_free, (GDestroyNotify) g_value_array_free);
+
+          for (; status->name != NULL; status++)
+            {
+              GValueArray *val = NULL;
+              gchar *key = NULL;
+              gboolean message = FALSE;
+              gboolean settable = status->self;
+              TpConnectionPresenceType type = status->presence_type;
+
+              key = g_strdup (status->name);
+
+              /* assuming the string arg of a status is a message */
+              if (settable && status->optional_arguments != NULL)
+                {
+                  const TpPresenceStatusOptionalArgumentSpec *arg =
+                    status->optional_arguments;
+
+                  for (; !message && arg->name != NULL; arg++)
+                    message = !tp_strdiff (arg->dtype, "s");
+                }
+
+              val = tp_value_array_build (3,
+                  G_TYPE_UINT, type,
+                  G_TYPE_BOOLEAN, settable,
+                  G_TYPE_BOOLEAN, message,
+                  G_TYPE_INVALID);
+
+              g_hash_table_insert (ret, key, val);
+            }
+
+          g_value_take_boxed (value, ret);
+        }
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
+}
+
 static void
 protocol_properties_getter (GObject *object,
     GQuark iface G_GNUC_UNUSED,
@@ -759,8 +827,16 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
       { "Icon", GINT_TO_POINTER (PP_ICON), NULL },
       { NULL }
   };
+
+  static TpDBusPropertiesMixinPropImpl presence_props[] = {
+      { "Statuses", GINT_TO_POINTER (PPP_STATUSES), NULL },
+      { NULL }
+  };
+
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_PROTOCOL, protocol_properties_getter, NULL, channel_props },
+      { TP_IFACE_PROTOCOL_INTERFACE_PRESENCE, protocol_prop_presence_getter,
+        NULL, presence_props },
       { NULL }
   };
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -817,6 +893,33 @@ tp_base_protocol_init (TpBaseProtocol *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_BASE_PROTOCOL,
       TpBaseProtocolPrivate);
+}
+
+/**
+ * tp_base_protocol_get_statuses:
+ * @self: a Protocol object
+ *
+ * If the object does not implement the Protocol.Interface.Presences
+ * interface, it need not set this callback.
+ *
+ * Returns: an array of #TpPresenceStatusSpec structs describing the
+ * standard statuses supported by this protocol, with a final element
+ * whose name element is guaranteed to be %NULL.
+ *
+ * Since: FIXME
+ */
+const TpPresenceStatusSpec *
+tp_base_protocol_get_statuses (TpBaseProtocol *self)
+{
+  static const TpPresenceStatusSpec none[] = { { NULL } };
+  TpBaseProtocolClass *cls = TP_BASE_PROTOCOL_GET_CLASS (self);
+
+  g_return_val_if_fail (cls != NULL, NULL);
+
+  if (cls->get_statuses != NULL)
+    return cls->get_statuses (self);
+
+  return none;
 }
 
 /**
@@ -1297,4 +1400,9 @@ protocol_iface_init (TpSvcProtocolClass *cls)
   IMPLEMENT (normalize_contact);
   IMPLEMENT (identify_account);
 #undef IMPLEMENT
+}
+
+static void
+presence_iface_init (TpSvcProtocolInterfacePresenceClass *cls)
+{
 }
