@@ -462,6 +462,7 @@ tube_incoming_cb (TpStreamTubeChannel *tube,
     TpStreamTubeConnection *tube_conn,
     Test *test)
 {
+  tp_clear_object (&test->tube_conn);
   test->tube_conn = g_object_ref (tube_conn);
 
   test->wait--;
@@ -475,6 +476,8 @@ socket_connected (GObject *source,
     gpointer user_data)
 {
   Test *test = user_data;
+
+  tp_clear_object (&test->cm_stream);
 
   test->cm_stream = G_IO_STREAM (g_socket_client_connect_finish (
         G_SOCKET_CLIENT (source), result, &test->error));
@@ -789,6 +792,8 @@ test_offer_race (Test *test,
 
   tp_handle_unref (test->contact_repo, alice_handle);
   g_object_unref (address);
+  g_object_unref (alice_cm_stream);
+  g_object_unref (bob_cm_stream);
 }
 
 static void
