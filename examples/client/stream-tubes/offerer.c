@@ -12,6 +12,14 @@ channel_closed_cb (TpChannel *channel,
 }
 
 static void
+tube_conn_closed_cb (TpStreamTubeConnection *conn,
+    const GError *error,
+    gpointer user_data)
+{
+  g_debug ("Tube connection has been closed: %s", error->message);
+}
+
+static void
 _incoming_iostream (TpStreamTubeChannel *tube,
     TpStreamTubeConnection* tube_conn,
     gpointer user_data)
@@ -22,6 +30,9 @@ _incoming_iostream (TpStreamTubeChannel *tube,
   GError *error = NULL;
   TpContact *contact;
   GSocketConnection *conn;
+
+  g_signal_connect (tube_conn, "closed",
+      G_CALLBACK (tube_conn_closed_cb), NULL);
 
   contact = tp_stream_tube_connection_get_contact (tube_conn);
 

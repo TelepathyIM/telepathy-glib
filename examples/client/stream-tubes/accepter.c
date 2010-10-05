@@ -3,6 +3,14 @@
 static GMainLoop *loop = NULL;
 
 static void
+tube_conn_closed_cb (TpStreamTubeConnection *conn,
+    const GError *error,
+    gpointer user_data)
+{
+  g_debug ("Tube connection has been closed: %s", error->message);
+}
+
+static void
 _tube_accepted (GObject *tube,
     GAsyncResult *res,
     gpointer user_data)
@@ -17,6 +25,9 @@ _tube_accepted (GObject *tube,
 
   tube_conn = tp_stream_tube_channel_accept_finish (
       TP_STREAM_TUBE_CHANNEL (tube), res, &error);
+
+  g_signal_connect (tube_conn, "closed",
+      G_CALLBACK (tube_conn_closed_cb), NULL);
 
   if (error != NULL)
     {
