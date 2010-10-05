@@ -417,6 +417,21 @@ service_incoming_cb (GSocketService *service,
       g_assert_cmpuint (byte, ==,
           g_value_get_uchar (self->priv->access_control_param));
     }
+  else if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_PORT)
+    {
+      GSocketAddress *addr;
+      guint16 port;
+
+      addr = g_socket_connection_get_remote_address (connection, &error);
+      g_assert_no_error (error);
+
+      port = g_inet_socket_address_get_port (G_INET_SOCKET_ADDRESS (addr));
+
+      g_assert_cmpuint (port, ==,
+          g_value_get_uint (self->priv->access_control_param));
+
+      g_object_unref (addr);
+    }
 
   tp_svc_channel_type_stream_tube_emit_new_local_connection (self,
       self->priv->connection_id);
