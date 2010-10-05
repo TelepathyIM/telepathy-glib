@@ -1094,6 +1094,8 @@ sig_match_conn (TpStreamTubeChannel *self,
         {
           DEBUG ("Identified connection %u using port %u",
               port, sig->connection_id);
+
+          g_object_unref (address);
           return TRUE;
         }
 
