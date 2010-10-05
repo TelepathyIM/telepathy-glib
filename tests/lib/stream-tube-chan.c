@@ -416,6 +416,7 @@ service_incoming_cb (GSocketService *service,
 
       g_assert_cmpuint (byte, ==,
           g_value_get_uchar (self->priv->access_control_param));
+      g_object_unref (creds);
     }
   else if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_PORT)
     {
