@@ -4786,3 +4786,24 @@ TP_TYPE_STREAM_TUBE_CHANNEL
 tp_stream_tube_channel_get_type
 TpStreamTubeChannelPrivate
 </SECTION>
+
+<SECTION>
+<FILE>stream-tube-connection</FILE>
+<TITLE>stream-tube-connection</TITLE>
+<INCLUDE>telepathy-glib/stream-tube-connection.h</INCLUDE>
+<SUBSECTION>
+TpStreamTubeConnection
+TpStreamTubeConnectionClass
+tp_stream_tube_connection_get_channel
+tp_stream_tube_connection_get_contact
+tp_stream_tube_connection_get_socket_connection
+<SUBSECTION Standard>
+TP_IS_STREAM_TUBE_CONNECTION
+TP_IS_STREAM_TUBE_CONNECTION_CLASS
+TP_STREAM_TUBE_CONNECTION
+TP_STREAM_TUBE_CONNECTION_CLASS
+TP_STREAM_TUBE_CONNECTION_GET_CLASS
+TP_TYPE_STREAM_TUBE_CONNECTION
+tp_stream_tube_connection_get_type
+TpStreamTubeConnectionPrivate
+</SECTION>

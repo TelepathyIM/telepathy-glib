@@ -233,7 +233,8 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
   /**
    * TpStreamTubeConnection::closed
    * @self: the #TpStreamTubeConnection
-   * @error: (transfer none): the error reported by the connection manager
+   * @error: (transfer none): a #GError representing the error reported by the
+   * connection manager
    *
    * The ::closed signal is emitted when the connection manager reports that
    * a tube connection has been closed.
@@ -261,10 +262,10 @@ _tp_stream_tube_connection_new (
 }
 
 /**
- * tp_stream_tube_connection_get_connection: (skip)
+ * tp_stream_tube_connection_get_socket_connection: (skip)
  * @self: a #TpStreamTubeConnection
  *
- * Return the #TpStreamTubeConnection:connection property
+ * Return the #TpStreamTubeConnection:socket-connection property
  *
  * Returns: (transfer none): the value of #TpStreamTubeConnection:connection
  *

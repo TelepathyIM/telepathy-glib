@@ -71,6 +71,7 @@
     <xi:include href="xml/client.xml"/>
     <xi:include href="xml/account-channel-request.xml"/>
     <xi:include href="xml/stream-tube-channel.xml"/>
+    <xi:include href="xml/stream-tube-connection.xml"/>
   </chapter>
 
   <chapter id="ch-service-dbus">
