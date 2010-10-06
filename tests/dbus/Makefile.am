@@ -12,6 +12,7 @@ noinst_PROGRAMS = \
     test-channel-request \
     test-cli-group \
     test-client \
+    test-client-channel-factory \
     test-cm \
     test-connection \
     test-connection-bug-18845 \
@@ -179,6 +180,8 @@ test_simple_approver_SOURCES = simple-approver.c
 test_simple_handler_SOURCES = simple-handler.c
 
 test_stream_tube_SOURCES = stream-tube.c
+
+test_client_channel_factory_SOURCES = client-channel-factory.c
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
