@@ -21,6 +21,8 @@
 #ifndef __TP_UTIL_INTERNAL_H__
 #define __TP_UTIL_INTERNAL_H__
 
+#include "config.h"
+
 #include <glib.h>
 #include <gio/gio.h>
 
