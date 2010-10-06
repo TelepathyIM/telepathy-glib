@@ -187,23 +187,24 @@ enum /* signals */
 
 static guint _signals[LAST_SIGNAL] = { 0, };
 
-static gboolean
-is_connection (gpointer key,
-    gpointer value,
-    gpointer user_data)
-{
-  return value == user_data;
-}
-
 static void
 remote_connection_destroyed_cb (gpointer user_data,
     GObject *conn)
 {
   /* The GSocketConnection has been destroyed, removing it from the hash */
   TpStreamTubeChannel *self = user_data;
+  GHashTableIter iter;
+  gpointer value;
 
-  g_hash_table_foreach_remove (self->priv->tube_connections, is_connection,
-      conn);
+  g_hash_table_iter_init (&iter, self->priv->tube_connections);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      if (value == conn)
+        {
+          g_hash_table_iter_remove (&iter);
+          break;
+        }
+    }
 }
 
 static void
