@@ -71,7 +71,7 @@
 #include <gio/gunixconnection.h>
 #endif /* HAVE_GIO_UNIX */
 
-G_DEFINE_TYPE (TpStreamTubeChannel, tp_stream_tube_channel, TP_TYPE_CHANNEL);
+G_DEFINE_TYPE (TpStreamTubeChannel, tp_stream_tube_channel, TP_TYPE_CHANNEL)
 
 /* Used to store the data of a NewRemoteConnection signal while we are waiting
  * for the TCP connection identified by this signal */
