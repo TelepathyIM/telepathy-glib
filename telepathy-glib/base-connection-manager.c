@@ -93,7 +93,7 @@ GType _tp_legacy_protocol_get_type (void) G_GNUC_CONST;
 
 G_DEFINE_TYPE(_TpLegacyProtocol,
     _tp_legacy_protocol,
-    TP_TYPE_BASE_PROTOCOL);
+    TP_TYPE_BASE_PROTOCOL)
 
 static const TpCMParamSpec *
 _tp_legacy_protocol_get_parameters (TpBaseProtocol *protocol)

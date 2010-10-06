@@ -342,9 +342,7 @@ struct _TpProxyPrivate {
     gboolean dispose_has_run;
 };
 
-G_DEFINE_TYPE (TpProxy,
-    tp_proxy,
-    G_TYPE_OBJECT);
+G_DEFINE_TYPE (TpProxy, tp_proxy, G_TYPE_OBJECT)
 
 enum
 {

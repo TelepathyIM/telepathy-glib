@@ -127,7 +127,7 @@ struct _TpContact {
  * Since: 0.11.5
  */
 
-G_DEFINE_TYPE (TpContact, tp_contact, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TpContact, tp_contact, G_TYPE_OBJECT)
 
 
 enum {

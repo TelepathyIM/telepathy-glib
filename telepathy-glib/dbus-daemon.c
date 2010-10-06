@@ -75,7 +75,7 @@ struct _TpDBusDaemonPrivate
   DBusConnection *libdbus;
 };
 
-G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY);
+G_DEFINE_TYPE (TpDBusDaemon, tp_dbus_daemon, TP_TYPE_PROXY)
 
 static gpointer starter_bus_daemon = NULL;
 

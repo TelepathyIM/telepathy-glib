@@ -136,7 +136,7 @@ enum {
 static guint signals[N_SIGNALS] = { 0 };
 
 G_DEFINE_TYPE (TpChannelDispatchOperation, tp_channel_dispatch_operation,
-    TP_TYPE_PROXY);
+    TP_TYPE_PROXY)
 
 static void
 tp_channel_dispatch_operation_init (TpChannelDispatchOperation *self)

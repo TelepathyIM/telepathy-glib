@@ -73,7 +73,7 @@ struct _TpClientPrivate {
     gpointer dummy;
 };
 
-G_DEFINE_TYPE (TpClient, tp_client, TP_TYPE_PROXY);
+G_DEFINE_TYPE (TpClient, tp_client, TP_TYPE_PROXY)
 
 static void
 tp_client_init (TpClient *self)
