@@ -703,12 +703,8 @@ test_offer_race (Test *test,
     return;
 
   /* We can't break the race with other access controles :( */
-  /* FIXME: Actually TP_SOCKET_ACCESS_CONTROL_CREDENTIALS is also able to
-   * properly identify connections and our code should be able to.
-   * But we can't test it as we currently use sync calls to send and
-   * receive credentials. We should change that once bgo #629503
-   * has been fixed. */
-  if (contexts[i].access_control != TP_SOCKET_ACCESS_CONTROL_PORT)
+  if (contexts[i].access_control != TP_SOCKET_ACCESS_CONTROL_PORT &&
+      contexts[i].access_control != TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
     return;
 
   create_tube_service (test, TRUE, contexts[i].address_type,
@@ -762,6 +758,11 @@ test_offer_race (Test *test,
   tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
       bob_cm_stream, bob_handle);
 
+  /* ...and then detects Alice's connection */
+  tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
+      alice_cm_stream, alice_handle);
+
+  /* Bob connection is identified */
   test->wait = 1;
   g_main_loop_run (test->mainloop);
   g_assert (test->tube_conn != NULL);
@@ -772,10 +773,7 @@ test_offer_race (Test *test,
 
   g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "bob");
 
-  /* ...and then detects Alice's connection */
-  tp_tests_stream_tube_channel_peer_connected (test->tube_chan_service,
-      alice_cm_stream, alice_handle);
-
+  /* Alice connection is identified */
   test->wait = 1;
   g_main_loop_run (test->mainloop);
   g_assert (test->tube_conn != NULL);
