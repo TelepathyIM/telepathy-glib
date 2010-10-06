@@ -38,7 +38,6 @@
 #include <config.h>
 
 #include <gio/gio.h>
-#include <gio/gunixcredentialsmessage.h>
 
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/util.h>
@@ -59,6 +58,7 @@
 #ifdef HAVE_GIO_UNIX
 #include <gio/gunixconnection.h>
 #include <gio/gunixsocketaddress.h>
+#include <gio/gunixcredentialsmessage.h>
 #endif /* HAVE_GIO_UNIX */
 
 /**
