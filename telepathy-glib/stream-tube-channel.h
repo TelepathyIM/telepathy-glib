@@ -28,12 +28,12 @@ G_BEGIN_DECLS
 /* Forward declaration of a subclass - from stream-tube-connection.h */
 typedef struct _TpStreamTubeConnection TpStreamTubeConnection;
 
-#define TP_TYPE_STREAM_TUBE_CHANNEL	(tp_stream_tube_channel_get_type ())
-#define TP_STREAM_TUBE_CHANNEL(obj)	(G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannel))
-#define TP_STREAM_TUBE_CHANNEL_CLASS(obj)	(G_TYPE_CHECK_CLASS_CAST ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannelClass))
-#define TP_IS_STREAM_TUBE_CHANNEL(obj)	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_STREAM_TUBE_CHANNEL))
-#define TP_IS_STREAM_TUBE_CHANNEL_CLASS(obj)	(G_TYPE_CHECK_CLASS_TYPE ((obj), TP_TYPE_STREAM_TUBE_CHANNEL))
-#define TP_STREAM_TUBE_CHANNEL_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannelClass))
+#define TP_TYPE_STREAM_TUBE_CHANNEL (tp_stream_tube_channel_get_type ())
+#define TP_STREAM_TUBE_CHANNEL(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannel))
+#define TP_STREAM_TUBE_CHANNEL_CLASS(obj) (G_TYPE_CHECK_CLASS_CAST ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannelClass))
+#define TP_IS_STREAM_TUBE_CHANNEL(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_STREAM_TUBE_CHANNEL))
+#define TP_IS_STREAM_TUBE_CHANNEL_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE ((obj), TP_TYPE_STREAM_TUBE_CHANNEL))
+#define TP_STREAM_TUBE_CHANNEL_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_STREAM_TUBE_CHANNEL, TpStreamTubeChannelClass))
 
 typedef struct _TpStreamTubeChannel TpStreamTubeChannel;
 typedef struct _TpStreamTubeChannelClass TpStreamTubeChannelClass;
