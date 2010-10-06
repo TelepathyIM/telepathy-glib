@@ -26,6 +26,11 @@
  * This factory implements the #TpClientChannelFactoryInterface interface to
  * create specialized #TpChannel subclasses.
  *
+ * The current version of #TpAutomaticChannelFactory guarantees to create the
+ * following objects:
+ *  - if channel is of type TP_IFACE_CHANNEL_TYPE_STREAM_TUBE, a
+ *  #TpStreamTubeChannel
+ *  - for all the other channel types, a #TpChannel
  */
 
 /**
@@ -48,6 +53,10 @@
 #include "telepathy-glib/automatic-channel-factory.h"
 
 #include <telepathy-glib/client-channel-factory.h>
+#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/stream-tube-channel.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
@@ -77,7 +86,13 @@ tp_automatic_channel_factory_create_channel (
     GHashTable *properties,
     GError **error)
 {
-  /* TODO: Create TpChannel subclasses depending on the channel type */
+  const gchar *chan_type;
+
+  chan_type = tp_asv_get_string (properties, TP_PROP_CHANNEL_CHANNEL_TYPE);
+
+  if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE))
+    return TP_CHANNEL (tp_stream_tube_channel_new (conn, path, properties,
+          error));
 
   return tp_channel_new_from_properties (conn, path, properties, error);
 }
