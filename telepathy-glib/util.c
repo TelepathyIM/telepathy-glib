@@ -27,11 +27,19 @@
  * GLib, but aren't.
  */
 
+#include <config.h>
+
 #include <gobject/gvaluecollector.h>
+
+#ifdef HAVE_GIO_UNIX
+#include <gio/gunixsocketaddress.h>
+#include <gio/gunixconnection.h>
+#endif /* HAVE_GIO_UNIX */
 
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
+#include <stdio.h>
 #include <string.h>
 
 #define DEBUG_FLAG TP_DEBUG_MISC
@@ -1490,3 +1498,35 @@ next_i:
       continue;
     }
 }
+
+#ifdef HAVE_GIO_UNIX
+GSocketAddress *
+_tp_create_temp_unix_socket (GSocketService *service,
+    GError **error)
+{
+  guint i;
+  GSocketAddress *address;
+
+  /* why doesn't GIO provide a method to create a socket we don't
+   * care about? Iterate until we find a valid temporary name.
+   *
+   * Try a maximum of 10 times to get a socket */
+  for (i = 0; i < 10; i++)
+    {
+      address = g_unix_socket_address_new (tmpnam (NULL));
+
+      g_clear_error (error);
+
+      if (g_socket_listener_add_address (
+            G_SOCKET_LISTENER (service),
+            address, G_SOCKET_TYPE_STREAM,
+            G_SOCKET_PROTOCOL_DEFAULT,
+            NULL, NULL, error))
+        return address;
+      else
+        g_object_unref (address);
+    }
+
+  return NULL;
+}
+#endif /* HAVE_GIO_UNIX */

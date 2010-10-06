@@ -162,7 +162,7 @@ AM_CONDITIONAL([OUT_OF_TREE_BUILD], [test "z$ac_srcdir" != z.])
 
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,
-  [glib-2.0 >= 2.24, gobject-2.0 >= 2.24, gio-2.0 >= 2.24])
+  [glib-2.0 >= 2.25.16, gobject-2.0 >= 2.25.16, gio-2.0 >= 2.25.16])
 
 dnl Check for GIO-Unix
 PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0],
@@ -276,6 +276,7 @@ AC_OUTPUT( Makefile \
 	   docs/reference/Makefile \
 	   examples/Makefile \
 	   examples/client/Makefile \
+	   examples/client/stream-tubes/Makefile \
 	   examples/cm/Makefile \
 	   examples/cm/callable/Makefile \
 	   examples/cm/channelspecific/Makefile \

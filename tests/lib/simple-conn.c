@@ -158,6 +158,8 @@ create_handle_repos (TpBaseConnection *conn,
 {
   repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new
       (TP_HANDLE_TYPE_CONTACT, tp_tests_simple_normalize_contact, NULL);
+  repos[TP_HANDLE_TYPE_ROOM] = tp_dynamic_handle_repo_new
+      (TP_HANDLE_TYPE_ROOM, NULL, NULL);
 }
 
 static GPtrArray *

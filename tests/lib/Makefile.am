@@ -35,6 +35,8 @@ libtp_glib_tests_la_SOURCES = \
     simple-conn.h \
     simple-manager.c \
     simple-manager.h \
+    stream-tube-chan.c \
+    stream-tube-chan.h \
     stub-object.c \
     stub-object.h \
     textchan-null.c \

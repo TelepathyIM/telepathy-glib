@@ -50,6 +50,8 @@
 #include <telepathy-glib/simple-approver.h>
 #include <telepathy-glib/simple-handler.h>
 #include <telepathy-glib/simple-observer.h>
+#include <telepathy-glib/stream-tube-channel.h>
+#include <telepathy-glib/stream-tube-connection.h>
 
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>
