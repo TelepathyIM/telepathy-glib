@@ -1331,6 +1331,8 @@ tp_user_action_time_should_present
 <INCLUDE>telepathy-glib/gnio-util.h</INCLUDE>
 tp_g_socket_address_from_variant
 tp_address_variant_from_g_socket_address
+tp_unix_connection_receive_credentials_with_byte
+tp_unix_connection_send_credentials_with_byte
 </SECTION>
 
 <SECTION>

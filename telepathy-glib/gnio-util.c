@@ -330,6 +330,20 @@ _tp_unix_connection_send_credentials_with_byte (GUnixConnection *connection,
 }
 #endif
 
+/**
+ * tp_unix_connection_send_credentials_with_byte
+ * @connection: a #GUnixConnection
+ * @byte: the byte to send with the credentials
+ * @cancellable: (allown-none): a #GCancellable, or %NULL
+ * @error: a #GError to fill
+ *
+ * A variant of g_unix_connection_send_credentials() allowing you to choose
+ * the byte which is send with the credentials
+ *
+ * Returns: %TRUE on success, %FALSE if error is set.
+ *
+ * Since: 0.13.UNRELEASED
+ */
 gboolean
 tp_unix_connection_send_credentials_with_byte (GSocketConnection *connection,
     guchar byte,
@@ -527,6 +541,21 @@ _tp_unix_connection_receive_credentials_with_byte (GUnixConnection *connection,
 }
 #endif
 
+/**
+ * tp_unix_connection_receive_credentials_with_byte
+ * @connection: a #GUnixConnection
+ * @byte: (out): if not %NULL, used to return the byte
+ * @cancellable: (allown-none): a #GCancellable, or %NULL
+ * @error: a #GError to fill
+ *
+ * A variant of g_unix_connection_receive_credentials() allowing you to get
+ * the byte which has been received with the credentials.
+ *
+ * Returns: (transfer full): Received credentials on success (free with
+ * g_object_unref()), %NULL if error is set.
+ *
+ * Since: 0.13.UNRELEASED
+ */
 GCredentials *
 tp_unix_connection_receive_credentials_with_byte (GSocketConnection *connection,
     guchar *byte,
