@@ -165,7 +165,6 @@ struct _TpStreamTubeChannelPrivate
 
   TpSocketAddressType socket_type;
   TpSocketAccessControl access_control;
-  GCancellable *cancellable;
 
   GSimpleAsyncResult *result;
 
@@ -229,12 +228,6 @@ tp_stream_tube_channel_dispose (GObject *obj)
   g_slist_foreach (self->priv->sig_waiting_conn, (GFunc) sig_waiting_conn_free,
       NULL);
   tp_clear_pointer (&self->priv->sig_waiting_conn, g_slist_free);
-
-  if (self->priv->cancellable != NULL)
-    {
-      g_cancellable_cancel (self->priv->cancellable);
-      tp_clear_object (&self->priv->cancellable);
-    }
 
   if (self->priv->tube_connections != NULL)
     {
