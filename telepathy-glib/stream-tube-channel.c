@@ -814,9 +814,11 @@ create_client_socket (TpStreamTubeChannel *self)
 
   switch (self->priv->socket_type)
     {
+#ifdef HAVE_GIO_UNIX
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
         family = G_SOCKET_FAMILY_UNIX;
         break;
+#endif
 
       case TP_SOCKET_ADDRESS_TYPE_IPV4:
         family = G_SOCKET_FAMILY_IPV4;
