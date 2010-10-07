@@ -1161,7 +1161,7 @@ tp_account_channel_request_ensure_channel_finish (
  *
  * Set @factory as the #TpClientChannelFactoryInterface that will be used to
  * create the channel requested by @self.
- * By default #TpAutomaticChannelFactory is used.
+ * By default #TpAutomaticProxyFactory is used.
  *
  * This function can't be called once @self has been used to request a
  * channel.

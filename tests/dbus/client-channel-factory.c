@@ -1,4 +1,4 @@
-/* Tests of TpAutomaticChannelFactory and TpBasicProxyFactory
+/* Tests of TpAutomaticProxyFactory and TpBasicProxyFactory
  *
  * Copyright © 2010 Collabora Ltd. <http://www.collabora.co.uk/>
  *
@@ -124,9 +124,9 @@ test_auto_creation (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   test->factory = TP_CLIENT_CHANNEL_FACTORY (
-      tp_automatic_channel_factory_new ());
+      tp_automatic_proxy_factory_new ());
 
-  g_assert (TP_IS_AUTOMATIC_CHANNEL_FACTORY (test->factory));
+  g_assert (TP_IS_AUTOMATIC_PROXY_FACTORY (test->factory));
   g_assert (TP_IS_CLIENT_CHANNEL_FACTORY (test->factory));
 }
 
@@ -166,7 +166,7 @@ test_auto_stream_tube (Test *test,
   GHashTable *props;
 
   test->factory = TP_CLIENT_CHANNEL_FACTORY (
-      tp_automatic_channel_factory_new ());
+      tp_automatic_proxy_factory_new ());
 
   g_object_get (test->tube_chan_service,
       "object-path", &chan_path,

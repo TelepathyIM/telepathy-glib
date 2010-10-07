@@ -1,5 +1,5 @@
 /*
- * Client channel factory creating TpChannel subclasses when possible
+ * Factory creating higher level proxy objects
  *
  * Copyright © 2010 Collabora Ltd.
  *
@@ -19,14 +19,14 @@
  */
 
 /**
- * SECTION:automatic-channel-factory
- * @title: TpAutomaticChannelFactory
- * @short_description: channel factory creating TpChannel subclasses
+ * SECTION:automatic-proxy-factory
+ * @title: TpAutomaticProxyFactory
+ * @short_description: factory creating higher level proxy objects
  *
  * This factory implements the #TpClientChannelFactoryInterface interface to
  * create specialized #TpChannel subclasses.
  *
- * The current version of #TpAutomaticChannelFactory guarantees to create the
+ * The current version of #TpAutomaticProxyFactory guarantees to create the
  * following objects:
  *  - if channel is of type TP_IFACE_CHANNEL_TYPE_STREAM_TUBE, a
  *  #TpStreamTubeChannel
@@ -34,18 +34,18 @@
  */
 
 /**
- * TpAutomaticChannelFactory:
+ * TpAutomaticProxyFactory:
  *
- * Data structure representing a #TpAutomaticChannelFactory
+ * Data structure representing a #TpAutomaticProxyFactory
  *
  * Since: 0.13.UNRELEASED
  */
 
 /**
- * TpAutomaticChannelFactoryClass:
+ * TpAutomaticProxyFactoryClass:
  * @parent_class: the parent class
  *
- * The class of a #TpAutomaticChannelFactory.
+ * The class of a #TpAutomaticProxyFactory.
  *
  * Since: 0.13.UNRELEASED
  */
@@ -61,25 +61,25 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 
-static void client_channel_factory_iface_init (gpointer, gpointer);
+static void client_proxy_factory_iface_init (gpointer, gpointer);
 
-G_DEFINE_TYPE_WITH_CODE(TpAutomaticChannelFactory,
-    tp_automatic_channel_factory, G_TYPE_OBJECT,
+G_DEFINE_TYPE_WITH_CODE(TpAutomaticProxyFactory,
+    tp_automatic_proxy_factory, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CLIENT_CHANNEL_FACTORY,
-      client_channel_factory_iface_init))
+      client_proxy_factory_iface_init))
 
 static void
-tp_automatic_channel_factory_init (TpAutomaticChannelFactory *self)
+tp_automatic_proxy_factory_init (TpAutomaticProxyFactory *self)
 {
 }
 
 static void
-tp_automatic_channel_factory_class_init (TpAutomaticChannelFactoryClass *cls)
+tp_automatic_proxy_factory_class_init (TpAutomaticProxyFactoryClass *cls)
 {
 }
 
 static TpChannel *
-tp_automatic_channel_factory_create_channel (
+tp_automatic_proxy_factory_create_channel (
     TpClientChannelFactoryInterface *factory,
     TpConnection *conn,
     const gchar *path,
@@ -98,26 +98,26 @@ tp_automatic_channel_factory_create_channel (
 }
 
 static void
-client_channel_factory_iface_init (gpointer g_iface,
+client_proxy_factory_iface_init (gpointer g_iface,
     gpointer unused G_GNUC_UNUSED)
 {
   TpClientChannelFactoryInterface *iface = g_iface;
 
-  iface->create_channel = tp_automatic_channel_factory_create_channel;
+  iface->create_channel = tp_automatic_proxy_factory_create_channel;
 }
 
 /**
- * tp_automatic_channel_factory_new:
+ * tp_automatic_proxy_factory_new:
  *
- * Convenient function to create a new #TpAutomaticChannelFactory instance.
+ * Convenient function to create a new #TpAutomaticProxyFactory instance.
  *
- * Returns: a new #TpAutomaticChannelFactory
+ * Returns: a new #TpAutomaticProxyFactory
  *
  * Since: 0.13.UNRELEASED
  */
-TpAutomaticChannelFactory *
-tp_automatic_channel_factory_new (void)
+TpAutomaticProxyFactory *
+tp_automatic_proxy_factory_new (void)
 {
-  return g_object_new (TP_TYPE_AUTOMATIC_CHANNEL_FACTORY,
+  return g_object_new (TP_TYPE_AUTOMATIC_PROXY_FACTORY,
       NULL);
 }

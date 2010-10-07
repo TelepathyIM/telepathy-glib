@@ -1082,7 +1082,7 @@ tp_base_client_constructed (GObject *object)
   if (self->priv->channel_factory == NULL)
     {
       self->priv->channel_factory = TP_CLIENT_CHANNEL_FACTORY (
-          tp_automatic_channel_factory_new ());
+          tp_automatic_proxy_factory_new ());
     }
   else
     {
@@ -1331,7 +1331,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * While the client has not been registerd, this property can be changed
    * using tp_base_client_set_channel_factory().
    *
-   * If no channel factory is specified then #TpAutomaticChannelFactory is used.
+   * If no channel factory is specified then #TpAutomaticProxyFactory is used.
    *
    * Since: 0.13.UNRELEASED
    */
