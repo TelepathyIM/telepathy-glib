@@ -130,6 +130,60 @@ test_auto_creation (Test *test,
   g_assert (TP_IS_CLIENT_CHANNEL_FACTORY (test->factory));
 }
 
+/* Create a proxy for a stream tube */
+static void
+test_basic_stream_tube (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpChannel *chan;
+  gchar *chan_path;
+  GHashTable *props;
+
+  test->factory = TP_CLIENT_CHANNEL_FACTORY (tp_basic_proxy_factory_new ());
+
+  g_object_get (test->tube_chan_service,
+      "object-path", &chan_path,
+      "channel-properties", &props,
+      NULL);
+
+  chan = tp_client_channel_factory_create_channel (test->factory,
+      test->connection, chan_path, props, &test->error);
+  g_assert_no_error (test->error);
+
+  g_assert (TP_IS_CHANNEL (chan));
+  g_assert (!TP_IS_STREAM_TUBE_CHANNEL (chan));
+
+  g_free (chan_path);
+  g_hash_table_unref (props);
+}
+
+static void
+test_auto_stream_tube (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpChannel *chan;
+  gchar *chan_path;
+  GHashTable *props;
+
+  test->factory = TP_CLIENT_CHANNEL_FACTORY (
+      tp_automatic_channel_factory_new ());
+
+  g_object_get (test->tube_chan_service,
+      "object-path", &chan_path,
+      "channel-properties", &props,
+      NULL);
+
+  chan = tp_client_channel_factory_create_channel (test->factory,
+      test->connection, chan_path, props, &test->error);
+  g_assert_no_error (test->error);
+
+  g_assert (TP_IS_CHANNEL (chan));
+  g_assert (TP_IS_STREAM_TUBE_CHANNEL (chan));
+
+  g_free (chan_path);
+  g_hash_table_unref (props);
+}
+
 int
 main (int argc,
       char **argv)
@@ -144,6 +198,10 @@ main (int argc,
       test_basic_creation, teardown);
   g_test_add ("/client-channel-factory/auto/creation", Test, NULL, setup,
       test_auto_creation, teardown);
+  g_test_add ("/client-channel-factory/basic/stream-tube", Test, NULL, setup,
+      test_basic_stream_tube, teardown);
+  g_test_add ("/client-channel-factory/auto/stream-tube", Test, NULL, setup,
+      test_auto_stream_tube, teardown);
 
   return g_test_run ();
 }
