@@ -165,7 +165,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
-#include <telepathy-glib/automatic-channel-factory.h>
+#include <telepathy-glib/automatic-proxy-factory.h>
 #include <telepathy-glib/channel-dispatch-operation-internal.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>

@@ -50,7 +50,7 @@
  * Since: 0.13.UNRELEASED
  */
 
-#include "telepathy-glib/automatic-channel-factory.h"
+#include "telepathy-glib/automatic-proxy-factory.h"
 
 #include <telepathy-glib/client-channel-factory.h>
 #include <telepathy-glib/dbus.h>
