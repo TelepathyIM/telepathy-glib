@@ -1469,7 +1469,7 @@ service_incoming_cb (GSocketService *service,
 /**
  * tp_stream_tube_channel_offer_async:
  * @self: an outgoing #TpStreamTubeChannel
- * @params: (allow none) (transfer none): parameters of the tube, or %NULL
+ * @params: (allow-none) (transfer none): parameters of the tube, or %NULL
  * @callback: a callback to call when the tube has been offered
  * @user_data: data to pass to @callback
  *
