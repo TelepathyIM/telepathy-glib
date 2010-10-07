@@ -379,8 +379,11 @@ _tp_account_got_all_storage_cb (TpProxy *proxy,
   if (error != NULL)
     DEBUG ("Error getting Storage properties: %s", error->message);
 
-  self->priv->storage_provider = g_strdup (tp_asv_get_string (properties,
-        "StorageProvider"));
+  if (properties == NULL)
+    self->priv->storage_provider = NULL;
+  else
+    self->priv->storage_provider = g_strdup (tp_asv_get_string (properties,
+          "StorageProvider"));
 
   if (!tp_str_empty (self->priv->storage_provider))
     {
