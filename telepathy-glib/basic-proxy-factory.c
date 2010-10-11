@@ -96,3 +96,29 @@ tp_basic_proxy_factory_new (void)
   return g_object_new (TP_TYPE_BASIC_PROXY_FACTORY,
       NULL);
 }
+
+/**
+ * tp_basic_proxy_factory_dup:
+ *
+ * Returns a cached #TpBasicProxyFactory; the same #TpBasicProxyFactory object
+ * will be returned by this function repeatedly, as long as at least one
+ * reference exists.
+ *
+ * Returns: (transfer full): a #TpBasicProxyFactory
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpBasicProxyFactory *
+tp_basic_proxy_factory_dup (void)
+{
+  static TpBasicProxyFactory *singleton = NULL;
+
+  if (singleton != NULL)
+    return g_object_ref (singleton);
+
+  singleton = tp_basic_proxy_factory_new ();
+
+  g_object_add_weak_pointer (G_OBJECT (singleton), (gpointer) &singleton);
+
+  return singleton;
+}

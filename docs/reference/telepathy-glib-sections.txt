@@ -4875,6 +4875,7 @@ tp_client_channel_factory_get_type
 TpBasicProxyFactory
 TpBasicProxyFactoryClass
 tp_basic_proxy_factory_new
+tp_basic_proxy_factory_dup
 <SUBSECTION Standard>
 TP_BASIC_PROXY_FACTORY
 TP_BASIC_PROXY_FACTORY_GET_CLASS

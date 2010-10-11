@@ -184,6 +184,22 @@ test_auto_stream_tube (Test *test,
   g_hash_table_unref (props);
 }
 
+static void
+test_basic_dup (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpBasicProxyFactory *fac;
+
+  test->factory = TP_CLIENT_CHANNEL_FACTORY (tp_basic_proxy_factory_dup ());
+  g_assert (TP_IS_BASIC_PROXY_FACTORY (test->factory));
+  g_assert (TP_IS_CLIENT_CHANNEL_FACTORY (test->factory));
+
+  fac = tp_basic_proxy_factory_dup ();
+  g_assert ((gpointer) fac == (gpointer) test->factory);
+
+  g_object_unref (fac);
+}
+
 int
 main (int argc,
       char **argv)
@@ -202,6 +218,8 @@ main (int argc,
       test_basic_stream_tube, teardown);
   g_test_add ("/client-channel-factory/auto/stream-tube", Test, NULL, setup,
       test_auto_stream_tube, teardown);
+  g_test_add ("/client-channel-factory/basic/dup", Test, NULL, setup,
+      test_basic_dup, teardown);
 
   return g_test_run ();
 }

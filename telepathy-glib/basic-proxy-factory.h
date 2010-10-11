@@ -58,6 +58,8 @@ GType tp_basic_proxy_factory_get_type (void);
 
 TpBasicProxyFactory * tp_basic_proxy_factory_new (void);
 
+TpBasicProxyFactory * tp_basic_proxy_factory_dup (void);
+
 G_END_DECLS
 
 #endif
