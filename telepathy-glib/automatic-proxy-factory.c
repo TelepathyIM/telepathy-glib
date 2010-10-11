@@ -22,15 +22,29 @@
  * SECTION:automatic-proxy-factory
  * @title: TpAutomaticProxyFactory
  * @short_description: factory creating higher level proxy objects
+ * @see_also: #TpBasicProxyFactory
  *
  * This factory implements the #TpClientChannelFactoryInterface interface to
  * create specialized #TpChannel subclasses.
  *
- * The current version of #TpAutomaticProxyFactory guarantees to create the
- * following objects:
- *  - if channel is of type TP_IFACE_CHANNEL_TYPE_STREAM_TUBE, a
- *  #TpStreamTubeChannel
- *  - for all the other channel types, a #TpChannel
+ * #TpAutomaticProxyFactory will currently create #TpChannel objects
+ * as follows:
+ *
+ * <itemizedlist>
+ *   <listitem>
+ *     <para>a #TpStreamTubeChannel, if the channel is of type
+ *     %TP_IFACE_CHANNEL_TYPE_STREAM_TUBE;</para>
+ *   </listitem>
+ *   <listitem>
+ *     <para>a plain #TpChannel, otherwise</para>
+ *   </listitem>
+ * </itemizedlist>
+ *
+ * It is guaranteed that the objects returned by future versions
+ * will be either the class that is currently used, or a more specific
+ * subclass of that class.
+ *
+ * TpProxy subclasses other than TpChannel are not currently supported.
  */
 
 /**
