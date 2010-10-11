@@ -22,10 +22,13 @@
  * SECTION:basic-proxy-factory
  * @title: TpBasicProxyFactory
  * @short_description: channel factory creating TpChannel objects
+ * @see_also: #TpAutomaticProxyFactory
  *
  * This factory implements the #TpClientChannelFactory interface to create
- * #TpChannel objects.
+ * plain #TpChannel objects. Unlike #TpAutomaticProxyFactory, it will
+ * not create higher-level subclasses like #TpStreamTubeChannel.
  *
+ * TpProxy subclasses other than TpChannel are not currently supported.
  */
 
 /**
