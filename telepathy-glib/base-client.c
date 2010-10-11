@@ -1082,7 +1082,7 @@ tp_base_client_constructed (GObject *object)
   if (self->priv->channel_factory == NULL)
     {
       self->priv->channel_factory = TP_CLIENT_CHANNEL_FACTORY (
-          tp_automatic_proxy_factory_new ());
+          tp_automatic_proxy_factory_dup ());
     }
   else
     {
