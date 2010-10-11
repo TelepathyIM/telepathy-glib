@@ -37,9 +37,6 @@ struct _TpClientChannelFactoryInterface {
         const gchar *path,
         GHashTable *properties,
         GError **error);
-
-    /*<private>*/
-    GCallback _padding[7];
 };
 
 GType tp_client_channel_factory_get_type (void);
