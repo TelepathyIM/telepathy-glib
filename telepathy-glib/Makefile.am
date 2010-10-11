@@ -112,6 +112,9 @@ CLEANFILES = \
 distclean-local:
 	rm -rf _gen
 
+clean-local:
+	rm -rf tmp-introspect*
+
 check_c_sources = \
     $(our_headers) \
     $(libtelepathy_glib_internal_la_SOURCES)
