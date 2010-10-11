@@ -57,6 +57,7 @@ GType tp_automatic_proxy_factory_get_type (void);
                               TpAutomaticProxyFactoryClass))
 
 TpAutomaticProxyFactory * tp_automatic_proxy_factory_new (void);
+TpAutomaticProxyFactory * tp_automatic_proxy_factory_dup (void);
 
 G_END_DECLS
 

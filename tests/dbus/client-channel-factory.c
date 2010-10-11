@@ -200,6 +200,22 @@ test_basic_dup (Test *test,
   g_object_unref (fac);
 }
 
+static void
+test_auto_dup (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpAutomaticProxyFactory *fac;
+
+  test->factory = TP_CLIENT_CHANNEL_FACTORY (tp_automatic_proxy_factory_dup ());
+  g_assert (TP_IS_AUTOMATIC_PROXY_FACTORY (test->factory));
+  g_assert (TP_IS_CLIENT_CHANNEL_FACTORY (test->factory));
+
+  fac = tp_automatic_proxy_factory_dup ();
+  g_assert ((gpointer) fac == (gpointer) test->factory);
+
+  g_object_unref (fac);
+}
+
 int
 main (int argc,
       char **argv)
@@ -220,6 +236,8 @@ main (int argc,
       test_auto_stream_tube, teardown);
   g_test_add ("/client-channel-factory/basic/dup", Test, NULL, setup,
       test_basic_dup, teardown);
+  g_test_add ("/client-channel-factory/auto/dup", Test, NULL, setup,
+      test_auto_dup, teardown);
 
   return g_test_run ();
 }

@@ -4893,6 +4893,7 @@ tp_basic_proxy_factory_get_type
 TpAutomaticProxyFactory
 TpAutomaticProxyFactoryClass
 tp_automatic_proxy_factory_new
+tp_automatic_proxy_factory_dup
 <SUBSECTION Standard>
 TP_AUTOMATIC_PROXY_FACTORY
 TP_AUTOMATIC_PROXY_FACTORY_CLASS
