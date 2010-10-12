@@ -106,6 +106,7 @@ our_headers = \
     svc-protocol.h \
     svc-tls.h \
     telepathy-glib.h \
+    text-channel.h \
     text-mixin.h \
     util.h
 
@@ -231,6 +232,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     stream-tube-channel.c \
     stream-tube-connection-internal.h \
     stream-tube-connection.c \
+    text-channel.c \
     text-mixin.c \
     util.c \
     util-internal.h

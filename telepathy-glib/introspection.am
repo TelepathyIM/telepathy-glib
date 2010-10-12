@@ -46,6 +46,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/handle-repo.c $(srcdir)/handle-repo.h $(srcdir)/handle-set.c \
 	$(srcdir)/stream-tube-channel.c $(srcdir)/stream-tube-channel.h \
 	$(srcdir)/stream-tube-connection.c $(srcdir)/stream-tube-connection.h \
+	$(srcdir)/text-channel.c $(srcdir)/text-channel.h \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
 	_gen/telepathy-enums.h \
 	$(NULL)
