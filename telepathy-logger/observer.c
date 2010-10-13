@@ -106,6 +106,8 @@ typedef struct
   TpObserveChannelsContext *ctx;
 } ObservingContext;
 
+static gboolean observing_context_try_to_return (ObservingContext *ctx);
+
 static TplObserver *observer_singleton = NULL;
 
 enum
@@ -154,7 +156,10 @@ tpl_observer_observe_channels (TpBaseClient *client,
       /* Ignore channel if we are already observing it */
       if (g_hash_table_lookup (self->priv->channels, path) != NULL ||
           g_hash_table_lookup (self->priv->preparing_channels, path) != NULL)
-        continue;
+        {
+          observing_ctx->chan_n--;
+          continue;
+        }
 
       /* d.bus.propertyName.str/gvalue hash */
       prop_map = tp_channel_borrow_immutable_properties (channel);
@@ -164,8 +169,9 @@ tpl_observer_observe_channels (TpBaseClient *client,
           &error);
       if (tpl_chan == NULL)
         {
-          DEBUG ("%s", error->message);
+          DEBUG ("%s: %s", path, error->message);
           g_clear_error (&error);
+          observing_ctx->chan_n--;
           continue;
         }
       PATH_DEBUG (tpl_chan, "Starting preparation for TplChannel instance %p",
@@ -179,7 +185,27 @@ tpl_observer_observe_channels (TpBaseClient *client,
           observing_ctx);
     }
 
-  tp_observe_channels_context_delay (context);
+  /* Arguably we shouldn't claim to have accepted the channels if an error
+   * occurred above? */
+  if (!observing_context_try_to_return (observing_ctx))
+    tp_observe_channels_context_delay (context);
+}
+
+static gboolean
+observing_context_try_to_return (ObservingContext *observing_ctx)
+{
+  if (observing_ctx->chan_n == 0)
+    {
+      DEBUG ("Returning from observe channels");
+      tp_observe_channels_context_accept (observing_ctx->ctx);
+      g_object_unref (observing_ctx->ctx);
+      g_slice_free (ObservingContext, observing_ctx);
+      return TRUE;
+    }
+  else
+    {
+      return FALSE;
+    }
 }
 
 static gboolean
@@ -224,13 +250,7 @@ got_tpl_channel_text_ready_cb (GObject *obj,
       tp_proxy_get_object_path (obj));
 
   observing_ctx->chan_n -= 1;
-  if (observing_ctx->chan_n == 0)
-    {
-      DEBUG ("Returning from observe channels");
-      tp_observe_channels_context_accept (observing_ctx->ctx);
-      g_object_unref (observing_ctx->ctx);
-      g_slice_free (ObservingContext, observing_ctx);
-    }
+  observing_context_try_to_return (observing_ctx);
 }
 
 
