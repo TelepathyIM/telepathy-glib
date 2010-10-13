@@ -48,6 +48,7 @@ noinst_PROGRAMS = \
     test-simple-handler \
     test-simple-observer \
     test-stream-tube \
+    test-text-channel \
     test-text-mixin \
     test-text-respawn \
     test-unsupported-interface
@@ -186,7 +187,9 @@ test_simple_handler_SOURCES = simple-handler.c
 
 test_stream_tube_SOURCES = stream-tube.c
 
+
 test_client_channel_factory_SOURCES = client-channel-factory.c
+
 
 # this one uses internal ABI
 test_cm_message_SOURCES = \
@@ -195,6 +198,12 @@ test_cm_message_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
     $(GLIB_LIBS)
+
+test_text_channel_SOURCES = text-channel.c
+
+test_text_channel_LDADD = \
+    $(LDADD) \
+    $(top_builddir)/examples/cm/echo-message-parts/libexample-cm-echo-2.la
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
