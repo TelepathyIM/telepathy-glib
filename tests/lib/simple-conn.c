@@ -234,6 +234,9 @@ pretend_disconnected (gpointer data)
 {
   TpTestsSimpleConnection *self = TP_TESTS_SIMPLE_CONNECTION (data);
 
+  /* We are disconnected, all our channels are invalidated */
+  g_hash_table_remove_all (self->priv->channels);
+
   tp_base_connection_finish_shutdown (TP_BASE_CONNECTION (data));
   self->priv->disconnect_source = 0;
   return FALSE;
