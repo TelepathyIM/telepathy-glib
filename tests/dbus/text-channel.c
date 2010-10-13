@@ -127,6 +127,40 @@ test_creation (Test *test,
   g_assert_no_error (error);
 }
 
+static void
+test_properties (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GStrv content_types;
+  TpMessagePartSupportFlags message_part;
+  TpDeliveryReportingSupportFlags delivery;
+
+  g_object_get (test->channel,
+      "supported-content-types", &content_types,
+      "message-part-support-flags", &message_part,
+      "delivery-reporting-support", &delivery,
+      NULL);
+
+  g_assert_cmpuint (g_strv_length (content_types), ==, 1);
+  g_assert_cmpstr (content_types[0], ==, "*/*");
+  g_strfreev (content_types);
+
+  content_types = tp_text_channel_get_supported_content_types (test->channel);
+  g_assert_cmpstr (content_types[0], ==, "*/*");
+
+  g_assert_cmpuint (message_part, ==,
+      TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT |
+      TP_MESSAGE_PART_SUPPORT_FLAG_MULTIPLE_ATTACHMENTS |
+      TP_DELIVERY_REPORTING_SUPPORT_FLAG_RECEIVE_FAILURES);
+  g_assert_cmpuint (message_part, ==,
+      tp_text_channel_get_message_part_support_flags (test->channel));
+
+  g_assert_cmpuint (delivery, ==,
+      TP_DELIVERY_REPORTING_SUPPORT_FLAG_RECEIVE_FAILURES);
+  g_assert_cmpuint (delivery, ==,
+      tp_text_channel_get_delivery_reporting_support (test->channel));
+}
+
 int
 main (int argc,
       char **argv)
@@ -140,6 +174,8 @@ main (int argc,
 
   g_test_add ("/text-channel/creation", Test, NULL, setup,
       test_creation, teardown);
+  g_test_add ("/text-channel/properties", Test, NULL, setup,
+      test_properties, teardown);
 
   return g_test_run ();
 }
