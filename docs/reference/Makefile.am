@@ -77,7 +77,8 @@ IGNORE_HFILES=\
     observe-channels-context-internal.h \
     protocol-internal.h \
     proxy-internal.h \
-    proxy-introspectable.h
+    proxy-introspectable.h \
+    util-internal.h
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png
