@@ -117,7 +117,7 @@ struct _TpAccountPrivate {
   GHashTable *parameters;
 };
 
-G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY);
+G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY)
 
 /* signals */
 enum {

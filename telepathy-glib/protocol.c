@@ -71,7 +71,7 @@ struct _TpProtocolClass
  * Since: 0.11.11
  */
 
-G_DEFINE_TYPE(TpProtocol, tp_protocol, TP_TYPE_PROXY);
+G_DEFINE_TYPE(TpProtocol, tp_protocol, TP_TYPE_PROXY)
 
 /**
  * TP_PROTOCOL_FEATURE_PARAMETERS:

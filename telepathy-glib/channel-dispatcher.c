@@ -75,7 +75,7 @@ struct _TpChannelDispatcherPrivate {
     gpointer dummy;
 };
 
-G_DEFINE_TYPE (TpChannelDispatcher, tp_channel_dispatcher, TP_TYPE_PROXY);
+G_DEFINE_TYPE (TpChannelDispatcher, tp_channel_dispatcher, TP_TYPE_PROXY)
 
 static void
 tp_channel_dispatcher_init (TpChannelDispatcher *self)

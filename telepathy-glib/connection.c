@@ -241,7 +241,7 @@ enum
 
 G_DEFINE_TYPE (TpConnection,
     tp_connection,
-    TP_TYPE_PROXY);
+    TP_TYPE_PROXY)
 
 static void
 tp_connection_get_property (GObject *object,

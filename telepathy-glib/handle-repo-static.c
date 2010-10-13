@@ -69,7 +69,7 @@ static void static_repo_iface_init (gpointer g_iface,
 
 G_DEFINE_TYPE_WITH_CODE (TpStaticHandleRepo, tp_static_handle_repo,
     G_TYPE_OBJECT, G_IMPLEMENT_INTERFACE (TP_TYPE_HANDLE_REPO_IFACE,
-        static_repo_iface_init));
+        static_repo_iface_init))
 
 static void
 tp_static_handle_repo_init (TpStaticHandleRepo *self)

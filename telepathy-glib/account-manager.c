@@ -110,7 +110,7 @@ enum {
 
 static guint signals[LAST_SIGNAL];
 
-G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY);
+G_DEFINE_TYPE (TpAccountManager, tp_account_manager, TP_TYPE_PROXY)
 
 /**
  * TP_ACCOUNT_MANAGER_FEATURE_CORE:

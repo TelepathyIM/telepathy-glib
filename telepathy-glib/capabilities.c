@@ -59,7 +59,7 @@ struct _TpCapabilities {
     TpCapabilitiesPrivate *priv;
 };
 
-G_DEFINE_TYPE (TpCapabilities, tp_capabilities, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TpCapabilities, tp_capabilities, G_TYPE_OBJECT)
 
 enum {
     PROP_CHANNEL_CLASSES = 1,

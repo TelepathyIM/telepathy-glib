@@ -285,7 +285,7 @@ struct _TpConnectionManagerPrivate {
 
 G_DEFINE_TYPE (TpConnectionManager,
     tp_connection_manager,
-    TP_TYPE_PROXY);
+    TP_TYPE_PROXY)
 
 
 static void

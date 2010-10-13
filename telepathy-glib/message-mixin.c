@@ -175,7 +175,7 @@ struct _TpMessage {
     /* for sending */
     DBusGMethodInvocation *outgoing_context;
     TpMessageSendingFlags outgoing_flags;
-    gboolean outgoing_text_api:1;
+    gboolean outgoing_text_api;
 };
 
 
