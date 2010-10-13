@@ -230,7 +230,7 @@ static void dynamic_repo_iface_init (gpointer g_iface,
 
 G_DEFINE_TYPE_WITH_CODE (TpDynamicHandleRepo, tp_dynamic_handle_repo,
     G_TYPE_OBJECT, G_IMPLEMENT_INTERFACE (TP_TYPE_HANDLE_REPO_IFACE,
-        dynamic_repo_iface_init));
+        dynamic_repo_iface_init))
 
 static inline TpHandlePriv *
 handle_priv_lookup (TpDynamicHandleRepo *repo,

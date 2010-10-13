@@ -612,7 +612,7 @@ tp_channel_manager_foreach_channel_class (TpChannelManager *manager,
     {
       ForeachAdaptor adaptor = { manager, func, user_data };
 
-      return tp_channel_manager_type_foreach_channel_class (
+      tp_channel_manager_type_foreach_channel_class (
           G_TYPE_FROM_INSTANCE (manager), foreach_adaptor, &adaptor);
     }
 }

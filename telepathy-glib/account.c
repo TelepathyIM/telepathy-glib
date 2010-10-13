@@ -121,7 +121,7 @@ struct _TpAccountPrivate {
   TpStorageRestrictionFlags storage_restrictions;
 };
 
-G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY);
+G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY)
 
 /* signals */
 enum {
