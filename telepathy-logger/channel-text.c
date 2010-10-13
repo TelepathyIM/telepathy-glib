@@ -68,8 +68,8 @@ static void call_when_ready_wrapper (TplChannel *tpl_chan,
 
 static void got_tpl_chan_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
-static void on_closed_cb (TpChannel *proxy, gpointer user_data,
-    GObject *weak_object);
+static void on_channel_invalidated_cb (TpProxy *proxy, guint domain, gint code,
+    gchar *message, gpointer user_data);
 static void on_lost_message_cb (TpChannel *proxy, gpointer user_data,
     GObject *weak_object);
 static void on_received_signal_cb (TpChannel *proxy, guint arg_ID,
@@ -963,14 +963,8 @@ pendingproc_connect_message_signals (TplActionChain *ctx,
       is_error = TRUE;
     }
 
-  tp_cli_channel_connect_to_closed (channel, on_closed_cb,
-      tpl_text, NULL, NULL, &error);
-  if (error != NULL)
-    {
-      PATH_DEBUG (tpl_text, "'closed' signal connect: %s", error->message);
-      g_clear_error (&error);
-      is_error = TRUE;
-    }
+  tp_g_signal_connect_object (channel, "invalidated",
+      G_CALLBACK (on_channel_invalidated_cb), tpl_text, 0);
 
   if (tp_proxy_has_interface_by_id (tpl_text,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
@@ -1029,13 +1023,17 @@ on_pending_messages_removed_cb (TpChannel *proxy,
 
 
 static void
-on_closed_cb (TpChannel *proxy,
-    gpointer user_data,
-    GObject *weak_object)
+on_channel_invalidated_cb (TpProxy *proxy,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
 {
-  TplChannelText *tpl_text = TPL_CHANNEL_TEXT (user_data);
-  TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
+  TplChannel *tpl_chan = TPL_CHANNEL (user_data);
   TplObserver *observer = _tpl_observer_new ();
+
+  PATH_DEBUG (tpl_chan, "%s #%d %s",
+      g_quark_to_string (domain), code, message);
 
   if (!_tpl_observer_unregister_channel (observer, tpl_chan))
     PATH_DEBUG (tpl_chan, "Channel couldn't be unregistered correctly (BUG?)");
