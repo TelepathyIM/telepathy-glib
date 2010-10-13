@@ -922,69 +922,42 @@ pendingproc_connect_message_signals (TplActionChain *ctx,
     gpointer user_data)
 {
   TplChannelText *tpl_text = _tpl_action_chain_get_object (ctx);
-  GError *error = NULL;
-  gboolean is_error = FALSE;
   TpChannel *channel = TP_CHANNEL (tpl_text);
-
-  tp_cli_channel_type_text_connect_to_received (channel,
-      on_received_signal_cb, NULL, NULL, NULL, &error);
-  if (error != NULL)
-    {
-      PATH_DEBUG (tpl_text, "'received' signal connect: %s", error->message);
-      g_clear_error (&error);
-      is_error = TRUE;
-    }
-
-  tp_cli_channel_type_text_connect_to_sent (channel,
-      on_sent_signal_cb, tpl_text, NULL, NULL, &error);
-  if (error != NULL)
-    {
-      PATH_DEBUG (tpl_text, "'sent' signal connect: %s", error->message);
-      g_clear_error (&error);
-      is_error = TRUE;
-    }
-
-  tp_cli_channel_type_text_connect_to_send_error (channel,
-      on_send_error_cb, tpl_text, NULL, NULL, &error);
-  if (error != NULL)
-    {
-      PATH_DEBUG (tpl_text, "'send error' signal connect: %s", error->message);
-      g_clear_error (&error);
-      is_error = TRUE;
-    }
-
-  tp_cli_channel_type_text_connect_to_lost_message (channel,
-      on_lost_message_cb, tpl_text, NULL, NULL, &error);
-  if (error != NULL)
-    {
-      PATH_DEBUG (tpl_text, "'lost message' signal connect: %s",
-          error->message);
-      g_clear_error (&error);
-      is_error = TRUE;
-    }
+  GError *error = NULL;
 
   tp_g_signal_connect_object (channel, "invalidated",
       G_CALLBACK (on_channel_invalidated_cb), tpl_text, 0);
 
+  if (tp_cli_channel_type_text_connect_to_received (channel,
+          on_received_signal_cb, NULL, NULL, NULL, &error) == NULL)
+    goto disaster;
+
+  if (tp_cli_channel_type_text_connect_to_sent (channel,
+          on_sent_signal_cb, tpl_text, NULL, NULL, &error) == NULL)
+    goto disaster;
+
+  if (tp_cli_channel_type_text_connect_to_send_error (channel,
+          on_send_error_cb, tpl_text, NULL, NULL, &error) == NULL)
+    goto disaster;
+
+  if (tp_cli_channel_type_text_connect_to_lost_message (channel,
+          on_lost_message_cb, tpl_text, NULL, NULL, &error) == NULL)
+    goto disaster;
+
   if (tp_proxy_has_interface_by_id (tpl_text,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
-    {
+          TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES) &&
       tp_cli_channel_interface_messages_connect_to_pending_messages_removed (
           channel, on_pending_messages_removed_cb, NULL, NULL,
-          G_OBJECT (tpl_text), &error);
-      if (error != NULL)
-        {
-          PATH_DEBUG (tpl_text, "'PendingMessagesRemoved' signal connect: %s",
-              error->message);
-          g_clear_error (&error);
-          is_error = TRUE;
-        }
-    }
+          G_OBJECT (tpl_text), &error) == NULL)
+   goto disaster;
 
-  if (is_error)
-    _tpl_action_chain_terminate (ctx);
-  else
-    _tpl_action_chain_continue (ctx);
+  _tpl_action_chain_continue (ctx);
+  return;
+
+disaster:
+  DEBUG ("couldn't connect to signals: %s", error->message);
+  g_clear_error (&error);
+  _tpl_action_chain_terminate (ctx);
 }
 
 
