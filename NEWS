@@ -1,3 +1,17 @@
+telepathy-logger 0.1.6 (2010-10-13)
+===================================
+
+The “maths lesson” release.
+
+Fixes:
+
+• Running the test suite no longer accesses your session's GSettings.
+  (Danni)
+• Out-of-tree builds now work. (Nicolas)
+• A CM crashing with open text channels no longer causes conversations
+  not to be logged, and to take 25 seconds to be displayed.
+  (fd.o#30824, Will)
+
 telepathy-logger 0.1.5 (2010-08-11)
 ===================================
 
