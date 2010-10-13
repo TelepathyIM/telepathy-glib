@@ -1864,6 +1864,7 @@ tp_message_mixin_init_dbus_properties (GObjectClass *cls)
       { "PendingMessages", NULL, NULL },
       { "SupportedContentTypes", NULL, NULL },
       { "MessagePartSupportFlags", NULL, NULL },
+      { "DeliveryReportingSupport", NULL, NULL },
       { NULL }
   };
 
