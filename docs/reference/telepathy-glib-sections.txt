@@ -2198,6 +2198,28 @@ tp_heap_size
 <FILE>message-mixin</FILE>
 <INCLUDE>telepathy-glib/message-mixin.h</INCLUDE>
 <TITLE>TpMessageMixin</TITLE>
+TpMessageMixin
+TpMessageMixinSendImpl
+tp_message_mixin_finalize
+tp_message_mixin_implement_sending
+tp_message_mixin_init
+tp_message_mixin_init_dbus_properties
+tp_message_mixin_messages_iface_init
+tp_message_mixin_get_dbus_property
+tp_message_mixin_sent
+tp_message_mixin_set_rescued
+tp_message_mixin_take_received
+tp_message_mixin_has_pending_messages
+tp_message_mixin_clear
+tp_message_mixin_text_iface_init
+<SUBSECTION Private>
+TpMessageMixinPrivate
+</SECTION>
+
+<SECTION>
+<FILE>message</FILE>
+<INCLUDE>telepathy-glib/message.h</INCLUDE>
+<TITLE>TpMessage</TITLE>
 TpMessage
 tp_message_append_part
 tp_message_count_parts
@@ -2220,22 +2242,6 @@ tp_message_set_uint16
 tp_message_set_uint32
 tp_message_set_uint64
 tp_message_take_message
-TpMessageMixin
-TpMessageMixinSendImpl
-tp_message_mixin_finalize
-tp_message_mixin_implement_sending
-tp_message_mixin_init
-tp_message_mixin_init_dbus_properties
-tp_message_mixin_messages_iface_init
-tp_message_mixin_get_dbus_property
-tp_message_mixin_sent
-tp_message_mixin_set_rescued
-tp_message_mixin_take_received
-tp_message_mixin_has_pending_messages
-tp_message_mixin_clear
-tp_message_mixin_text_iface_init
-<SUBSECTION Private>
-TpMessageMixinPrivate
 </SECTION>
 
 <SECTION>

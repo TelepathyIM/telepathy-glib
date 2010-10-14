@@ -23,6 +23,7 @@
 
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/handle-repo.h>
+#include <telepathy-glib/message.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/util.h>
 
@@ -35,47 +36,6 @@ struct _TpMessageMixin {
   /*<private>*/
   TpMessageMixinPrivate *priv;
 };
-
-
-typedef struct _TpMessage TpMessage;
-
-TpMessage *tp_message_new (TpBaseConnection *connection, guint initial_parts,
-    guint size_hint) G_GNUC_WARN_UNUSED_RESULT;
-void tp_message_destroy (TpMessage *self);
-guint tp_message_count_parts (TpMessage *self);
-const GHashTable *tp_message_peek (TpMessage *self, guint part);
-guint tp_message_append_part (TpMessage *self);
-void tp_message_delete_part (TpMessage *self, guint part);
-void tp_message_ref_handle (TpMessage *self, TpHandleType handle_type,
-    TpHandle handle);
-
-gboolean tp_message_delete_key (TpMessage *self, guint part, const gchar *key);
-void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
-    TpHandleType handle_type, TpHandle handle_or_0);
-void tp_message_set_boolean (TpMessage *self, guint part, const gchar *key,
-    gboolean b);
-void tp_message_set_int32 (TpMessage *self, guint part, const gchar *key,
-    gint32 i);
-#define tp_message_set_int16(s, p, k, i) \
-    tp_message_set_int32 (s, p, k, (gint16) i)
-void tp_message_set_int64 (TpMessage *self, guint part, const gchar *key,
-    gint64 i);
-void tp_message_set_uint32 (TpMessage *self, guint part, const gchar *key,
-    guint32 u);
-#define tp_message_set_uint16(s, p, k, u) \
-    tp_message_set_uint32 (s, p, k, (guint16) u)
-void tp_message_set_uint64 (TpMessage *self, guint part, const gchar *key,
-    guint64 u);
-void tp_message_set_string (TpMessage *self, guint part, const gchar *key,
-    const gchar *s);
-void tp_message_set_string_printf (TpMessage *self, guint part,
-    const gchar *key, const gchar *fmt, ...) G_GNUC_PRINTF (4, 5);
-void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
-    guint len, gconstpointer bytes);
-void tp_message_set (TpMessage *self, guint part, const gchar *key,
-    const GValue *source);
-void tp_message_take_message (TpMessage *self, guint part, const gchar *key,
-    TpMessage *message);
 
 void tp_message_mixin_get_dbus_property (GObject *object, GQuark interface,
     GQuark name, GValue *value, gpointer unused);

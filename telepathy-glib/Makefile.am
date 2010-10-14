@@ -72,6 +72,7 @@ our_headers = \
     interfaces.h \
     intset.h \
     media-interfaces.h \
+    message.h \
     message-mixin.h \
     observe-channels-context.h \
     presence-mixin.h \
@@ -197,6 +198,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel-iface.c \
     channel-factory-iface.c \
     media-interfaces.c \
+    message.c \
+    message-internal.h \
     message-mixin.c \
     observe-channels-context-internal.h \
     observe-channels-context.c \
