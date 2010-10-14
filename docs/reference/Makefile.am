@@ -103,8 +103,8 @@ expand_content_files=
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
 INCLUDES=-I$(top_srcdir) -I$(top_builddir) \
 	 @DBUS_CFLAGS@ @GLIB_CFLAGS@
-GTKDOC_LIBS=@DBUS_LIBS@ @GLIB_LIBS@ \
-	    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
+GTKDOC_LIBS=$(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+            @DBUS_LIBS@ @GLIB_LIBS@
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
