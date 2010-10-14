@@ -53,9 +53,45 @@ struct _TpMessagePrivate
 };
 
 static void
+tp_message_dispose (GObject *object)
+{
+  TpMessage *self = TP_MESSAGE (object);
+  void (*dispose) (GObject *) =
+    G_OBJECT_CLASS (tp_message_parent_class)->dispose;
+  guint i;
+
+  if (self->parts != NULL)
+    {
+      for (i = 0; i < self->parts->len; i++)
+        {
+          g_hash_table_destroy (g_ptr_array_index (self->parts, i));
+        }
+
+      g_ptr_array_free (self->parts, TRUE);
+      self->parts = NULL;
+    }
+
+  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
+    {
+      if (self->reffed_handles[i] != NULL)
+        {
+          tp_handle_set_destroy (self->reffed_handles[i]);
+          self->reffed_handles[i] = NULL;
+        }
+    }
+
+  tp_clear_object (&self->connection);
+
+  if (dispose != NULL)
+    dispose (object);
+}
+
+static void
 tp_message_class_init (TpMessageClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+
+  gobject_class->dispose = tp_message_dispose;
 
   g_type_class_add_private (gobject_class, sizeof (TpMessagePrivate));
 }
@@ -93,7 +129,7 @@ tp_message_new (TpBaseConnection *connection,
   g_return_val_if_fail (initial_parts >= 1, NULL);
   g_return_val_if_fail (size_hint >= initial_parts, NULL);
 
-  self = g_slice_new0 (TpMessage);
+  self = g_object_new (TP_TYPE_MESSAGE, NULL);
   self->connection = g_object_ref (connection);
   self->parts = g_ptr_array_sized_new (size_hint);
   self->incoming_id = G_MAXUINT32;
@@ -113,37 +149,16 @@ tp_message_new (TpBaseConnection *connection,
  * tp_message_destroy:
  * @self: a message
  *
- * Destroy @self.
+ * Since 0.13.UNRELEASED this function is a simple wrapper around
+ * g_object_unref()
  *
  * @since 0.7.21
  */
 void
 tp_message_destroy (TpMessage *self)
 {
-  guint i;
-
-  g_return_if_fail (TP_IS_BASE_CONNECTION (self->connection));
-  g_return_if_fail (self->parts != NULL);
-  g_return_if_fail (self->parts->len >= 1);
-
-  for (i = 0; i < self->parts->len; i++)
-    {
-      g_hash_table_destroy (g_ptr_array_index (self->parts, i));
-    }
-
-  g_ptr_array_free (self->parts, TRUE);
-
-  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
-    {
-      if (self->reffed_handles[i] != NULL)
-        tp_handle_set_destroy (self->reffed_handles[i]);
-    }
-
-  g_object_unref (self->connection);
-
-  g_slice_free (TpMessage, self);
+  g_object_unref (self);
 }
-
 
 /**
  * tp_message_count_parts:
