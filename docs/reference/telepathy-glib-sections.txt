@@ -2242,6 +2242,14 @@ tp_message_set_uint16
 tp_message_set_uint32
 tp_message_set_uint64
 tp_message_take_message
+<SUBSECTION Standard>
+TP_IS_MESSAGE
+TP_IS_MESSAGE_CLASS
+TP_MESSAGE
+TP_MESSAGE_CLASS
+TP_MESSAGE_GET_CLASS
+TP_TYPE_MESSAGE
+tp_message_get_type
 </SECTION>
 
 <SECTION>

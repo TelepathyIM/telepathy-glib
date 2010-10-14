@@ -23,7 +23,17 @@
 
 G_BEGIN_DECLS
 
+#define TP_TYPE_MESSAGE (tp_message_get_type ())
+#define TP_MESSAGE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_MESSAGE, TpMessage))
+#define TP_MESSAGE_CLASS(obj) (G_TYPE_CHECK_CLASS_CAST ((obj), TP_TYPE_MESSAGE, TpMessageClass))
+#define TP_IS_MESSAGE(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_MESSAGE))
+#define TP_IS_MESSAGE_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE ((obj), TP_TYPE_MESSAGE))
+#define TP_MESSAGE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_MESSAGE, TpMessageClass))
+
 typedef struct _TpMessage TpMessage;
+typedef struct _TpMessageClass TpMessageClass;
+
+GType tp_message_get_type (void);
 
 TpMessage *tp_message_new (TpBaseConnection *connection, guint initial_parts,
     guint size_hint) G_GNUC_WARN_UNUSED_RESULT;

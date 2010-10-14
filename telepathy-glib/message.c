@@ -36,6 +36,8 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
 
+G_DEFINE_TYPE (TpMessage, tp_message, G_TYPE_OBJECT)
+
 /**
  * TpMessage:
  *
@@ -44,6 +46,26 @@
  * mapping contains message headers and subsequent mappings contain the
  * message body).
  */
+
+struct _TpMessagePrivate
+{
+  gpointer unused;
+};
+
+static void
+tp_message_class_init (TpMessageClass *klass)
+{
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+
+  g_type_class_add_private (gobject_class, sizeof (TpMessagePrivate));
+}
+
+static void
+tp_message_init (TpMessage *self)
+{
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_MESSAGE,
+      TpMessagePrivate);
+}
 
 
 /**

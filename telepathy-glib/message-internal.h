@@ -28,7 +28,20 @@
 
 G_BEGIN_DECLS
 
+typedef struct _TpMessagePrivate TpMessagePrivate;
+
+struct _TpMessageClass
+{
+    /*<private>*/
+    GObjectClass parent_class;
+    GCallback _padding[7];
+};
+
 struct _TpMessage {
+    /*<private>*/
+    GObject parent;
+    TpMessagePrivate *priv;
+
     TpBaseConnection *connection;
 
     /* array of hash tables, allocated string => sliced GValue */
