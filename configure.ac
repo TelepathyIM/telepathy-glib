@@ -11,23 +11,15 @@ AC_PREREQ([2.59])
 
 m4_define([tp_glib_major_version], [0])
 m4_define([tp_glib_minor_version], [12])
-m4_define([tp_glib_micro_version], [0])
-m4_define([tp_glib_nano_version], [1])
+m4_define([tp_glib_micro_version], [1])
+m4_define([tp_glib_nano_version], [0])
 
 # If library source has changed since last release, increment revision
 # If interfaces have been added, removed or changed since last release,
-#  increment current and set revision to 0
-# If interfaces have been added since last release, increment age
-# If interfaces have been removed since last release, set age to 0
-#
-# If interfaces have been added, release builds will fail unless you add a new
-# file like telepathy-glib/versions/0.7.3.abi to add them to the official ABI.
-# This also forces binaries built against devel versions to be rebuilt
-# (we don't guarantee that we won't add ABI then remove it again, if it was
-# never seen in a release).
+#  you're on the wrong branch :-)
 
 m4_define([tp_glib_lt_current], [45])
-m4_define([tp_glib_lt_revision], [0])
+m4_define([tp_glib_lt_revision], [1])
 m4_define([tp_glib_lt_age], [45])
 
 # Some magic

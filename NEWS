@@ -1,7 +1,28 @@
-telepathy-glib 0.12.1 (UNRELEASED)
+telepathy-glib 0.12.1 (2010-10-15)
 ==================================
 
-…
+The "your thighs are capacitive too" release.
+
+Enhancements:
+
+• When a Protocol's filter rejects a parameter, log the error message (wjt)
+
+• Improve the error message for an undefined D-Bus interface (wjt)
+
+• Check the GObject type of the self pointer in TpCapabilities methods (cassidy)
+
+Fixes:
+
+• fd.o #30644: don't 'return' a void expression from a void function, which
+  isn't valid C99 and breaks compilation on Sun Studio C (smcv)
+
+• Remove redundant trailing semicolons from G_DEFINE_TYPE etc., which are
+  not valid C99 (smcv)
+
+• Add DeliveryReportingSupport to the properties offered by TpMessageMixin
+  (cassidy)
+
+• Avoid using a gboolean (which is signed) as a one-bit bitfield (smcv)
 
 telepathy-glib 0.12.0 (2010-09-20)
 ==================================
