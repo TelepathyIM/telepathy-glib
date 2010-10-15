@@ -4365,6 +4365,8 @@ tp_base_client_get_dbus_daemon
 tp_base_client_get_name
 tp_base_client_get_uniquify_name
 tp_base_client_get_account_manager
+tp_base_client_set_channel_factory
+tp_base_client_get_channel_factory
 <SUBSECTION Standard>
 tp_base_client_get_type
 TP_BASE_CLIENT
@@ -4654,6 +4656,7 @@ tp_account_channel_request_create_channel_async
 tp_account_channel_request_create_channel_finish
 tp_account_channel_request_ensure_channel_async
 tp_account_channel_request_ensure_channel_finish
+tp_account_channel_request_set_channel_factory
 <SUBSECTION Standard>
 tp_account_channel_request_get_type
 TP_ACCOUNT_CHANNEL_REQUEST
@@ -4857,4 +4860,53 @@ TP_STREAM_TUBE_CONNECTION_GET_CLASS
 TP_TYPE_STREAM_TUBE_CONNECTION
 tp_stream_tube_connection_get_type
 TpStreamTubeConnectionPrivate
+
+<SECTION>
+<FILE>client-channel-factory</FILE>
+<TITLE>client-channel-factory</TITLE>
+<INCLUDE>telepathy-glib/client-channel-factory.h</INCLUDE>
+TpClientChannelFactoryInterface
+tp_client_channel_factory_create_channel
+<SUBSECTION Standard>
+TP_CLIENT_CHANNEL_FACTORY
+TP_CLIENT_CHANNEL_FACTORY_GET_IFACE
+TP_IS_CLIENT_CHANNEL_FACTORY
+TP_TYPE_CLIENT_CHANNEL_FACTORY
+tp_client_channel_factory_get_type
+</SECTION>
+
+<SECTION>
+<FILE>basic-proxy-factory</FILE>
+<TITLE>basic-proxy-factory</TITLE>
+<INCLUDE>telepathy-glib/basic-proxy-factory.h</INCLUDE>
+TpBasicProxyFactory
+TpBasicProxyFactoryClass
+tp_basic_proxy_factory_new
+tp_basic_proxy_factory_dup
+<SUBSECTION Standard>
+TP_BASIC_PROXY_FACTORY
+TP_BASIC_PROXY_FACTORY_GET_CLASS
+TP_IS_BASIC_PROXY_FACTORY
+TP_TYPE_BASIC_PROXY_FACTORY
+TP_BASIC_PROXY_FACTORY_CLASS
+TP_IS_BASIC_PROXY_FACTORY_CLASS
+tp_basic_proxy_factory_get_type
+</SECTION>
+
+<SECTION>
+<FILE>automatic-proxy-factory</FILE>
+<TITLE>automatic-proxy-factory</TITLE>
+<INCLUDE>telepathy-glib/automatic-proxy-factory.h</INCLUDE>
+TpAutomaticProxyFactory
+TpAutomaticProxyFactoryClass
+tp_automatic_proxy_factory_new
+tp_automatic_proxy_factory_dup
+<SUBSECTION Standard>
+TP_AUTOMATIC_PROXY_FACTORY
+TP_AUTOMATIC_PROXY_FACTORY_CLASS
+TP_AUTOMATIC_PROXY_FACTORY_GET_CLASS
+TP_IS_AUTOMATIC_PROXY_FACTORY
+TP_IS_AUTOMATIC_PROXY_FACTORY_CLASS
+TP_TYPE_AUTOMATIC_PROXY_FACTORY
+tp_automatic_proxy_factory_get_type
 </SECTION>

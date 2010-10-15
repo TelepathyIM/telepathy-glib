@@ -27,6 +27,7 @@
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/add-dispatch-operation-context.h>
+#include <telepathy-glib/client-channel-factory.h>
 #include <telepathy-glib/handle-channels-context.h>
 #include <telepathy-glib/observe-channels-context.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
@@ -147,6 +148,12 @@ void tp_base_client_add_connection_features (TpBaseClient *self,
     const GQuark *features, gssize n);
 void tp_base_client_add_connection_features_varargs (TpBaseClient *self,
     GQuark feature, ...);
+
+void tp_base_client_set_channel_factory (TpBaseClient *self,
+    TpClientChannelFactoryInterface *factory);
+
+TpClientChannelFactoryInterface * tp_base_client_get_channel_factory (
+    TpBaseClient *self);
 
 /* future, potentially (currently in spec as a draft):
 void tp_base_client_set_handler_related_conferences_bypass_approval (
