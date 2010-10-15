@@ -43,7 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <tp:docstring>
         Emitted to indicate that the mute state has changed for this call content.
         This may occur as a consequence of the client calling
-        <tp:member-ref>Muted</tp:member-ref>, or as an indication that another
+        <tp:member-ref>Mute</tp:member-ref>, or as an indication that another
         client has (un)muted the content.
       </tp:docstring>
 
@@ -61,7 +61,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </tp:docstring>
     </property>
 
-    <method name="Muted" tp:name-for-bindings="Muted">
+    <method name="Mute" tp:name-for-bindings="Mute">
+      <tp:changed version="0.21.2">renamed from Muted</tp:changed>
       <arg direction="in" name="Muted" type="b">
         <tp:docstring>
           True if the client has muted the content.
@@ -70,7 +71,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
       <tp:docstring>
         <p>Inform the CM that the call content has been muted or unmuted by
-          che client.</p>
+          the client.</p>
 
         <p>It is the client's responsibility to actually mute or unmute the
           microphone or camera used for the content. However, the client

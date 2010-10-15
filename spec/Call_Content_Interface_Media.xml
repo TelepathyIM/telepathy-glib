@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <node name="/Call_Content_Interface_Media"
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <tp:copyright>Copyright © 2009 Collabora Ltd.</tp:copyright>
-  <tp:copyright>Copyright © 2009 Nokia Corporation</tp:copyright>
+  <tp:copyright>Copyright © 2009-2010 Collabora Ltd.</tp:copyright>
+  <tp:copyright>Copyright © 2009-2010 Nokia Corporation</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
     <p>This library is free software; you can redistribute it and/or
       modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,7 @@
   <interface name="org.freedesktop.Telepathy.Call.Content.Interface.Media.DRAFT"
       tp:causes-havoc="experimental">
     <tp:added version="0.19.0">(draft 1)</tp:added>
-    <tp:requires interface="org.freedesktop.Telepathy.Call.Content"/>
+    <tp:requires interface="org.freedesktop.Telepathy.Call.Content.DRAFT"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       Interface to use by a software implementation of media streaming.
@@ -93,17 +93,16 @@
 
       <tp:member name="Codec_Offer" type="o">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          The object path to the
-            <tp:dbus-ref namespace="org.freedesktop.Telepathy.Call.Content"
-              >CodecOffer.DRAFT</tp:dbus-ref>
+          The object path to the <tp:dbus-ref namespace="ofdT.Call.Content"
+          >CodecOffer.DRAFT</tp:dbus-ref>
         </tp:docstring>
       </tp:member>
 
       <tp:member name="Remote_Contact_Codec_Map" type="a{ua(usuua{ss})}"
           tp:type="Contact_Codec_Map">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          The <tp:dbus-ref namespace="org.freedesktop.Telepathy.Call.Content"
-            >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property
+          The <tp:dbus-ref namespace="ofdT.Call.Content"
+          >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property
           of the codec offer.
         </tp:docstring>
       </tp:member>
@@ -163,14 +162,13 @@
 
     <signal name="NewCodecOffer" tp:name-for-bindings="New_Codec_Offer">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>Emitted when a new <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Call.Content"
-            >CodecOffer.DRAFT</tp:dbus-ref> appears. The streaming
+        <p>Emitted when a new <tp:dbus-ref namespace="ofdT.Call.Content"
+          >CodecOffer.DRAFT</tp:dbus-ref> appears. The streaming
           implementation MUST respond by calling the <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Call.Content.CodecOffer.DRAFT"
-            >Accept</tp:dbus-ref> or <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Call.Content.CodecOffer.DRAFT"
-            >Reject</tp:dbus-ref> method on the codec offer object.</p>
+          namespace="ofdT.Call.Content.CodecOffer.DRAFT"
+          >Accept</tp:dbus-ref> or <tp:dbus-ref
+          namespace="ofdT.Call.Content.CodecOffer.DRAFT"
+          >Reject</tp:dbus-ref> method on the codec offer object.</p>
 
         <p>Emission of this signal indicates that the
           <tp:member-ref>CodecOffer</tp:member-ref> property has changed to
@@ -186,8 +184,8 @@
 
       <arg name="Codecs" type="a{ua(usuua{ss})}" tp:type="Contact_Codec_Map">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          <p>The <tp:dbus-ref namespace="org.freedesktop.Telepathy.Call.Content"
-              >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property
+          <p>The <tp:dbus-ref namespace="ofdT.Call.Content"
+            >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property
             of the codec offer.</p>
 
           <tp:rationale>
@@ -203,13 +201,12 @@
       type="(oa{ua(usuua{ss})})" tp:type="Codec_Offering" access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The object path to the current
-          <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Call.Content"
-              >CodecOffer.DRAFT</tp:dbus-ref> object, and its
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Call.Content"
-              >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property.
+          <tp:dbus-ref namespace="ofdT.Call.Content"
+            >CodecOffer.DRAFT</tp:dbus-ref> object, and its
+            <tp:dbus-ref namespace="ofdT.Call.Content"
+            >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property.
             If the object path is "/" then there isn't an outstanding
-          codec offer, and the mapping MUST be empty.</p>
+            codec offer, and the mapping MUST be empty.</p>
 
         <tp:rationale>
           <p>Having the RemoteContactCodecMap property here saves a D-Bus

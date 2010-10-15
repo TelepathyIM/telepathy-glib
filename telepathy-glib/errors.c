@@ -194,6 +194,10 @@
  *     Raised when the requested functionality is not yet available, but is
  *     likely to become available after some time has passed.
  *     Since: 0.11.15
+ * @TP_ERROR_REJECTED: org.freedesktop.Telepathy.Error.Rejected:
+ *     Raised when an incoming or outgoing call is rejected by the receiving
+ *     contact.
+ *     Since: 0.13.UNRELEASED
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

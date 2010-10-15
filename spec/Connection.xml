@@ -722,7 +722,7 @@ USA.</p>
             reasons SHOULD be treated like this reason.</p>
 
           <p>When disconnected for this reason, the equivalent D-Bus error is
-            <code>org.freedesktop.Telepathy.Error.Disconnected</code>.</p>
+            <code>org.freedesktop.Telepathy.Error.<tp:error-ref>Disconnected</tp:error-ref></code>.</p>
         </tp:docstring>
       </tp:enumvalue>
 
@@ -985,7 +985,7 @@ USA.</p>
           <tp:type>Connection_Status_Reason</tp:type>, or may be a more
           specific Telepathy error
           (such as
-          <code>org.freedesktop.Telepathy.Errors.ConnectionRefused</code>
+          <code>org.freedesktop.Telepathy.Error.ConnectionRefused</code>
           for Connection_Status_Reason_Network_Error)
           or a protocol-specific or connection-manager-specific error in a
           suitable namespace.

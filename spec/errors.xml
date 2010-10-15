@@ -491,6 +491,15 @@
     </tp:docstring>
   </tp:error>
 
+  <tp:error name="Rejected">
+    <tp:added version="0.21.2"/>
+    <tp:docstring>
+      Raised when an incoming or outgoing <tp:dbus-ref
+      namespace="ofdT.Channel.Type">Call.DRAFT</tp:dbus-ref> is
+      rejected by the the receiver.
+    </tp:docstring>
+  </tp:error>
+
   <tp:copyright>Copyright © 2005-2010 Collabora Limited</tp:copyright>
   <tp:copyright>Copyright © 2005-2009 Nokia Corporation</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">

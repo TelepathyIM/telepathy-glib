@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <node name="/Call_Stream_Interface_Media"
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <tp:copyright>Copyright © 2009 Collabora Ltd.</tp:copyright>
-  <tp:copyright>Copyright © 2009 Nokia Corporation</tp:copyright>
+  <tp:copyright>Copyright © 2009-2010 Collabora Ltd.</tp:copyright>
+  <tp:copyright>Copyright © 2009-2010 Nokia Corporation</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
     <p>This library is free software; you can redistribute it and/or
       modify it under the terms of the GNU Lesser General Public
@@ -23,13 +23,13 @@
   <interface name="org.freedesktop.Telepathy.Call.Stream.Interface.Media.DRAFT"
       tp:causes-havoc="experimental">
     <tp:added version="0.19.0">(draft 1)</tp:added>
-    <tp:requires interface="org.freedesktop.Telepathy.Call.Stream"/>
+    <tp:requires interface="org.freedesktop.Telepathy.Call.Stream.DRAFT"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       [FIXME]
     </tp:docstring>
 
-    <tp:method name="SetCredentials" tp:name-for-bindings="Set_Credentials">
+    <method name="SetCredentials" tp:name-for-bindings="Set_Credentials">
       <tp:docstring>
         Used to set the username fragment and password for streams that have
         global credentials.
@@ -40,7 +40,7 @@
       </tp:docstring>
       <arg name="Username" type="s" direction="in"/>
       <arg name="Password" type="s" direction="in" />
-    </tp:method>
+    </method>
 
     <tp:mapping name="Candidate_Info">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -130,6 +130,7 @@
     </method>
 
     <tp:enum type="u" name="Stream_Transport_Type">
+      <tp:changed version="0.21.2">WLM_8_5 was removed</tp:changed>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         A transport that can be used for streaming.
       </tp:docstring>
@@ -138,9 +139,8 @@
         <tp:docstring>
           Raw UDP, with or without STUN. All streaming clients are assumed to
           support this transport, so there is no handler capability token for
-          it in the <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy.Channel.Type"
-            >Call.DRAFT</tp:dbus-ref> interface.
+          it in the <tp:dbus-ref namespace="ofdT.Channel.Type"
+          >Call.DRAFT</tp:dbus-ref> interface.
           [This corresponds to "none" or "stun" in the old Media.StreamHandler
           interface.]
         </tp:docstring>
@@ -148,12 +148,10 @@
 
       <tp:enumvalue suffix="ICE" value="1">
         <tp:docstring>
-          Interactive Connectivity Establishment, as defined by the IETF MMUSIC
-          working group.
-          [FIXME: do we want this to cover both ICE-UDP and ICE-TCP, or split
-          them?]
-          [This corresponds to "ice-udp" in the old Media.StreamHandler
-          interface.]
+          Interactive Connectivity Establishment, as defined by RFC
+          5245. Note that this value covers ICE-UDP only.
+          [This corresponds to "ice-udp" in the old
+          Media.StreamHandler interface.]
         </tp:docstring>
       </tp:enumvalue>
 
@@ -166,21 +164,20 @@
         </tp:docstring>
       </tp:enumvalue>
 
-      <tp:enumvalue suffix="WLM_8_5" value="3">
-        <tp:docstring>
-          The transport used by Windows Live Messenger 8.5 or later, which
-          resembles ICE draft 6.
-          [This corresponds to "wlm-8.5" in the old Media.StreamHandler
-          interface.]
-        </tp:docstring>
-      </tp:enumvalue>
-
-      <tp:enumvalue suffix="WLM_2009" value="4">
+      <tp:enumvalue suffix="WLM_2009" value="3">
         <tp:docstring>
           The transport used by Windows Live Messenger 2009 or later, which
           resembles ICE draft 19.
           [This corresponds to "wlm-2009" in the old Media.StreamHandler
           interface.]
+        </tp:docstring>
+      </tp:enumvalue>
+
+      <tp:enumvalue suffix="SHM" value="4">
+        <tp:added version="0.21.2"/>
+        <tp:docstring>
+          Shared memory transport, as implemented by the GStreamer
+          shmmsrc and shmsink plugins.
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
@@ -232,13 +229,14 @@
       type="(ss)" tp:type="Stream_Credentials" access="read">
       <tp:docstring>
         [FIXME]. Change notification is via
-        <tp:member-ref>LocalCredentialsSet</tp:member-ref>.
+        <tp:member-ref>LocalCredentialsChanged</tp:member-ref>.
       </tp:docstring>
 
     </property>
 
-    <signal name="LocalCredentialsSet"
-      tp:name-for-bindings="Local_Credentials_Set">
+    <signal name="LocalCredentialsChanged"
+      tp:name-for-bindings="Local_Credentials_Changed">
+      <tp:changed version="0.21.2">renamed from LocalCredentailsSet</tp:changed>
       <tp:docstring>
         Emitted when the value of
         <tp:member-ref>LocalCredentials</tp:member-ref> changes.
@@ -386,12 +384,8 @@
     <property name="Endpoints" tp:name-for-bindings="Endpoints"
       type="ao" access="read">
       <tp:docstring>
-        <p> The list of endpoints
-           <tp:dbus-ref
-              namespace="org.freedesktop.Telepathy.Call.Stream"
-              >Endpoint.DRAFT</tp:dbus-ref>
-           that exist for this stream.
-        </p>
+        <p>The list of endpoints <tp:dbus-ref namespace="ofdT.Call.Stream"
+          >Endpoint.DRAFT</tp:dbus-ref> that exist for this stream.</p>
 
         <p>Change notification is via the
           <tp:member-ref>EndpointsChanged</tp:member-ref> signal.</p>

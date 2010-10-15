@@ -352,7 +352,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
           while the SearchState is In_Progress,
           <tp:member-ref>SearchStateChanged</tp:member-ref> will be emitted,
           with the state Failed and the error
-          <code>org.freedesktop.Telepathy.Errors.Cancelled</code>.</p>
+          <code>org.freedesktop.Telepathy.Error.<tp:error-ref>Cancelled</tp:error-ref></code>.</p>
 
         <p>Calling this method on a search in state Completed or Failed
           succeeds, but has no effect.</p>

@@ -95,7 +95,8 @@ USA.</p>
     </tp:docstring>
 
     <property name="SupportedContentTypes" type="as" access="read"
-      tp:name-for-bindings="Supported_Content_Types">
+      tp:name-for-bindings="Supported_Content_Types"
+      tp:immutable="yes">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>A list of MIME types supported by this channel, with more preferred
           MIME types appearing earlier in the list. The list MAY include "*/*"
@@ -143,7 +144,8 @@ USA.</p>
 
     <property name="MessagePartSupportFlags" type="u"
       tp:type="Message_Part_Support_Flags" access="read"
-      tp:name-for-bindings="Message_Part_Support_Flags">
+      tp:name-for-bindings="Message_Part_Support_Flags"
+      tp:immutable="yes">
       <tp:docstring>
         Flags indicating the level of support for message parts on this
         channel.
@@ -1087,15 +1089,19 @@ USA.</p>
 
     <property name="PendingMessages" type="aaa{sv}" access="read"
       tp:type="Message_Part[][]" tp:name-for-bindings="Pending_Messages">
-      <tp:docstring>
-        A list of incoming messages that have neither been acknowledged nor
-        rejected. This list is a more detailed version of the one returned
-        by <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Channel.Type">Text.ListPendingMessages</tp:dbus-ref>,
-        and contains the same messages, uniquely identified by the same
-        pending message IDs. Its items can be removed using
-        <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Channel.Type">Text.AcknowledgePendingMessages</tp:dbus-ref>.
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>A list of incoming messages that have neither been acknowledged nor
+          rejected. This list is a more detailed version of the one returned
+          by <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy.Channel.Type">Text.ListPendingMessages</tp:dbus-ref>,
+          and contains the same messages, uniquely identified by the same
+          pending message IDs. Its items can be removed using
+          <tp:dbus-ref
+            namespace="org.freedesktop.Telepathy.Channel.Type">Text.AcknowledgePendingMessages</tp:dbus-ref>.</p>
+
+        <p>Change notification is via
+          <tp:member-ref>MessageReceived</tp:member-ref> and
+          <tp:member-ref>PendingMessagesRemoved</tp:member-ref>.</p>
       </tp:docstring>
     </property>
 
@@ -1340,7 +1346,8 @@ USA.</p>
 
     <property name="DeliveryReportingSupport" access="read"
       tp:type="Delivery_Reporting_Support_Flags" type="u"
-      tp:name-for-bindings="Delivery_Reporting_Support">
+      tp:name-for-bindings="Delivery_Reporting_Support"
+      tp:immutable="yes">
       <tp:docstring>
         A bitfield indicating features supported by this channel.
       </tp:docstring>
