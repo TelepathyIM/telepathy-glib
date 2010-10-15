@@ -197,7 +197,7 @@
  * @TP_ERROR_REJECTED: org.freedesktop.Telepathy.Error.Rejected:
  *     Raised when an incoming or outgoing call is rejected by the receiving
  *     contact.
- *     Since: 0.13.UNRELEASED
+ *     Since: 0.13.2
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

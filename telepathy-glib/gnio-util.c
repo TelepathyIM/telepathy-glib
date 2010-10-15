@@ -342,7 +342,7 @@ _tp_unix_connection_send_credentials_with_byte (GUnixConnection *connection,
  *
  * Returns: %TRUE on success, %FALSE if error is set.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 gboolean
 tp_unix_connection_send_credentials_with_byte (GSocketConnection *connection,
@@ -554,7 +554,7 @@ _tp_unix_connection_receive_credentials_with_byte (GUnixConnection *connection,
  * Returns: (transfer full): Received credentials on success (free with
  * g_object_unref()), %NULL if error is set.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 GCredentials *
 tp_unix_connection_receive_credentials_with_byte (GSocketConnection *connection,

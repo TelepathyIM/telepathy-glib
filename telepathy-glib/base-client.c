@@ -1333,7 +1333,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    *
    * If no channel factory is specified then #TpAutomaticProxyFactory is used.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.2
    */
   param_spec = g_param_spec_object ("channel-factory", "Channel factory",
       "Object implementing TpClientChannelFactoryInterface",
@@ -2604,7 +2604,7 @@ tp_base_client_add_connection_features (TpBaseClient *self,
  * Change the value of the #TpBaseClient:channel-factory property.
  * It can't be changed once @self has been registered.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 void
 tp_base_client_set_channel_factory (TpBaseClient *self,
@@ -2627,7 +2627,7 @@ tp_base_client_set_channel_factory (TpBaseClient *self,
  * Return the #TpBaseClient:channel-factory property.
  *
  * Returns: the value of #TpBaseClient:channel-factory
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpClientChannelFactoryInterface *
 tp_base_client_get_channel_factory (TpBaseClient *self)

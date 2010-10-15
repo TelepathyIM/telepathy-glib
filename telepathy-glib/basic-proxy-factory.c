@@ -29,6 +29,8 @@
  * not create higher-level subclasses like #TpStreamTubeChannel.
  *
  * TpProxy subclasses other than TpChannel are not currently supported.
+ *
+ * Since: 0.13.2
  */
 
 /**
@@ -36,7 +38,7 @@
  *
  * Data structure representing a #TpBasicProxyFactory
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 
 /**
@@ -45,7 +47,7 @@
  *
  * The class of a #TpBasicProxyFactory.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 
 #include "telepathy-glib/basic-proxy-factory.h"
@@ -88,7 +90,7 @@ client_channel_factory_iface_init (gpointer g_iface,
  *
  * Returns: a new #TpBasicProxyFactory
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpBasicProxyFactory *
 tp_basic_proxy_factory_new (void)
@@ -106,7 +108,7 @@ tp_basic_proxy_factory_new (void)
  *
  * Returns: (transfer full): a #TpBasicProxyFactory
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpBasicProxyFactory *
 tp_basic_proxy_factory_dup (void)

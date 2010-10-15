@@ -25,6 +25,8 @@
  *
  * #TpStreamTubeChannel is a sub-class of #TpChannel providing convenient API
  * to offer and accept a stream tube.
+ *
+ * Since: 0.13.2
  */
 
 /**
@@ -32,7 +34,7 @@
  *
  * Data structure representing a #TpStreamTubeChannel.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 
 /**
@@ -40,7 +42,7 @@
  *
  * The class of a #TpStreamTubeChannel.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 
 #include <config.h>
@@ -414,7 +416,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
    *
    * A string representing the service name that will be used over the tube.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.2
    */
   param_spec = g_param_spec_string ("service", "Service",
       "The service of the stream tube",
@@ -429,7 +431,7 @@ tp_stream_tube_channel_class_init (TpStreamTubeChannelClass *klass)
    *
    * Will be %NULL for outgoing tubes until the tube has been offered.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.2
    */
   param_spec = g_param_spec_boxed ("parameters", "Parameters",
       "The parameters of the stream tube",
@@ -484,7 +486,7 @@ tp_stream_tube_channel_init (TpStreamTubeChannel *self)
  *
  * Returns: (transfer full): a newly created #TpStreamTubeChannel
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpStreamTubeChannel *
 tp_stream_tube_channel_new (TpConnection *conn,
@@ -965,7 +967,7 @@ out:
  * will be called. You can then call tp_stream_tube_channel_accept_finish()
  * to get a #TpStreamTubeConnection connected to the tube.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 void
 tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
@@ -1060,7 +1062,7 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
  *
  * Returns: (transfer full): a newly created #TpStreamTubeConnection
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpStreamTubeConnection *
 tp_stream_tube_channel_accept_finish (TpStreamTubeChannel *self,
@@ -1481,7 +1483,7 @@ service_incoming_cb (GSocketService *service,
  * #TpStreamTubeConnection each time a contact establishes a connection to
  * the tube.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 void
 tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
@@ -1593,7 +1595,7 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
  *
  * Returns: %TRUE when a Tube has been successfully offered; %FALSE otherwise
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 gboolean
 tp_stream_tube_channel_offer_finish (TpStreamTubeChannel *self,
@@ -1611,7 +1613,7 @@ tp_stream_tube_channel_offer_finish (TpStreamTubeChannel *self,
  *
  * Returns: (transfer none): the value of #TpStreamTubeChannel:service
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 const gchar *
 tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
@@ -1632,7 +1634,7 @@ tp_stream_tube_channel_get_service (TpStreamTubeChannel *self)
  * Returns: (transfer none) (element-type utf8 GObject.Value):
  * the value of #TpStreamTubeChannel:parameters
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 GHashTable *
 tp_stream_tube_channel_get_parameters (TpStreamTubeChannel *self)

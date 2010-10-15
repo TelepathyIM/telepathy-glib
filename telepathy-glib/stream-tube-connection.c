@@ -24,6 +24,8 @@
  * @short_description: a connection on a Stream Tube
  *
  * Object used to represent a connection on a #TpStreamTubeChannel.
+ *
+ * Since: 0.13.2
  */
 
 /**
@@ -31,7 +33,7 @@
  *
  * Data structure representing a connection on a #TpStreamTubeChannel.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 
 /**
@@ -39,7 +41,7 @@
  *
  * The class of a #TpStreamTubeConnection.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 
 #include "telepathy-glib/stream-tube-connection-internal.h"
@@ -191,7 +193,7 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.2
    */
   param_spec = g_param_spec_object ("socket-connection", "GSocketConnection",
       "GSocketConnection used to transfer data",
@@ -207,7 +209,7 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
    *
    * This property can't be %NULL.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.2
    */
   param_spec = g_param_spec_object ("channel", "TpStreamTubeChannel",
       "The channel associated with this connection",
@@ -222,7 +224,7 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
    * The #TpContact with who we are exchanging data through this tube, or
    * %NULL if we can't safely identify the contact.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.2
    */
   param_spec = g_param_spec_object ("contact", "TpContact",
       "The TpContact of the connection",
@@ -239,7 +241,7 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
    * The ::closed signal is emitted when the connection manager reports that
    * a tube connection has been closed.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.2
    */
   _signals[CLOSED] = g_signal_new ("closed",
       G_OBJECT_CLASS_TYPE (cls),
@@ -269,7 +271,7 @@ _tp_stream_tube_connection_new (
  *
  * Returns: (transfer none): the value of #TpStreamTubeConnection:connection
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 GSocketConnection *
 tp_stream_tube_connection_get_socket_connection (TpStreamTubeConnection *self)
@@ -285,7 +287,7 @@ tp_stream_tube_connection_get_socket_connection (TpStreamTubeConnection *self)
  *
  * Returns: (transfer none): the value of #TpStreamTubeConnection:channel
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpStreamTubeChannel *
 tp_stream_tube_connection_get_channel (
@@ -302,7 +304,7 @@ tp_stream_tube_connection_get_channel (
  *
  * Returns: (transfer none): the value of #TpStreamTubeConnection:contact
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpContact *
 tp_stream_tube_connection_get_contact (TpStreamTubeConnection *self)

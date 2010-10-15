@@ -191,7 +191,7 @@ static void tp_account_maybe_prepare_storage (TpProxy *proxy);
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: UNRELEASED
+ * Since: 0.13.2
  */
 
 /**
@@ -218,7 +218,7 @@ tp_account_get_feature_quark_core (void)
  * Returns: the quark used for representing the storage interface of a
  *          #TpAccount
  *
- * Since: UNRELEASED
+ * Since: 0.13.2
  */
 GQuark
 tp_account_get_feature_quark_storage (void)
@@ -1465,7 +1465,7 @@ tp_account_class_init (TpAccountClass *klass)
    * %TP_ACCOUNT_FEATURE_STORAGE feature has been prepared; until then,
    * the value is %NULL.
    *
-   * Since: UNRELEASED
+   * Since: 0.13.2
    */
   g_object_class_install_property (object_class, PROP_STORAGE_PROVIDER,
       g_param_spec_string ("storage-provider",
@@ -1489,7 +1489,7 @@ tp_account_class_init (TpAccountClass *klass)
    * %TP_ACCOUNT_FEATURE_STORAGE feature has been prepared; until then,
    * the value is %NULL.
    *
-   * Since: UNRELEASED
+   * Since: 0.13.2
    */
   g_object_class_install_property (object_class, PROP_STORAGE_IDENTIFIER,
       g_param_spec_boxed ("storage-identifier",
@@ -1513,7 +1513,7 @@ tp_account_class_init (TpAccountClass *klass)
    * %TP_ACCOUNT_FEATURE_STORAGE feature has been prepared; until then,
    * the value is 0.
    *
-   * Since: UNRELEASED
+   * Since: 0.13.2
    */
   g_object_class_install_property (object_class, PROP_STORAGE_RESTRICTIONS,
       g_param_spec_uint ("storage-restrictions",
@@ -3266,7 +3266,7 @@ tp_account_get_detailed_error (TpAccount *self,
  *
  * Returns: the same as the #TpAccount:storage-provider property
  *
- * Since: UNRELEASED
+ * Since: 0.13.2
  */
 const gchar *
 tp_account_get_storage_provider (TpAccount *self)
@@ -3284,7 +3284,7 @@ tp_account_get_storage_provider (TpAccount *self)
  *
  * Returns: the same as the #TpAccount:storage-identifier property
  *
- * Since: UNRELEASED
+ * Since: 0.13.2
  */
 const GValue *
 tp_account_get_storage_identifier (TpAccount *self)
@@ -3302,7 +3302,7 @@ tp_account_get_storage_identifier (TpAccount *self)
  *
  * Returns: the same as the #TpAccount:storage-restrictions property
  *
- * Since: UNRELEASED
+ * Since: 0.13.2
  */
 TpStorageRestrictionFlags
 tp_account_get_storage_restrictions (TpAccount *self)
@@ -3352,7 +3352,7 @@ _tp_account_get_storage_specific_information_cb (TpProxy *self,
  * call tp_account_get_storage_specific_information_finish() to get the
  * result of the request.
  *
- * Since: UNRELEASED
+ * Since: 0.13.2
  */
 void
 tp_account_get_storage_specific_information_async (TpAccount *self,
@@ -3383,7 +3383,7 @@ tp_account_get_storage_specific_information_async (TpAccount *self,
  * Returns: (element-type utf8 GObject.Value) (transfer none): a #GHashTable
  *  of strings to GValues representing the D-Bus type a{sv}.
  *
- * Since: UNRELEASED
+ * Since: 0.13.2
  */
 GHashTable *
 tp_account_get_storage_specific_information_finish (TpAccount *self,

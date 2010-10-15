@@ -1166,7 +1166,7 @@ tp_account_channel_request_ensure_channel_finish (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 void
 tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,

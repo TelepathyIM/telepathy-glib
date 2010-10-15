@@ -1,7 +1,44 @@
-telepathy-glib 0.13.2 (UNRELEASED)
+telepathy-glib 0.13.2 (2010-10-15)
 ==================================
 
-…
+The "whose thighs are capacitive?" release.
+
+This release includes all the fixes from version 0.12.1.
+
+Enhancements:
+
+• Update to spec 0.21.2 (smcv)
+  - add TP_ERROR_REJECTED, SendNamedTelephonyEvent, SendSoundTelephonyEvent
+  - change the experimental Call interfaces and adjust the example CM to match
+
+• fd.o #29973: add TpClientChannelFactory, TpAutomaticProxyFactory and
+  TpBasicProxyFactory, and use them in TpBaseClient and TpAccountChannelRequest
+  (cassidy)
+
+• fd.o #29218: add TpStreamTubeChannel, a higher-level API for stream tubes
+  (danni, cassidy)
+
+• fd.o #30478: add TP_ACCOUNT_FEATURE_STORAGE (danni)
+
+• Improve the error message for an undefined D-Bus interface (wjt)
+
+Fixes:
+
+• fd.o #30791: fix building with gtk-doc enabled, and an older telepathy-glib
+  installed in a non-default library search path (danni)
+
+• fd.o #30644: don't 'return' a void expression from a void function, which
+  isn't valid C99 and breaks compilation on Sun Studio C (smcv)
+
+• Remove redundant trailing semicolons from G_DEFINE_TYPE etc., which are
+  not valid C99 (smcv)
+
+• Add DeliveryReportingSupport to the properties offered by TpMessageMixin
+  (cassidy)
+
+• Add ContactListState to the properties offered by TpBaseContactList (smcv)
+
+• Avoid using a gboolean (which is signed) as a one-bit bitfield (smcv)
 
 telepathy-glib 0.13.1 (2010-10-04)
 ==================================

@@ -26,6 +26,8 @@
  * Client channel factories are used to create channel proxies. An application
  * wanting to use its own #TpChannel subclass has to implement an object
  * implementing the #TpClientChannelFactoryInterface interface.
+ *
+ * Since: 0.13.2
  */
 
 /**
@@ -35,7 +37,7 @@
  *
  * Interface for a channel factory
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 
 #include "telepathy-glib/client-channel-factory.h"
@@ -67,7 +69,7 @@ tp_client_channel_factory_default_init (TpClientChannelFactoryInterface *iface)
  *
  * Returns: a new channel proxy, or %NULL on invalid arguments
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpChannel *
 tp_client_channel_factory_create_channel (TpClientChannelFactoryInterface *self,

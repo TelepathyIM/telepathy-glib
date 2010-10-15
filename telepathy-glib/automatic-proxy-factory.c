@@ -45,6 +45,8 @@
  * subclass of that class.
  *
  * TpProxy subclasses other than TpChannel are not currently supported.
+ *
+ * Since: 0.13.2
  */
 
 /**
@@ -52,7 +54,7 @@
  *
  * Data structure representing a #TpAutomaticProxyFactory
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 
 /**
@@ -61,7 +63,7 @@
  *
  * The class of a #TpAutomaticProxyFactory.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 
 #include "telepathy-glib/automatic-proxy-factory.h"
@@ -127,7 +129,7 @@ client_proxy_factory_iface_init (gpointer g_iface,
  *
  * Returns: a new #TpAutomaticProxyFactory
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpAutomaticProxyFactory *
 tp_automatic_proxy_factory_new (void)
@@ -145,7 +147,7 @@ tp_automatic_proxy_factory_new (void)
  *
  * Returns: (transfer full): a #TpAutomaticProxyFactory
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.2
  */
 TpAutomaticProxyFactory *
 tp_automatic_proxy_factory_dup (void)
