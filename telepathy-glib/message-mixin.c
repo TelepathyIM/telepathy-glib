@@ -1909,7 +1909,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
       q_message_part_support_flags =
           g_quark_from_static_string ("MessagePartSupportFlags");
       q_delivery_reporting_support_flags =
-          g_quark_from_static_string ("DeliveryReportingSupportFlags");
+          g_quark_from_static_string ("DeliveryReportingSupport");
     }
 
   mixin = TP_MESSAGE_MIXIN (object);

@@ -175,7 +175,7 @@ constructor (GType type,
       (sizeof (types) / sizeof (types[0])), types,
       TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT |
       TP_MESSAGE_PART_SUPPORT_FLAG_MULTIPLE_ATTACHMENTS,
-      0, /* aka no TpDeliveryReportingSupportFlags */
+      TP_DELIVERY_REPORTING_SUPPORT_FLAG_RECEIVE_FAILURES,
       content_types);
 
   return object;
