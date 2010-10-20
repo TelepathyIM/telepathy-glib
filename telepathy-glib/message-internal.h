@@ -34,7 +34,6 @@ struct _TpMessageClass
 {
     /*<private>*/
     GObjectClass parent_class;
-    GCallback _padding[7];
 };
 
 struct _TpMessage {
