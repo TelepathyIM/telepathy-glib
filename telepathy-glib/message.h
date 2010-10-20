@@ -23,6 +23,9 @@
 
 G_BEGIN_DECLS
 
+#include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/handle.h>
+
 #define TP_TYPE_MESSAGE (tp_message_get_type ())
 #define TP_MESSAGE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_MESSAGE, TpMessage))
 #define TP_MESSAGE_CLASS(obj) (G_TYPE_CHECK_CLASS_CAST ((obj), TP_TYPE_MESSAGE, TpMessageClass))
