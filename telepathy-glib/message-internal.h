@@ -41,13 +41,8 @@ struct _TpMessage {
     GObject parent;
     TpMessagePrivate *priv;
 
-    TpBaseConnection *connection;
-
     /* array of hash tables, allocated string => sliced GValue */
     GPtrArray *parts;
-
-    /* handles referenced by this message */
-    TpHandleSet *reffed_handles[NUM_TP_HANDLE_TYPES];
 
     /* from here down is implementation-specific for TpMessageMixin */
 

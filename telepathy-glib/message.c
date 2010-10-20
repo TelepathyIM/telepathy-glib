@@ -72,13 +72,6 @@ tp_message_dispose (GObject *object)
       self->parts = NULL;
     }
 
-  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
-    {
-      tp_clear_pointer (&self->reffed_handles[i], tp_handle_set_destroy);
-    }
-
-  tp_clear_object (&self->connection);
-
   if (dispose != NULL)
     dispose (object);
 }
