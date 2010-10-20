@@ -43,6 +43,7 @@ our_headers = \
     channel-request.h \
     client.h \
     client-channel-factory.h \
+    cm-message.h \
     connection.h \
     connection-manager.h \
     capabilities.h \
@@ -170,6 +171,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     contact-list-channel.c \
     base-contact-list.c \
     base-contact-list-internal.h \
+    cm-message.c \
+    cm-message-internal.h \
     contacts-mixin.c \
     dbus.c \
     dbus-daemon.c \
