@@ -32,6 +32,7 @@
 #include "message-internal.h"
 #include "message.h"
 
+#include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/util.h>
@@ -112,32 +113,14 @@ tp_message_init (TpMessage *self)
  * tp_message_mixin_take_received
  *
  * @since 0.7.21
+ * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_new()
  */
 TpMessage *
 tp_message_new (TpBaseConnection *connection,
                 guint initial_parts,
                 guint size_hint)
 {
-  TpMessage *self;
-  guint i;
-
-  g_return_val_if_fail (connection != NULL, NULL);
-  g_return_val_if_fail (initial_parts >= 1, NULL);
-  g_return_val_if_fail (size_hint >= initial_parts, NULL);
-
-  self = g_object_new (TP_TYPE_MESSAGE, NULL);
-  self->connection = g_object_ref (connection);
-  self->parts = g_ptr_array_sized_new (size_hint);
-  self->incoming_id = G_MAXUINT32;
-  self->outgoing_context = NULL;
-
-  for (i = 0; i < initial_parts; i++)
-    {
-      g_ptr_array_add (self->parts, g_hash_table_new_full (g_str_hash,
-            g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
-    }
-
-  return self;
+  return tp_cm_message_new (connection, initial_parts, size_hint);
 }
 
 
@@ -235,23 +218,6 @@ tp_message_delete_part (TpMessage *self,
   g_hash_table_unref (g_ptr_array_remove_index (self->parts, part));
 }
 
-
-static void
-_ensure_handle_set (TpMessage *self,
-                    TpHandleType handle_type)
-{
-  if (self->reffed_handles[handle_type] == NULL)
-    {
-      TpHandleRepoIface *handles = tp_base_connection_get_handles (
-          self->connection, handle_type);
-
-      g_return_if_fail (handles != NULL);
-
-      self->reffed_handles[handle_type] = tp_handle_set_new (handles);
-    }
-}
-
-
 /**
  * tp_message_ref_handle:
  * @self: a message
@@ -262,50 +228,17 @@ _ensure_handle_set (TpMessage *self,
  * Reference the given handle until this message is destroyed.
  *
  * @since 0.7.21
+ * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_ref_handle()
  */
 void
 tp_message_ref_handle (TpMessage *self,
                        TpHandleType handle_type,
                        TpHandle handle)
 {
-  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
-  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
-  g_return_if_fail (handle != 0);
+  g_return_if_fail (TP_IS_CM_MESSAGE (self));
 
-  _ensure_handle_set (self, handle_type);
-
-  tp_handle_set_add (self->reffed_handles[handle_type], handle);
+  tp_cm_message_ref_handle (self, handle_type, handle);
 }
-
-
-/**
- * tp_message_ref_handles:
- * @self: a message
- * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less
- *  than %NUM_TP_HANDLE_TYPES
- * @handles: a set of handles of the given type
- *
- * References all of the given handles until this message is destroyed.
- *
- * @since 0.7.21
- */
-static void
-tp_message_ref_handles (TpMessage *self,
-                        TpHandleType handle_type,
-                        TpIntset *handles)
-{
-  TpIntset *updated;
-
-  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
-  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
-  g_return_if_fail (!tp_intset_is_member (handles, 0));
-
-  _ensure_handle_set (self, handle_type);
-
-  updated = tp_handle_set_update (self->reffed_handles[handle_type], handles);
-  tp_intset_destroy (updated);
-}
-
 
 /**
  * tp_message_delete_key:
@@ -333,7 +266,7 @@ tp_message_delete_key (TpMessage *self,
 
 /**
  * tp_message_set_handle:
- * @self: a message
+ * @self: a #TpCMMessage
  * @part: a part number, which must be strictly less than the number
  *  returned by tp_message_count_parts()
  * @key: a key in the mapping representing the part
@@ -346,6 +279,7 @@ tp_message_delete_key (TpMessage *self,
  * value.
  *
  * @since 0.7.21
+ * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_set_handle()
  */
 void
 tp_message_set_handle (TpMessage *self,
@@ -354,10 +288,9 @@ tp_message_set_handle (TpMessage *self,
                        TpHandleType handle_type,
                        TpHandle handle_or_0)
 {
-  if (handle_or_0 != 0)
-    tp_message_ref_handle (self, handle_type, handle_or_0);
+  g_return_if_fail (TP_IS_CM_MESSAGE (self));
 
-  tp_message_set_uint32 (self, part, key, handle_or_0);
+  tp_cm_message_set_handle (self, part, key, handle_type, handle_or_0);
 }
 
 
@@ -642,7 +575,7 @@ tp_message_set (TpMessage *self,
 
 /**
  * tp_message_take_message:
- * @self: a message
+ * @self: a #TpCMMessage
  * @part: a part number, which must be strictly less than the number
  *  returned by tp_message_count_parts()
  * @key: a key in the mapping representing the part
@@ -655,6 +588,7 @@ tp_message_set (TpMessage *self,
  * with @self.
  *
  * @since 0.7.21
+ * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_take_message()
  */
 void
 tp_message_take_message (TpMessage *self,
@@ -662,33 +596,7 @@ tp_message_take_message (TpMessage *self,
                          const gchar *key,
                          TpMessage *message)
 {
-  guint i;
+  g_return_if_fail (TP_IS_CM_MESSAGE (self));
 
-  g_return_if_fail (self != NULL);
-  g_return_if_fail (part < self->parts->len);
-  g_return_if_fail (key != NULL);
-  g_return_if_fail (message != NULL);
-  g_return_if_fail (self != message);
-  g_return_if_fail (self->connection == message->connection);
-
-  g_hash_table_insert (g_ptr_array_index (self->parts, part),
-      g_strdup (key),
-      tp_g_value_slice_new_take_boxed (TP_ARRAY_TYPE_MESSAGE_PART_LIST,
-          message->parts));
-
-  /* Now that @self has stolen @message's parts, replace them with a stub to
-   * keep tp_message_destroy happy.
-   */
-  message->parts = g_ptr_array_sized_new (1);
-  g_ptr_array_add (message->parts, g_hash_table_new_full (g_str_hash,
-        g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
-
-  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
-    {
-      if (message->reffed_handles[i] != NULL)
-        tp_message_ref_handles (self, i,
-            tp_handle_set_peek (message->reffed_handles[i]));
-    }
-
-  tp_message_destroy (message);
+  tp_cm_message_take_message (self, part, key, message);
 }

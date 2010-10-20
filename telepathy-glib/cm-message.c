@@ -80,3 +80,197 @@ tp_cm_message_init (TpCMMessage *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_MESSAGE,
       TpCMMessagePrivate);
 }
+
+/**
+ * tp_cm_message_new:
+ * @connection: a connection on which to reference handles
+ * @initial_parts: number of parts to create (at least 1)
+ * @size_hint: preallocate space for this many parts (at least @initial_parts)
+ *
+ * <!-- nothing more to say -->
+ *
+ * Returns: a newly allocated message suitable to be passed to
+ * tp_cm_message_mixin_take_received
+ *
+ * @since 0.13.UNRELEASED
+ */
+TpMessage *
+tp_cm_message_new (TpBaseConnection *connection,
+    guint initial_parts,
+    guint size_hint)
+{
+  TpCMMessage *self;
+  TpMessage *msg;
+  guint i;
+
+  g_return_val_if_fail (connection != NULL, NULL);
+  g_return_val_if_fail (initial_parts >= 1, NULL);
+  g_return_val_if_fail (size_hint >= initial_parts, NULL);
+
+  self = g_object_new (TP_TYPE_CM_MESSAGE, NULL);
+  msg = (TpMessage *) self;
+
+  msg->connection = g_object_ref (connection);
+  msg->parts = g_ptr_array_sized_new (size_hint);
+  msg->incoming_id = G_MAXUINT32;
+  msg->outgoing_context = NULL;
+
+  for (i = 0; i < initial_parts; i++)
+    {
+      g_ptr_array_add (msg->parts, g_hash_table_new_full (g_str_hash,
+            g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
+    }
+
+  return msg;
+}
+
+static void
+_ensure_handle_set (TpMessage *self,
+                    TpHandleType handle_type)
+{
+  if (self->reffed_handles[handle_type] == NULL)
+    {
+      TpHandleRepoIface *handles = tp_base_connection_get_handles (
+          self->connection, handle_type);
+
+      g_return_if_fail (handles != NULL);
+
+      self->reffed_handles[handle_type] = tp_handle_set_new (handles);
+    }
+}
+
+/**
+ * tp_message_ref_handles:
+ * @self: a message
+ * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less
+ *  than %NUM_TP_HANDLE_TYPES
+ * @handles: a set of handles of the given type
+ *
+ * References all of the given handles until this message is destroyed.
+ *
+ * @since 0.7.21
+ */
+static void
+tp_message_ref_handles (TpMessage *self,
+                        TpHandleType handle_type,
+                        TpIntset *handles)
+{
+  TpIntset *updated;
+
+  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
+  g_return_if_fail (!tp_intset_is_member (handles, 0));
+
+  _ensure_handle_set (self, handle_type);
+
+  updated = tp_handle_set_update (self->reffed_handles[handle_type], handles);
+  tp_intset_destroy (updated);
+}
+
+
+/**
+ * tp_cm_message_take_message:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @message: another (distinct) message created for the same #TpBaseConnection
+ *
+ * Set @key in part @part of @self to have @message as an aa{sv} value (that
+ * is, an array of Message_Part), and take ownership of @message.  The caller
+ * should not use @message after passing it to this function.  All handle
+ * references owned by @message will subsequently belong to and be released
+ * with @self.
+ *
+ * @since 0.13.UNRELEASED
+ */
+void
+tp_cm_message_take_message (TpMessage *self,
+    guint part,
+    const gchar *key,
+    TpMessage *message)
+{
+  guint i;
+
+  g_return_if_fail (self != NULL);
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (message != NULL);
+  g_return_if_fail (self != message);
+  g_return_if_fail (self->connection == message->connection);
+
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key),
+      tp_g_value_slice_new_take_boxed (TP_ARRAY_TYPE_MESSAGE_PART_LIST,
+          message->parts));
+
+  /* Now that @self has stolen @message's parts, replace them with a stub to
+   * keep tp_message_destroy happy.
+   */
+  message->parts = g_ptr_array_sized_new (1);
+  g_ptr_array_add (message->parts, g_hash_table_new_full (g_str_hash,
+        g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
+
+  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
+    {
+      if (message->reffed_handles[i] != NULL)
+        tp_message_ref_handles (self, i,
+            tp_handle_set_peek (message->reffed_handles[i]));
+    }
+
+  tp_message_destroy (message);
+}
+
+/**
+ * tp_cm_message_set_handle:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @handle_type: a handle type
+ * @handle_or_0: a handle of that type, or 0
+ *
+ * If @handle_or_0 is not zero, reference it with tp_message_ref_handle().
+ *
+ * Set @key in part @part of @self to have @handle_or_0 as an unsigned integer
+ * value.
+ *
+ * @since 0.13.UNRELEASED
+ */
+void
+tp_cm_message_set_handle (TpMessage *self,
+    guint part,
+    const gchar *key,
+    TpHandleType handle_type,
+    TpHandle handle_or_0)
+{
+  if (handle_or_0 != 0)
+    tp_message_ref_handle (self, handle_type, handle_or_0);
+
+  tp_message_set_uint32 (self, part, key, handle_or_0);
+}
+
+/**
+ * tp_cm_message_ref_handle:
+ * @self: a message
+ * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less than
+ *  %NUM_TP_HANDLE_TYPES
+ * @handle: a handle of the given type
+ *
+ * Reference the given handle until this message is destroyed.
+ *
+ * @since 0.13.UNRELEASED
+ */
+void
+tp_cm_message_ref_handle (TpMessage *self,
+    TpHandleType handle_type,
+    TpHandle handle)
+{
+  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
+  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
+  g_return_if_fail (handle != 0);
+
+  _ensure_handle_set (self, handle_type);
+
+  tp_handle_set_add (self->reffed_handles[handle_type], handle);
+}

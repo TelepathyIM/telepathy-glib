@@ -38,8 +38,6 @@ typedef struct _TpMessageClass TpMessageClass;
 
 GType tp_message_get_type (void);
 
-TpMessage *tp_message_new (TpBaseConnection *connection, guint initial_parts,
-    guint size_hint) G_GNUC_WARN_UNUSED_RESULT;
 void tp_message_destroy (TpMessage *self);
 guint tp_message_count_parts (TpMessage *self);
 const GHashTable *tp_message_peek (TpMessage *self, guint part);
@@ -49,8 +47,6 @@ void tp_message_ref_handle (TpMessage *self, TpHandleType handle_type,
     TpHandle handle);
 
 gboolean tp_message_delete_key (TpMessage *self, guint part, const gchar *key);
-void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
-    TpHandleType handle_type, TpHandle handle_or_0);
 void tp_message_set_boolean (TpMessage *self, guint part, const gchar *key,
     gboolean b);
 void tp_message_set_int32 (TpMessage *self, guint part, const gchar *key,
@@ -73,6 +69,14 @@ void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
     guint len, gconstpointer bytes);
 void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
+
+/* Takes a TpCMMessage */
+TpMessage *tp_message_new (TpBaseConnection *connection, guint initial_parts,
+    guint size_hint) G_GNUC_WARN_UNUSED_RESULT;
+
+void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
+    TpHandleType handle_type, TpHandle handle_or_0);
+
 void tp_message_take_message (TpMessage *self, guint part, const gchar *key,
     TpMessage *message);
 

@@ -39,6 +39,25 @@ typedef struct _TpCMMessageClass TpCMMessageClass;
 
 GType tp_cm_message_get_type (void);
 
+TpMessage * tp_cm_message_new (TpBaseConnection *connection,
+    guint initial_parts,
+    guint size_hint);
+
+void tp_cm_message_take_message (TpMessage *self,
+    guint part,
+    const gchar *key,
+    TpMessage *message);
+
+void tp_cm_message_set_handle (TpMessage *self,
+    guint part,
+    const gchar *key,
+    TpHandleType handle_type,
+    TpHandle handle_or_0);
+
+void tp_cm_message_ref_handle (TpMessage *self,
+    TpHandleType handle_type,
+    TpHandle handle);
+
 G_END_DECLS
 
 #endif /* __TP_CM_MESSAGE_H__ */
