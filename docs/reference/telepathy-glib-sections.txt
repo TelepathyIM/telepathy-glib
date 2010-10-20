@@ -4867,6 +4867,7 @@ TP_STREAM_TUBE_CONNECTION_GET_CLASS
 TP_TYPE_STREAM_TUBE_CONNECTION
 tp_stream_tube_connection_get_type
 TpStreamTubeConnectionPrivate
+</SECTION>
 
 <SECTION>
 <FILE>client-channel-factory</FILE>
