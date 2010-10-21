@@ -27,7 +27,7 @@
  * wanting to use its own #TpChannel subclass has to implement an object
  * implementing the #TpClientChannelFactoryInterface interface.
  *
- * Once a channel has be created by a factory using
+ * Once a channel has been created by a factory using
  * tp_client_channel_factory_create_channel(), the caller should then prepare
  * on it the channel features returned by
  * tp_client_channel_factory_get_channel_features() using
