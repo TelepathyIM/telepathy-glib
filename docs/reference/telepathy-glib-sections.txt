@@ -5322,3 +5322,18 @@ tp_cli_channel_interface_sasl_authentication_run_start_mechanism_with_data
 tp_cli_channel_interface_sasl_authentication_signal_callback_new_challenge
 tp_cli_channel_interface_sasl_authentication_signal_callback_sasl_status_changed
 </SECTION>
+
+<SECTION>
+<FILE>client-message</FILE>
+<INCLUDE>telepathy-glib/client-message.h</INCLUDE>
+<TITLE>TpClientMessage</TITLE>
+TpClientMessage
+<SUBSECTION Standard>
+TP_IS_CLIENT_MESSAGE
+TP_IS_CLIENT_MESSAGE_CLASS
+TP_CLIENT_MESSAGE
+TP_CLIENT_MESSAGE_CLASS
+TP_CLIENT_MESSAGE_GET_CLASS
+TP_TYPE_CLIENT_MESSAGE
+tp_client_message_get_type
+</SECTION>
