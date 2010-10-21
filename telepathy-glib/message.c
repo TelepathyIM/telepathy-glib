@@ -271,8 +271,12 @@ tp_message_delete_key (TpMessage *self,
  * Set @key in part @part of @self to have @handle_or_0 as an unsigned integer
  * value.
  *
+ * Since 0.13.UNRELEASED this function has been deprecated in favor or
+ * tp_cm_message_set_sender() as 'message-sender' is the only handle
+ * you can put in a #TpCMMessage.
+ *
  * @since 0.7.21
- * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_set_handle()
+ * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_set_sender()
  */
 void
 tp_message_set_handle (TpMessage *self,
@@ -283,7 +287,10 @@ tp_message_set_handle (TpMessage *self,
 {
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
 
-  tp_cm_message_set_handle (self, part, key, handle_type, handle_or_0);
+  if (handle_or_0 != 0)
+    tp_message_ref_handle (self, handle_type, handle_or_0);
+
+  tp_message_set_uint32 (self, part, key, handle_or_0);
 }
 
 

@@ -241,35 +241,6 @@ tp_cm_message_take_message (TpMessage *self,
 }
 
 /**
- * tp_cm_message_set_handle:
- * @self: a message
- * @part: a part number, which must be strictly less than the number
- *  returned by tp_message_count_parts()
- * @key: a key in the mapping representing the part
- * @handle_type: a handle type
- * @handle_or_0: a handle of that type, or 0
- *
- * If @handle_or_0 is not zero, reference it with tp_message_ref_handle().
- *
- * Set @key in part @part of @self to have @handle_or_0 as an unsigned integer
- * value.
- *
- * @since 0.13.UNRELEASED
- */
-void
-tp_cm_message_set_handle (TpMessage *self,
-    guint part,
-    const gchar *key,
-    TpHandleType handle_type,
-    TpHandle handle_or_0)
-{
-  if (handle_or_0 != 0)
-    tp_message_ref_handle (self, handle_type, handle_or_0);
-
-  tp_message_set_uint32 (self, part, key, handle_or_0);
-}
-
-/**
  * tp_cm_message_ref_handle:
  * @self: a message
  * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less than
@@ -315,6 +286,6 @@ tp_cm_message_set_sender (TpMessage *self,
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
   g_return_if_fail (handle != 0);
 
-  tp_cm_message_set_handle (self, 0, "message-sender", TP_HANDLE_TYPE_CONTACT,
+  tp_message_set_handle (self, 0, "message-sender", TP_HANDLE_TYPE_CONTACT,
       handle);
 }

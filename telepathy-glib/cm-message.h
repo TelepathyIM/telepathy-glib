@@ -48,12 +48,6 @@ void tp_cm_message_take_message (TpMessage *self,
     const gchar *key,
     TpMessage *message);
 
-void tp_cm_message_set_handle (TpMessage *self,
-    guint part,
-    const gchar *key,
-    TpHandleType handle_type,
-    TpHandle handle_or_0);
-
 void tp_cm_message_ref_handle (TpMessage *self,
     TpHandleType handle_type,
     TpHandle handle);
