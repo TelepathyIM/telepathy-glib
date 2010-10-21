@@ -27,6 +27,12 @@
  * wanting to use its own #TpChannel subclass has to implement an object
  * implementing the #TpClientChannelFactoryInterface interface.
  *
+ * Once a channel has be created by a factory using
+ * tp_client_channel_factory_create_channel(), the caller should then prepare
+ * on it the channel features returned by
+ * tp_client_channel_factory_get_channel_features() using
+ * tp_proxy_prepare_async().
+ *
  * Since: 0.13.2
  */
 
@@ -34,6 +40,8 @@
  * TpClientChannelFactoryInterface:
  * @parent: the parent
  * @create_channel: the function used to create channels
+ * @get_channel_features: channel features that have to be prepared on
+ * newly created channels
  *
  * Interface for a channel factory
  *
@@ -86,7 +94,41 @@ tp_client_channel_factory_create_channel (TpClientChannelFactoryInterface *self,
   g_return_val_if_fail (properties != NULL, NULL);
 
   if (iface->create_channel != NULL)
-    return iface->create_channel (self, conn, path, properties, error);
+    return iface->create_channel (iface, conn, path, properties, error);
 
   return tp_channel_new_from_properties (conn, path, properties, error);
+}
+
+/**
+ * tp_client_channel_factory_get_channel_features:
+ * @self: a client channel factory
+ * @channel: a #TpChannel
+ *
+ * Return a #GArray containing the #TpChannel features that
+ * should be prepared on @channel.
+ *
+ * Returns: (transfer container): a newly allocated #GArray
+ *
+ * Since: 0.13.UNRELEASED
+ */
+GArray *
+tp_client_channel_factory_get_channel_features (
+    TpClientChannelFactoryInterface *self,
+    TpChannel *channel)
+{
+  TpClientChannelFactoryInterface *iface = TP_CLIENT_CHANNEL_FACTORY_GET_IFACE (
+      self);
+  GArray *arr;
+  GQuark feature = TP_CHANNEL_FEATURE_CORE;
+
+  g_return_val_if_fail (TP_IS_CHANNEL (channel), NULL);
+
+  if (iface->get_channel_features != NULL)
+    return iface->get_channel_features (iface, channel);
+
+  arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark), 1);
+
+  g_array_append_val (arr, feature);
+
+  return arr;
 }

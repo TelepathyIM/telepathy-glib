@@ -37,6 +37,9 @@ struct _TpClientChannelFactoryInterface {
         const gchar *path,
         GHashTable *properties,
         GError **error);
+
+    GArray * (* get_channel_features) (TpClientChannelFactoryInterface *self,
+        TpChannel *channel);
 };
 
 GType tp_client_channel_factory_get_type (void);
@@ -58,6 +61,10 @@ TpChannel * tp_client_channel_factory_create_channel (
     const gchar *path,
     GHashTable *properties,
     GError **error);
+
+GArray * tp_client_channel_factory_get_channel_features (
+    TpClientChannelFactoryInterface *self,
+    TpChannel *channel);
 
 G_END_DECLS
 
