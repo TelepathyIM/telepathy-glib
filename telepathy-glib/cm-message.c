@@ -298,3 +298,23 @@ tp_cm_message_ref_handle (TpMessage *msg,
 
   tp_handle_set_add (self->priv->reffed_handles[handle_type], handle);
 }
+
+/**
+ * tp_cm_message_set_sender:
+ * @self: a #TpCMMessage
+ * @handle: the #TpHandle of the sender of the message
+ *
+ * Set the sender of @self.
+ *
+ * @since 0.13.UNRELEASED
+ */
+void
+tp_cm_message_set_sender (TpMessage *self,
+    TpHandle handle)
+{
+  g_return_if_fail (TP_IS_CM_MESSAGE (self));
+  g_return_if_fail (handle != 0);
+
+  tp_cm_message_set_handle (self, 0, "message-sender", TP_HANDLE_TYPE_CONTACT,
+      handle);
+}

@@ -58,6 +58,9 @@ void tp_cm_message_ref_handle (TpMessage *self,
     TpHandleType handle_type,
     TpHandle handle);
 
+void tp_cm_message_set_sender (TpMessage *self,
+    TpHandle handle);
+
 G_END_DECLS
 
 #endif /* __TP_CM_MESSAGE_H__ */
