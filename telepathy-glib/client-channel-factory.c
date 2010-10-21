@@ -107,7 +107,7 @@ tp_client_channel_factory_create_channel (TpClientChannelFactoryInterface *self,
  * Return a #GArray containing the #TpChannel features that
  * should be prepared on @channel.
  *
- * Returns: (transfer container): a newly allocated #GArray
+ * Returns: (transfer full): a newly allocated #GArray
  *
  * Since: 0.13.UNRELEASED
  */
