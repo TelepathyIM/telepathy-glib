@@ -26,6 +26,7 @@ TESTS_ENVIRONMENT = \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     PYTHONPATH=@abs_top_srcdir@/tools \
+    $(top_srcdir)/tools/test-wrapper.sh \
     $(EXTRA_TESTS_ENVIRONMENT)
 
 EXTRA_TESTS_ENVIRONMENT =

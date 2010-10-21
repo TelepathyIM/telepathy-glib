@@ -200,6 +200,7 @@ TESTS_ENVIRONMENT = \
     XDG_DATA_DIRS=@abs_srcdir@ \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
+    $(top_srcdir)/tools/test-wrapper.sh \
     sh $(top_srcdir)/tools/with-session-bus.sh \
         --config-file=dbus-1/session.conf -- \
     $(EXTRA_TESTS_ENVIRONMENT)
@@ -229,6 +230,7 @@ CLEANFILES = \
     $(BUILT_SOURCES)
 
 distclean-local:
+	rm -f capture-*.log
 	rm -rf _gen
 
 EXTRA_DIST = \

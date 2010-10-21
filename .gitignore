@@ -88,3 +88,4 @@ tools/telepathy-glib-env
 /vala/telepathy-glib.gi
 /vala/telepathy-glib.vapi
 /valgrind.log
+capture-*.log
