@@ -131,8 +131,8 @@ test_auto_creation (Test *test,
 }
 
 static gboolean
-array_contain_feature (GArray *features,
-    GQuark feature)
+array_contains_feature (GArray *features,
+    const GQuark feature)
 {
   guint i;
 
@@ -172,7 +172,7 @@ test_basic_stream_tube (Test *test,
   features = tp_client_channel_factory_dup_channel_features (test->factory,
       chan);
   g_assert_cmpuint (features->len, ==, 1);
-  g_assert (array_contain_feature (features, TP_CHANNEL_FEATURE_CORE));
+  g_assert (array_contains_feature (features, TP_CHANNEL_FEATURE_CORE));
 
   g_free (chan_path);
   g_hash_table_unref (props);
@@ -206,8 +206,8 @@ test_auto_stream_tube (Test *test,
   features = tp_client_channel_factory_dup_channel_features (test->factory,
       chan);
   g_assert_cmpuint (features->len, ==, 2);
-  g_assert (array_contain_feature (features, TP_CHANNEL_FEATURE_CORE));
-  g_assert (array_contain_feature (features, TP_CHANNEL_FEATURE_GROUP));
+  g_assert (array_contains_feature (features, TP_CHANNEL_FEATURE_CORE));
+  g_assert (array_contains_feature (features, TP_CHANNEL_FEATURE_GROUP));
 
   g_free (chan_path);
   g_hash_table_unref (props);
