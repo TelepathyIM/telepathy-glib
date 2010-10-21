@@ -1466,6 +1466,28 @@ array_data_or_null (GArray *array)
     return array->data;
 }
 
+static GArray *
+get_features_for_channel (TpBaseClient *self,
+    TpChannel *channel)
+{
+  GArray *features;
+
+  features = tp_client_channel_factory_get_channel_features (
+      self->priv->channel_factory, channel);
+
+  g_assert (features != NULL);
+
+  /* Add TpBaseClient's own features, if any */
+  if (self->priv->channel_features == NULL)
+    return features;
+
+  _tp_quark_array_merge (features,
+      (GQuark *) self->priv->channel_features->data,
+      self->priv->channel_features->len);
+
+  return features;
+}
+
 static void
 _tp_base_client_observe_channels (TpSvcClientObserver *iface,
     const gchar *account_path,
@@ -1485,6 +1507,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   GPtrArray *channels = NULL, *requests = NULL;
   TpChannelDispatchOperation *dispatch_operation = NULL;
   guint i;
+  TpChannel *channel = NULL;
+  GArray *channel_features;
 
   if (!(self->priv->flags & CLIENT_IS_OBSERVER))
     {
@@ -1529,7 +1553,6 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
     {
       const gchar *chan_path;
       GHashTable *chan_props;
-      TpChannel *channel;
 
       tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
           &chan_path, &chan_props);
@@ -1583,13 +1606,16 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   ctx = _tp_observe_channels_context_new (account, connection, channels,
       dispatch_operation, requests, observer_info, context);
 
+  channel_features = get_features_for_channel (self, channel);
+
   _tp_observe_channels_context_prepare_async (ctx,
       array_data_or_null (self->priv->account_features),
       array_data_or_null (self->priv->connection_features),
-      array_data_or_null (self->priv->channel_features),
+      array_data_or_null (channel_features),
       context_prepare_cb, self);
 
   g_object_unref (ctx);
+  g_array_free (channel_features, TRUE);
 
 out:
   if (channels != NULL)
@@ -1680,6 +1706,8 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   TpChannelDispatchOperation *dispatch_operation = NULL;
   guint i;
   const gchar *path;
+  TpChannel *channel = NULL;
+  GArray *channel_features;
 
   if (!(self->priv->flags & CLIENT_IS_APPROVER))
     {
@@ -1744,7 +1772,6 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
     {
       const gchar *chan_path;
       GHashTable *chan_props;
-      TpChannel *channel;
 
       tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
           &chan_path, &chan_props);
@@ -1773,13 +1800,16 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   ctx = _tp_add_dispatch_operation_context_new (account, connection, channels,
       dispatch_operation, context);
 
+  channel_features = get_features_for_channel (self, channel);
+
   _tp_add_dispatch_operation_context_prepare_async (ctx,
       array_data_or_null (self->priv->account_features),
       array_data_or_null (self->priv->connection_features),
-      array_data_or_null (self->priv->channel_features),
+      array_data_or_null (channel_features),
       add_dispatch_context_prepare_cb, self);
 
   g_object_unref (ctx);
+  g_array_free (channel_features, TRUE);
 
 out:
   if (channels != NULL)
@@ -1922,6 +1952,8 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   TpConnection *connection = NULL;
   GPtrArray *channels = NULL, *requests = NULL;
   guint i;
+  TpChannel *channel = NULL;
+  GArray *channel_features;
 
   if (!(self->priv->flags & CLIENT_IS_HANDLER))
     {
@@ -1966,7 +1998,6 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
     {
       const gchar *chan_path;
       GHashTable *chan_props;
-      TpChannel *channel;
 
       tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
           &chan_path, &chan_props);
@@ -2012,13 +2043,16 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   ctx = _tp_handle_channels_context_new (account, connection, channels,
       requests, user_action_time, handler_info, context);
 
+  channel_features = get_features_for_channel (self, channel);
+
   _tp_handle_channels_context_prepare_async (ctx,
       array_data_or_null (self->priv->account_features),
       array_data_or_null (self->priv->connection_features),
-      array_data_or_null (self->priv->channel_features),
+      array_data_or_null (channel_features),
       handle_channels_context_prepare_cb, self);
 
   g_object_unref (ctx);
+  g_array_free (channel_features, TRUE);
 
 out:
   if (channels != NULL)
