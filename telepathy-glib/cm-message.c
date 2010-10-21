@@ -19,14 +19,14 @@
  */
 
 /**
- * SECTION:message
+ * SECTION:cm-message
  * @title: TpCMMessage
- * @short_description: a message in the Telepathy message interface
+ * @short_description: a message in the Telepathy message interface, CM side
  *
  * #TpCMMessage represent a message send or received using the Message
  * interface.
  *
- * @since 0.7.21
+ * @since 0.13.UNRELEASED
  */
 
 #include "cm-message-internal.h"
@@ -159,7 +159,7 @@ _ensure_handle_set (TpCMMessage *self,
  *
  * References all of the given handles until this message is destroyed.
  *
- * @since 0.7.21
+ * @since 0.13.UNRELEASED
  */
 static void
 tp_message_ref_handles (TpMessage *msg,

@@ -2253,6 +2253,25 @@ tp_message_get_type
 </SECTION>
 
 <SECTION>
+<FILE>cm-message</FILE>
+<INCLUDE>telepathy-glib/cm-message.h</INCLUDE>
+<TITLE>TpCMMessage</TITLE>
+TpCMMessage
+tp_cm_message_new
+tp_cm_message_take_message
+tp_cm_message_ref_handle
+tp_cm_message_set_sender
+<SUBSECTION Standard>
+TP_IS_CM_MESSAGE
+TP_IS_CM_MESSAGE_CLASS
+TP_CM_MESSAGE
+TP_CM_MESSAGE_CLASS
+TP_CM_MESSAGE_GET_CLASS
+TP_TYPE_CM_MESSAGE
+tp_cm_message_get_type
+</SECTION>
+
+<SECTION>
 <FILE>text-mixin</FILE>
 <INCLUDE>telepathy-glib/text-mixin.h</INCLUDE>
 <TITLE>TpTextMixin</TITLE>

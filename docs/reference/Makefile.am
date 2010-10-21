@@ -69,6 +69,7 @@ IGNORE_HFILES=\
     channel-dispatch-operation-internal.h \
     base-protocol-internal.h \
     channel-internal.h \
+    cm-message-internal.h \
     connection-internal.h \
     contact-list-channel-internal.h \
     debug-internal.h \
