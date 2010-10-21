@@ -1472,7 +1472,7 @@ get_features_for_channel (TpBaseClient *self,
 {
   GArray *features;
 
-  features = tp_client_channel_factory_get_channel_features (
+  features = tp_client_channel_factory_dup_channel_features (
       self->priv->channel_factory, channel);
 
   g_assert (features != NULL);

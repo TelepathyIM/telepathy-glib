@@ -38,7 +38,7 @@ struct _TpClientChannelFactoryInterface {
         GHashTable *properties,
         GError **error);
 
-    GArray * (* get_channel_features) (TpClientChannelFactoryInterface *self,
+    GArray * (* dup_channel_features) (TpClientChannelFactoryInterface *self,
         TpChannel *channel);
 };
 
@@ -62,7 +62,7 @@ TpChannel * tp_client_channel_factory_create_channel (
     GHashTable *properties,
     GError **error);
 
-GArray * tp_client_channel_factory_get_channel_features (
+GArray * tp_client_channel_factory_dup_channel_features (
     TpClientChannelFactoryInterface *self,
     TpChannel *channel);
 

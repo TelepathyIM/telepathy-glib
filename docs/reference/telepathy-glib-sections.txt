@@ -4875,7 +4875,7 @@ TpStreamTubeConnectionPrivate
 <INCLUDE>telepathy-glib/client-channel-factory.h</INCLUDE>
 TpClientChannelFactoryInterface
 tp_client_channel_factory_create_channel
-tp_client_channel_factory_get_channel_features
+tp_client_channel_factory_dup_channel_features
 <SUBSECTION Standard>
 TP_CLIENT_CHANNEL_FACTORY
 TP_CLIENT_CHANNEL_FACTORY_GET_IFACE

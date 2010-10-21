@@ -117,7 +117,7 @@ tp_automatic_proxy_factory_create_channel (
 }
 
 static GArray *
-tp_automatic_proxy_factory_get_channel_features (
+tp_automatic_proxy_factory_dup_channel_features (
     TpClientChannelFactoryInterface *factory,
     TpChannel *channel)
 {
@@ -142,7 +142,7 @@ client_proxy_factory_iface_init (gpointer g_iface,
   TpClientChannelFactoryInterface *iface = g_iface;
 
   iface->create_channel = tp_automatic_proxy_factory_create_channel;
-  iface->get_channel_features = tp_automatic_proxy_factory_get_channel_features;
+  iface->dup_channel_features = tp_automatic_proxy_factory_dup_channel_features;
 }
 
 /**

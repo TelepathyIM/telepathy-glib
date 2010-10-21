@@ -169,7 +169,7 @@ test_basic_stream_tube (Test *test,
   g_assert (TP_IS_CHANNEL (chan));
   g_assert (!TP_IS_STREAM_TUBE_CHANNEL (chan));
 
-  features = tp_client_channel_factory_get_channel_features (test->factory,
+  features = tp_client_channel_factory_dup_channel_features (test->factory,
       chan);
   g_assert_cmpuint (features->len, ==, 1);
   g_assert (array_contain_feature (features, TP_CHANNEL_FEATURE_CORE));
@@ -203,7 +203,7 @@ test_auto_stream_tube (Test *test,
   g_assert (TP_IS_CHANNEL (chan));
   g_assert (TP_IS_STREAM_TUBE_CHANNEL (chan));
 
-  features = tp_client_channel_factory_get_channel_features (test->factory,
+  features = tp_client_channel_factory_dup_channel_features (test->factory,
       chan);
   g_assert_cmpuint (features->len, ==, 2);
   g_assert (array_contain_feature (features, TP_CHANNEL_FEATURE_CORE));

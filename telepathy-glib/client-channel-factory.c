@@ -30,7 +30,7 @@
  * Once a channel has been created by a factory using
  * tp_client_channel_factory_create_channel(), the caller should then prepare
  * on it the channel features returned by
- * tp_client_channel_factory_get_channel_features() using
+ * tp_client_channel_factory_dup_channel_features() using
  * tp_proxy_prepare_async().
  *
  * Since: 0.13.2
@@ -40,7 +40,7 @@
  * TpClientChannelFactoryInterface:
  * @parent: the parent
  * @create_channel: the function used to create channels
- * @get_channel_features: channel features that have to be prepared on
+ * @dup_channel_features: channel features that have to be prepared on
  * newly created channels
  *
  * Interface for a channel factory
@@ -100,7 +100,7 @@ tp_client_channel_factory_create_channel (TpClientChannelFactoryInterface *self,
 }
 
 /**
- * tp_client_channel_factory_get_channel_features:
+ * tp_client_channel_factory_dup_channel_features:
  * @self: a client channel factory
  * @channel: a #TpChannel
  *
@@ -112,7 +112,7 @@ tp_client_channel_factory_create_channel (TpClientChannelFactoryInterface *self,
  * Since: 0.13.UNRELEASED
  */
 GArray *
-tp_client_channel_factory_get_channel_features (
+tp_client_channel_factory_dup_channel_features (
     TpClientChannelFactoryInterface *self,
     TpChannel *channel)
 {
@@ -123,8 +123,8 @@ tp_client_channel_factory_get_channel_features (
 
   g_return_val_if_fail (TP_IS_CHANNEL (channel), NULL);
 
-  if (iface->get_channel_features != NULL)
-    return iface->get_channel_features (iface, channel);
+  if (iface->dup_channel_features != NULL)
+    return iface->dup_channel_features (iface, channel);
 
   arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark), 1);
 
