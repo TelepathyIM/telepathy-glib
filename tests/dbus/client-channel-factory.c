@@ -130,6 +130,21 @@ test_auto_creation (Test *test,
   g_assert (TP_IS_CLIENT_CHANNEL_FACTORY (test->factory));
 }
 
+static gboolean
+array_contain_feature (GArray *features,
+    GQuark feature)
+{
+  guint i;
+
+  for (i = 0; i < features->len; i++)
+    {
+      if (g_array_index (features, GQuark, i) == feature)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
 /* Create a proxy for a stream tube */
 static void
 test_basic_stream_tube (Test *test,
@@ -138,6 +153,7 @@ test_basic_stream_tube (Test *test,
   TpChannel *chan;
   gchar *chan_path;
   GHashTable *props;
+  GArray *features;
 
   test->factory = TP_CLIENT_CHANNEL_FACTORY (tp_basic_proxy_factory_new ());
 
@@ -153,8 +169,14 @@ test_basic_stream_tube (Test *test,
   g_assert (TP_IS_CHANNEL (chan));
   g_assert (!TP_IS_STREAM_TUBE_CHANNEL (chan));
 
+  features = tp_client_channel_factory_get_channel_features (test->factory,
+      chan);
+  g_assert_cmpuint (features->len, ==, 1);
+  g_assert (array_contain_feature (features, TP_CHANNEL_FEATURE_CORE));
+
   g_free (chan_path);
   g_hash_table_unref (props);
+  g_array_free (features, TRUE);
 }
 
 static void
@@ -164,6 +186,7 @@ test_auto_stream_tube (Test *test,
   TpChannel *chan;
   gchar *chan_path;
   GHashTable *props;
+  GArray *features;
 
   test->factory = TP_CLIENT_CHANNEL_FACTORY (
       tp_automatic_proxy_factory_new ());
@@ -180,8 +203,15 @@ test_auto_stream_tube (Test *test,
   g_assert (TP_IS_CHANNEL (chan));
   g_assert (TP_IS_STREAM_TUBE_CHANNEL (chan));
 
+  features = tp_client_channel_factory_get_channel_features (test->factory,
+      chan);
+  g_assert_cmpuint (features->len, ==, 2);
+  g_assert (array_contain_feature (features, TP_CHANNEL_FEATURE_CORE));
+  g_assert (array_contain_feature (features, TP_CHANNEL_FEATURE_GROUP));
+
   g_free (chan_path);
   g_hash_table_unref (props);
+  g_array_free (features, TRUE);
 }
 
 static void
