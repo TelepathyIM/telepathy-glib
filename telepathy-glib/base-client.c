@@ -938,6 +938,10 @@ tp_base_client_finalize (GObject *object)
   g_free (self->priv->bus_name);
   g_free (self->priv->object_path);
 
+  tp_clear_pointer (&self->priv->account_features, g_array_unref);
+  tp_clear_pointer (&self->priv->connection_features, g_array_unref);
+  tp_clear_pointer (&self->priv->channel_features, g_array_unref);
+
   if (finalize != NULL)
     finalize (object);
 }
