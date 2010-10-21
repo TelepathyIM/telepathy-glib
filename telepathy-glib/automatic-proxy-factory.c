@@ -44,6 +44,9 @@
  * will be either the class that is currently used, or a more specific
  * subclass of that class.
  *
+ * This factory asks to prepare #TP_CHANNEL_FEATURE_CORE and
+ * #TP_CHANNEL_FEATURE_GROUP for all type of channels.
+ *
  * TpProxy subclasses other than TpChannel are not currently supported.
  *
  * Since: 0.13.2
@@ -113,6 +116,25 @@ tp_automatic_proxy_factory_create_channel (
   return tp_channel_new_from_properties (conn, path, properties, error);
 }
 
+static GArray *
+tp_automatic_proxy_factory_get_channel_features (
+    TpClientChannelFactoryInterface *factory,
+    TpChannel *channel)
+{
+  GArray *features;
+  GQuark feature;
+
+  features = g_array_sized_new (FALSE, FALSE, sizeof (GQuark), 2);
+
+  feature = TP_CHANNEL_FEATURE_CORE;
+  g_array_append_val (features, feature);
+
+  feature = TP_CHANNEL_FEATURE_GROUP;
+  g_array_append_val (features, feature);
+
+  return features;
+}
+
 static void
 client_proxy_factory_iface_init (gpointer g_iface,
     gpointer unused G_GNUC_UNUSED)
@@ -120,6 +142,7 @@ client_proxy_factory_iface_init (gpointer g_iface,
   TpClientChannelFactoryInterface *iface = g_iface;
 
   iface->create_channel = tp_automatic_proxy_factory_create_channel;
+  iface->get_channel_features = tp_automatic_proxy_factory_get_channel_features;
 }
 
 /**
