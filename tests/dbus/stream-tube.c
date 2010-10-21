@@ -43,6 +43,8 @@ TestContext contexts[] = {
   { FALSE, NUM_TP_SOCKET_ADDRESS_TYPES, NUM_TP_SOCKET_ACCESS_CONTROLS }
 };
 
+static gboolean have_ipv6 = FALSE;
+
 typedef struct {
     GMainLoop *mainloop;
     TpDBusDaemon *dbus;
@@ -409,6 +411,13 @@ test_accept_success (Test *test,
   guint i = GPOINTER_TO_UINT (data);
   TpContact *contact;
 
+  if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
+      !have_ipv6)
+    {
+      g_message ("skipped: IPv6 not supported here");
+      return;
+    }
+
   create_tube_service (test, FALSE, contexts[i].address_type,
       contexts[i].access_control, contexts[i].contact);
 
@@ -508,6 +517,13 @@ test_offer_success (Test *test,
   GSocketClient *client;
   TpHandle bob_handle;
   TpContact *contact;
+
+  if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
+      !have_ipv6)
+    {
+      g_message ("skipped: IPv6 not supported here");
+      return;
+    }
 
   create_tube_service (test, TRUE, contexts[i].address_type,
       contexts[i].access_control, contexts[i].contact);
@@ -697,6 +713,13 @@ test_offer_race (Test *test,
   GIOStream *alice_stream, *bob_stream;
   GSocketConnection *conn;
   TpContact *contact;
+
+  if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
+      !have_ipv6)
+    {
+      g_message ("skipped: IPv6 not supported here");
+      return;
+    }
 
   /* The race only appear in room stream tubes */
   if (contexts[i].contact)
@@ -938,6 +961,55 @@ test_offer_bad_connection_sig_first (Test *test,
   g_assert (test->tube_conn == NULL);
 }
 
+static gboolean
+check_ipv6_support (void)
+{
+  GInetAddress *address = NULL;
+  GSocketAddress *socket_address = NULL;
+  GSocket *sock = NULL;
+  GError *error = NULL;
+  const gchar *action;
+  gboolean ret = TRUE;
+
+  address = g_inet_address_new_loopback (G_SOCKET_FAMILY_IPV6);
+  socket_address = g_inet_socket_address_new (address, 0);
+  g_assert (address != NULL);
+  g_assert (socket_address != NULL);
+
+  action = "g_socket_new";
+  sock = g_socket_new (G_SOCKET_FAMILY_IPV6, G_SOCKET_TYPE_STREAM,
+      G_SOCKET_PROTOCOL_DEFAULT, &error);
+
+  if (sock == NULL)
+    goto denied;
+
+  action = "g_socket_bind";
+  if (!g_socket_bind (sock, socket_address, TRUE, &error))
+    goto denied;
+
+  action = "g_socket_listen";
+  if (!g_socket_listen (sock, &error))
+    goto denied;
+
+  g_socket_close (sock, &error);
+  g_assert_no_error (error);
+
+  goto finally;
+
+denied:
+  g_message ("IPv6 doesn't seem to work here and will not be tested.\n"
+      "(%s failed: %s#%u: %s)",
+      action, g_quark_to_string (error->domain), error->code, error->message);
+  ret = FALSE;
+
+finally:
+  tp_clear_object (&sock);
+  tp_clear_object (&address);
+  tp_clear_object (&socket_address);
+  g_clear_error (&error);
+  return FALSE;
+}
+
 int
 main (int argc,
       char **argv)
@@ -947,6 +1019,8 @@ main (int argc,
 
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
+
+  have_ipv6 = check_ipv6_support ();
 
   g_test_add ("/stream-tube/creation", Test, NULL, setup, test_creation,
       teardown);
