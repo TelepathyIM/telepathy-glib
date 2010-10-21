@@ -27,6 +27,7 @@
  * This factory implements the #TpClientChannelFactory interface to create
  * plain #TpChannel objects. Unlike #TpAutomaticProxyFactory, it will
  * not create higher-level subclasses like #TpStreamTubeChannel.
+ * The only feature this factory asks to prepare is #TP_CHANNEL_FEATURE_CORE.
  *
  * TpProxy subclasses other than TpChannel are not currently supported.
  *
