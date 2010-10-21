@@ -1177,7 +1177,7 @@ group_flags_to_string (TpChannelGroupFlags flags)
   gint i = 0;
   GString *str;
 
-  str = g_string_new ("[" TP_ANSI_BOLD_OFF);
+  str = g_string_new ("[");
 
   GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_CAN_ADD);
   GFTS_APPEND_FLAG_IF_SET (TP_CHANNEL_GROUP_FLAG_CAN_REMOVE);
@@ -1204,7 +1204,7 @@ group_flags_to_string (TpChannelGroupFlags flags)
       g_string_append_printf (str, "%u", flags);
     }
 
-  g_string_append (str, TP_ANSI_BOLD_ON "]");
+  g_string_append (str, "]");
 
   return g_string_free (str, FALSE);
 }
@@ -1255,11 +1255,10 @@ tp_group_mixin_change_flags (GObject *obj,
           str_removed = group_flags_to_string (removed);
           str_flags = group_flags_to_string (mixin->group_flags);
 
-          printf (TP_ANSI_BOLD_ON TP_ANSI_FG_WHITE
-                  "%s: emitting group flags changed\n"
+          printf ("%s: emitting group flags changed\n"
                   "  added    : %s\n"
                   "  removed  : %s\n"
-                  "  flags now: %s\n" TP_ANSI_RESET,
+                  "  flags now: %s\n",
                   G_STRFUNC, str_added, str_removed, str_flags);
 
           fflush (stdout);
@@ -1292,7 +1291,7 @@ member_array_to_string (TpHandleRepoIface *repo,
   GString *str;
   guint i;
 
-  str = g_string_new ("[" TP_ANSI_BOLD_OFF);
+  str = g_string_new ("[");
 
   for (i = 0; i < array->len; i++)
     {
@@ -1309,7 +1308,7 @@ member_array_to_string (TpHandleRepoIface *repo,
           handle, handle_str);
     }
 
-  g_string_append (str, TP_ANSI_BOLD_ON "]");
+  g_string_append (str, "]");
 
   return g_string_free (str, FALSE);
 }
@@ -1463,15 +1462,14 @@ emit_members_changed_signals (GObject *channel,
       local_str = member_array_to_string (mixin->handle_repo, local_pending);
       remote_str = member_array_to_string (mixin->handle_repo, remote_pending);
 
-      printf (TP_ANSI_BOLD_ON TP_ANSI_FG_CYAN
-              "%s: emitting members changed\n"
+      printf ("%s: emitting members changed\n"
               "  message       : \"%s\"\n"
               "  added         : %s\n"
               "  removed       : %s\n"
               "  local_pending : %s\n"
               "  remote_pending: %s\n"
               "  actor         : %u\n"
-              "  reason        : %u: %s\n" TP_ANSI_RESET,
+              "  reason        : %u: %s\n",
               G_STRFUNC, message, add_str, rem_str, local_str, remote_str,
               actor, reason, group_change_reason_str (reason));
 
