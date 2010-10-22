@@ -161,6 +161,51 @@ test_properties (Test *test,
       tp_text_channel_get_delivery_reporting_support (test->channel));
 }
 
+static void
+proxy_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_proxy_prepare_finish (source, result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_pending_messages (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
+  GList *messages;
+
+  /* We didn't prepare the feature yet so there is no pending msg */
+  messages = tp_text_channel_get_pending_messages (test->channel);
+  g_assert_cmpuint (g_list_length (messages), ==, 0);
+  g_list_free (messages);
+
+  /* TODO: emulate that 2 messages have been received on the chan */
+
+  tp_proxy_prepare_async (test->channel, features,
+      proxy_prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_proxy_is_prepared (test->channel,
+        TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES));
+
+  /* We have the pending messages now */
+  messages = tp_text_channel_get_pending_messages (test->channel);
+
+  /* TODO: Check that messages contain our 2 messages */
+
+  g_list_free (messages);
+}
+
 int
 main (int argc,
       char **argv)
@@ -176,6 +221,8 @@ main (int argc,
       test_creation, teardown);
   g_test_add ("/text-channel/properties", Test, NULL, setup,
       test_properties, teardown);
+  g_test_add ("/text-channel/pending-messages", Test, NULL, setup,
+      test_pending_messages, teardown);
 
   return g_test_run ();
 }

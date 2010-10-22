@@ -53,6 +53,7 @@
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
@@ -72,6 +73,9 @@ struct _TpTextChannelPrivate
   GStrv supported_content_types;
   TpMessagePartSupportFlags message_part_support_flags;
   TpDeliveryReportingSupportFlags delivery_reporting_support;
+
+  /* list of owned TpSignalledMessage */
+  GList *pending_messages;
 };
 
 enum
@@ -84,6 +88,8 @@ enum
 #if 0
 enum /* signals */
 {
+  SIG_MESSAGE_RECEIVED,
+  SIG_PENDING_MESSAGES_REMOVED,
   LAST_SIGNAL
 };
 
@@ -96,6 +102,9 @@ tp_text_channel_dispose (GObject *obj)
   TpTextChannel *self = (TpTextChannel *) obj;
 
   tp_clear_pointer (&self->priv->supported_content_types, g_strfreev);
+
+  g_list_foreach (self->priv->pending_messages, (GFunc) g_object_unref, NULL);
+  tp_clear_pointer (&self->priv->pending_messages, g_list_free);
 
   G_OBJECT_CLASS (tp_text_channel_parent_class)->dispose (obj);
 }
@@ -203,14 +212,125 @@ tp_text_channel_constructed (GObject *obj)
 }
 
 static void
+message_received_cb (TpChannel *proxy,
+    const GPtrArray *message,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  /* TODO: update pending messages */
+}
+
+static void
+pending_messages_removed_cb (TpChannel *proxy,
+    const GArray *ids,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  /* TODO: update pending messages */
+}
+
+static void
+get_pending_messages_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  guint i;
+  GPtrArray *messages;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get PendingMessages property: %s", error->message);
+
+      _tp_proxy_set_feature_prepared (proxy,
+          TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, FALSE);
+      return;
+    }
+
+  messages = g_value_get_boxed (value);
+  for (i = 0; i < messages->len; i++)
+    {
+      /* TODO: update pending messages */
+    }
+
+  _tp_proxy_set_feature_prepared (proxy,
+      TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+}
+
+static void
+tp_text_channel_prepare_pending_messages (TpProxy *proxy)
+{
+  TpChannel *channel = (TpChannel *) proxy;
+  GError *error = NULL;
+
+  tp_cli_channel_interface_messages_connect_to_message_received (channel,
+      message_received_cb, proxy, NULL, G_OBJECT (proxy), &error);
+  if (error != NULL)
+    {
+      DEBUG ("Failed to connect to MessageReceived signal: %s", error->message);
+      goto fail;
+    }
+
+  tp_cli_channel_interface_messages_connect_to_pending_messages_removed (
+      channel, pending_messages_removed_cb, proxy, NULL, G_OBJECT (proxy),
+      &error);
+  if (error != NULL)
+    {
+      DEBUG ("Failed to connect to PendingMessagesRemoved signal: %s",
+          error->message);
+      goto fail;
+    }
+
+  tp_cli_dbus_properties_call_get (proxy, -1,
+      TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "PendingMessages",
+      get_pending_messages_cb, proxy, NULL, G_OBJECT (proxy));
+
+  return;
+
+fail:
+  g_error_free (error);
+
+  _tp_proxy_set_feature_prepared (proxy,
+      TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+}
+
+enum {
+    FEAT_PENDING_MESSAGES,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tp_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_PENDING_MESSAGES].name =
+    TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES;
+  features[FEAT_PENDING_MESSAGES].start_preparing =
+    tp_text_channel_prepare_pending_messages;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
+}
+
+static void
 tp_text_channel_class_init (TpTextChannelClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GParamSpec *param_spec;
 
   gobject_class->constructed = tp_text_channel_constructed;
   gobject_class->get_property = tp_text_channel_get_property;
   gobject_class->dispose = tp_text_channel_dispose;
+
+  proxy_class->list_features = tp_text_channel_list_features;
 
   /**
    * TpTextChannel:supported-content-types:
@@ -362,4 +482,42 @@ tp_text_channel_get_delivery_reporting_support (
     TpTextChannel *self)
 {
   return self->priv->delivery_reporting_support;
+}
+
+/**
+ * TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES:
+ *
+ * Expands to a call to a function that returns a quark representing the
+ * Pending Messages features of a #TpTextChannel.
+ *
+ * When this feature is prepared, the initial value of the
+ * #TpTextChannel:pending-messages property has been fetched
+ * and change notification has been set up.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+GQuark
+tp_text_channel_get_feature_quark_pending_messages (void)
+{
+  return g_quark_from_static_string (
+      "tp-text-channel-feature-pending-messages");
+}
+
+/**
+ * tp_text_channel_get_pending_messages:
+ * @self: a #TpTextChannel
+ *
+ * Return the a newly allocated list of not acked #TpSignalledMessage.
+ *
+ * Returns: (transfer container): a #GList of borrowed #TpSignalledMessage
+ *
+ * Since: 0.13.UNRELEASED
+ */
+GList *
+tp_text_channel_get_pending_messages (TpTextChannel *self)
+{
+  return g_list_copy (self->priv->pending_messages);
 }

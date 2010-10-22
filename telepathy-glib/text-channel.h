@@ -66,6 +66,12 @@ TpMessagePartSupportFlags tp_text_channel_get_message_part_support_flags (
 TpDeliveryReportingSupportFlags tp_text_channel_get_delivery_reporting_support (
     TpTextChannel *self);
 
+#define TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES \
+  tp_text_channel_get_feature_quark_pending_messages ()
+GQuark tp_text_channel_get_feature_quark_pending_messages (void) G_GNUC_CONST;
+
+GList * tp_text_channel_get_pending_messages (TpTextChannel *self);
+
 G_END_DECLS
 
 #endif
