@@ -77,3 +77,23 @@ tp_client_message_init (TpClientMessage *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_MESSAGE,
       TpClientMessagePrivate);
 }
+
+/**
+ * tp_client_message_new:
+ * @self: a #TpTextChannel
+ * @initial_parts: number of parts to create and allocate (at least 1)
+ *
+ * A convenient function to create a new #TpClientMessage
+ *
+ * Returns: (transfer full): a newly allocated #TpClientMessage
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpMessage *
+tp_client_message_new (guint initial_parts)
+{
+  return g_object_new (TP_TYPE_CLIENT_MESSAGE,
+      "initial-parts", initial_parts,
+      "size-hint", initial_parts,
+      NULL);
+}

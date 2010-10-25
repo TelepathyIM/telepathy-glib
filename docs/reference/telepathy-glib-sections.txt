@@ -5328,6 +5328,7 @@ tp_cli_channel_interface_sasl_authentication_signal_callback_sasl_status_changed
 <INCLUDE>telepathy-glib/client-message.h</INCLUDE>
 <TITLE>TpClientMessage</TITLE>
 TpClientMessage
+tp_client_message_new
 <SUBSECTION Standard>
 TP_IS_CLIENT_MESSAGE
 TP_IS_CLIENT_MESSAGE_CLASS
