@@ -246,6 +246,8 @@ tp_dtmf_player_emit_tones_deferred (TpDTMFPlayer *self,
 void
 tp_dtmf_player_cancel (TpDTMFPlayer *self)
 {
+  g_return_if_fail (TP_IS_DTMF_PLAYER (self));
+
   if (self->priv->timer_id != 0)
     {
       tp_dtmf_player_maybe_emit_stopped_tone (self);
@@ -372,6 +374,7 @@ tp_dtmf_player_play (TpDTMFPlayer *self,
 {
   guint i;
 
+  g_return_val_if_fail (TP_IS_DTMF_PLAYER (self), FALSE);
   g_return_val_if_fail (tones != NULL, FALSE);
   g_return_val_if_fail (tone_ms > 0, FALSE);
   g_return_val_if_fail (gap_ms > 0, FALSE);
@@ -421,6 +424,8 @@ tp_dtmf_player_play (TpDTMFPlayer *self,
 gboolean
 tp_dtmf_player_is_active (TpDTMFPlayer *self)
 {
+  g_return_val_if_fail (TP_IS_DTMF_PLAYER (self), FALSE);
+
   return (self->priv->dialstring != NULL);
 }
 
