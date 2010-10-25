@@ -23,6 +23,7 @@
 
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/client-message.h>
+#include <telepathy-glib/signalled-message.h>
 
 G_BEGIN_DECLS
 

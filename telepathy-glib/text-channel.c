@@ -56,6 +56,7 @@
 #include <telepathy-glib/message-internal.h>
 #include <telepathy-glib/proxy-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/signalled-message-internal.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
@@ -237,6 +238,7 @@ get_pending_messages_cb (TpProxy *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
+  TpTextChannel *self = user_data;
   guint i;
   GPtrArray *messages;
 
@@ -252,7 +254,13 @@ get_pending_messages_cb (TpProxy *proxy,
   messages = g_value_get_boxed (value);
   for (i = 0; i < messages->len; i++)
     {
-      /* TODO: update pending messages */
+      GPtrArray *parts = g_ptr_array_index (messages, i);
+      TpMessage *msg;
+
+      msg = _tp_signalled_message_new (parts);
+
+      self->priv->pending_messages = g_list_append (
+          self->priv->pending_messages, msg);
     }
 
   _tp_proxy_set_feature_prepared (proxy,
