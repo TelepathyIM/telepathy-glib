@@ -176,18 +176,80 @@ proxy_prepare_cb (GObject *source,
 }
 
 static void
+send_message_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_text_channel_send_message_finish (TP_TEXT_CHANNEL (source), result,
+      &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+on_received (TpChannel *chan,
+    guint id,
+    guint timestamp,
+    guint sender,
+    guint type,
+    guint flags,
+    const gchar *text,
+    gpointer user_data,
+    GObject *object)
+{
+  Test *test = user_data;
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_pending_messages (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
   GList *messages;
+  TpMessage *msg;
+
+  /* connect on the Received sig to check if the message has been received */
+  tp_cli_channel_type_text_connect_to_received (TP_CHANNEL (test->channel),
+      on_received, test, NULL, NULL, NULL);
+
+  /* Send a first message */
+  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "Badger");
+
+  tp_text_channel_send_message_async (test->channel, msg, 0,
+      send_message_cb, test);
+
+  g_object_unref (msg);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Send a second message */
+  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "Snake");
+
+  tp_text_channel_send_message_async (test->channel, msg, 0,
+      send_message_cb, test);
+
+  g_object_unref (msg);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
 
   /* We didn't prepare the feature yet so there is no pending msg */
   messages = tp_text_channel_get_pending_messages (test->channel);
   g_assert_cmpuint (g_list_length (messages), ==, 0);
   g_list_free (messages);
-
-  /* TODO: emulate that 2 messages have been received on the chan */
 
   tp_proxy_prepare_async (test->channel, features,
       proxy_prepare_cb, test);
