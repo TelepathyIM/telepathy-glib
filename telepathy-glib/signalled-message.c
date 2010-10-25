@@ -77,3 +77,29 @@ tp_signalled_message_init (TpSignalledMessage *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_SIGNALLED_MESSAGE,
       TpSignalledMessagePrivate);
 }
+
+TpMessage *
+_tp_signalled_message_new (const GPtrArray *parts)
+{
+  TpMessage *self;
+  guint i;
+
+  g_return_val_if_fail (parts != NULL, NULL);
+  g_return_val_if_fail (parts->len > 0, NULL);
+
+  /* FIXME: remove message-sender? */
+  self = g_object_new (TP_TYPE_SIGNALLED_MESSAGE,
+      "initial-parts", parts->len,
+      "size-hint", parts->len,
+      NULL);
+
+  for (i = 0; i < parts->len; i++)
+    {
+      tp_g_hash_table_update (g_ptr_array_index (self->parts, i),
+          g_ptr_array_index (parts, i),
+          (GBoxedCopyFunc) g_strdup,
+          (GBoxedCopyFunc) tp_g_value_slice_dup);
+    }
+
+  return self;
+}
