@@ -103,21 +103,19 @@ check-local: check-coding-style
 
 LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(GLIB_LIBS) \
     $(DBUS_LIBS) \
-    $(GLIB_LIBS)
+    $(NULL)
 
-AM_CFLAGS = \
-    $(ERROR_CFLAGS) \
-    $(DBUS_CFLAGS) \
-    $(GLIB_CFLAGS) \
+AM_CPPFLAGS = \
+    -I${top_srcdir} -I${top_builddir} \
     -D_TP_IGNORE_DEPRECATIONS \
-    $(TP_GLIB_CFLAGS)
+    $(GLIB_CFLAGS) \
+    $(DBUS_CFLAGS) \
+    $(NULL)
 
-AM_CXXFLAGS = \
-    $(DBUS_CFLAGS) \
-    $(GLIB_CFLAGS) \
-    -D_TP_IGNORE_DEPRECATIONS \
-    $(TP_GLIB_CFLAGS)
+AM_CFLAGS = $(ERROR_CFLAGS)
+AM_CXXFLAGS = $(ERROR_CXXFLAGS)
 
 if HAVE_CXX
 noinst_PROGRAMS += \
