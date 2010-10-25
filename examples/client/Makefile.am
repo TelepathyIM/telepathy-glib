@@ -42,14 +42,20 @@ noinst_PROGRAMS = $(EXAMPLES)
 endif
 
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
-# pkg-config via autoconf) instead of the .la path
+# pkg-config via autoconf) instead of the .la path, and put it last; we use
+# a different format here because we're part of the telepathy-glib source tree.
+# Similarly, in an external project you'd put $(TP_GLIB_CFLAGS) at the end of
+# AM_CPPFLAGS.
 LDADD = \
-    @DBUS_LIBS@ \
-    @GLIB_LIBS@ \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(GLIB_LIBS) \
+    $(DBUS_LIBS) \
+    $(NULL)
 
-AM_CFLAGS = \
-    $(ERROR_CFLAGS) \
-    @DBUS_CFLAGS@ \
-    @GLIB_CFLAGS@ \
-    @TP_GLIB_CFLAGS@
+AM_CPPFLAGS = \
+    -I${top_srcdir} -I${top_builddir} \
+    $(GLIB_CFLAGS) \
+    $(DBUS_CFLAGS) \
+    $(NULL)
+
+AM_CFLAGS = $(ERROR_CFLAGS)

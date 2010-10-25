@@ -53,10 +53,11 @@ noinst_PROGRAMS = \
 TESTS = $(noinst_PROGRAMS)
 
 LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(GLIB_LIBS) \
     $(DBUS_LIBS) \
-    $(GLIB_LIBS)
+    $(NULL)
 
 test_account_SOURCES = account.c
 
@@ -187,12 +188,14 @@ check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
-AM_CFLAGS = \
-    $(ERROR_CFLAGS) \
-    $(DBUS_CFLAGS) \
-    $(GLIB_CFLAGS) \
+AM_CPPFLAGS = \
+    -I${top_srcdir} -I${top_builddir} \
     -D_TP_IGNORE_DEPRECATIONS \
-    $(TP_GLIB_CFLAGS)
+    $(GLIB_CFLAGS) \
+    $(DBUS_CFLAGS) \
+    $(NULL)
+
+AM_CFLAGS = $(ERROR_CFLAGS)
 
 TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
