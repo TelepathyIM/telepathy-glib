@@ -198,6 +198,10 @@
  *     Raised when an incoming or outgoing call is rejected by the receiving
  *     contact.
  *     Since: 0.13.2
+ * @TP_ERROR_PICKED_UP_ELSEWHERE: org.freedesktop.Telepathy.Error.PickedUpElsewhere:
+ *     Raised when a call was terminated as a result of the local user
+ *     picking up the call on a different resource.
+ *     Since: 0.13.UNRELEASED
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

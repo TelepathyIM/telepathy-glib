@@ -344,6 +344,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           <td>""</td>
           <td>The outgoing call was not picked up and the call ended.</td>
         </tr>
+        <tr>
+          <td>False</td>
+          <td><tp:type>Call_State</tp:type>_Ended</td>
+          <td>Remote contact handle</td>
+          <td><tp:type>Call_State_Change_Reason</tp:type>_User_Requested</td>
+          <td><tp:error-ref>PickedUpElsewhere</tp:error-ref></td>
+          <td>The incoming call was ended because it was picked up elsewhere.</td>
+        </tr>
       </table>
 
       <h4>Requestable channel classes</h4>
@@ -457,9 +465,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           <tp:dbus-ref namespace="ofdT.Call.Content.DRAFT"
           >Disposition</tp:dbus-ref> is
           <tp:type>Call_Content_Disposition</tp:type>_Initial, any
-          streams where the self-handle's sending state in <tp:dbus-ref
-          namespace="ofdT.Call.Stream.DRAFT" >Members</tp:dbus-ref> is
-          <tp:type>Sending_State</tp:type>_Pending_Send will be
+          streams where the <tp:dbus-ref
+          namespace="ofdT.Call.Stream.DRAFT">LocalSendingState</tp:dbus-ref>
+          is <tp:type>Sending_State</tp:type>_Pending_Send will be
           moved to <tp:type>Sending_State</tp:type>_Sending as if
           <tp:dbus-ref namespace="ofdT.Call.Stream.DRAFT"
           >SetSending</tp:dbus-ref>(True) had been called.</p>
@@ -932,7 +940,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <tp:member type="u" tp:type="Call_State_Change_Reason" name="Reason">
         <tp:docstring>
           The reason, chosen from a limited set of possibilities defined by
-          the Telepathy specification.
+          the Telepathy specification. If
+          <tp:type>Call_State_Change_Reason</tp:type>_User_Requested then
+          the Actor member will dictate whether it was the local user or
+          a remote contact responsible.
         </tp:docstring>
       </tp:member>
 

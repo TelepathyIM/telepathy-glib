@@ -1050,6 +1050,125 @@ USA.</p>
       </tp:docstring>
     </tp:contact-attribute>
 
+    <method name="AddClientInterest" tp:name-for-bindings="Add_Client_Interest">
+      <tp:added version="0.21.UNRELEASED"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Register a client's interest in notifications related to one or
+          more interfaces.</p>
+
+        <p>Groups of notifications are identified by a token which is either
+          a D-Bus interface name, or a string that starts with a D-Bus
+          interface name. The meaning of each token is given by that D-Bus
+          interface, which MUST define it in its documentation.</p>
+
+        <tp:rationale>
+          <p>Initially, all interests are in entire interface, but allowing
+            other strings allows subscription to part of an interface; for
+            instance, an interest in ...MailNotification/count could track
+            the number of messages without caring about their detailed
+            content.</p>
+        </tp:rationale>
+
+        <p>For each token with which this method interacts, the
+          Connection tracks an "interest count" (like a reference count) for
+          each unique bus name that has called this method. When a client
+          calls this method, for each token, the interest count for its
+          unique bus name is incremented; when
+          <tp:member-ref>RemoveClientInterest</tp:member-ref> is called,
+          all interest counts for that unique bus name are decremented.
+          If the unique bus name leaves the bus (for instance, if the
+          client crashes or exits), all interest counts for that unique bus
+          name are set to zero.</p>
+
+        <p>The Connection can then use these reference counts to
+          avoid subscribing to protocol-level notifications unless at least
+          one client has a non-zero interest count for the relevant
+          token.</p>
+
+        <tp:rationale>
+          <p>This method exists to reduce memory and network overhead when
+            there is no active subscription.</p>
+
+          <p>One situation where this is useful is <tp:dbus-ref
+              namespace="org.freedesktop.Telepathy.Connection.Interface"
+              >Location</tp:dbus-ref>: on XMPP, location updates are received
+            over PEP. If the Connection advertises the
+            <code>geoloc+notify</code> capability, it will be sent location
+            updates for all contacts. To avoid consuming resources for this,
+            the connection should avoid advertising that capability until
+            a client has expressed an interest in contacts' locations.</p>
+
+          <p>Another example of a protocol that benefits from this method is
+            the Google XMPP Mail Notification extension, which can be used
+            to implement <tp:dbus-ref
+              namespace="org.freedesktop.Telepathy.Connection.Interface"
+              >MailNotification.DRAFT</tp:dbus-ref>. In this protocol, the CM
+            receives a notification that something has changed, but to get
+            more information, the CM must request this information. Knowing
+            that nobody is currently interested in this information, the CM
+            can avoid generating useless network traffic. Similarly, the CM
+            may free the list of unread messages to reduce memory overhead.</p>
+        </tp:rationale>
+
+        <p>If this method is called for an interface that might require
+          protocol-level subscription, but the connection cannot set up
+          that subscription yet (for instance because the
+          <tp:member-ref>Status</tp:member-ref> is not Connected yet), the
+          Connection MUST remember the client's interest, and attempt to
+          subscribe to the appropriate protocol feature when this becomes
+          possible.</p>
+
+        <p>Clients MAY ignore any errors raised by this method; it is intended
+          to be called with the reply ignored.</p>
+
+        <tp:rationale>
+          <p>The only reason it could fail is if it's unimplemented, in which
+            case the only thing the client can usefully do is to proceed as if
+            it had succeeded.</p>
+        </tp:rationale>
+      </tp:docstring>
+
+      <arg name="Tokens" type="as" direction="in">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>Interfaces or parts of interfaces in which to register an
+            interest, represented by either a
+            <tp:type>DBus_Interface</tp:type>, or a string prefixed with a
+            <tp:type>DBus_Interface</tp:type>.</p>
+
+          <p>If the Connection does not support one of these tokens, this
+            is not considered to be an error; the unsupported token is
+            simply ignored.</p>
+        </tp:docstring>
+      </arg>
+    </method>
+
+    <method name="RemoveClientInterest"
+      tp:name-for-bindings="Remove_Client_Interest">
+      <tp:added version="0.21.UNRELEASED"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Release an interest registered using
+          <tp:member-ref>AddClientInterest</tp:member-ref>. See that
+          method's documentation for details.</p>
+
+        <p>Clients MAY ignore any errors raised by this method; it is intended
+          to be called with the reply ignored.</p>
+
+        <tp:rationale>
+          <p>The only reasons it could fail are if it's unimplemented, or if
+            the client's reference-counting is wrong and it has tried to
+            remove a client interest that it did not add. In both cases,
+            there's nothing the client could do about it.</p>
+        </tp:rationale>
+      </tp:docstring>
+
+      <arg name="Tokens" type="as" direction="in">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>Interfaces or parts of interfaces that were previously passed to
+            <tp:member-ref>AddClientInterest</tp:member-ref>.</p>
+        </tp:docstring>
+      </arg>
+    </method>
+
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This models a connection to a single user account on a communication
         service. Its basic capability is to provide the facility to request and
