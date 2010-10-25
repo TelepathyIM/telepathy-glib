@@ -18,20 +18,40 @@
  */
 
 #include "config.h"
-#include "dtmf.h"
+#include "telepathy-glib/dtmf.h"
 
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/util.h>
 
 /**
- * gabble_dtmf_event_to_char:
+ * SECTION:dtmf
+ * @title: DTMF dialstring interpreter
+ * @short_description: Converts a dialstring into a timed sequence of events
+ *
+ * Telepathy offers two APIs for DTMF events: user interfaces can either
+ * call the StartTone and StopTone methods (appropriate if the user is
+ * pressing hardware or on-screen buttons in real time), or call
+ * MultipleTones or set InitialTones (appropriate if a stored dialstring
+ * is in use).
+ *
+ * #TpDTMFPlayer provides common code for connection managers that need to
+ * turn MultipleTones or InitialTones received from a UI into a sequence of
+ * start and stop events for the underlying protocol.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * tp_dtmf_event_to_char:
  * @event: a TpDTMFEvent
  *
  * Return a printable ASCII character representing @event, or '?' if @event
  * was not understood.
+ *
+ * Returns: a printable ASCII character
  */
 gchar
-gabble_dtmf_event_to_char (TpDTMFEvent event)
+tp_dtmf_event_to_char (TpDTMFEvent event)
 {
   switch (event)
     {
@@ -67,7 +87,7 @@ gabble_dtmf_event_to_char (TpDTMFEvent event)
 #define INVALID_DTMF_EVENT ((TpDTMFEvent) 0xFF)
 
 static TpDTMFEvent
-gabble_dtmf_char_to_event (gchar c)
+tp_dtmf_char_to_event (gchar c)
 {
   switch (c)
     {
@@ -116,7 +136,7 @@ typedef enum
 } DTMFCharClass;
 
 static DTMFCharClass
-gabble_dtmf_char_classify (gchar c)
+tp_dtmf_char_classify (gchar c)
 {
   switch (c)
     {
@@ -132,16 +152,36 @@ gabble_dtmf_char_classify (gchar c)
         return DTMF_CHAR_CLASS_PAUSE;
 
       default:
-        if (gabble_dtmf_char_to_event (c) != INVALID_DTMF_EVENT)
+        if (tp_dtmf_char_to_event (c) != INVALID_DTMF_EVENT)
           return DTMF_CHAR_CLASS_EVENT;
         else
           return DTMF_CHAR_CLASS_MEANINGLESS;
     }
 }
 
-G_DEFINE_TYPE (GabbleDTMFPlayer, gabble_dtmf_player, G_TYPE_OBJECT)
+/**
+ * TpDTMFPlayer:
+ *
+ * An object to convert a string of characters representing DTMF tones
+ * into timed start and stop events.
+ *
+ * Typically, a connection manager should instantiate one #TpDTMFPlayer
+ * for each StreamedMedia or Call channel that supports DTMF.
+ *
+ * The #TpDTMFPlayer::started-tone and #TpDTMFPlayer::stopped-tone
+ * signals should be connected to some way to play a tone, either directly
+ * or by emitting signals from the StreamHandler interface.
+ *
+ * The #TpDTMFPlayer::tones-deferred signal should trigger emission of
+ * TonesDeferred.
+ *
+ * The #TpDTMFPlayer::finished signal indicates that the current sequence
+ * of tones has finished.
+ */
 
-struct _GabbleDTMFPlayerPrivate
+G_DEFINE_TYPE (TpDTMFPlayer, tp_dtmf_player, G_TYPE_OBJECT)
+
+struct _TpDTMFPlayerPrivate
 {
   /* owned, or NULL */
   gchar *dialstring;
@@ -161,7 +201,7 @@ static guint sig_id_finished;
 static guint sig_id_tones_deferred;
 
 static void
-gabble_dtmf_player_emit_started_tone (GabbleDTMFPlayer *self,
+tp_dtmf_player_emit_started_tone (TpDTMFPlayer *self,
     TpDTMFEvent tone)
 {
   self->priv->playing_tone = TRUE;
@@ -169,7 +209,7 @@ gabble_dtmf_player_emit_started_tone (GabbleDTMFPlayer *self,
 }
 
 static void
-gabble_dtmf_player_maybe_emit_stopped_tone (GabbleDTMFPlayer *self)
+tp_dtmf_player_maybe_emit_stopped_tone (TpDTMFPlayer *self)
 {
   self->priv->paused = FALSE;
 
@@ -181,26 +221,35 @@ gabble_dtmf_player_maybe_emit_stopped_tone (GabbleDTMFPlayer *self)
 }
 
 static void
-gabble_dtmf_player_emit_finished (GabbleDTMFPlayer *self,
+tp_dtmf_player_emit_finished (TpDTMFPlayer *self,
     gboolean cancelled)
 {
   g_signal_emit (self, sig_id_finished, 0, cancelled);
 }
 
 static void
-gabble_dtmf_player_emit_tones_deferred (GabbleDTMFPlayer *self,
+tp_dtmf_player_emit_tones_deferred (TpDTMFPlayer *self,
     const gchar *remaining_tones)
 {
   g_signal_emit (self, sig_id_tones_deferred, 0, remaining_tones);
 }
 
+/**
+ * tp_dtmf_player_cancel:
+ * @self: a DTMF interpreter
+ *
+ * If tones were being played, stop the current tone (if any),
+ * stop playing subsequent tones, and emit #TpDTMFPlayer::finished.
+ *
+ * Otherwise, do nothing.
+ */
 void
-gabble_dtmf_player_cancel (GabbleDTMFPlayer *self)
+tp_dtmf_player_cancel (TpDTMFPlayer *self)
 {
   if (self->priv->timer_id != 0)
     {
-      gabble_dtmf_player_maybe_emit_stopped_tone (self);
-      gabble_dtmf_player_emit_finished (self, TRUE);
+      tp_dtmf_player_maybe_emit_stopped_tone (self);
+      tp_dtmf_player_emit_finished (self, TRUE);
 
       g_source_remove (self->priv->timer_id);
       self->priv->timer_id = 0;
@@ -210,15 +259,15 @@ gabble_dtmf_player_cancel (GabbleDTMFPlayer *self)
 }
 
 static gboolean
-gabble_dtmf_player_timer_cb (gpointer data)
+tp_dtmf_player_timer_cb (gpointer data)
 {
-  GabbleDTMFPlayer *self = data;
+  TpDTMFPlayer *self = data;
   gboolean was_playing = self->priv->playing_tone;
   gboolean was_paused = self->priv->paused;
 
   self->priv->timer_id = 0;
 
-  gabble_dtmf_player_maybe_emit_stopped_tone (self);
+  tp_dtmf_player_maybe_emit_stopped_tone (self);
 
   if ((was_playing || was_paused) &&
       !tp_str_empty (self->priv->dialstring_remaining))
@@ -230,28 +279,28 @@ gabble_dtmf_player_timer_cb (gpointer data)
   if (tp_str_empty (self->priv->dialstring_remaining))
     {
       /* die of natural causes */
-      gabble_dtmf_player_emit_finished (self, FALSE);
-      gabble_dtmf_player_cancel (self);
+      tp_dtmf_player_emit_finished (self, FALSE);
+      tp_dtmf_player_cancel (self);
       return FALSE;
     }
 
-  switch (gabble_dtmf_char_classify (*self->priv->dialstring_remaining))
+  switch (tp_dtmf_char_classify (*self->priv->dialstring_remaining))
     {
       case DTMF_CHAR_CLASS_EVENT:
         if (was_playing)
           {
             /* Play a gap (short silence) before the next tone */
             self->priv->timer_id = g_timeout_add (self->priv->gap_ms,
-                gabble_dtmf_player_timer_cb, self);
+                tp_dtmf_player_timer_cb, self);
           }
         else
           {
             /* We're at the end of a gap or pause, or in our initial state.
              * Play the tone straight away. */
-            gabble_dtmf_player_emit_started_tone (self,
-                gabble_dtmf_char_to_event (*self->priv->dialstring_remaining));
+            tp_dtmf_player_emit_started_tone (self,
+                tp_dtmf_char_to_event (*self->priv->dialstring_remaining));
             self->priv->timer_id = g_timeout_add (self->priv->tone_ms,
-                gabble_dtmf_player_timer_cb, self);
+                tp_dtmf_player_timer_cb, self);
           }
         break;
 
@@ -260,7 +309,7 @@ gabble_dtmf_player_timer_cb (gpointer data)
          * first. */
         self->priv->paused = TRUE;
         self->priv->timer_id = g_timeout_add (self->priv->pause_ms,
-            gabble_dtmf_player_timer_cb, self);
+            tp_dtmf_player_timer_cb, self);
         break;
 
       case DTMF_CHAR_CLASS_WAIT_FOR_USER:
@@ -269,11 +318,11 @@ gabble_dtmf_player_timer_cb (gpointer data)
          * appropriate), unless we're at the end of the string. Again, we
          * don't need a gap. */
         if (self->priv->dialstring_remaining[1] != '\0')
-          gabble_dtmf_player_emit_tones_deferred (self,
+          tp_dtmf_player_emit_tones_deferred (self,
               self->priv->dialstring_remaining + 1);
 
-        gabble_dtmf_player_emit_finished (self, FALSE);
-        gabble_dtmf_player_cancel (self);
+        tp_dtmf_player_emit_finished (self, FALSE);
+        tp_dtmf_player_cancel (self);
         break;
 
       default:
@@ -283,8 +332,38 @@ gabble_dtmf_player_timer_cb (gpointer data)
   return FALSE;
 }
 
+/**
+ * tp_dtmf_player_play:
+ * @self: a DTMF interpreter
+ * @tones: a sequence of tones or other events
+ * @tone_ms: length of a tone (0-9, A-D, # or *) in milliseconds,
+ *  which must be positive; typically 250
+ * @gap_ms: length of the gap between two tones, which must be positive;
+ *  typically 100
+ * @pause_ms: length of the pause produced by P, X or comma, which must be
+ *  positive; typically 3000
+ * @error: used to raise an error
+ *
+ * Start to play a sequence of tones, by emitting the
+ * #TpDTMFPlayer::started-tone and #TpDTMFPlayer::stopped-tone signals.
+ *
+ * If tp_dtmf_player_is_active() would return %TRUE, this method raises
+ * %TP_ERROR_SERVICE_BUSY and does not play anything, and the previous
+ * sequence continues to play.
+ *
+ * The recognised characters are 0-9, A-D,
+ * # and * (which play the corresponding DTMF event), P, X and comma (which
+ * each pause for @pause_ms milliseconds), and W
+ * (which stops interpretation of the string and emits
+ * #TpDTMFPlayer::tones-deferred with the rest of the string). The
+ * corresponding lower-case letters are also allowed.
+ * If @tones contains any other characters, this method raises
+ * %TP_ERROR_INVALID_ARGUMENT and does not play anything.
+ *
+ * Returns: %TRUE on success, %FALSE (setting @error) on failure
+ */
 gboolean
-gabble_dtmf_player_play (GabbleDTMFPlayer *self,
+tp_dtmf_player_play (TpDTMFPlayer *self,
     const gchar *tones,
     guint tone_ms,
     guint gap_ms,
@@ -309,7 +388,7 @@ gabble_dtmf_player_play (GabbleDTMFPlayer *self,
 
   for (i = 0; tones[i] != '\0'; i++)
     {
-      if (gabble_dtmf_char_classify (tones[i]) == DTMF_CHAR_CLASS_MEANINGLESS)
+      if (tp_dtmf_char_classify (tones[i]) == DTMF_CHAR_CLASS_MEANINGLESS)
         {
           g_set_error (error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
               "Invalid character in DTMF string starting at %s",
@@ -327,23 +406,31 @@ gabble_dtmf_player_play (GabbleDTMFPlayer *self,
   /* start off the process: conceptually, this is the end of the zero-length
    * gap before the first tone */
   self->priv->playing_tone = FALSE;
-  gabble_dtmf_player_timer_cb (self);
+  tp_dtmf_player_timer_cb (self);
   return TRUE;
 }
 
+/**
+ * tp_dtmf_player_is_active:
+ * @self: a DTMF interpreter
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if a sequence of tones is currently playing
+ */
 gboolean
-gabble_dtmf_player_is_active (GabbleDTMFPlayer *self)
+tp_dtmf_player_is_active (TpDTMFPlayer *self)
 {
   return (self->priv->dialstring != NULL);
 }
 
-#define MY_PARENT_CLASS (gabble_dtmf_player_parent_class)
+#define MY_PARENT_CLASS (tp_dtmf_player_parent_class)
 
 static void
-gabble_dtmf_player_init (GabbleDTMFPlayer *self)
+tp_dtmf_player_init (TpDTMFPlayer *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, GABBLE_TYPE_DTMF_PLAYER,
-      GabbleDTMFPlayerPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_DTMF_PLAYER,
+      TpDTMFPlayerPrivate);
 
   self->priv->dialstring = NULL;
   self->priv->dialstring_remaining = NULL;
@@ -352,46 +439,82 @@ gabble_dtmf_player_init (GabbleDTMFPlayer *self)
 }
 
 static void
-gabble_dtmf_player_dispose (GObject *object)
+tp_dtmf_player_dispose (GObject *object)
 {
-  GabbleDTMFPlayer *self = (GabbleDTMFPlayer *) object;
+  TpDTMFPlayer *self = (TpDTMFPlayer *) object;
   void (*dispose) (GObject *) = G_OBJECT_CLASS (MY_PARENT_CLASS)->dispose;
 
-  gabble_dtmf_player_cancel (self);
+  tp_dtmf_player_cancel (self);
 
   if (dispose != NULL)
     dispose (object);
 }
 
 static void
-gabble_dtmf_player_class_init (GabbleDTMFPlayerClass *cls)
+tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
 {
   GObjectClass *object_class = (GObjectClass *) cls;
 
-  g_type_class_add_private (cls, sizeof (GabbleDTMFPlayerPrivate));
+  g_type_class_add_private (cls, sizeof (TpDTMFPlayerPrivate));
 
-  object_class->dispose = gabble_dtmf_player_dispose;
+  object_class->dispose = tp_dtmf_player_dispose;
 
+  /**
+   * TpDTMFPlayer::started-tone:
+   * @event: a %G_TYPE_UINT representing the tone being played
+   *
+   * Emitted at the beginning of each tone.
+   */
   sig_id_started_tone =  g_signal_new ("started-tone",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       g_cclosure_marshal_VOID__UINT, G_TYPE_NONE, 1, G_TYPE_UINT);
 
+  /**
+   * TpDTMFPlayer::stopped-tone:
+   *
+   * Emitted at the end of each tone.
+   */
   sig_id_stopped_tone =  g_signal_new ("stopped-tone",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
+  /**
+   * TpDTMFPlayer::finished:
+   * @cancelled: %TRUE if playback was cancelled with tp_dtmf_player_cancel()
+   *
+   * Emitted when playback stops, either because the end of the
+   * sequence was reached, tp_dtmf_player_cancel() was called, or a 'W'
+   * or 'w' character was encountered.
+   */
   sig_id_finished =  g_signal_new ("finished",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       g_cclosure_marshal_VOID__BOOLEAN, G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
+  /**
+   * TpDTMFPlayer::tones-deferred:
+   * @tones: the remaining tones, starting from just after the 'W' or 'w'
+   *
+   * Emitted just before #TpDTMFPlayer::finished if a 'W' or 'w' character
+   * is encountered before the end of a dial string. The connection
+   * manager is expected to wait for the user to confirm, then call
+   * tp_dtmf_player_play() again, using this signal's argument as the new
+   * dial string.
+   */
   sig_id_tones_deferred =  g_signal_new ("tones-deferred",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING);
 }
 
-GabbleDTMFPlayer *
-gabble_dtmf_player_new (void)
+/**
+ * tp_dtmf_player_new:
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full): a new DTMF interpreter
+ */
+TpDTMFPlayer *
+tp_dtmf_player_new (void)
 {
-  return g_object_new (GABBLE_TYPE_DTMF_PLAYER,
+  return g_object_new (TP_TYPE_DTMF_PLAYER,
       NULL);
 }

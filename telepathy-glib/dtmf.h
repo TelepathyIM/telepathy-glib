@@ -17,56 +17,56 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef GABBLE_DTMF_H
-#define GABBLE_DTMF_H
+#ifndef __TP_DTMF_H__
+#define __TP_DTMF_H__
 
 #include <glib-object.h>
 #include <telepathy-glib/enums.h>
 
-gchar gabble_dtmf_event_to_char (TpDTMFEvent event);
+gchar tp_dtmf_event_to_char (TpDTMFEvent event);
 
-typedef struct _GabbleDTMFPlayer GabbleDTMFPlayer;
-typedef struct _GabbleDTMFPlayerClass GabbleDTMFPlayerClass;
-typedef struct _GabbleDTMFPlayerPrivate GabbleDTMFPlayerPrivate;
+typedef struct _TpDTMFPlayer TpDTMFPlayer;
+typedef struct _TpDTMFPlayerClass TpDTMFPlayerClass;
+typedef struct _TpDTMFPlayerPrivate TpDTMFPlayerPrivate;
 
-GType gabble_dtmf_player_get_type (void);
+GType tp_dtmf_player_get_type (void);
 
-#define GABBLE_TYPE_DTMF_PLAYER \
-  (gabble_dtmf_player_get_type ())
-#define GABBLE_DTMF_PLAYER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), GABBLE_TYPE_DTMF_PLAYER, \
-                               GabbleDTMFPlayer))
-#define GABBLE_DTMF_PLAYER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), GABBLE_TYPE_DTMF_PLAYER, \
-                            GabbleDTMFPlayerClass))
-#define GABBLE_IS_DTMF_PLAYER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GABBLE_TYPE_DTMF_PLAYER))
-#define GABBLE_IS_DTMF_PLAYER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), GABBLE_TYPE_DTMF_PLAYER))
-#define GABBLE_DTMF_PLAYER_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), GABBLE_TYPE_DTMF_PLAYER, \
-                              GabbleDTMFPlayerClass))
+#define TP_TYPE_DTMF_PLAYER \
+  (tp_dtmf_player_get_type ())
+#define TP_DTMF_PLAYER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_DTMF_PLAYER, \
+                               TpDTMFPlayer))
+#define TP_DTMF_PLAYER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), TP_TYPE_DTMF_PLAYER, \
+                            TpDTMFPlayerClass))
+#define TP_IS_DTMF_PLAYER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_DTMF_PLAYER))
+#define TP_IS_DTMF_PLAYER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TP_TYPE_DTMF_PLAYER))
+#define TP_DTMF_PLAYER_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_DTMF_PLAYER, \
+                              TpDTMFPlayerClass))
 
-struct _GabbleDTMFPlayer
+struct _TpDTMFPlayer
 {
   GObject parent;
-  GabbleDTMFPlayerPrivate *priv;
+  TpDTMFPlayerPrivate *priv;
 };
 
-struct _GabbleDTMFPlayerClass
+struct _TpDTMFPlayerClass
 {
   GObjectClass parent_class;
   gpointer priv;
 };
 
-GabbleDTMFPlayer *gabble_dtmf_player_new (void);
+TpDTMFPlayer *tp_dtmf_player_new (void);
 
-gboolean gabble_dtmf_player_play (GabbleDTMFPlayer *self,
+gboolean tp_dtmf_player_play (TpDTMFPlayer *self,
     const gchar *tones, guint tone_ms, guint gap_ms, guint pause_ms,
     GError **error);
 
-gboolean gabble_dtmf_player_is_active (GabbleDTMFPlayer *self);
+gboolean tp_dtmf_player_is_active (TpDTMFPlayer *self);
 
-void gabble_dtmf_player_cancel (GabbleDTMFPlayer *self);
+void tp_dtmf_player_cancel (TpDTMFPlayer *self);
 
 #endif
