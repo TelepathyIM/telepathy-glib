@@ -112,25 +112,19 @@ tp_cm_message_new (TpBaseConnection *connection,
 {
   TpCMMessage *self;
   TpMessage *msg;
-  guint i;
 
   g_return_val_if_fail (connection != NULL, NULL);
-  g_return_val_if_fail (initial_parts >= 1, NULL);
-  g_return_val_if_fail (size_hint >= initial_parts, NULL);
 
-  self = g_object_new (TP_TYPE_CM_MESSAGE, NULL);
+  self = g_object_new (TP_TYPE_CM_MESSAGE,
+      "initial-parts", initial_parts,
+      "size-hint", size_hint,
+      NULL);
+
   msg = (TpMessage *) self;
 
   self->priv->connection = g_object_ref (connection);
-  msg->parts = g_ptr_array_sized_new (size_hint);
   msg->incoming_id = G_MAXUINT32;
   msg->outgoing_context = NULL;
-
-  for (i = 0; i < initial_parts; i++)
-    {
-      g_ptr_array_add (msg->parts, g_hash_table_new_full (g_str_hash,
-            g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
-    }
 
   return msg;
 }
