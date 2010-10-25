@@ -60,7 +60,7 @@ FIXXREF_OPTIONS=
 HFILE_GLOB=$(top_srcdir)/telepathy-glib/*.h $(top_builddir)/telepathy-glib/_gen/*.h
 CFILE_GLOB=$(top_srcdir)/telepathy-glib/*.c $(top_builddir)/telepathy-glib/_gen/*.c
 
-# Header files to ignore when scanning.
+# Header files to ignore when scasignalled
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES=\
     add-dispatch-operation-context-internal.h \
@@ -81,6 +81,7 @@ IGNORE_HFILES=\
     protocol-internal.h \
     proxy-internal.h \
     proxy-introspectable.h \
+    signalled-message-internal.h \
     simple-password-channel-internal.h \
     util-internal.h
 

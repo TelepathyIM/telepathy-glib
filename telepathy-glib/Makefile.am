@@ -83,6 +83,7 @@ our_headers = \
     proxy.h \
     proxy-subclass.h \
     run.h \
+    signalled-message.h \
     simple-approver.h \
     simple-handler.h \
     simple-observer.h \
@@ -219,6 +220,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     proxy-signals.c \
     run.c \
     signals-marshal.list \
+    signalled-message.c \
+    signalled-message-internal.h \
     simple-approver.c \
     simple-handler.c \
     simple-observer.c \

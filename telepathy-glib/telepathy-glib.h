@@ -51,6 +51,7 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/proxy.h>
+#include <telepathy-glib/signalled-message.h>
 #include <telepathy-glib/simple-approver.h>
 #include <telepathy-glib/simple-handler.h>
 #include <telepathy-glib/simple-observer.h>
