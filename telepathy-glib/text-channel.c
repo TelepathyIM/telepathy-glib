@@ -53,6 +53,7 @@
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/message-internal.h>
 #include <telepathy-glib/proxy-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util-internal.h>
@@ -520,4 +521,81 @@ GList *
 tp_text_channel_get_pending_messages (TpTextChannel *self)
 {
   return g_list_copy (self->priv->pending_messages);
+}
+
+static void
+send_message_cb (TpChannel *proxy,
+    const gchar *token,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  /* FIXME: should we return the token? Or provide an object to monitor
+   * delivery and failure reports ? */
+  if (error != NULL)
+    {
+      DEBUG ("Failed to send message: %s", error->message);
+
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_text_channel_send_message_async:
+ * @self: a #TpTextChannel
+ * @message: a #TpClientMessage
+ * @flags: flags affecting how the message is sent
+ * @callback: a callback to call when the message has been submitted to the
+ * server
+ * @user_data: data to pass to @callback
+ *
+ * Submit a message to the server for sending. Once the message has been
+ * submitted to the sever, @callback will be called. You can then call
+ * tp_text_channel_send_message_finish() to get the result of the operation.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_text_channel_send_message_async (TpTextChannel *self,
+    TpMessage *message,
+    TpMessageSendingFlags flags,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_TEXT_CHANNEL (self));
+  g_return_if_fail (TP_IS_CLIENT_MESSAGE (message));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_text_channel_send_message_async);
+
+  tp_cli_channel_interface_messages_call_send_message (TP_CHANNEL (self),
+    -1, message->parts, flags, send_message_cb, result, NULL, NULL);
+}
+
+/**
+ * tp_text_channel_send_message_finish:
+ * @self: a #TpTextChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to send a message.
+ *
+ * Returns: %TRUE if the message has been submitted to the server, %FALSE
+ * otherwise.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_text_channel_send_message_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_text_channel_send_message_async)
 }

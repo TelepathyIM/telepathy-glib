@@ -22,6 +22,7 @@
 #define __TP_TEXT_CHANNEL_H__
 
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/client-message.h>
 
 G_BEGIN_DECLS
 
@@ -71,6 +72,16 @@ TpDeliveryReportingSupportFlags tp_text_channel_get_delivery_reporting_support (
 GQuark tp_text_channel_get_feature_quark_pending_messages (void) G_GNUC_CONST;
 
 GList * tp_text_channel_get_pending_messages (TpTextChannel *self);
+
+void tp_text_channel_send_message_async (TpTextChannel *self,
+    TpMessage *message,
+    TpMessageSendingFlags flags,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_text_channel_send_message_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    GError **error);
 
 G_END_DECLS
 
