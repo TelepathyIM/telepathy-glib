@@ -854,3 +854,18 @@
  *
  * Since: 0.13.1
  */
+
+/**
+ * SECTION:connection-mail
+ * @title: Connection MailNotification interface
+ * @short_description: client-side wrappers for the MailNotification interface
+ *
+ * Some service providers offer both real-time communications and e-mail, and
+ * integrate them by providing "new mail" notifications over the real-time
+ * communication protocol.
+ *
+ * This section documents the auto-generated C wrappers for the
+ * MailNotification interface, used with #TpConnection objects.
+ *
+ * Since: 0.13.1
+ */
