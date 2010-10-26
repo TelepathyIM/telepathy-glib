@@ -62,6 +62,7 @@ main (int argc,
   gchar *name;
   gchar *path;
 
+  tp_tests_abort_after (10);
   g_type_init ();
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);

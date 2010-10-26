@@ -173,6 +173,7 @@ main (int argc,
   gpointer tmp_obj;
 
   g_type_init ();
+  tp_tests_abort_after (10);
   tp_debug_set_flags ("all");
 
   freed_user_data = tp_intset_sized_new (N_DAEMONS);

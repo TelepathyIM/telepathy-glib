@@ -6,9 +6,15 @@
 # Usage: test-wrapper.sh PROGRAM [ARGS...]
 
 set -e
+
+if test -t 1 || test "z$CHECK_VERBOSE" != z; then
+  "$@" || e=$?
+  exit $e
+fi
+
 e=0
 "$@" > capture-$$.log 2>&1 || e=$?
-if test z$e = z0 && test -t 1; then
+if test z$e = z0; then
   grep -i skipped capture-$$.log || true
   rm -f capture-$$.log
 else

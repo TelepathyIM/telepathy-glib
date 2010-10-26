@@ -34,6 +34,7 @@ int
 main (int argc,
     char **argv)
 {
+  tp_tests_abort_after (10);
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/test-get-interface-after-invalidate",
