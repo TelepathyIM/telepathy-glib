@@ -11,7 +11,7 @@ AC_PREREQ([2.59])
 
 m4_define([tp_glib_major_version], [0])
 m4_define([tp_glib_minor_version], [13])
-m4_define([tp_glib_micro_version], [1])
+m4_define([tp_glib_micro_version], [2])
 m4_define([tp_glib_nano_version], [1])
 
 # If library source has changed since last release, increment revision
@@ -26,9 +26,9 @@ m4_define([tp_glib_nano_version], [1])
 # (we don't guarantee that we won't add ABI then remove it again, if it was
 # never seen in a release).
 
-m4_define([tp_glib_lt_current], [47])
+m4_define([tp_glib_lt_current], [48])
 m4_define([tp_glib_lt_revision], [0])
-m4_define([tp_glib_lt_age], [47])
+m4_define([tp_glib_lt_age], [48])
 
 # Some magic
 m4_define([tp_glib_base_version],
@@ -162,7 +162,7 @@ AM_CONDITIONAL([OUT_OF_TREE_BUILD], [test "z$ac_srcdir" != z.])
 
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,
-  [glib-2.0 >= 2.24, gobject-2.0 >= 2.24, gio-2.0 >= 2.24])
+  [glib-2.0 >= 2.25.16, gobject-2.0 >= 2.25.16, gio-2.0 >= 2.25.16])
 
 dnl Check for GIO-Unix
 PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0],
@@ -276,6 +276,7 @@ AC_OUTPUT( Makefile \
 	   docs/reference/Makefile \
 	   examples/Makefile \
 	   examples/client/Makefile \
+	   examples/client/stream-tubes/Makefile \
 	   examples/cm/Makefile \
 	   examples/cm/callable/Makefile \
 	   examples/cm/channelspecific/Makefile \

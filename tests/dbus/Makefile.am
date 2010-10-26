@@ -12,12 +12,14 @@ noinst_PROGRAMS = \
     test-channel-request \
     test-cli-group \
     test-client \
+    test-client-channel-factory \
     test-cm \
     test-connection \
     test-connection-bug-18845 \
     test-connection-error \
     test-connection-handles \
     test-connection-inject-bug16307 \
+    test-connection-interests \
     test-connection-getinterfaces-failure \
     test-contact-lists \
     test-contacts \
@@ -44,6 +46,7 @@ noinst_PROGRAMS = \
     test-simple-approver \
     test-simple-handler \
     test-simple-observer \
+    test-stream-tube \
     test-text-mixin \
     test-text-respawn \
     test-unsupported-interface
@@ -51,10 +54,11 @@ noinst_PROGRAMS = \
 TESTS = $(noinst_PROGRAMS)
 
 LDADD = \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(GLIB_LIBS) \
     $(DBUS_LIBS) \
-    $(GLIB_LIBS)
+    $(NULL)
 
 test_account_SOURCES = account.c
 
@@ -104,6 +108,8 @@ test_connection_handles_SOURCES = connection-handles.c
 test_connection_error_SOURCES = connection-error.c
 
 test_connection_inject_bug16307_SOURCES = connection-inject-bug16307.c
+
+test_connection_interests_SOURCES = connection-interests.c
 
 test_connection_getinterfaces_failure_SOURCES = \
     connection-getinterfaces-failure.c
@@ -177,16 +183,22 @@ test_simple_approver_SOURCES = simple-approver.c
 
 test_simple_handler_SOURCES = simple-handler.c
 
+test_stream_tube_SOURCES = stream-tube.c
+
+test_client_channel_factory_SOURCES = client-channel-factory.c
+
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
-AM_CFLAGS = \
-    $(ERROR_CFLAGS) \
-    $(DBUS_CFLAGS) \
-    $(GLIB_CFLAGS) \
+AM_CPPFLAGS = \
+    -I${top_srcdir} -I${top_builddir} \
     -D_TP_IGNORE_DEPRECATIONS \
-    $(TP_GLIB_CFLAGS)
+    $(GLIB_CFLAGS) \
+    $(DBUS_CFLAGS) \
+    $(NULL)
+
+AM_CFLAGS = $(ERROR_CFLAGS)
 
 TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
@@ -194,6 +206,7 @@ TESTS_ENVIRONMENT = \
     XDG_DATA_DIRS=@abs_srcdir@ \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
+    $(top_srcdir)/tools/test-wrapper.sh \
     sh $(top_srcdir)/tools/with-session-bus.sh \
         --config-file=dbus-1/session.conf -- \
     $(EXTRA_TESTS_ENVIRONMENT)
@@ -209,7 +222,7 @@ include $(top_srcdir)/tools/valgrind.mk
 
 VALGRIND_TESTS_ENVIRONMENT = \
     $(TESTS_ENVIRONMENT) \
-    env G_SLICE=always-malloc \
+    env G_SLICE=always-malloc CHECK_VERBOSE=1 \
     $(top_builddir)/libtool --mode=execute \
     $(VALGRIND) --suppressions=$(top_srcdir)/tests/tests.supp $(VALGRIND_FLAGS)
 
@@ -223,6 +236,7 @@ CLEANFILES = \
     $(BUILT_SOURCES)
 
 distclean-local:
+	rm -f capture-*.log
 	rm -rf _gen
 
 EXTRA_DIST = \

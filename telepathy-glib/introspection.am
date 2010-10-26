@@ -9,6 +9,8 @@ INTROSPECTION_FILES = \
 	$(srcdir)/account.c $(srcdir)/account.h \
 	$(srcdir)/account-channel-request.c $(srcdir)/account-channel-request.h \
 	$(srcdir)/account-manager.c $(srcdir)/account-manager.h \
+	$(srcdir)/automatic-proxy-factory.c $(srcdir)/automatic-proxy-factory.h \
+	$(srcdir)/basic-proxy-factory.c $(srcdir)/basic-proxy-factory.h \
 	$(srcdir)/connection.c $(srcdir)/connection.h \
 	$(srcdir)/connection-handles.c $(srcdir)/connection-contact-info.c \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
@@ -39,6 +41,8 @@ INTROSPECTION_FILES = \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
 	$(srcdir)/base-connection.c $(srcdir)/base-connection.h \
 	$(srcdir)/handle-repo.c $(srcdir)/handle-repo.h $(srcdir)/handle-set.c \
+	$(srcdir)/stream-tube-channel.c $(srcdir)/stream-tube-channel.h \
+	$(srcdir)/stream-tube-connection.c $(srcdir)/stream-tube-connection.h \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
 	_gen/telepathy-enums.h \
 	$(NULL)

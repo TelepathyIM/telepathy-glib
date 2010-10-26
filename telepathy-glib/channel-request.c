@@ -92,7 +92,7 @@ struct _TpChannelRequestPrivate {
     gpointer dummy;
 };
 
-G_DEFINE_TYPE (TpChannelRequest, tp_channel_request, TP_TYPE_PROXY);
+G_DEFINE_TYPE (TpChannelRequest, tp_channel_request, TP_TYPE_PROXY)
 
 static void
 tp_channel_request_init (TpChannelRequest *self)

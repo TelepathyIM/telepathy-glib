@@ -113,6 +113,7 @@ struct _TpAccountChannelRequestPrivate
   TpChannel *channel;
   TpHandleChannelsContext *handle_context;
   TpDBusDaemon *dbus;
+  TpClientChannelFactoryInterface *factory;
 
   /* TRUE if the channel has been requested (an _async function has been called
    * on the TpAccountChannelRequest) */
@@ -166,6 +167,7 @@ tp_account_channel_request_dispose (GObject *object)
   tp_clear_object (&self->priv->channel);
   tp_clear_object (&self->priv->handle_context);
   tp_clear_object (&self->priv->dbus);
+  tp_clear_object (&self->priv->factory);
 
   if (dispose != NULL)
     dispose (object);
@@ -739,6 +741,12 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   _tp_base_client_set_only_for_account (self->priv->handler,
       self->priv->account);
 
+  if (self->priv->factory != NULL)
+    {
+      tp_base_client_set_channel_factory (self->priv->handler,
+          self->priv->factory);
+    }
+
   if (!tp_base_client_register (self->priv->handler, &error))
     {
       DEBUG ("Failed to register temp handler: %s", error->message);
@@ -1144,4 +1152,28 @@ tp_account_channel_request_ensure_channel_finish (
 {
   return request_channel_finish (self, result,
       tp_account_channel_request_ensure_channel_async, error);
+}
+
+/**
+ * tp_account_channel_request_set_channel_factory:
+ * @self: a #TpAccountChannelRequest
+ * @factory: a #TpClientChannelFactoryInterface
+ *
+ * Set @factory as the #TpClientChannelFactoryInterface that will be used to
+ * create the channel requested by @self.
+ * By default #TpAutomaticProxyFactory is used.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.13.2
+ */
+void
+tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,
+    TpClientChannelFactoryInterface *factory)
+{
+  g_return_if_fail (!self->priv->requested);
+
+  tp_clear_object (&self->priv->factory);
+  self->priv->factory = g_object_ref (factory);
 }

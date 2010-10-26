@@ -10,6 +10,10 @@
 
 #include "tests/lib/util.h"
 
+#ifdef G_OS_UNIX
+# include <unistd.h> /* for alarm() */
+#endif
+
 void
 tp_tests_proxy_run_until_prepared (gpointer proxy,
     const GQuark *features)
@@ -260,4 +264,25 @@ tp_tests_object_new_static_class (GType type,
   object = g_object_new_valist (type, first_property, ap);
   va_end (ap);
   return object;
+}
+
+static gboolean
+time_out (gpointer nil G_GNUC_UNUSED)
+{
+  g_error ("Timed out");
+  g_assert_not_reached ();
+  return FALSE;
+}
+
+void
+tp_tests_abort_after (guint sec)
+{
+  g_timeout_add_seconds (sec, time_out, NULL);
+
+#ifdef G_OS_UNIX
+  /* On Unix, we can kill the process more reliably; this is a safety-catch
+   * in case it deadlocks or something, in which case the main loop won't be
+   * processed. The default handler for SIGALRM is process termination. */
+  alarm (sec + 2);
+#endif
 }

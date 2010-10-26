@@ -201,6 +201,13 @@ gboolean tp_base_connection_channel_manager_iter_next (
 
 TpDBusDaemon *tp_base_connection_get_dbus_daemon (TpBaseConnection *self);
 
+void tp_base_connection_add_client_interest (TpBaseConnection *self,
+    const gchar *unique_name, const gchar *token,
+    gboolean only_if_uninterested);
+
+void tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
+    GQuark token);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_BASE_CONNECTION_H__*/

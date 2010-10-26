@@ -52,4 +52,6 @@ void tp_tests_run_until_result (GAsyncResult **result);
 void tp_tests_result_ready_cb (GObject *object,
     GAsyncResult *res, gpointer user_data);
 
+void tp_tests_abort_after (guint sec);
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */

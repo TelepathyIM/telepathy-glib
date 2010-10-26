@@ -241,7 +241,7 @@ enum
 
 G_DEFINE_TYPE (TpConnection,
     tp_connection,
-    TP_TYPE_PROXY);
+    TP_TYPE_PROXY)
 
 static void
 tp_connection_get_property (GObject *object,
@@ -924,6 +924,7 @@ tp_connection_init (TpConnection *self)
   self->priv->status_reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
   self->priv->contacts = g_hash_table_new (g_direct_hash, g_direct_equal);
   self->priv->introspection_call = NULL;
+  self->priv->interests = tp_intset_new ();
 }
 
 static void
@@ -999,6 +1000,36 @@ tp_connection_dispose (GObject *object)
   tp_clear_object (&self->priv->capabilities);
   tp_clear_pointer (&self->priv->avatar_requirements,
       tp_avatar_requirements_destroy);
+
+  if (self->priv->interests != NULL)
+    {
+      TpIntSetIter iter = TP_INTSET_ITER_INIT (self->priv->interests);
+      guint size = tp_intset_size (self->priv->interests);
+      GPtrArray *strings;
+
+      /* Before freeing the set of tokens in which we declared an
+       * interest, cancel those interests. We'll still get the signals
+       * if there's another interested TpConnection in this process,
+       * because the CM uses distributed refcounting. */
+      if (size > 0)
+        {
+          strings = g_ptr_array_sized_new (size + 1);
+
+          while (tp_intset_iter_next (&iter))
+            g_ptr_array_add (strings,
+                (gchar *) g_quark_to_string (iter.element));
+
+          g_ptr_array_add (strings, NULL);
+
+          /* no callback - if the CM replies, we'll ignore it anyway */
+          tp_cli_connection_call_remove_client_interest (self, -1,
+              (const gchar **) strings->pdata, NULL, NULL, NULL, NULL);
+          g_ptr_array_unref (strings);
+        }
+
+      tp_intset_destroy (self->priv->interests);
+      self->priv->interests = NULL;
+    }
 
   ((GObjectClass *) tp_connection_parent_class)->dispose (object);
 }
@@ -2048,4 +2079,60 @@ tp_connection_get_detailed_error (TpConnection *self,
           return TP_ERROR_STR_DISCONNECTED;
         }
     }
+}
+
+/**
+ * tp_connection_add_client_interest:
+ * @self: a connection
+ * @interested_in: a string identifying an interface or part of an interface
+ *  to which this connection will subscribe
+ *
+ * Subscribe to any opt-in change notifications for @interested_in.
+ *
+ * For contact information, use #TpContact instead, which will call this
+ * automatically.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_connection_add_client_interest (TpConnection *self,
+    const gchar *interested_in)
+{
+  tp_connection_add_client_interest_by_id (self,
+      g_quark_from_string (interested_in));
+}
+
+/**
+ * tp_connection_add_client_interest_by_id: (skip)
+ * @self: a connection
+ * @interested_in: a quark identifying an interface or part of an interface
+ *  to which this connection will subscribe
+ *
+ * Subscribe to any opt-in change notifications for @interested_in.
+ *
+ * Equivalent to, but a little more efficient than, calling
+ * tp_connection_add_interest() for the string value of @interested_in.
+ *
+ * Since: 0.11.UNRELEASED
+ */
+void
+tp_connection_add_client_interest_by_id (TpConnection *self,
+    GQuark interested_in)
+{
+  TpProxy *proxy = (TpProxy *) self;
+  const gchar *interest = g_quark_to_string (interested_in);
+  const gchar *strv[2] = { interest, NULL };
+
+  g_return_if_fail (TP_IS_CONNECTION (self));
+  g_return_if_fail (interest != NULL);
+
+  if (proxy->invalidated != NULL ||
+      tp_intset_is_member (self->priv->interests, interested_in))
+    return;
+
+  tp_intset_add (self->priv->interests, interested_in);
+
+  /* no-reply flag set, and we ignore any reply */
+  tp_cli_connection_call_add_client_interest (self, -1,
+      strv, NULL, NULL, NULL, NULL);
 }

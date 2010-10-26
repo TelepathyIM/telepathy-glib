@@ -587,7 +587,7 @@ example_call_channel_terminate (ExampleCallChannel *self,
         }
 
       /* terminate all streams: to avoid modifying the hash table (in the
-       * stream-removed handler) while iterating over it, we have to copy the
+       * streams-removed handler) while iterating over it, we have to copy the
        * keys and iterate over those */
       values = g_hash_table_get_values (self->priv->contents);
       g_list_foreach (values, (GFunc) g_object_ref, NULL);
@@ -962,8 +962,8 @@ media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
 #endif
 
 static void
-stream_removed_cb (ExampleCallContent *content,
-    const gchar *stream_path G_GNUC_UNUSED,
+streams_removed_cb (ExampleCallContent *content,
+    const GPtrArray *stream_paths G_GNUC_UNUSED,
     ExampleCallChannel *self)
 {
   gchar *path, *name;
@@ -1165,7 +1165,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
       NULL);
 
   g_hash_table_insert (self->priv->contents, name, content);
-  future_svc_channel_type_call_emit_content_added (self, path, media_type);
+  future_svc_channel_type_call_emit_content_added (self, path);
   g_free (path);
 
   path = g_strdup_printf ("%s/Stream%u", self->priv->object_path, id);
@@ -1179,8 +1179,8 @@ example_call_channel_add_content (ExampleCallChannel *self,
   example_call_content_add_stream (content, stream);
   g_free (path);
 
-  tp_g_signal_connect_object (content, "stream-removed",
-      G_CALLBACK (stream_removed_cb), self, 0);
+  tp_g_signal_connect_object (content, "streams-removed",
+      G_CALLBACK (streams_removed_cb), self, 0);
 
   return content;
 }
@@ -1251,7 +1251,7 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
 }
 
 static void
-call_ringing (FutureSvcChannelTypeCall *iface,
+call_set_ringing (FutureSvcChannelTypeCall *iface,
     DBusGMethodInvocation *context)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
@@ -1281,7 +1281,7 @@ call_ringing (FutureSvcChannelTypeCall *iface,
 finally:
   if (error == NULL)
     {
-      future_svc_channel_type_call_return_from_ringing (context);
+      future_svc_channel_type_call_return_from_set_ringing (context);
     }
   else
     {
@@ -1460,7 +1460,7 @@ call_iface_init (gpointer iface,
 
 #define IMPLEMENT(x) \
   future_svc_channel_type_call_implement_##x (klass, call_##x)
-  IMPLEMENT (ringing);
+  IMPLEMENT (set_ringing);
   IMPLEMENT (hangup);
   IMPLEMENT (accept);
   IMPLEMENT (add_content);

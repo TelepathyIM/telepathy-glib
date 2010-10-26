@@ -37,6 +37,8 @@
 
 #include <config.h>
 
+#include <gio/gio.h>
+
 #include <telepathy-glib/gnio-util.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/gtypes.h>
@@ -44,10 +46,19 @@
 
 #include <string.h>
 
+#ifdef __linux__
+/* for getsockopt() and setsockopt() */
+#include <sys/types.h>          /* See NOTES */
+#include <sys/socket.h>
+#include <errno.h>
+#endif
+
 #include <dbus/dbus-glib.h>
 
 #ifdef HAVE_GIO_UNIX
+#include <gio/gunixconnection.h>
 #include <gio/gunixsocketaddress.h>
+#include <gio/gunixcredentialsmessage.h>
 #endif /* HAVE_GIO_UNIX */
 
 /**
@@ -262,4 +273,301 @@ tp_address_variant_from_g_socket_address (GSocketAddress *address,
     *ret_type = type;
 
   return variant;
+}
+
+#ifdef HAVE_GIO_UNIX
+static gboolean
+_tp_unix_connection_send_credentials_with_byte (GUnixConnection *connection,
+    guchar byte,
+    GCancellable *cancellable,
+    GError **error)
+{
+  /* There is not variant of g_unix_connection_send_credentials allowing us to
+   * choose the byte sent :( See bgo #629267
+   *
+   * This code has been copied from glib/gunixconnection.c
+   *
+   * Copyright © 2009 Codethink Limited
+   */
+  GCredentials *credentials;
+  GSocketControlMessage *scm;
+  GSocket *_socket;
+  gboolean ret;
+  GOutputVector vector;
+
+  g_return_val_if_fail (G_IS_UNIX_CONNECTION (connection), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  ret = FALSE;
+
+  credentials = g_credentials_new ();
+
+  vector.buffer = &byte;
+  vector.size = 1;
+  scm = g_unix_credentials_message_new_with_credentials (credentials);
+  g_object_get (connection, "socket", &_socket, NULL);
+  if (g_socket_send_message (_socket,
+                             NULL, /* address */
+                             &vector,
+                             1,
+                             &scm,
+                             1,
+                             G_SOCKET_MSG_NONE,
+                             cancellable,
+                             error) != 1)
+    {
+      g_prefix_error (error, "Error sending credentials: ");
+      goto out;
+    }
+
+  ret = TRUE;
+
+ out:
+  g_object_unref (_socket);
+  g_object_unref (scm);
+  g_object_unref (credentials);
+  return ret;
+}
+#endif
+
+/**
+ * tp_unix_connection_send_credentials_with_byte
+ * @connection: a #GUnixConnection
+ * @byte: the byte to send with the credentials
+ * @cancellable: (allown-none): a #GCancellable, or %NULL
+ * @error: a #GError to fill
+ *
+ * A variant of g_unix_connection_send_credentials() allowing you to choose
+ * the byte which is send with the credentials
+ *
+ * Returns: %TRUE on success, %FALSE if error is set.
+ *
+ * Since: 0.13.2
+ */
+gboolean
+tp_unix_connection_send_credentials_with_byte (GSocketConnection *connection,
+    guchar byte,
+    GCancellable *cancellable,
+    GError **error)
+{
+#ifdef HAVE_GIO_UNIX
+  return _tp_unix_connection_send_credentials_with_byte (
+      G_UNIX_CONNECTION (connection), byte, cancellable, error);
+#else
+  g_set_error (G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+      "Unix sockets not supported");
+  return FALSE;
+#endif
+}
+
+#ifdef HAVE_GIO_UNIX
+static GCredentials *
+_tp_unix_connection_receive_credentials_with_byte (GUnixConnection *connection,
+    guchar *byte,
+    GCancellable *cancellable,
+    GError **error)
+{
+  /* There is not variant of g_unix_connection_receive_credentials allowing us
+   * to choose the byte sent :( See bgo #629267
+   *
+   * This code has been copied from glib/gunixconnection.c
+   *
+   * Copyright © 2009 Codethink Limited
+   */
+  GCredentials *ret;
+  GSocketControlMessage **scms;
+  gint nscm;
+  GSocket *_socket;
+  gint n;
+  volatile GType credentials_message_gtype;
+  gssize num_bytes_read;
+#ifdef __linux__
+  gboolean turn_off_so_passcreds;
+#endif
+  GInputVector vector;
+  guchar buffer[1];
+
+  g_return_val_if_fail (G_IS_UNIX_CONNECTION (connection), NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  ret = NULL;
+  scms = NULL;
+
+  g_object_get (connection, "socket", &_socket, NULL);
+
+  /* On Linux, we need to turn on SO_PASSCRED if it isn't enabled
+   * already. We also need to turn it off when we're done.  See
+   * #617483 for more discussion.
+   */
+#ifdef __linux__
+  {
+    gint opt_val;
+    socklen_t opt_len;
+
+    turn_off_so_passcreds = FALSE;
+    opt_val = 0;
+    opt_len = sizeof (gint);
+    if (getsockopt (g_socket_get_fd (_socket),
+                    SOL_SOCKET,
+                    SO_PASSCRED,
+                    &opt_val,
+                    &opt_len) != 0)
+      {
+        g_set_error (error,
+                     G_IO_ERROR,
+                     g_io_error_from_errno (errno),
+                     "Error checking if SO_PASSCRED is enabled for socket: %s",
+                     strerror (errno));
+        goto out;
+      }
+    if (opt_len != sizeof (gint))
+      {
+        g_set_error (error,
+                     G_IO_ERROR,
+                     G_IO_ERROR_FAILED,
+                     "Unexpected option length while checking if SO_PASSCRED is enabled for socket. "
+                       "Expected %d bytes, got %d",
+                     (gint) sizeof (gint), (gint) opt_len);
+        goto out;
+      }
+    if (opt_val == 0)
+      {
+        opt_val = 1;
+        if (setsockopt (g_socket_get_fd (_socket),
+                        SOL_SOCKET,
+                        SO_PASSCRED,
+                        &opt_val,
+                        sizeof opt_val) != 0)
+          {
+            g_set_error (error,
+                         G_IO_ERROR,
+                         g_io_error_from_errno (errno),
+                         "Error enabling SO_PASSCRED: %s",
+                         strerror (errno));
+            goto out;
+          }
+        turn_off_so_passcreds = TRUE;
+      }
+  }
+#endif
+
+  vector.buffer = buffer;
+  vector.size = 1;
+
+  /* ensure the type of GUnixCredentialsMessage has been registered with the type system */
+  credentials_message_gtype = G_TYPE_UNIX_CREDENTIALS_MESSAGE;
+  num_bytes_read = g_socket_receive_message (_socket,
+                                             NULL, /* GSocketAddress **address */
+                                             &vector,
+                                             1,
+                                             &scms,
+                                             &nscm,
+                                             NULL,
+                                             cancellable,
+                                             error);
+  if (num_bytes_read != 1)
+    {
+      /* Handle situation where g_socket_receive_message() returns
+       * 0 bytes and not setting @error
+       */
+      if (num_bytes_read == 0 && error != NULL && *error == NULL)
+        {
+          g_set_error_literal (error,
+                               G_IO_ERROR,
+                               G_IO_ERROR_FAILED,
+                               "Expecting to read a single byte for receiving credentials but read zero bytes");
+        }
+      goto out;
+    }
+
+  if (nscm != 1)
+    {
+      g_set_error (error,
+                   G_IO_ERROR,
+                   G_IO_ERROR_FAILED,
+                   "Expecting 1 control message, got %d",
+                   nscm);
+      goto out;
+    }
+
+  if (!G_IS_UNIX_CREDENTIALS_MESSAGE (scms[0]))
+    {
+      g_set_error_literal (error,
+                           G_IO_ERROR,
+                           G_IO_ERROR_FAILED,
+                           "Unexpected type of ancillary data");
+      goto out;
+    }
+
+  if (byte != NULL)
+    {
+      *byte = buffer[0];
+    }
+
+  ret = g_unix_credentials_message_get_credentials (G_UNIX_CREDENTIALS_MESSAGE (scms[0]));
+  g_object_ref (ret);
+
+ out:
+
+#ifdef __linux__
+  if (turn_off_so_passcreds)
+    {
+      gint opt_val;
+      opt_val = 0;
+      if (setsockopt (g_socket_get_fd (_socket),
+                      SOL_SOCKET,
+                      SO_PASSCRED,
+                      &opt_val,
+                      sizeof opt_val) != 0)
+        {
+          g_set_error (error,
+                       G_IO_ERROR,
+                       g_io_error_from_errno (errno),
+                       "Error while disabling SO_PASSCRED: %s",
+                       strerror (errno));
+          goto out;
+        }
+    }
+#endif
+
+  if (scms != NULL)
+    {
+      for (n = 0; n < nscm; n++)
+        g_object_unref (scms[n]);
+      g_free (scms);
+    }
+  g_object_unref (_socket);
+  return ret;
+}
+#endif
+
+/**
+ * tp_unix_connection_receive_credentials_with_byte
+ * @connection: a #GUnixConnection
+ * @byte: (out): if not %NULL, used to return the byte
+ * @cancellable: (allown-none): a #GCancellable, or %NULL
+ * @error: a #GError to fill
+ *
+ * A variant of g_unix_connection_receive_credentials() allowing you to get
+ * the byte which has been received with the credentials.
+ *
+ * Returns: (transfer full): Received credentials on success (free with
+ * g_object_unref()), %NULL if error is set.
+ *
+ * Since: 0.13.2
+ */
+GCredentials *
+tp_unix_connection_receive_credentials_with_byte (GSocketConnection *connection,
+    guchar *byte,
+    GCancellable *cancellable,
+    GError **error)
+{
+#ifdef HAVE_GIO_UNIX
+  return _tp_unix_connection_receive_credentials_with_byte (
+      G_UNIX_CONNECTION (connection), byte, cancellable, error);
+#else
+  g_set_error (G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+      "Unix sockets not supported");
+  return FALSE;
+#endif
 }

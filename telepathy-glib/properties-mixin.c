@@ -706,12 +706,12 @@ property_flags_to_string (TpPropertyFlags flags)
   gint i = 0;
   GString *str;
 
-  str = g_string_new ("[" TP_ANSI_BOLD_OFF);
+  str = g_string_new ("[");
 
   RPTS_APPEND_FLAG_IF_SET (TP_PROPERTY_FLAG_READ);
   RPTS_APPEND_FLAG_IF_SET (TP_PROPERTY_FLAG_WRITE);
 
-  g_string_append (str, TP_ANSI_BOLD_ON "]");
+  g_string_append (str, "]");
 
   return g_string_free (str, FALSE);
 }
@@ -890,8 +890,7 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntset *props)
   prop_arr = g_ptr_array_sized_new (len);
 
   if (DEBUGGING)
-    printf (TP_ANSI_BOLD_ON TP_ANSI_FG_CYAN
-            "%s: emitting properties changed for propert%s:\n",
+    printf ("%s: emitting properties changed for propert%s:\n",
             G_STRFUNC, (len > 1) ? "ies" : "y");
 
   tp_intset_fast_iter_init (&iter, props);
@@ -917,7 +916,6 @@ tp_properties_mixin_emit_changed (GObject *obj, const TpIntset *props)
 
   if (DEBUGGING)
     {
-      printf (TP_ANSI_RESET);
       fflush (stdout);
     }
 
@@ -959,8 +957,7 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntset *props)
   prop_arr = g_ptr_array_sized_new (len);
 
   if (DEBUGGING)
-    printf (TP_ANSI_BOLD_ON TP_ANSI_FG_WHITE
-            "%s: emitting properties flags changed for propert%s:\n",
+    printf ("%s: emitting properties flags changed for propert%s:\n",
             G_STRFUNC, (len > 1) ? "ies" : "y");
 
   tp_intset_fast_iter_init (&iter, props);
@@ -997,7 +994,6 @@ tp_properties_mixin_emit_flags (GObject *obj, const TpIntset *props)
 
   if (DEBUGGING)
     {
-      printf (TP_ANSI_RESET);
       fflush (stdout);
     }
 

@@ -175,7 +175,7 @@ struct _TpMessage {
     /* for sending */
     DBusGMethodInvocation *outgoing_context;
     TpMessageSendingFlags outgoing_flags;
-    gboolean outgoing_text_api:1;
+    gboolean outgoing_text_api;
 };
 
 
@@ -1864,6 +1864,7 @@ tp_message_mixin_init_dbus_properties (GObjectClass *cls)
       { "PendingMessages", NULL, NULL },
       { "SupportedContentTypes", NULL, NULL },
       { "MessagePartSupportFlags", NULL, NULL },
+      { "DeliveryReportingSupport", NULL, NULL },
       { NULL }
   };
 
@@ -1908,7 +1909,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
       q_message_part_support_flags =
           g_quark_from_static_string ("MessagePartSupportFlags");
       q_delivery_reporting_support_flags =
-          g_quark_from_static_string ("DeliveryReportingSupportFlags");
+          g_quark_from_static_string ("DeliveryReportingSupport");
     }
 
   mixin = TP_MESSAGE_MIXIN (object);

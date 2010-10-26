@@ -27,6 +27,7 @@
 
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/client-channel-factory.h>
 #include <telepathy-glib/handle-channels-context.h>
 
 G_BEGIN_DECLS
@@ -68,6 +69,10 @@ GHashTable * tp_account_channel_request_get_request (
 
 gint64 tp_account_channel_request_get_user_action_time (
     TpAccountChannelRequest *self);
+
+void tp_account_channel_request_set_channel_factory (
+    TpAccountChannelRequest *self,
+    TpClientChannelFactoryInterface *factory);
 
 /* Request and handle API */
 

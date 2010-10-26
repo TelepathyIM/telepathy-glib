@@ -8,6 +8,7 @@ noinst_PROGRAMS = \
     test-asv \
     test-capabilities \
     test-availability-cmp \
+    test-dtmf-player \
     test-enums \
     test-gnio-util \
     test-heap \
@@ -26,6 +27,7 @@ TESTS_ENVIRONMENT = \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     PYTHONPATH=@abs_top_srcdir@/tools \
+    $(top_srcdir)/tools/test-wrapper.sh \
     $(EXTRA_TESTS_ENVIRONMENT)
 
 EXTRA_TESTS_ENVIRONMENT =
@@ -34,7 +36,7 @@ include $(top_srcdir)/tools/valgrind.mk
 
 VALGRIND_TESTS_ENVIRONMENT = \
     $(TESTS_ENVIRONMENT) \
-    G_SLICE=always-malloc \
+    env G_SLICE=always-malloc CHECK_VERBOSE=1 \
     $(top_builddir)/libtool --mode=execute \
     $(VALGRIND) --suppressions=$(top_srcdir)/tests/tests.supp $(VALGRIND_FLAGS)
 
@@ -59,6 +61,11 @@ test_capabilities_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
     $(GLIB_LIBS)
+
+test_dtmf_player_SOURCES = dtmf-player.c
+test_dtmf_player_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(LDADD)
 
 test_heap_SOURCES = \
     heap.c
@@ -103,21 +110,19 @@ check-local: check-coding-style
 
 LDADD = \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
+    $(GLIB_LIBS) \
     $(DBUS_LIBS) \
-    $(GLIB_LIBS)
+    $(NULL)
 
-AM_CFLAGS = \
-    $(ERROR_CFLAGS) \
-    $(DBUS_CFLAGS) \
-    $(GLIB_CFLAGS) \
+AM_CPPFLAGS = \
+    -I${top_srcdir} -I${top_builddir} \
     -D_TP_IGNORE_DEPRECATIONS \
-    $(TP_GLIB_CFLAGS)
+    $(GLIB_CFLAGS) \
+    $(DBUS_CFLAGS) \
+    $(NULL)
 
-AM_CXXFLAGS = \
-    $(DBUS_CFLAGS) \
-    $(GLIB_CFLAGS) \
-    -D_TP_IGNORE_DEPRECATIONS \
-    $(TP_GLIB_CFLAGS)
+AM_CFLAGS = $(ERROR_CFLAGS)
+AM_CXXFLAGS = $(ERROR_CXXFLAGS)
 
 if HAVE_CXX
 noinst_PROGRAMS += \

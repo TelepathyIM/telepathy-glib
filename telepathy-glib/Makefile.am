@@ -26,12 +26,14 @@ our_headers = \
     account.h \
     account-channel-request.h \
     account-manager.h \
+    automatic-proxy-factory.h \
     add-dispatch-operation-context.h \
     base-client.h \
     base-channel.h \
     base-connection.h \
     base-connection-manager.h \
     base-protocol.h \
+    basic-proxy-factory.h \
     channel.h \
     channel-iface.h \
     channel-dispatcher.h \
@@ -40,6 +42,7 @@ our_headers = \
     channel-manager.h \
     channel-request.h \
     client.h \
+    client-channel-factory.h \
     connection.h \
     connection-manager.h \
     capabilities.h \
@@ -53,6 +56,7 @@ our_headers = \
     debug.h \
     debug-sender.h \
     debug-ansi.h \
+    dtmf.h \
     enums.h \
     errors.h \
     exportable-channel.h \
@@ -79,6 +83,8 @@ our_headers = \
     simple-approver.h \
     simple-handler.h \
     simple-observer.h \
+    stream-tube-channel.h \
+    stream-tube-connection.h \
     svc-account.h \
     svc-account-manager.h \
     svc-channel-dispatcher.h \
@@ -110,6 +116,9 @@ CLEANFILES = \
 distclean-local:
 	rm -rf _gen
 
+clean-local:
+	rm -rf tmp-introspect*
+
 check_c_sources = \
     $(our_headers) \
     $(libtelepathy_glib_internal_la_SOURCES)
@@ -124,6 +133,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-internal.h \
     account-manager.c \
     account-manager-internal.h \
+    automatic-proxy-factory.c \
     add-dispatch-operation-context-internal.h \
     add-dispatch-operation-context.c \
     base-channel.c \
@@ -134,6 +144,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     base-connection-manager.c \
     base-protocol-internal.h \
     base-protocol.c \
+    basic-proxy-factory.c \
     capabilities.c \
     capabilities-internal.h \
     channel.c \
@@ -145,6 +156,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     channel-manager.c \
     channel-request.c \
     client.c \
+    client-channel-factory.c \
     connection.c \
     connection-avatars.c \
     connection-contact-info.c \
@@ -163,6 +175,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     dbus-properties-mixin.c \
     debug.c \
     debug-sender.c \
+    dtmf.c \
     interfaces.c \
     debug-internal.h \
     errors.c \
@@ -199,6 +212,9 @@ libtelepathy_glib_internal_la_SOURCES = \
     simple-approver.c \
     simple-handler.c \
     simple-observer.c \
+    stream-tube-channel.c \
+    stream-tube-connection-internal.h \
+    stream-tube-connection.c \
     text-mixin.c \
     util.c \
     util-internal.h

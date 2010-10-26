@@ -25,6 +25,7 @@
 #include <telepathy-glib/capabilities.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
+#include <telepathy-glib/intset.h>
 
 G_BEGIN_DECLS
 
@@ -43,6 +44,10 @@ struct _TpConnectionPrivate {
 
     /* GArray of GQuark */
     GArray *contact_attribute_interfaces;
+
+    /* items are GQuarks that represent arguments to
+     * Connection.AddClientInterests */
+    TpIntSet *interests;
 
     /* TpHandle => weak ref to TpContact */
     GHashTable *contacts;

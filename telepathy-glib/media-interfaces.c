@@ -69,7 +69,7 @@ struct _TpMediaStreamHandler {
 
 G_DEFINE_TYPE (TpMediaStreamHandler,
     tp_media_stream_handler,
-    TP_TYPE_PROXY);
+    TP_TYPE_PROXY)
 
 static void
 tp_media_stream_handler_init (TpMediaStreamHandler *self)
@@ -153,7 +153,7 @@ struct _TpMediaSessionHandler {
 
 G_DEFINE_TYPE (TpMediaSessionHandler,
     tp_media_session_handler,
-    TP_TYPE_PROXY);
+    TP_TYPE_PROXY)
 
 static void
 tp_media_session_handler_init (TpMediaSessionHandler *self)

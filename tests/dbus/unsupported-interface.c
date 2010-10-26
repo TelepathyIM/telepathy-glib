@@ -72,6 +72,7 @@ main (int argc,
   TpDBusDaemon *bus_daemon;
   GError *error = NULL;
 
+  tp_tests_abort_after (10);
   g_type_init ();
   tp_debug_set_flags ("all");
 

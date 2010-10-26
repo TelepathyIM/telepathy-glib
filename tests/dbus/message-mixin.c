@@ -207,6 +207,7 @@ main (int argc,
   gboolean ok;
   GHashTable *parameters;
 
+  tp_tests_abort_after (10);
   g_type_init ();
   tp_debug_set_flags ("all");
   dbus = tp_tests_dbus_daemon_dup_or_die ();
@@ -314,7 +315,7 @@ main (int argc,
 
       g_print ("\n\n==== Examining properties ====\n\n");
 
-      MYASSERT (g_hash_table_size (properties) == 3, "%u",
+      MYASSERT (g_hash_table_size (properties) == 4, "%u",
           g_hash_table_size (properties));
 
       MYASSERT (tp_asv_get_uint32 (properties, "MessagePartSupportFlags", NULL)
@@ -334,6 +335,10 @@ main (int argc,
       MYASSERT (G_VALUE_HOLDS_BOXED (value), "");
       messages = g_value_get_boxed (value);
       MYASSERT (messages->len == 0, "%u", messages->len);
+
+      g_assert_cmpuint (tp_asv_get_uint32 (properties,
+            "DeliveryReportingSupport", NULL), ==,
+          TP_DELIVERY_REPORTING_SUPPORT_FLAG_RECEIVE_FAILURES);
 
       g_hash_table_destroy (properties);
     }
@@ -954,7 +959,7 @@ main (int argc,
 
       g_print ("\n\n==== Examining properties ====\n\n");
 
-      MYASSERT (g_hash_table_size (properties) == 3, "%u",
+      MYASSERT (g_hash_table_size (properties) == 4, "%u",
           g_hash_table_size (properties));
 
       MYASSERT (tp_asv_get_uint32 (properties, "MessagePartSupportFlags", NULL)
@@ -968,6 +973,10 @@ main (int argc,
       contents = g_strdup_value_contents (value);
       g_message ("%s", contents);
       g_free (contents);
+
+      g_assert_cmpuint (tp_asv_get_uint32 (properties,
+            "DeliveryReportingSupport", NULL), ==,
+          TP_DELIVERY_REPORTING_SUPPORT_FLAG_RECEIVE_FAILURES);
 
       MYASSERT ((value = tp_asv_lookup (properties, "PendingMessages"))
           != NULL, "");

@@ -54,6 +54,8 @@ examples/client/telepathy-example-*
 examples/cm/*/telepathy-example-*
 examples/extensions/extensions.html
 /examples/future/*/telepathy-example-*
+examples/client/stream-tubes/accepter
+examples/client/stream-tubes/offerer
 /extensions/extensions.html
 gtk-doc.make
 install-sh
@@ -73,6 +75,7 @@ missing
 stamp-h1
 tags
 /telepathy-glib-0.*
+/telepathy-glib/tmp-introspect*/
 tests/dbus/dbus-1/session.conf
 tests/dbus/test-*
 tests/test-*
@@ -85,3 +88,4 @@ tools/telepathy-glib-env
 /vala/telepathy-glib.gi
 /vala/telepathy-glib.vapi
 /valgrind.log
+capture-*.log
