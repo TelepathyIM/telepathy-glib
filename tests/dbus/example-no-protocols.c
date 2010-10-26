@@ -57,14 +57,6 @@ connection_manager_got_info (TpConnectionManager *cm,
   g_hash_table_destroy (empty);
 }
 
-static gboolean
-time_out (gpointer mainloop)
-{
-  g_error ("Timed out");
-  g_assert_not_reached ();
-  return FALSE;
-}
-
 static void
 wait_for_name_owner_cb (TpDBusDaemon *dbus_daemon,
     const gchar *name,
@@ -93,6 +85,7 @@ main (int argc,
   GError *error = NULL;
   gboolean saw_exited;
 
+  tp_tests_abort_after (5);
   g_type_init ();
 
   tp_debug_set_flags ("all");
@@ -100,8 +93,6 @@ main (int argc,
   mainloop = g_main_loop_new (NULL, FALSE);
 
   dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
-
-  g_timeout_add (5000, time_out, mainloop);
 
   /* First try making a TpConnectionManager before the CM is available. This
    * will fail. */
