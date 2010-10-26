@@ -36,6 +36,11 @@
  *     %TP_IFACE_CHANNEL_TYPE_STREAM_TUBE;</para>
  *   </listitem>
  *   <listitem>
+ *     <para>a #TpTextChannel, if the channel is of type
+ *     %TP_IFACE_CHANNEL_TYPE_TEXT and implements
+ *     %TP_IFACE_CHANNEL_INTERFACE_MESSAGES;</para>
+ *   </listitem>
+ *   <listitem>
  *     <para>a plain #TpChannel, otherwise</para>
  *   </listitem>
  * </itemizedlist>
@@ -44,8 +49,18 @@
  * will be either the class that is currently used, or a more specific
  * subclass of that class.
  *
- * This factory asks to prepare #TP_CHANNEL_FEATURE_CORE and
- * #TP_CHANNEL_FEATURE_GROUP for all type of channels.
+ * This factory asks to prepare the following properties:
+ *
+ * <itemizedlist>
+ *   <listitem>
+ *     <para><#TP_CHANNEL_FEATURE_CORE and #TP_CHANNEL_FEATURE_GROUP for all
+ *     type of channels.</para>
+ *   </listitem>
+ *   <listitem>
+ *     <para>#TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES for
+ *     #TpTextChannel</para>
+ *   </listitem>
+ * </itemizedlist>
  *
  * TpProxy subclasses other than TpChannel are not currently supported.
  *
@@ -75,6 +90,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/stream-tube-channel.h>
+#include <telepathy-glib/text-channel.h>
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
@@ -109,8 +125,21 @@ tp_automatic_proxy_factory_create_channel_impl (
   chan_type = tp_asv_get_string (properties, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
   if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE))
-    return TP_CHANNEL (tp_stream_tube_channel_new (conn, path, properties,
-          error));
+    {
+      return TP_CHANNEL (tp_stream_tube_channel_new (conn, path, properties,
+            error));
+    }
+  else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))
+    {
+      /* Create a TpTextChannel only if the channel supports Messages */
+      const gchar * const * interfaces;
+
+      interfaces = tp_asv_get_strv (properties, TP_PROP_CHANNEL_INTERFACES);
+
+      if (tp_strv_contains (interfaces, TP_IFACE_CHANNEL_INTERFACE_MESSAGES))
+        return TP_CHANNEL (tp_text_channel_new (conn, path, properties,
+              error));
+    }
 
   return tp_channel_new_from_properties (conn, path, properties, error);
 }
@@ -140,7 +169,7 @@ tp_automatic_proxy_factory_obj_create_channel (
 }
 
 static GArray *
-tp_automatic_proxy_factory_dup_channel_features_impl (void)
+tp_automatic_proxy_factory_dup_channel_features_impl (TpChannel *channel)
 {
   GArray *features;
   GQuark feature;
@@ -153,6 +182,12 @@ tp_automatic_proxy_factory_dup_channel_features_impl (void)
   feature = TP_CHANNEL_FEATURE_GROUP;
   g_array_append_val (features, feature);
 
+  if (TP_IS_TEXT_CHANNEL (channel))
+    {
+      feature = TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES;
+      g_array_append_val (features, feature);
+    }
+
   return features;
 }
 
@@ -161,7 +196,7 @@ tp_automatic_proxy_factory_obj_dup_channel_features (
     TpClientChannelFactory *self G_GNUC_UNUSED,
     TpChannel *channel G_GNUC_UNUSED)
 {
-  return tp_automatic_proxy_factory_dup_channel_features_impl ();
+  return tp_automatic_proxy_factory_dup_channel_features_impl (channel);
 }
 
 static GArray *
@@ -169,7 +204,7 @@ tp_automatic_proxy_factory_dup_channel_features (
     TpClientChannelFactoryInterface *iface G_GNUC_UNUSED,
     TpChannel *channel G_GNUC_UNUSED)
 {
-  return tp_automatic_proxy_factory_dup_channel_features_impl ();
+  return tp_automatic_proxy_factory_dup_channel_features_impl (channel);
 }
 
 static void
