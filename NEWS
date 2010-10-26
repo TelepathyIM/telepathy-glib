@@ -1,7 +1,18 @@
 telepathy-glib 0.13.3 (UNRELEASED)
 ==================================
 
-…
+This release includes all the fixes from version 0.12.2.
+
+Fixes:
+
+• fd.o #30730: order tests' and examples' CFLAGS and LIBS
+  consistently, fixing builds in some situations (an older telepathy-glib
+  built with -rpath already installed, possibly) (smcv)
+
+• fd.o #30949: fix a typo that made DeliveryReportingSupport always come out
+  as 0, and test a nonzero value (smcv)
+
+• Don't leak an array of features in TpBaseClient (cassidy)
 
 telepathy-glib 0.13.2 (2010-10-15)
 ==================================
