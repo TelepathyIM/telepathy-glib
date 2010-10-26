@@ -236,6 +236,23 @@ message_received_cb (TpChannel *proxy,
   g_signal_emit (self, signals[SIG_MESSAGE_RECEIVED], 0, msg);
 }
 
+/* Move this as TpMessage (or TpSignalledMessage?) API ? */
+static guint
+get_pending_message_id (TpMessage *msg,
+    gboolean *valid)
+{
+  const GHashTable *part0;
+
+  part0 = tp_message_peek (msg, 0);
+  if (part0 == NULL)
+    {
+      *valid = FALSE;
+      return 0;
+    }
+
+  return tp_asv_get_uint32 (part0, "pending-message-id", valid);
+}
+
 static void
 pending_messages_removed_cb (TpChannel *proxy,
     const GArray *ids,
@@ -646,4 +663,109 @@ tp_text_channel_send_message_finish (TpTextChannel *self,
     GError **error)
 {
   _tp_implement_finish_void (self, tp_text_channel_send_message_async)
+}
+
+static void
+acknowledge_pending_messages_cb (TpChannel *channel,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to ack messages: %s", error->message);
+
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_text_channel_ack_messages_async:
+ * @self: a #TpTextChannel
+ * @messages: a #Glist of #TpSignalledMessage
+ * @callback: a callback to call when the message have been acked
+ * @user_data: data to pass to @callback
+ *
+ * Ack all the messages in @messages.
+ * Once the messages have been acked, @callback will be called.
+ * You can then call tp_text_channel_ack_messages_finish() to get the
+ * result of the operation.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_text_channel_ack_messages_async (TpTextChannel *self,
+    const GList *messages,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpChannel *chan = (TpChannel *) self;
+  GArray *ids;
+  GList *l;
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_TEXT_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_text_channel_ack_messages_async);
+
+  if (messages == NULL)
+    {
+      /* Nothing to ack, succeed immediately */
+      g_simple_async_result_complete_in_idle (result);
+
+      g_object_unref (result);
+      return;
+    }
+
+  ids = g_array_sized_new (FALSE, FALSE, sizeof (guint),
+      g_list_length ((GList *) messages));
+
+  for (l = (GList *) messages; l != NULL; l = g_list_next (l))
+    {
+      TpMessage *msg = l->data;
+      guint id;
+      gboolean valid;
+
+      g_return_if_fail (TP_IS_SIGNALLED_MESSAGE (msg));
+
+      id = get_pending_message_id (msg, &valid);
+      if (!valid)
+        {
+          DEBUG ("Message doesn't have pending-message-id ?!");
+          continue;
+        }
+
+      g_array_append_val (ids, id);
+    }
+
+  tp_cli_channel_type_text_call_acknowledge_pending_messages (chan, -1, ids,
+      acknowledge_pending_messages_cb, result, NULL, G_OBJECT (self));
+
+  g_array_free (ids, TRUE);
+}
+
+/**
+ * tp_text_channel_ack_messages_finish:
+ * @self: a #TpTextChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to ack a list of messages.
+ *
+ * Returns: %TRUE if the messages have been acked, %FALSE otherwise.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_text_channel_ack_messages_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_text_channel_ack_messages_async)
 }
