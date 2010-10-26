@@ -1,7 +1,32 @@
-telepathy-glib 0.13.3 (UNRELEASED)
+telepathy-glib 0.13.3 (2010-10-26)
 ==================================
 
+The "reminds me of daf's random dbus type generator" release.
+
 This release includes all the fixes from version 0.12.2.
+
+Deprecations:
+
+• <telepathy-glib/debug-ansi.h> is now deprecated, and the Group and
+  Properties mixins no longer output brightly-coloured logs
+
+Enhancements:
+
+• fd.o #31102: update to spec 0.21.3 (smcv):
+  - add TP_ERROR_PICKED_UP_ELSEWHERE
+  - generate code for Chan.I.DTMF.TonesDeferred and DeferredTones
+  - generate code for Conn.I.MailNotification
+  - generate code for Protocol.I.Presence
+  - generate code for AddClientInterest, RemoveClientInterest
+  - update the Call example CM and its regression test
+
+• fd.o #27948: add generic support for AddClientInterest,
+  RemoveClientInterest on TpBaseConnection and TpConnection (smcv)
+
+• fd.o #30505: add TpDTMFPlayer, a DTMF dialstring interpreter (smcv)
+
+• TpClientChannelFactory: ask callers to prepare a given set of features,
+  and do so in TpBaseClient (cassidy)
 
 Fixes:
 
@@ -13,6 +38,13 @@ Fixes:
   as 0, and test a nonzero value (smcv)
 
 • Don't leak an array of features in TpBaseClient (cassidy)
+
+• fd.o #31027: if stdout is a tty, tests now succeed silently, and only
+  produce output on failure; also, they will automatically fail after a
+  few seconds if an expected event does not happen (smcv)
+
+• fd.o #30999: tests now succeed on machines where IPv6 is supported but ::1
+  is not assigned to an interface (smcv)
 
 telepathy-glib 0.13.2 (2010-10-15)
 ==================================

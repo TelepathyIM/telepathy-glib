@@ -6,7 +6,7 @@
  * This header provides some ANSI escapes you can use to make debug messages
  * more colourful. Please use sparingly.
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 
 #ifndef __TP_DEBUG_ANSI_H__
@@ -19,7 +19,7 @@
  *
  * Reset all attributes.
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_RESET      "\x1b[0m"
 /**
@@ -27,7 +27,7 @@
  *
  * Set the bold attribute.
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_BOLD_ON    "\x1b[1m"
 /**
@@ -35,7 +35,7 @@
  *
  * Set the inverse video attribute.
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_INVERSE_ON "\x1b[7m"
 /**
@@ -43,7 +43,7 @@
  *
  * Clear the bold attribute.
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_BOLD_OFF   "\x1b[22m"
 /**
@@ -51,7 +51,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_FG_BLACK   "\x1b[30m"
 /**
@@ -59,7 +59,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_FG_RED     "\x1b[31m"
 /**
@@ -67,7 +67,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_FG_GREEN   "\x1b[32m"
 /**
@@ -75,7 +75,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_FG_YELLOW  "\x1b[33m"
 /**
@@ -83,7 +83,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_FG_BLUE    "\x1b[34m"
 /**
@@ -91,7 +91,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_FG_MAGENTA "\x1b[35m"
 /**
@@ -99,7 +99,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_FG_CYAN    "\x1b[36m"
 /**
@@ -107,7 +107,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_FG_WHITE   "\x1b[37m"
 /**
@@ -115,7 +115,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_BG_RED     "\x1b[41m"
 /**
@@ -123,7 +123,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_BG_GREEN   "\x1b[42m"
 /**
@@ -131,7 +131,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_BG_YELLOW  "\x1b[43m"
 /**
@@ -139,7 +139,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_BG_BLUE    "\x1b[44m"
 /**
@@ -147,7 +147,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_BG_MAGENTA "\x1b[45m"
 /**
@@ -155,7 +155,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_BG_CYAN    "\x1b[46m"
 /**
@@ -163,7 +163,7 @@
  *
  * <!---->
  *
- * Deprecated: 0.13.UNRELEASED
+ * Deprecated: 0.13.3
  */
 #define TP_ANSI_BG_WHITE   "\x1b[47m"
 

@@ -38,7 +38,7 @@
  * turn MultipleTones or InitialTones received from a UI into a sequence of
  * start and stop events for the underlying protocol.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.3
  */
 
 /**
@@ -49,6 +49,8 @@
  * was not understood.
  *
  * Returns: a printable ASCII character
+ *
+ * Since: 0.13.3
  */
 gchar
 tp_dtmf_event_to_char (TpDTMFEvent event)
@@ -177,6 +179,8 @@ tp_dtmf_char_classify (gchar c)
  *
  * The #TpDTMFPlayer::finished signal indicates that the current sequence
  * of tones has finished.
+ *
+ * Since: 0.13.3
  */
 
 G_DEFINE_TYPE (TpDTMFPlayer, tp_dtmf_player, G_TYPE_OBJECT)
@@ -242,6 +246,8 @@ tp_dtmf_player_emit_tones_deferred (TpDTMFPlayer *self,
  * stop playing subsequent tones, and emit #TpDTMFPlayer::finished.
  *
  * Otherwise, do nothing.
+ *
+ * Since: 0.13.3
  */
 void
 tp_dtmf_player_cancel (TpDTMFPlayer *self)
@@ -363,6 +369,8 @@ tp_dtmf_player_timer_cb (gpointer data)
  * %TP_ERROR_INVALID_ARGUMENT and does not play anything.
  *
  * Returns: %TRUE on success, %FALSE (setting @error) on failure
+ *
+ * Since: 0.13.3
  */
 gboolean
 tp_dtmf_player_play (TpDTMFPlayer *self,
@@ -420,6 +428,8 @@ tp_dtmf_player_play (TpDTMFPlayer *self,
  * <!-- -->
  *
  * Returns: %TRUE if a sequence of tones is currently playing
+ *
+ * Since: 0.13.3
  */
 gboolean
 tp_dtmf_player_is_active (TpDTMFPlayer *self)
@@ -478,6 +488,8 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    * TpDTMFPlayer::stopped-tone:
    *
    * Emitted at the end of each tone.
+   *
+   * Since: 0.13.3
    */
   sig_id_stopped_tone =  g_signal_new ("stopped-tone",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
@@ -490,6 +502,8 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    * Emitted when playback stops, either because the end of the
    * sequence was reached, tp_dtmf_player_cancel() was called, or a 'W'
    * or 'w' character was encountered.
+   *
+   * Since: 0.13.3
    */
   sig_id_finished =  g_signal_new ("finished",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
@@ -504,6 +518,8 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
    * manager is expected to wait for the user to confirm, then call
    * tp_dtmf_player_play() again, using this signal's argument as the new
    * dial string.
+   *
+   * Since: 0.13.3
    */
   sig_id_tones_deferred =  g_signal_new ("tones-deferred",
       G_OBJECT_CLASS_TYPE (cls), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
@@ -516,6 +532,8 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
  * <!-- -->
  *
  * Returns: (transfer full): a new DTMF interpreter
+ *
+ * Since: 0.13.3
  */
 TpDTMFPlayer *
 tp_dtmf_player_new (void)

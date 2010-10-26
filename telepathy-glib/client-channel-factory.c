@@ -109,7 +109,7 @@ tp_client_channel_factory_create_channel (TpClientChannelFactoryInterface *self,
  *
  * Returns: (transfer full): a newly allocated #GArray
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.3
  */
 GArray *
 tp_client_channel_factory_dup_channel_features (

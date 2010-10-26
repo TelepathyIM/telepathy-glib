@@ -2092,7 +2092,7 @@ tp_connection_get_detailed_error (TpConnection *self,
  * For contact information, use #TpContact instead, which will call this
  * automatically.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 void
 tp_connection_add_client_interest (TpConnection *self,
@@ -2113,7 +2113,7 @@ tp_connection_add_client_interest (TpConnection *self,
  * Equivalent to, but a little more efficient than, calling
  * tp_connection_add_interest() for the string value of @interested_in.
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.11.3
  */
 void
 tp_connection_add_client_interest_by_id (TpConnection *self,

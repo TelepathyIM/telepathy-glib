@@ -53,6 +53,7 @@ ABI_LISTS = \
     versions/0.13.0.abi \
     versions/0.13.1.abi \
     versions/0.13.2.abi \
+    versions/0.13.3.abi \
     $(NULL)
 
 # The quoting here is unnecessary but harmless, and has the useful side-effect
