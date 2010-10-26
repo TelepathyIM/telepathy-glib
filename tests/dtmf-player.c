@@ -3,6 +3,8 @@
 
 #include <telepathy-glib/util.h>
 
+#include "tests/lib/util.h"
+
 static void
 test_to_char (void)
 {

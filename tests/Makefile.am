@@ -63,6 +63,9 @@ test_capabilities_LDADD = \
     $(GLIB_LIBS)
 
 test_dtmf_player_SOURCES = dtmf-player.c
+test_dtmf_player_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(LDADD)
 
 test_heap_SOURCES = \
     heap.c
