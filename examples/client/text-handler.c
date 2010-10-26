@@ -14,89 +14,63 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
-gboolean got_pending_msg = FALSE;
-
 static void
-echo_message (TpChannel *channel,
+echo_message (TpTextChannel *channel,
     const gchar *text)
 {
-  gchar *msg;
+  gchar *up;
+  TpMessage *msg;
 
-  msg = g_ascii_strup (text, -1);
-  g_print ("send: %s\n", msg);
+  up = g_ascii_strup (text, -1);
+  g_print ("send: %s\n", up);
 
-  tp_cli_channel_type_text_call_send (channel, -1,
-      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, msg, NULL, NULL, NULL, NULL);
+  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, up);
 
-  g_free (msg);
+  tp_text_channel_send_message_async (channel, msg, 0, NULL, NULL);
+
+  g_free (up);
+  g_object_unref (msg);
 }
 
 static void
-message_received_cb (TpChannel *channel,
-    guint id,
-    guint timestamp,
-    guint sender,
-    guint type,
-    guint flags,
-    const gchar *text,
-    gpointer user_data,
-    GObject *weak_object)
+message_received_cb (TpTextChannel *channel,
+    TpMessage *message,
+    gpointer user_data)
 {
-  GArray *arr;
+  const GHashTable *part;
+  const gchar *text;
 
-  /* Ignore messages if we didn't fetch pending messages yet */
-  if (!got_pending_msg)
-    return;
+  part = tp_message_peek (message, 1);
+  text = tp_asv_get_string (part, "content");
 
   g_print ("received: %s\n", text);
 
   echo_message (channel, text);
 
-  arr = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
-  g_array_append_val (arr, id);
-
-  tp_cli_channel_type_text_call_acknowledge_pending_messages (channel, -1,
-      arr, NULL, NULL, NULL, NULL);
-
-  g_array_free (arr, TRUE);
+  tp_text_channel_ack_message_async (channel, message, NULL, NULL);
 }
 
 static void
-got_pending_messages_cb (TpChannel *channel,
-    const GPtrArray *messages,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+display_pending_messages (TpTextChannel *channel)
 {
-  guint i;
-  GArray *ids;
+  GList *messages, *l;
 
-  got_pending_msg = TRUE;
+  messages = tp_text_channel_get_pending_messages (channel);
 
-  if (error != NULL)
-    return;
-
-  ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), messages->len);
-
-  for (i = 0; i < messages->len; i++)
+  for (l = messages; l != NULL; l = g_list_next (l))
     {
-      GValueArray *v = g_ptr_array_index (messages, i);
-      guint id, timestamp, sender, type, flags;
-      const gchar *text;
-
-      tp_value_array_unpack (v, 6,
-          &id, &timestamp, &sender, &type, &flags, &text);
+      TpMessage *msg = l->data;
+      const GHashTable *part = tp_message_peek (msg, 1);
+      const gchar *text = tp_asv_get_string (part, "content");
 
       g_print ("pending: %s\n", text);
 
       echo_message (channel, text);
-      g_array_append_val (ids, id);
     }
 
-  tp_cli_channel_type_text_call_acknowledge_pending_messages (channel, -1,
-      ids, NULL, NULL, NULL, NULL);
+  tp_text_channel_ack_messages_async (channel, messages, NULL, NULL);
 
-  g_array_free (ids, TRUE);
+  g_list_free (messages);
 }
 
 static void
@@ -114,24 +88,18 @@ handle_channels_cb (TpSimpleHandler *self,
   for (l = channels; l != NULL; l = g_list_next (l))
     {
       TpChannel *channel = l->data;
-      GHashTable *props;
-      gboolean requested;
+      TpTextChannel *text_chan = l->data;
 
-      if (tp_strdiff (tp_channel_get_channel_type (channel),
-            TP_IFACE_CHANNEL_TYPE_TEXT))
+      if (!TP_IS_TEXT_CHANNEL (channel))
         continue;
-
-      props = tp_channel_borrow_immutable_properties (channel);
-      requested = tp_asv_get_boolean (props, TP_PROP_CHANNEL_REQUESTED, NULL);
 
       g_print ("Handling text channel with %s\n",
           tp_channel_get_identifier (channel));
 
-      tp_cli_channel_type_text_connect_to_received (channel,
-          message_received_cb, NULL, NULL, NULL, NULL);
+      g_signal_connect (channel, "message-received",
+          G_CALLBACK (message_received_cb), NULL);
 
-      tp_cli_channel_type_text_call_list_pending_messages (channel, -1, FALSE,
-          got_pending_messages_cb, NULL, NULL, NULL);
+      display_pending_messages (text_chan);
     }
 
   tp_handle_channels_context_accept (context);
