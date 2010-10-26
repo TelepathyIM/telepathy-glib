@@ -35,7 +35,7 @@ include $(top_srcdir)/tools/valgrind.mk
 
 VALGRIND_TESTS_ENVIRONMENT = \
     $(TESTS_ENVIRONMENT) \
-    G_SLICE=always-malloc \
+    env G_SLICE=always-malloc CHECK_VERBOSE=1 \
     $(top_builddir)/libtool --mode=execute \
     $(VALGRIND) --suppressions=$(top_srcdir)/tests/tests.supp $(VALGRIND_FLAGS)
 
