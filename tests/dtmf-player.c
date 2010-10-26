@@ -292,13 +292,6 @@ test_wait (Fixture *f,
       "finished\n");
 }
 
-static gboolean
-timeout_cb (gpointer nil G_GNUC_UNUSED)
-{
-  g_error ("timed out");
-  g_assert_not_reached ();
-}
-
 int
 main (int argc,
     char **argv)
@@ -307,10 +300,9 @@ main (int argc,
 #define FIXTURE_TEST(x) \
   g_test_add (TEST_PREFIX #x, Fixture, NULL, setup, test_ ## x, teardown)
 
+  tp_tests_abort_after (10);
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
-
-  g_timeout_add_seconds (10, timeout_cb, NULL);
 
   g_test_add_func (TEST_PREFIX "to_char", test_to_char);
 
