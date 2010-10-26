@@ -41,6 +41,9 @@ GType tp_client_message_get_type (void);
 
 TpMessage * tp_client_message_new (guint initial_parts);
 
+TpMessage * tp_client_message_text_new (TpChannelTextMessageType type,
+    const gchar *text);
+
 G_END_DECLS
 
 #endif /* __TP_CLIENT_MESSAGE_H__ */

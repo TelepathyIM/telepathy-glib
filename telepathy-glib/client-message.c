@@ -97,3 +97,36 @@ tp_client_message_new (guint initial_parts)
       "size-hint", initial_parts,
       NULL);
 }
+
+/**
+ * tp_client_message_text_new:
+ * @type: the type of message
+ * @text: content of the messsage
+ *
+ * A convenient function to create a new #TpClientMessage having
+ * 'text/plain' as 'content-typee', @type as 'message-type' and
+ * @text as 'content'.
+ *
+ * Returns: (transfer full): a newly allocated #TpClientMessage
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpMessage *
+tp_client_message_text_new (TpChannelTextMessageType type,
+    const gchar *text)
+{
+  TpMessage *msg;
+
+  msg = g_object_new (TP_TYPE_CLIENT_MESSAGE,
+      "initial-parts", 2,
+      "size-hint", 2,
+      NULL);
+
+  if (type != TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL)
+    tp_message_set_uint32 (msg, 0, "message-type", type);
+
+  tp_message_set_string (msg, 1, "content-type", "text/plain");
+  tp_message_set_string (msg, 1, "content", text);
+
+  return msg;
+}
