@@ -1,7 +1,18 @@
-telepathy-glib 0.12.2 (UNRELEASED)
+telepathy-glib 0.12.2 (2010-10-26)
 ==================================
 
-…
+The "fs2 literally speaks like Desmond from Lost nowadays" release.
+
+Fixes:
+
+• fd.o #30730, #30791: order tests' and examples' CFLAGS and LIBS
+  consistently, fixing builds in some situations (an older telepathy-glib
+  built with -rpath already installed, possibly) (smcv)
+
+• fd.o #30949: fix a typo that made DeliveryReportingSupport always come out
+  as 0, and test a nonzero value (smcv)
+
+• Don't leak an array of features in TpBaseClient (cassidy)
 
 telepathy-glib 0.12.1 (2010-10-15)
 ==================================
