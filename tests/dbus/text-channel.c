@@ -29,6 +29,8 @@ typedef struct {
     TpConnection *connection;
     TpTextChannel *channel;
 
+    TpMessage *received_msg;
+
     GError *error /* initialized where needed */;
     gint wait;
 } Test;
@@ -111,6 +113,8 @@ teardown (Test *test,
 
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
+
+  tp_clear_object (&test->received_msg);
 
   tp_clear_object (&test->channel);
 }
@@ -286,6 +290,58 @@ test_pending_messages (Test *test,
   g_list_free (messages);
 }
 
+static void
+message_received_cb (TpTextChannel *chan,
+    TpSignalledMessage *msg,
+    Test *test)
+{
+  tp_clear_object (&test->received_msg);
+
+  test->received_msg = g_object_ref (msg);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_message_received (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
+  TpMessage *msg;
+  const GHashTable *part;
+
+  /* We have to prepare the pending messages feature to be notified about
+   * incoming messages */
+  /* FIXME: Shouldn't we rename this feature then ? */
+  tp_proxy_prepare_async (test->channel, features,
+      proxy_prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_signal_connect (test->channel, "message-received",
+      G_CALLBACK (message_received_cb), test);
+
+  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "Snake");
+
+  tp_text_channel_send_message_async (test->channel, msg, 0,
+      send_message_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (TP_IS_SIGNALLED_MESSAGE (test->received_msg));
+  part = tp_message_peek (msg, 1);
+  g_assert (part != NULL);
+  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==, "Snake");
+
+  g_object_unref (msg);
+}
+
 int
 main (int argc,
       char **argv)
@@ -303,6 +359,8 @@ main (int argc,
       test_properties, teardown);
   g_test_add ("/text-channel/pending-messages", Test, NULL, setup,
       test_pending_messages, teardown);
+  g_test_add ("/text-channel/message-received", Test, NULL, setup,
+      test_message_received, teardown);
 
   return g_test_run ();
 }
