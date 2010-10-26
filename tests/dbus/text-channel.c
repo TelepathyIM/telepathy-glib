@@ -30,6 +30,7 @@ typedef struct {
     TpTextChannel *channel;
 
     TpMessage *received_msg;
+    TpMessage *removed_msg;
 
     GError *error /* initialized where needed */;
     gint wait;
@@ -115,6 +116,7 @@ teardown (Test *test,
   g_object_unref (test->base_connection);
 
   tp_clear_object (&test->received_msg);
+  tp_clear_object (&test->removed_msg);
 
   tp_clear_object (&test->channel);
 }
@@ -425,6 +427,20 @@ message_acked_cb (GObject *source,
 }
 
 static void
+pending_message_removed_cb (TpTextChannel *chan,
+    TpSignalledMessage *msg,
+    Test *test)
+{
+  tp_clear_object (&test->removed_msg);
+
+  test->removed_msg = g_object_ref (msg);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_ack_message (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -456,11 +472,17 @@ test_ack_message (Test *test,
 
   g_assert (TP_IS_SIGNALLED_MESSAGE (test->received_msg));
 
+  g_signal_connect (test->channel, "pending-message-removed",
+      G_CALLBACK (pending_message_removed_cb), test);
+
   tp_text_channel_ack_message_async (test->channel, test->received_msg,
       message_acked_cb, test);
 
+  test->wait = 2;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
+
+  g_assert (test->received_msg == test->removed_msg);
 
   /* Messages has been acked so there is no pending messages */
   messages = tp_text_channel_get_pending_messages (test->channel);
