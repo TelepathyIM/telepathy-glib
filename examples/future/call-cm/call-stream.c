@@ -43,7 +43,8 @@ enum
   PROP_HANDLE,
   PROP_SIMULATION_DELAY,
   PROP_LOCALLY_REQUESTED,
-  PROP_MEMBERS,
+  PROP_LOCAL_SENDING_STATE,
+  PROP_REMOTE_MEMBERS,
   N_PROPS
 };
 
@@ -156,20 +157,19 @@ get_property (GObject *object,
       g_value_set_boolean (value, self->priv->locally_requested);
       break;
 
-    case PROP_MEMBERS:
+    case PROP_REMOTE_MEMBERS:
         {
           GHashTable *members = g_hash_table_new (NULL, NULL);
 
           g_hash_table_insert (members, GUINT_TO_POINTER (self->priv->handle),
               GUINT_TO_POINTER (self->priv->remote_sending_state));
 
-          g_hash_table_insert (members,
-              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
-                  self->priv->conn)),
-              GUINT_TO_POINTER (self->priv->local_sending_state));
-
           g_value_take_boxed (value, members);
         }
+      break;
+
+    case PROP_LOCAL_SENDING_STATE:
+      g_value_set_uint (value, self->priv->local_sending_state);
       break;
 
     default:
@@ -257,7 +257,8 @@ static void
 example_call_stream_class_init (ExampleCallStreamClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl stream_props[] = {
-      { "Members", "members", NULL },
+      { "LocalSendingState", "local-sending-state", NULL },
+      { "RemoteMembers", "remote-members", NULL },
       { "Interfaces", "interfaces", NULL },
       { NULL }
   };
@@ -312,16 +313,24 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
   g_object_class_install_property (object_class, PROP_LOCALLY_REQUESTED,
       param_spec);
 
-  param_spec = g_param_spec_boxed ("members", "members",
+  param_spec = g_param_spec_boxed ("remote-members", "RemoteMembers",
       "Map from contact handles to their sending states",
       FUTURE_HASH_TYPE_CONTACT_SENDING_STATE_MAP,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_MEMBERS, param_spec);
+  g_object_class_install_property (object_class, PROP_REMOTE_MEMBERS,
+      param_spec);
 
   param_spec = g_param_spec_boxed ("interfaces", "Interfaces",
       "List of D-Bus interfaces",
       G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
+
+  param_spec = g_param_spec_uint ("local-sending-state", "LocalSendingState",
+      "Local sending state",
+      0, NUM_FUTURE_SENDING_STATES, FUTURE_SENDING_STATE_NONE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_LOCAL_SENDING_STATE,
+      param_spec);
 
   signals[SIGNAL_REMOVED] = g_signal_new ("removed",
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
@@ -358,9 +367,6 @@ example_call_stream_close (ExampleCallStream *self)
 void
 example_call_stream_accept_proposed_direction (ExampleCallStream *self)
 {
-  GHashTable *updated_members;
-  GArray *removed_members;
-
   if (self->priv->removed ||
       self->priv->local_sending_state != FUTURE_SENDING_STATE_PENDING_SEND)
     return;
@@ -369,16 +375,8 @@ example_call_stream_accept_proposed_direction (ExampleCallStream *self)
       self->priv->object_path);
 
   self->priv->local_sending_state = FUTURE_SENDING_STATE_SENDING;
-
-  updated_members = g_hash_table_new (NULL, NULL);
-  removed_members = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
-  g_hash_table_insert (updated_members,
-      GUINT_TO_POINTER (tp_base_connection_get_self_handle (self->priv->conn)),
-      GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
-  future_svc_call_stream_emit_members_changed (self, updated_members,
-      removed_members);
-  g_hash_table_unref (updated_members);
-  g_array_free (removed_members, TRUE);
+  future_svc_call_stream_emit_local_sending_state_changed (self,
+      self->priv->local_sending_state);
 }
 
 void
@@ -400,7 +398,7 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
   removed_members = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
   g_hash_table_insert (updated_members, GUINT_TO_POINTER (self->priv->handle),
       GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
-  future_svc_call_stream_emit_members_changed (self, updated_members,
+  future_svc_call_stream_emit_remote_members_changed (self, updated_members,
       removed_members);
   g_hash_table_unref (updated_members);
   g_array_free (removed_members, TRUE);
@@ -433,11 +431,8 @@ example_call_stream_change_direction (ExampleCallStream *self,
           g_message ("%s: MEDIA: sending media to peer",
               self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_SENDING;
-
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
-                  self->priv->conn)),
-              GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
+          future_svc_call_stream_emit_local_sending_state_changed (self,
+              self->priv->local_sending_state);
         }
     }
   else
@@ -449,11 +444,8 @@ example_call_stream_change_direction (ExampleCallStream *self,
           g_message ("%s: MEDIA: no longer sending media to peer",
               self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
-
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
-                  self->priv->conn)),
-              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
+          future_svc_call_stream_emit_local_sending_state_changed (self,
+              self->priv->local_sending_state);
         }
       else if (self->priv->local_sending_state ==
           FUTURE_SENDING_STATE_PENDING_SEND)
@@ -461,11 +453,8 @@ example_call_stream_change_direction (ExampleCallStream *self,
           g_message ("%s: SIGNALLING: send: refusing to send you media",
               self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
-
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
-                  self->priv->conn)),
-              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
+          future_svc_call_stream_emit_local_sending_state_changed (self,
+              self->priv->local_sending_state);
         }
     }
 
@@ -506,8 +495,8 @@ example_call_stream_change_direction (ExampleCallStream *self,
       GArray *removed_members = g_array_sized_new (FALSE, FALSE,
           sizeof (guint), 0);
 
-      future_svc_call_stream_emit_members_changed (self, updated_members,
-          removed_members);
+      future_svc_call_stream_emit_remote_members_changed (self,
+          updated_members, removed_members);
 
       g_array_free (removed_members, TRUE);
     }
@@ -541,11 +530,8 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
         {
           /* ask the user for permission */
           self->priv->local_sending_state = FUTURE_SENDING_STATE_PENDING_SEND;
-
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
-                  self->priv->conn)),
-              GUINT_TO_POINTER (FUTURE_SENDING_STATE_PENDING_SEND));
+          future_svc_call_stream_emit_local_sending_state_changed (self,
+              self->priv->local_sending_state);
         }
       else
         {
@@ -565,21 +551,15 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           g_message ("%s: MEDIA: no longer sending media to peer",
               self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
-
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
-                  self->priv->conn)),
-              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
+          future_svc_call_stream_emit_local_sending_state_changed (self,
+              self->priv->local_sending_state);
         }
       else if (self->priv->local_sending_state ==
           FUTURE_SENDING_STATE_PENDING_SEND)
         {
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
-
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (tp_base_connection_get_self_handle (
-                  self->priv->conn)),
-              GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
+          future_svc_call_stream_emit_local_sending_state_changed (self,
+              self->priv->local_sending_state);
         }
       else
         {
@@ -632,8 +612,8 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
       GArray *removed_members = g_array_sized_new (FALSE, FALSE,
           sizeof (guint), 0);
 
-      future_svc_call_stream_emit_members_changed (self, updated_members,
-          removed_members);
+      future_svc_call_stream_emit_remote_members_changed (self,
+          updated_members, removed_members);
 
       g_array_free (removed_members, TRUE);
     }

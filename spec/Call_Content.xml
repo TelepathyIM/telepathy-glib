@@ -25,19 +25,24 @@
     <tp:added version="0.19.0">(draft 1)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-      This object represents one Content inside a Call. For example in an
-      audio/video call there would be one audio and one video content. Each
-      content has one or more <tp:dbus-ref namespace="ofdT.Call"
-      >Stream.DRAFT</tp:dbus-ref> objects which represent the actual
-      transport to one or more contacts.
+      This object represents one Content inside a <tp:dbus-ref
+      namespace="ofdT.Channel.Type">Call.DRAFT</tp:dbus-ref>. For
+      example, in an audio/video call there would be one audio content
+      and one video content. Each content has one or more <tp:dbus-ref
+      namespace="ofdT.Call">Stream.DRAFT</tp:dbus-ref> objects which
+      represent the actual transport to one or more remote contacts.
     </tp:docstring>
 
     <tp:enum name="Content_Removal_Reason" type="u">
       <tp:added version="0.21.2"/>
       <tp:docstring>
-        A simple representation of the reason for a content to be
-        removed, which may be used by simple clients, or used as a
-        fallback when the DBus_Reason is not understood.
+        A representation of the reason for a content to be removed,
+        which may be used by simple clients, or used as a fallback
+        when the DBus_Reason is not understood. This enum will be
+        extended with future reasons as and when appropriate, so
+        clients SHOULD keep up to date with its values, but also be
+        happy to fallback to the Unknown value when an unknown value
+        is encountered.
       </tp:docstring>
 
       <tp:enumvalue suffix="Unknown" value="0">
@@ -87,32 +92,32 @@
         tp:type="DBus_Error_Name">
         <tp:docstring>
           A more specific reason for the content removal, if one is
-          available, or an empty string otherwise.
+          available, or an empty string.
         </tp:docstring>
       </arg>
 
       <arg direction="in" name="Message" type="s">
         <tp:docstring>
           A human-readable message for the reason of removing the
-          content, for example "Fatal streaming failure", "no codec
-          intersection", etc. This property can be left empty if no
-          reason is to be given.
+          content, such as "Fatal streaming failure" or "no codec
+          intersection". This property can be left empty if no reason
+          is to be given.
         </tp:docstring>
       </arg>
 
       <tp:possible-errors>
-        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError">
-        </tp:error>
+        <tp:error name="org.freedesktop.Telepathy.Error.NetworkError" />
         <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented">
           <tp:docstring>
-            Raised when a Call doesn't support removing contents (e.g. a Google Talk video call)
+            Raised when a Call doesn't support removing contents
+            (e.g. a Google Talk video call).
           </tp:docstring>
         </tp:error>
       </tp:possible-errors>
     </method>
 
     <property name="Interfaces" tp:name-for-bindings="Interfaces"
-      type="as" tp:type="DBus_Interface[]" access="read">
+      type="as" tp:type="DBus_Interface[]" access="read" tp:immutable="yes">
       <tp:added version="0.19.11"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Extra interfaces provided by this content, such as <tp:dbus-ref
@@ -123,37 +128,35 @@
       </tp:docstring>
     </property>
 
-    <property name="Name" tp:name-for-bindings="Name" type="s" access="read">
+    <property name="Name" tp:name-for-bindings="Name" type="s" access="read"
+      tp:immutable="yes">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The name of the content.</p>
 
         <tp:rationale>
-          The content name property should be meaningful, so should
-          be given a name which is significant to the user. The name
-          could be a localized "audio", "video" or perhaps include
-          some string identifying the source, such as a webcam
+          The content name property should be meaningful, so should be
+          given a name which is significant to the user. The name
+          could be the "audio" or "video" string localized, or perhaps
+          include some string identifying the source, such as a webcam
           identifier.
         </tp:rationale>
       </tp:docstring>
     </property>
 
     <property name="Type" tp:name-for-bindings="Type"
-        type="u" tp:type="Media_Stream_Type" access="read">
+        type="u" tp:type="Media_Stream_Type" access="read" tp:immutable="yes">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The media type of this content</p>
-      </tp:docstring>
-    </property>
-
-    <property name="Creator" tp:name-for-bindings="Creator"
-        type="u" tp:type="Contact_Handle" access="read">
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The creator of this content</p>
+        <p>The media type of this content.</p>
       </tp:docstring>
     </property>
 
     <tp:enum name="Call_Content_Disposition" type="u">
       <tp:docstring>
-        [FIXME]
+        The disposition of this content, which defines whether to
+        automatically start sending data on the streams when
+        <tp:dbus-ref
+        namespace="ofdT.Channel.Type">Call.DRAFT</tp:dbus-ref> is
+        called on the channel.
       </tp:docstring>
 
       <tp:enumvalue suffix="None" value="0">
@@ -162,31 +165,28 @@
         </tp:docstring>
       </tp:enumvalue>
 
-      <tp:enumvalue suffix="Early_Media" value="1">
+      <tp:enumvalue suffix="Initial" value="1">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          [FIXME: what does this mean?]
-        </tp:docstring>
-      </tp:enumvalue>
-
-      <tp:enumvalue suffix="Initial" value="2">
-        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-          <p>The content was initially part of the call. When <tp:dbus-ref
-            namespace="ofdT.Channel.Type.Call.DRAFT">Accept</tp:dbus-ref>
-            is called on the channel, all streams of this content where
-            the self-handle's sending state in <tp:dbus-ref
-            namespace="ofdT.Call.Stream.DRAFT">Members</tp:dbus-ref>
-            is Sending_State_Pending_Send will be moved to
-            Sending_State_Sending as if <tp:dbus-ref
-            namespace="ofdT.Call.Stream.DRAFT">SetSending</tp:dbus-ref>
-            (TRUE) had been called.</p>
+          <p>The content was initially part of the call. When
+          <tp:dbus-ref
+          namespace="ofdT.Channel.Type.Call.DRAFT">Accept</tp:dbus-ref>
+          is called on the channel, all streams of this content with
+          <tp:dbus-ref
+          namespace="ofdT.Call.Stream.DRAFT">LocalSendingState</tp:dbus-ref>
+          set to <tp:type>Sending_State</tp:type>_Pending_Send will be
+          moved to <tp:type>Sending_State</tp:type>_Sending as if
+          <tp:dbus-ref
+          namespace="ofdT.Call.Stream.DRAFT">SetSending</tp:dbus-ref>
+          (True) had been called.</p>
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
 
     <property name="Disposition" tp:name-for-bindings="Disposition"
-        type="u" tp:type="Call_Content_Disposition" access="read">
+        type="u" tp:type="Call_Content_Disposition" access="read"
+        tp:immutable="yes">
       <tp:docstring>
-        The disposition of this content. This property cannot change.
+        The disposition of this content.
       </tp:docstring>
     </property>
 
@@ -198,7 +198,9 @@
       </tp:docstring>
       <arg name="Streams" type="ao">
          <tp:docstring>
-           The streams which were added.
+           The <tp:dbus-ref
+           namespace="ofdT.Call">Stream.DRAFT</tp:dbus-ref>s which were
+           added.
          </tp:docstring>
        </arg>
     </signal>
@@ -211,7 +213,9 @@
       </tp:docstring>
       <arg name="Streams" type="ao">
          <tp:docstring>
-           The streams which were removed.
+           The <tp:dbus-ref
+           namespace="ofdT.Call">Stream.DRAFT</tp:dbus-ref>s which were
+           removed.
          </tp:docstring>
        </arg>
     </signal>
@@ -224,16 +228,17 @@
           content.</p>
 
         <tp:rationale>
-          <p>In a conference call multiple parties can share one media content
-            (say, audio), but the streaming of that media can either be shared
-            or separate. For example, in a multicast conference all contacts
-            would share one stream, while in a Muji conference there would be
-            a stream for each participant.</p>
+          In a conference call multiple parties can share one media
+          content (say, audio), but the streaming of that media can
+          either be shared or separate. For example, in a multicast
+          conference all contacts would share one stream, while in a
+          Muji conference there would be a stream for each
+          participant.
         </tp:rationale>
 
-        <p>Change notification is via
+        <p>Change notification is through the
           <tp:member-ref>StreamsAdded</tp:member-ref> and
-          <tp:member-ref>StreamsRemoved</tp:member-ref>.</p>
+          <tp:member-ref>StreamsRemoved</tp:member-ref> signals.</p>
       </tp:docstring>
     </property>
 
@@ -265,11 +270,11 @@
     </tp:enum>
 
     <property name="Packetization" tp:name-for-bindings="Packetization"
-      type="u" tp:type="Call_Content_Packetization_Type" access="read">
+      type="u" tp:type="Call_Content_Packetization_Type" access="read"
+      tp:immutable="yes">
       <tp:added version="0.21.2"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The packetization method in use for this content. This
-          property is immutable.</p>
+        <p>The packetization method in use for this content.</p>
       </tp:docstring>
     </property>
   </interface>

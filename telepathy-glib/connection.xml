@@ -23,5 +23,6 @@
 <xi:include href="../spec/Connection_Interface_Requests.xml"/>
 <xi:include href="../spec/Connection_Interface_Location.xml"/>
 <xi:include href="../spec/Connection_Interface_Service_Point.xml"/>
+<xi:include href="../spec/Connection_Interface_Mail_Notification.xml"/>
 
 </tp:spec>

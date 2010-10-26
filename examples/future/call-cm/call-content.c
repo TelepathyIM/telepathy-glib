@@ -245,7 +245,6 @@ example_call_content_class_init (ExampleCallContentClass *klass)
       { "Name", "name", NULL },
       { "Interfaces", "interfaces", NULL },
       { "Type", "type", NULL },
-      { "Creator", "creator", NULL },
       { "Disposition", "disposition", NULL },
       { "Streams", "stream-paths", NULL },
       { NULL }

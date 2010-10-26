@@ -500,6 +500,14 @@
     </tp:docstring>
   </tp:error>
 
+  <tp:error name="Picked Up Elsewhere">
+    <tp:added version="0.21.UNRELEASED"/>
+    <tp:docstring>
+      Raised when a call was terminated as a result of the local user
+      picking up the call on a different resource.
+    </tp:docstring>
+  </tp:error>
+
   <tp:copyright>Copyright © 2005-2010 Collabora Limited</tp:copyright>
   <tp:copyright>Copyright © 2005-2009 Nokia Corporation</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">

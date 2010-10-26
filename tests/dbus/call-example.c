@@ -28,21 +28,6 @@
 
 #include "tests/lib/util.h"
 
-/* FIXME: if this isn't needed for Members, remove it */
-G_GNUC_UNUSED static void
-test_assert_uu_hash_contains (GHashTable *hash,
-                              guint key,
-                              guint expected)
-{
-  gpointer v;
-
-  if (!g_hash_table_lookup_extended (hash, GUINT_TO_POINTER (key), NULL, &v))
-    g_error ("Expected %u => %u in hash table, but key was absent", key,
-        expected);
-
-  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, expected);
-}
-
 typedef struct
 {
   GMainLoop *mainloop;
@@ -67,6 +52,7 @@ typedef struct
   GArray *contacts;
   GPtrArray *get_contents_return;
   GHashTable *get_members_return;
+  guint uint_return;
 
   gulong members_changed_detailed_id;
 
@@ -269,6 +255,26 @@ got_members_cb (TpProxy *proxy,
 }
 
 static void
+got_uint_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+
+  if (test->error != NULL)
+    g_clear_error (&test->error);
+
+  g_assert_no_error ((GError *) error);
+
+  g_assert (G_VALUE_HOLDS (value, G_TYPE_UINT));
+  test->uint_return = g_value_get_uint (value);
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
 void_cb (TpChannel *chan G_GNUC_UNUSED,
          const GError *error,
          gpointer user_data,
@@ -379,7 +385,6 @@ assert_call_properties (GHashTable *get_all_return,
 static void
 assert_content_properties (GHashTable *get_all_return,
     TpMediaStreamType type,
-    TpHandle creator,
     FutureCallContentDisposition disposition)
 {
   gboolean valid;
@@ -388,8 +393,6 @@ assert_content_properties (GHashTable *get_all_return,
   g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "Type", &valid),
       ==, type);
   g_assert_cmpint (valid, ==, TRUE);
-  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "Creator",
-        &valid), ==, creator);
   g_assert_cmpint (valid, ==, TRUE);
   g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "Disposition",
         &valid), ==, disposition);
@@ -508,7 +511,7 @@ test_basics (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
   assert_content_properties (test->get_all_return,
-      TP_MEDIA_STREAM_TYPE_AUDIO, test->self_handle,
+      TP_MEDIA_STREAM_TYPE_AUDIO,
       FUTURE_CALL_CONTENT_DISPOSITION_INITIAL);
 
   stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
@@ -522,22 +525,28 @@ test_basics (Test *test,
   g_assert (test->audio_stream != NULL);
 
   tp_cli_dbus_properties_call_get (test->audio_stream, -1,
-      FUTURE_IFACE_CALL_STREAM, "Members", got_members_cb, test, NULL, NULL);
+      FUTURE_IFACE_CALL_STREAM, "RemoteMembers",
+      got_members_cb, test, NULL, NULL);
   g_main_loop_run (test->mainloop);
-
   g_assert_no_error (test->error);
 
-  g_assert_cmpuint (g_hash_table_size (test->get_members_return), ==, 2);
+  g_assert_cmpuint (g_hash_table_size (test->get_members_return), ==, 1);
   g_assert (!g_hash_table_lookup_extended (test->get_members_return,
         GUINT_TO_POINTER (0), NULL, NULL));
-  g_assert (g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (test->self_handle), NULL, &v));
-  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, FUTURE_SENDING_STATE_SENDING);
+  g_assert (!g_hash_table_lookup_extended (test->get_members_return,
+        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
   g_assert (g_hash_table_lookup_extended (test->get_members_return,
         GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
         NULL, &v));
   g_assert_cmpuint (GPOINTER_TO_UINT (v), ==,
       FUTURE_SENDING_STATE_PENDING_SEND);
+
+  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
+      FUTURE_IFACE_CALL_STREAM, "LocalSendingState",
+      got_uint_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert_cmpuint (test->uint_return, ==, FUTURE_SENDING_STATE_SENDING);
 
   /* OK, that looks good. Actually make the call */
   future_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
@@ -588,20 +597,27 @@ test_basics (Test *test,
   /* Other contact is sending now */
   tp_clear_pointer (&test->get_members_return, g_hash_table_unref);
   tp_cli_dbus_properties_call_get (test->audio_stream, -1,
-      FUTURE_IFACE_CALL_STREAM, "Members", got_members_cb, test, NULL, NULL);
+      FUTURE_IFACE_CALL_STREAM, "RemoteMembers", got_members_cb, test,
+      NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert_cmpuint (g_hash_table_size (test->get_members_return), ==, 2);
+  g_assert_cmpuint (g_hash_table_size (test->get_members_return), ==, 1);
   g_assert (!g_hash_table_lookup_extended (test->get_members_return,
         GUINT_TO_POINTER (0), NULL, NULL));
-  g_assert (g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (test->self_handle), NULL, &v));
-  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, FUTURE_SENDING_STATE_SENDING);
+  g_assert (!g_hash_table_lookup_extended (test->get_members_return,
+        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
   g_assert (g_hash_table_lookup_extended (test->get_members_return,
         GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
         NULL, &v));
   g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, FUTURE_SENDING_STATE_SENDING);
+
+  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
+      FUTURE_IFACE_CALL_STREAM, "LocalSendingState",
+      got_uint_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert_cmpuint (test->uint_return, ==, FUTURE_SENDING_STATE_SENDING);
 
   /* AddContent with bad content-type must fail */
 
@@ -653,7 +669,7 @@ test_basics (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
   assert_content_properties (test->get_all_return,
-      TP_MEDIA_STREAM_TYPE_VIDEO, test->self_handle,
+      TP_MEDIA_STREAM_TYPE_VIDEO,
       FUTURE_CALL_CONTENT_DISPOSITION_NONE);
 
   stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
@@ -666,17 +682,24 @@ test_basics (Test *test,
       g_ptr_array_index (stream_paths, 0), NULL);
   g_assert (test->video_stream != NULL);
 
+  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
+      FUTURE_IFACE_CALL_STREAM, "LocalSendingState",
+      got_uint_cb, test, NULL, NULL);
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert_cmpuint (test->uint_return, ==, FUTURE_SENDING_STATE_SENDING);
+
   tp_cli_dbus_properties_call_get (test->video_stream, -1,
-      FUTURE_IFACE_CALL_STREAM, "Members", got_members_cb, test, NULL, NULL);
+      FUTURE_IFACE_CALL_STREAM, "RemoteMembers", got_members_cb, test,
+      NULL, NULL);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert_cmpuint (g_hash_table_size (test->get_members_return), ==, 2);
+  g_assert_cmpuint (g_hash_table_size (test->get_members_return), ==, 1);
   g_assert (!g_hash_table_lookup_extended (test->get_members_return,
         GUINT_TO_POINTER (0), NULL, NULL));
-  g_assert (g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (test->self_handle), NULL, &v));
-  g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, FUTURE_SENDING_STATE_SENDING);
+  g_assert (!g_hash_table_lookup_extended (test->get_members_return,
+        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
   g_assert (g_hash_table_lookup_extended (test->get_members_return,
         GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
         NULL, &v));

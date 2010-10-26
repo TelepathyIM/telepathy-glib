@@ -84,6 +84,7 @@ typedef enum {
     TP_ERROR_CERT_LIMIT_EXCEEDED, /*< nick=Cert.LimitExceeded >*/
     TP_ERROR_NOT_YET, /*< nick=NotYet >*/
     TP_ERROR_REJECTED, /*< nick=Rejected >*/
+    TP_ERROR_PICKED_UP_ELSEWHERE, /*< nick=PickedUpElsewhere >*/
 } TpError;
 
 const gchar *tp_error_get_dbus_name (TpError error);
