@@ -215,6 +215,7 @@ test_pending_messages (Test *test,
   GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
   GList *messages;
   TpMessage *msg;
+  const GHashTable *part;
 
   /* connect on the Received sig to check if the message has been received */
   tp_cli_channel_type_text_connect_to_received (TP_CHANNEL (test->channel),
@@ -262,8 +263,25 @@ test_pending_messages (Test *test,
 
   /* We have the pending messages now */
   messages = tp_text_channel_get_pending_messages (test->channel);
+  g_assert_cmpuint (g_list_length (messages), ==, 2);
 
-  /* TODO: Check that messages contain our 2 messages */
+  /* Check first message */
+  msg = messages->data;
+  g_assert (TP_IS_SIGNALLED_MESSAGE (msg));
+
+  part = tp_message_peek (msg, 1);
+  g_assert (part != NULL);
+  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==, "Badger");
+
+  /* Check second message */
+  msg = messages->next->data;
+  g_assert (TP_IS_SIGNALLED_MESSAGE (msg));
+
+  part = tp_message_peek (msg, 1);
+  g_assert (part != NULL);
+  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==, "Snake");
+
+  /* TODO: check sender */
 
   g_list_free (messages);
 }
