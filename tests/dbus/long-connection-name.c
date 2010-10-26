@@ -39,6 +39,7 @@ main (int argc,
   gchar *name;
   gchar *conn_path;
 
+  tp_tests_abort_after (10);
   g_type_init ();
 
   MYASSERT (strlen (LONG_ACCOUNT_IS_LONG) == 256, "");

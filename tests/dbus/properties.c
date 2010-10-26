@@ -130,6 +130,7 @@ main (int argc, char **argv)
   GValue *value;
   GHashTable *hash;
 
+  tp_tests_abort_after (10);
   tp_debug_set_flags ("all");
   g_type_init ();
   dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();

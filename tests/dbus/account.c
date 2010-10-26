@@ -546,6 +546,7 @@ main (int argc,
       char **argv)
 {
   g_type_init ();
+  tp_tests_abort_after (10);
   tp_debug_set_flags ("all");
 
   g_test_init (&argc, &argv, NULL);

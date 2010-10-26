@@ -5,6 +5,7 @@
 #include <telepathy-glib/util.h>
 
 #include "tests/lib/myassert.h"
+#include "tests/lib/util.h"
 
 static GPtrArray *events;
 static TpDBusDaemon *bus;
@@ -75,6 +76,7 @@ main (int argc,
 {
   guint i;
 
+  tp_tests_abort_after (10);
   tp_debug_set_flags ("all");
   mainloop = g_main_loop_new (NULL, FALSE);
 
