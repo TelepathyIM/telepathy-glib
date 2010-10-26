@@ -164,10 +164,6 @@
  *
  * The class of a #TpBaseConnection. Many members are virtual methods etc.
  * to be filled in in the subclass' class_init function.
- *
- * In addition to the fields documented here, there are three gpointer fields
- * which must currently be %NULL (a meaning may be defined for these in a
- * future version of telepathy-glib), and a pointer to opaque private data.
  */
 
 /**
@@ -283,6 +279,8 @@ enum
 {
     INVALID_SIGNAL,
     SHUTDOWN_FINISHED,
+    CLIENTS_INTERESTED,
+    CLIENTS_UNINTERESTED,
     N_SIGNALS
 };
 
@@ -407,6 +405,19 @@ struct _TpBaseConnectionPrivate
   TpDBusDaemon *bus_proxy;
   /* TRUE after constructor() returns */
   gboolean been_constructed;
+
+  /* g_strdup (unique name) => gsize total count
+   *
+   * This is derivable from @client_interests: e.g. if
+   *    client_interests = { LOCATION => { ":1.23" => 5, ":1.42" => 2 },
+   *                         MAIL_NOTIFICATION => { ":1.23" => 1 } }
+   * then it implies
+   *    interested_clients = { ":1.23" => 6, ":1.42" => 2 }
+   */
+  GHashTable *interested_clients;
+  /* GQuark iface => GHashTable {
+   *    unique name borrowed from interested_clients => gsize count } */
+  GHashTable *client_interests;
 };
 
 static guint tp_base_connection_get_dbus_status (TpBaseConnection *self);
@@ -522,6 +533,12 @@ tp_base_connection_set_property (GObject      *object,
   }
 }
 
+static void tp_base_connection_interested_name_owner_changed_cb (
+    TpDBusDaemon *it,
+    const gchar *unique_name,
+    const gchar *new_owner,
+    gpointer user_data);
+
 static void
 tp_base_connection_dispose (GObject *object)
 {
@@ -543,8 +560,25 @@ tp_base_connection_dispose (GObject *object)
       self->self_handle = 0;
     }
 
-  if (priv->bus_proxy != NULL && self->bus_name != NULL)
-    tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
+  if (priv->bus_proxy != NULL)
+    {
+      GHashTableIter iter;
+      gpointer k;
+
+      if (self->bus_name != NULL)
+        {
+          tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
+        }
+
+      g_hash_table_iter_init (&iter, self->priv->interested_clients);
+
+      while (g_hash_table_iter_next (&iter, &k, NULL))
+        {
+          tp_dbus_daemon_cancel_name_owner_watch (priv->bus_proxy, k,
+              tp_base_connection_interested_name_owner_changed_cb, self);
+          g_hash_table_iter_remove (&iter);
+        }
+    }
 
   tp_clear_object (&priv->bus_proxy);
 
@@ -584,6 +618,8 @@ tp_base_connection_finalize (GObject *object)
   g_free (priv->protocol);
   g_free (self->bus_name);
   g_free (self->object_path);
+  g_hash_table_unref (priv->client_interests);
+  g_hash_table_unref (priv->interested_clients);
 
   G_OBJECT_CLASS (tp_base_connection_parent_class)->finalize (object);
 }
@@ -1301,6 +1337,34 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
   return (GObject *) self;
 }
 
+/**
+ * tp_base_connection_add_possible_client_interest:
+ * @self: a connection
+ * @token: a quark corresponding to a D-Bus interface, or a token
+ *  representing part of a D-Bus interface, for which this connection wishes
+ *  to be notified when clients register an interest
+ *
+ * Add @token to the set of tokens for which this connection will emit
+ * #TpBaseConnection::clients-interested and
+ * #TpBaseConnection::clients-uninterested.
+ *
+ * This method must be called from the #GObjectClass.constructed or
+ * #GObjectClass.constructor callback (otherwise, it will run too late to be
+ * useful).
+ */
+void
+tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
+    GQuark token)
+{
+  gpointer p = GUINT_TO_POINTER (token);
+
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+  g_return_if_fail (self->status == TP_INTERNAL_CONNECTION_STATUS_NEW);
+
+  if (g_hash_table_lookup (self->priv->client_interests, p) == NULL)
+    g_hash_table_insert (self->priv->client_interests, p,
+        g_hash_table_new (g_str_hash, g_str_equal));
+}
 
 /* D-Bus properties for the Requests interface */
 
@@ -1555,6 +1619,53 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
                   g_cclosure_marshal_VOID__VOID,
                   G_TYPE_NONE, 0);
 
+  /**
+   * TpBaseConnection::clients-interested:
+   * @token: the interface or part of an interface in which clients are newly
+   *  interested
+   *
+   * Emitted when a client becomes interested in any token that was added with
+   * tp_base_connection_add_possible_client_interest().
+   *
+   * The "signal detail" is a GQuark representing @token. Modules implementing
+   * an interface (Location, say) should typically connect to a detailed signal
+   * like
+   * "clients-interested::org.freedesktop.Telepathy.Connection.Interface.Location"
+   * rather than receiving all emissions of this signal.
+   */
+  signals[CLIENTS_INTERESTED] =
+    g_signal_new ("clients-interested",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__STRING,
+                  G_TYPE_NONE, 1, G_TYPE_STRING);
+
+  /**
+   * TpBaseConnection::clients-uninterested:
+   * @token: the interface or part of an interface in which clients are no
+   *  longer interested
+   *
+   * Emitted when no more clients are interested in an interface added with
+   * tp_base_connection_add_possible_client_interest(), for which
+   * #TpBaseConnection::clients-interested was previously emitted.
+   *
+   * As with #TpBaseConnection::clients-interested, the "signal detail" is a
+   * GQuark representing @token. Modules implementing an interface (Location,
+   * say) should typically connect to a detailed signal like
+   * "clients-uninterested::org.freedesktop.Telepathy.Connection.Interface.Location"
+   * rather than receiving all emissions of this signal.
+   */
+  signals[CLIENTS_UNINTERESTED] =
+    g_signal_new ("clients-uninterested",
+                  G_OBJECT_CLASS_TYPE (klass),
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__STRING,
+                  G_TYPE_NONE, 1, G_TYPE_STRING);
+
   tp_dbus_properties_mixin_class_init (object_class, 0);
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CONNECTION,
@@ -1585,6 +1696,10 @@ tp_base_connection_init (TpBaseConnection *self)
     }
 
   priv->channel_requests = g_ptr_array_new ();
+  priv->client_interests = g_hash_table_new_full (NULL, NULL, NULL,
+      (GDestroyNotify) g_hash_table_unref);
+  priv->interested_clients = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, NULL);
 }
 
 static gchar *
@@ -2902,6 +3017,296 @@ tp_base_connection_add_interfaces (TpBaseConnection *self,
     }
 }
 
+static void
+tp_base_connection_interested_name_owner_changed_cb (
+    TpDBusDaemon *it G_GNUC_UNUSED,
+    const gchar *unique_name,
+    const gchar *new_owner,
+    gpointer user_data)
+{
+  TpBaseConnection *self = user_data;
+  GHashTableIter iter;
+  gpointer q, hash;
+
+  /* We don't care about the initial report that :1.42 is owned by :1.42. */
+  if (!tp_str_empty (new_owner))
+    return;
+
+  /* Failing that, @unique_name must have crashed... */
+
+  g_hash_table_iter_init (&iter, self->priv->client_interests);
+
+  while (g_hash_table_iter_next (&iter, &q, &hash))
+    {
+      if (g_hash_table_remove (hash, unique_name) &&
+          g_hash_table_size (hash) == 0)
+        {
+          const gchar *s = g_quark_to_string (GPOINTER_TO_UINT (q));
+
+          DEBUG ("%s was the last client interested in %s", unique_name, s);
+          g_signal_emit (self, signals[CLIENTS_UNINTERESTED],
+              (GQuark) GPOINTER_TO_UINT (q), s);
+        }
+    }
+
+  /* this has to be done last, because the keys in the other hashes are
+   * borrowed from here */
+  g_hash_table_remove (self->priv->interested_clients, unique_name);
+
+  tp_dbus_daemon_cancel_name_owner_watch (self->priv->bus_proxy,
+      unique_name, tp_base_connection_interested_name_owner_changed_cb, self);
+}
+
+static void
+tp_base_connection_add_client_interest_impl (TpBaseConnection *self,
+    const gchar *unique_name,
+    const gchar * const *interests,
+    gboolean only_if_uninterested)
+{
+  gpointer name_in_hash, count_p;
+  gsize total;
+  const gchar * const *interest;
+  gboolean was_there;
+
+  if (g_hash_table_lookup_extended (self->priv->interested_clients,
+        unique_name, &name_in_hash, &count_p))
+    {
+      total = GPOINTER_TO_SIZE (count_p);
+      was_there = TRUE;
+    }
+  else
+    {
+      name_in_hash = g_strdup (unique_name);
+      total = 0;
+      g_hash_table_insert (self->priv->interested_clients, name_in_hash,
+          GSIZE_TO_POINTER (total));
+      was_there = FALSE;
+    }
+
+  for (interest = interests; *interest != NULL; interest++)
+    {
+      GQuark q = g_quark_try_string (*interest);
+      GHashTable *clients;
+      gsize count;
+
+      if (q == 0)
+        {
+          /* we can only declare an interest in known quarks, so clearly this
+           * one is not useful */
+          continue;
+        }
+
+      clients = g_hash_table_lookup (self->priv->client_interests,
+            GUINT_TO_POINTER (q));
+
+      if (clients == NULL)
+        {
+          /* declaring an interest in this token has no effect */
+          continue;
+        }
+
+      count = GPOINTER_TO_SIZE (g_hash_table_lookup (clients, unique_name));
+
+      if (count > 0 && only_if_uninterested)
+        {
+          /* that client is already interested - nothing to do */
+          continue;
+        }
+
+      /* name_in_hash is borrowed from interested_clients so we have to
+       * keep using the same one */
+      g_hash_table_insert (clients, name_in_hash,
+          GSIZE_TO_POINTER (++count));
+      total++;
+
+      if (count == 1 && g_hash_table_size (clients) == 1)
+        {
+          /* Transition from 0 to 1 interests in total; the signal detail is
+           * the token. */
+          DEBUG ("%s is the first to be interested in %s", unique_name,
+              *interest);
+          g_signal_emit (self, signals[CLIENTS_INTERESTED], q, *interest);
+        }
+    }
+
+  if (total > 0)
+    {
+      /* name_in_hash is borrowed by client_interests so we have to keep
+       * using the same one */
+      g_hash_table_steal (self->priv->interested_clients, name_in_hash);
+      g_hash_table_insert (self->priv->interested_clients, name_in_hash,
+          GSIZE_TO_POINTER (total));
+
+      if (!was_there)
+        {
+          tp_dbus_daemon_watch_name_owner (self->priv->bus_proxy, unique_name,
+              tp_base_connection_interested_name_owner_changed_cb, self, NULL);
+        }
+    }
+  else
+    {
+      g_hash_table_remove (self->priv->interested_clients, unique_name);
+
+      tp_dbus_daemon_cancel_name_owner_watch (self->priv->bus_proxy,
+          unique_name, tp_base_connection_interested_name_owner_changed_cb,
+          self);
+    }
+}
+
+/**
+ * tp_base_connection_add_client_interest:
+ * @self: a #TpBaseConnection
+ * @unique_name: the unique bus name of a D-Bus client
+ * @token: a D-Bus interface or a token representing part of an interface,
+ *  added with tp_base_connection_add_possible_client_interest()
+ * @only_if_uninterested: only add to the interest count if the client is not
+ *  already interested (appropriate for APIs that implicitly subscribe on first
+ *  use if this has not been done already, like Location)
+ *
+ * Add a "client interest" for @token on behalf of the given client.
+ *
+ * This emits #TpBaseConnection::clients-interested if this was the first
+ * time a client expressed an interest in this token.
+ */
+void
+tp_base_connection_add_client_interest (TpBaseConnection *self,
+    const gchar *unique_name,
+    const gchar *token,
+    gboolean only_if_uninterested)
+{
+  const gchar * tokens[2] = { NULL, NULL };
+
+  tokens[0] = token;
+  tp_base_connection_add_client_interest_impl (self, unique_name, tokens,
+      only_if_uninterested);
+}
+
+static void
+tp_base_connection_dbus_add_client_interest (TpSvcConnection *svc,
+    const gchar **interests,
+    DBusGMethodInvocation *context)
+{
+  TpBaseConnection *self = (TpBaseConnection *) svc;
+  gchar *unique_name = NULL;
+
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+  g_return_if_fail (self->priv->bus_proxy != NULL);
+
+  if (interests == NULL || interests[0] == NULL)
+    goto finally;
+
+  unique_name = dbus_g_method_get_sender (context);
+
+  tp_base_connection_add_client_interest_impl (self, unique_name,
+      (const gchar * const *) interests, FALSE);
+
+finally:
+  tp_svc_connection_return_from_add_client_interest (context);
+  g_free (unique_name);
+}
+
+static void
+tp_base_connection_dbus_remove_client_interest (TpSvcConnection *svc,
+    const gchar **interests,
+    DBusGMethodInvocation *context)
+{
+  gchar *unique_name = NULL;
+  const gchar **interest;
+  TpBaseConnection *self = (TpBaseConnection *) svc;
+  gpointer name_in_hash, count_p;
+  gsize total;
+
+  g_return_if_fail (TP_IS_BASE_CONNECTION (self));
+  g_return_if_fail (self->priv->bus_proxy != NULL);
+
+  if (interests == NULL || interests[0] == NULL)
+    goto finally;
+
+  unique_name = dbus_g_method_get_sender (context);
+
+  /* this method isn't really meant to fail, so we might as well return now */
+
+  if (!g_hash_table_lookup_extended (self->priv->interested_clients,
+        unique_name, &name_in_hash, &count_p))
+    {
+      /* unique_name doesn't own any client interests. Strictly speaking this
+       * is an error, but it's probably ignoring the reply anyway, so we
+       * won't tell it. */
+      goto finally;
+    }
+
+  total = GPOINTER_TO_SIZE (count_p);
+
+  for (interest = interests; *interest != NULL; interest++)
+    {
+      GQuark q = g_quark_try_string (*interest);
+      GHashTable *clients;
+      gsize count;
+
+      if (q == 0)
+        {
+          /* we can only declare an interest in known quarks, so clearly this
+           * one is not useful */
+          continue;
+        }
+
+      clients = g_hash_table_lookup (self->priv->client_interests,
+            GUINT_TO_POINTER (q));
+
+      if (clients == NULL)
+        {
+          /* declaring an interest in this token has no effect */
+          continue;
+        }
+
+      count = GPOINTER_TO_SIZE (g_hash_table_lookup (clients, unique_name));
+
+      if (count == 0)
+        {
+          /* strictly speaking, this is an error, but nobody will be waiting
+           * for a reply anyway */
+          DEBUG ("unable to decrement %s interest in %s past zero",
+              unique_name, *interest);
+          continue;
+        }
+
+      total--;
+
+      if (count == 1)
+        {
+          g_hash_table_remove (clients, unique_name);
+
+          if (g_hash_table_size (clients) == 0)
+            {
+              /* transition from 1 to 0 total interest-counts */
+              DEBUG ("%s was the last client interested in %s", unique_name,
+                  *interest);
+              g_signal_emit (self, signals[CLIENTS_UNINTERESTED], q,
+                  *interest);
+            }
+        }
+      else
+        {
+          /* name_in_hash is borrowed from interested_clients so we have to
+           * keep using the same one */
+          g_hash_table_insert (clients, name_in_hash,
+              GSIZE_TO_POINTER (--count));
+        }
+    }
+
+  if (total == 0)
+    {
+      g_hash_table_remove (self->priv->interested_clients, unique_name);
+
+      tp_dbus_daemon_cancel_name_owner_watch (self->priv->bus_proxy,
+          unique_name, tp_base_connection_interested_name_owner_changed_cb,
+          self);
+    }
+
+finally:
+  tp_svc_connection_return_from_remove_client_interest (context);
+  g_free (unique_name);
+}
 
 static void
 conn_iface_init (gpointer g_iface, gpointer iface_data)
@@ -2922,6 +3327,8 @@ conn_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(,request_channel);
   IMPLEMENT(,release_handles);
   IMPLEMENT(dbus_,request_handles);
+  IMPLEMENT(dbus_,add_client_interest);
+  IMPLEMENT(dbus_,remove_client_interest);
 #undef IMPLEMENT
 }
 

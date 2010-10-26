@@ -173,6 +173,12 @@ gboolean tp_connection_parse_object_path (TpConnection *self, gchar **protocol,
 const gchar *tp_connection_get_detailed_error (TpConnection *self,
     const GHashTable **details);
 
+void tp_connection_add_client_interest (TpConnection *self,
+    const gchar *interested_in);
+
+void tp_connection_add_client_interest_by_id (TpConnection *self,
+    GQuark interested_in);
+
 #define TP_CONNECTION_FEATURE_CORE \
   (tp_connection_get_feature_quark_core ())
 GQuark tp_connection_get_feature_quark_core (void) G_GNUC_CONST;

@@ -19,6 +19,7 @@ noinst_PROGRAMS = \
     test-connection-error \
     test-connection-handles \
     test-connection-inject-bug16307 \
+    test-connection-interests \
     test-connection-getinterfaces-failure \
     test-contact-lists \
     test-contacts \
@@ -107,6 +108,8 @@ test_connection_handles_SOURCES = connection-handles.c
 test_connection_error_SOURCES = connection-error.c
 
 test_connection_inject_bug16307_SOURCES = connection-inject-bug16307.c
+
+test_connection_interests_SOURCES = connection-interests.c
 
 test_connection_getinterfaces_failure_SOURCES = \
     connection-getinterfaces-failure.c
