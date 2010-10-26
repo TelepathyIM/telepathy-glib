@@ -18,7 +18,7 @@
 #include <gio/gunixsocketaddress.h>
 #include <gio/gunixconnection.h>
 
-#include <stdio.h>
+#include <glib/gstdio.h>
 
 enum
 {
@@ -48,6 +48,7 @@ struct _TpTestsStreamTubeChannelPrivate {
     /* Offering side */
     TpSocketAddressType address_type;
     GValue *address;
+    gchar *unix_address;
     guint connection_id;
 
     TpSocketAccessControl access_control;
@@ -197,6 +198,11 @@ dispose (GObject *object)
   tp_clear_pointer (&self->priv->address, tp_g_value_slice_free);
   tp_clear_pointer (&self->priv->supported_socket_types, g_hash_table_unref);
   tp_clear_pointer (&self->priv->access_control_param, tp_g_value_slice_free);
+
+  if (self->priv->unix_address != NULL)
+    g_unlink (self->priv->unix_address);
+
+  tp_clear_pointer (&self->priv->unix_address, g_free);
 
   ((GObjectClass *) tp_tests_stream_tube_channel_parent_class)->dispose (
     object);
@@ -504,6 +510,8 @@ create_local_socket (TpTestsStreamTubeChannel *self,
   switch (address_type)
     {
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
+        self->priv->unix_address = g_strdup (g_unix_socket_address_get_path (
+              G_UNIX_SOCKET_ADDRESS (effective_address)));
         address_gvalue =  tp_g_value_slice_new_bytes (
             g_unix_socket_address_get_path_len (
               G_UNIX_SOCKET_ADDRESS (effective_address)),
