@@ -93,6 +93,15 @@ gboolean tp_text_channel_ack_messages_finish (TpTextChannel *self,
     GAsyncResult *result,
     GError **error);
 
+void tp_text_channel_ack_message_async (TpTextChannel *self,
+    TpMessage *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_text_channel_ack_message_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #endif

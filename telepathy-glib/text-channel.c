@@ -795,3 +795,73 @@ tp_text_channel_ack_messages_finish (TpTextChannel *self,
 {
   _tp_implement_finish_void (self, tp_text_channel_ack_messages_async)
 }
+
+/**
+ * tp_text_channel_ack_message_async:
+ * @self: a #TpTextChannel
+ * @message: a #TpSignalledMessage
+ * @callback: a callback to call when the message have been acked
+ * @user_data: data to pass to @callback
+ *
+ * Ack @message. Once the message has been acked, @callback will be called.
+ * You can then call tp_text_channel_ack_message_finish() to get the
+ * result of the operation.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_text_channel_ack_message_async (TpTextChannel *self,
+    TpMessage *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpChannel *chan = (TpChannel *) self;
+  GSimpleAsyncResult *result;
+  GArray *ids;
+  guint id;
+  gboolean valid;
+
+  g_return_if_fail (TP_IS_TEXT_CHANNEL (self));
+  g_return_if_fail (TP_IS_SIGNALLED_MESSAGE (message));
+
+  id = get_pending_message_id (message, &valid);
+  if (!valid)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback, user_data,
+          TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Message doesn't have a pending-message-id");
+
+      return;
+    }
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_text_channel_ack_message_async);
+
+  ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+  g_array_append_val (ids, id);
+
+  tp_cli_channel_type_text_call_acknowledge_pending_messages (chan, -1, ids,
+      acknowledge_pending_messages_cb, result, NULL, G_OBJECT (self));
+
+  g_array_free (ids, TRUE);
+}
+
+/**
+ * tp_text_channel_ack_message_finish:
+ * @self: a #TpTextChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to ack a message.
+ *
+ * Returns: %TRUE if the message has been acked, %FALSE otherwise.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_text_channel_ack_message_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_text_channel_ack_message_async)
+}
