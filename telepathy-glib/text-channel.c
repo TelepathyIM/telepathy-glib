@@ -282,6 +282,9 @@ pending_messages_removed_cb (TpChannel *proxy,
               self->priv->pending_messages = g_list_delete_link (
                   self->priv->pending_messages, l);
 
+              g_signal_emit (self, signals[SIG_PENDING_MESSAGES_REMOVED],
+                  0, msg);
+
               g_object_unref (msg);
             }
         }
@@ -465,6 +468,28 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * Since: 0.13.UNRELEASED
    */
   signals[SIG_MESSAGE_RECEIVED] = g_signal_new ("message-received",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      g_cclosure_marshal_VOID__OBJECT,
+      G_TYPE_NONE,
+      1, TP_TYPE_SIGNALLED_MESSAGE);
+
+  /**
+   * TpTextChannel::pending-message-removed
+   * @self: the #TpTextChannel
+   * @message: a #TpSignalledMessage
+   *
+   * The ::pending-message-removed signal is emitted when @message
+   * has been acked and so removed from the pending messages list.
+   *
+   * Note that this signal is only fired once the
+   * #TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES has been prepared.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  signals[SIG_PENDING_MESSAGES_REMOVED] = g_signal_new (
+      "pending-message-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL,
