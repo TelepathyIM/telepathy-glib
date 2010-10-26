@@ -78,6 +78,7 @@ struct _TpTextChannelPrivate
 
   /* list of owned TpSignalledMessage */
   GList *pending_messages;
+  gboolean retrieving_pending;
 };
 
 enum
@@ -87,7 +88,6 @@ enum
   PROP_DELIVERY_REPORTING_SUPPORT
 };
 
-#if 0
 enum /* signals */
 {
   SIG_MESSAGE_RECEIVED,
@@ -95,8 +95,7 @@ enum /* signals */
   LAST_SIGNAL
 };
 
-static guint _signals[LAST_SIGNAL] = { 0, };
-#endif
+static guint signals[LAST_SIGNAL] = { 0, };
 
 static void
 tp_text_channel_dispose (GObject *obj)
@@ -219,7 +218,22 @@ message_received_cb (TpChannel *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  /* TODO: update pending messages */
+  TpTextChannel *self = user_data;
+  TpMessage *msg;
+
+  /* If we are still retrieving pending messages, no need to add the message,
+   * it will be in the initial set of messages retrieved. */
+  if (self->priv->retrieving_pending)
+    return;
+
+  DEBUG ("New message received");
+
+  msg = _tp_signalled_message_new (message);
+
+  self->priv->pending_messages = g_list_append (
+      self->priv->pending_messages, msg);
+
+  g_signal_emit (self, signals[SIG_MESSAGE_RECEIVED], 0, msg);
 }
 
 static void
@@ -241,6 +255,8 @@ get_pending_messages_cb (TpProxy *proxy,
   TpTextChannel *self = user_data;
   guint i;
   GPtrArray *messages;
+
+  self->priv->retrieving_pending = FALSE;
 
   if (error != NULL)
     {
@@ -270,6 +286,7 @@ get_pending_messages_cb (TpProxy *proxy,
 static void
 tp_text_channel_prepare_pending_messages (TpProxy *proxy)
 {
+  TpTextChannel *self = (TpTextChannel *) proxy;
   TpChannel *channel = (TpChannel *) proxy;
   GError *error = NULL;
 
@@ -290,6 +307,8 @@ tp_text_channel_prepare_pending_messages (TpProxy *proxy)
           error->message);
       goto fail;
     }
+
+  self->priv->retrieving_pending = TRUE;
 
   tp_cli_dbus_properties_call_get (proxy, -1,
       TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "PendingMessages",
@@ -388,6 +407,27 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class,
       PROP_DELIVERY_REPORTING_SUPPORT, param_spec);
+
+  /**
+   * TpTextChannel::message-received
+   * @self: the #TpTextChannel
+   * @message: a #TpSignalledMessage
+   *
+   * The ::message-received signal is emitted when a new message has been
+   * received on @self.
+   *
+   * Note that this signal is only fired once the
+   * #TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES has been prepared.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  signals[SIG_MESSAGE_RECEIVED] = g_signal_new ("message-received",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      g_cclosure_marshal_VOID__OBJECT,
+      G_TYPE_NONE,
+      1, TP_TYPE_SIGNALLED_MESSAGE);
 
   g_type_class_add_private (gobject_class, sizeof (TpTextChannelPrivate));
 }
