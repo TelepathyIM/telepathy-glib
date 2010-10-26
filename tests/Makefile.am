@@ -8,6 +8,7 @@ noinst_PROGRAMS = \
     test-asv \
     test-capabilities \
     test-availability-cmp \
+    test-dtmf-player \
     test-enums \
     test-gnio-util \
     test-heap \
@@ -60,6 +61,8 @@ test_capabilities_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
     $(GLIB_LIBS)
+
+test_dtmf_player_SOURCES = dtmf-player.c
 
 test_heap_SOURCES = \
     heap.c

@@ -47,6 +47,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/dtmf.h>
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/proxy.h>

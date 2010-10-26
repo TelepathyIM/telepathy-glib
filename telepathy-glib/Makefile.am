@@ -56,6 +56,7 @@ our_headers = \
     debug.h \
     debug-sender.h \
     debug-ansi.h \
+    dtmf.h \
     enums.h \
     errors.h \
     exportable-channel.h \
@@ -174,6 +175,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     dbus-properties-mixin.c \
     debug.c \
     debug-sender.c \
+    dtmf.c \
     interfaces.c \
     debug-internal.h \
     errors.c \
