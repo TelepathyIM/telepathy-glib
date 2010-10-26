@@ -410,7 +410,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *  properties that represent details of the connections provided by this
  *  protocol
  * @get_statuses: a callback used to implement the Protocol.Interface.Presence
- * interface's Statuses property.
+ * interface's Statuses property. Since 0.13.UNRELEASED
  *
  * The class of a #TpBaseProtocol.
  *
@@ -905,14 +905,18 @@ tp_base_protocol_init (TpBaseProtocol *self)
  * tp_base_protocol_get_statuses:
  * @self: a Protocol object
  *
+ * Get the statuses supported by this object. Subclasses implement this via
+ * the #TpBaseProtocolClass.get_statuses virtual method.
+ *
  * If the object does not implement the Protocol.Interface.Presences
- * interface, it need not set this callback.
+ * interface, it need not implement this virtual method.
  *
  * Returns: an array of #TpPresenceStatusSpec structs describing the
- * standard statuses supported by this protocol, with a final element
- * whose name element is guaranteed to be %NULL.
+ *  standard statuses supported by this protocol, with a final element
+ *  whose name element is guaranteed to be %NULL. The array must remain
+ *  valid at least as long as @self does.
  *
- * Since: FIXME
+ * Since: 0.13.UNRELEASED
  */
 const TpPresenceStatusSpec *
 tp_base_protocol_get_statuses (TpBaseProtocol *self)
