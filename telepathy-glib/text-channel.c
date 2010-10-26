@@ -259,7 +259,33 @@ pending_messages_removed_cb (TpChannel *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  /* TODO: update pending messages */
+  TpTextChannel *self = (TpTextChannel *) proxy;
+  GList *l;
+  guint i;
+
+  for (i = 0; i < ids->len; i++)
+    {
+      guint id = g_array_index (ids, guint, i);
+
+      for (l = self->priv->pending_messages; l != NULL; l = g_list_next (l))
+        {
+          TpMessage *msg = l->data;
+          guint msg_id;
+          gboolean valid;
+
+          msg_id = get_pending_message_id (msg, &valid);
+          if (!valid)
+            continue;
+
+          if (msg_id == id)
+            {
+              self->priv->pending_messages = g_list_delete_link (
+                  self->priv->pending_messages, l);
+
+              g_object_unref (msg);
+            }
+        }
+    }
 }
 
 static void
