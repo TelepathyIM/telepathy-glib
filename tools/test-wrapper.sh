@@ -7,7 +7,9 @@
 
 set -e
 
-if test -t 1 || test "z$CHECK_VERBOSE" != z; then
+if test -t 1 && test "z$CHECK_VERBOSE" = z; then
+  :   # continue with the output-suppressed code path, below
+else
   "$@" || e=$?
   exit $e
 fi
