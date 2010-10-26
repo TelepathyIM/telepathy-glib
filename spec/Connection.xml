@@ -1051,7 +1051,7 @@ USA.</p>
     </tp:contact-attribute>
 
     <method name="AddClientInterest" tp:name-for-bindings="Add_Client_Interest">
-      <tp:added version="0.21.UNRELEASED"/>
+      <tp:added version="0.21.3"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Register a client's interest in notifications related to one or
           more interfaces.</p>
@@ -1144,7 +1144,7 @@ USA.</p>
 
     <method name="RemoveClientInterest"
       tp:name-for-bindings="Remove_Client_Interest">
-      <tp:added version="0.21.UNRELEASED"/>
+      <tp:added version="0.21.3"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Release an interest registered using
           <tp:member-ref>AddClientInterest</tp:member-ref>. See that

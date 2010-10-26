@@ -501,7 +501,7 @@
   </tp:error>
 
   <tp:error name="Picked Up Elsewhere">
-    <tp:added version="0.21.UNRELEASED"/>
+    <tp:added version="0.21.3"/>
     <tp:docstring>
       Raised when a call was terminated as a result of the local user
       picking up the call on a different resource.

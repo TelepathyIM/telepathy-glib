@@ -129,7 +129,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <method name="MultipleTones" tp:name-for-bindings="Multiple_Tones">
       <tp:added version="0.19.6" />
-      <tp:changed version="0.21.UNRELEASED">The characters [pPxXwW,] must
+      <tp:changed version="0.21.3">The characters [pPxXwW,] must
         also be supported.</tp:changed>
       <arg direction="in" name="Tones" type="s">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
@@ -221,7 +221,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <property name="DeferredTones" tp:name-for-bindings="Deferred_Tones"
         type="s" access="read">
-      <tp:added version="0.21.UNRELEASED" />
+      <tp:added version="0.21.3" />
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The tones waiting for the user to continue, if any.</p>
 
@@ -234,7 +234,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
     </property>
 
     <signal name="TonesDeferred" tp:name-for-bindings="Tones_Deferred">
-      <tp:added version="0.21.UNRELEASED" />
+      <tp:added version="0.21.3" />
       <arg name="Tones" type="s">
         <tp:docstring>The new non-empty value of
           <tp:member-ref>DeferredTones</tp:member-ref>.</tp:docstring>

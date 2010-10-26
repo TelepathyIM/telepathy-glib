@@ -21,7 +21,7 @@
   </tp:license>
 
   <interface name="org.freedesktop.Telepathy.Protocol.Interface.Presence">
-    <tp:added version="0.21.UNRELEASED">(as stable API)</tp:added>
+    <tp:added version="0.21.3">(as stable API)</tp:added>
     <tp:requires interface="org.freedesktop.Telepathy.Protocol"/>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">

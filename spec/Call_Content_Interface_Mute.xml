@@ -64,7 +64,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
     <method name="SetMuted" tp:name-for-bindings="Set_Muted">
       <tp:changed version="0.21.2">renamed from SetMuted to Mute</tp:changed>
-      <tp:changed version="0.21.UNRELEASED">renamed back from Mute to SetMuted</tp:changed>
+      <tp:changed version="0.21.3">renamed back from Mute to SetMuted</tp:changed>
       <arg direction="in" name="Muted" type="b">
         <tp:docstring>
           True if the client has muted the content.

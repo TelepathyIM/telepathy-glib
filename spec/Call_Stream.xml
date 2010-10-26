@@ -97,7 +97,7 @@
     <signal name="RemoteMembersChanged"
         tp:name-for-bindings="Remote_Members_Changed">
       <tp:changed version="0.21.2">renamed from SendersChanged to MembersChanged</tp:changed>
-      <tp:changed version="0.21.UNRELEASED">renamed from MembersChanged to RemoteMembersChanged</tp:changed>
+      <tp:changed version="0.21.3">renamed from MembersChanged to RemoteMembersChanged</tp:changed>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         Emitted when <tp:member-ref>RemoteMembers</tp:member-ref> changes.
       </tp:docstring>

@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   <interface
     name="org.freedesktop.Telepathy.Connection.Interface.MailNotification.DRAFT">
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
-    <tp:added version="0.21.UNRELEASED">(as stable API)</tp:added>
+    <tp:added version="0.21.3">(as stable API)</tp:added>
 
     <tp:flags name="Mail_Notification_Flags" value-prefix="Mail_Notification_Flag" type="u" >
       <tp:flag suffix="Supports_Unread_Mail_Count" value="1">
