@@ -34,6 +34,7 @@ EXTRA_DIST = \
     telepathy.am \
     telepathy-glib.supp \
     telepathy-glib-env.in \
+    test-wrapper.sh \
     with-session-bus.sh \
     xincludator.py
 
