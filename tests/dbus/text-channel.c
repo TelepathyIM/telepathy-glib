@@ -342,6 +342,73 @@ test_message_received (Test *test,
   g_object_unref (msg);
 }
 
+static void
+messages_acked_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_text_channel_ack_messages_finish (TP_TEXT_CHANNEL (source), result,
+      &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_ack_messages (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
+  GList *messages;
+  TpMessage *msg;
+
+  /* Send a first message */
+  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "Badger");
+
+  tp_text_channel_send_message_async (test->channel, msg, 0,
+      send_message_cb, test);
+
+  g_object_unref (msg);
+
+  /* Send a second message */
+  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "Snake");
+
+  tp_text_channel_send_message_async (test->channel, msg, 0,
+      send_message_cb, test);
+
+  g_object_unref (msg);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  tp_proxy_prepare_async (test->channel, features,
+      proxy_prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  messages = tp_text_channel_get_pending_messages (test->channel);
+  g_assert_cmpuint (g_list_length (messages), ==, 2);
+
+  tp_text_channel_ack_messages_async (test->channel, messages,
+      messages_acked_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_list_free (messages);
+
+  /* Messages have been acked so there is no pending messages */
+  messages = tp_text_channel_get_pending_messages (test->channel);
+  g_assert_cmpuint (g_list_length (messages), ==, 0);
+}
+
 int
 main (int argc,
       char **argv)
@@ -361,6 +428,8 @@ main (int argc,
       test_pending_messages, teardown);
   g_test_add ("/text-channel/message-received", Test, NULL, setup,
       test_message_received, teardown);
+  g_test_add ("/text-channel/ack-messages", Test, NULL, setup,
+      test_ack_messages, teardown);
 
   return g_test_run ();
 }
