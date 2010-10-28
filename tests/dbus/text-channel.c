@@ -228,7 +228,7 @@ test_pending_messages (Test *test,
       on_received, test, NULL, NULL, NULL);
 
   /* Send a first message */
-  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "Badger");
 
   tp_text_channel_send_message_async (test->channel, msg, 0,
@@ -241,7 +241,7 @@ test_pending_messages (Test *test,
   g_assert_no_error (test->error);
 
   /* Send a second message */
-  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "Snake");
 
   tp_text_channel_send_message_async (test->channel, msg, 0,
@@ -326,7 +326,7 @@ test_message_received (Test *test,
   g_signal_connect (test->channel, "message-received",
       G_CALLBACK (message_received_cb), test);
 
-  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "Snake");
 
   tp_text_channel_send_message_async (test->channel, msg, 0,
@@ -368,7 +368,7 @@ test_ack_messages (Test *test,
   TpMessage *msg;
 
   /* Send a first message */
-  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "Badger");
 
   tp_text_channel_send_message_async (test->channel, msg, 0,
@@ -377,7 +377,7 @@ test_ack_messages (Test *test,
   g_object_unref (msg);
 
   /* Send a second message */
-  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "Snake");
 
   tp_text_channel_send_message_async (test->channel, msg, 0,
@@ -458,7 +458,7 @@ test_ack_message (Test *test,
       G_CALLBACK (message_received_cb), test);
 
   /* Send message */
-  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "Badger");
 
   tp_text_channel_send_message_async (test->channel, msg, 0,

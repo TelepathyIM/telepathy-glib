@@ -24,7 +24,7 @@ echo_message (TpTextChannel *channel,
   up = g_ascii_strup (text, -1);
   g_print ("send: %s\n", up);
 
-  msg = tp_client_message_text_new (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, up);
+  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, up);
 
   tp_text_channel_send_message_async (channel, msg, 0, NULL, NULL);
 
