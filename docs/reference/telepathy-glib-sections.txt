@@ -5329,7 +5329,7 @@ tp_cli_channel_interface_sasl_authentication_signal_callback_sasl_status_changed
 <TITLE>TpClientMessage</TITLE>
 TpClientMessage
 tp_client_message_new
-tp_client_message_text_new
+tp_client_message_new_text
 <SUBSECTION Standard>
 TP_IS_CLIENT_MESSAGE
 TP_IS_CLIENT_MESSAGE_CLASS

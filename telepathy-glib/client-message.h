@@ -39,9 +39,9 @@ typedef struct _TpClientMessageClass TpClientMessageClass;
 
 GType tp_client_message_get_type (void);
 
-TpMessage * tp_client_message_new (guint initial_parts);
+TpMessage * tp_client_message_new (void);
 
-TpMessage * tp_client_message_text_new (TpChannelTextMessageType type,
+TpMessage * tp_client_message_new_text (TpChannelTextMessageType type,
     const gchar *text);
 
 G_END_DECLS

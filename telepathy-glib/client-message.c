@@ -81,7 +81,6 @@ tp_client_message_init (TpClientMessage *self)
 /**
  * tp_client_message_new:
  * @self: a #TpTextChannel
- * @initial_parts: number of parts to create and allocate (at least 1)
  *
  * A convenient function to create a new #TpClientMessage
  *
@@ -90,16 +89,16 @@ tp_client_message_init (TpClientMessage *self)
  * Since: 0.13.UNRELEASED
  */
 TpMessage *
-tp_client_message_new (guint initial_parts)
+tp_client_message_new (void)
 {
   return g_object_new (TP_TYPE_CLIENT_MESSAGE,
-      "initial-parts", initial_parts,
-      "size-hint", initial_parts,
+      "initial-parts", 1,
+      "size-hint", 1,
       NULL);
 }
 
 /**
- * tp_client_message_text_new:
+ * tp_client_message_new_text:
  * @type: the type of message
  * @text: content of the messsage
  *
@@ -112,7 +111,7 @@ tp_client_message_new (guint initial_parts)
  * Since: 0.13.UNRELEASED
  */
 TpMessage *
-tp_client_message_text_new (TpChannelTextMessageType type,
+tp_client_message_new_text (TpChannelTextMessageType type,
     const gchar *text)
 {
   TpMessage *msg;
