@@ -13,6 +13,7 @@
 
 #include "chan.h"
 
+#include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>

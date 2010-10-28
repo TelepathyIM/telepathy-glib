@@ -57,6 +57,7 @@
 #include <dbus/dbus-glib.h>
 #include <string.h>
 
+#include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>

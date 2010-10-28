@@ -23,7 +23,6 @@
 
 G_BEGIN_DECLS
 
-#include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/handle.h>
 
 #define TP_TYPE_MESSAGE (tp_message_get_type ())
@@ -71,9 +70,6 @@ void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
 
 /* Takes a TpCMMessage */
-TpMessage *tp_message_new (TpBaseConnection *connection, guint initial_parts,
-    guint size_hint) G_GNUC_WARN_UNUSED_RESULT;
-
 void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
     TpHandleType handle_type, TpHandle handle_or_0);
 
