@@ -23,6 +23,8 @@
 
 #include <glib.h>
 
+#include "signalled-message.h"
+
 #include "message.h"
 #include "message-internal.h"
 
@@ -43,6 +45,9 @@ struct _TpSignalledMessage {
 };
 
 TpMessage * _tp_signalled_message_new (const GPtrArray *parts);
+
+void _tp_signalled_message_set_sender (TpMessage *message,
+    TpContact *contact);
 
 G_END_DECLS
 

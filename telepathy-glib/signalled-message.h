@@ -25,6 +25,7 @@
 
 G_BEGIN_DECLS
 
+#include <telepathy-glib/contact.h>
 #include <telepathy-glib/message.h>
 
 #define TP_TYPE_SIGNALLED_MESSAGE (tp_signalled_message_get_type ())
@@ -38,6 +39,8 @@ typedef struct _TpSignalledMessage TpSignalledMessage;
 typedef struct _TpSignalledMessageClass TpSignalledMessageClass;
 
 GType tp_signalled_message_get_type (void);
+
+TpContact * tp_signalled_message_get_sender (TpMessage *message);
 
 G_END_DECLS
 

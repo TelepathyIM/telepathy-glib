@@ -47,15 +47,17 @@ G_DEFINE_TYPE (TpSignalledMessage, tp_signalled_message, TP_TYPE_MESSAGE)
 
 struct _TpSignalledMessagePrivate
 {
-  gpointer unused;
+  TpContact *sender;
 };
 
 static void
 tp_signalled_message_dispose (GObject *object)
 {
-  //TpSignalledMessage *self = TP_SIGNALLED_MESSAGE (object);
+  TpSignalledMessage *self = TP_SIGNALLED_MESSAGE (object);
   void (*dispose) (GObject *) =
     G_OBJECT_CLASS (tp_signalled_message_parent_class)->dispose;
+
+  tp_clear_object (&self->priv->sender);
 
   if (dispose != NULL)
     dispose (object);
@@ -76,6 +78,8 @@ tp_signalled_message_init (TpSignalledMessage *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_SIGNALLED_MESSAGE,
       TpSignalledMessagePrivate);
+
+  self->priv->sender = NULL;
 }
 
 TpMessage *
@@ -102,4 +106,37 @@ _tp_signalled_message_new (const GPtrArray *parts)
     }
 
   return self;
+}
+
+void
+_tp_signalled_message_set_sender (TpMessage *message,
+    TpContact *contact)
+{
+  TpSignalledMessage *self = TP_SIGNALLED_MESSAGE (message);
+
+  g_assert (self->priv->sender == NULL);
+  self->priv->sender = g_object_ref (contact);
+}
+
+/**
+ * tp_signalled_message_get_sender:
+ * @message: a #TpSignalledMessage
+ *
+ * Returns a #TpContact representing the sender of @message if known, %NULL
+ * otherwise.
+ *
+ * Returns: (transfer none): the sender of the message
+ *
+ * @since 0.13.UNRELEASED
+ */
+TpContact *
+tp_signalled_message_get_sender (TpMessage *message)
+{
+  TpSignalledMessage *self;
+
+  g_return_val_if_fail (TP_IS_SIGNALLED_MESSAGE (message), NULL);
+
+  self = (TpSignalledMessage *) message;
+
+  return self->priv->sender;
 }

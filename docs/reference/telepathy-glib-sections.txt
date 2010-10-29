@@ -5346,6 +5346,7 @@ tp_client_message_get_type
 <INCLUDE>telepathy-glib/signalled-message.h</INCLUDE>
 <TITLE>TpSignalledMessage</TITLE>
 TpSignalledMessage
+tp_signalled_message_get_sender
 <SUBSECTION Standard>
 TP_IS_SIGNALLED_MESSAGE
 TP_IS_SIGNALLED_MESSAGE_CLASS
