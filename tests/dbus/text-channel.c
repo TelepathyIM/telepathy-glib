@@ -230,7 +230,7 @@ test_pending_messages (Test *test,
   GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
   GList *messages;
   TpMessage *msg;
-  const GHashTable *part;
+  gchar *text;
 
   /* connect on the Received sig to check if the message has been received */
   tp_cli_channel_type_text_connect_to_received (TP_CHANNEL (test->channel),
@@ -284,17 +284,17 @@ test_pending_messages (Test *test,
   msg = messages->data;
   g_assert (TP_IS_SIGNALLED_MESSAGE (msg));
 
-  part = tp_message_peek (msg, 1);
-  g_assert (part != NULL);
-  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==, "Badger");
+  text = tp_message_to_text (msg, NULL);
+  g_assert_cmpstr (text, ==, "Badger");
+  g_free (text);
 
   /* Check second message */
   msg = messages->next->data;
   g_assert (TP_IS_SIGNALLED_MESSAGE (msg));
 
-  part = tp_message_peek (msg, 1);
-  g_assert (part != NULL);
-  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==, "Snake");
+  text = tp_message_to_text (msg, NULL);
+  g_assert_cmpstr (text, ==, "Snake");
+  g_free (text);
 
   /* TODO: check sender */
 
@@ -321,7 +321,7 @@ test_message_received (Test *test,
 {
   GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
   TpMessage *msg;
-  const GHashTable *part;
+  gchar *text;
 
   /* We have to prepare the pending messages feature to be notified about
    * incoming messages */
@@ -345,10 +345,9 @@ test_message_received (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert (TP_IS_SIGNALLED_MESSAGE (test->received_msg));
-  part = tp_message_peek (msg, 1);
-  g_assert (part != NULL);
-  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==, "Snake");
+  text = tp_message_to_text (test->received_msg, NULL);
+  g_assert_cmpstr (text, ==, "Snake");
+  g_free (text);
 
   g_object_unref (msg);
 }
@@ -523,7 +522,7 @@ test_message_sent (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   TpMessage *msg;
-  const GHashTable *part;
+  gchar *text;
 
   g_signal_connect (test->channel, "message-sent",
       G_CALLBACK (message_sent_cb), test);
@@ -542,9 +541,9 @@ test_message_sent (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (TP_IS_SIGNALLED_MESSAGE (test->sent_msg));
-  part = tp_message_peek (test->sent_msg, 1);
-  g_assert (part != NULL);
-  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==, "Badger");
+  text = tp_message_to_text (test->sent_msg, NULL);
+  g_assert_cmpstr (text, ==, "Badger");
+  g_free (text);
 
   g_assert_cmpuint (test->sending_flags, ==,
       TP_MESSAGE_SENDING_FLAG_REPORT_DELIVERY);
