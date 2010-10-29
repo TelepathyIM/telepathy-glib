@@ -2384,6 +2384,7 @@ varargs_helper (TpBaseClient *self,
 {
   GQuark f;
   gsize n = 0;
+  GQuark *features;
   va_list ap_copy;
 
   G_VA_COPY (ap_copy, ap);
@@ -2391,17 +2392,15 @@ varargs_helper (TpBaseClient *self,
   for (f = feature; f != 0; f = va_arg (ap, GQuark))
     n++;
 
-  /* block to provide a scope for @features on the stack */
-    {
-      GQuark features[n];
+  features = g_malloc_n (n, sizeof (GQuark));
 
-      n = 0;
+  n = 0;
 
-      for (f = feature; f != 0; f = va_arg (ap_copy, GQuark))
-        features[n++] = f;
+  for (f = feature; f != 0; f = va_arg (ap_copy, GQuark))
+    features[n++] = f;
 
-      method (self, features, n);
-    }
+  method (self, features, n);
+  g_free (features);
 }
 
 /**
