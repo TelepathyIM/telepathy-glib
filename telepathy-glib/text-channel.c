@@ -241,6 +241,16 @@ tp_text_channel_constructed (GObject *obj)
 }
 
 static void
+add_message_received (TpTextChannel *self,
+    TpMessage *msg)
+{
+  self->priv->pending_messages = g_list_append (
+      self->priv->pending_messages, msg);
+
+  g_signal_emit (self, signals[SIG_MESSAGE_RECEIVED], 0, msg);
+}
+
+static void
 message_received_cb (TpChannel *proxy,
     const GPtrArray *message,
     gpointer user_data,
@@ -258,10 +268,7 @@ message_received_cb (TpChannel *proxy,
 
   msg = _tp_signalled_message_new (message);
 
-  self->priv->pending_messages = g_list_append (
-      self->priv->pending_messages, msg);
-
-  g_signal_emit (self, signals[SIG_MESSAGE_RECEIVED], 0, msg);
+  add_message_received (self, msg);
 }
 
 /* Move this as TpMessage (or TpSignalledMessage?) API ? */
