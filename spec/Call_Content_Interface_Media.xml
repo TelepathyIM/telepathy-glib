@@ -27,7 +27,14 @@
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>Interface to use by a software implementation of media
-        streaming.</p>
+        streaming. The reason behind splitting the members of this
+        interface out from the main <tp:dbus-ref
+        namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref> interface is
+        that the software is not necessarily what controls the
+        media. An example of this is in GSM phones, where the CM just
+        tells the phone to dial a number and it does the audio routing
+        in a device specific hardware way and the CM does not need
+        to concern itself with codecs.</p>
 
       <p>On new <tp:dbus-ref
         namespace="ofdT.Channel.Type">Call.DRAFT</tp:dbus-ref> channels,

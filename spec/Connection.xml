@@ -1102,7 +1102,7 @@ USA.</p>
             the Google XMPP Mail Notification extension, which can be used
             to implement <tp:dbus-ref
               namespace="org.freedesktop.Telepathy.Connection.Interface"
-              >MailNotification.DRAFT</tp:dbus-ref>. In this protocol, the CM
+              >MailNotification</tp:dbus-ref>. In this protocol, the CM
             receives a notification that something has changed, but to get
             more information, the CM must request this information. Knowing
             that nobody is currently interested in this information, the CM

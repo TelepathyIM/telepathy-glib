@@ -116,6 +116,15 @@
       </tp:possible-errors>
     </method>
 
+    <signal name="Removed" tp:name-for-bindings="Removed">
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Emitted when the content is removed from the call. This
+          is the same as the <tp:dbus-ref
+          namespace="ofdT.Channel.Type">Call.DRAFT.ContentRemoved</tp:dbus-ref>
+          signal.</p>
+      </tp:docstring>
+    </signal>
+
     <property name="Interfaces" tp:name-for-bindings="Interfaces"
       type="as" tp:type="DBus_Interface[]" access="read" tp:immutable="yes">
       <tp:added version="0.19.11"/>
