@@ -92,6 +92,7 @@ enum /* signals */
 {
   SIG_MESSAGE_RECEIVED,
   SIG_PENDING_MESSAGES_REMOVED,
+  SIG_MESSAGE_SENT,
   LAST_SIGNAL
 };
 
@@ -142,6 +143,24 @@ tp_text_channel_get_property (GObject *object,
 }
 
 static void
+message_sent_cb (TpChannel *channel,
+    const GPtrArray *content,
+    guint flags,
+    const gchar *token,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpMessage *msg;
+
+  msg = _tp_signalled_message_new (content);
+
+  g_signal_emit (channel, signals[SIG_MESSAGE_SENT], 0, msg, flags,
+      tp_str_empty (token) ? NULL : token);
+
+  g_object_unref (msg);
+}
+
+static void
 tp_text_channel_constructed (GObject *obj)
 {
   TpTextChannel *self = (TpTextChannel *) obj;
@@ -150,6 +169,7 @@ tp_text_channel_constructed (GObject *obj)
   TpChannel *chan = (TpChannel *) obj;
   GHashTable *props;
   gboolean valid;
+  GError *err = NULL;
 
   if (chain_up != NULL)
     chain_up (obj);
@@ -209,6 +229,14 @@ tp_text_channel_constructed (GObject *obj)
     {
       DEBUG ("Channel doesn't have Messages.DeliveryReportingSupport in its "
           "immutable properties");
+    }
+
+  tp_cli_channel_interface_messages_connect_to_message_sent (chan,
+      message_sent_cb, NULL, NULL, NULL, &err);
+  if (err != NULL)
+    {
+      DEBUG ("Failed to connect to MessageSent: %s", err->message);
+      g_error_free (err);
     }
 }
 
@@ -496,6 +524,29 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
       g_cclosure_marshal_VOID__OBJECT,
       G_TYPE_NONE,
       1, TP_TYPE_SIGNALLED_MESSAGE);
+
+  /**
+   * TpTextChannel::message-sent
+   * @self: the #TpTextChannel
+   * @message: a #TpSignalledMessage
+   * @flags: the #TpMessageSendingFlags affecting how the message was sent
+   * @token: an opaque token used to match any incoming delivery or failure
+   * reports against this message, or %NULL if the message is not
+   * readily identifiable.
+   *
+   * The ::message-sent signal is emitted when @message
+   * has been submitted for sending.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  signals[SIG_MESSAGE_SENT] = g_signal_new (
+      "message-sent",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tp_marshal_VOID__OBJECT_UINT_STRING,
+      G_TYPE_NONE,
+      3, TP_TYPE_SIGNALLED_MESSAGE, G_TYPE_UINT, G_TYPE_STRING);
 
   g_type_class_add_private (gobject_class, sizeof (TpTextChannelPrivate));
 }
