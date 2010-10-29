@@ -31,7 +31,10 @@ typedef struct {
 
     TpMessage *received_msg;
     TpMessage *removed_msg;
+    TpMessage *sent_msg;
     gchar *token;
+    gchar *sent_token;
+    TpMessageSendingFlags sending_flags;
 
     GError *error /* initialized where needed */;
     gint wait;
@@ -118,7 +121,9 @@ teardown (Test *test,
 
   tp_clear_object (&test->received_msg);
   tp_clear_object (&test->removed_msg);
+  tp_clear_object (&test->sent_msg);
   tp_clear_pointer (&test->token, g_free);
+  tp_clear_pointer (&test->sent_token, g_free);
 
   tp_clear_object (&test->channel);
 }
@@ -493,6 +498,59 @@ test_ack_message (Test *test,
   g_assert_cmpuint (g_list_length (messages), ==, 0);
 }
 
+static void
+message_sent_cb (TpTextChannel *channel,
+    TpSignalledMessage *message,
+    TpMessageSendingFlags flags,
+    const gchar *token,
+    Test *test)
+{
+  tp_clear_object (&test->sent_msg);
+  tp_clear_pointer (&test->sent_token, g_free);
+
+  test->sent_msg = g_object_ref (message);
+  test->sending_flags = flags;
+  if (token != NULL)
+    test->sent_token = g_strdup (token);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_message_sent (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpMessage *msg;
+  const GHashTable *part;
+
+  g_signal_connect (test->channel, "message-sent",
+      G_CALLBACK (message_sent_cb), test);
+
+  /* Send message */
+  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "Badger");
+
+  tp_text_channel_send_message_async (test->channel, msg,
+      TP_MESSAGE_SENDING_FLAG_REPORT_DELIVERY, send_message_cb, test);
+
+  g_object_unref (msg);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (TP_IS_SIGNALLED_MESSAGE (test->sent_msg));
+  part = tp_message_peek (test->sent_msg, 1);
+  g_assert (part != NULL);
+  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==, "Badger");
+
+  g_assert_cmpuint (test->sending_flags, ==,
+      TP_MESSAGE_SENDING_FLAG_REPORT_DELIVERY);
+  g_assert (test->sent_token == NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -516,6 +574,8 @@ main (int argc,
       test_ack_messages, teardown);
   g_test_add ("/text-channel/ack-message", Test, NULL, setup,
       test_ack_message, teardown);
+  g_test_add ("/text-channel/message-sent", Test, NULL, setup,
+      test_message_sent, teardown);
 
   return g_test_run ();
 }
