@@ -216,6 +216,23 @@ example_echo_2_channel_close (TpBaseChannel *self)
 }
 
 static void
+example_echo_2_channel_fill_immutable_properties (TpBaseChannel *chan,
+    GHashTable *properties)
+{
+  TpBaseChannelClass *klass = TP_BASE_CHANNEL_CLASS (
+      example_echo_2_channel_parent_class);
+
+  klass->fill_immutable_properties (chan, properties);
+
+  tp_dbus_properties_mixin_fill_properties_hash (
+      G_OBJECT (chan), properties,
+      TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "MessagePartSupportFlags",
+      TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "DeliveryReportingSupport",
+      TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "SupportedContentTypes",
+      NULL);
+}
+
+static void
 example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -228,6 +245,8 @@ example_echo_2_channel_class_init (ExampleEcho2ChannelClass *klass)
   base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
   base_class->interfaces = example_echo_2_channel_interfaces;
   base_class->close = example_echo_2_channel_close;
+  base_class->fill_immutable_properties =
+    example_echo_2_channel_fill_immutable_properties;
 
   tp_message_mixin_init_dbus_properties (object_class);
 }
