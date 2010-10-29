@@ -64,6 +64,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/message-internal.h>
+#include <telepathy-glib/signalled-message-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_IM
 
@@ -207,14 +208,14 @@ subtract_from_hash (gpointer key,
 
 
 static gchar *
-parts_to_text (const GPtrArray *parts,
+parts_to_text (TpMessage *msg,
                TpChannelTextMessageFlags *out_flags,
                TpChannelTextMessageType *out_type,
                TpHandle *out_sender,
                guint *out_timestamp)
 {
   guint i;
-  GHashTable *header = g_ptr_array_index (parts, 0);
+  GHashTable *header = g_ptr_array_index (msg->parts, 0);
   /* Lazily created hash tables, used as a sets: keys are borrowed
    * "alternative" string values from @parts, value == key. */
   /* Alternative IDs for which we have already extracted an alternative */
@@ -235,14 +236,14 @@ parts_to_text (const GPtrArray *parts,
 
   /* If the message is on an extended interface or only contains headers,
    * definitely set the "your client is too old" flag. */
-  if (parts->len <= 1 || g_hash_table_lookup (header, "interface") != NULL)
+  if (msg->parts->len <= 1 || g_hash_table_lookup (header, "interface") != NULL)
     {
       flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
     }
 
-  for (i = 1; i < parts->len; i++)
+  for (i = 1; i < msg->parts->len; i++)
     {
-      GHashTable *part = g_ptr_array_index (parts, i);
+      GHashTable *part = g_ptr_array_index (msg->parts, i);
       const gchar *type = tp_asv_get_string (part, "content-type");
       const gchar *alternative = tp_asv_get_string (part, "alternative");
 
@@ -624,7 +625,7 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
       TpHandle sender;
       guint timestamp;
 
-      text = parts_to_text (msg->parts, &flags, &type, &sender, &timestamp);
+      text = parts_to_text (msg, &flags, &type, &sender, &timestamp);
 
       g_value_init (&val, pending_type);
       g_value_take_boxed (&val,
@@ -784,7 +785,7 @@ queue_pending (GObject *object, TpMessage *pending)
 
   g_queue_push_tail (mixin->priv->pending, pending);
 
-  text = parts_to_text (pending->parts, &flags, &type, &sender, &timestamp);
+  text = parts_to_text (pending, &flags, &type, &sender, &timestamp);
   tp_svc_channel_type_text_emit_received (object, pending->incoming_id,
       timestamp, sender, type, flags, text);
   g_free (text);
@@ -811,6 +812,9 @@ queue_pending (GObject *object, TpMessage *pending)
       if (echo != NULL)
         {
           const GHashTable *echo_header = g_ptr_array_index (echo, 1);
+          TpMessage *echo_msg;
+
+          echo_msg = _tp_signalled_message_new (echo);
 
           /* The specification says that the timestamp in SendError should be the
            * time at which the original message was sent.  parts_to_text falls
@@ -821,8 +825,10 @@ queue_pending (GObject *object, TpMessage *pending)
            * timestamp to be 0 if we can't determine when the original message
            * was sent.
            */
-          text = parts_to_text (echo, NULL, &type, NULL, NULL);
+          text = parts_to_text (echo_msg, NULL, &type, NULL, NULL);
           timestamp = tp_asv_get_uint32 (echo_header, "message-sent", NULL);
+
+          g_object_unref (echo_msg);
         }
       else
         {
@@ -1039,7 +1045,7 @@ tp_message_mixin_sent (GObject *object,
 
       tp_svc_channel_interface_messages_emit_message_sent (object,
           message->parts, flags, token);
-      string = parts_to_text (message->parts, NULL, &message_type, NULL, NULL);
+      string = parts_to_text (message, NULL, &message_type, NULL, NULL);
       tp_svc_channel_type_text_emit_sent (object, now, message_type,
           string);
       g_free (string);
