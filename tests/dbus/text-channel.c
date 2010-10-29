@@ -322,6 +322,7 @@ test_message_received (Test *test,
   GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
   TpMessage *msg;
   gchar *text;
+  TpContact *sender;
 
   /* We have to prepare the pending messages feature to be notified about
    * incoming messages */
@@ -348,6 +349,10 @@ test_message_received (Test *test,
   text = tp_message_to_text (test->received_msg, NULL);
   g_assert_cmpstr (text, ==, "Snake");
   g_free (text);
+
+  sender = tp_signalled_message_get_sender (test->received_msg);
+  g_assert (sender != NULL);
+  g_assert_cmpstr (tp_contact_get_identifier (sender), ==, "bob");
 
   g_object_unref (msg);
 }

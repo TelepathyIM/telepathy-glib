@@ -251,6 +251,40 @@ add_message_received (TpTextChannel *self,
 }
 
 static void
+got_sender_contact_cb (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    guint n_failed,
+    const TpHandle *failed,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpTextChannel *self = (TpTextChannel *) weak_object;
+  TpMessage *msg = user_data;
+  TpContact *contact;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to prepare TpContact: %s", error->message);
+      goto out;
+    }
+
+  if (n_failed > 0)
+    {
+      DEBUG ("Failed to prepare TpContact (InvalidHandle)");
+      goto out;
+    }
+
+  contact = contacts[0];
+
+  _tp_signalled_message_set_sender (msg, contact);
+
+out:
+  add_message_received (self, msg);
+}
+
+static void
 message_received_cb (TpChannel *proxy,
     const GPtrArray *message,
     gpointer user_data,
@@ -258,6 +292,9 @@ message_received_cb (TpChannel *proxy,
 {
   TpTextChannel *self = user_data;
   TpMessage *msg;
+  const GHashTable *header;
+  TpHandle sender;
+  TpConnection *conn;
 
   /* If we are still retrieving pending messages, no need to add the message,
    * it will be in the initial set of messages retrieved. */
@@ -268,7 +305,21 @@ message_received_cb (TpChannel *proxy,
 
   msg = _tp_signalled_message_new (message);
 
-  add_message_received (self, msg);
+  header = tp_message_peek (msg, 0);
+  sender = tp_asv_get_uint32 (header, "message-sender", NULL);
+
+  if (sender == 0)
+    {
+      DEBUG ("Message doesn't have a sender");
+
+      add_message_received (self, msg);
+      return;
+    }
+
+  conn = tp_channel_borrow_connection (proxy);
+
+  tp_connection_get_contacts_by_handle (conn, 1, &sender,
+      0, NULL, got_sender_contact_cb, msg, NULL, G_OBJECT (self));
 }
 
 /* Move this as TpMessage (or TpSignalledMessage?) API ? */
