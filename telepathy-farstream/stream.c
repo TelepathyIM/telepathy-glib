@@ -181,6 +181,12 @@ static void set_stream_sending (TpMediaStreamHandler *proxy, gboolean play,
 static void start_telephony_event (TpMediaStreamHandler *proxy, guchar event,
     gpointer user_data, GObject *object);
 
+static void start_named_telephony_event (TpMediaStreamHandler *proxy,
+    guchar event, guint codecid, gpointer user_data, GObject *object);
+
+static void start_sound_telephony_event (TpMediaStreamHandler *proxy,
+    guchar event, gpointer user_data, GObject *object);
+
 static void stop_telephony_event (TpMediaStreamHandler *proxy,
     gpointer user_data, GObject *object);
 
@@ -734,6 +740,12 @@ get_all_properties_cb (TpProxy *proxy,
   tp_cli_media_stream_handler_connect_to_start_telephony_event
       (stream->priv->stream_handler_proxy, start_telephony_event, NULL, NULL,
           (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_start_named_telephony_event
+      (stream->priv->stream_handler_proxy, start_named_telephony_event, NULL,
+          NULL, (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_start_sound_telephony_event
+      (stream->priv->stream_handler_proxy, start_sound_telephony_event, NULL,
+          NULL, (GObject*) stream, NULL);
   tp_cli_media_stream_handler_connect_to_stop_telephony_event
       (stream->priv->stream_handler_proxy, stop_telephony_event, NULL, NULL,
           (GObject*) stream, NULL);
@@ -1811,6 +1823,36 @@ start_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           FS_DTMF_METHOD_AUTO))
     WARNING (self, "sending event %u failed", event);
 }
+
+static void
+start_named_telephony_event (TpMediaStreamHandler *proxy,
+    guchar event,
+    guint codecid,
+    gpointer user_data,
+    GObject *object)
+{
+  TfStream *self = TF_STREAM (object);
+
+  WARNING (self, "Named Telephony Events not implemented");
+}
+
+static void
+start_sound_telephony_event (TpMediaStreamHandler *proxy, guchar event,
+    gpointer user_data, GObject *object)
+{
+  TfStream *self = TF_STREAM (object);
+
+  g_assert (self->priv->fs_session != NULL);
+
+  DEBUG (self, "called with event %u", event);
+
+  /* this week, volume is 8, for the sake of argument... */
+
+  if (!fs_session_start_telephony_event (self->priv->fs_session, event, 8,
+          FS_DTMF_METHOD_IN_BAND))
+    WARNING (self, "sending sound event %u failed", event);
+}
+
 
 static void
 stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
