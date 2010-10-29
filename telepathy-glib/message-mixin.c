@@ -185,28 +185,6 @@ pending_item_id_equals_data (gconstpointer item,
   return (self->incoming_id != id);
 }
 
-
-static inline void
-nullify_hash (GHashTable **hash)
-{
-  if (*hash == NULL)
-    return;
-
-  g_hash_table_destroy (*hash);
-  *hash = NULL;
-}
-
-
-static void
-subtract_from_hash (gpointer key,
-                    gpointer value,
-                    gpointer user_data)
-{
-  DEBUG ("... removing %s", (gchar *) key);
-  g_hash_table_remove (user_data, key);
-}
-
-
 static gchar *
 parts_to_text (TpMessage *msg,
                TpChannelTextMessageFlags *out_flags,
@@ -214,153 +192,7 @@ parts_to_text (TpMessage *msg,
                TpHandle *out_sender,
                guint *out_timestamp)
 {
-  guint i;
   GHashTable *header = g_ptr_array_index (msg->parts, 0);
-  /* Lazily created hash tables, used as a sets: keys are borrowed
-   * "alternative" string values from @parts, value == key. */
-  /* Alternative IDs for which we have already extracted an alternative */
-  GHashTable *alternatives_used = NULL;
-  /* Alternative IDs for which we expect to extract text, but have not yet;
-   * cleared if the flag Channel_Text_Message_Flag_Non_Text_Content is set.
-   * At the end, if this contains any item not in alternatives_used,
-   * Channel_Text_Message_Flag_Non_Text_Content must be set. */
-  GHashTable *alternatives_needed = NULL;
-  GString *buffer = g_string_new ("");
-  TpChannelTextMessageFlags flags = 0;
-
-  if (tp_asv_get_boolean (header, "scrollback", NULL))
-    flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_SCROLLBACK;
-
-  if (tp_asv_get_boolean (header, "rescued", NULL))
-    flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED;
-
-  /* If the message is on an extended interface or only contains headers,
-   * definitely set the "your client is too old" flag. */
-  if (msg->parts->len <= 1 || g_hash_table_lookup (header, "interface") != NULL)
-    {
-      flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
-    }
-
-  for (i = 1; i < msg->parts->len; i++)
-    {
-      GHashTable *part = g_ptr_array_index (msg->parts, i);
-      const gchar *type = tp_asv_get_string (part, "content-type");
-      const gchar *alternative = tp_asv_get_string (part, "alternative");
-
-      /* Renamed to "content-type" in spec 0.17.14 */
-      if (type == NULL)
-        type = tp_asv_get_string (part, "type");
-
-      DEBUG ("Parsing part %u, type %s, alternative %s", i, type, alternative);
-
-      if (!tp_strdiff (type, "text/plain"))
-        {
-          GValue *value;
-
-          DEBUG ("... is text/plain");
-
-          if (alternative != NULL && alternative[0] != '\0')
-            {
-              if (alternatives_used == NULL)
-                {
-                  /* We can't have seen an alternative for this part yet.
-                   * However, we need to create the hash table now */
-                  alternatives_used = g_hash_table_new (g_str_hash,
-                      g_str_equal);
-                }
-              else if (g_hash_table_lookup (alternatives_used,
-                    alternative) != NULL)
-                {
-                  /* we've seen a "better" alternative for this part already.
-                   * Skip it */
-                  DEBUG ("... already saw a better alternative, skipping it");
-                  continue;
-                }
-
-              g_hash_table_insert (alternatives_used, (gpointer) alternative,
-                  (gpointer) alternative);
-            }
-
-          value = g_hash_table_lookup (part, "content");
-
-          if (value != NULL && G_VALUE_HOLDS_STRING (value))
-            {
-              DEBUG ("... using its text");
-              g_string_append (buffer, g_value_get_string (value));
-
-              value = g_hash_table_lookup (part, "truncated");
-
-              if (value != NULL && (!G_VALUE_HOLDS_BOOLEAN (value) ||
-                  g_value_get_boolean (value)))
-                {
-                  DEBUG ("... appears to have been truncated");
-                  flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_TRUNCATED;
-                }
-            }
-          else
-            {
-              /* There was a text/plain part we couldn't parse:
-               * that counts as "non-text content" I think */
-              DEBUG ("... didn't understand it, setting NON_TEXT_CONTENT");
-              flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
-              nullify_hash (&alternatives_needed);
-            }
-        }
-      else if ((flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) == 0)
-        {
-          DEBUG ("... wondering whether this is NON_TEXT_CONTENT?");
-
-          if (tp_str_empty (alternative))
-            {
-              /* This part can't possibly have a text alternative, since it
-               * isn't part of a multipart/alternative group
-               * (attached image or something, perhaps) */
-              DEBUG ("... ... yes, no possibility of a text alternative");
-              flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
-              nullify_hash (&alternatives_needed);
-            }
-          else if (alternatives_used != NULL &&
-              g_hash_table_lookup (alternatives_used, (gpointer) alternative)
-              != NULL)
-            {
-              DEBUG ("... ... no, we already saw a text alternative");
-            }
-          else
-            {
-              /* This part might have a text alternative later, if we're
-               * lucky */
-              if (alternatives_needed == NULL)
-                alternatives_needed = g_hash_table_new (g_str_hash,
-                    g_str_equal);
-
-              DEBUG ("... ... perhaps, but might have text alternative later");
-              g_hash_table_insert (alternatives_needed, (gpointer) alternative,
-                  (gpointer) alternative);
-            }
-        }
-    }
-
-  if ((flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) == 0 &&
-      alternatives_needed != NULL)
-    {
-      if (alternatives_used != NULL)
-        g_hash_table_foreach (alternatives_used, subtract_from_hash,
-            alternatives_needed);
-
-      if (g_hash_table_size (alternatives_needed) > 0)
-        flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
-    }
-
-  if (alternatives_needed != NULL)
-    g_hash_table_destroy (alternatives_needed);
-
-  if (alternatives_used != NULL)
-    g_hash_table_destroy (alternatives_used);
-
-  if (out_flags != NULL)
-    {
-      *out_flags = flags;
-    }
 
   if (out_type != NULL)
     {
@@ -389,7 +221,7 @@ parts_to_text (TpMessage *msg,
         *out_timestamp = time (NULL);
     }
 
-  return g_string_free (buffer, FALSE);
+  return tp_message_to_text (msg, out_flags);
 }
 
 

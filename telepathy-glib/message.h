@@ -69,6 +69,9 @@ void tp_message_set_bytes (TpMessage *self, guint part, const gchar *key,
 void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
 
+gchar * tp_message_to_text (TpMessage *message,
+    TpChannelTextMessageFlags *out_flags);
+
 /* Takes a TpCMMessage */
 void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
     TpHandleType handle_type, TpHandle handle_or_0);
