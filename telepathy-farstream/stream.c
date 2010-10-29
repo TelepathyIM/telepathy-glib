@@ -2170,6 +2170,8 @@ _tf_stream_bus_message (TfStream *stream,
       DEBUG (stream, "Codecs changed");
 
       _tf_stream_try_sending_codecs (stream);
+
+      return TRUE;
     }
   else if (gst_structure_has_name (s, "farsight-send-codec-changed"))
     {
@@ -2212,6 +2214,7 @@ _tf_stream_bus_message (TfStream *stream,
         return TRUE;
 
       cb_fs_component_state_changed (stream, component, fsstate);
+      return TRUE;
     }
 
   return FALSE;
