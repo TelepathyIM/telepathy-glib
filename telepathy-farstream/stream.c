@@ -74,6 +74,11 @@ G_DEFINE_TYPE (TfStream, tf_stream, G_TYPE_OBJECT);
 
 static TpMediaStreamError fserrorno_to_tperrorno (FsError fserror);
 
+struct DtmfEvent {
+  gint codec_id;
+  guint event_id;
+};
+
 struct _TfStreamPrivate
 {
   TfChannel *channel;
@@ -108,6 +113,8 @@ struct _TfStreamPrivate
   TpMediaStreamState current_state;
 
   NewStreamCreatedCb *new_stream_created_cb;
+
+  GQueue events_to_send;
 };
 
 enum
@@ -231,6 +238,8 @@ tf_stream_init (TfStream *self)
   g_static_mutex_init (&priv->mutex);
   priv->has_resource = TP_MEDIA_STREAM_DIRECTION_NONE;
   priv->current_state = TP_MEDIA_STREAM_STATE_DISCONNECTED;
+
+  g_queue_init (&priv->events_to_send);
 }
 
 static void
@@ -379,6 +388,7 @@ tf_stream_dispose (GObject *object)
 {
   TfStream *stream = TF_STREAM (object);
   TfStreamPrivate *priv = stream->priv;
+  gpointer data;
 
   TF_STREAM_LOCK (stream);
   if (stream->priv->idle_connected_id)
@@ -442,6 +452,9 @@ tf_stream_dispose (GObject *object)
       fs_codec_list_destroy (priv->last_sent_codecs);
       priv->last_sent_codecs = NULL;
     }
+
+  while ((data = g_queue_pop_head (&priv->events_to_send)))
+    g_slice_free (struct DtmfEvent, data);
 
   fs_candidate_list_destroy (priv->local_candidates);
   priv->local_candidates = NULL;
@@ -1824,6 +1837,59 @@ start_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     WARNING (self, "sending event %u failed", event);
 }
 
+static gboolean
+check_codecs_for_telephone_event (TfStream *self, GList **codecs,
+    FsCodec *send_codec, guint codecid)
+{
+  GList *item = NULL;
+  gboolean found = FALSE;
+  GError *error = NULL;
+
+ again:
+
+  for (item = *codecs; item; item = item->next)
+    {
+      FsCodec *codec = item->data;
+
+      if (!g_ascii_strcasecmp (codec->encoding_name, "telephone-event") &&
+          send_codec->clock_rate == codec->clock_rate)
+        {
+          if (found)
+            {
+              *codecs = g_list_delete_link (*codecs, item);
+              goto again;
+            }
+          else if (codecid == (guint) codec->id)
+            {
+              return TRUE;            }
+          else
+            {
+              codec->id = codecid;
+            }
+        }
+    }
+
+  if (!found)
+    {
+      FsCodec *codec = fs_codec_new (codecid, "telephone-event",
+          FS_MEDIA_TYPE_AUDIO, send_codec->clock_rate);
+
+      *codecs = g_list_append (*codecs, codec);
+    }
+
+  if (!fs_stream_set_remote_codecs (self->priv->fs_stream, *codecs, &error))
+    {
+      /*
+       * Call the error method with the proper thing here
+       */
+      g_prefix_error (&error, "Codec negotiation failed for DTMF: ");
+      tf_stream_error (self, fserror_to_tperror (error), error->message);
+      g_clear_error (&error);
+    }
+
+  return FALSE;
+}
+
 static void
 start_named_telephony_event (TpMediaStreamHandler *proxy,
     guchar event,
@@ -1832,8 +1898,36 @@ start_named_telephony_event (TpMediaStreamHandler *proxy,
     GObject *object)
 {
   TfStream *self = TF_STREAM (object);
+  FsCodec *send_codec = NULL;
+  GList *codecs = NULL;
+  struct DtmfEvent *dtmfevent;
 
-  WARNING (self, "Named Telephony Events not implemented");
+  g_object_get (self->priv->fs_session,
+      "current-send-codec", &send_codec,
+      "codecs", &codecs,
+      NULL);
+
+
+  if (check_codecs_for_telephone_event (self, &codecs, send_codec, codecid))
+    {
+      DEBUG (self, "Sending named telephony event %d with pt %d",
+          event, codecid);
+      if (!fs_session_start_telephony_event (self->priv->fs_session,
+              event, 8, FS_DTMF_METHOD_RTP_RFC4733))
+        WARNING (self, "sending event %u failed", event);
+    }
+  else
+    {
+      DEBUG (self, "Queing named telephony event %d with pt %d",
+          event, codecid);
+      dtmfevent = g_slice_new (struct DtmfEvent);
+      dtmfevent->codec_id = codecid;
+      dtmfevent->event_id = event;
+      g_queue_push_tail (&self->priv->events_to_send, dtmfevent);
+    }
+
+  fs_codec_destroy (send_codec);
+  fs_codec_list_destroy (codecs);
 }
 
 static void
@@ -1994,6 +2088,60 @@ invalidated_cb (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     }
 
   tf_stream_shutdown (stream);
+}
+
+static void
+cb_fs_send_codec_changed (TfStream *self,
+    FsCodec *send_codec,
+    GList *secondary_codecs)
+{
+  GList *item;
+  gint last_event_id = -1;
+  struct DtmfEvent *dtmfevent;
+
+  while ((dtmfevent = g_queue_peek_head (&self->priv->events_to_send)))
+    {
+      if (dtmfevent->codec_id != last_event_id)
+        {
+          last_event_id = -1;
+          for (item = secondary_codecs; item; item = item->next)
+            {
+              FsCodec *codec = item->data;
+
+              if (!g_ascii_strcasecmp (codec->encoding_name, "telephone-event")
+                  && codec->id == dtmfevent->codec_id)
+                {
+                  last_event_id = codec->id;
+                  goto have_id;
+                }
+            }
+          if (dtmfevent->codec_id != last_event_id)
+            {
+              GList *codecs = NULL;
+
+              g_object_get (self->priv->fs_session, "codecs", &codecs, NULL);
+
+              DEBUG (self, "Still do not have the right PT for telephony"
+                  " events, trying to force it again");
+              if (check_codecs_for_telephone_event (self, &codecs, send_codec,
+                      dtmfevent->codec_id))
+                WARNING (self, "Did not have the right pt in the secondary"
+                    " codecs, but it was in the codec list. Ignoring for now");
+              fs_codec_list_destroy (codecs);
+              return;
+            }
+        }
+
+    have_id:
+      DEBUG (self, "Sending queued event %d with pt %d", dtmfevent->event_id,
+          dtmfevent->codec_id);
+      dtmfevent = g_queue_pop_head (&self->priv->events_to_send);
+      if (!fs_session_start_telephony_event (self->priv->fs_session,
+              dtmfevent->event_id, 8, FS_DTMF_METHOD_RTP_RFC4733))
+        WARNING (self, "sending event %u failed", dtmfevent->event_id);
+
+      g_slice_free (struct DtmfEvent, dtmfevent);
+    }
 }
 
 /**
@@ -2178,6 +2326,8 @@ _tf_stream_bus_message (TfStream *stream,
       FsSession *fssession;
       const GValue *value;
       FsCodec *codec = NULL;
+      GList *secondary_codecs = NULL;
+      FsCodec *objcodec = NULL;
 
       value = gst_structure_get_value (s, "session");
       fssession = g_value_get_object (value);
@@ -2185,15 +2335,30 @@ _tf_stream_bus_message (TfStream *stream,
       if (fssession != stream->priv->fs_session)
         return FALSE;
 
-      g_object_get (fssession, "current-send-codec", &codec, NULL);
+      value = gst_structure_get_value (s, "codec");
+      codec = g_value_get_boxed (value);
+      g_object_get (fssession, "current-send-codec", &objcodec, NULL);
+
+      if (!fs_codec_are_equal (objcodec, codec))
+        {
+          fs_codec_destroy (objcodec);
+          return TRUE;
+        }
+
+      value = gst_structure_get_value (s, "secondary-codecs");
+      secondary_codecs = g_value_get_boxed (value);
+
 
       if (codec)
-        {
-          DEBUG (stream, "Send codec changed: " FS_CODEC_FORMAT,
-              FS_CODEC_ARGS (codec));
+        DEBUG (stream, "Send codec changed: " FS_CODEC_FORMAT,
+            FS_CODEC_ARGS (codec));
 
-          fs_codec_destroy (codec);
-        }
+      cb_fs_send_codec_changed (stream, codec, secondary_codecs);
+
+      if (codec)
+        fs_codec_destroy (codec);
+      fs_codec_list_destroy (secondary_codecs);
+      return TRUE;
     }
   else if (gst_structure_has_name (s, "farsight-component-state-changed"))
     {
