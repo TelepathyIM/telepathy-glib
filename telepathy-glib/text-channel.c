@@ -648,14 +648,15 @@ send_message_cb (TpChannel *proxy,
 {
   GSimpleAsyncResult *result = user_data;
 
-  /* FIXME: should we return the token? Or provide an object to monitor
-   * delivery and failure reports ? */
   if (error != NULL)
     {
       DEBUG ("Failed to send message: %s", error->message);
 
       g_simple_async_result_set_from_error (result, error);
     }
+
+  g_simple_async_result_set_op_res_gpointer (result, g_strdup (token),
+      g_free);
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
@@ -699,9 +700,15 @@ tp_text_channel_send_message_async (TpTextChannel *self,
  * tp_text_channel_send_message_finish:
  * @self: a #TpTextChannel
  * @result: a #GAsyncResult
+ * @token: (out) (transfer full): if not %NULL, used to return the
+ * token of the sent message
  * @error: a #GError to fill
  *
  * Finishes to send a message.
+ *
+ * @token can be used to match any incoming delivery or failure reports
+ * against the sent message. If the returned token is %NULL the
+ * message is not readily identifiable.
  *
  * Returns: %TRUE if the message has been submitted to the server, %FALSE
  * otherwise.
@@ -711,9 +718,11 @@ tp_text_channel_send_message_async (TpTextChannel *self,
 gboolean
 tp_text_channel_send_message_finish (TpTextChannel *self,
     GAsyncResult *result,
+    gchar **token,
     GError **error)
 {
-  _tp_implement_finish_void (self, tp_text_channel_send_message_async)
+  _tp_implement_finish_copy_pointer (self, tp_text_channel_send_message_async,
+      g_strdup, token);
 }
 
 static void

@@ -31,6 +31,7 @@ typedef struct {
 
     TpMessage *received_msg;
     TpMessage *removed_msg;
+    gchar *token;
 
     GError *error /* initialized where needed */;
     gint wait;
@@ -117,6 +118,7 @@ teardown (Test *test,
 
   tp_clear_object (&test->received_msg);
   tp_clear_object (&test->removed_msg);
+  tp_clear_pointer (&test->token, g_free);
 
   tp_clear_object (&test->channel);
 }
@@ -188,8 +190,10 @@ send_message_cb (GObject *source,
 {
   Test *test = user_data;
 
+  tp_clear_pointer (&test->token, g_free);
+
   tp_text_channel_send_message_finish (TP_TEXT_CHANNEL (source), result,
-      &test->error);
+      &test->token, &test->error);
 
   test->wait--;
   if (test->wait <= 0)

@@ -82,6 +82,7 @@ void tp_text_channel_send_message_async (TpTextChannel *self,
 
 gboolean tp_text_channel_send_message_finish (TpTextChannel *self,
     GAsyncResult *result,
+    gchar **token,
     GError **error);
 
 void tp_text_channel_ack_messages_async (TpTextChannel *self,
