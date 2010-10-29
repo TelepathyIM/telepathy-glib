@@ -950,3 +950,71 @@ tp_text_channel_ack_message_finish (TpTextChannel *self,
 {
   _tp_implement_finish_void (self, tp_text_channel_ack_message_async)
 }
+
+static void
+set_chat_state_cb (TpChannel *proxy,
+      const GError *error,
+      gpointer user_data,
+      GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("SetChatState failed: %s", error->message);
+
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_text_channel_set_chat_state_async:
+ * @self: a #TpTextChannel
+ * @state: a #TpChannelChatState to set
+ * @callback: a callback to call when the chat state has been set
+ * @user_data: data to pass to @callback
+ *
+ * Set the local state on channel @self to @state.
+ * Once the state has been set, @callback will be called.
+ * You can then call tp_text_channel_set_chat_state_finish() to get the
+ * result of the operation.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_text_channel_set_chat_state_async (TpTextChannel *self,
+    TpChannelChatState state,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_text_channel_set_chat_state_async);
+
+  tp_cli_channel_interface_chat_state_call_set_chat_state (TP_CHANNEL (self),
+      -1, state, set_chat_state_cb, result, NULL, G_OBJECT (self));
+}
+
+/**
+ * tp_text_channel_set_chat_state_finish:
+ * @self: a #TpTextChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to set chat state.
+ *
+ * Returns: %TRUE if the chat state has been changed, %FALSE otherwise.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_text_channel_set_chat_state_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_text_channel_set_chat_state_finish)
+}
