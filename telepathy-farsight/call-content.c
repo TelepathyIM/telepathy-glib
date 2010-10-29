@@ -156,7 +156,7 @@ tf_call_content_get_property (GObject    *object,
     }
 }
 
-static gboolean
+static void
 add_stream (TfCallContent *self, const gchar *stream_path)
 {
   GError *error = NULL;
@@ -165,14 +165,14 @@ add_stream (TfCallContent *self, const gchar *stream_path)
 
   if (error)
     {
+      /* TODO: Use per-stream errors */
       g_warning ("Error creating the stream object: %s", error->message);
       tf_call_channel_error (self->call_channel);
-      return FALSE;
+      return;
     }
 
   // g_hash_table_insert (self->streams, g_strdup (stream_path), stream);
 
-  return TRUE;
 }
 
 
@@ -255,8 +255,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
       g_free, g_object_unref);
 
   for (i = 0; i < streams->len; i++)
-    if (!add_stream (self, g_ptr_array_index (streams, i)))
-      break;
+    add_stream (self, g_ptr_array_index (streams, i));
 
   tp_proxy_add_interface_by_id (TP_PROXY (self->proxy),
       TF_FUTURE_IFACE_QUARK_CALL_CONTENT_INTERFACE_MEDIA);
@@ -275,12 +274,13 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 }
 
 static void
-stream_added (TfFutureCallContent *proxy,
-    const gchar *arg_Stream,
+streams_added (TfFutureCallContent *proxy,
+    const GPtrArray *arg_Streams,
     gpointer user_data,
     GObject *weak_object)
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  guint i;
 
   /* Ignore signals before we got the "Contents" property to avoid races that
    * could cause the same content to be added twice
@@ -289,21 +289,24 @@ stream_added (TfFutureCallContent *proxy,
   if (!self->streams)
     return;
 
-  add_stream (self, arg_Stream);
+  for (i = 0; i < arg_Streams->len; i++)
+    add_stream (self, g_ptr_array_index (arg_Streams, i));
 }
 
 static void
-stream_removed (TfFutureCallContent *proxy,
-    const gchar *arg_Stream,
+streams_removed (TfFutureCallContent *proxy,
+    const GPtrArray *arg_Streams,
     gpointer user_data,
     GObject *weak_object)
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  guint i;
 
   if (!self->streams)
     return;
 
-  g_hash_table_remove (self->streams, arg_Stream);
+  for (i = 0; i < arg_Streams->len; i++)
+    add_stream (self, g_ptr_array_index (arg_Streams, i));
 }
 
 
@@ -325,8 +328,8 @@ tf_call_content_new (TfCallChannel *call_channel,
   self->call_channel = call_channel;
   self->proxy = proxy;
 
-  tf_future_cli_call_content_connect_to_stream_added (
-      TF_FUTURE_CALL_CONTENT (proxy), stream_added, NULL, NULL,
+  tf_future_cli_call_content_connect_to_streams_added (
+      TF_FUTURE_CALL_CONTENT (proxy), streams_added, NULL, NULL,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
@@ -338,8 +341,8 @@ tf_call_content_new (TfCallChannel *call_channel,
       return NULL;
     }
 
-  tf_future_cli_call_content_connect_to_stream_removed (
-      TF_FUTURE_CALL_CONTENT (proxy), stream_removed, NULL, NULL,
+  tf_future_cli_call_content_connect_to_streams_removed (
+      TF_FUTURE_CALL_CONTENT (proxy), streams_removed, NULL, NULL,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
@@ -435,8 +438,8 @@ try_sending_codecs (TfCallContent *self)
     }
   else
     {
-      tf_future_cli_call_content_interface_media_call_set_codecs (self->proxy,
-          -1, tpcodecs, NULL, NULL, NULL, NULL);
+      tf_future_cli_call_content_interface_media_call_update_codecs (
+          self->proxy, -1, tpcodecs, NULL, NULL, NULL, NULL);
     }
 
   g_boxed_free (TF_FUTURE_ARRAY_TYPE_CODEC_LIST, tpcodecs);

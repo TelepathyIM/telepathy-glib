@@ -180,7 +180,6 @@ got_contents (TpProxy *proxy, const GValue *out_value,
 static void
 content_added (TpChannel *proxy,
     const gchar *arg_Content,
-    guint arg_Content_Type,
     gpointer user_data,
     GObject *weak_object)
 {
