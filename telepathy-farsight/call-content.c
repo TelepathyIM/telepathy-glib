@@ -71,7 +71,8 @@ G_DEFINE_TYPE (TfCallContent, tf_call_content, G_TYPE_OBJECT);
 
 enum
 {
-  PROP_FS_SESSION = 1
+  PROP_FS_CONFERENCE = 1,
+  PROP_FS_SESSION
 };
 
 enum
@@ -99,12 +100,19 @@ tf_call_content_class_init (TfCallContentClass *klass)
   object_class->get_property = tf_call_content_get_property;
 
   g_object_class_install_property (object_class, PROP_FS_SESSION,
-      g_param_spec_object ("fs-session",
-          "Farsight2 FsSession ",
-          "The Farsight2 session for this channel",
-          FS_TYPE_SESSION,
+      g_param_spec_object ("fs-conference",
+          "Farsight2 FsConference used by the Content ",
+          "The Farsight2 conference for this content "
+          "(could be the same as other contents)",
+          FS_TYPE_CONFERENCE,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
+  g_object_class_install_property (object_class, PROP_FS_SESSION,
+      g_param_spec_object ("fs-session",
+          "Farsight2 FsSession ",
+          "The Farsight2 session for this content",
+          FS_TYPE_SESSION,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 
@@ -151,6 +159,10 @@ tf_call_content_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_FS_CONFERENCE:
+      if (self->fsconference)
+        g_value_set_object (value, self->fsconference);
+      break;
     case PROP_FS_SESSION:
       if (self->fssession)
         g_value_set_object (value, self->fssession);
