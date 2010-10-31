@@ -48,6 +48,7 @@ struct _TfCallContent {
   GObject parent;
 
   TfCallChannel *call_channel;
+  FsConference *fsconference;
 
   TfFutureCallContent *proxy;
 
@@ -89,7 +90,6 @@ tf_call_content_get_property (GObject    *object,
 static void tf_call_content_dispose (GObject *object);
 
 
-
 static void
 tf_call_content_class_init (TfCallContentClass *klass)
 {
@@ -127,6 +127,11 @@ tf_call_content_dispose (GObject *object)
   if (self->fssession)
     g_object_unref (self->fssession);
   self->fssession = NULL;
+
+  if (self->fsconference)
+    _tf_call_channel_put_conference (self->call_channel,
+        self->fsconference);
+  self->fsconference = NULL;
 
   if (self->proxy)
     g_object_unref (self->proxy);
@@ -195,6 +200,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   GError *myerror = NULL;
   guint i;
   const gchar * const *interfaces;
+  const gchar * conference_type;
   gboolean got_media_interface = FALSE;;
 
   if (error)
@@ -233,6 +239,11 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   if (!valid)
     goto invalid_property;
 
+
+  conference_type = tp_asv_get_string (out_Properties, "Packetization");
+  if (!conference_type)
+    goto invalid_property;
+
   streams = tp_asv_get_boxed (out_Properties, "Streams",
       TP_ARRAY_TYPE_OBJECT_PATH_LIST);
   if (!streams)
@@ -240,7 +251,16 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   g_assert (self->fssession == NULL);
 
-  self->fssession = fs_conference_new_session (self->call_channel->fsconference,
+  self->fsconference = _tf_call_channel_get_conference (self->call_channel,
+      conference_type);
+  if (!self->fsconference)
+    {
+      g_warning ("Could not create FsConference for type %s", conference_type);
+      tf_call_channel_error (self->call_channel);
+      return;
+    }
+
+  self->fssession = fs_conference_new_session (self->fsconference,
       tp_media_type_to_fs (self->media_type), &myerror);
 
   if (!self->fssession)

@@ -74,7 +74,7 @@ struct _TfCallChannel {
 
   TpChannel *proxy;
 
-  FsConference *fsconference;
+  GHashTable *fsconferences;
 
   GHashTable *contents; /* NULL before getting the first contents */
 };
@@ -93,6 +93,15 @@ void tf_call_channel_error (TfCallChannel *channel);
 
 gboolean tf_call_channel_bus_message (TfCallChannel *channel,
     GstMessage *message);
+
+/* Private methods, only to be used inside TP-FS */
+
+FsConference *_tf_call_channel_get_conference (TfCallChannel *channel,
+    const gchar *conference_type);
+
+void _tf_call_channel_put_conference (TfCallChannel *channel,
+    FsConference *conference);
+
 
 G_END_DECLS
 

@@ -46,16 +46,24 @@ G_DEFINE_TYPE (TfCallChannel, tf_call_channel, G_TYPE_OBJECT);
 
 enum
 {
-  PROP_FS_CONFERENCE = 1
+  PROP_FS_CONFERENCES = 1
 };
 
 
 enum
 {
+  SIGNAL_FS_CONFERENCE_ADDED,
+  SIGNAL_FS_CONFERENCE_REMOVED,
   SIGNAL_COUNT
 };
 
-// static guint signals[SIGNAL_COUNT] = {0};
+static guint signals[SIGNAL_COUNT] = {0};
+
+struct CallConference {
+  gint use_count;
+  gchar *conference_type;
+  FsConference *fsconference;
+};
 
 static void
 tf_call_channel_get_property (GObject    *object,
@@ -65,8 +73,6 @@ tf_call_channel_get_property (GObject    *object,
 
 static void tf_call_channel_dispose (GObject *object);
 
-
-
 static void
 tf_call_channel_class_init (TfCallChannelClass *klass)
 {
@@ -75,19 +81,43 @@ tf_call_channel_class_init (TfCallChannelClass *klass)
   object_class->dispose = tf_call_channel_dispose;
   object_class->get_property = tf_call_channel_get_property;
 
-  g_object_class_install_property (object_class, PROP_FS_CONFERENCE,
-      g_param_spec_object ("fs-conference",
-          "Farsight2 FsConference ",
-          "The Farsight2 conference for this channel",
-          FS_TYPE_CONFERENCE,
+  g_object_class_install_property (object_class, PROP_FS_CONFERENCES,
+      g_param_spec_object ("fs-conferences",
+          "Farsight2 FsConference object",
+          "GPtrArray of Farsight2 FsConferences for this channel",
+          G_TYPE_PTR_ARRAY,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  signals[SIGNAL_FS_CONFERENCE_ADDED] = g_signal_new ("fs-conference-added",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tf_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+  signals[SIGNAL_FS_CONFERENCE_REMOVED] = g_signal_new ("fs-conference-removed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tf_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 }
 
+static void
+free_call_conference (gpointer data)
+{
+  struct CallConference *cc = data;
+
+  gst_object_unref (cc->fsconference);
+  g_slice_free (struct CallConference, data);
+}
 
 static void
 tf_call_channel_init (TfCallChannel *self)
 {
+  self->fsconferences = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+      free_call_conference);
 }
 
 static void
@@ -101,9 +131,9 @@ tf_call_channel_dispose (GObject *object)
     g_hash_table_destroy (self->contents);
   self->contents = NULL;
 
-  if (self->fsconference)
-    g_object_unref (self->fsconference);
-  self->fsconference = NULL;
+  if (self->fsconferences)
+      g_hash_table_unref (self->fsconferences);
+  self->fsconferences = NULL;
 
   if (self->proxy)
     g_object_unref (self->proxy);
@@ -111,6 +141,15 @@ tf_call_channel_dispose (GObject *object)
 
   if (G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_channel_parent_class)->dispose (object);
+}
+
+static void
+conf_into_ptr_array (gpointer key, gpointer value, gpointer data)
+{
+  struct CallConference *cc = value;
+  GPtrArray *array = data;
+
+  g_ptr_array_add (array, cc->fsconference);
 }
 
 static void
@@ -123,9 +162,15 @@ tf_call_channel_get_property (GObject    *object,
 
   switch (property_id)
     {
-    case PROP_FS_CONFERENCE:
-      if (self->fsconference)
-        g_value_set_object (value, self->fsconference);
+    case PROP_FS_CONFERENCES:
+      {
+        GPtrArray *array = g_ptr_array_sized_new (
+            g_hash_table_size (self->fsconferences));
+
+        g_ptr_array_set_free_func (array, gst_object_unref);
+        g_hash_table_foreach (self->fsconferences, conf_into_ptr_array, array);
+        g_value_take_boxed (value, array);
+      }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -258,12 +303,6 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       tf_call_channel_error (self);
       return;
     }
-
-  /* FIXME: Hardcode RTP because nothing else is supported for now */
-  self->fsconference = FS_CONFERENCE (gst_element_factory_make ("fsrtpconference", NULL));
-  g_object_ref (self->fsconference);
-
-  g_object_notify (G_OBJECT (self), "fs-conference");
 }
 
 TfCallChannel *
@@ -282,6 +321,27 @@ tf_call_channel_new (TpChannel *channel)
   return self;
 }
 
+
+static gboolean
+find_conf_func (gpointer key, gpointer value, gpointer data)
+{
+  FsConference *conf = data;
+  struct CallConference *cc = value;
+
+  if (cc->fsconference == conf)
+    return TRUE;
+  else
+    return FALSE;
+}
+
+static struct CallConference *
+find_call_conference_by_conference (TfCallChannel *channel,
+    GstObject *conference)
+{
+  return g_hash_table_find (channel->fsconferences, find_conf_func,
+      conference);
+}
+
 gboolean
 tf_call_channel_bus_message (TfCallChannel *channel,
     GstMessage *message)
@@ -290,9 +350,10 @@ tf_call_channel_bus_message (TfCallChannel *channel,
   gchar *debug;
   GHashTableIter iter;
   gpointer key, value;
+  struct CallConference *cc;
 
-  if (!channel->fsconference ||
-      GST_MESSAGE_SRC (message) != GST_OBJECT_CAST (channel->fsconference))
+  cc = find_call_conference_by_conference (channel, GST_MESSAGE_SRC (message));
+  if (!cc)
     return FALSE;
 
   switch (GST_MESSAGE_TYPE (message))
@@ -334,4 +395,64 @@ tf_call_channel_error (TfCallChannel *channel)
   tf_future_cli_channel_type_call_call_hangup (channel->proxy,
       -1, TF_FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "",
       NULL, NULL, NULL, NULL);
+}
+
+
+FsConference *
+_tf_call_channel_get_conference (TfCallChannel *channel,
+    const gchar *conference_type)
+{
+  gchar *tmp;
+  struct CallConference *cc;
+
+  cc = g_hash_table_lookup (channel->fsconferences, conference_type);
+
+  if (cc)
+    {
+      cc->use_count++;
+      gst_object_ref (cc->fsconference);
+      return cc->fsconference;
+    }
+
+  cc = g_slice_new (struct CallConference);
+  cc->use_count = 1;
+  cc->conference_type = g_strdup (conference_type);
+
+  tmp = g_strdup_printf ("fs%sconference", conference_type);
+  cc->fsconference = FS_CONFERENCE (gst_element_factory_make (tmp, NULL));
+  g_free (tmp);
+  gst_object_ref (cc->fsconference);
+  g_hash_table_insert (channel->fsconferences, cc->conference_type, cc);
+
+  g_signal_emit (channel, signals[SIGNAL_FS_CONFERENCE_ADDED], 0,
+      cc->fsconference);
+  g_object_notify (G_OBJECT (channel), "fs-conferences");
+
+  gst_object_ref (cc->fsconference);
+
+  return cc->fsconference;
+}
+
+void
+_tf_call_channel_put_conference (TfCallChannel *channel,
+    FsConference *conference)
+{
+  struct CallConference *cc;
+
+  cc = find_call_conference_by_conference (channel, GST_OBJECT (conference));
+  if (!cc)
+    {
+      g_warning ("Trying to put conference that does not exist");
+      return;
+    }
+
+  cc->use_count--;
+
+  if (cc->use_count <= 0)
+    {
+      g_signal_emit (channel, signals[SIGNAL_FS_CONFERENCE_REMOVED], 0,
+          cc->fsconference);
+      g_hash_table_remove (channel->fsconferences, cc->conference_type);
+      g_object_notify (G_OBJECT (channel), "fs-conferences");
+    }
 }
