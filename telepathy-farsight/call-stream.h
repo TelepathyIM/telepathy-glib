@@ -77,6 +77,12 @@ struct _TfCallStream {
   TfCallContent *call_content;
 
   TfFutureCallStream *proxy;
+
+  TfFutureSendingState local_sending_state;
+
+  gboolean has_contact;
+  guint contact_handle;
+  TfFutureSendingState remote_sending_state;
 };
 
 struct _TfCallStreamClass{

@@ -86,6 +86,49 @@ remote_members_changed (TfFutureCallStream *proxy,
     const GArray *arg_Removed,
     gpointer user_data, GObject *weak_object)
 {
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+  GHashTableIter iter;
+  gpointer key, value;
+
+  if (arg_Removed->len)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "org.freedesktop.Telepathy.Error.NotImplemented",
+          "Removing Members from a Stream is not implemented");
+      return;
+    }
+
+  if (g_hash_table_size (arg_Updates) != 1)
+    goto adding;
+
+  g_hash_table_iter_init (&iter, arg_Updates);
+  if (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      guint contact_handle = GPOINTER_TO_UINT (key);
+
+      if (self->has_contact)
+        {
+          if (self->contact_handle != contact_handle)
+            goto adding;
+        }
+      else
+        {
+          self->has_contact = TRUE;
+          self->contact_handle = GPOINTER_TO_UINT (key);
+        }
+      self->remote_sending_state = GPOINTER_TO_UINT (value);
+
+      /* TODO: if FsStream .. ask for direction change !! */
+    }
+
+  return;
+
+ adding:
+  tf_call_content_error (self->call_content,
+      TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+      "org.freedesktop.Telepathy.Error.NotImplemented",
+      "Having more than one member in a stream is not implemented");
 }
 
 static void
@@ -140,6 +183,8 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
   gboolean got_media_interface = FALSE;
   gboolean local_sending_state;
   GHashTable *members;
+  GHashTableIter iter;
+  gpointer key, value;
 
   if (error)
     {
@@ -185,6 +230,26 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
   if (!valid)
     goto invalid_property;
 
+  self->local_sending_state = local_sending_state;
+
+  if (g_hash_table_size (members) > 1)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "org.freedesktop.Telepathy.Error.NotImplemented",
+          "Only one Member per Stream is supported, there are %d",
+          g_hash_table_size (members));
+      return;
+    }
+
+  g_hash_table_iter_init (&iter, members);
+
+  if (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      self->has_contact = TRUE;
+      self->contact_handle = GPOINTER_TO_UINT (key);
+      self->remote_sending_state = GPOINTER_TO_UINT (value);
+    }
 
   tp_proxy_add_interface_by_id (TP_PROXY (self->proxy),
       TF_FUTURE_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA);
