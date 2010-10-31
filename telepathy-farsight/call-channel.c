@@ -225,10 +225,9 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       return;
     }
 
-  if (!g_value_get_boolean (out_value))
+  if (g_value_get_boolean (out_value))
     {
-      g_warning ("Hardware streaming property is not a boolean");
-      tf_call_channel_error (self);
+      g_warning ("Hardware streaming property is not TRUE, ignoring");
       return;
     }
 
