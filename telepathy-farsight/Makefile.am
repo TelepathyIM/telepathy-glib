@@ -23,6 +23,8 @@ libtelepathy_farsight_la_SOURCES = \
 	call-channel.h \
 	call-content.h \
 	call-content.c \
+	call-stream.h \
+	call-stream.c \
 	utils.h
 
 nodist_libtelepathy_farsight_la_SOURCES = $(BUILT_SOURCES)

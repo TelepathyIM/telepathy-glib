@@ -25,6 +25,7 @@
 #include <gst/gst.h>
 #include <telepathy-glib/channel.h>
 
+#include "extensions/extensions.h"
 #include "call-channel.h"
 
 G_BEGIN_DECLS
@@ -87,6 +88,13 @@ FsStream *_tf_call_content_get_fsstream_by_handle (TfCallContent *content,
     GParameter *stream_transmitter_parameters,
     GError **error);
 void _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream);
+
+void
+tf_call_content_error (TfCallContent *content,
+    TfFutureContentRemovalReason reason,
+    const gchar *detailed_reason,
+    const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
+
 
 
 G_END_DECLS

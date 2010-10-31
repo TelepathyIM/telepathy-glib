@@ -39,16 +39,8 @@
 
 #include <telepathy-glib/proxy-subclass.h>
 
-#include "extensions/extensions.h"
-
 #include "tf-signals-marshal.h"
 #include "utils.h"
-
-static void
-tf_call_content_error (TfCallContent *content,
-    TfFutureContentRemovalReason reason,
-    const gchar *detailed_reason,
-    const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
 
 
 struct _TfCallContent {
@@ -751,7 +743,7 @@ tf_call_content_bus_message (TfCallContent *content,
   return ret;
 }
 
-static void
+void
 tf_call_content_error (TfCallContent *content,
     TfFutureContentRemovalReason reason,
     const gchar *detailed_reason,
