@@ -83,6 +83,13 @@ struct _TfCallStream {
   gboolean has_contact;
   guint contact_handle;
   TfFutureSendingState remote_sending_state;
+  FsStream *fsstream;
+
+  gboolean has_media_properties;
+  TfFutureStreamTransportType transport_type;
+  gboolean server_info_retrieved;
+  GPtrArray *stun_servers;
+  GPtrArray *relay_info;
 };
 
 struct _TfCallStreamClass{

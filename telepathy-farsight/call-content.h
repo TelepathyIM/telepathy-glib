@@ -95,6 +95,8 @@ tf_call_content_error (TfCallContent *content,
     const gchar *detailed_reason,
     const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
 
+FsMediaType
+tf_call_content_get_fs_media_type (TfCallContent *content);
 
 
 G_END_DECLS

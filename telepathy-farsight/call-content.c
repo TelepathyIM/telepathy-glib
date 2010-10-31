@@ -845,3 +845,9 @@ _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
         }
     }
 }
+
+FsMediaType
+tf_call_content_get_fs_media_type (TfCallContent *content)
+{
+  return tp_media_type_to_fs (content->media_type);
+}

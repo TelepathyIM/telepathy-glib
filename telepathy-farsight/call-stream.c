@@ -68,6 +68,19 @@ tf_call_stream_dispose (GObject *object)
     g_object_unref (self->proxy);
   self->proxy = NULL;
 
+  if (self->stun_servers)
+    g_boxed_free (TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST, self->stun_servers);
+  self->stun_servers = NULL;
+
+  if (self->relay_info)
+    g_boxed_free (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST, self->relay_info);
+  self->relay_info = NULL;
+
+  if (self->fsstream)
+    _tf_call_content_put_fsstream (self->call_content, self->fsstream);
+  self->fsstream = NULL;
+
+
   if (G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose (object);
 }
@@ -132,9 +145,256 @@ remote_members_changed (TfFutureCallStream *proxy,
 }
 
 static void
+tf_call_stream_try_adding_fsstream (TfCallStream *self)
+{
+  gchar *transmitter;
+  GError *error = NULL;
+  guint n_params = 0;
+  GParameter params[6];
+  GList *preferred_local_candidates = NULL;
+  guint i;
+
+  if (!self->server_info_retrieved ||
+      !self->has_contact ||
+      !self->has_media_properties)
+    return;
+
+  switch (self->transport_type)
+    {
+    case TF_FUTURE_STREAM_TRANSPORT_TYPE_RAW_UDP:
+      transmitter = "rawudp";
+
+      switch (tf_call_content_get_fs_media_type (self->call_content))
+        {
+        case TP_MEDIA_STREAM_TYPE_VIDEO:
+          preferred_local_candidates = g_list_prepend (NULL,
+              fs_candidate_new (NULL, FS_COMPONENT_RTP, FS_CANDIDATE_TYPE_HOST,
+                  FS_NETWORK_PROTOCOL_UDP, NULL, 9078));
+          break;
+        case TP_MEDIA_STREAM_TYPE_AUDIO:
+          preferred_local_candidates = g_list_prepend (NULL,
+              fs_candidate_new (NULL, FS_COMPONENT_RTP, FS_CANDIDATE_TYPE_HOST,
+                  FS_NETWORK_PROTOCOL_UDP, NULL, 7078));
+        default:
+          break;
+        }
+
+      if (preferred_local_candidates)
+        {
+          params[n_params].name = "preferred-local-candidates";
+          g_value_init (&params[n_params].value, FS_TYPE_CANDIDATE_LIST);
+          g_value_take_boxed (&params[n_params].value,
+              preferred_local_candidates);
+          n_params++;
+        }
+      break;
+    case TF_FUTURE_STREAM_TRANSPORT_TYPE_ICE:
+    case TF_FUTURE_STREAM_TRANSPORT_TYPE_GTALK_P2P:
+    case TF_FUTURE_STREAM_TRANSPORT_TYPE_WLM_2009:
+      transmitter = "nice";
+
+      /* MISSING: Set Controlling mode property here */
+
+      params[n_params].name = "compatibility-mode";
+      g_value_init (&params[n_params].value, G_TYPE_UINT);
+      switch (self->transport_type)
+        {
+        case TF_FUTURE_STREAM_TRANSPORT_TYPE_ICE:
+          g_value_set_uint (&params[n_params].value, 0);
+          break;
+        case TF_FUTURE_STREAM_TRANSPORT_TYPE_GTALK_P2P:
+          g_value_set_uint (&params[n_params].value, 1);
+          break;
+        case TF_FUTURE_STREAM_TRANSPORT_TYPE_WLM_2009:
+          g_value_set_uint (&params[n_params].value, 3);
+          break;
+        default:
+          break;
+        }
+      n_params++;
+      break;
+    case TF_FUTURE_STREAM_TRANSPORT_TYPE_SHM:
+      transmitter = "shm";
+      break;
+    default:
+       tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+           "org.freedesktop.Telepathy.Error.NotImplemented",
+           "Unknown transport type %d", self->transport_type);
+    }
+
+  if (self->stun_servers->len)
+    {
+      GValueArray *gva = g_ptr_array_index (self->stun_servers, 0);
+      gchar *ip;
+      guint16 port;
+      gchar *conn_timeout_str;
+
+      /* We only use the first STUN server if there are many */
+
+      tp_value_array_unpack (gva, 2, &ip, &port);
+
+      params[n_params].name = "stun-ip";
+      g_value_init (&params[n_params].value, G_TYPE_STRING);
+      g_value_set_string (&params[n_params].value, ip);
+      n_params++;
+
+      params[n_params].name = "stun-port";
+      g_value_init (&params[n_params].value, G_TYPE_UINT);
+      g_value_set_uint (&params[n_params].value, port);
+      n_params++;
+
+      conn_timeout_str = getenv ("FS_CONN_TIMEOUT");
+      if (conn_timeout_str)
+        {
+          gint conn_timeout = strtol (conn_timeout_str, NULL, 10);
+
+          params[n_params].name = "stun-timeout";
+          g_value_init (&params[n_params].value, G_TYPE_UINT);
+          g_value_set_uint (&params[n_params].value, conn_timeout);
+          n_params++;
+        }
+    }
+
+  if (self->relay_info->len)
+    {
+      GValueArray *fs_relay_info = g_value_array_new (0);
+      GValue val = {0};
+      g_value_init (&val, GST_TYPE_STRUCTURE);
+
+      for (i = 0; i < self->relay_info->len; i++)
+        {
+          GHashTable *one_relay = g_ptr_array_index(self->relay_info, i);
+          const gchar *type = NULL;
+          const gchar *ip;
+          guint32 port;
+          const gchar *username;
+          const gchar *password;
+          guint component;
+          GstStructure *s;
+
+          ip = tp_asv_get_string (one_relay, "ip");
+          port = tp_asv_get_uint32 (one_relay, "port", NULL);
+          type = tp_asv_get_string (one_relay, "type");
+          username = tp_asv_get_string (one_relay, "username");
+          password = tp_asv_get_string (one_relay, "password");
+          component = tp_asv_get_uint32 (one_relay, "component", NULL);
+
+          if (!ip || !port || !username || !password)
+              continue;
+
+          if (!type)
+            type = "udp";
+
+          s = gst_structure_new ("relay-info",
+              "ip", G_TYPE_STRING, ip,
+              "port", G_TYPE_UINT, port,
+              "username", G_TYPE_STRING, username,
+              "password", G_TYPE_STRING, password,
+              "type", G_TYPE_STRING, type,
+              NULL);
+
+          if (component)
+            gst_structure_set (s, "component", G_TYPE_UINT, component, NULL);
+
+
+          g_value_take_boxed (&val, s);
+
+          g_value_array_append (fs_relay_info, &val);
+          g_value_reset (&val);
+        }
+
+      if (fs_relay_info->n_values)
+        {
+          params[n_params].name = "relay-info";
+          g_value_init (&params[n_params].value, G_TYPE_VALUE_ARRAY);
+          g_value_set_boxed (&params[n_params].value, fs_relay_info);
+          n_params++;
+        }
+
+      g_value_array_free (fs_relay_info);
+    }
+
+  self->fsstream = _tf_call_content_get_fsstream_by_handle (self->call_content,
+      self->contact_handle,
+      transmitter,
+      n_params,
+      params,
+      &error);
+
+  for (i = 0; i < n_params; i++)
+    g_value_unset (&params[i].value);
+
+  if (!self->fsstream)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "",
+          "Could not create FsStream: %s", error->message);
+      return;
+    }
+
+}
+
+static void
 server_info_retrieved (TfFutureCallStream *proxy,
     gpointer user_data, GObject *weak_object)
 {
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  self->server_info_retrieved = TRUE;
+
+  tf_call_stream_try_adding_fsstream (self);
+}
+
+static void
+relay_info_changed (TfFutureCallStream *proxy,
+    const GPtrArray *arg_Relay_Info,
+    gpointer user_data, GObject *weak_object)
+{
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  if (self->server_info_retrieved)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "org.freedesktop.Telepathy.Error.NotImplemented",
+          "Changing relay servers after ServerInfoRetrived is not implemented");
+      return;
+    }
+
+  /* Ignore signals that come before the basic info has been retrived */
+  if (!self->relay_info)
+    return;
+
+  g_boxed_free (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST, self->relay_info);
+  self->relay_info = g_boxed_copy (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST,
+      arg_Relay_Info);
+}
+
+static void
+stun_servers_changed (TfFutureCallStream *proxy,
+    const GPtrArray *arg_Servers,
+    gpointer user_data, GObject *weak_object)
+{
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  if (self->server_info_retrieved)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "org.freedesktop.Telepathy.Error.NotImplemented",
+          "Changing STUN servers after ServerInfoRetrived is not implemented");
+      return;
+    }
+
+  /* Ignore signals that come before the basic info has been retrived */
+  if (!self->stun_servers)
+    return;
+
+  g_boxed_free (TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST, self->stun_servers);
+  self->stun_servers = g_boxed_copy (TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST,
+      arg_Servers);
 }
 
 static void
@@ -150,6 +410,9 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
+  GPtrArray *stun_servers;
+  GPtrArray *relay_info;
+  gboolean valid;
 
   if (error)
     {
@@ -160,7 +423,6 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
       return;
     }
 
-
   if (!out_Properties)
     {
       tf_call_content_error (self->call_content,
@@ -168,6 +430,42 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
           "", "Error getting the Stream's media properties: there are none");
       return;
     }
+
+  self->transport_type =
+      tp_asv_get_uint32 (out_Properties, "Transport", &valid);
+  if (!valid)
+    goto invalid_property;
+
+  stun_servers = tp_asv_get_boxed (out_Properties, "STUNServers",
+      TP_STRUCT_TYPE_SOCKET_ADDRESS_IP);
+  if (!stun_servers)
+    goto invalid_property;
+
+  relay_info = tp_asv_get_boxed (out_Properties, "STUNServers",
+      TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST);
+  if (!relay_info)
+    goto invalid_property;
+
+  self->server_info_retrieved = tp_asv_get_boolean (out_Properties,
+      "HasServerInfo", &valid);
+  if (!valid)
+    goto invalid_property;
+
+  self->stun_servers = g_boxed_copy (TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST,
+      stun_servers);
+  self->relay_info = g_boxed_copy (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST,
+      relay_info);
+
+  self->has_media_properties = TRUE;
+
+  tf_call_stream_try_adding_fsstream (self);
+
+  return;
+ invalid_property:
+  tf_call_content_error (self->call_content,
+      TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      "Error getting the Stream's properties: invalid type");
+  return;
 }
 
 
@@ -256,6 +554,33 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   tf_future_cli_call_stream_interface_media_connect_to_server_info_retrieved (
       TF_FUTURE_CALL_STREAM (proxy), server_info_retrieved, NULL, NULL,
+      G_OBJECT (self), &myerror);
+  if (myerror)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to ServerInfoRetrived signal: %s",
+          myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
+  tf_future_cli_call_stream_interface_media_connect_to_stun_servers_changed (
+      TF_FUTURE_CALL_STREAM (proxy), stun_servers_changed, NULL, NULL,
+      G_OBJECT (self), &myerror);
+  if (myerror)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to ServerInfoRetrived signal: %s",
+          myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
+
+  tf_future_cli_call_stream_interface_media_connect_to_relay_info_changed (
+      TF_FUTURE_CALL_STREAM (proxy), relay_info_changed, NULL, NULL,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
