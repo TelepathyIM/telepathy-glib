@@ -65,6 +65,13 @@ struct CallConference {
   FsConference *fsconference;
 };
 
+struct CallParticipant {
+  gint use_count;
+  guint handle;
+  FsConference *fsconference;
+  FsParticipant *fsparticipant;
+};
+
 static void
 tf_call_channel_get_property (GObject    *object,
     guint       property_id,
@@ -114,10 +121,22 @@ free_call_conference (gpointer data)
 }
 
 static void
+free_participant (gpointer data)
+{
+  struct CallParticipant *cp = data;
+
+  g_object_unref (cp->fsparticipant);
+  gst_object_unref (cp->fsconference);
+  g_slice_free (struct CallParticipant, cp);
+}
+
+static void
 tf_call_channel_init (TfCallChannel *self)
 {
   self->fsconferences = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
       free_call_conference);
+
+  self->participants = g_ptr_array_new_with_free_func (free_participant);
 }
 
 static void
@@ -130,6 +149,10 @@ tf_call_channel_dispose (GObject *object)
   if (self->contents)
     g_hash_table_destroy (self->contents);
   self->contents = NULL;
+
+  if (self->participants)
+    g_ptr_array_unref (self->participants);
+  self->participants = NULL;
 
   if (self->fsconferences)
       g_hash_table_unref (self->fsconferences);
@@ -455,4 +478,62 @@ _tf_call_channel_put_conference (TfCallChannel *channel,
       g_hash_table_remove (channel->fsconferences, cc->conference_type);
       g_object_notify (G_OBJECT (channel), "fs-conferences");
     }
+}
+
+
+FsParticipant *
+_tf_call_channel_get_participant (TfCallChannel *channel,
+    FsConference *fsconference,
+    guint contact_handle)
+{
+  guint i;
+  struct CallParticipant *cp;
+  FsParticipant *p;
+
+  for (i = 0; i < channel->participants->len; i++)
+    {
+      cp = g_ptr_array_index (channel->participants, i);
+
+      if (cp->fsconference == fsconference &&
+          cp->handle == contact_handle)
+        {
+          cp->use_count++;
+          return g_object_ref (cp->fsparticipant);
+        }
+    }
+
+  p = fs_conference_new_participant (fsconference, NULL, NULL);
+  if (!p)
+    return NULL;
+
+  cp = g_slice_new (struct CallParticipant);
+  cp->use_count = 1;
+  cp->handle = contact_handle;
+  cp->fsconference = gst_object_ref (fsconference);
+  cp->fsparticipant = p;
+  g_ptr_array_add (channel->participants, cp);
+
+  return p;
+}
+
+
+void
+_tf_call_channel_put_participant (TfCallChannel *channel,
+    FsParticipant *participant)
+{
+  guint i;
+
+   for (i = 0; i < channel->participants->len; i++)
+    {
+      struct CallParticipant *cp = g_ptr_array_index (channel->participants, i);
+
+      if (cp->fsparticipant == participant)
+        {
+          cp->use_count--;
+          if (cp->use_count <= 0)
+            g_ptr_array_remove_index (channel->participants, i);
+          return;
+        }
+    }
+
 }

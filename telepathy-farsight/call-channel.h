@@ -24,6 +24,7 @@
 
 #include <gst/gst.h>
 #include <gst/farsight/fs-conference-iface.h>
+#include <gst/farsight/fs-participant.h>
 #include <telepathy-glib/channel.h>
 
 G_BEGIN_DECLS
@@ -77,6 +78,8 @@ struct _TfCallChannel {
   GHashTable *fsconferences;
 
   GHashTable *contents; /* NULL before getting the first contents */
+
+  GPtrArray *participants;
 };
 
 struct _TfCallChannelClass{
@@ -98,10 +101,15 @@ gboolean tf_call_channel_bus_message (TfCallChannel *channel,
 
 FsConference *_tf_call_channel_get_conference (TfCallChannel *channel,
     const gchar *conference_type);
-
 void _tf_call_channel_put_conference (TfCallChannel *channel,
     FsConference *conference);
 
+
+FsParticipant *_tf_call_channel_get_participant (TfCallChannel *channel,
+    FsConference *fsconference,
+    guint contact_handle);
+void _tf_call_channel_put_participant (TfCallChannel *channel,
+    FsParticipant *participant);
 
 G_END_DECLS
 
