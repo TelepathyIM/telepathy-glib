@@ -50,15 +50,7 @@ nodist_libfuture_extensions_la_SOURCES = \
     _gen/cli-channel.h \
     _gen/cli-channel-body.h \
     _gen/cli-misc.h \
-    _gen/cli-misc-body.h \
-    _gen/svc-call-content.h \
-    _gen/svc-call-content.c \
-    _gen/svc-call-stream.h \
-    _gen/svc-call-stream.c \
-    _gen/svc-channel.h \
-    _gen/svc-channel.c \
-    _gen/svc-misc.h \
-    _gen/svc-misc.c
+    _gen/cli-misc-body.h
 
 BUILT_SOURCES = \
     _gen/all.xml \
@@ -120,17 +112,6 @@ _gen/interfaces-body.h _gen/interfaces.h: _gen/all.xml \
 _gen/%.xml: %.xml $(wildcard $(srcdir)/*.xml) $(wildcard $(top_srcdir)/spec/*.xml) $(tools_dir)/xincludator.py
 	$(mkdir_p) _gen
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
-
-_gen/svc-%.c _gen/svc-%.h: _gen/%.xml \
-	$(tools_dir)/glib-ginterface-gen.py
-	$(AM_V_GEN)$(PYTHON) $(tools_dir)/glib-ginterface-gen.py \
-		--filename=_gen/svc-$* \
-		--signal-marshal-prefix=_tf_future_ext \
-		--include='<telepathy-glib/dbus.h>' \
-		--include='"_gen/signals-marshal.h"' \
-		--not-implemented-func='tp_dbus_g_method_return_not_implemented' \
-		--allow-unstable \
-		$< Tf_Future_Svc_
 
 _gen/cli-channel-body.h _gen/cli-channel.h: _gen/channel.xml \
 	$(tools_dir)/glib-client-gen.py Makefile.am
