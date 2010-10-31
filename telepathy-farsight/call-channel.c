@@ -186,8 +186,8 @@ add_content (TfCallChannel *self, const gchar *content_path)
 
   if (error)
     {
-      g_warning ("Error creating the content object: %s", error->message);
-      tf_call_channel_error (self);
+      /* Error was already transmitter to the Content by the CM */
+      g_clear_error (&error);
       return FALSE;
     }
 

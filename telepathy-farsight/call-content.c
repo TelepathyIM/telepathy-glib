@@ -34,6 +34,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <gst/farsight/fs-conference-iface.h>
 
+#include <stdarg.h>
 #include <string.h>
 
 #include <telepathy-glib/proxy-subclass.h>
@@ -42,6 +43,12 @@
 
 #include "tf-signals-marshal.h"
 #include "utils.h"
+
+static void
+tf_call_content_error (TfCallContent *content,
+    TfFutureContentRemovalReason reason,
+    const gchar *detailed_reason,
+    const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
 
 
 struct _TfCallContent {
@@ -183,8 +190,8 @@ add_stream (TfCallContent *self, const gchar *stream_path)
   if (error)
     {
       /* TODO: Use per-stream errors */
-      g_warning ("Error creating the stream object: %s", error->message);
-      tf_call_channel_error (self->call_channel);
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Error creating the stream object: %s", error->message);
       return;
     }
 
@@ -217,16 +224,15 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (error)
     {
-      g_warning ("Error getting the Content's properties: %s",
-          error->message);
-      tf_call_channel_error (self->call_channel);
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Error getting the Content's properties: %s", error->message);
       return;
     }
 
   if (!out_Properties)
     {
-      g_warning ("Error getting the Content's properties: there are none");
-      tf_call_channel_error (self->call_channel);
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Error getting the Content's properties: there are none");
       return;
     }
 
@@ -241,9 +247,10 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!got_media_interface)
     {
-      g_warning ("Content does not have the media interface,"
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Content does not have the media interface,"
           " but HardwareStreaming was NOT true");
-      tf_call_channel_error (self->call_channel);
+      return;
     }
 
 
@@ -267,8 +274,8 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
       conference_type);
   if (!self->fsconference)
     {
-      g_warning ("Could not create FsConference for type %s", conference_type);
-      tf_call_channel_error (self->call_channel);
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
+          "", "Could not create FsConference for type %s", conference_type);
       return;
     }
 
@@ -277,9 +284,9 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!self->fssession)
     {
-      g_warning ("Could not create FsSession: %s", myerror->message);
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
+          "", "Could not create FsSession: %s", myerror->message);
       g_clear_error (&myerror);
-      tf_call_channel_error (self->call_channel);
       return;
     }
 
@@ -300,8 +307,8 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   return;
 
  invalid_property:
-  g_warning ("Error getting the Content's properties: invalid type");
-  tf_call_channel_error (self->call_channel);
+  tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+      "", "Error getting the Content's properties: invalid type");
   return;
 }
 
@@ -365,9 +372,9 @@ tf_call_content_new (TfCallChannel *call_channel,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      g_warning ("Error connectiong to StreamAdded signal: %s",
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to StreamAdded signal: %s",
           (*error)->message);
-      tf_call_channel_error (call_channel);
       g_object_unref (self);
       g_propagate_error (error, myerror);
       return NULL;
@@ -378,9 +385,9 @@ tf_call_content_new (TfCallChannel *call_channel,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      g_warning ("Error connectiong to StreamRemoved signal: %s",
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to StreamRemoved signal: %s",
           myerror->message);
-      tf_call_channel_error (call_channel);
       g_object_unref (self);
       g_propagate_error (error, myerror);
       return NULL;
@@ -519,8 +526,9 @@ tf_call_content_bus_message (TfCallContent *content,
               enumvalue->value_nick, errorno, msg, debug);
           g_type_class_unref (enumclass);
 
-          /* FIXME: Error propagation not possible */
-          g_warning ("ERROR propagation not possible");
+          tf_call_content_error (content,
+              TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", msg);
+
           ret = TRUE;
         }
     }
@@ -543,4 +551,25 @@ tf_call_content_bus_message (TfCallContent *content,
     }
 
   return ret;
+}
+
+static void
+tf_call_content_error (TfCallContent *content,
+    TfFutureContentRemovalReason reason,
+    const gchar *detailed_reason,
+    const gchar *message_format, ...)
+{
+  gchar *message;
+  va_list valist;
+
+  va_start (valist, message_format);
+  message = g_strdup_vprintf (message_format, valist);
+  va_end (valist);
+
+  g_warning (message);
+  tf_future_cli_call_content_call_remove (
+      content->proxy, -1, reason, detailed_reason, message, NULL, NULL,
+      NULL, NULL);
+
+  g_free (message);
 }
