@@ -484,7 +484,8 @@ _tf_call_channel_put_conference (TfCallChannel *channel,
 FsParticipant *
 _tf_call_channel_get_participant (TfCallChannel *channel,
     FsConference *fsconference,
-    guint contact_handle)
+    guint contact_handle,
+    GError **error)
 {
   guint i;
   struct CallParticipant *cp;
@@ -502,7 +503,7 @@ _tf_call_channel_get_participant (TfCallChannel *channel,
         }
     }
 
-  p = fs_conference_new_participant (fsconference, NULL, NULL);
+  p = fs_conference_new_participant (fsconference, NULL, error);
   if (!p)
     return NULL;
 
@@ -531,7 +532,7 @@ _tf_call_channel_put_participant (TfCallChannel *channel,
         {
           cp->use_count--;
           if (cp->use_count <= 0)
-            g_ptr_array_remove_index (channel->participants, i);
+            g_ptr_array_remove_index_fast (channel->participants, i);
           return;
         }
     }

@@ -107,7 +107,8 @@ void _tf_call_channel_put_conference (TfCallChannel *channel,
 
 FsParticipant *_tf_call_channel_get_participant (TfCallChannel *channel,
     FsConference *fsconference,
-    guint contact_handle);
+    guint contact_handle,
+    GError **error);
 void _tf_call_channel_put_participant (TfCallChannel *channel,
     FsParticipant *participant);
 

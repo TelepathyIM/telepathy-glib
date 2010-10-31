@@ -78,6 +78,17 @@ TfCallContent *tf_call_content_new (
 gboolean tf_call_content_bus_message (TfCallContent *content,
     GstMessage *message);
 
+
+/* Private */
+FsStream *_tf_call_content_get_fsstream_by_handle (TfCallContent *content,
+    guint contact_handle,
+    const gchar *transmitter,
+    guint stream_transmitter_n_parameters,
+    GParameter *stream_transmitter_parameters,
+    GError **error);
+void _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream);
+
+
 G_END_DECLS
 
 #endif /* __TF_CALL_CONTENT_H__ */

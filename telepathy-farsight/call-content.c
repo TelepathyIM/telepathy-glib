@@ -67,6 +67,8 @@ struct _TfCallContent {
 
   GHashTable *streams; /* NULL before getting the first streams */
 
+  GPtrArray *fsstreams;
+
   gboolean got_codec_offer_property;
 };
 
@@ -87,6 +89,14 @@ enum
 enum
 {
   SIGNAL_COUNT
+};
+
+struct CallFsStream {
+  TfCallChannel *parent_channel;
+  guint use_count;
+  guint contact_handle;
+  FsParticipant *fsparticipant;
+  FsStream *fsstream;
 };
 
 // static guint signals[SIGNAL_COUNT] = {0};
@@ -126,8 +136,19 @@ tf_call_content_class_init (TfCallContentClass *klass)
 
 
 static void
+free_content_fsstream (gpointer data)
+{
+  struct CallFsStream *cfs = data;
+
+  g_object_unref (cfs->fsstream);
+  _tf_call_channel_put_participant (cfs->parent_channel, cfs->fsparticipant);
+  g_slice_free (struct CallFsStream, cfs);
+}
+
+static void
 tf_call_content_init (TfCallContent *self)
 {
+  self->fsstreams = g_ptr_array_new_with_free_func (free_content_fsstream);
 }
 
 static void
@@ -144,6 +165,10 @@ tf_call_content_dispose (GObject *object)
   if (self->fssession)
     g_object_unref (self->fssession);
   self->fssession = NULL;
+
+  if (self->fsstreams)
+    g_ptr_array_unref (self->fsstreams);
+  self->fsstreams = NULL;
 
   if (self->fsconference)
     _tf_call_channel_put_conference (self->call_channel,
@@ -706,4 +731,86 @@ tf_call_content_error (TfCallContent *content,
       NULL, NULL);
 
   g_free (message);
+}
+
+
+
+static FsStream *
+tf_call_content_get_existing_fsstream_by_handle (TfCallContent *content,
+    guint contact_handle)
+{
+  guint i;
+
+  for (i = 0; i < content->fsstreams->len; i++)
+    {
+      struct CallFsStream *cfs = g_ptr_array_index (content->fsstreams, i);
+
+      if (cfs->contact_handle == contact_handle)
+        {
+          cfs->use_count++;
+          return cfs->fsstream;
+        }
+    }
+
+  return NULL;
+}
+
+FsStream *
+_tf_call_content_get_fsstream_by_handle (TfCallContent *content,
+    guint contact_handle,
+    const gchar *transmitter,
+    guint stream_transmitter_n_parameters,
+    GParameter *stream_transmitter_parameters,
+    GError **error)
+{
+  struct CallFsStream *cfs;
+  FsParticipant *p;
+  FsStream *s;
+
+  s = tf_call_content_get_existing_fsstream_by_handle (content,
+      contact_handle);
+  if (s)
+    return s;
+
+  p = _tf_call_channel_get_participant (content->call_channel,
+      content->fsconference, contact_handle, error);
+  if (!p)
+    return NULL;
+
+  s = fs_session_new_stream (content->fssession, p, FS_DIRECTION_NONE,
+      transmitter, stream_transmitter_n_parameters,
+      stream_transmitter_parameters, error);
+  if (!s)
+    {
+      _tf_call_channel_put_participant (content->call_channel, p);
+      return NULL;
+    }
+
+  cfs = g_slice_new (struct CallFsStream);
+  cfs->use_count = 1;
+  cfs->contact_handle = contact_handle;
+  cfs->parent_channel = content->call_channel;
+  cfs->fsparticipant = p;
+  cfs->fsstream = s;
+
+  return s;
+}
+
+void
+_tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
+{
+  guint i;
+
+  for (i = 0; i < content->fsstreams->len; i++)
+    {
+      struct CallFsStream *cfs = g_ptr_array_index (content->fsstreams, i);
+
+      if (cfs->fsstream == fsstream)
+        {
+          cfs->use_count--;
+          if (cfs->use_count <= 0)
+            g_ptr_array_remove_index_fast (content->fsstreams, i);
+          return;
+        }
+    }
 }
