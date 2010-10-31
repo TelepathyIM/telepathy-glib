@@ -64,12 +64,16 @@ struct _TfCallContent {
 
   GList *current_codecs;
   TpProxy *current_offer;
+  guint current_offer_contact_handle;
+  GList *current_offer_fscodecs;
 
   GHashTable *streams; /* NULL before getting the first streams */
 
   GPtrArray *fsstreams;
 
   gboolean got_codec_offer_property;
+
+  guint sending_count;
 };
 
 struct _TfCallContentClass{
@@ -108,6 +112,11 @@ tf_call_content_get_property (GObject    *object,
     GParamSpec *pspec);
 
 static void tf_call_content_dispose (GObject *object);
+
+
+static void tf_call_content_try_sending_codecs (TfCallContent *self);
+static FsStream * tf_call_content_get_existing_fsstream_by_handle (
+    TfCallContent *content, guint contact_handle);
 
 
 static void
@@ -272,11 +281,13 @@ tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs)
 
 static void
 process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
-    guint contact, const GPtrArray *codecs)
+    guint contact_handle, const GPtrArray *codecs)
 {
   TpProxy *proxy;
   GError *error = NULL;
   GList *fscodecs;
+  FsStream *fsstream;
+  gboolean success;
 
   if (!tp_dbus_check_valid_object_path (offer_objpath, &error))
     {
@@ -295,14 +306,33 @@ process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
   fscodecs = tpcodecs_to_fscodecs (tp_media_type_to_fs (self->media_type),
       codecs);
 
-  /* Find the right FsStream object for this contact  and try setting the codecs
-   * if possible
-   */
+  fsstream = tf_call_content_get_existing_fsstream_by_handle (self,
+      contact_handle);
 
+  if (!fsstream)
+    {
+      self->current_offer = proxy;
+      self->current_offer_contact_handle = contact_handle;
+      self->current_offer_fscodecs = fscodecs;
+      return;
+    }
+
+  success = fs_stream_set_remote_codecs (fsstream, fscodecs, &error);
+  _tf_call_content_put_fsstream (self, fsstream);
   fs_codec_list_destroy (fscodecs);
 
+  if (success)
+    {
+      self->current_offer = proxy;
+      tf_call_content_try_sending_codecs (self);
+    }
+  else
+    {
+      tf_future_cli_call_content_codec_offer_call_reject (self->current_offer,
+          -1, NULL, NULL, NULL, NULL);
+      g_object_unref (proxy);
+    }
 
-  g_object_unref (proxy);
 }
 
 static void
@@ -346,6 +376,13 @@ new_codec_offer (TfFutureCallContent *proxy,
   /* Ignore signals before we get the first codec offer property */
   if (!self->got_codec_offer_property)
     return;
+
+  if (self->current_offer) {
+    g_object_unref (self->current_offer);
+    fs_codec_list_destroy (self->current_offer_fscodecs);
+    self->current_offer = NULL;
+    self->current_offer_fscodecs = NULL;
+  }
 
   process_codec_offer (self, arg_Offer, arg_Contact, arg_Codecs);
 }
@@ -602,7 +639,7 @@ fscodecs_to_tpcodecs (GList *codecs)
 }
 
 static void
-try_sending_codecs (TfCallContent *self)
+tf_call_content_try_sending_codecs (TfCallContent *self)
 {
   gboolean ready;
   GList *codecs;
@@ -610,12 +647,15 @@ try_sending_codecs (TfCallContent *self)
 
   g_debug ("new local codecs");
 
-  g_object_get (self->fssession, "ready", &ready, NULL);
-
-  if (ready)
-    g_object_get (self->fssession, "codecs", &codecs, NULL);
+  if (self->sending_count == 0)
+    ready = TRUE;
   else
-    g_object_get (self->fssession, "codecs-without-config", &codecs, NULL);
+    g_object_get (self->fssession, "ready", &ready, NULL);
+
+  if (!ready)
+    return;
+
+  g_object_get (self->fssession, "codecs", &codecs, NULL);
 
   if (fs_codec_list_are_equal (codecs, self->current_codecs))
     {
@@ -629,7 +669,6 @@ try_sending_codecs (TfCallContent *self)
     {
       tf_future_cli_call_content_codec_offer_call_accept (self->current_offer,
           -1, tpcodecs, NULL, NULL, NULL, NULL);
-      self->current_offer = NULL;
 
       g_object_unref (self->current_offer);
       self->current_offer = NULL;
@@ -704,7 +743,7 @@ tf_call_content_bus_message (TfCallContent *content,
 
       g_debug ("Codecs changed");
 
-      try_sending_codecs (content);
+      tf_call_content_try_sending_codecs (content);
 
       ret = TRUE;
     }
