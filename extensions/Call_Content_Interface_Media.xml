@@ -174,8 +174,13 @@
           >CodecOffer.DRAFT</tp:dbus-ref>
         </tp:docstring>
       </tp:member>
-      <tp:member name="Remote_Contact_Codec_Map" type="a{ua(usuua{ss})}"
-          tp:type="Contact_Codec_Map">
+      <tp:member name="Remote_Contact" type="u" tp:type="Contact_Handle">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          The contact handle that this codec offer applies to.
+        </tp:docstring>
+      </tp:member>
+      <tp:member name="Remote_Contact_Codecs" type="a(usuua{ss})"
+          tp:type="Codec[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           The <tp:dbus-ref namespace="ofdT.Call.Content"
           >CodecOffer.DRAFT.RemoteContactCodecs</tp:dbus-ref> property
@@ -274,7 +279,7 @@
           codec offer.
         </tp:docstring>
       </arg>
-      <arg name="Codecs" type="a{ua(usuua{ss})}" tp:type="Contact_Codec_Map">
+      <arg name="Codecs" type="a(usuua{ss})" tp:type="Codec[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The <tp:dbus-ref namespace="ofdT.Call.Content"
             >CodecOffer.DRAFT.RemoteContactCodecs</tp:dbus-ref> property
@@ -292,7 +297,7 @@
     </signal>
 
     <property name="CodecOffer" tp:name-for-bindings="Codec_Offer"
-      type="(oa{ua(usuua{ss})})" tp:type="Codec_Offering"
+      type="(oua(usuua{ss}))" tp:type="Codec_Offering"
       access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The object path to the current
