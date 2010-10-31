@@ -39,6 +39,7 @@
 
 #include <telepathy-glib/proxy-subclass.h>
 
+#include "call-stream.h"
 #include "tf-signals-marshal.h"
 #include "utils.h"
 
@@ -212,8 +213,8 @@ static void
 add_stream (TfCallContent *self, const gchar *stream_path)
 {
   GError *error = NULL;
-  // TfCallStream *stream = tf_call_stream_new (self,
-  //    stream_path, &error);
+  TfCallStream *stream = tf_call_stream_new (self->call_channel, self,
+      stream_path, &error);
 
   if (error)
     {
@@ -223,8 +224,7 @@ add_stream (TfCallContent *self, const gchar *stream_path)
       return;
     }
 
-  // g_hash_table_insert (self->streams, g_strdup (stream_path), stream);
-
+  g_hash_table_insert (self->streams, g_strdup (stream_path), stream);
 }
 
 
@@ -530,7 +530,7 @@ streams_removed (TfFutureCallContent *proxy,
     return;
 
   for (i = 0; i < arg_Streams->len; i++)
-    add_stream (self, g_ptr_array_index (arg_Streams, i));
+    g_hash_table_remove (self->streams, g_ptr_array_index (arg_Streams, i));
 }
 
 
