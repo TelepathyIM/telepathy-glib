@@ -66,6 +66,8 @@ struct _TfCallContent {
   TpProxy *current_offer;
 
   GHashTable *streams; /* NULL before getting the first streams */
+
+  gboolean got_codec_offer_property;
 };
 
 struct _TfCallContentClass{
@@ -201,11 +203,126 @@ add_stream (TfCallContent *self, const gchar *stream_path)
 
 
 static void
-got_content_media_properties (TpProxy *proxy, GHashTable *out_Properties,
+tpparam_to_fsparam (gpointer key, gpointer value, gpointer user_data)
+{
+  gchar *name = key;
+  gchar *val = value;
+  FsCodec *fscodec = user_data;
+
+  fs_codec_add_optional_parameter (fscodec, name, val);
+}
+
+static GList *
+tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs)
+{
+  GList *fscodecs = NULL;
+  guint i;
+
+  for (i = 0; i < tpcodecs->len; i++)
+    {
+      GValueArray *tpcodec = g_ptr_array_index (tpcodecs, i);
+      guint pt;
+      gchar *name;
+      guint clock_rate;
+      guint channels;
+      GHashTable *params;
+      FsCodec *fscodec;
+
+      tp_value_array_unpack (tpcodec, 5, &pt, &name, &clock_rate, &channels,
+          &params);
+
+      fscodec = fs_codec_new (pt, name, fsmediatype, clock_rate);
+      fscodec->channels = channels;
+
+      g_hash_table_foreach (params, tpparam_to_fsparam, fscodec);
+
+      fscodecs = g_list_prepend (fscodecs, fscodec);
+    }
+
+  fscodecs = g_list_reverse (fscodecs);
+
+  return fscodecs;
+}
+
+
+static void
+process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
+    guint contact, const GPtrArray *codecs)
+{
+  TpProxy *proxy;
+  GError *error = NULL;
+  GList *fscodecs;
+
+  if (!tp_dbus_check_valid_object_path (offer_objpath, &error))
+    {
+      tf_call_content_error (self,  TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Invalid offer path: %s", error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  proxy = g_object_new (TP_TYPE_PROXY,
+      "dbus-daemon", tp_proxy_get_dbus_daemon (self->proxy),
+      "bus-name", tp_proxy_get_bus_name (self->proxy),
+      "object-path", offer_objpath,
+      NULL);
+
+  fscodecs = tpcodecs_to_fscodecs (tp_media_type_to_fs (self->media_type),
+      codecs);
+
+  /* Find the right FsStream object for this contact  and try setting the codecs
+   * if possible
+   */
+
+  fs_codec_list_destroy (fscodecs);
+
+
+  g_object_unref (proxy);
+}
+
+static void
+got_codec_offer_property (TpProxy *proxy, const GValue *out_Value,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
-  // TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  GValueArray *gva;
+  const gchar *offer_objpath;
+  guint contact;
+  GPtrArray *codecs;
 
+  if (!G_VALUE_HOLDS (out_Value, TF_FUTURE_STRUCT_TYPE_CODEC_OFFERING))
+    {
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Error getting the Content's properties: invalid type");
+      return;
+    }
+
+  gva = g_value_get_boxed (out_Value);
+
+  tp_value_array_unpack (gva, 3, &offer_objpath, &contact, &codecs);
+
+  process_codec_offer (self, offer_objpath, contact, codecs);
+
+  self->got_codec_offer_property = TRUE;
+}
+
+
+
+static void
+new_codec_offer (TfFutureCallContent *proxy,
+    guint arg_Contact,
+    const gchar *arg_Offer,
+    const GPtrArray *arg_Codecs,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
+
+  /* Ignore signals before we get the first codec offer property */
+  if (!self->got_codec_offer_property)
+    return;
+
+  process_codec_offer (self, arg_Offer, arg_Contact, arg_Codecs);
 }
 
 
@@ -299,9 +416,23 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   tp_proxy_add_interface_by_id (TP_PROXY (self->proxy),
       TF_FUTURE_IFACE_QUARK_CALL_CONTENT_INTERFACE_MEDIA);
 
-  tp_cli_dbus_properties_call_get_all (proxy, -1,
-      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
-      got_content_media_properties, NULL, NULL, G_OBJECT (self));
+
+  tf_future_cli_call_content_interface_media_connect_to_new_codec_offer (
+      TF_FUTURE_CALL_CONTENT (proxy), new_codec_offer, NULL, NULL,
+      G_OBJECT (self), &myerror);
+
+  if (myerror)
+    {
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to NewCodecOffer signal: %s",
+          myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
+  tp_cli_dbus_properties_call_get (proxy, -1,
+      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA, "CodecOffer",
+      got_codec_offer_property, NULL, NULL, G_OBJECT (self));
 
 
   return;
@@ -374,7 +505,7 @@ tf_call_content_new (TfCallChannel *call_channel,
     {
       tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to StreamAdded signal: %s",
-          (*error)->message);
+          myerror->message);
       g_object_unref (self);
       g_propagate_error (error, myerror);
       return NULL;
@@ -473,6 +604,9 @@ try_sending_codecs (TfCallContent *self)
     {
       tf_future_cli_call_content_codec_offer_call_accept (self->current_offer,
           -1, tpcodecs, NULL, NULL, NULL, NULL);
+      self->current_offer = NULL;
+
+      g_object_unref (self->current_offer);
       self->current_offer = NULL;
     }
   else
