@@ -78,6 +78,12 @@ struct _TfCallStream {
 
   TfFutureCallStream *proxy;
 
+  gchar *endpoint_objpath;
+  TpProxy *endpoint;
+  gchar *creds_username;
+  gchar *creds_password;
+  GList *stored_remote_candidates;
+
   TfFutureSendingState local_sending_state;
 
   gboolean has_contact;

@@ -294,6 +294,8 @@ process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
       "bus-name", tp_proxy_get_bus_name (self->proxy),
       "object-path", offer_objpath,
       NULL);
+  tp_proxy_add_interface_by_id (TP_PROXY (proxy),
+      TF_FUTURE_IFACE_QUARK_CALL_CONTENT_CODEC_OFFER);
 
   fscodecs = tpcodecs_to_fscodecs (tp_media_type_to_fs (self->media_type),
       codecs);

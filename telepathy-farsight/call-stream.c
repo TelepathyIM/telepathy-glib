@@ -80,6 +80,17 @@ tf_call_stream_dispose (GObject *object)
     _tf_call_content_put_fsstream (self->call_content, self->fsstream);
   self->fsstream = NULL;
 
+  if (self->endpoint)
+    g_object_unref (self->endpoint);
+  self->endpoint = NULL;
+
+  g_free (self->creds_username);
+  self->creds_username = NULL;
+  g_free (self->creds_password);
+  self->creds_password = NULL;
+
+  fs_candidate_list_destroy (self->stored_remote_candidates);
+  self->stored_remote_candidates = NULL;
 
   if (G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose (object);
@@ -398,12 +409,249 @@ stun_servers_changed (TfFutureCallStream *proxy,
 }
 
 static void
+tf_call_stream_add_remote_candidate (TfCallStream *self,
+    const GPtrArray *candidates)
+{
+  GList *fscandidates = NULL;
+  guint i;
+  GError *error = NULL;
+
+  for (i = 0; i < candidates->len; i++)
+    {
+      GValueArray *tpcandidate = g_ptr_array_index (candidates, i);
+      guint component;
+      gchar *ip;
+      guint16 port;
+      GHashTable *extra_info;
+      const gchar *foundation;
+      guint priority;
+      const gchar *username;
+      const gchar *password;
+      gboolean valid;
+      FsCandidate *cand;
+
+      tp_value_array_unpack (tpcandidate, 4, &component, &ip, &port,
+          &extra_info);
+
+      foundation = tp_asv_get_string (extra_info, "Foundation");
+      if (!foundation)
+        foundation = "";
+      priority = tp_asv_get_uint32 (extra_info, "Priority", &valid);
+      if (!valid)
+        priority = 0;
+
+      username = tp_asv_get_string (extra_info, "Username");
+      if (!username)
+        username = self->creds_username;
+
+      password = tp_asv_get_string (extra_info, "Password");
+      if (!password)
+        password = self->creds_password;
+
+      cand = fs_candidate_new (foundation, component, FS_CANDIDATE_TYPE_HOST,
+          FS_NETWORK_PROTOCOL_UDP, ip, port);
+      cand->priority = priority;
+      cand->username = g_strdup (username);
+      cand->password = g_strdup (password);
+
+      fscandidates = g_list_append (fscandidates, cand);
+    }
+
+  if (self->fsstream)
+    {
+      if (!fs_stream_set_remote_candidates (self->fsstream, fscandidates,
+              &error))
+        {
+          tf_call_content_error (self->call_content,
+              TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+              "Error setting the remote candidates: %s", error->message);
+          g_clear_error (&error);
+        }
+      fs_candidate_list_destroy (fscandidates);
+    }
+  else
+    {
+      self->stored_remote_candidates =
+          g_list_concat (self->stored_remote_candidates, fscandidates);
+    }
+}
+
+static void
+remote_candidates_added (TpProxy *proxy,
+    const GPtrArray *arg_Candidates,
+    gpointer user_data, GObject *weak_object)
+{
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  tf_call_stream_add_remote_candidate (self, arg_Candidates);
+}
+
+static void
+remote_credentials_set (TpProxy *proxy,
+    const gchar *arg_Username,
+    const gchar *arg_Password,
+    gpointer user_data, GObject *weak_object)
+{
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  if ((self->creds_username && strcmp (self->creds_username, arg_Username)) ||
+      (self->creds_password && strcmp (self->creds_password, arg_Password)))
+    {
+      /* Remote credentials changed, this will perform a ICE restart, so
+       * clear old remote candidates */
+      fs_candidate_list_destroy (self->stored_remote_candidates);
+      self->stored_remote_candidates = NULL;
+    }
+
+  g_free (self->creds_username);
+  g_free (self->creds_password);
+  self->creds_username = g_strdup (arg_Username);
+  self->creds_password = g_strdup (arg_Password);
+}
+
+
+static void
+got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
+    const GError *error, gpointer user_data, GObject *weak_object)
+{
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+  GValueArray *credentials;
+  gchar *username, *password;
+  GPtrArray *candidates;
+
+  if (error)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Error getting the Streams's media properties: %s",
+          error->message);
+      return;
+    }
+
+  if (!out_Properties)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Error getting the Stream's media properties: there are none");
+      return;
+    }
+
+
+  credentials = tp_asv_get_boxed (out_Properties, "RemoteCredentials",
+      TF_FUTURE_STRUCT_TYPE_STREAM_CREDENTIALS);
+  if (!credentials)
+    goto invalid_property;
+  tp_value_array_unpack (credentials, 2, &username, &password);
+  self->creds_username = g_strdup (username);
+  self->creds_password = g_strdup (password);
+
+  candidates = tp_asv_get_boxed (out_Properties, "RemoteCandidates",
+      TF_FUTURE_ARRAY_TYPE_CANDIDATE_LIST);
+  if (!candidates)
+    goto invalid_property;
+
+  tf_call_stream_add_remote_candidate (self, candidates);
+
+
+  return;
+
+ invalid_property:
+  tf_call_content_error (self->call_content,
+      TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      "Error getting the Endpoint's properties: invalid type");
+}
+
+static void
+tf_call_stream_add_endpoint (TfCallStream *self)
+{
+  GError *error = NULL;
+
+  self->endpoint = g_object_new (TP_TYPE_PROXY,
+      "dbus-daemon", tp_proxy_get_dbus_daemon (self->proxy),
+      "bus-name", tp_proxy_get_bus_name (self->proxy),
+      "object-path", self->endpoint_objpath,
+      NULL);
+  tp_proxy_add_interface_by_id (TP_PROXY (self->endpoint),
+      TF_FUTURE_IFACE_QUARK_CALL_STREAM_ENDPOINT);
+
+  tf_future_cli_call_stream_endpoint_connect_to_remote_credentials_set (
+      TP_PROXY (self->endpoint), remote_credentials_set, NULL, NULL,
+      G_OBJECT (self), &error);
+  if (error)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to RemoteCredentialsSet signal: %s",
+          error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  tf_future_cli_call_stream_endpoint_connect_to_remote_candidates_added (
+      TP_PROXY (self->endpoint), remote_candidates_added, NULL, NULL,
+      G_OBJECT (self), &error);
+  if (error)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to RemoteCandidatesAdded signal: %s",
+          error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  tp_cli_dbus_properties_call_get_all (self->endpoint, -1,
+      TF_FUTURE_IFACE_CALL_STREAM_ENDPOINT,
+      got_endpoint_properties, NULL, NULL, G_OBJECT (self));
+}
+
+
+static void
 endpoints_changed (TfFutureCallStream *proxy,
     const GPtrArray *arg_Endpoints_Added,
     const GPtrArray *arg_Endpoints_Removed,
     gpointer user_data, GObject *weak_object)
 {
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  /* Ignore signals before getting the properties to avoid races */
+  if (!self->has_media_properties)
+    return;
+
+  if (arg_Endpoints_Removed->len != 0)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "org.freedesktop.Telepathy.Error.NotImplemented",
+          "Removing Endpoints is not implemented");
+      return;
+    }
+
+  if (arg_Endpoints_Added->len != 1)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "org.freedesktop.Telepathy.Error.NotImplemented",
+          "Having more than one endpoint is not implemented");
+      return;
+    }
+
+  if (self->endpoint_objpath)
+    {
+      if (strcmp (g_ptr_array_index (arg_Endpoints_Added, 0),
+              self->endpoint_objpath))
+        tf_call_content_error (self->call_content,
+            TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+            "",
+            "Trying to give a different endpoint, CM bug");
+      return;
+    }
+
+  self->endpoint_objpath = g_strdup (
+      g_ptr_array_index (arg_Endpoints_Added, 0));
+  tf_call_stream_add_endpoint (self);
 }
+
 
 static void
 got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
@@ -412,6 +660,7 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
   TfCallStream *self = TF_CALL_STREAM (weak_object);
   GPtrArray *stun_servers;
   GPtrArray *relay_info;
+  GPtrArray *endpoints;
   gboolean valid;
 
   if (error)
@@ -455,6 +704,24 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
       stun_servers);
   self->relay_info = g_boxed_copy (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST,
       relay_info);
+
+  endpoints = tp_asv_get_boxed (out_Properties, "Endpoints",
+      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+
+  if (endpoints->len > 1)
+    {
+      tf_call_content_error (self->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "org.freedesktop.Telepathy.Error.NotImplemented",
+          "Having more than one endpoint is not implemented");
+      return;
+    }
+
+  if (endpoints->len == 1)
+    {
+      self->endpoint_objpath = g_strdup (g_ptr_array_index (endpoints, 0));
+      tf_call_stream_add_endpoint (self);
+    }
 
   self->has_media_properties = TRUE;
 
