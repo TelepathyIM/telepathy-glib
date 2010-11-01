@@ -99,6 +99,9 @@ FsMediaType
 tf_call_content_get_fs_media_type (TfCallContent *content);
 
 
+gboolean
+tf_call_content_bus_message (TfCallContent *content, GstMessage *message);
+
 G_END_DECLS
 
 #endif /* __TF_CALL_CONTENT_H__ */

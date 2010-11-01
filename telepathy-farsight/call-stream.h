@@ -83,6 +83,10 @@ struct _TfCallStream {
   gchar *creds_username;
   gchar *creds_password;
   GList *stored_remote_candidates;
+  gboolean multiple_usernames;
+
+  gchar *last_local_username;
+  gchar *last_local_password;
 
   TfFutureSendingState local_sending_state;
 
@@ -110,6 +114,8 @@ TfCallStream *tf_call_stream_new (
     TfCallContent *content,
     const gchar *object_path,
     GError **error);
+
+gboolean tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message);
 
 G_END_DECLS
 

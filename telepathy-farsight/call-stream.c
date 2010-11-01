@@ -215,6 +215,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
           break;
         case TF_FUTURE_STREAM_TRANSPORT_TYPE_GTALK_P2P:
           g_value_set_uint (&params[n_params].value, 1);
+          self->multiple_usernames = TRUE;
           break;
         case TF_FUTURE_STREAM_TRANSPORT_TYPE_WLM_2009:
           g_value_set_uint (&params[n_params].value, 3);
@@ -939,4 +940,190 @@ tf_call_stream_new (TfCallChannel *call_channel,
   return self;
 }
 
+static void
+cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
+{
+  GPtrArray *candidate_list = g_ptr_array_sized_new (1);
+  GValueArray *gva;
+  GHashTable *extra_info;
 
+  extra_info = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, (GDestroyNotify) tp_g_value_slice_free);
+  if (candidate->priority)
+    tp_asv_set_uint32 (extra_info, "Priority", candidate->priority);
+
+  if (candidate->foundation)
+    tp_asv_set_string (extra_info, "Foundation", candidate->foundation);
+
+  if (stream->multiple_usernames)
+    {
+      if (candidate->username)
+        tp_asv_set_string (extra_info, "Username", candidate->username);
+      if (candidate->password)
+        tp_asv_set_string (extra_info, "Password", candidate->password);
+    }
+  else
+    {
+      if ((!stream->last_local_username && candidate->username) ||
+          (!stream->last_local_password && candidate->password) ||
+          (stream->last_local_username &&
+              strcmp (candidate->username, stream->last_local_username)) ||
+          (stream->last_local_password &&
+              strcmp (candidate->password, stream->last_local_password)))
+        {
+          g_free (stream->last_local_username);
+          g_free (stream->last_local_password);
+          stream->last_local_username = g_strdup (candidate->username);
+          stream->last_local_password = g_strdup (candidate->password);
+
+          if (!stream->last_local_username)
+            stream->last_local_username = g_strdup ("");
+          if (!stream->last_local_password)
+            stream->last_local_password = g_strdup ("");
+
+          /* Add a callback to kill Call on errors */
+          tf_future_cli_call_stream_interface_media_call_set_credentials (
+              stream->proxy, -1, stream->last_local_username,
+              stream->last_local_password, NULL, NULL, NULL, NULL);
+
+        }
+    }
+
+  gva = tp_value_array_build (G_TYPE_UINT, candidate->component_id,
+      G_TYPE_STRING, candidate->ip,
+      G_TYPE_UINT, candidate->port,
+      G_TYPE_HASH_TABLE, extra_info,
+      G_TYPE_INVALID);
+
+  g_ptr_array_add (candidate_list, gva);
+
+  /* Should also check for errors */
+  tf_future_cli_call_stream_interface_media_call_add_candidates (stream->proxy,
+      -1, candidate_list, NULL, NULL, NULL, NULL);
+
+
+  g_boxed_free (TF_FUTURE_ARRAY_TYPE_CANDIDATE_LIST, candidate_list);
+}
+
+static void
+cb_fs_local_candidates_prepared (TfCallStream *stream)
+{
+  tf_future_cli_call_stream_interface_media_call_candidates_prepared (
+      stream->proxy, -1, NULL, NULL, NULL, NULL);
+
+}
+
+static void
+cb_fs_component_state_changed (TfCallStream *stream, guint component,
+    FsStreamState fsstate)
+{
+  TpMediaStreamState state;
+
+  if (!stream->endpoint)
+    return;
+
+  switch (fsstate)
+  {
+    case FS_STREAM_STATE_FAILED:
+    case FS_STREAM_STATE_DISCONNECTED:
+      state = TP_MEDIA_STREAM_STATE_DISCONNECTED;
+      break;
+    case FS_STREAM_STATE_GATHERING:
+    case FS_STREAM_STATE_CONNECTING:
+    case FS_STREAM_STATE_CONNECTED:
+      state = TP_MEDIA_STREAM_STATE_CONNECTING;
+      break;
+    case FS_STREAM_STATE_READY:
+    default:
+      state = TP_MEDIA_STREAM_STATE_CONNECTED;
+      break;
+  }
+
+  tf_future_cli_call_stream_endpoint_call_set_stream_state (stream->endpoint,
+      -1, state, NULL, NULL, NULL, NULL);
+}
+
+
+gboolean
+tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
+{
+  const GstStructure *s;
+  const GValue *val;
+
+  if (!stream->fsstream)
+    return FALSE;
+
+  s = gst_message_get_structure (message);
+
+  if (gst_structure_has_name (s, "farsight-error"))
+    {
+      GObject *object;
+      const gchar *msg;
+      FsError errorno;
+      GEnumClass *enumclass;
+      GEnumValue *enumvalue;
+      const gchar *debug;
+
+      val = gst_structure_get_value (s, "src-object");
+      object = g_value_get_object (val);
+
+      if (object != (GObject*) stream->fsstream)
+        return FALSE;
+
+      val = gst_structure_get_value (s, "error-no");
+      errorno = g_value_get_enum (val);
+      msg = gst_structure_get_string (s, "error-msg");
+      debug = gst_structure_get_string (s, "debug-msg");
+
+      enumclass = g_type_class_ref (FS_TYPE_ERROR);
+      enumvalue = g_enum_get_value (enumclass, errorno);
+      g_warning ("error (%s (%d)): %s : %s",
+          enumvalue->value_nick, errorno, msg, debug);
+      g_type_class_unref (enumclass);
+
+      tf_call_content_error (stream->call_content,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", msg);
+      return TRUE;
+    }
+
+  val = gst_structure_get_value (s, "stream");
+  if (!val)
+    return FALSE;
+  if (!G_VALUE_HOLDS_OBJECT (val))
+    return FALSE;
+  if (g_value_get_object (val) != stream->fsstream)
+    return FALSE;
+
+  if (gst_structure_has_name (s, "farsight-new-local-candidate"))
+    {
+      FsCandidate *candidate;
+
+      val = gst_structure_get_value (s, "candidate");
+      candidate = g_value_get_boxed (val);
+
+      cb_fs_new_local_candidate (stream, candidate);
+      return TRUE;
+    }
+  else if (gst_structure_has_name (s, "farsight-local-candidates-prepared"))
+    {
+      cb_fs_local_candidates_prepared (stream);
+    }
+  else if (gst_structure_has_name (s, "farsight-component-state-changed"))
+    {
+      guint component;
+      FsStreamState fsstate;
+
+      if (!gst_structure_get_uint (s, "component", &component) ||
+          !gst_structure_get_enum (s, "state", FS_TYPE_STREAM_STATE,
+              (gint*) &fsstate))
+        return TRUE;
+
+      cb_fs_component_state_changed (stream, component, fsstate);
+    }
+  else
+    {
+      return FALSE;
+    }
+
+  return TRUE;
+}

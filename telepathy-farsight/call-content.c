@@ -683,6 +683,8 @@ tf_call_content_bus_message (TfCallContent *content,
   const GstStructure *s;
   gboolean ret = FALSE;
   const gchar *debug;
+  GHashTableIter iter;
+  gpointer key, value;
 
   if (!content->fssession)
     return FALSE;
@@ -742,6 +744,11 @@ tf_call_content_bus_message (TfCallContent *content,
       ret = TRUE;
     }
 
+  g_hash_table_iter_init (&iter, content->streams);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    if (tf_call_stream_bus_message (value, message))
+      return TRUE;
+
   return ret;
 }
 
@@ -787,6 +794,7 @@ tf_call_content_get_existing_fsstream_by_handle (TfCallContent *content,
 
   return NULL;
 }
+
 
 FsStream *
 _tf_call_content_get_fsstream_by_handle (TfCallContent *content,

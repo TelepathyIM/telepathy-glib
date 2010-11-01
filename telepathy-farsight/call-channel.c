@@ -404,9 +404,8 @@ tf_call_channel_bus_message (TfCallChannel *channel,
     }
 
   g_hash_table_iter_init (&iter, channel->contents);
-
   while (g_hash_table_iter_next (&iter, &key, &value))
-    if (tf_call_channel_bus_message (value, message))
+    if (tf_call_content_bus_message (value, message))
       return TRUE;
 
   return FALSE;
