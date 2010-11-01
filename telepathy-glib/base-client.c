@@ -160,6 +160,7 @@
 #include "telepathy-glib/base-client-internal.h"
 
 #include <stdarg.h>
+#include <string.h>                     /* for G_VA_COPY */
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -2462,24 +2463,23 @@ varargs_helper (TpBaseClient *self,
 {
   GQuark f;
   gsize n = 0;
+  GQuark *features;
   va_list ap_copy;
 
-  va_copy (ap_copy, ap);
+  G_VA_COPY (ap_copy, ap);
 
   for (f = feature; f != 0; f = va_arg (ap, GQuark))
     n++;
 
-  /* block to provide a scope for @features on the stack */
-    {
-      GQuark features[n];
+  features = g_malloc_n (n, sizeof (GQuark));
 
-      n = 0;
+  n = 0;
 
-      for (f = feature; f != 0; f = va_arg (ap_copy, GQuark))
-        features[n++] = f;
+  for (f = feature; f != 0; f = va_arg (ap_copy, GQuark))
+    features[n++] = f;
 
-      method (self, features, n);
-    }
+  method (self, features, n);
+  g_free (features);
 }
 
 /**
