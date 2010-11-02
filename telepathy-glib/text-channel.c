@@ -378,6 +378,60 @@ pending_messages_removed_cb (TpChannel *proxy,
 }
 
 static void
+got_pending_senders_contact_cb (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    guint n_failed,
+    const TpHandle *failed,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpTextChannel *self = (TpTextChannel *) weak_object;
+  GList *l;
+  guint i;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to prepare TpContact: %s", error->message);
+      goto out;
+    }
+
+  if (n_failed > 0)
+    {
+      DEBUG ("Failed to prepare some TpContact (InvalidHandle)");
+    }
+
+  for (l = self->priv->pending_messages; l != NULL; l = g_list_next (l))
+    {
+      TpMessage *msg = l->data;
+      const GHashTable *header;
+      TpHandle sender;
+
+      header = tp_message_peek (msg, 0);
+      sender = tp_asv_get_uint32 (header, "message-sender", NULL);
+
+      if (sender == 0)
+        continue;
+
+      for (i = 0; i < n_contacts; i++)
+        {
+          TpContact *contact = contacts[i];
+
+          if (tp_contact_get_handle (contact) == sender)
+            {
+              _tp_signalled_message_set_sender (msg, contact);
+              break;
+            }
+        }
+    }
+
+out:
+  _tp_proxy_set_feature_prepared (TP_PROXY (self),
+      TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+}
+
+static void
 get_pending_messages_cb (TpProxy *proxy,
     const GValue *value,
     const GError *error,
@@ -387,6 +441,7 @@ get_pending_messages_cb (TpProxy *proxy,
   TpTextChannel *self = user_data;
   guint i;
   GPtrArray *messages;
+  TpIntSet *senders;
 
   self->priv->retrieving_pending = FALSE;
 
@@ -399,20 +454,54 @@ get_pending_messages_cb (TpProxy *proxy,
       return;
     }
 
+  senders = tp_intset_new ();
+
   messages = g_value_get_boxed (value);
   for (i = 0; i < messages->len; i++)
     {
       GPtrArray *parts = g_ptr_array_index (messages, i);
       TpMessage *msg;
+      const GHashTable *header;
+      TpHandle sender;
 
       msg = _tp_signalled_message_new (parts);
+
+      header = tp_message_peek (msg, 0);
+      sender = tp_asv_get_uint32 (header, "message-sender", NULL);
+
+      if (sender == 0)
+        {
+          DEBUG ("Message doesn't have a sender");
+          continue;
+        }
+
+      tp_intset_add (senders, sender);
 
       self->priv->pending_messages = g_list_append (
           self->priv->pending_messages, msg);
     }
 
-  _tp_proxy_set_feature_prepared (proxy,
-      TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+  if (tp_intset_size (senders) == 0)
+    {
+      _tp_proxy_set_feature_prepared (proxy,
+          TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+    }
+  else
+    {
+      GArray *tmp;
+      TpConnection *conn;
+
+      tmp = tp_intset_to_array (senders);
+      conn = tp_channel_borrow_connection (TP_CHANNEL (proxy));
+
+      tp_connection_get_contacts_by_handle (conn, tmp->len,
+          (TpHandle *) tmp->data,
+          0, NULL, got_pending_senders_contact_cb, NULL, NULL, G_OBJECT (self));
+
+      g_array_unref (tmp);
+    }
+
+  tp_intset_destroy (senders);
 }
 
 static void

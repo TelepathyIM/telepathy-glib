@@ -231,6 +231,7 @@ test_pending_messages (Test *test,
   GList *messages;
   TpMessage *msg;
   gchar *text;
+  TpContact *sender;
 
   /* connect on the Received sig to check if the message has been received */
   tp_cli_channel_type_text_connect_to_received (TP_CHANNEL (test->channel),
@@ -287,6 +288,9 @@ test_pending_messages (Test *test,
   text = tp_message_to_text (msg, NULL);
   g_assert_cmpstr (text, ==, "Badger");
   g_free (text);
+  sender = tp_signalled_message_get_sender (msg);
+  g_assert (sender != NULL);
+  g_assert_cmpstr (tp_contact_get_identifier (sender), ==, "bob");
 
   /* Check second message */
   msg = messages->next->data;
@@ -295,6 +299,9 @@ test_pending_messages (Test *test,
   text = tp_message_to_text (msg, NULL);
   g_assert_cmpstr (text, ==, "Snake");
   g_free (text);
+  sender = tp_signalled_message_get_sender (msg);
+  g_assert (sender != NULL);
+  g_assert_cmpstr (tp_contact_get_identifier (sender), ==, "bob");
 
   /* TODO: check sender */
 
