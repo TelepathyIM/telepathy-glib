@@ -750,7 +750,8 @@ tp_base_channel_dispose (GObject *object)
       tp_base_channel_destroyed (chan);
     }
 
-  if (priv->target != 0)
+  if (klass->target_handle_type != TP_HANDLE_TYPE_NONE
+      && priv->target != 0)
     {
       handles = tp_base_connection_get_handles (priv->conn,
                                                 klass->target_handle_type);
