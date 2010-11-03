@@ -551,10 +551,15 @@ tp_base_connection_unregister (TpBaseConnection *self)
       GHashTableIter iter;
       gpointer k;
 
+      if (priv->been_registered)
+        tp_dbus_daemon_unregister_object (priv->bus_proxy, self);
+
       if (self->bus_name != NULL)
         {
           tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
         }
+
+      priv->been_registered = FALSE;
 
       g_hash_table_iter_init (&iter, self->priv->interested_clients);
 
@@ -564,11 +569,6 @@ tp_base_connection_unregister (TpBaseConnection *self)
               tp_base_connection_interested_name_owner_changed_cb, self);
           g_hash_table_iter_remove (&iter);
         }
-
-      if (priv->been_registered)
-        tp_dbus_daemon_unregister_object (priv->bus_proxy, self);
-
-      priv->been_registered = FALSE;
     }
 }
 
