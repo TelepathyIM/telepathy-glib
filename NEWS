@@ -1,7 +1,15 @@
-telepathy-glib 0.12.3 (UNRELEASED)
+telepathy-glib 0.12.3 (2010-11-03)
 ==================================
 
-…
+The "removing the fourth boolean type" release.
+
+Fixes:
+
+• fd.o #31321: don't crash if the TpAccountManager is disposed while
+  an account from tp_account_manager_ensure_account is preparing (cassidy)
+
+• fd.o #31198: avoid some C99 features not supported by MSVC 9
+  (Thomas Fluueli, smcv)
 
 telepathy-glib 0.12.2 (2010-10-26)
 ==================================
