@@ -978,6 +978,7 @@ streams_removed_cb (ExampleCallContent *content,
 
   g_hash_table_remove (self->priv->contents, name);
 
+  future_svc_call_content_emit_removed (content);
   future_svc_channel_type_call_emit_content_removed (self, path);
   g_free (path);
   g_free (name);

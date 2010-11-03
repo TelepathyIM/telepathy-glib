@@ -52,11 +52,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
       <h4>Contents</h4>
 
-      <p><tp:dbus-ref
-        namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref> objects
-        represent the actual media that forms the Call (for example an
-        audio content and a video content). Calls always have one or
-        more Content objects associated with them.</p>
+      <p><tp:dbus-ref namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref>
+        objects represent the actual media that forms the Call (for
+        example an audio content and a video content). Calls always
+        have one or more Content objects associated with them. As a
+        result, a new Call channel request MUST have either
+        <tp:member-ref>InitialAudio</tp:member-ref>=True, or
+        <tp:member-ref>InitialVideo</tp:member-ref>=True, or both,
+        as the Requestable Channel Classes will document.</p>
 
       <p><tp:dbus-ref
         namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref> objects have
