@@ -2955,6 +2955,7 @@ tp_base_connection_change_status (TpBaseConnection *self,
               tp_channel_factory_iface_disconnected, NULL);
         }
       (klass->shut_down) (self);
+      tp_base_connection_unregister (self);
       break;
 
     default:
