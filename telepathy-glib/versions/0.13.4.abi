@@ -1,0 +1,7 @@
+Version: TELEPATHY_GLIB_0.13.4
+Extends: TELEPATHY_GLIB_0.13.3
+Release: 0.13.4
+
+tp_cli_media_stream_handler_call_new_active_transport_pair
+tp_cli_media_stream_handler_run_new_active_transport_pair
+tp_svc_media_stream_handler_implement_new_active_transport_pair

@@ -1,7 +1,13 @@
-telepathy-glib 0.13.4 (UNRELEASED)
+telepathy-glib 0.13.4 (2010-11-03)
 ==================================
 
 This release includes all the fixes from 0.12.3.
+
+Enhancements:
+
+• Update to spec 0.21.4 (smcv)
+  - fd.o #31215: fix incorrect namespace for MailNotification
+  - add bindings for NewActiveTransportPair
 
 Fixes:
 
@@ -10,6 +16,13 @@ Fixes:
 
 • fd.o #31198: avoid some C99 features not supported by MSVC 9
   (Thomas Fluueli, smcv)
+
+• fd.o #31291: add pkg-config and C header information to GIR for the
+  benefit of future Vala versions (Evan Nemerson)
+
+• In the echo2 example CM, advertise Messages' immutable properties (cassidy)
+
+• In TpBaseChannel, don't unref handles we didn't ref (jonny)
 
 telepathy-glib 0.13.3 (2010-10-26)
 ==================================
