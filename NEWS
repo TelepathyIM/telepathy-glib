@@ -1,5 +1,12 @@
+telepathy-glib 0.13.5 (UNRELEASED)
+==================================
+
+…
+
 telepathy-glib 0.13.4 (2010-11-03)
 ==================================
+
+The "request_module: runaway loop modprobe binfmt-464c" release.
 
 This release includes all the fixes from 0.12.3.
 
