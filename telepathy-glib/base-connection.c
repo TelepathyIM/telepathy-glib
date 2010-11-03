@@ -2895,6 +2895,9 @@ tp_base_connection_change_status (TpBaseConnection *self,
       return;
     }
 
+  /* ref self in case user callbacks unref us */
+  g_object_ref (self);
+
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
       /* the presence of this array indicates that we are shutting down */
@@ -2961,6 +2964,8 @@ tp_base_connection_change_status (TpBaseConnection *self,
     default:
       g_assert_not_reached ();
     }
+
+  g_object_unref (self);
 }
 
 
