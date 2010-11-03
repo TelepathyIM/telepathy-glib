@@ -822,8 +822,7 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
       g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
       g_object_unref (account);
 
-      _tp_account_manager_check_core_ready (manager);
-      return;
+      goto out;
     }
 
   /* see if there's any pending callbacks for this account */
@@ -851,7 +850,10 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
       G_CALLBACK (_tp_account_manager_account_invalidated_cb),
       G_OBJECT (manager), 0);
 
+out:
   _tp_account_manager_check_core_ready (manager);
+
+  g_object_unref (manager);
 }
 
 /**
@@ -895,7 +897,7 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
   g_hash_table_insert (priv->accounts, g_strdup (path), account);
 
   tp_account_prepare_async (account, fs, _tp_account_manager_account_ready_cb,
-      manager);
+      g_object_ref (manager));
 
   return account;
 }
