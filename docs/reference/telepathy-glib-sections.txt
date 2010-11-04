@@ -2906,6 +2906,8 @@ tp_channel_get_identifier
 tp_channel_get_requested
 tp_channel_get_initiator_handle
 tp_channel_get_initiator_identifier
+tp_channel_leave_async
+tp_channel_leave_finish
 <SUBSECTION Private>
 tp_channel_get_feature_quark_chat_states
 tp_channel_get_feature_quark_core
