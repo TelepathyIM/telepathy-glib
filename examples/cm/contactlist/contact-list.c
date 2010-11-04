@@ -781,8 +781,7 @@ self_and_contact_new (ExampleContactList *self,
   SelfAndContact *ret = g_slice_new0 (SelfAndContact);
 
   ret->self = g_object_ref (self);
-  ret->contact = contact;
-  tp_handle_ref (self->priv->contact_repo, contact);
+  ret->contact = tp_handle_ref (self->priv->contact_repo, contact);
   return ret;
 }
 

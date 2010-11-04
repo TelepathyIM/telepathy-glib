@@ -192,8 +192,8 @@ tp_handle_set_add (TpHandleSet *set, TpHandle handle)
 
   if (!tp_intset_is_member (set->intset, handle))
     {
-      tp_handle_ref (set->repo, handle);
-      tp_intset_add (set->intset, handle);
+      tp_intset_add (set->intset,
+          tp_handle_ref (set->repo, handle));
     }
 }
 

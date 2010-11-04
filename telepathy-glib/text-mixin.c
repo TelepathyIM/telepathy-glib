@@ -294,8 +294,7 @@ tp_text_mixin_receive_with_flags (GObject *obj,
   size_t len;
 
   msg = _pending_new0 ();
-  tp_handle_ref (mixin->priv->contacts_repo, sender);
-  msg->sender = sender;
+  msg->sender = tp_handle_ref (mixin->priv->contacts_repo, sender);
   /* FIXME: we don't check for overflow, so in highly pathological cases we
    * might end up with multiple messages with the same ID */
   msg->id = mixin->priv->recv_id++;

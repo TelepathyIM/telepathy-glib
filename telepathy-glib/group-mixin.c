@@ -122,13 +122,12 @@ local_pending_info_new (TpHandleRepoIface *repo,
                         const gchar *message)
 {
   LocalPendingInfo *info = g_slice_new0 (LocalPendingInfo);
-  info->actor = actor;
   info->reason = reason;
   info->message = g_strdup (message);
   info->repo = repo;
 
   if (actor != 0)
-    tp_handle_ref (repo, actor);
+    info->actor = tp_handle_ref (repo, actor);
 
   return info;
 }
@@ -310,10 +309,9 @@ tp_group_mixin_init (GObject *obj,
   mixin = TP_GROUP_MIXIN (obj);
 
   mixin->handle_repo = handle_repo;
-  mixin->self_handle = self_handle;
 
-  if (mixin->self_handle != 0)
-    tp_handle_ref (handle_repo, mixin->self_handle);
+  if (self_handle != 0)
+    mixin->self_handle = tp_handle_ref (handle_repo, self_handle);
 
   mixin->group_flags = 0;
 
@@ -445,10 +443,11 @@ tp_group_mixin_change_self_handle (GObject *obj,
   DEBUG ("%u '%s'", new_self_handle,
       tp_handle_inspect (mixin->handle_repo, new_self_handle));
 
-  if (new_self_handle != 0)
-    tp_handle_ref (mixin->handle_repo, new_self_handle);
+  mixin->self_handle = 0;
 
-  mixin->self_handle = new_self_handle;
+  if (new_self_handle != 0)
+    mixin->self_handle = tp_handle_ref (mixin->handle_repo,
+        new_self_handle);
 
   tp_svc_channel_interface_group_emit_self_handle_changed (obj,
       new_self_handle);
