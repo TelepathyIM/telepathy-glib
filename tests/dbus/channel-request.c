@@ -182,9 +182,9 @@ test_crash (Test *test,
   dbus_g_connection_unref (test->private_conn);
   test->private_conn = NULL;
 
-  tp_tests_proxy_run_until_dbus_queue_processed (test->cr);
+  while (tp_proxy_get_invalidated (test->cr) == NULL)
+    g_main_context_iteration (NULL, TRUE);
 
-  g_assert (tp_proxy_get_invalidated (test->cr) != NULL);
   g_assert (tp_proxy_get_invalidated (test->cr)->domain == TP_DBUS_ERRORS);
   g_assert (tp_proxy_get_invalidated (test->cr)->code ==
       TP_DBUS_ERROR_NAME_OWNER_LOST);
