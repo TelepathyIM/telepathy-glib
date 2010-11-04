@@ -57,7 +57,7 @@ struct _TpHandleRepoIfaceClass {
     gboolean (*handles_are_valid) (TpHandleRepoIface *self,
         const GArray *handles, gboolean allow_zero, GError **error);
 
-    void (*ref_handle) (TpHandleRepoIface *self, TpHandle handle);
+    TpHandle (*ref_handle) (TpHandleRepoIface *self, TpHandle handle);
     void (*unref_handle) (TpHandleRepoIface *self, TpHandle handle);
     gboolean (*client_hold_handle) (TpHandleRepoIface *self,
         const gchar *client, TpHandle handle, GError **error);

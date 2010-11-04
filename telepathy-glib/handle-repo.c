@@ -136,13 +136,15 @@ tp_handles_are_valid (TpHandleRepoIface *self,
  * Increase the reference count of the given handle, which must be present
  * in the repository. For repository implementations which never free handles
  * (like #TpStaticHandleRepo) this has no effect.
+ *
+ * Returns: the same @handle
  */
 
-void
+TpHandle
 tp_handle_ref (TpHandleRepoIface *self,
                TpHandle handle)
 {
-  TP_HANDLE_REPO_IFACE_GET_CLASS (self)->ref_handle (self, handle);
+  return TP_HANDLE_REPO_IFACE_GET_CLASS (self)->ref_handle (self, handle);
 }
 
 
@@ -162,7 +164,7 @@ tp_handles_ref (TpHandleRepoIface *self,
 {
   guint i;
   TpHandle h;
-  void (*ref) (TpHandleRepoIface *, TpHandle) =
+  TpHandle (*ref) (TpHandleRepoIface *, TpHandle) =
     TP_HANDLE_REPO_IFACE_GET_CLASS (self)->ref_handle;
 
   for (i = 0; i < handles->len; i++)

@@ -624,17 +624,19 @@ dynamic_unref_handle (TpHandleRepoIface *repo, TpHandle handle)
     handle_priv_remove (self, handle);
 }
 
-static void
+static TpHandle
 dynamic_ref_handle (TpHandleRepoIface *repo, TpHandle handle)
 {
   TpHandlePriv *priv = handle_priv_lookup (TP_DYNAMIC_HANDLE_REPO (repo),
       handle);
 
-  g_return_if_fail (priv != NULL);
+  g_return_val_if_fail (priv != NULL, 0);
 
   priv->refcount++;
 
   HANDLE_LEAK_DEBUG_DO (priv->traces, repo, handle, HL_REFFED)
+
+  return handle;
 }
 
 static gboolean
