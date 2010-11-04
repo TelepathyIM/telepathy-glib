@@ -86,6 +86,37 @@ add_member (GObject *obj,
   return TRUE;
 }
 
+static gboolean
+remove_with_reason (GObject *obj,
+    TpHandle handle,
+    const gchar *message,
+    guint reason,
+    GError **error)
+{
+  TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (obj);
+  TpGroupMixin *group = TP_GROUP_MIXIN (self);
+
+  tp_clear_pointer (&self->removed_message, g_free);
+
+  self->removed_handle = handle;
+  self->removed_message = g_strdup (message);
+  self->removed_reason = reason;
+
+  if (handle == group->self_handle)
+    {
+      /* User wants to leave */
+      if (!self->priv->closed)
+        {
+          self->priv->closed = TRUE;
+          tp_svc_channel_emit_closed (self);
+        }
+
+      return TRUE;
+    }
+
+  return TRUE;
+}
+
 static void
 tp_tests_text_channel_group_init (TpTestsTextChannelGroup *self)
 {
@@ -356,6 +387,11 @@ tp_tests_text_channel_group_class_init (TpTestsTextChannelGroupClass *klass)
   tp_group_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsTextChannelGroupClass, group_class), add_member,
       NULL);
+
+  tp_group_mixin_class_set_remove_with_reason_func (object_class,
+      remove_with_reason);
+
+  tp_group_mixin_class_allow_self_removal (object_class);
 
   klass->dbus_properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,

@@ -57,6 +57,10 @@ struct _TpTestsTextChannelGroup {
     TpTextMixin text;
     TpGroupMixin group;
 
+    TpHandle removed_handle;
+    gchar *removed_message;
+    TpChannelGroupChangeReason removed_reason;
+
     TpTestsTextChannelGroupPrivate *priv;
 };
 
