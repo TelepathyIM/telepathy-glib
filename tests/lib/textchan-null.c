@@ -540,6 +540,7 @@ tp_tests_text_channel_get_props (TpTestsTextChannelNull *self)
   gboolean requested;
   TpHandle initiator_handle;
   gchar *initiator_id;
+  GStrv interfaces;
 
   g_object_get (self,
       "handle-type", &handle_type,
@@ -548,6 +549,7 @@ tp_tests_text_channel_get_props (TpTestsTextChannelNull *self)
       "requested", &requested,
       "initiator-handle", &initiator_handle,
       "initiator-id", &initiator_id,
+      "interfaces", &interfaces,
       NULL);
 
   props = tp_asv_new (
@@ -558,9 +560,11 @@ tp_tests_text_channel_get_props (TpTestsTextChannelNull *self)
       TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, requested,
       TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, initiator_handle,
       TP_PROP_CHANNEL_INITIATOR_ID, G_TYPE_STRING, initiator_id,
+      TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, interfaces,
       NULL);
 
   g_free (target_id);
   g_free (initiator_id);
+  g_strfreev (interfaces);
   return props;
 }
