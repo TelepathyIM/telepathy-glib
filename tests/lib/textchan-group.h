@@ -60,6 +60,9 @@ struct _TpTestsTextChannelGroup {
     TpTestsTextChannelGroupPrivate *priv;
 };
 
+
+void tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self);
+
 G_END_DECLS
 
 #endif /* #ifndef __TEST_TEXT_CHANNEL_GROUP_H__ */

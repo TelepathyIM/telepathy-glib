@@ -437,3 +437,19 @@ text_iface_init (gpointer iface,
   IMPLEMENT (send);
 #undef IMPLEMENT
 }
+
+void
+tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self)
+{
+  TpIntset *add, *empty;
+
+ /* Add ourself as a member */
+  add = tp_intset_new_containing (self->conn->self_handle);
+  empty = tp_intset_new ();
+
+  tp_group_mixin_change_members ((GObject *) self, NULL, add, empty,
+      empty, empty, 0, 0);
+
+  tp_intset_destroy (add);
+  tp_intset_destroy (empty);
+}
