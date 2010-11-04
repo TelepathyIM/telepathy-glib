@@ -354,26 +354,32 @@ test_interest (Test *test,
   tp_tests_proxy_run_until_dbus_queue_processed (test->dbus);
 
   i = 0;
+  g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
       "interested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION);
 
   i++;
+  g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
       "Location interested");
 
   i++;
+  g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
       "interested in " SUPPORTED_TOKEN);
 
   i++;
+  g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
       "uninterested in " SUPPORTED_TOKEN);
 
   i++;
+  g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
       "uninterested in " TP_IFACE_CONNECTION_INTERFACE_LOCATION);
 
   i++;
+  g_assert_cmpuint (test->log->len, >, i);
   g_assert_cmpstr (g_ptr_array_index (test->log, i), ==,
       "Location uninterested");
 
