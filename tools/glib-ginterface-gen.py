@@ -678,6 +678,7 @@ class Generator(object):
         self.d('/**')
         self.d(' * %s%s::%s:'
                 % (self.Prefix, self.node_name_mixed, signal_name))
+        self.d(' * @self: an object')
         for (ctype, name, gtype) in args:
             self.d(' * @%s: %s (FIXME, generate documentation)'
                    % (name, ctype))
