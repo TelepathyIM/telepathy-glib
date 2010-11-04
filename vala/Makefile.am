@@ -18,14 +18,6 @@ telepathy-glib.vapi: $(top_builddir)/telepathy-glib/TelepathyGLib-0.12.gir
 		--pkg gio-2.0 \
 		$< \
 		$(NULL)
-	@mv $@ telepathy-glib.vapi.tmp1
-	$(AM_V_GEN)sed -e \
-		's/TelepathyGLib-0.12.h/telepathy-glib\/telepathy-glib.h/' \
-		< telepathy-glib.vapi.tmp1 > telepathy-glib.vapi.tmp2
-	$(AM_V_GEN)sed -e \
-		's/cprefix = "tp"/cprefix = "Tp"/' \
-		< telepathy-glib.vapi.tmp2 > $@
-	@rm telepathy-glib.vapi.tmp*
 
 CLEANFILES = \
 	$(BUILT_SOURCES) \
