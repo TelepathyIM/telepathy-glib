@@ -405,6 +405,8 @@ struct _TpBaseConnectionPrivate
   TpDBusDaemon *bus_proxy;
   /* TRUE after constructor() returns */
   gboolean been_constructed;
+  /* TRUE if on D-Bus */
+  gboolean been_registered;
 
   /* g_strdup (unique name) => gsize total count
    *
@@ -540,6 +542,37 @@ static void tp_base_connection_interested_name_owner_changed_cb (
     gpointer user_data);
 
 static void
+tp_base_connection_unregister (TpBaseConnection *self)
+{
+  TpBaseConnectionPrivate *priv = self->priv;
+
+  if (priv->bus_proxy != NULL)
+    {
+      GHashTableIter iter;
+      gpointer k;
+
+      if (priv->been_registered)
+        tp_dbus_daemon_unregister_object (priv->bus_proxy, self);
+
+      if (self->bus_name != NULL)
+        {
+          tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
+        }
+
+      priv->been_registered = FALSE;
+
+      g_hash_table_iter_init (&iter, self->priv->interested_clients);
+
+      while (g_hash_table_iter_next (&iter, &k, NULL))
+        {
+          tp_dbus_daemon_cancel_name_owner_watch (priv->bus_proxy, k,
+              tp_base_connection_interested_name_owner_changed_cb, self);
+          g_hash_table_iter_remove (&iter);
+        }
+    }
+}
+
+static void
 tp_base_connection_dispose (GObject *object)
 {
   TpBaseConnection *self = TP_BASE_CONNECTION (object);
@@ -560,25 +593,7 @@ tp_base_connection_dispose (GObject *object)
       self->self_handle = 0;
     }
 
-  if (priv->bus_proxy != NULL)
-    {
-      GHashTableIter iter;
-      gpointer k;
-
-      if (self->bus_name != NULL)
-        {
-          tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
-        }
-
-      g_hash_table_iter_init (&iter, self->priv->interested_clients);
-
-      while (g_hash_table_iter_next (&iter, &k, NULL))
-        {
-          tp_dbus_daemon_cancel_name_owner_watch (priv->bus_proxy, k,
-              tp_base_connection_interested_name_owner_changed_cb, self);
-          g_hash_table_iter_remove (&iter);
-        }
-    }
+  tp_base_connection_unregister (self);
 
   tp_clear_object (&priv->bus_proxy);
 
@@ -1753,6 +1768,7 @@ tp_base_connection_register (TpBaseConnection *self,
 
   g_return_val_if_fail (TP_IS_BASE_CONNECTION (self), FALSE);
   g_return_val_if_fail (cm_name != NULL, FALSE);
+  g_return_val_if_fail (!self->priv->been_registered, FALSE);
 
   if (tp_connection_manager_check_valid_protocol_name (priv->protocol, NULL))
     {
@@ -1831,6 +1847,7 @@ tp_base_connection_register (TpBaseConnection *self,
   DEBUG ("object path %s", self->object_path);
 
   tp_dbus_daemon_register_object (priv->bus_proxy, self->object_path, self);
+  self->priv->been_registered = TRUE;
 
   if (bus_name != NULL)
     *bus_name = g_strdup (self->bus_name);
@@ -2878,6 +2895,9 @@ tp_base_connection_change_status (TpBaseConnection *self,
       return;
     }
 
+  /* ref self in case user callbacks unref us */
+  g_object_ref (self);
+
   if (status == TP_CONNECTION_STATUS_DISCONNECTED)
     {
       /* the presence of this array indicates that we are shutting down */
@@ -2938,11 +2958,14 @@ tp_base_connection_change_status (TpBaseConnection *self,
               tp_channel_factory_iface_disconnected, NULL);
         }
       (klass->shut_down) (self);
+      tp_base_connection_unregister (self);
       break;
 
     default:
       g_assert_not_reached ();
     }
+
+  g_object_unref (self);
 }
 
 
