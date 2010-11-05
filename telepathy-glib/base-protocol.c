@@ -352,6 +352,9 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Signature of a virtual method to get the D-Bus interfaces implemented by
  * @self, in addition to the Protocol interface.
  *
+ * If you implement #TpBaseProtocolClass.get_statuses, you should include
+ * %TP_IFACE_PROTOCOL_INTERFACE_PRESENCE in the returned array.
+ *
  * Returns: (transfer full): a %NULL-terminated array of D-Bus interface names
  *
  * Since: 0.11.11
