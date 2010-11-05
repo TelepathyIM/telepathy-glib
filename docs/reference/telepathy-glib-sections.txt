@@ -4626,6 +4626,7 @@ TpBaseProtocol
 tp_base_protocol_get_name
 tp_base_protocol_get_immutable_properties
 tp_base_protocol_get_parameters
+tp_base_protocol_get_statuses
 tp_base_protocol_new_connection
 <SUBSECTION>
 TpBaseProtocolClass
