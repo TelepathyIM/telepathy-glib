@@ -1,5 +1,12 @@
-telepathy-glib 0.13.5 (UNRELEASED)
+telepathy-glib 0.13.5 (2010-11-05)
 ==================================
+
+The "gunpowder, treason and plot" release.
+
+Enhancements:
+
+• fd.o #30088: add support for Protocol.I.Presence to TpBaseProtocol
+  (fledermaus, smcv)
 
 Fixes:
 

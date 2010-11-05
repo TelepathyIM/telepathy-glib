@@ -1,0 +1,5 @@
+Version: TELEPATHY_GLIB_0.13.5
+Extends: TELEPATHY_GLIB_0.13.4
+Release: 0.13.5
+
+tp_base_protocol_get_statuses
