@@ -21,6 +21,8 @@
 
 #include "telepathy-glib/channel-request.h"
 
+#include <telepathy-glib/channel.h>
+#include <telepathy-glib/connection.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
@@ -31,6 +33,8 @@
 #include "telepathy-glib/debug-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-channel-request-body.h"
+
+#include "_gen/signals-marshal.h"
 
 /**
  * SECTION:channel-request
@@ -88,6 +92,7 @@
 
 enum {
   SIGNAL_SUCCEEDED,
+  SIGNAL_SUCCEEDED_WITH_CHANNEL,
   N_SIGNALS
 };
 
@@ -133,6 +138,47 @@ tp_channel_request_succeeded_cb (TpChannelRequest *self,
 }
 
 static void
+tp_channel_request_succeeded_with_channel_cb (TpChannelRequest *self,
+    const gchar *conn_path,
+    GHashTable *conn_props,
+    const gchar *chan_path,
+    GHashTable *chan_props,
+    gpointer unused G_GNUC_UNUSED,
+    GObject *object G_GNUC_UNUSED)
+{
+  TpDBusDaemon *dbus;
+  TpConnection *connection;
+  TpChannel *channel;
+  GError *error = NULL;
+
+  dbus = tp_proxy_get_dbus_daemon (self);
+
+  connection = tp_connection_new (dbus, NULL, conn_path, &error);
+  if (connection == NULL)
+    {
+      DEBUG ("Failed to create TpConnection: %s", error->message);
+      g_error_free (error);
+      return;
+    }
+
+  channel = tp_channel_new_from_properties (connection, chan_path, chan_props,
+      &error);
+  if (channel == NULL)
+    {
+      DEBUG ("Failed to create TpChannel: %s", error->message);
+      g_error_free (error);
+      g_object_unref (channel);
+      return;
+    }
+
+  g_signal_emit (self, signals[SIGNAL_SUCCEEDED_WITH_CHANNEL], 0,
+      connection, channel);
+
+  g_object_unref (connection);
+  g_object_unref (channel);
+}
+
+static void
 tp_channel_request_constructed (GObject *object)
 {
   TpChannelRequest *self = TP_CHANNEL_REQUEST (object);
@@ -167,6 +213,16 @@ tp_channel_request_constructed (GObject *object)
       g_assert_not_reached ();
       return;
     }
+
+  sc = tp_cli_channel_request_connect_to_succeeded_with_channel (self,
+      tp_channel_request_succeeded_with_channel_cb, NULL, NULL, NULL, &error);
+
+  if (sc == NULL)
+    {
+      DEBUG ("Couldn't connect to SucceededWithChannel: %s", error->message);
+      g_error_free (error);
+      return;
+    }
 }
 
 static void
@@ -196,6 +252,29 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
       NULL, NULL,
       g_cclosure_marshal_VOID__VOID,
       G_TYPE_NONE, 0);
+
+  /**
+   * TpChannelRequest::succeeded-with-channel:
+   * @self: the channel request proxy
+   * @connection: the #TpConnection of @channel
+   * @channel: the #TpChannel created
+   *
+   * Variant of the #TpChannelRequest::succeeded signal allowing to get
+   * the channel which has been created.
+   *
+   * Note that this signal can not be fired if your telepathy-mission-control
+   * is too old.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  signals[SIGNAL_SUCCEEDED_WITH_CHANNEL] = g_signal_new (
+      "succeeded-with-channel",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__OBJECT_OBJECT,
+      G_TYPE_NONE, 2, TP_TYPE_CONNECTION, TP_TYPE_CHANNEL);
 }
 
 /**
