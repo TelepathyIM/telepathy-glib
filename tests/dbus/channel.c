@@ -60,7 +60,7 @@ create_contact_chan (Test *test)
 
   g_assert_no_error (test->error);
 
-  test->chan_contact_service = g_object_new (
+  test->chan_contact_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_TEXT_CHANNEL_NULL,
       "connection", test->base_connection,
       "handle", handle,
@@ -100,7 +100,7 @@ create_room_chan (Test *test)
 
   g_assert_no_error (test->error);
 
-  test->chan_room_service = g_object_new (
+  test->chan_room_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
       "connection", test->base_connection,
       "handle", handle,
