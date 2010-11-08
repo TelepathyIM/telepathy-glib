@@ -2311,7 +2311,7 @@ leave_channel_async (TpChannel *self,
  *
  * Leave channel @self with @reason as reason and @message as leave message.
  * If @self doesn't implement #TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP or if
- * for any reason we can properly leave the channel, we close it.
+ * for any reason we can't properly leave the channel, we close it.
  *
  * If @reason equals TP_CHANNEL_GROUP_CHANGE_REASON_NONE and message is %NULL
  * then @self is simply closed as well.
