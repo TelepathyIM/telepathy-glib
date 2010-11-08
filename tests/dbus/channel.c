@@ -371,6 +371,34 @@ test_leave_room_prepared_reason (Test *test,
   check_removed (test->chan_room_service);
 }
 
+static void
+channel_close_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_channel_close_finish (TP_CHANNEL (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_close (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  g_assert (tp_proxy_get_invalidated (test->channel_contact) == NULL);
+
+  tp_channel_close_async (test->channel_contact, channel_close_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_proxy_get_invalidated (test->channel_contact) != NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -399,6 +427,9 @@ main (int argc,
       test_leave_room_prepared_no_reason, teardown);
   g_test_add ("/channel/leave/room/prepared/reason", Test, NULL, setup,
       test_leave_room_prepared_reason, teardown);
+
+  g_test_add ("/channel/close", Test, NULL, setup,
+      test_close, teardown);
 
   return g_test_run ();
 }

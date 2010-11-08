@@ -2908,6 +2908,8 @@ tp_channel_get_initiator_handle
 tp_channel_get_initiator_identifier
 tp_channel_leave_async
 tp_channel_leave_finish
+tp_channel_close_async
+tp_channel_close_finish
 <SUBSECTION Private>
 tp_channel_get_feature_quark_chat_states
 tp_channel_get_feature_quark_core

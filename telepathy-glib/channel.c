@@ -2251,29 +2251,9 @@ call_close:
   leave_ctx_free (ctx);
 }
 
-/**
- * tp_channel_leave_async:
- * @self: a #TpChannel
- * @reason: the leave reason
- * @message: the leave message
- * @callback: a callback to call when we left the channel
- * @user_data: data to pass to @callback
- *
- * Leave channel @self with @reason as reason and @message as leave message.
- * If @self doesn't implement #TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP or if
- * for any reason we can properly leave the channel, we close it.
- *
- * If @reason equals TP_CHANNEL_GROUP_CHANGE_REASON_NONE and message is %NULL
- * then @self is simply closed as well.
- *
- * When we left the channel, @callback will be called.
- * You can then call tp_channel_leave_finish() to get the result of
- * the operation.
- *
- * Since: 0.13.UNRELEASED
- */
-void
-tp_channel_leave_async (TpChannel *self,
+static void
+leave_channel_async (TpChannel *self,
+    gboolean leave_called,
     TpChannelGroupChangeReason reason,
     const gchar *message,
     GAsyncReadyCallback callback,
@@ -2282,11 +2262,17 @@ tp_channel_leave_async (TpChannel *self,
   GSimpleAsyncResult *result;
   GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
   LeaveCtx *ctx;
+  gpointer source_tag;
 
   g_return_if_fail (TP_IS_CHANNEL (self));
 
+  if (leave_called)
+    source_tag = tp_channel_leave_async;
+  else
+    source_tag = tp_channel_close_async;
+
   result = g_simple_async_result_new (G_OBJECT (self), callback,
-      user_data, tp_channel_leave_async);
+      user_data, source_tag);
 
   if (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CORE) &&
       !tp_proxy_has_interface_by_id (self,
@@ -2316,6 +2302,37 @@ tp_channel_leave_async (TpChannel *self,
 }
 
 /**
+ * tp_channel_leave_async:
+ * @self: a #TpChannel
+ * @reason: the leave reason
+ * @message: the leave message
+ * @callback: a callback to call when we left the channel
+ * @user_data: data to pass to @callback
+ *
+ * Leave channel @self with @reason as reason and @message as leave message.
+ * If @self doesn't implement #TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP or if
+ * for any reason we can properly leave the channel, we close it.
+ *
+ * If @reason equals TP_CHANNEL_GROUP_CHANGE_REASON_NONE and message is %NULL
+ * then @self is simply closed as well.
+ *
+ * When we left the channel, @callback will be called.
+ * You can then call tp_channel_leave_finish() to get the result of
+ * the operation.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_channel_leave_async (TpChannel *self,
+    TpChannelGroupChangeReason reason,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  leave_channel_async (self, TRUE, reason, message, callback, user_data);
+}
+
+/**
  * tp_channel_leave_finish:
  * @self: a #TpChannel
  * @result: a #GAsyncResult
@@ -2333,4 +2350,48 @@ tp_channel_leave_finish (TpChannel *self,
     GError **error)
 {
   _tp_implement_finish_void (self, tp_channel_leave_async)
+}
+
+/**
+ * tp_channel_close_async:
+ * @self: a #TpChannel
+ * @callback: a callback to call when we closed the channel
+ * @user_data: data to pass to @callback
+ *
+ * Close channel @self. In most cases, it's generally cleaner to use
+ * tp_channel_leave_async() instead to properly leave and close the channel.
+ *
+ * When the channel has been closed, @callback will be called.
+ * You can then call tp_channel_close_finish() to get the result of
+ * the operation.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_channel_close_async (TpChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  leave_channel_async (self, FALSE, TP_CHANNEL_GROUP_CHANGE_REASON_NONE, NULL,
+      callback, user_data);
+}
+
+/**
+ * tp_channel_close_finish:
+ * @self: a #TpChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to close a channel.
+ *
+ * Returns: %TRUE if the channel has been closed; %FALSE otherwise
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_channel_close_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_channel_close_async)
 }
