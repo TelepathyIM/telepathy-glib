@@ -83,7 +83,6 @@ static void
 create_room_chan (Test *test)
 {
   gchar *chan_path;
-  TpHandle handle;
   GHashTable *props;
 
   tp_clear_object (&test->chan_room_service);
@@ -96,14 +95,9 @@ create_room_chan (Test *test)
       TP_HANDLE_TYPE_ROOM);
   g_assert (test->room_repo != NULL);
 
-  handle = tp_handle_ensure (test->room_repo, "test", NULL, &test->error);
-
-  g_assert_no_error (test->error);
-
   test->chan_room_service = tp_tests_object_new_static_class (
       TP_TESTS_TYPE_TEXT_CHANNEL_GROUP,
       "connection", test->base_connection,
-      "handle", handle,
       "object-path", chan_path,
       NULL);
 
@@ -121,7 +115,6 @@ create_room_chan (Test *test)
 
   g_free (chan_path);
 
-  tp_handle_unref (test->room_repo, handle);
   g_hash_table_unref (props);
 }
 
