@@ -17,6 +17,7 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include "tests/lib/simple-conn.h"
 #include "tests/lib/util.h"
 
 /* This object implements no methods and no properties - TpChannelRequest
@@ -53,7 +54,14 @@ typedef struct {
     TpDBusDaemon *private_dbus;
     GObject *cr_service;
 
+    /* Service side objects */
+    TpBaseConnection *base_connection;
+
+    /* Client side objects */
+    TpConnection *connection;
+    TpChannel *channel;
     TpChannelRequest *cr;
+
     GError *error /* initialized where needed */;
 
     guint succeeded;
@@ -84,6 +92,9 @@ setup (Test *test,
   test->private_dbus = tp_dbus_daemon_new (test->private_conn);
   g_assert (test->private_dbus != NULL);
 
+  /* Create (service and client sides) connection objects */
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+      "me@test.com", &test->base_connection, &test->connection);
   test->cr = NULL;
 
   test->cr_service = tp_tests_object_new_static_class (test_simple_cr_get_type (),
@@ -96,6 +107,12 @@ static void
 teardown (Test *test,
           gconstpointer data)
 {
+  tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
+  g_assert_no_error (test->error);
+
+  g_object_unref (test->connection);
+  g_object_unref (test->base_connection);
+
   if (test->cr != NULL)
     {
       g_object_unref (test->cr);
@@ -197,10 +214,28 @@ succeeded_cb (Test *test)
 }
 
 static void
+succeeded_with_channel_cb (TpChannelRequest *request,
+    TpConnection *connection,
+    TpChannel *channel,
+    Test *test)
+{
+  g_assert (TP_IS_CONNECTION (connection));
+  g_assert (TP_IS_CHANNEL (channel));
+
+  g_assert_cmpstr (tp_proxy_get_object_path (connection), ==,
+      test->base_connection->object_path);
+  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
+      "/Channel");
+
+  test->succeeded++;
+}
+
+static void
 test_succeeded (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   gboolean ok;
+  GHashTable *props;
 
   ok = tp_dbus_daemon_request_name (test->private_dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
@@ -212,6 +247,15 @@ test_succeeded (Test *test,
 
   g_signal_connect_swapped (test->cr, "succeeded", G_CALLBACK (succeeded_cb),
       test);
+  g_signal_connect (test->cr, "succeeded-with-channel",
+      G_CALLBACK (succeeded_with_channel_cb), test);
+
+  props = g_hash_table_new (NULL, NULL);
+
+  tp_svc_channel_request_emit_succeeded_with_channel (test->cr_service,
+      test->base_connection->object_path, props, "/Channel", props);
+
+  g_hash_table_unref (props);
 
   tp_svc_channel_request_emit_succeeded (test->cr_service);
 
@@ -221,7 +265,7 @@ test_succeeded (Test *test,
   g_assert (tp_proxy_get_invalidated (test->cr)->domain == TP_DBUS_ERRORS);
   g_assert (tp_proxy_get_invalidated (test->cr)->code ==
       TP_DBUS_ERROR_OBJECT_REMOVED);
-  g_assert_cmpuint (test->succeeded, ==, 1);
+  g_assert_cmpuint (test->succeeded, ==, 2);
 
   g_signal_handlers_disconnect_by_func (test->cr, G_CALLBACK (succeeded_cb),
       test);
