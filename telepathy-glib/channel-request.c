@@ -86,7 +86,12 @@
  * The class of a #TpChannelRequest.
  */
 
-static guint signal_id_succeeded = 0;
+enum {
+  SIGNAL_SUCCEEDED,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = { 0 };
 
 struct _TpChannelRequestPrivate {
     gpointer dummy;
@@ -123,7 +128,7 @@ tp_channel_request_succeeded_cb (TpChannelRequest *self,
   GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
       "ChannelRequest succeeded and was removed" };
 
-  g_signal_emit (self, signal_id_succeeded, 0);
+  g_signal_emit (self, signals[SIGNAL_SUCCEEDED], 0);
   tp_proxy_invalidate ((TpProxy *) self, &e);
 }
 
@@ -184,7 +189,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Emitted when the channel request succeeds.
    */
-  signal_id_succeeded = g_signal_new ("succeeded",
+  signals[SIGNAL_SUCCEEDED] = g_signal_new ("succeeded",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
