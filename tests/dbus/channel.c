@@ -48,7 +48,7 @@ create_contact_chan (Test *test)
   tp_clear_object (&test->chan_contact_service);
   tp_clear_object (&test->chan_room_service);
 
-  /* Create service-side tube channel object */
+  /* Create service-side channel object */
   chan_path = g_strdup_printf ("%s/Channel",
       tp_proxy_get_object_path (test->connection));
 
@@ -88,7 +88,7 @@ create_room_chan (Test *test)
 
   tp_clear_object (&test->chan_room_service);
 
-  /* Create service-side tube channel object */
+  /* Create service-side channel object */
   chan_path = g_strdup_printf ("%s/Channel2",
       tp_proxy_get_object_path (test->connection));
 
