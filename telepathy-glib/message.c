@@ -374,7 +374,7 @@ tp_message_set_handle (TpMessage *self,
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
 
   if (handle_or_0 != 0)
-    tp_message_ref_handle (self, handle_type, handle_or_0);
+    tp_cm_message_ref_handle (self, handle_type, handle_or_0);
 
   tp_message_set_uint32 (self, part, key, handle_or_0);
 }
