@@ -280,6 +280,7 @@ tp_cm_message_set_sender (TpMessage *self,
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
   g_return_if_fail (handle != 0);
 
-  tp_message_set_handle (self, 0, "message-sender", TP_HANDLE_TYPE_CONTACT,
-      handle);
+  tp_cm_message_ref_handle (self, TP_HANDLE_TYPE_CONTACT, handle);
+
+  tp_message_set_uint32 (self, 0, "message-sender", handle);
 }
