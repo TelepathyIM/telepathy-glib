@@ -23,8 +23,8 @@
  * @title: TpCMMessage
  * @short_description: a message in the Telepathy message interface, CM side
  *
- * #TpCMMessage represent a message send or received using the Message
- * interface.
+ *  #TpCMMessage is used within connection managers to represent a
+ *  message sent or received using the Messages interface.
  *
  * @since 0.13.UNRELEASED
  */

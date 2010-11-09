@@ -23,7 +23,11 @@
  * @title: TpClientMessage
  * @short_description: a message in the Telepathy message interface, client side
  *
- * #TpClientMessage represent a message send using the Message interface.
+ * #TpClientMessage is used within Telepathy clients to represent a
+ * message composed by a client, which it will send using the
+ * Messages interface.
+ * Its subclass #TpSignalledMessage represents messages as signalled by a
+ * connection manager.
  *
  * @since 0.13.UNRELEASED
  */

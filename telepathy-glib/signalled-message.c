@@ -23,7 +23,11 @@
  * @title: TpSignalledMessage
  * @short_description: a message received using the Telepathy message interface
  *
- * #TpSignalledMessage represent a message received using the Message interface.
+ * #TpSignalledMessage is used within Telepathy clients to represent a message
+ * signalled by a connection manager. This can either be a message received from
+ * someone else, confirmation that a message has been sent by the local user,
+ * or a delivery report indicating that delivery of a message has
+ * succeeded or failed.
  *
  * @since 0.13.UNRELEASED
  */
