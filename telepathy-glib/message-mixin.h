@@ -22,6 +22,7 @@
 #define TP_MESSAGE_MIXIN_H
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/handle-repo.h>
 #include <telepathy-glib/message.h>
 #include <telepathy-glib/svc-channel.h>
