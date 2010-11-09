@@ -277,10 +277,23 @@ void
 tp_cm_message_set_sender (TpMessage *self,
     TpHandle handle)
 {
+  TpCMMessage *cm_msg;
+  TpHandleRepoIface *contact_repo;
+  const gchar *id;
+
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
   g_return_if_fail (handle != 0);
 
   tp_cm_message_ref_handle (self, TP_HANDLE_TYPE_CONTACT, handle);
 
   tp_message_set_uint32 (self, 0, "message-sender", handle);
+
+  cm_msg = (TpCMMessage *) self;
+
+  contact_repo = tp_base_connection_get_handles (cm_msg->priv->connection,
+      TP_HANDLE_TYPE_CONTACT);
+
+  id = tp_handle_inspect (contact_repo, handle);
+  if (id != NULL)
+    tp_message_set_string (self, 0, "message-sender-id", id);
 }
