@@ -112,15 +112,22 @@ tp_cm_message_new (TpBaseConnection *connection,
 {
   TpCMMessage *self;
   TpMessage *msg;
+  guint i;
 
   g_return_val_if_fail (connection != NULL, NULL);
+  g_return_val_if_fail (size_hint >= initial_parts, NULL);
 
   self = g_object_new (TP_TYPE_CM_MESSAGE,
-      "initial-parts", initial_parts,
-      "size-hint", size_hint,
       NULL);
 
   msg = (TpMessage *) self;
+
+  /* The first part has already be created */
+  for (i = 1; i < initial_parts; i++)
+    {
+      g_ptr_array_add (msg->parts, g_hash_table_new_full (g_str_hash,
+            g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
+    }
 
   self->priv->connection = g_object_ref (connection);
   msg->incoming_id = G_MAXUINT32;
@@ -310,8 +317,6 @@ _tp_cm_message_new_from_parts (const GPtrArray *parts)
   g_return_val_if_fail (parts->len > 0, NULL);
 
   self = g_object_new (TP_TYPE_CM_MESSAGE,
-      "initial-parts", parts->len,
-      "size-hint", parts->len,
       NULL);
 
   for (i = 0; i < parts->len; i++)

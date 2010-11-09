@@ -51,62 +51,10 @@ G_DEFINE_TYPE (TpMessage, tp_message, G_TYPE_OBJECT)
  * message body).
  */
 
-enum {
-  PROP_INITIAL_PARTS = 1,
-  PROP_SIZE_HINT
-};
-
 struct _TpMessagePrivate
 {
-  guint initial_parts;
-  guint size_hint;
+  gpointer unused;
 };
-
-static void
-tp_message_set_property (GObject *obj,
-    guint property_id,
-    const GValue *value,
-    GParamSpec *pspec)
-{
-  TpMessage *self = (TpMessage *) obj;
-
-  switch (property_id)
-    {
-      case PROP_INITIAL_PARTS:
-        self->priv->initial_parts = g_value_get_uint (value);
-        break;
-
-      case PROP_SIZE_HINT:
-        self->priv->size_hint = g_value_get_uint (value);
-        break;
-
-      default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, property_id, pspec);
-        break;
-  }
-}
-
-static void
-tp_message_constructed (GObject *obj)
-{
-  TpMessage *self = (TpMessage *) obj;
-  void (*chain_up) (GObject *) =
-    ((GObjectClass *) tp_message_parent_class)->constructed;
-  guint i;
-
-  if (chain_up != NULL)
-    chain_up (obj);
-
-  g_assert (self->priv->size_hint >= self->priv->initial_parts);
-
-  self->parts = g_ptr_array_sized_new (self->priv->size_hint);
-
-  for (i = 0; i < self->priv->initial_parts; i++)
-    {
-      g_ptr_array_add (self->parts, g_hash_table_new_full (g_str_hash,
-            g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
-    }
-}
 
 static void
 tp_message_dispose (GObject *object)
@@ -135,39 +83,8 @@ static void
 tp_message_class_init (TpMessageClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-  GParamSpec *spec;
 
-  gobject_class->set_property = tp_message_set_property;
-  gobject_class->constructed = tp_message_constructed;
   gobject_class->dispose = tp_message_dispose;
-
-  /**
-   * TpMessage:initial-parts:
-   *
-   * Number of parts to create (at least 1)
-   *
-   * Since: 0.13.UNRELEASED
-   */
-  spec = g_param_spec_uint ("initial-parts", "initial parts",
-      "number of parts to create (at least 1)",
-      1, G_MAXUINT32, 1,
-      G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (gobject_class, PROP_INITIAL_PARTS,
-      spec);
-
-  /**
-   * TpMessage:size-hint:
-   *
-   * preallocate space for this many parts (at least TpMessage:initial-parts:)
-   *
-   * Since: 0.13.UNRELEASED
-   */
-  spec = g_param_spec_uint ("size-hint", "size hint",
-      "preallocate space for this many parts (at least initial_parts)",
-      1, G_MAXUINT32, 1,
-      G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (gobject_class, PROP_SIZE_HINT,
-      spec);
 
   g_type_class_add_private (gobject_class, sizeof (TpMessagePrivate));
 }
@@ -177,6 +94,12 @@ tp_message_init (TpMessage *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_MESSAGE,
       TpMessagePrivate);
+
+  /* Create header part */
+  self->parts = g_ptr_array_sized_new (1);
+
+  g_ptr_array_add (self->parts, g_hash_table_new_full (g_str_hash,
+        g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
 }
 
 

@@ -96,8 +96,6 @@ TpMessage *
 tp_client_message_new (void)
 {
   return g_object_new (TP_TYPE_CLIENT_MESSAGE,
-      "initial-parts", 1,
-      "size-hint", 1,
       NULL);
 }
 
@@ -121,13 +119,12 @@ tp_client_message_new_text (TpChannelTextMessageType type,
   TpMessage *msg;
 
   msg = g_object_new (TP_TYPE_CLIENT_MESSAGE,
-      "initial-parts", 2,
-      "size-hint", 2,
       NULL);
 
   if (type != TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL)
     tp_message_set_uint32 (msg, 0, "message-type", type);
 
+  tp_message_append_part (msg);
   tp_message_set_string (msg, 1, "content-type", "text/plain");
   tp_message_set_string (msg, 1, "content", text);
 

@@ -97,12 +97,14 @@ _tp_signalled_message_new (const GPtrArray *parts)
 
   /* FIXME: remove message-sender? */
   self = g_object_new (TP_TYPE_SIGNALLED_MESSAGE,
-      "initial-parts", parts->len,
-      "size-hint", parts->len,
       NULL);
 
   for (i = 0; i < parts->len; i++)
     {
+      /* First part is automatically created */
+      if (i != 0)
+        tp_message_append_part (self);
+
       tp_g_hash_table_update (g_ptr_array_index (self->parts, i),
           g_ptr_array_index (parts, i),
           (GBoxedCopyFunc) g_strdup,
