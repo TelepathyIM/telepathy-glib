@@ -71,7 +71,7 @@ void tp_message_set (TpMessage *self, guint part, const gchar *key,
     const GValue *source);
 
 gchar * tp_message_to_text (TpMessage *message,
-    TpChannelTextMessageFlags *out_flags);
+    TpChannelTextMessageFlags *out_flags) G_GNUC_WARN_UNUSED_RESULT;
 
 /* Takes a TpCMMessage */
 void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
