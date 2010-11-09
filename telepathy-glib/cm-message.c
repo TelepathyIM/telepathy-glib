@@ -145,7 +145,7 @@ _ensure_handle_set (TpCMMessage *self,
 }
 
 /**
- * tp_message_ref_handles:
+ * tp_cm_message_ref_handles:
  * @self: a message
  * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less
  *  than %NUM_TP_HANDLE_TYPES
@@ -156,7 +156,7 @@ _ensure_handle_set (TpCMMessage *self,
  * @since 0.13.UNRELEASED
  */
 static void
-tp_message_ref_handles (TpMessage *msg,
+tp_cm_message_ref_handles (TpMessage *msg,
                         TpHandleType handle_type,
                         TpIntset *handles)
 {
@@ -227,7 +227,7 @@ tp_cm_message_take_message (TpMessage *self,
   for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
     {
       if (cm_message->priv->reffed_handles[i] != NULL)
-        tp_message_ref_handles (self, i,
+        tp_cm_message_ref_handles (self, i,
             tp_handle_set_peek (cm_message->priv->reffed_handles[i]));
     }
 
