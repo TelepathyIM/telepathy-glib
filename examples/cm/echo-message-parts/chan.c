@@ -61,15 +61,14 @@ send_message (GObject *object,
       goto finally;
     }
 
-  received = tp_message_new (tp_base_channel_get_connection (base), 1, len);
+  received = tp_cm_message_new (tp_base_channel_get_connection (base), 1, len);
 
   /* Copy/modify the headers for the "received" message */
     {
       TpChannelTextMessageType message_type;
       gboolean valid;
 
-      tp_message_set_handle (received, 0, "message-sender",
-          TP_HANDLE_TYPE_CONTACT,
+      tp_cm_message_set_sender (received,
           tp_base_channel_get_target_handle (base));
 
       message_type = tp_asv_get_uint32 (tp_message_peek (message, 0),
