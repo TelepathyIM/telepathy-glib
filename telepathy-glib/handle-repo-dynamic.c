@@ -99,27 +99,21 @@ struct _TpHandlePriv
   GData *datalist;
 };
 
-static TpHandlePriv *
-handle_priv_new (void)
-{
-  TpHandlePriv *priv;
-
-  priv = g_slice_new0 (TpHandlePriv);
-
-  g_datalist_init (&(priv->datalist));
-  return priv;
-}
-
-/* Dynamic handle repo */
+static const TpHandlePriv empty_priv = { NULL, NULL };
 
 static void
-handle_priv_free (TpHandlePriv *priv)
+handle_priv_init (TpHandlePriv *priv,
+    const gchar *string)
 {
-  g_return_if_fail (priv != NULL);
+  priv->string = g_strdup (string);
+  g_datalist_init (&(priv->datalist));
+}
 
+static void
+handle_priv_free_contents (TpHandlePriv *priv)
+{
   g_free (priv->string);
   g_datalist_clear (&(priv->datalist));
-  g_slice_free (TpHandlePriv, priv);
 }
 
 enum
@@ -151,12 +145,10 @@ struct _TpDynamicHandleRepo {
 
   TpHandleType handle_type;
 
-  /* Map GUINT_TO_POINTER(handle) -> (TpHandlePriv *) */
-  GHashTable *handle_to_priv;
+  /* Array of TpHandlePriv keyed by handle; 0th element is unused */
+  GArray *handle_to_priv;
   /* Map contact unique ID -> GUINT_TO_POINTER(handle) */
   GHashTable *string_to_handle;
-  /* Smallest handle which has never been allocated */
-  guint next_handle;
   /* Normalization function */
   TpDynamicHandleRepoNormalizeFunc normalize_function;
   /* Context for normalization function if NULL is passed to _ensure or
@@ -179,26 +171,22 @@ G_DEFINE_TYPE_WITH_CODE (TpDynamicHandleRepo, tp_dynamic_handle_repo,
 
 static inline TpHandlePriv *
 handle_priv_lookup (TpDynamicHandleRepo *repo,
-                    TpHandle handle)
+    TpHandle handle)
 {
-  return g_hash_table_lookup (repo->handle_to_priv, GINT_TO_POINTER (handle));
-}
+  if (handle == 0 || handle >= repo->handle_to_priv->len)
+    return NULL;
 
-static inline TpHandle
-handle_alloc (TpDynamicHandleRepo *repo)
-{
-  g_assert (repo != NULL);
-
-  return repo->next_handle++;
+  return &g_array_index (repo->handle_to_priv, TpHandlePriv, handle);
 }
 
 static void
 tp_dynamic_handle_repo_init (TpDynamicHandleRepo *self)
 {
-  self->handle_to_priv = g_hash_table_new_full (g_direct_hash,
-      g_direct_equal, NULL, (GDestroyNotify) handle_priv_free);
+  self->handle_to_priv = g_array_new (FALSE, FALSE, sizeof (TpHandlePriv));
+  /* dummy 0'th entry */
+  g_array_append_val (self->handle_to_priv, empty_priv);
+
   self->string_to_handle = g_hash_table_new (g_str_hash, g_str_equal);
-  self->next_handle = 1;
 }
 
 static void
@@ -214,13 +202,19 @@ static void
 dynamic_finalize (GObject *obj)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (obj);
-
   GObjectClass *parent = G_OBJECT_CLASS (tp_dynamic_handle_repo_parent_class);
+  guint i;
 
-  g_assert (self->handle_to_priv);
-  g_assert (self->string_to_handle);
+  g_assert (self->handle_to_priv != NULL);
+  g_assert (self->string_to_handle != NULL);
 
-  g_hash_table_destroy (self->handle_to_priv);
+  for (i = 0; i < self->handle_to_priv->len; i++)
+    {
+      handle_priv_free_contents (&g_array_index (self->handle_to_priv,
+            TpHandlePriv, i));
+    }
+
+  g_array_free (self->handle_to_priv, TRUE);
   g_hash_table_destroy (self->string_to_handle);
 
   if (parent->finalize)
@@ -328,7 +322,8 @@ tp_dynamic_handle_repo_class_init (TpDynamicHandleRepoClass *klass)
 }
 
 static gboolean
-dynamic_handle_is_valid (TpHandleRepoIface *irepo, TpHandle handle,
+dynamic_handle_is_valid (TpHandleRepoIface *irepo,
+    TpHandle handle,
     GError **error)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
@@ -348,8 +343,10 @@ dynamic_handle_is_valid (TpHandleRepoIface *irepo, TpHandle handle,
 }
 
 static gboolean
-dynamic_handles_are_valid (TpHandleRepoIface *irepo, const GArray *handles,
-    gboolean allow_zero, GError **error)
+dynamic_handles_are_valid (TpHandleRepoIface *irepo,
+    const GArray *handles,
+    gboolean allow_zero,
+    GError **error)
 {
   guint i;
 
@@ -401,10 +398,12 @@ dynamic_client_release_handle (TpHandleRepoIface *repo G_GNUC_UNUSED,
 }
 
 static const char *
-dynamic_inspect_handle (TpHandleRepoIface *irepo, TpHandle handle)
+dynamic_inspect_handle (TpHandleRepoIface *irepo,
+    TpHandle handle)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
   TpHandlePriv *priv = handle_priv_lookup (self, handle);
+
   if (priv == NULL)
     return NULL;
   else
@@ -429,19 +428,18 @@ dynamic_inspect_handle (TpHandleRepoIface *irepo, TpHandle handle)
  */
 TpHandle
 tp_dynamic_handle_repo_lookup_exact (TpHandleRepoIface *irepo,
-                                     const char *id)
+    const char *id)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
 
-  return GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle,
-        id));
+  return GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle, id));
 }
 
 static TpHandle
 dynamic_lookup_handle (TpHandleRepoIface *irepo,
-                       const char *id,
-                       gpointer context,
-                       GError **error)
+    const char *id,
+    gpointer context,
+    GError **error)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
   TpHandle handle;
@@ -458,8 +456,7 @@ dynamic_lookup_handle (TpHandleRepoIface *irepo,
       id = normal_id;
     }
 
-  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle,
-        id));
+  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle, id));
 
   if (handle == 0)
     {
@@ -475,9 +472,9 @@ dynamic_lookup_handle (TpHandleRepoIface *irepo,
 
 static TpHandle
 dynamic_ensure_handle (TpHandleRepoIface *irepo,
-                       const char *id,
-                       gpointer context,
-                       GError **error)
+    const char *id,
+    gpointer context,
+    GError **error)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
   TpHandle handle;
@@ -496,23 +493,22 @@ dynamic_ensure_handle (TpHandleRepoIface *irepo,
       id = normal_id;
     }
 
-  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle,
-        id));
-  if (handle)
+  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle, id));
+
+  if (handle != 0)
     {
       g_free (normal_id);
       return handle;
     }
 
-  handle = handle_alloc (self);
-  priv = handle_priv_new ();
+  if (normal_id == NULL)
+    normal_id = g_strdup (id);
 
-  if (self->normalize_function)
-    priv->string = normal_id;
-  else
-    priv->string = g_strdup (id);
+  handle = self->handle_to_priv->len;
+  g_array_append_val (self->handle_to_priv, empty_priv);
+  priv = &g_array_index (self->handle_to_priv, TpHandlePriv, handle);
 
-  g_hash_table_insert (self->handle_to_priv, GUINT_TO_POINTER (handle), priv);
+  handle_priv_init (priv, normal_id);
   g_hash_table_insert (self->string_to_handle, priv->string,
       GUINT_TO_POINTER (handle));
   return handle;
