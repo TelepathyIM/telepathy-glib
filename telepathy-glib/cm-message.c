@@ -88,7 +88,7 @@ tp_cm_message_class_init (TpCMMessageClass *klass)
 static void
 tp_cm_message_init (TpCMMessage *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_MESSAGE,
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_CM_MESSAGE,
       TpCMMessagePrivate);
 }
 
