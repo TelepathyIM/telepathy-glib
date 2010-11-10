@@ -98,6 +98,12 @@ enum {
 
 static guint signals[N_SIGNALS] = { 0 };
 
+typedef enum
+{
+  ACTION_TYPE_FORGET,
+  ACTION_TYPE_HANDLE
+} ActionType;
+
 struct _TpAccountChannelRequestPrivate
 {
   TpAccount *account;
@@ -120,9 +126,7 @@ struct _TpAccountChannelRequestPrivate
    * on the TpAccountChannelRequest) */
   gboolean requested;
 
-  /* TRUE if The TpAccountChannelRequest should handle the requested channel
-   * itself */
-  gboolean should_handle;
+  ActionType action_type;
 };
 
 static void
@@ -583,7 +587,7 @@ handle_channels (TpSimpleHandler *handler,
 static void
 channel_request_succeeded (TpAccountChannelRequest *self)
 {
-  if (self->priv->should_handle)
+  if (self->priv->action_type == ACTION_TYPE_HANDLE)
     {
       GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
           "Another Handler is handling this channel" };
@@ -619,7 +623,7 @@ acr_channel_request_proceed_cb (TpChannelRequest *request,
       return;
     }
 
-  if (self->priv->should_handle)
+  if (self->priv->action_type == ACTION_TYPE_HANDLE)
     DEBUG ("Proceed succeeded; waiting for the channel to be handled");
   else
     DEBUG ("Proceed succeeded; waiting for the Succeeded signal");
@@ -748,7 +752,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
 
-  self->priv->should_handle = TRUE;
+  self->priv->action_type = ACTION_TYPE_HANDLE;
 
   if (g_cancellable_is_cancelled (cancellable))
     {
@@ -1001,7 +1005,7 @@ request_channel_async (TpAccountChannelRequest *self,
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
 
-  self->priv->should_handle = FALSE;
+  self->priv->action_type = ACTION_TYPE_FORGET;
 
   if (g_cancellable_is_cancelled (cancellable))
     {
