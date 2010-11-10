@@ -84,7 +84,6 @@ tp_client_message_init (TpClientMessage *self)
 
 /**
  * tp_client_message_new:
- * @self: a #TpTextChannel
  *
  * A convenient function to create a new #TpClientMessage
  *
