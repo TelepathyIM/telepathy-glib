@@ -216,13 +216,9 @@ test_by_handle (TpTestsContactsConnection *service_conn,
 
   /* unref all the handles we created service-side */
   tp_handle_unref (service_repo, handles[0]);
-  MYASSERT (!tp_handle_is_valid (service_repo, handles[0], NULL), "");
   tp_handle_unref (service_repo, handles[1]);
-  MYASSERT (!tp_handle_is_valid (service_repo, handles[1], NULL), "");
   tp_handle_unref (service_repo, handles[2]);
-  MYASSERT (!tp_handle_is_valid (service_repo, handles[2], NULL), "");
   tp_handle_unref (service_repo, handles[3]);
-  MYASSERT (!tp_handle_is_valid (service_repo, handles[3], NULL), "");
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
@@ -295,7 +291,6 @@ test_no_features (TpTestsContactsConnection *service_conn,
       g_object_unref (contacts[i]);
       tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
       tp_handle_unref (service_repo, handles[i]);
-      MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
     }
 
   /* remaining cleanup */
@@ -517,7 +512,6 @@ test_upgrade (TpTestsContactsConnection *service_conn,
       g_object_unref (contacts[i]);
       tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
       tp_handle_unref (service_repo, handles[i]);
-      MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
     }
 
   /* remaining cleanup */
@@ -806,7 +800,6 @@ test_features (TpTestsContactsConnection *service_conn,
       g_object_unref (contacts[i]);
       tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
       tp_handle_unref (service_repo, handles[i]);
-      MYASSERT (!tp_handle_is_valid (service_repo, handles[i], NULL), "");
     }
 
   /* remaining cleanup */
