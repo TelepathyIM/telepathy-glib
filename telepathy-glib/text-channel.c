@@ -152,7 +152,7 @@ message_sent_cb (TpChannel *channel,
 {
   TpMessage *msg;
 
-  msg = _tp_signalled_message_new (content);
+  msg = _tp_signalled_message_new (content, NULL);
 
   g_signal_emit (channel, signals[SIG_MESSAGE_SENT], 0, msg, flags,
       tp_str_empty (token) ? NULL : token);
@@ -242,8 +242,13 @@ tp_text_channel_constructed (GObject *obj)
 
 static void
 add_message_received (TpTextChannel *self,
-    TpMessage *msg)
+    const GPtrArray *parts,
+    TpContact *sender)
 {
+  TpMessage *msg;
+
+  msg = _tp_signalled_message_new (parts, sender);
+
   self->priv->pending_messages = g_list_append (
       self->priv->pending_messages, msg);
 
@@ -261,8 +266,8 @@ got_sender_contact_cb (TpConnection *connection,
     GObject *weak_object)
 {
   TpTextChannel *self = (TpTextChannel *) weak_object;
-  TpMessage *msg = user_data;
-  TpContact *contact;
+  GPtrArray *parts = user_data;
+  TpContact *sender = NULL;
 
   if (error != NULL)
     {
@@ -276,12 +281,17 @@ got_sender_contact_cb (TpConnection *connection,
       goto out;
     }
 
-  contact = contacts[0];
-
-  _tp_signalled_message_set_sender (msg, contact);
+  sender = contacts[0];
 
 out:
-  add_message_received (self, msg);
+  add_message_received (self, parts, sender);
+  g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
+}
+
+static GPtrArray *
+copy_parts (const GPtrArray *parts)
+{
+  return g_boxed_copy (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
 }
 
 static void
@@ -291,7 +301,6 @@ message_received_cb (TpChannel *proxy,
     GObject *weak_object)
 {
   TpTextChannel *self = user_data;
-  TpMessage *msg;
   const GHashTable *header;
   TpHandle sender;
   TpConnection *conn;
@@ -303,23 +312,22 @@ message_received_cb (TpChannel *proxy,
 
   DEBUG ("New message received");
 
-  msg = _tp_signalled_message_new (message);
-
-  header = tp_message_peek (msg, 0);
+  header = g_ptr_array_index (message, 0);
   sender = tp_asv_get_uint32 (header, "message-sender", NULL);
 
   if (sender == 0)
     {
       DEBUG ("Message doesn't have a sender");
 
-      add_message_received (self, msg);
+      add_message_received (self, message, NULL);
       return;
     }
 
   conn = tp_channel_borrow_connection (proxy);
 
   tp_connection_get_contacts_by_handle (conn, 1, &sender,
-      0, NULL, got_sender_contact_cb, msg, NULL, G_OBJECT (self));
+      0, NULL, got_sender_contact_cb, copy_parts (message),
+      NULL, G_OBJECT (self));
 }
 
 /* Move this as TpMessage (or TpSignalledMessage?) API ? */
@@ -388,6 +396,7 @@ got_pending_senders_contact_cb (TpConnection *connection,
     GObject *weak_object)
 {
   TpTextChannel *self = (TpTextChannel *) weak_object;
+  GList *parts_list = user_data;
   GList *l;
   guint i;
 
@@ -402,13 +411,13 @@ got_pending_senders_contact_cb (TpConnection *connection,
       DEBUG ("Failed to prepare some TpContact (InvalidHandle)");
     }
 
-  for (l = self->priv->pending_messages; l != NULL; l = g_list_next (l))
+  for (l = parts_list; l != NULL; l = g_list_next (l))
     {
-      TpMessage *msg = l->data;
+      GPtrArray *parts = l->data;
       const GHashTable *header;
       TpHandle sender;
 
-      header = tp_message_peek (msg, 0);
+      header = g_ptr_array_index (parts, 0);
       sender = tp_asv_get_uint32 (header, "message-sender", NULL);
 
       if (sender == 0)
@@ -420,11 +429,20 @@ got_pending_senders_contact_cb (TpConnection *connection,
 
           if (tp_contact_get_handle (contact) == sender)
             {
-              _tp_signalled_message_set_sender (msg, contact);
+              TpMessage *msg;
+
+              msg = _tp_signalled_message_new (parts, contact);
+
+              self->priv->pending_messages = g_list_append (
+                  self->priv->pending_messages, msg);
               break;
             }
         }
+
+      g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
     }
+
+  g_list_free (parts_list);
 
 out:
   _tp_proxy_set_feature_prepared (TP_PROXY (self),
@@ -442,6 +460,7 @@ get_pending_messages_cb (TpProxy *proxy,
   guint i;
   GPtrArray *messages;
   TpIntSet *senders;
+  GList *parts_list = NULL;
 
   self->priv->retrieving_pending = FALSE;
 
@@ -460,13 +479,10 @@ get_pending_messages_cb (TpProxy *proxy,
   for (i = 0; i < messages->len; i++)
     {
       GPtrArray *parts = g_ptr_array_index (messages, i);
-      TpMessage *msg;
       const GHashTable *header;
       TpHandle sender;
 
-      msg = _tp_signalled_message_new (parts);
-
-      header = tp_message_peek (msg, 0);
+      header = g_ptr_array_index (parts, 0);
       sender = tp_asv_get_uint32 (header, "message-sender", NULL);
 
       if (sender == 0)
@@ -477,8 +493,7 @@ get_pending_messages_cb (TpProxy *proxy,
 
       tp_intset_add (senders, sender);
 
-      self->priv->pending_messages = g_list_append (
-          self->priv->pending_messages, msg);
+      parts_list = g_list_prepend (parts_list, copy_parts (parts));
     }
 
   if (tp_intset_size (senders) == 0)
@@ -491,12 +506,15 @@ get_pending_messages_cb (TpProxy *proxy,
       GArray *tmp;
       TpConnection *conn;
 
+      parts_list = g_list_reverse (parts_list);
+
       tmp = tp_intset_to_array (senders);
       conn = tp_channel_borrow_connection (TP_CHANNEL (proxy));
 
       tp_connection_get_contacts_by_handle (conn, tmp->len,
           (TpHandle *) tmp->data,
-          0, NULL, got_pending_senders_contact_cb, NULL, NULL, G_OBJECT (self));
+          0, NULL, got_pending_senders_contact_cb, parts_list,
+          NULL, G_OBJECT (self));
 
       g_array_unref (tmp);
     }
