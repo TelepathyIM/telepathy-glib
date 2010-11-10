@@ -680,7 +680,7 @@ main (int argc,
   g_test_add ("/account-channels-request-handle/re-handle", Test, NULL,
       setup, test_handle_re_handle, teardown);
 
-  /* Request and handle tests */
+  /* Request and forget tests */
   g_test_add ("/account-channels-request-forget/create-success", Test, NULL,
       setup, test_forget_create_success, teardown);
   g_test_add ("/account-channels-request-forget/create-fail", Test, NULL,
