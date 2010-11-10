@@ -161,7 +161,15 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   if (!tp_strdiff (self->priv->preferred_handler, "Fake"))
     {
       /* Pretend that the channel has been handled */
+      GHashTable *props;
+
+      props = g_hash_table_new (NULL, NULL);
+
+      tp_svc_channel_request_emit_succeeded_with_channel (self,
+          base_conn->object_path, props, "/chan", props);
       tp_svc_channel_request_emit_succeeded (self);
+
+      g_hash_table_unref (props);
       return;
     }
 
