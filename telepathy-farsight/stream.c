@@ -39,6 +39,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/util.h>
 
 #include <gst/farsight/fs-conference-iface.h>
 
@@ -190,6 +191,7 @@ static void invalidated_cb (TpMediaStreamHandler *proxy,
 
 static FsMediaType tp_media_type_to_fs (TpMediaStreamType type);
 
+static GValueArray *fs_candidate_to_tp_array (const FsCandidate *candidate);
 static GPtrArray *fs_codecs_to_tp (TfStream *stream,
     const GList *codecs);
 static void async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
@@ -1242,6 +1244,59 @@ tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
   return fs_trans_list;
 }
 
+static GValueArray *
+fs_candidate_to_tp_array (const FsCandidate *candidate)
+{
+  GValueArray *transport = NULL;
+  TpMediaStreamBaseProto proto;
+  TpMediaStreamTransportType type;
+
+  switch (candidate->proto) {
+  case FS_NETWORK_PROTOCOL_UDP:
+    proto = TP_MEDIA_STREAM_BASE_PROTO_UDP;
+    break;
+  case FS_NETWORK_PROTOCOL_TCP:
+    proto = TP_MEDIA_STREAM_BASE_PROTO_TCP;
+    break;
+  default:
+    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+        G_STRFUNC);
+    return NULL;
+  }
+
+  switch (candidate->type) {
+  case FS_CANDIDATE_TYPE_HOST:
+    type = TP_MEDIA_STREAM_TRANSPORT_TYPE_LOCAL;
+    break;
+  case FS_CANDIDATE_TYPE_SRFLX:
+  case FS_CANDIDATE_TYPE_PRFLX:
+    type = TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED;
+    break;
+  case FS_CANDIDATE_TYPE_RELAY:
+    type = TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
+    break;
+  default:
+    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+        G_STRFUNC);
+    return NULL;
+  }
+
+  transport = tp_value_array_build (10,
+      G_TYPE_UINT, candidate->component_id,
+      G_TYPE_STRING, candidate->ip,
+      G_TYPE_UINT, candidate->port,
+      G_TYPE_UINT, proto,
+      G_TYPE_STRING, "RTP",
+      G_TYPE_STRING, "AVP",
+      G_TYPE_DOUBLE, (double) (candidate->priority / 65536.0),
+      G_TYPE_UINT, type,
+      G_TYPE_STRING, candidate->username,
+      G_TYPE_STRING, candidate->password,
+      G_TYPE_INVALID);
+
+  return transport;
+}
+
 static FsMediaType
 tp_media_type_to_fs (TpMediaStreamType type)
 {
@@ -1825,11 +1880,29 @@ cb_fs_new_active_candidate_pair (TfStream *self,
     FsCandidate *local_candidate,
     FsCandidate *remote_candidate)
 {
+  GValueArray *local_transport = NULL;
+  GValueArray *remote_transport = NULL;
+
   DEBUG (self, "called: c:%d local: %s %s:%u  remote: %s %s:%u",
       local_candidate->component_id,
       local_candidate->foundation, local_candidate->ip, local_candidate->port,
       remote_candidate->foundation, remote_candidate->ip,
       remote_candidate->port);
+
+  local_transport = fs_candidate_to_tp_array (local_candidate);
+  remote_transport = fs_candidate_to_tp_array (remote_candidate);
+  if (local_transport == NULL || remote_transport == NULL)
+  {
+    g_value_array_free (local_transport);
+    g_value_array_free (remote_transport);
+    return;
+  }
+
+  tp_cli_media_stream_handler_call_new_active_transport_pair (
+    self->priv->stream_handler_proxy, -1, local_candidate->foundation,
+    local_transport, remote_candidate->foundation, remote_transport,
+    async_method_callback, "Media.StreamHandler::NewActiveCandidatePairWithInfo",
+    NULL, (GObject *) self);
 
   tp_cli_media_stream_handler_call_new_active_candidate_pair (
     self->priv->stream_handler_proxy, -1, local_candidate->foundation,
@@ -1845,6 +1918,9 @@ cb_fs_new_active_candidate_pair (TfStream *self,
         NULL, (GObject *) self);
     self->priv->current_state = TP_MEDIA_STREAM_STATE_CONNECTED;
   }
+
+  g_value_array_free (local_transport);
+  g_value_array_free (remote_transport);
 }
 
 static void
