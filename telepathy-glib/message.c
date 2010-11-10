@@ -53,7 +53,7 @@ G_DEFINE_TYPE (TpMessage, tp_message, G_TYPE_OBJECT)
 
 struct _TpMessagePrivate
 {
-  gpointer unused;
+  gboolean mutable;
 };
 
 static void
@@ -100,6 +100,9 @@ tp_message_init (TpMessage *self)
 
   g_ptr_array_add (self->parts, g_hash_table_new_full (g_str_hash,
         g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
+
+  /* Message can be modified until _tp_message_immutable() is called */
+  self->priv->mutable = TRUE;
 }
 
 
@@ -195,6 +198,8 @@ tp_message_peek (TpMessage *self,
 guint
 tp_message_append_part (TpMessage *self)
 {
+  g_return_val_if_fail (self->priv->mutable, 0);
+
   g_ptr_array_add (self->parts, g_hash_table_new_full (g_str_hash,
         g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
   return self->parts->len - 1;
@@ -216,6 +221,7 @@ tp_message_delete_part (TpMessage *self,
 {
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (part > 0);
+  g_return_if_fail (self->priv->mutable);
 
   g_hash_table_unref (g_ptr_array_remove_index (self->parts, part));
 }
@@ -238,6 +244,7 @@ tp_message_ref_handle (TpMessage *self,
                        TpHandle handle)
 {
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
+  g_return_if_fail (self->priv->mutable);
 
   tp_cm_message_ref_handle (self, handle_type, handle);
 }
@@ -261,6 +268,7 @@ tp_message_delete_key (TpMessage *self,
                        const gchar *key)
 {
   g_return_val_if_fail (part < self->parts->len, FALSE);
+  g_return_val_if_fail (self->priv->mutable, FALSE);
 
   return g_hash_table_remove (g_ptr_array_index (self->parts, part), key);
 }
@@ -295,6 +303,7 @@ tp_message_set_handle (TpMessage *self,
                        TpHandle handle_or_0)
 {
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
+  g_return_if_fail (self->priv->mutable);
 
   if (handle_or_0 != 0)
     tp_cm_message_ref_handle (self, handle_type, handle_or_0);
@@ -323,6 +332,7 @@ tp_message_set_boolean (TpMessage *self,
 {
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
+  g_return_if_fail (self->priv->mutable);
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_new_boolean (b));
@@ -361,6 +371,7 @@ tp_message_set_int32 (TpMessage *self,
 {
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
+  g_return_if_fail (self->priv->mutable);
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_new_int (i));
@@ -387,6 +398,7 @@ tp_message_set_int64 (TpMessage *self,
 {
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
+  g_return_if_fail (self->priv->mutable);
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_new_int64 (i));
@@ -426,6 +438,7 @@ tp_message_set_uint32 (TpMessage *self,
 {
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
+  g_return_if_fail (self->priv->mutable);
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_new_uint (u));
@@ -452,6 +465,7 @@ tp_message_set_uint64 (TpMessage *self,
 {
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
+  g_return_if_fail (self->priv->mutable);
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_new_uint64 (u));
@@ -479,6 +493,7 @@ tp_message_set_string (TpMessage *self,
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
   g_return_if_fail (s != NULL);
+  g_return_if_fail (self->priv->mutable);
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_new_string (s));
@@ -512,6 +527,7 @@ tp_message_set_string_printf (TpMessage *self,
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
   g_return_if_fail (fmt != NULL);
+  g_return_if_fail (self->priv->mutable);
 
   va_start (va, fmt);
   s = g_strdup_vprintf (fmt, va);
@@ -545,6 +561,7 @@ tp_message_set_bytes (TpMessage *self,
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
   g_return_if_fail (bytes != NULL);
+  g_return_if_fail (self->priv->mutable);
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key),
@@ -576,6 +593,7 @@ tp_message_set (TpMessage *self,
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
   g_return_if_fail (source != NULL);
+  g_return_if_fail (self->priv->mutable);
 
   g_hash_table_insert (g_ptr_array_index (self->parts, part),
       g_strdup (key), tp_g_value_slice_dup (source));
@@ -784,4 +802,10 @@ tp_message_to_text (TpMessage *message,
     }
 
   return g_string_free (buffer, FALSE);
+}
+
+void
+_tp_message_immutable (TpMessage *self)
+{
+  self->priv->mutable = TRUE;
 }

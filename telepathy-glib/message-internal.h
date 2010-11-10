@@ -25,6 +25,7 @@
 
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/handle-repo.h>
+#include <telepathy-glib/message.h>
 
 G_BEGIN_DECLS
 
@@ -54,6 +55,8 @@ struct _TpMessage {
     TpMessageSendingFlags outgoing_flags;
     gboolean outgoing_text_api;
 };
+
+void _tp_message_immutable (TpMessage *self);
 
 G_END_DECLS
 

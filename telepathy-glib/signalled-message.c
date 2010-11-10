@@ -177,6 +177,8 @@ _tp_signalled_message_new (const GPtrArray *parts,
           (GBoxedCopyFunc) tp_g_value_slice_dup);
     }
 
+  _tp_message_immutable ((TpMessage *) self);
+
   return self;
 }
 
