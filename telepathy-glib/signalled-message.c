@@ -47,12 +47,58 @@
  * messages interface
  */
 
+enum
+{
+  PROP_SENDER = 1
+};
+
 G_DEFINE_TYPE (TpSignalledMessage, tp_signalled_message, TP_TYPE_MESSAGE)
 
 struct _TpSignalledMessagePrivate
 {
   TpContact *sender;
 };
+
+static void
+tp_signalled_message_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpSignalledMessage *self = (TpSignalledMessage *) object;
+
+  switch (property_id)
+    {
+      case PROP_SENDER:
+        g_value_set_object (value, self->priv->sender);
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+    }
+}
+
+static void
+tp_signalled_message_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpSignalledMessage *self = (TpSignalledMessage *) object;
+
+  switch (property_id)
+    {
+      case PROP_SENDER:
+        g_assert (self->priv->sender == NULL); /* construct only */
+        self->priv->sender = g_value_dup_object (value);
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+    }
+}
 
 static void
 tp_signalled_message_dispose (GObject *object)
@@ -71,8 +117,26 @@ static void
 tp_signalled_message_class_init (TpSignalledMessageClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  GParamSpec *param_spec;
 
+  gobject_class->get_property = tp_signalled_message_get_property;
+  gobject_class->set_property = tp_signalled_message_set_property;
   gobject_class->dispose = tp_signalled_message_dispose;
+
+  /**
+   * TpSignalledMessage:sender:
+   *
+   * A #TpContat representing the sender of the message if known,
+   * otherwise %NULL.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("sender", "TpContact",
+      "The sender of the message",
+      TP_TYPE_CONTACT,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_SENDER,
+      param_spec);
 
   g_type_class_add_private (gobject_class, sizeof (TpSignalledMessagePrivate));
 }
@@ -87,7 +151,8 @@ tp_signalled_message_init (TpSignalledMessage *self)
 }
 
 TpMessage *
-_tp_signalled_message_new (const GPtrArray *parts)
+_tp_signalled_message_new (const GPtrArray *parts,
+    TpContact *sender)
 {
   TpMessage *self;
   guint i;
@@ -97,6 +162,7 @@ _tp_signalled_message_new (const GPtrArray *parts)
 
   /* FIXME: remove message-sender? */
   self = g_object_new (TP_TYPE_SIGNALLED_MESSAGE,
+      "sender", sender,
       NULL);
 
   for (i = 0; i < parts->len; i++)
@@ -112,16 +178,6 @@ _tp_signalled_message_new (const GPtrArray *parts)
     }
 
   return self;
-}
-
-void
-_tp_signalled_message_set_sender (TpMessage *message,
-    TpContact *contact)
-{
-  TpSignalledMessage *self = TP_SIGNALLED_MESSAGE (message);
-
-  g_assert (self->priv->sender == NULL);
-  self->priv->sender = g_object_ref (contact);
 }
 
 /**

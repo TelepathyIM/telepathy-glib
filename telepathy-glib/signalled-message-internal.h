@@ -44,10 +44,8 @@ struct _TpSignalledMessage {
     TpSignalledMessagePrivate *priv;
 };
 
-TpMessage * _tp_signalled_message_new (const GPtrArray *parts);
-
-void _tp_signalled_message_set_sender (TpMessage *message,
-    TpContact *contact);
+TpMessage * _tp_signalled_message_new (const GPtrArray *parts,
+    TpContact *sender);
 
 G_END_DECLS
 
