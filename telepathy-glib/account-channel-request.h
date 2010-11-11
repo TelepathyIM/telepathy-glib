@@ -130,6 +130,32 @@ gboolean tp_account_channel_request_ensure_channel_finish (
     GAsyncResult *result,
     GError **error);
 
+/* Request and observe API */
+
+void tp_account_channel_request_create_and_observe_channel_async (
+    TpAccountChannelRequest *self,
+    const gchar *preferred_handler,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+TpChannel * tp_account_channel_request_create_and_observe_channel_finish (
+    TpAccountChannelRequest *self,
+    GAsyncResult *result,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
+
+void tp_account_channel_request_ensure_and_observe_channel_async (
+    TpAccountChannelRequest *self,
+    const gchar *preferred_handler,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+TpChannel * tp_account_channel_request_ensure_and_observe_channel_finish (
+    TpAccountChannelRequest *self,
+    GAsyncResult *result,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
+
 G_END_DECLS
 
 #endif
