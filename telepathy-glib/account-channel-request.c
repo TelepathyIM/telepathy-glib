@@ -739,6 +739,12 @@ acr_request_cb (TpChannelDispatcher *cd,
       goto fail;
     }
 
+  if (self->priv->factory != NULL)
+    {
+      tp_channel_request_set_channel_factory (self->priv->chan_request,
+          self->priv->factory);
+    }
+
   self->priv->invalidated_sig = g_signal_connect (self->priv->chan_request,
       "invalidated", G_CALLBACK (acr_channel_request_invalidated_cb), self);
 
