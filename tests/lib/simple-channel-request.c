@@ -172,6 +172,15 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
       g_hash_table_unref (props);
       return;
     }
+  else if (!tp_strdiff (self->priv->preferred_handler, "FakeNoChannel"))
+    {
+      /* Pretend that the channel has been handled but only fire the old
+       * Succeeded signal. */
+
+      tp_svc_channel_request_emit_succeeded (self);
+      return;
+    }
+
 
   /* Call HandleChannels() on the preferred handler */
   client_path = g_strdelimit (g_strdup_printf ("/%s",
