@@ -2654,7 +2654,7 @@ tp_base_client_set_channel_factory (TpBaseClient *self,
 
   tp_clear_object (&self->priv->channel_factory);
 
-  self->priv->channel_factory = g_object_ref (self->priv->channel_factory);
+  self->priv->channel_factory = g_object_ref (factory);
   g_object_notify (G_OBJECT (self), "channel-factory");
 }
 
