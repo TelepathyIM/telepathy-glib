@@ -57,6 +57,7 @@
 
 #include "telepathy-glib/account-channel-request.h"
 
+#include <telepathy-glib/automatic-proxy-factory.h>
 #include "telepathy-glib/base-client-internal.h"
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-request.h>
@@ -137,6 +138,9 @@ tp_account_channel_request_init (TpAccountChannelRequest *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       TpAccountChannelRequestPrivate);
+
+  self->priv->factory = TP_CLIENT_CHANNEL_FACTORY (
+      tp_automatic_proxy_factory_dup ());
 }
 
 static void
@@ -591,6 +595,23 @@ handle_channels (TpSimpleHandler *handler,
 }
 
 static void
+channel_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpAccountChannelRequest *self = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      DEBUG ("Failed to prepare channel: %s", error->message);
+      g_error_free (error);
+    }
+
+  complete_result (self);
+}
+
+static void
 channel_request_succeeded (TpAccountChannelRequest *self)
 {
   if (self->priv->action_type == ACTION_TYPE_HANDLE)
@@ -606,15 +627,30 @@ channel_request_succeeded (TpAccountChannelRequest *self)
        * That means another handler handled the channels so we don't own it. */
       request_fail (self, &err);
     }
-  else if (self->priv->action_type == ACTION_TYPE_OBSERVE &&
-      self->priv->channel == NULL)
+  else if (self->priv->action_type == ACTION_TYPE_OBSERVE)
     {
-      GError err = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Channel has been created but MC didn't give it back to us" };
+      GArray *features;
 
-      DEBUG ("%s", err.message);
+      if (self->priv->channel == NULL)
+        {
+          GError err = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+              "Channel has been created but MC didn't give it back to us" };
 
-      request_fail (self, &err);
+          DEBUG ("%s", err.message);
+
+          request_fail (self, &err);
+          return;
+        }
+
+      /* Operation will be complete once the channel have been prepared */
+      features = tp_client_channel_factory_dup_channel_features (
+          self->priv->factory, self->priv->channel);
+      g_assert (features != NULL);
+
+      tp_proxy_prepare_async (self->priv->channel, (GQuark *) features->data,
+          channel_prepare_cb, self);
+
+      g_array_free (features, TRUE);
     }
   else
     {
@@ -739,11 +775,8 @@ acr_request_cb (TpChannelDispatcher *cd,
       goto fail;
     }
 
-  if (self->priv->factory != NULL)
-    {
-      tp_channel_request_set_channel_factory (self->priv->chan_request,
-          self->priv->factory);
-    }
+  tp_channel_request_set_channel_factory (self->priv->chan_request,
+      self->priv->factory);
 
   self->priv->invalidated_sig = g_signal_connect (self->priv->chan_request,
       "invalidated", G_CALLBACK (acr_channel_request_invalidated_cb), self);
@@ -808,11 +841,8 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   _tp_base_client_set_only_for_account (self->priv->handler,
       self->priv->account);
 
-  if (self->priv->factory != NULL)
-    {
-      tp_base_client_set_channel_factory (self->priv->handler,
-          self->priv->factory);
-    }
+  tp_base_client_set_channel_factory (self->priv->handler,
+      self->priv->factory);
 
   if (!tp_base_client_register (self->priv->handler, &error))
     {
