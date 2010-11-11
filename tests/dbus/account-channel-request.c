@@ -868,37 +868,37 @@ main (int argc,
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   /* Request and handle tests */
-  g_test_add ("/account-channels-request-handle/create-success", Test, NULL,
+  g_test_add ("/account-channels/request-handle/create-success", Test, NULL,
       setup, test_handle_create_success, teardown);
-  g_test_add ("/account-channels-request-handle/create-fail", Test, NULL,
+  g_test_add ("/account-channels/request-handle/create-fail", Test, NULL,
       setup, test_handle_create_fail, teardown);
-  g_test_add ("/account-channels-request-handle/proceed-fail", Test, NULL,
+  g_test_add ("/account-channels/request-handle/proceed-fail", Test, NULL,
       setup, test_handle_proceed_fail, teardown);
-  g_test_add ("/account-channels-request-handle/cr-failed", Test, NULL,
+  g_test_add ("/account-channels/request-handle/cr-failed", Test, NULL,
       setup, test_handle_cr_failed, teardown);
-  g_test_add ("/account-channels-request-handle/ensure-success", Test, NULL,
+  g_test_add ("/account-channels/request-handle/ensure-success", Test, NULL,
       setup, test_handle_ensure_success, teardown);
-  g_test_add ("/account-channels-request-handle/cancel-before", Test, NULL,
+  g_test_add ("/account-channels/request-handle/cancel-before", Test, NULL,
       setup, test_handle_cancel_before, teardown);
-  g_test_add ("/account-channels-request-handle/after-create", Test, NULL,
+  g_test_add ("/account-channels/request-handle/after-create", Test, NULL,
       setup, test_handle_cancel_after_create, teardown);
-  g_test_add ("/account-channels-request-handle/re-handle", Test, NULL,
+  g_test_add ("/account-channels/request-handle/re-handle", Test, NULL,
       setup, test_handle_re_handle, teardown);
 
   /* Request and forget tests */
-  g_test_add ("/account-channels-request-forget/create-success", Test, NULL,
+  g_test_add ("/account-channels/request-forget/create-success", Test, NULL,
       setup, test_forget_create_success, teardown);
-  g_test_add ("/account-channels-request-forget/create-fail", Test, NULL,
+  g_test_add ("/account-channels/request-forget/create-fail", Test, NULL,
       setup, test_forget_create_fail, teardown);
-  g_test_add ("/account-channels-request-foget/proceed-fail", Test, NULL,
+  g_test_add ("/account-channels/request-foget/proceed-fail", Test, NULL,
       setup, test_forget_proceed_fail, teardown);
-  g_test_add ("/account-channels-request-forget/cr-failed", Test, NULL,
+  g_test_add ("/account-channels/request-forget/cr-failed", Test, NULL,
       setup, test_forget_cr_failed, teardown);
-  g_test_add ("/account-channels-request-forget/ensure-success", Test, NULL,
+  g_test_add ("/account-channels/request-forget/ensure-success", Test, NULL,
       setup, test_forget_ensure_success, teardown);
-  g_test_add ("/account-channels-request-forget/cancel-before", Test, NULL,
+  g_test_add ("/account-channels/request-forget/cancel-before", Test, NULL,
       setup, test_forget_cancel_before, teardown);
-  g_test_add ("/account-channels-request-forget/after-create", Test, NULL,
+  g_test_add ("/account-channels/request-forget/after-create", Test, NULL,
       setup, test_forget_cancel_after_create, teardown);
 
   /* Request and observe tests */
