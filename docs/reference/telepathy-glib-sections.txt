@@ -4480,6 +4480,7 @@ TpChannelRequest
 TpChannelRequestClass
 tp_channel_request_new
 tp_channel_request_init_known_interfaces
+tp_channel_request_set_channel_factory
 <SUBSECTION>
 tp_cli_channel_request_callback_for_cancel
 tp_cli_channel_request_call_cancel

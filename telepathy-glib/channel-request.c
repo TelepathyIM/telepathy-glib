@@ -21,12 +21,14 @@
 
 #include "telepathy-glib/channel-request.h"
 
+#include <telepathy-glib/automatic-proxy-factory.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/dbus-internal.h"
@@ -96,10 +98,14 @@ enum {
   N_SIGNALS
 };
 
+enum {
+  PROP_CHANNEL_FACTORY = 1
+};
+
 static guint signals[N_SIGNALS] = { 0 };
 
 struct _TpChannelRequestPrivate {
-    gpointer dummy;
+    TpClientChannelFactory *channel_factory;
 };
 
 G_DEFINE_TYPE (TpChannelRequest, tp_channel_request, TP_TYPE_PROXY)
@@ -109,6 +115,47 @@ tp_channel_request_init (TpChannelRequest *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CHANNEL_REQUEST,
       TpChannelRequestPrivate);
+}
+
+static void
+tp_channel_request_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpChannelRequest *self = TP_CHANNEL_REQUEST (object);
+
+  switch (property_id)
+    {
+      case PROP_CHANNEL_FACTORY:
+        tp_clear_object (&self->priv->channel_factory);
+        self->priv->channel_factory = g_value_dup_object (value);
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+  }
+}
+
+static void
+tp_channel_request_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpChannelRequest *self = TP_CHANNEL_REQUEST (object);
+
+  switch (property_id)
+    {
+      case PROP_CHANNEL_FACTORY:
+        g_value_set_object (value, self->priv->channel_factory);
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+        break;
+  }
 }
 
 static void
@@ -161,8 +208,8 @@ tp_channel_request_succeeded_with_channel_cb (TpChannelRequest *self,
       return;
     }
 
-  channel = tp_channel_new_from_properties (connection, chan_path, chan_props,
-      &error);
+  channel = tp_client_channel_factory_create_channel (
+      self->priv->channel_factory, connection, chan_path, chan_props, &error);
   if (channel == NULL)
     {
       DEBUG ("Failed to create TpChannel: %s", error->message);
@@ -191,6 +238,12 @@ tp_channel_request_constructed (GObject *object)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
+
+  if (self->priv->channel_factory == NULL)
+    {
+      self->priv->channel_factory = TP_CLIENT_CHANNEL_FACTORY (
+          tp_automatic_proxy_factory_dup ());
+    }
 
   sc = tp_cli_channel_request_connect_to_failed (self,
       tp_channel_request_failed_cb, NULL, NULL, NULL, &error);
@@ -226,18 +279,55 @@ tp_channel_request_constructed (GObject *object)
 }
 
 static void
+tp_channel_request_dispose (GObject *object)
+{
+  TpChannelRequest *self = TP_CHANNEL_REQUEST (object);
+  void (*dispose) (GObject *) =
+    G_OBJECT_CLASS (tp_channel_request_parent_class)->dispose;
+
+  tp_clear_object (&self->priv->channel_factory);
+
+  if (dispose != NULL)
+    dispose (object);
+}
+
+static void
 tp_channel_request_class_init (TpChannelRequestClass *klass)
 {
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
+  GParamSpec *param_spec;
 
   g_type_class_add_private (klass, sizeof (TpChannelRequestPrivate));
 
+  object_class->set_property = tp_channel_request_set_property;
+  object_class->get_property = tp_channel_request_get_property;
   object_class->constructed = tp_channel_request_constructed;
+  object_class->dispose = tp_channel_request_dispose;
 
   proxy_class->interface = TP_IFACE_QUARK_CHANNEL_REQUEST;
   tp_channel_request_init_known_interfaces ();
   proxy_class->must_have_unique_name = TRUE;
+
+  /**
+   * TpChannelRequest:channel-factory:
+   *
+   * The object implementing the #TpClientChannelFactoryInterface interface
+   * that will be used to create channel proxies when the
+   * #TpChannelRequest::succeeded-with-channel signal is fired.
+   * This property can be changed using
+   * tp_channel_request_set_channel_factory().
+   *
+   * If no channel factory is specified then #TpAutomaticProxyFactory is used.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("channel-factory", "Channel factory",
+      "Object implementing TpClientChannelFactoryInterface",
+      G_TYPE_OBJECT,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_FACTORY,
+      param_spec);
 
   /**
    * TpChannelRequest::succeeded:
@@ -264,6 +354,11 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Note that this signal can not be fired if your telepathy-mission-control
    * is too old.
+   *
+   * The #TpChannel is created using #TpChannelRequest:channel-factory but
+   * the features of the factory are NOT prepared. It's up to the user to
+   * prepare the features returned by
+   * tp_client_channel_factory_dup_channel_features() himself.
    *
    * Since: 0.13.UNRELEASED
    */
@@ -358,4 +453,23 @@ tp_channel_request_new (TpDBusDaemon *bus_daemon,
   g_free (unique_name);
 
   return self;
+}
+
+/**
+ * tp_channel_request_set_channel_factory:
+ * @self: a #TpChannelRequest
+ * @factory: an object implementing the #TpClientChannelFactoryInterface
+ * interface
+ *
+ * Change the value of the #TpChannelRequest:channel-factory property.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_channel_request_set_channel_factory (TpChannelRequest *self,
+    TpClientChannelFactory *factory)
+{
+  tp_clear_object (&self->priv->channel_factory);
+  self->priv->channel_factory = g_object_ref (factory);
+  g_object_notify (G_OBJECT (self), "channel-factory");
 }
