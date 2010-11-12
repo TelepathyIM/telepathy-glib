@@ -1893,13 +1893,15 @@ cb_fs_new_active_candidate_pair (TfStream *self,
       remote_candidate->port);
 
   local_transport = fs_candidate_to_tp_array (local_candidate);
-  remote_transport = fs_candidate_to_tp_array (remote_candidate);
-  if (local_transport == NULL || remote_transport == NULL)
-  {
-    g_value_array_free (local_transport);
-    g_value_array_free (remote_transport);
+  if (!local_transport)
     return;
-  }
+
+  remote_transport = fs_candidate_to_tp_array (remote_candidate);
+  if (!remote_transport)
+    {
+      g_value_array_free (local_transport);
+      return;
+    }
 
   tp_cli_media_stream_handler_call_new_active_transport_pair (
     self->priv->stream_handler_proxy, -1, local_candidate->foundation,
