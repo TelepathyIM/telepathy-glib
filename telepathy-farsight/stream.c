@@ -191,6 +191,10 @@ static void invalidated_cb (TpMediaStreamHandler *proxy,
 
 static FsMediaType tp_media_type_to_fs (TpMediaStreamType type);
 
+static TpMediaStreamBaseProto fs_network_proto_to_tp (FsNetworkProtocol proto,
+    gboolean *valid);
+static TpMediaStreamTransportType fs_candidate_type_to_tp (FsCandidateType type,
+    gboolean *valid);
 static GValueArray *fs_candidate_to_tp_array (const FsCandidate *candidate);
 static GPtrArray *fs_codecs_to_tp (TfStream *stream,
     const GList *codecs);
@@ -1066,6 +1070,7 @@ cb_fs_local_candidates_prepared (TfStream *self)
           GValue transport = { 0, };
           TpMediaStreamBaseProto proto;
           TpMediaStreamTransportType type;
+          gboolean valid = TRUE;
           GList *item = NULL;
 
           g_value_init (&transport,
@@ -1074,35 +1079,12 @@ cb_fs_local_candidates_prepared (TfStream *self)
               dbus_g_type_specialized_construct (
                   TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT));
 
-          switch (candidate->proto) {
-          case FS_NETWORK_PROTOCOL_UDP:
-            proto = TP_MEDIA_STREAM_BASE_PROTO_UDP;
-            break;
-          case FS_NETWORK_PROTOCOL_TCP:
-            proto = TP_MEDIA_STREAM_BASE_PROTO_TCP;
-            break;
-          default:
-            g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
-                G_STRFUNC);
+          proto = fs_network_proto_to_tp (candidate->proto, &valid);
+          if (valid == FALSE)
             return;
-          }
-
-          switch (candidate->type) {
-          case FS_CANDIDATE_TYPE_HOST:
-            type = TP_MEDIA_STREAM_TRANSPORT_TYPE_LOCAL;
-            break;
-          case FS_CANDIDATE_TYPE_SRFLX:
-          case FS_CANDIDATE_TYPE_PRFLX:
-            type = TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED;
-            break;
-          case FS_CANDIDATE_TYPE_RELAY:
-            type = TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
-            break;
-          default:
-            g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
-                G_STRFUNC);
+          type = fs_candidate_type_to_tp (candidate->type, &valid);
+          if (valid == FALSE)
             return;
-          }
 
           DEBUG (self, "ip = '%s port = %u component = %u'", candidate->ip,
               candidate->port, candidate->component_id);
@@ -1244,42 +1226,63 @@ tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
   return fs_trans_list;
 }
 
+static TpMediaStreamBaseProto
+fs_network_proto_to_tp (FsNetworkProtocol proto, gboolean *valid)
+{
+  if (valid != NULL)
+    *valid = TRUE;
+
+  switch (proto) {
+  case FS_NETWORK_PROTOCOL_UDP:
+    return TP_MEDIA_STREAM_BASE_PROTO_UDP;
+  case FS_NETWORK_PROTOCOL_TCP:
+    return TP_MEDIA_STREAM_BASE_PROTO_TCP;
+  default:
+    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+        G_STRFUNC);
+    if (valid != NULL)
+      *valid = FALSE;
+    g_return_val_if_reached(0);
+  }
+}
+
+static TpMediaStreamTransportType
+fs_candidate_type_to_tp (FsCandidateType type, gboolean *valid)
+{
+  if (valid != NULL)
+    *valid = TRUE;
+
+  switch (type) {
+  case FS_CANDIDATE_TYPE_HOST:
+    return TP_MEDIA_STREAM_TRANSPORT_TYPE_LOCAL;
+  case FS_CANDIDATE_TYPE_SRFLX:
+  case FS_CANDIDATE_TYPE_PRFLX:
+    return TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED;
+  case FS_CANDIDATE_TYPE_RELAY:
+    return TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
+  default:
+    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+        G_STRFUNC);
+    if (valid != NULL)
+      *valid = FALSE;
+    g_return_val_if_reached(0);
+  }
+}
+
 static GValueArray *
 fs_candidate_to_tp_array (const FsCandidate *candidate)
 {
   GValueArray *transport = NULL;
   TpMediaStreamBaseProto proto;
   TpMediaStreamTransportType type;
+  gboolean valid = TRUE;
 
-  switch (candidate->proto) {
-  case FS_NETWORK_PROTOCOL_UDP:
-    proto = TP_MEDIA_STREAM_BASE_PROTO_UDP;
-    break;
-  case FS_NETWORK_PROTOCOL_TCP:
-    proto = TP_MEDIA_STREAM_BASE_PROTO_TCP;
-    break;
-  default:
-    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
-        G_STRFUNC);
+  proto = fs_network_proto_to_tp (candidate->proto, &valid);
+  if (valid == FALSE)
     return NULL;
-  }
-
-  switch (candidate->type) {
-  case FS_CANDIDATE_TYPE_HOST:
-    type = TP_MEDIA_STREAM_TRANSPORT_TYPE_LOCAL;
-    break;
-  case FS_CANDIDATE_TYPE_SRFLX:
-  case FS_CANDIDATE_TYPE_PRFLX:
-    type = TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED;
-    break;
-  case FS_CANDIDATE_TYPE_RELAY:
-    type = TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
-    break;
-  default:
-    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
-        G_STRFUNC);
+  type = fs_candidate_type_to_tp (candidate->type, &valid);
+  if (valid == FALSE)
     return NULL;
-  }
 
   transport = tp_value_array_build (10,
       G_TYPE_UINT, candidate->component_id,
