@@ -79,7 +79,7 @@ gboolean tp_handle_is_valid (TpHandleRepoIface *self,
 gboolean tp_handles_are_valid (TpHandleRepoIface *self,
     const GArray *handles, gboolean allow_zero, GError **error);
 
-void tp_handle_ref (TpHandleRepoIface *self, TpHandle handle);
+TpHandle tp_handle_ref (TpHandleRepoIface *self, TpHandle handle);
 void tp_handles_ref (TpHandleRepoIface *self, const GArray *handles);
 void tp_handle_unref (TpHandleRepoIface *self, TpHandle handle);
 void tp_handles_unref (TpHandleRepoIface *self, const GArray *handles);

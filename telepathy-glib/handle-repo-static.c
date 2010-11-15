@@ -230,8 +230,16 @@ static_handles_are_valid (TpHandleRepoIface *irepo, const GArray *handles,
   return TRUE;
 }
 
+static TpHandle
+static_ref_handle (TpHandleRepoIface *self, TpHandle handle)
+{
+  /* nothing to do, handles in this repo are permanent */
+
+  return handle;
+}
+
 static void
-static_ref_or_unref_handle (TpHandleRepoIface *self, TpHandle handle)
+static_unref_handle (TpHandleRepoIface *self, TpHandle handle)
 {
   /* nothing to do, handles in this repo are permanent */
 }
@@ -326,8 +334,8 @@ static_repo_iface_init (gpointer g_iface,
 
   klass->handle_is_valid = static_handle_is_valid;
   klass->handles_are_valid = static_handles_are_valid;
-  klass->ref_handle = static_ref_or_unref_handle;
-  klass->unref_handle = static_ref_or_unref_handle;
+  klass->ref_handle = static_ref_handle;
+  klass->unref_handle = static_unref_handle;
   klass->client_hold_handle = static_client_hold_or_release_handle;
   klass->client_release_handle = static_client_hold_or_release_handle;
   klass->inspect_handle = static_inspect_handle;
