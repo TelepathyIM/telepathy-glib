@@ -1007,7 +1007,7 @@ finally:
   tp_clear_object (&address);
   tp_clear_object (&socket_address);
   g_clear_error (&error);
-  return FALSE;
+  return ret;
 }
 
 int
