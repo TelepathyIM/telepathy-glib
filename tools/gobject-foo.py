@@ -5,7 +5,7 @@
 # The master copy of this program is in the telepathy-glib repository -
 # please make any changes there.
 #
-# Copyright (C) 2007 Collabora Ltd. <http://www.collabora.co.uk/>
+# Copyright (C) 2007-2010 Collabora Ltd. <http://www.collabora.co.uk/>
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -33,8 +33,13 @@ def gobject_header(head, tail, as_interface=False):
     gtype = head.upper() + '_TYPE_' + tail.upper()
 
     o("typedef struct _%s %s;" % (MixedCase, MixedCase))
-    o("typedef struct _%sClass %sClass;" % (MixedCase, MixedCase))
-    o("typedef struct _%sPrivate %sPrivate;" % (MixedCase, MixedCase))
+
+    if as_interface:
+        o("typedef struct _%sInterface %sInterface;" % (MixedCase, MixedCase))
+    else:
+        o("typedef struct _%sClass %sClass;" % (MixedCase, MixedCase))
+        o("typedef struct _%sPrivate %sPrivate;" % (MixedCase, MixedCase))
+
     o("")
     o("GType %s_get_type (void);" % lower_case)
     o("")
@@ -54,13 +59,17 @@ def gobject_header(head, tail, as_interface=False):
     o("#define %s_IS_%s(obj) \\" % (head.upper(), tail.upper()))
     o("  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), %s))" % gtype)
 
-    if not as_interface:
+    if as_interface:
+        o("#define %s_GET_IFACE(obj) \\" % UPPER_CASE)
+        o("  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), %s, \\" % gtype)
+        o("                                  %sInterface))" % MixedCase)
+    else:
         o("#define %s_IS_%s_CLASS(klass) \\" % (head.upper(), tail.upper()))
         o("  (G_TYPE_CHECK_CLASS_TYPE ((klass), %s))" % gtype)
 
-    o("#define %s_GET_CLASS(obj) \\" % UPPER_CASE)
-    o("  (G_TYPE_INSTANCE_GET_CLASS ((obj), %s, \\" % gtype)
-    o("                              %sClass))" % MixedCase)
+        o("#define %s_GET_CLASS(obj) \\" % UPPER_CASE)
+        o("  (G_TYPE_INSTANCE_GET_CLASS ((obj), %s, \\" % gtype)
+        o("                              %sClass))" % MixedCase)
 
     return out
 

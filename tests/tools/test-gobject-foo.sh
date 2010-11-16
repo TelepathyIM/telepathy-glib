@@ -5,7 +5,7 @@ set -e
 ${PYTHON} ${top_srcdir}/tools/gobject-foo.py Xyz_Badger Mushroom_Snake \
     > gobject-foo.h
 ${PYTHON} ${top_srcdir}/tools/gobject-foo.py --interface \
-    Xyz_Badger Mushroom_Snake > ginterface-foo.h
+    Xyz_Badger Irritable > ginterface-foo.h
 
 e=0
 # We assume POSIX diff, until someone complains
