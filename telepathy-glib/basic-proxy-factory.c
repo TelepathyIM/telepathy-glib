@@ -58,11 +58,9 @@
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
 
-static void client_channel_factory_iface_init (gpointer, gpointer);
-
+/* We rely on the default (lack of) implementation of everything */
 G_DEFINE_TYPE_WITH_CODE(TpBasicProxyFactory, tp_basic_proxy_factory, G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CLIENT_CHANNEL_FACTORY,
-      client_channel_factory_iface_init))
+    G_IMPLEMENT_INTERFACE (TP_TYPE_CLIENT_CHANNEL_FACTORY, NULL))
 
 static void
 tp_basic_proxy_factory_init (TpBasicProxyFactory *self)
@@ -72,16 +70,6 @@ tp_basic_proxy_factory_init (TpBasicProxyFactory *self)
 static void
 tp_basic_proxy_factory_class_init (TpBasicProxyFactoryClass *cls)
 {
-}
-
-static void
-client_channel_factory_iface_init (gpointer g_iface,
-    gpointer unused G_GNUC_UNUSED)
-{
-  TpClientChannelFactoryInterface *iface = g_iface;
-
-  /* We rely on the default implementation of create_channel */
-  iface->create_channel = NULL;
 }
 
 /**

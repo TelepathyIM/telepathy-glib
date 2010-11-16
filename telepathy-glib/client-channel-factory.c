@@ -37,11 +37,26 @@
  */
 
 /**
+ * TpClientChannelFactory:
+ *
+ * Opaque typedef representing a #GObject that implements
+ * the %TP_TYPE_CLIENT_CHANNEL_FACTORY interface.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
  * TpClientChannelFactoryInterface:
  * @parent: the parent
- * @create_channel: the function used to create channels
- * @dup_channel_features: channel features that have to be prepared on
- * newly created channels
+ * @create_channel: obsolete version of @obj_create_channel which does not
+ *  receive the object instance as an argument
+ * @dup_channel_features: obsolete version of @obj_dup_channel_features which
+ *  does not receive the object instance as an argument
+ * @obj_create_channel: virtual method used to create channels;
+ *  see tp_client_channel_factory_create_channel()
+ * @obj_dup_channel_features: virtual method returning channel features that
+ *  have to be prepared on newly created channels;
+ *  see tp_client_channel_factory_dup_channel_features()
  *
  * Interface for a channel factory
  *
@@ -75,12 +90,16 @@ tp_client_channel_factory_default_init (TpClientChannelFactoryInterface *iface)
  * Function called when a channel need to be created.
  * Implementation can return a subclass of #TpChannel if they need to.
  *
+ * Changed in 0.13.UNRELEASED: the function's signature was previously wrong;
+ * it expected an object instance as its first parameter, but the type of the
+ * parameter was the type of the interface vtable.
+ *
  * Returns: a new channel proxy, or %NULL on invalid arguments
  *
  * Since: 0.13.2
  */
 TpChannel *
-tp_client_channel_factory_create_channel (TpClientChannelFactoryInterface *self,
+tp_client_channel_factory_create_channel (TpClientChannelFactory *self,
     TpConnection *conn,
     const gchar *path,
     GHashTable *properties,
@@ -89,9 +108,13 @@ tp_client_channel_factory_create_channel (TpClientChannelFactoryInterface *self,
   TpClientChannelFactoryInterface *iface = TP_CLIENT_CHANNEL_FACTORY_GET_IFACE (
       self);
 
+  g_return_val_if_fail (TP_IS_CLIENT_CHANNEL_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
   g_return_val_if_fail (path != NULL, NULL);
   g_return_val_if_fail (properties != NULL, NULL);
+
+  if (iface->obj_create_channel != NULL)
+    return iface->obj_create_channel (self, conn, path, properties, error);
 
   if (iface->create_channel != NULL)
     return iface->create_channel (iface, conn, path, properties, error);
@@ -107,13 +130,17 @@ tp_client_channel_factory_create_channel (TpClientChannelFactoryInterface *self,
  * Return a #GArray containing the #TpChannel features that
  * should be prepared on @channel.
  *
+ * Changed in 0.13.UNRELEASED: the function's signature was previously wrong;
+ * it expected an object instance as its first parameter, but the type of the
+ * parameter was the type of the interface vtable.
+ *
  * Returns: (transfer full): a newly allocated #GArray
  *
  * Since: 0.13.3
  */
 GArray *
 tp_client_channel_factory_dup_channel_features (
-    TpClientChannelFactoryInterface *self,
+    TpClientChannelFactory *self,
     TpChannel *channel)
 {
   TpClientChannelFactoryInterface *iface = TP_CLIENT_CHANNEL_FACTORY_GET_IFACE (
@@ -121,7 +148,11 @@ tp_client_channel_factory_dup_channel_features (
   GArray *arr;
   GQuark feature = TP_CHANNEL_FEATURE_CORE;
 
+  g_return_val_if_fail (TP_IS_CLIENT_CHANNEL_FACTORY (self), NULL);
   g_return_val_if_fail (TP_IS_CHANNEL (channel), NULL);
+
+  if (iface->obj_dup_channel_features != NULL)
+    return iface->obj_dup_channel_features (self, channel);
 
   if (iface->dup_channel_features != NULL)
     return iface->dup_channel_features (iface, channel);

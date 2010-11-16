@@ -72,7 +72,7 @@ gint64 tp_account_channel_request_get_user_action_time (
 
 void tp_account_channel_request_set_channel_factory (
     TpAccountChannelRequest *self,
-    TpClientChannelFactoryInterface *factory);
+    TpClientChannelFactory *factory);
 
 /* Request and handle API */
 

@@ -113,7 +113,7 @@ struct _TpAccountChannelRequestPrivate
   TpChannel *channel;
   TpHandleChannelsContext *handle_context;
   TpDBusDaemon *dbus;
-  TpClientChannelFactoryInterface *factory;
+  TpClientChannelFactory *factory;
 
   /* TRUE if the channel has been requested (an _async function has been called
    * on the TpAccountChannelRequest) */
@@ -1157,9 +1157,9 @@ tp_account_channel_request_ensure_channel_finish (
 /**
  * tp_account_channel_request_set_channel_factory:
  * @self: a #TpAccountChannelRequest
- * @factory: a #TpClientChannelFactoryInterface
+ * @factory: a #TpClientChannelFactory
  *
- * Set @factory as the #TpClientChannelFactoryInterface that will be used to
+ * Set @factory as the #TpClientChannelFactory that will be used to
  * create the channel requested by @self.
  * By default #TpAutomaticProxyFactory is used.
  *
@@ -1170,7 +1170,7 @@ tp_account_channel_request_ensure_channel_finish (
  */
 void
 tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,
-    TpClientChannelFactoryInterface *factory)
+    TpClientChannelFactory *factory)
 {
   g_return_if_fail (!self->priv->requested);
 

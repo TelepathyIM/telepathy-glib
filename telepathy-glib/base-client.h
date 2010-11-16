@@ -150,9 +150,9 @@ void tp_base_client_add_connection_features_varargs (TpBaseClient *self,
     GQuark feature, ...);
 
 void tp_base_client_set_channel_factory (TpBaseClient *self,
-    TpClientChannelFactoryInterface *factory);
+    TpClientChannelFactory *factory);
 
-TpClientChannelFactoryInterface * tp_base_client_get_channel_factory (
+TpClientChannelFactory *tp_base_client_get_channel_factory (
     TpBaseClient *self);
 
 /* future, potentially (currently in spec as a draft):

@@ -98,8 +98,7 @@ tp_automatic_proxy_factory_class_init (TpAutomaticProxyFactoryClass *cls)
 }
 
 static TpChannel *
-tp_automatic_proxy_factory_create_channel (
-    TpClientChannelFactoryInterface *factory,
+tp_automatic_proxy_factory_create_channel_impl (
     TpConnection *conn,
     const gchar *path,
     GHashTable *properties,
@@ -116,10 +115,32 @@ tp_automatic_proxy_factory_create_channel (
   return tp_channel_new_from_properties (conn, path, properties, error);
 }
 
+static TpChannel *
+tp_automatic_proxy_factory_create_channel (
+    TpClientChannelFactoryInterface *iface G_GNUC_UNUSED,
+    TpConnection *conn,
+    const gchar *path,
+    GHashTable *properties,
+    GError **error)
+{
+  return tp_automatic_proxy_factory_create_channel_impl (conn, path,
+      properties, error);
+}
+
+static TpChannel *
+tp_automatic_proxy_factory_obj_create_channel (
+    TpClientChannelFactory *self G_GNUC_UNUSED,
+    TpConnection *conn,
+    const gchar *path,
+    GHashTable *properties,
+    GError **error)
+{
+  return tp_automatic_proxy_factory_create_channel_impl (conn, path,
+      properties, error);
+}
+
 static GArray *
-tp_automatic_proxy_factory_dup_channel_features (
-    TpClientChannelFactoryInterface *factory,
-    TpChannel *channel)
+tp_automatic_proxy_factory_dup_channel_features_impl (void)
 {
   GArray *features;
   GQuark feature;
@@ -135,6 +156,22 @@ tp_automatic_proxy_factory_dup_channel_features (
   return features;
 }
 
+static GArray *
+tp_automatic_proxy_factory_obj_dup_channel_features (
+    TpClientChannelFactory *self G_GNUC_UNUSED,
+    TpChannel *channel G_GNUC_UNUSED)
+{
+  return tp_automatic_proxy_factory_dup_channel_features_impl ();
+}
+
+static GArray *
+tp_automatic_proxy_factory_dup_channel_features (
+    TpClientChannelFactoryInterface *iface G_GNUC_UNUSED,
+    TpChannel *channel G_GNUC_UNUSED)
+{
+  return tp_automatic_proxy_factory_dup_channel_features_impl ();
+}
+
 static void
 client_proxy_factory_iface_init (gpointer g_iface,
     gpointer unused G_GNUC_UNUSED)
@@ -143,6 +180,8 @@ client_proxy_factory_iface_init (gpointer g_iface,
 
   iface->create_channel = tp_automatic_proxy_factory_create_channel;
   iface->dup_channel_features = tp_automatic_proxy_factory_dup_channel_features;
+  iface->obj_create_channel = tp_automatic_proxy_factory_obj_create_channel;
+  iface->obj_dup_channel_features = tp_automatic_proxy_factory_obj_dup_channel_features;
 }
 
 /**

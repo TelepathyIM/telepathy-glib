@@ -27,6 +27,7 @@
 
 G_BEGIN_DECLS
 
+typedef struct _TpClientChannelFactory TpClientChannelFactory;
 typedef struct _TpClientChannelFactoryInterface TpClientChannelFactoryInterface;
 
 struct _TpClientChannelFactoryInterface {
@@ -40,6 +41,15 @@ struct _TpClientChannelFactoryInterface {
 
     GArray * (* dup_channel_features) (TpClientChannelFactoryInterface *self,
         TpChannel *channel);
+
+    TpChannel *(*obj_create_channel) (TpClientChannelFactory *self,
+        TpConnection *conn,
+        const gchar *path,
+        GHashTable *properties,
+        GError **error);
+
+    GArray *(*obj_dup_channel_features) (TpClientChannelFactory *self,
+        TpChannel *channel);
 };
 
 GType tp_client_channel_factory_get_type (void);
@@ -48,22 +58,22 @@ GType tp_client_channel_factory_get_type (void);
   (tp_client_channel_factory_get_type ())
 #define TP_CLIENT_CHANNEL_FACTORY(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_CLIENT_CHANNEL_FACTORY, \
-                               TpClientChannelFactoryInterface))
+                               TpClientChannelFactory))
 #define TP_IS_CLIENT_CHANNEL_FACTORY(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TP_TYPE_CLIENT_CHANNEL_FACTORY))
 #define TP_CLIENT_CHANNEL_FACTORY_GET_IFACE(obj) \
   (G_TYPE_INSTANCE_GET_INTERFACE ((obj), TP_TYPE_CLIENT_CHANNEL_FACTORY, \
                               TpClientChannelFactoryInterface))
 
-TpChannel * tp_client_channel_factory_create_channel (
-    TpClientChannelFactoryInterface *self,
+TpChannel *tp_client_channel_factory_create_channel (
+    TpClientChannelFactory *self,
     TpConnection *conn,
     const gchar *path,
     GHashTable *properties,
     GError **error);
 
-GArray * tp_client_channel_factory_dup_channel_features (
-    TpClientChannelFactoryInterface *self,
+GArray *tp_client_channel_factory_dup_channel_features (
+    TpClientChannelFactory *self,
     TpChannel *channel);
 
 G_END_DECLS

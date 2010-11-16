@@ -27,7 +27,7 @@ typedef struct {
     /* Client side objects */
     TpConnection *connection;
 
-    TpClientChannelFactoryInterface *factory;
+    TpClientChannelFactory *factory;
 
     GError *error /* initialized where needed */;
     gint wait;
