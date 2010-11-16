@@ -1,6 +1,10 @@
 telepathy-glib 0.13.6 (UNRELEASED)
 ==================================
 
+Enhancements:
+
+• Return the reffed handle from tp_handle_ref() (jonny)
+
 Fixes:
 
 • fd.o #31473: force the namespace TelepathyGLib for the g-i-derived Vala
@@ -8,6 +12,9 @@ Fixes:
 
 • fd.o #31581: don't modify a const array in
   tp_group_mixin_remove_members_with_reason (smcv)
+
+• Run the stream tube IPv6 tests again, if ::1 is assigned to an
+  interface (smcv)
 
 telepathy-glib 0.13.5 (2010-11-05)
 ==================================
