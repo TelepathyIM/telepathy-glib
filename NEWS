@@ -1,7 +1,13 @@
 telepathy-glib 0.13.6 (UNRELEASED)
 ==================================
 
-…
+Fixes:
+
+• fd.o #31473: force the namespace TelepathyGLib for the g-i-derived Vala
+  bindings (treitter)
+
+• fd.o #31581: don't modify a const array in
+  tp_group_mixin_remove_members_with_reason (smcv)
 
 telepathy-glib 0.13.5 (2010-11-05)
 ==================================
