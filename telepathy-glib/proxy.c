@@ -245,6 +245,11 @@ struct _TpProxyInterfaceAddLink {
     TpProxyInterfaceAddLink *next;
 };
 
+struct _TpProxyFeaturePrivate
+{
+  gpointer unused;
+};
+
 /**
  * TpProxyInvokeFunc:
  * @self: the #TpProxy on which the D-Bus method was invoked

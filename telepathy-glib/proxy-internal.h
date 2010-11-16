@@ -27,6 +27,8 @@ GError *_tp_proxy_take_and_remap_error (TpProxy *self, GError *error)
 
 typedef void (*TpProxyProc) (TpProxy *);
 
+typedef struct _TpProxyFeaturePrivate TpProxyFeaturePrivate;
+
 struct _TpProxyFeature {
     /*<public>*/
     GQuark name;
@@ -34,7 +36,7 @@ struct _TpProxyFeature {
     TpProxyProc start_preparing;
     /*<private>*/
     GCallback _reserved[4];
-    gpointer priv;
+    TpProxyFeaturePrivate *priv;
 };
 
 gboolean _tp_proxy_is_preparing (gpointer self,
