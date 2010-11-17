@@ -42,7 +42,7 @@
  * Opaque typedef representing a #GObject that implements
  * the %TP_TYPE_CLIENT_CHANNEL_FACTORY interface.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.6
  */
 
 /**
@@ -90,7 +90,7 @@ tp_client_channel_factory_default_init (TpClientChannelFactoryInterface *iface)
  * Function called when a channel need to be created.
  * Implementation can return a subclass of #TpChannel if they need to.
  *
- * Changed in 0.13.UNRELEASED: the function's signature was previously wrong;
+ * Changed in 0.13.6: the function's signature was previously wrong;
  * it expected an object instance as its first parameter, but the type of the
  * parameter was the type of the interface vtable.
  *
@@ -130,7 +130,7 @@ tp_client_channel_factory_create_channel (TpClientChannelFactory *self,
  * Return a #GArray containing the #TpChannel features that
  * should be prepared on @channel.
  *
- * Changed in 0.13.UNRELEASED: the function's signature was previously wrong;
+ * Changed in 0.13.6: the function's signature was previously wrong;
  * it expected an object instance as its first parameter, but the type of the
  * parameter was the type of the interface vtable.
  *

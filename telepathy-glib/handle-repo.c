@@ -137,7 +137,7 @@ tp_handles_are_valid (TpHandleRepoIface *self,
  * in the repository. For repository implementations which never free handles
  * (like #TpStaticHandleRepo) this has no effect.
  *
- * Changed in 0.13.UNRELEASED: %handle is now returned; previously,
+ * Changed in 0.13.6: %handle is now returned; previously,
  * this function didn't return anything.
  *
  * Returns: the same @handle

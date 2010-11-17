@@ -1,5 +1,7 @@
-telepathy-glib 0.13.6 (UNRELEASED)
+telepathy-glib 0.13.6 (2010-11-17)
 ==================================
+
+The "please stop trying to find me on Wikipedia" release.
 
 This release includes all the fixes from 0.12.4.
 
