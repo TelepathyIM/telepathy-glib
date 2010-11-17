@@ -114,7 +114,7 @@ telepathy_logger_dbus_init (void)
     }
 
   dbus_srv = _tpl_dbus_service_new ();
-  dbus_g_connection_register_g_object (tp_get_bus (), TPL_DBUS_SRV_OBJECT_PATH,
+  tp_dbus_daemon_register_object (tp_bus, TPL_DBUS_SRV_OBJECT_PATH,
       G_OBJECT (dbus_srv));
 
   DEBUG ("TPL DBus service registered to: %s",
