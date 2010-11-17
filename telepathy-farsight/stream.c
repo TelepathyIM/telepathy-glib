@@ -1043,6 +1043,20 @@ async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 }
 
 
+/* dummy callback handler for async calling calls with no return values
+ * and whose implementation is optional */
+static void
+async_method_callback_optional (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  if (error != NULL &&
+      !(error->domain == DBUS_GERROR &&
+          error->code == G_DBUS_ERROR_UNKNOWN_METHOD))
+    async_method_callback (proxy, error, user_data, weak_object);
+}
+
 static void
 cb_fs_new_local_candidate (TfStream *self,
     FsCandidate *candidate)
@@ -1874,8 +1888,8 @@ cb_fs_recv_codecs_changed (TfStream *self,
 
   tp_cli_media_stream_handler_call_codec_choice
       (self->priv->stream_handler_proxy, -1, id,
-          async_method_callback, "Media.StreamHandler::CodecChoice",
-          NULL, (GObject *) self);
+          async_method_callback_optional,
+          "Media.StreamHandler::CodecChoice", NULL, (GObject *) self);
 }
 
 static void
@@ -1906,13 +1920,15 @@ cb_fs_new_active_candidate_pair (TfStream *self,
   tp_cli_media_stream_handler_call_new_active_transport_pair (
     self->priv->stream_handler_proxy, -1, local_candidate->foundation,
     local_transport, remote_candidate->foundation, remote_transport,
-    async_method_callback, "Media.StreamHandler::NewActiveTransportPair",
+    async_method_callback_optional,
+    "Media.StreamHandler::NewActiveTransportPair",
     NULL, (GObject *) self);
 
   tp_cli_media_stream_handler_call_new_active_candidate_pair (
     self->priv->stream_handler_proxy, -1, local_candidate->foundation,
     remote_candidate->foundation,
-    async_method_callback, "Media.StreamHandler::NewActiveCandidatePair",
+    async_method_callback_optional,
+    "Media.StreamHandler::NewActiveCandidatePair",
     NULL, (GObject *) self);
 
   if (self->priv->current_state == TP_MEDIA_STREAM_STATE_DISCONNECTED)
