@@ -1,6 +1,12 @@
 telepathy-glib 0.13.6 (UNRELEASED)
 ==================================
 
+API changes:
+
+• Pointers to a GObject implementing TP_TYPE_CLIENT_CHANNEL_FACTORY are now
+  referred to as having type TpClientChannelFactory*, rather than misusing
+  TpClientChannelFactoryInterface*. The ABI has not changed.
+
 Enhancements:
 
 • Return the reffed handle from tp_handle_ref() (jonny)
@@ -12,6 +18,11 @@ Fixes:
 
 • fd.o #31581: don't modify a const array in
   tp_group_mixin_remove_members_with_reason (smcv)
+
+• fd.o #31631: set a TpBaseClient's TpClientChannelFactory correctly (cassidy)
+
+• fd.o #31631: fix confusion between TpClientChannelFactory and
+  TpClientChannelFactoryIface (smcv)
 
 • Run the stream tube IPv6 tests again, if ::1 is assigned to an
   interface (smcv)
