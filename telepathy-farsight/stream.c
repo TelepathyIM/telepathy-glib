@@ -1906,7 +1906,7 @@ cb_fs_new_active_candidate_pair (TfStream *self,
   tp_cli_media_stream_handler_call_new_active_transport_pair (
     self->priv->stream_handler_proxy, -1, local_candidate->foundation,
     local_transport, remote_candidate->foundation, remote_transport,
-    async_method_callback, "Media.StreamHandler::NewActiveCandidatePairWithInfo",
+    async_method_callback, "Media.StreamHandler::NewActiveTransportPair",
     NULL, (GObject *) self);
 
   tp_cli_media_stream_handler_call_new_active_candidate_pair (
