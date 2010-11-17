@@ -1,6 +1,8 @@
 telepathy-glib 0.13.6 (UNRELEASED)
 ==================================
 
+This release includes all the fixes from 0.12.4.
+
 API changes:
 
 • Pointers to a GObject implementing TP_TYPE_CLIENT_CHANNEL_FACTORY are now
