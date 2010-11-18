@@ -480,7 +480,7 @@ struct _TpBaseProtocolPrivate
   gchar *icon;
   gchar *english_name;
   gchar *vcard_field;
-  AvatarSpecs *avatar_specs;
+  AvatarSpecs avatar_specs;
 };
 
 enum
@@ -584,25 +584,21 @@ tp_base_protocol_constructed (GObject *object)
       self->priv->vcard_field = g_strdup ("");
     }
 
-  /* Should we make this conditional on the iface being present?
-     It would be less bomb proof.. */
-  self->priv->avatar_specs = g_slice_new0 (AvatarSpecs);
-
   if (cls->get_avatar_details != NULL)
     {
       (cls->get_avatar_details) (self,
-          &self->priv->avatar_specs->supported_mime_types,
-          &self->priv->avatar_specs->min_height,
-          &self->priv->avatar_specs->min_width,
-          &self->priv->avatar_specs->recommended_height,
-          &self->priv->avatar_specs->recommended_width,
-          &self->priv->avatar_specs->max_height,
-          &self->priv->avatar_specs->max_width,
-          &self->priv->avatar_specs->max_bytes);
+          &self->priv->avatar_specs.supported_mime_types,
+          &self->priv->avatar_specs.min_height,
+          &self->priv->avatar_specs.min_width,
+          &self->priv->avatar_specs.recommended_height,
+          &self->priv->avatar_specs.recommended_width,
+          &self->priv->avatar_specs.max_height,
+          &self->priv->avatar_specs.max_width,
+          &self->priv->avatar_specs.max_bytes);
     }
 
-  if (self->priv->avatar_specs->supported_mime_types == NULL)
-    self->priv->avatar_specs->supported_mime_types = g_new0 (gchar *, 1);
+  if (self->priv->avatar_specs.supported_mime_types == NULL)
+    self->priv->avatar_specs.supported_mime_types = g_new0 (gchar *, 1);
 }
 
 /**
@@ -738,11 +734,7 @@ tp_base_protocol_finalize (GObject *object)
   g_free (self->priv->english_name);
   g_free (self->priv->vcard_field);
 
-  if (self->priv->avatar_specs != NULL)
-    {
-      g_strfreev (self->priv->avatar_specs->supported_mime_types);
-      g_slice_free(AvatarSpecs, self->priv->avatar_specs);
-    }
+  g_strfreev (self->priv->avatar_specs.supported_mime_types);
 
   if (self->priv->requestable_channel_classes != NULL)
     g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
@@ -856,35 +848,35 @@ protocol_prop_avatar_getter (GObject *object,
     {
       case PPA_SUPPORTED_AVATAR_MIME_TYPES:
         g_value_set_boxed (value,
-            self->priv->avatar_specs->supported_mime_types);
+            self->priv->avatar_specs.supported_mime_types);
         break;
 
       case PPA_MIN_AVATAR_HEIGHT:
-        g_value_set_uint (value, self->priv->avatar_specs->min_height);
+        g_value_set_uint (value, self->priv->avatar_specs.min_height);
         break;
 
       case PPA_MIN_AVATAR_WIDTH:
-        g_value_set_uint (value, self->priv->avatar_specs->min_width);
+        g_value_set_uint (value, self->priv->avatar_specs.min_width);
         break;
 
       case PPA_RECOMMENDED_AVATAR_HEIGHT:
-        g_value_set_uint (value, self->priv->avatar_specs->recommended_height);
+        g_value_set_uint (value, self->priv->avatar_specs.recommended_height);
         break;
 
       case PPA_RECOMMENDED_AVATAR_WIDTH:
-        g_value_set_uint (value, self->priv->avatar_specs->recommended_width);
+        g_value_set_uint (value, self->priv->avatar_specs.recommended_width);
         break;
 
       case PPA_MAX_AVATAR_HEIGHT:
-        g_value_set_uint (value, self->priv->avatar_specs->max_height);
+        g_value_set_uint (value, self->priv->avatar_specs.max_height);
         break;
 
       case PPA_MAX_AVATAR_WIDTH:
-        g_value_set_uint (value, self->priv->avatar_specs->max_width);
+        g_value_set_uint (value, self->priv->avatar_specs.max_width);
         break;
 
       case PPA_MAX_AVATAR_BYTES:
-        g_value_set_uint (value, self->priv->avatar_specs->max_bytes);
+        g_value_set_uint (value, self->priv->avatar_specs.max_bytes);
         break;
 
       default:
