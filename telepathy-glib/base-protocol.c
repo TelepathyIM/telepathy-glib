@@ -394,9 +394,9 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *  avatar on this protocol, which may be 0
  * @min_width: (out): used to return the minimum width in pixels of an avatar
  *  on this protocol, which may be 0
- * @recommended_height: (out): used to return the recommended height in pixels
+ * @rec_height: (out): used to return the rec height in pixels
  *  of an avatar on this protocol, or 0 if there is no preferred height
- * @recommended_width: (out): used to return the recommended width in pixels
+ * @rec_width: (out): used to return the rec width in pixels
  *  of an avatar on this protocol, or 0 if there is no preferred width
  * @max_height: (out): used to return the maximum height in pixels of an
  *  avatar on this protocol, or 0 if there is no limit
@@ -464,8 +464,8 @@ typedef struct
   gchar **supported_mime_types;
   guint min_height;
   guint min_width;
-  guint recommended_height;
-  guint recommended_width;
+  guint rec_height;
+  guint rec_width;
   guint max_height;
   guint max_width;
   guint max_bytes;
@@ -590,8 +590,8 @@ tp_base_protocol_constructed (GObject *object)
           &self->priv->avatar_specs.supported_mime_types,
           &self->priv->avatar_specs.min_height,
           &self->priv->avatar_specs.min_width,
-          &self->priv->avatar_specs.recommended_height,
-          &self->priv->avatar_specs.recommended_width,
+          &self->priv->avatar_specs.rec_height,
+          &self->priv->avatar_specs.rec_width,
           &self->priv->avatar_specs.max_height,
           &self->priv->avatar_specs.max_width,
           &self->priv->avatar_specs.max_bytes);
@@ -764,8 +764,8 @@ typedef enum {
     PAP_SUPPORTED_AVATAR_MIME_TYPES,
     PAP_MIN_AVATAR_HEIGHT,
     PAP_MIN_AVATAR_WIDTH,
-    PAP_RECOMMENDED_AVATAR_HEIGHT,
-    PAP_RECOMMENDED_AVATAR_WIDTH,
+    PAP_REC_AVATAR_HEIGHT,
+    PAP_REC_AVATAR_WIDTH,
     PAP_MAX_AVATAR_HEIGHT,
     PAP_MAX_AVATAR_WIDTH,
     PAP_MAX_AVATAR_BYTES,
@@ -859,12 +859,12 @@ protocol_prop_avatar_getter (GObject *object,
         g_value_set_uint (value, self->priv->avatar_specs.min_width);
         break;
 
-      case PAP_RECOMMENDED_AVATAR_HEIGHT:
-        g_value_set_uint (value, self->priv->avatar_specs.recommended_height);
+      case PAP_REC_AVATAR_HEIGHT:
+        g_value_set_uint (value, self->priv->avatar_specs.rec_height);
         break;
 
-      case PAP_RECOMMENDED_AVATAR_WIDTH:
-        g_value_set_uint (value, self->priv->avatar_specs.recommended_width);
+      case PAP_REC_AVATAR_WIDTH:
+        g_value_set_uint (value, self->priv->avatar_specs.rec_width);
         break;
 
       case PAP_MAX_AVATAR_HEIGHT:
@@ -967,9 +967,9 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
       { "MinimumAvatarHeight", GINT_TO_POINTER (PAP_MIN_AVATAR_HEIGHT), NULL },
       { "MinimumAvatarWidth", GINT_TO_POINTER (PAP_MIN_AVATAR_WIDTH), NULL },
       { "RecommendedAvatarHeight",
-        GINT_TO_POINTER (PAP_RECOMMENDED_AVATAR_HEIGHT), NULL },
+        GINT_TO_POINTER (PAP_REC_AVATAR_HEIGHT), NULL },
       { "RecommendedAvatarWidth",
-        GINT_TO_POINTER (PAP_RECOMMENDED_AVATAR_WIDTH), NULL },
+        GINT_TO_POINTER (PAP_REC_AVATAR_WIDTH), NULL },
       { "MaximumAvatarHeight", GINT_TO_POINTER (PAP_MAX_AVATAR_HEIGHT), NULL },
       { "MaximumAvatarWidth", GINT_TO_POINTER (PAP_MAX_AVATAR_WIDTH), NULL },
       { "MaximumAvatarBytes", GINT_TO_POINTER (PAP_MAX_AVATAR_BYTES), NULL },
