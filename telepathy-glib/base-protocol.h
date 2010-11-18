@@ -161,20 +161,12 @@ struct _TpBaseProtocolClass
       gchar **english_name,
       gchar **vcard_field);
 
-  void (*get_avatar_details) (TpBaseProtocol *self,
-      GStrv *supported_mime_types,
-      guint *min_height,
-      guint *min_width,
-      guint *recommended_height,
-      guint *recommended_width,
-      guint *max_height,
-      guint *max_width,
-      guint *max_bytes);
-
   const TpPresenceStatusSpec * (*get_statuses) (TpBaseProtocol *self);
 
+  TpBaseProtocolGetAvatarDetailsFunc get_avatar_details;
+
   /*<private>*/
-  GCallback padding[7];
+  GCallback padding[6];
   TpBaseProtocolClassPrivate *priv;
 };
 
