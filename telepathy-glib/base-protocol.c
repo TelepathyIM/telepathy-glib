@@ -761,14 +761,14 @@ typedef enum {
 } ProtocolPresenceProp;
 
 typedef enum {
-    PPA_SUPPORTED_AVATAR_MIME_TYPES,
-    PPA_MIN_AVATAR_HEIGHT,
-    PPA_MIN_AVATAR_WIDTH,
-    PPA_RECOMMENDED_AVATAR_HEIGHT,
-    PPA_RECOMMENDED_AVATAR_WIDTH,
-    PPA_MAX_AVATAR_HEIGHT,
-    PPA_MAX_AVATAR_WIDTH,
-    PPA_MAX_AVATAR_BYTES,
+    PAP_SUPPORTED_AVATAR_MIME_TYPES,
+    PAP_MIN_AVATAR_HEIGHT,
+    PAP_MIN_AVATAR_WIDTH,
+    PAP_RECOMMENDED_AVATAR_HEIGHT,
+    PAP_RECOMMENDED_AVATAR_WIDTH,
+    PAP_MAX_AVATAR_HEIGHT,
+    PAP_MAX_AVATAR_WIDTH,
+    PAP_MAX_AVATAR_BYTES,
     N_PPA
 } ProtocolAvatarProp;
 
@@ -846,36 +846,36 @@ protocol_prop_avatar_getter (GObject *object,
 
   switch (GPOINTER_TO_INT (getter_data))
     {
-      case PPA_SUPPORTED_AVATAR_MIME_TYPES:
+      case PAP_SUPPORTED_AVATAR_MIME_TYPES:
         g_value_set_boxed (value,
             self->priv->avatar_specs.supported_mime_types);
         break;
 
-      case PPA_MIN_AVATAR_HEIGHT:
+      case PAP_MIN_AVATAR_HEIGHT:
         g_value_set_uint (value, self->priv->avatar_specs.min_height);
         break;
 
-      case PPA_MIN_AVATAR_WIDTH:
+      case PAP_MIN_AVATAR_WIDTH:
         g_value_set_uint (value, self->priv->avatar_specs.min_width);
         break;
 
-      case PPA_RECOMMENDED_AVATAR_HEIGHT:
+      case PAP_RECOMMENDED_AVATAR_HEIGHT:
         g_value_set_uint (value, self->priv->avatar_specs.recommended_height);
         break;
 
-      case PPA_RECOMMENDED_AVATAR_WIDTH:
+      case PAP_RECOMMENDED_AVATAR_WIDTH:
         g_value_set_uint (value, self->priv->avatar_specs.recommended_width);
         break;
 
-      case PPA_MAX_AVATAR_HEIGHT:
+      case PAP_MAX_AVATAR_HEIGHT:
         g_value_set_uint (value, self->priv->avatar_specs.max_height);
         break;
 
-      case PPA_MAX_AVATAR_WIDTH:
+      case PAP_MAX_AVATAR_WIDTH:
         g_value_set_uint (value, self->priv->avatar_specs.max_width);
         break;
 
-      case PPA_MAX_AVATAR_BYTES:
+      case PAP_MAX_AVATAR_BYTES:
         g_value_set_uint (value, self->priv->avatar_specs.max_bytes);
         break;
 
@@ -963,16 +963,16 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
 
   static TpDBusPropertiesMixinPropImpl avatar_props[] = {
       { "SupportedAvatarMIMETypes",
-        GINT_TO_POINTER (PPA_SUPPORTED_AVATAR_MIME_TYPES), NULL },
-      { "MinimumAvatarHeight", GINT_TO_POINTER (PPA_MIN_AVATAR_HEIGHT), NULL },
-      { "MinimumAvatarWidth", GINT_TO_POINTER (PPA_MIN_AVATAR_WIDTH), NULL },
+        GINT_TO_POINTER (PAP_SUPPORTED_AVATAR_MIME_TYPES), NULL },
+      { "MinimumAvatarHeight", GINT_TO_POINTER (PAP_MIN_AVATAR_HEIGHT), NULL },
+      { "MinimumAvatarWidth", GINT_TO_POINTER (PAP_MIN_AVATAR_WIDTH), NULL },
       { "RecommendedAvatarHeight",
-        GINT_TO_POINTER (PPA_RECOMMENDED_AVATAR_HEIGHT), NULL },
+        GINT_TO_POINTER (PAP_RECOMMENDED_AVATAR_HEIGHT), NULL },
       { "RecommendedAvatarWidth",
-        GINT_TO_POINTER (PPA_RECOMMENDED_AVATAR_WIDTH), NULL },
-      { "MaximumAvatarHeight", GINT_TO_POINTER (PPA_MAX_AVATAR_HEIGHT), NULL },
-      { "MaximumAvatarWidth", GINT_TO_POINTER (PPA_MAX_AVATAR_WIDTH), NULL },
-      { "MaximumAvatarBytes", GINT_TO_POINTER (PPA_MAX_AVATAR_BYTES), NULL },
+        GINT_TO_POINTER (PAP_RECOMMENDED_AVATAR_WIDTH), NULL },
+      { "MaximumAvatarHeight", GINT_TO_POINTER (PAP_MAX_AVATAR_HEIGHT), NULL },
+      { "MaximumAvatarWidth", GINT_TO_POINTER (PAP_MAX_AVATAR_WIDTH), NULL },
+      { "MaximumAvatarBytes", GINT_TO_POINTER (PAP_MAX_AVATAR_BYTES), NULL },
       { NULL }
   };
 
