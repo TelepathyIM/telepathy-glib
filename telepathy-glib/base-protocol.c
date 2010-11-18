@@ -399,9 +399,9 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * @recommended_width: (out): used to return the recommended width in pixels
  *  of an avatar on this protocol, or 0 if there is no preferred width
  * @max_height: (out): used to return the maximum height in pixels of an
- *  avatar on this protocol, which may be 0
+ *  avatar on this protocol, or 0 if there is no limit
  * @max_width: (out): used to return the maximum width in pixels of an avatar
- *  on this protocol, which may be 0
+ *  on this protocol, or 0 if there is no limit
  * @max_bytes: (out): used to return the maximum size in bytes of an avatar on
  *  this protocol, or 0 if there is no limit
  *
