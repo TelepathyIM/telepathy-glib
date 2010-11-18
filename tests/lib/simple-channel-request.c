@@ -46,6 +46,7 @@ enum
   PROP_REQUESTS,
   PROP_CONNECTION,
   PROP_INTERFACES,
+  PROP_HINTS,
 };
 
 struct _TpTestsSimpleChannelRequestPrivate
@@ -55,6 +56,7 @@ struct _TpTestsSimpleChannelRequestPrivate
   gint64 user_action_time;
   gchar *preferred_handler;
   GPtrArray *requests;
+  GHashTable *hints;
 
   /* Our own path */
   gchar *path;
@@ -283,6 +285,10 @@ tp_tests_simple_channel_request_get_property (GObject *object,
       g_value_set_boxed (value, CHANNEL_REQUEST_INTERFACES);
       break;
 
+    case PROP_HINTS:
+      g_value_set_boxed (value, self->priv->hints);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
       break;
@@ -322,6 +328,10 @@ tp_tests_simple_channel_request_set_property (GObject *object,
       self->priv->conn = g_value_dup_object (value);
       break;
 
+    case PROP_HINTS:
+      self->priv->hints = g_value_dup_boxed (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
       break;
@@ -344,6 +354,7 @@ tp_tests_simple_channel_request_dispose (GObject *object)
     }
 
   tp_clear_object (&self->priv->conn);
+  tp_clear_pointer (&self->priv->hints, g_hash_table_unref);
 
   if (G_OBJECT_CLASS (tp_tests_simple_channel_request_parent_class)->dispose != NULL)
     G_OBJECT_CLASS (tp_tests_simple_channel_request_parent_class)->dispose (object);
@@ -358,6 +369,7 @@ tp_tests_simple_channel_request_class_init (
 
   static TpDBusPropertiesMixinPropImpl am_props[] = {
         { "Interfaces", "interfaces", NULL },
+        { "Hints", "hints", NULL },
         { NULL }
   };
 
@@ -420,6 +432,12 @@ tp_tests_simple_channel_request_class_init (
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
+  param_spec = g_param_spec_boxed ("hints", "Hints",
+      "metadata provided when requesting the channel",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_HINTS, param_spec);
+
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsSimpleChannelRequestClass, dbus_props_class));
@@ -431,7 +449,8 @@ tp_tests_simple_channel_request_new (const gchar *path,
     const gchar *account_path,
     gint64 user_action_time,
     const gchar *preferred_handler,
-    GPtrArray *requests)
+    GPtrArray *requests,
+    GHashTable *hints)
 {
   return tp_tests_object_new_static_class (
       TP_TESTS_TYPE_SIMPLE_CHANNEL_REQUEST,
@@ -441,5 +460,6 @@ tp_tests_simple_channel_request_new (const gchar *path,
       "user-action-time", user_action_time,
       "preferred-handler", preferred_handler,
       "requests", requests,
+      "hints", hints,
       NULL);
 }

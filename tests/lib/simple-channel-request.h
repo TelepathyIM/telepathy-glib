@@ -60,7 +60,8 @@ tp_tests_simple_channel_request_new (const gchar *path,
     const gchar *account_path,
     gint64 user_action_time,
     const gchar *preferred_handler,
-    GPtrArray *requests);
+    GPtrArray *requests,
+    GHashTable *hints);
 
 G_END_DECLS
 
