@@ -972,10 +972,10 @@ tpl_log_manager_get_dates_finish (TplLogManager *self,
 static void
 _get_dates_async_result_free (gpointer data)
 {
-  GList *lst = data; /* list of (char *) */
+  GList *lst = data; /* list of (GDate *) */
   g_return_if_fail (data != NULL);
 
-  g_list_foreach (lst, (GFunc) g_free, NULL);
+  g_list_foreach (lst, (GFunc) g_date_free, NULL);
   g_list_free (lst);
 }
 
