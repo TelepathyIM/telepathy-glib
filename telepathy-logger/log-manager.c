@@ -964,7 +964,17 @@ tpl_log_manager_get_dates_finish (TplLogManager *self,
     return FALSE;
 
   if (dates != NULL)
-    *dates = g_simple_async_result_get_op_res_gpointer (simple);
+    {
+      GList *list, *l;
+
+      *dates = NULL;
+      list = g_simple_async_result_get_op_res_gpointer (simple);
+
+      for (l = list; l != NULL; l = g_list_next (l))
+        *dates = g_list_prepend (*dates, copy_date (l->data));
+
+      *dates = g_list_reverse (*dates);
+    }
 
   return TRUE;
 }
@@ -1082,7 +1092,12 @@ tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
     return FALSE;
 
   if (messages != NULL)
-    *messages = g_simple_async_result_get_op_res_gpointer (simple);
+    {
+      *messages = g_list_copy (g_simple_async_result_get_op_res_gpointer (
+            simple));
+
+      g_list_foreach (*messages, (GFunc) g_object_ref, NULL);
+    }
 
   return TRUE;
 }
@@ -1201,7 +1216,12 @@ tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
     return FALSE;
 
   if (messages != NULL)
-    *messages = g_simple_async_result_get_op_res_gpointer (simple);
+    {
+      *messages = g_list_copy (g_simple_async_result_get_op_res_gpointer (
+            simple));
+
+      g_list_foreach (*messages, (GFunc) g_object_ref, NULL);
+    }
 
   return TRUE;
 }
@@ -1295,6 +1315,21 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
   g_object_unref (simple);
 }
 
+static GList *
+copy_search_hit_list (GList *list)
+{
+  GList *result = NULL;
+  GList *l;
+
+  for (l = list; l != NULL; l = g_list_next (l))
+    {
+      result = g_list_prepend (result,
+          _tpl_log_manager_search_hit_copy (l->data));
+    }
+
+  return g_list_reverse (result);
+}
+
 /**
  * tpl_log_manager_get_chats_finish:
  * @self: a #TplLogManager
@@ -1323,21 +1358,15 @@ tpl_log_manager_get_chats_finish (TplLogManager *self,
     return FALSE;
 
   if (chats != NULL)
-    *chats = g_simple_async_result_get_op_res_gpointer (simple);
+    {
+      GList *list;
+
+      list = g_simple_async_result_get_op_res_gpointer (simple);
+      *chats = copy_search_hit_list (list);
+    }
 
   return TRUE;
 }
-
-static void
-_get_chats_async_result_free (gpointer data)
-{
-  GList *lst = data; /* list of (gchar *) */
-  g_return_if_fail (data != NULL);
-
-  g_list_foreach (lst, (GFunc) g_free, NULL);
-  g_list_free (lst);
-}
-
 
 static void
 _get_chats_async_thread (GSimpleAsyncResult *simple,
@@ -1354,7 +1383,7 @@ _get_chats_async_thread (GSimpleAsyncResult *simple,
   lst = _tpl_log_manager_get_chats (async_data->manager, chat_info->account);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      _get_chats_async_result_free);
+      (GDestroyNotify) tpl_log_manager_search_free);
 }
 
 /**
@@ -1419,7 +1448,12 @@ _tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
     return FALSE;
 
   if (chats != NULL)
-    *chats = g_simple_async_result_get_op_res_gpointer (simple);
+    {
+      GList *list;
+
+      list = g_simple_async_result_get_op_res_gpointer (simple);
+      *chats = copy_search_hit_list (list);
+    }
 
   return TRUE;
 }
@@ -1519,7 +1553,12 @@ tpl_log_manager_search_finish (TplLogManager *self,
     return FALSE;
 
   if (chats != NULL)
-    *chats = g_simple_async_result_get_op_res_gpointer (simple);
+    {
+      GList *list;
+
+      list = g_simple_async_result_get_op_res_gpointer (simple);
+      *chats = copy_search_hit_list (list);
+    }
 
   return TRUE;
 }
