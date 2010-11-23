@@ -113,10 +113,7 @@ tpl_entry_finalize (GObject *obj)
   TplEntry *self = TPL_ENTRY (obj);
   TplEntryPriv *priv = self->priv;
 
-  g_free (priv->chat_id);
-  priv->chat_id = NULL;
-
-  tp_clear_object (&priv->account);
+  tp_clear_pointer (&priv->chat_id, g_free);
 
   G_OBJECT_CLASS (tpl_entry_parent_class)->finalize (obj);
 }
@@ -128,16 +125,9 @@ tpl_entry_dispose (GObject *obj)
   TplEntry *self = TPL_ENTRY (obj);
   TplEntryPriv *priv = self->priv;
 
-  if (priv->sender != NULL)
-    {
-      g_object_unref (priv->sender);
-      priv->sender = NULL;
-    }
-  if (priv->receiver != NULL)
-    {
-      g_object_unref (priv->receiver);
-      priv->receiver = NULL;
-    }
+  tp_clear_object (&priv->account);
+  tp_clear_object (&priv->sender);
+  tp_clear_object (&priv->receiver);
 
   G_OBJECT_CLASS (tpl_entry_parent_class)->dispose (obj);
 }
