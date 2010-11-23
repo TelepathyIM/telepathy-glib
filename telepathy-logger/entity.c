@@ -22,6 +22,8 @@
 #include "config.h"
 #include "entity-internal.h"
 
+#include <telepathy-glib/util.h>
+
 #define DEBUG_FLAG TPL_DEBUG_ENTITY
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
@@ -64,10 +66,8 @@ tpl_entity_finalize (GObject *obj)
   TplEntity *self = TPL_ENTITY (obj);
   TplEntityPriv *priv = self->priv;
 
-  g_free (priv->alias);
-  priv->alias = NULL;
-  g_free (priv->identifier);
-  priv->identifier = NULL;
+  tp_clear_pointer (&priv->alias, g_free);
+  tp_clear_pointer (&priv->identifier, g_free);
 
   G_OBJECT_CLASS (tpl_entity_parent_class)->finalize (obj);
 }
