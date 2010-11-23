@@ -113,7 +113,9 @@ tpl_entry_finalize (GObject *obj)
   TplEntry *self = TPL_ENTRY (obj);
   TplEntryPriv *priv = self->priv;
 
+  tp_clear_pointer (&priv->log_id, g_free);
   tp_clear_pointer (&priv->chat_id, g_free);
+  tp_clear_pointer (&priv->channel_path, g_free);
 
   G_OBJECT_CLASS (tpl_entry_parent_class)->finalize (obj);
 }
