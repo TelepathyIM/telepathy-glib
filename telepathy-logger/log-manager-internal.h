@@ -95,4 +95,6 @@ void _tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
 gint _tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
     TplLogSearchHit *b);
 
+TplLogSearchHit * _tpl_log_manager_search_hit_copy (TplLogSearchHit *hit);
+
 #endif /* __TPL_LOG_MANAGER_PRIV_H__ */

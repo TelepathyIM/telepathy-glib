@@ -1608,3 +1608,10 @@ tpl_log_manager_errors_quark (void)
 
   return (GQuark) quark;
 }
+
+TplLogSearchHit *
+_tpl_log_manager_search_hit_copy (TplLogSearchHit *hit)
+{
+  return _tpl_log_manager_search_hit_new (hit->account, hit->chat_id,
+      hit->is_chatroom, hit->filename, hit->date);
+}
