@@ -929,6 +929,13 @@ _tpl_log_manager_add_message_async (TplLogManager *manager,
   g_object_unref (simple);
 }
 
+/* There is no g_date_copy() */
+static GDate *
+copy_date (const GDate *date)
+{
+  return g_date_new_julian (g_date_get_julian (date));
+}
+
 /**
  * tpl_log_manager_get_dates_finish:
  * @self: a #TplLogManager
@@ -1147,8 +1154,7 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
   chat_info->account = g_object_ref (account);
   chat_info->chat_id = g_strdup (chat_id);
   chat_info->is_chatroom = is_chatroom;
-  /* There is no g_date_copy() */
-  chat_info->date = g_date_new_julian (g_date_get_julian (date));
+  chat_info->date = copy_date (date);
 
   async_data->manager = g_object_ref (manager);
   async_data->request = chat_info;
