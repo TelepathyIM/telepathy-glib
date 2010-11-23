@@ -828,12 +828,9 @@ tpl_log_manager_chat_info_new (void)
 static void
 tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
 {
-  if (data->account != NULL)
-    g_object_unref (data->account);
-  if (data->chat_id != NULL)
-    g_free (data->chat_id);
-  if (data->date != NULL)
-    g_date_free (data->date);
+  tp_clear_object (&data->account);
+  tp_clear_pointer (&data->chat_id, g_free);
+  tp_clear_pointer (&data->date, g_date_free);
   g_slice_free (TplLogManagerChatInfo, data);
 }
 
