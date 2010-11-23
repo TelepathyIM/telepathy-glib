@@ -925,6 +925,8 @@ _tpl_log_manager_add_message_async (TplLogManager *manager,
 
   g_simple_async_result_run_in_thread (simple, _add_message_async_thread, 0,
       NULL);
+
+  g_object_unref (simple);
 }
 
 /**
@@ -1041,6 +1043,8 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
 
   g_simple_async_result_run_in_thread (simple, _get_dates_async_thread, 0,
       NULL);
+
+  g_object_unref (simple);
 }
 
 /**
@@ -1159,6 +1163,8 @@ tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
 
   g_simple_async_result_run_in_thread (simple,
       _get_messages_for_date_async_thread, 0, NULL);
+
+  g_object_unref (simple);
 }
 
 /**
@@ -1279,6 +1285,8 @@ tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
 
   g_simple_async_result_run_in_thread (simple,
       _get_filtered_messages_async_thread, 0, NULL);
+
+  g_object_unref (simple);
 }
 
 /**
@@ -1380,6 +1388,8 @@ tpl_log_manager_get_chats_async (TplLogManager *self,
 
   g_simple_async_result_run_in_thread (simple, _get_chats_async_thread, 0,
       NULL);
+
+  g_object_unref (simple);
 }
 
 gboolean
@@ -1471,6 +1481,8 @@ _tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 
   g_simple_async_result_run_in_thread (simple,
       _search_in_identifier_chats_new_async_thread, 0, NULL);
+
+  g_object_unref (simple);
 }
 
 /**
@@ -1572,6 +1584,8 @@ tpl_log_manager_search_async (TplLogManager *manager,
 
   g_simple_async_result_run_in_thread (simple, _search_async_thread, 0,
       NULL);
+
+  g_object_unref (simple);
 }
 
 /**
