@@ -1152,13 +1152,6 @@ log_store_xml_get_chats (TplLogStore *store,
   hits = log_store_xml_get_chats_for_dir (self, dir, FALSE, account);
   g_free (dir);
 
-  for (guint i = 0; i < g_list_length (hits); ++i)
-    {
-      TplLogSearchHit *hit;
-      hit = g_list_nth_data (hits, i);
-    }
-
-
   return hits;
 }
 
