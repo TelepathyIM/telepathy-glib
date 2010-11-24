@@ -662,14 +662,13 @@ _tpl_log_manager_get_chats (TplLogManager *manager,
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
-      GList *in;
+      GList *in, *j;
 
+      in = _tpl_log_store_get_chats (store, account);
       /* merge the lists avoiding duplicates */
-      for (in = _tpl_log_store_get_chats (store, account);
-          in != NULL;
-          in = g_list_next (in))
+      for (j = in; j != NULL; j = g_list_next (j))
         {
-          TplLogSearchHit *hit = in->data;
+          TplLogSearchHit *hit = j->data;
 
           if (g_list_find_custom (out, hit,
                 (GCompareFunc) _tpl_log_manager_search_hit_compare) == NULL)
