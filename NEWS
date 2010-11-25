@@ -1,7 +1,27 @@
 telepathy-glib 0.13.7 (UNRELEASED)
 ==================================
 
-…
+Enhancements:
+
+• Update to spec 0.21.5 (smcv)
+  · Conn.I.PowerSaving
+  · Chan.T.ServerAuthentication, Chan.I.SASLAuthentication, Chan.I.Securable
+  · Account.I.Addressing
+  · Protocol.I.Avatars
+  · enhanced ChannelDispatcher and ChannelRequest API with "request hints"
+  · new errors: CONFUSED, SERVER_CONFUSED
+  · new property: Messages.MessageTypes
+  · TP_CONTACT_INFO_FIELD_FLAG_OVERWRITTEN_BY_NICKNAME
+
+• fd.o #31686: add Protocol.I.Avatars support to TpBaseProtocol (eeejay)
+
+• implement the MessageTypes property in the TpMessagesMixin (smcv)
+
+• use G_N_ELEMENTS more (smcv)
+
+Fixes:
+
+• use the right getter for TpAccountChannelRequest:request (smcv)
 
 telepathy-glib 0.13.6 (2010-11-17)
 ==================================
