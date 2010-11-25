@@ -882,3 +882,40 @@
  *
  * Since: 0.13.UNRELEASED
  */
+
+/**
+ * SECTION:channel-auth
+ * @title: Channel Authentication interfaces
+ * @short_description: client-side wrappers for authentication channels
+ *
+ * The ServerAuthentication channel type represents a request for client/UI
+ * processes to carry out authentication with a server.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * SECTION:svc-channel-auth
+ * @title: Service-side Channel Authentication interfaces
+ * @short_description: GInterfaces to implement authentication channels
+ *
+ * The ServerAuthentication channel type represents a request for client/UI
+ * processes to carry out authentication with a server.
+ *
+ * The SASLAuthentication interface allows authentication via SASL, and also
+ * allows providing a simple password to the connection manager for it to
+ * use with SASL or non-SASL mechanisms.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * SECTION:svc-channel-securable
+ * @title: Service-side Securable interface
+ * @short_description: GInterface to indicate channels' security level
+ *
+ * The Securable channel interface represents a channel that might be
+ * end-to-end encrypted and/or protected from man-in-the-middle attacks.
+ *
+ * Since: 0.13.UNRELEASED
+ */
