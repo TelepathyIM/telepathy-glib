@@ -1,0 +1,335 @@
+/*
+ * simple_password-manager.c - Source for TpSimplePasswordManager
+ * Copyright (C) 2010 Collabora Ltd.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include "telepathy-glib/simple-password-manager.h"
+
+#include <telepathy-glib/channel-manager.h>
+#include <telepathy-glib/gtypes.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/util.h>
+
+#define DEBUG_FLAG TP_DEBUG_SASL
+#include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/simple-password-channel.h"
+
+static void channel_manager_iface_init (gpointer, gpointer);
+static void tp_simple_password_manager_close_all (TpSimplePasswordManager *self);
+static void tp_simple_password_manager_constructed (GObject *object);
+
+G_DEFINE_TYPE_WITH_CODE (TpSimplePasswordManager, tp_simple_password_manager,
+    G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_MANAGER,
+        channel_manager_iface_init));
+
+/* properties */
+enum
+{
+  PROP_CONNECTION = 1,
+  LAST_PROPERTY
+};
+
+struct _TpSimplePasswordManagerPrivate
+{
+  TpBaseConnection *conn;
+  guint status_changed_id;
+
+  TpSimplePasswordChannel *channel;
+  GAsyncResult *result;
+
+  gboolean dispose_has_run;
+};
+
+static void
+tp_simple_password_manager_init (TpSimplePasswordManager *self)
+{
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TP_TYPE_SIMPLE_PASSWORD_MANAGER, TpSimplePasswordManagerPrivate);
+}
+
+static void
+tp_simple_password_manager_dispose (GObject *object)
+{
+  TpSimplePasswordManager *self = TP_SIMPLE_PASSWORD_MANAGER (object);
+  TpSimplePasswordManagerPrivate *priv = self->priv;
+
+  if (priv->dispose_has_run)
+    return;
+
+  DEBUG ("dispose called");
+  priv->dispose_has_run = TRUE;
+
+  tp_simple_password_manager_close_all (self);
+
+  if (priv->status_changed_id != 0)
+    {
+      g_signal_handler_disconnect (priv->conn,
+          priv->status_changed_id);
+      priv->status_changed_id = 0;
+    }
+
+  if (G_OBJECT_CLASS (tp_simple_password_manager_parent_class)->dispose)
+    G_OBJECT_CLASS (tp_simple_password_manager_parent_class)->dispose (object);
+}
+
+static void
+tp_simple_password_manager_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  TpSimplePasswordManager *self = TP_SIMPLE_PASSWORD_MANAGER (object);
+  TpSimplePasswordManagerPrivate *priv = self->priv;
+
+  switch (property_id)
+    {
+    case PROP_CONNECTION:
+      g_value_set_object (value, priv->conn);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
+}
+
+static void
+tp_simple_password_manager_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpSimplePasswordManager *self = TP_SIMPLE_PASSWORD_MANAGER (object);
+  TpSimplePasswordManagerPrivate *priv = self->priv;
+
+  switch (property_id)
+    {
+    case PROP_CONNECTION:
+      priv->conn = g_value_get_object (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
+}
+
+static void
+tp_simple_password_manager_class_init (
+    TpSimplePasswordManagerClass *tp_simple_password_manager_class)
+{
+  GObjectClass *object_class = G_OBJECT_CLASS (tp_simple_password_manager_class);
+  GParamSpec *param_spec;
+
+  g_type_class_add_private (tp_simple_password_manager_class,
+      sizeof (TpSimplePasswordManagerPrivate));
+
+  object_class->constructed = tp_simple_password_manager_constructed;
+  object_class->dispose = tp_simple_password_manager_dispose;
+
+  object_class->get_property = tp_simple_password_manager_get_property;
+  object_class->set_property = tp_simple_password_manager_set_property;
+
+  param_spec = g_param_spec_object ("connection",
+      "TpBaseConnection object",
+      "The connection object that owns this channel manager",
+      TP_TYPE_BASE_CONNECTION,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
+
+}
+
+static void
+tp_simple_password_manager_close_all (TpSimplePasswordManager *self)
+{
+  TpSimplePasswordManagerPrivate *priv = self->priv;
+
+  if (priv->channel == NULL)
+    return;
+
+  DEBUG ("closing %p", priv->channel);
+  tp_base_channel_close (TP_BASE_CHANNEL (priv->channel));
+  g_object_unref (priv->channel);
+  priv->channel = NULL;
+}
+
+static void
+connection_status_changed_cb (TpBaseConnection *conn,
+    guint status,
+    guint reason,
+    TpSimplePasswordManager *self)
+{
+  switch (status)
+    {
+    case TP_CONNECTION_STATUS_DISCONNECTED:
+      tp_simple_password_manager_close_all (self);
+      break;
+    }
+}
+
+static void
+tp_simple_password_manager_constructed (GObject *object)
+{
+  void (*chain_up) (GObject *) =
+      G_OBJECT_CLASS (tp_simple_password_manager_parent_class)->constructed;
+  TpSimplePasswordManager *self = TP_SIMPLE_PASSWORD_MANAGER (object);
+  TpSimplePasswordManagerPrivate *priv = self->priv;
+
+  if (chain_up != NULL)
+    chain_up (object);
+
+  tp_g_signal_connect_object (priv->conn,
+      "status-changed", G_CALLBACK (connection_status_changed_cb),
+      object, 0);
+}
+
+static void
+tp_simple_password_manager_foreach_channel (TpChannelManager *manager,
+    TpExportableChannelFunc foreach,
+    gpointer user_data)
+{
+  TpSimplePasswordManager *self = TP_SIMPLE_PASSWORD_MANAGER (manager);
+  TpSimplePasswordManagerPrivate *priv = self->priv;
+
+  if (priv->channel != NULL
+      && !tp_base_channel_is_destroyed (TP_BASE_CHANNEL (priv->channel)))
+    {
+      foreach (TP_EXPORTABLE_CHANNEL (priv->channel), user_data);
+    }
+}
+
+static void
+channel_manager_iface_init (gpointer g_iface,
+    gpointer iface_data)
+{
+  TpChannelManagerIface *iface = g_iface;
+
+  iface->foreach_channel = tp_simple_password_manager_foreach_channel;
+
+  /* these channels are not requestable */
+  iface->foreach_channel_class = NULL;
+  iface->request_channel = NULL;
+  iface->create_channel = NULL;
+  iface->ensure_channel = NULL;
+}
+
+
+TpSimplePasswordManager *
+tp_simple_password_manager_new (TpBaseConnection *connection)
+{
+  g_return_val_if_fail (TP_IS_BASE_CONNECTION (connection), NULL);
+
+  return g_object_new (TP_TYPE_SIMPLE_PASSWORD_MANAGER,
+      "connection", connection,
+      NULL);
+}
+
+static void
+tp_simple_password_manager_channel_closed_cb (GObject *chan,
+    TpSimplePasswordManager *manager)
+{
+  tp_channel_manager_emit_channel_closed_for_object (manager,
+      TP_EXPORTABLE_CHANNEL (chan));
+}
+
+static void
+tp_simple_password_manager_channel_finished_cb (
+    TpSimplePasswordChannel *channel,
+    const GString *str,
+    const GError *error,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+  else
+    {
+      g_simple_async_result_set_op_res_gpointer (
+          result, (gpointer) str, NULL);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+void
+tp_simple_password_manager_prompt_async (
+    TpSimplePasswordManager *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpSimplePasswordManagerPrivate *priv = self->priv;
+  TpBaseConnection *base_conn = priv->conn;
+  gchar *object_path;
+
+  g_return_if_fail (TP_IS_SIMPLE_PASSWORD_MANAGER (self));
+  g_return_if_fail (priv->channel == NULL);
+  g_return_if_fail (priv->result == NULL);
+
+  object_path = g_strdup_printf ("%s/SimplePasswordChannel",
+      base_conn->object_path);
+
+  priv->channel = g_object_new (TP_TYPE_SIMPLE_PASSWORD_CHANNEL,
+      "connection", priv->conn,
+      "object-path", object_path,
+      "handle", 0,
+      "requested", FALSE,
+      "initiator-handle", base_conn->self_handle,
+      NULL);
+
+  g_free (object_path);
+
+  priv->result = G_ASYNC_RESULT (g_simple_async_result_new (G_OBJECT (self),
+          callback, user_data, tp_simple_password_manager_prompt_async));
+
+  tp_g_signal_connect_object (priv->channel, "closed",
+      G_CALLBACK (tp_simple_password_manager_channel_closed_cb), self, 0);
+  tp_g_signal_connect_object (priv->channel, "finished",
+      G_CALLBACK (tp_simple_password_manager_channel_finished_cb),
+      priv->result, 0);
+
+  tp_base_channel_register ((TpBaseChannel *) priv->channel);
+
+  tp_channel_manager_emit_new_channel (self,
+      TP_EXPORTABLE_CHANNEL (priv->channel), NULL);
+}
+
+const GString *
+tp_simple_password_manager_prompt_finish (
+    TpSimplePasswordManager *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_SIMPLE_PASSWORD_MANAGER (self), NULL);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return NULL;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (self), tp_simple_password_manager_prompt_async),
+      NULL);
+
+  return g_simple_async_result_get_op_res_gpointer (simple);
+}
