@@ -150,7 +150,7 @@ connection_ready_cb (TpConnection *connection,
 
       tp_connection_get_contacts_by_handle (connection,
           1, &self_handle,
-          sizeof (features) / sizeof (features[0]), features,
+          G_N_ELEMENTS (features), features,
           got_contacts_by_handle,
           data, NULL, NULL);
     }
@@ -160,7 +160,7 @@ connection_ready_cb (TpConnection *connection,
 
       tp_connection_get_contacts_by_id (connection,
           1, contacts,
-          sizeof (features) / sizeof (features[0]), features,
+          G_N_ELEMENTS (features), features,
           got_contacts_by_id,
           data, NULL, NULL);
     }

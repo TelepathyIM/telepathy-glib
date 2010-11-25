@@ -460,7 +460,7 @@ test_upgrade (TpTestsContactsConnection *service_conn,
 
   tp_connection_upgrade_contacts (client_conn,
       3, contacts,
-      sizeof (features) / sizeof (features[0]), features,
+      G_N_ELEMENTS (features), features,
       upgrade_cb,
       &result, finish, NULL);
 
@@ -658,7 +658,7 @@ test_features (TpTestsContactsConnection *service_conn,
 
   tp_connection_get_contacts_by_handle (client_conn,
       3, handles,
-      sizeof (features) / sizeof (features[0]), features,
+      G_N_ELEMENTS (features), features,
       by_handle_cb,
       &result, finish, NULL);
 
