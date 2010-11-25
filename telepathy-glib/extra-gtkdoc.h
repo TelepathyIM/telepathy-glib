@@ -869,3 +869,16 @@
  *
  * Since: 0.13.1
  */
+
+/**
+ * SECTION:connection-powersaving
+ * @title: Connection PowerSaving interface
+ * @short_description: client-side wrappers for the PowerSaving interface
+ *
+ * Some connection manager implementations can be instructed to try to
+ * save power on mobile devices by suppressing non-essential traffic, such
+ * as presence notifications. This section documents auto-generated C
+ * wrappers for the PowerSaving D-Bus interface.
+ *
+ * Since: 0.13.UNRELEASED
+ */
