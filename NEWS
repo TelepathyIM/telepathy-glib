@@ -1,7 +1,11 @@
-telepathy-glib 0.12.5 (UNRELEASED)
+telepathy-glib 0.12.5 (2010-11-25)
 ==================================
 
-…
+The "does firing someone out of a cannon count as canonizing them?" release.
+
+Fixes:
+
+• Use the right getter for TpAccountChannelRequest:request (smcv)
 
 telepathy-glib 0.12.4 (2010-11-17)
 ==================================
