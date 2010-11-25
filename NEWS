@@ -1,6 +1,8 @@
 telepathy-glib 0.13.7 (UNRELEASED)
 ==================================
 
+This release includes all bugfixes from 0.12.5.
+
 Enhancements:
 
 • Update to spec 0.21.5 (smcv)
