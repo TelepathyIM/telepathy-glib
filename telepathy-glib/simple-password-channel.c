@@ -310,9 +310,9 @@ _tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_
       G_SIGNAL_RUN_LAST,
       0,
       NULL, NULL,
-      _tp_marshal_VOID__POINTER_POINTER,
+      _tp_marshal_VOID__BOXED_POINTER,
       G_TYPE_NONE, 2,
-      G_TYPE_STRING, G_TYPE_POINTER);
+      G_TYPE_GSTRING, G_TYPE_POINTER);
 
   tp_simple_password_channel_class->properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
