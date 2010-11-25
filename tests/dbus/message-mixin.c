@@ -306,6 +306,7 @@ main (int argc,
     {
       const GValue *value;
       gchar *contents;
+      GArray *types;
       GPtrArray *messages;
       GHashTable *properties = NULL;
 
@@ -315,8 +316,7 @@ main (int argc,
 
       g_print ("\n\n==== Examining properties ====\n\n");
 
-      MYASSERT (g_hash_table_size (properties) == 4, "%u",
-          g_hash_table_size (properties));
+      g_assert_cmpuint (g_hash_table_size (properties), ==, 5);
 
       MYASSERT (tp_asv_get_uint32 (properties, "MessagePartSupportFlags", NULL)
           == ( TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT
@@ -329,6 +329,18 @@ main (int argc,
       contents = g_strdup_value_contents (value);
       g_message ("%s", contents);
       g_free (contents);
+
+      g_assert ((value = tp_asv_lookup (properties, "MessageTypes"))
+          != NULL);
+      g_assert (G_VALUE_HOLDS (value, DBUS_TYPE_G_UINT_ARRAY));
+      types = g_value_get_boxed (value);
+      g_assert_cmpuint (types->len, ==, 3);
+      g_assert_cmpuint (g_array_index (types, guint, 0), ==,
+          TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
+      g_assert_cmpuint (g_array_index (types, guint, 1), ==,
+          TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+      g_assert_cmpuint (g_array_index (types, guint, 2), ==,
+          TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE);
 
       MYASSERT ((value = tp_asv_lookup (properties, "PendingMessages"))
           != NULL, "");
@@ -959,8 +971,7 @@ main (int argc,
 
       g_print ("\n\n==== Examining properties ====\n\n");
 
-      MYASSERT (g_hash_table_size (properties) == 4, "%u",
-          g_hash_table_size (properties));
+      g_assert_cmpuint (g_hash_table_size (properties), ==, 5);
 
       MYASSERT (tp_asv_get_uint32 (properties, "MessagePartSupportFlags", NULL)
           == ( TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT

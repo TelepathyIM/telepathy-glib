@@ -1864,6 +1864,7 @@ tp_message_mixin_init_dbus_properties (GObjectClass *cls)
       { "PendingMessages", NULL, NULL },
       { "SupportedContentTypes", NULL, NULL },
       { "MessagePartSupportFlags", NULL, NULL },
+      { "MessageTypes", NULL, NULL },
       { "DeliveryReportingSupport", NULL, NULL },
       { NULL }
   };
@@ -1900,6 +1901,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
   static GQuark q_supported_content_types = 0;
   static GQuark q_message_part_support_flags = 0;
   static GQuark q_delivery_reporting_support_flags = 0;
+  static GQuark q_message_types = 0;
 
   if (G_UNLIKELY (q_pending_messages == 0))
     {
@@ -1910,6 +1912,8 @@ tp_message_mixin_get_dbus_property (GObject *object,
           g_quark_from_static_string ("MessagePartSupportFlags");
       q_delivery_reporting_support_flags =
           g_quark_from_static_string ("DeliveryReportingSupport");
+      q_message_types =
+          g_quark_from_static_string ("MessageTypes");
     }
 
   mixin = TP_MESSAGE_MIXIN (object);
@@ -1950,6 +1954,10 @@ tp_message_mixin_get_dbus_property (GObject *object,
   else if (name == q_supported_content_types)
     {
       g_value_set_boxed (value, mixin->priv->supported_content_types);
+    }
+  else if (name == q_message_types)
+    {
+      g_value_set_boxed (value, mixin->priv->msg_types);
     }
 }
 

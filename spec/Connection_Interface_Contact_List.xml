@@ -652,15 +652,27 @@
           subscribe to their presence, i.e. that their subscribe attribute
           becomes Yes.</p>
 
+        <p>Connection managers SHOULD NOT attempt to enforce a
+          mutual-subscription policy (i.e. when this method is called, they
+          should not automatically allow the contacts to see the local user's
+          presence). User interfaces that require mutual subscription
+          MAY call <tp:member-ref>AuthorizePublication</tp:member-ref>
+          at the same time as this method.</p>
+
+        <tp:rationale>
+          <p>Whether to enforce mutual subscription is a matter of policy,
+            so it is left to the user interface and/or the server.</p>
+        </tp:rationale>
+
         <p>Before calling this method on a connection where <tp:dbus-ref
             namespace="org.freedesktop.Telepathy.Connection.Interface.Aliasing"
             >GetAliasFlags</tp:dbus-ref> returns the <code>User_Set</code> flag,
           user interfaces SHOULD obtain, from the user, an alias to
           identify the contact in future, and store it using <tp:dbus-ref
             namespace="org.freedesktop.Telepathy.Connection.Interface.Aliasing"
-            >SetAliases</tp:dbus-ref>.
+            >SetAliases</tp:dbus-ref>.</p>
 
-          The user MAY be
+        <p>The user MAY be
           prompted using the contact's current self-assigned nickname, or
           something derived from the contact's (presumably self-assigned)
           identifier, as a default, but these names chosen by the contact
@@ -792,6 +804,19 @@
         <p>For each of the given contacts, request that the local user's
           presence is sent to that contact, i.e. that their publish attribute
           becomes Yes.</p>
+
+        <p>Connection managers SHOULD NOT attempt to enforce a
+          mutual-subscription policy (i.e. when this method is called, they
+          should not automatically request that the contacts allow the user to
+          subscribe to their presence). User interfaces that require mutual
+          subscription MAY call
+          <tp:member-ref>RequestSubscription</tp:member-ref> at the same time
+          as this method.</p>
+
+        <tp:rationale>
+          <p>Whether to enforce mutual subscription is a matter of policy,
+            so it is left to the user interface and/or the server.</p>
+        </tp:rationale>
 
         <p>For contacts with publish=Yes, this method has no effect; it
           MUST return successfully if all contacts given have this state.</p>

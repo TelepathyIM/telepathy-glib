@@ -172,7 +172,7 @@ constructor (GType type,
       tp_base_channel_get_connection (base));
 
   tp_message_mixin_implement_sending (object, send_message,
-      (sizeof (types) / sizeof (types[0])), types,
+      G_N_ELEMENTS (types), types,
       TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT |
       TP_MESSAGE_PART_SUPPORT_FLAG_MULTIPLE_ATTACHMENTS,
       TP_DELIVERY_REPORTING_SUPPORT_FLAG_RECEIVE_FAILURES,

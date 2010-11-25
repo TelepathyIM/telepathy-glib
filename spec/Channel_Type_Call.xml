@@ -1163,12 +1163,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </property>
 
     <property name="InitialTransport" tp:name-for-bindings="Initial_Transport"
-      type="s" access="read" tp:requestable="yes" tp:immutable="yes">
+      type="u" tp:type="Stream_Transport_Type" access="read"
+      tp:requestable="yes" tp:immutable="yes">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>If set on a requested channel, this indicates the transport that
           should be used for this call. Where not applicable, this property
-          is defined to be the empty string, in particular, on CMs with
-          hardware streaming.</p>
+          is defined to be <tp:type>Stream_Transport_Type</tp:type>_Unknown,
+          in particular, on CMs with hardware streaming.</p>
 
         <tp:rationale>
           When implementing a voip gateway one wants the outgoing leg of the

@@ -358,8 +358,9 @@ assert_call_properties (GHashTable *get_all_return,
   g_assert_cmpint (tp_asv_get_boolean (get_all_return,
         "MutableContents", &valid), ==, TRUE);
   g_assert (valid);
-  g_assert_cmpstr (tp_asv_get_string (get_all_return,
-        "InitialTransport"), ==, "");
+  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return,
+        "InitialTransport", &valid), ==, FUTURE_STREAM_TRANSPORT_TYPE_UNKNOWN);
+  g_assert (valid);
 
   if (check_call_flags)
     {

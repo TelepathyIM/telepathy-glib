@@ -27,6 +27,26 @@
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       [FIXME]
+
+      <h4>ICE restarts</h4>
+
+      <p>If the <tp:dbus-ref
+        namespace="ofdT.Call.Stream.Endpoint.DRAFT">RemoteCredentialsSet</tp:dbus-ref>
+        signal is fired during a call once it has been called before
+        whilst setting up the call for initial use, and the
+        credentials have changed, then there has been an ICE
+        restart. In such a case, the CM SHOULD also empty the remote
+        candidate list in the <tp:dbus-ref
+        namespace="ofdT.Call.Stream">Endpoint.DRAFT</tp:dbus-ref>.</p>
+
+      <p>If the CM does an ICE restart, then the
+        <tp:member-ref>PleaseRestartICE</tp:member-ref> signal is
+        emitted and the streaming implementation should then call
+        <tp:member-ref>SetCredentials</tp:member-ref> again.</p>
+
+      <p>For more information on ICE restarts see
+        <a href="http://tools.ietf.org/html/rfc5245#section-9.1.1.1">RFC 5245
+        section 9.1.1.1</a></p>
     </tp:docstring>
 
     <method name="SetCredentials" tp:name-for-bindings="Set_Credentials">
@@ -133,7 +153,13 @@
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         A transport that can be used for streaming.
       </tp:docstring>
-      <tp:enumvalue suffix="Raw_UDP" value="0">
+      <tp:enumvalue suffix="Unknown" value="0">
+        <tp:docstring>
+          The stream transport type is unknown or not applicable
+          (for streams that do not have a configurable transport).
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="Raw_UDP" value="1">
         <tp:docstring>
           Raw UDP, with or without STUN. All streaming clients are assumed to
           support this transport, so there is no handler capability token for
@@ -143,7 +169,7 @@
           interface.]
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="ICE" value="1">
+      <tp:enumvalue suffix="ICE" value="2">
         <tp:docstring>
           Interactive Connectivity Establishment, as defined by RFC
           5245. Note that this value covers ICE-UDP only.
@@ -151,7 +177,7 @@
           Media.StreamHandler interface.]
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="GTalk_P2P" value="2">
+      <tp:enumvalue suffix="GTalk_P2P" value="3">
         <tp:docstring>
           Google Talk peer-to-peer connectivity establishment, as implemented
           by libjingle 0.3.
@@ -159,7 +185,7 @@
           interface.]
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="WLM_2009" value="3">
+      <tp:enumvalue suffix="WLM_2009" value="4">
         <tp:docstring>
           The transport used by Windows Live Messenger 2009 or later, which
           resembles ICE draft 19.
@@ -167,11 +193,17 @@
           interface.]
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="SHM" value="4">
+      <tp:enumvalue suffix="SHM" value="5">
         <tp:added version="0.21.2"/>
         <tp:docstring>
           Shared memory transport, as implemented by the GStreamer
           shmsrc and shmsink plugins.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="Multicast" value="6">
+        <tp:added version="0.21.5"/>
+        <tp:docstring>
+          Multicast transport.
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
@@ -401,6 +433,15 @@
           <tp:member-ref>EndpointsChanged</tp:member-ref> signal.</p>
       </tp:docstring>
     </property>
+
+    <signal name="PleaseRestartICE"
+      tp:name-for-bindings="Please_Restart_ICE">
+      <tp:docstring>
+        Emitted when the CM does an ICE restart to notify the
+        streaming implementation that it should call
+        <tp:member-ref>SetCredentials</tp:member-ref> again.
+      </tp:docstring>
+    </signal>
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->

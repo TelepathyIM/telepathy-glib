@@ -1,5 +1,6 @@
 EXTRA_DIST = \
     Account_Interface_Avatar.xml \
+    Account_Interface_Addressing.xml \
     Account_Interface_Minimum_Presence.xml \
     Account_Interface_Storage.xml \
     Account_Manager.xml \
@@ -15,7 +16,6 @@ EXTRA_DIST = \
     Call_Stream_Endpoint.xml \
     Channel_Dispatch_Operation.xml \
     Channel_Dispatcher.xml \
-    Channel_Dispatcher_Future.xml \
     Channel_Dispatcher_Interface_Operation_List.xml \
     Channel_Future.xml \
     Channel_Handler.xml \
@@ -34,19 +34,21 @@ EXTRA_DIST = \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
     Channel_Interface_Room.xml \
+    Channel_Interface_SASL_Authentication.xml \
+    Channel_Interface_Securable.xml \
     Channel_Interface_Service_Point.xml \
     Channel_Interface_SMS.xml \
     Channel_Interface_Splittable.xml \
     Channel_Interface_Transfer.xml \
     Channel_Interface_Tube.xml \
     Channel_Request.xml \
-    Channel_Request_Future.xml \
     Channel_Type_Call.xml \
     Channel_Type_Contact_List.xml \
     Channel_Type_Contact_Search.xml \
     Channel_Type_DBus_Tube.xml \
     Channel_Type_File_Transfer.xml \
     Channel_Type_Room_List.xml \
+    Channel_Type_Server_Authentication.xml \
     Channel_Type_Server_TLS_Connection.xml \
     Channel_Type_Stream_Tube.xml \
     Channel_Type_Streamed_Media.xml \
