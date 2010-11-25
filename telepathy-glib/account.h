@@ -71,9 +71,12 @@ GType tp_account_get_type (void);
   tp_account_get_feature_quark_core ()
 #define TP_ACCOUNT_FEATURE_STORAGE \
   tp_account_get_feature_quark_storage ()
+#define TP_ACCOUNT_FEATURE_ADDRESSING \
+  tp_account_get_feature_quark_addressing ()
 
 GQuark tp_account_get_feature_quark_core (void) G_GNUC_CONST;
 GQuark tp_account_get_feature_quark_storage (void) G_GNUC_CONST;
+GQuark tp_account_get_feature_quark_addressing (void) G_GNUC_CONST;
 
 TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
@@ -220,6 +223,17 @@ TpStorageRestrictionFlags tp_account_get_storage_restrictions (TpAccount *self);
 void tp_account_get_storage_specific_information_async (TpAccount *self,
     GAsyncReadyCallback callback, gpointer user_data);
 GHashTable *tp_account_get_storage_specific_information_finish (TpAccount *self,
+    GAsyncResult *result, GError **error);
+
+const gchar * const *
+/* ugh, gtk-doc */
+tp_account_get_uri_schemes (TpAccount *self);
+gboolean tp_account_associated_with_uri_scheme (TpAccount *self,
+    const gchar *scheme);
+void tp_account_set_uri_scheme_association_async (TpAccount *self,
+    const gchar *scheme, gboolean associate,
+    GAsyncReadyCallback callback, gpointer user_data);
+gboolean tp_account_set_uri_scheme_association_finish (TpAccount *self,
     GAsyncResult *result, GError **error);
 
 G_END_DECLS

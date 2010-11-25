@@ -119,6 +119,8 @@ struct _TpAccountPrivate {
   gchar *storage_provider;
   GValue *storage_identifier;
   TpStorageRestrictionFlags storage_restrictions;
+
+  GStrv uri_schemes;
 };
 
 G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY)
@@ -161,6 +163,7 @@ enum {
   PROP_STORAGE_RESTRICTIONS
 };
 
+static void tp_account_maybe_prepare_addressing (TpProxy *proxy);
 static void tp_account_maybe_prepare_storage (TpProxy *proxy);
 
 /**
@@ -195,6 +198,21 @@ static void tp_account_maybe_prepare_storage (TpProxy *proxy);
  */
 
 /**
+ * TP_ACCOUNT_FEATURE_ADDRESSING:
+ *
+ * Expands to a call to a function that returns a quark for the "addressing"
+ * feature on a #TpAccount.
+ *
+ * When this feature is prepared, the list of URI schemes from
+ * Account.Interface.Addressing has been retrieved and is available for use.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
  * tp_account_get_feature_quark_core:
  *
  * <!-- -->
@@ -226,8 +244,15 @@ tp_account_get_feature_quark_storage (void)
   return g_quark_from_static_string ("tp-account-feature-storage");
 }
 
+GQuark
+tp_account_get_feature_quark_addressing (void)
+{
+  return g_quark_from_static_string ("tp-account-feature-addressing");
+}
+
 enum {
     FEAT_CORE,
+    FEAT_ADDRESSING,
     FEAT_STORAGE,
     N_FEAT
 };
@@ -242,6 +267,10 @@ _tp_account_list_features (TpProxyClass *cls G_GNUC_UNUSED)
       features[FEAT_CORE].name = TP_ACCOUNT_FEATURE_CORE;
       features[FEAT_CORE].core = TRUE;
       /* no need for a start_preparing function - the constructor starts it */
+
+      features[FEAT_ADDRESSING].name = TP_ACCOUNT_FEATURE_ADDRESSING;
+      features[FEAT_ADDRESSING].start_preparing =
+        tp_account_maybe_prepare_addressing;
 
       features[FEAT_STORAGE].name = TP_ACCOUNT_FEATURE_STORAGE;
       features[FEAT_STORAGE].start_preparing =
@@ -2452,7 +2481,7 @@ tp_account_set_icon_name_finish (TpAccount *account,
 }
 
 static void
-_tp_account_remove_cb (TpAccount *proxy,
+_tp_account_void_cb (TpAccount *proxy,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
@@ -2490,7 +2519,7 @@ tp_account_remove_async (TpAccount *account,
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_remove_finish);
 
-  tp_cli_account_call_remove (account, -1, _tp_account_remove_cb, result, NULL,
+  tp_cli_account_call_remove (account, -1, _tp_account_void_cb, result, NULL,
       G_OBJECT (account));
 }
 
@@ -3404,4 +3433,165 @@ tp_account_get_storage_specific_information_finish (TpAccount *self,
         tp_account_get_storage_specific_information_async), NULL);
 
   return g_simple_async_result_get_op_res_gpointer (simple);
+}
+
+static void
+_tp_account_got_all_addressing_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *object)
+{
+  TpAccount *self = TP_ACCOUNT (proxy);
+
+  if (error != NULL)
+    {
+      DEBUG ("Error getting Addressing properties: %s", error->message);
+    }
+  else
+    {
+      self->priv->uri_schemes = g_strdupv (tp_asv_get_boxed (properties,
+            "URISchemes", G_TYPE_STRV));
+    }
+
+  if (self->priv->uri_schemes == NULL)
+    self->priv->uri_schemes = g_new0 (gchar *, 1);
+
+  _tp_proxy_set_feature_prepared (proxy, TP_ACCOUNT_FEATURE_ADDRESSING, TRUE);
+}
+
+static void
+tp_account_maybe_prepare_addressing (TpProxy *proxy)
+{
+  TpAccount *self = TP_ACCOUNT (proxy);
+
+  if (self->priv->uri_schemes != NULL)
+    return;
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING,
+      _tp_account_got_all_addressing_cb, NULL, NULL, NULL);
+}
+
+/**
+ * tp_account_get_uri_schemes:
+ * @self: a #TpAccount
+ *
+ * If the %TP_ACCOUNT_FEATURE_ADDRESSING feature has been prepared
+ * successfully, return a list of additional URI schemes for which this
+ * account should be used if possible. Otherwise return %NULL.
+ *
+ * For instance, a SIP or Skype account might have "tel" in this list if the
+ * user would like to use that account to call phone numbers.
+ *
+ * This list should not contain the primary URI scheme(s) for the account's
+ * protocol (for instance, "xmpp" for XMPP, or "sip" or "sips" for SIP),
+ * since it should be assumed to be useful for those schemes in any case.
+ *
+ * Returns: (transfer none): a list of URI schemes, or %NULL
+ *
+ * Since: 0.13.UNRELEASED
+ */
+const gchar * const *
+tp_account_get_uri_schemes (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  return (const gchar * const *) self->priv->uri_schemes;
+}
+
+/**
+ * tp_account_associated_with_uri_scheme:
+ * @self: a #TpAccount
+ * @scheme: (transfer none): a URI scheme such as "tel", "sip" or "xmpp"
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if the result of tp_account_get_uri_schemes() would include
+ *  @scheme
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_account_associated_with_uri_scheme (TpAccount *self,
+    const gchar *scheme)
+{
+  return tp_strv_contains (tp_account_get_uri_schemes (self), scheme);
+}
+
+/**
+ * tp_account_set_uri_scheme_association_async:
+ * @self: a #TpAccount
+ * @scheme: a non-%NULL URI scheme such as "tel"
+ * @associate: %TRUE to use this account for @scheme, or %FALSE to not use it
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Add @scheme to the list of additional URI schemes that would be returned
+ * by tp_account_get_uri_schemes(), or remove it from that list.
+ *
+ * @scheme should not be the primary URI scheme for the account's
+ * protocol (for instance, "xmpp" for XMPP, or "sip" or "sips" for SIP),
+ * since the account should be assumed to be useful for those schemes
+ * regardless of the contents of the list.
+ *
+ * Calling this method does not require the %TP_ACCOUNT_FEATURE_ADDRESSING
+ * feature to be enabled, but the change will not be reflected in the result
+ * of tp_account_get_uri_schemes() or tp_account_associated_with_uri_scheme()
+ * unless that feature has been enabled.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_account_set_uri_scheme_association_async (TpAccount *self,
+    const gchar *scheme,
+    gboolean associate,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_ACCOUNT (self));
+  g_return_if_fail (scheme != NULL);
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_account_set_uri_scheme_association_finish);
+
+  tp_cli_account_interface_addressing_call_set_uri_scheme_association (
+      self, -1, scheme, associate,
+      _tp_account_void_cb, result, NULL, NULL);
+}
+
+/**
+ * tp_account_set_uri_scheme_association_finish:
+ * @self: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Interpret the result of tp_account_set_uri_scheme_association_async().
+ *
+ * Returns: %TRUE if the call was successful, otherwise %FALSE
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_account_set_uri_scheme_association_finish (TpAccount *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (self), tp_account_set_uri_scheme_association_async),
+      FALSE);
+
+  return TRUE;
 }
