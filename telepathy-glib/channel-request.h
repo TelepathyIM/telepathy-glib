@@ -74,6 +74,9 @@ void tp_channel_request_init_known_interfaces (void);
 void tp_channel_request_set_channel_factory (TpChannelRequest *self,
     TpClientChannelFactory *factory);
 
+const GHashTable * tp_channel_request_get_immutable_properties (
+    TpChannelRequest *self);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel-request.h>

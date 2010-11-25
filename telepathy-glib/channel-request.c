@@ -26,6 +26,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
@@ -99,12 +100,15 @@ enum {
 };
 
 enum {
-  PROP_CHANNEL_FACTORY = 1
+  PROP_CHANNEL_FACTORY = 1,
+  PROP_IMMUTABLE_PROPERTIES,
 };
 
 static guint signals[N_SIGNALS] = { 0 };
 
 struct _TpChannelRequestPrivate {
+    GHashTable *immutable_properties;
+
     TpClientChannelFactory *channel_factory;
 };
 
@@ -132,6 +136,11 @@ tp_channel_request_set_property (GObject *object,
         self->priv->channel_factory = g_value_dup_object (value);
         break;
 
+      case PROP_IMMUTABLE_PROPERTIES:
+        g_assert (self->priv->immutable_properties == NULL);
+        self->priv->immutable_properties = g_value_dup_boxed (value);
+        break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -150,6 +159,10 @@ tp_channel_request_get_property (GObject *object,
     {
       case PROP_CHANNEL_FACTORY:
         g_value_set_object (value, self->priv->channel_factory);
+        break;
+
+      case PROP_IMMUTABLE_PROPERTIES:
+        g_value_set_boxed (value, self->priv->immutable_properties);
         break;
 
       default:
@@ -285,6 +298,7 @@ tp_channel_request_dispose (GObject *object)
   void (*dispose) (GObject *) =
     G_OBJECT_CLASS (tp_channel_request_parent_class)->dispose;
 
+  tp_clear_pointer (&self->priv->immutable_properties, g_hash_table_unref);
   tp_clear_object (&self->priv->channel_factory);
 
   if (dispose != NULL)
@@ -327,6 +341,28 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
       G_TYPE_OBJECT,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNEL_FACTORY,
+      param_spec);
+
+  /**
+   * TpChannelRequest:immutable-properties:
+   *
+   * The immutable D-Bus properties of this channel request, represented by a
+   * #GHashTable where the keys are D-Bus interface name + "." + property
+   * name, and the values are #GValue instances.
+   *
+   * Note that this property is set only if the immutable properties have been
+   * set during the construction of the #TpChannelRequest.
+   *
+   * Read-only except during construction.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("immutable-properties",
+      "Immutable D-Bus properties",
+      "A map D-Bus interface + \".\" + property name => GValue",
+      TP_HASH_TYPE_QUALIFIED_PROPERTY_VALUE_MAP,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_IMMUTABLE_PROPERTIES,
       param_spec);
 
   /**
@@ -417,8 +453,6 @@ tp_channel_request_init_known_interfaces (void)
  * is responsible for calling tp_cli_channel_request_call_proceed() when it
  * is ready for the channel request to proceed.
  *
- * The @immutable_properties argument is not yet used.
- *
  * Returns: a new reference to an channel request proxy, or %NULL if
  *    @object_path is not syntactically valid or the channel dispatcher is
  *    not running
@@ -426,7 +460,7 @@ tp_channel_request_init_known_interfaces (void)
 TpChannelRequest *
 tp_channel_request_new (TpDBusDaemon *bus_daemon,
     const gchar *object_path,
-    GHashTable *immutable_properties G_GNUC_UNUSED,
+    GHashTable *immutable_properties,
     GError **error)
 {
   TpChannelRequest *self;
@@ -448,6 +482,7 @@ tp_channel_request_new (TpDBusDaemon *bus_daemon,
         "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
         "bus-name", unique_name,
         "object-path", object_path,
+        "immutable-properties", immutable_properties,
         NULL));
 
   g_free (unique_name);
@@ -472,4 +507,23 @@ tp_channel_request_set_channel_factory (TpChannelRequest *self,
   tp_clear_object (&self->priv->channel_factory);
   self->priv->channel_factory = g_object_ref (factory);
   g_object_notify (G_OBJECT (self), "channel-factory");
+}
+
+/**
+ * tp_channel_request_get_immutable_properties:
+ * @self: a #TpChannelRequest
+ *
+ * Return the #TpChannelRequest:immutable-properties construct-only property
+ *
+ * Returns: (transfer none): the value of
+ * #TpChannelRequest:immutable-properties
+ *
+ * Since: 0.13.UNRELEASED
+ */
+const GHashTable *
+tp_channel_request_get_immutable_properties (TpChannelRequest *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
+
+  return self->priv->immutable_properties;
 }
