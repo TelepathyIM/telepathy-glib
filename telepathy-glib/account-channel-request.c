@@ -189,7 +189,7 @@ tp_account_channel_request_get_property (GObject *object,
         break;
 
       case PROP_REQUEST:
-        g_value_set_object (value, self->priv->request);
+        g_value_set_boxed (value, self->priv->request);
         break;
 
       case PROP_USER_ACTION_TIME:
