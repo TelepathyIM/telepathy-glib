@@ -386,6 +386,32 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
+ * TpBaseProtocolGetAvatarDetailsFunc:
+ * @self: a protocol
+ * @supported_mime_types: (out) (transfer full): used to return a
+ *  %NULL-terminated array of supported avatar mime types
+ * @min_height: (out): used to return the minimum height in pixels of an
+ *  avatar on this protocol, which may be 0
+ * @min_width: (out): used to return the minimum width in pixels of an avatar
+ *  on this protocol, which may be 0
+ * @rec_height: (out): used to return the rec height in pixels
+ *  of an avatar on this protocol, or 0 if there is no preferred height
+ * @rec_width: (out): used to return the rec width in pixels
+ *  of an avatar on this protocol, or 0 if there is no preferred width
+ * @max_height: (out): used to return the maximum height in pixels of an
+ *  avatar on this protocol, or 0 if there is no limit
+ * @max_width: (out): used to return the maximum width in pixels of an avatar
+ *  on this protocol, or 0 if there is no limit
+ * @max_bytes: (out): used to return the maximum size in bytes of an avatar on
+ *  this protocol, or 0 if there is no limit
+ *
+ * Signature of a virtual method to get the supported avatar details for the
+ * protocol implemented by @self.
+ *
+ * Since: 0.13.6
+ */
+
+/**
  * TpBaseProtocolClass:
  * @parent_class: the parent class
  * @dbus_properties_class: a D-Bus properties mixin
@@ -429,7 +455,21 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseProtocol, tp_base_protocol,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL, protocol_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_PRESENCE,
-      presence_iface_init))
+      presence_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_AVATARS,
+        NULL))
+
+typedef struct
+{
+  gchar **supported_mime_types;
+  guint min_height;
+  guint min_width;
+  guint rec_height;
+  guint rec_width;
+  guint max_height;
+  guint max_width;
+  guint max_bytes;
+} AvatarSpecs;
 
 struct _TpBaseProtocolPrivate
 {
@@ -440,6 +480,7 @@ struct _TpBaseProtocolPrivate
   gchar *icon;
   gchar *english_name;
   gchar *vcard_field;
+  AvatarSpecs avatar_specs;
 };
 
 enum
@@ -542,6 +583,22 @@ tp_base_protocol_constructed (GObject *object)
       self->priv->english_name = g_strdup ("");
       self->priv->vcard_field = g_strdup ("");
     }
+
+  if (cls->get_avatar_details != NULL)
+    {
+      (cls->get_avatar_details) (self,
+          &self->priv->avatar_specs.supported_mime_types,
+          &self->priv->avatar_specs.min_height,
+          &self->priv->avatar_specs.min_width,
+          &self->priv->avatar_specs.rec_height,
+          &self->priv->avatar_specs.rec_width,
+          &self->priv->avatar_specs.max_height,
+          &self->priv->avatar_specs.max_width,
+          &self->priv->avatar_specs.max_bytes);
+    }
+
+  if (self->priv->avatar_specs.supported_mime_types == NULL)
+    self->priv->avatar_specs.supported_mime_types = g_new0 (gchar *, 1);
 }
 
 /**
@@ -677,6 +734,8 @@ tp_base_protocol_finalize (GObject *object)
   g_free (self->priv->english_name);
   g_free (self->priv->vcard_field);
 
+  g_strfreev (self->priv->avatar_specs.supported_mime_types);
+
   if (self->priv->requestable_channel_classes != NULL)
     g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
         self->priv->requestable_channel_classes);
@@ -701,6 +760,17 @@ typedef enum {
     N_PPP
 } ProtocolPresenceProp;
 
+typedef enum {
+    PAP_SUPPORTED_AVATAR_MIME_TYPES,
+    PAP_MIN_AVATAR_HEIGHT,
+    PAP_MIN_AVATAR_WIDTH,
+    PAP_REC_AVATAR_HEIGHT,
+    PAP_REC_AVATAR_WIDTH,
+    PAP_MAX_AVATAR_HEIGHT,
+    PAP_MAX_AVATAR_WIDTH,
+    PAP_MAX_AVATAR_BYTES,
+    N_PPA
+} ProtocolAvatarProp;
 
 static void
 protocol_prop_presence_getter (GObject *object,
@@ -758,6 +828,55 @@ protocol_prop_presence_getter (GObject *object,
 
           g_value_take_boxed (value, ret);
         }
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
+}
+
+static void
+protocol_prop_avatar_getter (GObject *object,
+    GQuark iface G_GNUC_UNUSED,
+    GQuark name G_GNUC_UNUSED,
+    GValue *value,
+    gpointer getter_data)
+{
+  TpBaseProtocol *self = (TpBaseProtocol *) object;
+
+  switch (GPOINTER_TO_INT (getter_data))
+    {
+      case PAP_SUPPORTED_AVATAR_MIME_TYPES:
+        g_value_set_boxed (value,
+            self->priv->avatar_specs.supported_mime_types);
+        break;
+
+      case PAP_MIN_AVATAR_HEIGHT:
+        g_value_set_uint (value, self->priv->avatar_specs.min_height);
+        break;
+
+      case PAP_MIN_AVATAR_WIDTH:
+        g_value_set_uint (value, self->priv->avatar_specs.min_width);
+        break;
+
+      case PAP_REC_AVATAR_HEIGHT:
+        g_value_set_uint (value, self->priv->avatar_specs.rec_height);
+        break;
+
+      case PAP_REC_AVATAR_WIDTH:
+        g_value_set_uint (value, self->priv->avatar_specs.rec_width);
+        break;
+
+      case PAP_MAX_AVATAR_HEIGHT:
+        g_value_set_uint (value, self->priv->avatar_specs.max_height);
+        break;
+
+      case PAP_MAX_AVATAR_WIDTH:
+        g_value_set_uint (value, self->priv->avatar_specs.max_width);
+        break;
+
+      case PAP_MAX_AVATAR_BYTES:
+        g_value_set_uint (value, self->priv->avatar_specs.max_bytes);
         break;
 
       default:
@@ -842,12 +961,30 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
       { NULL }
   };
 
+  static TpDBusPropertiesMixinPropImpl avatar_props[] = {
+      { "SupportedAvatarMIMETypes",
+        GINT_TO_POINTER (PAP_SUPPORTED_AVATAR_MIME_TYPES), NULL },
+      { "MinimumAvatarHeight", GINT_TO_POINTER (PAP_MIN_AVATAR_HEIGHT), NULL },
+      { "MinimumAvatarWidth", GINT_TO_POINTER (PAP_MIN_AVATAR_WIDTH), NULL },
+      { "RecommendedAvatarHeight",
+        GINT_TO_POINTER (PAP_REC_AVATAR_HEIGHT), NULL },
+      { "RecommendedAvatarWidth",
+        GINT_TO_POINTER (PAP_REC_AVATAR_WIDTH), NULL },
+      { "MaximumAvatarHeight", GINT_TO_POINTER (PAP_MAX_AVATAR_HEIGHT), NULL },
+      { "MaximumAvatarWidth", GINT_TO_POINTER (PAP_MAX_AVATAR_WIDTH), NULL },
+      { "MaximumAvatarBytes", GINT_TO_POINTER (PAP_MAX_AVATAR_BYTES), NULL },
+      { NULL }
+  };
+
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_PROTOCOL, protocol_properties_getter, NULL, channel_props },
       { TP_IFACE_PROTOCOL_INTERFACE_PRESENCE, protocol_prop_presence_getter,
         NULL, presence_props },
+      { TP_IFACE_PROTOCOL_INTERFACE_AVATARS, protocol_prop_avatar_getter,
+        NULL, avatar_props },
       { NULL }
   };
+
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (TpBaseProtocolPrivate));

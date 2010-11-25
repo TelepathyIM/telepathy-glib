@@ -112,6 +112,16 @@ const gchar * const expected_interfaces[] = {
     TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
     NULL };
 
+const gchar * const expected_protocol_interfaces[] = {
+    TP_IFACE_PROTOCOL_INTERFACE_AVATARS,
+    NULL };
+
+const gchar * const expected_supported_avatar_mime_types[] = {
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  NULL };
+
 static void
 test_protocol_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
@@ -129,8 +139,9 @@ test_protocol_properties (Test *test,
       TP_IFACE_PROTOCOL, &properties, &test->error, NULL);
   g_assert_no_error (test->error);
 
-  test_assert_empty_strv (tp_asv_get_boxed (properties, "Interfaces",
-        G_TYPE_STRV));
+  tp_tests_assert_strv_equals (
+      tp_asv_get_boxed (properties, "Interfaces", G_TYPE_STRV),
+      expected_protocol_interfaces);
 
   g_assert_cmpstr (tp_asv_get_string (properties, "Icon"), ==, "im-icq");
   g_assert_cmpstr (tp_asv_get_string (properties, "EnglishName"), ==,
@@ -163,6 +174,55 @@ test_protocol_properties (Test *test,
 }
 
 static void
+test_protocol_avatar_properties (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *properties = NULL;
+  gboolean is_set;
+  guint num;
+
+  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
+      "example", NULL, NULL);
+  g_assert (test->protocol != NULL);
+
+  tp_cli_dbus_properties_run_get_all (test->protocol, -1,
+      TP_IFACE_PROTOCOL_INTERFACE_AVATARS, &properties, &test->error, NULL);
+  g_assert_no_error (test->error);
+
+  tp_tests_assert_strv_equals (
+      tp_asv_get_boxed (properties, "SupportedAvatarMIMETypes", G_TYPE_STRV),
+      expected_supported_avatar_mime_types);
+
+  num = tp_asv_get_uint32 (properties, "MinimumAvatarHeight", &is_set);
+  g_assert (is_set);
+  g_assert_cmpuint (num, ==, 32);
+
+  num = tp_asv_get_uint32 (properties, "MinimumAvatarWidth", &is_set);
+  g_assert (is_set);
+  g_assert_cmpuint (num, ==, 32);
+
+  num = tp_asv_get_uint32 (properties, "RecommendedAvatarHeight", &is_set);
+  g_assert (is_set);
+  g_assert_cmpuint (num, ==, 64);
+
+  num = tp_asv_get_uint32 (properties, "RecommendedAvatarWidth", &is_set);
+  g_assert (is_set);
+  g_assert_cmpuint (num, ==, 64);
+
+  num = tp_asv_get_uint32 (properties, "MaximumAvatarHeight", &is_set);
+  g_assert (is_set);
+  g_assert_cmpuint (num, ==, 96);
+
+  num = tp_asv_get_uint32 (properties, "MaximumAvatarWidth", &is_set);
+  g_assert (is_set);
+  g_assert_cmpuint (num, ==, 96);
+
+  num = tp_asv_get_uint32 (properties, "MaximumAvatarBytes", &is_set);
+  g_assert (is_set);
+  g_assert_cmpuint (num, ==, 37748736);
+}
+
+static void
 test_protocols_property (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -189,8 +249,9 @@ test_protocols_property (Test *test,
   pp = g_hash_table_lookup (protocols, "example");
   g_assert (pp != NULL);
 
-  test_assert_empty_strv (tp_asv_get_boxed (pp, TP_PROP_PROTOCOL_INTERFACES,
-        G_TYPE_STRV));
+  tp_tests_assert_strv_equals (
+      tp_asv_get_boxed (pp, TP_PROP_PROTOCOL_INTERFACES, G_TYPE_STRV),
+      expected_protocol_interfaces);
 
   g_assert_cmpstr (tp_asv_get_string (pp, TP_PROP_PROTOCOL_ICON), ==,
       "im-icq");
@@ -371,6 +432,8 @@ main (int argc,
 
   g_test_add ("/protocol-objects/protocol-properties", Test, NULL, setup,
       test_protocol_properties, teardown);
+  g_test_add ("/protocol-objects/protocol-avatar-properties", Test, NULL,
+      setup, test_protocol_avatar_properties, teardown);
   g_test_add ("/protocol-objects/protocols-property", Test, NULL, setup,
       test_protocols_property, teardown);
   g_test_add ("/protocol-objects/protocols-property-old", Test, NULL, setup,

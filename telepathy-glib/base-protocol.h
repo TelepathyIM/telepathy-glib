@@ -124,6 +124,16 @@ typedef void (*TpBaseProtocolGetConnectionDetailsFunc) (TpBaseProtocol *self,
     gchar **english_name,
     gchar **vcard_field);
 
+typedef void (*TpBaseProtocolGetAvatarDetailsFunc) (TpBaseProtocol *self,
+    GStrv *supported_mime_types,
+    guint *min_height,
+    guint *min_width,
+    guint *recommended_height,
+    guint *recommended_width,
+    guint *max_height,
+    guint *max_width,
+    guint *max_bytes);
+
 struct _TpBaseProtocolClass
 {
   GObjectClass parent_class;
@@ -153,8 +163,10 @@ struct _TpBaseProtocolClass
 
   const TpPresenceStatusSpec * (*get_statuses) (TpBaseProtocol *self);
 
+  TpBaseProtocolGetAvatarDetailsFunc get_avatar_details;
+
   /*<private>*/
-  GCallback padding[7];
+  GCallback padding[6];
   TpBaseProtocolClassPrivate *priv;
 };
 
