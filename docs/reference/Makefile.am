@@ -78,7 +78,7 @@ IGNORE_HFILES=\
     protocol-internal.h \
     proxy-internal.h \
     proxy-introspectable.h \
-    simple-password-channel.h \
+    simple-password-channel-internal.h \
     util-internal.h
 
 # Images to copy into HTML directory.

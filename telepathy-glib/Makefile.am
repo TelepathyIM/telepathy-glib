@@ -214,7 +214,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     simple-handler.c \
     simple-observer.c \
     simple-password-manager.c \
-    simple-password-channel.h \
+    simple-password-channel-internal.h \
     simple-password-channel.c \
     stream-tube-channel.c \
     stream-tube-connection-internal.h \

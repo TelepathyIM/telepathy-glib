@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "telepathy-glib/simple-password-channel.h"
+#include "telepathy-glib/simple-password-channel-internal.h"
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
