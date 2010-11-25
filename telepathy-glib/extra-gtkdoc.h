@@ -880,7 +880,7 @@
  * as presence notifications. This section documents auto-generated C
  * wrappers for the PowerSaving D-Bus interface.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.7
  */
 
 /**
@@ -891,7 +891,7 @@
  * The ServerAuthentication channel type represents a request for client/UI
  * processes to carry out authentication with a server.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.7
  */
 
 /**
@@ -906,7 +906,7 @@
  * allows providing a simple password to the connection manager for it to
  * use with SASL or non-SASL mechanisms.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.7
  */
 
 /**
@@ -917,5 +917,5 @@
  * The Securable channel interface represents a channel that might be
  * end-to-end encrypted and/or protected from man-in-the-middle attacks.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.7
  */

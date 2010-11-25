@@ -408,7 +408,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Signature of a virtual method to get the supported avatar details for the
  * protocol implemented by @self.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.7
  */
 
 /**
@@ -441,7 +441,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * @get_statuses: a callback used to implement the Protocol.Interface.Presence
  * interface's Statuses property. Since 0.13.5
  * @get_avatar_details: a callback used to implement the
- *  Protocol.Interface.Avatars interface's properties. Since 0.13.UNRELEASED
+ *  Protocol.Interface.Avatars interface's properties. Since 0.13.7
  *
  * The class of a #TpBaseProtocol.
  *

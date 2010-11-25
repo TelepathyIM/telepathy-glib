@@ -208,12 +208,12 @@
  *     understand each other, or an apparently impossible situation is
  *     reached. This has a similar meaning to %TP_DBUS_ERROR_INCONSISTENT but
  *     can be passed between processes via D-Bus.
- *     Since: 0.13.UNRELEASED
+ *     Since: 0.13.7
  * @TP_ERROR_SERVICE_CONFUSED: org.freedesktop.Telepathy.Error.ServiceConfused:
  *     Raised when a server or other piece of infrastructure indicates an
  *     internal error, or when a message that makes no sense is received from
  *     a server or other piece of infrastructure.
- *     Since: 0.13.UNRELEASED
+ *     Since: 0.13.7
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */
