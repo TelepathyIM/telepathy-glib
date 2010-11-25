@@ -1,5 +1,5 @@
 /*
- * simple_password-manager.c - Source for TpSimplePasswordManager
+ * simple-password-manager.c - Source for TpSimplePasswordManager
  * Copyright (C) 2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
@@ -15,6 +15,55 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+/**
+ * SECTION:simple-password-manager
+ * @title: TpSimplePasswordManager
+ * @short_description: a simple X-TELEPATHY-PASSWORD channel manager
+ *
+ * This class makes it easy to implement the X-TELEPATHY-PASSWORD SASL
+ * mechanism in a connection manger. It implements the
+ * #TpChannelManager interface and pops up a ServerAuthentication
+ * channel when tp_simple_password_manager_prompt_async() is called to
+ * enable a channel handler to pass in the password using the
+ * appropriate D-Bus methods.
+ *
+ * This channel manager is only useful for connection managers only
+ * wanting to implement the X-TELEPATHY-PASSWORD SASL mechanism in
+ * authentication channels. For connections with more SASL mechanisms,
+ * the channel manager and channel itself should be reimplemented to
+ * support the desired mechanisms.
+ *
+ * A new #TpSimplePasswordManager object should be created in the
+ * #TpBaseConnectionClass->create_channel_managers implementation and
+ * added to the #GPtrArray of channel managers. Then, in the
+ * #TpBaseConnectionClass->start_connecting implementation, once the
+ * connection status has been changed to CONNECTING, the connection
+ * should check whether a password parameter was given when creating
+ * the connection through RequestConnection. If a password is present,
+ * the connection should go ahead and use it. If it is not present,
+ * tp_simple_password_manager_prompt_async() should be called.
+ *
+ * Once a password is retrieved using the server authentication
+ * channel, or an error is occurred, the callback that was passed to
+ * tp_simple_password_manager_prompt_async() is called and the
+ * connection should call tp_simple_password_manager_prompt_finish()
+ * to get the result of the process. If the #GString returned from
+ * said finish function is non-#NULL, the connection can then proceed
+ * with that password, otherwise the connection must deal with the
+ * error reached.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpSimplePasswordManager:
+ *
+ * A helper channel manager to manage X-TELEPATHY-PASSWORD
+ * ServerAuthentication channels.
+ *
+ * Since: 0.13.UNRELEASED
  */
 
 #include "telepathy-glib/simple-password-manager.h"
@@ -226,7 +275,15 @@ channel_manager_iface_init (gpointer g_iface,
   iface->ensure_channel = NULL;
 }
 
-
+/**
+ * tp_simple_password_manager_new:
+ * @connection: a #TpBaseConnection
+ *
+ * Creates a new simple server authentication channel manager.
+ *
+ * Returns: a new reference to a server authentication channel
+ *  manager.
+ */
 TpSimplePasswordManager *
 tp_simple_password_manager_new (TpBaseConnection *connection)
 {
@@ -269,6 +326,22 @@ tp_simple_password_manager_channel_finished_cb (
   g_object_unref (result);
 }
 
+/**
+ * tp_simple_password_manager_prompt_async:
+ * @self: a #TpSimplePasswordManager
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Pops up a new server authentication channel and handles the
+ * X-TELEPATHY-PASSWORD mechanism to obtain a password for the
+ * connection.
+ *
+ * When the operation is finished, @callback will be called. You must then
+ * call tp_simple_password_manager_prompt_finish() to get the
+ * result of the request.
+ *
+ * Since: 0.13.UNRELEASED
+ */
 void
 tp_simple_password_manager_prompt_async (
     TpSimplePasswordManager *self,
@@ -311,6 +384,20 @@ tp_simple_password_manager_prompt_async (
       TP_EXPORTABLE_CHANNEL (priv->channel), NULL);
 }
 
+/**
+ * tp_simple_password_manager_prompt_finish:
+ * @self: a #TpSimplePasswordManager
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Retrieve the value of the request begun with
+ * tp_simple_password_manager_prompt_async().
+ *
+ * Returns: a #GString with the password (or byte-blob) retrieved
+ *  by @manager
+ *
+ * Since: 0.13.UNRELEASED
+ */
 const GString *
 tp_simple_password_manager_prompt_finish (
     TpSimplePasswordManager *self,
