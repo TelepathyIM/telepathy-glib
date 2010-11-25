@@ -85,6 +85,8 @@ typedef enum {
     TP_ERROR_NOT_YET, /*< nick=NotYet >*/
     TP_ERROR_REJECTED, /*< nick=Rejected >*/
     TP_ERROR_PICKED_UP_ELSEWHERE, /*< nick=PickedUpElsewhere >*/
+    TP_ERROR_CONFUSED, /*< nick=Confused >*/
+    TP_ERROR_SERVICE_CONFUSED, /*< nick=ServiceConfused >*/
 } TpError;
 
 const gchar *tp_error_get_dbus_name (TpError error);

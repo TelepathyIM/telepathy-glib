@@ -65,15 +65,22 @@
       </tp:docstring>
     </property>
 
-    <property name="RemoteContactCodecMap"
-      tp:name-for-bindings="Remote_Contact_Codec_Map"
-      type="a{ua(usuua{ss})}" tp:type="Contact_Codec_Map" access="read"
+    <property name="RemoteContactCodecs"
+      tp:name-for-bindings="Remote_Contact_Codecs"
+      type="a(usuua{ss})" tp:type="Codec[]" access="read"
       tp:immutable="yes">
       <tp:docstring>
-        A map from remote contact to the list of codecs he or she
-        supports.
+        A list of codecs the remote contact supports.
       </tp:docstring>
     </property>
+
+    <property name="RemoteContact" tp:name-for-bindings="Remote_Contact"
+      type="u" tp:type="Contact_Handle" access="read" tp:immutable="yes">
+      <tp:docstring>
+        The contact handle that this codec offer applies to.
+      </tp:docstring>
+    </property>
+
 
   </interface>
 </node>

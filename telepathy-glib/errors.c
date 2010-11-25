@@ -202,6 +202,18 @@
  *     Raised when a call was terminated as a result of the local user
  *     picking up the call on a different resource.
  *     Since: 0.13.3
+ * @TP_ERROR_CONFUSED: org.freedesktop.Telepathy.Error.Confused:
+ *     Raised if a server rejects protocol messages from a connection manager
+ *     claiming that they do not make sense, two local processes fail to
+ *     understand each other, or an apparently impossible situation is
+ *     reached. This has a similar meaning to %TP_DBUS_ERROR_INCONSISTENT but
+ *     can be passed between processes via D-Bus.
+ *     Since: 0.13.UNRELEASED
+ * @TP_ERROR_SERVICE_CONFUSED: org.freedesktop.Telepathy.Error.ServiceConfused:
+ *     Raised when a server or other piece of infrastructure indicates an
+ *     internal error, or when a message that makes no sense is received from
+ *     a server or other piece of infrastructure.
+ *     Since: 0.13.UNRELEASED
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

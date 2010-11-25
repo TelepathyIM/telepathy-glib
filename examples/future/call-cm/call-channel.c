@@ -458,7 +458,7 @@ get_property (GObject *object,
     case PROP_INITIAL_TRANSPORT:
       /* this implementation has hardware_streaming, so the initial
        * transport is rather meaningless */
-      g_value_set_static_string (value, "");
+      g_value_set_uint (value, FUTURE_STREAM_TRANSPORT_TYPE_UNKNOWN);
       break;
 
     case PROP_CALL_MEMBERS:
@@ -837,9 +837,10 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
   g_object_class_install_property (object_class, PROP_CALL_MEMBERS,
       param_spec);
 
-  param_spec = g_param_spec_string ("initial-transport", "Initial transport",
+  param_spec = g_param_spec_uint ("initial-transport", "Initial transport",
       "The initial transport for this channel (there is none)",
-      "",
+      0, NUM_FUTURE_STREAM_TRANSPORT_TYPES,
+      FUTURE_STREAM_TRANSPORT_TYPE_UNKNOWN,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INITIAL_TRANSPORT,
       param_spec);

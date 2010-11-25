@@ -36,25 +36,82 @@
         in a device specific hardware way and the CM does not need
         to concern itself with codecs.</p>
 
-      <p>On new <tp:dbus-ref
-        namespace="ofdT.Channel.Type">Call.DRAFT</tp:dbus-ref> channels,
-        handlers should wait for <tp:dbus-ref
-        namespace="ofdT.Call.Content">CodecOffer.DRAFT</tp:dbus-ref>
-        objects to appear (one will either already be present, or will
-        appear at some point in the channel's lifetime).</p>
+      <h4>Codec negotiation</h4>
 
-      <p>If the Call is incoming, then the codec offer's <tp:dbus-ref
-        namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecMap</tp:dbus-ref>
-        will already be filled with the codec information of the
-        remote contacts. Depending on the protocol, an outgoing call's
+      <p>When a new <tp:dbus-ref
+        namespace="ofdT.Channel.Type">Call.DRAFT</tp:dbus-ref> channel
+        appears, whether it was requested or not, a <tp:dbus-ref
+        namespace="ofdT.Call.Content">CodecOffer.DRAFT</tp:dbus-ref>
+        will either be waiting in the
+        <tp:member-ref>CodecOffer</tp:member-ref> property, or will
+        appear at some point via the
+        <tp:member-ref>NewCodecOffer</tp:member-ref> signal.</p>
+
+      <p>The <tp:dbus-ref
+        namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecs</tp:dbus-ref>
+        property on the codec offer lists the codecs which are
+        supported by the remote contact, and so will determine the
+        codecs that should be proposed by the local user's streaming
+        implementation. An empty list means all codecs can be proposed.</p>
+
+      <p>For incoming calls on protocols where codecs are proposed when
+        starting the call (for example, <a
+        href="http://xmpp.org/extensions/xep-0166.html">Jingle</a>),
+        the <tp:dbus-ref
+        namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecs</tp:dbus-ref>
+        will contain information on the codecs that have already been
+        proposed by the remote contact, otherwise the codec map will
+        be the empty list.</p>
+
+      <p>The streaming implementation should look at the remote codec
+        map and the codecs known by the local user and call
         <tp:dbus-ref
-        namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecMap</tp:dbus-ref>
-        will either be filled with remote contact codec information, or
-        it will be empty. If empty, then this SHOULD be interpreted to
-        mean that all codecs are supported. Once a compatible list of
-        codecs has been decided, <tp:dbus-ref
         namespace="ofdT.Call.Content">CodecOffer.DRAFT.Accept</tp:dbus-ref>
-        should be called with the details of these codecs.</p>
+        on the intersection of these two codec lists.</p>
+
+      <p>This means that in practice, outgoing calls will have a codec
+        offer pop up with no information in the <tp:dbus-ref
+        namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecs</tp:dbus-ref>,
+        so the local user will call <tp:dbus-ref
+        namespace="ofdT.Call.Content.CodecOffer.DRAFT">Accept</tp:dbus-ref>
+        with the list of all codecs supported. If this codec offer is
+        accepted, then <tp:member-ref>CodecsChanged</tp:member-ref>
+        will fire with the details of the codecs passed into
+        <tp:dbus-ref
+        namespace="ofdT.Call.Content.CodecOffer.DRAFT">Accept</tp:dbus-ref>. If
+        the call is incoming, then the <tp:dbus-ref
+        namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecs</tp:dbus-ref>
+        will contain details of the remote contact's codecs and the
+        local user will call <tp:dbus-ref
+        namespace="ofdT.Call.Content.CodecOffer.DRAFT">Accept</tp:dbus-ref>
+        with the codecs that both sides understand. After the codec
+        set is accepted, <tp:member-ref>CodecsChanged</tp:member-ref>
+        will fire to signal this change.</p>
+
+      <h4>Protocols without codec negotiation</h4>
+
+      <p>For protocols where the codecs are not negotiable, instead of
+        popping up the initial content's <tp:dbus-ref
+        namespace="ofdT.Call.Content">CodecOffer.DRAFT</tp:dbus-ref>
+        object with an empty <tp:dbus-ref
+        namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecs</tp:dbus-ref>,
+        the CM should set the supported codec values to known codec
+        values in the said object's codec map.</p>
+
+      <h4>Changing codecs mid-call</h4>
+
+      <p>To update the codec list used mid-call, the
+        <tp:member-ref>UpdateCodecs</tp:member-ref> method should be
+        called with details of the new codec list. If this is
+        accepted, then <tp:member-ref>CodecsChanged</tp:member-ref>
+        will be emitted with the new codec set.</p>
+
+      <p>If the other side decides to update his or her codec list
+        during a call, a new <tp:dbus-ref
+        namespace="ofdT.Call.Content">CodecOffer.DRAFT</tp:dbus-ref>
+        object will appear through
+        <tp:member-ref>NewCodecOffer</tp:member-ref> which should be
+        acted on as documented above.</p>
 
     </tp:docstring>
 
@@ -116,11 +173,16 @@
           >CodecOffer.DRAFT</tp:dbus-ref>
         </tp:docstring>
       </tp:member>
-      <tp:member name="Remote_Contact_Codec_Map" type="a{ua(usuua{ss})}"
-          tp:type="Contact_Codec_Map">
+      <tp:member name="Remote_Contact" type="u" tp:type="Contact_Handle">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          The contact handle that this codec offer applies to.
+        </tp:docstring>
+      </tp:member>
+      <tp:member name="Remote_Contact_Codecs" type="a(usuua{ss})"
+          tp:type="Codec[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           The <tp:dbus-ref namespace="ofdT.Call.Content"
-          >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property
+          >CodecOffer.DRAFT.RemoteContactCodecs</tp:dbus-ref> property
           of the codec offer.
         </tp:docstring>
       </tp:member>
@@ -167,7 +229,14 @@
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
           <tp:docstring>
-            Raised when not used during an existing call to update the codec mapping.
+            Raised when a <tp:dbus-ref
+            namespace="ofdT.Call.Content">CodecOffer.DRAFT</tp:dbus-ref>
+            object exists and is referred to in the
+            <tp:member-ref>CodecOffer</tp:member-ref> property which
+            should be used instead of calling this method, or before
+            the content's initial <tp:dbus-ref
+            namespace="ofdT.Call.Content">CodecOffer.DRAFT</tp:dbus-ref>
+            object has appeared.
           </tp:docstring>
         </tp:error>
       </tp:possible-errors>
@@ -196,23 +265,28 @@
 
         <p>Emission of this signal indicates that the
           <tp:member-ref>CodecOffer</tp:member-ref> property has changed to
-          <code>(Offer, Codecs)</code>.</p>
+          <code>(Contact, Offer, Codecs)</code>.</p>
       </tp:docstring>
+      <arg name="Contact" type="u">
+        <tp:docstring>
+          The contact the codec offer belongs to.
+        </tp:docstring>
+      </arg>
       <arg name="Offer" type="o">
         <tp:docstring>
           The object path of the new codec offer. This replaces any previous
           codec offer.
         </tp:docstring>
       </arg>
-      <arg name="Codecs" type="a{ua(usuua{ss})}" tp:type="Contact_Codec_Map">
+      <arg name="Codecs" type="a(usuua{ss})" tp:type="Codec[]">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           <p>The <tp:dbus-ref namespace="ofdT.Call.Content"
-            >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property
+            >CodecOffer.DRAFT.RemoteContactCodecs</tp:dbus-ref> property
             of the codec offer.</p>
 
         <tp:rationale>
           Having the <tp:dbus-ref
-          namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecMap</tp:dbus-ref>
+          namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecs</tp:dbus-ref>
           property here saves a D-Bus round-trip - it shouldn't be
           necessary to get the property from the CodecOffer object, in
           practice.
@@ -222,21 +296,26 @@
     </signal>
 
     <property name="CodecOffer" tp:name-for-bindings="Codec_Offer"
-      type="(oa{ua(usuua{ss})})" tp:type="Codec_Offering" access="read">
+      type="(oua(usuua{ss}))" tp:type="Codec_Offering" access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The object path to the current
           <tp:dbus-ref namespace="ofdT.Call.Content"
-            >CodecOffer.DRAFT</tp:dbus-ref> object, and its
+            >CodecOffer.DRAFT</tp:dbus-ref> object, its
             <tp:dbus-ref namespace="ofdT.Call.Content"
-            >CodecOffer.DRAFT.RemoteContactCodecMap</tp:dbus-ref> property.
+            >CodecOffer.DRAFT.RemoteContact</tp:dbus-ref> and
+            <tp:dbus-ref namespace="ofdT.Call.Content"
+            >CodecOffer.DRAFT.RemoteContactCodecs</tp:dbus-ref> properties.
             If the object path is "/" then there isn't an outstanding
             codec offer, and the mapping MUST be empty.</p>
 
         <tp:rationale>
           Having the <tp:dbus-ref
-          namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecMap</tp:dbus-ref>
-          property here saves a D-Bus round-trip - it shouldn't be
-          necessary to get the property from the CodecOffer object, in
+          namespace="ofdT.Call.Content.CodecOffer.DRAFT"
+          >RemoteContact</tp:dbus-ref> and
+          <tp:dbus-ref namespace="ofdT.Call.Content.CodecOffer.DRAFT"
+          >RemoteContactCodecs</tp:dbus-ref>
+          properties here saves a D-Bus round-trip - it shouldn't be
+          necessary to get these properties from the CodecOffer object, in
           practice.
         </tp:rationale>
 
