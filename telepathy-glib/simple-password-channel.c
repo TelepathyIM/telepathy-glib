@@ -32,7 +32,7 @@
 
 static void sasl_auth_iface_init (gpointer g_iface, gpointer iface_data);
 
-G_DEFINE_TYPE_WITH_CODE (TpSimplePasswordChannel, tp_simple_password_channel,
+G_DEFINE_TYPE_WITH_CODE (TpSimplePasswordChannel, _tp_simple_password_channel,
     TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_SERVER_AUTHENTICATION,
         NULL);
@@ -91,7 +91,7 @@ struct _TpSimplePasswordChannelPrivate
 };
 
 static void
-tp_simple_password_channel_init (TpSimplePasswordChannel *self)
+_tp_simple_password_channel_init (TpSimplePasswordChannel *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_SIMPLE_PASSWORD_CHANNEL, TpSimplePasswordChannelPrivate);
@@ -107,8 +107,8 @@ tp_simple_password_channel_constructed (GObject *obj)
   TpHandleRepoIface *contact_handles = tp_base_connection_get_handles (
       base_conn, TP_HANDLE_TYPE_CONTACT);
 
-  if (((GObjectClass *) tp_simple_password_channel_parent_class)->constructed != NULL)
-    ((GObjectClass *) tp_simple_password_channel_parent_class)->constructed (obj);
+  if (((GObjectClass *) _tp_simple_password_channel_parent_class)->constructed != NULL)
+    ((GObjectClass *) _tp_simple_password_channel_parent_class)->constructed (obj);
 
   priv->sasl_error = g_strdup ("");
   priv->sasl_error_details = tp_asv_new (NULL, NULL);
@@ -174,7 +174,7 @@ static void tp_simple_password_channel_fill_immutable_properties (TpBaseChannel 
     GHashTable *properties);
 
 static void
-tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_password_channel_class)
+_tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_password_channel_class)
 {
   TpBaseChannelClass *chan_class = TP_BASE_CHANNEL_CLASS (
       tp_simple_password_channel_class);
@@ -337,8 +337,8 @@ tp_simple_password_channel_finalize (GObject *object)
       priv->password = NULL;
     }
 
-  if (G_OBJECT_CLASS (tp_simple_password_channel_parent_class)->finalize != NULL)
-    G_OBJECT_CLASS (tp_simple_password_channel_parent_class)->finalize (object);
+  if (G_OBJECT_CLASS (_tp_simple_password_channel_parent_class)->finalize != NULL)
+    G_OBJECT_CLASS (_tp_simple_password_channel_parent_class)->finalize (object);
 }
 
 static void
@@ -391,7 +391,7 @@ tp_simple_password_channel_fill_immutable_properties (TpBaseChannel *chan,
     GHashTable *properties)
 {
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_CLASS (
-      tp_simple_password_channel_parent_class);
+      _tp_simple_password_channel_parent_class);
 
   klass->fill_immutable_properties (chan, properties);
 

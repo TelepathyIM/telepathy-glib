@@ -45,11 +45,11 @@ struct _TpSimplePasswordChannel
   TpSimplePasswordChannelPrivate *priv;
 };
 
-GType tp_simple_password_channel_get_type (void);
+GType _tp_simple_password_channel_get_type (void);
 
 /* TYPE MACROS */
 #define TP_TYPE_SIMPLE_PASSWORD_CHANNEL \
-  (tp_simple_password_channel_get_type ())
+  (_tp_simple_password_channel_get_type ())
 #define TP_SIMPLE_PASSWORD_CHANNEL(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TYPE_SIMPLE_PASSWORD_CHANNEL,\
                               TpSimplePasswordChannel))
