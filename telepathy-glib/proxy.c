@@ -90,7 +90,8 @@ tp_dbus_errors_quark (void)
  * @TP_DBUS_ERROR_CANCELLED: Raised from calls that re-enter the main
  *  loop (*_run_*) if they are cancelled
  * @TP_DBUS_ERROR_INCONSISTENT: Raised if information received from a remote
- *  object is inconsistent or otherwise obviously wrong (added in 0.7.17)
+ *  object is inconsistent or otherwise obviously wrong (added in 0.7.17).
+ *  See also %TP_ERROR_CONFUSED.
  *
  * #GError codes for use with the %TP_DBUS_ERRORS domain.
  *
