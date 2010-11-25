@@ -306,15 +306,19 @@ static void
 tp_simple_password_manager_channel_finished_cb (
     TpSimplePasswordChannel *channel,
     const GString *str,
-    const GError *error,
+    guint domain,
+    gint code,
+    const gchar *message,
     gpointer user_data)
 {
   GSimpleAsyncResult *result = user_data;
 
-  if (error != NULL)
+  if (domain > 0)
     {
+      GError *error = g_error_new (domain, code, "%s", message);
       DEBUG ("Failed: %s", error->message);
       g_simple_async_result_set_from_error (result, error);
+      g_error_free (error);
     }
   else
     {

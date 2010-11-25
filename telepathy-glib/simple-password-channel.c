@@ -310,9 +310,9 @@ _tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_
       G_SIGNAL_RUN_LAST,
       0,
       NULL, NULL,
-      _tp_marshal_VOID__BOXED_POINTER,
-      G_TYPE_NONE, 2,
-      G_TYPE_GSTRING, G_TYPE_POINTER);
+      _tp_marshal_VOID__BOXED_UINT_INT_STRING,
+      G_TYPE_NONE, 4,
+      G_TYPE_GSTRING, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
 
   tp_simple_password_channel_class->properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
@@ -362,7 +362,6 @@ tp_simple_password_channel_close (TpBaseChannel *base)
 {
   TpSimplePasswordChannel *self = TP_SIMPLE_PASSWORD_CHANNEL (base);
   TpSimplePasswordChannelPrivate *priv = self->priv;
-  GError *error;
 
   DEBUG ("Called on %p", base);
 
@@ -376,10 +375,8 @@ tp_simple_password_channel_close (TpBaseChannel *base)
       tp_simple_password_channel_change_status (self,
           TP_SASL_STATUS_CLIENT_FAILED, TP_ERROR_STR_CANCELLED);
 
-      error = g_error_new (TP_ERRORS, TP_ERROR_CANCELLED,
-          "SimplePassword channel was closed");
-      g_signal_emit (self, signals[FINISHED], 0, NULL, error);
-      g_error_free (error);
+      g_signal_emit (self, signals[FINISHED], 0, NULL, TP_ERRORS,
+          TP_ERROR_CANCELLED, "SimplePassword channel was closed");
     }
 
   DEBUG ("Closing channel");
@@ -481,7 +478,7 @@ tp_simple_password_channel_accept_sasl (
   tp_simple_password_channel_change_status (channel,
       TP_SASL_STATUS_SUCCEEDED, "");
 
-  g_signal_emit (channel, signals[FINISHED], 0, priv->password, NULL);
+  g_signal_emit (channel, signals[FINISHED], 0, priv->password, 0, 0, NULL);
 
   tp_svc_channel_interface_sasl_authentication_return_from_accept_sasl (
       context);
@@ -509,8 +506,6 @@ tp_simple_password_channel_abort_sasl (
   if (priv->sasl_status != TP_SASL_STATUS_CLIENT_FAILED
       && priv->sasl_status != TP_SASL_STATUS_SERVER_FAILED)
     {
-      GError *error;
-
       DEBUG ("Aborting SASL because: %s", debug_message);
 
       /* we don't care about the reason; it'll always be User_Abort
@@ -522,10 +517,8 @@ tp_simple_password_channel_abort_sasl (
       tp_simple_password_channel_change_status (channel,
           TP_SASL_STATUS_CLIENT_FAILED, TP_ERROR_STR_CANCELLED);
 
-      error = g_error_new (TP_ERRORS, TP_ERROR_CANCELLED,
-          "AbortSASL was called");
-      g_signal_emit (channel, signals[FINISHED], 0, NULL, error);
-      g_error_free (error);
+      g_signal_emit (channel, signals[FINISHED], 0, NULL, TP_ERRORS,
+          TP_ERROR_CANCELLED, "AbortSASL was called");
     }
 
   tp_svc_channel_interface_sasl_authentication_return_from_abort_sasl (
