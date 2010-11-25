@@ -332,6 +332,38 @@ test_immutable_properties (Test *test,
   g_hash_table_unref (props);
 }
 
+static void
+test_hints (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  gboolean ok;
+  GHashTable *props, *hints;
+
+  hints = tp_asv_new ("test", G_TYPE_STRING, "hi", NULL);
+
+  props = tp_asv_new (
+      TP_PROP_CHANNEL_REQUEST_HINTS, TP_HASH_TYPE_STRING_VARIANT_MAP, hints,
+      NULL);
+
+  ok = tp_dbus_daemon_request_name (test->private_dbus,
+      TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL);
+  g_assert (ok);
+
+  test->cr = tp_channel_request_new (test->dbus, "/whatever", props, NULL);
+  g_assert (test->cr != NULL);
+
+  g_hash_table_unref (props);
+  g_hash_table_unref (hints);
+
+  hints = (GHashTable *) tp_channel_request_get_hints (test->cr);
+  g_assert_cmpstr (tp_asv_get_string (hints, "test"), ==, "hi");
+
+  g_object_get (test->cr, "hints", &hints, NULL);
+  g_assert_cmpstr (tp_asv_get_string (hints, "test"), ==, "hi");
+
+  g_hash_table_unref (hints);
+}
+
 int
 main (int argc,
       char **argv)
@@ -346,6 +378,7 @@ main (int argc,
   g_test_add ("/cr/failed", Test, NULL, setup, test_failed, teardown);
   g_test_add ("/cr/immutable-properties", Test, NULL, setup,
       test_immutable_properties, teardown);
+  g_test_add ("/cr/hints", Test, NULL, setup, test_hints, teardown);
 
   return g_test_run ();
 }

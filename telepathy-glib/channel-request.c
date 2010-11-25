@@ -102,6 +102,7 @@ enum {
 enum {
   PROP_CHANNEL_FACTORY = 1,
   PROP_IMMUTABLE_PROPERTIES,
+  PROP_HINTS,
 };
 
 static guint signals[N_SIGNALS] = { 0 };
@@ -163,6 +164,10 @@ tp_channel_request_get_property (GObject *object,
 
       case PROP_IMMUTABLE_PROPERTIES:
         g_value_set_boxed (value, self->priv->immutable_properties);
+        break;
+
+      case PROP_HINTS:
+        g_value_set_boxed (value, tp_channel_request_get_hints (self));
         break;
 
       default:
@@ -299,6 +304,7 @@ tp_channel_request_dispose (GObject *object)
     G_OBJECT_CLASS (tp_channel_request_parent_class)->dispose;
 
   tp_clear_pointer (&self->priv->immutable_properties, g_hash_table_unref);
+
   tp_clear_object (&self->priv->channel_factory);
 
   if (dispose != NULL)
@@ -364,6 +370,22 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IMMUTABLE_PROPERTIES,
       param_spec);
+
+  /**
+   * TpChannelRequest:hints:
+   *
+   * A #TP_HASH_TYPE_STRING_VARIANT_MAP of metadata provided by
+   * the channel requester; or %NULL if #TpChannelRequest:immutable-properties
+   * is not defined or if no hints has been defined.
+   *
+   * Read-only.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("hints", "Hints", "Hints",
+      TP_HASH_TYPE_STRING_VARIANT_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_HINTS, param_spec);
 
   /**
    * TpChannelRequest::succeeded:
@@ -526,4 +548,27 @@ tp_channel_request_get_immutable_properties (TpChannelRequest *self)
   g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
 
   return self->priv->immutable_properties;
+}
+
+/**
+ * tp_channel_request_get_hints:
+ * @self: a #TpChannelRequest
+ *
+ * Return the #TpChannelRequest:hints property
+ *
+ * Returns: (transfer none): the value of
+ * #TpChannelRequest:hints
+ *
+ * Since: 0.13.UNRELEASED
+ */
+const GHashTable *
+tp_channel_request_get_hints (TpChannelRequest *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
+
+  if (self->priv->immutable_properties == NULL)
+    return NULL;
+
+  return tp_asv_get_boxed (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_REQUEST_HINTS, TP_HASH_TYPE_STRING_VARIANT_MAP);
 }
