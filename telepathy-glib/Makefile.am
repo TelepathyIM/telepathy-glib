@@ -136,6 +136,7 @@ our_headers = \
     telepathy-glib-dbus.h \
     text-channel.h \
     text-mixin.h \
+    tls-certificate.h \
     util.h
 
 tpginclude_HEADERS = \
@@ -301,6 +302,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     stream-tube-connection.c \
     text-channel.c \
     text-mixin.c \
+    tls-certificate.c \
     util.c \
     util-internal.h
 
