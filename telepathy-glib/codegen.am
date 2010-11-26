@@ -297,7 +297,8 @@ _gen/tp-cli-%-body.h: _gen/tp-spec-%.xml \
 			subclass_assert=--subclass-assert=TP_IS_DEBUG_CLIENT; \
 			;; \
 		tls-cert) \
-			echo "FIXME: use TpTLSCertificate here" ; \
+			subclass=--subclass=TpTLSCertificate; \
+			subclass_assert=--subclass-assert=TP_IS_TLS_CERTIFICATE; \
 			;; \
 	esac; \
 	$(PYTHON) $(tools_dir)/glib-client-gen.py \

@@ -237,7 +237,7 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
 }
 
 static void
-cert_proxy_accept_cb (TpProxy *proxy,
+cert_proxy_accept_cb (TpTLSCertificate *self,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
@@ -256,7 +256,7 @@ cert_proxy_accept_cb (TpProxy *proxy,
 }
 
 static void
-cert_proxy_reject_cb (TpProxy *proxy,
+cert_proxy_reject_cb (TpTLSCertificate *self,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
@@ -360,7 +360,7 @@ tp_tls_certificate_accept_async (TpTLSCertificate *self,
   accept_result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data, tp_tls_certificate_accept_async);
 
-  tp_cli_authentication_tls_certificate_call_accept (TP_PROXY (self),
+  tp_cli_authentication_tls_certificate_call_accept (self,
       -1, cert_proxy_accept_cb,
       accept_result, g_object_unref,
       G_OBJECT (self));
@@ -415,7 +415,7 @@ tp_tls_certificate_reject_async (TpTLSCertificate *self,
   reject_result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data, tp_tls_certificate_reject_async);
 
-  tp_cli_authentication_tls_certificate_call_reject (TP_PROXY (self),
+  tp_cli_authentication_tls_certificate_call_reject (self,
       -1, rejections, cert_proxy_reject_cb,
       reject_result, g_object_unref, G_OBJECT (self));
 
