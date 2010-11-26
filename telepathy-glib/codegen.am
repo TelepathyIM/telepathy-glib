@@ -56,6 +56,7 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-connection.h \
     _gen/tp-cli-connection-manager.h \
     _gen/tp-cli-dbus-daemon.h \
+    _gen/tp-cli-debug.h \
     _gen/tp-cli-generic.h \
     _gen/tp-cli-media-session-handler.h \
     _gen/tp-cli-media-stream-handler.h \
@@ -100,6 +101,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-connection-body.h \
     _gen/tp-cli-connection-manager-body.h \
     _gen/tp-cli-dbus-daemon-body.h \
+    _gen/tp-cli-debug-body.h \
     _gen/tp-cli-generic-body.h \
     _gen/tp-cli-media-session-handler-body.h \
     _gen/tp-cli-media-stream-handler-body.h \
@@ -287,6 +289,10 @@ _gen/tp-cli-%-body.h: _gen/tp-spec-%.xml \
 		dbus-daemon) \
 			subclass=--subclass=TpDBusDaemon; \
 			subclass_assert=--subclass-assert=TP_IS_DBUS_DAEMON; \
+			;; \
+		debug) \
+			subclass=--subclass=TpDebugClient; \
+			subclass_assert=--subclass-assert=TP_IS_DEBUG_CLIENT; \
 			;; \
 	esac; \
 	$(PYTHON) $(tools_dir)/glib-client-gen.py \
