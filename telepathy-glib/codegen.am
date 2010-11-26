@@ -61,6 +61,7 @@ nodist_geninclude_HEADERS = \
     _gen/tp-cli-media-session-handler.h \
     _gen/tp-cli-media-stream-handler.h \
     _gen/tp-cli-protocol.h \
+    _gen/tp-cli-tls-cert.h \
     _gen/tp-svc-account.h \
     _gen/tp-svc-account-manager.h \
     _gen/tp-svc-call-content.h \
@@ -106,6 +107,7 @@ nodist_libtelepathy_glib_internal_la_SOURCES = \
     _gen/tp-cli-media-session-handler-body.h \
     _gen/tp-cli-media-stream-handler-body.h \
     _gen/tp-cli-protocol-body.h \
+    _gen/tp-cli-tls-cert-body.h \
     _gen/tp-svc-account.c \
     _gen/tp-svc-account-manager.c \
     _gen/tp-svc-call-content.c \
@@ -293,6 +295,9 @@ _gen/tp-cli-%-body.h: _gen/tp-spec-%.xml \
 		debug) \
 			subclass=--subclass=TpDebugClient; \
 			subclass_assert=--subclass-assert=TP_IS_DEBUG_CLIENT; \
+			;; \
+		tls-cert) \
+			echo "FIXME: use TpTLSCertificate here" ; \
 			;; \
 	esac; \
 	$(PYTHON) $(tools_dir)/glib-client-gen.py \
