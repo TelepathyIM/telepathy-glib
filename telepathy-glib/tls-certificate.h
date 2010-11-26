@@ -65,15 +65,14 @@ GType tp_tls_certificate_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_TLS_CERTIFICATE, \
                               TpTLSCertificateClass))
 
+GQuark tp_tls_certificate_get_feature_quark_core (void);
+#define TP_TLS_CERTIFICATE_FEATURE_CORE \
+  (tp_tls_certificate_get_feature_quark_core ())
+
 TpTLSCertificate *tp_tls_certificate_new (TpDBusDaemon *dbus_daemon,
     const gchar *bus_name,
     const gchar *object_path,
     GError **error);
-
-void tp_tls_certificate_prepare_async (TpTLSCertificate *self,
-    GAsyncReadyCallback callback, gpointer user_data);
-gboolean tp_tls_certificate_prepare_finish (TpTLSCertificate *self,
-    GAsyncResult *result, GError **error);
 
 void tp_tls_certificate_accept_async (TpTLSCertificate *self,
     GAsyncReadyCallback callback,

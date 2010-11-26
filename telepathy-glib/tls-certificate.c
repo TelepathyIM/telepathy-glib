@@ -31,6 +31,7 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/proxy-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
 
@@ -46,18 +47,38 @@ enum {
 };
 
 struct _TpTLSCertificatePrivate {
-  GSimpleAsyncResult *async_prepare_res;
-
   /* TLSCertificate properties */
   gchar *cert_type;
   GPtrArray *cert_data;
   TpTLSCertificateState state;
-
-  gboolean is_prepared;
 };
 
 G_DEFINE_TYPE (TpTLSCertificate, tp_tls_certificate,
     TP_TYPE_PROXY);
+
+/**
+ * TP_TLS_CERTIFICATE_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark representing the
+ * core functionality of a #TpTLSCertificate.
+ *
+ * When this feature is prepared, the basic properties of the
+ * object have been retrieved and are available for use:
+ *
+ * <itemizedlist>
+ * <listitem>#TpTLSCertificate:cert-type</listitem>
+ * <listitem>#TpTLSCertificate:cert-data</listitem>
+ * </itemizedlist>
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ */
+
+GQuark
+tp_tls_certificate_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tp-tls-certificate-feature-core");
+}
 
 static void
 tls_certificate_got_all_cb (TpProxy *proxy,
@@ -67,86 +88,46 @@ tls_certificate_got_all_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   GPtrArray *cert_data;
-  TpTLSCertificate *self = TP_TLS_CERTIFICATE (weak_object);
-  TpTLSCertificatePrivate *priv = self->priv;
+  TpTLSCertificate *self = TP_TLS_CERTIFICATE (proxy);
 
   if (error != NULL)
     {
-      g_simple_async_result_set_from_error (priv->async_prepare_res, error);
-      g_simple_async_result_complete (priv->async_prepare_res);
-      tp_clear_object (&priv->async_prepare_res);
-
+      tp_proxy_invalidate (proxy, error);
       return;
     }
 
-  priv->cert_type = g_strdup (tp_asv_get_string (properties,
+  self->priv->cert_type = g_strdup (tp_asv_get_string (properties,
           "CertificateType"));
-  priv->state = tp_asv_get_uint32 (properties, "State", NULL);
+  self->priv->state = tp_asv_get_uint32 (properties, "State", NULL);
 
   cert_data = tp_asv_get_boxed (properties, "CertificateChainData",
       TP_ARRAY_TYPE_UCHAR_ARRAY_LIST);
   g_assert (cert_data != NULL);
-  priv->cert_data = g_boxed_copy (TP_ARRAY_TYPE_UCHAR_ARRAY_LIST, cert_data);
+  self->priv->cert_data = g_boxed_copy (TP_ARRAY_TYPE_UCHAR_ARRAY_LIST,
+      cert_data);
 
   DEBUG ("Got a certificate chain long %u, of type %s",
-      priv->cert_data->len, priv->cert_type);
+      self->priv->cert_data->len, self->priv->cert_type);
 
-  priv->is_prepared = TRUE;
-
-  g_simple_async_result_complete (priv->async_prepare_res);
-  tp_clear_object (&priv->async_prepare_res);
+  _tp_proxy_set_feature_prepared (proxy, TP_TLS_CERTIFICATE_FEATURE_CORE,
+      TRUE);
 }
 
-void
-tp_tls_certificate_prepare_async (TpTLSCertificate *self,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
+static void
+tp_tls_certificate_constructed (GObject *object)
 {
-  TpTLSCertificatePrivate *priv = self->priv;
+  TpTLSCertificate *self = TP_TLS_CERTIFICATE (object);
+  void (*constructed) (GObject *) =
+    G_OBJECT_CLASS (tp_tls_certificate_parent_class)->constructed;
 
-  /* emit an error if we're already preparing the object */
-  if (priv->async_prepare_res != NULL)
-    {
-      g_simple_async_report_error_in_idle (G_OBJECT (self),
-          callback, user_data,
-          G_IO_ERROR, G_IO_ERROR_PENDING,
-          "%s",
-          "Prepare operation already in progress on the TLS certificate.");
+  if (constructed != NULL)
+    constructed (object);
 
-      return;
-    }
+  /* FIXME: if we want change notification for 'state', this is the place */
 
-  /* if the object is already prepared, just complete in idle */
-  if (priv->is_prepared)
-    {
-      tp_simple_async_report_success_in_idle (G_OBJECT (self),
-          callback, user_data, tp_tls_certificate_prepare_async);
-
-      return;
-    }
-
-  priv->async_prepare_res = g_simple_async_result_new (G_OBJECT (self),
-      callback, user_data, tp_tls_certificate_prepare_async);
-
-  /* call GetAll() on the certificate */
   tp_cli_dbus_properties_call_get_all (self,
       -1, TP_IFACE_AUTHENTICATION_TLS_CERTIFICATE,
-      tls_certificate_got_all_cb, NULL, NULL,
-      G_OBJECT (self));
-}
-
-gboolean
-tp_tls_certificate_prepare_finish (TpTLSCertificate *self,
-    GAsyncResult *result,
-    GError **error)
-{
-  gboolean retval = TRUE;
-
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-          error))
-    retval = FALSE;
-
-  return retval;
+      tls_certificate_got_all_cb, NULL, NULL, NULL);
 }
 
 static void
@@ -196,6 +177,26 @@ tp_tls_certificate_init (TpTLSCertificate *self)
       TP_TYPE_TLS_CERTIFICATE, TpTLSCertificatePrivate);
 }
 
+enum {
+    FEAT_CORE,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tp_tls_certificate_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_CORE].name = TP_TLS_CERTIFICATE_FEATURE_CORE;
+  features[FEAT_CORE].core = TRUE;
+
+  g_assert (features[N_FEAT].name == 0);
+  return features;
+}
+
 static void
 tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
 {
@@ -206,10 +207,12 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
   tp_tls_certificate_init_known_interfaces ();
 
   oclass->get_property = tp_tls_certificate_get_property;
+  oclass->constructed = tp_tls_certificate_constructed;
   oclass->finalize = tp_tls_certificate_finalize;
 
   pclass->interface = TP_IFACE_QUARK_AUTHENTICATION_TLS_CERTIFICATE;
   pclass->must_have_unique_name = TRUE;
+  pclass->list_features = tp_tls_certificate_list_features;
 
   g_type_class_add_private (klass, sizeof (TpTLSCertificatePrivate));
 
