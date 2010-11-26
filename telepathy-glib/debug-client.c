@@ -23,6 +23,10 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
+
+#define DEBUG_FLAG TP_DEBUG_DEBUGGER
+#include "telepathy-glib/debug-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-debug-body.h"
 
@@ -64,6 +68,11 @@ struct _TpDebugClient {
     TpDebugClientPrivate *priv;
 };
 
+static void name_owner_changed_cb (TpDBusDaemon *bus,
+    const gchar *name,
+    const gchar *new_owner,
+    gpointer user_data);
+
 G_DEFINE_TYPE (TpDebugClient, tp_debug_client, TP_TYPE_PROXY)
 
 static void
@@ -72,13 +81,59 @@ tp_debug_client_init (TpDebugClient *self)
 }
 
 static void
+tp_debug_client_constructed (GObject *object)
+{
+  TpProxy *proxy = TP_PROXY (object);
+
+  tp_dbus_daemon_watch_name_owner (
+      tp_proxy_get_dbus_daemon (proxy), tp_proxy_get_bus_name (proxy),
+      name_owner_changed_cb, object, NULL);
+}
+
+static void
+tp_debug_client_dispose (GObject *object)
+{
+  TpProxy *proxy = TP_PROXY (object);
+
+  tp_dbus_daemon_cancel_name_owner_watch (
+      tp_proxy_get_dbus_daemon (proxy), tp_proxy_get_bus_name (proxy),
+      name_owner_changed_cb, object);
+  G_OBJECT_CLASS (tp_debug_client_parent_class)->dispose (object);
+}
+
+static void
 tp_debug_client_class_init (TpDebugClientClass *klass)
 {
+  GObjectClass *object_class = (GObjectClass *) klass;
   TpProxyClass *proxy_class = (TpProxyClass *) klass;
+
+  object_class->constructed = tp_debug_client_constructed;
+  object_class->dispose = tp_debug_client_dispose;
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_DEBUG;
   tp_debug_client_init_known_interfaces ();
+}
+
+static void
+name_owner_changed_cb (
+    TpDBusDaemon *bus,
+    const gchar *name,
+    const gchar *new_owner,
+    gpointer user_data)
+{
+  TpDebugClient *self = TP_DEBUG_CLIENT (user_data);
+
+  if (tp_str_empty (new_owner))
+    {
+      GError *error = g_error_new (TP_DBUS_ERRORS,
+          TP_DBUS_ERROR_NAME_OWNER_LOST,
+          "%s fell off the bus", name);
+
+      DEBUG ("%s fell off the bus", name);
+      tp_proxy_invalidate (TP_PROXY (self), error);
+      g_error_free (error);
+    }
 }
 
 /**
