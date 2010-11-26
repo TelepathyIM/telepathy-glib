@@ -110,6 +110,14 @@ G_BEGIN_DECLS
 #define TP_CLIENT_OBJECT_PATH_BASE "/org/freedesktop/Telepathy/Client/"
 
 /**
+ * TP_DEBUG_OBJECT_PATH:
+ *
+ * The standard path for objects implementing the Telepathy Debug interface
+ * (#TpSvcDebug).
+ */
+#define TP_DEBUG_OBJECT_PATH "/org/freedesktop/Telepathy/debug"
+
+/**
  * TP_USER_ACTION_TIME_NOT_USER_ACTION:
  *
  * The "user action time" used by methods like

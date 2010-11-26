@@ -22,6 +22,7 @@
 #include "debug-sender.h"
 
 #include <telepathy-glib/dbus.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
@@ -230,7 +231,7 @@ tp_debug_sender_constructed (GObject *object)
   if (dbus_daemon != NULL)
     {
       tp_dbus_daemon_register_object (dbus_daemon,
-          "/org/freedesktop/Telepathy/debug", debug_sender);
+          TP_DEBUG_OBJECT_PATH, debug_sender);
 
       g_object_unref (dbus_daemon);
     }
