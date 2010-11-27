@@ -35,6 +35,10 @@ TpDebugClient *tp_debug_client_new (
     const gchar *unique_name,
     GError **error);
 
+#define TP_DEBUG_CLIENT_FEATURE_CORE \
+    (tp_debug_client_get_feature_quark_core ())
+GQuark tp_debug_client_get_feature_quark_core (void) G_GNUC_CONST;
+
 /* Tedious GObject boilerplate */
 
 GType tp_debug_client_get_type (void);

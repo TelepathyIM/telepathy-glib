@@ -27,6 +27,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_DEBUGGER
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/proxy-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-debug-body.h"
 
@@ -68,6 +69,12 @@ struct _TpDebugClient {
     TpDebugClientPrivate *priv;
 };
 
+struct _TpDebugClientPrivate {
+    gboolean enabled;
+};
+
+static const TpProxyFeature *tp_debug_client_list_features (TpProxyClass *klass);
+static void tp_debug_client_prepare_core (TpDebugClient *self);
 static void name_owner_changed_cb (TpDBusDaemon *bus,
     const gchar *name,
     const gchar *new_owner,
@@ -78,27 +85,38 @@ G_DEFINE_TYPE (TpDebugClient, tp_debug_client, TP_TYPE_PROXY)
 static void
 tp_debug_client_init (TpDebugClient *self)
 {
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_DEBUG_CLIENT,
+      TpDebugClientPrivate);
 }
 
 static void
 tp_debug_client_constructed (GObject *object)
 {
+  TpDebugClient *self = TP_DEBUG_CLIENT (object);
   TpProxy *proxy = TP_PROXY (object);
+  GObjectClass *parent_class = G_OBJECT_CLASS (tp_debug_client_parent_class);
+
+  if (parent_class->constructed != NULL)
+    parent_class->constructed (object);
 
   tp_dbus_daemon_watch_name_owner (
       tp_proxy_get_dbus_daemon (proxy), tp_proxy_get_bus_name (proxy),
       name_owner_changed_cb, object, NULL);
+  tp_debug_client_prepare_core (self);
 }
 
 static void
 tp_debug_client_dispose (GObject *object)
 {
   TpProxy *proxy = TP_PROXY (object);
+  GObjectClass *parent_class = G_OBJECT_CLASS (tp_debug_client_parent_class);
 
   tp_dbus_daemon_cancel_name_owner_watch (
       tp_proxy_get_dbus_daemon (proxy), tp_proxy_get_bus_name (proxy),
       name_owner_changed_cb, object);
-  G_OBJECT_CLASS (tp_debug_client_parent_class)->dispose (object);
+
+  if (parent_class->dispose != NULL)
+    parent_class->dispose (object);
 }
 
 static void
@@ -112,7 +130,16 @@ tp_debug_client_class_init (TpDebugClientClass *klass)
 
   proxy_class->must_have_unique_name = TRUE;
   proxy_class->interface = TP_IFACE_QUARK_DEBUG;
+  proxy_class->list_features = tp_debug_client_list_features;
+
+  g_type_class_add_private (klass, sizeof (TpDebugClientPrivate));
   tp_debug_client_init_known_interfaces ();
+}
+
+GQuark
+tp_debug_client_get_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tp-debug-client-feature-core");
 }
 
 static void
@@ -134,6 +161,65 @@ name_owner_changed_cb (
       tp_proxy_invalidate (TP_PROXY (self), error);
       g_error_free (error);
     }
+}
+
+static void
+got_enabled_cb (
+    TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpDebugClient *self = TP_DEBUG_CLIENT (proxy);
+
+  if (error != NULL)
+    {
+      tp_proxy_invalidate (proxy, error);
+    }
+  else if (!G_VALUE_HOLDS_BOOLEAN (value))
+    {
+      GError *e = g_error_new (TP_ERRORS,
+          TP_ERROR_NOT_IMPLEMENTED,
+          "this service doesn't implement the Debug interface correctly "
+          "(the Enabled property is not a boolean, but a %s)",
+          G_VALUE_TYPE_NAME (value));
+
+      tp_proxy_invalidate (proxy, e);
+      g_error_free (e);
+    }
+  else
+    {
+      self->priv->enabled = g_value_get_boolean (value);
+      /* FIXME: we have no change notification for Enabled. */
+      _tp_proxy_set_feature_prepared (proxy, TP_DEBUG_CLIENT_FEATURE_CORE,
+          TRUE);
+    }
+}
+
+static void
+tp_debug_client_prepare_core (TpDebugClient *self)
+{
+  tp_cli_dbus_properties_call_get (self, -1, TP_IFACE_DEBUG, "Enabled",
+      got_enabled_cb, NULL, NULL, NULL);
+}
+
+static const TpProxyFeature *
+tp_debug_client_list_features (TpProxyClass *klass)
+{
+  static gsize once = 0;
+  static TpProxyFeature features[] = {
+      { 0, TRUE },
+      { 0 }
+  };
+
+  if (g_once_init_enter (&once))
+    {
+      features[0].name = TP_DEBUG_CLIENT_FEATURE_CORE;
+      g_once_init_leave (&once, 1);
+    }
+
+  return features;
 }
 
 /**
