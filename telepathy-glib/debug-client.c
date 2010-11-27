@@ -28,6 +28,7 @@
 #define DEBUG_FLAG TP_DEBUG_DEBUGGER
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/util-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-debug-body.h"
 
@@ -280,4 +281,46 @@ tp_debug_client_new (
       "bus-name", unique_name,
       "object-path", TP_DEBUG_OBJECT_PATH,
       NULL));
+}
+
+static void
+set_enabled_cb (
+    TpProxy *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
+
+  if (error != NULL)
+    g_simple_async_result_set_from_error (result, error);
+
+  g_simple_async_result_complete (result);
+}
+
+void
+tp_debug_client_set_enabled_async (
+    TpDebugClient *self,
+    gboolean enabled,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data, tp_debug_client_set_enabled_async);
+  GValue v = { 0, };
+
+  g_value_init (&v, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&v, enabled);
+  tp_cli_dbus_properties_call_set (self, -1, TP_IFACE_DEBUG, "Enabled", &v,
+      set_enabled_cb, result, g_object_unref, NULL);
+  g_value_unset (&v);
+}
+
+gboolean
+tp_debug_client_set_enabled_finish (
+    TpDebugClient *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_debug_client_set_enabled_async)
 }

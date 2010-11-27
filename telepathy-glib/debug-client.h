@@ -39,6 +39,17 @@ TpDebugClient *tp_debug_client_new (
     (tp_debug_client_get_feature_quark_core ())
 GQuark tp_debug_client_get_feature_quark_core (void) G_GNUC_CONST;
 
+void tp_debug_client_set_enabled_async (
+    TpDebugClient *self,
+    gboolean enabled,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_debug_client_set_enabled_finish (
+    TpDebugClient *self,
+    GAsyncResult *result,
+    GError **error);
+
 /* Tedious GObject boilerplate */
 
 GType tp_debug_client_get_type (void);
