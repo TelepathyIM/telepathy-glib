@@ -75,8 +75,12 @@ void tp_account_channel_request_set_channel_factory (
     TpAccountChannelRequest *self,
     TpClientChannelFactory *factory);
 
+
 TpChannelRequest * tp_account_channel_request_get_channel_request (
     TpAccountChannelRequest *self);
+
+void tp_account_channel_request_set_hints (TpAccountChannelRequest *self,
+    GHashTable *hints);
 
 /* Request and handle API */
 

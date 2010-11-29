@@ -124,6 +124,7 @@ struct _TpAccountChannelRequestPrivate
   TpHandleChannelsContext *handle_context;
   TpDBusDaemon *dbus;
   TpClientChannelFactory *factory;
+  GHashTable *hints;
 
   /* TRUE if the channel has been requested (an _async function has been called
    * on the TpAccountChannelRequest) */
@@ -183,6 +184,7 @@ tp_account_channel_request_dispose (GObject *object)
   tp_clear_object (&self->priv->handle_context);
   tp_clear_object (&self->priv->dbus);
   tp_clear_object (&self->priv->factory);
+  tp_clear_pointer (&self->priv->hints, g_hash_table_unref);
 
   if (dispose != NULL)
     dispose (object);
@@ -863,11 +865,23 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
           user_data,
           tp_account_channel_request_ensure_and_handle_channel_async);
 
-      tp_cli_channel_dispatcher_call_ensure_channel (cd, -1,
-          tp_proxy_get_object_path (self->priv->account), self->priv->request,
-          self->priv->user_action_time,
-          tp_base_client_get_bus_name (self->priv->handler),
-          acr_request_cb, self, NULL, G_OBJECT (self));
+      if (self->priv->hints == NULL)
+        {
+          tp_cli_channel_dispatcher_call_ensure_channel (cd, -1,
+              tp_proxy_get_object_path (self->priv->account),
+              self->priv->request, self->priv->user_action_time,
+              tp_base_client_get_bus_name (self->priv->handler),
+              acr_request_cb, self, NULL, G_OBJECT (self));
+        }
+      else
+        {
+          tp_cli_channel_dispatcher_call_ensure_channel_with_hints (cd, -1,
+              tp_proxy_get_object_path (self->priv->account),
+              self->priv->request, self->priv->user_action_time,
+              tp_base_client_get_bus_name (self->priv->handler),
+              self->priv->hints,
+              acr_request_cb, self, NULL, G_OBJECT (self));
+        }
     }
   else
     {
@@ -875,11 +889,25 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
           user_data,
           tp_account_channel_request_create_and_handle_channel_async);
 
-      tp_cli_channel_dispatcher_call_create_channel (cd, -1,
-          tp_proxy_get_object_path (self->priv->account), self->priv->request,
-          self->priv->user_action_time,
-          tp_base_client_get_bus_name (self->priv->handler),
-          acr_request_cb, self, NULL, G_OBJECT (self));
+      if (self->priv->hints == NULL)
+        {
+          tp_cli_channel_dispatcher_call_create_channel (cd, -1,
+              tp_proxy_get_object_path (self->priv->account),
+              self->priv->request,
+              self->priv->user_action_time,
+              tp_base_client_get_bus_name (self->priv->handler),
+              acr_request_cb, self, NULL, G_OBJECT (self));
+        }
+      else
+        {
+          tp_cli_channel_dispatcher_call_create_channel_with_hints (cd, -1,
+              tp_proxy_get_object_path (self->priv->account),
+              self->priv->request,
+              self->priv->user_action_time,
+              tp_base_client_get_bus_name (self->priv->handler),
+              self->priv->hints,
+              acr_request_cb, self, NULL, G_OBJECT (self));
+        }
     }
 
   g_object_unref (cd);
@@ -1092,22 +1120,50 @@ request_channel_async (TpAccountChannelRequest *self,
       self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
           user_data, tp_account_channel_request_ensure_channel_async);
 
-      tp_cli_channel_dispatcher_call_ensure_channel (cd, -1,
-          tp_proxy_get_object_path (self->priv->account), self->priv->request,
-          self->priv->user_action_time,
-          preferred_handler == NULL ? "" : preferred_handler,
-          acr_request_cb, self, NULL, G_OBJECT (self));
+      if (self->priv->hints == NULL)
+        {
+          tp_cli_channel_dispatcher_call_ensure_channel (cd, -1,
+              tp_proxy_get_object_path (self->priv->account),
+              self->priv->request,
+              self->priv->user_action_time,
+              preferred_handler == NULL ? "" : preferred_handler,
+              acr_request_cb, self, NULL, G_OBJECT (self));
+        }
+      else
+        {
+          tp_cli_channel_dispatcher_call_ensure_channel_with_hints (cd, -1,
+              tp_proxy_get_object_path (self->priv->account),
+              self->priv->request,
+              self->priv->user_action_time,
+              preferred_handler == NULL ? "" : preferred_handler,
+              self->priv->hints,
+              acr_request_cb, self, NULL, G_OBJECT (self));
+        }
     }
   else
     {
       self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
           user_data, tp_account_channel_request_create_channel_async);
 
-      tp_cli_channel_dispatcher_call_create_channel (cd, -1,
-          tp_proxy_get_object_path (self->priv->account), self->priv->request,
-          self->priv->user_action_time,
-          preferred_handler == NULL ? "" : preferred_handler,
-          acr_request_cb, self, NULL, G_OBJECT (self));
+      if (self->priv->hints == NULL)
+        {
+          tp_cli_channel_dispatcher_call_create_channel (cd, -1,
+              tp_proxy_get_object_path (self->priv->account),
+              self->priv->request,
+              self->priv->user_action_time,
+              preferred_handler == NULL ? "" : preferred_handler,
+              acr_request_cb, self, NULL, G_OBJECT (self));
+        }
+      else
+        {
+          tp_cli_channel_dispatcher_call_create_channel_with_hints (cd, -1,
+              tp_proxy_get_object_path (self->priv->account),
+              self->priv->request,
+              self->priv->user_action_time,
+              preferred_handler == NULL ? "" : preferred_handler,
+              self->priv->hints,
+              acr_request_cb, self, NULL, G_OBJECT (self));
+        }
     }
 
   g_object_unref (cd);
@@ -1308,7 +1364,6 @@ request_and_observe_channel_async (TpAccountChannelRequest *self,
     gboolean ensure)
 {
   TpChannelDispatcher *cd;
-  GHashTable *hints;
 
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
@@ -1330,7 +1385,8 @@ request_and_observe_channel_async (TpAccountChannelRequest *self,
 
   cd = tp_channel_dispatcher_new (self->priv->dbus);
 
-  hints = g_hash_table_new (NULL, NULL);
+  if (self->priv->hints == NULL)
+    self->priv->hints = g_hash_table_new (NULL, NULL);
 
   if (ensure)
     {
@@ -1341,7 +1397,8 @@ request_and_observe_channel_async (TpAccountChannelRequest *self,
       tp_cli_channel_dispatcher_call_ensure_channel_with_hints (cd, -1,
           tp_proxy_get_object_path (self->priv->account), self->priv->request,
           self->priv->user_action_time,
-          preferred_handler == NULL ? "" : preferred_handler, hints,
+          preferred_handler == NULL ? "" : preferred_handler,
+          self->priv->hints,
           acr_request_cb, self, NULL, G_OBJECT (self));
     }
   else
@@ -1353,11 +1410,11 @@ request_and_observe_channel_async (TpAccountChannelRequest *self,
       tp_cli_channel_dispatcher_call_create_channel_with_hints (cd, -1,
           tp_proxy_get_object_path (self->priv->account), self->priv->request,
           self->priv->user_action_time,
-          preferred_handler == NULL ? "" : preferred_handler, hints,
+          preferred_handler == NULL ? "" : preferred_handler,
+          self->priv->hints,
           acr_request_cb, self, NULL, G_OBJECT (self));
     }
 
-  g_hash_table_unref (hints);
   g_object_unref (cd);
 }
 
@@ -1505,4 +1562,28 @@ tp_account_channel_request_ensure_and_observe_channel_finish (
 {
   return request_and_observe_channel_finish (self, result,
       tp_account_channel_request_ensure_and_observe_channel_async, error);
+}
+
+/**
+ * tp_account_channel_request_set_hints:
+ * @self: a #TpAccountChannelRequest
+ * @hints: a #TP_HASH_TYPE_STRING_VARIANT_MAP
+ *
+ * Set additional information about the channel request, which will be used
+ * as the value for the resulting request's #TpChannelRequest:hints property.
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_account_channel_request_set_hints (TpAccountChannelRequest *self,
+    GHashTable *hints)
+{
+  g_return_if_fail (!self->priv->requested);
+  g_return_if_fail (hints != NULL);
+
+  tp_clear_pointer (&self->priv->hints, g_hash_table_unref);
+  self->priv->hints = g_hash_table_ref (hints);
 }
