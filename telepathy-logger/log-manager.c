@@ -1230,7 +1230,6 @@ static void
 _get_filtered_messages_async_result_free (gpointer data)
 {
   GList *lst = data; /* list of TPL_ENTRY */
-  g_return_if_fail (data != NULL);
 
   g_list_foreach (lst, (GFunc) g_object_unref, NULL);
   g_list_free (lst);
