@@ -982,7 +982,6 @@ static void
 _get_dates_async_result_free (gpointer data)
 {
   GList *lst = data; /* list of (GDate *) */
-  g_return_if_fail (data != NULL);
 
   g_list_foreach (lst, (GFunc) g_date_free, NULL);
   g_list_free (lst);
@@ -1106,7 +1105,6 @@ static void
 _get_messages_for_date_async_result_free (gpointer data)
 {
   GList *lst = data; /* list of TPL_ENTRY */
-  g_return_if_fail (data != NULL);
 
   g_list_foreach (lst, (GFunc) g_object_unref, NULL);
   g_list_free (lst);
@@ -1460,7 +1458,6 @@ static void
 _search_in_identifier_chats_new_async_result_free (gpointer data)
 {
   GList *lst = data; /* list of TplSearchHit */
-  g_return_if_fail (data != NULL);
 
   g_list_foreach (lst, (GFunc) _tpl_log_manager_search_hit_free, NULL);
   g_list_free (lst);
