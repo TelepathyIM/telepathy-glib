@@ -1,3 +1,16 @@
+telepathy-logger 0.1.7 (2010-11-29)
+===================================
+
+This bug fix release fixes a crash and remove a lot of memory leaks. We
+strongly suggest to distributions to update to this version.
+
+Fixes:
+
+• Stop using tp_get_bus(). (smcv)
+• Loads of memory leaks fixed. (cassidy)
+• Don't crash by trying to use the sqlite log store after it has been
+  disposed. (cassidy)
+
 telepathy-logger 0.1.6 (2010-10-13)
 ===================================
 
