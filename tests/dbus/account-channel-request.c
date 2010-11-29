@@ -457,6 +457,80 @@ test_handle_re_handle (Test *test,
   g_object_unref (req2);
 }
 
+static void
+create_and_handle_hints_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+
+{
+  Test *test = user_data;
+  TpHandleChannelsContext *context = NULL;
+  GList *reqs;
+  const GHashTable *hints;
+  TpChannelRequest *req;
+
+  test->channel = tp_account_channel_request_create_and_handle_channel_finish (
+      TP_ACCOUNT_CHANNEL_REQUEST (source), result, &context, &test->error);
+  if (test->channel == NULL)
+    goto out;
+
+  g_assert (TP_IS_CHANNEL (test->channel));
+  tp_clear_object (&test->channel);
+
+  g_assert (TP_IS_HANDLE_CHANNELS_CONTEXT (context));
+
+  reqs = tp_handle_channels_context_get_requests (context);
+  g_assert_cmpuint (g_list_length (reqs), ==, 1);
+
+  req = reqs->data;
+  g_assert (TP_IS_CHANNEL_REQUEST (req));
+
+  hints = tp_channel_request_get_hints (req);
+  g_assert_cmpuint (g_hash_table_size ((GHashTable *) hints), ==, 1);
+  g_assert_cmpuint (tp_asv_get_uint32 (hints, "Badger", NULL), ==, 42);
+
+  g_list_foreach (reqs, (GFunc) g_object_unref, NULL);
+  g_list_free (reqs);
+
+  g_object_unref (context);
+
+out:
+  g_main_loop_quit (test->mainloop);
+}
+
+static GHashTable *
+create_hints (void)
+{
+  return tp_asv_new (
+      "Badger", G_TYPE_UINT, 42,
+      NULL);
+}
+
+static void
+test_handle_create_success_hints (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req;
+  GHashTable *hints;
+
+  request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  hints = create_hints ();
+  tp_account_channel_request_set_hints (req, hints);
+  g_hash_table_unref (hints);
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_hints_cb, test);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+}
+
 /* Request and forget tests */
 
 static void
@@ -905,6 +979,8 @@ main (int argc,
       setup, test_handle_cancel_after_create, teardown);
   g_test_add ("/account-channels/request-handle/re-handle", Test, NULL,
       setup, test_handle_re_handle, teardown);
+  g_test_add ("/account-channels/request-handle/create-success-hints", Test,
+      NULL, setup, test_handle_create_success_hints, teardown);
 
   /* Request and forget tests */
   g_test_add ("/account-channels/request-forget/create-success", Test, NULL,
