@@ -127,7 +127,7 @@ tp_client_channel_factory_create_channel (TpClientChannelFactory *self,
  * @self: a client channel factory
  * @channel: a #TpChannel
  *
- * Return a #GArray containing the #TpChannel features that
+ * Return a zero terminated #GArray containing the #TpChannel features that
  * should be prepared on @channel.
  *
  * Changed in 0.13.6: the function's signature was previously wrong;
@@ -157,7 +157,7 @@ tp_client_channel_factory_dup_channel_features (
   if (iface->dup_channel_features != NULL)
     return iface->dup_channel_features (iface, channel);
 
-  arr = g_array_sized_new (FALSE, FALSE, sizeof (GQuark), 1);
+  arr = g_array_sized_new (TRUE, FALSE, sizeof (GQuark), 1);
 
   g_array_append_val (arr, feature);
 

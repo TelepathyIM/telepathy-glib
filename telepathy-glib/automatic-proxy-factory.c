@@ -145,7 +145,7 @@ tp_automatic_proxy_factory_dup_channel_features_impl (void)
   GArray *features;
   GQuark feature;
 
-  features = g_array_sized_new (FALSE, FALSE, sizeof (GQuark), 2);
+  features = g_array_sized_new (TRUE, FALSE, sizeof (GQuark), 2);
 
   feature = TP_CHANNEL_FEATURE_CORE;
   g_array_append_val (features, feature);
