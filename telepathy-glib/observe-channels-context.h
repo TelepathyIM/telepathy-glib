@@ -58,6 +58,9 @@ void tp_observe_channels_context_delay (TpObserveChannelsContext *self);
 gboolean tp_observe_channels_context_is_recovering (
     TpObserveChannelsContext *self);
 
+GList * tp_observe_channels_context_get_requests (
+    TpObserveChannelsContext *self);
+
 G_END_DECLS
 
 #endif

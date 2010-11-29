@@ -48,6 +48,7 @@
 #include "telepathy-glib/observe-channels-context.h"
 
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 
@@ -667,4 +668,52 @@ _tp_observe_channels_context_prepare_finish (
           G_OBJECT (self), _tp_observe_channels_context_prepare_async), FALSE);
 
   return TRUE;
+}
+
+/**
+ * tp_observe_channels_context_get_requests:
+ * @self: a #TpObserveChannelsContext
+ *
+ * Return a list of the #TpChannelRequest which have been satisfied by the
+ * channels associated with #self.
+ *
+ * Returns: (transfer full) (element-type TelepathyGLib.ChannelRequest):
+ *  a newly allocated #GList of reffed #TpChannelRequest.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+GList *
+tp_observe_channels_context_get_requests (TpObserveChannelsContext *self)
+{
+  GHashTable *request_props;
+  GHashTableIter iter;
+  GList *result = NULL;
+  gpointer key, value;
+
+  request_props = tp_asv_get_boxed (self->observer_info, "request-properties",
+      TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP);
+  if (request_props == NULL)
+    return NULL;
+
+  g_hash_table_iter_init (&iter, request_props);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpChannelRequest *req;
+      const gchar *path = key;
+      GHashTable *props = value;
+      GError *error = NULL;
+
+      req = tp_channel_request_new (
+          tp_proxy_get_dbus_daemon (self->account), path, props, &error);
+      if (req == NULL)
+        {
+          DEBUG ("Failed to create TpChannelRequest: %s", error->message);
+          g_error_free (error);
+          continue;
+        }
+
+      result = g_list_prepend (result, req);
+    }
+
+  return result;
 }
