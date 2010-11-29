@@ -67,6 +67,8 @@ typedef struct _TplLogStoreSqlitePrivate TplLogStoreSqlitePrivate;
 struct _TplLogStoreSqlitePrivate
 {
   sqlite3 *db;
+
+  guint purge_id;
 };
 
 static GObject *singleton = NULL;
@@ -160,6 +162,12 @@ tpl_log_store_sqlite_dispose (GObject *self)
       priv->db = NULL;
     }
 
+  if (priv->purge_id != 0)
+    {
+      g_source_remove (priv->purge_id);
+      priv->purge_id = 0;
+    }
+
   G_OBJECT_CLASS (_tpl_log_store_sqlite_parent_class)->dispose (self);
 }
 
@@ -231,7 +239,7 @@ _tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
     }
 
   /* purge old entries every hour (60*60 secs) and purges 24h old entries */
-  g_timeout_add_seconds (60*60, purge_entry_timeout, self);
+  priv->purge_id = g_timeout_add_seconds (60*60, purge_entry_timeout, self);
 
   /* end of cache table init */
 
