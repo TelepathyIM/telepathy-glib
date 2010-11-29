@@ -4832,6 +4832,7 @@ tp_handle_channels_context_accept
 tp_handle_channels_context_delay
 tp_handle_channels_context_fail
 tp_handle_channels_context_get_handler_info
+tp_handle_channels_context_get_requests
 <SUBSECTION Standard>
 tp_handle_channels_context_get_type
 TP_HANDLE_CHANNELS_CONTEXT
