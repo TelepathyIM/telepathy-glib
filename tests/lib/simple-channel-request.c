@@ -115,6 +115,24 @@ free_channel_details (gpointer data,
   g_boxed_free (TP_STRUCT_TYPE_CHANNEL_DETAILS, data);
 }
 
+static GHashTable *
+dup_immutable_props (TpTestsSimpleChannelRequest *self)
+{
+  return tp_asv_new (
+      TP_PROP_CHANNEL_REQUEST_ACCOUNT, DBUS_TYPE_G_OBJECT_PATH,
+        self->priv->account_path,
+      TP_PROP_CHANNEL_REQUEST_USER_ACTION_TIME, G_TYPE_INT64,
+        self->priv->user_action_time,
+      TP_PROP_CHANNEL_REQUEST_PREFERRED_HANDLER, G_TYPE_STRING,
+        self->priv->preferred_handler,
+      TP_PROP_CHANNEL_REQUEST_REQUESTS, TP_ARRAY_TYPE_CHANNEL_CLASS_LIST,
+        self->priv->requests,
+      TP_PROP_CHANNEL_REQUEST_INTERFACES, G_TYPE_STRV, NULL,
+      TP_PROP_CHANNEL_REQUEST_HINTS, TP_HASH_TYPE_STRING_VARIANT_MAP,
+        self->priv->hints,
+      NULL);
+}
+
 static void
 tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
     DBusGMethodInvocation *context)
@@ -128,6 +146,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   GHashTable *info;
   TpBaseConnection *base_conn = (TpBaseConnection *) self->priv->conn;
   GHashTable *req;
+  GHashTable *request_props;
 
   req = g_ptr_array_index (self->priv->requests, 0);
   g_assert (req != NULL);
@@ -164,7 +183,6 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
     {
       /* Pretend that the channel has been handled */
       GHashTable *props;
-
       props = g_hash_table_new (NULL, NULL);
 
       tp_svc_channel_request_emit_succeeded_with_channel (self,
@@ -182,7 +200,6 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
       tp_svc_channel_request_emit_succeeded (self);
       return;
     }
-
 
   /* Call HandleChannels() on the preferred handler */
   client_path = g_strdelimit (g_strdup_printf ("/%s",
@@ -207,7 +224,16 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   satisfied = g_ptr_array_sized_new (1);
   g_ptr_array_add (satisfied, self->priv->path);
 
-  info = g_hash_table_new (NULL, NULL);
+  request_props = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, (GDestroyNotify) g_hash_table_unref);
+
+  g_hash_table_insert (request_props, g_strdup (self->priv->path),
+      dup_immutable_props (self));
+
+  info = tp_asv_new (
+      "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
+        request_props,
+      NULL);
 
   tp_cli_client_handler_call_handle_channels (client, -1,
       self->priv->account_path, base_conn->object_path, channels,
@@ -219,6 +245,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
   g_ptr_array_free (channels, TRUE);
   g_ptr_array_free (satisfied, TRUE);
   g_hash_table_unref (info);
+  g_hash_table_unref (request_props);
   g_object_unref (dbus);
   g_object_unref (client);
 }
