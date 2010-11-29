@@ -379,7 +379,6 @@ re_handled_cb (TpAccountChannelRequest *req,
   g_assert_cmpint (timestamp, ==, 666);
   g_assert (TP_IS_HANDLE_CHANNELS_CONTEXT (context));
 
-  g_print ("sig fired\n");
   test->count--;
   if (test->count <= 0)
     g_main_loop_quit (test->mainloop);
