@@ -554,6 +554,10 @@ _tp_account_update (TpAccount *account,
       g_free (priv->requested_message);
       priv->requested_message =
         g_value_dup_string (g_value_array_get_nth (arr, 2));
+
+      g_object_notify (G_OBJECT (account), "requested-presence-type");
+      g_object_notify (G_OBJECT (account), "requested-status");
+      g_object_notify (G_OBJECT (account), "requested-status-message");
     }
 
   if (g_hash_table_lookup (properties, "DisplayName") != NULL)
@@ -649,6 +653,7 @@ _tp_account_update (TpAccount *account,
 
       priv->parameters = g_boxed_copy (TP_HASH_TYPE_STRING_VARIANT_MAP,
           parameters);
+      /* this isn't a property, so we don't notify */
     }
 
   if (status_changed)
@@ -1378,7 +1383,8 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The account's requested presence type (a #TpConnectionPresenceType).
    *
-   * One can receive change notifications on this property by connecting
+   * Since 0.13.UNRELEASED,
+   * one can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
@@ -1398,7 +1404,8 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The requested Status string of the account.
    *
-   * One can receive change notifications on this property by connecting
+   * Since 0.13.UNRELEASED,
+   * one can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
@@ -1416,7 +1423,8 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The requested status message message of the account.
    *
-   * One can receive change notifications on this property by connecting
+   * Since 0.13.UNRELEASED,
+   * one can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail.
    *
