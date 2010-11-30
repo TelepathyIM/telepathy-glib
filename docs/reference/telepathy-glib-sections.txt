@@ -4721,6 +4721,28 @@ TpSimpleHandlerPrivate
 </SECTION>
 
 <SECTION>
+<INCLUDE>telepathy-glib/simple-password-manager.h</INCLUDE>
+<FILE>simple-password-manager</FILE>
+<TITLE>simple-password-manager</TITLE>
+TpSimplePasswordManager
+tp_simple_password_manager_new
+<SUBSECTION>
+tp_simple_password_manager_prompt_async
+tp_simple_password_manager_prompt_finish
+<SUBSECTION Standard>
+tp_simple_password_manager_get_type
+TP_TYPE_SIMPLE_PASSWORD_MANAGER
+TP_SIMPLE_PASSWORD_MANAGER
+TP_SIMPLE_PASSWORD_MANAGER_CLASS
+TP_SIMPLE_PASSWORD_MANAGER_GET_CLASS
+TP_IS_SIMPLE_PASSWORD_MANAGER
+TP_IS_SIMPLE_PASSWORD_MANAGER_CLASS
+TpSimplePasswordManagerClass
+<SUBSECTION Private>
+TpSimplePasswordManagerPrivate
+</SECTION>
+
+<SECTION>
 <INCLUDE>telepathy-glib/base-protocol.h</INCLUDE>
 <FILE>base-protocol</FILE>
 <TITLE>base-protocol</TITLE>

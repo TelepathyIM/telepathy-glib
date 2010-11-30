@@ -28,7 +28,8 @@ typedef enum
   TP_DEBUG_ACCOUNTS      = 1 << 12,
   TP_DEBUG_DISPATCHER    = 1 << 13,
   TP_DEBUG_CLIENT        = 1 << 14,
-  TP_DEBUG_CONTACT_LISTS = 1 << 15
+  TP_DEBUG_CONTACT_LISTS = 1 << 15,
+  TP_DEBUG_SASL          = 1 << 16
 } TpDebugFlags;
 
 gboolean _tp_debug_flag_is_set (TpDebugFlags flag);

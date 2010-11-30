@@ -112,6 +112,7 @@ static GDebugKey keys[] = {
   { "dispatcher",    TP_DEBUG_DISPATCHER },
   { "client",        TP_DEBUG_CLIENT },
   { "contact-lists", TP_DEBUG_CONTACT_LISTS },
+  { "sasl",          TP_DEBUG_SASL },
   { 0, }
 };
 
@@ -143,6 +144,7 @@ static DebugKeyToDomain key_to_domain[] = {
   { TP_DEBUG_DISPATCHER, G_LOG_DOMAIN "/dispatcher" },
   { TP_DEBUG_CLIENT,     G_LOG_DOMAIN "/client" },
   { TP_DEBUG_CONTACT_LISTS, G_LOG_DOMAIN "/contact-lists" },
+  { TP_DEBUG_SASL,       G_LOG_DOMAIN "/sasl" },
   { 0, NULL }
 };
 
