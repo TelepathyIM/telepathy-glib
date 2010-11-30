@@ -1047,7 +1047,9 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
-   * detail.
+   * detail. Change notifications for current-presence-type,
+   * current-status and current-status-message are always emitted together,
+   * so it is sufficient to connect to one of the notification signals.
    *
    * This is not guaranteed to have been retrieved until
    * tp_proxy_prepare_async() has finished; until then, the value is
@@ -1071,7 +1073,9 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
-   * detail.
+   * detail. Change notifications for current-presence-type,
+   * current-status and current-status-message are always emitted together,
+   * so it is sufficient to connect to one of the notification signals.
    *
    * This is not guaranteed to have been retrieved until
    * tp_proxy_prepare_async() has finished; until then, the value is
@@ -1093,7 +1097,9 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
-   * detail.
+   * detail. Change notifications for current-presence-type,
+   * current-status and current-status-message are always emitted together,
+   * so it is sufficient to connect to one of the notification signals.
    *
    * This is not guaranteed to have been retrieved until
    * tp_proxy_prepare_async() has finished; until then, the value is
