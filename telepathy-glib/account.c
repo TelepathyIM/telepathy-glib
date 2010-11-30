@@ -97,10 +97,15 @@ struct _TpAccountPrivate {
   gchar *requested_status;
   gchar *requested_message;
 
+  TpConnectionPresenceType auto_presence;
+  gchar *auto_status;
+  gchar *auto_message;
+
   gboolean changing_presence;
   gboolean connect_automatically;
   gboolean has_been_online;
 
+  gchar *normalized_name;
   gchar *nickname;
 
   gboolean enabled;
@@ -156,6 +161,10 @@ enum {
   PROP_REQUESTED_STATUS,
   PROP_REQUESTED_STATUS_MESSAGE,
   PROP_NICKNAME,
+  PROP_AUTOMATIC_PRESENCE_TYPE,
+  PROP_AUTOMATIC_STATUS,
+  PROP_AUTOMATIC_STATUS_MESSAGE,
+  PROP_NORMALIZED_NAME,
   PROP_STORAGE_PROVIDER,
   PROP_STORAGE_IDENTIFIER,
   PROP_STORAGE_RESTRICTIONS
@@ -560,6 +569,26 @@ _tp_account_update (TpAccount *account,
       g_object_notify (G_OBJECT (account), "requested-status-message");
     }
 
+  if (g_hash_table_lookup (properties, "AutomaticPresence") != NULL)
+    {
+      arr = tp_asv_get_boxed (properties, "AutomaticPresence",
+          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+      priv->auto_presence =
+        g_value_get_uint (g_value_array_get_nth (arr, 0));
+
+      g_free (priv->auto_status);
+      priv->auto_status =
+        g_value_dup_string (g_value_array_get_nth (arr, 1));
+
+      g_free (priv->auto_message);
+      priv->auto_message =
+        g_value_dup_string (g_value_array_get_nth (arr, 2));
+
+      g_object_notify (G_OBJECT (account), "automatic-presence-type");
+      g_object_notify (G_OBJECT (account), "automatic-status");
+      g_object_notify (G_OBJECT (account), "automatic-status-message");
+    }
+
   if (g_hash_table_lookup (properties, "DisplayName") != NULL)
     {
       gchar *old = priv->display_name;
@@ -581,6 +610,19 @@ _tp_account_update (TpAccount *account,
 
       if (tp_strdiff (old, priv->nickname))
         g_object_notify (G_OBJECT (account), "nickname");
+
+      g_free (old);
+    }
+
+  if (g_hash_table_lookup (properties, "NormalizedName") != NULL)
+    {
+      gchar *old = priv->normalized_name;
+
+      priv->normalized_name = g_strdup (tp_asv_get_string (properties,
+            "NormalizedName"));
+
+      if (tp_strdiff (old, priv->normalized_name))
+        g_object_notify (G_OBJECT (account), "normalized-name");
 
       g_free (old);
     }
@@ -884,6 +926,18 @@ _tp_account_get_property (GObject *object,
       break;
     case PROP_NICKNAME:
       g_value_set_string (value, self->priv->nickname);
+      break;
+    case PROP_AUTOMATIC_PRESENCE_TYPE:
+      g_value_set_uint (value, self->priv->auto_presence);
+      break;
+    case PROP_AUTOMATIC_STATUS:
+      g_value_set_string (value, self->priv->auto_status);
+      break;
+    case PROP_AUTOMATIC_STATUS_MESSAGE:
+      g_value_set_string (value, self->priv->auto_message);
+      break;
+    case PROP_NORMALIZED_NAME:
+      g_value_set_string (value, self->priv->normalized_name);
       break;
     case PROP_STORAGE_PROVIDER:
       g_value_set_string (value, self->priv->storage_provider);
@@ -1456,6 +1510,109 @@ tp_account_class_init (TpAccountClass *klass)
       g_param_spec_string ("nickname",
           "Nickname",
           "The account's nickname",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:automatic-presence-type:
+   *
+   * The account's automatic presence type (a #TpConnectionPresenceType).
+   *
+   * When the account is put online automatically, for instance to make a
+   * channel request or because network connectivity becomes available,
+   * the automatic presence type, status and message will be copied to
+   * their "requested" counterparts.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail. Change notifications for automatic-presence-type,
+   * automatic-status and automatic-status-message are always emitted together,
+   * so it is sufficient to connect to one of the notification signals.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_proxy_prepare_async() has finished; until then, the value is
+   * %TP_CONNECTION_PRESENCE_TYPE_UNSET.
+   *
+   * Since: 0.9.0
+   */
+  g_object_class_install_property (object_class, PROP_AUTOMATIC_PRESENCE_TYPE,
+      g_param_spec_uint ("automatic-presence-type",
+          "AutomaticPresence type",
+          "Presence type used to put the account online automatically",
+          0,
+          NUM_TP_CONNECTION_PRESENCE_TYPES,
+          TP_CONNECTION_PRESENCE_TYPE_UNSET,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:automatic-status:
+   *
+   * The string status name to use in conjunction with the
+   * #TpAccount:automatic-presence-type.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail. Change notifications for automatic-presence-type,
+   * automatic-status and automatic-status-message are always emitted together,
+   * so it is sufficient to connect to one of the notification signals.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_proxy_prepare_async() has finished; until then, the value is
+   * %NULL.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS,
+      g_param_spec_string ("automatic-status",
+          "AutomaticPresence status",
+          "Presence status used to put the account online automatically",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:automatic-status-message:
+   *
+   * The user-defined message to use in conjunction with the
+   * #TpAccount:automatic-presence-type.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail. Change notifications for automatic-presence-type,
+   * automatic-status and automatic-status-message are always emitted together,
+   * so it is sufficient to connect to one of the notification signals.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_proxy_prepare_async() has finished; until then, the value is
+   * %NULL.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS_MESSAGE,
+      g_param_spec_string ("automatic-status-message",
+          "AutomaticPresence message",
+          "User-defined message used to put the account online automatically",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpAccount:normalized-name
+   *
+   * The normalized form of the user's own identifier on this protocol.
+   *
+   * One can receive change notifications on this property by connecting
+   * to the #GObject::notify signal and using this property as the signal
+   * detail.
+   *
+   * This is not guaranteed to have been retrieved until
+   * tp_proxy_prepare_async() has finished; until then, the value is
+   * %NULL.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_NORMALIZED_NAME,
+      g_param_spec_string ("normalized-name",
+          "NormalizedName",
+          "The normalized identifier of the user",
           NULL,
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
