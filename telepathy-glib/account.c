@@ -89,9 +89,9 @@ struct _TpAccountPrivate {
   gchar *error;
   GHashTable *error_details;
 
-  TpConnectionPresenceType presence;
-  gchar *status;
-  gchar *message;
+  TpConnectionPresenceType cur_presence;
+  gchar *cur_status;
+  gchar *cur_message;
 
   TpConnectionPresenceType requested_presence;
   gchar *requested_status;
@@ -531,13 +531,13 @@ _tp_account_update (TpAccount *account,
       presence_changed = TRUE;
       arr = tp_asv_get_boxed (properties, "CurrentPresence",
           TP_STRUCT_TYPE_SIMPLE_PRESENCE);
-      priv->presence = g_value_get_uint (g_value_array_get_nth (arr, 0));
+      priv->cur_presence = g_value_get_uint (g_value_array_get_nth (arr, 0));
 
-      g_free (priv->status);
-      priv->status = g_value_dup_string (g_value_array_get_nth (arr, 1));
+      g_free (priv->cur_status);
+      priv->cur_status = g_value_dup_string (g_value_array_get_nth (arr, 1));
 
-      g_free (priv->message);
-      priv->message = g_value_dup_string (g_value_array_get_nth (arr, 2));
+      g_free (priv->cur_message);
+      priv->cur_message = g_value_dup_string (g_value_array_get_nth (arr, 2));
     }
 
   if (g_hash_table_lookup (properties, "RequestedPresence") != NULL)
@@ -666,7 +666,7 @@ _tp_account_update (TpAccount *account,
   if (presence_changed)
     {
       g_signal_emit (account, signals[PRESENCE_CHANGED], 0,
-          priv->presence, priv->status, priv->message);
+          priv->cur_presence, priv->cur_status, priv->cur_message);
       g_object_notify (G_OBJECT (account), "current-presence-type");
       g_object_notify (G_OBJECT (account), "current-status");
       g_object_notify (G_OBJECT (account), "current-status-message");
@@ -816,13 +816,13 @@ _tp_account_get_property (GObject *object,
       g_value_set_boolean (value, self->priv->enabled);
       break;
     case PROP_CURRENT_PRESENCE_TYPE:
-      g_value_set_uint (value, self->priv->presence);
+      g_value_set_uint (value, self->priv->cur_presence);
       break;
     case PROP_CURRENT_STATUS:
-      g_value_set_string (value, self->priv->status);
+      g_value_set_string (value, self->priv->cur_status);
       break;
     case PROP_CURRENT_STATUS_MESSAGE:
-      g_value_set_string (value, self->priv->message);
+      g_value_set_string (value, self->priv->cur_message);
       break;
     case PROP_CONNECTION_STATUS:
       g_value_set_uint (value, self->priv->connection_status);
@@ -920,8 +920,8 @@ _tp_account_finalize (GObject *object)
   TpAccountPrivate *priv = self->priv;
 
   g_free (priv->connection_object_path);
-  g_free (priv->status);
-  g_free (priv->message);
+  g_free (priv->cur_status);
+  g_free (priv->cur_message);
   g_free (priv->requested_status);
   g_free (priv->requested_message);
   g_free (priv->error);
@@ -2702,12 +2702,12 @@ tp_account_get_current_presence (TpAccount *account,
       TP_CONNECTION_PRESENCE_TYPE_UNSET);
 
   if (status != NULL)
-    *status = g_strdup (account->priv->status);
+    *status = g_strdup (account->priv->cur_status);
 
   if (status_message != NULL)
-    *status_message = g_strdup (account->priv->message);
+    *status_message = g_strdup (account->priv->cur_message);
 
-  return account->priv->presence;
+  return account->priv->cur_presence;
 }
 
 /**
