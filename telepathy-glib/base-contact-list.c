@@ -1285,49 +1285,53 @@ tp_base_contact_list_add_to_group_cb (GObject *source,
 
   if (tp_base_contact_list_add_to_group_finish (self, result, &error))
     {
-      DEBUG ("Adding to group '%s' succeeded", (gchar *) user_data);
+      dbus_g_method_return (user_data);
     }
   else
     {
-      DEBUG ("Adding to group '%s' failed: %s #%d: %s", (gchar *) user_data,
-          g_quark_to_string (error->domain), error->code, error->message);
+      dbus_g_method_return_error (user_data, error);
       g_clear_error (&error);
     }
-
-  g_free (user_data);
 }
 
-gboolean
+void
 _tp_base_contact_list_add_to_group (TpBaseContactList *self,
     TpHandle group,
-    TpHandle contact,
+    const GArray *contacts_arr,
     const gchar *message G_GNUC_UNUSED,
-    GError **error)
+    DBusGMethodInvocation *context)
 {
   TpHandleSet *contacts;
   const gchar *group_name;
+  GError *error = NULL;
 
-  /* fail if not ready yet, failed, or disconnected */
-  if (tp_base_contact_list_get_state (self, error) !=
-      TP_CONTACT_LIST_STATE_SUCCESS)
-    return FALSE;
+  /* fail if not ready yet, failed, or disconnected, or if handles are bad */
+  if (tp_base_contact_list_get_state (self, &error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS ||
+      !tp_handles_are_valid (self->priv->contact_repo, contacts_arr, FALSE,
+        &error))
+    goto error;
 
   if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot add contacts to a group");
-      return FALSE;
+      goto error;
     }
 
-  contacts = tp_handle_set_new (self->priv->contact_repo);
-  tp_handle_set_add (contacts, contact);
+  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts_arr);
   group_name = tp_handle_inspect (self->priv->group_repo, group);
 
   tp_base_contact_list_add_to_group_async (self, group_name, contacts,
-      tp_base_contact_list_add_to_group_cb, g_strdup (group_name));
+      tp_base_contact_list_add_to_group_cb, context);
 
   tp_handle_set_destroy (contacts);
-  return TRUE;
+  return;
+
+error:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void
@@ -1342,49 +1346,54 @@ tp_base_contact_list_remove_from_group_cb (GObject *source,
 
   if (tp_base_contact_list_remove_from_group_finish (self, result, &error))
     {
-      DEBUG ("Removing from group '%s' succeeded", (gchar *) user_data);
+      dbus_g_method_return (user_data);
     }
   else
     {
-      DEBUG ("Removing from group '%s' failed: %s #%d: %s",
-          (gchar *) user_data,
-          g_quark_to_string (error->domain), error->code, error->message);
+      dbus_g_method_return_error (user_data, error);
       g_clear_error (&error);
     }
-
-  g_free (user_data);
 }
 
-gboolean
+void
 _tp_base_contact_list_remove_from_group (TpBaseContactList *self,
     TpHandle group,
-    TpHandle contact,
+    const GArray *contacts_arr,
     const gchar *message G_GNUC_UNUSED,
-    GError **error)
+    guint reason G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
 {
   TpHandleSet *contacts;
   const gchar *group_name;
+  GError *error = NULL;
 
-  if (tp_base_contact_list_get_state (self, error) !=
-      TP_CONTACT_LIST_STATE_SUCCESS)
-    return FALSE;
+  /* fail if not ready yet, failed, or disconnected, or if handles are bad */
+  if (tp_base_contact_list_get_state (self, &error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS ||
+      !tp_handles_are_valid (self->priv->contact_repo, contacts_arr, FALSE,
+        &error))
+    goto error;
 
   if (!TP_IS_MUTABLE_CONTACT_GROUP_LIST (self))
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot remove contacts from a group");
-      return FALSE;
+      goto error;
     }
 
-  contacts = tp_handle_set_new (self->priv->contact_repo);
-  tp_handle_set_add (contacts, contact);
+  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts_arr);
   group_name = tp_handle_inspect (self->priv->group_repo, group);
 
   tp_base_contact_list_remove_from_group_async (self, group_name, contacts,
-      tp_base_contact_list_remove_from_group_cb, g_strdup (group_name));
+      tp_base_contact_list_remove_from_group_cb, context);
 
   tp_handle_set_destroy (contacts);
-  return TRUE;
+  return;
+
+error:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void
@@ -1439,19 +1448,52 @@ _tp_base_contact_list_delete_group_by_handle (TpBaseContactList *self,
   return TRUE;
 }
 
+typedef struct {
+    DBusGMethodInvocation *context;
+    TpListHandle list;
+} ListContext;
+
+static ListContext *
+list_context_new (DBusGMethodInvocation *context,
+    TpListHandle list)
+{
+  ListContext *lc = g_slice_new0 (ListContext);
+
+  lc->context = context;
+  lc->list = list;
+  return lc;
+}
+
+static void
+list_context_finish_take_error (ListContext *lc,
+    GError *error)
+{
+  if (error == NULL)
+    {
+      dbus_g_method_return (lc->context);
+    }
+  else
+    {
+      dbus_g_method_return_error (lc->context, error);
+      g_error_free (error);
+    }
+
+  g_slice_free (ListContext, lc);
+}
+
 static void
 tp_base_contact_list_add_to_list_cb (GObject *source,
     GAsyncResult *result,
-    gpointer list_p)
+    gpointer user_data)
 {
   TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  guint list = GPOINTER_TO_UINT (list_p);
+  ListContext *lc = user_data;
   GError *error = NULL;
   gboolean ok;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
 
-  switch (list)
+  switch (lc->list)
     {
     case TP_LIST_HANDLE_SUBSCRIBE:
       ok = tp_base_contact_list_request_subscription_finish (self, result,
@@ -1475,84 +1517,86 @@ tp_base_contact_list_add_to_list_cb (GObject *source,
       g_return_if_reached ();
     }
 
-  if (ok)
-    {
-      DEBUG ("Adding contact to '%s' list succeeded",
-          tp_base_contact_list_contact_lists[list - 1]);
-    }
-  else
-    {
-      DEBUG ("Adding contact to '%s' list failed: %s #%d: %s",
-          tp_base_contact_list_contact_lists[list - 1],
-          g_quark_to_string (error->domain), error->code, error->message);
-      g_clear_error (&error);
-    }
+  g_assert (ok == (error == NULL));
+  list_context_finish_take_error (lc, error);
 }
 
-gboolean
+void
 _tp_base_contact_list_add_to_list (TpBaseContactList *self,
     TpHandle list,
-    TpHandle contact,
+    const GArray *contacts_arr,
     const gchar *message,
-    GError **error)
+    DBusGMethodInvocation *context)
 {
   TpHandleSet *contacts;
+  GError *error = NULL;
+  ListContext *lc;
 
-  if (tp_base_contact_list_get_state (self, error) !=
-      TP_CONTACT_LIST_STATE_SUCCESS)
-    return FALSE;
+  /* fail if not ready yet, failed, or disconnected, or if handles are bad */
+  if (tp_base_contact_list_get_state (self, &error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS ||
+      !tp_handles_are_valid (self->priv->contact_repo, contacts_arr, FALSE,
+        &error))
+    goto error;
 
   if (!tp_base_contact_list_can_change_contact_list (self))
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot change subscriptions");
-      return FALSE;
+      goto error;
     }
 
-  contacts = tp_handle_set_new (self->priv->contact_repo);
-  tp_handle_set_add (contacts, contact);
+  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts_arr);
+  lc = list_context_new (context, list);
 
   switch (list)
     {
     case TP_LIST_HANDLE_SUBSCRIBE:
       tp_base_contact_list_request_subscription_async (self, contacts,
-          message, tp_base_contact_list_add_to_list_cb,
-          GUINT_TO_POINTER (list));
+          message, tp_base_contact_list_add_to_list_cb, lc);
       break;
 
     case TP_LIST_HANDLE_PUBLISH:
       tp_base_contact_list_authorize_publication_async (self, contacts,
-          tp_base_contact_list_add_to_list_cb, GUINT_TO_POINTER (list));
+          tp_base_contact_list_add_to_list_cb, lc);
       break;
 
     case TP_LIST_HANDLE_STORED:
       tp_base_contact_list_store_contacts_async (self, contacts,
-          tp_base_contact_list_add_to_list_cb, GUINT_TO_POINTER (list));
+          tp_base_contact_list_add_to_list_cb, lc);
       break;
 
     case TP_LIST_HANDLE_DENY:
       tp_base_contact_list_block_contacts_async (self, contacts,
-          tp_base_contact_list_add_to_list_cb, GUINT_TO_POINTER (list));
+          tp_base_contact_list_add_to_list_cb, lc);
       break;
+
+    default:
+      g_assert_not_reached ();
     }
 
   tp_handle_set_destroy (contacts);
-  return TRUE;
+  return;
+
+error:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 static void
 tp_base_contact_list_remove_from_list_cb (GObject *source,
     GAsyncResult *result,
-    gpointer list_p)
+    gpointer user_data)
 {
   TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
-  guint list = GPOINTER_TO_UINT (list_p);
+  ListContext *lc = user_data;
   GError *error = NULL;
   gboolean ok;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (source));
 
-  switch (list)
+  switch (lc->list)
     {
     case TP_LIST_HANDLE_SUBSCRIBE:
       ok = tp_base_contact_list_unsubscribe_finish (self, result, &error);
@@ -1574,68 +1618,72 @@ tp_base_contact_list_remove_from_list_cb (GObject *source,
       g_return_if_reached ();
     }
 
-  if (ok)
-    {
-      DEBUG ("Removing contact from '%s' list succeeded",
-          tp_base_contact_list_contact_lists[list - 1]);
-    }
-  else
-    {
-      DEBUG ("Removing contact from '%s' list failed: %s #%d: %s",
-          tp_base_contact_list_contact_lists[list - 1],
-          g_quark_to_string (error->domain), error->code, error->message);
-      g_clear_error (&error);
-    }
+  g_assert (ok == (error == NULL));
+  list_context_finish_take_error (lc, error);
 }
 
-gboolean
+void
 _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
     TpHandle list,
-    TpHandle contact,
+    const GArray *contacts_arr,
     const gchar *message G_GNUC_UNUSED,
-    GError **error)
+    guint reason G_GNUC_UNUSED,
+    DBusGMethodInvocation *context)
 {
   TpHandleSet *contacts;
+  GError *error = NULL;
+  ListContext *lc;
 
-  if (tp_base_contact_list_get_state (self, error) !=
-      TP_CONTACT_LIST_STATE_SUCCESS)
-    return FALSE;
+  /* fail if not ready yet, failed, or disconnected, or if handles are bad */
+  if (tp_base_contact_list_get_state (self, &error) !=
+      TP_CONTACT_LIST_STATE_SUCCESS ||
+      !tp_handles_are_valid (self->priv->contact_repo, contacts_arr, FALSE,
+        &error))
+    goto error;
 
   if (!tp_base_contact_list_can_change_contact_list (self))
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Cannot change subscriptions");
-      return FALSE;
+      goto error;
     }
 
-  contacts = tp_handle_set_new (self->priv->contact_repo);
-  tp_handle_set_add (contacts, contact);
+  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts_arr);
+  lc = list_context_new (context, list);
 
   switch (list)
     {
     case TP_LIST_HANDLE_SUBSCRIBE:
       tp_base_contact_list_unsubscribe_async (self, contacts,
-          tp_base_contact_list_remove_from_list_cb, GUINT_TO_POINTER (list));
+          tp_base_contact_list_remove_from_list_cb, lc);
       break;
 
     case TP_LIST_HANDLE_PUBLISH:
       tp_base_contact_list_unpublish_async (self, contacts,
-          tp_base_contact_list_remove_from_list_cb, GUINT_TO_POINTER (list));
+          tp_base_contact_list_remove_from_list_cb, lc);
       break;
 
     case TP_LIST_HANDLE_STORED:
       tp_base_contact_list_remove_contacts_async (self, contacts,
-          tp_base_contact_list_remove_from_list_cb, GUINT_TO_POINTER (list));
+          tp_base_contact_list_remove_from_list_cb, lc);
       break;
 
     case TP_LIST_HANDLE_DENY:
       tp_base_contact_list_unblock_contacts_async (self, contacts,
-          tp_base_contact_list_remove_from_list_cb, GUINT_TO_POINTER (list));
+          tp_base_contact_list_remove_from_list_cb, lc);
       break;
+
+    default:
+      g_assert_not_reached ();
     }
 
   tp_handle_set_destroy (contacts);
-  return TRUE;
+  return;
+
+error:
+  dbus_g_method_return_error (context, error);
+  g_error_free (error);
 }
 
 /**
