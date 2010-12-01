@@ -969,6 +969,8 @@ _tp_account_finalize (GObject *object)
   g_free (priv->storage_provider);
   tp_clear_pointer (&priv->storage_identifier, tp_g_value_slice_free);
 
+  g_strfreev (priv->uri_schemes);
+
   /* free any data held directly by the object here */
   if (G_OBJECT_CLASS (tp_account_parent_class)->finalize != NULL)
     G_OBJECT_CLASS (tp_account_parent_class)->finalize (object);
