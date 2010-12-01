@@ -143,6 +143,12 @@ void tp_connection_get_contacts_by_id (TpConnection *self,
     TpConnectionContactsByIdCb callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
 
+TpContact *tp_connection_dup_contact_for_immortal_handle (
+    TpConnection *connection,
+    TpHandle handle,
+    const gchar *identifier,
+    GError **error);
+
 G_END_DECLS
 
 #endif

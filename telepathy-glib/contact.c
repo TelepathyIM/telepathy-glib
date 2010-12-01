@@ -1001,6 +1001,66 @@ tp_contact_ensure (TpConnection *connection,
   return self;
 }
 
+/**
+ * tp_connection_dup_contact_for_immortal_handle:
+ * @connection: a connection for which tp_connection_has_immortal_handles()
+ *  must return TRUE
+ * @handle: a handle of type %TP_HANDLE_TYPE_CONTACT
+ * @identifier: (transfer none): the normalized identifier (XMPP JID, etc.)
+ *  corresponding to @handle
+ * @error: used to raise an error if @identifier is inconsistent with
+ *  information we already have
+ *
+ * Return a contact object or create a new contact object, immediately.
+ *
+ * This function cannot be used on connections for which
+ * tp_connection_has_immortal_handles() returns %FALSE, because on those
+ * connections it is not possible to guarantee that @handle remains valid
+ * without making asynchronous D-Bus calls.
+ *
+ * On connections without immortal handles, it might be necessary to delay
+ * processing of messages or other events until a #TpContact can be
+ * constructed asynchronously, for instance by using
+ * tp_connection_get_contacts_by_id().
+ *
+ * Returns: (transfer full): a contact
+ */
+TpContact *
+tp_connection_dup_contact_for_immortal_handle (TpConnection *connection,
+    TpHandle handle,
+    const gchar *identifier,
+    GError **error)
+{
+  TpContact *ret;
+
+  g_return_val_if_fail (tp_connection_has_immortal_handles (connection), NULL);
+  g_return_val_if_fail (handle != 0, NULL);
+  g_return_val_if_fail (identifier != NULL, NULL);
+
+  ret = tp_contact_ensure (connection, handle);
+  g_assert (ret->priv->handle == handle);
+
+  if (ret->priv->identifier == NULL)
+    {
+      /* new object, I suppose we'll have to believe the caller */
+      ret->priv->identifier = g_strdup (identifier);
+      return ret;
+    }
+
+  if (G_UNLIKELY (tp_strdiff (ret->priv->identifier, identifier)))
+    {
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "Either this client, or connection manager %s, is broken: "
+          "handle %u is thought to be '%s', but we already have "
+          "a TpContact that thinks the identifier is '%s'",
+          tp_proxy_get_bus_name (connection), handle, identifier,
+          ret->priv->identifier);
+      g_object_unref (ret);
+      return NULL;
+    }
+
+  return ret;
+}
 
 static void
 tp_contact_init (TpContact *self)

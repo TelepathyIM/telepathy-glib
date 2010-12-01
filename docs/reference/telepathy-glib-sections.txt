@@ -3952,6 +3952,7 @@ TpContactFeature
 NUM_TP_CONTACT_FEATURES
 TP_TYPE_CONTACT_FEATURE
 TpConnectionContactsByHandleCb
+tp_connection_dup_contact_for_immortal_handle
 tp_connection_get_contacts_by_handle
 TpConnectionContactsByIdCb
 tp_connection_get_contacts_by_id
