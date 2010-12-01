@@ -137,16 +137,10 @@ if test x$enable_debug = xyes; then
   AC_DEFINE(ENABLE_DEBUG, [], [Enable debug code])
 fi
 
-if test x$enable_handle_leak_debug = xyes; then
-  AC_DEFINE(ENABLE_HANDLE_LEAK_DEBUG, [], [Enable handle leak debug code])
-  HANDLE_LEAK_DEBUG_CFLAGS="-rdynamic"
-fi
-
 if test x$enable_backtrace = xyes; then
   AC_DEFINE(ENABLE_BACKTRACE, [], [Enable backtrace output on crashes])
 fi
 
-AC_SUBST(HANDLE_LEAK_DEBUG_CFLAGS)
 AC_SUBST(COVERAGE_CFLAGS)
 
 AC_ARG_ENABLE([installed-examples],
