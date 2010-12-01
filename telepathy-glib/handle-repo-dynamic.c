@@ -37,6 +37,10 @@
  *
  * Most connection managers will use this for all supported handle types
  * except %TP_HANDLE_TYPE_CONTACT_LIST.
+ *
+ * Changed in 0.13.UNRELEASED: handles are no longer reference-counted, and
+ * the reference-count-related functions are stubs. Instead, handles remain
+ * valid until the handle repository is destroyed.
  */
 
 #include <config.h>
@@ -84,91 +88,32 @@
  * Returns: a new dynamic handle repository
  */
 
-/* Handle leak tracing */
-
-#ifdef ENABLE_HANDLE_LEAK_DEBUG
-#include <stdlib.h>
-#include <stdio.h>
-
-#ifdef HAVE_EXECINFO_H
-#include <execinfo.h>
-#else
-#error "Handle leak debug requires execinfo.h"
-#endif
-
-typedef enum {
-    HL_REFFED,
-    HL_CREATED,
-    HL_UNREFFED,
-    HL_CREATED_FLOATING
-} HandleLeakEvent;
-
-typedef struct _HandleLeakTrace HandleLeakTrace;
-
-struct _HandleLeakTrace
-{
-  char **trace;
-  int len;
-  HandleLeakEvent event;
-};
-
-static void
-handle_leak_trace_free (HandleLeakTrace *hltrace)
-{
-  free (hltrace->trace);
-  g_slice_free (HandleLeakTrace, hltrace);
-}
-
-static void
-handle_leak_trace_free_gfunc (gpointer data, gpointer user_data)
-{
-  return handle_leak_trace_free ((HandleLeakTrace *) data);
-}
-
-#endif /* ENABLE_HANDLE_LEAK_DEBUG */
-
 /* Handle private data structure */
 
 typedef struct _TpHandlePriv TpHandlePriv;
 
 struct _TpHandlePriv
 {
-  /* Reference count */
-  guint refcount;
   /* Unique ID */
   gchar *string;
-#ifdef ENABLE_HANDLE_LEAK_DEBUG
-  GSList *traces;
-#endif /* ENABLE_HANDLE_LEAK_DEBUG */
   GData *datalist;
 };
 
-static TpHandlePriv *
-handle_priv_new (void)
-{
-  TpHandlePriv *priv;
-
-  priv = g_slice_new0 (TpHandlePriv);
-  priv->refcount = 1;
-
-  g_datalist_init (&(priv->datalist));
-  return priv;
-}
-
-/* Dynamic handle repo */
+static const TpHandlePriv empty_priv = { NULL, NULL };
 
 static void
-handle_priv_free (TpHandlePriv *priv)
+handle_priv_init (TpHandlePriv *priv,
+    const gchar *string)
 {
-  g_return_if_fail (priv != NULL);
+  priv->string = g_strdup (string);
+  g_datalist_init (&(priv->datalist));
+}
 
+static void
+handle_priv_free_contents (TpHandlePriv *priv)
+{
   g_free (priv->string);
   g_datalist_clear (&(priv->datalist));
-#ifdef ENABLE_HANDLE_LEAK_DEBUG
-  g_slist_foreach (priv->traces, handle_leak_trace_free_gfunc, NULL);
-  g_slist_free (priv->traces);
-#endif /* ENABLE_HANDLE_LEAK_DEBUG */
-  g_slice_free (TpHandlePriv, priv);
 }
 
 enum
@@ -200,16 +145,10 @@ struct _TpDynamicHandleRepo {
 
   TpHandleType handle_type;
 
-  /* Map GUINT_TO_POINTER(handle) -> (TpHandlePriv *) */
-  GHashTable *handle_to_priv;
+  /* Array of TpHandlePriv keyed by handle; 0th element is unused */
+  GArray *handle_to_priv;
   /* Map contact unique ID -> GUINT_TO_POINTER(handle) */
   GHashTable *string_to_handle;
-  /* Heap-queue of GUINT_TO_POINTER(handle): previously used handles */
-  TpHeap *free_handles;
-  /* Smallest handle which has never been allocated */
-  guint next_handle;
-  /* Map (client name) -> (TpHandleSet *): handles being held by that client */
-  GData *holder_to_handle_set;
   /* Normalization function */
   TpDynamicHandleRepoNormalizeFunc normalize_function;
   /* Context for normalization function if NULL is passed to _ensure or
@@ -221,8 +160,6 @@ struct _TpDynamicHandleRepo {
   gpointer normalization_data;
   /* Destructor for extra data */
   GDestroyNotify free_normalization_data;
-
-  TpDBusDaemon *bus_daemon;
 };
 
 static void dynamic_repo_iface_init (gpointer g_iface,
@@ -234,208 +171,29 @@ G_DEFINE_TYPE_WITH_CODE (TpDynamicHandleRepo, tp_dynamic_handle_repo,
 
 static inline TpHandlePriv *
 handle_priv_lookup (TpDynamicHandleRepo *repo,
-                    TpHandle handle)
-{
-  return g_hash_table_lookup (repo->handle_to_priv, GINT_TO_POINTER (handle));
-}
-
-static TpHandle
-handle_alloc (TpDynamicHandleRepo *repo)
-{
-  g_assert (repo != NULL);
-
-  if (tp_heap_size (repo->free_handles))
-    return GPOINTER_TO_UINT (tp_heap_extract_first (repo->free_handles));
-  else
-    return repo->next_handle++;
-}
-
-static gint
-handle_compare_func (gconstpointer a, gconstpointer b)
-{
-  TpHandle first = GPOINTER_TO_UINT (a);
-  TpHandle second = GPOINTER_TO_UINT (b);
-
-  return (first == second) ? 0 : ((first < second) ? -1 : 1);
-}
-
-static void
-handle_priv_remove (TpDynamicHandleRepo *repo,
     TpHandle handle)
 {
-  TpHandlePriv *priv;
-  const gchar *string;
+  if (handle == 0 || handle >= repo->handle_to_priv->len)
+    return NULL;
 
-  g_return_if_fail (handle != 0);
-  g_return_if_fail (repo != NULL);
-
-  priv = handle_priv_lookup (repo, handle);
-
-  g_assert (priv != NULL);
-
-  string = priv->string;
-
-  g_hash_table_remove (repo->string_to_handle, string);
-  g_hash_table_remove (repo->handle_to_priv, GUINT_TO_POINTER (handle));
-  if (handle == repo->next_handle - 1)
-    repo->next_handle--;
-  else
-    tp_heap_add (repo->free_handles, GUINT_TO_POINTER (handle));
-}
-
-static void
-handles_name_owner_changed_cb (TpDBusDaemon *dbus_daemon,
-                               const gchar *name,
-                               const gchar *new_owner,
-                               gpointer user_data)
-{
-  TpDynamicHandleRepo *repo = user_data;
-
-  if (tp_str_empty (new_owner))
-    {
-      tp_dbus_daemon_cancel_name_owner_watch (dbus_daemon, name,
-          handles_name_owner_changed_cb, repo);
-      g_datalist_remove_data (&repo->holder_to_handle_set, name);
-    }
+  return &g_array_index (repo->handle_to_priv, TpHandlePriv, handle);
 }
 
 static void
 tp_dynamic_handle_repo_init (TpDynamicHandleRepo *self)
 {
-  self->handle_to_priv = g_hash_table_new_full (g_direct_hash,
-      g_direct_equal, NULL, (GDestroyNotify) handle_priv_free);
+  self->handle_to_priv = g_array_new (FALSE, FALSE, sizeof (TpHandlePriv));
+  /* dummy 0'th entry */
+  g_array_append_val (self->handle_to_priv, empty_priv);
+
   self->string_to_handle = g_hash_table_new (g_str_hash, g_str_equal);
-  self->free_handles = tp_heap_new (handle_compare_func, NULL);
-  self->next_handle = 1;
-  g_datalist_init (&self->holder_to_handle_set);
-
-  self->bus_daemon = tp_dbus_daemon_dup (NULL);
-
-  if (self->bus_daemon == NULL)
-    ERROR ("Unable to connect to starter bus");
-
-  return;
-}
-
-#ifdef ENABLE_HANDLE_LEAK_DEBUG
-
-static const char *
-handle_leak_describe_event (HandleLeakEvent event)
-{
-  switch (event)
-    {
-    case HL_REFFED:
-      return "reffed";
-    case HL_UNREFFED:
-      return "unreffed";
-    case HL_CREATED:
-      return "created with 1 ref";
-    case HL_CREATED_FLOATING:
-      return "created with 0 refs";
-    }
-  g_assert_not_reached ();
-  return NULL;
-}
-
-static void
-handle_leak_debug_printbt_foreach (gpointer data, gpointer user_data)
-{
-  HandleLeakTrace *hltrace = (HandleLeakTrace *) data;
-  int i;
-
-  printf ("\t    %s at:\n", handle_leak_describe_event (hltrace->event));
-
-  for (i = 1; i < hltrace->len; i++)
-    {
-      printf ("\t\t%s\n", hltrace->trace[i]);
-    }
-
-  printf ("\n");
-}
-
-static void
-handle_leak_debug_printhandles_foreach (gpointer key,
-                                        gpointer value,
-                                        gpointer ignore)
-{
-  TpHandle handle = GPOINTER_TO_UINT (key);
-  TpHandlePriv *priv = (TpHandlePriv *) value;
-
-  printf ("\t%05u: %s (%u refs), traces:\n", handle, priv->string,
-      priv->refcount);
-
-  g_slist_foreach (priv->traces, handle_leak_debug_printbt_foreach, NULL);
-}
-
-static void
-handle_leak_debug_print_report (TpDynamicHandleRepo *self)
-{
-  g_assert (self != NULL);
-
-  if (g_hash_table_size (self->handle_to_priv) == 0)
-    {
-      printf ("No handles were leaked\n");
-      return;
-    }
-
-  printf ("HANDLE LEAK: The following handles were not freed from repo %p:\n",
-      self);
-  g_hash_table_foreach (self->handle_to_priv,
-      handle_leak_debug_printhandles_foreach, NULL);
-}
-
-static HandleLeakTrace *
-handle_leak_debug_bt (HandleLeakEvent event)
-{
-  void *bt_addresses[16];
-  HandleLeakTrace *ret = g_slice_new0 (HandleLeakTrace);
-
-  ret->event = event;
-  ret->len = backtrace (bt_addresses, 16);
-  ret->trace = backtrace_symbols (bt_addresses, ret->len);
-
-  return ret;
-}
-
-#define HANDLE_LEAK_DEBUG_DO(traces_slist, self, handle, event) \
-  { (traces_slist) =  g_slist_append ((traces_slist), \
-      handle_leak_debug_bt (event)); \
-    g_debug ("%p: handle %u %s", self, handle, \
-        handle_leak_describe_event (event)); \
-  }
-
-#else /* !ENABLE_HANDLE_LEAK_DEBUG */
-
-#define HANDLE_LEAK_DEBUG_DO(traces_slist, self, handle, event) {}
-
-#endif /* ENABLE_HANDLE_LEAK_DEBUG */
-
-static void
-foreach_cancel_watch (GQuark key_id,
-    gpointer handle_set,
-    gpointer user_data)
-{
-  TpDynamicHandleRepo *self = user_data;
-
-  tp_dbus_daemon_cancel_name_owner_watch (self->bus_daemon,
-      g_quark_to_string (key_id), handles_name_owner_changed_cb, self);
 }
 
 static void
 dynamic_dispose (GObject *obj)
 {
-  TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (obj);
-
   _tp_dynamic_handle_repo_set_normalization_data ((TpHandleRepoIface *) obj,
       NULL, NULL);
-
-  if (self->bus_daemon != NULL)
-    {
-      g_datalist_foreach (&self->holder_to_handle_set, foreach_cancel_watch,
-          self);
-      g_object_unref (self->bus_daemon);
-      self->bus_daemon = NULL;
-    }
 
   G_OBJECT_CLASS (tp_dynamic_handle_repo_parent_class)->dispose (obj);
 }
@@ -444,21 +202,20 @@ static void
 dynamic_finalize (GObject *obj)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (obj);
-
   GObjectClass *parent = G_OBJECT_CLASS (tp_dynamic_handle_repo_parent_class);
+  guint i;
 
-  g_assert (self->handle_to_priv);
-  g_assert (self->string_to_handle);
+  g_assert (self->handle_to_priv != NULL);
+  g_assert (self->string_to_handle != NULL);
 
-  g_datalist_clear (&self->holder_to_handle_set);
+  for (i = 0; i < self->handle_to_priv->len; i++)
+    {
+      handle_priv_free_contents (&g_array_index (self->handle_to_priv,
+            TpHandlePriv, i));
+    }
 
-#ifdef ENABLE_HANDLE_LEAK_DEBUG
-  handle_leak_debug_print_report (self);
-#endif
-
-  g_hash_table_destroy (self->handle_to_priv);
+  g_array_free (self->handle_to_priv, TRUE);
   g_hash_table_destroy (self->string_to_handle);
-  tp_heap_destroy (self->free_handles);
 
   if (parent->finalize)
     parent->finalize (obj);
@@ -565,7 +322,8 @@ tp_dynamic_handle_repo_class_init (TpDynamicHandleRepoClass *klass)
 }
 
 static gboolean
-dynamic_handle_is_valid (TpHandleRepoIface *irepo, TpHandle handle,
+dynamic_handle_is_valid (TpHandleRepoIface *irepo,
+    TpHandle handle,
     GError **error)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
@@ -585,8 +343,10 @@ dynamic_handle_is_valid (TpHandleRepoIface *irepo, TpHandle handle,
 }
 
 static gboolean
-dynamic_handles_are_valid (TpHandleRepoIface *irepo, const GArray *handles,
-    gboolean allow_zero, GError **error)
+dynamic_handles_are_valid (TpHandleRepoIface *irepo,
+    const GArray *handles,
+    gboolean allow_zero,
+    GError **error)
 {
   guint i;
 
@@ -607,132 +367,43 @@ dynamic_handles_are_valid (TpHandleRepoIface *irepo, const GArray *handles,
 }
 
 static void
-dynamic_unref_handle (TpHandleRepoIface *repo, TpHandle handle)
+dynamic_unref_handle (TpHandleRepoIface *repo G_GNUC_UNUSED,
+    TpHandle handle G_GNUC_UNUSED)
 {
-  TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (repo);
-  TpHandlePriv *priv = handle_priv_lookup (self, handle);
-
-  g_return_if_fail (priv != NULL);
-
-  HANDLE_LEAK_DEBUG_DO (priv->traces, repo, handle, HL_UNREFFED)
-
-  g_assert (priv->refcount > 0);
-
-  priv->refcount--;
-
-  if (priv->refcount == 0)
-    handle_priv_remove (self, handle);
 }
 
 static TpHandle
-dynamic_ref_handle (TpHandleRepoIface *repo, TpHandle handle)
+dynamic_ref_handle (TpHandleRepoIface *repo G_GNUC_UNUSED,
+    TpHandle handle)
 {
-  TpHandlePriv *priv = handle_priv_lookup (TP_DYNAMIC_HANDLE_REPO (repo),
-      handle);
-
-  g_return_val_if_fail (priv != NULL, 0);
-
-  priv->refcount++;
-
-  HANDLE_LEAK_DEBUG_DO (priv->traces, repo, handle, HL_REFFED)
-
   return handle;
 }
 
 static gboolean
-dynamic_client_hold_handle (TpHandleRepoIface *repo,
-                            const gchar *client_name,
-                            TpHandle handle,
-                            GError **error)
+dynamic_client_hold_handle (TpHandleRepoIface *repo G_GNUC_UNUSED,
+    const gchar *client_name G_GNUC_UNUSED,
+    TpHandle handle G_GNUC_UNUSED,
+    GError **error G_GNUC_UNUSED)
 {
-  TpDynamicHandleRepo *self;
-  TpHandleSet *handle_set;
-
-  g_return_val_if_fail (handle != 0, FALSE);
-  g_return_val_if_fail (repo != NULL, FALSE);
-
-  self = TP_DYNAMIC_HANDLE_REPO (repo);
-
-  if (!client_name || *client_name == '\0')
-    {
-      CRITICAL ("called with invalid client name");
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "invalid client name");
-      return FALSE;
-    }
-
-  handle_set = (TpHandleSet *) g_datalist_get_data (
-      &(self->holder_to_handle_set), client_name);
-
-  if (!handle_set)
-    {
-      handle_set = tp_handle_set_new (repo);
-      g_datalist_set_data_full (&(self->holder_to_handle_set),
-                                client_name,
-                                handle_set,
-                                (GDestroyNotify) tp_handle_set_destroy);
-
-      tp_dbus_daemon_watch_name_owner (self->bus_daemon, client_name,
-          handles_name_owner_changed_cb, self, NULL);
-    }
-
-  tp_handle_set_add (handle_set, handle);
-
   return TRUE;
 }
 
 static gboolean
-dynamic_client_release_handle (TpHandleRepoIface *repo,
-                               const gchar *client_name,
-                               TpHandle handle,
-                               GError **error)
+dynamic_client_release_handle (TpHandleRepoIface *repo G_GNUC_UNUSED,
+    const gchar *client_name G_GNUC_UNUSED,
+    TpHandle handle G_GNUC_UNUSED,
+    GError **error G_GNUC_UNUSED)
 {
-  TpDynamicHandleRepo *self;
-  TpHandleSet *handle_set;
-
-  g_return_val_if_fail (handle != 0, FALSE);
-  g_return_val_if_fail (repo != NULL, FALSE);
-
-  self = TP_DYNAMIC_HANDLE_REPO (repo);
-
-  if (!client_name || *client_name == '\0')
-    {
-      CRITICAL ("called with invalid client name");
-      g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "invalid client name");
-      return FALSE;
-    }
-
-  handle_set = (TpHandleSet *) g_datalist_get_data (
-      &(self->holder_to_handle_set), client_name);
-
-  if (!handle_set)
-    {
-      g_debug ("%s: no handle set found for the given client %s",
-          G_STRFUNC, client_name);
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "the given client %s wasn't holding any handles", client_name);
-      return FALSE;
-    }
-
-  if (!tp_handle_set_remove (handle_set, handle))
-    {
-      g_debug ("%s: the client %s wasn't holding the handle %u", G_STRFUNC,
-          client_name, handle);
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "the given client %s wasn't holding the handle %u", client_name,
-          handle);
-      return FALSE;
-    }
-
   return TRUE;
 }
 
 static const char *
-dynamic_inspect_handle (TpHandleRepoIface *irepo, TpHandle handle)
+dynamic_inspect_handle (TpHandleRepoIface *irepo,
+    TpHandle handle)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
   TpHandlePriv *priv = handle_priv_lookup (self, handle);
+
   if (priv == NULL)
     return NULL;
   else
@@ -757,19 +428,18 @@ dynamic_inspect_handle (TpHandleRepoIface *irepo, TpHandle handle)
  */
 TpHandle
 tp_dynamic_handle_repo_lookup_exact (TpHandleRepoIface *irepo,
-                                     const char *id)
+    const char *id)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
 
-  return GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle,
-        id));
+  return GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle, id));
 }
 
 static TpHandle
 dynamic_lookup_handle (TpHandleRepoIface *irepo,
-                       const char *id,
-                       gpointer context,
-                       GError **error)
+    const char *id,
+    gpointer context,
+    GError **error)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
   TpHandle handle;
@@ -786,8 +456,7 @@ dynamic_lookup_handle (TpHandleRepoIface *irepo,
       id = normal_id;
     }
 
-  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle,
-        id));
+  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle, id));
 
   if (handle == 0)
     {
@@ -803,9 +472,9 @@ dynamic_lookup_handle (TpHandleRepoIface *irepo,
 
 static TpHandle
 dynamic_ensure_handle (TpHandleRepoIface *irepo,
-                       const char *id,
-                       gpointer context,
-                       GError **error)
+    const char *id,
+    gpointer context,
+    GError **error)
 {
   TpDynamicHandleRepo *self = TP_DYNAMIC_HANDLE_REPO (irepo);
   TpHandle handle;
@@ -824,27 +493,24 @@ dynamic_ensure_handle (TpHandleRepoIface *irepo,
       id = normal_id;
     }
 
-  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle,
-        id));
-  if (handle)
+  handle = GPOINTER_TO_UINT (g_hash_table_lookup (self->string_to_handle, id));
+
+  if (handle != 0)
     {
-      dynamic_ref_handle (irepo, handle);
       g_free (normal_id);
       return handle;
     }
 
-  handle = handle_alloc (self);
-  priv = handle_priv_new ();
+  if (normal_id == NULL)
+    normal_id = g_strdup (id);
 
-  if (self->normalize_function)
-    priv->string = normal_id;
-  else
-    priv->string = g_strdup (id);
+  handle = self->handle_to_priv->len;
+  g_array_append_val (self->handle_to_priv, empty_priv);
+  priv = &g_array_index (self->handle_to_priv, TpHandlePriv, handle);
 
-  g_hash_table_insert (self->handle_to_priv, GUINT_TO_POINTER (handle), priv);
+  handle_priv_init (priv, normal_id);
   g_hash_table_insert (self->string_to_handle, priv->string,
       GUINT_TO_POINTER (handle));
-  HANDLE_LEAK_DEBUG_DO (priv->traces, irepo, handle, HL_CREATED)
   return handle;
 }
 

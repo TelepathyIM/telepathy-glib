@@ -228,7 +228,6 @@ AM_CFLAGS = \
     $(ERROR_CFLAGS) \
     @DBUS_CFLAGS@ \
     @GLIB_CFLAGS@ \
-    @HANDLE_LEAK_DEBUG_CFLAGS@ \
     -I$(top_builddir) \
     -I$(top_srcdir)
 

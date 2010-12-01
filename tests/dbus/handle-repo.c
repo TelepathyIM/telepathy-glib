@@ -89,11 +89,10 @@ test_handles (void)
   /* ref 4 ensures still valid */
   g_assert (tp_handle_is_valid (tp_repo, handle, NULL) == TRUE);
 
-  /* wait for D-Bus to catch up */
+  /* wait for D-Bus to catch up (just to detect any crashes) but don't assert
+   * that the handle doesn't remain valid - unref is a no-op since
+   * 0.13.UNRELEASED */
   tp_tests_proxy_run_until_dbus_queue_processed (bus_daemon);
-
-  /* No more refs */
-  g_assert (tp_handle_is_valid (tp_repo, handle, NULL) == FALSE);
 
   g_object_unref (tp_repo);
   g_object_unref (bus_daemon);

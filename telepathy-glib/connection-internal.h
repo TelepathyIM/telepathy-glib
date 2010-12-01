@@ -84,9 +84,6 @@ void _tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
     const gchar **ret_str,
     GError **error);
 
-void _tp_connection_init_handle_refs (TpConnection *self);
-void _tp_connection_clean_up_handle_refs (TpConnection *self);
-
 void _tp_connection_add_contact (TpConnection *self, TpHandle handle,
     TpContact *contact);
 void _tp_connection_remove_contact (TpConnection *self, TpHandle handle,
