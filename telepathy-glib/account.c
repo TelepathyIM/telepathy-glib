@@ -2258,20 +2258,7 @@ tp_account_set_automatic_presence_finish (TpAccount *account,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (account), tp_account_set_automatic_presence_async), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (account, tp_account_set_automatic_presence_async)
 }
 
 /**
@@ -2299,7 +2286,6 @@ tp_account_set_automatic_presence_async (TpAccount *account,
     gpointer user_data)
 {
   GValue value = {0, };
-  GValueArray *arr;
   GSimpleAsyncResult *result;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
@@ -2308,13 +2294,11 @@ tp_account_set_automatic_presence_async (TpAccount *account,
       callback, user_data, tp_account_set_automatic_presence_async);
 
   g_value_init (&value, TP_STRUCT_TYPE_SIMPLE_PRESENCE);
-  g_value_take_boxed (&value, dbus_g_type_specialized_construct (
-          TP_STRUCT_TYPE_SIMPLE_PRESENCE));
-  arr = (GValueArray *) g_value_get_boxed (&value);
-
-  g_value_set_uint (arr->values, type);
-  g_value_set_static_string (arr->values + 1, status);
-  g_value_set_static_string (arr->values + 2, message);
+  g_value_take_boxed (&value, tp_value_array_build (3,
+        G_TYPE_UINT, type,
+        G_TYPE_STRING, status,
+        G_TYPE_STRING, message,
+        G_TYPE_INVALID));
 
   tp_cli_dbus_properties_call_set (TP_PROXY (account), -1,
       TP_IFACE_ACCOUNT, "AutomaticPresence", &value,
