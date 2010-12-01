@@ -100,6 +100,8 @@ const gchar *tp_account_get_service (TpAccount *self);
 
 const gchar *tp_account_get_icon_name (TpAccount *account);
 
+const gchar *tp_account_get_normalized_name (TpAccount *self);
+
 void tp_account_set_enabled_async (TpAccount *account,
     gboolean enabled, GAsyncReadyCallback callback, gpointer user_data);
 
@@ -157,6 +159,13 @@ void tp_account_request_presence_async (TpAccount *account,
 gboolean tp_account_request_presence_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
 
+void tp_account_set_automatic_presence_async (TpAccount *account,
+    TpConnectionPresenceType type, const gchar *status, const gchar *message,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_set_automatic_presence_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
 gboolean tp_account_get_connect_automatically (TpAccount *account);
 
 void tp_account_set_connect_automatically_async (TpAccount *account,
@@ -179,6 +188,9 @@ TpConnectionPresenceType tp_account_get_current_presence (TpAccount *account,
 
 TpConnectionPresenceType tp_account_get_requested_presence (
     TpAccount *account, gchar **status, gchar **status_message);
+
+TpConnectionPresenceType tp_account_get_automatic_presence (
+    TpAccount *self, gchar **status, gchar **status_message);
 
 const GHashTable *tp_account_get_parameters (TpAccount *account);
 

@@ -91,14 +91,7 @@ tp_tests_simple_account_get_property (GObject *object,
               GValue *value,
               GParamSpec *spec)
 {
-  GValueArray *presence;
   GValue identifier = { 0, };
-
-  presence = tp_value_array_build (3,
-      G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
-      G_TYPE_STRING, "available",
-      G_TYPE_STRING, "",
-      G_TYPE_INVALID);
 
   g_value_init (&identifier, G_TYPE_STRING);
   g_value_set_string (&identifier, "unique-identifier");
@@ -126,7 +119,11 @@ tp_tests_simple_account_get_property (GObject *object,
       g_value_take_boxed (value, g_hash_table_new (NULL, NULL));
       break;
     case PROP_AUTOMATIC_PRESENCE:
-      g_value_set_boxed (value, presence);
+      g_value_take_boxed (value, tp_value_array_build (3,
+            G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE,
+            G_TYPE_STRING, "automatically-available",
+            G_TYPE_STRING, "this is my AutomaticPresence",
+            G_TYPE_INVALID));
       break;
     case PROP_CONNECT_AUTO:
       g_value_set_boolean (value, FALSE);
@@ -141,13 +138,21 @@ tp_tests_simple_account_get_property (GObject *object,
       g_value_set_uint (value, TP_CONNECTION_STATUS_REASON_REQUESTED);
       break;
     case PROP_CURRENT_PRESENCE:
-      g_value_set_boxed (value, presence);
+      g_value_take_boxed (value, tp_value_array_build (3,
+            G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_AWAY,
+            G_TYPE_STRING, "currently-away",
+            G_TYPE_STRING, "this is my CurrentPresence",
+            G_TYPE_INVALID));
       break;
     case PROP_REQUESTED_PRESENCE:
-      g_value_set_boxed (value, presence);
+      g_value_take_boxed (value, tp_value_array_build (3,
+            G_TYPE_UINT, TP_CONNECTION_PRESENCE_TYPE_BUSY,
+            G_TYPE_STRING, "requesting",
+            G_TYPE_STRING, "this is my RequestedPresence",
+            G_TYPE_INVALID));
       break;
     case PROP_NORMALIZED_NAME:
-      g_value_set_string (value, "");
+      g_value_set_string (value, "bob.mcbadgers@example.com");
       break;
     case PROP_HAS_BEEN_ONLINE:
       g_value_set_boolean (value, TRUE);
@@ -175,7 +180,6 @@ tp_tests_simple_account_get_property (GObject *object,
       break;
   }
 
-  g_boxed_free (TP_STRUCT_TYPE_SIMPLE_PRESENCE, presence);
   g_value_unset (&identifier);
 }
 
