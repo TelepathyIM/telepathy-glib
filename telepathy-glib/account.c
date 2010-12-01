@@ -1,8 +1,8 @@
 /*
  * account.c - proxy for an account in the Telepathy account manager
  *
- * Copyright (C) 2009 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2009 Nokia Corporation
+ * Copyright © 2009–2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2009–2010 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1946,6 +1946,38 @@ tp_account_ensure_connection (TpAccount *account,
   _tp_account_set_connection (account, path);
 
   return priv->connection;
+}
+
+/**
+ * tp_account_get_path_suffix:
+ * @account: a #TpAccount
+ *
+ * Returns the portion of @account's object path after the standard
+ * #TP_ACCOUNT_OBJECT_PATH_BASE prefix, of the form "cm/protocol/acct". This
+ * string uniquely identifies the account.
+ *
+ * This function is only intended to be used when printing debug messages or in
+ * tools for developer. For a string suitable for displaying to the user, see
+ * tp_account_get_display_name(). To retrieve the connection manager and
+ * protocol name parts of the object path, see
+ * tp_account_get_connection_manager() and tp_account_get_protocol(). For
+ * persistent identification of the account, use tp_proxy_get_object_path().
+ *
+ * Returns: a suffix of @account's object path, for debugging purposes.
+ * Since: 0.13.UNRELEASED
+ */
+const gchar *
+tp_account_get_path_suffix (TpAccount *account)
+{
+  const gchar *path;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
+
+  path = tp_proxy_get_object_path (account);
+  g_return_val_if_fail (g_str_has_prefix (path, TP_ACCOUNT_OBJECT_PATH_BASE),
+      path);
+
+  return path + strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
 }
 
 /**

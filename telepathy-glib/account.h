@@ -83,6 +83,7 @@ TpAccount *tp_account_new (TpDBusDaemon *bus_daemon, const gchar *object_path,
 
 gboolean tp_account_parse_object_path (const gchar *object_path,
     gchar **cm, gchar **protocol, gchar **account_id, GError **error);
+const gchar *tp_account_get_path_suffix (TpAccount *account);
 
 void tp_account_init_known_interfaces (void);
 
