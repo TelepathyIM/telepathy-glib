@@ -937,7 +937,8 @@ _tp_account_get_property (GObject *object,
       g_value_set_string (value, self->priv->auto_message);
       break;
     case PROP_NORMALIZED_NAME:
-      g_value_set_string (value, self->priv->normalized_name);
+      g_value_set_string (value,
+          tp_account_get_normalized_name (self));
       break;
     case PROP_STORAGE_PROVIDER:
       g_value_set_string (value, self->priv->storage_provider);
@@ -3603,4 +3604,23 @@ tp_account_get_automatic_presence (TpAccount *self,
     *status_message = g_strdup (self->priv->auto_message);
 
   return self->priv->auto_presence;
+}
+
+/**
+ * tp_account_get_normalized_name:
+ * @account: a #TpAccount
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the same as the #TpAccount:normalized-name
+ *  property
+ *
+ * Since: 0.13.UNRELEASED
+ **/
+const gchar *
+tp_account_get_normalized_name (TpAccount *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
+
+  return self->priv->normalized_name;
 }

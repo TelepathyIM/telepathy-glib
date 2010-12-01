@@ -97,6 +97,8 @@ const gchar *tp_account_get_service (TpAccount *self);
 
 const gchar *tp_account_get_icon_name (TpAccount *account);
 
+const gchar *tp_account_get_normalized_name (TpAccount *self);
+
 void tp_account_set_enabled_async (TpAccount *account,
     gboolean enabled, GAsyncReadyCallback callback, gpointer user_data);
 
