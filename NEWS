@@ -1,5 +1,7 @@
-telepathy-glib 0.13.8 (UNRELEASED)
+telepathy-glib 0.13.8 (2010-12-01)
 ==================================
+
+The "many of my best conversations are when un-agonized" release.
 
 Deprecations:
 
@@ -24,10 +26,18 @@ Enhancements:
 
 • fd.o #31900: add TpSimplePasswordManager (jonny)
 
+• fd.o #32004: add tp_account_get_automatic_presence,
+  tp_account_get_normalized_name, tp_account_set_automatic_presence_async
+  (smcv)
+
+• fd.o #31918: add convenience API for Account.I.Addressing (smcv)
+
 Fixes:
 
 • return a zero-terminated array of features from
   tp_client_channel_factory_dup_channel_features (cassidy)
+
+• fd.o #32004: emit GObject::notify for TpAccount::requested-* (smcv)
 
 telepathy-glib 0.13.7 (2010-11-25)
 ==================================

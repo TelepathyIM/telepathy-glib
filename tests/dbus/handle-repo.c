@@ -91,7 +91,7 @@ test_handles (void)
 
   /* wait for D-Bus to catch up (just to detect any crashes) but don't assert
    * that the handle doesn't remain valid - unref is a no-op since
-   * 0.13.UNRELEASED */
+   * 0.13.8 */
   tp_tests_proxy_run_until_dbus_queue_processed (bus_daemon);
 
   g_object_unref (tp_repo);

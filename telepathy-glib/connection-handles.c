@@ -33,7 +33,7 @@
  * @n_handles: the number of handles in @handles
  * @handles: (array length=n_handles): an array of @n_handles handles
  *
- * Do nothing. In versions of telepathy-glib prior to 0.13.UNRELEASED,
+ * Do nothing. In versions of telepathy-glib prior to 0.13.8,
  * this released a reference to the handles in @handles.
  */
 void
@@ -87,7 +87,7 @@ hold_handles_context_free (gpointer p)
  *
  * On success, the caller has a reference to each handle in @handles.
  *
- * Since telepathy-glib version 0.13.UNRELEASED,
+ * Since telepathy-glib version 0.13.8,
  * the handles will remain valid until @connection becomes invalid
  * (signalled by #TpProxy::invalidated). In earlier versions, they could be
  * released with tp_connection_unref_handles().
@@ -239,7 +239,7 @@ request_handles_context_free (gpointer p)
  *
  * On success, the caller has a reference to each handle in @handles.
  *
- * Since telepathy-glib version 0.13.UNRELEASED,
+ * Since telepathy-glib version 0.13.8,
  * the handles will remain valid until @connection becomes invalid
  * (signalled by #TpProxy::invalidated). In earlier versions, they could be
  * released with tp_connection_unref_handles().
@@ -375,7 +375,7 @@ tp_connection_request_handles (TpConnection *self,
  *
  * Return (via a callback) any number of attributes of the given handles.
  *
- * Since telepathy-glib version 0.13.UNRELEASED,
+ * Since telepathy-glib version 0.13.8,
  * the handles will remain valid until @connection becomes invalid
  * (signalled by #TpProxy::invalidated). In earlier versions, if @hold
  * was %TRUE, the callback would hold a reference to them which could be
@@ -453,7 +453,7 @@ tp_connection_get_contact_attributes (TpConnection *self,
  * Return (via a callback) the contacts on the contact list and any number of
  * their attributes.
  *
- * Since telepathy-glib version 0.13.UNRELEASED,
+ * Since telepathy-glib version 0.13.8,
  * the handles will remain valid until @connection becomes invalid
  * (signalled by #TpProxy::invalidated). In earlier versions, if @hold
  * was %TRUE, the callback would hold a reference to them which could be

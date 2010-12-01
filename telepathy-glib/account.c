@@ -218,7 +218,7 @@ static void tp_account_maybe_prepare_storage (TpProxy *proxy);
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 
 /**
@@ -1475,7 +1475,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The account's requested presence type (a #TpConnectionPresenceType).
    *
-   * Since 0.13.UNRELEASED,
+   * Since 0.13.8,
    * one can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail. Change notifications for requested-presence-type,
@@ -1502,7 +1502,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The requested Status string of the account.
    *
-   * Since 0.13.UNRELEASED,
+   * Since 0.13.8,
    * one can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail. Change notifications for requested-presence-type,
@@ -1527,7 +1527,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * The requested status message message of the account.
    *
-   * Since 0.13.UNRELEASED,
+   * Since 0.13.8,
    * one can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
    * detail. Change notifications for requested-presence-type,
@@ -1589,7 +1589,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_proxy_prepare_async() has finished; until then, the value is
    * %TP_CONNECTION_PRESENCE_TYPE_UNSET.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.8
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_PRESENCE_TYPE,
       g_param_spec_uint ("automatic-presence-type",
@@ -1616,7 +1616,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.8
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS,
       g_param_spec_string ("automatic-status",
@@ -1641,7 +1641,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.8
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_STATUS_MESSAGE,
       g_param_spec_string ("automatic-status-message",
@@ -1663,7 +1663,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_proxy_prepare_async() has finished; until then, the value is
    * %NULL.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.8
    */
   g_object_class_install_property (object_class, PROP_NORMALIZED_NAME,
       g_param_spec_string ("normalized-name",
@@ -2282,7 +2282,7 @@ tp_account_reconnect_async (TpAccount *account,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 gboolean
 tp_account_set_automatic_presence_finish (TpAccount *account,
@@ -2306,7 +2306,7 @@ tp_account_set_automatic_presence_finish (TpAccount *account,
  * tp_account_set_automatic_presence_finish() to get the result of the
  * operation.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 void
 tp_account_set_automatic_presence_async (TpAccount *account,
@@ -3749,7 +3749,7 @@ tp_account_maybe_prepare_addressing (TpProxy *proxy)
  *
  * Returns: (transfer none): a list of URI schemes, or %NULL
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 const gchar * const *
 tp_account_get_uri_schemes (TpAccount *self)
@@ -3769,7 +3769,7 @@ tp_account_get_uri_schemes (TpAccount *self)
  * Returns: %TRUE if the result of tp_account_get_uri_schemes() would include
  *  @scheme
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 gboolean
 tp_account_associated_with_uri_scheme (TpAccount *self,
@@ -3799,7 +3799,7 @@ tp_account_associated_with_uri_scheme (TpAccount *self,
  * of tp_account_get_uri_schemes() or tp_account_associated_with_uri_scheme()
  * unless that feature has been enabled.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 void
 tp_account_set_uri_scheme_association_async (TpAccount *self,
@@ -3831,7 +3831,7 @@ tp_account_set_uri_scheme_association_async (TpAccount *self,
  *
  * Returns: %TRUE if the call was successful, otherwise %FALSE
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 gboolean
 tp_account_set_uri_scheme_association_finish (TpAccount *self,
@@ -3870,7 +3870,7 @@ tp_account_set_uri_scheme_association_finish (TpAccount *self,
  *
  * Returns: the same as the #TpAccount:automatic-presence-type property
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 TpConnectionPresenceType
 tp_account_get_automatic_presence (TpAccount *self,
@@ -3898,7 +3898,7 @@ tp_account_get_automatic_presence (TpAccount *self,
  * Returns: (transfer none): the same as the #TpAccount:normalized-name
  *  property
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  **/
 const gchar *
 tp_account_get_normalized_name (TpAccount *self)

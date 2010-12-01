@@ -54,7 +54,7 @@
  * with that password, otherwise the connection must deal with the
  * error reached.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 
 /**
@@ -63,7 +63,7 @@
  * A helper channel manager to manage X-TELEPATHY-PASSWORD
  * ServerAuthentication channels.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 
 #include "telepathy-glib/simple-password-manager.h"
@@ -344,7 +344,7 @@ tp_simple_password_manager_channel_finished_cb (
  * call tp_simple_password_manager_prompt_finish() to get the
  * result of the request.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 void
 tp_simple_password_manager_prompt_async (
@@ -400,7 +400,7 @@ tp_simple_password_manager_prompt_async (
  * Returns: a #GString with the password (or byte-blob) retrieved
  *  by @manager
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.8
  */
 const GString *
 tp_simple_password_manager_prompt_finish (

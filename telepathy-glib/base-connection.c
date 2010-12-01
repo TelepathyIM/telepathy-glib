@@ -1628,7 +1628,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * indicate that this version of telepathy-glib never unreferences handles
    * until the connection becomes disconnected.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.8
    */
   param_spec = g_param_spec_boolean ("has-immortal-handles",
       "Connection.HasImmortalHandles",
