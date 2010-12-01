@@ -27,7 +27,7 @@
  * @see_also: TpDynamicHandleRepo, TpStaticHandleRepo
  *
  * Abstract interface of a repository for handles, supporting operations
- * which include checking for validity, reference counting, lookup by
+ * which include checking for validity, lookup by
  * string value and lookup by numeric value. See #TpDynamicHandleRepo
  * and #TpStaticHandleRepo for concrete implementations.
  */
@@ -130,12 +130,11 @@ tp_handles_are_valid (TpHandleRepoIface *self,
 
 /**
  * tp_handle_ref: (skip)
- * @self: A handle repository implementation
- * @handle: A handle of the type stored in the repository
+ * @self: not used
+ * @handle: not used
  *
- * Increase the reference count of the given handle, which must be present
- * in the repository. For repository implementations which never free handles
- * (like #TpStaticHandleRepo) this has no effect.
+ * Do nothing. This previously provided refcounting for handles, but handles
+ * now last as long as the connection.
  *
  * Changed in 0.13.6: %handle is now returned; previously,
  * this function didn't return anything.
@@ -144,38 +143,25 @@ tp_handles_are_valid (TpHandleRepoIface *self,
  */
 
 TpHandle
-tp_handle_ref (TpHandleRepoIface *self,
-               TpHandle handle)
+tp_handle_ref (TpHandleRepoIface *self G_GNUC_UNUSED,
+    TpHandle handle)
 {
-  return TP_HANDLE_REPO_IFACE_GET_CLASS (self)->ref_handle (self, handle);
+  return handle;
 }
 
 
 /**
  * tp_handles_ref: (skip)
- * @self: A handle repository implementation
- * @handles: A GArray of TpHandle representing handles
+ * @self: not used
+ * @handles: not used
  *
- * Increase the reference count of the given handles. If a handle appears
- * multiple times in @handles it will be referenced that many times. If
- * any zero entries appear in @handles they will be ignored without error;
- * it is an error for any other invalid handle to appear in @handles.
+ * Do nothing. This previously provided refcounting for handles, but handles
+ * now last as long as the connection.
  */
 void
-tp_handles_ref (TpHandleRepoIface *self,
-                const GArray *handles)
+tp_handles_ref (TpHandleRepoIface *self G_GNUC_UNUSED,
+    const GArray *handles G_GNUC_UNUSED)
 {
-  guint i;
-  TpHandle h;
-  TpHandle (*ref) (TpHandleRepoIface *, TpHandle) =
-    TP_HANDLE_REPO_IFACE_GET_CLASS (self)->ref_handle;
-
-  for (i = 0; i < handles->len; i++)
-    {
-      h = g_array_index (handles, TpHandle, i);
-      if (h != 0)
-          ref (self, h);
-    }
 }
 
 
@@ -184,78 +170,52 @@ tp_handles_ref (TpHandleRepoIface *self,
  * @self: A handle repository implementation
  * @handle: A handle of the type stored in the repository
  *
- * Decrease the reference count of the given handle. If it reaches zero,
- * delete the handle. It is an error to attempt to unref a handle
- * which is not present in the repository.
- *
- * For repository implementations which never free handles (like
- * #TpStaticHandleRepo) this has no effect.
+ * Do nothing. This previously provided refcounting for handles, but handles
+ * now last as long as the connection.
  */
 
 void
-tp_handle_unref (TpHandleRepoIface *self,
-                 TpHandle handle)
+tp_handle_unref (TpHandleRepoIface *self G_GNUC_UNUSED,
+    TpHandle handle G_GNUC_UNUSED)
 {
-  TP_HANDLE_REPO_IFACE_GET_CLASS (self)->unref_handle (self, handle);
 }
 
 
 /**
  * tp_handles_unref: (skip)
- * @self: A handle repository implementation
- * @handles: A GArray of TpHandle representing handles
+ * @self: not used
+ * @handles: not used
  *
- * Decrease the reference count of the given handles. If a handle appears
- * multiple times in @handles it will be dereferenced that many times. If
- * any zero entries appear in @handles they will be ignored without error;
- * it is an error for any other invalid handle to appear in @handles.
+ * Do nothing. This previously provided refcounting for handles, but handles
+ * now last as long as the connection.
  */
 void
-tp_handles_unref (TpHandleRepoIface *self,
-                  const GArray *handles)
+tp_handles_unref (TpHandleRepoIface *self G_GNUC_UNUSED,
+    const GArray *handles G_GNUC_UNUSED)
 {
-  guint i;
-  TpHandle h;
-  void (*unref) (TpHandleRepoIface *, TpHandle) =
-    TP_HANDLE_REPO_IFACE_GET_CLASS (self)->unref_handle;
-
-  for (i = 0; i < handles->len; i++)
-    {
-      h = g_array_index (handles, TpHandle, i);
-      if (h != 0)
-        unref (self, h);
-    }
 }
 
 
 /**
  * tp_handle_client_hold: (skip)
- * @self: A handle repository implementation
- * @client: The unique bus name of a D-Bus peer
- * @handle: A handle of the type stored in the repository
- * @error: Set if %FALSE is returned
+ * @self: not used
+ * @client: not used
+ * @handle: not used
+ * @error: not set
  *
- * Hold the given handle on behalf of the named client.
- * If the client leaves the bus, the reference is automatically discarded.
+ * Do nothing. This previously provided refcounting for handles, but handles
+ * now last as long as the connection.
  *
- * Handles held multiple times are the same as handles held
- * once: the client either holds a handle or it doesn't. In particular,
- * if you call tp_handle_client_hold() multiple times, then call
- * tp_handle_client_release() just once, the client no longer holds the handle.
- *
- * It is an error for @handle not to be present in the repository.
- *
- * Returns: %TRUE if the client name is valid; else %FALSE with @error set.
+ * Returns: %TRUE
  */
 
 gboolean
-tp_handle_client_hold (TpHandleRepoIface *self,
-                       const gchar *client,
-                       TpHandle handle,
-                       GError **error)
+tp_handle_client_hold (TpHandleRepoIface *self G_GNUC_UNUSED,
+    const gchar *client G_GNUC_UNUSED,
+    TpHandle handle G_GNUC_UNUSED,
+    GError **error G_GNUC_UNUSED)
 {
-  return TP_HANDLE_REPO_IFACE_GET_CLASS (self)->client_hold_handle (self,
-      client, handle, error);
+  return TRUE;
 }
 
 
@@ -264,150 +224,66 @@ typedef gboolean (*HoldReleaseFunc) (TpHandleRepoIface *, const gchar *,
 
 /**
  * tp_handles_client_hold: (skip)
- * @self: A handle repository implementation
- * @client: The D-Bus unique name of a client
- * @handles: A GArray of TpHandle representing handles
- * @error: Used to return an error if %FALSE is returned
+ * @self: ignored
+ * @client: ignored
+ * @handles: ignored
+ * @error: ignored
  *
- * Hold the given handles on behalf of the named client.
- * If the client leaves the bus, the reference is automatically discarded.
+ * Do nothing. This previously provided refcounting for handles, but handles
+ * now last as long as the connection.
  *
- * If any of the handles are zero they will be ignored without error.
- * It is an error for any other invalid handle to be in @handles:
- * the caller is expected to have validated them first, e.g. using
- * tp_handles_are_valid().
- *
- * Handles appearing multiple times are the same as handles appearing
- * once: the client either holds a handle or it doesn't.
- *
- * If %FALSE is returned, the reference counts of all handles are unaffected
- * (the function either fails completely or succeeds completely).
- *
- * Returns: %TRUE if the client name is valid; else %FALSE with @error set.
+ * Returns: %TRUE
  */
 gboolean
-tp_handles_client_hold (TpHandleRepoIface *self,
-                        const gchar *client,
-                        const GArray *handles,
-                        GError **error)
+tp_handles_client_hold (TpHandleRepoIface *self G_GNUC_UNUSED,
+    const gchar *client G_GNUC_UNUSED,
+    const GArray *handles G_GNUC_UNUSED,
+    GError **error G_GNUC_UNUSED)
 {
-  guint i, j;
-  TpHandle h;
-  HoldReleaseFunc hold =
-    TP_HANDLE_REPO_IFACE_GET_CLASS (self)->client_hold_handle;
-  HoldReleaseFunc release =
-    TP_HANDLE_REPO_IFACE_GET_CLASS (self)->client_release_handle;
-
-  for (i = 0; i < handles->len; i++)
-    {
-      h = g_array_index (handles, TpHandle, i);
-      if (h != 0)
-        if (!hold (self, client, h, error))
-          {
-            /* undo what we already did */
-            for (j = 0; j < i; j++)
-              {
-                h = g_array_index (handles, TpHandle, j);
-                if (h != 0)
-                  release (self, client, h, NULL);
-              }
-            return FALSE;
-          }
-    }
-  /* success */
   return TRUE;
 }
 
 
 /**
  * tp_handle_client_release: (skip)
- * @self: A handle repository implementation
- * @client: The unique bus name of a D-Bus peer
- * @handle: A handle of the type stored in the repository
- * @error: Set if %FALSE is returned
+ * @self: ignored
+ * @client: ignored
+ * @handle: ignored
+ * @error: ignored
  *
- * If the named client holds the given handle, release it.
- * If this causes the reference count to become zero, delete the handle.
+ * Do nothing. This previously provided refcounting for handles, but handles
+ * now last as long as the connection.
  *
- * For repository implementations which never free handles (like
- * #TpStaticHandleRepo) this has no effect.
- *
- * Returns: %TRUE if the client name is valid and the client previously held
- * a reference to the handle, else %FALSE.
+ * Returns: %TRUE
  */
-
 gboolean
-tp_handle_client_release (TpHandleRepoIface *self,
-                          const gchar *client,
-                          TpHandle handle,
-                          GError **error)
+tp_handle_client_release (TpHandleRepoIface *self G_GNUC_UNUSED,
+    const gchar *client G_GNUC_UNUSED,
+    TpHandle handle G_GNUC_UNUSED,
+    GError **error G_GNUC_UNUSED)
 {
-  return TP_HANDLE_REPO_IFACE_GET_CLASS (self)->client_release_handle (self,
-      client, handle, error);
+  return TRUE;
 }
-
 
 /**
  * tp_handles_client_release: (skip)
- * @self: A handle repository implementation
- * @client: The D-Bus unique name of a client
- * @handles: A GArray of TpHandle representing handles
- * @error: Used to return an error if %FALSE is returned
+ * @self: ignored
+ * @client: ignored
+ * @handles: ignored
+ * @error: ignored
  *
- * Releases a reference to the given handles on behalf of the named client.
+ * Do nothing. This previously provided refcounting for handles, but handles
+ * now last as long as the connection.
  *
- * If any of the handles are zero they will be ignored without error.
- * It is an error for any other invalid handle to be in @handles:
- * the caller is expected to have validated them first, e.g. using
- * tp_handles_are_valid().
- *
- * If %FALSE is returned, the reference counts of all handles are unaffected
- * (the function either fails completely or succeeds completely).
- *
- * Returns: %TRUE if the client name is valid and the client previously held
- * a reference to all the handles, else %FALSE.
+ * Returns: %TRUE
  */
 gboolean
-tp_handles_client_release (TpHandleRepoIface *self,
-                           const gchar *client,
-                           const GArray *handles,
-                           GError **error)
+tp_handles_client_release (TpHandleRepoIface *self G_GNUC_UNUSED,
+    const gchar *client G_GNUC_UNUSED,
+    const GArray *handles G_GNUC_UNUSED,
+    GError **error G_GNUC_UNUSED)
 {
-  guint i, j;
-  TpHandle h;
-  gboolean ret = TRUE;
-  HoldReleaseFunc hold =
-    TP_HANDLE_REPO_IFACE_GET_CLASS (self)->client_hold_handle;
-  HoldReleaseFunc release =
-    TP_HANDLE_REPO_IFACE_GET_CLASS (self)->client_release_handle;
-
-  /* We don't want to release the last reference to any handle, since that
-   * would prevent us from undoing it on error. So, reference them all. */
-  tp_handles_ref (self, handles);
-
-  for (i = 0; i < handles->len; i++)
-    {
-      h = g_array_index (handles, TpHandle, i);
-      if (h != 0)
-        if (!release (self, client, h, error))
-          {
-            /* undo what we already did */
-            for (j = 0; j < i; j++)
-              {
-                h = g_array_index (handles, TpHandle, j);
-                if (h != 0)
-                  hold (self, client, h, NULL);
-              }
-            ret = FALSE;
-            goto out;
-          }
-    }
-
-out:
-  /* now we've either succeeded or undone a partial success, we don't need
-   * to ref all the handles any more */
-  tp_handles_unref (self, handles);
-  return ret;
+  return TRUE;
 }
 
 
@@ -440,8 +316,8 @@ tp_handle_inspect (TpHandleRepoIface *self,
  * @context: User data to be passed to the normalization callback
  * @error: Used to return an error if 0 is returned
  *
- * Return a new reference to the handle for the given string. The handle
- * is normalized, if possible. If no such handle exists it will be created.
+ * Return a handle for the given string, creating one if necessary. The string
+ * is normalized, if possible.
  *
  * Returns: the handle corresponding to the given string, or 0 if it
  * is invalid.
@@ -466,8 +342,8 @@ tp_handle_ensure (TpHandleRepoIface *self,
  * @error: Used to raise an error if the handle does not exist or is
  *  invalid
  *
- * Return the handle for the given string, without incrementing its
- * reference count. The handle is normalized if possible.
+ * Return the handle for the given string. The string is normalized if
+ * possible. If no handle already exists for the string, none is created.
  *
  * Returns: the handle corresponding to the given string, or 0 if it
  * does not exist or is invalid
