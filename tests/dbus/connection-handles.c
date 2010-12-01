@@ -311,10 +311,15 @@ main (int argc,
 
   client_conn = tp_connection_new (dbus, name, conn_path, &error);
   MYASSERT (client_conn != NULL, "");
+  /* It does in fact have immortal handles, but we can't know that yet */
+  g_assert (!tp_connection_has_immortal_handles (client_conn));
   g_assert_no_error (error);
   MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
       "");
   g_assert_no_error (error);
+
+  /* now we know */
+  g_assert (tp_connection_has_immortal_handles (client_conn));
 
   /* Tests */
 
