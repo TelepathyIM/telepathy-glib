@@ -45,31 +45,31 @@ TpChannelGroupFlags _tp_base_contact_list_get_list_flags (
 TpChannelGroupFlags _tp_base_contact_list_get_group_flags (
     TpBaseContactList *self);
 
-gboolean _tp_base_contact_list_add_to_list (TpBaseContactList *self,
+void _tp_base_contact_list_add_to_list (TpBaseContactList *self,
     TpHandle list,
-    TpHandle contact,
+    const GArray *contacts_arr,
     const gchar *message,
-    GError **error);
+    DBusGMethodInvocation *context);
 
-gboolean _tp_base_contact_list_remove_from_list (
-    TpBaseContactList *self,
+void _tp_base_contact_list_remove_from_list (TpBaseContactList *self,
     TpHandle list,
-    TpHandle contact,
+    const GArray *contacts_arr,
     const gchar *message,
-    GError **error);
+    guint reason,
+    DBusGMethodInvocation *context);
 
-gboolean _tp_base_contact_list_add_to_group (TpBaseContactList *self,
+void _tp_base_contact_list_add_to_group (TpBaseContactList *self,
     TpHandle group,
-    TpHandle contact,
+    const GArray *contacts_arr,
     const gchar *message,
-    GError **error);
+    DBusGMethodInvocation *context);
 
-gboolean _tp_base_contact_list_remove_from_group (
-    TpBaseContactList *self,
+void _tp_base_contact_list_remove_from_group (TpBaseContactList *self,
     TpHandle group,
-    TpHandle contact,
+    const GArray *contacts_arr,
     const gchar *message,
-    GError **error);
+    guint reason,
+    DBusGMethodInvocation *context);
 
 gboolean _tp_base_contact_list_delete_group_by_handle (
     TpBaseContactList *self,
