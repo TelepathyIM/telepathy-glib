@@ -1558,7 +1558,7 @@ tp_account_class_init (TpAccountClass *klass)
    * tp_proxy_prepare_async() has finished; until then, the value is
    * %TP_CONNECTION_PRESENCE_TYPE_UNSET.
    *
-   * Since: 0.9.0
+   * Since: 0.13.UNRELEASED
    */
   g_object_class_install_property (object_class, PROP_AUTOMATIC_PRESENCE_TYPE,
       g_param_spec_uint ("automatic-presence-type",
