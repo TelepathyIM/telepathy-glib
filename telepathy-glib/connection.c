@@ -878,6 +878,28 @@ tp_connection_invalidated (TpConnection *self)
   _tp_connection_set_self_handle (self, 0);
 }
 
+static void
+_tp_connection_got_properties (TpProxy *proxy,
+    GHashTable *asv,
+    const GError *error,
+    gpointer unused G_GNUC_UNUSED,
+    GObject *unused_object G_GNUC_UNUSED)
+{
+  TpConnection *self = TP_CONNECTION (proxy);
+
+  if (error == NULL)
+    {
+      /* FIXME: fd.o #27459: use more of the properties, as a fast-path */
+
+      if (tp_asv_get_boolean (asv, "HasImmortalHandles", NULL))
+        self->priv->has_immortal_handles = TRUE;
+    }
+  else
+    {
+      DEBUG ("GetAll failed, will use 0.18 API instead: %s", error->message);
+    }
+}
+
 static GObject *
 tp_connection_constructor (GType type,
                            guint n_params,
@@ -895,6 +917,10 @@ tp_connection_constructor (GType type,
       tp_connection_status_changed_cb, NULL, NULL, NULL, NULL);
   tp_cli_connection_connect_to_connection_error (self,
       tp_connection_connection_error_cb, NULL, NULL, NULL, NULL);
+
+  /* get the properties, currently only for HasImmortalHandles */
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
 
   /* get my initial status */
   DEBUG ("Calling GetStatus");
@@ -2132,4 +2158,25 @@ tp_connection_add_client_interest_by_id (TpConnection *self,
   /* no-reply flag set, and we ignore any reply */
   tp_cli_connection_call_add_client_interest (self, -1,
       strv, NULL, NULL, NULL, NULL);
+}
+
+/**
+ * tp_connection_has_immortal_handles:
+ * @self: a connection
+ *
+ * Return %TRUE if this connection is known to not destroy handles
+ * (#TpHandle) until it disconnects.
+ *
+ * On such connections, if you know that a handle maps to a particular
+ * identifier now, then you can rely on that handle mapping to that
+ * identifier for the whole lifetime of the connection.
+ *
+ * Returns: %TRUE if handles last as long as the connection itself
+ */
+gboolean
+tp_connection_has_immortal_handles (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  return self->priv->has_immortal_handles;
 }

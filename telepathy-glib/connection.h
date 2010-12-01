@@ -179,6 +179,8 @@ void tp_connection_add_client_interest (TpConnection *self,
 void tp_connection_add_client_interest_by_id (TpConnection *self,
     GQuark interested_in);
 
+gboolean tp_connection_has_immortal_handles (TpConnection *self);
+
 #define TP_CONNECTION_FEATURE_CORE \
   (tp_connection_get_feature_quark_core ())
 GQuark tp_connection_get_feature_quark_core (void) G_GNUC_CONST;
