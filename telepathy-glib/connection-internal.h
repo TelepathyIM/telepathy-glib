@@ -67,6 +67,7 @@ struct _TpConnectionPrivate {
     unsigned contact_info_fetched:1;
 
     unsigned ready:1;
+    unsigned has_immortal_handles:1;
     unsigned tracking_aliases_changed:1;
     unsigned tracking_avatar_updated:1;
     unsigned tracking_avatar_retrieved:1;
