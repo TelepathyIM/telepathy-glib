@@ -137,42 +137,6 @@ _tp_connection_ref_handles (TpConnection *connection,
     }
 }
 
-
-static void
-post_unref (TpConnection *connection,
-            const GError *error,
-            gpointer user_data,
-            GObject *weak_object)
-{
-  GArray *arr = user_data;
-
-  if (error == NULL)
-    {
-      DEBUG ("Released %u handles", arr->len);
-    }
-  else
-    {
-      guint i;
-
-      DEBUG ("Failed to release %u handles: %s %u: %s",
-          arr->len, g_quark_to_string (error->domain), error->code,
-          error->message);
-
-      for (i = 0; i < arr->len; i++)
-        {
-          DEBUG ("   %u", g_array_index (arr, guint, i));
-        }
-    }
-}
-
-
-static void
-array_free_TRUE (gpointer p)
-{
-  g_array_free (p, TRUE);
-}
-
-
 void
 _tp_connection_init_handle_refs (TpConnection *self)
 {
@@ -265,95 +229,15 @@ _tp_connection_clean_up_handle_refs (TpConnection *self)
  * @n_handles: the number of handles in @handles
  * @handles: (array length=n_handles): an array of @n_handles handles
  *
- * Release the reference to the handles in @handles that was obtained by
- * calling tp_connection_hold_handles() or tp_connection_request_handles().
- *
- * This function might release any references held by calling
- * tp_cli_connection_call_request_handles(),
- * tp_cli_connection_run_request_handles(),
- * tp_cli_connection_call_hold_handles(),
- * tp_cli_connection_run_hold_handles(),
- * tp_cli_connection_interface_contacts_call_get_contact_attributes() or
- * tp_cli_connection_interface_contacts_run_get_contact_attributes() directly.
- * Those functions should be avoided in favour of using #TpContact,
- * tp_connection_hold_handles(), tp_connection_request_handles() and
- * tp_connection_get_contact_attributes(), which along with this function
- * perform client-side reference counting of handles.
- *
- * If @self has already become invalid, this function does nothing.
+ * Do nothing. In versions of telepathy-glib prior to 0.13.UNRELEASED,
+ * this released one reference to the handles in @handles.
  */
 void
-tp_connection_unref_handles (TpConnection *self,
-                             TpHandleType handle_type,
-                             guint n_handles,
-                             const TpHandle *handles)
+tp_connection_unref_handles (TpConnection *self G_GNUC_UNUSED,
+                             TpHandleType handle_type G_GNUC_UNUSED,
+                             guint n_handles G_GNUC_UNUSED,
+                             const TpHandle *handles G_GNUC_UNUSED)
 {
-  TpProxy *as_proxy = (TpProxy *) self;
-  GHashTable *handle_refs;
-  Bucket *bucket;
-  guint i;
-  GArray *unref;
-
-  DEBUG ("%p: %u handles of type %u", self, n_handles, handle_type);
-
-  g_return_if_fail (TP_IS_CONNECTION (self));
-  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
-  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
-
-  if (as_proxy->invalidated != NULL)
-    {
-      return;
-    }
-
-  bucket = connection_get_bucket (self);
-
-  /* if there's no hash table, then we can't have a ref to the handles -
-   * user error */
-  g_return_if_fail (((void)"no refs exist to any handle of that type",
-        bucket->handle_refs[handle_type] != NULL));
-
-  handle_refs = bucket->handle_refs[handle_type];
-
-  unref = g_array_sized_new (FALSE, FALSE, sizeof (guint), n_handles);
-
-  for (i = 0; i < n_handles; i++)
-    {
-      gpointer handle = GUINT_TO_POINTER (handles[i]);
-      gsize r = GPOINTER_TO_SIZE (g_hash_table_lookup (handle_refs, handle));
-
-      g_return_if_fail (handles[i] != 0);
-      /* if we have no refs, it's user error */
-      g_return_if_fail (((void)"no refs exist to one of the handles", r != 0));
-
-      if (r == 1)
-        {
-          DEBUG ("releasing handle %u", handles[i]);
-          g_array_append_val (unref, handles[i]);
-          g_hash_table_remove (handle_refs, handle);
-        }
-      else
-        {
-          DEBUG ("decrementing handle %u to %" G_GSIZE_FORMAT, handles[i],
-              r - 1);
-          g_hash_table_insert (handle_refs, handle, GSIZE_TO_POINTER (r - 1));
-        }
-    }
-
-  /* Fire off the unref call asynchronously, ignore error if any.
-   * This can't be done idly (so we can combine unrefs) without additional
-   * checks, since that would introduce a race between the idle handler
-   * running, and someone else holding the handles again. */
-  if (unref->len > 0)
-    {
-      DEBUG ("releasing %u handles", unref->len);
-
-      tp_cli_connection_call_release_handles (self, -1,
-          handle_type, unref, post_unref, unref, array_free_TRUE, NULL);
-    }
-  else
-    {
-      g_array_free (unref, TRUE);
-    }
 }
 
 
