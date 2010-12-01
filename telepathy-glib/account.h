@@ -177,6 +177,9 @@ TpConnectionPresenceType tp_account_get_current_presence (TpAccount *account,
 TpConnectionPresenceType tp_account_get_requested_presence (
     TpAccount *account, gchar **status, gchar **status_message);
 
+TpConnectionPresenceType tp_account_get_automatic_presence (
+    TpAccount *self, gchar **status, gchar **status_message);
+
 const GHashTable *tp_account_get_parameters (TpAccount *account);
 
 const gchar *tp_account_get_nickname (TpAccount *account);

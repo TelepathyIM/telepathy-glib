@@ -3570,3 +3570,37 @@ tp_account_get_storage_specific_information_finish (TpAccount *self,
 
   return g_simple_async_result_get_op_res_gpointer (simple);
 }
+
+/**
+ * tp_account_get_automatic_presence:
+ * @self: an account
+ * @status: (out) (transfer none): return location for the presence status
+ * @status_message: (out) (transfer full): return location for the
+ *  user-defined message
+ *
+ * Gets the automatic presence, status and status message of @account. These
+ * values are the same as the #TpAccount:automatic-presence-type,
+ * #TpAccount:automatic-status and #TpAccount:automatic-status-message
+ * properties, and are the values that will be used if the account should
+ * be put online automatically.
+ *
+ * Returns: the same as the #TpAccount:automatic-presence-type property
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpConnectionPresenceType
+tp_account_get_automatic_presence (TpAccount *self,
+    gchar **status,
+    gchar **status_message)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT (self),
+      TP_CONNECTION_PRESENCE_TYPE_UNSET);
+
+  if (status != NULL)
+    *status = g_strdup (self->priv->auto_status);
+
+  if (status_message != NULL)
+    *status_message = g_strdup (self->priv->auto_message);
+
+  return self->priv->auto_presence;
+}
