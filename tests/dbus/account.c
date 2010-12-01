@@ -337,28 +337,28 @@ test_prepare_success (Test *test,
   /* the icon name in SimpleAccount is "", so we guess based on the protocol */
   g_assert_cmpstr (tp_account_get_icon_name (test->account), ==, "im-ev");
 
-  /* RequestedPresence is (Available, "available", "") */
+  /* RequestedPresence */
   g_assert_cmpint (tp_account_get_requested_presence (test->account, NULL,
-        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_BUSY);
   g_assert_cmpint (tp_account_get_requested_presence (test->account, &status,
-        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
-  g_assert_cmpstr (status, ==, "available");
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_BUSY);
+  g_assert_cmpstr (status, ==, "requesting");
   g_free (status);
   g_assert_cmpint (tp_account_get_requested_presence (test->account, NULL,
-        &message), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
-  g_assert_cmpstr (message, ==, "");
+        &message), ==, TP_CONNECTION_PRESENCE_TYPE_BUSY);
+  g_assert_cmpstr (message, ==, "this is my RequestedPresence");
   g_free (message);
 
-  /* CurrentPresence is the same as RequestedPresence */
+  /* CurrentPresence */
   g_assert_cmpint (tp_account_get_current_presence (test->account, NULL,
-        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AWAY);
   g_assert_cmpint (tp_account_get_current_presence (test->account, &status,
-        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
-  g_assert_cmpstr (status, ==, "available");
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AWAY);
+  g_assert_cmpstr (status, ==, "currently-away");
   g_free (status);
   g_assert_cmpint (tp_account_get_current_presence (test->account, NULL,
-        &message), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
-  g_assert_cmpstr (message, ==, "");
+        &message), ==, TP_CONNECTION_PRESENCE_TYPE_AWAY);
+  g_assert_cmpstr (message, ==, "this is my CurrentPresence");
   g_free (message);
 
   /* NormalizedName and AutomaticPresence aren't available yet */
