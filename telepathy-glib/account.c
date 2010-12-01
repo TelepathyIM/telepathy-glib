@@ -2241,6 +2241,89 @@ tp_account_reconnect_async (TpAccount *account,
 }
 
 /**
+ * tp_account_set_automatic_presence_finish:
+ * @account: a #TpAccount
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an asynchronous request to change the automatic presence of
+ * @account.
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_account_set_automatic_presence_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (account), tp_account_set_automatic_presence_async), FALSE);
+
+  return TRUE;
+}
+
+/**
+ * tp_account_set_automatic_presence_async:
+ * @account: a #TpAccount
+ * @type: the requested presence
+ * @status: a status message to set, or %NULL
+ * @message: a message for the change, or %NULL
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Requests an asynchronous change of @account's automatic presence. When the
+ * operation is finished, @callback will be called. You can then call
+ * tp_account_set_automatic_presence_finish() to get the result of the
+ * operation.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_account_set_automatic_presence_async (TpAccount *account,
+    TpConnectionPresenceType type,
+    const gchar *status,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GValue value = {0, };
+  GValueArray *arr;
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+
+  result = g_simple_async_result_new (G_OBJECT (account),
+      callback, user_data, tp_account_set_automatic_presence_async);
+
+  g_value_init (&value, TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+  g_value_take_boxed (&value, dbus_g_type_specialized_construct (
+          TP_STRUCT_TYPE_SIMPLE_PRESENCE));
+  arr = (GValueArray *) g_value_get_boxed (&value);
+
+  g_value_set_uint (arr->values, type);
+  g_value_set_static_string (arr->values + 1, status);
+  g_value_set_static_string (arr->values + 2, message);
+
+  tp_cli_dbus_properties_call_set (TP_PROXY (account), -1,
+      TP_IFACE_ACCOUNT, "AutomaticPresence", &value,
+      _tp_account_property_set_cb, result, NULL, G_OBJECT (account));
+
+  g_value_unset (&value);
+}
+
+/**
  * tp_account_request_presence_finish:
  * @account: a #TpAccount
  * @result: a #GAsyncResult

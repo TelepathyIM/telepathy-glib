@@ -156,6 +156,13 @@ void tp_account_request_presence_async (TpAccount *account,
 gboolean tp_account_request_presence_finish (TpAccount *account,
     GAsyncResult *result, GError **error);
 
+void tp_account_set_automatic_presence_async (TpAccount *account,
+    TpConnectionPresenceType type, const gchar *status, const gchar *message,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+gboolean tp_account_set_automatic_presence_finish (TpAccount *account,
+    GAsyncResult *result, GError **error);
+
 gboolean tp_account_get_connect_automatically (TpAccount *account);
 
 void tp_account_set_connect_automatically_async (TpAccount *account,
