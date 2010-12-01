@@ -1,7 +1,21 @@
 telepathy-glib 0.13.8 (UNRELEASED)
 ==================================
 
-…
+Deprecations:
+
+• fd.o #24114: tp_get_bus() is deprecated (again). Please use
+  tp_dbus_daemon_dup(), followed by tp_dbus_daemon_register_object() if that's
+  what you're using it for, or tp_proxy_get_dbus_connection() if you really
+  need a DBusGConnection. (smcv)
+
+Enhancements:
+
+• fd.o #31900: add TpSimplePasswordManager (jonny)
+
+Fixes:
+
+• return a zero-terminated array of features from
+  tp_client_channel_factory_dup_channel_features (cassidy)
 
 telepathy-glib 0.13.7 (2010-11-25)
 ==================================
