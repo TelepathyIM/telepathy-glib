@@ -133,8 +133,8 @@ tp_handles_are_valid (TpHandleRepoIface *self,
  * @self: not used
  * @handle: not used
  *
- * Do nothing. This previously provided refcounting for handles, but handles
- * now last as long as the connection.
+ * Do nothing. Since version 0.13.UNRELEASED, handles always last as long as
+ * the connection; previously, this function provided refcounting for handles.
  *
  * Changed in 0.13.6: %handle is now returned; previously,
  * this function didn't return anything.
@@ -155,8 +155,8 @@ tp_handle_ref (TpHandleRepoIface *self G_GNUC_UNUSED,
  * @self: not used
  * @handles: not used
  *
- * Do nothing. This previously provided refcounting for handles, but handles
- * now last as long as the connection.
+ * Do nothing. Since version 0.13.UNRELEASED, handles always last as long as
+ * the connection; previously, this function provided refcounting for handles.
  */
 void
 tp_handles_ref (TpHandleRepoIface *self G_GNUC_UNUSED,
@@ -170,8 +170,8 @@ tp_handles_ref (TpHandleRepoIface *self G_GNUC_UNUSED,
  * @self: A handle repository implementation
  * @handle: A handle of the type stored in the repository
  *
- * Do nothing. This previously provided refcounting for handles, but handles
- * now last as long as the connection.
+ * Do nothing. Since version 0.13.UNRELEASED, handles always last as long as
+ * the connection; previously, this function provided refcounting for handles.
  */
 
 void
@@ -186,8 +186,8 @@ tp_handle_unref (TpHandleRepoIface *self G_GNUC_UNUSED,
  * @self: not used
  * @handles: not used
  *
- * Do nothing. This previously provided refcounting for handles, but handles
- * now last as long as the connection.
+ * Do nothing. Since version 0.13.UNRELEASED, handles always last as long as
+ * the connection; previously, this function provided refcounting for handles.
  */
 void
 tp_handles_unref (TpHandleRepoIface *self G_GNUC_UNUSED,
@@ -203,8 +203,8 @@ tp_handles_unref (TpHandleRepoIface *self G_GNUC_UNUSED,
  * @handle: not used
  * @error: not set
  *
- * Do nothing. This previously provided refcounting for handles, but handles
- * now last as long as the connection.
+ * Do nothing. Since version 0.13.UNRELEASED, handles always last as long as
+ * the connection; previously, this function provided refcounting for handles.
  *
  * Returns: %TRUE
  */
@@ -229,8 +229,8 @@ typedef gboolean (*HoldReleaseFunc) (TpHandleRepoIface *, const gchar *,
  * @handles: ignored
  * @error: ignored
  *
- * Do nothing. This previously provided refcounting for handles, but handles
- * now last as long as the connection.
+ * Do nothing. Since version 0.13.UNRELEASED, handles always last as long as
+ * the connection; previously, this function provided refcounting for handles.
  *
  * Returns: %TRUE
  */
@@ -251,8 +251,8 @@ tp_handles_client_hold (TpHandleRepoIface *self G_GNUC_UNUSED,
  * @handle: ignored
  * @error: ignored
  *
- * Do nothing. This previously provided refcounting for handles, but handles
- * now last as long as the connection.
+ * Do nothing. Since version 0.13.UNRELEASED, handles always last as long as
+ * the connection; previously, this function provided refcounting for handles.
  *
  * Returns: %TRUE
  */
@@ -272,8 +272,8 @@ tp_handle_client_release (TpHandleRepoIface *self G_GNUC_UNUSED,
  * @handles: ignored
  * @error: ignored
  *
- * Do nothing. This previously provided refcounting for handles, but handles
- * now last as long as the connection.
+ * Do nothing. Since version 0.13.UNRELEASED, handles always last as long as
+ * the connection; previously, this function provided refcounting for handles.
  *
  * Returns: %TRUE
  */
@@ -372,6 +372,10 @@ tp_handle_lookup (TpHandleRepoIface *self,
  * Associates a blob of data with a given handle and a given key
  *
  * If @destroy is set, then the data is freed when the handle is freed.
+ *
+ * Since version 0.13.UNRELEASED, handles always last as long as the
+ * connection, so @destroy will not be called until the connection
+ * disconnects.
  */
 
 void
