@@ -222,6 +222,9 @@ USA.</p>
     </method>
 
     <method name="HoldHandles" tp:name-for-bindings="Hold_Handles">
+      <tp:changed version="0.21.6">If
+        <tp:member-ref>HasImmortalHandles</tp:member-ref> is true,
+        this method no longer does anything.</tp:changed>
       <arg direction="in" name="Handle_Type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           The type of handle to be held
@@ -235,7 +238,13 @@ USA.</p>
       </arg>
 
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>Notify the connection manger that your client is holding a copy
+        <p>If <tp:member-ref>HasImmortalHandles</tp:member-ref> is true,
+          which SHOULD always be the case in this version of telepathy-spec,
+          this method does nothing and returns successfully, unless
+          the given handle type or any of the given handles is invalid.</p>
+
+        <p>In older connection managers, this method
+        notifies the connection manger that your client is holding a copy
         of handles which may not be in use in any existing channel or
         list, and were not obtained by using the
         <tp:member-ref>RequestHandles</tp:member-ref> method. For
@@ -390,6 +399,9 @@ USA.</p>
     </signal>
 
     <method name="ReleaseHandles" tp:name-for-bindings="Release_Handles">
+      <tp:changed version="0.21.6">If
+        <tp:member-ref>HasImmortalHandles</tp:member-ref> is true,
+        this method no longer does anything.</tp:changed>
       <arg direction="in" name="Handle_Type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           An integer handle type (as defined in RequestHandle)
@@ -403,10 +415,17 @@ USA.</p>
       </arg>
 
       <tp:docstring>
-        Explicitly notify the connection manager that your client is no
+        <p>If <tp:member-ref>HasImmortalHandles</tp:member-ref> is true,
+          which SHOULD always be the case in this version of telepathy-spec,
+          this method does nothing and returns successfully, unless
+          the given handle type or any of the given handles is invalid.</p>
+
+        <p>In older connection managers, this method
+        explicitly notifies the connection manager that your client is no
         longer holding any references to the given handles, and that they
         may be deallocated if they are not held by any other clients or
-        referenced by any existing channels. See HoldHandles for notes.
+        referenced by any existing channels. See
+        <tp:member-ref>HoldHandles</tp:member-ref> for notes.</p>
       </tp:docstring>
 
       <tp:possible-errors>
@@ -419,11 +438,6 @@ USA.</p>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidHandle">
           <tp:docstring>
             One of the given handles is not valid
-          </tp:docstring>
-        </tp:error>
-        <tp:error name="org.freedesktop.Telepathy.Error.NotAvailable">
-          <tp:docstring>
-            One of the given handles is not held by this client
           </tp:docstring>
         </tp:error>
       </tp:possible-errors>
@@ -622,6 +636,9 @@ USA.</p>
     </tp:simple-type>
 
     <method name="RequestHandles" tp:name-for-bindings="Request_Handles">
+      <tp:changed version="0.21.6">If
+        <tp:member-ref>HasImmortalHandles</tp:member-ref> is true,
+        this method no longer has its reference-counting effect.</tp:changed>
       <arg direction="in" name="Handle_Type" type="u" tp:type="Handle_Type">
         <tp:docstring>
           The type of handle required
@@ -641,17 +658,23 @@ USA.</p>
         </tp:docstring>
       </arg>
 
-      <tp:docstring>
-        Request several handles from the connection manager which represent a
-        number of contacts, rooms or server-stored lists on the service. The
-        connection manager should record that these handles are in use by the
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Request several handles from the connection manager which represent a
+          number of contacts, rooms or server-stored lists on the service.</p>
+
+        <p>If <tp:member-ref>HasImmortalHandles</tp:member-ref> is true,
+          which SHOULD always be the case in this version of telepathy-spec,
+          the handles remain valid until the connection disconnects.</p>
+
+        <p>The implementation of this method in older connection managers
+        must record that these handles are in use by the
         client who invokes this method, and must not deallocate the handles
         until the client disconnects from the bus or calls the
         <tp:member-ref>ReleaseHandles</tp:member-ref>
         method. Where the identifier refers to an entity that already has a
         handle in this connection manager, this handle should be returned
         instead. The handle number 0 must not be returned by the connection
-        manager.
+        manager.</p>
       </tp:docstring>
 
       <tp:possible-errors>
@@ -1168,6 +1191,18 @@ USA.</p>
         </tp:docstring>
       </arg>
     </method>
+
+    <property name="HasImmortalHandles"
+      tp:name-for-bindings="Has_Immortal_Handles"
+      access="read" type="b">
+      <tp:added version="0.21.6"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>True if handles last for the whole lifetime of the Connection.
+          This SHOULD be the case in all connection managers, but clients
+          MUST interoperate with older connection managers
+          (which reference-count handles).</p>
+      </tp:docstring>
+    </property>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This models a connection to a single user account on a communication
