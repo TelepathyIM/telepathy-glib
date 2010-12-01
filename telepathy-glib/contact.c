@@ -566,8 +566,6 @@ tp_contact_dispose (GObject *object)
 
       _tp_connection_remove_contact (self->priv->connection,
           self->priv->handle, self);
-      tp_connection_unref_handles (self->priv->connection,
-          TP_HANDLE_TYPE_CONTACT, 1, &self->priv->handle);
 
       self->priv->handle = 0;
     }
@@ -982,7 +980,6 @@ tp_contact_class_init (TpContactClass *klass)
 }
 
 
-/* Consumes one reference to @handle. */
 static TpContact *
 tp_contact_ensure (TpConnection *connection,
                    TpHandle handle)
@@ -992,11 +989,6 @@ tp_contact_ensure (TpConnection *connection,
   if (self != NULL)
     {
       g_assert (self->priv->handle == handle);
-
-      /* we have one ref to this handle more than we need, so consume it */
-      tp_connection_unref_handles (self->priv->connection,
-          TP_HANDLE_TYPE_CONTACT, 1, &self->priv->handle);
-
       return g_object_ref (self);
     }
 
@@ -2982,27 +2974,9 @@ contacts_got_attributes (TpConnection *connection,
             }
           else
             {
-              TpContact *contact = NULL;
-              guint j;
-
-              /* we might already have consumed the only reference we have to
-               * the handle - if we have, we must recycle the same object
-               * rather than calling tp_contact_ensure again */
-              for (j = 0; j < i; j++)
-                {
-                  if (handle == g_array_index (c->handles, guint, j))
-                    {
-                      contact = g_object_ref (g_ptr_array_index (c->contacts,
-                            j));
-                    }
-                }
-
-              if (contact == NULL)
-                contact = tp_contact_ensure (connection, handle);
+              TpContact *contact = tp_contact_ensure (connection, handle);
 
               g_ptr_array_add (c->contacts, contact);
-
-              /* save the contact and move on to the next handle */
               i++;
             }
         }
