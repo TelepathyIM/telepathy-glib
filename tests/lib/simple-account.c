@@ -152,7 +152,7 @@ tp_tests_simple_account_get_property (GObject *object,
             G_TYPE_INVALID));
       break;
     case PROP_NORMALIZED_NAME:
-      g_value_set_string (value, "");
+      g_value_set_string (value, "bob.mcbadgers@example.com");
       break;
     case PROP_HAS_BEEN_ONLINE:
       g_value_set_boolean (value, TRUE);

@@ -361,7 +361,21 @@ test_prepare_success (Test *test,
   g_assert_cmpstr (message, ==, "this is my CurrentPresence");
   g_free (message);
 
-  /* NormalizedName and AutomaticPresence aren't available yet */
+  /* AutomaticPresence */
+  g_assert_cmpint (tp_account_get_automatic_presence (test->account, NULL,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpint (tp_account_get_automatic_presence (test->account, &status,
+        NULL), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (status, ==, "automatically-available");
+  g_free (status);
+  g_assert_cmpint (tp_account_get_automatic_presence (test->account, NULL,
+        &message), ==, TP_CONNECTION_PRESENCE_TYPE_AVAILABLE);
+  g_assert_cmpstr (message, ==, "this is my AutomaticPresence");
+  g_free (message);
+
+  /* NormalizedName */
+  g_assert_cmpstr (tp_account_get_normalized_name (test->account), ==,
+      "bob.mcbadgers@example.com");
 
   /* test Acct.I.Storage features */
   g_assert_cmpstr (tp_account_get_storage_provider (test->account), ==,
