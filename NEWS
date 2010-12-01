@@ -8,7 +8,19 @@ Deprecations:
   what you're using it for, or tp_proxy_get_dbus_connection() if you really
   need a DBusGConnection. (smcv)
 
+Changes:
+
+• fd.o #23155: handles now persist until the TpBaseConnection disconnects,
+  and most of the reference-counting machinery has been removed (smcv)
+
+• fd.o #31997: in the ContactList channels produced by TpBaseContactList,
+  AddMembers, RemoveMembers etc. don't return until the implementation
+  reports success or failure (smcv)
+
 Enhancements:
+
+• Update to spec 0.21.6 (smcv)
+  · Connection.HasImmortalHandles property
 
 • fd.o #31900: add TpSimplePasswordManager (jonny)
 
