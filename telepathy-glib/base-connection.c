@@ -1518,7 +1518,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
       { "SelfHandle", "self-handle", NULL },
       { "Status", "dbus-status", NULL },
       { "Interfaces", "interfaces", NULL },
-      /*{ "HasImmortalHandles", "has-immortal-handles", NULL },*/
+      { "HasImmortalHandles", "has-immortal-handles", NULL },
       { NULL }
   };
   static TpDBusPropertiesMixinPropImpl requests_properties[] = {
