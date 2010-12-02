@@ -63,7 +63,7 @@ GType tp_simple_observer_get_type (void);
                               TpSimpleObserverClass))
 
 typedef void (*TpSimpleObserverObserveChannelsImpl) (
-    TpSimpleObserver *self,
+    TpSimpleObserver *observer,
     TpAccount *account,
     TpConnection *connection,
     GList *channels,

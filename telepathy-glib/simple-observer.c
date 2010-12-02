@@ -30,7 +30,7 @@
  * A typical simple observer would look liks this:
  * |[
  * static void
- * my_observe_channels (TpSimpleObserver *self,
+ * my_observe_channels (TpSimpleObserver *observer,
  *    TpAccount *account,
  *    TpConnection *connection,
  *    GList *channels,
@@ -76,7 +76,7 @@
 
 /**
  * TpSimpleObserverObserveChannelsImpl:
- * @self: a #TpSimpleObserver instance
+ * @observer: a #TpSimpleObserver instance
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
  * if possible

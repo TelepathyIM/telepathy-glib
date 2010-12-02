@@ -63,7 +63,7 @@ GType tp_simple_approver_get_type (void);
                               TpSimpleApproverClass))
 
 typedef void (*TpSimpleApproverAddDispatchOperationImpl) (
-    TpSimpleApprover *self,
+    TpSimpleApprover *approver,
     TpAccount *account,
     TpConnection *connection,
     GList *channels,

@@ -30,7 +30,7 @@
  * A typical simple handler would look liks this:
  * |[
  * static void
- * my_handle_channels (TpSimpleHandler *self,
+ * my_handle_channels (TpSimpleHandler *handler,
  *    TpAccount *account,
  *    TpConnection *connection,
  *    GList *channels,
@@ -79,7 +79,7 @@
 
 /**
  * TpSimpleHandlerHandleChannelsImpl:
- * @self: a #TpSimpleHandler instance
+ * @handler: a #TpSimpleHandler instance
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
  * if possible

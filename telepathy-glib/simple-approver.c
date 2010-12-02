@@ -30,7 +30,7 @@
  * A typical simple approver would look liks this:
  * |[
  * static void
- * my_add_dispatch_operation (TpSimpleApprover *self,
+ * my_add_dispatch_operation (TpSimpleApprover *approver,
  *    TpAccount *account,
  *    TpConnection *connection,
  *    GList *channels,
@@ -76,7 +76,7 @@
 
 /**
  * TpSimpleApproverAddDispatchOperationImpl:
- * @self: a #TpSimpleApprover instance
+ * @approver: a #TpSimpleApprover instance
  * @account: a #TpAccount having %TP_ACCOUNT_FEATURE_CORE prepared if possible
  * @connection: a #TpConnection having %TP_CONNECTION_FEATURE_CORE prepared
  * if possible

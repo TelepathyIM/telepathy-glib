@@ -63,7 +63,7 @@ GType tp_simple_handler_get_type (void);
                               TpSimpleHandlerClass))
 
 typedef void (*TpSimpleHandlerHandleChannelsImpl) (
-    TpSimpleHandler *self,
+    TpSimpleHandler *handler,
     TpAccount *account,
     TpConnection *connection,
     GList *channels,
