@@ -288,7 +288,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  * @dbus: a #TpDBusDaemon object, may not be %NULL
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
- * @unique: the value of the TpBaseClient:uniquify-name: property
+ * @uniquify: the value of the #TpBaseClient:uniquify-name: property
  * @callback: the function called when ObserverChannels is called
  * @user_data: arbitrary user-supplied data passed to @callback
  * @destroy: called with the user_data as argument, when the #TpSimpleObserver
@@ -308,7 +308,7 @@ TpBaseClient *
 tp_simple_observer_new (TpDBusDaemon *dbus,
     gboolean recover,
     const gchar *name,
-    gboolean unique,
+    gboolean uniquify,
     TpSimpleObserverObserveChannelsImpl callback,
     gpointer user_data,
     GDestroyNotify destroy)
@@ -317,7 +317,7 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
       "dbus-daemon", dbus,
       "recover", recover,
       "name", name,
-      "uniquify-name", unique,
+      "uniquify-name", uniquify,
       "callback", callback,
       "user-data", user_data,
       "destroy", destroy,
@@ -329,7 +329,7 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
  * @account_manager: an account manager, which may not be %NULL
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
- * @unique: the value of the TpBaseClient:uniquify-name: property
+ * @uniquify: the value of the #TpBaseClient:uniquify-name: property
  * @callback: the function called when ObserverChannels is called
  * @user_data: arbitrary user-supplied data passed to @callback
  * @destroy: called with the user_data as argument, when the #TpSimpleObserver
@@ -349,7 +349,7 @@ TpBaseClient *
 tp_simple_observer_new_with_am (TpAccountManager *account_manager,
     gboolean recover,
     const gchar *name,
-    gboolean unique,
+    gboolean uniquify,
     TpSimpleObserverObserveChannelsImpl callback,
     gpointer user_data,
     GDestroyNotify destroy)
@@ -358,7 +358,7 @@ tp_simple_observer_new_with_am (TpAccountManager *account_manager,
       "account-manager", account_manager,
       "recover", recover,
       "name", name,
-      "uniquify-name", unique,
+      "uniquify-name", uniquify,
       "callback", callback,
       "user-data", user_data,
       "destroy", destroy,

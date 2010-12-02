@@ -317,7 +317,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  * @requests: if this handler implement Requests (see
  * tp_base_client_set_handler_request_notification() for details)
  * @name: the name of the Handler (see #TpBaseClient:name: for details)
- * @unique: the value of the TpBaseClient:uniquify-name: property
+ * @uniquify: the value of the #TpBaseClient:uniquify-name: property
  * @callback: the function called when HandleChannels is called
  * @user_data: arbitrary user-supplied data passed to @callback
  * @destroy: called with the user_data as argument, when the #TpSimpleHandler
@@ -338,7 +338,7 @@ tp_simple_handler_new (TpDBusDaemon *dbus,
     gboolean bypass_approval,
     gboolean requests,
     const gchar *name,
-    gboolean unique,
+    gboolean uniquify,
     TpSimpleHandlerHandleChannelsImpl callback,
     gpointer user_data,
     GDestroyNotify destroy)
@@ -348,7 +348,7 @@ tp_simple_handler_new (TpDBusDaemon *dbus,
       "bypass-approval", bypass_approval,
       "requests", requests,
       "name", name,
-      "uniquify-name", unique,
+      "uniquify-name", uniquify,
       "callback", callback,
       "user-data", user_data,
       "destroy", destroy,
@@ -363,7 +363,7 @@ tp_simple_handler_new (TpDBusDaemon *dbus,
  * @requests: if this handler implement Requests (see
  * tp_base_client_set_handler_request_notification() for details)
  * @name: the name of the Handler (see #TpBaseClient:name: for details)
- * @unique: the value of the TpBaseClient:uniquify-name: property
+ * @uniquify: the value of the #TpBaseClient:uniquify-name: property
  * @callback: the function called when HandleChannels is called
  * @user_data: arbitrary user-supplied data passed to @callback
  * @destroy: called with the user_data as argument, when the #TpSimpleHandler
@@ -384,7 +384,7 @@ tp_simple_handler_new_with_am (TpAccountManager *account_manager,
     gboolean bypass_approval,
     gboolean requests,
     const gchar *name,
-    gboolean unique,
+    gboolean uniquify,
     TpSimpleHandlerHandleChannelsImpl callback,
     gpointer user_data,
     GDestroyNotify destroy)
@@ -394,7 +394,7 @@ tp_simple_handler_new_with_am (TpAccountManager *account_manager,
       "bypass-approval", bypass_approval,
       "requests", requests,
       "name", name,
-      "uniquify-name", unique,
+      "uniquify-name", uniquify,
       "callback", callback,
       "user-data", user_data,
       "destroy", destroy,
