@@ -2274,8 +2274,6 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   GList *item = NULL;
   GPtrArray *tpcodecs = NULL;
 
-  gboolean sent_codecs = FALSE;
-
   DEBUG (stream, "called (send_local:%d send_supported:%d)",
       stream->priv->send_local_codecs, stream->priv->send_supported_codecs);
 
@@ -2307,7 +2305,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           -1, tpcodecs, async_method_callback, "Media.StreamHandler::Ready",
           NULL, (GObject *) stream);
       stream->priv->send_local_codecs = FALSE;
-      sent_codecs = TRUE;
+      goto out;
     }
 
   if (stream->priv->send_supported_codecs)
@@ -2320,12 +2318,17 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           -1, tpcodecs, async_method_callback,
           "Media.StreamHandler::SupportedCodecs", NULL, (GObject *) stream);
       stream->priv->send_supported_codecs = FALSE;
-      sent_codecs = TRUE;
+
+      /* Fallthrough to potentially call CodecsUpdated as CMs assume
+       * SupportedCodecs will only give the intersection of the already sent
+       * (if any) local codecs, not any updates */
     }
 
 
-  if (!sent_codecs &&
-      !fs_codec_list_are_equal (fscodecs, stream->priv->last_sent_codecs))
+  /* Only send updates if there was something to update (iotw we sent codecs
+   * before) or our list changed */
+  if (stream->priv->last_sent_codecs != NULL
+      && !fs_codec_list_are_equal (fscodecs, stream->priv->last_sent_codecs))
     {
       tpcodecs = fs_codecs_to_tp (stream, fscodecs);
 
@@ -2336,6 +2339,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           "Media.StreamHandler::CodecsUpdated", NULL, (GObject *) stream);
     }
 
+out:
   if (tpcodecs)
     g_boxed_free (TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, tpcodecs);
   fs_codec_list_destroy (stream->priv->last_sent_codecs);
