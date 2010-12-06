@@ -3,11 +3,16 @@ telepathy-glib 0.13.9 (UNRELEASED)
 
 Fixes:
 
+• In TpSimplePasswordManager, clear the pointer to the channel when it's closed
+  (jonny)
+
 • fd.o #32116: don't leak LegacyProtocol object references when a
   TpBaseConnectionManager is registered (smcv)
 
 • Fix an unlikely crash in which a TpBaseConnection outlives its
   TpBaseConnectionManager (smcv)
+
+• Documentation improvements (cassidy)
 
 telepathy-glib 0.13.8 (2010-12-01)
 ==================================
