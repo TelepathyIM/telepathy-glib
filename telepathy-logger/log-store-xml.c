@@ -972,11 +972,13 @@ _log_store_xml_search_in_files (TplLogStoreXml *self,
   GList *l;
   GList *hits = NULL;
   gchar *text_casefold;
+  gchar *escaped_text;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
-  text_casefold = g_utf8_casefold (text, -1);
+  escaped_text = g_markup_escape_text (text, -1);
+  text_casefold = g_utf8_casefold (escaped_text, -1);
 
   for (l = files; l; l = g_list_next (l))
     {
@@ -1024,6 +1026,7 @@ fail:
 
   g_list_free (files);
   g_free (text_casefold);
+  g_free (escaped_text);
 
   return hits;
 }
