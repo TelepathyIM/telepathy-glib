@@ -832,7 +832,7 @@ tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
 
   tp_clear_pointer (&data->chat_id, g_free);
   tp_clear_pointer (&data->date, g_date_free);
-  tp_clear_pointer (&data->search_text, g_date_free);
+  tp_clear_pointer (&data->search_text, g_free);
   g_slice_free (TplLogManagerChatInfo, data);
 }
 
