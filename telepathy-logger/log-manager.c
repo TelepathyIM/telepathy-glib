@@ -1562,7 +1562,6 @@ static void
 _search_new_async_result_free (gpointer data)
 {
   GList *lst = data; /* list of TplSearchHit */
-  g_return_if_fail (data != NULL);
 
   g_list_foreach (lst, (GFunc) _tpl_log_manager_search_hit_free, NULL);
   g_list_free (lst);
