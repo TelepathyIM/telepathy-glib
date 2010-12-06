@@ -134,9 +134,6 @@ get_self_contact_cb (TpConnection *connection,
 
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
-  g_assert_cmpuint (n_failed, ==, 0);
-  g_assert_cmpuint (n_contacts, ==, 1);
-
   if (n_failed > 0)
     {
       TpConnection *tp_conn = tp_channel_borrow_connection (tp_chan);
