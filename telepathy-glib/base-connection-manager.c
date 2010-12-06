@@ -1045,8 +1045,11 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
     {
       for (i = 0; cls->protocol_params[i].name != NULL; i++)
         {
-          tp_base_connection_manager_add_protocol (self,
-              _tp_legacy_protocol_new (self, cls->protocol_params + i));
+          TpBaseProtocol *p = _tp_legacy_protocol_new (self,
+              cls->protocol_params + i);
+
+          tp_base_connection_manager_add_protocol (self, p);
+          g_object_unref (p);
         }
     }
 
