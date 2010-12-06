@@ -379,6 +379,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
   FILE *file;
   gchar *filename;
   gchar *basedir;
+  gboolean ret = TRUE;
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
@@ -410,12 +411,21 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
       if (file != NULL)
         fseek (file, -strlen (LOG_FOOTER), SEEK_END);
     }
+  if (file == NULL)
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_FAILED,
+          "Couldn't open log file: %s", filename);
+      ret = FALSE;
+      goto out;
+    }
   g_fprintf (file, "%s", entry);
-  /*DEBUG ("%s: written: %s", filename, entry);*/
+  DEBUG ("%s: written: %s", filename, entry);
 
   fclose (file);
+ out:
   g_free (filename);
-  return TRUE;
+  return ret;
 }
 
 
