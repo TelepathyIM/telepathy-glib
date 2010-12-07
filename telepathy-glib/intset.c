@@ -624,7 +624,6 @@ tp_intset_intersection (const TpIntset *left, const TpIntset *right)
   return ret;
 }
 
-
 /**
  * tp_intset_union:
  * @left: The left operand
@@ -640,26 +639,42 @@ tp_intset_intersection (const TpIntset *left, const TpIntset *right)
 TpIntset *
 tp_intset_union (const TpIntset *left, const TpIntset *right)
 {
-  gpointer key, value;
-  GHashTableIter iter;
   TpIntset *ret;
 
   ret = tp_intset_copy (left);
+  tp_intset_union_update (ret, right);
 
-  g_hash_table_iter_init (&iter, (GHashTable *) right->table);
+  return ret;
+}
+
+/**
+ * tp_intset_union_update:
+ * @self: the set to change
+ * @other: members to add
+ *
+ * Add each integer in @other to @self, analogous to the bitwise operation
+ * self |= other.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_intset_union_update (TpIntset *self,
+    const TpIntset *other)
+{
+  gpointer key, value;
+  GHashTableIter iter;
+
+  g_hash_table_iter_init (&iter, (GHashTable *) other->table);
 
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       gsize v = GPOINTER_TO_SIZE (value);
 
-      intset_update_largest_ever (ret, key);
-      v |= GPOINTER_TO_SIZE (g_hash_table_lookup (ret->table, key));
-      g_hash_table_insert (ret->table, key, GSIZE_TO_POINTER (v));
+      intset_update_largest_ever (self, key);
+      v |= GPOINTER_TO_SIZE (g_hash_table_lookup (self->table, key));
+      g_hash_table_insert (self->table, key, GSIZE_TO_POINTER (v));
     }
-
-  return ret;
 }
-
 
 /**
  * tp_intset_difference:
@@ -677,32 +692,48 @@ TpIntset *
 tp_intset_difference (const TpIntset *left, const TpIntset *right)
 {
   TpIntset *ret;
-  gpointer key, value;
-  GHashTableIter iter;
 
   g_return_val_if_fail (left != NULL, NULL);
   g_return_val_if_fail (right != NULL, NULL);
 
   ret = tp_intset_copy (left);
-
-  g_hash_table_iter_init (&iter, (GHashTable *) right->table);
-
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      gsize v = GPOINTER_TO_SIZE (value);
-      v = (GPOINTER_TO_SIZE (g_hash_table_lookup (ret->table, key))) & ~v;
-
-      /* No need to update largest_ever here - we're only deleting members. */
-
-      if (v == 0)
-        g_hash_table_remove (ret->table, key);
-      else
-        g_hash_table_insert (ret->table, key, GSIZE_TO_POINTER (v));
-    }
+  tp_intset_difference_update (ret, right);
 
   return ret;
 }
 
+/**
+ * tp_intset_difference_update:
+ * @self: the set to change
+ * @other: members to remove
+ *
+ * Remove each integer in @other from @self, analogous to the bitwise
+ * operation self &= (~other).
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_intset_difference_update (TpIntset *self,
+    const TpIntset *other)
+{
+  gpointer key, value;
+  GHashTableIter iter;
+
+  g_hash_table_iter_init (&iter, (GHashTable *) other->table);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      gsize v = GPOINTER_TO_SIZE (value);
+      v = (GPOINTER_TO_SIZE (g_hash_table_lookup (self->table, key))) & ~v;
+
+      /* No need to update largest_ever here - we're only deleting members. */
+
+      if (v == 0)
+        g_hash_table_remove (self->table, key);
+      else
+        g_hash_table_insert (self->table, key, GSIZE_TO_POINTER (v));
+    }
+}
 
 /**
  * tp_intset_symmetric_difference:

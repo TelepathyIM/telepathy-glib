@@ -1929,7 +1929,9 @@ tp_intset_is_equal
 tp_intset_copy
 tp_intset_intersection
 tp_intset_union
+tp_intset_union_update
 tp_intset_difference
+tp_intset_difference_update
 tp_intset_symmetric_difference
 tp_intset_dump
 TpIntsetFastIter
