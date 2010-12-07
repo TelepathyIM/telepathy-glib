@@ -557,14 +557,14 @@ tp_base_connection_unregister (TpBaseConnection *self)
       gpointer k;
 
       if (priv->been_registered)
-        tp_dbus_daemon_unregister_object (priv->bus_proxy, self);
-
-      if (self->bus_name != NULL)
         {
-          tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
-        }
+          tp_dbus_daemon_unregister_object (priv->bus_proxy, self);
 
-      priv->been_registered = FALSE;
+          if (self->bus_name != NULL)
+            tp_dbus_daemon_release_name (priv->bus_proxy, self->bus_name, NULL);
+
+          priv->been_registered = FALSE;
+        }
 
       g_hash_table_iter_init (&iter, self->priv->interested_clients);
 
