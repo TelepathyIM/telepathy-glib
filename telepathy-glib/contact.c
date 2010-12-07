@@ -2871,10 +2871,8 @@ contacts_got_attributes (TpConnection *connection,
 
   i = 0;
 
-  if (c->signature == CB_BY_HANDLE)
+  if (c->signature == CB_BY_HANDLE && c->contacts->len == 0)
     {
-      g_assert (c->contacts->len == 0);
-
       while (i < c->handles->len)
         {
           TpHandle handle = g_array_index (c->handles, guint, i);
@@ -3099,12 +3097,13 @@ contacts_get_attributes (ContactsContext *context)
   g_ptr_array_add (array, NULL);
   supported_interfaces = (const gchar **) g_ptr_array_free (array, FALSE);
 
-  /* we want to hold the handles if and only if the call is by_handle -
-   * for the other modes, we already have handles */
+  /* The Hold parameter is only true if we started from handles, and we don't
+   * already have all the contacts we need. */
   context->refcount++;
   tp_connection_get_contact_attributes (context->connection, -1,
       context->handles->len, (const TpHandle *) context->handles->data,
-      supported_interfaces, (context->signature == CB_BY_HANDLE),
+      supported_interfaces,
+      (context->signature == CB_BY_HANDLE && context->contacts->len == 0),
       contacts_got_attributes,
       context, contacts_context_unref, context->weak_object);
   g_free (supported_interfaces);
