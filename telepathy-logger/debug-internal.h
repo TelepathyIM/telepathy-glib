@@ -79,7 +79,7 @@ G_STMT_START { \
 #define DEBUG(format, ...) \
   _tpl_debug (DEBUG_FLAG, "%s: " format, G_STRFUNC, ##__VA_ARGS__)
 
-#define DEBUGGING gabble_debug_flag_is_set (DEBUG_FLAG)
+#define DEBUGGING _tpl_debug_flag_is_set (DEBUG_FLAG)
 
 /* The same of DEBUG, printing also the object-path property for the TpProxy,
  * passed as first arg. prepending '_' to avoid shadowing local variables */
