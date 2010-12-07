@@ -3257,12 +3257,11 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
       /* we support the Contacts interface, so we can hold the handles and
        * simultaneously inspect them. After that, we'll fill in any
        * features that are necessary (this becomes a no-op if Contacts
-       * gave us everything). */
-      contacts_get_attributes (context);
+       * will give us everything). */
+      g_queue_push_head (&context->todo, contacts_get_attributes);
       contacts_context_queue_features (context);
-      /* we have one excess ref to the context because we create it,
-       * and then contacts_get_attributes refs it */
-      contacts_context_unref (context);
+      g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+          contacts_context_idle_continue, context, contacts_context_unref);
       return;
     }
 
