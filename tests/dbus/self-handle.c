@@ -60,6 +60,10 @@ test_self_handle (TpTestsSimpleConnection *service_conn,
   /* similar to /nick in IRC */
   tp_tests_simple_connection_set_identifier (service_conn, "myself@example.org");
   tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
+
+  while (times < 1)
+    g_main_context_iteration (NULL, TRUE);
+
   g_assert_cmpuint (times, ==, 1);
 
   g_assert_cmpstr (tp_handle_inspect (contact_repo,
