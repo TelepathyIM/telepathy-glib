@@ -3265,6 +3265,13 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
        * contact in the list already has. */
       context->wanted &= (~minimal_feature_flags);
 
+      /* We do need to retrieve any features that aren't there yet, though. */
+      if (tp_proxy_has_interface_by_id (self,
+            TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+        {
+          g_queue_push_head (&context->todo, contacts_get_attributes);
+        }
+
       contacts_context_queue_features (context);
 
       g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
