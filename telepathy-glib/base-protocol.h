@@ -165,8 +165,10 @@ struct _TpBaseProtocolClass
 
   TpBaseProtocolGetAvatarDetailsFunc get_avatar_details;
 
+  GStrv (*dup_authentication_types) (TpBaseProtocol *self);
+
   /*<private>*/
-  GCallback padding[6];
+  GCallback padding[5];
   TpBaseProtocolClassPrivate *priv;
 };
 
