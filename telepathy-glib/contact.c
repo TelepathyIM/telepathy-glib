@@ -3390,7 +3390,14 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   GPtrArray *contacts;
   guint i;
 
-  g_return_if_fail (tp_connection_is_ready (self));
+  /* As an implementation detail, this method actually starts working slightly
+   * before we're officially ready, but only if you don't want any features.
+   * We use this to get the TpContact for the SelfHandle. */
+  if (n_features != 0 || !self->priv->introspecting_after_connected)
+    {
+      g_return_if_fail (tp_connection_is_ready (self));
+    }
+
   g_return_if_fail (tp_proxy_get_invalidated (self) == NULL);
   g_return_if_fail (n_handles >= 1);
   g_return_if_fail (handles != NULL);
