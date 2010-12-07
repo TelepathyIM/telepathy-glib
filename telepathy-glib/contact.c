@@ -3227,13 +3227,20 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
 
   if (contacts != NULL)
     {
+      ContactFeatureFlags minimal_feature_flags = 0xFFFFFFFF;
+
       /* We have already held/inspected handles, so we can skip that. */
       for (i = 0; i < n_handles; i++)
         {
           TpContact *contact = g_object_ref (g_ptr_array_index (contacts, i));
 
+          minimal_feature_flags &= contact->priv->has_features;
           g_ptr_array_add (context->contacts, contact);
         }
+
+      /* This context won't need to retrieve any features that every
+       * contact in the list already has. */
+      context->wanted &= (~minimal_feature_flags);
 
       contacts_context_queue_features (context);
 
