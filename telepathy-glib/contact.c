@@ -1016,6 +1016,9 @@ struct _ContactsContext {
      * failed with InvalidHandle, or the RequestHandles call failed with
      * NotAvailable */
     guint next_index;
+
+    /* TRUE if all contacts already have IDs */
+    gboolean contacts_have_ids;
 };
 
 /* This code (and lots of telepathy-glib, really) won't work if this
@@ -3094,6 +3097,18 @@ contacts_get_attributes (ContactsContext *context)
         }
     }
 
+  if (array->len == 0 &&
+      !(context->signature == CB_BY_HANDLE && context->contacts->len == 0) &&
+      context->contacts_have_ids)
+    {
+      /* We're not going to do anything useful: we're not holding/inspecting
+       * the handles, and we're not inspecting any extended interfaces
+       * either. Skip it. */
+      g_ptr_array_free (array, TRUE);
+      contacts_context_continue (context);
+      return;
+    }
+
   g_ptr_array_add (array, NULL);
   supported_interfaces = (const gchar **) g_ptr_array_free (array, FALSE);
 
@@ -3229,13 +3244,20 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
     {
       ContactFeatureFlags minimal_feature_flags = 0xFFFFFFFF;
 
-      /* We have already held/inspected handles, so we can skip that. */
+      /* We have already held (and possibly inspected) handles, so we can
+       * skip that. */
+
+      context->contacts_have_ids = TRUE;
+
       for (i = 0; i < n_handles; i++)
         {
           TpContact *contact = g_object_ref (g_ptr_array_index (contacts, i));
 
           minimal_feature_flags &= contact->priv->has_features;
           g_ptr_array_add (context->contacts, contact);
+
+          if (contact->priv->identifier == NULL)
+            context->contacts_have_ids = FALSE;
         }
 
       /* This context won't need to retrieve any features that every
@@ -3334,6 +3356,7 @@ tp_connection_upgrade_contacts (TpConnection *self,
   for (i = 0; i < n_contacts; i++)
     {
       g_return_if_fail (contacts[i]->priv->connection == self);
+      g_return_if_fail (contacts[i]->priv->identifier != NULL);
     }
 
   if (!get_feature_flags (n_features, features, &feature_flags))
@@ -3348,6 +3371,8 @@ tp_connection_upgrade_contacts (TpConnection *self,
       g_ptr_array_add (context->contacts, g_object_ref (contacts[i]));
       g_array_append_val (context->handles, contacts[i]->priv->handle);
     }
+
+  context->contacts_have_ids = TRUE;
 
   g_assert (context->handles->len == n_contacts);
 
