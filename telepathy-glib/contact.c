@@ -2765,9 +2765,10 @@ contacts_context_supports_iface (ContactsContext *context,
 }
 
 static void
-contacts_context_queue_features (ContactsContext *context,
-                                 ContactFeatureFlags feature_flags)
+contacts_context_queue_features (ContactsContext *context)
 {
+  ContactFeatureFlags feature_flags = context->wanted;
+
   /* Start slow path for requested features that are not in
    * ContactAttributeInterfaces */
 
@@ -3235,7 +3236,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
           g_ptr_array_add (context->contacts, contact);
         }
 
-      contacts_context_queue_features (context, feature_flags);
+      contacts_context_queue_features (context);
 
       g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
           contacts_context_idle_continue, context, contacts_context_unref);
@@ -3252,7 +3253,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
        * features that are necessary (this becomes a no-op if Contacts
        * gave us everything). */
       contacts_get_attributes (context);
-      contacts_context_queue_features (context, feature_flags);
+      contacts_context_queue_features (context);
       /* we have one excess ref to the context because we create it,
        * and then contacts_get_attributes refs it */
       contacts_context_unref (context);
@@ -3265,7 +3266,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   g_queue_push_head (&context->todo, contacts_inspect);
 
   /* After that we'll get the features */
-  contacts_context_queue_features (context, feature_flags);
+  contacts_context_queue_features (context);
 
   /* but first, we need to hold onto them */
   tp_connection_hold_handles (self, -1,
@@ -3351,7 +3352,7 @@ tp_connection_upgrade_contacts (TpConnection *self,
       g_queue_push_head (&context->todo, contacts_get_attributes);
     }
 
-  contacts_context_queue_features (context, feature_flags);
+  contacts_context_queue_features (context);
 
   /* use an idle to make sure the callback is called after we return,
    * even if all the contacts actually have all the features, just to be
@@ -3570,7 +3571,7 @@ tp_connection_get_contacts_by_id (TpConnection *self,
       g_queue_push_head (&context->todo, contacts_inspect);
     }
 
-  contacts_context_queue_features (context, feature_flags);
+  contacts_context_queue_features (context);
 
   /* but first, we need to get the handles in the first place */
   tp_connection_request_handles (self, -1,
