@@ -1417,6 +1417,7 @@ contacts_held_handles (TpConnection *connection,
       guint i;
 
       g_assert (n_handles == c->handles->len);
+      g_assert (c->contacts->len == 0);
 
       for (i = 0; i < c->handles->len; i++)
         {
