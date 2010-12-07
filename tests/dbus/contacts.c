@@ -282,6 +282,7 @@ test_contact_info (Fixture *f,
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
       (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
   TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_INFO };
+  TpContact *self_contact;
   TpContact *contact;
   TpHandle handle;
   const gchar *field_value[] = { "Foo", NULL };
@@ -313,6 +314,20 @@ test_contact_info (Fixture *f,
   /* TEST2: Set contact info on the connection, then get the self TpContact.
    * This tests the set operation works correctly and also test TpContact
    * correctly introspects the ContactInfo when the feature is requested. */
+
+  /* ... but first, get the SelfHandle contact without any features (regression
+   * test for a related bug, fd.o #32191) */
+  handle = tp_connection_get_self_handle (client_conn);
+  tp_connection_get_contacts_by_handle (client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+  self_contact = g_object_ref (g_ptr_array_index (result.contacts, 0));
+  reset_result (&result);
+
   tp_connection_set_contact_info_async (client_conn, info_list,
     contact_info_set_cb, &result);
   g_main_loop_run (result.loop);
