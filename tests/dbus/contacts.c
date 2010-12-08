@@ -30,6 +30,16 @@
 #include "tests/lib/util.h"
 
 typedef struct {
+  TpBaseConnection *base_connection;
+  TpBaseConnection *legacy_base_connection;
+  TpBaseConnection *no_requests_base_connection;
+  TpTestsContactsConnection *service_conn;
+  TpConnection *client_conn;
+  TpConnection *legacy_client_conn;
+  TpConnection *no_requests_client_conn;
+} Fixture;
+
+typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
     GPtrArray *contacts;
@@ -1828,75 +1838,104 @@ test_prepare_contact_caps_without_request (
   g_main_loop_unref (result.loop);
 }
 
+static void
+setup (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
+      "me@test.com", &f->base_connection, &f->client_conn);
+
+  f->service_conn = TP_TESTS_CONTACTS_CONNECTION (f->base_connection);
+  g_object_ref (f->service_conn);
+
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
+      "me2@test.com", &f->legacy_base_connection, &f->legacy_client_conn);
+
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_NO_REQUESTS_CONNECTION,
+      "me3@test.com", &f->no_requests_base_connection,
+      &f->no_requests_client_conn);
+}
+
+static void
+teardown (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  gboolean ok;
+  GError *error = NULL;
+
+  if (f->client_conn != NULL)
+    {
+      ok = tp_cli_connection_run_disconnect (f->client_conn, -1, &error, NULL);
+      g_assert_no_error (error);
+      g_assert (ok);
+    }
+
+  tp_clear_object (&f->client_conn);
+  tp_clear_object (&f->service_conn);
+  tp_clear_object (&f->base_connection);
+
+  if (f->legacy_client_conn != NULL)
+    {
+      ok = tp_cli_connection_run_disconnect (f->legacy_client_conn, -1, &error,
+          NULL);
+      g_assert_no_error (error);
+      g_assert (ok);
+    }
+
+  tp_clear_object (&f->legacy_client_conn);
+  tp_clear_object (&f->legacy_base_connection);
+
+  if (f->no_requests_client_conn != NULL)
+    {
+      ok = tp_cli_connection_run_disconnect (f->no_requests_client_conn, -1,
+            &error, NULL);
+      g_assert_no_error (error);
+      g_assert (ok);
+    }
+
+  tp_clear_object (&f->no_requests_client_conn);
+  tp_clear_object (&f->no_requests_base_connection);
+}
+
 int
 main (int argc,
       char **argv)
 {
-  TpBaseConnection *base_connection, *legacy_base_connection,
-                   *no_requests_base_connection;
-  TpTestsContactsConnection *service_conn;
-  GError *error = NULL;
-  TpConnection *client_conn, *legacy_client_conn, *no_requests_client_conn;
+  Fixture f = { NULL };
 
   /* Setup */
 
   g_type_init ();
   tp_debug_set_flags ("all");
 
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
-      "me@test.com", &base_connection, &client_conn);
-
-  service_conn = TP_TESTS_CONTACTS_CONNECTION (base_connection);
-
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
-      "me2@test.com", &legacy_base_connection, &legacy_client_conn);
-
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_NO_REQUESTS_CONNECTION,
-      "me3@test.com", &no_requests_base_connection, &no_requests_client_conn);
+  setup (&f, NULL);
 
   /* Tests */
 
-  test_by_handle (service_conn, client_conn);
-  test_no_features (service_conn, client_conn);
-  test_features (service_conn, client_conn);
-  test_upgrade (service_conn, client_conn);
-  test_by_id (client_conn);
-  test_avatar_requirements (client_conn);
-  test_avatar_data (service_conn, client_conn);
-  test_contact_info (service_conn, client_conn);
+  test_by_handle (f.service_conn, f.client_conn);
+  test_no_features (f.service_conn, f.client_conn);
+  test_features (f.service_conn, f.client_conn);
+  test_upgrade (f.service_conn, f.client_conn);
+  test_by_id (f.client_conn);
+  test_avatar_requirements (f.client_conn);
+  test_avatar_data (f.service_conn, f.client_conn);
+  test_contact_info (f.service_conn, f.client_conn);
 
   /* test if TpContact fallbacks to connection's capabilities if
    * ContactCapabilities is not implemented. */
   test_capabilities_without_contact_caps (
-      TP_TESTS_CONTACTS_CONNECTION (legacy_base_connection),
-      legacy_client_conn);
+      TP_TESTS_CONTACTS_CONNECTION (f.legacy_base_connection),
+      f.legacy_client_conn);
 
   /* test if TP_CONTACT_FEATURE_CAPABILITIES is prepared but with
    * an empty set of capabilities if the connection doesn't support
    * ContactCapabilities and Requests. */
   test_prepare_contact_caps_without_request (
-      TP_TESTS_CONTACTS_CONNECTION (no_requests_base_connection),
-      no_requests_client_conn);
+      TP_TESTS_CONTACTS_CONNECTION (f.no_requests_base_connection),
+      f.no_requests_client_conn);
 
   /* Teardown */
-
-  MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
-      "");
-  g_assert_no_error (error);
-  g_object_unref (client_conn);
-  g_object_unref (service_conn);
-
-  MYASSERT (tp_cli_connection_run_disconnect (legacy_client_conn, -1, &error, NULL),
-      "");
-  g_assert_no_error (error);
-  g_object_unref (legacy_client_conn);
-  g_object_unref (legacy_base_connection);
-
-  MYASSERT (tp_cli_connection_run_disconnect (no_requests_client_conn, -1,
-        &error, NULL), "");
-  g_assert_no_error (error);
-  g_object_unref (no_requests_client_conn);
-  g_object_unref (no_requests_base_connection);
+  teardown (&f, NULL);
 
   return 0;
 }
