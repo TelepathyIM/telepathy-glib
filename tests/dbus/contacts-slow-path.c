@@ -1067,13 +1067,23 @@ main (int argc,
   tp_debug_set_flags ("all");
 
   setup (&f);
-
   test_by_handle (f.legacy_service_conn, f.legacy_client_conn);
-  test_no_features (f.legacy_service_conn, f.legacy_client_conn);
-  test_features (f.legacy_service_conn, f.legacy_client_conn);
-  test_upgrade (f.legacy_service_conn, f.legacy_client_conn);
-  test_by_id (f.legacy_client_conn);
+  teardown (&f);
 
+  setup (&f);
+  test_no_features (f.legacy_service_conn, f.legacy_client_conn);
+  teardown (&f);
+
+  setup (&f);
+  test_features (f.legacy_service_conn, f.legacy_client_conn);
+  teardown (&f);
+
+  setup (&f);
+  test_upgrade (f.legacy_service_conn, f.legacy_client_conn);
+  teardown (&f);
+
+  setup (&f);
+  test_by_id (f.legacy_client_conn);
   teardown (&f);
 
   return 0;
