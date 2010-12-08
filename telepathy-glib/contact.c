@@ -1016,6 +1016,9 @@ struct _ContactsContext {
      * failed with InvalidHandle, or the RequestHandles call failed with
      * NotAvailable */
     guint next_index;
+
+    /* TRUE if all contacts already have IDs */
+    gboolean contacts_have_ids;
 };
 
 /* This code (and lots of telepathy-glib, really) won't work if this
@@ -1414,6 +1417,7 @@ contacts_held_handles (TpConnection *connection,
       guint i;
 
       g_assert (n_handles == c->handles->len);
+      g_assert (c->contacts->len == 0);
 
       for (i = 0; i < c->handles->len; i++)
         {
@@ -2765,9 +2769,10 @@ contacts_context_supports_iface (ContactsContext *context,
 }
 
 static void
-contacts_context_queue_features (ContactsContext *context,
-                                 ContactFeatureFlags feature_flags)
+contacts_context_queue_features (ContactsContext *context)
 {
+  ContactFeatureFlags feature_flags = context->wanted;
+
   /* Start slow path for requested features that are not in
    * ContactAttributeInterfaces */
 
@@ -2870,10 +2875,8 @@ contacts_got_attributes (TpConnection *connection,
 
   i = 0;
 
-  if (c->signature == CB_BY_HANDLE)
+  if (c->signature == CB_BY_HANDLE && c->contacts->len == 0)
     {
-      g_assert (c->contacts->len == 0);
-
       while (i < c->handles->len)
         {
           TpHandle handle = g_array_index (c->handles, guint, i);
@@ -3095,15 +3098,28 @@ contacts_get_attributes (ContactsContext *context)
         }
     }
 
+  if (array->len == 0 &&
+      !(context->signature == CB_BY_HANDLE && context->contacts->len == 0) &&
+      context->contacts_have_ids)
+    {
+      /* We're not going to do anything useful: we're not holding/inspecting
+       * the handles, and we're not inspecting any extended interfaces
+       * either. Skip it. */
+      g_ptr_array_free (array, TRUE);
+      contacts_context_continue (context);
+      return;
+    }
+
   g_ptr_array_add (array, NULL);
   supported_interfaces = (const gchar **) g_ptr_array_free (array, FALSE);
 
-  /* we want to hold the handles if and only if the call is by_handle -
-   * for the other modes, we already have handles */
+  /* The Hold parameter is only true if we started from handles, and we don't
+   * already have all the contacts we need. */
   context->refcount++;
   tp_connection_get_contact_attributes (context->connection, -1,
       context->handles->len, (const TpHandle *) context->handles->data,
-      supported_interfaces, (context->signature == CB_BY_HANDLE),
+      supported_interfaces,
+      (context->signature == CB_BY_HANDLE && context->contacts->len == 0),
       contacts_got_attributes,
       context, contacts_context_unref, context->weak_object);
   g_free (supported_interfaces);
@@ -3227,15 +3243,36 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
 
   if (contacts != NULL)
     {
-      /* We have already held/inspected handles, so we can skip that. */
+      ContactFeatureFlags minimal_feature_flags = 0xFFFFFFFF;
+
+      /* We have already held (and possibly inspected) handles, so we can
+       * skip that. */
+
+      context->contacts_have_ids = TRUE;
+
       for (i = 0; i < n_handles; i++)
         {
           TpContact *contact = g_object_ref (g_ptr_array_index (contacts, i));
 
+          minimal_feature_flags &= contact->priv->has_features;
           g_ptr_array_add (context->contacts, contact);
+
+          if (contact->priv->identifier == NULL)
+            context->contacts_have_ids = FALSE;
         }
 
-      contacts_context_queue_features (context, feature_flags);
+      /* This context won't need to retrieve any features that every
+       * contact in the list already has. */
+      context->wanted &= (~minimal_feature_flags);
+
+      /* We do need to retrieve any features that aren't there yet, though. */
+      if (tp_proxy_has_interface_by_id (self,
+            TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+        {
+          g_queue_push_head (&context->todo, contacts_get_attributes);
+        }
+
+      contacts_context_queue_features (context);
 
       g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
           contacts_context_idle_continue, context, contacts_context_unref);
@@ -3250,12 +3287,11 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
       /* we support the Contacts interface, so we can hold the handles and
        * simultaneously inspect them. After that, we'll fill in any
        * features that are necessary (this becomes a no-op if Contacts
-       * gave us everything). */
-      contacts_get_attributes (context);
-      contacts_context_queue_features (context, feature_flags);
-      /* we have one excess ref to the context because we create it,
-       * and then contacts_get_attributes refs it */
-      contacts_context_unref (context);
+       * will give us everything). */
+      g_queue_push_head (&context->todo, contacts_get_attributes);
+      contacts_context_queue_features (context);
+      g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+          contacts_context_idle_continue, context, contacts_context_unref);
       return;
     }
 
@@ -3265,7 +3301,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   g_queue_push_head (&context->todo, contacts_inspect);
 
   /* After that we'll get the features */
-  contacts_context_queue_features (context, feature_flags);
+  contacts_context_queue_features (context);
 
   /* but first, we need to hold onto them */
   tp_connection_hold_handles (self, -1,
@@ -3328,6 +3364,7 @@ tp_connection_upgrade_contacts (TpConnection *self,
   for (i = 0; i < n_contacts; i++)
     {
       g_return_if_fail (contacts[i]->priv->connection == self);
+      g_return_if_fail (contacts[i]->priv->identifier != NULL);
     }
 
   if (!get_feature_flags (n_features, features, &feature_flags))
@@ -3343,6 +3380,8 @@ tp_connection_upgrade_contacts (TpConnection *self,
       g_array_append_val (context->handles, contacts[i]->priv->handle);
     }
 
+  context->contacts_have_ids = TRUE;
+
   g_assert (context->handles->len == n_contacts);
 
   if (tp_proxy_has_interface_by_id (self,
@@ -3351,7 +3390,7 @@ tp_connection_upgrade_contacts (TpConnection *self,
       g_queue_push_head (&context->todo, contacts_get_attributes);
     }
 
-  contacts_context_queue_features (context, feature_flags);
+  contacts_context_queue_features (context);
 
   /* use an idle to make sure the callback is called after we return,
    * even if all the contacts actually have all the features, just to be
@@ -3570,7 +3609,7 @@ tp_connection_get_contacts_by_id (TpConnection *self,
       g_queue_push_head (&context->todo, contacts_inspect);
     }
 
-  contacts_context_queue_features (context, feature_flags);
+  contacts_context_queue_features (context);
 
   /* but first, we need to get the handles in the first place */
   tp_connection_request_handles (self, -1,

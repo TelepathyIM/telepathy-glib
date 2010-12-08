@@ -30,6 +30,16 @@
 #include "tests/lib/util.h"
 
 typedef struct {
+  TpBaseConnection *base_connection;
+  TpBaseConnection *legacy_base_connection;
+  TpBaseConnection *no_requests_base_connection;
+  TpTestsContactsConnection *service_conn;
+  TpConnection *client_conn;
+  TpConnection *legacy_client_conn;
+  TpConnection *no_requests_client_conn;
+} Fixture;
+
+typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
     GPtrArray *contacts;
@@ -263,13 +273,16 @@ contact_info_request_cancel (gpointer cancellable)
 }
 
 static void
-test_contact_info (TpTestsContactsConnection *service_conn,
-    TpConnection *client_conn)
+test_contact_info (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpTestsContactsConnection *service_conn = f->service_conn;
+  TpConnection *client_conn = f->client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
       (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
   TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_INFO };
+  TpContact *self_contact;
   TpContact *contact;
   TpHandle handle;
   const gchar *field_value[] = { "Foo", NULL };
@@ -301,6 +314,20 @@ test_contact_info (TpTestsContactsConnection *service_conn,
   /* TEST2: Set contact info on the connection, then get the self TpContact.
    * This tests the set operation works correctly and also test TpContact
    * correctly introspects the ContactInfo when the feature is requested. */
+
+  /* ... but first, get the SelfHandle contact without any features (regression
+   * test for a related bug, fd.o #32191) */
+  handle = tp_connection_get_self_handle (client_conn);
+  tp_connection_get_contacts_by_handle (client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+  self_contact = g_object_ref (g_ptr_array_index (result.contacts, 0));
+  reset_result (&result);
+
   tp_connection_set_contact_info_async (client_conn, info_list,
     contact_info_set_cb, &result);
   g_main_loop_run (result.loop);
@@ -454,8 +481,10 @@ prepare_avatar_requirements_cb (GObject *object,
 }
 
 static void
-test_avatar_requirements (TpConnection *client_conn)
+test_avatar_requirements (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpConnection *client_conn = f->client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   GQuark features[] = { TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS, 0 };
 
@@ -592,9 +621,11 @@ haze_remove_directory (const gchar *path)
 #define RAND_STR_LEN 6
 
 static void
-test_avatar_data (TpTestsContactsConnection *service_conn,
-    TpConnection *client_conn)
+test_avatar_data (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpTestsContactsConnection *service_conn = f->service_conn;
+  TpConnection *client_conn = f->client_conn;
   static const gchar letters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   gchar rand_str[RAND_STR_LEN + 1];
   gchar *dir;
@@ -648,9 +679,11 @@ test_avatar_data (TpTestsContactsConnection *service_conn,
 }
 
 static void
-test_by_handle (TpTestsContactsConnection *service_conn,
-                TpConnection *client_conn)
+test_by_handle (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpTestsContactsConnection *service_conn = f->service_conn;
+  TpConnection *client_conn = f->client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handles[5] = { 0, 0, 0, 0, 0 };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
@@ -786,9 +819,168 @@ test_by_handle (TpTestsContactsConnection *service_conn,
 }
 
 static void
-test_no_features (TpTestsContactsConnection *service_conn,
-                  TpConnection *client_conn)
+test_by_handle_again (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  TpHandle handle;
+  TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
+      f->base_connection, TP_HANDLE_TYPE_CONTACT);
+  TpContact *contact;
+  gpointer weak_pointer;
+  const gchar *alias = "Alice in Wonderland";
+  TpContactFeature feature = TP_CONTACT_FEATURE_ALIAS;
+  gboolean ok;
+
+  g_test_bug ("25181");
+
+  handle = tp_handle_ensure (service_repo, "alice", NULL, NULL);
+  g_assert_cmpuint (handle, !=, 0);
+  tp_tests_contacts_connection_change_aliases (f->service_conn, 1, &handle,
+      &alias);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &feature,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_cmpuint (result.contacts->len, ==, 1);
+  g_assert_cmpuint (result.invalid->len, ==, 0);
+  g_assert_no_error (result.error);
+
+  g_assert (g_ptr_array_index (result.contacts, 0) != NULL);
+  contact = g_object_ref (g_ptr_array_index (result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, handle);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "alice");
+  g_assert_cmpstr (tp_contact_get_alias (contact), ==, "Alice in Wonderland");
+
+  /* clean up before doing the second request */
+  reset_result (&result);
+  g_assert (result.error == NULL);
+
+  /* silently remove the object from D-Bus, so that if the second request
+   * makes any D-Bus calls, it will fail (but the client conn isn't
+   * invalidated) */
+  tp_dbus_daemon_unregister_object (
+      tp_base_connection_get_dbus_daemon (f->base_connection),
+      f->base_connection);
+  /* check that that worked */
+  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
+      &result.error, NULL);
+  g_assert_error (result.error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+  g_assert (!ok);
+  g_clear_error (&result.error);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &feature,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_cmpuint (result.contacts->len, ==, 1);
+  g_assert_cmpuint (result.invalid->len, ==, 0);
+  g_assert_no_error (result.error);
+
+  g_assert (g_ptr_array_index (result.contacts, 0) == contact);
+  g_assert_cmpstr (tp_contact_get_alias (contact), ==, "Alice in Wonderland");
+
+  /* OK, put it back so teardown() can use it */
+  tp_dbus_daemon_register_object (
+      tp_base_connection_get_dbus_daemon (f->base_connection),
+      f->base_connection->object_path, f->base_connection);
+  /* check that *that* worked */
+  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
+      &result.error, NULL);
+  g_assert_no_error (result.error);
+  g_assert (ok);
+
+  g_assert (result.error == NULL);
+  reset_result (&result);
+
+  weak_pointer = contact;
+  g_object_add_weak_pointer ((GObject *) contact, &weak_pointer);
+  g_object_unref (contact);
+  g_assert (weak_pointer == NULL);
+
+  tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
+  g_main_loop_unref (result.loop);
+}
+
+static void
+test_by_handle_upgrade (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  TpHandle handle;
+  TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
+      f->base_connection, TP_HANDLE_TYPE_CONTACT);
+  TpContact *contact;
+  gpointer weak_pointer;
+  const gchar *alias = "Alice in Wonderland";
+  TpContactFeature feature = TP_CONTACT_FEATURE_ALIAS;
+
+  g_test_bug ("32191");
+
+  handle = tp_handle_ensure (service_repo, "alice", NULL, NULL);
+  g_assert_cmpuint (handle, !=, 0);
+  tp_tests_contacts_connection_change_aliases (f->service_conn, 1, &handle,
+      &alias);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_cmpuint (result.contacts->len, ==, 1);
+  g_assert_cmpuint (result.invalid->len, ==, 0);
+  g_assert_no_error (result.error);
+
+  g_assert (g_ptr_array_index (result.contacts, 0) != NULL);
+  contact = g_object_ref (g_ptr_array_index (result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, handle);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "alice");
+  /* fallback alias is still in effect */
+  g_assert_cmpstr (tp_contact_get_alias (contact), ==, "alice");
+
+  /* clean up before doing the second request */
+  reset_result (&result);
+  g_assert (result.error == NULL);
+
+  /* the second request enables the Alias feature, so it must make more D-Bus
+   * round trips */
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &feature,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_cmpuint (result.contacts->len, ==, 1);
+  g_assert_cmpuint (result.invalid->len, ==, 0);
+  g_assert_no_error (result.error);
+
+  g_assert (g_ptr_array_index (result.contacts, 0) == contact);
+  g_assert_cmpstr (tp_contact_get_alias (contact), ==, "Alice in Wonderland");
+
+  g_assert (result.error == NULL);
+  reset_result (&result);
+
+  weak_pointer = contact;
+  g_object_add_weak_pointer ((GObject *) contact, &weak_pointer);
+  g_object_unref (contact);
+  g_assert (weak_pointer == NULL);
+
+  tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
+  g_main_loop_unref (result.loop);
+}
+
+static void
+test_no_features (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpTestsContactsConnection *service_conn = f->service_conn;
+  TpConnection *client_conn = f->client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   const gchar * const ids[] = { "alice", "bob", "chris" };
   TpHandle handles[3] = { 0, 0, 0 };
@@ -981,9 +1173,11 @@ create_contact_caps (TpHandle *handles)
 }
 
 static void
-test_upgrade (TpTestsContactsConnection *service_conn,
-              TpConnection *client_conn)
+test_upgrade (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpTestsContactsConnection *service_conn = f->service_conn;
+  TpConnection *client_conn = f->client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handles[] = { 0, 0, 0 };
   static const gchar * const ids[] = { "alice", "bob", "chris" };
@@ -1246,9 +1440,11 @@ create_new_contact_caps (TpHandle *handles)
 }
 
 static void
-test_features (TpTestsContactsConnection *service_conn,
-               TpConnection *client_conn)
+test_features (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpTestsContactsConnection *service_conn = f->service_conn;
+  TpConnection *client_conn = f->client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handles[] = { 0, 0, 0 };
   static const gchar * const ids[] = { "alice", "bob", "chris" };
@@ -1607,9 +1803,12 @@ by_id_cb (TpConnection *connection,
     }
 }
 
+
 static void
-test_by_id (TpConnection *client_conn)
+test_by_id (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpConnection *client_conn = f->client_conn;
   Result result = { g_main_loop_new (NULL, FALSE) };
   static const gchar * const ids[] = { "Alice", "Bob", "Not valid", "Chris",
       "not valid either", NULL };
@@ -1704,16 +1903,17 @@ test_by_id (TpConnection *client_conn)
   g_main_loop_unref (result.loop);
 }
 
+
 static void
-test_capabilities_without_contact_caps (
-    TpTestsContactsConnection *service_conn,
-    TpConnection *client_conn)
+test_capabilities_without_contact_caps (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpConnection *client_conn = f->legacy_client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handles[] = { 0, 0, 0 };
   static const gchar * const ids[] = { "alice", "bob", "chris" };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
-      (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
+      f->legacy_base_connection, TP_HANDLE_TYPE_CONTACT);
   TpContact *contacts[3];
   guint i;
   TpContactFeature features[] = { TP_CONTACT_FEATURE_CAPABILITIES };
@@ -1766,16 +1966,17 @@ test_capabilities_without_contact_caps (
   g_main_loop_unref (result.loop);
 }
 
+
 static void
-test_prepare_contact_caps_without_request (
-    TpTestsContactsConnection *service_conn,
-    TpConnection *client_conn)
+test_prepare_contact_caps_without_request (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpConnection *client_conn = f->no_requests_client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handles[] = { 0, 0, 0 };
   static const gchar * const ids[] = { "alice", "bob", "chris" };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
-      (TpBaseConnection *) service_conn, TP_HANDLE_TYPE_CONTACT);
+      f->no_requests_base_connection, TP_HANDLE_TYPE_CONTACT);
   TpContact *contacts[3];
   guint i;
   TpContactFeature features[] = { TP_CONTACT_FEATURE_CAPABILITIES };
@@ -1828,75 +2029,96 @@ test_prepare_contact_caps_without_request (
   g_main_loop_unref (result.loop);
 }
 
+static void
+setup (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
+      "me@test.com", &f->base_connection, &f->client_conn);
+
+  f->service_conn = TP_TESTS_CONTACTS_CONNECTION (f->base_connection);
+  g_object_ref (f->service_conn);
+
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
+      "me2@test.com", &f->legacy_base_connection, &f->legacy_client_conn);
+
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_NO_REQUESTS_CONNECTION,
+      "me3@test.com", &f->no_requests_base_connection,
+      &f->no_requests_client_conn);
+}
+
+static void
+teardown (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  gboolean ok;
+  GError *error = NULL;
+
+  if (f->client_conn != NULL)
+    {
+      ok = tp_cli_connection_run_disconnect (f->client_conn, -1, &error, NULL);
+      g_assert_no_error (error);
+      g_assert (ok);
+    }
+
+  tp_clear_object (&f->client_conn);
+  tp_clear_object (&f->service_conn);
+  tp_clear_object (&f->base_connection);
+
+  if (f->legacy_client_conn != NULL)
+    {
+      ok = tp_cli_connection_run_disconnect (f->legacy_client_conn, -1, &error,
+          NULL);
+      g_assert_no_error (error);
+      g_assert (ok);
+    }
+
+  tp_clear_object (&f->legacy_client_conn);
+  tp_clear_object (&f->legacy_base_connection);
+
+  if (f->no_requests_client_conn != NULL)
+    {
+      ok = tp_cli_connection_run_disconnect (f->no_requests_client_conn, -1,
+            &error, NULL);
+      g_assert_no_error (error);
+      g_assert (ok);
+    }
+
+  tp_clear_object (&f->no_requests_client_conn);
+  tp_clear_object (&f->no_requests_base_connection);
+}
+
 int
 main (int argc,
       char **argv)
 {
-  TpBaseConnection *base_connection, *legacy_base_connection,
-                   *no_requests_base_connection;
-  TpTestsContactsConnection *service_conn;
-  GError *error = NULL;
-  TpConnection *client_conn, *legacy_client_conn, *no_requests_client_conn;
-
-  /* Setup */
-
   g_type_init ();
   tp_debug_set_flags ("all");
+  g_set_prgname ("contacts");
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
-      "me@test.com", &base_connection, &client_conn);
+#define ADD(x) \
+  g_test_add ("/contacts/" #x, Fixture, NULL, setup, test_ ## x, teardown)
 
-  service_conn = TP_TESTS_CONTACTS_CONNECTION (base_connection);
-
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
-      "me2@test.com", &legacy_base_connection, &legacy_client_conn);
-
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_NO_REQUESTS_CONNECTION,
-      "me3@test.com", &no_requests_base_connection, &no_requests_client_conn);
-
-  /* Tests */
-
-  test_by_handle (service_conn, client_conn);
-  test_no_features (service_conn, client_conn);
-  test_features (service_conn, client_conn);
-  test_upgrade (service_conn, client_conn);
-  test_by_id (client_conn);
-  test_avatar_requirements (client_conn);
-  test_avatar_data (service_conn, client_conn);
-  test_contact_info (service_conn, client_conn);
-
+  ADD (by_handle);
+  ADD (by_handle_again);
+  ADD (by_handle_upgrade);
+  ADD (no_features);
+  ADD (features);
+  ADD (upgrade);
+  ADD (by_id);
+  ADD (avatar_requirements);
+  ADD (avatar_data);
+  ADD (contact_info);
   /* test if TpContact fallbacks to connection's capabilities if
    * ContactCapabilities is not implemented. */
-  test_capabilities_without_contact_caps (
-      TP_TESTS_CONTACTS_CONNECTION (legacy_base_connection),
-      legacy_client_conn);
+  ADD (capabilities_without_contact_caps);
 
   /* test if TP_CONTACT_FEATURE_CAPABILITIES is prepared but with
    * an empty set of capabilities if the connection doesn't support
    * ContactCapabilities and Requests. */
-  test_prepare_contact_caps_without_request (
-      TP_TESTS_CONTACTS_CONNECTION (no_requests_base_connection),
-      no_requests_client_conn);
+  ADD (prepare_contact_caps_without_request);
 
-  /* Teardown */
-
-  MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
-      "");
-  g_assert_no_error (error);
-  g_object_unref (client_conn);
-  g_object_unref (service_conn);
-
-  MYASSERT (tp_cli_connection_run_disconnect (legacy_client_conn, -1, &error, NULL),
-      "");
-  g_assert_no_error (error);
-  g_object_unref (legacy_client_conn);
-  g_object_unref (legacy_base_connection);
-
-  MYASSERT (tp_cli_connection_run_disconnect (no_requests_client_conn, -1,
-        &error, NULL), "");
-  g_assert_no_error (error);
-  g_object_unref (no_requests_client_conn);
-  g_object_unref (no_requests_base_connection);
-
-  return 0;
+  return g_test_run ();
 }
