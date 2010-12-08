@@ -1034,20 +1034,27 @@ setup (Fixture *f)
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
       "me@test.com", &f->base_connection, &f->legacy_client_conn);
 
-  f->legacy_service_conn = TP_TESTS_CONTACTS_CONNECTION (f->base_connection);
+  f->legacy_service_conn = g_object_ref (TP_TESTS_CONTACTS_CONNECTION (
+        f->base_connection));
 }
 
 static void
 teardown (Fixture *f)
 {
   GError *error = NULL;
+  gboolean ok;
 
-  MYASSERT (tp_cli_connection_run_disconnect (f->legacy_client_conn, -1,
-        &error, NULL), "");
-  g_assert_no_error (error);
+  if (f->legacy_client_conn != NULL)
+    {
+      ok = tp_cli_connection_run_disconnect (f->legacy_client_conn, -1,
+            &error, NULL);
+      g_assert_no_error (error);
+      g_assert (ok);
+    }
 
-  g_object_unref (f->legacy_client_conn);
-  g_object_unref (f->legacy_service_conn);
+  tp_clear_object (&f->legacy_client_conn);
+  tp_clear_object (&f->legacy_service_conn);
+  tp_clear_object (&f->base_connection);
 }
 
 int
