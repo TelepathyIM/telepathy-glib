@@ -14,6 +14,9 @@ Fixes:
 
 • Documentation improvements (cassidy)
 
+• fd.o #32191: when tp_connection_get_contacts_by_handle would return
+  contacts that already exist, make sure they have the desired features (smcv)
+
 telepathy-glib 0.13.8 (2010-12-01)
 ==================================
 
