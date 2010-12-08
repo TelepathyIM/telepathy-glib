@@ -1909,32 +1909,52 @@ main (int argc,
   tp_debug_set_flags ("all");
 
   setup (&f, NULL);
-
-  /* Tests */
-
   test_by_handle (f.service_conn, f.client_conn);
+  teardown (&f, NULL);
+
+  setup (&f, NULL);
   test_no_features (f.service_conn, f.client_conn);
+  teardown (&f, NULL);
+
+  setup (&f, NULL);
   test_features (f.service_conn, f.client_conn);
+  teardown (&f, NULL);
+
+  setup (&f, NULL);
   test_upgrade (f.service_conn, f.client_conn);
+  teardown (&f, NULL);
+
+  setup (&f, NULL);
   test_by_id (f.client_conn);
+  teardown (&f, NULL);
+
+  setup (&f, NULL);
   test_avatar_requirements (f.client_conn);
+  teardown (&f, NULL);
+
+  setup (&f, NULL);
   test_avatar_data (f.service_conn, f.client_conn);
+  teardown (&f, NULL);
+
+  setup (&f, NULL);
   test_contact_info (f.service_conn, f.client_conn);
+  teardown (&f, NULL);
 
   /* test if TpContact fallbacks to connection's capabilities if
    * ContactCapabilities is not implemented. */
+  setup (&f, NULL);
   test_capabilities_without_contact_caps (
       TP_TESTS_CONTACTS_CONNECTION (f.legacy_base_connection),
       f.legacy_client_conn);
+  teardown (&f, NULL);
 
   /* test if TP_CONTACT_FEATURE_CAPABILITIES is prepared but with
    * an empty set of capabilities if the connection doesn't support
    * ContactCapabilities and Requests. */
+  setup (&f, NULL);
   test_prepare_contact_caps_without_request (
       TP_TESTS_CONTACTS_CONNECTION (f.no_requests_base_connection),
       f.no_requests_client_conn);
-
-  /* Teardown */
   teardown (&f, NULL);
 
   return 0;
