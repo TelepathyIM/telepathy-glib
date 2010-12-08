@@ -30,16 +30,6 @@
 #include "tests/lib/util.h"
 
 typedef struct {
-  TpBaseConnection *base_connection;
-  TpBaseConnection *legacy_base_connection;
-  TpBaseConnection *no_requests_base_connection;
-  TpTestsContactsConnection *service_conn;
-  TpConnection *client_conn;
-  TpConnection *legacy_client_conn;
-  TpConnection *no_requests_client_conn;
-} Fixture;
-
-typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
     GPtrArray *contacts;
@@ -47,6 +37,18 @@ typedef struct {
     gchar **good_ids;
     GHashTable *bad_ids;
 } Result;
+
+typedef struct {
+  Result result;
+  TpBaseConnection *base_connection;
+  TpBaseConnection *legacy_base_connection;
+  TpBaseConnection *no_requests_base_connection;
+  TpTestsContactsConnection *service_conn;
+  TpHandleRepoIface *service_repo;
+  TpConnection *client_conn;
+  TpConnection *legacy_client_conn;
+  TpConnection *no_requests_client_conn;
+} Fixture;
 
 static void
 by_handle_cb (TpConnection *connection,
@@ -126,32 +128,13 @@ finish (gpointer r)
 static void
 reset_result (Result *result)
 {
-  g_clear_error (&(result->error));
-
+  tp_clear_pointer (&result->invalid, g_array_unref);
   if (result->contacts != NULL)
-    {
-      g_ptr_array_foreach (result->contacts, (GFunc) g_object_unref, NULL);
-      g_ptr_array_unref (result->contacts);
-      result->contacts = NULL;
-    }
-
-  if (result->invalid)
-    {
-      g_array_unref (result->invalid);
-      result->invalid = NULL;
-    }
-
-  if (result->good_ids)
-    {
-      g_strfreev (result->good_ids);
-      result->good_ids = NULL;
-    }
-
-  if (result->bad_ids)
-    {
-      g_hash_table_unref (result->bad_ids);
-      result->bad_ids = NULL;
-    }
+    g_ptr_array_foreach (result->contacts, (GFunc) g_object_unref, NULL);
+  tp_clear_pointer (&result->contacts, g_ptr_array_unref);
+  tp_clear_pointer (&result->good_ids, g_strfreev);
+  tp_clear_pointer (&result->bad_ids, g_hash_table_unref);
+  g_clear_error (&result->error);
 }
 
 static void
@@ -2032,6 +2015,10 @@ setup (Fixture *f,
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_NO_REQUESTS_CONNECTION,
       "me3@test.com", &f->no_requests_base_connection,
       &f->no_requests_client_conn);
+
+  f->service_repo = tp_base_connection_get_handles (f->base_connection,
+      TP_HANDLE_TYPE_CONTACT);
+  f->result.loop = g_main_loop_new (NULL, FALSE);
 }
 
 static void
@@ -2049,6 +2036,7 @@ teardown (Fixture *f,
     }
 
   tp_clear_object (&f->client_conn);
+  f->service_repo = NULL;
   tp_clear_object (&f->service_conn);
   tp_clear_object (&f->base_connection);
 
@@ -2073,6 +2061,8 @@ teardown (Fixture *f,
 
   tp_clear_object (&f->no_requests_client_conn);
   tp_clear_object (&f->no_requests_base_connection);
+  reset_result (&f->result);
+  tp_clear_pointer (&f->result.loop, g_main_loop_unref);
 }
 
 int
