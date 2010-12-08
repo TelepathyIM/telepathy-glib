@@ -21,12 +21,6 @@
 #include "tests/lib/util.h"
 
 typedef struct {
-    TpBaseConnection *base_connection;
-    TpTestsContactsConnection *legacy_service_conn;
-    TpConnection *legacy_client_conn;
-} Fixture;
-
-typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
     GPtrArray *contacts;
@@ -34,6 +28,14 @@ typedef struct {
     gchar **good_ids;
     GHashTable *bad_ids;
 } Result;
+
+typedef struct {
+    Result result;
+    TpBaseConnection *base_connection;
+    TpTestsContactsConnection *legacy_service_conn;
+    TpConnection *legacy_client_conn;
+    TpHandleRepoIface *service_repo;
+} Fixture;
 
 static void
 reset_result (Result *result)
@@ -1209,6 +1211,9 @@ setup (Fixture *f,
 
   f->legacy_service_conn = g_object_ref (TP_TESTS_CONTACTS_CONNECTION (
         f->base_connection));
+  f->service_repo = tp_base_connection_get_handles (f->base_connection,
+      TP_HANDLE_TYPE_CONTACT);
+  f->result.loop = g_main_loop_new (NULL, FALSE);
 }
 
 static void
@@ -1226,9 +1231,11 @@ teardown (Fixture *f,
       g_assert (ok);
     }
 
+  f->service_repo = NULL;
   tp_clear_object (&f->legacy_client_conn);
   tp_clear_object (&f->legacy_service_conn);
   tp_clear_object (&f->base_connection);
+  tp_clear_pointer (&f->result.loop, g_main_loop_unref);
 }
 
 int
