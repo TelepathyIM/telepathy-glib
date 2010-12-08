@@ -102,10 +102,10 @@ struct _TpHandlePriv
 static const TpHandlePriv empty_priv = { NULL, NULL };
 
 static void
-handle_priv_init (TpHandlePriv *priv,
-    const gchar *string)
+handle_priv_init_take_string (TpHandlePriv *priv,
+    gchar *string)
 {
-  priv->string = g_strdup (string);
+  priv->string = string;
   g_datalist_init (&(priv->datalist));
 }
 
@@ -508,9 +508,10 @@ dynamic_ensure_handle (TpHandleRepoIface *irepo,
   g_array_append_val (self->handle_to_priv, empty_priv);
   priv = &g_array_index (self->handle_to_priv, TpHandlePriv, handle);
 
-  handle_priv_init (priv, normal_id);
+  handle_priv_init_take_string (priv, normal_id);
   g_hash_table_insert (self->string_to_handle, priv->string,
       GUINT_TO_POINTER (handle));
+
   return handle;
 }
 
