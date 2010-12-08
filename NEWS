@@ -9,6 +9,9 @@ Fixes:
 • Fix an unlikely crash in which a TpBaseConnection outlives its
   TpBaseConnectionManager (smcv)
 
+• fd.o #32191: when tp_connection_get_contacts_by_handle would return
+  contacts that already exist, make sure they have the desired features (smcv)
+
 telepathy-glib 0.12.5 (2010-11-25)
 ==================================
 
