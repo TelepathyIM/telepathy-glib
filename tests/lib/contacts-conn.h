@@ -107,7 +107,7 @@ void tp_tests_contacts_connection_set_default_contact_info (
     TpTestsContactsConnection *self,
     GPtrArray *info);
 
-/* Legacy version (no Contacts interface) */
+/* Legacy version (no Contacts interface, and no immortal handles) */
 
 typedef struct _TpTestsLegacyContactsConnection TpTestsLegacyContactsConnection;
 typedef struct _TpTestsLegacyContactsConnectionClass TpTestsLegacyContactsConnectionClass;
