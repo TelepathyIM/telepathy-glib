@@ -32,7 +32,7 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpContact TpContact;
+/* TpContact is forward-declared in connection.h */
 typedef struct _TpContactClass TpContactClass;
 typedef struct _TpContactPrivate TpContactPrivate;
 

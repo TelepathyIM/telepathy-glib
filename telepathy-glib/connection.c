@@ -124,6 +124,7 @@ tp_connection_get_feature_quark_core (void)
  *  <listitem>#TpConnection:status is
  *    %TP_CONNECTION_STATUS_CONNECTED</listitem>
  *  <listitem>#TpConnection:self-handle is valid and non-zero</listitem>
+ *  <listitem>#TpConnection:self-contact is non-%NULL</listitem>
  *  <listitem>all interfaces have been added to the set of
  *    #TpProxy:interfaces, and that set will not change again</listitem>
  * </itemizedlist>
@@ -234,6 +235,7 @@ enum
   PROP_STATUS = 1,
   PROP_STATUS_REASON,
   PROP_CONNECTION_READY,
+  PROP_SELF_CONTACT,
   PROP_SELF_HANDLE,
   PROP_CAPABILITIES,
   N_PROPS
@@ -261,6 +263,9 @@ tp_connection_get_property (GObject *object,
       break;
     case PROP_STATUS_REASON:
       g_value_set_uint (value, self->priv->status_reason);
+      break;
+    case PROP_SELF_CONTACT:
+      g_value_set_object (value, tp_connection_get_self_contact (self));
       break;
     case PROP_SELF_HANDLE:
       g_value_set_uint (value, tp_connection_get_self_handle (self));
@@ -492,6 +497,7 @@ tp_connection_set_self_contact (TpConnection *self,
 
       self->priv->self_contact = g_object_ref (contact);
       tp_clear_object (&tmp);
+      g_object_notify ((GObject *) self, "self-contact");
       g_object_notify ((GObject *) self, "self-handle");
     }
 
@@ -1230,6 +1236,10 @@ tp_connection_class_init (TpConnectionClass *klass)
    * The %TP_HANDLE_TYPE_CONTACT handle of the local user on this connection,
    * or 0 if we don't know yet or if the connection has become invalid.
    *
+   * This may change if the local user's unique identifier changes (for
+   * instance by using /nick on IRC), in which case #GObject::notify will be
+   * emitted.
+   *
    * To wait for a valid self-handle (and other properties), call
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONNECTED.
@@ -1239,6 +1249,28 @@ tp_connection_class_init (TpConnectionClass *klass)
       0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SELF_HANDLE,
+      param_spec);
+
+  /**
+   * TpConnection:self-contact:
+   *
+   * A #TpContact representing the local user on this connection,
+   * or %NULL if not yet available.
+   *
+   * If the local user's unique identifier changes (for instance by using
+   * /nick on IRC), this property will change to a different #TpContact object
+   * representing the new identifier, and #GObject::notify will be emitted.
+   *
+   * To wait for a non-%NULL self-contact (and other properties), call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONNECTED.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("self-contact", "Self contact",
+      "The local user's Contact object on this connection", TP_TYPE_CONTACT,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SELF_CONTACT,
       param_spec);
 
   /**
@@ -2269,4 +2301,25 @@ tp_connection_has_immortal_handles (TpConnection *self)
   g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
 
   return self->priv->has_immortal_handles;
+}
+
+/**
+ * tp_connection_get_self_contact:
+ * @self: a connection
+ *
+ * Return a #TpContact representing the local user on this connection.
+ *
+ * The returned object is not necessarily valid after the main loop is
+ * re-entered; ref it with g_object_ref() if you want to keep it.
+ *
+ * Returns: (transfer none): the value of the TpConnection:self-contact
+ *  property, which may be %NULL
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpContact *
+tp_connection_get_self_contact (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
+  return self->priv->self_contact;
 }

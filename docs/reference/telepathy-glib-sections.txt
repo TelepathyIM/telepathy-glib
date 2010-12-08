@@ -3341,6 +3341,7 @@ TpConnectionWhenReadyCb
 tp_connection_call_when_ready
 tp_connection_is_ready
 tp_connection_get_status
+tp_connection_get_self_contact
 tp_connection_get_self_handle
 tp_connection_has_immortal_handles
 TpConnectionRequestHandlesCb

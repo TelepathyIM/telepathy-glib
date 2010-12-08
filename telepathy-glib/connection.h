@@ -74,6 +74,9 @@ GType tp_contact_info_list_get_type (void);
 GList *tp_contact_info_list_copy (GList *list);
 void tp_contact_info_list_free (GList *list);
 
+/* forward declaration, see contact.h for the rest */
+typedef struct _TpContact TpContact;
+
 typedef struct _TpConnection TpConnection;
 typedef struct _TpConnectionPrivate TpConnectionPrivate;
 typedef struct _TpConnectionClass TpConnectionClass;
@@ -124,6 +127,7 @@ TpConnectionStatus tp_connection_get_status (TpConnection *self,
     TpConnectionStatusReason *reason);
 
 TpHandle tp_connection_get_self_handle (TpConnection *self);
+TpContact *tp_connection_get_self_contact (TpConnection *self);
 
 TpCapabilities * tp_connection_get_capabilities (TpConnection *self);
 
