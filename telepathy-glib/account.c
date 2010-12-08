@@ -1014,6 +1014,9 @@ _tp_account_finalize (GObject *object)
   g_free (priv->requested_status);
   g_free (priv->requested_message);
   g_free (priv->error);
+  g_free (priv->auto_status);
+  g_free (priv->auto_message);
+  g_free (priv->normalized_name);
 
   g_free (priv->nickname);
 
