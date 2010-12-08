@@ -1921,57 +1921,31 @@ int
 main (int argc,
       char **argv)
 {
-  Fixture f = { NULL };
-
-  /* Setup */
-
   g_type_init ();
   tp_debug_set_flags ("all");
+  g_set_prgname ("contacts");
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  setup (&f, NULL);
-  test_by_handle (&f, NULL);
-  teardown (&f, NULL);
+#define ADD(x) \
+  g_test_add ("/contacts/" #x, Fixture, NULL, setup, test_ ## x, teardown)
 
-  setup (&f, NULL);
-  test_no_features (&f, NULL);
-  teardown (&f, NULL);
-
-  setup (&f, NULL);
-  test_features (&f, NULL);
-  teardown (&f, NULL);
-
-  setup (&f, NULL);
-  test_upgrade (&f, NULL);
-  teardown (&f, NULL);
-
-  setup (&f, NULL);
-  test_by_id (&f, NULL);
-  teardown (&f, NULL);
-
-  setup (&f, NULL);
-  test_avatar_requirements (&f, NULL);
-  teardown (&f, NULL);
-
-  setup (&f, NULL);
-  test_avatar_data (&f, NULL);
-  teardown (&f, NULL);
-
-  setup (&f, NULL);
-  test_contact_info (&f, NULL);
-  teardown (&f, NULL);
-
+  ADD (by_handle);
+  ADD (no_features);
+  ADD (features);
+  ADD (upgrade);
+  ADD (by_id);
+  ADD (avatar_requirements);
+  ADD (avatar_data);
+  ADD (contact_info);
   /* test if TpContact fallbacks to connection's capabilities if
    * ContactCapabilities is not implemented. */
-  setup (&f, NULL);
-  test_capabilities_without_contact_caps (&f, NULL);
-  teardown (&f, NULL);
+  ADD (capabilities_without_contact_caps);
 
   /* test if TP_CONTACT_FEATURE_CAPABILITIES is prepared but with
    * an empty set of capabilities if the connection doesn't support
    * ContactCapabilities and Requests. */
-  setup (&f, NULL);
-  test_prepare_contact_caps_without_request (&f, NULL);
-  teardown (&f, NULL);
+  ADD (prepare_contact_caps_without_request);
 
-  return 0;
+  return g_test_run ();
 }
