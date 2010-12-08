@@ -99,9 +99,11 @@ finish (gpointer r)
 }
 
 static void
-test_by_handle (TpTestsContactsConnection *service_conn,
-                TpConnection *client_conn)
+test_by_handle (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpTestsContactsConnection *service_conn = f->legacy_service_conn;
+  TpConnection *client_conn = f->legacy_client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handles[5] = { 0, 0, 0, 0, 0 };
   TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
@@ -238,9 +240,11 @@ test_by_handle (TpTestsContactsConnection *service_conn,
 }
 
 static void
-test_no_features (TpTestsContactsConnection *service_conn,
-                  TpConnection *client_conn)
+test_no_features (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpTestsContactsConnection *service_conn = f->legacy_service_conn;
+  TpConnection *client_conn = f->legacy_client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   const gchar * const ids[] = { "alice", "bob", "chris" };
   TpHandle handles[3] = { 0, 0, 0 };
@@ -371,9 +375,11 @@ upgrade_cb (TpConnection *connection,
   } G_STMT_END
 
 static void
-test_upgrade (TpTestsContactsConnection *service_conn,
-              TpConnection *client_conn)
+test_upgrade (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpTestsContactsConnection *service_conn = f->legacy_service_conn;
+  TpConnection *client_conn = f->legacy_client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handles[] = { 0, 0, 0 };
   static const gchar * const ids[] = { "alice", "bob", "chris" };
@@ -593,9 +599,11 @@ contact_notify_cb (TpContact *contact,
 }
 
 static void
-test_features (TpTestsContactsConnection *service_conn,
-               TpConnection *client_conn)
+test_features (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpTestsContactsConnection *service_conn = f->legacy_service_conn;
+  TpConnection *client_conn = f->legacy_client_conn;
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handles[] = { 0, 0, 0 };
   static const gchar * const ids[] = { "alice", "bob", "chris" };
@@ -903,8 +911,10 @@ by_id_cb (TpConnection *connection,
 }
 
 static void
-test_by_id (TpConnection *client_conn)
+test_by_id (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
+  TpConnection *client_conn = f->legacy_client_conn;
   Result result = { g_main_loop_new (NULL, FALSE) };
   static const gchar * const ids[] = { "Alice", "Bob", "Not valid", "Chris",
       "not valid either", NULL };
@@ -1029,7 +1039,8 @@ test_by_id (TpConnection *client_conn)
 }
 
 static void
-setup (Fixture *f)
+setup (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
       "me@test.com", &f->base_connection, &f->legacy_client_conn);
@@ -1039,7 +1050,8 @@ setup (Fixture *f)
 }
 
 static void
-teardown (Fixture *f)
+teardown (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
   GError *error = NULL;
   gboolean ok;
@@ -1061,30 +1073,22 @@ int
 main (int argc,
       char **argv)
 {
-  Fixture f = { NULL };
-
   g_type_init ();
   tp_debug_set_flags ("all");
+  g_set_prgname ("contacts-slow-path");
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  setup (&f);
-  test_by_handle (f.legacy_service_conn, f.legacy_client_conn);
-  teardown (&f);
+  g_test_add ("/contacts-slow-path/by-handle", Fixture, NULL, setup,
+      test_by_handle, teardown);
+  g_test_add ("/contacts-slow-path/no-features", Fixture, NULL, setup,
+      test_no_features, teardown);
+  g_test_add ("/contacts-slow-path/features", Fixture, NULL, setup,
+      test_features, teardown);
+  g_test_add ("/contacts-slow-path/upgrade", Fixture, NULL, setup,
+      test_upgrade, teardown);
+  g_test_add ("/contacts-slow-path/by-id", Fixture, NULL, setup,
+      test_by_id, teardown);
 
-  setup (&f);
-  test_no_features (f.legacy_service_conn, f.legacy_client_conn);
-  teardown (&f);
-
-  setup (&f);
-  test_features (f.legacy_service_conn, f.legacy_client_conn);
-  teardown (&f);
-
-  setup (&f);
-  test_upgrade (f.legacy_service_conn, f.legacy_client_conn);
-  teardown (&f);
-
-  setup (&f);
-  test_by_id (f.legacy_client_conn);
-  teardown (&f);
-
-  return 0;
+  return g_test_run ();
 }
