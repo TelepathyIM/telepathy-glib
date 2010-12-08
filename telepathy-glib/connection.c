@@ -263,7 +263,7 @@ tp_connection_get_property (GObject *object,
       g_value_set_uint (value, self->priv->status_reason);
       break;
     case PROP_SELF_HANDLE:
-      g_value_set_uint (value, self->priv->self_handle);
+      g_value_set_uint (value, tp_connection_get_self_handle (self));
       break;
     case PROP_CAPABILITIES:
       g_value_set_object (value, self->priv->capabilities);
@@ -483,13 +483,77 @@ introspect_contacts (TpConnection *self)
 }
 
 static void
-_tp_connection_set_self_handle (TpConnection *self,
-                 guint self_handle)
+tp_connection_set_self_contact (TpConnection *self,
+    TpContact *contact)
 {
-  if (self_handle != self->priv->self_handle)
+  if (contact != self->priv->self_contact)
     {
-      self->priv->self_handle = self_handle;
+      TpContact *tmp = self->priv->self_contact;
+
+      self->priv->self_contact = g_object_ref (contact);
+      tp_clear_object (&tmp);
       g_object_notify ((GObject *) self, "self-handle");
+    }
+
+  if (self->priv->introspecting_self_contact)
+    {
+      self->priv->introspecting_self_contact = FALSE;
+      tp_connection_continue_introspection (self);
+    }
+}
+
+static void
+tp_connection_got_self_contact_cb (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    guint n_failed,
+    const TpHandle *failed,
+    const GError *error,
+    gpointer unused_data G_GNUC_UNUSED,
+    GObject *unused_object G_GNUC_UNUSED)
+{
+  if (n_contacts != 0)
+    {
+      g_assert (n_contacts == 1);
+      g_assert (n_failed == 0);
+      g_assert (error == NULL);
+
+      if (tp_contact_get_handle (contacts[0]) ==
+          self->priv->last_known_self_handle)
+        {
+          tp_connection_set_self_contact (self, contacts[0]);
+        }
+      else
+        {
+          DEBUG ("SelfHandle is now %u, ignoring contact object for %u",
+              self->priv->last_known_self_handle,
+              tp_contact_get_handle (contacts[0]));
+        }
+    }
+  else if (error != NULL)
+    {
+      /* Unrecoverable error: we were probably invalidated, but in case
+       * we weren't... */
+      DEBUG ("Failed to hold the handle from GetSelfHandle(): %s",
+          error->message);
+      tp_proxy_invalidate ((TpProxy *) self, error);
+    }
+  else if (n_failed == 1 && failed[0] != self->priv->last_known_self_handle)
+    {
+      /* Since we tried to make the TpContact, our self-handle has changed,
+       * so it doesn't matter that we couldn't make a TpContact for the old
+       * one - carry on and make a TpContact for the new one instead. */
+      DEBUG ("Failed to hold handle %u from GetSelfHandle(), but it's "
+          "changed to %u anyway, so never mind", failed[0],
+          self->priv->last_known_self_handle);
+    }
+  else
+    {
+      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "The handle from GetSelfHandle() was considered invalid" };
+
+      DEBUG ("%s", e.message);
+      tp_proxy_invalidate ((TpProxy *) self, &e);
     }
 }
 
@@ -506,12 +570,25 @@ got_self_handle (TpConnection *self,
   if (error != NULL)
     {
       DEBUG ("%p: GetSelfHandle() failed: %s", self, error->message);
-      self_handle = 0;
-      /* FIXME: abort the readying process */
+      tp_proxy_invalidate ((TpProxy *) self, error);
+      return;
     }
 
-  _tp_connection_set_self_handle (self, self_handle);
-  tp_connection_continue_introspection (self);
+  if (self_handle == 0)
+    {
+      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "GetSelfHandle() returned 0" };
+      DEBUG ("%s", e.message);
+      tp_proxy_invalidate ((TpProxy *) self, &e);
+      return;
+    }
+
+  self->priv->last_known_self_handle = self_handle;
+  self->priv->introspecting_self_contact = TRUE;
+  /* This relies on the special case in tp_connection_get_contacts_by_handle()
+   * which makes it start working slightly early. */
+  tp_connection_get_contacts_by_handle (self, 1, &self_handle, 0, NULL,
+      tp_connection_got_self_contact_cb, NULL, NULL, NULL);
 }
 
 static void
@@ -520,7 +597,16 @@ on_self_handle_changed (TpConnection *self,
                         gpointer user_data G_GNUC_UNUSED,
                         GObject *user_object G_GNUC_UNUSED)
 {
-  _tp_connection_set_self_handle (self, self_handle);
+  if (self_handle == 0)
+    {
+      DEBUG ("Ignoring alleged change of self-handle to %u", self_handle);
+      return;
+    }
+
+  DEBUG ("SelfHandleChanged to %u, I wonder what that means?", self_handle);
+  self->priv->last_known_self_handle = self_handle;
+  tp_connection_get_contacts_by_handle (self, 1, &self_handle, 0, NULL,
+      tp_connection_got_self_contact_cb, NULL, NULL, NULL);
 }
 
 static void
@@ -874,8 +960,6 @@ tp_connection_invalidated (TpConnection *self)
       tp_proxy_pending_call_cancel (self->priv->introspection_call);
       self->priv->introspection_call = NULL;
     }
-
-  _tp_connection_set_self_handle (self, 0);
 }
 
 static void
@@ -1315,7 +1399,11 @@ TpHandle
 tp_connection_get_self_handle (TpConnection *self)
 {
   g_return_val_if_fail (TP_IS_CONNECTION (self), 0);
-  return self->priv->self_handle;
+
+  if (self->priv->self_contact == NULL)
+    return 0;
+
+  return tp_contact_get_handle (self->priv->self_contact);
 }
 
 /**

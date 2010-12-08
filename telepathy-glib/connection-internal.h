@@ -35,7 +35,8 @@ struct _TpConnectionPrivate {
     /* list of TpConnectionProc */
     GList *introspect_needed;
 
-    TpHandle self_handle;
+    TpHandle last_known_self_handle;
+    TpContact *self_contact;
     TpConnectionStatus status;
     TpConnectionStatusReason status_reason;
     gchar *connection_error;
@@ -78,6 +79,7 @@ struct _TpConnectionPrivate {
     unsigned tracking_contact_info_changed:1;
     unsigned introspecting_after_connected:1;
     unsigned tracking_client_types_updated:1;
+    unsigned introspecting_self_contact:1;
 };
 
 void _tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
