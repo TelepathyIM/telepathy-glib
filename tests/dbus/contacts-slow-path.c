@@ -21,6 +21,12 @@
 #include "tests/lib/util.h"
 
 typedef struct {
+    TpBaseConnection *base_connection;
+    TpTestsContactsConnection *legacy_service_conn;
+    TpConnection *legacy_client_conn;
+} Fixture;
+
+typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
     GPtrArray *contacts;
@@ -1022,40 +1028,46 @@ test_by_id (TpConnection *client_conn)
   result.bad_ids = NULL;
 }
 
+static void
+setup (Fixture *f)
+{
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
+      "me@test.com", &f->base_connection, &f->legacy_client_conn);
+
+  f->legacy_service_conn = TP_TESTS_CONTACTS_CONNECTION (f->base_connection);
+}
+
+static void
+teardown (Fixture *f)
+{
+  GError *error = NULL;
+
+  MYASSERT (tp_cli_connection_run_disconnect (f->legacy_client_conn, -1,
+        &error, NULL), "");
+  g_assert_no_error (error);
+
+  g_object_unref (f->legacy_client_conn);
+  g_object_unref (f->legacy_service_conn);
+}
+
 int
 main (int argc,
       char **argv)
 {
-  TpBaseConnection *base_connection;
-  TpTestsContactsConnection *legacy_service_conn;
-  GError *error = NULL;
-  TpConnection *legacy_client_conn;
-
-  /* Setup */
+  Fixture f = { NULL };
 
   g_type_init ();
   tp_debug_set_flags ("all");
 
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
-      "me@test.com", &base_connection, &legacy_client_conn);
+  setup (&f);
 
-  legacy_service_conn = TP_TESTS_CONTACTS_CONNECTION (base_connection);
+  test_by_handle (f.legacy_service_conn, f.legacy_client_conn);
+  test_no_features (f.legacy_service_conn, f.legacy_client_conn);
+  test_features (f.legacy_service_conn, f.legacy_client_conn);
+  test_upgrade (f.legacy_service_conn, f.legacy_client_conn);
+  test_by_id (f.legacy_client_conn);
 
-  /* Tests */
-  test_by_handle (legacy_service_conn, legacy_client_conn);
-  test_no_features (legacy_service_conn, legacy_client_conn);
-  test_features (legacy_service_conn, legacy_client_conn);
-  test_upgrade (legacy_service_conn, legacy_client_conn);
-  test_by_id (legacy_client_conn);
-
-  /* Teardown */
-
-  MYASSERT (tp_cli_connection_run_disconnect (legacy_client_conn, -1, &error,
-        NULL), "");
-  g_assert_no_error (error);
-
-  g_object_unref (legacy_client_conn);
-  g_object_unref (legacy_service_conn);
+  teardown (&f);
 
   return 0;
 }
