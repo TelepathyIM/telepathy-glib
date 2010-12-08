@@ -2000,6 +2000,63 @@ test_prepare_contact_caps_without_request (Fixture *f,
 }
 
 static void
+test_dup_if_possible (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle alice_handle, bob_handle;
+  TpContact *alice;
+  TpContact *contact;
+
+  alice_handle = tp_handle_ensure (f->service_repo, "alice", NULL, NULL);
+  g_assert_cmpuint (alice_handle, !=, 0);
+  bob_handle = tp_handle_ensure (f->service_repo, "bob", NULL, NULL);
+  g_assert_cmpuint (bob_handle, !=, 0);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &alice_handle,
+      0, NULL,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  alice = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (alice), ==, alice_handle);
+  g_assert_cmpstr (tp_contact_get_identifier (alice), ==, "alice");
+
+  reset_result (&f->result);
+
+  /* we already have a cached TpContact for Alice, so we can get another
+   * copy of it synchronously */
+
+  contact = tp_connection_dup_contact_if_possible (f->client_conn,
+      alice_handle, "alice");
+  g_assert (contact == alice);
+  g_object_unref (contact);
+
+  contact = tp_connection_dup_contact_if_possible (f->client_conn,
+      alice_handle, NULL);
+  g_assert (contact == alice);
+  g_object_unref (contact);
+
+  /* because this connection has immortal handles, we can reliably get a
+   * contact for Bob synchronously, but only if we supply his identifier */
+
+  contact = tp_connection_dup_contact_if_possible (f->client_conn,
+      bob_handle, NULL);
+  g_assert (contact == NULL);
+
+  contact = tp_connection_dup_contact_if_possible (f->client_conn,
+      bob_handle, "bob");
+  g_assert (contact != alice);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "bob");
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, bob_handle);
+}
+
+static void
 setup (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -2097,6 +2154,8 @@ main (int argc,
    * an empty set of capabilities if the connection doesn't support
    * ContactCapabilities and Requests. */
   ADD (prepare_contact_caps_without_request);
+
+  ADD (dup_if_possible);
 
   return g_test_run ();
 }
