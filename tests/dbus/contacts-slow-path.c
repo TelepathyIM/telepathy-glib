@@ -40,12 +40,12 @@ typedef struct {
 static void
 reset_result (Result *result)
 {
-  /* clean up before doing the second request */
-  g_array_free (result->invalid, TRUE);
-  result->invalid = NULL;
-  g_ptr_array_foreach (result->contacts, (GFunc) g_object_unref, NULL);
-  g_ptr_array_free (result->contacts, TRUE);
-  result->contacts = NULL;
+  tp_clear_pointer (&result->invalid, g_array_unref);
+  if (result->contacts != NULL)
+    g_ptr_array_foreach (result->contacts, (GFunc) g_object_unref, NULL);
+  tp_clear_pointer (&result->contacts, g_ptr_array_unref);
+  tp_clear_pointer (&result->good_ids, g_strfreev);
+  tp_clear_pointer (&result->bad_ids, g_hash_table_unref);
   g_clear_error (&result->error);
 }
 
@@ -1235,6 +1235,7 @@ teardown (Fixture *f,
   tp_clear_object (&f->legacy_client_conn);
   tp_clear_object (&f->legacy_service_conn);
   tp_clear_object (&f->base_connection);
+  reset_result (&f->result);
   tp_clear_pointer (&f->result.loop, g_main_loop_unref);
 }
 
