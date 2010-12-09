@@ -14,6 +14,7 @@ noinst_PROGRAMS = \
     test-client \
     test-client-channel-factory \
     test-cm \
+    test-cm-message \
     test-connection \
     test-connection-bug-18845 \
     test-connection-error \
@@ -186,6 +187,14 @@ test_simple_handler_SOURCES = simple-handler.c
 test_stream_tube_SOURCES = stream-tube.c
 
 test_client_channel_factory_SOURCES = client-channel-factory.c
+
+# this one uses internal ABI
+test_cm_message_SOURCES = \
+    cm-message.c
+test_cm_message_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
+    $(GLIB_LIBS)
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
