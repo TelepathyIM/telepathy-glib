@@ -1,6 +1,14 @@
 telepathy-glib 0.13.9 (UNRELEASED)
 ==================================
 
+Deprecations:
+
+• tp_message_new (replace with tp_cm_message_new)
+• tp_message_ref_handle (no longer needed)
+• tp_message_set_handle (use tp_cm_message_set_sender for the only supported
+  handle in a message)
+• tp_message_take_message (replace with tp_cm_message_take_message)
+
 Enhancements:
 
 • tp_account_get_path_suffix: new function to get the varying suffix of an
@@ -10,6 +18,11 @@ Enhancements:
 
 • tp_connection_dup_contact_if_possible: new function to make
   TpContact objects synchronously in some situations (smcv)
+
+• convert TpMessage into a GObject, with subclasses for use in CMs
+  (TpCMMessage) and clients (TpClientMessage, TpSignalledMessage) (cassidy)
+
+• add TpConnection:self-contact, a TpContact for the self-handle (smcv)
 
 Fixes:
 
