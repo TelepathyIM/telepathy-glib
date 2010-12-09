@@ -51,9 +51,6 @@ G_DEFINE_TYPE (TpCMMessage, tp_cm_message, TP_TYPE_MESSAGE)
 struct _TpCMMessagePrivate
 {
   TpBaseConnection *connection;
-
-  /* handles referenced by this message */
-  TpHandleSet *reffed_handles[NUM_TP_HANDLE_TYPES];
 };
 
 static void
@@ -62,14 +59,8 @@ tp_cm_message_dispose (GObject *object)
   TpCMMessage *self = TP_CM_MESSAGE (object);
   void (*dispose) (GObject *) =
     G_OBJECT_CLASS (tp_cm_message_parent_class)->dispose;
-  guint i;
 
   tp_clear_object (&self->priv->connection);
-
-  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
-    {
-      tp_clear_pointer (&self->priv->reffed_handles[i], tp_handle_set_destroy);
-    }
 
   if (dispose != NULL)
     dispose (object);
@@ -133,51 +124,6 @@ tp_cm_message_new (TpBaseConnection *connection,
   return msg;
 }
 
-static void
-_ensure_handle_set (TpCMMessage *self,
-                    TpHandleType handle_type)
-{
-  if (self->priv->reffed_handles[handle_type] == NULL)
-    {
-      TpHandleRepoIface *handles = tp_base_connection_get_handles (
-          self->priv->connection, handle_type);
-
-      g_return_if_fail (handles != NULL);
-
-      self->priv->reffed_handles[handle_type] = tp_handle_set_new (handles);
-    }
-}
-
-/**
- * tp_cm_message_ref_handles:
- * @self: a message
- * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less
- *  than %NUM_TP_HANDLE_TYPES
- * @handles: a set of handles of the given type
- *
- * References all of the given handles until this message is destroyed.
- *
- * @since 0.13.UNRELEASED
- */
-static void
-tp_cm_message_ref_handles (TpMessage *msg,
-                        TpHandleType handle_type,
-                        TpIntset *handles)
-{
-  TpIntset *updated;
-  TpCMMessage *self = (TpCMMessage *) msg;
-
-  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
-  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
-  g_return_if_fail (!tp_intset_is_member (handles, 0));
-
-  _ensure_handle_set (self, handle_type);
-
-  updated = tp_handle_set_update (self->priv->reffed_handles[handle_type], handles);
-  tp_intset_destroy (updated);
-}
-
-
 /**
  * tp_cm_message_take_message:
  * @self: a message
@@ -200,7 +146,6 @@ tp_cm_message_take_message (TpMessage *self,
     const gchar *key,
     TpMessage *message)
 {
-  guint i;
   TpCMMessage *cm_message;
 
   g_return_if_fail (self != NULL);
@@ -228,44 +173,7 @@ tp_cm_message_take_message (TpMessage *self,
   g_ptr_array_add (message->parts, g_hash_table_new_full (g_str_hash,
         g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
 
-  for (i = 0; i < NUM_TP_HANDLE_TYPES; i++)
-    {
-      if (cm_message->priv->reffed_handles[i] != NULL)
-        tp_cm_message_ref_handles (self, i,
-            tp_handle_set_peek (cm_message->priv->reffed_handles[i]));
-    }
-
   tp_message_destroy (message);
-}
-
-/**
- * tp_cm_message_ref_handle:
- * @self: a message
- * @handle_type: a handle type, greater than %TP_HANDLE_TYPE_NONE and less than
- *  %NUM_TP_HANDLE_TYPES
- * @handle: a handle of the given type
- *
- * Reference the given handle until this message is destroyed.
- *
- * @since 0.13.UNRELEASED
- */
-void
-tp_cm_message_ref_handle (TpMessage *msg,
-    TpHandleType handle_type,
-    TpHandle handle)
-{
-  TpCMMessage *self;
-
-  g_return_if_fail (TP_IS_CM_MESSAGE (msg));
-  g_return_if_fail (handle_type > TP_HANDLE_TYPE_NONE);
-  g_return_if_fail (handle_type < NUM_TP_HANDLE_TYPES);
-  g_return_if_fail (handle != 0);
-
-  self = (TpCMMessage *) msg;
-
-  _ensure_handle_set (self, handle_type);
-
-  tp_handle_set_add (self->priv->reffed_handles[handle_type], handle);
 }
 
 /**
@@ -288,8 +196,6 @@ tp_cm_message_set_sender (TpMessage *self,
 
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
   g_return_if_fail (handle != 0);
-
-  tp_cm_message_ref_handle (self, TP_HANDLE_TYPE_CONTACT, handle);
 
   tp_message_set_uint32 (self, 0, "message-sender", handle);
 
