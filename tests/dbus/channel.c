@@ -296,7 +296,10 @@ test_leave_room_unprepared_no_reason (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (tp_proxy_get_invalidated (test->channel_room) != NULL);
-  check_not_removed (test->chan_room_service);
+  g_assert_cmpuint (test->chan_room_service->removed_handle, !=, 0);
+  g_assert_cmpstr (test->chan_room_service->removed_message, ==, "");
+  g_assert_cmpuint (test->chan_room_service->removed_reason, ==,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 }
 
 static void
@@ -337,7 +340,10 @@ test_leave_room_prepared_no_reason (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (tp_proxy_get_invalidated (test->channel_room) != NULL);
-  check_not_removed (test->chan_room_service);
+  g_assert_cmpuint (test->chan_room_service->removed_handle, !=, 0);
+  g_assert_cmpstr (test->chan_room_service->removed_message, ==, "");
+  g_assert_cmpuint (test->chan_room_service->removed_reason, ==,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 }
 
 static void

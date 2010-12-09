@@ -2278,15 +2278,6 @@ leave_channel_async (TpChannel *self,
       return;
     }
 
-  if (tp_str_empty (message) &&
-      reason == TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
-    {
-      /* exactly equivalent to Close(), so skip the Group interface */
-      tp_cli_channel_call_close (self, -1, channel_close_cb, result,
-          NULL, NULL);
-      return;
-    }
-
   /* We need to prepare TP_CHANNEL_FEATURE_GROUP to get
    * tp_channel_group_get_self_handle() working */
   ctx = leave_ctx_new (result, message, reason);
@@ -2305,9 +2296,6 @@ leave_channel_async (TpChannel *self,
  * Leave channel @self with @reason as reason and @message as leave message.
  * If @self doesn't implement #TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP or if
  * for any reason we can't properly leave the channel, we close it.
- *
- * If @reason equals TP_CHANNEL_GROUP_CHANGE_REASON_NONE and message is %NULL
- * then @self is simply closed as well.
  *
  * When we left the channel, @callback will be called.
  * You can then call tp_channel_leave_finish() to get the result of
