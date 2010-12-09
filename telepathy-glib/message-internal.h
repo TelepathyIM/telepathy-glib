@@ -56,7 +56,7 @@ struct _TpMessage {
     gboolean outgoing_text_api;
 };
 
-void _tp_message_immutable (TpMessage *self);
+void _tp_message_set_immutable (TpMessage *self);
 
 G_END_DECLS
 

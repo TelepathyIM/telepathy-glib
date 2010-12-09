@@ -101,7 +101,7 @@ tp_message_init (TpMessage *self)
   g_ptr_array_add (self->parts, g_hash_table_new_full (g_str_hash,
         g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
 
-  /* Message can be modified until _tp_message_immutable() is called */
+  /* Message can be modified until _tp_message_set_immutable() is called */
   self->priv->mutable = TRUE;
 }
 
@@ -807,7 +807,7 @@ tp_message_to_text (TpMessage *message,
 }
 
 void
-_tp_message_immutable (TpMessage *self)
+_tp_message_set_immutable (TpMessage *self)
 {
-  self->priv->mutable = TRUE;
+  self->priv->mutable = FALSE;
 }
