@@ -2124,6 +2124,8 @@ tp_channel_get_initiator_identifier (TpChannel *self)
   return id != NULL ? id : "";
 }
 
+/* tp_cli callbacks can potentially be called in a re-entrant way,
+ * so we can't necessarily complete @result without using an idle. */
 static void
 channel_close_cb (TpChannel *channel,
     const GError *error,
@@ -2146,10 +2148,13 @@ channel_close_cb (TpChannel *channel,
         }
     }
 
-  g_simple_async_result_complete (result);
+  g_simple_async_result_complete_in_idle (result);
   g_object_unref (result);
 }
 
+/* This is only called from the main loop, as a result of group_prepared_cb
+ * having the same property, so it can complete LeaveCtx.result without
+ * an idle. */
 static void
 channel_remove_self_cb (TpChannel *channel,
     const GError *error,
@@ -2214,6 +2219,8 @@ leave_ctx_free (LeaveCtx *ctx)
   g_slice_free (LeaveCtx, ctx);
 }
 
+/* This is only called from the main loop, so it can safely complete
+ * LeaveCtx.result without an idle. */
 static void
 group_prepared_cb (GObject *source,
     GAsyncResult *res,
