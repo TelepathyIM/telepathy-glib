@@ -331,7 +331,7 @@ _tp_cm_message_new_from_parts (const GPtrArray *parts)
   header = tp_message_peek (self, 0);
   sender = tp_asv_get_uint32 (header, "message-sender", NULL);
   if (sender != 0)
-    tp_cm_message_ref_handle (self, TP_HANDLE_TYPE_CONTACT, sender);
+    tp_cm_message_set_sender (self, sender);
 
   return self;
 }
