@@ -918,7 +918,7 @@ tp_base_client_dispose (GObject *object)
 
   if (self->priv->my_chans != NULL &&
       g_hash_table_size (self->priv->my_chans) > 0)
-    g_warning ("TpBaseClient is still handling channels at dispose");
+    WARNING ("TpBaseClient is still handling channels at dispose");
 
   tp_clear_pointer (&self->priv->my_chans, g_hash_table_unref);
 
