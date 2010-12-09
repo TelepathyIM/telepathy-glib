@@ -287,6 +287,40 @@ test_change_inconveniently (Fixture *f,
 }
 
 static void
+test_self_handle_fails (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  gboolean ok;
+
+  tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
+      &f->result);
+  g_assert (f->result == NULL);
+
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "me@example.com");
+  tp_tests_simple_connection_set_get_self_handle_error (f->service_conn,
+      TP_ERROR, TP_ERROR_CONFUSED, "totally wasted");
+  tp_base_connection_change_status (f->service_conn_as_base,
+      TP_CONNECTION_STATUS_CONNECTED,
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+
+  /* now run the main loop and let the client catch up */
+  tp_tests_run_until_result (&f->result);
+  ok = tp_proxy_prepare_finish (f->client_conn, f->result, &f->error);
+  g_assert_error (f->error, TP_ERROR, TP_ERROR_CONFUSED);
+  g_assert (!ok);
+  g_clear_error (&f->error);
+
+  g_assert_error (tp_proxy_get_invalidated (f->client_conn), TP_ERROR,
+      TP_ERROR_CONFUSED);
+
+  /* don't want to Disconnect during teardown - it'll just fail */
+  tp_tests_simple_connection_inject_disconnect (f->service_conn);
+  tp_clear_object (&f->client_conn);
+}
+
+static void
 teardown (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -328,6 +362,8 @@ main (int argc,
       test_change_early, teardown);
   g_test_add ("/self-handle/change-inconveniently", Fixture, NULL, setup,
       test_change_inconveniently, teardown);
+  g_test_add ("/self-handle/fails", Fixture, NULL, setup,
+      test_self_handle_fails, teardown);
 
   return g_test_run ();
 }
