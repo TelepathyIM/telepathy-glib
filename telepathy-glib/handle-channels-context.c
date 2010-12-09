@@ -463,6 +463,9 @@ TpHandleChannelsContext * _tp_handle_channels_context_new (
  * Called by #TpBaseClientClassAddDispatchOperationImpl when it's done so
  * the D-Bus method can return.
  *
+ * The caller is responsible for closing channels with
+ * tp_cli_channel_call_close() when it has finished handling them.
+ *
  * Since: 0.11.6
  */
 void
