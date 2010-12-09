@@ -392,6 +392,21 @@ test_close (Test *test,
   g_assert (tp_proxy_get_invalidated (test->channel_contact) != NULL);
 }
 
+static void
+test_close_room (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  g_assert (tp_proxy_get_invalidated (test->channel_room) == NULL);
+
+  tp_channel_close_async (test->channel_room, channel_close_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_proxy_get_invalidated (test->channel_room) != NULL);
+  check_not_removed (test->chan_room_service);
+}
+
 int
 main (int argc,
       char **argv)
@@ -421,8 +436,10 @@ main (int argc,
   g_test_add ("/channel/leave/room/prepared/reason", Test, NULL, setup,
       test_leave_room_prepared_reason, teardown);
 
-  g_test_add ("/channel/close", Test, NULL, setup,
+  g_test_add ("/channel/close/contact", Test, NULL, setup,
       test_close, teardown);
+  g_test_add ("/channel/close/room", Test, NULL, setup,
+      test_close_room, teardown);
 
   return g_test_run ();
 }
