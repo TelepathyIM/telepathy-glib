@@ -522,13 +522,15 @@ handle_channels (TpSimpleHandler *handler,
       return;
     }
 
+  tp_handle_channels_context_accept (context);
+
   if (self->priv->result == NULL)
     {
       /* We are re-handling the channel, no async request to complete */
       g_signal_emit (self, signals[SIGNAL_RE_HANDLED], 0, self->priv->channel,
           user_action_time, context);
 
-      goto out;
+      return;
     }
 
   /* Request succeeded */
@@ -545,9 +547,6 @@ handle_channels (TpSimpleHandler *handler,
     }
 
   handle_request_complete (self, channel, context);
-
-out:
-  tp_handle_channels_context_accept (context);
 }
 
 static void
