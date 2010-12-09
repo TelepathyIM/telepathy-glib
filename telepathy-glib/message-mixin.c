@@ -65,7 +65,6 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/message-internal.h>
-#include <telepathy-glib/signalled-message-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_IM
 
