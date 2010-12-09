@@ -44,16 +44,6 @@ struct _TpMessage {
 
     /* array of hash tables, allocated string => sliced GValue */
     GPtrArray *parts;
-
-    /* from here down is implementation-specific for TpMessageMixin */
-
-    /* for receiving */
-    guint32 incoming_id;
-
-    /* for sending */
-    DBusGMethodInvocation *outgoing_context;
-    TpMessageSendingFlags outgoing_flags;
-    gboolean outgoing_text_api;
 };
 
 void _tp_message_set_immutable (TpMessage *self);

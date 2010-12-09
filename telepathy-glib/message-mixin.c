@@ -176,7 +176,7 @@ static gint
 pending_item_id_equals_data (gconstpointer item,
                              gconstpointer data)
 {
-  const TpMessage *self = item;
+  const TpCMMessage *self = item;
   guint id = GPOINTER_TO_UINT (data);
 
   /* The sense of this comparison is correct: the callback passed to
@@ -387,7 +387,6 @@ tp_message_mixin_acknowledge_pending_messages_async (
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
   GList **nodes;
-  TpMessage *item;
   guint i;
 
   nodes = g_new (GList *, ids->len);
@@ -418,9 +417,10 @@ tp_message_mixin_acknowledge_pending_messages_async (
 
   for (i = 0; i < ids->len; i++)
     {
-      item = nodes[i]->data;
+      TpMessage *item = nodes[i]->data;
+      TpCMMessage *cm_msg = nodes[i]->data;
 
-      DEBUG ("acknowledging message id %u", item->incoming_id);
+      DEBUG ("acknowledging message id %u", cm_msg->incoming_id);
 
       g_queue_remove (mixin->priv->pending, item);
       tp_message_destroy (item);
@@ -450,6 +450,7 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
        cur = cur->next)
     {
       TpMessage *msg = cur->data;
+      TpCMMessage *cm_msg = cur->data;
       GValue val = { 0, };
       gchar *text;
       TpChannelTextMessageFlags flags;
@@ -463,7 +464,7 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
       g_value_take_boxed (&val,
           dbus_g_type_specialized_construct (pending_type));
       dbus_g_type_struct_set (&val,
-          0, msg->incoming_id,
+          0, cm_msg->incoming_id,
           1, timestamp,
           2, sender,
           3, type,
@@ -488,9 +489,10 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
       while (cur != NULL)
         {
           TpMessage *msg = cur->data;
+          TpCMMessage *cm_msg = cur->data;
           GList *next = cur->next;
 
-          i = msg->incoming_id;
+          i = cm_msg->incoming_id;
           g_array_append_val (ids, i);
           g_queue_delete_link (mixin->priv->pending, cur);
           tp_message_destroy (msg);
@@ -614,11 +616,12 @@ queue_pending (GObject *object, TpMessage *pending)
   gchar *text;
   const GHashTable *header;
   TpDeliveryStatus delivery_status;
+  TpCMMessage *cm_message = (TpCMMessage *) pending;
 
   g_queue_push_tail (mixin->priv->pending, pending);
 
   text = parts_to_text (pending, &flags, &type, &sender, &timestamp);
-  tp_svc_channel_type_text_emit_received (object, pending->incoming_id,
+  tp_svc_channel_type_text_emit_received (object, cm_message->incoming_id,
       timestamp, sender, type, flags, text);
   g_free (text);
 
@@ -696,9 +699,10 @@ tp_message_mixin_take_received (GObject *object,
                                 TpMessage *message)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+  TpCMMessage *cm_msg = (TpCMMessage *) message;
   GHashTable *header;
 
-  g_return_val_if_fail (message->incoming_id == G_MAXUINT32, 0);
+  g_return_val_if_fail (cm_msg->incoming_id == G_MAXUINT32, 0);
   g_return_val_if_fail (message->parts->len >= 1, 0);
 
   header = g_ptr_array_index (message->parts, 0);
@@ -708,10 +712,10 @@ tp_message_mixin_take_received (GObject *object,
 
   /* FIXME: we don't check for overflow, so in highly pathological cases we
    * might end up with multiple messages with the same ID */
-  message->incoming_id = mixin->priv->recv_id++;
+  cm_msg->incoming_id = mixin->priv->recv_id++;
 
   tp_message_set_uint32 (message, 0, "pending-message-id",
-      message->incoming_id);
+      cm_msg->incoming_id);
 
   if (tp_asv_get_uint64 (header, "message-received", NULL) == 0)
     tp_message_set_uint64 (message, 0, "message-received",
@@ -725,7 +729,7 @@ tp_message_mixin_take_received (GObject *object,
    */
   queue_pending (object, message);
 
-  return message->incoming_id;
+  return cm_msg->incoming_id;
 }
 
 
@@ -847,6 +851,7 @@ tp_message_mixin_sent (GObject *object,
                        const GError *error)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (object);
+  TpCMMessage *cm_msg = (TpCMMessage *) message;
   time_t now = time (NULL);
 
   g_return_if_fail (mixin != NULL);
@@ -854,7 +859,7 @@ tp_message_mixin_sent (GObject *object,
   g_return_if_fail (message != NULL);
   g_return_if_fail (message != NULL);
   g_return_if_fail (message->parts != NULL);
-  g_return_if_fail (message->outgoing_context != NULL);
+  g_return_if_fail (cm_msg->outgoing_context != NULL);
   g_return_if_fail (token == NULL || error == NULL);
   g_return_if_fail (token != NULL || error != NULL);
 
@@ -862,7 +867,7 @@ tp_message_mixin_sent (GObject *object,
     {
       GError *e = g_error_copy (error);
 
-      dbus_g_method_return_error (message->outgoing_context, e);
+      dbus_g_method_return_error (cm_msg->outgoing_context, e);
       g_error_free (e);
     }
   else
@@ -885,19 +890,19 @@ tp_message_mixin_sent (GObject *object,
 
       /* return successfully */
 
-      if (message->outgoing_text_api)
+      if (cm_msg->outgoing_text_api)
         {
           tp_svc_channel_type_text_return_from_send (
-              message->outgoing_context);
+              cm_msg->outgoing_context);
         }
       else
         {
           tp_svc_channel_interface_messages_return_from_send_message (
-              message->outgoing_context, token);
+              cm_msg->outgoing_context, token);
         }
     }
 
-  message->outgoing_context = NULL;
+  cm_msg->outgoing_context = NULL;
   tp_message_destroy (message);
 }
 
@@ -910,6 +915,7 @@ tp_message_mixin_send_async (TpSvcChannelTypeText *iface,
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
   TpMessage *message;
+  TpCMMessage *cm_msg;
 
   if (mixin->priv->send_message == NULL)
     {
@@ -918,6 +924,7 @@ tp_message_mixin_send_async (TpSvcChannelTypeText *iface,
     }
 
   message = tp_cm_message_new (mixin->priv->connection, 2);
+  cm_msg = (TpCMMessage *) message;
 
   if (message_type != 0)
     tp_message_set_uint32 (message, 0, "message-type", message_type);
@@ -926,8 +933,8 @@ tp_message_mixin_send_async (TpSvcChannelTypeText *iface,
   tp_message_set_string (message, 1, "type", "text/plain"); /* Removed in 0.17.14 */
   tp_message_set_string (message, 1, "content", text);
 
-  message->outgoing_context = context;
-  message->outgoing_text_api = TRUE;
+  cm_msg->outgoing_context = context;
+  cm_msg->outgoing_text_api = TRUE;
 
   mixin->priv->send_message ((GObject *) iface, message, 0);
 }
@@ -941,6 +948,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
   TpMessage *message;
+  TpCMMessage *cm_msg;
   GHashTable *header;
   guint i;
   const char * const *iter;
@@ -1023,6 +1031,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
     }
 
   message = tp_cm_message_new (mixin->priv->connection, parts->len);
+  cm_msg = (TpCMMessage *) message;
 
   for (i = 0; i < parts->len; i++)
     {
@@ -1032,8 +1041,8 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
           (GBoxedCopyFunc) tp_g_value_slice_dup);
     }
 
-  message->outgoing_context = context;
-  message->outgoing_text_api = FALSE;
+  cm_msg->outgoing_context = context;
+  cm_msg->outgoing_text_api = FALSE;
 
   mixin->priv->send_message ((GObject *) iface, message, flags);
 }

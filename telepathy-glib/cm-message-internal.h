@@ -40,6 +40,16 @@ struct _TpCMMessage {
     /*<private>*/
     TpMessage parent;
     TpCMMessagePrivate *priv;
+
+    /* from here down is implementation-specific for TpMessageMixin */
+
+    /* for receiving */
+    guint32 incoming_id;
+
+    /* for sending */
+    DBusGMethodInvocation *outgoing_context;
+    TpMessageSendingFlags outgoing_flags;
+    gboolean outgoing_text_api;
 };
 
 TpMessage * _tp_cm_message_new_from_parts (TpBaseConnection *conn,

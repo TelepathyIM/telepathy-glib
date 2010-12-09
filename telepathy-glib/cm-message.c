@@ -115,8 +115,8 @@ tp_cm_message_new (TpBaseConnection *connection,
     tp_message_append_part (msg);
 
   self->priv->connection = g_object_ref (connection);
-  msg->incoming_id = G_MAXUINT32;
-  msg->outgoing_context = NULL;
+  self->incoming_id = G_MAXUINT32;
+  self->outgoing_context = NULL;
 
   return msg;
 }
