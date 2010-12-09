@@ -238,7 +238,10 @@ tp_message_delete_part (TpMessage *self,
  * Reference the given handle until this message is destroyed.
  *
  * @since 0.7.21
- * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_ref_handle()
+ * @deprecated since 0.13.UNRELEASED. Handles are now immortables so there is
+ * no point to ref them. Furthermore, the only handles that should be stored
+ * in a TpMessage is message-sender which should be set using
+ * tp_cm_message_set_sender().
  */
 void
 tp_message_ref_handle (TpMessage *self,
@@ -248,7 +251,7 @@ tp_message_ref_handle (TpMessage *self,
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
   g_return_if_fail (self->priv->mutable);
 
-  tp_cm_message_ref_handle (self, handle_type, handle);
+  /* Handles are now immortables so we don't have to anything */
 }
 
 /**
@@ -306,9 +309,6 @@ tp_message_set_handle (TpMessage *self,
 {
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
   g_return_if_fail (self->priv->mutable);
-
-  if (handle_or_0 != 0)
-    tp_cm_message_ref_handle (self, handle_type, handle_or_0);
 
   tp_message_set_uint32 (self, part, key, handle_or_0);
 }
