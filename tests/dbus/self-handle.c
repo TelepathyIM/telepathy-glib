@@ -76,10 +76,9 @@ setup_and_connect (Fixture *f,
   g_assert (ok);
 }
 
+/* we'll get more arguments, but just ignore them */
 static void
-counter_cb (TpConnection *client_conn,
-    GParamSpec *param_spec G_GNUC_UNUSED,
-    gpointer user_data)
+swapped_counter_cb (gpointer user_data)
 {
   guint *times = user_data;
 
@@ -94,10 +93,10 @@ test_self_handle (Fixture *f,
   TpContact *before, *after;
   guint handle_times = 0, contact_times = 0;
 
-  g_signal_connect (f->client_conn, "notify::self-handle",
-      G_CALLBACK (counter_cb), &handle_times);
-  g_signal_connect (f->client_conn, "notify::self-contact",
-      G_CALLBACK (counter_cb), &contact_times);
+  g_signal_connect_swapped (f->client_conn, "notify::self-handle",
+      G_CALLBACK (swapped_counter_cb), &handle_times);
+  g_signal_connect_swapped (f->client_conn, "notify::self-contact",
+      G_CALLBACK (swapped_counter_cb), &contact_times);
 
   g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
         tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
@@ -161,10 +160,10 @@ test_change_early (Fixture *f,
   gboolean ok;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
-  g_signal_connect (f->client_conn, "notify::self-handle",
-      G_CALLBACK (counter_cb), &handle_times);
-  g_signal_connect (f->client_conn, "notify::self-contact",
-      G_CALLBACK (counter_cb), &contact_times);
+  g_signal_connect_swapped (f->client_conn, "notify::self-handle",
+      G_CALLBACK (swapped_counter_cb), &handle_times);
+  g_signal_connect_swapped (f->client_conn, "notify::self-contact",
+      G_CALLBACK (swapped_counter_cb), &contact_times);
 
   tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
       &f->result);
