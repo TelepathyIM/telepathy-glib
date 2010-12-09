@@ -101,10 +101,9 @@ create_room_chan (Test *test)
       "object-path", chan_path,
       NULL);
 
-  /* FIXME: This is crack a chan_room_service is actually not a
-   * TpTestsTextChannelNull */
-  props = tp_tests_text_channel_get_props (
-      (TpTestsTextChannelNull *) test->chan_room_service);
+  g_object_get (test->chan_room_service,
+      "channel-properties", &props,
+      NULL);
 
   test->channel_room = tp_channel_new_from_properties (test->connection,
       chan_path, props, &test->error);
