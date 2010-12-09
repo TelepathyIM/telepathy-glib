@@ -276,7 +276,8 @@ tp_cm_message_ref_handle (TpMessage *msg,
  * @self: a #TpCMMessage
  * @handle: the #TpHandle of the sender of the message
  *
- * Set the sender of @self.
+ * Set the sender of @self, i.e. the "message-sender" and
+ * "message-sender-id" keys in the header.
  *
  * @since 0.13.UNRELEASED
  */
