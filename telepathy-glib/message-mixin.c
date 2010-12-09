@@ -647,7 +647,8 @@ queue_pending (GObject *object, TpMessage *pending)
           const GHashTable *echo_header = g_ptr_array_index (echo, 1);
           TpMessage *echo_msg;
 
-          echo_msg = _tp_cm_message_new_from_parts (echo);
+          echo_msg = _tp_cm_message_new_from_parts (mixin->priv->connection,
+              echo);
 
           /* The specification says that the timestamp in SendError should be the
            * time at which the original message was sent.  parts_to_text falls

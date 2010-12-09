@@ -45,7 +45,8 @@ struct _TpCMMessage {
     TpCMMessagePrivate *priv;
 };
 
-TpMessage * _tp_cm_message_new_from_parts (const GPtrArray *parts);
+TpMessage * _tp_cm_message_new_from_parts (TpBaseConnection *conn,
+    const GPtrArray *parts);
 
 G_END_DECLS
 

@@ -304,7 +304,8 @@ tp_cm_message_set_sender (TpMessage *self,
 }
 
 TpMessage *
-_tp_cm_message_new_from_parts (const GPtrArray *parts)
+_tp_cm_message_new_from_parts (TpBaseConnection *conn,
+    const GPtrArray *parts)
 {
   TpMessage *self;
   guint i;
@@ -314,8 +315,7 @@ _tp_cm_message_new_from_parts (const GPtrArray *parts)
   g_return_val_if_fail (parts != NULL, NULL);
   g_return_val_if_fail (parts->len > 0, NULL);
 
-  self = g_object_new (TP_TYPE_CM_MESSAGE,
-      NULL);
+  self = tp_cm_message_new (conn, parts->len);
 
   for (i = 0; i < parts->len; i++)
     {
