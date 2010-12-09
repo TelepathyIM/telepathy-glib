@@ -26,9 +26,6 @@
 #include "message.h"
 #include "message-internal.h"
 
-#include <telepathy-glib/base-connection.h>
-#include <telepathy-glib/handle-repo.h>
-
 G_BEGIN_DECLS
 
 typedef struct _TpCMMessagePrivate TpCMMessagePrivate;
