@@ -55,6 +55,8 @@ struct _TpTestsSimpleConnectionPrivate
 
   /* TpHandle => reffed TpTestsTextChannelNull */
   GHashTable *channels;
+
+  GError *get_self_handle_error /* initially NULL */ ;
 };
 
 static void
@@ -127,6 +129,7 @@ finalize (GObject *object)
       g_source_remove (self->priv->disconnect_source);
     }
 
+  g_clear_error (&self->priv->get_self_handle_error);
   g_free (self->priv->account);
 
   G_OBJECT_CLASS (tp_tests_simple_connection_parent_class)->finalize (object);
@@ -365,17 +368,35 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
   return chan_path;
 }
 
+void
+tp_tests_simple_connection_set_get_self_handle_error (
+    TpTestsSimpleConnection *self,
+    GQuark domain,
+    gint code,
+    const gchar *message)
+{
+  self->priv->get_self_handle_error = g_error_new_literal (domain, code,
+      message);
+}
+
 static void
 get_self_handle (TpSvcConnection *iface,
     DBusGMethodInvocation *context)
 {
-  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
+  TpTestsSimpleConnection *self = TP_TESTS_SIMPLE_CONNECTION (iface);
+  TpBaseConnection *base = TP_BASE_CONNECTION (iface);
 
-  g_assert (TP_IS_BASE_CONNECTION (self));
+  g_assert (TP_IS_BASE_CONNECTION (base));
 
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (base, context);
 
-  tp_svc_connection_return_from_get_self_handle (context, self->self_handle);
+  if (self->priv->get_self_handle_error != NULL)
+    {
+      dbus_g_method_return_error (context, self->priv->get_self_handle_error);
+      return;
+    }
+
+  tp_svc_connection_return_from_get_self_handle (context, base->self_handle);
   g_signal_emit (self, signals[SIGNAL_GOT_SELF_HANDLE], 0);
 }
 
