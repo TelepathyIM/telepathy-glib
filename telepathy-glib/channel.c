@@ -2135,7 +2135,15 @@ channel_close_cb (TpChannel *channel,
   if (error != NULL)
     {
       DEBUG ("Close() failed: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
+
+      if (tp_proxy_get_invalidated (channel) == NULL)
+        {
+          g_simple_async_result_set_from_error (result, error);
+        }
+      else
+        {
+          DEBUG ("... but channel was already invalidated, so never mind");
+        }
     }
 
   g_simple_async_result_complete (result);
