@@ -104,7 +104,7 @@ tp_client_message_new (void)
  * @text: content of the messsage
  *
  * A convenient function to create a new #TpClientMessage having
- * 'text/plain' as 'content-typee', @type as 'message-type' and
+ * 'text/plain' as 'content-type', @type as 'message-type' and
  * @text as 'content'.
  *
  * Returns: (transfer full): a newly allocated #TpClientMessage
