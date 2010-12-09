@@ -1,7 +1,7 @@
 /*
  * simple-conn.c - a simple connection
  *
- * Copyright (C) 2007-2008 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2007-2010 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2007-2008 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
@@ -25,8 +25,11 @@
 #include "textchan-null.h"
 #include "util.h"
 
-G_DEFINE_TYPE (TpTestsSimpleConnection, tp_tests_simple_connection,
-    TP_TYPE_BASE_CONNECTION);
+static void conn_iface_init (TpSvcConnectionClass *);
+
+G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleConnection, tp_tests_simple_connection,
+    TP_TYPE_BASE_CONNECTION,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, conn_iface_init))
 
 /* type definition stuff */
 
@@ -35,6 +38,14 @@ enum
   PROP_ACCOUNT = 1,
   N_PROPS
 };
+
+enum
+{
+  SIGNAL_GOT_SELF_HANDLE,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = {0};
 
 struct _TpTestsSimpleConnectionPrivate
 {
@@ -267,6 +278,14 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+
+  signals[SIGNAL_GOT_SELF_HANDLE] = g_signal_new ("got-self-handle",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
 }
 
 void
@@ -344,4 +363,27 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
     *props = tp_tests_text_channel_get_props (chan);
 
   return chan_path;
+}
+
+static void
+get_self_handle (TpSvcConnection *iface,
+    DBusGMethodInvocation *context)
+{
+  TpBaseConnection *self = TP_BASE_CONNECTION (iface);
+
+  g_assert (TP_IS_BASE_CONNECTION (self));
+
+  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (self, context);
+
+  tp_svc_connection_return_from_get_self_handle (context, self->self_handle);
+  g_signal_emit (self, signals[SIGNAL_GOT_SELF_HANDLE], 0);
+}
+
+static void
+conn_iface_init (TpSvcConnectionClass *iface)
+{
+#define IMPLEMENT(prefix,x) \
+  tp_svc_connection_implement_##x (iface, prefix##x)
+  IMPLEMENT(,get_self_handle);
+#undef IMPLEMENT
 }
