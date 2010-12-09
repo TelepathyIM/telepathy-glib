@@ -239,7 +239,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    * TpSimpleObserver:callback:
    *
    * The TpSimpleObserverObserveChannelsImpl callback implementing the
-   * ObserverChannels D-Bus method.
+   * ObserveChannels D-Bus method.
    *
    * This property can't be %NULL.
    *
@@ -247,7 +247,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    */
   param_spec = g_param_spec_pointer ("callback",
       "Callback",
-      "Function called when ObserverChannels is called",
+      "Function called when ObserveChannels is called",
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CALLBACK,
       param_spec);
@@ -256,12 +256,12 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
    * TpSimpleObserver:user-data:
    *
    * The user-data pointer passed to the callback implementing the
-   * ObserverChannels D-Bus method.
+   * ObserveChannels D-Bus method.
    *
    * Since: 0.11.5
    */
   param_spec = g_param_spec_pointer ("user-data", "user data",
-      "pointer passed as user-data when ObserverChannels is called",
+      "pointer passed as user-data when ObserveChannels is called",
       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_USER_DATA,
       param_spec);
@@ -289,7 +289,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name: property
- * @callback: the function called when ObserverChannels is called
+ * @callback: the function called when ObserveChannels is called
  * @user_data: arbitrary user-supplied data passed to @callback
  * @destroy: called with the user_data as argument, when the #TpSimpleObserver
  * is destroyed
@@ -330,7 +330,7 @@ tp_simple_observer_new (TpDBusDaemon *dbus,
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name: property
- * @callback: the function called when ObserverChannels is called
+ * @callback: the function called when ObserveChannels is called
  * @user_data: arbitrary user-supplied data passed to @callback
  * @destroy: called with the user_data as argument, when the #TpSimpleObserver
  * is destroyed
