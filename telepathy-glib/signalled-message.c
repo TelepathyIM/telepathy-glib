@@ -156,6 +156,8 @@ _tp_signalled_message_new (const GPtrArray *parts,
 {
   TpMessage *self;
   guint i;
+  const GHashTable *header;
+  TpHandle sender_handle;
 
   g_return_val_if_fail (parts != NULL, NULL);
   g_return_val_if_fail (parts->len > 0, NULL);
@@ -175,6 +177,23 @@ _tp_signalled_message_new (const GPtrArray *parts,
           g_ptr_array_index (parts, i),
           (GBoxedCopyFunc) g_strdup,
           (GBoxedCopyFunc) tp_g_value_slice_dup);
+    }
+
+  header = tp_message_peek (self, 0);
+  sender_handle = tp_asv_get_uint32 (header, "message-sender", NULL);
+  if (sender_handle != 0)
+    {
+      g_assert (sender != NULL);
+      g_assert (tp_contact_get_handle (sender) == sender_handle);
+
+      /* This handle may not be persistent, user should use the TpContact
+       * directly */
+      g_hash_table_remove ((GHashTable *) header, "message-sender");
+    }
+  else
+    {
+      g_assert (sender == NULL);
+      g_assert (tp_str_empty (tp_asv_get_string (header, "message-sender-id")));
     }
 
   _tp_message_set_immutable ((TpMessage *) self);
