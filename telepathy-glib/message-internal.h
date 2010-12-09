@@ -21,6 +21,8 @@
 #ifndef __TP_MESSAGE_INTERNAL_H__
 #define __TP_MESSAGE_INTERNAL_H__
 
+#include "message.h"
+
 #include <glib.h>
 
 #include <telepathy-glib/base-connection.h>

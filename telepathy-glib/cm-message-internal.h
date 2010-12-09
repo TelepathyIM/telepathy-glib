@@ -21,6 +21,8 @@
 #ifndef __TP_CM_MESSAGE_INTERNAL_H__
 #define __TP_CM_MESSAGE_INTERNAL_H__
 
+#include "cm-message.h"
+
 #include <glib.h>
 
 #include "message.h"

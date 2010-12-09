@@ -29,8 +29,8 @@
  * @since 0.7.21
  */
 
-#include "message-internal.h"
 #include "message.h"
+#include "message-internal.h"
 
 #include <telepathy-glib/cm-message.h>
 #include <telepathy-glib/dbus.h>
