@@ -102,9 +102,33 @@ setup (Test *test,
 }
 
 static void
+teardown_channel_invalidated_cb (TpChannel *self,
+  guint domain,
+  gint code,
+  gchar *message,
+  Test *test)
+{
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+teardown_run_close_channel (Test *test, TpChannel *channel)
+{
+  if (channel != NULL && tp_proxy_get_invalidated (channel) == NULL)
+    {
+      g_signal_connect (channel, "invalidated",
+          G_CALLBACK (teardown_channel_invalidated_cb), test);
+      tp_cli_channel_call_close (channel, -1, NULL, NULL, NULL, NULL);
+      g_main_loop_run (test->mainloop);
+    }
+}
+
+static void
 teardown (Test *test,
           gconstpointer data)
 {
+  teardown_run_close_channel (test, test->text_chan);
+
   g_clear_error (&test->error);
 
   g_object_unref (test->simple_handler);

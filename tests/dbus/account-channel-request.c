@@ -86,9 +86,33 @@ setup (Test *test,
 }
 
 static void
+teardown_channel_invalidated_cb (TpChannel *self,
+  guint domain,
+  gint code,
+  gchar *message,
+  Test *test)
+{
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+teardown_run_close_channel (Test *test, TpChannel *channel)
+{
+  if (channel != NULL && tp_proxy_get_invalidated (channel) == NULL)
+    {
+      g_signal_connect (channel, "invalidated",
+          G_CALLBACK (teardown_channel_invalidated_cb), test);
+      tp_cli_channel_call_close (channel, -1, NULL, NULL, NULL, NULL);
+      g_main_loop_run (test->mainloop);
+    }
+}
+
+static void
 teardown (Test *test,
           gconstpointer data)
 {
+  teardown_run_close_channel (test, test->channel);
+
   g_clear_error (&test->error);
 
   tp_dbus_daemon_unregister_object (test->dbus, test->account_service);
@@ -132,14 +156,16 @@ create_and_handle_cb (GObject *source,
 {
   Test *test = user_data;
   TpHandleChannelsContext *context = NULL;
+  TpChannel *channel;
 
-  test->channel = tp_account_channel_request_create_and_handle_channel_finish (
+  channel = tp_account_channel_request_create_and_handle_channel_finish (
       TP_ACCOUNT_CHANNEL_REQUEST (source), result, &context, &test->error);
-  if (test->channel == NULL)
+  if (channel == NULL)
     goto out;
 
-  g_assert (TP_IS_CHANNEL (test->channel));
-  tp_clear_object (&test->channel);
+  g_assert (TP_IS_CHANNEL (channel));
+  g_assert (test->channel == NULL || test->channel == channel);
+  test->channel = channel;
 
   g_assert (TP_IS_HANDLE_CHANNELS_CONTEXT (context));
   g_object_unref (context);
@@ -264,13 +290,16 @@ ensure_and_handle_cb (GObject *source,
 
 {
   Test *test = user_data;
+  TpChannel *channel;
 
-  test->channel = tp_account_channel_request_ensure_and_handle_channel_finish (
+  channel = tp_account_channel_request_ensure_and_handle_channel_finish (
       TP_ACCOUNT_CHANNEL_REQUEST (source), result, NULL, &test->error);
-  if (test->channel == NULL)
+  if (channel == NULL)
     goto out;
 
-  g_assert (TP_IS_CHANNEL (test->channel));
+  g_assert (TP_IS_CHANNEL (channel));
+  g_assert (test->channel == NULL || test->channel == channel);
+  test->channel = channel;
 
 out:
   test->count--;
@@ -307,8 +336,6 @@ test_handle_ensure_success (Test *test,
 
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_YOURS);
-
-  tp_clear_object (&test->channel);
 }
 
 /* Cancel the operation before starting it */
