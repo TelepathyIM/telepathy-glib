@@ -2351,7 +2351,8 @@ tp_channel_leave_finish (TpChannel *self,
 /**
  * tp_channel_close_async:
  * @self: a #TpChannel
- * @callback: a callback to call when we closed the channel
+ * @callback: a callback to call when we closed the channel, or %NULL
+ *  to ignore any reply
  * @user_data: data to pass to @callback
  *
  * Close channel @self. In most cases, it's generally cleaner to use
@@ -2371,6 +2372,12 @@ tp_channel_close_async (TpChannel *self,
   GSimpleAsyncResult *result;
 
   g_return_if_fail (TP_IS_CHANNEL (self));
+
+  if (callback == NULL)
+    {
+      tp_cli_channel_call_close (self, -1, NULL, NULL, NULL, NULL);
+      return;
+    }
 
   result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_channel_close_async);
