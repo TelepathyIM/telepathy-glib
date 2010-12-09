@@ -833,6 +833,9 @@ request_and_handle_channel_finish (TpAccountChannelRequest *self,
  * acting like tp_account_channel_request_create_channel_async() with the
  * temporary #TpBaseClient as the @preferred_handler.)
  *
+ * The caller is responsible for closing the channel with
+ * tp_cli_channel_call_close() when it has finished handling it.
+ *
  * Since: 0.11.12
  */
 void
@@ -859,6 +862,9 @@ tp_account_channel_request_create_and_handle_channel_async (
  *
  * See tp_account_channel_request_ensure_and_handle_channel_finish()
  * for details of how @context can be used.
+ *
+ * The caller is responsible for closing the channel with
+ * tp_cli_channel_call_close() when it has finished handling it.
  *
  * Returns: (transfer full) (allow-none): a new reference on a #TpChannel if the
  * channel was successfully created and you are handling it, otherwise %NULL.
