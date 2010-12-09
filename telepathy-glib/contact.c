@@ -2922,7 +2922,8 @@ contacts_context_supports_iface (ContactsContext *context,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
     return FALSE;
 
-  g_assert (contact_attribute_interfaces != NULL);
+  if (contact_attribute_interfaces == NULL)
+    return FALSE;
 
   for (i = 0; i < contact_attribute_interfaces->len; i++)
     {
@@ -3177,6 +3178,10 @@ contacts_get_attributes (ContactsContext *context)
   GPtrArray *array;
   const gchar **supported_interfaces;
   guint i;
+  guint len = 0;
+
+  if (contact_attribute_interfaces != NULL)
+      len = contact_attribute_interfaces->len;
 
   /* tp_connection_get_contact_attributes insists that you have at least one
    * handle; skip it if we don't (can only happen if we started from IDs) */
@@ -3188,11 +3193,10 @@ contacts_get_attributes (ContactsContext *context)
 
   g_assert (tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS));
-  g_assert (contact_attribute_interfaces != NULL);
 
-  array = g_ptr_array_sized_new (contact_attribute_interfaces->len);
+  array = g_ptr_array_sized_new (len);
 
-  for (i = 0; i < contact_attribute_interfaces->len; i++)
+  for (i = 0; i < len; i++)
     {
       GQuark q = g_array_index (contact_attribute_interfaces, GQuark, i);
 
@@ -3386,7 +3390,14 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   GPtrArray *contacts;
   guint i;
 
-  g_return_if_fail (tp_connection_is_ready (self));
+  /* As an implementation detail, this method actually starts working slightly
+   * before we're officially ready, but only if you don't want any features.
+   * We use this to get the TpContact for the SelfHandle. */
+  if (n_features != 0 || !self->priv->introspecting_after_connected)
+    {
+      g_return_if_fail (tp_connection_is_ready (self));
+    }
+
   g_return_if_fail (tp_proxy_get_invalidated (self) == NULL);
   g_return_if_fail (n_handles >= 1);
   g_return_if_fail (handles != NULL);

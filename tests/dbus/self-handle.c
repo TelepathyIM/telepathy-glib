@@ -1,6 +1,6 @@
-/* Feature test for the user's self-handle changing.
+/* Feature test for the user's self-handle/self-contact changing.
  *
- * Copyright (C) 2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2009-2010 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright (C) 2009 Nokia Corporation
  *
  * Copying and distribution of this file, with or without modification,
@@ -19,10 +19,66 @@
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
+typedef struct {
+  TpDBusDaemon *dbus;
+  TpTestsSimpleConnection *service_conn;
+  TpBaseConnection *service_conn_as_base;
+  gchar *name;
+  gchar *conn_path;
+  GError *error /* zero-initialized */;
+  TpConnection *client_conn;
+  TpHandleRepoIface *contact_repo;
+  GAsyncResult *result;
+} Fixture;
+
 static void
-on_self_handle_changed (TpConnection *client_conn,
-                        GParamSpec *param_spec G_GNUC_UNUSED,
-                        gpointer user_data)
+setup (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  gboolean ok;
+
+  f->dbus = tp_tests_dbus_daemon_dup_or_die ();
+
+  f->service_conn = TP_TESTS_SIMPLE_CONNECTION (
+      tp_tests_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+        "account", "me@example.com",
+        "protocol", "simple",
+        NULL));
+  f->service_conn_as_base = TP_BASE_CONNECTION (f->service_conn);
+  g_object_ref (f->service_conn_as_base);
+  g_assert (f->service_conn != NULL);
+  g_assert (f->service_conn_as_base != NULL);
+
+  f->contact_repo = tp_base_connection_get_handles (f->service_conn_as_base,
+      TP_HANDLE_TYPE_CONTACT);
+
+  ok = tp_base_connection_register (f->service_conn_as_base, "simple",
+        &f->name, &f->conn_path, &f->error);
+  g_assert_no_error (f->error);
+  g_assert (ok);
+
+  f->client_conn = tp_connection_new (f->dbus, f->name, f->conn_path,
+      &f->error);
+  g_assert_no_error (f->error);
+  g_assert (f->client_conn != NULL);
+}
+
+static void
+setup_and_connect (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  gboolean ok;
+
+  setup (f, unused);
+
+  ok = tp_connection_run_until_ready (f->client_conn, TRUE, &f->error, NULL);
+  g_assert_no_error (f->error);
+  g_assert (ok);
+}
+
+/* we'll get more arguments, but just ignore them */
+static void
+swapped_counter_cb (gpointer user_data)
 {
   guint *times = user_data;
 
@@ -30,108 +86,284 @@ on_self_handle_changed (TpConnection *client_conn,
 }
 
 static void
-test_self_handle (TpTestsSimpleConnection *service_conn,
-                  TpConnection *client_conn)
+test_self_handle (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
 {
-  TpBaseConnection *service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-      service_conn_as_base, TP_HANDLE_TYPE_CONTACT);
   TpHandle handle;
-  guint times = 0;
+  TpContact *before, *after;
+  guint handle_times = 0, contact_times = 0;
 
-  g_signal_connect (client_conn, "notify::self-handle",
-      G_CALLBACK (on_self_handle_changed), &times);
+  g_signal_connect_swapped (f->client_conn, "notify::self-handle",
+      G_CALLBACK (swapped_counter_cb), &handle_times);
+  g_signal_connect_swapped (f->client_conn, "notify::self-contact",
+      G_CALLBACK (swapped_counter_cb), &contact_times);
 
-  g_assert_cmpstr (tp_handle_inspect (contact_repo,
-        tp_base_connection_get_self_handle (service_conn_as_base)), ==,
+  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
+        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
       "me@example.com");
 
-  g_assert_cmpuint (tp_connection_get_self_handle (client_conn), ==,
-      tp_base_connection_get_self_handle (service_conn_as_base));
+  g_assert_cmpuint (tp_connection_get_self_handle (f->client_conn), ==,
+      tp_base_connection_get_self_handle (f->service_conn_as_base));
 
-  g_object_get (client_conn,
+  g_object_get (f->client_conn,
       "self-handle", &handle,
+      "self-contact", &before,
       NULL);
   g_assert_cmpuint (handle, ==,
-      tp_base_connection_get_self_handle (service_conn_as_base));
+      tp_base_connection_get_self_handle (f->service_conn_as_base));
+  g_assert_cmpuint (tp_contact_get_handle (before), ==, handle);
+  g_assert_cmpstr (tp_contact_get_identifier (before), ==, "me@example.com");
 
-  g_assert_cmpuint (times, ==, 0);
+  g_assert_cmpuint (handle_times, ==, 0);
+  g_assert_cmpuint (contact_times, ==, 0);
 
   /* similar to /nick in IRC */
-  tp_tests_simple_connection_set_identifier (service_conn, "myself@example.org");
-  tp_tests_proxy_run_until_dbus_queue_processed (client_conn);
-  g_assert_cmpuint (times, ==, 1);
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "myself@example.org");
+  tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
 
-  g_assert_cmpstr (tp_handle_inspect (contact_repo,
-        tp_base_connection_get_self_handle (service_conn_as_base)), ==,
+  while (handle_times < 1 || contact_times < 1)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (handle_times, ==, 1);
+  g_assert_cmpuint (contact_times, ==, 1);
+
+  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
+        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
       "myself@example.org");
 
-  g_assert_cmpuint (tp_connection_get_self_handle (client_conn), ==,
-      tp_base_connection_get_self_handle (service_conn_as_base));
+  g_assert_cmpuint (tp_connection_get_self_handle (f->client_conn), ==,
+      tp_base_connection_get_self_handle (f->service_conn_as_base));
 
-  g_object_get (client_conn,
+  g_object_get (f->client_conn,
       "self-handle", &handle,
+      "self-contact", &after,
+      NULL);
+  g_assert (before != after);
+  g_assert_cmpuint (handle, ==,
+      tp_base_connection_get_self_handle (f->service_conn_as_base));
+  g_assert_cmpuint (tp_contact_get_handle (after), ==, handle);
+  g_assert_cmpstr (tp_contact_get_identifier (after), ==,
+      "myself@example.org");
+
+  g_object_unref (before);
+  g_object_unref (after);
+}
+
+static void
+test_change_early (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle handle;
+  TpContact *after;
+  guint handle_times = 0, contact_times = 0;
+  gboolean ok;
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+
+  g_signal_connect_swapped (f->client_conn, "notify::self-handle",
+      G_CALLBACK (swapped_counter_cb), &handle_times);
+  g_signal_connect_swapped (f->client_conn, "notify::self-contact",
+      G_CALLBACK (swapped_counter_cb), &contact_times);
+
+  tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
+      &f->result);
+  g_assert (f->result == NULL);
+
+  /* act as though someone else called Connect; emit signals in quick
+   * succession, so that by the time the TpConnection tries to investigate
+   * the self-handle, it has already changed */
+  tp_base_connection_change_status (f->service_conn_as_base,
+      TP_CONNECTION_STATUS_CONNECTING,
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "me@example.com");
+  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
+        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
+      "me@example.com");
+  tp_base_connection_change_status (f->service_conn_as_base,
+      TP_CONNECTION_STATUS_CONNECTED,
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "myself@example.org");
+  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
+        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
+      "myself@example.org");
+
+  /* now run the main loop and let the client catch up */
+  tp_tests_run_until_result (&f->result);
+  ok = tp_proxy_prepare_finish (f->client_conn, f->result, &f->error);
+  g_assert_no_error (f->error);
+  g_assert (ok);
+
+  /* the self-handle and self-contact change once during connection */
+  g_assert_cmpuint (handle_times, ==, 1);
+  g_assert_cmpuint (contact_times, ==, 1);
+
+  g_assert_cmpuint (tp_connection_get_self_handle (f->client_conn), ==,
+      tp_base_connection_get_self_handle (f->service_conn_as_base));
+
+  g_object_get (f->client_conn,
+      "self-handle", &handle,
+      "self-contact", &after,
       NULL);
   g_assert_cmpuint (handle, ==,
-      tp_base_connection_get_self_handle (service_conn_as_base));
+      tp_base_connection_get_self_handle (f->service_conn_as_base));
+  g_assert_cmpuint (tp_contact_get_handle (after), ==, handle);
+  g_assert_cmpstr (tp_contact_get_identifier (after), ==,
+      "myself@example.org");
+
+  g_object_unref (after);
+}
+
+static void
+test_change_inconveniently (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle handle;
+  TpContact *after;
+  guint handle_times = 0, contact_times = 0, got_self_handle_times = 0;
+  gboolean ok;
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+
+  g_signal_connect_swapped (f->client_conn, "notify::self-handle",
+      G_CALLBACK (swapped_counter_cb), &handle_times);
+  g_signal_connect_swapped (f->client_conn, "notify::self-contact",
+      G_CALLBACK (swapped_counter_cb), &contact_times);
+  g_signal_connect_swapped (f->service_conn, "got-self-handle",
+      G_CALLBACK (swapped_counter_cb), &got_self_handle_times);
+
+  tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
+      &f->result);
+  g_assert (f->result == NULL);
+
+  /* act as though someone else called Connect */
+  tp_base_connection_change_status (f->service_conn_as_base,
+      TP_CONNECTION_STATUS_CONNECTING,
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "me@example.com");
+  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
+        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
+      "me@example.com");
+  tp_base_connection_change_status (f->service_conn_as_base,
+      TP_CONNECTION_STATUS_CONNECTED,
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+
+  /* run the main loop until just after GetSelfHandle is processed, to make
+   * sure the client first saw the old self handle */
+  while (got_self_handle_times == 0)
+    g_main_context_iteration (NULL, TRUE);
+
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "myself@example.org");
+  g_assert_cmpstr (tp_handle_inspect (f->contact_repo,
+        tp_base_connection_get_self_handle (f->service_conn_as_base)), ==,
+      "myself@example.org");
+
+  /* now run the main loop and let the client catch up */
+  tp_tests_run_until_result (&f->result);
+  ok = tp_proxy_prepare_finish (f->client_conn, f->result, &f->error);
+  g_assert_no_error (f->error);
+  g_assert (ok);
+
+  /* the self-handle and self-contact change once during connection */
+  g_assert_cmpuint (handle_times, ==, 1);
+  g_assert_cmpuint (contact_times, ==, 1);
+
+  g_assert_cmpuint (tp_connection_get_self_handle (f->client_conn), ==,
+      tp_base_connection_get_self_handle (f->service_conn_as_base));
+
+  g_object_get (f->client_conn,
+      "self-handle", &handle,
+      "self-contact", &after,
+      NULL);
+  g_assert_cmpuint (handle, ==,
+      tp_base_connection_get_self_handle (f->service_conn_as_base));
+  g_assert_cmpuint (tp_contact_get_handle (after), ==, handle);
+  g_assert_cmpstr (tp_contact_get_identifier (after), ==,
+      "myself@example.org");
+
+  g_object_unref (after);
+}
+
+static void
+test_self_handle_fails (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  gboolean ok;
+
+  tp_proxy_prepare_async (f->client_conn, features, tp_tests_result_ready_cb,
+      &f->result);
+  g_assert (f->result == NULL);
+
+  tp_tests_simple_connection_set_identifier (f->service_conn,
+      "me@example.com");
+  tp_tests_simple_connection_set_get_self_handle_error (f->service_conn,
+      TP_ERROR, TP_ERROR_CONFUSED, "totally wasted");
+  tp_base_connection_change_status (f->service_conn_as_base,
+      TP_CONNECTION_STATUS_CONNECTED,
+      TP_CONNECTION_STATUS_REASON_REQUESTED);
+
+  /* now run the main loop and let the client catch up */
+  tp_tests_run_until_result (&f->result);
+  ok = tp_proxy_prepare_finish (f->client_conn, f->result, &f->error);
+  g_assert_error (f->error, TP_ERROR, TP_ERROR_CONFUSED);
+  g_assert (!ok);
+  g_clear_error (&f->error);
+
+  g_assert_error (tp_proxy_get_invalidated (f->client_conn), TP_ERROR,
+      TP_ERROR_CONFUSED);
+
+  /* don't want to Disconnect during teardown - it'll just fail */
+  tp_tests_simple_connection_inject_disconnect (f->service_conn);
+  tp_clear_object (&f->client_conn);
+}
+
+static void
+teardown (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  gboolean ok;
+
+  g_clear_error (&f->error);
+
+  if (f->client_conn != NULL)
+    {
+      ok = tp_cli_connection_run_disconnect (f->client_conn, -1, &f->error,
+          NULL);
+      g_assert_no_error (f->error);
+      g_assert (ok);
+    }
+
+  tp_clear_object (&f->result);
+  tp_clear_object (&f->client_conn);
+  tp_clear_object (&f->service_conn_as_base);
+  tp_clear_object (&f->service_conn);
+  tp_clear_pointer (&f->name, g_free);
+  tp_clear_pointer (&f->conn_path, g_free);
+  tp_clear_object (&f->dbus);
 }
 
 int
 main (int argc,
       char **argv)
 {
-  TpDBusDaemon *dbus;
-  TpTestsSimpleConnection *service_conn;
-  TpBaseConnection *service_conn_as_base;
-  gchar *name;
-  gchar *conn_path;
-  GError *error = NULL;
-  TpConnection *client_conn;
-
-  /* Setup */
-
   tp_tests_abort_after (10);
   g_type_init ();
   tp_debug_set_flags ("all");
-  dbus = tp_tests_dbus_daemon_dup_or_die ();
+  g_set_prgname ("self-handle");
+  g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  service_conn = TP_TESTS_SIMPLE_CONNECTION (tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_SIMPLE_CONNECTION,
-        "account", "me@example.com",
-        "protocol", "simple",
-        NULL));
-  service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
+  g_test_add ("/self-handle", Fixture, NULL, setup_and_connect,
+      test_self_handle, teardown);
+  g_test_add ("/self-handle/change-early", Fixture, NULL, setup,
+      test_change_early, teardown);
+  g_test_add ("/self-handle/change-inconveniently", Fixture, NULL, setup,
+      test_change_inconveniently, teardown);
+  g_test_add ("/self-handle/fails", Fixture, NULL, setup,
+      test_self_handle_fails, teardown);
 
-  MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
-        &name, &conn_path, &error), "");
-  g_assert_no_error (error);
-
-  client_conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (client_conn != NULL, "");
-  g_assert_no_error (error);
-  MYASSERT (tp_connection_run_until_ready (client_conn, TRUE, &error, NULL),
-      "");
-  g_assert_no_error (error);
-
-  /* Tests */
-
-  test_self_handle (service_conn, client_conn);
-
-  /* Teardown */
-
-  MYASSERT (tp_cli_connection_run_disconnect (client_conn, -1, &error, NULL),
-      "");
-  g_assert_no_error (error);
-  g_object_unref (client_conn);
-
-  service_conn_as_base = NULL;
-  g_object_unref (service_conn);
-  g_free (name);
-  g_free (conn_path);
-
-  g_object_unref (dbus);
-
-  return 0;
+  return g_test_run ();
 }
