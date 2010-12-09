@@ -125,7 +125,9 @@ tp_message_new (TpBaseConnection *connection,
                 guint initial_parts,
                 guint size_hint)
 {
-  return tp_cm_message_new (connection, initial_parts, size_hint);
+  g_return_val_if_fail (size_hint >= initial_parts, NULL);
+
+  return tp_cm_message_new (connection, initial_parts);
 }
 
 

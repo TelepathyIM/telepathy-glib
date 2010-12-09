@@ -917,7 +917,7 @@ tp_message_mixin_send_async (TpSvcChannelTypeText *iface,
       return;
     }
 
-  message = tp_cm_message_new (mixin->priv->connection, 2, 2);
+  message = tp_cm_message_new (mixin->priv->connection, 2);
 
   if (message_type != 0)
     tp_message_set_uint32 (message, 0, "message-type", message_type);
@@ -1022,7 +1022,7 @@ tp_message_mixin_send_message_async (TpSvcChannelInterfaceMessages *iface,
         }
     }
 
-  message = tp_cm_message_new (mixin->priv->connection, parts->len, parts->len);
+  message = tp_cm_message_new (mixin->priv->connection, parts->len);
 
   for (i = 0; i < parts->len; i++)
     {

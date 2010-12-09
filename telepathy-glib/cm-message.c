@@ -96,7 +96,6 @@ tp_cm_message_init (TpCMMessage *self)
  * tp_cm_message_new:
  * @connection: a connection on which to reference handles
  * @initial_parts: number of parts to create (at least 1)
- * @size_hint: preallocate space for this many parts (at least @initial_parts)
  *
  * <!-- nothing more to say -->
  *
@@ -107,15 +106,13 @@ tp_cm_message_init (TpCMMessage *self)
  */
 TpMessage *
 tp_cm_message_new (TpBaseConnection *connection,
-    guint initial_parts,
-    guint size_hint)
+    guint initial_parts)
 {
   TpCMMessage *self;
   TpMessage *msg;
   guint i;
 
   g_return_val_if_fail (connection != NULL, NULL);
-  g_return_val_if_fail (size_hint >= initial_parts, NULL);
 
   self = g_object_new (TP_TYPE_CM_MESSAGE,
       NULL);

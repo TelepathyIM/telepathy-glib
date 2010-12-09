@@ -61,7 +61,7 @@ send_message (GObject *object,
       goto finally;
     }
 
-  received = tp_cm_message_new (tp_base_channel_get_connection (base), 1, len);
+  received = tp_cm_message_new (tp_base_channel_get_connection (base), 1);
 
   /* Copy/modify the headers for the "received" message */
     {

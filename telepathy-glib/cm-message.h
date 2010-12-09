@@ -41,8 +41,7 @@ typedef struct _TpCMMessageClass TpCMMessageClass;
 GType tp_cm_message_get_type (void);
 
 TpMessage * tp_cm_message_new (TpBaseConnection *connection,
-    guint initial_parts,
-    guint size_hint);
+    guint initial_parts);
 
 void tp_cm_message_take_message (TpMessage *self,
     guint part,
