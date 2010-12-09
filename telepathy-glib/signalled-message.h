@@ -23,10 +23,10 @@
 
 #include <glib-object.h>
 
-G_BEGIN_DECLS
-
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/message.h>
+
+G_BEGIN_DECLS
 
 #define TP_TYPE_SIGNALLED_MESSAGE (tp_signalled_message_get_type ())
 #define TP_SIGNALLED_MESSAGE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_SIGNALLED_MESSAGE, TpSignalledMessage))

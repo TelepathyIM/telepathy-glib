@@ -21,12 +21,13 @@
 #ifndef __TP_CM_MESSAGE_H__
 #define __TP_CM_MESSAGE_H__
 
-G_BEGIN_DECLS
 
-#include <glib-object.h>
+#include <glib.h>
 
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/message.h>
+
+G_BEGIN_DECLS
 
 #define TP_TYPE_CM_MESSAGE (tp_cm_message_get_type ())
 #define TP_CM_MESSAGE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TP_TYPE_CM_MESSAGE, TpCMMessage))
