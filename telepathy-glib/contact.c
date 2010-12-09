@@ -1002,55 +1002,75 @@ tp_contact_ensure (TpConnection *connection,
 }
 
 /**
- * tp_connection_dup_contact_for_immortal_handle:
- * @connection: a connection for which tp_connection_has_immortal_handles()
- *  must return TRUE
+ * tp_connection_dup_contact_if_possible:
+ * @connection: a connection
  * @handle: a handle of type %TP_HANDLE_TYPE_CONTACT
  * @identifier: (transfer none): the normalized identifier (XMPP JID, etc.)
- *  corresponding to @handle
- * @error: used to raise an error if @identifier is inconsistent with
- *  information we already have
+ *  corresponding to @handle, or %NULL if not known
  *
- * Return a contact object or create a new contact object, immediately.
+ * Try to return an existing contact object or create a new contact object
+ * immediately.
  *
- * This function cannot be used on connections for which
- * tp_connection_has_immortal_handles() returns %FALSE, because on those
- * connections it is not possible to guarantee that @handle remains valid
- * without making asynchronous D-Bus calls.
+ * If tp_connection_has_immortal_handles() would return %TRUE and
+ * @identifier is non-%NULL, this function always succeeds.
  *
- * On connections without immortal handles, it might be necessary to delay
- * processing of messages or other events until a #TpContact can be
- * constructed asynchronously, for instance by using
+ * On connections without immortal handles, it is not possible to guarantee
+ * that @handle remains valid without making asynchronous D-Bus calls, so
+ * it might be necessary to delay processing of messages or other events
+ * until a #TpContact can be constructed asynchronously, for instance by using
  * tp_connection_get_contacts_by_id().
  *
- * Returns: (transfer full): a contact
+ * Similarly, if @identifier is %NULL, it might not be possible to find the
+ * identifier for @handle without making asynchronous D-Bus calls, so
+ * it might be necessary to delay processing of messages or other events
+ * until a #TpContact can be constructed asynchronously, for instance by using
+ * tp_connection_get_contacts_by_handle().
+ *
+ * Returns: (transfer full): a contact or %NULL
+ *
+ * Since: 0.13.UNRELEASED
  */
 TpContact *
-tp_connection_dup_contact_for_immortal_handle (TpConnection *connection,
+tp_connection_dup_contact_if_possible (TpConnection *connection,
     TpHandle handle,
-    const gchar *identifier,
-    GError **error)
+    const gchar *identifier)
 {
   TpContact *ret;
 
-  g_return_val_if_fail (tp_connection_has_immortal_handles (connection), NULL);
+  g_return_val_if_fail (TP_IS_CONNECTION (connection), NULL);
   g_return_val_if_fail (handle != 0, NULL);
-  g_return_val_if_fail (identifier != NULL, NULL);
 
-  ret = tp_contact_ensure (connection, handle);
-  g_assert (ret->priv->handle == handle);
+  ret = _tp_connection_lookup_contact (connection, handle);
 
-  if (ret->priv->identifier == NULL)
+  if (ret != NULL && ret->priv->identifier != NULL)
     {
-      /* new object, I suppose we'll have to believe the caller */
-      ret->priv->identifier = g_strdup (identifier);
-      return ret;
+      g_object_ref (ret);
+    }
+  else if (tp_connection_has_immortal_handles (connection) &&
+      identifier != NULL)
+    {
+      ret = tp_contact_ensure (connection, handle);
+
+      if (ret->priv->identifier == NULL)
+        {
+          /* new object, I suppose we'll have to believe the caller */
+          ret->priv->identifier = g_strdup (identifier);
+        }
+    }
+  else
+    {
+      /* we don't already have a contact, and we can't make one without
+       * D-Bus calls (either because we can't rely on the handle staying
+       * static, or we don't know the identifier) */
+      return NULL;
     }
 
-  if (G_UNLIKELY (tp_strdiff (ret->priv->identifier, identifier)))
+  g_assert (ret->priv->handle == handle);
+
+  if (G_UNLIKELY (identifier != NULL &&
+        tp_strdiff (ret->priv->identifier, identifier)))
     {
-      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-          "Either this client, or connection manager %s, is broken: "
+      WARNING ("Either this client, or connection manager %s, is broken: "
           "handle %u is thought to be '%s', but we already have "
           "a TpContact that thinks the identifier is '%s'",
           tp_proxy_get_bus_name (connection), handle, identifier,

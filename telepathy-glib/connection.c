@@ -1942,6 +1942,8 @@ tp_connection_parse_object_path (TpConnection *self,
   return _tp_connection_parse (object_path, '/', protocol, cm_name);
 }
 
+/* Can return a contact that's not meant to be visible to library users
+ * because it lacks an identifier */
 TpContact *
 _tp_connection_lookup_contact (TpConnection *self,
                                TpHandle handle)

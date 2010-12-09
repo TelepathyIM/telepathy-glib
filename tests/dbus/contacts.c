@@ -30,16 +30,6 @@
 #include "tests/lib/util.h"
 
 typedef struct {
-  TpBaseConnection *base_connection;
-  TpBaseConnection *legacy_base_connection;
-  TpBaseConnection *no_requests_base_connection;
-  TpTestsContactsConnection *service_conn;
-  TpConnection *client_conn;
-  TpConnection *legacy_client_conn;
-  TpConnection *no_requests_client_conn;
-} Fixture;
-
-typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
     GPtrArray *contacts;
@@ -47,6 +37,18 @@ typedef struct {
     gchar **good_ids;
     GHashTable *bad_ids;
 } Result;
+
+typedef struct {
+  Result result;
+  TpBaseConnection *base_connection;
+  TpBaseConnection *legacy_base_connection;
+  TpBaseConnection *no_requests_base_connection;
+  TpTestsContactsConnection *service_conn;
+  TpHandleRepoIface *service_repo;
+  TpConnection *client_conn;
+  TpConnection *legacy_client_conn;
+  TpConnection *no_requests_client_conn;
+} Fixture;
 
 static void
 by_handle_cb (TpConnection *connection,
@@ -126,32 +128,13 @@ finish (gpointer r)
 static void
 reset_result (Result *result)
 {
-  g_clear_error (&(result->error));
-
+  tp_clear_pointer (&result->invalid, g_array_unref);
   if (result->contacts != NULL)
-    {
-      g_ptr_array_foreach (result->contacts, (GFunc) g_object_unref, NULL);
-      g_ptr_array_unref (result->contacts);
-      result->contacts = NULL;
-    }
-
-  if (result->invalid)
-    {
-      g_array_unref (result->invalid);
-      result->invalid = NULL;
-    }
-
-  if (result->good_ids)
-    {
-      g_strfreev (result->good_ids);
-      result->good_ids = NULL;
-    }
-
-  if (result->bad_ids)
-    {
-      g_hash_table_unref (result->bad_ids);
-      result->bad_ids = NULL;
-    }
+    g_ptr_array_foreach (result->contacts, (GFunc) g_object_unref, NULL);
+  tp_clear_pointer (&result->contacts, g_ptr_array_unref);
+  tp_clear_pointer (&result->good_ids, g_strfreev);
+  tp_clear_pointer (&result->bad_ids, g_hash_table_unref);
+  g_clear_error (&result->error);
 }
 
 static void
@@ -2017,6 +2000,63 @@ test_prepare_contact_caps_without_request (Fixture *f,
 }
 
 static void
+test_dup_if_possible (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle alice_handle, bob_handle;
+  TpContact *alice;
+  TpContact *contact;
+
+  alice_handle = tp_handle_ensure (f->service_repo, "alice", NULL, NULL);
+  g_assert_cmpuint (alice_handle, !=, 0);
+  bob_handle = tp_handle_ensure (f->service_repo, "bob", NULL, NULL);
+  g_assert_cmpuint (bob_handle, !=, 0);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &alice_handle,
+      0, NULL,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  alice = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (alice), ==, alice_handle);
+  g_assert_cmpstr (tp_contact_get_identifier (alice), ==, "alice");
+
+  reset_result (&f->result);
+
+  /* we already have a cached TpContact for Alice, so we can get another
+   * copy of it synchronously */
+
+  contact = tp_connection_dup_contact_if_possible (f->client_conn,
+      alice_handle, "alice");
+  g_assert (contact == alice);
+  g_object_unref (contact);
+
+  contact = tp_connection_dup_contact_if_possible (f->client_conn,
+      alice_handle, NULL);
+  g_assert (contact == alice);
+  g_object_unref (contact);
+
+  /* because this connection has immortal handles, we can reliably get a
+   * contact for Bob synchronously, but only if we supply his identifier */
+
+  contact = tp_connection_dup_contact_if_possible (f->client_conn,
+      bob_handle, NULL);
+  g_assert (contact == NULL);
+
+  contact = tp_connection_dup_contact_if_possible (f->client_conn,
+      bob_handle, "bob");
+  g_assert (contact != alice);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "bob");
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, bob_handle);
+}
+
+static void
 setup (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -2032,6 +2072,10 @@ setup (Fixture *f,
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_NO_REQUESTS_CONNECTION,
       "me3@test.com", &f->no_requests_base_connection,
       &f->no_requests_client_conn);
+
+  f->service_repo = tp_base_connection_get_handles (f->base_connection,
+      TP_HANDLE_TYPE_CONTACT);
+  f->result.loop = g_main_loop_new (NULL, FALSE);
 }
 
 static void
@@ -2049,6 +2093,7 @@ teardown (Fixture *f,
     }
 
   tp_clear_object (&f->client_conn);
+  f->service_repo = NULL;
   tp_clear_object (&f->service_conn);
   tp_clear_object (&f->base_connection);
 
@@ -2073,6 +2118,8 @@ teardown (Fixture *f,
 
   tp_clear_object (&f->no_requests_client_conn);
   tp_clear_object (&f->no_requests_base_connection);
+  reset_result (&f->result);
+  tp_clear_pointer (&f->result.loop, g_main_loop_unref);
 }
 
 int
@@ -2107,6 +2154,8 @@ main (int argc,
    * an empty set of capabilities if the connection doesn't support
    * ContactCapabilities and Requests. */
   ADD (prepare_contact_caps_without_request);
+
+  ADD (dup_if_possible);
 
   return g_test_run ();
 }

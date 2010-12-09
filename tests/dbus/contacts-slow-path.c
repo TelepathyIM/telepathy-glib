@@ -21,12 +21,6 @@
 #include "tests/lib/util.h"
 
 typedef struct {
-    TpBaseConnection *base_connection;
-    TpTestsContactsConnection *legacy_service_conn;
-    TpConnection *legacy_client_conn;
-} Fixture;
-
-typedef struct {
     GMainLoop *loop;
     GError *error /* initialized to 0 */;
     GPtrArray *contacts;
@@ -35,15 +29,23 @@ typedef struct {
     GHashTable *bad_ids;
 } Result;
 
+typedef struct {
+    Result result;
+    TpBaseConnection *base_connection;
+    TpTestsContactsConnection *legacy_service_conn;
+    TpConnection *legacy_client_conn;
+    TpHandleRepoIface *service_repo;
+} Fixture;
+
 static void
 reset_result (Result *result)
 {
-  /* clean up before doing the second request */
-  g_array_free (result->invalid, TRUE);
-  result->invalid = NULL;
-  g_ptr_array_foreach (result->contacts, (GFunc) g_object_unref, NULL);
-  g_ptr_array_free (result->contacts, TRUE);
-  result->contacts = NULL;
+  tp_clear_pointer (&result->invalid, g_array_unref);
+  if (result->contacts != NULL)
+    g_ptr_array_foreach (result->contacts, (GFunc) g_object_unref, NULL);
+  tp_clear_pointer (&result->contacts, g_ptr_array_unref);
+  tp_clear_pointer (&result->good_ids, g_strfreev);
+  tp_clear_pointer (&result->bad_ids, g_hash_table_unref);
   g_clear_error (&result->error);
 }
 
@@ -1201,6 +1203,62 @@ test_by_handle_upgrade (Fixture *f,
 }
 
 static void
+test_dup_if_possible (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle alice_handle, bob_handle;
+  TpContact *alice;
+  TpContact *contact;
+
+  alice_handle = tp_handle_ensure (f->service_repo, "alice", NULL, NULL);
+  g_assert_cmpuint (alice_handle, !=, 0);
+  bob_handle = tp_handle_ensure (f->service_repo, "bob", NULL, NULL);
+  g_assert_cmpuint (bob_handle, !=, 0);
+
+  tp_connection_get_contacts_by_handle (f->legacy_client_conn,
+      1, &alice_handle,
+      0, NULL,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  alice = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (alice), ==, alice_handle);
+  g_assert_cmpstr (tp_contact_get_identifier (alice), ==, "alice");
+
+  reset_result (&f->result);
+
+  /* we already have a cached TpContact for Alice, so we can get another
+   * copy of it synchronously */
+
+  contact = tp_connection_dup_contact_if_possible (f->legacy_client_conn,
+      alice_handle, "alice");
+  g_assert (contact == alice);
+  g_object_unref (contact);
+
+  contact = tp_connection_dup_contact_if_possible (f->legacy_client_conn,
+      alice_handle, NULL);
+  g_assert (contact == alice);
+  g_object_unref (contact);
+
+  /* because this connection pretends not to have immortal handles, we can't
+   * reliably get a contact for Bob synchronously, even if we supply his
+   * identifier */
+
+  contact = tp_connection_dup_contact_if_possible (f->legacy_client_conn,
+      bob_handle, "bob");
+  g_assert (contact == NULL);
+
+  contact = tp_connection_dup_contact_if_possible (f->legacy_client_conn,
+      bob_handle, NULL);
+  g_assert (contact == NULL);
+}
+
+static void
 setup (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -1209,6 +1267,9 @@ setup (Fixture *f,
 
   f->legacy_service_conn = g_object_ref (TP_TESTS_CONTACTS_CONNECTION (
         f->base_connection));
+  f->service_repo = tp_base_connection_get_handles (f->base_connection,
+      TP_HANDLE_TYPE_CONTACT);
+  f->result.loop = g_main_loop_new (NULL, FALSE);
 }
 
 static void
@@ -1226,9 +1287,12 @@ teardown (Fixture *f,
       g_assert (ok);
     }
 
+  f->service_repo = NULL;
   tp_clear_object (&f->legacy_client_conn);
   tp_clear_object (&f->legacy_service_conn);
   tp_clear_object (&f->base_connection);
+  reset_result (&f->result);
+  tp_clear_pointer (&f->result.loop, g_main_loop_unref);
 }
 
 int
@@ -1256,6 +1320,8 @@ main (int argc,
       test_by_handle_again, teardown);
   g_test_add ("/contacts-slow-path/by-handle-upgrade", Fixture, NULL, setup,
       test_by_handle_upgrade, teardown);
+  g_test_add ("/contacts-slow-path/dup-if-possible", Fixture, NULL, setup,
+      test_dup_if_possible, teardown);
 
   return g_test_run ();
 }
