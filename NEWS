@@ -8,7 +8,7 @@ Enhancements:
 
 • TpAccountManager: document which TpAccount objects are prepared (wjt)
 
-• tp_connection_dup_contact_for_immortal_handle: new function to make
+• tp_connection_dup_contact_if_possible: new function to make
   TpContact objects synchronously in some situations (smcv)
 
 Fixes:
