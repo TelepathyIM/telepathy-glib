@@ -2253,7 +2253,6 @@ call_close:
 
 static void
 leave_channel_async (TpChannel *self,
-    gboolean leave_called,
     TpChannelGroupChangeReason reason,
     const gchar *message,
     GAsyncReadyCallback callback,
@@ -2262,17 +2261,11 @@ leave_channel_async (TpChannel *self,
   GSimpleAsyncResult *result;
   GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
   LeaveCtx *ctx;
-  gpointer source_tag;
 
   g_return_if_fail (TP_IS_CHANNEL (self));
 
-  if (leave_called)
-    source_tag = tp_channel_leave_async;
-  else
-    source_tag = tp_channel_close_async;
-
   result = g_simple_async_result_new (G_OBJECT (self), callback,
-      user_data, source_tag);
+      user_data, tp_channel_leave_async);
 
   if (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CORE) &&
       !tp_proxy_has_interface_by_id (self,
@@ -2329,7 +2322,7 @@ tp_channel_leave_async (TpChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  leave_channel_async (self, TRUE, reason, message, callback, user_data);
+  leave_channel_async (self, reason, message, callback, user_data);
 }
 
 /**
@@ -2372,8 +2365,14 @@ tp_channel_close_async (TpChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  leave_channel_async (self, FALSE, TP_CHANNEL_GROUP_CHANGE_REASON_NONE, NULL,
-      callback, user_data);
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_channel_close_async);
+  tp_cli_channel_call_close (self, -1, channel_close_cb, result,
+      NULL, NULL);
 }
 
 /**
