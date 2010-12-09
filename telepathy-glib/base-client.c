@@ -892,7 +892,7 @@ tp_base_client_init (TpBaseClient *self)
   g_ptr_array_add (self->priv->handler_caps, NULL);
 
   self->priv->my_chans = g_hash_table_new_full (g_str_hash, g_str_equal,
-      NULL, NULL);
+      NULL, g_object_unref);
 }
 
 static void
