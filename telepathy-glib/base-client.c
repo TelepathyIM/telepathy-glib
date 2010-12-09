@@ -912,6 +912,10 @@ tp_base_client_dispose (GObject *object)
   g_list_free (self->priv->pending_requests);
   self->priv->pending_requests = NULL;
 
+  if (self->priv->my_chans != NULL &&
+      g_hash_table_size (self->priv->my_chans) > 0)
+    g_warning ("TpBaseClient is still handling channels at dispose");
+
   tp_clear_pointer (&self->priv->my_chans, g_hash_table_unref);
 
   if (dispose != NULL)
