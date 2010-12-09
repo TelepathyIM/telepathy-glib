@@ -55,24 +55,8 @@ struct _TpClientMessagePrivate
 };
 
 static void
-tp_client_message_dispose (GObject *object)
-{
-  //TpClientMessage *self = TP_CLIENT_MESSAGE (object);
-  void (*dispose) (GObject *) =
-    G_OBJECT_CLASS (tp_client_message_parent_class)->dispose;
-
-  if (dispose != NULL)
-    dispose (object);
-}
-
-static void
 tp_client_message_class_init (TpClientMessageClass *klass)
 {
-  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-
-  gobject_class->dispose = tp_client_message_dispose;
-
-  g_type_class_add_private (gobject_class, sizeof (TpClientMessagePrivate));
 }
 
 static void
