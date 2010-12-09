@@ -196,6 +196,14 @@ _tp_signalled_message_new (const GPtrArray *parts,
       g_assert (tp_str_empty (tp_asv_get_string (header, "message-sender-id")));
     }
 
+  if (tp_asv_get_string (header, "message-sender-id") == NULL &&
+      sender != NULL)
+    {
+      /* message-sender-id is missing, let's add it */
+      tp_message_set_string (self, 0, "message-sender-id",
+          tp_contact_get_identifier (sender));
+    }
+
   _tp_message_set_immutable ((TpMessage *) self);
 
   return self;
