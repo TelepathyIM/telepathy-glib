@@ -112,10 +112,7 @@ tp_cm_message_new (TpBaseConnection *connection,
 
   /* The first part has already be created */
   for (i = 1; i < initial_parts; i++)
-    {
-      g_ptr_array_add (msg->parts, g_hash_table_new_full (g_str_hash,
-            g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
-    }
+    tp_message_append_part (msg);
 
   self->priv->connection = g_object_ref (connection);
   msg->incoming_id = G_MAXUINT32;
@@ -170,8 +167,7 @@ tp_cm_message_take_message (TpMessage *self,
    * keep tp_message_destroy happy.
    */
   message->parts = g_ptr_array_sized_new (1);
-  g_ptr_array_add (message->parts, g_hash_table_new_full (g_str_hash,
-        g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free));
+  tp_message_append_part (message);
 
   tp_message_destroy (message);
 }
