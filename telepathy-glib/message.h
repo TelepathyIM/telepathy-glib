@@ -80,6 +80,8 @@ void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
 void tp_message_take_message (TpMessage *self, guint part, const gchar *key,
     TpMessage *message) _TP_GNUC_DEPRECATED;
 
+gboolean tp_message_is_mutable (TpMessage *self);
+
 G_END_DECLS
 
 #endif /* __TP_MESSAGE_H__ */

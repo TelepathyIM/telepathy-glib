@@ -811,3 +811,20 @@ _tp_message_set_immutable (TpMessage *self)
 {
   self->priv->mutable = FALSE;
 }
+
+/**
+ * tp_message_is_mutable:
+ * @self: a #TpMessage
+ *
+ * Check if @self is mutable. Only mutable messages can be modified using
+ * functions such as tp_message_set_string().
+ *
+ * Returns: %TRUE if the message is mutable.
+ *
+ * @since 0.13.UNRELEASED
+ */
+gboolean
+tp_message_is_mutable (TpMessage *self)
+{
+  return self->priv->mutable;
+}

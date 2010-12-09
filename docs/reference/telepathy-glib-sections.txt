@@ -2243,6 +2243,7 @@ tp_message_set_uint32
 tp_message_set_uint64
 tp_message_take_message
 tp_message_to_text
+tp_message_is_mutable
 <SUBSECTION Standard>
 TP_IS_MESSAGE
 TP_IS_MESSAGE_CLASS
