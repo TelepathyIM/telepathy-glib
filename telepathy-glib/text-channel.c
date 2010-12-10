@@ -531,6 +531,7 @@ get_pending_messages_cb (TpProxy *proxy,
       if (sender == 0)
         {
           DEBUG ("Message doesn't have a sender");
+          add_message_received (self, parts, NULL, FALSE);
           continue;
         }
 
