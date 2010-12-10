@@ -12,6 +12,11 @@ Fixes:
 • fd.o #32191: when tp_connection_get_contacts_by_handle would return
   contacts that already exist, make sure they have the desired features (smcv)
 
+• fd.o #32222: fix a leak of TpChannel objects in TpBaseClient, document that
+  Handlers are responsible for closing their channels, warn if channels are
+  still handled when a Handler is disposed, and close channels in some
+  regression tests (Zdra)
+
 telepathy-glib 0.12.5 (2010-11-25)
 ==================================
 
