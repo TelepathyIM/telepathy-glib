@@ -857,9 +857,8 @@ tp_message_mixin_sent (GObject *object,
   time_t now = time (NULL);
 
   g_return_if_fail (mixin != NULL);
-  g_return_if_fail (object != NULL);
-  g_return_if_fail (message != NULL);
-  g_return_if_fail (message != NULL);
+  g_return_if_fail (G_IS_OBJECT (object));
+  g_return_if_fail (TP_IS_CM_MESSAGE (message));
   g_return_if_fail (message->parts != NULL);
   g_return_if_fail (cm_msg->outgoing_context != NULL);
   g_return_if_fail (token == NULL || error == NULL);
