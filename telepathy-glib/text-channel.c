@@ -294,6 +294,45 @@ copy_parts (const GPtrArray *parts)
   return g_boxed_copy (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
 }
 
+static TpHandle
+get_sender (TpTextChannel *self,
+    const GPtrArray *message,
+    TpContact **contact)
+{
+  const GHashTable *header;
+  TpHandle handle;
+  const gchar *sender_id;
+  TpConnection *conn;
+
+  g_assert (contact != NULL);
+
+  header = g_ptr_array_index (message, 0);
+  handle = tp_asv_get_uint32 (header, "message-sender", NULL);
+  if (handle == 0)
+    {
+      DEBUG ("Message received on Channel %s doesn't have message-sender, "
+          "please fix CM", tp_proxy_get_object_path (self));
+      return 0;
+    }
+
+  sender_id = tp_asv_get_string (header, "message-sender-id");
+
+  conn = tp_channel_borrow_connection ((TpChannel *) self);
+  *contact = tp_connection_dup_contact_if_possible (conn, handle, sender_id);
+
+  if (*contact == NULL)
+    {
+      if (!tp_connection_has_immortal_handles (conn))
+        DEBUG ("Connection %s don't have immortal handles, please fix CM",
+            tp_proxy_get_object_path (conn));
+      else if (tp_str_empty (sender_id))
+        DEBUG ("Message received on %s doesn't include message-sender-id, "
+            "please fix CM", tp_proxy_get_object_path (self));
+    }
+
+  return handle;
+}
+
 static void
 message_received_cb (TpChannel *proxy,
     const GPtrArray *message,
@@ -301,9 +340,9 @@ message_received_cb (TpChannel *proxy,
     GObject *weak_object)
 {
   TpTextChannel *self = user_data;
-  const GHashTable *header;
   TpHandle sender;
   TpConnection *conn;
+  TpContact *contact;
 
   /* If we are still retrieving pending messages, no need to add the message,
    * it will be in the initial set of messages retrieved. */
@@ -312,19 +351,26 @@ message_received_cb (TpChannel *proxy,
 
   DEBUG ("New message received");
 
-  header = g_ptr_array_index (message, 0);
-  sender = tp_asv_get_uint32 (header, "message-sender", NULL);
+  sender = get_sender (self, message, &contact);
 
   if (sender == 0)
     {
-      DEBUG ("Message doesn't have a sender");
-
       add_message_received (self, message, NULL);
+      return;
+    }
+
+  if (contact != NULL)
+    {
+      /* We have the sender, all good */
+      add_message_received (self, message, contact);
+
+      g_object_unref (contact);
       return;
     }
 
   conn = tp_channel_borrow_connection (proxy);
 
+  /* We have to request the sender which may result in message re-ordering */
   tp_connection_get_contacts_by_handle (conn, 1, &sender,
       0, NULL, got_sender_contact_cb, copy_parts (message),
       NULL, G_OBJECT (self));
