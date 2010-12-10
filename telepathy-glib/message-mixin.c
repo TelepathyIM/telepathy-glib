@@ -129,6 +129,7 @@ static const char * const body_only_incoming[] = {
 static const char * const headers_only[] = {
     "message-type",
     "message-sender",
+    "message-sender-id",
     "message-sent",
     "message-received",
     "message-token",
@@ -138,6 +139,7 @@ static const char * const headers_only[] = {
 
 static const char * const headers_only_incoming[] = {
     "message-sender",
+    "message-sender-id",
     "message-sent",
     "message-received",
     NULL
