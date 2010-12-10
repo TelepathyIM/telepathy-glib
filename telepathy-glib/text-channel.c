@@ -493,37 +493,21 @@ pending_messages_removed_cb (TpChannel *proxy,
     }
 }
 
+/* takes ownership of parts_list */
 static void
-got_pending_senders_contact_cb (TpConnection *connection,
+got_pending_senders_contact (TpTextChannel *self,
+    GList *parts_list,
     guint n_contacts,
-    TpContact * const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+    TpContact * const *contacts)
 {
-  TpTextChannel *self = (TpTextChannel *) weak_object;
-  GList *parts_list = user_data;
   GList *l;
-  guint i;
-
-  if (error != NULL)
-    {
-      DEBUG ("Failed to prepare TpContact: %s", error->message);
-      goto out;
-    }
-
-  if (n_failed > 0)
-    {
-      DEBUG ("Failed to prepare some TpContact (InvalidHandle)");
-    }
 
   for (l = parts_list; l != NULL; l = g_list_next (l))
     {
       GPtrArray *parts = l->data;
       const GHashTable *header;
       TpHandle sender;
+      guint i;
 
       header = g_ptr_array_index (parts, 0);
       sender = tp_asv_get_uint32 (header, "message-sender", NULL);
@@ -547,6 +531,70 @@ got_pending_senders_contact_cb (TpConnection *connection,
     }
 
   g_list_free (parts_list);
+}
+
+static void
+got_pending_senders_contact_by_handle_cb (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    guint n_failed,
+    const TpHandle *failed,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpTextChannel *self = (TpTextChannel *) weak_object;
+  GList *parts_list = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to prepare TpContact: %s", error->message);
+      goto out;
+    }
+
+  if (n_failed > 0)
+    {
+      DEBUG ("Failed to prepare some TpContact (InvalidHandle)");
+    }
+
+  got_pending_senders_contact (self, parts_list, n_contacts, contacts);
+
+out:
+  _tp_proxy_set_feature_prepared (TP_PROXY (self),
+      TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+}
+
+static void
+got_pending_senders_contact_by_id_cb (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const gchar * const *requested_ids,
+    GHashTable *failed_id_errors,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpTextChannel *self = (TpTextChannel *) weak_object;
+  GList *parts_list = user_data;
+  GHashTableIter iter;
+  gpointer key, value;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to prepare TpContact: %s", error->message);
+      goto out;
+    }
+
+  g_hash_table_iter_init (&iter, failed_id_errors);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const gchar *id = key;
+      GError *err = value;
+
+      DEBUG ("Failed to get a TpContact for %s: %s", id, err->message);
+    }
+
+  got_pending_senders_contact (self, parts_list, n_contacts, contacts);
 
 out:
   _tp_proxy_set_feature_prepared (TP_PROXY (self),
@@ -565,6 +613,7 @@ get_pending_messages_cb (TpProxy *proxy,
   GPtrArray *messages;
   TpIntSet *senders;
   GList *parts_list = NULL;
+  GPtrArray *sender_ids;
 
   self->priv->retrieving_pending = FALSE;
 
@@ -578,6 +627,7 @@ get_pending_messages_cb (TpProxy *proxy,
     }
 
   senders = tp_intset_new ();
+  sender_ids = g_ptr_array_new ();
 
   messages = g_value_get_boxed (value);
   for (i = 0; i < messages->len; i++)
@@ -585,8 +635,9 @@ get_pending_messages_cb (TpProxy *proxy,
       GPtrArray *parts = g_ptr_array_index (messages, i);
       TpHandle sender;
       TpContact *contact;
+      const gchar *sender_id;
 
-      sender = get_sender (self, parts, &contact, NULL);
+      sender = get_sender (self, parts, &contact, &sender_id);
 
       if (sender == 0)
         {
@@ -603,6 +654,10 @@ get_pending_messages_cb (TpProxy *proxy,
         }
 
       tp_intset_add (senders, sender);
+
+      if (sender_id != NULL)
+        g_ptr_array_add (sender_ids, (gpointer) sender_id);
+
       parts_list = g_list_prepend (parts_list, copy_parts (parts));
     }
 
@@ -613,25 +668,37 @@ get_pending_messages_cb (TpProxy *proxy,
     }
   else
     {
-      GArray *tmp;
       TpConnection *conn;
 
       DEBUG ("Pending messages may be re-ordered, please fix CM");
 
       parts_list = g_list_reverse (parts_list);
 
-      tmp = tp_intset_to_array (senders);
       conn = tp_channel_borrow_connection (TP_CHANNEL (proxy));
 
-      tp_connection_get_contacts_by_handle (conn, tmp->len,
-          (TpHandle *) tmp->data,
-          0, NULL, got_pending_senders_contact_cb, parts_list,
-          NULL, G_OBJECT (self));
+      if (sender_ids->len > 0)
+        {
+          /* Use the sender ID rather than the handles */
+          tp_connection_get_contacts_by_id (conn, sender_ids->len,
+              (const gchar * const *) sender_ids->pdata,
+              0, NULL, got_pending_senders_contact_by_id_cb, parts_list,
+              NULL, G_OBJECT (self));
+        }
+      else
+        {
+          GArray *tmp = tp_intset_to_array (senders);
 
-      g_array_unref (tmp);
+          tp_connection_get_contacts_by_handle (conn, tmp->len,
+              (TpHandle *) tmp->data,
+              0, NULL, got_pending_senders_contact_by_handle_cb, parts_list,
+              NULL, G_OBJECT (self));
+
+          g_array_unref (tmp);
+        }
     }
 
   tp_intset_destroy (senders);
+  g_ptr_array_free (sender_ids, TRUE);
 }
 
 static void
