@@ -59,6 +59,9 @@ test_new_from_parts (Test *test,
   g_ptr_array_add (parts, tp_asv_new (
         "message-sender", G_TYPE_UINT, sender,
         "message-token", G_TYPE_STRING, "token",
+        "message-sent", G_TYPE_INT64, G_GINT64_CONSTANT (42),
+        "message-received", G_TYPE_INT64, G_GINT64_CONSTANT (666),
+        "scrollback", G_TYPE_BOOLEAN, TRUE,
         NULL));
 
   g_ptr_array_add (parts, tp_asv_new (
@@ -86,6 +89,16 @@ test_new_from_parts (Test *test,
       "text/plain");
   g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
       "Badger");
+
+  g_assert_cmpuint (tp_cm_message_get_sender (msg), ==, sender);
+  g_assert_cmpstr (tp_message_get_token (msg), ==, "token");
+  g_assert_cmpint ((gint) tp_message_get_sent_timestamp (msg), ==, 42);
+  g_assert_cmpint ((gint) tp_message_get_received_timestamp (msg), ==, 666);
+  g_assert_cmpint (tp_message_is_scrollback (msg), ==, TRUE);
+  g_assert_cmpint (tp_message_is_rescued (msg), ==, FALSE);
+  g_assert_cmpstr (tp_message_get_supersedes (msg), ==, NULL);
+  g_assert_cmpstr (tp_message_get_specific_to_interface (msg), ==, NULL);
+  g_assert_cmpint (tp_message_is_delivery_report (msg), ==, FALSE);
 
   g_object_unref (msg);
 }
