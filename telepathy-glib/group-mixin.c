@@ -155,6 +155,23 @@ struct _TpGroupMixinPrivate {
     GPtrArray *externals;
 };
 
+/**
+ * TP_HAS_GROUP_MIXIN:
+ * @o: a #GObject instance
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if @o (or one of its parent classes) has the group mixin.
+ */
+
+/**
+ * TP_HAS_GROUP_MIXIN_CLASS:
+ * @cls: a #GObjectClass structure
+ *
+ * <!-- -->
+ *
+ * Returns: %TRUE if @cls (or one of its parent classes) has the group mixin.
+ */
 
 /**
  * tp_group_mixin_class_get_offset_quark: (skip)
