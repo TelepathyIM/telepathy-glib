@@ -509,6 +509,7 @@ pending_messages_removed_cb (TpChannel *proxy,
                   0, msg);
 
               g_object_unref (msg);
+              break;
             }
         }
     }
