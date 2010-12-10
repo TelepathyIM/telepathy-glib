@@ -525,11 +525,10 @@ get_pending_messages_cb (TpProxy *proxy,
   for (i = 0; i < messages->len; i++)
     {
       GPtrArray *parts = g_ptr_array_index (messages, i);
-      const GHashTable *header;
       TpHandle sender;
+      TpContact *contact;
 
-      header = g_ptr_array_index (parts, 0);
-      sender = tp_asv_get_uint32 (header, "message-sender", NULL);
+      sender = get_sender (self, parts, &contact);
 
       if (sender == 0)
         {
@@ -537,8 +536,19 @@ get_pending_messages_cb (TpProxy *proxy,
           continue;
         }
 
-      tp_intset_add (senders, sender);
+      if (contact != NULL)
+        {
+          /* We have the sender */
+          TpMessage *msg;
 
+          msg = _tp_signalled_message_new (parts, contact);
+
+          self->priv->pending_messages = g_list_append (
+              self->priv->pending_messages, msg);
+          continue;
+        }
+
+      tp_intset_add (senders, sender);
       parts_list = g_list_prepend (parts_list, copy_parts (parts));
     }
 
@@ -551,6 +561,8 @@ get_pending_messages_cb (TpProxy *proxy,
     {
       GArray *tmp;
       TpConnection *conn;
+
+      DEBUG ("Pending messages may be re-ordered, please fix CM");
 
       parts_list = g_list_reverse (parts_list);
 
