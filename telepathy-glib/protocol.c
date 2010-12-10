@@ -140,7 +140,7 @@ struct _TpProtocolPrivate
   gchar *vcard_field;
   gchar *english_name;
   gchar *icon_name;
-  const gchar * const *authentication_types;
+  GStrv authentication_types;
   TpCapabilities *capabilities;
 };
 
@@ -352,6 +352,12 @@ tp_protocol_dispose (GObject *object)
       self->priv->capabilities = NULL;
     }
 
+  if (self->priv->authentication_types)
+    {
+      g_strfreev (self->priv->authentication_types);
+      self->priv->authentication_types = NULL;
+    }
+
   if (dispose != NULL)
     dispose (object);
 }
@@ -430,6 +436,7 @@ tp_protocol_constructed (GObject *object)
   const gchar *s;
   const GPtrArray *rccs;
   gboolean had_immutables = TRUE;
+  const gchar * const *auth_types = NULL;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -482,9 +489,19 @@ tp_protocol_constructed (GObject *object)
   if (rccs != NULL)
     self->priv->capabilities = _tp_capabilities_new (rccs, FALSE);
 
-  self->priv->authentication_types = tp_asv_get_boxed (
+  auth_types = tp_asv_get_boxed (
       self->priv->protocol_properties,
       TP_PROP_PROTOCOL_AUTHENTICATION_TYPES, G_TYPE_STRV);
+
+  if (auth_types != NULL)
+    {
+      self->priv->authentication_types = g_strdupv ((GStrv) auth_types);
+    }
+  else
+    {
+      gchar *tmp[] = { NULL };
+      self->priv->authentication_types = g_strdupv (tmp);
+    }
 
   /* become ready immediately */
   _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_PARAMETERS,
@@ -656,7 +673,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
   /**
    * TpProtocol:authentication-types:
    *
-   * A #GStrv of interfaces interfaces which provide information as to
+   * A non-%NULL #GStrv of interfaces which provide information as to
    * what kind of authentication channels can possibly appear before
    * the connection reaches the CONNECTED state, or %NULL if
    * %TP_PROTOCOL_FEATURE_CORE has not been prepared.
@@ -934,7 +951,7 @@ const gchar * const *
 tp_protocol_get_authentication_types (TpProtocol *self)
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
-  return self->priv->authentication_types;
+  return (const gchar * const *) self->priv->authentication_types;
 }
 
 /**
