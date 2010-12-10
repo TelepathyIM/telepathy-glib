@@ -1005,7 +1005,12 @@ USA.</p>
       <arg direction="in" type="aa{sv}" tp:type="Message_Part[]"
         name="Message">
         <tp:docstring>
-          The message content, including any attachments or alternatives
+          The message content, including any attachments or alternatives.
+          This MUST NOT include the following headers, or any others that
+          do not make sense for a client to specify:
+          <code>message-sender</code>, <code>message-sender-id</code>,
+          <code>message-sent</code>, <code>message-received</code>,
+          <code>pending-message-id</code>.
         </tp:docstring>
       </arg>
       <arg direction="in" name="Flags" type="u"
@@ -1114,6 +1119,14 @@ USA.</p>
             <tt>text/plain</tt> alternative, the CM MUST use the formatted text
             part to generate a <tt>text/plain</tt> alternative which is also
             included in this signal argument.</p>
+
+          <p>The connection manager SHOULD include the
+            <code>message-sender</code>, <code>message-sender-id</code> and
+            <code>message-sent</code> headers in the representation of the
+            message that is signalled here. If the channel has
+            channel-specific handles, the <code>message-sender</code> and
+            <code>message-sender-id</code> SHOULD reflect the sender that
+            other contacts will see.</p>
 
           <p>If the connection manager can predict that the message will be
             altered during transmission, this argument SHOULD reflect what

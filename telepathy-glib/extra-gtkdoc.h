@@ -99,11 +99,12 @@
  * SECTION:svc-channel-text
  * @title: Text channels
  * @short_description: service-side interfaces for the Text channel type, and
- *  the Chat State and Password interfaces
+ *  the Chat State, Password and SMS interfaces
  * @see_also: #TpTextMixin
  *
  * A major use for instant messaging is obviously to send messages.
- * Channels of type Text represent IM conversations or chat rooms.
+ * Channels of type Text represent conversations or chat rooms using short
+ * real-time messages, including SMS.
  *
  * This section documents the auto-generated GInterfaces used to implement
  * the Text channel type, and some interfaces used in conjunction with it.
