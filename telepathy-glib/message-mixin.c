@@ -62,6 +62,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/group-mixin.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/message-internal.h>
@@ -876,9 +877,21 @@ tp_message_mixin_sent (GObject *object,
       TpChannelTextMessageType message_type;
       gchar *string;
       GHashTable *header = g_ptr_array_index (message->parts, 0);
+      TpHandle self_handle = 0;
 
       if (tp_asv_get_uint64 (header, "message-sent", NULL) == 0)
         tp_message_set_uint64 (message, 0, "message-sent", time (NULL));
+
+      if (TP_HAS_GROUP_MIXIN (object))
+        {
+          tp_group_mixin_get_self_handle (object, &self_handle, NULL);
+        }
+
+      if (self_handle == 0)
+        self_handle = tp_base_connection_get_self_handle (
+            mixin->priv->connection);
+
+      tp_cm_message_set_sender (message, self_handle);
 
       /* emit Sent and MessageSent */
 
