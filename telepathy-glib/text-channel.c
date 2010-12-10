@@ -299,7 +299,8 @@ copy_parts (const GPtrArray *parts)
 static TpHandle
 get_sender (TpTextChannel *self,
     const GPtrArray *message,
-    TpContact **contact)
+    TpContact **contact,
+    const gchar **out_sender_id)
 {
   const GHashTable *header;
   TpHandle handle;
@@ -314,7 +315,7 @@ get_sender (TpTextChannel *self,
     {
       DEBUG ("Message received on Channel %s doesn't have message-sender, "
           "please fix CM", tp_proxy_get_object_path (self));
-      return 0;
+      goto out;
     }
 
   sender_id = tp_asv_get_string (header, "message-sender-id");
@@ -331,6 +332,10 @@ get_sender (TpTextChannel *self,
         DEBUG ("Message received on %s doesn't include message-sender-id, "
             "please fix CM", tp_proxy_get_object_path (self));
     }
+
+out:
+  if (out_sender_id != NULL)
+    *out_sender_id = sender_id;
 
   return handle;
 }
@@ -353,7 +358,7 @@ message_received_cb (TpChannel *proxy,
 
   DEBUG ("New message received");
 
-  sender = get_sender (self, message, &contact);
+  sender = get_sender (self, message, &contact, NULL);
 
   if (sender == 0)
     {
@@ -526,7 +531,7 @@ get_pending_messages_cb (TpProxy *proxy,
       TpHandle sender;
       TpContact *contact;
 
-      sender = get_sender (self, parts, &contact);
+      sender = get_sender (self, parts, &contact, NULL);
 
       if (sender == 0)
         {
