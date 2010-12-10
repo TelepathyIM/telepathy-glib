@@ -128,7 +128,7 @@ tp_message_init (TpMessage *self)
  * tp_message_mixin_take_received
  *
  * @since 0.7.21
- * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_new()
+ * @deprecated since 0.13.9. Use tp_cm_message_new()
  */
 TpMessage *
 tp_message_new (TpBaseConnection *connection,
@@ -145,7 +145,7 @@ tp_message_new (TpBaseConnection *connection,
  * tp_message_destroy:
  * @self: a message
  *
- * Since 0.13.UNRELEASED this function is a simple wrapper around
+ * Since 0.13.9 this function is a simple wrapper around
  * g_object_unref()
  *
  * @since 0.7.21
@@ -248,7 +248,7 @@ tp_message_delete_part (TpMessage *self,
  * Reference the given handle until this message is destroyed.
  *
  * @since 0.7.21
- * @deprecated since 0.13.UNRELEASED. Handles are now immortal so there is
+ * @deprecated since 0.13.9. Handles are now immortal so there is
  * no point to ref them. Furthermore, the only handle that should be stored
  * in a TpMessage is message-sender which should be set using
  * tp_cm_message_set_sender().
@@ -303,12 +303,12 @@ tp_message_delete_key (TpMessage *self,
  * Set @key in part @part of @self to have @handle_or_0 as an unsigned integer
  * value.
  *
- * Since 0.13.UNRELEASED this function has been deprecated in favor or
+ * Since 0.13.9 this function has been deprecated in favor or
  * tp_cm_message_set_sender() as 'message-sender' is the only handle
  * you can put in a #TpCMMessage.
  *
  * @since 0.7.21
- * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_set_sender()
+ * @deprecated since 0.13.9. Use tp_cm_message_set_sender()
  */
 void
 tp_message_set_handle (TpMessage *self,
@@ -626,7 +626,7 @@ tp_message_set (TpMessage *self,
  * with @self.
  *
  * @since 0.7.21
- * @deprecated since 0.13.UNRELEASED. Use tp_cm_message_take_message()
+ * @deprecated since 0.13.9. Use tp_cm_message_take_message()
  */
 void
 tp_message_take_message (TpMessage *self,
@@ -658,7 +658,7 @@ subtract_from_hash (gpointer key,
  * Returns: (transfer full): a newly allocated string containing the
  * text content of #message
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 gchar *
 tp_message_to_text (TpMessage *message,
@@ -831,7 +831,7 @@ _tp_message_set_immutable (TpMessage *self)
  *
  * Returns: %TRUE if the message is mutable.
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 gboolean
 tp_message_is_mutable (TpMessage *self)

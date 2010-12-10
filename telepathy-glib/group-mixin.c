@@ -162,6 +162,8 @@ struct _TpGroupMixinPrivate {
  * <!-- -->
  *
  * Returns: %TRUE if @o (or one of its parent classes) has the group mixin.
+ *
+ * Since: 0.13.9
  */
 
 /**
@@ -171,6 +173,8 @@ struct _TpGroupMixinPrivate {
  * <!-- -->
  *
  * Returns: %TRUE if @cls (or one of its parent classes) has the group mixin.
+ *
+ * Since: 0.13.9
  */
 
 /**

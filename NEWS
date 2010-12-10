@@ -1,5 +1,9 @@
-telepathy-glib 0.13.9 (UNRELEASED)
+telepathy-glib 0.13.9 (2010-12-10)
 ==================================
+
+The "please mind the gap between the table and the table" release.
+
+This release includes all the bugfixes from version 0.12.6.
 
 Deprecations:
 

@@ -1028,7 +1028,7 @@ tp_contact_ensure (TpConnection *connection,
  *
  * Returns: (transfer full): a contact or %NULL
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.9
  */
 TpContact *
 tp_connection_dup_contact_if_possible (TpConnection *connection,

@@ -444,7 +444,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *  Protocol.Interface.Avatars interface's properties. Since 0.13.7
  * @dup_authentication_types: a callback used to implement the
  *  AuthenticationTypes D-Bus property; it must return a newly allocated #GStrv
- *  containing D-Bus interface names. Since 0.13.UNRELEASED
+ *  containing D-Bus interface names. Since 0.13.9
  *
  * The class of a #TpBaseProtocol.
  *

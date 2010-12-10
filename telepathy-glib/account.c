@@ -1967,7 +1967,7 @@ tp_account_ensure_connection (TpAccount *account,
  * persistent identification of the account, use tp_proxy_get_object_path().
  *
  * Returns: a suffix of @account's object path, for debugging purposes.
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.9
  */
 const gchar *
 tp_account_get_path_suffix (TpAccount *account)

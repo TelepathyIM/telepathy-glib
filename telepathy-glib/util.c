@@ -599,7 +599,7 @@ tp_mixin_offset_cast (gpointer instance, guint offset)
  *
  * In older telepathy-glib versions, calling this function on an instance that
  * did not have the mixin was considered to be a programming error. Since
- * version 0.13.UNRELEASED, 0 is returned, without error.
+ * version 0.13.9, 0 is returned, without error.
  *
  * This is used to implement the telepathy-glib mixin classes.
  *
@@ -636,7 +636,7 @@ tp_mixin_instance_get_offset (gpointer instance,
  *
  * In older telepathy-glib versions, calling this function on an instance that
  * did not have the mixin was considered to be a programming error. Since
- * version 0.13.UNRELEASED, 0 is returned, without error.
+ * version 0.13.9, 0 is returned, without error.
  *
  * This is used to implement the telepathy-glib mixin classes.
  *

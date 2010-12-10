@@ -26,7 +26,7 @@
  *  #TpCMMessage is used within connection managers to represent a
  *  message sent or received using the Messages interface.
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 
 #include "cm-message.h"
@@ -46,6 +46,8 @@ G_DEFINE_TYPE (TpCMMessage, tp_cm_message, TP_TYPE_MESSAGE)
  * (an array of at least one mapping from string to variant, where the first
  * mapping contains message headers and subsequent mappings contain the
  * message body).
+ *
+ * Since: 0.13.9
  */
 
 struct _TpCMMessagePrivate
@@ -93,7 +95,7 @@ tp_cm_message_init (TpCMMessage *self)
  * Returns: a newly allocated message suitable to be passed to
  * tp_cm_message_mixin_take_received
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 TpMessage *
 tp_cm_message_new (TpBaseConnection *connection,
@@ -135,7 +137,7 @@ tp_cm_message_new (TpBaseConnection *connection,
  * references owned by @message will subsequently belong to and be released
  * with @self.
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 void
 tp_cm_message_take_message (TpMessage *self,
@@ -180,7 +182,7 @@ tp_cm_message_take_message (TpMessage *self,
  * Set the sender of @self, i.e. the "message-sender" and
  * "message-sender-id" keys in the header.
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 void
 tp_cm_message_set_sender (TpMessage *self,
@@ -244,7 +246,7 @@ _tp_cm_message_new_from_parts (TpBaseConnection *conn,
  *
  * Returns: a %TP_HANDLE_TYPE_CONTACT handle, or 0
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 TpHandle
 tp_cm_message_get_sender (TpMessage *self)

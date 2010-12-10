@@ -1265,7 +1265,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONNECTED.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.9
    */
   param_spec = g_param_spec_object ("self-contact", "Self contact",
       "The local user's Contact object on this connection", TP_TYPE_CONTACT,
@@ -2315,7 +2315,7 @@ tp_connection_has_immortal_handles (TpConnection *self)
  * Returns: (transfer none): the value of the TpConnection:self-contact
  *  property, which may be %NULL
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.9
  */
 TpContact *
 tp_connection_get_self_contact (TpConnection *self)

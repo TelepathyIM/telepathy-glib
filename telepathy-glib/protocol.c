@@ -678,7 +678,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * the connection reaches the CONNECTED state, or %NULL if
    * %TP_PROTOCOL_FEATURE_CORE has not been prepared.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.9
    */
   g_object_class_install_property (object_class, PROP_AUTHENTICATION_TYPES,
       g_param_spec_boxed ("authentication-types",
@@ -945,7 +945,7 @@ tp_protocol_get_icon_name (TpProtocol *self)
  *
  * Returns: the value of #TpProtocol:authentication-types
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.9
  */
 const gchar * const *
 tp_protocol_get_authentication_types (TpProtocol *self)

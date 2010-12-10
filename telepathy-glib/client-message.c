@@ -29,7 +29,7 @@
  * Its subclass #TpSignalledMessage represents messages as signalled by a
  * connection manager.
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 
 #include "client-message.h"
@@ -45,6 +45,8 @@
  *
  * Opaque structure representing a message in the Telepathy messages interface
  * (client side).
+ *
+ * Since: 0.13.9
  */
 
 G_DEFINE_TYPE (TpClientMessage, tp_client_message, TP_TYPE_MESSAGE)
@@ -74,7 +76,7 @@ tp_client_message_init (TpClientMessage *self)
  * Returns: (transfer full): a newly allocated #TpClientMessage having only
  * the header part.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.9
  */
 TpMessage *
 tp_client_message_new (void)
@@ -94,7 +96,7 @@ tp_client_message_new (void)
  *
  * Returns: (transfer full): a newly allocated #TpClientMessage
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.9
  */
 TpMessage *
 tp_client_message_new_text (TpChannelTextMessageType type,

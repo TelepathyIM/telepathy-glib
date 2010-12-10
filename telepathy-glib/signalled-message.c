@@ -29,7 +29,7 @@
  * or a delivery report indicating that delivery of a message has
  * succeeded or failed.
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 
 #include "signalled-message.h"
@@ -129,7 +129,7 @@ tp_signalled_message_class_init (TpSignalledMessageClass *klass)
    * A #TpContat representing the sender of the message if known,
    * otherwise %NULL.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.9
    */
   param_spec = g_param_spec_object ("sender", "TpContact",
       "The sender of the message",
@@ -220,7 +220,7 @@ _tp_signalled_message_new (const GPtrArray *parts,
  *
  * Returns: (transfer none): the sender of the message
  *
- * @since 0.13.UNRELEASED
+ * @since 0.13.9
  */
 TpContact *
 tp_signalled_message_get_sender (TpMessage *message)
