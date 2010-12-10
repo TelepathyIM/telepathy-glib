@@ -650,6 +650,7 @@ get_pending_messages_cb (TpProxy *proxy,
         {
           /* We have the sender */
           add_message_received (self, parts, contact, FALSE);
+          g_object_unref (contact);
           continue;
         }
 
