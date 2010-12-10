@@ -150,19 +150,31 @@ tp_signalled_message_init (TpSignalledMessage *self)
   self->priv->sender = NULL;
 }
 
+/*
+ * Create a new TpSignalledMessage.
+ *
+ * Any message-sender and message-sender-id in parts[0] will be ignored
+ * completely: the caller is responsible for interpreting those fields
+ * and providing a suitable @sender.
+ *
+ * The message-sender will be removed from the header, and the
+ * message-sender-id will be set to match the #TpContact:identifier of @sender.
+ *
+ * @sender may be %NULL, which means the message wasn't sent by a contact
+ * (this could be used for administrative messages from a chatroom or the
+ * server) or we have no idea who sent it.
+ */
 TpMessage *
 _tp_signalled_message_new (const GPtrArray *parts,
     TpContact *sender)
 {
   TpMessage *self;
   guint i;
-  const GHashTable *header;
-  TpHandle sender_handle;
 
   g_return_val_if_fail (parts != NULL, NULL);
   g_return_val_if_fail (parts->len > 0, NULL);
+  g_return_val_if_fail (sender == NULL || TP_IS_CONTACT (sender), NULL);
 
-  /* FIXME: remove message-sender? */
   self = g_object_new (TP_TYPE_SIGNALLED_MESSAGE,
       "sender", sender,
       NULL);
@@ -179,32 +191,22 @@ _tp_signalled_message_new (const GPtrArray *parts,
           (GBoxedCopyFunc) tp_g_value_slice_dup);
     }
 
-  header = tp_message_peek (self, 0);
-  sender_handle = tp_asv_get_uint32 (header, "message-sender", NULL);
-  if (sender_handle != 0)
-    {
-      g_assert (sender != NULL);
-      g_assert (tp_contact_get_handle (sender) == sender_handle);
+  /* This handle may not be persistent, user should use the TpContact
+   * directly */
+  tp_message_delete_key (self, 0, "message-sender");
 
-      /* This handle may not be persistent, user should use the TpContact
-       * directly */
-      g_hash_table_remove ((GHashTable *) header, "message-sender");
+  /* override any message-sender-id that the message might have had */
+  if (sender == NULL)
+    {
+      tp_message_delete_key (self, 0, "message-sender-id");
     }
   else
     {
-      g_assert (sender == NULL);
-      g_assert (tp_str_empty (tp_asv_get_string (header, "message-sender-id")));
-    }
-
-  if (tp_asv_get_string (header, "message-sender-id") == NULL &&
-      sender != NULL)
-    {
-      /* message-sender-id is missing, let's add it */
       tp_message_set_string (self, 0, "message-sender-id",
           tp_contact_get_identifier (sender));
     }
 
-  _tp_message_set_immutable ((TpMessage *) self);
+  _tp_message_set_immutable (self);
 
   return self;
 }
