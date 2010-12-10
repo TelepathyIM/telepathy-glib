@@ -243,7 +243,8 @@ tp_text_channel_constructed (GObject *obj)
 static void
 add_message_received (TpTextChannel *self,
     const GPtrArray *parts,
-    TpContact *sender)
+    TpContact *sender,
+    gboolean fire_received)
 {
   TpMessage *msg;
 
@@ -252,7 +253,8 @@ add_message_received (TpTextChannel *self,
   self->priv->pending_messages = g_list_append (
       self->priv->pending_messages, msg);
 
-  g_signal_emit (self, signals[SIG_MESSAGE_RECEIVED], 0, msg);
+  if (fire_received)
+    g_signal_emit (self, signals[SIG_MESSAGE_RECEIVED], 0, msg);
 }
 
 static void
@@ -284,7 +286,7 @@ got_sender_contact_cb (TpConnection *connection,
   sender = contacts[0];
 
 out:
-  add_message_received (self, parts, sender);
+  add_message_received (self, parts, sender, TRUE);
   g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
 }
 
@@ -355,14 +357,14 @@ message_received_cb (TpChannel *proxy,
 
   if (sender == 0)
     {
-      add_message_received (self, message, NULL);
+      add_message_received (self, message, NULL, TRUE);
       return;
     }
 
   if (contact != NULL)
     {
       /* We have the sender, all good */
-      add_message_received (self, message, contact);
+      add_message_received (self, message, contact, TRUE);
 
       g_object_unref (contact);
       return;
@@ -475,12 +477,8 @@ got_pending_senders_contact_cb (TpConnection *connection,
 
           if (tp_contact_get_handle (contact) == sender)
             {
-              TpMessage *msg;
+              add_message_received (self, parts, contact, FALSE);
 
-              msg = _tp_signalled_message_new (parts, contact);
-
-              self->priv->pending_messages = g_list_append (
-                  self->priv->pending_messages, msg);
               break;
             }
         }
@@ -539,12 +537,7 @@ get_pending_messages_cb (TpProxy *proxy,
       if (contact != NULL)
         {
           /* We have the sender */
-          TpMessage *msg;
-
-          msg = _tp_signalled_message_new (parts, contact);
-
-          self->priv->pending_messages = g_list_append (
-              self->priv->pending_messages, msg);
+          add_message_received (self, parts, contact, FALSE);
           continue;
         }
 
