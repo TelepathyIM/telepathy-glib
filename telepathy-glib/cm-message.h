@@ -49,6 +49,7 @@ void tp_cm_message_take_message (TpMessage *self,
     const gchar *key,
     TpMessage *message);
 
+TpHandle tp_cm_message_get_sender (TpMessage *self);
 void tp_cm_message_set_sender (TpMessage *self,
     TpHandle handle);
 

@@ -82,6 +82,15 @@ void tp_message_take_message (TpMessage *self, guint part, const gchar *key,
 
 gboolean tp_message_is_mutable (TpMessage *self);
 
+const gchar *tp_message_get_token (TpMessage *self);
+gint64 tp_message_get_sent_timestamp (TpMessage *self);
+gint64 tp_message_get_received_timestamp (TpMessage *self);
+gboolean tp_message_is_scrollback (TpMessage *self);
+gboolean tp_message_is_rescued (TpMessage *self);
+const gchar *tp_message_get_supersedes (TpMessage *self);
+const gchar *tp_message_get_specific_to_interface (TpMessage *self);
+gboolean tp_message_is_delivery_report (TpMessage *self);
+
 G_END_DECLS
 
 #endif /* __TP_MESSAGE_H__ */

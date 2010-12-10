@@ -22,6 +22,7 @@
  * SECTION:message
  * @title: TpMessage
  * @short_description: a message in the Telepathy message interface
+ * @see_also: #TpCMMessage, #TpClientMessage, #TpSignalledMessage
  *
  * #TpMessage represent a message send or received using the Message
  * interface.
@@ -49,6 +50,16 @@ G_DEFINE_TYPE (TpMessage, tp_message, G_TYPE_OBJECT)
  * (an array of at least one mapping from string to variant, where the first
  * mapping contains message headers and subsequent mappings contain the
  * message body).
+ *
+ * This base class provides convenience API for most of the common keys that
+ * can appear in the header. One notable exception is the sender of the
+ * message. Inside a connection manager, messages are represented by the
+ * #TpCMMessage subclass, and you should use tp_cm_message_get_sender().
+ * When composing a message in a client using #TpClientMessage, messages do
+ * not have an explicit sender (the sender is automatically the local user).
+ * When a client sees a sent or received message signalled by the connection
+ * manager (represented by #TpSignalledMessage), the message's sender (if any)
+ * can be accessed with tp_signalled_message_get_sender().
  */
 
 struct _TpMessagePrivate
@@ -825,5 +836,189 @@ _tp_message_set_immutable (TpMessage *self)
 gboolean
 tp_message_is_mutable (TpMessage *self)
 {
+  g_return_val_if_fail (TP_IS_MESSAGE (self), FALSE);
+
   return self->priv->mutable;
 }
+
+/**
+ * tp_message_get_token:
+ * @self: a message
+ *
+ * Return this message's identifier in the underlying protocol. This is
+ * <emphasis>not</emphasis> guaranteed to be unique, even within the scope
+ * of a single channel or contact: the only guarantee made is that two
+ * messages with different non-empty tokens are different messages.
+ *
+ * If there is no suitable token, return %NULL.
+ *
+ * Returns: (transfer none): a non-empty opaque identifier, or %NULL if none
+ */
+const gchar *
+tp_message_get_token (TpMessage *self)
+{
+  const gchar *token;
+
+  g_return_val_if_fail (TP_IS_MESSAGE (self), NULL);
+
+  token = tp_asv_get_string (tp_message_peek (self, 0), "message-token");
+
+  if (tp_str_empty (token))
+    return NULL;
+  else
+    return token;
+}
+
+/**
+ * tp_message_get_sent_timestamp:
+ * @self: a message
+ *
+ * Return when this message was sent, as a number of seconds since the
+ * beginning of 1970 in the UTC timezone (the same representation used by
+ * g_date_time_new_from_unix_utc(), for instance), or 0 if not known.
+ *
+ * If this protocol does not track the time at which the message was
+ * initially sent, this timestamp might be approximated by using the
+ * time at which it arrived at a central server.
+ *
+ * Returns: a Unix timestamp, or 0
+ */
+gint64
+tp_message_get_sent_timestamp (TpMessage *self)
+{
+  g_return_val_if_fail (TP_IS_MESSAGE (self), 0);
+  return tp_asv_get_int64 (tp_message_peek (self, 0), "message-sent", NULL);
+}
+
+/**
+ * tp_message_get_received_timestamp:
+ * @self: a message
+ *
+ * Return when this message was received locally, as a number of seconds since
+ * the beginning of 1970 in the UTC timezone (the same representation used by
+ * g_date_time_new_from_unix_utc(), for instance), or 0 if not known.
+ *
+ * Returns: a Unix timestamp, or 0
+ */
+gint64
+tp_message_get_received_timestamp (TpMessage *self)
+{
+  g_return_val_if_fail (TP_IS_MESSAGE (self), 0);
+  return tp_asv_get_int64 (tp_message_peek (self, 0), "message-received",
+      NULL);
+}
+
+/**
+ * tp_message_is_scrollback:
+ * @self: a message
+ *
+ * <!-- no more to say -->
+ *
+ * Returns: %TRUE if this message is part of a replay of message history, for
+ *  instance in an XMPP chatroom.
+ */
+gboolean
+tp_message_is_scrollback (TpMessage *self)
+{
+  g_return_val_if_fail (TP_IS_MESSAGE (self), FALSE);
+  return tp_asv_get_boolean (tp_message_peek (self, 0), "scrollback", NULL);
+}
+
+/**
+ * tp_message_is_rescued:
+ * @self: a message
+ *
+ * Returns %TRUE if this incoming message has been seen in a previous channel
+ * during the lifetime of the Connection, but had not been acknowledged when
+ * that channel closed, causing an identical channel (in which the message now
+ * appears) to open.
+ *
+ * Loggers should check this flag to avoid duplicating messages, for instance.
+ *
+ * Returns: %TRUE if this message was seen in a previous Channel on this
+ *  Connection
+ */
+gboolean
+tp_message_is_rescued (TpMessage *self)
+{
+  g_return_val_if_fail (TP_IS_MESSAGE (self), FALSE);
+  return tp_asv_get_boolean (tp_message_peek (self, 0), "rescued", NULL);
+}
+
+/**
+ * tp_message_get_supersedes:
+ * @self: a message
+ *
+ * If this message replaces a previous message, return the value of
+ * tp_message_get_token() for that previous message. Otherwise, return %NULL.
+ *
+ * For instance, a user interface could replace the superseded
+ * message with this message, or grey out the superseded message.
+ *
+ * Returns: (transfer none): a non-empty opaque identifier, or %NULL if none
+ */
+const gchar *
+tp_message_get_supersedes (TpMessage *self)
+{
+  const gchar *token;
+
+  g_return_val_if_fail (TP_IS_MESSAGE (self), NULL);
+
+  token = tp_asv_get_string (tp_message_peek (self, 0), "supersedes");
+
+  if (tp_str_empty (token))
+    return NULL;
+  else
+    return token;
+}
+
+/**
+ * tp_message_get_specific_to_interface:
+ * @self: a message
+ *
+ * If this message is specific to a particular D-Bus interface and should
+ * be ignored by clients without knowledge of that interface, return the
+ * name of the interface.
+ *
+ * If this message is an ordinary message or delivery report, return %NULL.
+ *
+ * Returns: (transfer none): a D-Bus interface name, or %NULL for ordinary
+ *  messages and delivery reports
+ */
+const gchar *
+tp_message_get_specific_to_interface (TpMessage *self)
+{
+  g_return_val_if_fail (TP_IS_MESSAGE (self), NULL);
+  return tp_asv_get_string (tp_message_peek (self, 0), "interface");
+}
+
+/**
+ * tp_message_is_delivery_report:
+ * @self: a message
+ *
+ * If this message is a delivery report indicating success or failure of
+ * delivering a message, return %TRUE.
+ *
+ * Returns: %TRUE if this is a delivery report
+ */
+gboolean
+tp_message_is_delivery_report (TpMessage *self)
+{
+  gboolean valid;
+
+  g_return_val_if_fail (TP_IS_MESSAGE (self), FALSE);
+
+  tp_asv_get_uint32 (tp_message_peek (self, 0), "delivery-status", &valid);
+  return valid;
+}
+
+/*
+ * Omitted for now:
+ *
+ * sender-nickname - perhaps better done in TpSignalledMessage, so we can use
+ *  the TpContact's nickname if the message doesn't specify?
+ *
+ * pending-message-id - special-purpose, should be encapsulated
+ *
+ * delivery reporting stuff other than "is this a report?" - later
+ */
