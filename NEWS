@@ -43,6 +43,11 @@ Fixes:
 • Fix memory leaks in TpAccount and TpDynamicHandleRepo introduced in 0.13.8
   (cassidy)
 
+• fd.o #32222: fix a leak of TpChannel objects in TpBaseClient, document that
+  Handlers are responsible for closing their channels, warn if channels are
+  still handled when a Handler is disposed, and close channels in some
+  regression tests (Zdra)
+
 telepathy-glib 0.13.8 (2010-12-01)
 ==================================
 
