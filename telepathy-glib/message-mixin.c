@@ -62,6 +62,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/errors.h>
+#include <telepathy-glib/group-mixin.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/message-internal.h>
@@ -128,6 +129,7 @@ static const char * const body_only_incoming[] = {
 static const char * const headers_only[] = {
     "message-type",
     "message-sender",
+    "message-sender-id",
     "message-sent",
     "message-received",
     "message-token",
@@ -137,6 +139,7 @@ static const char * const headers_only[] = {
 
 static const char * const headers_only_incoming[] = {
     "message-sender",
+    "message-sender-id",
     "message-sent",
     "message-received",
     NULL
@@ -857,9 +860,8 @@ tp_message_mixin_sent (GObject *object,
   time_t now = time (NULL);
 
   g_return_if_fail (mixin != NULL);
-  g_return_if_fail (object != NULL);
-  g_return_if_fail (message != NULL);
-  g_return_if_fail (message != NULL);
+  g_return_if_fail (G_IS_OBJECT (object));
+  g_return_if_fail (TP_IS_CM_MESSAGE (message));
   g_return_if_fail (message->parts != NULL);
   g_return_if_fail (cm_msg->outgoing_context != NULL);
   g_return_if_fail (token == NULL || error == NULL);
@@ -877,9 +879,21 @@ tp_message_mixin_sent (GObject *object,
       TpChannelTextMessageType message_type;
       gchar *string;
       GHashTable *header = g_ptr_array_index (message->parts, 0);
+      TpHandle self_handle = 0;
 
       if (tp_asv_get_uint64 (header, "message-sent", NULL) == 0)
         tp_message_set_uint64 (message, 0, "message-sent", time (NULL));
+
+      if (TP_HAS_GROUP_MIXIN (object))
+        {
+          tp_group_mixin_get_self_handle (object, &self_handle, NULL);
+        }
+
+      if (self_handle == 0)
+        self_handle = tp_base_connection_get_self_handle (
+            mixin->priv->connection);
+
+      tp_cm_message_set_sender (message, self_handle);
 
       /* emit Sent and MessageSent */
 

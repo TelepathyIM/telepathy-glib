@@ -81,6 +81,8 @@ static guint message_sent_count = 0;
 static guint last_message_sent_type = 0;
 static gchar *last_message_sent_token = NULL;
 static guint last_message_sent_n_parts = 0;
+static guint last_message_sent_sender = 0;
+static gchar *last_message_sent_sender_id = NULL;
 
 static void
 print_part (gpointer k,
@@ -152,10 +154,14 @@ on_message_sent (TpChannel *chan,
   guint i;
   GHashTable *headers = g_ptr_array_index (parts, 0);
   guint type;
+  guint sender;
+  const gchar *sender_id;
 
   g_assert (parts->len >= 1);
 
   type = tp_asv_get_uint32 (headers, "message-type", NULL);
+  sender = tp_asv_get_uint32 (headers, "message-sender", NULL);
+  sender_id = tp_asv_get_string (headers, "message-sender-id");
 
   g_print ("%p: MessageSent with token '%s': type %u, %u parts\n",
       chan, token, type, parts->len);
@@ -171,6 +177,9 @@ on_message_sent (TpChannel *chan,
   last_message_sent_n_parts = parts->len;
   g_free (last_message_sent_token);
   last_message_sent_token = g_strdup (token);
+  g_free (last_message_sent_sender_id);
+  last_message_sent_sender_id = g_strdup (sender_id);
+  last_message_sent_sender = sender;
 }
 
 static void
@@ -397,6 +406,9 @@ main (int argc,
   MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
   MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       ": %u != NORMAL", last_message_sent_type);
+  g_assert_cmpuint (last_message_sent_sender, ==,
+      tp_connection_get_self_handle (conn));
+  g_assert_cmpstr (last_message_sent_sender_id, ==, "me@example.com");
   MYASSERT (last_message_sent_n_parts == 2,
       ": %u != 2", last_message_sent_n_parts);
   MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -438,6 +450,9 @@ main (int argc,
   MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
   MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
       ": %u != ACTION", last_message_sent_type);
+  g_assert_cmpuint (last_message_sent_sender, ==,
+      tp_connection_get_self_handle (conn));
+  g_assert_cmpstr (last_message_sent_sender_id, ==, "me@example.com");
   MYASSERT (last_message_sent_n_parts == 2,
       ": %u != 2", last_message_sent_n_parts);
   MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
@@ -479,6 +494,9 @@ main (int argc,
   MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
   MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
       ": %u != NOTICE", last_message_sent_type);
+  g_assert_cmpuint (last_message_sent_sender, ==,
+      tp_connection_get_self_handle (conn));
+  g_assert_cmpstr (last_message_sent_sender_id, ==, "me@example.com");
   MYASSERT (last_message_sent_n_parts == 2,
       ": %u != 2", last_message_sent_n_parts);
   MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
@@ -579,6 +597,9 @@ main (int argc,
       ": '%s'", last_received_text);
   MYASSERT (message_sent_count == 1, ": %u != 1", message_sent_count);
   MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
+  g_assert_cmpuint (last_message_sent_sender, ==,
+      tp_connection_get_self_handle (conn));
+  g_assert_cmpstr (last_message_sent_sender_id, ==, "me@example.com");
   MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       ": %u != NORMAL", last_message_sent_type);
   MYASSERT (last_message_sent_n_parts == 4,
@@ -687,6 +708,9 @@ main (int argc,
   MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
   MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       ": %u != NORMAL", last_message_sent_type);
+  g_assert_cmpuint (last_message_sent_sender, ==,
+      tp_connection_get_self_handle (conn));
+  g_assert_cmpstr (last_message_sent_sender_id, ==, "me@example.com");
   MYASSERT (last_message_sent_n_parts == 5,
       ": %u != 5", last_message_sent_n_parts);
   MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -775,6 +799,9 @@ main (int argc,
   MYASSERT (message_received_count == 1, ": %u != 1", message_received_count);
   MYASSERT (last_message_sent_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       ": %u != NORMAL", last_message_sent_type);
+  g_assert_cmpuint (last_message_sent_sender, ==,
+      tp_connection_get_self_handle (conn));
+  g_assert_cmpstr (last_message_sent_sender_id, ==, "me@example.com");
   MYASSERT (last_message_sent_n_parts == 4,
       ": %u != 4", last_message_sent_n_parts);
   MYASSERT (last_message_received_type == TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -1074,6 +1101,7 @@ main (int argc,
   g_free (last_sent_text);
   g_free (last_received_text);
   g_free (last_message_sent_token);
+  g_free (last_message_sent_sender_id);
 
   return 0;
 }

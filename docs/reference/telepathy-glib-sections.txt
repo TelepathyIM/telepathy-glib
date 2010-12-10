@@ -1853,6 +1853,8 @@ tp_handle_type_to_string
 <FILE>group-mixin</FILE>
 <INCLUDE>telepathy-glib/group-mixin.h</INCLUDE>
 <TITLE>TpGroupMixin</TITLE>
+TP_HAS_GROUP_MIXIN
+TP_HAS_GROUP_MIXIN_CLASS
 TpGroupMixinAddMemberFunc
 TpGroupMixinRemMemberFunc
 TpGroupMixinRemMemberWithReasonFunc

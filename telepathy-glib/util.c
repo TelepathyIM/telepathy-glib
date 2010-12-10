@@ -595,7 +595,11 @@ tp_mixin_offset_cast (gpointer instance, guint offset)
  *
  * If the type of @instance, or any of its ancestor types, has had an offset
  * attached using qdata with the given @quark, return that offset. If not,
- * this indicates a programming error and results are undefined.
+ * return 0.
+ *
+ * In older telepathy-glib versions, calling this function on an instance that
+ * did not have the mixin was considered to be a programming error. Since
+ * version 0.13.UNRELEASED, 0 is returned, without error.
  *
  * This is used to implement the telepathy-glib mixin classes.
  *
@@ -617,7 +621,7 @@ tp_mixin_instance_get_offset (gpointer instance,
         return GPOINTER_TO_UINT (qdata);
     }
 
-  g_return_val_if_reached (0);
+  return 0;
 }
 
 
@@ -627,8 +631,12 @@ tp_mixin_instance_get_offset (gpointer instance,
  * @quark: A quark that was used to store the offset with g_type_set_qdata()
  *
  * If the type of @klass, or any of its ancestor types, has had an offset
- * attached using qdata with the given @quark, return that offset. If not,
- * this indicates a programming error and results are undefined.
+ * attached using qdata with the given @quark, return that offset; if not,
+ * return 0.
+ *
+ * In older telepathy-glib versions, calling this function on an instance that
+ * did not have the mixin was considered to be a programming error. Since
+ * version 0.13.UNRELEASED, 0 is returned, without error.
  *
  * This is used to implement the telepathy-glib mixin classes.
  *
@@ -650,7 +658,7 @@ tp_mixin_class_get_offset (gpointer klass,
         return GPOINTER_TO_UINT (qdata);
     }
 
-  g_return_val_if_reached (0);
+  return 0;
 }
 
 
