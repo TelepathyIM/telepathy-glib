@@ -258,7 +258,7 @@ add_message_received (TpTextChannel *self,
 }
 
 static void
-got_sender_contact_cb (TpConnection *connection,
+got_sender_contact_by_handle_cb (TpConnection *connection,
     guint n_contacts,
     TpContact * const *contacts,
     guint n_failed,
@@ -290,6 +290,50 @@ out:
   g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
 }
 
+static void
+got_sender_contact_by_id_cb (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const gchar * const *requested_ids,
+    GHashTable *failed_id_errors,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpTextChannel *self = (TpTextChannel *) weak_object;
+  GPtrArray *parts = user_data;
+  TpContact *sender = NULL;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to prepare TpContact: %s", error->message);
+      goto out;
+    }
+
+  if (n_contacts != 1)
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+
+      g_hash_table_iter_init (&iter, failed_id_errors);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          const gchar *id = key;
+          GError *err = value;
+
+          DEBUG ("Failed to get a TpContact for %s: %s", id, err->message);
+        }
+
+      goto out;
+    }
+
+  sender = contacts[0];
+
+out:
+  add_message_received (self, parts, sender, TRUE);
+  g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
+}
+
 static GPtrArray *
 copy_parts (const GPtrArray *parts)
 {
@@ -304,7 +348,7 @@ get_sender (TpTextChannel *self,
 {
   const GHashTable *header;
   TpHandle handle;
-  const gchar *sender_id;
+  const gchar *sender_id = NULL;
   TpConnection *conn;
 
   g_assert (contact != NULL);
@@ -350,6 +394,7 @@ message_received_cb (TpChannel *proxy,
   TpHandle sender;
   TpConnection *conn;
   TpContact *contact;
+  const gchar *sender_id;
 
   /* If we are still retrieving pending messages, no need to add the message,
    * it will be in the initial set of messages retrieved. */
@@ -358,7 +403,7 @@ message_received_cb (TpChannel *proxy,
 
   DEBUG ("New message received");
 
-  sender = get_sender (self, message, &contact, NULL);
+  sender = get_sender (self, message, &contact, &sender_id);
 
   if (sender == 0)
     {
@@ -377,10 +422,20 @@ message_received_cb (TpChannel *proxy,
 
   conn = tp_channel_borrow_connection (proxy);
 
-  /* We have to request the sender which may result in message re-ordering */
-  tp_connection_get_contacts_by_handle (conn, 1, &sender,
-      0, NULL, got_sender_contact_cb, copy_parts (message),
-      NULL, G_OBJECT (self));
+  /* We have to request the sender which may result in message re-ordering. We
+   * use the ID if possible as the handle may have expired so it's safer. */
+  if (sender_id != NULL)
+    {
+      tp_connection_get_contacts_by_id (conn, 1, &sender_id,
+          0, NULL, got_sender_contact_by_id_cb, copy_parts (message),
+          NULL, G_OBJECT (self));
+    }
+  else
+    {
+      tp_connection_get_contacts_by_handle (conn, 1, &sender,
+          0, NULL, got_sender_contact_by_handle_cb, copy_parts (message),
+          NULL, G_OBJECT (self));
+    }
 }
 
 /* Move this as TpMessage (or TpSignalledMessage?) API ? */
