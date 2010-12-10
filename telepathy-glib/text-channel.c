@@ -142,6 +142,50 @@ tp_text_channel_get_property (GObject *object,
     }
 }
 
+static TpHandle
+get_sender (TpTextChannel *self,
+    const GPtrArray *message,
+    TpContact **contact,
+    const gchar **out_sender_id)
+{
+  const GHashTable *header;
+  TpHandle handle;
+  const gchar *sender_id = NULL;
+  TpConnection *conn;
+
+  g_assert (contact != NULL);
+
+  header = g_ptr_array_index (message, 0);
+  handle = tp_asv_get_uint32 (header, "message-sender", NULL);
+  if (handle == 0)
+    {
+      DEBUG ("Message received on Channel %s doesn't have message-sender, "
+          "please fix CM", tp_proxy_get_object_path (self));
+      goto out;
+    }
+
+  sender_id = tp_asv_get_string (header, "message-sender-id");
+
+  conn = tp_channel_borrow_connection ((TpChannel *) self);
+  *contact = tp_connection_dup_contact_if_possible (conn, handle, sender_id);
+
+  if (*contact == NULL)
+    {
+      if (!tp_connection_has_immortal_handles (conn))
+        DEBUG ("Connection %s don't have immortal handles, please fix CM",
+            tp_proxy_get_object_path (conn));
+      else if (tp_str_empty (sender_id))
+        DEBUG ("Message received on %s doesn't include message-sender-id, "
+            "please fix CM", tp_proxy_get_object_path (self));
+    }
+
+out:
+  if (out_sender_id != NULL)
+    *out_sender_id = sender_id;
+
+  return handle;
+}
+
 static void
 message_sent_cb (TpChannel *channel,
     const GPtrArray *content,
@@ -150,14 +194,33 @@ message_sent_cb (TpChannel *channel,
     gpointer user_data,
     GObject *weak_object)
 {
+  TpTextChannel *self = (TpTextChannel *) channel;
   TpMessage *msg;
+  TpContact *contact;
 
-  msg = _tp_signalled_message_new (content, NULL);
+  get_sender (self, content, &contact, NULL);
+
+  if (contact == NULL)
+    {
+      TpConnection *conn;
+
+      DEBUG ("Failed to get our self contact, please fix CM");
+
+      conn = tp_channel_borrow_connection (channel);
+
+      /* Use the connection self contact as a fallback */
+      contact = tp_connection_get_self_contact (conn);
+      if (contact != NULL)
+        g_object_ref (contact);
+    }
+
+  msg = _tp_signalled_message_new (content, contact);
 
   g_signal_emit (channel, signals[SIG_MESSAGE_SENT], 0, msg, flags,
       tp_str_empty (token) ? NULL : token);
 
   g_object_unref (msg);
+  tp_clear_object (&contact);
 }
 
 static void
@@ -338,50 +401,6 @@ static GPtrArray *
 copy_parts (const GPtrArray *parts)
 {
   return g_boxed_copy (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
-}
-
-static TpHandle
-get_sender (TpTextChannel *self,
-    const GPtrArray *message,
-    TpContact **contact,
-    const gchar **out_sender_id)
-{
-  const GHashTable *header;
-  TpHandle handle;
-  const gchar *sender_id = NULL;
-  TpConnection *conn;
-
-  g_assert (contact != NULL);
-
-  header = g_ptr_array_index (message, 0);
-  handle = tp_asv_get_uint32 (header, "message-sender", NULL);
-  if (handle == 0)
-    {
-      DEBUG ("Message received on Channel %s doesn't have message-sender, "
-          "please fix CM", tp_proxy_get_object_path (self));
-      goto out;
-    }
-
-  sender_id = tp_asv_get_string (header, "message-sender-id");
-
-  conn = tp_channel_borrow_connection ((TpChannel *) self);
-  *contact = tp_connection_dup_contact_if_possible (conn, handle, sender_id);
-
-  if (*contact == NULL)
-    {
-      if (!tp_connection_has_immortal_handles (conn))
-        DEBUG ("Connection %s don't have immortal handles, please fix CM",
-            tp_proxy_get_object_path (conn));
-      else if (tp_str_empty (sender_id))
-        DEBUG ("Message received on %s doesn't include message-sender-id, "
-            "please fix CM", tp_proxy_get_object_path (self));
-    }
-
-out:
-  if (out_sender_id != NULL)
-    *out_sender_id = sender_id;
-
-  return handle;
 }
 
 static void
