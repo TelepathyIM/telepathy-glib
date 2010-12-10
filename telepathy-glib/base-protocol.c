@@ -442,6 +442,9 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * interface's Statuses property. Since 0.13.5
  * @get_avatar_details: a callback used to implement the
  *  Protocol.Interface.Avatars interface's properties. Since 0.13.7
+ * @dup_authentication_types: a callback used to implement the
+ *  AuthenticationTypes D-Bus property; it must return a newly allocated #GStrv
+ *  containing D-Bus interface names. Since 0.13.UNRELEASED
  *
  * The class of a #TpBaseProtocol.
  *
@@ -478,6 +481,7 @@ struct _TpBaseProtocolPrivate
   gchar *name;
   GStrv interfaces;
   GStrv connection_interfaces;
+  GStrv authentication_types;
   GPtrArray *requestable_channel_classes;
   gchar *icon;
   gchar *english_name;
@@ -601,6 +605,16 @@ tp_base_protocol_constructed (GObject *object)
 
   if (self->priv->avatar_specs.supported_mime_types == NULL)
     self->priv->avatar_specs.supported_mime_types = g_new0 (gchar *, 1);
+
+  if (cls->dup_authentication_types != NULL)
+    {
+      self->priv->authentication_types = cls->dup_authentication_types (self);
+    }
+  else
+    {
+      const gchar * const tmp[] = { NULL };
+      self->priv->authentication_types = g_strdupv ((GStrv) tmp);
+    }
 }
 
 /**
@@ -668,6 +682,7 @@ tp_base_protocol_get_immutable_properties (TpBaseProtocol *self)
       TP_IFACE_PROTOCOL, "VCardField",
       TP_IFACE_PROTOCOL, "EnglishName",
       TP_IFACE_PROTOCOL, "Icon",
+      TP_IFACE_PROTOCOL, "AuthenticationTypes",
       NULL);
 
   /* FIXME: when we support avatar requirements, etc., we could use
@@ -732,6 +747,7 @@ tp_base_protocol_finalize (GObject *object)
   g_free (self->priv->name);
   g_strfreev (self->priv->interfaces);
   g_strfreev (self->priv->connection_interfaces);
+  g_strfreev (self->priv->authentication_types);
   g_free (self->priv->icon);
   g_free (self->priv->english_name);
   g_free (self->priv->vcard_field);
@@ -754,6 +770,7 @@ typedef enum {
     PP_VCARD_FIELD,
     PP_ENGLISH_NAME,
     PP_ICON,
+    PP_AUTHENTICATION_TYPES,
     N_PP
 } ProtocolProp;
 
@@ -937,6 +954,10 @@ protocol_properties_getter (GObject *object,
       g_value_set_string (value, self->priv->icon);
       break;
 
+    case PP_AUTHENTICATION_TYPES:
+      g_value_set_boxed (value, self->priv->authentication_types);
+      break;
+
     default:
       g_assert_not_reached ();
     }
@@ -955,6 +976,8 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
       { "VCardField", GINT_TO_POINTER (PP_VCARD_FIELD), NULL },
       { "EnglishName", GINT_TO_POINTER (PP_ENGLISH_NAME), NULL },
       { "Icon", GINT_TO_POINTER (PP_ICON), NULL },
+      { "AuthenticationTypes", GINT_TO_POINTER (PP_AUTHENTICATION_TYPES),
+        NULL },
       { NULL }
   };
 

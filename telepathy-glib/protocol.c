@@ -140,6 +140,7 @@ struct _TpProtocolPrivate
   gchar *vcard_field;
   gchar *english_name;
   gchar *icon_name;
+  GStrv authentication_types;
   TpCapabilities *capabilities;
 };
 
@@ -152,6 +153,7 @@ enum
     PROP_ICON_NAME,
     PROP_CAPABILITIES,
     PROP_PARAM_NAMES,
+    PROP_AUTHENTICATION_TYPES,
     N_PROPS
 };
 
@@ -274,6 +276,10 @@ tp_protocol_get_property (GObject *object,
       g_value_take_boxed (value, tp_protocol_dup_param_names (self));
       break;
 
+    case PROP_AUTHENTICATION_TYPES:
+      g_value_set_boxed (value, tp_protocol_get_authentication_types (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -344,6 +350,12 @@ tp_protocol_dispose (GObject *object)
     {
       g_object_unref (self->priv->capabilities);
       self->priv->capabilities = NULL;
+    }
+
+  if (self->priv->authentication_types)
+    {
+      g_strfreev (self->priv->authentication_types);
+      self->priv->authentication_types = NULL;
     }
 
   if (dispose != NULL)
@@ -424,6 +436,7 @@ tp_protocol_constructed (GObject *object)
   const gchar *s;
   const GPtrArray *rccs;
   gboolean had_immutables = TRUE;
+  const gchar * const *auth_types = NULL;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -475,6 +488,20 @@ tp_protocol_constructed (GObject *object)
 
   if (rccs != NULL)
     self->priv->capabilities = _tp_capabilities_new (rccs, FALSE);
+
+  auth_types = tp_asv_get_boxed (
+      self->priv->protocol_properties,
+      TP_PROP_PROTOCOL_AUTHENTICATION_TYPES, G_TYPE_STRV);
+
+  if (auth_types != NULL)
+    {
+      self->priv->authentication_types = g_strdupv ((GStrv) auth_types);
+    }
+  else
+    {
+      gchar *tmp[] = { NULL };
+      self->priv->authentication_types = g_strdupv (tmp);
+    }
 
   /* become ready immediately */
   _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_PARAMETERS,
@@ -641,6 +668,22 @@ tp_protocol_class_init (TpProtocolClass *klass)
       g_param_spec_boxed ("param-names",
         "Parameter names",
         "A list of parameter names",
+        G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:authentication-types:
+   *
+   * A non-%NULL #GStrv of interfaces which provide information as to
+   * what kind of authentication channels can possibly appear before
+   * the connection reaches the CONNECTED state, or %NULL if
+   * %TP_PROTOCOL_FEATURE_CORE has not been prepared.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_AUTHENTICATION_TYPES,
+      g_param_spec_boxed ("authentication-types",
+        "AuthenticationTypes",
+        "A list of authentication types",
         G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   proxy_class->list_features = tp_protocol_list_features;
@@ -891,6 +934,24 @@ tp_protocol_get_icon_name (TpProtocol *self)
 {
   g_return_val_if_fail (TP_IS_PROTOCOL (self), "dialog-error");
   return self->priv->icon_name;
+}
+
+/**
+ * tp_protocol_get_authentication_types
+ * @self: a protocol object
+ *
+ *
+ <!-- -->
+ *
+ * Returns: the value of #TpProtocol:authentication-types
+ *
+ * Since: 0.13.UNRELEASED
+ */
+const gchar * const *
+tp_protocol_get_authentication_types (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+  return (const gchar * const *) self->priv->authentication_types;
 }
 
 /**

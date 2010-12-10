@@ -89,6 +89,10 @@ gboolean tp_protocol_has_param (TpProtocol *self,
 gboolean tp_protocol_can_register (TpProtocol *self);
 GStrv tp_protocol_dup_param_names (TpProtocol *self) G_GNUC_WARN_UNUSED_RESULT;
 
+const gchar * const *
+/* gtk-doc sucks */
+tp_protocol_get_authentication_types (TpProtocol *self);
+
 #define TP_PROTOCOL_FEATURE_CORE \
   (tp_protocol_get_feature_quark_core ())
 GQuark tp_protocol_get_feature_quark_core (void) G_GNUC_CONST;
