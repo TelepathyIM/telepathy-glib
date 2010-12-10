@@ -161,6 +161,8 @@ get_sender (TpTextChannel *self,
     {
       DEBUG ("Message received on Channel %s doesn't have message-sender, "
           "please fix CM", tp_proxy_get_object_path (self));
+
+      *contact = NULL;
       goto out;
     }
 
