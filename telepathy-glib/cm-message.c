@@ -234,3 +234,21 @@ _tp_cm_message_new_from_parts (TpBaseConnection *conn,
 
   return self;
 }
+
+/**
+ * tp_cm_message_get_sender:
+ * @self: a #TpCMMessage
+ *
+ * Return the sender of @self, i.e. the "message-sender" key of the header,
+ * or 0 if there is no sender.
+ *
+ * Returns: a %TP_HANDLE_TYPE_CONTACT handle, or 0
+ *
+ * @since 0.13.UNRELEASED
+ */
+TpHandle
+tp_cm_message_get_sender (TpMessage *self)
+{
+  g_return_val_if_fail (TP_IS_CM_MESSAGE (self), 0);
+  return tp_asv_get_uint32 (tp_message_peek (self, 0), "message-sender", NULL);
+}
