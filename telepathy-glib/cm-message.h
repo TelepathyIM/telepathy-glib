@@ -56,7 +56,7 @@ void tp_cm_message_set_sender (TpMessage *self,
 #ifndef TP_DISABLE_DEPRECATED
 TpMessage *tp_message_new (TpBaseConnection *connection,
     guint initial_parts,
-    guint size_hint) G_GNUC_WARN_UNUSED_RESULT _TP_GNUC_DEPRECATED;
+    guint size_hint) G_GNUC_WARN_UNUSED_RESULT;
 #endif
 
 G_END_DECLS

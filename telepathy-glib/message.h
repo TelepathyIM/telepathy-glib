@@ -74,13 +74,13 @@ gchar * tp_message_to_text (TpMessage *message,
 #ifndef TP_DISABLE_DEPRECATED
 /* Takes a TpCMMessage */
 void tp_message_set_handle (TpMessage *self, guint part, const gchar *key,
-    TpHandleType handle_type, TpHandle handle_or_0) _TP_GNUC_DEPRECATED;
+    TpHandleType handle_type, TpHandle handle_or_0);
 
 void tp_message_take_message (TpMessage *self, guint part, const gchar *key,
-    TpMessage *message) _TP_GNUC_DEPRECATED;
+    TpMessage *message);
 
 void tp_message_ref_handle (TpMessage *self, TpHandleType handle_type,
-    TpHandle handle) _TP_GNUC_DEPRECATED;
+    TpHandle handle);
 #endif
 
 gboolean tp_message_is_mutable (TpMessage *self);
