@@ -872,6 +872,25 @@ tp_message_get_token (TpMessage *self)
 }
 
 /**
+ * tp_message_get_message_type:
+ * @self: a message
+ *
+ * <!-- -->
+ *
+ * Returns: the type of this message
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpChannelTextMessageType
+tp_message_get_message_type (TpMessage *self)
+{
+  g_return_val_if_fail (TP_IS_MESSAGE (self),
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
+  /* if message-type is absent or invalid we just return 0, which is NORMAL */
+  return tp_asv_get_uint32 (tp_message_peek (self, 0), "message-type", NULL);
+}
+
+/**
  * tp_message_get_sent_timestamp:
  * @self: a message
  *
