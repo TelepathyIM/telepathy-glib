@@ -1823,7 +1823,7 @@ tp_group_mixin_change_members (GObject *obj,
  *  signals were emitted; %FALSE if nothing actually changed and the signals
  *  were suppressed.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 gboolean
 tp_group_mixin_change_members_detailed (GObject *obj,
@@ -1942,7 +1942,7 @@ add_handle_owners_helper (gpointer key,
  * handle to the members, local-pending members or remote-pending members, you
  * must call either this function or tp_group_mixin_add_handle_owner().
  *
- * @since 0.7.10
+ * Since: 0.7.10
  */
 void
 tp_group_mixin_add_handle_owners (GObject *obj,

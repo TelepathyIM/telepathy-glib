@@ -29,7 +29,7 @@
  * Its subclass #TpSignalledMessage represents messages as signalled by a
  * connection manager.
  *
- * @since 0.13.9
+ * Since: 0.13.9
  */
 
 #include "client-message.h"

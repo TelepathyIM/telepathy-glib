@@ -49,7 +49,7 @@
  * tp_message_mixin_implement_sending() in the constructor function. If you do
  * not, any attempt to send a message will fail with NotImplemented.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 
 #include <telepathy-glib/message-mixin.h>
@@ -79,7 +79,7 @@
  *
  * There are no public fields.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 
 struct _TpMessageMixinPrivate
@@ -160,7 +160,7 @@ static const char * const headers_only_incoming[] = {
  *
  * Returns: the quark used for storing mixin offset on a GObject
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 static GQuark
 tp_message_mixin_get_offset_quark (void)
@@ -257,7 +257,7 @@ parts_to_text (TpMessage *msg,
  * constructed callback, after tp_message_mixin_init(), and may only be called
  * once per object.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_mixin_implement_sending (GObject *object,
@@ -307,7 +307,7 @@ tp_message_mixin_implement_sending (GObject *object,
  *     self->connection);
  * </programlisting></informalexample>
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_mixin_init (GObject *obj,
@@ -362,7 +362,7 @@ tp_message_mixin_clear (GObject *obj)
  *
  * Free resources held by the text mixin.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_mixin_finalize (GObject *obj)
@@ -697,7 +697,7 @@ queue_pending (GObject *object, TpMessage *pending)
  *
  * Returns: the message ID
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 guint
 tp_message_mixin_take_received (GObject *object,
@@ -815,7 +815,7 @@ tp_message_mixin_set_rescued (GObject *obj)
  * the connection manager has no way to know how the keys and values will be
  * freed).
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 
 
@@ -846,7 +846,7 @@ struct _TpMessageMixinOutgoingMessagePrivate {
  * After this function is called, @message will have been freed, and must not
  * be dereferenced.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_mixin_sent (GObject *object,
@@ -1187,7 +1187,7 @@ tp_message_mixin_get_dbus_property (GObject *object,
  * Fill in this mixin's Text method implementations in the given interface
  * vtable.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_mixin_text_iface_init (gpointer g_iface,
@@ -1213,7 +1213,7 @@ tp_message_mixin_text_iface_init (gpointer g_iface,
  * Fill in this mixin's Messages method implementations in the given interface
  * vtable.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_mixin_messages_iface_init (gpointer g_iface,

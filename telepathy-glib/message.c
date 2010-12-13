@@ -27,7 +27,7 @@
  * #TpMessage represent a message send or received using the Message
  * interface.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 
 #include "message.h"
@@ -127,8 +127,8 @@ tp_message_init (TpMessage *self)
  * Returns: a newly allocated message suitable to be passed to
  * tp_message_mixin_take_received
  *
- * @since 0.7.21
- * @deprecated since 0.13.9. Use tp_cm_message_new()
+ * Since: 0.7.21
+ * Deprecated: since 0.13.9. Use tp_cm_message_new()
  */
 TpMessage *
 tp_message_new (TpBaseConnection *connection,
@@ -148,7 +148,7 @@ tp_message_new (TpBaseConnection *connection,
  * Since 0.13.9 this function is a simple wrapper around
  * g_object_unref()
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_destroy (TpMessage *self)
@@ -165,7 +165,7 @@ tp_message_destroy (TpMessage *self)
  * Returns: the number of parts in the message, including the headers in
  * part 0
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 guint
 tp_message_count_parts (TpMessage *self)
@@ -184,7 +184,7 @@ tp_message_count_parts (TpMessage *self)
  *  part number is out of range. The hash table is only valid as long as the
  *  message is valid and the part is not deleted.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 const GHashTable *
 tp_message_peek (TpMessage *self,
@@ -205,7 +205,7 @@ tp_message_peek (TpMessage *self,
  *
  * Returns: the part number
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 guint
 tp_message_append_part (TpMessage *self)
@@ -225,7 +225,7 @@ tp_message_append_part (TpMessage *self)
  *
  * Delete the given body part from the message.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_delete_part (TpMessage *self,
@@ -247,8 +247,8 @@ tp_message_delete_part (TpMessage *self,
  *
  * Reference the given handle until this message is destroyed.
  *
- * @since 0.7.21
- * @deprecated since 0.13.9. Handles are now immortal so there is
+ * Since: 0.7.21
+ * Deprecated: since 0.13.9. Handles are now immortal so there is
  * no point to ref them. Furthermore, the only handle that should be stored
  * in a TpMessage is message-sender which should be set using
  * tp_cm_message_set_sender().
@@ -275,7 +275,7 @@ tp_message_ref_handle (TpMessage *self,
  *
  * Returns: %TRUE if the key previously existed
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 gboolean
 tp_message_delete_key (TpMessage *self,
@@ -307,8 +307,8 @@ tp_message_delete_key (TpMessage *self,
  * tp_cm_message_set_sender() as 'message-sender' is the only handle
  * you can put in a #TpCMMessage.
  *
- * @since 0.7.21
- * @deprecated since 0.13.9. Use tp_cm_message_set_sender()
+ * Since: 0.7.21
+ * Deprecated: since 0.13.9. Use tp_cm_message_set_sender()
  */
 void
 tp_message_set_handle (TpMessage *self,
@@ -334,7 +334,7 @@ tp_message_set_handle (TpMessage *self,
  *
  * Set @key in part @part of @self to have @b as a boolean value.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_set_boolean (TpMessage *self,
@@ -360,7 +360,7 @@ tp_message_set_boolean (TpMessage *self,
  *
  * Set @key in part @part of @self to have @i as a signed integer value.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 
 /**
@@ -373,7 +373,7 @@ tp_message_set_boolean (TpMessage *self,
  *
  * Set @key in part @part of @self to have @i as a signed integer value.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_set_int32 (TpMessage *self,
@@ -400,7 +400,7 @@ tp_message_set_int32 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @i as a signed integer value.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_set_int64 (TpMessage *self,
@@ -427,7 +427,7 @@ tp_message_set_int64 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @u as an unsigned integer value.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 
 /**
@@ -440,7 +440,7 @@ tp_message_set_int64 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @u as an unsigned integer value.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_set_uint32 (TpMessage *self,
@@ -467,7 +467,7 @@ tp_message_set_uint32 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @u as an unsigned integer value.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_set_uint64 (TpMessage *self,
@@ -494,7 +494,7 @@ tp_message_set_uint64 (TpMessage *self,
  *
  * Set @key in part @part of @self to have @s as a string value.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_set_string (TpMessage *self,
@@ -524,7 +524,7 @@ tp_message_set_string (TpMessage *self,
  * Set @key in part @part of @self to have a string value constructed from a
  * printf-style format string.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_set_string_printf (TpMessage *self,
@@ -561,7 +561,7 @@ tp_message_set_string_printf (TpMessage *self,
  *
  * Set @key in part @part of @self to have @bytes as a byte-array value.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_set_bytes (TpMessage *self,
@@ -594,7 +594,7 @@ tp_message_set_bytes (TpMessage *self,
  * If @source represents a data structure containing handles, they should
  * all be referenced with tp_message_ref_handle() first.
  *
- * @since 0.7.21
+ * Since: 0.7.21
  */
 void
 tp_message_set (TpMessage *self,
@@ -625,8 +625,8 @@ tp_message_set (TpMessage *self,
  * references owned by @message will subsequently belong to and be released
  * with @self.
  *
- * @since 0.7.21
- * @deprecated since 0.13.9. Use tp_cm_message_take_message()
+ * Since: 0.7.21
+ * Deprecated: since 0.13.9. Use tp_cm_message_take_message()
  */
 void
 tp_message_take_message (TpMessage *self,
@@ -658,7 +658,7 @@ subtract_from_hash (gpointer key,
  * Returns: (transfer full): a newly allocated string containing the
  * text content of #message
  *
- * @since 0.13.9
+ * Since: 0.13.9
  */
 gchar *
 tp_message_to_text (TpMessage *message,
@@ -831,7 +831,7 @@ _tp_message_set_immutable (TpMessage *self)
  *
  * Returns: %TRUE if the message is mutable.
  *
- * @since 0.13.9
+ * Since: 0.13.9
  */
 gboolean
 tp_message_is_mutable (TpMessage *self)
