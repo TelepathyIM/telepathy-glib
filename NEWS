@@ -9,6 +9,9 @@ Fixes:
 • TpBaseClient will now return (an error) from ObserveChannels if an invalid
   connection path is passed to it by the Channel Dispatcher. (wjt)
 
+• fd.o#32184: Connection bus names are no longer erroneously released while
+  connections are still open. This was a regression in 0.13.5. (wjt)
+
 …
 
 telepathy-glib 0.13.9 (2010-12-10)
