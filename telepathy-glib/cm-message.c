@@ -254,3 +254,40 @@ tp_cm_message_get_sender (TpMessage *self)
   g_return_val_if_fail (TP_IS_CM_MESSAGE (self), 0);
   return tp_asv_get_uint32 (tp_message_peek (self, 0), "message-sender", NULL);
 }
+
+/**
+ * tp_cm_message_new_text:
+ * @conn: a connection
+ * @sender: the #TpHandle of the sender of the message
+ * @type: the type of message
+ * @text: content of the messsage
+ *
+ * A convenient function to create a new #TpCMMessage having
+ * 'text/plain' as 'content-type', @type as 'message-type',
+ * @text as 'content' and @sender as its sender.
+ *
+ * Returns: (transfer full): a newly allocated #TpCMMessage
+ *
+ * Since: 0.13.UNRELEASED
+ */
+TpMessage *
+tp_cm_message_new_text (TpBaseConnection *conn,
+    TpHandle sender,
+    TpChannelTextMessageType type,
+    const gchar *text)
+{
+  TpMessage *msg;
+
+  msg = tp_cm_message_new (conn, 2);
+
+  if (sender != 0)
+    tp_cm_message_set_sender (msg, sender);
+
+  if (type != TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL)
+    tp_message_set_uint32 (msg, 0, "message-type", type);
+
+  tp_message_set_string (msg, 1, "content-type", "text/plain");
+  tp_message_set_string (msg, 1, "content", text);
+
+  return msg;
+}
