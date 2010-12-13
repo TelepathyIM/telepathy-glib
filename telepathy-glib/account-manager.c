@@ -880,7 +880,8 @@ out:
  * The caller must keep a ref to the returned object using g_object_ref() if
  * it is to be kept.
  *
- * Returns: (transfer none): a new #TpAccount at @path
+ * Returns: (transfer none): a new #TpAccount at @path, or %NULL if @path is
+ *  not a valid account path.
  *
  * Since: 0.9.0
  */
@@ -891,6 +892,7 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
   TpAccountManagerPrivate *priv;
   TpAccount *account;
   GQuark fs[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
+  GError *error = NULL;
 
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
   g_return_val_if_fail (path != NULL, NULL);
@@ -901,13 +903,17 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
   if (account != NULL)
     return account;
 
-  account = tp_account_new (tp_proxy_get_dbus_daemon (manager), path, NULL);
-  g_return_val_if_fail (account != NULL, NULL);
-  g_hash_table_insert (priv->accounts, g_strdup (path), account);
+  account = tp_account_new (tp_proxy_get_dbus_daemon (manager), path, &error);
+  if (account == NULL)
+    {
+      DEBUG ("tp_account_new() failed: %s", error->message);
+      g_clear_error (&error);
+      return NULL;
+    }
 
+  g_hash_table_insert (priv->accounts, g_strdup (path), account);
   tp_account_prepare_async (account, fs, _tp_account_manager_account_ready_cb,
       g_object_ref (manager));
-
   return account;
 }
 

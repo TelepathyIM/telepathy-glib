@@ -1548,7 +1548,10 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   connection = tp_account_ensure_connection (account, connection_path);
   if (connection == NULL)
     {
-      DEBUG ("Failed to create TpConnection");
+      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Connection %s doesn't seem to exist. (Maybe the CM doesn't own "
+          "the corresponding bus name?)", connection_path);
+      DEBUG ("Failed to create TpConnection: %s", error->message);
       goto out;
     }
 
