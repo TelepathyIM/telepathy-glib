@@ -57,6 +57,7 @@ test_new_from_parts (Test *test,
   g_assert_no_error (test->error);
 
   g_ptr_array_add (parts, tp_asv_new (
+        "message-type", G_TYPE_UINT, TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
         "message-sender", G_TYPE_UINT, sender,
         "message-token", G_TYPE_STRING, "token",
         "message-sent", G_TYPE_INT64, G_GINT64_CONSTANT (42),
@@ -90,6 +91,8 @@ test_new_from_parts (Test *test,
   g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
       "Badger");
 
+  g_assert_cmpuint (tp_message_get_message_type (msg), ==,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE);
   g_assert_cmpuint (tp_cm_message_get_sender (msg), ==, sender);
   g_assert_cmpstr (tp_message_get_token (msg), ==, "token");
   g_assert_cmpint ((gint) tp_message_get_sent_timestamp (msg), ==, 42);
