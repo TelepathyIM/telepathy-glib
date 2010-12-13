@@ -45,6 +45,8 @@
  *
  * Opaque structure representing a received message using the Telepathy
  * messages interface
+ *
+ * Since: 0.13.9
  */
 
 enum

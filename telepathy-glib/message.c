@@ -853,6 +853,8 @@ tp_message_is_mutable (TpMessage *self)
  * If there is no suitable token, return %NULL.
  *
  * Returns: (transfer none): a non-empty opaque identifier, or %NULL if none
+ *
+ * Since: 0.13.9
  */
 const gchar *
 tp_message_get_token (TpMessage *self)
@@ -882,6 +884,8 @@ tp_message_get_token (TpMessage *self)
  * time at which it arrived at a central server.
  *
  * Returns: a Unix timestamp, or 0
+ *
+ * Since: 0.13.9
  */
 gint64
 tp_message_get_sent_timestamp (TpMessage *self)
@@ -899,6 +903,8 @@ tp_message_get_sent_timestamp (TpMessage *self)
  * g_date_time_new_from_unix_utc(), for instance), or 0 if not known.
  *
  * Returns: a Unix timestamp, or 0
+ *
+ * Since: 0.13.9
  */
 gint64
 tp_message_get_received_timestamp (TpMessage *self)
@@ -916,6 +922,8 @@ tp_message_get_received_timestamp (TpMessage *self)
  *
  * Returns: %TRUE if this message is part of a replay of message history, for
  *  instance in an XMPP chatroom.
+ *
+ * Since: 0.13.9
  */
 gboolean
 tp_message_is_scrollback (TpMessage *self)
@@ -937,6 +945,8 @@ tp_message_is_scrollback (TpMessage *self)
  *
  * Returns: %TRUE if this message was seen in a previous Channel on this
  *  Connection
+ *
+ * Since: 0.13.9
  */
 gboolean
 tp_message_is_rescued (TpMessage *self)
@@ -956,6 +966,8 @@ tp_message_is_rescued (TpMessage *self)
  * message with this message, or grey out the superseded message.
  *
  * Returns: (transfer none): a non-empty opaque identifier, or %NULL if none
+ *
+ * Since: 0.13.9
  */
 const gchar *
 tp_message_get_supersedes (TpMessage *self)
@@ -984,6 +996,8 @@ tp_message_get_supersedes (TpMessage *self)
  *
  * Returns: (transfer none): a D-Bus interface name, or %NULL for ordinary
  *  messages and delivery reports
+ *
+ * Since: 0.13.9
  */
 const gchar *
 tp_message_get_specific_to_interface (TpMessage *self)
@@ -1000,6 +1014,8 @@ tp_message_get_specific_to_interface (TpMessage *self)
  * delivering a message, return %TRUE.
  *
  * Returns: %TRUE if this is a delivery report
+ *
+ * Since: 0.13.9
  */
 gboolean
 tp_message_is_delivery_report (TpMessage *self)
