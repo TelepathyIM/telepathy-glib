@@ -1,6 +1,14 @@
 telepathy-glib 0.12.7 (UNRELEASED)
 ==================================
 
+Fixes:
+
+• tp_account_manager_ensure_account() no longer criticals if you pass it a
+  malformed account path. (wjt)
+
+• TpBaseClient will now return (an error) from ObserveChannels if an invalid
+  connection path is passed to it by the Channel Dispatcher. (wjt)
+
 …
 
 telepathy-glib 0.12.6 (2010-12-10)
