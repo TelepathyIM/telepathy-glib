@@ -91,7 +91,7 @@ enum
 enum /* signals */
 {
   SIG_MESSAGE_RECEIVED,
-  SIG_PENDING_MESSAGES_REMOVED,
+  SIG_PENDING_MESSAGE_REMOVED,
   SIG_MESSAGE_SENT,
   LAST_SIGNAL
 };
@@ -505,7 +505,7 @@ pending_messages_removed_cb (TpChannel *proxy,
               self->priv->pending_messages = g_list_delete_link (
                   self->priv->pending_messages, l);
 
-              g_signal_emit (self, signals[SIG_PENDING_MESSAGES_REMOVED],
+              g_signal_emit (self, signals[SIG_PENDING_MESSAGE_REMOVED],
                   0, msg);
 
               g_object_unref (msg);
@@ -883,7 +883,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    *
    * Since: 0.13.UNRELEASED
    */
-  signals[SIG_PENDING_MESSAGES_REMOVED] = g_signal_new (
+  signals[SIG_PENDING_MESSAGE_REMOVED] = g_signal_new (
       "pending-message-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
