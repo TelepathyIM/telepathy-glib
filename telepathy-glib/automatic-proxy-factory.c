@@ -194,7 +194,7 @@ tp_automatic_proxy_factory_dup_channel_features_impl (TpChannel *channel)
 static GArray *
 tp_automatic_proxy_factory_obj_dup_channel_features (
     TpClientChannelFactory *self G_GNUC_UNUSED,
-    TpChannel *channel G_GNUC_UNUSED)
+    TpChannel *channel)
 {
   return tp_automatic_proxy_factory_dup_channel_features_impl (channel);
 }
@@ -202,7 +202,7 @@ tp_automatic_proxy_factory_obj_dup_channel_features (
 static GArray *
 tp_automatic_proxy_factory_dup_channel_features (
     TpClientChannelFactoryInterface *iface G_GNUC_UNUSED,
-    TpChannel *channel G_GNUC_UNUSED)
+    TpChannel *channel)
 {
   return tp_automatic_proxy_factory_dup_channel_features_impl (channel);
 }
