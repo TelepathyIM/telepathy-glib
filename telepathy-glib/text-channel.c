@@ -1056,8 +1056,8 @@ send_message_cb (TpChannel *proxy,
       g_simple_async_result_set_from_error (result, error);
     }
 
-  g_simple_async_result_set_op_res_gpointer (result, g_strdup (token),
-      g_free);
+  g_simple_async_result_set_op_res_gpointer (result,
+      tp_str_empty (token) ? NULL : g_strdup (token), g_free);
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
