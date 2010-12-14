@@ -1028,7 +1028,8 @@ tp_text_channel_get_feature_quark_pending_messages (void)
  * tp_text_channel_get_pending_messages:
  * @self: a #TpTextChannel
  *
- * Return the a newly allocated list of not acked #TpSignalledMessage.
+ * Return the a newly allocated list of unacknowledged #TpSignalledMessage
+ * objects.
  *
  * Returns: (transfer container): a #GList of borrowed #TpSignalledMessage
  *
