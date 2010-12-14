@@ -52,7 +52,7 @@ struct _TpTLSCertificatePrivate {
 };
 
 G_DEFINE_TYPE (TpTLSCertificate, tp_tls_certificate,
-    TP_TYPE_PROXY);
+    TP_TYPE_PROXY)
 
 /**
  * TP_TLS_CERTIFICATE_FEATURE_CORE:
