@@ -232,6 +232,79 @@ test_watch_name_owner (void)
   mainloop = NULL;
 }
 
+/* Here's a regression test for a bug where, if a name owner watch callback
+ * removes itself, subsequent callbacks for the same change would not fire.
+ * This was because the implementation was an array of callbacks, with an index
+ * i, calling each in turn. So imagine we're dispatching three callbacks,
+ * starting with 'foo':
+ *
+ *   | foo | bar | baz |
+ *     i=0
+ *
+ * If 'foo' cancels its own watch, it would be removed from the array. Then the
+ * iteration would continue by incrementing i:
+ *
+ *   | bar | baz |
+ *           i=1
+ *
+ * and 'bar' has not been called! Gulp. This test checks this case by setting
+ * up ten numbered callbacks, each one of which removes itself and itself ±1,
+ * so that each of (0, 1), (2, 3), (4, 5), (6, 7), (8, 9) should fire exactly
+ * once. It should work regardless of the internal order of callbacks.
+ */
+#define N_CALLBACK_PAIRS 5
+gboolean callbacks_fired[N_CALLBACK_PAIRS] =
+    { FALSE, FALSE, FALSE, FALSE, FALSE };
+
+static void
+bbf3_performed_cb (
+    TpDBusDaemon *bus_daemon,
+    const gchar *name,
+    const gchar *new_owner,
+    gpointer user_data)
+{
+  guint i = GPOINTER_TO_UINT (user_data);
+  guint even = i - (i % 2);
+  guint odd = even + 1;
+  guint j;
+
+  g_message ("%u fired; cancelling %u and %u", i, even, odd);
+  tp_dbus_daemon_cancel_name_owner_watch (bus_daemon, name, bbf3_performed_cb,
+      GUINT_TO_POINTER (even));
+  tp_dbus_daemon_cancel_name_owner_watch (bus_daemon, name, bbf3_performed_cb,
+      GUINT_TO_POINTER (odd));
+
+  g_assert (!callbacks_fired[even / 2]);
+  callbacks_fired[even / 2] = TRUE;
+
+  for (j = 0; j < N_CALLBACK_PAIRS; j++)
+    if (!callbacks_fired[j])
+      {
+        g_message ("still waiting for %u or %u, at least", j * 2, j * 2 + 1);
+        return;
+      }
+
+  g_main_loop_quit (mainloop);
+}
+
+static void
+cancel_watch_during_dispatch (void)
+{
+  TpDBusDaemon *bus = tp_dbus_daemon_dup (NULL);
+  guint i;
+
+  tp_dbus_daemon_request_name (bus, "ca.bbf3", FALSE, NULL);
+
+  for (i = 0; i < N_CALLBACK_PAIRS * 2; i++)
+    tp_dbus_daemon_watch_name_owner (bus, "ca.bbf3", bbf3_performed_cb,
+        GUINT_TO_POINTER (i), NULL);
+
+  mainloop = g_main_loop_new (NULL, FALSE);
+  g_main_loop_run (mainloop);
+  g_main_loop_unref (mainloop);
+  g_object_unref (bus);
+}
+
 int
 main (int argc,
       char **argv)
@@ -244,6 +317,8 @@ main (int argc,
   g_test_add_func ("/dbus/validation", test_validation);
   g_test_add_func ("/dbus-daemon/properties", test_properties);
   g_test_add_func ("/dbus-daemon/watch-name-owner", test_watch_name_owner);
+  g_test_add_func ("/dbus-daemon/cancel-watch-during-dispatch",
+      cancel_watch_during_dispatch);
 
   return g_test_run ();
 }
