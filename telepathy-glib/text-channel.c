@@ -665,6 +665,7 @@ get_pending_messages_cb (TpProxy *proxy,
       if (sender_id != NULL)
         g_ptr_array_add (sender_ids, (gpointer) sender_id);
 
+      /* We'll revert the list below when requesting the TpContact objects */
       parts_list = g_list_prepend (parts_list, copy_parts (parts));
     }
 
