@@ -32,6 +32,7 @@
 #include <telepathy-glib/proxy-internal.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_TLS
 #include "debug-internal.h"
@@ -352,11 +353,7 @@ tp_tls_certificate_accept_finish (TpTLSCertificate *self,
     GAsyncResult *result,
     GError **error)
 {
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-          error))
-    return FALSE;
-
-  return TRUE;
+  _tp_implement_finish_void (self, tp_tls_certificate_accept_async)
 }
 
 static GPtrArray *
@@ -409,11 +406,7 @@ tp_tls_certificate_reject_finish (TpTLSCertificate *self,
     GAsyncResult *result,
     GError **error)
 {
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-          error))
-    return FALSE;
-
-  return TRUE;
+  _tp_implement_finish_void (self, tp_tls_certificate_reject_async)
 }
 
 #include <telepathy-glib/_gen/tp-cli-tls-cert-body.h>
