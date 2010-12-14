@@ -340,18 +340,18 @@ got_sender_contact_by_handle_cb (TpConnection *connection,
   if (error != NULL)
     {
       DEBUG ("Failed to prepare TpContact: %s", error->message);
-      goto out;
     }
-
-  if (n_failed > 0)
+  else if (n_failed > 0)
     {
       DEBUG ("Failed to prepare TpContact (InvalidHandle)");
-      goto out;
+
+      sender = contacts[0];
+    }
+  else
+    {
+      DEBUG ("TpContact of the sender hasn't be prepared");
     }
 
-  sender = contacts[0];
-
-out:
   add_message_received (self, parts, sender, TRUE);
   g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
 }
@@ -373,10 +373,8 @@ got_sender_contact_by_id_cb (TpConnection *connection,
   if (error != NULL)
     {
       DEBUG ("Failed to prepare TpContact: %s", error->message);
-      goto out;
     }
-
-  if (n_contacts != 1)
+  else if (n_contacts != 1)
     {
       GHashTableIter iter;
       gpointer key, value;
@@ -390,12 +388,13 @@ got_sender_contact_by_id_cb (TpConnection *connection,
           DEBUG ("Failed to get a TpContact for %s: %s", id, err->message);
         }
 
-      goto out;
+      sender = contacts[0];
+    }
+  else
+    {
+      DEBUG ("TpContact of the sender hasn't be prepared");
     }
 
-  sender = contacts[0];
-
-out:
   add_message_received (self, parts, sender, TRUE);
   g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
 }
