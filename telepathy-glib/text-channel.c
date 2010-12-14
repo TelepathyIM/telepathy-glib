@@ -206,9 +206,10 @@ message_sent_cb (TpChannel *channel,
     {
       TpConnection *conn;
 
-      DEBUG ("Failed to get our self contact, please fix CM");
-
       conn = tp_channel_borrow_connection (channel);
+
+      DEBUG ("Failed to get our self contact, please fix CM (%s)",
+          tp_proxy_get_object_path (conn));
 
       /* Use the connection self contact as a fallback */
       contact = tp_connection_get_self_contact (conn);
@@ -676,11 +677,12 @@ get_pending_messages_cb (TpProxy *proxy,
     {
       TpConnection *conn;
 
-      DEBUG ("Pending messages may be re-ordered, please fix CM");
-
       parts_list = g_list_reverse (parts_list);
 
       conn = tp_channel_borrow_connection (TP_CHANNEL (proxy));
+
+      DEBUG ("Pending messages may be re-ordered, please fix CM (%s)",
+          tp_proxy_get_object_path (conn));
 
       if (sender_ids->len > 0)
         {
