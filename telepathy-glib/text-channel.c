@@ -499,7 +499,6 @@ pending_messages_removed_cb (TpChannel *proxy,
     }
 }
 
-/* takes ownership of parts_list */
 static void
 got_pending_senders_contact (TpTextChannel *self,
     GList *parts_list,
@@ -532,11 +531,7 @@ got_pending_senders_contact (TpTextChannel *self,
               break;
             }
         }
-
-      g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
     }
-
-  g_list_free (parts_list);
 }
 
 static void
@@ -605,6 +600,18 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
 out:
   _tp_proxy_set_feature_prepared (TP_PROXY (self),
       TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+}
+
+static void
+free_parts_list (gpointer data)
+{
+  GList *parts_list = data;
+  GList *l;
+
+  for (l = parts_list; l != NULL; l = g_list_next (l))
+    g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, l->data);
+
+  g_list_free (parts_list);
 }
 
 static void
@@ -691,7 +698,7 @@ get_pending_messages_cb (TpProxy *proxy,
           tp_connection_get_contacts_by_id (conn, sender_ids->len,
               (const gchar * const *) sender_ids->pdata,
               0, NULL, got_pending_senders_contact_by_id_cb, parts_list,
-              NULL, G_OBJECT (self));
+              free_parts_list, G_OBJECT (self));
         }
       else
         {
@@ -700,7 +707,7 @@ get_pending_messages_cb (TpProxy *proxy,
           tp_connection_get_contacts_by_handle (conn, tmp->len,
               (TpHandle *) tmp->data,
               0, NULL, got_pending_senders_contact_by_handle_cb, parts_list,
-              NULL, G_OBJECT (self));
+              free_parts_list, G_OBJECT (self));
 
           g_array_unref (tmp);
         }
