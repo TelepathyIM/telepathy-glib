@@ -47,6 +47,10 @@ struct _TpSignalledMessage {
 TpMessage * _tp_signalled_message_new (const GPtrArray *parts,
     TpContact *sender);
 
+
+guint _tp_signalled_message_get_pending_message_id (TpMessage *message,
+    gboolean *valid);
+
 G_END_DECLS
 
 #endif /* __TP_Signalled_MESSAGE_INTERNAL_H__ */

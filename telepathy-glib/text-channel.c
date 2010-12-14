@@ -459,23 +459,6 @@ message_received_cb (TpChannel *proxy,
     }
 }
 
-/* Move this as TpMessage (or TpSignalledMessage?) API ? */
-static guint
-get_pending_message_id (TpMessage *msg,
-    gboolean *valid)
-{
-  const GHashTable *part0;
-
-  part0 = tp_message_peek (msg, 0);
-  if (part0 == NULL)
-    {
-      *valid = FALSE;
-      return 0;
-    }
-
-  return tp_asv_get_uint32 (part0, "pending-message-id", valid);
-}
-
 static void
 pending_messages_removed_cb (TpChannel *proxy,
     const GArray *ids,
@@ -496,7 +479,7 @@ pending_messages_removed_cb (TpChannel *proxy,
           guint msg_id;
           gboolean valid;
 
-          msg_id = get_pending_message_id (msg, &valid);
+          msg_id = _tp_signalled_message_get_pending_message_id (msg, &valid);
           if (!valid)
             continue;
 
@@ -1214,7 +1197,7 @@ tp_text_channel_ack_messages_async (TpTextChannel *self,
 
       g_return_if_fail (TP_IS_SIGNALLED_MESSAGE (msg));
 
-      id = get_pending_message_id (msg, &valid);
+      id = _tp_signalled_message_get_pending_message_id (msg, &valid);
       if (!valid)
         {
           DEBUG ("Message doesn't have pending-message-id ?!");
@@ -1285,7 +1268,7 @@ tp_text_channel_ack_message_async (TpTextChannel *self,
   g_return_if_fail (TP_IS_TEXT_CHANNEL (self));
   g_return_if_fail (TP_IS_SIGNALLED_MESSAGE (message));
 
-  id = get_pending_message_id (message, &valid);
+  id = _tp_signalled_message_get_pending_message_id (message, &valid);
   if (!valid)
     {
       g_simple_async_report_error_in_idle (G_OBJECT (self), callback, user_data,
