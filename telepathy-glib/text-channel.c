@@ -76,8 +76,8 @@ struct _TpTextChannelPrivate
   TpMessagePartSupportFlags message_part_support_flags;
   TpDeliveryReportingSupportFlags delivery_reporting_support;
 
-  /* list of owned TpSignalledMessage */
-  GList *pending_messages;
+  /* queue of owned TpSignalledMessage */
+  GQueue *pending_messages;
   gboolean retrieving_pending;
 };
 
@@ -105,8 +105,8 @@ tp_text_channel_dispose (GObject *obj)
 
   tp_clear_pointer (&self->priv->supported_content_types, g_strfreev);
 
-  g_list_foreach (self->priv->pending_messages, (GFunc) g_object_unref, NULL);
-  tp_clear_pointer (&self->priv->pending_messages, g_list_free);
+  g_queue_foreach (self->priv->pending_messages, (GFunc) g_object_unref, NULL);
+  tp_clear_pointer (&self->priv->pending_messages, g_queue_free);
 
   G_OBJECT_CLASS (tp_text_channel_parent_class)->dispose (obj);
 }
@@ -316,8 +316,7 @@ add_message_received (TpTextChannel *self,
 
   msg = _tp_signalled_message_new (parts, sender);
 
-  self->priv->pending_messages = g_list_append (
-      self->priv->pending_messages, msg);
+  g_queue_push_tail (self->priv->pending_messages, msg);
 
   if (fire_received)
     g_signal_emit (self, signals[SIG_MESSAGE_RECEIVED], 0, msg);
@@ -459,6 +458,22 @@ message_received_cb (TpChannel *proxy,
     }
 }
 
+static gint
+find_msg_by_id (gconstpointer a,
+    gconstpointer b)
+{
+  TpMessage *msg = TP_MESSAGE (a);
+  guint id = GPOINTER_TO_UINT (b);
+  gboolean valid;
+  guint msg_id;
+
+  msg_id = _tp_signalled_message_get_pending_message_id (msg, &valid);
+  if (!valid)
+    return 1;
+
+  return msg_id - id;
+}
+
 static void
 pending_messages_removed_cb (TpChannel *proxy,
     const GArray *ids,
@@ -466,35 +481,30 @@ pending_messages_removed_cb (TpChannel *proxy,
     GObject *weak_object)
 {
   TpTextChannel *self = (TpTextChannel *) proxy;
-  GList *l;
   guint i;
 
   for (i = 0; i < ids->len; i++)
     {
       guint id = g_array_index (ids, guint, i);
+      GList *link_;
+      TpMessage *msg;
 
-      for (l = self->priv->pending_messages; l != NULL; l = g_list_next (l))
+      link_ = g_queue_find_custom (self->priv->pending_messages,
+          GUINT_TO_POINTER (id), find_msg_by_id);
+
+      if (link_ == NULL)
         {
-          TpMessage *msg = l->data;
-          guint msg_id;
-          gboolean valid;
-
-          msg_id = _tp_signalled_message_get_pending_message_id (msg, &valid);
-          if (!valid)
-            continue;
-
-          if (msg_id == id)
-            {
-              self->priv->pending_messages = g_list_delete_link (
-                  self->priv->pending_messages, l);
-
-              g_signal_emit (self, signals[SIG_PENDING_MESSAGE_REMOVED],
-                  0, msg);
-
-              g_object_unref (msg);
-              break;
-            }
+          DEBUG ("Unable to find pending message having id %d", id);
+          continue;
         }
+
+      msg = link_->data;
+
+      g_queue_delete_link (self->priv->pending_messages, link_);
+
+      g_signal_emit (self, signals[SIG_PENDING_MESSAGE_REMOVED], 0, msg);
+
+      g_object_unref (msg);
     }
 }
 
@@ -915,6 +925,8 @@ tp_text_channel_init (TpTextChannel *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE ((self), TP_TYPE_TEXT_CHANNEL,
       TpTextChannelPrivate);
+
+  self->priv->pending_messages = g_queue_new ();
 }
 
 
@@ -1047,7 +1059,7 @@ tp_text_channel_get_feature_quark_pending_messages (void)
 GList *
 tp_text_channel_get_pending_messages (TpTextChannel *self)
 {
-  return g_list_copy (self->priv->pending_messages);
+  return g_list_copy (g_queue_peek_head_link (self->priv->pending_messages));
 }
 
 static void
