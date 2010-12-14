@@ -16,20 +16,32 @@
 
 static void
 echo_message (TpTextChannel *channel,
-    const gchar *text)
+    TpMessage *message,
+    gboolean pending)
 {
+  gchar *text;
   gchar *up;
-  TpMessage *msg;
+  TpMessage *reply;
+
+  text = tp_message_to_text (message, NULL);
+  if (text == NULL)
+    return;
+
+  if (pending)
+    g_print ("pending: %s\n", text);
+  else
+    g_print ("received: %s\n", text);
 
   up = g_ascii_strup (text, -1);
   g_print ("send: %s\n", up);
 
-  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, up);
+  reply = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, up);
 
-  tp_text_channel_send_message_async (channel, msg, 0, NULL, NULL);
+  tp_text_channel_send_message_async (channel, reply, 0, NULL, NULL);
 
+  g_free (text);
   g_free (up);
-  g_object_unref (msg);
+  g_object_unref (reply);
 }
 
 static void
@@ -37,15 +49,7 @@ message_received_cb (TpTextChannel *channel,
     TpMessage *message,
     gpointer user_data)
 {
-  const GHashTable *part;
-  const gchar *text;
-
-  part = tp_message_peek (message, 1);
-  text = tp_asv_get_string (part, "content");
-
-  g_print ("received: %s\n", text);
-
-  echo_message (channel, text);
+  echo_message (channel, message, FALSE);
 
   tp_text_channel_ack_message_async (channel, message, NULL, NULL);
 }
@@ -60,12 +64,9 @@ display_pending_messages (TpTextChannel *channel)
   for (l = messages; l != NULL; l = g_list_next (l))
     {
       TpMessage *msg = l->data;
-      const GHashTable *part = tp_message_peek (msg, 1);
-      const gchar *text = tp_asv_get_string (part, "content");
 
-      g_print ("pending: %s\n", text);
 
-      echo_message (channel, text);
+      echo_message (channel, msg, TRUE);
     }
 
   tp_text_channel_ack_messages_async (channel, messages, NULL, NULL);
