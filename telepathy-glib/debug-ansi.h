@@ -1,7 +1,7 @@
 /**
  * SECTION:debug-ansi
  * @title: ANSI codes for debug messages
- * @short_description: used to colorize log messages for clarity
+ * @short_description: used to colorize log messages for "clarity"
  *
  * This header provides some ANSI escapes you can use to make debug messages
  * more colourful. Please use sparingly.

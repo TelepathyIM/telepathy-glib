@@ -22,6 +22,7 @@
 #define __TP_MESSAGE_H__
 
 #include <telepathy-glib/defs.h>
+#include <telepathy-glib/enums.h>
 #include <telepathy-glib/handle.h>
 
 G_BEGIN_DECLS
@@ -85,6 +86,7 @@ void tp_message_ref_handle (TpMessage *self, TpHandleType handle_type,
 
 gboolean tp_message_is_mutable (TpMessage *self);
 
+TpChannelTextMessageType tp_message_get_message_type (TpMessage *self);
 const gchar *tp_message_get_token (TpMessage *self);
 gint64 tp_message_get_sent_timestamp (TpMessage *self);
 gint64 tp_message_get_received_timestamp (TpMessage *self);

@@ -85,7 +85,7 @@ static gboolean tp_debug_persistent = FALSE;
  * Activate all possible debug modes. This also activates persistent mode,
  * which should have been orthogonal.
  *
- * @deprecated since 0.6.1. Use tp_debug_set_flags ("all") and
+ * Deprecated: since 0.6.1. Use tp_debug_set_flags ("all") and
  * tp_debug_set_persistent() instead.
  */
 void
@@ -167,7 +167,7 @@ static GDebugKey persist_keys[] = {
  * this function has no practical effect, since the debug messages it would
  * enable were removed at compile time.
  *
- * @since 0.6.1
+ * Since: 0.6.1
  */
 void
 tp_debug_set_flags (const gchar *flags_string)
@@ -193,7 +193,7 @@ tp_debug_set_flags (const gchar *flags_string)
  *
  * The parsing matches that of g_parse_debug_string().
  *
- * @deprecated since 0.6.1. Use tp_debug_set_flags() and
+ * Deprecated: since 0.6.1. Use tp_debug_set_flags() and
  * tp_debug_set_persistent() instead
  */
 void
@@ -214,7 +214,7 @@ tp_debug_set_flags_from_string (const gchar *flags_string)
  * <literal>tp_debug_set_flags_from_string (g_getenv (var))</literal>,
  * and has the same problem with persistence being included in "all".
  *
- * @deprecated since 0.6.1. Use tp_debug_set_flags(g_getenv(...)) and
+ * Deprecated: since 0.6.1. Use tp_debug_set_flags(g_getenv(...)) and
  * tp_debug_set_persistent() instead
  */
 void

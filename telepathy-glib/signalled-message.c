@@ -29,7 +29,7 @@
  * or a delivery report indicating that delivery of a message has
  * succeeded or failed.
  *
- * @since 0.13.9
+ * Since: 0.13.9
  */
 
 #include "signalled-message.h"
@@ -45,6 +45,8 @@
  *
  * Opaque structure representing a received message using the Telepathy
  * messages interface
+ *
+ * Since: 0.13.9
  */
 
 enum
@@ -220,7 +222,7 @@ _tp_signalled_message_new (const GPtrArray *parts,
  *
  * Returns: (transfer none): the sender of the message
  *
- * @since 0.13.9
+ * Since: 0.13.9
  */
 TpContact *
 tp_signalled_message_get_sender (TpMessage *message)

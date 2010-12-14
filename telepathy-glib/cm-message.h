@@ -44,6 +44,11 @@ GType tp_cm_message_get_type (void);
 TpMessage * tp_cm_message_new (TpBaseConnection *connection,
     guint initial_parts);
 
+TpMessage *tp_cm_message_new_text (TpBaseConnection *conn,
+    TpHandle sender,
+    TpChannelTextMessageType type,
+    const gchar *text);
+
 void tp_cm_message_take_message (TpMessage *self,
     guint part,
     const gchar *key,
