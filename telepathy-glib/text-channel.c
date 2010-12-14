@@ -1169,10 +1169,12 @@ acknowledge_pending_messages_cb (TpChannel *channel,
  * @callback: a callback to call when the message have been acked
  * @user_data: data to pass to @callback
  *
- * Ack all the messages in @messages.
+ * Acknowledge all the messages in @messages.
  * Once the messages have been acked, @callback will be called.
  * You can then call tp_text_channel_ack_messages_finish() to get the
  * result of the operation.
+ *
+ * See tp_text_channel_ack_message_async() about acknowledging messages.
  *
  * Since: 0.13.UNRELEASED
  */
@@ -1255,9 +1257,16 @@ tp_text_channel_ack_messages_finish (TpTextChannel *self,
  * @callback: a callback to call when the message have been acked
  * @user_data: data to pass to @callback
  *
- * Ack @message. Once the message has been acked, @callback will be called.
- * You can then call tp_text_channel_ack_message_finish() to get the
+ * Acknowledge @message. Once the message has been acked, @callback will be
+ * called. You can then call tp_text_channel_ack_message_finish() to get the
  * result of the operation.
+ *
+ * A message should be acknowledged once it has been shown to the user by the
+ * Handler of the channel. So Observers and Approvers should NOT acknowledge
+ * messages themselves.
+ * Once a message has been acknowledged, it is removed from the
+ * pending-message queue and so the #TpTextChannel::pending-message-removed
+ * signal is fired.
  *
  * Since: 0.13.UNRELEASED
  */
