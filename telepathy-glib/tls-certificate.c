@@ -238,7 +238,7 @@ static void
 cert_proxy_accept_cb (TpTLSCertificate *self,
     const GError *error,
     gpointer user_data,
-    GObject *weak_object)
+    GObject *unused_object G_GNUC_UNUSED)
 {
   GSimpleAsyncResult *accept_result = user_data;
 
@@ -257,7 +257,7 @@ static void
 cert_proxy_reject_cb (TpTLSCertificate *self,
     const GError *error,
     gpointer user_data,
-    GObject *weak_object)
+    GObject *unused_object G_GNUC_UNUSED)
 {
   GSimpleAsyncResult *reject_result = user_data;
 
@@ -344,8 +344,7 @@ tp_tls_certificate_accept_async (TpTLSCertificate *self,
 
   tp_cli_authentication_tls_certificate_call_accept (self,
       -1, cert_proxy_accept_cb,
-      accept_result, g_object_unref,
-      G_OBJECT (self));
+      accept_result, g_object_unref, NULL);
 }
 
 gboolean
@@ -399,7 +398,7 @@ tp_tls_certificate_reject_async (TpTLSCertificate *self,
 
   tp_cli_authentication_tls_certificate_call_reject (self,
       -1, rejections, cert_proxy_reject_cb,
-      reject_result, g_object_unref, G_OBJECT (self));
+      reject_result, g_object_unref, NULL);
 
   tp_clear_boxed (TP_ARRAY_TYPE_TLS_CERTIFICATE_REJECTION_LIST,
       &rejections);
