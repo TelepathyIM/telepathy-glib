@@ -37,6 +37,34 @@
 #define DEBUG_FLAG TP_DEBUG_TLS
 #include "debug-internal.h"
 
+/**
+ * SECTION:tls-certificate
+ * @title: TpTLSCertificate
+ * @short_description: proxy object for a server or peer's TLS certificate
+ *
+ * #TpTLSCertificate is a #TpProxy subclass for TLSCertificate objects,
+ * used in Channel.Type.ServerTLSConnection.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpTLSCertificate:
+ *
+ * A #TpProxy subclass representing a server or peer's TLS certificate
+ * being presented for acceptance/rejection.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpTLSCertificateClass:
+ *
+ * The class of a #TpTLSCertificate.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
 enum {
   /* proxy properties */
   PROP_CERT_TYPE = 1,
@@ -215,12 +243,32 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpTLSCertificatePrivate));
 
+  /**
+   * TpTLSCertificate:cert-type:
+   *
+   * The type of the certificate, typically either "x509" or "pgp".
+   */
   pspec = g_param_spec_string ("cert-type", "Certificate type",
       "The type of this certificate.",
       NULL,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (oclass, PROP_CERT_TYPE, pspec);
 
+  /**
+   * TpTLSCertificate:cert-data:
+   *
+   * The raw data of the certificate or certificate chain, represented
+   * as a #GPtrArray of #GArray of #guchar. It should be interpreted
+   * according to #TpTLSCertificate:cert-type.
+   *
+   * The first certificate in this array is the server's certificate,
+   * followed by its issuer, followed by the issuer's issuer and so on.
+   *
+   * For "x509" certificates, each certificate is an X.509 certificate in
+   * binary (DER) format.
+   *
+   * For "pgp" certificates, each certificate is a binary OpenPGP key.
+   */
   pspec = g_param_spec_boxed ("cert-data", "Certificate chain data",
       "The raw DER-encoded certificate chain data.",
       TP_ARRAY_TYPE_UCHAR_ARRAY_LIST,
@@ -304,6 +352,18 @@ reject_reason_get_dbus_error (TpTLSCertificateRejectReason reason)
   return retval;
 }
 
+/**
+ * tp_tls_certificate_new:
+ * @dbus: a connection to D-Bus
+ * @bus_name: the unique bus name of the connection manager implementing
+ *  this TLS certificate
+ * @object_path: the object path of this TLS certificate
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer full): a new TLS certificate proxy. Prepare the
+ *  feature %TP_TLS_CERTIFICATE_FEATURE_CORE to make it useful.
+ */
 TpTLSCertificate *
 tp_tls_certificate_new (TpDBusDaemon *dbus,
     const gchar *bus_name,
@@ -329,6 +389,15 @@ finally:
   return retval;
 }
 
+/**
+ * tp_tls_certificate_accept_async:
+ * @self: a TLS certificate
+ * @callback: called on success or failure
+ * @user_data: user data for the callback
+ *
+ * Accept this certificate, asynchronously. In or after @callback,
+ * you may call tp_tls_certificate_accept_finish() to check the result.
+ */
 void
 tp_tls_certificate_accept_async (TpTLSCertificate *self,
     GAsyncReadyCallback callback,
@@ -348,6 +417,17 @@ tp_tls_certificate_accept_async (TpTLSCertificate *self,
       accept_result, g_object_unref, NULL);
 }
 
+/**
+ * tp_tls_certificate_accept_finish:
+ * @self: a TLS certificate
+ * @result: the result passed to the callback by
+ *  tp_tls_certificate_accept_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Check the result of tp_tls_certificate_accept_async().
+ *
+ * Returns: %TRUE if acceptance was successful
+ */
 gboolean
 tp_tls_certificate_accept_finish (TpTLSCertificate *self,
     GAsyncResult *result,
@@ -375,6 +455,18 @@ build_rejections_array (TpTLSCertificateRejectReason reason,
   return retval;
 }
 
+/**
+ * tp_tls_certificate_reject_async:
+ * @self: a TLS certificate
+ * @reason: the reason for rejection
+ * @details: (transfer none) (element-type utf8 GObject.Value): details of the
+ *  rejection
+ * @callback: called on success or failure
+ * @user_data: user data for the callback
+ *
+ * Reject this certificate, asynchronously. In or after @callback,
+ * you may call tp_tls_certificate_reject_finish() to check the result.
+ */
 void
 tp_tls_certificate_reject_async (TpTLSCertificate *self,
     TpTLSCertificateRejectReason reason,
@@ -401,6 +493,17 @@ tp_tls_certificate_reject_async (TpTLSCertificate *self,
       &rejections);
 }
 
+/**
+ * tp_tls_certificate_reject_finish:
+ * @self: a TLS certificate
+ * @result: the result passed to the callback by
+ *  tp_tls_certificate_reject_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Check the result of tp_tls_certificate_reject_async().
+ *
+ * Returns: %TRUE if rejection was successful
+ */
 gboolean
 tp_tls_certificate_reject_finish (TpTLSCertificate *self,
     GAsyncResult *result,

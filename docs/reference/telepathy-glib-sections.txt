@@ -7355,4 +7355,5 @@ TP_TYPE_TLS_CERTIFICATE
 TpTLSCertificateClass
 TpTLSCertificateClassPrivate
 TpTLSCertificatePrivate
+tp_tls_certificate_get_type
 </SECTION>

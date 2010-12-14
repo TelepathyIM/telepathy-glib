@@ -38,12 +38,14 @@ typedef struct _TpTLSCertificatePrivate TpTLSCertificatePrivate;
 typedef struct _TpTLSCertificateClassPrivate TpTLSCertificateClassPrivate;
 
 struct _TpTLSCertificateClass {
+    /*<private>*/
     TpProxyClass parent_class;
     GCallback _future[3];
     TpTLSCertificateClassPrivate *priv;
 };
 
 struct _TpTLSCertificate {
+    /*<private>*/
     TpProxy parent;
     TpTLSCertificatePrivate *priv;
 };
