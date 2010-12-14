@@ -325,10 +325,6 @@ tp_tls_certificate_new (TpDBusDaemon *dbus,
       NULL);
 
 finally:
-  if (*error != NULL)
-    DEBUG ("Error while creating the TLS certificate: %s",
-        (*error)->message);
-
   return retval;
 }
 
