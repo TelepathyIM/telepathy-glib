@@ -23,8 +23,6 @@
 #include <config.h>
 #include "telepathy-glib/tls-certificate.h"
 
-#include <errno.h>
-
 #include <glib/gstdio.h>
 
 #include <telepathy-glib/dbus.h>
