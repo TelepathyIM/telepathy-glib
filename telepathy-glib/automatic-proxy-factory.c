@@ -53,11 +53,11 @@
  *
  * <itemizedlist>
  *   <listitem>
- *     <para><#TP_CHANNEL_FEATURE_CORE and #TP_CHANNEL_FEATURE_GROUP for all
+ *     <para>%TP_CHANNEL_FEATURE_CORE and %TP_CHANNEL_FEATURE_GROUP for all
  *     type of channels.</para>
  *   </listitem>
  *   <listitem>
- *     <para>#TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES for
+ *     <para>%TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES for
  *     #TpTextChannel</para>
  *   </listitem>
  * </itemizedlist>
