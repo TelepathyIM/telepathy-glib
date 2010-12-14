@@ -41,7 +41,7 @@ enum {
   PROP_CERT_TYPE = 1,
   PROP_CERT_DATA,
   PROP_STATE,
-  LAST_PROPERTY,
+  N_PROPS
 };
 
 struct _TpTLSCertificatePrivate {
