@@ -4,82 +4,9 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/util.h>
 
-static GPtrArray *events;
-static TpDBusDaemon *bus;
-static GMainLoop *mainloop;
-static gchar *two = "2", *five = "5";
-static gboolean had_owners = FALSE;
-
 static void
-noc (TpDBusDaemon *obj,
-     const gchar *name,
-     const gchar *new_owner,
-     gpointer user_data)
+test_validation (void)
 {
-  const gchar *tag = user_data;
-
-  g_message ("[%s] %s -> <%s>", tag, name, new_owner);
-
-  g_ptr_array_add (events, g_strdup_printf ("[%s] %s %d",
-        tag, name, new_owner[0]));
-
-  if (new_owner[0] != '\0')
-    had_owners = TRUE;
-
-  if (!tp_strdiff (name, "net.example"))
-    {
-      if (new_owner[0] == '\0')
-        {
-          if (had_owners)
-            {
-              g_main_loop_quit (mainloop);
-            }
-          else
-            {
-              guint ret;
-              GError *error = NULL;
-
-              g_assert (tp_cli_dbus_daemon_run_request_name (obj, -1,
-                    "com.example", 0, &ret, &error, NULL));
-              g_assert (ret == 1 && error == NULL);
-              g_assert (tp_cli_dbus_daemon_run_request_name (obj, -1,
-                    "org.example", 0, &ret, &error, NULL));
-              g_assert (ret == 1 && error == NULL);
-              g_assert (tp_cli_dbus_daemon_run_request_name (obj, -1,
-                    "net.example", 0, &ret, &error, NULL));
-              g_assert (ret == 1 && error == NULL);
-            }
-        }
-      else
-        {
-          guint ret;
-          GError *error = NULL;
-
-          g_assert (tp_dbus_daemon_cancel_name_owner_watch (obj,
-                "org.example", noc, five));
-          g_assert (tp_cli_dbus_daemon_run_release_name (obj, -1,
-                "org.example", &ret, &error, NULL));
-          g_assert (ret == 1 && error == NULL);
-          g_assert (tp_cli_dbus_daemon_run_release_name (obj, -1,
-                "net.example", &ret, &error, NULL));
-          g_assert (ret == 1 && error == NULL);
-        }
-    }
-}
-
-int
-main (int argc,
-      char **argv)
-{
-  guint i;
-
-  tp_debug_set_flags ("all");
-  mainloop = g_main_loop_new (NULL, FALSE);
-
-  events = g_ptr_array_new ();
-
-  g_type_init ();
-
   g_assert (tp_dbus_check_valid_object_path ("/", NULL));
   g_assert (tp_dbus_check_valid_object_path ("/a", NULL));
   g_assert (tp_dbus_check_valid_object_path ("/foo", NULL));
@@ -170,33 +97,105 @@ main (int argc,
         TP_DBUS_NAME_TYPE_ANY, NULL));
   g_assert (!tp_dbus_check_valid_bus_name (":1.1.",
         TP_DBUS_NAME_TYPE_ANY, NULL));
+}
 
-  bus = tp_dbus_daemon_new (tp_get_bus ());
+static void
+test_properties (void)
+{
+  TpDBusDaemon *bus = tp_dbus_daemon_dup (NULL);
+  gchar *bus_name;
+  gchar *object_path;
+  DBusGConnection *dbus_conn;
 
-  /* Regression test for properties */
+  g_object_get (bus,
+      "dbus-connection", &dbus_conn,
+      "bus-name", &bus_name,
+      "object-path", &object_path,
+      NULL);
+
+  if (object_path[0] != '/')
+    g_error ("supposed object-path \"%s\" doesn't start with a /",
+        object_path);
+
+  g_assert_cmpstr (bus_name, ==, "org.freedesktop.DBus");
+  g_assert (dbus_conn != NULL);
+  g_assert (dbus_conn == tp_get_bus ());
+
+  g_free (bus_name);
+  g_free (object_path);
+  dbus_g_connection_unref (dbus_conn);
+  g_object_unref (bus);
+}
+
+static GPtrArray *events;
+static GMainLoop *mainloop;
+static gchar *two = "2", *five = "5";
+static gboolean had_owners = FALSE;
+
+static void
+noc (TpDBusDaemon *obj,
+     const gchar *name,
+     const gchar *new_owner,
+     gpointer user_data)
+{
+  const gchar *tag = user_data;
+
+  g_message ("[%s] %s -> <%s>", tag, name, new_owner);
+
+  g_ptr_array_add (events, g_strdup_printf ("[%s] %s %d",
+        tag, name, new_owner[0]));
+
+  if (new_owner[0] != '\0')
+    had_owners = TRUE;
+
+  if (!tp_strdiff (name, "net.example"))
     {
-      gchar *bus_name;
-      gchar *object_path;
-      DBusGConnection *dbus_conn;
+      if (new_owner[0] == '\0')
+        {
+          if (had_owners)
+            {
+              g_main_loop_quit (mainloop);
+            }
+          else
+            {
+              guint ret;
+              GError *error = NULL;
 
-      g_object_get (bus,
-          "dbus-connection", &dbus_conn,
-          "bus-name", &bus_name,
-          "object-path", &object_path,
-          NULL);
+              g_assert (tp_cli_dbus_daemon_run_request_name (obj, -1,
+                    "com.example", 0, &ret, &error, NULL));
+              g_assert (ret == 1 && error == NULL);
+              g_assert (tp_cli_dbus_daemon_run_request_name (obj, -1,
+                    "org.example", 0, &ret, &error, NULL));
+              g_assert (ret == 1 && error == NULL);
+              g_assert (tp_cli_dbus_daemon_run_request_name (obj, -1,
+                    "net.example", 0, &ret, &error, NULL));
+              g_assert (ret == 1 && error == NULL);
+            }
+        }
+      else
+        {
+          guint ret;
+          GError *error = NULL;
 
-      if (object_path[0] != '/')
-        g_error ("supposed object-path \"%s\" doesn't start with a /",
-            object_path);
-
-      g_assert_cmpstr (bus_name, ==, "org.freedesktop.DBus");
-      g_assert (dbus_conn != NULL);
-      g_assert (dbus_conn == tp_get_bus ());
-
-      g_free (bus_name);
-      g_free (object_path);
-      dbus_g_connection_unref (dbus_conn);
+          g_assert (tp_dbus_daemon_cancel_name_owner_watch (obj,
+                "org.example", noc, five));
+          g_assert (tp_cli_dbus_daemon_run_release_name (obj, -1,
+                "org.example", &ret, &error, NULL));
+          g_assert (ret == 1 && error == NULL);
+          g_assert (tp_cli_dbus_daemon_run_release_name (obj, -1,
+                "net.example", &ret, &error, NULL));
+          g_assert (ret == 1 && error == NULL);
+        }
     }
+}
+
+static void
+test_watch_name_owner (void)
+{
+  TpDBusDaemon *bus = tp_dbus_daemon_dup (NULL);
+  guint i;
+
+  events = g_ptr_array_new ();
 
   tp_dbus_daemon_watch_name_owner (bus, "com.example", noc, "1", NULL);
   tp_dbus_daemon_watch_name_owner (bus, "com.example", noc, two, NULL);
@@ -205,6 +204,7 @@ main (int argc,
   tp_dbus_daemon_watch_name_owner (bus, "net.example", noc, "4", NULL);
   tp_dbus_daemon_watch_name_owner (bus, "org.example", noc, five, NULL);
 
+  mainloop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (mainloop);
 
   g_assert_cmpuint (events->len, ==, 9);
@@ -230,6 +230,20 @@ main (int argc,
   g_ptr_array_free (events, TRUE);
   g_main_loop_unref (mainloop);
   mainloop = NULL;
+}
 
-  return 0;
+int
+main (int argc,
+      char **argv)
+{
+  g_type_init ();
+  g_test_init (&argc, &argv, NULL);
+
+  tp_debug_set_flags ("all");
+
+  g_test_add_func ("/dbus/validation", test_validation);
+  g_test_add_func ("/dbus-daemon/properties", test_properties);
+  g_test_add_func ("/dbus-daemon/watch-name-owner", test_watch_name_owner);
+
+  return g_test_run ();
 }
