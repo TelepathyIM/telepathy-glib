@@ -684,7 +684,7 @@ get_pending_messages_cb (TpProxy *proxy,
       DEBUG ("Pending messages may be re-ordered, please fix CM (%s)",
           tp_proxy_get_object_path (conn));
 
-      if (sender_ids->len > 0)
+      if (sender_ids->len == g_list_length (parts_list))
         {
           /* Use the sender ID rather than the handles */
           tp_connection_get_contacts_by_id (conn, sender_ids->len,
