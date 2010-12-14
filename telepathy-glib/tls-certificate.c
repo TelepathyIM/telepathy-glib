@@ -279,33 +279,21 @@ reject_reason_get_dbus_error (TpTLSCertificateRejectReason reason)
 
   switch (reason)
     {
-    case TP_TLS_CERTIFICATE_REJECT_REASON_UNTRUSTED:
-      retval = tp_error_get_dbus_name (TP_ERROR_CERT_UNTRUSTED);
-      break;
-    case TP_TLS_CERTIFICATE_REJECT_REASON_EXPIRED:
-      retval = tp_error_get_dbus_name (TP_ERROR_CERT_EXPIRED);
-      break;
-    case TP_TLS_CERTIFICATE_REJECT_REASON_NOT_ACTIVATED:
-      retval = tp_error_get_dbus_name (TP_ERROR_CERT_NOT_ACTIVATED);
-      break;
-    case TP_TLS_CERTIFICATE_REJECT_REASON_FINGERPRINT_MISMATCH:
-      retval = tp_error_get_dbus_name (TP_ERROR_CERT_FINGERPRINT_MISMATCH);
-      break;
-    case TP_TLS_CERTIFICATE_REJECT_REASON_HOSTNAME_MISMATCH:
-      retval = tp_error_get_dbus_name (TP_ERROR_CERT_HOSTNAME_MISMATCH);
-      break;
-    case TP_TLS_CERTIFICATE_REJECT_REASON_SELF_SIGNED:
-      retval = tp_error_get_dbus_name (TP_ERROR_CERT_SELF_SIGNED);
-      break;
-    case TP_TLS_CERTIFICATE_REJECT_REASON_REVOKED:
-      retval = tp_error_get_dbus_name (TP_ERROR_CERT_REVOKED);
-      break;
-    case TP_TLS_CERTIFICATE_REJECT_REASON_INSECURE:
-      retval = tp_error_get_dbus_name (TP_ERROR_CERT_INSECURE);
-      break;
-    case TP_TLS_CERTIFICATE_REJECT_REASON_LIMIT_EXCEEDED:
-      retval = tp_error_get_dbus_name (TP_ERROR_CERT_LIMIT_EXCEEDED);
-      break;
+#define EASY_CASE(x) \
+    case TP_TLS_CERTIFICATE_REJECT_REASON_ ## x: \
+      retval = tp_error_get_dbus_name (TP_ERROR_CERT_ ## x); \
+      break
+    EASY_CASE (UNTRUSTED);
+    EASY_CASE (EXPIRED);
+    EASY_CASE (NOT_ACTIVATED);
+    EASY_CASE (FINGERPRINT_MISMATCH);
+    EASY_CASE (HOSTNAME_MISMATCH);
+    EASY_CASE (SELF_SIGNED);
+    EASY_CASE (REVOKED);
+    EASY_CASE (INSECURE);
+    EASY_CASE (LIMIT_EXCEEDED);
+#undef EASY_CASE
+
     case TP_TLS_CERTIFICATE_REJECT_REASON_UNKNOWN:
     default:
       retval = tp_error_get_dbus_name (TP_ERROR_CERT_INVALID);
