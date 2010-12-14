@@ -149,10 +149,8 @@ tp_dbus_daemon_new (DBusGConnection *connection)
 
 typedef struct
 {
-  TpDBusDaemonNameOwnerChangedCb callback;
-  gpointer user_data;
-  GDestroyNotify destroy;
   gchar *last_owner;
+  GArray *callbacks;
 } _NameOwnerWatch;
 
 typedef struct
@@ -163,48 +161,14 @@ typedef struct
 } _NameOwnerSubWatch;
 
 static void
-_tp_dbus_daemon_name_owner_changed_multiple (TpDBusDaemon *self,
-                                             const gchar *name,
-                                             const gchar *new_owner,
-                                             gpointer user_data)
-{
-  GArray *array = user_data;
-  guint i;
-
-  for (i = 0; i < array->len; i++)
-    {
-      _NameOwnerSubWatch *watch = &g_array_index (array, _NameOwnerSubWatch,
-          i);
-
-      watch->callback (self, name, new_owner, watch->user_data);
-    }
-}
-
-static void
-_tp_dbus_daemon_name_owner_changed_multiple_free (gpointer data)
-{
-  GArray *array = data;
-  guint i;
-
-  for (i = 0; i < array->len; i++)
-    {
-      _NameOwnerSubWatch *watch = &g_array_index (array, _NameOwnerSubWatch,
-          i);
-
-      if (watch->destroy)
-        watch->destroy (watch->user_data);
-    }
-
-  g_array_free (array, TRUE);
-}
-
-static void
 _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
                                     const gchar *name,
                                     const gchar *new_owner)
 {
   _NameOwnerWatch *watch = g_hash_table_lookup (self->priv->name_owner_watches,
       name);
+  GArray *array;
+  guint i;
 
   if (watch == NULL)
     return;
@@ -221,7 +185,24 @@ _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
   g_free (watch->last_owner);
   watch->last_owner = g_strdup (new_owner);
 
-  watch->callback (self, name, new_owner, watch->user_data);
+  /* We're calling out to user code which might end up removing its watch, so
+   * we need to hold onto the array while we're iterating it.
+   *
+   * FIXME: actually, if you have two callbacks and the first callback removes
+   * itself, the second one will never be called! This is a very old bug. I'll
+   * fix it with some kind of mark-and-sweep shortly.
+   */
+  array = g_array_ref (watch->callbacks);
+
+  for (i = 0; i < array->len; i++)
+    {
+      _NameOwnerSubWatch *subwatch = &g_array_index (array,
+          _NameOwnerSubWatch, i);
+
+      subwatch->callback (self, name, new_owner, subwatch->user_data);
+    }
+
+  g_array_unref (array);
 }
 
 static dbus_int32_t daemons_slot = -1;
@@ -287,7 +268,9 @@ noc_idle_context_invoke (gpointer data)
       GSList *iter;
 
       for (iter = *daemons; iter != NULL; iter = iter->next)
-        _tp_dbus_daemon_name_owner_changed (iter->data, name, new_owner);
+        {
+          _tp_dbus_daemon_name_owner_changed (iter->data, name, new_owner);
+        }
     }
 
   return FALSE;
@@ -470,6 +453,7 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
 {
   _NameOwnerWatch *watch = g_hash_table_lookup (self->priv->name_owner_watches,
       name);
+  _NameOwnerSubWatch tmp = { callback, user_data, destroy };
 
   g_return_if_fail (TP_IS_DBUS_DAEMON (self));
   g_return_if_fail (tp_dbus_check_valid_bus_name (name,
@@ -483,12 +467,11 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
       DBusPendingCall *pc = NULL;
       GetNameOwnerContext *context = get_name_owner_context_new (self, name);
 
-      /* Allocate a single watch (common case) */
+      /* Allocate a new watch */
       watch = g_slice_new (_NameOwnerWatch);
-      watch->callback = callback;
-      watch->user_data = user_data;
-      watch->destroy = destroy;
       watch->last_owner = NULL;
+      watch->callbacks = g_array_new (FALSE, FALSE,
+          sizeof (_NameOwnerSubWatch));
 
       g_hash_table_insert (self->priv->name_owner_watches, g_strdup (name),
           watch);
@@ -533,42 +516,13 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
           ERROR ("Out of memory");
         }
     }
-  else
+
+  g_array_append_val (watch->callbacks, tmp);
+
+  if (watch->last_owner != NULL)
     {
-      _NameOwnerSubWatch tmp = { callback, user_data, destroy };
-
-      if (watch->callback == _tp_dbus_daemon_name_owner_changed_multiple)
-        {
-          /* The watch is already a "multiplexer", just append to it */
-          GArray *array = watch->user_data;
-
-          g_array_append_val (array, tmp);
-        }
-      else
-        {
-          /* Replace the old contents of the watch with one that dispatches
-           * the signal to (potentially) more than one watcher */
-          GArray *array = g_array_sized_new (FALSE, FALSE,
-              sizeof (_NameOwnerSubWatch), 2);
-
-          /* The new watcher */
-          g_array_append_val (array, tmp);
-          /* The old watcher */
-          tmp.callback = watch->callback;
-          tmp.user_data = watch->user_data;
-          tmp.destroy = watch->destroy;
-          g_array_prepend_val (array, tmp);
-
-          watch->callback = _tp_dbus_daemon_name_owner_changed_multiple;
-          watch->user_data = array;
-          watch->destroy = _tp_dbus_daemon_name_owner_changed_multiple_free;
-        }
-
-      if (watch->last_owner != NULL)
-        {
-          /* FIXME: should avoid reentrancy? */
-          callback (self, name, watch->last_owner, user_data);
-        }
+      /* FIXME: should avoid reentrancy? */
+      callback (self, name, watch->last_owner, user_data);
     }
 }
 
@@ -579,9 +533,22 @@ _tp_dbus_daemon_stop_watching (TpDBusDaemon *self,
 {
   gchar *match_rule;
 
-  if (watch->destroy)
-    watch->destroy (watch->user_data);
+  /* Clean up any leftöver callbacks. */
+  if (watch->callbacks->len > 0)
+    {
+      guint i;
 
+      for (i = 0; i < watch->callbacks->len; i++)
+        {
+          _NameOwnerSubWatch *entry = &g_array_index (watch->callbacks,
+              _NameOwnerSubWatch, i);
+
+          if (entry->destroy != NULL)
+            entry->destroy (entry->user_data);
+        }
+    }
+
+  g_array_unref (watch->callbacks);
   g_free (watch->last_owner);
   g_slice_free (_NameOwnerWatch, watch);
 
@@ -621,23 +588,11 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
   g_return_val_if_fail (name != NULL, FALSE);
   g_return_val_if_fail (callback != NULL, FALSE);
 
-  if (watch == NULL)
+  if (watch != NULL)
     {
-      /* No watch at all */
-      return FALSE;
-    }
-  else if (watch->callback == callback && watch->user_data == user_data)
-    {
-      /* Simple case: there is one name-owner watch and it's what we wanted */
-      _tp_dbus_daemon_stop_watching (self, name, watch);
-      g_hash_table_remove (self->priv->name_owner_watches, name);
-      return TRUE;
-    }
-  else if (watch->callback == _tp_dbus_daemon_name_owner_changed_multiple)
-    {
-      /* Complicated case: this watch is a "multiplexer", we need to check
-       * its contents */
-      GArray *array = watch->user_data;
+      /* Check to see whether this (callback, user_data) pair is in the watch's
+       * array of callbacks. */
+      GArray *array = watch->callbacks;
       guint i;
 
       for (i = 1; i <= array->len; i++)
