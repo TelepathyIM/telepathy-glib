@@ -98,7 +98,10 @@ G_DEFINE_TYPE (TpTLSCertificate, tp_tls_certificate,
  * <itemizedlist>
  * <listitem>#TpTLSCertificate:cert-type</listitem>
  * <listitem>#TpTLSCertificate:cert-data</listitem>
+ * <listitem>#TpTLSCertificate:state</listitem>
  * </itemizedlist>
+ *
+ * In addition, #GObject::notify::state will be emitted if the state changes.
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
@@ -111,6 +114,25 @@ tp_tls_certificate_get_feature_quark_core (void)
 }
 
 static void
+tp_tls_certificate_accepted_cb (TpTLSCertificate *self,
+    gpointer unused G_GNUC_UNUSED,
+    GObject *unused_object G_GNUC_UNUSED)
+{
+  self->priv->state = TP_TLS_CERTIFICATE_STATE_ACCEPTED;
+  g_object_notify ((GObject *) self, "state");
+}
+
+static void
+tp_tls_certificate_rejected_cb (TpTLSCertificate *self,
+    const GPtrArray *rejections,
+    gpointer unused G_GNUC_UNUSED,
+    GObject *unused_object G_GNUC_UNUSED)
+{
+  self->priv->state = TP_TLS_CERTIFICATE_STATE_REJECTED;
+  g_object_notify ((GObject *) self, "state");
+}
+
+static void
 tls_certificate_got_all_cb (TpProxy *proxy,
     GHashTable *properties,
     const GError *error,
@@ -119,6 +141,7 @@ tls_certificate_got_all_cb (TpProxy *proxy,
 {
   GPtrArray *cert_data;
   TpTLSCertificate *self = TP_TLS_CERTIFICATE (proxy);
+  guint state;
 
   if (error != NULL)
     {
@@ -128,7 +151,30 @@ tls_certificate_got_all_cb (TpProxy *proxy,
 
   self->priv->cert_type = g_strdup (tp_asv_get_string (properties,
           "CertificateType"));
-  self->priv->state = tp_asv_get_uint32 (properties, "State", NULL);
+
+  state = tp_asv_get_uint32 (properties, "State", NULL);
+
+  switch (state)
+    {
+      case TP_TLS_CERTIFICATE_STATE_PENDING:
+        break;
+
+      case TP_TLS_CERTIFICATE_STATE_ACCEPTED:
+        tp_tls_certificate_accepted_cb (self, NULL, NULL);
+        break;
+
+      case TP_TLS_CERTIFICATE_STATE_REJECTED:
+        tp_tls_certificate_rejected_cb (self,
+            tp_asv_get_boxed (properties, "Rejections",
+              TP_ARRAY_TYPE_TLS_CERTIFICATE_REJECTION_LIST),
+            NULL, NULL);
+        break;
+
+      default:
+        /* what does it mean? we just don't know */
+        self->priv->state = state;
+        g_object_notify ((GObject *) self, "state");
+    }
 
   cert_data = tp_asv_get_boxed (properties, "CertificateChainData",
       TP_ARRAY_TYPE_UCHAR_ARRAY_LIST);
@@ -184,7 +230,10 @@ tp_tls_certificate_constructed (GObject *object)
           "invalidated", G_CALLBACK (parent_invalidated_cb), self, 0);
     }
 
-  /* FIXME: if we want change notification for 'state', this is the place */
+  tp_cli_authentication_tls_certificate_connect_to_accepted (self,
+      tp_tls_certificate_accepted_cb, NULL, NULL, NULL, NULL);
+  tp_cli_authentication_tls_certificate_connect_to_rejected (self,
+      tp_tls_certificate_rejected_cb, NULL, NULL, NULL, NULL);
 
   tp_cli_dbus_properties_call_get_all (self,
       -1, TP_IFACE_AUTHENTICATION_TLS_CERTIFICATE,
@@ -340,7 +389,10 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
   /**
    * TpTLSCertificate:state:
    *
-   * The state of this TLS certificate as a #TpTLSCertificateState.
+   * The state of this TLS certificate as a #TpTLSCertificateState,
+   * initially %TP_TLS_CERTIFICATE_STATE_PENDING.
+   *
+   * #GObject::notify::state will be emitted when this changes.
    */
   pspec = g_param_spec_uint ("state", "State",
       "The state of this certificate.",
@@ -473,6 +525,9 @@ finally:
  *
  * Accept this certificate, asynchronously. In or after @callback,
  * you may call tp_tls_certificate_accept_finish() to check the result.
+ *
+ * #GObject::notify::state will also be emitted when the connection manager
+ * signals that the certificate has been accepted.
  */
 void
 tp_tls_certificate_accept_async (TpTLSCertificate *self,
@@ -542,6 +597,9 @@ build_rejections_array (TpTLSCertificateRejectReason reason,
  *
  * Reject this certificate, asynchronously. In or after @callback,
  * you may call tp_tls_certificate_reject_finish() to check the result.
+ *
+ * #GObject::notify::state will also be emitted when the connection manager
+ * signals that the certificate has been rejected.
  */
 void
 tp_tls_certificate_reject_async (TpTLSCertificate *self,
