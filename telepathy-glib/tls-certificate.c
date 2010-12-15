@@ -81,8 +81,10 @@ struct _TpTLSCertificatePrivate {
   gchar *cert_type;
   GPtrArray *cert_data;
   TpTLSCertificateState state;
-  /* array of SignalledRejection */
+  /* array of SignalledRejection received from the CM */
   GArray *rejections;
+  /* GPtrArray of TP_STRUCT_TYPE_TLS_CERTIFICATE_REJECTION to send to CM */
+  GPtrArray *pending_rejections;
 };
 
 G_DEFINE_TYPE (TpTLSCertificate, tp_tls_certificate,
@@ -332,6 +334,8 @@ tp_tls_certificate_finalize (GObject *object)
   tp_tls_certificate_clear_rejections (self);
   g_free (priv->cert_type);
   tp_clear_boxed (TP_ARRAY_TYPE_UCHAR_ARRAY_LIST, &priv->cert_data);
+  tp_clear_boxed (TP_ARRAY_TYPE_TLS_CERTIFICATE_REJECTION_LIST,
+      &self->priv->pending_rejections);
 
   G_OBJECT_CLASS (tp_tls_certificate_parent_class)->finalize (object);
 }
@@ -649,41 +653,60 @@ tp_tls_certificate_accept_finish (TpTLSCertificate *self,
   _tp_implement_finish_void (self, tp_tls_certificate_accept_async)
 }
 
-static GPtrArray *
-build_rejections_array (TpTLSCertificateRejectReason reason,
-    const gchar *dbus_error,
-    GHashTable *details)
-{
-  GPtrArray *retval;
-  GValueArray *rejection;
-
-  if (dbus_error == NULL)
-    dbus_error = reject_reason_get_dbus_error (reason);
-
-  retval = g_ptr_array_new ();
-  rejection = tp_value_array_build (3,
-      G_TYPE_UINT, reason,
-      G_TYPE_STRING, dbus_error,
-      TP_HASH_TYPE_STRING_VARIANT_MAP, details,
-      NULL);
-
-  g_ptr_array_add (retval, rejection);
-
-  return retval;
-}
-
 /**
- * tp_tls_certificate_reject_async:
+ * tp_tls_certificate_add_rejection:
  * @self: a TLS certificate
  * @reason: the reason for rejection
  * @dbus_error: a D-Bus error name such as %TP_ERROR_STR_CERT_REVOKED, or
  *  %NULL to derive one from @reason
  * @details: (transfer none) (element-type utf8 GObject.Value): details of the
  *  rejection
+ *
+ * Add a pending reason for rejection. The first call to this method is
+ * considered "most important". After calling this method as many times
+ * as are required, call tp_tls_certificate_reject_async() to reject the
+ * certificate.
+ */
+void
+tp_tls_certificate_add_rejection (TpTLSCertificate *self,
+    TpTLSCertificateRejectReason reason,
+    const gchar *dbus_error,
+    GHashTable *details)
+{
+  GValueArray *rejection;
+
+  g_return_if_fail (dbus_error == NULL ||
+      tp_dbus_check_valid_interface_name (dbus_error, NULL));
+
+  if (self->priv->pending_rejections == NULL)
+    self->priv->pending_rejections = g_ptr_array_new ();
+
+  if (dbus_error == NULL)
+    dbus_error = reject_reason_get_dbus_error (reason);
+
+  rejection = tp_value_array_build (3,
+      G_TYPE_UINT, reason,
+      G_TYPE_STRING, dbus_error,
+      TP_HASH_TYPE_STRING_VARIANT_MAP, details,
+      NULL);
+
+  g_ptr_array_add (self->priv->pending_rejections, rejection);
+}
+
+/**
+ * tp_tls_certificate_reject_async:
+ * @self: a TLS certificate
  * @callback: called on success or failure
  * @user_data: user data for the callback
  *
- * Reject this certificate, asynchronously. In or after @callback,
+ * Reject this certificate, asynchronously.
+ *
+ * Before calling this method, you must call
+ * tp_tls_certificate_add_rejection() at least once, to set the reason(s)
+ * for rejection (for instance, a certificate might be both self-signed and
+ * expired).
+ *
+ * In or after @callback,
  * you may call tp_tls_certificate_reject_finish() to check the result.
  *
  * #GObject::notify::state will also be emitted when the connection manager
@@ -691,31 +714,24 @@ build_rejections_array (TpTLSCertificateRejectReason reason,
  */
 void
 tp_tls_certificate_reject_async (TpTLSCertificate *self,
-    TpTLSCertificateRejectReason reason,
-    const gchar *dbus_error,
-    GHashTable *details,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GPtrArray *rejections;
   GSimpleAsyncResult *reject_result;
 
   g_return_if_fail (TP_IS_TLS_CERTIFICATE (self));
-  g_return_if_fail (dbus_error == NULL ||
-      tp_dbus_check_valid_interface_name (dbus_error, NULL));
+  g_return_if_fail (self->priv->pending_rejections != NULL);
+  g_return_if_fail (self->priv->pending_rejections->len >= 1);
 
-  DEBUG ("Rejecting TLS certificate with reason %u", reason);
-
-  rejections = build_rejections_array (reason, dbus_error, details);
   reject_result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data, tp_tls_certificate_reject_async);
 
   tp_cli_authentication_tls_certificate_call_reject (self,
-      -1, rejections, cert_proxy_reject_cb,
+      -1, self->priv->pending_rejections, cert_proxy_reject_cb,
       reject_result, g_object_unref, NULL);
 
   tp_clear_boxed (TP_ARRAY_TYPE_TLS_CERTIFICATE_REJECTION_LIST,
-      &rejections);
+      &self->priv->pending_rejections);
 }
 
 /**

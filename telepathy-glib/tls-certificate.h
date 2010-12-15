@@ -93,10 +93,11 @@ gboolean tp_tls_certificate_accept_finish (TpTLSCertificate *self,
     GAsyncResult *result,
     GError **error);
 
-void tp_tls_certificate_reject_async (TpTLSCertificate *self,
+void tp_tls_certificate_add_rejection (TpTLSCertificate *self,
     TpTLSCertificateRejectReason reason,
     const gchar *dbus_error,
-    GHashTable *details,
+    GHashTable *details);
+void tp_tls_certificate_reject_async (TpTLSCertificate *self,
     GAsyncReadyCallback callback,
     gpointer user_data);
 gboolean tp_tls_certificate_reject_finish (TpTLSCertificate *self,

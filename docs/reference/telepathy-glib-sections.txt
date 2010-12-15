@@ -7335,6 +7335,7 @@ tp_tls_certificate_get_rejection
 tp_tls_certificate_get_nth_rejection
 tp_tls_certificate_accept_async
 tp_tls_certificate_accept_finish
+tp_tls_certificate_add_rejection
 tp_tls_certificate_reject_async
 tp_tls_certificate_reject_finish
 <SUBSECTION>
