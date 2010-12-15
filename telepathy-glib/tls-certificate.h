@@ -72,8 +72,7 @@ GQuark tp_tls_certificate_get_feature_quark_core (void);
 #define TP_TLS_CERTIFICATE_FEATURE_CORE \
   (tp_tls_certificate_get_feature_quark_core ())
 
-TpTLSCertificate *tp_tls_certificate_new (TpDBusDaemon *dbus_daemon,
-    const gchar *bus_name,
+TpTLSCertificate *tp_tls_certificate_new (TpProxy *conn_or_chan,
     const gchar *object_path,
     GError **error);
 

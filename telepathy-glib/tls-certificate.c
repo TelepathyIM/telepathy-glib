@@ -70,10 +70,13 @@ enum {
   PROP_CERT_TYPE = 1,
   PROP_CERT_DATA,
   PROP_STATE,
+  PROP_PARENT,
   N_PROPS
 };
 
 struct _TpTLSCertificatePrivate {
+  TpProxy *parent;
+
   /* TLSCertificate properties */
   gchar *cert_type;
   GPtrArray *cert_data;
@@ -141,6 +144,21 @@ tls_certificate_got_all_cb (TpProxy *proxy,
 }
 
 static void
+parent_invalidated_cb (TpProxy *parent,
+    guint domain,
+    gint code,
+    gchar *message,
+    TpTLSCertificate *self)
+{
+  GError e = { domain, code, message };
+
+  tp_clear_object (&self->priv->parent);
+
+  tp_proxy_invalidate ((TpProxy *) self, &e);
+  g_object_notify ((GObject *) self, "parent");
+}
+
+static void
 tp_tls_certificate_constructed (GObject *object)
 {
   TpTLSCertificate *self = TP_TLS_CERTIFICATE (object);
@@ -149,6 +167,22 @@ tp_tls_certificate_constructed (GObject *object)
 
   if (constructed != NULL)
     constructed (object);
+
+  g_return_if_fail (TP_IS_CHANNEL (self->priv->parent) ||
+      TP_IS_CONNECTION (self->priv->parent));
+
+  if (self->priv->parent->invalidated != NULL)
+    {
+      GError *invalidated = self->priv->parent->invalidated;
+
+      parent_invalidated_cb (self->priv->parent, invalidated->domain,
+          invalidated->code, invalidated->message, self);
+    }
+  else
+    {
+      tp_g_signal_connect_object (self->priv->parent,
+          "invalidated", G_CALLBACK (parent_invalidated_cb), self, 0);
+    }
 
   /* FIXME: if we want change notification for 'state', this is the place */
 
@@ -185,12 +219,39 @@ tp_tls_certificate_get_property (GObject *object,
     case PROP_CERT_TYPE:
       g_value_set_string (value, priv->cert_type);
       break;
+
     case PROP_CERT_DATA:
       g_value_set_boxed (value, priv->cert_data);
       break;
+
     case PROP_STATE:
       g_value_set_uint (value, priv->state);
       break;
+
+    case PROP_PARENT:
+      g_value_set_object (value, priv->parent);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+tp_tls_certificate_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpTLSCertificate *self = TP_TLS_CERTIFICATE (object);
+
+  switch (property_id)
+    {
+    case PROP_PARENT:
+      self->priv->parent = TP_PROXY (g_value_dup_object (value));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -234,6 +295,7 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
   tp_tls_certificate_init_known_interfaces ();
 
   oclass->get_property = tp_tls_certificate_get_property;
+  oclass->set_property = tp_tls_certificate_set_property;
   oclass->constructed = tp_tls_certificate_constructed;
   oclass->finalize = tp_tls_certificate_finalize;
 
@@ -281,6 +343,18 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
       TP_TLS_CERTIFICATE_STATE_PENDING,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (oclass, PROP_STATE, pspec);
+
+  /**
+   * TpTLSCertificate:parent:
+   *
+   * A #TpConnection or #TpChannel which owns this TLS certificate. If the
+   * parent object is invalidated, the certificate is also invalidated, and
+   * this property is set to %NULL.
+   */
+  pspec = g_param_spec_object ("parent", "Parent",
+      "The TpConnection or TpChannel to which this belongs", TP_TYPE_PROXY,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (oclass, PROP_PARENT, pspec);
 }
 
 static void
@@ -354,9 +428,8 @@ reject_reason_get_dbus_error (TpTLSCertificateRejectReason reason)
 
 /**
  * tp_tls_certificate_new:
- * @dbus: a connection to D-Bus
- * @bus_name: the unique bus name of the connection manager implementing
- *  this TLS certificate
+ * @conn_or_chan: a #TpConnection or #TpChannel parent for this object, whose
+ *  invalidation will also result in invalidation of the returned object
  * @object_path: the object path of this TLS certificate
  *
  * <!-- -->
@@ -365,23 +438,22 @@ reject_reason_get_dbus_error (TpTLSCertificateRejectReason reason)
  *  feature %TP_TLS_CERTIFICATE_FEATURE_CORE to make it useful.
  */
 TpTLSCertificate *
-tp_tls_certificate_new (TpDBusDaemon *dbus,
-    const gchar *bus_name,
+tp_tls_certificate_new (TpProxy *conn_or_chan,
     const gchar *object_path,
     GError **error)
 {
   TpTLSCertificate *retval = NULL;
 
-  if (!tp_dbus_check_valid_bus_name (bus_name,
-          TP_DBUS_NAME_TYPE_UNIQUE, error))
-    goto finally;
+  g_return_val_if_fail (TP_IS_CONNECTION (conn_or_chan) ||
+      TP_IS_CHANNEL (conn_or_chan), NULL);
 
   if (!tp_dbus_check_valid_object_path (object_path, error))
     goto finally;
 
   retval = g_object_new (TP_TYPE_TLS_CERTIFICATE,
-      "dbus-daemon", dbus,
-      "bus-name", bus_name,
+      "parent", conn_or_chan,
+      "dbus-daemon", conn_or_chan->dbus_daemon,
+      "dbus-daemon", conn_or_chan->bus_name,
       "object-path", object_path,
       NULL);
 
