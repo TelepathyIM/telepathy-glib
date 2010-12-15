@@ -34,7 +34,7 @@ TP_USER_ACTION_TIME_CURRENT_TIME
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/base-connection.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-connection</FILE>
 <TITLE>TpBaseConnection</TITLE>
 TP_INTERNAL_CONNECTION_STATUS_NEW
@@ -77,7 +77,7 @@ TpBaseConnectionPrivate
 
 <SECTION>
 <TITLE>TpBaseConnectionManager</TITLE>
-<INCLUDE>telepathy-glib/base-connection-manager.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-connection-manager</FILE>
 TpCMParamFilter
 tp_cm_param_filter_string_nonempty
@@ -179,7 +179,7 @@ TP_EXPORTABLE_CHANNEL_GET_INTERFACE
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/base-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-channel</FILE>
 <TITLE>TpBaseChannel</TITLE>
 TpBaseChannel
@@ -4616,7 +4616,7 @@ TpDebugSenderPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/base-client.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-client</FILE>
 <TITLE>base-client</TITLE>
 TpBaseClient
@@ -4815,7 +4815,7 @@ TpSimplePasswordManagerPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/base-protocol.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-protocol</FILE>
 <TITLE>base-protocol</TITLE>
 TpBaseProtocol
@@ -5032,7 +5032,7 @@ tp_svc_channel_type_server_tls_connection_get_type
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/base-contact-list.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <FILE>base-contact-list</FILE>
 <TITLE>base-contact-list</TITLE>
 TpBaseContactList
