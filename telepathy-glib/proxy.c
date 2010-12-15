@@ -1654,7 +1654,6 @@ tp_proxy_prepare_async (gpointer self,
 {
   TpProxy *proxy = self;
   GSimpleAsyncResult *result = NULL;
-  const GError *error;
   guint i;
 
   g_return_if_fail (TP_IS_PROXY (self));
@@ -1665,6 +1664,12 @@ tp_proxy_prepare_async (gpointer self,
   for (i = 0; features[i] != 0; i++)
     {
       FeatureState state = tp_proxy_get_feature_state (self, features[i]);
+
+      /* stop if the proxy has been invalidated: we check this each time
+       * through the loop because any of the preparation callbacks
+       * could conceivably invalidate us */
+      if (proxy->invalidated != NULL)
+        break;
 
       if (state == FEATURE_STATE_INVALID)
         {
@@ -1692,13 +1697,11 @@ tp_proxy_prepare_async (gpointer self,
     result = g_simple_async_result_new (self, callback, user_data,
         tp_proxy_prepare_async);
 
-  error = tp_proxy_get_invalidated (self);
-
-  if (error != NULL)
+  if (proxy->invalidated != NULL)
     {
       if (result != NULL)
         {
-          g_simple_async_result_set_from_error (result, error);
+          g_simple_async_result_set_from_error (result, proxy->invalidated);
           g_simple_async_result_complete_in_idle (result);
         }
 
