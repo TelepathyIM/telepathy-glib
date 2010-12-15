@@ -569,15 +569,19 @@ tp_tls_certificate_accept_finish (TpTLSCertificate *self,
 
 static GPtrArray *
 build_rejections_array (TpTLSCertificateRejectReason reason,
+    const gchar *dbus_error,
     GHashTable *details)
 {
   GPtrArray *retval;
   GValueArray *rejection;
 
+  if (dbus_error == NULL)
+    dbus_error = reject_reason_get_dbus_error (reason);
+
   retval = g_ptr_array_new ();
   rejection = tp_value_array_build (3,
       G_TYPE_UINT, reason,
-      G_TYPE_STRING, reject_reason_get_dbus_error (reason),
+      G_TYPE_STRING, dbus_error,
       TP_HASH_TYPE_STRING_VARIANT_MAP, details,
       NULL);
 
@@ -590,6 +594,8 @@ build_rejections_array (TpTLSCertificateRejectReason reason,
  * tp_tls_certificate_reject_async:
  * @self: a TLS certificate
  * @reason: the reason for rejection
+ * @dbus_error: a D-Bus error name such as %TP_ERROR_STR_CERT_REVOKED, or
+ *  %NULL to derive one from @reason
  * @details: (transfer none) (element-type utf8 GObject.Value): details of the
  *  rejection
  * @callback: called on success or failure
@@ -604,6 +610,7 @@ build_rejections_array (TpTLSCertificateRejectReason reason,
 void
 tp_tls_certificate_reject_async (TpTLSCertificate *self,
     TpTLSCertificateRejectReason reason,
+    const gchar *dbus_error,
     GHashTable *details,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -611,7 +618,9 @@ tp_tls_certificate_reject_async (TpTLSCertificate *self,
   GPtrArray *rejections;
   GSimpleAsyncResult *reject_result;
 
-  g_assert (TP_IS_TLS_CERTIFICATE (self));
+  g_return_if_fail (TP_IS_TLS_CERTIFICATE (self));
+  g_return_if_fail (dbus_error == NULL ||
+      tp_dbus_check_valid_interface_name (dbus_error, NULL));
 
   DEBUG ("Rejecting TLS certificate with reason %u", reason);
 
