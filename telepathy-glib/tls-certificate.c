@@ -344,8 +344,7 @@ tp_tls_certificate_class_init (TpTLSCertificateClass *klass)
    */
   pspec = g_param_spec_uint ("state", "State",
       "The state of this certificate.",
-      TP_TLS_CERTIFICATE_STATE_PENDING, NUM_TP_TLS_CERTIFICATE_STATES -1,
-      TP_TLS_CERTIFICATE_STATE_PENDING,
+      0, G_MAXUINT32, TP_TLS_CERTIFICATE_STATE_PENDING,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (oclass, PROP_STATE, pspec);
 
