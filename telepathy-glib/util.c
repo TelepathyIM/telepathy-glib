@@ -993,6 +993,8 @@ tp_g_signal_connect_object (gpointer instance,
   g_return_val_if_fail (detailed_signal != NULL, 0);
   g_return_val_if_fail (c_handler != NULL, 0);
   g_return_val_if_fail (G_IS_OBJECT (gobject), 0);
+  g_return_val_if_fail (
+      (connect_flags & ~(G_CONNECT_AFTER|G_CONNECT_SWAPPED)) == 0, 0);
 
   if (connect_flags & G_CONNECT_SWAPPED)
     ctx->closure = g_cclosure_new_object_swap (c_handler, gobject);
