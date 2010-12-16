@@ -151,6 +151,7 @@ typedef struct
 {
   gchar *last_owner;
   GArray *callbacks;
+  gsize invoking;
 } _NameOwnerWatch;
 
 typedef struct
@@ -159,6 +160,43 @@ typedef struct
   gpointer user_data;
   GDestroyNotify destroy;
 } _NameOwnerSubWatch;
+
+static void _tp_dbus_daemon_stop_watching (TpDBusDaemon *self,
+    const gchar *name, _NameOwnerWatch *watch);
+
+static void
+tp_dbus_daemon_maybe_free_name_owner_watch (TpDBusDaemon *self,
+    const gchar *name,
+    _NameOwnerWatch *watch)
+{
+  /* Check to see whether this (callback, user_data) pair is in the watch's
+   * array of callbacks. */
+  GArray *array = watch->callbacks;
+  guint i;
+
+  if (watch->invoking > 0)
+    return;
+
+  for (i = 1; i <= array->len; i++)
+    {
+      _NameOwnerSubWatch *entry = &g_array_index (array,
+          _NameOwnerSubWatch, array->len - i);
+
+      if (entry->callback != NULL)
+        continue;
+
+      if (entry->destroy != NULL)
+        entry->destroy (entry->user_data);
+
+      g_array_remove_index (array, array->len - i);
+    }
+
+  if (array->len == 0)
+    {
+      _tp_dbus_daemon_stop_watching (self, name, watch);
+      g_hash_table_remove (self->priv->name_owner_watches, name);
+    }
+}
 
 static void
 _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
@@ -185,24 +223,26 @@ _tp_dbus_daemon_name_owner_changed (TpDBusDaemon *self,
   g_free (watch->last_owner);
   watch->last_owner = g_strdup (new_owner);
 
-  /* We're calling out to user code which might end up removing its watch, so
-   * we need to hold onto the array while we're iterating it.
-   *
-   * FIXME: actually, if you have two callbacks and the first callback removes
-   * itself, the second one will never be called! This is a very old bug. I'll
-   * fix it with some kind of mark-and-sweep shortly.
-   */
-  array = g_array_ref (watch->callbacks);
+  /* We're calling out to user code which might end up removing its watch;
+   * tell it to be less destructive. Also hold a ref on self, to avoid it
+   * getting removed that way. */
+  array = watch->callbacks;
+  g_object_ref (self);
+  watch->invoking++;
 
   for (i = 0; i < array->len; i++)
     {
       _NameOwnerSubWatch *subwatch = &g_array_index (array,
           _NameOwnerSubWatch, i);
 
-      subwatch->callback (self, name, new_owner, subwatch->user_data);
+      if (subwatch->callback != NULL)
+        subwatch->callback (self, name, new_owner, subwatch->user_data);
     }
 
-  g_array_unref (array);
+  watch->invoking--;
+
+  tp_dbus_daemon_maybe_free_name_owner_watch (self, name, watch);
+  g_object_unref (self);
 }
 
 static dbus_int32_t daemons_slot = -1;
@@ -468,7 +508,7 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
       GetNameOwnerContext *context = get_name_owner_context_new (self, name);
 
       /* Allocate a new watch */
-      watch = g_slice_new (_NameOwnerWatch);
+      watch = g_slice_new0 (_NameOwnerWatch);
       watch->last_owner = NULL;
       watch->callbacks = g_array_new (FALSE, FALSE,
           sizeof (_NameOwnerSubWatch));
@@ -602,17 +642,8 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
 
           if (entry->callback == callback && entry->user_data == user_data)
             {
-              if (entry->destroy != NULL)
-                entry->destroy (entry->user_data);
-
-              g_array_remove_index (array, array->len - i);
-
-              if (array->len == 0)
-                {
-                  _tp_dbus_daemon_stop_watching (self, name, watch);
-                  g_hash_table_remove (self->priv->name_owner_watches, name);
-                }
-
+              entry->callback = NULL;
+              tp_dbus_daemon_maybe_free_name_owner_watch (self, name, watch);
               return TRUE;
             }
         }
@@ -1292,7 +1323,11 @@ tp_dbus_daemon_dispose (GObject *object)
 
       while (g_hash_table_iter_next (&iter, &k, &v))
         {
-          _tp_dbus_daemon_stop_watching (self, k, v);
+          _NameOwnerWatch *watch = v;
+
+          /* it refs us while invoking stuff */
+          g_assert (watch->invoking == 0);
+          _tp_dbus_daemon_stop_watching (self, k, watch);
           g_hash_table_iter_remove (&iter);
         }
 
