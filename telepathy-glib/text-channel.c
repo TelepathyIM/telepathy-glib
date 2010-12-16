@@ -1001,6 +1001,8 @@ tp_text_channel_new (TpConnection *conn,
 const gchar * const *
 tp_text_channel_get_supported_content_types (TpTextChannel *self)
 {
+  g_return_val_if_fail (TP_IS_TEXT_CHANNEL (self), NULL);
+
   return (const gchar * const *) self->priv->supported_content_types;
 }
 
@@ -1018,6 +1020,8 @@ TpMessagePartSupportFlags
 tp_text_channel_get_message_part_support_flags (
     TpTextChannel *self)
 {
+  g_return_val_if_fail (TP_IS_TEXT_CHANNEL (self), 0);
+
   return self->priv->message_part_support_flags;
 }
 
@@ -1035,6 +1039,8 @@ TpDeliveryReportingSupportFlags
 tp_text_channel_get_delivery_reporting_support (
     TpTextChannel *self)
 {
+  g_return_val_if_fail (TP_IS_TEXT_CHANNEL (self), 0);
+
   return self->priv->delivery_reporting_support;
 }
 
