@@ -623,6 +623,10 @@ free_parts_list (gpointer data)
   g_list_free (parts_list);
 }
 
+/* There is no TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST (fdo #32433) */
+#define ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST dbus_g_type_get_collection (\
+    "GPtrArray", TP_ARRAY_TYPE_MESSAGE_PART_LIST)
+
 static void
 get_pending_messages_cb (TpProxy *proxy,
     const GValue *value,
@@ -642,6 +646,15 @@ get_pending_messages_cb (TpProxy *proxy,
   if (error != NULL)
     {
       DEBUG ("Failed to get PendingMessages property: %s", error->message);
+
+      _tp_proxy_set_feature_prepared (proxy,
+          TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, FALSE);
+      return;
+    }
+
+  if (!G_VALUE_HOLDS (value, ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST))
+    {
+      DEBUG ("PendingMessages property is of the wrong type");
 
       _tp_proxy_set_feature_prepared (proxy,
           TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, FALSE);
