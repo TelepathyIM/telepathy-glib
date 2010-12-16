@@ -60,7 +60,9 @@ TpTextChannel *tp_text_channel_new (TpConnection *conn,
     const GHashTable *immutable_properties,
     GError **error);
 
-GStrv tp_text_channel_get_supported_content_types (TpTextChannel *self);
+const gchar * const *
+/* gtk-doc sucks */
+tp_text_channel_get_supported_content_types (TpTextChannel *self);
 
 TpMessagePartSupportFlags tp_text_channel_get_message_part_support_flags (
     TpTextChannel *self);

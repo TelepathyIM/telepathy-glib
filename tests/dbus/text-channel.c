@@ -145,6 +145,7 @@ test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GStrv content_types;
+  const gchar * const * content_types2;
   TpMessagePartSupportFlags message_part;
   TpDeliveryReportingSupportFlags delivery;
 
@@ -158,8 +159,8 @@ test_properties (Test *test,
   g_assert_cmpstr (content_types[0], ==, "*/*");
   g_strfreev (content_types);
 
-  content_types = tp_text_channel_get_supported_content_types (test->channel);
-  g_assert_cmpstr (content_types[0], ==, "*/*");
+  content_types2 = tp_text_channel_get_supported_content_types (test->channel);
+  g_assert_cmpstr (content_types2[0], ==, "*/*");
 
   g_assert_cmpuint (message_part, ==,
       TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT |

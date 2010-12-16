@@ -996,10 +996,10 @@ tp_text_channel_new (TpConnection *conn,
  *
  * Since: 0.13.UNRELEASED
  */
-GStrv
+const gchar * const *
 tp_text_channel_get_supported_content_types (TpTextChannel *self)
 {
-  return self->priv->supported_content_types;
+  return (const gchar * const *) self->priv->supported_content_types;
 }
 
 /**
