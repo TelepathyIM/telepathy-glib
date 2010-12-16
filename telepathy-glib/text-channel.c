@@ -778,7 +778,7 @@ fail:
   g_error_free (error);
 
   _tp_proxy_set_feature_prepared (proxy,
-      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
+      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, FALSE);
 }
 
 enum {
