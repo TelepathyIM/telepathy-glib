@@ -303,8 +303,6 @@ test_pending_messages (Test *test,
   g_assert (sender != NULL);
   g_assert_cmpstr (tp_contact_get_identifier (sender), ==, "bob");
 
-  /* TODO: check sender */
-
   g_list_free (messages);
 }
 
