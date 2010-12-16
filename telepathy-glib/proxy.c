@@ -289,8 +289,11 @@ typedef enum {
     FEATURE_STATE_INVALID = GPOINTER_TO_INT (NULL),
     /* Nobody cares */
     FEATURE_STATE_UNWANTED,
-    /* Want to prepare, called start_preparing if necessary */
+    /* Want to prepare, waiting for dependencies to be satisfied (or maybe
+     * just poll_features being called) */
     FEATURE_STATE_WANTED,
+    /* Want to prepare, have called start_preparing */
+    FEATURE_STATE_TRYING,
     /* Couldn't prepare, gave up */
     FEATURE_STATE_FAILED,
     /* Prepared */
@@ -1590,7 +1593,7 @@ _tp_proxy_is_preparing (gpointer self,
 
   state = tp_proxy_get_feature_state (self, feature);
   g_return_val_if_fail (state != FEATURE_STATE_INVALID, FALSE);
-  return (state == FEATURE_STATE_WANTED);
+  return (state == FEATURE_STATE_WANTED || state == FEATURE_STATE_TRYING);
 }
 
 /**
@@ -1691,7 +1694,7 @@ tp_proxy_prepare_async (gpointer self,
           g_return_if_fail (feat_struct != NULL);
 
           DEBUG ("%p: %s newly wanted", self, g_quark_to_string (features[i]));
-          tp_proxy_set_feature_state (self, features[i], FEATURE_STATE_WANTED);
+          tp_proxy_set_feature_state (self, features[i], FEATURE_STATE_TRYING);
 
           if (feat_struct->start_preparing != NULL)
             feat_struct->start_preparing (self);
@@ -1822,7 +1825,8 @@ tp_proxy_poll_features (TpProxy *self,
           FeatureState state = tp_proxy_get_feature_state (self,
               g_array_index (req->features, GQuark, i));
 
-          if (state == FEATURE_STATE_UNWANTED || state == FEATURE_STATE_WANTED)
+          if (state == FEATURE_STATE_UNWANTED || state == FEATURE_STATE_WANTED
+              || state == FEATURE_STATE_TRYING)
             {
               wait = TRUE;
               break;
