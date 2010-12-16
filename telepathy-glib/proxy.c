@@ -285,10 +285,15 @@ struct _TpProxyFeaturePrivate
  */
 
 typedef enum {
+    /* Not a feature */
     FEATURE_STATE_INVALID = GPOINTER_TO_INT (NULL),
+    /* Nobody cares */
     FEATURE_STATE_UNWANTED,
+    /* Want to prepare, called start_preparing if necessary */
     FEATURE_STATE_WANTED,
+    /* Couldn't prepare, gave up */
     FEATURE_STATE_FAILED,
+    /* Prepared */
     FEATURE_STATE_READY
 } FeatureState;
 
