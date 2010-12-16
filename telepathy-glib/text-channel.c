@@ -301,7 +301,7 @@ tp_text_channel_constructed (GObject *obj)
       message_sent_cb, NULL, NULL, NULL, &err);
   if (err != NULL)
     {
-      DEBUG ("Failed to connect to MessageSent: %s", err->message);
+      WARNING ("Failed to connect to MessageSent: %s", err->message);
       g_error_free (err);
     }
 }
