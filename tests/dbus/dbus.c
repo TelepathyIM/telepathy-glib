@@ -255,7 +255,7 @@ test_watch_name_owner (void)
 #define N_CALLBACK_PAIRS 5
 gboolean callbacks_fired[N_CALLBACK_PAIRS] =
     { FALSE, FALSE, FALSE, FALSE, FALSE };
-/* Overwritten with "-" when "freed" */
+/* Overwritten with '.' when "freed" */
 gchar user_data_flags[N_CALLBACK_PAIRS * 2 + 1] = "0123456789";
 
 static void
@@ -267,6 +267,7 @@ free_fake_user_data (gpointer user_data)
     g_error ("Double 'free' of user-data %u. Still to free: %s", i,
         user_data_flags);
 
+  g_assert_cmpuint ((guint) user_data_flags[i], ==, i + '0');
   user_data_flags[i] = '.';
 }
 
@@ -310,8 +311,11 @@ cancel_watch_during_dispatch (void)
   tp_dbus_daemon_request_name (bus, "ca.bbf3", FALSE, NULL);
 
   for (i = 0; i < N_CALLBACK_PAIRS * 2; i++)
-    tp_dbus_daemon_watch_name_owner (bus, "ca.bbf3", bbf3_performed_cb,
-        GUINT_TO_POINTER (i), free_fake_user_data);
+    {
+      tp_dbus_daemon_watch_name_owner (bus, "ca.bbf3", bbf3_performed_cb,
+          GUINT_TO_POINTER (i), free_fake_user_data);
+      g_assert_cmpuint ((guint) user_data_flags[i], ==, i + '0');
+    }
 
   mainloop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (mainloop);
