@@ -172,15 +172,18 @@ tp_dbus_daemon_maybe_free_name_owner_watch (TpDBusDaemon *self,
   /* Check to see whether this (callback, user_data) pair is in the watch's
    * array of callbacks. */
   GArray *array = watch->callbacks;
+  /* 1 greater than an index into @array, to avoid it going negative: we
+   * iterate in reverse so we can delete elements without needing to adjust
+   * @i to compensate */
   guint i;
 
   if (watch->invoking > 0)
     return;
 
-  for (i = 1; i <= array->len; i++)
+  for (i = array->len; i > 0; i--)
     {
       _NameOwnerSubWatch *entry = &g_array_index (array,
-          _NameOwnerSubWatch, array->len - i);
+          _NameOwnerSubWatch, i - 1);
 
       if (entry->callback != NULL)
         continue;
@@ -188,7 +191,7 @@ tp_dbus_daemon_maybe_free_name_owner_watch (TpDBusDaemon *self,
       if (entry->destroy != NULL)
         entry->destroy (entry->user_data);
 
-      g_array_remove_index (array, array->len - i);
+      g_array_remove_index (array, i - 1);
     }
 
   if (array->len == 0)
@@ -633,12 +636,14 @@ tp_dbus_daemon_cancel_name_owner_watch (TpDBusDaemon *self,
       /* Check to see whether this (callback, user_data) pair is in the watch's
        * array of callbacks. */
       GArray *array = watch->callbacks;
+      /* 1 greater than an index into @array, to avoid it going negative;
+       * we iterate in reverse to have "last in = first out" as documented. */
       guint i;
 
-      for (i = 1; i <= array->len; i++)
+      for (i = array->len; i > 0; i--)
         {
           _NameOwnerSubWatch *entry = &g_array_index (array,
-              _NameOwnerSubWatch, array->len - i);
+              _NameOwnerSubWatch, i - 1);
 
           if (entry->callback == callback && entry->user_data == user_data)
             {
