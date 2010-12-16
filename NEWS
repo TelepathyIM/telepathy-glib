@@ -22,6 +22,9 @@ Fixes:
 • fd.o #32423: Preparing TpAccount features when the CORE feature is already
   prepared now works (smcv)
 
+• fd.o #32391: correctly deal with removing name owner watches during
+  dispatch of their callbacks (wjt, smcv)
+
 • Documentation improvements (smcv)
 
 telepathy-glib 0.13.9 (2010-12-10)
