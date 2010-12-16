@@ -272,8 +272,13 @@ tp_text_channel_constructed (GObject *obj)
       TP_PROP_CHANNEL_INTERFACE_MESSAGES_SUPPORTED_CONTENT_TYPES);
   if (self->priv->supported_content_types == NULL)
     {
+      const gchar * const plain[] = { "text/plain", NULL };
+
       DEBUG ("Channel doesn't have Messages.SupportedContentTypes in its "
           "immutable properties");
+
+      /* spec mandates that plain text is always allowed. */
+      self->priv->supported_content_types = g_strdupv ((GStrv) plain);
     }
   else
     {
