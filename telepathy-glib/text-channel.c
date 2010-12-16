@@ -488,6 +488,9 @@ pending_messages_removed_cb (TpChannel *proxy,
   TpTextChannel *self = (TpTextChannel *) proxy;
   guint i;
 
+  if (!self->priv->got_initial_messages)
+    return;
+
   for (i = 0; i < ids->len; i++)
     {
       guint id = g_array_index (ids, guint, i);
