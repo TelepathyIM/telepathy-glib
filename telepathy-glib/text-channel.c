@@ -78,7 +78,7 @@ struct _TpTextChannelPrivate
 
   /* queue of owned TpSignalledMessage */
   GQueue *pending_messages;
-  gboolean retrieving_pending;
+  gboolean got_initial_messages;
 };
 
 enum
@@ -423,7 +423,7 @@ message_received_cb (TpChannel *proxy,
 
   /* If we are still retrieving pending messages, no need to add the message,
    * it will be in the initial set of messages retrieved. */
-  if (self->priv->retrieving_pending)
+  if (!self->priv->got_initial_messages)
     return;
 
   DEBUG ("New message received");
@@ -646,7 +646,7 @@ get_pending_messages_cb (TpProxy *proxy,
   GList *parts_list = NULL;
   GPtrArray *sender_ids;
 
-  self->priv->retrieving_pending = FALSE;
+  self->priv->got_initial_messages = TRUE;
 
   if (error != NULL)
     {
@@ -747,7 +747,6 @@ get_pending_messages_cb (TpProxy *proxy,
 static void
 tp_text_channel_prepare_pending_messages (TpProxy *proxy)
 {
-  TpTextChannel *self = (TpTextChannel *) proxy;
   TpChannel *channel = (TpChannel *) proxy;
   GError *error = NULL;
 
@@ -768,8 +767,6 @@ tp_text_channel_prepare_pending_messages (TpProxy *proxy)
           error->message);
       goto fail;
     }
-
-  self->priv->retrieving_pending = TRUE;
 
   tp_cli_dbus_properties_call_get (proxy, -1,
       TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "PendingMessages",
