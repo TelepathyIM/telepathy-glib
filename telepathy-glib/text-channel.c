@@ -571,7 +571,7 @@ got_pending_senders_contact_by_handle_cb (TpConnection *connection,
 
 out:
   _tp_proxy_set_feature_prepared (TP_PROXY (self),
-      TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
 }
 
 static void
@@ -608,7 +608,7 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
 
 out:
   _tp_proxy_set_feature_prepared (TP_PROXY (self),
-      TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
 }
 
 static void
@@ -648,7 +648,7 @@ get_pending_messages_cb (TpProxy *proxy,
       DEBUG ("Failed to get PendingMessages property: %s", error->message);
 
       _tp_proxy_set_feature_prepared (proxy,
-          TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, FALSE);
+          TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, FALSE);
       return;
     }
 
@@ -657,7 +657,7 @@ get_pending_messages_cb (TpProxy *proxy,
       DEBUG ("PendingMessages property is of the wrong type");
 
       _tp_proxy_set_feature_prepared (proxy,
-          TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, FALSE);
+          TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, FALSE);
       return;
     }
 
@@ -701,7 +701,7 @@ get_pending_messages_cb (TpProxy *proxy,
   if (tp_intset_size (senders) == 0)
     {
       _tp_proxy_set_feature_prepared (proxy,
-          TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+          TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
     }
   else
     {
@@ -776,7 +776,7 @@ fail:
   g_error_free (error);
 
   _tp_proxy_set_feature_prepared (proxy,
-      TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, TRUE);
+      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
 }
 
 enum {
@@ -793,7 +793,7 @@ tp_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
     return features;
 
   features[FEAT_PENDING_MESSAGES].name =
-    TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES;
+    TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES;
   features[FEAT_PENDING_MESSAGES].start_preparing =
     tp_text_channel_prepare_pending_messages;
 
@@ -873,7 +873,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * received on @self.
    *
    * Note that this signal is only fired once the
-   * #TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES has been prepared.
+   * #TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES has been prepared.
    *
    * Since: 0.13.UNRELEASED
    */
@@ -894,7 +894,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * has been acked and so removed from the pending messages list.
    *
    * Note that this signal is only fired once the
-   * #TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES has been prepared.
+   * #TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES has been prepared.
    *
    * Since: 0.13.UNRELEASED
    */
@@ -1037,10 +1037,10 @@ tp_text_channel_get_delivery_reporting_support (
 }
 
 /**
- * TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES:
+ * TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES:
  *
  * Expands to a call to a function that returns a quark representing the
- * Pending Messages features of a #TpTextChannel.
+ * incoming messages features of a #TpTextChannel.
  *
  * When this feature is prepared, the initial value of the
  * #TpTextChannel:pending-messages property has been fetched
@@ -1052,10 +1052,10 @@ tp_text_channel_get_delivery_reporting_support (
  * Since: 0.13.UNRELEASED
  */
 GQuark
-tp_text_channel_get_feature_quark_pending_messages (void)
+tp_text_channel_get_feature_quark_incoming_messages (void)
 {
   return g_quark_from_static_string (
-      "tp-text-channel-feature-pending-messages");
+      "tp-text-channel-feature-incoming-messages");
 }
 
 /**

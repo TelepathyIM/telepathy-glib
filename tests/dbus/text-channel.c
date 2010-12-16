@@ -227,7 +227,7 @@ static void
 test_pending_messages (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, 0 };
   GList *messages;
   TpMessage *msg;
   gchar *text;
@@ -275,7 +275,7 @@ test_pending_messages (Test *test,
   g_assert_no_error (test->error);
 
   g_assert (tp_proxy_is_prepared (test->channel,
-        TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES));
+        TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES));
 
   /* We have the pending messages now */
   messages = tp_text_channel_get_pending_messages (test->channel);
@@ -324,14 +324,13 @@ static void
 test_message_received (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, 0 };
   TpMessage *msg;
   gchar *text;
   TpContact *sender;
 
   /* We have to prepare the pending messages feature to be notified about
    * incoming messages */
-  /* FIXME: Shouldn't we rename this feature then ? */
   tp_proxy_prepare_async (test->channel, features,
       proxy_prepare_cb, test);
 
@@ -381,7 +380,7 @@ static void
 test_ack_messages (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, 0 };
   GList *messages;
   TpMessage *msg;
 
@@ -462,7 +461,7 @@ static void
 test_ack_message (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES, 0 };
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, 0 };
   GList *messages;
   TpMessage *msg;
 

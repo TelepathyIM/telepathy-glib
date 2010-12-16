@@ -105,7 +105,7 @@ handle_channels_cb (TpSimpleHandler *self,
           G_CALLBACK (message_received_cb), NULL);
 
       /* The default channel factory used by the TpSimpleHandler has
-       * already prepared TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES,
+       * already prepared TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES,
        * if possible. */
       display_pending_messages (text_chan);
     }

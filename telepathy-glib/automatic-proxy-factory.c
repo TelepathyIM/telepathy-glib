@@ -57,7 +57,7 @@
  *     type of channels.</para>
  *   </listitem>
  *   <listitem>
- *     <para>%TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES for
+ *     <para>%TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES for
  *     #TpTextChannel</para>
  *   </listitem>
  * </itemizedlist>
@@ -184,7 +184,7 @@ tp_automatic_proxy_factory_dup_channel_features_impl (TpChannel *channel)
 
   if (TP_IS_TEXT_CHANNEL (channel))
     {
-      feature = TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES;
+      feature = TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES;
       g_array_append_val (features, feature);
     }
 
