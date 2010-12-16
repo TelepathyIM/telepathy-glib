@@ -471,7 +471,7 @@ find_msg_by_id (gconstpointer a,
   if (!valid)
     return 1;
 
-  return msg_id - id;
+  return msg_id != id;
 }
 
 static void
