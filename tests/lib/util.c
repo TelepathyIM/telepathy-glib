@@ -277,6 +277,9 @@ time_out (gpointer nil G_GNUC_UNUSED)
 void
 tp_tests_abort_after (guint sec)
 {
+  if (g_getenv ("TP_TESTS_NO_TIMEOUT") != NULL)
+    return;
+
   g_timeout_add_seconds (sec, time_out, NULL);
 
 #ifdef G_OS_UNIX
