@@ -5,6 +5,9 @@ Enhancements:
 
 • New TpMessage API: tp_message_get_message_type, tp_cm_message_new_text (smcv)
 
+• fd.o #32411: warn and do nothing if unsupported flags are passed to
+  tp_g_signal_connect_object (smcv)
+
 Fixes:
 
 • tp_account_manager_ensure_account() no longer criticals if you pass it a
@@ -15,6 +18,9 @@ Fixes:
 
 • fd.o#32184: Connection bus names are no longer erroneously released while
   connections are still open. This was a regression in 0.13.5. (wjt)
+
+• fd.o #32423: Preparing TpAccount features when the CORE feature is already
+  prepared now works (smcv)
 
 • Documentation improvements (smcv)
 
