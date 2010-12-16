@@ -22,15 +22,20 @@ echo_message (TpTextChannel *channel,
   gchar *text;
   gchar *up;
   TpMessage *reply;
+  TpChannelTextMessageFlags flags;
+  const gchar *comment = "";
 
-  text = tp_message_to_text (message, NULL);
-  if (text == NULL)
-    return;
+  text = tp_message_to_text (message, &flags);
+
+  if (flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT)
+    {
+      comment = " (and some non-text content we don't understand)";
+    }
 
   if (pending)
-    g_print ("pending: %s\n", text);
+    g_print ("pending: '%s' %s\n", text, comment);
   else
-    g_print ("received: %s\n", text);
+    g_print ("received: '%s' %s\n", text, comment);
 
   up = g_ascii_strup (text, -1);
   g_print ("send: %s\n", up);
@@ -64,7 +69,6 @@ display_pending_messages (TpTextChannel *channel)
   for (l = messages; l != NULL; l = g_list_next (l))
     {
       TpMessage *msg = l->data;
-
 
       echo_message (channel, msg, TRUE);
     }
@@ -100,6 +104,9 @@ handle_channels_cb (TpSimpleHandler *self,
       g_signal_connect (channel, "message-received",
           G_CALLBACK (message_received_cb), NULL);
 
+      /* The default channel factory used by the TpSimpleHandler has
+       * already prepared TP_TEXT_CHANNEL_FEATURE_PENDING_MESSAGES,
+       * if possible. */
       display_pending_messages (text_chan);
     }
 
