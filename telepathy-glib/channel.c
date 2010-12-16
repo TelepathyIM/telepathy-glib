@@ -27,6 +27,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/debug-internal.h"
@@ -2121,4 +2122,285 @@ tp_channel_get_initiator_identifier (TpChannel *self)
       TP_PROP_CHANNEL_INITIATOR_ID);
 
   return id != NULL ? id : "";
+}
+
+/* tp_cli callbacks can potentially be called in a re-entrant way,
+ * so we can't necessarily complete @result without using an idle. */
+static void
+channel_close_cb (TpChannel *channel,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Close() failed: %s", error->message);
+
+      if (tp_proxy_get_invalidated (channel) == NULL)
+        {
+          g_simple_async_result_set_from_error (result, error);
+        }
+      else
+        {
+          DEBUG ("... but channel was already invalidated, so never mind");
+        }
+    }
+
+  g_simple_async_result_complete_in_idle (result);
+  g_object_unref (result);
+}
+
+/* This is only called from the main loop, as a result of group_prepared_cb
+ * having the same property, so it can complete LeaveCtx.result without
+ * an idle. */
+static void
+channel_remove_self_cb (TpChannel *channel,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("RemoveMembersWithDetails() with self handle failed: %s",
+          error->message);
+
+      if (tp_proxy_get_invalidated (channel) != NULL)
+        {
+          DEBUG ("Proxy has been invalidated; succeed");
+          goto succeed;
+        }
+
+      DEBUG ("Close channel then");
+
+      tp_cli_channel_call_close (channel, -1, channel_close_cb, result,
+          NULL, NULL);
+      return;
+    }
+
+ DEBUG ("RemoveMembersWithDetails() succeeded");
+
+succeed:
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+typedef struct
+{
+  GSimpleAsyncResult *result;
+  gchar *message;
+  TpChannelGroupChangeReason reason;
+} LeaveCtx;
+
+/* Takes the reference on @result */
+static LeaveCtx *
+leave_ctx_new (GSimpleAsyncResult *result,
+    const gchar *message,
+    TpChannelGroupChangeReason reason)
+{
+  LeaveCtx *ctx = g_slice_new (LeaveCtx);
+
+  ctx->result = result;
+  ctx->message = message != NULL ? g_strdup (message) : g_strdup ("");
+  ctx->reason = reason;
+
+  return ctx;
+}
+
+static void
+leave_ctx_free (LeaveCtx *ctx)
+{
+  g_object_unref (ctx->result);
+  g_free (ctx->message);
+
+  g_slice_free (LeaveCtx, ctx);
+}
+
+/* This is only called from the main loop, so it can safely complete
+ * LeaveCtx.result without an idle. */
+static void
+group_prepared_cb (GObject *source,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  LeaveCtx *ctx = user_data;
+  TpChannel *self = (TpChannel *) source;
+  GError *error = NULL;
+  TpHandle self_handle;
+  GArray *handles;
+
+  if (!tp_proxy_prepare_finish (source, res, &error))
+    {
+      DEBUG ("Failed to prepare Group feature; fallback to Close(): %s",
+          error->message);
+
+      g_error_free (error);
+      goto call_close;
+    }
+
+  self_handle = tp_channel_group_get_self_handle (self);
+  if (self_handle == 0)
+    {
+      DEBUG ("We are not in the channel, fallback to Close()");
+      goto call_close;
+    }
+
+  handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
+  g_array_append_val (handles, self_handle);
+
+  tp_cli_channel_interface_group_call_remove_members_with_reason (
+      self, -1, handles, ctx->message, ctx->reason,
+      channel_remove_self_cb, g_object_ref (ctx->result), NULL, NULL);
+
+  g_array_unref (handles);
+  leave_ctx_free (ctx);
+  return;
+
+call_close:
+  tp_cli_channel_call_close (self, -1, channel_close_cb,
+      g_object_ref (ctx->result), NULL, NULL);
+
+  leave_ctx_free (ctx);
+}
+
+static void
+leave_channel_async (TpChannel *self,
+    TpChannelGroupChangeReason reason,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
+  LeaveCtx *ctx;
+
+  g_return_if_fail (TP_IS_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_channel_leave_async);
+
+  if (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CORE) &&
+      !tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
+    {
+      DEBUG ("Channel doesn't implement Group; fallback to Close()");
+
+      tp_cli_channel_call_close (self, -1, channel_close_cb, result,
+          NULL, NULL);
+      return;
+    }
+
+  /* We need to prepare TP_CHANNEL_FEATURE_GROUP to get
+   * tp_channel_group_get_self_handle() working */
+  ctx = leave_ctx_new (result, message, reason);
+
+  tp_proxy_prepare_async (self, features, group_prepared_cb, ctx);
+}
+
+/**
+ * tp_channel_leave_async:
+ * @self: a #TpChannel
+ * @reason: the leave reason
+ * @message: the leave message
+ * @callback: a callback to call when we left the channel
+ * @user_data: data to pass to @callback
+ *
+ * Leave channel @self with @reason as reason and @message as leave message.
+ * If @self doesn't implement #TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP or if
+ * for any reason we can't properly leave the channel, we close it.
+ *
+ * When we left the channel, @callback will be called.
+ * You can then call tp_channel_leave_finish() to get the result of
+ * the operation.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_channel_leave_async (TpChannel *self,
+    TpChannelGroupChangeReason reason,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  leave_channel_async (self, reason, message, callback, user_data);
+}
+
+/**
+ * tp_channel_leave_finish:
+ * @self: a #TpChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to leave a channel.
+ *
+ * Returns: %TRUE if the channel has been left; %FALSE otherwise
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_channel_leave_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_channel_leave_async)
+}
+
+/**
+ * tp_channel_close_async:
+ * @self: a #TpChannel
+ * @callback: a callback to call when we closed the channel, or %NULL
+ *  to ignore any reply
+ * @user_data: data to pass to @callback
+ *
+ * Close channel @self. In most cases, it's generally cleaner to use
+ * tp_channel_leave_async() instead to properly leave and close the channel.
+ *
+ * When the channel has been closed, @callback will be called.
+ * You can then call tp_channel_close_finish() to get the result of
+ * the operation.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_channel_close_async (TpChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CHANNEL (self));
+
+  if (callback == NULL)
+    {
+      tp_cli_channel_call_close (self, -1, NULL, NULL, NULL, NULL);
+      return;
+    }
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_channel_close_async);
+  tp_cli_channel_call_close (self, -1, channel_close_cb, result,
+      NULL, NULL);
+}
+
+/**
+ * tp_channel_close_finish:
+ * @self: a #TpChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to close a channel.
+ *
+ * Returns: %TRUE if the channel has been closed; %FALSE otherwise
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_channel_close_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_channel_close_async)
 }

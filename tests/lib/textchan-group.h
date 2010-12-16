@@ -14,6 +14,7 @@
 
 #include <glib-object.h>
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/group-mixin.h>
 #include <telepathy-glib/text-mixin.h>
 
@@ -42,7 +43,7 @@ GType tp_tests_text_channel_group_get_type (void);
                               TpTestsTextChannelGroupClass))
 
 struct _TpTestsTextChannelGroupClass {
-    GObjectClass parent_class;
+    TpBaseChannelClass parent_class;
 
     TpTextMixinClass text_class;
     TpGroupMixinClass group_class;
@@ -50,15 +51,22 @@ struct _TpTestsTextChannelGroupClass {
 };
 
 struct _TpTestsTextChannelGroup {
-    GObject parent;
+    TpBaseChannel parent;
 
     TpBaseConnection *conn;
 
     TpTextMixin text;
     TpGroupMixin group;
 
+    TpHandle removed_handle;
+    gchar *removed_message;
+    TpChannelGroupChangeReason removed_reason;
+
     TpTestsTextChannelGroupPrivate *priv;
 };
+
+
+void tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self);
 
 G_END_DECLS
 
