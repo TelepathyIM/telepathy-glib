@@ -1785,30 +1785,34 @@ tp_proxy_poll_features (TpProxy *self,
   if (self->priv->prepare_requests == NULL)
     return;
 
-  if (error == NULL)
-    {
-      error_source = "invalidated";
-      error = self->invalidated;
-    }
-
-  if (error != NULL)
-    {
-      DEBUG ("%p: %s, ending all requests", self, error_source);
-      iter = self->priv->prepare_requests;
-      self->priv->prepare_core = NULL;
-      self->priv->prepare_requests = NULL;
-
-      for ( ; iter != NULL; iter = g_list_delete_link (iter, iter))
-        {
-          tp_proxy_prepare_request_finish (iter->data, error);
-        }
-    }
+  g_object_ref (self);
 
   for (iter = self->priv->prepare_requests; iter != NULL; iter = next)
     {
       TpProxyPrepareRequest *req = iter->data;
       gboolean wait = FALSE;
       guint i;
+
+      if (error == NULL)
+        {
+          error_source = "invalidated";
+          error = self->invalidated;
+        }
+
+      if (error != NULL)
+        {
+          DEBUG ("%p: %s, ending all requests", self, error_source);
+          iter = self->priv->prepare_requests;
+          self->priv->prepare_core = NULL;
+          self->priv->prepare_requests = NULL;
+
+          for ( ; iter != NULL; iter = g_list_delete_link (iter, iter))
+            {
+              tp_proxy_prepare_request_finish (iter->data, error);
+            }
+
+          break;
+        }
 
       next = iter->next;
 
@@ -1848,6 +1852,8 @@ tp_proxy_poll_features (TpProxy *self,
           tp_proxy_prepare_request_finish (req, NULL);
         }
     }
+
+  g_object_unref (self);
 }
 
 /*
