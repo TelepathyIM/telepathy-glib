@@ -5383,7 +5383,7 @@ tp_signalled_message_get_type
 <SECTION>
 <FILE>text-channel</FILE>
 <TITLE>text-channel</TITLE>
-<INCLUDE>telepathy-glib/text-channel.h</INCLUDE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
 <SUBSECTION>
 TpTextChannel
 TpTextChannelClass
