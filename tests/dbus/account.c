@@ -266,28 +266,6 @@ account_prepare_cb (GObject *source,
   g_main_loop_quit (test->mainloop);
 }
 
-static void
-get_storage_specific_info_cb (GObject *account,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  Test *test = user_data;
-  GHashTable *info;
-  GError *error = NULL;
-
-  info = tp_account_get_storage_specific_information_finish (
-      TP_ACCOUNT (account), result, &error);
-  g_assert_no_error (error);
-
-  g_assert_cmpuint (g_hash_table_size (info), ==, 3);
-
-  g_assert_cmpint (tp_asv_get_int32 (info, "one", NULL), ==, 1);
-  g_assert_cmpuint (tp_asv_get_uint32 (info, "two", NULL), ==, 2);
-  g_assert_cmpstr (tp_asv_get_string (info, "marco"), ==, "polo");
-
-  g_main_loop_quit (test->mainloop);
-}
-
 #define assert_strprop(self, prop, val) \
   {\
     gchar *s; \
@@ -321,13 +299,11 @@ static void
 test_prepare_success (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE,
-      TP_ACCOUNT_FEATURE_STORAGE, 0 };
+  GQuark account_features[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
   TpConnectionStatusReason reason;
   gchar *status = NULL;
   gchar *message = NULL;
   const GHashTable *details = GUINT_TO_POINTER (666);
-  GValue *gvalue;
 
   test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
   g_assert (test->account != NULL);
@@ -438,8 +414,65 @@ test_prepare_success (Test *test,
       "bob.mcbadgers@example.com");
   assert_strprop (test->account, "normalized-name",
       "bob.mcbadgers@example.com");
+}
 
-  /* test Acct.I.Storage features */
+static void
+get_storage_specific_info_cb (GObject *account,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+  GHashTable *info;
+  GError *error = NULL;
+
+  info = tp_account_get_storage_specific_information_finish (
+      TP_ACCOUNT (account), result, &error);
+  g_assert_no_error (error);
+
+  g_assert_cmpuint (g_hash_table_size (info), ==, 3);
+
+  g_assert_cmpint (tp_asv_get_int32 (info, "one", NULL), ==, 1);
+  g_assert_cmpuint (tp_asv_get_uint32 (info, "two", NULL), ==, 2);
+  g_assert_cmpstr (tp_asv_get_string (info, "marco"), ==, "polo");
+
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_storage (Test *test,
+    gconstpointer mode)
+{
+  GQuark account_features[] = { TP_ACCOUNT_FEATURE_STORAGE, 0 };
+  GValue *gvalue;
+
+  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  g_assert (test->account != NULL);
+
+  if (g_str_equal (mode, "later"))
+    {
+      /* prepare the core feature first */
+      tp_proxy_prepare_async (test->account, NULL, account_prepare_cb, test);
+      g_main_loop_run (test->mainloop);
+
+      /* storage stuff doesn't work yet */
+      g_assert_cmpstr (tp_account_get_storage_provider (test->account), ==,
+          NULL);
+      assert_strprop (test->account, "storage-provider", NULL);
+      g_assert (tp_account_get_storage_identifier (test->account) == NULL);
+      g_object_get (test->account,
+          "storage-identifier", &gvalue,
+          NULL);
+      g_assert (gvalue == NULL);
+      g_assert_cmpuint (tp_account_get_storage_restrictions (test->account), ==,
+          0);
+      assert_uintprop (test->account, "storage-restrictions", 0);
+    }
+
+  /* prepare the storage feature */
+  tp_proxy_prepare_async (test->account, account_features,
+      account_prepare_cb, test);
+  g_main_loop_run (test->mainloop);
+
   g_assert_cmpstr (tp_account_get_storage_provider (test->account), ==,
       "org.freedesktop.Telepathy.glib.test");
   assert_strprop (test->account, "storage-provider",
@@ -463,6 +496,52 @@ test_prepare_success (Test *test,
   tp_account_get_storage_specific_information_async (test->account,
       get_storage_specific_info_cb, test);
   g_main_loop_run (test->mainloop);
+}
+
+static void
+test_addressing (Test *test,
+    gconstpointer mode)
+{
+  GQuark account_features[] = { TP_ACCOUNT_FEATURE_ADDRESSING, 0 };
+  const gchar * const *schemes;
+
+  test->account = tp_account_new (test->dbus, ACCOUNT_PATH, NULL);
+  g_assert (test->account != NULL);
+
+  if (g_str_equal (mode, "later"))
+    {
+      /* prepare the core feature first */
+      tp_proxy_prepare_async (test->account, NULL, account_prepare_cb, test);
+      g_main_loop_run (test->mainloop);
+
+      /* addressing stuff doesn't work yet */
+      g_assert (tp_account_get_uri_schemes (test->account) == NULL);
+      g_assert (!tp_account_associated_with_uri_scheme (test->account,
+            "about"));
+      g_assert (!tp_account_associated_with_uri_scheme (test->account,
+            "telnet"));
+      g_assert (!tp_account_associated_with_uri_scheme (test->account,
+            "xmpp"));
+    }
+
+  /* prepare the addressing feature */
+  tp_proxy_prepare_async (test->account, account_features,
+      account_prepare_cb, test);
+  g_main_loop_run (test->mainloop);
+
+  schemes = tp_account_get_uri_schemes (test->account);
+  g_assert (schemes != NULL);
+  g_assert (tp_strv_contains (schemes, "about"));
+  g_assert (tp_strv_contains (schemes, "telnet"));
+  g_assert (schemes[2] == NULL);
+
+  g_assert (tp_account_associated_with_uri_scheme (test->account,
+        "about"));
+  g_assert (tp_account_associated_with_uri_scheme (test->account,
+        "telnet"));
+  g_assert (!tp_account_associated_with_uri_scheme (test->account,
+        "xmpp"));
+
 }
 
 static void
@@ -685,6 +764,16 @@ main (int argc,
 
   g_test_add ("/account/connection", Test, NULL, setup_service,
               test_connection, teardown_service);
+
+  g_test_add ("/account/storage", Test, "first", setup_service, test_storage,
+      teardown_service);
+  g_test_add ("/account/storage", Test, "later", setup_service, test_storage,
+      teardown_service);
+
+  g_test_add ("/account/addressing", Test, "first", setup_service,
+      test_addressing, teardown_service);
+  g_test_add ("/account/addressing", Test, "later", setup_service,
+      test_addressing, teardown_service);
 
   return g_test_run ();
 }

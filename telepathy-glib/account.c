@@ -446,6 +446,9 @@ tp_account_maybe_prepare_storage (TpProxy *proxy)
   if (self->priv->storage_provider != NULL)
     return;
 
+  if (!_tp_proxy_is_preparing (proxy, TP_ACCOUNT_FEATURE_STORAGE))
+    return;
+
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
       _tp_account_got_all_storage_cb, NULL, NULL, G_OBJECT (self));
@@ -455,6 +458,7 @@ static void
 _tp_account_update (TpAccount *account,
     GHashTable *properties)
 {
+  TpProxy *proxy = TP_PROXY (account);
   TpAccountPrivate *priv = account->priv;
   GValueArray *arr;
   TpConnectionStatus old_s = priv->connection_status;
@@ -797,8 +801,10 @@ _tp_account_update (TpAccount *account,
         g_object_notify (G_OBJECT (account), "has-been-online");
     }
 
-  _tp_proxy_set_feature_prepared ((TpProxy *) account,
-      TP_ACCOUNT_FEATURE_CORE, TRUE);
+  _tp_proxy_set_feature_prepared (proxy, TP_ACCOUNT_FEATURE_CORE, TRUE);
+
+  tp_account_maybe_prepare_storage (proxy);
+  tp_account_maybe_prepare_addressing (proxy);
 }
 
 static void
@@ -3760,6 +3766,9 @@ tp_account_maybe_prepare_addressing (TpProxy *proxy)
   TpAccount *self = TP_ACCOUNT (proxy);
 
   if (self->priv->uri_schemes != NULL)
+    return;
+
+  if (!_tp_proxy_is_preparing (proxy, TP_ACCOUNT_FEATURE_ADDRESSING))
     return;
 
   tp_cli_dbus_properties_call_get_all (self, -1,
