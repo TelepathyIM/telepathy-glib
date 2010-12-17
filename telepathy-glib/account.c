@@ -3589,7 +3589,7 @@ tp_account_get_detailed_error (TpAccount *self,
 
 /**
  * tp_account_get_storage_provider:
- * @account: a #TpAccount
+ * @self: a #TpAccount
  *
  * <!-- -->
  *
@@ -3607,7 +3607,7 @@ tp_account_get_storage_provider (TpAccount *self)
 
 /**
  * tp_account_get_storage_identifier:
- * @account: a #TpAccount
+ * @self: a #TpAccount
  *
  * <!-- -->
  *
@@ -3625,7 +3625,7 @@ tp_account_get_storage_identifier (TpAccount *self)
 
 /**
  * tp_account_get_storage_restrictions:
- * @account: a #TpAccount
+ * @self: a #TpAccount
  *
  * <!-- -->
  *
@@ -3935,7 +3935,7 @@ tp_account_get_automatic_presence (TpAccount *self,
 
 /**
  * tp_account_get_normalized_name:
- * @account: a #TpAccount
+ * @self: a #TpAccount
  *
  * <!-- -->
  *
