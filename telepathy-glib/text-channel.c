@@ -1076,7 +1076,8 @@ tp_text_channel_get_feature_quark_incoming_messages (void)
  * Return the a newly allocated list of unacknowledged #TpSignalledMessage
  * objects.
  *
- * Returns: (transfer container): a #GList of borrowed #TpSignalledMessage
+ * Returns: (transfer container) (element-type TelepathyGLib.SignalledMessage):
+ * a #GList of borrowed #TpSignalledMessage
  *
  * Since: 0.13.UNRELEASED
  */
