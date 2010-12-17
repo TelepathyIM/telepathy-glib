@@ -1195,7 +1195,8 @@ acknowledge_pending_messages_cb (TpChannel *channel,
 /**
  * tp_text_channel_ack_messages_async:
  * @self: a #TpTextChannel
- * @messages: a #Glist of #TpSignalledMessage
+ * @messages: (element-type TelepathyGLib.SignalledMessage): a #GList of
+ * #TpSignalledMessage
  * @callback: a callback to call when the message have been acked
  * @user_data: data to pass to @callback
  *
