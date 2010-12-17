@@ -943,7 +943,7 @@ tp_protocol_get_icon_name (TpProtocol *self)
  *
  <!-- -->
  *
- * Returns: the value of #TpProtocol:authentication-types
+ * Returns: (transfer none): the value of #TpProtocol:authentication-types
  *
  * Since: 0.13.9
  */
