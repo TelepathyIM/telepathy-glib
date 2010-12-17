@@ -2100,16 +2100,10 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 
   if (removed != NULL)
     {
-      TpIntset *tmp;
       guint i;
 
-      tmp = unsub;
-      unsub = tp_intset_union (tmp, tp_handle_set_peek (removed));
-      tp_intset_destroy (tmp);
-
-      tmp = unpub;
-      unpub = tp_intset_union (tmp, tp_handle_set_peek (removed));
-      tp_intset_destroy (tmp);
+      tp_intset_union_update (unsub, tp_handle_set_peek (removed));
+      tp_intset_union_update (unpub, tp_handle_set_peek (removed));
 
       removals = tp_handle_set_to_array (removed);
 
