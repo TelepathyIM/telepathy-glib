@@ -15,7 +15,7 @@ N.B. telepathy-logger and libtelepathy-logger currently include some
      It is our eventual goal to allow libtelepathy-logger to be licensed under
      the LGPL v2.1.
 
-TPL is currently under development, please refer to  Please refer to
+TPL is currently under development, please refer to
 http://telepathy.freedesktop.org/wiki/Logger for more information.
 
 Bugs should be filed at http://bugs.freedesktop.org/ under the product
