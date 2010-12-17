@@ -94,7 +94,7 @@ tp_client_channel_factory_default_init (TpClientChannelFactoryInterface *iface)
  * it expected an object instance as its first parameter, but the type of the
  * parameter was the type of the interface vtable.
  *
- * Returns: a new channel proxy, or %NULL on invalid arguments
+ * Returns: (transfer full): a new channel proxy, or %NULL on invalid arguments
  *
  * Since: 0.13.2
  */
