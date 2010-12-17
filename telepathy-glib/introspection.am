@@ -23,7 +23,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/handle.c $(srcdir)/handle.h \
 	$(srcdir)/handle-channels-context.c $(srcdir)/handle-channels-context.h \
 	$(srcdir)/dbus-daemon.c $(srcdir)/dbus-daemon.h \
-	$(srcdir)/interfaces.c $(srcdir)/interfaces.h \
+	$(srcdir)/interfaces.c \
 	$(srcdir)/intset.c $(srcdir)/intset.h \
 	$(srcdir)/dbus.c $(srcdir)/dbus.h \
 	$(srcdir)/capabilities.c $(srcdir)/capabilities.h \
@@ -54,6 +54,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/signalled-message.c $(srcdir)/signalled-message.h \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
 	_gen/telepathy-enums.h \
+	_gen/telepathy-interfaces.h \
 	$(NULL)
 
 _gen/proxy-introspectable.h: proxy.h introspection.am
