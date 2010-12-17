@@ -1939,7 +1939,9 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
     TpHandleSet *removed)
 {
   GHashTable *changes;
+  GHashTable *change_ids;
   GArray *removals;
+  GHashTable *removal_ids;
   TpIntsetFastIter iter;
   TpIntset *pub, *sub_rp, *unpub, *unsub, *store;
   GObject *sub_chan, *pub_chan, *stored_chan;
@@ -1975,6 +1977,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 
   changes = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_value_array_free);
+  change_ids = g_hash_table_new (NULL, NULL);
 
   if (changed != NULL)
     tp_intset_fast_iter_init (&iter, tp_handle_set_peek (changed));
@@ -2088,11 +2091,17 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
             G_TYPE_STRING, publish_request,
             G_TYPE_INVALID));
       g_free (publish_request);
+
+      g_hash_table_insert (change_ids, GUINT_TO_POINTER (contact),
+          (gchar *) tp_handle_inspect (self->priv->contact_repo, contact));
     }
+
+  removal_ids = g_hash_table_new (NULL, NULL);
 
   if (removed != NULL)
     {
       TpIntset *tmp;
+      guint i;
 
       tmp = unsub;
       unsub = tp_intset_union (tmp, tp_handle_set_peek (removed));
@@ -2103,6 +2112,14 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
       tp_intset_destroy (tmp);
 
       removals = tp_handle_set_to_array (removed);
+
+      for (i = 0; i < removals->len; i++)
+        {
+          TpHandle handle = g_array_index (removals, guint, i);
+
+          g_hash_table_insert (removal_ids, GUINT_TO_POINTER (handle),
+              (gchar *) tp_handle_inspect (self->priv->contact_repo, handle));
+        }
     }
   else
     {
@@ -2145,8 +2162,14 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
           g_hash_table_size (changes), removals->len);
 
       if (self->priv->svc_contact_list)
-        tp_svc_connection_interface_contact_list_emit_contacts_changed (
-            self->priv->conn, changes, removals);
+        {
+#if 0
+          tp_svc_connection_interface_contact_list_emit_contacts_changed_with_ids (
+              self->priv->conn, changes, change_ids, removal_ids);
+#endif
+          tp_svc_connection_interface_contact_list_emit_contacts_changed (
+              self->priv->conn, changes, removals);
+        }
     }
 
   tp_intset_destroy (pub);
@@ -2156,6 +2179,8 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
   tp_intset_destroy (store);
 
   g_hash_table_unref (changes);
+  g_hash_table_unref (change_ids);
+  g_hash_table_unref (removal_ids);
   g_array_unref (removals);
 }
 
