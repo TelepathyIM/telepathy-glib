@@ -918,7 +918,8 @@ tp_base_client_dispose (GObject *object)
 
   if (self->priv->my_chans != NULL &&
       g_hash_table_size (self->priv->my_chans) > 0)
-    WARNING ("TpBaseClient is still handling channels at dispose");
+    WARNING ("TpBaseClient is still handling %d channels at dispose",
+        g_hash_table_size (self->priv->my_chans));
 
   tp_clear_pointer (&self->priv->my_chans, g_hash_table_unref);
 
@@ -1851,10 +1852,14 @@ chan_invalidated_cb (TpChannel *channel,
     gchar *message,
     TpBaseClient *self)
 {
-  DEBUG ("Channel %s has been invalidated", tp_proxy_get_object_path (channel));
+  DEBUG ("Channel (%p) %s has been invalidated (%s)",
+      channel, tp_proxy_get_object_path (channel), message);
 
-  g_hash_table_remove (self->priv->my_chans, tp_proxy_get_object_path (
-        channel));
+  if (!(domain == TP_DBUS_ERRORS && code == TP_DBUS_ERROR_PROXY_UNREFERENCED))
+    {
+      g_hash_table_remove (self->priv->my_chans, tp_proxy_get_object_path (
+          channel));
+    }
 }
 
 static void
@@ -1869,6 +1874,8 @@ ctx_done_cb (TpHandleChannelsContext *context,
 
       if (tp_proxy_get_invalidated (channel) == NULL)
         {
+          DEBUG ("Inserting Channel (%p) %s",
+            channel, tp_proxy_get_object_path (channel));
           g_hash_table_insert (self->priv->my_chans,
               (gchar *) tp_proxy_get_object_path (channel),
               g_object_ref (channel));
