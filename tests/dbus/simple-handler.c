@@ -377,6 +377,7 @@ call_handle_channels (Test *test)
 {
   GPtrArray *channels, *requests_satisified;
   GHashTable *info;
+  int i;
 
   channels = g_ptr_array_sized_new (1);
   add_channel_to_ptr_array (channels, test->text_chan);
@@ -387,13 +388,16 @@ call_handle_channels (Test *test)
   tp_proxy_add_interface_by_id (TP_PROXY (test->client),
       TP_IFACE_QUARK_CLIENT_HANDLER);
 
-  tp_cli_client_handler_call_handle_channels (test->client, -1,
-      tp_proxy_get_object_path (test->account),
-      tp_proxy_get_object_path (test->connection),
-      channels, requests_satisified, 0, info,
-      no_return_cb, test, NULL, NULL);
+  for (i = 0 ; i < 10 ; i ++)
+    {
+      tp_cli_client_handler_call_handle_channels (test->client, -1,
+          tp_proxy_get_object_path (test->account),
+          tp_proxy_get_object_path (test->connection),
+          channels, requests_satisified, 0, info,
+          no_return_cb, test, NULL, NULL);
 
-  g_main_loop_run (test->mainloop);
+      g_main_loop_run (test->mainloop);
+    }
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
   g_ptr_array_free (channels, TRUE);
