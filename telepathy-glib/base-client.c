@@ -1876,7 +1876,7 @@ ctx_done_cb (TpHandleChannelsContext *context,
         {
           DEBUG ("Inserting Channel (%p) %s",
             channel, tp_proxy_get_object_path (channel));
-          g_hash_table_insert (self->priv->my_chans,
+          g_hash_table_replace (self->priv->my_chans,
               (gchar *) tp_proxy_get_object_path (channel),
               g_object_ref (channel));
 
