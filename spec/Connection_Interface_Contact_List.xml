@@ -576,8 +576,9 @@
       </tp:member>
     </tp:mapping>
 
-    <signal name="ContactsChanged"
-      tp:name-for-bindings="Contacts_Changed">
+    <signal name="ContactsChangedWithID"
+      tp:name-for-bindings="Contacts_Changed_With_ID">
+      <tp:added version="0.21.8"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Emitted when the contact list becomes available, when contacts'
           basic stored properties change, when new contacts are added to the
@@ -613,13 +614,53 @@
         </tp:docstring>
       </arg>
 
-      <arg name="Removals" type="au" tp:type="Contact_Handle[]">
-        <tp:docstring>
+      <arg name="Identifiers" type="a{us}" tp:type="Handle_Identifier_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          The identifiers of the contacts in the <var>Changes</var> map.
+        </tp:docstring>
+      </arg>
+
+      <arg name="Removals" type="a{us}" tp:type="Handle_Identifier_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
           The contacts that have been removed from the list that would be
           returned by
           <tp:member-ref>GetContactListAttributes</tp:member-ref>.
           This also implies that they have subscribe = No and publish = No;
-          contacts MUST NOT be listed both here and in Changes.
+          contacts MUST NOT be listed both here and in <var>Changes</var>.
+        </tp:docstring>
+      </arg>
+    </signal>
+
+    <signal name="ContactsChanged"
+      tp:name-for-bindings="Contacts_Changed">
+      <tp:deprecated version="0.21.8">Connection managers MUST still
+        emit this signal, but clients SHOULD listen for the
+        <tp:member-ref>ContactsChangedWithID</tp:member-ref> signal in
+        addition, and ignore this signal after ContactsChangedWithID has been
+        emitted at least once.
+      </tp:deprecated>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Emitted immediately after
+          <tp:member-ref>ContactsChangedWithID</tp:member-ref>, under the same
+          circumstances.</p>
+
+        <p>If clients receive this signal without first receiving a
+          corresponding <tp:member-ref>ContactsChangedWithID</tp:member-ref>,
+          they MUST assume that only this signal will be emitted.</p>
+      </tp:docstring>
+
+      <arg type="a{u(uus)}" name="Changes" tp:type="Contact_Subscription_Map">
+        <tp:docstring>
+          The same as the corresponding argument to
+          <tp:member-ref>ContactsChangedWithID</tp:member-ref>.
+        </tp:docstring>
+      </arg>
+
+      <arg name="Removals" type="au" tp:type="Contact_Handle[]">
+        <tp:docstring>
+          The same as the corresponding argument to
+          <tp:member-ref>ContactsChangedWithID</tp:member-ref>, except that it
+          only includes handles and not identifiers.
         </tp:docstring>
       </arg>
     </signal>
