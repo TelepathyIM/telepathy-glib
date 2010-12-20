@@ -1,3 +1,10 @@
+telepathy-glib 0.13.11 (UNRELEASED)
+===================================
+
+The “and, erm … I own an M-16 fully-automatic ground assault rifle” release.
+
+…
+
 telepathy-glib 0.13.10 (2010-12-20)
 ===================================
 
@@ -33,6 +40,10 @@ Fixes:
   dispatch of their callbacks (wjt, smcv)
 
 • Documentation improvements (smcv)
+
+• TpBaseClient no longer breaks if HandleChannels is called more than once for
+  the same channel. This was a regression introduced by the leak fix in the
+  previous release (sjoerd)
 
 telepathy-glib 0.13.9 (2010-12-10)
 ==================================
