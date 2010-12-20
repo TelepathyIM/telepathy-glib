@@ -2157,10 +2157,8 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
 
       if (self->priv->svc_contact_list)
         {
-#if 0
-          tp_svc_connection_interface_contact_list_emit_contacts_changed_with_ids (
+          tp_svc_connection_interface_contact_list_emit_contacts_changed_with_id (
               self->priv->conn, changes, change_ids, removal_ids);
-#endif
           tp_svc_connection_interface_contact_list_emit_contacts_changed (
               self->priv->conn, changes, removals);
         }
