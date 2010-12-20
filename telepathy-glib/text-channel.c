@@ -380,16 +380,19 @@ got_sender_contact_by_id_cb (TpConnection *connection,
     }
   else if (n_contacts != 1)
     {
-      GHashTableIter iter;
-      gpointer key, value;
-
-      g_hash_table_iter_init (&iter, failed_id_errors);
-      while (g_hash_table_iter_next (&iter, &key, &value))
+      if (DEBUGGING)
         {
-          const gchar *id = key;
-          GError *err = value;
+          GHashTableIter iter;
+          gpointer key, value;
 
-          DEBUG ("Failed to get a TpContact for %s: %s", id, err->message);
+          g_hash_table_iter_init (&iter, failed_id_errors);
+          while (g_hash_table_iter_next (&iter, &key, &value))
+            {
+              const gchar *id = key;
+              GError *err = value;
+
+              DEBUG ("Failed to get a TpContact for %s: %s", id, err->message);
+            }
         }
 
       sender = contacts[0];
@@ -594,8 +597,6 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
 {
   TpTextChannel *self = (TpTextChannel *) weak_object;
   GList *parts_list = user_data;
-  GHashTableIter iter;
-  gpointer key, value;
 
   if (error != NULL)
     {
@@ -603,13 +604,19 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
       goto out;
     }
 
-  g_hash_table_iter_init (&iter, failed_id_errors);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  if (DEBUGGING)
     {
-      const gchar *id = key;
-      GError *err = value;
+      GHashTableIter iter;
+      gpointer key, value;
 
-      DEBUG ("Failed to get a TpContact for %s: %s", id, err->message);
+      g_hash_table_iter_init (&iter, failed_id_errors);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          const gchar *id = key;
+          GError *err = value;
+
+          DEBUG ("Failed to get a TpContact for %s: %s", id, err->message);
+        }
     }
 
   got_pending_senders_contact (self, parts_list, n_contacts, contacts);
