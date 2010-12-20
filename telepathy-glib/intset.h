@@ -132,6 +132,9 @@ void tp_intset_fast_iter_init (TpIntsetFastIter *iter,
 gboolean tp_intset_fast_iter_next (TpIntsetFastIter *iter,
     guint *output);
 
+void tp_intset_union_update (TpIntset *self, const TpIntset *other);
+void tp_intset_difference_update (TpIntset *self, const TpIntset *other);
+
 G_END_DECLS
 
 #endif /*__TP_INTSET_H__*/
