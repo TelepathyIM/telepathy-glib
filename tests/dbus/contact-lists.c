@@ -25,7 +25,7 @@ typedef struct {
     LogEntryType type;
     /* ContactsChanged */
     GHashTable *contacts_changed;
-    GArray *contacts_removed;
+    TpIntset *contacts_removed;
     /* GroupsChanged */
     GArray *contacts;
     /* GroupsChanged, GroupsCreated, GroupRenamed */
@@ -41,7 +41,7 @@ log_entry_free (LogEntry *le)
     g_hash_table_unref (le->contacts_changed);
 
   if (le->contacts_removed != NULL)
-    g_array_unref (le->contacts_removed);
+    tp_intset_destroy (le->contacts_removed);
 
   if (le->contacts != NULL)
     g_array_unref (le->contacts);
@@ -95,6 +95,54 @@ test_quit_loop (gpointer p)
 }
 
 static void
+contacts_changed_with_id_cb (TpConnection *connection,
+    GHashTable *changes,
+    GHashTable *identifiers,
+    GHashTable *removals,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+  GHashTableIter i;
+  gpointer key, value;
+
+  if (g_hash_table_size (changes) > 0)
+    g_assert_cmpuint (g_hash_table_size (changes), ==,
+        g_hash_table_size (identifiers));
+  else
+    g_assert_cmpuint (g_hash_table_size (removals), >, 0);
+
+  le->type = CONTACTS_CHANGED;
+  le->contacts_changed = g_boxed_copy (TP_HASH_TYPE_CONTACT_SUBSCRIPTION_MAP,
+      changes);
+
+  /* We asserted above that we have as many identifiers as we have changes. */
+  g_hash_table_iter_init (&i, identifiers);
+  while (g_hash_table_iter_next (&i, &key, &value))
+    {
+      TpHandle handle = GPOINTER_TO_UINT (key);
+
+      g_assert_cmpstr (value, ==,
+          tp_handle_inspect (test->contact_repo, handle));
+    }
+
+  le->contacts_removed = tp_intset_new ();
+
+  g_hash_table_iter_init (&i, removals);
+  while (g_hash_table_iter_next (&i, &key, &value))
+    {
+      TpHandle handle = GPOINTER_TO_UINT (key);
+
+      g_assert_cmpstr (value, ==,
+          tp_handle_inspect (test->contact_repo, handle));
+      tp_intset_add (le->contacts_removed, handle);
+    }
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
 contacts_changed_cb (TpConnection *connection,
     GHashTable *changes,
     const GArray *removals,
@@ -102,18 +150,53 @@ contacts_changed_cb (TpConnection *connection,
     GObject *weak_object G_GNUC_UNUSED)
 {
   Test *test = user_data;
-  LogEntry *le = g_slice_new0 (LogEntry);
+  LogEntry *le;
+  GHashTableIter i;
+  gpointer key, value;
+  TpIntset *removal_set;
 
   g_assert (g_hash_table_size (changes) > 0 || removals->len > 0);
 
-  le->type = CONTACTS_CHANGED;
-  le->contacts_changed = g_boxed_copy (TP_HASH_TYPE_CONTACT_SUBSCRIPTION_MAP,
-      changes);
-  le->contacts_removed = g_array_sized_new (FALSE, FALSE, sizeof (guint),
-      removals->len);
-  g_array_append_vals (le->contacts_removed, removals->data, removals->len);
+  /* We should have had a ContactsChangedByID signal immediately before this
+   * signal */
+  g_assert_cmpuint (test->log->len, >, 0);
 
-  g_ptr_array_add (test->log, le);
+  le = g_ptr_array_index (test->log, test->log->len - 1);
+  g_assert_cmpuint (le->type, ==, CONTACTS_CHANGED);
+
+  /* The changes should all have been the same as in the previous signal */
+  g_assert_cmpuint (g_hash_table_size (changes), ==,
+      g_hash_table_size (le->contacts_changed));
+
+  g_hash_table_iter_init (&i, changes);
+  while (g_hash_table_iter_next (&i, &key, &value))
+    {
+      GValueArray *existing = g_hash_table_lookup (le->contacts_changed, key);
+      GValueArray *emitted = value;
+      guint existing_sub, existing_pub, emitted_sub, emitted_pub;
+      const gchar *existing_req, *emitted_req;
+
+      g_assert (existing != NULL);
+
+      tp_value_array_unpack (existing, 3, &existing_sub, &existing_pub,
+          &existing_req);
+      tp_value_array_unpack (emitted, 3, &emitted_sub, &emitted_pub,
+          &emitted_req);
+
+      g_assert_cmpuint (existing_sub, ==, emitted_sub);
+      g_assert_cmpuint (existing_pub, ==, emitted_pub);
+      g_assert_cmpstr (existing_req, ==, emitted_req);
+    }
+
+  removal_set = tp_intset_from_array (removals);
+
+  if (!tp_intset_is_equal (removal_set, le->contacts_removed))
+    g_error ("Removals from ContactsChangedById (%s) != "
+        "Removals from ContactsChanged (%s)",
+        tp_intset_dump (le->contacts_removed),
+        tp_intset_dump (removal_set));
+
+  tp_intset_destroy (removal_set);
 }
 
 static void
@@ -246,6 +329,9 @@ setup (Test *test,
 
   test->log = g_ptr_array_new ();
 
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_list_connect_to_contacts_changed_with_id (
+        test->conn, contacts_changed_with_id_cb, test, NULL, NULL, NULL));
   maybe_queue_disconnect (
       tp_cli_connection_interface_contact_list_connect_to_contacts_changed (
         test->conn, contacts_changed_cb, test, NULL, NULL, NULL));
@@ -401,7 +487,7 @@ test_assert_one_contact_changed (Test *test,
   g_assert_cmpuint (pub_state, ==, expected_pub_state);
   g_assert_cmpstr (pub_request, ==, expected_pub_request);
 
-  g_assert_cmpuint (le->contacts_removed->len, ==, 0);
+  g_assert_cmpuint (tp_intset_size (le->contacts_removed), ==, 0);
 }
 
 static void
@@ -415,9 +501,8 @@ test_assert_one_contact_removed (Test *test,
   g_assert_cmpint (le->type, ==, CONTACTS_CHANGED);
 
   g_assert_cmpuint (g_hash_table_size (le->contacts_changed), ==, 0);
-  g_assert_cmpuint (le->contacts_removed->len, ==, 1);
-  g_assert_cmpuint (g_array_index (le->contacts_removed, guint, 0), ==,
-      handle);
+  g_assert_cmpuint (tp_intset_size (le->contacts_removed), ==, 1);
+  g_assert (tp_intset_is_member (le->contacts_removed, handle));
 }
 
 static void
