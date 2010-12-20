@@ -32,7 +32,7 @@
  *
  * Data structure representing a #TpTextChannel.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 
 /**
@@ -40,7 +40,7 @@
  *
  * The class of a #TpTextChannel.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 
 #include <config.h>
@@ -827,7 +827,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * A #GStrv containing the MIME types supported by this channel, with more
    * preferred MIME types appearing earlier in the array.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.10
    */
   param_spec = g_param_spec_boxed ("supported-content-types",
       "SupportedContentTypes",
@@ -843,7 +843,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * A #TpMessagePartSupportFlags indicating the level of support for
    * message parts on this channel.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.10
    */
   param_spec = g_param_spec_uint ("message-part-support-flags",
       "MessagePartSupportFlags",
@@ -859,7 +859,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * A #TpDeliveryReportingSupportFlags indicating features supported
    * by this channel.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.10
    */
   param_spec = g_param_spec_uint ("delivery-reporting-support",
       "DeliveryReportingSupport",
@@ -880,7 +880,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * Note that this signal is only fired once the
    * #TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES has been prepared.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.10
    */
   signals[SIG_MESSAGE_RECEIVED] = g_signal_new ("message-received",
       G_OBJECT_CLASS_TYPE (klass),
@@ -901,7 +901,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * Note that this signal is only fired once the
    * #TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES has been prepared.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.10
    */
   signals[SIG_PENDING_MESSAGE_REMOVED] = g_signal_new (
       "pending-message-removed",
@@ -924,7 +924,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * The ::message-sent signal is emitted when @message
    * has been submitted for sending.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.10
    */
   signals[SIG_MESSAGE_SENT] = g_signal_new (
       "message-sent",
@@ -963,7 +963,7 @@ tp_text_channel_init (TpTextChannel *self)
  *
  * Returns: (transfer full): a newly created #TpTextChannel
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 TpTextChannel *
 tp_text_channel_new (TpConnection *conn,
@@ -999,7 +999,7 @@ tp_text_channel_new (TpConnection *conn,
  * Returns: (transfer none) :
  * the value of #TpTextChannel:supported-content-types
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 const gchar * const *
 tp_text_channel_get_supported_content_types (TpTextChannel *self)
@@ -1017,7 +1017,7 @@ tp_text_channel_get_supported_content_types (TpTextChannel *self)
  *
  * Returns: the value of #TpTextChannel:message-part-support-flags
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 TpMessagePartSupportFlags
 tp_text_channel_get_message_part_support_flags (
@@ -1036,7 +1036,7 @@ tp_text_channel_get_message_part_support_flags (
  *
  * Returns: the value of #TpTextChannel:delivery-reporting-support property
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 TpDeliveryReportingSupportFlags
 tp_text_channel_get_delivery_reporting_support (
@@ -1060,7 +1060,7 @@ tp_text_channel_get_delivery_reporting_support (
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 GQuark
 tp_text_channel_get_feature_quark_incoming_messages (void)
@@ -1079,7 +1079,7 @@ tp_text_channel_get_feature_quark_incoming_messages (void)
  * Returns: (transfer container) (element-type TelepathyGLib.SignalledMessage):
  * a #GList of borrowed #TpSignalledMessage
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 GList *
 tp_text_channel_get_pending_messages (TpTextChannel *self)
@@ -1123,7 +1123,7 @@ send_message_cb (TpChannel *proxy,
  * submitted to the sever, @callback will be called. You can then call
  * tp_text_channel_send_message_finish() to get the result of the operation.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 void
 tp_text_channel_send_message_async (TpTextChannel *self,
@@ -1161,7 +1161,7 @@ tp_text_channel_send_message_async (TpTextChannel *self,
  * Returns: %TRUE if the message has been submitted to the server, %FALSE
  * otherwise.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 gboolean
 tp_text_channel_send_message_finish (TpTextChannel *self,
@@ -1207,7 +1207,7 @@ acknowledge_pending_messages_cb (TpChannel *channel,
  *
  * See tp_text_channel_ack_message_async() about acknowledging messages.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 void
 tp_text_channel_ack_messages_async (TpTextChannel *self,
@@ -1271,7 +1271,7 @@ tp_text_channel_ack_messages_async (TpTextChannel *self,
  *
  * Returns: %TRUE if the messages have been acked, %FALSE otherwise.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 gboolean
 tp_text_channel_ack_messages_finish (TpTextChannel *self,
@@ -1299,7 +1299,7 @@ tp_text_channel_ack_messages_finish (TpTextChannel *self,
  * pending-message queue and so the #TpTextChannel::pending-message-removed
  * signal is fired.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 void
 tp_text_channel_ack_message_async (TpTextChannel *self,
@@ -1348,7 +1348,7 @@ tp_text_channel_ack_message_async (TpTextChannel *self,
  *
  * Returns: %TRUE if the message has been acked, %FALSE otherwise.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 gboolean
 tp_text_channel_ack_message_finish (TpTextChannel *self,
@@ -1389,7 +1389,7 @@ set_chat_state_cb (TpChannel *proxy,
  * You can then call tp_text_channel_set_chat_state_finish() to get the
  * result of the operation.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 void
 tp_text_channel_set_chat_state_async (TpTextChannel *self,
@@ -1416,7 +1416,7 @@ tp_text_channel_set_chat_state_async (TpTextChannel *self,
  *
  * Returns: %TRUE if the chat state has been changed, %FALSE otherwise.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 gboolean
 tp_text_channel_set_chat_state_finish (TpTextChannel *self,

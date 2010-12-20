@@ -879,7 +879,7 @@ tp_message_get_token (TpMessage *self)
  *
  * Returns: the type of this message
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 TpChannelTextMessageType
 tp_message_get_message_type (TpMessage *self)

@@ -2316,7 +2316,7 @@ leave_channel_async (TpChannel *self,
  * You can then call tp_channel_leave_finish() to get the result of
  * the operation.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 void
 tp_channel_leave_async (TpChannel *self,
@@ -2338,7 +2338,7 @@ tp_channel_leave_async (TpChannel *self,
  *
  * Returns: %TRUE if the channel has been left; %FALSE otherwise
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 gboolean
 tp_channel_leave_finish (TpChannel *self,
@@ -2362,7 +2362,7 @@ tp_channel_leave_finish (TpChannel *self,
  * You can then call tp_channel_close_finish() to get the result of
  * the operation.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 void
 tp_channel_close_async (TpChannel *self,
@@ -2395,7 +2395,7 @@ tp_channel_close_async (TpChannel *self,
  *
  * Returns: %TRUE if the channel has been closed; %FALSE otherwise
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 gboolean
 tp_channel_close_finish (TpChannel *self,

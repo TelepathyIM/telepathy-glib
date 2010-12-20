@@ -1,5 +1,7 @@
-telepathy-glib 0.13.10 (UNRELEASED)
+telepathy-glib 0.13.10 (2010-12-20)
 ===================================
+
+The “I own a 9 millimetre, a 357, a 45 handgun, a 38 special” release.
 
 Enhancements:
 
@@ -7,6 +9,11 @@ Enhancements:
 
 • fd.o #32411: warn and do nothing if unsupported flags are passed to
   tp_g_signal_connect_object (smcv)
+
+• Updated to spec 0.21.8.
+  · The ContactList.ContactsChangedWithID signal was added. It's automatically
+    emitted by TpBaseContactList, so CMs don't need to make any changes to take
+    advantage of it. (smcv)
 
 Fixes:
 

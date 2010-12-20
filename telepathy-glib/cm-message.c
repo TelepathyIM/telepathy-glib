@@ -268,7 +268,7 @@ tp_cm_message_get_sender (TpMessage *self)
  *
  * Returns: (transfer full): a newly allocated #TpCMMessage
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 TpMessage *
 tp_cm_message_new_text (TpBaseConnection *conn,

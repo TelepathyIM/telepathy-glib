@@ -655,7 +655,7 @@ tp_intset_union (const TpIntset *left, const TpIntset *right)
  * Add each integer in @other to @self, analogous to the bitwise operation
  * self |= other.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 void
 tp_intset_union_update (TpIntset *self,
@@ -710,7 +710,7 @@ tp_intset_difference (const TpIntset *left, const TpIntset *right)
  * Remove each integer in @other from @self, analogous to the bitwise
  * operation self &= (~other).
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.10
  */
 void
 tp_intset_difference_update (TpIntset *self,
