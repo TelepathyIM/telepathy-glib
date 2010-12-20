@@ -1,7 +1,6 @@
 EXTRA_DIST = \
     Account_Interface_Avatar.xml \
     Account_Interface_Addressing.xml \
-    Account_Interface_Minimum_Presence.xml \
     Account_Interface_Storage.xml \
     Account_Manager.xml \
     Account.xml \
