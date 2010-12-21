@@ -460,7 +460,7 @@ tp_tests_simple_channel_request_class_init (
   g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
 
   param_spec = g_param_spec_boxed ("hints", "Hints",
-      "metadata provided when requesting the channel",
+      "Metadata provided by the channel's requester, if any",
       TP_HASH_TYPE_STRING_VARIANT_MAP,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_HINTS, param_spec);
