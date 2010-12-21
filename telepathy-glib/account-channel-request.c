@@ -65,6 +65,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/simple-handler.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
@@ -609,6 +610,9 @@ channel_prepare_cb (GObject *source,
       DEBUG ("Failed to prepare channel: %s", error->message);
       g_error_free (error);
     }
+
+  g_simple_async_result_set_op_res_gpointer (self->priv->result,
+    g_object_ref (source), g_object_unref);
 
   complete_result (self);
 }
@@ -1452,29 +1456,6 @@ tp_account_channel_request_create_and_observe_channel_async (
       callback, user_data, FALSE);
 }
 
-static TpChannel *
-request_and_observe_channel_finish (TpAccountChannelRequest *self,
-    GAsyncResult *result,
-    gpointer source_tag,
-    GError **error)
-{
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), NULL);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), source_tag),
-      NULL);
-
-  return g_object_ref (self->priv->channel);
-}
-
 /**
  * tp_account_channel_request_create_and_observe_channel_finish:
  * @self: a #TpAccountChannelRequest
@@ -1495,8 +1476,9 @@ tp_account_channel_request_create_and_observe_channel_finish (
     GAsyncResult *result,
     GError **error)
 {
-  return request_and_observe_channel_finish (self, result,
-      tp_account_channel_request_create_and_observe_channel_async, error);
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_account_channel_request_create_and_observe_channel_async,
+      g_object_ref);
 }
 
 /**
@@ -1560,8 +1542,9 @@ tp_account_channel_request_ensure_and_observe_channel_finish (
     GAsyncResult *result,
     GError **error)
 {
-  return request_and_observe_channel_finish (self, result,
-      tp_account_channel_request_ensure_and_observe_channel_async, error);
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_account_channel_request_ensure_and_observe_channel_async,
+      g_object_ref);
 }
 
 /**
