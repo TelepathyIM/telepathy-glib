@@ -635,7 +635,7 @@ channel_request_succeeded (TpAccountChannelRequest *self)
 
       if (self->priv->channel == NULL)
         {
-          GError err = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          GError err = { TP_ERRORS, TP_ERROR_CONFUSED,
               "Channel has been created but MC didn't give it back to us" };
 
           DEBUG ("%s", err.message);

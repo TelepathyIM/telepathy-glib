@@ -948,7 +948,7 @@ test_observe_no_channel (Test *test,
   g_object_unref (req);
 
   g_main_loop_run (test->mainloop);
-  g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_CONFUSED);
 }
 
 int
