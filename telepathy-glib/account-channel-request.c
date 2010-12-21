@@ -1269,9 +1269,9 @@ tp_account_channel_request_create_channel_finish (
  * If a suitable channel already existed, its handler will be notified that
  * the channel was requested again (for instance with
  * #TpAccountChannelRequest::re-handled, #TpBaseClientClassHandleChannelsImpl
- * or #TpSimpleHandler:callback), and can move its window to the foreground,
- * if applicable. Otherwise, a new channel will be created and dispatched to
- * a handler.
+ * or #TpSimpleHandler:callback, if it is implemented using Telepathy-GLib),
+ * so that it can re-present the window to the user, for example.
+ * Otherwise, a new channel will be created and dispatched to a handler.
  *
  * @callback will be called when an existing channel's handler has been
  * notified, a new channel has been created and dispatched, or the request
@@ -1504,9 +1504,9 @@ tp_account_channel_request_create_and_observe_channel_finish (
  * If a suitable channel already existed, its handler will be notified that
  * the channel was requested again (for instance with
  * #TpAccountChannelRequest::re-handled, #TpBaseClientClassHandleChannelsImpl
- * or #TpSimpleHandler:callback), and can move its window to the foreground,
- * if applicable. Otherwise, a new channel will be created and dispatched to
- * a handler.
+ * or #TpSimpleHandler:callback, if it is implemented using Telepathy-GLib),
+ * so that it can re-present the window to the user, for example.
+ * Otherwise, a new channel will be created and dispatched to a handler.
  *
  * Since: 0.13.UNRELEASED
  */
