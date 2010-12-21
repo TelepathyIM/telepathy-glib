@@ -766,26 +766,6 @@ test_observe_create_success (Test *test,
   g_assert_no_error (test->error);
 }
 
-static void
-ensure_and_observe_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-
-{
-  Test *test = user_data;
-
-  test->channel = tp_account_channel_request_ensure_and_observe_channel_finish (
-      TP_ACCOUNT_CHANNEL_REQUEST (source), result, &test->error);
-  if (test->channel == NULL)
-    goto out;
-
-  g_assert (TP_IS_CHANNEL (test->channel));
-  tp_clear_object (&test->channel);
-
-out:
-  g_main_loop_quit (test->mainloop);
-}
-
 /* ChannelDispatcher.CreateChannel() call fails */
 static void
 test_observe_create_fail (Test *test,
@@ -862,6 +842,26 @@ test_observe_cr_failed (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
   g_assert (test->channel == NULL);
+}
+
+static void
+ensure_and_observe_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+
+{
+  Test *test = user_data;
+
+  test->channel = tp_account_channel_request_ensure_and_observe_channel_finish (
+      TP_ACCOUNT_CHANNEL_REQUEST (source), result, &test->error);
+  if (test->channel == NULL)
+    goto out;
+
+  g_assert (TP_IS_CHANNEL (test->channel));
+  tp_clear_object (&test->channel);
+
+out:
+  g_main_loop_quit (test->mainloop);
 }
 
 static void
