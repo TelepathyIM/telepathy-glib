@@ -54,6 +54,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
@@ -743,34 +744,12 @@ tp_handle_channels_context_get_requests (
     TpHandleChannelsContext *self)
 {
   GHashTable *request_props;
-  GHashTableIter iter;
-  GList *result = NULL;
-  gpointer key, value;
 
   request_props = tp_asv_get_boxed (self->handler_info, "request-properties",
       TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP);
   if (request_props == NULL)
     return NULL;
 
-  g_hash_table_iter_init (&iter, request_props);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      TpChannelRequest *req;
-      const gchar *path = key;
-      GHashTable *props = value;
-      GError *error = NULL;
-
-      req = tp_channel_request_new (
-          tp_proxy_get_dbus_daemon (self->account), path, props, &error);
-      if (req == NULL)
-        {
-          DEBUG ("Failed to create TpChannelRequest: %s", error->message);
-          g_error_free (error);
-          continue;
-        }
-
-      result = g_list_prepend (result, req);
-    }
-
-  return result;
+  return _tp_create_channel_request_list (
+      tp_proxy_get_dbus_daemon (self->account),request_props);
 }

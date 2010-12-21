@@ -26,6 +26,8 @@
 #include <glib.h>
 #include <gio/gio.h>
 
+#include <telepathy-glib/channel-request.h>
+
 GArray *_tp_quark_array_copy (const GQuark *quarks) G_GNUC_WARN_UNUSED_RESULT;
 void _tp_quark_array_merge (GArray *array, const GQuark *quarks, gssize n);
 
@@ -33,6 +35,9 @@ void _tp_quark_array_merge (GArray *array, const GQuark *quarks, gssize n);
 GSocketAddress * _tp_create_temp_unix_socket (GSocketService *service,
     GError **error);
 #endif /* HAVE_GIO_UNIX */
+
+GList * _tp_create_channel_request_list (TpDBusDaemon *dbus,
+    GHashTable *request_props);
 
 /* Copied from wocky/wocky-utils.h */
 

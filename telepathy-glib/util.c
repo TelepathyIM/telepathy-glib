@@ -1540,3 +1540,33 @@ _tp_create_temp_unix_socket (GSocketService *service,
   return NULL;
 }
 #endif /* HAVE_GIO_UNIX */
+
+GList *
+_tp_create_channel_request_list (TpDBusDaemon *dbus,
+    GHashTable *request_props)
+{
+  GHashTableIter iter;
+  GList *result = NULL;
+  gpointer key, value;
+
+  g_hash_table_iter_init (&iter, request_props);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpChannelRequest *req;
+      const gchar *path = key;
+      GHashTable *props = value;
+      GError *error = NULL;
+
+      req = tp_channel_request_new (dbus, path, props, &error);
+      if (req == NULL)
+        {
+          DEBUG ("Failed to create TpChannelRequest: %s", error->message);
+          g_error_free (error);
+          continue;
+        }
+
+      result = g_list_prepend (result, req);
+    }
+
+  return result;
+}
