@@ -409,7 +409,15 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
   g_return_if_fail (!self->priv->registered);
   g_return_if_fail (cls->observe_channels != NULL);
 
-  self->priv->flags |= (CLIENT_IS_OBSERVER | CLIENT_OBSERVER_RECOVER);
+  if (recover)
+    {
+      self->priv->flags |= (CLIENT_IS_OBSERVER | CLIENT_OBSERVER_RECOVER);
+    }
+  else
+    {
+      self->priv->flags |= CLIENT_IS_OBSERVER;
+      self->priv->flags &= ~CLIENT_OBSERVER_RECOVER;
+    }
 }
 
 /**
