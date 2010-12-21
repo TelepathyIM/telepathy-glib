@@ -618,54 +618,6 @@ channel_prepare_cb (GObject *source,
 }
 
 static void
-channel_request_succeeded (TpAccountChannelRequest *self)
-{
-  if (self->priv->action_type == ACTION_TYPE_HANDLE)
-    {
-      GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
-          "Another Handler is handling this channel" };
-
-      if (self->priv->result == NULL)
-        /* Our handler has been called, all good */
-        return;
-
-      /* Our handler hasn't be called but the channel request is complete.
-       * That means another handler handled the channels so we don't own it. */
-      request_fail (self, &err);
-    }
-  else if (self->priv->action_type == ACTION_TYPE_OBSERVE)
-    {
-      GArray *features;
-
-      if (self->priv->channel == NULL)
-        {
-          GError err = { TP_ERRORS, TP_ERROR_CONFUSED,
-              "Channel has been created but MC didn't give it back to us" };
-
-          DEBUG ("%s", err.message);
-
-          request_fail (self, &err);
-          return;
-        }
-
-      /* Operation will be complete once the channel have been prepared */
-      features = tp_client_channel_factory_dup_channel_features (
-          self->priv->factory, self->priv->channel);
-      g_assert (features != NULL);
-
-      tp_proxy_prepare_async (self->priv->channel, (GQuark *) features->data,
-          channel_prepare_cb, self);
-
-      g_array_free (features, TRUE);
-    }
-  else
-    {
-      /* We don't have to handle the channel so we're done */
-      complete_result (self);
-    }
-}
-
-static void
 acr_channel_request_proceed_cb (TpChannelRequest *request,
   const GError *error,
   gpointer user_data,
@@ -716,7 +668,50 @@ acr_channel_request_succeeded_with_channel (TpChannelRequest *chan_req,
   if (channel != NULL)
     self->priv->channel = g_object_ref (channel);
 
-  channel_request_succeeded (self);
+  /* ChannelRequest succeeded */
+  if (self->priv->action_type == ACTION_TYPE_HANDLE)
+    {
+      GError err = { TP_ERRORS, TP_ERROR_NOT_YOURS,
+          "Another Handler is handling this channel" };
+
+      if (self->priv->result == NULL)
+        /* Our handler has been called, all good */
+        return;
+
+      /* Our handler hasn't be called but the channel request is complete.
+       * That means another handler handled the channels so we don't own it. */
+      request_fail (self, &err);
+    }
+  else if (self->priv->action_type == ACTION_TYPE_OBSERVE)
+    {
+      GArray *features;
+
+      if (self->priv->channel == NULL)
+        {
+          GError err = { TP_ERRORS, TP_ERROR_CONFUSED,
+              "Channel has been created but MC didn't give it back to us" };
+
+          DEBUG ("%s", err.message);
+
+          request_fail (self, &err);
+          return;
+        }
+
+      /* Operation will be complete once the channel have been prepared */
+      features = tp_client_channel_factory_dup_channel_features (
+          self->priv->factory, self->priv->channel);
+      g_assert (features != NULL);
+
+      tp_proxy_prepare_async (self->priv->channel, (GQuark *) features->data,
+          channel_prepare_cb, self);
+
+      g_array_free (features, TRUE);
+    }
+  else
+    {
+      /* We don't have to handle the channel so we're done */
+      complete_result (self);
+    }
 }
 
 static void
