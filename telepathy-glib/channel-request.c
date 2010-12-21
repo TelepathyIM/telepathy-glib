@@ -345,7 +345,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
   param_spec = g_param_spec_object ("channel-factory", "Channel factory",
       "Object implementing TpClientChannelFactoryInterface",
       G_TYPE_OBJECT,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CHANNEL_FACTORY,
       param_spec);
 
