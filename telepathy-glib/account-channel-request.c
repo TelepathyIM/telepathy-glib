@@ -1439,8 +1439,8 @@ request_and_observe_channel_async (TpAccountChannelRequest *self,
  * or the request has failed.
  * You can then call tp_account_channel_request_create_channel_finish() to
  * get the result of the operation and a #TpChannel representing the channel
- * which has been created. Note that your are NOT handling this channel and so
- * should interact with the channel as an Observer.
+ * which has been created. Note that you are <emphasis>not</emphasis> handling
+ * this channel and so should interact with the channel as an Observer.
  *
  * Since: 0.13.UNRELEASED
  */
@@ -1498,8 +1498,8 @@ tp_account_channel_request_create_and_observe_channel_finish (
  * or the request has failed.
  * You can then call tp_account_channel_request_create_channel_finish() to
  * get the result of the operation and a #TpChannel representing the channel
- * which has been created. Note that your are NOT handling this channel and so
- * should interact with the channel as an Observer.
+ * which has been created. Note that you are <emphasis>not</emphasis> handling
+ * this channel and so should interact with the channel as an Observer.
  *
  * If a suitable channel already existed, its handler will be notified that
  * the channel was requested again (for instance with
