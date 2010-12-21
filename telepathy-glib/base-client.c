@@ -225,6 +225,7 @@ typedef enum {
     CLIENT_HANDLER_WANTS_REQUESTS = 1 << 3,
     CLIENT_HANDLER_BYPASSES_APPROVAL = 1 << 4,
     CLIENT_OBSERVER_RECOVER = 1 << 5,
+    CLIENT_OBSERVER_DELAYS_APPROVERS = 1 << 6,
 } ClientFlags;
 
 struct _TpBaseClientPrivate
@@ -418,6 +419,47 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
     {
       self->priv->flags |= CLIENT_IS_OBSERVER;
       self->priv->flags &= ~CLIENT_OBSERVER_RECOVER;
+    }
+}
+
+/**
+ * tp_base_client_set_observer_delay_approvers:
+ * @self: a #TpBaseClient
+ * @delay: the value of the Observer.DelayApprovers property
+ *
+ * Set whether the channel dispatcher should wait for
+ * tp_observe_channels_context_accept() or tp_observe_channels_context_fail()
+ * to be called before calling
+ * #TpBaseClientClass.add_dispatch_operation on appropriate Approvers.
+ *
+ * This is implemented by setting the value of the DelayApprovers
+ * D-Bus property.
+ *
+ * This method may only be called before tp_base_client_register() is
+ * called, and may only be called on objects whose class implements
+ * #TpBaseClientClass.observe_channels.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
+    gboolean delay)
+{
+  TpBaseClientClass *cls = TP_BASE_CLIENT_GET_CLASS (self);
+
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+  g_return_if_fail (cls->observe_channels != NULL);
+
+  if (delay)
+    {
+      self->priv->flags |= (CLIENT_IS_OBSERVER |
+          CLIENT_OBSERVER_DELAYS_APPROVERS);
+    }
+  else
+    {
+      self->priv->flags |= CLIENT_IS_OBSERVER;
+      self->priv->flags &= ~CLIENT_OBSERVER_DELAYS_APPROVERS;
     }
 }
 
@@ -1118,6 +1160,7 @@ typedef enum {
     DP_HANDLED_CHANNELS,
     DP_OBSERVER_CHANNEL_FILTER,
     DP_OBSERVER_RECOVER,
+    DP_OBSERVER_DELAY_APPROVERS,
 } ClientDBusProp;
 
 static void
@@ -1196,6 +1239,11 @@ tp_base_client_get_dbus_properties (GObject *object,
           (self->priv->flags & CLIENT_OBSERVER_RECOVER) != 0);
       break;
 
+    case DP_OBSERVER_DELAY_APPROVERS:
+      g_value_set_boolean (value,
+          (self->priv->flags & CLIENT_OBSERVER_DELAYS_APPROVERS) != 0);
+      break;
+
     default:
       g_assert_not_reached ();
     }
@@ -1230,6 +1278,8 @@ tp_base_client_class_init (TpBaseClientClass *cls)
           GINT_TO_POINTER (DP_OBSERVER_CHANNEL_FILTER) },
         { "Recover",
           GINT_TO_POINTER (DP_OBSERVER_RECOVER) },
+        { "DelayApprovers",
+          GINT_TO_POINTER (DP_OBSERVER_DELAY_APPROVERS) },
         { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_ifaces[] = {

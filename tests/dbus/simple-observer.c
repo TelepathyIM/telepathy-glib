@@ -220,6 +220,7 @@ get_observer_prop_cb (TpProxy *proxy,
   GPtrArray *filters;
   gboolean recover;
   gboolean valid;
+  gboolean delay;
 
   if (error != NULL)
     {
@@ -227,7 +228,7 @@ get_observer_prop_cb (TpProxy *proxy,
       goto out;
     }
 
-  g_assert_cmpint (g_hash_table_size (properties), == , 2);
+  g_assert_cmpint (g_hash_table_size (properties), == , 3);
 
   filters = tp_asv_get_boxed (properties, "ObserverChannelFilter",
       TP_ARRAY_TYPE_CHANNEL_CLASS_LIST);
@@ -236,6 +237,10 @@ get_observer_prop_cb (TpProxy *proxy,
   recover = tp_asv_get_boolean (properties, "Recover", &valid);
   g_assert (valid);
   g_assert (recover);
+
+  delay = tp_asv_get_boolean (properties, "DelayApprovers", &valid);
+  g_assert (valid);
+  g_assert (!delay);
 
 out:
   g_main_loop_quit (test->mainloop);

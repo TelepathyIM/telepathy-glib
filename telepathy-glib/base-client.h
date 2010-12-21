@@ -110,6 +110,8 @@ void tp_base_client_take_observer_filter (TpBaseClient *self,
 
 void tp_base_client_set_observer_recover (TpBaseClient *self,
     gboolean recover);
+void tp_base_client_set_observer_delay_approvers (TpBaseClient *self,
+    gboolean delay);
 
 void tp_base_client_add_approver_filter (TpBaseClient *self,
     GHashTable *filter);
