@@ -111,6 +111,7 @@ struct _TpChannelRequestPrivate {
     GHashTable *immutable_properties;
 
     TpClientChannelFactory *channel_factory;
+    gboolean succeeded_with_chan_fired;
 };
 
 G_DEFINE_TYPE (TpChannelRequest, tp_channel_request, TP_TYPE_PROXY)
@@ -198,7 +199,19 @@ tp_channel_request_succeeded_cb (TpChannelRequest *self,
   GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED,
       "ChannelRequest succeeded and was removed" };
 
+  if (!self->priv->succeeded_with_chan_fired)
+    {
+      DEBUG ("MC is too old and didn't fired SucceededWithChannel");
+
+      g_signal_emit (self, signals[SIGNAL_SUCCEEDED_WITH_CHANNEL], 0,
+          NULL, NULL);
+
+      self->priv->succeeded_with_chan_fired = TRUE;
+    }
+
+  /* Fire the old legacy signal as well */
   g_signal_emit (self, signals[SIGNAL_SUCCEEDED], 0);
+
   tp_proxy_invalidate ((TpProxy *) self, &e);
 }
 
@@ -238,6 +251,8 @@ tp_channel_request_succeeded_with_channel_cb (TpChannelRequest *self,
 
   g_signal_emit (self, signals[SIGNAL_SUCCEEDED_WITH_CHANNEL], 0,
       connection, channel);
+
+  self->priv->succeeded_with_chan_fired = TRUE;
 
   g_object_unref (connection);
   g_object_unref (channel);
@@ -392,6 +407,9 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    * @self: the channel request proxy
    *
    * Emitted when the channel request succeeds.
+   *
+   * Deprecated: since 0.13.UNRELEASED. Use
+   * #TpChannelRequest::succeeded-with-channel instead
    */
   signals[SIGNAL_SUCCEEDED] = g_signal_new ("succeeded",
       G_OBJECT_CLASS_TYPE (klass),
@@ -404,14 +422,14 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
   /**
    * TpChannelRequest::succeeded-with-channel:
    * @self: the channel request proxy
-   * @connection: the #TpConnection of @channel
-   * @channel: the #TpChannel created
+   * @connection: the #TpConnection of @channel, or %NULL
+   * @channel: the #TpChannel created, or %NULL
    *
-   * Variant of the #TpChannelRequest::succeeded signal allowing to get
-   * the channel which has been created.
+   * Emitted when the channel request succeeds.
    *
-   * Note that this signal can not be fired if your telepathy-mission-control
-   * is too old.
+   * @connection and @channel may be %NULL your telepathy-mission-control is
+   * too old.
+   * TODO: put the actual version of MC implementing this.
    *
    * The #TpChannel is created using #TpChannelRequest:channel-factory but
    * the features of the factory are NOT prepared. It's up to the user to

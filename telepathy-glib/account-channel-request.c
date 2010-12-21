@@ -699,7 +699,6 @@ acr_channel_request_invalidated_cb (TpProxy *proxy,
   if (g_error_matches (&error, TP_DBUS_ERRORS, TP_DBUS_ERROR_OBJECT_REMOVED))
     {
       /* Object has been removed without error, so ChannelRequest succeeded */
-      channel_request_succeeded (self);
       return;
     }
 
@@ -714,7 +713,10 @@ acr_channel_request_succeeded_with_channel (TpChannelRequest *chan_req,
     TpChannel *channel,
     TpAccountChannelRequest *self)
 {
-  self->priv->channel = g_object_ref (channel);
+  if (channel != NULL)
+    self->priv->channel = g_object_ref (channel);
+
+  channel_request_succeeded (self);
 }
 
 static void
