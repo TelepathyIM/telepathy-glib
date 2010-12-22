@@ -140,6 +140,8 @@ main (int argc,
 
   g_type_init ();
 
+  g_set_prgname (PACKAGE_NAME);
+
   /* initialise thread support. It can be called just once, so check it already
    * ON and call if if it's not.
    * Threads are needed by Async APIs.
