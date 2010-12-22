@@ -1438,6 +1438,9 @@ request_and_observe_channel_async (TpAccountChannelRequest *self,
  * get the result of the operation and a #TpChannel representing the channel
  * which has been created. Note that you are <emphasis>not</emphasis> handling
  * this channel and so should interact with the channel as an Observer.
+ * See <ulink url="http://telepathy.freedesktop.org/doc/book/sect.channel-dispatcher.clients.html">
+ * the Telepathy book</ulink> for details about how clients should interact
+ * with channels.
  *
  * Since: 0.13.UNRELEASED
  */
@@ -1497,6 +1500,9 @@ tp_account_channel_request_create_and_observe_channel_finish (
  * get the result of the operation and a #TpChannel representing the channel
  * which has been created. Note that you are <emphasis>not</emphasis> handling
  * this channel and so should interact with the channel as an Observer.
+ * See <ulink url="http://telepathy.freedesktop.org/doc/book/sect.channel-dispatcher.clients.html">
+ * the Telepathy book</ulink> for details about how clients should interact
+ * with channels.
  *
  * If a suitable channel already existed, its handler will be notified that
  * the channel was requested again (for instance with
