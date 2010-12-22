@@ -428,8 +428,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    * Emitted when the channel request succeeds.
    *
    * @connection and @channel may be %NULL your telepathy-mission-control is
-   * too old.
-   * TODO: put the actual version of MC implementing this.
+   * too old (< 5.7.1).
    *
    * The #TpChannel is created using #TpChannelRequest:channel-factory but
    * the features of the factory are NOT prepared. It's up to the user to
