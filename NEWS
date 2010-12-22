@@ -1,3 +1,9 @@
+telepathy-farsight 0.0.16 (22 Dec 2010)
+=======================================
+- Emit the NewActiveTransportPair signal
+- Emit CodecsUpdated more often
+- Various bug fixes
+
 telepathy-farsight 0.0.15 (30 Sep 2010)
 =======================================
 - Release sending resource when SetStreamSending(False) is called
