@@ -139,6 +139,9 @@ tp_automatic_proxy_factory_create_channel_impl (
       if (tp_strv_contains (interfaces, TP_IFACE_CHANNEL_INTERFACE_MESSAGES))
         return TP_CHANNEL (tp_text_channel_new (conn, path, properties,
               error));
+
+      DEBUG ("channel %s doesn't implement Messages so we can't create "
+          "a TpTextChannel", path);
     }
 
   return tp_channel_new_from_properties (conn, path, properties, error);
