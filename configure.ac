@@ -10,7 +10,7 @@ AC_PREREQ([2.59])
 m4_define([tp_farsight_major_version], [0])
 m4_define([tp_farsight_minor_version], [0])
 m4_define([tp_farsight_micro_version], [16])
-m4_define([tp_farsight_nano_version], [0])
+m4_define([tp_farsight_nano_version], [1])
 
 dnl CURRENT, REVISION, AGE
 dnl - library source changed -> increment REVISION
