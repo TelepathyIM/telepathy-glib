@@ -100,6 +100,10 @@ struct _TpContact {
  *  (available since 0.11.7)
  * @TP_CONTACT_FEATURE_CLIENT_TYPES: #TpContact:client-types
  *  (available since 0.13.1)
+ * @TP_CONTACT_FEATURE_SUBSCRIPTION_STATES: #TpContact:subscribe-state,
+ *  #TpContact:publish-state and #TpContact:publish-request. Require a
+ *  Connection implementing ContactList interface.
+ *  (available since UNRELEASED)
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -147,11 +151,15 @@ enum {
     PROP_CAPABILITIES,
     PROP_CONTACT_INFO,
     PROP_CLIENT_TYPES,
+    PROP_SUBSCRIBE_STATE,
+    PROP_PUBLISH_STATE,
+    PROP_PUBLISH_REQUEST,
     N_PROPS
 };
 
 enum {
     SIGNAL_PRESENCE_CHANGED,
+    SIGNAL_SUBSCRIPTION_STATES_CHANGED,
     N_SIGNALS
 };
 
@@ -168,6 +176,7 @@ typedef enum {
     CONTACT_FEATURE_FLAG_AVATAR_DATA = 1 << TP_CONTACT_FEATURE_AVATAR_DATA,
     CONTACT_FEATURE_FLAG_CONTACT_INFO = 1 << TP_CONTACT_FEATURE_CONTACT_INFO,
     CONTACT_FEATURE_FLAG_CLIENT_TYPES = 1 << TP_CONTACT_FEATURE_CLIENT_TYPES,
+    CONTACT_FEATURE_FLAG_STATES = 1 << TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
 } ContactFeatureFlags;
 
 struct _TpContactPrivate {
@@ -201,6 +210,11 @@ struct _TpContactPrivate {
 
     /* a list of TpContactInfoField */
     GList *contact_info;
+
+    /* Subscribe/Publish states */
+    TpSubscriptionState subscribe;
+    TpSubscriptionState publish;
+    gchar *publish_request;
 };
 
 
@@ -544,6 +558,73 @@ tp_contact_get_contact_info (TpContact *self)
   return g_list_copy (self->priv->contact_info);
 }
 
+/**
+ * tp_contact_get_subscribe_state:
+ * @self: a #TpContact
+ *
+ * Return the state of the user's subscription to @self's presence.
+ *
+ * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
+ * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
+ *
+ * Returns: the value of #TpContact:subscribe-state.
+ *
+ * Since: UNRELEASED
+ */
+TpSubscriptionState
+tp_contact_get_subscribe_state (TpContact *self)
+{
+  g_return_val_if_fail (TP_IS_CONTACT (self), TP_SUBSCRIPTION_STATE_UNKNOWN);
+
+  return self->priv->subscribe;
+}
+
+/**
+ * tp_contact_get_publish_state:
+ * @self: a #TpContact
+ *
+ * Return the state of @self's subscription to the user's presence.
+ *
+ * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
+ * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
+ *
+ * Returns: the value of #TpContact:publish-state.
+ *
+ * Since: UNRELEASED
+ */
+TpSubscriptionState
+tp_contact_get_publish_state (TpContact *self)
+{
+  g_return_val_if_fail (TP_IS_CONTACT (self), TP_SUBSCRIPTION_STATE_UNKNOWN);
+
+  return self->priv->publish;
+}
+
+/**
+ * tp_contact_get_publish_request:
+ * @self: a #TpContact
+ *
+ * If #TpContact:publish-state is set to %TP_SUBSCRIPTION_STATE_ASK, return the
+ * message that @self sent when they requested permission to see the user's
+ * presence. This remains valid until the main loop is re-entered; if the caller
+ * requires a string that will persist for longer than that, it must be copied
+ * with g_strdup().
+ *
+ * This is set to %NULL until %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been
+ * prepared, and it is guaranteed to be non-%NULL afterward.
+
+ * Returns: the value of #TpContact:publish-request.
+ *
+ * Since: UNRELEASED
+ */
+const gchar *
+tp_contact_get_publish_request (TpContact *self)
+{
+  g_return_val_if_fail (TP_IS_CONTACT (self), NULL);
+
+  return self->priv->publish_request;
+}
+
 void
 _tp_contact_connection_invalidated (TpContact *contact)
 {
@@ -592,6 +673,7 @@ tp_contact_finalize (GObject *object)
   g_free (self->priv->presence_message);
   g_strfreev (self->priv->client_types);
   tp_contact_info_list_free (self->priv->contact_info);
+  g_free (self->priv->publish_request);
 
   ((GObjectClass *) tp_contact_parent_class)->finalize (object);
 }
@@ -664,6 +746,18 @@ tp_contact_get_property (GObject *object,
 
     case PROP_CLIENT_TYPES:
       g_value_set_boxed (value, tp_contact_get_client_types (self));
+      break;
+
+    case PROP_SUBSCRIBE_STATE:
+      g_value_set_uint (value, tp_contact_get_subscribe_state (self));
+      break;
+
+    case PROP_PUBLISH_STATE:
+      g_value_set_uint (value, tp_contact_get_publish_state (self));
+      break;
+
+    case PROP_PUBLISH_REQUEST:
+      g_value_set_string (value, tp_contact_get_publish_request (self));
       break;
 
     default:
@@ -958,6 +1052,87 @@ tp_contact_class_init (TpContactClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CLIENT_TYPES,
       param_spec);
+
+  /**
+   * TpContact:subscribe-state:
+   *
+   * A #TpSubscriptionState indicating the state of the user's subscription
+   * to contact's presence.
+   *
+   * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
+   * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
+   *
+   * Since: UNRELEASED
+   */
+  param_spec = g_param_spec_uint ("subscribe-state",
+      "Subscribe State",
+      "Subscribe state of the contact",
+      0,
+      G_MAXUINT,
+      TP_SUBSCRIPTION_STATE_UNKNOWN,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SUBSCRIBE_STATE,
+      param_spec);
+
+  /**
+   * TpContact:publish-state:
+   *
+   * A #TpSubscriptionState indicating the state of contact's subscription to
+   * the user's presence.
+   *
+   * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
+   * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
+   *
+   * Since: UNRELEASED
+   */
+  param_spec = g_param_spec_uint ("publish-state",
+      "Publish State",
+      "Publish state of the contact",
+      0,
+      G_MAXUINT,
+      TP_SUBSCRIPTION_STATE_UNKNOWN,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_PUBLISH_STATE,
+      param_spec);
+
+  /**
+   * TpContact:publish-request:
+   *
+   * The message that contact sent when they requested permission to see the
+   * user's presence, if #TpContact:publish-state is %TP_SUBSCRIPTION_STATE_ASK.
+   *
+   * This is set to %NULL until %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been
+   * prepared, and it is guaranteed to be non-%NULL afterward.
+   *
+   * Since: UNRELEASED
+   */
+  param_spec = g_param_spec_string ("publish-request",
+      "Publish Request",
+      "Publish request message of the contact",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_PUBLISH_REQUEST,
+      param_spec);
+
+  /**
+   * TpContact::subscription-states-changed:
+   * @contact: A #TpContact
+   * @subscribe: The new value of #TpContact:subscribe-state
+   * @publish: The new value of #TpContact:publish-state
+   * @publish_request: The new value of #TpContact:publish-request
+   *
+   * Emitted when this contact's subscription states changes.
+   *
+   * Since: UNRELEASED
+   */
+  signals[SIGNAL_SUBSCRIPTION_STATES_CHANGED] = g_signal_new (
+      "subscription-states-changed",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__UINT_UINT_STRING,
+      G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_STRING);
 
   /**
    * TpContact::presence-changed:
@@ -2910,6 +3085,92 @@ tp_connection_refresh_contact_info (TpConnection *self,
   g_array_free (handles, TRUE);
 }
 
+static void
+contact_set_subscription_states (TpContact *self,
+    TpSubscriptionState subscribe,
+    TpSubscriptionState publish,
+    const gchar *publish_request)
+{
+  if (publish_request == NULL)
+    publish_request = "";
+
+  DEBUG ("contact#%u state changed:", self->priv->handle);
+  DEBUG ("  subscribe: %d", subscribe);
+  DEBUG ("  publish: %d", publish);
+  DEBUG ("  publish request: %s", publish_request);
+
+  self->priv->has_features |= CONTACT_FEATURE_FLAG_STATES;
+
+  g_free (self->priv->publish_request);
+
+  self->priv->subscribe = subscribe;
+  self->priv->publish = publish;
+  self->priv->publish_request = g_strdup (publish_request);
+
+  g_object_notify ((GObject *) self, "subscribe-state");
+  g_object_notify ((GObject *) self, "publish-state");
+  g_object_notify ((GObject *) self, "publish-request");
+
+  g_signal_emit (self, signals[SIGNAL_SUBSCRIPTION_STATES_CHANGED], 0,
+      self->priv->subscribe, self->priv->publish, self->priv->publish_request);
+}
+
+static void
+contacts_changed_cb (TpConnection *connection,
+    GHashTable *changes,
+    const GArray *removals,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+  guint i;
+
+  g_hash_table_iter_init (&iter, changes);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpHandle handle = GPOINTER_TO_UINT (key);
+      GValueArray *value_array = value;
+      TpContact *contact = _tp_connection_lookup_contact (connection, handle);
+      TpSubscriptionState subscribe;
+      TpSubscriptionState publish;
+      const gchar *publish_request;
+
+      if (contact == NULL)
+        continue;
+
+      tp_value_array_unpack (value_array, 3,
+          &subscribe, &publish, &publish_request);
+
+      contact_set_subscription_states (contact, subscribe, publish,
+          publish_request);
+    }
+
+  for (i = 0; i < removals->len; i++)
+    {
+      TpHandle handle = g_array_index (removals, TpHandle, i);
+      TpContact *contact = _tp_connection_lookup_contact (connection, handle);
+
+      if (contact == NULL)
+        continue;
+
+      contact_set_subscription_states (contact, TP_SUBSCRIPTION_STATE_NO,
+          TP_SUBSCRIPTION_STATE_NO, NULL);
+    }
+}
+
+static void
+contacts_bind_to_contacts_changed (TpConnection *connection)
+{
+  if (!connection->priv->tracking_contacts_changed)
+    {
+      connection->priv->tracking_contacts_changed = TRUE;
+
+      tp_cli_connection_interface_contact_list_connect_to_contacts_changed
+        (connection, contacts_changed_cb, NULL, NULL, NULL, NULL);
+    }
+}
+
 static gboolean
 contacts_context_supports_iface (ContactsContext *context,
     GQuark iface)
@@ -3164,6 +3425,30 @@ contacts_got_attributes (TpConnection *connection,
           TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES_CLIENT_TYPES,
           G_TYPE_STRV);
       contact_maybe_set_client_types (contact, boxed);
+
+      /* ContactList subscription states */
+      {
+        TpSubscriptionState subscribe;
+        TpSubscriptionState publish;
+        const gchar *publish_request;
+        gboolean subscribe_valid = FALSE;
+        gboolean publish_valid = FALSE;
+
+        subscribe = tp_asv_get_uint32 (asv,
+              TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE,
+              &subscribe_valid);
+        publish = tp_asv_get_uint32 (asv,
+              TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH,
+              &publish_valid);
+        publish_request = tp_asv_get_string (asv,
+              TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST);
+
+        if (subscribe_valid && publish_valid)
+          {
+            contact_set_subscription_states (contact, subscribe, publish,
+                publish_request);
+          }
+      }
     }
 
   contacts_context_continue (c);
@@ -3261,6 +3546,15 @@ contacts_get_attributes (ContactsContext *context)
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES);
               contacts_bind_to_client_types_updated (context->connection);
+            }
+        }
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST)
+        {
+          if ((context->wanted & CONTACT_FEATURE_FLAG_STATES) != 0)
+            {
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST);
+              contacts_bind_to_contacts_changed (context->connection);
             }
         }
     }

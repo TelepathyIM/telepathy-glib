@@ -63,8 +63,9 @@ typedef enum {
     TP_CONTACT_FEATURE_AVATAR_DATA,
     TP_CONTACT_FEATURE_CONTACT_INFO,
     TP_CONTACT_FEATURE_CLIENT_TYPES,
+    TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
 } TpContactFeature;
-#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CLIENT_TYPES + 1)
+#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_SUBSCRIPTION_STATES + 1)
 
 /* Basic functionality, always available */
 TpConnection *tp_contact_get_connection (TpContact *self);
@@ -110,6 +111,11 @@ void tp_connection_refresh_contact_info (TpConnection *self,
 const gchar * const *
 /* this comment stops gtkdoc denying that this function exists */
 tp_contact_get_client_types (TpContact *self);
+
+/* TP_CONTACT_FEATURE_SUBSCRIPTION_STATES */
+TpSubscriptionState tp_contact_get_subscribe_state (TpContact *self);
+TpSubscriptionState tp_contact_get_publish_state (TpContact *self);
+const gchar *tp_contact_get_publish_request (TpContact *self);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,
