@@ -564,7 +564,7 @@ log_store_xml_add_message (TplLogStore *store,
       case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SENT:
       case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_RECEIVED:
       case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR:
-      case TPL_ENTRY_CHANELL_TEXT_SIGNAL_LOST_MESSAGE:
+      case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_LOST_MESSAGE:
         return add_message_text (self, TPL_ENTRY_TEXT (message), error);
       default:
         DEBUG ("TplEntrySignalType not handled by this LogStore (%s). "

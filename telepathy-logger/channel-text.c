@@ -402,7 +402,7 @@ _tpl_channel_text_init (TplChannelText *self)
  * within a #TplObserver singleton, when its Observer_Channel method is called
  * by the Channel Dispatcher.
  *
- * Returns: the TplChannelText instance or %NULL in @object_path is not valid
+ * Returns: the TplChannelText instance or %NULL if @object_path is not valid
  */
 TplChannelText *
 _tpl_channel_text_new (TpConnection *conn,
@@ -659,7 +659,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
 
   if (!TPL_IS_CHANNEL_TEXT (proxy))
     {
-      CRITICAL ("Passed proxy not a is proper TplChannelText");
+      CRITICAL ("Passed proxy is not a proper TplChannelText");
       goto out;
     }
 

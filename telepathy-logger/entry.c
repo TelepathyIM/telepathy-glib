@@ -34,8 +34,8 @@
  * @short_description: Abstract representation of a log entry
  * @see_also: #TplEntryText and other subclasses when they'll exist
  *
- * The TPLogger log entry represent a generic log entry, which will be
- * specialied by subclasses of #TplEntry.
+ * The TPLogger log entry represents a generic log entry, which will be
+ * specialized by subclasses of #TplEntry.
  */
 
 /**
@@ -50,7 +50,7 @@
  *
  * Return whether a message ID is valid.
  *
- * If %FALSE is returned, it means that either a invalid input has been
+ * If %FALSE is returned, it means that either an invalid input has been
  * passed, or the TplEntry is currently set to %TPL_ENTRY_MSG_ID_UNKNOWN
  * or %TPL_ENTRY_MSG_ID_ACKNOWLEDGED.
  *

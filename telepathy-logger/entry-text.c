@@ -38,7 +38,7 @@
  * @title: TplEntryText
  * @short_description: Representation of a text log entry
  *
- * A subclass of #TpEntry representing a text log entry.
+ * A subclass of #TplEntry representing a text log entry.
  */
 
 /**

@@ -183,7 +183,7 @@ tpl_channel_set_account (TplChannel *self,
  * @cb: a callback
  * @user_data: user's data passed to the callback
  *
- * The TplObserver has no idea of what TplChannel subclass intance it's
+ * The TplObserver has no idea of what TplChannel subclass instance it's
  * dealing with.
  * In order to prepare the subclass instance this method has to
  * be called, which will call #TplChannelClass.call_when_ready
@@ -214,7 +214,7 @@ _tpl_channel_call_when_ready (TplChannel *self,
  * This static method is called from #TplChannelClass.call_when_ready, implemented by
  * #TplChannel subclasses.
  *
- * See also: tpl_channel_call_when_ready()
+ * See also: %tpl_channel_call_when_ready
  */
 static void
 call_when_ready_protected (TplChannel *self,
