@@ -523,7 +523,7 @@ add_message_text (TplLogStoreXml *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TPL_IS_ENTRY_TEXT (message), FALSE);
 
-  signal_type = _tpl_entry_get_signal_type (TPL_ENTRY (message));
+  signal_type = _tpl_entry_text_get_signal_type (message);
 
   switch (signal_type)
     {

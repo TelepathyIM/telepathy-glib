@@ -1119,12 +1119,12 @@ on_sent_signal_cb (TpChannel *proxy,
   _tpl_entry_set_channel_path (TPL_ENTRY (log), channel_path);
   _tpl_entry_set_chat_id (log, chat_id);
   _tpl_entry_set_timestamp (log, (time_t) arg_Timestamp);
-  _tpl_entry_set_signal_type (log, TPL_ENTRY_TEXT_SIGNAL_SENT);
   _tpl_entry_set_sender (log, tpl_entity_sender);
   /* NULL when it's a chatroom */
   if (tpl_entity_receiver != NULL)
     _tpl_entry_set_receiver (log, tpl_entity_receiver);
   _tpl_entry_text_set_message (text_log, arg_Text);
+  _tpl_entry_text_set_signal_type (text_log, TPL_ENTRY_TEXT_SIGNAL_SENT);
   _tpl_entry_text_set_message_type (text_log, arg_Type);
   _tpl_entry_text_set_tpl_channel_text (text_log, tpl_text);
 
@@ -1325,7 +1325,7 @@ on_received_signal_cb (TpChannel *proxy,
   _tpl_entry_text_set_tpl_channel_text (text_log, tpl_text);
   _tpl_entry_text_set_message (text_log, arg_Text);
   _tpl_entry_text_set_message_type (text_log, arg_Type);
-  _tpl_entry_set_signal_type (log,
+  _tpl_entry_text_set_signal_type (text_log,
       TPL_ENTRY_TEXT_SIGNAL_RECEIVED);
 
   me = _tpl_channel_text_get_my_contact (tpl_text);

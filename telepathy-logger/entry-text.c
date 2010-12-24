@@ -51,6 +51,8 @@ G_DEFINE_TYPE (TplEntryText, tpl_entry_text, TPL_TYPE_ENTRY)
 
 struct _TplEntryTextPriv
 {
+  TplEntryTextSignalType signal_type;
+
   TplChannelText *tpl_text;
   TpChannelTextMessageType message_type;
   gchar *message;
@@ -294,6 +296,25 @@ _tpl_entry_text_get_tpl_channel_text (TplEntryText * self)
   g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self), NULL);
 
   return self->priv->tpl_text;
+}
+
+
+TplEntryTextSignalType
+_tpl_entry_text_get_signal_type (TplEntryText *self)
+{
+  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self), TPL_ENTRY_TEXT_SIGNAL_NONE);
+
+  return self->priv->signal_type;
+}
+
+
+void
+_tpl_entry_text_set_signal_type (TplEntryText *self,
+    TplEntryTextSignalType signal_type)
+{
+  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
+
+  self->priv->signal_type = signal_type;
 }
 
 /**

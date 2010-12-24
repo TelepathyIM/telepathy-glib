@@ -65,6 +65,9 @@ const gchar * _tpl_entry_text_message_type_to_str (
 TplChannelText * _tpl_entry_text_get_tpl_channel_text (
     TplEntryText *self);
 
+TplEntryTextSignalType _tpl_entry_text_get_signal_type (
+    TplEntryText *self);
+
 void _tpl_entry_text_set_tpl_channel_text (TplEntryText *self,
     TplChannelText *data);
 
@@ -87,6 +90,9 @@ gboolean _tpl_entry_text_equal (TplEntry *message1,
 
 void _tpl_entry_text_set_pending_msg_id (TplEntryText *self,
     gint data);
+
+void _tpl_entry_text_set_signal_type (TplEntryText *self,
+    TplEntryTextSignalType signal_type);
 
 gboolean _tpl_entry_text_is_pending (TplEntryText *self);
 

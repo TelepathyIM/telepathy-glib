@@ -80,7 +80,6 @@ struct _TplEntryPriv
 {
   gchar *log_id;
   gint64 timestamp;
-  TplEntrySignalType signal_type;
   gchar *chat_id;
   TpAccount *account;
   gchar *channel_path;
@@ -330,15 +329,6 @@ tpl_entry_get_timestamp (TplEntry *self)
   return self->priv->timestamp;
 }
 
-TplEntrySignalType
-_tpl_entry_get_signal_type (TplEntry *self)
-{
-  g_return_val_if_fail (TPL_IS_ENTRY (self), TPL_ENTRY_SIGNAL_NONE);
-
-  return self->priv->signal_type;
-}
-
-
 const gchar *
 _tpl_entry_get_log_id (TplEntry *self)
 {
@@ -431,15 +421,6 @@ _tpl_entry_set_timestamp (TplEntry *self,
   g_object_notify (G_OBJECT (self), "timestamp");
 }
 
-
-void
-_tpl_entry_set_signal_type (TplEntry *self,
-    TplEntrySignalType data)
-{
-  g_return_if_fail (TPL_IS_ENTRY (self));
-
-  self->priv->signal_type = data;
-}
 
 /* set just on construction time */
 static void

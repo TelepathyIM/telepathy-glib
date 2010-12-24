@@ -33,20 +33,6 @@ G_BEGIN_DECLS
 
 typedef enum
 {
-  TPL_ENTRY_SIGNAL_NONE = 0,
-
-  TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SENT,
-  TPL_ENTRY_CHANNEL_TEXT_SIGNAL_RECEIVED,
-  TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR,
-  TPL_ENTRY_CHANNEL_TEXT_SIGNAL_LOST_MESSAGE,
-  TPL_ENTRY_CHANNEL_TEXT_SIGNAL_CHAT_STATUS_CHANGED,
-
-  TPL_ENTRY_CHANNEL_SIGNAL_CHANNEL_CLOSED
-
-} TplEntrySignalType;
-
-typedef enum
-{
   TPL_ENTRY_ERROR,
   TPL_ENTRY_TEXT
 } TplEntryType;
@@ -71,9 +57,6 @@ struct _TplEntryClass {
 void _tpl_entry_set_timestamp (TplEntry *self,
     gint64 data);
 
-void _tpl_entry_set_signal_type (TplEntry *self,
-    TplEntrySignalType data);
-
 void _tpl_entry_set_direction (TplEntry *self,
     TplEntryDirection data);
 
@@ -89,7 +72,6 @@ void _tpl_entry_set_sender (TplEntry *self,
 void _tpl_entry_set_receiver (TplEntry *self,
     TplEntity *data);
 
-TplEntrySignalType _tpl_entry_get_signal_type (TplEntry *self);
 const gchar * _tpl_entry_get_chat_id (TplEntry * self);
 const gchar * _tpl_entry_get_channel_path (TplEntry *self);
 
