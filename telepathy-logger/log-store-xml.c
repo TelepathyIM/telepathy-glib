@@ -559,20 +559,14 @@ log_store_xml_add_message (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_ENTRY (message), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  switch (_tpl_entry_get_signal_type (TPL_ENTRY (message)))
-    {
-      case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SENT:
-      case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_RECEIVED:
-      case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_SEND_ERROR:
-      case TPL_ENTRY_CHANNEL_TEXT_SIGNAL_LOST_MESSAGE:
-        return add_message_text (self, TPL_ENTRY_TEXT (message), error);
-      default:
-        DEBUG ("TplEntrySignalType not handled by this LogStore (%s). "
-            "Ignoring Entry", log_store_xml_get_name (store));
-        /* do not consider it an error, this LogStore simply do not want/need
-         * this Entry */
-        return TRUE;
-    }
+  if (TPL_IS_ENTRY_TEXT (message))
+    return add_message_text (self, TPL_ENTRY_TEXT (message), error);
+
+  DEBUG ("TplEntrySignalType not handled by this LogStore (%s). "
+      "Ignoring Entry", log_store_xml_get_name (store));
+  /* do not consider it an error, this LogStore simply do not want/need
+   * this Entry */
+  return TRUE;
 }
 
 

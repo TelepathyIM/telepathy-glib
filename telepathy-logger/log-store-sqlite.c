@@ -445,8 +445,9 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  if (_tpl_entry_get_signal_type (message) !=
-          TPL_ENTRY_TEXT_SIGNAL_RECEIVED)
+  if ((TPL_IS_ENTRY_TEXT (message) == FALSE) ||
+      (_tpl_entry_get_signal_type (message) !=
+          TPL_ENTRY_TEXT_SIGNAL_RECEIVED))
     {
       DEBUG ("ignoring msg %s, not interesting for message-counter",
           _tpl_entry_get_log_id (message));
