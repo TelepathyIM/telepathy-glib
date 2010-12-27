@@ -134,6 +134,21 @@ typedef void (*TpBaseProtocolGetAvatarDetailsFunc) (TpBaseProtocol *self,
     guint *max_width,
     guint *max_bytes);
 
+typedef void (*TpBaseProtocolGetAddressingDetailsFunc) (TpBaseProtocol *self,
+    GStrv *addressable_vcard_fields,
+    GStrv *addressable_uri_schemes);
+
+typedef gchar *(*TpBaseProtocolAddressingNormalizeVCardAddressFunc) (
+    TpBaseProtocol *self,
+    const gchar *vcard_field,
+    const gchar *vcard_address,
+    GError **error);
+
+typedef gchar *(*TpBaseProtocolAddressingNormalizeUriFunc) (
+    TpBaseProtocol *self,
+    const gchar *uri,
+    GError **error);
+
 struct _TpBaseProtocolClass
 {
   GObjectClass parent_class;
@@ -167,8 +182,14 @@ struct _TpBaseProtocolClass
 
   GStrv (*dup_authentication_types) (TpBaseProtocol *self);
 
+  TpBaseProtocolGetAddressingDetailsFunc get_addressing_details;
+
+  TpBaseProtocolAddressingNormalizeVCardAddressFunc normalize_vcard_address;
+
+  TpBaseProtocolAddressingNormalizeUriFunc normalize_uri;
+
   /*<private>*/
-  GCallback padding[5];
+  GCallback padding[2];
   TpBaseProtocolClassPrivate *priv;
 };
 
