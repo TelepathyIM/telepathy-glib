@@ -1084,7 +1084,10 @@ lookup_contact_info (TpTestsContactsConnection *self,
           g_ptr_array_ref (ret));
     }
 
-  return ret;
+  if (ret == NULL)
+    return g_ptr_array_new ();
+
+  return g_ptr_array_ref (ret);
 }
 
 static void
@@ -1115,6 +1118,7 @@ my_refresh_contact_info (TpSvcConnectionInterfaceContactInfo *obj,
 
       tp_svc_connection_interface_contact_info_emit_contact_info_changed (self,
           handle, arr);
+      g_ptr_array_unref (arr);
     }
 
   tp_svc_connection_interface_contact_info_return_from_refresh_contact_info (
@@ -1146,6 +1150,8 @@ my_request_contact_info (TpSvcConnectionInterfaceContactInfo *obj,
 
   tp_svc_connection_interface_contact_info_return_from_request_contact_info (
       context, ret);
+
+  g_ptr_array_unref (ret);
 }
 
 static void
