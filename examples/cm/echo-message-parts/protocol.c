@@ -21,12 +21,23 @@ G_DEFINE_TYPE (ExampleEcho2Protocol,
 
 const gchar * const protocol_interfaces[] = {
   TP_IFACE_PROTOCOL_INTERFACE_AVATARS,
+  TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING,
   NULL };
 
 const gchar * const supported_avatar_mime_types[] = {
   "image/png",
   "image/jpeg",
   "image/gif",
+  NULL };
+
+const gchar * const addressing_vcard_fields[] = {
+  "x-jabber",
+  "tel",
+  NULL };
+
+const gchar * const addressing_uri_schemes[] = {
+  "xmpp",
+  "tel",
   NULL };
 
 static void
@@ -199,6 +210,18 @@ get_avatar_details (TpBaseProtocol *self,
 }
 
 static void
+get_addressing_details (TpBaseProtocol *self,
+    GStrv *addressable_vcard_fields,
+    GStrv *addressable_uri_schemes)
+{
+  if (addressable_vcard_fields != NULL)
+    *addressable_vcard_fields = g_strdupv ((gchar **) addressing_vcard_fields);
+
+  if (addressable_uri_schemes != NULL)
+    *addressable_uri_schemes = g_strdupv ((gchar **) addressing_uri_schemes);
+}
+
+static void
 example_echo_2_protocol_class_init (
     ExampleEcho2ProtocolClass *klass)
 {
@@ -213,4 +236,5 @@ example_echo_2_protocol_class_init (
   base_class->get_interfaces = get_interfaces;
   base_class->get_connection_details = get_connection_details;
   base_class->get_avatar_details = get_avatar_details;
+  base_class->get_addressing_details = get_addressing_details;
 }
