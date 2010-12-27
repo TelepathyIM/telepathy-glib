@@ -226,7 +226,7 @@ allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy
 
         <p>A more exhaustive list of addressable vCard fields can be found in
           the Protocol's Addressing interface's
-          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Protocol.Interface.Addressing.DRAFT">AddressableVCardFields</tp:dbus-ref>.</p>
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Protocol.Interface.Addressing">AddressableVCardFields</tp:dbus-ref>.</p>
 
         <p>It is not necessarily valid to interpret contacts' identifiers
           as values of this vCard field. For instance, telepathy-sofiasip

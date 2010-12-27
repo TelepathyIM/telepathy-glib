@@ -21,9 +21,8 @@
   </tp:license>
 
   <interface
-     name="org.freedesktop.Telepathy.Protocol.Interface.Addressing.DRAFT"
-     tp:causes-havoc="experimental">
-    <tp:added version="0.19.12">(as draft)</tp:added>
+     name="org.freedesktop.Telepathy.Protocol.Interface.Addressing">
+    <tp:added version="0.21.UNRELEASED">(as stable API)</tp:added>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>An interface for protocols that support multiple forms of
         addressing contacts, for example through vCard addresses and URIs.</p>
@@ -147,7 +146,7 @@ AddressableURISchemes=tel;sip;
             For example: <code>xmpp:julien@example.com</code>.</dd>
           <dt><code>msnim</code></dt>
           <dd>For the purposes of
-            <tp:dbus-ref namespace="org.freedesktop.Telepathy">Protocol.Interface.Addressing.DRAFT</tp:dbus-ref>,
+            <tp:dbus-ref namespace="org.freedesktop.Telepathy">Protocol.Interface.Addressing</tp:dbus-ref>,
             <tp:dbus-ref namespace="org.freedesktop.Telepathy">Connection.Interface.Addressing.DRAFT</tp:dbus-ref>,
             and
             <tp:dbus-ref namespace="org.freedesktop.Telepathy">Channel.Interface.Addressing.DRAFT</tp:dbus-ref>,
@@ -157,7 +156,7 @@ AddressableURISchemes=tel;sip;
             For example: <code>msnim:add?contact=julien</code>.</dd>
           <dt><code>aim</code></dt>
           <dd>For the purposes of
-            <tp:dbus-ref namespace="org.freedesktop.Telepathy">Protocol.Interface.Addressing.DRAFT</tp:dbus-ref>,
+            <tp:dbus-ref namespace="org.freedesktop.Telepathy">Protocol.Interface.Addressing</tp:dbus-ref>,
             <tp:dbus-ref namespace="org.freedesktop.Telepathy">Connection.Interface.Addressing.DRAFT</tp:dbus-ref>,
             and
             <tp:dbus-ref namespace="org.freedesktop.Telepathy">Channel.Interface.Addressing.DRAFT</tp:dbus-ref>,
@@ -170,7 +169,7 @@ AddressableURISchemes=tel;sip;
             For example: <code>skype:julien</code>.</dd>
           <dt><code>ymsgr</code></dt>
           <dd>For the purposes of
-            <tp:dbus-ref namespace="org.freedesktop.Telepathy">Protocol.Interface.Addressing.DRAFT</tp:dbus-ref>,
+            <tp:dbus-ref namespace="org.freedesktop.Telepathy">Protocol.Interface.Addressing</tp:dbus-ref>,
             <tp:dbus-ref namespace="org.freedesktop.Telepathy">Connection.Interface.Addressing.DRAFT</tp:dbus-ref>,
             and
             <tp:dbus-ref namespace="org.freedesktop.Telepathy">Channel.Interface.Addressing.DRAFT</tp:dbus-ref>,
