@@ -18,6 +18,7 @@
 #include <telepathy-glib/presence-mixin.h>
 
 #include "simple-conn.h"
+#include "contact-list-manager.h"
 
 G_BEGIN_DECLS
 
@@ -70,6 +71,9 @@ typedef enum {
 #define TP_TESTS_CONTACTS_CONNECTION_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_CONTACTS_CONNECTION, \
                               TpTestsContactsConnectionClass))
+
+TestContactListManager *tp_tests_contacts_connection_get_contact_list_manager (
+    TpTestsContactsConnection *self);
 
 void tp_tests_contacts_connection_change_aliases (
     TpTestsContactsConnection *self, guint n,

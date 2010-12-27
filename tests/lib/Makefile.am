@@ -7,6 +7,8 @@ libtp_glib_tests_la_SOURCES = \
     bug16307-conn.h \
     contacts-conn.c \
     contacts-conn.h \
+    contact-list-manager.c \
+    contact-list-manager.h \
     debug.h \
     echo-chan.h \
     echo-chan.c \

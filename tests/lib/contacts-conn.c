@@ -19,7 +19,7 @@
 #include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/util.h>
 
-#include "tests/lib/debug.h"
+#include "debug.h"
 
 static void init_aliasing (gpointer, gpointer);
 static void init_avatars (gpointer, gpointer);
@@ -36,8 +36,6 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
       init_aliasing);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_AVATARS,
       init_avatars);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
-      tp_contacts_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
       tp_presence_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
@@ -49,6 +47,12 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsContactsConnection,
       init_contact_caps)
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_INFO,
       init_contact_info)
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
+      tp_contacts_mixin_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST,
+      tp_base_contact_list_mixin_list_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      tp_base_contact_list_mixin_groups_iface_init);
     );
 
 /* type definition stuff */
@@ -89,6 +93,8 @@ struct _TpTestsContactsConnectionPrivate
   /* TpHandle => GPtrArray * */
   GHashTable *contact_info;
   GPtrArray *default_contact_info;
+
+  TestContactListManager *list_manager;
 };
 
 typedef struct
@@ -347,6 +353,7 @@ constructed (GObject *object)
   tp_contacts_mixin_init (object,
       G_STRUCT_OFFSET (TpTestsContactsConnection, contacts_mixin));
   tp_base_connection_register_with_contacts_mixin (base);
+  tp_base_contact_list_mixin_register_with_contacts_mixin (base);
   tp_contacts_mixin_add_contact_attributes_iface (object,
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       aliasing_fill_contact_attributes);
@@ -458,6 +465,20 @@ my_set_own_status (GObject *object,
   return TRUE;
 }
 
+static GPtrArray *
+create_channel_managers (TpBaseConnection *conn)
+{
+  TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (conn);
+  GPtrArray *ret = g_ptr_array_sized_new (1);
+
+  self->priv->list_manager = g_object_new (TEST_TYPE_CONTACT_LIST_MANAGER,
+      "connection", conn, NULL);
+
+  g_ptr_array_add (ret, self->priv->list_manager);
+
+  return ret;
+}
+
 static void
 tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
 {
@@ -468,6 +489,8 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       TP_IFACE_CONNECTION_INTERFACE_AVATARS,
       TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_LOCATION,
@@ -494,6 +517,7 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   g_type_class_add_private (klass, sizeof (TpTestsContactsConnectionPrivate));
 
   base_class->interfaces_always_present = interfaces_always_present;
+  base_class->create_channel_managers = create_channel_managers;
 
   tp_contacts_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsContactsConnectionClass, contacts_mixin));
@@ -508,6 +532,15 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   klass->properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpTestsContactsConnectionClass, properties_class));
+
+  tp_base_contact_list_mixin_class_init (base_class);
+}
+
+TestContactListManager *
+tp_tests_contacts_connection_get_contact_list_manager (
+    TpTestsContactsConnection *self)
+{
+  return self->priv->list_manager;
 }
 
 void
