@@ -48,7 +48,9 @@ typedef struct _TfChannelClass TfChannelClass;
 
 GType tf_channel_get_type (void);
 
-TfChannel *tf_channel_new (TpChannel *channel_proxy);
+void tf_channel_new_async (TpChannel *channel_proxy,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 
 void tf_channel_error (TfChannel *chan,

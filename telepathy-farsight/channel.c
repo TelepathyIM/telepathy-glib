@@ -46,7 +46,11 @@
 #include "media-signalling-channel.h"
 #include "call-channel.h"
 
-G_DEFINE_TYPE (TfChannel, tf_channel, G_TYPE_OBJECT);
+
+static void channel_async_initable_init (GAsyncInitableIface *asynciface);
+
+G_DEFINE_TYPE_WITH_CODE (TfChannel, tf_channel, G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, channel_async_initable_init));
 
 struct _TfChannelPrivate
 {
@@ -56,15 +60,13 @@ struct _TfChannelPrivate
   TfCallChannel *call_channel;
 
   gulong channel_invalidated_handler;
-  guint  channel_ready_idle;
 
-  gboolean channel_handled;
+  gboolean closed;
 };
 
 enum
 {
   SIGNAL_CLOSED,
-  SIGNAL_HANDLER_RESULT,
   SIGNAL_GET_CODEC_CONFIG,
   SIGNAL_FS_CONFERENCE_ADD,
   SIGNAL_FS_CONFERENCE_REMOVE,
@@ -91,6 +93,15 @@ static void channel_fs_conference_add (GObject *chan,
 static void channel_fs_conference_remove (GObject *chan,
     FsConference *conf, TfChannel *self);
 
+static void tf_channel_init_async (GAsyncInitable *initable,
+    int io_priority,
+    GCancellable  *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+static gboolean tf_channel_init_finish (GAsyncInitable *initable,
+    GAsyncResult *res,
+    GError **error);
+
 static void
 tf_channel_init (TfChannel *self)
 {
@@ -99,6 +110,14 @@ tf_channel_init (TfChannel *self)
 
   self->priv = priv;
 }
+
+static void
+channel_async_initable_init (GAsyncInitableIface *asynciface)
+{
+  asynciface->init_async = tf_channel_init_async;
+  asynciface->init_finish = tf_channel_init_finish;
+}
+
 
 static void
 tf_channel_get_property (GObject    *object,
@@ -155,35 +174,40 @@ static void channel_invalidated (TpChannel *channel_proxy,
 
 
 static void
-channel_ready (TpChannel *channel_proxy,
-               const GError *error,
-               gpointer user_data)
+channel_prepared (GObject *obj,
+    GAsyncResult *proxy_res,
+    gpointer user_data)
 {
-  TfChannel *self = TF_CHANNEL (user_data);
+  TpChannel *channel_proxy = TP_CHANNEL (obj);
   TpProxy *as_proxy = (TpProxy *) channel_proxy;
+  GSimpleAsyncResult *res = user_data;
+  GError *error = NULL;
+  TfChannel *self = TF_CHANNEL (
+      g_async_result_get_source_object (G_ASYNC_RESULT (res)));
 
-
-  if (error)
+  if (!tp_proxy_prepare_finish (channel_proxy, proxy_res, &error))
     {
-      if (!self->priv->channel_handled)
-        {
-          self->priv->channel_handled = TRUE;
-          g_signal_emit (self, signals[SIGNAL_HANDLER_RESULT], 0, error);
-        }
-
+      g_simple_async_result_propagate_error (res, &error);
+      g_simple_async_result_set_op_res_gboolean (res, FALSE);
+      g_simple_async_result_complete (res);
       shutdown_channel (self);
+      g_object_unref (res);
       return;
     }
 
-
-  if (self->priv->channel_handled)
-    return;
-
+  if (self->priv->closed)
+    {
+      g_simple_async_result_set_error (res, TP_ERROR, TP_ERROR_CANCELLED,
+          "Channel already closed");
+      g_simple_async_result_set_op_res_gboolean (res, FALSE);
+      g_simple_async_result_complete (res);
+      g_object_unref (res);
+      return;
+    }
 
   if (tp_proxy_has_interface_by_id (as_proxy,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_MEDIA_SIGNALLING))
     {
-
       self->priv->media_signalling_channel =
           tf_media_signalling_channel_new (channel_proxy);
 
@@ -194,7 +218,7 @@ channel_ready (TpChannel *channel_proxy,
       tp_g_signal_connect_object (self->priv->media_signalling_channel,
           "session-created", G_CALLBACK (channel_fs_conference_add),
           self, 0);
-
+      g_simple_async_result_set_op_res_gboolean (res, TRUE);
     }
   else if (tp_proxy_has_interface_by_id (as_proxy,
           TF_FUTURE_IFACE_QUARK_CHANNEL_TYPE_CALL))
@@ -207,56 +231,72 @@ channel_ready (TpChannel *channel_proxy,
       tp_g_signal_connect_object (self->priv->call_channel,
           "fs-conference-remove", G_CALLBACK (channel_fs_conference_remove),
           self, 0);
+
+      g_simple_async_result_set_op_res_gboolean (res, TRUE);
     }
   else
     {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-        "Channel does not implement "
-        TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING " or "
-                   TF_FUTURE_IFACE_CHANNEL_TYPE_CALL};
+      g_simple_async_result_set_error (res, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Channel does not implement "
+          TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING " or "
+          TF_FUTURE_IFACE_CHANNEL_TYPE_CALL);
+      g_simple_async_result_set_op_res_gboolean (res, FALSE);
 
-      g_message ("%s", e.message);
-      self->priv->channel_handled = TRUE;
-      g_signal_emit (self, signals[SIGNAL_HANDLER_RESULT], 0, &e);
+      g_simple_async_result_complete (res);
+      g_object_unref (res);
       return;
     }
 
-  self->priv->channel_handled = TRUE;
-  g_signal_emit (self, signals[SIGNAL_HANDLER_RESULT], 0, NULL);
-
+  g_simple_async_result_complete (res);
 
   self->priv->channel_invalidated_handler = g_signal_connect (
       self->priv->channel_proxy,
       "invalidated", G_CALLBACK (channel_invalidated), self);
 
+  g_object_unref (res);
+}
+
+
+static void
+tf_channel_init_async (GAsyncInitable *initable,
+    int io_priority,
+    GCancellable  *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TfChannel *self = TF_CHANNEL (initable);
+  GSimpleAsyncResult *res;
+
+  if (cancellable != NULL)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback, user_data,
+          G_IO_ERROR, G_IO_ERROR_NOT_INITIALIZED,
+          "TfChannel initialisation does not support cancellation");
+      return;
+    }
+
+  res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tf_channel_init_async);
+  tp_proxy_prepare_async (self->priv->channel_proxy, NULL,
+      channel_prepared, res);
 }
 
 static gboolean
-channel_ready_idle (gpointer data)
+tf_channel_init_finish (GAsyncInitable *initable,
+    GAsyncResult *res,
+    GError **error)
 {
-  TfChannel *self = data;
+  GSimpleAsyncResult *simple_res;
 
-  tp_channel_call_when_ready (self->priv->channel_proxy, channel_ready, self);
+  g_return_val_if_fail (g_simple_async_result_is_valid (res,
+          G_OBJECT (initable), tf_channel_init_async), FALSE);
+  simple_res = G_SIMPLE_ASYNC_RESULT (res);
 
-  return FALSE;
+  g_simple_async_result_propagate_error (simple_res, error);
+
+  return g_simple_async_result_get_op_res_gboolean (simple_res);
 }
 
-static GObject *
-tf_channel_constructor (GType type,
-    guint n_props,
-    GObjectConstructParam *props)
-{
-  GObject *obj;
-  TfChannel *self;
-
-  obj = G_OBJECT_CLASS (tf_channel_parent_class)->
-           constructor (type, n_props, props);
-  self = (TfChannel *) obj;
-
-  self->priv->channel_ready_idle = g_idle_add (channel_ready_idle, self);
-
-  return obj;
-}
 
 static void
 tf_channel_dispose (GObject *object)
@@ -269,12 +309,6 @@ tf_channel_dispose (GObject *object)
     {
       g_object_unref (self->priv->media_signalling_channel);
       self->priv->media_signalling_channel = NULL;
-    }
-
-  if (self->priv->channel_ready_idle)
-    {
-      g_source_remove (self->priv->channel_ready_idle);
-      self->priv->channel_ready_idle = 0;
     }
 
   if (self->priv->channel_proxy)
@@ -304,8 +338,6 @@ tf_channel_class_init (TfChannelClass *klass)
   object_class->set_property = tf_channel_set_property;
   object_class->get_property = tf_channel_get_property;
 
-  object_class->constructor = tf_channel_constructor;
-
   object_class->dispose = tf_channel_dispose;
 
   g_object_class_install_property (object_class, PROP_CHANNEL,
@@ -330,23 +362,6 @@ tf_channel_class_init (TfChannelClass *klass)
           "GPtrArray of Farsight2 FsConferences for this channel",
           G_TYPE_PTR_ARRAY,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
-
-  /**
-   * TfChannel::handler-result:
-   * @error: a #GError containing the error or %NULL if there was no error
-   *
-   * This message is emitted when we are ready to handle the channel with %NULL
-   * or with an #GError if we can not handle the channel.
-   */
-
-  signals[SIGNAL_HANDLER_RESULT] = g_signal_new ("handler-result",
-      G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST,
-      0,
-      NULL,
-      NULL,
-      g_cclosure_marshal_VOID__POINTER,
-      G_TYPE_NONE, 1, G_TYPE_POINTER);
 
   /**
    * TfChannel::closed:
@@ -430,9 +445,6 @@ shutdown_channel (TfChannel *self)
 
   if (self->priv->channel_proxy != NULL)
     {
-      /* I've ensured that this is true everywhere this function is called */
-      g_assert (self->priv->channel_ready_idle == 0);
-
       if (self->priv->channel_invalidated_handler)
         {
           g_signal_handler_disconnect (
@@ -442,6 +454,8 @@ shutdown_channel (TfChannel *self)
     }
 
   g_signal_emit (self, signals[SIGNAL_CLOSED], 0);
+
+  self->priv->closed = TRUE;
 }
 
 static void
@@ -451,36 +465,27 @@ channel_invalidated (TpChannel *channel_proxy,
     gchar *message,
     TfChannel *self)
 {
-  GError e = { domain, code, message };
-
-  if (!self->priv->channel_handled)
-    {
-      self->priv->channel_handled = TRUE;
-      g_signal_emit (self, signals[SIGNAL_HANDLER_RESULT], 0, &e);
-    }
-
-  if (self->priv->channel_ready_idle)
-    {
-      g_source_remove (self->priv->channel_ready_idle);
-      self->priv->channel_ready_idle = 0;
-    }
-
   shutdown_channel (self);
 }
 
 /**
- * tf_channel_new:
+ * tf_channel_new_async:
  * @channel_proxy: a #TpChannel proxy
  *
- * Creates a new #TfChannel from an existing channel proxy
+ * Creates a new #TfChannel from an existing channel proxy, the new
+ * TfChannel object will be return in the async callback.
  *
- * Returns: a new #TfChannel
+ * The user must call g_async_initable_new_finish() in the callback
+ * to get the finished object.
  */
 
-TfChannel *
-tf_channel_new (TpChannel *channel_proxy)
+void
+tf_channel_new_async (TpChannel *channel_proxy,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  return g_object_new (TF_TYPE_CHANNEL,
+  return g_async_initable_new_async (TF_TYPE_CHANNEL,
+      0, NULL, callback, user_data,
       "channel", channel_proxy,
       NULL);
 }
@@ -503,22 +508,6 @@ tf_channel_error (TfChannel *chan,
   if (chan->priv->media_signalling_channel)
     tf_media_signalling_channel_error (chan->priv->media_signalling_channel,
         error, message);
-
-  if (!chan->priv->channel_handled)
-    {
-      /* we haven't yet decided whether we're handling this channel. This
-       * seems an unlikely situation at this point, but for the sake of
-       * returning *something* from HandleChannel, let's claim we are */
-
-      g_signal_emit (chan, signals[SIGNAL_HANDLER_RESULT], 0, NULL);
-    }
-
-  if (chan->priv->channel_ready_idle != 0)
-    {
-      if (chan->priv->channel_ready_idle)
-        g_source_remove (chan->priv->channel_ready_idle);
-      chan->priv->channel_ready_idle = 0;
-    }
 
   shutdown_channel (chan);
 }
