@@ -2056,6 +2056,97 @@ test_dup_if_possible (Fixture *f,
   g_assert_cmpuint (tp_contact_get_handle (contact), ==, bob_handle);
 }
 
+typedef struct
+{
+  TpSubscriptionState subscribe;
+  TpSubscriptionState publish;
+  const gchar *publish_request;
+
+  GMainLoop *loop;
+} SubscriptionStates;
+
+static void
+assert_subscription_states (TpContact *contact,
+    SubscriptionStates *states)
+{
+  g_assert_cmpint (tp_contact_get_subscribe_state (contact), ==, states->subscribe);
+  g_assert_cmpint (tp_contact_get_publish_state (contact), ==, states->publish);
+  g_assert_cmpstr (tp_contact_get_publish_request (contact), ==, states->publish_request);
+}
+
+static void
+subscription_states_changed_cb (TpContact *contact,
+    TpSubscriptionState subscribe,
+    TpSubscriptionState publish,
+    const gchar *publish_request,
+    SubscriptionStates *states)
+{
+  assert_subscription_states (contact, states);
+  g_main_loop_quit (states->loop);
+}
+
+static void
+test_subscription_states (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle alice_handle;
+  TpContact *alice;
+  TestContactListManager *manager;
+  TpContactFeature features[] = { TP_CONTACT_FEATURE_SUBSCRIPTION_STATES };
+  SubscriptionStates states = { TP_SUBSCRIPTION_STATE_NO,
+      TP_SUBSCRIPTION_STATE_NO, "", f->result.loop };
+
+  manager = tp_tests_contacts_connection_get_contact_list_manager (
+      f->service_conn);
+
+  alice_handle = tp_handle_ensure (f->service_repo, "alice", NULL, NULL);
+  g_assert_cmpuint (alice_handle, !=, 0);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &alice_handle,
+      G_N_ELEMENTS (features), features,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  alice = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (alice), ==, alice_handle);
+  g_assert_cmpstr (tp_contact_get_identifier (alice), ==, "alice");
+  assert_subscription_states (alice, &states);
+
+  reset_result (&f->result);
+
+  g_signal_connect (alice, "subscription-states-changed",
+      G_CALLBACK (subscription_states_changed_cb), &states);
+
+  /* Request subscription */
+  test_contact_list_manager_request_subscription (manager, 1, &alice_handle, "");
+  states.subscribe = TP_SUBSCRIPTION_STATE_ASK;
+  g_main_loop_run (states.loop);
+
+  /* Request again must re-emit the signal. Saying please this time will make
+   * the request accepted and will ask for publish. */
+  test_contact_list_manager_request_subscription (manager, 1, &alice_handle, "please");
+  g_main_loop_run (states.loop);
+  states.subscribe = TP_SUBSCRIPTION_STATE_YES;
+  states.publish = TP_SUBSCRIPTION_STATE_ASK;
+  states.publish_request = "automatic publish request";
+  g_main_loop_run (states.loop);
+
+  /* Remove the contact */
+  test_contact_list_manager_remove (manager, 1, &alice_handle);
+  states.subscribe = TP_SUBSCRIPTION_STATE_NO;
+  states.publish = TP_SUBSCRIPTION_STATE_NO;
+  states.publish_request = "";
+  g_main_loop_run (states.loop);
+
+  g_object_unref (alice);
+}
+
 static void
 setup (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
@@ -2146,6 +2237,9 @@ main (int argc,
   ADD (avatar_requirements);
   ADD (avatar_data);
   ADD (contact_info);
+  ADD (dup_if_possible);
+  ADD (subscription_states);
+
   /* test if TpContact fallbacks to connection's capabilities if
    * ContactCapabilities is not implemented. */
   ADD (capabilities_without_contact_caps);
@@ -2154,8 +2248,6 @@ main (int argc,
    * an empty set of capabilities if the connection doesn't support
    * ContactCapabilities and Requests. */
   ADD (prepare_contact_caps_without_request);
-
-  ADD (dup_if_possible);
 
   return g_test_run ();
 }
