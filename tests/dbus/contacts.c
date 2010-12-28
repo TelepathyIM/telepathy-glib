@@ -2147,6 +2147,100 @@ test_subscription_states (Fixture *f,
   g_object_unref (alice);
 }
 
+typedef struct
+{
+  GPtrArray *groups;
+  GMainLoop *loop;
+} ContactGroups;
+
+static void
+assert_contact_groups (TpContact *contact,
+    ContactGroups *data)
+{
+  const gchar * const *groups = tp_contact_get_contact_groups (contact);
+  guint i;
+
+  g_assert (groups != NULL);
+  g_assert_cmpuint (g_strv_length ((GStrv) groups), ==, data->groups->len);
+
+  for (i = 0; i < data->groups->len; i++)
+    g_assert (tp_strv_contains (groups, g_ptr_array_index (data->groups, i)));
+}
+
+static void
+contact_groups_changed_cb (TpContact *contact,
+    GStrv added,
+    GStrv removed,
+    ContactGroups *data)
+{
+  assert_contact_groups (contact, data);
+  g_main_loop_quit (data->loop);
+}
+
+static void
+test_contact_groups (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle alice_handle;
+  TpContact *alice;
+  TestContactListManager *manager;
+  TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_GROUPS };
+  ContactGroups data;
+
+  data.groups = g_ptr_array_new ();
+  data.loop = f->result.loop;
+
+  manager = tp_tests_contacts_connection_get_contact_list_manager (
+      f->service_conn);
+
+  alice_handle = tp_handle_ensure (f->service_repo, "alice", NULL, NULL);
+  g_assert_cmpuint (alice_handle, !=, 0);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &alice_handle,
+      G_N_ELEMENTS (features), features,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  alice = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (alice), ==, alice_handle);
+  g_assert_cmpstr (tp_contact_get_identifier (alice), ==, "alice");
+  assert_contact_groups (alice, &data);
+
+  reset_result (&f->result);
+
+  g_signal_connect (alice, "contact-groups-changed",
+      G_CALLBACK (contact_groups_changed_cb), &data);
+
+  g_ptr_array_add (data.groups, "group1");
+  test_contact_list_manager_add_to_group (manager, "group1", alice_handle);
+  g_main_loop_run (data.loop);
+
+  g_ptr_array_add (data.groups, "group2");
+  test_contact_list_manager_add_to_group (manager, "group2", alice_handle);
+  g_main_loop_run (data.loop);
+
+  g_ptr_array_remove_index_fast (data.groups, 0);
+  test_contact_list_manager_remove_from_group (manager, "group1", alice_handle);
+  g_main_loop_run (data.loop);
+
+  g_ptr_array_set_size (data.groups, 0);
+  g_ptr_array_add (data.groups, "group1");
+  g_ptr_array_add (data.groups, "group2");
+  g_ptr_array_add (data.groups, "group3");
+  tp_contact_set_contact_groups_async (alice, data.groups->len,
+      (const gchar * const *) data.groups->pdata, NULL, NULL);
+  g_main_loop_run (data.loop);
+
+  g_ptr_array_unref (data.groups);
+  g_object_unref (alice);
+}
+
 static void
 setup (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
@@ -2239,6 +2333,7 @@ main (int argc,
   ADD (contact_info);
   ADD (dup_if_possible);
   ADD (subscription_states);
+  ADD (contact_groups);
 
   /* test if TpContact fallbacks to connection's capabilities if
    * ContactCapabilities is not implemented. */

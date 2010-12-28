@@ -29,11 +29,15 @@ struct _TestContactListManagerPrivate
 };
 
 static void contact_groups_iface_init (TpContactGroupListInterface *iface);
+static void mutable_contact_groups_iface_init (
+    TpMutableContactGroupListInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (TestContactListManager, test_contact_list_manager,
     TP_TYPE_BASE_CONTACT_LIST,
     G_IMPLEMENT_INTERFACE (TP_TYPE_CONTACT_GROUP_LIST,
-      contact_groups_iface_init))
+      contact_groups_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_MUTABLE_CONTACT_GROUP_LIST,
+      mutable_contact_groups_iface_init))
 
 typedef struct {
   TpSubscriptionState subscribe;
@@ -134,7 +138,6 @@ contact_list_dup_contacts (TpBaseContactList *base)
   set = tp_handle_set_new (self->priv->contact_repo);
 
   g_hash_table_iter_init (&iter, self->priv->contact_details);
-
   while (g_hash_table_iter_next (&iter, &k, &v))
     {
       ContactDetails *d = v;
@@ -193,12 +196,9 @@ contact_list_dup_groups (TpBaseContactList *base)
       TpIntSetFastIter iter;
       TpHandle group;
 
-      ret = g_ptr_array_sized_new (
-          tp_handle_set_size (self->priv->groups) + 1);
+      ret = g_ptr_array_sized_new (tp_handle_set_size (self->priv->groups) + 1);
 
-      tp_intset_fast_iter_init (&iter,
-          tp_handle_set_peek (self->priv->groups));
-
+      tp_intset_fast_iter_init (&iter, tp_handle_set_peek (self->priv->groups));
       while (tp_intset_fast_iter_next (&iter, &group))
         {
           g_ptr_array_add (ret, g_strdup (tp_handle_inspect (
@@ -211,6 +211,7 @@ contact_list_dup_groups (TpBaseContactList *base)
     }
 
   g_ptr_array_add (ret, NULL);
+
   return (GStrv) g_ptr_array_free (ret, FALSE);
 }
 
@@ -219,8 +220,8 @@ contact_list_dup_contact_groups (TpBaseContactList *base,
     TpHandle contact)
 {
   TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (base);
-  GPtrArray *ret = g_ptr_array_new ();
   ContactDetails *d = lookup_contact (self, contact);
+  GPtrArray *ret;
 
   if (d != NULL && d->groups != NULL)
     {
@@ -230,7 +231,6 @@ contact_list_dup_contact_groups (TpBaseContactList *base,
       ret = g_ptr_array_sized_new (tp_handle_set_size (d->groups) + 1);
 
       tp_intset_fast_iter_init (&iter, tp_handle_set_peek (d->groups));
-
       while (tp_intset_fast_iter_next (&iter, &group))
         {
           g_ptr_array_add (ret, g_strdup (tp_handle_inspect (
@@ -243,6 +243,7 @@ contact_list_dup_contact_groups (TpBaseContactList *base,
     }
 
   g_ptr_array_add (ret, NULL);
+
   return (GStrv) g_ptr_array_free (ret, FALSE);
 }
 
@@ -257,17 +258,14 @@ contact_list_dup_group_members (TpBaseContactList *base,
   gpointer k, v;
 
   set = tp_handle_set_new (self->priv->contact_repo);
-
-  g_hash_table_iter_init (&iter, self->priv->contact_details);
-
   group_handle = tp_handle_lookup (self->priv->group_repo, group, NULL, NULL);
-
   if (G_UNLIKELY (group_handle == 0))
     {
       /* clearly it doesn't have members */
       return set;
     }
 
+  g_hash_table_iter_init (&iter, self->priv->contact_details);
   while (g_hash_table_iter_next (&iter, &k, &v))
     {
       ContactDetails *d = v;
@@ -278,6 +276,125 @@ contact_list_dup_group_members (TpBaseContactList *base,
     }
 
   return set;
+}
+
+static void
+contact_list_set_contact_groups_async (TpBaseContactList *base,
+    TpHandle contact,
+    const gchar * const *names,
+    gsize n,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TestContactListManager *self = TEST_CONTACT_LIST_MANAGER (base);
+  ContactDetails *d;
+  TpIntset *set, *added_set, *removed_set;
+  GPtrArray *added_names, *removed_names;
+  TpIntSetFastIter iter;
+  TpHandle group_handle;
+  guint i;
+
+  d = ensure_contact (self, contact);
+
+  set = tp_intset_new ();
+  for (i = 0; i < n; i++)
+    {
+      group_handle = tp_handle_ensure (self->priv->group_repo, names[i], NULL, NULL);
+      tp_intset_add (set, group_handle);
+    }
+
+  added_set = tp_intset_difference (set, tp_handle_set_peek (d->groups));
+  added_names = g_ptr_array_sized_new (tp_intset_size (added_set));
+  tp_intset_fast_iter_init (&iter, added_set);
+  while (tp_intset_fast_iter_next (&iter, &group_handle))
+    {
+      g_ptr_array_add (added_names, (gchar *) tp_handle_inspect (
+          self->priv->group_repo, group_handle));
+    }
+  tp_intset_destroy (added_set);
+
+  removed_set = tp_intset_difference (tp_handle_set_peek (d->groups), set);
+  removed_names = g_ptr_array_sized_new (tp_intset_size (removed_set));
+  tp_intset_fast_iter_init (&iter, removed_set);
+  while (tp_intset_fast_iter_next (&iter, &group_handle))
+    {
+      g_ptr_array_add (removed_names, (gchar *) tp_handle_inspect (
+          self->priv->group_repo, group_handle));
+    }
+  tp_intset_destroy (removed_set);
+
+  tp_handle_set_destroy (d->groups);
+  d->groups = tp_handle_set_new_from_intset (self->priv->group_repo, set);
+  tp_intset_destroy (set);
+
+  tp_base_contact_list_one_contact_groups_changed (base, contact,
+      (const gchar * const *) added_names->pdata, added_names->len,
+      (const gchar * const *) removed_names->pdata, removed_names->len);
+
+  tp_simple_async_report_success_in_idle ((GObject *) self, callback,
+      user_data, contact_list_set_contact_groups_async);
+
+  g_ptr_array_unref (added_names);
+  g_ptr_array_unref (removed_names);
+}
+
+static void
+contact_list_set_group_members_async (TpBaseContactList *base,
+    const gchar *normalized_group,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *simple;
+
+  simple = g_simple_async_result_new_error ((GObject *) base, callback,
+      user_data, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED, "Not implemented");
+  g_simple_async_result_complete_in_idle (simple);
+  g_object_unref (simple);
+}
+
+static void
+contact_list_add_to_group_async (TpBaseContactList *base,
+    const gchar *group,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *simple;
+
+  simple = g_simple_async_result_new_error ((GObject *) base, callback,
+      user_data, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED, "Not implemented");
+  g_simple_async_result_complete_in_idle (simple);
+  g_object_unref (simple);
+}
+
+static void
+contact_list_remove_from_group_async (TpBaseContactList *base,
+    const gchar *group,
+    TpHandleSet *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *simple;
+
+  simple = g_simple_async_result_new_error ((GObject *) base, callback,
+      user_data, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED, "Not implemented");
+  g_simple_async_result_complete_in_idle (simple);
+  g_object_unref (simple);
+}
+
+static void
+contact_list_remove_group_async (TpBaseContactList *base,
+    const gchar *group,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *simple;
+
+  simple = g_simple_async_result_new_error ((GObject *) base, callback,
+      user_data, TP_ERROR, TP_ERROR_NOT_IMPLEMENTED, "Not implemented");
+  g_simple_async_result_complete_in_idle (simple);
+  g_object_unref (simple);
 }
 
 static void
@@ -335,6 +452,17 @@ contact_groups_iface_init (TpContactGroupListInterface *iface)
 }
 
 static void
+mutable_contact_groups_iface_init (
+    TpMutableContactGroupListInterface *iface)
+{
+  iface->set_contact_groups_async = contact_list_set_contact_groups_async;
+  iface->set_group_members_async = contact_list_set_group_members_async;
+  iface->add_to_group_async = contact_list_add_to_group_async;
+  iface->remove_from_group_async = contact_list_remove_from_group_async;
+  iface->remove_group_async = contact_list_remove_group_async;
+}
+
+static void
 test_contact_list_manager_class_init (TestContactListManagerClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -358,12 +486,6 @@ test_contact_list_manager_add_to_group (TestContactListManager *self,
   TpHandle group_handle;
 
   group_handle = tp_handle_ensure (self->priv->group_repo, group_name, NULL, NULL);
-
-  if (!tp_handle_set_is_member (self->priv->groups, group_handle))
-    {
-      tp_handle_set_add (self->priv->groups, group_handle);
-      tp_base_contact_list_groups_created (base, &group_name, 1);
-    }
 
   tp_handle_set_add (d->groups, group_handle);
   tp_base_contact_list_one_contact_groups_changed (base, member,
