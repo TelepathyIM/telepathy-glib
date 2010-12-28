@@ -37,11 +37,10 @@ _wrap_tf_channel_new(PyGObject *self, PyObject *args, PyObject *kwargs)
       kwlist, &busname, &connection_path, &channel_path))
     return -1;
 
-  dbus = tp_dbus_daemon_new (tp_get_bus ());
-  /* FIXME Throw an exception */
+  dbus = tp_dbus_daemon_dup (&error);
   if (dbus == NULL)
     {
-      PyErr_SetString (PyExc_RuntimeError, "Failed to connect to D-Bus");
+      pyg_error_check (&error);
       goto out;
     }
 

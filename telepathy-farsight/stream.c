@@ -39,6 +39,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/util.h>
 
 #include <gst/farsight/fs-conference-iface.h>
 
@@ -53,7 +54,7 @@ G_DEFINE_TYPE (TfStream, tf_stream, G_TYPE_OBJECT);
 #define DEBUG(stream, format, ...) \
   g_debug ("stream %d %p (%s) %s: " format, \
     stream->stream_id, stream,                                   \
-    (stream->priv->media_type == FS_MEDIA_TYPE_AUDIO) ? "audio"  \
+    (stream->priv->media_type == TP_MEDIA_STREAM_TYPE_AUDIO) ? "audio"  \
                                                       : "video", \
     G_STRFUNC, \
     ##__VA_ARGS__)
@@ -61,7 +62,7 @@ G_DEFINE_TYPE (TfStream, tf_stream, G_TYPE_OBJECT);
 #define WARNING(stream, format, ...) \
   g_warning ("stream %d %p (%s) %s: " format, \
     stream->stream_id, stream,                                   \
-    (stream->priv->media_type == FS_MEDIA_TYPE_AUDIO) ? "audio"  \
+    (stream->priv->media_type == TP_MEDIA_STREAM_TYPE_AUDIO) ? "audio"  \
                                                       : "video", \
     G_STRFUNC, \
     ##__VA_ARGS__)
@@ -188,6 +189,12 @@ static void stream_close (TpMediaStreamHandler *proxy,
 
 static void invalidated_cb (TpMediaStreamHandler *proxy,
     guint domain, gint code, gchar *message, gpointer user_data);
+
+static TpMediaStreamBaseProto fs_network_proto_to_tp (FsNetworkProtocol proto,
+    gboolean *valid);
+static TpMediaStreamTransportType fs_candidate_type_to_tp (FsCandidateType type,
+    gboolean *valid);
+static GValueArray *fs_candidate_to_tp_array (const FsCandidate *candidate);
 
 static GPtrArray *fs_codecs_to_tp (TfStream *stream,
     const GList *codecs);
@@ -1036,6 +1043,20 @@ async_method_callback (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 }
 
 
+/* dummy callback handler for async calling calls with no return values
+ * and whose implementation is optional */
+static void
+async_method_callback_optional (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  if (error != NULL &&
+      !(error->domain == DBUS_GERROR &&
+          error->code == G_DBUS_ERROR_UNKNOWN_METHOD))
+    async_method_callback (proxy, error, user_data, weak_object);
+}
+
 static void
 cb_fs_new_local_candidate (TfStream *self,
     FsCandidate *candidate)
@@ -1063,6 +1084,7 @@ cb_fs_local_candidates_prepared (TfStream *self)
           GValue transport = { 0, };
           TpMediaStreamBaseProto proto;
           TpMediaStreamTransportType type;
+          gboolean valid = TRUE;
           GList *item = NULL;
 
           g_value_init (&transport,
@@ -1071,35 +1093,12 @@ cb_fs_local_candidates_prepared (TfStream *self)
               dbus_g_type_specialized_construct (
                   TP_STRUCT_TYPE_MEDIA_STREAM_HANDLER_TRANSPORT));
 
-          switch (candidate->proto) {
-          case FS_NETWORK_PROTOCOL_UDP:
-            proto = TP_MEDIA_STREAM_BASE_PROTO_UDP;
-            break;
-          case FS_NETWORK_PROTOCOL_TCP:
-            proto = TP_MEDIA_STREAM_BASE_PROTO_TCP;
-            break;
-          default:
-            g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
-                G_STRFUNC);
+          proto = fs_network_proto_to_tp (candidate->proto, &valid);
+          if (valid == FALSE)
             return;
-          }
-
-          switch (candidate->type) {
-          case FS_CANDIDATE_TYPE_HOST:
-            type = TP_MEDIA_STREAM_TRANSPORT_TYPE_LOCAL;
-            break;
-          case FS_CANDIDATE_TYPE_SRFLX:
-          case FS_CANDIDATE_TYPE_PRFLX:
-            type = TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED;
-            break;
-          case FS_CANDIDATE_TYPE_RELAY:
-            type = TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
-            break;
-          default:
-            g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
-                G_STRFUNC);
+          type = fs_candidate_type_to_tp (candidate->type, &valid);
+          if (valid == FALSE)
             return;
-          }
 
           DEBUG (self, "ip = '%s port = %u component = %u'", candidate->ip,
               candidate->port, candidate->component_id);
@@ -1239,6 +1238,80 @@ tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
   fs_trans_list = g_list_reverse (fs_trans_list);
 
   return fs_trans_list;
+}
+
+static TpMediaStreamBaseProto
+fs_network_proto_to_tp (FsNetworkProtocol proto, gboolean *valid)
+{
+  if (valid != NULL)
+    *valid = TRUE;
+
+  switch (proto) {
+  case FS_NETWORK_PROTOCOL_UDP:
+    return TP_MEDIA_STREAM_BASE_PROTO_UDP;
+  case FS_NETWORK_PROTOCOL_TCP:
+    return TP_MEDIA_STREAM_BASE_PROTO_TCP;
+  default:
+    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+        G_STRFUNC);
+    if (valid != NULL)
+      *valid = FALSE;
+    g_return_val_if_reached(0);
+  }
+}
+
+static TpMediaStreamTransportType
+fs_candidate_type_to_tp (FsCandidateType type, gboolean *valid)
+{
+  if (valid != NULL)
+    *valid = TRUE;
+
+  switch (type) {
+  case FS_CANDIDATE_TYPE_HOST:
+    return TP_MEDIA_STREAM_TRANSPORT_TYPE_LOCAL;
+  case FS_CANDIDATE_TYPE_SRFLX:
+  case FS_CANDIDATE_TYPE_PRFLX:
+    return TP_MEDIA_STREAM_TRANSPORT_TYPE_DERIVED;
+  case FS_CANDIDATE_TYPE_RELAY:
+    return TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
+  default:
+    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+        G_STRFUNC);
+    if (valid != NULL)
+      *valid = FALSE;
+    g_return_val_if_reached(0);
+  }
+}
+
+static GValueArray *
+fs_candidate_to_tp_array (const FsCandidate *candidate)
+{
+  GValueArray *transport = NULL;
+  TpMediaStreamBaseProto proto;
+  TpMediaStreamTransportType type;
+  gboolean valid = TRUE;
+
+  proto = fs_network_proto_to_tp (candidate->proto, &valid);
+  if (valid == FALSE)
+    return NULL;
+  type = fs_candidate_type_to_tp (candidate->type, &valid);
+  if (valid == FALSE)
+    return NULL;
+
+  transport = tp_value_array_build (10,
+      G_TYPE_UINT, candidate->component_id,
+      G_TYPE_STRING, candidate->ip,
+      G_TYPE_UINT, candidate->port,
+      G_TYPE_UINT, proto,
+      G_TYPE_STRING, "RTP",
+      G_TYPE_STRING, "AVP",
+      G_TYPE_DOUBLE, (double) (candidate->priority / 65536.0),
+      G_TYPE_UINT, type,
+      G_TYPE_STRING, candidate->username,
+      G_TYPE_STRING, candidate->password,
+      G_TYPE_INVALID);
+
+  return transport;
 }
 
 /*
@@ -1801,8 +1874,8 @@ cb_fs_recv_codecs_changed (TfStream *self,
 
   tp_cli_media_stream_handler_call_codec_choice
       (self->priv->stream_handler_proxy, -1, id,
-          async_method_callback, "Media.StreamHandler::CodecChoice",
-          NULL, (GObject *) self);
+          async_method_callback_optional,
+          "Media.StreamHandler::CodecChoice", NULL, (GObject *) self);
 }
 
 static void
@@ -1810,16 +1883,38 @@ cb_fs_new_active_candidate_pair (TfStream *self,
     FsCandidate *local_candidate,
     FsCandidate *remote_candidate)
 {
+  GValueArray *local_transport = NULL;
+  GValueArray *remote_transport = NULL;
+
   DEBUG (self, "called: c:%d local: %s %s:%u  remote: %s %s:%u",
       local_candidate->component_id,
       local_candidate->foundation, local_candidate->ip, local_candidate->port,
       remote_candidate->foundation, remote_candidate->ip,
       remote_candidate->port);
 
+  local_transport = fs_candidate_to_tp_array (local_candidate);
+  if (!local_transport)
+    return;
+
+  remote_transport = fs_candidate_to_tp_array (remote_candidate);
+  if (!remote_transport)
+    {
+      g_value_array_free (local_transport);
+      return;
+    }
+
+  tp_cli_media_stream_handler_call_new_active_transport_pair (
+    self->priv->stream_handler_proxy, -1, local_candidate->foundation,
+    local_transport, remote_candidate->foundation, remote_transport,
+    async_method_callback_optional,
+    "Media.StreamHandler::NewActiveTransportPair",
+    NULL, (GObject *) self);
+
   tp_cli_media_stream_handler_call_new_active_candidate_pair (
     self->priv->stream_handler_proxy, -1, local_candidate->foundation,
     remote_candidate->foundation,
-    async_method_callback, "Media.StreamHandler::NewActiveCandidatePair",
+    async_method_callback_optional,
+    "Media.StreamHandler::NewActiveCandidatePair",
     NULL, (GObject *) self);
 
   if (self->priv->current_state == TP_MEDIA_STREAM_STATE_DISCONNECTED)
@@ -1830,6 +1925,9 @@ cb_fs_new_active_candidate_pair (TfStream *self,
         NULL, (GObject *) self);
     self->priv->current_state = TP_MEDIA_STREAM_STATE_CONNECTED;
   }
+
+  g_value_array_free (local_transport);
+  g_value_array_free (remote_transport);
 }
 
 static void
@@ -2162,8 +2260,6 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   GList *item = NULL;
   GPtrArray *tpcodecs = NULL;
 
-  gboolean sent_codecs = FALSE;
-
   DEBUG (stream, "called (send_local:%d send_supported:%d)",
       stream->priv->send_local_codecs, stream->priv->send_supported_codecs);
 
@@ -2195,7 +2291,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           -1, tpcodecs, async_method_callback, "Media.StreamHandler::Ready",
           NULL, (GObject *) stream);
       stream->priv->send_local_codecs = FALSE;
-      sent_codecs = TRUE;
+      goto out;
     }
 
   if (stream->priv->send_supported_codecs)
@@ -2208,12 +2304,17 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           -1, tpcodecs, async_method_callback,
           "Media.StreamHandler::SupportedCodecs", NULL, (GObject *) stream);
       stream->priv->send_supported_codecs = FALSE;
-      sent_codecs = TRUE;
+
+      /* Fallthrough to potentially call CodecsUpdated as CMs assume
+       * SupportedCodecs will only give the intersection of the already sent
+       * (if any) local codecs, not any updates */
     }
 
 
-  if (!sent_codecs &&
-      !fs_codec_list_are_equal (fscodecs, stream->priv->last_sent_codecs))
+  /* Only send updates if there was something to update (iotw we sent codecs
+   * before) or our list changed */
+  if (stream->priv->last_sent_codecs != NULL
+      && !fs_codec_list_are_equal (fscodecs, stream->priv->last_sent_codecs))
     {
       tpcodecs = fs_codecs_to_tp (stream, fscodecs);
 
@@ -2224,6 +2325,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           "Media.StreamHandler::CodecsUpdated", NULL, (GObject *) stream);
     }
 
+out:
   if (tpcodecs)
     g_boxed_free (TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, tpcodecs);
   fs_codec_list_destroy (stream->priv->last_sent_codecs);

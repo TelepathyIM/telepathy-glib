@@ -9,7 +9,7 @@ AC_PREREQ([2.59])
 
 m4_define([tp_farsight_major_version], [0])
 m4_define([tp_farsight_minor_version], [0])
-m4_define([tp_farsight_micro_version], [15])
+m4_define([tp_farsight_micro_version], [16])
 m4_define([tp_farsight_nano_version], [1])
 
 dnl CURRENT, REVISION, AGE
@@ -18,7 +18,7 @@ dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
 dnl - interfaces added -> increment AGE
 dnl - interfaces removed -> AGE = 0
 m4_define([tp_farsight_lt_current], [1])
-m4_define([tp_farsight_lt_revision], [2])
+m4_define([tp_farsight_lt_revision], [3])
 m4_define([tp_farsight_lt_age], [1])
 
 
@@ -98,7 +98,7 @@ AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
 dnl Check for Telepathy libraries
-PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib >= 0.7.34])
+PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib >= 0.13.4])
 
 AC_SUBST(TELEPATHY_CFLAGS)
 AC_SUBST(TELEPATHY_LIBS)
