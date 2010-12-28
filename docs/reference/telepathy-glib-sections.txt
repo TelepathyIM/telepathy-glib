@@ -4093,6 +4093,9 @@ tp_contact_request_contact_info_finish
 tp_contact_get_subscribe_state
 tp_contact_get_publish_state
 tp_contact_get_publish_request
+tp_contact_get_contact_groups
+tp_contact_set_contact_groups_async
+tp_contact_set_contact_groups_finish
 tp_contact_has_feature
 <SUBSECTION Standard>
 tp_contact_feature_get_type

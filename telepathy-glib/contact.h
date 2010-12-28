@@ -64,8 +64,9 @@ typedef enum {
     TP_CONTACT_FEATURE_CONTACT_INFO,
     TP_CONTACT_FEATURE_CLIENT_TYPES,
     TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
+    TP_CONTACT_FEATURE_CONTACT_GROUPS,
 } TpContactFeature;
-#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_SUBSCRIPTION_STATES + 1)
+#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_GROUPS + 1)
 
 /* Basic functionality, always available */
 TpConnection *tp_contact_get_connection (TpContact *self);
@@ -116,6 +117,16 @@ tp_contact_get_client_types (TpContact *self);
 TpSubscriptionState tp_contact_get_subscribe_state (TpContact *self);
 TpSubscriptionState tp_contact_get_publish_state (TpContact *self);
 const gchar *tp_contact_get_publish_request (TpContact *self);
+
+/* TP_CONTACT_FEATURE_CONTACT_GROUPS */
+const gchar * const *
+/* this comment stops gtkdoc denying that this function exists */
+tp_contact_get_contact_groups (TpContact *self);
+void tp_contact_set_contact_groups_async (TpContact *self,
+    gint n_groups, const gchar * const *groups, GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_contact_set_contact_groups_finish (TpContact *self,
+    GAsyncResult *result, GError **error);
 
 typedef void (*TpConnectionContactsByHandleCb) (TpConnection *connection,
     guint n_contacts, TpContact * const *contacts,

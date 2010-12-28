@@ -104,6 +104,8 @@ struct _TpContact {
  *  #TpContact:publish-state and #TpContact:publish-request. Require a
  *  Connection implementing the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
  *  interface. (available since 0.13.12)
+ * @TP_CONTACT_FEATURE_CONTACT_GROUPS: #TpContact:contact-groups
+ *  (available since 0.13.UNRELEASED)
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -154,12 +156,14 @@ enum {
     PROP_SUBSCRIBE_STATE,
     PROP_PUBLISH_STATE,
     PROP_PUBLISH_REQUEST,
+    PROP_CONTACT_GROUPS,
     N_PROPS
 };
 
 enum {
     SIGNAL_PRESENCE_CHANGED,
     SIGNAL_SUBSCRIPTION_STATES_CHANGED,
+    SIGNAL_CONTACT_GROUPS_CHANGED,
     N_SIGNALS
 };
 
@@ -177,6 +181,7 @@ typedef enum {
     CONTACT_FEATURE_FLAG_CONTACT_INFO = 1 << TP_CONTACT_FEATURE_CONTACT_INFO,
     CONTACT_FEATURE_FLAG_CLIENT_TYPES = 1 << TP_CONTACT_FEATURE_CLIENT_TYPES,
     CONTACT_FEATURE_FLAG_STATES = 1 << TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
+    CONTACT_FEATURE_FLAG_CONTACT_GROUPS = 1 << TP_CONTACT_FEATURE_CONTACT_GROUPS,
 } ContactFeatureFlags;
 
 struct _TpContactPrivate {
@@ -215,6 +220,9 @@ struct _TpContactPrivate {
     TpSubscriptionState subscribe;
     TpSubscriptionState publish;
     gchar *publish_request;
+
+    /* ContactGroups */
+    GPtrArray *contact_groups;
 };
 
 
@@ -627,6 +635,148 @@ tp_contact_get_publish_request (TpContact *self)
   return self->priv->publish_request;
 }
 
+/**
+ * tp_contact_get_contact_groups:
+ * @self: a #TpContact
+ *
+ * Return names of groups of which a contact is a member. It is incorrect to
+ * call this method before %TP_CONTACT_FEATURE_CONTACT_GROUPS has been
+ * prepared. This remains valid until the main loop is re-entered; if the caller
+ * requires a #GStrv that will persist for longer than that, it must be copied
+ * with g_strdupv().
+ *
+ * Returns: (array zero-terminated=1) (transfer none): the same
+ *  #GStrv as the #TpContact:contact-groups property
+ *
+ * Since: 0.13.UNRELEASED
+ */
+const gchar * const *
+tp_contact_get_contact_groups (TpContact *self)
+{
+  g_return_val_if_fail (TP_IS_CONTACT (self), NULL);
+
+  if (self->priv->contact_groups == NULL)
+    return NULL;
+
+  return (const gchar * const *) self->priv->contact_groups->pdata;
+}
+
+static void
+set_contact_groups_cb (TpConnection *connection,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to set contact groups: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_contact_set_contact_groups_async:
+ * @self: a #TpContact
+ * @n_groups: the length of @groups, or -1 if @groups is %NULL-terminated
+ * @groups: (array length=n_groups) (allow-none): the set of groups which the
+ *  contact should be in (may be %NULL if @n_groups is 0)
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Add @self to the given groups (creating new groups if necessary), and remove
+ * it from all other groups. If the user is removed from a group of which they
+ * were the only member, the group MAY be removed automatically. You can then
+ * call tp_contact_set_contact_groups_finish() to get the result of the
+ * operation.
+ *
+ * If the operation is successful and %TP_CONTACT_FEATURE_CONTACT_GROUPS is
+ * prepared, the #TpContact:contact-groups property will be
+ * updated (emitting "notify::contact-groups" signal) and
+ * #TpContact:contact-groups-changed signal will be emitted before @callback
+ * is called. That means you can call tp_contact_get_contact_groups() to get the
+ * new contact groups inside @callback.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_contact_set_contact_groups_async (TpContact *self,
+    gint n_groups,
+    const gchar * const *groups,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  const gchar *empty_groups[] = { NULL };
+  GPtrArray *groups_array = NULL;
+
+  g_return_if_fail (TP_IS_CONTACT (self));
+  g_return_if_fail (groups != NULL || n_groups == 0);
+
+  if (groups == NULL || n_groups == 0)
+    {
+      groups = empty_groups;
+    }
+  else if (n_groups > 0)
+    {
+      gint i;
+
+      groups_array = g_ptr_array_sized_new (n_groups + 1);
+      for (i = 0; i < n_groups; i++)
+        g_ptr_array_add (groups_array, (gchar *) groups[i]);
+      g_ptr_array_add (groups_array, NULL);
+      groups = (const gchar * const *) groups_array->pdata;
+    }
+
+  result = g_simple_async_result_new (G_OBJECT (self),
+      callback, user_data, tp_contact_set_contact_groups_finish);
+
+  tp_cli_connection_interface_contact_groups_call_set_contact_groups (
+      self->priv->connection, -1, self->priv->handle, (const gchar **) groups,
+      set_contact_groups_cb, result, NULL, G_OBJECT (self));
+
+  tp_clear_pointer (&groups_array, g_ptr_array_unref);
+}
+
+/**
+ * tp_contact_set_contact_groups_finish:
+ * @self: a #TpContact
+ * @result: a #GAsyncResult
+ * @error: a #GError to be filled
+ *
+ * Finishes an async set of @self contact groups. If the operation was
+ * successful, the contact's groups can be accessed using
+ * tp_contact_get_contact_groups().
+ *
+ * Returns: %TRUE if the request call was successful, otherwise %FALSE
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_contact_set_contact_groups_finish (TpContact *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TP_IS_CONTACT (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+          G_OBJECT (self), tp_contact_set_contact_groups_finish), FALSE);
+
+  return TRUE;
+}
+
 void
 _tp_contact_connection_invalidated (TpContact *contact)
 {
@@ -657,6 +807,7 @@ tp_contact_dispose (GObject *object)
   tp_clear_pointer (&self->priv->location, g_hash_table_unref);
   tp_clear_object (&self->priv->capabilities);
   tp_clear_object (&self->priv->avatar_file);
+  tp_clear_pointer (&self->priv->contact_groups, g_ptr_array_unref);
 
   ((GObjectClass *) tp_contact_parent_class)->dispose (object);
 }
@@ -760,6 +911,10 @@ tp_contact_get_property (GObject *object,
 
     case PROP_PUBLISH_REQUEST:
       g_value_set_string (value, tp_contact_get_publish_request (self));
+      break;
+
+    case PROP_CONTACT_GROUPS:
+      g_value_set_boxed (value, tp_contact_get_contact_groups (self));
       break;
 
     default:
@@ -1116,6 +1271,45 @@ tp_contact_class_init (TpContactClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PUBLISH_REQUEST,
       param_spec);
+
+  /**
+   * TpContact:contact-groups:
+   *
+   * a #GStrv with names of groups of which a contact is a member.
+   *
+   * This is set to %NULL if %TP_CONTACT_FEATURE_CONTACT_GROUPS is not set
+   * on this contact, or if the connection does not implement ContactGroups
+   * interface.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("contact-groups",
+      "Contact Groups",
+      "Groups of the contact",
+      G_TYPE_STRV,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONTACT_GROUPS,
+      param_spec);
+
+  /**
+   * TpContact::contact-groups-changed:
+   * @contact: A #TpContact
+   * @added: A #GStrv with added contact groups
+   * @removed: A #GStrv with removed contact groups
+   *
+   * Emitted when this contact's groups changes. When this signal is emitted,
+   * #TpContact:contact-groups property is already updated.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  signals[SIGNAL_CONTACT_GROUPS_CHANGED] = g_signal_new (
+      "contact-groups-changed",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__BOXED_BOXED,
+      G_TYPE_NONE, 2, G_TYPE_STRV, G_TYPE_STRV);
 
   /**
    * TpContact::subscription-states-changed:
@@ -3174,6 +3368,93 @@ contacts_bind_to_contacts_changed (TpConnection *connection)
     }
 }
 
+static void
+contact_maybe_set_contact_groups (TpContact *self,
+    GStrv contact_groups)
+{
+  if (self == NULL || contact_groups == NULL)
+    return;
+
+  self->priv->has_features |= CONTACT_FEATURE_FLAG_CONTACT_GROUPS;
+
+  g_assert (self->priv->contact_groups == NULL);
+  self->priv->contact_groups = g_ptr_array_sized_new (
+      g_strv_length (contact_groups) + 1);
+  g_ptr_array_set_free_func (self->priv->contact_groups, g_free);
+
+  while (*contact_groups != NULL)
+    {
+      g_ptr_array_add (self->priv->contact_groups, g_strdup (*contact_groups));
+      contact_groups++;
+    }
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+
+  g_object_notify ((GObject *) self, "contact-groups");
+}
+
+static void
+contact_groups_changed_cb (TpConnection *connection,
+    const GArray *contacts,
+    const gchar **added,
+    const gchar **removed,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  guint i;
+
+  for (i = 0; i < contacts->len; i++)
+    {
+      TpHandle handle = g_array_index (contacts, TpHandle, i);
+      TpContact *contact = _tp_connection_lookup_contact (connection, handle);
+      const gchar **iter;
+      guint j;
+
+      if (contact == NULL || contact->priv->contact_groups == NULL)
+        continue;
+
+      /* Remove the ending NULL */
+      g_ptr_array_remove_index_fast (contact->priv->contact_groups,
+          contact->priv->contact_groups->len - 1);
+
+      /* Remove old groups */
+      for (iter = removed; *iter != NULL; iter++)
+        for (j = 0; j < contact->priv->contact_groups->len; j++)
+          {
+            const gchar *str;
+
+            str = g_ptr_array_index (contact->priv->contact_groups, j);
+            if (!tp_strdiff (str, *iter))
+              {
+                g_ptr_array_remove_index_fast (contact->priv->contact_groups, j);
+                break;
+              }
+          }
+
+      /* Add new groups */
+      for (iter = added; *iter != NULL; iter++)
+        g_ptr_array_add (contact->priv->contact_groups, g_strdup (*iter));
+
+      /* Add back the ending NULL */
+      g_ptr_array_add (contact->priv->contact_groups, NULL);
+
+      g_object_notify ((GObject *) contact, "contact-groups");
+      g_signal_emit (contact, signals[SIGNAL_CONTACT_GROUPS_CHANGED], 0,
+          added, removed);
+    }
+}
+
+static void
+contacts_bind_to_contact_groups_changed (TpConnection *connection)
+{
+  if (!connection->priv->tracking_contact_groups_changed)
+    {
+      connection->priv->tracking_contact_groups_changed = TRUE;
+
+      tp_cli_connection_interface_contact_groups_connect_to_groups_changed
+        (connection, contact_groups_changed_cb, NULL, NULL, NULL, NULL);
+    }
+}
+
 static gboolean
 contacts_context_supports_iface (ContactsContext *context,
     GQuark iface)
@@ -3452,6 +3733,12 @@ contacts_got_attributes (TpConnection *connection,
                 publish_request);
           }
       }
+
+      /* ContactGroups */
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS,
+          G_TYPE_STRV);
+      contact_maybe_set_contact_groups (contact, boxed);
     }
 
   contacts_context_continue (c);
@@ -3558,6 +3845,15 @@ contacts_get_attributes (ContactsContext *context)
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST);
               contacts_bind_to_contacts_changed (context->connection);
+            }
+        }
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS)
+        {
+          if ((context->wanted & CONTACT_FEATURE_FLAG_CONTACT_GROUPS) != 0)
+            {
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS);
+              contacts_bind_to_contact_groups_changed (context->connection);
             }
         }
     }
