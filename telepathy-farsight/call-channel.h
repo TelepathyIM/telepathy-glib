@@ -89,8 +89,9 @@ struct _TfCallChannelClass{
 
 GType tf_call_channel_get_type (void);
 
-TfCallChannel *tf_call_channel_new (
-    TpChannel *channel_proxy);
+void tf_call_channel_new_async (TpChannel *channel_proxy,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 void tf_call_channel_error (TfCallChannel *channel);
 

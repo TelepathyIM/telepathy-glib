@@ -172,6 +172,45 @@ tf_channel_set_property (GObject      *object,
 static void channel_invalidated (TpChannel *channel_proxy,
     guint domain, gint code, gchar *message, TfChannel *self);
 
+static void
+call_channel_ready (GObject *obj, GAsyncResult *call_res, gpointer user_data)
+{
+  GError *error = NULL;
+  GSimpleAsyncResult *res = user_data;
+  TfChannel *self = TF_CHANNEL (
+      g_async_result_get_source_object (G_ASYNC_RESULT (res)));
+
+  self->priv->call_channel = TF_CALL_CHANNEL (g_async_initable_new_finish (
+          G_ASYNC_INITABLE (obj), call_res, &error));
+
+  if (error)
+    {
+      g_simple_async_result_set_op_res_gboolean (res, FALSE);
+      g_simple_async_result_set_from_error (res, error);
+      g_clear_error (&error);
+    }
+  else
+    {
+      g_simple_async_result_set_op_res_gboolean (res, TRUE);
+
+
+      tp_g_signal_connect_object (self->priv->call_channel,
+          "fs-conference-add", G_CALLBACK (channel_fs_conference_add),
+          self, 0);
+      tp_g_signal_connect_object (self->priv->call_channel,
+          "fs-conference-remove", G_CALLBACK (channel_fs_conference_remove),
+          self, 0);
+    }
+
+
+  g_simple_async_result_complete (res);
+
+  self->priv->channel_invalidated_handler = g_signal_connect (
+      self->priv->channel_proxy,
+      "invalidated", G_CALLBACK (channel_invalidated), self);
+
+  g_object_unref (res);
+}
 
 static void
 channel_prepared (GObject *obj,
@@ -223,16 +262,12 @@ channel_prepared (GObject *obj,
   else if (tp_proxy_has_interface_by_id (as_proxy,
           TF_FUTURE_IFACE_QUARK_CHANNEL_TYPE_CALL))
     {
-      self->priv->call_channel = tf_call_channel_new (channel_proxy);
+      tf_call_channel_new_async (channel_proxy, call_channel_ready, res);
 
-      tp_g_signal_connect_object (self->priv->call_channel,
-          "fs-conference-add", G_CALLBACK (channel_fs_conference_add),
-          self, 0);
-      tp_g_signal_connect_object (self->priv->call_channel,
-          "fs-conference-remove", G_CALLBACK (channel_fs_conference_remove),
-          self, 0);
-
-      g_simple_async_result_set_op_res_gboolean (res, TRUE);
+      self->priv->channel_invalidated_handler = g_signal_connect (
+          self->priv->channel_proxy,
+          "invalidated", G_CALLBACK (channel_invalidated), self);
+      return;
     }
   else
     {

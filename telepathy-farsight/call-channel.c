@@ -40,8 +40,11 @@
 #include "tf-signals-marshal.h"
 
 
+static void call_channel_async_initable_init (GAsyncInitableIface *asynciface);
 
-G_DEFINE_TYPE (TfCallChannel, tf_call_channel, G_TYPE_OBJECT);
+G_DEFINE_TYPE_WITH_CODE (TfCallChannel, tf_call_channel, G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
+        call_channel_async_initable_init));
 
 
 enum
@@ -80,6 +83,20 @@ tf_call_channel_get_property (GObject    *object,
 
 static void tf_call_channel_dispose (GObject *object);
 
+
+static void tf_call_channel_init_async (GAsyncInitable *initable,
+    int io_priority,
+    GCancellable  *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+static gboolean tf_call_channel_init_finish (GAsyncInitable *initable,
+    GAsyncResult *res,
+    GError **error);
+
+static void got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
+    const GError *error, gpointer user_data, GObject *weak_object);
+
+
 static void
 tf_call_channel_class_init (TfCallChannelClass *klass)
 {
@@ -111,6 +128,14 @@ tf_call_channel_class_init (TfCallChannelClass *klass)
 
 }
 
+
+static void
+call_channel_async_initable_init (GAsyncInitableIface *asynciface)
+{
+  asynciface->init_async = tf_call_channel_init_async;
+  asynciface->init_finish = tf_call_channel_init_finish;
+}
+
 static void
 free_call_conference (gpointer data)
 {
@@ -138,6 +163,51 @@ tf_call_channel_init (TfCallChannel *self)
 
   self->participants = g_ptr_array_new_with_free_func (free_participant);
 }
+
+
+static void
+tf_call_channel_init_async (GAsyncInitable *initable,
+    int io_priority,
+    GCancellable  *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TfCallChannel *self = TF_CALL_CHANNEL (initable);
+  GSimpleAsyncResult *res;
+
+  if (cancellable != NULL)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback, user_data,
+          G_IO_ERROR, G_IO_ERROR_NOT_INITIALIZED,
+          "TfCallChannel initialisation does not support cancellation");
+      return;
+    }
+
+  res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tf_call_channel_init_async);
+
+  tp_cli_dbus_properties_call_get (self->proxy, -1,
+      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
+      TF_FUTURE_PROP_CHANNEL_TYPE_CALL_HARDWARE_STREAMING,
+      got_hardware_streaming, res, g_object_unref, G_OBJECT (self));
+}
+
+static gboolean
+tf_call_channel_init_finish (GAsyncInitable *initable,
+    GAsyncResult *res,
+    GError **error)
+{
+  GSimpleAsyncResult *simple_res;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (res,
+          G_OBJECT (initable), tf_call_channel_init_async), FALSE);
+  simple_res = G_SIMPLE_ASYNC_RESULT (res);
+
+  g_simple_async_result_propagate_error (simple_res, error);
+
+  return g_simple_async_result_get_op_res_gboolean (simple_res);
+}
+
 
 static void
 tf_call_channel_dispose (GObject *object)
@@ -224,6 +294,7 @@ got_contents (TpProxy *proxy, const GValue *out_value,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
   TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
+  GSimpleAsyncResult *res = user_data;
   GPtrArray *contents;
   guint i;
 
@@ -231,7 +302,9 @@ got_contents (TpProxy *proxy, const GValue *out_value,
     {
       g_warning ("Error getting the Contents property: %s",
           error->message);
-      tf_call_channel_error (self);
+      g_simple_async_result_set_op_res_gboolean (res, FALSE);
+      g_simple_async_result_set_from_error (res, error);
+      g_simple_async_result_complete (res);
       return;
     }
 
@@ -283,26 +356,29 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
   TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
+  GSimpleAsyncResult *res = user_data;
   GError *myerror = NULL;
 
   if (error)
     {
       g_warning ("Error getting the hardware streaming property: %s",
           error->message);
-      tf_call_channel_error (self);
+      g_simple_async_result_set_op_res_gboolean (res, FALSE);
+      g_simple_async_result_set_from_error (res, error);
+      g_simple_async_result_complete (res);
       return;
     }
 
   if (g_value_get_boolean (out_value))
     {
-      g_warning ("Hardware streaming property is not TRUE, ignoring");
+      g_warning ("Hardware streaming property is TRUE, ignoring");
+
+      g_simple_async_result_set_op_res_gboolean (res, FALSE);
+      g_simple_async_result_set_error (res, TP_ERROR, TP_ERROR_NOT_CAPABLE,
+          "This channel does hardware streaming, not handled here");
+      g_simple_async_result_complete (res);
       return;
     }
-
-  tp_cli_dbus_properties_call_get (proxy, -1,
-      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
-      TF_FUTURE_PROP_CHANNEL_TYPE_CALL_CONTENTS,
-      got_contents, NULL, NULL, G_OBJECT (self));
 
   tf_future_cli_channel_type_call_connect_to_content_added (TP_CHANNEL (proxy),
       content_added, NULL, NULL, G_OBJECT (self), &myerror);
@@ -310,8 +386,10 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
     {
       g_warning ("Error connectiong to ContentAdded signal: %s",
           myerror->message);
+      g_simple_async_result_set_op_res_gboolean (res, FALSE);
+      g_simple_async_result_set_from_error (res, myerror);
+      g_simple_async_result_complete (res);
       g_clear_error (&myerror);
-      tf_call_channel_error (self);
       return;
     }
 
@@ -322,26 +400,32 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
     {
       g_warning ("Error connectiong to ContentRemoved signal: %s",
           myerror->message);
+      g_simple_async_result_set_op_res_gboolean (res, FALSE);
+      g_simple_async_result_set_from_error (res, myerror);
+      g_simple_async_result_complete (res);
       g_clear_error (&myerror);
-      tf_call_channel_error (self);
       return;
     }
+
+  tp_cli_dbus_properties_call_get (proxy, -1,
+      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
+      TF_FUTURE_PROP_CHANNEL_TYPE_CALL_CONTENTS,
+      got_contents, NULL, NULL, G_OBJECT (self));
+
+  g_simple_async_result_set_op_res_gboolean (res, TRUE);
+  g_simple_async_result_complete (res);
 }
 
-TfCallChannel *
-tf_call_channel_new (TpChannel *channel)
+void
+tf_call_channel_new_async (TpChannel *channel,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
-  TfCallChannel *self = g_object_new (
-      TF_TYPE_CALL_CHANNEL, NULL);
+  TfCallChannel *self = g_object_new (TF_TYPE_CALL_CHANNEL, NULL);
 
-  self->proxy = g_object_ref (channel);
-
-  tp_cli_dbus_properties_call_get (channel, -1,
-      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
-      TF_FUTURE_PROP_CHANNEL_TYPE_CALL_HARDWARE_STREAMING,
-      got_hardware_streaming, NULL, NULL, G_OBJECT (self));
-
-  return self;
+  self->proxy = channel;
+  g_async_initable_init_async (G_ASYNC_INITABLE (self), 0, NULL, callback,
+      user_data);
 }
 
 
