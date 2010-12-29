@@ -18,7 +18,7 @@
  */
 
 /**
- * SECTION:content
+ * SECTION:call-content
 
  * @short_description: Handle the Call interface on a Channel
  *
