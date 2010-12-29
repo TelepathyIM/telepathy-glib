@@ -57,6 +57,8 @@ enum
 {
   SIGNAL_FS_CONFERENCE_ADD,
   SIGNAL_FS_CONFERENCE_REMOVE,
+  SIGNAL_CONTENT_ADDED,
+  SIGNAL_CONTENT_REMOVED,
   SIGNAL_COUNT
 };
 
@@ -126,6 +128,19 @@ tf_call_channel_class_init (TfCallChannelClass *klass)
       _tf_marshal_VOID__OBJECT,
       G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
+  signals[SIGNAL_CONTENT_ADDED] = g_signal_new ("content-added",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tf_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1, TF_TYPE_CALL_CONTENT);
+
+  signals[SIGNAL_CONTENT_REMOVED] = g_signal_new ("content-removed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tf_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1, TF_TYPE_CALL_CONTENT);
 }
 
 
@@ -279,12 +294,14 @@ add_content (TfCallChannel *self, const gchar *content_path)
 
   if (error)
     {
-      /* Error was already transmitter to the Content by the CM */
+      /* Error was already transmitted to the CM by TfCallContent */
       g_clear_error (&error);
       return FALSE;
     }
 
   g_hash_table_insert (self->contents, g_strdup (content_path), content);
+
+  g_signal_emit (self, signals[SIGNAL_CONTENT_ADDED], 0, content);
 
   return TRUE;
 }
@@ -343,11 +360,20 @@ content_removed (TpChannel *proxy,
     GObject *weak_object)
 {
   TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
+  TfCallContent *content;
 
   if (!self->contents)
     return;
 
-  g_hash_table_remove (self->contents, arg_Content);
+  content = g_hash_table_lookup (self->contents, arg_Content);
+
+  if (content)
+    {
+      g_hash_table_remove (self->contents, arg_Content);
+
+      g_signal_emit (self, signals[SIGNAL_CONTENT_REMOVED], 0, content);
+      g_object_unref (content);
+    }
 }
 
 
