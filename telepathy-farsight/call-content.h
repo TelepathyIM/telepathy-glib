@@ -30,25 +30,25 @@
 
 G_BEGIN_DECLS
 
-#define TF_TYPE_CONTENT tf_call_content_get_type()
+#define TF_TYPE_CALL_CONTENT tf_call_content_get_type()
 
 #define TF_CALL_CONTENT(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-  TF_TYPE_CONTENT, TfCallContent))
+  TF_TYPE_CALL_CONTENT, TfCallContent))
 
 #define TF_CALL_CONTENT_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
-  TF_TYPE_CONTENT, TfCallContentClass))
+  TF_TYPE_CALL_CONTENT, TfCallContentClass))
 
-#define TF_IS_CONTENT(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TF_TYPE_CONTENT))
+#define TF_IS_CALL_CONTENT(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TF_TYPE_CALL_CONTENT))
 
-#define TF_IS_CONTENT_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), TF_TYPE_CONTENT))
+#define TF_IS_CALL_CONTENT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TF_TYPE_CALL_CONTENT))
 
 #define TF_CALL_CONTENT_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
-  TF_TYPE_CONTENT, TfCallContentClass))
+  TF_TYPE_CALL_CONTENT, TfCallContentClass))
 
 typedef struct _TfCallContentPrivate TfCallContentPrivate;
 

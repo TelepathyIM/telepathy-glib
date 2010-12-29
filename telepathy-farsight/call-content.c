@@ -549,7 +549,7 @@ tf_call_content_new (TfCallChannel *call_channel,
   if (!proxy)
     return NULL;
 
-  self = g_object_new (TF_TYPE_CONTENT, NULL);
+  self = g_object_new (TF_TYPE_CALL_CONTENT, NULL);
 
   self->call_channel = call_channel;
   self->proxy = proxy;
