@@ -45,7 +45,7 @@
 
 
 struct _TfCallContent {
-  GObject parent;
+  TfContent parent;
 
   TfCallChannel *call_channel;
   FsConference *fsconference;
@@ -70,11 +70,11 @@ struct _TfCallContent {
 };
 
 struct _TfCallContentClass{
-  GObjectClass parent_class;
+  TfContentClass parent_class;
 };
 
 
-G_DEFINE_TYPE (TfCallContent, tf_call_content, G_TYPE_OBJECT);
+G_DEFINE_TYPE (TfCallContent, tf_call_content, TF_TYPE_CONTENT)
 
 
 enum
@@ -120,20 +120,10 @@ tf_call_content_class_init (TfCallContentClass *klass)
   object_class->dispose = tf_call_content_dispose;
   object_class->get_property = tf_call_content_get_property;
 
-  g_object_class_install_property (object_class, PROP_FS_SESSION,
-      g_param_spec_object ("fs-conference",
-          "Farsight2 FsConference used by the Content ",
-          "The Farsight2 conference for this content "
-          "(could be the same as other contents)",
-          FS_TYPE_CONFERENCE,
-          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
-
-  g_object_class_install_property (object_class, PROP_FS_SESSION,
-      g_param_spec_object ("fs-session",
-          "Farsight2 FsSession ",
-          "The Farsight2 session for this content",
-          FS_TYPE_SESSION,
-          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+  g_object_class_override_property (object_class, PROP_FS_CONFERENCE,
+      "fs-conference");
+  g_object_class_override_property (object_class, PROP_FS_SESSION,
+      "fs-session");
 }
 
 

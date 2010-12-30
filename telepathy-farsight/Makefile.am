@@ -13,6 +13,7 @@ libtelepathy_farsight_la_SOURCES = \
 	stream.h \
 	content.c \
 	content.h \
+	content-priv.h \
 	session.c \
 	channel.c \
 	channel.h \

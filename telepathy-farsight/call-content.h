@@ -27,6 +27,8 @@
 
 #include "extensions/extensions.h"
 #include "call-channel.h"
+#include "content.h"
+#include "content-priv.h"
 
 G_BEGIN_DECLS
 

@@ -1,26 +1,21 @@
 
 #include "content.h"
+#include "content-priv.h"
 
 #include <gst/farsight/fs-conference-iface.h>
 
-
-struct _TfContent {
-  GObject parent;
-
-};
-
-struct _TfContentClass{
-  GObjectClass parent_class;
-};
+#include "channel.h"
 
 
-G_DEFINE_TYPE (TfContent, tf_content, G_TYPE_OBJECT);
+G_DEFINE_ABSTRACT_TYPE (TfContent, tf_content, G_TYPE_OBJECT);
 
 
 enum
 {
-  PROP_FS_CONFERENCE = 1,
-  PROP_FS_SESSION
+  PROP_TF_CHANNEL = 1,
+  PROP_FS_CONFERENCE,
+  PROP_FS_SESSION,
+  PROP_SINK_PAD
 };
 
 enum
@@ -29,20 +24,16 @@ enum
 };
 
 static void
-tf_content_get_property (GObject *object,
-    guint property_id,
-    GValue *value,
-    GParamSpec *pspec);
-
-
-
-static void
 tf_content_class_init (TfContentClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  object_class->get_property = tf_content_get_property;
-
+  g_object_class_install_property (object_class, PROP_TF_CHANNEL,
+      g_param_spec_object ("tf-channel",
+          "Parent TfChannel object ",
+          "The Telepathy-Farsight Channel for this object",
+          TF_TYPE_CHANNEL,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_FS_SESSION,
       g_param_spec_object ("fs-conference",
@@ -58,31 +49,17 @@ tf_content_class_init (TfContentClass *klass)
           "The Farsight2 session for this content",
           FS_TYPE_SESSION,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_SINK_PAD,
+      g_param_spec_object ("sink-pad",
+          "Sink Pad",
+          "Sink GstPad for this content",
+          GST_TYPE_PAD,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 
 static void
 tf_content_init (TfContent *self)
 {
-}
-
-
-static void
-tf_content_get_property (GObject    *object,
-    guint       property_id,
-    GValue     *value,
-    GParamSpec *pspec)
-{
-  //TfContent *self = TF_CONTENT (object);
-
-  switch (property_id)
-    {
-    case PROP_FS_CONFERENCE:
-      break;
-    case PROP_FS_SESSION:
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
-    }
 }
