@@ -62,6 +62,9 @@ struct _TfCallContent {
 
   GHashTable *streams; /* NULL before getting the first streams */
 
+  GMutex *mutex;
+
+  /* Content protected by the Mutex */
   GPtrArray *fsstreams;
 
   gboolean got_codec_offer_property;
@@ -75,6 +78,9 @@ struct _TfCallContentClass{
 
 
 G_DEFINE_TYPE (TfCallContent, tf_call_content, TF_TYPE_CONTENT)
+
+#define TF_CALL_CONTENT_LOCK(self)   g_mutex_lock ((self)->mutex)
+#define TF_CALL_CONTENT_UNLOCK(self) g_mutex_unlock ((self)->mutex)
 
 
 enum
@@ -106,6 +112,7 @@ tf_call_content_get_property (GObject    *object,
     GParamSpec *pspec);
 
 static void tf_call_content_dispose (GObject *object);
+static void tf_call_content_finalize (GObject *object);
 
 
 static void tf_call_content_try_sending_codecs (TfCallContent *self);
@@ -119,6 +126,7 @@ tf_call_content_class_init (TfCallContentClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->dispose = tf_call_content_dispose;
+  object_class->finalize = tf_call_content_finalize;
   object_class->get_property = tf_call_content_get_property;
 
   g_object_class_override_property (object_class, PROP_FS_CONFERENCE,
@@ -144,6 +152,8 @@ static void
 tf_call_content_init (TfCallContent *self)
 {
   self->fsstreams = g_ptr_array_new_with_free_func (free_content_fsstream);
+
+  self->mutex = g_mutex_new ();
 }
 
 static void
@@ -177,6 +187,19 @@ tf_call_content_dispose (GObject *object)
   if (G_OBJECT_CLASS (tf_call_content_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_content_parent_class)->dispose (object);
 }
+
+
+static void
+tf_call_content_finalize (GObject *object)
+{
+  TfCallContent *self = TF_CALL_CONTENT (object);
+
+  g_mutex_free (self->mutex);
+
+  if (G_OBJECT_CLASS (tf_call_content_parent_class)->finalize)
+    G_OBJECT_CLASS (tf_call_content_parent_class)->finalize (object);
+}
+
 
 static void
 tf_call_content_get_property (GObject    *object,
@@ -778,6 +801,8 @@ tf_call_content_get_existing_fsstream_by_handle (TfCallContent *content,
 {
   guint i;
 
+  TF_CALL_CONTENT_LOCK (content);
+
   for (i = 0; i < content->fsstreams->len; i++)
     {
       struct CallFsStream *cfs = g_ptr_array_index (content->fsstreams, i);
@@ -785,9 +810,12 @@ tf_call_content_get_existing_fsstream_by_handle (TfCallContent *content,
       if (cfs->contact_handle == contact_handle)
         {
           cfs->use_count++;
+          TF_CALL_CONTENT_UNLOCK (content);
           return cfs->fsstream;
         }
     }
+
+  TF_CALL_CONTENT_UNLOCK (content);
 
   return NULL;
 }
@@ -839,6 +867,8 @@ _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
 {
   guint i;
 
+  TF_CALL_CONTENT_LOCK (content);
+
   for (i = 0; i < content->fsstreams->len; i++)
     {
       struct CallFsStream *cfs = g_ptr_array_index (content->fsstreams, i);
@@ -848,9 +878,11 @@ _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
           cfs->use_count--;
           if (cfs->use_count <= 0)
             g_ptr_array_remove_index_fast (content->fsstreams, i);
-          return;
+          break;
         }
     }
+
+  TF_CALL_CONTENT_UNLOCK (content);
 }
 
 FsMediaType
