@@ -23,6 +23,7 @@ enum
 {
   SIGNAL_START_SENDING,
   SIGNAL_STOP_SENDING,
+  SIGNAL_SRC_PAD_ADDED,
   SIGNAL_COUNT
 };
 
@@ -65,8 +66,6 @@ tf_content_class_init (TfContentClass *klass)
   /**
    * TfContent::start-sending
    * @content: the #TfContent
-   * @direction: The direction for which this resource is requested
-   *  (as a #TpMediaDirection
    *
    * This signal is emitted when the connection manager ask to send media.
    * For example, this can be used to open a camera, start recording from a
@@ -86,6 +85,13 @@ tf_content_class_init (TfContentClass *klass)
           _tf_marshal_BOOLEAN__VOID,
           G_TYPE_BOOLEAN, 0);
 
+  /**
+   * TfContent::stop-sending
+   * @content: the #TfContent
+   *
+   * This signal is emitted when the connection manager ask to stop
+   * sending media
+   */
 
   signals[SIGNAL_STOP_SENDING] =
       g_signal_new ("stop-sending",
@@ -94,6 +100,16 @@ tf_content_class_init (TfContentClass *klass)
           0, NULL, NULL,
           g_cclosure_marshal_VOID__VOID,
           G_TYPE_NONE, 0);
+
+
+  signals[SIGNAL_SRC_PAD_ADDED] =
+      g_signal_new ("src-pad-added",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0, NULL, NULL,
+          _tf_marshal_VOID__BOXED_OBJECT_BOXED_OBJECT,
+          G_TYPE_NONE, 4,
+          G_TYPE_PTR_ARRAY, FS_TYPE_STREAM, FS_TYPE_CODEC, GST_TYPE_PAD);
 }
 
 
@@ -141,4 +157,12 @@ _tf_content_stop_sending (TfContent *self)
   g_signal_emit (self, signals[SIGNAL_STOP_SENDING], 0);
 
   self->sending = FALSE;
+}
+
+void
+_tf_content_emit_src_pad_added (TfContent *self, GPtrArray *handles,
+    FsStream *stream, FsCodec *codec, GstPad *pad)
+{
+  g_signal_emit (self, signals[SIGNAL_SRC_PAD_ADDED], 0, handles,
+      stream, codec, pad);
 }

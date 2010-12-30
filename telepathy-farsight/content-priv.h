@@ -4,6 +4,9 @@
 
 #include <glib-object.h>
 
+#include <gst/farsight/fs-conference-iface.h>
+
+
 G_BEGIN_DECLS
 
 struct _TfContent {
@@ -18,6 +21,9 @@ struct _TfContentClass{
 
 gboolean _tf_content_start_sending (TfContent *self);
 void _tf_content_stop_sending (TfContent *self);
+
+void _tf_content_emit_src_pad_added (TfContent *self, GPtrArray *handles,
+    FsStream *stream, FsCodec *codec, GstPad *pad);
 
 
 G_END_DECLS
