@@ -107,9 +107,9 @@ tf_content_class_init (TfContentClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0, NULL, NULL,
-          _tf_marshal_VOID__BOXED_OBJECT_BOXED_OBJECT,
+          _tf_marshal_VOID__BOXED_OBJECT_OBJECT_BOXED,
           G_TYPE_NONE, 4,
-          G_TYPE_PTR_ARRAY, FS_TYPE_STREAM, FS_TYPE_CODEC, GST_TYPE_PAD);
+          G_TYPE_ARRAY, FS_TYPE_STREAM, GST_TYPE_PAD, FS_TYPE_CODEC);
 }
 
 
@@ -160,9 +160,9 @@ _tf_content_stop_sending (TfContent *self)
 }
 
 void
-_tf_content_emit_src_pad_added (TfContent *self, GPtrArray *handles,
-    FsStream *stream, FsCodec *codec, GstPad *pad)
+_tf_content_emit_src_pad_added (TfContent *self, GArray *handles,
+    FsStream *stream, GstPad *pad, FsCodec *codec)
 {
   g_signal_emit (self, signals[SIGNAL_SRC_PAD_ADDED], 0, handles,
-      stream, codec, pad);
+      stream, pad, codec);
 }

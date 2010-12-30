@@ -119,6 +119,10 @@ static void tf_call_content_try_sending_codecs (TfCallContent *self);
 static FsStream * tf_call_content_get_existing_fsstream_by_handle (
     TfCallContent *content, guint contact_handle);
 
+static void
+src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
+    TfCallContent *content);
+
 
 static void
 tf_call_content_class_init (TfCallContentClass *klass)
@@ -859,6 +863,9 @@ _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
   cfs->fsparticipant = p;
   cfs->fsstream = s;
 
+  tp_g_signal_connect_object (s, "src-pad-added",
+      G_CALLBACK (src_pad_added), content, 0);
+
   return s;
 }
 
@@ -889,4 +896,32 @@ FsMediaType
 tf_call_content_get_fs_media_type (TfCallContent *content)
 {
   return tp_media_type_to_fs (content->media_type);
+}
+
+static void
+src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
+    TfCallContent *content)
+{
+  GArray *handles = g_array_new (TRUE, TRUE, sizeof(guint));
+  guint i;
+
+  TF_CALL_CONTENT_LOCK (content);
+
+  for (i = 0; i < content->fsstreams->len; i++)
+    {
+      struct CallFsStream *cfs = g_ptr_array_index (content->fsstreams, i);
+      if (cfs->fsstream == fsstream)
+        {
+          g_array_append_val (handles, cfs->contact_handle);
+          break;
+        }
+    }
+
+  TF_CALL_CONTENT_UNLOCK (content);
+
+  _tf_content_emit_src_pad_added (TF_CONTENT (content), handles,
+      fsstream, pad, codec);
+
+
+  g_array_unref (handles);
 }
