@@ -80,7 +80,8 @@ G_DEFINE_TYPE (TfCallContent, tf_call_content, TF_TYPE_CONTENT)
 enum
 {
   PROP_FS_CONFERENCE = 1,
-  PROP_FS_SESSION
+  PROP_FS_SESSION,
+  PROP_SINK_PAD
 };
 
 enum
@@ -124,6 +125,8 @@ tf_call_content_class_init (TfCallContentClass *klass)
       "fs-conference");
   g_object_class_override_property (object_class, PROP_FS_SESSION,
       "fs-session");
+  g_object_class_override_property (object_class, PROP_SINK_PAD,
+      "sink-pad");
 }
 
 
@@ -192,6 +195,10 @@ tf_call_content_get_property (GObject    *object,
     case PROP_FS_SESSION:
       if (self->fssession)
         g_value_set_object (value, self->fssession);
+      break;
+    case PROP_SINK_PAD:
+      if (self->fssession)
+        g_object_get_property (G_OBJECT (self->fssession), "sink-pad", value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
