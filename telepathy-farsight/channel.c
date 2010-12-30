@@ -302,10 +302,6 @@ channel_prepared (GObject *obj,
 
   g_simple_async_result_complete (res);
 
-  self->priv->channel_invalidated_handler = g_signal_connect (
-      self->priv->channel_proxy,
-      "invalidated", G_CALLBACK (channel_invalidated), self);
-
   g_object_unref (res);
 }
 
