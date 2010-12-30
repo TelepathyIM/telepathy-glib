@@ -45,6 +45,7 @@
 #include "tf-signals-marshal.h"
 #include "media-signalling-channel.h"
 #include "call-channel.h"
+#include "content.h"
 
 
 static void channel_async_initable_init (GAsyncInitableIface *asynciface);
@@ -70,6 +71,8 @@ enum
   SIGNAL_GET_CODEC_CONFIG,
   SIGNAL_FS_CONFERENCE_ADD,
   SIGNAL_FS_CONFERENCE_REMOVE,
+  SIGNAL_CONTENT_ADDED,
+  SIGNAL_CONTENT_REMOVED,
   SIGNAL_COUNT
 };
 
@@ -101,6 +104,10 @@ static void tf_channel_init_async (GAsyncInitable *initable,
 static gboolean tf_channel_init_finish (GAsyncInitable *initable,
     GAsyncResult *res,
     GError **error);
+
+static void content_added (TfContent *content, TfChannel *self);
+static void content_removed (TfContent *content, TfChannel *self);
+
 
 static void
 tf_channel_init (TfChannel *self)
@@ -200,6 +207,13 @@ call_channel_ready (GObject *obj, GAsyncResult *call_res, gpointer user_data)
       tp_g_signal_connect_object (self->priv->call_channel,
           "fs-conference-remove", G_CALLBACK (channel_fs_conference_remove),
           self, 0);
+
+      tp_g_signal_connect_object (self->priv->call_channel,
+          "content_added", G_CALLBACK (content_added),
+          self, 0);
+      tp_g_signal_connect_object (self->priv->call_channel,
+          "content_removed", G_CALLBACK (content_removed),
+          self, 0);
     }
 
 
@@ -208,6 +222,10 @@ call_channel_ready (GObject *obj, GAsyncResult *call_res, gpointer user_data)
   self->priv->channel_invalidated_handler = g_signal_connect (
       self->priv->channel_proxy,
       "invalidated", G_CALLBACK (channel_invalidated), self);
+
+  tp_g_signal_connect_object (self->priv->media_signalling_channel,
+          "get-codec-config", G_CALLBACK (media_signalling_channel_get_config),
+          self, 0);
 
   g_object_unref (res);
 }
@@ -467,6 +485,41 @@ tf_channel_class_init (TfChannelClass *klass)
       0, NULL, NULL,
       _tf_marshal_VOID__OBJECT,
       G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
+
+
+  /**
+   * TfChannel::content-added
+   * @tfchannel: the #TfChannel
+   * @content: a #TfContent
+   *
+   * Tells the application that a content has been added. In the callback for
+   * this signal, the application should set its preferred codecs, and hook
+   * up to any signal from #TfContent it cares about. Special care should be
+   * made to connect #TfContent:src-pad-added as well
+   * as the #TfContent:start-sending and #TfContent:stop-sending signals.
+   */
+
+  signals[SIGNAL_CONTENT_ADDED] = g_signal_new ("content-added",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tf_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1, TF_TYPE_CONTENT);
+
+  /**
+   * TfChannel::content-removed
+   * @tfchannel: the #TfChannel
+   * @content: a #TfContent
+   *
+   * Tells the application that a content is being removed.
+   */
+
+  signals[SIGNAL_CONTENT_REMOVED] = g_signal_new ("content-removed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tf_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1, TF_TYPE_CONTENT);
 }
 
 static void
@@ -600,3 +653,14 @@ channel_fs_conference_remove (GObject *chan, FsConference *conf,
       conf);
 }
 
+static void
+content_added (TfContent *content, TfChannel *self)
+{
+  g_signal_emit (self, signals[SIGNAL_CONTENT_ADDED], 0, content);
+}
+
+static void
+content_removed (TfContent *content, TfChannel *self)
+{
+  g_signal_emit (self, signals[SIGNAL_CONTENT_REMOVED], 0, content);
+}
