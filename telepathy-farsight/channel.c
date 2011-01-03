@@ -68,7 +68,6 @@ struct _TfChannelPrivate
 enum
 {
   SIGNAL_CLOSED,
-  SIGNAL_GET_CODEC_CONFIG,
   SIGNAL_FS_CONFERENCE_ADD,
   SIGNAL_FS_CONFERENCE_REMOVE,
   SIGNAL_CONTENT_ADDED,
@@ -84,10 +83,6 @@ enum
   PROP_OBJECT_PATH,
   PROP_FS_CONFERENCES
 };
-
-static GList *media_signalling_channel_get_config (
-    TfMediaSignallingChannel *msc,
-    guint media_type, TfChannel *self);
 
 static void shutdown_channel (TfChannel *self);
 
@@ -223,10 +218,6 @@ call_channel_ready (GObject *obj, GAsyncResult *call_res, gpointer user_data)
       self->priv->channel_proxy,
       "invalidated", G_CALLBACK (channel_invalidated), self);
 
-  tp_g_signal_connect_object (self->priv->media_signalling_channel,
-          "get-codec-config", G_CALLBACK (media_signalling_channel_get_config),
-          self, 0);
-
   g_object_unref (res);
 }
 
@@ -267,10 +258,6 @@ channel_prepared (GObject *obj,
     {
       self->priv->media_signalling_channel =
           tf_media_signalling_channel_new (channel_proxy);
-
-      tp_g_signal_connect_object (self->priv->media_signalling_channel,
-          "get-codec-config", G_CALLBACK (media_signalling_channel_get_config),
-          self, 0);
 
       tp_g_signal_connect_object (self->priv->media_signalling_channel,
           "session-created", G_CALLBACK (channel_fs_conference_add),
@@ -428,27 +415,6 @@ tf_channel_class_init (TfChannelClass *klass)
           NULL, NULL,
           g_cclosure_marshal_VOID__VOID,
           G_TYPE_NONE, 0);
-
-  /**
-   * TfChannel::stream-get-codec-config:
-   * @tfchannel: the #TfChannel
-   * @media_type: The #TpMediaStreamType of the stream
-   *
-   * This is emitted when a new stream is created and allows the caller to
-   * specify his codec preferences.
-   *
-   * Returns: a #GList of #FsCodec
-   */
-
-  signals[SIGNAL_GET_CODEC_CONFIG] =
-      g_signal_new ("get-codec-config",
-          G_OBJECT_CLASS_TYPE (klass),
-          G_SIGNAL_RUN_LAST,
-          0,
-          NULL, NULL,
-          _tf_marshal_BOXED__UINT,
-          FS_TYPE_CODEC_LIST, 1, G_TYPE_UINT);
-
 
   /**
    * TfChannel::fs-conference-add
@@ -616,19 +582,6 @@ tf_channel_bus_message (TfChannel *channel,
         channel->priv->media_signalling_channel, message);
   else
     return FALSE;
-}
-
-static GList *
-media_signalling_channel_get_config (TfMediaSignallingChannel *msc,
-    guint media_type, TfChannel *self)
-{
-  GList *local_codec_config = NULL;
-
-  g_signal_emit (self, signals[SIGNAL_GET_CODEC_CONFIG], 0,
-      media_type,
-      &local_codec_config);
-
-  return local_codec_config;
 }
 
 static void
