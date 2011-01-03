@@ -115,6 +115,10 @@ static void tf_call_content_dispose (GObject *object);
 static void tf_call_content_finalize (GObject *object);
 
 
+static gboolean tf_call_content_set_codec_preferences (TfContent *content,
+    GList *codec_preferences,
+    GError **error);
+
 static void tf_call_content_try_sending_codecs (TfCallContent *self);
 static FsStream * tf_call_content_get_existing_fsstream_by_handle (
     TfCallContent *content, guint contact_handle);
@@ -128,10 +132,13 @@ static void
 tf_call_content_class_init (TfCallContentClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  TfContentClass *content_class = TF_CONTENT_CLASS (klass);
 
   object_class->dispose = tf_call_content_dispose;
   object_class->finalize = tf_call_content_finalize;
   object_class->get_property = tf_call_content_get_property;
+
+  content_class->set_codec_preferences = tf_call_content_set_codec_preferences;
 
   g_object_class_override_property (object_class, PROP_FS_CONFERENCE,
       "fs-conference");
@@ -924,4 +931,33 @@ src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
 
 
   g_array_unref (handles);
+}
+
+
+static gboolean
+tf_call_content_set_codec_preferences (TfContent *content,
+    GList *codec_preferences,
+    GError **error)
+{
+  TfCallContent *self;
+
+  g_return_val_if_fail (TF_IS_CALL_CONTENT (content), FALSE);
+  self = TF_CALL_CONTENT (content);
+
+  if (self->fssession == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_INITIALIZED,
+          "TfCallContent not initialised yet");
+      return FALSE;
+    }
+
+  if (self->got_codec_offer_property)
+    {
+      g_warning ("Too late, already got the initial codec offer");
+      return FALSE;
+    }
+
+
+  return fs_session_set_codec_preferences (self->fssession, codec_preferences,
+      error);
 }
