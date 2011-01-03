@@ -17,6 +17,11 @@ struct _TfContent {
 
 struct _TfContentClass{
   GObjectClass parent_class;
+
+  gboolean (*set_codec_preferences) (TfContent *self,
+      GList *codec_preferences,
+      GError **error);
+
 };
 
 gboolean _tf_content_start_sending (TfContent *self);

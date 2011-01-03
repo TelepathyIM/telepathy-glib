@@ -166,3 +166,20 @@ _tf_content_emit_src_pad_added (TfContent *self, GArray *handles,
   g_signal_emit (self, signals[SIGNAL_SRC_PAD_ADDED], 0, handles,
       stream, pad, codec);
 }
+
+gboolean
+tf_content_set_codec_preferences (TfContent *content,
+    GList *codec_preferences,
+    GError **error)
+{
+ TfContentClass *klass = TF_CONTENT_GET_CLASS (content);
+
+  if (klass->set_codec_preferences) {
+    return klass->set_codec_preferences (content, codec_preferences, error);
+  } else {
+    GST_WARNING ("set_codec_preferences not defined in class");
+    g_set_error (error, FS_ERROR, FS_ERROR_NOT_IMPLEMENTED,
+        "set_codec_preferences not defined in class");
+  }
+  return FALSE;
+}

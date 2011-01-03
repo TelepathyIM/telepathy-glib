@@ -51,6 +51,11 @@ void tf_content_error (TfContent *chan,
     const gchar *detailed_reason,
     const gchar *message);
 
+gboolean tf_content_set_codec_preferences (TfContent *content,
+    GList *codec_preferences,
+    GError **error);
+
+
 G_END_DECLS
 
 #endif /* __TF_CONTENT_H__ */
