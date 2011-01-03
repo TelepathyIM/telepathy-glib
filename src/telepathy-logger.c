@@ -170,7 +170,7 @@ main (int argc,
   DEBUG ("Initialising TPL Channel Factory");
   _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Text",
       (TplChannelConstructor) _tpl_channel_text_new);
-  DEBUG ("- TplChannelText registred.");
+  DEBUG ("- TplChannelText registered.");
 
   observer = _tpl_observer_new ();
   DEBUG ("Registering channel factory into TplObserver");
