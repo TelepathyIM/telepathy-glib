@@ -15,9 +15,11 @@
 #include "conn.h"
 #include "im-manager.h"
 
-G_DEFINE_TYPE (ExampleEcho2Protocol,
-    example_echo_2_protocol,
-    TP_TYPE_BASE_PROTOCOL)
+static void addressing_iface_init (TpProtocolAddressingInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Protocol, example_echo_2_protocol,
+    TP_TYPE_BASE_PROTOCOL,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_PROTOCOL_ADDRESSING, addressing_iface_init))
 
 const gchar * const protocol_interfaces[] = {
   TP_IFACE_PROTOCOL_INTERFACE_AVATARS,
@@ -209,16 +211,16 @@ get_avatar_details (TpBaseProtocol *self,
     *max_bytes = 37748736;
 }
 
-static void
-get_addressing_details (TpBaseProtocol *self,
-    GStrv *addressable_vcard_fields,
-    GStrv *addressable_uri_schemes)
+static GStrv
+get_supported_uri_schemes (TpBaseProtocol *self)
 {
-  if (addressable_vcard_fields != NULL)
-    *addressable_vcard_fields = g_strdupv ((gchar **) addressing_vcard_fields);
+  return g_strdupv ((GStrv) addressing_uri_schemes);
+}
 
-  if (addressable_uri_schemes != NULL)
-    *addressable_uri_schemes = g_strdupv ((gchar **) addressing_uri_schemes);
+static GStrv
+get_supported_vcard_fields (TpBaseProtocol *self)
+{
+  return g_strdupv ((GStrv) addressing_vcard_fields);
 }
 
 static void
@@ -236,5 +238,11 @@ example_echo_2_protocol_class_init (
   base_class->get_interfaces = get_interfaces;
   base_class->get_connection_details = get_connection_details;
   base_class->get_avatar_details = get_avatar_details;
-  base_class->get_addressing_details = get_addressing_details;
+}
+
+static void
+addressing_iface_init (TpProtocolAddressingInterface *iface)
+{
+  iface->get_supported_vcard_fields = get_supported_vcard_fields;
+  iface->get_supported_uri_schemes = get_supported_uri_schemes;
 }

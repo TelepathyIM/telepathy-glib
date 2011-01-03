@@ -134,21 +134,6 @@ typedef void (*TpBaseProtocolGetAvatarDetailsFunc) (TpBaseProtocol *self,
     guint *max_width,
     guint *max_bytes);
 
-typedef void (*TpBaseProtocolGetAddressingDetailsFunc) (TpBaseProtocol *self,
-    GStrv *addressable_vcard_fields,
-    GStrv *addressable_uri_schemes);
-
-typedef gchar *(*TpBaseProtocolAddressingNormalizeVCardAddressFunc) (
-    TpBaseProtocol *self,
-    const gchar *vcard_field,
-    const gchar *vcard_address,
-    GError **error);
-
-typedef gchar *(*TpBaseProtocolAddressingNormalizeUriFunc) (
-    TpBaseProtocol *self,
-    const gchar *uri,
-    GError **error);
-
 struct _TpBaseProtocolClass
 {
   GObjectClass parent_class;
@@ -182,14 +167,8 @@ struct _TpBaseProtocolClass
 
   GStrv (*dup_authentication_types) (TpBaseProtocol *self);
 
-  TpBaseProtocolGetAddressingDetailsFunc get_addressing_details;
-
-  TpBaseProtocolAddressingNormalizeVCardAddressFunc normalize_vcard_address;
-
-  TpBaseProtocolAddressingNormalizeUriFunc normalize_uri;
-
   /*<private>*/
-  GCallback padding[2];
+  GCallback padding[5];
   TpBaseProtocolClassPrivate *priv;
 };
 
@@ -201,6 +180,51 @@ const TpPresenceStatusSpec *tp_base_protocol_get_statuses (TpBaseProtocol *self)
 
 TpBaseConnection *tp_base_protocol_new_connection (TpBaseProtocol *self,
     GHashTable *asv, GError **error);
+
+
+/* ---- Implemented by subclasses for Addressing support ---- */
+
+#define TP_TYPE_PROTOCOL_ADDRESSING \
+  (tp_protocol_addressing_get_type ())
+
+#define TP_IS_PROTOCOL_ADDRESSING(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+      TP_TYPE_PROTOCOL_ADDRESSING))
+
+#define TP_PROTOCOL_ADDRESSING_GET_INTERFACE(obj) \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), \
+      TP_TYPE_PROTOCOL_ADDRESSING, TpProtocolAddressingInterface))
+
+typedef struct _TpProtocolAddressingInterface TpProtocolAddressingInterface;
+
+typedef GStrv (*TpBaseProtocolGetSupportedVCardFields) (TpBaseProtocol *self);
+
+typedef GStrv (*TpBaseProtocolGetSupportedURISchemes) (TpBaseProtocol *self);
+
+typedef gchar *(*TpBaseProtocolNormalizeVCardAddressFunc) (
+    TpBaseProtocol *self,
+    const gchar *vcard_field,
+    const gchar *vcard_address,
+    GError **error);
+
+typedef gchar *(*TpBaseProtocolNormalizeURIFunc) (
+    TpBaseProtocol *self,
+    const gchar *uri,
+    GError **error);
+
+struct _TpProtocolAddressingInterface {
+  GTypeInterface parent;
+
+  TpBaseProtocolGetSupportedVCardFields get_supported_vcard_fields;
+
+  TpBaseProtocolGetSupportedURISchemes get_supported_uri_schemes;
+
+  TpBaseProtocolNormalizeVCardAddressFunc normalize_vcard_address;
+
+  TpBaseProtocolNormalizeURIFunc normalize_uri;
+};
+
+GType tp_protocol_addressing_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS
 
