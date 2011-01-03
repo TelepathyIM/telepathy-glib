@@ -39,7 +39,7 @@ typedef struct _TfChannel TfChannel;
 
 /**
  * TfChannelClass:
- * @parent_class: the parent #GObjecClass
+ * @parent_class: the parent #GObjectClass
  *
  * There are no overridable functions
  */

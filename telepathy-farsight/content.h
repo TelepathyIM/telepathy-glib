@@ -30,23 +30,22 @@ typedef struct _TfContentPrivate TfContentPrivate;
 /**
  * TfContent:
  *
- * All members of the object are private
+ * This structure is private, this class is not subclassable.
  */
 
 typedef struct _TfContent TfContent;
 
 /**
  * TfContentClass:
- * @parent_class: the parent #GObjecClass
  *
- * There are no overridable functions
+ * This structure is private, this class is not subclassable.
  */
 
 typedef struct _TfContentClass TfContentClass;
 
 GType tf_content_get_type (void);
 
-void tf_content_error (TfContent *chan,
+void tf_content_error (TfContent *content,
     guint reason, /* TfFutureContentRemovalReason */
     const gchar *detailed_reason,
     const gchar *message);

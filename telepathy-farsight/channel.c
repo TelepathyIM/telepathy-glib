@@ -20,11 +20,13 @@
 
 /**
  * SECTION:channel
- * @short_description: Handle the MediaSignalling interface on a Channel
+ * @short_description: Handle the MediaSignalling or Call media interfaces on a
+ *  Channel
  *
  * This class handles the
  * org.freedesktop.Telepathy.Channel.Interface.MediaSignalling on a
- * channel using Farsight2.
+ * channel using Farsight2 or the media part of the
+ * org.freedesktop.Telepathy.Channel.Type.Call that has HardwareStreaming=FALSE
  */
 
 #include <stdlib.h>
@@ -457,8 +459,8 @@ tf_channel_class_init (TfChannelClass *klass)
    * Tells the application that a content has been added. In the callback for
    * this signal, the application should set its preferred codecs, and hook
    * up to any signal from #TfContent it cares about. Special care should be
-   * made to connect #TfContent:src-pad-added as well
-   * as the #TfContent:start-sending and #TfContent:stop-sending signals.
+   * made to connect #TfContent::src-pad-added as well
+   * as the #TfContent::start-sending and #TfContent::stop-sending signals.
    */
 
   signals[SIGNAL_CONTENT_ADDED] = g_signal_new ("content-added",
@@ -521,6 +523,8 @@ channel_invalidated (TpChannel *channel_proxy,
 /**
  * tf_channel_new_async:
  * @channel_proxy: a #TpChannel proxy
+ * @callback: a #GAsyncReadyCallback to call when the channel is ready
+ * @user_data: the data to pass to callback function
  *
  * Creates a new #TfChannel from an existing channel proxy, the new
  * TfChannel object will be return in the async callback.

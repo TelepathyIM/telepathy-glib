@@ -11,8 +11,8 @@
   </bookinfo>
 
   <chapter>
-    <title>Telepathy Farsight Wrapper Classes</title>
+    <title>Telepathy Farsight Helper Classes</title>
     <xi:include href="xml/channel.xml"/>
-    <xi:include href="xml/stream.xml"/>
+    <xi:include href="xml/content.xml"/>
   </chapter>
 </book>

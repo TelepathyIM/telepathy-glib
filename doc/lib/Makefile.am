@@ -39,12 +39,12 @@ FIXXREF_OPTIONS=
 # Used for dependencies. The docs will be rebuilt if any of these change.
 # e.g. HFILE_GLOB=$(top_srcdir)/gtk/*.h
 # e.g. CFILE_GLOB=$(top_srcdir)/gtk/*.c
-HFILE_GLOB=$(top_srcdir)/telepathy-farsight/channel.h $(top_srcdir)/telepathy-farsight/stream.h
-CFILE_GLOB=$(top_srcdir)/telepathy-farsight/channel.c $(top_srcdir)/telepathy-farsight/stream.c
+HFILE_GLOB=$(top_srcdir)/telepathy-farsight/channel.h $(top_srcdir)/telepathy-farsight/content.h
+CFILE_GLOB=$(top_srcdir)/telepathy-farsight/channel.c $(top_srcdir)/telepathy-farsight/content.c
 
 # Header files to ignore when scanning.
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
-IGNORE_HFILES=session-priv.h stream-priv.h *marshal.h
+IGNORE_HFILES=*priv.h stream*.h call*.h *marshal.h media*.h
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png

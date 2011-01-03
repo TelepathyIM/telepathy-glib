@@ -8,6 +8,21 @@
 #include "tf-signals-marshal.h"
 
 
+/**
+ * SECTION:content
+ * @short_description: Represent the Content of a channel handled by #TfChannel
+ *
+ * Objects of this class allow the user to handle the media side of a Telepathy
+ * channel handled by #TfChannel.
+ *
+ * This object is created by the #TfChannel and the user is notified of its
+ * creation by the #TfChannel::content-added signal. In the callback for this
+ * signal, the user should call tf_content_set_codec_preferences() and connect
+ * to the #TfContent::src-pad-added signal.
+ *
+ */
+
+
 G_DEFINE_ABSTRACT_TYPE (TfContent, tf_content, G_TYPE_OBJECT);
 
 
@@ -41,7 +56,7 @@ tf_content_class_init (TfContentClass *klass)
           TF_TYPE_CHANNEL,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_FS_SESSION,
+  g_object_class_install_property (object_class, PROP_FS_CONFERENCE,
       g_param_spec_object ("fs-conference",
           "Farsight2 FsConference used by the Content ",
           "The Farsight2 conference for this content "
@@ -101,6 +116,19 @@ tf_content_class_init (TfContentClass *klass)
           g_cclosure_marshal_VOID__VOID,
           G_TYPE_NONE, 0);
 
+  /**
+   * TfContent::src-pad-added
+   * @content: the #TfContent
+   * @handles: a #GArray of #guint of handles for this pad
+   * @stream: the #FsStream for this pad
+   * @pad: a #GstPad
+   * @codec: the #FsCodec for this pad
+   *
+   * This signal is emitted when a data is coming on a new pad. This signal
+   * is not emitted on the main thread, so special care must be made to lock
+   * the relevant data. When the callback returns from this signal, data will
+   * start flowing through the pad, so the application MUST connect a sink.
+   */
 
   signals[SIGNAL_SRC_PAD_ADDED] =
       g_signal_new ("src-pad-added",
@@ -167,6 +195,31 @@ _tf_content_emit_src_pad_added (TfContent *self, GArray *handles,
       stream, pad, codec);
 }
 
+/**
+ * tf_content_set_codec_preferences:
+ * @content: the #TfContent
+ * @codec_preferences: The #GList of #FsCodec
+ * @error: a #GError or %NULL
+ *
+ * Set the list of desired codec preferences. It is a #GList
+ * of #FsCodec. The function does not take ownership of the list.
+ *
+ * The payload type may be a valid dynamic PT (96-127), %FS_CODEC_ID_DISABLE
+ * or %FS_CODEC_ID_ANY. If the encoding name is "reserve-pt", then the
+ * payload type of the codec will be "reserved" and not be used by any
+ * dynamically assigned payload type.
+ *
+ * If the list of specifications would invalidate all codecs, an error will
+ * be returned.
+ *
+ * This function should be called only during the callback for the
+ * #TfChannel::content-added signal. Afterwards, the codecs may have been
+ * set to the connection manager.
+ *
+ * Returns: %TRUE if the preferences could be set of %FALSE if there was an
+ * error, in that case @error will have been set.
+ */
+
 gboolean
 tf_content_set_codec_preferences (TfContent *content,
     GList *codec_preferences,
@@ -182,4 +235,29 @@ tf_content_set_codec_preferences (TfContent *content,
         "set_codec_preferences not defined in class");
   }
   return FALSE;
+}
+
+/**
+ * tf_content_error:
+ * @content: a #TfContent
+ * @reason: the reason (a #TfContentRemovalReason)
+ * @detailed_reason: The detailled error (as a DBus name)
+ * @message: error Message
+ *
+ * Send an error to the Content to the CM, the effect is most likely that the
+ * content will be removed.
+ */
+
+void
+tf_content_error (TfContent *content,
+    guint reason, /* TfFutureContentRemovalReason */
+    const gchar *detailed_reason,
+    const gchar *message)
+{
+   TfContentClass *klass = TF_CONTENT_GET_CLASS (content);
+
+   if (klass->content_error)
+     klass->content_error (content, reason, detailed_reason, message);
+   else
+     GST_WARNING ("content_error not defined in class");
 }

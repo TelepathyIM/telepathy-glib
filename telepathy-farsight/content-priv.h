@@ -22,6 +22,10 @@ struct _TfContentClass{
       GList *codec_preferences,
       GError **error);
 
+  void (*content_error) (TfContent *chan,
+      guint reason, /* TfFutureContentRemovalReason */
+      const gchar *detailed_reason,
+      const gchar *message);
 };
 
 gboolean _tf_content_start_sending (TfContent *self);

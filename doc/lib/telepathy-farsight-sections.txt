@@ -1,21 +1,20 @@
 <SECTION>
-<FILE>stream</FILE>
-<TITLE>TfStream</TITLE>
-TfStream
-TfStreamClass
-tf_stream_error
-tf_stream_get_id
+<FILE>content</FILE>
+<TITLE>TfContent</TITLE>
+TfContent
+TfContentClass
+tf_content_error
+tf_content_set_codec_preferences
 <SUBSECTION Private>
-TfStreamPrivate
-fserror_to_tperror
+TfContentPrivate
 <SUBSECTION Standard>
-TF_STREAM
-TF_TYPE_STREAM
-tf_stream_get_type
-TF_STREAM_CLASS
-TF_STREAM_GET_CLASS
-TF_IS_STREAM
-TF_IS_STREAM_CLASS
+TF_CONTENT
+TF_TYPE_CONTENT
+tf_content_get_type
+TF_CONTENT_CLASS
+TF_CONTENT_GET_CLASS
+TF_IS_CONTENT
+TF_IS_CONTENT_CLASS
 </SECTION>
 
 <SECTION>
@@ -23,7 +22,7 @@ TF_IS_STREAM_CLASS
 <TITLE>TfChannel</TITLE>
 TfChannel
 TfChannelClass
-tf_channel_new
+tf_channel_new_async
 tf_channel_error
 tf_channel_bus_message
 <SUBSECTION Private>
