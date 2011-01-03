@@ -73,10 +73,12 @@ typedef struct _TfCallContentClass TfCallContentClass;
 
 GType tf_call_content_get_type (void);
 
-TfCallContent *tf_call_content_new (
-    TfCallChannel *callchannel,
+TfCallContent *tf_call_content_new_async (
+    TfCallChannel *call_channel,
     const gchar *object_path,
-    GError **error);
+    GError **error,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 gboolean tf_call_content_bus_message (TfCallContent *content,
     GstMessage *message);

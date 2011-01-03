@@ -77,7 +77,11 @@ struct _TfCallContentClass{
 };
 
 
-G_DEFINE_TYPE (TfCallContent, tf_call_content, TF_TYPE_CONTENT)
+static void call_content_async_initable_init (GAsyncInitableIface *asynciface);
+
+G_DEFINE_TYPE_WITH_CODE (TfCallContent, tf_call_content, TF_TYPE_CONTENT,
+                         G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
+                             call_content_async_initable_init))
 
 #define TF_CALL_CONTENT_LOCK(self)   g_mutex_lock ((self)->mutex)
 #define TF_CALL_CONTENT_UNLOCK(self) g_mutex_unlock ((self)->mutex)
@@ -114,6 +118,15 @@ tf_call_content_get_property (GObject    *object,
 static void tf_call_content_dispose (GObject *object);
 static void tf_call_content_finalize (GObject *object);
 
+static void tf_call_content_init_async (GAsyncInitable *initable,
+    int io_priority,
+    GCancellable  *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+static gboolean tf_call_content_init_finish (GAsyncInitable *initable,
+    GAsyncResult *res,
+    GError **error);
+
 
 static gboolean tf_call_content_set_codec_preferences (TfContent *content,
     GList *codec_preferences,
@@ -146,6 +159,13 @@ tf_call_content_class_init (TfCallContentClass *klass)
       "fs-session");
   g_object_class_override_property (object_class, PROP_SINK_PAD,
       "sink-pad");
+}
+
+static void
+call_content_async_initable_init (GAsyncInitableIface *asynciface)
+{
+  asynciface->init_async = tf_call_content_init_async;
+  asynciface->init_finish = tf_call_content_init_finish;
 }
 
 
@@ -418,6 +438,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  GSimpleAsyncResult *res = user_data;
   gboolean valid;
   GPtrArray *streams;
   GError *myerror = NULL;
@@ -430,6 +451,8 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
     {
       tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "", "Error getting the Content's properties: %s", error->message);
+      g_simple_async_result_set_from_error (res, error);
+      g_simple_async_result_complete (res);
       return;
     }
 
@@ -437,6 +460,9 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
     {
       tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "", "Error getting the Content's properties: there are none");
+      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Error getting the Content's properties: there are none");
+      g_simple_async_result_complete (res);
       return;
     }
 
@@ -454,6 +480,10 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
       tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "", "Content does not have the media interface,"
           " but HardwareStreaming was NOT true");
+      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Content does not have the media interface,"
+          " but HardwareStreaming was NOT true");
+      g_simple_async_result_complete (res);
       return;
     }
 
@@ -480,6 +510,9 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
     {
       tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
           "", "Could not create FsConference for type %s", conference_type);
+      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Error getting the Content's properties: invalid type");
+      g_simple_async_result_complete (res);
       return;
     }
 
@@ -490,6 +523,8 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
     {
       tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
           "", "Could not create FsSession: %s", myerror->message);
+      g_simple_async_result_set_from_error (res, myerror);
+      g_simple_async_result_complete (res);
       g_clear_error (&myerror);
       return;
     }
@@ -513,20 +548,27 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
       tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to NewCodecOffer signal: %s",
           myerror->message);
+      g_simple_async_result_set_from_error (res, myerror);
+      g_simple_async_result_complete (res);
       g_clear_error (&myerror);
       return;
     }
 
+  g_simple_async_result_set_op_res_gboolean (res, TRUE);
+  g_simple_async_result_complete (res);
+
   tp_cli_dbus_properties_call_get (proxy, -1,
       TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA, "CodecOffer",
       got_codec_offer_property, NULL, NULL, G_OBJECT (self));
-
 
   return;
 
  invalid_property:
   tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
       "", "Error getting the Content's properties: invalid type");
+  g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+      "Error getting the Content's properties: invalid type");
+  g_simple_async_result_complete (res);
   return;
 }
 
@@ -567,15 +609,85 @@ streams_removed (TfFutureCallContent *proxy,
 }
 
 
-TfCallContent *
-tf_call_content_new (TfCallChannel *call_channel,
-    const gchar *object_path,
+static void
+tf_call_content_init_async (GAsyncInitable *initable,
+    int io_priority,
+    GCancellable  *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TfCallContent *self = TF_CALL_CONTENT (initable);
+  GError *myerror = NULL;
+  GSimpleAsyncResult *res;
+
+  if (cancellable != NULL)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback, user_data,
+          G_IO_ERROR, G_IO_ERROR_NOT_INITIALIZED,
+          "TfCallChannel initialisation does not support cancellation");
+      return;
+    }
+
+  tf_future_cli_call_content_connect_to_streams_added (
+      TF_FUTURE_CALL_CONTENT (self->proxy), streams_added, NULL, NULL,
+      G_OBJECT (self), &myerror);
+  if (myerror)
+    {
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to StreamAdded signal: %s",
+          myerror->message);
+      g_simple_async_report_gerror_in_idle (G_OBJECT (self), callback,
+          user_data, myerror);
+      return;
+    }
+
+  tf_future_cli_call_content_connect_to_streams_removed (
+      TF_FUTURE_CALL_CONTENT (self->proxy), streams_removed, NULL, NULL,
+      G_OBJECT (self), &myerror);
+  if (myerror)
+    {
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to StreamRemoved signal: %s",
+          myerror->message);
+      g_simple_async_report_gerror_in_idle (G_OBJECT (self), callback,
+          user_data, myerror);
+      return;
+    }
+
+
+  res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tf_call_content_init_async);
+
+  tp_cli_dbus_properties_call_get_all (self->proxy, -1,
+      TF_FUTURE_IFACE_CALL_CONTENT, got_content_properties, res,
+      g_object_unref, G_OBJECT (self));
+}
+
+static gboolean
+tf_call_content_init_finish (GAsyncInitable *initable,
+    GAsyncResult *res,
     GError **error)
+{
+  GSimpleAsyncResult *simple_res;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (res,
+          G_OBJECT (initable), tf_call_content_init_async), FALSE);
+  simple_res = G_SIMPLE_ASYNC_RESULT (res);
+
+  if (g_simple_async_result_propagate_error (simple_res, error))
+    return FALSE;
+
+  return g_simple_async_result_get_op_res_gboolean (simple_res);
+}
+
+TfCallContent *
+tf_call_content_new_async (TfCallChannel *call_channel,
+    const gchar *object_path, GError **error,
+    GAsyncReadyCallback callback, gpointer user_data)
 {
   TfCallContent *self;
   TfFutureCallContent *proxy = tf_future_call_content_new (
       call_channel->proxy, object_path, error);
-  GError *myerror = NULL;
 
   if (!proxy)
     return NULL;
@@ -585,37 +697,13 @@ tf_call_content_new (TfCallChannel *call_channel,
   self->call_channel = call_channel;
   self->proxy = proxy;
 
-  tf_future_cli_call_content_connect_to_streams_added (
-      TF_FUTURE_CALL_CONTENT (proxy), streams_added, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
-    {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
-          "Error connectiong to StreamAdded signal: %s",
-          myerror->message);
-      g_object_unref (self);
-      g_propagate_error (error, myerror);
-      return NULL;
-    }
-
-  tf_future_cli_call_content_connect_to_streams_removed (
-      TF_FUTURE_CALL_CONTENT (proxy), streams_removed, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
-    {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
-          "Error connectiong to StreamRemoved signal: %s",
-          myerror->message);
-      g_object_unref (self);
-      g_propagate_error (error, myerror);
-      return NULL;
-    }
-
-  tp_cli_dbus_properties_call_get_all (proxy, -1, TF_FUTURE_IFACE_CALL_CONTENT,
-      got_content_properties, NULL, NULL, G_OBJECT (self));
+  g_async_initable_init_async (G_ASYNC_INITABLE (self), 0, NULL,
+      callback, user_data);
 
   return self;
 }
+
+
 
 static GPtrArray *
 fscodecs_to_tpcodecs (GList *codecs)

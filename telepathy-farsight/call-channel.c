@@ -44,7 +44,7 @@ static void call_channel_async_initable_init (GAsyncInitableIface *asynciface);
 
 G_DEFINE_TYPE_WITH_CODE (TfCallChannel, tf_call_channel, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
-        call_channel_async_initable_init));
+        call_channel_async_initable_init))
 
 
 enum
@@ -218,7 +218,8 @@ tf_call_channel_init_finish (GAsyncInitable *initable,
           G_OBJECT (initable), tf_call_channel_init_async), FALSE);
   simple_res = G_SIMPLE_ASYNC_RESULT (res);
 
-  g_simple_async_result_propagate_error (simple_res, error);
+  if (g_simple_async_result_propagate_error (simple_res, error))
+    return FALSE;
 
   return g_simple_async_result_get_op_res_gboolean (simple_res);
 }
@@ -286,11 +287,40 @@ tf_call_channel_get_property (GObject    *object,
     }
 }
 
+static void
+content_ready (GObject *object, GAsyncResult *res, gpointer user_data)
+{
+  TfCallChannel *self = user_data;
+  TfCallContent *content = TF_CALL_CONTENT (object);
+
+
+  if (g_async_initable_init_finish (G_ASYNC_INITABLE (object), res, NULL))
+    {
+      g_signal_emit (self, signals[SIGNAL_CONTENT_ADDED], 0, content);
+    }
+  else
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+
+      g_hash_table_iter_init (&iter, self->contents);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          if (value == object)
+            {
+              g_hash_table_iter_remove (&iter);
+              break;
+            }
+        }
+    }
+}
+
 static gboolean
 add_content (TfCallChannel *self, const gchar *content_path)
 {
   GError *error = NULL;
-  TfCallContent *content = tf_call_content_new (self, content_path, &error);
+  TfCallContent *content = tf_call_content_new_async (self, content_path,
+      &error, content_ready, self);
 
   if (error)
     {
@@ -300,8 +330,6 @@ add_content (TfCallChannel *self, const gchar *content_path)
     }
 
   g_hash_table_insert (self->contents, g_strdup (content_path), content);
-
-  g_signal_emit (self, signals[SIGNAL_CONTENT_ADDED], 0, content);
 
   return TRUE;
 }
@@ -319,7 +347,6 @@ got_contents (TpProxy *proxy, const GValue *out_value,
     {
       g_warning ("Error getting the Contents property: %s",
           error->message);
-      g_simple_async_result_set_op_res_gboolean (res, FALSE);
       g_simple_async_result_set_from_error (res, error);
       g_simple_async_result_complete (res);
       return;
@@ -369,6 +396,7 @@ content_removed (TpChannel *proxy,
 
   if (content)
     {
+      g_object_ref (content);
       g_hash_table_remove (self->contents, arg_Content);
 
       g_signal_emit (self, signals[SIGNAL_CONTENT_REMOVED], 0, content);
@@ -389,7 +417,6 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
     {
       g_warning ("Error getting the hardware streaming property: %s",
           error->message);
-      g_simple_async_result_set_op_res_gboolean (res, FALSE);
       g_simple_async_result_set_from_error (res, error);
       g_simple_async_result_complete (res);
       return;
@@ -399,7 +426,6 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
     {
       g_warning ("Hardware streaming property is TRUE, ignoring");
 
-      g_simple_async_result_set_op_res_gboolean (res, FALSE);
       g_simple_async_result_set_error (res, TP_ERROR, TP_ERROR_NOT_CAPABLE,
           "This channel does hardware streaming, not handled here");
       g_simple_async_result_complete (res);
@@ -412,7 +438,6 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
     {
       g_warning ("Error connectiong to ContentAdded signal: %s",
           myerror->message);
-      g_simple_async_result_set_op_res_gboolean (res, FALSE);
       g_simple_async_result_set_from_error (res, myerror);
       g_simple_async_result_complete (res);
       g_clear_error (&myerror);
@@ -426,7 +451,6 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
     {
       g_warning ("Error connectiong to ContentRemoved signal: %s",
           myerror->message);
-      g_simple_async_result_set_op_res_gboolean (res, FALSE);
       g_simple_async_result_set_from_error (res, myerror);
       g_simple_async_result_complete (res);
       g_clear_error (&myerror);
