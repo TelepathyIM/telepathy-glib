@@ -689,7 +689,7 @@ _insert_to_cache_table (TplLogStore *self,
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   const char *account, *channel, *identifier, *log_id;
   gboolean chatroom;
-  char *date;
+  char *date = NULL;
   gint msg_id;
   sqlite3_stmt *sql = NULL;
   gboolean retval = FALSE;
