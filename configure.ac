@@ -236,7 +236,6 @@ Configure summary:
 	Coding style checks.........:  ${ENABLE_CODING_STYLE_CHECKS}
 	Python Twisted tests........:  ${TEST_PYTHON}
 	Bugreporting URL............:  ${PACKAGE_BUGREPORT}
-	Enable Text Channel.........:  ${enable_channeltext}
 	Public extensions library...:  ${enable_public_extensions}
 
 
