@@ -665,7 +665,7 @@ tpl_log_store_sqlite_add_message (TplLogStore *self,
     }
 
   retval = tpl_log_store_sqlite_add_message_cache (self, message, error);
-  if (error != NULL && *error != NULL)
+  if (retval == FALSE)
     /* either the message has already been log, or a SQLite fatal error
      * occurred, I won't update the counter table */
     goto out;
