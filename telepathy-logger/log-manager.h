@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
  * Copyright (C) 2003-2007 Imendio AB
- * Copyright (C) 2007-2010 Collabora Ltd.
+ * Copyright (C) 2007-2011 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,7 @@ GQuark tpl_log_manager_errors_quark (void);
 
 typedef enum
 {
-  TPL_LOG_MANAGER_ERROR_ADD_MESSAGE
+  TPL_LOG_MANAGER_ERROR_ADD_EVENT
 } TplLogManagerError;
 
 
@@ -59,16 +59,24 @@ typedef struct
   GObjectClass parent_class;
 } TplLogManagerClass;
 
+typedef enum
+{
+  TPL_EVENT_SEARCH_TEXT       = 1 << 0,
+  TPL_EVENT_SEARCH_TEXT_GROUP = 1 << 1,
+  TPL_EVENT_SEARCH_CALL       = 1 << 2,
+  TPL_EVENT_SEARCH_ALL        = 0xffff
+} TplEventSearchType;
+
 typedef struct
 {
   TpAccount *account;
-  gchar *chat_id;
-  gboolean is_chatroom;
+  TplEventSearchType type;
+  gchar *id;
   gchar *filename;
   GDate *date;
 } TplLogSearchHit;
 
-typedef gboolean (*TplLogMessageFilter) (TplEntry *message,
+typedef gboolean (*TplLogEventFilter) (TplEntry *event,
     gpointer user_data);
 
 GType tpl_log_manager_get_type (void);
@@ -76,7 +84,7 @@ GType tpl_log_manager_get_type (void);
 TplLogManager *tpl_log_manager_dup_singleton (void);
 
 gboolean tpl_log_manager_exists (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom);
+    TpAccount *account, const gchar *id, TplEventSearchType type);
 
 gboolean tpl_log_manager_get_dates_finish (TplLogManager *self,
     GAsyncResult *result,
@@ -84,39 +92,39 @@ gboolean tpl_log_manager_get_dates_finish (TplLogManager *self,
     GError **error);
 
 void tpl_log_manager_get_dates_async (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
+    TpAccount *account, const gchar *id, TplEventSearchType type,
     GAsyncReadyCallback callback, gpointer user_data);
 
-gboolean tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
+gboolean tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **messages,
+    GList **events,
     GError **error);
 
-void tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
+void tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
+    TpAccount *account, const gchar *id, TplEventSearchType type,
     const GDate *date, GAsyncReadyCallback callback, gpointer user_data);
 
-gboolean tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
+gboolean tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **messages,
+    GList **events,
     GError **error);
 
-void tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
-    TpAccount *account, const gchar *chat_id, gboolean is_chatroom,
-    guint num_messages, TplLogMessageFilter filter, gpointer filter_user_data,
+void tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
+    TpAccount *account, const gchar *id, TplEventSearchType type,
+    guint num_events, TplLogEventFilter filter, gpointer filter_user_data,
     GAsyncReadyCallback callback, gpointer user_data);
 
-gboolean tpl_log_manager_get_chats_finish (TplLogManager *self,
+gboolean tpl_log_manager_get_events_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **chats,
+    GList **events,
     GError **error);
 
-void tpl_log_manager_get_chats_async (TplLogManager *self,
+void tpl_log_manager_get_events_async (TplLogManager *self,
     TpAccount *account, GAsyncReadyCallback callback, gpointer user_data);
 
 gboolean tpl_log_manager_search_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **chats,
+    GList **hits,
     GError **error);
 
 void tpl_log_manager_search_async (TplLogManager *manager,
