@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
  * Copyright (C) 2003-2007 Imendio AB
- * Copyright (C) 2007-2010 Collabora Ltd.
+ * Copyright (C) 2007-2011 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,11 +61,11 @@
  */
 
 /**
- * TplLogMessageFilter:
- * @message: the #TplEntry to filter
+ * TplLogEventFilter:
+ * @event: the #TplEntry to filter
  * @user_data: user-supplied data
  *
- * Returns: %TRUE if @message should appear in the result
+ * Returns: %TRUE if @event should appear in the result
  */
 
 /**
@@ -90,26 +90,25 @@ typedef void (*TplLogManagerFreeFunc) (gpointer *data);
 typedef struct
 {
   TpAccount *account;
-  gchar *chat_id;
-  gboolean is_chatroom;
+  gchar *id;
+  TplEventSearchType type;
   GDate *date;
-  guint num_messages;
-  TplLogMessageFilter filter;
+  guint num_events;
+  TplLogEventFilter filter;
   gchar *search_text;
   gpointer user_data;
   TplEntry *logentry;
-} TplLogManagerChatInfo;
+} TplLogManagerEventInfo;
 
 
 typedef struct
 {
   TplLogManager *manager;
-  TplLogManagerChatInfo *request;
+  TplLogManagerEventInfo *request;
   TplLogManagerFreeFunc request_free;
   GAsyncReadyCallback cb;
   gpointer user_data;
 } TplLogManagerAsyncData;
-
 
 
 G_DEFINE_TYPE (TplLogManager, tpl_log_manager, G_TYPE_OBJECT);
@@ -235,7 +234,7 @@ tpl_log_manager_init (TplLogManager *self)
   if (store != NULL)
     g_object_set (store, "empathy-legacy", TRUE, NULL);
 
-  /* Load the message counting cache */
+  /* Load the event counting cache */
   add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE, TRUE);
 
   DEBUG ("Log Manager initialised");
@@ -255,24 +254,24 @@ tpl_log_manager_dup_singleton (void)
 
 
 /**
- * _tpl_log_manager_add_message
+ * _tpl_log_manager_add_event
  * @manager: the log manager
- * @message: a TplEntry subclass's instance
+ * @event: a TplEntry subclass's instance
  * @error: the memory location of GError, filled if an error occurs
  *
- * It stores @message, sending it to all the registered TplLogStore which have
+ * It stores @event, sending it to all the registered TplLogStore which have
  * #TplLogStore:writable set to %TRUE.
- * Every TplLogManager is guaranteed to have at least TplLogStore a readable
- * and a writable LogStore regitered.
+ * Every TplLogManager is guaranteed to have at least a readable
+ * and a writable TplLogStore regitered.
  *
  * It applies for any registered TplLogStore with #TplLogstore:writable property
  * %TRUE
  *
- * Returns: %TRUE if the message has been successfully added, %FALSE otherwise.
+ * Returns: %TRUE if the event has been successfully added, %FALSE otherwise.
  */
 gboolean
-_tpl_log_manager_add_message (TplLogManager *manager,
-    TplEntry *message,
+_tpl_log_manager_add_event (TplLogManager *manager,
+    TplEntry *event,
     GError **error)
 {
   TplLogManagerPriv *priv;
@@ -281,24 +280,24 @@ _tpl_log_manager_add_message (TplLogManager *manager,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
-  g_return_val_if_fail (TPL_IS_ENTRY (message), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTRY (event), FALSE);
 
   priv = manager->priv;
 
   if (!_tpl_conf_is_globally_enabled (priv->conf))
     {
-      /* ignore message, logging is globally disabled */
+      /* ignore event, logging is globally disabled */
       return FALSE;
     }
 
-  /* send the message to any writable log store */
+  /* send the event to any writable log store */
   for (l = priv->writable_stores; l != NULL; l = g_list_next (l))
     {
       GError *loc_error = NULL;
       TplLogStore *store = l->data;
       gboolean result;
 
-      result = _tpl_log_store_add_message (store, message, &loc_error);
+      result = _tpl_log_store_add_event (store, event, &loc_error);
       if (!result)
         {
           CRITICAL ("logstore name=%s: %s. "
@@ -312,11 +311,11 @@ _tpl_log_manager_add_message (TplLogManager *manager,
   if (!retval)
     {
       CRITICAL ("Failed to write to all "
-          "writable LogStores log-id %s.", _tpl_entry_get_log_id (message));
+          "writable LogStores log-id %s.", _tpl_entry_get_log_id (event));
       g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
-          TPL_LOG_MANAGER_ERROR_ADD_MESSAGE,
-          "Not recoverable error occurred during log manager's "
-          "add_message() execution");
+          TPL_LOG_MANAGER_ERROR_ADD_EVENT,
+          "Non recoverable error occurred during log manager's "
+          "add_event() execution");
     }
   return retval;
 }
@@ -330,7 +329,7 @@ _tpl_log_manager_add_message (TplLogManager *manager,
  * It registers @logstore into @manager, the log store has to be an
  * implementation of the TplLogStore interface.
  *
- * @logstore has to properly implement the add_message method if the
+ * @logstore has to properly implement the add_event method if the
  * #TplLogStore:writable is set to %TRUE.
  *
  * @logstore has to properly implement all the search/query methods if the
@@ -372,7 +371,7 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
     priv->writable_stores = g_list_prepend (priv->writable_stores, logstore);
 
   /* reference just once, writable/readable lists are kept in sync with the
-   * general list and never written separatedly */
+   * general list and never written separately */
   priv->stores = g_list_prepend (priv->stores, g_object_ref (logstore));
   DEBUG ("LogStore name=%s registered", _tpl_log_store_get_name (logstore));
 
@@ -383,36 +382,34 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
  * tpl_log_manager_exists:
  * @manager: TplLogManager
  * @account: TpAccount
- * @chat_id: a non-NULL chat id
- * @chatroom: whether @chat_id is a chatroom or not
+ * @id: a non-NULL event id
+ * @type: the event type
  *
- * Checks if @chat_id does exist for @account and
- * - is a chatroom, if @chatroom is %TRUE
- * - is not a chatroom, if @chatroom is %FALSE
+ * Checks if @id of type @type exists for @account.
  *
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
 
- * Returns: %TRUE if @chat_id exists, %FALSE otherwise
+ * Returns: %TRUE if @id exists, %FALSE otherwise
  */
 gboolean
 tpl_log_manager_exists (TplLogManager *manager,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean chatroom)
+    const gchar *id,
+    TplEventSearchType type)
 {
   GList *l;
   TplLogManagerPriv *priv;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
-  g_return_val_if_fail (chat_id != NULL, FALSE);
+  g_return_val_if_fail (id != NULL, FALSE);
 
   priv = manager->priv;
 
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       if (_tpl_log_store_exists (TPL_LOG_STORE (l->data),
-            account, chat_id, chatroom))
+            account, id, type))
         return TRUE;
     }
 
@@ -422,34 +419,32 @@ tpl_log_manager_exists (TplLogManager *manager,
 
 /**
  * _tpl_log_manager_get_dates:
- * @manager: a TplLogManager
- * @account: a TpAccount
- * @chat_id: a non-NULL chat identifier
- * @chatroom: whather if the request is related to a chatroom or not.
+ * @manager: a #TplLogManager
+ * @account: a #TpAccount
+ * @id: a non-NULL event identifier
+ * @type: the event type
  *
  * Retrieves a list of #GDate corresponding to each day
- * at least a message was sent to or received from @chat_id.
- * @chat_id may be the id of a buddy or a chatroom, depending on the value of
- * @chatroom.
+ * at least an event of type @type was sent to or received from @id.
+ * @id may be the id of a buddy or a chatroom,
  *
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
  *
  * Returns: a GList of (GDate *), to be freed using something like
- * g_list_foreach (lst, g_date_free, NULL);
- * g_list_free (lst);
+ * g_list_free_full (lst, g_date_free);
  */
 GList *
 _tpl_log_manager_get_dates (TplLogManager *manager,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean chatroom)
+    const gchar *id,
+    TplEventSearchType type)
 {
   GList *l, *out = NULL;
   TplLogManagerPriv *priv;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
-  g_return_val_if_fail (chat_id != NULL, NULL);
+  g_return_val_if_fail (id != NULL, NULL);
 
   priv = manager->priv;
 
@@ -460,7 +455,7 @@ _tpl_log_manager_get_dates (TplLogManager *manager,
 
       /* Insert dates of each store in the out list. Keep the out list sorted
        * and avoid to insert dups. */
-      new = _tpl_log_store_get_dates (store, account, chat_id, chatroom);
+      new = _tpl_log_store_get_dates (store, account, id, type);
       while (new)
         {
           if (g_list_find_custom (out, new->data,
@@ -480,17 +475,17 @@ _tpl_log_manager_get_dates (TplLogManager *manager,
 
 
 GList *
-_tpl_log_manager_get_messages_for_date (TplLogManager *manager,
+_tpl_log_manager_get_events_for_date (TplLogManager *manager,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean chatroom,
+    const gchar *id,
+    TplEventSearchType type,
     const GDate *date)
 {
   GList *l, *out = NULL;
   TplLogManagerPriv *priv;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
-  g_return_val_if_fail (chat_id != NULL, NULL);
+  g_return_val_if_fail (id != NULL, NULL);
 
   priv = manager->priv;
 
@@ -498,8 +493,8 @@ _tpl_log_manager_get_messages_for_date (TplLogManager *manager,
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
-      out = g_list_concat (out, _tpl_log_store_get_messages_for_date (store,
-          account, chat_id, chatroom, date));
+      out = g_list_concat (out, _tpl_log_store_get_events_for_date (store,
+          account, id, type, date));
     }
 
   return out;
@@ -507,7 +502,7 @@ _tpl_log_manager_get_messages_for_date (TplLogManager *manager,
 
 
 static gint
-log_manager_message_date_cmp (gconstpointer a,
+log_manager_event_date_cmp (gconstpointer a,
     gconstpointer b)
 {
   TplEntry *one = (TplEntry *) a;
@@ -520,19 +515,19 @@ log_manager_message_date_cmp (gconstpointer a,
   one_time = tpl_entry_get_timestamp (one);
   two_time = tpl_entry_get_timestamp (two);
 
-  /* return -1, o or 1 depending on message1 is newer, the same or older than
-   * message2 */
+  /* return -1, 0 or 1 depending on event1 being newer, the same or older
+   * than event2 */
   return CLAMP (one_time - two_time, -1, 1);
 }
 
 
 GList *
-_tpl_log_manager_get_filtered_messages (TplLogManager *manager,
+_tpl_log_manager_get_filtered_events (TplLogManager *manager,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean chatroom,
-    guint num_messages,
-    TplLogMessageFilter filter,
+    const gchar *id,
+    TplEventSearchType type,
+    guint num_events,
+    TplLogEventFilter filter,
     gpointer user_data)
 {
   TplLogManagerPriv *priv;
@@ -541,40 +536,40 @@ _tpl_log_manager_get_filtered_messages (TplLogManager *manager,
   guint i = 0;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (chat_id), NULL);
+  g_return_val_if_fail (!TPL_STR_EMPTY (id), NULL);
 
   priv = manager->priv;
 
-  /* Get num_messages from each log store and keep only the
-   * newest ones in the out list. Keep that list sorted: Older first. */
+  /* Get num_events from each log store and keep only the
+   * newest ones in the out list. Keep that list sorted: olders first. */
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *new;
 
-      new = _tpl_log_store_get_filtered_messages (store, account, chat_id,
-          chatroom, num_messages, filter, user_data);
+      new = _tpl_log_store_get_filtered_events (store, account, id,
+          type, num_events, filter, user_data);
       while (new != NULL)
         {
-          if (i < num_messages)
+          if (i < num_events)
             {
-              /* We have less message than needed so far. Keep this message */
+              /* We have less events than needed so far. Keep this event. */
               out = g_list_insert_sorted (out, new->data,
-                  (GCompareFunc) log_manager_message_date_cmp);
+                  (GCompareFunc) log_manager_event_date_cmp);
               i++;
             }
-          else if (log_manager_message_date_cmp (new->data, out->data) > 0)
+          else if (log_manager_event_date_cmp (new->data, out->data) > 0)
             {
-              /* This message is newer than the oldest message we have in out
-               * list. Remove the head of out list and insert this message */
+              /* This event is newer than the oldest event we have in out
+               * list. Remove the head of out list and insert this event. */
               g_object_unref (out->data);
               out = g_list_delete_link (out, out);
               out = g_list_insert_sorted (out, new->data,
-                  (GCompareFunc) log_manager_message_date_cmp);
+                  (GCompareFunc) log_manager_event_date_cmp);
             }
           else
             {
-              /* This message is older than the oldest message we have in out
+              /* This event is older than the oldest event we have in out
                * list. Drop it. */
               g_object_unref (new->data);
             }
@@ -589,49 +584,27 @@ _tpl_log_manager_get_filtered_messages (TplLogManager *manager,
 
 /**
  * _tpl_log_manager_search_hit_compare:
- * @a: a TplLogSerachHit
- * @b: a TplLogSerachHit
+ * @a: a #TplLogSearchHit
+ * @b: a #TplLogSearchHit
  *
- * Compare @a and @b, returning an ordered relation between the two.
- * Acts similar to the strcmp family, with the difference that since
- * TplLogSerachHit is not a plain string, but a struct, the order relation
- * will be a coposition of:
- * - the order relation between @a.chat_it and @b.chat_id
- * - the order relation between @a.chatroom and @b.chatroom, being
- *   chatroom = %FALSE > chatroom = %TRUE (meaning: a 1-1 message is greater
- *   than a chatroom one).
+ * Compares @a and @b.
  *
- * Returns: -1 if a > b, 1 if a < b or 0 is a == b */
+ * Returns: 0 if a == b, nonzero otherwise.
+ */
 gint
 _tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
     TplLogSearchHit *b)
 {
-  /* if chat_ids differ, just return their sorting return value */
-  gint ret;
+  g_return_val_if_fail (a != NULL && a->id != NULL, 1);
+  g_return_val_if_fail (b != NULL && b->id != NULL, 1);
 
-  g_return_val_if_fail (a != NULL && a->chat_id != NULL, 1);
-  g_return_val_if_fail (b != NULL && b->chat_id != NULL, -1);
-
-  ret = g_strcmp0 (a->chat_id, b->chat_id);
-
-  if (ret == 0)
+  if (g_strcmp0 (a->id, b->id) == 0)
     {
-      /* if chat_id are the same, a further check needed: chat_id may be equal
-       * but one can refer to a chatroom and the other not.
-       * Definition: chatroom < not_chatroom */
-      if (a->is_chatroom != b->is_chatroom)
-        {
-          if (a->is_chatroom)
-            ret = 1; /* b > a */
-          else
-            ret = -1; /* a > b */
-        }
-      else
-        ret = 0; /* a = b */
+      if (a->type == b->type)
+        return 0;
     }
-  /* else original strcmp result is returned */
 
-  return ret;
+  return 1;
 }
 
 
@@ -643,12 +616,12 @@ _tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
  * It queries the readable TplLogStores in @manager for all the buddies the
  * log store has at least a conversation stored originated using @account.
  *
- * Returns: a list of pointer to TplLogSearchHit, having chat_id and
- * is_chatroom fields filled. the result needs to be freed after use using
+ * Returns: a list of pointer to TplLogSearchHit, having id and
+ * type fields filled. the result needs to be freed after use using
  * _tpl_log_manager_search_hit_free
  */
 GList *
-_tpl_log_manager_get_chats (TplLogManager *manager,
+_tpl_log_manager_get_events (TplLogManager *manager,
     TpAccount *account)
 {
   GList *l, *out = NULL;
@@ -664,7 +637,7 @@ _tpl_log_manager_get_chats (TplLogManager *manager,
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *in, *j;
 
-      in = _tpl_log_store_get_chats (store, account);
+      in = _tpl_log_store_get_events (store, account);
       /* merge the lists avoiding duplicates */
       for (j = in; j != NULL; j = g_list_next (j))
         {
@@ -688,9 +661,10 @@ _tpl_log_manager_get_chats (TplLogManager *manager,
 
 
 GList *
-_tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
+_tpl_log_manager_search_in_identifier (TplLogManager *manager,
     TpAccount *account,
     gchar const *identifier,
+    TplEventSearchType type,
     const gchar *text)
 {
   GList *l, *out = NULL;
@@ -708,8 +682,8 @@ _tpl_log_manager_search_in_identifier_chats_new (TplLogManager *manager,
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
       out = g_list_concat (out,
-          _tpl_log_store_search_in_identifier_chats_new
-          (store, account, identifier, text));
+          _tpl_log_store_search_in_identifier
+          (store, account, identifier, type, text));
     }
 
   return out;
@@ -740,20 +714,20 @@ _tpl_log_manager_search (TplLogManager *manager,
 
 TplLogSearchHit *
 _tpl_log_manager_search_hit_new (TpAccount *account,
-    const gchar *chat_id,
-    gboolean is_chatroom,
+    const gchar *id,
+    TplEventSearchType type,
     const gchar *filename,
     GDate *date)
 {
   TplLogSearchHit *hit = g_slice_new0 (TplLogSearchHit);
 
-  g_assert (chat_id != NULL);
+  g_assert (id != NULL);
 
   if (account != NULL)
     hit->account = g_object_ref (account);
 
-  hit->chat_id = g_strdup (chat_id);
-  hit->is_chatroom = is_chatroom;
+  hit->id = g_strdup (id);
+  hit->type = type;
 
   if (filename != NULL)
     hit->filename = g_strdup (filename);
@@ -775,7 +749,7 @@ _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
     g_date_free (hit->date);
 
   g_free (hit->filename);
-  g_free (hit->chat_id);
+  g_free (hit->id);
 
   g_slice_free (TplLogSearchHit, hit);
 }
@@ -817,23 +791,23 @@ tpl_log_manager_async_data_free (TplLogManagerAsyncData *data)
 }
 
 
-static TplLogManagerChatInfo *
-tpl_log_manager_chat_info_new (void)
+static TplLogManagerEventInfo *
+tpl_log_manager_event_info_new (void)
 {
-  return g_slice_new0 (TplLogManagerChatInfo);
+  return g_slice_new0 (TplLogManagerEventInfo);
 }
 
 
 static void
-tpl_log_manager_chat_info_free (TplLogManagerChatInfo *data)
+tpl_log_manager_event_info_free (TplLogManagerEventInfo *data)
 {
   tp_clear_object (&data->account);
   tp_clear_object (&data->logentry);
 
-  tp_clear_pointer (&data->chat_id, g_free);
+  tp_clear_pointer (&data->id, g_free);
   tp_clear_pointer (&data->date, g_date_free);
   tp_clear_pointer (&data->search_text, g_free);
-  g_slice_free (TplLogManagerChatInfo, data);
+  g_slice_free (TplLogManagerEventInfo, data);
 }
 
 
@@ -850,83 +824,7 @@ _tpl_log_manager_async_operation_cb (GObject *source_object,
 
   tpl_log_manager_async_data_free (async_data);
 }
-/* end of Async common function */
 
-
-gboolean
-_tpl_log_manager_add_message_finish (TplLogManager *self,
-    GAsyncResult *result,
-    GError **error)
-{
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), _tpl_log_manager_add_message_async), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  return TRUE;
-}
-
-
-static void
-_add_message_async_thread (GSimpleAsyncResult *simple,
-    GObject *object,
-    GCancellable *cancellable)
-{
-  TplLogManagerAsyncData *async_data;
-  TplLogManagerChatInfo *chat_info;
-  GError *error = NULL;
-
-  async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
-  chat_info = async_data->request;
-
-  _tpl_log_manager_add_message (async_data->manager, chat_info->logentry,
-      &error);
-  if (error != NULL)
-    {
-      DEBUG ("synchronous operation error: %s", error->message);
-      g_simple_async_result_set_from_error (simple, error);
-      g_error_free (error);
-    }
-}
-
-void
-_tpl_log_manager_add_message_async (TplLogManager *manager,
-    TplEntry *message,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
-  TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
-  GSimpleAsyncResult *simple;
-
-  g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
-  g_return_if_fail (TPL_IS_ENTRY (message));
-
-  chat_info->logentry = g_object_ref (message);
-
-  async_data->manager = g_object_ref (manager);
-  async_data->request = chat_info;
-  async_data->request_free =
-    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
-  async_data->cb = callback;
-  async_data->user_data = user_data;
-
-  simple = g_simple_async_result_new (G_OBJECT (manager),
-      _tpl_log_manager_async_operation_cb, async_data,
-      _tpl_log_manager_add_message_async);
-
-  g_simple_async_result_run_in_thread (simple, _add_message_async_thread, 0,
-      NULL);
-
-  g_object_unref (simple);
-}
 
 /* There is no g_date_copy() */
 static GDate *
@@ -994,15 +892,15 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
     GCancellable *cancellable)
 {
   TplLogManagerAsyncData *async_data;
-  TplLogManagerChatInfo *chat_info;
+  TplLogManagerEventInfo *event_info;
   GList *lst = NULL;
 
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
-  chat_info = async_data->request;
+  event_info = async_data->request;
 
   lst = _tpl_log_manager_get_dates (async_data->manager,
-      chat_info->account, chat_info->chat_id,
-      chat_info->is_chatroom);
+      event_info->account, event_info->id,
+      event_info->type);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _get_dates_async_result_free);
@@ -1012,15 +910,13 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
  * tpl_log_manager_get_dates_async:
  * @manager: a #TplLogManager
  * @account: a #TpAccount
- * @chat_id: the chat identifier (can't be %NULL)
- * @is_chatroom: whather if the request is related to a chatroom or not.
+ * @id: the event identifier (can't be %NULL)
+ * @type: the event type
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
  * Retrieves a list of #GDate corresponding to each day
- * at least a message was sent to or received from @chat_id.
- * @chat_id may be the id of a buddy or a chatroom, depending on the value of
- * @is_chatroom.
+ * at least an event of type @type was sent to or received from @id.
  *
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
@@ -1028,27 +924,27 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
 void
 tpl_log_manager_get_dates_async (TplLogManager *manager,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean is_chatroom,
+    const gchar *id,
+    TplEventSearchType type,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
+  TplLogManagerEventInfo *event_info = tpl_log_manager_event_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
   g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
   g_return_if_fail (TP_IS_ACCOUNT (account));
-  g_return_if_fail (!TPL_STR_EMPTY (chat_id));
+  g_return_if_fail (!TPL_STR_EMPTY (id));
 
-  chat_info->account = g_object_ref (account);
-  chat_info->chat_id = g_strdup (chat_id);
-  chat_info->is_chatroom = is_chatroom;
+  event_info->account = g_object_ref (account);
+  event_info->id = g_strdup (id);
+  event_info->type = type;
 
   async_data->manager = g_object_ref (manager);
-  async_data->request = chat_info;
+  async_data->request = event_info;
   async_data->request_free =
-    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+    (TplLogManagerFreeFunc) tpl_log_manager_event_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
@@ -1063,18 +959,18 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
 }
 
 /**
- * tpl_log_manager_get_messages_for_date_finish
+ * tpl_log_manager_get_events_for_date_finish
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @messages: a pointer to a #GList used to return the list of #GDate
+ * @events: a pointer to a #GList used to return the list of #GDate
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
  */
 gboolean
-tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
+tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **messages,
+    GList **events,
     GError **error)
 {
   GSimpleAsyncResult *simple;
@@ -1082,19 +978,19 @@ tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_get_messages_for_date_async), FALSE);
+        G_OBJECT (self), tpl_log_manager_get_events_for_date_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
 
-  if (messages != NULL)
+  if (events != NULL)
     {
-      *messages = g_list_copy (g_simple_async_result_get_op_res_gpointer (
+      *events = g_list_copy (g_simple_async_result_get_op_res_gpointer (
             simple));
 
-      g_list_foreach (*messages, (GFunc) g_object_ref, NULL);
+      g_list_foreach (*events, (GFunc) g_object_ref, NULL);
     }
 
   return TRUE;
@@ -1102,7 +998,7 @@ tpl_log_manager_get_messages_for_date_finish (TplLogManager *self,
 
 
 static void
-_get_messages_for_date_async_result_free (gpointer data)
+_get_events_for_date_async_result_free (gpointer data)
 {
   GList *lst = data; /* list of TPL_ENTRY */
 
@@ -1112,92 +1008,92 @@ _get_messages_for_date_async_result_free (gpointer data)
 
 
 static void
-_get_messages_for_date_async_thread (GSimpleAsyncResult *simple,
+_get_events_for_date_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
   TplLogManagerAsyncData *async_data;
-  TplLogManagerChatInfo *chat_info;
+  TplLogManagerEventInfo *event_info;
   GList *lst;
 
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
-  chat_info = async_data->request;
+  event_info = async_data->request;
 
-  lst = _tpl_log_manager_get_messages_for_date (async_data->manager,
-      chat_info->account,
-      chat_info->chat_id,
-      chat_info->is_chatroom,
-      chat_info->date);
+  lst = _tpl_log_manager_get_events_for_date (async_data->manager,
+      event_info->account,
+      event_info->id,
+      event_info->type,
+      event_info->date);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      _get_messages_for_date_async_result_free);
+      _get_events_for_date_async_result_free);
 }
 
 /**
- * tpl_log_manager_get_messages_for_date_async
+ * tpl_log_manager_get_events_for_date_async
  * @manager: a #TplLogManager
  * @account: a #TpAccount
- * @chat_id: the chat identifier (can't be %NULL)
- * @is_chatroom: %TRUE if the request is related to a chatroom
+ * @id: the event identifier (can't be %NULL)
+ * @type: the event type
  * @date: a #GDate
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Retrieve a list of #TplEntry exchanged at @date with @chat_id.
+ * Retrieve a list of #TplEntry exchanged at @date with @id.
  */
 void
-tpl_log_manager_get_messages_for_date_async (TplLogManager *manager,
+tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean is_chatroom,
+    const gchar *id,
+    TplEventSearchType type,
     const GDate *date,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
+  TplLogManagerEventInfo *event_info = tpl_log_manager_event_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
   g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
   g_return_if_fail (TP_IS_ACCOUNT (account));
-  g_return_if_fail (!TPL_STR_EMPTY (chat_id));
+  g_return_if_fail (!TPL_STR_EMPTY (id));
   g_return_if_fail (date != NULL);
 
-  chat_info->account = g_object_ref (account);
-  chat_info->chat_id = g_strdup (chat_id);
-  chat_info->is_chatroom = is_chatroom;
-  chat_info->date = copy_date (date);
+  event_info->account = g_object_ref (account);
+  event_info->id = g_strdup (id);
+  event_info->type = type;
+  event_info->date = copy_date (date);
 
   async_data->manager = g_object_ref (manager);
-  async_data->request = chat_info;
+  async_data->request = event_info;
   async_data->request_free =
-    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+    (TplLogManagerFreeFunc) tpl_log_manager_event_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_get_messages_for_date_async);
+      tpl_log_manager_get_events_for_date_async);
 
   g_simple_async_result_run_in_thread (simple,
-      _get_messages_for_date_async_thread, 0, NULL);
+      _get_events_for_date_async_thread, 0, NULL);
 
   g_object_unref (simple);
 }
 
 /**
- * tpl_log_manager_get_filtered_messages_finish:
+ * tpl_log_manager_get_filtered_events_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @messages: a pointer to a #GList used to return the list #TplEntry
+ * @events: a pointer to a #GList used to return the list #TplEntry
  * @error: a #GError to fill
  *
- * Returns: #TRUE if the operation was successful, otherwise #FALSE
+ * Returns: #TRUE if the operation was successful, #FALSE otherwise.
  */
 gboolean
-tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
+tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **messages,
+    GList **events,
     GError **error)
 {
   GSimpleAsyncResult *simple;
@@ -1205,19 +1101,19 @@ tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_get_filtered_messages_async), FALSE);
+        G_OBJECT (self), tpl_log_manager_get_filtered_events_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
 
-  if (messages != NULL)
+  if (events != NULL)
     {
-      *messages = g_list_copy (g_simple_async_result_get_op_res_gpointer (
+      *events = g_list_copy (g_simple_async_result_get_op_res_gpointer (
             simple));
 
-      g_list_foreach (*messages, (GFunc) g_object_ref, NULL);
+      g_list_foreach (*events, (GFunc) g_object_ref, NULL);
     }
 
   return TRUE;
@@ -1225,7 +1121,7 @@ tpl_log_manager_get_filtered_messages_finish (TplLogManager *self,
 
 
 static void
-_get_filtered_messages_async_result_free (gpointer data)
+_get_filtered_events_async_result_free (gpointer data)
 {
   GList *lst = data; /* list of TPL_ENTRY */
 
@@ -1234,79 +1130,79 @@ _get_filtered_messages_async_result_free (gpointer data)
 }
 
 static void
-_get_filtered_messages_async_thread (GSimpleAsyncResult *simple,
+_get_filtered_events_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
   TplLogManagerAsyncData *async_data;
-  TplLogManagerChatInfo *chat_info;
+  TplLogManagerEventInfo *event_info;
   GList *lst;
 
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
-  chat_info = async_data->request;
+  event_info = async_data->request;
 
-  lst = _tpl_log_manager_get_filtered_messages (async_data->manager,
-      chat_info->account, chat_info->chat_id, chat_info->is_chatroom,
-      chat_info->num_messages, chat_info->filter, chat_info->user_data);
+  lst = _tpl_log_manager_get_filtered_events (async_data->manager,
+      event_info->account, event_info->id, event_info->type,
+      event_info->num_events, event_info->filter, event_info->user_data);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      _get_filtered_messages_async_result_free);
+      _get_filtered_events_async_result_free);
 }
 
 /**
- * tpl_log_manager_get_filtered_messages_async:
+ * tpl_log_manager_get_filtered_events_async:
  * @manager: a #TplLogManager
  * @account: a #TpAccount
- * @chat_id: the chat identifier (can't be %NULL)
- * @is_chatroom: %TRUE if the request is related to a chatroom
- * @num_messages: number of maximum messages to fetch
- * @filter: an optionnal filter function
+ * @id: the event identifier (can't be %NULL)
+ * @type: the event type
+ * @num_event: number of maximum events to fetch
+ * @filter: an optional filter function
  * @filter_user_data: user data to pass to @filter
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Retrieve the @num_messages most recent messages exchanged with @chat_id.
+ * Retrieve the most recent @num_event events exchanged with @id.
  */
 void
-tpl_log_manager_get_filtered_messages_async (TplLogManager *manager,
+tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean is_chatroom,
-    guint num_messages,
-    TplLogMessageFilter filter,
+    const gchar *id,
+    TplEventSearchType type,
+    guint num_events,
+    TplLogEventFilter filter,
     gpointer filter_user_data,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
+  TplLogManagerEventInfo *event_info = tpl_log_manager_event_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
   g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
   g_return_if_fail (TP_IS_ACCOUNT (account));
-  g_return_if_fail (!TPL_STR_EMPTY (chat_id));
-  g_return_if_fail (num_messages > 0);
+  g_return_if_fail (!TPL_STR_EMPTY (id));
+  g_return_if_fail (num_events > 0);
 
-  chat_info->account = g_object_ref (account);
-  chat_info->chat_id = g_strdup (chat_id);
-  chat_info->is_chatroom = is_chatroom;
-  chat_info->num_messages = num_messages;
-  chat_info->filter = filter;
-  chat_info->user_data = filter_user_data;
+  event_info->account = g_object_ref (account);
+  event_info->id = g_strdup (id);
+  event_info->type = type;
+  event_info->num_events = num_events;
+  event_info->filter = filter;
+  event_info->user_data = filter_user_data;
 
   async_data->manager = g_object_ref (manager);
-  async_data->request = chat_info;
+  async_data->request = event_info;
   async_data->request_free =
-    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+    (TplLogManagerFreeFunc) tpl_log_manager_event_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_get_filtered_messages_async);
+      tpl_log_manager_get_filtered_events_async);
 
   g_simple_async_result_run_in_thread (simple,
-      _get_filtered_messages_async_thread, 0, NULL);
+      _get_filtered_events_async_thread, 0, NULL);
 
   g_object_unref (simple);
 }
@@ -1336,9 +1232,9 @@ copy_search_hit_list (GList *list)
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
  */
 gboolean
-tpl_log_manager_get_chats_finish (TplLogManager *self,
+tpl_log_manager_get_events_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **chats,
+    GList **events,
     GError **error)
 {
   GSimpleAsyncResult *simple;
@@ -1346,87 +1242,88 @@ tpl_log_manager_get_chats_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_get_chats_async), FALSE);
+        G_OBJECT (self), tpl_log_manager_get_events_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
 
-  if (chats != NULL)
+  if (events != NULL)
     {
       GList *list;
 
       list = g_simple_async_result_get_op_res_gpointer (simple);
-      *chats = copy_search_hit_list (list);
+      *events = copy_search_hit_list (list);
     }
 
   return TRUE;
 }
 
 static void
-_get_chats_async_thread (GSimpleAsyncResult *simple,
+_get_events_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
   TplLogManagerAsyncData *async_data;
-  TplLogManagerChatInfo *chat_info;
+  TplLogManagerEventInfo *event_info;
   GList *lst;
 
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
-  chat_info = async_data->request;
+  event_info = async_data->request;
 
-  lst = _tpl_log_manager_get_chats (async_data->manager, chat_info->account);
+  lst = _tpl_log_manager_get_events (async_data->manager, event_info->account);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       (GDestroyNotify) tpl_log_manager_search_free);
 }
 
 /**
- * tpl_log_manager_get_chats_async:
+ * tpl_log_manager_get_events_async:
  * @self: a #TplLogManager
  * @account: a #TpAccount
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Start a query looking for all the conversations on @account.
+ * Start a query looking for all the events on @account.
  */
 void
-tpl_log_manager_get_chats_async (TplLogManager *self,
+tpl_log_manager_get_events_async (TplLogManager *self,
     TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
+  TplLogManagerEventInfo *event_info = tpl_log_manager_event_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
   g_return_if_fail (TPL_IS_LOG_MANAGER (self));
   g_return_if_fail (TP_IS_ACCOUNT (account));
 
-  chat_info->account = g_object_ref (account);
+  event_info->account = g_object_ref (account);
 
   async_data->manager = g_object_ref (self);
-  async_data->request = chat_info;
+  async_data->request = event_info;
   async_data->request_free =
-    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+    (TplLogManagerFreeFunc) tpl_log_manager_event_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
   simple = g_simple_async_result_new (G_OBJECT (self),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_get_chats_async);
+      tpl_log_manager_get_events_async);
 
-  g_simple_async_result_run_in_thread (simple, _get_chats_async_thread, 0,
+  g_simple_async_result_run_in_thread (simple, _get_events_async_thread, 0,
       NULL);
 
   g_object_unref (simple);
 }
 
+
 gboolean
-_tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
+_tpl_log_manager_search_in_identifier_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **chats,
+    GList **hits,
     GError **error)
 {
   GSimpleAsyncResult *simple;
@@ -1435,7 +1332,7 @@ _tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
         G_OBJECT (self),
-        _tpl_log_manager_search_in_identifier_chats_new_async),
+        _tpl_log_manager_search_in_identifier_async),
       FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
@@ -1443,19 +1340,19 @@ _tpl_log_manager_search_in_identifier_chats_new_finish (TplLogManager *self,
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
 
-  if (chats != NULL)
+  if (hits != NULL)
     {
       GList *list;
 
       list = g_simple_async_result_get_op_res_gpointer (simple);
-      *chats = copy_search_hit_list (list);
+      *hits = copy_search_hit_list (list);
     }
 
   return TRUE;
 }
 
 static void
-_search_in_identifier_chats_new_async_result_free (gpointer data)
+_search_in_identifier_async_result_free (gpointer data)
 {
   GList *lst = data; /* list of TplSearchHit */
 
@@ -1465,60 +1362,64 @@ _search_in_identifier_chats_new_async_result_free (gpointer data)
 
 
 static void
-_search_in_identifier_chats_new_async_thread (GSimpleAsyncResult *simple,
+_search_in_identifier_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
   TplLogManagerAsyncData *async_data;
-  TplLogManagerChatInfo *chat_info;
+  TplLogManagerEventInfo *event_info;
   GList *lst;
 
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
-  chat_info = async_data->request;
+  event_info = async_data->request;
 
-  lst = _tpl_log_manager_search_in_identifier_chats_new (async_data->manager,
-      chat_info->account, chat_info->chat_id, chat_info->search_text);
+  lst = _tpl_log_manager_search_in_identifier (async_data->manager,
+      event_info->account, event_info->id, event_info->type,
+      event_info->search_text);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      _search_in_identifier_chats_new_async_result_free);
+      _search_in_identifier_async_result_free);
 }
 
 
 void
-_tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
+_tpl_log_manager_search_in_identifier_async (TplLogManager *manager,
     TpAccount *account,
     gchar const *identifier,
+    TplEventSearchType type,
     const gchar *text,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
+  TplLogManagerEventInfo *event_info = tpl_log_manager_event_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
   g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
   g_return_if_fail (TP_IS_ACCOUNT (account));
 
-  chat_info->account = g_object_ref (account);
-  chat_info->chat_id = g_strdup (identifier);
-  chat_info->search_text = g_strdup (text);
+  event_info->account = g_object_ref (account);
+  event_info->id = g_strdup (identifier);
+  event_info->type = type;
+  event_info->search_text = g_strdup (text);
 
   async_data->manager = g_object_ref (manager);
-  async_data->request = chat_info;
+  async_data->request = event_info;
   async_data->request_free =
-    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+    (TplLogManagerFreeFunc) tpl_log_manager_event_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
   simple = g_simple_async_result_new (G_OBJECT (manager),
       _tpl_log_manager_async_operation_cb, async_data,
-      _tpl_log_manager_search_in_identifier_chats_new_async);
+      _tpl_log_manager_search_in_identifier_async);
 
   g_simple_async_result_run_in_thread (simple,
-      _search_in_identifier_chats_new_async_thread, 0, NULL);
+      _search_in_identifier_async_thread, 0, NULL);
 
   g_object_unref (simple);
 }
+
 
 /**
  * tpl_log_manager_search_finish:
@@ -1532,7 +1433,7 @@ _tpl_log_manager_search_in_identifier_chats_new_async (TplLogManager *manager,
 gboolean
 tpl_log_manager_search_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **chats,
+    GList **hits,
     GError **error)
 {
   GSimpleAsyncResult *simple;
@@ -1547,12 +1448,12 @@ tpl_log_manager_search_finish (TplLogManager *self,
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
 
-  if (chats != NULL)
+  if (hits != NULL)
     {
       GList *list;
 
       list = g_simple_async_result_get_op_res_gpointer (simple);
-      *chats = copy_search_hit_list (list);
+      *hits = copy_search_hit_list (list);
     }
 
   return TRUE;
@@ -1574,14 +1475,14 @@ _search_async_thread (GSimpleAsyncResult *simple,
     GCancellable *cancellable)
 {
   TplLogManagerAsyncData *async_data;
-  TplLogManagerChatInfo *chat_info;
+  TplLogManagerEventInfo *event_info;
   GList *lst;
 
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
-  chat_info = async_data->request;
+  event_info = async_data->request;
 
   lst = _tpl_log_manager_search (async_data->manager,
-      chat_info->search_text);
+      event_info->search_text);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _search_new_async_result_free);
@@ -1602,18 +1503,18 @@ tpl_log_manager_search_async (TplLogManager *manager,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TplLogManagerChatInfo *chat_info = tpl_log_manager_chat_info_new ();
+  TplLogManagerEventInfo *event_info = tpl_log_manager_event_info_new ();
   TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
   GSimpleAsyncResult *simple;
 
   g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
 
-  chat_info->search_text = g_strdup (text);
+  event_info->search_text = g_strdup (text);
 
   async_data->manager = g_object_ref (manager);
-  async_data->request = chat_info;
+  async_data->request = event_info;
   async_data->request_free =
-    (TplLogManagerFreeFunc) tpl_log_manager_chat_info_free;
+    (TplLogManagerFreeFunc) tpl_log_manager_event_info_free;
   async_data->cb = callback;
   async_data->user_data = user_data;
 
@@ -1651,6 +1552,6 @@ tpl_log_manager_errors_quark (void)
 TplLogSearchHit *
 _tpl_log_manager_search_hit_copy (TplLogSearchHit *hit)
 {
-  return _tpl_log_manager_search_hit_new (hit->account, hit->chat_id,
-      hit->is_chatroom, hit->filename, hit->date);
+  return _tpl_log_manager_search_hit_new (hit->account, hit->id,
+      hit->type, hit->filename, hit->date);
 }
