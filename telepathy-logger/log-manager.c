@@ -145,7 +145,7 @@ log_manager_constructor (GType type, guint n_props,
 {
   GObject *retval = NULL;
 
-  if (manager_singleton)
+  if (G_LIKELY (manager_singleton))
     retval = g_object_ref (manager_singleton);
   else
     {
