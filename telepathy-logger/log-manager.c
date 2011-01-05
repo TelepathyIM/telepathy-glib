@@ -409,7 +409,7 @@ tpl_log_manager_exists (TplLogManager *manager,
 
   priv = manager->priv;
 
-  for (l = priv->stores; l != NULL; l = g_list_next (l))
+  for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       if (_tpl_log_store_exists (TPL_LOG_STORE (l->data),
             account, chat_id, chatroom))
