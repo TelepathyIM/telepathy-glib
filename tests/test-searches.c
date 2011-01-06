@@ -74,7 +74,7 @@ main (int argc, char *argv[])
 
 
   /* we do not want duplicates */
-  ret = _tpl_log_manager_get_chats (manager, acc);
+  ret = _tpl_log_manager_get_events (manager, acc);
   ret = g_list_sort (ret, (GCompareFunc) _tpl_log_manager_search_hit_compare);
   for (loc = ret; loc; loc = g_list_next (loc))
     if (loc->next)

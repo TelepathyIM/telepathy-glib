@@ -31,7 +31,7 @@
 static GMainLoop *mainloop = NULL;
 
 static void
-last_chats_cb (TpProxy *logger,
+last_events_cb (TpProxy *logger,
     const GPtrArray *result,
     const GError *error,
     gpointer userdata,
@@ -102,9 +102,9 @@ main (int argc, char *argv[])
 
   tp_proxy_add_interface_by_id (proxy, TPL_IFACE_QUARK_LOGGER);
 
-  tpl_cli_logger_call_get_recent_messages (proxy, -1,
+  tpl_cli_logger_call_get_recent_events (proxy, -1,
       account, identifer, FALSE, 5,
-      last_chats_cb, NULL, NULL, NULL);
+      last_events_cb, NULL, NULL, NULL);
 
   g_free (account);
 
