@@ -1048,6 +1048,9 @@ log_store_xml_search_in_identifier_chats_new (TplLogStore *store,
   files = log_store_xml_get_all_files (self, dir);
   DEBUG ("Found %d log files in total", g_list_length (files));
 
+  g_free (account_dir);
+  g_free (dir);
+
   return _log_store_xml_search_in_files (self, text, files);
 }
 
