@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <node name="/Logger"
   xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-  <tp:copyright>Copyright © 2009 Collabora Ltd.</tp:copyright>
+  <tp:copyright>Copyright © 2009-2011 Collabora Ltd.</tp:copyright>
   <tp:license xmlns="http://www.w3.org/1999/xhtml">
     <p>This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Logger.DRAFT"
     tp:causes-havoc="experimental">
-    <tp:added version="0.1">(as a draft)</tp:added>
+    <tp:added version="0.2">(as a draft)</tp:added>
 
     <tp:docstring>
       An interface for requesting information from the Telepathy Logger
@@ -53,8 +53,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </tp:struct>
 
-    <method name="GetRecentMessages"
-            tp:name-for-bindings="Get_Recent_Messages">
+    <method name="GetRecentEvents"
+            tp:name-for-bindings="Get_Recent_Events">
       <arg direction="in" name="Account" type="o" tp:type="Account">
         <tp:docstring>
         The account path for the TpAccount to which the conversation is related
@@ -67,9 +67,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
 
-      <arg direction="in" name="Is_Chatroom" type="b">
+      <arg direction="in" name="Type" type="u">
         <tp:docstring>
-        Whether the conversation is a chatroom (i.e., XMPP MUC) or not
+        The type of the events to return.
         </tp:docstring>
       </arg>
 
@@ -82,6 +82,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         </tp:docstring>
       </arg>
 
+      <!-- FIXME: we're returning a list of events that can be
+           messages (chats), but also calls and any other event
+           type in the future, so make the return type a list of
+           TplLogSearchHit or something generic than a(ssx) ? -->
       <arg direction="out" name="Messages" type="a(ssx)"
            tp:type="Chat_Message[]" />
 

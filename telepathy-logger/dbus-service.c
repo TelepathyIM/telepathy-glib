@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * Copyright (C) 2009 Collabora Ltd.
+ * Copyright (C) 2009-2011 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -373,35 +373,35 @@ typedef struct
   TplDBusService *self;
   TpAccount *account;
   char *identifier;
-  gboolean is_chatroom;
+  TplEventSearchType type;
   guint lines;
   DBusGMethodInvocation *context;
   GPtrArray *packed;
   GList *dates, *ptr;
-} RecentMessagesContext;
+} RecentEventsContext;
 
-static void _lookup_next_date (RecentMessagesContext *ctx);
+static void _lookup_next_date (RecentEventsContext *ctx);
 
 static void
-_get_messages_return (GObject *manager,
+_get_events_return (GObject *manager,
     GAsyncResult *res,
     gpointer user_data)
 {
-  RecentMessagesContext *ctx = user_data;
-  GList *messages, *ptr;
+  RecentEventsContext *ctx = user_data;
+  GList *events, *ptr;
   GError *error = NULL;
 
-  if (!tpl_log_manager_get_messages_for_date_finish (
-      TPL_LOG_MANAGER (manager), res, &messages, &error))
+  if (!tpl_log_manager_get_events_for_date_finish (
+      TPL_LOG_MANAGER (manager), res, &events, &error))
     {
-      DEBUG ("Failed to get messages: %s", error->message);
+      DEBUG ("Failed to get events: %s", error->message);
 
       g_clear_error (&error);
-      messages = NULL; /* just to be sure */
+      events = NULL; /* just to be sure */
     }
 
   /* from the most recent message, backward */
-  for (ptr = g_list_last (messages);
+  for (ptr = g_list_last (events);
        ptr != NULL && ctx->lines > 0;
        ptr = g_list_previous (ptr))
     {
@@ -424,15 +424,15 @@ _get_messages_return (GObject *manager,
       ctx->lines--;
     }
 
-  g_list_foreach (messages, (GFunc) g_object_unref, NULL);
-  g_list_free (messages);
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
+  g_list_free (events);
 
   _lookup_next_date (ctx);
 }
 
 
 static void
-_lookup_next_date (RecentMessagesContext *ctx)
+_lookup_next_date (RecentEventsContext *ctx)
 {
   TplDBusServicePriv *priv = ctx->self->priv;
 
@@ -443,9 +443,9 @@ _lookup_next_date (RecentMessagesContext *ctx)
       DEBUG ("Looking up date %04u-%02u-%02u", g_date_get_year (date),
           g_date_get_month (date), g_date_get_day (date));
 
-      tpl_log_manager_get_messages_for_date_async (priv->manager,
-          ctx->account, ctx->identifier, ctx->is_chatroom, date,
-          _get_messages_return, ctx);
+      tpl_log_manager_get_events_for_date_async (priv->manager,
+          ctx->account, ctx->identifier, ctx->type, date,
+          _get_events_return, ctx);
 
       ctx->ptr = g_list_previous (ctx->ptr);
     }
@@ -457,13 +457,13 @@ _lookup_next_date (RecentMessagesContext *ctx)
       g_list_foreach (ctx->dates, (GFunc) g_date_free, NULL);
       g_list_free (ctx->dates);
 
-      tpl_svc_logger_return_from_get_recent_messages (ctx->context,
+      tpl_svc_logger_return_from_get_recent_events (ctx->context,
           ctx->packed);
 
       g_ptr_array_free (ctx->packed, TRUE);
       g_free (ctx->identifier);
       g_object_unref (ctx->account);
-      g_slice_free (RecentMessagesContext, ctx);
+      g_slice_free (RecentEventsContext, ctx);
     }
 }
 
@@ -473,7 +473,7 @@ _get_dates_return (GObject *manager,
     GAsyncResult *res,
     gpointer user_data)
 {
-  RecentMessagesContext *ctx = user_data;
+  RecentEventsContext *ctx = user_data;
   GError *error = NULL;
 
   if (!tpl_log_manager_get_dates_finish (TPL_LOG_MANAGER (manager), res,
@@ -487,7 +487,7 @@ _get_dates_return (GObject *manager,
 
       g_free (ctx->identifier);
       g_object_unref (ctx->account);
-      g_slice_free (RecentMessagesContext, ctx);
+      g_slice_free (RecentEventsContext, ctx);
 
       return;
     }
@@ -501,17 +501,17 @@ _get_dates_return (GObject *manager,
 
 
 static void
-tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
+tpl_dbus_service_get_recent_events (TplSvcLogger *self,
     const gchar *account_path,
     const gchar *identifier,
-    gboolean is_chatroom,
+    TplEventSearchType type,
     guint lines,
     DBusGMethodInvocation *context)
 {
   TplDBusServicePriv *priv = TPL_DBUS_SERVICE (self)->priv;
   TpDBusDaemon *tp_dbus;
   TpAccount *account;
-  RecentMessagesContext *ctx;
+  RecentEventsContext *ctx;
   GError *error = NULL;
 
   g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
@@ -534,16 +534,16 @@ tpl_dbus_service_get_recent_messages (TplSvcLogger *self,
       goto out;
     }
 
-  ctx = g_slice_new (RecentMessagesContext);
+  ctx = g_slice_new (RecentEventsContext);
   ctx->self = TPL_DBUS_SERVICE (self);
   ctx->account = account;
   ctx->identifier = g_strdup (identifier);
-  ctx->is_chatroom = is_chatroom;
+  ctx->type = type;
   ctx->lines = lines;
   ctx->context = context;
 
   tpl_log_manager_get_dates_async (priv->manager,
-      account, identifier, is_chatroom,
+      account, identifier, type,
       _get_dates_return, ctx);
 
 out:
@@ -928,7 +928,7 @@ tpl_logger_iface_init (gpointer iface,
   TplSvcLoggerClass *klass = (TplSvcLoggerClass *) iface;
 
 #define IMPLEMENT(x) tpl_svc_logger_implement_##x (klass, tpl_dbus_service_##x)
-  IMPLEMENT (get_recent_messages);
+  IMPLEMENT (get_recent_events);
   IMPLEMENT (get_favourite_contacts);
   IMPLEMENT (add_favourite_contact);
   IMPLEMENT (remove_favourite_contact);
