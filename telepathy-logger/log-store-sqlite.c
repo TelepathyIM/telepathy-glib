@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Collabora Ltd.
+ * Copyright (C) 2010-2011 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -478,7 +478,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   if (e != SQLITE_OK)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error checking current counter in %s: %s", G_STRFUNC,
           sqlite3_errmsg (priv->db));
 
@@ -504,7 +504,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   else
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error binding counter checking query in %s: %s", G_STRFUNC,
           sqlite3_errmsg (priv->db));
 
@@ -538,7 +538,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   if (e != SQLITE_OK)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error preparing query in %s: %s", G_STRFUNC,
           sqlite3_errmsg (priv->db));
 
@@ -555,7 +555,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
   if (e != SQLITE_DONE)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error %s counter in %s: %s",
           (insert ? "inserting new" : "updating"),
           G_STRFUNC, sqlite3_errmsg (priv->db));
@@ -612,7 +612,7 @@ out:
 
 
 /**
- * tpl_log_store_sqlite_add_message:
+ * tpl_log_store_sqlite_add_event:
  * @self: TplLogstoreSqlite instance
  * @message: a TplEntry instance
  * @error: memory pointer use in case of error
@@ -643,7 +643,7 @@ out:
  * this method return %FALSE with @error set.
  */
 static gboolean
-tpl_log_store_sqlite_add_message (TplLogStore *self,
+tpl_log_store_sqlite_add_event (TplLogStore *self,
     TplEntry *message,
     GError **error)
 {
@@ -653,14 +653,14 @@ tpl_log_store_sqlite_add_message (TplLogStore *self,
   if (!TPL_IS_LOG_STORE_SQLITE (self))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "TplLogStoreSqlite intance needed");
       goto out;
     }
   if (!TPL_IS_ENTRY (message))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE, "TplEntry instance needed");
+          TPL_LOG_STORE_ERROR_ADD_EVENT, "TplEntry instance needed");
       goto out;
     }
 
@@ -698,7 +698,7 @@ _insert_to_cache_table (TplLogStore *self,
   if (!TPL_IS_ENTRY_TEXT (message))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "Message not handled by this log store");
 
       goto out;
@@ -726,7 +726,7 @@ _insert_to_cache_table (TplLogStore *self,
       TPL_STR_EMPTY (log_id) || TPL_STR_EMPTY (date))
     {
       g_set_error_literal (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "passed LogStore has at least one of the needed properties unset: "
           "account-path, channel-path, log-id, timestamp");
 
@@ -742,7 +742,7 @@ _insert_to_cache_table (TplLogStore *self,
   if (e != SQLITE_OK)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
 
       goto out;
@@ -765,7 +765,7 @@ _insert_to_cache_table (TplLogStore *self,
   if (e != SQLITE_DONE)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error bind in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
 
       goto out;
@@ -1037,7 +1037,7 @@ _tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
   if (e != SQLITE_OK)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
 
       goto out;
@@ -1049,7 +1049,7 @@ _tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
   if (e != SQLITE_DONE)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
     }
 
@@ -1083,7 +1083,7 @@ tpl_log_store_sqlite_purge (TplLogStoreSqlite *self,
   if (e != SQLITE_OK)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error preparing statement in %s: %s", G_STRFUNC,
           sqlite3_errmsg (priv->db));
 
@@ -1096,7 +1096,7 @@ tpl_log_store_sqlite_purge (TplLogStoreSqlite *self,
   if (e != SQLITE_DONE)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
           "SQL Error in %s: %s", G_STRFUNC, sqlite3_errmsg (priv->db));
     }
 
@@ -1126,7 +1126,7 @@ purge_entry_timeout (gpointer logstore)
 }
 
 static GList *
-tpl_log_store_sqlite_get_chats (TplLogStore *self,
+tpl_log_store_sqlite_get_events (TplLogStore *self,
     TpAccount *account)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
@@ -1157,14 +1157,17 @@ tpl_log_store_sqlite_get_chats (TplLogStore *self,
       TplLogSearchHit *hit;
       const char *identifier;
       gboolean chatroom;
+      TplEventSearchType type;
 
       /* for some reason this returns unsigned char */
       identifier = (const char *) sqlite3_column_text (sql, 0);
       chatroom = sqlite3_column_int (sql, 1);
+      type = chatroom ? TPL_EVENT_SEARCH_TEXT_GROUP
+        : TPL_EVENT_SEARCH_TEXT;
 
       DEBUG ("identifier = %s, chatroom = %i", identifier, chatroom);
 
-      hit = _tpl_log_manager_search_hit_new (account, identifier, chatroom,
+      hit = _tpl_log_manager_search_hit_new (account, identifier, type,
           NULL, NULL);
 
       list = g_list_prepend (list, hit);
@@ -1187,8 +1190,8 @@ static void
 log_store_iface_init (TplLogStoreInterface *iface)
 {
   iface->get_name = tpl_log_store_sqlite_get_name;
-  iface->add_message = tpl_log_store_sqlite_add_message;
-  iface->get_chats = tpl_log_store_sqlite_get_chats;
+  iface->add_event = tpl_log_store_sqlite_add_event;
+  iface->get_events = tpl_log_store_sqlite_get_events;
 }
 
 TplLogStore *
