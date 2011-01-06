@@ -139,8 +139,12 @@ class Generator(object):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
-            self.d(' * @%s: %s' % (name,
-                xml_escape(get_docstring(elt) or '(Undocumented)')))
+            docs = get_docstring(elt) or '(Undocumented)'
+
+            if ctype == 'guint ' and tp_type != '':
+                docs +=  ' (#%s)' % ('Tp' + tp_type.replace('_', ''))
+
+            self.d(' * @%s: %s' % (name, xml_escape(docs)))
 
         self.d(' * @user_data: User-supplied data')
         self.d(' * @weak_object: User-supplied weakly referenced object')
@@ -432,9 +436,14 @@ class Generator(object):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
+            docs = xml_escape(get_docstring(elt) or '(Undocumented)')
+
+            if ctype == 'guint ' and tp_type != '':
+                docs +=  ' (#%s)' % ('Tp' + tp_type.replace('_', ''))
+
             self.d(' * @%s: Used to return an \'out\' argument if @error is '
                    '%%NULL: %s'
-                   % (name, xml_escape(get_docstring(elt) or '(Undocumented)')))
+                   % (name, docs))
 
         self.d(' * @error: %NULL on success, or an error on failure')
         self.d(' * @user_data: user-supplied data')
@@ -687,8 +696,13 @@ class Generator(object):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
+            docs = xml_escape(get_docstring(elt) or '(Undocumented)')
+
+            if ctype == 'guint ' and tp_type != '':
+                docs +=  ' (#%s)' % ('Tp' + tp_type.replace('_', ''))
+
             self.d(' * @%s: Used to pass an \'in\' argument: %s'
-                   % (name, xml_escape(get_docstring(elt) or '(Undocumented)')))
+                   % (name, docs))
 
         self.d(' * @callback: called when the method call succeeds or fails;')
         self.d(' *   may be %NULL to make a "fire and forget" call with no ')
@@ -943,8 +957,13 @@ class Generator(object):
             name, info, tp_type, elt = arg
             ctype, gtype, marshaller, pointer = info
 
+            docs = xml_escape(get_docstring(elt) or '(Undocumented)')
+
+            if ctype == 'guint ' and tp_type != '':
+                docs +=  ' (#%s)' % ('Tp' + tp_type.replace('_', ''))
+
             self.d(' * @%s: Used to pass an \'in\' argument: %s'
-                   % (name, xml_escape(get_docstring(elt) or '(Undocumented)')))
+                   % (name, docs))
 
         for arg in out_args:
             name, info, tp_type, elt = arg
