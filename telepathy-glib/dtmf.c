@@ -476,6 +476,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
 
   /**
    * TpDTMFPlayer::started-tone:
+   * @self: the #TpDTMFPlayer
    * @event: a %G_TYPE_UINT representing the tone being played
    *
    * Emitted at the beginning of each tone.
@@ -486,6 +487,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
 
   /**
    * TpDTMFPlayer::stopped-tone:
+   * @self: the #TpDTMFPlayer
    *
    * Emitted at the end of each tone.
    *
@@ -497,6 +499,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
 
   /**
    * TpDTMFPlayer::finished:
+   * @self: the #TpDTMFPlayer
    * @cancelled: %TRUE if playback was cancelled with tp_dtmf_player_cancel()
    *
    * Emitted when playback stops, either because the end of the
@@ -511,6 +514,7 @@ tp_dtmf_player_class_init (TpDTMFPlayerClass *cls)
 
   /**
    * TpDTMFPlayer::tones-deferred:
+   * @self: the #TpDTMFPlayer
    * @tones: the remaining tones, starting from just after the 'W' or 'w'
    *
    * Emitted just before #TpDTMFPlayer::finished if a 'W' or 'w' character
