@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * Copyright (C) 2008-2010 Collabora Ltd.
+ * Copyright (C) 2008-2011 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -79,8 +79,8 @@ _tpl_log_store_init (gpointer g_iface)
    * Defines wether the object is writable for a #TplLogManager.
    *
    * If an TplLogStore implementation is writable, the #TplLogManager will call
-   * it's tpl_log_store_add_message() method every time a loggable even occurs,
-   * i.e., everytime _tpl_log_manager_add_message() is called.
+   * it's tpl_log_store_add_event() method every time a loggable even occurs,
+   * i.e., everytime _tpl_log_manager_add_event() is called.
    */
   g_object_interface_install_property (g_iface,
       g_param_spec_boolean ("readable",
@@ -121,45 +121,45 @@ _tpl_log_store_get_name (TplLogStore *self)
 gboolean
 _tpl_log_store_exists (TplLogStore *self,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean chatroom)
+    const gchar *id,
+    TplEventSearchType type)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->exists)
     return FALSE;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->exists (self, account, chat_id,
-      chatroom);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->exists (self, account, id,
+      type);
 }
 
 
 /**
- * _tpl_log_store_add_message:
+ * _tpl_log_store_add_event:
  * @self: a TplLogStore
- * @message: an instance of a subclass of TplEntry (ie TplEntryText)
+ * @event: an instance of a subclass of TplEntry (ie TplEntryText)
  * @error: memory location used if an error occurs
  *
- * Sends @message to the LogStore @self, in order to be stored.
+ * Sends @event to the LogStore @self, in order to be stored.
  *
  * Returns: %TRUE if succeeds, %FALSE with @error set otherwise
  */
 gboolean
-_tpl_log_store_add_message (TplLogStore *self,
-    TplEntry *message,
+_tpl_log_store_add_event (TplLogStore *self,
+    TplEntry *event,
     GError **error)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-  if (TPL_LOG_STORE_GET_INTERFACE (self)->add_message == NULL)
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->add_event == NULL)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_MESSAGE,
-          "%s: add_message not implemented, but writable set to TRUE : %s",
+          TPL_LOG_STORE_ERROR_ADD_EVENT,
+          "%s: add_event not implemented, but writable set to TRUE : %s",
           G_STRFUNC, G_OBJECT_CLASS_NAME (self));
       return FALSE;
     }
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->add_message (self, message,
+  return TPL_LOG_STORE_GET_INTERFACE (self)->add_event (self, event,
       error);
 }
 
@@ -168,13 +168,11 @@ _tpl_log_store_add_message (TplLogStore *self,
  * _tpl_log_store_get_dates:
  * @self: a TplLogStore
  * @account: a TpAccount
- * @chat_id: a non-NULL chat identifier
- * @chatroom: whather if the request is related to a chatroom or not.
+ * @id: a non-NULL identifier
+ * @type: the event type of @id
  *
  * Retrieves a list of #GDate, corresponding to each day
- * at least a message was sent to or received from @chat_id.
- * @chat_id may be the id of a buddy or a chatroom, depending on the value of
- * @chatroom.
+ * at least an event was sent to or received from @id.
  *
  * Returns: a GList of (GDate *), to be freed using something like
  * g_list_foreach (lst, g_date_free, NULL);
@@ -183,123 +181,124 @@ _tpl_log_store_add_message (TplLogStore *self,
 GList *
 _tpl_log_store_get_dates (TplLogStore *self,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean chatroom)
+    const gchar *id,
+    TplEventSearchType type)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (TPL_LOG_STORE_GET_INTERFACE (self)->get_dates == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_dates (self, account,
-      chat_id, chatroom);
+      id, type);
 }
 
 
 /**
- * _tpl_log_store_get_messages_for_date:
+ * _tpl_log_store_get_events_for_date:
  * @self: a TplLogStore
  * @account: a TpAccount
- * @chat_id: a non-NULL chat identifier
- * @chatroom: whather if the request is related to a chatroom or not.
+ * @id: a non-NULL identifier
+ * @type: the event type of @id
  * @date: a #GDate
  *
- * Retrieves a list of text messages, with timestamp matching @date.
+ * Retrieves a list of events, with timestamp matching @date.
  *
  * Returns: a GList of TplEntryText, to be freed using something like
  * g_list_foreach (lst, g_object_unref, NULL);
  * g_list_free (lst);
  */
 GList *
-_tpl_log_store_get_messages_for_date (TplLogStore *self,
+_tpl_log_store_get_events_for_date (TplLogStore *self,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean chatroom,
+    const gchar *id,
+    TplEventSearchType type,
     const GDate *date)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_messages_for_date == NULL)
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_events_for_date == NULL)
     return NULL;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->get_messages_for_date (self,
-      account, chat_id, chatroom, date);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->get_events_for_date (self,
+      account, id, type, date);
 }
 
 
 GList *
-_tpl_log_store_get_recent_messages (TplLogStore *self,
+_tpl_log_store_get_recent_events (TplLogStore *self,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean chatroom)
+    const gchar *id,
+    TplEventSearchType type)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_messages == NULL)
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_events == NULL)
     return NULL;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_messages (self, account,
-      chat_id, chatroom);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_events (self, account,
+      id, type);
 }
 
 
 /**
- * _tpl_log_store_get_chats:
+ * _tpl_log_store_get_events:
  * @self: a TplLogStore
  * @account: a TpAccount
  *
  * Retrieves a list of search hits, corrisponding to each buddy/chatroom id
- * the user exchanged at least a message with, using @account.
+ * the user exchanged at least a event with, using @account.
  *
  * Returns: a GList of (TplLogSearchHit *), to be freed using something like
  * g_list_foreach (lst, tpl_log_manager_search_free, NULL);
  * g_list_free (lst);
  */
 GList *
-_tpl_log_store_get_chats (TplLogStore *self,
+_tpl_log_store_get_events (TplLogStore *self,
     TpAccount *account)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_chats == NULL)
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_events == NULL)
     return NULL;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->get_chats (self, account);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->get_events (self, account);
 }
 
 
 /**
- * _tpl_log_store_search_in_identifier_chats_new:
+ * _tpl_log_store_search_in_identifier:
  * @self: a TplLogStore
  * @account: a TpAccount
- * @chat_id: a chat_id
- * @text: a text to be searched among @chat_id messages
+ * @id: a non-NULL identifier
+ * @type: the event type
+ * @text: a text to be searched among @id events
  *
- * Searches textual log entries related to @chat_id and matching @text
+ * Searches textual log entries related to @id and matching @text
  *
  * Returns: a GList of (TplLogSearchHit *), to be freed using something like
  * g_list_foreach (lst, tpl_log_manager_search_free, NULL);
  * g_list_free (lst);
  */
 GList *
-_tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
+_tpl_log_store_search_in_identifier (TplLogStore *self,
     TpAccount *account,
-    const gchar *chat_id,
+    const gchar *id,
+    TplEventSearchType type,
     const gchar *text)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  if (TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new == \
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier ==
       NULL)
     return NULL;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier_chats_new (self,
-      account, chat_id, text);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier (self,
+      account, id, type, text);
 }
 
 
 /**
  * _tpl_log_store_search_new:
  * @self: a TplLogStore
- * @text: a text to be searched among @chat_id messages
+ * @text: a text to be searched among text messages
  *
- * Searches all textual log entries (all accounts and all chat_ids)  matching
- * @text
+ * Searches all textual log entries matching @text.
  *
  * Returns: a GList of (TplLogSearchHit *), to be freed using something like
  * g_list_foreach (lst, tpl_log_manager_search_free, NULL);
@@ -318,39 +317,39 @@ _tpl_log_store_search_new (TplLogStore *self,
 
 
 /**
- * _tpl_log_store_search_in_identifier_chats_new:
+ * _tpl_log_store_get_filtered_events:
  * @self: a TplLogStore
  * @account: a TpAccount
- * @chat_id: a chat_id
- * @chatroom: whether the @chat_id is related to a chatroom or not
- * @num_messages: max number of messages to return
+ * @id: an identifier
+ * @type: the type of @id
+ * @num_events: max number of events to return
  * @filter: filter function
  * @user_data: data be passed to @filter, may be NULL
  *
- * Filters all messages related to @chat_id, using the boolean function
+ * Filters all events related to @id, using the boolean function
  * @filter.
- * It will return at most the last (ie most recent) @num_messages messages.
- * Pass G_MAXUINT if all the message are needed.
+ * It will return at most the last (ie most recent) @num_events events.
+ * Pass G_MAXUINT if all the events are needed.
  *
  * Returns: a GList of TplEntryText, to be freed using something like
  * g_list_foreach (lst, g_object_unref, NULL);
  * g_list_free (lst);
  */
 GList *
-_tpl_log_store_get_filtered_messages (TplLogStore *self,
+_tpl_log_store_get_filtered_events (TplLogStore *self,
     TpAccount *account,
-    const gchar *chat_id,
-    gboolean chatroom,
-    guint num_messages,
-    TplLogMessageFilter filter,
+    const gchar *id,
+    TplEventSearchType type,
+    guint num_events,
+    TplLogEventFilter filter,
     gpointer user_data)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_messages == NULL)
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_events == NULL)
     return NULL;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_messages (self,
-      account, chat_id, chatroom, num_messages, filter, user_data);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_events (self,
+      account, id, type, num_events, filter, user_data);
 }
 
 

@@ -1,6 +1,6 @@
 /*-*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * Copyright (C) 2008-2010 Collabora Ltd.
+ * Copyright (C) 2008-2011 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,8 +44,8 @@ typedef enum
 {
   /* generic error */
   TPL_LOG_STORE_ERROR_FAILED,
-  /* generic failure for add_message() method, when nothing else applies */
-  TPL_LOG_STORE_ERROR_ADD_MESSAGE,
+  /* generic failure for add_event() method, when nothing else applies */
+  TPL_LOG_STORE_ERROR_ADD_EVENT,
   /* data is already present in the LogStore */
   TPL_LOG_STORE_ERROR_PRESENT,
   /* data is not present in the LogStore */
@@ -63,45 +63,47 @@ typedef struct
 
   const gchar * (*get_name) (TplLogStore *self);
   gboolean (*exists) (TplLogStore *self, TpAccount *account,
-      const gchar *chat_id, gboolean chatroom);
-  gboolean (*add_message) (TplLogStore *self, TplEntry *message,
+      const gchar *id, TplEventSearchType type);
+  gboolean (*add_event) (TplLogStore *self, TplEntry *event,
       GError **error);
   GList * (*get_dates) (TplLogStore *self, TpAccount *account,
-      const gchar *chat_id, gboolean chatroom);
-  GList * (*get_messages_for_date) (TplLogStore *self, TpAccount *account,
-      const gchar *chat_id, gboolean chatroom, const GDate *date);
-  GList * (*get_recent_messages) (TplLogStore *self, TpAccount *account,
-      const gchar *chat_id, gboolean chatroom);
-  GList * (*get_chats) (TplLogStore *self, TpAccount *account);
+      const gchar *id, TplEventSearchType type);
+  GList * (*get_events_for_date) (TplLogStore *self, TpAccount *account,
+      const gchar *id, TplEventSearchType type, const GDate *date);
+  GList * (*get_recent_events) (TplLogStore *self, TpAccount *account,
+      const gchar *id, TplEventSearchType type);
+  GList * (*get_events) (TplLogStore *self, TpAccount *account);
   GList * (*search_new) (TplLogStore *self, const gchar *text);
-  GList * (*search_in_identifier_chats_new) (TplLogStore *self,
-      TpAccount *account, const gchar *identifier, const gchar *text);
-  GList * (*get_filtered_messages) (TplLogStore *self, TpAccount *account,
-      const gchar *chat_id, gboolean chatroom, guint num_messages,
-      TplLogMessageFilter filter, gpointer user_data);
+  GList * (*search_in_identifier) (TplLogStore *self,
+      TpAccount *account, const gchar *identifier, TplEventSearchType type,
+      const gchar *text);
+  GList * (*get_filtered_events) (TplLogStore *self, TpAccount *account,
+      const gchar *id, TplEventSearchType type, guint num_events,
+      TplLogEventFilter filter, gpointer user_data);
 } TplLogStoreInterface;
 
 GType _tpl_log_store_get_type (void);
 
 const gchar * _tpl_log_store_get_name (TplLogStore *self);
 gboolean _tpl_log_store_exists (TplLogStore *self, TpAccount *account,
-    const gchar *chat_id, gboolean chatroom);
-gboolean _tpl_log_store_add_message (TplLogStore *self, TplEntry *message,
+    const gchar *id, TplEventSearchType type);
+gboolean _tpl_log_store_add_event (TplLogStore *self, TplEntry *event,
     GError **error);
 GList * _tpl_log_store_get_dates (TplLogStore *self, TpAccount *account,
-    const gchar *chat_id, gboolean chatroom);
-GList * _tpl_log_store_get_messages_for_date (TplLogStore *self,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom,
+    const gchar *id, TplEventSearchType type);
+GList * _tpl_log_store_get_events_for_date (TplLogStore *self,
+    TpAccount *account, const gchar *id, TplEventSearchType type,
     const GDate *date);
-GList * _tpl_log_store_get_recent_messages (TplLogStore *self,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom);
-GList * _tpl_log_store_get_chats (TplLogStore *self, TpAccount *account);
-GList * _tpl_log_store_search_in_identifier_chats_new (TplLogStore *self,
-    TpAccount *account, const gchar *identifier, const gchar *text);
+GList * _tpl_log_store_get_recent_events (TplLogStore *self,
+    TpAccount *account, const gchar *id, TplEventSearchType type);
+GList * _tpl_log_store_get_events (TplLogStore *self, TpAccount *account);
+GList * _tpl_log_store_search_in_identifier (TplLogStore *self,
+    TpAccount *account, const gchar *identifier, TplEventSearchType type,
+    const gchar *text);
 GList * _tpl_log_store_search_new (TplLogStore *self, const gchar *text);
-GList * _tpl_log_store_get_filtered_messages (TplLogStore *self,
-    TpAccount *account, const gchar *chat_id, gboolean chatroom,
-    guint num_messages, TplLogMessageFilter filter, gpointer user_data);
+GList * _tpl_log_store_get_filtered_events (TplLogStore *self,
+    TpAccount *account, const gchar *id, TplEventSearchType type,
+    guint num_events, TplLogEventFilter filter, gpointer user_data);
 gboolean _tpl_log_store_is_writable (TplLogStore *self);
 gboolean _tpl_log_store_is_readable (TplLogStore *self);
 
