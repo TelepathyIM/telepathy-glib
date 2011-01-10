@@ -10,6 +10,7 @@
 .libs
 Makefile
 Makefile.in
+tags
 
 # Autotools and other top-level cruft
 /ChangeLog
@@ -40,7 +41,6 @@ Makefile.in
 /shave
 /shave-libtool
 /stamp-h1
-/tags
 /telepathy-logger-*.tar.bz2
 /telepathy-logger-*.tar.bz2.asc
 /telepathy-logger-*/
