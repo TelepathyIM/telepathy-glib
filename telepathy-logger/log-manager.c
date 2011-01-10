@@ -39,6 +39,7 @@
 #include <telepathy-logger/event-internal.h>
 #include <telepathy-logger/log-store-internal.h>
 #include <telepathy-logger/log-store-xml-internal.h>
+#include <telepathy-logger/log-store-pidgin-internal.h>
 #include <telepathy-logger/log-store-sqlite-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_MANAGER
@@ -290,6 +291,8 @@ tpl_log_manager_init (TplLogManager *self)
   store = add_log_store (self, TPL_TYPE_LOG_STORE_XML, "Empathy", TRUE, FALSE);
   if (store != NULL)
     g_object_set (store, "empathy-legacy", TRUE, NULL);
+
+  add_log_store (self, TPL_TYPE_LOG_STORE_PIDGIN, "Pidgin", TRUE, FALSE);
 
   /* Load the event counting cache */
   add_log_store (self, TPL_TYPE_LOG_STORE_SQLITE, "Sqlite", FALSE, TRUE);
