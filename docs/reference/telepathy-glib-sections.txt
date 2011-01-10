@@ -4784,6 +4784,7 @@ tp_debug_sender_add_message
 tp_debug_sender_add_message_vprintf
 tp_debug_sender_add_message_printf
 tp_debug_sender_log_handler
+tp_debug_sender_set_timestamps
 <SUBSECTION Standard>
 tp_debug_sender_get_type
 TP_DEBUG_SENDER
