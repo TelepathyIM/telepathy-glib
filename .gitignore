@@ -79,6 +79,11 @@ tags
 /telepathy-logger/tpl-marshal.h
 
 /tests/test-*[^ch]
+
+/tests/dbus/test-*[^ch]
+/tests/dbus/dbus-1/session.conf
+/tests/dbus/capture-*.log
+
 /tests/twisted/config.py
 /tests/twisted/telepathy-logger-debug
 /tests/twisted/tools/exec-with-log.sh
