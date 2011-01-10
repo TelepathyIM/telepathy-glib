@@ -608,7 +608,7 @@ log_store_pidgin_search_hit_new (TplLogStore *self,
 
   hit = g_slice_new0 (TplLogSearchHit);
   hit->date = log_store_pidgin_get_time (strv[len-1]);
-  hit->type = g_str_has_suffix (strv[len-2], ".chat") 
+  hit->type = g_str_has_suffix (strv[len-2], ".chat")
     ? TPL_EVENT_SEARCH_TEXT : TPL_EVENT_SEARCH_TEXT_ROOM;
 
   /* Remove ".chat" suffix. */

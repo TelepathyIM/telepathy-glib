@@ -2,50 +2,60 @@ if WANT_TWISTED_TESTS
 CHECKTWISTED = twisted
 endif
 
-SUBDIRS = $(CHECKTWISTED) suppressions lib
+SUBDIRS = $(CHECKTWISTED) suppressions lib dbus
 
 LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
 	$(TPL_LIBS)
 
+TEST_EXECUTABLES = \
+	test-entity			\
+	test-tpl-channel		\
+	test-tpl-conf			\
+	test-tpl-log-store-sqlite	\
+	test-tpl-log-manager		\
+	test-tpl-observer		\
+	$(NULL)
+
 noinst_PROGRAMS = \
-	test-entity             \
-	test-tpl-channel	\
-	test-tpl-conf		\
-	test-tpl-log-store-sqlite \
-	test-tpl-log-manager	\
-	test-tpl-observer	\
-	test-searches		\
+	${TEST_EXECUTABLES}	\
 	$(NULL)
 
 test_tpl_channel_SOURCES = \
 	test-tpl-channel.c	\
 	tpl-channel-test.c	\
-	tpl-channel-test.h
+	tpl-channel-test.h	\
+	$(NULL)
 
 test_tpl_observer_SOURCES = \
 	test-tpl-observer.c	\
-	tpl-channel-test.c
+	tpl-channel-test.c	\
+	$(NULL)
 
 test_searches_SOURCES = \
 	test-searches.c \
-	constants.h
+	constants.h	\
+	$(NULL)
 
 test_entity_LDADD = \
 	$(top_builddir)/tests/lib/libtp-logger-tests.la \
-	$(LDADD)
+	$(LDADD) \
+	$(NULL)
 
 AM_CFLAGS = \
 	$(ERROR_CFLAGS) \
 	$(TPL_CFLAGS) \
 	-I$(top_srcdir) \
-	-I$(top_builddir)
+	-I$(top_builddir) \
+	$(NULL)
 
-TESTS = $(noinst_PROGRAMS)
+TESTS = $(TEST_EXECUTABLES)
 
 TESTS_ENVIRONMENT = \
-	G_DEBUG=fatal-warnings,fatal-criticals \
-	TPL_TEST_MODE=true \
+	G_DEBUG=fatal-warnings,fatal-criticals		\
+	TPL_TEST_MODE=true 				\
+	TEST_LOG_DIR=@abs_top_srcdir@/tests/logs	\
+	$(top_srcdir)/tools/test-wrapper.sh		\
 	$(NULL)
 
 check-valgrind: $(TESTS)

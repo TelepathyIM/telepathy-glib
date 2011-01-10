@@ -3,6 +3,10 @@ noinst_LTLIBRARIES = libtp-logger-tests.la
 libtp_logger_tests_la_SOURCES = \
     contacts-conn.c \
     contacts-conn.h \
+    simple-account.c		\
+    simple-account.h		\
+    simple-account-manager.c	\
+    simple-account-manager.h	\
     simple-conn.c \
     simple-conn.h \
     textchan-null.c \
@@ -16,11 +20,7 @@ check-local: check-coding-style
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
-    $(DBUS_CFLAGS) \
-    $(GLIB_CFLAGS) \
-    $(TPL_CFLAGS)
+    $(TPL_CFLAGS)\
+    $(NULL)
 
-libtp_logger_tests_la_LIBADD = \
-    $(DBUS_LIBS) \
-    $(GLIB_LIBS) \
-    $(top_builddir)/telepathy-logger/libtelepathy-logger.la
+libtp_logger_tests_la_LIBADD =  $(TPL_LIBS)
