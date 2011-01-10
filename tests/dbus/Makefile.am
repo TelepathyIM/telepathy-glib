@@ -11,6 +11,7 @@ noinst_PROGRAMS = \
     test-channel-dispatch-operation \
     test-channel-introspect \
     test-channel-request \
+    test-channel-manager-request-properties \
     test-cli-group \
     test-client \
     test-client-channel-factory \
@@ -205,6 +206,8 @@ test_stream_tube_SOURCES = stream-tube.c
 test_client_channel_factory_SOURCES = client-channel-factory.c
 
 test_proxy_preparation_SOURCES = proxy-preparation.c
+
+test_channel_manager_request_properties_SOURCES = channel-manager-request-properties.c
 
 # this one uses internal ABI
 test_cm_message_SOURCES = \
