@@ -1133,7 +1133,7 @@ on_sent_signal_cb (TpChannel *proxy,
       _tpl_channel_text_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
-  _tpl_log_manager_add_message (logmanager, TPL_ENTRY (log), &error);
+  _tpl_log_manager_add_event (logmanager, TPL_ENTRY (log), &error);
 
   if (error != NULL)
     {
@@ -1244,7 +1244,7 @@ keepon_on_receiving_signal (TplEntryText *text_log,
       _tpl_channel_text_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
-  _tpl_log_manager_add_message (logmanager, TPL_ENTRY (log), &e);
+  _tpl_log_manager_add_event (logmanager, TPL_ENTRY (log), &e);
   if (e != NULL)
     {
       DEBUG ("%s", e->message);
