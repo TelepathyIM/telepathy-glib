@@ -41,7 +41,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
       <tp:member type="x" name="Timestamp" tp:type="Unix_Timestamp64">
         <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        Unix timestamp for the log entry
+        Unix timestamp for the log event
         </tp:docstring>
       </tp:member>
 

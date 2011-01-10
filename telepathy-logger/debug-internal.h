@@ -40,7 +40,7 @@ typedef enum
   TPL_DEBUG_ENTITY        = 1 << 2,
   TPL_DEBUG_CHANNEL       = 1 << 3,
   TPL_DEBUG_DBUS_SERVICE  = 1 << 4,
-  TPL_DEBUG_LOG_ENTRY     = 1 << 5,
+  TPL_DEBUG_LOG_EVENT     = 1 << 5,
   TPL_DEBUG_LOG_MANAGER   = 1 << 6,
   TPL_DEBUG_LOG_STORE     = 1 << 7,
   TPL_DEBUG_MAIN          = 1 << 8,

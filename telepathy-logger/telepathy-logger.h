@@ -22,8 +22,8 @@
 #define __TELEPATHY_LOGGER_H__
 
 #include <telepathy-logger/entity.h>
-#include <telepathy-logger/entry-text.h>
-#include <telepathy-logger/entry.h>
+#include <telepathy-logger/event-text.h>
+#include <telepathy-logger/event.h>
 #include <telepathy-logger/log-manager.h>
 
 #endif

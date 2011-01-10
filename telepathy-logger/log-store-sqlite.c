@@ -26,9 +26,9 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <sqlite3.h>
 
-#include "entry-internal.h"
-#include "entry-text.h"
-#include "entry-text-internal.h"
+#include "event-internal.h"
+#include "event-text.h"
+#include "event-text-internal.h"
 #include "log-store-sqlite-internal.h"
 #include "log-manager-internal.h"
 
@@ -45,10 +45,10 @@
 
 static void log_store_iface_init (TplLogStoreInterface *iface);
 static gboolean _insert_to_cache_table (TplLogStore *self,
-    TplEntry *message, GError **error);
+    TplEvent *message, GError **error);
 static void tpl_log_store_sqlite_purge (TplLogStoreSqlite *self, time_t delta,
     GError **error);
-static gboolean purge_entry_timeout (gpointer logstore);
+static gboolean purge_event_timeout (gpointer logstore);
 
 
 G_DEFINE_TYPE_WITH_CODE (TplLogStoreSqlite, _tpl_log_store_sqlite,
@@ -239,7 +239,7 @@ _tpl_log_store_sqlite_init (TplLogStoreSqlite *self)
     }
 
   /* purge old entries every hour (60*60 secs) and purges 24h old entries */
-  priv->purge_id = g_timeout_add_seconds (60*60, purge_entry_timeout, self);
+  priv->purge_id = g_timeout_add_seconds (60*60, purge_event_timeout, self);
 
   /* end of cache table init */
 
@@ -274,9 +274,9 @@ get_account_name (TpAccount *account)
 }
 
 static const char *
-get_account_name_from_entry (TplEntry *entry)
+get_account_name_from_event (TplEvent *event)
 {
-  return tpl_entry_get_account_path (entry) +
+  return tpl_event_get_account_path (event) +
     strlen (TP_ACCOUNT_OBJECT_PATH_BASE);
 }
 
@@ -288,28 +288,28 @@ get_channel_name (TpChannel *chan)
 }
 
 static const char *
-get_channel_name_from_entry (TplEntry *entry)
+get_channel_name_from_event (TplEvent *event)
 {
-  return _tpl_entry_get_channel_path (entry) +
+  return _tpl_event_get_channel_path (event) +
     strlen (TP_CONN_OBJECT_PATH_BASE);
 }
 
 static char *
-get_date (TplEntry *entry)
+get_date (TplEvent *event)
 {
   time_t t;
 
-  t = tpl_entry_get_timestamp (entry);
+  t = tpl_event_get_timestamp (event);
 
   return _tpl_time_to_string_utc (t, "%Y-%m-%d");
 }
 
 static char *
-get_datetime (TplEntry *entry)
+get_datetime (TplEvent *event)
 {
   time_t t;
 
-  t = tpl_entry_get_timestamp (entry);
+  t = tpl_event_get_timestamp (event);
 
   return _tpl_time_to_string_utc (t, TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
 }
@@ -354,7 +354,7 @@ _cache_msg_id_is_present (TplLogStore *self,
   sqlite3_bind_int (sql, 2, msg_id);
 
   e = sqlite3_step (sql);
-  /* return the first (most recent) entry if a raw is found */
+  /* return the first (most recent) event if a raw is found */
   if (e == SQLITE_ROW)
     retval = g_strdup ((const gchar *) sqlite3_column_text (sql, 0));
   else if (e == SQLITE_ERROR)
@@ -430,7 +430,7 @@ out:
 
 static gboolean
 tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
-    TplEntry *message,
+    TplEvent *message,
     GError **error)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
@@ -445,21 +445,21 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  if ((TPL_IS_ENTRY_TEXT (message) == FALSE) ||
-      (_tpl_entry_text_get_signal_type (TPL_ENTRY_TEXT (message)) !=
-          TPL_ENTRY_TEXT_SIGNAL_RECEIVED))
+  if ((TPL_IS_EVENT_TEXT (message) == FALSE) ||
+      (_tpl_event_text_get_signal_type (TPL_EVENT_TEXT (message)) !=
+          TPL_EVENT_TEXT_SIGNAL_RECEIVED))
     {
       DEBUG ("ignoring msg %s, not interesting for message-counter",
-          _tpl_entry_get_log_id (message));
+          _tpl_event_get_log_id (message));
       retval = TRUE;
       goto out;
     }
 
   DEBUG ("message received");
 
-  account = get_account_name_from_entry (message);
-  identifier = _tpl_entry_get_chat_id (message);
-  chatroom = _tpl_entry_text_is_chatroom (TPL_ENTRY_TEXT (message));
+  account = get_account_name_from_event (message);
+  identifier = _tpl_event_get_chat_id (message);
+  chatroom = _tpl_event_text_is_chatroom (TPL_EVENT_TEXT (message));
   date = get_date (message);
 
   DEBUG ("account = %s", account);
@@ -580,7 +580,7 @@ out:
 
 static gboolean
 tpl_log_store_sqlite_add_message_cache (TplLogStore *self,
-    TplEntry *message,
+    TplEvent *message,
     GError **error)
 {
   const char *log_id;
@@ -588,7 +588,7 @@ tpl_log_store_sqlite_add_message_cache (TplLogStore *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  log_id = _tpl_entry_get_log_id (message);
+  log_id = _tpl_event_get_log_id (message);
   DEBUG ("received %s, considering if can be cached", log_id);
   if (_tpl_log_store_sqlite_log_id_is_present (self, log_id))
     {
@@ -614,24 +614,24 @@ out:
 /**
  * tpl_log_store_sqlite_add_event:
  * @self: TplLogstoreSqlite instance
- * @message: a TplEntry instance
+ * @message: a TplEvent instance
  * @error: memory pointer use in case of error
  *
  * @message will be sent to the MessageCounter and MessageSqlite tables.
  *
- * MessageSqlite will accept any instance of TplEntry for @message and will
+ * MessageSqlite will accept any instance of TplEvent for @message and will
  * return %FALSE with @error set when a fatal error occurs or when @message
  * has already been logged.
  * For the last case a TPL_LOG_STORE_ERROR_PRESENT will be set as error
  * code in @error, and is considered fatal, since it should never happen.
  *
- * A module implementing a TplChannel should always check for TplEntry
+ * A module implementing a TplChannel should always check for TplEvent
  * log-id presence in the cache log-store if there is a chance to receive the
  * same log-id twice.
  *
  * MessageCounter only handles Text messages, which means that it will
  * silently (ie won't use @error) not log @message, when it won't be an
- * instance ot TplEntryText, returning anyway %TRUE. This means "I could
+ * instance ot TplEventText, returning anyway %TRUE. This means "I could
  * store @message, but I'm discarding it because I'm not interested in it" and
  * is not cosidered an error (@error won't be set).
  * It will return %FALSE with @error set if a fatal error occurred, for
@@ -644,7 +644,7 @@ out:
  */
 static gboolean
 tpl_log_store_sqlite_add_event (TplLogStore *self,
-    TplEntry *message,
+    TplEvent *message,
     GError **error)
 {
   gboolean retval = FALSE;
@@ -657,10 +657,10 @@ tpl_log_store_sqlite_add_event (TplLogStore *self,
           "TplLogStoreSqlite intance needed");
       goto out;
     }
-  if (!TPL_IS_ENTRY (message))
+  if (!TPL_IS_EVENT (message))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
-          TPL_LOG_STORE_ERROR_ADD_EVENT, "TplEntry instance needed");
+          TPL_LOG_STORE_ERROR_ADD_EVENT, "TplEvent instance needed");
       goto out;
     }
 
@@ -683,7 +683,7 @@ out:
 
 static gboolean
 _insert_to_cache_table (TplLogStore *self,
-    TplEntry *message,
+    TplEvent *message,
     GError **error)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
@@ -695,7 +695,7 @@ _insert_to_cache_table (TplLogStore *self,
   gboolean retval = FALSE;
   int e;
 
-  if (!TPL_IS_ENTRY_TEXT (message))
+  if (!TPL_IS_EVENT_TEXT (message))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_EVENT,
@@ -704,12 +704,12 @@ _insert_to_cache_table (TplLogStore *self,
       goto out;
     }
 
-  account = get_account_name_from_entry (message);
-  channel = get_channel_name_from_entry (message);
-  identifier = _tpl_entry_get_chat_id (message);
-  log_id = _tpl_entry_get_log_id (message);
-  msg_id = tpl_entry_text_get_pending_msg_id (TPL_ENTRY_TEXT (message));
-  chatroom = _tpl_entry_text_is_chatroom (TPL_ENTRY_TEXT (message));
+  account = get_account_name_from_event (message);
+  channel = get_channel_name_from_event (message);
+  identifier = _tpl_event_get_chat_id (message);
+  log_id = _tpl_event_get_log_id (message);
+  msg_id = tpl_event_text_get_pending_msg_id (TPL_EVENT_TEXT (message));
+  chatroom = _tpl_event_text_is_chatroom (TPL_EVENT_TEXT (message));
   date = get_datetime (message);
 
   DEBUG ("channel = %s", channel);
@@ -717,7 +717,7 @@ _insert_to_cache_table (TplLogStore *self,
   DEBUG ("chat_identifier = %s", identifier);
   DEBUG ("log_identifier = %s", log_id);
   DEBUG ("pending_msg_id = %d (%s)", msg_id,
-      (TPL_ENTRY_MSG_ID_IS_VALID (msg_id) ?
+      (TPL_EVENT_MSG_ID_IS_VALID (msg_id) ?
        "pending" : "acknowledged or sent"));
   DEBUG ("chatroom = %i", chatroom);
   DEBUG ("date = %s", date);
@@ -752,7 +752,7 @@ _insert_to_cache_table (TplLogStore *self,
   sqlite3_bind_text (sql, 2, account, -1, SQLITE_TRANSIENT);
   /* insert NULL if ACKNOWLEDGED (ie sent message's entries, which are created
    * ACK'd */
-  if (!TPL_ENTRY_MSG_ID_IS_VALID (msg_id))
+  if (!TPL_EVENT_MSG_ID_IS_VALID (msg_id))
     sqlite3_bind_null (sql, 3);
   else
     sqlite3_bind_int (sql, 3, msg_id);
@@ -813,7 +813,7 @@ out:
  * specific TpChannel instance with the same path or not, just knowking its
  * path.
  * This is not a problem, though, since log-ids are unique within TPL. If two
- * log-ids match, they relates to the same TplEntry instance.
+ * log-ids match, they relates to the same TplEvent instance.
  *
  * Returns: a list of log-id
  */
@@ -909,7 +909,7 @@ out:
  * specific TpChannel instance with the same path or not, just knowking its
  * path.
  * This is not a problem, though, since log-ids are unique within TPL. If two
- * log-ids match, they relates to the same TplEntry instance.
+ * log-ids match, they relates to the same TplEvent instance.
  *
  * Returns: a list of log-id
  */
@@ -1108,7 +1108,7 @@ out:
 }
 
 static gboolean
-purge_entry_timeout (gpointer logstore)
+purge_event_timeout (gpointer logstore)
 {
   GError *error = NULL;
   TplLogStoreSqlite *self = logstore;

@@ -35,8 +35,8 @@
 #include <telepathy-glib/util.h>
 
 #include <telepathy-logger/conf-internal.h>
-#include <telepathy-logger/entry.h>
-#include <telepathy-logger/entry-internal.h>
+#include <telepathy-logger/event.h>
+#include <telepathy-logger/event-internal.h>
 #include <telepathy-logger/log-store-internal.h>
 #include <telepathy-logger/log-store-xml-internal.h>
 #include <telepathy-logger/log-store-sqlite-internal.h>
@@ -62,7 +62,7 @@
 
 /**
  * TplLogEventFilter:
- * @event: the #TplEntry to filter
+ * @event: the #TplEvent to filter
  * @user_data: user-supplied data
  *
  * Returns: %TRUE if @event should appear in the result
@@ -97,7 +97,7 @@ typedef struct
   TplLogEventFilter filter;
   gchar *search_text;
   gpointer user_data;
-  TplEntry *logentry;
+  TplEvent *logevent;
 } TplLogManagerEventInfo;
 
 
@@ -256,7 +256,7 @@ tpl_log_manager_dup_singleton (void)
 /**
  * _tpl_log_manager_add_event
  * @manager: the log manager
- * @event: a TplEntry subclass's instance
+ * @event: a TplEvent subclass's instance
  * @error: the memory location of GError, filled if an error occurs
  *
  * It stores @event, sending it to all the registered TplLogStore which have
@@ -271,7 +271,7 @@ tpl_log_manager_dup_singleton (void)
  */
 gboolean
 _tpl_log_manager_add_event (TplLogManager *manager,
-    TplEntry *event,
+    TplEvent *event,
     GError **error)
 {
   TplLogManagerPriv *priv;
@@ -280,7 +280,7 @@ _tpl_log_manager_add_event (TplLogManager *manager,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
-  g_return_val_if_fail (TPL_IS_ENTRY (event), FALSE);
+  g_return_val_if_fail (TPL_IS_EVENT (event), FALSE);
 
   priv = manager->priv;
 
@@ -311,7 +311,7 @@ _tpl_log_manager_add_event (TplLogManager *manager,
   if (!retval)
     {
       CRITICAL ("Failed to write to all "
-          "writable LogStores log-id %s.", _tpl_entry_get_log_id (event));
+          "writable LogStores log-id %s.", _tpl_event_get_log_id (event));
       g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
           TPL_LOG_MANAGER_ERROR_ADD_EVENT,
           "Non recoverable error occurred during log manager's "
@@ -505,15 +505,15 @@ static gint
 log_manager_event_date_cmp (gconstpointer a,
     gconstpointer b)
 {
-  TplEntry *one = (TplEntry *) a;
-  TplEntry *two = (TplEntry *) b;
+  TplEvent *one = (TplEvent *) a;
+  TplEvent *two = (TplEvent *) b;
   gint64 one_time, two_time;
 
-  g_assert (TPL_IS_ENTRY (one));
-  g_assert (TPL_IS_ENTRY (two));
+  g_assert (TPL_IS_EVENT (one));
+  g_assert (TPL_IS_EVENT (two));
 
-  one_time = tpl_entry_get_timestamp (one);
-  two_time = tpl_entry_get_timestamp (two);
+  one_time = tpl_event_get_timestamp (one);
+  two_time = tpl_event_get_timestamp (two);
 
   /* return -1, 0 or 1 depending on event1 being newer, the same or older
    * than event2 */
@@ -802,7 +802,7 @@ static void
 tpl_log_manager_event_info_free (TplLogManagerEventInfo *data)
 {
   tp_clear_object (&data->account);
-  tp_clear_object (&data->logentry);
+  tp_clear_object (&data->logevent);
 
   tp_clear_pointer (&data->id, g_free);
   tp_clear_pointer (&data->date, g_date_free);
@@ -1000,7 +1000,7 @@ tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
 static void
 _get_events_for_date_async_result_free (gpointer data)
 {
-  GList *lst = data; /* list of TPL_ENTRY */
+  GList *lst = data; /* list of TPL_EVENT */
 
   g_list_foreach (lst, (GFunc) g_object_unref, NULL);
   g_list_free (lst);
@@ -1039,7 +1039,7 @@ _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Retrieve a list of #TplEntry exchanged at @date with @id.
+ * Retrieve a list of #TplEvent exchanged at @date with @id.
  */
 void
 tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
@@ -1085,7 +1085,7 @@ tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
  * tpl_log_manager_get_filtered_events_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @events: a pointer to a #GList used to return the list #TplEntry
+ * @events: a pointer to a #GList used to return the list #TplEvent
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, #FALSE otherwise.
@@ -1123,7 +1123,7 @@ tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
 static void
 _get_filtered_events_async_result_free (gpointer data)
 {
-  GList *lst = data; /* list of TPL_ENTRY */
+  GList *lst = data; /* list of TPL_EVENT */
 
   g_list_foreach (lst, (GFunc) g_object_unref, NULL);
   g_list_free (lst);

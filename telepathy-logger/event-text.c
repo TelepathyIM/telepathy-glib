@@ -20,44 +20,44 @@
  */
 
 #include "config.h"
-#include "entry-text.h"
-#include "entry-text-internal.h"
+#include "event-text.h"
+#include "event-text-internal.h"
 
 #include <glib-object.h>
 #include <telepathy-glib/util.h>
 
-#include <telepathy-logger/entry.h>
-#include <telepathy-logger/entry-internal.h>
+#include <telepathy-logger/event.h>
+#include <telepathy-logger/event-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
 /**
- * SECTION:entry-text
- * @title: TplEntryText
- * @short_description: Representation of a text log entry
+ * SECTION:event-text
+ * @title: TplEventText
+ * @short_description: Representation of a text log event
  *
- * A subclass of #TplEntry representing a text log entry.
+ * A subclass of #TplEvent representing a text log event.
  */
 
 /**
- * TplEntryText:
+ * TplEventText:
  *
- * An object representing a text log entry.
+ * An object representing a text log event.
  */
 
-G_DEFINE_TYPE (TplEntryText, tpl_entry_text, TPL_TYPE_ENTRY)
+G_DEFINE_TYPE (TplEventText, tpl_event_text, TPL_TYPE_EVENT)
 
-struct _TplEntryTextPriv
+struct _TplEventTextPriv
 {
-  TplEntryTextSignalType signal_type;
+  TplEventTextSignalType signal_type;
 
   TplChannelText *tpl_text;
   TpChannelTextMessageType message_type;
   gchar *message;
   gboolean chatroom;
-  /* in specs it's guint, TplEntry needs a way to represent ACK'd messages:
+  /* in specs it's guint, TplEvent needs a way to represent ACK'd messages:
    * if pending_msg_id reachs G_MAXINT32, then the problem is elsewhere :-) */
   gint pending_msg_id;
 };
@@ -71,10 +71,10 @@ enum
 
 
 static void
-tpl_entry_text_dispose (GObject * obj)
+tpl_event_text_dispose (GObject * obj)
 {
-  TplEntryText *self = TPL_ENTRY_TEXT (obj);
-  TplEntryTextPriv *priv = self->priv;
+  TplEventText *self = TPL_EVENT_TEXT (obj);
+  TplEventTextPriv *priv = self->priv;
 
   if (priv->tpl_text != NULL)
     {
@@ -82,30 +82,30 @@ tpl_entry_text_dispose (GObject * obj)
       priv->tpl_text = NULL;
     }
 
-  G_OBJECT_CLASS (tpl_entry_text_parent_class)->dispose (obj);
+  G_OBJECT_CLASS (tpl_event_text_parent_class)->dispose (obj);
 }
 
 
 static void
-tpl_entry_text_finalize (GObject * obj)
+tpl_event_text_finalize (GObject * obj)
 {
-  TplEntryText *self = TPL_ENTRY_TEXT (obj);
-  TplEntryTextPriv *priv = self->priv;
+  TplEventText *self = TPL_EVENT_TEXT (obj);
+  TplEventTextPriv *priv = self->priv;
 
   g_free (priv->message);
   priv->message = NULL;
 
-  G_OBJECT_CLASS (tpl_entry_text_parent_class)->finalize (obj);
+  G_OBJECT_CLASS (tpl_event_text_parent_class)->finalize (obj);
 }
 
 
 static void
-tpl_entry_text_get_property (GObject *object,
+tpl_event_text_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplEntryTextPriv *priv = TPL_ENTRY_TEXT (object)->priv;
+  TplEventTextPriv *priv = TPL_EVENT_TEXT (object)->priv;
 
   switch (param_id)
     {
@@ -126,22 +126,22 @@ tpl_entry_text_get_property (GObject *object,
 
 
 static void
-tpl_entry_text_set_property (GObject *object,
+tpl_event_text_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TplEntryText *self = TPL_ENTRY_TEXT (object);
+  TplEventText *self = TPL_EVENT_TEXT (object);
 
   switch (param_id) {
       case PROP_MESSAGE_TYPE:
-        _tpl_entry_text_set_message_type (self, g_value_get_uint (value));
+        _tpl_event_text_set_message_type (self, g_value_get_uint (value));
         break;
       case PROP_MESSAGE:
-        _tpl_entry_text_set_message (self, g_value_get_string (value));
+        _tpl_event_text_set_message (self, g_value_get_string (value));
         break;
       case PROP_PENDING_MSG_ID:
-        _tpl_entry_text_set_pending_msg_id (self, g_value_get_int (value));
+        _tpl_event_text_set_pending_msg_id (self, g_value_get_int (value));
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -150,82 +150,82 @@ tpl_entry_text_set_property (GObject *object,
 }
 
 
-static void tpl_entry_text_class_init (TplEntryTextClass *klass)
+static void tpl_event_text_class_init (TplEventTextClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  TplEntryClass *entry_class = TPL_ENTRY_CLASS (klass);
+  TplEventClass *event_class = TPL_EVENT_CLASS (klass);
   GParamSpec *param_spec;
 
-  object_class->finalize = tpl_entry_text_finalize;
-  object_class->dispose = tpl_entry_text_dispose;
-  object_class->get_property = tpl_entry_text_get_property;
-  object_class->set_property = tpl_entry_text_set_property;
-  entry_class->equal = _tpl_entry_text_equal;
+  object_class->finalize = tpl_event_text_finalize;
+  object_class->dispose = tpl_event_text_dispose;
+  object_class->get_property = tpl_event_text_get_property;
+  object_class->set_property = tpl_event_text_set_property;
+  event_class->equal = _tpl_event_text_equal;
 
   param_spec = g_param_spec_uint ("message-type",
       "MessageType",
-      "The message type for a Text log entry",
+      "The message type for a Text log event",
       0, G_MAXUINT32, TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE_TYPE, param_spec);
 
   param_spec = g_param_spec_string ("message",
       "Message",
-      "The text message of the log entry",
+      "The text message of the log event",
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE, param_spec);
 
   /**
-   * TplEntryText::pending-msg-id:
+   * TplEventText::pending-msg-id:
    *
-   * The pending message id for the current log entry.
-   * The default value, is #TPL_ENTRY_MSG_ID_UNKNOWN,
+   * The pending message id for the current log event.
+   * The default value, is #TPL_EVENT_MSG_ID_UNKNOWN,
    * meaning that it's not possible to know if the message is pending or has
    * been acknowledged.
    *
-   * An object instantiating a TplEntry subclass should explicitly set it
-   * to a valid msg-id number (id>=0) or to #TPL_ENTRY_MSG_ID_ACKNOWLEDGED
-   * when acknowledged or if the entry is a result of
+   * An object instantiating a TplEvent subclass should explicitly set it
+   * to a valid msg-id number (id>=0) or to #TPL_EVENT_MSG_ID_ACKNOWLEDGED
+   * when acknowledged or if the event is a result of
    * 'sent' signal.
-   * In fact a sent entry is considered as 'automatically' ACK by TPL.
+   * In fact a sent event is considered as 'automatically' ACK by TPL.
    *
    * The pending message id value is only meaningful when associated to the
-   * #TplEntry::channel-path property.
+   * #TplEvent::channel-path property.
    * The couple (channel-path, pending-msg-id) cannot be considered unique,
    * though, since a message-id might be reused over time.
    *
-   * Use #TplEntry::log-id for a unique identifier within TPL.
+   * Use #TplEvent::log-id for a unique identifier within TPL.
    */
   param_spec = g_param_spec_int ("pending-msg-id",
       "PendingMessageId",
-      "Pending Message ID, if set, the log entry is set as pending for ACK."
+      "Pending Message ID, if set, the log event is set as pending for ACK."
       " Default to -1 meaning not pending.",
-      -1, G_MAXUINT32, TPL_ENTRY_MSG_ID_ACKNOWLEDGED,
+      -1, G_MAXUINT32, TPL_EVENT_MSG_ID_ACKNOWLEDGED,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PENDING_MSG_ID,
       param_spec);
 
-  g_type_class_add_private (object_class, sizeof (TplEntryTextPriv));
+  g_type_class_add_private (object_class, sizeof (TplEventTextPriv));
 
 }
 
 
 static void
-tpl_entry_text_init (TplEntryText *self)
+tpl_event_text_init (TplEventText *self)
 {
-  TplEntryTextPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TPL_TYPE_ENTRY_TEXT, TplEntryTextPriv);
+  TplEventTextPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TPL_TYPE_EVENT_TEXT, TplEventTextPriv);
   self->priv = priv;
 }
 
 
-TplEntryText *
-_tpl_entry_text_new (const gchar *log_id,
+TplEventText *
+_tpl_event_text_new (const gchar *log_id,
     TpAccount *account,
-    TplEntryDirection direction)
+    TplEventDirection direction)
 {
-  return g_object_new (TPL_TYPE_ENTRY_TEXT,
+  return g_object_new (TPL_TYPE_EVENT_TEXT,
       "log-id", log_id,
       "account", account,
       "direction", direction,
@@ -242,7 +242,7 @@ static gchar *message_types[] = {
 
 
 /**
- * _tpl_entry_text_message_type_from_str
+ * _tpl_event_text_message_type_from_str
  * @type_str: string to transform into a #TpChannelTextMessageType
  *
  * Maps strings into enum #TpChannelTextMessageType values.
@@ -251,7 +251,7 @@ static gchar *message_types[] = {
  * mapping is found, or defaults to %TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL if not.
  */
 TpChannelTextMessageType
-_tpl_entry_text_message_type_from_str (const gchar *type_str)
+_tpl_event_text_message_type_from_str (const gchar *type_str)
 {
   guint i;
   for (i = 0; i < G_N_ELEMENTS (message_types); ++i)
@@ -264,7 +264,7 @@ _tpl_entry_text_message_type_from_str (const gchar *type_str)
 
 
 /**
- * _tpl_entry_text_message_type_to_str
+ * _tpl_event_text_message_type_to_str
  * @msg_type: message type to transform into a string
  *
  * Maps enum #TpChannelTextMessageType values into strings
@@ -273,7 +273,7 @@ _tpl_entry_text_message_type_from_str (const gchar *type_str)
  * a legal value for %TpChannelTextMessageType.
  */
 const gchar *
-_tpl_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
+_tpl_event_text_message_type_to_str (TpChannelTextMessageType msg_type)
 {
   g_return_val_if_fail (G_N_ELEMENTS (message_types) >= msg_type, NULL);
 
@@ -282,59 +282,59 @@ _tpl_entry_text_message_type_to_str (TpChannelTextMessageType msg_type)
 
 
 gboolean
-_tpl_entry_text_is_chatroom (TplEntryText * self)
+_tpl_event_text_is_chatroom (TplEventText * self)
 {
-  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self), FALSE);
+  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), FALSE);
 
   return self->priv->chatroom;
 }
 
 
 TplChannelText *
-_tpl_entry_text_get_tpl_channel_text (TplEntryText * self)
+_tpl_event_text_get_tpl_channel_text (TplEventText * self)
 {
-  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self), NULL);
+  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), NULL);
 
   return self->priv->tpl_text;
 }
 
 
-TplEntryTextSignalType
-_tpl_entry_text_get_signal_type (TplEntryText *self)
+TplEventTextSignalType
+_tpl_event_text_get_signal_type (TplEventText *self)
 {
-  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self), TPL_ENTRY_TEXT_SIGNAL_NONE);
+  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), TPL_EVENT_TEXT_SIGNAL_NONE);
 
   return self->priv->signal_type;
 }
 
 
 void
-_tpl_entry_text_set_signal_type (TplEntryText *self,
-    TplEntryTextSignalType signal_type)
+_tpl_event_text_set_signal_type (TplEventText *self,
+    TplEventTextSignalType signal_type)
 {
-  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
+  g_return_if_fail (TPL_IS_EVENT_TEXT (self));
 
   self->priv->signal_type = signal_type;
 }
 
 /**
- * tpl_entry_text_get_message
- * @self: a #TplEntryText
+ * tpl_event_text_get_message
+ * @self: a #TplEventText
  *
- * Returns: the same message as the #TplEntryText:message property
+ * Returns: the same message as the #TplEventText:message property
  */
 const gchar *
-tpl_entry_text_get_message (TplEntryText * self)
+tpl_event_text_get_message (TplEventText * self)
 {
-  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self), NULL);
+  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), NULL);
 
   return self->priv->message;
 }
 
 TpChannelTextMessageType
-_tpl_entry_text_get_message_type (TplEntryText * self)
+_tpl_event_text_get_message_type (TplEventText * self)
 {
-  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (self),
+  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self),
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
 
   return self->priv->message_type;
@@ -342,12 +342,12 @@ _tpl_entry_text_get_message_type (TplEntryText * self)
 
 
 void
-_tpl_entry_text_set_tpl_channel_text (TplEntryText * self,
+_tpl_event_text_set_tpl_channel_text (TplEventText * self,
     TplChannelText *data)
 {
-  TplEntryTextPriv *priv;
+  TplEventTextPriv *priv;
 
-  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
+  g_return_if_fail (TPL_IS_EVENT_TEXT (self));
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (data) || data == NULL);
 
   priv = self->priv;
@@ -358,15 +358,15 @@ _tpl_entry_text_set_tpl_channel_text (TplEntryText * self,
 
 
 void
-_tpl_entry_text_set_message (TplEntryText *self,
+_tpl_event_text_set_message (TplEventText *self,
     const gchar *data)
 {
-  TplEntryTextPriv *priv;
+  TplEventTextPriv *priv;
 
   if (data == NULL)
     return;
 
-  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
+  g_return_if_fail (TPL_IS_EVENT_TEXT (self));
 
   priv = self->priv;
 
@@ -376,78 +376,78 @@ _tpl_entry_text_set_message (TplEntryText *self,
 
 
 void
-_tpl_entry_text_set_message_type (TplEntryText *self,
+_tpl_event_text_set_message_type (TplEventText *self,
     TpChannelTextMessageType data)
 {
-  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
+  g_return_if_fail (TPL_IS_EVENT_TEXT (self));
 
   self->priv->message_type = data;
 }
 
 
 void
-_tpl_entry_text_set_chatroom (TplEntryText *self,
+_tpl_event_text_set_chatroom (TplEventText *self,
     gboolean data)
 {
-  g_return_if_fail (TPL_IS_ENTRY_TEXT (self));
+  g_return_if_fail (TPL_IS_EVENT_TEXT (self));
 
   self->priv->chatroom = data;
 }
 
 gboolean
-_tpl_entry_text_equal (TplEntry *message1,
-    TplEntry *message2)
+_tpl_event_text_equal (TplEvent *message1,
+    TplEvent *message2)
 {
-  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (message1), FALSE);
-  g_return_val_if_fail (TPL_IS_ENTRY_TEXT (message2), FALSE);
+  g_return_val_if_fail (TPL_IS_EVENT_TEXT (message1), FALSE);
+  g_return_val_if_fail (TPL_IS_EVENT_TEXT (message2), FALSE);
 
   /*
   if (priv1->id == priv2->id && !tp_strdiff (priv1->body, priv2->body)) {
   if (priv1->type == priv2->type)
-    if (!tp_strdiff (priv1->entry.text->message, priv2->entry.text->message)) {
+    if (!tp_strdiff (priv1->event.text->message, priv2->event.text->message)) {
     }
   */
-  return !tp_strdiff (_tpl_entry_get_log_id (message1),
-      _tpl_entry_get_log_id (message2));
+  return !tp_strdiff (_tpl_event_get_log_id (message1),
+      _tpl_event_get_log_id (message2));
 }
 
 /**
- * _tpl_entry_set_pending_msg_id:
- * @self: TplEntryText instance
+ * _tpl_event_set_pending_msg_id:
+ * @self: TplEventText instance
  * @data: the pending message ID
  *
  * Sets @self to be associated to pending message id @data.
  *
- * @see_also: #TplEntry::pending-msg-id for special values.
+ * @see_also: #TplEvent::pending-msg-id for special values.
  */
 void
-_tpl_entry_text_set_pending_msg_id (TplEntryText *self,
+_tpl_event_text_set_pending_msg_id (TplEventText *self,
     gint data)
 {
-  g_return_if_fail (TPL_IS_ENTRY (self));
+  g_return_if_fail (TPL_IS_EVENT (self));
 
   self->priv->pending_msg_id = data;
   g_object_notify (G_OBJECT (self), "pending-msg-id");
 }
 
 /**
- * tpl_entry_text_get_pending_msg_id
- * @self: a #TplEntryText
+ * tpl_event_text_get_pending_msg_id
+ * @self: a #TplEventText
  *
- * Returns: the id as the #TplEntryText:pending-msg-id property
+ * Returns: the id as the #TplEventText:pending-msg-id property
  */
 gint
-tpl_entry_text_get_pending_msg_id (TplEntryText *self)
+tpl_event_text_get_pending_msg_id (TplEventText *self)
 {
-  g_return_val_if_fail (TPL_IS_ENTRY (self), -1);
+  g_return_val_if_fail (TPL_IS_EVENT (self), -1);
 
   return self->priv->pending_msg_id;
 }
 
 
 gboolean
-_tpl_entry_text_is_pending (TplEntryText *self)
+_tpl_event_text_is_pending (TplEventText *self)
 {
-  return TPL_ENTRY_MSG_ID_IS_VALID (
-      tpl_entry_text_get_pending_msg_id (self));
+  return TPL_EVENT_MSG_ID_IS_VALID (
+      tpl_event_text_get_pending_msg_id (self));
 }

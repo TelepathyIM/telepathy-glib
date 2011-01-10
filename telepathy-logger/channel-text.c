@@ -29,9 +29,9 @@
 
 #include <telepathy-logger/channel-internal.h>
 #include <telepathy-logger/observer-internal.h>
-#include <telepathy-logger/entry-internal.h>
-#include <telepathy-logger/entry-text.h>
-#include <telepathy-logger/entry-text-internal.h>
+#include <telepathy-logger/event-internal.h>
+#include <telepathy-logger/event-text.h>
+#include <telepathy-logger/event-text-internal.h>
 #include <telepathy-logger/log-manager-internal.h>
 #include <telepathy-logger/log-store-sqlite-internal.h>
 
@@ -95,7 +95,7 @@ static void pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data);
 #endif
 
-static void keepon_on_receiving_signal (TplEntryText *log,
+static void keepon_on_receiving_signal (TplEventText *log,
     TpContact *remote);
 static void got_message_pending_messages_cb (TpProxy *proxy,
     const GValue *out_Value, const GError *error, gpointer user_data,
@@ -726,7 +726,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
         {
           DEBUG ("pending-message-id not in a valid range, setting to "
               "UNKNOWN");
-            message_id = TPL_ENTRY_MSG_ID_UNKNOWN;
+            message_id = TPL_EVENT_MSG_ID_UNKNOWN;
         }
       message_timestamp = tp_asv_get_uint64 (message_headers,
           "message-received", NULL);
@@ -1050,8 +1050,8 @@ on_sent_signal_cb (TpChannel *proxy,
   TpContact *me;
   TplEntity *tpl_entity_sender;
   TplEntity *tpl_entity_receiver = NULL;
-  TplEntryText *text_log;
-  TplEntry *log;
+  TplEventText *text_log;
+  TplEvent *log;
   TplLogManager *logmanager;
   const gchar *chat_id;
   TpAccount *account;
@@ -1062,7 +1062,7 @@ on_sent_signal_cb (TpChannel *proxy,
 
   channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   log_id = _tpl_create_message_token (channel_path, arg_Timestamp,
-      TPL_ENTRY_MSG_ID_ACKNOWLEDGED);
+      TPL_EVENT_MSG_ID_ACKNOWLEDGED);
 
   /* Initialize data for TplEntity */
   me = _tpl_channel_text_get_my_contact (tpl_text);
@@ -1102,7 +1102,7 @@ on_sent_signal_cb (TpChannel *proxy,
           arg_Text);
     }
 
-  /* Initialise TplEntryText */
+  /* Initialise TplEventText */
   if (!_tpl_channel_text_is_chatroom (tpl_text))
     chat_id = tpl_entity_get_identifier (tpl_entity_receiver);
   else
@@ -1110,30 +1110,30 @@ on_sent_signal_cb (TpChannel *proxy,
 
   account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
 
-  text_log = _tpl_entry_text_new (log_id, account,
-      TPL_ENTRY_DIRECTION_OUT);
-  log = TPL_ENTRY (text_log);
+  text_log = _tpl_event_text_new (log_id, account,
+      TPL_EVENT_DIRECTION_OUT);
+  log = TPL_EVENT (text_log);
 
-  _tpl_entry_text_set_pending_msg_id (text_log,
-      TPL_ENTRY_MSG_ID_ACKNOWLEDGED);
-  _tpl_entry_set_channel_path (TPL_ENTRY (log), channel_path);
-  _tpl_entry_set_chat_id (log, chat_id);
-  _tpl_entry_set_timestamp (log, (time_t) arg_Timestamp);
-  _tpl_entry_set_sender (log, tpl_entity_sender);
+  _tpl_event_text_set_pending_msg_id (text_log,
+      TPL_EVENT_MSG_ID_ACKNOWLEDGED);
+  _tpl_event_set_channel_path (TPL_EVENT (log), channel_path);
+  _tpl_event_set_chat_id (log, chat_id);
+  _tpl_event_set_timestamp (log, (time_t) arg_Timestamp);
+  _tpl_event_set_sender (log, tpl_entity_sender);
   /* NULL when it's a chatroom */
   if (tpl_entity_receiver != NULL)
-    _tpl_entry_set_receiver (log, tpl_entity_receiver);
-  _tpl_entry_text_set_message (text_log, arg_Text);
-  _tpl_entry_text_set_signal_type (text_log, TPL_ENTRY_TEXT_SIGNAL_SENT);
-  _tpl_entry_text_set_message_type (text_log, arg_Type);
-  _tpl_entry_text_set_tpl_channel_text (text_log, tpl_text);
+    _tpl_event_set_receiver (log, tpl_entity_receiver);
+  _tpl_event_text_set_message (text_log, arg_Text);
+  _tpl_event_text_set_signal_type (text_log, TPL_EVENT_TEXT_SIGNAL_SENT);
+  _tpl_event_text_set_message_type (text_log, arg_Type);
+  _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
 
-  /* Initialized LogStore and send the log entry */
-  _tpl_entry_text_set_chatroom (text_log,
+  /* Initialized LogStore and send the log event */
+  _tpl_event_text_set_chatroom (text_log,
       _tpl_channel_text_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
-  _tpl_log_manager_add_event (logmanager, TPL_ENTRY (log), &error);
+  _tpl_log_manager_add_event (logmanager, TPL_EVENT (log), &error);
 
   if (error != NULL)
     {
@@ -1161,21 +1161,21 @@ on_received_signal_with_contact_cb (TpConnection *connection,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplEntryText *log = user_data;
+  TplEventText *log = user_data;
   TplChannelText *tpl_text;
   TpContact *remote;
   TpHandle handle;
 
-  g_return_if_fail (TPL_IS_ENTRY_TEXT (log));
+  g_return_if_fail (TPL_IS_EVENT_TEXT (log));
 
-  tpl_text = _tpl_entry_text_get_tpl_channel_text (log);
+  tpl_text = _tpl_event_text_get_tpl_channel_text (log);
 
   if (error != NULL)
     {
       PATH_DEBUG (tpl_text, "An Unrecoverable error retrieving remote contact "
          "information occured: %s", error->message);
       PATH_DEBUG (tpl_text, "Unable to log the received message: %s",
-         tpl_entry_text_get_message (log));
+         tpl_event_text_get_message (log));
       g_object_unref (log);
       return;
     }
@@ -1185,7 +1185,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
       PATH_DEBUG (tpl_text, "%d invalid handle(s) passed to "
          "tp_connection_get_contacts_by_handle()", n_failed);
       PATH_DEBUG (tpl_text, "Not able to log the received message: %s",
-         tpl_entry_text_get_message (log));
+         tpl_event_text_get_message (log));
       g_object_unref (log);
       return;
     }
@@ -1201,10 +1201,10 @@ on_received_signal_with_contact_cb (TpConnection *connection,
 
 
 static void
-keepon_on_receiving_signal (TplEntryText *text_log,
+keepon_on_receiving_signal (TplEventText *text_log,
     TpContact *remote)
 {
-  TplEntry *log = TPL_ENTRY (text_log);
+  TplEvent *log = TPL_EVENT (text_log);
   TplChannelText *tpl_text;
   GError *e = NULL;
   TplLogManager *logmanager;
@@ -1212,39 +1212,39 @@ keepon_on_receiving_signal (TplEntryText *text_log,
   TplEntity *tpl_entity_receiver;
   TpContact *local;
 
-  g_return_if_fail (TPL_IS_ENTRY_TEXT (text_log));
+  g_return_if_fail (TPL_IS_EVENT_TEXT (text_log));
 
-  tpl_text = _tpl_entry_text_get_tpl_channel_text (text_log);
+  tpl_text = _tpl_event_text_get_tpl_channel_text (text_log);
   local = _tpl_channel_text_get_my_contact (tpl_text);
 
   tpl_entity_sender = _tpl_entity_from_tp_contact (remote);
   _tpl_entity_set_entity_type (tpl_entity_sender, TPL_ENTITY_CONTACT);
-  _tpl_entry_set_sender (log, tpl_entity_sender);
+  _tpl_event_set_sender (log, tpl_entity_sender);
 
   tpl_entity_receiver = _tpl_entity_from_tp_contact (local);
 
   DEBUG ("recvd:\n\tlog_id=\"%s\"\n\tto=\"%s "
       "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-      _tpl_entry_get_log_id (log),
+      _tpl_event_get_log_id (log),
       tpl_entity_get_identifier (tpl_entity_receiver),
       tpl_entity_get_alias (tpl_entity_receiver),
       tpl_entity_get_identifier (tpl_entity_sender),
       tpl_entity_get_alias (tpl_entity_sender),
-      tpl_entry_text_get_message (text_log));
+      tpl_event_text_get_message (text_log));
 
 
   if (!_tpl_channel_text_is_chatroom (tpl_text))
-    _tpl_entry_set_chat_id (log, tpl_entity_get_identifier (
+    _tpl_event_set_chat_id (log, tpl_entity_get_identifier (
           tpl_entity_sender));
   else
-    _tpl_entry_set_chat_id (log, _tpl_channel_text_get_chatroom_id (
+    _tpl_event_set_chat_id (log, _tpl_channel_text_get_chatroom_id (
           tpl_text));
 
-  _tpl_entry_text_set_chatroom (text_log,
+  _tpl_event_text_set_chatroom (text_log,
       _tpl_channel_text_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
-  _tpl_log_manager_add_event (logmanager, TPL_ENTRY (log), &e);
+  _tpl_log_manager_add_event (logmanager, TPL_EVENT (log), &e);
   if (e != NULL)
     {
       DEBUG ("%s", e->message);
@@ -1273,8 +1273,8 @@ on_received_signal_cb (TpChannel *proxy,
   TpConnection *tp_conn;
   TpContact *me, *remote;
   TplEntity *tpl_entity_receiver = NULL;
-  TplEntryText *text_log = NULL;
-  TplEntry *log;
+  TplEventText *text_log = NULL;
+  TplEvent *log;
   TpAccount *account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
   TplLogStore *index = _tpl_log_store_sqlite_dup ();
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
@@ -1315,25 +1315,25 @@ on_received_signal_cb (TpChannel *proxy,
       return;
     }
 
-  /* Initialize TplEntryText (part 1) - chat_id still unknown */
-  text_log = _tpl_entry_text_new (log_id, account,
-      TPL_ENTRY_DIRECTION_IN);
-  log = TPL_ENTRY (text_log);
+  /* Initialize TplEventText (part 1) - chat_id still unknown */
+  text_log = _tpl_event_text_new (log_id, account,
+      TPL_EVENT_DIRECTION_IN);
+  log = TPL_EVENT (text_log);
 
-  _tpl_entry_set_channel_path (log, channel_path);
-  _tpl_entry_text_set_pending_msg_id (text_log, arg_ID);
-  _tpl_entry_text_set_tpl_channel_text (text_log, tpl_text);
-  _tpl_entry_text_set_message (text_log, arg_Text);
-  _tpl_entry_text_set_message_type (text_log, arg_Type);
-  _tpl_entry_text_set_signal_type (text_log,
-      TPL_ENTRY_TEXT_SIGNAL_RECEIVED);
+  _tpl_event_set_channel_path (log, channel_path);
+  _tpl_event_text_set_pending_msg_id (text_log, arg_ID);
+  _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
+  _tpl_event_text_set_message (text_log, arg_Text);
+  _tpl_event_text_set_message_type (text_log, arg_Type);
+  _tpl_event_text_set_signal_type (text_log,
+      TPL_EVENT_TEXT_SIGNAL_RECEIVED);
 
   me = _tpl_channel_text_get_my_contact (tpl_text);
   tpl_entity_receiver = _tpl_entity_from_tp_contact (me);
   _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_SELF);
-  _tpl_entry_set_receiver (log, tpl_entity_receiver);
+  _tpl_event_set_receiver (log, tpl_entity_receiver);
 
-  _tpl_entry_set_timestamp (log, (time_t) arg_Timestamp);
+  _tpl_event_set_timestamp (log, (time_t) arg_Timestamp);
 
   tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_chan));
   remote = g_hash_table_lookup (tpl_text->priv->contacts,

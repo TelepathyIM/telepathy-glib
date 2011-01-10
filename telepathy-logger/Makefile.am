@@ -19,8 +19,8 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 LIBTPLdir = $(includedir)/telepathy-logger-0.1/telepathy-logger
 LIBTPL_HEADERS = \
 		entity.h			\
-		entry.h			\
-		entry-text.h		\
+		event.h				\
+		event-text.h		\
 		log-manager.h			\
 		telepathy-logger.h \
 		$(NULL)
@@ -55,10 +55,10 @@ libtelepathy_logger_la_SOURCES = \
 		dbus-service-internal.h			\
 		debug-internal.h		\
 		debug.c				\
-		entry.c			\
-		entry-internal.h			\
-		entry-text.c		\
-		entry-text-internal.h		\
+		event.c			\
+		event-internal.h			\
+		event-text.c		\
+		event-text-internal.h		\
 		log-manager.c			\
 		log-manager-internal.h		\
 		log-store.c			\

@@ -27,7 +27,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/account.h>
 
-#include <telepathy-logger/entry.h>
+#include <telepathy-logger/event.h>
 
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_MANAGER  (tpl_log_manager_get_type ())
@@ -76,7 +76,7 @@ typedef struct
   GDate *date;
 } TplLogSearchHit;
 
-typedef gboolean (*TplLogEventFilter) (TplEntry *event,
+typedef gboolean (*TplLogEventFilter) (TplEvent *event,
     gpointer user_data);
 
 GType tpl_log_manager_get_type (void);

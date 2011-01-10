@@ -31,8 +31,8 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/svc-generic.h>
 
-#include <telepathy-logger/entry-internal.h>
-#include <telepathy-logger/entry-text.h>
+#include <telepathy-logger/event-internal.h>
+#include <telepathy-logger/event-text.h>
 #include <telepathy-logger/log-manager.h>
 
 #include <extensions/extensions.h>
@@ -109,12 +109,12 @@ favourite_contact_closure_new (TplDBusService *self,
 
 
 static gboolean
-favourite_contacts_add_entry (TplDBusService *self,
+favourite_contacts_add_event (TplDBusService *self,
     const gchar *account,
     const gchar *contact_id)
 {
   GHashTable *contacts;
-  gboolean new_entry = FALSE;
+  gboolean new_event = FALSE;
   TplDBusServicePriv *priv;
 
   g_return_val_if_fail (TPL_IS_DBUS_SERVICE (self), FALSE);
@@ -133,14 +133,14 @@ favourite_contacts_add_entry (TplDBusService *self,
           (GDestroyNotify) g_free, NULL);
       g_hash_table_insert (priv->accounts_contacts_map, g_strdup (account),
           contacts);
-      new_entry = TRUE;
+      new_event = TRUE;
     }
   else if (g_hash_table_lookup (contacts, contact_id) == NULL)
     {
-      new_entry = TRUE;
+      new_event = TRUE;
     }
 
-  if (new_entry)
+  if (new_event)
     {
       /* add dummy string for the value just for the convenience of looking up
        * whether the key already exists */
@@ -148,7 +148,7 @@ favourite_contacts_add_entry (TplDBusService *self,
           GINT_TO_POINTER (TRUE));
     }
 
-  return new_entry;
+  return new_event;
 }
 
 
@@ -187,7 +187,7 @@ favourite_contacts_parse_line (TplDBusService *self,
       success = FALSE;
     }
   else
-    favourite_contacts_add_entry (self, elements[0], elements[1]);
+    favourite_contacts_add_event (self, elements[0], elements[1]);
 
   g_strfreev (elements);
 
@@ -405,12 +405,12 @@ _get_events_return (GObject *manager,
        ptr != NULL && ctx->lines > 0;
        ptr = g_list_previous (ptr))
     {
-      TplEntry *log = ptr->data;
-      const char *message = tpl_entry_text_get_message (
-          TPL_ENTRY_TEXT (log));
+      TplEvent *log = ptr->data;
+      const char *message = tpl_event_text_get_message (
+          TPL_EVENT_TEXT (log));
       const char *sender = tpl_entity_get_identifier (
-          tpl_entry_get_sender (log));
-      gint64 timestamp = tpl_entry_get_timestamp (log);
+          tpl_event_get_sender (log));
+      gint64 timestamp = tpl_event_get_timestamp (log);
 
       DEBUG ("Message: %" G_GINT64_FORMAT " <%s> %s",
           timestamp, sender, message);
@@ -775,7 +775,7 @@ pendingproc_add_favourite_contact (TplActionChain *action_chain,
       goto pendingproc_add_favourite_contact_ERROR;
     }
 
-  should_add = favourite_contacts_add_entry (closure->service, closure->account,
+  should_add = favourite_contacts_add_event (closure->service, closure->account,
       closure->contact_id);
 
   closure->cb = add_favourite_contact_file_save_cb;

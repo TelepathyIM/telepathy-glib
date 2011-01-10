@@ -28,7 +28,7 @@
 #include <telepathy-logger/log-store-internal.h>
 
 gboolean _tpl_log_manager_add_event (TplLogManager *manager,
-    TplEntry *event, GError **error);
+    TplEvent *event, GError **error);
 
 gboolean _tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore);

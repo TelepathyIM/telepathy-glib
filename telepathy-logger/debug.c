@@ -34,7 +34,7 @@ static GDebugKey keys[] = {
   { "conf",         TPL_DEBUG_CONF },
   { "entity",      TPL_DEBUG_ENTITY },
   { "dbus-service", TPL_DEBUG_DBUS_SERVICE },
-  { "log-entry",    TPL_DEBUG_LOG_ENTRY },
+  { "log-event",    TPL_DEBUG_LOG_EVENT },
   { "log-manager",  TPL_DEBUG_LOG_MANAGER },
   { "log-store",    TPL_DEBUG_LOG_STORE },
   { "main",         TPL_DEBUG_MAIN },

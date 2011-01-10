@@ -26,7 +26,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/account.h>
 
-#include <telepathy-logger/entry.h>
+#include <telepathy-logger/event.h>
 #include <telepathy-logger/log-manager.h>
 
 G_BEGIN_DECLS
@@ -64,7 +64,7 @@ typedef struct
   const gchar * (*get_name) (TplLogStore *self);
   gboolean (*exists) (TplLogStore *self, TpAccount *account,
       const gchar *id, TplEventSearchType type);
-  gboolean (*add_event) (TplLogStore *self, TplEntry *event,
+  gboolean (*add_event) (TplLogStore *self, TplEvent *event,
       GError **error);
   GList * (*get_dates) (TplLogStore *self, TpAccount *account,
       const gchar *id, TplEventSearchType type);
@@ -87,7 +87,7 @@ GType _tpl_log_store_get_type (void);
 const gchar * _tpl_log_store_get_name (TplLogStore *self);
 gboolean _tpl_log_store_exists (TplLogStore *self, TpAccount *account,
     const gchar *id, TplEventSearchType type);
-gboolean _tpl_log_store_add_event (TplLogStore *self, TplEntry *event,
+gboolean _tpl_log_store_add_event (TplLogStore *self, TplEvent *event,
     GError **error);
 GList * _tpl_log_store_get_dates (TplLogStore *self, TpAccount *account,
     const gchar *id, TplEventSearchType type);

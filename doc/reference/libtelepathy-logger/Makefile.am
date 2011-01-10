@@ -65,8 +65,8 @@ IGNORE_HFILES=\
     datetime-internal.h \
     dbus-service-internal.h \
     debug-internal.h \
-    entry-internal.h \
-    entry-text-internal.h \
+    event-internal.h \
+    event-text-internal.h \
     log-manager-internal.h \
     log-store-factory-internal.h \
     log-store-internal.h \
