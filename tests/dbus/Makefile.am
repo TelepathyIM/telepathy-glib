@@ -218,6 +218,9 @@ AM_CPPFLAGS = \
     $(GLIB_CFLAGS) \
     $(DBUS_CFLAGS) \
     $(NULL)
+AM_LDFLAGS = \
+    $(ERROR_LDFLAGS) \
+    $(NULL)
 
 AM_CFLAGS = $(ERROR_CFLAGS)
 

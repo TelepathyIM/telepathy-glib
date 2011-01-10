@@ -14,6 +14,9 @@ AM_CFLAGS = \
     $(DBUS_CFLAGS) \
     $(GLIB_CFLAGS) \
     $(TP_GLIB_CFLAGS)
+AM_LDFLAGS = \
+    $(ERROR_LDFLAGS) \
+    $(NULL)
 
 EXTRA_DIST = \
     all.xml \
