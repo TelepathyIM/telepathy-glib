@@ -197,6 +197,13 @@ add_log_store (TplLogManager *self,
       "writable", writable,
       NULL);
 
+  /* set the log store in "testmode" if it supports it and the environment is
+   * currently in test mode */
+  if (g_object_class_find_property (G_OBJECT_GET_CLASS (store), "testmode"))
+      g_object_set (store,
+          "testmode", (g_getenv ("TPL_TEST_MODE") != NULL),
+          NULL);
+
   if (store == NULL)
     CRITICAL ("Error creating %s (name=%s)", g_type_name (type), name);
   else if (!_tpl_log_manager_register_log_store (self, store))
