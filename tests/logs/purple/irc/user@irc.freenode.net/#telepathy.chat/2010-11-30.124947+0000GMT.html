@@ -1,0 +1,178 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Conversation with #telepathy at Tue 30 Nov 2010 12:49:47 GMT on KA__@irc.freenode.net (irc)</title></head><body><h3>Conversation with #telepathy at Tue 30 Nov 2010 12:49:47 GMT on KA__@irc.freenode.net (irc)</h3>
+<font size="2">(12:49:48)</font><b> The topic for #telepathy is: ICQ trouble? <a href="http://is.gd/hmEtM">http://is.gd/hmEtM</a> | Visit #empathy on GIMPnet for Empathy-specific discussion | Telepathy Real-time Communications Framework: <a href="http://telepathy.freedesktop.org">http://telepathy.freedesktop.org</a> | <a href="http://telepathy.freedesktop.org/wiki/FAQ">http://telepathy.freedesktop.org/wiki/FAQ</a> | <a href="http://git.collabora.co.uk/">http://git.collabora.co.uk/</a></b><br/>
+<font size="2">(12:56:01)</font><b> MattJ [<em>~MattJ@91.85.174.192</em>] entered the room.</b><br/>
+<font size="2">(13:10:27)</font><b> johanbr [<em>~j@142.12.7.28</em>] entered the room.</b><br/>
+<font size="2">(13:16:13)</font><b> seiflotfy_ [<em>~seiflotfy@ip-95-223-14-124.unitymediagroup.de</em>] entered the room.</b><br/>
+<font size="2">(13:16:16)</font><b> seiflotfy left the room (quit: Read error: Connection reset by peer).</b><br/>
+<font color="#A82F2F"><font size="2">(13:17:58)</font> <b>smcv:</b></font> those who like contact lists: https://bugs.freedesktop.org/show_bug.cgi?id=31997<br/>
+<font size="2">(13:18:39)</font><b> shiyee left the room (quit: Quit: Ex-Chat).</b><br/>
+<font color="#A82F2F"><font size="2">(13:22:05)</font> <b>smcv:</b></font> and relatedly https://bugs.freedesktop.org/show_bug.cgi?id=31998<br/>
+<font size="2">(13:25:18)</font><b> seb128 left the room (quit: Quit: Ex-Chat).</b><br/>
+<font size="2">(13:25:34)</font><b> seb128 [<em>~seb128@ANancy-258-1-45-93.w90-39.abo.wanadoo.fr</em>] entered the room.</b><br/>
+<font size="2">(13:25:34)</font><b> seb128 left the room (quit: Changing host).</b><br/>
+<font size="2">(13:25:34)</font><b> seb128 [<em>~seb128@ubuntu/member/seb128</em>] entered the room.</b><br/>
+<font size="2">(13:37:05)</font><b> bpepple [<em>~bpepple|l@99-186-52-80.lightspeed.clmboh.sbcglobal.net</em>] entered the room.</b><br/>
+<font size="2">(13:43:15)</font><b> seiflotfy_ left the room (quit: Remote host closed the connection).</b><br/>
+<font size="2">(13:44:12)</font><b> alsuren [<em>~alsuren@78-86-104-189.zone2.bethere.co.uk</em>] entered the room.</b><br/>
+<font size="2">(13:44:58)</font><b> seiflotfy [<em>~seiflotfy@ip-95-223-14-124.unitymediagroup.de</em>] entered the room.</b><br/>
+<font size="2">(13:47:43)</font><b> gkcn left the room (&quot;http://quassel-irc.org - Her yerden rahatça konuş.&quot;).</b><br/>
+<font size="2">(13:58:56)</font><b> seb128 left the room (quit: Quit: Ex-Chat).</b><br/>
+<font color="#A82F2F"><font size="2">(14:04:34)</font> <b>wjt:</b></font> hmm. what do we actually have in Gabble that actually needs server support? besides PEP and contact search and contact info.<br/>
+<font color="#A82F2F"><font size="2">(14:09:31)</font> <b>cassidy:</b></font> mucs ?<br/>
+<font color="#A82F2F"><font size="2">(14:09:38)</font> <b>cassidy:</b></font> invisible<br/>
+<font color="#A82F2F"><font size="2">(14:09:47)</font> <b>cassidy:</b></font> proxies<br/>
+<font color="#A82F2F"><font size="2">(14:10:06)</font> <b>sjoerd:</b></font> invisible is a good one<br/>
+<font color="#A82F2F"><font size="2">(14:11:22)</font> <b>cassidy:</b></font> XMPP ping maybe<br/>
+<font color="#A82F2F"><font size="2">(14:11:30)</font> <b>cassidy:</b></font> not sure if we implement this one<br/>
+<font size="2">(14:11:31)</font><b> seb128 [<em>~seb128@ANancy-258-1-45-93.w90-39.abo.wanadoo.fr</em>] entered the room.</b><br/>
+<font size="2">(14:11:31)</font><b> seb128 left the room (quit: Changing host).</b><br/>
+<font size="2">(14:11:31)</font><b> seb128 [<em>~seb128@ubuntu/member/seb128</em>] entered the room.</b><br/>
+<font size="2">(14:11:41)</font><b> mikhailz left the room (quit: Quit: Ушёл).</b><br/>
+<font color="#A82F2F"><font size="2">(14:11:48)</font> <b>cassidy:</b></font> the roster power saving thing<br/>
+<font size="2">(14:12:11)</font><b> kaserf [<em>~felix@ppp-93-104-18-213.dynamic.mnet-online.de</em>] entered the room.</b><br/>
+<font color="#A82F2F"><font size="2">(14:12:20)</font> <b>wjt:</b></font> oh yeah, dwd implemented google:queue in M-Link<br/>
+<font color="#A82F2F"><font size="2">(14:12:26)</font> <b>wjt:</b></font> invisible&apos;s a good idea. we do implement xmpp ping<br/>
+<font color="#A82F2F"><font size="2">(14:18:06)</font> <b>wjt:</b></font> we don&apos;t do the roster versioning thing though<br/>
+<font color="#A82F2F"><font size="2">(14:18:10)</font> <b>wjt:</b></font> maybe we should. how hard could it be.<br/>
+<font color="#A82F2F"><font size="2">(14:18:44)</font> <b>wjt:</b></font> there&apos;s not much to test in Ping :)<br/>
+<font color="#A82F2F"><font size="2">(14:19:01)</font> <b>sjoerd:</b></font> I&apos;d like to move to a WockyRoster first tbh, but....<br/>
+<font color="#A82F2F"><font size="2">(14:19:13)</font> <b>wjt:</b></font> cassidy: proxies as in Socks5 bytestream proxies?<br/>
+<font color="#A82F2F"><font size="2">(14:19:16)</font> <b>cassidy:</b></font> yep<br/>
+<font size="2">(14:20:22)</font><b> bcurtiswx [<em>~bcurtis@wx.mesa.gmu.edu</em>] entered the room.</b><br/>
+<font size="2">(14:20:22)</font><b> bcurtiswx left the room (quit: Changing host).</b><br/>
+<font size="2">(14:20:22)</font><b> bcurtiswx [<em>~bcurtis@ubuntu/member/bcurtiswx</em>] entered the room.</b><br/>
+<font size="2">(14:30:32)</font><b> jonkri [<em>~jonkri@dedikerad/admin/jonkri</em>] entered the room.</b><br/>
+<font size="2">(14:36:43)</font><b> stefw_ [<em>~sean@201.138.95.188</em>] entered the room.</b><br/>
+<font size="2">(14:53:14)</font><b> trupheenix left the room (quit: Ping timeout: 255 seconds).</b><br/>
+<font color="#A82F2F"><font size="2">(14:55:26)</font> <b>ptlo:</b></font> kkszysiu, heya; i seem to remember you were hacking on a im-via-web-using-telepathy stuff? how&apos;s that going? i&apos;d be interested in doing something along the same lines<br/>
+<font color="#A82F2F"><font size="2">(14:55:46)</font> <b>ptlo:</b></font> (or similar)<br/>
+<font color="#A82F2F"><font size="2">(15:10:05)</font> <b>wjt:</b></font> huh<br/>
+<font color="#A82F2F"><font size="2">(15:10:21)</font> <b>wjt:</b></font> setting my status on Google Talk seems to take a noticable amount of time since the Shared Status stuff went in<br/>
+<font color="#A82F2F"><font size="2">(15:10:43)</font> <b>sjoerd:</b></font> in gabble or in another location<br/>
+<font color="#A82F2F"><font size="2">(15:11:12)</font> <b>sjoerd:</b></font> Oh, i noticed that our iq request queue somethings fill up and then doesn&apos;t seem to get unstuck<br/>
+<font color="#A82F2F"><font size="2">(15:11:43)</font> <b>sjoerd:</b></font> quite noticable of you request user info<br/>
+<font color="#A82F2F"><font size="2">(15:12:06)</font> <b>wjt:</b></font> in Gabble. i didn&apos;t even have GMail open<br/>
+<font color="#A82F2F"><font size="2">(15:12:23)</font> <b>wjt:</b></font> invisibleness works on almost all of my accounts now! :D<br/>
+<font color="#A82F2F"><font size="2">(15:12:38)</font> <b>sjoerd:</b></font> i mean does it take gabble a while to send out the presence or gmail to update it to peers<br/>
+<font color="#A82F2F"><font size="2">(15:13:35)</font> <b>wjt:</b></font> MattJ: so about that xep-0186 support? ;-)<br/>
+<font color="#A82F2F"><font size="2">(15:14:03)</font> <b>wjt:</b></font> heh, oh dear<br/>
+<font color="#A82F2F"><font size="2">(15:14:22)</font> <b>wjt:</b></font> i fell out of jdev@ when I went invisible<br/>
+<font color="#A82F2F"><font size="2">(15:14:39)</font> <b>sjoerd:</b></font> buhboh<br/>
+<font color="#A82F2F"><font size="2">(15:15:10)</font> <b>wjt:</b></font> i guess the collabora xmpp server does privacy list-based invisibility, so it&apos;s only doing what i asked<br/>
+<font color="#A82F2F"><font size="2">(15:16:50)</font> <b>cassidy:</b></font> wjt, how can you test if you are actually invisible? The account presence is always sync with your real status?<br/>
+<font color="#A82F2F"><font size="2">(15:17:26)</font> <b>cassidy:</b></font> (I like this ghost icon :)<br/>
+<font color="#A82F2F"><font size="2">(15:17:28)</font> <b>wjt:</b></font> http://telepathy.freedesktop.org/spec/Account.html#org.freedesktop.Telepathy.Account.CurrentPresence is based on what the CM says it is<br/>
+<font color="#A82F2F"><font size="2">(15:17:37)</font> <b>wjt:</b></font> and that&apos;s what shows up in the account dialog<br/>
+<font color="#A82F2F"><font size="2">(15:17:46)</font> <b>wjt:</b></font> what does the ghost look like? I use a different theme.<br/>
+<font color="#A82F2F"><font size="2">(15:20:40)</font> <b>cassidy:</b></font> wjt, http://people.collabora.co.uk/~cassidy/status.jpg<br/>
+<font color="#A82F2F"><font size="2">(15:22:31)</font> <b>wjt:</b></font> haha<br/>
+<font color="#A82F2F"><font size="2">(15:22:39)</font> <b>wjt:</b></font> that&apos;s the only good icon in that set<br/>
+<font color="#A82F2F"><font size="2">(15:22:51)</font> <b>cassidy:</b></font> totally<br/>
+<font color="#A82F2F"><font size="2">(15:28:05)</font> <b>jonnylamb:</b></font> pessi: Hi, I fixed some bugs in ring: http://git.collabora.co.uk/?p=user/jonny/telepathy-ring.git;a=shortlog;h=refs/heads/trivia<br/>
+<font color="#A82F2F"><font size="2">(15:29:09)</font> <b>wjt:</b></font> no gitorious merge request? <br/>
+<font color="#A82F2F"><font size="2">(15:29:27)</font> <b>jonnylamb:</b></font> no gitorious merge request.<br/>
+<font color="#A82F2F"><font size="2">(15:29:42)</font> <b>wjt:</b></font> no biscuit.<br/>
+<font color="#A82F2F"><font size="2">(15:30:44)</font> <b>sjoerd:</b></font> bha, my register flag is sticky on an account again<br/>
+<font color="#A82F2F"><font size="2">(15:30:49)</font> <b>sjoerd:</b></font> i thought we fixed that...<br/>
+<font color="#A82F2F"><font size="2">(15:33:38)</font> <b>MattJ:</b></font> That&apos;s the #2 most common problem I help Empathy users with :)<br/>
+<font color="#A82F2F"><font size="2">(15:34:15)</font> <b>jonnylamb:</b></font> :-/<br/>
+<font color="#A82F2F"><font size="2">(15:34:21)</font> <b>jonnylamb:</b></font> What&apos;s number one?<br/>
+<font color="#A82F2F"><font size="2">(15:34:26)</font> <b>cassidy:</b></font> yeah that should have be fixed in MC<br/>
+<font color="#A82F2F"><font size="2">(15:34:48)</font> <b>sjoerd:</b></font> Good that a proper register interface is getting higher on the todo list<br/>
+<font color="#A82F2F"><font size="2">(15:35:24)</font> <b>MattJ:</b></font> jonnylamb: debugging &quot;Network Error&quot; messages<br/>
+<font color="#A82F2F"><font size="2">(15:35:35)</font> <b>wjt:</b></font> \o\ /o/<br/>
+<font color="#A82F2F"><font size="2">(15:35:45)</font> <b>jonnylamb:</b></font> :-(<br/>
+<font color="#A82F2F"><font size="2">(15:35:46)</font> <b>MattJ:</b></font> jonnylamb: which actually covers practically every account or server misconfiguration possible, so...<br/>
+<font color="#A82F2F"><font size="2">(15:35:50)</font> <b>sjoerd:</b></font> that&apos;s mostly fixed though<br/>
+<font color="#A82F2F"><font size="2">(15:36:00)</font> <b>smcv:</b></font> ConnectionError gives us extensible signalling<br/>
+<font color="#A82F2F"><font size="2">(15:36:09)</font> <b>smcv:</b></font> not all the CMs actually provide more info yet<br/>
+<font color="#A82F2F"><font size="2">(15:36:17)</font> <b>smcv:</b></font> we&apos;re getting there for Gabble<br/>
+<font color="#A82F2F"><font size="2">(15:36:18)</font> <b>MattJ:</b></font> Does Gabble?<br/>
+<font color="#A82F2F"><font size="2">(15:36:23)</font> <b>MattJ:</b></font> Good :)<br/>
+<font color="#A82F2F"><font size="2">(15:36:34)</font> <b>smcv:</b></font> Gabble provides the un-localized debug message in all cases<br/>
+<font color="#A82F2F"><font size="2">(15:36:41)</font> <b>wjt:</b></font> the UI doesn&apos;t show it though<br/>
+<font color="#A82F2F"><font size="2">(15:36:44)</font> <b>MattJ:</b></font> Please use &lt;text&gt; from XMPP errors<br/>
+<font color="#A82F2F"><font size="2">(15:36:46)</font> <b>smcv:</b></font> and a maximally good Telepathy error in some<br/>
+<font size="2">(15:36:50)</font><b> alsuren_ [<em>~alsuren@78-86-104-189.zone2.bethere.co.uk</em>] entered the room.</b><br/>
+<font color="#A82F2F"><font size="2">(15:36:56)</font> <b>MattJ:</b></font> I know other servers aren&apos;t helpful that way, but Prosody is<br/>
+<font color="#A82F2F"><font size="2">(15:37:17)</font> <b>smcv:</b></font> MattJ: aha, I spy a use-case for the hypothetical server-message field<br/>
+<font color="#A82F2F"><font size="2">(15:37:25)</font> <b>sjoerd:</b></font> dear ejabberd, why are you not showing your xep 55 in your disco response<br/>
+<font color="#A82F2F"><font size="2">(15:37:31)</font> <b>MattJ:</b></font> smcv: :)<br/>
+<font color="#A82F2F"><font size="2">(15:37:38)</font> <b>smcv:</b></font> (ConnectionError has a hash table of misc, debug-message is the only universally-provided key)<br/>
+<font color="#A82F2F"><font size="2">(15:38:00)</font> <b>wjt:</b></font> hey<br/>
+<font color="#A82F2F"><font size="2">(15:38:09)</font> <b>wjt:</b></font> you successfully convinced me to conflate the two<br/>
+<font color="#A82F2F"><font size="2">(15:38:13)</font> <b>smcv:</b></font> MattJ: what language is the &lt;text&gt; in btw?<br/>
+<font color="#A82F2F"><font size="2">(15:38:22)</font> <b>wjt:</b></font> if the server provides &lt;text/&gt;, use that; otherwise, use a locally-supplied debug string<br/>
+<font color="#A82F2F"><font size="2">(15:38:41)</font> <b>smcv:</b></font> did I? not sure if I intended to or not, tbh<br/>
+<font color="#A82F2F"><font size="2">(15:38:54)</font> <b>MattJ:</b></font> smcv: In Prosody, always (British!) English currently<br/>
+<font color="#A82F2F"><font size="2">(15:38:56)</font> <b>sjoerd:</b></font> I don&apos;t really trust servers to give something more useful then gabble can tbh<br/>
+<font color="#A82F2F"><font size="2">(15:38:57)</font> <b>wjt:</b></font> well, s/you/this channel/<br/>
+<font color="#A82F2F"><font size="2">(15:39:06)</font> <b>MattJ:</b></font> sjoerd: lies<br/>
+<font color="#A82F2F"><font size="2">(15:39:22)</font> <b>sjoerd:</b></font> MattJ: Prosody is usually the exception about being nice<br/>
+<font color="#A82F2F"><font size="2">(15:39:26)</font> <b>MattJ:</b></font> Heh<br/>
+<font color="#A82F2F"><font size="2">(15:39:34)</font> <b>smcv:</b></font> libpurple&apos;s localized debug messages aren&apos;t quite the same thing as &lt;text/&gt; from the server<br/>
+<font color="#A82F2F"><font size="2">(15:39:47)</font> <b>sjoerd:</b></font> ejabberd isn&apos;t even telling me why it&apos;s disconnecting some test accounts<br/>
+<font color="#A82F2F"><font size="2">(15:39:55)</font> <b>MattJ:</b></font> There are vague errors like &quot;bad-request&quot; or &quot;not-authorized&quot; where Prosody usually gives more specific information about why the error occured<br/>
+<font color="#A82F2F"><font size="2">(15:40:04)</font> <b>smcv:</b></font> tbh we should probably provide our (libpurple&apos;s/wocky&apos;s) interpretation, *and* the &lt;text/&gt; from the server in case it&apos;s informative<br/>
+<font size="2">(15:40:05)</font><b> bcurtiswx left the room (quit: Remote host closed the connection).</b><br/>
+<font color="#A82F2F"><font size="2">(15:40:14)</font> <b>sjoerd:</b></font> nod<br/>
+<font color="#A82F2F"><font size="2">(15:40:16)</font> <b>MattJ:</b></font> smcv: Yes, the specs say you should do that<br/>
+<font color="#A82F2F"><font size="2">(15:40:25)</font> <b>MattJ:</b></font> e.g. not present solely the &lt;text&gt;<br/>
+<font color="#A82F2F"><font size="2">(15:40:36)</font> <b>smcv:</b></font> oh I wasn&apos;t suggesting that<br/>
+<font color="#A82F2F"><font size="2">(15:40:55)</font> <b>smcv:</b></font> the primary thing to present is a D-Bus error code which UIs are expected to localize<br/>
+<font color="#A82F2F"><font size="2">(15:41:07)</font> <b>smcv:</b></font> one of whose possible values is the dreaded NetworkError<br/>
+<font color="#A82F2F"><font size="2">(15:41:12)</font> <b>MattJ:</b></font> But please don&apos;t do what Psi does and copy the XMPP spec&apos;s error text verbatim into the UI...<br/>
+<font size="2">(15:41:19)</font><b> alsuren left the room (quit: Ping timeout: 272 seconds).</b><br/>
+<font color="#A82F2F"><font size="2">(15:43:39)</font> <b>sjoerd:</b></font> hehe<br/>
+<font size="2">(15:43:48)</font><b> nekohayo [<em>~jeff@206-248-171-113.dsl.teksavvy.com</em>] entered the room.</b><br/>
+<font color="#A82F2F"><font size="2">(15:44:00)</font> <b>pessi:</b></font> jonnylamb: please rebase against latest master ... and see if e7470c3ab and f26a5c3298 are still applicable<br/>
+<font color="#A82F2F"><font size="2">(15:44:45)</font> <b>sjoerd:</b></font> wjt: hrm, can you disco remote servers for their jud and does gabble do that if needed or does it rely on the given server being the jud?<br/>
+<font color="#A82F2F"><font size="2">(15:45:34)</font> <b>jonnylamb:</b></font> pessi: Hm, I wonder why my checkout was so out-of-date. Did you just push those patches?<br/>
+<font color="#A82F2F"><font size="2">(15:45:43)</font> <b>jonnylamb:</b></font> pessi: \o/ TpBaseChannel \o/<br/>
+<font color="#A82F2F"><font size="2">(15:46:37)</font> <b>wjt:</b></font> sjoerd: oops. the latter.<br/>
+<font color="#A82F2F"><font size="2">(15:46:40)</font> <b>pessi:</b></font> jonnylamb: I was just waiting for our tester to get rid of oFono bugs ;)<br/>
+<font color="#A82F2F"><font size="2">(15:48:57)</font> <b>sjoerd:</b></font> wjt: we should probably cope with both cases.. i wonder if jud server correctly indicate in a disco response that they&apos;re the jud server<br/>
+<font size="2">(15:49:46)</font><b> jessevdk [<em>~jessevdk@grijpc10.epfl.ch</em>] entered the room.</b><br/>
+<font size="2">(15:50:09)</font><b> mattire left the room (quit: Ping timeout: 245 seconds).</b><br/>
+<font color="#A82F2F"><font size="2">(15:52:40)</font> <b>jonnylamb:</b></font> pessi: Well you&apos;ve destroyed my branch with your recent commits!<br/>
+<font color="#A82F2F"><font size="2">(15:52:44)</font> <b>jonnylamb:</b></font> pessi: http://git.collabora.co.uk/?p=user/jonny/telepathy-ring.git;a=shortlog;h=refs/heads/trivia<br/>
+<font size="2">(15:54:54)</font><b> bcurtiswx [<em>~bcurtis@wx.mesa.gmu.edu</em>] entered the room.</b><br/>
+<font size="2">(15:54:54)</font><b> bcurtiswx left the room (quit: Changing host).</b><br/>
+<font size="2">(15:54:54)</font><b> bcurtiswx [<em>~bcurtis@ubuntu/member/bcurtiswx</em>] entered the room.</b><br/>
+<font size="2">(15:55:54)</font><b> jessevdk left the room (&quot;Ex-Chat&quot;).</b><br/>
+<font size="2">(15:57:03)</font><b> kaserf left the room (quit: Read error: Operation timed out).</b><br/>
+<font size="2">(15:57:37)</font><b> ptlo left the room (quit: Quit: Ex-Chat).</b><br/>
+<font size="2">(15:58:14)</font><b> mlundblad left the room (quit: Ping timeout: 260 seconds).</b><br/>
+<font color="#A82F2F"><font size="2">(15:58:30)</font> <b>wjt:</b></font> so. if I were to propose adding a property alongside ValidAccounts and InvalidAccounts, which contains accounts which are not normal IM accounts—maybe they&apos;re just signed in for some kind of pubsub system—and thus should not normally be shown to the user, how many people would club me to death?<br/>
+<font color="#A82F2F"><font size="2">(15:59:18)</font> <b>wjt:</b></font> assumptions: such accounts never turn into normal accounts; there would be a separate interface for them on AM; but otherwise they would behave like normal accounts; the Account objects would also have a property on a separate interface to say they&apos;re non-user-visible service accounts?<br/>
+<font size="2">(15:59:33)</font><b> fledermaus left the room (quit: Quit: bbl).</b><br/>
+<font color="#A82F2F"><font size="2">(16:00:38)</font> <b>wjt:</b></font> alternative possibly less-beating-worthy proposals include just adding the flag to the account and then modifying tp-{glib,qt4,...} to hide &apos;em by default<br/>
+<font color="#A82F2F"><font size="2">(16:00:53)</font> <b>smcv:</b></font> wjt: if the account manager manages it, I think it&apos;s a valid account like any other<br/>
+<font color="#A82F2F"><font size="2">(16:01:32)</font> <b>smcv:</b></font> if the libraries hide those accounts by default, that&apos;s no more compatible than changing the D-Bus API<br/>
+<font color="#A82F2F"><font size="2">(16:01:44)</font> <b>smcv:</b></font> you&apos;re just moving the incompatibility into the client libraries<br/>
+<font color="#A82F2F"><font size="2">(16:01:46)</font> <b>wjt:</b></font> but if it&apos;s not meant to be used for IM, then IM UIs shouldn&apos;t show it<br/>
+<font color="#A82F2F"><font size="2">(16:01:59)</font> <b>wjt:</b></font> yes, that&apos;s why i didn&apos;t want to put it in the client libraries :)<br/>
+<font color="#A82F2F"><font size="2">(16:02:24)</font> <b>wjt:</b></font> i want to be able to make stealth service accounts exist without modifying literally every existing and future application not to show them<br/>
+<font color="#A82F2F"><font size="2">(16:02:57)</font> <b>smcv:</b></font> wjt: if you want them to be that stealthy, put the new property on a different interface<br/>
+<font color="#A82F2F"><font size="2">(16:03:11)</font> <b>smcv:</b></font> AccountManager.I.AndAlso.SecretNinjaAccounts<br/>
+<font color="#A82F2F"><font size="2">(16:03:37)</font> <b>wjt:</b></font> that&apos;s exactly what I just proposed? :)<br/>
+<font color="#A82F2F"><font size="2">(16:03:55)</font> <b>smcv:</b></font> oh right I thought by &quot;alongside&quot; you meant in o.fd.T.AM<br/>
+<font size="2">(16:03:59)</font><b> seb128 left the room (quit: Quit: Ex-Chat).</b><br/>
+<font color="#A82F2F"><font size="2">(16:04:07)</font> <b>wjt:</b></font> nono, i meant on ja.ninja.AccountManager<br/>
+<font color="#A82F2F"><font size="2">(16:04:57)</font> <b>smcv:</b></font> I think that&apos;s better than modifying the client libraries<br/>
+<font color="#A82F2F"><font size="2">(16:05:24)</font> <b>wjt:</b></font> but implemented in MC (yeah yeah, adding weird extensions considered harmful, but i also don&apos;t want to use the libmissioncontrol-server6 API and subclass shit)<br/>
+<font color="#A82F2F"><font size="2">(16:07:01)</font> <b>smcv:</b></font> oh yeah having weird extensions live in MC where we can keep an eye on them is better than having them in misc subclasses :-)<br/>
+<font color="#A82F2F"><font size="2">(16:07:34)</font> <b>smcv:</b></font> tbh it&apos;s not necessarily too niche to have in telepathy-spec<br/>
+<font color="#A82F2F"><font size="2">(16:07:41)</font> <b>smcv:</b></font> it&apos;s just too weird to have in the core interface<br/>
+<font color="#A82F2F"><font size="2">(16:07:45)</font> <b>wjt:</b></font> exactly :)<br/>
+<font color="#A82F2F"><font size="2">(16:08:09)</font> <b>wjt:</b></font> ugh. so after empathy crashed and this MUC i&apos;m in respawned, all the scrollback messages turned up in 1-1 channels<br/>
+<font size="2">(16:08:18)</font><b> seb128 [<em>~seb128@ANancy-258-1-45-93.w90-39.abo.wanadoo.fr</em>] entered the room.</b><br/>
+<font size="2">(16:08:18)</font><b> seb128 left the room (quit: Changing host).</b><br/>
+<font size="2">(16:08:18)</font><b> seb128 [<em>~seb128@ubuntu/member/seb128</em>] entered the room.</b><br/>
+<font size="2">(16:08:25)</font><b> seb128 left the room (quit: Remote host closed the connection).</b><br/>
+<font size="2">(16:09:15)</font><b> seb128 [<em>~seb128@ANancy-258-1-45-93.w90-39.abo.wanadoo.fr</em>] entered the room.</b><br/>
+<font size="2">(16:09:18)</font><b> seb128 left the room (quit: Changing host).</b><br/>
+<font size="2">(16:09:18)</font><b> seb128 [<em>~seb128@ubuntu/member/seb128</em>] entered the room.</b><br/>
+<font color="#A82F2F"><font size="2">(16:10:13)</font> <b>sjoerd:</b></font> wjt: yeah that still happens from time to time, although i thought it was fixed :(<br/>
+<font size="2">(16:10:27)</font><b> The account has disconnected and you are no longer in this chat. You will automatically rejoin the chat when the account reconnects.</b><br/>
+</body></html>

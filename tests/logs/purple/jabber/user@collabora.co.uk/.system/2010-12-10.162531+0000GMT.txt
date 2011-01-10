@@ -1,0 +1,5 @@
+System log for account ka.test2@test.collabora.co.uk/TEST (jabber) connected at Fri 10 Dec 2010 16:25:31 GMT
+---- +++ ka.test2@test.collabora.co.uk/TEST signed on @ 10/12/10 16:25:31 ----
+---- cosimo.alfarano@collabora.co.uk (cosimo.alfarano@collabora.co.uk) is now Offline @ 10/12/10 16:26:50 ----
+---- cosimo.alfarano@collabora.co.uk (cosimo.alfarano@collabora.co.uk) changed status from Offline to Available @ 10/12/10 16:26:54 ----
+---- +++ ka.test2@test.collabora.co.uk/TEST signed off @ 10/12/10 16:27:15 ----
