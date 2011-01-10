@@ -30,7 +30,7 @@
 #include <time.h>
 
 
-/* Note: TplTime is always in UTC. */
+/* Note: time is always in UTC. */
 
 time_t
 _tpl_time_get_current (void)
