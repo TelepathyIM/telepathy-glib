@@ -39,20 +39,20 @@ BUILT_SOURCES = \
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\
 		action-chain-internal.h		\
-		channel-internal.h			\
+		channel-internal.h		\
 		channel.c			\
 		channel-factory.c		\
-		channel-factory-internal.h		\
+		channel-factory-internal.h	\
 		channel-text.c			\
-		channel-text-internal.h			\
+		channel-text-internal.h		\
 		conf.c				\
-		conf-internal.h				\
+		conf-internal.h			\
 		entity.c			\
-		entity-internal.h			\
+		entity-internal.h		\
 		datetime.c			\
 		datetime-internal.h		\
 		dbus-service.c			\
-		dbus-service-internal.h			\
+		dbus-service-internal.h		\
 		debug-internal.h		\
 		debug.c				\
 		event.c			\
@@ -62,15 +62,17 @@ libtelepathy_logger_la_SOURCES = \
 		log-manager.c			\
 		log-manager-internal.h		\
 		log-store.c			\
-		log-store-internal.h			\
+		log-store-internal.h		\
 		log-store-xml.c			\
-		log-store-xml-internal.h			\
+		log-store-xml-internal.h	\
 		log-store-sqlite.c		\
-		log-store-sqlite-internal.h		\
+		log-store-sqlite-internal.h	\
+		log-store-pidgin.c		\
+		log-store-pidgin-internal.h	\
 		log-store-factory.c		\
-		log-store-factory-internal.h		\
+		log-store-factory-internal.h	\
 		observer.c			\
-		observer-internal.h			\
+		observer-internal.h		\
 		util-internal.h			\
 		util.c				\
 		$(NULL)
