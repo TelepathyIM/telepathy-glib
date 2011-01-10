@@ -121,6 +121,8 @@ log_store_xml_dispose (GObject *object)
       g_object_unref (priv->account_manager);
       priv->account_manager = NULL;
     }
+
+  G_OBJECT_CLASS (_tpl_log_store_xml_parent_class)->dispose (object);
 }
 
 
