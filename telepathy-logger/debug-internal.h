@@ -44,7 +44,8 @@ typedef enum
   TPL_DEBUG_LOG_MANAGER   = 1 << 6,
   TPL_DEBUG_LOG_STORE     = 1 << 7,
   TPL_DEBUG_MAIN          = 1 << 8,
-  TPL_DEBUG_OBSERVER      = 1 << 9
+  TPL_DEBUG_OBSERVER      = 1 << 9,
+  TPL_DEBUG_TESTSUITE     = 1 << 10
 } TplDebugFlags;
 
 void _tpl_debug_set_flags_from_env (void);
