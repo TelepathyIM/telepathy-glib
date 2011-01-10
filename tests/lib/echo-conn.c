@@ -95,12 +95,20 @@ get_unique_connection_name (TpBaseConnection *conn)
   return g_strdup (self->priv->account);
 }
 
+/* Returns the same id given in but in lowercase. If '#' is present,
+ * the normalized contact will be the lhs of it. For example:
+ *
+ * LOL -> lol
+ * Lol#foo -> lol
+ */
 static gchar *
 tp_tests_echo_normalize_contact (TpHandleRepoIface *repo,
                            const gchar *id,
                            gpointer context,
                            GError **error)
 {
+  gchar *hash;
+
   if (id[0] == '\0')
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_HANDLE,
@@ -108,7 +116,19 @@ tp_tests_echo_normalize_contact (TpHandleRepoIface *repo,
       return NULL;
     }
 
-  return g_utf8_strdown (id, -1);
+  hash = g_utf8_strchr (id, -1, '#');
+
+  if (hash != NULL)
+    {
+      gchar *tmp = g_strndup (id, (hash - id));
+      gchar *out = g_utf8_strdown (tmp, -1);
+      g_free (tmp);
+      return out;
+    }
+  else
+    {
+      return g_utf8_strdown (id, -1);
+    }
 }
 
 static void
