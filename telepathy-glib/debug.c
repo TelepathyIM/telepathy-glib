@@ -430,10 +430,12 @@ tp_debug_timestamped_log_handler (const gchar *log_domain,
 {
 #ifdef ENABLE_DEBUG
   GTimeVal now;
-  gchar *tmp;
+  gchar *tmp, *now_str;
 
   g_get_current_time (&now);
-  tmp = g_time_val_to_iso8601 (&now);
+  now_str = g_time_val_to_iso8601 (&now);
+  tmp = g_strdup_printf ("%s: %s", now_str, message);
+  g_free (now_str);
   message = tmp;
 #endif
 
