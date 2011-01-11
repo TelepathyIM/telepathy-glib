@@ -942,7 +942,7 @@ _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
   if (!p)
     return NULL;
 
-  s = fs_session_new_stream (content->fssession, p, FS_DIRECTION_NONE,
+  s = fs_session_new_stream (content->fssession, p, FS_DIRECTION_RECV,
       transmitter, stream_transmitter_n_parameters,
       stream_transmitter_parameters, error);
   if (!s)
