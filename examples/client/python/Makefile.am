@@ -1,1 +1,2 @@
-EXTRA_DIST =
+EXTRA_DIST = \
+  text-handler.py
