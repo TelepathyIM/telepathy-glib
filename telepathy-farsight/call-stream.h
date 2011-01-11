@@ -92,7 +92,6 @@ struct _TfCallStream {
 
   gboolean has_contact;
   guint contact_handle;
-  TfFutureSendingState remote_sending_state;
   FsStream *fsstream;
 
   gboolean has_media_properties;
