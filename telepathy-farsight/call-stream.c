@@ -102,6 +102,32 @@ local_sending_state_changed (TfFutureCallStream *proxy,
     guint arg_State,
     gpointer user_data, GObject *weak_object)
 {
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  self->local_sending_state = arg_State;
+
+  if (!self->fsstream)
+    return;
+
+  switch (arg_State)
+    {
+    case TF_FUTURE_SENDING_STATE_PENDING_SEND:
+      tf_future_cli_call_stream_call_set_sending (
+          self->proxy, -1, TF_FUTURE_SENDING_STATE_SENDING, 0, "", "",
+          NULL, NULL, NULL, NULL);
+      /* fallthrough */
+    case TF_FUTURE_SENDING_STATE_SENDING:
+      g_object_set (self->fsstream, "direction", FS_DIRECTION_BOTH, NULL);
+      break;
+    case TF_FUTURE_SENDING_STATE_PENDING_STOP_SENDING:
+      tf_future_cli_call_stream_call_set_sending (self->proxy,
+          -1, TF_FUTURE_SENDING_STATE_NONE, 0, "", "",
+              NULL, NULL, NULL, NULL);
+      /* fallthrough */
+    case TF_FUTURE_SENDING_STATE_NONE:
+      g_object_set (self->fsstream, "direction", FS_DIRECTION_RECV, NULL);
+      break;
+    }
 }
 
 
@@ -296,6 +322,14 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
       return;
     }
 
+  if (self->local_sending_state == TF_FUTURE_SENDING_STATE_PENDING_SEND ||
+      self->local_sending_state == TF_FUTURE_SENDING_STATE_SENDING)
+    g_object_set (self->fsstream, "direction", FS_DIRECTION_BOTH, NULL);
+
+  if (self->local_sending_state == TF_FUTURE_SENDING_STATE_PENDING_SEND)
+    tf_future_cli_call_stream_call_set_sending (
+        self->proxy, -1, TF_FUTURE_SENDING_STATE_SENDING, 0, "", "",
+        NULL, NULL, NULL, NULL);
 }
 
 static void
