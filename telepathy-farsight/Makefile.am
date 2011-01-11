@@ -6,7 +6,7 @@ CLEANFILES = $(BUILT_SOURCES) tf-signals-marshal.list
 
 
 tfincludedir = $(includedir)/telepathy-1.0/telepathy-farsight
-tfinclude_HEADERS = channel.h content.h stream.h
+tfinclude_HEADERS = channel.h content.h
 
 libtelepathy_farsight_la_SOURCES = \
 	stream.c \
