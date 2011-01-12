@@ -83,51 +83,69 @@ GType tpl_log_manager_get_type (void);
 TplLogManager *tpl_log_manager_dup_singleton (void);
 
 gboolean tpl_log_manager_exists (TplLogManager *manager,
-    TpAccount *account, const gchar *id, TplEventSearchType type);
+    TpAccount *account,
+    const gchar *id,
+    TplEventSearchType type);
+
+void tpl_log_manager_get_dates_async (TplLogManager *manager,
+    TpAccount *account,
+    const gchar *id,
+    TplEventSearchType type,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 gboolean tpl_log_manager_get_dates_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **dates,
     GError **error);
 
-void tpl_log_manager_get_dates_async (TplLogManager *manager,
-    TpAccount *account, const gchar *id, TplEventSearchType type,
-    GAsyncReadyCallback callback, gpointer user_data);
+void tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
+    TpAccount *account,
+    const gchar *id,
+    TplEventSearchType type,
+    const GDate *date,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 gboolean tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **events,
     GError **error);
 
-void tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
-    TpAccount *account, const gchar *id, TplEventSearchType type,
-    const GDate *date, GAsyncReadyCallback callback, gpointer user_data);
+void tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
+    TpAccount *account,
+    const gchar *id,
+    TplEventSearchType type,
+    guint num_events,
+    TplLogEventFilter filter,
+    gpointer filter_user_data,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 gboolean tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **events,
     GError **error);
 
-void tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
-    TpAccount *account, const gchar *id, TplEventSearchType type,
-    guint num_events, TplLogEventFilter filter, gpointer filter_user_data,
-    GAsyncReadyCallback callback, gpointer user_data);
+void tpl_log_manager_get_events_async (TplLogManager *self,
+    TpAccount *account,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 gboolean tpl_log_manager_get_events_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **events,
     GError **error);
 
-void tpl_log_manager_get_events_async (TplLogManager *self,
-    TpAccount *account, GAsyncReadyCallback callback, gpointer user_data);
+void tpl_log_manager_search_async (TplLogManager *manager,
+    const gchar *text,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 gboolean tpl_log_manager_search_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **hits,
     GError **error);
-
-void tpl_log_manager_search_async (TplLogManager *manager,
-    const gchar *text, GAsyncReadyCallback callback, gpointer user_data);
 
 void tpl_log_manager_search_free (GList *hits);
 

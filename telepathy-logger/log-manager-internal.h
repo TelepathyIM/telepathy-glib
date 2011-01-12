@@ -28,7 +28,8 @@
 #include <telepathy-logger/log-store-internal.h>
 
 gboolean _tpl_log_manager_add_event (TplLogManager *manager,
-    TplEvent *event, GError **error);
+    TplEvent *event,
+    GError **error);
 
 gboolean _tpl_log_manager_register_log_store (TplLogManager *self,
     TplLogStore *logstore);
@@ -64,12 +65,6 @@ GList * _tpl_log_manager_search_in_identifier (TplLogManager *manager,
     TplEventSearchType type,
     const gchar *text);
 
-gboolean _tpl_log_manager_search_in_identifier_finish (
-    TplLogManager *self,
-    GAsyncResult *result,
-    GList **hits,
-    GError **error);
-
 void _tpl_log_manager_search_in_identifier_async (
     TplLogManager *manager,
     TpAccount *account,
@@ -78,6 +73,12 @@ void _tpl_log_manager_search_in_identifier_async (
     const gchar *text,
     GAsyncReadyCallback callback,
     gpointer user_data);
+
+gboolean _tpl_log_manager_search_in_identifier_finish (
+    TplLogManager *self,
+    GAsyncResult *result,
+    GList **hits,
+    GError **error);
 
 TplLogSearchHit * _tpl_log_manager_search_hit_new (TpAccount *account,
     const gchar *id,

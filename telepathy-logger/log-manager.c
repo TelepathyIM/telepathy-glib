@@ -115,6 +115,7 @@ G_DEFINE_TYPE (TplLogManager, tpl_log_manager, G_TYPE_OBJECT);
 
 static TplLogManager *manager_singleton = NULL;
 
+
 static void
 log_manager_finalize (GObject *object)
 {
@@ -139,7 +140,8 @@ log_manager_finalize (GObject *object)
  * Initialises LogStores with LogStoreEmpathy instance
  */
 static GObject *
-log_manager_constructor (GType type, guint n_props,
+log_manager_constructor (GType type,
+    guint n_props,
     GObjectConstructParam *props)
 {
   GObject *retval = NULL;
@@ -172,6 +174,7 @@ tpl_log_manager_class_init (TplLogManagerClass *klass)
   g_type_class_add_private (object_class, sizeof (TplLogManagerPriv));
 }
 
+
 static TplLogStore *
 add_log_store (TplLogManager *self,
     GType type,
@@ -201,6 +204,7 @@ add_log_store (TplLogManager *self,
   return store;
 }
 
+
 static void
 _globally_enabled_changed (TplConf *conf,
     GParamSpec *pspec,
@@ -209,6 +213,7 @@ _globally_enabled_changed (TplConf *conf,
   DEBUG ("Logging has been globally %s",
       _tpl_conf_is_globally_enabled (conf) ? "enabled" : "disabled");
 }
+
 
 static void
 tpl_log_manager_init (TplLogManager *self)
@@ -267,7 +272,7 @@ tpl_log_manager_dup_singleton (void)
  * It applies for any registered TplLogStore with #TplLogstore:writable property
  * %TRUE
  *
- * Returns: %TRUE if the event has been successfully added, %FALSE otherwise.
+ * Returns: %TRUE if the event has been successfully added, otherwise %FALSE.
  */
 gboolean
 _tpl_log_manager_add_event (TplLogManager *manager,
@@ -378,6 +383,7 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
   return TRUE;
 }
 
+
 /**
  * tpl_log_manager_exists:
  * @manager: TplLogManager
@@ -390,7 +396,7 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
 
- * Returns: %TRUE if @id exists, %FALSE otherwise
+ * Returns: %TRUE if @id exists, otherwise %FALSE
  */
 gboolean
 tpl_log_manager_exists (TplLogManager *manager,
@@ -712,6 +718,7 @@ _tpl_log_manager_search (TplLogManager *manager,
   return out;
 }
 
+
 TplLogSearchHit *
 _tpl_log_manager_search_hit_new (TpAccount *account,
     const gchar *id,
@@ -749,6 +756,7 @@ _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
   g_slice_free (TplLogSearchHit, hit);
 }
 
+
 /**
  * tpl_log_manager_search_free:
  * @hits: a #GList of #TplLogSearchHit
@@ -767,6 +775,7 @@ tpl_log_manager_search_free (GList *hits)
 
   g_list_free (hits);
 }
+
 
 /* start of Async definitions */
 static TplLogManagerAsyncData *
@@ -828,48 +837,6 @@ copy_date (const GDate *date)
   return g_date_new_julian (g_date_get_julian (date));
 }
 
-/**
- * tpl_log_manager_get_dates_finish:
- * @self: a #TplLogManager
- * @result: a #GAsyncResult
- * @dates: a pointer to a #GList used to return the list of #GDate
- * @error: a #GError to fill
- *
- * Returns: #TRUE if the operation was successful, otherwise #FALSE
- */
-gboolean
-tpl_log_manager_get_dates_finish (TplLogManager *self,
-    GAsyncResult *result,
-    GList **dates,
-    GError **error)
-{
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_get_dates_async), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  if (dates != NULL)
-    {
-      GList *list, *l;
-
-      *dates = NULL;
-      list = g_simple_async_result_get_op_res_gpointer (simple);
-
-      for (l = list; l != NULL; l = g_list_next (l))
-        *dates = g_list_prepend (*dates, copy_date (l->data));
-
-      *dates = g_list_reverse (*dates);
-    }
-
-  return TRUE;
-}
 
 static void
 _get_dates_async_result_free (gpointer data)
@@ -900,6 +867,7 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _get_dates_async_result_free);
 }
+
 
 /**
  * tpl_log_manager_get_dates_async:
@@ -953,19 +921,20 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
   g_object_unref (simple);
 }
 
+
 /**
- * tpl_log_manager_get_events_for_date_finish
+ * tpl_log_manager_get_dates_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @events: a pointer to a #GList used to return the list of #GDate
+ * @dates: a pointer to a #GList used to return the list of #GDate
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
  */
 gboolean
-tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
+tpl_log_manager_get_dates_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **events,
+    GList **dates,
     GError **error)
 {
   GSimpleAsyncResult *simple;
@@ -973,19 +942,24 @@ tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_get_events_for_date_async), FALSE);
+        G_OBJECT (self), tpl_log_manager_get_dates_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
 
-  if (events != NULL)
+  if (dates != NULL)
     {
-      *events = g_list_copy (g_simple_async_result_get_op_res_gpointer (
-            simple));
+      GList *list, *l;
 
-      g_list_foreach (*events, (GFunc) g_object_ref, NULL);
+      *dates = NULL;
+      list = g_simple_async_result_get_op_res_gpointer (simple);
+
+      for (l = list; l != NULL; l = g_list_next (l))
+        *dates = g_list_prepend (*dates, copy_date (l->data));
+
+      *dates = g_list_reverse (*dates);
     }
 
   return TRUE;
@@ -1023,6 +997,7 @@ _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _get_events_for_date_async_result_free);
 }
+
 
 /**
  * tpl_log_manager_get_events_for_date_async
@@ -1076,17 +1051,18 @@ tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
   g_object_unref (simple);
 }
 
+
 /**
- * tpl_log_manager_get_filtered_events_finish:
+ * tpl_log_manager_get_events_for_date_finish
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @events: a pointer to a #GList used to return the list #TplEvent
+ * @events: a pointer to a #GList used to return the list of #GDate
  * @error: a #GError to fill
  *
- * Returns: #TRUE if the operation was successful, #FALSE otherwise.
+ * Returns: #TRUE if the operation was successful, otherwise #FALSE
  */
 gboolean
-tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
+tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **events,
     GError **error)
@@ -1096,7 +1072,7 @@ tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_get_filtered_events_async), FALSE);
+        G_OBJECT (self), tpl_log_manager_get_events_for_date_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
@@ -1124,6 +1100,7 @@ _get_filtered_events_async_result_free (gpointer data)
   g_list_free (lst);
 }
 
+
 static void
 _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
@@ -1143,6 +1120,7 @@ _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _get_filtered_events_async_result_free);
 }
+
 
 /**
  * tpl_log_manager_get_filtered_events_async:
@@ -1202,6 +1180,46 @@ tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
   g_object_unref (simple);
 }
 
+
+/**
+ * tpl_log_manager_get_filtered_events_finish:
+ * @self: a #TplLogManager
+ * @result: a #GAsyncResult
+ * @events: a pointer to a #GList used to return the list #TplEvent
+ * @error: a #GError to fill
+ *
+ * Returns: #TRUE if the operation was successful, otherwise #FALSE.
+ */
+gboolean
+tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
+    GAsyncResult *result,
+    GList **events,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (self), tpl_log_manager_get_filtered_events_async), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  if (events != NULL)
+    {
+      *events = g_list_copy (g_simple_async_result_get_op_res_gpointer (
+            simple));
+
+      g_list_foreach (*events, (GFunc) g_object_ref, NULL);
+    }
+
+  return TRUE;
+}
+
+
 static GList *
 copy_search_hit_list (GList *list)
 {
@@ -1217,43 +1235,6 @@ copy_search_hit_list (GList *list)
   return g_list_reverse (result);
 }
 
-/**
- * tpl_log_manager_get_chats_finish:
- * @self: a #TplLogManager
- * @result: a #GAsyncResult
- * @chats: a pointer to a #GList used to return the list of chats
- * @error: a #GError to fill
- *
- * Returns: #TRUE if the operation was successful, otherwise #FALSE
- */
-gboolean
-tpl_log_manager_get_events_finish (TplLogManager *self,
-    GAsyncResult *result,
-    GList **events,
-    GError **error)
-{
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_get_events_async), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  if (events != NULL)
-    {
-      GList *list;
-
-      list = g_simple_async_result_get_op_res_gpointer (simple);
-      *events = copy_search_hit_list (list);
-    }
-
-  return TRUE;
-}
 
 static void
 _get_events_async_thread (GSimpleAsyncResult *simple,
@@ -1272,6 +1253,7 @@ _get_events_async_thread (GSimpleAsyncResult *simple,
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       (GDestroyNotify) tpl_log_manager_search_free);
 }
+
 
 /**
  * tpl_log_manager_get_events_async:
@@ -1315,10 +1297,19 @@ tpl_log_manager_get_events_async (TplLogManager *self,
 }
 
 
+/**
+ * tpl_log_manager_get_chats_finish:
+ * @self: a #TplLogManager
+ * @result: a #GAsyncResult
+ * @chats: a pointer to a #GList used to return the list of chats
+ * @error: a #GError to fill
+ *
+ * Returns: #TRUE if the operation was successful, otherwise #FALSE
+ */
 gboolean
-_tpl_log_manager_search_in_identifier_finish (TplLogManager *self,
+tpl_log_manager_get_events_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **hits,
+    GList **events,
     GError **error)
 {
   GSimpleAsyncResult *simple;
@@ -1326,25 +1317,24 @@ _tpl_log_manager_search_in_identifier_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self),
-        _tpl_log_manager_search_in_identifier_async),
-      FALSE);
+        G_OBJECT (self), tpl_log_manager_get_events_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
 
-  if (hits != NULL)
+  if (events != NULL)
     {
       GList *list;
 
       list = g_simple_async_result_get_op_res_gpointer (simple);
-      *hits = copy_search_hit_list (list);
+      *events = copy_search_hit_list (list);
     }
 
   return TRUE;
 }
+
 
 static void
 _search_in_identifier_async_result_free (gpointer data)
@@ -1416,17 +1406,8 @@ _tpl_log_manager_search_in_identifier_async (TplLogManager *manager,
 }
 
 
-/**
- * tpl_log_manager_search_finish:
- * @self: a #TplLogManager
- * @result: a #GAsyncResult
- * @chats: a pointer to a #GList used to return the list of #TplLogSearchHit
- * @error: a #GError to fill
- *
- * Returns: #TRUE if the operation was successful, otherwise #FALSE
- */
 gboolean
-tpl_log_manager_search_finish (TplLogManager *self,
+_tpl_log_manager_search_in_identifier_finish (TplLogManager *self,
     GAsyncResult *result,
     GList **hits,
     GError **error)
@@ -1436,7 +1417,9 @@ tpl_log_manager_search_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_search_async), FALSE);
+        G_OBJECT (self),
+        _tpl_log_manager_search_in_identifier_async),
+      FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
@@ -1453,6 +1436,7 @@ tpl_log_manager_search_finish (TplLogManager *self,
 
   return TRUE;
 }
+
 
 static void
 _search_new_async_result_free (gpointer data)
@@ -1482,6 +1466,7 @@ _search_async_thread (GSimpleAsyncResult *simple,
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _search_new_async_result_free);
 }
+
 
 /**
  * tpl_log_manager_search_async:
@@ -1523,6 +1508,46 @@ tpl_log_manager_search_async (TplLogManager *manager,
   g_object_unref (simple);
 }
 
+
+/**
+ * tpl_log_manager_search_finish:
+ * @self: a #TplLogManager
+ * @result: a #GAsyncResult
+ * @chats: a pointer to a #GList used to return the list of #TplLogSearchHit
+ * @error: a #GError to fill
+ *
+ * Returns: #TRUE if the operation was successful, otherwise #FALSE
+ */
+gboolean
+tpl_log_manager_search_finish (TplLogManager *self,
+    GAsyncResult *result,
+    GList **hits,
+    GError **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
+  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (self), tpl_log_manager_search_async), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  if (hits != NULL)
+    {
+      GList *list;
+
+      list = g_simple_async_result_get_op_res_gpointer (simple);
+      *hits = copy_search_hit_list (list);
+    }
+
+  return TRUE;
+}
+
+
 /**
  * tpl_log_manager_errors_quark:
  *
@@ -1543,6 +1568,7 @@ tpl_log_manager_errors_quark (void)
 
   return (GQuark) quark;
 }
+
 
 TplLogSearchHit *
 _tpl_log_manager_search_hit_copy (TplLogSearchHit *hit)
