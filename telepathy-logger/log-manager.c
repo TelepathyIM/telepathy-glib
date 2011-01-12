@@ -258,7 +258,7 @@ tpl_log_manager_dup_singleton (void)
 }
 
 
-/**
+/*
  * _tpl_log_manager_add_event
  * @manager: the log manager
  * @event: a TplEvent subclass's instance
@@ -326,7 +326,7 @@ _tpl_log_manager_add_event (TplLogManager *manager,
 }
 
 
-/**
+/*
  * _tpl_log_manager_register_log_store
  * @self: the log manager
  * @logstore: a TplLogStore interface implementation
@@ -423,7 +423,7 @@ tpl_log_manager_exists (TplLogManager *manager,
 }
 
 
-/**
+/*
  * _tpl_log_manager_get_dates:
  * @manager: a #TplLogManager
  * @account: a #TpAccount
@@ -588,7 +588,7 @@ _tpl_log_manager_get_filtered_events (TplLogManager *manager,
 }
 
 
-/**
+/*
  * _tpl_log_manager_search_hit_compare:
  * @a: a #TplLogSearchHit
  * @b: a #TplLogSearchHit
@@ -614,8 +614,8 @@ _tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
 }
 
 
-/**
- * _tpl_log_manager_get_chats
+/*
+ * _tpl_log_manager_get_events
  * @manager: the log manager
  * @account: a TpAccount the query will return data related to
  *
@@ -623,8 +623,8 @@ _tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
  * log store has at least a conversation stored originated using @account.
  *
  * Returns: a list of pointer to TplLogSearchHit, having id and
- * type fields filled. the result needs to be freed after use using
- * _tpl_log_manager_search_hit_free
+ * type fields filled. The result needs to be freed after use, see
+ * _tpl_log_manager_search_hit_free()
  */
 GList *
 _tpl_log_manager_get_events (TplLogManager *manager,
@@ -878,8 +878,8 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Retrieves a list of #GDate corresponding to each day
- * at least an event of type @type was sent to or received from @id.
+ * Retrieves a list of #GDate corresponding to each day where
+ * at least one event of type @type was sent to or received from @id.
  *
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
@@ -1009,7 +1009,7 @@ _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Retrieve a list of #TplEvent exchanged at @date with @id.
+ * Retrieve a list of #TplEvent at @date with @id.
  */
 void
 tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
@@ -1056,7 +1056,7 @@ tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
  * tpl_log_manager_get_events_for_date_finish
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @events: a pointer to a #GList used to return the list of #GDate
+ * @events: a pointer to a #GList used to return the list of #TplEvent
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
@@ -1298,10 +1298,10 @@ tpl_log_manager_get_events_async (TplLogManager *self,
 
 
 /**
- * tpl_log_manager_get_chats_finish:
+ * tpl_log_manager_get_events_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @chats: a pointer to a #GList used to return the list of chats
+ * @chats: a pointer to a #GList used to return the list of #TplLogSearchHit
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
