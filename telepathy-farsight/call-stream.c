@@ -41,7 +41,6 @@
 
 G_DEFINE_TYPE (TfCallStream, tf_call_stream, G_TYPE_OBJECT);
 
-
 static void tf_call_stream_dispose (GObject *object);
 
 static void
@@ -96,7 +95,6 @@ tf_call_stream_dispose (GObject *object)
     G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose (object);
 }
 
-
 static void
 local_sending_state_changed (TfFutureCallStream *proxy,
     guint arg_State,
@@ -108,6 +106,7 @@ local_sending_state_changed (TfFutureCallStream *proxy,
 
   if (!self->fsstream)
     return;
+
 
   switch (arg_State)
     {
@@ -324,12 +323,8 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
 
   if (self->local_sending_state == TF_FUTURE_SENDING_STATE_PENDING_SEND ||
       self->local_sending_state == TF_FUTURE_SENDING_STATE_SENDING)
-    g_object_set (self->fsstream, "direction", FS_DIRECTION_BOTH, NULL);
-
-  if (self->local_sending_state == TF_FUTURE_SENDING_STATE_PENDING_SEND)
-    tf_future_cli_call_stream_call_set_sending (
-        self->proxy, -1, TF_FUTURE_SENDING_STATE_SENDING, 0, "", "",
-        NULL, NULL, NULL, NULL);
+    local_sending_state_changed (self->proxy, self->local_sending_state,
+        NULL, (GObject *) self);
 }
 
 static void
