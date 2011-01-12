@@ -119,7 +119,8 @@ tf_content_class_init (TfContentClass *klass)
   /**
    * TfContent::src-pad-added
    * @content: the #TfContent
-   * @handles: a #GArray of #guint of handles for this pad
+   * @handle: the handle of the remote party producing the content on this pad
+   *    or 0 if unknown
    * @stream: the #FsStream for this pad
    * @pad: a #GstPad
    * @codec: the #FsCodec for this pad
@@ -135,9 +136,9 @@ tf_content_class_init (TfContentClass *klass)
           G_OBJECT_CLASS_TYPE (klass),
           G_SIGNAL_RUN_LAST,
           0, NULL, NULL,
-          _tf_marshal_VOID__BOXED_OBJECT_OBJECT_BOXED,
+          _tf_marshal_VOID__UINT_OBJECT_OBJECT_BOXED,
           G_TYPE_NONE, 4,
-          G_TYPE_ARRAY, FS_TYPE_STREAM, GST_TYPE_PAD, FS_TYPE_CODEC);
+          G_TYPE_UINT, FS_TYPE_STREAM, GST_TYPE_PAD, FS_TYPE_CODEC);
 }
 
 
@@ -188,10 +189,10 @@ _tf_content_stop_sending (TfContent *self)
 }
 
 void
-_tf_content_emit_src_pad_added (TfContent *self, GArray *handles,
+_tf_content_emit_src_pad_added (TfContent *self, guint handle,
     FsStream *stream, GstPad *pad, FsCodec *codec)
 {
-  g_signal_emit (self, signals[SIGNAL_SRC_PAD_ADDED], 0, handles,
+  g_signal_emit (self, signals[SIGNAL_SRC_PAD_ADDED], 0, handle,
       stream, pad, codec);
 }
 

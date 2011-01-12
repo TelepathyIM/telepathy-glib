@@ -31,7 +31,7 @@ struct _TfContentClass{
 gboolean _tf_content_start_sending (TfContent *self);
 void _tf_content_stop_sending (TfContent *self);
 
-void _tf_content_emit_src_pad_added (TfContent *self, GArray *handles,
+void _tf_content_emit_src_pad_added (TfContent *self, guint handle,
     FsStream *stream, GstPad *pad, FsCodec *codec);
 
 

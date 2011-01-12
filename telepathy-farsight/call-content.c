@@ -997,7 +997,7 @@ static void
 src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
     TfCallContent *content)
 {
-  GArray *handles = g_array_new (TRUE, TRUE, sizeof(guint));
+  guint handle = 0;
   guint i;
 
   TF_CALL_CONTENT_LOCK (content);
@@ -1007,18 +1007,15 @@ src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
       struct CallFsStream *cfs = g_ptr_array_index (content->fsstreams, i);
       if (cfs->fsstream == fsstream)
         {
-          g_array_append_val (handles, cfs->contact_handle);
+          handle = cfs->contact_handle;
           break;
         }
     }
 
   TF_CALL_CONTENT_UNLOCK (content);
 
-  _tf_content_emit_src_pad_added (TF_CONTENT (content), handles,
+  _tf_content_emit_src_pad_added (TF_CONTENT (content), handle,
       fsstream, pad, codec);
-
-
-  g_array_unref (handles);
 }
 
 
