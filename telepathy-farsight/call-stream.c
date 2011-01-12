@@ -107,6 +107,27 @@ local_sending_state_changed (TfFutureCallStream *proxy,
   if (!self->fsstream)
     return;
 
+  if (arg_State == TF_FUTURE_SENDING_STATE_PENDING_SEND ||
+      arg_State == TF_FUTURE_SENDING_STATE_SENDING)
+    {
+      if (!self->has_send_resource)
+        {
+          if (_tf_content_start_sending (TF_CONTENT (self->call_content)))
+            {
+              self->has_send_resource = TRUE;
+            }
+          else
+            {
+              tf_future_cli_call_stream_call_set_sending (self->proxy,
+                  -1, TF_FUTURE_SENDING_STATE_NONE,
+                  TF_FUTURE_STREAM_SENDING_CHANGE_REASON_RESOURCE_UNAVAILABLE,
+                  "", "Could not open send resource",
+                  NULL, NULL, NULL, NULL);
+
+              return;
+            }
+        }
+    }
 
   switch (arg_State)
     {
@@ -124,6 +145,12 @@ local_sending_state_changed (TfFutureCallStream *proxy,
               NULL, NULL, NULL, NULL);
       /* fallthrough */
     case TF_FUTURE_SENDING_STATE_NONE:
+      if (self->has_send_resource)
+        {
+          _tf_content_stop_sending (TF_CONTENT (self->call_content));
+
+          self->has_send_resource = FALSE;
+        }
       g_object_set (self->fsstream, "direction", FS_DIRECTION_RECV, NULL);
       break;
     }

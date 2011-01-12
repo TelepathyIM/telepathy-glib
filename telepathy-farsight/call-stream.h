@@ -89,6 +89,7 @@ struct _TfCallStream {
   gchar *last_local_password;
 
   TfFutureSendingState local_sending_state;
+  gboolean has_send_resource;
 
   gboolean has_contact;
   guint contact_handle;
