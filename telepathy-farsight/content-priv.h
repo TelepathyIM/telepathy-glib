@@ -12,7 +12,7 @@ G_BEGIN_DECLS
 struct _TfContent {
   GObject parent;
 
-  gboolean sending;
+  guint sending_count;
 };
 
 struct _TfContentClass{

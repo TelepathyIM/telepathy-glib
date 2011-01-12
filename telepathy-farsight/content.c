@@ -155,8 +155,11 @@ _tf_content_start_sending (TfContent *self)
   GValue sending_success_val = {0,};
   gboolean sending_success;
 
-  if (self->sending)
-    return TRUE;
+  if (self->sending_count)
+    {
+      self->sending_count ++;
+      return TRUE;
+    }
 
   g_value_init (&sending_success_val, G_TYPE_BOOLEAN);
   g_value_set_boolean (&sending_success_val, TRUE);
@@ -175,7 +178,7 @@ _tf_content_start_sending (TfContent *self)
   g_debug ("Request to start sending %s",
       sending_success ? "succeeded" : "failed");
 
-  self->sending = sending_success;
+  self->sending_count = 1;
 
   return sending_success;
 }
@@ -183,9 +186,10 @@ _tf_content_start_sending (TfContent *self)
 void
 _tf_content_stop_sending (TfContent *self)
 {
-  g_signal_emit (self, signals[SIGNAL_STOP_SENDING], 0);
+  self->sending_count --;
 
-  self->sending = FALSE;
+  if (self->sending_count == 0)
+    g_signal_emit (self, signals[SIGNAL_STOP_SENDING], 0);
 }
 
 void
