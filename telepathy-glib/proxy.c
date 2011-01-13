@@ -1864,6 +1864,61 @@ prepare_feature (TpProxy *self,
     }
 }
 
+/* Returns %TRUE if all the features requested in @req have complete their
+ * preparation */
+static gboolean
+request_is_complete (TpProxy *self,
+    TpProxyPrepareRequest *req)
+{
+  guint i;
+  gboolean complete = TRUE;
+
+  for (i = 0; i < req->features->len; i++)
+    {
+      GQuark feature = g_array_index (req->features, GQuark, i);
+      FeatureState state = tp_proxy_get_feature_state (self, feature);
+      const TpProxyFeature *feat_struct = tp_proxy_subclass_get_feature (
+          G_OBJECT_TYPE (self), feature);
+
+      switch (state)
+        {
+          case FEATURE_STATE_UNWANTED:
+            /* this can only happen in the special pseudo-request for the
+             * core features, which blocks everything */
+            g_assert (req == self->priv->prepare_core);
+            complete = FALSE;
+            break;
+
+            /* fall through to treat it as WANTED */
+          case FEATURE_STATE_WANTED:
+            if (self->priv->prepare_core == NULL ||
+                self->priv->prepare_core == req)
+              {
+                DEBUG ("%p: calling callback for %s", self,
+                    g_quark_to_string (feature));
+
+                tp_proxy_set_feature_state (self, feature,
+                    FEATURE_STATE_TRYING);
+
+                prepare_feature (self, feat_struct);
+              }
+
+            /* fall through */
+          case FEATURE_STATE_TRYING:
+            complete = FALSE;
+            break;
+
+          case FEATURE_STATE_INVALID:
+          case FEATURE_STATE_FAILED:
+          case FEATURE_STATE_READY:
+            /* nothing more to do */
+            break;
+        }
+    }
+
+  return complete;
+}
+
 /*
  * tp_proxy_poll_features:
  * @self: a proxy
@@ -1896,8 +1951,6 @@ tp_proxy_poll_features (TpProxy *self,
   for (iter = self->priv->prepare_requests; iter != NULL; iter = next)
     {
       TpProxyPrepareRequest *req = iter->data;
-      gboolean wait = FALSE;
-      guint i;
 
       if (error == NULL)
         {
@@ -1930,50 +1983,7 @@ tp_proxy_poll_features (TpProxy *self,
           continue;
         }
 
-      for (i = 0; i < req->features->len; i++)
-        {
-          GQuark feature = g_array_index (req->features, GQuark, i);
-          FeatureState state = tp_proxy_get_feature_state (self, feature);
-          const TpProxyFeature *feat_struct = tp_proxy_subclass_get_feature (
-              G_OBJECT_TYPE (self), feature);
-
-          switch (state)
-            {
-              case FEATURE_STATE_UNWANTED:
-                /* this can only happen in the special pseudo-request for the
-                 * core features, which blocks everything */
-                g_assert (req == self->priv->prepare_core);
-                wait = TRUE;
-                break;
-
-                /* fall through to treat it as WANTED */
-              case FEATURE_STATE_WANTED:
-                if (self->priv->prepare_core == NULL ||
-                    self->priv->prepare_core == req)
-                  {
-                    DEBUG ("%p: calling callback for %s", self,
-                        g_quark_to_string (feature));
-
-                    tp_proxy_set_feature_state (self, feature,
-                        FEATURE_STATE_TRYING);
-
-                    prepare_feature (self, feat_struct);
-                  }
-
-                /* fall through */
-              case FEATURE_STATE_TRYING:
-                wait = TRUE;
-                break;
-
-              case FEATURE_STATE_INVALID:
-              case FEATURE_STATE_FAILED:
-              case FEATURE_STATE_READY:
-                /* nothing more to do */
-                break;
-            }
-        }
-
-      if (!wait)
+      if (request_is_complete (self, req))
         {
           DEBUG ("%p: request %p prepared", self, req);
           self->priv->prepare_requests = g_list_delete_link (
