@@ -1597,6 +1597,32 @@ _tp_proxy_is_preparing (gpointer self,
   return (state == FEATURE_STATE_WANTED || state == FEATURE_STATE_TRYING);
 }
 
+static gboolean
+check_feature_interfaces (TpProxy *self,
+    GQuark name)
+{
+  const TpProxyFeature *feature = tp_proxy_subclass_get_feature (
+      G_OBJECT_TYPE (self), name);
+  guint i;
+
+  if (feature->interfaces_needed == NULL)
+    return TRUE;
+
+  for (i = 0; feature->interfaces_needed[i] != 0; i++)
+    {
+      if (!tp_proxy_has_interface_by_id (self, feature->interfaces_needed[i]))
+        {
+          DEBUG ("Proxy doesn't implement %s, can't prepare feature %s",
+              g_quark_to_string (feature->interfaces_needed[i]),
+              g_quark_to_string (name));
+
+          return FALSE;
+        }
+    }
+
+  return TRUE;
+}
+
 /**
  * tp_proxy_prepare_async:
  * @self: an instance of a #TpProxy subclass
@@ -1677,9 +1703,22 @@ tp_proxy_prepare_async (gpointer self,
       /* We just skip unknown features, which have state FEATURE_STATE_INVALID
        * (this doesn't seem ideal, but is
        * consistent with TpAccountManager's existing behaviour) */
+      if (state == FEATURE_STATE_INVALID)
+        continue;
+      else if (state == FEATURE_STATE_UNWANTED)
+        {
+          if (check_feature_interfaces (self, features[i]))
+            {
+              tp_proxy_set_feature_state (self, features[i],
+                  FEATURE_STATE_WANTED);
+            }
+          else
+            {
+              tp_proxy_set_feature_state (self, features[i],
+                  FEATURE_STATE_FAILED);
+            }
+        }
 
-      if (state == FEATURE_STATE_UNWANTED)
-        tp_proxy_set_feature_state (self, features[i], FEATURE_STATE_WANTED);
     }
 
   if (callback != NULL)

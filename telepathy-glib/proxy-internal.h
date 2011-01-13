@@ -42,6 +42,10 @@ struct _TpProxyFeature {
     TpProxyProc start_preparing;
     TpProxyPrepareAsync prepare_async;
 
+    const GQuark *interfaces_needed;
+    /* Features we depend on */
+    const GQuark *depends_on;
+
     /*<private>*/
     GCallback _reserved[4];
     TpProxyFeaturePrivate *priv;
