@@ -1162,7 +1162,7 @@ tpl_log_store_sqlite_get_events (TplLogStore *self,
       /* for some reason this returns unsigned char */
       identifier = (const char *) sqlite3_column_text (sql, 0);
       chatroom = sqlite3_column_int (sql, 1);
-      type = chatroom ? TPL_EVENT_SEARCH_TEXT_GROUP
+      type = chatroom ? TPL_EVENT_SEARCH_TEXT_ROOM
         : TPL_EVENT_SEARCH_TEXT;
 
       DEBUG ("identifier = %s, chatroom = %i", identifier, chatroom);

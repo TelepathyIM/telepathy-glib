@@ -294,7 +294,7 @@ log_store_xml_get_dir (TplLogStoreXml *self,
 
   escaped = log_store_account_to_dirname (account);
 
-  if (type == TPL_EVENT_SEARCH_TEXT_GROUP)
+  if (type == TPL_EVENT_SEARCH_TEXT_ROOM)
     basedir = g_build_path (G_DIR_SEPARATOR_S,
         log_store_xml_get_basedir (self), escaped, LOG_DIR_CHATROOMS,
         id, NULL);
@@ -756,7 +756,7 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
     }
   g_list_free (accounts);
 
-  type = is_chatroom ? TPL_EVENT_SEARCH_TEXT_GROUP
+  type = is_chatroom ? TPL_EVENT_SEARCH_TEXT_ROOM
     : TPL_EVENT_SEARCH_TEXT;
   hit = _tpl_log_manager_search_hit_new (account, chat_id,
     type, date);
@@ -1090,7 +1090,7 @@ log_store_xml_get_events_for_dir (TplLogStoreXml *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (dir), NULL);
 
-  type = is_chatroom ? TPL_EVENT_SEARCH_TEXT_GROUP : TPL_EVENT_SEARCH_TEXT;
+  type = is_chatroom ? TPL_EVENT_SEARCH_TEXT_ROOM : TPL_EVENT_SEARCH_TEXT;
 
   gdir = g_dir_open (dir, 0, &error);
   if (!gdir)

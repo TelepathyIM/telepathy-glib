@@ -190,7 +190,7 @@ tpl_entity_init (TplEntity *self)
  * @chatroom_id: the chatroom id which will be the identifier for the entity
  *
  * Return a TplEntity instance with identifier, alias copied from
- * @chatroom_id. It also sets %TPL_ENTITY_GROUP as type for
+ * @chatroom_id. It also sets %TPL_ENTITY_ROOM as type for
  * the #TplEntity returned.
  */
 TplEntity *
@@ -202,7 +202,7 @@ _tpl_entity_from_room_id (const gchar *chatroom_id)
 
   ret = _tpl_entity_new (chatroom_id);
   _tpl_entity_set_alias (ret, chatroom_id);
-  _tpl_entity_set_entity_type (ret, TPL_ENTITY_GROUP);
+  _tpl_entity_set_entity_type (ret, TPL_ENTITY_ROOM);
 
   DEBUG ("Chatroom id: %s", chatroom_id);
   return ret;
@@ -341,7 +341,7 @@ _tpl_entity_set_identifier (TplEntity *self,
  *
  * Set a entity type for @self.
  *
- * Note: %TPL_ENTITY_CONTACT and %TPL_ENTITY_GROUP are automatically set after
+ * Note: %TPL_ENTITY_CONTACT and %TPL_ENTITY_ROOM are automatically set after
  * _tpl_entity_from_tp_contact() and #tpl_entity_from_chatroom_id(),
  * respectively. Though, the client will need to set %TPL_ENTITY_SELF after
  * those function calls when @self represents the owner of the account.

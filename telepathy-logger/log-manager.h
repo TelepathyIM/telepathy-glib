@@ -62,7 +62,7 @@ typedef struct
 typedef enum
 {
   TPL_EVENT_SEARCH_TEXT       = 1 << 0,
-  TPL_EVENT_SEARCH_TEXT_GROUP = 1 << 1,
+  TPL_EVENT_SEARCH_TEXT_ROOM  = 1 << 1,
   TPL_EVENT_SEARCH_CALL       = 1 << 2,
   TPL_EVENT_SEARCH_ALL        = 0xffff
 } TplEventSearchType;
