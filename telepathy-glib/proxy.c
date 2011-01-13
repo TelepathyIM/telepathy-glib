@@ -1623,6 +1623,80 @@ check_feature_interfaces (TpProxy *self,
   return TRUE;
 }
 
+/* Returns %TRUE if all the deps of @name are ready
+ * @failed: (out): %TRUE if one of @name's dep can't be prepared and so
+ * @name can't be either
+ */
+static gboolean
+check_depends_ready (TpProxy *self,
+    GQuark name,
+    gboolean *failed)
+{
+  const TpProxyFeature *feature = tp_proxy_subclass_get_feature (
+      G_OBJECT_TYPE (self), name);
+  guint i;
+  gboolean ready = TRUE;
+
+  g_assert (failed != NULL);
+  *failed = FALSE;
+
+  if (feature->depends_on == NULL)
+    return TRUE;
+
+  for (i = 0; feature->depends_on[i] != 0; i++)
+    {
+      GQuark dep = feature->depends_on[i];
+      FeatureState dep_state;
+
+      dep_state = tp_proxy_get_feature_state (self, dep);
+      switch (dep_state)
+        {
+          case FEATURE_STATE_INVALID:
+          case FEATURE_STATE_FAILED:
+            DEBUG ("Can't prepare %s, one is dep %s: %s",
+                g_quark_to_string (name),
+                dep_state == FEATURE_STATE_INVALID ? "is invalid": "failed",
+                g_quark_to_string (dep));
+
+            *failed = TRUE;
+            return FALSE;
+
+          case FEATURE_STATE_UNWANTED:
+          case FEATURE_STATE_WANTED:
+          case FEATURE_STATE_TRYING:
+            ready = FALSE;
+            break;
+
+          case FEATURE_STATE_READY:
+            break;
+        }
+    }
+
+  return ready;
+}
+
+static void
+depends_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpProxy *self = (TpProxy *) source;
+
+  tp_proxy_poll_features (self, NULL);
+}
+
+static void
+prepare_depends (TpProxy *self,
+    GQuark name)
+{
+  const TpProxyFeature *feature;
+
+  feature = tp_proxy_subclass_get_feature (G_OBJECT_TYPE (self), name);
+  g_assert (feature->depends_on != NULL);
+
+  tp_proxy_prepare_async (self, feature->depends_on, depends_prepare_cb, NULL);
+}
+
 /**
  * tp_proxy_prepare_async:
  * @self: an instance of a #TpProxy subclass
@@ -1707,18 +1781,32 @@ tp_proxy_prepare_async (gpointer self,
         continue;
       else if (state == FEATURE_STATE_UNWANTED)
         {
-          if (check_feature_interfaces (self, features[i]))
-            {
-              tp_proxy_set_feature_state (self, features[i],
-                  FEATURE_STATE_WANTED);
-            }
-          else
+          gboolean failed;
+
+          /* Check if we have the required interfaces */
+          if (!check_feature_interfaces (self, features[i]))
             {
               tp_proxy_set_feature_state (self, features[i],
                   FEATURE_STATE_FAILED);
+              continue;
             }
-        }
 
+          /* Check deps */
+          if (!check_depends_ready (self, features[i], &failed))
+            {
+              if (failed)
+                {
+                  /* We can't prepare the feature because of its deps */
+                  tp_proxy_set_feature_state (self, features[i],
+                      FEATURE_STATE_FAILED);
+                  continue;
+                }
+
+              prepare_depends (self, features[i]);
+            }
+
+          tp_proxy_set_feature_state (self, features[i], FEATURE_STATE_WANTED);
+        }
     }
 
   if (callback != NULL)
@@ -1894,16 +1982,34 @@ request_is_complete (TpProxy *self,
             if (self->priv->prepare_core == NULL ||
                 self->priv->prepare_core == req)
               {
-                DEBUG ("%p: calling callback for %s", self,
-                    g_quark_to_string (feature));
+                gboolean failed;
 
-                tp_proxy_set_feature_state (self, feature,
-                    FEATURE_STATE_TRYING);
+                if (check_depends_ready (self, feature, &failed))
+                  {
+                    /* We can prepare it now */
+                    DEBUG ("%p: calling callback for %s", self,
+                        g_quark_to_string (feature));
 
-                prepare_feature (self, feat_struct);
+                    tp_proxy_set_feature_state (self, feature,
+                        FEATURE_STATE_TRYING);
+
+                    prepare_feature (self, feat_struct);
+                    complete = FALSE;
+                  }
+                else if (failed)
+                  {
+                    tp_proxy_set_feature_state (self, feature,
+                        FEATURE_STATE_FAILED);
+                  }
+                else
+                  {
+                    /* We have to wait than deps finished their
+                     * preparation */
+                    complete = FALSE;
+                  }
               }
+            break;
 
-            /* fall through */
           case FEATURE_STATE_TRYING:
             complete = FALSE;
             break;
