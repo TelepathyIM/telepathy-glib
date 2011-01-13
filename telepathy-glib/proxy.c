@@ -292,7 +292,7 @@ typedef enum {
     /* Want to prepare, waiting for dependencies to be satisfied (or maybe
      * just poll_features being called) */
     FEATURE_STATE_WANTED,
-    /* Want to prepare, have called start_preparing */
+    /* Want to prepare, have called start_preparing or prepare_async */
     FEATURE_STATE_TRYING,
     /* Couldn't prepare, gave up */
     FEATURE_STATE_FAILED,
@@ -1775,11 +1775,47 @@ start_preparing_in_idle_cb (gpointer data)
   return FALSE;
 }
 
+static gboolean
+prepare_finish (TpProxy *self,
+    GAsyncResult *result,
+    gpointer source,
+    GError **error)
+{
+  _tp_implement_finish_void (self, source);
+}
+
+static void
+feature_prepared_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpProxy *self = (TpProxy *) source;
+  TpProxyFeature *feature = user_data;
+  GError *error = NULL;
+  gboolean prepared = TRUE;
+
+  if (!prepare_finish (self, result, feature->prepare_async, &error))
+    {
+      DEBUG ("Failed to prepare %s: %s", g_quark_to_string (feature->name),
+          error->message);
+
+      prepared = FALSE;
+      g_error_free (error);
+    }
+
+  _tp_proxy_set_feature_prepared (self, feature->name, prepared);
+}
+
 static void
 prepare_feature (TpProxy *self,
     const TpProxyFeature *feature)
 {
-  if (feature->start_preparing != NULL)
+  if (feature->prepare_async != NULL)
+    {
+      feature->prepare_async (self, feature, feature_prepared_cb,
+          (gpointer) feature);
+    }
+  else if (feature->start_preparing != NULL)
     {
       /* start_preparing should be async, use an idle for now */
       start_preparing_ctx *ctx = start_preparing_ctx_new (self, feature);

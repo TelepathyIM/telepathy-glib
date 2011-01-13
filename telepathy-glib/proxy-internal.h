@@ -27,13 +27,21 @@ GError *_tp_proxy_take_and_remap_error (TpProxy *self, GError *error)
 
 typedef void (*TpProxyProc) (TpProxy *);
 
+typedef void (* TpProxyPrepareAsync) (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
 typedef struct _TpProxyFeaturePrivate TpProxyFeaturePrivate;
 
 struct _TpProxyFeature {
     /*<public>*/
     GQuark name;
     gboolean core;
+
     TpProxyProc start_preparing;
+    TpProxyPrepareAsync prepare_async;
+
     /*<private>*/
     GCallback _reserved[4];
     TpProxyFeaturePrivate *priv;
