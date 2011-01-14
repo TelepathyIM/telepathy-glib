@@ -102,8 +102,8 @@ struct _TpContact {
  *  (available since 0.13.1)
  * @TP_CONTACT_FEATURE_SUBSCRIPTION_STATES: #TpContact:subscribe-state,
  *  #TpContact:publish-state and #TpContact:publish-request. Require a
- *  Connection implementing ContactList interface.
- *  (available since UNRELEASED)
+ *  Connection implementing the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
+ *  interface. (available since 0.13.UNRELEASED)
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -562,14 +562,15 @@ tp_contact_get_contact_info (TpContact *self)
  * tp_contact_get_subscribe_state:
  * @self: a #TpContact
  *
- * Return the state of the user's subscription to @self's presence.
+ * Return the state of the local user's subscription to this remote contact's
+ * presence.
  *
  * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
  * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
  *
  * Returns: the value of #TpContact:subscribe-state.
  *
- * Since: UNRELEASED
+ * Since: 0.13.UNRELEASED
  */
 TpSubscriptionState
 tp_contact_get_subscribe_state (TpContact *self)
@@ -583,14 +584,15 @@ tp_contact_get_subscribe_state (TpContact *self)
  * tp_contact_get_publish_state:
  * @self: a #TpContact
  *
- * Return the state of @self's subscription to the user's presence.
+ * Return the state of this remote contact's subscription to the local user's
+ * presence.
  *
  * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
  * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
  *
  * Returns: the value of #TpContact:publish-state.
  *
- * Since: UNRELEASED
+ * Since: 0.13.UNRELEASED
  */
 TpSubscriptionState
 tp_contact_get_publish_state (TpContact *self)
@@ -605,17 +607,17 @@ tp_contact_get_publish_state (TpContact *self)
  * @self: a #TpContact
  *
  * If #TpContact:publish-state is set to %TP_SUBSCRIPTION_STATE_ASK, return the
- * message that @self sent when they requested permission to see the user's
- * presence. This remains valid until the main loop is re-entered; if the caller
- * requires a string that will persist for longer than that, it must be copied
- * with g_strdup().
+ * message that this remote contact sent when they requested permission to see
+ * the local user's presence, an empty string ("") otherwise. This remains valid
+ * until the main loop is re-entered; if the caller requires a string that will
+ * persist for longer than that, it must be copied with g_strdup().
  *
  * This is set to %NULL until %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been
  * prepared, and it is guaranteed to be non-%NULL afterward.
 
  * Returns: the value of #TpContact:publish-request.
  *
- * Since: UNRELEASED
+ * Since: 0.13.UNRELEASED
  */
 const gchar *
 tp_contact_get_publish_request (TpContact *self)
@@ -1056,13 +1058,13 @@ tp_contact_class_init (TpContactClass *klass)
   /**
    * TpContact:subscribe-state:
    *
-   * A #TpSubscriptionState indicating the state of the user's subscription
-   * to contact's presence.
+   * A #TpSubscriptionState indicating the state of the local user's
+   * subscription to this contact's presence.
    *
    * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
    * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
    *
-   * Since: UNRELEASED
+   * Since: 0.13.UNRELEASED
    */
   param_spec = g_param_spec_uint ("subscribe-state",
       "Subscribe State",
@@ -1077,13 +1079,13 @@ tp_contact_class_init (TpContactClass *klass)
   /**
    * TpContact:publish-state:
    *
-   * A #TpSubscriptionState indicating the state of contact's subscription to
-   * the user's presence.
+   * A #TpSubscriptionState indicating the state of this contact's subscription
+   * to the local user's presence.
    *
    * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
    * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
    *
-   * Since: UNRELEASED
+   * Since: 0.13.UNRELEASED
    */
   param_spec = g_param_spec_uint ("publish-state",
       "Publish State",
@@ -1099,12 +1101,13 @@ tp_contact_class_init (TpContactClass *klass)
    * TpContact:publish-request:
    *
    * The message that contact sent when they requested permission to see the
-   * user's presence, if #TpContact:publish-state is %TP_SUBSCRIPTION_STATE_ASK.
+   * local user's presence, if #TpContact:publish-state is
+   * %TP_SUBSCRIPTION_STATE_ASK, an empty string ("") otherwise.
    *
    * This is set to %NULL until %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been
    * prepared, and it is guaranteed to be non-%NULL afterward.
    *
-   * Since: UNRELEASED
+   * Since: 0.13.UNRELEASED
    */
   param_spec = g_param_spec_string ("publish-request",
       "Publish Request",
@@ -1116,14 +1119,14 @@ tp_contact_class_init (TpContactClass *klass)
 
   /**
    * TpContact::subscription-states-changed:
-   * @contact: A #TpContact
-   * @subscribe: The new value of #TpContact:subscribe-state
-   * @publish: The new value of #TpContact:publish-state
-   * @publish_request: The new value of #TpContact:publish-request
+   * @contact: a #TpContact
+   * @subscribe: the new value of #TpContact:subscribe-state
+   * @publish: the new value of #TpContact:publish-state
+   * @publish_request: the new value of #TpContact:publish-request
    *
    * Emitted when this contact's subscription states changes.
    *
-   * Since: UNRELEASED
+   * Since: 0.13.UNRELEASED
    */
   signals[SIGNAL_SUBSCRIPTION_STATES_CHANGED] = g_signal_new (
       "subscription-states-changed",
@@ -1136,7 +1139,7 @@ tp_contact_class_init (TpContactClass *klass)
 
   /**
    * TpContact::presence-changed:
-   * @contact: A #TpContact
+   * @contact: a #TpContact
    * @type: The new value of #TpContact:presence-type
    * @status: The new value of #TpContact:presence-status
    * @message: The new value of #TpContact:presence-message
