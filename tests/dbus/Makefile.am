@@ -43,6 +43,7 @@ noinst_PROGRAMS = \
     test-params-cm \
     test-properties \
     test-protocol-objects \
+    test-proxy-preparation \
     test-self-handle \
     test-self-presence \
     test-simple-approver \
@@ -190,9 +191,9 @@ test_simple_handler_SOURCES = simple-handler.c
 
 test_stream_tube_SOURCES = stream-tube.c
 
-
 test_client_channel_factory_SOURCES = client-channel-factory.c
 
+test_proxy_preparation_SOURCES = proxy-preparation.c
 
 # this one uses internal ABI
 test_cm_message_SOURCES = \
