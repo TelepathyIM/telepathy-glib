@@ -587,6 +587,7 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) proxy;
+  GSimpleAsyncResult *result = user_data;
   gboolean prepared = TRUE;
   GPtrArray *channels;
   GError *e = NULL;
@@ -665,8 +666,10 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
   g_object_notify ((GObject *) self, "cdo-properties");
 
 out:
-  _tp_proxy_set_feature_prepared (proxy,
-      TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, prepared);
+  if (e != NULL)
+    g_simple_async_result_set_from_error (result, e);
+
+  g_simple_async_result_complete (result);
 
   if (!prepared)
     {
@@ -676,14 +679,21 @@ out:
 }
 
 static void
-prepare_core (TpProxy *proxy)
+prepare_core_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) proxy;
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      prepare_core_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CHANNEL_DISPATCH_OPERATION,
       get_dispatch_operation_prop_cb,
-      NULL, NULL, NULL);
+      result, g_object_unref, NULL);
 }
 
 enum {
@@ -701,7 +711,7 @@ tp_channel_dispatch_operation_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_CORE].name = TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE;
   features[FEAT_CORE].core = TRUE;
-  features[FEAT_CORE].start_preparing = prepare_core;
+  features[FEAT_CORE].prepare_async = prepare_core_async;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
