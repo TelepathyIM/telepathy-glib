@@ -298,8 +298,6 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
 {
   TpConnection *self = (TpConnection *) proxy;
 
-  self->priv->fetching_rcc = FALSE;
-
   if (error != NULL)
     {
       DEBUG ("Failed to get RequestableChannelClasses property, using an "
@@ -335,31 +333,11 @@ finally:
 }
 
 static void
-tp_connection_maybe_prepare_capabilities (TpProxy *proxy)
+tp_connection_prepare_capabilities (TpProxy *proxy)
 {
   TpConnection *self = (TpConnection *) proxy;
 
-  if (self->priv->capabilities != NULL)
-    return;   /* already done */
-
-  if (!_tp_proxy_is_preparing (proxy, TP_CONNECTION_FEATURE_CAPABILITIES))
-    return;   /* not interested right now */
-
-  if (!self->priv->ready)
-    return;   /* will try again when ready */
-
-  if (self->priv->fetching_rcc)
-    return;   /* Another Get operation is running */
-
-  if (!tp_proxy_has_interface_by_id (proxy,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS))
-    {
-      _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
-          FALSE);
-      return;
-    }
-
-  self->priv->fetching_rcc = TRUE;
+  g_assert (self->priv->capabilities == NULL);
 
   tp_cli_dbus_properties_call_get (self, -1,
       TP_IFACE_CONNECTION_INTERFACE_REQUESTS, "RequestableChannelClasses",
@@ -402,7 +380,6 @@ tp_connection_continue_introspection (TpConnection *self)
       g_object_notify ((GObject *) self, "status-reason");
       g_object_notify ((GObject *) self, "connection-ready");
 
-      tp_connection_maybe_prepare_capabilities ((TpProxy *) self);
       _tp_connection_maybe_prepare_avatar_requirements ((TpProxy *) self);
       _tp_connection_maybe_prepare_contact_info ((TpProxy *) self);
     }
@@ -1258,6 +1235,7 @@ static const TpProxyFeature *
 tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+  static GQuark need_requests[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -1269,7 +1247,10 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_CAPABILITIES].name = TP_CONNECTION_FEATURE_CAPABILITIES;
   features[FEAT_CAPABILITIES].start_preparing =
-    tp_connection_maybe_prepare_capabilities;
+      tp_connection_prepare_capabilities;
+  if (G_UNLIKELY (need_requests[0] == 0))
+    need_requests[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS;
+  features[FEAT_CAPABILITIES].interfaces_needed = need_requests;
 
   features[FEAT_AVATAR_REQUIREMENTS].name = TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS;
   features[FEAT_AVATAR_REQUIREMENTS].start_preparing =

@@ -66,7 +66,6 @@ struct _TpConnectionPrivate {
     GList *contact_info_supported_fields;
 
     TpProxyPendingCall *introspection_call;
-    unsigned fetching_rcc:1;
     unsigned fetching_avatar_requirements:1;
     unsigned contact_info_fetched:1;
 
