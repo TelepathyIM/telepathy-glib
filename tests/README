@@ -12,3 +12,11 @@ To run a single test:
 
 If you're running a test under a debugger, export TP_TESTS_NO_TIMEOUT=1 to
 avoid it being killed for taking too long.
+
+Generate tests coverage report
+==============================
+
+make clean
+./configure --enable-compiler-coverage
+make check
+make lcov-report
