@@ -19,6 +19,8 @@ libtp_glib_tests_la_SOURCES = \
     echo-im-manager.h \
     echo-im-manager.c \
     myassert.h \
+    my-conn-proxy.h \
+    my-conn-proxy.c \
     params-cm.h \
     params-cm.c \
     simple-account.c \
