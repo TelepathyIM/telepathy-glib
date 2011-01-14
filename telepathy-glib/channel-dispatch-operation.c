@@ -116,8 +116,6 @@ struct _TpChannelDispatchOperationPrivate {
   GPtrArray *channels;
   GStrv possible_handlers;
   GHashTable *immutable_properties;
-
-  gboolean preparing_core;
 };
 
 enum
@@ -593,8 +591,6 @@ get_dispatch_operation_prop_cb (TpProxy *proxy,
   GPtrArray *channels;
   GError *e = NULL;
 
-  self->priv->preparing_core = FALSE;
-
   if (error != NULL)
     {
       DEBUG ("Failed to fetch ChannelDispatchOperation properties: %s",
@@ -680,21 +676,9 @@ out:
 }
 
 static void
-maybe_prepare_core (TpProxy *proxy)
+prepare_core (TpProxy *proxy)
 {
   TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) proxy;
-
-  if (tp_proxy_is_prepared (proxy, TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE))
-    return;   /* already done */
-
-  if (self->priv->preparing_core)
-    return;   /* already running */
-
-  if (!_tp_proxy_is_preparing (proxy,
-        TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE))
-    return;   /* not interested right now */
-
-  self->priv->preparing_core = TRUE;
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CHANNEL_DISPATCH_OPERATION,
@@ -717,7 +701,7 @@ tp_channel_dispatch_operation_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_CORE].name = TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE;
   features[FEAT_CORE].core = TRUE;
-  features[FEAT_CORE].start_preparing = maybe_prepare_core;
+  features[FEAT_CORE].start_preparing = prepare_core;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
