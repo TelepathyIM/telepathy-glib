@@ -699,18 +699,11 @@ tp_channel_get_initial_chat_states_cb (TpProxy *proxy,
 }
 
 static void
-tp_channel_maybe_prepare_chat_states (TpProxy *proxy)
+tp_channel_prepare_chat_states (TpProxy *proxy)
 {
   TpChannel *self = (TpChannel *) proxy;
 
-  if (self->priv->chat_states != NULL)
-    return;   /* already done */
-
-  if (!_tp_proxy_is_preparing (proxy, TP_CHANNEL_FEATURE_CHAT_STATES))
-    return;   /* not interested right now */
-
-  if (!self->priv->ready)
-    return;   /* will try again when ready */
+  g_assert (self->priv->chat_states == NULL);
 
   /* chat states? yes please! */
   self->priv->chat_states = g_hash_table_new (NULL, NULL);
@@ -755,8 +748,6 @@ _tp_channel_continue_introspection (TpChannel *self)
           TP_CHANNEL_FEATURE_GROUP,
           tp_proxy_has_interface_by_id (self,
             TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP));
-
-      tp_channel_maybe_prepare_chat_states ((TpProxy *) self);
     }
   else
     {
@@ -1361,7 +1352,7 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
   features[FEAT_CHAT_STATES].start_preparing =
-    tp_channel_maybe_prepare_chat_states;
+    tp_channel_prepare_chat_states;
   if (G_UNLIKELY (need_chat_states[0] == 0))
     need_chat_states[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE;
   features[FEAT_CHAT_STATES].interfaces_needed = need_chat_states;
