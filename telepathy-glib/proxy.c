@@ -1783,14 +1783,6 @@ tp_proxy_prepare_async (gpointer self,
         {
           gboolean failed;
 
-          /* Check if we have the required interfaces */
-          if (!check_feature_interfaces (self, features[i]))
-            {
-              tp_proxy_set_feature_state (self, features[i],
-                  FEATURE_STATE_FAILED);
-              continue;
-            }
-
           /* Check deps */
           if (!check_depends_ready (self, features[i], &failed))
             {
@@ -1942,6 +1934,15 @@ request_is_complete (TpProxy *self,
                 self->priv->prepare_core == req)
               {
                 gboolean failed;
+
+                /* Check if we have the required interfaces. We can't do that
+                 * in tp_proxy_prepare_async() as CORE have to be prepared */
+                if (!check_feature_interfaces (self, feature))
+                  {
+                    tp_proxy_set_feature_state (self, feature,
+                        FEATURE_STATE_FAILED);
+                    continue;
+                  }
 
                 if (check_depends_ready (self, feature, &failed))
                   {
