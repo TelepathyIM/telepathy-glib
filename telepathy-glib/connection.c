@@ -297,6 +297,7 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result = user_data;
 
   if (error != NULL)
     {
@@ -326,22 +327,28 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
       FALSE);
 
 finally:
-  _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
-      TRUE);
+  g_simple_async_result_complete (result);
 
   g_object_notify ((GObject *) self, "capabilities");
 }
 
 static void
-tp_connection_prepare_capabilities (TpProxy *proxy)
+tp_connection_prepare_capabilities_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_connection_prepare_capabilities_async);
 
   g_assert (self->priv->capabilities == NULL);
 
   tp_cli_dbus_properties_call_get (self, -1,
       TP_IFACE_CONNECTION_INTERFACE_REQUESTS, "RequestableChannelClasses",
-      tp_connection_get_rcc_cb, NULL, NULL, NULL);
+      tp_connection_get_rcc_cb, result, g_object_unref, NULL);
 }
 
 static void
@@ -1245,22 +1252,22 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CONNECTED].name = TP_CONNECTION_FEATURE_CONNECTED;
 
   features[FEAT_CAPABILITIES].name = TP_CONNECTION_FEATURE_CAPABILITIES;
-  features[FEAT_CAPABILITIES].start_preparing =
-      tp_connection_prepare_capabilities;
+  features[FEAT_CAPABILITIES].prepare_async =
+      tp_connection_prepare_capabilities_async;
   if (G_UNLIKELY (need_requests[0] == 0))
     need_requests[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS;
   features[FEAT_CAPABILITIES].interfaces_needed = need_requests;
 
   features[FEAT_AVATAR_REQUIREMENTS].name = TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS;
-  features[FEAT_AVATAR_REQUIREMENTS].start_preparing =
-    _tp_connection_prepare_avatar_requirements;
+  features[FEAT_AVATAR_REQUIREMENTS].prepare_async =
+    _tp_connection_prepare_avatar_requirements_async;
   if (G_UNLIKELY (need_avatars[0] == 0))
     need_avatars[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS;
   features[FEAT_AVATAR_REQUIREMENTS].interfaces_needed = need_avatars;
 
   features[FEAT_CONTACT_INFO].name = TP_CONNECTION_FEATURE_CONTACT_INFO;
-  features[FEAT_CONTACT_INFO].start_preparing =
-    _tp_connection_prepare_contact_info;
+  features[FEAT_CONTACT_INFO].prepare_async =
+    _tp_connection_prepare_contact_info_async;
   if (G_UNLIKELY (need_contact_info[0] == 0))
     need_contact_info[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO;
   features[FEAT_CONTACT_INFO].interfaces_needed = need_contact_info;

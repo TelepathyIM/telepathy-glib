@@ -427,15 +427,15 @@ tp_connection_get_contact_info_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result = user_data;
   GPtrArray *specs;
   gboolean valid;
-  gboolean success = FALSE;
   guint i;
 
   if (error != NULL)
     {
       DEBUG ("Failed to get contact info properties: %s", error->message);
-      goto finally;
+      g_simple_async_result_set_from_error (result, error);
     }
 
   g_assert (self->priv->contact_info_supported_fields == NULL);
@@ -449,6 +449,8 @@ tp_connection_get_contact_info_cb (TpProxy *proxy,
   if (!valid || specs == NULL)
     {
       DEBUG ("Some properties are missing on the ContactInfo interface");
+      g_simple_async_result_set_error (result, TP_ERRORS, TP_ERROR_CONFUSED,
+          "Some properties are missing on the ContactInfo interface");
       goto finally;
     }
 
@@ -468,22 +470,25 @@ tp_connection_get_contact_info_cb (TpProxy *proxy,
           _tp_contact_info_field_spec_new (name, parameters, flags, max));
     }
 
-  success = TRUE;
-
 finally:
-
-  _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CONTACT_INFO,
-      success);
+  g_simple_async_result_complete (result);
 }
 
 void
-_tp_connection_prepare_contact_info (TpProxy *proxy)
+_tp_connection_prepare_contact_info_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      _tp_connection_prepare_contact_info_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,
-      tp_connection_get_contact_info_cb, NULL, NULL, NULL);
+      tp_connection_get_contact_info_cb, result, g_object_unref, NULL);
 }
 
 /**
