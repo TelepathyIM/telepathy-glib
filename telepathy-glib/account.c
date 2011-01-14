@@ -172,8 +172,15 @@ enum {
   PROP_STORAGE_RESTRICTIONS
 };
 
-static void tp_account_prepare_addressing (TpProxy *proxy);
-static void tp_account_prepare_storage (TpProxy *proxy);
+static void tp_account_prepare_addressing_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+static void tp_account_prepare_storage_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 /**
  * TP_ACCOUNT_FEATURE_CORE:
@@ -278,12 +285,12 @@ _tp_account_list_features (TpProxyClass *cls G_GNUC_UNUSED)
       /* no need for a start_preparing function - the constructor starts it */
 
       features[FEAT_ADDRESSING].name = TP_ACCOUNT_FEATURE_ADDRESSING;
-      features[FEAT_ADDRESSING].start_preparing =
-        tp_account_prepare_addressing;
+      features[FEAT_ADDRESSING].prepare_async =
+        tp_account_prepare_addressing_async;
 
       features[FEAT_STORAGE].name = TP_ACCOUNT_FEATURE_STORAGE;
-      features[FEAT_STORAGE].start_preparing =
-        tp_account_prepare_storage;
+      features[FEAT_STORAGE].prepare_async =
+        tp_account_prepare_storage_async;
 
       /* assert that the terminator at the end is there */
       g_assert (features[N_FEAT].name == 0);
@@ -413,6 +420,7 @@ _tp_account_got_all_storage_cb (TpProxy *proxy,
     GObject *object)
 {
   TpAccount *self = TP_ACCOUNT (proxy);
+  GSimpleAsyncResult *result = user_data;
 
   if (error != NULL)
     DEBUG ("Error getting Storage properties: %s", error->message);
@@ -435,19 +443,26 @@ _tp_account_got_all_storage_cb (TpProxy *proxy,
   if (self->priv->storage_provider == NULL)
     self->priv->storage_provider = g_strdup ("");
 
-  _tp_proxy_set_feature_prepared (proxy, TP_ACCOUNT_FEATURE_STORAGE, TRUE);
+  g_simple_async_result_complete (result);
 }
 
 static void
-tp_account_prepare_storage (TpProxy *proxy)
+tp_account_prepare_storage_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpAccount *self = TP_ACCOUNT (proxy);
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_account_prepare_storage_async);
 
   g_assert (self->priv->storage_provider == NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
-      _tp_account_got_all_storage_cb, NULL, NULL, G_OBJECT (self));
+      _tp_account_got_all_storage_cb, result, g_object_unref, G_OBJECT (self));
 }
 
 static void
@@ -3714,6 +3729,7 @@ _tp_account_got_all_addressing_cb (TpProxy *proxy,
     GObject *object)
 {
   TpAccount *self = TP_ACCOUNT (proxy);
+  GSimpleAsyncResult *result = user_data;
 
   if (error != NULL)
     {
@@ -3728,19 +3744,26 @@ _tp_account_got_all_addressing_cb (TpProxy *proxy,
   if (self->priv->uri_schemes == NULL)
     self->priv->uri_schemes = g_new0 (gchar *, 1);
 
-  _tp_proxy_set_feature_prepared (proxy, TP_ACCOUNT_FEATURE_ADDRESSING, TRUE);
+  g_simple_async_result_complete (result);
 }
 
 static void
-tp_account_prepare_addressing (TpProxy *proxy)
+tp_account_prepare_addressing_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpAccount *self = TP_ACCOUNT (proxy);
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_account_prepare_addressing_async);
 
   g_assert (self->priv->uri_schemes == NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING,
-      _tp_account_got_all_addressing_cb, NULL, NULL, NULL);
+      _tp_account_got_all_addressing_cb, result, g_object_unref, NULL);
 }
 
 /**
