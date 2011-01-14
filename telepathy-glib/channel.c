@@ -686,6 +686,7 @@ tp_channel_get_initial_chat_states_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpChannel *self = TP_CHANNEL (proxy);
+  GSimpleAsyncResult *result = user_data;
 
   if (error == NULL && G_VALUE_HOLDS (value, TP_HASH_TYPE_CHAT_STATE_MAP))
     {
@@ -695,13 +696,20 @@ tp_channel_get_initial_chat_states_cb (TpProxy *proxy,
   /* else just ignore it and assume everyone was initially in the default
    * Inactive state, unless we already saw a signal for them */
 
-  _tp_proxy_set_feature_prepared (proxy, TP_CHANNEL_FEATURE_CHAT_STATES, TRUE);
+  g_simple_async_result_complete (result);
 }
 
 static void
-tp_channel_prepare_chat_states (TpProxy *proxy)
+tp_channel_prepare_chat_states_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpChannel *self = (TpChannel *) proxy;
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_channel_prepare_chat_states_async);
 
   g_assert (self->priv->chat_states == NULL);
 
@@ -714,7 +722,7 @@ tp_channel_prepare_chat_states (TpProxy *proxy)
   tp_cli_dbus_properties_call_get (self, -1,
       TP_IFACE_CHANNEL_INTERFACE_CHAT_STATE, "ChatStates",
       tp_channel_get_initial_chat_states_cb,
-      NULL, NULL, NULL);
+      result, g_object_unref, NULL);
 }
 
 void
@@ -1351,8 +1359,8 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_GROUP].name = TP_CHANNEL_FEATURE_GROUP;
 
   features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
-  features[FEAT_CHAT_STATES].start_preparing =
-    tp_channel_prepare_chat_states;
+  features[FEAT_CHAT_STATES].prepare_async =
+    tp_channel_prepare_chat_states_async;
   if (G_UNLIKELY (need_chat_states[0] == 0))
     need_chat_states[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE;
   features[FEAT_CHAT_STATES].interfaces_needed = need_chat_states;
