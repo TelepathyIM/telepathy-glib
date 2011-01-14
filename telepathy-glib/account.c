@@ -282,7 +282,7 @@ _tp_account_list_features (TpProxyClass *cls G_GNUC_UNUSED)
     {
       features[FEAT_CORE].name = TP_ACCOUNT_FEATURE_CORE;
       features[FEAT_CORE].core = TRUE;
-      /* no need for a start_preparing function - the constructor starts it */
+      /* no need for a prepare_async function - the constructor starts it */
 
       features[FEAT_ADDRESSING].name = TP_ACCOUNT_FEATURE_ADDRESSING;
       features[FEAT_ADDRESSING].prepare_async =

@@ -166,7 +166,7 @@ _tp_account_manager_list_features (TpProxyClass *cls G_GNUC_UNUSED)
     {
       features[FEAT_CORE].name = TP_ACCOUNT_MANAGER_FEATURE_CORE;
       features[FEAT_CORE].core = TRUE;
-      /* no need for a start_preparing function - the constructor starts it */
+      /* no need for a prepare_async function - the constructor starts it */
 
       /* assert that the terminator at the end is there */
       g_assert (features[N_FEAT].name == 0);
