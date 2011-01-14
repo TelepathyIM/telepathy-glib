@@ -292,7 +292,7 @@ typedef enum {
     /* Want to prepare, waiting for dependencies to be satisfied (or maybe
      * just poll_features being called) */
     FEATURE_STATE_WANTED,
-    /* Want to prepare, have called start_preparing or prepare_async */
+    /* Want to prepare, have called prepare_async */
     FEATURE_STATE_TRYING,
     /* Couldn't prepare, gave up */
     FEATURE_STATE_FAILED,
@@ -1869,39 +1869,6 @@ tp_proxy_prepare_finish (gpointer self,
   return TRUE;
 }
 
-typedef struct
-{
-  TpProxy *self;
-  const TpProxyFeature *feature;
-} start_preparing_ctx;
-
-static start_preparing_ctx *
-start_preparing_ctx_new (TpProxy *self,
-    const TpProxyFeature *feature)
-{
-  start_preparing_ctx *ctx = g_slice_new (start_preparing_ctx);
-
-  ctx->self = g_object_ref (self);
-  ctx->feature = feature;
-  return ctx;
-}
-
-static void
-start_preparing_ctx_free (start_preparing_ctx *ctx)
-{
-  g_object_unref (ctx->self);
-  g_slice_free (start_preparing_ctx, ctx);
-}
-
-static gboolean
-start_preparing_in_idle_cb (gpointer data)
-{
-  start_preparing_ctx *ctx = data;
-
-  ctx->feature->start_preparing (ctx->self);
-  return FALSE;
-}
-
 static gboolean
 prepare_finish (TpProxy *self,
     GAsyncResult *result,
@@ -1937,19 +1904,11 @@ static void
 prepare_feature (TpProxy *self,
     const TpProxyFeature *feature)
 {
-  if (feature->prepare_async != NULL)
-    {
-      feature->prepare_async (self, feature, feature_prepared_cb,
-          (gpointer) feature);
-    }
-  else if (feature->start_preparing != NULL)
-    {
-      /* start_preparing should be async, use an idle for now */
-      start_preparing_ctx *ctx = start_preparing_ctx_new (self, feature);
+  if (feature->prepare_async == NULL)
+    return;
 
-      g_idle_add_full (G_PRIORITY_DEFAULT_IDLE, start_preparing_in_idle_cb, ctx,
-          (GDestroyNotify) start_preparing_ctx_free);
-    }
+  feature->prepare_async (self, feature, feature_prepared_cb,
+      (gpointer) feature);
 }
 
 /* Returns %TRUE if all the features requested in @req have complete their

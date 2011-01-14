@@ -39,7 +39,6 @@ struct _TpProxyFeature {
     GQuark name;
     gboolean core;
 
-    TpProxyProc start_preparing;
     TpProxyPrepareAsync prepare_async;
 
     const GQuark *interfaces_needed;
