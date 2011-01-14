@@ -354,12 +354,8 @@ tp_connection_maybe_prepare_capabilities (TpProxy *proxy)
   if (!tp_proxy_has_interface_by_id (proxy,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS))
     {
-      /* Connection doesn't support Requests; set an empty TpCapabilities
-       * object as all calls to CreateChannel/EnsureChannel will fail. */
-
-      self->priv->capabilities = _tp_capabilities_new (NULL, FALSE);
       _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CAPABILITIES,
-          TRUE);
+          FALSE);
       return;
     }
 

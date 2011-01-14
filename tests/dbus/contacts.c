@@ -1977,20 +1977,16 @@ test_prepare_contact_caps_without_request (Fixture *f,
   for (i = 0; i < 3; i++)
     {
       TpCapabilities *caps;
-      GPtrArray *classes;
 
       g_assert_cmpuint (tp_contact_get_handle (contacts[i]), ==, handles[i]);
       g_assert_cmpstr (tp_contact_get_identifier (contacts[i]), ==,
           ids[i]);
 
-      MYASSERT (tp_contact_has_feature (contacts[i],
+      MYASSERT (!tp_contact_has_feature (contacts[i],
             TP_CONTACT_FEATURE_CAPABILITIES), "");
 
       caps = tp_contact_get_capabilities (contacts[i]);
-      MYASSERT (caps != NULL, "");
-      MYASSERT (!tp_capabilities_is_specific_to_contact (caps), "");
-      classes = tp_capabilities_get_channel_classes (caps);
-      g_assert_cmpuint (classes->len, ==, 0);
+      MYASSERT (caps == NULL, "");
     }
 
   g_assert (result.error == NULL);
