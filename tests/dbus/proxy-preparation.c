@@ -12,6 +12,7 @@
 #include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
 #include "tests/lib/simple-conn.h"
+#include "tests/lib/my-conn-proxy.h"
 
 typedef struct {
     GMainLoop *mainloop;
@@ -22,6 +23,7 @@ typedef struct {
 
     /* Client side objects */
     TpConnection *connection;
+    TpTestsMyConnProxy *my_conn;
 
     GError *error /* initialized where needed */;
     gint wait;
@@ -39,6 +41,12 @@ setup (Test *test,
   /* Create (service and client sides) connection objects */
   tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
+
+  test->my_conn = g_object_new (TP_TESTS_TYPE_MY_CONN_PROXY,
+      "dbus-daemon", test->dbus,
+      "bus-name", tp_proxy_get_bus_name (test->connection),
+      "object-path", tp_proxy_get_object_path (test->connection),
+      NULL);
 }
 
 static void
@@ -56,6 +64,7 @@ teardown (Test *test,
 
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
+  g_object_unref (test->my_conn);
 }
 
 static void
@@ -78,22 +87,16 @@ test_prepare_capabilities (Test *test,
 {
   /* Prepare capabilities on a new proxy. Core should be prepared *before*
    * checking if Requests is implemented */
-  TpConnection *conn;
   GQuark features[] = { TP_CONNECTION_FEATURE_CAPABILITIES, 0 };
 
-  conn = tp_connection_new (test->dbus,
-      NULL, tp_proxy_get_object_path (test->connection), &test->error);
-  g_assert_no_error (test->error);
-
-  tp_proxy_prepare_async (conn, features, prepare_cb, test);
+  tp_proxy_prepare_async (test->my_conn, features, prepare_cb, test);
 
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  g_assert (tp_proxy_is_prepared (conn, TP_CONNECTION_FEATURE_CORE));
-  g_assert (tp_proxy_is_prepared (conn, TP_CONNECTION_FEATURE_CAPABILITIES));
-
-  g_object_unref (conn);
+  g_assert (tp_proxy_is_prepared (test->my_conn, TP_CONNECTION_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (test->my_conn,
+        TP_CONNECTION_FEATURE_CAPABILITIES));
 }
 
 int
