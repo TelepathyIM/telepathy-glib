@@ -66,7 +66,6 @@ struct _TpConnectionPrivate {
     GList *contact_info_supported_fields;
 
     TpProxyPendingCall *introspection_call;
-    unsigned fetching_avatar_requirements:1;
     unsigned contact_info_fetched:1;
 
     unsigned ready:1;
@@ -107,7 +106,7 @@ TpContactInfoFieldSpec *_tp_contact_info_field_spec_new (const gchar *name,
     GStrv parameters, TpContactInfoFieldFlags flags, guint max);
 
 /* connection-avatars.c */
-void _tp_connection_maybe_prepare_avatar_requirements (TpProxy *proxy);
+void _tp_connection_prepare_avatar_requirements (TpProxy *proxy);
 
 G_END_DECLS
 

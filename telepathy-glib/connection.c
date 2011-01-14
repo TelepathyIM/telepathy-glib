@@ -379,8 +379,6 @@ tp_connection_continue_introspection (TpConnection *self)
       g_object_notify ((GObject *) self, "status");
       g_object_notify ((GObject *) self, "status-reason");
       g_object_notify ((GObject *) self, "connection-ready");
-
-      _tp_connection_maybe_prepare_avatar_requirements ((TpProxy *) self);
       _tp_connection_maybe_prepare_contact_info ((TpProxy *) self);
     }
   else
@@ -1236,6 +1234,7 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
   static GQuark need_requests[2] = {0, 0};
+  static GQuark need_avatars[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -1254,7 +1253,10 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_AVATAR_REQUIREMENTS].name = TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS;
   features[FEAT_AVATAR_REQUIREMENTS].start_preparing =
-    _tp_connection_maybe_prepare_avatar_requirements;
+    _tp_connection_prepare_avatar_requirements;
+  if (G_UNLIKELY (need_avatars[0] == 0))
+    need_avatars[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS;
+  features[FEAT_AVATAR_REQUIREMENTS].interfaces_needed = need_avatars;
 
   features[FEAT_CONTACT_INFO].name = TP_CONNECTION_FEATURE_CONTACT_INFO;
   features[FEAT_CONTACT_INFO].start_preparing =
