@@ -472,36 +472,14 @@ tp_connection_get_contact_info_cb (TpProxy *proxy,
 
 finally:
 
-  if (!success)
-    self->priv->contact_info_fetched = FALSE;
-
   _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CONTACT_INFO,
       success);
 }
 
 void
-_tp_connection_maybe_prepare_contact_info (TpProxy *proxy)
+_tp_connection_prepare_contact_info (TpProxy *proxy)
 {
   TpConnection *self = (TpConnection *) proxy;
-
-  if (self->priv->contact_info_fetched)
-    return;   /* already done */
-
-  if (!_tp_proxy_is_preparing (proxy, TP_CONNECTION_FEATURE_CONTACT_INFO))
-    return;   /* not interested right now */
-
-  if (!self->priv->ready)
-    return;   /* will try again when ready */
-
-  if (!tp_proxy_has_interface_by_id (proxy,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO))
-    {
-      _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_CONTACT_INFO,
-          FALSE);
-      return;
-    }
-
-  self->priv->contact_info_fetched = TRUE;
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,

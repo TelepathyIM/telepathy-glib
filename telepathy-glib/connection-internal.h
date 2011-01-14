@@ -66,7 +66,6 @@ struct _TpConnectionPrivate {
     GList *contact_info_supported_fields;
 
     TpProxyPendingCall *introspection_call;
-    unsigned contact_info_fetched:1;
 
     unsigned ready:1;
     unsigned has_immortal_handles:1;
@@ -101,7 +100,7 @@ TpContact *_tp_connection_lookup_contact (TpConnection *self, TpHandle handle);
 void _tp_contact_connection_invalidated (TpContact *contact);
 
 /* connection-contact-info.c */
-void _tp_connection_maybe_prepare_contact_info (TpProxy *proxy);
+void _tp_connection_prepare_contact_info (TpProxy *proxy);
 TpContactInfoFieldSpec *_tp_contact_info_field_spec_new (const gchar *name,
     GStrv parameters, TpContactInfoFieldFlags flags, guint max);
 
