@@ -172,8 +172,8 @@ enum {
   PROP_STORAGE_RESTRICTIONS
 };
 
-static void tp_account_maybe_prepare_addressing (TpProxy *proxy);
-static void tp_account_maybe_prepare_storage (TpProxy *proxy);
+static void tp_account_prepare_addressing (TpProxy *proxy);
+static void tp_account_prepare_storage (TpProxy *proxy);
 
 /**
  * TP_ACCOUNT_FEATURE_CORE:
@@ -279,11 +279,11 @@ _tp_account_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
       features[FEAT_ADDRESSING].name = TP_ACCOUNT_FEATURE_ADDRESSING;
       features[FEAT_ADDRESSING].start_preparing =
-        tp_account_maybe_prepare_addressing;
+        tp_account_prepare_addressing;
 
       features[FEAT_STORAGE].name = TP_ACCOUNT_FEATURE_STORAGE;
       features[FEAT_STORAGE].start_preparing =
-        tp_account_maybe_prepare_storage;
+        tp_account_prepare_storage;
 
       /* assert that the terminator at the end is there */
       g_assert (features[N_FEAT].name == 0);
@@ -439,15 +439,11 @@ _tp_account_got_all_storage_cb (TpProxy *proxy,
 }
 
 static void
-tp_account_maybe_prepare_storage (TpProxy *proxy)
+tp_account_prepare_storage (TpProxy *proxy)
 {
   TpAccount *self = TP_ACCOUNT (proxy);
 
-  if (self->priv->storage_provider != NULL)
-    return;
-
-  if (!_tp_proxy_is_preparing (proxy, TP_ACCOUNT_FEATURE_STORAGE))
-    return;
+  g_assert (self->priv->storage_provider == NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_ACCOUNT_INTERFACE_STORAGE,
@@ -783,9 +779,6 @@ _tp_account_update (TpAccount *account,
     }
 
   _tp_proxy_set_feature_prepared (proxy, TP_ACCOUNT_FEATURE_CORE, TRUE);
-
-  tp_account_maybe_prepare_storage (proxy);
-  tp_account_maybe_prepare_addressing (proxy);
 }
 
 static void
@@ -3739,15 +3732,11 @@ _tp_account_got_all_addressing_cb (TpProxy *proxy,
 }
 
 static void
-tp_account_maybe_prepare_addressing (TpProxy *proxy)
+tp_account_prepare_addressing (TpProxy *proxy)
 {
   TpAccount *self = TP_ACCOUNT (proxy);
 
-  if (self->priv->uri_schemes != NULL)
-    return;
-
-  if (!_tp_proxy_is_preparing (proxy, TP_ACCOUNT_FEATURE_ADDRESSING))
-    return;
+  g_assert (self->priv->uri_schemes == NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_ACCOUNT_INTERFACE_ADDRESSING,
