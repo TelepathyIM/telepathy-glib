@@ -3901,6 +3901,26 @@ tp_cli_connection_manager_connect_to_new_connection
 </SECTION>
 
 <SECTION>
+<FILE>contact-search-result</FILE>
+<TITLE>contact-search-result</TITLE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+TpContactSearchResult
+TpContactSearchResultClass
+tp_contact_search_result_get_field
+tp_contact_search_result_get_fields
+tp_contact_search_result_get_identifier
+<SUBSECTION Standard>
+tp_contact_search_result_get_type
+TP_CONTACT_SEARCH_RESULT
+TP_CONTACT_SEARCH_RESULT_CLASS
+TP_CONTACT_SEARCH_RESULT_GET_CLASS
+TP_IS_CONTACT_SEARCH_RESULT
+TP_IS_CONTACT_SEARCH_RESULT_CLASS
+TP_TYPE_CONTACT_SEARCH_RESULT
+TpContactSearchResultPrivate
+</SECTION>
+
+<SECTION>
 <FILE>media-interfaces</FILE>
 <TITLE>media-interfaces</TITLE>
 <INCLUDE>telepathy-glib/media-interfaces.h</INCLUDE>
