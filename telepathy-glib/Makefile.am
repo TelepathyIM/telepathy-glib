@@ -47,6 +47,7 @@ our_headers = \
     cm-message.h \
     connection.h \
     connection-manager.h \
+    contact-search.h \
     contact-search-result.h \
     capabilities.h \
     contact.h \
@@ -175,6 +176,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     contact.c \
     contact-list-channel-internal.h \
     contact-list-channel.c \
+    contact-search.c \
     contact-search-internal.h \
     contact-search-result.c \
     base-contact-list.c \
