@@ -30,7 +30,7 @@ m4_define(tpl_maybe_datestamp,
 m4_define(tpl_version, tpl_full_version[]tpl_maybe_datestamp)
 
 
-AC_INIT(telepathy-logger, tpl_version, https://bugs.freedesktop.org/buglist.cgi?product=Telepathy&component=logger)
+AC_INIT([telepathy-logger],[tpl_version],[https://bugs.freedesktop.org/buglist.cgi?product=Telepathy&component=logger])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 
 DBUS_SERVICES_DIR="$datadir/dbus-1/services"
@@ -59,7 +59,7 @@ AC_SUBST([TPL_EXT_LT_CURRENT])
 AC_SUBST([TPL_EXT_LT_REVISION])
 AC_SUBST([TPL_EXT_LT_AGE])
 
-AC_PREREQ(2.59)
+AC_PREREQ([2.67])
 AC_COPYRIGHT([
   Copyright (C) 2003-2007 Imendio AB
   Copyright (C) 2007-2010 Collabora Ltd.
@@ -83,10 +83,10 @@ AC_CONFIG_AUX_DIR(.)
 GNOME_COMMON_INIT
 
 AM_INIT_AUTOMAKE(1.9 dist-bzip2 no-define no-dist-gzip tar-ustar -Wno-portability)
-AC_ISC_POSIX
+AC_SEARCH_LIBS([strerror],[cposix])
 AC_PROG_CC
 AC_HEADER_STDC
-AM_PROG_LIBTOOL
+LT_INIT
 AM_PROG_MKDIR_P
 AM_PATH_GLIB_2_0
 AC_PATH_XTRA
@@ -145,7 +145,7 @@ TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$official_release" = xno],
 # declaration-after-statement is deliberately not used here
 
 AC_ARG_ENABLE(Werror,
-  AC_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
+  AS_HELP_STRING([--disable-Werror],[compile without -Werror (normally enabled in development builds)]),
     werror=$enableval, werror=yes)
 
 TP_COMPILER_FLAG(-D_POSIX_SOURCE, ERROR_CFLAGS="$ERROR_CFLAGS -D_POSIX_SOURCE")
@@ -175,7 +175,7 @@ PKG_CHECK_MODULES(TPL,
 # -----------------------------------------------------------
 
 AC_ARG_ENABLE(public_extensions,
-  AC_HELP_STRING([--enable-public-extensions],[build a public wrapper for the Telepathy extensions library]),
+  AS_HELP_STRING([--enable-public-extensions],[build a public wrapper for the Telepathy extensions library]),
     enable_public_extensions=$enableval, enable_public_extensions=no )
 
 if test x$enable_public_extensions = xyes; then
@@ -188,7 +188,7 @@ AM_CONDITIONAL([ENABLE_PUBLIC_EXTENSIONS], [test "x$enable_public_extensions" = 
 # -----------------------------------------------------------
 
 AC_ARG_ENABLE(debug,
-  AC_HELP_STRING([--disable-debug],[compile without debug code]),
+  AS_HELP_STRING([--disable-debug],[compile without debug code]),
     enable_debug=$enableval, enable_debug=yes )
 
 if test x$enable_debug = xyes; then
@@ -200,14 +200,14 @@ AM_CONDITIONAL([ENABLE_DEBUG], [test "x$enable_debug" = xyes])
 # Coding style checks
 # -----------------------------------------------------------
 AC_ARG_ENABLE(coding-style-checks,
-  AC_HELP_STRING([--disable-coding-style-checks],
+  AS_HELP_STRING([--disable-coding-style-checks],
                  [do not check coding style using grep]),
     [ENABLE_CODING_STYLE_CHECKS=$enableval], [ENABLE_CODING_STYLE_CHECKS=yes])
 
 AC_SUBST([ENABLE_CODING_STYLE_CHECKS])
 # -----------------------------------------------------------
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
    Makefile
    data/Makefile
    doc/Makefile
@@ -226,6 +226,7 @@ AC_OUTPUT([
    tests/twisted/Makefile
    tests/twisted/tools/Makefile
 ])
+AC_OUTPUT
 
 echo "
 Configure summary:
