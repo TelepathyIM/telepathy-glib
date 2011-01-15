@@ -82,7 +82,6 @@ void _tpl_log_manager_search_in_identifier_async (
 TplLogSearchHit * _tpl_log_manager_search_hit_new (TpAccount *account,
     const gchar *id,
     TplEventSearchType type,
-    const gchar *filename,
     GDate *date);
 
 void _tpl_log_manager_search_hit_free (TplLogSearchHit *hit);

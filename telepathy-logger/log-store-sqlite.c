@@ -1168,7 +1168,7 @@ tpl_log_store_sqlite_get_events (TplLogStore *self,
       DEBUG ("identifier = %s, chatroom = %i", identifier, chatroom);
 
       hit = _tpl_log_manager_search_hit_new (account, identifier, type,
-          NULL, NULL);
+          NULL);
 
       list = g_list_prepend (list, hit);
     }

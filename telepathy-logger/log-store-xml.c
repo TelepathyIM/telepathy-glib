@@ -759,7 +759,7 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   type = is_chatroom ? TPL_EVENT_SEARCH_TEXT_GROUP
     : TPL_EVENT_SEARCH_TEXT;
   hit = _tpl_log_manager_search_hit_new (account, chat_id,
-    type, filename, date);
+    type, date);
 
   g_strfreev (strv);
   g_date_free (date);
@@ -1010,7 +1010,7 @@ _log_store_xml_search_in_files (TplLogStoreXml *self,
             {
               hits = g_list_prepend (hits, hit);
               DEBUG ("Found text:'%s' in file:'%s' on date: %04u-%02u-%02u",
-                  text, hit->filename, g_date_get_year (hit->date),
+                  text, filename, g_date_get_year (hit->date),
                   g_date_get_month (hit->date), g_date_get_day (hit->date));
             }
         }
@@ -1115,7 +1115,7 @@ log_store_xml_get_events_for_dir (TplLogStoreXml *self,
         }
 
       hit = _tpl_log_manager_search_hit_new (account, name, type,
-          NULL, NULL);
+          NULL);
 
       hits = g_list_prepend (hits, hit);
     }

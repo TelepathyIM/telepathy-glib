@@ -716,7 +716,6 @@ TplLogSearchHit *
 _tpl_log_manager_search_hit_new (TpAccount *account,
     const gchar *id,
     TplEventSearchType type,
-    const gchar *filename,
     GDate *date)
 {
   TplLogSearchHit *hit = g_slice_new0 (TplLogSearchHit);
@@ -728,9 +727,6 @@ _tpl_log_manager_search_hit_new (TpAccount *account,
 
   hit->id = g_strdup (id);
   hit->type = type;
-
-  if (filename != NULL)
-    hit->filename = g_strdup (filename);
 
   if (date != NULL)
     hit->date = g_date_new_dmy (g_date_get_day (date), g_date_get_month (date),
@@ -748,7 +744,6 @@ _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
   if (hit->date != NULL)
     g_date_free (hit->date);
 
-  g_free (hit->filename);
   g_free (hit->id);
 
   g_slice_free (TplLogSearchHit, hit);
@@ -1553,5 +1548,5 @@ TplLogSearchHit *
 _tpl_log_manager_search_hit_copy (TplLogSearchHit *hit)
 {
   return _tpl_log_manager_search_hit_new (hit->account, hit->id,
-      hit->type, hit->filename, hit->date);
+      hit->type, hit->date);
 }

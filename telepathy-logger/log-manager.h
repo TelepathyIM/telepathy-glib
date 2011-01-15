@@ -72,7 +72,6 @@ typedef struct
   TpAccount *account;
   TplEventSearchType type;
   gchar *id;
-  gchar *filename;
   GDate *date;
 } TplLogSearchHit;
 
