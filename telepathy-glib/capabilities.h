@@ -63,6 +63,10 @@ gboolean tp_capabilities_supports_dbus_tubes (TpCapabilities *self,
     TpHandleType handle_type,
     const gchar *service_name);
 
+gboolean tp_capabilities_supports_contact_search (TpCapabilities *self,
+    gboolean *with_limit,
+    gboolean *with_server);
+
 G_END_DECLS
 
 #endif
