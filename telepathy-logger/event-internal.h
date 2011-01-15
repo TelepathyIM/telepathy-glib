@@ -60,7 +60,7 @@ void _tpl_event_set_timestamp (TplEvent *self,
 void _tpl_event_set_direction (TplEvent *self,
     TplEventDirection data);
 
-void _tpl_event_set_chat_id (TplEvent *self,
+void _tpl_event_set_id (TplEvent *self,
     const gchar *data);
 
 void _tpl_event_set_channel_path (TplEvent *self,
@@ -72,7 +72,7 @@ void _tpl_event_set_sender (TplEvent *self,
 void _tpl_event_set_receiver (TplEvent *self,
     TplEntity *data);
 
-const gchar * _tpl_event_get_chat_id (TplEvent * self);
+const gchar * _tpl_event_get_id (TplEvent * self);
 const gchar * _tpl_event_get_channel_path (TplEvent *self);
 
 TplEventDirection _tpl_event_get_direction (TplEvent *self);

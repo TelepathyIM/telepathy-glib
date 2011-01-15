@@ -1117,7 +1117,7 @@ on_sent_signal_cb (TpChannel *proxy,
   _tpl_event_text_set_pending_msg_id (text_log,
       TPL_EVENT_MSG_ID_ACKNOWLEDGED);
   _tpl_event_set_channel_path (TPL_EVENT (log), channel_path);
-  _tpl_event_set_chat_id (log, chat_id);
+  _tpl_event_set_id (log, chat_id);
   _tpl_event_set_timestamp (log, (time_t) arg_Timestamp);
   _tpl_event_set_sender (log, tpl_entity_sender);
   /* NULL when it's a chatroom */
@@ -1234,10 +1234,10 @@ keepon_on_receiving_signal (TplEventText *text_log,
 
 
   if (!_tpl_channel_text_is_chatroom (tpl_text))
-    _tpl_event_set_chat_id (log, tpl_entity_get_identifier (
+    _tpl_event_set_id (log, tpl_entity_get_identifier (
           tpl_entity_sender));
   else
-    _tpl_event_set_chat_id (log, _tpl_channel_text_get_chatroom_id (
+    _tpl_event_set_id (log, _tpl_channel_text_get_chatroom_id (
           tpl_text));
 
   _tpl_event_text_set_chatroom (text_log,

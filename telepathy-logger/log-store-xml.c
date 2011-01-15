@@ -493,7 +493,7 @@ add_event_text_chat (TplLogStoreXml *self,
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
-      _tpl_event_get_chat_id (TPL_EVENT (message)),
+      _tpl_event_get_id (TPL_EVENT (message)),
       _tpl_event_text_is_chatroom (message),
       event, error);
 
