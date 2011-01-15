@@ -16,7 +16,8 @@ noinst_PROGRAMS = \
     test-intset \
     test-signal-connect-object \
     test-util \
-    test-debug-domain
+    test-debug-domain \
+    test-contact-search-result
 
 TESTS = $(noinst_PROGRAMS) \
     all-errors-documented.py
@@ -58,6 +59,14 @@ test_asv_SOURCES = \
 test_capabilities_SOURCES = \
     capabilities.c
 test_capabilities_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
+    $(GLIB_LIBS)
+
+# this one uses internal ABI
+test_contact_search_result_SOURCES = \
+    contact-search-result.c
+test_contact_search_result_LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
     $(GLIB_LIBS)
