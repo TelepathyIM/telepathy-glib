@@ -53,6 +53,16 @@ GType tp_tests_my_conn_proxy_get_type (void);
   (tp_tests_my_conn_proxy_get_feature_quark_core ())
 GQuark tp_tests_my_conn_proxy_get_feature_quark_core (void) G_GNUC_CONST;
 
+/* No depends */
+#define TP_TESTS_MY_CONN_PROXY_FEATURE_A \
+  (tp_tests_my_conn_proxy_get_feature_quark_a ())
+GQuark tp_tests_my_conn_proxy_get_feature_quark_a (void) G_GNUC_CONST;
+
+/* Depends on A */
+#define TP_TESTS_MY_CONN_PROXY_FEATURE_B \
+  (tp_tests_my_conn_proxy_get_feature_quark_b ())
+GQuark tp_tests_my_conn_proxy_get_feature_quark_b (void) G_GNUC_CONST;
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TESTS_MY_CONN_PROXY_H__ */

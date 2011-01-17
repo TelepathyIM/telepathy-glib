@@ -23,6 +23,8 @@ tp_tests_my_conn_proxy_init (TpTestsMyConnProxy *self)
 
 enum {
     FEAT_CORE,
+    FEAT_A,
+    FEAT_B,
     N_FEAT
 };
 
@@ -41,11 +43,46 @@ prepare_core_async (TpProxy *proxy,
   g_object_unref (result);
 }
 
+static void
+prepare_a_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_assert (tp_proxy_is_prepared (proxy, TP_TESTS_MY_CONN_PROXY_FEATURE_CORE));
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      prepare_a_async);
+
+  g_simple_async_result_complete_in_idle (result);
+  g_object_unref (result);
+}
+
+static void
+prepare_b_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_assert (tp_proxy_is_prepared (proxy, TP_TESTS_MY_CONN_PROXY_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (proxy, TP_TESTS_MY_CONN_PROXY_FEATURE_A));
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      prepare_b_async);
+
+  g_simple_async_result_complete_in_idle (result);
+  g_object_unref (result);
+}
 
 static const TpProxyFeature *
 list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+  static GQuark need_a[2] = {0, 0};
 
     if (G_LIKELY (features[0].name != 0))
     return features;
@@ -53,6 +90,15 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CORE].name = TP_TESTS_MY_CONN_PROXY_FEATURE_CORE;
   features[FEAT_CORE].core = TRUE;
   features[FEAT_CORE].prepare_async = prepare_core_async;
+
+  features[FEAT_A].name = TP_TESTS_MY_CONN_PROXY_FEATURE_A;
+  features[FEAT_A].prepare_async = prepare_a_async;
+
+  features[FEAT_B].name = TP_TESTS_MY_CONN_PROXY_FEATURE_B;
+  features[FEAT_B].prepare_async = prepare_b_async;
+  if (G_UNLIKELY (need_a[0] == 0))
+    need_a[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_A;
+  features[FEAT_B].depends_on = need_a;
 
   return features;
 }
@@ -69,4 +115,16 @@ GQuark
 tp_tests_my_conn_proxy_get_feature_quark_core (void)
 {
   return g_quark_from_static_string ("tp-my-conn-proxy-feature-core");
+}
+
+GQuark
+tp_tests_my_conn_proxy_get_feature_quark_a (void)
+{
+  return g_quark_from_static_string ("tp-my-conn-proxy-feature-a");
+}
+
+GQuark
+tp_tests_my_conn_proxy_get_feature_quark_b (void)
+{
+  return g_quark_from_static_string ("tp-my-conn-proxy-feature-b");
 }
