@@ -180,6 +180,24 @@ test_bad_dep (Test *test,
         TP_TESTS_MY_CONN_PROXY_FEATURE_BAD_DEP));
 }
 
+static void
+test_fail (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Feature preparation fails */
+  GQuark features[] = { TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL, 0 };
+
+  tp_proxy_prepare_async (test->my_conn, features, prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_proxy_is_prepared (test->my_conn,
+        TP_TESTS_MY_CONN_PROXY_FEATURE_CORE));
+  g_assert (!tp_proxy_is_prepared (test->my_conn,
+        TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL));
+}
+
 int
 main (int argc,
       char **argv)
@@ -201,6 +219,8 @@ main (int argc,
       test_wrong_iface, teardown);
   g_test_add ("/proxy-preparation/bad-dep", Test, NULL, setup,
       test_bad_dep, teardown);
+  g_test_add ("/proxy-preparation/fail", Test, NULL, setup,
+      test_fail, teardown);
 
   return g_test_run ();
 }

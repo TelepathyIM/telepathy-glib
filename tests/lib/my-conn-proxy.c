@@ -27,6 +27,7 @@ enum {
     FEAT_B,
     FEAT_WRONG_IFACE,
     FEAT_BAD_DEP,
+    FEAT_FAIL,
     N_FEAT
 };
 
@@ -89,6 +90,24 @@ cannot_be_prepared_async (TpProxy *proxy,
   g_assert_not_reached ();
 }
 
+static void
+prepare_fail_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_assert (tp_proxy_is_prepared (proxy, TP_TESTS_MY_CONN_PROXY_FEATURE_CORE));
+
+  result = g_simple_async_result_new_error ((GObject *) proxy, callback,
+      user_data, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
+      "No feature for you!");
+
+  g_simple_async_result_complete_in_idle (result);
+  g_object_unref (result);
+}
+
 static const TpProxyFeature *
 list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
@@ -124,6 +143,9 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
   if (G_UNLIKELY (need_wrong_iface[0] == 0))
     need_wrong_iface[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_WRONG_IFACE;
   features[FEAT_BAD_DEP].depends_on = need_wrong_iface;
+
+  features[FEAT_FAIL].name = TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL;
+  features[FEAT_FAIL].prepare_async = prepare_fail_async;
 
   return features;
 }
@@ -164,4 +186,10 @@ GQuark
 tp_tests_my_conn_proxy_get_feature_quark_bad_dep (void)
 {
   return g_quark_from_static_string ("tp-my-conn-proxy-feature-bad-dep");
+}
+
+GQuark
+tp_tests_my_conn_proxy_get_feature_quark_fail (void)
+{
+  return g_quark_from_static_string ("tp-my-conn-proxy-feature-fail");
 }
