@@ -48,6 +48,11 @@ GType tp_tests_my_conn_proxy_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TESTS_TYPE_MY_CONN_PROXY, \
                               TpTestsMyConnProxyClass))
 
+/* Core feature */
+#define TP_TESTS_MY_CONN_PROXY_FEATURE_CORE \
+  (tp_tests_my_conn_proxy_get_feature_quark_core ())
+GQuark tp_tests_my_conn_proxy_get_feature_quark_core (void) G_GNUC_CONST;
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TESTS_MY_CONN_PROXY_H__ */

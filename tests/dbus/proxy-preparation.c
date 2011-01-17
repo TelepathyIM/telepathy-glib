@@ -99,6 +99,27 @@ test_prepare_capabilities (Test *test,
         TP_CONNECTION_FEATURE_CAPABILITIES));
 }
 
+static void
+test_prepare_core (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Test than preparing the 'top' core feature prepare the other core
+   * features as well */
+  GQuark features[] = { TP_TESTS_MY_CONN_PROXY_FEATURE_CORE, 0 };
+
+  tp_proxy_prepare_async (test->my_conn, features, prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_proxy_is_prepared (test->my_conn,
+        TP_TESTS_MY_CONN_PROXY_FEATURE_CORE));
+  g_assert (tp_proxy_is_prepared (test->my_conn, TP_CONNECTION_FEATURE_CORE));
+
+  g_assert (!tp_proxy_is_prepared (test->my_conn,
+        TP_CONNECTION_FEATURE_CAPABILITIES));
+}
+
 int
 main (int argc,
       char **argv)
@@ -112,6 +133,8 @@ main (int argc,
 
   g_test_add ("/proxy-preparation/prepare-capabilities", Test, NULL, setup,
       test_prepare_capabilities, teardown);
+  g_test_add ("/proxy-preparation/prepare-core", Test, NULL, setup,
+      test_prepare_core, teardown);
 
   return g_test_run ();
 }
