@@ -1926,7 +1926,6 @@ request_is_complete (TpProxy *self,
              * core features, which blocks everything */
             g_assert (req == self->priv->prepare_core);
             complete = FALSE;
-            break;
 
             /* fall through to treat it as WANTED */
           case FEATURE_STATE_WANTED:
