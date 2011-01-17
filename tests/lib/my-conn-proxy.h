@@ -27,6 +27,8 @@ struct _TpTestsMyConnProxyClass {
 
 struct _TpTestsMyConnProxy {
     TpConnection parent;
+
+    gboolean retry_feature_success;
 };
 
 GType tp_tests_my_conn_proxy_get_type (void);
@@ -82,6 +84,11 @@ GQuark tp_tests_my_conn_proxy_get_feature_quark_fail (void) G_GNUC_CONST;
 #define TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL_DEP \
   (tp_tests_my_conn_proxy_get_feature_quark_fail_dep ())
 GQuark tp_tests_my_conn_proxy_get_feature_quark_fail_dep (void) G_GNUC_CONST;
+
+/* Fail at first attempt but succeed after */
+#define TP_TESTS_MY_CONN_PROXY_FEATURE_RETRY \
+  (tp_tests_my_conn_proxy_get_feature_quark_retry ())
+GQuark tp_tests_my_conn_proxy_get_feature_quark_retry (void) G_GNUC_CONST;
 
 G_END_DECLS
 

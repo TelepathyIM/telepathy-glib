@@ -29,6 +29,7 @@ enum {
     FEAT_BAD_DEP,
     FEAT_FAIL,
     FEAT_FAIL_DEP,
+    FEAT_RETRY,
     N_FEAT
 };
 
@@ -112,6 +113,29 @@ prepare_fail_async (TpProxy *proxy,
   g_object_unref (result);
 }
 
+static void
+prepare_retry_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpTestsMyConnProxy *self = (TpTestsMyConnProxy *) proxy;
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      prepare_retry_async);
+
+  if (!self->retry_feature_success)
+    {
+      /* Fail the first time we try to prepare the feature */
+      g_simple_async_result_set_error (result, TP_ERRORS,
+          TP_ERROR_NOT_YET, "Nah");
+    }
+
+  g_simple_async_result_complete_in_idle (result);
+  g_object_unref (result);
+}
+
 static const TpProxyFeature *
 list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
@@ -157,6 +181,10 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
   if (G_UNLIKELY (need_fail[0] == 0))
     need_fail[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL;
   features[FEAT_FAIL_DEP].depends_on = need_fail;
+
+  features[FEAT_RETRY].name = TP_TESTS_MY_CONN_PROXY_FEATURE_RETRY;
+  features[FEAT_RETRY].prepare_async = prepare_retry_async;
+  features[FEAT_RETRY].can_retry = TRUE;
 
   return features;
 }
@@ -209,4 +237,10 @@ GQuark
 tp_tests_my_conn_proxy_get_feature_quark_fail_dep (void)
 {
   return g_quark_from_static_string ("tp-my-conn-proxy-feature-fail-dep");
+}
+
+GQuark
+tp_tests_my_conn_proxy_get_feature_quark_retry (void)
+{
+  return g_quark_from_static_string ("tp-my-conn-proxy-feature-retry");
 }

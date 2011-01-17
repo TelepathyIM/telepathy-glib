@@ -1776,13 +1776,16 @@ tp_proxy_prepare_async (gpointer self,
   for (i = 0; features[i] != 0; i++)
     {
       FeatureState state = tp_proxy_get_feature_state (self, features[i]);
+      const TpProxyFeature *feature = tp_proxy_subclass_get_feature (
+          G_OBJECT_TYPE (self), features[i]);
 
       /* We just skip unknown features, which have state FEATURE_STATE_INVALID
        * (this doesn't seem ideal, but is
        * consistent with TpAccountManager's existing behaviour) */
       if (state == FEATURE_STATE_INVALID)
         continue;
-      else if (state == FEATURE_STATE_UNWANTED)
+      else if (state == FEATURE_STATE_UNWANTED ||
+          (state == FEATURE_STATE_FAILED && feature->can_retry))
         {
           gboolean failed;
 

@@ -45,6 +45,8 @@ struct _TpProxyFeature {
     /* Features we depend on */
     const GQuark *depends_on;
 
+    gboolean can_retry;
+
     /*<private>*/
     GCallback _reserved[4];
     TpProxyFeaturePrivate *priv;
