@@ -2057,7 +2057,7 @@ tp_proxy_poll_features (TpProxy *self,
 
       /* Core features have to be prepared first */
       if (!core_prepared (self) &&
-          !req->core)
+          req != self->priv->prepare_requests->data)
         {
           DEBUG ("%p: core features not ready yet, nothing prepared", self);
           continue;

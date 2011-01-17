@@ -40,6 +40,9 @@ prepare_core_async (TpProxy *proxy,
 {
   GSimpleAsyncResult *result;
 
+  /* superclass core features are prepared first */
+  g_assert (tp_proxy_is_prepared (proxy, TP_CONNECTION_FEATURE_CORE));
+
   result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
       prepare_core_async);
 
