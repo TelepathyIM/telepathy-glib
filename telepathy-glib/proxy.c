@@ -303,6 +303,7 @@ typedef enum {
 typedef struct {
     GSimpleAsyncResult *result;
     GArray *features;
+    gboolean core;
 } TpProxyPrepareRequest;
 
 static TpProxyPrepareRequest *
@@ -347,12 +348,11 @@ struct _TpProxyPrivate {
     /* feature => FeatureState */
     GData *features;
 
-    /* List of TpProxyPrepareRequest */
+    /* List of TpProxyPrepareRequest. The first requests are the core one,
+     * sorted from the most upper super class to the subclass core features.
+     * This is needed to guarantee than subclass features are not prepared
+     * until the super class features have been prepared. */
     GList *prepare_requests;
-    /* A request containing all core features, borrowed from the head of
-     * prepare_requests, or NULL if prepared; nothing else is allowed
-     * to become prepared until this one does.*/
-    TpProxyPrepareRequest *prepare_core;
 
     gboolean dispose_has_run;
 };
@@ -965,11 +965,8 @@ tp_proxy_constructor (GType type,
   TpProxyInterfaceAddLink *iter;
   GType proxy_parent_type = G_TYPE_FROM_CLASS (tp_proxy_parent_class);
   GType ancestor_type;
-  GArray *core_features;
 
   _tp_register_dbus_glib_marshallers ();
-
-  core_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
 
   for (ancestor_type = type;
        ancestor_type != proxy_parent_type && ancestor_type != 0;
@@ -978,6 +975,7 @@ tp_proxy_constructor (GType type,
       TpProxyClass *ancestor = g_type_class_peek (ancestor_type);
       const TpProxyFeature *features;
       guint i;
+      GArray *core_features;
 
       for (iter = g_type_get_qdata (ancestor_type,
               interface_added_cb_quark ());
@@ -994,6 +992,8 @@ tp_proxy_constructor (GType type,
       if (features == NULL)
         continue;
 
+      core_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
+
       for (i = 0; features[i].name != 0; i++)
         {
           tp_proxy_set_feature_state (self, features[i].name,
@@ -1004,6 +1004,23 @@ tp_proxy_constructor (GType type,
               g_array_append_val (core_features, features[i].name);
             }
         }
+
+      if (core_features->len > 0)
+        {
+          TpProxyPrepareRequest *req;
+
+          req = tp_proxy_prepare_request_new (NULL,
+              (const GQuark *) core_features->data);
+          req->core = TRUE;
+
+          self->priv->prepare_requests = g_list_prepend (
+              self->priv->prepare_requests, req);
+
+          DEBUG ("%p: request %p represents core features on %s", self, req,
+              g_type_name (ancestor_type));
+        }
+
+      g_array_free (core_features, TRUE);
     }
 
   g_return_val_if_fail (self->dbus_connection != NULL, NULL);
@@ -1030,19 +1047,6 @@ tp_proxy_constructor (GType type,
     {
       g_return_val_if_fail (self->bus_name[0] == ':', NULL);
     }
-
-  if (core_features->len > 0)
-    {
-      self->priv->prepare_core = tp_proxy_prepare_request_new (NULL,
-          (const GQuark *) core_features->data);
-      self->priv->prepare_requests = g_list_prepend (
-          self->priv->prepare_requests,
-          self->priv->prepare_core);
-      DEBUG ("%p: request %p represents core features", self,
-          self->priv->prepare_core);
-    }
-
-  g_array_free (core_features, TRUE);
 
   return (GObject *) self;
 }
@@ -1084,7 +1088,6 @@ tp_proxy_finalize (GObject *object)
 
   /* invalidation ensures that these have gone away */
   g_assert (self->priv->prepare_requests == NULL);
-  g_assert (self->priv->prepare_core == NULL);
 
   g_free (self->bus_name);
   g_free (self->object_path);
@@ -1903,6 +1906,19 @@ prepare_feature (TpProxy *self,
       (gpointer) feature);
 }
 
+static gboolean
+core_prepared (TpProxy *self)
+{
+  /* All the core features have been prepared if the head of the
+   * prepare_requests list is NOT a core feature */
+  TpProxyPrepareRequest *req = self->priv->prepare_requests->data;
+
+  if (req == NULL)
+    return TRUE;
+
+  return !req->core;
+}
+
 /* Returns %TRUE if all the features requested in @req have complete their
  * preparation */
 static gboolean
@@ -1924,13 +1940,13 @@ request_is_complete (TpProxy *self,
           case FEATURE_STATE_UNWANTED:
             /* this can only happen in the special pseudo-request for the
              * core features, which blocks everything */
-            g_assert (req == self->priv->prepare_core);
+            g_assert (req->core);
             complete = FALSE;
 
             /* fall through to treat it as WANTED */
           case FEATURE_STATE_WANTED:
-            if (self->priv->prepare_core == NULL ||
-                self->priv->prepare_core == req)
+            if (core_prepared (self) ||
+                req->core)
               {
                 gboolean failed;
 
@@ -2027,7 +2043,6 @@ tp_proxy_poll_features (TpProxy *self,
         {
           DEBUG ("%p: %s, ending all requests", self, error_source);
           iter = self->priv->prepare_requests;
-          self->priv->prepare_core = NULL;
           self->priv->prepare_requests = NULL;
 
           for ( ; iter != NULL; iter = g_list_delete_link (iter, iter))
@@ -2040,9 +2055,9 @@ tp_proxy_poll_features (TpProxy *self,
 
       next = iter->next;
 
-      /* prepare_core is always the first in the list (if present), so it
-       * will always have been checked by the time we reach any later one */
-      if (self->priv->prepare_core != NULL && req != self->priv->prepare_core)
+      /* Core features have to be prepared first */
+      if (!core_prepared (self) &&
+          !req->core)
         {
           DEBUG ("%p: core features not ready yet, nothing prepared", self);
           continue;
@@ -2053,12 +2068,6 @@ tp_proxy_poll_features (TpProxy *self,
           DEBUG ("%p: request %p prepared", self, req);
           self->priv->prepare_requests = g_list_delete_link (
               self->priv->prepare_requests, iter);
-
-          if (req == self->priv->prepare_core)
-            {
-              DEBUG ("%p: core features ready", self);
-              self->priv->prepare_core = NULL;
-            }
 
           tp_proxy_prepare_request_finish (req, NULL);
         }
