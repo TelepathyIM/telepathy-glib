@@ -78,6 +78,11 @@ GQuark tp_tests_my_conn_proxy_get_feature_quark_bad_dep (void) G_GNUC_CONST;
   (tp_tests_my_conn_proxy_get_feature_quark_fail ())
 GQuark tp_tests_my_conn_proxy_get_feature_quark_fail (void) G_GNUC_CONST;
 
+/* Depends on FAIL */
+#define TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL_DEP \
+  (tp_tests_my_conn_proxy_get_feature_quark_fail_dep ())
+GQuark tp_tests_my_conn_proxy_get_feature_quark_fail_dep (void) G_GNUC_CONST;
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TESTS_MY_CONN_PROXY_H__ */
