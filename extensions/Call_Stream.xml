@@ -25,19 +25,8 @@
     <tp:added version="0.19.0">(draft 1)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-      <p>One stream inside a <tp:dbus-ref
-        namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref>.</p>
-
-      <!-- TODO: more details here -->
-
-      <p>
-        The streaming implementation calls
-        <tp:member-ref>SetSending</tp:member-ref>(True,
-        <tp:type>Stream_Sending_Change_Reason</tp:type>_User_Requested,
-        "", "") when streaming other contacts is to start. If there is
-        an error then <tp:member-ref>SetSending</tp:member-ref> is
-        called again to stop the stream from sending, but not from
-        receiving.</p>
+      One stream inside a <tp:dbus-ref
+      namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref>.
     </tp:docstring>
 
     <method name="SetSending" tp:name-for-bindings="Set_Sending">
@@ -59,59 +48,11 @@
             already.</p>
         </tp:docstring>
       </arg>
-      <arg name="Reason" type="u" direction="in"
-        tp:type="Stream_Sending_Change_Reason">
-        <tp:docstring>
-           A generic hangup reason.
-        </tp:docstring>
-      </arg>
-      <arg name="DBus_Reason" type="s" direction="in"
-        tp:type="DBus_Error_Name">
-        <tp:docstring>
-          A more specific reason for the state change, if one is
-          available, or an empty string.
-        </tp:docstring>
-      </arg>
-      <arg name="Reason_String" type="s" direction="in">
-        <tp:docstring>
-          A human-readable message to be shown in the local user's UI
-          or sent to the remote contact(s).
-        </tp:docstring>
-      </arg>
 
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.NotImplemented" />
       </tp:possible-errors>
     </method>
-
-    <tp:enum name="Stream_Sending_Change_Reason" type="u">
-      <tp:enumvalue value="0" suffix="Unknown">
-        <tp:docstring>
-           We just don't know. Unknown values of this enum SHOULD also
-           be treated like this.
-        </tp:docstring>
-      </tp:enumvalue>
-      <tp:enumvalue value="1" suffix="User_Requested">
-        <tp:docstring>
-          The change was requested by the local user.
-        </tp:docstring>
-      </tp:enumvalue>
-      <tp:enumvalue value="2" suffix="Resource_Unavailable">
-        <tp:docstring>
-          A resource used for sending data on the stream is
-          unavailable. For example, the local user's webcam is busy so
-          couldn't be opened, so instead ending the stream, simply set
-          the local sending state to
-          <tp:type>Sending_State</tp:type>_None.
-        </tp:docstring>
-      </tp:enumvalue>
-      <tp:enumvalue value="3" suffix="Failed">
-        <tp:docstring>
-          There was an unrecoverable error in the sending data on the
-          stream.
-        </tp:docstring>
-      </tp:enumvalue>
-    </tp:enum>
 
     <method name="RequestReceiving" tp:name-for-bindings="Request_Receiving">
       <tp:docstring>

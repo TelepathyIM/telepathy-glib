@@ -40,20 +40,19 @@
 
       <p>When a new <tp:dbus-ref
         namespace="ofdT.Channel.Type">Call.DRAFT</tp:dbus-ref> channel
-        appears, whether it was requested or not, one or more <tp:dbus-ref
+        appears, whether it was requested or not, a <tp:dbus-ref
         namespace="ofdT.Call.Content">CodecOffer.DRAFT</tp:dbus-ref>
-        objects will either be waiting in the
-        <tp:member-ref>CodecOffer</tp:member-ref> mapping, or will
+        will either be waiting in the
+        <tp:member-ref>CodecOffer</tp:member-ref> property, or will
         appear at some point via the
         <tp:member-ref>NewCodecOffer</tp:member-ref> signal.</p>
 
       <p>The <tp:dbus-ref
         namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecs</tp:dbus-ref>
-        property on the codec offer list the codecs which are
+        property on the codec offer lists the codecs which are
         supported by the remote contact, and so will determine the
         codecs that should be proposed by the local user's streaming
-        implementation. An empty list means all codecs are
-        supported.</p>
+        implementation. An empty list means all codecs can be proposed.</p>
 
       <p>For incoming calls on protocols where codecs are proposed when
         starting the call (for example, <a
@@ -164,7 +163,7 @@
       </tp:member>
     </tp:mapping>
 
-    <tp:struct name="Codec_Offering" array-name="Codec_Offering_List">
+    <tp:struct name="Codec_Offering">
       <tp:docstring>
         A codec offer and its corresponding remote contact codec map.
       </tp:docstring>
@@ -196,7 +195,7 @@
         <p>As well as acting as change notification for the
           <tp:member-ref>ContactCodecMap</tp:member-ref>, emission of this
           signal implies that the <tp:member-ref>CodecOffer</tp:member-ref>
-          property has changed to the empty list.</p>
+          property has changed to <code>('/', {})</code>.</p>
       </tp:docstring>
       <arg name="Updated_Codecs" type="a{ua(usuua{ss})}"
         tp:type="Contact_Codec_Map">
@@ -264,9 +263,9 @@
           namespace="ofdT.Call.Content.CodecOffer.DRAFT"
           >Reject</tp:dbus-ref> method on the codec offer object.</p>
 
-        <p>Emission of this signal indicates that the a new (Contact,
-          Offer, Codecs) element has been added to the
-          <tp:member-ref>CodecOffer</tp:member-ref> property.</p>
+        <p>Emission of this signal indicates that the
+          <tp:member-ref>CodecOffer</tp:member-ref> property has changed to
+          <code>(Contact, Offer, Codecs)</code>.</p>
       </tp:docstring>
       <arg name="Contact" type="u">
         <tp:docstring>
@@ -297,21 +296,26 @@
     </signal>
 
     <property name="CodecOffer" tp:name-for-bindings="Codec_Offer"
-      type="(oua(usuua{ss}))" tp:type="Codec_Offering"
-      access="read">
+      type="(oua(usuua{ss}))" tp:type="Codec_Offering" access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The object path to the current
           <tp:dbus-ref namespace="ofdT.Call.Content"
-          >CodecOffer.DRAFT</tp:dbus-ref> objects, and their
-          <tp:dbus-ref namespace="ofdT.Call.Content"
-          >CodecOffer.DRAFT.RemoteContactCodecs</tp:dbus-ref> properties.
-          An empty list means there are no outstanding codec offers.</p>
+            >CodecOffer.DRAFT</tp:dbus-ref> object, its
+            <tp:dbus-ref namespace="ofdT.Call.Content"
+            >CodecOffer.DRAFT.RemoteContact</tp:dbus-ref> and
+            <tp:dbus-ref namespace="ofdT.Call.Content"
+            >CodecOffer.DRAFT.RemoteContactCodecs</tp:dbus-ref> properties.
+            If the object path is "/" then there isn't an outstanding
+            codec offer, and the mapping MUST be empty.</p>
 
         <tp:rationale>
           Having the <tp:dbus-ref
-          namespace="ofdT.Call.Content.CodecOffer.DRAFT">RemoteContactCodecs</tp:dbus-ref>
-          property here saves a D-Bus round-trip - it shouldn't be
-          necessary to get the property from the CodecOffer object, in
+          namespace="ofdT.Call.Content.CodecOffer.DRAFT"
+          >RemoteContact</tp:dbus-ref> and
+          <tp:dbus-ref namespace="ofdT.Call.Content.CodecOffer.DRAFT"
+          >RemoteContactCodecs</tp:dbus-ref>
+          properties here saves a D-Bus round-trip - it shouldn't be
+          necessary to get these properties from the CodecOffer object, in
           practice.
         </tp:rationale>
 
@@ -320,6 +324,42 @@
           value of this property with a new codec offer), and
           <tp:member-ref>CodecsChanged</tp:member-ref> (which implies that
           there is no longer any active codec offer) signals.</p>
+      </tp:docstring>
+    </property>
+
+    <tp:enum name="Call_Content_Packetization_Type" type="u">
+      <tp:added version="0.21.2"/>
+      <tp:docstring>
+        A packetization method that can be used for a content.
+      </tp:docstring>
+
+      <tp:enumvalue suffix="RTP" value="0">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          Real-time Transport Protocol, as documented by RFC 3550.
+        </tp:docstring>
+      </tp:enumvalue>
+
+      <tp:enumvalue suffix="Raw" value="1">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          Raw media.
+        </tp:docstring>
+      </tp:enumvalue>
+
+      <tp:enumvalue suffix="MSN_Webcam" value="2">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          MSN webcam. This is the video-only one-way type which was
+          used in earlier versions of WLM. Although no longer used,
+          modern WLM clients still support the MSN webcam protocol.
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
+
+    <property name="Packetization" tp:name-for-bindings="Packetization"
+      type="u" tp:type="Call_Content_Packetization_Type" access="read"
+      tp:immutable="yes">
+      <tp:added version="0.21.2"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>The packetization method in use for this content.</p>
       </tp:docstring>
     </property>
   </interface>

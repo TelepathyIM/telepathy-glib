@@ -177,28 +177,6 @@
       </tp:docstring>
     </property>
 
-    <signal name="RemoteSSRCsChanged"
-      tp:name-for-bindings="Remote_SSRCs_Changed">
-      <tp:docstring>
-        Emitted when the <tp:member-ref>RemoteSSRCs</tp:member-ref>
-        property changes.
-      </tp:docstring>
-      <arg name="SSRCs" type="au">
-        <tp:docstring>
-          The new <tp:member-ref>RemoteSSRCs</tp:member-ref> value.
-        </tp:docstring>
-      </arg>
-    </signal>
-
-    <property name="RemoteSSRCs" tp:name-for-bindings="Remote_SSRCs"
-      type="au" access="read">
-      <tp:docstring>
-        A list of SSRCs used by this contact in the stream. Change
-        notification is via the
-        <tp:member-ref>RemoteSSRCsChanged</tp:member-ref> signal.
-      </tp:docstring>
-    </property>
-
   </interface>
 </node>
 <!-- vim:set sw=2 sts=2 et ft=xml: -->
