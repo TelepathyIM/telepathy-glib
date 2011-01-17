@@ -4,7 +4,6 @@
 
 #define LOG_ID 0
 #define CHAT_ID "echo@test.collabora.co.uk"
-#define DIRECTION TPL_ENTRY_DIRECTION_IN
 
 int main (int argc, char **argv)
 {

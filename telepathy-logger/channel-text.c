@@ -1110,8 +1110,7 @@ on_sent_signal_cb (TpChannel *proxy,
 
   account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
 
-  text_log = _tpl_event_text_new (log_id, account,
-      TPL_EVENT_DIRECTION_OUT);
+  text_log = _tpl_event_text_new (log_id, account);
   log = TPL_EVENT (text_log);
 
   _tpl_event_text_set_pending_msg_id (text_log,
@@ -1316,8 +1315,7 @@ on_received_signal_cb (TpChannel *proxy,
     }
 
   /* Initialize TplEventText (part 1) - chat_id still unknown */
-  text_log = _tpl_event_text_new (log_id, account,
-      TPL_EVENT_DIRECTION_IN);
+  text_log = _tpl_event_text_new (log_id, account);
   log = TPL_EVENT (text_log);
 
   _tpl_event_set_channel_path (log, channel_path);

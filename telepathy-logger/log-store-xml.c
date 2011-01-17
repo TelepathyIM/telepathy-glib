@@ -883,11 +883,10 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
           g_free (instead_of_channel_path);
         }
 
-      message = _tpl_event_text_new (log_id, account, TPL_EVENT_DIRECTION_NONE);
+      message = _tpl_event_text_new (log_id, account);
       event = TPL_EVENT (message);
 
-      _tpl_event_text_set_pending_msg_id (message,
-          pending_id);
+      _tpl_event_text_set_pending_msg_id (message, pending_id);
       _tpl_event_set_sender (event, sender);
       _tpl_event_set_timestamp (event, t);
       _tpl_event_text_set_message (message, body);

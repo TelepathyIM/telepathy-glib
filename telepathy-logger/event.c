@@ -84,9 +84,6 @@ struct _TplEventPriv
   TpAccount *account;
   gchar *channel_path;
 
-  /* incoming/outgoing */
-  TplEventDirection direction;
-
   /* message and receiver may be NULL depending on the signal. ie. status
    * changed signals set only the sender */
   TplEntity *sender;
@@ -96,7 +93,6 @@ struct _TplEventPriv
 enum {
     PROP_TIMESTAMP = 1,
     PROP_LOG_ID,
-    PROP_DIRECTION,
     PROP_ID,
     PROP_ACCOUNT,
     PROP_ACCOUNT_PATH,
@@ -151,8 +147,6 @@ tpl_event_get_property (GObject *object,
       case PROP_LOG_ID:
         g_value_set_string (value, priv->log_id);
         break;
-      case PROP_DIRECTION:
-        g_value_set_uint (value, priv->direction);
         break;
       case PROP_ID:
         g_value_set_string (value, priv->id);
@@ -193,9 +187,6 @@ tpl_event_set_property (GObject *object,
         break;
       case PROP_LOG_ID:
         tpl_event_set_log_id (self, g_value_get_string (value));
-        break;
-      case PROP_DIRECTION:
-        _tpl_event_set_direction (self, g_value_get_uint (value));
         break;
       case PROP_ID:
         _tpl_event_set_id (self, g_value_get_string (value));
@@ -253,13 +244,6 @@ tpl_event_class_init (TplEventClass *klass)
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LOG_ID, param_spec);
-
-  param_spec = g_param_spec_uint ("direction",
-      "Direction",
-      "The direction of the log event (in/out)",
-      0, G_MAXUINT32, TPL_EVENT_DIRECTION_NONE,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_DIRECTION, param_spec);
 
   param_spec = g_param_spec_string ("id",
       "Id",
@@ -337,15 +321,6 @@ _tpl_event_get_log_id (TplEvent *self)
   return self->priv->log_id;
 }
 
-
-TplEventDirection
-_tpl_event_get_direction (TplEvent *self)
-{
-  g_return_val_if_fail (TPL_IS_EVENT (self),
-      TPL_EVENT_DIRECTION_NONE);
-
-  return self->priv->direction;
-}
 
 /**
  * tpl_event_get_sender
@@ -433,17 +408,6 @@ tpl_event_set_log_id (TplEvent *self,
 
   self->priv->log_id = g_strdup (data);
   g_object_notify (G_OBJECT (self), "log-id");
-}
-
-
-void
-_tpl_event_set_direction (TplEvent *self,
-    TplEventDirection data)
-{
-  g_return_if_fail (TPL_IS_EVENT (self));
-
-  self->priv->direction = data;
-  g_object_notify (G_OBJECT (self), "direction");
 }
 
 

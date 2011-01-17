@@ -57,9 +57,6 @@ struct _TplEventClass {
 void _tpl_event_set_timestamp (TplEvent *self,
     gint64 data);
 
-void _tpl_event_set_direction (TplEvent *self,
-    TplEventDirection data);
-
 void _tpl_event_set_id (TplEvent *self,
     const gchar *data);
 
@@ -74,8 +71,6 @@ void _tpl_event_set_receiver (TplEvent *self,
 
 const gchar * _tpl_event_get_id (TplEvent * self);
 const gchar * _tpl_event_get_channel_path (TplEvent *self);
-
-TplEventDirection _tpl_event_get_direction (TplEvent *self);
 
 gboolean _tpl_event_equal (TplEvent *self,
     TplEvent *data);
