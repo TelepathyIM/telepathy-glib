@@ -26,6 +26,7 @@ enum {
     FEAT_A,
     FEAT_B,
     FEAT_WRONG_IFACE,
+    FEAT_BAD_DEP,
     N_FEAT
 };
 
@@ -94,6 +95,7 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
   static GQuark need_a[2] = {0, 0};
   static GQuark need_channel_core[2] = {0, 0};
+  static GQuark need_wrong_iface[2] = {0, 0};
 
     if (G_LIKELY (features[0].name != 0))
     return features;
@@ -116,6 +118,12 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
   if (G_UNLIKELY (need_channel_core[0] == 0))
     need_channel_core[0] = TP_CHANNEL_FEATURE_CORE;
   features[FEAT_WRONG_IFACE].interfaces_needed = need_channel_core;
+
+  features[FEAT_BAD_DEP].name = TP_TESTS_MY_CONN_PROXY_FEATURE_BAD_DEP;
+  features[FEAT_BAD_DEP].prepare_async = cannot_be_prepared_async;
+  if (G_UNLIKELY (need_wrong_iface[0] == 0))
+    need_wrong_iface[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_WRONG_IFACE;
+  features[FEAT_BAD_DEP].depends_on = need_wrong_iface;
 
   return features;
 }
@@ -150,4 +158,10 @@ GQuark
 tp_tests_my_conn_proxy_get_feature_quark_wrong_iface (void)
 {
   return g_quark_from_static_string ("tp-my-conn-proxy-feature-wrong_iface");
+}
+
+GQuark
+tp_tests_my_conn_proxy_get_feature_quark_bad_dep (void)
+{
+  return g_quark_from_static_string ("tp-my-conn-proxy-feature-bad-dep");
 }

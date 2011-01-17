@@ -68,6 +68,11 @@ GQuark tp_tests_my_conn_proxy_get_feature_quark_b (void) G_GNUC_CONST;
   (tp_tests_my_conn_proxy_get_feature_quark_wrong_iface ())
 GQuark tp_tests_my_conn_proxy_get_feature_quark_wrong_iface (void) G_GNUC_CONST;
 
+/* Depends on WRONG_IFACE */
+#define TP_TESTS_MY_CONN_PROXY_FEATURE_BAD_DEP \
+  (tp_tests_my_conn_proxy_get_feature_quark_bad_dep ())
+GQuark tp_tests_my_conn_proxy_get_feature_quark_bad_dep (void) G_GNUC_CONST;
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TESTS_MY_CONN_PROXY_H__ */
