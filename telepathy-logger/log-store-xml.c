@@ -349,7 +349,7 @@ log_store_xml_get_filename (TplLogStoreXml *self,
   gchar *esc_id;
 
   /* avoid that 1-1 conversation generated from a chatroom, having id similar
-   * to room@conference.domain/My_Alias (in XMPP) are threated as a directory
+   * to room@conference.domain/My_Alias (in XMPP) are treated as a directory
    * path, creating My_Alias as a subdirectory of room@conference.domain */
   esc_id = g_strdelimit (g_strdup (id), "/", '_');
   id_dir = log_store_xml_get_dir (self, account, esc_id,
