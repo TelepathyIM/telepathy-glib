@@ -25,6 +25,7 @@ enum {
     FEAT_CORE,
     FEAT_A,
     FEAT_B,
+    FEAT_WRONG_IFACE,
     N_FEAT
 };
 
@@ -78,11 +79,21 @@ prepare_b_async (TpProxy *proxy,
   g_object_unref (result);
 }
 
+static void
+cannot_be_prepared_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  g_assert_not_reached ();
+}
+
 static const TpProxyFeature *
 list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
   static GQuark need_a[2] = {0, 0};
+  static GQuark need_channel_core[2] = {0, 0};
 
     if (G_LIKELY (features[0].name != 0))
     return features;
@@ -99,6 +110,12 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
   if (G_UNLIKELY (need_a[0] == 0))
     need_a[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_A;
   features[FEAT_B].depends_on = need_a;
+
+  features[FEAT_WRONG_IFACE].name = TP_TESTS_MY_CONN_PROXY_FEATURE_WRONG_IFACE;
+  features[FEAT_WRONG_IFACE].prepare_async = cannot_be_prepared_async;
+  if (G_UNLIKELY (need_channel_core[0] == 0))
+    need_channel_core[0] = TP_CHANNEL_FEATURE_CORE;
+  features[FEAT_WRONG_IFACE].interfaces_needed = need_channel_core;
 
   return features;
 }
@@ -127,4 +144,10 @@ GQuark
 tp_tests_my_conn_proxy_get_feature_quark_b (void)
 {
   return g_quark_from_static_string ("tp-my-conn-proxy-feature-b");
+}
+
+GQuark
+tp_tests_my_conn_proxy_get_feature_quark_wrong_iface (void)
+{
+  return g_quark_from_static_string ("tp-my-conn-proxy-feature-wrong_iface");
 }

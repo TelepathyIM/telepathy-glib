@@ -140,6 +140,25 @@ test_depends (Test *test,
         TP_TESTS_MY_CONN_PROXY_FEATURE_B));
 }
 
+static void
+test_wrong_iface (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Feature can't be prepared because proxy doesn't support the right
+   * interface */
+  GQuark features[] = { TP_TESTS_MY_CONN_PROXY_FEATURE_WRONG_IFACE, 0 };
+
+  tp_proxy_prepare_async (test->my_conn, features, prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_proxy_is_prepared (test->my_conn,
+        TP_TESTS_MY_CONN_PROXY_FEATURE_CORE));
+  g_assert (!tp_proxy_is_prepared (test->my_conn,
+        TP_TESTS_MY_CONN_PROXY_FEATURE_WRONG_IFACE));
+}
+
 int
 main (int argc,
       char **argv)
@@ -157,6 +176,8 @@ main (int argc,
       test_prepare_core, teardown);
   g_test_add ("/proxy-preparation/depends", Test, NULL, setup,
       test_depends, teardown);
+  g_test_add ("/proxy-preparation/wrong-iface", Test, NULL, setup,
+      test_wrong_iface, teardown);
 
   return g_test_run ();
 }
