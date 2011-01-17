@@ -42,14 +42,6 @@ typedef struct _TplEventPriv TplEventPriv;
 
 GType tpl_event_get_type (void);
 
-typedef enum
-{
-  TPL_EVENT_DIRECTION_NONE = 0,
-
-  TPL_EVENT_DIRECTION_IN,
-  TPL_EVENT_DIRECTION_OUT
-} TplEventDirection;
-
 gint64 tpl_event_get_timestamp (TplEvent *self);
 
 const gchar *tpl_event_get_account_path (TplEvent *self);

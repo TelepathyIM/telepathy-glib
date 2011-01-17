@@ -53,8 +53,7 @@ struct _TplEventTextClass
 };
 
 TplEventText * _tpl_event_text_new (const gchar* log_id,
-    TpAccount *account,
-    TplEventDirection direction);
+    TpAccount *account);
 
 TpChannelTextMessageType _tpl_event_text_message_type_from_str (
     const gchar *type_str);

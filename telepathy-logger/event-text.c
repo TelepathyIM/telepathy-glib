@@ -222,13 +222,11 @@ tpl_event_text_init (TplEventText *self)
 
 TplEventText *
 _tpl_event_text_new (const gchar *log_id,
-    TpAccount *account,
-    TplEventDirection direction)
+    TpAccount *account)
 {
   return g_object_new (TPL_TYPE_EVENT_TEXT,
       "log-id", log_id,
       "account", account,
-      "direction", direction,
       NULL);
 }
 
