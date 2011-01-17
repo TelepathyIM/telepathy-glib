@@ -1627,12 +1627,16 @@ check_feature_interfaces (TpProxy *self,
 }
 
 /* Returns %TRUE if all the deps of @name are ready
+ * @can_retry: if %TRUE dependencies which have failed but have
+ * TpProxyFeature.can_retry won't be considered as having failed so we'll
+ * still have a change to retry preparing those.
  * @failed: (out): %TRUE if one of @name's dep can't be prepared and so
  * @name can't be either
  */
 static gboolean
 check_depends_ready (TpProxy *self,
     GQuark name,
+    gboolean can_retry,
     gboolean *failed)
 {
   const TpProxyFeature *feature = tp_proxy_subclass_get_feature (
@@ -1649,20 +1653,34 @@ check_depends_ready (TpProxy *self,
   for (i = 0; feature->depends_on[i] != 0; i++)
     {
       GQuark dep = feature->depends_on[i];
+      const TpProxyFeature *dep_feature = tp_proxy_subclass_get_feature (
+          G_OBJECT_TYPE (self), dep);
       FeatureState dep_state;
 
       dep_state = tp_proxy_get_feature_state (self, dep);
       switch (dep_state)
         {
           case FEATURE_STATE_INVALID:
-          case FEATURE_STATE_FAILED:
-            DEBUG ("Can't prepare %s, one is dep %s: %s",
-                g_quark_to_string (name),
-                dep_state == FEATURE_STATE_INVALID ? "is invalid": "failed",
-                g_quark_to_string (dep));
+            DEBUG ("Can't prepare %s, one dep is invalid: %s",
+                g_quark_to_string (name), g_quark_to_string (dep));
 
             *failed = TRUE;
             return FALSE;
+
+          case FEATURE_STATE_FAILED:
+            if (!can_retry || !dep_feature->can_retry)
+              {
+                DEBUG ("Can't prepare %s, one dep failed: %s",
+                    g_quark_to_string (name), g_quark_to_string (dep));
+
+                *failed = TRUE;
+                return FALSE;
+              }
+
+            DEBUG ("retry preparing dep: %s", g_quark_to_string (dep));
+            tp_proxy_set_feature_state (self, dep, FEATURE_STATE_WANTED);
+            ready = FALSE;
+            break;
 
           case FEATURE_STATE_UNWANTED:
           case FEATURE_STATE_WANTED:
@@ -1789,8 +1807,11 @@ tp_proxy_prepare_async (gpointer self,
         {
           gboolean failed;
 
-          /* Check deps */
-          if (!check_depends_ready (self, features[i], &failed))
+          /* Check deps. We only offer there the chance to retry a previously
+           * failed dependency. Doing it in tp_proxy_poll_features() could
+           * result in an infinite loop if we'd depends on 2 features which
+           * are constantly failing. */
+          if (!check_depends_ready (self, features[i], TRUE, &failed))
             {
               if (failed)
                 {
@@ -1962,7 +1983,7 @@ request_is_complete (TpProxy *self,
                     continue;
                   }
 
-                if (check_depends_ready (self, feature, &failed))
+                if (check_depends_ready (self, feature, FALSE, &failed))
                   {
                     /* We can prepare it now */
                     DEBUG ("%p: calling callback for %s", self,
