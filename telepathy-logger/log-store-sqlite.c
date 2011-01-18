@@ -1167,10 +1167,11 @@ tpl_log_store_sqlite_get_entities (TplLogStore *self,
 
       DEBUG ("identifier = %s, chatroom = %i", identifier, chatroom);
 
-      entity = _tpl_entity_new (identifier);
-      _tpl_entity_set_entity_type (entity, type);
-      /* FIXME Faking alias with identifier */
-      _tpl_entity_set_alias (entity, identifier);
+      entity = g_object_new (TPL_TYPE_ENTITY,
+          "identifier", identifier,
+          "type", type,
+          "alias", identifier, /* FIXME Faking alias with identifier */
+          NULL);
 
       list = g_list_prepend (list, entity);
     }

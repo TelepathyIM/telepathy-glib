@@ -146,6 +146,13 @@
    fun:g_type_register_static
 }
 
+{
+  g_type_create_instance
+  Memcheck:Leak
+  ...
+  fun:g_type_create_instance
+}
+
 # ============================= dbus-glib =============================
 
 {
@@ -236,19 +243,6 @@
 }
 
 # ============================= unclassified ==========================
-
-{
-   creating param specs in tp_proxy_class_intern_init
-   Memcheck:Leak
-   fun:memalign
-   fun:posix_memalign
-   fun:slab_allocator_alloc_chunk
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
-   fun:g_type_create_instance
-   fun:g_param_spec_internal
-   fun:g_param_spec_string
-}
 
 {
    ld.so initialization on glibc 2.9

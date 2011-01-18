@@ -31,15 +31,15 @@
 /**
  * SECTION:entity
  * @title: TplEntity
- * @short_description: Representation of a contact or chatroom
+ * @short_description: Representation of a contact or room
  *
- * An object representing a contact or chatroom.
+ * An object representing a contact or room.
  */
 
 /**
  * TplEntity:
  *
- * An object representing a contact or chatroom.
+ * An object representing a contact or room.
  */
 
 G_DEFINE_TYPE (TplEntity, tpl_entity, G_TYPE_OBJECT)
@@ -55,6 +55,7 @@ struct _TplEntityPriv
 enum
 {
   PROP0,
+  PROP_TYPE,
   PROP_IDENTIFIER,
   PROP_ALIAS,
   PROP_AVATAR_TOKEN
@@ -84,6 +85,9 @@ tpl_entity_get_property (GObject *object,
 
   switch (param_id)
     {
+      case PROP_TYPE:
+        g_value_set_int (value, priv->type);
+        break;
       case PROP_IDENTIFIER:
         g_value_set_string (value, priv->identifier);
         break;
@@ -106,17 +110,24 @@ tpl_entity_set_property (GObject *object,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TplEntity *self = TPL_ENTITY (object);
+  TplEntityPriv *priv = TPL_ENTITY (object)->priv;
 
-  switch (param_id) {
+  switch (param_id)
+    {
+      case PROP_TYPE:
+        priv->type = g_value_get_int (value);
+        break;
       case PROP_IDENTIFIER:
-        _tpl_entity_set_identifier (self, g_value_get_string (value));
+        g_assert (priv->identifier == NULL);
+        priv->identifier = g_value_dup_string (value);
         break;
       case PROP_ALIAS:
-        _tpl_entity_set_alias (self, g_value_get_string (value));
+        g_assert (priv->alias == NULL);
+        priv->alias = g_value_dup_string (value);
         break;
       case PROP_AVATAR_TOKEN:
-        _tpl_entity_set_avatar_token (self, g_value_get_string (value));
+        g_assert (priv->avatar_token == NULL);
+        priv->avatar_token = g_value_dup_string (value);
         break;
 
       default:
@@ -137,6 +148,20 @@ static void tpl_entity_class_init (TplEntityClass *klass)
   object_class->set_property = tpl_entity_set_property;
 
   /**
+   * TplEntity:type:
+   *
+   * The entity's type (see #TplEntityType).
+   */
+  param_spec = g_param_spec_int ("type",
+      "Type",
+      "The entity's type",
+      TPL_ENTITY_UNKNOWN,
+      TPL_ENTITY_SELF,
+      TPL_ENTITY_UNKNOWN,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_TYPE, param_spec);
+
+  /**
    * TplEntity:identifier:
    *
    * The entity's identifier
@@ -145,7 +170,7 @@ static void tpl_entity_class_init (TplEntityClass *klass)
       "Identifier",
       "The entity's identifier",
       NULL,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IDENTIFIER, param_spec);
 
   /**
@@ -157,7 +182,7 @@ static void tpl_entity_class_init (TplEntityClass *klass)
       "Alias",
       "The entity's alias",
       NULL,
-      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
 
   /**
@@ -169,8 +194,8 @@ static void tpl_entity_class_init (TplEntityClass *klass)
       "AvatarToken",
       "The entity's avatar's token",
       NULL,
-      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_ALIAS, param_spec);
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_AVATAR_TOKEN, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplEntityPriv));
 }
@@ -186,67 +211,56 @@ tpl_entity_init (TplEntity *self)
 }
 
 
-TplEntity *
-_tpl_entity_new (const gchar *identifier)
-{
-  g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
-
-  return g_object_new (TPL_TYPE_ENTITY,
-      "identifier", identifier, NULL);
-}
-
-
-/* _tpl_entity_from_room_id:
- * @chatroom_id: the chatroom id which will be the identifier for the entity
+/* _tpl_entity_new_from_room_id:
+ * @room_id: the room id which will be the identifier for the entity
  *
  * Return a TplEntity instance with identifier, alias copied from
- * @chatroom_id. It also sets %TPL_ENTITY_ROOM as type for
+ * @room_id. It also sets %TPL_ENTITY_ROOM as type for
  * the #TplEntity returned.
  */
 TplEntity *
-_tpl_entity_from_room_id (const gchar *chatroom_id)
+_tpl_entity_new_from_room_id (const gchar *room_id)
 {
   TplEntity *ret;
 
-  g_return_val_if_fail (chatroom_id != NULL, NULL);
+  g_return_val_if_fail (room_id != NULL, NULL);
 
-  ret = _tpl_entity_new (chatroom_id);
-  _tpl_entity_set_alias (ret, chatroom_id);
-  _tpl_entity_set_entity_type (ret, TPL_ENTITY_ROOM);
+  ret = g_object_new (TPL_TYPE_ENTITY,
+      "type", TPL_ENTITY_ROOM,
+      "identifier", room_id,
+      "alias", room_id,
+      NULL);
 
-  DEBUG ("Chatroom id: %s", chatroom_id);
+  DEBUG ("Chatroom id: %s", room_id);
   return ret;
 }
 
 
-/* _tpl_entity_from_tp_contact:
+/* _tpl_entity_new_from_tp_contact:
  * @contact: the TpContact instance to create the TplEntity from
+ * @type: the #TplEntity type
  *
  * Return a TplEntity instance with identifier, alias and
- * avatar's token copied. It also sets %TPL_ENTITY_CONTACT as contact type for
- * the #TplEntity returned. The client needs to set it to %TPL_ENTITY_SELF
- * in case the contact is the account's onwer.
- *
- * @see #tpl_entity_set_contact_type() and %TPL_ENTITY_SELF description.
+ * avatar's token copied. Type parameter is useful to differentiate between
+ * normal contact and self contact, thus only %TPL_ENTITY_CONTACT and
+ * %TPL_ENTITY_SELF are accepted.
  */
 TplEntity *
-_tpl_entity_from_tp_contact (TpContact *contact)
+_tpl_entity_new_from_tp_contact (TpContact *contact,
+    TplEntityType type)
 {
   TplEntity *ret;
 
   g_return_val_if_fail (TP_IS_CONTACT (contact), NULL);
+  g_return_val_if_fail (type == TPL_ENTITY_CONTACT || type == TPL_ENTITY_SELF,
+      NULL);
 
-  ret = _tpl_entity_new (tp_contact_get_identifier (contact));
-
-  if (tp_contact_get_alias (contact) != NULL)
-    _tpl_entity_set_alias (ret, tp_contact_get_alias (contact));
-  if (tp_contact_get_avatar_token (contact) != NULL)
-    _tpl_entity_set_avatar_token (ret, tp_contact_get_avatar_token (contact));
-
-  /* set contact type to TPL_ENTITY_CONTACT by default, the client need to set
-   * it to TPL_ENTITY_SELF in case the contact is actually the account's
-   * owner */
-  _tpl_entity_set_entity_type (ret, TPL_ENTITY_CONTACT);
+  ret = g_object_new (TPL_TYPE_ENTITY,
+      "type", type,
+      "identifier", tp_contact_get_identifier (contact),
+      "alias", tp_contact_get_alias (contact),
+      "avatar-token", tp_contact_get_avatar_token (contact),
+      NULL);
 
   DEBUG ("ID: %s, TOK: %s", tpl_entity_get_identifier (ret),
       tpl_entity_get_avatar_token (ret));
@@ -311,63 +325,4 @@ tpl_entity_get_avatar_token (TplEntity *self)
   g_return_val_if_fail (TPL_IS_ENTITY (self), NULL);
 
   return self->priv->avatar_token;
-}
-
-
-void
-_tpl_entity_set_alias (TplEntity *self,
-    const gchar *data)
-{
-  g_return_if_fail (TPL_IS_ENTITY (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (self->priv->alias == NULL);
-
-  self->priv->alias = g_strdup (data);
-}
-
-
-void
-_tpl_entity_set_identifier (TplEntity *self,
-    const gchar *data)
-{
-  g_return_if_fail (TPL_IS_ENTITY (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (self->priv->identifier == NULL);
-
-  self->priv->identifier = g_strdup (data);
-}
-
-
-/* _tpl_entity_set_entity_type:
- * @self: a TplEntity instance
- * @data: the contact type for @self
- *
- * Set a entity type for @self.
- *
- * Note: %TPL_ENTITY_CONTACT and %TPL_ENTITY_ROOM are automatically set after
- * _tpl_entity_from_tp_contact() and #tpl_entity_from_chatroom_id(),
- * respectively. Though, the client will need to set %TPL_ENTITY_SELF after
- * those function calls when @self represents the owner of the account.
- *
- * @see #TplEntityType
- */
-void
-_tpl_entity_set_entity_type (TplEntity *self,
-    TplEntityType data)
-{
-  g_return_if_fail (TPL_IS_ENTITY (self));
-
-  self->priv->type = data;
-}
-
-
-void
-_tpl_entity_set_avatar_token (TplEntity *self,
-    const gchar *data)
-{
-  g_return_if_fail (TPL_IS_ENTITY (self));
-  g_return_if_fail (self->priv->avatar_token == NULL);
-  /* data can be NULL, if no avatar_token is set */
-
-  self->priv->avatar_token = g_strdup (data);
 }

@@ -862,9 +862,12 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
 
       t = _tpl_time_parse (time_);
 
-      sender = _tpl_entity_new (sender_id);
-      _tpl_entity_set_alias (sender, sender_name);
-      _tpl_entity_set_avatar_token (sender, sender_avatar_token);
+      sender = g_object_new (TPL_TYPE_ENTITY,
+          "identifier", sender_id,
+          "type", is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
+          "alias", sender_name,
+          "avatar-token", sender_avatar_token,
+          NULL);
 
       if (self->priv->empathy_legacy)
         {
@@ -1111,13 +1114,13 @@ log_store_xml_get_entities_for_dir (TplLogStoreXml *self,
         }
 
       if (is_chatroom)
-        entity = _tpl_entity_from_room_id (name);
-      else {
-        entity = _tpl_entity_new (name);
-        _tpl_entity_set_entity_type (entity, TPL_ENTITY_CONTACT);
-        /* FIXME Faking alias with identifier */
-        _tpl_entity_set_alias (entity, name);
-      }
+        entity = _tpl_entity_new_from_room_id (name);
+      else
+        entity = g_object_new (TPL_TYPE_ENTITY,
+            "identifier", name,
+            "type", TPL_ENTITY_CONTACT,
+            "alias", name, /* FIXME Faking alias with identifier */
+            NULL);
 
       entities = g_list_prepend (entities, entity);
     }

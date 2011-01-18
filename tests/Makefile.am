@@ -9,6 +9,7 @@ LDADD = \
 	$(TPL_LIBS)
 
 noinst_PROGRAMS = \
+	test-entity             \
 	test-tpl-channel	\
 	test-tpl-conf		\
 	test-tpl-log-store-sqlite \
@@ -60,6 +61,7 @@ check-valgrind: $(TESTS)
 check_c_sources = \
 	$(dbus_test_sources)	\
 	tpl-channel-test.c	\
+	test-entity.c		\
 	test-tpl-channel.c	\
 	test-tpl-conf.c		\
 	test-tpl-observer.c	\

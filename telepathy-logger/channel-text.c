@@ -1048,8 +1048,8 @@ on_sent_signal_cb (TpChannel *proxy,
   GError *error = NULL;
   TplChannelText *tpl_text = TPL_CHANNEL_TEXT (user_data);
   TpContact *me;
-  TplEntity *tpl_entity_sender;
-  TplEntity *tpl_entity_receiver = NULL;
+  TplEntity *sender;
+  TplEntity *receiver = NULL;
   TplEventText *text_log;
   TplEvent *log;
   TplLogManager *logmanager;
@@ -1066,8 +1066,7 @@ on_sent_signal_cb (TpChannel *proxy,
 
   /* Initialize data for TplEntity */
   me = _tpl_channel_text_get_my_contact (tpl_text);
-  tpl_entity_sender = _tpl_entity_from_tp_contact (me);
-  _tpl_entity_set_entity_type (tpl_entity_sender, TPL_ENTITY_SELF);
+  sender = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
 
   if (!_tpl_channel_text_is_chatroom (tpl_text))
     {
@@ -1078,35 +1077,34 @@ on_sent_signal_cb (TpChannel *proxy,
           GUINT_TO_POINTER (handle));
       g_assert (remote != NULL);
 
-      tpl_entity_receiver = _tpl_entity_from_tp_contact (remote);
-      _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_CONTACT);
+      receiver = _tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
 
       DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto=\"%s "
           "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
           log_id,
-          tpl_entity_get_identifier (tpl_entity_receiver),
-          tpl_entity_get_alias (tpl_entity_receiver),
-          tpl_entity_get_identifier (tpl_entity_sender),
-          tpl_entity_get_alias (tpl_entity_sender),
+          tpl_entity_get_identifier (receiver),
+          tpl_entity_get_alias (receiver),
+          tpl_entity_get_identifier (sender),
+          tpl_entity_get_alias (sender),
           arg_Text);
 
     }
   else
     {
+      receiver = _tpl_entity_new_from_room_id (
+          _tpl_channel_text_get_chatroom_id (tpl_text));
+
       DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto "
           "chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
           log_id,
-          _tpl_channel_text_get_chatroom_id (tpl_text),
-          tpl_entity_get_identifier (tpl_entity_sender),
-          tpl_entity_get_alias (tpl_entity_sender),
+          tpl_entity_get_identifier (receiver),
+          tpl_entity_get_identifier (sender),
+          tpl_entity_get_alias (sender),
           arg_Text);
     }
 
   /* Initialise TplEventText */
-  if (!_tpl_channel_text_is_chatroom (tpl_text))
-    chat_id = tpl_entity_get_identifier (tpl_entity_receiver);
-  else
-    chat_id = _tpl_channel_text_get_chatroom_id (tpl_text);
+  chat_id = tpl_entity_get_identifier (receiver);
 
   account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
 
@@ -1118,10 +1116,8 @@ on_sent_signal_cb (TpChannel *proxy,
   _tpl_event_set_channel_path (TPL_EVENT (log), channel_path);
   _tpl_event_set_id (log, chat_id);
   _tpl_event_set_timestamp (log, (time_t) arg_Timestamp);
-  _tpl_event_set_sender (log, tpl_entity_sender);
-  /* NULL when it's a chatroom */
-  if (tpl_entity_receiver != NULL)
-    _tpl_event_set_receiver (log, tpl_entity_receiver);
+  _tpl_event_set_sender (log, sender);
+  _tpl_event_set_receiver (log, receiver);
   _tpl_event_text_set_message (text_log, arg_Text);
   _tpl_event_text_set_signal_type (text_log, TPL_EVENT_TEXT_SIGNAL_SENT);
   _tpl_event_text_set_message_type (text_log, arg_Type);
@@ -1140,9 +1136,8 @@ on_sent_signal_cb (TpChannel *proxy,
       g_error_free (error);
     }
 
-  if (tpl_entity_receiver != NULL)
-    g_object_unref (tpl_entity_receiver);
-  g_object_unref (tpl_entity_sender);
+  g_object_unref (receiver);
+  g_object_unref (sender);
   g_object_unref (logmanager);
   g_object_unref (log);
 
@@ -1207,37 +1202,33 @@ keepon_on_receiving_signal (TplEventText *text_log,
   TplChannelText *tpl_text;
   GError *e = NULL;
   TplLogManager *logmanager;
-  TplEntity *tpl_entity_sender;
-  TplEntity *tpl_entity_receiver;
-  TpContact *local;
+  TplEntity *sender;
+  TplEntity *receiver;
+  TpContact *me;
 
   g_return_if_fail (TPL_IS_EVENT_TEXT (text_log));
 
   tpl_text = _tpl_event_text_get_tpl_channel_text (text_log);
-  local = _tpl_channel_text_get_my_contact (tpl_text);
+  me = _tpl_channel_text_get_my_contact (tpl_text);
+  receiver = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
 
-  tpl_entity_sender = _tpl_entity_from_tp_contact (remote);
-  _tpl_entity_set_entity_type (tpl_entity_sender, TPL_ENTITY_CONTACT);
-  _tpl_event_set_sender (log, tpl_entity_sender);
-
-  tpl_entity_receiver = _tpl_entity_from_tp_contact (local);
+  sender = _tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
+  _tpl_event_set_sender (log, sender);
 
   DEBUG ("recvd:\n\tlog_id=\"%s\"\n\tto=\"%s "
       "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
       _tpl_event_get_log_id (log),
-      tpl_entity_get_identifier (tpl_entity_receiver),
-      tpl_entity_get_alias (tpl_entity_receiver),
-      tpl_entity_get_identifier (tpl_entity_sender),
-      tpl_entity_get_alias (tpl_entity_sender),
+      tpl_entity_get_identifier (receiver),
+      tpl_entity_get_alias (receiver),
+      tpl_entity_get_identifier (sender),
+      tpl_entity_get_alias (sender),
       tpl_event_text_get_message (text_log));
 
 
   if (!_tpl_channel_text_is_chatroom (tpl_text))
-    _tpl_event_set_id (log, tpl_entity_get_identifier (
-          tpl_entity_sender));
+    _tpl_event_set_id (log, tpl_entity_get_identifier (sender));
   else
-    _tpl_event_set_id (log, _tpl_channel_text_get_chatroom_id (
-          tpl_text));
+    _tpl_event_set_id (log, _tpl_channel_text_get_chatroom_id (tpl_text));
 
   _tpl_event_text_set_chatroom (text_log,
       _tpl_channel_text_is_chatroom (tpl_text));
@@ -1250,7 +1241,8 @@ keepon_on_receiving_signal (TplEventText *text_log,
       g_error_free (e);
     }
 
-  g_object_unref (tpl_entity_sender);
+  g_object_unref (sender);
+  g_object_unref (receiver);
   g_object_unref (log);
   g_object_unref (logmanager);
 }
@@ -1271,9 +1263,8 @@ on_received_signal_cb (TpChannel *proxy,
   TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpConnection *tp_conn;
   TpContact *me, *remote;
-  TplEntity *tpl_entity_receiver = NULL;
+  TplEntity *receiver = NULL;
   TplEventText *text_log = NULL;
-  TplEvent *log;
   TpAccount *account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
   TplLogStore *index = _tpl_log_store_sqlite_dup ();
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
@@ -1316,9 +1307,8 @@ on_received_signal_cb (TpChannel *proxy,
 
   /* Initialize TplEventText (part 1) - chat_id still unknown */
   text_log = _tpl_event_text_new (log_id, account);
-  log = TPL_EVENT (text_log);
 
-  _tpl_event_set_channel_path (log, channel_path);
+  _tpl_event_set_channel_path (TPL_EVENT (text_log), channel_path);
   _tpl_event_text_set_pending_msg_id (text_log, arg_ID);
   _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
   _tpl_event_text_set_message (text_log, arg_Text);
@@ -1327,11 +1317,10 @@ on_received_signal_cb (TpChannel *proxy,
       TPL_EVENT_TEXT_SIGNAL_RECEIVED);
 
   me = _tpl_channel_text_get_my_contact (tpl_text);
-  tpl_entity_receiver = _tpl_entity_from_tp_contact (me);
-  _tpl_entity_set_entity_type (tpl_entity_receiver, TPL_ENTITY_SELF);
-  _tpl_event_set_receiver (log, tpl_entity_receiver);
+  receiver = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
+  _tpl_event_set_receiver (TPL_EVENT (text_log), receiver);
 
-  _tpl_event_set_timestamp (log, (time_t) arg_Timestamp);
+  _tpl_event_set_timestamp (TPL_EVENT (text_log), (time_t) arg_Timestamp);
 
   tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_chan));
   remote = g_hash_table_lookup (tpl_text->priv->contacts,
@@ -1342,7 +1331,7 @@ on_received_signal_cb (TpChannel *proxy,
       /* Contact is not in the cache */
       tp_connection_get_contacts_by_handle (tp_conn, 1, &sender,
           G_N_ELEMENTS (features), features, on_received_signal_with_contact_cb,
-          log, NULL, G_OBJECT (tpl_text));
+          text_log, NULL, G_OBJECT (tpl_text));
     }
   else
     {
@@ -1350,8 +1339,8 @@ on_received_signal_cb (TpChannel *proxy,
     }
 
 out:
-  if (tpl_entity_receiver != NULL)
-    g_object_unref (tpl_entity_receiver);
+  if (receiver != NULL)
+    g_object_unref (receiver);
 
   g_object_unref (index);
   /* log is unrefed in keepon_on_receiving_signal() */
