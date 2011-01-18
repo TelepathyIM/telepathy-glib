@@ -372,6 +372,32 @@ signal_connected (TpConnection *self)
 }
 
 static void
+will_announced_connected_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpConnection *self = (TpConnection *) source;
+  GError *error = NULL;
+
+  if (!_tp_proxy_will_announce_connected_finish ((TpProxy *) self, result,
+        &error))
+    {
+      DEBUG ("_tp_connection_prepare_contact_info_async failed: %s",
+          error->message);
+
+      g_error_free (error);
+    }
+
+  if (tp_proxy_get_invalidated (self) != NULL)
+    {
+      DEBUG ("Connection has been invalidated; we're done");
+      return;
+    }
+
+  signal_connected (self);
+}
+
+static void
 tp_connection_continue_introspection (TpConnection *self)
 {
   if (tp_proxy_get_invalidated (self) != NULL)
@@ -391,7 +417,10 @@ tp_connection_continue_introspection (TpConnection *self)
           return;
         }
 
-      signal_connected (self);
+      /* We'll announce CONNECTED state soon, but first give a chance to
+       * prepared feature to be updated, if needed */
+      _tp_proxy_will_announce_connected_async ((TpProxy *) self,
+          will_announced_connected_cb, NULL);
     }
   else
     {

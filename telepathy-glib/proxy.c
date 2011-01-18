@@ -354,6 +354,11 @@ struct _TpProxyPrivate {
      * until the super class features have been prepared. */
     GList *prepare_requests;
 
+    GSimpleAsyncResult *will_announce_connected_result;
+    /* Number of pending calls blocking will_announce_connected_result to be
+     * completed */
+    guint pending_will_announce_calls;
+
     gboolean dispose_has_run;
 };
 
@@ -962,6 +967,11 @@ check_feature_validity (TpProxy *self,
   /* Core features can't have depends, their depends are implicit */
   if (feature->core)
     g_assert (feature->depends_on == NULL || feature->depends_on[0] == 0);
+
+  /* prepare_before_signalling_connected_async only make sense for
+   * TpConnection subclasses */
+  if (feature->prepare_before_signalling_connected_async != NULL)
+    g_assert (TP_IS_CONNECTION (self));
 }
 
 static GObject *
@@ -2164,4 +2174,92 @@ _tp_proxy_set_features_failed (TpProxy *self,
   g_return_if_fail (TP_IS_PROXY (self));
   g_return_if_fail (error != NULL);
   tp_proxy_poll_features (self, error);
+}
+
+static void
+check_announce_connected (TpProxy *self,
+    gboolean in_idle)
+{
+  if (self->priv->pending_will_announce_calls != 0)
+    return;
+
+  if (in_idle)
+    {
+      g_simple_async_result_complete_in_idle (
+          self->priv->will_announce_connected_result);
+    }
+  else
+    {
+      g_simple_async_result_complete (
+          self->priv->will_announce_connected_result);
+    }
+
+  tp_clear_object (&self->priv->will_announce_connected_result);
+}
+
+static void
+prepare_before_signalling_connected_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpProxy *self = user_data;
+
+  /* We don't care if the call succeeded or not as it was already prepared */
+  self->priv->pending_will_announce_calls--;
+
+  check_announce_connected (self, FALSE);
+}
+
+static void foreach_feature (GQuark name,
+    gpointer data,
+    gpointer user_data)
+{
+  FeatureState state = GPOINTER_TO_INT (data);
+  TpProxy *self = user_data;
+  const TpProxyFeature *feature;
+
+  if (state != FEATURE_STATE_READY)
+    return;
+
+  feature = tp_proxy_subclass_get_feature (G_OBJECT_TYPE (self), name);
+
+  if (feature->prepare_before_signalling_connected_async == NULL)
+    return;
+
+  self->priv->pending_will_announce_calls++;
+
+  feature->prepare_before_signalling_connected_async (self, feature,
+      prepare_before_signalling_connected_cb, self);
+}
+
+/*
+ * _tp_proxy_will_announce_connected_async:
+ *
+ * Called by connection.c when the connection became connected and we're about
+ * to announce it. But before we have to wait for all the prepared features to
+ * process their prepare_before_signalling_connected_async, if any.
+ */
+void
+_tp_proxy_will_announce_connected_async (TpProxy *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  g_assert (TP_IS_CONNECTION (self));
+  g_assert (self->priv->will_announce_connected_result == NULL);
+
+  self->priv->will_announce_connected_result = g_simple_async_result_new (
+      (GObject *) self, callback, user_data,
+      _tp_proxy_will_announce_connected_async);
+
+  g_datalist_foreach (&self->priv->features, foreach_feature, self);
+
+  check_announce_connected (self, TRUE);
+}
+
+gboolean
+_tp_proxy_will_announce_connected_finish (TpProxy *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, _tp_proxy_will_announce_connected_async)
 }

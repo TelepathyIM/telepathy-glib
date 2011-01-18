@@ -40,6 +40,7 @@ struct _TpProxyFeature {
     gboolean core;
 
     TpProxyPrepareAsync prepare_async;
+    TpProxyPrepareAsync prepare_before_signalling_connected_async;
 
     const GQuark *interfaces_needed;
     /* Features we depend on */
@@ -59,5 +60,13 @@ void _tp_proxy_set_feature_prepared (TpProxy *self,
     gboolean succeeded);
 void _tp_proxy_set_features_failed (TpProxy *self,
     const GError *error);
+
+void _tp_proxy_will_announce_connected_async (TpProxy *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean _tp_proxy_will_announce_connected_finish (TpProxy *self,
+    GAsyncResult *result,
+    GError **error);
 
 #endif
