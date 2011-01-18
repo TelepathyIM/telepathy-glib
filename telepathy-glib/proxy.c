@@ -953,6 +953,17 @@ tp_proxy_set_feature_state (TpProxy *self,
       GINT_TO_POINTER (state));
 }
 
+static void
+check_feature_validity (TpProxy *self,
+    const TpProxyFeature *feature)
+{
+  g_assert (feature != NULL);
+
+  /* Core features can't have depends, their depends are implicit */
+  if (feature->core)
+    g_assert (feature->depends_on == NULL || feature->depends_on[0] == 0);
+}
+
 static GObject *
 tp_proxy_constructor (GType type,
                       guint n_params,
@@ -996,6 +1007,8 @@ tp_proxy_constructor (GType type,
 
       for (i = 0; features[i].name != 0; i++)
         {
+          check_feature_validity (self, &features[i]);
+
           tp_proxy_set_feature_state (self, features[i].name,
               FEATURE_STATE_UNWANTED);
 
