@@ -37,8 +37,9 @@ typedef struct
   GObjectClass parent_class;
 } TplEntityClass;
 
-TplEntity *_tpl_entity_from_tp_contact (TpContact *contact);
 TplEntity *_tpl_entity_new (const gchar *identifier);
+TplEntity *_tpl_entity_from_tp_contact (TpContact *contact);
+TplEntity *_tpl_entity_from_room_id (const gchar *chatroom_id);
 
 void _tpl_entity_set_alias (TplEntity *self,
     const gchar *data);
@@ -51,8 +52,6 @@ void _tpl_entity_set_entity_type (TplEntity *self,
 
 void _tpl_entity_set_avatar_token (TplEntity *self,
     const gchar *data);
-
-TplEntity * _tpl_entity_from_room_id (const gchar *chatroom_id);
 
 G_END_DECLS
 #endif // __TPL_ENTITY_INTERNAL_H__

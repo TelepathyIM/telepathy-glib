@@ -26,10 +26,10 @@
 #include <telepathy-glib/contact.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_ENTITY    (tpl_entity_get_type ())
-#define TPL_ENTITY(obj)    (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_ENTITY, TplEntity))
-#define TPL_ENTITY_CLASS(klass)  (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_ENTITY, TplEntityClass))
-#define TPL_IS_ENTITY(obj)    (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_ENTITY))
+#define TPL_TYPE_ENTITY             (tpl_entity_get_type ())
+#define TPL_ENTITY(obj)             (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_ENTITY, TplEntity))
+#define TPL_ENTITY_CLASS(klass)     (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_ENTITY, TplEntityClass))
+#define TPL_IS_ENTITY(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_ENTITY))
 #define TPL_IS_ENTITY_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_ENTITY))
 #define TPL_ENTITY_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_ENTITY, TplEntityClass))
 

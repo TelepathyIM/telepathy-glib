@@ -186,6 +186,16 @@ tpl_entity_init (TplEntity *self)
 }
 
 
+TplEntity *
+_tpl_entity_new (const gchar *identifier)
+{
+  g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
+
+  return g_object_new (TPL_TYPE_ENTITY,
+      "identifier", identifier, NULL);
+}
+
+
 /* _tpl_entity_from_room_id:
  * @chatroom_id: the chatroom id which will be the identifier for the entity
  *
@@ -244,15 +254,6 @@ _tpl_entity_from_tp_contact (TpContact *contact)
 }
 
 
-TplEntity *
-_tpl_entity_new (const gchar *identifier)
-{
-  g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
-
-  return g_object_new (TPL_TYPE_ENTITY,
-      "identifier", identifier, NULL);
-}
-
 /**
  * tpl_entity_get_alias:
  * @self: a #TplEntity
@@ -267,6 +268,7 @@ tpl_entity_get_alias (TplEntity *self)
   return self->priv->alias;
 }
 
+
 /**
  * tpl_entity_get_identifier:
  * @self: a #TplEntity
@@ -280,6 +282,7 @@ tpl_entity_get_identifier (TplEntity *self)
 
   return self->priv->identifier;
 }
+
 
 /**
  * tpl_entity_get_entity_type:
