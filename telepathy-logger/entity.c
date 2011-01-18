@@ -229,7 +229,7 @@ _tpl_entity_from_tp_contact (TpContact *contact)
   ret = _tpl_entity_new (tp_contact_get_identifier (contact));
 
   if (tp_contact_get_alias (contact) != NULL)
-    _tpl_entity_set_alias (ret, (gchar *) tp_contact_get_alias (contact));
+    _tpl_entity_set_alias (ret, tp_contact_get_alias (contact));
   if (tp_contact_get_avatar_token (contact) != NULL)
     _tpl_entity_set_avatar_token (ret, tp_contact_get_avatar_token (contact));
 
