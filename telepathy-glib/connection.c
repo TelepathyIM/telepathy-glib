@@ -352,6 +352,26 @@ tp_connection_prepare_capabilities_async (TpProxy *proxy,
 }
 
 static void
+signal_connected (TpConnection *self)
+{
+  /* we shouldn't have gone to status CONNECTED for any reason
+   * that isn't REQUESTED :-) */
+  DEBUG ("%p: CORE and CONNECTED ready", self);
+  self->priv->status = TP_CONNECTION_STATUS_CONNECTED;
+  self->priv->status_reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
+  self->priv->ready = TRUE;
+
+  _tp_proxy_set_feature_prepared ((TpProxy *) self,
+      TP_CONNECTION_FEATURE_CONNECTED, TRUE);
+  _tp_proxy_set_feature_prepared ((TpProxy *) self,
+      TP_CONNECTION_FEATURE_CORE, TRUE);
+
+  g_object_notify ((GObject *) self, "status");
+  g_object_notify ((GObject *) self, "status-reason");
+  g_object_notify ((GObject *) self, "connection-ready");
+}
+
+static void
 tp_connection_continue_introspection (TpConnection *self)
 {
   if (tp_proxy_get_invalidated (self) != NULL)
@@ -371,21 +391,7 @@ tp_connection_continue_introspection (TpConnection *self)
           return;
         }
 
-      /* signal CONNECTED; we shouldn't have gone to status CONNECTED for any
-       * reason that isn't REQUESTED :-) */
-      DEBUG ("%p: CORE and CONNECTED ready", self);
-      self->priv->status = TP_CONNECTION_STATUS_CONNECTED;
-      self->priv->status_reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
-      self->priv->ready = TRUE;
-
-      _tp_proxy_set_feature_prepared ((TpProxy *) self,
-          TP_CONNECTION_FEATURE_CONNECTED, TRUE);
-      _tp_proxy_set_feature_prepared ((TpProxy *) self,
-          TP_CONNECTION_FEATURE_CORE, TRUE);
-
-      g_object_notify ((GObject *) self, "status");
-      g_object_notify ((GObject *) self, "status-reason");
-      g_object_notify ((GObject *) self, "connection-ready");
+      signal_connected (self);
     }
   else
     {
