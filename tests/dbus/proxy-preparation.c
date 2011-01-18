@@ -50,6 +50,19 @@ setup (Test *test,
 }
 
 static void
+disconnect_and_destroy_conn (Test *test)
+{
+  tp_cli_connection_run_disconnect (TP_CONNECTION (test->my_conn), -1,
+      &test->error, NULL);
+  g_assert_no_error (test->error);
+
+  tp_clear_object (&test->connection);
+  tp_clear_object (&test->base_connection);
+  tp_clear_object (&test->my_conn);
+
+}
+
+static void
 teardown (Test *test,
           gconstpointer data)
 {
@@ -59,12 +72,7 @@ teardown (Test *test,
   g_main_loop_unref (test->mainloop);
   test->mainloop = NULL;
 
-  tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
-  g_assert_no_error (test->error);
-
-  g_object_unref (test->connection);
-  g_object_unref (test->base_connection);
-  g_object_unref (test->my_conn);
+  disconnect_and_destroy_conn (test);
 }
 
 static void
@@ -286,6 +294,78 @@ test_retry_dep (Test *test,
         TP_TESTS_MY_CONN_PROXY_FEATURE_RETRY_DEP));
 }
 
+static void
+recreate_connection (Test *test)
+{
+  gchar *name;
+  gchar *conn_path;
+
+  disconnect_and_destroy_conn (test);
+
+  test->base_connection = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_CONNECTION,
+      "account", "me@test.com",
+      "protocol", "simple",
+      NULL);
+  g_assert (test->base_connection != NULL);
+
+  g_assert (tp_base_connection_register (test->base_connection, "simple",
+        &name, &conn_path, &test->error));
+  g_assert_no_error (test->error);
+
+  test->connection = tp_connection_new (test->dbus, name, conn_path,
+      &test->error);
+  g_assert_no_error (test->error);
+
+  test->my_conn = g_object_new (TP_TESTS_TYPE_MY_CONN_PROXY,
+      "dbus-daemon", test->dbus,
+      "bus-name", tp_proxy_get_bus_name (test->connection),
+      "object-path", tp_proxy_get_object_path (test->connection),
+      NULL);
+  g_assert (test->my_conn != NULL);
+
+  g_free (name);
+  g_free (conn_path);
+}
+
+static void
+test_before_connected (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_TESTS_MY_CONN_PROXY_FEATURE_BEFORE_CONNECTED, 0 };
+  GQuark connected[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+
+  /* We need a not yet connected connection */
+  recreate_connection (test);
+
+  g_assert_cmpuint (test->my_conn->before_connected_state, ==,
+      BEFORE_CONNECTED_STATE_UNPREPARED);
+
+  /* Connection is not yet connected, prepare the feature */
+  tp_proxy_prepare_async (test->my_conn, features, prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_proxy_is_prepared (test->my_conn,
+        TP_TESTS_MY_CONN_PROXY_FEATURE_BEFORE_CONNECTED));
+
+  g_assert_cmpuint (test->my_conn->before_connected_state, ==,
+      BEFORE_CONNECTED_STATE_NOT_CONNECTED);
+
+  tp_cli_connection_call_connect (test->connection, -1, NULL, NULL, NULL, NULL);
+
+  /* Wait that CONNECTED is announced */
+  tp_proxy_prepare_async (test->my_conn, connected, prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* state has been updated */
+  g_assert_cmpuint (test->my_conn->before_connected_state, ==,
+      BEFORE_CONNECTED_STATE_CONNECTED);
+}
+
 int
 main (int argc,
       char **argv)
@@ -315,6 +395,8 @@ main (int argc,
       test_retry, teardown);
   g_test_add ("/proxy-preparation/retry-dep", Test, NULL, setup,
       test_retry_dep, teardown);
+  g_test_add ("/proxy-preparation/before-connected", Test, NULL, setup,
+      test_before_connected, teardown);
 
   return g_test_run ();
 }

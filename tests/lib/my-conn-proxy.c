@@ -31,6 +31,7 @@ enum {
     FEAT_FAIL_DEP,
     FEAT_RETRY,
     FEAT_RETRY_DEP,
+    FEAT_BEFORE_CONNECTED,
     N_FEAT
 };
 
@@ -154,6 +155,53 @@ prepare_retry_dep_async (TpProxy *proxy,
   g_object_unref (result);
 }
 
+static void
+prepare_before_connected_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpTestsMyConnProxy *self = (TpTestsMyConnProxy *) proxy;
+  GSimpleAsyncResult *result;
+
+  g_assert (tp_proxy_is_prepared (proxy, TP_TESTS_MY_CONN_PROXY_FEATURE_CORE));
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      prepare_before_connected_async);
+
+  if (tp_connection_get_status (TP_CONNECTION (self), NULL) ==
+        TP_CONNECTION_STATUS_CONNECTED)
+    self->before_connected_state = BEFORE_CONNECTED_STATE_CONNECTED;
+  else
+    self->before_connected_state = BEFORE_CONNECTED_STATE_NOT_CONNECTED;
+
+  g_simple_async_result_complete_in_idle (result);
+  g_object_unref (result);
+}
+
+static void
+prepare_before_connected_before_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpTestsMyConnProxy *self = (TpTestsMyConnProxy *) proxy;
+  GSimpleAsyncResult *result;
+
+  g_assert (tp_proxy_is_prepared (proxy, TP_TESTS_MY_CONN_PROXY_FEATURE_CORE));
+
+  g_assert_cmpuint (tp_connection_get_status (TP_CONNECTION (proxy), NULL), ==,
+      TP_CONNECTION_STATUS_CONNECTING);
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      prepare_before_connected_before_async);
+
+  self->before_connected_state = BEFORE_CONNECTED_STATE_CONNECTED;
+
+  g_simple_async_result_complete_in_idle (result);
+  g_object_unref (result);
+}
+
 static const TpProxyFeature *
 list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
@@ -210,6 +258,13 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
     need_retry[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_RETRY;
   features[FEAT_RETRY_DEP].prepare_async = prepare_retry_dep_async;
   features[FEAT_RETRY_DEP].depends_on = need_retry;
+
+  features[FEAT_BEFORE_CONNECTED].name =
+    TP_TESTS_MY_CONN_PROXY_FEATURE_BEFORE_CONNECTED;
+  features[FEAT_BEFORE_CONNECTED].prepare_async =
+    prepare_before_connected_async;
+  features[FEAT_BEFORE_CONNECTED].prepare_before_signalling_connected_async =
+    prepare_before_connected_before_async;
 
   return features;
 }
@@ -274,4 +329,10 @@ GQuark
 tp_tests_my_conn_proxy_get_feature_quark_retry_dep (void)
 {
   return g_quark_from_static_string ("tp-my-conn-proxy-feature-retry-dep");
+}
+
+GQuark
+tp_tests_my_conn_proxy_get_feature_quark_before_connected (void)
+{
+  return g_quark_from_static_string ("tp-my-conn-proxy-feature-before-connected");
 }

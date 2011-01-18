@@ -25,10 +25,19 @@ struct _TpTestsMyConnProxyClass {
     TpConnectionClass parent_class;
 };
 
+typedef enum
+{
+  BEFORE_CONNECTED_STATE_UNPREPARED = 0,
+  BEFORE_CONNECTED_STATE_NOT_CONNECTED,
+  BEFORE_CONNECTED_STATE_CONNECTED,
+} TpTestsMyConnProxyBeforeConnectedState;
+
+
 struct _TpTestsMyConnProxy {
     TpConnection parent;
 
     gboolean retry_feature_success;
+    TpTestsMyConnProxyBeforeConnectedState before_connected_state;
 };
 
 GType tp_tests_my_conn_proxy_get_type (void);
@@ -94,6 +103,12 @@ GQuark tp_tests_my_conn_proxy_get_feature_quark_retry (void) G_GNUC_CONST;
 #define TP_TESTS_MY_CONN_PROXY_FEATURE_RETRY_DEP \
   (tp_tests_my_conn_proxy_get_feature_quark_retry_dep ())
 GQuark tp_tests_my_conn_proxy_get_feature_quark_retry_dep (void) G_GNUC_CONST;
+
+/* Can be prepared before the connection is connected and block announcing the
+ * connected state */
+#define TP_TESTS_MY_CONN_PROXY_FEATURE_BEFORE_CONNECTED \
+  (tp_tests_my_conn_proxy_get_feature_quark_before_connected ())
+GQuark tp_tests_my_conn_proxy_get_feature_quark_before_connected (void) G_GNUC_CONST;
 
 G_END_DECLS
 
