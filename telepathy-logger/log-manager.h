@@ -127,14 +127,14 @@ gboolean tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
     GList **events,
     GError **error);
 
-void tpl_log_manager_get_events_async (TplLogManager *self,
+void tpl_log_manager_get_entities_async (TplLogManager *self,
     TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tpl_log_manager_get_events_finish (TplLogManager *self,
+gboolean tpl_log_manager_get_entities_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **events,
+    GList **entities,
     GError **error);
 
 void tpl_log_manager_search_async (TplLogManager *manager,

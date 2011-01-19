@@ -634,45 +634,44 @@ _tpl_log_manager_get_filtered_events (TplLogManager *manager,
 
 
 /*
- * _tpl_log_manager_search_hit_compare:
- * @a: a #TplLogSearchHit
- * @b: a #TplLogSearchHit
+ * _tpl_entity_compare:
+ * @a: a #TplEntity
+ * @b: a #TplEntity
  *
  * Compares @a and @b.
  *
- * Returns: 0 if a == b, nonzero otherwise.
+ * Returns: 0 if a == b, -1 if a < b, 1 otherwise.
  */
 gint
-_tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
-    TplLogSearchHit *b)
+_tpl_entity_compare (TplEntity *a,
+    TplEntity *b)
 {
-  g_return_val_if_fail (a != NULL && a->id != NULL, 1);
-  g_return_val_if_fail (b != NULL && b->id != NULL, 1);
+  g_return_val_if_fail (TPL_IS_ENTITY (a), TPL_IS_ENTITY (b) ? -1 : 0);
+  g_return_val_if_fail (TPL_IS_ENTITY (b), 1);
 
-  if (g_strcmp0 (a->id, b->id) == 0)
-    {
-      if (a->type == b->type)
-        return 0;
-    }
-
-  return 1;
+  if (tpl_entity_get_entity_type (a) == tpl_entity_get_entity_type (b))
+    return g_strcmp0 (tpl_entity_get_identifier (a),
+        tpl_entity_get_identifier (b));
+  else if (tpl_entity_get_entity_type (a) < tpl_entity_get_entity_type (b))
+    return -1;
+  else
+    return 1;
 }
 
 
 /*
- * _tpl_log_manager_get_events
+ * _tpl_log_manager_get_entities
  * @manager: the log manager
  * @account: a TpAccount the query will return data related to
  *
  * It queries the readable TplLogStores in @manager for all the buddies the
  * log store has at least a conversation stored originated using @account.
  *
- * Returns: a list of pointer to TplLogSearchHit, having id and
- * type fields filled. The result needs to be freed after use, see
- * _tpl_log_manager_search_hit_free()
+ * Returns: a list of pointer to #TplEntity, to be freed using something like
+ * g_list_free_full (lst, g_object_unref)
  */
 GList *
-_tpl_log_manager_get_events (TplLogManager *manager,
+_tpl_log_manager_get_entities (TplLogManager *manager,
     TpAccount *account)
 {
   GList *l, *out = NULL;
@@ -688,21 +687,21 @@ _tpl_log_manager_get_events (TplLogManager *manager,
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *in, *j;
 
-      in = _tpl_log_store_get_events (store, account);
+      in = _tpl_log_store_get_entities (store, account);
       /* merge the lists avoiding duplicates */
       for (j = in; j != NULL; j = g_list_next (j))
         {
-          TplLogSearchHit *hit = j->data;
+          TplEntity *entity = TPL_ENTITY (j->data);
 
-          if (g_list_find_custom (out, hit,
-                (GCompareFunc) _tpl_log_manager_search_hit_compare) == NULL)
+          if (g_list_find_custom (out, entity,
+                (GCompareFunc) _tpl_entity_compare) == NULL)
             {
               /* add data if not already present */
-              out = g_list_prepend (out, hit);
+              out = g_list_prepend (out, entity);
             }
           else
             /* free hit if already present in out */
-            _tpl_log_manager_search_hit_free (hit);
+            g_object_unref (entity);
         }
       g_list_free (in);
     }
@@ -1217,7 +1216,7 @@ tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
 
 
 static void
-_get_events_async_thread (GSimpleAsyncResult *simple,
+_get_entities_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
 {
@@ -1228,7 +1227,7 @@ _get_events_async_thread (GSimpleAsyncResult *simple,
   async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
   event_info = async_data->request;
 
-  lst = _tpl_log_manager_get_events (async_data->manager, event_info->account);
+  lst = _tpl_log_manager_get_entities (async_data->manager, event_info->account);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       (GDestroyNotify) tpl_log_manager_search_free);
@@ -1236,16 +1235,16 @@ _get_events_async_thread (GSimpleAsyncResult *simple,
 
 
 /**
- * tpl_log_manager_get_events_async:
+ * tpl_log_manager_get_entities_async:
  * @self: a #TplLogManager
  * @account: a #TpAccount
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Start a query looking for all the events on @account.
+ * Start a query looking for all entities for which you have logs in the @account.
  */
 void
-tpl_log_manager_get_events_async (TplLogManager *self,
+tpl_log_manager_get_entities_async (TplLogManager *self,
     TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1268,9 +1267,9 @@ tpl_log_manager_get_events_async (TplLogManager *self,
 
   simple = g_simple_async_result_new (G_OBJECT (self),
       _tpl_log_manager_async_operation_cb, async_data,
-      tpl_log_manager_get_events_async);
+      tpl_log_manager_get_entities_async);
 
-  g_simple_async_result_run_in_thread (simple, _get_events_async_thread, 0,
+  g_simple_async_result_run_in_thread (simple, _get_entities_async_thread, 0,
       NULL);
 
   g_object_unref (simple);
@@ -1278,18 +1277,19 @@ tpl_log_manager_get_events_async (TplLogManager *self,
 
 
 /**
- * tpl_log_manager_get_events_finish:
+ * tpl_log_manager_get_entities_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @chats: a pointer to a #GList used to return the list of #TplLogSearchHit
+ * @entities: a pointer to a #GList used to return the list of #TplEntity, to be
+ *         freed using something like g_list_free_full (lst, g_object_unref)
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
  */
 gboolean
-tpl_log_manager_get_events_finish (TplLogManager *self,
+tpl_log_manager_get_entities_finish (TplLogManager *self,
     GAsyncResult *result,
-    GList **events,
+    GList **entities,
     GError **error)
 {
   GSimpleAsyncResult *simple;
@@ -1297,15 +1297,15 @@ tpl_log_manager_get_events_finish (TplLogManager *self,
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
   g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
   g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self), tpl_log_manager_get_events_async), FALSE);
+        G_OBJECT (self), tpl_log_manager_get_entities_async), FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
 
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
 
-  if (events != NULL)
-    *events = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
+  if (entities != NULL)
+    *entities = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
 
   return TRUE;
 }

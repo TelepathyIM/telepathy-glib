@@ -72,7 +72,7 @@ typedef struct
       const gchar *id, TplEventSearchType type, const GDate *date);
   GList * (*get_recent_events) (TplLogStore *self, TpAccount *account,
       const gchar *id, TplEventSearchType type);
-  GList * (*get_events) (TplLogStore *self, TpAccount *account);
+  GList * (*get_entities) (TplLogStore *self, TpAccount *account);
   GList * (*search_new) (TplLogStore *self, const gchar *text);
   GList * (*search_in_identifier) (TplLogStore *self,
       TpAccount *account, const gchar *identifier, TplEventSearchType type,
@@ -96,7 +96,7 @@ GList * _tpl_log_store_get_events_for_date (TplLogStore *self,
     const GDate *date);
 GList * _tpl_log_store_get_recent_events (TplLogStore *self,
     TpAccount *account, const gchar *id, TplEventSearchType type);
-GList * _tpl_log_store_get_events (TplLogStore *self, TpAccount *account);
+GList * _tpl_log_store_get_entities (TplLogStore *self, TpAccount *account);
 GList * _tpl_log_store_search_in_identifier (TplLogStore *self,
     TpAccount *account, const gchar *identifier, TplEventSearchType type,
     const gchar *text);

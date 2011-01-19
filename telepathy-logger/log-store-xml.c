@@ -1076,21 +1076,18 @@ log_store_xml_search_new (TplLogStore *store,
 
 /* Returns: (GList *) of (TplLogSearchHit *) */
 static GList *
-log_store_xml_get_events_for_dir (TplLogStoreXml *self,
+log_store_xml_get_entities_for_dir (TplLogStoreXml *self,
     const gchar *dir,
     gboolean is_chatroom,
     TpAccount *account)
 {
   GDir *gdir;
-  GList *hits = NULL;
+  GList *entities = NULL;
   const gchar *name;
   GError *error = NULL;
-  TplEventSearchType type;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (dir), NULL);
-
-  type = is_chatroom ? TPL_EVENT_SEARCH_TEXT_ROOM : TPL_EVENT_SEARCH_TEXT;
 
   gdir = g_dir_open (dir, 0, &error);
   if (!gdir)
@@ -1102,26 +1099,32 @@ log_store_xml_get_events_for_dir (TplLogStoreXml *self,
 
   while ((name = g_dir_read_name (gdir)) != NULL)
     {
-      TplLogSearchHit *hit;
+      TplEntity *entity;
 
       if (!is_chatroom && strcmp (name, LOG_DIR_CHATROOMS) == 0)
         {
           gchar *filename = g_build_filename (dir, name, NULL);
-          hits = g_list_concat (hits,
-              log_store_xml_get_events_for_dir (self, filename, TRUE, account));
+          entities = g_list_concat (entities,
+              log_store_xml_get_entities_for_dir (self, filename, TRUE, account));
           g_free (filename);
           continue;
         }
 
-      hit = _tpl_log_manager_search_hit_new (account, name, type,
-          NULL);
+      if (is_chatroom)
+        entity = _tpl_entity_from_room_id (name);
+      else {
+        entity = _tpl_entity_new (name);
+        _tpl_entity_set_entity_type (entity, TPL_ENTITY_CONTACT);
+        /* FIXME Faking alias with identifier */
+        _tpl_entity_set_alias (entity, name);
+      }
 
-      hits = g_list_prepend (hits, hit);
+      entities = g_list_prepend (entities, entity);
     }
 
   g_dir_close (gdir);
 
-  return hits;
+  return entities;
 }
 
 
@@ -1153,22 +1156,24 @@ log_store_xml_get_events_for_date (TplLogStore *store,
 
 
 static GList *
-log_store_xml_get_events (TplLogStore *store,
+log_store_xml_get_entities (TplLogStore *store,
     TpAccount *account)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *dir;
-  GList *hits;
+  GList *entities;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  /* FIXME: What about chat rooms? Don't hardcode TPL_EVENT_SEARCH_TEXT */
+  /* We only need TPL_EVENT_SEARCH_TEXT as the room directory is a
+   * sub-directory of it, which will be handled by
+   * log_store_xml_get_entities_for_dir() */
   dir = log_store_xml_get_dir (self, account, NULL, TPL_EVENT_SEARCH_TEXT);
-  hits = log_store_xml_get_events_for_dir (self, dir, FALSE, account);
+  entities = log_store_xml_get_entities_for_dir (self, dir, FALSE, account);
   g_free (dir);
 
-  return hits;
+  return entities;
 }
 
 
@@ -1315,7 +1320,7 @@ log_store_iface_init (gpointer g_iface,
   iface->add_event = log_store_xml_add_event;
   iface->get_dates = log_store_xml_get_dates;
   iface->get_events_for_date = log_store_xml_get_events_for_date;
-  iface->get_events = log_store_xml_get_events;
+  iface->get_entities = log_store_xml_get_entities;
   iface->search_in_identifier =
     log_store_xml_search_in_identifier;
   iface->search_new = log_store_xml_search_new;

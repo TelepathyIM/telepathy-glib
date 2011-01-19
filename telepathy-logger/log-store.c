@@ -239,26 +239,26 @@ _tpl_log_store_get_recent_events (TplLogStore *self,
 
 
 /**
- * _tpl_log_store_get_events:
+ * _tpl_log_store_get_entities:
  * @self: a TplLogStore
  * @account: a TpAccount
  *
- * Retrieves a list of search hits, corrisponding to each buddy/chatroom id
- * the user exchanged at least a event with, using @account.
+ * Retrieves a list of #TplEntity, corresponding to each buddy/chatroom id
+ * the user exchanged at least a event with inside @account.
  *
- * Returns: a GList of (TplLogSearchHit *), to be freed using something like
- * g_list_foreach (lst, tpl_log_manager_search_free, NULL);
+ * Returns: a GList of #TplEntity, to be freed using something like
+ * g_list_foreach (lst, g_object_unref, NULL);
  * g_list_free (lst);
  */
 GList *
-_tpl_log_store_get_events (TplLogStore *self,
+_tpl_log_store_get_entities (TplLogStore *self,
     TpAccount *account)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_events == NULL)
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->get_entities == NULL)
     return NULL;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->get_events (self, account);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->get_entities (self, account);
 }
 
 

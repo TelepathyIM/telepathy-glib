@@ -53,7 +53,7 @@ GList * _tpl_log_manager_get_filtered_events (TplLogManager *manager,
     TplLogEventFilter filter,
     gpointer user_data);
 
-GList * _tpl_log_manager_get_events (TplLogManager *manager,
+GList * _tpl_log_manager_get_entities (TplLogManager *manager,
     TpAccount *account);
 
 GList * _tpl_log_manager_search (TplLogManager *manager,
@@ -87,8 +87,8 @@ TplLogSearchHit * _tpl_log_manager_search_hit_new (TpAccount *account,
 
 void _tpl_log_manager_search_hit_free (TplLogSearchHit *hit);
 
-gint _tpl_log_manager_search_hit_compare (TplLogSearchHit *a,
-    TplLogSearchHit *b);
+gint _tpl_entity_compare (TplEntity *e1,
+    TplEntity *e2);
 
 TplLogSearchHit * _tpl_log_manager_search_hit_copy (TplLogSearchHit *hit);
 

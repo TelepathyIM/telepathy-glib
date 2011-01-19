@@ -29,6 +29,7 @@
 #include "event-internal.h"
 #include "event-text.h"
 #include "event-text-internal.h"
+#include "entity-internal.h"
 #include "log-store-sqlite-internal.h"
 #include "log-manager-internal.h"
 
@@ -1126,7 +1127,7 @@ purge_event_timeout (gpointer logstore)
 }
 
 static GList *
-tpl_log_store_sqlite_get_events (TplLogStore *self,
+tpl_log_store_sqlite_get_entities (TplLogStore *self,
     TpAccount *account)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
@@ -1154,23 +1155,24 @@ tpl_log_store_sqlite_get_events (TplLogStore *self,
 
   while ((e = sqlite3_step (sql)) == SQLITE_ROW)
     {
-      TplLogSearchHit *hit;
+      TplEntity *entity;
       const char *identifier;
       gboolean chatroom;
-      TplEventSearchType type;
+      TplEntityType type;
 
       /* for some reason this returns unsigned char */
       identifier = (const char *) sqlite3_column_text (sql, 0);
       chatroom = sqlite3_column_int (sql, 1);
-      type = chatroom ? TPL_EVENT_SEARCH_TEXT_ROOM
-        : TPL_EVENT_SEARCH_TEXT;
+      type = chatroom ? TPL_ENTITY_ROOM : TPL_ENTITY_CONTACT;
 
       DEBUG ("identifier = %s, chatroom = %i", identifier, chatroom);
 
-      hit = _tpl_log_manager_search_hit_new (account, identifier, type,
-          NULL);
+      entity = _tpl_entity_new (identifier);
+      _tpl_entity_set_entity_type (entity, type);
+      /* FIXME Faking alias with identifier */
+      _tpl_entity_set_alias (entity, identifier);
 
-      list = g_list_prepend (list, hit);
+      list = g_list_prepend (list, entity);
     }
   if (e != SQLITE_DONE)
     {
@@ -1191,7 +1193,7 @@ log_store_iface_init (TplLogStoreInterface *iface)
 {
   iface->get_name = tpl_log_store_sqlite_get_name;
   iface->add_event = tpl_log_store_sqlite_add_event;
-  iface->get_events = tpl_log_store_sqlite_get_events;
+  iface->get_entities = tpl_log_store_sqlite_get_entities;
 }
 
 TplLogStore *
