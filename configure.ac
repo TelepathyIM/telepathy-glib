@@ -222,6 +222,7 @@ AC_CONFIG_FILES([
    telepathy-logger/telepathy-logger-0.1-uninstalled.pc
    tools/Makefile
    tests/Makefile
+   tests/lib/Makefile
    tests/suppressions/Makefile
    tests/twisted/Makefile
    tests/twisted/tools/Makefile

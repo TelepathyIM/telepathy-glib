@@ -2,7 +2,7 @@ if WANT_TWISTED_TESTS
 CHECKTWISTED = twisted
 endif
 
-SUBDIRS = $(CHECKTWISTED) suppressions
+SUBDIRS = $(CHECKTWISTED) suppressions lib
 
 LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
@@ -30,6 +30,10 @@ test_tpl_observer_SOURCES = \
 test_searches_SOURCES = \
 	test-searches.c \
 	constants.h
+
+test_entity_LDADD = \
+	$(top_builddir)/tests/lib/libtp-logger-tests.la \
+	$(LDADD)
 
 AM_CFLAGS = \
 	$(ERROR_CFLAGS) \

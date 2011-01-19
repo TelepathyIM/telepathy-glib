@@ -4,13 +4,13 @@
 # ============================= selinux ==================================
 
 {
-  selinux getdelim
-  Memcheck:Leak
-  fun:malloc
-  fun:getdelim
-  obj:/lib/libselinux.so.1
-  obj:/lib/libselinux.so.1
-  obj:/lib/libselinux.so.1
+   selinux getdelim
+   Memcheck:Leak
+   fun:malloc
+   fun:getdelim
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
+   obj:/lib/libselinux.so.1
 }
 
 
@@ -147,10 +147,17 @@
 }
 
 {
-  g_type_create_instance
-  Memcheck:Leak
-  ...
-  fun:g_type_create_instance
+   g_type_create_instance
+   Memcheck:Leak
+   ...
+   fun:g_type_create_instance
+}
+
+{
+   g_type_add_interface_static
+   Memcheck:Leak
+   ...
+   fun:g_type_add_interface_static
 }
 
 # ============================= dbus-glib =============================
@@ -240,6 +247,23 @@
    ...
    fun:dbus_connection_add_filter
    fun:tp_dbus_daemon_constructor
+}
+
+{
+   Leak in tp-glib 0.11.16 (Fedora 14)
+   Memcheck:Leak
+   ...
+   fun:g_simple_async_result_new
+   fun:tp_proxy_prepare_async
+}
+
+# ============================= tp-logger-tests ==========================
+
+{
+   tp_tests_object_new_static_class
+   Memcheck:Leak
+   ...
+   fun:tp_tests_object_new_static_class
 }
 
 # ============================= unclassified ==========================
