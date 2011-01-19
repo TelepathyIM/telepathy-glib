@@ -216,6 +216,30 @@ _globally_enabled_changed (TplConf *conf,
 
 
 static void
+_list_of_object_free (gpointer data)
+{
+  GList *lst = data; /* list of GObject */
+
+  if (!_LIST_TAKEN (lst))
+    g_list_foreach (lst, (GFunc) g_object_unref, NULL);
+
+  g_list_free (lst);
+}
+
+
+static void
+_list_of_date_free (gpointer data)
+{
+  GList *lst = data; /* list of (GDate *) */
+
+  if (!_LIST_TAKEN (lst))
+    g_list_foreach (lst, (GFunc) g_date_free, NULL);
+
+  g_list_free (lst);
+}
+
+
+static void
 tpl_log_manager_init (TplLogManager *self)
 {
   TplLogStore *store;
@@ -839,16 +863,6 @@ copy_date (const GDate *date)
 
 
 static void
-_get_dates_async_result_free (gpointer data)
-{
-  GList *lst = data; /* list of (GDate *) */
-
-  g_list_foreach (lst, (GFunc) g_date_free, NULL);
-  g_list_free (lst);
-}
-
-
-static void
 _get_dates_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -865,7 +879,7 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
       event_info->type);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      _get_dates_async_result_free);
+      _list_of_date_free);
 }
 
 
@@ -967,16 +981,6 @@ tpl_log_manager_get_dates_finish (TplLogManager *self,
 
 
 static void
-_get_events_for_date_async_result_free (gpointer data)
-{
-  GList *lst = data; /* list of TPL_EVENT */
-
-  g_list_foreach (lst, (GFunc) g_object_unref, NULL);
-  g_list_free (lst);
-}
-
-
-static void
 _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -995,7 +999,7 @@ _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
       event_info->date);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      _get_events_for_date_async_result_free);
+      _list_of_object_free);
 }
 
 
@@ -1092,16 +1096,6 @@ tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
 
 
 static void
-_get_filtered_events_async_result_free (gpointer data)
-{
-  GList *lst = data; /* list of TPL_EVENT */
-
-  g_list_foreach (lst, (GFunc) g_object_unref, NULL);
-  g_list_free (lst);
-}
-
-
-static void
 _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -1118,7 +1112,7 @@ _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
       event_info->num_events, event_info->filter, event_info->user_data);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      _get_filtered_events_async_result_free);
+      _list_of_object_free);
 }
 
 
@@ -1337,16 +1331,6 @@ tpl_log_manager_get_events_finish (TplLogManager *self,
 
 
 static void
-_search_in_identifier_async_result_free (gpointer data)
-{
-  GList *lst = data; /* list of TplSearchHit */
-
-  g_list_foreach (lst, (GFunc) _tpl_log_manager_search_hit_free, NULL);
-  g_list_free (lst);
-}
-
-
-static void
 _search_in_identifier_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -1363,7 +1347,7 @@ _search_in_identifier_async_thread (GSimpleAsyncResult *simple,
       event_info->search_text);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      _search_in_identifier_async_result_free);
+      (GDestroyNotify) tpl_log_manager_search_free);
 }
 
 
@@ -1439,16 +1423,6 @@ _tpl_log_manager_search_in_identifier_finish (TplLogManager *self,
 
 
 static void
-_search_new_async_result_free (gpointer data)
-{
-  GList *lst = data; /* list of TplSearchHit */
-
-  g_list_foreach (lst, (GFunc) _tpl_log_manager_search_hit_free, NULL);
-  g_list_free (lst);
-}
-
-
-static void
 _search_async_thread (GSimpleAsyncResult *simple,
     GObject *object,
     GCancellable *cancellable)
@@ -1464,7 +1438,7 @@ _search_async_thread (GSimpleAsyncResult *simple,
       event_info->search_text);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      _search_new_async_result_free);
+      (GDestroyNotify) tpl_log_manager_search_free);
 }
 
 
