@@ -74,6 +74,11 @@
  * The error domain for the #TplLogManager.
  */
 
+/* This macro is used to check if a list has been taken by a _finish()
+ * function call. It detects the marker set by _take_list() method. Those
+ * are used to avoid copying the full list on every call. */
+#define _LIST_TAKEN(l) ((l) != NULL && (l)->data == NULL)
+
 typedef struct
 {
   TplConf *conf;
@@ -212,6 +217,22 @@ _globally_enabled_changed (TplConf *conf,
 {
   DEBUG ("Logging has been globally %s",
       _tpl_conf_is_globally_enabled (conf) ? "enabled" : "disabled");
+}
+
+
+static GList *
+_take_list (GList *list)
+{
+  GList *copy = NULL;
+
+  if (list != NULL)
+    {
+      copy = g_new0 (GList, 1);
+      memcpy (copy, list, sizeof (GList));
+      memset (list, 0, sizeof (GList));
+    }
+
+  return copy;
 }
 
 
@@ -794,7 +815,8 @@ tpl_log_manager_search_free (GList *hits)
 
   for (l = hits; l != NULL; l = g_list_next (l))
     {
-      _tpl_log_manager_search_hit_free (l->data);
+      if (l->data != NULL)
+        _tpl_log_manager_search_hit_free (l->data);
     }
 
   g_list_free (hits);
@@ -964,17 +986,7 @@ tpl_log_manager_get_dates_finish (TplLogManager *self,
     return FALSE;
 
   if (dates != NULL)
-    {
-      GList *list, *l;
-
-      *dates = NULL;
-      list = g_simple_async_result_get_op_res_gpointer (simple);
-
-      for (l = list; l != NULL; l = g_list_next (l))
-        *dates = g_list_prepend (*dates, copy_date (l->data));
-
-      *dates = g_list_reverse (*dates);
-    }
+    *dates = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
 
   return TRUE;
 }
@@ -1084,12 +1096,7 @@ tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
     return FALSE;
 
   if (events != NULL)
-    {
-      *events = g_list_copy (g_simple_async_result_get_op_res_gpointer (
-            simple));
-
-      g_list_foreach (*events, (GFunc) g_object_ref, NULL);
-    }
+    *events = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
 
   return TRUE;
 }
@@ -1203,30 +1210,9 @@ tpl_log_manager_get_filtered_events_finish (TplLogManager *self,
     return FALSE;
 
   if (events != NULL)
-    {
-      *events = g_list_copy (g_simple_async_result_get_op_res_gpointer (
-            simple));
-
-      g_list_foreach (*events, (GFunc) g_object_ref, NULL);
-    }
+    *events = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
 
   return TRUE;
-}
-
-
-static GList *
-copy_search_hit_list (GList *list)
-{
-  GList *result = NULL;
-  GList *l;
-
-  for (l = list; l != NULL; l = g_list_next (l))
-    {
-      result = g_list_prepend (result,
-          _tpl_log_manager_search_hit_copy (l->data));
-    }
-
-  return g_list_reverse (result);
 }
 
 
@@ -1319,12 +1305,7 @@ tpl_log_manager_get_events_finish (TplLogManager *self,
     return FALSE;
 
   if (events != NULL)
-    {
-      GList *list;
-
-      list = g_simple_async_result_get_op_res_gpointer (simple);
-      *events = copy_search_hit_list (list);
-    }
+    *events = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
 
   return TRUE;
 }
@@ -1411,12 +1392,7 @@ _tpl_log_manager_search_in_identifier_finish (TplLogManager *self,
     return FALSE;
 
   if (hits != NULL)
-    {
-      GList *list;
-
-      list = g_simple_async_result_get_op_res_gpointer (simple);
-      *hits = copy_search_hit_list (list);
-    }
+    *hits = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
 
   return TRUE;
 }
@@ -1511,13 +1487,7 @@ tpl_log_manager_search_finish (TplLogManager *self,
     return FALSE;
 
   if (hits != NULL)
-    {
-      GList *list;
-
-      list = g_simple_async_result_get_op_res_gpointer (simple);
-      *hits = copy_search_hit_list (list);
-    }
-
+    *hits = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
   return TRUE;
 }
 
