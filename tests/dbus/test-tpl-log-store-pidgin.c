@@ -400,39 +400,6 @@ test_get_entities_jabber (PidginTestCaseFixture *fixture,
 }
 
 static void
-test_search_in_identifier (PidginTestCaseFixture *fixture,
-    gconstpointer user_data)
-{
-  GList *l = NULL;
-  TplLogSearchHit *hit;
-
-  l = log_store_pidgin_search_in_identifier (
-      TPL_LOG_STORE (fixture->store), fixture->account,
-      "user2@collabora.co.uk", TPL_EVENT_SEARCH_TEXT, "bla bla");
-
-  g_assert_cmpint (g_list_length (l), ==, 0);
-
-  tpl_log_manager_search_free (l);
-
-  l = log_store_pidgin_search_in_identifier (
-      TPL_LOG_STORE (fixture->store), fixture->account,
-      "user2@collabora.co.uk", TPL_EVENT_SEARCH_TEXT, "hey you");
-
-  g_assert_cmpint (g_list_length (l), ==, 1);
-  hit = g_list_nth_data (l, 0);
-  g_assert (hit->type == TPL_EVENT_SEARCH_TEXT);
-  g_assert_cmpstr (hit->id, ==, "user2@collabora.co.uk");
-
-  g_assert_cmpint (g_date_get_day (hit->date), ==, 10);
-  g_assert_cmpint (g_date_get_month (hit->date), ==, G_DATE_DECEMBER);
-  g_assert_cmpint (g_date_get_year (hit->date), ==, 2010);
-
-  tpl_log_manager_search_free (l);
-
-  return;
-}
-
-static void
 test_search_new (PidginTestCaseFixture *fixture,
     gconstpointer user_data)
 {
@@ -540,10 +507,6 @@ main (int argc, char **argv)
   g_test_add ("/log-store-pidgin/get-entities-jabber",
       PidginTestCaseFixture, params,
       setup, test_get_entities_jabber, teardown);
-
-  g_test_add ("/log-store-pidgin/search-in-identifier",
-      PidginTestCaseFixture, params, setup,
-      test_search_in_identifier, teardown);
 
   /* IRC account tests */
   params = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
