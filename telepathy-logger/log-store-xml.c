@@ -74,6 +74,7 @@ struct _TplLogStoreXmlPriv
   gboolean readable;
   gboolean writable;
   gboolean empathy_legacy;
+  gboolean test_mode;
   TpAccountManager *account_manager;
 };
 
@@ -83,7 +84,8 @@ enum {
     PROP_READABLE,
     PROP_WRITABLE,
     PROP_BASEDIR,
-    PROP_EMPATHY_LEGACY
+    PROP_EMPATHY_LEGACY,
+    PROP_TESTMODE
 };
 
 static void log_store_iface_init (gpointer g_iface, gpointer iface_data);
@@ -170,6 +172,9 @@ tpl_log_store_xml_get_property (GObject *object,
       case PROP_EMPATHY_LEGACY:
         g_value_set_boolean (value, priv->empathy_legacy);
         break;
+      case PROP_TESTMODE:
+        g_value_set_boolean (value, priv->test_mode);
+        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -201,6 +206,9 @@ tpl_log_store_xml_set_property (GObject *object,
         break;
       case PROP_BASEDIR:
         log_store_xml_set_basedir (self, g_value_get_string (value));
+        break;
+      case PROP_TESTMODE:
+        self->priv->test_mode = g_value_get_boolean (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -249,6 +257,12 @@ _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
       FALSE, G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_EMPATHY_LEGACY,
       param_spec);
+
+  param_spec = g_param_spec_boolean ("testmode",
+      "TestMode",
+      "Wheter the logstore is in testmode, for testsuite use only",
+      FALSE, G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_TESTMODE, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplLogStoreXmlPriv));
 }
@@ -1204,9 +1218,22 @@ log_store_xml_get_basedir (TplLogStoreXml *self)
   if (self->priv->basedir == NULL)
     {
       gchar *dir;
+      const char *user_data_dir;
+      const char *name;
 
-      dir = g_build_path (G_DIR_SEPARATOR_S, g_get_user_data_dir (),
-          log_store_xml_get_name ((TplLogStore *) self), "logs", NULL);
+      if (self->priv->test_mode && g_getenv ("TPL_TEST_LOG_DIR") != NULL)
+        {
+          user_data_dir = g_getenv ("TPL_TEST_LOG_DIR");
+          name = self->priv->empathy_legacy ? "Empathy" : "TpLogger";
+        }
+      else
+        {
+          user_data_dir = g_get_user_data_dir ();
+          name =  log_store_xml_get_name ((TplLogStore *) self);
+        }
+
+      dir = g_build_path (G_DIR_SEPARATOR_S, user_data_dir, name, "logs",
+          NULL);
       log_store_xml_set_basedir (self, dir);
       g_free (dir);
     }
