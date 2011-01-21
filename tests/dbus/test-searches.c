@@ -1,8 +1,8 @@
-#include "../../telepathy-logger/log-manager.c"
+#include "telepathy-logger/log-manager.c"
 
-#include "../lib/util.h"
-#include "../lib/simple-account.h"
-#include "../lib/simple-account-manager.h"
+#include "lib/util.h"
+#include "lib/simple-account.h"
+#include "lib/simple-account-manager.h"
 
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/log-manager-internal.h>

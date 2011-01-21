@@ -4,12 +4,7 @@ endif
 
 SUBDIRS = $(CHECKTWISTED) suppressions lib dbus
 
-LDADD = \
-	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
-	$(TPL_LIBS)
-
-TEST_EXECUTABLES = \
-	test-entity			\
+noinst_PROGRAMS = \
 	test-tpl-channel		\
 	test-tpl-conf			\
 	test-tpl-log-store-sqlite	\
@@ -17,9 +12,11 @@ TEST_EXECUTABLES = \
 	test-tpl-observer		\
 	$(NULL)
 
-noinst_PROGRAMS = \
-	${TEST_EXECUTABLES}	\
-	$(NULL)
+TESTS = $(noinst_PROGRAMS)
+
+LDADD = \
+	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
+	$(TPL_LIBS)
 
 test_tpl_channel_SOURCES = \
 	test-tpl-channel.c	\
@@ -32,15 +29,6 @@ test_tpl_observer_SOURCES = \
 	tpl-channel-test.c	\
 	$(NULL)
 
-test_searches_SOURCES = \
-	test-searches.c \
-	constants.h	\
-	$(NULL)
-
-test_entity_LDADD = \
-	$(top_builddir)/tests/lib/libtp-logger-tests.la \
-	$(LDADD) \
-	$(NULL)
 
 AM_CFLAGS = \
 	$(ERROR_CFLAGS) \
@@ -48,8 +36,6 @@ AM_CFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_builddir) \
 	$(NULL)
-
-TESTS = $(TEST_EXECUTABLES)
 
 TESTS_ENVIRONMENT = \
 	G_DEBUG=fatal-warnings,fatal-criticals		\
@@ -75,7 +61,6 @@ check-valgrind: $(TESTS)
 check_c_sources = \
 	$(dbus_test_sources)	\
 	tpl-channel-test.c	\
-	test-entity.c		\
 	test-tpl-channel.c	\
 	test-tpl-conf.c		\
 	test-tpl-observer.c	\

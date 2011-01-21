@@ -1,11 +1,11 @@
 /* FIXME: hugly kludge: we need to include all the declarations which are used
  * by the GInterface and thus not in the -internal.h */
-#include "../../telepathy-logger/log-store-pidgin.c"
+#include "telepathy-logger/log-store-pidgin.c"
 
 
-#include "../lib/util.h"
-#include "../lib/simple-account.h"
-#include "../lib/simple-account-manager.h"
+#include "lib/util.h"
+#include "lib/simple-account.h"
+#include "lib/simple-account-manager.h"
 
 #include <telepathy-logger/log-store-pidgin-internal.h>
 #include <telepathy-logger/event-text-internal.h>

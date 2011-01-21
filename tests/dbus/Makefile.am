@@ -1,7 +1,8 @@
 noinst_PROGRAMS = \
-    test-searches 		\
-    test-tpl-log-store-pidgin 	\
-    $(NULL)
+	test-entity 			\
+	test-searches 			\
+	test-tpl-log-store-pidgin 	\
+	$(NULL)
 
 TESTS = $(noinst_PROGRAMS)
 
@@ -11,18 +12,27 @@ LDADD = \
 	$(TPL_LIBS) 						\
 	$(NULL)
 
+test_searches_SOURCES = \
+	test-searches.c \
+	constants.h	\
+	$(NULL)
+
+test_entity_LDADD = \
+	$(top_builddir)/tests/lib/libtp-logger-tests.la \
+	$(LDADD) \
+	$(NULL)
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
-AM_CPPFLAGS = \
-    -I${top_srcdir} -I${top_builddir}	\
-    -D_TP_IGNORE_DEPRECATIONS		\
-    $(TPL_CFLAGS)			\
-    $(NULL)
-
-AM_CFLAGS = $(ERROR_CFLAGS)
+AM_CFLAGS = \
+	$(ERROR_CFLAGS) \
+	$(TPL_CFLAGS) \
+	-I$(top_srcdir) \
+	-I$(top_builddir) \
+	-I$(top_srcdir)/tests
+	$(NULL)
 
 TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@				\
