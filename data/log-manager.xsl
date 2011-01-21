@@ -18,7 +18,7 @@ To generate a HTML file, try something like:
           <xsl:text>
             body {
               background: #fff;
-	      font-family: Verdana, "Bitstream Vera Sans", Sans-Serif; 
+	      font-family: Verdana, "Bitstream Vera Sans", Sans-Serif;
 	      font-size: 10pt;
             }
             .stamp {
@@ -83,7 +83,7 @@ To generate a HTML file, try something like:
         <xsl:with-param name="stamp" select="@time"/>
       </xsl:call-template>
     </div>
-  </xsl:template>  
+  </xsl:template>
 
   <xsl:template match="a">
     <xsl:text disable-output-escaping="yes">&lt;a href="</xsl:text>
@@ -146,7 +146,7 @@ To generate a HTML file, try something like:
       <span class="{$nick-class}">
         &lt;<xsl:value-of select="@name"/>&gt;
       </span>
- 
+
       <xsl:apply-templates/>
       <br/>
 

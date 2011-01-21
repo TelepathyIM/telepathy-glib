@@ -22,7 +22,7 @@
 #ifndef __TPL_CHANNEL_TEST_H__
 #define __TPL_CHANNEL_TEST_H__
 
-/* 
+/*
  * http://telepathy.freedesktop.org/doc/telepathy-glib/telepathy-glib-channel-text.html#tp-cli-channel-type-text-connect-to-received
  */
 

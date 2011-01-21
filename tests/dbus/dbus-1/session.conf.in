@@ -1,7 +1,7 @@
 <!-- Copied from telepathy-gabble (which doubtless copied it from somewhere
      else) and modified.
      This configuration file controls the per-user-login-session message bus.
-     Add a session-local.conf and edit that rather than changing this 
+     Add a session-local.conf and edit that rather than changing this
      file directly. -->
 
 <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
@@ -23,7 +23,7 @@
     <allow own="*"/>
   </policy>
 
-  <!-- This is included last so local configuration can override what's 
+  <!-- This is included last so local configuration can override what's
        in this standard file -->
 
 
