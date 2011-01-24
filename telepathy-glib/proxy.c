@@ -1574,7 +1574,7 @@ _tp_proxy_is_preparing (gpointer self,
  * |[
  * TpChannel *channel = ...;
  *
- * tp_proxy_prepare_async (channel, NULL, NULL, callback, user_data);
+ * tp_proxy_prepare_async (channel, NULL, callback, user_data);
  * ]|
  *
  * is equivalent to
