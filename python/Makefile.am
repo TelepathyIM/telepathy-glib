@@ -1,4 +1,4 @@
-SUBDIRS = codegen
+SUBDIRS = codegen examples
 
 PYDEFS=`pkg-config --variable=defsdir pygtk-2.0`
 GSTPYDEFS=`pkg-config --variable=defsdir gst-python-0.10`

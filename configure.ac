@@ -149,4 +149,5 @@ AC_OUTPUT( Makefile \
           tools/Makefile \
           python/Makefile \
           python/codegen/Makefile \
+          python/examples/Makefile \
 )
