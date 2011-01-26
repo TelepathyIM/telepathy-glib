@@ -31,6 +31,7 @@ enum
   PROP_TF_CHANNEL = 1,
   PROP_FS_CONFERENCE,
   PROP_FS_SESSION,
+  PROP_MEDIA_TYPE,
   PROP_SINK_PAD
 };
 
@@ -93,6 +94,14 @@ tf_content_class_init (TfContentClass *klass)
           "Sink Pad",
           "Sink GstPad for this content",
           GST_TYPE_PAD,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_MEDIA_TYPE,
+      g_param_spec_enum ("media-type",
+          "MediaType",
+          "The FsMediaType for this content",
+          FS_TYPE_MEDIA_TYPE,
+          0,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
