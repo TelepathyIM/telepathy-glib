@@ -5,6 +5,13 @@
   (gtype-id "TF_TYPE_CHANNEL")
 )
 
+(define-object Content
+  (in-module "Tf")
+  (parent "GObject")
+  (c-name "TfContent")
+  (gtype-id "TF_TYPE_CONTENT")
+)
+
 (define-object Stream
   (in-module "Tf")
   (parent "GObject")
@@ -12,22 +19,20 @@
   (gtype-id "TF_TYPE_STREAM")
 )
 
-(define-function tf_channel_new
-  (c-name "tf_channel_new")
-    (is-constructor-of "TfChannel")
-    (return-type "TfChannel*")
-    (parameters
+(define-function tf_channel_new_async
+  (c-name "tf_channel_new_async")
+  (return-type "none")
+  (parameters
          '("const-gchar*" "connection_busname")
          '("const-gchar*" "connection_path")
          '("const-gchar*" "channel_path")
-    )
+         '("GAsyncReadyCallback" "callback")
+  )
 )
-
 
 ;; Overide these because TpMediaStreamError is not a real GObject enum
 ;
 ; Can we directly override it instead ?
-
 
 (define-method error
   (of-object "TfChannel")
