@@ -5,6 +5,13 @@
   (gtype-id "TF_TYPE_CHANNEL")
 )
 
+(define-object Content
+  (in-module "Tf")
+  (parent "GObject")
+  (c-name "TfContent")
+  (gtype-id "TF_TYPE_CONTENT")
+)
+
 (define-object Stream
   (in-module "Tf")
   (parent "GObject")
@@ -12,22 +19,20 @@
   (gtype-id "TF_TYPE_STREAM")
 )
 
-(define-function tf_channel_new
-  (c-name "tf_channel_new")
-    (is-constructor-of "TfChannel")
-    (return-type "TfChannel*")
-    (parameters
+(define-function tf_channel_new_async
+  (c-name "tf_channel_new_async")
+  (return-type "none")
+  (parameters
          '("const-gchar*" "connection_busname")
          '("const-gchar*" "connection_path")
          '("const-gchar*" "channel_path")
-    )
+         '("GAsyncReadyCallback" "callback")
+  )
 )
-
 
 ;; Overide these because TpMediaStreamError is not a real GObject enum
 ;
 ; Can we directly override it instead ?
-
 
 (define-method error
   (of-object "TfChannel")
@@ -61,31 +66,46 @@
   (return-type "GType")
 )
 
-(define-method lookup_stream
-  (of-object "TfChannel")
-  (c-name "tf_channel_lookup_stream")
-  (return-type "TfStream*")
-  (parameters
-    '("guint" "stream_id")
-  )
-)
-
-(define-method foreach_stream
-  (of-object "TfChannel")
-  (c-name "tf_channel_foreach_stream")
-  (return-type "none")
-  (parameters
-    '("TfChannelStreamFunc" "func")
-    '("gpointer" "user_data")
-  )
-)
-
 (define-method bus_message
   (of-object "TfChannel")
   (c-name "tf_channel_bus_message")
   (return-type "gboolean")
   (parameters
     '("GstMessage*" "message")
+  )
+)
+
+
+;; -*- scheme -*-
+; object definitions ...
+;; Enumerations and flags ...
+
+
+;; From content.h
+
+(define-function tf_content_get_type
+  (c-name "tf_content_get_type")
+  (return-type "GType")
+)
+
+(define-method error
+  (of-object "TfContent")
+  (c-name "tf_content_error")
+  (return-type "none")
+  (parameters
+    '("guint" "reason")
+    '("const-gchar*" "detailed_reason")
+    '("const-gchar*" "message")
+  )
+)
+
+(define-method set_codec_preferences
+  (of-object "TfContent")
+  (c-name "tf_content_set_codec_preferences")
+  (return-type "gboolean")
+  (parameters
+    '("GList*" "codec_preferences")
+    '("GError**" "error")
   )
 )
 
