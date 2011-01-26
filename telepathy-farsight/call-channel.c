@@ -46,7 +46,6 @@ G_DEFINE_TYPE_WITH_CODE (TfCallChannel, tf_call_channel, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
         call_channel_async_initable_init))
 
-
 enum
 {
   PROP_FS_CONFERENCES = 1
@@ -203,7 +202,7 @@ tf_call_channel_init_async (GAsyncInitable *initable,
 
   tp_cli_dbus_properties_call_get (self->proxy, -1,
       TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
-      TF_FUTURE_PROP_CHANNEL_TYPE_CALL_HARDWARE_STREAMING,
+      "HardwareStreaming",
       got_hardware_streaming, res, g_object_unref, G_OBJECT (self));
 }
 
@@ -292,7 +291,6 @@ content_ready (GObject *object, GAsyncResult *res, gpointer user_data)
 {
   TfCallChannel *self = user_data;
   TfCallContent *content = TF_CALL_CONTENT (object);
-
 
   if (g_async_initable_init_finish (G_ASYNC_INITABLE (object), res, NULL))
     {
@@ -458,8 +456,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
     }
 
   tp_cli_dbus_properties_call_get (proxy, -1,
-      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
-      TF_FUTURE_PROP_CHANNEL_TYPE_CALL_CONTENTS,
+      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
       got_contents, NULL, NULL, G_OBJECT (self));
 
   g_simple_async_result_set_op_res_gboolean (res, TRUE);
