@@ -359,6 +359,31 @@ tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs)
   return fscodecs;
 }
 
+static void
+process_codec_offer_try_codecs (TfCallContent *self, FsStream *fsstream,
+    TpProxy *offer, GList *fscodecs)
+{
+  gboolean success = TRUE;
+  GError *error = NULL;
+
+  if (fscodecs != NULL)
+    success = fs_stream_set_remote_codecs (fsstream, fscodecs, &error);
+
+  fs_codec_list_destroy (fscodecs);
+
+  if (success)
+    {
+      self->current_offer = offer;
+      tf_call_content_try_sending_codecs (self);
+    }
+  else
+    {
+      tf_future_cli_call_content_codec_offer_call_reject (offer,
+          -1, NULL, NULL, NULL, NULL);
+      g_object_unref (offer);
+    }
+
+}
 
 static void
 process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
@@ -366,9 +391,8 @@ process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
 {
   TpProxy *proxy;
   GError *error = NULL;
-  GList *fscodecs;
   FsStream *fsstream;
-  gboolean success;
+  GList *fscodecs;
 
   if (!tp_dbus_check_valid_object_path (offer_objpath, &error))
     {
@@ -400,22 +424,7 @@ process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
       return;
     }
 
-  success = fs_stream_set_remote_codecs (fsstream, fscodecs, &error);
-  _tf_call_content_put_fsstream (self, fsstream);
-  fs_codec_list_destroy (fscodecs);
-
-  if (success)
-    {
-      self->current_offer = proxy;
-      tf_call_content_try_sending_codecs (self);
-    }
-  else
-    {
-      tf_future_cli_call_content_codec_offer_call_reject (self->current_offer,
-          -1, NULL, NULL, NULL, NULL);
-      g_object_unref (proxy);
-    }
-
+  process_codec_offer_try_codecs (self, fsstream, proxy, fscodecs);
 }
 
 static void
@@ -1051,6 +1060,14 @@ _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
 
   tp_g_signal_connect_object (s, "src-pad-added",
       G_CALLBACK (src_pad_added), content, 0);
+
+  g_ptr_array_add (content->fsstreams, cfs);
+  if (content->current_offer != NULL
+      && content->current_offer_contact_handle == contact_handle)
+  {
+    process_codec_offer_try_codecs (content, s, content->current_offer,
+      content->current_offer_fscodecs);
+  }
 
   return s;
 }
