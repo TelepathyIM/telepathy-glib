@@ -102,8 +102,12 @@ static gboolean tf_channel_init_finish (GAsyncInitable *initable,
     GAsyncResult *res,
     GError **error);
 
-static void content_added (TfContent *content, TfChannel *self);
-static void content_removed (TfContent *content, TfChannel *self);
+static void content_added (GObject *proxy,
+    TfContent *content,
+    TfChannel *self);
+static void content_removed (GObject *proxy,
+    TfContent *content,
+    TfChannel *self);
 
 
 static void
@@ -589,7 +593,7 @@ tf_channel_bus_message (TfChannel *channel,
 }
 
 static void
-channel_fs_conference_add (GObject *chan, FsConference *conf,
+channel_fs_conference_add (GObject *proxy, FsConference *conf,
     TfChannel *self)
 {
   g_object_notify (G_OBJECT (self), "fs-conferences");
@@ -598,7 +602,7 @@ channel_fs_conference_add (GObject *chan, FsConference *conf,
 }
 
 static void
-channel_fs_conference_remove (GObject *chan, FsConference *conf,
+channel_fs_conference_remove (GObject *proxy, FsConference *conf,
     TfChannel *self)
 {
   g_object_notify (G_OBJECT (self), "fs-conferences");
@@ -607,13 +611,13 @@ channel_fs_conference_remove (GObject *chan, FsConference *conf,
 }
 
 static void
-content_added (TfContent *content, TfChannel *self)
+content_added (GObject *proxy, TfContent *content, TfChannel *self)
 {
   g_signal_emit (self, signals[SIGNAL_CONTENT_ADDED], 0, content);
 }
 
 static void
-content_removed (TfContent *content, TfChannel *self)
+content_removed (GObject *proxy, TfContent *content, TfChannel *self)
 {
   g_signal_emit (self, signals[SIGNAL_CONTENT_REMOVED], 0, content);
 }
