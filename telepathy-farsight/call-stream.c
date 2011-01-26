@@ -944,8 +944,7 @@ cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
   GValueArray *gva;
   GHashTable *extra_info;
 
-  extra_info = g_hash_table_new_full (g_str_hash, g_str_equal,
-      NULL, (GDestroyNotify) tp_g_value_slice_free);
+  extra_info = tp_asv_new (NULL, NULL);
   if (candidate->priority)
     tp_asv_set_uint32 (extra_info, "Priority", candidate->priority);
 
