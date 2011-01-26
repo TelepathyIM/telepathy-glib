@@ -45,9 +45,26 @@ enum
 static guint signals[SIGNAL_COUNT] = {0};
 
 static void
+tf_content_get_property (GObject    *object,
+    guint       property_id,
+    GValue     *value,
+    GParamSpec *pspec)
+{
+  switch (property_id)
+    {
+      /* Other properties need to be overwritten */
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
 tf_content_class_init (TfContentClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->get_property = tf_content_get_property;
 
   g_object_class_install_property (object_class, PROP_TF_CHANNEL,
       g_param_spec_object ("tf-channel",
