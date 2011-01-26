@@ -2,6 +2,7 @@
 
 HEADERS=" \
     channel.h \
+    content.h \
     stream.h"
 
 srcdir=../telepathy-farsight/
