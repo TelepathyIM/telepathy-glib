@@ -87,9 +87,11 @@ G_DEFINE_TYPE_WITH_CODE (TfCallContent, tf_call_content, TF_TYPE_CONTENT,
 
 enum
 {
-  PROP_FS_CONFERENCE = 1,
+  PROP_TF_CHANNEL = 1,
+  PROP_FS_CONFERENCE,
   PROP_FS_SESSION,
-  PROP_SINK_PAD
+  PROP_SINK_PAD,
+  PROP_MEDIA_TYPE,
 };
 
 enum
@@ -151,12 +153,16 @@ tf_call_content_class_init (TfCallContentClass *klass)
 
   content_class->set_codec_preferences = tf_call_content_set_codec_preferences;
 
+  g_object_class_override_property (object_class, PROP_TF_CHANNEL,
+      "tf-channel");
   g_object_class_override_property (object_class, PROP_FS_CONFERENCE,
       "fs-conference");
   g_object_class_override_property (object_class, PROP_FS_SESSION,
       "fs-session");
   g_object_class_override_property (object_class, PROP_SINK_PAD,
       "sink-pad");
+  g_object_class_override_property (object_class, PROP_MEDIA_TYPE,
+      "media-type");
 }
 
 static void
@@ -240,6 +246,9 @@ tf_call_content_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_TF_CHANNEL:
+      if (self->call_channel)
+        g_value_set_object (value, self->call_channel);
     case PROP_FS_CONFERENCE:
       if (self->fsconference)
         g_value_set_object (value, self->fsconference);
@@ -251,6 +260,9 @@ tf_call_content_get_property (GObject    *object,
     case PROP_SINK_PAD:
       if (self->fssession)
         g_object_get_property (G_OBJECT (self->fssession), "sink-pad", value);
+      break;
+    case PROP_MEDIA_TYPE:
+      g_value_set_enum (value, tf_call_content_get_fs_media_type (self));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
