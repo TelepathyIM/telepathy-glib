@@ -153,9 +153,11 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
   gchar *transmitter;
   GError *error = NULL;
   guint n_params = 0;
-  GParameter params[6];
+  GParameter params[6] = { {NULL,} };
   GList *preferred_local_candidates = NULL;
   guint i;
+
+  memset (params, 0, sizeof(params));
 
   if (!self->server_info_retrieved ||
       !self->has_contact ||
@@ -225,6 +227,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
            "org.freedesktop.Telepathy.Error.NotImplemented",
            "Unknown transport type %d", self->transport_type);
+       return;
     }
 
   if (self->stun_servers->len)
