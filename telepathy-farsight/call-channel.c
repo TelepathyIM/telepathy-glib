@@ -108,7 +108,7 @@ tf_call_channel_class_init (TfCallChannelClass *klass)
   object_class->get_property = tf_call_channel_get_property;
 
   g_object_class_install_property (object_class, PROP_FS_CONFERENCES,
-      g_param_spec_object ("fs-conferences",
+      g_param_spec_boxed ("fs-conferences",
           "Farsight2 FsConference object",
           "GPtrArray of Farsight2 FsConferences for this channel",
           G_TYPE_PTR_ARRAY,
