@@ -61,6 +61,8 @@ struct _TfCallContent {
   GList *current_offer_fscodecs;
 
   GHashTable *streams; /* NULL before getting the first streams */
+  /* Streams for which we don't have a session yet*/
+  GList *outstanding_streams;
 
   GMutex *mutex;
 
@@ -271,7 +273,7 @@ tf_call_content_get_property (GObject    *object,
 }
 
 static void
-add_stream (TfCallContent *self, const gchar *stream_path)
+create_stream (TfCallContent *self, gchar *stream_path)
 {
   GError *error = NULL;
   TfCallStream *stream = tf_call_stream_new (self->call_channel, self,
@@ -285,9 +287,35 @@ add_stream (TfCallContent *self, const gchar *stream_path)
       return;
     }
 
-  g_hash_table_insert (self->streams, g_strdup (stream_path), stream);
+  g_hash_table_insert (self->streams, stream_path, stream);
 }
 
+static void
+add_stream (TfCallContent *self, const gchar *stream_path)
+{
+
+  if (!self->fsconference)
+  {
+    self->outstanding_streams = g_list_prepend (self->outstanding_streams,
+      g_strdup (stream_path));
+  } else {
+    create_stream (self, g_strdup (stream_path));
+  }
+}
+
+static void
+update_streams (TfCallContent *self)
+{
+  GList *l;
+
+  g_assert (self->fsconference);
+
+  for (l = self->outstanding_streams ; l != NULL; l = l->next)
+    create_stream (self, l->data);
+
+  g_list_free (self->outstanding_streams);
+  self->outstanding_streams = NULL;
+}
 
 static void
 tpparam_to_fsparam (gpointer key, gpointer value, gpointer user_data)
@@ -391,29 +419,113 @@ process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
 }
 
 static void
-got_codec_offer_property (TpProxy *proxy, const GValue *out_Value,
+got_content_media_properties (TpProxy *proxy, GHashTable *properties,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  GSimpleAsyncResult *res = user_data;
   GValueArray *gva;
   const gchar *offer_objpath;
   guint contact;
+  GError *myerror = NULL;
   GPtrArray *codecs;
+  guint32 packetization;
+  const gchar *conference_type;
+  gboolean valid;
 
-  if (!G_VALUE_HOLDS (out_Value, TF_FUTURE_STRUCT_TYPE_CODEC_OFFERING))
+  packetization = tp_asv_get_uint32 (properties, "Packetization", &valid);
+
+  if (!valid)
+    goto invalid_property;
+
+  g_assert (self->fssession == NULL);
+
+  switch (packetization)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "", "Error getting the Content's properties: invalid type");
+      case TF_FUTURE_CALL_CONTENT_PACKETIZATION_TYPE_RTP:
+        conference_type = "rtp";
+        break;
+      case TF_FUTURE_CALL_CONTENT_PACKETIZATION_TYPE_RAW:
+        conference_type = "raw";
+        break;
+      default:
+        tf_call_content_error (self,
+          TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
+          "", "Could not create FsConference for type %d", packetization);
+        g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Could not create FsConference for type %d", packetization);
+        g_simple_async_result_complete (res);
+        g_object_unref (res);
+        return;
+    }
+
+  self->fsconference = _tf_call_channel_get_conference (self->call_channel,
+      conference_type);
+  if (!self->fsconference)
+    {
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
+          "", "Could not create FsConference for type %s", conference_type);
+      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Error getting the Content's properties: invalid type");
+      g_simple_async_result_complete (res);
+      g_object_unref (res);
       return;
     }
 
-  gva = g_value_get_boxed (out_Value);
+  self->fssession = fs_conference_new_session (self->fsconference,
+      tp_media_type_to_fs (self->media_type), &myerror);
+
+  if (!self->fssession)
+    {
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
+          "", "Could not create FsSession: %s", myerror->message);
+      g_simple_async_result_set_from_error (res, myerror);
+      g_simple_async_result_complete (res);
+      g_clear_error (&myerror);
+      return;
+    }
+
+  if (error)
+    {
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Error getting the Content's properties: %s", error->message);
+      g_simple_async_result_set_from_error (res, error);
+      g_simple_async_result_complete (res);
+      return;
+    }
+
+  /* No process outstanding streams */
+  update_streams (self);
+
+  gva = tp_asv_get_boxed (properties, "CodecOffer",
+    TF_FUTURE_STRUCT_TYPE_CODEC_OFFERING);
+  if (gva == NULL)
+    {
+      goto invalid_property;
+    }
+
+  /* First complete so we get signalled and the preferences can be set, then
+   * start looking at the offer */
+  g_simple_async_result_set_op_res_gboolean (res, TRUE);
+  g_simple_async_result_complete (res);
+  g_object_unref (res);
 
   tp_value_array_unpack (gva, 3, &offer_objpath, &contact, &codecs);
 
   process_codec_offer (self, offer_objpath, contact, codecs);
 
   self->got_codec_offer_property = TRUE;
+
+  return;
+
+ invalid_property:
+  tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+      "", "Error getting the Content's properties: invalid type");
+  g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+      "Error getting the Content's properties: invalid type");
+  g_simple_async_result_complete (res);
+  g_object_unref (res);
+  return;
 }
 
 
@@ -454,7 +566,6 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   GError *myerror = NULL;
   guint i;
   const gchar * const *interfaces;
-  const gchar * conference_type;
   gboolean got_media_interface = FALSE;;
 
   if (error)
@@ -463,6 +574,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
           "", "Error getting the Content's properties: %s", error->message);
       g_simple_async_result_set_from_error (res, error);
       g_simple_async_result_complete (res);
+      g_object_unref (res);
       return;
     }
 
@@ -473,6 +585,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
       g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
           "Error getting the Content's properties: there are none");
       g_simple_async_result_complete (res);
+      g_object_unref (res);
       return;
     }
 
@@ -494,50 +607,19 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
           "Content does not have the media interface,"
           " but HardwareStreaming was NOT true");
       g_simple_async_result_complete (res);
+      g_object_unref (res);
       return;
     }
-
 
   self->media_type = tp_asv_get_uint32 (out_Properties, "Type", &valid);
   if (!valid)
     goto invalid_property;
 
 
-  conference_type = tp_asv_get_string (out_Properties, "Packetization");
-  if (!conference_type)
-    goto invalid_property;
-
   streams = tp_asv_get_boxed (out_Properties, "Streams",
       TP_ARRAY_TYPE_OBJECT_PATH_LIST);
   if (!streams)
     goto invalid_property;
-
-  g_assert (self->fssession == NULL);
-
-  self->fsconference = _tf_call_channel_get_conference (self->call_channel,
-      conference_type);
-  if (!self->fsconference)
-    {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
-          "", "Could not create FsConference for type %s", conference_type);
-      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-          "Error getting the Content's properties: invalid type");
-      g_simple_async_result_complete (res);
-      return;
-    }
-
-  self->fssession = fs_conference_new_session (self->fsconference,
-      tp_media_type_to_fs (self->media_type), &myerror);
-
-  if (!self->fssession)
-    {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
-          "", "Could not create FsSession: %s", myerror->message);
-      g_simple_async_result_set_from_error (res, myerror);
-      g_simple_async_result_complete (res);
-      g_clear_error (&myerror);
-      return;
-    }
 
   self->streams = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, g_object_unref);
@@ -560,16 +642,14 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
           myerror->message);
       g_simple_async_result_set_from_error (res, myerror);
       g_simple_async_result_complete (res);
+      g_object_unref (res);
       g_clear_error (&myerror);
       return;
     }
 
-  g_simple_async_result_set_op_res_gboolean (res, TRUE);
-  g_simple_async_result_complete (res);
-
-  tp_cli_dbus_properties_call_get (proxy, -1,
-      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA, "CodecOffer",
-      got_codec_offer_property, NULL, NULL, G_OBJECT (self));
+  tp_cli_dbus_properties_call_get_all (proxy, -1,
+      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
+      got_content_media_properties, res, NULL, G_OBJECT (self));
 
   return;
 
@@ -579,6 +659,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
       "Error getting the Content's properties: invalid type");
   g_simple_async_result_complete (res);
+  g_object_unref (res);
   return;
 }
 
@@ -670,7 +751,7 @@ tf_call_content_init_async (GAsyncInitable *initable,
 
   tp_cli_dbus_properties_call_get_all (self->proxy, -1,
       TF_FUTURE_IFACE_CALL_CONTENT, got_content_properties, res,
-      g_object_unref, G_OBJECT (self));
+      NULL, G_OBJECT (self));
 }
 
 static gboolean
