@@ -118,12 +118,8 @@ local_sending_state_changed (TfFutureCallStream *proxy,
             }
           else
             {
-              tf_future_cli_call_stream_call_set_sending (self->proxy,
-                  -1, TF_FUTURE_SENDING_STATE_NONE,
-                  TF_FUTURE_STREAM_SENDING_CHANGE_REASON_RESOURCE_UNAVAILABLE,
-                  "", "Could not open send resource",
-                  NULL, NULL, NULL, NULL);
-
+              /* FIXME add a way to call to report media errors */
+              g_warning ("Sending failed");
               return;
             }
         }
@@ -131,19 +127,13 @@ local_sending_state_changed (TfFutureCallStream *proxy,
 
   switch (arg_State)
     {
+    case TF_FUTURE_SENDING_STATE_PENDING_STOP_SENDING:
     case TF_FUTURE_SENDING_STATE_PENDING_SEND:
-      tf_future_cli_call_stream_call_set_sending (
-          self->proxy, -1, TF_FUTURE_SENDING_STATE_SENDING, 0, "", "",
-          NULL, NULL, NULL, NULL);
-      /* fallthrough */
+      /* the UI should respond to these */
+      break;
     case TF_FUTURE_SENDING_STATE_SENDING:
       g_object_set (self->fsstream, "direction", FS_DIRECTION_BOTH, NULL);
       break;
-    case TF_FUTURE_SENDING_STATE_PENDING_STOP_SENDING:
-      tf_future_cli_call_stream_call_set_sending (self->proxy,
-          -1, TF_FUTURE_SENDING_STATE_NONE, 0, "", "",
-              NULL, NULL, NULL, NULL);
-      /* fallthrough */
     case TF_FUTURE_SENDING_STATE_NONE:
       if (self->has_send_resource)
         {
