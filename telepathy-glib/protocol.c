@@ -1452,6 +1452,9 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
   tp_asv_take_string (immutables, TP_PROP_PROTOCOL_ICON,
       replace_null_with_empty (
         g_key_file_get_string (file, group, "Icon", NULL)));
+  tp_asv_take_boxed (immutables, TP_PROP_PROTOCOL_AUTHENTICATION_TYPES,
+      G_TYPE_STRV, g_key_file_get_string_list (file, group,
+          "AuthenticationTypes", NULL, NULL));
 
   rccs = g_ptr_array_new ();
 
