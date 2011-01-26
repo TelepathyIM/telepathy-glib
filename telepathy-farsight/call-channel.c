@@ -289,7 +289,7 @@ tf_call_channel_get_property (GObject    *object,
 static void
 content_ready (GObject *object, GAsyncResult *res, gpointer user_data)
 {
-  TfCallChannel *self = user_data;
+  TfCallChannel *self = TF_CALL_CHANNEL (user_data);
   TfCallContent *content = TF_CALL_CONTENT (object);
 
   if (g_async_initable_init_finish (G_ASYNC_INITABLE (object), res, NULL))
