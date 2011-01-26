@@ -683,22 +683,35 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
   self->transport_type =
       tp_asv_get_uint32 (out_Properties, "Transport", &valid);
   if (!valid)
+  {
+    g_warning ("No valid transport");
     goto invalid_property;
+  }
 
   stun_servers = tp_asv_get_boxed (out_Properties, "STUNServers",
-      TP_STRUCT_TYPE_SOCKET_ADDRESS_IP);
+      TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST);
   if (!stun_servers)
+  {
+    g_warning ("No valid STUN servers");
     goto invalid_property;
+  }
 
-  relay_info = tp_asv_get_boxed (out_Properties, "STUNServers",
+  relay_info = tp_asv_get_boxed (out_Properties, "RelayInfo",
       TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST);
   if (!relay_info)
+  {
+    g_warning ("No valid RelayInfo");
     goto invalid_property;
+  }
 
   self->server_info_retrieved = tp_asv_get_boolean (out_Properties,
       "HasServerInfo", &valid);
   if (!valid)
+  {
+    g_warning ("No valid server info");
     goto invalid_property;
+  }
+
 
   self->stun_servers = g_boxed_copy (TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST,
       stun_servers);
@@ -746,7 +759,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
   guint i;
   const gchar * const * interfaces;
   gboolean got_media_interface = FALSE;
-  gboolean local_sending_state;
+  guint32 local_sending_state;
   GHashTable *members;
   GHashTableIter iter;
   gpointer key, value;
@@ -790,7 +803,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
   if (!members)
     goto invalid_property;
 
-  local_sending_state = tp_asv_get_boolean (out_Properties, "LocalSendingState",
+  local_sending_state = tp_asv_get_uint32 (out_Properties, "LocalSendingState",
       &valid);
   if (!valid)
     goto invalid_property;
@@ -973,10 +986,11 @@ cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
         }
     }
 
-  gva = tp_value_array_build (G_TYPE_UINT, candidate->component_id,
+  gva = tp_value_array_build (4,
+      G_TYPE_UINT, candidate->component_id,
       G_TYPE_STRING, candidate->ip,
       G_TYPE_UINT, candidate->port,
-      G_TYPE_HASH_TABLE, extra_info,
+      TF_FUTURE_HASH_TYPE_CANDIDATE_INFO, extra_info,
       G_TYPE_INVALID);
 
   g_ptr_array_add (candidate_list, gva);
