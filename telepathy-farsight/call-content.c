@@ -863,7 +863,7 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
   if (TF_CONTENT (self)->sending_count == 0)
     ready = TRUE;
   else
-    g_object_get (self->fssession, "ready", &ready, NULL);
+    g_object_get (self->fssession, "codecs-ready", &ready, NULL);
 
   if (!ready)
     return;
