@@ -1289,22 +1289,19 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CAPABILITIES].name = TP_CONNECTION_FEATURE_CAPABILITIES;
   features[FEAT_CAPABILITIES].prepare_async =
       tp_connection_prepare_capabilities_async;
-  if (G_UNLIKELY (need_requests[0] == 0))
-    need_requests[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS;
+  need_requests[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_REQUESTS;
   features[FEAT_CAPABILITIES].interfaces_needed = need_requests;
 
   features[FEAT_AVATAR_REQUIREMENTS].name = TP_CONNECTION_FEATURE_AVATAR_REQUIREMENTS;
   features[FEAT_AVATAR_REQUIREMENTS].prepare_async =
     _tp_connection_prepare_avatar_requirements_async;
-  if (G_UNLIKELY (need_avatars[0] == 0))
-    need_avatars[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS;
+  need_avatars[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS;
   features[FEAT_AVATAR_REQUIREMENTS].interfaces_needed = need_avatars;
 
   features[FEAT_CONTACT_INFO].name = TP_CONNECTION_FEATURE_CONTACT_INFO;
   features[FEAT_CONTACT_INFO].prepare_async =
     _tp_connection_prepare_contact_info_async;
-  if (G_UNLIKELY (need_contact_info[0] == 0))
-    need_contact_info[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO;
+  need_contact_info[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO;
   features[FEAT_CONTACT_INFO].interfaces_needed = need_contact_info;
 
   /* assert that the terminator at the end is there */

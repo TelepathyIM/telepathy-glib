@@ -224,20 +224,17 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_B].name = TP_TESTS_MY_CONN_PROXY_FEATURE_B;
   features[FEAT_B].prepare_async = prepare_b_async;
-  if (G_UNLIKELY (need_a[0] == 0))
-    need_a[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_A;
+  need_a[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_A;
   features[FEAT_B].depends_on = need_a;
 
   features[FEAT_WRONG_IFACE].name = TP_TESTS_MY_CONN_PROXY_FEATURE_WRONG_IFACE;
   features[FEAT_WRONG_IFACE].prepare_async = cannot_be_prepared_async;
-  if (G_UNLIKELY (need_channel_core[0] == 0))
-    need_channel_core[0] = TP_CHANNEL_FEATURE_CORE;
+  need_channel_core[0] = TP_CHANNEL_FEATURE_CORE;
   features[FEAT_WRONG_IFACE].interfaces_needed = need_channel_core;
 
   features[FEAT_BAD_DEP].name = TP_TESTS_MY_CONN_PROXY_FEATURE_BAD_DEP;
   features[FEAT_BAD_DEP].prepare_async = cannot_be_prepared_async;
-  if (G_UNLIKELY (need_wrong_iface[0] == 0))
-    need_wrong_iface[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_WRONG_IFACE;
+  need_wrong_iface[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_WRONG_IFACE;
   features[FEAT_BAD_DEP].depends_on = need_wrong_iface;
 
   features[FEAT_FAIL].name = TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL;
@@ -245,8 +242,7 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
 
   features[FEAT_FAIL_DEP].name = TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL_DEP;
   features[FEAT_FAIL_DEP].prepare_async = cannot_be_prepared_async;
-  if (G_UNLIKELY (need_fail[0] == 0))
-    need_fail[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL;
+  need_fail[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_FAIL;
   features[FEAT_FAIL_DEP].depends_on = need_fail;
 
   features[FEAT_RETRY].name = TP_TESTS_MY_CONN_PROXY_FEATURE_RETRY;
@@ -254,8 +250,7 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_RETRY].can_retry = TRUE;
 
   features[FEAT_RETRY_DEP].name = TP_TESTS_MY_CONN_PROXY_FEATURE_RETRY_DEP;
-  if (G_UNLIKELY (need_retry[0] == 0))
-    need_retry[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_RETRY;
+  need_retry[0] = TP_TESTS_MY_CONN_PROXY_FEATURE_RETRY;
   features[FEAT_RETRY_DEP].prepare_async = prepare_retry_dep_async;
   features[FEAT_RETRY_DEP].depends_on = need_retry;
 
