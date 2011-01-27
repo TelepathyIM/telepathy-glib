@@ -1,7 +1,7 @@
 /*
  * my-conn-proxy.c - a simple subclass of TpConnection
  *
- * Copyright (C) 2010 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2010-2011 Collabora Ltd. <http://www.collabora.co.uk/>
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
