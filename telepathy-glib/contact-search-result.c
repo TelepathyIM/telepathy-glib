@@ -39,7 +39,7 @@
  * #TpContactSearchResult objects represent results for
  * #TpContactSearch.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 
 /**
@@ -47,7 +47,7 @@
  *
  * The class of a #TpContactSearchResult.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 
 /**
@@ -57,7 +57,7 @@
  * search channel.
  * There are no interesting public struct fields.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 
 G_DEFINE_TYPE (TpContactSearchResult,
@@ -155,7 +155,7 @@ tp_contact_search_result_class_init (TpContactSearchResultClass *klass)
    *
    * The contact identifier.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.11
    */
   g_object_class_install_property (gobject_class,
       PROP_IDENTIFIER,
@@ -204,7 +204,7 @@ _tp_contact_search_result_insert_field (TpContactSearchResult *self,
  *
  * Returns: the contact identifier.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 const gchar *
 tp_contact_search_result_get_identifier (TpContactSearchResult *self)
@@ -224,7 +224,7 @@ tp_contact_search_result_get_identifier (TpContactSearchResult *self)
  * Returns: (transfer none): the specified field, or %NULL if the
  * result doesn't have it.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 TpContactInfoField *
 tp_contact_search_result_get_field (TpContactSearchResult *self,

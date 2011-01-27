@@ -1,0 +1,19 @@
+Version: TELEPATHY_GLIB_0.13.11
+Extends: TELEPATHY_GLIB_0.13.10
+Release: 0.13.11
+
+tp_contact_search_get_account
+tp_contact_search_result_get_identifier
+tp_contact_search_start
+tp_contact_search_new_finish
+tp_contact_search_reset_finish
+tp_contact_search_reset_async
+tp_contact_search_get_type
+tp_capabilities_supports_contact_search
+tp_contact_search_get_server
+tp_contact_search_new_async
+tp_contact_search_result_get_field
+tp_contact_search_result_get_type
+tp_contact_search_result_get_fields
+tp_contact_search_get_limit
+tp_contact_search_get_search_keys

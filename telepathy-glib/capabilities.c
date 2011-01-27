@@ -494,7 +494,7 @@ tp_capabilities_supports_dbus_tubes (TpCapabilities *self,
  *
  * Returns: %TRUE if #TpContactSearch can be used.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 gboolean
 tp_capabilities_supports_contact_search (TpCapabilities *self,

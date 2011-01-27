@@ -56,7 +56,7 @@
  * You can search as many times as you want on a #TpContactSearch object,
  * but you need to call tp_contact_search_reset_async() between searches.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 
 /**
@@ -64,7 +64,7 @@
  *
  * The class of a #TpContactSearch.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 
 /**
@@ -73,7 +73,7 @@
  * An object for Telepathy contact searches.
  * There are no interesting public struct fields.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 
 static void async_initable_iface_init (GAsyncInitableIface *iface);
@@ -393,7 +393,7 @@ tp_contact_search_class_init (TpContactSearchClass *klass)
    *
    * This search's account.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.11
    */
   g_object_class_install_property (gobject_class,
       PROP_ACCOUNT,
@@ -413,7 +413,7 @@ tp_contact_search_class_init (TpContactSearchClass *klass)
    * To change the server after the object has been constructed,
    * use tp_contact_search_reset_async().
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.11
    */
   g_object_class_install_property (gobject_class,
       PROP_SERVER,
@@ -434,7 +434,7 @@ tp_contact_search_class_init (TpContactSearchClass *klass)
    * To change the limit after the object has been constructed,
    * use tp_contact_search_reset_async().
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.11
    */
   g_object_class_install_property (gobject_class,
       PROP_LIMIT,
@@ -451,7 +451,7 @@ tp_contact_search_class_init (TpContactSearchClass *klass)
    *
    * This search's state, as a %TpChannelContactSearchState.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.11
    */
   g_object_class_install_property (gobject_class,
       PROP_STATE,
@@ -472,7 +472,7 @@ tp_contact_search_class_init (TpContactSearchClass *klass)
    * Emitted when search results are received. Note that this signal may
    * be emitted multiple times for the same search.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.11
    */
   _signals[SEARCH_RESULTS_RECEIVED] = g_signal_new ("search-results-received",
       G_TYPE_FROM_CLASS (klass),
@@ -509,7 +509,7 @@ tp_contact_search_init (TpContactSearch *self)
  *
  * <!-- -->
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 void
 tp_contact_search_new_async (TpAccount *account,
@@ -541,7 +541,7 @@ tp_contact_search_new_async (TpAccount *account,
  * Returns: (transfer full): a new contact search object, or %NULL
  * in case of error.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 TpContactSearch *
 tp_contact_search_new_finish (GAsyncResult *result,
@@ -576,7 +576,7 @@ tp_contact_search_new_finish (GAsyncResult *result,
  * it will be cancelled and tp_contact_search_reset_finish() will
  * return an appropriate error.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 void
 tp_contact_search_reset_async (TpContactSearch *self,
@@ -620,7 +620,7 @@ tp_contact_search_reset_async (TpContactSearch *self,
  * Returns: (transfer none): the new search keys, or %NULL
  * in case of error.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 const gchar * const *
 tp_contact_search_reset_finish (TpContactSearch *self,
@@ -656,7 +656,7 @@ tp_contact_search_reset_finish (TpContactSearch *self,
  * Before searching again on the same #TpContactSearch, you must
  * call tp_contact_search_reset_async().
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 void
 tp_contact_search_start (TpContactSearch *self,
@@ -685,7 +685,7 @@ tp_contact_search_start (TpContactSearch *self,
  *
  * Returns: (transfer none): the new search keys, or %NULL.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 const gchar * const *
 tp_contact_search_get_search_keys (TpContactSearch *self)
@@ -703,7 +703,7 @@ tp_contact_search_get_search_keys (TpContactSearch *self)
  *
  * Returns: The TpContactSearch:account property
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 TpAccount *
 tp_contact_search_get_account (TpContactSearch *self)
@@ -721,7 +721,7 @@ tp_contact_search_get_account (TpContactSearch *self)
  *
  * Returns: The TpContactSearch:server property
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 const gchar *
 tp_contact_search_get_server (TpContactSearch *self)
@@ -739,7 +739,7 @@ tp_contact_search_get_server (TpContactSearch *self)
  *
  * Returns: The TpContactSearch:limit property
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.11
  */
 guint
 tp_contact_search_get_limit (TpContactSearch *self)
