@@ -1299,11 +1299,7 @@ int
 main (int argc,
       char **argv)
 {
-  g_type_init ();
-  tp_debug_set_flags ("all");
-  tp_tests_abort_after (10);
-  g_set_prgname ("contacts-slow-path");
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/contacts-slow-path/by-handle", Fixture, NULL, setup,

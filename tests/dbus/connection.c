@@ -399,8 +399,7 @@ int
 main (int argc,
       char **argv)
 {
-  tp_tests_abort_after (10);
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
 
   g_test_add ("/conn/prepare", Test, NULL, setup, test_prepare, teardown);
   g_test_add ("/conn/fail_to_prepare", Test, NULL, setup, test_fail_to_prepare,

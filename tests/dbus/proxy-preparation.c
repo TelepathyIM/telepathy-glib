@@ -372,7 +372,6 @@ main (int argc,
       char **argv)
 {
   tp_tests_init (&argc, &argv);
-
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/proxy-preparation/prepare-capabilities", Test, NULL, setup,

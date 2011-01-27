@@ -392,8 +392,7 @@ int
 main (int argc,
       char **argv)
 {
-  tp_tests_abort_after (5);
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
 
   g_test_add ("/conn/interest", Test, NULL, setup, test_interest, teardown);
   g_test_add ("/conn/interested-client", Test, NULL, setup,

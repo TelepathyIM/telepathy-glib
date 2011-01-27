@@ -332,11 +332,7 @@ int
 main (int argc,
       char **argv)
 {
-  tp_tests_abort_after (10);
-  tp_debug_set_flags ("all");
-
-  g_type_init ();
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
 
   g_test_add_func ("/dbus/validation", test_validation);
   g_test_add_func ("/dbus-daemon/properties", test_properties);

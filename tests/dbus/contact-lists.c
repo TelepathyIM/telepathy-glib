@@ -2319,8 +2319,7 @@ int
 main (int argc,
       char **argv)
 {
-  tp_tests_abort_after (60);
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
 
   g_test_add ("/contact-lists/nothing",
       Test, NULL, setup, test_nothing, teardown);

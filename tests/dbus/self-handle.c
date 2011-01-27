@@ -350,11 +350,8 @@ int
 main (int argc,
       char **argv)
 {
-  tp_tests_abort_after (10);
-  g_type_init ();
-  tp_debug_set_flags ("all");
+  tp_tests_init (&argc, &argv);
   g_set_prgname ("self-handle");
-  g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/self-handle", Fixture, NULL, setup_and_connect,

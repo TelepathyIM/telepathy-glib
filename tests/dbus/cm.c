@@ -1017,8 +1017,7 @@ int
 main (int argc,
       char **argv)
 {
-  tp_tests_abort_after (10);
-  g_test_init (&argc, &argv, NULL);
+  tp_tests_init (&argc, &argv);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add_func ("/cm/valid-name", test_valid_name);
