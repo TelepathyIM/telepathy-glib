@@ -348,11 +348,11 @@ struct _TpProxyPrivate {
     /* feature => FeatureState */
     GData *features;
 
-    /* List of TpProxyPrepareRequest. The first requests are the core one,
+    /* Queue of TpProxyPrepareRequest. The first requests are the core one,
      * sorted from the most upper super class to the subclass core features.
      * This is needed to guarantee than subclass features are not prepared
      * until the super class features have been prepared. */
-    GList *prepare_requests;
+    GQueue *prepare_requests;
 
     GSimpleAsyncResult *will_announce_connected_result;
     /* Number of pending calls blocking will_announce_connected_result to be
@@ -543,7 +543,7 @@ tp_proxy_emit_invalidated (gpointer p)
 
   /* make all pending tp_proxy_prepare_async calls fail */
   tp_proxy_poll_features (self, NULL);
-  g_assert (self->priv->prepare_requests == NULL);
+  g_assert_cmpuint (g_queue_get_length (self->priv->prepare_requests), ==, 0);
 
   /* Don't clear the datalist until after we've emitted the signal, so
    * the pending call and signal connection friend classes can still get
@@ -926,6 +926,8 @@ tp_proxy_init (TpProxy *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_PROXY,
       TpProxyPrivate);
+
+  self->priv->prepare_requests = g_queue_new ();
 }
 
 static GQuark
@@ -1036,8 +1038,7 @@ tp_proxy_constructor (GType type,
               (const GQuark *) core_features->data);
           req->core = TRUE;
 
-          self->priv->prepare_requests = g_list_prepend (
-              self->priv->prepare_requests, req);
+          g_queue_push_head (self->priv->prepare_requests, req);
 
           DEBUG ("%p: request %p represents core features on %s", self, req,
               g_type_name (ancestor_type));
@@ -1110,7 +1111,8 @@ tp_proxy_finalize (GObject *object)
   g_error_free (self->invalidated);
 
   /* invalidation ensures that these have gone away */
-  g_assert (self->priv->prepare_requests == NULL);
+  g_assert_cmpuint (g_queue_get_length (self->priv->prepare_requests), ==, 0);
+  tp_clear_pointer (&self->priv->prepare_requests, g_queue_free);
 
   g_free (self->bus_name);
   g_free (self->object_path);
@@ -1869,8 +1871,7 @@ tp_proxy_prepare_async (gpointer self,
       goto finally;
     }
 
-  proxy->priv->prepare_requests = g_list_append (
-      proxy->priv->prepare_requests,
+  g_queue_push_tail (proxy->priv->prepare_requests,
       tp_proxy_prepare_request_new (result, features));
   tp_proxy_poll_features (proxy, NULL);
 
@@ -1960,8 +1961,8 @@ static gboolean
 core_prepared (TpProxy *self)
 {
   /* All the core features have been prepared if the head of the
-   * prepare_requests list is NOT a core feature */
-  TpProxyPrepareRequest *req = self->priv->prepare_requests->data;
+   * prepare_requests queue is NOT a core feature */
+  TpProxyPrepareRequest *req = g_queue_peek_head (self->priv->prepare_requests);
 
   if (req == NULL)
     return TRUE;
@@ -2054,14 +2055,17 @@ static void
 finish_all_requests (TpProxy *self,
     const GError *error)
 {
-  GList *iter = self->priv->prepare_requests;
+  GList *iter;
+  GQueue *tmp = g_queue_copy (self->priv->prepare_requests);
 
-  self->priv->prepare_requests = NULL;
+  g_queue_clear (self->priv->prepare_requests);
 
-  for ( ; iter != NULL; iter = g_list_delete_link (iter, iter))
+  for (iter = tmp->head; iter != NULL; iter = g_list_next (iter))
     {
       tp_proxy_prepare_request_finish (iter->data, error);
     }
+
+  g_queue_clear (tmp);
 }
 
 /*
@@ -2088,14 +2092,16 @@ tp_proxy_poll_features (TpProxy *self,
   GList *iter;
   GList *next;
 
-  if (self->priv->prepare_requests == NULL)
+  if (g_queue_get_length (self->priv->prepare_requests) == 0)
     return;
 
   g_object_ref (self);
 
-  for (iter = self->priv->prepare_requests; iter != NULL; iter = next)
+  for (iter = self->priv->prepare_requests->head; iter != NULL; iter = next)
     {
       TpProxyPrepareRequest *req = iter->data;
+      TpProxyPrepareRequest *head = g_queue_peek_head (
+          self->priv->prepare_requests);
 
       if (error == NULL)
         {
@@ -2115,7 +2121,7 @@ tp_proxy_poll_features (TpProxy *self,
 
       /* Core features have to be prepared first */
       if (!core_prepared (self) &&
-          req != self->priv->prepare_requests->data)
+          req != head)
         {
           DEBUG ("%p: core features not ready yet, nothing prepared", self);
           continue;
@@ -2124,8 +2130,7 @@ tp_proxy_poll_features (TpProxy *self,
       if (request_is_complete (self, req))
         {
           DEBUG ("%p: request %p prepared", self, req);
-          self->priv->prepare_requests = g_list_delete_link (
-              self->priv->prepare_requests, iter);
+          g_queue_delete_link (self->priv->prepare_requests, iter);
 
           tp_proxy_prepare_request_finish (req, NULL);
         }
