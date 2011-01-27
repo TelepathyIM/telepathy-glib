@@ -2050,6 +2050,20 @@ request_is_complete (TpProxy *self,
   return complete;
 }
 
+static void
+finish_all_requests (TpProxy *self,
+    const GError *error)
+{
+  GList *iter = self->priv->prepare_requests;
+
+  self->priv->prepare_requests = NULL;
+
+  for ( ; iter != NULL; iter = g_list_delete_link (iter, iter))
+    {
+      tp_proxy_prepare_request_finish (iter->data, error);
+    }
+}
+
 /*
  * tp_proxy_poll_features:
  * @self: a proxy
@@ -2092,14 +2106,8 @@ tp_proxy_poll_features (TpProxy *self,
       if (error != NULL)
         {
           DEBUG ("%p: %s, ending all requests", self, error_source);
-          iter = self->priv->prepare_requests;
-          self->priv->prepare_requests = NULL;
 
-          for ( ; iter != NULL; iter = g_list_delete_link (iter, iter))
-            {
-              tp_proxy_prepare_request_finish (iter->data, error);
-            }
-
+          finish_all_requests (self, error);
           break;
         }
 
