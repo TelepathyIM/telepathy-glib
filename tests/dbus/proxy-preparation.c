@@ -93,8 +93,9 @@ static void
 test_prepare_capabilities (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  /* Prepare capabilities on a new proxy. Core should be prepared *before*
-   * checking if Requests is implemented */
+  /* Prepare capabilities on a new proxy. CORE should be automatically prepared
+   * *before* checking if Requests is implemented as
+   * tp_proxy_has_interface_by_id() can't work without CORE. */
   GQuark features[] = { TP_CONNECTION_FEATURE_CAPABILITIES, 0 };
 
   tp_proxy_prepare_async (test->my_conn, features, prepare_cb, test);
