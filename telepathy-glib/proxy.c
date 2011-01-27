@@ -1824,7 +1824,9 @@ tp_proxy_prepare_async (gpointer self,
        * (this doesn't seem ideal, but is
        * consistent with TpAccountManager's existing behaviour) */
       if (state == FEATURE_STATE_INVALID)
-        continue;
+        {
+          continue;
+        }
       else if (state == FEATURE_STATE_UNWANTED ||
           (state == FEATURE_STATE_FAILED && feature->can_retry))
         {
