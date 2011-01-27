@@ -961,7 +961,7 @@ tp_proxy_set_feature_state (TpProxy *self,
 }
 
 static void
-check_feature_validity (TpProxy *self,
+assert_feature_validity (TpProxy *self,
     const TpProxyFeature *feature)
 {
   g_assert (feature != NULL);
@@ -1019,7 +1019,7 @@ tp_proxy_constructor (GType type,
 
       for (i = 0; features[i].name != 0; i++)
         {
-          check_feature_validity (self, &features[i]);
+          assert_feature_validity (self, &features[i]);
 
           tp_proxy_set_feature_state (self, features[i].name,
               FEATURE_STATE_UNWANTED);
