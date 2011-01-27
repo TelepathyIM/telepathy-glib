@@ -212,7 +212,7 @@ list_features (TpProxyClass *cls G_GNUC_UNUSED)
   static GQuark need_fail[2] = {0, 0};
   static GQuark need_retry[2] = {0, 0};
 
-    if (G_LIKELY (features[0].name != 0))
+  if (G_LIKELY (features[0].name != 0))
     return features;
 
   features[FEAT_CORE].name = TP_TESTS_MY_CONN_PROXY_FEATURE_CORE;
