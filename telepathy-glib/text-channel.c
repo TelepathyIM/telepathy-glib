@@ -581,6 +581,17 @@ got_pending_senders_contact (TpTextChannel *self,
 }
 
 static void
+free_parts_list (GList *parts_list)
+{
+  GList *l;
+
+  for (l = parts_list; l != NULL; l = g_list_next (l))
+    g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, l->data);
+
+  g_list_free (parts_list);
+}
+
+static void
 got_pending_senders_contact_by_handle_cb (TpConnection *connection,
     guint n_contacts,
     TpContact * const *contacts,
@@ -590,8 +601,10 @@ got_pending_senders_contact_by_handle_cb (TpConnection *connection,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpTextChannel *self = (TpTextChannel *) weak_object;
+  GSimpleAsyncResult *result = (GSimpleAsyncResult *) weak_object;
   GList *parts_list = user_data;
+  TpTextChannel *self = TP_TEXT_CHANNEL (g_async_result_get_source_object (
+        G_ASYNC_RESULT (result)));
 
   if (error != NULL)
     {
@@ -609,6 +622,8 @@ got_pending_senders_contact_by_handle_cb (TpConnection *connection,
 out:
   _tp_proxy_set_feature_prepared (TP_PROXY (self),
       TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
+
+  free_parts_list (parts_list);
 }
 
 static void
@@ -621,8 +636,10 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpTextChannel *self = (TpTextChannel *) weak_object;
+  GSimpleAsyncResult *result = (GSimpleAsyncResult *) weak_object;
   GList *parts_list = user_data;
+  TpTextChannel *self = TP_TEXT_CHANNEL (g_async_result_get_source_object (
+        G_ASYNC_RESULT (result)));
 
   if (error != NULL)
     {
@@ -648,45 +665,8 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
 out:
   _tp_proxy_set_feature_prepared (TP_PROXY (self),
       TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
-}
 
-static void
-free_parts_list (gpointer data)
-{
-  GList *parts_list = data;
-  GList *l;
-
-  for (l = parts_list; l != NULL; l = g_list_next (l))
-    g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, l->data);
-
-  g_list_free (parts_list);
-}
-
-typedef struct
-{
-  GList *parts_list;
-  GSimpleAsyncResult *result;
-} IdentifyMessagesCtx;
-
-/* Take the ref on @parts_list */
-static IdentifyMessagesCtx *
-identify_messages_ctx_new (GList *parts_list,
-    GSimpleAsyncResult *result)
-{
-  IdentifyMessagesCtx *ctx = g_slice_new (IdentifyMessagesCtx);
-
-  ctx->parts_list = parts_list;
-  ctx->result = g_object_ref (result);
-  return ctx;
-}
-
-static void
-identify_messages_free (IdentifyMessagesCtx *ctx)
-{
-  free_parts_list (ctx->parts_list);
-  g_object_unref (ctx->result);
-
-  g_slice_free (IdentifyMessagesCtx, ctx);
+  free_parts_list (parts_list);
 }
 
 /* There is no TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST (fdo #32433) */
@@ -774,8 +754,6 @@ get_pending_messages_cb (TpProxy *proxy,
   else
     {
       TpConnection *conn;
-      IdentifyMessagesCtx *ctx = identify_messages_ctx_new (parts_list,
-          result);
 
       parts_list = g_list_reverse (parts_list);
 
@@ -784,13 +762,14 @@ get_pending_messages_cb (TpProxy *proxy,
       DEBUG ("Pending messages may be re-ordered, please fix CM (%s)",
           tp_proxy_get_object_path (conn));
 
+      /* Pass ownership of parts_list to the callback */
       if (sender_ids->len == g_list_length (parts_list))
         {
           /* Use the sender ID rather than the handles */
           tp_connection_get_contacts_by_id (conn, sender_ids->len,
               (const gchar * const *) sender_ids->pdata,
-              0, NULL, got_pending_senders_contact_by_id_cb, ctx,
-              (GDestroyNotify) identify_messages_free, G_OBJECT (self));
+              0, NULL, got_pending_senders_contact_by_id_cb, parts_list,
+              NULL, G_OBJECT (result));
         }
       else
         {
@@ -798,8 +777,8 @@ get_pending_messages_cb (TpProxy *proxy,
 
           tp_connection_get_contacts_by_handle (conn, tmp->len,
               (TpHandle *) tmp->data,
-              0, NULL, got_pending_senders_contact_by_handle_cb, ctx,
-              (GDestroyNotify) identify_messages_free, G_OBJECT (self));
+              0, NULL, got_pending_senders_contact_by_handle_cb, parts_list,
+              NULL, G_OBJECT (result));
 
           g_array_unref (tmp);
         }
