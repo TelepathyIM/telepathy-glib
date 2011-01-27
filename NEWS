@@ -3,7 +3,21 @@ telepathy-glib 0.13.11 (UNRELEASED)
 
 The “and, erm … I own an M-16 fully-automatic ground assault rifle” release.
 
-…
+Enhancements:
+
+• fd.o#32053: The TpContactSearch object has been added. It represents
+  ongoing searches for contacts. (pochu)
+
+Fixes:
+
+• fd.o#32551: tp_base_client_set_observer_recover now works with all
+  possible gboolean arguments! (jonny)
+
+• tp_debug_timestamped_log_handler will now print the message and not
+  just the time, which was broken over a year ago. (jonny)
+
+• TpProtocol will now consider a manager file's AuthenticationTypes
+  value. (jonny)
 
 telepathy-glib 0.13.10 (2010-12-20)
 ===================================
