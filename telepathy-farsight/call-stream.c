@@ -30,6 +30,7 @@
 
 #include <stdarg.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <telepathy-glib/proxy-subclass.h>
 
