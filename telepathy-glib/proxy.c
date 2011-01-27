@@ -1684,8 +1684,8 @@ check_depends_ready (TpProxy *self,
       switch (dep_state)
         {
           case FEATURE_STATE_INVALID:
-            DEBUG ("Can't prepare %s, one dep is invalid: %s",
-                g_quark_to_string (name), g_quark_to_string (dep));
+            DEBUG ("Can't prepare %s, because %s (a dependency) is "
+                "invalid", g_quark_to_string (name), g_quark_to_string (dep));
 
             *failed = TRUE;
             return FALSE;
@@ -1693,7 +1693,8 @@ check_depends_ready (TpProxy *self,
           case FEATURE_STATE_FAILED:
             if (!can_retry || !dep_feature->can_retry)
               {
-                DEBUG ("Can't prepare %s, one dep failed: %s",
+                DEBUG ("Can't prepare %s, because %s (a dependency) is "
+                    "failed to prepare",
                     g_quark_to_string (name), g_quark_to_string (dep));
 
                 *failed = TRUE;
@@ -2027,8 +2028,8 @@ request_is_complete (TpProxy *self,
                   }
                 else
                   {
-                    /* We have to wait than deps finished their
-                     * preparation */
+                    /* We have to wait until the deps finish their
+                     * preparation. */
                     complete = FALSE;
                   }
               }
