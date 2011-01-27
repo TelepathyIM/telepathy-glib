@@ -2119,7 +2119,9 @@ tp_proxy_poll_features (TpProxy *self,
 
       next = iter->next;
 
-      /* Core features have to be prepared first */
+      /* Core features have to be prepared first, in superclass-to-subclass
+       * order. The next core feature to be prepared, if any, is always at the
+       * head of prepare_requests. */
       if (!core_prepared (self) &&
           req != head)
         {
