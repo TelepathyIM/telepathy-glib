@@ -7,7 +7,8 @@ tools_dir = $(top_srcdir)/tools
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
     $(GLIB_CFLAGS) \
-    $(TELEPATHY_CFLAGS)
+    $(TELEPATHY_CFLAGS) \
+    $(DBUS_CFLAGS)
 
 EXTRA_DIST = \
     all.xml \
