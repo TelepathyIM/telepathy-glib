@@ -93,6 +93,136 @@
  * Since: 0.5.13
  */
 
+/**
+ * TpPresenceStatusOptionalArgumentSpec
+ * @name: Name of the argument as passed over D-Bus
+ * @dtype: D-Bus type signature of the argument
+ *
+ * Structure specifying a supported optional argument for a presence status.
+ *
+ * In addition to the fields documented here, there are two gpointer fields
+ * which must currently be %NULL. A meaning may be defined for these in a
+ * future version of telepathy-glib.
+ */
+
+/**
+ * TpPresenceStatusSpec
+ * @name: String identifier of the presence status
+ * @presence_type: A type value, as specified by #TpConnectionPresenceType
+ * @self: Indicates if this status may be set on yourself
+ * @optional_arguments: An array of #TpPresenceStatusOptionalArgumentSpec
+ *  structures representing the optional arguments for this status, terminated
+ *  by a NULL name. If there are no optional arguments for a status, this can
+ *  be NULL.
+ *
+ * Structure specifying a supported presence status.
+ *
+ * In addition to the fields documented here, there are two gpointer fields
+ * which must currently be %NULL. A meaning may be defined for these in a
+ * future version of telepathy-glib.
+ */
+
+/**
+ * TpPresenceStatus:
+ * @index: Index of the presence status in the provided supported presence
+ *  statuses array
+ * @optional_arguments: A GHashTable mapping of string identifiers to GValues
+ *  of the optional status arguments, if any. If there are no optional
+ *  arguments, this pointer may be NULL.
+ *
+ * Structure representing a presence status.
+ *
+ * In addition to the fields documented here, there are two gpointer fields
+ * which must currently be %NULL. A meaning may be defined for these in a
+ * future version of telepathy-glib.
+ */
+
+
+/**
+ * TpPresenceMixinStatusAvailableFunc:
+ * @obj: An object implementing the presence interface with this mixin
+ * @which: The index of the presence status in the provided supported presence
+ *  statuses array
+ *
+ * Signature of the callback used to determine if a given status is currently
+ * available to be set on the connection.
+ *
+ * When implementing the
+ * org.freedesktop.Telepathy.Connection.Interface.SimplePresence interface
+ * this can be called while DISCONNECTED to determine which statuses can be set
+ * in that state.
+ *
+ * Returns: %TRUE if the status is available, %FALSE if not.
+ */
+
+/**
+ * TpPresenceMixinGetContactStatusesFunc:
+ * @obj: An object with this mixin.
+ * @contacts: An array of #TpHandle for the contacts to get presence status for
+ * @error: Used to return a Telepathy D-Bus error if %NULL is returned
+ *
+ * Signature of the callback used to get the stored presence status of
+ * contacts. The returned hash table should have contact handles mapped to
+ * their respective presence statuses in #TpPresenceStatus structs.
+ *
+ * The returned hash table will be freed with g_hash_table_destroy. The
+ * callback is responsible for ensuring that this does any cleanup that
+ * may be necessary.
+ *
+ * Returns: (transfer full): The contact presence on success, %NULL with
+ *  error set on error
+ */
+
+/**
+ * TpPresenceMixinSetOwnStatusFunc:
+ * @obj: An object with this mixin.
+ * @status: The status to set, or NULL for whatever the protocol defines as a
+ *  "default" status
+ * @error: Used to return a Telepathy D-Bus error if %FALSE is returned
+ *
+ * Signature of the callback used to commit changes to the user's own presence
+ * status in SetStatuses. It is also used in ClearStatus and RemoveStatus to
+ * reset the user's own status back to the "default" one with a %NULL status
+ * argument.
+ *
+ * The optional_arguments hash table in @status, if not NULL, will have been
+ * filtered so it only contains recognised parameters, so the callback
+ * need not (and cannot) check for unrecognised parameters. However, the
+ * types of the parameters are not currently checked, so the callback is
+ * responsible for doing so.
+ *
+ * The callback is responsible for emitting PresenceUpdate, if appropriate,
+ * by calling tp_presence_mixin_emit_presence_update().
+ *
+ * Returns: %TRUE if the operation was successful, %FALSE if not.
+ */
+
+/**
+ * TpPresenceMixinClass:
+ * @status_available: The status-available function that was passed to
+ *  tp_presence_mixin_class_init()
+ * @get_contact_statuses: The get-contact-statuses function that was passed to
+ *  tp_presence_mixin_class_init()
+ * @set_own_status: The set-own-status function that was passed to
+ *  tp_presence_mixin_class_init()
+ * @statuses: The presence statuses array that was passed to
+ *  tp_presence_mixin_class_init()
+ *
+ * Structure to be included in the class structure of objects that
+ * use this mixin. Initialize it with tp_presence_mixin_class_init().
+ *
+ * All fields should be considered read-only.
+ */
+
+/**
+ * TpPresenceMixin:
+ *
+ * Structure to be included in the instance structure of objects that
+ * use this mixin. Initialize it with tp_presence_mixin_init().
+ *
+ * There are no public fields.
+ */
+
 #include <telepathy-glib/presence-mixin.h>
 
 #include <dbus/dbus-glib.h>
@@ -210,7 +340,6 @@ tp_presence_mixin_get_offset_quark ()
   return offset_quark;
 }
 
-
 /**
  * tp_presence_mixin_class_init: (skip)
  * @obj_cls: The class of the implementation that uses this mixin
@@ -289,7 +418,6 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
         }
     }
 }
-
 
 /**
  * tp_presence_mixin_init: (skip)
