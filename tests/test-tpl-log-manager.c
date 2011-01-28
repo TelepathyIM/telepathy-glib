@@ -1,4 +1,4 @@
-#include <telepathy-logger/event-text.h>
+#include <telepathy-logger/text-event.h>
 
 #define gconf_client_get_bool(obj,key,err) g_print ("%s", key)
 

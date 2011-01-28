@@ -20,8 +20,8 @@
  */
 
 #include "config.h"
-#include "event-text.h"
-#include "event-text-internal.h"
+#include "text-event.h"
+#include "text-event-internal.h"
 
 #include <glib-object.h>
 #include <telepathy-glib/util.h>
@@ -35,33 +35,33 @@
 
 /**
  * SECTION:event-text
- * @title: TplEventText
+ * @title: TplTextEvent
  * @short_description: Representation of a text log event
  *
  * A subclass of #TplEvent representing a text log event.
  */
 
 /**
- * TplEventText:
+ * TplTextEvent:
  *
  * An object representing a text log event.
  */
 
 /**
- * TPL_EVENT_TEXT_MSG_ID_IS_VALID:
+ * TPL_TEXT_EVENT_MSG_ID_IS_VALID:
  * @msg: a message ID
  *
  * Return whether a message ID is valid.
  *
  * If %FALSE is returned, it means that either an invalid input has been
- * passed, or the TplEvent is currently set to %TPL_EVENT_TEXT_MSG_ID_UNKNOWN
- * or %TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED.
+ * passed, or the TplEvent is currently set to %TPL_TEXT_EVENT_MSG_ID_UNKNOWN
+ * or %TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED.
  *
  * Returns: %TRUE if the argument is a valid message ID or %FALSE otherwise.
  */
 
 /**
- * TPL_EVENT_TEXT_MSG_ID_UNKNOWN:
+ * TPL_TEXT_EVENT_MSG_ID_UNKNOWN:
  *
  * Special value used instead of a message ID to indicate a message with an
  * unknown status (before _tpl_event_set_pending_msg_id() was called, or
@@ -69,15 +69,15 @@
  */
 
 /**
- * TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED:
+ * TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED:
  *
  * Special value used instead of a message ID to indicate an acknowledged
  * message.
  */
 
-G_DEFINE_TYPE (TplEventText, tpl_event_text, TPL_TYPE_EVENT)
+G_DEFINE_TYPE (TplTextEvent, tpl_text_event, TPL_TYPE_EVENT)
 
-struct _TplEventTextPriv
+struct _TplTextEventPriv
 {
   TpChannelTextMessageType message_type;
   gchar *message;
@@ -104,24 +104,24 @@ static gchar *message_types[] = {
 
 
 static void
-tpl_event_text_finalize (GObject *obj)
+tpl_text_event_finalize (GObject *obj)
 {
-  TplEventTextPriv *priv = TPL_EVENT_TEXT (obj)->priv;
+  TplTextEventPriv *priv = TPL_TEXT_EVENT (obj)->priv;
 
   g_free (priv->message);
   priv->message = NULL;
 
-  G_OBJECT_CLASS (tpl_event_text_parent_class)->finalize (obj);
+  G_OBJECT_CLASS (tpl_text_event_parent_class)->finalize (obj);
 }
 
 
 static void
-tpl_event_text_get_property (GObject *object,
+tpl_text_event_get_property (GObject *object,
     guint param_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TplEventTextPriv *priv = TPL_EVENT_TEXT (object)->priv;
+  TplTextEventPriv *priv = TPL_TEXT_EVENT (object)->priv;
 
   switch (param_id)
     {
@@ -142,12 +142,12 @@ tpl_event_text_get_property (GObject *object,
 
 
 static void
-tpl_event_text_set_property (GObject *object,
+tpl_text_event_set_property (GObject *object,
     guint param_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TplEventTextPriv *priv = TPL_EVENT_TEXT (object)->priv;
+  TplTextEventPriv *priv = TPL_TEXT_EVENT (object)->priv;
 
   switch (param_id) {
       case PROP_MESSAGE_TYPE:
@@ -166,14 +166,14 @@ tpl_event_text_set_property (GObject *object,
   }
 }
 
-static void tpl_event_text_class_init (TplEventTextClass *klass)
+static void tpl_text_event_class_init (TplTextEventClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
 
-  object_class->finalize = tpl_event_text_finalize;
-  object_class->get_property = tpl_event_text_get_property;
-  object_class->set_property = tpl_event_text_set_property;
+  object_class->finalize = tpl_text_event_finalize;
+  object_class->get_property = tpl_text_event_get_property;
+  object_class->set_property = tpl_text_event_set_property;
 
   param_spec = g_param_spec_uint ("message-type",
       "MessageType",
@@ -190,15 +190,15 @@ static void tpl_event_text_class_init (TplEventTextClass *klass)
   g_object_class_install_property (object_class, PROP_MESSAGE, param_spec);
 
   /**
-   * TplEventText::pending-msg-id:
+   * TplTextEvent::pending-msg-id:
    *
    * The pending message id for the current log event.
-   * The default value, is #TPL_EVENT_TEXT_MSG_ID_UNKNOWN,
+   * The default value, is #TPL_TEXT_EVENT_MSG_ID_UNKNOWN,
    * meaning that it's not possible to know if the message is pending or has
    * been acknowledged.
    *
    * An object instantiating a TplEvent subclass should explicitly set it
-   * to a valid msg-id number (id>=0) or to #TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED
+   * to a valid msg-id number (id>=0) or to #TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED
    * when acknowledged or if the event is a result of
    * 'sent' signal.
    * In fact a sent event is considered as 'automatically' ACK by TPL.
@@ -214,26 +214,26 @@ static void tpl_event_text_class_init (TplEventTextClass *klass)
       "PendingMessageId",
       "Pending Message ID, if set, the log event is set as pending for ACK."
       " Default to -1 meaning not pending.",
-      -1, G_MAXUINT32, TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED,
+      -1, G_MAXUINT32, TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PENDING_MSG_ID,
       param_spec);
 
-  g_type_class_add_private (object_class, sizeof (TplEventTextPriv));
+  g_type_class_add_private (object_class, sizeof (TplTextEventPriv));
 }
 
 
 static void
-tpl_event_text_init (TplEventText *self)
+tpl_text_event_init (TplTextEvent *self)
 {
-  TplEventTextPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TPL_TYPE_EVENT_TEXT, TplEventTextPriv);
+  TplTextEventPriv *priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      TPL_TYPE_TEXT_EVENT, TplTextEventPriv);
   self->priv = priv;
 }
 
 
 /**
- * _tpl_event_text_message_type_from_str
+ * _tpl_text_event_message_type_from_str
  * @type_str: string to transform into a #TpChannelTextMessageType
  *
  * Maps strings into enum #TpChannelTextMessageType values.
@@ -242,7 +242,7 @@ tpl_event_text_init (TplEventText *self)
  * mapping is found, or defaults to %TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL if not.
  */
 TpChannelTextMessageType
-_tpl_event_text_message_type_from_str (const gchar *type_str)
+_tpl_text_event_message_type_from_str (const gchar *type_str)
 {
   guint i;
   for (i = 0; i < G_N_ELEMENTS (message_types); ++i)
@@ -255,7 +255,7 @@ _tpl_event_text_message_type_from_str (const gchar *type_str)
 
 
 /**
- * _tpl_event_text_message_type_to_str
+ * _tpl_text_event_message_type_to_str
  * @msg_type: message type to transform into a string
  *
  * Maps enum #TpChannelTextMessageType values into strings
@@ -264,7 +264,7 @@ _tpl_event_text_message_type_from_str (const gchar *type_str)
  * a legal value for %TpChannelTextMessageType.
  */
 const gchar *
-_tpl_event_text_message_type_to_str (TpChannelTextMessageType msg_type)
+_tpl_text_event_message_type_to_str (TpChannelTextMessageType msg_type)
 {
   g_return_val_if_fail (G_N_ELEMENTS (message_types) >= msg_type, NULL);
 
@@ -273,30 +273,30 @@ _tpl_event_text_message_type_to_str (TpChannelTextMessageType msg_type)
 
 
 /**
- * tpl_event_text_get_message
- * @self: a #TplEventText
+ * tpl_text_event_get_message
+ * @self: a #TplTextEvent
  *
- * Returns: the same message as the #TplEventText:message property
+ * Returns: the same message as the #TplTextEvent:message property
  */
 const gchar *
-tpl_event_text_get_message (TplEventText *self)
+tpl_text_event_get_message (TplTextEvent *self)
 {
-  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), NULL);
+  g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), NULL);
 
   return self->priv->message;
 }
 
 
 /**
- * tpl_event_text_get_message_type
- * @self: a #TplEventText
+ * tpl_text_event_get_message_type
+ * @self: a #TplTextEvent
  *
- * Returns: the same message as the #TplEventText:message-type property
+ * Returns: the same message as the #TplTextEvent:message-type property
  */
 TpChannelTextMessageType
-tpl_event_text_get_message_type (TplEventText *self)
+tpl_text_event_get_message_type (TplTextEvent *self)
 {
-  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self),
+  g_return_val_if_fail (TPL_IS_TEXT_EVENT (self),
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
 
   return self->priv->message_type;
@@ -304,23 +304,23 @@ tpl_event_text_get_message_type (TplEventText *self)
 
 
 /*
- * tpl_event_text_get_pending_msg_id
- * @self: a #TplEventText
+ * tpl_text_event_get_pending_msg_id
+ * @self: a #TplTextEvent
  *
- * Returns: the id as the #TplEventText:pending-msg-id property
+ * Returns: the id as the #TplTextEvent:pending-msg-id property
  */
 gint
-_tpl_event_text_get_pending_msg_id (TplEventText *self)
+_tpl_text_event_get_pending_msg_id (TplTextEvent *self)
 {
-  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), -1);
+  g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), -1);
 
   return self->priv->pending_msg_id;
 }
 
 
 gboolean
-_tpl_event_text_is_pending (TplEventText *self)
+_tpl_text_event_is_pending (TplTextEvent *self)
 {
-  return TPL_EVENT_TEXT_MSG_ID_IS_VALID (
-      _tpl_event_text_get_pending_msg_id (self));
+  return TPL_TEXT_EVENT_MSG_ID_IS_VALID (
+      _tpl_text_event_get_pending_msg_id (self));
 }

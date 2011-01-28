@@ -32,7 +32,7 @@
 #include <telepathy-glib/svc-generic.h>
 
 #include <telepathy-logger/event-internal.h>
-#include <telepathy-logger/event-text.h>
+#include <telepathy-logger/text-event.h>
 #include <telepathy-logger/log-manager.h>
 
 #include <extensions/extensions.h>
@@ -406,8 +406,8 @@ _get_events_return (GObject *manager,
        ptr = g_list_previous (ptr))
     {
       TplEvent *log = ptr->data;
-      const char *message = tpl_event_text_get_message (
-          TPL_EVENT_TEXT (log));
+      const char *message = tpl_text_event_get_message (
+          TPL_TEXT_EVENT (log));
       const char *sender = tpl_entity_get_identifier (
           tpl_event_get_sender (log));
       gint64 timestamp = tpl_event_get_timestamp (log);

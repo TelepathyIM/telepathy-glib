@@ -40,8 +40,8 @@
 #include <telepathy-glib/util.h>
 
 #include <telepathy-logger/event-internal.h>
-#include <telepathy-logger/event-text.h>
-#include <telepathy-logger/event-text-internal.h>
+#include <telepathy-logger/text-event.h>
+#include <telepathy-logger/text-event-internal.h>
 #include <telepathy-logger/log-manager.h>
 #include <telepathy-logger/log-store-internal.h>
 #include <telepathy-logger/log-manager-internal.h>
@@ -447,7 +447,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
 
 static gboolean
 add_event_text (TplLogStoreXml *self,
-    TplEventText *message,
+    TplTextEvent *message,
     GError **error)
 {
   gboolean ret = FALSE;
@@ -465,7 +465,7 @@ add_event_text (TplLogStoreXml *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
-  g_return_val_if_fail (TPL_IS_EVENT_TEXT (message), FALSE);
+  g_return_val_if_fail (TPL_IS_TEXT_EVENT (message), FALSE);
 
   bus_daemon = tp_dbus_daemon_dup (error);
   if (bus_daemon == NULL)
@@ -476,12 +476,12 @@ add_event_text (TplLogStoreXml *self,
 
   account =  tpl_event_get_account (TPL_EVENT (message));
 
-  body_str = tpl_event_text_get_message (message);
+  body_str = tpl_text_event_get_message (message);
   if (TPL_STR_EMPTY (body_str))
     goto out;
 
   body = g_markup_escape_text (body_str, -1);
-  msg_type = tpl_event_text_get_message_type (message);
+  msg_type = tpl_text_event_get_message_type (message);
   timestamp = log_store_xml_get_timestamp_from_event (
       TPL_EVENT (message));
 
@@ -501,7 +501,7 @@ add_event_text (TplLogStoreXml *self,
       avatar_token ? avatar_token : "",
       tpl_entity_get_entity_type (sender)
           == TPL_ENTITY_SELF ? "true" : "false",
-      _tpl_event_text_message_type_to_str (msg_type),
+      _tpl_text_event_message_type_to_str (msg_type),
       body);
 
   DEBUG ("writing %s from %s (ts %s)",
@@ -539,8 +539,8 @@ log_store_xml_add_event (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_EVENT (event), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  if (TPL_IS_EVENT_TEXT (event))
-    return add_event_text (self, TPL_EVENT_TEXT (event), error);
+  if (TPL_IS_TEXT_EVENT (event))
+    return add_event_text (self, TPL_TEXT_EVENT (event), error);
 
   DEBUG ("TplEventSignalType not handled by this LogStore (%s). "
       "Ignoring Event", log_store_xml_get_name (store));
@@ -826,7 +826,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   /* Now get the events. */
   for (node = log_node->children; node; node = node->next)
     {
-      TplEventText *event;
+      TplTextEvent *event;
       TplEntity *sender;
       TplEntity *receiver;
       gchar *time_str;
@@ -861,7 +861,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
         is_user = (!tp_strdiff (is_user_str, "true"));
 
       if (msg_type_str != NULL)
-        msg_type = _tpl_event_text_message_type_from_str (msg_type_str);
+        msg_type = _tpl_text_event_message_type_from_str (msg_type_str);
 
       timestamp = _tpl_time_parse (time_str);
 
@@ -910,7 +910,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
           xmlFree (saved_log_id);
         }
 
-      event = g_object_new (TPL_TYPE_EVENT_TEXT,
+      event = g_object_new (TPL_TYPE_TEXT_EVENT,
           /* TplEvent */
           "account", account,
           /* MISSING: "channel-path", channel_path, */
@@ -919,12 +919,12 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
           "sender", sender,
           "target-id", target_id,
           "timestamp", timestamp,
-          /* TplEventText */
+          /* TplTextEvent */
           "message-type", msg_type,
           "message", body,
           /* As the pending-msg-id is not maintained in XML store, we simply
            * assume the message to be acknowledge. */
-          "pending-msg-id", TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED,
+          "pending-msg-id", TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
           NULL);
 
       events = g_list_append (events, event);

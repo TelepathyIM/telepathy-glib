@@ -8,7 +8,7 @@
 #include "lib/simple-account-manager.h"
 
 #include <telepathy-logger/log-store-pidgin-internal.h>
-#include <telepathy-logger/event-text-internal.h>
+#include <telepathy-logger/text-event-internal.h>
 
 #include <telepathy-glib/debug-sender.h>
 
@@ -339,7 +339,7 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
     gconstpointer user_data)
 {
   GList *l;
-  TplEventText *msg = NULL;
+  TplTextEvent *msg = NULL;
   GDate *date = g_date_new_dmy (12, G_DATE_APRIL, 2010);
 
   /* chatroom messages */
@@ -352,7 +352,7 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
 
   msg = g_list_nth_data (l, 0);
   g_assert (_tpl_event_target_is_room (TPL_EVENT (msg)) == TRUE);
-  g_assert_cmpstr (tpl_event_text_get_message (msg), ==, "1");
+  g_assert_cmpstr (tpl_text_event_get_message (msg), ==, "1");
 
   g_list_foreach (l, (GFunc) g_object_unref, NULL);
   g_list_free (l);
@@ -368,7 +368,7 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
 
   msg = g_list_nth_data (l, 0);
   g_assert (_tpl_event_target_is_room (TPL_EVENT (msg)) == FALSE);
-  g_assert_cmpstr (tpl_event_text_get_message (msg), ==, "hi");
+  g_assert_cmpstr (tpl_text_event_get_message (msg), ==, "hi");
 
   g_list_foreach (l, (GFunc) g_object_unref, NULL);
   g_list_free (l);

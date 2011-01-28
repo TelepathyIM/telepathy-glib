@@ -66,13 +66,13 @@ IGNORE_HFILES=\
     dbus-service-internal.h \
     debug-internal.h \
     event-internal.h \
-    event-text-internal.h \
     log-manager-internal.h \
     log-store-factory-internal.h \
     log-store-internal.h \
     log-store-sqlite-internal.h \
     log-store-xml-internal.h \
     observer-internal.h \
+    text-event-internal.h \
     util-internal.h
 
 # Images to copy into HTML directory.

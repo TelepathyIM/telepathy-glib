@@ -19,42 +19,42 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#ifndef __TPL_EVENT_TEXT_INTERNAL_H__
-#define __TPL_EVENT_TEXT_INTERNAL_H__
+#ifndef __TPL_TEXT_EVENT_INTERNAL_H__
+#define __TPL_TEXT_EVENT_INTERNAL_H__
 
-#include <telepathy-logger/event-text.h>
+#include <telepathy-logger/text-event.h>
 #include <telepathy-logger/event-internal.h>
 #include <telepathy-logger/channel-text-internal.h>
 
-#define TPL_EVENT_TEXT_MSG_ID_IS_VALID(msg) (msg >= 0)
+#define TPL_TEXT_EVENT_MSG_ID_IS_VALID(msg) (msg >= 0)
 
-#define TPL_EVENT_TEXT_MSG_ID_UNKNOWN -2
-#define TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED -1
+#define TPL_TEXT_EVENT_MSG_ID_UNKNOWN -2
+#define TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED -1
 
 G_BEGIN_DECLS
 
-struct _TplEventText
+struct _TplTextEvent
 {
   TplEvent parent;
 
   /* Private */
-  TplEventTextPriv *priv;
+  TplTextEventPriv *priv;
 };
 
-struct _TplEventTextClass
+struct _TplTextEventClass
 {
   TplEventClass parent_class;
 };
 
-TpChannelTextMessageType _tpl_event_text_message_type_from_str (
+TpChannelTextMessageType _tpl_text_event_message_type_from_str (
     const gchar *type_str);
 
-const gchar * _tpl_event_text_message_type_to_str (
+const gchar * _tpl_text_event_message_type_to_str (
     TpChannelTextMessageType msg_type);
 
-gint _tpl_event_text_get_pending_msg_id (TplEventText *self);
+gint _tpl_text_event_get_pending_msg_id (TplTextEvent *self);
 
-gboolean _tpl_event_text_is_pending (TplEventText *self);
+gboolean _tpl_text_event_is_pending (TplTextEvent *self);
 
 G_END_DECLS
-#endif // __TPL_EVENT_TEXT_INTERNAL_H__
+#endif // __TPL_TEXT_EVENT_INTERNAL_H__

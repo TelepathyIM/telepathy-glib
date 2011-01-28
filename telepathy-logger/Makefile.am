@@ -20,9 +20,9 @@ LIBTPLdir = $(includedir)/telepathy-logger-0.1/telepathy-logger
 LIBTPL_HEADERS = \
 		entity.h			\
 		event.h				\
-		event-text.h		\
 		log-manager.h			\
-		telepathy-logger.h \
+		telepathy-logger.h 		\
+		text-event.h			\
 		$(NULL)
 
 %-marshal.c: %-marshal.list Makefile.am
@@ -57,8 +57,6 @@ libtelepathy_logger_la_SOURCES = \
 		debug.c				\
 		event.c			\
 		event-internal.h			\
-		event-text.c		\
-		event-text-internal.h		\
 		log-manager.c			\
 		log-manager-internal.h		\
 		log-store.c			\
@@ -73,6 +71,8 @@ libtelepathy_logger_la_SOURCES = \
 		log-store-factory-internal.h	\
 		observer.c			\
 		observer-internal.h		\
+		text-event.c			\
+		text-event-internal.h		\
 		util-internal.h			\
 		util.c				\
 		$(NULL)

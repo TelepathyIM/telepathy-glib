@@ -27,8 +27,8 @@
 #include <sqlite3.h>
 
 #include "event-internal.h"
-#include "event-text.h"
-#include "event-text-internal.h"
+#include "text-event.h"
+#include "text-event-internal.h"
 #include "entity-internal.h"
 #include "log-store-sqlite-internal.h"
 #include "log-manager-internal.h"
@@ -446,7 +446,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-  if (TPL_IS_EVENT_TEXT (message) == FALSE)
+  if (TPL_IS_TEXT_EVENT (message) == FALSE)
     {
       DEBUG ("ignoring msg %s, not interesting for message-counter",
           _tpl_event_get_log_id (message));
@@ -630,7 +630,7 @@ out:
  *
  * MessageCounter only handles Text messages, which means that it will
  * silently (ie won't use @error) not log @message, when it won't be an
- * instance ot TplEventText, returning anyway %TRUE. This means "I could
+ * instance ot TplTextEvent, returning anyway %TRUE. This means "I could
  * store @message, but I'm discarding it because I'm not interested in it" and
  * is not cosidered an error (@error won't be set).
  * It will return %FALSE with @error set if a fatal error occurred, for
@@ -694,7 +694,7 @@ _insert_to_cache_table (TplLogStore *self,
   gboolean retval = FALSE;
   int e;
 
-  if (!TPL_IS_EVENT_TEXT (message))
+  if (!TPL_IS_TEXT_EVENT (message))
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
           TPL_LOG_STORE_ERROR_ADD_EVENT,
@@ -707,7 +707,7 @@ _insert_to_cache_table (TplLogStore *self,
   channel = get_channel_name_from_event (message);
   identifier = _tpl_event_get_target_id (message);
   log_id = _tpl_event_get_log_id (message);
-  msg_id = _tpl_event_text_get_pending_msg_id (TPL_EVENT_TEXT (message));
+  msg_id = _tpl_text_event_get_pending_msg_id (TPL_TEXT_EVENT (message));
   chatroom = _tpl_event_target_is_room (message);
   date = get_datetime (message);
 
@@ -716,7 +716,7 @@ _insert_to_cache_table (TplLogStore *self,
   DEBUG ("chat_identifier = %s", identifier);
   DEBUG ("log_identifier = %s", log_id);
   DEBUG ("pending_msg_id = %d (%s)", msg_id,
-      (TPL_EVENT_TEXT_MSG_ID_IS_VALID (msg_id) ?
+      (TPL_TEXT_EVENT_MSG_ID_IS_VALID (msg_id) ?
        "pending" : "acknowledged or sent"));
   DEBUG ("chatroom = %i", chatroom);
   DEBUG ("date = %s", date);
@@ -751,7 +751,7 @@ _insert_to_cache_table (TplLogStore *self,
   sqlite3_bind_text (sql, 2, account, -1, SQLITE_TRANSIENT);
   /* insert NULL if ACKNOWLEDGED (ie sent message's entries, which are created
    * ACK'd */
-  if (!TPL_EVENT_TEXT_MSG_ID_IS_VALID (msg_id))
+  if (!TPL_TEXT_EVENT_MSG_ID_IS_VALID (msg_id))
     sqlite3_bind_null (sql, 3);
   else
     sqlite3_bind_int (sql, 3, msg_id);

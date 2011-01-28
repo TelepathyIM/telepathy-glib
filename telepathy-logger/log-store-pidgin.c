@@ -33,7 +33,7 @@
 #include "log-store-internal.h"
 #include "log-store-pidgin-internal.h"
 #include "log-manager-internal.h"
-#include "event-text-internal.h"
+#include "text-event-internal.h"
 #include "entity-internal.h"
 #include "datetime-internal.h"
 #include "util-internal.h"
@@ -746,7 +746,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
 
       for (i = 1; lines[i] != NULL; i++)
         {
-          TplEventText *event;
+          TplTextEvent *event;
           TplEntity *sender;
           TplEntity *receiver = NULL;
           gchar *sender_name = NULL;
@@ -876,7 +876,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
               timestamp, 0);
           g_free (instead_of_channel_path);
 
-          event = g_object_new (TPL_TYPE_EVENT_TEXT,
+          event = g_object_new (TPL_TYPE_TEXT_EVENT,
               /* TplEvent */
               "account", account,
               /* MISSING: "channel-path", channel_path, */
@@ -885,11 +885,11 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
               "sender", sender,
               "target-id", target_id,
               "timestamp", timestamp,
-              /* TplEventText */
+              /* TplTextEvent */
               "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
               "message", body,
               /* Assume that messages are acknowledged. */
-              "pending-msg-id", TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED,
+              "pending-msg-id", TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
               NULL);
 
           /* prepend and then reverse is better than append */

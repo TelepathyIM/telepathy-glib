@@ -30,8 +30,8 @@
 #include <telepathy-logger/channel-internal.h>
 #include <telepathy-logger/observer-internal.h>
 #include <telepathy-logger/event-internal.h>
-#include <telepathy-logger/event-text.h>
-#include <telepathy-logger/event-text-internal.h>
+#include <telepathy-logger/text-event.h>
+#include <telepathy-logger/text-event-internal.h>
 #include <telepathy-logger/log-manager-internal.h>
 #include <telepathy-logger/log-store-sqlite-internal.h>
 
@@ -738,7 +738,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
         {
           DEBUG ("pending-message-id not in a valid range, setting to "
               "UNKNOWN");
-            message_id = TPL_EVENT_TEXT_MSG_ID_UNKNOWN;
+            message_id = TPL_TEXT_EVENT_MSG_ID_UNKNOWN;
         }
       message_timestamp = tp_asv_get_uint64 (message_headers,
           "message-received", NULL);
@@ -1062,7 +1062,7 @@ on_sent_signal_cb (TpChannel *proxy,
   TpContact *me;
   TplEntity *sender;
   TplEntity *receiver = NULL;
-  TplEventText *text_log;
+  TplTextEvent *text_log;
   TplLogManager *logmanager;
   TpAccount *account;
   const gchar *channel_path;
@@ -1072,7 +1072,7 @@ on_sent_signal_cb (TpChannel *proxy,
 
   channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   log_id = _tpl_create_message_token (channel_path, timestamp,
-      TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED);
+      TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED);
 
   /* Initialize data for TplEntity */
   me = _tpl_channel_text_get_my_contact (tpl_text);
@@ -1113,10 +1113,9 @@ on_sent_signal_cb (TpChannel *proxy,
           text);
     }
 
-  /* Initialise TplEventText */
+  /* Initialise TplTextEvent */
   account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
-
-  text_log = g_object_new (TPL_TYPE_EVENT_TEXT,
+  text_log = g_object_new (TPL_TYPE_TEXT_EVENT,
       /* TplEvent */
       "account", account,
       "channel-path", channel_path,
@@ -1125,10 +1124,10 @@ on_sent_signal_cb (TpChannel *proxy,
       "sender", sender,
       "target-id", tpl_entity_get_identifier (receiver),
       "timestamp", timestamp,
-      /* TplEventText */
+      /* TplTextEvent */
       "message-type", type,
       "message", text,
-      "pending-msg-id", TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED,
+      "pending-msg-id", TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
       NULL);
 
   logmanager = tpl_log_manager_dup_singleton ();
@@ -1207,7 +1206,7 @@ keepon_on_receiving_signal (TplChannelText *tpl_text,
     TpContact *remote,
     ReceivedData *data)
 {
-  TplEventText *text_log;
+  TplTextEvent *text_log;
   GError *error = NULL;
   TplLogManager *logmanager;
   TplEntity *sender;
@@ -1229,8 +1228,8 @@ keepon_on_receiving_signal (TplChannelText *tpl_text,
       target_id = tpl_entity_get_identifier (sender);
     }
 
-  /* Initialize TplEventText */
-  text_log = g_object_new (TPL_TYPE_EVENT_TEXT,
+  /* Initialize TplTextEvent */
+  text_log = g_object_new (TPL_TYPE_TEXT_EVENT,
       /* TplEvent */
       "account", _tpl_channel_get_account (TPL_CHANNEL (tpl_text)),
       "channel-path", tp_proxy_get_object_path (TP_PROXY (tpl_text)),
@@ -1239,7 +1238,7 @@ keepon_on_receiving_signal (TplChannelText *tpl_text,
       "sender", sender,
       "target-id", target_id,
       "timestamp", data->timestamp,
-      /* TplEventText */
+      /* TplTextEvent */
       "message-type", data->type,
       "message", data->text,
       "pending-msg-id", data->msg_id,
@@ -1252,7 +1251,7 @@ keepon_on_receiving_signal (TplChannelText *tpl_text,
       tpl_entity_get_alias (receiver),
       tpl_entity_get_identifier (sender),
       tpl_entity_get_alias (sender),
-      tpl_event_text_get_message (text_log));
+      tpl_text_event_get_message (text_log));
 
   logmanager = tpl_log_manager_dup_singleton ();
   _tpl_log_manager_add_event (logmanager, TPL_EVENT (text_log), &error);
