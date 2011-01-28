@@ -29,6 +29,8 @@ def display_pending_messages(channel):
     for msg in messages:
         echo_message(channel, msg, True)
 
+    # Ideally we should pass None as callback but that doesn't work
+    # (bgo #640812)
     channel.ack_messages_async(messages, lambda a, b, c: 0, None)
 
 def handle_channels_cb(handler, account, connection, channels, requests,
