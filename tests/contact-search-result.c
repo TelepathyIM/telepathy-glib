@@ -27,7 +27,7 @@ test_contact_search_result (void)
   TpContactInfoField *field;
   const gchar *identifier;
   GList *fields;
-  gchar *field_value = "Joe";
+  gchar *field_value[] = { "Joe", NULL };
 
   result = _tp_contact_search_result_new ("id");
   g_assert (TP_IS_CONTACT_SEARCH_RESULT (result));
@@ -41,7 +41,7 @@ test_contact_search_result (void)
   field = tp_contact_search_result_get_field (result, "fn");
   g_assert (field == NULL);
 
-  field = tp_contact_info_field_new ("fn", NULL, &field_value);
+  field = tp_contact_info_field_new ("fn", NULL, field_value);
   g_assert (field != NULL);
 
   _tp_contact_search_result_insert_field (result, field);
@@ -51,7 +51,8 @@ test_contact_search_result (void)
 
   field = tp_contact_search_result_get_field (result, "fn");
   g_assert (field != NULL);
-  g_assert_cmpstr (field->field_value[0], ==, field_value);
+  g_assert_cmpstr (field->field_value[0], ==, field_value[0]);
+  g_assert_cmpstr (field->field_value[1], ==, field_value[1]);
 
   g_object_unref (result);
 }
