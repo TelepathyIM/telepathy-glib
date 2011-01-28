@@ -24,7 +24,7 @@
 
 #include <telepathy-glib/util.h>
 
-#include <telepathy-logger/channel-text-internal.h>
+#include <telepathy-logger/text-channel-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/debug-internal.h>

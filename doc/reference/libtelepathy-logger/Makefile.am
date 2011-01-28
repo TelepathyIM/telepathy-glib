@@ -59,7 +59,6 @@ IGNORE_HFILES=\
     action-chain-internal.h \
     channel-factory-internal.h \
     channel-internal.h \
-    channel-text-internal.h \
     conf-internal.h \
     contact-internal.h \
     datetime-internal.h \
@@ -72,6 +71,7 @@ IGNORE_HFILES=\
     log-store-sqlite-internal.h \
     log-store-xml-internal.h \
     observer-internal.h \
+    text-channel-internal.h \
     text-event-internal.h \
     util-internal.h
 

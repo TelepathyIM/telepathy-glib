@@ -24,7 +24,7 @@
 
 #include <telepathy-logger/text-event.h>
 #include <telepathy-logger/event-internal.h>
-#include <telepathy-logger/channel-text-internal.h>
+#include <telepathy-logger/text-channel-internal.h>
 
 #define TPL_TEXT_EVENT_MSG_ID_IS_VALID(msg) (msg >= 0)
 

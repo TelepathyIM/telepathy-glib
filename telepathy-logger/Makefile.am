@@ -43,8 +43,6 @@ libtelepathy_logger_la_SOURCES = \
 		channel.c			\
 		channel-factory.c		\
 		channel-factory-internal.h	\
-		channel-text.c			\
-		channel-text-internal.h		\
 		conf.c				\
 		conf-internal.h			\
 		entity.c			\
@@ -71,6 +69,8 @@ libtelepathy_logger_la_SOURCES = \
 		log-store-factory-internal.h	\
 		observer.c			\
 		observer-internal.h		\
+		text-channel.c			\
+		text-channel-internal.h		\
 		text-event.c			\
 		text-event-internal.h		\
 		util-internal.h			\

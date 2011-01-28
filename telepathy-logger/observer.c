@@ -82,7 +82,7 @@
  */
 
 static void tpl_observer_dispose (GObject * obj);
-static void got_tpl_channel_text_ready_cb (GObject *obj, GAsyncResult *result,
+static void got_tpl_text_channel_ready_cb (GObject *obj, GAsyncResult *result,
     gpointer user_data);
 static TplChannelFactory tpl_observer_get_channel_factory (TplObserver *self);
 
@@ -181,7 +181,7 @@ tpl_observer_observe_channels (TpBaseClient *client,
       g_hash_table_insert (self->priv->preparing_channels,
           (gchar *) tp_proxy_get_object_path (tpl_chan), tpl_chan);
 
-      _tpl_channel_call_when_ready (tpl_chan, got_tpl_channel_text_ready_cb,
+      _tpl_channel_call_when_ready (tpl_chan, got_tpl_text_channel_ready_cb,
           observing_ctx);
     }
 
@@ -228,7 +228,7 @@ _tpl_observer_register_channel (TplObserver *self,
 }
 
 static void
-got_tpl_channel_text_ready_cb (GObject *obj,
+got_tpl_text_channel_ready_cb (GObject *obj,
     GAsyncResult *result,
     gpointer user_data)
 {
@@ -424,7 +424,7 @@ _tpl_observer_new (void)
  * @self: #TplObserver instance, cannot be %NULL.
  * @channel: a #TplChannel cast of a TplChannel subclass instance
  *
- * Un-registers a TplChannel subclass instance, i.e. TplChannelText instance,
+ * Un-registers a TplChannel subclass instance, i.e. TplTextChannel instance,
  * as TplChannel instance.
  * It is supposed to be called when the Closed signal for a channel is
  * emitted or when an un-recoverable error during the life or a TplChannel

@@ -19,8 +19,8 @@
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
  */
 
-#ifndef __TPL_CHANNEL_TEXT_H__
-#define __TPL_CHANNEL_TEXT_H__
+#ifndef __TPL_TEXT_CHANNEL_H__
+#define __TPL_TEXT_CHANNEL_H__
 
 /*
  * http://telepathy.freedesktop.org/doc/telepathy-glib/telepathy-glib-channel-text.html#tp-cli-channel-type-text-connect-to-received
@@ -35,32 +35,32 @@
 #include <telepathy-logger/channel-internal.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_CHANNEL_TEXT                  (_tpl_channel_text_get_type ())
-#define TPL_CHANNEL_TEXT(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CHANNEL_TEXT, TplChannelText))
-#define TPL_CHANNEL_TEXT_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CHANNEL_TEXT, TplChannelTextClass))
-#define TPL_IS_CHANNEL_TEXT(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CHANNEL_TEXT))
-#define TPL_IS_CHANNEL_TEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CHANNEL_TEXT))
-#define TPL_CHANNEL_TEXT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CHANNEL_TEXT, TplChannelTextClass))
+#define TPL_TYPE_TEXT_CHANNEL                  (_tpl_text_channel_get_type ())
+#define TPL_TEXT_CHANNEL(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_TEXT_CHANNEL, TplTextChannel))
+#define TPL_TEXT_CHANNEL_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_TEXT_CHANNEL, TplTextChannelClass))
+#define TPL_IS_TEXT_CHANNEL(obj)               (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_TEXT_CHANNEL))
+#define TPL_IS_TEXT_CHANNEL_CLASS(klass)       (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_TEXT_CHANNEL))
+#define TPL_TEXT_CHANNEL_GET_CLASS(obj)        (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_TEXT_CHANNEL, TplTextChannelClass))
 
-typedef struct _TplChannelTextPriv TplChannelTextPriv;
+typedef struct _TplTextChannelPriv TplTextChannelPriv;
 typedef struct
 {
   TplChannel parent;
 
   /* private */
-  TplChannelTextPriv *priv;
-} TplChannelText;
+  TplTextChannelPriv *priv;
+} TplTextChannel;
 
 typedef struct
 {
   TplChannelClass parent_class;
-} TplChannelTextClass;
+} TplTextChannelClass;
 
-GType _tpl_channel_text_get_type (void);
+GType _tpl_text_channel_get_type (void);
 
-TplChannelText * _tpl_channel_text_new (TpConnection *conn,
+TplTextChannel * _tpl_text_channel_new (TpConnection *conn,
     const gchar *object_path, GHashTable *tp_chan_props, TpAccount *account,
     GError **error);
 
 G_END_DECLS
-#endif /* __TPL_CHANNEL_TEXT_H__ */
+#endif /* __TPL_TEXT_CHANNEL_H__ */

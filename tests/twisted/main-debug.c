@@ -25,7 +25,7 @@
 
 #include <telepathy-logger/observer-internal.h>
 #include <telepathy-logger/channel-factory-internal.h>
-#include <telepathy-logger/channel-text-internal.h>
+#include <telepathy-logger/text-channel-internal.h>
 
 
 static TplObserver *
