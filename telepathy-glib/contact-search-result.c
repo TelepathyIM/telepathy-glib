@@ -134,9 +134,8 @@ tp_contact_search_result_dispose (GObject *object)
 
   tp_clear_pointer (&self->priv->identifier, g_free);
 
-  g_list_free_full (self->priv->fields,
-      (GDestroyNotify) tp_contact_info_field_free);
-  self->priv->fields = NULL;
+  g_list_foreach (self->priv->fields, (GFunc) tp_contact_info_field_free, NULL);
+  tp_clear_pointer (&self->priv->fields, g_list_free);
 
   G_OBJECT_CLASS (tp_contact_search_result_parent_class)->dispose (object);
 }

@@ -181,7 +181,8 @@ _search_results_received (TpChannel *channel,
   DEBUG ("SearchResultsReceived (%i results)", g_hash_table_size (result));
   g_signal_emit (object, _signals[SEARCH_RESULTS_RECEIVED], 0, results);
 
-  g_list_free_full (results, g_object_unref);
+  g_list_foreach (results, (GFunc) g_object_unref, NULL);
+  g_list_free (results);
 }
 
 static void
@@ -201,39 +202,24 @@ _create_search_channel_cb (GObject *source_object,
 
   self->priv->channel =
       tp_account_channel_request_create_and_handle_channel_finish (
-          channel_request,
-          result,
-          NULL,
-          &error);
+          channel_request, result, NULL, &error);
 
-  if (error != NULL)
+  if (self->priv->channel == NULL)
     {
       DEBUG ("Failed to create search channel: %s", error->message);
-      g_simple_async_result_take_error (self->priv->async_res, error);
       goto out;
     }
 
   DEBUG ("Got channel: %s", tp_proxy_get_object_path (self->priv->channel));
 
-  tp_cli_channel_type_contact_search_connect_to_search_result_received (
-      self->priv->channel, _search_results_received,
-      NULL, NULL, G_OBJECT (self), &error);
-  if (error != NULL)
+  if (tp_cli_channel_type_contact_search_connect_to_search_result_received (
+          self->priv->channel, _search_results_received,
+          NULL, NULL, G_OBJECT (self), &error) == NULL ||
+      tp_cli_channel_type_contact_search_connect_to_search_state_changed (
+          self->priv->channel, _search_state_changed,
+          NULL, NULL, G_OBJECT (self), &error) == NULL)
     {
-      DEBUG ("Failed to connect SearchResultReceived: %s", error->message);
-      close_search_channel (self);
-      g_simple_async_result_take_error (self->priv->async_res, error);
-      goto out;
-    }
-
-  tp_cli_channel_type_contact_search_connect_to_search_state_changed (
-      self->priv->channel, _search_state_changed,
-      NULL, NULL, G_OBJECT (self), &error);
-  if (error != NULL)
-    {
-      DEBUG ("Failed to connect SearchStateChanged: %s", error->message);
-      close_search_channel (self);
-      g_simple_async_result_take_error (self->priv->async_res, error);
+      DEBUG ("Failed to connect to signals: %s", error->message);
       goto out;
     }
 
@@ -261,6 +247,14 @@ _create_search_channel_cb (GObject *source_object,
   g_object_notify (G_OBJECT (self), "state");
 
  out:
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (self->priv->async_res, error);
+      g_error_free (error);
+    }
+
+  /* This function is safe if self->priv->channel is NULL. */
+  close_search_channel (self);
   g_simple_async_result_complete (self->priv->async_res);
   tp_clear_object (&self->priv->async_res);
 }
