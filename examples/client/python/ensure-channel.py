@@ -13,7 +13,7 @@ def usage():
 
     sys.exit(1)
 
-def create_request(action, contact_id):
+def create_request_dict(action, contact_id):
     if action == 'text':
         return {
             TelepathyGLib.PROP_CHANNEL_CHANNEL_TYPE:
@@ -55,9 +55,9 @@ if __name__ == '__main__':
     account = mgr.ensure_account("%s%s" % (TelepathyGLib.ACCOUNT_OBJECT_PATH_BASE,
         account_id))
 
-    request = create_request(action, contact_id)
+    request_dict = create_request_dict(action, contact_id)
 
-    req = TelepathyGLib.AccountChannelRequest.new(account, request, 0)
+    req = TelepathyGLib.AccountChannelRequest.new(account, request_dict, 0)
     # FIXME: for some reason TelepathyGLib.USER_ACTION_TIME_CURRENT_TIME is
     # not defined
 
