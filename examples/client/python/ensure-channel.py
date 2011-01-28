@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     req = TelepathyGLib.AccountChannelRequest.new(account, request_dict, 0)
     # FIXME: for some reason TelepathyGLib.USER_ACTION_TIME_CURRENT_TIME is
-    # not defined
+    # not defined (bgo #639206)
 
     main_loop = gobject.MainLoop()
 
