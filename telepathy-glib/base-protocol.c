@@ -36,7 +36,7 @@
  *         (@gtype is INT), 16- and 32-bit unsigned integers (gtype is UINT),
  *         strings (gtype is STRING) and booleans (gtype is BOOLEAN).
  * @gtype: GLib type, derived from @dtype as above
- * @flags: Some combination of TP_CONN_MGR_PARAM_FLAG_foo
+ * @flags: Some combination of #TpConnMgrParamFlags
  * @def: Default value, as a (const gchar *) for string parameters, or
          using #GINT_TO_POINTER or #GUINT_TO_POINTER for integer parameters
  * @offset: Offset of the parameter in the opaque data structure, if
