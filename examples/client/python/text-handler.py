@@ -13,7 +13,8 @@ def echo_message(channel, msg, pending):
     else:
         print "received: %s" % (text)
 
-    reply = TelepathyGLib.ClientMessage.new_text(0, text.upper())
+    reply = TelepathyGLib.ClientMessage.new_text(
+        TelepathyGLib.ChannelTextMessageType.NORMAL, text.upper())
 
     channel.send_message_async(reply, 0, lambda a, b, c: 0, None)
 
