@@ -35,8 +35,8 @@ def create_request_dict(action, contact_id):
     else:
         usage()
 
-def ensure_channel_cb(req, result, main_loop):
-    req.ensure_channel_finish(result)
+def ensure_channel_cb(request, result, main_loop):
+    request.ensure_channel_finish(result)
 
     main_loop.quit()
 
@@ -50,19 +50,19 @@ if __name__ == '__main__':
 
     _, account_id, action, contact_id = sys.argv
 
-    mgr = TelepathyGLib.AccountManager.dup()
+    account_manager = TelepathyGLib.AccountManager.dup()
 
-    account = mgr.ensure_account("%s%s" % (TelepathyGLib.ACCOUNT_OBJECT_PATH_BASE,
-        account_id))
+    account = account_manager.ensure_account("%s%s" %
+        (TelepathyGLib.ACCOUNT_OBJECT_PATH_BASE, account_id))
 
     request_dict = create_request_dict(action, contact_id)
 
-    req = TelepathyGLib.AccountChannelRequest.new(account, request_dict, 0)
+    request = TelepathyGLib.AccountChannelRequest.new(account, request_dict, 0)
     # FIXME: for some reason TelepathyGLib.USER_ACTION_TIME_CURRENT_TIME is
     # not defined (bgo #639206)
 
     main_loop = gobject.MainLoop()
 
-    req.ensure_channel_async("", None, ensure_channel_cb, main_loop)
+    request.ensure_channel_async("", None, ensure_channel_cb, main_loop)
 
     main_loop.run()
