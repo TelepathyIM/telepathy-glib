@@ -181,7 +181,8 @@ _search_results_received (TpChannel *channel,
   DEBUG ("SearchResultsReceived (%i results)", g_hash_table_size (result));
   g_signal_emit (object, _signals[SEARCH_RESULTS_RECEIVED], 0, results);
 
-  g_list_free_full (results, g_object_unref);
+  g_list_foreach (results, (GFunc) g_object_unref, NULL);
+  g_list_free (results);
 }
 
 static void
@@ -209,7 +210,8 @@ _create_search_channel_cb (GObject *source_object,
   if (error != NULL)
     {
       DEBUG ("Failed to create search channel: %s", error->message);
-      g_simple_async_result_take_error (self->priv->async_res, error);
+      g_simple_async_result_set_from_error (self->priv->async_res, error);
+      g_error_free (error);
       goto out;
     }
 
@@ -222,7 +224,8 @@ _create_search_channel_cb (GObject *source_object,
     {
       DEBUG ("Failed to connect SearchResultReceived: %s", error->message);
       close_search_channel (self);
-      g_simple_async_result_take_error (self->priv->async_res, error);
+      g_simple_async_result_set_from_error (self->priv->async_res, error);
+      g_error_free (error);
       goto out;
     }
 
@@ -233,7 +236,8 @@ _create_search_channel_cb (GObject *source_object,
     {
       DEBUG ("Failed to connect SearchStateChanged: %s", error->message);
       close_search_channel (self);
-      g_simple_async_result_take_error (self->priv->async_res, error);
+      g_simple_async_result_set_from_error (self->priv->async_res, error);
+      g_error_free (error);
       goto out;
     }
 
