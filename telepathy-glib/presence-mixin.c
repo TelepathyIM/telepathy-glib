@@ -45,23 +45,32 @@
  *   <itemizedlist>
  *     <listitem>
  *       <para>use the #TpContactsMixin and
- *        <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link></para>
+ *        <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link>;</para>
  *     </listitem>
  *     <listitem>
  *       <para>pass tp_presence_mixin_simple_presence_iface_init() as an
- *         argument to G_IMPLEMENT_INTERFACE()
+ *         argument to G_IMPLEMENT_INTERFACE(), like so:
  *       </para>
+ *       |[
+ *       G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
+ *           TP_TYPE_BASE_CONNECTION,
+ *           // ...
+ *           G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+ *               tp_presence_mixin_simple_presence_iface_init);
+ *           // ...
+ *           )
+ *       ]|
  *     </listitem>
  *     <listitem>
  *       <para>
- *         call tp_presence_mixin_simple_presence_init_dbus_properties in the
- *         #GTypeClass.class_init function
+ *         call tp_presence_mixin_simple_presence_init_dbus_properties() in the
+ *         #GTypeInfo class_init function;
  *       </para>
  *     </listitem>
  *     <listitem>
  *       <para>
  *         call tp_presence_mixin_simple_presence_register_with_contacts_mixin()
- *         in the #GObjectClass.constructed function
+ *         in the #GObjectClass constructed function.
  *       </para>
  *     </listitem>
  *   </itemizedlist>
@@ -78,10 +87,19 @@
  * <para>
  *   To use the presence mixin as the implementation of
  *   #TpSvcConnectionInterfacePresence, use tp_presence_mixin_iface_init() as
- *   the function you pass to G_IMPLEMENT_INTERFACE().
- *   The presence mixin implements all of the D-Bus methods in the Presence
- *   interface.
+ *   the function you pass to G_IMPLEMENT_INTERFACE(), as in the following
+ *   example.  The presence mixin implements all of the D-Bus methods in the
+ *   Presence interface.
  * </para>
+ * |[
+ * G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
+ *     TP_TYPE_BASE_CONNECTION,
+ *     // ...
+ *     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
+ *         tp_presence_mixin_iface_init);
+ *     // ...
+ *     )
+ * ]|
  * <para>
  *   In telepathy-glib versions older than 0.11.13, every connection
  *   that used the #TpPresenceMixin was required to implement
