@@ -140,19 +140,27 @@
 
 /**
  * TpPresenceMixinStatusAvailableFunc:
- * @obj: An object implementing the presence interface with this mixin
- * @which: The index of the presence status in the provided supported presence
- *  statuses array
+ * @obj: An instance of a #TpBaseConnection subclass implementing the presence
+ *  interface with this mixin
+ * @which: An index into the array of #TpPresenceStatusSpec provided to
+ *  tp_presence_mixin_class_init()
  *
- * Signature of the callback used to determine if a given status is currently
- * available to be set on the connection.
+ * Signature of a callback to be used to determine if a given presence
+ * status can be set on the connection. Most users of this mixin do not need to
+ * supply an implementation of this callback: the value of
+ * #TpPresenceStatusSpec.self is enough to determine whether this is a
+ * user-settable presence, so %NULL should be passed to
+ * tp_presence_mixin_class_init() for this callback.
  *
- * When implementing the
- * org.freedesktop.Telepathy.Connection.Interface.SimplePresence interface
- * this can be called while DISCONNECTED to determine which statuses can be set
- * in that state.
+ * One place where this callback may be needed is on XMPP: not all server
+ * implementation support the user becoming invisible. So an XMPP
+ * implementation would implement this function, so that—once connected—the
+ * hidden status is only available if the server supports it. Before the
+ * connection is connected, this callback should return %TRUE for every status
+ * that might possibly be supported: this allows the user to at least try to
+ * sign in as invisible.
  *
- * Returns: %TRUE if the status is available, %FALSE if not.
+ * Returns: %TRUE if the status can be set on this connection; %FALSE if not.
  */
 
 /**
@@ -346,9 +354,9 @@ tp_presence_mixin_get_offset_quark ()
  * @offset: The byte offset of the TpPresenceMixinClass within the class
  * structure
  * @status_available: A callback to be used to determine if a given presence
- *  status is available to be set on the connection. If NULL, all statuses are
- *  always considered available. If SimplePresence is implemented, this
- *  callback may be called before the connection is connected.
+ *  status can be set on a particular connection. Should usually be %NULL, to
+ *  consider all statuses with #TpPresenceStatusSpec.self set to %TRUE to be
+ *  settable.
  * @get_contact_statuses: A callback to be used get the current presence status
  *  for contacts. This is used in implementations of various D-Bus methods and
  *  hence must be provided.
