@@ -1080,7 +1080,7 @@ tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
       g_type_class_unref (enumclass);
 
       tf_call_content_error (stream->call_content,
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", msg);
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", "%s", msg);
       return TRUE;
     }
 

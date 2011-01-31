@@ -940,7 +940,7 @@ tf_call_content_bus_message (TfCallContent *content,
           g_type_class_unref (enumclass);
 
           tf_call_content_error (content,
-              TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", msg);
+              TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", "%s", msg);
 
           ret = TRUE;
         }
@@ -984,7 +984,7 @@ tf_call_content_error (TfCallContent *content,
   message = g_strdup_vprintf (message_format, valist);
   va_end (valist);
 
-  g_warning (message);
+  g_warning ("%s", message);
   tf_future_cli_call_content_call_remove (
       content->proxy, -1, reason, detailed_reason, message, NULL, NULL,
       NULL, NULL);
