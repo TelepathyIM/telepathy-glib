@@ -21,6 +21,7 @@ import dbus
 import dbus.glib
 import gobject
 import sys
+from glib import GError
 
 import pygst
 pygst.require("0.10")
@@ -128,7 +129,10 @@ class CallChannel:
         mtype = content.get_property ("media-type")
         prefs = self.get_codec_config (mtype)
         if prefs != None:
-            content.set_codec_preferences(prefs)
+            try:
+                content.set_codec_preferences(prefs)
+            except GError, e:
+                print e.message
 
         content.connect ("src-pad-added", self.src_pad_added)
 
