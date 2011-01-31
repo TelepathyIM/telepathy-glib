@@ -140,8 +140,8 @@ class CallChannel:
             src = gst.element_factory_make ("audiotestsrc")
             src.set_property("is-live", True)
         elif mtype == farsight.MEDIA_TYPE_VIDEO:
-            src = gst.element_factory_make ("videotestsrc")
-            src.set_property("is-live", True)
+            src = gst.parse_bin_from_description("videotestsrc is-live=1 ! " \
+                "capsfilter caps=video/x-raw-yuv,width=640,height=480", True)
 
         self.pipeline.add(src)
         src.get_pad("src").link(sinkpad)
