@@ -176,9 +176,7 @@ pendingproc_get_my_contact (TplActionChain *ctx,
 
   my_handle = tp_channel_group_get_self_handle (chan);
   if (my_handle == 0)
-    {
-      my_handle = tp_connection_get_self_handle (tp_conn);
-    }
+    my_handle = tp_connection_get_self_handle (tp_conn);
 
   tp_connection_get_contacts_by_handle (tp_conn, 1, &my_handle,
       G_N_ELEMENTS (features), features, get_self_contact_cb, ctx, NULL,
