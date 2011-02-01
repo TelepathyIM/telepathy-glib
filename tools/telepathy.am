@@ -34,6 +34,11 @@ _is-release-check:
 		echo "Hey! You have changes staged! No release for you." >&2; \
 		exit 2; \
 	fi
+if ENABLE_GTK_DOC
+else
+	@echo "Hey! You need to pass --enable-gtk-doc to configure!"
+	@exit 2;
+endif
 
 %.tar.gz.asc: %.tar.gz
 	$(AM_V_GEN)gpg --detach-sign --armor $@
