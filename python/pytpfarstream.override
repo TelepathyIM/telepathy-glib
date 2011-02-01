@@ -4,10 +4,7 @@ headers
 
 #include <gst/gst.h>
 
-#include <telepathy-farstream/channel.h>
-#include <telepathy-farstream/content.h>
-#include <telepathy-farstream/stream.h>
-#include <extensions/extensions.h>
+#include <telepathy-farstream/telepathy-farstream.h>
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/channel.h>
@@ -124,8 +121,6 @@ _wrap_tf_channel_new_async(PyGObject *self, PyObject *args, PyObject *kwargs)
   GError *error = NULL;
   PyObject *callback;
   PyObject *ret = NULL;
-
-  tf_future_cli_init ();
 
   if (!PyArg_ParseTupleAndKeywords (args, kwargs, "sssO:tf_channel_new_async",
       kwlist, &busname, &connection_path, &channel_path, &callback))

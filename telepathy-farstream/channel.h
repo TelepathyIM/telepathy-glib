@@ -4,6 +4,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/channel.h>
+#include <gst/gst.h>
 
 G_BEGIN_DECLS
 

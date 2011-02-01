@@ -1,6 +1,7 @@
 #!/bin/sh
 
 HEADERS=" \
+    telepathy-farstream.h \
     channel.h \
     content.h \
     stream.h"

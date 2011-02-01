@@ -1,6 +1,7 @@
 #include <pygobject.h>
 
 #include <gst/gst.h>
+#include <telepathy-farstream/telepathy-farstream.h>
 
 void tf_register_classes (PyObject *d);
 
@@ -14,6 +15,7 @@ inittpfarstream(void)
 {
   PyObject *m, *d;
 
+  tf_init ();
   init_pygobject ();
 
   m = Py_InitModule ("tpfarstream", tf_functions);
