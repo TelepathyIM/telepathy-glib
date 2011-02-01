@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <p>Handlers are advised against executing all the media
         signalling, codec and candidate negotiation themselves but
         instead use a helper library such as <a
-        href="http://telepathy.freedesktop.org/doc/telepathy-farsight/">telepathy-farsight</a>
+        href="http://telepathy.freedesktop.org/doc/telepathy-farstream/">telepathy-farstream</a>
         which when given a new Call channel will set up the
         transports and codecs and create GStreamer pads which
         can be added to the handler UI. This is useful as it means
@@ -52,11 +52,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
       <h4>Contents</h4>
 
-      <p><tp:dbus-ref
-        namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref> objects
-        represent the actual media that forms the Call (for example an
-        audio content and a video content). Calls always have one or
-        more Content objects associated with them.</p>
+      <p><tp:dbus-ref namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref>
+        objects represent the actual media that forms the Call (for
+        example an audio content and a video content). Calls always
+        have one or more Content objects associated with them. As a
+        result, a new Call channel request MUST have either
+        <tp:member-ref>InitialAudio</tp:member-ref>=True, or
+        <tp:member-ref>InitialVideo</tp:member-ref>=True, or both,
+        as the Requestable Channel Classes will document.</p>
 
       <p><tp:dbus-ref
         namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref> objects have
@@ -114,7 +117,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         <tp:type>Call_State</tp:type>_Accepted.</p>
 
       <p>At this point <a
-        href="http://telepathy.freedesktop.org/doc/telepathy-farsight/">telepathy-farsight</a>
+        href="http://telepathy.freedesktop.org/doc/telepathy-farstream/">telepathy-farstream</a>
         will signal that a pad is available for the handler to show
         in the user interface.</p>
 
@@ -180,9 +183,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       <p>Once the handler has notified the local user that there is an
         incoming call waiting for acceptance, the handler should call
         <tp:member-ref>SetRinging</tp:member-ref> to let the CM know.
-        The new channel should also be given to telepathy-farsight to
+        The new channel should also be given to telepathy-farstream to
         work out how the two participants will connect together.
-        telepathy-farsight will call the appropriate methods on the call's
+        telepathy-farstream will call the appropriate methods on the call's
         <tp:dbus-ref namespace="ofdT.Call">Content.DRAFT</tp:dbus-ref>s
         to negotiate codecs and transports.</p>
 
@@ -190,7 +193,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         <tp:member-ref>Accept</tp:member-ref>. The
         <tp:member-ref>CallState</tp:member-ref> property changes to
         <tp:type>Call_State</tp:type>_Accepted and once media is
-        being transferred, telepathy-farsight will notify the
+        being transferred, telepathy-farstream will notify the
         handler of a new pad to be shown to the local user in the
         UI</p>
 
@@ -222,9 +225,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       </blockquote>
 
       <p>Assuming no errors, the new video content will be added to
-        the call. telepathy-farsight will pick up the new content and
+        the call. telepathy-farstream will pick up the new content and
         perform the transport and codec negotiation automatically.
-        telpathy-farsight will signal when the video is ready to
+        telpathy-farstream will signal when the video is ready to
         show in the handler's user interface.</p>
 
       <p>A similar method is used for removing contents from a call,
@@ -1160,12 +1163,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
     </property>
 
     <property name="InitialTransport" tp:name-for-bindings="Initial_Transport"
-      type="s" access="read" tp:requestable="yes" tp:immutable="yes">
+      type="u" tp:type="Stream_Transport_Type" access="read"
+      tp:requestable="yes" tp:immutable="yes">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>If set on a requested channel, this indicates the transport that
           should be used for this call. Where not applicable, this property
-          is defined to be the empty string, in particular, on CMs with
-          hardware streaming.</p>
+          is defined to be <tp:type>Stream_Transport_Type</tp:type>_Unknown,
+          in particular, on CMs with hardware streaming.</p>
 
         <tp:rationale>
           When implementing a voip gateway one wants the outgoing leg of the
