@@ -74,7 +74,7 @@ class CallChannel:
 
     def tpfs_created (self, source, result):
         tfchannel = self.tfchannel = source.new_finish(result)
-        tfchannel.connect ("fs-conference-add", self.conference_added)
+        tfchannel.connect ("fs-conference-added", self.conference_added)
         tfchannel.connect ("content-added", self.content_added)
 
 
