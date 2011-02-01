@@ -28,6 +28,8 @@ libtelepathy_farstream_la_SOURCES = \
 	call-content.c \
 	call-stream.h \
 	call-stream.c \
+	telepathy-farstream.h \
+	telepathy-farstream.c \
 	utils.h
 
 nodist_libtelepathy_farstream_la_SOURCES = $(BUILT_SOURCES)
