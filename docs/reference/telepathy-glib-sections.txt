@@ -4683,6 +4683,7 @@ TpDebugSenderPrivate
 <FILE>base-client</FILE>
 <TITLE>base-client</TITLE>
 TpBaseClient
+TpBaseClientClass
 tp_base_client_add_observer_filter
 tp_base_client_take_observer_filter
 tp_base_client_set_observer_recover
@@ -4729,7 +4730,6 @@ TP_IS_BASE_CLIENT
 TP_IS_BASE_CLIENT_CLASS
 TP_TYPE_OBSERVE_CHANNELS_CONTEXT
 TP_TYPE_BASE_CLIENT
-TpBaseClientClass
 TpBaseClientPrivate
 TpBaseClientClassPrivate
 </SECTION>
