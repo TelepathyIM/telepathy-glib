@@ -26,7 +26,7 @@ import pygst
 pygst.require("0.10")
 import gst
 
-import tpfarsight
+import tpfarstream
 import farsight
 from util import *
 
@@ -59,7 +59,7 @@ class CallChannel:
         notifier.set_properties_from_file("element-properties")
         notifier.add(self.pipeline)
 
-        tpfarsight.tf_channel_new_async (connection.service_name,
+        tpfarstream.tf_channel_new_async (connection.service_name,
             connection.object_path, object_path, self.tpfs_created)
 
     def accept (self):

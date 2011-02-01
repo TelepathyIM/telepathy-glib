@@ -5,10 +5,10 @@ HEADERS=" \
     content.h \
     stream.h"
 
-srcdir=../telepathy-farsight/
+srcdir=../telepathy-farstream/
 
-output=pytpfarsight.defs
-filter=pytpfarsight-filter.defs
+output=pytpfarstream.defs
+filter=pytpfarstream-filter.defs
 
 cat ${filter} > ${output}
 

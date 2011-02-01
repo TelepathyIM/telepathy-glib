@@ -1,3 +1,8 @@
+telepathy-farstream 0.0.0 (UNRELEASED)
+======================================
+- Rename from telepathy-farsight to telepathy-farstream 
+- Implement Call API
+
 telepathy-farsight 0.0.16 (22 Dec 2010)
 =======================================
 - Emit the NewActiveTransportPair signal

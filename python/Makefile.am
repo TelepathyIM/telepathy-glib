@@ -11,39 +11,39 @@ AM_CPPFLAGS =					\
 	-DDATADIR=\""$(datadir)"\" \
 	$(TELEPATHY_CFLAGS) \
 	$(PYTHON_INCLUDES) \
-	$(PYTPFARSIGHT_CFLAGS) \
+	$(PYTPFARSTREAM_CFLAGS) \
 	$(FARSIGHT2_CFLAGS)
 
 BUILT_SOURCES =						\
-	pytpfarsight.c					 
+	pytpfarstream.c					 
 
-pytpfarsightdir = $(pyexecdir)
-pytpfarsight_LTLIBRARIES = tpfarsight.la
+pytpfarstreamdir = $(pyexecdir)
+pytpfarstream_LTLIBRARIES = tpfarstream.la
 
-tpfarsight_la_SOURCES =					\
-	pytpfarsightmodule.c pygstminiobject.c
+tpfarstream_la_SOURCES =					\
+	pytpfarstreammodule.c pygstminiobject.c
 
-nodist_tpfarsight_la_SOURCES = pytpfarsight.c
+nodist_tpfarstream_la_SOURCES = pytpfarstream.c
 
-tpfarsight_la_LIBADD =					\
-	$(PYTPFARSIGHT_LIBS)				\
-	$(top_builddir)/telepathy-farsight/libtelepathy-farsight.la
+tpfarstream_la_LIBADD =					\
+	$(PYTPFARSTREAM_LIBS)				\
+	$(top_builddir)/telepathy-farstream/libtelepathy-farstream.la
 
-tpfarsight_la_LDFLAGS =					\
+tpfarstream_la_LDFLAGS =					\
 	`python-config --libs`				\
 	-module -avoid-version
 
-pytpfarsight.c: pytpfarsight.override pytpfarsight.defs
+pytpfarstream.c: pytpfarstream.override pytpfarstream.defs
 	$(PYTHON) $(top_srcdir)/python/codegen/codegen.py	\
 		--prefix tf	\
 		--register $(GSTPYDEFS)/gst-types.defs		\
-		--override $(srcdir)/pytpfarsight.override	\
-		$(srcdir)/pytpfarsight.defs > $@ 
+		--override $(srcdir)/pytpfarstream.override	\
+		$(srcdir)/pytpfarstream.defs > $@ 
 
 EXTRA_DIST =			\
-	pytpfarsight.override	\
-	pytpfarsight.defs		\
-	pytpfarsight-filter.defs  \
+	pytpfarstream.override	\
+	pytpfarstream.defs		\
+	pytpfarstream-filter.defs  \
 	rebuild-defs.sh
 
 CLEANFILES = $(BUILT_SOURCES)

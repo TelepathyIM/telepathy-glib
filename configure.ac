@@ -5,31 +5,31 @@ AC_PREREQ([2.59])
 #     odd minor -> development series
 #     even minor -> stable series
 #     increment micro for each release within a series
-#   set tp_farsight_release to 1
+#   set tp_farstream_release to 1
 
-m4_define([tp_farsight_major_version], [0])
-m4_define([tp_farsight_minor_version], [0])
-m4_define([tp_farsight_micro_version], [16])
-m4_define([tp_farsight_nano_version], [1])
+m4_define([tp_farstream_major_version], [0])
+m4_define([tp_farstream_minor_version], [0])
+m4_define([tp_farstream_micro_version], [0])
+m4_define([tp_farstream_nano_version], [1])
 
 dnl CURRENT, REVISION, AGE
 dnl - library source changed -> increment REVISION
 dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
 dnl - interfaces added -> increment AGE
 dnl - interfaces removed -> AGE = 0
-m4_define([tp_farsight_lt_current], [1])
-m4_define([tp_farsight_lt_revision], [3])
-m4_define([tp_farsight_lt_age], [1])
+m4_define([tp_farstream_lt_current], [0])
+m4_define([tp_farstream_lt_revision], [0])
+m4_define([tp_farstream_lt_age], [0])
 
 
 # Some magic
-m4_define([tp_farsight_base_version],
-          [tp_farsight_major_version.tp_farsight_minor_version.tp_farsight_micro_version])
-m4_define([tp_farsight_version],
-          [m4_if(tp_farsight_nano_version, 0, [tp_farsight_base_version],
-              [tp_farsight_base_version].[tp_farsight_nano_version])])
+m4_define([tp_farstream_base_version],
+          [tp_farstream_major_version.tp_farstream_minor_version.tp_farstream_micro_version])
+m4_define([tp_farstream_version],
+          [m4_if(tp_farstream_nano_version, 0, [tp_farstream_base_version],
+              [tp_farstream_base_version].[tp_farstream_nano_version])])
 
-AC_INIT([Telepathy-Farsight], [tp_farsight_version],
+AC_INIT([Telepathy-Farsight], [tp_farstream_version],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=stream-engine])
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -64,7 +64,7 @@ AS_COMPILER_FLAG(-Wno-unused-parameter,
         wno_unused_parameter=yes,
         wno_unused_parameter=no)
 
-ifelse(tp_farsight_nano_version, 0, [],
+ifelse(tp_farstream_nano_version, 0, [],
     [
         if test x$werror = xyes; then
             ERROR_CFLAGS="$ERROR_CFLAGS -Werror"
@@ -103,7 +103,7 @@ PKG_CHECK_MODULES([TELEPATHY], [telepathy-glib >= 0.13.4])
 AC_SUBST(TELEPATHY_CFLAGS)
 AC_SUBST(TELEPATHY_LIBS)
 
-dnl Check for farsight
+dnl Check for farstream
 PKG_CHECK_MODULES(FARSIGHT2, [farsight2-0.10 >= 0.0.17])
 
 AC_SUBST(FARSIGHT2_CFLAGS)
@@ -123,16 +123,16 @@ AC_ARG_ENABLE([python],
 
 if test "x$WANT_PYTHON" = "xyes"; then
    AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(could not find Python headers)])
-   PKG_CHECK_MODULES(PYTPFARSIGHT, [ pygobject-2.0 >= 2.12.0
+   PKG_CHECK_MODULES(PYTPFARSTREAM, [ pygobject-2.0 >= 2.12.0
       gst-python-0.10 >= 0.10.10 ])
 fi
 AM_CONDITIONAL(WANT_PYTHON, test "x$WANT_PYTHON" = "xyes")
 
 GTK_DOC_CHECK([1.10])
 
-LT_CURRENT=tp_farsight_lt_current
-LT_REVISION=tp_farsight_lt_revision
-LT_AGE=tp_farsight_lt_age
+LT_CURRENT=tp_farstream_lt_current
+LT_REVISION=tp_farstream_lt_revision
+LT_AGE=tp_farstream_lt_age
 AC_SUBST([LT_CURRENT])
 AC_SUBST([LT_REVISION])
 AC_SUBST([LT_AGE])
@@ -142,10 +142,10 @@ AC_OUTPUT( Makefile \
           doc/Makefile \
           doc/lib/Makefile \
           m4/Makefile \
-	  extensions/Makefile \
-          telepathy-farsight/Makefile  \
-          telepathy-farsight/telepathy-farsight.pc \
-          telepathy-farsight/telepathy-farsight-uninstalled.pc
+          extensions/Makefile \
+          telepathy-farstream/Makefile  \
+          telepathy-farstream/telepathy-farstream.pc \
+          telepathy-farstream/telepathy-farstream-uninstalled.pc
           tools/Makefile \
           python/Makefile \
           python/codegen/Makefile \

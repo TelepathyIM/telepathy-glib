@@ -6,7 +6,7 @@ abs_top_builddir = @abs_top_builddir@
 AUTOMAKE_OPTIONS = 1.6
 
 # The name of the module, e.g. 'glib'.
-DOC_MODULE=telepathy-farsight
+DOC_MODULE=telepathy-farstream
 
 # The top-level SGML file. You can change this if you want to.
 DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.sgml
@@ -15,7 +15,7 @@ DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.sgml
 # gtk-doc will search all .c & .h files beneath here for inline comments
 # documenting the functions and macros.
 # e.g. DOC_SOURCE_DIR=../../../gtk
-DOC_SOURCE_DIR=../../telepathy-farsight
+DOC_SOURCE_DIR=../../telepathy-farstream
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
 SCANGOBJ_OPTIONS=
@@ -39,8 +39,8 @@ FIXXREF_OPTIONS=
 # Used for dependencies. The docs will be rebuilt if any of these change.
 # e.g. HFILE_GLOB=$(top_srcdir)/gtk/*.h
 # e.g. CFILE_GLOB=$(top_srcdir)/gtk/*.c
-HFILE_GLOB=$(top_srcdir)/telepathy-farsight/channel.h $(top_srcdir)/telepathy-farsight/content.h
-CFILE_GLOB=$(top_srcdir)/telepathy-farsight/channel.c $(top_srcdir)/telepathy-farsight/content.c
+HFILE_GLOB=$(top_srcdir)/telepathy-farstream/channel.h $(top_srcdir)/telepathy-farstream/content.h
+CFILE_GLOB=$(top_srcdir)/telepathy-farstream/channel.c $(top_srcdir)/telepathy-farstream/content.c
 
 # Header files to ignore when scanning.
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
@@ -81,7 +81,7 @@ GTKDOC_LIBS= \
 	$(GST_INTERFACES_LIBS) \
 	$(TELEPATHY_LIBS) \
 	$(FARSIGHT2_LIBS) \
-	$(top_builddir)/telepathy-farsight/libtelepathy-farsight.la
+	$(top_builddir)/telepathy-farstream/libtelepathy-farstream.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
@@ -89,16 +89,16 @@ include $(top_srcdir)/gtk-doc.make
 if ENABLE_GTK_DOC
 check-local:
 	@if grep '^0 symbols incomplete' \
-		$(srcdir)/telepathy-farsight-undocumented.txt; then\
+		$(srcdir)/telepathy-farstream-undocumented.txt; then\
 		:; else \
-		cat $(srcdir)/telepathy-farsight-undocumented.txt; exit 1; fi
+		cat $(srcdir)/telepathy-farstream-undocumented.txt; exit 1; fi
 	@if grep '^0 not documented' \
-		$(srcdir)/telepathy-farsight-undocumented.txt; then\
+		$(srcdir)/telepathy-farstream-undocumented.txt; then\
 		:; else \
-		cat $(srcdir)/telepathy-farsight-undocumented.txt; exit 1; fi
-	@if grep . $(srcdir)/telepathy-farsight-unused.txt; then\
+		cat $(srcdir)/telepathy-farstream-undocumented.txt; exit 1; fi
+	@if grep . $(srcdir)/telepathy-farstream-unused.txt; then\
 		echo "^^^ Unused symbols" >&2; exit 1; fi
-	@if test -e $(srcdir)/telepathy-farsight-undeclared.txt &&\
-		grep . $(srcdir)/telepathy-farsight-undeclared.txt; then\
+	@if test -e $(srcdir)/telepathy-farstream-undeclared.txt &&\
+		grep . $(srcdir)/telepathy-farstream-undeclared.txt; then\
 		echo "^^^ Undeclared symbols" >&2; exit 1; fi
 endif

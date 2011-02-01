@@ -3,15 +3,15 @@
                "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 <book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
   <bookinfo>
-    <title>telepathy-farsight Reference Manual</title>
+    <title>telepathy-farstream Reference Manual</title>
     <releaseinfo>
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="http://telepathy.freedesktop.org/doc/telepathy-farsight/">http://telepathy.freedesktop.org/telepathy-farsight/</ulink>.
+      <ulink role="online-location" url="http://telepathy.freedesktop.org/doc/telepathy-farstream/">http://telepathy.freedesktop.org/telepathy-farstream/</ulink>.
     </releaseinfo>
   </bookinfo>
 
   <chapter>
-    <title>Telepathy Farsight Helper Classes</title>
+    <title>Telepathy Farstream Helper Classes</title>
     <xi:include href="xml/channel.xml"/>
     <xi:include href="xml/content.xml"/>
   </chapter>

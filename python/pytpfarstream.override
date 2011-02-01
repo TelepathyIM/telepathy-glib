@@ -4,9 +4,9 @@ headers
 
 #include <gst/gst.h>
 
-#include <telepathy-farsight/channel.h>
-#include <telepathy-farsight/content.h>
-#include <telepathy-farsight/stream.h>
+#include <telepathy-farstream/channel.h>
+#include <telepathy-farstream/content.h>
+#include <telepathy-farstream/stream.h>
 #include <extensions/extensions.h>
 
 #include <telepathy-glib/dbus.h>

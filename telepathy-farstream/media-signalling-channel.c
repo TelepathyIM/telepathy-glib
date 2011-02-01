@@ -458,7 +458,8 @@ new_stream_cb (TfSession *session,
       gchar *str = g_strdup_printf ("failed to construct TpMediaStreamHandler:"
           " bad object path '%s'?", object_path);
       g_warning ("%s", str);
-      tf_media_signalling_channel_error (self, TP_MEDIA_STREAM_ERROR_UNKNOWN, str);
+      tf_media_signalling_channel_error (self, TP_MEDIA_STREAM_ERROR_UNKNOWN,
+        str);
       g_free (str);
       return;
     }

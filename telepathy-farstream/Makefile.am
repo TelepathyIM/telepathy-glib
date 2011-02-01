@@ -5,10 +5,10 @@ BUILT_SOURCES = \
 CLEANFILES = $(BUILT_SOURCES) tf-signals-marshal.list
 
 
-tfincludedir = $(includedir)/telepathy-1.0/telepathy-farsight
+tfincludedir = $(includedir)/telepathy-1.0/telepathy-farstream
 tfinclude_HEADERS = channel.h content.h
 
-libtelepathy_farsight_la_SOURCES = \
+libtelepathy_farstream_la_SOURCES = \
 	stream.c \
 	stream.h \
 	content.c \
@@ -30,12 +30,12 @@ libtelepathy_farsight_la_SOURCES = \
 	call-stream.c \
 	utils.h
 
-nodist_libtelepathy_farsight_la_SOURCES = $(BUILT_SOURCES)
+nodist_libtelepathy_farstream_la_SOURCES = $(BUILT_SOURCES)
 
-lib_LTLIBRARIES = libtelepathy-farsight.la
+lib_LTLIBRARIES = libtelepathy-farstream.la
 
 pkgconfigdir = ${libdir}/pkgconfig
-pkgconfig_DATA = telepathy-farsight.pc
+pkgconfig_DATA = telepathy-farstream.pc
 
 AM_CFLAGS = \
 	-DG_LOG_DOMAIN=\"tp-fs\" \
@@ -48,7 +48,7 @@ AM_CFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_builddir)
 
-libtelepathy_farsight_la_LIBADD = \
+libtelepathy_farstream_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(GST_LIBS) \
@@ -56,16 +56,16 @@ libtelepathy_farsight_la_LIBADD = \
 	$(TELEPATHY_LIBS) \
 	../extensions/libfuture-extensions.la
 
-libtelepathy_farsight_la_LDFLAGS =  -no-undefined \
+libtelepathy_farstream_la_LDFLAGS =  -no-undefined \
 	-export-symbols-regex "^tf_.*" \
 	-version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
 
 
 # rules to generate signal marshallers
-tf-signals-marshal.list: $(libtelepathy_farsight_la_SOURCES) Makefile.am
+tf-signals-marshal.list: $(libtelepathy_farstream_la_SOURCES) Makefile.am
 	( cd $(srcdir) && \
 	sed -n -e 's/.*_tf_marshal_\([[:upper:][:digit:]]*__[[:upper:][:digit:]_]*\).*/\1/p' \
-	$(libtelepathy_farsight_la_SOURCES) ) \
+	$(libtelepathy_farstream_la_SOURCES) ) \
 	| sed -e 's/__/:/' -e 'y/_/,/' | sort -u > $@.tmp
 	if cmp -s $@.tmp $@; then \
 		rm $@.tmp; \

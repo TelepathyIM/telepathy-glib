@@ -12,24 +12,24 @@ Makefile.in
 .#*
 *.stamp
 
-telepathy-farsight/tf-signals-marshal.[ch]
-telepathy-farsight/tf-signals-marshal.list
-telepathy-farsight/telepathy-farsight.pc
-telepathy-farsight/telepathy-farsight-uninstalled.pc
+telepathy-farstream/tf-signals-marshal.[ch]
+telepathy-farstream/tf-signals-marshal.list
+telepathy-farstream/telepathy-farstream.pc
+telepathy-farstream/telepathy-farstream-uninstalled.pc
 
 doc/lib/*.bak
 doc/lib/html/
-doc/lib/telepathy-farsight.args
-doc/lib/telepathy-farsight-decl-list.txt
-doc/lib/telepathy-farsight-decl.txt
-doc/lib/telepathy-farsight.hierarchy
-doc/lib/telepathy-farsight.interfaces
-doc/lib/telepathy-farsight-overrides.txt
-doc/lib/telepathy-farsight.prerequisites
-doc/lib/telepathy-farsight.signals
-doc/lib/telepathy-farsight-undeclared.txt
-doc/lib/telepathy-farsight-undocumented.txt
-doc/lib/telepathy-farsight-unused.txt
+doc/lib/telepathy-farstream.args
+doc/lib/telepathy-farstream-decl-list.txt
+doc/lib/telepathy-farstream-decl.txt
+doc/lib/telepathy-farstream.hierarchy
+doc/lib/telepathy-farstream.interfaces
+doc/lib/telepathy-farstream-overrides.txt
+doc/lib/telepathy-farstream.prerequisites
+doc/lib/telepathy-farstream.signals
+doc/lib/telepathy-farstream-undeclared.txt
+doc/lib/telepathy-farstream-undocumented.txt
+doc/lib/telepathy-farstream-unused.txt
 doc/lib/tmpl/
 doc/lib/xml/
 
@@ -55,4 +55,4 @@ stamp-h.in
 stamp-h1
 gtk-doc.make
 m4/gtk-doc.m4
-python/pytpfarsight.c
+python/pytpfarstream.c
