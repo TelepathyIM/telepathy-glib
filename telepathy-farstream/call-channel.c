@@ -54,8 +54,8 @@ enum
 
 enum
 {
-  SIGNAL_FS_CONFERENCE_ADD,
-  SIGNAL_FS_CONFERENCE_REMOVE,
+  SIGNAL_FS_CONFERENCE_ADDED,
+  SIGNAL_FS_CONFERENCE_REMOVED,
   SIGNAL_CONTENT_ADDED,
   SIGNAL_CONTENT_REMOVED,
   SIGNAL_COUNT
@@ -113,14 +113,14 @@ tf_call_channel_class_init (TfCallChannelClass *klass)
           G_TYPE_PTR_ARRAY,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  signals[SIGNAL_FS_CONFERENCE_ADD] = g_signal_new ("fs-conference-add",
+  signals[SIGNAL_FS_CONFERENCE_ADDED] = g_signal_new ("fs-conference-added",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL,
       _tf_marshal_VOID__OBJECT,
       G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
-  signals[SIGNAL_FS_CONFERENCE_REMOVE] = g_signal_new ("fs-conference-remove",
+  signals[SIGNAL_FS_CONFERENCE_REMOVED] = g_signal_new ("fs-conference-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL,
@@ -577,7 +577,7 @@ _tf_call_channel_get_conference (TfCallChannel *channel,
   gst_object_ref (cc->fsconference);
   g_hash_table_insert (channel->fsconferences, cc->conference_type, cc);
 
-  g_signal_emit (channel, signals[SIGNAL_FS_CONFERENCE_ADD], 0,
+  g_signal_emit (channel, signals[SIGNAL_FS_CONFERENCE_ADDED], 0,
       cc->fsconference);
   g_object_notify (G_OBJECT (channel), "fs-conferences");
 
@@ -603,7 +603,7 @@ _tf_call_channel_put_conference (TfCallChannel *channel,
 
   if (cc->use_count <= 0)
     {
-      g_signal_emit (channel, signals[SIGNAL_FS_CONFERENCE_REMOVE], 0,
+      g_signal_emit (channel, signals[SIGNAL_FS_CONFERENCE_REMOVED], 0,
           cc->fsconference);
       g_hash_table_remove (channel->fsconferences, cc->conference_type);
       g_object_notify (G_OBJECT (channel), "fs-conferences");

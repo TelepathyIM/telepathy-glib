@@ -70,8 +70,8 @@ struct _TfChannelPrivate
 enum
 {
   SIGNAL_CLOSED,
-  SIGNAL_FS_CONFERENCE_ADD,
-  SIGNAL_FS_CONFERENCE_REMOVE,
+  SIGNAL_FS_CONFERENCE_ADDED,
+  SIGNAL_FS_CONFERENCE_REMOVED,
   SIGNAL_CONTENT_ADDED,
   SIGNAL_CONTENT_REMOVED,
   SIGNAL_COUNT
@@ -88,9 +88,9 @@ enum
 
 static void shutdown_channel (TfChannel *self);
 
-static void channel_fs_conference_add (GObject *chan,
+static void channel_fs_conference_added (GObject *chan,
     FsConference *conf, TfChannel *self);
-static void channel_fs_conference_remove (GObject *chan,
+static void channel_fs_conference_removed (GObject *chan,
     FsConference *conf, TfChannel *self);
 
 static void tf_channel_init_async (GAsyncInitable *initable,
@@ -203,10 +203,10 @@ call_channel_ready (GObject *obj, GAsyncResult *call_res, gpointer user_data)
 
 
       tp_g_signal_connect_object (self->priv->call_channel,
-          "fs-conference-add", G_CALLBACK (channel_fs_conference_add),
+          "fs-conference-added", G_CALLBACK (channel_fs_conference_added),
           self, 0);
       tp_g_signal_connect_object (self->priv->call_channel,
-          "fs-conference-remove", G_CALLBACK (channel_fs_conference_remove),
+          "fs-conference-removed", G_CALLBACK (channel_fs_conference_removed),
           self, 0);
 
       tp_g_signal_connect_object (self->priv->call_channel,
@@ -266,7 +266,7 @@ channel_prepared (GObject *obj,
           tf_media_signalling_channel_new (channel_proxy);
 
       tp_g_signal_connect_object (self->priv->media_signalling_channel,
-          "session-created", G_CALLBACK (channel_fs_conference_add),
+          "session-created", G_CALLBACK (channel_fs_conference_added),
           self, 0);
       g_simple_async_result_set_op_res_gboolean (res, TRUE);
     }
@@ -423,7 +423,7 @@ tf_channel_class_init (TfChannelClass *klass)
           G_TYPE_NONE, 0);
 
   /**
-   * TfChannel::fs-conference-add
+   * TfChannel::fs-conference-added
    * @tfchannel: the #TfChannel
    * @conf: a #FsConference
    *
@@ -431,7 +431,7 @@ tf_channel_class_init (TfChannelClass *klass)
    * application's pipeline.
    */
 
-  signals[SIGNAL_FS_CONFERENCE_ADD] = g_signal_new ("fs-conference-add",
+  signals[SIGNAL_FS_CONFERENCE_ADDED] = g_signal_new ("fs-conference-added",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL,
@@ -439,7 +439,7 @@ tf_channel_class_init (TfChannelClass *klass)
       G_TYPE_NONE, 1, FS_TYPE_CONFERENCE);
 
   /**
-   * TfChannel::fs-conference-remove
+   * TfChannel::fs-conference-removed
    * @tfchannel: the #TfChannel
    * @conf: a #FsConference
    *
@@ -447,7 +447,7 @@ tf_channel_class_init (TfChannelClass *klass)
    * application's pipeline.
    */
 
-  signals[SIGNAL_FS_CONFERENCE_REMOVE] = g_signal_new ("fs-conference-remove",
+  signals[SIGNAL_FS_CONFERENCE_REMOVED] = g_signal_new ("fs-conference-removed",
       G_OBJECT_CLASS_TYPE (klass),
       G_SIGNAL_RUN_LAST,
       0, NULL, NULL,
@@ -594,20 +594,20 @@ tf_channel_bus_message (TfChannel *channel,
 }
 
 static void
-channel_fs_conference_add (GObject *proxy, FsConference *conf,
+channel_fs_conference_added (GObject *proxy, FsConference *conf,
     TfChannel *self)
 {
   g_object_notify (G_OBJECT (self), "fs-conferences");
-  g_signal_emit (self, signals[SIGNAL_FS_CONFERENCE_ADD], 0,
+  g_signal_emit (self, signals[SIGNAL_FS_CONFERENCE_ADDED], 0,
       conf);
 }
 
 static void
-channel_fs_conference_remove (GObject *proxy, FsConference *conf,
+channel_fs_conference_removed (GObject *proxy, FsConference *conf,
     TfChannel *self)
 {
   g_object_notify (G_OBJECT (self), "fs-conferences");
-  g_signal_emit (self, signals[SIGNAL_FS_CONFERENCE_REMOVE], 0,
+  g_signal_emit (self, signals[SIGNAL_FS_CONFERENCE_REMOVED], 0,
       conf);
 }
 
