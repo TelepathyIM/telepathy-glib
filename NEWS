@@ -1,9 +1,25 @@
-telepathy-glib 0.13.12 (UNRELEASED)
+telepathy-glib 0.13.12 (2011-02-01)
 ===================================
+
+The “You look good by siren light” release.
 
 Enhancements:
 
+• TpContact now tracks incoming and outgoing presence subscriptions,
+  albeit only if the connection implements the new
+  Connection.Interface.ContactList API. (Xavier)
+
+• Code is generated for new API added in telepathy-spec version 0.21.9;
+  specifically, the FileTransfer.URI property is supported. (Guillaume)
+
+• TpPresenceMixinStatusAvailableFunc, which has confused many a CM
+  author, now has clearer documentation. (Will)
+
 Fixes:
+
+• We no longer accidentally depend on GLib 2.28. (Will)
+
+• tests/contact-search-result no longer fails on x86. (Will)
 
 telepathy-glib 0.13.11 (2011-01-27)
 ===================================
