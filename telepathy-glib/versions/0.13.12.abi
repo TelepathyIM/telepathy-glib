@@ -1,0 +1,9 @@
+Version: TELEPATHY_GLIB_0.13.12
+Extends: TELEPATHY_GLIB_0.13.11
+Release: 0.13.12
+
+tp_cli_channel_type_file_transfer_connect_to_uri_defined
+tp_contact_get_publish_request
+tp_contact_get_publish_state
+tp_contact_get_subscribe_state
+tp_svc_channel_type_file_transfer_emit_uri_defined

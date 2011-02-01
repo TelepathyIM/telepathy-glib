@@ -103,7 +103,7 @@ struct _TpContact {
  * @TP_CONTACT_FEATURE_SUBSCRIPTION_STATES: #TpContact:subscribe-state,
  *  #TpContact:publish-state and #TpContact:publish-request. Require a
  *  Connection implementing the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
- *  interface. (available since 0.13.UNRELEASED)
+ *  interface. (available since 0.13.12)
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -570,7 +570,7 @@ tp_contact_get_contact_info (TpContact *self)
  *
  * Returns: the value of #TpContact:subscribe-state.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.12
  */
 TpSubscriptionState
 tp_contact_get_subscribe_state (TpContact *self)
@@ -592,7 +592,7 @@ tp_contact_get_subscribe_state (TpContact *self)
  *
  * Returns: the value of #TpContact:publish-state.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.12
  */
 TpSubscriptionState
 tp_contact_get_publish_state (TpContact *self)
@@ -617,7 +617,7 @@ tp_contact_get_publish_state (TpContact *self)
 
  * Returns: the value of #TpContact:publish-request.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.12
  */
 const gchar *
 tp_contact_get_publish_request (TpContact *self)
@@ -1064,7 +1064,7 @@ tp_contact_class_init (TpContactClass *klass)
    * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
    * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.12
    */
   param_spec = g_param_spec_uint ("subscribe-state",
       "Subscribe State",
@@ -1085,7 +1085,7 @@ tp_contact_class_init (TpContactClass *klass)
    * This is set to %TP_SUBSCRIPTION_STATE_UNKNOWN until
    * %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been prepared
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.12
    */
   param_spec = g_param_spec_uint ("publish-state",
       "Publish State",
@@ -1107,7 +1107,7 @@ tp_contact_class_init (TpContactClass *klass)
    * This is set to %NULL until %TP_CONTACT_FEATURE_SUBSCRIPTION_STATES has been
    * prepared, and it is guaranteed to be non-%NULL afterward.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.12
    */
   param_spec = g_param_spec_string ("publish-request",
       "Publish Request",
@@ -1126,7 +1126,7 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * Emitted when this contact's subscription states changes.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.12
    */
   signals[SIGNAL_SUBSCRIPTION_STATES_CHANGED] = g_signal_new (
       "subscription-states-changed",
