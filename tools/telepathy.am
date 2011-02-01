@@ -40,7 +40,7 @@ _is-release-check:
 
 @PACKAGE@-@VERSION@.tar.gz: _is-release-check check distcheck
 
-maintainer-prepare-release: _is-release-check check distcheck release-mail
+maintainer-prepare-release: _is-release-check all distcheck release-mail
 	git tag -s @PACKAGE@-@VERSION@ -m @PACKAGE@' '@VERSION@
 	gpg --detach-sign --armor @PACKAGE@-@VERSION@.tar.gz
 
