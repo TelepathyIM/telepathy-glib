@@ -222,6 +222,10 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
       break;
     case TF_FUTURE_STREAM_TRANSPORT_TYPE_SHM:
       transmitter = "shm";
+      params[n_params].name = "create-local-candidates";
+      g_value_init (&params[n_params].value, G_TYPE_BOOLEAN);
+      g_value_set_boolean (&params[n_params].value, TRUE);
+      n_params++;
       break;
     default:
        tf_call_content_error (self->call_content,
