@@ -417,6 +417,12 @@ tf_call_stream_add_remote_candidate (TfCallStream *self,
   guint i;
   GError *error = NULL;
 
+  /* No candidates to add, ignore. This could either be caused by the CM
+   * accidentally emitting an empty RemoteCandidatesAdded or when there are no
+   * remote candidates on the endpoint yet when we query it */
+  if (candidates->len == 0)
+    return;
+
   for (i = 0; i < candidates->len; i++)
     {
       GValueArray *tpcandidate = g_ptr_array_index (candidates, i);
