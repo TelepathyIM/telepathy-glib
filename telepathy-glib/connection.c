@@ -2256,7 +2256,7 @@ tp_connection_add_client_interest (TpConnection *self,
  * Subscribe to any opt-in change notifications for @interested_in.
  *
  * Equivalent to, but a little more efficient than, calling
- * tp_connection_add_interest() for the string value of @interested_in.
+ * tp_connection_add_client_interest() for the string value of @interested_in.
  *
  * Since: 0.11.3
  */

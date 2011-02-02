@@ -136,7 +136,7 @@ tp_handles_are_valid (TpHandleRepoIface *self,
  * Do nothing. Since version 0.13.8, handles always last as long as
  * the connection; previously, this function provided refcounting for handles.
  *
- * Changed in 0.13.6: %handle is now returned; previously,
+ * Changed in 0.13.6: @handle is now returned; previously,
  * this function didn't return anything.
  *
  * Returns: the same @handle

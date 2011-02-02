@@ -271,7 +271,7 @@ tp_contacts_mixin_finalize (GObject *obj)
  * @assumed_interfaces: A list of additional interfaces to retrieve attributes
  *  from. This can be used for interfaces documented as automatically included,
  *  like %TP_IFACE_CONNECTION for GetContactAttributes,
- *  or %TP_IFACE_CONNECTION and %TP_IFACE_CONNECTION_CONTACT_LIST for
+ *  or %TP_IFACE_CONNECTION and %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST for
  *  GetContactListAttributes.
  * @sender: The DBus client's unique name. If this is not NULL, the requested handles
  * will be held on behalf of this client.

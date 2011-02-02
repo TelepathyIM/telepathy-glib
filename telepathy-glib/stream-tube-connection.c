@@ -269,7 +269,7 @@ _tp_stream_tube_connection_new (
  *
  * Return the #TpStreamTubeConnection:socket-connection property
  *
- * Returns: (transfer none): the value of #TpStreamTubeConnection:connection
+ * Returns: (transfer none): the value of #TpStreamTubeConnection:socket-connection
  *
  * Since: 0.13.2
  */

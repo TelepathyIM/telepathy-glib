@@ -36,7 +36,7 @@
  * perform validation and normalization on handle ID strings.
  *
  * Most connection managers will use this for all supported handle types
- * except %TP_HANDLE_TYPE_CONTACT_LIST.
+ * except %TP_HANDLE_TYPE_LIST.
  *
  * Changed in 0.13.8: handles are no longer reference-counted, and
  * the reference-count-related functions are stubs. Instead, handles remain
