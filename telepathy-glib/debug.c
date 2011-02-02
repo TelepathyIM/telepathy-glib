@@ -44,7 +44,7 @@
  * <listitem><literal>im</literal> - (text) instant messaging
  *    (service)</listitem>
  * <listitem><literal>properties</literal> -
- *    #TpDBusPropertiesMixin and #TpPropertiesMixin (service)</listitem>
+ *    <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link> and #TpPropertiesMixin (service)</listitem>
  * <listitem><literal>params</literal> - connection manager parameters
  *    (service)</listitem>
  * <listitem><literal>handles</literal> - handle reference tracking tracking

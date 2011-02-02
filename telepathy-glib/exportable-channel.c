@@ -98,9 +98,10 @@ exportable_channel_base_init (gpointer klass)
        * (possibly mutable) properties not included here may also be exposed
        * via the D-Bus properties interface.
        *
-       * If the channel implementation uses #TpDBusPropertiesMixin, this
-       * property can implemented using
-       * #tp_dbus_properties_mixin_make_properties_hash as follows:
+       * If the channel implementation uses
+       * <link linkend="telepathy-glib-dbus-properties-mixin">TpDBusPropertiesMixin</link>,
+       * this property can implemented using
+       * tp_dbus_properties_mixin_make_properties_hash() as follows:
        *
        * <informalexample><programlisting>
        *  case PROP_CHANNEL_PROPERTIES:

@@ -1060,9 +1060,10 @@ tp_text_channel_get_delivery_reporting_support (
  * Expands to a call to a function that returns a quark representing the
  * incoming messages features of a #TpTextChannel.
  *
- * When this feature is prepared, the initial value of the
- * #TpTextChannel:pending-messages property has been fetched
- * and change notification has been set up.
+ * When this feature is prepared, tp_text_channel_get_pending_messages() will
+ * return a non-empty list if any unacknowledged messages are waiting, and the
+ * #TpTextChannel::message-received and #TpTextChannel::pending-message-removed
+ * signals will be emitted.
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
@@ -1080,7 +1081,7 @@ tp_text_channel_get_feature_quark_incoming_messages (void)
  * tp_text_channel_get_pending_messages:
  * @self: a #TpTextChannel
  *
- * Return the a newly allocated list of unacknowledged #TpSignalledMessage
+ * Return a newly allocated list of unacknowledged #TpSignalledMessage
  * objects.
  *
  * Returns: (transfer container) (element-type TelepathyGLib.SignalledMessage):

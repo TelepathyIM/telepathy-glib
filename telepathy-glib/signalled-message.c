@@ -128,8 +128,8 @@ tp_signalled_message_class_init (TpSignalledMessageClass *klass)
   /**
    * TpSignalledMessage:sender:
    *
-   * A #TpContat representing the sender of the message if known,
-   * otherwise %NULL.
+   * A #TpContact representing the sender of the message, if known, or %NULL
+   * otherwise.
    *
    * Since: 0.13.9
    */

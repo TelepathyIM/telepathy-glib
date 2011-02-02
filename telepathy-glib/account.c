@@ -1682,7 +1682,7 @@ tp_account_class_init (TpAccountClass *klass)
           G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount:storage-provider
+   * TpAccount:storage-provider:
    *
    * The storage provider for this account.
    *
@@ -1705,12 +1705,12 @@ tp_account_class_init (TpAccountClass *klass)
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
-   * TpAccount:storage-identifier
+   * TpAccount:storage-identifier:
    *
    * The storage identifier for this account.
    *
    * A provider-specific variant type used to identify this account with the
-   * provider. This value will be %NULL if #TpAccount::storage-provider is
+   * provider. This value will be %NULL if #TpAccount:storage-provider is
    * an empty string.
    *
    * This property cannot change once an Account has been created.
@@ -1735,7 +1735,7 @@ tp_account_class_init (TpAccountClass *klass)
    *
    * A bitfield of #TpStorageRestrictionFlags that give the limitations of
    * this account imposed by the storage provider. This value will be 0
-   * if #TpAccount::storage-provider is an empty string.
+   * if #TpAccount:storage-provider is an empty string.
    *
    * This property cannot change once an Account has been created.
    *

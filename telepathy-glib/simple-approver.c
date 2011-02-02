@@ -24,8 +24,8 @@
  * @short_description: a subclass of #TpBaseClient implementing
  * a simple Approver
  *
- * This class makes it easier to write #TpSvcClient implementing the
- * TpSvcClientApprover interface.
+ * This class makes it easier to construct a #TpSvcClient implementing the
+ * #TpSvcClientApprover interface.
  *
  * A typical simple approver would look liks this:
  * |[
@@ -214,8 +214,8 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
   /**
    * TpSimpleApprover:callback:
    *
-   * The TpSimpleApproverAddDispatchOperationImpl callback implementing the
-   * ApproverChannels D-Bus method.
+   * The #TpSimpleApproverAddDispatchOperationImpl callback implementing the
+   * AddDispatchOperation D-Bus method.
    *
    * This property can't be %NULL.
    *
@@ -231,8 +231,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
   /**
    * TpSimpleApprover:user-data:
    *
-   * The user-data pointer passed to the callback implementing the
-   * ApproverChannels D-Bus method.
+   * The user-data pointer passed to #TpSimpleApprover:callback.
    *
    * Since: 0.11.5
    */
@@ -245,8 +244,8 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
   /**
    * TpSimpleApprover:destroy:
    *
-   * The #GDestroyNotify function called to free the user-data pointer when
-   * the #TpSimpleApprover is destroyed.
+   * The #GDestroyNotify function called to free #TpSimpleApprover:user-data
+   * when the #TpSimpleApprover is destroyed.
    *
    * Since: 0.11.5
    */
@@ -262,11 +261,11 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
 /**
  * tp_simple_approver_new:
  * @dbus: a #TpDBusDaemon object, may not be %NULL
- * @name: the name of the Approver (see #TpBaseClient:name: for details)
- * @uniquify: the value of the #TpBaseClient:uniquify-name: property
- * @callback: the function called when ApproverChannels is called
+ * @name: the name of the Approver (see #TpBaseClient:name for details)
+ * @uniquify: the value of the #TpBaseClient:uniquify-name property
+ * @callback: the function called when AddDispatchOperation is called
  * @user_data: arbitrary user-supplied data passed to @callback
- * @destroy: called with the user_data as argument, when the #TpSimpleApprover
+ * @destroy: called with @user_data as its argument when the #TpSimpleApprover
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleApprover instance.
@@ -300,11 +299,11 @@ tp_simple_approver_new (TpDBusDaemon *dbus,
 /**
  * tp_simple_approver_new_with_am:
  * @account_manager: an account manager, which may not be %NULL
- * @name: the name of the Approver (see #TpBaseClient:name: for details)
- * @uniquify: the value of the #TpBaseClient:uniquify-name: property
- * @callback: the function called when ApproverChannels is called
+ * @name: the name of the Approver (see #TpBaseClient:name for details)
+ * @uniquify: the value of the #TpBaseClient:uniquify-name property
+ * @callback: the function called when AddDispatchOperation is called
  * @user_data: arbitrary user-supplied data passed to @callback
- * @destroy: called with the user_data as argument, when the #TpSimpleApprover
+ * @destroy: called with @user_data as its argument when the #TpSimpleApprover
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleApprover instance with a

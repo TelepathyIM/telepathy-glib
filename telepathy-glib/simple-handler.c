@@ -24,8 +24,8 @@
  * @short_description: a subclass of #TpBaseClient implementing
  * a simple Handler
  *
- * This class makes it easier to write #TpSvcClient implementing the
- * TpSvcClientHandler interface.
+ * This class makes it easier to construct a #TpSvcClient implementing the
+ * #TpSvcClientHandler interface.
  *
  * A typical simple handler would look liks this:
  * |[
@@ -264,7 +264,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
   /**
    * TpSimpleHandler:callback:
    *
-   * The TpSimpleHandlerHandleChannelsImpl callback implementing the
+   * The #TpSimpleHandlerHandleChannelsImpl callback implementing the
    * HandleChannels D-Bus method.
    *
    * This property can't be %NULL.
@@ -281,8 +281,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
   /**
    * TpSimpleHandler:user-data:
    *
-   * The user-data pointer passed to the callback implementing the
-   * HandleChannels D-Bus method.
+   * The user-data pointer passed to #TpSimpleHandler:callback.
    *
    * Since: 0.11.6
    */
@@ -295,8 +294,8 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
   /**
    * TpSimpleHandler:destroy:
    *
-   * The #GDestroyNotify function called to free the user-data pointer when
-   * the #TpSimpleHandler is destroyed.
+   * The #GDestroyNotify function called to free #TpSimpleHandler:user-data
+   * when the #TpSimpleHandler is destroyed.
    *
    * Since: 0.11.6
    */
@@ -314,13 +313,13 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  * @dbus: a #TpDBusDaemon object, may not be %NULL
  * @bypass_approval: the value of the Handler.BypassApproval D-Bus property
  * (see tp_base_client_set_handler_bypass_approval() for details)
- * @requests: if this handler implement Requests (see
+ * @requests: whether this handler should implement Requests (see
  * tp_base_client_set_handler_request_notification() for details)
- * @name: the name of the Handler (see #TpBaseClient:name: for details)
- * @uniquify: the value of the #TpBaseClient:uniquify-name: property
+ * @name: the name of the Handler (see #TpBaseClient:name for details)
+ * @uniquify: the value of the #TpBaseClient:uniquify-name property
  * @callback: the function called when HandleChannels is called
  * @user_data: arbitrary user-supplied data passed to @callback
- * @destroy: called with the user_data as argument, when the #TpSimpleHandler
+ * @destroy: called with @user_data as its argument when the #TpSimpleHandler
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleHandler instance.
@@ -360,13 +359,13 @@ tp_simple_handler_new (TpDBusDaemon *dbus,
  * @account_manager: an account manager, which may not be %NULL
  * @bypass_approval: the value of the Handler.BypassApproval D-Bus property
  * (see tp_base_client_set_handler_bypass_approval() for details)
- * @requests: if this handler implement Requests (see
+ * @requests: whether this handler should implement Requests (see
  * tp_base_client_set_handler_request_notification() for details)
- * @name: the name of the Handler (see #TpBaseClient:name: for details)
- * @uniquify: the value of the #TpBaseClient:uniquify-name: property
+ * @name: the name of the Handler (see #TpBaseClient:name for details)
+ * @uniquify: the value of the #TpBaseClient:uniquify-name property
  * @callback: the function called when HandleChannels is called
  * @user_data: arbitrary user-supplied data passed to @callback
- * @destroy: called with the user_data as argument, when the #TpSimpleHandler
+ * @destroy: called with @user_data as its argument when the #TpSimpleHandler
  * is destroyed
  *
  * Convenient function to create a new #TpSimpleHandler instance with a
