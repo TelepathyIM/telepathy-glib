@@ -410,7 +410,7 @@ stun_servers_changed (TfFutureCallStream *proxy,
 }
 
 static void
-tf_call_stream_add_remote_candidate (TfCallStream *self,
+tf_call_stream_add_remote_candidates (TfCallStream *self,
     const GPtrArray *candidates)
 {
   GList *fscandidates = NULL;
@@ -490,7 +490,7 @@ remote_candidates_added (TpProxy *proxy,
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
 
-  tf_call_stream_add_remote_candidate (self, arg_Candidates);
+  tf_call_stream_add_remote_candidates (self, arg_Candidates);
 }
 
 static void
@@ -557,7 +557,7 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
   if (!candidates)
     goto invalid_property;
 
-  tf_call_stream_add_remote_candidate (self, candidates);
+  tf_call_stream_add_remote_candidates (self, candidates);
 
 
   return;
