@@ -27,8 +27,9 @@
  * implementations. Subclasses should usually pass the filters they
  * want and override the D-Bus methods they implement.
  *
- * See #TpSimpleObserver for a class implementing a simple observer using
- * #TpBaseClient.
+ * For many applications, the provided #TpSimpleObserver, #TpSimpleApprover
+ * and #TpSimpleHandler subclasses can be used instead of deriving from this
+ * class.
  */
 
 /**
@@ -484,12 +485,12 @@ tp_base_client_take_approver_filter (TpBaseClient *self,
  * tp_base_client_be_a_handler:
  * @self: a #TpBaseClient
  *
- * Register @self as a ChannelHandler with an empty list of filter.
+ * Register @self as a Client.Handler with an empty list of filters.
  * This is useful if you want to create a client that only handle channels
  * for which it's the PreferredHandler.
  *
  * This method may only be called before tp_base_client_register() is
- * called, and may only be called on objects whose class has called
+ * called, and may only be called on objects whose class implements
  * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.6
@@ -610,10 +611,10 @@ tp_base_client_set_handler_bypass_approval (TpBaseClient *self,
  * @self: a #TpBaseClient
  *
  * Indicate that @self is a Handler willing to be notified about requests for
- * channels that it is likely to be asked to handle.
- * That means the TpBaseClient::request-added and TpBaseClient::request-removed:
- * signals will be fired and tp_base_client_get_pending_requests() will
- * return the list of pending requests.
+ * channels that it is likely to be asked to handle. This means that the
+ * #TpBaseClient::request-added and #TpBaseClient::request-removed signals will
+ * be fired and tp_base_client_get_pending_requests() will return the list of
+ * pending requests.
  *
  * This method may only be called before tp_base_client_register() is
  * called, and may only be called on objects whose class implements
@@ -1345,9 +1346,9 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * TpBaseClient:channel-factory:
    *
    * The object implementing the #TpClientChannelFactoryInterface interface
-   * that will be used to create channel proxies.
-   * While the client has not been registerd, this property can be changed
-   * using tp_base_client_set_channel_factory().
+   * that will be used to create channel proxies. While
+   * tp_base_client_register() has not yet been called, this property can be
+   * changed using tp_base_client_set_channel_factory().
    *
    * If no channel factory is specified then #TpAutomaticProxyFactory is used.
    *
@@ -2581,8 +2582,10 @@ tp_base_client_add_channel_features_varargs (TpBaseClient *self,
  *
  * Request that the given features are prepared on each #TpAccount (in
  * addition to %TP_ACCOUNT_FEATURE_CORE) before calling
- * #TpBaseClient.observe_channels, #TpBaseClient.add_dispatch_operation or
- * #TpBaseClient.handle_channels, or emitting #TpBaseClient::request-added.
+ * #TpBaseClientClass.observe_channels,
+ * #TpBaseClientClass.add_dispatch_operation or
+ * #TpBaseClientClass.handle_channels, or emitting
+ * #TpBaseClient::request-added.
  *
  * Since: 0.11.14
  */
@@ -2608,8 +2611,9 @@ tp_base_client_add_account_features (TpBaseClient *self,
  *
  * Request that the given features are prepared on each #TpChannel (in
  * addition to %TP_CHANNEL_FEATURE_CORE) before calling
- * #TpBaseClient.observe_channels, #TpBaseClient.add_dispatch_operation or
- * #TpBaseClient.handle_channels.
+ * #TpBaseClientClass.observe_channels,
+ * #TpBaseClientClass.add_dispatch_operation or
+ * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.14
  */
@@ -2635,8 +2639,9 @@ tp_base_client_add_channel_features (TpBaseClient *self,
  *
  * Request that the given features are prepared on each #TpConnection (in
  * addition to %TP_CONNECTION_FEATURE_CORE) before calling
- * #TpBaseClient.observe_channels, #TpBaseClient.add_dispatch_operation or
- * #TpBaseClient.handle_channels.
+ * #TpBaseClientClass.observe_channels,
+ * #TpBaseClientClass.add_dispatch_operation or
+ * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.14
  */
