@@ -167,8 +167,8 @@ class CallChannel:
         content.connect ("src-pad-added", self.src_pad_added)
 
         if mtype == farsight.MEDIA_TYPE_AUDIO:
-            src = gst.element_factory_make ("audiotestsrc")
-            src.set_property("is-live", True)
+            src = gst.parse_bin_from_description("audiotestsrc is-live=1 ! " \
+                "queue", True)
         elif mtype == farsight.MEDIA_TYPE_VIDEO:
             src = gst.parse_bin_from_description("videotestsrc is-live=1 ! " \
                 "capsfilter caps=video/x-raw-yuv,width=640,height=480", True)
