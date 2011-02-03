@@ -473,6 +473,9 @@ tf_call_channel_new_async (TpChannel *channel,
   self->proxy = channel;
   g_async_initable_init_async (G_ASYNC_INITABLE (self), 0, NULL, callback,
       user_data);
+
+  /* Ownership passed to async call */
+  g_object_unref (self);
 }
 
 
