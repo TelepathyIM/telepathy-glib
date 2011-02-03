@@ -30,6 +30,7 @@ import gst
 import tpfarstream
 import farsight
 from util import *
+import gc
 
 from telepathy.client.channel import Channel
 from telepathy.constants import (
@@ -52,6 +53,8 @@ class CallChannel:
         self.tfchannel = None
 
         self.obj = self.bus.get_object (self.conn.service_name, object_path)
+        self.obj.connect_to_signal ("CallStateChanged",
+            self.state_changed_cb, dbus_interface=CHANNEL_TYPE_CALL)
 
         self.pipeline = gst.Pipeline()
         self.pipeline.get_bus().add_watch(self.async_handler)
@@ -63,8 +66,35 @@ class CallChannel:
         tpfarstream.tf_channel_new_async (connection.service_name,
             connection.object_path, object_path, self.tpfs_created)
 
+    def state_changed_cb(self, state, flags, reason, details):
+        print "* StateChanged:\n State: %s (%d)\n Flags: %s" % (
+            call_state_to_s (state), state, call_flags_to_s (flags))
+
+        print "\tReason: actor: %d reason: %d dbus_reason: '%s'" % (
+            reason[0], reason[1], reason[2])
+
+        print '\tDetails:'
+        for key, value in details.iteritems():
+            print "\t  %s: %s" % (key, value)
+        else:
+            print '\t  None'
+
+        if state == CALL_STATE_ENDED:
+            self.close()
+
     def accept (self):
         self.obj.Accept(dbus_interface=CHANNEL_TYPE_CALL)
+
+    def close (self):
+        print "Closing the channel"
+        # close and cleanup
+        self.obj.Close(dbus_interface=CHANNEL_INTERFACE)
+
+        self.pipeline.set_state (gst.STATE_NULL)
+        self.pipeline = None
+
+        self.tfchannel = None
+        self.notifier = None
 
     def async_handler (self, bus, message):
         if self.tfchannel != None:
