@@ -426,8 +426,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
 
       g_simple_async_result_set_error (res, TP_ERROR, TP_ERROR_NOT_CAPABLE,
           "This channel does hardware streaming, not handled here");
-      g_simple_async_result_complete (res);
-      return;
+      goto out;
     }
 
   tf_future_cli_channel_type_call_connect_to_content_added (TP_CHANNEL (proxy),
@@ -437,9 +436,8 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       g_warning ("Error connectiong to ContentAdded signal: %s",
           myerror->message);
       g_simple_async_result_set_from_error (res, myerror);
-      g_simple_async_result_complete (res);
       g_clear_error (&myerror);
-      return;
+      goto out;
     }
 
   tf_future_cli_channel_type_call_connect_to_content_removed (
@@ -450,9 +448,8 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       g_warning ("Error connectiong to ContentRemoved signal: %s",
           myerror->message);
       g_simple_async_result_set_from_error (res, myerror);
-      g_simple_async_result_complete (res);
       g_clear_error (&myerror);
-      return;
+      goto out;
     }
 
   tp_cli_dbus_properties_call_get (proxy, -1,
@@ -460,7 +457,10 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       got_contents, NULL, NULL, G_OBJECT (self));
 
   g_simple_async_result_set_op_res_gboolean (res, TRUE);
+
+out:
   g_simple_async_result_complete (res);
+  g_object_unref (res);
 }
 
 void
