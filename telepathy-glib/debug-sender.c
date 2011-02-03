@@ -356,6 +356,7 @@ static void
 _tp_debug_sender_take (TpDebugSender *self,
     DebugMessage *new_msg)
 {
+#ifdef ENABLE_DEBUG_CACHE
   if (g_queue_get_length (self->priv->messages) >= DEBUG_MESSAGE_LIMIT)
     {
       DebugMessage *old_head =
@@ -365,6 +366,7 @@ _tp_debug_sender_take (TpDebugSender *self,
     }
 
   g_queue_push_tail (self->priv->messages, new_msg);
+#endif
 
   if (self->priv->enabled)
     {
