@@ -110,9 +110,6 @@ class CallChannel:
 
 
     def src_pad_added (self, content, handle, stream, pad, codec):
-        print "SOURCE PAD ADDEDD YO !"
-        print codec
-
         type = content.get_property ("media-type")
         if type == farsight.MEDIA_TYPE_AUDIO:
             sink = gst.parse_bin_from_description("audioconvert ! audioresample ! audioconvert ! autoaudiosink", True)
