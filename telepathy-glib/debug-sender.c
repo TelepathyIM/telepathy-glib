@@ -378,7 +378,7 @@ _tp_debug_sender_take (TpDebugSender *self,
 /**
  * tp_debug_sender_add_message:
  * @self: A #TpDebugSender instance
- * @timestamp: Time of the message
+ * @timestamp: Time of the message or %NULL for right now
  * @domain: Message domain
  * @level: The message level
  * @string: The message string itself
@@ -396,8 +396,93 @@ tp_debug_sender_add_message (TpDebugSender *self,
     GLogLevelFlags level,
     const gchar *string)
 {
+  GTimeVal now = { 0 };
+
+  if (timestamp == NULL)
+    {
+      g_get_current_time (&now);
+      timestamp = &now;
+    }
+
   _tp_debug_sender_take (self,
       debug_message_new (timestamp, domain, level, string));
+}
+
+/**
+ * tp_debug_sender_add_message_vprintf:
+ * @self: A #TpDebugSender instance
+ * @timestamp: Time of the message, or %NULL for right now
+ * @formatted: Place to store the formatted message, or %NULL if not needed
+ * @domain: Message domain
+ * @level: The message level
+ * @format: The printf() format string
+ * @args: the #va_list of parameters to insert into @format
+ *
+ * Formats and adds a new message to the debug sender message queue. If the
+ * #TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
+ * signal will be fired too.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_debug_sender_add_message_vprintf (TpDebugSender *self,
+    GTimeVal *timestamp,
+    gchar **formatted,
+    const gchar *domain,
+    GLogLevelFlags level,
+    const gchar *format,
+    va_list args)
+{
+  gchar *message = NULL;
+
+  /* disabled cache? we might have no need to format the message at all */
+#ifndef ENABLE_DEBUG_CACHE
+  if (!self->priv->enabled && formatted == NULL)
+    return;
+#endif
+
+  message = g_strdup_vprintf (format, args);
+
+  tp_debug_sender_add_message (self, timestamp, domain, level, message);
+
+  /* if the caller didn't want a copy, we're done with the message: */
+  if (formatted != NULL)
+    *formatted = message;
+  else
+    g_free (message);
+}
+
+/**
+ * tp_debug_sender_add_message_printf:
+ * @self: A #TpDebugSender instance
+ * @timestamp: Time of the message, or %NULL for right now
+ * @formatted: Place to store the formatted message, or %NULL if not required
+ * @domain: Message domain
+ * @level: The message level
+ * @format: The printf() format string
+ * @Varargs: The parameters to insert into @format
+ *
+ * Formats and adds a new message to the debug sender message queue. If the
+ * #TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
+ * signal will be fired too.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_debug_sender_add_message_printf (TpDebugSender *self,
+    GTimeVal *timestamp,
+    gchar **formatted,
+    const gchar *domain,
+    GLogLevelFlags level,
+    const gchar *format,
+    ...)
+{
+  va_list args;
+
+  va_start (args, format);
+  tp_debug_sender_add_message_vprintf (self, timestamp, formatted, domain, level,
+      format, args);
+  va_end (args);
 }
 
 static gboolean

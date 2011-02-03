@@ -69,6 +69,22 @@ void tp_debug_sender_add_message (TpDebugSender *self,
     GLogLevelFlags level,
     const gchar *string);
 
+void tp_debug_sender_add_message_vprintf (TpDebugSender *self,
+    GTimeVal *timestamp,
+    gchar **formatted,
+    const gchar *domain,
+    GLogLevelFlags level,
+    const gchar *format,
+    va_list args);
+
+void tp_debug_sender_add_message_printf (TpDebugSender *self,
+    GTimeVal *timestamp,
+    gchar **formatted,
+    const gchar *domain,
+    GLogLevelFlags level,
+    const gchar *format,
+    ...);
+
 void tp_debug_sender_log_handler (const gchar *log_domain,
     GLogLevelFlags log_level, const gchar *message, gpointer exclude);
 
