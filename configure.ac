@@ -100,6 +100,17 @@ AC_ARG_ENABLE(debug,
   AC_HELP_STRING([--disable-debug],[compile without debug code (note that this will disable much of the debug code in all GLib connection managers)]),
     enable_debug=$enableval, enable_debug=yes )
 
+AC_ARG_ENABLE(debug-cache,
+  AS_HELP_STRING([--enable-debug-cache],
+                 [compile with code to unconditionally cache all debug messages whether or not they are actually emitted]),
+                 [enable_debug_cache=$enableval],
+                 [enable_debug_cache=yes])
+
+if test x"$enable_debug_cache" != xno
+then
+  AC_DEFINE([ENABLE_DEBUG_CACHE], [1], [Define to enable debug message cache])
+fi
+
 AC_ARG_ENABLE(handle-leak-debug,
   AC_HELP_STRING([--enable-handle-leak-debug],[compile with handle leak debugging code (the CM should be built with -rdynamic)]),
     enable_handle_leak_debug=$enableval, enable_handle_leak_debug=no )
