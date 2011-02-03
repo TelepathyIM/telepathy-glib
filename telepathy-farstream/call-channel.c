@@ -577,6 +577,13 @@ _tf_call_channel_get_conference (TfCallChannel *channel,
   tmp = g_strdup_printf ("fs%sconference", conference_type);
   cc->fsconference = FS_CONFERENCE (gst_element_factory_make (tmp, NULL));
   g_free (tmp);
+
+  if (cc->fsconference == NULL)
+  {
+    g_slice_free (struct CallConference, cc);
+    return NULL;
+  }
+
   gst_object_ref (cc->fsconference);
   g_hash_table_insert (channel->fsconferences, cc->conference_type, cc);
 
