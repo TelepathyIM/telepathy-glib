@@ -353,6 +353,8 @@ tf_channel_dispose (GObject *object)
       self->priv->media_signalling_channel = NULL;
     }
 
+  tp_clear_object (&self->priv->call_channel);
+
   if (self->priv->channel_proxy)
     {
       TpChannel *tmp;
@@ -498,6 +500,8 @@ shutdown_channel (TfChannel *self)
       g_object_unref (self->priv->media_signalling_channel);
       self->priv->media_signalling_channel = NULL;
     }
+
+  tp_clear_object (&self->priv->call_channel);
 
   if (self->priv->channel_proxy != NULL)
     {
