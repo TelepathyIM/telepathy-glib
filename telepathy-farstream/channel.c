@@ -243,21 +243,15 @@ channel_prepared (GObject *obj,
   if (!tp_proxy_prepare_finish (channel_proxy, proxy_res, &error))
     {
       g_simple_async_result_propagate_error (res, &error);
-      g_simple_async_result_set_op_res_gboolean (res, FALSE);
-      g_simple_async_result_complete (res);
       shutdown_channel (self);
-      g_object_unref (res);
-      return;
+      goto error;
     }
 
   if (self->priv->closed)
     {
       g_simple_async_result_set_error (res, TP_ERROR, TP_ERROR_CANCELLED,
           "Channel already closed");
-      g_simple_async_result_set_op_res_gboolean (res, FALSE);
-      g_simple_async_result_complete (res);
-      g_object_unref (res);
-      return;
+      goto error;
     }
 
   if (tp_proxy_has_interface_by_id (as_proxy,
@@ -279,7 +273,6 @@ channel_prepared (GObject *obj,
       self->priv->channel_invalidated_handler = g_signal_connect (
           self->priv->channel_proxy,
           "invalidated", G_CALLBACK (channel_invalidated), self);
-      return;
     }
   else
     {
@@ -287,16 +280,18 @@ channel_prepared (GObject *obj,
           "Channel does not implement "
           TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING " or "
           TF_FUTURE_IFACE_CHANNEL_TYPE_CALL);
-      g_simple_async_result_set_op_res_gboolean (res, FALSE);
-
-      g_simple_async_result_complete (res);
-      g_object_unref (res);
-      return;
+      goto error;
     }
 
+  g_object_unref (self);
+  return;
+
+error:
+  g_simple_async_result_set_op_res_gboolean (res, FALSE);
   g_simple_async_result_complete (res);
 
   g_object_unref (res);
+  g_object_unref (self);
 }
 
 
