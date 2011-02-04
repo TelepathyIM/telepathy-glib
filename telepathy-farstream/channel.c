@@ -201,7 +201,6 @@ call_channel_ready (GObject *obj, GAsyncResult *call_res, gpointer user_data)
     {
       g_simple_async_result_set_op_res_gboolean (res, TRUE);
 
-
       tp_g_signal_connect_object (self->priv->call_channel,
           "fs-conference-added", G_CALLBACK (channel_fs_conference_added),
           self, 0);
