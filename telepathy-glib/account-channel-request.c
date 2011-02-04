@@ -348,7 +348,11 @@ tp_account_channel_request_class_init (
    * This can be useful for example to compare with the #TpChannelRequest
    * objects received from the requests_satisfied argument of
    * #TpSimpleHandlerHandleChannelsImpl to check if the client is asked to
-   * handle the channel he just requested.
+   * handle the channel it just requested.
+   *
+   * Note that the #TpChannelRequest objects may be different while still
+   * representing the same ChannelRequest on D-Bus. You have to compare
+   * them using their object paths (tp_proxy_get_object_path()).
    *
    * Since 0.11.UNRELEASED
    */
