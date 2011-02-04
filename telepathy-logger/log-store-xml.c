@@ -542,7 +542,7 @@ log_store_xml_add_event (TplLogStore *store,
   if (TPL_IS_TEXT_EVENT (event))
     return add_text_event (self, TPL_TEXT_EVENT (event), error);
 
-  DEBUG ("TplEventSignalType not handled by this LogStore (%s). "
+  DEBUG ("TplEntry not handled by this LogStore (%s). "
       "Ignoring Event", log_store_xml_get_name (store));
   /* do not consider it an error, this LogStore simply do not want/need
    * this Event */
