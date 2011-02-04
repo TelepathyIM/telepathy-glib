@@ -225,6 +225,7 @@ call_channel_ready (GObject *obj, GAsyncResult *call_res, gpointer user_data)
       "invalidated", G_CALLBACK (channel_invalidated), self);
 
   g_object_unref (res);
+  g_object_unref (self);
 }
 
 static void
