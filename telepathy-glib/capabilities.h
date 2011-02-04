@@ -67,6 +67,9 @@ gboolean tp_capabilities_supports_contact_search (TpCapabilities *self,
     gboolean *with_limit,
     gboolean *with_server);
 
+gboolean tp_capabilities_supports_room_list (TpCapabilities *self,
+    gboolean *with_server);
+
 G_END_DECLS
 
 #endif

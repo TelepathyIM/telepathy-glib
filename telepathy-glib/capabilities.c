@@ -551,3 +551,59 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
 
   return ret;
 }
+
+/**
+ * tp_capabilities_supports_room_list:
+ * @self: a #TpCapabilities object
+ * @with_server: (out): if not %NULL, used to return %TRUE if the
+ * #TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER property can be defined when
+ * requesting a RoomList channel.
+ *
+ * Return whether this protocol or connection can perform rooms
+ * listing.
+ *
+ * Returns: %TRUE if a channel request containing RoomList as ChannelType,
+ * HandleTypeNone as TargetHandleType can be expected to work,
+ * %FALSE otherwise.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_room_list (TpCapabilities *self,
+    gboolean *with_server)
+{
+  gboolean result = FALSE;
+  gboolean server = FALSE;
+  guint i;
+
+  for (i = 0; i < self->priv->classes->len; i++)
+    {
+      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
+      GHashTable *fixed;
+      const gchar *chan_type;
+      const gchar **allowed_properties;
+      guint j;
+
+      tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
+
+      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_ROOM_LIST))
+        continue;
+
+      result = TRUE;
+
+      for (j = 0; allowed_properties[j] != NULL; j++)
+        {
+          if (!tp_strdiff (allowed_properties[j],
+                TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER))
+            server = TRUE;
+        }
+      break;
+    }
+
+  if (with_server != NULL)
+    *with_server = server;
+
+  return result;
+}
