@@ -75,6 +75,8 @@ libtelepathy_logger_la_SOURCES = \
 		log-store-factory-internal.h	\
 		observer.c			\
 		observer-internal.h		\
+		streamed-media-channel.c        \
+		streamed-media-channel-internal.h  \
 		text-channel.c			\
 		text-channel-internal.h		\
 		text-event.c			\
