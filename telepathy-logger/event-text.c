@@ -47,6 +47,34 @@
  * An object representing a text log event.
  */
 
+/**
+ * TPL_EVENT_TEXT_MSG_ID_IS_VALID:
+ * @msg: a message ID
+ *
+ * Return whether a message ID is valid.
+ *
+ * If %FALSE is returned, it means that either an invalid input has been
+ * passed, or the TplEvent is currently set to %TPL_EVENT_TEXT_MSG_ID_UNKNOWN
+ * or %TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED.
+ *
+ * Returns: %TRUE if the argument is a valid message ID or %FALSE otherwise.
+ */
+
+/**
+ * TPL_EVENT_TEXT_MSG_ID_UNKNOWN:
+ *
+ * Special value used instead of a message ID to indicate a message with an
+ * unknown status (before _tpl_event_set_pending_msg_id() was called, or
+ * when it wasn't possible to obtain the message ID).
+ */
+
+/**
+ * TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED:
+ *
+ * Special value used instead of a message ID to indicate an acknowledged
+ * message.
+ */
+
 G_DEFINE_TYPE (TplEventText, tpl_event_text, TPL_TYPE_EVENT)
 
 struct _TplEventTextPriv
@@ -178,12 +206,12 @@ static void tpl_event_text_class_init (TplEventTextClass *klass)
    * TplEventText::pending-msg-id:
    *
    * The pending message id for the current log event.
-   * The default value, is #TPL_EVENT_MSG_ID_UNKNOWN,
+   * The default value, is #TPL_EVENT_TEXT_MSG_ID_UNKNOWN,
    * meaning that it's not possible to know if the message is pending or has
    * been acknowledged.
    *
    * An object instantiating a TplEvent subclass should explicitly set it
-   * to a valid msg-id number (id>=0) or to #TPL_EVENT_MSG_ID_ACKNOWLEDGED
+   * to a valid msg-id number (id>=0) or to #TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED
    * when acknowledged or if the event is a result of
    * 'sent' signal.
    * In fact a sent event is considered as 'automatically' ACK by TPL.
@@ -199,7 +227,7 @@ static void tpl_event_text_class_init (TplEventTextClass *klass)
       "PendingMessageId",
       "Pending Message ID, if set, the log event is set as pending for ACK."
       " Default to -1 meaning not pending.",
-      -1, G_MAXUINT32, TPL_EVENT_MSG_ID_ACKNOWLEDGED,
+      -1, G_MAXUINT32, TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PENDING_MSG_ID,
       param_spec);
@@ -408,16 +436,16 @@ _tpl_event_text_set_pending_msg_id (TplEventText *self,
   g_object_notify (G_OBJECT (self), "pending-msg-id");
 }
 
-/**
+/*
  * tpl_event_text_get_pending_msg_id
- * @self: a #TplEventText
+ * @self: a #TplEvent
  *
  * Returns: the id as the #TplEventText:pending-msg-id property
  */
 gint
-tpl_event_text_get_pending_msg_id (TplEventText *self)
+_tpl_event_text_get_pending_msg_id (TplEventText *self)
 {
-  g_return_val_if_fail (TPL_IS_EVENT (self), -1);
+  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), -1);
 
   return self->priv->pending_msg_id;
 }
@@ -426,6 +454,6 @@ tpl_event_text_get_pending_msg_id (TplEventText *self)
 gboolean
 _tpl_event_text_is_pending (TplEventText *self)
 {
-  return TPL_EVENT_MSG_ID_IS_VALID (
-      tpl_event_text_get_pending_msg_id (self));
+  return TPL_EVENT_TEXT_MSG_ID_IS_VALID (
+      _tpl_event_text_get_pending_msg_id (self));
 }

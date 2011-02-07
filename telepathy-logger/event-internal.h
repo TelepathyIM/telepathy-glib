@@ -26,11 +26,6 @@
 
 G_BEGIN_DECLS
 
-#define TPL_EVENT_MSG_ID_IS_VALID(msg) (msg >= 0)
-
-#define TPL_EVENT_MSG_ID_UNKNOWN -2
-#define TPL_EVENT_MSG_ID_ACKNOWLEDGED -1
-
 struct _TplEvent
 {
   GObject parent;

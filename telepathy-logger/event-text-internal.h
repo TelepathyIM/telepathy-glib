@@ -26,6 +26,11 @@
 #include <telepathy-logger/event-internal.h>
 #include <telepathy-logger/channel-text-internal.h>
 
+#define TPL_EVENT_TEXT_MSG_ID_IS_VALID(msg) (msg >= 0)
+
+#define TPL_EVENT_TEXT_MSG_ID_UNKNOWN -2
+#define TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED -1
+
 G_BEGIN_DECLS
 
 struct _TplEventText
@@ -72,6 +77,8 @@ gboolean _tpl_event_text_is_chatroom (TplEventText *self);
 
 gboolean _tpl_event_text_equal (TplEvent *message1,
     TplEvent *message2);
+
+gint _tpl_event_text_get_pending_msg_id (TplEventText *self);
 
 void _tpl_event_text_set_pending_msg_id (TplEventText *self,
     gint data);

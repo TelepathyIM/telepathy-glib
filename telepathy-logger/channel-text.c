@@ -726,7 +726,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
         {
           DEBUG ("pending-message-id not in a valid range, setting to "
               "UNKNOWN");
-            message_id = TPL_EVENT_MSG_ID_UNKNOWN;
+            message_id = TPL_EVENT_TEXT_MSG_ID_UNKNOWN;
         }
       message_timestamp = tp_asv_get_uint64 (message_headers,
           "message-received", NULL);
@@ -1062,7 +1062,7 @@ on_sent_signal_cb (TpChannel *proxy,
 
   channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   log_id = _tpl_create_message_token (channel_path, arg_Timestamp,
-      TPL_EVENT_MSG_ID_ACKNOWLEDGED);
+      TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED);
 
   /* Initialize data for TplEntity */
   me = _tpl_channel_text_get_my_contact (tpl_text);
@@ -1112,7 +1112,7 @@ on_sent_signal_cb (TpChannel *proxy,
   log = TPL_EVENT (text_log);
 
   _tpl_event_text_set_pending_msg_id (text_log,
-      TPL_EVENT_MSG_ID_ACKNOWLEDGED);
+      TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED);
   _tpl_event_set_channel_path (TPL_EVENT (log), channel_path);
   _tpl_event_set_id (log, chat_id);
   _tpl_event_set_timestamp (log, (time_t) arg_Timestamp);

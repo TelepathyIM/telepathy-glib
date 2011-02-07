@@ -838,7 +838,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
         pending_id = atoi (log_id);
       else
         /* we have no way in non empathy-legacy mode to know it */
-        pending_id = TPL_EVENT_MSG_ID_UNKNOWN;
+        pending_id = TPL_EVENT_TEXT_MSG_ID_UNKNOWN;
 
       t = _tpl_time_parse (time_);
 

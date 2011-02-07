@@ -42,7 +42,5 @@ GType tpl_event_text_get_type (void);
 
 const gchar *tpl_event_text_get_message (TplEventText *self);
 
-gint tpl_event_text_get_pending_msg_id (TplEventText *self);
-
 G_END_DECLS
 #endif // __TPL_EVENT_TEXT_H__

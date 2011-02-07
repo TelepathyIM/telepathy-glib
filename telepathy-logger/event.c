@@ -44,34 +44,6 @@
  * An object representing a generic log event.
  */
 
-/**
- * TPL_EVENT_MSG_ID_IS_VALID:
- * @msg: a message ID
- *
- * Return whether a message ID is valid.
- *
- * If %FALSE is returned, it means that either an invalid input has been
- * passed, or the TplEvent is currently set to %TPL_EVENT_MSG_ID_UNKNOWN
- * or %TPL_EVENT_MSG_ID_ACKNOWLEDGED.
- *
- * Returns: %TRUE if the argument is a valid message ID or %FALSE otherwise.
- */
-
-/**
- * TPL_EVENT_MSG_ID_UNKNOWN:
- *
- * Special value used instead of a message ID to indicate a message with an
- * unknown status (before _tpl_event_set_pending_msg_id() was called, or
- * when it wasn't possible to obtain the message ID).
- */
-
-/**
- * TPL_EVENT_MSG_ID_ACKNOWLEDGED:
- *
- * Special value used instead of a message ID to indicate an acknowledged
- * message.
- */
-
 G_DEFINE_ABSTRACT_TYPE (TplEvent, tpl_event, G_TYPE_OBJECT)
 
 static void tpl_event_set_log_id (TplEvent *self, const gchar *data);

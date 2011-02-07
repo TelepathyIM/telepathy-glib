@@ -707,7 +707,7 @@ _insert_to_cache_table (TplLogStore *self,
   channel = get_channel_name_from_event (message);
   identifier = _tpl_event_get_id (message);
   log_id = _tpl_event_get_log_id (message);
-  msg_id = tpl_event_text_get_pending_msg_id (TPL_EVENT_TEXT (message));
+  msg_id = _tpl_event_text_get_pending_msg_id (TPL_EVENT_TEXT (message));
   chatroom = _tpl_event_text_is_chatroom (TPL_EVENT_TEXT (message));
   date = get_datetime (message);
 
@@ -716,7 +716,7 @@ _insert_to_cache_table (TplLogStore *self,
   DEBUG ("chat_identifier = %s", identifier);
   DEBUG ("log_identifier = %s", log_id);
   DEBUG ("pending_msg_id = %d (%s)", msg_id,
-      (TPL_EVENT_MSG_ID_IS_VALID (msg_id) ?
+      (TPL_EVENT_TEXT_MSG_ID_IS_VALID (msg_id) ?
        "pending" : "acknowledged or sent"));
   DEBUG ("chatroom = %i", chatroom);
   DEBUG ("date = %s", date);
@@ -751,7 +751,7 @@ _insert_to_cache_table (TplLogStore *self,
   sqlite3_bind_text (sql, 2, account, -1, SQLITE_TRANSIENT);
   /* insert NULL if ACKNOWLEDGED (ie sent message's entries, which are created
    * ACK'd */
-  if (!TPL_EVENT_MSG_ID_IS_VALID (msg_id))
+  if (!TPL_EVENT_TEXT_MSG_ID_IS_VALID (msg_id))
     sqlite3_bind_null (sql, 3);
   else
     sqlite3_bind_int (sql, 3, msg_id);
