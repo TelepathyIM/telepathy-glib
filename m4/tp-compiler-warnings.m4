@@ -22,6 +22,12 @@ AC_DEFUN([TP_COMPILER_WARNINGS],
   for tp_flag in $4; do
     TP_COMPILER_FLAG([-Wno-$tp_flag],
       [tp_warnings="$tp_warnings -Wno-$tp_flag"])
+dnl Yes, we do need to use both -Wno-foo and -Wno-error=foo. Simon says:
+dnl     some warnings we explicitly don't want, like unused-parameter, but
+dnl     they're in -Wall. when a distro using cdbs compiles us, we have:
+dnl       -Werror -Wno-unused-parameter      -Wall
+dnl         ^ from us                         ^ from cdbs
+dnl     which turns -Wunused-parameter back on, in effect
     TP_COMPILER_FLAG([-Wno-error=$tp_flag],
       [tp_error_flags="$tp_error_flags -Wno-error=$tp_flag"], [tp_werror=no])
   done
@@ -32,7 +38,10 @@ AC_DEFUN([TP_COMPILER_WARNINGS],
     tp_werror=$enableval, :)
 
   if test "x$tp_werror" = xyes && $2; then
-    $1="$tp_warnings $tp_error_flags"
+dnl We put -Wno-error=foo before -Wno-foo because clang interprets -Wall
+dnl -Werror -Wno-foo -Wno-error=foo as “make foo a non-fatal warning”, but does
+dnl what we want if you reverse them.
+    $1="$tp_error_flags $tp_warnings"
   else
     $1="$tp_warnings"
   fi
