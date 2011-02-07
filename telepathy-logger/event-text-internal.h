@@ -70,9 +70,6 @@ void _tpl_event_text_set_message_type (TplEventText *self,
 void _tpl_event_text_set_chatroom (TplEventText *self,
     gboolean data);
 
-TpChannelTextMessageType _tpl_event_text_get_message_type (
-    TplEventText *self);
-
 gboolean _tpl_event_text_is_chatroom (TplEventText *self);
 
 gboolean _tpl_event_text_equal (TplEvent *message1,

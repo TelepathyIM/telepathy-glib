@@ -481,7 +481,7 @@ add_event_text (TplLogStoreXml *self,
     goto out;
 
   body = g_markup_escape_text (body_str, -1);
-  msg_type = _tpl_event_text_get_message_type (message);
+  msg_type = tpl_event_text_get_message_type (message);
   timestamp = log_store_xml_get_timestamp_from_event (
       TPL_EVENT (message));
 

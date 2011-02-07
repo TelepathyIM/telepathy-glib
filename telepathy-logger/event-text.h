@@ -40,6 +40,8 @@ typedef struct _TplEventTextPriv TplEventTextPriv;
 
 GType tpl_event_text_get_type (void);
 
+TpChannelTextMessageType tpl_event_text_get_message_type (TplEventText *self);
+
 const gchar *tpl_event_text_get_message (TplEventText *self);
 
 G_END_DECLS
