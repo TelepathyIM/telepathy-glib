@@ -181,6 +181,16 @@ tpl_event_set_property (GObject *object,
   };
 }
 
+static gboolean
+tpl_event_equal_default (TplEvent *message1,
+    TplEvent *message2)
+{
+  g_return_val_if_fail (TPL_IS_EVENT (message1), FALSE);
+  g_return_val_if_fail (TPL_IS_EVENT (message2), FALSE);
+
+  return !tp_strdiff (message1->priv->log_id, message2->priv->log_id);
+}
+
 
 static void
 tpl_event_class_init (TplEventClass *klass)
@@ -194,7 +204,7 @@ tpl_event_class_init (TplEventClass *klass)
   object_class->get_property = tpl_event_get_property;
   object_class->set_property = tpl_event_set_property;
 
-  klass->equal = NULL;
+  klass->equal = tpl_event_equal_default;
 
   param_spec = g_param_spec_uint ("timestamp",
       "Timestamp",
@@ -458,7 +468,7 @@ _tpl_event_set_channel_path (TplEvent *self,
 }
 
 /**
- * _tpl_event_equal:
+ * tpl_event_equal:
  * @self: TplEvent subclass instance
  * @data: an instance of the same TplEvent subclass of @self
  *
@@ -468,7 +478,7 @@ _tpl_event_set_channel_path (TplEvent *self,
  * data, %FALSE otherwise
  */
 gboolean
-_tpl_event_equal (TplEvent *self,
+tpl_event_equal (TplEvent *self,
     TplEvent *data)
 {
   g_return_val_if_fail (TPL_IS_EVENT (self), FALSE);

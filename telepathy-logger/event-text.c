@@ -179,14 +179,12 @@ tpl_event_text_set_property (GObject *object,
 static void tpl_event_text_class_init (TplEventTextClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  TplEventClass *event_class = TPL_EVENT_CLASS (klass);
   GParamSpec *param_spec;
 
   object_class->finalize = tpl_event_text_finalize;
   object_class->dispose = tpl_event_text_dispose;
   object_class->get_property = tpl_event_text_get_property;
   object_class->set_property = tpl_event_text_set_property;
-  event_class->equal = _tpl_event_text_equal;
 
   param_spec = g_param_spec_uint ("message-type",
       "MessageType",
@@ -407,22 +405,6 @@ _tpl_event_text_set_chatroom (TplEventText *self,
   self->priv->chatroom = data;
 }
 
-gboolean
-_tpl_event_text_equal (TplEvent *message1,
-    TplEvent *message2)
-{
-  g_return_val_if_fail (TPL_IS_EVENT_TEXT (message1), FALSE);
-  g_return_val_if_fail (TPL_IS_EVENT_TEXT (message2), FALSE);
-
-  /*
-  if (priv1->id == priv2->id && !tp_strdiff (priv1->body, priv2->body)) {
-  if (priv1->type == priv2->type)
-    if (!tp_strdiff (priv1->event.text->message, priv2->event.text->message)) {
-    }
-  */
-  return !tp_strdiff (_tpl_event_get_log_id (message1),
-      _tpl_event_get_log_id (message2));
-}
 
 /**
  * _tpl_event_set_pending_msg_id:

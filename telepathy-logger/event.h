@@ -50,5 +50,7 @@ TpAccount * tpl_event_get_account (TplEvent *self);
 TplEntity * tpl_event_get_sender (TplEvent *self);
 TplEntity * tpl_event_get_receiver (TplEvent *self);
 
+gboolean tpl_event_equal (TplEvent *self, TplEvent *data);
+
 G_END_DECLS
 #endif // __TPL_EVENT_H__
