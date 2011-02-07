@@ -214,7 +214,7 @@ static void tpl_text_event_class_init (TplTextEventClass *klass)
       "PendingMessageId",
       "Pending Message ID, if set, the log event is set as pending for ACK."
       " Default to -1 meaning not pending.",
-      -1, G_MAXUINT32, TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
+      -1, G_MAXINT, TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PENDING_MSG_ID,
       param_spec);
