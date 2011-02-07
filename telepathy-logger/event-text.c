@@ -82,7 +82,7 @@ struct _TplEventTextPriv
   TplChannelText *tpl_text;
   TpChannelTextMessageType message_type;
   gchar *message;
-  gboolean chatroom;
+
   /* in specs it's guint, TplEvent needs a way to represent ACK'd messages:
    * if pending_msg_id reachs G_MAXINT32, then the problem is elsewhere :-) */
   gint pending_msg_id;
@@ -303,15 +303,6 @@ _tpl_event_text_message_type_to_str (TpChannelTextMessageType msg_type)
 }
 
 
-gboolean
-_tpl_event_text_is_chatroom (TplEventText * self)
-{
-  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), FALSE);
-
-  return self->priv->chatroom;
-}
-
-
 TplChannelText *
 _tpl_event_text_get_tpl_channel_text (TplEventText * self)
 {
@@ -393,16 +384,6 @@ _tpl_event_text_set_message_type (TplEventText *self,
   g_return_if_fail (TPL_IS_EVENT_TEXT (self));
 
   self->priv->message_type = data;
-}
-
-
-void
-_tpl_event_text_set_chatroom (TplEventText *self,
-    gboolean data)
-{
-  g_return_if_fail (TPL_IS_EVENT_TEXT (self));
-
-  self->priv->chatroom = data;
 }
 
 

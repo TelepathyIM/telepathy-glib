@@ -510,7 +510,7 @@ add_event_text (TplLogStoreXml *self,
 
   ret = _log_store_xml_write_to_store (self, account,
       _tpl_event_get_id (TPL_EVENT (message)),
-      _tpl_event_text_is_chatroom (message),
+      _tpl_event_target_is_room (TPL_EVENT (message)),
       event, error);
 
 out:

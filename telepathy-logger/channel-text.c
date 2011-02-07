@@ -1123,9 +1123,6 @@ on_sent_signal_cb (TpChannel *proxy,
   _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
 
   /* Initialized LogStore and send the log event */
-  _tpl_event_text_set_chatroom (text_log,
-      _tpl_channel_text_is_chatroom (tpl_text));
-
   logmanager = tpl_log_manager_dup_singleton ();
   _tpl_log_manager_add_event (logmanager, TPL_EVENT (log), &error);
 
@@ -1228,9 +1225,6 @@ keepon_on_receiving_signal (TplEventText *text_log,
     _tpl_event_set_id (log, tpl_entity_get_identifier (sender));
   else
     _tpl_event_set_id (log, _tpl_channel_text_get_chatroom_id (tpl_text));
-
-  _tpl_event_text_set_chatroom (text_log,
-      _tpl_channel_text_is_chatroom (tpl_text));
 
   logmanager = tpl_log_manager_dup_singleton ();
   _tpl_log_manager_add_event (logmanager, TPL_EVENT (log), &e);

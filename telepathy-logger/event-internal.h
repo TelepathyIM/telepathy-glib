@@ -42,6 +42,8 @@ struct _TplEventClass {
 };
 
 
+gboolean _tpl_event_target_is_room (TplEvent *self);
+
 void _tpl_event_set_timestamp (TplEvent *self,
     gint64 data);
 

@@ -458,7 +458,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
 
   account = get_account_name_from_event (message);
   identifier = _tpl_event_get_id (message);
-  chatroom = _tpl_event_text_is_chatroom (TPL_EVENT_TEXT (message));
+  chatroom = _tpl_event_target_is_room (message);
   date = get_date (message);
 
   DEBUG ("account = %s", account);
@@ -708,7 +708,7 @@ _insert_to_cache_table (TplLogStore *self,
   identifier = _tpl_event_get_id (message);
   log_id = _tpl_event_get_log_id (message);
   msg_id = _tpl_event_text_get_pending_msg_id (TPL_EVENT_TEXT (message));
-  chatroom = _tpl_event_text_is_chatroom (TPL_EVENT_TEXT (message));
+  chatroom = _tpl_event_target_is_room (message);
   date = get_datetime (message);
 
   DEBUG ("channel = %s", channel);

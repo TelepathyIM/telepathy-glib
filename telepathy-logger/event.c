@@ -342,6 +342,18 @@ _tpl_event_get_id (TplEvent *self)
 }
 
 
+gboolean
+_tpl_event_target_is_room (TplEvent *self)
+{
+  /* Some log-store like Pidgin text mode does not know about receiver, so
+   * having a NULL receiver is fine. */
+  if (self->priv->receiver == NULL)
+    return FALSE;
+
+  return (tpl_entity_get_entity_type (self->priv->receiver) == TPL_ENTITY_ROOM);
+}
+
+
 /**
  * tpl_event_get_account
  * @self: a #TplEvent

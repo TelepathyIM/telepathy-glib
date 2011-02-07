@@ -351,7 +351,7 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
   g_assert_cmpint (g_list_length (l), ==, 6);
 
   msg = g_list_nth_data (l, 0);
-  g_assert (_tpl_event_text_is_chatroom (msg) == TRUE);
+  g_assert (_tpl_event_target_is_room (TPL_EVENT (msg)) == TRUE);
   g_assert_cmpstr (tpl_event_text_get_message (msg), ==, NULL);
 
   g_list_foreach (l, (GFunc) g_object_unref, NULL);
@@ -367,7 +367,7 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
   g_assert_cmpint (g_list_length (l), ==, 2);
 
   msg = g_list_nth_data (l, 0);
-  g_assert (_tpl_event_text_is_chatroom (msg) == FALSE);
+  g_assert (_tpl_event_target_is_room (TPL_EVENT (msg)) == FALSE);
   g_assert_cmpstr (tpl_event_text_get_message (msg), ==, NULL);
 
   g_list_foreach (l, (GFunc) g_object_unref, NULL);

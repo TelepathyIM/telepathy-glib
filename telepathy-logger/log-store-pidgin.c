@@ -839,8 +839,6 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           _tpl_event_set_timestamp (TPL_EVENT (event), t);
           _tpl_event_text_set_message_type (event,
               TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
-          _tpl_event_text_set_chatroom (event,
-              type == TPL_EVENT_SEARCH_TEXT_ROOM);
 
           /* prepend and then reverse is better than append */
           events = g_list_prepend (events, event);
