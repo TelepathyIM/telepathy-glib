@@ -51,8 +51,6 @@ G_DEFINE_TYPE (TplEventText, tpl_event_text, TPL_TYPE_EVENT)
 
 struct _TplEventTextPriv
 {
-  TplEventTextSignalType signal_type;
-
   TplChannelText *tpl_text;
   TpChannelTextMessageType message_type;
   gchar *message;
@@ -296,24 +294,6 @@ _tpl_event_text_get_tpl_channel_text (TplEventText * self)
   return self->priv->tpl_text;
 }
 
-
-TplEventTextSignalType
-_tpl_event_text_get_signal_type (TplEventText *self)
-{
-  g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), TPL_EVENT_TEXT_SIGNAL_NONE);
-
-  return self->priv->signal_type;
-}
-
-
-void
-_tpl_event_text_set_signal_type (TplEventText *self,
-    TplEventTextSignalType signal_type)
-{
-  g_return_if_fail (TPL_IS_EVENT_TEXT (self));
-
-  self->priv->signal_type = signal_type;
-}
 
 /**
  * tpl_event_text_get_message

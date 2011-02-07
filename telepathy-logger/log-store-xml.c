@@ -446,7 +446,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
 
 
 static gboolean
-add_event_text_chat (TplLogStoreXml *self,
+add_event_text (TplLogStoreXml *self,
     TplEventText *message,
     GError **error)
 {
@@ -525,42 +525,6 @@ out:
     g_object_unref (bus_daemon);
 
   return ret;
-}
-
-
-static gboolean
-add_event_text (TplLogStoreXml *self,
-    TplEventText *message,
-    GError **error)
-{
-  TplEventTextSignalType signal_type;
-
-  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
-  g_return_val_if_fail (TPL_IS_EVENT_TEXT (message), FALSE);
-
-  signal_type = _tpl_event_text_get_signal_type (message);
-
-  switch (signal_type)
-    {
-      case TPL_EVENT_TEXT_SIGNAL_SENT:
-      case TPL_EVENT_TEXT_SIGNAL_RECEIVED:
-        return add_event_text_chat (self, message, error);
-        break;
-      case TPL_EVENT_TEXT_SIGNAL_CHAT_STATUS_CHANGED:
-        g_warning ("STATUS_CHANGED log event not currently handled");
-        return FALSE;
-        break;
-      case TPL_EVENT_TEXT_SIGNAL_SEND_ERROR:
-        g_warning ("SEND_ERROR log event not currently handled");
-        return FALSE;
-      case TPL_EVENT_TEXT_SIGNAL_LOST_MESSAGE:
-        g_warning ("LOST_MESSAGE log event not currently handled");
-        return FALSE;
-      default:
-        g_warning ("Event's signal type unknown");
-        return FALSE;
-    }
 }
 
 

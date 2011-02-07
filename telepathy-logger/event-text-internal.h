@@ -28,17 +28,6 @@
 
 G_BEGIN_DECLS
 
-typedef enum
-{
-  TPL_EVENT_TEXT_SIGNAL_NONE = 0,
-  TPL_EVENT_TEXT_SIGNAL_SENT,
-  TPL_EVENT_TEXT_SIGNAL_RECEIVED,
-  TPL_EVENT_TEXT_SIGNAL_SEND_ERROR,
-  TPL_EVENT_TEXT_SIGNAL_LOST_MESSAGE,
-  TPL_EVENT_TEXT_SIGNAL_CHAT_STATUS_CHANGED,
-  TPL_EVENT_SIGNAL_CHANNEL_CLOSED
-} TplEventTextSignalType;
-
 struct _TplEventText
 {
   TplEvent parent;
@@ -64,9 +53,6 @@ const gchar * _tpl_event_text_message_type_to_str (
 TplChannelText * _tpl_event_text_get_tpl_channel_text (
     TplEventText *self);
 
-TplEventTextSignalType _tpl_event_text_get_signal_type (
-    TplEventText *self);
-
 void _tpl_event_text_set_tpl_channel_text (TplEventText *self,
     TplChannelText *data);
 
@@ -89,9 +75,6 @@ gboolean _tpl_event_text_equal (TplEvent *message1,
 
 void _tpl_event_text_set_pending_msg_id (TplEventText *self,
     gint data);
-
-void _tpl_event_text_set_signal_type (TplEventText *self,
-    TplEventTextSignalType signal_type);
 
 gboolean _tpl_event_text_is_pending (TplEventText *self);
 

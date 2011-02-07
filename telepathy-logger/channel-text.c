@@ -1119,7 +1119,6 @@ on_sent_signal_cb (TpChannel *proxy,
   _tpl_event_set_sender (log, sender);
   _tpl_event_set_receiver (log, receiver);
   _tpl_event_text_set_message (text_log, arg_Text);
-  _tpl_event_text_set_signal_type (text_log, TPL_EVENT_TEXT_SIGNAL_SENT);
   _tpl_event_text_set_message_type (text_log, arg_Type);
   _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
 
@@ -1313,8 +1312,6 @@ on_received_signal_cb (TpChannel *proxy,
   _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
   _tpl_event_text_set_message (text_log, arg_Text);
   _tpl_event_text_set_message_type (text_log, arg_Type);
-  _tpl_event_text_set_signal_type (text_log,
-      TPL_EVENT_TEXT_SIGNAL_RECEIVED);
 
   me = _tpl_channel_text_get_my_contact (tpl_text);
   receiver = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
