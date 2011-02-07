@@ -46,13 +46,11 @@
 
 G_DEFINE_ABSTRACT_TYPE (TplEvent, tpl_event, G_TYPE_OBJECT)
 
-static void tpl_event_set_log_id (TplEvent *self, const gchar *data);
-
 struct _TplEventPriv
 {
   gchar *log_id;
   gint64 timestamp;
-  gchar *id;
+  gchar *target_id;
   TpAccount *account;
   gchar *channel_path;
 
@@ -65,7 +63,7 @@ struct _TplEventPriv
 enum {
     PROP_TIMESTAMP = 1,
     PROP_LOG_ID,
-    PROP_ID,
+    PROP_TARGET_ID,
     PROP_ACCOUNT,
     PROP_ACCOUNT_PATH,
     PROP_CHANNEL_PATH,
@@ -81,7 +79,7 @@ tpl_event_finalize (GObject *obj)
   TplEventPriv *priv = self->priv;
 
   tp_clear_pointer (&priv->log_id, g_free);
-  tp_clear_pointer (&priv->id, g_free);
+  tp_clear_pointer (&priv->target_id, g_free);
   tp_clear_pointer (&priv->channel_path, g_free);
 
   G_OBJECT_CLASS (tpl_event_parent_class)->finalize (obj);
@@ -114,14 +112,14 @@ tpl_event_get_property (GObject *object,
   switch (param_id)
     {
       case PROP_TIMESTAMP:
-        g_value_set_uint (value, priv->timestamp);
+        g_value_set_uint64 (value, priv->timestamp);
         break;
       case PROP_LOG_ID:
         g_value_set_string (value, priv->log_id);
         break;
         break;
-      case PROP_ID:
-        g_value_set_string (value, priv->id);
+      case PROP_TARGET_ID:
+        g_value_set_string (value, priv->target_id);
         break;
       case PROP_ACCOUNT:
         g_value_set_object (value, priv->account);
@@ -152,28 +150,40 @@ tpl_event_set_property (GObject *object,
     GParamSpec *pspec)
 {
   TplEvent *self = TPL_EVENT (object);
+  TplEventPriv *priv = self->priv;
 
   switch (param_id) {
       case PROP_TIMESTAMP:
-        _tpl_event_set_timestamp (self, g_value_get_uint (value));
+        g_assert (priv->timestamp == 0);
+        priv->timestamp = g_value_get_uint64 (value);
         break;
       case PROP_LOG_ID:
-        tpl_event_set_log_id (self, g_value_get_string (value));
+        g_assert (priv->log_id == NULL);
+        g_return_if_fail (!TPL_STR_EMPTY (g_value_get_string (value)));
+        priv->log_id = g_value_dup_string (value);
         break;
-      case PROP_ID:
-        _tpl_event_set_id (self, g_value_get_string (value));
+      case PROP_TARGET_ID:
+        g_assert (priv->target_id == NULL);
+        g_return_if_fail (!TPL_STR_EMPTY (g_value_get_string (value)));
+        priv->target_id = g_value_dup_string (value);
         break;
       case PROP_ACCOUNT:
-        self->priv->account = g_value_dup_object (value);
+        g_assert (priv->account == NULL);
+        priv->account = g_value_dup_object (value);
         break;
       case PROP_CHANNEL_PATH:
-        _tpl_event_set_channel_path (self, g_value_get_string (value));
+        g_assert (priv->channel_path == NULL);
+        priv->channel_path = g_value_dup_string (value);
         break;
       case PROP_SENDER:
-        _tpl_event_set_sender (self, g_value_get_object (value));
+        g_assert (priv->sender == NULL);
+        g_return_if_fail (TPL_IS_ENTITY (g_value_get_object (value)));
+        priv->sender = g_value_dup_object (value);
         break;
       case PROP_RECEIVER:
-        _tpl_event_set_receiver (self, g_value_get_object (value));
+        g_assert (priv->receiver == NULL);
+        /* can be NULL */
+        priv->receiver = g_value_dup_object (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -206,10 +216,11 @@ tpl_event_class_init (TplEventClass *klass)
 
   klass->equal = tpl_event_equal_default;
 
-  param_spec = g_param_spec_uint ("timestamp",
+  param_spec = g_param_spec_uint64 ("timestamp",
       "Timestamp",
       "The timestamp (gint64) for the log event",
-      0, G_MAXUINT32, 0, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+      0, G_MAXUINT64, 0,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TIMESTAMP, param_spec);
 
   /**
@@ -227,12 +238,13 @@ tpl_event_class_init (TplEventClass *klass)
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LOG_ID, param_spec);
 
-  param_spec = g_param_spec_string ("id",
-      "Id",
-      "The event identifier to which the log event is related.",
+  param_spec = g_param_spec_string ("target-id",
+      "TargetId",
+      "The target identifier to which the log event is related (may be a "
+      "contact name or a room name).",
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY  | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_ID, param_spec);
+  g_object_class_install_property (object_class, PROP_TARGET_ID, param_spec);
 
   param_spec = g_param_spec_object ("account",
       "TpAccount",
@@ -264,13 +276,14 @@ tpl_event_class_init (TplEventClass *klass)
 
   param_spec = g_param_spec_object ("receiver",
       "Receiver",
-      "TplEntity instance destination for the log event",
+      "TplEntity instance destination for the log event "
+      "(maybe NULL with some log store)",
       TPL_TYPE_ENTITY,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_RECEIVER, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplEventPriv));
-  }
+}
 
 
 static void
@@ -334,11 +347,11 @@ tpl_event_get_receiver (TplEvent *self)
 
 
 const gchar *
-_tpl_event_get_id (TplEvent *self)
+_tpl_event_get_target_id (TplEvent *self)
 {
   g_return_val_if_fail (TPL_IS_EVENT (self), NULL);
 
-  return self->priv->id;
+  return self->priv->target_id;
 }
 
 
@@ -366,6 +379,7 @@ const gchar *
 tpl_event_get_account_path (TplEvent *self)
 {
   g_return_val_if_fail (TPL_IS_EVENT (self), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT (self->priv->account), NULL);
 
   return tp_proxy_get_object_path (self->priv->account);
 }
@@ -379,105 +393,6 @@ _tpl_event_get_channel_path (TplEvent *self)
   return self->priv->channel_path;
 }
 
-
-void
-_tpl_event_set_timestamp (TplEvent *self,
-    gint64 data)
-{
-  g_return_if_fail (TPL_IS_EVENT (self));
-
-  self->priv->timestamp = data;
-  g_object_notify (G_OBJECT (self), "timestamp");
-}
-
-
-/* set just on construction time */
-static void
-tpl_event_set_log_id (TplEvent *self,
-    const gchar* data)
-{
-  g_return_if_fail (TPL_IS_EVENT (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (self->priv->log_id == NULL);
-
-  self->priv->log_id = g_strdup (data);
-  g_object_notify (G_OBJECT (self), "log-id");
-}
-
-
-void
-_tpl_event_set_sender (TplEvent *self,
-    TplEntity *data)
-{
-  TplEventPriv *priv;
-
-  if (data == NULL)
-    return;
-
-  g_return_if_fail (TPL_IS_EVENT (self));
-  g_return_if_fail (TPL_IS_ENTITY (data));
-
-  priv = self->priv;
-
-  if (priv->sender != NULL)
-    g_object_unref (priv->sender);
-  priv->sender = g_object_ref (data);
-  g_object_notify (G_OBJECT (self), "sender");
-}
-
-
-void
-_tpl_event_set_receiver (TplEvent *self,
-    TplEntity *data)
-{
-  TplEventPriv *priv;
-
-  if (data == NULL)
-    return;
-
-  g_return_if_fail (TPL_IS_EVENT (self));
-  g_return_if_fail (TPL_IS_ENTITY (data));
-
-  priv = self->priv;
-
-  if (priv->receiver != NULL)
-    g_object_unref (priv->receiver);
-
-  priv->receiver = g_object_ref (data);
-
-  g_object_notify (G_OBJECT (self), "receiver");
-}
-
-
-void
-_tpl_event_set_id (TplEvent *self,
-    const gchar *data)
-{
-  if (data == NULL)
-    return;
-
-  g_return_if_fail (TPL_IS_EVENT (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (self->priv->id == NULL);
-
-  self->priv->id = g_strdup (data);
-  g_object_notify (G_OBJECT (self), "id");
-}
-
-void
-_tpl_event_set_channel_path (TplEvent *self,
-    const gchar *data)
-{
-  if (data == NULL)
-    return;
-
-  g_return_if_fail (TPL_IS_EVENT (self));
-  g_return_if_fail (!TPL_STR_EMPTY (data));
-  g_return_if_fail (self->priv->channel_path == NULL);
-
-  self->priv->channel_path = g_strdup (data);
-  g_object_notify (G_OBJECT (self), "channel-path");
-}
 
 /**
  * tpl_event_equal:

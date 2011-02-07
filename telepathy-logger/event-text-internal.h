@@ -46,31 +46,13 @@ struct _TplEventTextClass
   TplEventClass parent_class;
 };
 
-TplEventText * _tpl_event_text_new (const gchar* log_id,
-    TpAccount *account);
-
 TpChannelTextMessageType _tpl_event_text_message_type_from_str (
     const gchar *type_str);
 
 const gchar * _tpl_event_text_message_type_to_str (
     TpChannelTextMessageType msg_type);
 
-TplChannelText * _tpl_event_text_get_tpl_channel_text (
-    TplEventText *self);
-
-void _tpl_event_text_set_tpl_channel_text (TplEventText *self,
-    TplChannelText *data);
-
-void _tpl_event_text_set_message (TplEventText *self,
-    const gchar *data);
-
-void _tpl_event_text_set_message_type (TplEventText *self,
-    TpChannelTextMessageType data);
-
 gint _tpl_event_text_get_pending_msg_id (TplEventText *self);
-
-void _tpl_event_text_set_pending_msg_id (TplEventText *self,
-    gint data);
 
 gboolean _tpl_event_text_is_pending (TplEventText *self);
 

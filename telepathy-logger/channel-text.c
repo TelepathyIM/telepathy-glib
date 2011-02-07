@@ -57,6 +57,16 @@ struct _TplChannelTextPriv
   GHashTable *contacts;
 };
 
+typedef struct
+{
+  gint msg_id;
+  gchar *log_id;
+  guint type;
+  gchar *text;
+  guint timestamp;
+
+} ReceivedData;
+
 static TpContactFeature features[3] = {
   TP_CONTACT_FEATURE_ALIAS,
   TP_CONTACT_FEATURE_PRESENCE,
@@ -95,8 +105,10 @@ static void pendingproc_cleanup_pending_messages_db (TplActionChain *ctx,
     gpointer user_data);
 #endif
 
-static void keepon_on_receiving_signal (TplEventText *log,
-    TpContact *remote);
+
+static void keepon_on_receiving_signal (TplChannelText *tpl_text,
+    TpContact *remote,
+    ReceivedData *data);
 static void got_message_pending_messages_cb (TpProxy *proxy,
     const GValue *out_Value, const GError *error, gpointer user_data,
     GObject *weak_object);
@@ -1051,9 +1063,7 @@ on_sent_signal_cb (TpChannel *proxy,
   TplEntity *sender;
   TplEntity *receiver = NULL;
   TplEventText *text_log;
-  TplEvent *log;
   TplLogManager *logmanager;
-  const gchar *chat_id;
   TpAccount *account;
   const gchar *channel_path;
   gchar *log_id;
@@ -1104,27 +1114,25 @@ on_sent_signal_cb (TpChannel *proxy,
     }
 
   /* Initialise TplEventText */
-  chat_id = tpl_entity_get_identifier (receiver);
-
   account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
 
-  text_log = _tpl_event_text_new (log_id, account);
-  log = TPL_EVENT (text_log);
+  text_log = g_object_new (TPL_TYPE_EVENT_TEXT,
+      /* TplEvent */
+      "account", account,
+      "channel-path", channel_path,
+      "log-id", log_id,
+      "receiver", receiver,
+      "sender", sender,
+      "target-id", tpl_entity_get_identifier (receiver),
+      "timestamp", timestamp,
+      /* TplEventText */
+      "message-type", type,
+      "message", text,
+      "pending-msg-id", TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED,
+      NULL);
 
-  _tpl_event_text_set_pending_msg_id (text_log,
-      TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED);
-  _tpl_event_set_channel_path (TPL_EVENT (log), channel_path);
-  _tpl_event_set_id (log, chat_id);
-  _tpl_event_set_timestamp (log, (time_t) timestamp);
-  _tpl_event_set_sender (log, sender);
-  _tpl_event_set_receiver (log, receiver);
-  _tpl_event_text_set_message (text_log, text);
-  _tpl_event_text_set_message_type (text_log, type);
-  _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
-
-  /* Initialized LogStore and send the log event */
   logmanager = tpl_log_manager_dup_singleton ();
-  _tpl_log_manager_add_event (logmanager, TPL_EVENT (log), &error);
+  _tpl_log_manager_add_event (logmanager, TPL_EVENT (text_log), &error);
 
   if (error != NULL)
     {
@@ -1135,9 +1143,19 @@ on_sent_signal_cb (TpChannel *proxy,
   g_object_unref (receiver);
   g_object_unref (sender);
   g_object_unref (logmanager);
-  g_object_unref (log);
+  g_object_unref (text_log);
 
   g_free (log_id);
+}
+
+
+static void
+received_data_free (gpointer arg)
+{
+  ReceivedData *data = arg;
+  g_free (data->log_id);
+  g_free (data->text);
+  g_slice_free (ReceivedData,data);
 }
 
 
@@ -1151,22 +1169,17 @@ on_received_signal_with_contact_cb (TpConnection *connection,
     gpointer user_data,
     GObject *weak_object)
 {
-  TplEventText *log = user_data;
-  TplChannelText *tpl_text;
+  ReceivedData *data = user_data;
+  TplChannelText *tpl_text = TPL_CHANNEL_TEXT (weak_object);
   TpContact *remote;
   TpHandle handle;
-
-  g_return_if_fail (TPL_IS_EVENT_TEXT (log));
-
-  tpl_text = _tpl_event_text_get_tpl_channel_text (log);
 
   if (error != NULL)
     {
       PATH_DEBUG (tpl_text, "An Unrecoverable error retrieving remote contact "
          "information occured: %s", error->message);
       PATH_DEBUG (tpl_text, "Unable to log the received message: %s",
-         tpl_event_text_get_message (log));
-      g_object_unref (log);
+          data->text);
       return;
     }
 
@@ -1175,8 +1188,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
       PATH_DEBUG (tpl_text, "%d invalid handle(s) passed to "
          "tp_connection_get_contacts_by_handle()", n_failed);
       PATH_DEBUG (tpl_text, "Not able to log the received message: %s",
-         tpl_event_text_get_message (log));
-      g_object_unref (log);
+         data->text);
       return;
     }
 
@@ -1186,57 +1198,75 @@ on_received_signal_with_contact_cb (TpConnection *connection,
   g_hash_table_insert (tpl_text->priv->contacts, GUINT_TO_POINTER (handle),
       g_object_ref (remote));
 
-  keepon_on_receiving_signal (log, remote);
+  keepon_on_receiving_signal (tpl_text, remote, data);
 }
 
 
 static void
-keepon_on_receiving_signal (TplEventText *text_log,
-    TpContact *remote)
+keepon_on_receiving_signal (TplChannelText *tpl_text,
+    TpContact *remote,
+    ReceivedData *data)
 {
-  TplEvent *log = TPL_EVENT (text_log);
-  TplChannelText *tpl_text;
-  GError *e = NULL;
+  TplEventText *text_log;
+  GError *error = NULL;
   TplLogManager *logmanager;
   TplEntity *sender;
   TplEntity *receiver;
-  TpContact *me;
-
-  g_return_if_fail (TPL_IS_EVENT_TEXT (text_log));
-
-  tpl_text = _tpl_event_text_get_tpl_channel_text (text_log);
-  me = _tpl_channel_text_get_my_contact (tpl_text);
-  receiver = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
+  const char *target_id;
 
   sender = _tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
-  _tpl_event_set_sender (log, sender);
+
+  if (_tpl_channel_text_is_chatroom (tpl_text))
+    {
+      const gchar *room_id = _tpl_channel_text_get_chatroom_id (tpl_text);
+      receiver = _tpl_entity_new_from_room_id (room_id);
+      target_id = room_id;
+    }
+  else
+    {
+      TpContact *me;
+      me = _tpl_channel_text_get_my_contact (tpl_text);
+      receiver = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
+      target_id = tpl_entity_get_identifier (sender);
+    }
+
+  /* Initialize TplEventText */
+  text_log = g_object_new (TPL_TYPE_EVENT_TEXT,
+      /* TplEvent */
+      "account", _tpl_channel_get_account (TPL_CHANNEL (tpl_text)),
+      "channel-path", tp_proxy_get_object_path (TP_PROXY (tpl_text)),
+      "log-id", data->log_id,
+      "receiver", receiver,
+      "sender", sender,
+      "target-id", target_id,
+      "timestamp", data->timestamp,
+      /* TplEventText */
+      "message-type", data->type,
+      "message", data->text,
+      "pending-msg-id", data->msg_id,
+      NULL);
 
   DEBUG ("recvd:\n\tlog_id=\"%s\"\n\tto=\"%s "
       "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-      _tpl_event_get_log_id (log),
+      _tpl_event_get_log_id (TPL_EVENT (text_log)),
       tpl_entity_get_identifier (receiver),
       tpl_entity_get_alias (receiver),
       tpl_entity_get_identifier (sender),
       tpl_entity_get_alias (sender),
       tpl_event_text_get_message (text_log));
 
-
-  if (!_tpl_channel_text_is_chatroom (tpl_text))
-    _tpl_event_set_id (log, tpl_entity_get_identifier (sender));
-  else
-    _tpl_event_set_id (log, _tpl_channel_text_get_chatroom_id (tpl_text));
-
   logmanager = tpl_log_manager_dup_singleton ();
-  _tpl_log_manager_add_event (logmanager, TPL_EVENT (log), &e);
-  if (e != NULL)
+  _tpl_log_manager_add_event (logmanager, TPL_EVENT (text_log), &error);
+
+  if (error != NULL)
     {
-      DEBUG ("%s", e->message);
-      g_error_free (e);
+      DEBUG ("%s", error->message);
+      g_error_free (error);
     }
 
   g_object_unref (sender);
   g_object_unref (receiver);
-  g_object_unref (log);
+  g_object_unref (text_log);
   g_object_unref (logmanager);
 }
 
@@ -1253,34 +1283,12 @@ on_received_signal_cb (TpChannel *proxy,
     GObject *weak_object)
 {
   TplChannelText *tpl_text = TPL_CHANNEL_TEXT (proxy);
-  TplChannel *tpl_chan = TPL_CHANNEL (tpl_text);
   TpConnection *tp_conn;
-  TpContact *me, *remote;
-  TplEntity *receiver = NULL;
-  TplEventText *text_log = NULL;
-  TpAccount *account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
+  TpContact *remote;
   TplLogStore *index = _tpl_log_store_sqlite_dup ();
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
-  gchar *log_id = _tpl_create_message_token (channel_path, timestamp,
-      msg_id);
-
-  /* First, check if log_id has already been logged
-   *
-   * FIXME: There is a race condition for which, right after a 'NewChannel'
-   * signal is raised and a message is received, the 'received' signal handler
-   * may be cateched before or being slower and arriving after the TplChannel
-   * preparation (in which pending message list is examined)
-   *
-   * Workaround:
-   * In the first case the analisys of P.M.L will detect that actually the
-   * handler has already received and logged the message.
-   * In the latter (here), the handler will detect that the P.M.L analisys
-   * has found and logged it, returning immediatly */
-  if (_tpl_log_store_sqlite_log_id_is_present (index, log_id))
-    {
-      PATH_DEBUG (tpl_text, "%s found, not logging", log_id);
-      goto out;
-    }
+  gchar *log_id;
+  ReceivedData *data;
 
   /* TODO use the Message iface to check the delivery
      notification and handle it correctly */
@@ -1298,22 +1306,34 @@ on_received_signal_cb (TpChannel *proxy,
       return;
     }
 
-  /* Initialize TplEventText (part 1) - chat_id still unknown */
-  text_log = _tpl_event_text_new (log_id, account);
+  /* Check if log_id has already been logged
+   *
+   * FIXME: There is a race condition for which, right after a 'NewChannel'
+   * signal is raised and a message is received, the 'received' signal handler
+   * may be cateched before or being slower and arriving after the TplChannel
+   * preparation (in which pending message list is examined)
+   *
+   * Workaround:
+   * In the first case the analisys of P.M.L will detect that actually the
+   * handler has already received and logged the message.
+   * In the latter (here), the handler will detect that the P.M.L analisys
+   * has found and logged it, returning immediatly */
+  log_id = _tpl_create_message_token (channel_path, timestamp, msg_id);
+  if (_tpl_log_store_sqlite_log_id_is_present (index, log_id))
+    {
+      PATH_DEBUG (tpl_text, "%s found, not logging", log_id);
+      g_free (log_id);
+      goto out;
+    }
 
-  _tpl_event_set_channel_path (TPL_EVENT (text_log), channel_path);
-  _tpl_event_text_set_pending_msg_id (text_log, msg_id);
-  _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
-  _tpl_event_text_set_message (text_log, text);
-  _tpl_event_text_set_message_type (text_log, type);
+  data = g_slice_new0(ReceivedData);
+  data->msg_id = msg_id;
+  data->log_id = log_id;
+  data->type = type;
+  data->text = g_strdup (text);
+  data->timestamp = timestamp;
 
-  me = _tpl_channel_text_get_my_contact (tpl_text);
-  receiver = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
-  _tpl_event_set_receiver (TPL_EVENT (text_log), receiver);
-
-  _tpl_event_set_timestamp (TPL_EVENT (text_log), (time_t) timestamp);
-
-  tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_chan));
+  tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_text));
   remote = g_hash_table_lookup (tpl_text->priv->contacts,
       GUINT_TO_POINTER (sender));
 
@@ -1322,19 +1342,14 @@ on_received_signal_cb (TpChannel *proxy,
       /* Contact is not in the cache */
       tp_connection_get_contacts_by_handle (tp_conn, 1, &sender,
           G_N_ELEMENTS (features), features, on_received_signal_with_contact_cb,
-          text_log, NULL, G_OBJECT (tpl_text));
+          data, received_data_free, G_OBJECT (tpl_text));
     }
   else
     {
-      keepon_on_receiving_signal (text_log, remote);
+      keepon_on_receiving_signal (tpl_text, remote, data);
+      received_data_free (data);
     }
 
 out:
-  if (receiver != NULL)
-    g_object_unref (receiver);
-
   g_object_unref (index);
-  /* log is unrefed in keepon_on_receiving_signal() */
-
-  g_free (log_id);
 }

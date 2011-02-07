@@ -631,16 +631,10 @@ log_store_pidgin_search_hit_new (TplLogStore *self,
 static GList *
 log_store_pidgin_get_events_for_files (TplLogStore *self,
     TpAccount *account,
-    const GList *filenames,
-    TplEventSearchType type)
+    const GList *filenames)
 {
   GList *events = NULL;
   const GList *l;
-
-  gchar *sender_id = NULL;
-  gchar *date = NULL;
-  gchar *own_user = NULL;
-  gchar *protocol = NULL;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
   g_return_val_if_fail (filenames != NULL, NULL);
@@ -648,6 +642,16 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
   for (l = filenames; l != NULL; l = l->next)
     {
       const gchar *filename;
+
+      gchar *target_id = NULL;
+      gchar *date = NULL;
+      gchar *own_user = NULL;
+      gchar *protocol = NULL;
+      gboolean is_room;
+      gchar *dirname;
+      gchar *date_str;
+      gchar *basename;
+      gchar **split;
 
       gchar *buffer;
       GError *error = NULL;
@@ -676,6 +680,27 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           g_error_free (error);
           continue;
         }
+
+      dirname = g_path_get_dirname (filename);
+      is_room = g_str_has_suffix (dirname, ".chat");
+      g_free (dirname);
+
+      basename = g_path_get_basename (filename);
+      split = g_strsplit_set (basename, "-.", 4);
+
+      if (g_strv_length (split) < 3)
+        {
+          DEBUG ("Unexpected filename: %s (expected YYYY-MM-DD ...)",
+              basename);
+          g_strfreev (split);
+          g_free (basename);
+          g_free (buffer);
+          continue;
+        }
+
+      date_str = g_strdup_printf ("%s%s%sT", split[0], split[1], split[2]);
+      g_free (basename);
+      g_strfreev (split);
 
       lines = g_strsplit (buffer, "\n", -1);
 
@@ -713,7 +738,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           continue;
         }
 
-      sender_id = g_strdup (hits[1]);
+      target_id = g_strdup (hits[1]);
       own_user = g_strdup (hits[3]);
       protocol = g_strdup (hits[4]);
 
@@ -723,16 +748,16 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
         {
           TplEventText *event;
           TplEntity *sender;
-          TplEntityType entity_type;
+          TplEntity *receiver = NULL;
           gchar *sender_name = NULL;
           gchar *time_str = NULL;
+          gchar *timestamp_str = NULL;
           gchar *body = NULL;
-          gchar *tmp = NULL;
           gchar *log_id = NULL;
           gchar *instead_of_channel_path = NULL;
           int j = i + 1;
           gboolean is_user = FALSE;
-          time_t t;
+          time_t timestamp;
 
           if (is_html)
             {
@@ -745,7 +770,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
             }
           else
             {
-              regex = g_regex_new ("^\\((.+)\\) (.+):", 0, 0, NULL);
+              regex = g_regex_new ("^\\((.+)\\) (.+): (.+)", 0, 0, NULL);
             }
 
           g_regex_match (regex, lines[i], 0, &match_info);
@@ -754,7 +779,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           g_match_info_free (match_info);
           g_regex_unref (regex);
 
-          if (hits == NULL || g_strv_length (hits) < 3)
+          if (hits == NULL || g_strv_length (hits) < (4 + (guint)is_html))
             {
               g_strfreev (hits);
               continue;
@@ -775,25 +800,15 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
             }
           else
             {
-              while (lines[j] != NULL
-                  && !g_regex_match_simple ("^\\(\\d{2}:\\d{2}:\\d{2}\\) .+:",
-                      lines[j], 0, 0))
-                {
-                  if (body == NULL)
-                    tmp = g_strdup (lines[j]);
-                  else
-                    tmp = g_strjoin ("\n", body, lines[j], NULL);
-
-                  g_free (body);
-                  body = tmp;
-                  j++;
-                }
+              body = g_strdup (hits[3]);
             }
 
           g_strfreev (hits);
 
           /* time_str -> "%H:%M:%S" */
-          t = _tpl_time_parse (time_str);
+          timestamp_str = g_strdup_printf ("%s%s", date_str, time_str);
+          timestamp = _tpl_time_parse (timestamp_str);
+          g_free (timestamp_str);
 
           /* Unfortunately, there's no way to tell which user is you in plain
            * text logs as they appear like this:
@@ -809,36 +824,71 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           /* FIXME: in text format (is_html==FALSE) there is no actual way to
            * understand what type the entity is, it might lead to inaccuracy,
            * as is_user will be always FALSE  */
-          if (is_user)
-            entity_type = TPL_ENTITY_SELF;
-          else if (type == TPL_EVENT_SEARCH_TEXT_ROOM)
-            entity_type = TPL_ENTITY_ROOM;
-          else
-            entity_type = TPL_ENTITY_CONTACT;
-
           sender = g_object_new (TPL_TYPE_ENTITY,
-              "identifier", sender_id,
-              "type", entity_type,
-              "alias", sender_name,
-              NULL);
+                  "identifier", is_user ? own_user : sender_name,
+                  "type", is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
+                  "alias", sender_name,
+                  NULL);
+
+          /* FIXME: in text format it's not possible to guess who is the
+           * reveiver (unless we are in a room). In this case the receiver will
+           * be left to NULL in the generated event. */
+          if (is_html || is_room)
+            {
+              const gchar *receiver_id;
+              TplEntityType receiver_type;
+
+              /* In chatrooms, the receiver is always the room */
+              if (is_room)
+                {
+                  receiver_id = target_id;
+                  receiver_type = TPL_ENTITY_ROOM;
+                }
+              else if (is_user)
+                {
+                  receiver_id = target_id;
+                  receiver_type = TPL_ENTITY_CONTACT;
+                }
+              else
+                {
+                  receiver_id = own_user;
+                  receiver_type = TPL_ENTITY_SELF;
+                }
+
+              receiver = g_object_new (TPL_TYPE_ENTITY,
+                  "identifier", receiver_id,
+                  "type", receiver_type,
+                  "alias", receiver_id,
+                  NULL);
+            }
+
 
           /* As purple logs does not have any good unique id, we
            * create one using its origin (libpurple) and telepathy's bits
            * which should identify the entity uniquely together with the log
            * timestamp */
           instead_of_channel_path = g_strconcat (
-              "libpurple", tp_proxy_get_object_path (account), sender_id,
+              "libpurple", tp_proxy_get_object_path (account), target_id,
               time_str, NULL);
-          log_id = _tpl_create_message_token (instead_of_channel_path, t,
-              0);
+          log_id = _tpl_create_message_token (instead_of_channel_path,
+              timestamp, 0);
           g_free (instead_of_channel_path);
 
-          event = _tpl_event_text_new (log_id, account);
-
-          _tpl_event_set_sender (TPL_EVENT (event), sender);
-          _tpl_event_set_timestamp (TPL_EVENT (event), t);
-          _tpl_event_text_set_message_type (event,
-              TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
+          event = g_object_new (TPL_TYPE_EVENT_TEXT,
+              /* TplEvent */
+              "account", account,
+              /* MISSING: "channel-path", channel_path, */
+              "log-id", log_id,
+              "receiver", receiver,
+              "sender", sender,
+              "target-id", target_id,
+              "timestamp", timestamp,
+              /* TplEventText */
+              "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+              "message", body,
+              /* Assume that messages are acknowledged. */
+              "pending-msg-id", TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED,
+              NULL);
 
           /* prepend and then reverse is better than append */
           events = g_list_prepend (events, event);
@@ -851,7 +901,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
         }
       events = g_list_reverse (events);
 
-      g_free (sender_id);
+      g_free (target_id);
       g_free (own_user);
       g_free (date);
       g_free (protocol);
@@ -1050,8 +1100,7 @@ log_store_pidgin_get_events_for_date (TplLogStore *self,
   if (filenames == NULL)
     return NULL;
 
-  events = log_store_pidgin_get_events_for_files (self, account,
-      filenames, type);
+  events = log_store_pidgin_get_events_for_files (self, account, filenames);
 
   g_list_foreach (filenames, (GFunc) g_free, NULL);
   g_list_free (filenames);

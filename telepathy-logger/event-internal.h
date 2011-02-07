@@ -37,35 +37,17 @@ struct _TplEvent
 struct _TplEventClass {
   GObjectClass parent_class;
 
-  /* to be implemented only by subclasses */
+  /* by default log_id is compared, can be overrided */
   gboolean (*equal) (TplEvent *event1, TplEvent *event2);
 };
 
+const gchar * _tpl_event_get_log_id (TplEvent *self);
+
+const gchar * _tpl_event_get_target_id (TplEvent * self);
 
 gboolean _tpl_event_target_is_room (TplEvent *self);
 
-void _tpl_event_set_timestamp (TplEvent *self,
-    gint64 data);
-
-void _tpl_event_set_id (TplEvent *self,
-    const gchar *data);
-
-void _tpl_event_set_channel_path (TplEvent *self,
-    const gchar *data);
-
-void _tpl_event_set_sender (TplEvent *self,
-    TplEntity *data);
-
-void _tpl_event_set_receiver (TplEvent *self,
-    TplEntity *data);
-
-const gchar * _tpl_event_get_id (TplEvent * self);
 const gchar * _tpl_event_get_channel_path (TplEvent *self);
-
-gboolean _tpl_event_equal (TplEvent *self,
-    TplEvent *data);
-
-const gchar * _tpl_event_get_log_id (TplEvent *self);
 
 G_END_DECLS
 #endif // __TPL_EVENT_INTERNAL_H__

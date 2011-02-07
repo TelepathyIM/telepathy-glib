@@ -499,8 +499,8 @@ add_event_text (TplLogStoreXml *self,
       _tpl_event_get_log_id (TPL_EVENT (message)),
       contact_id, contact_name,
       avatar_token ? avatar_token : "",
-      tpl_entity_get_entity_type (sender) ==
-      TPL_ENTITY_SELF ? "true" : "false",
+      tpl_entity_get_entity_type (sender)
+          == TPL_ENTITY_SELF ? "true" : "false",
       _tpl_event_text_message_type_to_str (msg_type),
       body);
 
@@ -509,7 +509,7 @@ add_event_text (TplLogStoreXml *self,
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
-      _tpl_event_get_id (TPL_EVENT (message)),
+      _tpl_event_get_target_id (TPL_EVENT (message)),
       _tpl_event_target_is_room (TPL_EVENT (message)),
       event, error);
 
@@ -758,6 +758,12 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   xmlDocPtr doc;
   xmlNodePtr log_node;
   xmlNodePtr node;
+  gboolean is_room;
+  gchar *dirname;
+  gchar *tmp;
+  gchar *target_id;
+  gchar *self_id;
+  GError *error = NULL;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
@@ -771,6 +777,16 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       return NULL;
     }
 
+  if (!tp_account_parse_object_path (
+        tp_proxy_get_object_path (TP_PROXY(account)),
+        NULL, NULL, &self_id, &error))
+    {
+      DEBUG ("Cannot get self identitifer from account: %s",
+          error->message);
+      g_error_free (error);
+      return NULL;
+    }
+
   /* Create parser. */
   ctxt = xmlNewParserCtxt ();
 
@@ -780,6 +796,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
     {
       g_warning ("Failed to parse file:'%s'", filename);
       xmlFreeParserCtxt (ctxt);
+      g_free (self_id);
       return NULL;
     }
 
@@ -789,17 +806,31 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
     {
       xmlFreeDoc (doc);
       xmlFreeParserCtxt (ctxt);
+      g_free (self_id);
       return NULL;
     }
+
+  /* Guess the target based on directory name */
+  dirname = g_path_get_dirname (filename);
+  target_id = g_path_get_basename (dirname);
+
+  /* Determin if it's a chatroom */
+  tmp = dirname;
+  dirname = g_path_get_dirname (tmp);
+  g_free (tmp);
+  tmp = g_path_get_basename (dirname);
+  is_room = g_strcmp0 ("chatroom", tmp);
+  g_free (dirname);
+  g_free (tmp);
 
   /* Now get the events. */
   for (node = log_node->children; node; node = node->next)
     {
-      TplEvent *event;
-      TplEventText *message;
+      TplEventText *event;
       TplEntity *sender;
-      gchar *time_;
-      time_t t;
+      TplEntity *receiver;
+      gchar *time_str;
+      time_t timestamp;
       gchar *sender_id;
       gchar *sender_name;
       gchar *sender_avatar_token;
@@ -808,14 +839,13 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       gboolean is_user = FALSE;
       gchar *msg_type_str;
       gchar *log_id;
-      guint pending_id;
       TpChannelTextMessageType msg_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
 
       if (strcmp ((const gchar *) node->name, "message") != 0)
         continue;
 
       body = (gchar *) xmlNodeGetContent (node);
-      time_ = (gchar *) xmlGetProp (node, (const xmlChar *) "time");
+      time_str = (gchar *) xmlGetProp (node, (const xmlChar *) "time");
       sender_id = (gchar *) xmlGetProp (node, (const xmlChar *) "id");
       sender_name = (gchar *) xmlGetProp (node, (const xmlChar *) "name");
       sender_avatar_token = (gchar *) xmlGetProp (node,
@@ -833,14 +863,25 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       if (msg_type_str != NULL)
         msg_type = _tpl_event_text_message_type_from_str (msg_type_str);
 
-      if (log_id != NULL && self->priv->empathy_legacy)
-        /* in legacy mode, it's actually the pending message id before ACK */
-        pending_id = atoi (log_id);
-      else
-        /* we have no way in non empathy-legacy mode to know it */
-        pending_id = TPL_EVENT_TEXT_MSG_ID_UNKNOWN;
+      timestamp = _tpl_time_parse (time_str);
 
-      t = _tpl_time_parse (time_);
+      if (is_user || is_room)
+        {
+          receiver = g_object_new (TPL_TYPE_ENTITY,
+              "identifier", target_id,
+              "type", is_room ? TPL_ENTITY_ROOM : TPL_ENTITY_CONTACT,
+              "alias", target_id,
+              NULL);
+        }
+      else
+        {
+          const gchar *alias = tp_account_get_nickname (account);
+          receiver = g_object_new (TPL_TYPE_ENTITY,
+              "identifier", self_id,
+              "type", TPL_ENTITY_SELF,
+              "alias", alias == NULL ? self_id : alias,
+              NULL);
+        }
 
       sender = g_object_new (TPL_TYPE_ENTITY,
           "identifier", sender_id,
@@ -855,31 +896,44 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
            * token, so I'll create, just for it to be present, an ad hoc unique
            * token. */
           gchar *instead_of_channel_path;
+          gchar *saved_log_id = log_id;
+          /* In legacy the log-id is in fact the pending-msg-id */
+          gint pending_msg_id = atoi (log_id);
 
           instead_of_channel_path = g_strconcat (
               tp_proxy_get_object_path (account), sender_id, NULL);
 
-          xmlFree (log_id);
-          log_id = _tpl_create_message_token (instead_of_channel_path, t,
-              pending_id);
+          log_id = _tpl_create_message_token (instead_of_channel_path,\
+              timestamp, pending_msg_id);
 
           g_free (instead_of_channel_path);
+          xmlFree (saved_log_id);
         }
 
-      message = _tpl_event_text_new (log_id, account);
-      event = TPL_EVENT (message);
-
-      _tpl_event_text_set_pending_msg_id (message, pending_id);
-      _tpl_event_set_sender (event, sender);
-      _tpl_event_set_timestamp (event, t);
-      _tpl_event_text_set_message (message, body);
-      _tpl_event_text_set_message_type (message, msg_type);
+      event = g_object_new (TPL_TYPE_EVENT_TEXT,
+          /* TplEvent */
+          "account", account,
+          /* MISSING: "channel-path", channel_path, */
+          "log-id", log_id,
+          "receiver", receiver,
+          "sender", sender,
+          "target-id", target_id,
+          "timestamp", timestamp,
+          /* TplEventText */
+          "message-type", msg_type,
+          "message", body,
+          /* As the pending-msg-id is not maintained in XML store, we simply
+           * assume the message to be acknowledge. */
+          "pending-msg-id", TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED,
+          NULL);
 
       events = g_list_append (events, event);
 
       g_object_unref (sender);
+      g_object_unref (receiver);
+      g_free (target_id);
       xmlFree (log_id);
-      xmlFree (time_);
+      xmlFree (time_str);
       xmlFree (sender_id);
       xmlFree (sender_name);
       xmlFree (body);
