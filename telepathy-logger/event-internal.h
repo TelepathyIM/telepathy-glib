@@ -31,13 +31,6 @@ G_BEGIN_DECLS
 #define TPL_EVENT_MSG_ID_UNKNOWN -2
 #define TPL_EVENT_MSG_ID_ACKNOWLEDGED -1
 
-typedef enum
-{
-  TPL_EVENT_ERROR,
-  TPL_EVENT_TEXT
-} TplEventType;
-
-
 struct _TplEvent
 {
   GObject parent;
