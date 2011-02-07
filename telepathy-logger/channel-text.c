@@ -72,14 +72,14 @@ static void on_channel_invalidated_cb (TpProxy *proxy, guint domain, gint code,
     gchar *message, gpointer user_data);
 static void on_lost_message_cb (TpChannel *proxy, gpointer user_data,
     GObject *weak_object);
-static void on_received_signal_cb (TpChannel *proxy, guint arg_ID,
-    guint arg_Timestamp, guint arg_Sender, guint arg_Type, guint arg_Flags,
-    const gchar *arg_Text, gpointer user_data, GObject *weak_object);
-static void on_sent_signal_cb (TpChannel *proxy, guint arg_Timestamp,
-    guint arg_Type, const gchar *arg_Text,  gpointer user_data,
+static void on_received_signal_cb (TpChannel *proxy, guint msg_id,
+    guint timestamp, guint arg_Sender, guint type, guint flags,
+    const gchar *text, gpointer user_data, GObject *weak_object);
+static void on_sent_signal_cb (TpChannel *proxy, guint timestamp,
+    guint type, const gchar *text,  gpointer user_data,
     GObject *weak_object);
 static void on_send_error_cb (TpChannel *proxy, guint arg_Error,
-    guint arg_Timestamp, guint arg_Type, const gchar *arg_Text,
+    guint timestamp, guint type, const gchar *text,
     gpointer user_data, GObject *weak_object);
 static void on_pending_messages_removed_cb (TpChannel *proxy,
     const GArray *arg_Message_IDs, gpointer user_data, GObject *weak_object);
@@ -1024,24 +1024,24 @@ on_lost_message_cb (TpChannel *proxy,
 
 static void
 on_send_error_cb (TpChannel *proxy,
-         guint arg_Error,
-         guint arg_Timestamp,
-         guint arg_Type,
-         const gchar *arg_Text,
+         guint error,
+         guint timestamp,
+         guint type,
+         const gchar *text,
          gpointer user_data,
          GObject *weak_object)
 {
   PATH_DEBUG (proxy, "unlogged event: TP was unable to send the message: %s",
-      arg_Text);
+      text);
   /* TODO log that the system was unable to send the message */
 }
 
 
 static void
 on_sent_signal_cb (TpChannel *proxy,
-    guint arg_Timestamp,
-    guint arg_Type,
-    const gchar *arg_Text,
+    guint timestamp,
+    guint type,
+    const gchar *text,
     gpointer user_data,
     GObject *weak_object)
 {
@@ -1061,7 +1061,7 @@ on_sent_signal_cb (TpChannel *proxy,
   g_return_if_fail (TPL_IS_CHANNEL_TEXT (tpl_text));
 
   channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
-  log_id = _tpl_create_message_token (channel_path, arg_Timestamp,
+  log_id = _tpl_create_message_token (channel_path, timestamp,
       TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED);
 
   /* Initialize data for TplEntity */
@@ -1086,7 +1086,7 @@ on_sent_signal_cb (TpChannel *proxy,
           tpl_entity_get_alias (receiver),
           tpl_entity_get_identifier (sender),
           tpl_entity_get_alias (sender),
-          arg_Text);
+          text);
 
     }
   else
@@ -1100,7 +1100,7 @@ on_sent_signal_cb (TpChannel *proxy,
           tpl_entity_get_identifier (receiver),
           tpl_entity_get_identifier (sender),
           tpl_entity_get_alias (sender),
-          arg_Text);
+          text);
     }
 
   /* Initialise TplEventText */
@@ -1115,11 +1115,11 @@ on_sent_signal_cb (TpChannel *proxy,
       TPL_EVENT_TEXT_MSG_ID_ACKNOWLEDGED);
   _tpl_event_set_channel_path (TPL_EVENT (log), channel_path);
   _tpl_event_set_id (log, chat_id);
-  _tpl_event_set_timestamp (log, (time_t) arg_Timestamp);
+  _tpl_event_set_timestamp (log, (time_t) timestamp);
   _tpl_event_set_sender (log, sender);
   _tpl_event_set_receiver (log, receiver);
-  _tpl_event_text_set_message (text_log, arg_Text);
-  _tpl_event_text_set_message_type (text_log, arg_Type);
+  _tpl_event_text_set_message (text_log, text);
+  _tpl_event_text_set_message_type (text_log, type);
   _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
 
   /* Initialized LogStore and send the log event */
@@ -1249,12 +1249,12 @@ keepon_on_receiving_signal (TplEventText *text_log,
 
 static void
 on_received_signal_cb (TpChannel *proxy,
-    guint arg_ID,
-    guint arg_Timestamp,
+    guint msg_id,
+    guint timestamp,
     TpHandle sender,
-    guint arg_Type,
-    guint arg_Flags,
-    const gchar *arg_Text,
+    guint type,
+    guint flags,
+    const gchar *text,
     gpointer user_data,
     GObject *weak_object)
 {
@@ -1267,8 +1267,8 @@ on_received_signal_cb (TpChannel *proxy,
   TpAccount *account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
   TplLogStore *index = _tpl_log_store_sqlite_dup ();
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
-  gchar *log_id = _tpl_create_message_token (channel_path, arg_Timestamp,
-      arg_ID);
+  gchar *log_id = _tpl_create_message_token (channel_path, timestamp,
+      msg_id);
 
   /* First, check if log_id has already been logged
    *
@@ -1290,7 +1290,7 @@ on_received_signal_cb (TpChannel *proxy,
 
   /* TODO use the Message iface to check the delivery
      notification and handle it correctly */
-  if (arg_Flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT)
+  if (flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT)
     {
       PATH_DEBUG (tpl_text, "Non text content flag set. "
           "Probably a delivery notification for a sent message. "
@@ -1298,7 +1298,7 @@ on_received_signal_cb (TpChannel *proxy,
       return;
     }
 
-  if (arg_Flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED)
+  if (flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED)
     {
       PATH_DEBUG (tpl_text, "Ignore 'rescued' message");
       return;
@@ -1308,16 +1308,16 @@ on_received_signal_cb (TpChannel *proxy,
   text_log = _tpl_event_text_new (log_id, account);
 
   _tpl_event_set_channel_path (TPL_EVENT (text_log), channel_path);
-  _tpl_event_text_set_pending_msg_id (text_log, arg_ID);
+  _tpl_event_text_set_pending_msg_id (text_log, msg_id);
   _tpl_event_text_set_tpl_channel_text (text_log, tpl_text);
-  _tpl_event_text_set_message (text_log, arg_Text);
-  _tpl_event_text_set_message_type (text_log, arg_Type);
+  _tpl_event_text_set_message (text_log, text);
+  _tpl_event_text_set_message_type (text_log, type);
 
   me = _tpl_channel_text_get_my_contact (tpl_text);
   receiver = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
   _tpl_event_set_receiver (TPL_EVENT (text_log), receiver);
 
-  _tpl_event_set_timestamp (TPL_EVENT (text_log), (time_t) arg_Timestamp);
+  _tpl_event_set_timestamp (TPL_EVENT (text_log), (time_t) timestamp);
 
   tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_chan));
   remote = g_hash_table_lookup (tpl_text->priv->contacts,
