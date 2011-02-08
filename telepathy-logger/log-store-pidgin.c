@@ -779,7 +779,9 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           g_match_info_free (match_info);
           g_regex_unref (regex);
 
-          if (hits == NULL || g_strv_length (hits) < (4 + (guint)is_html))
+          if (hits == NULL
+              || (is_html && g_strv_length (hits) < 5)
+              || (g_strv_length (hits) < 4))
             {
               g_strfreev (hits);
               continue;
