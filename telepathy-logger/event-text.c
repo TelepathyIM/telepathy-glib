@@ -306,7 +306,7 @@ tpl_event_text_get_message_type (TplEventText * self)
 
 /*
  * tpl_event_text_get_pending_msg_id
- * @self: a #TplEvent
+ * @self: a #TplEventText
  *
  * Returns: the id as the #TplEventText:pending-msg-id property
  */
