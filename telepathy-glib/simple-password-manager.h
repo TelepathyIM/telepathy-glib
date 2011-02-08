@@ -23,6 +23,7 @@
 #include <gio/gio.h>
 
 #include <telepathy-glib/base-connection.h>
+#include <telepathy-glib/simple-password-channel.h>
 
 G_BEGIN_DECLS
 
@@ -65,6 +66,11 @@ TpSimplePasswordManager * tp_simple_password_manager_new (
 
 void tp_simple_password_manager_prompt_async (
     TpSimplePasswordManager *self,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+void tp_simple_password_manager_prompt_for_channel_async (
+    TpSimplePasswordManager *self,
+    TpSimplePasswordChannel *channel,
     GAsyncReadyCallback callback, gpointer user_data);
 
 const GString * tp_simple_password_manager_prompt_finish (

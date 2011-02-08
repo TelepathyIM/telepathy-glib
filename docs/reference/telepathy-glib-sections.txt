@@ -4879,6 +4879,7 @@ TpSimplePasswordManager
 tp_simple_password_manager_new
 <SUBSECTION>
 tp_simple_password_manager_prompt_async
+tp_simple_password_manager_prompt_for_channel_async
 tp_simple_password_manager_prompt_finish
 <SUBSECTION Standard>
 tp_simple_password_manager_get_type
