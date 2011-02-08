@@ -232,7 +232,7 @@ tpl_event_class_init (TplEventClass *klass)
   param_spec = g_param_spec_string ("log-id",
       "LogId",
       "Log identification token, it's unique among existing event, if two "
-      "messages have the same token, they are the same event (maybe logged "
+      "messages have the same token, they are the same event (may be logged "
       "by two different TplLogStore)",
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
@@ -277,7 +277,7 @@ tpl_event_class_init (TplEventClass *klass)
   param_spec = g_param_spec_object ("receiver",
       "Receiver",
       "TplEntity instance destination for the log event "
-      "(maybe NULL with some log store)",
+      "(may be NULL with some log stores)",
       TPL_TYPE_ENTITY,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_RECEIVER, param_spec);
