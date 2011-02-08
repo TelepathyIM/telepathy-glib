@@ -89,6 +89,7 @@ our_headers = \
     simple-approver.h \
     simple-handler.h \
     simple-observer.h \
+    simple-password-channel.h \
     simple-password-manager.h \
     stream-tube-channel.h \
     stream-tube-connection.h \
@@ -232,7 +233,6 @@ libtelepathy_glib_internal_la_SOURCES = \
     simple-handler.c \
     simple-observer.c \
     simple-password-manager.c \
-    simple-password-channel-internal.h \
     simple-password-channel.c \
     stream-tube-channel.c \
     stream-tube-connection-internal.h \

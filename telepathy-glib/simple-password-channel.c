@@ -17,7 +17,25 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "telepathy-glib/simple-password-channel-internal.h"
+/**
+ * SECTION:simple-password-channel
+ * @title: TpSimplePasswordChannel
+ * @short_description: a simple X-TELEPATHY-PASSWORD channel
+ *
+ * This class implements a SASL Authentication channel with the
+ * X-TELEPATHY-PASSWORD SASL mechanism.  Most of the time, you should not use
+ * or instantiate this class directly.  It is used by #TpSimplePasswordManager
+ * behind the scenes.  In some special circumstances (e.g. when the authentication
+ * channel needs to implement additional interfaces), it may be necessary to
+ * create your own custom authentication channels instead of letting
+ * #TpSimplePasswordManager create them automatically.  In this case, you
+ * should derive your channel from this class and then pass the channel as an
+ * argument to tp_simple_password_manager_prompt_for_channel_async().
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+#include "telepathy-glib/simple-password-channel.h"
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
@@ -32,7 +50,7 @@
 
 static void sasl_auth_iface_init (gpointer g_iface, gpointer iface_data);
 
-G_DEFINE_TYPE_WITH_CODE (TpSimplePasswordChannel, _tp_simple_password_channel,
+G_DEFINE_TYPE_WITH_CODE (TpSimplePasswordChannel, tp_simple_password_channel,
     TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_SERVER_AUTHENTICATION,
         NULL);
@@ -91,7 +109,7 @@ struct _TpSimplePasswordChannelPrivate
 };
 
 static void
-_tp_simple_password_channel_init (TpSimplePasswordChannel *self)
+tp_simple_password_channel_init (TpSimplePasswordChannel *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_SIMPLE_PASSWORD_CHANNEL, TpSimplePasswordChannelPrivate);
@@ -107,8 +125,8 @@ tp_simple_password_channel_constructed (GObject *obj)
   TpHandleRepoIface *contact_handles = tp_base_connection_get_handles (
       base_conn, TP_HANDLE_TYPE_CONTACT);
 
-  if (((GObjectClass *) _tp_simple_password_channel_parent_class)->constructed != NULL)
-    ((GObjectClass *) _tp_simple_password_channel_parent_class)->constructed (obj);
+  if (((GObjectClass *) tp_simple_password_channel_parent_class)->constructed != NULL)
+    ((GObjectClass *) tp_simple_password_channel_parent_class)->constructed (obj);
 
   priv->sasl_error = g_strdup ("");
   priv->sasl_error_details = tp_asv_new (NULL, NULL);
@@ -174,7 +192,7 @@ static void tp_simple_password_channel_fill_immutable_properties (TpBaseChannel 
     GHashTable *properties);
 
 static void
-_tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_password_channel_class)
+tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_password_channel_class)
 {
   TpBaseChannelClass *chan_class = TP_BASE_CHANNEL_CLASS (
       tp_simple_password_channel_class);
@@ -337,8 +355,8 @@ tp_simple_password_channel_finalize (GObject *object)
       priv->password = NULL;
     }
 
-  if (G_OBJECT_CLASS (_tp_simple_password_channel_parent_class)->finalize != NULL)
-    G_OBJECT_CLASS (_tp_simple_password_channel_parent_class)->finalize (object);
+  if (G_OBJECT_CLASS (tp_simple_password_channel_parent_class)->finalize != NULL)
+    G_OBJECT_CLASS (tp_simple_password_channel_parent_class)->finalize (object);
 }
 
 static void
@@ -388,7 +406,7 @@ tp_simple_password_channel_fill_immutable_properties (TpBaseChannel *chan,
     GHashTable *properties)
 {
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_CLASS (
-      _tp_simple_password_channel_parent_class);
+      tp_simple_password_channel_parent_class);
 
   klass->fill_immutable_properties (chan, properties);
 

@@ -75,7 +75,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_SASL
 #include "telepathy-glib/debug-internal.h"
-#include "telepathy-glib/simple-password-channel-internal.h"
+#include "telepathy-glib/simple-password-channel.h"
 
 static void channel_manager_iface_init (gpointer, gpointer);
 static void tp_simple_password_manager_close_all (TpSimplePasswordManager *self);
