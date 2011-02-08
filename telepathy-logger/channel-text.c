@@ -1325,7 +1325,7 @@ on_received_signal_cb (TpChannel *proxy,
       goto out;
     }
 
-  data = g_slice_new0(ReceivedData);
+  data = g_slice_new0 (ReceivedData);
   data->msg_id = msg_id;
   data->log_id = log_id;
   data->type = type;

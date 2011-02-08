@@ -778,7 +778,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
     }
 
   if (!tp_account_parse_object_path (
-        tp_proxy_get_object_path (TP_PROXY(account)),
+        tp_proxy_get_object_path (TP_PROXY (account)),
         NULL, NULL, &self_id, &error))
     {
       DEBUG ("Cannot get self identitifer from account: %s",
