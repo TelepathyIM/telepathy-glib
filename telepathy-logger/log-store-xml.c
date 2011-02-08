@@ -814,7 +814,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   dirname = g_path_get_dirname (filename);
   target_id = g_path_get_basename (dirname);
 
-  /* Determin if it's a chatroom */
+  /* Determine if it's a chatroom */
   tmp = dirname;
   dirname = g_path_get_dirname (tmp);
   g_free (tmp);
