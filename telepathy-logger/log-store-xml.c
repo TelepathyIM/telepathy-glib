@@ -39,7 +39,8 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/util.h>
-
+#include <telepathy-logger/call-event.h>
+#include <telepathy-logger/call-event-internal.h>
 #include <telepathy-logger/event-internal.h>
 #include <telepathy-logger/text-event.h>
 #include <telepathy-logger/text-event-internal.h>
@@ -517,7 +518,7 @@ add_text_event (TplLogStoreXml *self,
       _tpl_text_event_message_type_to_str (msg_type),
       body);
 
-  DEBUG ("writing event from %s (ts %s)",
+  DEBUG ("writing text event from %s (ts %s)",
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
@@ -530,6 +531,100 @@ out:
   g_free (body);
   g_free (event);
   g_free (avatar_token);
+
+  if (bus_daemon != NULL)
+    g_object_unref (bus_daemon);
+
+  return ret;
+}
+
+static gboolean
+add_call_event (TplLogStoreXml *self,
+    TplCallEvent *event,
+    GError **error)
+{
+  gboolean ret = FALSE;
+  TpDBusDaemon *bus_daemon;
+  TpAccount *account;
+  TplEntity *sender;
+  TplEntity *actor;
+  TplEntity *target;
+  gchar *timestamp;
+  gchar *sender_avatar = NULL;
+  gchar *sender_name = NULL;
+  gchar *sender_id;
+  gchar *actor_name = NULL;
+  gchar *actor_avatar = NULL;
+  gchar *actor_id;
+  gchar *log_str;
+  TplCallEndReason reason;
+
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
+  g_return_val_if_fail (TPL_IS_CALL_EVENT (event), FALSE);
+
+  bus_daemon = tp_dbus_daemon_dup (error);
+  if (bus_daemon == NULL)
+    {
+      DEBUG ("Error acquiring bus daemon: %s", (*error)->message);
+      goto out;
+    }
+
+  account = tpl_event_get_account (TPL_EVENT (event));
+
+  timestamp = log_store_xml_get_timestamp_from_event (
+      TPL_EVENT (event));
+  reason = tpl_call_event_get_end_reason (event);
+
+  sender = tpl_event_get_sender (TPL_EVENT (event));
+  actor = tpl_call_event_get_end_actor (event);
+  target = _tpl_event_get_target (TPL_EVENT (event));
+  sender_id = g_markup_escape_text (tpl_entity_get_identifier (sender), -1);
+  sender_name = g_markup_escape_text (tpl_entity_get_alias (sender), -1);
+  sender_avatar = g_markup_escape_text (tpl_entity_get_avatar_token (sender),
+      -1);
+  actor_id = g_markup_escape_text (tpl_entity_get_identifier (actor), -1);
+  actor_name = g_markup_escape_text (tpl_entity_get_alias (actor), -1);
+  actor_avatar = g_markup_escape_text (tpl_entity_get_avatar_token (actor),
+      -1);
+
+
+  log_str = g_strdup_printf ("<call time='%s' "
+      "id='%s' name='%s' isuser='%s' token='%s' "
+      "duration='%" G_GINT64_FORMAT "' "
+      "actor='%s' actortype='%s' "
+      "actorname='%s' actortoken='%s' "
+      "reason='%s' detail='%s'/>\n"
+      LOG_FOOTER,
+        timestamp,
+        sender_id,
+        sender_name,
+        tpl_entity_get_entity_type (sender) ==
+            TPL_ENTITY_SELF ? "true" : "false",
+        sender_avatar,
+        tpl_call_event_get_duration (event),
+        actor_id,
+        _tpl_entity_type_to_str (tpl_entity_get_entity_type (actor)),
+        actor_name,
+        actor_avatar,
+        _tpl_call_event_end_reason_to_str (reason),
+        tpl_call_event_get_detailed_end_reason (event));
+
+  DEBUG ("writing call event from %s (ts %s)",
+      tpl_entity_get_identifier (target),
+      timestamp);
+
+  ret = _log_store_xml_write_to_store (self, account, target, log_str, error);
+
+out:
+  g_free (sender_id);
+  g_free (sender_name);
+  g_free (sender_avatar);
+  g_free (actor_id);
+  g_free (actor_name);
+  g_free (actor_avatar);
+  g_free (timestamp);
+  g_free (log_str);
 
   if (bus_daemon != NULL)
     g_object_unref (bus_daemon);
@@ -551,6 +646,8 @@ log_store_xml_add_event (TplLogStore *store,
 
   if (TPL_IS_TEXT_EVENT (event))
     return add_text_event (self, TPL_TEXT_EVENT (event), error);
+  else if (TPL_IS_CALL_EVENT (event))
+    return add_call_event (self, TPL_CALL_EVENT (event), error);
 
   DEBUG ("TplEntry not handled by this LogStore (%s). "
       "Ignoring Event", log_store_xml_get_name (store));
