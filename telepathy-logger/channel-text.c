@@ -1212,7 +1212,7 @@ keepon_on_receiving_signal (TplChannelText *tpl_text,
   TplLogManager *logmanager;
   TplEntity *sender;
   TplEntity *receiver;
-  const char *target_id;
+  const gchar *target_id;
 
   sender = _tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
 
