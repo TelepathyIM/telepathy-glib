@@ -104,7 +104,7 @@ static gchar *message_types[] = {
 
 
 static void
-tpl_event_text_finalize (GObject * obj)
+tpl_event_text_finalize (GObject *obj)
 {
   TplEventTextPriv *priv = TPL_EVENT_TEXT (obj)->priv;
 
@@ -279,7 +279,7 @@ _tpl_event_text_message_type_to_str (TpChannelTextMessageType msg_type)
  * Returns: the same message as the #TplEventText:message property
  */
 const gchar *
-tpl_event_text_get_message (TplEventText * self)
+tpl_event_text_get_message (TplEventText *self)
 {
   g_return_val_if_fail (TPL_IS_EVENT_TEXT (self), NULL);
 
