@@ -4665,6 +4665,8 @@ tp_svc_debug_get_type
 TpDebugSender
 tp_debug_sender_dup
 tp_debug_sender_add_message
+tp_debug_sender_add_message_vprintf
+tp_debug_sender_add_message_printf
 tp_debug_sender_log_handler
 <SUBSECTION Standard>
 tp_debug_sender_get_type
