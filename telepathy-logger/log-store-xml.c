@@ -446,7 +446,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
 
 
 static gboolean
-add_event_text (TplLogStoreXml *self,
+add_text_event (TplLogStoreXml *self,
     TplTextEvent *message,
     GError **error)
 {
@@ -540,7 +540,7 @@ log_store_xml_add_event (TplLogStore *store,
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
   if (TPL_IS_TEXT_EVENT (event))
-    return add_event_text (self, TPL_TEXT_EVENT (event), error);
+    return add_text_event (self, TPL_TEXT_EVENT (event), error);
 
   DEBUG ("TplEventSignalType not handled by this LogStore (%s). "
       "Ignoring Event", log_store_xml_get_name (store));
