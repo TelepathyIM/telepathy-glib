@@ -1218,9 +1218,8 @@ keepon_on_receiving_signal (TplChannelText *tpl_text,
 
   if (_tpl_channel_text_is_chatroom (tpl_text))
     {
-      const gchar *room_id = _tpl_channel_text_get_chatroom_id (tpl_text);
-      receiver = _tpl_entity_new_from_room_id (room_id);
-      target_id = room_id;
+      target_id = _tpl_channel_text_get_chatroom_id (tpl_text);
+      receiver = _tpl_entity_new_from_room_id (target_id);
     }
   else
     {
