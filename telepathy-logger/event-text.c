@@ -295,7 +295,7 @@ tpl_event_text_get_message (TplEventText * self)
  * Returns: the same message as the #TplEventText:message-type property
  */
 TpChannelTextMessageType
-tpl_event_text_get_message_type (TplEventText * self)
+tpl_event_text_get_message_type (TplEventText *self)
 {
   g_return_val_if_fail (TPL_IS_EVENT_TEXT (self),
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
