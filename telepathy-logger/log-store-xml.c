@@ -1068,34 +1068,6 @@ fail:
 
 
 static GList *
-log_store_xml_search_in_identifier (TplLogStore *store,
-    TpAccount *account,
-    const gchar *identifier,
-    TplEventSearchType type,
-    const gchar *text)
-{
-  TplLogStoreXml *self = (TplLogStoreXml *) store;
-  GList *files;
-  gchar *dir;
-
-  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
-
-  dir = log_store_xml_get_dir (self, account, identifier, type);
-
-  files = log_store_xml_get_all_files (self, dir);
-  DEBUG ("Found %d log files in total", g_list_length (files));
-
-  g_free (dir);
-
-  return _log_store_xml_search_in_files (self, text, files);
-}
-
-
-
-static GList *
 log_store_xml_search_new (TplLogStore *store,
     const gchar *text)
 {
@@ -1371,8 +1343,6 @@ log_store_iface_init (gpointer g_iface,
   iface->get_dates = log_store_xml_get_dates;
   iface->get_events_for_date = log_store_xml_get_events_for_date;
   iface->get_entities = log_store_xml_get_entities;
-  iface->search_in_identifier =
-    log_store_xml_search_in_identifier;
   iface->search_new = log_store_xml_search_new;
   iface->get_filtered_events = log_store_xml_get_filtered_events;
 }

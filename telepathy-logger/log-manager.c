@@ -721,36 +721,6 @@ _tpl_log_manager_get_entities (TplLogManager *manager,
 
 
 GList *
-_tpl_log_manager_search_in_identifier (TplLogManager *manager,
-    TpAccount *account,
-    gchar const *identifier,
-    TplEventSearchType type,
-    const gchar *text)
-{
-  GList *l, *out = NULL;
-  TplLogManagerPriv *priv;
-
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (identifier), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
-
-  priv = manager->priv;
-
-  for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
-    {
-      TplLogStore *store = TPL_LOG_STORE (l->data);
-
-      out = g_list_concat (out,
-          _tpl_log_store_search_in_identifier
-          (store, account, identifier, type, text));
-    }
-
-  return out;
-}
-
-
-GList *
 _tpl_log_manager_search (TplLogManager *manager,
     const gchar *text)
 {
@@ -1316,93 +1286,6 @@ tpl_log_manager_get_entities_finish (TplLogManager *self,
 
   if (entities != NULL)
     *entities = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
-
-  return TRUE;
-}
-
-
-static void
-_search_in_identifier_async_thread (GSimpleAsyncResult *simple,
-    GObject *object,
-    GCancellable *cancellable)
-{
-  TplLogManagerAsyncData *async_data;
-  TplLogManagerEventInfo *event_info;
-  GList *lst;
-
-  async_data = g_async_result_get_user_data (G_ASYNC_RESULT (simple));
-  event_info = async_data->request;
-
-  lst = _tpl_log_manager_search_in_identifier (async_data->manager,
-      event_info->account, event_info->id, event_info->type,
-      event_info->search_text);
-
-  g_simple_async_result_set_op_res_gpointer (simple, lst,
-      (GDestroyNotify) tpl_log_manager_search_free);
-}
-
-
-void
-_tpl_log_manager_search_in_identifier_async (TplLogManager *manager,
-    TpAccount *account,
-    gchar const *identifier,
-    TplEventSearchType type,
-    const gchar *text,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  TplLogManagerEventInfo *event_info = tpl_log_manager_event_info_new ();
-  TplLogManagerAsyncData *async_data = tpl_log_manager_async_data_new ();
-  GSimpleAsyncResult *simple;
-
-  g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
-  g_return_if_fail (TP_IS_ACCOUNT (account));
-
-  event_info->account = g_object_ref (account);
-  event_info->id = g_strdup (identifier);
-  event_info->type = type;
-  event_info->search_text = g_strdup (text);
-
-  async_data->manager = g_object_ref (manager);
-  async_data->request = event_info;
-  async_data->request_free =
-    (TplLogManagerFreeFunc) tpl_log_manager_event_info_free;
-  async_data->cb = callback;
-  async_data->user_data = user_data;
-
-  simple = g_simple_async_result_new (G_OBJECT (manager),
-      _tpl_log_manager_async_operation_cb, async_data,
-      _tpl_log_manager_search_in_identifier_async);
-
-  g_simple_async_result_run_in_thread (simple,
-      _search_in_identifier_async_thread, 0, NULL);
-
-  g_object_unref (simple);
-}
-
-
-gboolean
-_tpl_log_manager_search_in_identifier_finish (TplLogManager *self,
-    GAsyncResult *result,
-    GList **hits,
-    GError **error)
-{
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TPL_IS_LOG_MANAGER (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-        G_OBJECT (self),
-        _tpl_log_manager_search_in_identifier_async),
-      FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  if (hits != NULL)
-    *hits = _take_list (g_simple_async_result_get_op_res_gpointer (simple));
 
   return TRUE;
 }

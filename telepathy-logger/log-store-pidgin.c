@@ -1180,38 +1180,6 @@ log_store_pidgin_get_filtered_events (TplLogStore *self,
 }
 
 
-static GList *
-log_store_pidgin_search_in_identifier (TplLogStore *store,
-    TpAccount *account,
-    const gchar *identifier,
-    TplEventSearchType type,
-    const gchar *text)
-{
-  TplLogStorePidgin *self = TPL_LOG_STORE_PIDGIN (store);
-  GList *files;
-  GList *retval;
-  gchar *dir;
-
-  g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (!tp_str_empty (identifier), NULL);
-  g_return_val_if_fail (!tp_str_empty (text), NULL);
-
-  dir = log_store_pidgin_get_dir (store, account, identifier, type);
-
-  files = log_store_pidgin_get_all_files (store, dir);
-  DEBUG ("Found %d log files in total", g_list_length (files));
-
-  retval = _log_store_pidgin_search_in_files (self, text, files);
-
-  g_free (dir);
-  g_list_foreach (files, (GFunc) g_free, NULL);
-  g_list_free (files);
-
-  return retval;
-}
-
-
 static void
 log_store_iface_init (gpointer g_iface,
     gpointer iface_data)
@@ -1224,7 +1192,6 @@ log_store_iface_init (gpointer g_iface,
   iface->get_dates = log_store_pidgin_get_dates;
   iface->get_events_for_date = log_store_pidgin_get_events_for_date;
   iface->get_entities = log_store_pidgin_get_entities;
-  iface->search_in_identifier = log_store_pidgin_search_in_identifier;
   iface->search_new = log_store_pidgin_search_new;
   iface->get_filtered_events = log_store_pidgin_get_filtered_events;
 }
