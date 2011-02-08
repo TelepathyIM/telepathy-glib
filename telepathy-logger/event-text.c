@@ -106,8 +106,7 @@ static gchar *message_types[] = {
 static void
 tpl_event_text_finalize (GObject * obj)
 {
-  TplEventText *self = TPL_EVENT_TEXT (obj);
-  TplEventTextPriv *priv = self->priv;
+  TplEventTextPriv *priv = TPL_EVENT_TEXT (obj)->priv;
 
   g_free (priv->message);
   priv->message = NULL;
