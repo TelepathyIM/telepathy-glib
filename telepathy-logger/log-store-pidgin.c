@@ -831,7 +831,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
                   NULL);
 
           /* FIXME: in text format it's not possible to guess who is the
-           * reveiver (unless we are in a room). In this case the receiver will
+           * receiver (unless we are in a room). In this case the receiver will
            * be left to NULL in the generated event. */
           if (is_html || is_room)
             {
