@@ -388,10 +388,8 @@ got_sender_contact_by_id_cb (TpConnection *connection,
           g_hash_table_iter_init (&iter, failed_id_errors);
           while (g_hash_table_iter_next (&iter, &key, &value))
             {
-              const gchar *id = key;
-              GError *err = value;
-
-              DEBUG ("Failed to get a TpContact for %s: %s", id, err->message);
+              DEBUG ("Failed to get a TpContact for %s: %s",
+                  (const gchar *) key, ((GError *) value)->message);
             }
         }
 
@@ -612,10 +610,8 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
       g_hash_table_iter_init (&iter, failed_id_errors);
       while (g_hash_table_iter_next (&iter, &key, &value))
         {
-          const gchar *id = key;
-          GError *err = value;
-
-          DEBUG ("Failed to get a TpContact for %s: %s", id, err->message);
+          DEBUG ("Failed to get a TpContact for %s: %s",
+              (const gchar *) key, ((GError *) value)->message);
         }
     }
 
