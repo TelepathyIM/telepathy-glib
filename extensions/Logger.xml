@@ -153,6 +153,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
+    <method name="Clear"
+            tp:name-for-bindings="Clear">
+      <tp:docstring>
+        Clear all the log. This will not erase the favourite contacts.
+      </tp:docstring>
+    </method>
+
     <signal name="FavouriteContactsChanged"
       tp:name-for-bindings="Favourite_Contacts_Changed">
       <tp:docstring>

@@ -34,6 +34,7 @@
 #include <telepathy-logger/event-internal.h>
 #include <telepathy-logger/text-event.h>
 #include <telepathy-logger/log-manager.h>
+#include <telepathy-logger/log-manager-internal.h>
 
 #include <extensions/extensions.h>
 
@@ -921,6 +922,23 @@ tpl_dbus_service_remove_favourite_contact (TplSvcLogger *logger,
     pendingproc_remove_favourite_contact (NULL, closure);
 }
 
+
+static void
+tpl_dbus_service_clear (TplSvcLogger *logger,
+    DBusGMethodInvocation *context)
+{
+  TplDBusService *self = TPL_DBUS_SERVICE (logger);
+
+  g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
+  g_return_if_fail (context != NULL);
+
+  /* We want to clear synchronously to avoid concurent write */
+  _tpl_log_manager_clear (self->priv->manager);
+
+  tpl_svc_logger_return_from_clear (context);
+}
+
+
 static void
 tpl_logger_iface_init (gpointer iface,
     gpointer iface_data)
@@ -932,5 +950,6 @@ tpl_logger_iface_init (gpointer iface,
   IMPLEMENT (get_favourite_contacts);
   IMPLEMENT (add_favourite_contact);
   IMPLEMENT (remove_favourite_contact);
+  IMPLEMENT (clear);
 #undef IMPLEMENT
 }
