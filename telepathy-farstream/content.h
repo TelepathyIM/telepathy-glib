@@ -2,6 +2,7 @@
 #define __TF_CONTENT_H__
 
 #include <glib-object.h>
+#include <gst/farsight/fs-conference-iface.h>
 
 G_BEGIN_DECLS
 
