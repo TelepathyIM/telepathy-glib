@@ -346,8 +346,7 @@ got_contents (TpProxy *proxy, const GValue *out_value,
       g_warning ("Error getting the Contents property: %s",
           error->message);
       g_simple_async_result_set_from_error (res, error);
-      g_simple_async_result_complete (res);
-      return;
+      goto out;
     }
 
   contents = g_value_get_boxed (out_value);
@@ -358,6 +357,12 @@ got_contents (TpProxy *proxy, const GValue *out_value,
   for (i = 0; i < contents->len; i++)
     if (!add_content (self, g_ptr_array_index (contents, i)))
       break;
+
+  g_simple_async_result_set_op_res_gboolean (res, TRUE);
+
+out:
+  g_simple_async_result_complete (res);
+  g_object_unref (res);
 }
 
 static void
@@ -416,8 +421,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       g_warning ("Error getting the hardware streaming property: %s",
           error->message);
       g_simple_async_result_set_from_error (res, error);
-      g_simple_async_result_complete (res);
-      return;
+      goto error;
     }
 
   if (g_value_get_boolean (out_value))
@@ -426,7 +430,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
 
       g_simple_async_result_set_error (res, TP_ERROR, TP_ERROR_NOT_CAPABLE,
           "This channel does hardware streaming, not handled here");
-      goto out;
+      goto error;
     }
 
   tf_future_cli_channel_type_call_connect_to_content_added (TP_CHANNEL (proxy),
@@ -437,7 +441,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
           myerror->message);
       g_simple_async_result_set_from_error (res, myerror);
       g_clear_error (&myerror);
-      goto out;
+      goto error;
     }
 
   tf_future_cli_channel_type_call_connect_to_content_removed (
@@ -449,16 +453,16 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
           myerror->message);
       g_simple_async_result_set_from_error (res, myerror);
       g_clear_error (&myerror);
-      goto out;
+      goto error;
     }
 
   tp_cli_dbus_properties_call_get (proxy, -1,
       TF_FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
-      got_contents, NULL, NULL, G_OBJECT (self));
+      got_contents, res, NULL, G_OBJECT (self));
 
-  g_simple_async_result_set_op_res_gboolean (res, TRUE);
+  return;
 
-out:
+error:
   g_simple_async_result_complete (res);
   g_object_unref (res);
 }
