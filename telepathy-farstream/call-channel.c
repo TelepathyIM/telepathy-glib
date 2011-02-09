@@ -203,7 +203,7 @@ tf_call_channel_init_async (GAsyncInitable *initable,
   tp_cli_dbus_properties_call_get (self->proxy, -1,
       TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
       "HardwareStreaming",
-      got_hardware_streaming, res, g_object_unref, G_OBJECT (self));
+      got_hardware_streaming, res, NULL, G_OBJECT (self));
 }
 
 static gboolean
