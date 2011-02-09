@@ -30,5 +30,7 @@
 gchar *_tpl_create_message_token (const gchar *channel, gint64 timestamp,
     guint msgid);
 
+void _tpl_rmdir_recursively (const gchar *dir_name);
+
 
 #endif // __TPL_UTIL_H__

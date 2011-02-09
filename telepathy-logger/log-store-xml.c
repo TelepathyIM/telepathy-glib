@@ -25,6 +25,7 @@
 #include "config.h"
 #include "log-store-xml-internal.h"
 
+#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1360,6 +1361,22 @@ log_store_xml_get_filtered_events (TplLogStore *store,
   return events;
 }
 
+
+static void
+log_store_xml_clear (TplLogStore *store)
+{
+  TplLogStoreXml *self = TPL_LOG_STORE_XML (store);
+  const gchar *basedir;
+
+  /* We need to use the getter otherwise the basedir might not be set yet */
+  basedir = log_store_xml_get_basedir (self);
+
+  DEBUG ("Clear all logs from XML store in: %s", basedir);
+
+  _tpl_rmdir_recursively (basedir);
+}
+
+
 static void
 log_store_iface_init (gpointer g_iface,
     gpointer iface_data)
@@ -1376,4 +1393,5 @@ log_store_iface_init (gpointer g_iface,
     log_store_xml_search_in_identifier;
   iface->search_new = log_store_xml_search_new;
   iface->get_filtered_events = log_store_xml_get_filtered_events;
+  iface->clear = log_store_xml_clear;
 }
