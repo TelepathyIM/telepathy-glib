@@ -1213,7 +1213,7 @@ tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,
 }
 
 /**
- * tp_account_channel_request_get_user_action_time:
+ * tp_account_channel_request_get_channel_request:
  * @self: a #TpAccountChannelRequest
  *
  * Return the #TpAccountChannelRequest:channel-request property
