@@ -81,6 +81,7 @@ enum
   PROP_AUTHORIZATION_IDENTITY,
   PROP_DEFAULT_USERNAME,
   PROP_DEFAULT_REALM,
+  PROP_MAY_SAVE_RESPONSE,
 
   LAST_PROPERTY,
 };
@@ -106,6 +107,8 @@ struct _TpSimplePasswordChannelPrivate
   gchar *default_realm;
 
   GString *password;
+
+  gboolean may_save_response;
 };
 
 static void
@@ -135,6 +138,26 @@ tp_simple_password_channel_constructed (GObject *obj)
       tp_handle_inspect (contact_handles, base_conn->self_handle));
   priv->default_username = g_strdup (priv->authorization_identity);
   priv->default_realm = g_strdup ("");
+}
+
+static void
+tp_simple_password_channel_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  TpSimplePasswordChannel *chan = TP_SIMPLE_PASSWORD_CHANNEL (object);
+  TpSimplePasswordChannelPrivate *priv = chan->priv;
+
+  switch (property_id)
+    {
+    case PROP_MAY_SAVE_RESPONSE:
+      priv->may_save_response = g_value_get_boolean (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
 }
 
 static void
@@ -180,6 +203,9 @@ tp_simple_password_channel_get_property (GObject *object,
     case PROP_DEFAULT_REALM:
       g_value_set_string (value, priv->default_realm);
       break;
+    case PROP_MAY_SAVE_RESPONSE:
+      g_value_set_boolean (value, priv->may_save_response);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -211,6 +237,7 @@ tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_p
     { "AuthorizationIdentity", "authorization-identity", NULL },
     { "DefaultUsername", "default-username", NULL },
     { "DefaultRealm", "default-realm", NULL },
+    { "MaySaveResponse", "may-save-response", NULL },
     { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
@@ -233,6 +260,7 @@ tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_p
       sizeof (TpSimplePasswordChannelPrivate));
 
   object_class->constructed = tp_simple_password_channel_constructed;
+  object_class->set_property = tp_simple_password_channel_set_property;
   object_class->get_property = tp_simple_password_channel_get_property;
   object_class->finalize = tp_simple_password_channel_finalize;
 
@@ -321,6 +349,14 @@ tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_p
       "",
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DEFAULT_REALM,
+      param_spec);
+
+  param_spec = g_param_spec_boolean ("may-save-response",
+      "Whether the client may save the authentication response",
+      "Whether the client may save the authentication response",
+      TRUE,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_MAY_SAVE_RESPONSE,
       param_spec);
 
   signals[FINISHED] = g_signal_new ("finished",
@@ -419,6 +455,7 @@ tp_simple_password_channel_fill_immutable_properties (TpBaseChannel *chan,
       TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "AuthorizationIdentity",
       TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "DefaultUsername",
       TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "DefaultRealm",
+      TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION, "MaySaveResponse",
       NULL);
 }
 
