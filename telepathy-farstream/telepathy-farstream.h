@@ -22,7 +22,6 @@
 
 #include <telepathy-farstream/channel.h>
 #include <telepathy-farstream/content.h>
-#include <telepathy-farstream/stream.h>
 
 G_BEGIN_DECLS
 
