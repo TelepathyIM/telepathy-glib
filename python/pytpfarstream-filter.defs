@@ -12,13 +12,6 @@
   (gtype-id "TF_TYPE_CONTENT")
 )
 
-(define-object Stream
-  (in-module "Tf")
-  (parent "GObject")
-  (c-name "TfStream")
-  (gtype-id "TF_TYPE_STREAM")
-)
-
 (define-function tf_channel_new_async
   (c-name "tf_channel_new_async")
   (return-type "none")
@@ -37,17 +30,6 @@
 (define-method error
   (of-object "TfChannel")
   (c-name "tf_channel_error")
-  (return-type "none")
-  (parameters
-    '("gint" "error")
-    '("const-gchar*" "message")
-  )
-)
-
-
-(define-method error
-  (of-object "TfStream")
-  (c-name "tf_stream_error")
   (return-type "none")
   (parameters
     '("gint" "error")

@@ -12,13 +12,6 @@
   (gtype-id "TF_TYPE_CONTENT")
 )
 
-(define-object Stream
-  (in-module "Tf")
-  (parent "GObject")
-  (c-name "TfStream")
-  (gtype-id "TF_TYPE_STREAM")
-)
-
 (define-function tf_channel_new_async
   (c-name "tf_channel_new_async")
   (return-type "none")
@@ -42,18 +35,19 @@
     '("gint" "error")
     '("const-gchar*" "message")
   )
-)
+);; -*- scheme -*-
+; object definitions ...
+;; Enumerations and flags ...
 
 
-(define-method error
-  (of-object "TfStream")
-  (c-name "tf_stream_error")
+;; From telepathy-farstream.h
+
+(define-function tf_init
+  (c-name "tf_init")
   (return-type "none")
-  (parameters
-    '("gint" "error")
-    '("const-gchar*" "message")
-  )
 )
+
+
 ;; -*- scheme -*-
 ; object definitions ...
 ;; Enumerations and flags ...
@@ -126,6 +120,16 @@
   (of-object "TfStream")
   (c-name "tf_stream_get_id")
   (return-type "guint")
+)
+
+(define-method error
+  (of-object "TfStream")
+  (c-name "tf_stream_error")
+  (return-type "none")
+  (parameters
+    '("TpMediaStreamError" "error")
+    '("const-gchar*" "message")
+  )
 )
 
 
