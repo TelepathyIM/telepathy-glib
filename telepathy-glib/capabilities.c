@@ -559,8 +559,41 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
  * #TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER property can be defined when
  * requesting a RoomList channel.
  *
- * Return whether this protocol or connection can perform rooms
- * listing.
+ * Discovers whether this protocol or connection supports listing rooms.
+ * Specifically, if this function returns %TRUE, a room list channel can be
+ * requested as follows:
+ * |[
+ * GHashTable *request;
+ * TpAccountChannelRequest *req;
+ *
+ * request = tp_asv_new (
+ *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+ *       TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
+ *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_NONE,
+ *     NULL);
+ *
+ * req = tp_account_channel_request_new (account, request,
+ *    TP_USER_ACTION_TIME_CURRENT_TIME);
+ *
+ * tp_account_channel_request_create_and_handle_channel_async (req, NULL,
+ *     create_channel_cb, NULL);
+ *
+ * g_object_unref (req);
+ * g_hash_table_unref (request);
+ * ]|
+ *
+ * If @with_server is set to %TRUE, a list of rooms on a particular server can
+ * be requested as follows:
+ * |[
+ * /\* Same code as above but with request defined using: *\/
+ * request = tp_asv_new (
+ *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+ *       TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
+ *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_NONE,
+ *     TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER, G_TYPE_STRING,
+ *       "characters.shakespeare.lit",
+ *     NULL);
+ * ]|
  *
  * Returns: %TRUE if a channel request containing RoomList as ChannelType,
  * HandleTypeNone as TargetHandleType can be expected to work,
