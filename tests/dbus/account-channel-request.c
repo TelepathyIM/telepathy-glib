@@ -191,9 +191,15 @@ test_handle_create_success (Test *test,
 {
   GHashTable *request;
   TpAccountChannelRequest *req;
+  TpChannelRequest *chan_req;
 
   request = create_request ();
   req = tp_account_channel_request_new (test->account, request, 0);
+
+  /* We didn't start requesting the channel yet, so there is no
+   * ChannelRequest */
+  chan_req = tp_account_channel_request_get_channel_request (req);
+  g_assert (chan_req == NULL);
 
   tp_account_channel_request_create_and_handle_channel_async (req,
       NULL, create_and_handle_cb, test);
@@ -203,6 +209,12 @@ test_handle_create_success (Test *test,
 
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
+
+  /* The ChannelRequest has been defined */
+  g_object_get (req, "channel-request", &chan_req, NULL);
+  g_assert (TP_IS_CHANNEL_REQUEST (chan_req));
+  g_assert (tp_account_channel_request_get_channel_request (req) == chan_req);
+  g_object_unref (chan_req);
 }
 
 /* ChannelDispatcher.CreateChannel() call fails */

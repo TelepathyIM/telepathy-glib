@@ -87,6 +87,7 @@ enum {
     PROP_ACCOUNT = 1,
     PROP_REQUEST,
     PROP_USER_ACTION_TIME,
+    PROP_CHANNEL_REQUEST,
     N_PROPS
 };
 
@@ -194,6 +195,10 @@ tp_account_channel_request_get_property (GObject *object,
 
       case PROP_USER_ACTION_TIME:
         g_value_set_int64 (value, self->priv->user_action_time);
+        break;
+
+      case PROP_CHANNEL_REQUEST:
+        g_value_set_object (value, self->priv->chan_request);
         break;
 
       default:
@@ -332,6 +337,30 @@ tp_account_channel_request_class_init (
       G_MININT64, G_MAXINT64, 0,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_USER_ACTION_TIME,
+      param_spec);
+
+  /**
+   * TpAccountChannelRequest:channel-request:
+   *
+   * The #TpChannelRequest used to request the channel, or %NULL if the
+   * channel has not be requested yet.
+   *
+   * This can be useful for example to compare with the #TpChannelRequest
+   * objects received from the requests_satisfied argument of
+   * #TpSimpleHandlerHandleChannelsImpl to check if the client is asked to
+   * handle the channel it just requested.
+   *
+   * Note that the #TpChannelRequest objects may be different while still
+   * representing the same ChannelRequest on D-Bus. You have to compare
+   * them using their object paths (tp_proxy_get_object_path()).
+   *
+   * Since 0.11.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("channel-request", "channel request",
+      "TpChannelRequest",
+      TP_TYPE_CHANNEL_REQUEST,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CHANNEL_REQUEST,
       param_spec);
 
  /**
@@ -1181,4 +1210,20 @@ tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,
 
   tp_clear_object (&self->priv->factory);
   self->priv->factory = g_object_ref (factory);
+}
+
+/**
+ * tp_account_channel_request_get_user_action_time:
+ * @self: a #TpAccountChannelRequest
+ *
+ * Return the #TpAccountChannelRequest:channel-request property
+ *
+ * Returns: the value of #TpAccountChannelRequest:channel-request
+ *
+ * Since: 0.11.UNRELEASED
+ */
+TpChannelRequest *
+tp_account_channel_request_get_channel_request (TpAccountChannelRequest *self)
+{
+  return self->priv->chan_request;
 }

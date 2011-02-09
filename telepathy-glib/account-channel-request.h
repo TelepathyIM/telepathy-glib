@@ -27,6 +27,7 @@
 
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/channel.h>
+#include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/client-channel-factory.h>
 #include <telepathy-glib/handle-channels-context.h>
 
@@ -73,6 +74,9 @@ gint64 tp_account_channel_request_get_user_action_time (
 void tp_account_channel_request_set_channel_factory (
     TpAccountChannelRequest *self,
     TpClientChannelFactory *factory);
+
+TpChannelRequest * tp_account_channel_request_get_channel_request (
+    TpAccountChannelRequest *self);
 
 /* Request and handle API */
 
