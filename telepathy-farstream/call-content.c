@@ -418,6 +418,7 @@ process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
 
   if (!fsstream)
     {
+      g_debug ("Delaying codec offer processing");
       self->current_offer = proxy;
       self->current_offer_contact_handle = contact_handle;
       self->current_offer_fscodecs = fscodecs;
@@ -858,7 +859,13 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
   GList *codecs;
   GPtrArray *tpcodecs;
 
-  g_debug ("new local codecs");
+  if (self->current_offer_fscodecs != NULL)
+  {
+    g_debug ("Ignoring updated codecs unprocessed offer outstanding");
+    return;
+  }
+
+  g_debug ("updating local codecs");
 
   if (TF_CONTENT (self)->sending_count == 0)
     ready = TRUE;
@@ -1065,8 +1072,12 @@ _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
   if (content->current_offer != NULL
       && content->current_offer_contact_handle == contact_handle)
   {
-    process_codec_offer_try_codecs (content, s, content->current_offer,
-      content->current_offer_fscodecs);
+    GList *codecs = content->current_offer_fscodecs;
+    content->current_offer_fscodecs = NULL;
+
+    /* ownership transfers to try_codecs */
+    process_codec_offer_try_codecs (content, s,
+        content->current_offer, codecs);
   }
 
   return s;
