@@ -59,7 +59,7 @@ libtelepathy_farstream_la_LIBADD = \
 	../extensions/libfuture-extensions.la
 
 libtelepathy_farstream_la_LDFLAGS =  -no-undefined \
-	-export-symbols-regex "^tf_.*" \
+	-export-symbols-regex "^tf_(content|channel)_.*" \
 	-version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
 
 
