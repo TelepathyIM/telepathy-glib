@@ -6,7 +6,10 @@ CLEANFILES = $(BUILT_SOURCES) tf-signals-marshal.list
 
 
 tfincludedir = $(includedir)/telepathy-1.0/telepathy-farstream
-tfinclude_HEADERS = channel.h content.h
+tfinclude_HEADERS = \
+	telepathy-farstream.h \
+	channel.h \
+	content.h
 
 libtelepathy_farstream_la_SOURCES = \
 	stream.c \
