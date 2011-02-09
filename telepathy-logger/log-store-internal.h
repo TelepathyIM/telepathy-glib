@@ -80,6 +80,7 @@ typedef struct
   GList * (*get_filtered_events) (TplLogStore *self, TpAccount *account,
       const gchar *id, TplEventSearchType type, guint num_events,
       TplLogEventFilter filter, gpointer user_data);
+  void (*clear) (TplLogStore *self);
 } TplLogStoreInterface;
 
 GType _tpl_log_store_get_type (void);
@@ -104,6 +105,7 @@ GList * _tpl_log_store_search_new (TplLogStore *self, const gchar *text);
 GList * _tpl_log_store_get_filtered_events (TplLogStore *self,
     TpAccount *account, const gchar *id, TplEventSearchType type,
     guint num_events, TplLogEventFilter filter, gpointer user_data);
+void _tpl_log_store_clear (TplLogStore *self);
 gboolean _tpl_log_store_is_writable (TplLogStore *self);
 gboolean _tpl_log_store_is_readable (TplLogStore *self);
 
