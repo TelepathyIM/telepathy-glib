@@ -582,7 +582,6 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
       GHashTable *fixed;
       const gchar *chan_type;
       const gchar **allowed_properties;
-      guint j;
 
       tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
 
@@ -593,12 +592,8 @@ tp_capabilities_supports_room_list (TpCapabilities *self,
 
       result = TRUE;
 
-      for (j = 0; allowed_properties[j] != NULL; j++)
-        {
-          if (!tp_strdiff (allowed_properties[j],
-                TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER))
-            server = TRUE;
-        }
+      server = tp_strv_contains (allowed_properties,
+          TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER);
       break;
     }
 
