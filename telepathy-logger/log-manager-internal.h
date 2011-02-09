@@ -80,6 +80,8 @@ gboolean _tpl_log_manager_search_in_identifier_finish (
     GList **hits,
     GError **error);
 
+void _tpl_log_manager_clear (TplLogManager *self);
+
 TplLogSearchHit * _tpl_log_manager_search_hit_new (TpAccount *account,
     const gchar *id,
     TplEventSearchType type,

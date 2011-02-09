@@ -885,6 +885,23 @@ _tpl_log_manager_async_operation_cb (GObject *source_object,
 }
 
 
+void
+_tpl_log_manager_clear (TplLogManager *self)
+{
+  GList *l;
+  TplLogManagerPriv *priv;
+
+  g_return_if_fail (TPL_IS_LOG_MANAGER (self));
+
+  priv = self->priv;
+
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
+    {
+      _tpl_log_store_clear (TPL_LOG_STORE (l->data));
+    }
+}
+
+
 /* There is no g_date_copy() */
 static GDate *
 copy_date (const GDate *date)
