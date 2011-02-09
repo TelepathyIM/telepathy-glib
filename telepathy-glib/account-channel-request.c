@@ -354,7 +354,7 @@ tp_account_channel_request_class_init (
    * representing the same ChannelRequest on D-Bus. You have to compare
    * them using their object paths (tp_proxy_get_object_path()).
    *
-   * Since 0.11.UNRELEASED
+   * Since 0.13.13
    */
   param_spec = g_param_spec_object ("channel-request", "channel request",
       "TpChannelRequest",
@@ -1220,7 +1220,7 @@ tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,
  *
  * Returns: the value of #TpAccountChannelRequest:channel-request
  *
- * Since: 0.11.UNRELEASED
+ * Since: 0.13.13
  */
 TpChannelRequest *
 tp_account_channel_request_get_channel_request (TpAccountChannelRequest *self)

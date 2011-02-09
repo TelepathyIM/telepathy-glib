@@ -1,0 +1,7 @@
+Version: TELEPATHY_GLIB_0.13.13
+Extends: TELEPATHY_GLIB_0.13.12
+Release: 0.13.13
+
+tp_debug_sender_add_message_vprintf
+tp_debug_sender_add_message_printf
+tp_account_channel_request_get_channel_request

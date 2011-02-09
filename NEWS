@@ -1,15 +1,23 @@
-telepathy-glib 0.13.13 (UNRELEASED)
+telepathy-glib 0.13.13 (2011-02-09)
 ===================================
 
- _______________________
-< everything’s in ruins >
- -----------------------
-        \   ^__^
-         \  (oo)\_______
-            (__)\       )\/\
-                ||----w |
-                ||     ||
+The “Duckworth Lewis” release.
 
+Enhancements:
+
+• Many doc fixes, including: TpBaseClientClass is now included;
+  INCOMING_MESSAGES is now explained. (wjt)
+
+• Compiler flags reordered (clang is order-sensitive) to allow
+  static analysis. (wjt)
+
+• Account Channel Requests now give you access to the originating
+  TpChannelRequest. (cassidy)
+
+• The speculative debug cache may now be disabled at compile time.
+  tp_debug_sender_add_message_vprintf and
+  tp_debug_sender_add_message_printf added to allow callers who care
+  about optimisation to reduce debug overhead. (fledermaus)
 
 telepathy-glib 0.13.12 (2011-02-01)
 ===================================

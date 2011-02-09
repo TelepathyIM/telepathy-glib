@@ -422,7 +422,7 @@ tp_debug_sender_add_message (TpDebugSender *self,
  * #TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
  * signal will be fired too.
  *
- * Since: UNRELEASED
+ * Since: 0.13.13
  */
 void
 tp_debug_sender_add_message_vprintf (TpDebugSender *self,
@@ -466,7 +466,7 @@ tp_debug_sender_add_message_vprintf (TpDebugSender *self,
  * #TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
  * signal will be fired too.
  *
- * Since: UNRELEASED
+ * Since: 0.13.13
  */
 void
 tp_debug_sender_add_message_printf (TpDebugSender *self,
