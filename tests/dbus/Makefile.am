@@ -2,6 +2,7 @@ noinst_PROGRAMS = \
 	test-entity 			\
 	test-searches 			\
 	test-tpl-log-store-pidgin 	\
+	test-tpl-log-store-xml 		\
 	$(NULL)
 
 TESTS = $(noinst_PROGRAMS)
