@@ -33,6 +33,7 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
 #include <gst/farsight/fs-conference-iface.h>
+#include <gst/farsight/fs-utils.h>
 
 #include <stdarg.h>
 #include <string.h>
@@ -442,6 +443,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   guint32 packetization;
   const gchar *conference_type;
   gboolean valid;
+  GList *codec_prefs;
 
   packetization = tp_asv_get_uint32 (properties, "Packetization", &valid);
 
@@ -512,6 +514,20 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   if (gva == NULL)
     {
       goto invalid_property;
+    }
+
+
+  codec_prefs = fs_utils_get_default_codec_preferences (
+      GST_ELEMENT (self->fsconference));
+
+  if (codec_prefs)
+    {
+      if (!fs_session_set_codec_preferences (self->fssession, codec_prefs,
+              &myerror))
+        {
+          g_warning ("Could not set codec preference: %s", myerror->message);
+          g_clear_error (&myerror);
+        }
     }
 
   /* First complete so we get signalled and the preferences can be set, then
