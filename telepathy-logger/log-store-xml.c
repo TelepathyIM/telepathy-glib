@@ -1401,6 +1401,38 @@ log_store_xml_clear_account (TplLogStore *store,
 
 
 static void
+log_store_xml_clear_entity (TplLogStore *store,
+    TpAccount *account,
+    TplEntity *entity)
+{
+  TplLogStoreXml *self = TPL_LOG_STORE_XML (store);
+  gchar *entity_id;
+  gchar *entity_dir;
+
+  entity_id = g_strdup (tpl_entity_get_identifier (entity));
+  entity_id = g_strdelimit (entity_id, "/", '_');
+  entity_dir = log_store_xml_get_dir (self, account, entity_id,
+      tpl_entity_get_entity_type (entity) == TPL_ENTITY_ROOM ?
+        TPL_EVENT_SEARCH_TEXT_ROOM : TPL_EVENT_SEARCH_TEXT);
+
+  if (entity_dir)
+    {
+      DEBUG ("Clear entity logs from XML store in: %s",
+          entity_dir);
+
+      _tpl_rmdir_recursively (entity_dir);
+      g_free (entity_dir);
+    }
+  else
+    DEBUG ("Nothing to clear for account/entity: %s/%s",
+        tp_proxy_get_object_path (TP_PROXY (account)),
+        entity_id);
+
+  g_free (entity_id);
+}
+
+
+static void
 log_store_iface_init (gpointer g_iface,
     gpointer iface_data)
 {
@@ -1418,4 +1450,5 @@ log_store_iface_init (gpointer g_iface,
   iface->get_filtered_events = log_store_xml_get_filtered_events;
   iface->clear = log_store_xml_clear;
   iface->clear_account = log_store_xml_clear_account;
+  iface->clear_entity = log_store_xml_clear_entity;
 }
