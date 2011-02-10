@@ -160,6 +160,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
+    <method name="ClearAccount"
+            tp:name-for-bindings="Clear_Account">
+      <arg direction="in" name="Account" type="o" tp:type="Account">
+        <tp:docstring>
+        The object path for the TpAccount in which logs will be cleared.
+        </tp:docstring>
+      </arg>
+
+      <tp:docstring>
+        Clear all logs stored for specified account.
+      </tp:docstring>
+    </method>
+
     <signal name="FavouriteContactsChanged"
       tp:name-for-bindings="Favourite_Contacts_Changed">
       <tp:docstring>
