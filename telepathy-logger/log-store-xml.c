@@ -1378,6 +1378,29 @@ log_store_xml_clear (TplLogStore *store)
 
 
 static void
+log_store_xml_clear_account (TplLogStore *store,
+    TpAccount *account)
+{
+  TplLogStoreXml *self = TPL_LOG_STORE_XML (store);
+  gchar *account_dir;
+
+  account_dir = log_store_xml_get_dir (self, account, NULL,
+      TPL_EVENT_SEARCH_TEXT);
+
+  if (account_dir)
+    {
+      DEBUG ("Clear account logs from XML store in: %s",
+          account_dir);
+      _tpl_rmdir_recursively (account_dir);
+      g_free (account_dir);
+    }
+  else
+    DEBUG ("Nothing to clear in account: %s",
+        tp_proxy_get_object_path (TP_PROXY (account)));
+}
+
+
+static void
 log_store_iface_init (gpointer g_iface,
     gpointer iface_data)
 {
@@ -1394,4 +1417,5 @@ log_store_iface_init (gpointer g_iface,
   iface->search_new = log_store_xml_search_new;
   iface->get_filtered_events = log_store_xml_get_filtered_events;
   iface->clear = log_store_xml_clear;
+  iface->clear_account = log_store_xml_clear_account;
 }
