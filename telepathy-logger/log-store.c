@@ -364,6 +364,17 @@ _tpl_log_store_clear (TplLogStore *self)
 }
 
 
+void
+_tpl_log_store_clear_account (TplLogStore *self, TpAccount *account)
+{
+  g_return_if_fail (TPL_IS_LOG_STORE (self));
+  if (TPL_LOG_STORE_GET_INTERFACE (self)->clear_account == NULL)
+    return;
+
+  TPL_LOG_STORE_GET_INTERFACE (self)->clear_account (self, account);
+}
+
+
 gboolean
 _tpl_log_store_is_writable (TplLogStore *self)
 {
