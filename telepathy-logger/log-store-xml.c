@@ -510,7 +510,8 @@ add_text_event (TplLogStoreXml *self,
 
   ret = _log_store_xml_write_to_store (self, account,
       _tpl_event_get_target_id (TPL_EVENT (message)),
-      _tpl_event_target_is_room (TPL_EVENT (message)),
+      _tpl_event_target_is_room (TPL_EVENT (message)) ?
+          TPL_EVENT_SEARCH_TEXT_ROOM : TPL_EVENT_SEARCH_TEXT,
       event, error);
 
 out:
