@@ -173,6 +173,31 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       </tp:docstring>
     </method>
 
+    <method name="ClearEntity"
+            tp:name-for-bindings="Clear_Entity">
+      <arg direction="in" name="Account" type="o" tp:type="Account">
+        <tp:docstring>
+        The object path for the TpAccount in which logs will be cleared.
+        </tp:docstring>
+      </arg>
+
+      <arg direction="in" name="Identifier" type="s">
+        <tp:docstring>
+        The entity identifier.
+        </tp:docstring>
+      </arg>
+
+      <arg direction="in" name="Type" type="i">
+        <tp:docstring>
+        The entity type, should be one of TPL_ENTITY_CONTACT (1) or TPL_ENTITY_ROOM (2).
+        </tp:docstring>
+      </arg>
+
+      <tp:docstring>
+        Clear all logs stored for discussions with entity in account.
+      </tp:docstring>
+    </method>
+
     <signal name="FavouriteContactsChanged"
       tp:name-for-bindings="Favourite_Contacts_Changed">
       <tp:docstring>

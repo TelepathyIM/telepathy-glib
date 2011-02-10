@@ -984,6 +984,58 @@ out:
 
 
 static void
+tpl_dbus_service_clear_entity (TplSvcLogger *logger,
+    const gchar *account_path,
+    const gchar *identifier,
+    gint type,
+    DBusGMethodInvocation *context)
+{
+  TplDBusService *self = TPL_DBUS_SERVICE (logger);
+  TpDBusDaemon *bus;
+  TpAccount *account;
+  TplEntity *entity;
+  GError *error = NULL;
+
+  g_return_if_fail (TPL_IS_DBUS_SERVICE (self));
+  g_return_if_fail (context != NULL);
+  g_return_if_fail (!TPL_STR_EMPTY (identifier));
+
+  bus = tp_dbus_daemon_dup (&error);
+  if (bus == NULL)
+    {
+      DEBUG ("Unable to acquire the bus daemon: %s", error->message);
+      dbus_g_method_return_error (context, error);
+      goto out;
+    }
+
+  account = tp_account_new (bus, account_path, &error);
+  if (account == NULL)
+    {
+      DEBUG ("Unable to acquire the account for %s: %s", account_path,
+          error->message);
+      dbus_g_method_return_error (context, error);
+      goto out;
+    }
+
+  entity = g_object_new (TPL_TYPE_ENTITY,
+      "type", type,
+      "identifier", identifier,
+      NULL);
+
+  /* We want to clear synchronously to avoid concurent write */
+  _tpl_log_manager_clear_entity (self->priv->manager, account, entity);
+  g_object_unref (account);
+
+  tpl_svc_logger_return_from_clear_account (context);
+
+out:
+  if (bus != NULL)
+    g_object_unref (bus);
+
+  g_clear_error (&error);
+}
+
+static void
 tpl_logger_iface_init (gpointer iface,
     gpointer iface_data)
 {
@@ -996,5 +1048,6 @@ tpl_logger_iface_init (gpointer iface,
   IMPLEMENT (remove_favourite_contact);
   IMPLEMENT (clear);
   IMPLEMENT (clear_account);
+  IMPLEMENT (clear_entity);
 #undef IMPLEMENT
 }
