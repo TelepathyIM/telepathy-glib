@@ -82,6 +82,8 @@ typedef struct
       TplLogEventFilter filter, gpointer user_data);
   void (*clear) (TplLogStore *self);
   void (*clear_account) (TplLogStore *self, TpAccount *account);
+  void (*clear_entity) (TplLogStore *self, TpAccount *account,
+      TplEntity *entity);
 } TplLogStoreInterface;
 
 GType _tpl_log_store_get_type (void);
@@ -108,6 +110,8 @@ GList * _tpl_log_store_get_filtered_events (TplLogStore *self,
     guint num_events, TplLogEventFilter filter, gpointer user_data);
 void _tpl_log_store_clear (TplLogStore *self);
 void _tpl_log_store_clear_account (TplLogStore *self, TpAccount *account);
+void _tpl_log_store_clear_entity (TplLogStore *self, TpAccount *account,
+    TplEntity *entity);
 gboolean _tpl_log_store_is_writable (TplLogStore *self);
 gboolean _tpl_log_store_is_readable (TplLogStore *self);
 
