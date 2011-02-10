@@ -35,6 +35,9 @@ struct _TpConnectionPrivate {
     /* list of TpConnectionProc */
     GList *introspect_needed;
 
+    gchar *cm_name;
+    gchar *proto_name;
+
     TpHandle last_known_self_handle;
     TpContact *self_contact;
     TpConnectionStatus status;
