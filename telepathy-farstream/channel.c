@@ -193,6 +193,7 @@ call_channel_ready (GObject *obj, GAsyncResult *call_res, gpointer user_data)
 
   if (error)
     {
+      shutdown_channel (self);
       g_simple_async_result_set_op_res_gboolean (res, FALSE);
       g_simple_async_result_set_from_error (res, error);
       g_clear_error (&error);
