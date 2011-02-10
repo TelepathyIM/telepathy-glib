@@ -154,6 +154,94 @@ test_clear_account (XmlTestCaseFixture *fixture,
 }
 
 
+static void
+test_clear_entity (XmlTestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  gboolean is_room = GPOINTER_TO_INT (user_data);
+  GList *hits;
+  TpAccount *account;
+  TplEntity *entity;
+  GError *error = NULL;
+  const gchar *always_kept, *kept, *cleared;
+
+  always_kept = "1263405203";
+
+  if (is_room)
+    {
+      kept = "f95e605a3ae97c463b626a3538567bc90fc58730";
+      cleared = "8957fb4064049e7a1f9d8f84234d3bf09fb6778c";
+    }
+  else
+    {
+      kept = "8957fb4064049e7a1f9d8f84234d3bf09fb6778c";
+      cleared = "f95e605a3ae97c463b626a3538567bc90fc58730";
+    }
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      always_kept);
+
+  g_assert_cmpint (g_list_length (hits), ==, 1);
+
+  tpl_log_manager_search_free (hits);
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      kept);
+
+  g_assert_cmpint (g_list_length (hits), ==, 1);
+
+  tpl_log_manager_search_free (hits);
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      cleared);
+
+  g_assert_cmpint (g_list_length (hits), ==, 1);
+
+  tpl_log_manager_search_free (hits);
+
+  account = tp_account_new (fixture->bus,
+      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
+      &error);
+
+  g_assert_no_error (error);
+  g_assert (account != NULL);
+
+  if (is_room)
+    entity = g_object_new (TPL_TYPE_ENTITY,
+        "type", TPL_ENTITY_ROOM,
+        "identifier", "meego@conference.collabora.co.uk",
+        NULL);
+  else
+    entity = g_object_new (TPL_TYPE_ENTITY,
+        "type", TPL_ENTITY_CONTACT,
+        "identifier", "derek.foreman@collabora.co.uk",
+        NULL);
+
+  _tpl_log_store_clear_entity (TPL_LOG_STORE (fixture->store), account, entity);
+  g_object_unref (account);
+  g_object_unref (entity);
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      always_kept);
+
+  g_assert_cmpint (g_list_length (hits), ==, 1);
+
+  tpl_log_manager_search_free (hits);
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      kept);
+
+  g_assert_cmpint (g_list_length (hits), ==, 1);
+
+  tpl_log_manager_search_free (hits);
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      cleared);
+
+  g_assert_cmpint (g_list_length (hits), ==, 0);
+}
+
+
 gint main (gint argc, gchar **argv)
 {
   g_type_init ();
@@ -168,6 +256,14 @@ gint main (gint argc, gchar **argv)
   g_test_add ("/log-store-xml/clear-account",
       XmlTestCaseFixture, NULL,
       setup_for_writing, test_clear_account, teardown);
+
+  g_test_add ("/log-store-xml/clear-entity",
+      XmlTestCaseFixture, GINT_TO_POINTER (FALSE),
+      setup_for_writing, test_clear_entity, teardown);
+
+  g_test_add ("/log-store-xml/clear-entity-room",
+      XmlTestCaseFixture, GINT_TO_POINTER (TRUE),
+      setup_for_writing, test_clear_entity, teardown);
 
   return g_test_run ();
 }
