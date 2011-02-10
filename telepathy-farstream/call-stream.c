@@ -239,7 +239,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
     {
       GValueArray *gva = g_ptr_array_index (self->stun_servers, 0);
       gchar *ip;
-      guint16 port;
+      guint port;
       gchar *conn_timeout_str;
 
       /* We only use the first STUN server if there are many */
@@ -432,7 +432,7 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
       GValueArray *tpcandidate = g_ptr_array_index (candidates, i);
       guint component;
       gchar *ip;
-      guint16 port;
+      guint port;
       GHashTable *extra_info;
       const gchar *foundation;
       guint priority;
