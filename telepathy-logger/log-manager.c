@@ -902,6 +902,24 @@ _tpl_log_manager_clear (TplLogManager *self)
 }
 
 
+void
+_tpl_log_manager_clear_account (TplLogManager *self,
+    TpAccount *account)
+{
+  GList *l;
+  TplLogManagerPriv *priv;
+
+  g_return_if_fail (TPL_IS_LOG_MANAGER (self));
+
+  priv = self->priv;
+
+  for (l = priv->stores; l != NULL; l = g_list_next (l))
+    {
+      _tpl_log_store_clear_account (TPL_LOG_STORE (l->data), account);
+    }
+}
+
+
 /* There is no g_date_copy() */
 static GDate *
 copy_date (const GDate *date)

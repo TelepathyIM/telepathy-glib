@@ -82,6 +82,8 @@ gboolean _tpl_log_manager_search_in_identifier_finish (
 
 void _tpl_log_manager_clear (TplLogManager *self);
 
+void _tpl_log_manager_clear_account (TplLogManager *self, TpAccount *account);
+
 TplLogSearchHit * _tpl_log_manager_search_hit_new (TpAccount *account,
     const gchar *id,
     TplEventSearchType type,
