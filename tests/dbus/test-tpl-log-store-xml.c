@@ -2,6 +2,7 @@
 
 #include "telepathy-logger/log-manager-internal.h"
 #include "telepathy-logger/log-store-internal.h"
+#include "lib/util.h"
 
 #include <glib.h>
 
@@ -9,6 +10,7 @@ typedef struct
 {
   gchar *tmp_basedir;
   TplLogStoreXml *store;
+  TpDBusDaemon *bus;
 } XmlTestCaseFixture;
 
 
@@ -39,6 +41,9 @@ setup (XmlTestCaseFixture* fixture,
 
   if (fixture->tmp_basedir != NULL)
     log_store_xml_set_basedir (fixture->store, fixture->tmp_basedir);
+
+  fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
+  g_assert (fixture->bus != NULL);
 }
 
 
@@ -101,6 +106,54 @@ test_clear (XmlTestCaseFixture *fixture,
 }
 
 
+static void
+test_clear_account (XmlTestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  GList *hits;
+  TpAccount *account;
+  GError *error = NULL;
+  const gchar *kept = "1263405203";
+  const gchar *cleared = "f95e605a3ae97c463b626a3538567bc90fc58730";
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      kept);
+
+  g_assert_cmpint (g_list_length (hits), ==, 1);
+
+  tpl_log_manager_search_free (hits);
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      cleared);
+
+  g_assert_cmpint (g_list_length (hits), ==, 1);
+
+  tpl_log_manager_search_free (hits);
+
+  account = tp_account_new (fixture->bus,
+      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
+      &error);
+
+  g_assert_no_error (error);
+  g_assert (account != NULL);
+
+  _tpl_log_store_clear_account (TPL_LOG_STORE (fixture->store), account);
+  g_object_unref (account);
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      kept);
+
+  g_assert_cmpint (g_list_length (hits), ==, 1);
+
+  tpl_log_manager_search_free (hits);
+
+  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+      cleared);
+
+  g_assert_cmpint (g_list_length (hits), ==, 0);
+}
+
+
 gint main (gint argc, gchar **argv)
 {
   g_type_init ();
@@ -111,6 +164,10 @@ gint main (gint argc, gchar **argv)
   g_test_add ("/log-store-xml/clear",
       XmlTestCaseFixture, NULL,
       setup_for_writing, test_clear, teardown);
+
+  g_test_add ("/log-store-xml/clear-account",
+      XmlTestCaseFixture, NULL,
+      setup_for_writing, test_clear_account, teardown);
 
   return g_test_run ();
 }
