@@ -143,6 +143,7 @@ AC_OUTPUT( Makefile \
           doc/lib/Makefile \
           m4/Makefile \
           extensions/Makefile \
+          examples/Makefile \
           telepathy-farstream/Makefile  \
           telepathy-farstream/telepathy-farstream.pc \
           telepathy-farstream/telepathy-farstream-uninstalled.pc
