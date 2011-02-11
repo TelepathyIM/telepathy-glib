@@ -19,81 +19,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
   </tp:license>
   <interface name="org.freedesktop.Telepathy.Logger.DRAFT"
     tp:causes-havoc="experimental">
-    <tp:added version="0.2">(as a draft)</tp:added>
+    <tp:added version="0.3">(as a draft)</tp:added>
 
     <tp:docstring>
       An interface for requesting information from the Telepathy Logger
       service.
     </tp:docstring>
-
-    <tp:struct name="Chat_Message" array-name="Chat_Message_List">
-      <tp:member type="s" name="Sender">
-        <tp:docstring>
-          The identifier of the contact who originated this message.
-        </tp:docstring>
-      </tp:member>
-
-      <tp:member type="s" name="Message">
-        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        The body of the message sent to a 1-1 Chat or a Chat Room.
-        </tp:docstring>
-      </tp:member>
-
-      <tp:member type="x" name="Timestamp" tp:type="Unix_Timestamp64">
-        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        Unix timestamp for the log event
-        </tp:docstring>
-      </tp:member>
-
-      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>It represents a single message, received or sent.</p>
-        <p>The receiver is implicit in the request: if the sender is the user,
-        the receiver is the identifier in chat_id paramenter, if the sender is
-        not the user, the user is consequently the receiver of the message</p>
-      </tp:docstring>
-    </tp:struct>
-
-    <method name="GetRecentEvents"
-            tp:name-for-bindings="Get_Recent_Events">
-      <arg direction="in" name="Account" type="o" tp:type="Account">
-        <tp:docstring>
-        The account path for the TpAccount to which the conversation is related
-        </tp:docstring>
-      </arg>
-
-      <arg direction="in" name="Identifier" type="s">
-        <tp:docstring>
-        The buddy's identifier for the conversation
-        </tp:docstring>
-      </arg>
-
-      <arg direction="in" name="Type" type="u">
-        <tp:docstring>
-        The type of the events to return.
-        </tp:docstring>
-      </arg>
-
-      <arg direction="in" name="Lines" type="u">
-        <tp:docstring>
-        how many entries will be returned.
-
-        NOTE: to retreive information that would generate high traffic, use
-        the library API approach instead of DBus.
-        </tp:docstring>
-      </arg>
-
-      <!-- FIXME: we're returning a list of events that can be
-           messages (chats), but also calls and any other event
-           type in the future, so make the return type a list of
-           TplLogSearchHit or something generic than a(ssx) ? -->
-      <arg direction="out" name="Messages" type="a(ssx)"
-           tp:type="Chat_Message[]" />
-
-      <tp:docstring>
-        Request the last Lines entries of logs for the specified couple
-        Account+Identifier.
-      </tp:docstring>
-    </method>
 
     <method name="GetFavouriteContacts"
             tp:name-for-bindings="Get_Favourite_Contacts">

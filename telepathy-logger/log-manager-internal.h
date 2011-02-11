@@ -59,27 +59,6 @@ GList * _tpl_log_manager_get_entities (TplLogManager *manager,
 GList * _tpl_log_manager_search (TplLogManager *manager,
     const gchar *text);
 
-GList * _tpl_log_manager_search_in_identifier (TplLogManager *manager,
-    TpAccount *account,
-    gchar const *identifier,
-    TplEventSearchType type,
-    const gchar *text);
-
-void _tpl_log_manager_search_in_identifier_async (
-    TplLogManager *manager,
-    TpAccount *account,
-    gchar const *id,
-    TplEventSearchType type,
-    const gchar *text,
-    GAsyncReadyCallback callback,
-    gpointer user_data);
-
-gboolean _tpl_log_manager_search_in_identifier_finish (
-    TplLogManager *self,
-    GAsyncResult *result,
-    GList **hits,
-    GError **error);
-
 void _tpl_log_manager_clear (TplLogManager *self);
 
 void _tpl_log_manager_clear_account (TplLogManager *self, TpAccount *account);

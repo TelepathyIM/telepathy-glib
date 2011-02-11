@@ -263,37 +263,6 @@ _tpl_log_store_get_entities (TplLogStore *self,
 
 
 /**
- * _tpl_log_store_search_in_identifier:
- * @self: a TplLogStore
- * @account: a TpAccount
- * @id: a non-NULL identifier
- * @type: the event type
- * @text: a text to be searched among @id events
- *
- * Searches textual log entries related to @id and matching @text
- *
- * Returns: a GList of (TplLogSearchHit *), to be freed using something like
- * g_list_foreach (lst, tpl_log_manager_search_free, NULL);
- * g_list_free (lst);
- */
-GList *
-_tpl_log_store_search_in_identifier (TplLogStore *self,
-    TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
-    const gchar *text)
-{
-  g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
-  if (TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier ==
-      NULL)
-    return NULL;
-
-  return TPL_LOG_STORE_GET_INTERFACE (self)->search_in_identifier (self,
-      account, id, type, text);
-}
-
-
-/**
  * _tpl_log_store_search_new:
  * @self: a TplLogStore
  * @text: a text to be searched among text messages

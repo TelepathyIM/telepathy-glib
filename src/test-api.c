@@ -30,45 +30,6 @@
 
 static GMainLoop *mainloop = NULL;
 
-static void
-last_events_cb (TpProxy *logger,
-    const GPtrArray *result,
-    const GError *error,
-    gpointer userdata,
-    GObject *weak_obj)
-{
-  /* Just do demonstrate remote exceptions versus regular GError */
-  if (error != NULL)
-  {
-    g_printerr ("Error: %s\n", error->message);
-    return;
-  }
-
-  g_print ("Names on the message bus:\n");
-
-  for (guint i = 0; i < result->len; ++i)
-    {
-      GValueArray *message_struct;
-      const gchar *message_body;
-      const gchar *message_sender;
-      guint message_timestamp;
-
-      message_struct = g_ptr_array_index (result, i);
-
-      message_sender = g_value_get_string (
-          g_value_array_get_nth (message_struct, 0));
-      message_body = g_value_get_string (
-          g_value_array_get_nth (message_struct, 1));
-      message_timestamp = g_value_get_int64 (g_value_array_get_nth
-          (message_struct, 2));
-
-      g_print ("%d: [%d] from=%s: %s\n", i, message_timestamp, message_sender,
-          message_body);
-    }
-
-  g_main_loop_quit (mainloop);
-}
-
 int
 main (int argc, char *argv[])
 {
@@ -102,9 +63,7 @@ main (int argc, char *argv[])
 
   tp_proxy_add_interface_by_id (proxy, TPL_IFACE_QUARK_LOGGER);
 
-  tpl_cli_logger_call_get_recent_events (proxy, -1,
-      account, identifer, FALSE, 5,
-      last_events_cb, NULL, NULL, NULL);
+  // FIXME Test favorites
 
   g_free (account);
 
