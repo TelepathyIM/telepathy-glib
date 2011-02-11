@@ -59,16 +59,12 @@ _tpl_rmdir_recursively (const gchar *dir_name)
 {
   GDir *dir;
   const gchar *name;
-  GError *error = NULL;
 
-  dir = g_dir_open (dir_name, 0, &error);
+  dir = g_dir_open (dir_name, 0, NULL);
 
+  /* Directory does not exist, nothing to do */
   if (dir == NULL)
-    {
-      /* Directory does not exist, nothing to do */
-      g_error_free (error);
-      return;
-    }
+    return;
 
   while ((name = g_dir_read_name (dir)) != NULL)
     {
