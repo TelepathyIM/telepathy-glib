@@ -1024,7 +1024,9 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
 
   /* We want to clear synchronously to avoid concurent write */
   _tpl_log_manager_clear_entity (self->priv->manager, account, entity);
+
   g_object_unref (account);
+  g_object_unref (entity);
 
   tpl_svc_logger_return_from_clear_account (context);
 
