@@ -97,14 +97,9 @@ content_added_cb (TfChannel *channel,
   GstPad *srcpad, *sinkpad;
   FsMediaType mtype;
   GstElement *element;
-  GList *codecs;
   ChannelContext *context = user_data;
 
   g_debug ("Content added");
-
-  codecs = fs_codec_list_from_keyfile ("codec-preferences", NULL);
-
-  tf_content_set_codec_preferences (content, codecs, NULL);
 
   g_object_get (content,
     "sink-pad", &sinkpad,
