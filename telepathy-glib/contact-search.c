@@ -460,7 +460,7 @@ tp_contact_search_class_init (TpContactSearchClass *klass)
   /**
    * TpContactSearch::search-results-received:
    * @self: a contact search
-   * @results: (element-type TelepathyGLib.ContactSearchResult):
+   * @results: (type GLib.List) (element-type TelepathyGLib.ContactSearchResult):
    * a #GList with the search results
    *
    * Emitted when search results are received. Note that this signal may
