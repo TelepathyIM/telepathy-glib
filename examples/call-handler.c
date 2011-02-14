@@ -171,17 +171,24 @@ conference_added_cb (TfChannel *channel,
   gpointer user_data)
 {
   ChannelContext *context = user_data;
-  FsElementAddedNotifier *notifier;
+  GKeyFile *keyfile;
 
   g_debug ("Conference added");
 
   /* Add notifier to set the various element properties as needed */
-  notifier = fs_element_added_notifier_new ();
-  fs_element_added_notifier_set_properties_from_keyfile (notifier,
-    fs_utils_get_default_element_properties (conference));
-  fs_element_added_notifier_add (notifier, GST_BIN (context->pipeline));
+  keyfile = fs_utils_get_default_element_properties (conference);
+  if (keyfile != NULL)
+    {
+      FsElementAddedNotifier *notifier;
+      g_debug ("Loaded default codecs for %s", GST_ELEMENT_NAME (conference));
 
-  context->notifiers = g_list_prepend (context->notifiers, notifier);
+      notifier = fs_element_added_notifier_new ();
+      fs_element_added_notifier_set_properties_from_keyfile (notifier, keyfile);
+      fs_element_added_notifier_add (notifier, GST_BIN (context->pipeline));
+
+      context->notifiers = g_list_prepend (context->notifiers, notifier);
+    }
+
 
   gst_bin_add (GST_BIN (context->pipeline), conference);
   gst_element_set_state (conference, GST_STATE_PLAYING);
