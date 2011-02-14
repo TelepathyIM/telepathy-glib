@@ -60,6 +60,7 @@ src_pad_added_cb (TfContent *content,
   FsMediaType mtype;
   GstPad *sinkpad;
   GstElement *element;
+  GstStateChangeReturn ret;
 
   g_debug ("New src pad: %s", cstr);
   g_object_get (content, "media-type", &mtype, NULL);
@@ -83,8 +84,20 @@ src_pad_added_cb (TfContent *content,
 
   gst_bin_add (GST_BIN (context->pipeline), element);
   sinkpad = gst_element_get_pad (element, "sink");
-  gst_element_set_state (element, GST_STATE_PLAYING);
-  gst_pad_link (pad, sinkpad);
+  ret = gst_element_set_state (element, GST_STATE_PLAYING);
+  if (ret == GST_STATE_CHANGE_FAILURE)
+    {
+      tp_channel_close_async (TP_CHANNEL (context->proxy), NULL, NULL);
+      g_warning ("Failed to start sink pipeline !?");
+      return;
+    }
+
+  if (GST_PAD_LINK_FAILED (gst_pad_link (pad, sinkpad)))
+    {
+      tp_channel_close_async (TP_CHANNEL (context->proxy), NULL, NULL);
+      g_warning ("Couldn't link sink pipeline !?");
+      return;
+    }
 
   g_object_unref (sinkpad);
 }
@@ -98,6 +111,7 @@ content_added_cb (TfChannel *channel,
   GstPad *srcpad, *sinkpad;
   FsMediaType mtype;
   GstElement *element;
+  GstStateChangeReturn ret;
   ChannelContext *context = user_data;
 
   g_debug ("Content added");
@@ -130,9 +144,21 @@ content_added_cb (TfChannel *channel,
 
   gst_bin_add (GST_BIN (context->pipeline), element);
   srcpad = gst_element_get_pad (element, "src");
-  gst_pad_link (srcpad, sinkpad);
 
-  gst_element_set_state (element, GST_STATE_PLAYING);
+  if (GST_PAD_LINK_FAILED (gst_pad_link (srcpad, sinkpad)))
+    {
+      tp_channel_close_async (TP_CHANNEL (context->proxy), NULL, NULL);
+      g_warning ("Couldn't link source pipeline !?");
+      return;
+    }
+
+  ret = gst_element_set_state (element, GST_STATE_PLAYING);
+  if (ret == GST_STATE_CHANGE_FAILURE)
+    {
+      tp_channel_close_async (TP_CHANNEL (context->proxy), NULL, NULL);
+      g_warning ("source pipeline failed to start!?");
+      return;
+    }
 
   g_object_unref (srcpad);
 out:
@@ -240,21 +266,34 @@ new_call_channel_cb (TpSimpleHandler *handler,
     TpHandleChannelsContext *handler_context,
     gpointer user_data)
 {
-  ChannelContext *context = g_slice_new0 (ChannelContext);
+  ChannelContext *context;
   TpChannel *proxy;
   GstBus *bus;
+  GstElement *pipeline;
+  GstStateChangeReturn ret;
 
   g_debug ("New channel");
 
   proxy = channels->data;
 
-  context->pipeline = gst_pipeline_new (NULL);
+  pipeline = gst_pipeline_new (NULL);
 
-  bus = gst_pipeline_get_bus (GST_PIPELINE (context->pipeline));
+  ret = gst_element_set_state (pipeline, GST_STATE_PLAYING);
+
+  if (ret == GST_STATE_CHANGE_FAILURE)
+    {
+      tp_channel_close_async (TP_CHANNEL (proxy), NULL, NULL);
+      g_object_unref (pipeline);
+      g_warning ("Failed to start an empty pipeline !?");
+      return;
+    }
+
+  context = g_slice_new0 (ChannelContext);
+  context->pipeline = pipeline;
+
+  bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
   context->buswatch = gst_bus_add_watch (bus, bus_watch_cb, context);
   g_object_unref (bus);
-
-  gst_element_set_state (context->pipeline, GST_STATE_PLAYING);
 
   tf_channel_new_async (proxy, new_tf_channel_cb, context);
 
