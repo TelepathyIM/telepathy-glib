@@ -145,6 +145,8 @@ gint64 tp_user_action_time_from_x11 (guint32 x11_time);
 gboolean tp_user_action_time_should_present (gint64 user_action_time,
     guint32 *x11_time);
 
+void tp_g_ptr_array_extend (GPtrArray *one, GPtrArray *two);
+
 G_END_DECLS
 
 #undef  __TP_IN_UTIL_H__
