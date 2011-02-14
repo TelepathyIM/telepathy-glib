@@ -21,6 +21,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <extensions/extensions.h>
 #include <gst/farsight/fs-element-added-notifier.h>
+#include <gst/farsight/fs-utils.h>
 #include <telepathy-farstream/telepathy-farstream.h>
 
 typedef struct {
@@ -241,16 +242,17 @@ new_call_channel_cb (TpSimpleHandler *handler,
 {
   ChannelContext *context = g_slice_new0 (ChannelContext);
   TpChannel *proxy;
+  GstBus *bus;
 
   g_debug ("New channel");
 
   proxy = channels->data;
 
   context->pipeline = gst_pipeline_new (NULL);
-  context->buswatch = gst_bus_add_watch (
-    gst_pipeline_get_bus (GST_PIPELINE (context->pipeline)),
-    bus_watch_cb,
-    context);
+
+  bus = gst_pipeline_get_bus (GST_PIPELINE (context->pipeline));
+  context->buswatch = gst_bus_add_watch (bus, bus_watch_cb, context);
+  g_object_unref (bus);
 
   gst_element_set_state (context->pipeline, GST_STATE_PLAYING);
 
