@@ -695,7 +695,7 @@ tp_contact_search_get_search_keys (TpContactSearch *self)
  *
  * <!-- -->
  *
- * Returns: The TpContactSearch:account property
+ * Returns: (transfer none): The TpContactSearch:account property
  *
  * Since: 0.13.11
  */
