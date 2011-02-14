@@ -28,7 +28,7 @@ typedef struct {
   guint buswatch;
   TpChannel *proxy;
   TfChannel *channel;
-  FsElementAddedNotifier *notifier;
+  GList *notifiers;
 } ChannelContext;
 
 GMainLoop *loop;
@@ -149,8 +149,17 @@ conference_added_cb (TfChannel *channel,
   gpointer user_data)
 {
   ChannelContext *context = user_data;
+  FsElementAddedNotifier *notifier;
 
   g_debug ("Conference added");
+
+  /* Add notifier to set the various element properties as needed */
+  notifier = fs_element_added_notifier_new ();
+  fs_element_added_notifier_set_properties_from_keyfile (notifier,
+    fs_utils_get_default_element_properties (conference));
+  fs_element_added_notifier_add (notifier, GST_BIN (context->pipeline));
+
+  context->notifiers = g_list_prepend (context->notifiers, notifier);
 
   gst_bin_add (GST_BIN (context->pipeline), conference);
   gst_element_set_state (conference, GST_STATE_PLAYING);
@@ -216,8 +225,7 @@ proxy_invalidated_cb (TpProxy *proxy,
   if (context->channel != NULL)
     g_object_unref (context->channel);
 
-  if (context->notifier != NULL)
-    g_object_unref (context->notifier);
+  g_list_free_full (context->notifiers, g_object_unref);
 
   g_object_unref (context->proxy);
 
@@ -248,12 +256,6 @@ new_call_channel_cb (TpSimpleHandler *handler,
     gst_pipeline_get_bus (GST_PIPELINE (context->pipeline)),
     bus_watch_cb,
     context);
-  context->notifier = fs_element_added_notifier_new ();
-
-  fs_element_added_notifier_set_properties_from_file (context->notifier,
-    "element-properties", NULL);
-  fs_element_added_notifier_add (context->notifier,
-      GST_BIN (context->pipeline));
 
   gst_element_set_state (context->pipeline, GST_STATE_PLAYING);
 
