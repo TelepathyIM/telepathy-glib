@@ -254,7 +254,8 @@ proxy_invalidated_cb (TpProxy *proxy,
   if (context->channel != NULL)
     g_object_unref (context->channel);
 
-  g_list_free_full (context->notifiers, g_object_unref);
+  g_list_foreach (context->notifiers, (GFunc) g_object_unref, NULL);
+  g_list_free (context->notifiers);
 
   g_object_unref (context->proxy);
 
