@@ -1218,7 +1218,8 @@ tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,
  *
  * Return the #TpAccountChannelRequest:channel-request property
  *
- * Returns: the value of #TpAccountChannelRequest:channel-request
+ * Returns: (transfer none): the value of
+ * #TpAccountChannelRequest:channel-request
  *
  * Since: 0.13.13
  */
