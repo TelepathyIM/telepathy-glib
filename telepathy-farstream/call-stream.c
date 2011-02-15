@@ -19,8 +19,13 @@
 
 /**
  * SECTION:tfcallstream
+ *
+ * @short_description: Handle the Stream interface on a Channel
+ *
+ * This class handles the
+ * org.freedesktop.Telepathy.Channel.Interface.Stream on a
+ * channel using Farsight2.
  */
-
 
 #include "call-stream.h"
 
