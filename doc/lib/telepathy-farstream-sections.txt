@@ -1,4 +1,9 @@
 <SECTION>
+<TITLE>Initializers</TITLE>
+tf_init
+</SECTION>
+
+<SECTION>
 <FILE>content</FILE>
 <TITLE>TfContent</TITLE>
 TfContent
@@ -21,7 +26,6 @@ TF_IS_CONTENT_CLASS
 <FILE>channel</FILE>
 <TITLE>TfChannel</TITLE>
 TfChannel
-TfChannelClass
 tf_channel_new_async
 tf_channel_error
 tf_channel_bus_message
