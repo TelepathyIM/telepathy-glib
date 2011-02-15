@@ -29,7 +29,7 @@ m4_define([tp_farstream_version],
           [m4_if(tp_farstream_nano_version, 0, [tp_farstream_base_version],
               [tp_farstream_base_version].[tp_farstream_nano_version])])
 
-AC_INIT([Telepathy-Farsight], [tp_farstream_version],
+AC_INIT([Telepathy-Farstream], [tp_farstream_version],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=Telepathy&component=tp-farstream])
 
 AC_CONFIG_MACRO_DIR([m4])
