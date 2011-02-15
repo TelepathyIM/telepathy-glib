@@ -125,7 +125,9 @@ content_added_cb (TfChannel *channel,
     {
       case FS_MEDIA_TYPE_AUDIO:
         element = gst_parse_bin_from_description (
-          "audiotestsrc is-live=1 ! audio/x-raw-int,rate=8000 ! queue",
+          "audiotestsrc is-live=1 ! audio/x-raw-int,rate=8000 ! queue"
+          " ! audioconvert ! audioresample ! audioconvert ",
+
             TRUE, NULL);
         break;
       case FS_MEDIA_TYPE_VIDEO:
