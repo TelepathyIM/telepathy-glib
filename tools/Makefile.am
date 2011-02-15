@@ -1,5 +1,15 @@
 EXTRA_DIST = \
-    telepathy.am
+    telepathy.am \
+    c-constants-gen.py \
+    glib-client-gen.py \
+    glib-client-marshaller-gen.py \
+    glib-ginterface-gen.py \
+    glib-gtypes-generator.py \
+    glib-interfaces-gen.py \
+    glib-signals-marshal-gen.py \
+    libglibcodegen.py \
+    libtpcodegen.py \
+    xincludator.py
 
 TELEPATHY_GLIB_SRCDIR = $(top_srcdir)/../telepathy-glib
 maintainer-update-from-telepathy-glib:
