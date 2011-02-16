@@ -4981,12 +4981,9 @@ tp_base_contact_list_get_list_dbus_property (GObject *conn,
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST);
   ListProp p = GPOINTER_TO_INT (data);
-  TpBaseContactListClass *cls;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (self->priv->conn != NULL);
-
-  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
   switch (p)
     {
@@ -5025,7 +5022,6 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) obj, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -5034,8 +5030,6 @@ tp_base_contact_list_fill_list_contact_attributes (GObject *obj,
   /* just omit the attributes if the contact list hasn't come in yet */
   if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
     return;
-
-  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
   for (i = 0; i < contacts->len; i++)
     {
@@ -5507,13 +5501,10 @@ tp_base_contact_list_get_group_dbus_property (GObject *conn,
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST);
   GroupProp p = GPOINTER_TO_INT (data);
-  TpBaseContactListClass *cls;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_CONTACT_GROUP_LIST (self));
   g_return_if_fail (self->priv->conn != NULL);
-
-  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
   switch (p)
     {
@@ -5548,7 +5539,6 @@ tp_base_contact_list_fill_groups_contact_attributes (GObject *obj,
 {
   TpBaseContactList *self = _tp_base_connection_find_channel_manager (
       (TpBaseConnection *) obj, TP_TYPE_BASE_CONTACT_LIST);
-  TpBaseContactListClass *cls;
   guint i;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
@@ -5558,8 +5548,6 @@ tp_base_contact_list_fill_groups_contact_attributes (GObject *obj,
   /* just omit the attributes if the contact list hasn't come in yet */
   if (self->priv->state != TP_CONTACT_LIST_STATE_SUCCESS)
     return;
-
-  cls = TP_BASE_CONTACT_LIST_GET_CLASS (self);
 
   for (i = 0; i < contacts->len; i++)
     {

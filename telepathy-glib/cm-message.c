@@ -145,8 +145,6 @@ tp_cm_message_take_message (TpMessage *self,
     const gchar *key,
     TpMessage *message)
 {
-  TpCMMessage *cm_message;
-
   g_return_if_fail (self != NULL);
   g_return_if_fail (part < self->parts->len);
   g_return_if_fail (key != NULL);
@@ -154,8 +152,6 @@ tp_cm_message_take_message (TpMessage *self,
   g_return_if_fail (self != message);
   g_return_if_fail (TP_IS_CM_MESSAGE (self));
   g_return_if_fail (TP_IS_CM_MESSAGE (message));
-
-  cm_message = (TpCMMessage *) message;
 
   g_return_if_fail (TP_CM_MESSAGE (self)->priv->connection ==
       TP_CM_MESSAGE (message)->priv->connection);

@@ -2215,13 +2215,10 @@ tp_account_set_enabled_async (TpAccount *account,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpAccountPrivate *priv;
   GValue value = {0, };
   GSimpleAsyncResult *result;
 
   g_return_if_fail (TP_IS_ACCOUNT (account));
-
-  priv = account->priv;
 
   result = g_simple_async_result_new (G_OBJECT (account),
       callback, user_data, tp_account_set_enabled_finish);
