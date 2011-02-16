@@ -51,6 +51,7 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/dtmf.h>
 #include <telepathy-glib/debug.h>
+#include <telepathy-glib/file-transfer-channel.h>
 #include <telepathy-glib/handle.h>
 #include <telepathy-glib/proxy.h>
 #include <telepathy-glib/signalled-message.h>

@@ -18,6 +18,8 @@ libtp_glib_tests_la_SOURCES = \
     echo-conn.c \
     echo-im-manager.h \
     echo-im-manager.c \
+    file-transfer-chan.h \
+    file-transfer-chan.c \
     myassert.h \
     my-conn-proxy.h \
     my-conn-proxy.c \

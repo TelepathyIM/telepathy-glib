@@ -33,6 +33,7 @@ noinst_PROGRAMS = \
     test-disconnection \
     test-error-enum \
     test-example-no-protocols \
+    test-file-transfer-channel \
     test-finalized-in-invalidated-handler \
     test-get-interface-after-invalidate \
     test-group-mixin \
@@ -144,6 +145,8 @@ test_error_enum_SOURCES = error-enum.c
 nodist_test_error_enum_SOURCES = _gen/errors-check.h
 
 test_example_no_protocols_SOURCES = example-no-protocols.c
+
+test_file_transfer_channel_SOURCES = file-transfer-channel.c
 
 test_finalized_in_invalidated_handler_SOURCES = \
     finalized-in-invalidated-handler.c
