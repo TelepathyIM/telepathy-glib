@@ -21,6 +21,7 @@
 #include <telepathy-glib/contact.h>
 
 #include <errno.h>
+#include <string.h>
 
 #include <telepathy-glib/capabilities-internal.h>
 #include <telepathy-glib/dbus.h>
@@ -31,6 +32,7 @@
 #define DEBUG_FLAG TP_DEBUG_CONTACTS
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/util-internal.h"
 
 #include "telepathy-glib/_gen/signals-marshal.h"
 
@@ -222,6 +224,7 @@ struct _TpContactPrivate {
     gchar *publish_request;
 
     /* ContactGroups */
+    /* array of dupped strings */
     GPtrArray *contact_groups;
 };
 
@@ -682,9 +685,9 @@ set_contact_groups_cb (TpConnection *connection,
 /**
  * tp_contact_set_contact_groups_async:
  * @self: a #TpContact
- * @n_groups: the length of @groups, or -1 if @groups is %NULL-terminated
- * @groups: (array length=n_groups) (allow-none): the set of groups which the
- *  contact should be in (may be %NULL if @n_groups is 0)
+ * @n_groups: the number of groups, or -1 if @groups is %NULL-terminated
+ * @groups: (array length=n_groups) (element-type utf8) (allow-none): the set of
+ *  groups which the contact should be in (may be %NULL if @n_groups is 0)
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -710,26 +713,24 @@ tp_contact_set_contact_groups_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  static const gchar *empty_groups[] = { NULL };
   GSimpleAsyncResult *result;
-  const gchar *empty_groups[] = { NULL };
-  GPtrArray *groups_array = NULL;
+  gchar **new_groups = NULL;
 
   g_return_if_fail (TP_IS_CONTACT (self));
-  g_return_if_fail (groups != NULL || n_groups == 0);
+  g_return_if_fail (n_groups >= -1);
+  g_return_if_fail (n_groups <= 0 || groups != NULL);
 
-  if (groups == NULL || n_groups == 0)
+  if (groups == NULL)
     {
       groups = empty_groups;
     }
   else if (n_groups > 0)
     {
-      gint i;
-
-      groups_array = g_ptr_array_sized_new (n_groups + 1);
-      for (i = 0; i < n_groups; i++)
-        g_ptr_array_add (groups_array, (gchar *) groups[i]);
-      g_ptr_array_add (groups_array, NULL);
-      groups = (const gchar * const *) groups_array->pdata;
+      /* Create NULL-terminated array */
+      new_groups = g_new0 (gchar *, n_groups + 1);
+      g_memmove (new_groups, groups, n_groups * sizeof (gchar *));
+      groups = (const gchar * const *) new_groups;
     }
 
   result = g_simple_async_result_new (G_OBJECT (self),
@@ -739,7 +740,7 @@ tp_contact_set_contact_groups_async (TpContact *self,
       self->priv->connection, -1, self->priv->handle, (const gchar **) groups,
       set_contact_groups_cb, result, NULL, G_OBJECT (self));
 
-  tp_clear_pointer (&groups_array, g_ptr_array_unref);
+  g_free (new_groups);
 }
 
 /**
@@ -748,9 +749,7 @@ tp_contact_set_contact_groups_async (TpContact *self,
  * @result: a #GAsyncResult
  * @error: a #GError to be filled
  *
- * Finishes an async set of @self contact groups. If the operation was
- * successful, the contact's groups can be accessed using
- * tp_contact_get_contact_groups().
+ * Finishes an async set of @self contact groups.
  *
  * Returns: %TRUE if the request call was successful, otherwise %FALSE
  *
@@ -761,20 +760,7 @@ tp_contact_set_contact_groups_finish (TpContact *self,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_CONTACT (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_contact_set_contact_groups_finish), FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (self, tp_contact_set_contact_groups_finish);
 }
 
 void
@@ -1277,7 +1263,7 @@ tp_contact_class_init (TpContactClass *klass)
    *
    * a #GStrv with names of groups of which a contact is a member.
    *
-   * This is set to %NULL if %TP_CONTACT_FEATURE_CONTACT_GROUPS is not set
+   * This is set to %NULL if %TP_CONTACT_FEATURE_CONTACT_GROUPS is not prepared
    * on this contact, or if the connection does not implement ContactGroups
    * interface.
    *
@@ -3372,21 +3358,20 @@ static void
 contact_maybe_set_contact_groups (TpContact *self,
     GStrv contact_groups)
 {
+  gchar **iter;
+
   if (self == NULL || contact_groups == NULL)
     return;
 
   self->priv->has_features |= CONTACT_FEATURE_FLAG_CONTACT_GROUPS;
 
-  g_assert (self->priv->contact_groups == NULL);
+  tp_clear_pointer (&self->priv->contact_groups, g_ptr_array_unref);
   self->priv->contact_groups = g_ptr_array_sized_new (
       g_strv_length (contact_groups) + 1);
   g_ptr_array_set_free_func (self->priv->contact_groups, g_free);
 
-  while (*contact_groups != NULL)
-    {
-      g_ptr_array_add (self->priv->contact_groups, g_strdup (*contact_groups));
-      contact_groups++;
-    }
+  for (iter = contact_groups; *iter != NULL; iter++)
+    g_ptr_array_add (self->priv->contact_groups, g_strdup (*iter));
   g_ptr_array_add (self->priv->contact_groups, NULL);
 
   g_object_notify ((GObject *) self, "contact-groups");
@@ -3418,17 +3403,19 @@ contact_groups_changed_cb (TpConnection *connection,
 
       /* Remove old groups */
       for (iter = removed; *iter != NULL; iter++)
-        for (j = 0; j < contact->priv->contact_groups->len; j++)
-          {
-            const gchar *str;
+        {
+          for (j = 0; j < contact->priv->contact_groups->len; j++)
+            {
+              const gchar *str;
 
-            str = g_ptr_array_index (contact->priv->contact_groups, j);
-            if (!tp_strdiff (str, *iter))
-              {
-                g_ptr_array_remove_index_fast (contact->priv->contact_groups, j);
-                break;
-              }
-          }
+              str = g_ptr_array_index (contact->priv->contact_groups, j);
+              if (!tp_strdiff (str, *iter))
+                {
+                  g_ptr_array_remove_index_fast (contact->priv->contact_groups, j);
+                  break;
+                }
+            }
+        }
 
       /* Add new groups */
       for (iter = added; *iter != NULL; iter++)
