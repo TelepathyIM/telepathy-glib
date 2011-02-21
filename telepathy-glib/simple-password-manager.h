@@ -68,14 +68,20 @@ void tp_simple_password_manager_prompt_async (
     TpSimplePasswordManager *self,
     GAsyncReadyCallback callback, gpointer user_data);
 
+const GString * tp_simple_password_manager_prompt_finish (
+    TpSimplePasswordManager *self,
+    GAsyncResult *result, GError **error);
+
 void tp_simple_password_manager_prompt_for_channel_async (
     TpSimplePasswordManager *self,
     TpSimplePasswordChannel *channel,
     GAsyncReadyCallback callback, gpointer user_data);
 
-const GString * tp_simple_password_manager_prompt_finish (
+const GString * tp_simple_password_manager_prompt_for_channel_finish (
     TpSimplePasswordManager *self,
-    GAsyncResult *result, GError **error);
+    GAsyncResult *result,
+    TpSimplePasswordChannel **channel,
+    GError **error);
 
 
 G_END_DECLS
