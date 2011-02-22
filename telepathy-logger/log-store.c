@@ -121,15 +121,13 @@ _tpl_log_store_get_name (TplLogStore *self)
 gboolean
 _tpl_log_store_exists (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->exists)
     return FALSE;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->exists (self, account, id,
-      type);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->exists (self, account, target);
 }
 
 
@@ -168,8 +166,7 @@ _tpl_log_store_add_event (TplLogStore *self,
  * _tpl_log_store_get_dates:
  * @self: a TplLogStore
  * @account: a TpAccount
- * @id: a non-NULL identifier
- * @type: the event type of @id
+ * @target: a #TplEntity
  *
  * Retrieves a list of #GDate, corresponding to each day
  * at least an event was sent to or received from @id.
@@ -181,15 +178,14 @@ _tpl_log_store_add_event (TplLogStore *self,
 GList *
 _tpl_log_store_get_dates (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (TPL_LOG_STORE_GET_INTERFACE (self)->get_dates == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_dates (self, account,
-      id, type);
+      target);
 }
 
 
@@ -197,6 +193,7 @@ _tpl_log_store_get_dates (TplLogStore *self,
  * _tpl_log_store_get_events_for_date:
  * @self: a TplLogStore
  * @account: a TpAccount
+ * @target: a #TplEntity
  * @id: a non-NULL identifier
  * @type: the event type of @id
  * @date: a #GDate
@@ -210,8 +207,7 @@ _tpl_log_store_get_dates (TplLogStore *self,
 GList *
 _tpl_log_store_get_events_for_date (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const GDate *date)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
@@ -219,22 +215,21 @@ _tpl_log_store_get_events_for_date (TplLogStore *self,
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_events_for_date (self,
-      account, id, type, date);
+      account, target, date);
 }
 
 
 GList *
 _tpl_log_store_get_recent_events (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_events == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_events (self, account,
-      id, type);
+      target);
 }
 
 
@@ -289,8 +284,7 @@ _tpl_log_store_search_new (TplLogStore *self,
  * _tpl_log_store_get_filtered_events:
  * @self: a TplLogStore
  * @account: a TpAccount
- * @id: an identifier
- * @type: the type of @id
+ * @target: a #TplEntity
  * @num_events: max number of events to return
  * @filter: filter function
  * @user_data: data be passed to @filter, may be NULL
@@ -307,8 +301,7 @@ _tpl_log_store_search_new (TplLogStore *self,
 GList *
 _tpl_log_store_get_filtered_events (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     guint num_events,
     TplLogEventFilter filter,
     gpointer user_data)
@@ -318,7 +311,7 @@ _tpl_log_store_get_filtered_events (TplLogStore *self,
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_events (self,
-      account, id, type, num_events, filter, user_data);
+      account, target, num_events, filter, user_data);
 }
 
 

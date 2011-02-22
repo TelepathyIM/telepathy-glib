@@ -92,9 +92,14 @@ test_get_dates (TestCaseFixture *fixture,
     gconstpointer user_data)
 {
   GList *ret, *loc;
+  TplEntity *entity;
 
-  ret = _tpl_log_manager_get_dates (fixture->manager, fixture->account, ID,
-      TPL_EVENT_SEARCH_TEXT);
+  entity = g_object_new (TPL_TYPE_ENTITY,
+      "identifier", ID,
+      "type", TPL_ENTITY_CONTACT);
+  ret = _tpl_log_manager_get_dates (fixture->manager, fixture->account, entity);
+  g_object_unref (entity);
+
   /* it includes 1 date from libpurple logs, 5 from TpLogger. Empathy
    * log-store date are the same of the TpLogger store, and wont' be present,
    * being duplicates */
@@ -117,9 +122,8 @@ test_get_entities (TestCaseFixture *fixture,
   GList *ret, *loc;
 
   ret = _tpl_log_manager_get_entities (fixture->manager, fixture->account);
-  /* only ID=user2@collabora.co.uk is currently present, among PidginStore,
-   * EmpathyStore and XmlStore */
-  g_assert_cmpint (g_list_length (ret), ==, 1);
+
+  g_assert_cmpint (g_list_length (ret), ==, 2);
 
   /* we do not want duplicates */
   ret = g_list_sort (ret, (GCompareFunc) _tpl_entity_compare);

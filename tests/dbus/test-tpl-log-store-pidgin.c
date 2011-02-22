@@ -33,6 +33,9 @@ typedef struct
   TpTestsSimpleAccount *account_service;
 
   TplLogStorePidgin *store;
+  TplEntity *room;
+  TplEntity *irc_room;
+  TplEntity *contact;
 } PidginTestCaseFixture;
 
 #ifdef ENABLE_DEBUG
@@ -171,6 +174,21 @@ setup (PidginTestCaseFixture* fixture,
       "testmode", TRUE,
       NULL);
 
+  fixture->room = g_object_new (TPL_TYPE_ENTITY,
+      "identifier", "test@conference.collabora.co.uk",
+      "type", TPL_ENTITY_ROOM,
+      NULL);
+
+  fixture->irc_room = g_object_new (TPL_TYPE_ENTITY,
+      "identifier", "#telepathy",
+      "type", TPL_ENTITY_ROOM,
+      NULL);
+
+  fixture->contact = g_object_new (TPL_TYPE_ENTITY,
+      "identifier", "user2@collabora.co.uk",
+      "type", TPL_ENTITY_CONTACT,
+      NULL);
+
   if (user_data != NULL)
     setup_service (fixture, user_data);
 
@@ -216,6 +234,10 @@ teardown (PidginTestCaseFixture* fixture,
   g_object_unref (fixture->store);
   fixture->store = NULL;
 
+  g_object_unref (fixture->room);
+  g_object_unref (fixture->irc_room);
+  g_object_unref (fixture->contact);
+
   if (user_data != NULL)
     teardown_service (fixture, user_data);
 
@@ -256,8 +278,8 @@ test_get_dates_jabber (PidginTestCaseFixture *fixture,
   GDate *date = NULL;
 
   /* Chatroom messages */
-  dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store), fixture->account,
-      "test@conference.collabora.co.uk", TPL_EVENT_SEARCH_TEXT_ROOM);
+  dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store),
+      fixture->account, fixture->room);
 
   g_assert_cmpint (g_list_length (dates), ==, 2);
 
@@ -275,8 +297,8 @@ test_get_dates_jabber (PidginTestCaseFixture *fixture,
   g_list_free (dates);
 
   /* 1-1 messages */
-  dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store), fixture->account,
-      "user2@collabora.co.uk", TPL_EVENT_SEARCH_TEXT);
+  dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store),
+      fixture->account, fixture->contact);
 
   g_assert_cmpint (g_list_length (dates), ==, 1);
 
@@ -295,8 +317,9 @@ test_get_dates_irc (PidginTestCaseFixture *fixture,
   GList *dates = NULL;
   GDate *date = NULL;
 
-  dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store), fixture->account,
-      "#telepathy", TPL_EVENT_SEARCH_TEXT_ROOM);
+  dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store),
+      fixture->account,
+      fixture->irc_room);
 
   g_assert_cmpint (g_list_length (dates), ==, 1);
 
@@ -345,7 +368,7 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
   /* chatroom messages */
   l = log_store_pidgin_get_events_for_date (TPL_LOG_STORE (fixture->store),
       fixture->account,
-      "test@conference.collabora.co.uk", TPL_EVENT_SEARCH_TEXT_ROOM,
+      fixture->room,
       date);
 
   g_assert_cmpint (g_list_length (l), ==, 6);
@@ -361,7 +384,7 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
   g_date_set_dmy (date, 10, G_DATE_DECEMBER, 2010);
   l = log_store_pidgin_get_events_for_date (TPL_LOG_STORE (fixture->store),
       fixture->account,
-      "user2@collabora.co.uk", FALSE,
+      fixture->contact,
       date);
 
   g_assert_cmpint (g_list_length (l), ==, 2);
@@ -386,14 +409,17 @@ test_get_entities_jabber (PidginTestCaseFixture *fixture,
   l = log_store_pidgin_get_entities (TPL_LOG_STORE (fixture->store),
       fixture->account);
 
-  /* FIXME: currently the docstring says it should return both 1-1 and chatrooms
-   * chats, but code for the existing stores only return the 1-1 chats */
-  g_assert_cmpint (g_list_length (l), ==, 1);
+  g_assert_cmpint (g_list_length (l), ==, 2);
 
   entity = g_list_nth_data (l, 0);
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==,
       "user2@collabora.co.uk");
   g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
+
+  entity = g_list_nth_data (l, 1);
+  g_assert_cmpstr (tpl_entity_get_identifier (entity), ==,
+      "test@conference.collabora.co.uk");
+  g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_ROOM);
 
   g_list_foreach (l, (GFunc) g_object_unref, NULL);
   g_list_free (l);

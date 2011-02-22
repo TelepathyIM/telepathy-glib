@@ -36,19 +36,16 @@ gboolean _tpl_log_manager_register_log_store (TplLogManager *self,
 
 GList * _tpl_log_manager_get_dates (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type);
+    TplEntity *target);
 
 GList * _tpl_log_manager_get_events_for_date (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const GDate *date);
 
 GList * _tpl_log_manager_get_filtered_events (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     guint num_events,
     TplLogEventFilter filter,
     gpointer user_data);
@@ -67,8 +64,7 @@ void _tpl_log_manager_clear_entity (TplLogManager *self, TpAccount *account,
     TplEntity *entity);
 
 TplLogSearchHit * _tpl_log_manager_search_hit_new (TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     GDate *date);
 
 void _tpl_log_manager_search_hit_free (TplLogSearchHit *hit);

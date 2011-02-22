@@ -96,8 +96,7 @@ typedef void (*TplLogManagerFreeFunc) (gpointer *data);
 typedef struct
 {
   TpAccount *account;
-  gchar *id;
-  TplEventSearchType type;
+  TplEntity *target;
   GDate *date;
   guint num_events;
   TplLogEventFilter filter;
@@ -443,34 +442,31 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
  * tpl_log_manager_exists:
  * @manager: TplLogManager
  * @account: TpAccount
- * @id: a non-NULL event id
- * @type: the event type
+ * @target: a non-NULL #TplEntity
  *
- * Checks if @id of type @type exists for @account.
+ * Checks if logs exist for @target.
  *
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
 
- * Returns: %TRUE if @id exists, otherwise %FALSE
+ * Returns: %TRUE logs exist for @target, otherwise %FALSE
  */
 gboolean
 tpl_log_manager_exists (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   GList *l;
   TplLogManagerPriv *priv;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), FALSE);
-  g_return_val_if_fail (id != NULL, FALSE);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), FALSE);
 
   priv = manager->priv;
 
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
-      if (_tpl_log_store_exists (TPL_LOG_STORE (l->data),
-            account, id, type))
+      if (_tpl_log_store_exists (TPL_LOG_STORE (l->data), account, target))
         return TRUE;
     }
 
@@ -482,12 +478,10 @@ tpl_log_manager_exists (TplLogManager *manager,
  * _tpl_log_manager_get_dates:
  * @manager: a #TplLogManager
  * @account: a #TpAccount
- * @id: a non-NULL event identifier
- * @type: the event type
+ * @target: a non-NULL #TplEntity
  *
  * Retrieves a list of #GDate corresponding to each day
- * at least an event of type @type was sent to or received from @id.
- * @id may be the id of a buddy or a chatroom,
+ * at least an event exist for @target_id.
  *
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
@@ -498,14 +492,13 @@ tpl_log_manager_exists (TplLogManager *manager,
 GList *
 _tpl_log_manager_get_dates (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   GList *l, *out = NULL;
   TplLogManagerPriv *priv;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
-  g_return_val_if_fail (id != NULL, NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
   priv = manager->priv;
 
@@ -516,7 +509,7 @@ _tpl_log_manager_get_dates (TplLogManager *manager,
 
       /* Insert dates of each store in the out list. Keep the out list sorted
        * and avoid to insert dups. */
-      new = _tpl_log_store_get_dates (store, account, id, type);
+      new = _tpl_log_store_get_dates (store, account, target);
       while (new)
         {
           if (g_list_find_custom (out, new->data,
@@ -538,15 +531,14 @@ _tpl_log_manager_get_dates (TplLogManager *manager,
 GList *
 _tpl_log_manager_get_events_for_date (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const GDate *date)
 {
   GList *l, *out = NULL;
   TplLogManagerPriv *priv;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
-  g_return_val_if_fail (id != NULL, NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
   priv = manager->priv;
 
@@ -555,7 +547,7 @@ _tpl_log_manager_get_events_for_date (TplLogManager *manager,
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
       out = g_list_concat (out, _tpl_log_store_get_events_for_date (store,
-          account, id, type, date));
+          account, target, date));
     }
 
   return out;
@@ -585,8 +577,7 @@ log_manager_event_date_cmp (gconstpointer a,
 GList *
 _tpl_log_manager_get_filtered_events (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     guint num_events,
     TplLogEventFilter filter,
     gpointer user_data)
@@ -597,7 +588,7 @@ _tpl_log_manager_get_filtered_events (TplLogManager *manager,
   guint i = 0;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (id), NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
   priv = manager->priv;
 
@@ -608,8 +599,8 @@ _tpl_log_manager_get_filtered_events (TplLogManager *manager,
       TplLogStore *store = TPL_LOG_STORE (l->data);
       GList *new;
 
-      new = _tpl_log_store_get_filtered_events (store, account, id,
-          type, num_events, filter, user_data);
+      new = _tpl_log_store_get_filtered_events (store, account, target,
+          num_events, filter, user_data);
       while (new != NULL)
         {
           if (i < num_events)
@@ -745,19 +736,17 @@ _tpl_log_manager_search (TplLogManager *manager,
 
 TplLogSearchHit *
 _tpl_log_manager_search_hit_new (TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     GDate *date)
 {
   TplLogSearchHit *hit = g_slice_new0 (TplLogSearchHit);
 
-  g_assert (id != NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
   if (account != NULL)
     hit->account = g_object_ref (account);
 
-  hit->id = g_strdup (id);
-  hit->type = type;
+  hit->target = g_object_ref (target);
 
   if (date != NULL)
     hit->date = g_date_new_dmy (g_date_get_day (date), g_date_get_month (date),
@@ -775,7 +764,8 @@ _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
   if (hit->date != NULL)
     g_date_free (hit->date);
 
-  g_free (hit->id);
+  if (hit->target != NULL)
+    g_object_unref (hit->target);
 
   g_slice_free (TplLogSearchHit, hit);
 }
@@ -832,8 +822,8 @@ tpl_log_manager_event_info_free (TplLogManagerEventInfo *data)
 {
   tp_clear_object (&data->account);
   tp_clear_object (&data->logevent);
+  tp_clear_object (&data->target);
 
-  tp_clear_pointer (&data->id, g_free);
   tp_clear_pointer (&data->date, g_date_free);
   tp_clear_pointer (&data->search_text, g_free);
   g_slice_free (TplLogManagerEventInfo, data);
@@ -930,8 +920,7 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
   event_info = async_data->request;
 
   lst = _tpl_log_manager_get_dates (async_data->manager,
-      event_info->account, event_info->id,
-      event_info->type);
+      event_info->account, event_info->target);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _list_of_date_free);
@@ -942,13 +931,12 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
  * tpl_log_manager_get_dates_async:
  * @manager: a #TplLogManager
  * @account: a #TpAccount
- * @id: the event identifier (can't be %NULL)
- * @type: the event type
+ * @target: a non-NULL #TplEntity
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
  * Retrieves a list of #GDate corresponding to each day where
- * at least one event of type @type was sent to or received from @id.
+ * at least one event exist for @target.
  *
  * It applies for any registered TplLogStore with the #TplLogStore:readable
  * property %TRUE.
@@ -956,8 +944,7 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
 void
 tpl_log_manager_get_dates_async (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -967,11 +954,10 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
 
   g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
   g_return_if_fail (TP_IS_ACCOUNT (account));
-  g_return_if_fail (!TPL_STR_EMPTY (id));
+  g_return_if_fail (TPL_IS_ENTITY (target));
 
   event_info->account = g_object_ref (account);
-  event_info->id = g_strdup (id);
-  event_info->type = type;
+  event_info->target = g_object_ref (target);
 
   async_data->manager = g_object_ref (manager);
   async_data->request = event_info;
@@ -1039,8 +1025,7 @@ _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
 
   lst = _tpl_log_manager_get_events_for_date (async_data->manager,
       event_info->account,
-      event_info->id,
-      event_info->type,
+      event_info->target,
       event_info->date);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
@@ -1052,19 +1037,17 @@ _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
  * tpl_log_manager_get_events_for_date_async
  * @manager: a #TplLogManager
  * @account: a #TpAccount
- * @id: the event identifier (can't be %NULL)
- * @type: the event type
+ * @target: a non-NULL #TplEntity
  * @date: a #GDate
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Retrieve a list of #TplEvent at @date with @id.
+ * Retrieve a list of #TplEvent at @date with @target.
  */
 void
 tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const GDate *date,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1075,12 +1058,11 @@ tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
 
   g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
   g_return_if_fail (TP_IS_ACCOUNT (account));
-  g_return_if_fail (!TPL_STR_EMPTY (id));
+  g_return_if_fail (TPL_IS_ENTITY (target));
   g_return_if_fail (date != NULL);
 
   event_info->account = g_object_ref (account);
-  event_info->id = g_strdup (id);
-  event_info->type = type;
+  event_info->target = g_object_ref (target);
   event_info->date = copy_date (date);
 
   async_data->manager = g_object_ref (manager);
@@ -1148,8 +1130,8 @@ _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
   event_info = async_data->request;
 
   lst = _tpl_log_manager_get_filtered_events (async_data->manager,
-      event_info->account, event_info->id, event_info->type,
-      event_info->num_events, event_info->filter, event_info->user_data);
+      event_info->account, event_info->target, event_info->num_events,
+      event_info->filter, event_info->user_data);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _list_of_object_free);
@@ -1160,21 +1142,19 @@ _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
  * tpl_log_manager_get_filtered_events_async:
  * @manager: a #TplLogManager
  * @account: a #TpAccount
- * @id: the event identifier (can't be %NULL)
- * @type: the event type
+ * @target: a non-NULL #TplEntity
  * @num_event: number of maximum events to fetch
  * @filter: an optional filter function
  * @filter_user_data: user data to pass to @filter
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
- * Retrieve the most recent @num_event events exchanged with @id.
+ * Retrieve the most recent @num_event events exchanged with @target.
  */
 void
 tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     guint num_events,
     TplLogEventFilter filter,
     gpointer filter_user_data,
@@ -1187,12 +1167,11 @@ tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
 
   g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
   g_return_if_fail (TP_IS_ACCOUNT (account));
-  g_return_if_fail (!TPL_STR_EMPTY (id));
+  g_return_if_fail (TPL_IS_ENTITY (target));
   g_return_if_fail (num_events > 0);
 
   event_info->account = g_object_ref (account);
-  event_info->id = g_strdup (id);
-  event_info->type = type;
+  event_info->target = g_object_ref (target);
   event_info->num_events = num_events;
   event_info->filter = filter;
   event_info->user_data = filter_user_data;
@@ -1464,6 +1443,6 @@ tpl_log_manager_errors_quark (void)
 TplLogSearchHit *
 _tpl_log_manager_search_hit_copy (TplLogSearchHit *hit)
 {
-  return _tpl_log_manager_search_hit_new (hit->account, hit->id,
-      hit->type, hit->date);
+  return _tpl_log_manager_search_hit_new (hit->account, hit->target,
+      hit->date);
 }

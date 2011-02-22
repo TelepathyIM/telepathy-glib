@@ -70,8 +70,7 @@ typedef enum
 typedef struct
 {
   TpAccount *account;
-  TplEventSearchType type;
-  gchar *id;
+  TplEntity *target;
   GDate *date;
 } TplLogSearchHit;
 
@@ -84,13 +83,11 @@ TplLogManager *tpl_log_manager_dup_singleton (void);
 
 gboolean tpl_log_manager_exists (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type);
+    TplEntity *target);
 
 void tpl_log_manager_get_dates_async (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
@@ -101,8 +98,7 @@ gboolean tpl_log_manager_get_dates_finish (TplLogManager *self,
 
 void tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const GDate *date,
     GAsyncReadyCallback callback,
     gpointer user_data);
@@ -114,8 +110,7 @@ gboolean tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
 
 void tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     guint num_events,
     TplLogEventFilter filter,
     gpointer filter_user_data,

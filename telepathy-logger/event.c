@@ -50,7 +50,6 @@ struct _TplEventPriv
 {
   gchar *log_id;
   gint64 timestamp;
-  gchar *target_id;
   TpAccount *account;
   gchar *channel_path;
 
@@ -79,7 +78,6 @@ tpl_event_finalize (GObject *obj)
   TplEventPriv *priv = self->priv;
 
   tp_clear_pointer (&priv->log_id, g_free);
-  tp_clear_pointer (&priv->target_id, g_free);
   tp_clear_pointer (&priv->channel_path, g_free);
 
   G_OBJECT_CLASS (tpl_event_parent_class)->finalize (obj);
@@ -116,10 +114,6 @@ tpl_event_get_property (GObject *object,
         break;
       case PROP_LOG_ID:
         g_value_set_string (value, priv->log_id);
-        break;
-        break;
-      case PROP_TARGET_ID:
-        g_value_set_string (value, priv->target_id);
         break;
       case PROP_ACCOUNT:
         g_value_set_object (value, priv->account);
@@ -161,11 +155,6 @@ tpl_event_set_property (GObject *object,
         g_assert (priv->log_id == NULL);
         g_return_if_fail (!TPL_STR_EMPTY (g_value_get_string (value)));
         priv->log_id = g_value_dup_string (value);
-        break;
-      case PROP_TARGET_ID:
-        g_assert (priv->target_id == NULL);
-        g_return_if_fail (!TPL_STR_EMPTY (g_value_get_string (value)));
-        priv->target_id = g_value_dup_string (value);
         break;
       case PROP_ACCOUNT:
         g_assert (priv->account == NULL);
@@ -237,14 +226,6 @@ tpl_event_class_init (TplEventClass *klass)
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LOG_ID, param_spec);
-
-  param_spec = g_param_spec_string ("target-id",
-      "TargetId",
-      "The target identifier to which the log event is related (may be a "
-      "contact name or a room name).",
-      NULL,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY  | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TARGET_ID, param_spec);
 
   param_spec = g_param_spec_object ("account",
       "TpAccount",
@@ -346,14 +327,25 @@ tpl_event_get_receiver (TplEvent *self)
 }
 
 
+TplEntity *
+_tpl_event_get_target (TplEvent *self)
+{
+  g_return_val_if_fail (TPL_IS_EVENT (self), NULL);
+
+  if (tpl_entity_get_entity_type (self->priv->sender) == TPL_ENTITY_SELF)
+    return self->priv->receiver;
+  else
+    return self->priv->sender;
+}
+
+
 const gchar *
 _tpl_event_get_target_id (TplEvent *self)
 {
   g_return_val_if_fail (TPL_IS_EVENT (self), NULL);
 
-  return self->priv->target_id;
+  return tpl_entity_get_identifier (_tpl_event_get_target (self));
 }
-
 
 gboolean
 _tpl_event_target_is_room (TplEvent *self)

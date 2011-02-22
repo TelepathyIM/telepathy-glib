@@ -43,6 +43,8 @@ struct _TplEventClass {
 
 const gchar * _tpl_event_get_log_id (TplEvent *self);
 
+TplEntity * _tpl_event_get_target (TplEvent *self);
+
 const gchar * _tpl_event_get_target_id (TplEvent * self);
 
 gboolean _tpl_event_target_is_room (TplEvent *self);

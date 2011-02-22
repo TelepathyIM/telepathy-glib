@@ -300,14 +300,13 @@ log_store_pidgin_set_writable (TplLogStorePidgin *self,
 static gchar *
 log_store_pidgin_get_dir (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   const gchar *protocol;
   gchar *basedir;
   gchar *username, *normalized, *tmp;
-  gchar *dup_id = NULL; /* if not NULL, it contains a modified version of
-                           id, to be g_free'd */
+  gchar *id = NULL; /* if not NULL, it contains a modified version of
+                       target id, to be g_free'd */
   const GHashTable *params;
 
   params = tp_account_get_parameters (account);
@@ -336,11 +335,18 @@ log_store_pidgin_get_dir (TplLogStore *self,
   normalized = g_utf8_normalize (username, -1, G_NORMALIZE_DEFAULT);
   g_free (username);
 
-  if (id != NULL && type == TPL_EVENT_SEARCH_TEXT_ROOM)
-    id = dup_id = g_strdup_printf ("%s.chat", id);
-  else if (id != NULL && g_str_has_suffix (id, "#1"))
-    /* Small butterfly workaround */
-    id = dup_id = g_strndup (id, strlen (id) - 2);
+  if (target != NULL)
+    {
+      const gchar *orig_id = tpl_entity_get_identifier (target);
+
+      if (tpl_entity_get_entity_type (target) == TPL_ENTITY_ROOM)
+        id = g_strdup_printf ("%s.chat", orig_id);
+      else if (g_str_has_suffix (orig_id, "#1"))
+        /* Small butterfly workaround */
+        id = g_strndup (orig_id, strlen (id) - 2);
+      else
+        id = g_strdup (orig_id);
+    }
 
   tmp = g_uri_escape_string (normalized, "#@", TRUE);
   g_free (normalized);
@@ -354,7 +360,7 @@ log_store_pidgin_get_dir (TplLogStore *self,
       id,
       NULL);
 
-  g_free (dup_id);
+  g_free (id);
   g_free (normalized);
 
   return basedir;
@@ -365,13 +371,12 @@ log_store_pidgin_get_dir (TplLogStore *self,
 static gboolean
 log_store_pidgin_exists (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   gchar *dir;
   gboolean exists;
 
-  dir = log_store_pidgin_get_dir (self, account, id, type);
+  dir = log_store_pidgin_get_dir (self, account, target);
 
   if (dir != NULL)
     exists = g_file_test (dir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR);
@@ -427,8 +432,7 @@ log_store_pidgin_get_time (const gchar *filename)
 static GList *
 log_store_pidgin_get_dates (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   GList *dates = NULL;
   gchar *directory;
@@ -437,9 +441,9 @@ log_store_pidgin_get_dates (TplLogStore *self,
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (id != NULL, NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
-  directory = log_store_pidgin_get_dir (self, account, id, type);
+  directory = log_store_pidgin_get_dir (self, account, target);
 
   if (directory == NULL)
     return NULL;
@@ -479,8 +483,7 @@ log_store_pidgin_get_dates (TplLogStore *self,
 static GList *
 log_store_pidgin_get_filenames_for_date (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const GDate *date)
 {
   gchar *basedir;
@@ -489,7 +492,7 @@ log_store_pidgin_get_filenames_for_date (TplLogStore *self,
   GDir *dir;
   const gchar *dirfile;
 
-  basedir = log_store_pidgin_get_dir (self, account, id, type);
+  basedir = log_store_pidgin_get_dir (self, account, target);
 
   if (basedir == NULL)
     return NULL;
@@ -594,10 +597,10 @@ log_store_pidgin_search_hit_new (TplLogStore *self,
     const gchar *filename)
 {
   TplLogSearchHit *hit;
-  const gchar *username;
-  const gchar *protocol;
   gchar **strv;
   guint len;
+  TplEntityType type;
+  gchar *id;
 
   if (!g_str_has_suffix (filename, TXT_LOG_FILENAME_SUFFIX)
       && !g_str_has_suffix (filename, HTML_LOG_FILENAME_SUFFIX))
@@ -608,17 +611,23 @@ log_store_pidgin_search_hit_new (TplLogStore *self,
 
   hit = g_slice_new0 (TplLogSearchHit);
   hit->date = log_store_pidgin_get_time (strv[len-1]);
-  hit->type = g_str_has_suffix (strv[len-2], ".chat")
-    ? TPL_EVENT_SEARCH_TEXT : TPL_EVENT_SEARCH_TEXT_ROOM;
+
+  type = g_str_has_suffix (strv[len-2], ".chat")
+    ? TPL_ENTITY_ROOM : TPL_ENTITY_CONTACT;
 
   /* Remove ".chat" suffix. */
-  if (hit->type == TPL_EVENT_SEARCH_TEXT_ROOM)
-    hit->id = g_strndup (strv[len-2], (strlen (strv[len-2]) - 5));
+  if (type == TPL_ENTITY_ROOM)
+    id = g_strndup (strv[len-2], (strlen (strv[len-2]) - 5));
   else
-    hit->id = g_strdup (strv[len-2]);
+    id = g_strdup (strv[len-2]);
 
-  username = strv[len-3];
-  protocol = strv[len-4];
+  hit->target = g_object_new (TPL_TYPE_ENTITY,
+      "identifier", id,
+      "alias", id,
+      "type", type,
+      NULL);
+
+  g_free (id);
 
   hit->account = log_store_pidgin_dup_account (filename);
 
@@ -883,7 +892,6 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
               "log-id", log_id,
               "receiver", receiver,
               "sender", sender,
-              "target-id", target_id,
               "timestamp", timestamp,
               /* TplTextEvent */
               "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -1044,8 +1052,7 @@ log_store_pidgin_search_new (TplLogStore *self,
 
 static GList *
 log_store_pidgin_get_entities_for_dir (TplLogStore *self,
-    const gchar *dir,
-    TplEventSearchType type)
+    const gchar *dir)
 {
   GDir *gdir;
   GList *entities = NULL;
@@ -1059,19 +1066,27 @@ log_store_pidgin_get_entities_for_dir (TplLogStore *self,
     {
       TplEntity *entity;
 
-      /* pidgin internal ".system" directory is not a id */
+      /* pidgin internal ".system" directory is not a target ID */
       if (g_strcmp0 (name, ".system") == 0)
         continue;
-      /* Skip over chatrooms if we didn't ask for them, and vice versa. */
-      if (g_str_has_suffix (name, ".chat")
-          != (type == TPL_EVENT_SEARCH_TEXT_ROOM))
-        continue;
 
-      entity = g_object_new (TPL_TYPE_ENTITY,
-          "identifier", name,
-          "alias", name,
-          "type", type,
-          NULL);
+      /* Check if it's a chatroom */
+      if (g_str_has_suffix (name, ".chat"))
+        {
+          gchar *id = g_strndup (name, strlen (name) - 5);
+          entity = g_object_new (TPL_TYPE_ENTITY,
+              "identifier", id,
+              "alias", id,
+              "type", TPL_ENTITY_ROOM,
+              NULL);
+          g_free (id);
+        }
+      else
+        entity = g_object_new (TPL_TYPE_ENTITY,
+            "identifier", name,
+            "alias", name,
+            "type", TPL_ENTITY_CONTACT,
+            NULL);
 
       entities = g_list_prepend (entities, entity);
     }
@@ -1085,19 +1100,18 @@ log_store_pidgin_get_entities_for_dir (TplLogStore *self,
 static GList *
 log_store_pidgin_get_events_for_date (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const GDate *date)
 {
   GList *events, *filenames;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (id != NULL, NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
   /* pidgin stores multiple files related to the same date */
   filenames = log_store_pidgin_get_filenames_for_date (self, account,
-      id, type, date);
+      target, date);
 
   if (filenames == NULL)
     return NULL;
@@ -1118,11 +1132,10 @@ log_store_pidgin_get_entities (TplLogStore *self,
   gchar *dir;
   GList *hits;
 
-  dir = log_store_pidgin_get_dir (self, account, NULL, TPL_EVENT_SEARCH_TEXT);
+  dir = log_store_pidgin_get_dir (self, account, NULL);
 
   if (dir != NULL)
-    hits = log_store_pidgin_get_entities_for_dir (self, dir,
-        TPL_EVENT_SEARCH_TEXT);
+    hits = log_store_pidgin_get_entities_for_dir (self, dir);
   else
     hits = NULL;
 
@@ -1135,8 +1148,7 @@ log_store_pidgin_get_entities (TplLogStore *self,
 static GList *
 log_store_pidgin_get_filtered_events (TplLogStore *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     guint num_events,
     TplLogEventFilter filter,
     gpointer user_data)
@@ -1144,7 +1156,7 @@ log_store_pidgin_get_filtered_events (TplLogStore *self,
   GList *dates, *l, *events = NULL;
   guint i = 0;
 
-  dates = log_store_pidgin_get_dates (self, account, id, type);
+  dates = log_store_pidgin_get_dates (self, account, target);
 
   for (l = g_list_last (dates); l != NULL && i < num_events; l = l->prev)
     {
@@ -1153,7 +1165,7 @@ log_store_pidgin_get_filtered_events (TplLogStore *self,
       /* FIXME: We should really restrict the event parsing to get only
        * the newest num_events. */
       new_events = log_store_pidgin_get_events_for_date (self, account,
-          id, type, l->data);
+          target, l->data);
 
       n = new_events;
       while (n != NULL)

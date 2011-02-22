@@ -292,34 +292,46 @@ log_store_account_to_dirname (TpAccount *account)
   return g_strdelimit (g_strdup (name), "/", '_');
 }
 
+
 /* id can be NULL, but if present have to be a non zero-lenght string.
  * If NULL, the returned dir will be composed until the account part.
  * If non-NULL, the returned dir will be composed until the id part */
 static gchar *
 log_store_xml_get_dir (TplLogStoreXml *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   gchar *basedir;
-  gchar *escaped;
+  gchar *escaped_account;
+  gchar *escaped_id = NULL;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  /* id may be NULL, but not empthy string if not-NULL */
-  g_return_val_if_fail ((id == NULL) || (*id != '\0'), NULL);
 
-  escaped = log_store_account_to_dirname (account);
+  escaped_account = log_store_account_to_dirname (account);
 
-  if (type == TPL_EVENT_SEARCH_TEXT_ROOM)
+  if (target)
+    {
+      /* FIXME This may be source of bug (does that case still exist ?)
+       * avoid that 1-1 conversation generated from a chatroom, having id similar
+       * to room@conference.domain/My_Alias (in XMPP) are treated as a directory
+       * path, creating My_Alias as a subdirectory of room@conference.domain */
+      escaped_id = g_strdelimit (
+          g_strdup (tpl_entity_get_identifier (target)),
+          "/", '_');
+    }
+
+  if (target != NULL
+      && tpl_entity_get_entity_type (target) == TPL_ENTITY_ROOM)
     basedir = g_build_path (G_DIR_SEPARATOR_S,
-        log_store_xml_get_basedir (self), escaped, LOG_DIR_CHATROOMS,
-        id, NULL);
+        log_store_xml_get_basedir (self), escaped_account, LOG_DIR_CHATROOMS,
+        escaped_id, NULL);
   else
     basedir = g_build_path (G_DIR_SEPARATOR_S,
-        log_store_xml_get_basedir (self), escaped, id, NULL);
+        log_store_xml_get_basedir (self), escaped_account, escaped_id, NULL);
 
-  g_free (escaped);
+  g_free (escaped_account);
+  g_free (escaped_id);
 
   return basedir;
 }
@@ -357,24 +369,16 @@ log_store_xml_get_timestamp_from_event (TplEvent *event)
 static gchar *
 log_store_xml_get_filename (TplLogStoreXml *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   gchar *id_dir;
   gchar *timestamp;
   gchar *filename;
-  gchar *esc_id;
 
-  /* avoid that 1-1 conversation generated from a chatroom, having id similar
-   * to room@conference.domain/My_Alias (in XMPP) are treated as a directory
-   * path, creating My_Alias as a subdirectory of room@conference.domain */
-  esc_id = g_strdelimit (g_strdup (id), "/", '_');
-  id_dir = log_store_xml_get_dir (self, account, esc_id,
-      type);
+  id_dir = log_store_xml_get_dir (self, account, target);
   timestamp = log_store_xml_get_timestamp_filename ();
   filename = g_build_filename (id_dir, timestamp, NULL);
 
-  g_free (esc_id);
   g_free (id_dir);
   g_free (timestamp);
 
@@ -388,8 +392,7 @@ log_store_xml_get_filename (TplLogStoreXml *self,
 static gboolean
 _log_store_xml_write_to_store (TplLogStoreXml *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const gchar *event,
     GError **error)
 {
@@ -401,17 +404,17 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (!TPL_STR_EMPTY (id), FALSE);
-  g_return_val_if_fail (!TPL_STR_EMPTY (event), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), FALSE);
 
-  filename = log_store_xml_get_filename (self, account, id,
-      type);
+  filename = log_store_xml_get_filename (self, account, target);
   basedir = g_path_get_dirname (filename);
+
   if (!g_file_test (basedir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
     {
       DEBUG ("Creating directory: '%s'", basedir);
       g_mkdir_with_parents (basedir, LOG_DIR_CREATE_MODE);
     }
+
   g_free (basedir);
 
   if (!g_file_test (filename, G_FILE_TEST_EXISTS))
@@ -428,6 +431,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
       if (file != NULL)
         fseek (file, -strlen (LOG_FOOTER), SEEK_END);
     }
+
   if (file == NULL)
     {
       g_set_error (error, TPL_LOG_STORE_ERROR,
@@ -436,6 +440,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
       ret = FALSE;
       goto out;
     }
+
   g_fprintf (file, "%s", event);
   DEBUG ("%s: written: %s", filename, event);
 
@@ -510,10 +515,7 @@ add_text_event (TplLogStoreXml *self,
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
-      _tpl_event_get_target_id (TPL_EVENT (message)),
-      _tpl_event_target_is_room (TPL_EVENT (message)) ?
-          TPL_EVENT_SEARCH_TEXT_ROOM : TPL_EVENT_SEARCH_TEXT,
-      event, error);
+      _tpl_event_get_target (TPL_EVENT (message)), event, error);
 
 out:
   g_free (contact_id);
@@ -555,8 +557,7 @@ log_store_xml_add_event (TplLogStore *store,
 static gboolean
 log_store_xml_exists (TplLogStore *store,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *dir;
@@ -564,9 +565,9 @@ log_store_xml_exists (TplLogStore *store,
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (!TPL_STR_EMPTY (id), FALSE);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), FALSE);
 
-  dir = log_store_xml_get_dir (self, account, id, type);
+  dir = log_store_xml_get_dir (self, account, target);
   exists = g_file_test (dir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR);
   g_free (dir);
 
@@ -598,8 +599,7 @@ create_date_from_string (const gchar *str)
 static GList *
 log_store_xml_get_dates (TplLogStore *store,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type)
+    TplEntity *target)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *dates = NULL;
@@ -610,9 +610,9 @@ log_store_xml_get_dates (TplLogStore *store,
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (id), NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
-  directory = log_store_xml_get_dir (self, account, id, type);
+  directory = log_store_xml_get_dir (self, account, target);
   dir = g_dir_open (directory, 0, NULL);
   if (!dir)
     {
@@ -657,8 +657,7 @@ log_store_xml_get_dates (TplLogStore *store,
 static gchar *
 log_store_xml_get_filename_for_date (TplLogStoreXml *self,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const GDate *date)
 {
   gchar *basedir;
@@ -668,12 +667,12 @@ log_store_xml_get_filename_for_date (TplLogStoreXml *self,
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (id), NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
   g_return_val_if_fail (date != NULL, NULL);
 
   g_date_strftime (str, 9, "%Y%m%d", date);
 
-  basedir = log_store_xml_get_dir (self, account, id, type);
+  basedir = log_store_xml_get_dir (self, account, target);
   timestamp = g_strconcat (str, LOG_FILENAME_SUFFIX, NULL);
   filename = g_build_filename (basedir, timestamp, NULL);
 
@@ -699,7 +698,7 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   GDate *date;
   const gchar *chat_id;
   gboolean is_chatroom;
-  TplEventSearchType type;
+  TplEntity *target;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (filename), NULL);
@@ -738,13 +737,20 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
     }
   g_list_free (accounts);
 
-  type = is_chatroom ? TPL_EVENT_SEARCH_TEXT_ROOM
-    : TPL_EVENT_SEARCH_TEXT;
-  hit = _tpl_log_manager_search_hit_new (account, chat_id,
-    type, date);
+  if (is_chatroom)
+    target = _tpl_entity_new_from_room_id (chat_id);
+  else
+    target = g_object_new (TPL_TYPE_ENTITY,
+        "identifier", chat_id,
+        "type", TPL_ENTITY_CONTACT,
+        "alias", chat_id,
+        NULL);
+
+  hit = _tpl_log_manager_search_hit_new (account, target, date);
 
   g_strfreev (strv);
   g_date_free (date);
+  g_object_unref (target);
 
   return hit;
 }
@@ -783,7 +789,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
         tp_proxy_get_object_path (TP_PROXY (account)),
         NULL, NULL, &self_id, &error))
     {
-      DEBUG ("Cannot get self identitifer from account: %s",
+      DEBUG ("Cannot get self identifier from account: %s",
           error->message);
       g_error_free (error);
       return NULL;
@@ -919,7 +925,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
           "log-id", log_id,
           "receiver", receiver,
           "sender", sender,
-          "target-id", target_id,
           "timestamp", timestamp,
           /* TplTextEvent */
           "message-type", msg_type,
@@ -1143,8 +1148,7 @@ log_store_xml_get_entities_for_dir (TplLogStoreXml *self,
 static GList *
 log_store_xml_get_events_for_date (TplLogStore *store,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     const GDate *date)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
@@ -1153,13 +1157,12 @@ log_store_xml_get_events_for_date (TplLogStore *store,
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (id), NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
   g_return_val_if_fail (date != NULL, NULL);
 
-  filename = log_store_xml_get_filename_for_date (self, account, id,
-      type, date);
-  events = log_store_xml_get_events_for_file (self, account,
-      filename);
+  filename = log_store_xml_get_filename_for_date (self, account, target,
+      date);
+  events = log_store_xml_get_events_for_file (self, account, filename);
   g_free (filename);
 
   return events;
@@ -1177,10 +1180,7 @@ log_store_xml_get_entities (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
 
-  /* We only need TPL_EVENT_SEARCH_TEXT as the room directory is a
-   * sub-directory of it, which will be handled by
-   * log_store_xml_get_entities_for_dir() */
-  dir = log_store_xml_get_dir (self, account, NULL, TPL_EVENT_SEARCH_TEXT);
+  dir = log_store_xml_get_dir (self, account, NULL);
   entities = log_store_xml_get_entities_for_dir (self, dir, FALSE, account);
   g_free (dir);
 
@@ -1285,8 +1285,7 @@ log_store_xml_set_writable (TplLogStoreXml *self,
 static GList *
 log_store_xml_get_filtered_events (TplLogStore *store,
     TpAccount *account,
-    const gchar *id,
-    TplEventSearchType type,
+    TplEntity *target,
     guint num_events,
     TplLogEventFilter filter,
     gpointer user_data)
@@ -1297,9 +1296,9 @@ log_store_xml_get_filtered_events (TplLogStore *store,
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (id), NULL);
+  g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
-  dates = log_store_xml_get_dates (store, account, id, type);
+  dates = log_store_xml_get_dates (store, account, target);
 
   for (l = g_list_last (dates); l != NULL && i < num_events;
        l = g_list_previous (l))
@@ -1309,7 +1308,7 @@ log_store_xml_get_filtered_events (TplLogStore *store,
       /* FIXME: We should really restrict the event parsing to get only
        * the newest num_events. */
       new_events = log_store_xml_get_events_for_date (store, account,
-          id, type, l->data);
+          target, l->data);
 
       n = new_events;
       while (n != NULL)
@@ -1356,8 +1355,7 @@ log_store_xml_clear_account (TplLogStore *store,
   TplLogStoreXml *self = TPL_LOG_STORE_XML (store);
   gchar *account_dir;
 
-  account_dir = log_store_xml_get_dir (self, account, NULL,
-      TPL_EVENT_SEARCH_TEXT);
+  account_dir = log_store_xml_get_dir (self, account, NULL);
 
   if (account_dir)
     {
@@ -1378,14 +1376,9 @@ log_store_xml_clear_entity (TplLogStore *store,
     TplEntity *entity)
 {
   TplLogStoreXml *self = TPL_LOG_STORE_XML (store);
-  gchar *entity_id;
   gchar *entity_dir;
 
-  entity_id = g_strdup (tpl_entity_get_identifier (entity));
-  entity_id = g_strdelimit (entity_id, "/", '_');
-  entity_dir = log_store_xml_get_dir (self, account, entity_id,
-      tpl_entity_get_entity_type (entity) == TPL_ENTITY_ROOM ?
-        TPL_EVENT_SEARCH_TEXT_ROOM : TPL_EVENT_SEARCH_TEXT);
+  entity_dir = log_store_xml_get_dir (self, account, entity);
 
   if (entity_dir)
     {
@@ -1398,9 +1391,7 @@ log_store_xml_clear_entity (TplLogStore *store,
   else
     DEBUG ("Nothing to clear for account/entity: %s/%s",
         tp_proxy_get_object_path (TP_PROXY (account)),
-        entity_id);
-
-  g_free (entity_id);
+        tpl_entity_get_identifier (entity));
 }
 
 

@@ -63,19 +63,19 @@ typedef struct
 
   const gchar * (*get_name) (TplLogStore *self);
   gboolean (*exists) (TplLogStore *self, TpAccount *account,
-      const gchar *id, TplEventSearchType type);
+      TplEntity *target);
   gboolean (*add_event) (TplLogStore *self, TplEvent *event,
       GError **error);
   GList * (*get_dates) (TplLogStore *self, TpAccount *account,
-      const gchar *id, TplEventSearchType type);
+      TplEntity *target);
   GList * (*get_events_for_date) (TplLogStore *self, TpAccount *account,
-      const gchar *id, TplEventSearchType type, const GDate *date);
+      TplEntity *target, const GDate *date);
   GList * (*get_recent_events) (TplLogStore *self, TpAccount *account,
-      const gchar *id, TplEventSearchType type);
+      TplEntity *target);
   GList * (*get_entities) (TplLogStore *self, TpAccount *account);
   GList * (*search_new) (TplLogStore *self, const gchar *text);
   GList * (*get_filtered_events) (TplLogStore *self, TpAccount *account,
-      const gchar *id, TplEventSearchType type, guint num_events,
+      TplEntity *target, guint num_events,
       TplLogEventFilter filter, gpointer user_data);
   void (*clear) (TplLogStore *self);
   void (*clear_account) (TplLogStore *self, TpAccount *account);
@@ -87,21 +87,20 @@ GType _tpl_log_store_get_type (void);
 
 const gchar * _tpl_log_store_get_name (TplLogStore *self);
 gboolean _tpl_log_store_exists (TplLogStore *self, TpAccount *account,
-    const gchar *id, TplEventSearchType type);
+    TplEntity *target);
 gboolean _tpl_log_store_add_event (TplLogStore *self, TplEvent *event,
     GError **error);
 GList * _tpl_log_store_get_dates (TplLogStore *self, TpAccount *account,
-    const gchar *id, TplEventSearchType type);
+    TplEntity *target);
 GList * _tpl_log_store_get_events_for_date (TplLogStore *self,
-    TpAccount *account, const gchar *id, TplEventSearchType type,
-    const GDate *date);
+    TpAccount *account, TplEntity *target, const GDate *date);
 GList * _tpl_log_store_get_recent_events (TplLogStore *self,
-    TpAccount *account, const gchar *id, TplEventSearchType type);
+    TpAccount *account, TplEntity *target);
 GList * _tpl_log_store_get_entities (TplLogStore *self, TpAccount *account);
 GList * _tpl_log_store_search_new (TplLogStore *self, const gchar *text);
 GList * _tpl_log_store_get_filtered_events (TplLogStore *self,
-    TpAccount *account, const gchar *id, TplEventSearchType type,
-    guint num_events, TplLogEventFilter filter, gpointer user_data);
+    TpAccount *account, TplEntity *target, guint num_events,
+    TplLogEventFilter filter, gpointer user_data);
 void _tpl_log_store_clear (TplLogStore *self);
 void _tpl_log_store_clear_account (TplLogStore *self, TpAccount *account);
 void _tpl_log_store_clear_entity (TplLogStore *self, TpAccount *account,

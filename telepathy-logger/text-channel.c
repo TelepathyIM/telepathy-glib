@@ -1120,7 +1120,6 @@ on_sent_signal_cb (TpChannel *proxy,
       "log-id", log_id,
       "receiver", receiver,
       "sender", sender,
-      "target-id", tpl_entity_get_identifier (receiver),
       "timestamp", timestamp,
       /* TplTextEvent */
       "message-type", type,
@@ -1166,21 +1165,19 @@ keepon_on_receiving_signal (TplTextChannel *tpl_text,
   TplLogManager *logmanager;
   TplEntity *sender;
   TplEntity *receiver;
-  const gchar *target_id;
 
   sender = _tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
 
   if (_tpl_text_channel_is_chatroom (tpl_text))
     {
-      target_id = _tpl_text_channel_get_chatroom_id (tpl_text);
-      receiver = _tpl_entity_new_from_room_id (target_id);
+      const gchar *receiver_id = _tpl_text_channel_get_chatroom_id (tpl_text);
+      receiver = _tpl_entity_new_from_room_id (receiver_id);
     }
   else
     {
       TpContact *me;
       me = _tpl_text_channel_get_my_contact (tpl_text);
       receiver = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
-      target_id = tpl_entity_get_identifier (sender);
     }
 
   /* Initialize TplTextEvent */
@@ -1191,7 +1188,6 @@ keepon_on_receiving_signal (TplTextChannel *tpl_text,
       "log-id", data->log_id,
       "receiver", receiver,
       "sender", sender,
-      "target-id", target_id,
       "timestamp", data->timestamp,
       /* TplTextEvent */
       "message-type", data->type,
