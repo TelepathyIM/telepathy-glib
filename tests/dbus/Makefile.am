@@ -63,7 +63,7 @@ VALGRIND_TESTS_ENVIRONMENT = \
     $(TESTS_ENVIRONMENT)			\
     env G_SLICE=always-malloc CHECK_VERBOSE=1	\
     $(top_builddir)/libtool --mode=execute	\
-    $(VALGRIND) --suppressions=$(top_srcdir)/tests/tests.supp $(VALGRIND_FLAGS)
+    $(VALGRIND) --suppressions=$(top_srcdir)/tests/suppressions/tpl.supp $(VALGRIND_FLAGS)
 
 BUILT_SOURCES = \
 	dbus-1/session.conf \
