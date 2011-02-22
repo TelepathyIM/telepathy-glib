@@ -409,7 +409,8 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    * Emitted when the channel request succeeds.
    *
    * Deprecated: since 0.13.UNRELEASED. Use
-   * #TpChannelRequest::succeeded-with-channel instead
+   * #TpChannelRequest::succeeded-with-channel, which provides the resulting
+   * channel, instead.
    */
   signals[SIGNAL_SUCCEEDED] = g_signal_new ("succeeded",
       G_OBJECT_CLASS_TYPE (klass),
@@ -427,8 +428,9 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Emitted when the channel request succeeds.
    *
-   * @connection and @channel may be %NULL your telepathy-mission-control is
-   * too old (< 5.7.1).
+   * With telepathy-mission-control version 5.7.1 and earlier, @connection and
+   * @channel will be %NULL. When using newer versions, they will be correctly
+   * set to the newly-created channel, and the connection which owns it.
    *
    * The #TpChannel is created using #TpChannelRequest:channel-factory but
    * the features of the factory are NOT prepared. It's up to the user to
