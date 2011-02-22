@@ -694,5 +694,5 @@ tp_observe_channels_context_get_requests (TpObserveChannelsContext *self)
     return NULL;
 
   return _tp_create_channel_request_list (
-      tp_proxy_get_dbus_daemon (self->account),request_props);
+      tp_proxy_get_dbus_daemon (self->account), request_props);
 }
