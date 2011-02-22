@@ -2579,8 +2579,9 @@ tp_base_contact_list_store_contacts_async (TpBaseContactList *self,
   if (mutable_iface->store_contacts_async == NULL)
     tp_simple_async_report_success_in_idle ((GObject *) self,
         callback, user_data, NULL);
-
-  mutable_iface->store_contacts_async (self, contacts, callback, user_data);
+  else
+    mutable_iface->store_contacts_async (self, contacts, callback,
+        user_data);
 }
 
 /**
