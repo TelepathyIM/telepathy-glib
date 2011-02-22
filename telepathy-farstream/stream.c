@@ -106,6 +106,8 @@ struct _TfStreamPrivate
 
   guint tos;
 
+  GHashTable *feedback_messages;
+
   GStaticMutex mutex;
   guint idle_connected_id; /* Protected by mutex */
   gboolean disposed; /* Protected by mutex */
@@ -201,6 +203,9 @@ static void stop_telephony_event (TpMediaStreamHandler *proxy,
 
 static void stream_close (TpMediaStreamHandler *proxy,
     gpointer user_data, GObject *object);
+
+static void set_remote_feedback_messages (TpMediaStreamHandler *proxy,
+    GHashTable *messages, gpointer user_data, GObject *object);
 
 static void invalidated_cb (TpMediaStreamHandler *proxy,
     guint domain, gint code, gchar *message, gpointer user_data);
@@ -455,6 +460,11 @@ tf_stream_dispose (GObject *object)
       fs_codec_list_destroy (priv->last_sent_codecs);
       priv->last_sent_codecs = NULL;
     }
+
+  if (priv->feedback_messages)
+    g_boxed_free (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP,
+        priv->feedback_messages);
+  priv->feedback_messages = NULL;
 
   while ((data = g_queue_pop_head (&priv->events_to_send)))
     g_slice_free (struct DtmfEvent, data);
@@ -768,6 +778,9 @@ get_all_properties_cb (TpProxy *proxy,
   tp_cli_media_stream_handler_connect_to_close
       (stream->priv->stream_handler_proxy, stream_close, NULL, NULL,
           (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_set_remote_feedback_messages
+      (stream->priv->stream_handler_proxy, set_remote_feedback_messages, NULL,
+          NULL, (GObject*) stream, NULL);
 
   memset (params, 0, sizeof(GParameter) * MAX_STREAM_TRANS_PARAMS);
 
@@ -1576,12 +1589,65 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       params = g_value_get_boxed (g_value_array_get_nth (codec, 5));
       g_hash_table_foreach (params, fill_fs_params, fs_codec);
 
+      if (self->priv->feedback_messages)
+        {
+          GValueArray *message_props;
+
+          message_props = g_hash_table_lookup (self->priv->feedback_messages,
+              GUINT_TO_POINTER (fs_codec->id));
+
+          if (message_props)
+            {
+              GValue *val;
+              GPtrArray *messages;
+              guint j;
+
+              g_assert (G_VALUE_HOLDS_UINT (
+                      g_value_array_get_nth (message_props, 0)));
+              g_assert (G_VALUE_TYPE (
+                      g_value_array_get_nth (message_props, 1)) ==
+                  TP_ARRAY_TYPE_RTCP_FEEDBACK_MESSAGE_LIST);
+
+              val = g_value_array_get_nth (message_props, 0);
+              fs_codec->ABI.ABI.minimum_reporting_interval =
+                  g_value_get_uint (val);
+
+              val = g_value_array_get_nth (message_props, 1);
+              messages = g_value_get_boxed (val);
+
+              for (j = 0; j < messages->len; j++)
+                {
+                  GValueArray *msg = g_ptr_array_index (messages, j);
+
+                  g_assert (G_VALUE_HOLDS_STRING (
+                          g_value_array_get_nth (msg, 0)));
+                  g_assert (G_VALUE_HOLDS_STRING (
+                           g_value_array_get_nth (msg, 1)));
+                  g_assert (G_VALUE_HOLDS_STRING (
+                          g_value_array_get_nth (msg, 2)));
+
+                  fs_codec_add_feedback_parameter (fs_codec,
+                      g_value_get_string (g_value_array_get_nth (msg, 0)),
+                      g_value_get_string (g_value_array_get_nth (msg, 1)),
+                      g_value_get_string (g_value_array_get_nth (msg, 2)));
+                }
+            }
+        }
+
+
       DEBUG (self, "adding remote codec %s [%d]",
           fs_codec->encoding_name, fs_codec->id);
 
       fs_remote_codecs = g_list_prepend (fs_remote_codecs, fs_codec);
   }
   fs_remote_codecs = g_list_reverse (fs_remote_codecs);
+
+  if (self->priv->feedback_messages)
+    {
+      g_boxed_free (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP,
+          self->priv->feedback_messages);
+      self->priv->feedback_messages = NULL;
+    }
 
   if (!fs_stream_set_remote_codecs (self->priv->fs_stream, fs_remote_codecs,
           &error)) {
@@ -2032,6 +2098,22 @@ stream_close (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   tf_stream_shutdown (self);
 }
+
+
+static void
+set_remote_feedback_messages (TpMediaStreamHandler *proxy,
+    GHashTable *messages, gpointer user_data, GObject *object)
+{
+  TfStream *self = TF_STREAM (object);
+
+  if (self->priv->feedback_messages)
+    g_boxed_free (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP,
+        self->priv->feedback_messages);
+
+  self->priv->feedback_messages =
+      g_boxed_copy (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP, messages);
+}
+
 
 static void
 cb_fs_recv_codecs_changed (TfStream *self,
