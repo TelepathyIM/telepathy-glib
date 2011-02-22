@@ -559,6 +559,96 @@ test_supports_tube (Test *test,
   g_object_unref (caps);
 }
 
+static void
+add_room_list_class (GPtrArray *classes,
+    gboolean server)
+{
+  GHashTable *fixed;
+  const gchar * const allowed[] = {
+      TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER,
+      NULL };
+  const gchar * const no_allowed[] = { NULL };
+  GValueArray *arr;
+
+  fixed = tp_asv_new (
+      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
+      TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+          TP_HANDLE_TYPE_NONE,
+      NULL);
+
+  arr = tp_value_array_build (2,
+      TP_HASH_TYPE_STRING_VARIANT_MAP, fixed,
+      G_TYPE_STRV, server ? allowed : no_allowed,
+      G_TYPE_INVALID);
+
+  g_hash_table_unref (fixed);
+
+  g_ptr_array_add (classes, arr);
+}
+
+static void
+test_supports_room_list (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpCapabilities *caps;
+  GPtrArray *classes;
+  gboolean with_server = TRUE;
+
+  /* Does not support room list */
+  classes = g_ptr_array_sized_new (4);
+  add_ft_class (classes);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", FALSE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (!tp_capabilities_supports_room_list (caps, &with_server));
+  g_assert (!with_server);
+
+  g_object_unref (caps);
+
+  /* Support room list but no server */
+  classes = g_ptr_array_sized_new (4);
+  add_ft_class (classes);
+  add_room_list_class (classes, FALSE);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", FALSE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_supports_room_list (caps, &with_server));
+  g_assert (!with_server);
+
+  g_object_unref (caps);
+
+  /* Support room list with server */
+  classes = g_ptr_array_sized_new (4);
+  add_ft_class (classes);
+  add_room_list_class (classes, TRUE);
+
+  caps = tp_tests_object_new_static_class (TP_TYPE_CAPABILITIES,
+      "channel-classes", classes,
+      "contact-specific", FALSE,
+      NULL);
+
+  g_boxed_free (TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST,
+     classes);
+
+  g_assert (tp_capabilities_supports_room_list (caps, &with_server));
+  g_assert (with_server);
+
+  g_object_unref (caps);
+}
+
 int
 main (int argc,
     char **argv)
@@ -574,6 +664,8 @@ main (int argc,
       NULL);
   g_test_add (TEST_PREFIX "supports/tube", Test, NULL, setup,
       test_supports_tube, NULL);
+  g_test_add (TEST_PREFIX "supports/room-list", Test, NULL, setup,
+      test_supports_room_list, NULL);
 
   return g_test_run ();
 }

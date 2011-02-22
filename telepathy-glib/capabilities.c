@@ -551,3 +551,87 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
 
   return ret;
 }
+
+/**
+ * tp_capabilities_supports_room_list:
+ * @self: a #TpCapabilities object
+ * @with_server: (out): if not %NULL, used to return %TRUE if the
+ * #TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER property can be defined when
+ * requesting a RoomList channel.
+ *
+ * Discovers whether this protocol or connection supports listing rooms.
+ * Specifically, if this function returns %TRUE, a room list channel can be
+ * requested as follows:
+ * |[
+ * GHashTable *request;
+ * TpAccountChannelRequest *req;
+ *
+ * request = tp_asv_new (
+ *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+ *       TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
+ *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_NONE,
+ *     NULL);
+ *
+ * req = tp_account_channel_request_new (account, request,
+ *    TP_USER_ACTION_TIME_CURRENT_TIME);
+ *
+ * tp_account_channel_request_create_and_handle_channel_async (req, NULL,
+ *     create_channel_cb, NULL);
+ *
+ * g_object_unref (req);
+ * g_hash_table_unref (request);
+ * ]|
+ *
+ * If @with_server is set to %TRUE, a list of rooms on a particular server can
+ * be requested as follows:
+ * |[
+ * /\* Same code as above but with request defined using: *\/
+ * request = tp_asv_new (
+ *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+ *       TP_IFACE_CHANNEL_TYPE_ROOM_LIST,
+ *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_NONE,
+ *     TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER, G_TYPE_STRING,
+ *       "characters.shakespeare.lit",
+ *     NULL);
+ * ]|
+ *
+ * Returns: %TRUE if a channel request containing RoomList as ChannelType,
+ * HandleTypeNone as TargetHandleType can be expected to work,
+ * %FALSE otherwise.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_capabilities_supports_room_list (TpCapabilities *self,
+    gboolean *with_server)
+{
+  gboolean result = FALSE;
+  gboolean server = FALSE;
+  guint i;
+
+  for (i = 0; i < self->priv->classes->len; i++)
+    {
+      GValueArray *arr = g_ptr_array_index (self->priv->classes, i);
+      GHashTable *fixed;
+      const gchar *chan_type;
+      const gchar **allowed_properties;
+
+      tp_value_array_unpack (arr, 2, &fixed, &allowed_properties);
+
+      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+
+      if (tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_ROOM_LIST))
+        continue;
+
+      result = TRUE;
+
+      server = tp_strv_contains (allowed_properties,
+          TP_PROP_CHANNEL_TYPE_ROOM_LIST_SERVER);
+      break;
+    }
+
+  if (with_server != NULL)
+    *with_server = server;
+
+  return result;
+}

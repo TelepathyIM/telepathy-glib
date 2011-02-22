@@ -4122,6 +4122,7 @@ tp_capabilities_supports_text_chats
 tp_capabilities_supports_stream_tubes
 tp_capabilities_supports_dbus_tubes
 tp_capabilities_supports_contact_search
+tp_capabilities_supports_room_list
 <SUBSECTION Standard>
 tp_capabilities_get_type
 TP_CAPABILITIES
