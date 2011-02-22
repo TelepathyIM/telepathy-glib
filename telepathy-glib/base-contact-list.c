@@ -3603,10 +3603,10 @@ tp_base_contact_list_group_renamed (TpBaseContactList *self,
     {
       tp_group_mixin_change_members (old_chan, "", NULL, set, NULL, NULL,
           self->priv->conn->self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+      tp_channel_manager_emit_channel_closed_for_object (self, old_chan);
+      _tp_base_contact_list_channel_close (old_chan);
     }
 
-  tp_channel_manager_emit_channel_closed_for_object (self, old_chan);
-  _tp_base_contact_list_channel_close (old_chan);
   g_hash_table_remove (self->priv->groups, GUINT_TO_POINTER (old_handle));
 
   /* get normalized forms */
