@@ -1694,6 +1694,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                   g_ptr_array_index (self->priv->header_extensions, i);
               FsRtpHeaderExtension *hdrext;
 
+              g_assert (extension->n_values >= 3);
               g_assert (G_VALUE_HOLDS_UINT (
                       g_value_array_get_nth (extension, 0)));
               g_assert (G_VALUE_HOLDS_UINT (
@@ -2750,6 +2751,56 @@ fs_codecs_to_feedback_messages (GList *fscodecs)
   return feedback_messages;
 }
 
+
+static TpMediaStreamDirection
+fsdirection_to_tpdirection (FsStreamDirection dir)
+{
+  switch (dir) {
+  case FS_DIRECTION_NONE:
+    return TP_MEDIA_STREAM_DIRECTION_NONE;
+  case FS_DIRECTION_SEND:
+    return TP_MEDIA_STREAM_DIRECTION_SEND;
+  case FS_DIRECTION_RECV:
+    return TP_MEDIA_STREAM_DIRECTION_RECEIVE;
+  case FS_DIRECTION_BOTH:
+    return TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL;
+  default:
+    g_assert_not_reached ();
+  }
+}
+
+
+static GPtrArray *
+_tf_stream_get_header_extensions (TfStream *stream)
+{
+  GPtrArray *extensions = g_ptr_array_new ();
+  GList *hdrexts;
+  GList *item;
+
+  if (!g_object_class_find_property (
+          G_OBJECT_GET_CLASS (stream->priv->fs_session),
+          "rtp-header-extensions"))
+    return extensions;
+
+  g_object_get (stream->priv->fs_session,
+      "rtp-header-extensions", &hdrexts, NULL);
+
+  for (item = hdrexts; item; item = item->next)
+    {
+      FsRtpHeaderExtension *hdrext = item->data;
+
+      g_ptr_array_add (extensions,
+          tp_value_array_build (4,
+              G_TYPE_UINT, hdrext->id,
+              G_TYPE_UINT, fsdirection_to_tpdirection (hdrext->direction),
+              G_TYPE_STRING, hdrext->uri,
+              G_TYPE_STRING, "",
+              G_TYPE_INVALID));
+    }
+
+  return extensions;
+}
+
 void
 _tf_stream_try_sending_codecs (TfStream *stream)
 {
@@ -2758,6 +2809,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   GList *item = NULL;
   GPtrArray *tpcodecs = NULL;
   GHashTable *feedback_messages = NULL;
+  GPtrArray *header_extensions = NULL;
 
   DEBUG (stream, "called (send_local:%d send_supported:%d)",
       stream->priv->send_local_codecs, stream->priv->send_supported_codecs);
@@ -2784,12 +2836,18 @@ _tf_stream_try_sending_codecs (TfStream *stream)
     {
       tpcodecs = fs_codecs_to_tp (stream, fscodecs);
       feedback_messages = fs_codecs_to_feedback_messages (fscodecs);
+      header_extensions = _tf_stream_get_header_extensions (stream);
 
       DEBUG (stream, "calling MediaStreamHandler::Ready");
       tp_cli_media_stream_handler_call_supported_feedback_messages (
           stream->priv->stream_handler_proxy,
           -1, feedback_messages, async_method_callback_optional,
           "Media.StreamHandler::SupportedFeedbackMessages for Ready",
+          NULL, (GObject *) stream);
+      tp_cli_media_stream_handler_call_supported_header_extensions (
+          stream->priv->stream_handler_proxy,
+          -1, header_extensions, async_method_callback_optional,
+          "Media.StreamHandler::SupportedHeaderExtensions for Ready",
           NULL, (GObject *) stream);
       tp_cli_media_stream_handler_call_ready (
           stream->priv->stream_handler_proxy,
@@ -2803,12 +2861,18 @@ _tf_stream_try_sending_codecs (TfStream *stream)
     {
       tpcodecs = fs_codecs_to_tp (stream, fscodecs);
       feedback_messages = fs_codecs_to_feedback_messages (fscodecs);
+      header_extensions = _tf_stream_get_header_extensions (stream);
 
       DEBUG (stream, "calling MediaStreamHandler::SupportedCodecs");
       tp_cli_media_stream_handler_call_supported_feedback_messages (
           stream->priv->stream_handler_proxy,
           -1, feedback_messages, async_method_callback_optional,
           "Media.StreamHandler::SupportedFeedbackMessages for SupportedCodecs",
+          NULL, (GObject *) stream);
+      tp_cli_media_stream_handler_call_supported_header_extensions (
+          stream->priv->stream_handler_proxy,
+          -1, header_extensions, async_method_callback_optional,
+          "Media.StreamHandler::SupportedHeaderExtensions for SupportedCodecs",
           NULL, (GObject *) stream);
       tp_cli_media_stream_handler_call_supported_codecs (
           stream->priv->stream_handler_proxy,
@@ -2831,12 +2895,20 @@ _tf_stream_try_sending_codecs (TfStream *stream)
         tpcodecs = fs_codecs_to_tp (stream, fscodecs);
       if (!feedback_messages)
         feedback_messages = fs_codecs_to_feedback_messages (fscodecs);
+      if (!header_extensions)
+        header_extensions = _tf_stream_get_header_extensions (stream);
+
 
       DEBUG (stream, "calling MediaStreamHandler::CodecsUpdated");
       tp_cli_media_stream_handler_call_supported_feedback_messages (
           stream->priv->stream_handler_proxy,
           -1, feedback_messages, async_method_callback_optional,
           "Media.StreamHandler::SupportedFeedbackMessages for CodecsUpdated",
+          NULL, (GObject *) stream);
+      tp_cli_media_stream_handler_call_supported_header_extensions (
+          stream->priv->stream_handler_proxy,
+          -1, header_extensions, async_method_callback_optional,
+          "Media.StreamHandler::SupportedHeaderExtensions for CodecsUpdated",
           NULL, (GObject *) stream);
       tp_cli_media_stream_handler_call_codecs_updated (
           stream->priv->stream_handler_proxy,
@@ -2849,6 +2921,8 @@ out:
     g_boxed_free (TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, tpcodecs);
   if (feedback_messages)
     g_boxed_free (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP, feedback_messages);
+  if (header_extensions)
+    g_boxed_free (TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST, header_extensions);
   fs_codec_list_destroy (stream->priv->last_sent_codecs);
   stream->priv->last_sent_codecs = fscodecs;
 }
