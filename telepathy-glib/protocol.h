@@ -104,4 +104,6 @@ TpCapabilities *tp_protocol_get_capabilities (TpProtocol *self);
 
 G_END_DECLS
 
+#include <telepathy-glib/_gen/tp-cli-protocol.h>
+
 #endif
