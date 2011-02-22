@@ -2600,6 +2600,69 @@ _tf_stream_new (gpointer channel,
   return self;
 }
 
+static GHashTable *
+fs_codecs_to_feedback_messages (GList *fscodecs)
+{
+  GList *item;
+  GHashTable *feedback_messages = g_hash_table_new_full (g_direct_hash,
+      g_direct_equal, NULL, (GDestroyNotify) g_value_array_free);
+
+  for (item = fscodecs; item; item = item->next)
+    {
+      FsCodec *fs_codec = item->data;
+
+      if (fs_codec->ABI.ABI.minimum_reporting_interval != G_MAXUINT ||
+          fs_codec->ABI.ABI.feedback_params)
+        {
+          GValueArray *codec = g_value_array_new (2);
+          GPtrArray *messages = g_ptr_array_new ();
+          GValue *val;
+          GList *item2;
+
+          for (item2 = fs_codec->ABI.ABI.feedback_params;
+               item2;
+               item2 = item2->next)
+            {
+              FsFeedbackParameter *p = item2->data;
+              GValueArray *message = g_value_array_new (3);
+              GValue *val2;
+
+              g_value_array_insert (message, 0, NULL);
+              val2 = g_value_array_get_nth (message, 0);
+              g_value_init (val2, G_TYPE_STRING);
+              g_value_set_string (val2, p->type);
+
+              g_value_array_insert (message, 1, NULL);
+              val2 = g_value_array_get_nth (message, 1);
+              g_value_init (val2, G_TYPE_STRING);
+              g_value_set_string (val2, p->subtype);
+
+              g_value_array_insert (message, 2, NULL);
+              val2 = g_value_array_get_nth (message, 2);
+              g_value_init (val2, G_TYPE_STRING);
+              g_value_set_string (val2, p->extra_params);
+
+              g_ptr_array_add (messages, message);
+            }
+
+          g_value_array_insert (codec, 0, NULL);
+          val = g_value_array_get_nth (codec, 0);
+          g_value_init (val, G_TYPE_UINT);
+          g_value_set_uint (val, fs_codec->ABI.ABI.minimum_reporting_interval);
+
+          g_value_array_insert (codec, 1, NULL);
+          val = g_value_array_get_nth (codec, 1);
+          g_value_init (val, TP_ARRAY_TYPE_RTCP_FEEDBACK_MESSAGE_LIST);
+          g_value_take_boxed (val, messages);
+
+          g_hash_table_insert (feedback_messages,
+              GUINT_TO_POINTER (fs_codec->id), codec);
+        }
+    }
+
+  return feedback_messages;
+}
+
 void
 _tf_stream_try_sending_codecs (TfStream *stream)
 {
@@ -2607,6 +2670,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   GList *fscodecs = NULL;
   GList *item = NULL;
   GPtrArray *tpcodecs = NULL;
+  GHashTable *feedback_messages = NULL;
 
   DEBUG (stream, "called (send_local:%d send_supported:%d)",
       stream->priv->send_local_codecs, stream->priv->send_supported_codecs);
@@ -2632,8 +2696,14 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   if (stream->priv->send_local_codecs)
     {
       tpcodecs = fs_codecs_to_tp (stream, fscodecs);
+      feedback_messages = fs_codecs_to_feedback_messages (fscodecs);
 
       DEBUG (stream, "calling MediaStreamHandler::Ready");
+      tp_cli_media_stream_handler_call_supported_feedback_messages (
+          stream->priv->stream_handler_proxy,
+          -1, feedback_messages, async_method_callback_optional,
+          "Media.StreamHandler::SupportedFeedbackMessages for Ready",
+          NULL, (GObject *) stream);
       tp_cli_media_stream_handler_call_ready (
           stream->priv->stream_handler_proxy,
           -1, tpcodecs, async_method_callback, "Media.StreamHandler::Ready",
@@ -2645,8 +2715,14 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   if (stream->priv->send_supported_codecs)
     {
       tpcodecs = fs_codecs_to_tp (stream, fscodecs);
+      feedback_messages = fs_codecs_to_feedback_messages (fscodecs);
 
       DEBUG (stream, "calling MediaStreamHandler::SupportedCodecs");
+      tp_cli_media_stream_handler_call_supported_feedback_messages (
+          stream->priv->stream_handler_proxy,
+          -1, feedback_messages, async_method_callback_optional,
+          "Media.StreamHandler::SupportedFeedbackMessages for SupportedCodecs",
+          NULL, (GObject *) stream);
       tp_cli_media_stream_handler_call_supported_codecs (
           stream->priv->stream_handler_proxy,
           -1, tpcodecs, async_method_callback,
@@ -2666,8 +2742,15 @@ _tf_stream_try_sending_codecs (TfStream *stream)
     {
       if (!tpcodecs)
         tpcodecs = fs_codecs_to_tp (stream, fscodecs);
+      if (!feedback_messages)
+        feedback_messages = fs_codecs_to_feedback_messages (fscodecs);
 
       DEBUG (stream, "calling MediaStreamHandler::CodecsUpdated");
+      tp_cli_media_stream_handler_call_supported_feedback_messages (
+          stream->priv->stream_handler_proxy,
+          -1, feedback_messages, async_method_callback_optional,
+          "Media.StreamHandler::SupportedFeedbackMessages for CodecsUpdated",
+          NULL, (GObject *) stream);
       tp_cli_media_stream_handler_call_codecs_updated (
           stream->priv->stream_handler_proxy,
           -1, tpcodecs, async_method_callback,
@@ -2677,6 +2760,8 @@ _tf_stream_try_sending_codecs (TfStream *stream)
 out:
   if (tpcodecs)
     g_boxed_free (TP_ARRAY_TYPE_MEDIA_STREAM_HANDLER_CODEC_LIST, tpcodecs);
+  if (feedback_messages)
+    g_boxed_free (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP, feedback_messages);
   fs_codec_list_destroy (stream->priv->last_sent_codecs);
   stream->priv->last_sent_codecs = fscodecs;
 }
