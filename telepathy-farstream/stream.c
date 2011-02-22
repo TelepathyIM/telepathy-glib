@@ -42,6 +42,7 @@
 #include <telepathy-glib/util.h>
 
 #include <gst/farsight/fs-conference-iface.h>
+#include <gst/farsight/fs-rtp.h>
 
 #include "stream.h"
 #include "stream-priv.h"
@@ -107,6 +108,7 @@ struct _TfStreamPrivate
   guint tos;
 
   GHashTable *feedback_messages;
+  GPtrArray *header_extensions;
 
   GStaticMutex mutex;
   guint idle_connected_id; /* Protected by mutex */
@@ -206,6 +208,9 @@ static void stream_close (TpMediaStreamHandler *proxy,
 
 static void set_remote_feedback_messages (TpMediaStreamHandler *proxy,
     GHashTable *messages, gpointer user_data, GObject *object);
+
+static void set_remote_header_extensions (TpMediaStreamHandler *proxy,
+    const GPtrArray *header_extensions, gpointer user_data, GObject *object);
 
 static void invalidated_cb (TpMediaStreamHandler *proxy,
     guint domain, gint code, gchar *message, gpointer user_data);
@@ -465,6 +470,11 @@ tf_stream_dispose (GObject *object)
     g_boxed_free (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP,
         priv->feedback_messages);
   priv->feedback_messages = NULL;
+
+  if (priv->header_extensions)
+    g_boxed_free (TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST,
+        priv->header_extensions);
+  priv->header_extensions = NULL;
 
   while ((data = g_queue_pop_head (&priv->events_to_send)))
     g_slice_free (struct DtmfEvent, data);
@@ -780,6 +790,9 @@ get_all_properties_cb (TpProxy *proxy,
           (GObject*) stream, NULL);
   tp_cli_media_stream_handler_connect_to_set_remote_feedback_messages
       (stream->priv->stream_handler_proxy, set_remote_feedback_messages, NULL,
+          NULL, (GObject*) stream, NULL);
+  tp_cli_media_stream_handler_connect_to_set_remote_header_extensions
+      (stream->priv->stream_handler_proxy, set_remote_header_extensions, NULL,
           NULL, (GObject*) stream, NULL);
 
   memset (params, 0, sizeof(GParameter) * MAX_STREAM_TRANS_PARAMS);
@@ -1546,6 +1559,23 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
     fs_codec_add_optional_parameter (codec, key, value);
 }
 
+static FsStreamDirection
+tpdirection_to_fsdirection (TpMediaStreamDirection dir)
+{
+  switch (dir) {
+  case TP_MEDIA_STREAM_DIRECTION_NONE:
+    return FS_DIRECTION_NONE;
+  case TP_MEDIA_STREAM_DIRECTION_SEND:
+    return FS_DIRECTION_SEND;
+  case TP_MEDIA_STREAM_DIRECTION_RECEIVE:
+    return FS_DIRECTION_RECV;
+  case TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL:
+    return FS_DIRECTION_BOTH;
+  default:
+    g_assert_not_reached ();
+  }
+}
+
 static void
 set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     const GPtrArray *codecs,
@@ -1647,6 +1677,47 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
       g_boxed_free (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP,
           self->priv->feedback_messages);
       self->priv->feedback_messages = NULL;
+    }
+
+
+  if (self->priv->header_extensions)
+    {
+      if (g_object_class_find_property (
+              G_OBJECT_GET_CLASS (self->priv->fs_stream),
+              "rtp-header-extensions"))
+        {
+          GList *hdrexts = NULL;
+
+          for (i = 0; i < self->priv->header_extensions->len; i++)
+            {
+              GValueArray *extension =
+                  g_ptr_array_index (self->priv->header_extensions, i);
+              FsRtpHeaderExtension *hdrext;
+
+              g_assert (G_VALUE_HOLDS_UINT (
+                      g_value_array_get_nth (extension, 0)));
+              g_assert (G_VALUE_HOLDS_UINT (
+                      g_value_array_get_nth (extension, 1)));
+              g_assert (G_VALUE_HOLDS_STRING (
+                      g_value_array_get_nth (extension, 2)));
+
+              hdrext = fs_rtp_header_extension_new (
+                  g_value_get_uint (g_value_array_get_nth (extension, 0)),
+                  tpdirection_to_fsdirection (
+                      g_value_get_uint (g_value_array_get_nth (extension, 1))),
+                  g_value_get_string (g_value_array_get_nth (extension, 2)));
+
+              hdrexts = g_list_append (hdrexts, hdrext);
+            }
+
+          g_object_set (self->priv->fs_stream, "rtp-header-extensions",
+              hdrexts, NULL);
+
+          fs_rtp_header_extension_list_destroy (hdrexts);
+        }
+      g_boxed_free (TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST,
+          self->priv->header_extensions);
+      self->priv->header_extensions = NULL;
     }
 
   if (!fs_stream_set_remote_codecs (self->priv->fs_stream, fs_remote_codecs,
@@ -2112,6 +2183,22 @@ set_remote_feedback_messages (TpMediaStreamHandler *proxy,
 
   self->priv->feedback_messages =
       g_boxed_copy (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP, messages);
+}
+
+
+static void
+set_remote_header_extensions (TpMediaStreamHandler *proxy,
+    const GPtrArray *header_extensions, gpointer user_data, GObject *object)
+{
+  TfStream *self = TF_STREAM (object);
+
+  if (self->priv->header_extensions)
+    g_boxed_free (TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST,
+        self->priv->header_extensions);
+
+  self->priv->header_extensions =
+      g_boxed_copy (TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST,
+          header_extensions);
 }
 
 
