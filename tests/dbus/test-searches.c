@@ -94,9 +94,7 @@ test_get_dates (TestCaseFixture *fixture,
   GList *ret, *loc;
   TplEntity *entity;
 
-  entity = g_object_new (TPL_TYPE_ENTITY,
-      "identifier", ID,
-      "type", TPL_ENTITY_CONTACT);
+  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
   ret = _tpl_log_manager_get_dates (fixture->manager, fixture->account, entity);
   g_object_unref (entity);
 

@@ -207,15 +207,10 @@ test_clear_entity (XmlTestCaseFixture *fixture,
   g_assert (account != NULL);
 
   if (is_room)
-    entity = g_object_new (TPL_TYPE_ENTITY,
-        "type", TPL_ENTITY_ROOM,
-        "identifier", "meego@conference.collabora.co.uk",
-        NULL);
+    entity = tpl_entity_new_from_room_id ("meego@conference.collabora.co.uk");
   else
-    entity = g_object_new (TPL_TYPE_ENTITY,
-        "type", TPL_ENTITY_CONTACT,
-        "identifier", "derek.foreman@collabora.co.uk",
-        NULL);
+    entity = tpl_entity_new ("derek.foreman@collabora.co.uk",
+        TPL_ENTITY_CONTACT, NULL, NULL);
 
   _tpl_log_store_clear_entity (TPL_LOG_STORE (fixture->store), account, entity);
   g_object_unref (account);

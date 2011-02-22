@@ -67,6 +67,13 @@ typedef struct
 
 GType tpl_entity_get_type (void);
 
+TplEntity *tpl_entity_new (const gchar *id,
+    TplEntityType type,
+    const gchar *alias,
+    const gchar *avatar_token);
+TplEntity *tpl_entity_new_from_tp_contact (TpContact *contact, TplEntityType type);
+TplEntity *tpl_entity_new_from_room_id (const gchar *room_id);
+
 const gchar *tpl_entity_get_alias (TplEntity *self);
 const gchar *tpl_entity_get_identifier (TplEntity *self);
 TplEntityType tpl_entity_get_entity_type (TplEntity *self);

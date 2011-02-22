@@ -621,11 +621,7 @@ log_store_pidgin_search_hit_new (TplLogStore *self,
   else
     id = g_strdup (strv[len-2]);
 
-  hit->target = g_object_new (TPL_TYPE_ENTITY,
-      "identifier", id,
-      "alias", id,
-      "type", type,
-      NULL);
+  hit->target = tpl_entity_new (id, type, NULL, NULL);
 
   g_free (id);
 
@@ -835,11 +831,10 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           /* FIXME: in text format (is_html==FALSE) there is no actual way to
            * understand what type the entity is, it might lead to inaccuracy,
            * as is_user will be always FALSE  */
-          sender = g_object_new (TPL_TYPE_ENTITY,
-                  "identifier", is_user ? own_user : sender_name,
-                  "type", is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
-                  "alias", sender_name,
-                  NULL);
+          sender = tpl_entity_new (
+              is_user ? own_user : sender_name,
+              is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
+              sender_name, NULL);
 
           /* FIXME: in text format it's not possible to guess who is the
            * receiver (unless we are in a room). In this case the receiver will
@@ -866,11 +861,8 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
                   receiver_type = TPL_ENTITY_SELF;
                 }
 
-              receiver = g_object_new (TPL_TYPE_ENTITY,
-                  "identifier", receiver_id,
-                  "type", receiver_type,
-                  "alias", receiver_id,
-                  NULL);
+              receiver = tpl_entity_new (receiver_id, receiver_type,
+                  NULL, NULL);
             }
 
 
@@ -1074,19 +1066,11 @@ log_store_pidgin_get_entities_for_dir (TplLogStore *self,
       if (g_str_has_suffix (name, ".chat"))
         {
           gchar *id = g_strndup (name, strlen (name) - 5);
-          entity = g_object_new (TPL_TYPE_ENTITY,
-              "identifier", id,
-              "alias", id,
-              "type", TPL_ENTITY_ROOM,
-              NULL);
+          entity = tpl_entity_new_from_room_id (id);
           g_free (id);
         }
       else
-        entity = g_object_new (TPL_TYPE_ENTITY,
-            "identifier", name,
-            "alias", name,
-            "type", TPL_ENTITY_CONTACT,
-            NULL);
+        entity = tpl_entity_new (name, TPL_ENTITY_CONTACT, NULL, NULL);
 
       entities = g_list_prepend (entities, entity);
     }

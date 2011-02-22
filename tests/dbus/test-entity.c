@@ -11,17 +11,22 @@ test_entity_instantiation (void)
 {
   TplEntity *entity;
 
-  entity = g_object_new (TPL_TYPE_ENTITY,
-      "identifier", "my-identifier",
-      "type", TPL_ENTITY_CONTACT,
-      "alias", "my-alias",
-      "avatar-token", "my-token",
-      NULL);
+  entity = tpl_entity_new ("my-identifier", TPL_ENTITY_CONTACT,
+      "my-alias", "my-token");
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "my-identifier");
   g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
   g_assert_cmpstr (tpl_entity_get_alias (entity), ==, "my-alias");
   g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, "my-token");
+
+  g_object_unref (entity);
+
+  /* Check that identifier is copied in absence of ID */
+  entity = tpl_entity_new ("my-identifier", TPL_ENTITY_CONTACT,
+      NULL, NULL);
+
+  g_assert_cmpstr (tpl_entity_get_alias (entity), ==, "my-identifier");
+  g_assert (tpl_entity_get_avatar_token (entity) == NULL);
 
   g_object_unref (entity);
 }
@@ -31,7 +36,7 @@ test_entity_instantiation_from_room_id (void)
 {
   TplEntity *entity;
 
-  entity = _tpl_entity_new_from_room_id ("my-room-id");
+  entity = tpl_entity_new_from_room_id ("my-room-id");
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "my-room-id");
   g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_ROOM);
@@ -115,7 +120,7 @@ test_entity_instantiation_from_tp_contact (void)
       NULL, NULL);
   g_main_loop_run (result.loop);
 
-  entity = _tpl_entity_new_from_tp_contact (result.contacts[0],
+  entity = tpl_entity_new_from_tp_contact (result.contacts[0],
       TPL_ENTITY_SELF);
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "alice");
@@ -124,7 +129,7 @@ test_entity_instantiation_from_tp_contact (void)
   g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, avatar_tokens[0]);
   g_object_unref (entity);
 
-  entity = _tpl_entity_new_from_tp_contact (result.contacts[1],
+  entity = tpl_entity_new_from_tp_contact (result.contacts[1],
       TPL_ENTITY_CONTACT);
 
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "bob");

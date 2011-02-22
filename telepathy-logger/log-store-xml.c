@@ -738,13 +738,9 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   g_list_free (accounts);
 
   if (is_chatroom)
-    target = _tpl_entity_new_from_room_id (chat_id);
+    target = tpl_entity_new_from_room_id (chat_id);
   else
-    target = g_object_new (TPL_TYPE_ENTITY,
-        "identifier", chat_id,
-        "type", TPL_ENTITY_CONTACT,
-        "alias", chat_id,
-        NULL);
+    target = tpl_entity_new (chat_id, TPL_ENTITY_CONTACT, NULL, NULL);
 
   hit = _tpl_log_manager_search_hit_new (account, target, date);
 
@@ -873,30 +869,17 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
 
       timestamp = _tpl_time_parse (time_str);
 
-      if (is_user || is_room)
-        {
-          receiver = g_object_new (TPL_TYPE_ENTITY,
-              "identifier", target_id,
-              "type", is_room ? TPL_ENTITY_ROOM : TPL_ENTITY_CONTACT,
-              "alias", target_id,
-              NULL);
-        }
+      if (is_room)
+        receiver = tpl_entity_new_from_room_id (target_id);
+      else if (is_user)
+        receiver = tpl_entity_new (target_id, TPL_ENTITY_CONTACT, NULL, NULL);
       else
-        {
-          const gchar *alias = tp_account_get_nickname (account);
-          receiver = g_object_new (TPL_TYPE_ENTITY,
-              "identifier", self_id,
-              "type", TPL_ENTITY_SELF,
-              "alias", alias == NULL ? self_id : alias,
-              NULL);
-        }
+        receiver = tpl_entity_new (self_id, TPL_ENTITY_SELF,
+            tp_account_get_nickname (account), NULL);
 
-      sender = g_object_new (TPL_TYPE_ENTITY,
-          "identifier", sender_id,
-          "type", is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
-          "alias", sender_name,
-          "avatar-token", sender_avatar_token,
-          NULL);
+      sender = tpl_entity_new (sender_id,
+          is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
+          sender_name, sender_avatar_token);
 
       if (self->priv->empathy_legacy)
         {
@@ -1127,13 +1110,9 @@ log_store_xml_get_entities_for_dir (TplLogStoreXml *self,
         }
 
       if (is_chatroom)
-        entity = _tpl_entity_new_from_room_id (name);
+        entity = tpl_entity_new_from_room_id (name);
       else
-        entity = g_object_new (TPL_TYPE_ENTITY,
-            "identifier", name,
-            "type", TPL_ENTITY_CONTACT,
-            "alias", name, /* FIXME Faking alias with identifier */
-            NULL);
+        entity = tpl_entity_new (name, TPL_ENTITY_CONTACT, NULL, NULL);
 
       entities = g_list_prepend (entities, entity);
     }

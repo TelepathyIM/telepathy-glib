@@ -174,20 +174,13 @@ setup (PidginTestCaseFixture* fixture,
       "testmode", TRUE,
       NULL);
 
-  fixture->room = g_object_new (TPL_TYPE_ENTITY,
-      "identifier", "test@conference.collabora.co.uk",
-      "type", TPL_ENTITY_ROOM,
-      NULL);
+  fixture->room = tpl_entity_new_from_room_id (
+      "test@conference.collabora.co.uk");
 
-  fixture->irc_room = g_object_new (TPL_TYPE_ENTITY,
-      "identifier", "#telepathy",
-      "type", TPL_ENTITY_ROOM,
-      NULL);
+  fixture->irc_room = tpl_entity_new_from_room_id ("#telepathy");
 
-  fixture->contact = g_object_new (TPL_TYPE_ENTITY,
-      "identifier", "user2@collabora.co.uk",
-      "type", TPL_ENTITY_CONTACT,
-      NULL);
+  fixture->contact = tpl_entity_new ("user2@collabora.co.uk",
+      TPL_ENTITY_CONTACT, NULL, NULL);
 
   if (user_data != NULL)
     setup_service (fixture, user_data);

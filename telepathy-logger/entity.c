@@ -210,8 +210,44 @@ tpl_entity_init (TplEntity *self)
   self->priv = priv;
 }
 
+TplEntity *
+tpl_entity_new (const gchar *id,
+    TplEntityType type,
+    const gchar *alias,
+    const gchar *avatar_token)
+{
+  TplEntity *ret;
 
-/* _tpl_entity_new_from_room_id:
+  g_return_val_if_fail (!TPL_STR_EMPTY (id), NULL);
+
+  ret = g_object_new (TPL_TYPE_ENTITY,
+      "identifier", id,
+      "type", type,
+      "alias", alias == NULL ? id : alias,
+      "avatar-token", avatar_token,
+      NULL);
+
+  switch (type)
+    {
+    case TPL_ENTITY_ROOM:
+      DEBUG ("Room id: %s", id);
+      break;
+    case TPL_ENTITY_CONTACT:
+      DEBUG ("Contact id: %s, tok: %s", id, avatar_token);
+      break;
+    case TPL_ENTITY_SELF:
+      DEBUG ("Self id: %s, tok: %s", id, avatar_token);
+      break;
+    default:
+      g_warning ("Unkown entity type %i", type);
+      g_object_unref (ret);
+      ret = NULL;
+    }
+
+  return ret;
+}
+
+/** tpl_entity_new_from_room_id:
  * @room_id: the room id which will be the identifier for the entity
  *
  * Return a TplEntity instance with identifier, alias copied from
@@ -219,24 +255,13 @@ tpl_entity_init (TplEntity *self)
  * the #TplEntity returned.
  */
 TplEntity *
-_tpl_entity_new_from_room_id (const gchar *room_id)
+tpl_entity_new_from_room_id (const gchar *room_id)
 {
-  TplEntity *ret;
-
-  g_return_val_if_fail (room_id != NULL, NULL);
-
-  ret = g_object_new (TPL_TYPE_ENTITY,
-      "type", TPL_ENTITY_ROOM,
-      "identifier", room_id,
-      "alias", room_id,
-      NULL);
-
-  DEBUG ("Chatroom id: %s", room_id);
-  return ret;
+  return tpl_entity_new (room_id, TPL_ENTITY_ROOM, NULL, NULL);
 }
 
 
-/* _tpl_entity_new_from_tp_contact:
+/** tpl_entity_new_from_tp_contact:
  * @contact: the TpContact instance to create the TplEntity from
  * @type: the #TplEntity type
  *
@@ -246,25 +271,17 @@ _tpl_entity_new_from_room_id (const gchar *room_id)
  * %TPL_ENTITY_SELF are accepted.
  */
 TplEntity *
-_tpl_entity_new_from_tp_contact (TpContact *contact,
+tpl_entity_new_from_tp_contact (TpContact *contact,
     TplEntityType type)
 {
-  TplEntity *ret;
-
   g_return_val_if_fail (TP_IS_CONTACT (contact), NULL);
   g_return_val_if_fail (type == TPL_ENTITY_CONTACT || type == TPL_ENTITY_SELF,
       NULL);
 
-  ret = g_object_new (TPL_TYPE_ENTITY,
-      "type", type,
-      "identifier", tp_contact_get_identifier (contact),
-      "alias", tp_contact_get_alias (contact),
-      "avatar-token", tp_contact_get_avatar_token (contact),
-      NULL);
-
-  DEBUG ("ID: %s, TOK: %s", tpl_entity_get_identifier (ret),
-      tpl_entity_get_avatar_token (ret));
-  return ret;
+  return tpl_entity_new (tp_contact_get_identifier (contact),
+      type,
+      tp_contact_get_alias (contact),
+      tp_contact_get_avatar_token (contact));
 }
 
 

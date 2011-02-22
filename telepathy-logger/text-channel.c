@@ -1074,7 +1074,7 @@ on_sent_signal_cb (TpChannel *proxy,
 
   /* Initialize data for TplEntity */
   me = _tpl_text_channel_get_my_contact (tpl_text);
-  sender = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
+  sender = tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
 
   if (!_tpl_text_channel_is_chatroom (tpl_text))
     {
@@ -1085,7 +1085,7 @@ on_sent_signal_cb (TpChannel *proxy,
           GUINT_TO_POINTER (handle));
       g_assert (remote != NULL);
 
-      receiver = _tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
+      receiver = tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
 
       DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto=\"%s "
           "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
@@ -1099,7 +1099,7 @@ on_sent_signal_cb (TpChannel *proxy,
     }
   else
     {
-      receiver = _tpl_entity_new_from_room_id (
+      receiver = tpl_entity_new_from_room_id (
           _tpl_text_channel_get_chatroom_id (tpl_text));
 
       DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto "
@@ -1166,18 +1166,18 @@ keepon_on_receiving_signal (TplTextChannel *tpl_text,
   TplEntity *sender;
   TplEntity *receiver;
 
-  sender = _tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
+  sender = tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
 
   if (_tpl_text_channel_is_chatroom (tpl_text))
     {
       const gchar *receiver_id = _tpl_text_channel_get_chatroom_id (tpl_text);
-      receiver = _tpl_entity_new_from_room_id (receiver_id);
+      receiver = tpl_entity_new_from_room_id (receiver_id);
     }
   else
     {
       TpContact *me;
       me = _tpl_text_channel_get_my_contact (tpl_text);
-      receiver = _tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
+      receiver = tpl_entity_new_from_tp_contact (me, TPL_ENTITY_SELF);
     }
 
   /* Initialize TplTextEvent */

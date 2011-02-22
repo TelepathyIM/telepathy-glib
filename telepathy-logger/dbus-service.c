@@ -830,10 +830,7 @@ tpl_dbus_service_clear_entity (TplSvcLogger *logger,
       goto out;
     }
 
-  entity = g_object_new (TPL_TYPE_ENTITY,
-      "type", type,
-      "identifier", identifier,
-      NULL);
+  entity = tpl_entity_new (identifier, type, NULL, NULL);
 
   /* We want to clear synchronously to avoid concurent write */
   _tpl_log_manager_clear_entity (self->priv->manager, account, entity);
