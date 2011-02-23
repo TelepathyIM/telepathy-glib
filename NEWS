@@ -1,14 +1,36 @@
-telepathy-glib 0.13.14 (UNRELEASED)
+telepathy-glib 0.13.14 (2011-02-23)
 ===================================
- ________________________________________
-< colourless green ideas sleep furiously >
- ----------------------------------------
-        \   ^__^
-         \  (oo)\_______
-            (__)\       )\/\
-                ||----w |
-                ||     ||
 
+The “Things that London never saw” release.
+
+Enhancements:
+
+• TpContact now supports modifying the contact's groups on connection
+  managers which implement Connection.Interface.ContactGroups. (Zdra)
+
+• It's now possible to get a list of TpChannelRequest objects from a
+  TpObserveChannelsContext or TpHandleChannelsContext; adding hints to
+  channel requests, and retrieving them again, is supported with
+  telepathy-mission-control ≥ 5.7.2. (cassidy)
+
+• tp_account_channel_request_create_and_observe_channel_async() and
+  friends, analogous to
+  tp_account_channel_request_create_and_handle_channel_async() but for
+  Observers rather than Handlers, have been added. (cassidy)
+
+• Code is now generated to emit and listen for the PropertiesChanged
+  signal on org.freedesktop.DBus.Properties. Note that
+  TpDBusPropertiesMixin does not emit this signal on it own, nor does
+  TpProxy listen for it of its own accord. (danni)
+
+• tp_capabilities_supports_room_list(), a convenient way to check
+  whether a connection supports listing chat rooms, has been added.
+  (cassidy)
+
+Fixes:
+
+• Including telepathy-glib/protocol.h now correctly includes generated
+  client-side functions. (danni)
 
 telepathy-glib 0.13.13 (2011-02-09)
 ===================================
