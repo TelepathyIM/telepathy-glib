@@ -737,7 +737,7 @@ tp_handle_channels_context_get_handler_info (TpHandleChannelsContext *self)
  * Returns: (transfer full) (element-type TelepathyGLib.ChannelRequest):
  *  a newly allocated #GList of reffed #TpChannelRequest.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 GList *
 tp_handle_channels_context_get_requests (

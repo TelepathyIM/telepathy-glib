@@ -1442,7 +1442,7 @@ request_and_observe_channel_async (TpAccountChannelRequest *self,
  * the Telepathy book</ulink> for details about how clients should interact
  * with channels.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 void
 tp_account_channel_request_create_and_observe_channel_async (
@@ -1468,7 +1468,7 @@ tp_account_channel_request_create_and_observe_channel_async (
  * Returns: (transfer full): a newly created #TpChannel if the channel was
  * successfully created and dispatched, otherwise %NULL.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 TpChannel *
 tp_account_channel_request_create_and_observe_channel_finish (
@@ -1511,7 +1511,7 @@ tp_account_channel_request_create_and_observe_channel_finish (
  * so that it can re-present the window to the user, for example.
  * Otherwise, a new channel will be created and dispatched to a handler.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 void
 tp_account_channel_request_ensure_and_observe_channel_async (
@@ -1537,7 +1537,7 @@ tp_account_channel_request_ensure_and_observe_channel_async (
  * Returns: (transfer full): a newly created #TpChannel if the channel was
  * successfully ensure and (re-)dispatched, otherwise %NULL.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 TpChannel *
 tp_account_channel_request_ensure_and_observe_channel_finish (
@@ -1561,7 +1561,7 @@ tp_account_channel_request_ensure_and_observe_channel_finish (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 void
 tp_account_channel_request_set_hints (TpAccountChannelRequest *self,

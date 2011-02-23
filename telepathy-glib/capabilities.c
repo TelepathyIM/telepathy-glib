@@ -599,7 +599,7 @@ tp_capabilities_supports_contact_search (TpCapabilities *self,
  * HandleTypeNone as TargetHandleType can be expected to work,
  * %FALSE otherwise.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 gboolean
 tp_capabilities_supports_room_list (TpCapabilities *self,

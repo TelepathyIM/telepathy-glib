@@ -355,7 +355,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * If no channel factory is specified then #TpAutomaticProxyFactory is used.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.14
    */
   param_spec = g_param_spec_object ("channel-factory", "Channel factory",
       "Object implementing TpClientChannelFactoryInterface",
@@ -376,7 +376,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Read-only except during construction.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.14
    */
   param_spec = g_param_spec_boxed ("immutable-properties",
       "Immutable D-Bus properties",
@@ -395,7 +395,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Read-only.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.14
    */
   param_spec = g_param_spec_boxed ("hints", "Hints", "Hints",
       TP_HASH_TYPE_STRING_VARIANT_MAP,
@@ -408,7 +408,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Emitted when the channel request succeeds.
    *
-   * Deprecated: since 0.13.UNRELEASED. Use
+   * Deprecated: since 0.13.14. Use
    * #TpChannelRequest::succeeded-with-channel, which provides the resulting
    * channel, instead.
    */
@@ -437,7 +437,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    * prepare the features returned by
    * tp_client_channel_factory_dup_channel_features() himself.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.14
    */
   signals[SIGNAL_SUCCEEDED_WITH_CHANNEL] = g_signal_new (
       "succeeded-with-channel",
@@ -539,7 +539,7 @@ tp_channel_request_new (TpDBusDaemon *bus_daemon,
  *
  * Change the value of the #TpChannelRequest:channel-factory property.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 void
 tp_channel_request_set_channel_factory (TpChannelRequest *self,
@@ -559,7 +559,7 @@ tp_channel_request_set_channel_factory (TpChannelRequest *self,
  * Returns: (transfer none): the value of
  * #TpChannelRequest:immutable-properties
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 const GHashTable *
 tp_channel_request_get_immutable_properties (TpChannelRequest *self)
@@ -578,7 +578,7 @@ tp_channel_request_get_immutable_properties (TpChannelRequest *self)
  * Returns: (transfer none): the value of
  * #TpChannelRequest:hints
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 const GHashTable *
 tp_channel_request_get_hints (TpChannelRequest *self)

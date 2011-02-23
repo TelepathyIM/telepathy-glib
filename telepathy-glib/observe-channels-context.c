@@ -681,7 +681,7 @@ _tp_observe_channels_context_prepare_finish (
  * Returns: (transfer full) (element-type TelepathyGLib.ChannelRequest):
  *  a newly allocated #GList of reffed #TpChannelRequest.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 GList *
 tp_observe_channels_context_get_requests (TpObserveChannelsContext *self)

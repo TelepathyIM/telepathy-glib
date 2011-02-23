@@ -107,7 +107,7 @@ struct _TpContact {
  *  Connection implementing the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
  *  interface. (available since 0.13.12)
  * @TP_CONTACT_FEATURE_CONTACT_GROUPS: #TpContact:contact-groups
- *  (available since 0.13.UNRELEASED)
+ *  (available since 0.13.14)
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -651,7 +651,7 @@ tp_contact_get_publish_request (TpContact *self)
  * Returns: (array zero-terminated=1) (transfer none): the same
  *  #GStrv as the #TpContact:contact-groups property
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 const gchar * const *
 tp_contact_get_contact_groups (TpContact *self)
@@ -704,7 +704,7 @@ set_contact_groups_cb (TpConnection *connection,
  * is called. That means you can call tp_contact_get_contact_groups() to get the
  * new contact groups inside @callback.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 void
 tp_contact_set_contact_groups_async (TpContact *self,
@@ -753,7 +753,7 @@ tp_contact_set_contact_groups_async (TpContact *self,
  *
  * Returns: %TRUE if the request call was successful, otherwise %FALSE
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.14
  */
 gboolean
 tp_contact_set_contact_groups_finish (TpContact *self,
@@ -1267,7 +1267,7 @@ tp_contact_class_init (TpContactClass *klass)
    * on this contact, or if the connection does not implement ContactGroups
    * interface.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.14
    */
   param_spec = g_param_spec_boxed ("contact-groups",
       "Contact Groups",
@@ -1286,7 +1286,7 @@ tp_contact_class_init (TpContactClass *klass)
    * Emitted when this contact's groups changes. When this signal is emitted,
    * #TpContact:contact-groups property is already updated.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.14
    */
   signals[SIGNAL_CONTACT_GROUPS_CHANGED] = g_signal_new (
       "contact-groups-changed",
