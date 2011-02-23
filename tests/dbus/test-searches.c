@@ -134,6 +134,35 @@ test_get_entities (TestCaseFixture *fixture,
   g_list_free (ret);
 }
 
+
+static void
+test_get_events_for_date (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TplEntity *entity;
+  GDate *date;
+  GList *ret;
+
+  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+  date = g_date_new_dmy (13, 1, 2010);
+
+  ret = _tpl_log_manager_get_events_for_date (fixture->manager,
+      fixture->account,
+      entity,
+      TPL_EVENT_MASK_TEXT,
+      date);
+
+  g_object_unref (entity);
+  g_date_free (date);
+
+  /* We got 6 events in old Empathy and 6 in new TpLogger storage */
+  g_assert_cmpint (g_list_length (ret), ==, 12);
+
+  g_list_foreach (ret, (GFunc) g_object_unref, NULL);
+  g_list_free (ret);
+}
+
+
 static void
 teardown_service (TestCaseFixture* fixture,
     gconstpointer user_data)
@@ -310,6 +339,9 @@ main (int argc, char **argv)
       TestCaseFixture, params,
       setup, test_get_entities, teardown);
 
+  g_test_add ("/log-manager/get-events-for-date",
+      TestCaseFixture, params,
+      setup, test_get_events_for_date, teardown);
 
   retval = g_test_run ();
 

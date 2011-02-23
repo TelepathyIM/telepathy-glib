@@ -929,7 +929,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
 
       g_object_unref (sender);
       g_object_unref (receiver);
-      g_free (target_id);
       xmlFree (log_id);
       xmlFree (time_str);
       xmlFree (sender_id);
@@ -942,6 +941,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
 
   DEBUG ("Parsed %d events", g_list_length (events));
 
+  g_free (target_id);
   xmlFreeDoc (doc);
   xmlFreeParserCtxt (ctxt);
 
