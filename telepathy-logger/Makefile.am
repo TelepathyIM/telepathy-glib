@@ -16,7 +16,7 @@ pkgconfig_DATA = telepathy-logger-0.2.pc
 
 lib_LTLIBRARIES = libtelepathy-logger.la
 
-LIBTPLdir = $(includedir)/telepathy-logger-0.1/telepathy-logger
+LIBTPLdir = $(includedir)/telepathy-logger-0.2/telepathy-logger
 LIBTPL_HEADERS = \
 		entity.h			\
 		event.h				\
