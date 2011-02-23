@@ -371,10 +371,14 @@ log_store_pidgin_get_dir (TplLogStore *self,
 static gboolean
 log_store_pidgin_exists (TplLogStore *self,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    gint type_mask)
 {
   gchar *dir;
   gboolean exists;
+
+  if (!(type_mask & TPL_EVENT_MASK_TEXT))
+    return FALSE;
 
   dir = log_store_pidgin_get_dir (self, account, target);
 
@@ -432,7 +436,8 @@ log_store_pidgin_get_time (const gchar *filename)
 static GList *
 log_store_pidgin_get_dates (TplLogStore *self,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    gint type_mask)
 {
   GList *dates = NULL;
   gchar *directory;
@@ -442,6 +447,9 @@ log_store_pidgin_get_dates (TplLogStore *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
+
+  if (!(type_mask & TPL_EVENT_MASK_TEXT))
+    return NULL;
 
   directory = log_store_pidgin_get_dir (self, account, target);
 
@@ -1021,13 +1029,17 @@ _log_store_pidgin_search_in_files (TplLogStorePidgin *self,
 
 static GList *
 log_store_pidgin_search_new (TplLogStore *self,
-    const gchar *text)
+    const gchar *text,
+    gint type_mask)
 {
   GList *files;
   GList *retval;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
   g_return_val_if_fail (!tp_str_empty (text), NULL);
+
+  if (!(type_mask & TPL_EVENT_MASK_TEXT))
+    return NULL;
 
   files = log_store_pidgin_get_all_files (self, NULL);
   DEBUG ("Found %d log files in total", g_list_length (files));
@@ -1085,6 +1097,7 @@ static GList *
 log_store_pidgin_get_events_for_date (TplLogStore *self,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     const GDate *date)
 {
   GList *events, *filenames;
@@ -1092,6 +1105,9 @@ log_store_pidgin_get_events_for_date (TplLogStore *self,
   g_return_val_if_fail (TPL_IS_LOG_STORE_PIDGIN (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
+
+  if (!(type_mask & TPL_EVENT_MASK_TEXT))
+    return NULL;
 
   /* pidgin stores multiple files related to the same date */
   filenames = log_store_pidgin_get_filenames_for_date (self, account,
@@ -1133,6 +1149,7 @@ static GList *
 log_store_pidgin_get_filtered_events (TplLogStore *self,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     guint num_events,
     TplLogEventFilter filter,
     gpointer user_data)
@@ -1140,7 +1157,7 @@ log_store_pidgin_get_filtered_events (TplLogStore *self,
   GList *dates, *l, *events = NULL;
   guint i = 0;
 
-  dates = log_store_pidgin_get_dates (self, account, target);
+  dates = log_store_pidgin_get_dates (self, account, target, type_mask);
 
   for (l = g_list_last (dates); l != NULL && i < num_events; l = l->prev)
     {
@@ -1149,7 +1166,7 @@ log_store_pidgin_get_filtered_events (TplLogStore *self,
       /* FIXME: We should really restrict the event parsing to get only
        * the newest num_events. */
       new_events = log_store_pidgin_get_events_for_date (self, account,
-          target, l->data);
+          target, type_mask, l->data);
 
       n = new_events;
       while (n != NULL)

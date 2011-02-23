@@ -121,13 +121,15 @@ _tpl_log_store_get_name (TplLogStore *self)
 gboolean
 _tpl_log_store_exists (TplLogStore *self,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    gint type_mask)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), FALSE);
   if (!TPL_LOG_STORE_GET_INTERFACE (self)->exists)
     return FALSE;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->exists (self, account, target);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->exists (self, account, target,
+      type_mask);
 }
 
 
@@ -167,6 +169,7 @@ _tpl_log_store_add_event (TplLogStore *self,
  * @self: a TplLogStore
  * @account: a TpAccount
  * @target: a #TplEntity
+ * @type_mask: event type mask see #TplEventTypeMask
  *
  * Retrieves a list of #GDate, corresponding to each day
  * at least an event was sent to or received from @id.
@@ -178,14 +181,15 @@ _tpl_log_store_add_event (TplLogStore *self,
 GList *
 _tpl_log_store_get_dates (TplLogStore *self,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    gint type_mask)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (TPL_LOG_STORE_GET_INTERFACE (self)->get_dates == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_dates (self, account,
-      target);
+      target, type_mask);
 }
 
 
@@ -194,8 +198,7 @@ _tpl_log_store_get_dates (TplLogStore *self,
  * @self: a TplLogStore
  * @account: a TpAccount
  * @target: a #TplEntity
- * @id: a non-NULL identifier
- * @type: the event type of @id
+ * @type_mask: event type mask see #TplEventTypeMask
  * @date: a #GDate
  *
  * Retrieves a list of events, with timestamp matching @date.
@@ -208,6 +211,7 @@ GList *
 _tpl_log_store_get_events_for_date (TplLogStore *self,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     const GDate *date)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
@@ -215,21 +219,22 @@ _tpl_log_store_get_events_for_date (TplLogStore *self,
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_events_for_date (self,
-      account, target, date);
+      account, target, type_mask, date);
 }
 
 
 GList *
 _tpl_log_store_get_recent_events (TplLogStore *self,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    gint type_mask)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_events == NULL)
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_recent_events (self, account,
-      target);
+      target, type_mask);
 }
 
 
@@ -261,6 +266,7 @@ _tpl_log_store_get_entities (TplLogStore *self,
  * _tpl_log_store_search_new:
  * @self: a TplLogStore
  * @text: a text to be searched among text messages
+ * @type_mask: event type mask see #TplEventTypeMask
  *
  * Searches all textual log entries matching @text.
  *
@@ -270,13 +276,15 @@ _tpl_log_store_get_entities (TplLogStore *self,
  */
 GList *
 _tpl_log_store_search_new (TplLogStore *self,
-    const gchar *text)
+    const gchar *text,
+    gint type_mask)
 {
   g_return_val_if_fail (TPL_IS_LOG_STORE (self), NULL);
   if (TPL_LOG_STORE_GET_INTERFACE (self)->search_new == NULL)
     return NULL;
 
-  return TPL_LOG_STORE_GET_INTERFACE (self)->search_new (self, text);
+  return TPL_LOG_STORE_GET_INTERFACE (self)->search_new (self, text,
+      type_mask);
 }
 
 
@@ -285,6 +293,7 @@ _tpl_log_store_search_new (TplLogStore *self,
  * @self: a TplLogStore
  * @account: a TpAccount
  * @target: a #TplEntity
+ * @type_mask: event type mask see #TplEventTypeMask
  * @num_events: max number of events to return
  * @filter: filter function
  * @user_data: data be passed to @filter, may be NULL
@@ -302,6 +311,7 @@ GList *
 _tpl_log_store_get_filtered_events (TplLogStore *self,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     guint num_events,
     TplLogEventFilter filter,
     gpointer user_data)
@@ -311,7 +321,7 @@ _tpl_log_store_get_filtered_events (TplLogStore *self,
     return NULL;
 
   return TPL_LOG_STORE_GET_INTERFACE (self)->get_filtered_events (self,
-      account, target, num_events, filter, user_data);
+      account, target, type_mask, num_events, filter, user_data);
 }
 
 

@@ -90,7 +90,8 @@ test_clear (XmlTestCaseFixture *fixture,
 {
   GList *hits;
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      "1263405203");
+      "1263405203",
+      TPL_EVENT_MASK_TEXT);
 
   g_assert (hits != NULL);
   g_assert_cmpint (g_list_length (hits), ==, 1);
@@ -100,7 +101,8 @@ test_clear (XmlTestCaseFixture *fixture,
   _tpl_log_store_clear (TPL_LOG_STORE (fixture->store));
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      "1263405203");
+      "1263405203",
+      TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 0);
 }
@@ -117,14 +119,14 @@ test_clear_account (XmlTestCaseFixture *fixture,
   const gchar *cleared = "f95e605a3ae97c463b626a3538567bc90fc58730";
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      kept);
+      kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      cleared);
+      cleared, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
@@ -141,14 +143,14 @@ test_clear_account (XmlTestCaseFixture *fixture,
   g_object_unref (account);
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      kept);
+      kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      cleared);
+      cleared, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 0);
 }
@@ -179,21 +181,21 @@ test_clear_entity (XmlTestCaseFixture *fixture,
     }
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      always_kept);
+      always_kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      kept);
+      kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      cleared);
+      cleared, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
@@ -217,21 +219,21 @@ test_clear_entity (XmlTestCaseFixture *fixture,
   g_object_unref (entity);
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      always_kept);
+      always_kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      kept);
+      kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
   hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      cleared);
+      cleared, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 0);
 }

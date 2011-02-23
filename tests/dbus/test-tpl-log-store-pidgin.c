@@ -272,7 +272,7 @@ test_get_dates_jabber (PidginTestCaseFixture *fixture,
 
   /* Chatroom messages */
   dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store),
-      fixture->account, fixture->room);
+      fixture->account, fixture->room, TPL_EVENT_MASK_ANY);
 
   g_assert_cmpint (g_list_length (dates), ==, 2);
 
@@ -291,7 +291,7 @@ test_get_dates_jabber (PidginTestCaseFixture *fixture,
 
   /* 1-1 messages */
   dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store),
-      fixture->account, fixture->contact);
+      fixture->account, fixture->contact, TPL_EVENT_MASK_ANY);
 
   g_assert_cmpint (g_list_length (dates), ==, 1);
 
@@ -312,7 +312,8 @@ test_get_dates_irc (PidginTestCaseFixture *fixture,
 
   dates = log_store_pidgin_get_dates (TPL_LOG_STORE (fixture->store),
       fixture->account,
-      fixture->irc_room);
+      fixture->irc_room,
+      TPL_EVENT_MASK_ANY);
 
   g_assert_cmpint (g_list_length (dates), ==, 1);
 
@@ -362,6 +363,7 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
   l = log_store_pidgin_get_events_for_date (TPL_LOG_STORE (fixture->store),
       fixture->account,
       fixture->room,
+      TPL_EVENT_MASK_ANY,
       date);
 
   g_assert_cmpint (g_list_length (l), ==, 6);
@@ -378,6 +380,7 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
   l = log_store_pidgin_get_events_for_date (TPL_LOG_STORE (fixture->store),
       fixture->account,
       fixture->contact,
+      TPL_EVENT_MASK_ANY,
       date);
 
   g_assert_cmpint (g_list_length (l), ==, 2);
@@ -427,7 +430,8 @@ test_search_new (PidginTestCaseFixture *fixture,
 
   /* empty search */
   l = log_store_pidgin_search_new (TPL_LOG_STORE (fixture->store),
-      "I do not exist in this log store data base!");
+      "I do not exist in this log store data base!",
+      TPL_EVENT_MASK_ANY);
 
   g_assert_cmpint (g_list_length (l), ==, 0);
 
@@ -435,7 +439,8 @@ test_search_new (PidginTestCaseFixture *fixture,
 
   /* non empty search matching 1-1 */
   l = log_store_pidgin_search_new (TPL_LOG_STORE (fixture->store),
-      "hey you");
+      "hey you",
+      TPL_EVENT_MASK_ANY);
 
   g_assert_cmpint (g_list_length (l), ==, 1);
 
@@ -445,7 +450,8 @@ test_search_new (PidginTestCaseFixture *fixture,
 
   /* non empty search, checking chatrooms are also searched */
   l = log_store_pidgin_search_new (TPL_LOG_STORE (fixture->store),
-      "disco remote servers");
+      "disco remote servers",
+      TPL_EVENT_MASK_ANY);
 
   g_assert_cmpint (g_list_length (l), ==, 1);
 

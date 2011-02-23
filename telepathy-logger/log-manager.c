@@ -97,6 +97,7 @@ typedef struct
 {
   TpAccount *account;
   TplEntity *target;
+  gint type_mask;
   GDate *date;
   guint num_events;
   TplLogEventFilter filter;
@@ -454,7 +455,8 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
 gboolean
 tpl_log_manager_exists (TplLogManager *manager,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    gint type_mask)
 {
   GList *l;
   TplLogManagerPriv *priv;
@@ -466,7 +468,8 @@ tpl_log_manager_exists (TplLogManager *manager,
 
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
-      if (_tpl_log_store_exists (TPL_LOG_STORE (l->data), account, target))
+      if (_tpl_log_store_exists (TPL_LOG_STORE (l->data), account, target,
+            type_mask))
         return TRUE;
     }
 
@@ -492,7 +495,8 @@ tpl_log_manager_exists (TplLogManager *manager,
 GList *
 _tpl_log_manager_get_dates (TplLogManager *manager,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    gint type_mask)
 {
   GList *l, *out = NULL;
   TplLogManagerPriv *priv;
@@ -509,7 +513,7 @@ _tpl_log_manager_get_dates (TplLogManager *manager,
 
       /* Insert dates of each store in the out list. Keep the out list sorted
        * and avoid to insert dups. */
-      new = _tpl_log_store_get_dates (store, account, target);
+      new = _tpl_log_store_get_dates (store, account, target, type_mask);
       while (new)
         {
           if (g_list_find_custom (out, new->data,
@@ -532,6 +536,7 @@ GList *
 _tpl_log_manager_get_events_for_date (TplLogManager *manager,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     const GDate *date)
 {
   GList *l, *out = NULL;
@@ -547,7 +552,7 @@ _tpl_log_manager_get_events_for_date (TplLogManager *manager,
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
       out = g_list_concat (out, _tpl_log_store_get_events_for_date (store,
-          account, target, date));
+          account, target, type_mask, date));
     }
 
   return out;
@@ -578,6 +583,7 @@ GList *
 _tpl_log_manager_get_filtered_events (TplLogManager *manager,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     guint num_events,
     TplLogEventFilter filter,
     gpointer user_data)
@@ -600,7 +606,7 @@ _tpl_log_manager_get_filtered_events (TplLogManager *manager,
       GList *new;
 
       new = _tpl_log_store_get_filtered_events (store, account, target,
-          num_events, filter, user_data);
+          type_mask, num_events, filter, user_data);
       while (new != NULL)
         {
           if (i < num_events)
@@ -713,7 +719,8 @@ _tpl_log_manager_get_entities (TplLogManager *manager,
 
 GList *
 _tpl_log_manager_search (TplLogManager *manager,
-    const gchar *text)
+    const gchar *text,
+    gint type_mask)
 {
   GList *l, *out = NULL;
   TplLogManagerPriv *priv;
@@ -727,7 +734,8 @@ _tpl_log_manager_search (TplLogManager *manager,
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
 
-      out = g_list_concat (out, _tpl_log_store_search_new (store, text));
+      out = g_list_concat (out, _tpl_log_store_search_new (store, text,
+            type_mask));
     }
 
   return out;
@@ -920,7 +928,7 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
   event_info = async_data->request;
 
   lst = _tpl_log_manager_get_dates (async_data->manager,
-      event_info->account, event_info->target);
+      event_info->account, event_info->target, event_info->type_mask);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       _list_of_date_free);
@@ -932,6 +940,7 @@ _get_dates_async_thread (GSimpleAsyncResult *simple,
  * @manager: a #TplLogManager
  * @account: a #TpAccount
  * @target: a non-NULL #TplEntity
+ * @type_mask: event type filter see #TplEventTypeMask
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -945,6 +954,7 @@ void
 tpl_log_manager_get_dates_async (TplLogManager *manager,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -958,6 +968,7 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
 
   event_info->account = g_object_ref (account);
   event_info->target = g_object_ref (target);
+  event_info->type_mask = type_mask;
 
   async_data->manager = g_object_ref (manager);
   async_data->request = event_info;
@@ -1026,6 +1037,7 @@ _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
   lst = _tpl_log_manager_get_events_for_date (async_data->manager,
       event_info->account,
       event_info->target,
+      event_info->type_mask,
       event_info->date);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
@@ -1038,6 +1050,7 @@ _get_events_for_date_async_thread (GSimpleAsyncResult *simple,
  * @manager: a #TplLogManager
  * @account: a #TpAccount
  * @target: a non-NULL #TplEntity
+ * @type_mask: event type filter see #TplEventTypeMask
  * @date: a #GDate
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
@@ -1048,6 +1061,7 @@ void
 tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     const GDate *date,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1063,6 +1077,7 @@ tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
 
   event_info->account = g_object_ref (account);
   event_info->target = g_object_ref (target);
+  event_info->type_mask = type_mask;
   event_info->date = copy_date (date);
 
   async_data->manager = g_object_ref (manager);
@@ -1130,7 +1145,8 @@ _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
   event_info = async_data->request;
 
   lst = _tpl_log_manager_get_filtered_events (async_data->manager,
-      event_info->account, event_info->target, event_info->num_events,
+      event_info->account, event_info->target,
+      event_info->type_mask, event_info->num_events,
       event_info->filter, event_info->user_data);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
@@ -1143,6 +1159,7 @@ _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
  * @manager: a #TplLogManager
  * @account: a #TpAccount
  * @target: a non-NULL #TplEntity
+ * @type_mask: event type filter see #TplEventTypeMask
  * @num_event: number of maximum events to fetch
  * @filter: an optional filter function
  * @filter_user_data: user data to pass to @filter
@@ -1155,6 +1172,7 @@ void
 tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     guint num_events,
     TplLogEventFilter filter,
     gpointer filter_user_data,
@@ -1172,6 +1190,7 @@ tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
 
   event_info->account = g_object_ref (account);
   event_info->target = g_object_ref (target);
+  event_info->type_mask = type_mask;
   event_info->num_events = num_events;
   event_info->filter = filter;
   event_info->user_data = filter_user_data;
@@ -1337,7 +1356,7 @@ _search_async_thread (GSimpleAsyncResult *simple,
   event_info = async_data->request;
 
   lst = _tpl_log_manager_search (async_data->manager,
-      event_info->search_text);
+      event_info->search_text, event_info->type_mask);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
       (GDestroyNotify) tpl_log_manager_search_free);
@@ -1348,6 +1367,7 @@ _search_async_thread (GSimpleAsyncResult *simple,
  * tpl_log_manager_search_async:
  * @manager: a #TplLogManager
  * @text: the pattern to search
+ * @type_mask: event type filter see #TplEventTypeMask
  * @callback: a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
@@ -1356,6 +1376,7 @@ _search_async_thread (GSimpleAsyncResult *simple,
 void
 tpl_log_manager_search_async (TplLogManager *manager,
     const gchar *text,
+    gint type_mask,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -1366,6 +1387,7 @@ tpl_log_manager_search_async (TplLogManager *manager,
   g_return_if_fail (TPL_IS_LOG_MANAGER (manager));
 
   event_info->search_text = g_strdup (text);
+  event_info->type_mask = type_mask;
 
   async_data->manager = g_object_ref (manager);
   async_data->request = event_info;

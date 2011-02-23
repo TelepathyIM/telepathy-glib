@@ -95,7 +95,8 @@ test_get_dates (TestCaseFixture *fixture,
   TplEntity *entity;
 
   entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
-  ret = _tpl_log_manager_get_dates (fixture->manager, fixture->account, entity);
+  ret = _tpl_log_manager_get_dates (fixture->manager, fixture->account, entity,
+      TPL_EVENT_MASK_ANY);
   g_object_unref (entity);
 
   /* it includes 1 date from libpurple logs, 5 from TpLogger. Empathy

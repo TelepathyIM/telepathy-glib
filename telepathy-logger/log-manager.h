@@ -61,11 +61,10 @@ typedef struct
 
 typedef enum
 {
-  TPL_EVENT_SEARCH_TEXT       = 1 << 0,
-  TPL_EVENT_SEARCH_TEXT_ROOM  = 1 << 1,
-  TPL_EVENT_SEARCH_CALL       = 1 << 2,
-  TPL_EVENT_SEARCH_ALL        = 0xffff
-} TplEventSearchType;
+  TPL_EVENT_MASK_TEXT         = 1 << 0,
+  TPL_EVENT_MASK_ANY          = 0xffff
+} TplEventTypeMask;
+
 
 typedef struct
 {
@@ -83,11 +82,13 @@ TplLogManager *tpl_log_manager_dup_singleton (void);
 
 gboolean tpl_log_manager_exists (TplLogManager *manager,
     TpAccount *account,
-    TplEntity *target);
+    TplEntity *target,
+    gint type_mask);
 
 void tpl_log_manager_get_dates_async (TplLogManager *manager,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
@@ -99,6 +100,7 @@ gboolean tpl_log_manager_get_dates_finish (TplLogManager *self,
 void tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     const GDate *date,
     GAsyncReadyCallback callback,
     gpointer user_data);
@@ -111,6 +113,7 @@ gboolean tpl_log_manager_get_events_for_date_finish (TplLogManager *self,
 void tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     guint num_events,
     TplLogEventFilter filter,
     gpointer filter_user_data,
@@ -134,6 +137,7 @@ gboolean tpl_log_manager_get_entities_finish (TplLogManager *self,
 
 void tpl_log_manager_search_async (TplLogManager *manager,
     const gchar *text,
+    gint type_mask,
     GAsyncReadyCallback callback,
     gpointer user_data);
 

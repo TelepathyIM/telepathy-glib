@@ -557,7 +557,8 @@ log_store_xml_add_event (TplLogStore *store,
 static gboolean
 log_store_xml_exists (TplLogStore *store,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    gint type_mask)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *dir;
@@ -566,6 +567,9 @@ log_store_xml_exists (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
   g_return_val_if_fail (TPL_IS_ENTITY (target), FALSE);
+
+  if (!(type_mask & TPL_EVENT_MASK_TEXT))
+    return FALSE;
 
   dir = log_store_xml_get_dir (self, account, target);
   exists = g_file_test (dir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR);
@@ -599,7 +603,8 @@ create_date_from_string (const gchar *str)
 static GList *
 log_store_xml_get_dates (TplLogStore *store,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    gint type_mask)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *dates = NULL;
@@ -611,6 +616,9 @@ log_store_xml_get_dates (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
+
+  if (!(type_mask & TPL_EVENT_MASK_TEXT))
+    return NULL;
 
   directory = log_store_xml_get_dir (self, account, target);
   dir = g_dir_open (directory, 0, NULL);
@@ -1059,13 +1067,17 @@ fail:
 
 static GList *
 log_store_xml_search_new (TplLogStore *store,
-    const gchar *text)
+    const gchar *text,
+    gint type_mask)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *files;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
+
+  if (!(type_mask & TPL_EVENT_MASK_TEXT))
+    return NULL;
 
   files = log_store_xml_get_all_files (self, NULL);
   DEBUG ("Found %d log files in total", g_list_length (files));
@@ -1128,6 +1140,7 @@ static GList *
 log_store_xml_get_events_for_date (TplLogStore *store,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     const GDate *date)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
@@ -1138,6 +1151,9 @@ log_store_xml_get_events_for_date (TplLogStore *store,
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
   g_return_val_if_fail (date != NULL, NULL);
+
+  if (!(type_mask & TPL_EVENT_MASK_TEXT))
+    return NULL;
 
   filename = log_store_xml_get_filename_for_date (self, account, target,
       date);
@@ -1265,6 +1281,7 @@ static GList *
 log_store_xml_get_filtered_events (TplLogStore *store,
     TpAccount *account,
     TplEntity *target,
+    gint type_mask,
     guint num_events,
     TplLogEventFilter filter,
     gpointer user_data)
@@ -1277,7 +1294,7 @@ log_store_xml_get_filtered_events (TplLogStore *store,
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
 
-  dates = log_store_xml_get_dates (store, account, target);
+  dates = log_store_xml_get_dates (store, account, target, type_mask);
 
   for (l = g_list_last (dates); l != NULL && i < num_events;
        l = g_list_previous (l))
@@ -1287,7 +1304,7 @@ log_store_xml_get_filtered_events (TplLogStore *store,
       /* FIXME: We should really restrict the event parsing to get only
        * the newest num_events. */
       new_events = log_store_xml_get_events_for_date (store, account,
-          target, l->data);
+          target, type_mask, l->data);
 
       n = new_events;
       while (n != NULL)
