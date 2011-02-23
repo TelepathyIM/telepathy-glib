@@ -32,7 +32,7 @@
  * @title: TplLogStore
  * @short_description: LogStore interface can register into #TplLogManager as
  * #TplLogStore:writable or #TplLogStore:readable log stores.
- * @see_also: #event-text:TplTextEvent and other subclasses when they'll exist
+ * @see_also: #text-event:#TplTextEvent and other subclasses when they'll exist
  *
  * The #TplLogStore defines all the public methods that a TPL Log Store has to
  * implement in order to be used into a #TplLogManager.

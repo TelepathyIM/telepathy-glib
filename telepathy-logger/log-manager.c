@@ -444,6 +444,7 @@ _tpl_log_manager_register_log_store (TplLogManager *self,
  * @manager: TplLogManager
  * @account: TpAccount
  * @target: a non-NULL #TplEntity
+ * @type_mask: event type filter see #TplEventTypeMask
  *
  * Checks if logs exist for @target.
  *
@@ -1160,7 +1161,7 @@ _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
  * @account: a #TpAccount
  * @target: a non-NULL #TplEntity
  * @type_mask: event type filter see #TplEventTypeMask
- * @num_event: number of maximum events to fetch
+ * @num_events: number of maximum events to fetch
  * @filter: an optional filter function
  * @filter_user_data: user data to pass to @filter
  * @callback: a callback to call when the request is satisfied
@@ -1411,7 +1412,7 @@ tpl_log_manager_search_async (TplLogManager *manager,
  * tpl_log_manager_search_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @chats: a pointer to a #GList used to return the list of #TplLogSearchHit
+ * @hits: a pointer to a #GList used to return the list of #TplLogSearchHit
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE

@@ -34,7 +34,7 @@
 #include <telepathy-logger/util-internal.h>
 
 /**
- * SECTION:event-text
+ * SECTION:text-event
  * @title: TplTextEvent
  * @short_description: Representation of a text log event
  *

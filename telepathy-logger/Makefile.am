@@ -12,7 +12,7 @@ AM_CPPFLAGS =						\
 	$(WARN_CFLAGS)
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = telepathy-logger-0.1.pc
+pkgconfig_DATA = telepathy-logger-0.2.pc
 
 lib_LTLIBRARIES = libtelepathy-logger.la
 

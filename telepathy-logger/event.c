@@ -32,7 +32,7 @@
  * SECTION:event
  * @title: TplEvent
  * @short_description: Abstract representation of a log event
- * @see_also: #TplEventText and other subclasses when they'll exist
+ * @see_also: #TplTextEvent and other subclasses when they'll exist
  *
  * The TPLogger log event represents a generic log event, which will be
  * specialized by subclasses of #TplEvent.

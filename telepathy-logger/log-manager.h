@@ -41,24 +41,36 @@ G_BEGIN_DECLS
 
 GQuark tpl_log_manager_errors_quark (void);
 
+/**
+ * TplLogManagerError:
+ * @TPL_LOG_MANAGER_ERROR_ADD_EVENT: Error return when adding logs fails
+ */
 typedef enum
 {
   TPL_LOG_MANAGER_ERROR_ADD_EVENT
 } TplLogManagerError;
 
+typedef struct _TplLogManager TplLogManager;
 
-typedef struct
+struct _TplLogManager
 {
   GObject parent;
 
   gpointer priv;
-} TplLogManager;
+};
 
 typedef struct
 {
   GObjectClass parent_class;
 } TplLogManagerClass;
 
+/**
+ * TplEventTypeMask:
+ * @TPL_EVENT_MASK_TEXT: Mask to #TplTextEvent
+ * @TPL_EVENT_MASK_ANY: Special value to select all type of #TplEvent
+ *
+ * Mask used to filter type of #TplEvent returned.
+ */
 typedef enum
 {
   TPL_EVENT_MASK_TEXT         = 1 << 0,
@@ -66,6 +78,14 @@ typedef enum
 } TplEventTypeMask;
 
 
+/**
+ * TplLogSearchHit:
+ * @account: the #TpAccount
+ * @target: the #TplEntity
+ * @date: the #GDate
+ *
+ * Represent the context where the search has results.
+ */
 typedef struct
 {
   TpAccount *account;

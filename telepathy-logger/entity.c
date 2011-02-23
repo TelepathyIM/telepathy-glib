@@ -20,6 +20,7 @@
  */
 
 #include "config.h"
+#include "entity.h"
 #include "entity-internal.h"
 
 #include <telepathy-glib/util.h>
@@ -247,10 +248,11 @@ tpl_entity_new (const gchar *id,
   return ret;
 }
 
-/** tpl_entity_new_from_room_id:
+/**
+ * tpl_entity_new_from_room_id:
  * @room_id: the room id which will be the identifier for the entity
  *
- * Return a TplEntity instance with identifier, alias copied from
+ * Returns: a TplEntity instance with identifier, alias copied from
  * @room_id. It also sets %TPL_ENTITY_ROOM as type for
  * the #TplEntity returned.
  */
@@ -261,11 +263,12 @@ tpl_entity_new_from_room_id (const gchar *room_id)
 }
 
 
-/** tpl_entity_new_from_tp_contact:
+/** 
+ * tpl_entity_new_from_tp_contact:
  * @contact: the TpContact instance to create the TplEntity from
  * @type: the #TplEntity type
  *
- * Return a TplEntity instance with identifier, alias and
+ * Returns: a TplEntity instance with identifier, alias and
  * avatar's token copied. Type parameter is useful to differentiate between
  * normal contact and self contact, thus only %TPL_ENTITY_CONTACT and
  * %TPL_ENTITY_SELF are accepted.
