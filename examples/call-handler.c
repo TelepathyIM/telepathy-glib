@@ -132,8 +132,7 @@ content_added_cb (TfChannel *channel,
         break;
       case FS_MEDIA_TYPE_VIDEO:
         element = gst_parse_bin_from_description (
-          "videotestsrc is-live=1 ! " \
-            "video/x-raw-yuv,width=640, height=480 ! queue",
+          "autovideosrc ! video/x-raw-yuv,width=320, height=240 ! queue",
           TRUE, NULL);
         break;
       default:

@@ -168,7 +168,7 @@ class CallChannel:
                 "queue", True)
         elif mtype == farsight.MEDIA_TYPE_VIDEO:
             src = gst.parse_bin_from_description("videotestsrc is-live=1 ! " \
-                "capsfilter caps=video/x-raw-yuv,width=640,height=480", True)
+                "capsfilter caps=video/x-raw-yuv,width=320,height=240", True)
 
         self.pipeline.add(src)
         src.get_pad("src").link(sinkpad)
