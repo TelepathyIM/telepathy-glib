@@ -80,7 +80,9 @@ teardown (XmlTestCaseFixture *fixture,
   if (fixture->tmp_basedir != NULL)
     {
       gchar *command = g_strdup_printf ("rm -rf %s", fixture->tmp_basedir);
-      system (command);
+      int res;
+
+      res = system (command);
       g_free (fixture->tmp_basedir);
     }
 
