@@ -617,6 +617,19 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   interfaces = tp_asv_get_strv (out_Properties, "Interfaces");
 
+  if (interfaces == NULL)
+    {
+      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+          "", "Content does not have the Interfaces property,"
+          " but HardwareStreaming was NOT true");
+      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Content does not have the Interfaces property,"
+          " but HardwareStreaming was NOT true");
+      g_simple_async_result_complete (res);
+      g_object_unref (res);
+      return;
+    }
+
   for (i = 0; interfaces[i]; i++)
     if (!strcmp (interfaces[i], TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA))
       {
