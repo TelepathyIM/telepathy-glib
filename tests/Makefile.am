@@ -10,7 +10,6 @@ noinst_PROGRAMS = \
 	test-tpl-channel		\
 	test-tpl-conf			\
 	test-tpl-log-store-sqlite	\
-	test-tpl-log-manager		\
 	test-tpl-observer		\
 	$(NULL)
 
@@ -66,7 +65,6 @@ check_c_sources = \
 	test-tpl-channel.c	\
 	test-tpl-conf.c		\
 	test-tpl-observer.c	\
-	test-searches.c		\
 	$(NULL)
 
 include $(top_srcdir)/tools/check-coding-style.mk

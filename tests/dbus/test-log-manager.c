@@ -27,6 +27,8 @@ typedef struct
   TpAccount *account;
   TpTestsSimpleAccount *account_service;
 
+  GList *ret;
+
   TplLogManager *manager;
 } TestCaseFixture;
 
@@ -84,83 +86,6 @@ log_handler (const gchar *log_domain,
   log_to_debug_sender (log_domain, log_level, message);
 }
 #endif /* ENABLE_DEBUG */
-
-
-
-static void
-test_get_dates (TestCaseFixture *fixture,
-    gconstpointer user_data)
-{
-  GList *ret, *loc;
-  TplEntity *entity;
-
-  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
-  ret = _tpl_log_manager_get_dates (fixture->manager, fixture->account, entity,
-      TPL_EVENT_MASK_ANY);
-  g_object_unref (entity);
-
-  /* it includes 1 date from libpurple logs, 5 from TpLogger. Empathy
-   * log-store date are the same of the TpLogger store, and wont' be present,
-   * being duplicates */
-  g_assert_cmpint (g_list_length (ret), ==, 6);
-
-  /* we do not want duplicates */
-  ret = g_list_sort (ret, (GCompareFunc) g_strcmp0);
-  for (loc = ret; loc != NULL; loc = g_list_next (loc))
-    if (loc->next)
-      g_assert (g_date_compare (loc->data, loc->next->data) != 0);
-
-  g_list_foreach (ret, (GFunc) g_free, NULL);
-  g_list_free (ret);
-}
-
-static void
-test_get_entities (TestCaseFixture *fixture,
-    gconstpointer user_data)
-{
-  GList *ret, *loc;
-
-  ret = _tpl_log_manager_get_entities (fixture->manager, fixture->account);
-
-  g_assert_cmpint (g_list_length (ret), ==, 2);
-
-  /* we do not want duplicates */
-  ret = g_list_sort (ret, (GCompareFunc) _tpl_entity_compare);
-  for (loc = ret; loc != NULL; loc = g_list_next (loc))
-    if (loc->next)
-      g_assert (_tpl_entity_compare (loc->data, loc->next->data) != 0);
-
-  g_list_foreach (ret, (GFunc) g_object_unref, NULL);
-  g_list_free (ret);
-}
-
-
-static void
-test_get_events_for_date (TestCaseFixture *fixture,
-    gconstpointer user_data)
-{
-  TplEntity *entity;
-  GDate *date;
-  GList *ret;
-
-  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
-  date = g_date_new_dmy (13, 1, 2010);
-
-  ret = _tpl_log_manager_get_events_for_date (fixture->manager,
-      fixture->account,
-      entity,
-      TPL_EVENT_MASK_TEXT,
-      date);
-
-  g_object_unref (entity);
-  g_date_free (date);
-
-  /* We got 6 events in old Empathy and 6 in new TpLogger storage */
-  g_assert_cmpint (g_list_length (ret), ==, 12);
-
-  g_list_foreach (ret, (GFunc) g_object_unref, NULL);
-  g_list_free (ret);
-}
 
 
 static void
@@ -271,6 +196,7 @@ setup_service (TestCaseFixture* fixture,
   tp_g_value_slice_free (boxed_params);
 }
 
+
 static void
 setup (TestCaseFixture* fixture,
     gconstpointer user_data)
@@ -288,6 +214,7 @@ setup (TestCaseFixture* fixture,
   DEBUG ("set up finished");
 }
 
+
 static void
 setup_debug (void)
 {
@@ -301,6 +228,138 @@ setup_debug (void)
 
   g_log_set_default_handler (log_handler, NULL);
 #endif /* ENABLE_DEBUG */
+}
+
+
+static void
+get_dates_async_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_manager_get_dates_finish (TPL_LOG_MANAGER (object),
+      result, &fixture->ret, &error);
+
+  g_assert_no_error (error);
+  g_main_loop_quit (fixture->main_loop);
+}
+
+static void
+test_get_dates (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  GList *loc;
+  TplEntity *entity;
+
+  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+
+  tpl_log_manager_get_dates_async (fixture->manager,
+      fixture->account, entity, TPL_EVENT_MASK_ANY,
+      get_dates_async_cb, fixture);
+  g_main_loop_run (fixture->main_loop);
+
+  g_object_unref (entity);
+
+  /* it includes 1 date from libpurple logs, 5 from TpLogger. Empathy
+   * log-store date are the same of the TpLogger store, and wont' be present,
+   * being duplicates */
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 6);
+
+  /* we do not want duplicates, dates are suppose to be ordered */
+  fixture->ret = g_list_sort (fixture->ret, (GCompareFunc) g_date_compare);
+  for (loc = fixture->ret; loc != NULL; loc = g_list_next (loc))
+    if (loc->next)
+      g_assert (g_date_compare (loc->data, loc->next->data) != 0);
+
+  g_list_foreach (fixture->ret, (GFunc) g_date_free, NULL);
+  g_list_free (fixture->ret);
+}
+
+
+static void
+get_entities_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_manager_get_entities_finish (TPL_LOG_MANAGER (object), result,
+      &fixture->ret, &error);
+
+  g_assert_no_error (error);
+  g_main_loop_quit (fixture->main_loop);
+}
+
+
+static void
+test_get_entities (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  GList *loc;
+
+  tpl_log_manager_get_entities_async (fixture->manager, fixture->account,
+      get_entities_cb, fixture);
+  g_main_loop_run (fixture->main_loop);
+
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 2);
+
+  /* we do not want duplicates */
+  fixture->ret = g_list_sort (fixture->ret, (GCompareFunc) _tpl_entity_compare);
+  for (loc = fixture->ret; loc != NULL; loc = g_list_next (loc))
+    if (loc->next)
+      g_assert (_tpl_entity_compare (loc->data, loc->next->data) != 0);
+
+  g_list_foreach (fixture->ret, (GFunc) g_object_unref, NULL);
+  g_list_free (fixture->ret);
+}
+
+
+static void
+get_events_for_date_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_manager_get_events_for_date_finish (TPL_LOG_MANAGER (object),
+      result, &fixture->ret, &error);
+
+  g_assert_no_error (error);
+  g_main_loop_quit (fixture->main_loop);
+}
+
+
+static void
+test_get_events_for_date (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TplEntity *entity;
+  GDate *date;
+
+  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+  date = g_date_new_dmy (13, 1, 2010);
+
+  tpl_log_manager_get_events_for_date_async (fixture->manager,
+      fixture->account,
+      entity,
+      TPL_EVENT_MASK_TEXT,
+      date,
+      get_events_for_date_cb,
+      fixture);
+  g_main_loop_run (fixture->main_loop);
+
+  g_object_unref (entity);
+  g_date_free (date);
+
+  /* We got 6 events in old Empathy and 6 in new TpLogger storage */
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 12);
+
+  g_list_foreach (fixture->ret, (GFunc) g_object_unref, NULL);
+  g_list_free (fixture->ret);
 }
 
 
