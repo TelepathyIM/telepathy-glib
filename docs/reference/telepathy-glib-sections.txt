@@ -4895,21 +4895,21 @@ TpSimplePasswordManagerPrivate
 </SECTION>
 
 <SECTION>
-<INCLUDE>telepathy-glib/simple-password-channel.h</INCLUDE>
-<FILE>simple-password-channel</FILE>
-<TITLE>simple-password-channel</TITLE>
-TpSimplePasswordChannel
+<INCLUDE>telepathy-glib/base-password-channel.h</INCLUDE>
+<FILE>base-password-channel</FILE>
+<TITLE>base-password-channel</TITLE>
+TpBasePasswordChannel
 <SUBSECTION Standard>
-tp_simple_password_channel_get_type
-TP_TYPE_SIMPLE_PASSWORD_CHANNEL
-TP_SIMPLE_PASSWORD_CHANNEL
-TP_SIMPLE_PASSWORD_CHANNEL_CLASS
-TP_SIMPLE_PASSWORD_CHANNEL_GET_CLASS
-TP_IS_SIMPLE_PASSWORD_CHANNEL
-TP_IS_SIMPLE_PASSWORD_CHANNEL_CLASS
-TpSimplePasswordChannelClass
+tp_base_password_channel_get_type
+TP_TYPE_BASE_PASSWORD_CHANNEL
+TP_BASE_PASSWORD_CHANNEL
+TP_BASE_PASSWORD_CHANNEL_CLASS
+TP_BASE_PASSWORD_CHANNEL_GET_CLASS
+TP_IS_BASE_PASSWORD_CHANNEL
+TP_IS_BASE_PASSWORD_CHANNEL_CLASS
+TpBasePasswordChannelClass
 <SUBSECTION Private>
-TpSimplePasswordChannelPrivate
+TpBasePasswordChannelPrivate
 </SECTION>
 
 <SECTION>

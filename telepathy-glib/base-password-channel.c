@@ -1,5 +1,5 @@
 /*
- * simple_password-channel.c - Source for TpSimplePasswordChannel
+ * base-password-channel.c - Source for TpBasePasswordChannel
  * Copyright (C) 2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
@@ -18,24 +18,24 @@
  */
 
 /**
- * SECTION:simple-password-channel
- * @title: TpSimplePasswordChannel
+ * SECTION:base-password-channel
+ * @title: TpBasePasswordChannel
  * @short_description: a simple X-TELEPATHY-PASSWORD channel
  *
  * This class implements a SASL Authentication channel with the
  * X-TELEPATHY-PASSWORD SASL mechanism.  Most of the time, you should not use
- * or instantiate this class directly.  It is used by #TpSimplePasswordManager
+ * or instantiate this class directly.  It is used by #TpBasePasswordManager
  * behind the scenes.  In some special circumstances (e.g. when the authentication
  * channel needs to implement additional interfaces), it may be necessary to
  * create your own custom authentication channels instead of letting
- * #TpSimplePasswordManager create them automatically.  In this case, you
+ * #TpBasePasswordManager create them automatically.  In this case, you
  * should derive your channel from this class and then pass the channel as an
- * argument to tp_simple_password_manager_prompt_for_channel_async().
+ * argument to tp_base_password_manager_prompt_for_channel_async().
  *
  * Since: 0.13.UNRELEASED
  */
 
-#include "telepathy-glib/simple-password-channel.h"
+#include "telepathy-glib/base-password-channel.h"
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/gtypes.h>
@@ -50,19 +50,19 @@
 
 static void sasl_auth_iface_init (gpointer g_iface, gpointer iface_data);
 
-G_DEFINE_TYPE_WITH_CODE (TpSimplePasswordChannel, tp_simple_password_channel,
+G_DEFINE_TYPE_WITH_CODE (TpBasePasswordChannel, tp_base_password_channel,
     TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_SERVER_AUTHENTICATION,
         NULL);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_SASL_AUTHENTICATION,
         sasl_auth_iface_init));
 
-static const gchar *tp_simple_password_channel_interfaces[] = {
+static const gchar *tp_base_password_channel_interfaces[] = {
   TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION,
   NULL
 };
 
-static const gchar *tp_simple_password_channel_available_mechanisms[] = {
+static const gchar *tp_base_password_channel_available_mechanisms[] = {
   "X-TELEPATHY-PASSWORD",
   NULL
 };
@@ -95,7 +95,7 @@ enum
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-struct _TpSimplePasswordChannelPrivate
+struct _TpBasePasswordChannelPrivate
 {
   TpSASLStatus sasl_status;
   gchar *sasl_error;
@@ -112,24 +112,24 @@ struct _TpSimplePasswordChannelPrivate
 };
 
 static void
-tp_simple_password_channel_init (TpSimplePasswordChannel *self)
+tp_base_password_channel_init (TpBasePasswordChannel *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      TP_TYPE_SIMPLE_PASSWORD_CHANNEL, TpSimplePasswordChannelPrivate);
+      TP_TYPE_BASE_PASSWORD_CHANNEL, TpBasePasswordChannelPrivate);
 }
 
 static void
-tp_simple_password_channel_constructed (GObject *obj)
+tp_base_password_channel_constructed (GObject *obj)
 {
-  TpSimplePasswordChannel *chan = TP_SIMPLE_PASSWORD_CHANNEL (obj);
-  TpSimplePasswordChannelPrivate *priv = chan->priv;
+  TpBasePasswordChannel *chan = TP_BASE_PASSWORD_CHANNEL (obj);
+  TpBasePasswordChannelPrivate *priv = chan->priv;
   TpBaseConnection *base_conn = tp_base_channel_get_connection (
       TP_BASE_CHANNEL (obj));
   TpHandleRepoIface *contact_handles = tp_base_connection_get_handles (
       base_conn, TP_HANDLE_TYPE_CONTACT);
 
-  if (((GObjectClass *) tp_simple_password_channel_parent_class)->constructed != NULL)
-    ((GObjectClass *) tp_simple_password_channel_parent_class)->constructed (obj);
+  if (((GObjectClass *) tp_base_password_channel_parent_class)->constructed != NULL)
+    ((GObjectClass *) tp_base_password_channel_parent_class)->constructed (obj);
 
   priv->sasl_error = g_strdup ("");
   priv->sasl_error_details = tp_asv_new (NULL, NULL);
@@ -141,13 +141,13 @@ tp_simple_password_channel_constructed (GObject *obj)
 }
 
 static void
-tp_simple_password_channel_set_property (GObject *object,
+tp_base_password_channel_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  TpSimplePasswordChannel *chan = TP_SIMPLE_PASSWORD_CHANNEL (object);
-  TpSimplePasswordChannelPrivate *priv = chan->priv;
+  TpBasePasswordChannel *chan = TP_BASE_PASSWORD_CHANNEL (object);
+  TpBasePasswordChannelPrivate *priv = chan->priv;
 
   switch (property_id)
     {
@@ -161,13 +161,13 @@ tp_simple_password_channel_set_property (GObject *object,
 }
 
 static void
-tp_simple_password_channel_get_property (GObject *object,
+tp_base_password_channel_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  TpSimplePasswordChannel *chan = TP_SIMPLE_PASSWORD_CHANNEL (object);
-  TpSimplePasswordChannelPrivate *priv = chan->priv;
+  TpBasePasswordChannel *chan = TP_BASE_PASSWORD_CHANNEL (object);
+  TpBasePasswordChannelPrivate *priv = chan->priv;
 
   switch (property_id)
     {
@@ -177,7 +177,7 @@ tp_simple_password_channel_get_property (GObject *object,
       break;
     case PROP_AVAILABLE_MECHANISMS:
       g_value_set_boxed (value,
-          tp_simple_password_channel_available_mechanisms);
+          tp_base_password_channel_available_mechanisms);
       break;
     case PROP_HAS_INITIAL_DATA:
       g_value_set_boolean (value, TRUE);
@@ -212,18 +212,18 @@ tp_simple_password_channel_get_property (GObject *object,
   }
 }
 
-static void tp_simple_password_channel_finalize (GObject *object);
-static void tp_simple_password_channel_close (TpBaseChannel *base);
-static void tp_simple_password_channel_fill_immutable_properties (TpBaseChannel *chan,
+static void tp_base_password_channel_finalize (GObject *object);
+static void tp_base_password_channel_close (TpBaseChannel *base);
+static void tp_base_password_channel_fill_immutable_properties (TpBaseChannel *chan,
     GHashTable *properties);
 
 static void
-tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_password_channel_class)
+tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_password_channel_class)
 {
   TpBaseChannelClass *chan_class = TP_BASE_CHANNEL_CLASS (
-      tp_simple_password_channel_class);
+      tp_base_password_channel_class);
 
-  static TpDBusPropertiesMixinPropImpl server_simple_password_props[] = {
+  static TpDBusPropertiesMixinPropImpl server_base_password_props[] = {
     { "AuthenticationMethod", "authentication-method", NULL },
     { NULL }
   };
@@ -244,7 +244,7 @@ tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_p
     { TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION,
       tp_dbus_properties_mixin_getter_gobject_properties,
       NULL,
-      server_simple_password_props,
+      server_base_password_props,
     },
     { TP_IFACE_CHANNEL_INTERFACE_SASL_AUTHENTICATION,
       tp_dbus_properties_mixin_getter_gobject_properties,
@@ -253,23 +253,23 @@ tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_p
     },
     { NULL }
   };
-  GObjectClass *object_class = G_OBJECT_CLASS (tp_simple_password_channel_class);
+  GObjectClass *object_class = G_OBJECT_CLASS (tp_base_password_channel_class);
   GParamSpec *param_spec;
 
-  g_type_class_add_private (tp_simple_password_channel_class,
-      sizeof (TpSimplePasswordChannelPrivate));
+  g_type_class_add_private (tp_base_password_channel_class,
+      sizeof (TpBasePasswordChannelPrivate));
 
-  object_class->constructed = tp_simple_password_channel_constructed;
-  object_class->set_property = tp_simple_password_channel_set_property;
-  object_class->get_property = tp_simple_password_channel_get_property;
-  object_class->finalize = tp_simple_password_channel_finalize;
+  object_class->constructed = tp_base_password_channel_constructed;
+  object_class->set_property = tp_base_password_channel_set_property;
+  object_class->get_property = tp_base_password_channel_get_property;
+  object_class->finalize = tp_base_password_channel_finalize;
 
   chan_class->channel_type = TP_IFACE_CHANNEL_TYPE_SERVER_AUTHENTICATION;
   chan_class->target_handle_type = TP_HANDLE_TYPE_NONE;
-  chan_class->interfaces = tp_simple_password_channel_interfaces;
-  chan_class->close = tp_simple_password_channel_close;
+  chan_class->interfaces = tp_base_password_channel_interfaces;
+  chan_class->close = tp_base_password_channel_close;
   chan_class->fill_immutable_properties =
-    tp_simple_password_channel_fill_immutable_properties;
+    tp_base_password_channel_fill_immutable_properties;
 
   param_spec = g_param_spec_string ("authentication-method",
       "Authentication method",
@@ -328,7 +328,7 @@ tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_p
       param_spec);
 
   param_spec = g_param_spec_string ("authorization-identity",
-      "simple_password identity",
+      "base_password identity",
       "Authorization identity",
       "",
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
@@ -368,16 +368,16 @@ tp_simple_password_channel_class_init (TpSimplePasswordChannelClass *tp_simple_p
       G_TYPE_NONE, 4,
       G_TYPE_GSTRING, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
 
-  tp_simple_password_channel_class->properties_class.interfaces = prop_interfaces;
+  tp_base_password_channel_class->properties_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (TpSimplePasswordChannelClass, properties_class));
+      G_STRUCT_OFFSET (TpBasePasswordChannelClass, properties_class));
 }
 
 static void
-tp_simple_password_channel_finalize (GObject *object)
+tp_base_password_channel_finalize (GObject *object)
 {
-  TpSimplePasswordChannel *self = TP_SIMPLE_PASSWORD_CHANNEL (object);
-  TpSimplePasswordChannelPrivate *priv = self->priv;
+  TpBasePasswordChannel *self = TP_BASE_PASSWORD_CHANNEL (object);
+  TpBasePasswordChannelPrivate *priv = self->priv;
 
   tp_clear_pointer (&priv->sasl_error_details, g_hash_table_destroy);
   tp_clear_pointer (&priv->sasl_error, g_free);
@@ -391,16 +391,16 @@ tp_simple_password_channel_finalize (GObject *object)
       priv->password = NULL;
     }
 
-  if (G_OBJECT_CLASS (tp_simple_password_channel_parent_class)->finalize != NULL)
-    G_OBJECT_CLASS (tp_simple_password_channel_parent_class)->finalize (object);
+  if (G_OBJECT_CLASS (tp_base_password_channel_parent_class)->finalize != NULL)
+    G_OBJECT_CLASS (tp_base_password_channel_parent_class)->finalize (object);
 }
 
 static void
-tp_simple_password_channel_change_status (TpSimplePasswordChannel *channel,
+tp_base_password_channel_change_status (TpBasePasswordChannel *channel,
     TpSASLStatus new_status,
     const gchar *new_sasl_error)
 {
-  TpSimplePasswordChannelPrivate *priv = channel->priv;
+  TpBasePasswordChannelPrivate *priv = channel->priv;
 
   priv->sasl_status = new_status;
 
@@ -412,10 +412,10 @@ tp_simple_password_channel_change_status (TpSimplePasswordChannel *channel,
 }
 
 static void
-tp_simple_password_channel_close (TpBaseChannel *base)
+tp_base_password_channel_close (TpBaseChannel *base)
 {
-  TpSimplePasswordChannel *self = TP_SIMPLE_PASSWORD_CHANNEL (base);
-  TpSimplePasswordChannelPrivate *priv = self->priv;
+  TpBasePasswordChannel *self = TP_BASE_PASSWORD_CHANNEL (base);
+  TpBasePasswordChannelPrivate *priv = self->priv;
 
   DEBUG ("Called on %p", base);
 
@@ -426,11 +426,11 @@ tp_simple_password_channel_close (TpBaseChannel *base)
       && priv->sasl_status != TP_SASL_STATUS_SERVER_FAILED
       && priv->sasl_status != TP_SASL_STATUS_CLIENT_FAILED)
     {
-      tp_simple_password_channel_change_status (self,
+      tp_base_password_channel_change_status (self,
           TP_SASL_STATUS_CLIENT_FAILED, TP_ERROR_STR_CANCELLED);
 
       g_signal_emit (self, signals[FINISHED], 0, NULL, TP_ERRORS,
-          TP_ERROR_CANCELLED, "SimplePassword channel was closed");
+          TP_ERROR_CANCELLED, "BasePassword channel was closed");
     }
 
   DEBUG ("Closing channel");
@@ -438,11 +438,11 @@ tp_simple_password_channel_close (TpBaseChannel *base)
 }
 
 static void
-tp_simple_password_channel_fill_immutable_properties (TpBaseChannel *chan,
+tp_base_password_channel_fill_immutable_properties (TpBaseChannel *chan,
     GHashTable *properties)
 {
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_CLASS (
-      tp_simple_password_channel_parent_class);
+      tp_base_password_channel_parent_class);
 
   klass->fill_immutable_properties (chan, properties);
 
@@ -460,18 +460,18 @@ tp_simple_password_channel_fill_immutable_properties (TpBaseChannel *chan,
 }
 
 static void
-tp_simple_password_channel_start_mechanism_with_data (
+tp_base_password_channel_start_mechanism_with_data (
     TpSvcChannelInterfaceSASLAuthentication *self,
     const gchar *mechanism,
     const GArray *initial_data,
     DBusGMethodInvocation *context)
 {
-  TpSimplePasswordChannel *channel = TP_SIMPLE_PASSWORD_CHANNEL (self);
-  TpSimplePasswordChannelPrivate *priv = channel->priv;
+  TpBasePasswordChannel *channel = TP_BASE_PASSWORD_CHANNEL (self);
+  TpBasePasswordChannelPrivate *priv = channel->priv;
   GError *error = NULL;
 
   if (!tp_strv_contains (
-          tp_simple_password_channel_available_mechanisms, mechanism))
+          tp_base_password_channel_available_mechanisms, mechanism))
     {
       error = g_error_new (TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "The mechanism %s is not implemented", mechanism);
@@ -493,13 +493,13 @@ tp_simple_password_channel_start_mechanism_with_data (
       goto error;
     }
 
-  tp_simple_password_channel_change_status (channel,
+  tp_base_password_channel_change_status (channel,
       TP_SASL_STATUS_IN_PROGRESS, "");
 
   priv->password = g_string_new_len (
       initial_data->data, initial_data->len);
 
-  tp_simple_password_channel_change_status (channel,
+  tp_base_password_channel_change_status (channel,
       TP_SASL_STATUS_SERVER_SUCCEEDED, "");
 
   tp_svc_channel_interface_sasl_authentication_return_from_start_mechanism_with_data (
@@ -514,12 +514,12 @@ error:
 }
 
 static void
-tp_simple_password_channel_accept_sasl (
+tp_base_password_channel_accept_sasl (
     TpSvcChannelInterfaceSASLAuthentication *self,
     DBusGMethodInvocation *context)
 {
-  TpSimplePasswordChannel *channel = TP_SIMPLE_PASSWORD_CHANNEL (self);
-  TpSimplePasswordChannelPrivate *priv = channel->priv;
+  TpBasePasswordChannel *channel = TP_BASE_PASSWORD_CHANNEL (self);
+  TpBasePasswordChannelPrivate *priv = channel->priv;
 
   if (priv->sasl_status != TP_SASL_STATUS_SERVER_SUCCEEDED)
     {
@@ -530,7 +530,7 @@ tp_simple_password_channel_accept_sasl (
       return;
     }
 
-  tp_simple_password_channel_change_status (channel,
+  tp_base_password_channel_change_status (channel,
       TP_SASL_STATUS_SUCCEEDED, "");
 
   g_signal_emit (channel, signals[FINISHED], 0, priv->password, 0, 0, NULL);
@@ -540,14 +540,14 @@ tp_simple_password_channel_accept_sasl (
 }
 
 static void
-tp_simple_password_channel_abort_sasl (
+tp_base_password_channel_abort_sasl (
     TpSvcChannelInterfaceSASLAuthentication *self,
     TpSASLAbortReason reason,
     const gchar *debug_message,
     DBusGMethodInvocation *context)
 {
-  TpSimplePasswordChannel *channel = TP_SIMPLE_PASSWORD_CHANNEL (self);
-  TpSimplePasswordChannelPrivate *priv = channel->priv;
+  TpBasePasswordChannel *channel = TP_BASE_PASSWORD_CHANNEL (self);
+  TpBasePasswordChannelPrivate *priv = channel->priv;
 
   if (priv->sasl_status == TP_SASL_STATUS_SERVER_SUCCEEDED
       || priv->sasl_status == TP_SASL_STATUS_CLIENT_ACCEPTED)
@@ -569,7 +569,7 @@ tp_simple_password_channel_abort_sasl (
       tp_asv_set_string (priv->sasl_error_details, "debug-message",
           debug_message);
 
-      tp_simple_password_channel_change_status (channel,
+      tp_base_password_channel_change_status (channel,
           TP_SASL_STATUS_CLIENT_FAILED, TP_ERROR_STR_CANCELLED);
 
       g_signal_emit (channel, signals[FINISHED], 0, NULL, TP_ERRORS,
@@ -585,7 +585,7 @@ sasl_auth_iface_init (gpointer g_iface,
     gpointer iface_data)
 {
 #define IMPLEMENT(x) tp_svc_channel_interface_sasl_authentication_implement_##x (\
-    g_iface, tp_simple_password_channel_##x)
+    g_iface, tp_base_password_channel_##x)
   IMPLEMENT(start_mechanism_with_data);
   IMPLEMENT(accept_sasl);
   IMPLEMENT(abort_sasl);

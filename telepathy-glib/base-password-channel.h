@@ -1,5 +1,5 @@
 /*
- * simple-password-channel.h - Header for TpSimplePasswordChannel
+ * base-password-channel.h - Header for TpBasePasswordChannel
  * Copyright (C) 2010 Collabora Ltd.
  *
  * This library is free software; you can redistribute it and/or
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __TP_SIMPLE_PASSWORD_CHANNEL_H__
-#define __TP_SIMPLE_PASSWORD_CHANNEL_H__
+#ifndef __TP_BASE_PASSWORD_CHANNEL_H__
+#define __TP_BASE_PASSWORD_CHANNEL_H__
 
 #include <glib-object.h>
 
@@ -27,43 +27,43 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpSimplePasswordChannel TpSimplePasswordChannel;
-typedef struct _TpSimplePasswordChannelPrivate TpSimplePasswordChannelPrivate;
-typedef struct _TpSimplePasswordChannelClass TpSimplePasswordChannelClass;
+typedef struct _TpBasePasswordChannel TpBasePasswordChannel;
+typedef struct _TpBasePasswordChannelPrivate TpBasePasswordChannelPrivate;
+typedef struct _TpBasePasswordChannelClass TpBasePasswordChannelClass;
 
-struct _TpSimplePasswordChannelClass
+struct _TpBasePasswordChannelClass
 {
   TpBaseChannelClass parent_class;
 
   TpDBusPropertiesMixinClass properties_class;
 };
 
-struct _TpSimplePasswordChannel
+struct _TpBasePasswordChannel
 {
   TpBaseChannel parent;
 
-  TpSimplePasswordChannelPrivate *priv;
+  TpBasePasswordChannelPrivate *priv;
 };
 
-GType tp_simple_password_channel_get_type (void);
+GType tp_base_password_channel_get_type (void);
 
 /* TYPE MACROS */
-#define TP_TYPE_SIMPLE_PASSWORD_CHANNEL \
-  (tp_simple_password_channel_get_type ())
-#define TP_SIMPLE_PASSWORD_CHANNEL(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TYPE_SIMPLE_PASSWORD_CHANNEL,\
-                              TpSimplePasswordChannel))
-#define TP_SIMPLE_PASSWORD_CHANNEL_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TYPE_SIMPLE_PASSWORD_CHANNEL,\
-                           TpSimplePasswordChannelClass))
-#define TP_IS_SIMPLE_PASSWORD_CHANNEL(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TYPE_SIMPLE_PASSWORD_CHANNEL))
-#define TP_IS_SIMPLE_PASSWORD_CHANNEL_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TYPE_SIMPLE_PASSWORD_CHANNEL))
-#define TP_SIMPLE_PASSWORD_CHANNEL_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_SIMPLE_PASSWORD_CHANNEL, \
-                              TpSimplePasswordChannelClass))
+#define TP_TYPE_BASE_PASSWORD_CHANNEL \
+  (tp_base_password_channel_get_type ())
+#define TP_BASE_PASSWORD_CHANNEL(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TYPE_BASE_PASSWORD_CHANNEL,\
+                              TpBasePasswordChannel))
+#define TP_BASE_PASSWORD_CHANNEL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TYPE_BASE_PASSWORD_CHANNEL,\
+                           TpBasePasswordChannelClass))
+#define TP_IS_BASE_PASSWORD_CHANNEL(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TYPE_BASE_PASSWORD_CHANNEL))
+#define TP_IS_BASE_PASSWORD_CHANNEL_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TYPE_BASE_PASSWORD_CHANNEL))
+#define TP_BASE_PASSWORD_CHANNEL_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_PASSWORD_CHANNEL, \
+                              TpBasePasswordChannelClass))
 
 G_END_DECLS
 
-#endif /* #ifndef __TP_SIMPLE_PASSWORD_CHANNEL_H__*/
+#endif /* #ifndef __TP_BASE_PASSWORD_CHANNEL_H__*/
