@@ -109,15 +109,13 @@ void tp_weak_ref_destroy (TpWeakRef *self);
 #define tp_clear_pointer(pp, destroy) \
   G_STMT_START \
     { \
-      if (pp != NULL) \
-        { \
-          gpointer _tp_clear_pointer_tmp = *(pp); \
-          \
-          *(pp) = NULL; \
-          \
-          if (_tp_clear_pointer_tmp != NULL) \
-            (destroy) (_tp_clear_pointer_tmp); \
-        } \
+      gpointer _tp_clear_pointer_tmp; \
+      \
+      _tp_clear_pointer_tmp = *(pp); \
+      *(pp) = NULL; \
+      \
+      if (_tp_clear_pointer_tmp != NULL) \
+        (destroy) (_tp_clear_pointer_tmp); \
     } \
   G_STMT_END
 
@@ -126,15 +124,13 @@ void tp_weak_ref_destroy (TpWeakRef *self);
 #define tp_clear_boxed(gtype, pp) \
   G_STMT_START \
     { \
-      if (pp != NULL) \
-        { \
-          gpointer _tp_clear_boxed_tmp = *(pp); \
-          \
-          *(pp) = NULL; \
-          \
-          if (_tp_clear_boxed_tmp != NULL) \
-            g_boxed_free (gtype, _tp_clear_boxed_tmp); \
-        } \
+      gpointer _tp_clear_boxed_tmp; \
+      \
+      _tp_clear_boxed_tmp = *(pp); \
+      *(pp) = NULL; \
+      \
+      if (_tp_clear_boxed_tmp != NULL) \
+        g_boxed_free (gtype, _tp_clear_boxed_tmp); \
     } \
   G_STMT_END
 
