@@ -453,8 +453,8 @@ tp_simple_password_manager_prompt_async (
  * Retrieve the value of the request begun with
  * tp_simple_password_manager_prompt_async().
  *
- * Returns: a #GString with the password (or byte-blob) retrieved
- *  by @manager
+ * Returns: (transfer none): a #GString with the password (or byte-blob)
+ * retrieved by @manager
  *
  * Since: 0.13.8
  */
@@ -485,15 +485,16 @@ tp_simple_password_manager_prompt_finish (
  * tp_simple_password_manager_prompt_for_channel_finish:
  * @self: a #TpSimplePasswordManager
  * @result: a #GAsyncResult
- * @channel: an output location to retrieve the custom password channel that
- * was passed to tp_simple_password_manager_prompt_for_channel_async()
+ * @channel: (transfer none): an output location to retrieve the custom
+ * password channel that was passed to
+ * tp_simple_password_manager_prompt_for_channel_async()
  * @error: a #GError to fill
  *
  * Retrieve the value of the request begun with
  * tp_simple_password_manager_prompt_for_channel_async().
  *
- * Returns: a #GString with the password (or byte-blob) retrieved
- *  by @manager
+ * Returns: (transfer none): a #GString with the password (or byte-blob)
+ * retrieved by @manager
  *
  * Since: 0.13.UNRELEASED
  */
