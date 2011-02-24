@@ -2,13 +2,17 @@ EXTRA_DIST = \
     Account.xml \
     Account_Interface_Addressing.xml \
     Account_Interface_Avatar.xml \
+    Account_Interface_External_Password_Storage.xml \
+    Account_Interface_Hidden.xml \
     Account_Interface_Storage.xml \
     Account_Manager.xml \
+    Account_Manager_Interface_Hidden.xml \
     Authentication_TLS_Certificate.xml \
     Call_Content.xml \
     Call_Content_Codec_Offer.xml \
     Call_Content_Interface_Media.xml \
     Call_Content_Interface_Mute.xml \
+    Call_Content_Interface_Video_Control.xml \
     Call_Stream.xml \
     Call_Stream_Endpoint.xml \
     Call_Stream_Interface_Media.xml \
@@ -23,6 +27,7 @@ EXTRA_DIST = \
     Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
     Channel_Interface_Conference.xml \
+    Channel_Interface_Credentials_Storage.xml \
     Channel_Interface_DTMF.xml \
     Channel_Interface_Destroyable.xml \
     Channel_Interface_Group.xml \
@@ -88,6 +93,7 @@ EXTRA_DIST = \
     Connection_Interface_Service_Point.xml \
     Connection_Interface_Simple_Presence.xml \
     Connection_Manager.xml \
+    Connection_Manager_Interface_Account_Storage.xml \
     Debug.xml \
     Media_Session_Handler.xml \
     Media_Stream_Handler.xml \

@@ -86,6 +86,33 @@
         destructive happen. Destructive things (e.g. acknowledging messages)
         are defined to be done by handlers, therefore HandleWith and Claim
         aren't allowed to succeed until all observers are ready.</p>
+
+      <p>Non-interactive approvers (for instance, to shoot down spam
+        IM channels before the tray icon blinks at the user, or to grab
+        a SASL channel before the user is prompted for a password) can
+        be implemented as observers by following these steps:</p>
+
+      <ol>
+        <li><tp:member-ref>ObserveChannels</tp:member-ref>() is called
+          on the observer.</li>
+        <li>The observer calls <tp:dbus-ref
+          namespace="ofdT.ChannelDispatchOperation">Claim</tp:dbus-ref>()
+          on the CDO.</li>
+        <li>The observer then returns from
+          <tp:member-ref>ObserveChannels</tp:member-ref>().</li>
+        <li><tp:dbus-ref
+          namespace="ofdT.ChannelDispatchOperation">Claim</tp:dbus-ref>
+          will return successfully if the channels were successfully
+          claimed, or failure if someone else got there first.</li>
+      </ol>
+<!--
+      <p>Non-interactive approvers implemented as observers SHOULD
+        also set <tp:member-ref>DelayApprovers</tp:member-ref> to TRUE
+        so that other Approvers are not called on until all observers
+        return from <tp:member-ref>ObserveChannels</tp:member-ref>.
+        This gives non-interactive approvers a chance to claim the
+        channels before Approvers are called.</p>
+-->
     </tp:docstring>
 
     <property name="ObserverChannelFilter"
