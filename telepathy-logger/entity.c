@@ -263,7 +263,7 @@ tpl_entity_new_from_room_id (const gchar *room_id)
 }
 
 
-/** 
+/**
  * tpl_entity_new_from_tp_contact:
  * @contact: the TpContact instance to create the TplEntity from
  * @type: the #TplEntity type
