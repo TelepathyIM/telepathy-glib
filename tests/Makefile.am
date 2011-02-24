@@ -4,6 +4,8 @@ endif
 
 SUBDIRS = $(CHECKTWISTED) suppressions lib dbus
 
+EXTRA_DIST = logs
+
 noinst_PROGRAMS = \
 	test-tpl-channel		\
 	test-tpl-conf			\
