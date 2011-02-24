@@ -2,6 +2,8 @@
  * util.c - Source for telepathy-glib utility functions
  * Copyright © 2006-2010 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright © 2006-2008 Nokia Corporation
+ * Copyright © 1999 Tom Tromey
+ * Copyright © 2000 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
