@@ -110,7 +110,7 @@ tpl_event_get_property (GObject *object,
   switch (param_id)
     {
       case PROP_TIMESTAMP:
-        g_value_set_uint64 (value, priv->timestamp);
+        g_value_set_int64 (value, priv->timestamp);
         break;
       case PROP_LOG_ID:
         g_value_set_string (value, priv->log_id);
@@ -149,7 +149,7 @@ tpl_event_set_property (GObject *object,
   switch (param_id) {
       case PROP_TIMESTAMP:
         g_assert (priv->timestamp == 0);
-        priv->timestamp = g_value_get_uint64 (value);
+        priv->timestamp = g_value_get_int64 (value);
         break;
       case PROP_LOG_ID:
         g_assert (priv->log_id == NULL);
@@ -205,10 +205,10 @@ tpl_event_class_init (TplEventClass *klass)
 
   klass->equal = tpl_event_equal_default;
 
-  param_spec = g_param_spec_uint64 ("timestamp",
+  param_spec = g_param_spec_int64 ("timestamp",
       "Timestamp",
       "The timestamp (gint64) for the log event",
-      0, G_MAXUINT64, 0,
+      G_MININT64, G_MAXINT64, 0,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TIMESTAMP, param_spec);
 

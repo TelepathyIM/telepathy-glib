@@ -842,7 +842,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       TplEntity *sender;
       TplEntity *receiver;
       gchar *time_str;
-      time_t timestamp;
+      gint64 timestamp;
       gchar *sender_id;
       gchar *sender_name;
       gchar *sender_avatar_token;

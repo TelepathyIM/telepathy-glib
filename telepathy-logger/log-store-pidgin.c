@@ -770,7 +770,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           gchar *instead_of_channel_path = NULL;
           int j = i + 1;
           gboolean is_user = FALSE;
-          time_t timestamp;
+          gint64 timestamp;
 
           if (is_html)
             {
