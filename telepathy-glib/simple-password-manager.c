@@ -382,7 +382,7 @@ tp_simple_password_manager_prompt_common_async (
  * automatically.  This may be useful if your SASL channel needs to implement
  * additional interfaces (such as Channel.Interface.CredentialsStorage)
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.15
  */
 void
 tp_simple_password_manager_prompt_for_channel_async (
@@ -496,7 +496,7 @@ tp_simple_password_manager_prompt_finish (
  * Returns: (transfer none): a #GString with the password (or byte-blob)
  * retrieved by @manager
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.15
  */
 const GString *
 tp_simple_password_manager_prompt_for_channel_finish (

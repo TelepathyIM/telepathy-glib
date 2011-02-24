@@ -1,0 +1,8 @@
+Version: TELEPATHY_GLIB_0.13.15
+Extends: TELEPATHY_GLIB_0.13.14
+Release: 0.13.15
+
+tp_base_password_channel_get_type
+tp_simple_password_manager_prompt_for_channel_finish
+tp_simple_password_manager_prompt_for_channel_async
+tp_utf8_make_valid

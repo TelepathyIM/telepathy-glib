@@ -1587,7 +1587,7 @@ _tp_create_channel_request_list (TpDBusDaemon *dbus,
  *
  * Returns: a new valid UTF8 string
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.15
  */
 gchar *
 tp_utf8_make_valid (const gchar *name)

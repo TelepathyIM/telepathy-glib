@@ -32,7 +32,7 @@
  * should derive your channel from this class and then pass the channel as an
  * argument to tp_base_password_manager_prompt_for_channel_async().
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.15
  */
 
 /**
@@ -41,7 +41,7 @@
  * Data structure representing a channel implementing a SASL Authentication
  * channel with the X-TELEPATHY-PASSWORD SASL mechanism.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.15
  */
 
 /**
@@ -387,7 +387,7 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
    * Emitted when either the password has been provided by the user or the
    * authentication has been aborted.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.15
    */
   signals[FINISHED] = g_signal_new ("finished",
       G_TYPE_FROM_CLASS (object_class),
