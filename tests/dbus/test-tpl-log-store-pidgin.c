@@ -395,6 +395,15 @@ test_get_events_for_date_jabber (PidginTestCaseFixture *fixture,
   g_date_free (date);
 }
 
+static int
+cmp_entities (gconstpointer a,
+    gconstpointer b)
+{
+  return -1 * g_strcmp0 (
+      tpl_entity_get_identifier (TPL_ENTITY (a)),
+      tpl_entity_get_identifier (TPL_ENTITY (b)));
+}
+
 static void
 test_get_entities_jabber (PidginTestCaseFixture *fixture,
     gconstpointer user_data)
@@ -406,6 +415,9 @@ test_get_entities_jabber (PidginTestCaseFixture *fixture,
       fixture->account);
 
   g_assert_cmpint (g_list_length (l), ==, 2);
+
+  /* sort the entities, since their ordering depends on the file order */
+  l = g_list_sort (l, cmp_entities);
 
   entity = g_list_nth_data (l, 0);
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==,
