@@ -558,14 +558,7 @@ tp_g_hash_table_update (GHashTable *target,
 gboolean
 tp_strdiff (const gchar *left, const gchar *right)
 {
-  if ((NULL == left) != (NULL == right))
-    return TRUE;
-
-  else if (left == right)
-    return FALSE;
-
-  else
-    return (0 != strcmp (left, right));
+  return g_strcmp0 (left, right) != 0;
 }
 
 
