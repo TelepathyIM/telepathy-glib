@@ -10,7 +10,6 @@ noinst_PROGRAMS = \
 	test-tpl-channel		\
 	test-tpl-conf			\
 	test-tpl-log-store-sqlite	\
-	test-tpl-log-manager		\
 	test-tpl-observer		\
 	$(NULL)
 

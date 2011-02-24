@@ -1,6 +1,6 @@
 noinst_PROGRAMS = \
 	test-entity 			\
-	test-searches 			\
+	test-log-manager		\
 	test-tpl-log-store-pidgin 	\
 	test-tpl-log-store-xml 		\
 	$(NULL)
