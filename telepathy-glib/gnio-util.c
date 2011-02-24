@@ -455,7 +455,8 @@ _tp_unix_connection_receive_credentials_with_byte (GUnixConnection *connection,
   vector.size = 1;
 
   /* ensure the type of GUnixCredentialsMessage has been registered with the type system */
-  (void) (credentials_message_gtype = G_TYPE_UNIX_CREDENTIALS_MESSAGE);
+  credentials_message_gtype = G_TYPE_UNIX_CREDENTIALS_MESSAGE;
+  (void) credentials_message_gtype;
   num_bytes_read = g_socket_receive_message (_socket,
                                              NULL, /* GSocketAddress **address */
                                              &vector,

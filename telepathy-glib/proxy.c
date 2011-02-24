@@ -913,8 +913,8 @@ tp_proxy_constructor (GType type,
         n_params, params));
   TpProxyClass *klass = TP_PROXY_GET_CLASS (self);
   TpProxyInterfaceAddLink *iter;
-  GType ancestor_type = type;
   GType proxy_parent_type = G_TYPE_FROM_CLASS (tp_proxy_parent_class);
+  GType ancestor_type;
   GArray *core_features;
 
   _tp_register_dbus_glib_marshallers ();
