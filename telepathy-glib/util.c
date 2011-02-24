@@ -1570,3 +1570,59 @@ _tp_create_channel_request_list (TpDBusDaemon *dbus,
 
   return result;
 }
+
+/**
+ * tp_utf8_make_valid:
+ * @name: string to coerce into UTF8
+ *
+ * Validate that the provided string is valid UTF8. If not,
+ * replace all invalid bytes with unicode replacement
+ * character (U+FFFD).
+ *
+ * This method is a verbatim copy of glib's internal
+ * _g_utf8_make_valid() function, and will be deprecated as
+ * soon as the glib one becomes public.
+ *
+ * Returns: a new valid UTF8 string
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gchar *
+tp_utf8_make_valid (const gchar *name)
+{
+  GString *string;
+  const gchar *remainder, *invalid;
+  gint remaining_bytes, valid_bytes;
+
+  g_return_val_if_fail (name != NULL, NULL);
+
+  string = NULL;
+  remainder = name;
+  remaining_bytes = strlen (name);
+
+  while (remaining_bytes != 0)
+    {
+      if (g_utf8_validate (remainder, remaining_bytes, &invalid))
+        break;
+      valid_bytes = invalid - remainder;
+
+      if (string == NULL)
+        string = g_string_sized_new (remaining_bytes);
+
+      g_string_append_len (string, remainder, valid_bytes);
+      /* append U+FFFD REPLACEMENT CHARACTER */
+      g_string_append (string, "\357\277\275");
+
+      remaining_bytes -= valid_bytes + 1;
+      remainder = invalid + 1;
+    }
+
+  if (string == NULL)
+    return g_strdup (name);
+
+  g_string_append (string, remainder);
+
+  g_assert (g_utf8_validate (string->str, -1, NULL));
+
+  return g_string_free (string, FALSE);
+}
