@@ -1,3 +1,19 @@
+telepathy-logger 0.2.1 (2011-02-23)
+===================================
+
+The "We are human!" release
+
+This bug fix release fixes memory corruption in GList manipulation. We
+strongly suggest distributions using 0.2.0 version to update to this
+version.
+
+Fixes:
+
+* Use g_list_alloc() instead of g_new0() to allocate list (Sjoerd)
+* Use _async() TplLogManager methods in unit tests (Nicolas)
+* Do not ignore system() return value in unit tests (Guillaume)
+
+
 telepathy-logger 0.2.0 (2011-02-23)
 ===================================
 
