@@ -318,30 +318,48 @@ test_get_entities (TestCaseFixture *fixture,
 
 
 static void
+get_events_for_date_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_manager_get_events_for_date_finish (TPL_LOG_MANAGER (object),
+      result, &fixture->ret, &error);
+
+  g_assert_no_error (error);
+  g_main_loop_quit (fixture->main_loop);
+}
+
+
+static void
 test_get_events_for_date (TestCaseFixture *fixture,
     gconstpointer user_data)
 {
   TplEntity *entity;
   GDate *date;
-  GList *ret;
 
   entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
   date = g_date_new_dmy (13, 1, 2010);
 
-  ret = _tpl_log_manager_get_events_for_date (fixture->manager,
+  tpl_log_manager_get_events_for_date_async (fixture->manager,
       fixture->account,
       entity,
       TPL_EVENT_MASK_TEXT,
-      date);
+      date,
+      get_events_for_date_cb,
+      fixture);
+  g_main_loop_run (fixture->main_loop);
 
   g_object_unref (entity);
   g_date_free (date);
 
   /* We got 6 events in old Empathy and 6 in new TpLogger storage */
-  g_assert_cmpint (g_list_length (ret), ==, 12);
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 12);
 
-  g_list_foreach (ret, (GFunc) g_object_unref, NULL);
-  g_list_free (ret);
+  g_list_foreach (fixture->ret, (GFunc) g_object_unref, NULL);
+  g_list_free (fixture->ret);
 }
 
 
