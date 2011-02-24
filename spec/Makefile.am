@@ -1,18 +1,18 @@
 EXTRA_DIST = \
-    Account_Interface_Avatar.xml \
+    Account.xml \
     Account_Interface_Addressing.xml \
+    Account_Interface_Avatar.xml \
     Account_Interface_Storage.xml \
     Account_Manager.xml \
-    Account.xml \
-    all.xml \
     Authentication_TLS_Certificate.xml \
     Call_Content.xml \
+    Call_Content_Codec_Offer.xml \
     Call_Content_Interface_Media.xml \
     Call_Content_Interface_Mute.xml \
-    Call_Content_Codec_Offer.xml \
     Call_Stream.xml \
-    Call_Stream_Interface_Media.xml \
     Call_Stream_Endpoint.xml \
+    Call_Stream_Interface_Media.xml \
+    Channel.xml \
     Channel_Dispatch_Operation.xml \
     Channel_Dispatcher.xml \
     Channel_Dispatcher_Interface_Operation_List.xml \
@@ -23,20 +23,20 @@ EXTRA_DIST = \
     Channel_Interface_Call_State.xml \
     Channel_Interface_Chat_State.xml \
     Channel_Interface_Conference.xml \
-    Channel_Interface_Destroyable.xml \
     Channel_Interface_DTMF.xml \
+    Channel_Interface_Destroyable.xml \
     Channel_Interface_Group.xml \
-    Channel_Interface_Hold.xml \
     Channel_Interface_HTML.xml \
+    Channel_Interface_Hold.xml \
     Channel_Interface_Media_Signalling.xml \
     Channel_Interface_Mergeable_Conference.xml \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
     Channel_Interface_Room.xml \
     Channel_Interface_SASL_Authentication.xml \
+    Channel_Interface_SMS.xml \
     Channel_Interface_Securable.xml \
     Channel_Interface_Service_Point.xml \
-    Channel_Interface_SMS.xml \
     Channel_Interface_Splittable.xml \
     Channel_Interface_Transfer.xml \
     Channel_Interface_Tube.xml \
@@ -53,13 +53,13 @@ EXTRA_DIST = \
     Channel_Type_Streamed_Media.xml \
     Channel_Type_Text.xml \
     Channel_Type_Tubes.xml \
-    Channel.xml \
     Client.xml \
     Client_Approver.xml \
     Client_Handler.xml \
     Client_Handler_Future.xml \
     Client_Interface_Requests.xml \
     Client_Observer.xml \
+    Connection.xml \
     Connection_Future.xml \
     Connection_Interface_Addressing.xml \
     Connection_Interface_Aliasing.xml \
@@ -88,10 +88,7 @@ EXTRA_DIST = \
     Connection_Interface_Service_Point.xml \
     Connection_Interface_Simple_Presence.xml \
     Connection_Manager.xml \
-    Connection.xml \
     Debug.xml \
-    errors.xml \
-    generic-types.xml \
     Media_Session_Handler.xml \
     Media_Stream_Handler.xml \
     Properties_Interface.xml \
@@ -99,4 +96,7 @@ EXTRA_DIST = \
     Protocol_Interface_Addressing.xml \
     Protocol_Interface_Avatars.xml \
     Protocol_Interface_Presence.xml \
+    all.xml \
+    errors.xml \
+    generic-types.xml \
     template.xml
