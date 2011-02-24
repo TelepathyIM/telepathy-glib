@@ -1,20 +1,20 @@
 m4_define([tpl_major_version], [0])
-m4_define([tpl_minor_version], [1])
-m4_define([tpl_micro_version], [7])
-m4_define([tpl_nano_version], [1])
+m4_define([tpl_minor_version], [2])
+m4_define([tpl_micro_version], [0])
+m4_define([tpl_nano_version], [0])
 
 # If Tpl library source has changed since last release, increment revision
 # If interfaces have been added, removed or changed since last release,
 #  increment current and set revision to 0
 # If interfaces have been added since last release, increment age
 # If interfaces have been removed since last release, set age to 0
-m4_define([tpl_lt_current], [1])
-m4_define([tpl_lt_revision], [1])
+m4_define([tpl_lt_current], [2])
+m4_define([tpl_lt_revision], [0])
 m4_define([tpl_lt_age], [0])
 
 # The same for the extensions library produced by --enable-public-extensions
-m4_define([tpl_ext_lt_current], [1])
-m4_define([tpl_ext_lt_revision], [1])
+m4_define([tpl_ext_lt_current], [2])
+m4_define([tpl_ext_lt_revision], [0])
 m4_define([tpl_ext_lt_age], [0])
 
 dnl Display the nano_version only if it's not '0'
@@ -62,7 +62,7 @@ AC_SUBST([TPL_EXT_LT_AGE])
 AC_PREREQ([2.66])
 AC_COPYRIGHT([
   Copyright (C) 2003-2007 Imendio AB
-  Copyright (C) 2007-2010 Collabora Ltd.
+  Copyright (C) 2007-2011 Collabora Ltd.
 ])
 
 # Minimal version required

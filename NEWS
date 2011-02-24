@@ -1,3 +1,35 @@
+telepathy-logger 0.2.0 (2011-02-23)
+===================================
+
+This version is a large API refactoring that enables abstraction of
+the logged event type and clarifies the methods. Alongside this large refactoring
+some new features like ability to clear logs (see D-Bus API) and read-only
+Pidgin log store can be found. While it remains compatible on the storage
+side, the API is not.A version of Empathy compatible with this release will be
+released shortly; watch the Telepathy mailing list for details.
+
+Enhancement:
+
+* Read-only support for Pidgin log store.
+* Ability to clear logs (see D-Bus API).
+* Largely reworked API:
+  - TplEntry is now TplEvent.
+  - Sub-class naming is now more natural (e.g. TplTextEvent instead of
+    TplEventText).
+  - D-Bus API has been reduced to the minimum required function.
+  - chat-id is now commonly called target-id to abstract text chat.
+  - TplSearchHit has been cleanup and usage reduced.
+  - TplEntityDirection has been remove from TplEntity.
+  - TplEntity and TplEvent class was cleaned from useless setters and unused getters.
+  - ROOM is now used instead of GROUP to follow Telepathy naming.
+  - _get_chats() method is now replaced by _get_entities().
+  - Unused method _search_in_identitifer() is removed.
+  - TplTextEvent exposes message-type to let client know if it's a /me message.
+  - TplLogManager API now takes TplEntity to identify target.
+  - TplEventTypeMask can be used to filter event type (for future use).
+* A fair amount of test has been added.
+
+
 telepathy-logger 0.1.7 (2010-11-29)
 ===================================
 
