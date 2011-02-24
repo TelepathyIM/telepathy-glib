@@ -16,8 +16,12 @@ EXTRA_DIST = \
     lcov.am \
     libglibcodegen.py \
     libtpcodegen.py \
+    log-strip.py \
     specparser.py \
     telepathy.am \
+    test-wrapper.sh \
+    valgrind.mk \
+    with-session-bus.sh \
     xincludator.py
 
 CLEANFILES = *.pyc *.pyo
