@@ -13,11 +13,6 @@ LDADD = \
 	$(TPL_LIBS) 						\
 	$(NULL)
 
-test_searches_SOURCES = \
-	test-searches.c \
-	constants.h	\
-	$(NULL)
-
 test_entity_LDADD = \
 	$(top_builddir)/tests/lib/libtp-logger-tests.la \
 	$(LDADD) \
