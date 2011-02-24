@@ -235,7 +235,7 @@ _take_list (GList *list)
 
   if (list != NULL)
     {
-      copy = g_new0 (GList, 1);
+      copy = g_list_alloc ();
       memcpy (copy, list, sizeof (GList));
       memset (list, 0, sizeof (GList));
     }
