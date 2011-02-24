@@ -27,6 +27,8 @@ typedef struct
   TpAccount *account;
   TpTestsSimpleAccount *account_service;
 
+  GList *ret;
+
   TplLogManager *manager;
 } TestCaseFixture;
 
@@ -230,30 +232,49 @@ setup_debug (void)
 
 
 static void
+get_dates_async_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_manager_get_dates_finish (TPL_LOG_MANAGER (object),
+      result, &fixture->ret, &error);
+
+  g_assert_no_error (error);
+  g_main_loop_quit (fixture->main_loop);
+}
+
+static void
 test_get_dates (TestCaseFixture *fixture,
     gconstpointer user_data)
 {
-  GList *ret, *loc;
+  GList *loc;
   TplEntity *entity;
 
   entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
-  ret = _tpl_log_manager_get_dates (fixture->manager, fixture->account, entity,
-      TPL_EVENT_MASK_ANY);
+
+  tpl_log_manager_get_dates_async (fixture->manager,
+      fixture->account, entity, TPL_EVENT_MASK_ANY,
+      get_dates_async_cb, fixture);
+  g_main_loop_run (fixture->main_loop);
+
   g_object_unref (entity);
 
   /* it includes 1 date from libpurple logs, 5 from TpLogger. Empathy
    * log-store date are the same of the TpLogger store, and wont' be present,
    * being duplicates */
-  g_assert_cmpint (g_list_length (ret), ==, 6);
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 6);
 
   /* we do not want duplicates */
-  ret = g_list_sort (ret, (GCompareFunc) g_strcmp0);
-  for (loc = ret; loc != NULL; loc = g_list_next (loc))
+  fixture->ret = g_list_sort (fixture->ret, (GCompareFunc) g_strcmp0);
+  for (loc = fixture->ret; loc != NULL; loc = g_list_next (loc))
     if (loc->next)
       g_assert (g_date_compare (loc->data, loc->next->data) != 0);
 
-  g_list_foreach (ret, (GFunc) g_free, NULL);
-  g_list_free (ret);
+  g_list_foreach (fixture->ret, (GFunc) g_free, NULL);
+  g_list_free (fixture->ret);
 }
 
 static void
