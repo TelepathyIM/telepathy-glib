@@ -267,13 +267,13 @@ test_get_dates (TestCaseFixture *fixture,
    * being duplicates */
   g_assert_cmpint (g_list_length (fixture->ret), ==, 6);
 
-  /* we do not want duplicates */
-  fixture->ret = g_list_sort (fixture->ret, (GCompareFunc) g_strcmp0);
+  /* we do not want duplicates, dates are suppose to be ordered */
+  fixture->ret = g_list_sort (fixture->ret, (GCompareFunc) g_date_compare);
   for (loc = fixture->ret; loc != NULL; loc = g_list_next (loc))
     if (loc->next)
       g_assert (g_date_compare (loc->data, loc->next->data) != 0);
 
-  g_list_foreach (fixture->ret, (GFunc) g_free, NULL);
+  g_list_foreach (fixture->ret, (GFunc) g_date_free, NULL);
   g_list_free (fixture->ret);
 }
 
