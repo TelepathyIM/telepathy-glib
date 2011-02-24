@@ -35,6 +35,21 @@
  * Since: 0.13.UNRELEASED
  */
 
+/**
+ * TpBasePasswordChannel:
+ *
+ * Data structure representing a channel implementing a SASL Authentication
+ * channel with the X-TELEPATHY-PASSWORD SASL mechanism.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpBasePasswordChannelClass:
+ *
+ * The class of a #TpBasePasswordChannel.
+ */
+
 #include "telepathy-glib/base-password-channel.h"
 
 #include <telepathy-glib/dbus.h>
@@ -359,6 +374,21 @@ tp_base_password_channel_class_init (TpBasePasswordChannelClass *tp_base_passwor
   g_object_class_install_property (object_class, PROP_MAY_SAVE_RESPONSE,
       param_spec);
 
+  /**
+   * TpBasePasswordChannel::finished
+   * @password: the password provided by the user, or %NULL if the
+   * authentication has been aborted
+   * @domain: domain of a #GError indicating why the authentication has been
+   * aborted, or 0
+   * @code: error code of a GError indicating why the authentication has been
+   * aborted, or 0
+   * @message: a message associated with the error, or %NULL
+   *
+   * Emitted when either the password has been provided by the user or the
+   * authentication has been aborted.
+   *
+   * Since: 0.13.UNRELEASED
+   */
   signals[FINISHED] = g_signal_new ("finished",
       G_TYPE_FROM_CLASS (object_class),
       G_SIGNAL_RUN_LAST,
