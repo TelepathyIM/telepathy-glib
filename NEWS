@@ -1,3 +1,13 @@
+telepathy-glib 0.13.16 (UNRELEASED)
+===================================
+
+Enhancements:
+
+• Two new functions, tp_connection_get_connection_manager_name() and
+  tp_connection_get_protocol_name(), allow you to grab these properties
+  from a TpConnection without having to drive
+  tp_connection_parse_object_path() yourself. (sjokkis)
+
 telepathy-glib 0.13.15 (2011-02-24)
 ===================================
 
