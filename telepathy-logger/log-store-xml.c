@@ -1322,7 +1322,7 @@ log_store_xml_get_filtered_events (TplLogStore *store,
       events = g_list_concat (events, new_events);
     }
 
-  g_list_foreach (dates, (GFunc) g_free, NULL);
+  g_list_foreach (dates, (GFunc) g_date_free, NULL);
   g_list_free (dates);
 
   return events;
