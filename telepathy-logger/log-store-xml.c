@@ -1299,27 +1299,25 @@ log_store_xml_get_filtered_events (TplLogStore *store,
   for (l = g_list_last (dates); l != NULL && i < num_events;
        l = g_list_previous (l))
     {
-      GList *new_events, *n, *next;
+      GList *new_events, *n;
 
       /* FIXME: We should really restrict the event parsing to get only
        * the newest num_events. */
       new_events = log_store_xml_get_events_for_date (store, account,
           target, type_mask, l->data);
 
-      n = new_events;
-      while (n != NULL)
+      n = g_list_last (new_events);
+      while (n != NULL && i < num_events)
         {
-          next = g_list_next (n);
-          if (filter != NULL && !filter (n->data, user_data))
+          if (filter == NULL || filter (n->data, user_data))
             {
-              g_object_unref (n->data);
-              new_events = g_list_delete_link (new_events, n);
+              events = g_list_prepend (events, g_object_ref (n->data));
+              i++;
             }
-          else
-            i++;
-          n = next;
+          n = g_list_previous (n);
         }
-      events = g_list_concat (events, new_events);
+      g_list_foreach (new_events, (GFunc) g_object_unref, NULL);
+      g_list_free (new_events);
     }
 
   g_list_foreach (dates, (GFunc) g_date_free, NULL);
