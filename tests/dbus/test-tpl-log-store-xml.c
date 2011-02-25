@@ -9,7 +9,7 @@
 typedef struct
 {
   gchar *tmp_basedir;
-  TplLogStoreXml *store;
+  TplLogStore *store;
   TpDBusDaemon *bus;
 } XmlTestCaseFixture;
 
@@ -45,7 +45,8 @@ setup (XmlTestCaseFixture* fixture,
       NULL);
 
   if (fixture->tmp_basedir != NULL)
-    log_store_xml_set_basedir (fixture->store, fixture->tmp_basedir);
+    log_store_xml_set_basedir (TPL_LOG_STORE_XML (fixture->store),
+        fixture->tmp_basedir);
 
   fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (fixture->bus != NULL);
@@ -96,7 +97,7 @@ test_clear (XmlTestCaseFixture *fixture,
     gconstpointer user_data)
 {
   GList *hits;
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+  hits = _tpl_log_store_search_new (fixture->store,
       "1263405203",
       TPL_EVENT_MASK_TEXT);
 
@@ -105,9 +106,9 @@ test_clear (XmlTestCaseFixture *fixture,
 
   tpl_log_manager_search_free (hits);
 
-  _tpl_log_store_clear (TPL_LOG_STORE (fixture->store));
+  _tpl_log_store_clear (fixture->store);
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+  hits = _tpl_log_store_search_new (fixture->store,
       "1263405203",
       TPL_EVENT_MASK_TEXT);
 
@@ -125,14 +126,14 @@ test_clear_account (XmlTestCaseFixture *fixture,
   const gchar *kept = "1263405203";
   const gchar *cleared = "f95e605a3ae97c463b626a3538567bc90fc58730";
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+  hits = _tpl_log_store_search_new (fixture->store,
       kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+  hits = _tpl_log_store_search_new (fixture->store,
       cleared, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
@@ -146,18 +147,17 @@ test_clear_account (XmlTestCaseFixture *fixture,
   g_assert_no_error (error);
   g_assert (account != NULL);
 
-  _tpl_log_store_clear_account (TPL_LOG_STORE (fixture->store), account);
+  _tpl_log_store_clear_account (fixture->store, account);
   g_object_unref (account);
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      kept, TPL_EVENT_MASK_TEXT);
+  hits = _tpl_log_store_search_new (fixture->store, kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      cleared, TPL_EVENT_MASK_TEXT);
+  hits = _tpl_log_store_search_new (fixture->store, cleared,
+      TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 0);
 }
@@ -187,22 +187,21 @@ test_clear_entity (XmlTestCaseFixture *fixture,
       cleared = "f95e605a3ae97c463b626a3538567bc90fc58730";
     }
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      always_kept, TPL_EVENT_MASK_TEXT);
+  hits = _tpl_log_store_search_new (fixture->store, always_kept,
+      TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      kept, TPL_EVENT_MASK_TEXT);
+  hits = _tpl_log_store_search_new (fixture->store, kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      cleared, TPL_EVENT_MASK_TEXT);
+  hits = _tpl_log_store_search_new (fixture->store, cleared,
+      TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
@@ -221,26 +220,25 @@ test_clear_entity (XmlTestCaseFixture *fixture,
     entity = tpl_entity_new ("derek.foreman@collabora.co.uk",
         TPL_ENTITY_CONTACT, NULL, NULL);
 
-  _tpl_log_store_clear_entity (TPL_LOG_STORE (fixture->store), account, entity);
+  _tpl_log_store_clear_entity (fixture->store, account, entity);
   g_object_unref (account);
   g_object_unref (entity);
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
+  hits = _tpl_log_store_search_new (fixture->store,
       always_kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      kept, TPL_EVENT_MASK_TEXT);
+  hits = _tpl_log_store_search_new (fixture->store, kept, TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 1);
 
   tpl_log_manager_search_free (hits);
 
-  hits = _tpl_log_store_search_new (TPL_LOG_STORE (fixture->store),
-      cleared, TPL_EVENT_MASK_TEXT);
+  hits = _tpl_log_store_search_new (fixture->store, cleared,
+      TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 0);
 }
