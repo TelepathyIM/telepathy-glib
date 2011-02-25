@@ -126,6 +126,10 @@ TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
 TpConnectionStatus tp_connection_get_status (TpConnection *self,
     TpConnectionStatusReason *reason);
 
+const gchar *tp_connection_get_connection_manager_name (TpConnection *self);
+
+const gchar *tp_connection_get_protocol_name (TpConnection *self);
+
 TpHandle tp_connection_get_self_handle (TpConnection *self);
 TpContact *tp_connection_get_self_contact (TpConnection *self);
 

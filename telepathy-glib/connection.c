@@ -230,10 +230,13 @@ tp_errors_disconnected_quark (void)
  * Since: 0.7.1
  */
 
+/* properties */
 enum
 {
   PROP_STATUS = 1,
   PROP_STATUS_REASON,
+  PROP_CONNECTION_MANAGER_NAME,
+  PROP_PROTOCOL_NAME,
   PROP_CONNECTION_READY,
   PROP_SELF_CONTACT,
   PROP_SELF_HANDLE,
@@ -255,6 +258,12 @@ tp_connection_get_property (GObject *object,
 
   switch (property_id)
     {
+    case PROP_CONNECTION_MANAGER_NAME:
+      g_value_set_string (value, self->priv->cm_name);
+      break;
+    case PROP_PROTOCOL_NAME:
+      g_value_set_string (value, self->priv->proto_name);
+      break;
     case PROP_CONNECTION_READY:
       g_value_set_boolean (value, self->priv->ready);
       break;
@@ -1008,6 +1017,9 @@ tp_connection_constructor (GType type,
   tp_cli_connection_connect_to_connection_error (self,
       tp_connection_connection_error_cb, NULL, NULL, NULL, NULL);
 
+  tp_connection_parse_object_path (self, &(self->priv->proto_name),
+          &(self->priv->cm_name));
+
   /* get the properties, currently only for HasImmortalHandles */
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
@@ -1229,6 +1241,38 @@ tp_connection_class_init (TpConnectionClass *klass)
       | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
   g_object_class_install_property (object_class, PROP_STATUS,
       param_spec);
+
+  /**
+   * TpConnection:connection-manager-name:
+   *
+   * This connection's connection manager name.
+   *
+   * Since: 0.13.UNRELEASED
+   *
+   */
+  g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER_NAME,
+      g_param_spec_string ("connection-manager-name",
+          "Connection manager name",
+          "The connection's connection manager name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
+
+  /**
+   * TpConnection:protocol-name:
+   *
+   * The connection's machine-readable protocol name, such as "jabber",
+   * "msn" or "local-xmpp". Recommended names for most protocols can be
+   * found in the Telepathy D-Bus Interface Specification.
+   *
+   * Since: 0.13.UNRELEASED
+   *
+   */
+  g_object_class_install_property (object_class, PROP_PROTOCOL_NAME,
+      g_param_spec_string ("protocol-name",
+          "Protocol name",
+          "The connection's protocol name",
+          NULL,
+          G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
   /**
    * TpConnection:self-handle:
@@ -1461,6 +1505,44 @@ tp_connection_get_status (TpConnection *self,
     *reason = self->priv->status_reason;
 
   return self->priv->status;
+}
+
+/**
+* tp_connection_get_connection_manager_name:
+* @self: a #TpConnection
+*
+* <!-- -->
+*
+* Returns: the same as the #TpConnection:connection-manager-name property
+*
+* Since: 0.13.UNRELEASED
+*
+*/
+const gchar *
+tp_connection_get_connection_manager_name (TpConnection *self)
+{
+    g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
+
+    return self->priv->cm_name;
+}
+
+/**
+* tp_connection_get_protocol_name:
+* @self: a #TpConnection
+*
+* <!-- -->
+*
+* Returns: the same as the #TpConnection:protocol-name property
+*
+* Since: 0.13.UNRELEASED
+*
+*/
+const gchar *
+tp_connection_get_protocol_name (TpConnection *self)
+{
+    g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
+
+    return self->priv->proto_name;
 }
 
 /**

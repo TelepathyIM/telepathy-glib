@@ -193,6 +193,7 @@ test_prepare (Test *test,
   TpConnectionStatusReason reason;
   TpCapabilities *caps;
   GPtrArray *classes;
+  gchar *cm_name, *protocol_name;
 
   test->conn = tp_connection_new (test->dbus, test->conn_name, test->conn_path,
       &error);
@@ -223,6 +224,20 @@ test_prepare (Test *test,
   g_assert_cmpuint (tp_connection_get_self_handle (test->conn), ==, 0);
   g_assert_cmpint (tp_connection_get_status (test->conn, NULL), ==,
       TP_CONNECTION_STATUS_DISCONNECTED);
+
+  g_assert_cmpstr (tp_connection_get_connection_manager_name (test->conn), ==,
+          "simple");
+  g_assert_cmpstr (tp_connection_get_protocol_name (test->conn), ==,
+          "simple-protocol");
+
+  g_object_get (test->conn,
+      "connection-manager-name", &cm_name,
+      "protocol-name", &protocol_name,
+      NULL);
+  g_assert_cmpstr (cm_name, ==, "simple");
+  g_assert_cmpstr (protocol_name, ==, "simple-protocol");
+  g_free (cm_name);
+  g_free (protocol_name);
 
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
 
