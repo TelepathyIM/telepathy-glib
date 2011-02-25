@@ -831,7 +831,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   dirname = g_path_get_dirname (tmp);
   g_free (tmp);
   tmp = g_path_get_basename (dirname);
-  is_room = g_strcmp0 ("chatroom", tmp);
+  is_room = (g_strcmp0 (LOG_DIR_CHATROOMS, tmp) == 0);
   g_free (dirname);
   g_free (tmp);
 
