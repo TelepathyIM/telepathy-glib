@@ -304,7 +304,7 @@ tpl_log_manager_init (TplLogManager *self)
 /**
  * tpl_log_manager_dup_singleton
  *
- * Returns: a new reference on the log manager
+ * Returns: (transfer full): a new reference on the log manager
  */
 TplLogManager *
 tpl_log_manager_dup_singleton (void)
@@ -1162,9 +1162,9 @@ _get_filtered_events_async_thread (GSimpleAsyncResult *simple,
  * @target: a non-NULL #TplEntity
  * @type_mask: event type filter see #TplEventTypeMask
  * @num_events: number of maximum events to fetch
- * @filter: an optional filter function
+ * @filter: (scope async): an optional filter function
  * @filter_user_data: user data to pass to @filter
- * @callback: a callback to call when the request is satisfied
+ * @callback: (scope async): a callback to call when the request is satisfied
  * @user_data: data to pass to @callback
  *
  * Retrieve the most recent @num_event events exchanged with @target.

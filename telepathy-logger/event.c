@@ -302,7 +302,7 @@ _tpl_event_get_log_id (TplEvent *self)
  * tpl_event_get_sender
  * @self: a #TplEvent
  *
- * Returns: the same #TplEntity as the #TplEvent:sender property
+ * Returns: (transfer none): the same #TplEntity as the #TplEvent:sender property
  */
 TplEntity *
 tpl_event_get_sender (TplEvent *self)
@@ -316,7 +316,7 @@ tpl_event_get_sender (TplEvent *self)
  * tpl_event_get_receiver
  * @self: a #TplEvent
  *
- * Returns: the same #TplEntity as the #TplEvent:receiver property
+ * Returns: (transfer none): the same #TplEntity as the #TplEvent:receiver property
  */
 TplEntity *
 tpl_event_get_receiver (TplEvent *self)
@@ -412,7 +412,7 @@ tpl_event_equal (TplEvent *self,
  *
  * <!-- no more to say -->
  *
- * Returns: the same account as the #TplEvent:account property
+ * Returns: (transfer none): the same account as the #TplEvent:account property
  */
 TpAccount *
 tpl_event_get_account (TplEvent *self)

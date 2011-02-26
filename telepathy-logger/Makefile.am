@@ -1,5 +1,10 @@
 include $(top_srcdir)/tools/flymake.mk
 
+-include $(INTROSPECTION_MAKEFILE)
+INTROSPECTION_GIRS =
+INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir) --add-include-path=$(top_srcdir) -I$(top_srcdir)
+INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir) --includedir=$(top_srcdir)
+
 AM_CPPFLAGS =						\
 	-I$(top_builddir)				\
 	-I$(top_builddir)/extensions			\
@@ -46,6 +51,7 @@ libtelepathy_logger_la_SOURCES = \
 		conf.c				\
 		conf-internal.h			\
 		entity.c			\
+		entity.h			\
 		entity-internal.h		\
 		datetime.c			\
 		datetime-internal.h		\
@@ -54,8 +60,10 @@ libtelepathy_logger_la_SOURCES = \
 		debug-internal.h		\
 		debug.c				\
 		event.c			\
+		event.h 		\
 		event-internal.h			\
 		log-manager.c			\
+		log-manager.h			\
 		log-manager-internal.h		\
 		log-store.c			\
 		log-store-internal.h		\
@@ -72,9 +80,11 @@ libtelepathy_logger_la_SOURCES = \
 		text-channel.c			\
 		text-channel-internal.h		\
 		text-event.c			\
+		text-event.h			\
 		text-event-internal.h		\
 		util-internal.h			\
 		util.c				\
+		telepathy-logger.h	\
 		$(NULL)
 
 nodist_libtelepathy_logger_la_SOURCES = \
@@ -94,5 +104,29 @@ include $(top_srcdir)/tools/check-coding-style.mk
 check-local: check-coding-style
 
 CLEANFILES = $(BUILT_SOURCES)
+
+if HAVE_INTROSPECTION
+introspection_sources = $(libtelepathy_logger_la_SOURCES)
+
+TelepathyLogger-1.0.gir: libtelepathy-logger.la
+TelepathyLogger_1_0_gir_SCANNERFLAGS = --identifier-prefix=Tpl --warn-all
+TelepathyLogger_1_0_gir_INCLUDES = GObject-2.0 TelepathyGLib-0.12
+TelepathyLogger_1_0_gir_CFLAGS = $(INCLUDES)
+TelepathyLogger_1_0_gir_LIBS = libtelepathy-logger.la
+TelepathyLogger_1_0_gir_FILES = $(filter-out %-internal.h, $(introspection_sources))
+
+INTROSPECTION_GIRS += TelepathyLogger-1.0.gir
+
+girdir = $(datadir)/gir-1.0
+gir_DATA = $(INTROSPECTION_GIRS)
+
+typelibdir = $(libdir)/girepository-1.0/
+typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
+
+CLEANFILES += \
+	$(gir_DATA) \
+	$(typelib_DATA)
+
+endif
 
 include abi.am
