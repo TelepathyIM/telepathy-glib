@@ -1,3 +1,21 @@
+telepathy-logger 0.2.2 (2011-02-28)
+===================================
+
+The "Monday morning" release
+
+This bug fix release fixes issues around TplEvent with room target.
+It also contains initial work for GIntrospection.
+
+Fixes:
+
+* Start work on introspection support (Jasper and Emilio)
+* Fix TplEvent::get_target() logic so room event are stored correctly (Nicolas)
+* Fix room check when XML log store reads events (Nicolas)
+* Free GDate with g_date_free() instead of g_free ()
+* Fix log_store_xml_get_filtered_events() to return no more than num_events (Nicolas)
+* Add an XML log store test for log_store_xml_add_event() (Nicolas)
+
+
 telepathy-logger 0.2.1 (2011-02-23)
 ===================================
 
