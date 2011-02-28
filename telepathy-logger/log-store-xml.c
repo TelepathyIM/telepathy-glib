@@ -484,7 +484,12 @@ add_text_event (TplLogStoreXml *self,
 
   body_str = tpl_text_event_get_message (message);
   if (TPL_STR_EMPTY (body_str))
-    goto out;
+    {
+      g_set_error (error, TPL_LOG_STORE_ERROR,
+          TPL_LOG_STORE_ERROR_FAILED,
+          "The message body is empty or NULL");
+      goto out;
+    }
 
   body = g_markup_escape_text (body_str, -1);
   msg_type = tpl_text_event_get_message_type (message);
