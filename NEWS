@@ -1,3 +1,17 @@
+telepathy-logger 0.2.3 (2011-02-28)
+===================================
+
+The "I hate mondays" release
+
+This bug fix release fixes potential crash on 32bit machines. We
+strongly suggest distributions to update to this version.
+
+Fixes:
+
+* Convert timestamp from uint to int64 on sent message (Nicolas)
+* Set an error if text event body is empty or NULL (fd.o#31121, Emilio)
+
+
 telepathy-logger 0.2.2 (2011-02-28)
 ===================================
 
