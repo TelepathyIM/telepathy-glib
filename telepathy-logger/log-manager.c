@@ -1218,8 +1218,9 @@ tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
  * tpl_log_manager_get_filtered_events_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @events: a pointer to a #GList used to return the list #TplEvent
- * @error: a #GError to fill
+ * @events: (out) (transfer full) (element-type TelepathyLogger.Event):
+ *  a pointer to a #GList used to return the list #TplEvent
+ * @error: (out caller-allocates): a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE.
  */
