@@ -241,6 +241,6 @@ Configure summary:
 	Python Twisted tests........:  ${TEST_PYTHON}
 	Bugreporting URL............:  ${PACKAGE_BUGREPORT}
 	Public extensions library...:  ${enable_public_extensions}
-
+	Introspection support.......:  ${found_introspection}
 
 "
