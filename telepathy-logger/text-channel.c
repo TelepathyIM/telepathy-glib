@@ -1049,7 +1049,7 @@ on_send_error_cb (TpChannel *proxy,
 
 static void
 on_sent_signal_cb (TpChannel *proxy,
-    guint timestamp,
+    guint tp_timestamp,
     guint type,
     const gchar *text,
     gpointer user_data,
@@ -1065,6 +1065,7 @@ on_sent_signal_cb (TpChannel *proxy,
   TpAccount *account;
   const gchar *channel_path;
   gchar *log_id;
+  gint64 timestamp = (gint64) tp_timestamp;
 
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (tpl_text));
 
