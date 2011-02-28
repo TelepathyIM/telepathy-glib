@@ -1628,3 +1628,18 @@ tp_utf8_make_valid (const gchar *name)
 
   return g_string_free (string, FALSE);
 }
+
+gboolean
+_tp_bind_connection_status_to_boolean (GBinding *binding,
+    const GValue *src_value,
+    GValue *dest_value,
+    gpointer user_data)
+{
+  g_return_val_if_fail (G_VALUE_HOLDS_UINT (src_value), FALSE);
+  g_return_val_if_fail (G_VALUE_HOLDS_BOOLEAN (dest_value), FALSE);
+
+  g_value_set_boolean (dest_value,
+      g_value_get_uint (src_value) == TP_CONNECTION_STATUS_CONNECTED);
+
+  return TRUE;
+}

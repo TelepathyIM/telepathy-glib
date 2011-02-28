@@ -42,6 +42,7 @@
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/util-internal.h"
 
 #include "_gen/tp-cli-connection-body.h"
 
@@ -2404,4 +2405,40 @@ tp_connection_get_self_contact (TpConnection *self)
 {
   g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
   return self->priv->self_contact;
+}
+
+/**
+ * tp_connection_bind_connection_status_to_property:
+ * @self: a #TpConnection
+ * @target: the target #GObject
+ * @target_property: the property on @target to bind (must be %G_TYPE_BOOLEAN)
+ *
+ * Binds the :status of @self to the boolean property of another
+ * object using a #GBinding such that the @target_property will be set to
+ * %TRUE when @self is connected.
+ *
+ * @target_property will be synchronised immediately (%G_BINDING_SYNC_CREATE).
+ *
+ * For instance, this function can be used to bind the GtkWidget:sensitive
+ * property to only make a widget sensitive when the account is connected.
+ *
+ * See g_object_bind_property() for more information.
+ *
+ * Returns: (transfer none): the #GBinding instance representing the binding
+ *   between the @self and the @target. The binding is released whenever the
+ *   #GBinding reference count reaches zero.
+ * Since: UNRELEASED
+ */
+GBinding *
+tp_connection_bind_connection_status_to_property (TpConnection *self,
+    gpointer target,
+    const char *target_property)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
+
+  return g_object_bind_property_full (self, "status",
+      target, target_property,
+      G_BINDING_SYNC_CREATE,
+      _tp_bind_connection_status_to_boolean,
+      NULL, NULL, NULL);
 }

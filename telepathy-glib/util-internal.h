@@ -74,4 +74,7 @@ GList * _tp_create_channel_request_list (TpDBusDaemon *dbus,
         NULL); \
     return copy_func (g_simple_async_result_get_op_res_gpointer (_simple));
 
+gboolean _tp_bind_connection_status_to_boolean (GBinding *binding,
+    const GValue *src_value, GValue *dest_value, gpointer user_data);
+
 #endif /* __TP_UTIL_INTERNAL_H__ */

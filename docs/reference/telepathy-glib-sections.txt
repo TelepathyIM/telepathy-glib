@@ -3438,6 +3438,7 @@ TP_ERRORS_DISCONNECTED
 tp_connection_get_detailed_error
 tp_connection_add_client_interest
 tp_connection_add_client_interest_by_id
+tp_connection_bind_connection_status_to_property
 <SUBSECTION Standard>
 tp_errors_disconnected_quark
 tp_connection_get_type
@@ -4273,6 +4274,7 @@ tp_account_get_avatar_async
 tp_account_get_avatar_finish
 tp_account_set_avatar_async
 tp_account_set_avatar_finish
+tp_account_bind_connection_status_to_property
 <SUBSECTION>
 TP_ACCOUNT_FEATURE_CORE
 tp_account_is_prepared

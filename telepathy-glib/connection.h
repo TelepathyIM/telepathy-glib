@@ -290,6 +290,8 @@ void tp_connection_get_contact_list_attributes (TpConnection *self,
     gint timeout_ms, const gchar * const *interfaces, gboolean hold,
     tp_cli_connection_interface_contacts_callback_for_get_contact_attributes callback,
     gpointer user_data, GDestroyNotify destroy, GObject *weak_object);
+GBinding *tp_connection_bind_connection_status_to_property (TpConnection *self,
+    gpointer target, const char *target_property);
 
 G_END_DECLS
 
