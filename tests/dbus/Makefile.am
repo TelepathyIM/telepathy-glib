@@ -3,6 +3,7 @@ noinst_PROGRAMS = \
 	test-log-manager		\
 	test-tpl-log-store-pidgin 	\
 	test-tpl-log-store-xml 		\
+	test-tpl-observer		\
 	$(NULL)
 
 TESTS = $(noinst_PROGRAMS)
