@@ -10,11 +10,6 @@ information related to logging (most frequent contacts, etc.). It also provides
 a GLib-compatible client API for making bulk log requests (e.g. for display
 logs in applications without having to provide lots of information over D-Bus).
 
-N.B. telepathy-logger and libtelepathy-logger currently include some
-     GPL-licensed code, so can be considered licensed under the GPL.
-     It is our eventual goal to allow libtelepathy-logger to be licensed under
-     the LGPL v2.1.
-
 TPL is currently under development, please refer to
 http://telepathy.freedesktop.org/wiki/Logger for more information.
 
