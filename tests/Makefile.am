@@ -9,7 +9,6 @@ EXTRA_DIST = logs
 noinst_PROGRAMS = \
 	test-tpl-channel		\
 	test-tpl-conf			\
-	test-tpl-log-store-sqlite	\
 	$(NULL)
 
 TESTS = $(noinst_PROGRAMS)
