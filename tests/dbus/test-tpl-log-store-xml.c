@@ -287,6 +287,7 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   TplEvent *event;
   GError *error = NULL;
   GList *events;
+  gint64 timestamp = time (NULL);
 
   account = tp_account_new (fixture->bus,
       TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
@@ -307,7 +308,7 @@ test_add_text_event (XmlTestCaseFixture *fixture,
       "log-id", "my-log-id",
       "sender", me,
       "receiver", contact,
-      "timestamp", time (NULL),
+      "timestamp", timestamp,
       /* TplTextEvent */
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "message", "my message 1",
@@ -335,7 +336,7 @@ test_add_text_event (XmlTestCaseFixture *fixture,
       "log-id", "my-log-id",
       "sender", contact,
       "receiver", me,
-      "timestamp", time (NULL),
+      "timestamp", timestamp,
       /* TplTextEvent */
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION,
       "message", "my message 1",
@@ -363,7 +364,7 @@ test_add_text_event (XmlTestCaseFixture *fixture,
       "log-id", "my-log-id",
       "sender", me,
       "receiver", room,
-      "timestamp", time (NULL),
+      "timestamp", timestamp,
       /* TplTextEvent */
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "message", "my message 1",
@@ -391,7 +392,7 @@ test_add_text_event (XmlTestCaseFixture *fixture,
       "log-id", "my-log-id",
       "sender", contact,
       "receiver", room,
-      "timestamp", time (NULL),
+      "timestamp", timestamp,
       /* TplTextEvent */
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "message", "my message 1",
