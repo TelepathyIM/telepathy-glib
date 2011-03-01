@@ -462,11 +462,11 @@ add_text_event (TplLogStoreXml *self,
   TplEntity *sender;
   const gchar *body_str;
   gchar *avatar_token = NULL;
-  gchar *body;
-  gchar *timestamp;
+  gchar *body = NULL;
+  gchar *timestamp = NULL;
   gchar *contact_name = NULL;
-  gchar *contact_id;
-  gchar *event;
+  gchar *contact_id = NULL;
+  gchar *event = NULL;
   TpChannelTextMessageType msg_type;
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);

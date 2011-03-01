@@ -80,8 +80,6 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR(.)
 
-GNOME_COMMON_INIT
-
 AM_INIT_AUTOMAKE(1.9 dist-bzip2 no-define no-dist-gzip tar-ustar -Wno-portability)
 AC_SEARCH_LIBS([strerror],[cposix])
 AC_PROG_CC
@@ -91,7 +89,6 @@ AM_PROG_MKDIR_P
 AM_PATH_GLIB_2_0
 AC_PATH_XTRA
 IT_PROG_INTLTOOL([0.35.0])
-GNOME_DOC_INIT([0.17.3])
 AC_PATH_PROG(DBUS_BINDING_TOOL, dbus-binding-tool)
 GLIB_GSETTINGS
 GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
