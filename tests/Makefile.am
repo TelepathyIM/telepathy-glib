@@ -9,8 +9,6 @@ EXTRA_DIST = logs
 noinst_PROGRAMS = \
 	test-tpl-channel		\
 	test-tpl-conf			\
-	test-tpl-log-store-sqlite	\
-	test-tpl-observer		\
 	$(NULL)
 
 TESTS = $(noinst_PROGRAMS)
@@ -24,12 +22,6 @@ test_tpl_channel_SOURCES = \
 	tpl-channel-test.c	\
 	tpl-channel-test.h	\
 	$(NULL)
-
-test_tpl_observer_SOURCES = \
-	test-tpl-observer.c	\
-	tpl-channel-test.c	\
-	$(NULL)
-
 
 AM_CFLAGS = \
 	$(ERROR_CFLAGS) \
@@ -64,7 +56,6 @@ check_c_sources = \
 	tpl-channel-test.c	\
 	test-tpl-channel.c	\
 	test-tpl-conf.c		\
-	test-tpl-observer.c	\
 	$(NULL)
 
 include $(top_srcdir)/tools/check-coding-style.mk

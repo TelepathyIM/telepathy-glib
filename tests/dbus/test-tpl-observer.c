@@ -1,5 +1,3 @@
-#include "tpl-channel-test.h"
-
 #include <telepathy-logger/channel-factory-internal.h>
 #include <telepathy-logger/observer-internal.h>
 
