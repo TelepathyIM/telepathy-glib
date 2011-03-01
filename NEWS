@@ -1,3 +1,23 @@
+telepathy-logger 0.2.4 (2011-03-01)
+===================================
+
+The "small" release
+
+This bug fix release fixes minor issues. We suggest distributions to update to
+this version as it fixes compilation and unit tests on some configurations.
+
+Fixes:
+
+* Add output annotations in TplLogManager (Jasper)
+* Make the introspection files be 0.2 instead of 1.0 (Emilio)
+* Fix use of uninitialised variable (Nicolas)
+* Remove reference to Gnome in configure.ac (Nicolas)
+* Remove GPL warning in README, Logger is now fully LGPL (Nicolas)
+* Move observer and SQlite tests with dbus enabled tests (Nicolas)
+* Update valgrind suppressions. (Nicolas)
+* Fix XML store test crash on 32bit computer. (Nicolas)
+
+
 telepathy-logger 0.2.3 (2011-02-28)
 ===================================
 
