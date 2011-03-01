@@ -26,6 +26,30 @@
 }
 
 {
+   64bit ld.so initialization + selinux
+   Memcheck:Leak
+   ...
+   fun:_dl_init
+   obj:/lib64/ld-*.so
+}
+
+{
+   ld.so start
+   Memcheck:Cond
+   ...
+   fun:_dl_start
+   obj:/lib/ld-*.so
+}
+
+{
+   64bit ld.so start
+   Memcheck:Cond
+   ...
+   fun:_dl_start
+   obj:/lib64/ld-*.so
+}
+
+{
    dlopen initialization, triggered by handle-leak-debug code
    Memcheck:Leak
    ...
