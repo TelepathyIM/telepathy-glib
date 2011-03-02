@@ -251,10 +251,10 @@ _create_search_channel_cb (GObject *source_object,
     {
       g_simple_async_result_set_from_error (self->priv->async_res, error);
       g_error_free (error);
+      /* This function is safe if self->priv->channel is NULL. */
+      close_search_channel (self);
     }
 
-  /* This function is safe if self->priv->channel is NULL. */
-  close_search_channel (self);
   g_simple_async_result_complete (self->priv->async_res);
   tp_clear_object (&self->priv->async_res);
 }
