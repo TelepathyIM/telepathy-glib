@@ -254,8 +254,8 @@ tp_text_channel_constructed (GObject *obj)
       GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
           "Channel is not of type Text" };
 
-      DEBUG ("Channel is not of type Text: %s", tp_channel_get_channel_type (
-            chan));
+      DEBUG ("Channel %s is not of type Text: %s",
+          tp_proxy_get_object_path (self), tp_channel_get_channel_type (chan));
 
       tp_proxy_invalidate (TP_PROXY (self), &error);
       return;
@@ -267,7 +267,8 @@ tp_text_channel_constructed (GObject *obj)
       GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
           "Channel does not implement the Messages interface" };
 
-      DEBUG ("Channel does not implement the Messages interface");
+      DEBUG ("Channel %s does not implement the Messages interface",
+          tp_proxy_get_object_path (self));
 
       tp_proxy_invalidate (TP_PROXY (self), &error);
       return;
@@ -282,8 +283,8 @@ tp_text_channel_constructed (GObject *obj)
     {
       const gchar * const plain[] = { "text/plain", NULL };
 
-      DEBUG ("Channel doesn't have Messages.SupportedContentTypes in its "
-          "immutable properties");
+      DEBUG ("Channel %s doesn't have Messages.SupportedContentTypes in its "
+          "immutable properties", tp_proxy_get_object_path (self));
 
       /* spec mandates that plain text is always allowed. */
       self->priv->supported_content_types = g_strdupv ((GStrv) plain);
@@ -298,16 +299,16 @@ tp_text_channel_constructed (GObject *obj)
       TP_PROP_CHANNEL_INTERFACE_MESSAGES_MESSAGE_PART_SUPPORT_FLAGS, &valid);
   if (!valid)
     {
-      DEBUG ("Channel doesn't have Messages.MessagePartSupportFlags in its "
-          "immutable properties");
+      DEBUG ("Channel %s doesn't have Messages.MessagePartSupportFlags in its "
+          "immutable properties", tp_proxy_get_object_path (self));
     }
 
   self->priv->delivery_reporting_support = tp_asv_get_uint32 (props,
       TP_PROP_CHANNEL_INTERFACE_MESSAGES_DELIVERY_REPORTING_SUPPORT, &valid);
   if (!valid)
     {
-      DEBUG ("Channel doesn't have Messages.DeliveryReportingSupport in its "
-          "immutable properties");
+      DEBUG ("Channel %s doesn't have Messages.DeliveryReportingSupport in its "
+          "immutable properties", tp_proxy_get_object_path (self));
     }
 
   self->priv->message_types = tp_asv_get_boxed (props,
@@ -322,15 +323,16 @@ tp_text_channel_constructed (GObject *obj)
       self->priv->message_types = g_array_new (FALSE, FALSE,
           sizeof (TpChannelTextMessageType));
 
-      DEBUG ("Channel doesn't have Messages.MessageTypes in its "
-          "immutable properties");
+      DEBUG ("Channel %s doesn't have Messages.MessageTypes in its "
+          "immutable properties", tp_proxy_get_object_path (self));
     }
 
   tp_cli_channel_interface_messages_connect_to_message_sent (chan,
       message_sent_cb, NULL, NULL, NULL, &err);
   if (err != NULL)
     {
-      WARNING ("Failed to connect to MessageSent: %s", err->message);
+      WARNING ("Failed to connect to MessageSent on %s: %s",
+          tp_proxy_get_object_path (self), err->message);
       g_error_free (err);
     }
 }
