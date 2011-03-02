@@ -75,6 +75,7 @@ struct _TpTextChannelPrivate
   GStrv supported_content_types;
   TpMessagePartSupportFlags message_part_support_flags;
   TpDeliveryReportingSupportFlags delivery_reporting_support;
+  GArray *message_types;
 
   /* queue of owned TpSignalledMessage */
   GQueue *pending_messages;
@@ -85,7 +86,8 @@ enum
 {
   PROP_SUPPORTED_CONTENT_TYPES = 1,
   PROP_MESSAGE_PART_SUPPORT_FLAGS,
-  PROP_DELIVERY_REPORTING_SUPPORT
+  PROP_DELIVERY_REPORTING_SUPPORT,
+  PROP_MESSAGE_TYPES,
 };
 
 enum /* signals */
@@ -104,6 +106,7 @@ tp_text_channel_dispose (GObject *obj)
   TpTextChannel *self = (TpTextChannel *) obj;
 
   tp_clear_pointer (&self->priv->supported_content_types, g_strfreev);
+  tp_clear_pointer (&self->priv->message_types, g_array_unref);
 
   g_queue_foreach (self->priv->pending_messages, (GFunc) g_object_unref, NULL);
   tp_clear_pointer (&self->priv->pending_messages, g_queue_free);
@@ -134,6 +137,11 @@ tp_text_channel_get_property (GObject *object,
       case PROP_DELIVERY_REPORTING_SUPPORT:
         g_value_set_uint (value,
             tp_text_channel_get_delivery_reporting_support (self));
+        break;
+
+      case PROP_MESSAGE_TYPES:
+        g_value_set_boxed (value,
+            tp_text_channel_get_message_types (self));
         break;
 
       default:
@@ -299,6 +307,22 @@ tp_text_channel_constructed (GObject *obj)
   if (!valid)
     {
       DEBUG ("Channel doesn't have Messages.DeliveryReportingSupport in its "
+          "immutable properties");
+    }
+
+  self->priv->message_types = tp_asv_get_boxed (props,
+      TP_PROP_CHANNEL_INTERFACE_MESSAGES_MESSAGE_TYPES, DBUS_TYPE_G_UINT_ARRAY);
+  if (self->priv->message_types != NULL)
+    {
+      self->priv->message_types = g_boxed_copy (DBUS_TYPE_G_UINT_ARRAY,
+          self->priv->message_types);
+    }
+  else
+    {
+      self->priv->message_types = g_array_new (FALSE, FALSE,
+          sizeof (TpChannelTextMessageType));
+
+      DEBUG ("Channel doesn't have Messages.MessageTypes in its "
           "immutable properties");
     }
 
@@ -873,6 +897,22 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
       PROP_DELIVERY_REPORTING_SUPPORT, param_spec);
 
   /**
+   * TpTextChannel:message-types:
+   *
+   * A #GArray containing the #TpChannelTextMessageType which may be sent on
+   * this channel.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("message-types",
+      "MessageTypes",
+      "The Messages.MessageTypes property of the channel",
+      DBUS_TYPE_G_UINT_ARRAY,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class,
+      PROP_MESSAGE_TYPES, param_spec);
+
+  /**
    * TpTextChannel::message-received
    * @self: the #TpTextChannel
    * @message: a #TpSignalledMessage
@@ -1429,3 +1469,23 @@ tp_text_channel_set_chat_state_finish (TpTextChannel *self,
 {
   _tp_implement_finish_void (self, tp_text_channel_set_chat_state_finish)
 }
+
+/**
+ * tp_text_channel_get_message_types: (skip)
+ * @self: a #TpTextChannel
+ *
+ * Return the #TpTextChannel:message-types property
+ *
+ * Returns: (transfer none) (element-type TelepathyGLib.ChannelTextMessageType):
+ * the value of #TpTextChannel:message-types
+ *
+ * Since: 0.13.UNRELEASED
+ */
+GArray *
+tp_text_channel_get_message_types (TpTextChannel *self)
+{
+  g_return_val_if_fail (TP_IS_TEXT_CHANNEL (self), NULL);
+
+  return self->priv->message_types;
+}
+
