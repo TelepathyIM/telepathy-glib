@@ -329,6 +329,8 @@ tf_media_signalling_channel_new (TpChannel *channel)
   TfMediaSignallingChannel *self = g_object_new (
       TF_TYPE_MEDIA_SIGNALLING_CHANNEL, NULL);
 
+  self->channel_proxy = channel;
+
   if (!tp_proxy_has_interface_by_id (TP_PROXY (channel),
         TP_IFACE_QUARK_PROPERTIES_INTERFACE))
     {
