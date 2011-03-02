@@ -72,6 +72,9 @@ TpDeliveryReportingSupportFlags tp_text_channel_get_delivery_reporting_support (
 
 GArray * tp_text_channel_get_message_types (TpTextChannel *self);
 
+gboolean tp_text_channel_supports_message_type (TpTextChannel *self,
+    TpChannelTextMessageType message_type);
+
 #define TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES \
   tp_text_channel_get_feature_quark_incoming_messages ()
 GQuark tp_text_channel_get_feature_quark_incoming_messages (void) G_GNUC_CONST;

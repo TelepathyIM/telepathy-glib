@@ -201,6 +201,17 @@ test_properties (Test *test,
 
   message_types = tp_text_channel_get_message_types (test->channel);
   check_messages_types (message_types);
+
+  g_assert (tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL));
+  g_assert (tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION));
+  g_assert (tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE));
+  g_assert (!tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_AUTO_REPLY));
+  g_assert (!tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT));
 }
 
 static void

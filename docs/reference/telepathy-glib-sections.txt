@@ -5509,6 +5509,7 @@ tp_text_channel_ack_message_async
 tp_text_channel_ack_message_finish
 tp_text_channel_set_chat_state_async
 tp_text_channel_set_chat_state_finish
+tp_text_channel_supports_message_type
 <SUBSECTION Standard>
 TP_IS_TEXT_CHANNEL
 TP_IS_TEXT_CHANNEL_CLASS
