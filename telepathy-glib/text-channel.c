@@ -75,6 +75,7 @@ struct _TpTextChannelPrivate
   GStrv supported_content_types;
   TpMessagePartSupportFlags message_part_support_flags;
   TpDeliveryReportingSupportFlags delivery_reporting_support;
+  GArray *message_types;
 
   /* queue of owned TpSignalledMessage */
   GQueue *pending_messages;
@@ -85,7 +86,8 @@ enum
 {
   PROP_SUPPORTED_CONTENT_TYPES = 1,
   PROP_MESSAGE_PART_SUPPORT_FLAGS,
-  PROP_DELIVERY_REPORTING_SUPPORT
+  PROP_DELIVERY_REPORTING_SUPPORT,
+  PROP_MESSAGE_TYPES,
 };
 
 enum /* signals */
@@ -104,6 +106,7 @@ tp_text_channel_dispose (GObject *obj)
   TpTextChannel *self = (TpTextChannel *) obj;
 
   tp_clear_pointer (&self->priv->supported_content_types, g_strfreev);
+  tp_clear_pointer (&self->priv->message_types, g_array_unref);
 
   g_queue_foreach (self->priv->pending_messages, (GFunc) g_object_unref, NULL);
   tp_clear_pointer (&self->priv->pending_messages, g_queue_free);
@@ -134,6 +137,11 @@ tp_text_channel_get_property (GObject *object,
       case PROP_DELIVERY_REPORTING_SUPPORT:
         g_value_set_uint (value,
             tp_text_channel_get_delivery_reporting_support (self));
+        break;
+
+      case PROP_MESSAGE_TYPES:
+        g_value_set_boxed (value,
+            tp_text_channel_get_message_types (self));
         break;
 
       default:
@@ -246,8 +254,8 @@ tp_text_channel_constructed (GObject *obj)
       GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
           "Channel is not of type Text" };
 
-      DEBUG ("Channel is not of type Text: %s", tp_channel_get_channel_type (
-            chan));
+      DEBUG ("Channel %s is not of type Text: %s",
+          tp_proxy_get_object_path (self), tp_channel_get_channel_type (chan));
 
       tp_proxy_invalidate (TP_PROXY (self), &error);
       return;
@@ -259,7 +267,8 @@ tp_text_channel_constructed (GObject *obj)
       GError error = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
           "Channel does not implement the Messages interface" };
 
-      DEBUG ("Channel does not implement the Messages interface");
+      DEBUG ("Channel %s does not implement the Messages interface",
+          tp_proxy_get_object_path (self));
 
       tp_proxy_invalidate (TP_PROXY (self), &error);
       return;
@@ -274,8 +283,8 @@ tp_text_channel_constructed (GObject *obj)
     {
       const gchar * const plain[] = { "text/plain", NULL };
 
-      DEBUG ("Channel doesn't have Messages.SupportedContentTypes in its "
-          "immutable properties");
+      DEBUG ("Channel %s doesn't have Messages.SupportedContentTypes in its "
+          "immutable properties", tp_proxy_get_object_path (self));
 
       /* spec mandates that plain text is always allowed. */
       self->priv->supported_content_types = g_strdupv ((GStrv) plain);
@@ -290,23 +299,40 @@ tp_text_channel_constructed (GObject *obj)
       TP_PROP_CHANNEL_INTERFACE_MESSAGES_MESSAGE_PART_SUPPORT_FLAGS, &valid);
   if (!valid)
     {
-      DEBUG ("Channel doesn't have Messages.MessagePartSupportFlags in its "
-          "immutable properties");
+      DEBUG ("Channel %s doesn't have Messages.MessagePartSupportFlags in its "
+          "immutable properties", tp_proxy_get_object_path (self));
     }
 
   self->priv->delivery_reporting_support = tp_asv_get_uint32 (props,
       TP_PROP_CHANNEL_INTERFACE_MESSAGES_DELIVERY_REPORTING_SUPPORT, &valid);
   if (!valid)
     {
-      DEBUG ("Channel doesn't have Messages.DeliveryReportingSupport in its "
-          "immutable properties");
+      DEBUG ("Channel %s doesn't have Messages.DeliveryReportingSupport in its "
+          "immutable properties", tp_proxy_get_object_path (self));
+    }
+
+  self->priv->message_types = tp_asv_get_boxed (props,
+      TP_PROP_CHANNEL_INTERFACE_MESSAGES_MESSAGE_TYPES, DBUS_TYPE_G_UINT_ARRAY);
+  if (self->priv->message_types != NULL)
+    {
+      self->priv->message_types = g_boxed_copy (DBUS_TYPE_G_UINT_ARRAY,
+          self->priv->message_types);
+    }
+  else
+    {
+      self->priv->message_types = g_array_new (FALSE, FALSE,
+          sizeof (TpChannelTextMessageType));
+
+      DEBUG ("Channel %s doesn't have Messages.MessageTypes in its "
+          "immutable properties", tp_proxy_get_object_path (self));
     }
 
   tp_cli_channel_interface_messages_connect_to_message_sent (chan,
       message_sent_cb, NULL, NULL, NULL, &err);
   if (err != NULL)
     {
-      WARNING ("Failed to connect to MessageSent: %s", err->message);
+      WARNING ("Failed to connect to MessageSent on %s: %s",
+          tp_proxy_get_object_path (self), err->message);
       g_error_free (err);
     }
 }
@@ -873,6 +899,22 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
       PROP_DELIVERY_REPORTING_SUPPORT, param_spec);
 
   /**
+   * TpTextChannel:message-types:
+   *
+   * A #GArray containing the #TpChannelTextMessageType which may be sent on
+   * this channel.
+   *
+   * Since: 0.13.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("message-types",
+      "MessageTypes",
+      "The Messages.MessageTypes property of the channel",
+      DBUS_TYPE_G_UINT_ARRAY,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class,
+      PROP_MESSAGE_TYPES, param_spec);
+
+  /**
    * TpTextChannel::message-received
    * @self: the #TpTextChannel
    * @message: a #TpSignalledMessage
@@ -1428,4 +1470,53 @@ tp_text_channel_set_chat_state_finish (TpTextChannel *self,
     GError **error)
 {
   _tp_implement_finish_void (self, tp_text_channel_set_chat_state_finish)
+}
+
+/**
+ * tp_text_channel_get_message_types: (skip)
+ * @self: a #TpTextChannel
+ *
+ * Return the #TpTextChannel:message-types property
+ *
+ * Returns: (transfer none) (element-type TelepathyGLib.ChannelTextMessageType):
+ * the value of #TpTextChannel:message-types
+ *
+ * Since: 0.13.UNRELEASED
+ */
+GArray *
+tp_text_channel_get_message_types (TpTextChannel *self)
+{
+  g_return_val_if_fail (TP_IS_TEXT_CHANNEL (self), NULL);
+
+  return self->priv->message_types;
+}
+
+/**
+ * tp_text_channel_supports_message_type
+ * @self: a #TpTextChannel
+ * @type: a #TpChannelTextMessageType
+ *
+ * Check if message of type @type can be sent on this channel.
+ *
+ * Returns: %TRUE if message of type @type can be sent on @self, %FALSE
+ * otherwise
+ *
+ * Since: 0.13.UNRELEASED
+ */
+gboolean
+tp_text_channel_supports_message_type (TpTextChannel *self,
+    TpChannelTextMessageType type)
+{
+  guint i;
+
+  for (i = 0; i < self->priv->message_types->len; i++)
+    {
+      TpChannelTextMessageType tmp = g_array_index (self->priv->message_types,
+          TpChannelTextMessageType, i);
+
+      if (tmp == type)
+        return TRUE;
+    }
+
+  return FALSE;
 }

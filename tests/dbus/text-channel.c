@@ -141,6 +141,22 @@ test_creation (Test *test,
 }
 
 static void
+check_messages_types (GArray *message_types)
+{
+  TpChannelTextMessageType type;
+
+  g_assert (message_types != NULL);
+  g_assert_cmpuint (message_types->len, ==, 3);
+
+  type = g_array_index (message_types, TpChannelTextMessageType, 0);
+  g_assert_cmpuint (type, ==, TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
+  type = g_array_index (message_types, TpChannelTextMessageType, 1);
+  g_assert_cmpuint (type, ==, TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+  type = g_array_index (message_types, TpChannelTextMessageType, 2);
+  g_assert_cmpuint (type, ==, TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE);
+}
+
+static void
 test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -148,13 +164,16 @@ test_properties (Test *test,
   const gchar * const * content_types2;
   TpMessagePartSupportFlags message_part;
   TpDeliveryReportingSupportFlags delivery;
+  GArray *message_types;
 
   g_object_get (test->channel,
       "supported-content-types", &content_types,
       "message-part-support-flags", &message_part,
       "delivery-reporting-support", &delivery,
+      "message-types", &message_types,
       NULL);
 
+  /* SupportedContentTypes */
   g_assert_cmpuint (g_strv_length (content_types), ==, 1);
   g_assert_cmpstr (content_types[0], ==, "*/*");
   g_strfreev (content_types);
@@ -162,6 +181,7 @@ test_properties (Test *test,
   content_types2 = tp_text_channel_get_supported_content_types (test->channel);
   g_assert_cmpstr (content_types2[0], ==, "*/*");
 
+  /* MessagePartSupportFlags */
   g_assert_cmpuint (message_part, ==,
       TP_MESSAGE_PART_SUPPORT_FLAG_ONE_ATTACHMENT |
       TP_MESSAGE_PART_SUPPORT_FLAG_MULTIPLE_ATTACHMENTS |
@@ -169,10 +189,29 @@ test_properties (Test *test,
   g_assert_cmpuint (message_part, ==,
       tp_text_channel_get_message_part_support_flags (test->channel));
 
+  /* DeliveryReportingSupport */
   g_assert_cmpuint (delivery, ==,
       TP_DELIVERY_REPORTING_SUPPORT_FLAG_RECEIVE_FAILURES);
   g_assert_cmpuint (delivery, ==,
       tp_text_channel_get_delivery_reporting_support (test->channel));
+
+  /* MessageTypes */
+  check_messages_types (message_types);
+  g_array_unref (message_types);
+
+  message_types = tp_text_channel_get_message_types (test->channel);
+  check_messages_types (message_types);
+
+  g_assert (tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL));
+  g_assert (tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION));
+  g_assert (tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE));
+  g_assert (!tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_AUTO_REPLY));
+  g_assert (!tp_text_channel_supports_message_type (test->channel,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT));
 }
 
 static void
