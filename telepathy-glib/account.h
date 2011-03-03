@@ -250,7 +250,7 @@ gboolean tp_account_set_uri_scheme_association_finish (TpAccount *self,
     GAsyncResult *result, GError **error);
 
 GBinding *tp_account_bind_connection_status_to_property (TpAccount *self,
-    gpointer target, const char *target_property);
+    gpointer target, const char *target_property, gboolean invert);
 
 G_END_DECLS
 

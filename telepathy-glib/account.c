@@ -3957,12 +3957,15 @@ tp_account_get_normalized_name (TpAccount *self)
  * @self: a #TpAccount
  * @target: the target #GObject
  * @target_property: the property on @target to bind (must be %G_TYPE_BOOLEAN)
+ * @invert: %TRUE if you wish to invert the value of @target_property
+ *   (i.e. %FALSE if connected)
  *
  * Binds the :connection-status of @self to the boolean property of another
  * object using a #GBinding such that the @target_property will be set to
- * %TRUE when @self is connected.
+ * %TRUE when @self is connected (and @invert is %FALSE).
  *
  * @target_property will be synchronised immediately (%G_BINDING_SYNC_CREATE).
+ * @invert can be interpreted as analogous to %G_BINDING_INVERT_BOOLEAN.
  *
  * For instance, this function can be used to bind the GtkWidget:sensitive
  * property to only make a widget sensitive when the account is connected.
@@ -3977,7 +3980,8 @@ tp_account_get_normalized_name (TpAccount *self)
 GBinding *
 tp_account_bind_connection_status_to_property (TpAccount *self,
     gpointer target,
-    const char *target_property)
+    const char *target_property,
+    gboolean invert)
 {
   g_return_val_if_fail (TP_IS_ACCOUNT (self), NULL);
 
@@ -3985,5 +3989,5 @@ tp_account_bind_connection_status_to_property (TpAccount *self,
       target, target_property,
       G_BINDING_SYNC_CREATE,
       _tp_bind_connection_status_to_boolean,
-      NULL, NULL, NULL);
+      NULL, GUINT_TO_POINTER (invert), NULL);
 }
