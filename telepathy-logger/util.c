@@ -21,7 +21,6 @@
 
 #include "util-internal.h"
 
-#include "datetime-internal.h"
 #include "log-store-sqlite-internal.h"
 
 #include <errno.h>
@@ -33,13 +32,19 @@
  * within itself */
 gchar *
 _tpl_create_message_token (const gchar *channel,
-    gint64 timestamp,
+    gint64 unix_timestamp,
     guint msgid)
 {
-  GChecksum *log_id = g_checksum_new (G_CHECKSUM_SHA1);
   gchar *retval;
-  gchar *date = _tpl_time_to_string_local (timestamp,
+  gchar *date;
+  GDateTime *timestamp;
+  GChecksum *log_id = g_checksum_new (G_CHECKSUM_SHA1);
+
+  timestamp = g_date_time_new_from_unix_utc (unix_timestamp);
+  date = g_date_time_format (timestamp,
       TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
+
+  g_date_time_unref (timestamp);
 
   g_checksum_update (log_id, (guchar *) channel, -1);
   g_checksum_update (log_id, (guchar *) date, -1);
