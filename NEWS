@@ -1,3 +1,16 @@
+telepathy-logger 0.2.5 (2011-03-03)
+===================================
+
+The "One liner" release
+
+This bug fix release fixes another crash found on 32bit machines. We strongly
+suggest distributions to update to this version.
+
+Fixes:
+
+* Fix another 32 vs 64bits bug (Emilio)
+
+
 telepathy-logger 0.2.4 (2011-03-01)
 ===================================
 
