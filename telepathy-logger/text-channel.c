@@ -63,7 +63,7 @@ typedef struct
   gchar *log_id;
   guint type;
   gchar *text;
-  guint timestamp;
+  gint64 timestamp;
 
 } ReceivedData;
 
