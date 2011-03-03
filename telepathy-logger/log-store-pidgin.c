@@ -35,7 +35,6 @@
 #include "log-manager-internal.h"
 #include "text-event-internal.h"
 #include "entity-internal.h"
-#include "datetime-internal.h"
 #include "util-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE

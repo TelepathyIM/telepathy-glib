@@ -43,7 +43,6 @@
 #include <telepathy-logger/log-store-sqlite-internal.h>
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_MANAGER
-#include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 

@@ -61,7 +61,6 @@ IGNORE_HFILES=\
     channel-internal.h \
     conf-internal.h \
     contact-internal.h \
-    datetime-internal.h \
     dbus-service-internal.h \
     debug-internal.h \
     event-internal.h \

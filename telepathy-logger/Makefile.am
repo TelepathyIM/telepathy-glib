@@ -52,8 +52,6 @@ libtelepathy_logger_la_SOURCES = \
 		conf-internal.h			\
 		entity.c			\
 		entity-internal.h		\
-		datetime.c			\
-		datetime-internal.h		\
 		dbus-service.c			\
 		dbus-service-internal.h		\
 		debug-internal.h		\
