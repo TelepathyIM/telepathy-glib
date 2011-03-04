@@ -1248,7 +1248,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    *
    * This connection's connection manager name.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.16
    *
    */
   g_object_class_install_property (object_class, PROP_CONNECTION_MANAGER_NAME,
@@ -1265,7 +1265,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * "msn" or "local-xmpp". Recommended names for most protocols can be
    * found in the Telepathy D-Bus Interface Specification.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.16
    *
    */
   g_object_class_install_property (object_class, PROP_PROTOCOL_NAME,
@@ -1516,7 +1516,7 @@ tp_connection_get_status (TpConnection *self,
 *
 * Returns: the same as the #TpConnection:connection-manager-name property
 *
-* Since: 0.13.UNRELEASED
+* Since: 0.13.16
 *
 */
 const gchar *
@@ -1535,7 +1535,7 @@ tp_connection_get_connection_manager_name (TpConnection *self)
 *
 * Returns: the same as the #TpConnection:protocol-name property
 *
-* Since: 0.13.UNRELEASED
+* Since: 0.13.16
 *
 */
 const gchar *
@@ -2430,7 +2430,7 @@ tp_connection_get_self_contact (TpConnection *self)
  * Returns: (transfer none): the #GBinding instance representing the binding
  *   between the @self and the @target. The binding is released whenever the
  *   #GBinding reference count reaches zero.
- * Since: UNRELEASED
+ * Since: 0.13.16
  */
 GBinding *
 tp_connection_bind_connection_status_to_property (TpConnection *self,

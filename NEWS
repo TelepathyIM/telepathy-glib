@@ -3,10 +3,30 @@ telepathy-glib 0.13.16 (UNRELEASED)
 
 Enhancements:
 
+• Update to spec 0.21.11 (Guillaume)
+  · TP_PROP_CLIENT_OBSERVER_DELAY_APPROVERS
+
 • Two new functions, tp_connection_get_connection_manager_name() and
   tp_connection_get_protocol_name(), allow you to grab these properties
   from a TpConnection without having to drive
   tp_connection_parse_object_path() yourself. (sjokkis)
+
+• GBinding utilities for connection-status on TpAccount and TpConnection:
+  tp_connection_bind_connection_status_to_property() and
+  tp_account_bind_connection_status_to_property(). (Danielle)
+
+• TpTextChannel now has a "message-types" property and accessor.
+  It also gained tp_text_channel_supports_message_type() a convenient function
+  to check if a specific message type is supported. (Guillaume)
+
+• TpContactSearch: only close channels if there was an error (Emilio)
+
+• TpBaseClient gained tp_base_client_set_observer_delay_approvers() which can
+  be used to indicate that an Observer has to block Approvers.
+
+Fixes:
+
+• Various crashes fixed in TpBaseContactList. (Marco)
 
 telepathy-glib 0.13.15 (2011-02-24)
 ===================================

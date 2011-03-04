@@ -439,7 +439,7 @@ tp_base_client_set_observer_recover (TpBaseClient *self,
  * called, and may only be called on objects whose class implements
  * #TpBaseClientClass.observe_channels.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.16
  */
 void
 tp_base_client_set_observer_delay_approvers (TpBaseClient *self,

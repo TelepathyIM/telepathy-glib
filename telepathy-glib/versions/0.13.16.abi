@@ -1,0 +1,11 @@
+Version: TELEPATHY_GLIB_0.13.16
+Extends: TELEPATHY_GLIB_0.13.15
+Release: 0.13.16
+
+tp_base_client_set_observer_delay_approvers
+tp_connection_get_protocol_name
+tp_connection_bind_connection_status_to_property
+tp_text_channel_get_message_types
+tp_text_channel_supports_message_type
+tp_connection_get_connection_manager_name
+tp_account_bind_connection_status_to_property

@@ -3975,7 +3975,7 @@ tp_account_get_normalized_name (TpAccount *self)
  * Returns: (transfer none): the #GBinding instance representing the binding
  *   between the @self and the @target. The binding is released whenever the
  *   #GBinding reference count reaches zero.
- * Since: UNRELEASED
+ * Since: 0.13.16
  */
 GBinding *
 tp_account_bind_connection_status_to_property (TpAccount *self,

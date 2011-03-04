@@ -904,7 +904,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * A #GArray containing the #TpChannelTextMessageType which may be sent on
    * this channel.
    *
-   * Since: 0.13.UNRELEASED
+   * Since: 0.13.16
    */
   param_spec = g_param_spec_boxed ("message-types",
       "MessageTypes",
@@ -1481,7 +1481,7 @@ tp_text_channel_set_chat_state_finish (TpTextChannel *self,
  * Returns: (transfer none) (element-type TelepathyGLib.ChannelTextMessageType):
  * the value of #TpTextChannel:message-types
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.16
  */
 GArray *
 tp_text_channel_get_message_types (TpTextChannel *self)
@@ -1501,7 +1501,7 @@ tp_text_channel_get_message_types (TpTextChannel *self)
  * Returns: %TRUE if message of type @message_type can be sent on @self, %FALSE
  * otherwise
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.13.16
  */
 gboolean
 tp_text_channel_supports_message_type (TpTextChannel *self,
