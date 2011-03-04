@@ -1879,6 +1879,8 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
       while (g_hash_table_iter_next (&h_iter, NULL, &channel))
         tp_base_contact_list_announce_channel (self, channel, NULL);
+
+      g_strfreev (groups);
     }
 
   tp_handle_set_destroy (contacts);
