@@ -1494,18 +1494,18 @@ tp_text_channel_get_message_types (TpTextChannel *self)
 /**
  * tp_text_channel_supports_message_type
  * @self: a #TpTextChannel
- * @type: a #TpChannelTextMessageType
+ * @message_type: a #TpChannelTextMessageType
  *
- * Check if message of type @type can be sent on this channel.
+ * Check if message of type @message_type can be sent on this channel.
  *
- * Returns: %TRUE if message of type @type can be sent on @self, %FALSE
+ * Returns: %TRUE if message of type @message_type can be sent on @self, %FALSE
  * otherwise
  *
  * Since: 0.13.UNRELEASED
  */
 gboolean
 tp_text_channel_supports_message_type (TpTextChannel *self,
-    TpChannelTextMessageType type)
+    TpChannelTextMessageType message_type)
 {
   guint i;
 
@@ -1514,7 +1514,7 @@ tp_text_channel_supports_message_type (TpTextChannel *self,
       TpChannelTextMessageType tmp = g_array_index (self->priv->message_types,
           TpChannelTextMessageType, i);
 
-      if (tmp == type)
+      if (tmp == message_type)
         return TRUE;
     }
 
