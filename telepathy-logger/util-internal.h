@@ -1,6 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * Copyright (C) 2009 Collabora Ltd.
+ * Copyright (C) 2009-2011 Collabora Ltd.
+ * Copyright (C) 2003-2007 Imendio AB
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +18,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
+ *          Richard Hult <richard@imendio.com>
  */
 
 #ifndef __TPL_UTIL_H__
@@ -31,6 +33,8 @@ gchar *_tpl_create_message_token (const gchar *channel, gint64 timestamp,
     guint msgid);
 
 void _tpl_rmdir_recursively (const gchar *dir_name);
+
+gint64 _tpl_time_parse (const gchar * str);
 
 
 #endif // __TPL_UTIL_H__

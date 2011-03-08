@@ -79,7 +79,7 @@ TplLogStore * _tpl_log_store_sqlite_dup (void);
 GList * _tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
     TpChannel *channel, GError **error);
 GList * _tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
-    TpChannel *channel, time_t timestamp, GError **error);
+    TpChannel *channel, gint64 timestamp, GError **error);
 gboolean _tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
   const gchar* log_id);
 

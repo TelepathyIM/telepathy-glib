@@ -34,7 +34,6 @@
 #include "log-manager-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
-#include "datetime-internal.h"
 #include "debug-internal.h"
 #include "util-internal.h"
 
@@ -47,7 +46,7 @@
 static void log_store_iface_init (TplLogStoreInterface *iface);
 static gboolean _insert_to_cache_table (TplLogStore *self,
     TplEvent *message, GError **error);
-static void tpl_log_store_sqlite_purge (TplLogStoreSqlite *self, time_t delta,
+static void tpl_log_store_sqlite_purge (TplLogStoreSqlite *self, GTimeSpan delta,
     GError **error);
 static gboolean purge_event_timeout (gpointer logstore);
 
@@ -298,21 +297,30 @@ get_channel_name_from_event (TplEvent *event)
 static char *
 get_date (TplEvent *event)
 {
-  time_t t;
+  GDateTime *ts;
+  gchar *date;
 
-  t = tpl_event_get_timestamp (event);
+  ts = g_date_time_new_from_unix_utc (tpl_event_get_timestamp (event));
+  date = g_date_time_format (ts, "%Y-%m-%d");
 
-  return _tpl_time_to_string_utc (t, "%Y-%m-%d");
+  g_date_time_unref (ts);
+
+
+  return date;
 }
 
 static char *
 get_datetime (TplEvent *event)
 {
-  time_t t;
+  GDateTime *ts;
+  gchar *date;
 
-  t = tpl_event_get_timestamp (event);
+  ts = g_date_time_new_from_unix_utc (tpl_event_get_timestamp (event));
+  date = g_date_time_format (ts, TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
 
-  return _tpl_time_to_string_utc (t, TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
+  g_date_time_unref (ts);
+
+  return date;
 }
 
 static const char *
@@ -799,10 +807,10 @@ out:
  * If @channel is %NULL, it will get all the existing log-ids.
  *
  * All the entries will be filtered against @timestamp, returning only log-ids
- * older than this value (time_t). Set it to %G_MAXUINT or any other value in
+ * older than this value (gint64). Set it to %G_MAXINT64 or any other value in
  * the future to obtain all the entries.
  * For example, to obtain entries older than one day ago, use
- * @timestamp = (#_tpl_time_get_current()-86400)
+ * @timestamp = (now - 86400)
  *
  * Note that (in case @channel is not %NULL) this method might return log-ids
  * which are not currently related to @channel but just share the object-path,
@@ -819,13 +827,14 @@ out:
 GList *
 _tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
     TpChannel *channel,
-    time_t timestamp,
+    gint64 unix_timestamp,
     GError **error)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   sqlite3_stmt *sql = NULL;
   GList *retval = NULL;
-  gchar *date = NULL;
+  GDateTime *timestamp;
+  gchar *date;
   int e;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_SQLITE (self), NULL);
@@ -849,9 +858,13 @@ _tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
       goto out;
     }
 
-  date = _tpl_time_to_string_utc (timestamp,
+  timestamp = g_date_time_new_from_unix_utc (unix_timestamp);
+  date = g_date_time_format (timestamp,
       TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
   sqlite3_bind_text (sql, 1, date, -1, SQLITE_TRANSIENT);
+
+  g_date_time_unref (timestamp);
+  g_free (date);
 
   if (channel != NULL)
     sqlite3_bind_text (sql, 2, get_channel_name (channel), -1,
@@ -877,7 +890,6 @@ _tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
 out:
   if (sql != NULL)
     sqlite3_finalize (sql);
-  g_free (date);
 
   /* check that we set an error if appropriate
    * NOTE: retval == NULL && *error !=
@@ -1059,19 +1071,27 @@ out:
 
 static void
 tpl_log_store_sqlite_purge (TplLogStoreSqlite *self,
-    time_t delta,
+    GTimeSpan delta,
     GError **error)
 {
   TplLogStoreSqlitePrivate *priv = GET_PRIV (self);
   sqlite3_stmt *sql = NULL;
+  GDateTime *now;
+  GDateTime *timestamp;
   gchar *date;
   int e;
 
   g_return_if_fail (error == NULL || *error == NULL);
   g_return_if_fail (TPL_IS_LOG_STORE_SQLITE (self));
 
-  date = _tpl_time_to_string_utc ((_tpl_time_get_current () - delta),
+  now = g_date_time_new_now_utc ();
+  timestamp = g_date_time_add (now, -delta);
+
+  date = g_date_time_format (timestamp,
       TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
+
+  g_date_time_unref (now);
+  g_date_time_unref (timestamp);
 
   DEBUG ("Purging entries older than %s (%u seconds ago)", date, (guint) delta);
 

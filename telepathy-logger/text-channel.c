@@ -38,7 +38,6 @@
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
 #include <telepathy-logger/action-chain-internal.h>
 #include <telepathy-logger/entity-internal.h>
-#include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
@@ -712,7 +711,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
       GList *l;
       const gchar *message_token;
       gchar *tpl_message_token;
-      guint64 message_timestamp;
+      gint64 message_timestamp;
       guint message_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
       guint message_flags = 0;
       guint message_id;
@@ -738,7 +737,7 @@ got_message_pending_messages_cb (TpProxy *proxy,
               "UNKNOWN");
             message_id = TPL_TEXT_EVENT_MSG_ID_UNKNOWN;
         }
-      message_timestamp = tp_asv_get_uint64 (message_headers,
+      message_timestamp = tp_asv_get_int64 (message_headers,
           "message-received", NULL);
 
       tpl_message_token = _tpl_create_message_token (channel_path,
@@ -771,8 +770,9 @@ got_message_pending_messages_cb (TpProxy *proxy,
       if (l == NULL)
         {
           /* call the received signal callback to trigger the message storing */
+          /* FIXME Avoid converting gint64 timestamp into guint timestamp */
           on_received_signal_cb (TP_CHANNEL (proxy),
-              message_id, message_timestamp, message_sender_handle,
+              message_id, (guint) message_timestamp, message_sender_handle,
               message_type, message_flags, message_body,
               NULL, NULL);
         }

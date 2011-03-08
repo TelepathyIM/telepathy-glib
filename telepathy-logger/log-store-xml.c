@@ -49,7 +49,6 @@
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
 #include <telepathy-logger/entity-internal.h>
-#include <telepathy-logger/datetime-internal.h>
 #include <telepathy-logger/debug-internal.h>
 #include <telepathy-logger/util-internal.h>
 
@@ -340,14 +339,15 @@ log_store_xml_get_dir (TplLogStoreXml *self,
 static gchar *
 log_store_xml_get_timestamp_filename (void)
 {
-  time_t t;
   gchar *time_str;
   gchar *filename;
+  GDateTime *now;
 
-  t = _tpl_time_get_current ();
-  time_str = _tpl_time_to_string_local (t, LOG_TIME_FORMAT);
+  now = g_date_time_new_now_local ();
+  time_str = g_date_time_format (now, LOG_TIME_FORMAT);
   filename = g_strconcat (time_str, LOG_FILENAME_SUFFIX, NULL);
 
+  g_date_time_unref (now);
   g_free (time_str);
 
   return filename;
@@ -357,12 +357,15 @@ log_store_xml_get_timestamp_filename (void)
 static gchar *
 log_store_xml_get_timestamp_from_event (TplEvent *event)
 {
-  time_t t;
+  GDateTime *ts;
+  gchar *ts_str;
 
-  t = tpl_event_get_timestamp (event);
+  ts = g_date_time_new_from_unix_utc (tpl_event_get_timestamp (event));
+  ts_str = g_date_time_format (ts, LOG_TIME_FORMAT_FULL);
 
-  /* We keep the timestamps in the events as UTC */
-  return _tpl_time_to_string_utc (t, LOG_TIME_FORMAT_FULL);
+  g_date_time_unref (ts);
+
+  return ts_str;
 }
 
 

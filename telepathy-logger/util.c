@@ -1,6 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * Copyright (C) 2009 Collabora Ltd.
+ * Copyright (C) 2009-2011 Collabora Ltd.
+ * Copyright (C) 2003-2007 Imendio AB
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,11 +18,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Authors: Cosimo Alfarano <cosimo.alfarano@collabora.co.uk>
+ *          Richard Hult <richard@imendio.com>
  */
 
 #include "util-internal.h"
 
-#include "datetime-internal.h"
 #include "log-store-sqlite-internal.h"
 
 #include <errno.h>
@@ -33,13 +34,19 @@
  * within itself */
 gchar *
 _tpl_create_message_token (const gchar *channel,
-    gint64 timestamp,
+    gint64 unix_timestamp,
     guint msgid)
 {
-  GChecksum *log_id = g_checksum_new (G_CHECKSUM_SHA1);
   gchar *retval;
-  gchar *date = _tpl_time_to_string_local (timestamp,
+  gchar *date;
+  GDateTime *timestamp;
+  GChecksum *log_id = g_checksum_new (G_CHECKSUM_SHA1);
+
+  timestamp = g_date_time_new_from_unix_utc (unix_timestamp);
+  date = g_date_time_format (timestamp,
       TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
+
+  g_date_time_unref (timestamp);
 
   g_checksum_update (log_id, (guchar *) channel, -1);
   g_checksum_update (log_id, (guchar *) date, -1);
@@ -86,3 +93,34 @@ _tpl_rmdir_recursively (const gchar *dir_name)
         dir_name, g_strerror (errno));
 }
 
+
+/* The format is: "20021209T23:51:30" and is in UTC. 0 is returned on
+ * failure. The alternative format "20021209" is also accepted.
+ */
+gint64
+_tpl_time_parse (const gchar *str)
+{
+  gint year = 0;
+  gint month = 0;
+  gint day = 0;
+  gint hour = 0;
+  gint min = 0;
+  gint sec = 0;
+  gint n_parsed;
+  GDateTime *dt;
+  gint64 ts;
+
+  n_parsed = sscanf (str, "%4d%2d%2dT%2d:%2d:%2d",
+      &year, &month, &day, &hour,
+      &min, &sec);
+
+  if (n_parsed != 3 && n_parsed != 6)
+    return 0;
+
+  dt = g_date_time_new_utc (year, month, day, hour, min, sec);
+  ts = g_date_time_to_unix (dt);
+
+  g_date_time_unref (dt);
+
+  return ts;
+}
