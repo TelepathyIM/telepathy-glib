@@ -1,5 +1,11 @@
-telepathy-glib 0.13.17 (UNRELEASED)
+telepathy-glib 0.13.17 (2011-03-09)
 ===================================
+
+Enhancements:
+
+• Update to spec 0.21.11 (Sjoerd)
+  · TP_ERROR_STR_SOFTWARE_UPGRADE_REQUIRED
+  · TP_ERROR_STR_EMERGENCY_CALLS_NOT_SUPPORTED
 
 telepathy-glib 0.13.16 (2011-03-07)
 ===================================
