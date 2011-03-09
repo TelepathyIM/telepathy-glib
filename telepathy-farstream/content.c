@@ -32,7 +32,8 @@ enum
   PROP_FS_CONFERENCE,
   PROP_FS_SESSION,
   PROP_MEDIA_TYPE,
-  PROP_SINK_PAD
+  PROP_SINK_PAD,
+  PROP_OBJECT_PATH
 };
 
 enum
@@ -103,6 +104,15 @@ tf_content_class_init (TfContentClass *klass)
           FS_TYPE_MEDIA_TYPE,
           0,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_OBJECT_PATH,
+      g_param_spec_string ("object-path",
+          "content object path",
+          "D-Bus object path of the Telepathy content which this content"
+          " operates on",
+          NULL,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
 
   /**
    * TfContent::start-sending

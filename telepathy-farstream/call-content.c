@@ -95,6 +95,7 @@ enum
   PROP_FS_SESSION,
   PROP_SINK_PAD,
   PROP_MEDIA_TYPE,
+  PROP_OBJECT_PATH
 };
 
 enum
@@ -166,6 +167,8 @@ tf_call_content_class_init (TfCallContentClass *klass)
       "sink-pad");
   g_object_class_override_property (object_class, PROP_MEDIA_TYPE,
       "media-type");
+  g_object_class_override_property (object_class, PROP_OBJECT_PATH,
+      "object-path");
 }
 
 static void
@@ -267,6 +270,9 @@ tf_call_content_get_property (GObject    *object,
       break;
     case PROP_MEDIA_TYPE:
       g_value_set_enum (value, tf_call_content_get_fs_media_type (self));
+      break;
+    case PROP_OBJECT_PATH:
+      g_object_get_property (G_OBJECT (self->proxy), "object-path", value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
