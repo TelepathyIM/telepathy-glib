@@ -495,6 +495,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
       g_simple_async_result_set_from_error (res, myerror);
       g_simple_async_result_complete (res);
       g_clear_error (&myerror);
+      g_object_unref (res);
       return;
     }
 
@@ -504,6 +505,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
           "", "Error getting the Content's properties: %s", error->message);
       g_simple_async_result_set_from_error (res, error);
       g_simple_async_result_complete (res);
+      g_object_unref (res);
       return;
     }
 
