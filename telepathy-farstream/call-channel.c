@@ -318,7 +318,13 @@ static gboolean
 add_content (TfCallChannel *self, const gchar *content_path)
 {
   GError *error = NULL;
-  TfCallContent *content = tf_call_content_new_async (self, content_path,
+  TfCallContent *content;
+
+  /* Check if content already added */
+  if (g_hash_table_lookup (self->contents, content_path))
+    return TRUE;
+
+  content = tf_call_content_new_async (self, content_path,
       &error, content_ready, self);
 
   if (error)
