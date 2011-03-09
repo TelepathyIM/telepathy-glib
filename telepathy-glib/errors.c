@@ -219,7 +219,6 @@
  *     Raised when a client attempts to dial a number that is recognized as an
  *     emergency number (e.g. '911' in the USA), but the Connection
  *     Manager or provider does not support dialling emergency numbers.
- *
  * @TP_ERROR_SOFTWARE_UPGRADE_REQUIRED:
  *   org.freedesktop.Telepathy.Error.SoftwareUpgradeRequired:
  *     Raised when a Connection cannot be established because either the
