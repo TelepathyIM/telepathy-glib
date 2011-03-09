@@ -839,7 +839,7 @@ tf_call_content_new_async (TfCallChannel *call_channel,
   g_async_initable_init_async (G_ASYNC_INITABLE (self), 0, NULL,
       callback, user_data);
 
-  return self;
+  return g_object_ref (self);
 }
 
 
