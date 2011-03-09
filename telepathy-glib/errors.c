@@ -214,6 +214,17 @@
  *     internal error, or when a message that makes no sense is received from
  *     a server or other piece of infrastructure.
  *     Since: 0.13.7
+ * @TP_ERROR_EMERGENCY_CALLS_NOT_SUPPORTED:
+ *   org.freedesktop.Telepathy.Error.EmergencyCallsNotSupported:
+ *     Raised when a client attempts to dial a number that is recognized as an
+ *     emergency number (e.g. '911' in the USA), but the Connection
+ *     Manager or provider does not support dialling emergency numbers.
+ *
+ * @TP_ERROR_SOFTWARE_UPGRADE_REQUIRED:
+ *   org.freedesktop.Telepathy.Error.SoftwareUpgradeRequired:
+ *     Raised when a Connection cannot be established because either the
+ *     Connection Manager or its support library (e.g. wocky, papyon, sofiasip)
+ *     requires upgrading to support a newer protocol version.
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

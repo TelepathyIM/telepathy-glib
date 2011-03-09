@@ -87,6 +87,8 @@ typedef enum {
     TP_ERROR_PICKED_UP_ELSEWHERE, /*< nick=PickedUpElsewhere >*/
     TP_ERROR_CONFUSED, /*< nick=Confused >*/
     TP_ERROR_SERVICE_CONFUSED, /*< nick=ServiceConfused >*/
+    TP_ERROR_EMERGENCY_CALLS_NOT_SUPPORTED, /*< nick=EmergencyCallsNotSupported */
+    TP_ERROR_SOFTWARE_UPGRADE_REQUIRED, /*< nick=SoftwareUpgradeRequired >*/
 } TpError;
 
 const gchar *tp_error_get_dbus_name (TpError error);
