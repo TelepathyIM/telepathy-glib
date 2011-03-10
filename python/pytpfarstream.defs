@@ -93,16 +93,6 @@
   )
 )
 
-(define-method set_codec_preferences
-  (of-object "TfContent")
-  (c-name "tf_content_set_codec_preferences")
-  (return-type "gboolean")
-  (parameters
-    '("GList*" "codec_preferences")
-    '("GError**" "error")
-  )
-)
-
 (define-method error
   (of-object "TfContent")
   (c-name "tf_content_error")

@@ -237,48 +237,6 @@ _tf_content_emit_src_pad_added (TfContent *self, guint handle,
 }
 
 /**
- * tf_content_set_codec_preferences:
- * @content: the #TfContent
- * @codec_preferences: The #GList of #FsCodec
- * @error: a #GError or %NULL
- *
- * Set the list of desired codec preferences. It is a #GList
- * of #FsCodec. The function does not take ownership of the list.
- *
- * The payload type may be a valid dynamic PT (96-127), %FS_CODEC_ID_DISABLE
- * or %FS_CODEC_ID_ANY. If the encoding name is "reserve-pt", then the
- * payload type of the codec will be "reserved" and not be used by any
- * dynamically assigned payload type.
- *
- * If the list of specifications would invalidate all codecs, an error will
- * be returned.
- *
- * This function should be called only during the callback for the
- * #TfChannel::content-added signal. Afterwards, the codecs may have been
- * set to the connection manager.
- *
- * Returns: %TRUE if the preferences could be set of %FALSE if there was an
- * error, in that case @error will have been set.
- */
-
-gboolean
-tf_content_set_codec_preferences (TfContent *content,
-    GList *codec_preferences,
-    GError **error)
-{
- TfContentClass *klass = TF_CONTENT_GET_CLASS (content);
-
-  if (klass->set_codec_preferences) {
-    return klass->set_codec_preferences (content, codec_preferences, error);
-  } else {
-    GST_WARNING ("set_codec_preferences not defined in class");
-    g_set_error (error, FS_ERROR, FS_ERROR_NOT_IMPLEMENTED,
-        "set_codec_preferences not defined in class");
-  }
-  return FALSE;
-}
-
-/**
  * tf_content_error:
  * @content: a #TfContent
  * @reason: the reason (a #TfContentRemovalReason)

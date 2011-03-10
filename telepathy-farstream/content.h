@@ -51,10 +51,6 @@ void tf_content_error_literal (TfContent *content,
     const gchar *detailed_reason,
     const gchar *message);
 
-gboolean tf_content_set_codec_preferences (TfContent *content,
-    GList *codec_preferences,
-    GError **error);
-
 void tf_content_error (TfContent *content,
     guint reason, /* TfFutureContentRemovalReason */
     const gchar *detailed_reason,

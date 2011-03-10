@@ -18,10 +18,6 @@ struct _TfContent {
 struct _TfContentClass{
   GObjectClass parent_class;
 
-  gboolean (*set_codec_preferences) (TfContent *self,
-      GList *codec_preferences,
-      GError **error);
-
   void (*content_error) (TfContent *chan,
       guint reason, /* TfFutureContentRemovalReason */
       const gchar *detailed_reason,

@@ -11,42 +11,6 @@ headers
 
 #include "pygstminiobject.h"
 
-static gboolean
-_fs_codec_list_from_pysequence (PyObject *obj, GList **list)
-{
-  GList *codecs = NULL;
-  Py_ssize_t i;
-
-  if (!PySequence_Check (obj))
-  {
-    PyErr_SetString (PyExc_TypeError,
-        "The parameter must be a Sequence of FsCodec");
-    return FALSE;
-  }
-
-  for (i = 0; i < PySequence_Size (obj); i++)
-  {
-    PyObject *item = PySequence_GetItem (obj, i);
-
-    if (!pyg_boxed_check (item, FS_TYPE_CODEC))
-    {
-      PyErr_SetString(PyExc_TypeError,
-          "The parameter must be a Sequence of FsCodec");
-      return FALSE;
-    }
-  }
-
-  for (i = 0; i < PySequence_Size (obj); i++)
-  {
-    PyObject *item = PySequence_GetItem (obj, i);
-
-    codecs = g_list_append (codecs, pyg_boxed_get (item, FsCodec));
-  }
-
-  *list = codecs;
-  return TRUE;
-}
-
 static void
 async_result_callback_marshal(GObject *source_object,
                GAsyncResult *result,
@@ -82,30 +46,6 @@ ignore-glob
   *_get_type
 %%
 headers
-%%
-override tf_content_set_codec_preferences onearg
-static PyObject *
-_wrap_tf_content_set_codec_preferences (PyGObject *self, PyObject *arg)
-{
-  gboolean ret = FALSE;
-  GError *error = NULL;
-  GList *codecs = NULL;
-
-  if (!_fs_codec_list_from_pysequence (arg, &codecs))
-    return NULL;
-
-  Py_BEGIN_ALLOW_THREADS
-  ret = tf_content_set_codec_preferences (TF_CONTENT(self->obj), codecs,
-      &error);
-  Py_END_ALLOW_THREADS
-
-  g_list_free (codecs);
-
-  if (pyg_error_check(&error))
-    return NULL;
-
-  return PyBool_FromLong (ret);
-}
 %%
 override tf_channel_new_async kwargs
 static PyObject *

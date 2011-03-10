@@ -9,7 +9,6 @@ tf_init
 TfContent
 TfContentClass
 tf_content_error
-tf_content_set_codec_preferences
 <SUBSECTION Private>
 TfContentPrivate
 <SUBSECTION Standard>
