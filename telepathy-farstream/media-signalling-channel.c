@@ -1,7 +1,7 @@
 /*
  * media-signalling-channel.c - Source for TfMediaSignallingChannel
- * Copyright (C) 2006-2010 Collabora Ltd.
- * Copyright (C) 2006-2010 Nokia Corporation
+ * Copyright (C) 2011 Collabora Ltd.
+ * Copyright (C) 2011 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

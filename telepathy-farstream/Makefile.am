@@ -25,6 +25,8 @@ libtelepathy_farstream_la_SOURCES = \
 	channel-priv.h \
 	media-signalling-channel.c \
 	media-signalling-channel.h \
+	media-signalling-content.c \
+	media-signalling-content.h \
 	call-channel.c \
 	call-channel.h \
 	call-content.h \

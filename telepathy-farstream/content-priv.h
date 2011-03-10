@@ -18,7 +18,7 @@ struct _TfContent {
 struct _TfContentClass{
   GObjectClass parent_class;
 
-  void (*content_error) (TfContent *chan,
+  void (*content_error) (TfContent *content,
       guint reason, /* TfFutureContentRemovalReason */
       const gchar *detailed_reason,
       const gchar *message);
