@@ -1109,7 +1109,9 @@ tp_base_connection_manager_register (TpBaseConnectionManager *self)
   return TRUE;
 
 except:
-  WARNING ("%s", error->message);
+  WARNING ("Couldn't claim bus name. If you are trying to debug this "
+      "connection manager, disable all accounts and kill any running "
+      "copies of this CM, then try again. %s", error->message);
   g_error_free (error);
 
   if (string != NULL)
