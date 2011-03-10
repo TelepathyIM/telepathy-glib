@@ -43,17 +43,17 @@
 
 struct _TplTextChannelPriv
 {
-  gboolean chatroom;
-  TpContact *my_contact;
-  gchar *chatroom_id;          /* only set if chatroom==TRUE */
+  TplEntity *self;
+  gboolean is_chatroom;
+  TplEntity *chatroom;   /* only set if is_chatroom==TRUE */
 
-  /* Contacts participating in this channel.
-   * This is used as a cache so we don't have to recreate TpContact objects
-   * each time we receive something.
+  /* Entities participating in this channel.
+   * This is used as a cache so we don't have to recreate
+   * TpContact objects each time we receive something.
    *
-   * TpHandle => reffed TpContact
-   * */
-  GHashTable *contacts;
+   * TpHandle => reffed TplEntity
+   */
+  GHashTable *entities;
 };
 
 typedef struct
@@ -133,7 +133,8 @@ get_self_contact_cb (TpConnection *connection,
       return;
     }
 
-  tpl_text->priv->my_contact = g_object_ref (contacts[0]);
+  tpl_text->priv->self = tpl_entity_new_from_tp_contact (contacts[0],
+      TPL_ENTITY_SELF);
 
   _tpl_action_chain_continue (ctx);
 }
@@ -186,8 +187,8 @@ get_remote_contacts_cb (TpConnection *connection,
       TpContact *contact = contacts[i];
       TpHandle handle = tp_contact_get_handle (contact);
 
-      g_hash_table_insert (self->priv->contacts, GUINT_TO_POINTER (handle),
-          g_object_ref (contact));
+      g_hash_table_insert (self->priv->entities, GUINT_TO_POINTER (handle),
+          tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_CONTACT));
     }
 
   if (ctx != NULL)
@@ -221,7 +222,7 @@ chan_members_changed_cb (TpChannel *chan,
     {
       TpHandle handle = g_array_index (removed, TpHandle, i);
 
-      g_hash_table_remove (self->priv->contacts, GUINT_TO_POINTER (handle));
+      g_hash_table_remove (self->priv->entities, GUINT_TO_POINTER (handle));
     }
 }
 
@@ -279,11 +280,12 @@ pendingproc_get_room_info (TplActionChain *ctx,
   if (handle_type != TP_HANDLE_TYPE_ROOM)
     goto out;
 
-  tpl_text->priv->chatroom = TRUE;
-  tpl_text->priv->chatroom_id =
-    g_strdup (tp_channel_get_identifier (chan));
+  tpl_text->priv->is_chatroom = TRUE;
+  tpl_text->priv->chatroom =
+    tpl_entity_new_from_room_id (tp_channel_get_identifier (chan));
 
-  PATH_DEBUG (tpl_text, "Chatroom id: %s", tpl_text->priv->chatroom_id);
+  PATH_DEBUG (tpl_text, "Chatroom id: %s",
+      tpl_entity_get_identifier (tpl_text->priv->chatroom));
 
 out:
   _tpl_action_chain_continue (ctx);
@@ -312,22 +314,18 @@ on_channel_invalidated_cb (TpProxy *proxy,
 
 static void
 keepon_on_receiving_signal (TplTextChannel *tpl_text,
-    TpContact *remote,
+    TplEntity *sender,
     ReceivedData *data)
 {
   TplTextEvent *text_log;
   GError *error = NULL;
   TplLogManager *logmanager;
-  TplEntity *sender;
   TplEntity *receiver;
 
-  sender = tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
-
-  if (tpl_text->priv->chatroom)
-    receiver = tpl_entity_new_from_room_id (tpl_text->priv->chatroom_id);
+  if (tpl_text->priv->is_chatroom)
+    receiver = tpl_text->priv->chatroom;
   else
-    receiver = tpl_entity_new_from_tp_contact (tpl_text->priv->my_contact,
-        TPL_ENTITY_SELF);
+    receiver = tpl_text->priv->self;
 
   /* Initialize TplTextEvent */
   text_log = g_object_new (TPL_TYPE_TEXT_EVENT,
@@ -362,8 +360,6 @@ keepon_on_receiving_signal (TplTextChannel *tpl_text,
       g_error_free (error);
     }
 
-  g_object_unref (sender);
-  g_object_unref (receiver);
   g_object_unref (text_log);
   g_object_unref (logmanager);
 }
@@ -381,7 +377,7 @@ on_received_signal_with_contact_cb (TpConnection *connection,
 {
   ReceivedData *data = user_data;
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (weak_object);
-  TpContact *remote;
+  TplEntity *remote;
   TpHandle handle;
 
   if (error != NULL)
@@ -402,11 +398,11 @@ on_received_signal_with_contact_cb (TpConnection *connection,
       return;
     }
 
-  remote = contacts[0];
-  handle = tp_contact_get_handle (remote);
+  remote = tpl_entity_new_from_tp_contact (contacts[0], TPL_ENTITY_CONTACT);
+  handle = tp_contact_get_handle (contacts[0]);
 
-  g_hash_table_insert (tpl_text->priv->contacts, GUINT_TO_POINTER (handle),
-      g_object_ref (remote));
+  g_hash_table_insert (tpl_text->priv->entities, GUINT_TO_POINTER (handle),
+    remote);
 
   keepon_on_receiving_signal (tpl_text, remote, data);
 }
@@ -435,7 +431,7 @@ on_received_signal_cb (TpChannel *proxy,
 {
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (proxy);
   TpConnection *tp_conn;
-  TpContact *remote;
+  TplEntity *remote;
   TplLogStore *index = _tpl_log_store_sqlite_dup ();
   const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   gchar *log_id;
@@ -485,7 +481,7 @@ on_received_signal_cb (TpChannel *proxy,
   data->timestamp = timestamp;
 
   tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_text));
-  remote = g_hash_table_lookup (tpl_text->priv->contacts,
+  remote = g_hash_table_lookup (tpl_text->priv->entities,
       GUINT_TO_POINTER (sender));
 
   if (remote == NULL)
@@ -532,38 +528,36 @@ on_sent_signal_cb (TpChannel *proxy,
       TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED);
 
   /* Initialize data for TplEntity */
-  sender = tpl_entity_new_from_tp_contact (tpl_text->priv->my_contact,
-      TPL_ENTITY_SELF);
+  sender = tpl_text->priv->self;
 
-  if (!tpl_text->priv->chatroom)
+  if (tpl_text->priv->is_chatroom)
     {
-      TpContact *remote;
+      receiver = tpl_text->priv->chatroom;
+
+      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto "
+          "chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
+          log_id,
+          tpl_entity_get_identifier (receiver),
+          tpl_entity_get_identifier (sender),
+          tpl_entity_get_alias (sender),
+          text);
+    }
+  else
+    {
       TpHandle handle = tp_channel_get_handle (TP_CHANNEL (tpl_text), NULL);
 
-      remote = g_hash_table_lookup (tpl_text->priv->contacts,
+      receiver = g_hash_table_lookup (tpl_text->priv->entities,
           GUINT_TO_POINTER (handle));
-      g_assert (remote != NULL);
 
-      receiver = tpl_entity_new_from_tp_contact (remote, TPL_ENTITY_CONTACT);
+      /* FIXME Create unkown entity when supported, this way we can survive
+       * buggy connection managers */
+      g_assert (receiver != NULL);
 
       DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto=\"%s "
           "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
           log_id,
           tpl_entity_get_identifier (receiver),
           tpl_entity_get_alias (receiver),
-          tpl_entity_get_identifier (sender),
-          tpl_entity_get_alias (sender),
-          text);
-
-    }
-  else
-    {
-      receiver = tpl_entity_new_from_room_id (tpl_text->priv->chatroom_id);
-
-      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto "
-          "chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-          log_id,
-          tpl_entity_get_identifier (receiver),
           tpl_entity_get_identifier (sender),
           tpl_entity_get_alias (sender),
           text);
@@ -594,8 +588,6 @@ on_sent_signal_cb (TpChannel *proxy,
       g_error_free (error);
     }
 
-  g_object_unref (receiver);
-  g_object_unref (sender);
   g_object_unref (logmanager);
   g_object_unref (text_log);
 
@@ -1132,13 +1124,9 @@ tpl_text_channel_dispose (GObject *obj)
 {
   TplTextChannelPriv *priv = TPL_TEXT_CHANNEL (obj)->priv;
 
-  if (priv->my_contact != NULL)
-    {
-      g_object_unref (priv->my_contact);
-      priv->my_contact = NULL;
-    }
-
-  tp_clear_pointer (&priv->contacts, g_hash_table_unref);
+  tp_clear_object (&priv->chatroom);
+  tp_clear_object (&priv->self);
+  tp_clear_pointer (&priv->entities, g_hash_table_unref);
 
   G_OBJECT_CLASS (_tpl_text_channel_parent_class)->dispose (obj);
 }
@@ -1147,12 +1135,7 @@ tpl_text_channel_dispose (GObject *obj)
 static void
 tpl_text_channel_finalize (GObject *obj)
 {
-  TplTextChannelPriv *priv = TPL_TEXT_CHANNEL (obj)->priv;
-
   PATH_DEBUG (obj, "finalizing channel %p", obj);
-
-  g_free (priv->chatroom_id);
-  priv->chatroom_id = NULL;
 
   G_OBJECT_CLASS (_tpl_text_channel_parent_class)->finalize (obj);
 }
@@ -1181,7 +1164,7 @@ _tpl_text_channel_init (TplTextChannel *self)
 
   self->priv = priv;
 
-  self->priv->contacts = g_hash_table_new_full (NULL, NULL, NULL,
+  self->priv->entities = g_hash_table_new_full (NULL, NULL, NULL,
       (GDestroyNotify) g_object_unref);
 }
 
