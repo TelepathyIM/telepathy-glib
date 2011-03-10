@@ -252,6 +252,7 @@ tf_call_content_get_property (GObject    *object,
     case PROP_TF_CHANNEL:
       if (self->call_channel)
         g_value_set_object (value, self->call_channel);
+      break;
     case PROP_FS_CONFERENCE:
       if (self->fsconference)
         g_value_set_object (value, self->fsconference);
