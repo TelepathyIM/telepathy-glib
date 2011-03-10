@@ -42,7 +42,6 @@ main (int argc, char **argv)
 
   /* proper disposal for the singleton when no references are present */
   g_object_unref (obs);
-  g_assert (!TPL_IS_OBSERVER (obs));
 
   return 0;
 }
