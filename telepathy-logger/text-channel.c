@@ -235,7 +235,21 @@ pendingproc_get_remote_contacts (TplActionChain *ctx,
   TplTextChannel *self = _tpl_action_chain_get_object (ctx);
   TpChannel *chan = TP_CHANNEL (self);
   TpConnection *tp_conn = tp_channel_borrow_connection (chan);
+  TpHandle handle;
+  TpHandleType handle_type;
   GArray *arr;
+
+  handle = tp_channel_get_handle (chan, &handle_type);
+
+  if (handle_type == TP_HANDLE_TYPE_ROOM)
+    {
+      self->priv->is_chatroom = TRUE;
+      self->priv->chatroom =
+        tpl_entity_new_from_room_id (tp_channel_get_identifier (chan));
+
+      PATH_DEBUG (self, "Chatroom id: %s",
+          tpl_entity_get_identifier (self->priv->chatroom));
+    }
 
   if (tp_proxy_has_interface_by_id (chan,
         TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
@@ -252,8 +266,6 @@ pendingproc_get_remote_contacts (TplActionChain *ctx,
   else
     {
       /* Get the contact of the TargetHandle */
-      TpHandle handle;
-
       arr = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
       handle = tp_channel_get_handle (chan, NULL);
 
@@ -266,30 +278,6 @@ pendingproc_get_remote_contacts (TplActionChain *ctx,
       G_OBJECT (self));
 
   g_array_free (arr, TRUE);
-}
-
-
-static void
-pendingproc_get_room_info (TplActionChain *ctx,
-    gpointer user_data)
-{
-  TplTextChannel *tpl_text = _tpl_action_chain_get_object (ctx);
-  TpHandleType handle_type;
-  TpChannel *chan = TP_CHANNEL (tpl_text);
-
-  tp_channel_get_handle (chan, &handle_type);
-  if (handle_type != TP_HANDLE_TYPE_ROOM)
-    goto out;
-
-  tpl_text->priv->is_chatroom = TRUE;
-  tpl_text->priv->chatroom =
-    tpl_entity_new_from_room_id (tp_channel_get_identifier (chan));
-
-  PATH_DEBUG (tpl_text, "Chatroom id: %s",
-      tpl_entity_get_identifier (tpl_text->priv->chatroom));
-
-out:
-  _tpl_action_chain_continue (ctx);
 }
 
 
@@ -1108,7 +1096,6 @@ tpl_text_channel_call_when_ready (TplChannel *chan,
   _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_remote_contacts, NULL);
-  _tpl_action_chain_append (actions, pendingproc_get_room_info, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_pending_messages, NULL);
 #if 0
