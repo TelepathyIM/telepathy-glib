@@ -2316,7 +2316,8 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   if (stream->priv->last_sent_codecs != NULL
       && !fs_codec_list_are_equal (fscodecs, stream->priv->last_sent_codecs))
     {
-      tpcodecs = fs_codecs_to_tp (stream, fscodecs);
+      if (!tpcodecs)
+        tpcodecs = fs_codecs_to_tp (stream, fscodecs);
 
       DEBUG (stream, "calling MediaStreamHandler::CodecsUpdated");
       tp_cli_media_stream_handler_call_codecs_updated (
