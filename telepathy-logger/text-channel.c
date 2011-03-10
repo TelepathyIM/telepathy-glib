@@ -27,19 +27,19 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/proxy.h>
 
-#include <telepathy-logger/channel-internal.h>
-#include <telepathy-logger/observer-internal.h>
-#include <telepathy-logger/event-internal.h>
-#include <telepathy-logger/text-event.h>
-#include <telepathy-logger/text-event-internal.h>
-#include <telepathy-logger/log-manager-internal.h>
-#include <telepathy-logger/log-store-sqlite-internal.h>
+#include "action-chain-internal.h"
+#include "channel-internal.h"
+#include "entity-internal.h"
+#include "event-internal.h"
+#include "log-manager-internal.h"
+#include "log-store-sqlite-internal.h"
+#include "observer-internal.h"
+#include "text-event.h"
+#include "text-event-internal.h"
+#include "util-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_CHANNEL
-#include <telepathy-logger/action-chain-internal.h>
-#include <telepathy-logger/entity-internal.h>
-#include <telepathy-logger/debug-internal.h>
-#include <telepathy-logger/util-internal.h>
+#include "debug-internal.h"
 
 struct _TplTextChannelPriv
 {
