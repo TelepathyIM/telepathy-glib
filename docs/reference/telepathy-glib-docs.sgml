@@ -135,7 +135,7 @@
     <xi:include href="xml/message-mixin.xml"/>
     <xi:include href="xml/message.xml"/>
     <xi:include href="xml/cm-message.xml"/>
-    <xi:include href="xml/simple-password-channel.xml"/>
+    <xi:include href="xml/base-password-channel.xml"/>
     <xi:include href="xml/simple-password-manager.xml"/>
     <xi:include href="xml/base-client.xml"/>
     <xi:include href="xml/observe-channels-context.xml"/>
