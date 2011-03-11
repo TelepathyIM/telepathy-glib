@@ -46,6 +46,7 @@
 #include "channel-priv.h"
 #include "tf-signals-marshal.h"
 #include "media-signalling-channel.h"
+#include "media-signalling-content.h"
 #include "call-channel.h"
 #include "content.h"
 
@@ -61,6 +62,8 @@ struct _TfChannelPrivate
 
   TfMediaSignallingChannel *media_signalling_channel;
   TfCallChannel *call_channel;
+
+  GHashTable *media_signalling_contents;
 
   gulong channel_invalidated_handler;
 
@@ -223,6 +226,61 @@ call_channel_ready (GObject *obj, GAsyncResult *call_res, gpointer user_data)
   g_object_unref (self);
 }
 
+static gboolean
+content_remove_all (gpointer key, gpointer value, gpointer user_data)
+{
+  TfMediaSignallingContent *content = value;
+  TfChannel *self = user_data;
+
+  g_signal_emit (self, signals[SIGNAL_CONTENT_REMOVED], 0, content);
+
+  return TRUE;
+}
+
+static void
+channel_session_invalidated (TfMediaSignallingChannel *media_signalling_channel,
+    FsConference *fsconference, FsParticipant *part, TfChannel *self)
+{
+  g_object_notify (G_OBJECT (self), "fs-conferences");
+  g_signal_emit (self, signals[SIGNAL_FS_CONFERENCE_REMOVED], 0,
+      fsconference);
+
+  if (self->priv->media_signalling_contents)
+    g_hash_table_foreach_remove (self->priv->media_signalling_contents,
+        content_remove_all, self);
+}
+
+static void
+channel_stream_closed (TfStream *stream, TfChannel *self)
+{
+  TfMediaSignallingContent *content;
+
+  content = g_hash_table_lookup (self->priv->media_signalling_contents, stream);
+  g_signal_emit (self, signals[SIGNAL_CONTENT_REMOVED], 0, content);
+  g_hash_table_remove (self->priv->media_signalling_contents, stream);
+}
+
+static void
+channel_stream_created (TfMediaSignallingChannel *media_signalling_channel,
+    TfStream *stream, TfChannel *self)
+{
+  TfMediaSignallingContent *content;
+
+  g_assert (self->priv->media_signalling_contents);
+
+  content = tf_media_signalling_content_new (
+      self->priv->media_signalling_channel, stream, 0 /* HANDLE HERE */);
+
+  g_hash_table_insert (self->priv->media_signalling_contents,
+      g_object_ref (stream), content);
+
+  tp_g_signal_connect_object (stream, "closed",
+      G_CALLBACK (channel_stream_closed), self, 0);
+
+  g_signal_emit (self, signals[SIGNAL_CONTENT_ADDED], 0,
+      content);
+}
+
 static void
 channel_prepared (GObject *obj,
     GAsyncResult *proxy_res,
@@ -255,8 +313,17 @@ channel_prepared (GObject *obj,
       self->priv->media_signalling_channel =
           tf_media_signalling_channel_new (channel_proxy);
 
+      self->priv->media_signalling_contents = g_hash_table_new_full (
+          g_direct_hash, g_direct_equal, g_object_unref, g_object_unref);
+
       tp_g_signal_connect_object (self->priv->media_signalling_channel,
           "session-created", G_CALLBACK (channel_fs_conference_added),
+          self, 0);
+      tp_g_signal_connect_object (self->priv->media_signalling_channel,
+          "session-invalidated", G_CALLBACK (channel_session_invalidated),
+          self, 0);
+      tp_g_signal_connect_object (self->priv->media_signalling_channel,
+          "stream-created", G_CALLBACK (channel_stream_created),
           self, 0);
       g_simple_async_result_set_op_res_gboolean (res, TRUE);
     }
@@ -338,12 +405,11 @@ tf_channel_dispose (GObject *object)
 
   g_debug (G_STRFUNC);
 
-  if (self->priv->media_signalling_channel)
-    {
-      g_object_unref (self->priv->media_signalling_channel);
-      self->priv->media_signalling_channel = NULL;
-    }
 
+  g_hash_table_unref (self->priv->media_signalling_contents);
+  self->priv->media_signalling_contents = NULL;
+
+  tp_clear_object (&self->priv->media_signalling_channel);
   tp_clear_object (&self->priv->call_channel);
 
   if (self->priv->channel_proxy)
