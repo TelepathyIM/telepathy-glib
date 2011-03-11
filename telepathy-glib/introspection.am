@@ -51,7 +51,6 @@ INTROSPECTION_FILES = \
 	$(srcdir)/stream-tube-connection.c $(srcdir)/stream-tube-connection.h \
 	$(srcdir)/text-channel.c $(srcdir)/text-channel.h \
 	$(srcdir)/client-message.c $(srcdir)/client-message.h \
-	$(srcdir)/cm-message.c $(srcdir)/cm-message.h \
 	$(srcdir)/message.c $(srcdir)/message.h \
 	$(srcdir)/signalled-message.c $(srcdir)/signalled-message.h \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
