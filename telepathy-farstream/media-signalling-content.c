@@ -184,6 +184,9 @@ tf_media_signalling_content_new (
 {
   TfMediaSignallingContent *self =
       g_object_new (TF_TYPE_MEDIA_SIGNALLING_CONTENT, NULL);
+  GstElement *conf;
+  FsSession *session;
+  GList *codec_prefs;
 
   self->channel = media_signalling_channel;
   self->stream = stream;
@@ -195,6 +198,20 @@ tf_media_signalling_content_new (
       G_CALLBACK (request_resource), G_OBJECT (self), 0);
   tp_g_signal_connect_object (stream, "free-resource",
       G_CALLBACK (free_resource), G_OBJECT (self), 0);
+
+  g_object_get (stream,
+      "farsight-conference", &conf,
+      "farsight-session", &session,
+      NULL);
+
+  codec_prefs = fs_utils_get_default_codec_preferences (conf);
+  if (!fs_session_set_codec_preferences (session, codec_prefs, NULL))
+    tf_stream_error (stream, TP_MEDIA_STREAM_ERROR_MEDIA_ERROR,
+        "Default codec preferences disabled all codecs");
+
+  fs_codec_list_destroy (codec_prefs);
+  g_object_unref (session);
+  gst_object_unref (conf);
 
   return self;
 }
