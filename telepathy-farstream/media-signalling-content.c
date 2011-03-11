@@ -66,6 +66,7 @@ enum
   PROP_FS_SESSION,
   PROP_SINK_PAD,
   PROP_MEDIA_TYPE,
+  PROP_STREAM_ID
 };
 
 enum
@@ -116,6 +117,15 @@ tf_media_signalling_content_class_init (TfMediaSignallingContentClass *klass)
       "sink-pad");
   g_object_class_override_property (object_class, PROP_MEDIA_TYPE,
       "media-type");
+
+  g_object_class_install_property (object_class, PROP_STREAM_ID,
+      g_param_spec_uint ("stream-id",
+          "stream ID",
+          "A number identifying this stream within "
+          "its channel.",
+          0, G_MAXUINT, 0,
+          G_PARAM_READABLE |
+          G_PARAM_STATIC_STRINGS));
 }
 
 
@@ -154,6 +164,10 @@ tf_media_signalling_content_get_property (GObject    *object,
     case PROP_MEDIA_TYPE:
       g_object_get_property (G_OBJECT (self->stream),
           "media-type", value);
+      break;
+    case PROP_STREAM_ID:
+      g_object_get_property (G_OBJECT (self->stream),
+          "stream-id", value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
