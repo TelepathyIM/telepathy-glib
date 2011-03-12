@@ -71,6 +71,7 @@ struct _TfCallContent {
 
   /* Content protected by the Mutex */
   GPtrArray *fsstreams;
+  guint fsstreams_cookie;
 
   gboolean got_codec_offer_property;
 
@@ -154,9 +155,10 @@ static void tf_call_content_try_sending_codecs (TfCallContent *self);
 static FsStream * tf_call_content_get_existing_fsstream_by_handle (
     TfCallContent *content, guint contact_handle);
 
-static void
-src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
+static void src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
     TfCallContent *content);
+static GstIterator * tf_call_content_iterate_src_pads (TfContent *content,
+    guint *handles, guint handle_count);
 
 static void tf_call_content_error (TfContent *content,
     guint reason,  /* TfFutureContentRemovalReason */
@@ -167,6 +169,9 @@ static void
 tf_call_content_class_init (TfCallContentClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  TfContentClass *content_class = TF_CONTENT_CLASS (klass);
+
+  content_class->iterate_src_pads = tf_call_content_iterate_src_pads;
 
   content_class->content_error = tf_call_content_error;
 
@@ -1453,6 +1458,7 @@ _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
       G_CALLBACK (src_pad_added), content, 0);
 
   g_ptr_array_add (content->fsstreams, cfs);
+  content->fsstreams_cookie ++;
   if (content->current_offer != NULL
       && content->current_offer_contact_handle == contact_handle)
   {
@@ -1484,7 +1490,10 @@ _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
         {
           cfs->use_count--;
           if (cfs->use_count <= 0)
-            fs_cfs = g_ptr_array_remove_index_fast (content->fsstreams, i);
+            {
+              fs_cfs = g_ptr_array_remove_index_fast (content->fsstreams, i);
+              content->fsstreams_cookie++;
+            }
           break;
         }
     }
@@ -1529,4 +1538,93 @@ src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
 
   _tf_content_emit_src_pad_added (TF_CONTENT (content), handle,
       fsstream, pad, codec);
+}
+
+struct StreamSrcPadIterator {
+  GstIterator iterator;
+
+  GArray *handles;
+  GArray *handles_backup;
+
+  TfCallContent *self;
+};
+
+static GstIteratorResult
+streams_src_pads_iter_next (GstIterator *it, gpointer *result)
+{
+  struct StreamSrcPadIterator *iter = (struct StreamSrcPadIterator *) it;
+  guint i;
+
+  if (iter->handles->len == 0)
+    return GST_ITERATOR_DONE;
+
+  for (i = 0; i < iter->self->fsstreams->len; i++)
+    {
+      struct CallFsStream *cfs = g_ptr_array_index (iter->self->fsstreams, i);
+
+      if (cfs->contact_handle == g_array_index (iter->handles, guint, 0))
+        {
+          g_array_remove_index_fast (iter->handles, 0);
+          *result = cfs;
+          return GST_ITERATOR_OK;
+        }
+    }
+
+  return GST_ITERATOR_ERROR;
+
+}
+
+static GstIteratorItem
+streams_src_pads_iter_item (GstIterator *it, gpointer item)
+{
+  struct CallFsStream *cfs = item;
+
+  gst_iterator_push (it, fs_stream_get_src_pads_iterator (cfs->fsstream));
+
+  return GST_ITERATOR_ITEM_SKIP;
+}
+
+static void
+streams_src_pads_iter_resync (GstIterator *it)
+{
+  struct StreamSrcPadIterator *iter = (struct StreamSrcPadIterator *) it;
+
+  g_array_set_size (iter->handles, iter->handles_backup->len);
+  memcpy (iter->handles->data, iter->handles_backup->data,
+      iter->handles_backup->len * sizeof(guint));
+}
+
+static void
+streams_src_pads_iter_free (GstIterator *it)
+{
+  struct StreamSrcPadIterator *iter = (struct StreamSrcPadIterator *) it;
+
+  g_array_unref (iter->handles);
+  g_array_unref (iter->handles_backup);
+  g_object_unref (iter->self);
+}
+
+static GstIterator *
+tf_call_content_iterate_src_pads (TfContent *content, guint *handles,
+    guint handle_count)
+{
+  TfCallContent *self = TF_CALL_CONTENT (content);
+  struct StreamSrcPadIterator *iter;
+
+  iter = (struct StreamSrcPadIterator *) gst_iterator_new (
+      sizeof (struct StreamSrcPadIterator), GST_TYPE_PAD,
+      self->mutex, &self->fsstreams_cookie,
+      streams_src_pads_iter_next,
+      streams_src_pads_iter_item,
+      streams_src_pads_iter_resync,
+      streams_src_pads_iter_free);
+
+  iter->handles = g_array_sized_new (TRUE, FALSE, sizeof(guint), handle_count);
+  iter->handles_backup = g_array_sized_new (TRUE, FALSE, sizeof(guint),
+      handle_count);
+  g_array_append_vals (iter->handles, handles, handle_count);
+  g_array_append_vals (iter->handles_backup, handles, handle_count);
+  iter->self = g_object_ref (self);
+
+  return (GstIterator *) iter;
 }
