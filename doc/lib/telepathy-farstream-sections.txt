@@ -9,6 +9,7 @@ tf_init
 TfContent
 TfContentClass
 tf_content_error
+tf_content_iterate_src_pads
 <SUBSECTION Private>
 TfContentPrivate
 <SUBSECTION Standard>

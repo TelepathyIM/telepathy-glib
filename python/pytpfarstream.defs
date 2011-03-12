@@ -105,6 +105,16 @@
   (varargs #t)
 )
 
+(define-method iterate_src_pads
+  (of-object "TfContent")
+  (c-name "tf_content_iterate_src_pads")
+  (return-type "GstIterator*")
+  (parameters
+    '("guint*" "handle")
+    '("guint" "handle_count")
+  )
+)
+
 
 ;; -*- scheme -*-
 ; object definitions ...

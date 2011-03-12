@@ -288,3 +288,29 @@ tf_content_error (TfContent *content,
   tf_content_error_literal (content, reason, detailed_reason, message);
   g_free (message);
 }
+
+/**
+ * tf_content_iterate_src_pads:
+ * @content: a #TfContent
+ * @handles: a 0 terminated array of #guint representing Telepathy handles
+ * @handle_count: the numner of handles in @handles
+ *
+ * Provides a iterator that can be used to iterate through all of the src
+ * pads that are are used to receive from a group of Telepathy handles.
+ *
+ * Returns: a #GstIterator
+ */
+
+GstIterator *
+tf_content_iterate_src_pads (TfContent *content, guint *handles,
+    guint handle_count)
+{
+  TfContentClass *klass = TF_CONTENT_GET_CLASS (content);
+
+  if (klass->iterate_src_pads)
+    return klass->iterate_src_pads (content, handles, handle_count);
+  else
+    GST_WARNING ("iterate_src_pads not defined in class");
+
+  return NULL;
+}

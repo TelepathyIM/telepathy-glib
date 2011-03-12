@@ -22,6 +22,9 @@ struct _TfContentClass{
       guint reason, /* TfFutureContentRemovalReason */
       const gchar *detailed_reason,
       const gchar *message);
+
+  GstIterator * (*iterate_src_pads) (TfContent *content, guint *handle,
+      guint handle_count);
 };
 
 gboolean _tf_content_start_sending (TfContent *self);

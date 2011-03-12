@@ -56,6 +56,9 @@ void tf_content_error (TfContent *content,
     const gchar *detailed_reason,
     const gchar *message, ...) G_GNUC_PRINTF (4, 5);
 
+GstIterator *tf_content_iterate_src_pads (TfContent *content,
+    guint *handle, guint handle_count);
+
 G_END_DECLS
 
 #endif /* __TF_CONTENT_H__ */
