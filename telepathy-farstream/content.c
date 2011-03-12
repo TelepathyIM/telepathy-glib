@@ -41,6 +41,8 @@ enum
   SIGNAL_START_SENDING,
   SIGNAL_STOP_SENDING,
   SIGNAL_SRC_PAD_ADDED,
+  SIGNAL_START_RECEIVING,
+  SIGNAL_STOP_RECEIVING,
   SIGNAL_COUNT
 };
 
@@ -175,6 +177,51 @@ tf_content_class_init (TfContentClass *klass)
           _tf_marshal_VOID__UINT_OBJECT_OBJECT_BOXED,
           G_TYPE_NONE, 4,
           G_TYPE_UINT, FS_TYPE_STREAM, GST_TYPE_PAD, FS_TYPE_CODEC);
+
+  /**
+   * TfContent::start-receiving
+   * @content: the #TfContent
+   * @handles: a 0-terminated array of #guint containing the handles
+   * @handle_count: The number of handles in the @handles array
+   *
+   * This signal is emitted when the connection managers requests that the
+   * application prepares itself to start receiving data again from certain
+   * handles.
+   *
+   * This signal will only be emitted after the #TfContent::stop-receiving
+   * signal has succeeded. It will not be emitted right after
+   *  #TfContent::src-pad-added.
+   *
+   * Returns: %TRUE if the application can start receiving data or %FALSE
+   * otherwise
+   */
+
+  signals[SIGNAL_START_RECEIVING] =
+      g_signal_new ("start-receiving",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          g_signal_accumulator_true_handled, NULL,
+          _tf_marshal_BOOLEAN__POINTER_UINT,
+          G_TYPE_BOOLEAN, 2, G_TYPE_POINTER, G_TYPE_UINT);
+
+  /**
+   * TfContent::stop-receiving
+   * @content: the #TfContent
+   * @handles: a 0-terminated array of #guint containing the handles
+   * @handle_count: The number of handles in the @handles array
+   *
+   * This signal is emitted when the connection manager wants to tell the
+   * application that it is now allowed to stop receiving.
+   */
+
+  signals[SIGNAL_STOP_RECEIVING] =
+      g_signal_new ("stop-receiving",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0, NULL, NULL,
+          _tf_marshal_VOID__POINTER_UINT,
+          G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_UINT);
 }
 
 
@@ -313,4 +360,46 @@ tf_content_iterate_src_pads (TfContent *content, guint *handles,
     GST_WARNING ("iterate_src_pads not defined in class");
 
   return NULL;
+}
+
+gboolean
+_tf_content_start_receiving (TfContent *self, guint *handles,
+    guint handle_count)
+{
+  GValue instance_and_params[3] = {{0} , {0}, {0}};
+  GValue receiving_success_val = {0,};
+  gboolean receiving_success;
+
+  g_value_init (&receiving_success_val, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&receiving_success_val, TRUE);
+
+  g_value_init (&instance_and_params[0], TF_TYPE_CONTENT);
+  g_value_set_object (&instance_and_params[0], self);
+
+  g_value_init (&instance_and_params[1], G_TYPE_POINTER);
+  g_value_set_pointer (&instance_and_params[1], handles);
+
+  g_value_init (&instance_and_params[2], G_TYPE_UINT);
+  g_value_set_uint (&instance_and_params[2], handle_count);
+
+  g_debug ("Requesting that the application start receiving");
+
+  g_signal_emitv (instance_and_params, signals[SIGNAL_START_RECEIVING], 0,
+      &receiving_success_val);
+  receiving_success = g_value_get_boolean (&receiving_success_val);
+
+  g_value_unset (&instance_and_params[0]);
+
+  g_debug ("Request to start receiving %s",
+      receiving_success ? "succeeded" : "failed");
+
+  return receiving_success;
+}
+
+void
+_tf_content_stop_receiving (TfContent *self, guint *handles,
+    guint handle_count)
+{
+  g_signal_emit (self, signals[SIGNAL_STOP_SENDING], 0, handles,
+      handle_count);
 }
