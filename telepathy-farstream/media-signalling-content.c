@@ -88,6 +88,11 @@ static void tf_media_signalling_content_error (TfContent *content,
     const gchar *detailed_reason,
     const gchar *message);
 
+static GstIterator * tf_media_signalling_content_iterate_src_pads (
+    TfContent *content,
+    guint *handles,
+    guint handle_count);
+
 static void src_pad_added (TfStream *stream, GstPad *pad, FsCodec *codec,
     TfMediaSignallingContent *self);
 
@@ -106,6 +111,8 @@ tf_media_signalling_content_class_init (TfMediaSignallingContentClass *klass)
   object_class->get_property = tf_media_signalling_content_get_property;
 
   content_class->content_error = tf_media_signalling_content_error;
+  content_class->iterate_src_pads =
+      tf_media_signalling_content_iterate_src_pads;
 
   g_object_class_override_property (object_class, PROP_TF_CHANNEL,
       "tf-channel");
@@ -267,4 +274,22 @@ tf_media_signalling_content_error (TfContent *content,
     }
 
   tf_stream_error (self->stream,  stream_error, message);
+}
+
+static GstIterator *
+tf_media_signalling_content_iterate_src_pads (TfContent *content,
+    guint *handles,
+    guint handle_count)
+{
+  TfMediaSignallingContent *self = TF_MEDIA_SIGNALLING_CONTENT (content);
+  GstIterator *iter = NULL;
+  FsStream *fs_stream;
+
+  g_return_val_if_fail (handle_count <= 1, NULL);
+
+  g_object_get (self->stream, "farsight-stream", &fs_stream, NULL);
+  iter = fs_stream_get_src_pads_iterator (fs_stream);
+  g_object_unref (fs_stream);
+
+  return iter;
 }
