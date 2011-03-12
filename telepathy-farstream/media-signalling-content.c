@@ -49,6 +49,8 @@ struct _TfMediaSignallingContent {
   TfMediaSignallingChannel *channel;
   TfStream *stream;
   guint handle;
+
+  gboolean receiving;
 };
 
 struct _TfMediaSignallingContentClass{
@@ -140,6 +142,7 @@ tf_media_signalling_content_class_init (TfMediaSignallingContentClass *klass)
 static void
 tf_media_signalling_content_init (TfMediaSignallingContent *self)
 {
+  self->receiving = TRUE;
 }
 
 
@@ -241,8 +244,18 @@ request_resource (TfStream *stream, guint direction,
 {
   if (direction & TP_MEDIA_STREAM_DIRECTION_SEND)
     return _tf_content_start_sending (TF_CONTENT (self));
-  else
-    return TRUE;
+
+  if (!self->receiving && direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
+    {
+      guint handles[2] = { self->handle, 0};
+
+      self->receiving = _tf_content_start_receiving (TF_CONTENT (self),
+          handles, 1);
+
+      return self->receiving;
+    }
+
+  return FALSE;
 }
 
 
@@ -250,8 +263,16 @@ static void
 free_resource (TfStream *stream, guint direction,
     TfMediaSignallingContent *self)
 {
+  guint handles[2] = { self->handle, 0};
+
   if (direction & TP_MEDIA_STREAM_DIRECTION_SEND)
     _tf_content_stop_sending (TF_CONTENT (self));
+
+  if (self->receiving && direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
+    {
+      _tf_content_stop_receiving (TF_CONTENT (self), handles, 1);
+      self->receiving = FALSE;
+    }
 }
 
 
