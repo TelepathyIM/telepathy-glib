@@ -93,12 +93,6 @@ FsStream *_tf_call_content_get_fsstream_by_handle (TfCallContent *content,
     GError **error);
 void _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream);
 
-void
-tf_call_content_error (TfCallContent *content,
-    TfFutureContentRemovalReason reason,
-    const gchar *detailed_reason,
-    const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
-
 FsMediaType
 tf_call_content_get_fs_media_type (TfCallContent *content);
 

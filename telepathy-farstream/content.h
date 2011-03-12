@@ -55,6 +55,10 @@ gboolean tf_content_set_codec_preferences (TfContent *content,
     GList *codec_preferences,
     GError **error);
 
+void tf_content_error_printf (TfContent *content,
+    guint reason, /* TfFutureContentRemovalReason */
+    const gchar *detailed_reason,
+    const gchar *message, ...) G_GNUC_PRINTF (4, 5);
 
 G_END_DECLS
 

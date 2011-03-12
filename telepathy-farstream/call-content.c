@@ -144,12 +144,18 @@ static void
 src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
     TfCallContent *content);
 
+static void tf_call_content_error (TfContent *content,
+    guint reason,  /* TfFutureContentRemovalReason */
+    const gchar *detailed_reason,
+    const gchar *message);
 
 static void
 tf_call_content_class_init (TfCallContentClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   TfContentClass *content_class = TF_CONTENT_CLASS (klass);
+
+  content_class->content_error = tf_call_content_error;
 
   object_class->dispose = tf_call_content_dispose;
   object_class->finalize = tf_call_content_finalize;
@@ -290,8 +296,9 @@ create_stream (TfCallContent *self, gchar *stream_path)
   if (error)
     {
       /* TODO: Use per-stream errors */
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "", "Error creating the stream object: %s", error->message);
+      tf_content_error_printf (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error creating the stream object: %s", error->message);
       return;
     }
 
@@ -404,8 +411,9 @@ process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
 
   if (!tp_dbus_check_valid_object_path (offer_objpath, &error))
     {
-      tf_call_content_error (self,  TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "", "Invalid offer path: %s", error->message);
+      tf_content_error_printf (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Invalid offer path: %s", error->message);
       g_clear_error (&error);
       return;
     }
@@ -468,9 +476,9 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
         conference_type = "raw";
         break;
       default:
-        tf_call_content_error (self,
-          TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
-          "", "Could not create FsConference for type %d", packetization);
+        tf_content_error_printf (TF_CONTENT (self),
+            TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED, "",
+            "Could not create FsConference for type %d", packetization);
         g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
           "Could not create FsConference for type %d", packetization);
         g_simple_async_result_complete (res);
@@ -482,8 +490,9 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
       conference_type);
   if (!self->fsconference)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
-          "", "Could not create FsConference for type %s", conference_type);
+      tf_content_error_printf (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED, "",
+          "Could not create FsConference for type %s", conference_type);
       g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
           "Error getting the Content's properties: invalid type");
       g_simple_async_result_complete (res);
@@ -496,8 +505,9 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
 
   if (!self->fssession)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED,
-          "", "Could not create FsSession: %s", myerror->message);
+      tf_content_error_printf (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_UNSUPPORTED, "",
+          "Could not create FsSession: %s", myerror->message);
       g_simple_async_result_set_from_error (res, myerror);
       g_simple_async_result_complete (res);
       g_clear_error (&myerror);
@@ -507,8 +517,9 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
 
   if (error)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "", "Error getting the Content's properties: %s", error->message);
+      tf_content_error_printf (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error getting the Content's properties: %s", error->message);
       g_simple_async_result_set_from_error (res, error);
       g_simple_async_result_complete (res);
       g_object_unref (res);
@@ -554,8 +565,9 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   return;
 
  invalid_property:
-  tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-      "", "Error getting the Content's properties: invalid type");
+  tf_content_error (TF_CONTENT (self),
+      TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      "Error getting the Content's properties: invalid type");
   g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
       "Error getting the Content's properties: invalid type");
   g_simple_async_result_complete (res);
@@ -605,8 +617,9 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (error)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "", "Error getting the Content's properties: %s", error->message);
+      tf_content_error_printf (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error getting the Content's properties: %s", error->message);
       g_simple_async_result_set_from_error (res, error);
       g_simple_async_result_complete (res);
       g_object_unref (res);
@@ -615,8 +628,9 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!out_Properties)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "", "Error getting the Content's properties: there are none");
+      tf_content_error (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error getting the Content's properties: there are none");
       g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
           "Error getting the Content's properties: there are none");
       g_simple_async_result_complete (res);
@@ -628,12 +642,13 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (interfaces == NULL)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "", "Content does not have the Interfaces property,"
-          " but HardwareStreaming was NOT true");
+      tf_content_error (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Content does not have the Interfaces property, "
+          "but HardwareStreaming was NOT true");
       g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-          "Content does not have the Interfaces property,"
-          " but HardwareStreaming was NOT true");
+          "Content does not have the Interfaces property, "
+          "but HardwareStreaming was NOT true");
       g_simple_async_result_complete (res);
       g_object_unref (res);
       return;
@@ -648,8 +663,9 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!got_media_interface)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "", "Content does not have the media interface,"
+      tf_content_error (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Content does not have the media interface,"
           " but HardwareStreaming was NOT true");
       g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
           "Content does not have the media interface,"
@@ -685,7 +701,8 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (myerror)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_content_error_printf (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to NewCodecOffer signal: %s",
           myerror->message);
       g_simple_async_result_set_from_error (res, myerror);
@@ -702,7 +719,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   return;
 
  invalid_property:
-  tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
+  tf_content_error (TF_CONTENT (self), TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
       "", "Error getting the Content's properties: invalid type");
   g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
       "Error getting the Content's properties: invalid type");
@@ -772,9 +789,9 @@ tf_call_content_init_async (GAsyncInitable *initable,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
-          "Error connectiong to StreamAdded signal: %s",
-          myerror->message);
+      tf_content_error_printf (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to StreamAdded signal: %s", myerror->message);
       g_simple_async_report_gerror_in_idle (G_OBJECT (self), callback,
           user_data, myerror);
       return;
@@ -785,9 +802,9 @@ tf_call_content_init_async (GAsyncInitable *initable,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_call_content_error (self, TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
-          "Error connectiong to StreamRemoved signal: %s",
-          myerror->message);
+      tf_content_error_printf (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error connectiong to StreamRemoved signal: %s", myerror->message);
       g_simple_async_report_gerror_in_idle (G_OBJECT (self), callback,
           user_data, myerror);
       return;
@@ -984,8 +1001,8 @@ tf_call_content_bus_message (TfCallContent *content,
               enumvalue->value_nick, errorno, msg, debug);
           g_type_class_unref (enumclass);
 
-          tf_call_content_error (content,
-              TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", "%s", msg);
+          tf_content_error (TF_CONTENT (content),
+              TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", msg);
 
           ret = TRUE;
         }
@@ -1016,25 +1033,18 @@ tf_call_content_bus_message (TfCallContent *content,
   return ret;
 }
 
-void
-tf_call_content_error (TfCallContent *content,
-    TfFutureContentRemovalReason reason,
+static void
+tf_call_content_error (TfContent *content,
+    guint reason,  /* TfFutureContentRemovalReason */
     const gchar *detailed_reason,
-    const gchar *message_format, ...)
+    const gchar *message)
 {
-  gchar *message;
-  va_list valist;
-
-  va_start (valist, message_format);
-  message = g_strdup_vprintf (message_format, valist);
-  va_end (valist);
+  TfCallContent *self = TF_CALL_CONTENT (content);
 
   g_warning ("%s", message);
   tf_future_cli_call_content_call_remove (
-      content->proxy, -1, reason, detailed_reason, message, NULL, NULL,
+      self->proxy, -1, reason, detailed_reason, message, NULL, NULL,
       NULL, NULL);
-
-  g_free (message);
 }
 
 

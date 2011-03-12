@@ -300,5 +300,33 @@ tf_content_error (TfContent *content,
    if (klass->content_error)
      klass->content_error (content, reason, detailed_reason, message);
    else
-     GST_WARNING ("content_error not defined in class");
+     GST_WARNING ("content_error not defined in class: %s", message);
+}
+
+/**
+ * tf_content_error:
+ * @content: a #TfContent
+ * @reason: the reason (a #TfContentRemovalReason)
+ * @detailed_reason: The detailled error (as a DBus name)
+ * @message: error Message
+ *
+ * Send an error to the Content to the CM, the effect is most likely that the
+ * content will be removed.
+ */
+
+void
+tf_content_error_printf (TfContent *content,
+    guint reason, /* TfFutureContentRemovalReason */
+    const gchar *detailed_reason,
+    const gchar *message_format, ...)
+{
+  gchar *message;
+  va_list valist;
+
+  va_start (valist, message_format);
+  message = g_strdup_vprintf (message_format, valist);
+  va_end (valist);
+
+  tf_content_error (content, reason, detailed_reason, message);
+  g_free (message);
 }
