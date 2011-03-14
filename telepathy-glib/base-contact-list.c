@@ -242,6 +242,7 @@ struct _TpBaseContactListPrivate
    * the constructor and cleared when we lose @conn. */
   gboolean svc_contact_list;
   gboolean svc_contact_groups;
+  gboolean svc_contact_blocking;
 };
 
 struct _TpBaseContactListClassPrivate
@@ -535,6 +536,7 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
       tp_clear_object (&self->priv->conn);
       self->priv->svc_contact_list = FALSE;
       self->priv->svc_contact_groups = FALSE;
+      self->priv->svc_contact_blocking = FALSE;
     }
 }
 
@@ -668,6 +670,8 @@ tp_base_contact_list_constructed (GObject *object)
     TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_LIST (self->priv->conn);
   self->priv->svc_contact_groups =
     TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS (self->priv->conn);
+  self->priv->svc_contact_blocking =
+    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING (self->priv->conn);
 
   if (TP_IS_MUTABLE_CONTACT_LIST (self))
     {
