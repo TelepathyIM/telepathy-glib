@@ -583,9 +583,11 @@ tf_channel_bus_message (TfChannel *channel,
   if (channel->priv->media_signalling_channel)
     return tf_media_signalling_channel_bus_message (
         channel->priv->media_signalling_channel, message);
-  else
+  else if (channel->priv->call_channel)
     return tf_call_channel_bus_message (channel->priv->call_channel,
       message);
+
+  return FALSE;
 }
 
 static void
