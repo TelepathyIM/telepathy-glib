@@ -76,17 +76,6 @@ struct _TplLogStoreSqliteClass
 
 GType _tpl_log_store_sqlite_get_type (void);
 TplLogStore * _tpl_log_store_sqlite_dup (void);
-GList * _tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
-    TpChannel *channel, GError **error);
-GList * _tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
-    TpChannel *channel, gint64 timestamp, GError **error);
-gboolean _tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
-  const gchar* log_id);
-
-void _tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
-    const gchar* log_id, GError **error);
-void _tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
-    TpChannel *channel, guint msg_id, GError **error);
 
 gint64 _tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
     TpAccount *account, const char *identifier);
