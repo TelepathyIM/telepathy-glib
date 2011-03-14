@@ -56,7 +56,9 @@ typedef enum
   TPL_LOG_STORE_SQLITE_ERROR_FAILED = TPL_LOG_STORE_ERROR_LAST,
   /* generic _tpl_log_store_sqlite_get_pending_messages() error, to be used when
    * any other code cannot be use, including TPL_LOG_STORE_ERROR ones */
-  TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES
+  TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES,
+  TPL_LOG_STORE_SQLITE_ERROR_REMOVE_PENDING_MESSAGES,
+  TPL_LOG_STORE_SQLITE_ERROR_ADD_PENDING_MESSAGE
 } TplLogStoreSqliteError;
 
 
@@ -76,17 +78,13 @@ struct _TplLogStoreSqliteClass
 
 GType _tpl_log_store_sqlite_get_type (void);
 TplLogStore * _tpl_log_store_sqlite_dup (void);
+
 GList * _tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
     TpChannel *channel, GError **error);
-GList * _tpl_log_store_sqlite_get_log_ids (TplLogStore *self,
-    TpChannel *channel, gint64 timestamp, GError **error);
-gboolean _tpl_log_store_sqlite_log_id_is_present (TplLogStore *self,
-  const gchar* log_id);
-
-void _tpl_log_store_sqlite_set_acknowledgment (TplLogStore *self,
-    const gchar* log_id, GError **error);
-void _tpl_log_store_sqlite_set_acknowledgment_by_msg_id (TplLogStore *self,
-    TpChannel *channel, guint msg_id, GError **error);
+gboolean _tpl_log_store_sqlite_remove_pending_messages (TplLogStore *self,
+    GList *log_ids, GError **error);
+gboolean _tpl_log_store_sqlite_add_pending_message (TplLogStore *self,
+    TpChannel *channel, const gchar *log_id, gint64 timestamp, GError **error);
 
 gint64 _tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
     TpAccount *account, const char *identifier);
