@@ -291,8 +291,7 @@ tpl_log_store_sqlite_add_message_counter (TplLogStore *self,
 
   if (TPL_IS_TEXT_EVENT (message) == FALSE)
     {
-      DEBUG ("ignoring msg %s, not interesting for message-counter",
-          _tpl_event_get_log_id (message));
+      DEBUG ("ignoring non-text event not intersting for message-counter");
       retval = TRUE;
       goto out;
     }
@@ -427,30 +426,9 @@ out:
  * @message: a TplEvent instance
  * @error: memory pointer use in case of error
  *
- * @message will be sent to the MessageCounter and MessageSqlite tables.
- *
- * MessageSqlite will accept any instance of TplEvent for @message and will
- * return %FALSE with @error set when a fatal error occurs or when @message
- * has already been logged.
- * For the last case a TPL_LOG_STORE_ERROR_PRESENT will be set as error
- * code in @error, and is considered fatal, since it should never happen.
- *
- * A module implementing a TplChannel should always check for TplEvent
- * log-id presence in the cache log-store if there is a chance to receive the
- * same log-id twice.
- *
- * MessageCounter only handles Text messages, which means that it will
- * silently (ie won't use @error) not log @message, when it won't be an
- * instance ot TplTextEvent, returning anyway %TRUE. This means "I could
- * store @message, but I'm discarding it because I'm not interested in it" and
- * is not cosidered an error (@error won't be set).
- * It will return %FALSE with @error set if a fatal error occurred, for
- * example it wasn't able to store it.
- *
+ * Text messages will be accounted for statistics purpose.
  *
  * Returns: %TRUE if @self was able to store, %FALSE with @error set if an error occurred.
- * An already logged log-id or a failure in the persistence layer will make
- * this method return %FALSE with @error set.
  */
 static gboolean
 tpl_log_store_sqlite_add_event (TplLogStore *self,
