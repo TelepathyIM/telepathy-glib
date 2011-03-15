@@ -23,6 +23,7 @@
 #include "event-internal.h"
 
 #include <glib.h>
+#include "entity-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_EVENT
 #include <telepathy-logger/debug-internal.h>
@@ -180,6 +181,17 @@ tpl_event_set_property (GObject *object,
   };
 }
 
+static inline gboolean
+account_equal (TpAccount *account1, TpAccount *account2)
+{
+  g_return_val_if_fail (TP_IS_PROXY (account1), FALSE);
+  g_return_val_if_fail (TP_IS_PROXY (account2), FALSE);
+
+  return !tp_strdiff (tp_proxy_get_object_path (TP_PROXY (account1)),
+      tp_proxy_get_object_path (TP_PROXY (account2)));
+}
+
+
 static gboolean
 tpl_event_equal_default (TplEvent *message1,
     TplEvent *message2)
@@ -187,7 +199,10 @@ tpl_event_equal_default (TplEvent *message1,
   g_return_val_if_fail (TPL_IS_EVENT (message1), FALSE);
   g_return_val_if_fail (TPL_IS_EVENT (message2), FALSE);
 
-  return !tp_strdiff (message1->priv->log_id, message2->priv->log_id);
+  return message1->priv->timestamp == message2->priv->timestamp
+    && account_equal (message1->priv->account, message2->priv->account)
+    && _tpl_entity_compare (message1->priv->sender, message2->priv->sender)
+    && _tpl_entity_compare (message1->priv->receiver, message2->priv->receiver);
 }
 
 

@@ -166,14 +166,30 @@ tpl_text_event_set_property (GObject *object,
   }
 }
 
+
+static gboolean tpl_text_event_equal (TplEvent *event1,
+    TplEvent *event2)
+{
+  TplTextEvent *text_event1 = TPL_TEXT_EVENT (event1);
+  TplTextEvent *text_event2 = TPL_TEXT_EVENT (event2);
+
+  return TPL_EVENT_CLASS (tpl_text_event_parent_class)->equal (event1, event2)
+    && text_event1->priv->message_type == text_event2->priv->message_type
+    && !tp_strdiff (text_event1->priv->message, text_event2->priv->message);
+}
+
+
 static void tpl_text_event_class_init (TplTextEventClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  TplEventClass *event_class = TPL_EVENT_CLASS (klass);
   GParamSpec *param_spec;
 
   object_class->finalize = tpl_text_event_finalize;
   object_class->get_property = tpl_text_event_get_property;
   object_class->set_property = tpl_text_event_set_property;
+
+  event_class->equal = tpl_text_event_equal;
 
   param_spec = g_param_spec_uint ("message-type",
       "MessageType",
