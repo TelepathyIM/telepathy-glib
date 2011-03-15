@@ -61,8 +61,6 @@ typedef struct _TplLogStoreSqlitePrivate TplLogStoreSqlitePrivate;
 struct _TplLogStoreSqlitePrivate
 {
   sqlite3 *db;
-
-  guint purge_id;
 };
 
 static GObject *singleton = NULL;
@@ -154,12 +152,6 @@ tpl_log_store_sqlite_dispose (GObject *self)
     {
       sqlite3_close (priv->db);
       priv->db = NULL;
-    }
-
-  if (priv->purge_id != 0)
-    {
-      g_source_remove (priv->purge_id);
-      priv->purge_id = 0;
     }
 
   G_OBJECT_CLASS (_tpl_log_store_sqlite_parent_class)->dispose (self);
