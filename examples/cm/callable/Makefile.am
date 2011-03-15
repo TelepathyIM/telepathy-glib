@@ -66,3 +66,6 @@ AM_CPPFLAGS = \
     $(NULL)
 
 AM_CFLAGS = $(ERROR_CFLAGS)
+AM_LDFLAGS = \
+    $(ERROR_LDFLAGS) \
+    $(NULL)

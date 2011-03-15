@@ -57,6 +57,9 @@ AM_CFLAGS = \
     $(DBUS_CFLAGS) \
     $(GLIB_CFLAGS) \
     $(TP_GLIB_CFLAGS)
+AM_LDFLAGS = \
+    $(ERROR_LDFLAGS) \
+    $(NULL)
 
 libtp_glib_tests_la_LIBADD = \
     $(DBUS_LIBS) \

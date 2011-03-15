@@ -249,6 +249,9 @@ AM_CFLAGS = \
     @GLIB_CFLAGS@ \
     -I$(top_builddir) \
     -I$(top_srcdir)
+AM_LDFLAGS = \
+    $(ERROR_LDFLAGS) \
+    $(NULL)
 
 ALL_LIBS = \
     @DBUS_LIBS@ \

@@ -34,3 +34,10 @@ AC_DEFUN([TP_COMPILER_FLAG],
   fi
   AC_MSG_RESULT([$flag_ok])
 ])
+
+dnl TP_ADD_COMPILER_FLAG(VARIABLE, CFLAGS)
+dnl Append CFLAGS to VARIABLE if the compiler supports them.
+AC_DEFUN([TP_ADD_COMPILER_FLAG],
+[
+  TP_COMPILER_FLAG([$2], [$1="[$]$1 $2"])
+])

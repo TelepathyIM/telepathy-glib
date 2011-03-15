@@ -94,6 +94,22 @@ TP_COMPILER_WARNINGS([ERROR_CFLAGS], [test "x$official_release" = xno],
    unused-parameter])
 AC_SUBST([ERROR_CFLAGS])
 
+# these aren't really error flags but they serve a similar purpose for us -
+# making the toolchain stricter
+if test "x$official_release" = xno; then
+  TP_ADD_LINKER_FLAG([ERROR_LDFLAGS], [-Wl,--no-copy-dt-needed-entries])
+
+  # --no-copy-dt-needed-entries is the new name for --no-add-needed which
+  # is much more widely supported
+  case "$ERROR_LDFLAGS" in
+  (*-Wl,--no-copy-dt-needed-entries*)
+    ;;
+  (*)
+    TP_ADD_LINKER_FLAG([ERROR_LDFLAGS], [-Wl,--no-add-needed])
+    ;;
+  esac
+fi
+
 AM_CONDITIONAL([OFFICIAL_RELEASE], [test "x$official_release" = xyes])
 
 AC_ARG_ENABLE(debug,

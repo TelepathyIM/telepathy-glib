@@ -72,6 +72,7 @@ ABI_LISTS = \
 # that vim quickfix mode (:make) doesn't interpret the libtool --mode=link
 # command as an error message in a bizarrely named file
 libtelepathy_glib_la_LDFLAGS = \
+    $(AM_LDFLAGS) \
     -version-info "$(LT_CURRENT)":"$(LT_REVISION)":"$(LT_AGE)"
 libtelepathy_glib_la_LIBADD = libtelepathy-glib-internal.la
 nodist_libtelepathy_glib_la_SOURCES =
