@@ -59,7 +59,6 @@ struct _TplTextChannelPriv
 typedef struct
 {
   gint msg_id;
-  gchar *log_id;
   guint type;
   gchar *text;
   gint64 timestamp;
@@ -320,7 +319,6 @@ keepon_on_receiving_signal (TplTextChannel *tpl_text,
       /* TplEvent */
       "account", _tpl_channel_get_account (TPL_CHANNEL (tpl_text)),
       "channel-path", tp_proxy_get_object_path (TP_PROXY (tpl_text)),
-      "log-id", data->log_id,
       "receiver", receiver,
       "sender", sender,
       "timestamp", data->timestamp,
@@ -330,9 +328,7 @@ keepon_on_receiving_signal (TplTextChannel *tpl_text,
       "pending-msg-id", data->msg_id,
       NULL);
 
-  DEBUG ("recvd:\n\tlog_id=\"%s\"\n\tto=\"%s "
-      "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-      _tpl_event_get_log_id (TPL_EVENT (text_log)),
+  DEBUG ("recvd:\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
       tpl_entity_get_identifier (receiver),
       tpl_entity_get_alias (receiver),
       tpl_entity_get_identifier (sender),
@@ -400,7 +396,6 @@ static void
 received_data_free (gpointer arg)
 {
   ReceivedData *data = arg;
-  g_free (data->log_id);
   g_free (data->text);
   g_slice_free (ReceivedData,data);
 }
@@ -420,7 +415,6 @@ on_received_signal_cb (TpChannel *proxy,
   TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (proxy);
   TpConnection *tp_conn;
   TplEntity *remote;
-  const gchar *channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
   ReceivedData *data;
 
   /* TODO use the Message iface to check the delivery
@@ -441,7 +435,6 @@ on_received_signal_cb (TpChannel *proxy,
 
   data = g_slice_new0 (ReceivedData);
   data->msg_id = msg_id;
-  data->log_id = _tpl_create_message_token (channel_path, timestamp, msg_id);
   data->type = type;
   data->text = g_strdup (text);
   data->timestamp = timestamp;
@@ -481,14 +474,11 @@ on_sent_signal_cb (TpChannel *proxy,
   TplLogManager *logmanager;
   TpAccount *account;
   const gchar *channel_path;
-  gchar *log_id;
   gint64 timestamp = (gint64) tp_timestamp;
 
   g_return_if_fail (TPL_IS_TEXT_CHANNEL (tpl_text));
 
   channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
-  log_id = _tpl_create_message_token (channel_path, timestamp,
-      TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED);
 
   /* Initialize data for TplEntity */
   sender = tpl_text->priv->self;
@@ -497,9 +487,7 @@ on_sent_signal_cb (TpChannel *proxy,
     {
       receiver = tpl_text->priv->chatroom;
 
-      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto "
-          "chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-          log_id,
+      DEBUG ("sent:\n\tto chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
           tpl_entity_get_identifier (receiver),
           tpl_entity_get_identifier (sender),
           tpl_entity_get_alias (sender),
@@ -516,9 +504,7 @@ on_sent_signal_cb (TpChannel *proxy,
        * buggy connection managers */
       g_assert (receiver != NULL);
 
-      DEBUG ("sent:\n\tlog_id=\"%s\"\n\tto=\"%s "
-          "(%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-          log_id,
+      DEBUG ("sent:\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
           tpl_entity_get_identifier (receiver),
           tpl_entity_get_alias (receiver),
           tpl_entity_get_identifier (sender),
@@ -532,7 +518,6 @@ on_sent_signal_cb (TpChannel *proxy,
       /* TplEvent */
       "account", account,
       "channel-path", channel_path,
-      "log-id", log_id,
       "receiver", receiver,
       "sender", sender,
       "timestamp", timestamp,
@@ -553,8 +538,6 @@ on_sent_signal_cb (TpChannel *proxy,
 
   g_object_unref (logmanager);
   g_object_unref (text_log);
-
-  g_free (log_id);
 }
 
 
