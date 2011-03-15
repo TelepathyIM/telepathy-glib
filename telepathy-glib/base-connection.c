@@ -1640,6 +1640,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
 
   /**
    * TpBaseConnection::shutdown-finished: (skip)
+   * @connection: the #TpBaseConnection
    *
    * Emitted by tp_base_connection_finish_shutdown() when the underlying
    * network connection has been closed; #TpBaseConnectionManager listens
@@ -1657,6 +1658,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
 
   /**
    * TpBaseConnection::clients-interested:
+   * @connection: the #TpBaseConnection
    * @token: the interface or part of an interface in which clients are newly
    *  interested
    *
@@ -1680,6 +1682,7 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
 
   /**
    * TpBaseConnection::clients-uninterested:
+   * @connection: the #TpBaseConnection
    * @token: the interface or part of an interface in which clients are no
    *  longer interested
    *
