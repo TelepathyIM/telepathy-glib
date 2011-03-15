@@ -370,8 +370,7 @@ _tpl_log_manager_add_event (TplLogManager *manager,
     }
   if (!retval)
     {
-      CRITICAL ("Failed to write to all "
-          "writable LogStores log-id %s.", _tpl_event_get_log_id (event));
+      CRITICAL ("Failed to write event to all writable LogStores.");
       g_set_error_literal (error, TPL_LOG_MANAGER_ERROR,
           TPL_LOG_MANAGER_ERROR_ADD_EVENT,
           "Non recoverable error occurred during log manager's "
