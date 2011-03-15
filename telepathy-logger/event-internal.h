@@ -37,11 +37,8 @@ struct _TplEvent
 struct _TplEventClass {
   GObjectClass parent_class;
 
-  /* by default log_id is compared, can be overrided */
   gboolean (*equal) (TplEvent *event1, TplEvent *event2);
 };
-
-const gchar * _tpl_event_get_log_id (TplEvent *self);
 
 TplEntity * _tpl_event_get_target (TplEvent *self);
 

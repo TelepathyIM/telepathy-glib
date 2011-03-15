@@ -49,7 +49,6 @@ G_DEFINE_ABSTRACT_TYPE (TplEvent, tpl_event, G_TYPE_OBJECT)
 
 struct _TplEventPriv
 {
-  gchar *log_id;
   gint64 timestamp;
   TpAccount *account;
   gchar *channel_path;
@@ -62,7 +61,6 @@ struct _TplEventPriv
 
 enum {
     PROP_TIMESTAMP = 1,
-    PROP_LOG_ID,
     PROP_TARGET_ID,
     PROP_ACCOUNT,
     PROP_ACCOUNT_PATH,
@@ -78,7 +76,6 @@ tpl_event_finalize (GObject *obj)
   TplEvent *self = TPL_EVENT (obj);
   TplEventPriv *priv = self->priv;
 
-  tp_clear_pointer (&priv->log_id, g_free);
   tp_clear_pointer (&priv->channel_path, g_free);
 
   G_OBJECT_CLASS (tpl_event_parent_class)->finalize (obj);
@@ -112,9 +109,6 @@ tpl_event_get_property (GObject *object,
     {
       case PROP_TIMESTAMP:
         g_value_set_int64 (value, priv->timestamp);
-        break;
-      case PROP_LOG_ID:
-        g_value_set_string (value, priv->log_id);
         break;
       case PROP_ACCOUNT:
         g_value_set_object (value, priv->account);
@@ -151,10 +145,6 @@ tpl_event_set_property (GObject *object,
       case PROP_TIMESTAMP:
         g_assert (priv->timestamp == 0);
         priv->timestamp = g_value_get_int64 (value);
-        break;
-      case PROP_LOG_ID:
-        g_assert (priv->log_id == NULL);
-        priv->log_id = g_value_dup_string (value);
         break;
       case PROP_ACCOUNT:
         g_assert (priv->account == NULL);
@@ -226,21 +216,6 @@ tpl_event_class_init (TplEventClass *klass)
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TIMESTAMP, param_spec);
 
-  /**
-   * TplEvent::log-id:
-   *
-   * A token identifying the event.
-   *
-   */
-  param_spec = g_param_spec_string ("log-id",
-      "LogId",
-      "Log identification token, it's unique among existing event, if two "
-      "messages have the same token, they are the same event (may be logged "
-      "by two different TplLogStore)",
-      NULL,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_LOG_ID, param_spec);
-
   param_spec = g_param_spec_object ("account",
       "TpAccount",
       "The TpAccount to which the log event is related",
@@ -301,14 +276,6 @@ tpl_event_get_timestamp (TplEvent *self)
   g_return_val_if_fail (TPL_IS_EVENT (self), -1);
 
   return self->priv->timestamp;
-}
-
-const gchar *
-_tpl_event_get_log_id (TplEvent *self)
-{
-  g_return_val_if_fail (TPL_IS_EVENT (self), 0);
-
-  return self->priv->log_id;
 }
 
 
