@@ -56,15 +56,6 @@ struct _TplTextChannelPriv
   GHashTable *entities;
 };
 
-typedef struct
-{
-  gint msg_id;
-  guint type;
-  gchar *text;
-  gint64 timestamp;
-
-} ReceivedData;
-
 static TpContactFeature features[3] = {
   TP_CONTACT_FEATURE_ALIAS,
   TP_CONTACT_FEATURE_PRESENCE,
@@ -76,17 +67,20 @@ G_DEFINE_TYPE (TplTextChannel, _tpl_text_channel, TPL_TYPE_CHANNEL)
 
 static void
 got_tpl_chan_ready_cb (GObject *obj,
-    GAsyncResult *tpl_chan_result,
+    GAsyncResult *result,
     gpointer user_data)
 {
+  TpProxy *proxy = TP_PROXY (obj);
   TplActionChain *ctx = user_data;
 
-  /* if TplChannel preparation is OK, keep on with the TplTextChannel */
-  if (_tpl_action_chain_new_finish (tpl_chan_result))
+  /* if TplChannel preparation is OK (and support Message interface,
+   * keep on with the TplTextChannel */
+  if (_tpl_action_chain_new_finish (result)
+      && tp_proxy_has_interface_by_id (proxy,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
     _tpl_action_chain_continue (ctx);
   else
      _tpl_action_chain_terminate (ctx);
-  return;
 }
 
 
@@ -300,269 +294,222 @@ on_channel_invalidated_cb (TpProxy *proxy,
 
 
 static void
-keepon_on_receiving_signal (TplTextChannel *tpl_text,
+tpl_text_channel_store_message (TplTextChannel *self,
+    const GPtrArray *message,
     TplEntity *sender,
-    ReceivedData *data)
+    TplEntity *receiver)
 {
-  TplTextEvent *text_log;
-  GError *error = NULL;
+  TplTextChannelPriv *priv = self->priv;
+  const gchar *direction;
+  GHashTable *header;
+  TpChannelTextMessageType type;
+  TplEntity *allocated_sender = NULL;
+  gboolean valid;
+  gint64 timestamp;
+  guint i;
+  const gchar *text = NULL;
+  TplTextEvent *event;
   TplLogManager *logmanager;
-  TplEntity *receiver;
-
-  if (tpl_text->priv->is_chatroom)
-    receiver = tpl_text->priv->chatroom;
-  else
-    receiver = tpl_text->priv->self;
-
-  /* Initialize TplTextEvent */
-  text_log = g_object_new (TPL_TYPE_TEXT_EVENT,
-      /* TplEvent */
-      "account", _tpl_channel_get_account (TPL_CHANNEL (tpl_text)),
-      "channel-path", tp_proxy_get_object_path (TP_PROXY (tpl_text)),
-      "receiver", receiver,
-      "sender", sender,
-      "timestamp", data->timestamp,
-      /* TplTextEvent */
-      "message-type", data->type,
-      "message", data->text,
-      "pending-msg-id", data->msg_id,
-      NULL);
-
-  DEBUG ("recvd:\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-      tpl_entity_get_identifier (receiver),
-      tpl_entity_get_alias (receiver),
-      tpl_entity_get_identifier (sender),
-      tpl_entity_get_alias (sender),
-      tpl_text_event_get_message (text_log));
-
-  logmanager = tpl_log_manager_dup_singleton ();
-  _tpl_log_manager_add_event (logmanager, TPL_EVENT (text_log), &error);
-
-  if (error != NULL)
-    {
-      DEBUG ("%s", error->message);
-      g_error_free (error);
-    }
-
-  g_object_unref (text_log);
-  g_object_unref (logmanager);
-}
-
-
-static void
-on_received_signal_with_contact_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact *const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  ReceivedData *data = user_data;
-  TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (weak_object);
-  TplEntity *remote;
-  TpHandle handle;
-
-  if (error != NULL)
-    {
-      PATH_DEBUG (tpl_text, "An Unrecoverable error retrieving remote contact "
-         "information occured: %s", error->message);
-      PATH_DEBUG (tpl_text, "Unable to log the received message: %s",
-          data->text);
-      return;
-    }
-
-  if (n_failed > 0)
-    {
-      PATH_DEBUG (tpl_text, "%d invalid handle(s) passed to "
-         "tp_connection_get_contacts_by_handle()", n_failed);
-      PATH_DEBUG (tpl_text, "Not able to log the received message: %s",
-         data->text);
-      return;
-    }
-
-  remote = tpl_entity_new_from_tp_contact (contacts[0], TPL_ENTITY_CONTACT);
-  handle = tp_contact_get_handle (contacts[0]);
-
-  g_hash_table_insert (tpl_text->priv->entities, GUINT_TO_POINTER (handle),
-    remote);
-
-  keepon_on_receiving_signal (tpl_text, remote, data);
-}
-
-
-static void
-received_data_free (gpointer arg)
-{
-  ReceivedData *data = arg;
-  g_free (data->text);
-  g_slice_free (ReceivedData,data);
-}
-
-
-static void
-on_received_signal_cb (TpChannel *proxy,
-    guint msg_id,
-    guint timestamp,
-    TpHandle sender,
-    guint type,
-    guint flags,
-    const gchar *text,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (proxy);
-  TpConnection *tp_conn;
-  TplEntity *remote;
-  ReceivedData *data;
-
-  /* TODO use the Message iface to check the delivery
-     notification and handle it correctly */
-  if (flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT)
-    {
-      PATH_DEBUG (tpl_text, "Non text content flag set. "
-          "Probably a delivery notification for a sent message. "
-          "Ignoring");
-      return;
-    }
-
-  if (flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_RESCUED)
-    {
-      PATH_DEBUG (tpl_text, "Ignore 'rescued' message");
-      return;
-    }
-
-  data = g_slice_new0 (ReceivedData);
-  data->msg_id = msg_id;
-  data->type = type;
-  data->text = g_strdup (text);
-  data->timestamp = timestamp;
-
-  tp_conn = tp_channel_borrow_connection (TP_CHANNEL (tpl_text));
-  remote = g_hash_table_lookup (tpl_text->priv->entities,
-      GUINT_TO_POINTER (sender));
-
-  if (remote == NULL)
-    {
-      /* Contact is not in the cache */
-      tp_connection_get_contacts_by_handle (tp_conn, 1, &sender,
-          G_N_ELEMENTS (features), features, on_received_signal_with_contact_cb,
-          data, received_data_free, G_OBJECT (tpl_text));
-    }
-  else
-    {
-      keepon_on_receiving_signal (tpl_text, remote, data);
-      received_data_free (data);
-    }
-}
-
-
-static void
-on_sent_signal_cb (TpChannel *proxy,
-    guint tp_timestamp,
-    guint type,
-    const gchar *text,
-    gpointer user_data,
-    GObject *weak_object)
-{
   GError *error = NULL;
-  TplTextChannel *tpl_text = TPL_TEXT_CHANNEL (user_data);
-  TplEntity *sender;
-  TplEntity *receiver = NULL;
-  TplTextEvent *text_log;
-  TplLogManager *logmanager;
-  TpAccount *account;
-  const gchar *channel_path;
-  gint64 timestamp = (gint64) tp_timestamp;
 
-  g_return_if_fail (TPL_IS_TEXT_CHANNEL (tpl_text));
-
-  channel_path = tp_proxy_get_object_path (TP_PROXY (tpl_text));
-
-  /* Initialize data for TplEntity */
-  sender = tpl_text->priv->self;
-
-  if (tpl_text->priv->is_chatroom)
-    {
-      receiver = tpl_text->priv->chatroom;
-
-      DEBUG ("sent:\n\tto chatroom=\"%s\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-          tpl_entity_get_identifier (receiver),
-          tpl_entity_get_identifier (sender),
-          tpl_entity_get_alias (sender),
-          text);
-    }
+  if (sender != NULL
+      && tpl_entity_get_entity_type (sender) == TPL_ENTITY_SELF)
+    direction = "sent";
   else
+    direction = "received";
+
+  header = g_ptr_array_index (message, 0);
+
+  if (header == NULL)
     {
-      TpHandle handle = tp_channel_get_handle (TP_CHANNEL (tpl_text), NULL);
-
-      receiver = g_hash_table_lookup (tpl_text->priv->entities,
-          GUINT_TO_POINTER (handle));
-
-      /* FIXME Create unkown entity when supported, this way we can survive
-       * buggy connection managers */
-      g_assert (receiver != NULL);
-
-      DEBUG ("sent:\n\tto=\"%s (%s)\"\n\tfrom=\"%s (%s)\"\n\tmsg=\"%s\"",
-          tpl_entity_get_identifier (receiver),
-          tpl_entity_get_alias (receiver),
-          tpl_entity_get_identifier (sender),
-          tpl_entity_get_alias (sender),
-          text);
+      DEBUG ("Got invalid or corrupted %s message that could not be logged.",
+          direction);
+      return;
     }
+
+  if (tp_asv_get_boolean (header, "scrollback", NULL))
+    {
+      DEBUG ("Ignoring %s scrollback message.", direction);
+      return;
+    }
+
+  if (tp_asv_get_boolean (header, "rescued", NULL))
+    {
+      DEBUG ("Ignoring %s rescued message.", direction);
+      return;
+    }
+
+  type = tp_asv_get_uint32 (header, "message-type", NULL);
+
+  if (type == TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT)
+    {
+      DEBUG ("Ignoring %s delivery report message.", direction);
+      return;
+    }
+
+  /* Need to determin sender for incoming messages */
+  if (sender == NULL)
+    {
+      TpHandle handle;
+
+      handle = tp_asv_get_uint32 (header, "message-sender", NULL);
+
+      /* For non-chatroom, message handle is also the channel handle */
+      if (handle == 0 && !priv->is_chatroom)
+        handle = tp_channel_get_handle (TP_CHANNEL (self), NULL);
+
+      if (handle != 0)
+        sender = g_hash_table_lookup (priv->entities,
+            GUINT_TO_POINTER (handle));
+
+      /* If it's a chatroom and sender is not member rely on message header to
+       * get the appropriate sender information */
+      if (sender == NULL && priv->is_chatroom)
+        {
+          const gchar *id;
+          const gchar *alias;
+
+          id = tp_asv_get_string (header, "message-sender-id");
+          alias = tp_asv_get_string (header, "sender-nickname");
+
+          if (id != NULL)
+            allocated_sender = sender =
+              tpl_entity_new (id, TPL_ENTITY_CONTACT, alias, NULL);
+        }
+
+      /* If we still don't have a sender, then make it unknown */
+      if (sender == NULL)
+        allocated_sender = sender =
+          tpl_entity_new ("unknown", TPL_ENTITY_UNKNOWN, NULL, NULL);
+    }
+
+  /* Sender nickname may change for each messages */
+  if (!TPL_STR_EMPTY (tp_asv_get_string (header, "sender-nickname"))
+      && (allocated_sender == NULL))
+    {
+      if (g_strcmp0 (tpl_entity_get_alias (sender),
+            tp_asv_get_string (header, "sender-nickname")) != 0)
+        allocated_sender = sender =
+          tpl_entity_new (tpl_entity_get_identifier (sender),
+              tpl_entity_get_entity_type (sender),
+              tp_asv_get_string (header, "sender-nickname"),
+              tpl_entity_get_avatar_token (sender));
+    }
+
+  /* Ensure timestamp */
+  timestamp = tp_asv_get_int64 (header, "message-sent", &valid);
+
+  if (!valid)
+    timestamp = tp_asv_get_int64 (header, "message-received", &valid);
+
+  if (!valid)
+    {
+      GDateTime *datetime = g_date_time_new_now_utc ();
+      timestamp = g_date_time_to_unix (datetime);
+      g_date_time_unref (datetime);
+    }
+
+  for (i = 1; (i < message->len) && (text == NULL); i++)
+    {
+      GHashTable *part = g_ptr_array_index (message, i);
+
+      if (tp_strdiff ("text/plain",
+            tp_asv_get_string (part, "content-type")))
+        {
+          DEBUG ("Non text/plain content ignored, content of type = '%s'",
+              tp_asv_get_string (part, "content-type"));
+          continue;
+        }
+
+      text = tp_asv_get_string (part, "content");
+    }
+
+  if (text == NULL)
+    {
+      DEBUG ("Ignoring %s message with no supported content", direction);
+      tp_clear_object (&allocated_sender);
+      return;
+    }
+
+  if (tpl_entity_get_entity_type (sender) == TPL_ENTITY_SELF)
+    DEBUG ("Logging message sent to %s (%s)",
+        tpl_entity_get_alias (receiver),
+        tpl_entity_get_identifier (receiver));
+  else
+    DEBUG ("Logging message received from %s (%s)",
+        tpl_entity_get_alias (sender),
+        tpl_entity_get_identifier (sender));
+
 
   /* Initialise TplTextEvent */
-  account = _tpl_channel_get_account (TPL_CHANNEL (tpl_text));
-  text_log = g_object_new (TPL_TYPE_TEXT_EVENT,
+  event = g_object_new (TPL_TYPE_TEXT_EVENT,
       /* TplEvent */
-      "account", account,
-      "channel-path", channel_path,
+      "account", _tpl_channel_get_account (TPL_CHANNEL (self)),
+      "channel-path", tp_proxy_get_object_path (TP_PROXY (self)),
       "receiver", receiver,
       "sender", sender,
       "timestamp", timestamp,
       /* TplTextEvent */
       "message-type", type,
       "message", text,
-      "pending-msg-id", TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
       NULL);
 
+  /* Store sent event */
   logmanager = tpl_log_manager_dup_singleton ();
-  _tpl_log_manager_add_event (logmanager, TPL_EVENT (text_log), &error);
+  _tpl_log_manager_add_event (logmanager, TPL_EVENT (event), &error);
 
   if (error != NULL)
     {
-      PATH_DEBUG (tpl_text, "LogStore: %s", error->message);
+      PATH_DEBUG (self, "LogStore: %s", error->message);
       g_error_free (error);
     }
 
   g_object_unref (logmanager);
-  g_object_unref (text_log);
+  g_object_unref (event);
+  tp_clear_object (&allocated_sender);
 }
 
 
 static void
-on_send_error_cb (TpChannel *proxy,
-         guint error,
-         guint timestamp,
-         guint type,
-         const gchar *text,
-         gpointer user_data,
-         GObject *weak_object)
+on_message_received_cb (TpChannel *proxy,
+    const GPtrArray *message,
+    gpointer user_data,
+    GObject *weak_object)
 {
-  PATH_DEBUG (proxy, "unlogged event: TP was unable to send the message: %s",
-      text);
-  /* TODO log that the system was unable to send the message */
+  TplTextChannel *self = TPL_TEXT_CHANNEL (proxy);
+  TplTextChannelPriv *priv = self->priv;
+  TplEntity *receiver;
+
+  if (priv->is_chatroom)
+    receiver = priv->chatroom;
+  else
+    receiver = priv->self;
+
+  tpl_text_channel_store_message (self, message, NULL, receiver);
 }
 
 
 static void
-on_lost_message_cb (TpChannel *proxy,
-           gpointer user_data,
-           GObject *weak_object)
+on_message_sent_cb (TpChannel *proxy,
+    const GPtrArray *message,
+    guint flags,
+    const gchar *token,
+    gpointer user_data,
+    GObject *weak_object)
 {
-  PATH_DEBUG (proxy, "lost message signal catched. nothing logged");
-  /* TODO log that the system lost a message */
+  TplTextChannel *self = TPL_TEXT_CHANNEL (proxy);
+  TplTextChannelPriv *priv = self->priv;
+  TpChannel *chan = TP_CHANNEL (self);
+  TplEntity *sender = priv->self;
+  TplEntity *receiver;
+
+  if (priv->is_chatroom)
+    receiver = priv->chatroom;
+  else
+    receiver = g_hash_table_lookup (priv->entities,
+        GUINT_TO_POINTER (tp_channel_get_handle (chan, NULL)));
+
+  tpl_text_channel_store_message (self, message, sender, receiver);
 }
 
 
@@ -577,20 +524,14 @@ pendingproc_connect_message_signals (TplActionChain *ctx,
   tp_g_signal_connect_object (channel, "invalidated",
       G_CALLBACK (on_channel_invalidated_cb), tpl_text, 0);
 
-  if (tp_cli_channel_type_text_connect_to_received (channel,
-          on_received_signal_cb, NULL, NULL, NULL, &error) == NULL)
+  if (tp_cli_channel_interface_messages_connect_to_message_received (
+        channel, on_message_received_cb, NULL, NULL,
+        G_OBJECT (tpl_text), &error) == NULL)
     goto disaster;
 
-  if (tp_cli_channel_type_text_connect_to_sent (channel,
-          on_sent_signal_cb, tpl_text, NULL, NULL, &error) == NULL)
-    goto disaster;
-
-  if (tp_cli_channel_type_text_connect_to_send_error (channel,
-          on_send_error_cb, tpl_text, NULL, NULL, &error) == NULL)
-    goto disaster;
-
-  if (tp_cli_channel_type_text_connect_to_lost_message (channel,
-          on_lost_message_cb, tpl_text, NULL, NULL, &error) == NULL)
+  if (tp_cli_channel_interface_messages_connect_to_message_sent (
+        channel, on_message_sent_cb, NULL, NULL,
+        G_OBJECT (tpl_text), &error) == NULL)
     goto disaster;
 
   _tpl_action_chain_continue (ctx);
@@ -612,7 +553,7 @@ tpl_text_channel_call_when_ready (TplChannel *chan,
   /* first: connect signals, so none are lost
    * second: prepare all TplChannel
    * third: cache my contact and the remote one.
-   * last: connect message signals
+   * last: connect to Message signals
    *
    * If for any reason, the order is changed, it's needed to check what objects
    * are unreferenced by g_object_unref but used by a next action AND what
@@ -622,6 +563,7 @@ tpl_text_channel_call_when_ready (TplChannel *chan,
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_remote_contacts, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
+
   /* start the chain consuming */
   _tpl_action_chain_continue (actions);
 }
