@@ -900,9 +900,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
           /* TplTextEvent */
           "message-type", msg_type,
           "message", body,
-          /* As the pending-msg-id is not maintained in XML store, we simply
-           * assume the message to be acknowledge. */
-          "pending-msg-id", TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
           NULL);
 
       events = g_list_append (events, event);

@@ -880,8 +880,6 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
               /* TplTextEvent */
               "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
               "message", body,
-              /* Assume that messages are acknowledged. */
-              "pending-msg-id", TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
               NULL);
 
           /* prepend and then reverse is better than append */

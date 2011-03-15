@@ -47,33 +47,6 @@
  * An object representing a text log event.
  */
 
-/**
- * TPL_TEXT_EVENT_MSG_ID_IS_VALID:
- * @msg: a message ID
- *
- * Return whether a message ID is valid.
- *
- * If %FALSE is returned, it means that either an invalid input has been
- * passed, or the TplEvent is currently set to %TPL_TEXT_EVENT_MSG_ID_UNKNOWN
- * or %TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED.
- *
- * Returns: %TRUE if the argument is a valid message ID or %FALSE otherwise.
- */
-
-/**
- * TPL_TEXT_EVENT_MSG_ID_UNKNOWN:
- *
- * Special value used instead of a message ID to indicate a message with an
- * unknown status (before _tpl_event_set_pending_msg_id() was called, or
- * when it wasn't possible to obtain the message ID).
- */
-
-/**
- * TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED:
- *
- * Special value used instead of a message ID to indicate an acknowledged
- * message.
- */
 
 G_DEFINE_TYPE (TplTextEvent, tpl_text_event, TPL_TYPE_EVENT)
 
@@ -81,17 +54,12 @@ struct _TplTextEventPriv
 {
   TpChannelTextMessageType message_type;
   gchar *message;
-
-  /* in specs it's guint, TplEvent needs a way to represent ACK'd messages:
-   * if pending_msg_id reachs G_MAXINT32, then the problem is elsewhere :-) */
-  gint pending_msg_id;
 };
 
 enum
 {
   PROP_MESSAGE_TYPE = 1,
-  PROP_MESSAGE,
-  PROP_PENDING_MSG_ID
+  PROP_MESSAGE
 };
 
 static gchar *message_types[] = {
@@ -100,7 +68,8 @@ static gchar *message_types[] = {
     "notice",
     "auto-reply",
     "delivery-report",
-    NULL };
+    NULL
+};
 
 
 static void
@@ -131,9 +100,6 @@ tpl_text_event_get_property (GObject *object,
       case PROP_MESSAGE:
         g_value_set_string (value, priv->message);
         break;
-      case PROP_PENDING_MSG_ID:
-        g_value_set_int (value, priv->pending_msg_id);
-        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
         break;
@@ -156,9 +122,6 @@ tpl_text_event_set_property (GObject *object,
       case PROP_MESSAGE:
         g_assert (priv->message == NULL);
         priv->message = g_value_dup_string (value);
-        break;
-      case PROP_PENDING_MSG_ID:
-        priv->pending_msg_id = g_value_get_int (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -204,36 +167,6 @@ static void tpl_text_event_class_init (TplTextEventClass *klass)
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE, param_spec);
-
-  /**
-   * TplTextEvent::pending-msg-id:
-   *
-   * The pending message id for the current log event.
-   * The default value, is #TPL_TEXT_EVENT_MSG_ID_UNKNOWN,
-   * meaning that it's not possible to know if the message is pending or has
-   * been acknowledged.
-   *
-   * An object instantiating a TplEvent subclass should explicitly set it
-   * to a valid msg-id number (id>=0) or to #TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED
-   * when acknowledged or if the event is a result of
-   * 'sent' signal.
-   * In fact a sent event is considered as 'automatically' ACK by TPL.
-   *
-   * The pending message id value is only meaningful when associated to the
-   * #TplEvent::channel-path property.
-   * The couple (channel-path, pending-msg-id) cannot be considered unique,
-   * though, since a message-id might be reused over time.
-   *
-   * Use #TplEvent::log-id for a unique identifier within TPL.
-   */
-  param_spec = g_param_spec_int ("pending-msg-id",
-      "PendingMessageId",
-      "Pending Message ID, if set, the log event is set as pending for ACK."
-      " Default to -1 meaning not pending.",
-      -1, G_MAXINT, TPL_TEXT_EVENT_MSG_ID_ACKNOWLEDGED,
-      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_PENDING_MSG_ID,
-      param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplTextEventPriv));
 }
@@ -319,24 +252,3 @@ tpl_text_event_get_message_type (TplTextEvent *self)
 }
 
 
-/*
- * tpl_text_event_get_pending_msg_id
- * @self: a #TplTextEvent
- *
- * Returns: the id as the #TplTextEvent:pending-msg-id property
- */
-gint
-_tpl_text_event_get_pending_msg_id (TplTextEvent *self)
-{
-  g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), -1);
-
-  return self->priv->pending_msg_id;
-}
-
-
-gboolean
-_tpl_text_event_is_pending (TplTextEvent *self)
-{
-  return TPL_TEXT_EVENT_MSG_ID_IS_VALID (
-      _tpl_text_event_get_pending_msg_id (self));
-}
