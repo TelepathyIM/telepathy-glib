@@ -154,7 +154,6 @@ tpl_event_set_property (GObject *object,
         break;
       case PROP_LOG_ID:
         g_assert (priv->log_id == NULL);
-        g_return_if_fail (!TPL_STR_EMPTY (g_value_get_string (value)));
         priv->log_id = g_value_dup_string (value);
         break;
       case PROP_ACCOUNT:
