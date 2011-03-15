@@ -346,3 +346,29 @@ tpl_entity_get_avatar_token (TplEntity *self)
 
   return self->priv->avatar_token;
 }
+
+
+/*
+ * _tpl_entity_compare:
+ * @a: a #TplEntity
+ * @b: a #TplEntity
+ *
+ * Compares @a and @b.
+ *
+ * Returns: 0 if a == b, -1 if a < b, 1 otherwise.
+ */
+gint
+_tpl_entity_compare (TplEntity *a,
+    TplEntity *b)
+{
+  g_return_val_if_fail (TPL_IS_ENTITY (a), TPL_IS_ENTITY (b) ? -1 : 0);
+  g_return_val_if_fail (TPL_IS_ENTITY (b), 1);
+
+  if (tpl_entity_get_entity_type (a) == tpl_entity_get_entity_type (b))
+    return g_strcmp0 (tpl_entity_get_identifier (a),
+        tpl_entity_get_identifier (b));
+  else if (tpl_entity_get_entity_type (a) < tpl_entity_get_entity_type (b))
+    return -1;
+  else
+    return 1;
+}

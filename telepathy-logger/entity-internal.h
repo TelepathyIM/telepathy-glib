@@ -37,5 +37,7 @@ typedef struct
   GObjectClass parent_class;
 } TplEntityClass;
 
+gint _tpl_entity_compare (TplEntity *e1, TplEntity *e2);
+
 G_END_DECLS
 #endif // __TPL_ENTITY_INTERNAL_H__
