@@ -1,6 +1,28 @@
 telepathy-glib 0.13.18 (UNRELEASED)
 ===================================
 
+The “chilled coconut-chocolate security blanket” release.
+
+Changes:
+
+• Previously, tp_clear_object (NULL), tp_clear_boxed (type, NULL) and
+  tp_clear_pointer (NULL) were no-ops. However, this behaviour was not
+  very useful—these functions are always called as
+  tp_clear_object (&priv->foo) in practice—and triggered compiler
+  warnings (because these are actually implemented as macros). Thus,
+  this usage is no longer supported. (This should not affect anything
+  except contrived code, but CM authors may wish to check.)
+
+Fixes:
+
+• TpCMMessage is no longer included in the .gir file. This class is only
+  useful in CMs; we only support client-side API in the .gir file.
+  (Benjamin Otte)
+
+• Correctly include TpBasePasswordChannel documentation. (Danielle)
+
+• Fix GCC 4.6 and Clang analyzer warnings (Dan Winship, Will)
+
 telepathy-glib 0.13.17 (2011-03-09)
 ===================================
 
