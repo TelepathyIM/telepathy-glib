@@ -507,10 +507,9 @@ add_text_event (TplLogStoreXml *self,
     avatar_token = g_markup_escape_text (tpl_entity_get_avatar_token
         (sender), -1);
 
-  event = g_strdup_printf ("<message time='%s' cm_id='%s' id='%s' name='%s' "
+  event = g_strdup_printf ("<message time='%s' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'>"
       "%s</message>\n" LOG_FOOTER, timestamp,
-      _tpl_event_get_log_id (TPL_EVENT (message)),
       contact_id, contact_name,
       avatar_token ? avatar_token : "",
       tpl_entity_get_entity_type (sender)
@@ -518,8 +517,7 @@ add_text_event (TplLogStoreXml *self,
       _tpl_text_event_message_type_to_str (msg_type),
       body);
 
-  DEBUG ("writing %s from %s (ts %s)",
-      _tpl_event_get_log_id (TPL_EVENT (message)),
+  DEBUG ("writing event from %s (ts %s)",
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
@@ -858,7 +856,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       gchar *is_user_str;
       gboolean is_user = FALSE;
       gchar *msg_type_str;
-      gchar *log_id;
       TpChannelTextMessageType msg_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
 
       if (strcmp ((const gchar *) node->name, "message") != 0)
@@ -872,10 +869,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
           (const xmlChar *) "token");
       is_user_str = (gchar *) xmlGetProp (node, (const xmlChar *) "isuser");
       msg_type_str = (gchar *) xmlGetProp (node, (const xmlChar *) "type");
-      /* in XML the attr is still cm_id to keep legacy Empathy LogStore
-       * compatibility, but actually it stores the log-id when not in
-       * legacy-mode */
-      log_id = (gchar *) xmlGetProp (node, (const xmlChar *) "cm_id");
 
       if (is_user_str != NULL)
         is_user = (!tp_strdiff (is_user_str, "true"));
@@ -897,31 +890,10 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
           is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
           sender_name, sender_avatar_token);
 
-      if (self->priv->empathy_legacy)
-        {
-          /* in legacy Empathy LogStore there is no concept of log-id as a unique
-           * token, so I'll create, just for it to be present, an ad hoc unique
-           * token. */
-          gchar *instead_of_channel_path;
-          gchar *saved_log_id = log_id;
-          /* In legacy the log-id is in fact the pending-msg-id */
-          gint pending_msg_id = atoi (log_id);
-
-          instead_of_channel_path = g_strconcat (
-              tp_proxy_get_object_path (account), sender_id, NULL);
-
-          log_id = _tpl_create_message_token (instead_of_channel_path,
-              timestamp, pending_msg_id);
-
-          g_free (instead_of_channel_path);
-          xmlFree (saved_log_id);
-        }
-
       event = g_object_new (TPL_TYPE_TEXT_EVENT,
           /* TplEvent */
           "account", account,
           /* MISSING: "channel-path", channel_path, */
-          "log-id", log_id,
           "receiver", receiver,
           "sender", sender,
           "timestamp", timestamp,
@@ -937,7 +909,6 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
 
       g_object_unref (sender);
       g_object_unref (receiver);
-      xmlFree (log_id);
       xmlFree (time_str);
       xmlFree (sender_id);
       xmlFree (sender_name);
