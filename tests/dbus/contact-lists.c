@@ -18,7 +18,8 @@ typedef enum {
     GROUPS_CHANGED,
     GROUPS_CREATED,
     GROUPS_REMOVED,
-    GROUP_RENAMED
+    GROUP_RENAMED,
+    BLOCKED_CONTACTS_CHANGED
 } LogEntryType;
 
 typedef struct {
@@ -32,6 +33,9 @@ typedef struct {
     GStrv groups_added;
     /* GroupsChanged, GroupsRemoved, GroupRenamed */
     GStrv groups_removed;
+    /* BlockedContactsChanged */
+    GHashTable *blocked_contacts;
+    GHashTable *unblocked_contacts;
 } LogEntry;
 
 static void
@@ -48,6 +52,12 @@ log_entry_free (LogEntry *le)
 
   g_strfreev (le->groups_added);
   g_strfreev (le->groups_removed);
+
+  if (le->blocked_contacts != NULL)
+    g_hash_table_unref (le->blocked_contacts);
+
+  if (le->unblocked_contacts != NULL)
+    g_hash_table_unref (le->unblocked_contacts);
 
   g_slice_free (LogEntry, le);
 }
@@ -280,6 +290,23 @@ group_renamed_cb (TpConnection *connection,
 }
 
 static void
+blocked_contacts_changed_cb (TpConnection *connection,
+    GHashTable *blocked_contacts,
+    GHashTable *unblocked_contacts,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  le->type = BLOCKED_CONTACTS_CHANGED;
+  le->blocked_contacts = g_hash_table_ref (blocked_contacts);
+  le->unblocked_contacts = g_hash_table_ref (unblocked_contacts);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
 maybe_queue_disconnect (TpProxySignalConnection *sc)
 {
   if (sc != NULL)
@@ -347,6 +374,9 @@ setup (Test *test,
   maybe_queue_disconnect (
       tp_cli_connection_interface_contact_groups_connect_to_group_renamed (
         test->conn, group_renamed_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_blocking_connect_to_blocked_contacts_changed (
+        test->conn, blocked_contacts_changed_cb, test, NULL, NULL, NULL));
 
   test->sjoerd = tp_handle_ensure (test->contact_repo, "sjoerd@example.com",
       NULL, NULL);
@@ -567,6 +597,46 @@ test_assert_one_group_removed (Test *test,
   g_assert (le->groups_removed != NULL);
   g_assert_cmpstr (le->groups_removed[0], ==, group);
   g_assert_cmpstr (le->groups_removed[1], ==, NULL);
+}
+
+static void
+test_assert_one_contact_blocked (Test *test,
+    guint index,
+    TpHandle handle,
+    const gchar *id)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, BLOCKED_CONTACTS_CHANGED);
+
+  g_assert (le->blocked_contacts != NULL);
+  g_assert_cmpuint (g_hash_table_size (le->blocked_contacts), ==, 1);
+  g_assert_cmpstr (g_hash_table_lookup (le->blocked_contacts, GUINT_TO_POINTER (handle)),
+      ==, id);
+
+  g_assert (le->unblocked_contacts != NULL);
+  g_assert_cmpuint (g_hash_table_size (le->unblocked_contacts), ==, 0);
+}
+
+static void
+test_assert_one_contact_unblocked (Test *test,
+    guint index,
+    TpHandle handle,
+    const gchar *id)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, BLOCKED_CONTACTS_CHANGED);
+
+  g_assert (le->blocked_contacts != NULL);
+  g_assert_cmpuint (g_hash_table_size (le->blocked_contacts), ==, 0);
+
+  g_assert (le->unblocked_contacts != NULL);
+  g_assert_cmpuint (g_hash_table_size (le->unblocked_contacts), ==, 1);
+  g_assert_cmpstr (g_hash_table_lookup (le->unblocked_contacts, GUINT_TO_POINTER (handle)),
+      ==, id);
 }
 
 static void
@@ -2224,7 +2294,8 @@ test_add_to_deny (Test *test,
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
-   * change-notification, too */
+   * change-notification, on both the deny channel and the ContactBlocking
+   * connection interface */
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->deny)),
       ==, 3);
@@ -2237,6 +2308,10 @@ test_add_to_deny (Test *test,
         test->ninja));
   test_assert_contact_state (test, test->ninja,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_blocked (test, 0, test->ninja,
+      tp_handle_inspect (test->contact_repo, test->ninja));
 }
 
 static void
@@ -2261,6 +2336,9 @@ test_add_to_deny_no_op (Test *test,
         test->bill));
   test_assert_contact_state (test, test->bill,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+
+  /* We shouldn't emit spurious empty BlockedContactsChanged signals. */
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
@@ -2290,6 +2368,10 @@ test_remove_from_deny (Test *test,
         test->bill));
   test_assert_contact_state (test, test->bill,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_unblocked (test, 0, test->bill,
+      tp_handle_inspect (test->contact_repo, test->bill));
 }
 
 static void
@@ -2313,6 +2395,9 @@ test_remove_from_deny_no_op (Test *test,
         test->ninja));
   test_assert_contact_state (test, test->ninja,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+
+  /* We shouldn't emit spurious empty BlockedContactsChanged signals. */
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 int

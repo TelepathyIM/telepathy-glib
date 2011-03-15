@@ -2261,7 +2261,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 {
   TpHandleSet *now_blocked;
   TpIntset *blocked, *unblocked;
-  GArray *blocked_arr, *unblocked_arr;
+  GHashTable *blocked_contacts, *unblocked_contacts;
   TpIntsetFastIter iter;
   GObject *deny_chan;
   TpHandle handle;
@@ -2284,18 +2284,29 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 
   blocked = tp_intset_new ();
   unblocked = tp_intset_new ();
+  blocked_contacts = g_hash_table_new (NULL, NULL);
+  unblocked_contacts = g_hash_table_new (NULL, NULL);
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (changed));
 
   while (tp_intset_fast_iter_next (&iter, &handle))
     {
-      if (tp_handle_set_is_member (now_blocked, handle))
-        tp_intset_add (blocked, handle);
-      else
-        tp_intset_add (unblocked, handle);
+      const char *id = tp_handle_inspect (self->priv->contact_repo, handle);
 
-      DEBUG ("Contact %s: blocked=%c",
-          tp_handle_inspect (self->priv->contact_repo, handle),
+      if (tp_handle_set_is_member (now_blocked, handle))
+        {
+          tp_intset_add (blocked, handle);
+          g_hash_table_insert (blocked_contacts, GUINT_TO_POINTER (handle),
+              (gpointer) id);
+        }
+      else
+        {
+          tp_intset_add (unblocked, handle);
+          g_hash_table_insert (unblocked_contacts, GUINT_TO_POINTER (handle),
+              (gpointer) id);
+        }
+
+      DEBUG ("Contact %s: blocked=%c", id,
           tp_handle_set_is_member (now_blocked, handle) ? 'Y' : 'N');
     }
 
@@ -2304,15 +2315,16 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
       tp_base_connection_get_self_handle (self->priv->conn),
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
-  blocked_arr = tp_intset_to_array (blocked);
-  unblocked_arr = tp_intset_to_array (unblocked);
-  /* FIXME: emit ContactBlockingChanged (blocked_arr, unblocked_arr) when the
-   * new D-Bus API is available */
-  g_array_unref (blocked_arr);
-  g_array_unref (unblocked_arr);
+  if (self->priv->svc_contact_blocking &&
+      (g_hash_table_size (blocked_contacts) > 0 ||
+       g_hash_table_size (unblocked_contacts) > 0))
+    tp_svc_connection_interface_contact_blocking_emit_blocked_contacts_changed (
+        self->priv->conn, blocked_contacts, unblocked_contacts);
 
   tp_intset_destroy (blocked);
   tp_intset_destroy (unblocked);
+  g_hash_table_unref (blocked_contacts);
+  g_hash_table_unref (unblocked_contacts);
   tp_handle_set_destroy (now_blocked);
 }
 
