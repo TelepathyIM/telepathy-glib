@@ -5594,6 +5594,32 @@ tp_base_contact_list_mixin_groups_iface_init (
 }
 
 /**
+ * tp_base_contact_list_mixin_blocking_iface_init:
+ * @klass: the service-side D-Bus interface
+ *
+ * Use the #TpBaseContactList like a mixin, to implement the ContactBlocking
+ * D-Bus interface.
+ *
+ * This function should be passed to G_IMPLEMENT_INTERFACE() for
+ * #TpSvcConnectionInterfaceContactBlocking
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_base_contact_list_mixin_blocking_iface_init (
+    TpSvcConnectionInterfaceContactBlockingClass *klass)
+{
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_blocking_implement_##x (\
+  klass, tp_base_contact_list_mixin_##x)
+/* TODO
+  IMPLEMENT (block_contacts);
+  IMPLEMENT (unblock_contacts);
+  IMPLEMENT (request_blocked_contacts);
+  */
+#undef IMPLEMENT
+}
+
+/**
  * tp_base_contact_list_mixin_class_init:
  * @cls: A subclass of #TpBaseConnection that has a #TpContactsMixinClass,
  *  and implements #TpSvcConnectionInterfaceContactList using
