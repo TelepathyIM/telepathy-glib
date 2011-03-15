@@ -558,14 +558,7 @@ tp_g_hash_table_update (GHashTable *target,
 gboolean
 tp_strdiff (const gchar *left, const gchar *right)
 {
-  if ((NULL == left) != (NULL == right))
-    return TRUE;
-
-  else if (left == right)
-    return FALSE;
-
-  else
-    return (0 != strcmp (left, right));
+  return g_strcmp0 (left, right) != 0;
 }
 
 
@@ -1284,8 +1277,7 @@ tp_weak_ref_destroy (TpWeakRef *self)
 
 /**
  * tp_clear_object: (skip)
- * @op: (allow-none): a pointer to a variable, struct member etc. holding a
- *  #GObject
+ * @op: a pointer to a variable, struct member etc. holding a #GObject
  *
  * Set a variable holding a #GObject to %NULL. If it was not already %NULL,
  * unref the object it previously pointed to.
@@ -1298,8 +1290,7 @@ tp_weak_ref_destroy (TpWeakRef *self)
 
 /**
  * tp_clear_pointer: (skip)
- * @pp: (allow-none): a pointer to a variable, struct member etc. holding a
- *  pointer
+ * @pp: a pointer to a variable, struct member etc. holding a pointer
  * @destroy: a function to which a gpointer can be passed, to destroy *@pp
  *  (if calling this macro from C++, explicitly casting the function to
  *  #GDestroyNotify may be necessary)
@@ -1307,7 +1298,7 @@ tp_weak_ref_destroy (TpWeakRef *self)
  * Set a variable holding a pointer to %NULL. If it was not already %NULL,
  * unref or destroy the object it previously pointed to with @destroy.
  *
- * More precisely, if both @pp and *@pp are non-%NULL, set *@pp to %NULL, then
+ * More precisely, if *@pp is non-%NULL, set *@pp to %NULL, then
  * call @destroy on the object that *@pp previously pointed to.
  *
  * This is analogous to g_clear_error() for non-error objects, but also
@@ -1338,14 +1329,13 @@ tp_weak_ref_destroy (TpWeakRef *self)
 /**
  * tp_clear_boxed: (skip)
  * @gtype: (type GObject.Type): the #GType of *@pp, e.g. %G_TYPE_HASH_TABLE
- * @pp: (allow-none): a pointer to a variable, struct member etc. holding a
- *  boxed object
+ * @pp: a pointer to a variable, struct member etc. holding a boxed object
  *
  * Set a variable holding a boxed object to %NULL. If it was not already %NULL,
  * destroy the boxed object it previously pointed to, as appropriate for
  * @gtype.
  *
- * More precisely, if both @pp and *@pp are non-%NULL, set *@pp to %NULL, then
+ * More precisely, if *@pp is non-%NULL, set *@pp to %NULL, then
  * call g_boxed_free() on the object that *@pp previously pointed to.
  *
  * This is similar to tp_clear_pointer(); see that function's documentation

@@ -62,6 +62,7 @@ create_contact_chan (Test *test)
   g_assert_no_error (test->error);
 
   alf_handle = tp_handle_ensure (test->contact_repo, "alf", NULL, &test->error);
+  g_assert (alf_handle);
   g_assert_no_error (test->error);
 
   test->chan_service = g_object_new (

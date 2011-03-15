@@ -157,7 +157,6 @@ check_initial_properties (void)
 {
   GHashTable *props = NULL;
   GArray *members;
-  TpHandle h;
   gboolean valid;
   GError *error = NULL;
   TpChannelGroupFlags flags;
@@ -180,7 +179,7 @@ check_initial_properties (void)
   MYASSERT (members != NULL, ": LocalPendingMembers should be defined"); \
   MYASSERT (members->len == 0, ": LocalPendingMembers should be empty initally");
 
-  h = tp_asv_get_uint32 (props, "SelfHandle", &valid);
+  tp_asv_get_uint32 (props, "SelfHandle", &valid);
   MYASSERT (valid, ": SelfHandle property should be defined");
 
   flags = tp_asv_get_uint32 (props, "GroupFlags", &valid);
