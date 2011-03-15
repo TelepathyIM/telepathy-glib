@@ -29,9 +29,6 @@
 
 #define TPL_STR_EMPTY(x) ((x) == NULL || (x)[0] == '\0')
 
-gchar *_tpl_create_message_token (const gchar *channel, gint64 timestamp,
-    guint msgid);
-
 void _tpl_rmdir_recursively (const gchar *dir_name);
 
 gint64 _tpl_time_parse (const gchar * str);

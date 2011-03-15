@@ -29,37 +29,6 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 
-/* Bug#26838 prevents us to trust Messages' iface message-token
- * header, so I need to create a token which TPL can trust to be unique
- * within itself */
-gchar *
-_tpl_create_message_token (const gchar *channel,
-    gint64 unix_timestamp,
-    guint msgid)
-{
-  gchar *retval;
-  gchar *date;
-  GDateTime *timestamp;
-  GChecksum *log_id = g_checksum_new (G_CHECKSUM_SHA1);
-
-  timestamp = g_date_time_new_from_unix_utc (unix_timestamp);
-  date = g_date_time_format (timestamp,
-      TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT);
-
-  g_date_time_unref (timestamp);
-
-  g_checksum_update (log_id, (guchar *) channel, -1);
-  g_checksum_update (log_id, (guchar *) date, -1);
-  g_checksum_update (log_id, (guchar *) &msgid, sizeof (unsigned int));
-
-  retval = g_strdup (g_checksum_get_string (log_id));
-
-  g_checksum_free (log_id);
-  g_free (date);
-
-  return retval;
-}
-
 
 void
 _tpl_rmdir_recursively (const gchar *dir_name)
