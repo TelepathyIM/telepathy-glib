@@ -765,8 +765,6 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
           gchar *time_str = NULL;
           gchar *timestamp_str = NULL;
           gchar *body = NULL;
-          gchar *log_id = NULL;
-          gchar *instead_of_channel_path = NULL;
           int j = i + 1;
           gboolean is_user = FALSE;
           gint64 timestamp;
@@ -872,23 +870,10 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
                   NULL, NULL);
             }
 
-
-          /* As purple logs does not have any good unique id, we
-           * create one using its origin (libpurple) and telepathy's bits
-           * which should identify the entity uniquely together with the log
-           * timestamp */
-          instead_of_channel_path = g_strconcat (
-              "libpurple", tp_proxy_get_object_path (account), target_id,
-              time_str, NULL);
-          log_id = _tpl_create_message_token (instead_of_channel_path,
-              timestamp, 0);
-          g_free (instead_of_channel_path);
-
           event = g_object_new (TPL_TYPE_TEXT_EVENT,
               /* TplEvent */
               "account", account,
               /* MISSING: "channel-path", channel_path, */
-              "log-id", log_id,
               "receiver", receiver,
               "sender", sender,
               "timestamp", timestamp,
