@@ -374,12 +374,14 @@ got_sender_contact_by_handle_cb (TpConnection *connection,
   else if (n_failed > 0)
     {
       DEBUG ("Failed to prepare TpContact (InvalidHandle)");
-
+    }
+  else if (n_contacts > 0)
+    {
       sender = contacts[0];
     }
   else
     {
-      DEBUG ("TpContact of the sender hasn't be prepared");
+      DEBUG ("TpContact of the sender hasn't been prepared");
     }
 
   add_message_received (self, parts, sender, TRUE);
