@@ -511,6 +511,25 @@ on_message_sent_cb (TpChannel *proxy,
 
 
 static void
+pendingproc_store_pending_messages (TplActionChain *ctx,
+    gpointer user_data)
+{
+  TplTextChannel *self = _tpl_action_chain_get_object (ctx);
+  GList *pending_messages;
+  GList *it;
+
+  pending_messages =
+    tp_text_channel_get_pending_messages (TP_TEXT_CHANNEL (self));
+
+  for (it = pending_messages; it != NULL; it = g_list_next (it))
+      on_message_received_cb (TP_TEXT_CHANNEL (self),
+          TP_SIGNALLED_MESSAGE (it->data), self);
+
+  _tpl_action_chain_continue (ctx);
+}
+
+
+static void
 pendingproc_connect_message_signals (TplActionChain *ctx,
     gpointer user_data)
 {
@@ -549,6 +568,7 @@ tpl_text_channel_prepare_async (TplChannel *chan,
   _tpl_action_chain_append (actions, pendingproc_prepare_tp_text_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_remote_contacts, NULL);
+  _tpl_action_chain_append (actions, pendingproc_store_pending_messages, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
 
   _tpl_action_chain_continue (actions);
