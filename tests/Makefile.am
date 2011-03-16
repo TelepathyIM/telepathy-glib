@@ -3,7 +3,6 @@ SUBDIRS = $(CHECKTWISTED) suppressions lib dbus
 EXTRA_DIST = logs
 
 noinst_PROGRAMS = \
-	test-tpl-channel		\
 	test-tpl-conf			\
 	$(NULL)
 
@@ -14,7 +13,6 @@ LDADD = \
 	$(TPL_LIBS)
 
 test_tpl_channel_SOURCES = \
-	test-tpl-channel.c	\
 	tpl-channel-test.c	\
 	tpl-channel-test.h	\
 	$(NULL)
@@ -50,7 +48,6 @@ check-valgrind: $(TESTS)
 check_c_sources = \
 	$(dbus_test_sources)	\
 	tpl-channel-test.c	\
-	test-tpl-channel.c	\
 	test-tpl-conf.c		\
 	$(NULL)
 
