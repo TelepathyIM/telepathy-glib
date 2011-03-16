@@ -84,12 +84,6 @@ tags
 /tests/dbus/dbus-1/session.conf
 /tests/dbus/capture-*.log
 
-/tests/twisted/config.py
-/tests/twisted/telepathy-logger-debug
-/tests/twisted/tools/exec-with-log.sh
-/tests/twisted/tools/org.freedesktop.Telepathy.Client.Logger.service
-/tests/twisted/tools/tmp-session-bus.conf
-
 /po/Makefile.in.in
 /po/POTFILES
 /po/stamp-it

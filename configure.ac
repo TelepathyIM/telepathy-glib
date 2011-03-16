@@ -108,21 +108,6 @@ if test -z "$XSLTPROC"; then
 fi
 
 # -----------------------------------------------------------
-# Check for a Python >= 2.5 with Twisted, to run the tests
-# -----------------------------------------------------------
-AM_PATH_PYTHON([2.5])
-AC_MSG_CHECKING([for Python with Twisted])
-if $PYTHON -c "import twisted.internet.reactor" >/dev/null 2>&1; then
-    TEST_PYTHON="$PYTHON"
-else
-    TEST_PYTHON=false
-fi
-AC_MSG_RESULT([$TEST_PYTHON])
-AC_SUBST(TEST_PYTHON)
-AM_CONDITIONAL([WANT_TWISTED_TESTS], test false != "$TEST_PYTHON")
-
-
-# -----------------------------------------------------------
 # Error flags
 # -----------------------------------------------------------
 
@@ -223,8 +208,6 @@ AC_CONFIG_FILES([
    tests/dbus/Makefile
    tests/lib/Makefile
    tests/suppressions/Makefile
-   tests/twisted/Makefile
-   tests/twisted/tools/Makefile
 ])
 AC_OUTPUT
 

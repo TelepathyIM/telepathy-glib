@@ -1,7 +1,3 @@
-if WANT_TWISTED_TESTS
-CHECKTWISTED = twisted
-endif
-
 SUBDIRS = $(CHECKTWISTED) suppressions lib dbus
 
 EXTRA_DIST = logs

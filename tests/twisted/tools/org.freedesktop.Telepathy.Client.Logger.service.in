@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.freedesktop.Telepathy.Client.Logger
-Exec=@abs_top_builddir@/tests/twisted/tools/exec-with-log.sh
