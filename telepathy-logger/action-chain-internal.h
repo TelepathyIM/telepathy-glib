@@ -40,8 +40,9 @@ void _tpl_action_chain_append (TplActionChain *self, TplPendingAction func,
 void _tpl_action_chain_prepend (TplActionChain *self, TplPendingAction func,
     gpointer user_data);
 void _tpl_action_chain_continue (TplActionChain *self);
-void _tpl_action_chain_terminate (TplActionChain *self);
+void _tpl_action_chain_terminate (TplActionChain *self, const GError *error);
 gpointer _tpl_action_chain_get_object (TplActionChain *self);
-gboolean _tpl_action_chain_new_finish (GAsyncResult *result);
+gboolean _tpl_action_chain_new_finish (GObject *source,
+    GAsyncResult *result, GError **error);
 
 #endif // __TPL_ACTION_CHAIN_H__

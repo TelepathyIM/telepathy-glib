@@ -30,40 +30,35 @@
 #include <telepathy-glib/channel.h>
 
 G_BEGIN_DECLS
-#define TPL_TYPE_CHANNEL                  (_tpl_channel_get_type ())
-#define TPL_CHANNEL(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CHANNEL, TplChannel))
-#define TPL_CHANNEL_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_CHANNEL, TplChannelClass))
-#define TPL_IS_CHANNEL(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CHANNEL))
-#define TPL_IS_CHANNEL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_CHANNEL))
-#define TPL_CHANNEL_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_CHANNEL, TplChannelClass))
 
-typedef struct _TplChannelPriv TplChannelPriv;
+#define TPL_TYPE_CHANNEL            (_tpl_channel_get_type ())
+#define TPL_CHANNEL(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_CHANNEL, TplChannel))
+#define TPL_IS_CHANNEL(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_CHANNEL))
+#define TPL_CHANNEL_GET_IFACE(obj)  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), TPL_TYPE_CHANNEL, TplChannelInterface))
 
-typedef struct
+typedef struct _TplChannel TplChannel;
+typedef struct _TplChannelInterface TplChannelInterface;
+
+struct _TplChannelInterface
 {
-  TpChannel parent;
+  GTypeInterface g_iface;
 
-  /* private */
-  TplChannelPriv *priv;
-} TplChannel;
+  void (*prepare_async) (TplChannel *self,
+                         GAsyncReadyCallback cb,
+                         gpointer user_data);
+  gboolean (*prepare_finish) (TplChannel *self,
+                              GAsyncResult *result,
+                              GError **error);
+};
 
-typedef struct
-{
-  TpChannelClass parent_class;
-  /* Virtual method, to be implemented by subclasses */
-  void (*call_when_ready) (TplChannel *self, GAsyncReadyCallback cb,
-      gpointer user_data);
-  /* Protected method, should be called only by subclasses to prepare
-   * TplChannel */
-  void (*call_when_ready_protected) (TplChannel *self, GAsyncReadyCallback cb,
-      gpointer user_data);
-} TplChannelClass;
+GType _tpl_channel_get_type (void) G_GNUC_CONST;
 
-GType _tpl_channel_get_type (void);
+void _tpl_channel_prepare_async (TplChannel *self,
+                                 GAsyncReadyCallback cb,
+                                 gpointer user_data);
 
-TpAccount *_tpl_channel_get_account (TplChannel *self);
-void _tpl_channel_call_when_ready (TplChannel *self, GAsyncReadyCallback cb,
-    gpointer user_data);
-
+gboolean _tpl_channel_prepare_finish (TplChannel *self,
+                                      GAsyncResult *result,
+                                      GError **error);
 G_END_DECLS
 #endif // __TPL_CHANNEL_H__

@@ -214,9 +214,9 @@ favourite_contacts_file_read_line_cb (GObject *object,
 
   if (error != NULL)
     {
-      DEBUG ("failed to open favourite contacts file: %s", error->message);
+      g_prefix_error (&error, "failed to open favourite contacts file: ");
+      _tpl_action_chain_terminate (action_chain, error);
       g_clear_error (&error);
-      _tpl_action_chain_terminate (action_chain);
     }
   else if (line != NULL)
     {
@@ -260,9 +260,9 @@ favourite_contacts_file_open_cb (GObject *object,
     }
   else
     {
-      DEBUG ("Failed to open the favourite contacts file: %s", error->message);
+      g_prefix_error (&error, "Failed to open the favourite contacts file: ");
+      _tpl_action_chain_terminate (action_chain, error);
       g_clear_error (&error);
-      _tpl_action_chain_terminate (action_chain);
     }
 }
 
@@ -309,11 +309,13 @@ favourite_contacts_file_parsed_cb (GObject *object,
 {
   TplDBusService *self = TPL_DBUS_SERVICE (object);
   TplDBusServicePriv *priv = self->priv;
+  GError *error = NULL;
 
-  if (!_tpl_action_chain_new_finish (result))
+  if (!_tpl_action_chain_new_finish (object, result, &error))
     {
       DEBUG ("Failed to parse the favourite contacts file and/or execute "
-          "subsequent queued method calls");
+          "subsequent queued method calls: %s", error->message);
+      g_error_free (error);
     }
 
   priv->favourite_contacts_actions = NULL;
@@ -602,9 +604,10 @@ pendingproc_add_favourite_contact (TplActionChain *action_chain,
   return;
 
 pendingproc_add_favourite_contact_ERROR:
-  g_clear_error (&error);
   if (action_chain != NULL)
-    _tpl_action_chain_terminate (action_chain);
+    _tpl_action_chain_terminate (action_chain, error);
+
+  g_clear_error (&error);
 }
 
 
@@ -702,9 +705,10 @@ pendingproc_remove_favourite_contact (TplActionChain *action_chain,
   return;
 
 pendingproc_remove_favourite_contact_ERROR:
-  g_clear_error (&error);
   if (action_chain != NULL)
-    _tpl_action_chain_terminate (action_chain);
+    _tpl_action_chain_terminate (action_chain, error);
+
+  g_clear_error (&error);
 }
 
 static void

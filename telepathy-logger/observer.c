@@ -82,7 +82,8 @@
  */
 
 static void tpl_observer_dispose (GObject * obj);
-static void got_tpl_text_channel_ready_cb (GObject *obj, GAsyncResult *result,
+static void channel_prepared_cb (GObject *obj,
+    GAsyncResult *result,
     gpointer user_data);
 static TplChannelFactory tpl_observer_get_channel_factory (TplObserver *self);
 
@@ -181,7 +182,7 @@ tpl_observer_observe_channels (TpBaseClient *client,
       g_hash_table_insert (self->priv->preparing_channels,
           (gchar *) tp_proxy_get_object_path (tpl_chan), tpl_chan);
 
-      _tpl_channel_call_when_ready (tpl_chan, got_tpl_text_channel_ready_cb,
+      _tpl_channel_prepare_async (tpl_chan, channel_prepared_cb,
           observing_ctx);
     }
 
@@ -227,23 +228,24 @@ _tpl_observer_register_channel (TplObserver *self,
   return TRUE;
 }
 
+
 static void
-got_tpl_text_channel_ready_cb (GObject *obj,
+channel_prepared_cb (GObject *obj,
     GAsyncResult *result,
     gpointer user_data)
 {
   ObservingContext *observing_ctx = user_data;
-  gboolean success = _tpl_action_chain_new_finish (result);
+  GError *error = NULL;
 
-  if (success)
+  if (_tpl_action_chain_new_finish (obj, result, &error))
     {
-      PATH_DEBUG (obj, "prepared channel");
-
+      PATH_DEBUG (obj, "channel prepared");
       _tpl_observer_register_channel (observing_ctx->self, TPL_CHANNEL (obj));
     }
   else
     {
-      PATH_DEBUG (obj, "failed to prepare");
+      PATH_DEBUG (obj, "failed to prepare channel: %s", error->message);
+      g_error_free (error);
     }
 
   g_hash_table_remove (observing_ctx->self->priv->preparing_channels,

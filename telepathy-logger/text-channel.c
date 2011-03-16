@@ -43,6 +43,7 @@
 
 struct _TplTextChannelPriv
 {
+  TpAccount *account;
   TplEntity *self;
   gboolean is_chatroom;
   TplEntity *chatroom;   /* only set if is_chatroom==TRUE */
@@ -62,36 +63,86 @@ static TpContactFeature features[3] = {
   TP_CONTACT_FEATURE_AVATAR_TOKEN
 };
 
-G_DEFINE_TYPE (TplTextChannel, _tpl_text_channel, TPL_TYPE_CHANNEL)
+static void tpl_text_channel_iface_init (TplChannelInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (TplTextChannel, _tpl_text_channel,
+    TP_TYPE_TEXT_CHANNEL,
+    G_IMPLEMENT_INTERFACE (TPL_TYPE_CHANNEL, tpl_text_channel_iface_init))
 
 
 static void
-got_tpl_chan_ready_cb (GObject *obj,
+connection_prepared_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpProxy *proxy = TP_PROXY (obj);
   TplActionChain *ctx = user_data;
+  GError *error = NULL;
 
-  /* if TplChannel preparation is OK (and support Message interface,
-   * keep on with the TplTextChannel */
-  if (_tpl_action_chain_new_finish (result)
-      && tp_proxy_has_interface_by_id (proxy,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
-    _tpl_action_chain_continue (ctx);
-  else
-     _tpl_action_chain_terminate (ctx);
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      _tpl_action_chain_terminate (ctx, error);
+      g_error_free (error);
+      return;
+    }
+
+  _tpl_action_chain_continue (ctx);
 }
 
 
 static void
-pendingproc_prepare_tpl_channel (TplActionChain *ctx,
+pendingproc_prepare_tp_connection (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplChannel *tpl_chan = TPL_CHANNEL (_tpl_action_chain_get_object (ctx));
+  TplChannel *chan = _tpl_action_chain_get_object (ctx);
+  TpConnection *conn = tp_channel_borrow_connection (TP_CHANNEL (chan));
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CORE, 0 };
 
-  TPL_CHANNEL_GET_CLASS (tpl_chan)->call_when_ready_protected (tpl_chan,
-      got_tpl_chan_ready_cb, ctx);
+  tp_proxy_prepare_async (conn, conn_features, connection_prepared_cb, ctx);
+}
+
+
+static void
+channel_prepared_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer ctx)
+{
+  TplChannel *chan = _tpl_action_chain_get_object (ctx);
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      _tpl_action_chain_terminate (ctx, error);
+      g_error_free (error);
+      return;
+    }
+  else if (!tp_proxy_has_interface_by_id (TP_PROXY (chan),
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_MESSAGES))
+    {
+      error = g_error_new (TPL_TEXT_CHANNEL_ERROR,
+          TPL_TEXT_CHANNEL_ERROR_NEED_MESSAGE_INTERFACE,
+          "The text channel does not implement Message interface.");
+      _tpl_action_chain_terminate (ctx, error);
+      g_error_free (error);
+    }
+
+  _tpl_action_chain_continue (ctx);
+}
+
+
+static void
+pendingproc_prepare_tp_text_channel (TplActionChain *ctx,
+    gpointer user_data)
+{
+  TplChannel *chan = _tpl_action_chain_get_object (ctx);
+  GQuark chan_features[] = {
+      TP_CHANNEL_FEATURE_CORE,
+      TP_CHANNEL_FEATURE_GROUP,
+      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES,
+      0
+  };
+
+  /* user_data is a TplChannel instance */
+  tp_proxy_prepare_async (chan, chan_features, channel_prepared_cb, ctx);
 }
 
 
@@ -116,13 +167,16 @@ get_self_contact_cb (TpConnection *connection,
     {
       TpConnection *tp_conn = tp_channel_borrow_connection (tp_chan);
       const gchar *conn_path;
+      GError *new_error = NULL;
 
       conn_path = tp_proxy_get_object_path (TP_PROXY (tp_conn));
 
-      PATH_DEBUG (tpl_text, "Error resolving self handle for connection %s."
-         " Aborting channel observation", conn_path);
+      new_error = g_error_new (error->domain, error->code,
+          "Error resolving self handle for connection %s: %s)",
+          conn_path, error->message);
 
-      _tpl_action_chain_terminate (ctx);
+      _tpl_action_chain_terminate (ctx, new_error);
+      g_error_free (new_error);
       return;
     }
 
@@ -168,10 +222,13 @@ get_remote_contacts_cb (TpConnection *connection,
 
   if (error != NULL)
     {
-      DEBUG ("Failed to get remote contacts: %s", error->message);
-
       if (ctx != NULL)
-        _tpl_action_chain_terminate (ctx);
+        {
+          GError *new_error = NULL;
+          new_error = g_error_new (error->domain, error->code,
+              "Failed to get remote contacts: %s", error->message);
+          _tpl_action_chain_terminate (ctx, error);
+        }
       return;
     }
 
@@ -444,7 +501,7 @@ tpl_text_channel_store_message (TplTextChannel *self,
   /* Initialise TplTextEvent */
   event = g_object_new (TPL_TYPE_TEXT_EVENT,
       /* TplEvent */
-      "account", _tpl_channel_get_account (TPL_CHANNEL (self)),
+      "account", priv->account,
       "channel-path", tp_proxy_get_object_path (TP_PROXY (self)),
       "receiver", receiver,
       "sender", sender,
@@ -538,33 +595,34 @@ pendingproc_connect_message_signals (TplActionChain *ctx,
   return;
 
 disaster:
-  DEBUG ("couldn't connect to signals: %s", error->message);
-  g_clear_error (&error);
-  _tpl_action_chain_terminate (ctx);
+  g_prefix_error (&error, "Couldn't connect to signals: ");
+  _tpl_action_chain_terminate (ctx, error);
+  g_error_free (error);
+}
+
+static gboolean
+tpl_text_channel_prepare_finish (TplChannel *chan,
+    GAsyncResult *result,
+    GError **error)
+{
+  return _tpl_action_chain_new_finish (G_OBJECT (chan), result, error);
 }
 
 
 static void
-tpl_text_channel_call_when_ready (TplChannel *chan,
-    GAsyncReadyCallback cb, gpointer user_data)
+tpl_text_channel_prepare_async (TplChannel *chan,
+    GAsyncReadyCallback cb,
+    gpointer user_data)
 {
   TplActionChain *actions;
 
-  /* first: connect signals, so none are lost
-   * second: prepare all TplChannel
-   * third: cache my contact and the remote one.
-   * last: connect to Message signals
-   *
-   * If for any reason, the order is changed, it's needed to check what objects
-   * are unreferenced by g_object_unref but used by a next action AND what
-   * object are actually not prepared but used anyway */
   actions = _tpl_action_chain_new_async (G_OBJECT (chan), cb, user_data);
-  _tpl_action_chain_append (actions, pendingproc_prepare_tpl_channel, NULL);
+  _tpl_action_chain_append (actions, pendingproc_prepare_tp_connection, NULL);
+  _tpl_action_chain_append (actions, pendingproc_prepare_tp_text_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_remote_contacts, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
 
-  /* start the chain consuming */
   _tpl_action_chain_continue (actions);
 }
 
@@ -595,14 +653,19 @@ static void
 _tpl_text_channel_class_init (TplTextChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  TplChannelClass *tpl_chan_class = TPL_CHANNEL_CLASS (klass);
 
   object_class->dispose = tpl_text_channel_dispose;
   object_class->finalize = tpl_text_channel_finalize;
 
-  tpl_chan_class->call_when_ready = tpl_text_channel_call_when_ready;
-
   g_type_class_add_private (object_class, sizeof (TplTextChannelPriv));
+}
+
+
+static void
+tpl_text_channel_iface_init (TplChannelInterface *iface)
+{
+  iface->prepare_async = tpl_text_channel_prepare_async;
+  iface->prepare_finish = tpl_text_channel_prepare_finish;
 }
 
 
@@ -652,8 +715,9 @@ _tpl_text_channel_new (TpConnection *conn,
     GError **error)
 {
   TpProxy *conn_proxy = TP_PROXY (conn);
+  TplTextChannel *self;
 
-  /* Do what tpl_channel_new does + set TplTextChannel specific properties */
+  /* Do what tpl_channel_new does + set TplTextChannel specific */
 
   g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
@@ -663,9 +727,7 @@ _tpl_text_channel_new (TpConnection *conn,
   if (!tp_dbus_check_valid_object_path (object_path, error))
     return NULL;
 
-  return g_object_new (TPL_TYPE_TEXT_CHANNEL,
-      /* TplChannel properties */
-      "account", account,
+  self = g_object_new (TPL_TYPE_TEXT_CHANNEL,
       /* TpChannel properties */
       "connection", conn,
       "dbus-daemon", conn_proxy->dbus_daemon,
@@ -674,4 +736,8 @@ _tpl_text_channel_new (TpConnection *conn,
       "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
       "channel-properties", tp_chan_props,
       NULL);
+
+  self->priv->account = g_object_ref (account);
+
+  return self;
 }

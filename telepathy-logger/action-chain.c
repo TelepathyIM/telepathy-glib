@@ -110,12 +110,7 @@ void
 _tpl_action_chain_continue (TplActionChain *self)
 {
   if (g_queue_is_empty (self->chain))
-    {
-      GSimpleAsyncResult *simple = self->simple;
-
-      g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-      g_simple_async_result_complete (simple);
-    }
+    g_simple_async_result_complete (self->simple);
   else
     {
       TplActionLink *l = g_queue_pop_head (self->chain);
@@ -127,35 +122,49 @@ _tpl_action_chain_continue (TplActionChain *self)
 
 
 void
-_tpl_action_chain_terminate (TplActionChain *self)
+_tpl_action_chain_terminate (TplActionChain *self,
+    const GError *error)
 {
   GSimpleAsyncResult *simple = self->simple;
 
-  g_simple_async_result_set_op_res_gboolean (simple, FALSE);
+  g_assert (error != NULL);
+
+  g_simple_async_result_set_from_error (simple, error);
   g_simple_async_result_complete (simple);
 }
 
 
 /**
  * _tpl_action_chain_new_finish:
+ * @source: the #GObject pass to _tpl_action_chain_new_async()
+ * @result: the #GAsyncResult pass in callback
+ * @error: a pointer to a #GError that will be set on error, or NULL to ignore
  *
  * Get the result from running the action chain (%TRUE if the chain completed
- * successfully, %FALSE if it was terminated).
+ * successfully, %FALSE with @error set if it was terminated).
  *
  * This function also frees the chain.
+ *
+ * Returns: %TRUE on success, %FALSE with @error set on error.
  */
 gboolean
-_tpl_action_chain_new_finish (GAsyncResult *result)
+_tpl_action_chain_new_finish (GObject *source,
+    GAsyncResult *result,
+    GError **error)
 {
   TplActionChain *chain;
-  gboolean retval;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result, source,
+        _tpl_action_chain_new_async), FALSE);
 
   chain = g_object_get_data (G_OBJECT (result), "chain");
 
-  retval = g_simple_async_result_get_op_res_gboolean (
-      G_SIMPLE_ASYNC_RESULT (result));
+  g_return_val_if_fail (chain != NULL, FALSE);
+
+  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+        error))
+    return FALSE;
 
   _tpl_action_chain_free (chain);
-
-  return retval;
+  return TRUE;
 }

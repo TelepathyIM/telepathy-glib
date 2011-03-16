@@ -31,21 +31,34 @@
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
+#include <telepathy-glib/text-channel.h>
 
-#include <telepathy-logger/channel-internal.h>
+#include "channel-internal.h"
 
 G_BEGIN_DECLS
-#define TPL_TYPE_TEXT_CHANNEL                  (_tpl_text_channel_get_type ())
-#define TPL_TEXT_CHANNEL(obj)                  (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_TEXT_CHANNEL, TplTextChannel))
-#define TPL_TEXT_CHANNEL_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_TEXT_CHANNEL, TplTextChannelClass))
-#define TPL_IS_TEXT_CHANNEL(obj)               (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_TEXT_CHANNEL))
-#define TPL_IS_TEXT_CHANNEL_CLASS(klass)       (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_TEXT_CHANNEL))
-#define TPL_TEXT_CHANNEL_GET_CLASS(obj)        (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_TEXT_CHANNEL, TplTextChannelClass))
+
+#define TPL_TYPE_TEXT_CHANNEL             (_tpl_text_channel_get_type ())
+#define TPL_TEXT_CHANNEL(obj)             (G_TYPE_CHECK_INSTANCE_CAST ((obj), TPL_TYPE_TEXT_CHANNEL, TplTextChannel))
+#define TPL_TEXT_CHANNEL_CLASS(klass)     (G_TYPE_CHECK_CLASS_CAST ((klass), TPL_TYPE_TEXT_CHANNEL, TplTextChannelClass))
+#define TPL_IS_TEXT_CHANNEL(obj)          (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TPL_TYPE_TEXT_CHANNEL))
+#define TPL_IS_TEXT_CHANNEL_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), TPL_TYPE_TEXT_CHANNEL))
+#define TPL_TEXT_CHANNEL_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_TEXT_CHANNEL, TplTextChannelClass))
+
+
+#define TPL_TEXT_CHANNEL_ERROR \
+  g_quark_from_static_string ("tpl-text-channel-error-quark")
+
+typedef enum
+{
+  /* generic error */
+  TPL_TEXT_CHANNEL_ERROR_FAILED,
+  TPL_TEXT_CHANNEL_ERROR_NEED_MESSAGE_INTERFACE,
+} TplTextChannelError;
 
 typedef struct _TplTextChannelPriv TplTextChannelPriv;
 typedef struct
 {
-  TplChannel parent;
+  TpTextChannel parent;
 
   /* private */
   TplTextChannelPriv *priv;
@@ -53,7 +66,7 @@ typedef struct
 
 typedef struct
 {
-  TplChannelClass parent_class;
+  TpTextChannelClass parent_class;
 } TplTextChannelClass;
 
 GType _tpl_text_channel_get_type (void);
