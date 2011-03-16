@@ -406,8 +406,14 @@ got_sender_contact_by_id_cb (TpConnection *connection,
     {
       DEBUG ("Failed to prepare TpContact: %s", error->message);
     }
-  else if (n_contacts != 1)
+  else if (n_contacts > 0)
     {
+      sender = contacts[0];
+    }
+  else
+    {
+      DEBUG ("TpContact of the sender hasn't be prepared");
+
       if (DEBUGGING)
         {
           GHashTableIter iter;
@@ -420,12 +426,6 @@ got_sender_contact_by_id_cb (TpConnection *connection,
                   (const gchar *) key, ((GError *) value)->message);
             }
         }
-
-      sender = contacts[0];
-    }
-  else
-    {
-      DEBUG ("TpContact of the sender hasn't be prepared");
     }
 
   add_message_received (self, parts, sender, TRUE);
