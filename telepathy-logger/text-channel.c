@@ -46,15 +46,7 @@ struct _TplTextChannelPriv
   TpAccount *account;
   TplEntity *self;
   gboolean is_chatroom;
-  TplEntity *chatroom;   /* only set if is_chatroom==TRUE */
-
-  /* Entities participating in this channel.
-   * This is used as a cache so we don't have to recreate
-   * TpContact objects each time we receive something.
-   *
-   * TpHandle => reffed TplEntity
-   */
-  GHashTable *entities;
+  TplEntity *remote;
 };
 
 static TpContactFeature features[3] = {
@@ -207,7 +199,7 @@ pendingproc_get_my_contact (TplActionChain *ctx,
 
 
 static void
-get_remote_contacts_cb (TpConnection *connection,
+get_remote_contact_cb (TpConnection *connection,
     guint n_contacts,
     TpContact *const *contacts,
     guint n_failed,
@@ -218,115 +210,70 @@ get_remote_contacts_cb (TpConnection *connection,
 {
   TplActionChain *ctx = user_data;
   TplTextChannel *self = TPL_TEXT_CHANNEL (weak_object);
-  guint i;
 
   if (error != NULL)
     {
-      if (ctx != NULL)
-        {
-          GError *new_error = NULL;
-          new_error = g_error_new (error->domain, error->code,
-              "Failed to get remote contacts: %s", error->message);
-          _tpl_action_chain_terminate (ctx, error);
-        }
-      return;
+      GError *new_error = NULL;
+      new_error = g_error_new (error->domain, error->code,
+          "Failed to get remote contact: %s", error->message);
+      _tpl_action_chain_terminate (ctx, error);
     }
-
-  for (i = 0; i < n_contacts; i++)
+  else if (n_failed > 0)
     {
-      TpContact *contact = contacts[i];
-      TpHandle handle = tp_contact_get_handle (contact);
-
-      g_hash_table_insert (self->priv->entities, GUINT_TO_POINTER (handle),
-          tpl_entity_new_from_tp_contact (contact, TPL_ENTITY_CONTACT));
+      error = g_error_new (TPL_TEXT_CHANNEL_ERROR,
+          TPL_TEXT_CHANNEL_ERROR_FAILED,
+          "Failed to prepare remote contact.");
+      _tpl_action_chain_terminate (ctx, error);
     }
-
-  if (ctx != NULL)
-    _tpl_action_chain_continue (ctx);
-}
-
-
-static void
-chan_members_changed_cb (TpChannel *chan,
-    gchar *message,
-    GArray *added,
-    GArray *removed,
-    GArray *local_pending,
-    GArray *remote_pending,
-    TpHandle actor,
-    guint reason,
-    gpointer user_data)
-{
-  TplTextChannel *self = user_data;
-  guint i;
-
-  if (added->len > 0)
+  else
     {
-      tp_connection_get_contacts_by_handle (tp_channel_borrow_connection (chan),
-          added->len, (TpHandle *) added->data,
-          G_N_ELEMENTS (features), features, get_remote_contacts_cb, NULL, NULL,
-          G_OBJECT (self));
-    }
-
-  for (i = 0; i < removed->len; i++)
-    {
-      TpHandle handle = g_array_index (removed, TpHandle, i);
-
-      g_hash_table_remove (self->priv->entities, GUINT_TO_POINTER (handle));
+      self->priv->remote =
+        tpl_entity_new_from_tp_contact (contacts[1], TPL_ENTITY_CONTACT);
+      _tpl_action_chain_continue (ctx);
     }
 }
 
 
 static void
-pendingproc_get_remote_contacts (TplActionChain *ctx,
+pendingproc_get_remote_contact (TplActionChain *ctx,
     gpointer user_data)
 {
   TplTextChannel *self = _tpl_action_chain_get_object (ctx);
   TpChannel *chan = TP_CHANNEL (self);
-  TpConnection *tp_conn = tp_channel_borrow_connection (chan);
   TpHandle handle;
   TpHandleType handle_type;
-  GArray *arr;
 
   handle = tp_channel_get_handle (chan, &handle_type);
 
   if (handle_type == TP_HANDLE_TYPE_ROOM)
     {
       self->priv->is_chatroom = TRUE;
-      self->priv->chatroom =
+      self->priv->remote =
         tpl_entity_new_from_room_id (tp_channel_get_identifier (chan));
 
       PATH_DEBUG (self, "Chatroom id: %s",
-          tpl_entity_get_identifier (self->priv->chatroom));
-    }
+          tpl_entity_get_identifier (self->priv->remote));
 
-  if (tp_proxy_has_interface_by_id (chan,
-        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP))
-    {
-      /* Get the contacts of all the members */
-      const TpIntSet *members;
-
-      members = tp_channel_group_get_members (chan);
-      arr = tp_intset_to_array (members);
-
-      tp_g_signal_connect_object (chan, "group-members-changed",
-          G_CALLBACK (chan_members_changed_cb), self, 0);
+      _tpl_action_chain_continue (ctx);
     }
   else
     {
+      TpConnection *tp_conn = tp_channel_borrow_connection (chan);
+      GArray *arr;
+
       /* Get the contact of the TargetHandle */
       arr = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
       handle = tp_channel_get_handle (chan, NULL);
 
       g_array_append_val (arr, handle);
+
+      tp_connection_get_contacts_by_handle (tp_conn,
+          arr->len, (TpHandle *) arr->data,
+          G_N_ELEMENTS (features), features, get_remote_contact_cb, ctx, NULL,
+          G_OBJECT (self));
+
+      g_array_free (arr, TRUE);
     }
-
-  tp_connection_get_contacts_by_handle (tp_conn,
-      arr->len, (TpHandle *) arr->data,
-      G_N_ELEMENTS (features), features, get_remote_contacts_cb, ctx, NULL,
-      G_OBJECT (self));
-
-  g_array_free (arr, TRUE);
 }
 
 
@@ -461,7 +408,7 @@ on_message_received_cb (TpTextChannel *text_chan,
   TplEntity *sender;
 
   if (priv->is_chatroom)
-    receiver = priv->chatroom;
+    receiver = priv->remote;
   else
     receiver = priv->self;
 
@@ -486,15 +433,8 @@ on_message_sent_cb (TpChannel *proxy,
 {
   TplTextChannel *self = TPL_TEXT_CHANNEL (proxy);
   TplTextChannelPriv *priv = self->priv;
-  TpChannel *chan = TP_CHANNEL (self);
   TplEntity *sender;
-  TplEntity *receiver;
-
-  if (priv->is_chatroom)
-    receiver = priv->chatroom;
-  else
-    receiver = g_hash_table_lookup (priv->entities,
-        GUINT_TO_POINTER (tp_channel_get_handle (chan, NULL)));
+  TplEntity *receiver = priv->remote;
 
   if (tp_signalled_message_get_sender (TP_MESSAGE (message)) != NULL)
     sender = tpl_entity_new_from_tp_contact (
@@ -567,7 +507,7 @@ tpl_text_channel_prepare_async (TplChannel *chan,
   _tpl_action_chain_append (actions, pendingproc_prepare_tp_connection, NULL);
   _tpl_action_chain_append (actions, pendingproc_prepare_tp_text_channel, NULL);
   _tpl_action_chain_append (actions, pendingproc_get_my_contact, NULL);
-  _tpl_action_chain_append (actions, pendingproc_get_remote_contacts, NULL);
+  _tpl_action_chain_append (actions, pendingproc_get_remote_contact, NULL);
   _tpl_action_chain_append (actions, pendingproc_store_pending_messages, NULL);
   _tpl_action_chain_append (actions, pendingproc_connect_message_signals, NULL);
 
@@ -580,9 +520,8 @@ tpl_text_channel_dispose (GObject *obj)
 {
   TplTextChannelPriv *priv = TPL_TEXT_CHANNEL (obj)->priv;
 
-  tp_clear_object (&priv->chatroom);
+  tp_clear_object (&priv->remote);
   tp_clear_object (&priv->self);
-  tp_clear_pointer (&priv->entities, g_hash_table_unref);
 
   G_OBJECT_CLASS (_tpl_text_channel_parent_class)->dispose (obj);
 }
@@ -624,9 +563,6 @@ _tpl_text_channel_init (TplTextChannel *self)
       TPL_TYPE_TEXT_CHANNEL, TplTextChannelPriv);
 
   self->priv = priv;
-
-  self->priv->entities = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_object_unref);
 }
 
 
