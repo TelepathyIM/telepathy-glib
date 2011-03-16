@@ -239,6 +239,9 @@ tpl_entity_new (const gchar *id,
     case TPL_ENTITY_SELF:
       DEBUG ("Self id: %s, tok: %s", id, avatar_token);
       break;
+    case TPL_ENTITY_UNKNOWN:
+      DEBUG ("Unknown entity.");
+      break;
     default:
       g_warning ("Unkown entity type %i", type);
       g_object_unref (ret);
@@ -271,20 +274,24 @@ tpl_entity_new_from_room_id (const gchar *room_id)
  * Returns: a TplEntity instance with identifier, alias and
  * avatar's token copied. Type parameter is useful to differentiate between
  * normal contact and self contact, thus only %TPL_ENTITY_CONTACT and
- * %TPL_ENTITY_SELF are accepted.
+ * %TPL_ENTITY_SELF are accepted. If contact is %NULL, an entity of type
+ * %TPL_ENTITY_UNKNOWN with id set to "unknown" is returned.
  */
 TplEntity *
 tpl_entity_new_from_tp_contact (TpContact *contact,
     TplEntityType type)
 {
-  g_return_val_if_fail (TP_IS_CONTACT (contact), NULL);
+  g_return_val_if_fail (contact == NULL || TP_IS_CONTACT (contact), NULL);
   g_return_val_if_fail (type == TPL_ENTITY_CONTACT || type == TPL_ENTITY_SELF,
       NULL);
 
-  return tpl_entity_new (tp_contact_get_identifier (contact),
-      type,
-      tp_contact_get_alias (contact),
-      tp_contact_get_avatar_token (contact));
+  if (contact != NULL)
+    return tpl_entity_new (tp_contact_get_identifier (contact),
+        type,
+        tp_contact_get_alias (contact),
+        tp_contact_get_avatar_token (contact));
+  else
+    return tpl_entity_new ("unknown", TPL_ENTITY_UNKNOWN, NULL, NULL);
 }
 
 
