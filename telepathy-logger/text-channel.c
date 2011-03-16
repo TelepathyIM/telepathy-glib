@@ -352,51 +352,37 @@ on_channel_invalidated_cb (TpProxy *proxy,
 
 static void
 tpl_text_channel_store_message (TplTextChannel *self,
-    const GPtrArray *message,
+    TpMessage *message,
     TplEntity *sender,
     TplEntity *receiver)
 {
   TplTextChannelPriv *priv = self->priv;
   const gchar *direction;
-  GHashTable *header;
   TpChannelTextMessageType type;
-  TplEntity *allocated_sender = NULL;
-  gboolean valid;
   gint64 timestamp;
-  guint i;
-  const gchar *text = NULL;
+  gchar *text;
   TplTextEvent *event;
   TplLogManager *logmanager;
   GError *error = NULL;
 
-  if (sender != NULL
-      && tpl_entity_get_entity_type (sender) == TPL_ENTITY_SELF)
+  if (tpl_entity_get_entity_type (sender) == TPL_ENTITY_SELF)
     direction = "sent";
   else
     direction = "received";
 
-  header = g_ptr_array_index (message, 0);
-
-  if (header == NULL)
-    {
-      DEBUG ("Got invalid or corrupted %s message that could not be logged.",
-          direction);
-      return;
-    }
-
-  if (tp_asv_get_boolean (header, "scrollback", NULL))
+  if (tp_message_is_scrollback (message))
     {
       DEBUG ("Ignoring %s scrollback message.", direction);
       return;
     }
 
-  if (tp_asv_get_boolean (header, "rescued", NULL))
+  if (tp_message_is_rescued (message))
     {
       DEBUG ("Ignoring %s rescued message.", direction);
       return;
     }
 
-  type = tp_asv_get_uint32 (header, "message-type", NULL);
+  type = tp_message_get_message_type (message);
 
   if (type == TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT)
     {
@@ -404,87 +390,24 @@ tpl_text_channel_store_message (TplTextChannel *self,
       return;
     }
 
-  /* Need to determin sender for incoming messages */
-  if (sender == NULL)
-    {
-      TpHandle handle;
-
-      handle = tp_asv_get_uint32 (header, "message-sender", NULL);
-
-      /* For non-chatroom, message handle is also the channel handle */
-      if (handle == 0 && !priv->is_chatroom)
-        handle = tp_channel_get_handle (TP_CHANNEL (self), NULL);
-
-      if (handle != 0)
-        sender = g_hash_table_lookup (priv->entities,
-            GUINT_TO_POINTER (handle));
-
-      /* If it's a chatroom and sender is not member rely on message header to
-       * get the appropriate sender information */
-      if (sender == NULL && priv->is_chatroom)
-        {
-          const gchar *id;
-          const gchar *alias;
-
-          id = tp_asv_get_string (header, "message-sender-id");
-          alias = tp_asv_get_string (header, "sender-nickname");
-
-          if (id != NULL)
-            allocated_sender = sender =
-              tpl_entity_new (id, TPL_ENTITY_CONTACT, alias, NULL);
-        }
-
-      /* If we still don't have a sender, then make it unknown */
-      if (sender == NULL)
-        allocated_sender = sender =
-          tpl_entity_new ("unknown", TPL_ENTITY_UNKNOWN, NULL, NULL);
-    }
-
-  /* Sender nickname may change for each messages */
-  if (!TPL_STR_EMPTY (tp_asv_get_string (header, "sender-nickname"))
-      && (allocated_sender == NULL))
-    {
-      if (g_strcmp0 (tpl_entity_get_alias (sender),
-            tp_asv_get_string (header, "sender-nickname")) != 0)
-        allocated_sender = sender =
-          tpl_entity_new (tpl_entity_get_identifier (sender),
-              tpl_entity_get_entity_type (sender),
-              tp_asv_get_string (header, "sender-nickname"),
-              tpl_entity_get_avatar_token (sender));
-    }
-
   /* Ensure timestamp */
-  timestamp = tp_asv_get_int64 (header, "message-sent", &valid);
+  timestamp = tp_message_get_sent_timestamp (message);
 
-  if (!valid)
-    timestamp = tp_asv_get_int64 (header, "message-received", &valid);
+  if (timestamp == 0)
+    timestamp = tp_message_get_received_timestamp (message);
 
-  if (!valid)
+  if (timestamp == 0)
     {
       GDateTime *datetime = g_date_time_new_now_utc ();
       timestamp = g_date_time_to_unix (datetime);
       g_date_time_unref (datetime);
     }
 
-  for (i = 1; (i < message->len) && (text == NULL); i++)
-    {
-      GHashTable *part = g_ptr_array_index (message, i);
-
-      if (tp_strdiff ("text/plain",
-            tp_asv_get_string (part, "content-type")))
-        {
-          DEBUG ("Non text/plain content ignored, content of type = '%s'",
-              tp_asv_get_string (part, "content-type"));
-          continue;
-        }
-
-      text = tp_asv_get_string (part, "content");
-    }
+  text = tp_message_to_text (message, NULL);
 
   if (text == NULL)
     {
       DEBUG ("Ignoring %s message with no supported content", direction);
-      tp_clear_object (&allocated_sender);
       return;
     }
 
@@ -523,32 +446,39 @@ tpl_text_channel_store_message (TplTextChannel *self,
 
   g_object_unref (logmanager);
   g_object_unref (event);
-  tp_clear_object (&allocated_sender);
+  g_free (text);
 }
 
 
 static void
-on_message_received_cb (TpChannel *proxy,
-    const GPtrArray *message,
-    gpointer user_data,
-    GObject *weak_object)
+on_message_received_cb (TpTextChannel *text_chan,
+    TpSignalledMessage *message,
+    gpointer user_data)
 {
-  TplTextChannel *self = TPL_TEXT_CHANNEL (proxy);
+  TplTextChannel *self = TPL_TEXT_CHANNEL (text_chan);
   TplTextChannelPriv *priv = self->priv;
   TplEntity *receiver;
+  TplEntity *sender;
 
   if (priv->is_chatroom)
     receiver = priv->chatroom;
   else
     receiver = priv->self;
 
-  tpl_text_channel_store_message (self, message, NULL, receiver);
+  sender = tpl_entity_new_from_tp_contact (
+      tp_signalled_message_get_sender (TP_MESSAGE (message)),
+      TPL_ENTITY_CONTACT);
+
+  tpl_text_channel_store_message (self, TP_MESSAGE (message),
+      sender, receiver);
+
+  g_object_unref (sender);
 }
 
 
 static void
 on_message_sent_cb (TpChannel *proxy,
-    const GPtrArray *message,
+    TpSignalledMessage *message,
     guint flags,
     const gchar *token,
     gpointer user_data,
@@ -557,7 +487,7 @@ on_message_sent_cb (TpChannel *proxy,
   TplTextChannel *self = TPL_TEXT_CHANNEL (proxy);
   TplTextChannelPriv *priv = self->priv;
   TpChannel *chan = TP_CHANNEL (self);
-  TplEntity *sender = priv->self;
+  TplEntity *sender;
   TplEntity *receiver;
 
   if (priv->is_chatroom)
@@ -566,7 +496,17 @@ on_message_sent_cb (TpChannel *proxy,
     receiver = g_hash_table_lookup (priv->entities,
         GUINT_TO_POINTER (tp_channel_get_handle (chan, NULL)));
 
-  tpl_text_channel_store_message (self, message, sender, receiver);
+  if (tp_signalled_message_get_sender (TP_MESSAGE (message)) != NULL)
+    sender = tpl_entity_new_from_tp_contact (
+        tp_signalled_message_get_sender (TP_MESSAGE (message)),
+        TPL_ENTITY_SELF);
+  else
+    sender = g_object_ref (priv->self);
+
+  tpl_text_channel_store_message (self, TP_MESSAGE (message),
+      sender, receiver);
+
+  g_object_unref (sender);
 }
 
 
@@ -574,30 +514,18 @@ static void
 pendingproc_connect_message_signals (TplActionChain *ctx,
     gpointer user_data)
 {
-  TplTextChannel *tpl_text = _tpl_action_chain_get_object (ctx);
-  TpChannel *channel = TP_CHANNEL (tpl_text);
-  GError *error = NULL;
+  TplTextChannel *self = _tpl_action_chain_get_object (ctx);
 
-  tp_g_signal_connect_object (channel, "invalidated",
-      G_CALLBACK (on_channel_invalidated_cb), tpl_text, 0);
+  tp_g_signal_connect_object (self, "invalidated",
+      G_CALLBACK (on_channel_invalidated_cb), self, 0);
 
-  if (tp_cli_channel_interface_messages_connect_to_message_received (
-        channel, on_message_received_cb, NULL, NULL,
-        G_OBJECT (tpl_text), &error) == NULL)
-    goto disaster;
+  tp_g_signal_connect_object (self, "message-received",
+      G_CALLBACK (on_message_received_cb), self, 0);
 
-  if (tp_cli_channel_interface_messages_connect_to_message_sent (
-        channel, on_message_sent_cb, NULL, NULL,
-        G_OBJECT (tpl_text), &error) == NULL)
-    goto disaster;
+  tp_g_signal_connect_object (self, "message-sent",
+      G_CALLBACK (on_message_sent_cb), self, 0);
 
   _tpl_action_chain_continue (ctx);
-  return;
-
-disaster:
-  g_prefix_error (&error, "Couldn't connect to signals: ");
-  _tpl_action_chain_terminate (ctx, error);
-  g_error_free (error);
 }
 
 static gboolean
