@@ -45,7 +45,7 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TPL_TYPE_LOG_STORE_SQLITE, \
                               TplLogStoreSqliteClass))
 
-#define TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT (5 * 86400)
+#define TPL_LOG_STORE_SQLITE_CLEANUP_DELTA_LIMIT (60*60)
 #define TPL_LOG_STORE_SQLITE_TIMESTAMP_FORMAT "%Y-%m-%d %H:%M:%S"
 #define TPL_LOG_STORE_SQLITE_ERROR g_quark_from_static_string ( \
     "tpl-log-store-index-error-quark")
@@ -56,17 +56,20 @@ typedef enum
   TPL_LOG_STORE_SQLITE_ERROR_FAILED = TPL_LOG_STORE_ERROR_LAST,
   /* generic _tpl_log_store_sqlite_get_pending_messages() error, to be used when
    * any other code cannot be use, including TPL_LOG_STORE_ERROR ones */
-  TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES
+  TPL_LOG_STORE_SQLITE_ERROR_GET_PENDING_MESSAGES,
+  TPL_LOG_STORE_SQLITE_ERROR_REMOVE_PENDING_MESSAGES,
+  TPL_LOG_STORE_SQLITE_ERROR_ADD_PENDING_MESSAGE
 } TplLogStoreSqliteError;
 
-
-
 typedef struct _TplLogStoreSqlite TplLogStoreSqlite;
+typedef struct _TplLogStoreSqlitePrivate TplLogStoreSqlitePrivate;
 typedef struct _TplLogStoreSqliteClass TplLogStoreSqliteClass;
+typedef struct _TplPendingMessage TplPendingMessage;
 
 struct _TplLogStoreSqlite
 {
   GObject parent;
+  TplLogStoreSqlitePrivate *priv;
 };
 
 struct _TplLogStoreSqliteClass
@@ -74,8 +77,21 @@ struct _TplLogStoreSqliteClass
   GObjectClass parent_class;
 };
 
+struct _TplPendingMessage
+{
+  guint id;
+  gint64 timestamp;
+};
+
 GType _tpl_log_store_sqlite_get_type (void);
 TplLogStore * _tpl_log_store_sqlite_dup (void);
+
+GList * _tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
+    TpChannel *channel, GError **error);
+gboolean _tpl_log_store_sqlite_remove_pending_messages (TplLogStore *self,
+    TpChannel *channel, GList *log_ids, GError **error);
+gboolean _tpl_log_store_sqlite_add_pending_message (TplLogStore *self,
+    TpChannel *channel, guint id, gint64 timestamp, GError **error);
 
 gint64 _tpl_log_store_sqlite_get_most_recent (TplLogStoreSqlite *self,
     TpAccount *account, const char *identifier);
