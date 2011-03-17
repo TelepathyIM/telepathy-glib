@@ -12,11 +12,6 @@ LDADD = \
 	$(top_builddir)/telepathy-logger/libtelepathy-logger.la \
 	$(TPL_LIBS)
 
-test_tpl_channel_SOURCES = \
-	tpl-channel-test.c	\
-	tpl-channel-test.h	\
-	$(NULL)
-
 AM_CFLAGS = \
 	$(ERROR_CFLAGS) \
 	$(TPL_CFLAGS) \
@@ -47,7 +42,6 @@ check-valgrind: $(TESTS)
 
 check_c_sources = \
 	$(dbus_test_sources)	\
-	tpl-channel-test.c	\
 	test-tpl-conf.c		\
 	$(NULL)
 
