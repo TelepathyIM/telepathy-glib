@@ -358,7 +358,7 @@ _tpl_log_manager_add_event (TplLogManager *manager,
       gboolean result;
 
       result = _tpl_log_store_add_event (store, event, &loc_error);
-      if (!result)
+      if (!result && loc_error != NULL)
         {
           CRITICAL ("logstore name=%s: %s. "
               "Event may not be logged properly.",
