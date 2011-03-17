@@ -29,7 +29,7 @@ main (int argc, char **argv)
   g_assert (obs == obs2);
 
   /* unref the second singleton pointer and check that the it is still
-   * valid: checking correct object ref-counting after each _dup() call */
+   * valid: checking correct object ref-counting after each _dup () call */
   g_object_unref (obs2);
   g_assert (TPL_IS_OBSERVER (obs));
 

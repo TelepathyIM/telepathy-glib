@@ -14,7 +14,7 @@ main (int argc, char **argv)
   g_assert (conf == conf2);
 
   /* unref the second singleton pointer and check that the it is still
-   * valid: checking correct object ref-counting after each _dup() call */
+   * valid: checking correct object ref-counting after each _dup () call */
   g_object_unref (conf2);
   g_assert (TPL_IS_CONF (conf));
 
