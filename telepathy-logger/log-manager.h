@@ -74,6 +74,7 @@ typedef struct
 typedef enum
 {
   TPL_EVENT_MASK_TEXT         = 1 << 0,
+  TPL_EVENT_MASK_CALL         = 1 << 1,
   TPL_EVENT_MASK_ANY          = 0xffff
 } TplEventTypeMask;
 

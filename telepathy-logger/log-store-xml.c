@@ -1100,6 +1100,15 @@ _log_store_xml_search_in_files (TplLogStoreXml *self,
         "|<message( [^>]* | )name='[^>]*%s[^>]*'",
         escaped_text, escaped_text, escaped_text);
 
+  if (type_mask & TPL_EVENT_MASK_CALL)
+    g_string_append_printf (pattern,
+        "%s<call( [^>]* | )id='[^>]*%s[^>]*'"
+        "|<call( [^>]* | )name='[^>]*%s[^>]*'"
+        "|<call( [^>]* | )actor='[^>]*%s[^>]*'"
+        "|<call( [^>]* | )actorname='[^>]*%s[^>]*'",
+        pattern->len == 0 ? "" : "|",
+        escaped_text, escaped_text, escaped_text, escaped_text);
+
   if (TPL_STR_EMPTY (pattern->str))
     goto out;
 
