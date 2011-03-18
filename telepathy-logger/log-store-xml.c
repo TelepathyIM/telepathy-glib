@@ -862,11 +862,192 @@ log_store_xml_search_hit_new (TplLogStoreXml *self,
   return hit;
 }
 
+
+static TplEvent *
+parse_text_node (TplLogStoreXml *self,
+    xmlNodePtr node,
+    gboolean is_room,
+    const gchar *target_id,
+    const gchar *self_id,
+    TpAccount *account)
+{
+  TplEvent *event;
+  TplEntity *sender;
+  TplEntity *receiver;
+  gchar *time_str;
+  gint64 timestamp;
+  gchar *sender_id;
+  gchar *sender_name;
+  gchar *sender_avatar_token;
+  gchar *body;
+  gchar *is_user_str;
+  gboolean is_user = FALSE;
+  gchar *msg_type_str;
+  TpChannelTextMessageType msg_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
+
+  body = (gchar *) xmlNodeGetContent (node);
+  time_str = (gchar *) xmlGetProp (node, (const xmlChar *) "time");
+  sender_id = (gchar *) xmlGetProp (node, (const xmlChar *) "id");
+  sender_name = (gchar *) xmlGetProp (node, (const xmlChar *) "name");
+  sender_avatar_token = (gchar *) xmlGetProp (node,
+      (const xmlChar *) "token");
+  is_user_str = (gchar *) xmlGetProp (node, (const xmlChar *) "isuser");
+  msg_type_str = (gchar *) xmlGetProp (node, (const xmlChar *) "type");
+
+  if (is_user_str != NULL)
+    is_user = (!tp_strdiff (is_user_str, "true"));
+
+  if (msg_type_str != NULL)
+    msg_type = _tpl_text_event_message_type_from_str (msg_type_str);
+
+  timestamp = _tpl_time_parse (time_str);
+
+  if (is_room)
+    receiver = tpl_entity_new_from_room_id (target_id);
+  else if (is_user)
+    receiver = tpl_entity_new (target_id, TPL_ENTITY_CONTACT, NULL, NULL);
+  else
+    receiver = tpl_entity_new (self_id, TPL_ENTITY_SELF,
+        tp_account_get_nickname (account), NULL);
+
+  sender = tpl_entity_new (sender_id,
+      is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
+      sender_name, sender_avatar_token);
+
+  event = g_object_new (TPL_TYPE_TEXT_EVENT,
+      /* TplEvent */
+      "account", account,
+      /* MISSING: "channel-path", channel_path, */
+      "receiver", receiver,
+      "sender", sender,
+      "timestamp", timestamp,
+      /* TplTextEvent */
+      "message-type", msg_type,
+      "message", body,
+      NULL);
+
+  g_object_unref (sender);
+  g_object_unref (receiver);
+  xmlFree (time_str);
+  xmlFree (sender_id);
+  xmlFree (sender_name);
+  xmlFree (body);
+  xmlFree (is_user_str);
+  xmlFree (msg_type_str);
+  xmlFree (sender_avatar_token);
+
+  return event;
+}
+
+
+static TplEvent *
+parse_call_node (TplLogStoreXml *self,
+    xmlNodePtr node,
+    gboolean is_room,
+    const gchar *target_id,
+    const gchar *self_id,
+    TpAccount *account)
+{
+  TplEvent *event;
+  TplEntity *sender;
+  TplEntity *receiver;
+  TplEntity *actor;
+  gchar *time_str;
+  gint64 timestamp;
+  gchar *sender_id;
+  gchar *sender_name;
+  gchar *sender_avatar_token;
+  gchar *is_user_str;
+  gboolean is_user = FALSE;
+  gchar *actor_id;
+  gchar *actor_name;
+  gchar *actor_type;
+  gchar *actor_avatar_token;
+  gchar *duration_str;
+  gint64 duration = -1;
+  gchar *reason_str;
+  TplCallEndReason reason = TPL_CALL_END_REASON_UNKNOWN;
+  gchar *detailed_reason;
+
+  time_str = (gchar *) xmlGetProp (node, (const xmlChar *) "time");
+  sender_id = (gchar *) xmlGetProp (node, (const xmlChar *) "id");
+  sender_name = (gchar *) xmlGetProp (node, (const xmlChar *) "name");
+  sender_avatar_token = (gchar *) xmlGetProp (node,
+      (const xmlChar *) "token");
+  is_user_str = (gchar *) xmlGetProp (node, (const xmlChar *) "isuser");
+  duration_str = (char *) xmlGetProp (node, (const xmlChar*) "duration");
+  actor_id = (char *) xmlGetProp (node, (const xmlChar *) "actor");
+  actor_name = (char *) xmlGetProp (node, (const xmlChar *) "actorname");
+  actor_type = (char *) xmlGetProp (node, (const xmlChar *) "actortype");
+  actor_avatar_token = (char *) xmlGetProp (node,
+      (const xmlChar *) "actortoken");
+  reason_str = (char *) xmlGetProp (node, (const xmlChar *) "reason");
+  detailed_reason = (char *) xmlGetProp (node, (const xmlChar *) "detail");
+
+  if (is_user_str != NULL)
+    is_user = (!tp_strdiff (is_user_str, "true"));
+
+  if (reason_str != NULL)
+    reason = _tpl_call_event_str_to_end_reason (reason_str);
+
+  timestamp = _tpl_time_parse (time_str);
+
+  if (is_room)
+    receiver = tpl_entity_new_from_room_id (target_id);
+  else if (is_user)
+    receiver = tpl_entity_new (target_id, TPL_ENTITY_CONTACT, NULL, NULL);
+  else
+    receiver = tpl_entity_new (self_id, TPL_ENTITY_SELF,
+        tp_account_get_nickname (account), NULL);
+
+  sender = tpl_entity_new (sender_id,
+      is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
+      sender_name, sender_avatar_token);
+
+  actor = tpl_entity_new (actor_id,
+      _tpl_entity_type_from_str (actor_type),
+      actor_name, actor_avatar_token);
+
+  if (duration_str != NULL)
+    duration = atoll (duration_str);
+
+  event = g_object_new (TPL_TYPE_CALL_EVENT,
+      /* TplEvent */
+      "account", account,
+      /* MISSING: "channel-path", channel_path, */
+      "receiver", receiver,
+      "sender", sender,
+      "timestamp", timestamp,
+      /* TplCallEvent */
+      "duration", duration,
+      "end-actor", actor,
+      "end-reason", reason,
+      "detailed-end-reason", detailed_reason,
+      NULL);
+
+  g_object_unref (sender);
+  g_object_unref (receiver);
+  g_object_unref (actor);
+  xmlFree (time_str);
+  xmlFree (sender_id);
+  xmlFree (sender_name);
+  xmlFree (sender_avatar_token);
+  xmlFree (is_user_str);
+  xmlFree (actor_id);
+  xmlFree (actor_name);
+  xmlFree (actor_type);
+  xmlFree (actor_avatar_token);
+  xmlFree (duration_str);
+
+  return event;
+}
+
 /* returns a Glist of TplEvent instances */
 static GList *
 log_store_xml_get_events_for_file (TplLogStoreXml *self,
     TpAccount *account,
-    const gchar *filename)
+    const gchar *filename,
+    gint type_mask)
 {
   GList *events = NULL;
   xmlParserCtxtPtr ctxt;
@@ -941,75 +1122,19 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   /* Now get the events. */
   for (node = log_node->children; node; node = node->next)
     {
-      TplTextEvent *event;
-      TplEntity *sender;
-      TplEntity *receiver;
-      gchar *time_str;
-      gint64 timestamp;
-      gchar *sender_id;
-      gchar *sender_name;
-      gchar *sender_avatar_token;
-      gchar *body;
-      gchar *is_user_str;
-      gboolean is_user = FALSE;
-      gchar *msg_type_str;
-      TpChannelTextMessageType msg_type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
+      TplEvent *event = NULL;
 
-      if (strcmp ((const gchar *) node->name, "message") != 0)
-        continue;
+      if (type_mask & TPL_EVENT_MASK_TEXT
+          && strcmp ((const gchar *) node->name, "message") == 0)
+        event = parse_text_node (self, node, is_room, target_id, self_id,
+            account);
+      else if (type_mask & TPL_EVENT_MASK_CALL
+          && strcmp ((const char*) node->name, "call") == 0)
+        event = parse_call_node (self, node, is_room, target_id, self_id,
+            account);
 
-      body = (gchar *) xmlNodeGetContent (node);
-      time_str = (gchar *) xmlGetProp (node, (const xmlChar *) "time");
-      sender_id = (gchar *) xmlGetProp (node, (const xmlChar *) "id");
-      sender_name = (gchar *) xmlGetProp (node, (const xmlChar *) "name");
-      sender_avatar_token = (gchar *) xmlGetProp (node,
-          (const xmlChar *) "token");
-      is_user_str = (gchar *) xmlGetProp (node, (const xmlChar *) "isuser");
-      msg_type_str = (gchar *) xmlGetProp (node, (const xmlChar *) "type");
-
-      if (is_user_str != NULL)
-        is_user = (!tp_strdiff (is_user_str, "true"));
-
-      if (msg_type_str != NULL)
-        msg_type = _tpl_text_event_message_type_from_str (msg_type_str);
-
-      timestamp = _tpl_time_parse (time_str);
-
-      if (is_room)
-        receiver = tpl_entity_new_from_room_id (target_id);
-      else if (is_user)
-        receiver = tpl_entity_new (target_id, TPL_ENTITY_CONTACT, NULL, NULL);
-      else
-        receiver = tpl_entity_new (self_id, TPL_ENTITY_SELF,
-            tp_account_get_nickname (account), NULL);
-
-      sender = tpl_entity_new (sender_id,
-          is_user ? TPL_ENTITY_SELF : TPL_ENTITY_CONTACT,
-          sender_name, sender_avatar_token);
-
-      event = g_object_new (TPL_TYPE_TEXT_EVENT,
-          /* TplEvent */
-          "account", account,
-          /* MISSING: "channel-path", channel_path, */
-          "receiver", receiver,
-          "sender", sender,
-          "timestamp", timestamp,
-          /* TplTextEvent */
-          "message-type", msg_type,
-          "message", body,
-          NULL);
-
-      events = g_list_append (events, event);
-
-      g_object_unref (sender);
-      g_object_unref (receiver);
-      xmlFree (time_str);
-      xmlFree (sender_id);
-      xmlFree (sender_name);
-      xmlFree (body);
-      xmlFree (is_user_str);
-      xmlFree (msg_type_str);
-      xmlFree (sender_avatar_token);
+      if (event != NULL)
+        events = g_list_append (events, event);
     }
 
   DEBUG ("Parsed %d events", g_list_length (events));
@@ -1074,7 +1199,7 @@ static GList *
 _log_store_xml_search_in_files (TplLogStoreXml *self,
     const gchar *text,
     GList *files,
-    guint type_mask)
+    gint type_mask)
 {
   GList *l;
   GList *hits = NULL;
@@ -1262,12 +1387,9 @@ log_store_xml_get_events_for_date (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
   g_return_val_if_fail (date != NULL, NULL);
 
-  if (!(type_mask & TPL_EVENT_MASK_TEXT))
-    return NULL;
-
   filename = log_store_xml_get_filename_for_date (self, account, target,
       date);
-  events = log_store_xml_get_events_for_file (self, account, filename);
+  events = log_store_xml_get_events_for_file (self, account, filename, type_mask);
   g_free (filename);
 
   return events;
