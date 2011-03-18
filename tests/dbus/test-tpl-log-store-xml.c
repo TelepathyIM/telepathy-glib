@@ -98,18 +98,18 @@ test_clear (XmlTestCaseFixture *fixture,
 {
   GList *hits;
   hits = _tpl_log_store_search_new (fixture->store,
-      "1263405203",
+      "user@collabora.co.uk",
       TPL_EVENT_MASK_TEXT);
 
   g_assert (hits != NULL);
-  g_assert_cmpint (g_list_length (hits), ==, 1);
+  g_assert_cmpint (g_list_length (hits), ==, 4);
 
   tpl_log_manager_search_free (hits);
 
   _tpl_log_store_clear (fixture->store);
 
   hits = _tpl_log_store_search_new (fixture->store,
-      "1263405203",
+      "user@collabora.co.uk",
       TPL_EVENT_MASK_TEXT);
 
   g_assert_cmpint (g_list_length (hits), ==, 0);
@@ -123,13 +123,13 @@ test_clear_account (XmlTestCaseFixture *fixture,
   GList *hits;
   TpAccount *account;
   GError *error = NULL;
-  const gchar *kept = "1263405203";
-  const gchar *cleared = "f95e605a3ae97c463b626a3538567bc90fc58730";
+  const gchar *kept = "user2@collabora.co.uk";
+  const gchar *cleared = "test2@collabora.co.uk";
 
   hits = _tpl_log_store_search_new (fixture->store,
       kept, TPL_EVENT_MASK_TEXT);
 
-  g_assert_cmpint (g_list_length (hits), ==, 1);
+  g_assert_cmpint (g_list_length (hits), ==, 4);
 
   tpl_log_manager_search_free (hits);
 
@@ -152,7 +152,7 @@ test_clear_account (XmlTestCaseFixture *fixture,
 
   hits = _tpl_log_store_search_new (fixture->store, kept, TPL_EVENT_MASK_TEXT);
 
-  g_assert_cmpint (g_list_length (hits), ==, 1);
+  g_assert_cmpint (g_list_length (hits), ==, 4);
 
   tpl_log_manager_search_free (hits);
 
@@ -174,23 +174,23 @@ test_clear_entity (XmlTestCaseFixture *fixture,
   GError *error = NULL;
   const gchar *always_kept, *kept, *cleared;
 
-  always_kept = "1263405203";
+  always_kept = "user2@collabora.co.uk";
 
   if (is_room)
     {
-      kept = "f95e605a3ae97c463b626a3538567bc90fc58730";
-      cleared = "8957fb4064049e7a1f9d8f84234d3bf09fb6778c";
+      kept = "Hey, Just generating logs";
+      cleared = "meego@conference.collabora.co.uk/test2@collabora.co.uk";
     }
   else
     {
-      kept = "8957fb4064049e7a1f9d8f84234d3bf09fb6778c";
-      cleared = "f95e605a3ae97c463b626a3538567bc90fc58730";
+      kept = "meego@conference.collabora.co.uk/test2@collabora.co.uk";
+      cleared = "Hey, Just generating logs";
     }
 
   hits = _tpl_log_store_search_new (fixture->store, always_kept,
       TPL_EVENT_MASK_TEXT);
 
-  g_assert_cmpint (g_list_length (hits), ==, 1);
+  g_assert_cmpint (g_list_length (hits), ==, 4);
 
   tpl_log_manager_search_free (hits);
 
@@ -227,7 +227,7 @@ test_clear_entity (XmlTestCaseFixture *fixture,
   hits = _tpl_log_store_search_new (fixture->store,
       always_kept, TPL_EVENT_MASK_TEXT);
 
-  g_assert_cmpint (g_list_length (hits), ==, 1);
+  g_assert_cmpint (g_list_length (hits), ==, 4);
 
   tpl_log_manager_search_free (hits);
 

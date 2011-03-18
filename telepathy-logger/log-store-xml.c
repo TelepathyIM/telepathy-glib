@@ -1073,18 +1073,47 @@ log_store_xml_get_all_files (TplLogStoreXml *self,
 static GList *
 _log_store_xml_search_in_files (TplLogStoreXml *self,
     const gchar *text,
-    GList *files)
+    GList *files,
+    guint type_mask)
 {
   GList *l;
   GList *hits = NULL;
-  gchar *text_casefold;
+  gchar *markup_text;
   gchar *escaped_text;
+  GString *pattern = NULL;
+  GRegex *regex = NULL;
+  GError *error = NULL;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
-  escaped_text = g_markup_escape_text (text, -1);
-  text_casefold = g_utf8_casefold (escaped_text, -1);
+  markup_text = g_markup_escape_text (text, -1);
+  escaped_text = g_regex_escape_string (markup_text, -1);
+  g_free (markup_text);
+
+  pattern = g_string_new ("");
+
+  if (type_mask & TPL_EVENT_MASK_TEXT)
+    g_string_append_printf (pattern,
+        "<message [^>]*>[^<]*%s[^<]*</message>"
+        "|<message( [^>]* | )id='[^>]*%s[^>]*'"
+        "|<message( [^>]* | )name='[^>]*%s[^>]*'",
+        escaped_text, escaped_text, escaped_text);
+
+  if (TPL_STR_EMPTY (pattern->str))
+    goto out;
+
+  regex = g_regex_new (pattern->str,
+      G_REGEX_CASELESS | G_REGEX_OPTIMIZE,
+      0,
+      &error);
+
+  if (!regex)
+    {
+      DEBUG ("Failed to compile regex: %s", error->message);
+      g_error_free (error);
+      goto out;
+    }
 
   for (l = files; l; l = g_list_next (l))
     {
@@ -1092,7 +1121,6 @@ _log_store_xml_search_in_files (TplLogStoreXml *self,
       GMappedFile *file;
       gsize length;
       gchar *contents = NULL;
-      gchar *contents_casefold = NULL;
 
       filename = l->data;
 
@@ -1106,9 +1134,7 @@ _log_store_xml_search_in_files (TplLogStoreXml *self,
       if (length == 0 || contents == NULL)
         goto fail;
 
-      contents_casefold = g_utf8_casefold (contents, length);
-
-      if (strstr (contents_casefold, text_casefold))
+      if (g_regex_match_full (regex, contents, length, 0, 0, NULL, NULL))
         {
           TplLogSearchHit *hit;
 
@@ -1126,14 +1152,19 @@ fail:
       if (file != NULL)
         g_mapped_file_unref (file);
 
-      g_free (contents_casefold);
       g_free (filename);
     }
 
-  g_list_free (files);
-  g_free (text_casefold);
+out:
   g_free (escaped_text);
 
+  if (pattern != NULL)
+    g_string_free (pattern, TRUE);
+
+  if (regex != NULL)
+    g_regex_unref (regex);
+
+  g_list_free (files);
   return hits;
 }
 
@@ -1149,13 +1180,10 @@ log_store_xml_search_new (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
-  if (!(type_mask & TPL_EVENT_MASK_TEXT))
-    return NULL;
-
   files = log_store_xml_get_all_files (self, NULL);
   DEBUG ("Found %d log files in total", g_list_length (files));
 
-  return _log_store_xml_search_in_files (self, text, files);
+  return _log_store_xml_search_in_files (self, text, files, type_mask);
 }
 
 /* Returns: (GList *) of (TplLogSearchHit *) */
