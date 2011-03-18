@@ -25,6 +25,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/debug-sender.h>
 
+#include <telepathy-logger/call-channel-internal.h>
 #include <telepathy-logger/channel-factory-internal.h>
 #include <telepathy-logger/text-channel-internal.h>
 #include <telepathy-logger/observer-internal.h>
@@ -177,6 +178,10 @@ main (int argc,
   _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.StreamedMedia",
       (TplChannelConstructor) _tpl_streamed_media_channel_new);
   DEBUG ("- TplStreamedMediaChannel registered.");
+
+  _tpl_channel_factory_add ("org.freedesktop.Telepathy.Channel.Type.Call.DRAFT",
+      (TplChannelConstructor) _tpl_call_channel_new);
+  DEBUG ("- TplCallChannel registered.");
 
   observer = _tpl_observer_new ();
   DEBUG ("Registering channel factory into TplObserver");

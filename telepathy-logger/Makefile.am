@@ -45,6 +45,8 @@ BUILT_SOURCES = \
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\
 		action-chain-internal.h		\
+		call-channel.c                  \
+		call-channel-internal.h         \
 		call-event.c                    \
 		call-event-internal.h           \
 		channel-internal.h		\
