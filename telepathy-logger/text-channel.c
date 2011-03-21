@@ -116,6 +116,7 @@ channel_prepared_cb (GObject *source,
           "The text channel does not implement Message interface.");
       _tpl_action_chain_terminate (ctx, error);
       g_error_free (error);
+      return;
     }
 
   _tpl_action_chain_continue (ctx);
