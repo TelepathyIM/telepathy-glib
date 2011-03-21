@@ -358,11 +358,12 @@ _tpl_log_manager_add_event (TplLogManager *manager,
       gboolean result;
 
       result = _tpl_log_store_add_event (store, event, &loc_error);
-      if (!result && loc_error != NULL)
+      if (!result)
         {
           CRITICAL ("logstore name=%s: %s. "
               "Event may not be logged properly.",
-              _tpl_log_store_get_name (store), loc_error->message);
+              _tpl_log_store_get_name (store),
+              loc_error != NULL ? loc_error->message : "no error message");
           g_clear_error (&loc_error);
         }
       /* TRUE if at least one LogStore succeeds */
