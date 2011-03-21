@@ -1,5 +1,63 @@
-telepathy-glib 0.13.19 (UNRELEASED)
-===================================
+telepathy-glib 0.14.0 (UNRELEASED)
+==================================
+
+The “welded in gridlock” release, starting a 0.14.x stable branch. This
+branch corresponds to the 0.22 stable branch of the specification.
+
+Highlights since 0.12.0
+-----------------------
+
+• TpBaseContactList, a base class for the ContactList and ContactGroups
+  connection interfaces, as well as old-style ContactList channels.
+  While this helper class supports the old 'deny' channel for blocked
+  contact, it unfortunately does not implement the new ContactBlocking
+  interface yet.
+
+• CMs implemented using telepathy-glib will now have immortal handles.
+
+• TpContact supports ClientTypes.
+
+• TpClientChannelFactory, TpAutomaticProxyFactory and
+  TpBasicProxyFactory have been added to help applications construct
+  particular TpChannel subclasses for channels of different types, with
+  particular features prepared.
+
+• TpStreamTubeChannel, a high-level client API for stream tubes, has
+  been added.
+
+• TpBaseProtocol supports the Avatars and Presence interfaces.
+
+• tp_get_bus() is deprecated (again). Please use tp_dbus_daemon_dup(),
+  followed by tp_dbus_daemon_register_object() if that's what you're
+  using it for, or tp_proxy_get_dbus_connection() if you really need a
+  DBusGConnection.
+
+• TpClientMessage and TpSignalledMessage, client-side representations
+  for multipart messages used by TpTextChannel, have been added.
+
+• The TpContactSearch object has been added. It represents ongoing
+  searches for contacts.
+
+• Code is now generated to emit and listen for the PropertiesChanged
+  signal on org.freedesktop.DBus.Properties. Note that
+  TpDBusPropertiesMixin does not emit this signal on it own, nor does
+  TpProxy listen for it of its own accord.
+
+• Previously, tp_clear_object (NULL), tp_clear_boxed (type, NULL) and
+  tp_clear_pointer (NULL) were no-ops. However, this behaviour was not
+  very useful—these functions are always called as
+  tp_clear_object (&priv->foo) in practice—and triggered compiler
+  warnings (because these are actually implemented as macros). Thus,
+  this usage is no longer supported. (This should not affect anything
+  except contrived code, but CM authors may wish to check.)
+
+Fixes since 0.13.18
+-------------------
+
+• The error handling code paths when looking up the senders of incoming
+  messages have been fixed. This issue led to TpSignalledMessages not
+  specifying a sender with CMs that omit sender-id, like telepathy-idle.
+  (stormer)
 
 telepathy-glib 0.13.18 (2011-03-15)
 ===================================
