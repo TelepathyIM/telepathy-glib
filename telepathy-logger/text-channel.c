@@ -578,6 +578,8 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
           continue;
         }
 
+      cached = cached_it->data;
+
       if (pending_it == NULL)
         {
           /* No more pending, just remove the cached messages */
@@ -586,7 +588,6 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
           continue;
         }
 
-      cached = cached_it->data;
       pending = pending_it->data;
       pending_id = get_message_pending_id (TP_MESSAGE (pending));
       pending_ts = get_message_timestamp (TP_MESSAGE (pending));
