@@ -23,6 +23,7 @@ lib_LTLIBRARIES = libtelepathy-logger.la
 
 LIBTPLdir = $(includedir)/telepathy-logger-0.2/telepathy-logger
 LIBTPL_HEADERS = \
+		call-event.h                    \
 		entity.h			\
 		event.h				\
 		log-manager.h			\
@@ -44,6 +45,8 @@ BUILT_SOURCES = \
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\
 		action-chain-internal.h		\
+		call-event.c                    \
+		call-event-internal.h           \
 		channel-internal.h		\
 		channel.c			\
 		channel-factory.c		\
