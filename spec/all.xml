@@ -3,10 +3,10 @@
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <tp:title>Telepathy D-Bus Interface Specification</tp:title>
-<tp:version>0.21.12</tp:version>
+<tp:version>0.22.0</tp:version>
 
-<tp:copyright>Copyright © 2005-2010 Collabora Limited</tp:copyright>
-<tp:copyright>Copyright © 2005-2010 Nokia Corporation</tp:copyright>
+<tp:copyright>Copyright © 2005-2011 Collabora Limited</tp:copyright>
+<tp:copyright>Copyright © 2005-2011 Nokia Corporation</tp:copyright>
 <tp:copyright>Copyright © 2006 INdT</tp:copyright>
 
 <tp:license xmlns="http://www.w3.org/1999/xhtml">
@@ -56,13 +56,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
    <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
     <p>
      On protocols that support contact lists, these interface expose the user's
-     contact lists, along with presence subscription information and contact
-     list groups (if supported).
+     contact lists, along with presence subscription information, contact
+     list groups (if supported), and the ability to block and unblock contacts
+     (if supported).
     </p>
    </tp:docstring>
 
    <xi:include href="Connection_Interface_Contact_List.xml"/>
    <xi:include href="Connection_Interface_Contact_Groups.xml"/>
+   <xi:include href="Connection_Interface_Contact_Blocking.xml"/>
   </tp:section>
 
   <tp:section name="Contact metadata interfaces">
