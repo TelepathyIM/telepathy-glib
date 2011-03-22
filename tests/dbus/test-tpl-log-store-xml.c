@@ -243,6 +243,7 @@ test_clear_entity (XmlTestCaseFixture *fixture,
   g_assert_cmpint (g_list_length (hits), ==, 0);
 }
 
+
 static void
 assert_cmp_text_event (TplEvent *event,
     TplEvent *stored_event)
@@ -277,6 +278,7 @@ assert_cmp_text_event (TplEvent *event,
   g_assert_cmpstr (tpl_text_event_get_message (TPL_TEXT_EVENT (event)),
       ==, tpl_text_event_get_message (TPL_TEXT_EVENT (stored_event)));
 }
+
 
 static void
 test_add_text_event (XmlTestCaseFixture *fixture,
@@ -411,6 +413,197 @@ test_add_text_event (XmlTestCaseFixture *fixture,
 }
 
 
+static void
+assert_cmp_call_event (TplEvent *event,
+    TplEvent *stored_event)
+{
+  TplEntity *sender, *stored_sender;
+  TplEntity *receiver, *stored_receiver;
+  TplEntity *actor, *stored_actor;
+
+  g_assert (TPL_IS_CALL_EVENT (event));
+  g_assert (TPL_IS_CALL_EVENT (stored_event));
+  g_assert_cmpstr (tpl_event_get_account_path (event), ==,
+      tpl_event_get_account_path (stored_event));
+
+  sender = tpl_event_get_sender (event);
+  stored_sender = tpl_event_get_sender (stored_event);
+
+  g_assert (_tpl_entity_compare (sender, stored_sender) == 0);
+  g_assert_cmpstr (tpl_entity_get_alias (sender), ==,
+      tpl_entity_get_alias (stored_sender));
+  g_assert_cmpstr (tpl_entity_get_avatar_token (sender), ==,
+      tpl_entity_get_avatar_token (stored_sender));
+
+  receiver = tpl_event_get_receiver (event);
+  stored_receiver = tpl_event_get_receiver (stored_event);
+
+  g_assert (_tpl_entity_compare (receiver, stored_receiver) == 0);
+  /* No support for receiver alias/token */
+
+  g_assert_cmpint (tpl_event_get_timestamp (event), ==,
+      tpl_event_get_timestamp (stored_event));
+
+  g_assert_cmpint (tpl_call_event_get_duration (TPL_CALL_EVENT (event)),
+      ==, tpl_call_event_get_duration (TPL_CALL_EVENT (stored_event)));
+
+  actor = tpl_call_event_get_end_actor (TPL_CALL_EVENT (event));
+  stored_actor = tpl_call_event_get_end_actor (TPL_CALL_EVENT (stored_event));
+
+  g_print ("%s == %s\n", tpl_entity_get_identifier (actor), tpl_entity_get_identifier (stored_actor));
+  g_print ("%i == %i\n", tpl_entity_get_entity_type (actor), tpl_entity_get_entity_type (stored_actor));
+  g_assert (_tpl_entity_compare (actor, stored_actor) == 0);
+  g_assert_cmpstr (tpl_entity_get_alias (actor), ==,
+      tpl_entity_get_alias (stored_actor));
+  g_assert_cmpstr (tpl_entity_get_avatar_token (actor), ==,
+      tpl_entity_get_avatar_token (stored_actor));
+  g_assert_cmpstr (
+      tpl_call_event_get_detailed_end_reason (TPL_CALL_EVENT (event)),
+      ==,
+      tpl_call_event_get_detailed_end_reason (TPL_CALL_EVENT (stored_event)));
+}
+
+
+static void
+test_add_call_event (XmlTestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TpAccount *account;
+  TplEntity *me, *contact, *room;
+  TplEvent *event;
+  GError *error = NULL;
+  GList *events;
+  gint64 timestamp = time (NULL);
+
+  account = tp_account_new (fixture->bus,
+      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/me",
+      &error);
+  g_assert_no_error (error);
+  g_assert (account != NULL);
+
+  me = tpl_entity_new ("me", TPL_ENTITY_SELF, "my-alias", "my-avatar");
+  contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
+      "contact-token");
+  room = tpl_entity_new_from_room_id ("room");
+
+  /* 1. Outgoing call to a contact */
+  event = g_object_new (TPL_TYPE_CALL_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", me,
+      "receiver", contact,
+      "timestamp", timestamp,
+      /* TplCallEvent */
+      "duration", 1234,
+      "end-actor", me,
+      "end-reason", TPL_CALL_END_REASON_USER_REQUESTED,
+      "detailed-end-reason", TP_ERROR_STR_CANCELLED,
+      NULL);
+
+  _tpl_log_store_add_event (fixture->store, event, &error);
+  g_assert_no_error (error);
+
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
+      TPL_EVENT_MASK_CALL, 1, NULL, NULL);
+
+  g_assert_cmpint (g_list_length (events), ==, 1);
+  g_assert (TPL_IS_CALL_EVENT (events->data));
+
+  assert_cmp_call_event (event, events->data);
+
+  g_object_unref (event);
+  g_object_unref (events->data);
+  g_list_free (events);
+
+  /* 2. Incoming call from contact */
+  event = g_object_new (TPL_TYPE_CALL_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", contact,
+      "receiver", me,
+      "timestamp", timestamp,
+      /* TplCallEvent */
+      "duration", 2345,
+      "end-actor", contact,
+      "end-reason", TPL_CALL_END_REASON_USER_REQUESTED,
+      "detailed-end-reason", TP_ERROR_STR_TERMINATED,
+      NULL);
+
+  _tpl_log_store_add_event (fixture->store, event, &error);
+  g_assert_no_error (error);
+
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
+      TPL_EVENT_MASK_CALL, 1, NULL, NULL);
+
+  g_assert_cmpint (g_list_length (events), ==, 1);
+  g_assert (TPL_IS_CALL_EVENT (events->data));
+
+  assert_cmp_call_event (event, events->data);
+
+  g_object_unref (event);
+  g_object_unref (events->data);
+  g_list_free (events);
+
+  /* 3. Outgoing call to a room */
+  event = g_object_new (TPL_TYPE_CALL_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", me,
+      "receiver", room,
+      "timestamp", timestamp,
+      /* TplCallEvent */
+      "duration", 3456,
+      "end-actor", room,
+      "end-reason", TPL_CALL_END_REASON_USER_REQUESTED,
+      "detailed-end-reason", TP_ERROR_STR_CHANNEL_KICKED,
+      NULL);
+
+  _tpl_log_store_add_event (fixture->store, event, &error);
+  g_assert_no_error (error);
+
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, room,
+      TPL_EVENT_MASK_CALL, 1, NULL, NULL);
+
+  g_assert_cmpint (g_list_length (events), ==, 1);
+  g_assert (TPL_IS_CALL_EVENT (events->data));
+
+  assert_cmp_call_event (event, events->data);
+
+  g_object_unref (event);
+  g_object_unref (events->data);
+  g_list_free (events);
+
+  /* 4. Incoming missed call from a room */
+  event = g_object_new (TPL_TYPE_CALL_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", contact,
+      "receiver", room,
+      "timestamp", timestamp,
+      /* TplCallEvent */
+      "duration", -1,
+      "end-actor", room,
+      "end-reason", TPL_CALL_END_REASON_NO_ANSWER,
+      "detailed-end-reason", "",
+      NULL);
+
+  _tpl_log_store_add_event (fixture->store, event, &error);
+  g_assert_no_error (error);
+
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, room,
+      TPL_EVENT_MASK_CALL, 1, NULL, NULL);
+
+  g_assert_cmpint (g_list_length (events), ==, 1);
+  g_assert (TPL_IS_CALL_EVENT (events->data));
+
+  assert_cmp_call_event (event, events->data);
+
+  g_object_unref (event);
+  g_object_unref (events->data);
+  g_list_free (events);
+}
+
+
 gint main (gint argc, gchar **argv)
 {
   g_type_init ();
@@ -437,6 +630,10 @@ gint main (gint argc, gchar **argv)
   g_test_add ("/log-store-xml/add-text-event",
       XmlTestCaseFixture, NULL,
       setup_for_writing, test_add_text_event, teardown);
+
+  g_test_add ("/log-store-xml/add-call-event",
+      XmlTestCaseFixture, NULL,
+      setup_for_writing, test_add_call_event, teardown);
 
   return g_test_run ();
 }
