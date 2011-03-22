@@ -67,6 +67,10 @@
 #define LOG_FOOTER \
     "</log>\n"
 
+#define ALL_SUPPORTED_TYPES (TPL_EVENT_MASK_TEXT | TPL_EVENT_MASK_CALL)
+#define CONTAINS_ALL_SUPPORTED_TYPES(type_mask) \
+  (((type_mask) & ALL_SUPPORTED_TYPES) == ALL_SUPPORTED_TYPES)
+
 
 struct _TplLogStoreXmlPriv
 {
@@ -726,6 +730,11 @@ log_store_xml_match_in_file (const gchar *filename,
 
   retval = g_regex_match_full (regex, contents, length, 0, 0, NULL, NULL);
 
+  DEBUG ("%s pattern '%s' in file '%s'",
+      retval ? "Matched" : "Not matched",
+      g_regex_get_pattern (regex),
+      filename);
+
 out:
   if (file != NULL)
     g_mapped_file_unref (file);
@@ -742,53 +751,92 @@ log_store_xml_get_dates (TplLogStore *store,
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   GList *dates = NULL;
-  gchar *directory;
-  GDir *dir;
-  const gchar *filename;
-  const gchar *p;
+  gchar *directory = NULL;
+  GDir *dir = NULL;
+  GString *pattern = NULL;
+  GRegex *regex = NULL;
+  GError *error = NULL;
+  const gchar *basename;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
-
-  if (!(type_mask & TPL_EVENT_MASK_TEXT))
-    return NULL;
 
   directory = log_store_xml_get_dir (self, account, target);
   dir = g_dir_open (directory, 0, NULL);
   if (!dir)
     {
       DEBUG ("Could not open directory:'%s'", directory);
-      g_free (directory);
-      return NULL;
+      goto out;
     }
 
   DEBUG ("Collating a list of dates in:'%s'", directory);
 
-  while ((filename = g_dir_read_name (dir)) != NULL)
+  pattern = g_string_new ("");
+
+  if (type_mask & TPL_EVENT_MASK_TEXT)
+    g_string_append (pattern, "<message ");
+
+  if (type_mask & TPL_EVENT_MASK_CALL)
+    g_string_append_printf (pattern,
+        "%s<call ",
+        pattern->len == 0 ? "" : "|");
+
+  if (pattern->len == 0)
+    goto out;
+
+  regex = g_regex_new (pattern->str, G_REGEX_OPTIMIZE, 0, &error);
+  if (regex == NULL)
     {
-      gchar *str;
-      GDate *date;
-
-      if (!g_str_has_suffix (filename, LOG_FILENAME_SUFFIX))
-        continue;
-
-      p = strstr (filename, LOG_FILENAME_SUFFIX);
-      str = g_strndup (filename, p - filename);
-
-      if (str == NULL)
-        continue;
-
-      date = create_date_from_string (str);
-      if (date != NULL)
-       dates = g_list_insert_sorted (dates, date,
-           (GCompareFunc) g_date_compare);
-
-      g_free (str);
+      DEBUG ("Failed to create regex: %s", error->message);
+      g_error_free (error);
+      goto out;
     }
 
+  while ((basename = g_dir_read_name (dir)) != NULL)
+    {
+      gchar *filename;
+
+      if (!g_str_has_suffix (basename, LOG_FILENAME_SUFFIX))
+        continue;
+
+      filename = g_build_filename (directory, basename, NULL);
+
+      if (CONTAINS_ALL_SUPPORTED_TYPES (type_mask)
+          || log_store_xml_match_in_file (filename, regex))
+        {
+          const gchar *p;
+          gchar *str;
+          GDate *date;
+
+          p = strstr (basename, LOG_FILENAME_SUFFIX);
+          str = g_strndup (basename, p - basename);
+
+          if (str == NULL)
+            continue;
+
+          date = create_date_from_string (str);
+          if (date != NULL)
+            dates = g_list_insert_sorted (dates, date,
+                (GCompareFunc) g_date_compare);
+
+          g_free (str);
+        }
+
+      g_free (filename);
+    }
+
+out:
   g_free (directory);
-  g_dir_close (dir);
+
+  if (dir != NULL)
+    g_dir_close (dir);
+
+  if (pattern != NULL)
+    g_string_free (pattern, TRUE);
+
+  if (regex != NULL)
+    g_regex_unref (regex);
 
   DEBUG ("Parsed %d dates", g_list_length (dates));
 
