@@ -29,18 +29,18 @@
       <p>An interface for connection managers that store account details
         internally.  At the moment this consists only of storing an account's
         credentials, but other functionality may be added in the future.</p>
-      <p><tp:dbus-ref
-          namespace="org.freedesktop.Telepathy">Account</tp:dbus-ref> objects
-        representing accounts on a connection manager that implements this
-        interface should implement the <tp:dbus-ref
-          namespace="org.freedesktop.Telepathy.Account.Interface">ExternalPasswordStorage.DRAFT</tp:dbus-ref>
-        interface.</p>
 
+      <p><tp:dbus-ref namespace="ofdT">Account</tp:dbus-ref> objects
+        representing accounts on a connection manager that implements this
+        interface should implement the
+	<tp:dbus-ref namespace="ofdT.Account.Interface">ExternalPasswordStorage.DRAFT</tp:dbus-ref>
+        interface.</p>
     </tp:docstring>
 
     <tp:flags name="Account_Flags" value-prefix="Account_Flag" type="u">
       <tp:docstring>
-        A set of flags representing the status of the Account stored in the Connection Manager.
+        A set of flags representing the status of the Account stored in the
+        Connection Manager.
       </tp:docstring>
 
       <tp:flag suffix="Credentials_Stored" value="1">
@@ -61,9 +61,12 @@
     <property name="Accounts"
       tp:name-for-bindings="Accounts"
       type="a{su}" tp:type="Account_Flags_Map" access="read">
-      <tp:docstring>
-        The set of Accounts stored in this connection manager, and flags
-        indicating their status.
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>The set of Accounts stored in this Connection Manager, and flags
+          indicating their status.</p>
+
+        <p>Change notification for this property is provided by the standard
+          D-Bus <code>PropertiesChanged</code> signal.</p>
       </tp:docstring>
     </property>
 
@@ -76,8 +79,8 @@
       <arg direction="in" name="Account_Id"
         type="s">
         <tp:docstring>
-          An account id as returned from <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy">Protocol.IdentifyAccount</tp:dbus-ref>.
+          An account id as returned from
+	  <tp:dbus-ref namespace="ofdT">Protocol.IdentifyAccount</tp:dbus-ref>.
         </tp:docstring>
       </arg>
 
@@ -99,8 +102,8 @@
       <arg direction="in" name="Account_Id"
         type="s">
         <tp:docstring>
-          An account id as returned from <tp:dbus-ref
-            namespace="org.freedesktop.Telepathy">Protocol.IdentifyAccount</tp:dbus-ref>.
+          An account id as returned from
+	  <tp:dbus-ref namespace="ofdT">Protocol.IdentifyAccount</tp:dbus-ref>.
         </tp:docstring>
       </arg>
 
