@@ -1,6 +1,11 @@
 telepathy-glib 0.14.1 (2011-03-22)
 ==================================
 
+The “work by the windows” release. This release adds API from version
+0.22 of the Telepathy specification which was accidentally omitted from
+the previous release. Further releases on this stable branch should not
+add any further API.
+
 Enhancements:
 
 • Update to spec 0.22.0 (Guillaume)
