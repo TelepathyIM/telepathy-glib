@@ -232,6 +232,27 @@ setup_debug (void)
 
 
 static void
+test_exists (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TplEntity *entity;
+  TplEntity *no_entity;
+
+  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+  no_entity = tpl_entity_new ("unknown", TPL_ENTITY_CONTACT, NULL, NULL);
+
+  g_assert (tpl_log_manager_exists (fixture->manager, fixture->account,
+        entity, TPL_EVENT_MASK_ANY));
+
+  g_assert (!tpl_log_manager_exists (fixture->manager, fixture->account,
+        no_entity, TPL_EVENT_MASK_ANY));
+
+  g_object_unref (entity);
+  g_object_unref (no_entity);
+}
+
+
+static void
 get_dates_async_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
@@ -389,6 +410,10 @@ main (int argc, char **argv)
       tp_g_value_slice_new_static_string (MY_ID));
   g_hash_table_insert (params, "account-path",
       tp_g_value_slice_new_static_string (ACCOUNT_PATH_JABBER));
+
+  g_test_add ("/log-manager/exists",
+      TestCaseFixture, params,
+      setup, test_exists, teardown);
 
   g_test_add ("/log-manager/get-dates",
       TestCaseFixture, params,
