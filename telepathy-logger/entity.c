@@ -62,6 +62,14 @@ enum
   PROP_AVATAR_TOKEN
 };
 
+static const gchar * entity_types[] = {
+    "unknown",
+    "contact",
+    "room",
+    "self"
+};
+
+
 static void
 tpl_entity_finalize (GObject *obj)
 {
@@ -378,4 +386,25 @@ _tpl_entity_compare (TplEntity *a,
     return -1;
   else
     return 1;
+}
+
+
+TplEntityType
+_tpl_entity_type_from_str (const gchar *type_str)
+{
+  guint i;
+  for (i = 0; i < G_N_ELEMENTS (entity_types); ++i)
+    if (!tp_strdiff (type_str, entity_types[i]))
+      return (TplEntityType) i;
+
+  /* default case */
+  return TPL_ENTITY_UNKNOWN;
+}
+
+
+const gchar *
+_tpl_entity_type_to_str (TplEntityType type)
+{
+  g_return_val_if_fail (G_N_ELEMENTS (entity_types) >= type, "unknown");
+  return entity_types[type];
 }
