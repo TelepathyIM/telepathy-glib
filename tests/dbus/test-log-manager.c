@@ -300,45 +300,6 @@ test_get_dates (TestCaseFixture *fixture,
 
 
 static void
-get_entities_cb (GObject *object,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TestCaseFixture *fixture = user_data;
-  GError *error = NULL;
-
-  tpl_log_manager_get_entities_finish (TPL_LOG_MANAGER (object), result,
-      &fixture->ret, &error);
-
-  g_assert_no_error (error);
-  g_main_loop_quit (fixture->main_loop);
-}
-
-
-static void
-test_get_entities (TestCaseFixture *fixture,
-    gconstpointer user_data)
-{
-  GList *loc;
-
-  tpl_log_manager_get_entities_async (fixture->manager, fixture->account,
-      get_entities_cb, fixture);
-  g_main_loop_run (fixture->main_loop);
-
-  g_assert_cmpint (g_list_length (fixture->ret), ==, 2);
-
-  /* we do not want duplicates */
-  fixture->ret = g_list_sort (fixture->ret, (GCompareFunc) _tpl_entity_compare);
-  for (loc = fixture->ret; loc != NULL; loc = g_list_next (loc))
-    if (loc->next)
-      g_assert (_tpl_entity_compare (loc->data, loc->next->data) != 0);
-
-  g_list_foreach (fixture->ret, (GFunc) g_object_unref, NULL);
-  g_list_free (fixture->ret);
-}
-
-
-static void
 get_events_for_date_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
@@ -384,6 +345,45 @@ test_get_events_for_date (TestCaseFixture *fixture,
 }
 
 
+static void
+get_entities_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_manager_get_entities_finish (TPL_LOG_MANAGER (object), result,
+      &fixture->ret, &error);
+
+  g_assert_no_error (error);
+  g_main_loop_quit (fixture->main_loop);
+}
+
+
+static void
+test_get_entities (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  GList *loc;
+
+  tpl_log_manager_get_entities_async (fixture->manager, fixture->account,
+      get_entities_cb, fixture);
+  g_main_loop_run (fixture->main_loop);
+
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 2);
+
+  /* we do not want duplicates */
+  fixture->ret = g_list_sort (fixture->ret, (GCompareFunc) _tpl_entity_compare);
+  for (loc = fixture->ret; loc != NULL; loc = g_list_next (loc))
+    if (loc->next)
+      g_assert (_tpl_entity_compare (loc->data, loc->next->data) != 0);
+
+  g_list_foreach (fixture->ret, (GFunc) g_object_unref, NULL);
+  g_list_free (fixture->ret);
+}
+
+
 int
 main (int argc, char **argv)
 {
@@ -419,13 +419,13 @@ main (int argc, char **argv)
       TestCaseFixture, params,
       setup, test_get_dates, teardown);
 
-  g_test_add ("/log-manager/get-entities",
-      TestCaseFixture, params,
-      setup, test_get_entities, teardown);
-
   g_test_add ("/log-manager/get-events-for-date",
       TestCaseFixture, params,
       setup, test_get_events_for_date, teardown);
+
+  g_test_add ("/log-manager/get-entities",
+      TestCaseFixture, params,
+      setup, test_get_entities, teardown);
 
   retval = g_test_run ();
 
