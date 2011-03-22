@@ -453,6 +453,41 @@ test_get_entities (TestCaseFixture *fixture,
 }
 
 
+static void
+search_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_manager_search_finish (TPL_LOG_MANAGER (object),
+      result, &fixture->ret, &error);
+
+  g_assert_no_error (error);
+  g_main_loop_quit (fixture->main_loop);
+}
+
+
+static void
+test_search (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  tpl_log_manager_search_async (fixture->manager,
+      "user2@collabora.co.uk",
+      TPL_EVENT_MASK_TEXT,
+      search_cb,
+      fixture);
+  g_main_loop_run (fixture->main_loop);
+
+  /* We got 6 events in old Empathy and 6 in new TpLogger storage */
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 10);
+
+  tpl_log_manager_search_free (fixture->ret);
+  fixture->ret = NULL;
+}
+
+
 int
 main (int argc, char **argv)
 {
@@ -499,6 +534,10 @@ main (int argc, char **argv)
   g_test_add ("/log-manager/get-entities",
       TestCaseFixture, params,
       setup, test_get_entities, teardown);
+
+  g_test_add ("/log-manager/search",
+      TestCaseFixture, params,
+      setup, test_search, teardown);
 
   retval = g_test_run ();
 
