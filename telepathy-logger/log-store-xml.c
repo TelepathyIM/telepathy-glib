@@ -671,8 +671,9 @@ log_store_xml_exists (TplLogStore *store,
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
   g_return_val_if_fail (TPL_IS_ENTITY (target), FALSE);
 
-  if (!(type_mask & TPL_EVENT_MASK_TEXT))
-    return FALSE;
+  /* FIXME This method is exposed synchronously in the log manager API and
+   * thus we need a constant time reply. The implementation is not 100%
+   * correct here, but provide this constant time. See fd.o but #35549. */
 
   dir = log_store_xml_get_dir (self, account, target);
   exists = g_file_test (dir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR);
