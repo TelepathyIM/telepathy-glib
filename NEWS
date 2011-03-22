@@ -1,3 +1,12 @@
+telepathy-glib 0.14.1 (2011-03-22)
+==================================
+
+Enhancements:
+
+• Update to spec 0.22.0 (Guillaume)
+  · TP_PROP_CHANNEL_TYPE_SERVER_TLS_CONNECTION_REFERENCE_IDENTITIES
+  · generate code for Connection.I.ContactBlocking
+
 telepathy-glib 0.14.0 (2011-03-21)
 ==================================
 
