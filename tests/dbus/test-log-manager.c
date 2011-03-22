@@ -346,6 +346,75 @@ test_get_events_for_date (TestCaseFixture *fixture,
 
 
 static void
+get_filtered_events_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_manager_get_filtered_events_finish (TPL_LOG_MANAGER (object),
+      result, &fixture->ret, &error);
+
+  g_assert_no_error (error);
+  g_main_loop_quit (fixture->main_loop);
+}
+
+
+static gboolean
+events_filter (TplEvent *event,
+  gpointer user_data)
+{
+  gboolean keep;
+  GDateTime *timestamp;
+  GDate *date = user_data;
+
+  timestamp = g_date_time_new_from_unix_utc (tpl_event_get_timestamp (event));
+
+  keep = g_date_time_get_year (timestamp) == g_date_get_year (date)
+    && g_date_time_get_month (timestamp) == (gint) g_date_get_month (date)
+    && g_date_time_get_day_of_month (timestamp) == g_date_get_day (date);
+
+  g_date_time_unref (timestamp);
+
+  return keep;
+}
+
+
+static void
+test_get_filtered_events (TestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TplEntity *entity;
+  GDate *date;
+
+  entity = tpl_entity_new (ID, TPL_ENTITY_CONTACT, NULL, NULL);
+  date = g_date_new_dmy (13, 1, 2010);
+
+  tpl_log_manager_get_filtered_events_async (fixture->manager,
+      fixture->account,
+      entity,
+      TPL_EVENT_MASK_TEXT,
+      11,
+      events_filter,
+      date,
+      get_filtered_events_cb,
+      fixture);
+  g_main_loop_run (fixture->main_loop);
+
+  g_object_unref (entity);
+  g_date_free (date);
+
+  /* We got 6 events in old Empathy and 6 in new TpLogger storage,
+   * but we limited to 11 */
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 11);
+
+  g_list_foreach (fixture->ret, (GFunc) g_object_unref, NULL);
+  g_list_free (fixture->ret);
+}
+
+
+static void
 get_entities_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
@@ -422,6 +491,10 @@ main (int argc, char **argv)
   g_test_add ("/log-manager/get-events-for-date",
       TestCaseFixture, params,
       setup, test_get_events_for_date, teardown);
+
+  g_test_add ("/log-manager/get-filtered-events",
+      TestCaseFixture, params,
+      setup, test_get_filtered_events, teardown);
 
   g_test_add ("/log-manager/get-entities",
       TestCaseFixture, params,
