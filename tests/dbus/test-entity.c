@@ -26,7 +26,7 @@ test_entity_instantiation (void)
       NULL, NULL);
 
   g_assert_cmpstr (tpl_entity_get_alias (entity), ==, "my-identifier");
-  g_assert (tpl_entity_get_avatar_token (entity) == NULL);
+  g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, "");
 
   g_object_unref (entity);
 }
@@ -41,7 +41,7 @@ test_entity_instantiation_from_room_id (void)
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "my-room-id");
   g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_ROOM);
   g_assert_cmpstr (tpl_entity_get_alias (entity), ==, "my-room-id");
-  g_assert (tpl_entity_get_avatar_token (entity) == NULL);
+  g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, "");
 
   g_object_unref (entity);
 }
@@ -135,7 +135,7 @@ test_entity_instantiation_from_tp_contact (void)
   g_assert_cmpstr (tpl_entity_get_identifier (entity), ==, "bob");
   g_assert (tpl_entity_get_entity_type (entity) == TPL_ENTITY_CONTACT);
   g_assert_cmpstr (tpl_entity_get_alias (entity), ==, alias[1]);
-  g_assert (tpl_entity_get_avatar_token (entity) == NULL);
+  g_assert_cmpstr (tpl_entity_get_avatar_token (entity), ==, "");
   g_object_unref (entity);
 
   g_object_unref (result.contacts[0]);

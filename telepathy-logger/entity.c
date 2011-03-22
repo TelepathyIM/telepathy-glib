@@ -225,7 +225,7 @@ tpl_entity_new (const gchar *id,
       "identifier", id,
       "type", type,
       "alias", alias == NULL ? id : alias,
-      "avatar-token", avatar_token,
+      "avatar-token", avatar_token == NULL ? "" : avatar_token,
       NULL);
 
   switch (type)
