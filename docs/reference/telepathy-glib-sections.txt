@@ -2383,7 +2383,7 @@ TpChannelGroupFlags
 TpChannelGroupChangeReason
 NUM_TP_CHANNEL_GROUP_CHANGE_REASONS
 TpChannelPasswordFlags
-TpConnectionCapabilityFlags
+TpContactBlockingCapabilities
 TpDeliveryReportingSupportFlags
 TpDeliveryStatus
 NUM_TP_DELIVERY_STATUSES
