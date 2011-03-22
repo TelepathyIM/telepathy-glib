@@ -704,6 +704,36 @@ create_date_from_string (const gchar *str)
   return date;
 }
 
+
+static gboolean
+log_store_xml_match_in_file (const gchar *filename,
+    GRegex *regex)
+{
+  gboolean retval = FALSE;
+  GMappedFile *file;
+  gsize length;
+  gchar *contents = NULL;
+
+  file = g_mapped_file_new (filename, FALSE, NULL);
+  if (file == NULL)
+    goto out;
+
+  length = g_mapped_file_get_length (file);
+  contents = g_mapped_file_get_contents (file);
+
+  if (length == 0 || contents == NULL)
+    goto out;
+
+  retval = g_regex_match_full (regex, contents, length, 0, 0, NULL, NULL);
+
+out:
+  if (file != NULL)
+    g_mapped_file_unref (file);
+
+  return retval;
+}
+
+
 static GList *
 log_store_xml_get_dates (TplLogStore *store,
     TpAccount *account,
@@ -1252,24 +1282,9 @@ _log_store_xml_search_in_files (TplLogStoreXml *self,
 
   for (l = files; l; l = g_list_next (l))
     {
-      gchar *filename;
-      GMappedFile *file;
-      gsize length;
-      gchar *contents = NULL;
+      gchar *filename = l->data;
 
-      filename = l->data;
-
-      file = g_mapped_file_new (filename, FALSE, NULL);
-      if (file == NULL)
-        goto fail;
-
-      length = g_mapped_file_get_length (file);
-      contents = g_mapped_file_get_contents (file);
-
-      if (length == 0 || contents == NULL)
-        goto fail;
-
-      if (g_regex_match_full (regex, contents, length, 0, 0, NULL, NULL))
+      if (log_store_xml_match_in_file (filename, regex))
         {
           TplLogSearchHit *hit;
 
@@ -1282,12 +1297,6 @@ _log_store_xml_search_in_files (TplLogStoreXml *self,
                   g_date_get_month (hit->date), g_date_get_day (hit->date));
             }
         }
-
-fail:
-      if (file != NULL)
-        g_mapped_file_unref (file);
-
-      g_free (filename);
     }
 
 out:
