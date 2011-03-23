@@ -52,10 +52,6 @@ GType tf_media_signalling_channel_get_type (void);
 TfMediaSignallingChannel *tf_media_signalling_channel_new (
     TpChannel *channel_proxy);
 
-void tf_media_signalling_channel_error (TfMediaSignallingChannel *chan,
-  TpMediaStreamError error,
-  const gchar *message);
-
 TfStream *tf_media_signalling_channel_lookup_stream (
     TfMediaSignallingChannel *chan,
     guint stream_id);

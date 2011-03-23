@@ -93,6 +93,10 @@ static void new_stream_cb (TfSession *session, gchar *object_path,
 static void stream_closed_cb (TfStream *stream,
     gpointer user_data);
 
+static void
+tf_media_signalling_channel_error (TfMediaSignallingChannel *chan,
+    TpMediaStreamError error,
+    const gchar *message);
 
 
 
@@ -709,7 +713,7 @@ tf_media_signalling__channel_lookup_stream (TfMediaSignallingChannel *chan,
  * connection manager.
  */
 
-void
+static void
 tf_media_signalling_channel_error (TfMediaSignallingChannel *chan,
     TpMediaStreamError error,
     const gchar *message)

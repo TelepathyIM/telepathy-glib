@@ -544,28 +544,6 @@ tf_channel_new_async (TpChannel *channel_proxy,
 }
 
 /**
- * tf_channel_error:
- * @chan: a #TfChannel
- * @error: the error number of type #TpMediaStreamError
- * @message: the error message
- *
- * Stops the channel and all stream related to it and sends an error to the
- * connection manager.
- */
-
-void
-tf_channel_error (TfChannel *chan,
-    TpMediaStreamError error,
-    const gchar *message)
-{
-  if (chan->priv->media_signalling_channel)
-    tf_media_signalling_channel_error (chan->priv->media_signalling_channel,
-        error, message);
-
-  shutdown_channel (chan);
-}
-
-/**
  * tf_channel_bus_message:
  * @channel: A #TfChannel
  * @message: A #GstMessage received from the bus

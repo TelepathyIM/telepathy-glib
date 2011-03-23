@@ -54,10 +54,6 @@ void tf_channel_new_async (TpChannel *channel_proxy,
     gpointer user_data);
 
 
-void tf_channel_error (TfChannel *chan,
-  TpMediaStreamError error,
-  const gchar *message);
-
 gboolean tf_channel_bus_message (TfChannel *channel,
     GstMessage *message);
 
