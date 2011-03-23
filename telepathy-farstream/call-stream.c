@@ -348,6 +348,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "",
           "Could not create FsStream: %s", error->message);
+      g_clear_error (&error);
       return;
     }
 
