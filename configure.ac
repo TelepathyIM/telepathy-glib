@@ -107,6 +107,8 @@ if test -z "$XSLTPROC"; then
   AC_MSG_ERROR([xsltproc (from libxslt) is required])
 fi
 
+AM_PATH_PYTHON([2.5])
+
 # -----------------------------------------------------------
 # Error flags
 # -----------------------------------------------------------
