@@ -233,7 +233,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
       n_params++;
       break;
     default:
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "org.freedesktop.Telepathy.Error.NotImplemented",
           "Unknown transport type %d", self->transport_type);
@@ -344,7 +344,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
 
   if (!self->fsstream)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "",
           "Could not create FsStream: %s", error->message);
@@ -378,7 +378,7 @@ relay_info_changed (TfFutureCallStream *proxy,
 
   if (self->server_info_retrieved)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
+      tf_content_error_literal (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "org.freedesktop.Telepathy.Error.NotImplemented",
           "Changing relay servers after ServerInfoRetrived is not implemented");
@@ -403,7 +403,7 @@ stun_servers_changed (TfFutureCallStream *proxy,
 
   if (self->server_info_retrieved)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
+      tf_content_error_literal (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "org.freedesktop.Telepathy.Error.NotImplemented",
           "Changing STUN servers after ServerInfoRetrived is not implemented");
@@ -479,7 +479,7 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
       if (!fs_stream_set_remote_candidates (self->fsstream, fscandidates,
               &error))
         {
-          tf_content_error_printf (TF_CONTENT (self->call_content),
+          tf_content_error (TF_CONTENT (self->call_content),
               TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
               "Error setting the remote candidates: %s", error->message);
           g_clear_error (&error);
@@ -538,7 +538,7 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (error)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error getting the Streams's media properties: %s", error->message);
       return;
@@ -546,7 +546,7 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!out_Properties)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
+      tf_content_error_literal (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error getting the Stream's media properties: there are none");
       return;
@@ -572,7 +572,7 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
   return;
 
  invalid_property:
-  tf_content_error (TF_CONTENT (self->call_content),
+  tf_content_error_literal (TF_CONTENT (self->call_content),
       TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
       "Error getting the Endpoint's properties: invalid type");
 }
@@ -595,7 +595,7 @@ tf_call_stream_add_endpoint (TfCallStream *self)
       G_OBJECT (self), &error);
   if (error)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to RemoteCredentialsSet signal: %s",
           error->message);
@@ -608,7 +608,7 @@ tf_call_stream_add_endpoint (TfCallStream *self)
       G_OBJECT (self), &error);
   if (error)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to RemoteCandidatesAdded signal: %s",
           error->message);
@@ -636,7 +636,7 @@ endpoints_changed (TfFutureCallStream *proxy,
 
   if (arg_Endpoints_Removed->len != 0)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
+      tf_content_error_literal (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "org.freedesktop.Telepathy.Error.NotImplemented",
           "Removing Endpoints is not implemented");
@@ -645,7 +645,7 @@ endpoints_changed (TfFutureCallStream *proxy,
 
   if (arg_Endpoints_Added->len != 1)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
+      tf_content_error_literal (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "org.freedesktop.Telepathy.Error.NotImplemented",
           "Having more than one endpoint is not implemented");
@@ -656,7 +656,7 @@ endpoints_changed (TfFutureCallStream *proxy,
     {
       if (strcmp (g_ptr_array_index (arg_Endpoints_Added, 0),
               self->endpoint_objpath))
-        tf_content_error (TF_CONTENT (self->call_content),
+        tf_content_error_literal (TF_CONTENT (self->call_content),
             TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
             "Trying to give a different endpoint, CM bug");
       return;
@@ -680,7 +680,7 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (error)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error getting the Streams's media properties: %s",
           error->message);
@@ -689,7 +689,7 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!out_Properties)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
+      tf_content_error_literal (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error getting the Stream's media properties: there are none");
       return;
@@ -738,7 +738,7 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (endpoints->len > 1)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
+      tf_content_error_literal (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "org.freedesktop.Telepathy.Error.NotImplemented",
           "Having more than one endpoint is not implemented");
@@ -757,7 +757,7 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   return;
  invalid_property:
-  tf_content_error (TF_CONTENT (self->call_content),
+  tf_content_error_literal (TF_CONTENT (self->call_content),
       TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
       "Error getting the Stream's properties: invalid type");
   return;
@@ -781,7 +781,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (error)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error getting the Streams's properties: %s", error->message);
       return;
@@ -789,7 +789,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!out_Properties)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
+      tf_content_error_literal (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error getting the Content's properties: there are none");
       return;
@@ -806,7 +806,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!got_media_interface)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
+      tf_content_error_literal (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Stream does not have the media interface,"
           " but HardwareStreaming was NOT true");
@@ -827,7 +827,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (g_hash_table_size (members) != 1)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
           "org.freedesktop.Telepathy.Error.NotImplemented",
           "Only one Member per Stream is supported, there are %d",
@@ -851,7 +851,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to ServerInfoRetrived signal: %s",
           myerror->message);
@@ -864,7 +864,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to ServerInfoRetrived signal: %s",
           myerror->message);
@@ -878,7 +878,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to ServerInfoRetrived signal: %s",
           myerror->message);
@@ -892,7 +892,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to EndpointsChanged signal: %s",
           myerror->message);
@@ -907,7 +907,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
   return;
 
  invalid_property:
-  tf_content_error (TF_CONTENT (self->call_content),
+  tf_content_error_literal (TF_CONTENT (self->call_content),
       TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
       "Error getting the Stream's properties: invalid type");
   return;
@@ -937,7 +937,7 @@ tf_call_stream_new (TfCallChannel *call_channel,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error_printf (TF_CONTENT (self->call_content),
+      tf_content_error (TF_CONTENT (self->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error connectiong to LocalSendingStateChanged signal: %s",
           myerror->message);
@@ -1093,7 +1093,7 @@ tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
           enumvalue->value_nick, errorno, msg, debug);
       g_type_class_unref (enumclass);
 
-      tf_content_error (TF_CONTENT (stream->call_content),
+      tf_content_error_literal (TF_CONTENT (stream->call_content),
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", msg);
       return TRUE;
     }

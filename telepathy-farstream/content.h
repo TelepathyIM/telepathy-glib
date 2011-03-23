@@ -46,7 +46,7 @@ typedef struct _TfContentClass TfContentClass;
 
 GType tf_content_get_type (void);
 
-void tf_content_error (TfContent *content,
+void tf_content_error_literal (TfContent *content,
     guint reason, /* TfFutureContentRemovalReason */
     const gchar *detailed_reason,
     const gchar *message);
@@ -55,7 +55,7 @@ gboolean tf_content_set_codec_preferences (TfContent *content,
     GList *codec_preferences,
     GError **error);
 
-void tf_content_error_printf (TfContent *content,
+void tf_content_error (TfContent *content,
     guint reason, /* TfFutureContentRemovalReason */
     const gchar *detailed_reason,
     const gchar *message, ...) G_GNUC_PRINTF (4, 5);

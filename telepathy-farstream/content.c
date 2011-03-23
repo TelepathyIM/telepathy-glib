@@ -290,7 +290,7 @@ tf_content_set_codec_preferences (TfContent *content,
  */
 
 void
-tf_content_error (TfContent *content,
+tf_content_error_literal (TfContent *content,
     guint reason, /* TfFutureContentRemovalReason */
     const gchar *detailed_reason,
     const gchar *message)
@@ -315,7 +315,7 @@ tf_content_error (TfContent *content,
  */
 
 void
-tf_content_error_printf (TfContent *content,
+tf_content_error (TfContent *content,
     guint reason, /* TfFutureContentRemovalReason */
     const gchar *detailed_reason,
     const gchar *message_format, ...)
@@ -327,6 +327,6 @@ tf_content_error_printf (TfContent *content,
   message = g_strdup_vprintf (message_format, valist);
   va_end (valist);
 
-  tf_content_error (content, reason, detailed_reason, message);
+  tf_content_error_literal (content, reason, detailed_reason, message);
   g_free (message);
 }
