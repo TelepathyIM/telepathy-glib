@@ -251,7 +251,7 @@ tpl_entity_new (const gchar *id,
       DEBUG ("Unknown entity.");
       break;
     default:
-      g_warning ("Unkown entity type %i", type);
+      g_warning ("Unknown entity type %i", type);
       g_object_unref (ret);
       ret = NULL;
     }
