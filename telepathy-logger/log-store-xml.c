@@ -505,17 +505,15 @@ add_text_event (TplLogStoreXml *self,
 
   sender = tpl_event_get_sender (TPL_EVENT (message));
   contact_id = g_markup_escape_text (tpl_entity_get_identifier (sender), -1);
-  if (tpl_entity_get_alias (sender) != NULL)
-    contact_name = g_markup_escape_text (tpl_entity_get_alias (sender), -1);
-  if (tpl_entity_get_avatar_token (sender) != NULL)
-    avatar_token = g_markup_escape_text (tpl_entity_get_avatar_token
-        (sender), -1);
+  contact_name = g_markup_escape_text (tpl_entity_get_alias (sender), -1);
+  avatar_token = g_markup_escape_text (tpl_entity_get_avatar_token (sender),
+      -1);
 
   event = g_strdup_printf ("<message time='%s' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'>"
       "%s</message>\n" LOG_FOOTER, timestamp,
       contact_id, contact_name,
-      avatar_token ? avatar_token : "",
+      avatar_token,
       tpl_entity_get_entity_type (sender)
           == TPL_ENTITY_SELF ? "true" : "false",
       _tpl_text_event_message_type_to_str (msg_type),
