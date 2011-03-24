@@ -513,7 +513,8 @@ on_pending_message_removed_cb (TpTextChannel *self,
 
 
 static gint
-pending_message_compare (TpSignalledMessage *m1, TpSignalledMessage *m2)
+pending_message_compare_id (TpSignalledMessage *m1,
+    TpSignalledMessage *m2)
 {
   guint id1, id2;
 
@@ -523,6 +524,24 @@ pending_message_compare (TpSignalledMessage *m1, TpSignalledMessage *m2)
   if (id1 > id2)
     return 1;
   else if (id1 < id2)
+    return -1;
+  else
+    return 0;
+}
+
+
+static gint
+pending_message_compare_timestamp (TpSignalledMessage *m1,
+    TpSignalledMessage *m2)
+{
+  gint64 ts1, ts2;
+
+  ts1 = get_message_timestamp (TP_MESSAGE (m1));
+  ts2 = get_message_timestamp (TP_MESSAGE (m2));
+
+  if (ts1 > ts2)
+    return 1;
+  else if (ts1 < ts2)
     return -1;
   else
     return 0;
@@ -557,7 +576,7 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
     tp_text_channel_get_pending_messages (TP_TEXT_CHANNEL (self));
 
   pending_messages = g_list_sort (pending_messages,
-      (GCompareFunc) pending_message_compare);
+      (GCompareFunc) pending_message_compare_id);
 
   cached_it = cached_messages;
   pending_it = pending_messages;
@@ -641,6 +660,9 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
   if (to_log != NULL)
     {
       GList *it;
+
+      to_log = g_list_sort (to_log,
+          (GCompareFunc) pending_message_compare_timestamp);
 
       for (it = to_log; it != NULL; it = g_list_next (it))
         on_message_received_cb (TP_TEXT_CHANNEL (self),
