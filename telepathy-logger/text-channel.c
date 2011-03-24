@@ -135,7 +135,6 @@ pendingproc_prepare_tp_text_channel (TplActionChain *ctx,
       0
   };
 
-  /* user_data is a TplChannel instance */
   tp_proxy_prepare_async (chan, chan_features, channel_prepared_cb, ctx);
 }
 
