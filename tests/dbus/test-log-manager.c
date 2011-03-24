@@ -480,7 +480,8 @@ test_search (TestCaseFixture *fixture,
       fixture);
   g_main_loop_run (fixture->main_loop);
 
-  /* We got 6 events in old Empathy and 6 in new TpLogger storage */
+  /* We got 4 events in old Empathy, 4 in new TpLogger and
+   * 2 in Pidgin storage */
   g_assert_cmpint (g_list_length (fixture->ret), ==, 10);
 
   tpl_log_manager_search_free (fixture->ret);
