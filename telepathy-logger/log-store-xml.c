@@ -1125,7 +1125,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
     const gchar *filename,
     gint type_mask)
 {
-  GList *events = NULL;
+  GQueue events = { 0 };
   xmlParserCtxtPtr ctxt;
   xmlDocPtr doc;
   xmlNodePtr log_node;
@@ -1210,16 +1210,16 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
             account);
 
       if (event != NULL)
-        events = g_list_append (events, event);
+        g_queue_push_tail (&events, event);
     }
 
-  DEBUG ("Parsed %d events", g_list_length (events));
+  DEBUG ("Parsed %d events", events.length);
 
   g_free (target_id);
   xmlFreeDoc (doc);
   xmlFreeParserCtxt (ctxt);
 
-  return events;
+  return events.head;
 }
 
 
