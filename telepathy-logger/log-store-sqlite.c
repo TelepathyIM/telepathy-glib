@@ -692,7 +692,7 @@ _tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
   e = sqlite3_prepare_v2 (priv->db, "SELECT id,timestamp "
       "FROM pending_messages "
       "WHERE channel=? "
-      "ORDER BY id ASC",
+      "ORDER BY id DSC",
       -1, &sql, NULL);
 
   if (e != SQLITE_OK)
@@ -721,7 +721,7 @@ _tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
       DEBUG (" - pending id=%u timestamp=%"G_GINT64_FORMAT,
           pending->id, pending->timestamp);
 
-      retval = g_list_append (retval, pending);
+      retval = g_list_prepend (retval, pending);
     }
 
   if (e != SQLITE_DONE)
