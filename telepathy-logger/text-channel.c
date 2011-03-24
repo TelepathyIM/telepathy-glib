@@ -494,7 +494,7 @@ on_pending_message_removed_cb (TpTextChannel *self,
   GList *ids = NULL;
   GError *error = NULL;
 
-  ids = g_list_append (ids,
+  ids = g_list_prepend (ids,
       GUINT_TO_POINTER (get_message_pending_id (TP_MESSAGE (message))));
 
   cache = _tpl_log_store_sqlite_dup ();
@@ -572,7 +572,7 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
       if (cached_it == NULL)
         {
           /* No more cached pending, just log the pending messages */
-          to_log = g_list_append (to_log, pending_it->data);
+          to_log = g_list_prepend (to_log, pending_it->data);
           pending_it = g_list_next (pending_it);
           continue;
         }
@@ -582,7 +582,7 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
       if (pending_it == NULL)
         {
           /* No more pending, just remove the cached messages */
-          to_remove = g_list_append (to_remove, GUINT_TO_POINTER (cached->id));
+          to_remove = g_list_prepend (to_remove, GUINT_TO_POINTER (cached->id));
           cached_it = g_list_next (cached_it);
           continue;
         }
@@ -596,7 +596,7 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
           if (cached->timestamp != pending_ts)
             {
               /* The cache messaged is invalid, remove it */
-              to_remove = g_list_append (to_remove,
+              to_remove = g_list_prepend (to_remove,
                   GUINT_TO_POINTER (cached->id));
               cached_it = g_list_next (cached_it);
             }
@@ -610,13 +610,13 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
       else if (cached->id < pending_id)
         {
           /* The cached ID is not valid anymore, remove it */
-          to_remove = g_list_append (to_remove, GUINT_TO_POINTER (cached->id));
+          to_remove = g_list_prepend (to_remove, GUINT_TO_POINTER (cached->id));
           cached_it = g_list_next (cached_it);
         }
       else if (cached->id < pending_id)
         {
           /* The pending message has not been logged */
-          to_log = g_list_append (to_log, pending);
+          to_log = g_list_prepend (to_log, pending);
           pending_it = g_list_next (pending_it);
         }
     }
