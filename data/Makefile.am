@@ -26,7 +26,7 @@ EXTRA_DIST = 				\
 	$(gsettings_files)		\
 	$(clientfile_DATA)		\
 	$(servicefile_in_files)		\
-	$(client_file_parts)
+	$(clientfile_parts)
 
 CLEANFILES = \
 	$(gsettings_SCHEMAS) \
