@@ -2797,16 +2797,20 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
  * Change the status of the connection. The allowed state transitions are:
  *
  * <itemizedlist>
- * <listitem>NEW -> CONNECTING</listitem>
- * <listitem>CONNECTING -> CONNECTED</listitem>
- * <listitem>NEW -> CONNECTED (equivalent to both of the above one after the
- * other - see below)</listitem>
- * <listitem>(anything except DISCONNECTED) -> DISCONNECTED</listitem>
+ * <listitem>#TP_INTERNAL_CONNECTION_STATUS_NEW →
+ *    #TP_CONNECTION_STATUS_CONNECTING</listitem>
+ * <listitem>#TP_CONNECTION_STATUS_CONNECTING →
+ *    #TP_CONNECTION_STATUS_CONNECTED</listitem>
+ * <listitem>#TP_INTERNAL_CONNECTION_STATUS_NEW →
+ *    #TP_CONNECTION_STATUS_CONNECTED (exactly equivalent to both of the above
+ *    one after the other; see below)</listitem>
+ * <listitem>anything except #TP_CONNECTION_STATUS_DISCONNECTED →
+ *    #TP_CONNECTION_STATUS_DISCONNECTED</listitem>
  * </itemizedlist>
  *
- * Before the transition to CONNECTED, the implementation must have discovered
- * the handle for the local user, obtained a reference to that handle and
- * stored it in the @self_handle member of #TpBaseConnection.
+ * Before the transition to #TP_CONNECTION_STATUS_CONNECTED, the implementation
+ * must have discovered the handle for the local user and passed it to
+ * tp_base_connection_set_self_handle().
  *
  * Changing from NEW to CONNECTED is implemented by doing the transition from
  * NEW to CONNECTING, followed by the transition from CONNECTING to CONNECTED;
@@ -2816,14 +2820,16 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
  * Any other valid transition does the following, in this order:
  *
  * <itemizedlist>
- * <listitem>Update the @status member of #TpBaseConnection</listitem>
- * <listitem>If the new state is DISCONNECTED, call the close_all_channels
- * callback on all channel factories</listitem>
- * <listitem>Emit the D-Bus StatusChanged signal</listitem>
- * <listitem>Call the subclass' status change callback</listitem>
- * <listitem>Call the channel factories' status change callbacks</listitem>
- * <listitem>If the new state is DISCONNECTED, call the subclass'
- * @shut_down callback</listitem>
+ * <listitem>Update #TpBaseConnection.status;</listitem>
+ * <listitem>If the new state is #TP_CONNECTION_STATUS_DISCONNECTED, call
+ *    tp_channel_factory_iface_close_all() on all channel factories</listitem>
+ * <listitem>Emit the D-Bus StatusChanged signal;</listitem>
+ * <listitem>Call #TpBaseConnectionClass.connecting,
+ *    #TpBaseConnectionClass.connected or #TpBaseConnectionClass.disconnected
+ *    as appropriate;</listitem>
+ * <listitem>Call the channel factories' status change callbacks;</listitem>
+ * <listitem>If the new state is #TP_CONNECTION_STATUS_DISCONNECTED, call the
+ *    subclass' #TpBaseConnectionClass.shut_down callback.</listitem>
  * </itemizedlist>
  *
  * To provide more details about what happened when moving to @status
