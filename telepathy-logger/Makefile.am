@@ -21,14 +21,38 @@ pkgconfig_DATA = telepathy-logger-0.2.pc
 
 lib_LTLIBRARIES = libtelepathy-logger.la
 
+EXTRA_DIST = \
+	tpl-marshal.list \
+	$(NULL)
+
+if ENABLE_CALL
+
+call_headers = call-event.h
+call_sources = \
+	       call-channel.c                  \
+	       call-channel-internal.h         \
+	       streamed-media-channel.c        \
+	       streamed-media-channel-internal.h
+
+else # ENABLE_CALL
+
+EXTRA_DIST += \
+	      call-event.h 		      \
+	      call-channel.c                  \
+	      call-channel-internal.h         \
+	      streamed-media-channel.c        \
+	      streamed-media-channel-internal.h
+
+endif # ENABLE_CALL
+
 LIBTPLdir = $(includedir)/telepathy-logger-0.2/telepathy-logger
 LIBTPL_HEADERS = \
-		call-event.h                    \
 		entity.h			\
 		event.h				\
 		log-manager.h			\
 		telepathy-logger.h 		\
 		text-event.h			\
+		$(call_headers)                 \
 		$(NULL)
 
 %-marshal.c: %-marshal.list Makefile.am
@@ -45,8 +69,6 @@ BUILT_SOURCES = \
 libtelepathy_logger_la_SOURCES = \
 		action-chain.c			\
 		action-chain-internal.h		\
-		call-channel.c                  \
-		call-channel-internal.h         \
 		call-event.c                    \
 		call-event-internal.h           \
 		channel-internal.h		\
@@ -77,22 +99,17 @@ libtelepathy_logger_la_SOURCES = \
 		log-store-factory-internal.h	\
 		observer.c			\
 		observer-internal.h		\
-		streamed-media-channel.c        \
-		streamed-media-channel-internal.h  \
 		text-channel.c			\
 		text-channel-internal.h		\
 		text-event.c			\
 		text-event-internal.h		\
 		util-internal.h			\
 		util.c				\
+		$(call_sources)                 \
 		$(NULL)
 
 nodist_libtelepathy_logger_la_SOURCES = \
 		$(BUILT_SOURCES)
-
-EXTRA_DIST = \
-	tpl-marshal.list \
-	$(NULL)
 
 libtelepathy_logger_la_LIBADD = \
 	$(top_builddir)/extensions/libtpl-extensions-convenience.la

@@ -14,13 +14,31 @@ servicefile_DATA = $(servicefile_in_files:.service.in=.service)
 	$(AM_V_GEN)sed -e "s|[@]libexecdir[@]|$(libexecdir)|" $< > $@
 
 clientfiledir = $(datarootdir)/telepathy/clients
+
+clientfile_parts = $(top_srcdir)/data/Logger.Observer.client.in \
+	       	   $(top_srcdir)/data/Logger.Text.client.in \
+		   $(top_srcdir)/data/Logger.Call.client.in \
+		   $(top_srcdir)/data/Logger.Recover.client.in
+
 clientfile_DATA = Logger.client
 
 EXTRA_DIST = 				\
 	$(gsettings_files)		\
 	$(clientfile_DATA)		\
-	$(servicefile_in_files)
+	$(servicefile_in_files)		\
+	$(client_file_parts)
 
 CLEANFILES = \
 	$(gsettings_SCHEMAS) \
-	$(servicefile_DATA)
+	$(servicefile_DATA) \
+	$(clientfile_DATA)
+
+# Generates Logger.client file
+Logger.client: $(clientfile_parts)
+	cp $(top_srcdir)/data/Logger.Observer.client.in $(clientfile_DATA)
+	cat $(top_srcdir)/data/Logger.Text.client.in >> $(clientfile_DATA)
+if ENABLE_CALL
+	cat $(top_srcdir)/data/Logger.Call.client.in >> $(clientfile_DATA)
+endif
+	cat $(top_srcdir)/data/Logger.Recover.client.in >> $(clientfile_DATA)
+

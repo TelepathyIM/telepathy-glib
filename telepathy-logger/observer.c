@@ -380,6 +380,7 @@ _tpl_observer_init (TplObserver *self)
            TP_HANDLE_TYPE_ROOM,
       NULL));
 
+#ifdef ENABLE_CALL
   /* Observe contact stream media channels */
   tp_base_client_take_observer_filter (TP_BASE_CLIENT (self),
       tp_asv_new (
@@ -406,6 +407,7 @@ _tpl_observer_init (TplObserver *self)
        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
            TP_HANDLE_TYPE_ROOM,
       NULL));
+#endif /* ENABLE_CALL */
 
   tp_base_client_set_observer_recover (TP_BASE_CLIENT (self), TRUE);
 }
