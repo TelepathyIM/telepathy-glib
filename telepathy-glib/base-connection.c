@@ -2812,6 +2812,10 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
  * @shut_down callback</listitem>
  * </itemizedlist>
  *
+ * To provide more details about what happened when moving to @status
+ * #TP_CONNECTION_STATUS_DISCONNECTED due to an error, consider calling
+ * tp_base_connection_disconnect_with_dbus_error() instead of this function.
+ *
  * Changed in 0.7.35: the @self_handle member of #TpBaseConnection was
  * previously set to 0 at this stage. It now remains non-zero until the object
  * is disposed.
