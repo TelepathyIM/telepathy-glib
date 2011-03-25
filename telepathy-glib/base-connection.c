@@ -2736,16 +2736,30 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
  *              Disconnected
  * @details: Further details of the error, as a hash table where the keys
  *           are strings as defined in the Telepathy specification, and the
- *           values are GValues. %NULL is allowed, and treated as empty.
+ *           values are #GValue<!-- -->s. %NULL is allowed, and treated as
+ *           an empty hash table.
  * @reason: The reason code to use in the StatusChanged signal
  *          (a less specific, non-extensible version of @error_name)
  *
- * Change the status of the connection to %TP_CONNECTION_STATUS_DISCONNECTED,
- * as if by a call to tp_base_connection_change_status(). Before doing so,
- * emit the ConnectionError D-Bus signal to give more details of the error.
+ * Changes the #TpBaseConnection.status of @self to
+ * %TP_CONNECTION_STATUS_DISCONNECTED, as if by a call to
+ * tp_base_connection_change_status(), but additionally emits the
+ * <code>ConnectionError</code> D-Bus signal to provide more details about the
+ * error.
  *
- * @details may contain, among other entries, the well-known key
- * "debug-message", whose value should have type G_TYPE_STRING.
+ * Well-known keys for @details are documented in the Telepathy specification's
+ * <ulink url='http://telepathy.freedesktop.org/spec/Connection.html#Signal:ConnectionError'>definition
+ * of the ConnectionError signal</ulink>, and include:
+ *
+ * <itemizedlist>
+ * <listitem><code>"debug-message"</code>, whose value should have type
+ *    #G_TYPE_STRING, for debugging information about the
+ *    disconnection which should not be shown to the user</listitem>
+ * <listitem><code>"server-message"</code>, whose value should also have type
+ *    #G_TYPE_STRING, for a human-readable error message from the server (in an
+ *    unspecified language) explaining why the user was
+ *    disconnected.</listitem>
+ * </itemizedlist>
  *
  * Since: 0.7.24
  */
