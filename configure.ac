@@ -232,7 +232,6 @@ Configure summary:
 	Compiler Flags..............:  ${CFLAGS} ${ERROR_CFLAGS}
 	Prefix......................:  ${prefix}
 	Coding style checks.........:  ${ENABLE_CODING_STYLE_CHECKS}
-	Python Twisted tests........:  ${TEST_PYTHON}
 	Bugreporting URL............:  ${PACKAGE_BUGREPORT}
 	Public extensions library...:  ${enable_public_extensions}
 	Introspection support.......:  ${found_introspection}
