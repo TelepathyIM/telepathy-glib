@@ -1,3 +1,23 @@
+telepathy-logger 0.2.7 (2011-03-25)
+===================================
+
+The "TGIF" release
+
+This release adds experimental support for call logging, bug fixes and
+optimisations. We suggest distributions to update to this version. Note
+that compilation option '--enable-call' is required to use experimental
+call support.
+
+Fixes:
+
+* Readd AM_PATH_PYTHON back to configure.ac, required for codegen
+* Add support for call logging
+* Search using GRegex to prevent matching XML tags
+* Improve test coverage
+* Avoid using g_list_append() for performance reason
+* Fixed infinit loop in pending message cache logic
+
+
 telepathy-logger 0.2.6 (2011-03-22)
 ===================================
 
