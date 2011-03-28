@@ -28,6 +28,8 @@
 #include <glib.h>
 
 #include <telepathy-glib/intset.h>
+#define DEBUG_FLAG TP_DEBUG_HANDLES
+#include "debug-internal.h"
 
 /**
  * TpHandleSet:
@@ -314,6 +316,48 @@ tp_handle_set_to_array (const TpHandleSet *set)
   g_return_val_if_fail (set != NULL, NULL);
 
   return tp_intset_to_array (set->intset);
+}
+
+/**
+ * tp_handle_set_to_identifier_map:
+ * @self: a handle set
+ *
+ * Returns a dictionary mapping each handle in @self to the corresponding
+ * identifier, as if retrieved by calling tp_handle_inspect() on each handle.
+ * The type of the returned value is described as
+ * <code>Handle_Identifier_Map</code> in the Telepathy specification.
+ *
+ * Returns: (transfer full) (element-type TpHandle utf8): a map from the
+ *  handles in @self to the corresponding identifier.
+ */
+GHashTable *
+tp_handle_set_to_identifier_map (
+    TpHandleSet *self)
+{
+  /* We don't bother dupping the strings: they remain valid as long as the
+   * connection's alive and hence the repo exists.
+   */
+  GHashTable *map = g_hash_table_new (NULL, NULL);
+  TpIntsetFastIter iter;
+  TpHandle handle;
+
+  g_return_val_if_fail (self != NULL, map);
+
+  tp_intset_fast_iter_init (&iter, self->intset);
+  while (tp_intset_fast_iter_next (&iter, &handle))
+    {
+      if (handle == 0 || !tp_handle_is_valid (self->repo, handle, NULL))
+        {
+          WARNING ("handle set %p contains invalid handle #%u", self, handle);
+        }
+      else
+        {
+          g_hash_table_insert (map, GUINT_TO_POINTER (handle),
+              (gchar *) tp_handle_inspect (self->repo, handle));
+        }
+    }
+
+  return map;
 }
 
 static void
