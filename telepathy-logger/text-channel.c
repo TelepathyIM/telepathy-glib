@@ -632,7 +632,7 @@ pendingproc_store_pending_messages (TplActionChain *ctx,
           to_remove = g_list_prepend (to_remove, GUINT_TO_POINTER (cached->id));
           cached_it = g_list_next (cached_it);
         }
-      else if (cached->id < pending_id)
+      else
         {
           /* The pending message has not been logged */
           to_log = g_list_prepend (to_log, pending);
