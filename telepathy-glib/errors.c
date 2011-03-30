@@ -224,6 +224,12 @@
  *     Raised when a Connection cannot be established because either the
  *     Connection Manager or its support library (e.g. wocky, papyon, sofiasip)
  *     requires upgrading to support a newer protocol version.
+ * @TP_ERROR_INSUFFICIENT_BALANCE:
+ *   <code>org.freedesktop.Telepathy.Error.InsufficientBalance</code>:
+ *     Raised if the user has insufficient balance to place a call.  The key
+ *     'balance-required' MAY be included in CallStateDetails on a Call channel
+ *     (with the same units and scale as AccountBalance) to indicate how much
+ *     credit is required to make this call.
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

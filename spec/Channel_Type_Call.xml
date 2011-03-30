@@ -836,6 +836,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
             normally be localized or suitable for display to users, and is only
             applicable when the call state is
             <tp:type>Call_State</tp:type>_Ended.</dd>
+
+          <dt>balance-required - i</dt>
+          <dd>Optionally included when a call cannot be connected because
+            there is <tp:error-ref>InsufficientBalance</tp:error-ref>,
+            indicating what the required balance would be to place this call.
+            The value of this key has the same units and scale as
+            <tp:dbus-ref namespace="ofdT.Connection.Interface.Balance">AccountBalance</tp:dbus-ref>.
+            </dd>
         </dl>
       </tp:docstring>
     </property>
