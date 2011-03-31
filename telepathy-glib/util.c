@@ -120,6 +120,8 @@ tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle)
 {
   guint i;
 
+  g_return_val_if_fail (haystack != NULL, FALSE);
+
   for (i = 0; i < haystack->len; i++)
     {
       if (g_ptr_array_index (haystack, i) == needle)
@@ -156,6 +158,9 @@ void
 tp_g_ptr_array_extend (GPtrArray *target,
     GPtrArray *source)
 {
+  g_return_if_fail (source != NULL);
+  g_return_if_fail (target != NULL);
+
   g_ptr_array_foreach (source, add_to_array, target);
 }
 
