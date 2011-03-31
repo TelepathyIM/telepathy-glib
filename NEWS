@@ -1,3 +1,20 @@
+telepathy-glib 0.14.2 (2011-03-31)
+==================================
+
+The “where the wind blows” release. This release flatly contradicts the
+statement that the previous stable release would be the last to add API,
+by adding API from version 0.22.1 of the specification plus a new
+utility function. This time, we shall merely claim that no major API
+additions will be made on this stable branch, and once a 0.15.x release
+is made no further API additions will be made on 0.14.x at all.
+
+Enhancements:
+
+• Update to spec 0.22.1 (Will):
+  · Generated code for new StreamHandler methods and signals and types;
+  · TP_ERROR_INSUFFICIENT_BALANCE.
+• tp_g_ptr_array_extend() for concatenating two GPtrArrays. (Jonny)
+
 telepathy-glib 0.14.1 (2011-03-22)
 ==================================
 
