@@ -154,7 +154,7 @@ add_to_array (gpointer data,
  * as long as doing so does not free the data pointed to by the new
  * items in @target.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.14.3
  */
 void
 tp_g_ptr_array_extend (GPtrArray *target,

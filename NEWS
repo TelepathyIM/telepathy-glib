@@ -1,4 +1,4 @@
-telepathy-glib 0.14.2 (2011-03-31)
+telepathy-glib 0.14.3 (2011-03-31)
 ==================================
 
 The “where the wind blows” release. This release flatly contradicts the
@@ -14,6 +14,11 @@ Enhancements:
   · Generated code for new StreamHandler methods and signals and types;
   · TP_ERROR_INSUFFICIENT_BALANCE.
 • tp_g_ptr_array_extend() for concatenating two GPtrArrays. (Jonny)
+
+telepathy-glib 0.14.2 (never)
+=============================
+
+There is no telepathy-glib 0.14.2.
 
 telepathy-glib 0.14.1 (2011-03-22)
 ==================================
