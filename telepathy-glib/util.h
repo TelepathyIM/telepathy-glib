@@ -32,6 +32,7 @@
 G_BEGIN_DECLS
 
 gboolean tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle);
+void tp_g_ptr_array_extend (GPtrArray *target, GPtrArray *source);
 
 GValue *tp_g_value_slice_new (GType type) G_GNUC_WARN_UNUSED_RESULT;
 
