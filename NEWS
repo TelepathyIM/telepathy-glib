@@ -1,3 +1,18 @@
+telepathy-logger 0.2.8 (2011-03-31)
+===================================
+
+The "Piquez moi quelqu'un" release
+
+This release fixes wrong libtelepathy-logger shared object version. This
+error was introduced in version 0.2.7, where age has been incremented but
+not the current. Distribution should update to this version to avoid
+libtelepathy-logger shared object version to go backward.
+
+Fixes:
+
+* Fixed wrong shared object version.
+
+
 telepathy-logger 0.2.7 (2011-03-25)
 ===================================
 
