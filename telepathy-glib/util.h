@@ -32,6 +32,7 @@
 G_BEGIN_DECLS
 
 gboolean tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle);
+void tp_g_ptr_array_extend (GPtrArray *target, GPtrArray *source);
 
 GValue *tp_g_value_slice_new (GType type) G_GNUC_WARN_UNUSED_RESULT;
 
@@ -144,8 +145,6 @@ void tp_simple_async_report_success_in_idle (GObject *source,
 gint64 tp_user_action_time_from_x11 (guint32 x11_time);
 gboolean tp_user_action_time_should_present (gint64 user_action_time,
     guint32 *x11_time);
-
-void tp_g_ptr_array_extend (GPtrArray *target, GPtrArray *source);
 
 G_END_DECLS
 

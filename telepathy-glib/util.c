@@ -129,6 +129,35 @@ tp_g_ptr_array_contains (GPtrArray *haystack, gpointer needle)
   return FALSE;
 }
 
+static void
+add_to_array (gpointer data,
+    gpointer user_data)
+{
+  g_ptr_array_add (user_data, data);
+}
+
+/**
+ * tp_g_ptr_array_extend:
+ * @target: a #GPtrArray to copy items to
+ * @source: a #GPtrArray to copy items from
+ *
+ * Appends all elements of @source to @target. Note that this only copies the
+ * pointers from @source; any duplication or reference-incrementing must be
+ * performed by the caller.
+ *
+ * After this function has been called, it is safe to call
+ * g_ptr_array_free() on @source and also free the actual pointer array,
+ * as long as doing so does not free the data pointed to by the new
+ * items in @target.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_g_ptr_array_extend (GPtrArray *target,
+    GPtrArray *source)
+{
+  g_ptr_array_foreach (source, add_to_array, target);
+}
 
 /**
  * tp_g_value_slice_new:
@@ -1540,33 +1569,3 @@ _tp_create_temp_unix_socket (GSocketService *service,
   return NULL;
 }
 #endif /* HAVE_GIO_UNIX */
-
-static void
-add_to_array (gpointer data,
-    gpointer user_data)
-{
-  g_ptr_array_add (user_data, data);
-}
-
-/**
- * tp_g_ptr_array_extend:
- * @target: a #GPtrArray to copy items to
- * @source: a #GPtrArray to copy items from
- *
- * Appends all elements of @source to @target. Note that this only copies the
- * pointers from @source; any duplication or reference-incrementing must be
- * performed by the caller.
- *
- * After this function has been called, it is safe to call
- * g_ptr_array_free() on @source and also free the actual pointer array,
- * as long as doing so does not free the data pointed to by the new
- * items in @target.
- *
- * Since: 0.13.UNRELEASED
- */
-void
-tp_g_ptr_array_extend (GPtrArray *target,
-    GPtrArray *source)
-{
-  g_ptr_array_foreach (source, add_to_array, target);
-}
