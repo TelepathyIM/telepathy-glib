@@ -5,7 +5,7 @@ A log base for testing is placed in TPL_TEST_LOG_DIR.
 
 == When writing code ==
 
-If an object should behave in a different way, depending on wheter it is in a
+If an object should behave in a different way, depending on whether it is in a
 testing enviroment or not, you should rely on the present of TPL_TEST_MODE
 variable.
 

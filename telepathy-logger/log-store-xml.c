@@ -264,7 +264,7 @@ _tpl_log_store_xml_class_init (TplLogStoreXmlClass *klass)
 
   param_spec = g_param_spec_boolean ("testmode",
       "TestMode",
-      "Wheter the logstore is in testmode, for testsuite use only",
+      "Whether the logstore is in testmode, for testsuite use only",
       FALSE, G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TESTMODE, param_spec);
 
