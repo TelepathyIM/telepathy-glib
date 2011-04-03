@@ -30,9 +30,7 @@ tpfarstream_la_LIBADD =					\
 	$(PYTPFARSTREAM_LIBS)				\
 	$(top_builddir)/telepathy-farstream/libtelepathy-farstream.la
 
-tpfarstream_la_LDFLAGS =					\
-	`python-config --libs`				\
-	-module -avoid-version
+tpfarstream_la_LDFLAGS = -module -avoid-version
 
 pytpfarstream.c: pytpfarstream.override pytpfarstream.defs
 	$(PYTHON) $(top_srcdir)/python/codegen/codegen.py	\
