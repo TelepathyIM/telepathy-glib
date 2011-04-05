@@ -858,6 +858,11 @@ test_handler (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
+  g_assert (!tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan));
+  g_assert (!tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan_2));
+
   /* Call HandleChannels */
   channels = g_ptr_array_sized_new (2);
   add_channel_to_ptr_array (channels, test->text_chan);
@@ -885,6 +890,11 @@ test_handler (Test *test,
   g_assert_cmpuint (g_list_length (chans), ==, 2);
   g_list_free (chans);
 
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan));
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan_2));
+
   /* One of the channel is closed */
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
@@ -895,6 +905,11 @@ test_handler (Test *test,
   g_assert_cmpuint (g_list_length (chans), ==, 1);
   g_list_free (chans);
 
+  g_assert (!tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan));
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan_2));
+
   /* Create another client sharing the same unique name */
   client_2 = tp_tests_simple_client_new (test->dbus, "Test", TRUE);
   tp_base_client_be_a_handler (TP_BASE_CLIENT (client_2));
@@ -904,6 +919,11 @@ test_handler (Test *test,
   chans = tp_base_client_get_handled_channels (TP_BASE_CLIENT (client_2));
   g_assert_cmpuint (g_list_length (chans), ==, 1);
   g_list_free (chans);
+
+  g_assert (!tp_base_client_is_handling_channel (TP_BASE_CLIENT (client_2),
+        test->text_chan));
+  g_assert (tp_base_client_is_handling_channel (TP_BASE_CLIENT (client_2),
+        test->text_chan_2));
 
   g_object_unref (client_2);
 
