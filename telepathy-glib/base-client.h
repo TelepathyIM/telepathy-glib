@@ -170,6 +170,9 @@ gboolean tp_base_client_register (TpBaseClient *self,
 GList *tp_base_client_get_pending_requests (TpBaseClient *self);
 GList *tp_base_client_get_handled_channels (TpBaseClient *self);
 
+gboolean tp_base_client_is_handling_channel (TpBaseClient *self,
+    TpChannel *channel);
+
 const gchar *tp_base_client_get_name (TpBaseClient *self);
 gboolean tp_base_client_get_uniquify_name (TpBaseClient *self);
 const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
