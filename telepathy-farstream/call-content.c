@@ -1121,11 +1121,13 @@ _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
       && content->current_offer_contact_handle == contact_handle)
   {
     GList *codecs = content->current_offer_fscodecs;
+    TpProxy *current_offer = content->current_offer;
     content->current_offer_fscodecs = NULL;
+    content->current_offer = NULL;
 
     /* ownership transfers to try_codecs */
     process_codec_offer_try_codecs (content, s,
-        content->current_offer, codecs);
+        current_offer, codecs);
   }
 
   return s;
