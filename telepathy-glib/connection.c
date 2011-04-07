@@ -639,10 +639,6 @@ get_self_handle (TpConnection *self)
   tp_cli_connection_connect_to_self_handle_changed (self,
       on_self_handle_changed, NULL, NULL, NULL, NULL);
 
-  /* GetSelfHandle is deprecated in favour of the SelfHandle property,
-   * but until Connection has other interesting properties, there's no point in
-   * trying to implement a fast path; GetSelfHandle is the only one guaranteed
-   * to work, so we'll sometimes have to call it anyway */
   g_assert (self->priv->introspection_call == NULL);
   self->priv->introspection_call = tp_cli_connection_call_get_self_handle (
       self, -1, got_self_handle, NULL, NULL, NULL);
