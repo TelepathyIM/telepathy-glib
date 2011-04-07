@@ -1805,7 +1805,16 @@ contacts_context_continue (ContactsContext *c)
       /* bah! */
       ContactsProc next = g_queue_pop_head (&c->todo);
 
-      next (c);
+      if (G_UNLIKELY (tp_proxy_get_invalidated (c->connection) != NULL))
+        {
+          DEBUG ("failing due to connection having been invalidated: %s",
+              tp_proxy_get_invalidated (c->connection)->message);
+          contacts_context_fail (c, tp_proxy_get_invalidated (c->connection));
+        }
+      else
+        {
+          next (c);
+        }
     }
 }
 
