@@ -743,6 +743,7 @@ tp_connection_status_changed (TpConnection *self,
       /* we defer the perceived change to CONNECTED until ready */
       if (self->priv->introspection_call == NULL)
         {
+          /* TODO: use fast-path also for CONNECTED reintrospection */
           self->priv->introspection_call =
             tp_cli_connection_call_get_interfaces (self, -1,
                 tp_connection_got_interfaces_cb, NULL, NULL, NULL);
@@ -888,10 +889,10 @@ tp_connection_status_changed_cb (TpConnection *self,
 {
   TpConnectionStatus prev_status = self->priv->status;
 
-  /* GetStatus is called in the TpConnection constructor. If we don't have the
-   * reply for this GetStatus call yet, ignore this signal StatusChanged in
-   * order to run the interface introspection only one time. We will get the
-   * GetStatus reply later anyway. */
+  /* The status is initially attempted to be discovered starting in the
+   * constructor. If we don't have the reply for that call yet, ignore this
+   * signal StatusChanged in order to run the interface introspection only one
+   * time. We will get the initial introspection reply later anyway. */
   if (self->priv->status != TP_UNKNOWN_CONNECTION_STATUS)
     {
       tp_connection_status_changed (self, status, reason);
@@ -994,14 +995,33 @@ _tp_connection_got_properties (TpProxy *proxy,
 
   if (error == NULL)
     {
-      /* FIXME: fd.o #27459: use more of the properties, as a fast-path */
-
       if (tp_asv_get_boolean (asv, "HasImmortalHandles", NULL))
         self->priv->has_immortal_handles = TRUE;
+
+      /* FIXME: fd.o #27459: use the 0.19.2 properties, and early-return if
+       * they're all there */
     }
   else
     {
-      DEBUG ("GetAll failed, will use 0.18 API instead: %s", error->message);
+      DEBUG ("GetAll failed: %s", error->message);
+    }
+
+  DEBUG ("Could not extract all required properties from GetAll return, "
+         "will use 0.18 API instead");
+
+  if (self->priv->introspection_call == NULL)
+    {
+      if (tp_proxy_get_invalidated (self) != NULL)
+        {
+          DEBUG ("  ... except that we're already invalidated: %s",
+              tp_proxy_get_invalidated (self)->message);
+          return;
+        }
+
+      /* get my initial status */
+      DEBUG ("Calling GetStatus");
+      self->priv->introspection_call = tp_cli_connection_call_get_status (self, -1,
+          tp_connection_got_status_cb, NULL, NULL, NULL);
     }
 }
 
@@ -1029,12 +1049,6 @@ tp_connection_constructor (GType type,
   /* get the properties, currently only for HasImmortalHandles */
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
-
-  /* get my initial status */
-  DEBUG ("Calling GetStatus");
-  g_assert (self->priv->introspection_call == NULL);
-  self->priv->introspection_call = tp_cli_connection_call_get_status (self, -1,
-      tp_connection_got_status_cb, NULL, NULL, NULL);
 
   g_signal_connect (self, "invalidated",
       G_CALLBACK (tp_connection_invalidated), NULL);
