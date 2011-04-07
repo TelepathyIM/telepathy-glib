@@ -652,6 +652,33 @@ get_self_handle (TpConnection *self)
 G_STATIC_ASSERT (sizeof (TpConnectionProc) <= sizeof (gpointer));
 
 static void
+tp_connection_add_interfaces_from_introspection (TpConnection *self,
+                                                 const gchar **interfaces)
+{
+  const gchar **iter;
+
+  for (iter = interfaces; *iter != NULL; iter++)
+    {
+      if (tp_dbus_check_valid_interface_name (*iter, NULL))
+        {
+          GQuark q = g_quark_from_string (*iter);
+
+          tp_proxy_add_interface_by_id ((TpProxy *) self, q);
+
+          if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS)
+            {
+              self->priv->introspect_needed = g_list_append (
+                  self->priv->introspect_needed, introspect_contacts);
+            }
+        }
+      else
+        {
+          DEBUG ("\t\tInterface %s not valid", *iter);
+        }
+    }
+}
+
+static void
 tp_connection_got_interfaces_cb (TpConnection *self,
                                  const gchar **interfaces,
                                  const GError *error,
@@ -682,29 +709,7 @@ tp_connection_got_interfaces_cb (TpConnection *self,
     get_self_handle);
 
   if (interfaces != NULL)
-    {
-      const gchar **iter;
-
-      for (iter = interfaces; *iter != NULL; iter++)
-        {
-          if (tp_dbus_check_valid_interface_name (*iter, NULL))
-            {
-              GQuark q = g_quark_from_string (*iter);
-
-              tp_proxy_add_interface_by_id ((TpProxy *) self, q);
-
-              if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS)
-                {
-                  self->priv->introspect_needed = g_list_append (
-                      self->priv->introspect_needed, introspect_contacts);
-                }
-            }
-          else
-            {
-              DEBUG ("\t\tInterface %s not valid", *iter);
-            }
-        }
-    }
+    tp_connection_add_interfaces_from_introspection (self, interfaces);
 
   /* FIXME: give subclasses a chance to influence the definition of "ready"
    * now that we have our interfaces? */
