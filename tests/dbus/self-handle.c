@@ -43,6 +43,7 @@ setup (Fixture *f,
       tp_tests_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple",
+        "break-0192-properties", TRUE,
         NULL));
   f->service_conn_as_base = TP_BASE_CONNECTION (f->service_conn);
   g_object_ref (f->service_conn_as_base);

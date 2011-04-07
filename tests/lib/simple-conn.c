@@ -36,6 +36,8 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleConnection, tp_tests_simple_connection,
 enum
 {
   PROP_ACCOUNT = 1,
+  PROP_BREAK_PROPS = 2,
+  PROP_DBUS_STATUS = 3,
   N_PROPS
 };
 
@@ -52,6 +54,7 @@ struct _TpTestsSimpleConnectionPrivate
   gchar *account;
   guint connect_source;
   guint disconnect_source;
+  gboolean break_fastpath_props;
 
   /* TpHandle => reffed TpTestsTextChannelNull */
   GHashTable *channels;
@@ -81,6 +84,25 @@ get_property (GObject *object,
     case PROP_ACCOUNT:
       g_value_set_string (value, self->priv->account);
       break;
+    case PROP_BREAK_PROPS:
+      g_value_set_boolean (value, self->priv->break_fastpath_props);
+      break;
+    case PROP_DBUS_STATUS:
+      if (self->priv->break_fastpath_props)
+        {
+          g_debug ("returning broken value for Connection.Status");
+          g_value_set_uint (value, 0xdeadbeefU);
+        }
+      else
+        {
+          guint32 status = TP_BASE_CONNECTION (self)->status;
+
+          if (status == TP_INTERNAL_CONNECTION_STATUS_NEW)
+            g_value_set_uint (value, TP_CONNECTION_STATUS_DISCONNECTED);
+          else
+            g_value_set_uint (value, status);
+        }
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
   }
@@ -98,6 +120,9 @@ set_property (GObject *object,
     case PROP_ACCOUNT:
       g_free (self->priv->account);
       self->priv->account = g_utf8_strdown (g_value_get_string (value), -1);
+      break;
+    case PROP_BREAK_PROPS:
+      self->priv->break_fastpath_props = g_value_get_boolean (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
@@ -284,6 +309,21 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+
+  param_spec = g_param_spec_boolean ("break-0192-properties",
+      "Break 0.19.2 properties",
+      "Break Connection D-Bus properties introduced in spec 0.19.2", FALSE,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
+      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_BREAK_PROPS, param_spec);
+
+  param_spec = g_param_spec_uint ("dbus-status",
+      "Connection.Status",
+      "The connection status as visible on D-Bus (overridden so can break it)",
+      TP_CONNECTION_STATUS_CONNECTED, G_MAXUINT,
+      TP_CONNECTION_STATUS_DISCONNECTED,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
 
   signals[SIGNAL_GOT_SELF_HANDLE] = g_signal_new ("got-self-handle",
       G_OBJECT_CLASS_TYPE (klass),
