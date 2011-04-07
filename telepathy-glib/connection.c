@@ -718,6 +718,13 @@ tp_connection_got_interfaces_cb (TpConnection *self,
 }
 
 static void
+_tp_connection_got_properties (TpProxy *proxy,
+    GHashTable *asv,
+    const GError *error,
+    gpointer unused G_GNUC_UNUSED,
+    GObject *unused_object G_GNUC_UNUSED);
+
+static void
 tp_connection_status_changed (TpConnection *self,
                               guint status,
                               guint reason)
@@ -743,10 +750,9 @@ tp_connection_status_changed (TpConnection *self,
       /* we defer the perceived change to CONNECTED until ready */
       if (self->priv->introspection_call == NULL)
         {
-          /* TODO: use fast-path also for CONNECTED reintrospection */
           self->priv->introspection_call =
-            tp_cli_connection_call_get_interfaces (self, -1,
-                tp_connection_got_interfaces_cb, NULL, NULL, NULL);
+            tp_cli_dbus_properties_call_get_all (self, -1,
+              TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
         }
     }
   else
@@ -1000,6 +1006,9 @@ _tp_connection_got_properties (TpProxy *proxy,
       return;
     }
 
+  if (self->priv->introspection_call)
+    self->priv->introspection_call = NULL;
+
   if (error == NULL)
     {
       gboolean sufficient;
@@ -1062,10 +1071,21 @@ insufficient:
 
   if (self->priv->introspection_call == NULL)
     {
-      /* get my initial status */
-      DEBUG ("Calling GetStatus");
-      self->priv->introspection_call = tp_cli_connection_call_get_status (self, -1,
-          tp_connection_got_status_cb, NULL, NULL, NULL);
+      if (self->priv->status == TP_UNKNOWN_CONNECTION_STATUS &&
+          !self->priv->introspecting_after_connected)
+        {
+          /* get my initial status */
+          DEBUG ("Calling GetStatus");
+          self->priv->introspection_call =
+            tp_cli_connection_call_get_status (self, -1,
+              tp_connection_got_status_cb, NULL, NULL, NULL);
+        }
+      else
+        {
+          self->priv->introspection_call =
+            tp_cli_connection_call_get_interfaces (self, -1,
+                tp_connection_got_interfaces_cb, NULL, NULL, NULL);
+        }
     }
 }
 
