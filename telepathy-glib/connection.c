@@ -993,31 +993,75 @@ _tp_connection_got_properties (TpProxy *proxy,
 {
   TpConnection *self = TP_CONNECTION (proxy);
 
+  if (tp_proxy_get_invalidated (self) != NULL)
+    {
+      DEBUG ("%p: already invalidated, not trying to become ready: %s",
+          self, tp_proxy_get_invalidated (self)->message);
+      return;
+    }
+
   if (error == NULL)
     {
+      gboolean sufficient;
+      guint32 status;
+      guint32 self_handle;
+      const gchar **interfaces;
+
       if (tp_asv_get_boolean (asv, "HasImmortalHandles", NULL))
         self->priv->has_immortal_handles = TRUE;
 
-      /* FIXME: fd.o #27459: use the 0.19.2 properties, and early-return if
-       * they're all there */
+      status = tp_asv_get_uint32 (asv, "Status", &sufficient);
+
+      if (!sufficient
+          || status > TP_CONNECTION_STATUS_DISCONNECTED)
+        goto insufficient;
+
+      interfaces = (const gchar **) tp_asv_get_strv (asv, "Interfaces");
+
+      if (interfaces == NULL)
+        goto insufficient;
+
+      tp_connection_add_interfaces_from_introspection (self, interfaces);
+
+      if (status == TP_CONNECTION_STATUS_CONNECTED)
+        {
+          if ((self_handle = tp_asv_get_uint32 (asv, "SelfHandle", NULL)) == 0)
+            goto insufficient;
+
+          self->priv->introspecting_after_connected = TRUE;
+
+          self->priv->last_known_self_handle = self_handle;
+          self->priv->introspecting_self_contact = TRUE;
+
+          /* This relies on the special case in tp_connection_get_contacts_by_handle()
+           * which makes it start working slightly early. */
+          tp_connection_get_contacts_by_handle (self, 1, &self_handle, 0, NULL,
+              tp_connection_got_self_contact_cb, NULL, NULL, NULL);
+
+          /* tp_connection_got_self_contact_cb will resume the introspection */
+        }
+      else
+        {
+          tp_connection_status_changed (self, status,
+              TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED);
+
+          tp_connection_continue_introspection (self);
+        }
+
+      return;
     }
   else
     {
       DEBUG ("GetAll failed: %s", error->message);
     }
 
+insufficient:
+
   DEBUG ("Could not extract all required properties from GetAll return, "
          "will use 0.18 API instead");
 
   if (self->priv->introspection_call == NULL)
     {
-      if (tp_proxy_get_invalidated (self) != NULL)
-        {
-          DEBUG ("  ... except that we're already invalidated: %s",
-              tp_proxy_get_invalidated (self)->message);
-          return;
-        }
-
       /* get my initial status */
       DEBUG ("Calling GetStatus");
       self->priv->introspection_call = tp_cli_connection_call_get_status (self, -1,
