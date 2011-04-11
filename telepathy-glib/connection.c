@@ -986,6 +986,41 @@ tp_connection_invalidated (TpConnection *self)
     }
 }
 
+static gboolean
+_tp_connection_extract_properties (TpConnection *self,
+    GHashTable *asv,
+    guint32 *status,
+    guint32 *self_handle,
+    const gchar ***interfaces)
+{
+  gboolean sufficient;
+
+  /* has_immortal_handles is a bitfield, so we can't pass a pointer to it */
+  if (tp_asv_get_boolean (asv, "HasImmortalHandles", NULL))
+    self->priv->has_immortal_handles = TRUE;
+
+  *status = tp_asv_get_uint32 (asv, "Status", &sufficient);
+
+  if (!sufficient
+      || *status > TP_CONNECTION_STATUS_DISCONNECTED)
+    return FALSE;
+
+  *interfaces = (const gchar **) tp_asv_get_strv (asv, "Interfaces");
+
+  if (*interfaces == NULL)
+    return FALSE;
+
+  if (*status == TP_CONNECTION_STATUS_CONNECTED)
+    {
+      *self_handle = tp_asv_get_uint32 (asv, "SelfHandle", &sufficient);
+
+      if (!sufficient || *self_handle == 0)
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
 static void
 _tp_connection_got_properties (TpProxy *proxy,
     GHashTable *asv,
@@ -994,6 +1029,9 @@ _tp_connection_got_properties (TpProxy *proxy,
     GObject *unused_object G_GNUC_UNUSED)
 {
   TpConnection *self = TP_CONNECTION (proxy);
+  guint32 status;
+  guint32 self_handle;
+  const gchar **interfaces;
 
   if (tp_proxy_get_invalidated (self) != NULL)
     {
@@ -1005,34 +1043,18 @@ _tp_connection_got_properties (TpProxy *proxy,
   if (self->priv->introspection_call)
     self->priv->introspection_call = NULL;
 
-  if (error == NULL)
+  if (error == NULL &&
+      _tp_connection_extract_properties (
+        self,
+        asv,
+        &status,
+        &self_handle,
+        &interfaces))
     {
-      gboolean sufficient;
-      guint32 status;
-      guint32 self_handle;
-      const gchar **interfaces;
-
-      if (tp_asv_get_boolean (asv, "HasImmortalHandles", NULL))
-        self->priv->has_immortal_handles = TRUE;
-
-      status = tp_asv_get_uint32 (asv, "Status", &sufficient);
-
-      if (!sufficient
-          || status > TP_CONNECTION_STATUS_DISCONNECTED)
-        goto insufficient;
-
-      interfaces = (const gchar **) tp_asv_get_strv (asv, "Interfaces");
-
-      if (interfaces == NULL)
-        goto insufficient;
-
       tp_connection_add_interfaces_from_introspection (self, interfaces);
 
       if (status == TP_CONNECTION_STATUS_CONNECTED)
         {
-          if ((self_handle = tp_asv_get_uint32 (asv, "SelfHandle", NULL)) == 0)
-            goto insufficient;
-
           self->priv->introspecting_after_connected = TRUE;
 
           self->priv->last_known_self_handle = self_handle;
@@ -1055,12 +1077,11 @@ _tp_connection_got_properties (TpProxy *proxy,
 
       return;
     }
-  else
+  else if (error != NULL)
     {
       DEBUG ("GetAll failed: %s", error->message);
     }
 
-insufficient:
 
   DEBUG ("Could not extract all required properties from GetAll return, "
          "will use 0.18 API instead");
