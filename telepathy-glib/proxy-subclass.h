@@ -65,6 +65,7 @@ DBusGProxy *tp_proxy_borrow_interface_by_id (TpProxy *self, GQuark iface,
     GError **error);
 
 DBusGProxy *tp_proxy_add_interface_by_id (TpProxy *self, GQuark iface);
+void tp_proxy_add_interfaces (TpProxy *self, const gchar **interfaces);
 
 void tp_proxy_invalidate (TpProxy *self, const GError *error);
 

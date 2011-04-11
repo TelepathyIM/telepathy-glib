@@ -651,26 +651,15 @@ static void
 tp_connection_add_interfaces_from_introspection (TpConnection *self,
                                                  const gchar **interfaces)
 {
-  const gchar **iter;
+  TpProxy *proxy = (TpProxy *) self;
 
-  for (iter = interfaces; *iter != NULL; iter++)
+  tp_proxy_add_interfaces (proxy, interfaces);
+
+  if (tp_proxy_has_interface_by_id (proxy,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
     {
-      if (tp_dbus_check_valid_interface_name (*iter, NULL))
-        {
-          GQuark q = g_quark_from_string (*iter);
-
-          tp_proxy_add_interface_by_id ((TpProxy *) self, q);
-
-          if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS)
-            {
-              self->priv->introspect_needed = g_list_append (
-                  self->priv->introspect_needed, introspect_contacts);
-            }
-        }
-      else
-        {
-          DEBUG ("\t\tInterface %s not valid", *iter);
-        }
+      self->priv->introspect_needed = g_list_append (
+          self->priv->introspect_needed, introspect_contacts);
     }
 }
 
