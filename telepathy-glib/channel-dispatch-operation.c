@@ -334,25 +334,10 @@ static void
 maybe_set_interfaces (TpChannelDispatchOperation *self,
     const gchar **interfaces)
 {
-  const gchar **iter;
-
   if (interfaces == NULL)
     return;
 
-  for (iter = interfaces; *iter != NULL; iter++)
-    {
-      DEBUG ("- %s", *iter);
-
-      if (tp_dbus_check_valid_interface_name (*iter, NULL))
-        {
-          GQuark q = g_quark_from_string (*iter);
-          tp_proxy_add_interface_by_id ((TpProxy *) self, q);
-        }
-      else
-        {
-          DEBUG ("\tInterface %s not valid, ignoring it", *iter);
-        }
-    }
+  tp_proxy_add_interfaces ((TpProxy *) self, interfaces);
 
   g_hash_table_insert (self->priv->immutable_properties,
       g_strdup (TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES),

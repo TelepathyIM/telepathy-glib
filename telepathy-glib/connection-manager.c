@@ -705,29 +705,6 @@ tp_connection_manager_update_protocol_structs (TpConnectionManager *self)
 }
 
 static void
-tp_connection_manager_add_interfaces (TpConnectionManager *self,
-    const gchar * const * interfaces)
-{
-  if (interfaces == NULL)
-    return;
-
-  for (; *interfaces != NULL; interfaces++)
-    {
-      if (tp_dbus_check_valid_interface_name (*interfaces, NULL))
-        {
-          GQuark q = g_quark_from_string (*interfaces);
-
-          tp_proxy_add_interface_by_id ((TpProxy *) self, q);
-        }
-      else
-        {
-          DEBUG ("Ignoring invalid interface on %s: %s",
-              tp_proxy_get_object_path (self), *interfaces);
-        }
-    }
-}
-
-static void
 tp_connection_manager_get_all_cb (TpProxy *proxy,
     GHashTable *properties,
     const GError *error,
@@ -745,7 +722,7 @@ tp_connection_manager_get_all_cb (TpProxy *proxy,
     {
       GHashTable *protocols;
 
-      tp_connection_manager_add_interfaces (self,
+      tp_proxy_add_interfaces (proxy,
           tp_asv_get_strv (properties, "Interfaces"));
 
       protocols = tp_asv_get_boxed (properties, "Protocols",
@@ -1122,7 +1099,7 @@ tp_connection_manager_idle_read_manager_file (gpointer data)
             }
           else
             {
-              tp_connection_manager_add_interfaces (self,
+              tp_proxy_add_interfaces ((TpProxy *) self,
                   (const gchar * const *) interfaces);
               g_strfreev (interfaces);
 
