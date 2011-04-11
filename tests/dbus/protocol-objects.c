@@ -325,9 +325,34 @@ test_protocols_property_old (Test *test,
 }
 
 static void
+check_avatar_requirements (TpAvatarRequirements *req)
+{
+  g_assert (req != NULL);
+
+  g_assert (req->supported_mime_types != NULL);
+  g_assert_cmpuint (g_strv_length (req->supported_mime_types), ==, 3);
+  g_assert (tp_strv_contains ((const gchar * const *) req->supported_mime_types,
+        "image/png"));
+  g_assert (tp_strv_contains ((const gchar * const *) req->supported_mime_types,
+        "image/jpeg"));
+  g_assert (tp_strv_contains ((const gchar * const *) req->supported_mime_types,
+        "image/gif"));
+
+  g_assert_cmpuint (req->minimum_width, ==, 32);
+  g_assert_cmpuint (req->minimum_height, ==, 32);
+  g_assert_cmpuint (req->recommended_width, ==, 64);
+  g_assert_cmpuint (req->recommended_height, ==, 64);
+  g_assert_cmpuint (req->maximum_width, ==, 96);
+  g_assert_cmpuint (req->maximum_height, ==, 96);
+  g_assert_cmpuint (req->maximum_bytes, ==, 37748736);
+}
+
+static void
 test_protocol_object (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  TpAvatarRequirements *req;
+
   g_assert_cmpstr (tp_connection_manager_get_name (test->cm), ==,
       "example_echo_2");
   tp_tests_proxy_run_until_prepared (test->cm, NULL);
@@ -357,12 +382,20 @@ test_protocol_object (Test *test,
       "x-telepathy-example");
   g_assert (TP_IS_CAPABILITIES (tp_protocol_get_capabilities (
           test->protocol)));
+
+  req = tp_protocol_get_avatar_requirements (test->protocol);
+  check_avatar_requirements (req);
+
+  g_object_get (test->protocol, "avatar-requirements", &req, NULL);
+  check_avatar_requirements (req);
 }
 
 static void
 test_protocol_object_old (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
+  TpAvatarRequirements *req;
+
   g_assert_cmpstr (tp_connection_manager_get_name (test->old_cm), ==,
       "example_echo");
   tp_tests_proxy_run_until_prepared (test->old_cm, NULL);
@@ -386,6 +419,9 @@ test_protocol_object_old (Test *test,
       "Example");
   g_assert_cmpstr (tp_protocol_get_vcard_field (test->old_protocol), ==, NULL);
   g_assert (tp_protocol_get_capabilities (test->old_protocol) == NULL);
+
+  req = tp_protocol_get_avatar_requirements (test->old_protocol);
+  g_assert (req == NULL);
 }
 
 static void
@@ -394,6 +430,7 @@ test_protocol_object_from_file (Test *test,
 {
   GQuark features[] = { TP_PROTOCOL_FEATURE_CORE, 0 };
   TpCapabilities *caps;
+  TpAvatarRequirements *req;
 
   g_assert_cmpstr (tp_connection_manager_get_name (test->file_cm), ==,
       "test_manager_file");
@@ -425,6 +462,12 @@ test_protocol_object_from_file (Test *test,
   g_assert (!tp_capabilities_is_specific_to_contact (caps));
   g_assert (tp_capabilities_supports_text_chats (caps));
   g_assert (!tp_capabilities_supports_text_chatrooms (caps));
+
+  req = tp_protocol_get_avatar_requirements (test->file_protocol);
+  check_avatar_requirements (req);
+
+  g_object_get (test->file_protocol, "avatar-requirements", &req, NULL);
+  check_avatar_requirements (req);
 }
 
 int

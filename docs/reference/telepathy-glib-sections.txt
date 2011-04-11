@@ -5183,6 +5183,7 @@ tp_protocol_get_english_name
 tp_protocol_get_icon_name
 tp_protocol_get_vcard_field
 tp_protocol_get_authentication_types
+tp_protocol_get_avatar_requirements
 <SUBSECTION>
 tp_cli_protocol_call_identify_account
 tp_cli_protocol_call_normalize_contact
