@@ -638,6 +638,41 @@ tp_proxy_add_interface_by_id (TpProxy *self,
   return iface_proxy;
 }
 
+/**
+ * tp_proxy_add_interfaces: (skip)
+ * @self: the TpProxy, which must not have become #TpProxy::invalidated.
+ * @interfaces: the names of the interfaces to be added
+ *
+ * Declare that this proxy supports the given interfaces. Equivalent to calling
+ * g_quark_from_string () followed by tp_proxy_add_interface_by_id () for each
+ * of the interface names.
+ *
+ * Since: 0.14.UNRELEASED
+ */
+void
+tp_proxy_add_interfaces (TpProxy *self,
+    const gchar **interfaces)
+{
+  const gchar **iter;
+
+  if (G_UNLIKELY (interfaces == NULL))
+    return;
+
+  for (iter = interfaces; *iter != NULL; iter++)
+    {
+      if (tp_dbus_check_valid_interface_name (*iter, NULL))
+        {
+          GQuark q = g_quark_from_string (*iter);
+
+          tp_proxy_add_interface_by_id (self, q);
+        }
+      else
+        {
+          DEBUG ("\t\tInterface %s not valid", *iter);
+        }
+    }
+}
+
 static GQuark
 error_mapping_quark (void)
 {

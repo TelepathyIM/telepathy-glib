@@ -3040,6 +3040,7 @@ tp_cli_dbus_properties_run_set
 <TITLE>proxy-subclass</TITLE>
 <INCLUDE>telepathy-glib/proxy-subclass.h</INCLUDE>
 tp_proxy_add_interface_by_id
+tp_proxy_add_interfaces
 tp_proxy_borrow_interface_by_id
 tp_proxy_invalidate
 TpProxyInterfaceAddedCb

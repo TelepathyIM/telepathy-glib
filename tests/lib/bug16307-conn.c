@@ -150,6 +150,10 @@ tp_tests_bug16307_connection_class_init (TpTestsBug16307ConnectionClass *klass)
       TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
       TP_IFACE_CONNECTION_INTERFACE_AVATARS,
       NULL };
+  static TpDBusPropertiesMixinPropImpl connection_properties[] = {
+      { "Status", "dbus-status-except-i-broke-it", NULL },
+      { NULL }
+  };
 
   object_class->finalize = finalize;
   g_type_class_add_private (klass, sizeof (TpTestsBug16307ConnectionPrivate));
@@ -165,6 +169,13 @@ tp_tests_bug16307_connection_class_init (TpTestsBug16307ConnectionClass *klass)
       NULL, NULL,
       g_cclosure_marshal_VOID__VOID,
       G_TYPE_NONE, 0);
+
+  /* break the Connection D-Bus properties implementation, so that we always
+   * cause the slower introspection codepath (the one that actually calls
+   * GetStatus) in TpConnection to be invoked */
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CONNECTION,
+      NULL, NULL, connection_properties);
 }
 
 /**
