@@ -655,6 +655,9 @@ tp_proxy_add_interfaces (TpProxy *self,
 {
   const gchar **iter;
 
+  if (G_UNLIKELY (interfaces == NULL))
+    return;
+
   for (iter = interfaces; *iter != NULL; iter++)
     {
       if (tp_dbus_check_valid_interface_name (*iter, NULL))
