@@ -336,6 +336,11 @@ test_protocol_object (Test *test,
 
   g_assert_cmpstr (tp_protocol_get_name (test->protocol), ==, "example");
 
+  g_assert (tp_proxy_has_interface_by_id (test->protocol,
+      TP_IFACE_QUARK_PROTOCOL));
+  g_assert (tp_proxy_has_interface_by_id (test->protocol,
+      TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS));
+
   g_assert (tp_proxy_is_prepared (test->protocol,
         TP_PROTOCOL_FEATURE_PARAMETERS));
 

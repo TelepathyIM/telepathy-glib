@@ -1,8 +1,8 @@
 /*
  * connection.c - proxy for a Telepathy connection
  *
- * Copyright (C) 2007-2008 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2007-2008 Nokia Corporation
+ * Copyright (C) 2007-2011 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright (C) 2007-2011 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -639,10 +639,6 @@ get_self_handle (TpConnection *self)
   tp_cli_connection_connect_to_self_handle_changed (self,
       on_self_handle_changed, NULL, NULL, NULL, NULL);
 
-  /* GetSelfHandle is deprecated in favour of the SelfHandle property,
-   * but until Connection has other interesting properties, there's no point in
-   * trying to implement a fast path; GetSelfHandle is the only one guaranteed
-   * to work, so we'll sometimes have to call it anyway */
   g_assert (self->priv->introspection_call == NULL);
   self->priv->introspection_call = tp_cli_connection_call_get_self_handle (
       self, -1, got_self_handle, NULL, NULL, NULL);
@@ -650,6 +646,22 @@ get_self_handle (TpConnection *self)
 
 /* Appending callbacks to self->priv->introspect_needed relies on this */
 G_STATIC_ASSERT (sizeof (TpConnectionProc) <= sizeof (gpointer));
+
+static void
+tp_connection_add_interfaces_from_introspection (TpConnection *self,
+                                                 const gchar **interfaces)
+{
+  TpProxy *proxy = (TpProxy *) self;
+
+  tp_proxy_add_interfaces (proxy, interfaces);
+
+  if (tp_proxy_has_interface_by_id (proxy,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+    {
+      self->priv->introspect_needed = g_list_append (
+          self->priv->introspect_needed, introspect_contacts);
+    }
+}
 
 static void
 tp_connection_got_interfaces_cb (TpConnection *self,
@@ -682,35 +694,20 @@ tp_connection_got_interfaces_cb (TpConnection *self,
     get_self_handle);
 
   if (interfaces != NULL)
-    {
-      const gchar **iter;
-
-      for (iter = interfaces; *iter != NULL; iter++)
-        {
-          if (tp_dbus_check_valid_interface_name (*iter, NULL))
-            {
-              GQuark q = g_quark_from_string (*iter);
-
-              tp_proxy_add_interface_by_id ((TpProxy *) self, q);
-
-              if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS)
-                {
-                  self->priv->introspect_needed = g_list_append (
-                      self->priv->introspect_needed, introspect_contacts);
-                }
-            }
-          else
-            {
-              DEBUG ("\t\tInterface %s not valid", *iter);
-            }
-        }
-    }
+    tp_connection_add_interfaces_from_introspection (self, interfaces);
 
   /* FIXME: give subclasses a chance to influence the definition of "ready"
    * now that we have our interfaces? */
 
   tp_connection_continue_introspection (self);
 }
+
+static void
+_tp_connection_got_properties (TpProxy *proxy,
+    GHashTable *asv,
+    const GError *error,
+    gpointer unused G_GNUC_UNUSED,
+    GObject *unused_object G_GNUC_UNUSED);
 
 static void
 tp_connection_status_changed (TpConnection *self,
@@ -739,8 +736,8 @@ tp_connection_status_changed (TpConnection *self,
       if (self->priv->introspection_call == NULL)
         {
           self->priv->introspection_call =
-            tp_cli_connection_call_get_interfaces (self, -1,
-                tp_connection_got_interfaces_cb, NULL, NULL, NULL);
+            tp_cli_dbus_properties_call_get_all (self, -1,
+              TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
         }
     }
   else
@@ -883,10 +880,10 @@ tp_connection_status_changed_cb (TpConnection *self,
 {
   TpConnectionStatus prev_status = self->priv->status;
 
-  /* GetStatus is called in the TpConnection constructor. If we don't have the
-   * reply for this GetStatus call yet, ignore this signal StatusChanged in
-   * order to run the interface introspection only one time. We will get the
-   * GetStatus reply later anyway. */
+  /* The status is initially attempted to be discovered starting in the
+   * constructor. If we don't have the reply for that call yet, ignore this
+   * signal StatusChanged in order to run the interface introspection only one
+   * time. We will get the initial introspection reply later anyway. */
   if (self->priv->status != TP_UNKNOWN_CONNECTION_STATUS)
     {
       tp_connection_status_changed (self, status, reason);
@@ -978,6 +975,41 @@ tp_connection_invalidated (TpConnection *self)
     }
 }
 
+static gboolean
+_tp_connection_extract_properties (TpConnection *self,
+    GHashTable *asv,
+    guint32 *status,
+    guint32 *self_handle,
+    const gchar ***interfaces)
+{
+  gboolean sufficient;
+
+  /* has_immortal_handles is a bitfield, so we can't pass a pointer to it */
+  if (tp_asv_get_boolean (asv, "HasImmortalHandles", NULL))
+    self->priv->has_immortal_handles = TRUE;
+
+  *status = tp_asv_get_uint32 (asv, "Status", &sufficient);
+
+  if (!sufficient
+      || *status > TP_CONNECTION_STATUS_DISCONNECTED)
+    return FALSE;
+
+  *interfaces = (const gchar **) tp_asv_get_strv (asv, "Interfaces");
+
+  if (*interfaces == NULL)
+    return FALSE;
+
+  if (*status == TP_CONNECTION_STATUS_CONNECTED)
+    {
+      *self_handle = tp_asv_get_uint32 (asv, "SelfHandle", &sufficient);
+
+      if (!sufficient || *self_handle == 0)
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
 static void
 _tp_connection_got_properties (TpProxy *proxy,
     GHashTable *asv,
@@ -986,17 +1018,80 @@ _tp_connection_got_properties (TpProxy *proxy,
     GObject *unused_object G_GNUC_UNUSED)
 {
   TpConnection *self = TP_CONNECTION (proxy);
+  guint32 status;
+  guint32 self_handle;
+  const gchar **interfaces;
 
-  if (error == NULL)
+  if (tp_proxy_get_invalidated (self) != NULL)
     {
-      /* FIXME: fd.o #27459: use more of the properties, as a fast-path */
-
-      if (tp_asv_get_boolean (asv, "HasImmortalHandles", NULL))
-        self->priv->has_immortal_handles = TRUE;
+      DEBUG ("%p: already invalidated, not trying to become ready: %s",
+          self, tp_proxy_get_invalidated (self)->message);
+      return;
     }
-  else
+
+  if (self->priv->introspection_call)
+    self->priv->introspection_call = NULL;
+
+  if (error == NULL &&
+      _tp_connection_extract_properties (
+        self,
+        asv,
+        &status,
+        &self_handle,
+        &interfaces))
     {
-      DEBUG ("GetAll failed, will use 0.18 API instead: %s", error->message);
+      tp_connection_add_interfaces_from_introspection (self, interfaces);
+
+      if (status == TP_CONNECTION_STATUS_CONNECTED)
+        {
+          self->priv->introspecting_after_connected = TRUE;
+
+          self->priv->last_known_self_handle = self_handle;
+          self->priv->introspecting_self_contact = TRUE;
+
+          /* This relies on the special case in tp_connection_get_contacts_by_handle()
+           * which makes it start working slightly early. */
+          tp_connection_get_contacts_by_handle (self, 1, &self_handle, 0, NULL,
+              tp_connection_got_self_contact_cb, NULL, NULL, NULL);
+
+          /* tp_connection_got_self_contact_cb will resume the introspection */
+        }
+      else
+        {
+          tp_connection_status_changed (self, status,
+              TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED);
+
+          tp_connection_continue_introspection (self);
+        }
+
+      return;
+    }
+  else if (error != NULL)
+    {
+      DEBUG ("GetAll failed: %s", error->message);
+    }
+
+
+  DEBUG ("Could not extract all required properties from GetAll return, "
+         "will use 0.18 API instead");
+
+  if (self->priv->introspection_call == NULL)
+    {
+      if (self->priv->status == TP_UNKNOWN_CONNECTION_STATUS &&
+          !self->priv->introspecting_after_connected)
+        {
+          /* get my initial status */
+          DEBUG ("Calling GetStatus");
+          self->priv->introspection_call =
+            tp_cli_connection_call_get_status (self, -1,
+              tp_connection_got_status_cb, NULL, NULL, NULL);
+        }
+      else
+        {
+          self->priv->introspection_call =
+            tp_cli_connection_call_get_interfaces (self, -1,
+                tp_connection_got_interfaces_cb, NULL, NULL, NULL);
+        }
     }
 }
 
@@ -1024,12 +1119,6 @@ tp_connection_constructor (GType type,
   /* get the properties, currently only for HasImmortalHandles */
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
-
-  /* get my initial status */
-  DEBUG ("Calling GetStatus");
-  g_assert (self->priv->introspection_call == NULL);
-  self->priv->introspection_call = tp_cli_connection_call_get_status (self, -1,
-      tp_connection_got_status_cb, NULL, NULL, NULL);
 
   g_signal_connect (self, "invalidated",
       G_CALLBACK (tp_connection_invalidated), NULL);

@@ -465,26 +465,7 @@ _tp_account_update (TpAccount *account,
   gboolean status_changed = FALSE;
   gboolean presence_changed = FALSE;
 
-  if (g_hash_table_lookup (properties, "Interfaces") != NULL)
-    {
-      gchar **interfaces, **iter;
-
-      interfaces = tp_asv_get_boxed (properties, "Interfaces", G_TYPE_STRV);
-
-      for (iter = interfaces; *iter != NULL; iter++)
-        {
-          if (tp_dbus_check_valid_interface_name (*iter, NULL))
-            {
-              GQuark q = g_quark_from_string (*iter);
-
-              tp_proxy_add_interface_by_id ((TpProxy *) account, q);
-            }
-          else
-            {
-              DEBUG ("\t\tInterface %s not valid", *iter);
-            }
-        }
-    }
+  tp_proxy_add_interfaces (proxy, tp_asv_get_strv (properties, "Interfaces"));
 
   if (g_hash_table_lookup (properties, "ConnectionStatus") != NULL)
     {

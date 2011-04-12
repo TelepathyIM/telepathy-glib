@@ -436,6 +436,7 @@ tp_protocol_constructed (GObject *object)
   const GPtrArray *rccs;
   gboolean had_immutables = TRUE;
   const gchar * const *auth_types = NULL;
+  const gchar * const *interfaces;
 
   if (chain_up != NULL)
     chain_up (object);
@@ -501,6 +502,11 @@ tp_protocol_constructed (GObject *object)
       gchar *tmp[] = { NULL };
       self->priv->authentication_types = g_strdupv (tmp);
     }
+
+  interfaces = tp_asv_get_strv (self->priv->protocol_properties,
+      TP_PROP_PROTOCOL_INTERFACES);
+
+  tp_proxy_add_interfaces (proxy, interfaces);
 
   /* become ready immediately */
   _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_PARAMETERS,
