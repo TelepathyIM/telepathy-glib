@@ -115,6 +115,8 @@ struct _TfStreamPrivate
   NewStreamCreatedCb *new_stream_created_cb;
 
   GQueue events_to_send;
+
+  gint sending_telephony_event;
 };
 
 enum
@@ -238,6 +240,7 @@ tf_stream_init (TfStream *self)
   g_static_mutex_init (&priv->mutex);
   priv->has_resource = TP_MEDIA_STREAM_DIRECTION_NONE;
   priv->current_state = TP_MEDIA_STREAM_STATE_DISCONNECTED;
+  priv->sending_telephony_event = -1;
 
   g_queue_init (&priv->events_to_send);
 }
@@ -1830,11 +1833,21 @@ start_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   DEBUG (self, "called with event %u", event);
 
+  if (self->priv->sending_telephony_event != -1)
+    {
+      WARNING (self, "start new telephony event without stopping the"
+          " previous one first");
+      if (!fs_session_stop_telephony_event (self->priv->fs_session,
+              self->priv->sending_telephony_event))
+        WARNING (self, "stopping event failed");
+    }
+
   /* this week, volume is 8, for the sake of argument... */
 
   if (!fs_session_start_telephony_event (self->priv->fs_session, event, 8,
           FS_DTMF_METHOD_AUTO))
     WARNING (self, "sending event %u failed", event);
+  self->priv->sending_telephony_event = FS_DTMF_METHOD_AUTO;
 }
 
 static gboolean
@@ -1910,11 +1923,22 @@ start_named_telephony_event (TpMediaStreamHandler *proxy,
 
   if (check_codecs_for_telephone_event (self, &codecs, send_codec, codecid))
     {
+      if (self->priv->sending_telephony_event != -1)
+        {
+          WARNING (self, "start new telephony event without stopping the"
+              " previous one first");
+          if (!fs_session_stop_telephony_event (self->priv->fs_session,
+                  self->priv->sending_telephony_event))
+            WARNING (self, "stopping event failed");
+        }
+
+
       DEBUG (self, "Sending named telephony event %d with pt %d",
           event, codecid);
       if (!fs_session_start_telephony_event (self->priv->fs_session,
               event, 8, FS_DTMF_METHOD_RTP_RFC4733))
         WARNING (self, "sending event %u failed", event);
+      self->priv->sending_telephony_event = FS_DTMF_METHOD_RTP_RFC4733;
     }
   else
     {
@@ -1940,11 +1964,21 @@ start_sound_telephony_event (TpMediaStreamHandler *proxy, guchar event,
 
   DEBUG (self, "called with event %u", event);
 
+  if (self->priv->sending_telephony_event != -1)
+    {
+      WARNING (self, "start new telephony event without stopping the"
+          " previous one first");
+      if (!fs_session_stop_telephony_event (self->priv->fs_session,
+              self->priv->sending_telephony_event))
+        WARNING (self, "stopping event failed");
+    }
+
   /* this week, volume is 8, for the sake of argument... */
 
   if (!fs_session_start_telephony_event (self->priv->fs_session, event, 8,
           FS_DTMF_METHOD_IN_BAND))
     WARNING (self, "sending sound event %u failed", event);
+  self->priv->sending_telephony_event = FS_DTMF_METHOD_IN_BAND;
 }
 
 
@@ -1954,10 +1988,18 @@ stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     GObject *object)
 {
   TfStream *self = TF_STREAM (object);
+  FsDTMFMethod method = FS_DTMF_METHOD_AUTO;
 
   g_assert (self->priv->fs_session  != NULL);
 
   DEBUG (self, "called");
+
+  if (self->priv->sending_telephony_event == -1)
+      WARNING (self, "Trying to stop telephony event without having started"
+          " one");
+  else
+      method = self->priv->sending_telephony_event;
+  self->priv->sending_telephony_event = -1;
 
   if (!fs_session_stop_telephony_event (self->priv->fs_session,
           FS_DTMF_METHOD_AUTO))
@@ -2136,9 +2178,21 @@ cb_fs_send_codec_changed (TfStream *self,
       DEBUG (self, "Sending queued event %d with pt %d", dtmfevent->event_id,
           dtmfevent->codec_id);
       dtmfevent = g_queue_pop_head (&self->priv->events_to_send);
+      if (self->priv->sending_telephony_event != -1)
+        {
+          WARNING (self, "start new telephony event without stopping the"
+              " previous one first");
+          if (!fs_session_stop_telephony_event (self->priv->fs_session,
+                  self->priv->sending_telephony_event))
+            WARNING (self, "stopping event failed");
+        }
+      self->priv->sending_telephony_event = -1;
+
       if (!fs_session_start_telephony_event (self->priv->fs_session,
               dtmfevent->event_id, 8, FS_DTMF_METHOD_RTP_RFC4733))
         WARNING (self, "sending event %u failed", dtmfevent->event_id);
+      fs_session_stop_telephony_event (self->priv->fs_session,
+          FS_DTMF_METHOD_RTP_RFC4733);
 
       g_slice_free (struct DtmfEvent, dtmfevent);
     }
