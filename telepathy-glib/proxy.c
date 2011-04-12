@@ -651,9 +651,9 @@ tp_proxy_add_interface_by_id (TpProxy *self,
  */
 void
 tp_proxy_add_interfaces (TpProxy *self,
-    const gchar **interfaces)
+    const gchar * const *interfaces)
 {
-  const gchar **iter;
+  const gchar * const *iter;
 
   if (G_UNLIKELY (interfaces == NULL))
     return;
