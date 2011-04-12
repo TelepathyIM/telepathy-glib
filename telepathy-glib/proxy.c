@@ -644,8 +644,8 @@ tp_proxy_add_interface_by_id (TpProxy *self,
  * @interfaces: the names of the interfaces to be added
  *
  * Declare that this proxy supports the given interfaces. Equivalent to calling
- * g_quark_from_string () followed by tp_proxy_add_interface () for each of the
- * interface names.
+ * g_quark_from_string () followed by tp_proxy_add_interface_by_id () for each
+ * of the interface names.
  *
  * Since: 0.14.UNRELEASED
  */
