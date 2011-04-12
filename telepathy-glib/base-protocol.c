@@ -685,8 +685,21 @@ tp_base_protocol_get_immutable_properties (TpBaseProtocol *self)
       TP_IFACE_PROTOCOL, "AuthenticationTypes",
       NULL);
 
-  /* FIXME: when we support avatar requirements, etc., we could use
-   * tp_dbus_properties_mixin_fill_properties_hash() for them */
+  if (cls->get_avatar_details != NULL)
+    {
+      tp_dbus_properties_mixin_fill_properties_hash ((GObject *) self, table,
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "SupportedAvatarMIMETypes",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MinimumAvatarHeight",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MinimumAvatarWidth",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "RecommendedAvatarHeight",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "RecommendedAvatarWidth",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MaximumAvatarHeight",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MaximumAvatarWidth",
+          TP_IFACE_PROTOCOL_INTERFACE_AVATARS, "MaximumAvatarBytes",
+          NULL);
+    }
+
+  /* FIXME: we should add Presence properties as well */
 
   return table;
 }
