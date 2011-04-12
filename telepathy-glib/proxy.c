@@ -668,7 +668,8 @@ tp_proxy_add_interfaces (TpProxy *self,
         }
       else
         {
-          DEBUG ("\t\tInterface %s not valid", *iter);
+          DEBUG ("Ignoring invalid interface on %s: %s",
+              tp_proxy_get_object_path (self), *iter);
         }
     }
 }
