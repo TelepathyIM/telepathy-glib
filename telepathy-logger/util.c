@@ -61,6 +61,9 @@ _tpl_rmdir_recursively (const gchar *dir_name)
         dir_name, g_strerror (errno));
 }
 
+/* We leak a single tz struct as freeing them is not thread-safe,
+ * see https://bugzilla.gnome.org/show_bug.cgi?id=646435 */
+static GTimeZone *tz;
 
 /* The format is: "20021209T23:51:30" and is in UTC. 0 is returned on
  * failure. The alternative format "20021209" is also accepted.
@@ -85,7 +88,10 @@ _tpl_time_parse (const gchar *str)
   if (n_parsed != 3 && n_parsed != 6)
     return 0;
 
-  dt = g_date_time_new_utc (year, month, day, hour, min, sec);
+  if (G_UNLIKELY (tz == NULL))
+    tz = g_time_zone_new_utc ();
+
+  dt = g_date_time_new (tz, year, month, day, hour, min, sec);
   ts = g_date_time_to_unix (dt);
 
   g_date_time_unref (dt);
