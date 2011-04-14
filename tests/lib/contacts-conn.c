@@ -465,6 +465,12 @@ my_set_own_status (GObject *object,
   return TRUE;
 }
 
+static guint
+my_get_maximum_status_message_length_cb (GObject *obj)
+{
+  return 512;
+}
+
 static GPtrArray *
 create_channel_managers (TpBaseConnection *conn)
 {
@@ -485,6 +491,7 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
+  TpPresenceMixinClass *mixin_class;
   static const gchar *interfaces_always_present[] = {
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       TP_IFACE_CONNECTION_INTERFACE_AVATARS,
@@ -526,6 +533,9 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
       G_STRUCT_OFFSET (TpTestsContactsConnectionClass, presence_mixin),
       my_status_available, my_get_contact_statuses,
       my_set_own_status, my_statuses);
+  mixin_class = TP_PRESENCE_MIXIN_CLASS(klass);
+  mixin_class->get_maximum_status_message_length =
+      my_get_maximum_status_message_length_cb;
 
   tp_presence_mixin_simple_presence_init_dbus_properties (object_class);
 
