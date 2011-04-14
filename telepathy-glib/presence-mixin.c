@@ -423,6 +423,7 @@ tp_presence_mixin_class_init (GObjectClass *obj_cls,
   mixin_cls->get_contact_statuses = get_contact_statuses;
   mixin_cls->set_own_status = set_own_status;
   mixin_cls->statuses = statuses;
+  mixin_cls->get_maximum_status_message_length = NULL;
 
   for (i = 0; statuses[i].name != NULL; i++)
     {
@@ -1226,11 +1227,13 @@ tp_presence_mixin_iface_init (gpointer g_iface, gpointer iface_data)
 
 enum {
   MIXIN_DP_SIMPLE_STATUSES,
+  MIXIN_DP_SIMPLE_MAX_STATUS_MESSAGE_LENGTH,
   NUM_MIXIN_SIMPLE_DBUS_PROPERTIES
 };
 
 static TpDBusPropertiesMixinPropImpl known_simple_presence_props[] = {
   { "Statuses", NULL, NULL },
+  { "MaximumStatusMessageLength", NULL, NULL },
   { NULL }
 };
 
@@ -1242,6 +1245,8 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
                                                      gpointer unused
                                                        G_GNUC_UNUSED)
 {
+  TpPresenceMixinClass *mixin_cls =
+      TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (object));
   static GQuark q[NUM_MIXIN_SIMPLE_DBUS_PROPERTIES] = { 0, };
 
   DEBUG ("called.");
@@ -1249,14 +1254,14 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
   if (G_UNLIKELY (q[0] == 0))
     {
       q[MIXIN_DP_SIMPLE_STATUSES] = g_quark_from_static_string ("Statuses");
+      q[MIXIN_DP_SIMPLE_MAX_STATUS_MESSAGE_LENGTH] =
+          g_quark_from_static_string ("MaximumStatusMessageLength");
     }
 
   g_return_if_fail (object != NULL);
 
   if (name == q[MIXIN_DP_SIMPLE_STATUSES])
     {
-      TpPresenceMixinClass *mixin_cls =
-        TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (object));
       GHashTable *ret;
       GValueArray *status;
       int i;
@@ -1308,6 +1313,18 @@ tp_presence_mixin_get_simple_presence_dbus_property (GObject *object,
              status);
        }
        g_value_take_boxed (value, ret);
+    }
+  else if (name == q[MIXIN_DP_SIMPLE_MAX_STATUS_MESSAGE_LENGTH])
+    {
+      guint max_status_message_length = 0;
+
+      g_assert (G_VALUE_HOLDS (value, G_TYPE_UINT));
+
+      if (mixin_cls->get_maximum_status_message_length != NULL)
+        max_status_message_length =
+            mixin_cls->get_maximum_status_message_length (object);
+
+      g_value_set_uint (value, max_status_message_length);
     }
   else
     {

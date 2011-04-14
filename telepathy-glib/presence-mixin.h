@@ -76,6 +76,9 @@ typedef GHashTable *(*TpPresenceMixinGetContactStatusesFunc) (GObject *obj,
 typedef gboolean (*TpPresenceMixinSetOwnStatusFunc) (GObject *obj,
     const TpPresenceStatus *status, GError **error);
 
+typedef guint (*TpPresenceMixinGetMaximumStatusMessageLengthFunc) (
+    GObject *obj);
+
 typedef struct _TpPresenceMixinClass TpPresenceMixinClass;
 typedef struct _TpPresenceMixinClassPrivate TpPresenceMixinClassPrivate;
 typedef struct _TpPresenceMixin TpPresenceMixin;
@@ -90,10 +93,12 @@ struct _TpPresenceMixinClass {
 
     /*<private>*/
     TpPresenceMixinClassPrivate *priv;
+
+    TpPresenceMixinGetMaximumStatusMessageLengthFunc get_maximum_status_message_length;
+
     gpointer _future1;
     gpointer _future2;
     gpointer _future3;
-    gpointer _future4;
 };
 
 struct _TpPresenceMixin {
