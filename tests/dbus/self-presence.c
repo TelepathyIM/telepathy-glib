@@ -91,6 +91,23 @@ test_simple_presence (TpTestsContactsConnection *service_conn,
   MYASSERT (tp_cli_connection_interface_simple_presence_run_set_presence (
         client_conn, -1, "available", "Here I am", &error, NULL), "");
   g_assert_no_error (error);
+
+  value = NULL;
+
+  MYASSERT (tp_cli_dbus_properties_run_get (client_conn, -1,
+        TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+        "MaximumStatusMessageLength",
+        &value, &error, NULL), "");
+  g_assert_no_error (error);
+
+  MYASSERT (G_VALUE_TYPE (value) == G_TYPE_UINT,
+      ": %s != %s", G_VALUE_TYPE_NAME (value),
+      g_type_name (G_TYPE_UINT));
+  g_assert_cmpuint (g_value_get_uint (value), ==,
+      512);
+
+  g_value_unset (value);
+  g_free (value);
 }
 
 static void
