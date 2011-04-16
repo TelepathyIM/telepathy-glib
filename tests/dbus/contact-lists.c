@@ -315,11 +315,11 @@ maybe_queue_disconnect (TpProxySignalConnection *sc)
 }
 
 static void
-setup (Test *test,
+setup_pre_connect (
+    Test *test,
     gconstpointer data)
 {
   GError *error = NULL;
-  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -347,6 +347,19 @@ setup (Test *test,
       &error);
   g_assert (test->conn != NULL);
   g_assert_no_error (error);
+
+  /* Prepare the connection far enough to know its own interfaces. */
+  tp_tests_proxy_run_until_prepared (test->conn, NULL);
+}
+
+static void
+setup (Test *test,
+    gconstpointer data)
+{
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+
+  setup_pre_connect (test, data);
+
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
   tp_tests_proxy_run_until_prepared (test->conn, features);
 
@@ -408,6 +421,20 @@ test_clear_log (Test *test)
 }
 
 static void
+teardown_pre_connect (
+    Test *test,
+    gconstpointer data)
+{
+  test->service_conn_as_base = NULL;
+  g_object_unref (test->service_conn);
+  g_free (test->conn_name);
+  g_free (test->conn_path);
+  tp_clear_object (&test->conn);
+  tp_clear_object (&test->dbus);
+  tp_clear_pointer (&test->main_loop, g_main_loop_unref);
+}
+
+static void
 teardown (Test *test,
     gconstpointer data)
 {
@@ -427,7 +454,6 @@ teardown (Test *test,
   tp_handle_unref (test->contact_repo, test->ninja);
   tp_handle_unref (test->contact_repo, test->canceller);
 
-  tp_clear_object (&test->conn);
   tp_clear_object (&test->publish);
   tp_clear_object (&test->subscribe);
   tp_clear_object (&test->stored);
@@ -446,14 +472,9 @@ teardown (Test *test,
   g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
   g_clear_error (&error);
 
-  test->service_conn_as_base = NULL;
-  g_object_unref (test->service_conn);
-  g_free (test->conn_name);
-  g_free (test->conn_path);
-
-  tp_clear_object (&test->dbus);
-  tp_clear_pointer (&test->main_loop, g_main_loop_unref);
   tp_clear_pointer (&test->contact_attributes, g_hash_table_unref);
+
+  teardown_pre_connect (test, data);
 }
 
 static TpChannel *
