@@ -5816,7 +5816,8 @@ blocked_cb (
   DBusGMethodInvocation *context = user_data;
   GError *error = NULL;
 
-  if (tp_base_contact_list_block_contacts_finish (self, result, &error))
+  if (tp_base_contact_list_block_contacts_with_abuse_finish (self, result,
+          &error))
     {
       tp_svc_connection_interface_contact_blocking_return_from_block_contacts (
           context);
@@ -5843,9 +5844,8 @@ tp_base_contact_list_mixin_block_contacts (
 
   contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
       contacts_arr);
-  /* TODO: use report_abusive */
-  tp_base_contact_list_block_contacts_async (self, contacts, blocked_cb,
-      context);
+  tp_base_contact_list_block_contacts_with_abuse_async (self, contacts,
+      report_abusive, blocked_cb, context);
   tp_handle_set_destroy (contacts);
 }
 
