@@ -286,6 +286,17 @@ gboolean tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error);
 
+void tp_base_contact_list_block_contacts_with_abuse_async (
+    TpBaseContactList *self,
+    TpHandleSet *contacts,
+    gboolean report_abusive,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_base_contact_list_block_contacts_with_abuse_finish (
+    TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
 void tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,

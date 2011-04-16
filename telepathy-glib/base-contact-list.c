@@ -3174,7 +3174,9 @@ tp_base_contact_list_dup_blocked_contacts (TpBaseContactList *self)
  *
  * Request that the given contacts are prevented from communicating with the
  * user, and that presence is not sent to them even if they have a valid
- * presence subscription, if possible.
+ * presence subscription, if possible. This is equivalent to calling
+ * tp_base_contact_list_block_contacts_with_abuse_async(), passing #FALSE as
+ * the report_abusive argument.
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
@@ -3195,6 +3197,46 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  tp_base_contact_list_block_contacts_with_abuse_async (self, contacts, FALSE,
+      callback, user_data);
+}
+
+/**
+ * tp_base_contact_list_block_contacts_with_abuse_async:
+ * @self: a contact list manager
+ * @contacts: contacts whose communications should be blocked
+ * @report_abusive: whether to report the contacts as abusive to the server
+ *  operator
+ * @callback: a callback to call when the operation succeeds or fails
+ * @user_data: optional data to pass to @callback
+ *
+ * Request that the given contacts are prevented from communicating with the
+ * user, and that presence is not sent to them even if they have a valid
+ * presence subscription, if possible. If the #TpBaseContactList subclass
+ * implements #TpBlockableContactListInterface.block_contacts_with_abuse_async
+ * and @report_abusive is #TRUE, also report the given contacts as abusive to
+ * the server operator.
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
+ * method which must be implemented, using
+ * #TpBlockableContactListInterface.block_contacts_async or
+ * #TpBlockableContactListInterface.block_contacts_with_abuse_async.
+ * The implementation should call
+ * tp_base_contact_list_contact_blocking_changed()
+ * for any contacts it has changed, before calling @callback.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_base_contact_list_block_contacts_with_abuse_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    gboolean report_abusive,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
   TpBlockableContactListInterface *blockable_iface;
 
   blockable_iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
@@ -3203,8 +3245,8 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
   if (blockable_iface->block_contacts_async != NULL)
     blockable_iface->block_contacts_async (self, contacts, callback, user_data);
   else if (blockable_iface->block_contacts_with_abuse_async != NULL)
-    blockable_iface->block_contacts_with_abuse_async (self, contacts, FALSE,
-        callback, user_data);
+    blockable_iface->block_contacts_with_abuse_async (self, contacts,
+        report_abusive, callback, user_data);
   else
     g_critical ("neither block_contacts_async nor "
         "block_contacts_with_abuse_async is implemented");
@@ -3234,6 +3276,42 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
  */
 gboolean
 tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpBlockableContactListInterface *blockable_iface;
+
+  blockable_iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (blockable_iface != NULL, FALSE);
+  g_return_val_if_fail (blockable_iface->block_contacts_finish != NULL, FALSE);
+
+  return blockable_iface->block_contacts_finish (self, result, error);
+}
+
+/**
+ * tp_base_contact_list_block_contacts_with_abuse_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_block_contacts_with_abuse_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_block_contacts_with_abuse_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpBlockableContactListInterface.block_contacts_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_base_contact_list_block_contacts_with_abuse_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error)
 {
