@@ -235,6 +235,11 @@ struct _TpBaseContactListPrivate
    * announced via NewChannels yet. */
   GHashTable *channel_requests;
 
+  /* DBusGMethodInvocation *s for calls to RequestBlockedContacts which are
+   * waiting for the contact list to (fail to) be downloaded.
+   */
+  GQueue blocked_contact_requests;
+
   gulong status_changed_id;
 
   /* TRUE if @conn implements TpSvcConnectionInterface$FOO - used to
@@ -462,6 +467,7 @@ tp_base_contact_list_init (TpBaseContactList *self)
   self->priv->groups = g_hash_table_new_full (NULL, NULL, NULL,
       g_object_unref);
   self->priv->channel_requests = g_hash_table_new (NULL, NULL);
+  g_queue_init (&self->priv->blocked_contact_requests);
 }
 
 static void
@@ -501,13 +507,28 @@ tp_base_contact_list_fail_channel_requests (TpBaseContactList *self,
 }
 
 static void
+tp_base_contact_list_fail_blocked_contact_requests (
+    TpBaseContactList *self,
+    const GError *error)
+{
+  DBusGMethodInvocation *context;
+
+  while ((context = g_queue_pop_head (&self->priv->blocked_contact_requests))
+          != NULL)
+    dbus_g_method_return_error (context, error);
+}
+
+static void
 tp_base_contact_list_free_contents (TpBaseContactList *self)
 {
+  GError error = { TP_ERRORS, TP_ERROR_DISCONNECTED,
+      "Disconnected before blocked contacts were retrieved" };
   guint i;
 
   tp_base_contact_list_fail_channel_requests (self, TP_ERRORS,
       TP_ERROR_DISCONNECTED,
       "Unable to complete channel request due to disconnection");
+  tp_base_contact_list_fail_blocked_contact_requests (self, &error);
 
   for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
     tp_clear_object (self->priv->lists + i);
@@ -1746,6 +1767,8 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
       self->priv->conn, self->priv->state);
 
   tp_base_contact_list_fail_channel_requests (self, domain, code, message);
+  tp_base_contact_list_fail_blocked_contact_requests (self,
+      self->priv->failure);
 }
 
 /**
@@ -1845,6 +1868,23 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
         }
 
       tp_base_contact_list_contact_blocking_changed (self, blocked);
+
+      if (self->priv->svc_contact_blocking &&
+          self->priv->blocked_contact_requests.length > 0)
+        {
+          GHashTable *map = tp_handle_set_to_identifier_map (blocked);
+          DBusGMethodInvocation *context;
+
+          while ((context = g_queue_pop_head (
+                      &self->priv->blocked_contact_requests)) != NULL)
+            /* Sometimes I think we should either make our method names less
+             * verbose, or relax our 80-column limit.
+             */
+            tp_svc_connection_interface_contact_blocking_return_from_request_blocked_contacts (context, map);
+
+          g_hash_table_unref (map);
+        }
+
       tp_handle_set_destroy (blocked);
     }
 
@@ -5605,6 +5645,60 @@ tp_base_contact_list_mixin_groups_iface_init (
 #undef IMPLEMENT
 }
 
+#define ERROR_IF_BLOCKING_NOT_SUPPORTED(self, context) \
+  if (!self->priv->svc_contact_blocking) \
+    { \
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, \
+          "ContactBlocking is not supported on this connection" }; \
+      dbus_g_method_return_error (context, &e); \
+      return; \
+    }
+
+static void
+tp_base_contact_list_mixin_request_blocked_contacts (
+    TpSvcConnectionInterfaceContactBlocking *svc,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+
+  ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
+
+  switch (self->priv->state)
+    {
+    case TP_CONTACT_LIST_STATE_NONE:
+    case TP_CONTACT_LIST_STATE_WAITING:
+      g_queue_push_tail (&self->priv->blocked_contact_requests, context);
+      break;
+
+    case TP_CONTACT_LIST_STATE_FAILURE:
+      g_warn_if_fail (self->priv->failure != NULL);
+      dbus_g_method_return_error (context, self->priv->failure);
+      break;
+
+    case TP_CONTACT_LIST_STATE_SUCCESS:
+      {
+        TpHandleSet *blocked = tp_base_contact_list_dup_blocked_contacts (self);
+        GHashTable *map = tp_handle_set_to_identifier_map (blocked);
+
+        tp_svc_connection_interface_contact_blocking_return_from_request_blocked_contacts (context, map);
+
+        g_hash_table_unref (map);
+        tp_handle_set_destroy (blocked);
+        break;
+      }
+
+    default:
+      {
+        GError broken = { TP_ERRORS, TP_ERROR_CONFUSED,
+            "My internal list of blocked contacts is inconsistent! "
+            "I apologise for any inconvenience caused." };
+        dbus_g_method_return_error (context, &broken);
+        g_return_if_reached ();
+      }
+    }
+}
+
 /**
  * tp_base_contact_list_mixin_blocking_iface_init:
  * @klass: the service-side D-Bus interface
@@ -5626,8 +5720,8 @@ tp_base_contact_list_mixin_blocking_iface_init (
 /* TODO
   IMPLEMENT (block_contacts);
   IMPLEMENT (unblock_contacts);
-  IMPLEMENT (request_blocked_contacts);
   */
+  IMPLEMENT (request_blocked_contacts);
 #undef IMPLEMENT
 }
 

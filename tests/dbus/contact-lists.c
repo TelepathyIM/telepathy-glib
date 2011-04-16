@@ -320,15 +320,24 @@ setup_pre_connect (
     gconstpointer data)
 {
   GError *error = NULL;
+  const gchar *account;
 
   g_type_init ();
   tp_debug_set_flags ("all");
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
   test->main_loop = g_main_loop_new (NULL, FALSE);
 
+  /* Some tests want 'account' to be an invalid identifier, so that Connect()
+   * will fail (and the status will change to Disconnected).
+   */
+  if (!tp_strdiff (data, "break-account-parameter"))
+    account = "";
+  else
+    account = "me@example.com";
+
   test->service_conn = tp_tests_object_new_static_class (
         EXAMPLE_TYPE_CONTACT_LIST_CONNECTION,
-        "account", "me@example.com",
+        "account", account,
         "simulation-delay", 0,
         "protocol", "example-contact-list",
         NULL);
@@ -2421,6 +2430,95 @@ test_remove_from_deny_no_op (Test *test,
   g_assert_cmpuint (test->log->len, ==, 0);
 }
 
+static void
+test_request_blocked_contacts (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GHashTable *blocked_contacts;
+  GError *error = NULL;
+
+  tp_cli_connection_interface_contact_blocking_run_request_blocked_contacts (
+      test->conn, -1, &blocked_contacts, &error, NULL);
+  g_assert_no_error (error);
+  g_assert (blocked_contacts != NULL);
+
+  /* Both Bill and the shadowy Steve are blocked; Steve does not appear in this
+   * test, as he is in poor health.
+   */
+  g_assert_cmpuint (g_hash_table_size (blocked_contacts), ==, 2);
+  g_assert_cmpstr (tp_handle_inspect (test->contact_repo, test->bill), ==,
+      g_hash_table_lookup (blocked_contacts, GUINT_TO_POINTER (test->bill)));
+  g_hash_table_unref (blocked_contacts);
+}
+
+static void
+request_blocked_contacts_succeeded_cb (
+    TpConnection *conn,
+    GHashTable *blocked_contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  g_assert_no_error (error);
+
+  /* As above. */
+  g_assert_cmpuint (g_hash_table_size (blocked_contacts), ==, 2);
+}
+
+static void
+test_request_blocked_contacts_pre_connect (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  gboolean ok;
+
+  /* This verifies that calling RequestBlockedContacts()
+   * before Connect(), when Connect() ultimately succeeds, returns correctly.
+   */
+  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+      test->conn, -1, request_blocked_contacts_succeeded_cb,
+      test, test_quit_loop, NULL);
+  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
+  g_main_loop_run (test->main_loop);
+
+  ok = tp_cli_connection_run_disconnect (test->conn, -1, NULL, NULL);
+  g_assert (ok);
+}
+
+static void
+request_blocked_contacts_failed_cb (
+    TpConnection *conn,
+    GHashTable *blocked_contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  g_assert_error (error, TP_ERRORS, TP_ERROR_DISCONNECTED);
+}
+
+static void
+test_request_blocked_contacts_connect_failed (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  /* This verifies that calling RequestBlockedContacts() (twice, no less)
+   * before Connect(), when Connect() ultimately fails, returns an appropriate
+   * error.
+   */
+  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+      test->conn, -1, request_blocked_contacts_failed_cb,
+      test, test_quit_loop, NULL);
+  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+      test->conn, -1, request_blocked_contacts_failed_cb,
+      test, test_quit_loop, NULL);
+
+  /* We expect calling Connect() to fail because the handle was invalid, but
+   * don't wait around for it.
+   */
+  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
+  /* Spin the mainloop twice, once for each outstanding call. */
+  g_main_loop_run (test->main_loop);
+  g_main_loop_run (test->main_loop);
+}
+
 int
 main (int argc,
       char **argv)
@@ -2564,6 +2662,16 @@ main (int argc,
       Test, NULL, setup, test_remove_from_deny, teardown);
   g_test_add ("/contact-lists/remove-from-deny/no-op",
       Test, NULL, setup, test_remove_from_deny_no_op, teardown);
+
+  g_test_add ("/contact-lists/request-blocked-contacts",
+      Test, NULL, setup, test_request_blocked_contacts, teardown);
+  g_test_add ("/contact-lists/request-blocked-contacts-before-connect",
+      Test, NULL, setup_pre_connect,
+      test_request_blocked_contacts_pre_connect, teardown_pre_connect);
+  g_test_add ("/contact-lists/request-blocked-contacts-connect-failed",
+      Test, "break-account-parameter", setup_pre_connect,
+      test_request_blocked_contacts_connect_failed,
+      teardown_pre_connect);
 
   return g_test_run ();
 }
