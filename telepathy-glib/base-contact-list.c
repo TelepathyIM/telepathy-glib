@@ -338,7 +338,8 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  * @dup_blocked_contacts: the implementation of
  *  tp_base_contact_list_dup_blocked_contacts(); must always be provided
  * @block_contacts_async: the implementation of
- *  tp_base_contact_list_block_contacts_async(); must always be provided
+ *  tp_base_contact_list_block_contacts_async(); either this or
+ *  @block_contacts_with_abuse_async must always be provided
  * @block_contacts_finish: the implementation of
  *  tp_base_contact_list_block_contacts_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
@@ -350,6 +351,11 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  * @can_block: the implementation of
  *  tp_base_contact_list_can_block(); if not reimplemented,
  *  the default implementation always returns %TRUE
+ * @block_contacts_with_abuse_async: the implementation of
+ *  tp_base_contact_list_block_contacts_async(); either this or
+ *  @block_contacts_async must always be provided. If the underlying protocol
+ *  does not support reporting contacts as abusive, implement
+ *  @block_contacts_async instead. Since: 0.15.UNRELEASED
  *
  * The interface vtable for a %TP_TYPE_BLOCKABLE_CONTACT_LIST.
  *
@@ -722,7 +728,8 @@ tp_base_contact_list_constructed (GObject *object)
 
       g_return_if_fail (iface->can_block != NULL);
       g_return_if_fail (iface->dup_blocked_contacts != NULL);
-      g_return_if_fail (iface->block_contacts_async != NULL);
+      g_return_if_fail (iface->block_contacts_async != NULL ||
+          iface->block_contacts_with_abuse_async != NULL);
       g_return_if_fail (iface->block_contacts_finish != NULL);
       g_return_if_fail (iface->unblock_contacts_async != NULL);
       g_return_if_fail (iface->unblock_contacts_finish != NULL);
@@ -3067,6 +3074,21 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
 }
 
 /**
+ * TpBaseContactListBlockContactsWithAbuseFunc:
+ * @self: the contact list manager
+ * @contacts: the contacts to block
+ * @report_abusive: whether to report the contacts as abusive to the server
+ *  operator
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
+ *
+ * Signature of a virtual method that blocks a set of contacts, optionally
+ * reporting them to the server operator as abusive.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+
+/**
  * tp_base_contact_list_can_block:
  * @self: a contact list manager
  *
@@ -3159,7 +3181,8 @@ tp_base_contact_list_dup_blocked_contacts (TpBaseContactList *self)
  *
  * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
- * #TpBlockableContactListInterface.block_contacts_async.
+ * #TpBlockableContactListInterface.block_contacts_async or
+ * #TpBlockableContactListInterface.block_contacts_with_abuse_async.
  * The implementation should call
  * tp_base_contact_list_contact_blocking_changed()
  * for any contacts it has changed, before calling @callback.
@@ -3176,9 +3199,15 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
 
   blockable_iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
   g_return_if_fail (blockable_iface != NULL);
-  g_return_if_fail (blockable_iface->block_contacts_async != NULL);
 
-  blockable_iface->block_contacts_async (self, contacts, callback, user_data);
+  if (blockable_iface->block_contacts_async != NULL)
+    blockable_iface->block_contacts_async (self, contacts, callback, user_data);
+  else if (blockable_iface->block_contacts_with_abuse_async != NULL)
+    blockable_iface->block_contacts_with_abuse_async (self, contacts, FALSE,
+        callback, user_data);
+  else
+    g_critical ("neither block_contacts_async nor "
+        "block_contacts_with_abuse_async is implemented");
 }
 
 /**
