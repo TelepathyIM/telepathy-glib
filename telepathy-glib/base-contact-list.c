@@ -5699,6 +5699,89 @@ tp_base_contact_list_mixin_request_blocked_contacts (
     }
 }
 
+static void
+blocked_cb (
+    GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  DBusGMethodInvocation *context = user_data;
+  GError *error = NULL;
+
+  if (tp_base_contact_list_block_contacts_finish (self, result, &error))
+    {
+      tp_svc_connection_interface_contact_blocking_return_from_block_contacts (
+          context);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+    }
+}
+
+static void
+tp_base_contact_list_mixin_block_contacts (
+    TpSvcConnectionInterfaceContactBlocking *svc,
+    const GArray *contacts_arr,
+    gboolean report_abusive,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpHandleSet *contacts;
+
+  ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
+
+  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts_arr);
+  /* TODO: use report_abusive */
+  tp_base_contact_list_block_contacts_async (self, contacts, blocked_cb,
+      context);
+  tp_handle_set_destroy (contacts);
+}
+
+static void
+unblocked_cb (
+    GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  DBusGMethodInvocation *context = user_data;
+  GError *error = NULL;
+
+  if (tp_base_contact_list_unblock_contacts_finish (self, result, &error))
+    {
+      tp_svc_connection_interface_contact_blocking_return_from_unblock_contacts (context);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+    }
+}
+
+static void
+tp_base_contact_list_mixin_unblock_contacts (
+    TpSvcConnectionInterfaceContactBlocking *svc,
+    const GArray *contacts_arr,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpHandleSet *contacts;
+
+  ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
+
+  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts_arr);
+  tp_base_contact_list_unblock_contacts_async (self, contacts, unblocked_cb,
+      context);
+  tp_handle_set_destroy (contacts);
+}
+
 /**
  * tp_base_contact_list_mixin_blocking_iface_init:
  * @klass: the service-side D-Bus interface
@@ -5717,10 +5800,8 @@ tp_base_contact_list_mixin_blocking_iface_init (
 {
 #define IMPLEMENT(x) tp_svc_connection_interface_contact_blocking_implement_##x (\
   klass, tp_base_contact_list_mixin_##x)
-/* TODO
   IMPLEMENT (block_contacts);
   IMPLEMENT (unblock_contacts);
-  */
   IMPLEMENT (request_blocked_contacts);
 #undef IMPLEMENT
 }

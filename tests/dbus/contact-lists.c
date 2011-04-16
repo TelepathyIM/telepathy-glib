@@ -2302,9 +2302,14 @@ test_rename_group_absent (Test *test,
   g_clear_error (&error);
 }
 
+/* Signature of a function which does something with test->arr */
+typedef void (*ManipulateContactsFunc) (
+    Test *test,
+    GError **error);
+
 static void
-test_add_to_deny (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+block_contacts (Test *test,
+    ManipulateContactsFunc func)
 {
   GError *error = NULL;
 
@@ -2319,8 +2324,7 @@ test_add_to_deny (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->deny,
-      -1, test->arr, "", &error, NULL);
+  func (test, &error);
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -2345,8 +2349,8 @@ test_add_to_deny (Test *test,
 }
 
 static void
-test_add_to_deny_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+block_contacts_no_op (Test *test,
+    ManipulateContactsFunc func)
 {
   GError *error = NULL;
 
@@ -2357,8 +2361,7 @@ test_add_to_deny_no_op (Test *test,
         test->bill));
 
   g_array_append_val (test->arr, test->bill);
-  tp_cli_channel_interface_group_run_add_members (test->deny,
-      -1, test->arr, "", &error, NULL);
+  func (test, &error);
   g_assert_no_error (error);
 
   g_assert (tp_intset_is_member (
@@ -2372,8 +2375,8 @@ test_add_to_deny_no_op (Test *test,
 }
 
 static void
-test_remove_from_deny (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+unblock_contacts (Test *test,
+    ManipulateContactsFunc func)
 {
   GError *error = NULL;
 
@@ -2387,8 +2390,7 @@ test_remove_from_deny (Test *test,
         test->bill));
 
   g_array_append_val (test->arr, test->bill);
-  tp_cli_channel_interface_group_run_remove_members (test->deny,
-      -1, test->arr, "", &error, NULL);
+  func (test, &error);
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -2405,8 +2407,8 @@ test_remove_from_deny (Test *test,
 }
 
 static void
-test_remove_from_deny_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+unblock_contacts_no_op (Test *test,
+    ManipulateContactsFunc func)
 {
   GError *error = NULL;
 
@@ -2417,8 +2419,7 @@ test_remove_from_deny_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->deny,
-      -1, test->arr, "", &error, NULL);
+  func (test, &error);
   g_assert_no_error (error);
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->deny),
@@ -2428,6 +2429,50 @@ test_remove_from_deny_no_op (Test *test,
 
   /* We shouldn't emit spurious empty BlockedContactsChanged signals. */
   g_assert_cmpuint (test->log->len, ==, 0);
+}
+
+static void
+add_to_deny (Test *test,
+    GError **error)
+{
+  tp_cli_channel_interface_group_run_add_members (test->deny,
+      -1, test->arr, "", error, NULL);
+}
+
+static void
+test_add_to_deny (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  block_contacts (test, add_to_deny);
+}
+
+static void
+test_add_to_deny_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  block_contacts_no_op (test, add_to_deny);
+}
+
+static void
+remove_from_deny (Test *test,
+    GError **error)
+{
+  tp_cli_channel_interface_group_run_remove_members (test->deny,
+      -1, test->arr, "", error, NULL);
+}
+
+static void
+test_remove_from_deny (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  unblock_contacts (test, remove_from_deny);
+}
+
+static void
+test_remove_from_deny_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  unblock_contacts_no_op (test, remove_from_deny);
 }
 
 static void
@@ -2517,6 +2562,50 @@ test_request_blocked_contacts_connect_failed (Test *test,
   /* Spin the mainloop twice, once for each outstanding call. */
   g_main_loop_run (test->main_loop);
   g_main_loop_run (test->main_loop);
+}
+
+static void
+call_block_contacts (Test *test,
+    GError **error)
+{
+  tp_cli_connection_interface_contact_blocking_run_block_contacts (test->conn,
+      -1, test->arr, FALSE, error, NULL);
+}
+
+static void
+test_block_contacts (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  block_contacts (test, call_block_contacts);
+}
+
+static void
+test_block_contacts_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  block_contacts_no_op (test, call_block_contacts);
+}
+
+static void
+call_unblock_contacts (Test *test,
+    GError **error)
+{
+  tp_cli_connection_interface_contact_blocking_run_unblock_contacts (
+      test->conn, -1, test->arr, error, NULL);
+}
+
+static void
+test_unblock_contacts (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  unblock_contacts (test, call_unblock_contacts);
+}
+
+static void
+test_unblock_contacts_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  unblock_contacts_no_op (test, call_unblock_contacts);
 }
 
 int
@@ -2672,6 +2761,14 @@ main (int argc,
       Test, "break-account-parameter", setup_pre_connect,
       test_request_blocked_contacts_connect_failed,
       teardown_pre_connect);
+  g_test_add ("/contact-lists/block-contacts",
+      Test, NULL, setup, test_block_contacts, teardown);
+  g_test_add ("/contact-lists/block-contacts/no-op",
+      Test, NULL, setup, test_block_contacts_no_op, teardown);
+  g_test_add ("/contact-lists/unblock-contacts",
+      Test, NULL, setup, test_unblock_contacts, teardown);
+  g_test_add ("/contact-lists/unblock-contacts/no-op",
+      Test, NULL, setup, test_unblock_contacts_no_op, teardown);
 
   return g_test_run ();
 }
