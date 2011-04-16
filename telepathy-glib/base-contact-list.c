@@ -5913,6 +5913,40 @@ tp_base_contact_list_mixin_blocking_iface_init (
 #undef IMPLEMENT
 }
 
+static TpDBusPropertiesMixinPropImpl known_blocking_props[] = {
+    { "ContactBlockingCapabilities" },
+    { NULL }
+};
+
+static void
+tp_base_contact_list_get_blocking_dbus_property (GObject *conn,
+    GQuark interface G_GNUC_UNUSED,
+    GQuark name G_GNUC_UNUSED,
+    GValue *value,
+    gpointer data)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST);
+  TpBlockableContactListInterface *iface =
+      TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  static GQuark contact_blocking_capabilities_q = 0;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_BLOCKABLE_CONTACT_LIST (self));
+  g_return_if_fail (self->priv->conn != NULL);
+
+  if (G_UNLIKELY (contact_blocking_capabilities_q == 0))
+    contact_blocking_capabilities_q =
+        g_quark_from_static_string ("ContactBlockingCapabilities");
+
+  g_return_if_fail (name == contact_blocking_capabilities_q);
+
+  if (iface->block_contacts_with_abuse_async != NULL)
+    g_value_set_uint (value, TP_CONTACT_BLOCKING_CAPABILITY_CAN_REPORT_ABUSIVE);
+  else
+    g_value_set_uint (value, 0);
+}
+
 /**
  * tp_base_contact_list_mixin_class_init:
  * @cls: A subclass of #TpBaseConnection that has a #TpContactsMixinClass,
@@ -5952,6 +5986,14 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
           TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS,
           tp_base_contact_list_get_group_dbus_property,
           NULL, known_group_props);
+    }
+
+  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING))
+    {
+      tp_dbus_properties_mixin_implement_interface (obj_cls,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING,
+          tp_base_contact_list_get_blocking_dbus_property,
+          NULL, known_blocking_props);
     }
 }
 

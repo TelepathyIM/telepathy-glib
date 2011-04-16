@@ -753,6 +753,8 @@ test_properties (Test *test,
 {
   GHashTable *asv;
   GError *error = NULL;
+  guint32 blocking_caps;
+  gboolean valid;
 
   tp_cli_dbus_properties_run_get_all (test->conn, -1,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
@@ -800,6 +802,16 @@ test_properties (Test *test,
   g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"), "Montreal"));
   g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"),
         "Francophones"));
+  g_hash_table_unref (asv);
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), ==, 1);
+  blocking_caps = tp_asv_get_uint32 (asv, "ContactBlockingCapabilities",
+      &valid);
+  g_assert (valid);
+  g_assert_cmpuint (blocking_caps, ==, 0);
   g_hash_table_unref (asv);
 
   g_assert_cmpuint (test->log->len, ==, 0);
