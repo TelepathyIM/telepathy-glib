@@ -227,7 +227,7 @@ AM_CFLAGS = $(ERROR_CFLAGS)
 TESTS_ENVIRONMENT = \
     abs_top_builddir=@abs_top_builddir@ \
     XDG_DATA_HOME=@abs_builddir@ \
-    XDG_DATA_DIRS=@abs_srcdir@ \
+    XDG_DATA_DIRS=@abs_srcdir@:$${XDG_DATA_DIRS:=/usr/local/share:/usr/share} \
     G_SLICE=debug-blocks \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     $(top_srcdir)/tools/test-wrapper.sh \
