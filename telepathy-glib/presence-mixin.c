@@ -233,9 +233,18 @@
  *  tp_presence_mixin_class_init()
  * @statuses: The presence statuses array that was passed to
  *  tp_presence_mixin_class_init()
+ * @get_maximum_status_message_length: The callback used to discover the
+ *  the limit for status messages lenght, if any.
  *
  * Structure to be included in the class structure of objects that
  * use this mixin. Initialize it with tp_presence_mixin_class_init().
+ *
+ * If the protocol has a limit for status message length, one should implement
+ * the get_maximum_status_message_length callback returning the maximum length
+ * in characters for any individual status message that is supported,
+ * or 0 if there is no limit. If this callback is not implemented, it is
+ * considered that there is no limit.
+ * The callback should be set after calling tp_presence_mixin_class_init().
  *
  * All fields should be considered read-only.
  */
