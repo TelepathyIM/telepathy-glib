@@ -94,8 +94,10 @@ struct _TpPresenceMixinClass {
     /*<private>*/
     TpPresenceMixinClassPrivate *priv;
 
+    /*<public>*/
     TpPresenceMixinGetMaximumStatusMessageLengthFunc get_maximum_status_message_length;
 
+    /*<private>*/
     gpointer _future1;
     gpointer _future2;
     gpointer _future3;
