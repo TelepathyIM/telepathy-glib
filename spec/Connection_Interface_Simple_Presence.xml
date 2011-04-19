@@ -279,6 +279,7 @@
     <property name="MaximumStatusMessageLength"
       tp:name-for-bindings="Maximum_Status_Message_Length" access="read"
       type="u">
+      <tp:added version="0.22.UNRELEASED"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The maximum length in characters for any individual status
           message, or 0 if there is no limit.</p>
@@ -302,10 +303,11 @@
           state MUST NOT be assumed to still be correct when the state has
           become CONNECTED).</p>
 
-        <p>The connection manager MUST truncate the status message being set if
-          its length is bigger than the value of this property and
-          PresencesChanged MUST be emitted properly with the truncated
-          status message.</p>
+        <p>If a message passed to <tp:member-ref>SetPresence</tp:member-ref> is
+          longer than allowed by this property, the connection manager MUST
+          truncate the supplied message; when emitting
+          <tp:member-ref>PresencesChanged</tp:member-ref>, the truncated version
+          of the message MUST be used.</p>
 
         <tp:rationale>
           <p>Some XMPP servers, like Google Talk, define a maximum length for
