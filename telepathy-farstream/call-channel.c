@@ -312,6 +312,8 @@ content_ready (GObject *object, GAsyncResult *res, gpointer user_data)
             }
         }
     }
+
+  g_object_unref (self);
 }
 
 static gboolean
@@ -325,7 +327,7 @@ add_content (TfCallChannel *self, const gchar *content_path)
     return TRUE;
 
   content = tf_call_content_new_async (self, content_path,
-      &error, content_ready, self);
+      &error, content_ready, g_object_ref (self));
 
   if (error)
     {
