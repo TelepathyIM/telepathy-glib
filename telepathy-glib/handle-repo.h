@@ -130,7 +130,7 @@ gboolean tp_handle_set_remove (TpHandleSet *set, TpHandle handle);
 gboolean tp_handle_set_is_member (const TpHandleSet *set, TpHandle handle);
 
 void tp_handle_set_foreach (TpHandleSet *set, TpHandleSetMemberFunc func,
-    gpointer userdata);
+    gpointer user_data);
 
 gboolean tp_handle_set_is_empty (const TpHandleSet *set);
 int tp_handle_set_size (const TpHandleSet *set);

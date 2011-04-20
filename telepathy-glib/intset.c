@@ -139,7 +139,15 @@ tp_intset_get_type (void)
  *
  * Reset the iterator @iter to the beginning and make it iterate over @set.
  */
-/* (inline, see header) */
+void
+tp_intset_iter_init (
+    TpIntsetIter *iter,
+    const TpIntset *set)
+{
+  g_return_if_fail (iter != NULL);
+  iter->set = set;
+  iter->element = (guint)(-1);
+}
 
 /**
  * tp_intset_iter_reset:
@@ -148,7 +156,13 @@ tp_intset_get_type (void)
  * Reset the iterator @iter to the beginning. It must already be associated
  * with a set.
  */
-/* (inline, see header) */
+void
+tp_intset_iter_reset (TpIntsetIter *iter)
+{
+  g_return_if_fail (iter != NULL);
+  g_return_if_fail (iter->set != NULL);
+  iter->element = (guint)(-1);
+}
 
 /**
  * TpIntset:

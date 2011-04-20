@@ -56,6 +56,26 @@ typedef GPtrArray *(*TpBaseConnectionCreateChannelManagersImpl) (
 typedef gchar *(*TpBaseConnectionGetUniqueConnectionNameImpl) (
     TpBaseConnection *self);
 
+struct _TpBaseConnection {
+    /*<public>*/
+    GObject parent;
+
+    gchar *bus_name;
+    gchar *object_path;
+
+    TpConnectionStatus status;
+
+    TpHandle self_handle;
+
+    /*<private>*/
+    gpointer _future1;
+    gpointer _future2;
+    gpointer _future3;
+    gpointer _future4;
+
+    TpBaseConnectionPrivate *priv;
+};
+
 struct _TpBaseConnectionClass {
     GObjectClass parent_class;
 
@@ -92,26 +112,6 @@ struct _TpBaseConnectionClass {
 };
 
 #   define TP_INTERNAL_CONNECTION_STATUS_NEW ((TpConnectionStatus)(-1))
-
-struct _TpBaseConnection {
-    /*<public>*/
-    GObject parent;
-
-    gchar *bus_name;
-    gchar *object_path;
-
-    TpConnectionStatus status;
-
-    TpHandle self_handle;
-
-    /*<private>*/
-    gpointer _future1;
-    gpointer _future2;
-    gpointer _future3;
-    gpointer _future4;
-
-    TpBaseConnectionPrivate *priv;
-};
 
 GType tp_base_connection_get_type (void);
 

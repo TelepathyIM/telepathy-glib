@@ -334,7 +334,7 @@ _tp_unix_connection_send_credentials_with_byte (GUnixConnection *connection,
  * tp_unix_connection_send_credentials_with_byte
  * @connection: a #GUnixConnection
  * @byte: the byte to send with the credentials
- * @cancellable: (allown-none): a #GCancellable, or %NULL
+ * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @error: a #GError to fill
  *
  * A variant of g_unix_connection_send_credentials() allowing you to choose
@@ -544,7 +544,7 @@ _tp_unix_connection_receive_credentials_with_byte (GUnixConnection *connection,
  * tp_unix_connection_receive_credentials_with_byte
  * @connection: a #GUnixConnection
  * @byte: (out): if not %NULL, used to return the byte
- * @cancellable: (allown-none): a #GCancellable, or %NULL
+ * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @error: a #GError to fill
  *
  * A variant of g_unix_connection_receive_credentials() allowing you to get

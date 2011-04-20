@@ -91,27 +91,6 @@ void tp_group_mixin_class_set_remove_with_reason_func (GObjectClass *cls,
     TpGroupMixinRemMemberWithReasonFunc func);
 
 /**
- * TpGroupMixinClass:
- * @add_member: The add-member function that was passed to
- *  tp_group_mixin_class_init()
- * @remove_member: The remove-member function that was passed to
- *  tp_group_mixin_class_init()
- * @priv: Pointer to opaque private data
- *
- * Structure representing the group mixin as used in a particular class.
- * To be placed in the implementation's class structure.
- *
- * Initialize this with tp_group_mixin_class_init().
- *
- * All fields should be considered read-only.
- */
-struct _TpGroupMixinClass {
-  TpGroupMixinAddMemberFunc add_member;
-  TpGroupMixinRemMemberFunc remove_member;
-  TpGroupMixinClassPrivate *priv;
-};
-
-/**
  * TpGroupMixin:
  * @handle_repo: The connection's contact handle repository
  * @self_handle: The local user's handle within this group, or 0 if none.
@@ -142,6 +121,27 @@ struct _TpGroupMixin {
   TpHandleSet *remote_pending;
 
   TpGroupMixinPrivate *priv;
+};
+
+/**
+ * TpGroupMixinClass:
+ * @add_member: The add-member function that was passed to
+ *  tp_group_mixin_class_init()
+ * @remove_member: The remove-member function that was passed to
+ *  tp_group_mixin_class_init()
+ * @priv: Pointer to opaque private data
+ *
+ * Structure representing the group mixin as used in a particular class.
+ * To be placed in the implementation's class structure.
+ *
+ * Initialize this with tp_group_mixin_class_init().
+ *
+ * All fields should be considered read-only.
+ */
+struct _TpGroupMixinClass {
+  TpGroupMixinAddMemberFunc add_member;
+  TpGroupMixinRemMemberFunc remove_member;
+  TpGroupMixinClassPrivate *priv;
 };
 
 /* TYPE MACROS */

@@ -92,25 +92,8 @@ typedef struct {
 typedef TpIntsetIter TpIntSetIter;
 
 #define TP_INTSET_ITER_INIT(set) { (set), (guint)(-1) }
-
-#define tp_intset_iter_init(iter, set) tp_intset_iter_init_inline (iter, set)
-static inline void
-tp_intset_iter_init_inline (TpIntsetIter *iter, const TpIntset *set)
-{
-  g_return_if_fail (iter != NULL);
-  iter->set = set;
-  iter->element = (guint)(-1);
-}
-
-#define tp_intset_iter_reset(iter) tp_intset_iter_reset_inline (iter)
-static inline void
-tp_intset_iter_reset_inline (TpIntsetIter *iter)
-{
-  g_return_if_fail (iter != NULL);
-  g_return_if_fail (iter->set != NULL);
-  iter->element = (guint)(-1);
-}
-
+void tp_intset_iter_init (TpIntsetIter *iter, const TpIntset *set);
+void tp_intset_iter_reset (TpIntsetIter *iter);
 gboolean tp_intset_iter_next (TpIntsetIter *iter);
 
 typedef struct {
