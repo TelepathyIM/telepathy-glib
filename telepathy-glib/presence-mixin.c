@@ -234,6 +234,7 @@
  *
  * Returns: the maximum number of UTF-8 characters which may appear in a status
  * message, or 0 if there is no limit.
+ * Since: 0.14.5
  */
 
 /**
@@ -247,7 +248,7 @@
  * @statuses: The presence statuses array that was passed to
  *  tp_presence_mixin_class_init()
  * @get_maximum_status_message_length: The callback used to discover the
- *  the limit for status messages lenght, if any.
+ *  the limit for status messages length, if any. Since: 0.14.5
  *
  * Structure to be included in the class structure of objects that
  * use this mixin. Initialize it with tp_presence_mixin_class_init().
