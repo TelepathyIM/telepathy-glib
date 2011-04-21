@@ -1,0 +1,7 @@
+Version: TELEPATHY_GLIB_0.14.5
+Extends: TELEPATHY_GLIB_0.14.4
+Release: 0.14.5
+
+tp_base_client_is_handling_channel
+tp_intset_iter_init
+tp_intset_iter_reset

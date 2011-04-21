@@ -65,10 +65,8 @@ GValue *tp_g_value_slice_dup (const GValue *value) G_GNUC_WARN_UNUSED_RESULT;
 void tp_g_hash_table_update (GHashTable *target, GHashTable *source,
     GBoxedCopyFunc key_dup, GBoxedCopyFunc value_dup);
 
-#define tp_str_empty(s) (tp_str_empty_inline (s))
-
 static inline gboolean
-tp_str_empty_inline (const gchar *s)
+tp_str_empty (const gchar *s)
 {
   return (s == NULL || s[0] == '\0');
 }

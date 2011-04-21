@@ -647,7 +647,7 @@ tp_proxy_add_interface_by_id (TpProxy *self,
  * g_quark_from_string () followed by tp_proxy_add_interface_by_id () for each
  * of the interface names.
  *
- * Since: 0.14.UNRELEASED
+ * Since: 0.14.4
  */
 void
 tp_proxy_add_interfaces (TpProxy *self,

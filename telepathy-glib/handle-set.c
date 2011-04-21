@@ -270,18 +270,15 @@ foreach_helper (guint i, gpointer userdata)
  * tp_handle_set_foreach: (skip)
  * @set: A set of handles
  * @func: (scope call): A callback
- * @userdata: (closure): Arbitrary data to pass to @func
+ * @user_data: Arbitrary data to pass to @func
  *
  * Call @func(@set, @handle, @userdata) for each handle in @set.
  */
 void
 tp_handle_set_foreach (TpHandleSet *set, TpHandleSetMemberFunc func,
-    gpointer userdata)
+    gpointer user_data)
 {
-  _foreach_data data = {set, func, userdata};
-  data.set = set;
-  data.func = func;
-  data.userdata = userdata;
+  _foreach_data data = {set, func, user_data};
   tp_intset_foreach (set->intset, foreach_helper, &data);
 }
 

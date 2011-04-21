@@ -30,7 +30,7 @@
  * create your own custom authentication channels instead of letting
  * #TpBasePasswordManager create them automatically.  In this case, you
  * should derive your channel from this class and then pass the channel as an
- * argument to tp_base_password_manager_prompt_for_channel_async().
+ * argument to tp_simple_password_manager_prompt_for_channel_async().
  *
  * Since: 0.13.15
  */

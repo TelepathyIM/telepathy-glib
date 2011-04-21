@@ -2760,7 +2760,7 @@ tp_base_client_get_channel_factory (TpBaseClient *self)
  * Check if @self is currently handling @channel.
  *
  * Returns: %TRUE if @self is handling @channel, %FALSE otherwise
- * Since: 0.15.UNRELEASED
+ * Since: 0.14.5
  */
 gboolean
 tp_base_client_is_handling_channel (TpBaseClient *self,

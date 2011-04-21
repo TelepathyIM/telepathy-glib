@@ -224,6 +224,20 @@
  */
 
 /**
+ * TpPresenceMixinGetMaximumStatusMessageLengthFunc:
+ * @obj: An object with this mixin.
+ *
+ * Signature of a callback used to determine the maximum length of status
+ * messages. If this callback is provided and returns non-zero, the
+ * #TpPresenceMixinSetOwnStatusFunc implementation is responsible for
+ * truncating the message to fit this limit, if necessary.
+ *
+ * Returns: the maximum number of UTF-8 characters which may appear in a status
+ * message, or 0 if there is no limit.
+ * Since: 0.14.5
+ */
+
+/**
  * TpPresenceMixinClass:
  * @status_available: The status-available function that was passed to
  *  tp_presence_mixin_class_init()
@@ -234,19 +248,27 @@
  * @statuses: The presence statuses array that was passed to
  *  tp_presence_mixin_class_init()
  * @get_maximum_status_message_length: The callback used to discover the
- *  the limit for status messages lenght, if any.
+ *  the limit for status messages length, if any. Since: 0.14.5
  *
  * Structure to be included in the class structure of objects that
  * use this mixin. Initialize it with tp_presence_mixin_class_init().
  *
- * If the protocol has a limit for status message length, one should implement
- * the get_maximum_status_message_length callback returning the maximum length
- * in characters for any individual status message that is supported,
- * or 0 if there is no limit. If this callback is not implemented, it is
- * considered that there is no limit.
- * The callback should be set after calling tp_presence_mixin_class_init().
+ * If the protocol imposes a limit on the length of status messages, one should
+ * implement @get_maximum_status_message_length. If this callback is not
+ * implemented, it is assumed that there is no limit. The callback function
+ * should be set after calling tp_presence_mixin_class_init(), like so:
  *
- * All fields should be considered read-only.
+ * |[
+ * TpPresenceMixinClass *mixin_class;
+ *
+ * tp_presence_mixin_class_init ((GObjectClass *) klass,
+ *     G_STRUCT_OFFSET (SomeObjectClass, presence_mixin));
+ * mixin_class = TP_PRESENCE_MIXIN_CLASS (klass);
+ * mixin_class->get_maximum_status_message_length =
+ *     some_object_get_maximum_status_message_length;
+ * ]|
+ *
+ * All other fields should be considered read-only.
  */
 
 /**

@@ -96,8 +96,27 @@ typedef struct _TpPropertiesContext TpPropertiesContext;
 typedef gboolean (*TpPropertiesSetFunc) (GObject *obj,
     TpPropertiesContext *ctx, GError **error);
 
+typedef struct _TpPropertiesMixinClass TpPropertiesMixinClass;
+typedef struct _TpPropertiesMixinPrivate TpPropertiesMixinPrivate;
+typedef struct _TpPropertiesMixin TpPropertiesMixin;
 /* Doesn't yet exist. For future expansion. */
 typedef struct _TpPropertiesMixinClassPrivate TpPropertiesMixinClassPrivate;
+
+/**
+ * TpPropertiesMixin:
+ * @properties: Array of property values, of length klass->num_props.
+ *  Should be considered read-only.
+ * @priv: Pointer to opaque private data.
+ *
+ * Structure to be placed in a GObject-derived structure containing
+ * instance data for the properties mixin (i.e. the properties). Initialize
+ * it using tp_properties_mixin_init().
+ */
+struct _TpPropertiesMixin {
+    TpProperty *properties;
+
+    TpPropertiesMixinPrivate *priv;
+};
 
 /**
  * TpPropertiesMixinClass:
@@ -122,28 +141,6 @@ struct _TpPropertiesMixinClass {
 
   TpPropertiesMixinClassPrivate *priv;
 };
-
-typedef struct _TpPropertiesMixinClass TpPropertiesMixinClass;
-
-typedef struct _TpPropertiesMixinPrivate TpPropertiesMixinPrivate;
-
-/**
- * TpPropertiesMixin:
- * @properties: Array of property values, of length klass->num_props.
- *  Should be considered read-only.
- * @priv: Pointer to opaque private data.
- *
- * Structure to be placed in a GObject-derived structure containing
- * instance data for the properties mixin (i.e. the properties). Initialize
- * it using tp_properties_mixin_init().
- */
-struct _TpPropertiesMixin {
-    TpProperty *properties;
-
-    TpPropertiesMixinPrivate *priv;
-};
-
-typedef struct _TpPropertiesMixin TpPropertiesMixin;
 
 /* TYPE MACROS */
 #define TP_PROPERTIES_MIXIN_CLASS_OFFSET_QUARK \

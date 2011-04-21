@@ -59,6 +59,36 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
         namespace='ofdT.Client.Handler'>BypassApproval</tp:dbus-ref> property
         to <code>True</code>, so that it is invoked immediately for new
         channels.</p>
+
+      <h4>Contact Capabilities</h4>
+
+      <p>Contacts to whom SMSes can be sent SHOULD indicate this via a
+        requestable channel class with
+        <tp:member-ref>SMSChannel</tp:member-ref> = True as a fixed
+        property.</p>
+
+      <p>For instance, a contact that can accept both text and SMS channels:</p>
+
+      <blockquote><code>
+[<br/>
+ ({ ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
+     ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>,<br/>
+    ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>:
+       <tp:type>Handle_Type</tp:type>_Contact,<br/>
+  },<br/>
+  [ ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandle</tp:dbus-ref>,
+    ...<tp:dbus-ref namespace='ofdT.Channel'>TargetID</tp:dbus-ref> ]),<br/>
+<br/>
+ ({ ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
+       ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>,<br/>
+    ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>:
+       <tp:type>Handle_Type</tp:type>_Contact,<br/>
+    ...<tp:member-ref>SMSChannel</tp:member-ref>: True,<br/>
+  },<br/>
+  [ ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandle</tp:dbus-ref>,
+    ...<tp:dbus-ref namespace='ofdT.Channel'>TargetID</tp:dbus-ref> ]),<br/>
+]
+      </code></blockquote>
     </tp:docstring>
 
     <property name="Flash" tp:name-for-bindings="Flash"

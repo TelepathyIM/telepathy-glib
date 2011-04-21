@@ -33,6 +33,7 @@ G_BEGIN_DECLS
 typedef struct _TpContactInfoFieldSpec TpContactInfoFieldSpec;
 struct _TpContactInfoFieldSpec
 {
+  /*<public>*/
   gchar *name;
   GStrv parameters;
   TpContactInfoFieldFlags flags;
@@ -55,6 +56,7 @@ void tp_contact_info_spec_list_free (GList *list);
 typedef struct _TpContactInfoField TpContactInfoField;
 struct _TpContactInfoField
 {
+  /*<public>*/
   gchar *field_name;
   GStrv parameters;
   GStrv field_value;
@@ -234,6 +236,7 @@ void tp_connection_unref_handles (TpConnection *self,
 typedef struct _TpAvatarRequirements TpAvatarRequirements;
 struct _TpAvatarRequirements
 {
+  /*<public>*/
   GStrv supported_mime_types;
   guint minimum_width;
   guint minimum_height;

@@ -586,13 +586,15 @@
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>Raised if the user has insufficient
         <tp:dbus-ref namespace="ofdT.Connection.Interface">Balance</tp:dbus-ref>
-        to place a call.</p>
+        to place a call or send a message.</p>
 
       <p>The key 'balance-required' MAY be included in
         <tp:dbus-ref namespace="ofdT.Channel.Type.Call.DRAFT">CallStateDetails</tp:dbus-ref>
+        or a delivery report's <tp:type>Message_Part</tp:type>
         (with the same units and scale as
         <tp:dbus-ref namespace="ofdT.Connection.Interface.Balance">AccountBalance</tp:dbus-ref>)
-        to indicate how much credit is required to make this call.</p>
+        to indicate how much credit is required to make this call or send
+        this message.</p>
     </tp:docstring>
   </tp:error>
 

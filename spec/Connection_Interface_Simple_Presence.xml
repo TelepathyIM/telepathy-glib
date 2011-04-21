@@ -279,7 +279,7 @@
     <property name="MaximumStatusMessageLength"
       tp:name-for-bindings="Maximum_Status_Message_Length" access="read"
       type="u">
-      <tp:added version="0.22.UNRELEASED"/>
+      <tp:added version="0.22.2"/>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>The maximum length in characters for any individual status
           message, or 0 if there is no limit.</p>
@@ -590,57 +590,75 @@
 
       <table>
         <tr>
-          <th>status identifier</th>
-          <th>Connection_Presence_Type</th>
-          <th>comments</th>
+          <th>Status identifier</th>
+          <th><tp:type>Connection_Presence_Type</tp:type></th>
+          <th>Remarks</th>
         </tr>
         <tr>
-          <td>available</td>
-          <td>Connection_Presence_Type_Available</td>
+          <td><code>"available"</code></td>
+          <td>Available</td>
           <td></td>
         </tr>
         <tr>
-          <td>away</td>
-          <td>Connection_Presence_Type_Away</td>
+          <td><code>"chat"</code></td>
+          <td>Available</td>
+          <td>Actively interested in chatting, as opposed to merely
+            available.</td>
+        </tr>
+        <tr>
+          <td><code>"pstn"</code></td>
+          <td>Available</td>
+          <td>This contact is actually a phone number, not an IM account. As
+            such, the contact is conceptually always available, but not in the
+            same way that a contact can set their IM status to “available”.
+            It does not make sense to allow the user to set this status on
+            herself; hence, on protocols where this status is supported, its
+            entry in <tp:member-ref>Statuses</tp:member-ref> SHOULD have
+            <var>May_Set_On_Self</var> set to <code>False</code>.</td>
+        </tr>
+        <tr>
+          <td><code>"away"</code></td>
+          <td>Away</td>
           <td></td>
         </tr>
         <tr>
-          <td>brb</td>
-          <td>Connection_Presence_Type_Away</td>
+          <td><code>"brb"</code></td>
+          <td>Away</td>
           <td>Be Right Back (a more specific form of Away)</td>
         </tr>
         <tr>
-          <td>busy</td>
-          <td>Connection_Presence_Type_Busy</td>
+          <td><code>"busy"</code></td>
+          <td>Busy</td>
           <td></td>
         </tr>
-        <tr><td>dnd</td>
-          <td>Connection_Presence_Type_Busy</td>
+        <tr>
+          <td><code>"dnd"</code></td>
+          <td>Busy</td>
           <td>Do Not Disturb (a more specific form of Busy)</td>
         </tr>
         <tr>
-          <td>xa</td>
-          <td>Connection_Presence_Type_Extended_Away</td>
+          <td><code>"xa"</code></td>
+          <td>Extended_Away</td>
           <td>Extended Away</td>
         </tr>
         <tr>
-          <td>hidden</td>
-          <td>Connection_Presence_Type_Hidden</td>
+          <td><code>"hidden"</code></td>
+          <td>Hidden</td>
           <td>Also known as "Invisible" or "Appear Offline"</td>
         </tr>
         <tr>
-          <td>offline</td>
-          <td>Connection_Presence_Type_Offline</td>
+          <td><code>"offline"</code></td>
+          <td>Offline</td>
           <td></td>
         </tr>
         <tr>
-          <td>unknown</td>
-          <td>Connection_Presence_Type_Unknown</td>
+          <td><code>"unknown"</code></td>
+          <td>Unknown</td>
           <td>special, see below</td>
         </tr>
         <tr>
-          <td>error</td>
-          <td>Connection_Presence_Type_Error</td>
+          <td><code>"error"</code></td>
+          <td>Error</td>
           <td>special, see below</td>
         </tr>
       </table>

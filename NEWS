@@ -1,3 +1,50 @@
+telepathy-glib 0.14.6 (UNRELEASED yo)
+==================================
+
+
+telepathy-glib 0.14.5 (2011-04-20)
+==================================
+
+The “seven years wasn't strange” release.
+
+Enhancements:
+
+• Update to spec 0.22.2, generating code for the Balance.ManageCreditURI
+  and SimplePresence.MaximumStatusMessageLength properties.
+
+• tp_base_client_is_handling_channel(), which does what it says on the
+  tin. (cassidy)
+
+• TpPresenceMixin now supports the MaximumStatusMessageLength class.
+  (andrunko)
+
+Fixes:
+
+• The documentation now builds correctly with gtk-doc 1.16 and newer.
+  (wjt)
+
+• The test suite now passes on systems with glib-networking installed.
+  (wjt)
+
+telepathy-glib 0.14.4 (2011-04-15)
+==================================
+
+Enhancements:
+
+• fd.o#27459: TpConnection now avoids a bunch of redundant D-Bus method 
+  calls when preparing the CORE feature with recent services, lowering
+  latency (oggis)
+
+• tp_proxy_add_interfaces() for adding discovered interfaces from TpProxy
+  subclasses (oggis, cassidy)
+
+• tp_base_protocol_get_immutable_properties() now fills the Proto.I.Avatars
+  properties (cassidy)
+
+Fixes:
+
+• fd.o#36134 - TpProtocol claims it doesn't support any extra iface (cassidy)
+
 telepathy-glib 0.14.3 (2011-03-31)
 ==================================
 
