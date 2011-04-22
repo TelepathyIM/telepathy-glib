@@ -44,26 +44,61 @@
  *
  * Connections that use #TpBaseContactList must also have the #TpContactsMixin.
  *
- * To use the #TpBaseContactList subclass as a mixin, call
- * tp_base_contact_list_mixin_class_init() after tp_contacts_mixin_class_init()
- * in the #TpBaseConnection's #GTypeClass.class_init method, create a
- * #TpBaseContactList in the #TpBaseConnectionClass.create_channel_managers
- * method, then call tp_base_contact_list_mixin_register_with_contacts_mixin()
- * after tp_contacts_mixin_init() in the #GObjectClass.constructor or
- * #GObjectClass.constructed method.
+ * Connection managers should subclass #TpBaseContactList, implementing the
+ * virtual methods for core functionality in #TpBaseContactListClass.
+ * Then, in the connection manager's #TpBaseConnection subclass:
  *
- * Also add the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
- * interface to the #TpBaseConnectionClass.interfaces_always_present,
- * and implement the %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST #GInterface
- * by passing tp_base_contact_list_mixin_list_iface_init() to
- * G_IMPLEMENT_INTERFACE().
+ * <itemizedlist>
+ *  <listitem>
+ *   <para>in #G_DEFINE_TYPE_WITH_CODE, implement
+ *   #TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST using
+ *   tp_base_contact_list_mixin_list_iface_init():</para>
+ * |[
+ * G_DEFINE_TYPE_WITH_CODE (MyConnection, my_connection,
+ *     TP_TYPE_BASE_CONNECTION,
+ *     // ...
+ *     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST,
+ *         tp_base_contact_list_mixin_list_iface_init);
+ *     // ...
+ *     )
+ * ]|
+ *  </listitem>
+ *  <listitem>
+ *   <para>in the <function>class_init</function> method, call
+ *    tp_base_contact_list_mixin_class_init() after
+ *    tp_contacts_mixin_class_init():</para>
+ * |[
+ * // ...
+ * tp_contacts_mixin_class_init (object_class,
+ *     G_STRUCT_OFFSET (MyConnectionClass, contacts_mixin));
+ * tp_base_contact_list_mixin_class_init (base_connection_class);
+ * // ...
+ * ]|
+ *   <para>and include %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST in
+ *    #TpBaseConnectionClass.interfaces_always_present;</para>
+ *  </listitem>
+ *  <listitem>
+ *   <para>in the #TpBaseConnectionClass.create_channel_managers
+ *    implementation, create an instance of the #TpBaseContactList
+ *    subclass, and include it in the returned #GPtrArray;</para>
+ *  </listitem>
+ *  <listitem>
+ *   <para>in the <function>constructed</function> method, call
+ *    tp_base_contact_list_mixin_register_with_contacts_mixin() on the
+ *    <emphasis>connection</emphasis>.</para>
+ *  </listitem>
+ * </itemizedlist>
  *
- * To support user-defined contact groups too, do the same, but additionally
- * implement %TP_TYPE_CONTACT_GROUP_LIST in the #TpBaseContactList,
- * add the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS
- * interface to the #TpBaseConnectionClass.interfaces_always_present,
- * and implement %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS using
- * tp_base_contact_list_mixin_groups_iface_init().
+ * To support user-defined contact groups too, additionally implement
+ * %TP_TYPE_CONTACT_GROUP_LIST in the #TpBaseContactList subclass, add the
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS interface to
+ * #TpBaseConnectionClass.interfaces_always_present, and implement the
+ * %TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS in the #TpBaseConnection
+ * subclass using tp_base_contact_list_mixin_groups_iface_init().
+ *
+ * Optionally, one or more of the #TP_TYPE_MUTABLE_CONTACT_LIST,
+ * #TP_TYPE_MUTABLE_CONTACT_GROUP_LIST, and #TP_TYPE_BLOCKABLE_CONTACT_LIST
+ * GObject interfaces may also be implemented, as appropriate to the protocol.
  *
  * In versions of the Telepathy D-Bus Interface Specification prior to
  * 0.21.0, this functionality was provided as a collection of
