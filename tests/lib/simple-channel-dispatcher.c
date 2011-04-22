@@ -246,6 +246,18 @@ tp_tests_simple_channel_dispatcher_ensure_channel_with_hints (
   g_free (path);
 }
 
+
+static void
+tp_tests_simple_channel_dispatcher_delegate_channels (
+    TpSvcChannelDispatcher *dispatcher,
+    const GPtrArray *channels,
+    gint64 user_action_time,
+    const gchar *preferred_handler,
+    DBusGMethodInvocation *context)
+{
+  tp_svc_channel_dispatcher_return_from_delegate_channels (context);
+}
+
 static void
 channel_dispatcher_iface_init (gpointer klass,
     gpointer unused G_GNUC_UNUSED)
@@ -256,6 +268,7 @@ channel_dispatcher_iface_init (gpointer klass,
   IMPLEMENT (ensure_channel);
   IMPLEMENT (create_channel_with_hints);
   IMPLEMENT (ensure_channel_with_hints);
+  IMPLEMENT (delegate_channels);
 #undef IMPLEMENT
 }
 

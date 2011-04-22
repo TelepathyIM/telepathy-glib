@@ -169,6 +169,7 @@
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
 #include <telepathy-glib/automatic-proxy-factory.h>
 #include <telepathy-glib/channel-dispatch-operation-internal.h>
+#include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus-internal.h>
@@ -2804,4 +2805,126 @@ _tp_base_client_now_handling_channels (TpBaseClient *self,
    * a Handler */
   if (self->priv->flags & CLIENT_IS_HANDLER)
     add_handled_channels (self, channels);
+}
+
+static void
+delegate_channels_cb (TpChannelDispatcher *cd,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+  TpBaseClient *self = (TpBaseClient *) weak_object;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+    }
+  else
+    {
+      /* We are not longer handling the channels */
+      GPtrArray *chans;
+      guint i;
+
+      chans = g_simple_async_result_get_op_res_gpointer (result);
+
+      for (i = 0; i < chans->len; i++)
+        {
+          const gchar *path = g_ptr_array_index (chans, i);
+
+          g_hash_table_remove (self->priv->my_chans, path);
+        }
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_base_client_delegate_channels_async:
+ * @self: a #TpBaseClient
+ * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel
+ * handled by @self
+ * @user_action_time: the time at which user action occurred,
+ * or #TP_USER_ACTION_TIME_NOT_USER_ACTION if this delegation request is
+ * for some reason not involving user action.
+ * @preferred_handler: Either the well-known bus name (starting with
+ * %TP_CLIENT_BUS_NAME_BASE) of the preferred handler for the channels,
+ * or %NULL to indicate that any handler but @self would be acceptable.
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Asynchronously calls DelegateChannels on the ChannelDispatcher to try
+ * stopping handling @channels and pass them to another Handler.
+ * You can then call tp_base_client_delegate_channels_finish() to
+ * get the result of the operation.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_base_client_delegate_channels_async (TpBaseClient *self,
+    GList *channels,
+    gint64 user_action_time,
+    const gchar *preferred_handler,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpChannelDispatcher *cd;
+  GPtrArray *chans;
+  GList *l;
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (self->priv->flags & CLIENT_IS_HANDLER);
+
+  cd = tp_channel_dispatcher_new (self->priv->dbus);
+
+  chans = g_ptr_array_sized_new (g_list_length (channels));
+  g_ptr_array_set_free_func (chans, g_free);
+
+  for (l = channels; l != NULL; l = g_list_next (l))
+    {
+      TpChannel *channel = l->data;
+
+      g_return_if_fail (TP_IS_CHANNEL (channel));
+
+      g_ptr_array_add (chans, g_strdup (tp_proxy_get_object_path (channel)));
+    }
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tp_base_client_delegate_channels_async);
+
+  g_simple_async_result_set_op_res_gpointer (result, chans,
+      (GDestroyNotify) g_ptr_array_unref);
+
+  /* DelegateChannels() can takes a while if, for example, some clients are
+   * crashing and so MC has to wait for them to time out before calling the
+   * next handler. Set a timeout of 2 minutes. */
+  tp_cli_channel_dispatcher_call_delegate_channels (cd, 1000 * 60 * 2,
+      chans, user_action_time,
+      preferred_handler == NULL ? "" : preferred_handler,
+      delegate_channels_cb, result, g_object_unref, G_OBJECT (self));
+
+  g_object_unref (cd);
+}
+
+/**
+ * tp_base_client_delegate_channels_finish:
+ * @self: a #TpBaseClient
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async channels delegation request started using
+ * tp_base_client_delegate_channels_async().
+ *
+ * Returns: %TRUE if @self is not longer the handler of the channels,
+ * otherwise %FALSE.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_base_client_delegate_channels_finish (TpBaseClient *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_base_client_delegate_channels_async)
 }

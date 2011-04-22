@@ -22,6 +22,7 @@
 #include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
 #include "tests/lib/simple-channel-dispatch-operation.h"
+#include "tests/lib/simple-channel-dispatcher.h"
 #include "tests/lib/simple-client.h"
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/textchan-null.h"
@@ -38,6 +39,7 @@ typedef struct {
     TpTestsTextChannelNull *text_chan_service;
     TpTestsTextChannelNull *text_chan_service_2;
     TpTestsSimpleChannelDispatchOperation *cdo_service;
+    TpTestsSimpleChannelDispatcher *cd_service;
 
     /* Client side objects */
     TpAccountManager *account_mgr;
@@ -179,6 +181,15 @@ setup (Test *test,
 
   g_assert (tp_dbus_daemon_request_name (test->dbus,
       TP_CHANNEL_DISPATCHER_BUS_NAME, FALSE, NULL));
+
+  /* Create and register CD */
+  test->cd_service = tp_tests_object_new_static_class (
+      TP_TESTS_TYPE_SIMPLE_CHANNEL_DISPATCHER,
+      "connection", test->base_connection,
+      NULL);
+
+  tp_dbus_daemon_register_object (test->dbus, TP_CHANNEL_DISPATCHER_OBJECT_PATH,
+      test->cd_service);
 }
 
 static void
@@ -251,6 +262,8 @@ teardown (Test *test,
 
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
+
+  tp_clear_object (&test->cd_service);
 }
 
 /* Test Basis */
@@ -1214,6 +1227,95 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
   g_hash_table_unref (properties);
 }
 
+static void
+delegate_channels_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_base_client_delegate_channels_finish (
+      TP_BASE_CLIENT (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait == 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_delegate_channels (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GPtrArray *channels;
+  GPtrArray *requests_satisified;
+  GHashTable *info;
+  GList *chans;
+
+  tp_base_client_be_a_handler (test->base_client);
+
+  tp_base_client_register (test->base_client, &test->error);
+  g_assert_no_error (test->error);
+
+  /* Call HandleChannels */
+  channels = g_ptr_array_sized_new (2);
+  add_channel_to_ptr_array (channels, test->text_chan);
+  add_channel_to_ptr_array (channels, test->text_chan_2);
+
+  requests_satisified = g_ptr_array_sized_new (0);
+  info = g_hash_table_new (NULL, NULL);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
+      TP_IFACE_QUARK_CLIENT_HANDLER);
+
+  tp_cli_client_handler_call_handle_channels (test->client, -1,
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
+      channels, requests_satisified, 0, info,
+      no_return_cb, test, NULL, NULL);
+
+  test->wait++;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* The client is handling the 2 channels */
+  chans = tp_base_client_get_handled_channels (test->base_client);
+  g_assert_cmpuint (g_list_length (chans), ==, 2);
+  g_list_free (chans);
+
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan));
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan_2));
+
+  /* Try to delegate the first one */
+  chans = g_list_append (NULL, test->text_chan);
+
+  tp_base_client_delegate_channels_async (test->base_client,
+      chans, TP_USER_ACTION_TIME_CURRENT_TIME, NULL,
+      delegate_channels_cb, test);
+
+  g_list_free (chans);
+
+  test->wait++;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Client is not handling the channel any more */
+  chans = tp_base_client_get_handled_channels (test->base_client);
+  g_assert_cmpuint (g_list_length (chans), ==, 1);
+  g_list_free (chans);
+
+  g_assert (!tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan));
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan_2));
+
+  g_ptr_array_foreach (channels, free_channel_details, NULL);
+  g_ptr_array_free (channels, TRUE);
+  g_ptr_array_free (requests_satisified, TRUE);
+  g_hash_table_unref (info);
+}
+
 int
 main (int argc,
       char **argv)
@@ -1235,6 +1337,8 @@ main (int argc,
       test_handler_requests, teardown);
   g_test_add ("/cdo/claim_with", Test, NULL, setup,
       test_channel_dispatch_operation_claim_with_async, teardown);
+  g_test_add ("/base-client/delegate-channels", Test, NULL, setup,
+      test_delegate_channels, teardown);
 
   return g_test_run ();
 }

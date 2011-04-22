@@ -176,6 +176,17 @@ GList *tp_base_client_get_handled_channels (TpBaseClient *self);
 gboolean tp_base_client_is_handling_channel (TpBaseClient *self,
     TpChannel *channel);
 
+void tp_base_client_delegate_channels_async (TpBaseClient *self,
+    GList *channels,
+    gint64 user_action_time,
+    const gchar *preferred_handler,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_base_client_delegate_channels_finish (TpBaseClient *self,
+    GAsyncResult *result,
+    GError **error);
+
 const gchar *tp_base_client_get_name (TpBaseClient *self);
 gboolean tp_base_client_get_uniquify_name (TpBaseClient *self);
 const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
