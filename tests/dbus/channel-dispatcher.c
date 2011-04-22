@@ -69,6 +69,8 @@ main (int argc,
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   g_test_add ("/cd/new", Test, NULL, setup, test_new, teardown);
+  /* tp_channel_dispatcher_present_channel_async() is tested in
+   * test-base-client */
 
   return g_test_run ();
 }

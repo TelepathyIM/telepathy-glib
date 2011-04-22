@@ -22,6 +22,7 @@
 #ifndef TP_CHANNEL_DISPATCHER_H
 #define TP_CHANNEL_DISPATCHER_H
 
+#include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/proxy.h>
@@ -69,6 +70,17 @@ TpChannelDispatcher *tp_channel_dispatcher_new (TpDBusDaemon *bus_daemon)
     G_GNUC_WARN_UNUSED_RESULT;
 
 void tp_channel_dispatcher_init_known_interfaces (void);
+
+void tp_channel_dispatcher_present_channel_async (TpChannelDispatcher *self,
+    TpChannel *channel,
+    gint64 user_action_time,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_dispatcher_present_channel_finish (
+    TpChannelDispatcher *self,
+    GAsyncResult *result,
+    GError **error);
 
 G_END_DECLS
 

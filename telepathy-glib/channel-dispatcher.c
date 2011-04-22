@@ -26,6 +26,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util-internal.h>
 
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/debug-internal.h"
@@ -165,4 +166,78 @@ tp_channel_dispatcher_new (TpDBusDaemon *bus_daemon)
         NULL));
 
   return self;
+}
+
+static void
+present_channel_cb (TpChannelDispatcher *cd,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_channel_dispatcher_present_channel_async:
+ * @self: a #TpChannelDispatcher
+ * @channel: a #TpChannel
+ * @user_action_time: the time at which user action occurred,
+ * or #TP_USER_ACTION_TIME_NOT_USER_ACTION if this presentation request is
+ * for some reason not involving user action.
+ * @callback: a callback to call when the request is satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Asynchronously calls PresentChannel on the ChannelDispatcher to ask
+ * to the handler of @channel to re-present it to the user.
+ * You can then call tp_channel_dispatcher_present_channel_finish() to
+ * get the result of the operation.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_channel_dispatcher_present_channel_async (TpChannelDispatcher *self,
+    TpChannel *channel,
+    gint64 user_action_time,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CHANNEL_DISPATCHER (self));
+  g_return_if_fail (TP_IS_CHANNEL (channel));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tp_channel_dispatcher_present_channel_async);
+
+  tp_cli_channel_dispatcher_call_present_channel (self, -1,
+      tp_proxy_get_object_path (channel), user_action_time,
+      present_channel_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_channel_dispatcher_present_channel_finish:
+ * @self: a #TpBaseClient
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async channel presentation request started using
+ * tp_channel_dispatcher_present_channel_async().
+ *
+ * Returns: %TRUE if the call succeeded, otherwise %FALSE.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_channel_dispatcher_present_channel_finish (TpChannelDispatcher *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_channel_dispatcher_present_channel_async)
 }

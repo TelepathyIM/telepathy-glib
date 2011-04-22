@@ -1316,6 +1316,39 @@ test_delegate_channels (Test *test,
   g_hash_table_unref (info);
 }
 
+static void
+present_channel_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_channel_dispatcher_present_channel_finish (
+      TP_CHANNEL_DISPATCHER (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait == 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_present_channel (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpChannelDispatcher *cd;
+
+  cd = tp_channel_dispatcher_new (test->dbus);
+
+  tp_channel_dispatcher_present_channel_async (cd, test->text_chan,
+      TP_USER_ACTION_TIME_CURRENT_TIME, present_channel_cb, test);
+
+  test->wait++;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_object_unref (cd);
+}
+
 int
 main (int argc,
       char **argv)
@@ -1339,6 +1372,8 @@ main (int argc,
       test_channel_dispatch_operation_claim_with_async, teardown);
   g_test_add ("/base-client/delegate-channels", Test, NULL, setup,
       test_delegate_channels, teardown);
+  g_test_add ("/cd/present-channel", Test, NULL, setup,
+      test_present_channel, teardown);
 
   return g_test_run ();
 }
