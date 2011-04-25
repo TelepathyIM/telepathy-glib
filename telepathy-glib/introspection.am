@@ -53,6 +53,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/client-message.c $(srcdir)/client-message.h \
 	$(srcdir)/message.c $(srcdir)/message.h \
 	$(srcdir)/signalled-message.c $(srcdir)/signalled-message.h \
+	$(srcdir)/channel-dispatcher.c $(srcdir)/channel-dispatcher.h \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
 	_gen/telepathy-enums.h \
 	_gen/telepathy-interfaces.h \
