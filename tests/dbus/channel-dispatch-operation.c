@@ -779,6 +779,57 @@ test_handle_with_time (Test *test,
   g_assert_no_error (test->error);
 }
 
+static void
+close_channels_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_channel_dispatch_operation_close_channels_finish (
+      TP_CHANNEL_DISPATCH_OPERATION (source), result, &test->error);
+
+  test->sig--;
+  if (test->sig == 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+channel_invalidated_cb (TpProxy *proxy,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  test->sig--;
+  if (test->sig == 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_close_channels (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  test->cdo = tp_channel_dispatch_operation_new (test->dbus,
+      "/whatever", NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  g_signal_connect (test->text_chan, "invalidated",
+      G_CALLBACK (channel_invalidated_cb), test);
+  g_signal_connect (test->text_chan_2, "invalidated",
+      G_CALLBACK (channel_invalidated_cb), test);
+
+  tp_channel_dispatch_operation_close_channels_async (test->cdo,
+      close_channels_cb, test);
+
+  test->sig = 3;
+  g_main_loop_run (test->mainloop);
+
+  g_assert_no_error (test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -805,6 +856,8 @@ main (int argc,
       test_finished_preparing, teardown_services);
   g_test_add ("/cdo/handle-with-time", Test, NULL, setup_services,
       test_handle_with_time, teardown_services);
+  g_test_add ("/cdo/close-channels", Test, NULL, setup_services,
+      test_close_channels, teardown_services);
 
   return g_test_run ();
 }

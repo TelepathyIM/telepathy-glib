@@ -142,6 +142,18 @@ gboolean tp_channel_dispatch_operation_claim_with_finish (
     GAsyncResult *result,
     GError **error);
 
+/* Reject API */
+
+void tp_channel_dispatch_operation_close_channels_async (
+    TpChannelDispatchOperation *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_dispatch_operation_close_channels_finish (
+    TpChannelDispatchOperation *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel-dispatch-operation.h>

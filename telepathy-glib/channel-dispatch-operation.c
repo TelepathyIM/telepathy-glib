@@ -1578,3 +1578,94 @@ tp_channel_dispatch_operation_claim_with_finish (
   _tp_implement_finish_void (self, \
       tp_channel_dispatch_operation_claim_with_async)
 }
+
+static void
+channel_close_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  GError *error = NULL;
+
+  if (!tp_channel_close_finish (TP_CHANNEL (source), result, &error))
+    {
+      DEBUG ("Failed to close %s: %s", tp_proxy_get_object_path (source),
+          error->message);
+
+      g_error_free (error);
+    }
+}
+
+static void
+claim_close_channels_cb (TpChannelDispatchOperation *self,
+    GSimpleAsyncResult *result)
+{
+  guint i;
+
+  for (i = 0; i < self->priv->channels->len; i++)
+    {
+      TpChannel *channel = g_ptr_array_index (self->priv->channels, i);
+
+      tp_channel_close_async (channel, channel_close_cb, NULL);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_channel_dispatch_operation_close_channels_async:
+ * @self: a #TpChannelDispatchOperation
+ * @callback: a callback to call when the request has been satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Called by an approver to claim channels and close them all right away.
+ * If this method is called successfully, @self has been claimed and
+ * tp_channel_close_async() has been called on all of its channels.
+ *
+ * If successful, this method will cause the #TpProxy::invalidated signal
+ * to be emitted, in the same way as for
+ * tp_channel_dispatch_operation_handle_with_async().
+ *
+ * This method may fail because the dispatch operation has already
+ * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
+ * for more details.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_channel_dispatch_operation_close_channels_async (
+    TpChannelDispatchOperation *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tp_channel_dispatch_operation_close_channels_async);
+
+  prepare_core_and_claim (self, claim_close_channels_cb, result);
+}
+
+/**
+ * tp_channel_dispatch_operation_close_channels_finish:
+ * @self: a #TpChannelDispatchOperation
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async operation initiated using
+ * tp_channel_dispatch_operation_close_channels_finish().
+ *
+ * Returns: %TRUE if the Claim() call was successful and
+ * Close() has at least been attempted on all the channels, otherwise %FALSE
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_channel_dispatch_operation_close_channels_finish (
+    TpChannelDispatchOperation *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, \
+      tp_channel_dispatch_operation_close_channels_async)
+}
