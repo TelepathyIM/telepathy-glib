@@ -680,7 +680,7 @@ get_pending_messages_cb (TpProxy *proxy,
     gpointer user_data,
     GObject *weak_object)
 {
-  TpTextChannel *self = (TpTextChannel *) weak_object;
+  TpTextChannel *self = (TpTextChannel *) proxy;
   GSimpleAsyncResult *result = user_data;
   guint i;
   GPtrArray *messages;
