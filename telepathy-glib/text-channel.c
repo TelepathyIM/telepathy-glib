@@ -622,8 +622,6 @@ got_pending_senders_contact_by_handle_cb (TpConnection *connection,
 out:
   _tp_proxy_set_feature_prepared (TP_PROXY (self),
       TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
-
-  free_parts_list (parts_list);
 }
 
 static void
@@ -665,8 +663,6 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
 out:
   _tp_proxy_set_feature_prepared (TP_PROXY (self),
       TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
-
-  free_parts_list (parts_list);
 }
 
 /* There is no TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST (fdo #32433) */
@@ -769,7 +765,7 @@ get_pending_messages_cb (TpProxy *proxy,
           tp_connection_get_contacts_by_id (conn, sender_ids->len,
               (const gchar * const *) sender_ids->pdata,
               0, NULL, got_pending_senders_contact_by_id_cb, parts_list,
-              NULL, G_OBJECT (result));
+              (GDestroyNotify) free_parts_list, G_OBJECT (result));
         }
       else
         {
@@ -778,7 +774,7 @@ get_pending_messages_cb (TpProxy *proxy,
           tp_connection_get_contacts_by_handle (conn, tmp->len,
               (TpHandle *) tmp->data,
               0, NULL, got_pending_senders_contact_by_handle_cb, parts_list,
-              NULL, G_OBJECT (result));
+              (GDestroyNotify) free_parts_list, G_OBJECT (result));
 
           g_array_unref (tmp);
         }
