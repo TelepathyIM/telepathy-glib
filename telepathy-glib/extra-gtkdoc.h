@@ -600,16 +600,17 @@
 
 /**
  * SECTION:connection-contact-list
- * @title: Connection ContactList, ContactGroups interfaces
- * @short_description: client-side wrappers for the ContactList and
- *  ContactGroups interfaces
+ * @title: Connection ContactList, ContactGroups and ContactBlocking interfaces
+ * @short_description: client-side wrappers for the ContactList,
+ *  ContactGroups and ContactBlocking interfaces
  * @see_also: #TpConnection
  *
  * This interface allows a client to obtain a server-stored contact list
  * and contacts' groups.
  *
  * This section documents the auto-generated C wrappers for the
- * ContactList and ContactGroups interfaces, used with #TpConnection objects.
+ * ContactList, ContactGroups and ContactBlocking interfaces, used
+ * with #TpConnection objects.
  */
 
 /**
