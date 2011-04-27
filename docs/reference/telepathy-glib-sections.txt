@@ -2940,6 +2940,7 @@ tp_iface_quark_connection_interface_service_point
 <TITLE>proxy</TITLE>
 <INCLUDE>telepathy-glib/proxy.h</INCLUDE>
 TpProxy
+TpProxyPrepareAsync
 TpProxyFeature
 TpProxyClassFeatureListFunc
 TpProxyClass
@@ -2973,6 +2974,7 @@ TP_IS_PROXY_CLASS
 TP_PROXY
 TP_PROXY_CLASS
 TP_PROXY_GET_CLASS
+TpProxyFeaturePrivate
 </SECTION>
 
 <SECTION>

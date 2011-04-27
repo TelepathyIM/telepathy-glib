@@ -71,8 +71,32 @@ struct _TpProxy {
 
 typedef struct _TpProxyClass TpProxyClass;
 
-/* defined in proxy-internal.h for now */
 typedef struct _TpProxyFeature TpProxyFeature;
+typedef struct _TpProxyFeaturePrivate TpProxyFeaturePrivate;
+
+typedef void (* TpProxyPrepareAsync) (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+struct _TpProxyFeature {
+    /*<public>*/
+    GQuark name;
+    gboolean core;
+
+    TpProxyPrepareAsync prepare_async;
+    TpProxyPrepareAsync prepare_before_signalling_connected_async;
+
+    const GQuark *interfaces_needed;
+    /* Features we depend on */
+    const GQuark *depends_on;
+
+    gboolean can_retry;
+
+    /*<private>*/
+    GCallback _reserved[4];
+    TpProxyFeaturePrivate *priv;
+};
 
 /* XXX: hide this from the g-i scanner, since vapigen can't cope */
 #ifndef __GI_SCANNER__

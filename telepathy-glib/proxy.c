@@ -208,10 +208,36 @@ tp_dbus_errors_quark (void)
  */
 
 /**
- * TpProxyFeature:
+ * TpProxyPrepareAsync:
+ * @proxy: the object on which @feature has to be prepared
+ * @feature: a #GQuark representing the feature to prepare
+ * @callback: called when the feature has been prepared, or the preparation
+ * failed
+ * @user_data: data to pass to @callback
  *
- * Structure representing a feature. This is currently opaque to code outside
- * telepathy-glib itself.
+ * Function called when @feature has to be prepared for @proxy.
+ */
+
+/**
+ * TpProxyFeature:
+ * @name: a #GQuark representing the name of the feature
+ * @core: if %TRUE, every non-core feature of the class depends on this one,
+ * and every feature (core or not) in subclasses depends on this one
+ * @prepare_async: called when the feature has to be prepared
+ * @prepare_before_signalling_connected_async: only relevant for
+ * TpConnection sub-classes; same as @prepare_async but for
+ * features wanting to have a chance to prepare themself before the
+ * TpConnection object announce its %TP_CONNECTION_STATUS_CONNECTED status
+ * @interfaces_needed: an array of #GQuark representing interfaces which have
+ * to be implemented on the object in order to be able to prepare the feature
+ * @depends_on: an array of #GQuark representing other features which have to
+ * be prepared before trying to prepare this feature
+ * @can_retry: If %TRUE, allow retrying preparation of this feature even if it
+ * failed once already; if %FALSE any attempt of preparing the feature after
+ * the preparation already failed once will immediately fail with re-calling
+ * @prepare_async
+ *
+ * Structure representing a feature.
  *
  * Since: 0.11.3
  */
