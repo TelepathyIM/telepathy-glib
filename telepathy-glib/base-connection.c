@@ -2736,16 +2736,30 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
  *              Disconnected
  * @details: Further details of the error, as a hash table where the keys
  *           are strings as defined in the Telepathy specification, and the
- *           values are GValues. %NULL is allowed, and treated as empty.
+ *           values are #GValue<!-- -->s. %NULL is allowed, and treated as
+ *           an empty hash table.
  * @reason: The reason code to use in the StatusChanged signal
  *          (a less specific, non-extensible version of @error_name)
  *
- * Change the status of the connection to %TP_CONNECTION_STATUS_DISCONNECTED,
- * as if by a call to tp_base_connection_change_status(). Before doing so,
- * emit the ConnectionError D-Bus signal to give more details of the error.
+ * Changes the #TpBaseConnection.status of @self to
+ * %TP_CONNECTION_STATUS_DISCONNECTED, as if by a call to
+ * tp_base_connection_change_status(), but additionally emits the
+ * <code>ConnectionError</code> D-Bus signal to provide more details about the
+ * error.
  *
- * @details may contain, among other entries, the well-known key
- * "debug-message", whose value should have type G_TYPE_STRING.
+ * Well-known keys for @details are documented in the Telepathy specification's
+ * <ulink url='http://telepathy.freedesktop.org/spec/Connection.html#Signal:ConnectionError'>definition
+ * of the ConnectionError signal</ulink>, and include:
+ *
+ * <itemizedlist>
+ * <listitem><code>"debug-message"</code>, whose value should have type
+ *    #G_TYPE_STRING, for debugging information about the
+ *    disconnection which should not be shown to the user</listitem>
+ * <listitem><code>"server-message"</code>, whose value should also have type
+ *    #G_TYPE_STRING, for a human-readable error message from the server (in an
+ *    unspecified language) explaining why the user was
+ *    disconnected.</listitem>
+ * </itemizedlist>
  *
  * Since: 0.7.24
  */
@@ -2783,16 +2797,20 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
  * Change the status of the connection. The allowed state transitions are:
  *
  * <itemizedlist>
- * <listitem>NEW -> CONNECTING</listitem>
- * <listitem>CONNECTING -> CONNECTED</listitem>
- * <listitem>NEW -> CONNECTED (equivalent to both of the above one after the
- * other - see below)</listitem>
- * <listitem>(anything except DISCONNECTED) -> DISCONNECTED</listitem>
+ * <listitem>#TP_INTERNAL_CONNECTION_STATUS_NEW →
+ *    #TP_CONNECTION_STATUS_CONNECTING</listitem>
+ * <listitem>#TP_CONNECTION_STATUS_CONNECTING →
+ *    #TP_CONNECTION_STATUS_CONNECTED</listitem>
+ * <listitem>#TP_INTERNAL_CONNECTION_STATUS_NEW →
+ *    #TP_CONNECTION_STATUS_CONNECTED (exactly equivalent to both of the above
+ *    one after the other; see below)</listitem>
+ * <listitem>anything except #TP_CONNECTION_STATUS_DISCONNECTED →
+ *    #TP_CONNECTION_STATUS_DISCONNECTED</listitem>
  * </itemizedlist>
  *
- * Before the transition to CONNECTED, the implementation must have discovered
- * the handle for the local user, obtained a reference to that handle and
- * stored it in the @self_handle member of #TpBaseConnection.
+ * Before the transition to #TP_CONNECTION_STATUS_CONNECTED, the implementation
+ * must have discovered the handle for the local user and passed it to
+ * tp_base_connection_set_self_handle().
  *
  * Changing from NEW to CONNECTED is implemented by doing the transition from
  * NEW to CONNECTING, followed by the transition from CONNECTING to CONNECTED;
@@ -2802,15 +2820,21 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
  * Any other valid transition does the following, in this order:
  *
  * <itemizedlist>
- * <listitem>Update the @status member of #TpBaseConnection</listitem>
- * <listitem>If the new state is DISCONNECTED, call the close_all_channels
- * callback on all channel factories</listitem>
- * <listitem>Emit the D-Bus StatusChanged signal</listitem>
- * <listitem>Call the subclass' status change callback</listitem>
- * <listitem>Call the channel factories' status change callbacks</listitem>
- * <listitem>If the new state is DISCONNECTED, call the subclass'
- * @shut_down callback</listitem>
+ * <listitem>Update #TpBaseConnection.status;</listitem>
+ * <listitem>If the new state is #TP_CONNECTION_STATUS_DISCONNECTED, call
+ *    tp_channel_factory_iface_close_all() on all channel factories</listitem>
+ * <listitem>Emit the D-Bus StatusChanged signal;</listitem>
+ * <listitem>Call #TpBaseConnectionClass.connecting,
+ *    #TpBaseConnectionClass.connected or #TpBaseConnectionClass.disconnected
+ *    as appropriate;</listitem>
+ * <listitem>Call the channel factories' status change callbacks;</listitem>
+ * <listitem>If the new state is #TP_CONNECTION_STATUS_DISCONNECTED, call the
+ *    subclass' #TpBaseConnectionClass.shut_down callback.</listitem>
  * </itemizedlist>
+ *
+ * To provide more details about what happened when moving to @status
+ * #TP_CONNECTION_STATUS_DISCONNECTED due to an error, consider calling
+ * tp_base_connection_disconnect_with_dbus_error() instead of this function.
  *
  * Changed in 0.7.35: the @self_handle member of #TpBaseConnection was
  * previously set to 0 at this stage. It now remains non-zero until the object
