@@ -692,7 +692,7 @@ _tpl_log_store_sqlite_get_pending_messages (TplLogStore *self,
   e = sqlite3_prepare_v2 (priv->db, "SELECT id,timestamp "
       "FROM pending_messages "
       "WHERE channel=? "
-      "ORDER BY id DSC",
+      "ORDER BY id ASC",
       -1, &sql, NULL);
 
   if (e != SQLITE_OK)
