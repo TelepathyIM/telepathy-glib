@@ -784,6 +784,8 @@ _tpl_log_store_sqlite_remove_pending_messages (TplLogStore *self,
   g_string_append_printf (query, "channel='%s' AND id IN (%u",
       get_channel_name (channel), GPOINTER_TO_UINT (pending_ids->data));
 
+  DEBUG (" - pending_id: %u", GPOINTER_TO_UINT (pending_ids->data));
+
   for (it = g_list_next (pending_ids); it != NULL; it = g_list_next (it))
     {
       DEBUG (" - pending_id: %u", GPOINTER_TO_UINT (it->data));
