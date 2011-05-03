@@ -313,7 +313,7 @@ log_store_xml_get_dir (TplLogStoreXml *self,
 
   escaped_account = log_store_account_to_dirname (account);
 
-  if (target)
+  if (target != NULL)
     {
       /* FIXME This may be source of bug (does that case still exist ?)
        * avoid that 1-1 conversation generated from a chatroom, having id similar
