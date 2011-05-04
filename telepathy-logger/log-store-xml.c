@@ -663,6 +663,52 @@ log_store_xml_add_event (TplLogStore *store,
   return TRUE;
 }
 
+static gboolean
+log_store_xml_exists_in_directory (const gchar *dirname,
+    GRegex *regex,
+    gint type_mask,
+    gboolean recursive)
+{
+  gboolean exists;
+  const gchar *basename;
+  GDir *dir;
+
+  DEBUG ("Looking in directory '%s' %s",
+      dirname, recursive ? "resursively" : "");
+
+  dir = g_dir_open (dirname, 0, NULL);
+  exists = (dir != NULL);
+
+  if (CONTAINS_ALL_SUPPORTED_TYPES (type_mask) || !exists)
+    goto out;
+
+  exists = FALSE;
+  while ((basename = g_dir_read_name (dir)) != NULL)
+    {
+      gchar *filename;
+
+      filename = g_build_filename (dirname, basename, NULL);
+
+      DEBUG ("Matching with filename '%s'", basename);
+
+      if (recursive && g_file_test (filename, G_FILE_TEST_IS_DIR))
+        exists = log_store_xml_exists_in_directory (filename, regex, type_mask,
+            !tp_strdiff (basename, LOG_DIR_CHATROOMS));
+      else if (g_file_test (filename, G_FILE_TEST_IS_REGULAR))
+        exists = g_regex_match (regex, basename, 0, 0);
+
+      g_free (filename);
+
+      if (exists)
+        break;
+    }
+
+out:
+  if (dir != NULL)
+    g_dir_close (dir);
+
+  return exists;
+}
 
 static gboolean
 log_store_xml_exists (TplLogStore *store,
@@ -671,20 +717,47 @@ log_store_xml_exists (TplLogStore *store,
     gint type_mask)
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
-  gchar *dir;
-  gboolean exists;
+  gchar *dirname;
+  GString *pattern;
+  GRegex *regex;
+  GError *error = NULL;
+  gboolean exists = FALSE;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (TPL_IS_ENTITY (target), FALSE);
+  g_return_val_if_fail (target == NULL || TPL_IS_ENTITY (target), FALSE);
 
-  /* FIXME This method is exposed synchronously in the log manager API and
-   * thus we need a constant time reply. The implementation is not 100%
-   * correct here, but provide this constant time. See fd.o but #35549. */
+  dirname = log_store_xml_get_dir (self, account, target);
+  pattern = g_string_new ("");
 
-  dir = log_store_xml_get_dir (self, account, target);
-  exists = g_file_test (dir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR);
-  g_free (dir);
+  if (type_mask & TPL_EVENT_MASK_TEXT)
+    g_string_append (pattern, "^[0-9]{8,}\\.log$");
+
+  if (type_mask & TPL_EVENT_MASK_CALL)
+    g_string_append_printf (pattern,
+        "^%s[0-9]{8,}\\.call\\.log$",
+        pattern->len == 0 ? "" : "|");
+
+  if (pattern->len == 0)
+    goto out;
+
+  DEBUG ("Pattern is '%s'", pattern->str);
+
+  regex = g_regex_new (pattern->str, G_REGEX_OPTIMIZE, 0, &error);
+  if (regex == NULL)
+    {
+      DEBUG ("Failed to create regex: %s", error->message);
+      g_error_free (error);
+      goto out;
+    }
+
+  exists = log_store_xml_exists_in_directory (dirname, regex, type_mask,
+      target == NULL);
+
+out:
+  g_free (dirname);
+  g_string_free (pattern, TRUE);
+  g_regex_unref (regex);
 
   return exists;
 }
