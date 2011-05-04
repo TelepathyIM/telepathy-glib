@@ -615,6 +615,60 @@ test_add_call_event (XmlTestCaseFixture *fixture,
   g_list_free (events);
 }
 
+static void
+test_exists (XmlTestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TpAccount *account1, *account2;
+  TplEntity *user2, *user3;
+  GError *error = NULL;
+
+  account1 = tp_account_new (fixture->bus,
+      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/test2_40collabora_2eco_2euk0",
+      &error);
+  g_assert_no_error (error);
+  g_assert (account1 != NULL);
+
+  account2 = tp_account_new (fixture->bus,
+      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
+      &error);
+  g_assert_no_error (error);
+  g_assert (account1 != NULL);
+
+  user2 = tpl_entity_new ("user2@collabora.co.uk", TPL_ENTITY_CONTACT,
+      "User2", "");
+
+  user3 = tpl_entity_new ("user3@collabora.co.uk", TPL_ENTITY_CONTACT,
+      "User3", "");
+
+  g_assert (_tpl_log_store_exists (fixture->store, account1, NULL, TPL_EVENT_MASK_ANY));
+  g_assert (_tpl_log_store_exists (fixture->store, account1, NULL, TPL_EVENT_MASK_TEXT));
+  g_assert (!_tpl_log_store_exists (fixture->store, account1, NULL, TPL_EVENT_MASK_CALL));
+
+  g_assert (_tpl_log_store_exists (fixture->store, account2, NULL, TPL_EVENT_MASK_ANY));
+  g_assert (_tpl_log_store_exists (fixture->store, account2, NULL, TPL_EVENT_MASK_TEXT));
+  g_assert (_tpl_log_store_exists (fixture->store, account2, NULL, TPL_EVENT_MASK_CALL));
+
+  g_assert (!_tpl_log_store_exists (fixture->store, account1, user2, TPL_EVENT_MASK_ANY));
+  g_assert (!_tpl_log_store_exists (fixture->store, account1, user2, TPL_EVENT_MASK_TEXT));
+  g_assert (!_tpl_log_store_exists (fixture->store, account1, user2, TPL_EVENT_MASK_CALL));
+
+  g_assert (_tpl_log_store_exists (fixture->store, account2, user2, TPL_EVENT_MASK_ANY));
+  g_assert (_tpl_log_store_exists (fixture->store, account2, user2, TPL_EVENT_MASK_TEXT));
+  g_assert (!_tpl_log_store_exists (fixture->store, account2, user2, TPL_EVENT_MASK_CALL));
+
+  g_assert (_tpl_log_store_exists (fixture->store, account2, user3, TPL_EVENT_MASK_ANY));
+
+#ifdef ENABLE_CALL
+  g_assert (!_tpl_log_store_exists (fixture->store, account2, user3, TPL_EVENT_MASK_TEXT));
+  g_assert (_tpl_log_store_exists (fixture->store, account2, user3, TPL_EVENT_MASK_CALL));
+#endif
+
+  g_object_unref (account1);
+  g_object_unref (account2);
+  g_object_unref (user2);
+  g_object_unref (user3);
+}
 
 gint main (gint argc, gchar **argv)
 {
@@ -646,6 +700,10 @@ gint main (gint argc, gchar **argv)
   g_test_add ("/log-store-xml/add-call-event",
       XmlTestCaseFixture, NULL,
       setup_for_writing, test_add_call_event, teardown);
+
+  g_test_add ("/log-store-xml/exists",
+      XmlTestCaseFixture, NULL,
+      setup, test_exists, teardown);
 
   return g_test_run ();
 }
