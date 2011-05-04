@@ -351,9 +351,19 @@ log_store_xml_get_dir (TplLogStoreXml *self,
   return basedir;
 }
 
+static const gchar *
+log_store_xml_get_file_suffix (GType type)
+{
+  if (type == TPL_TYPE_TEXT_EVENT)
+    return LOG_FILENAME_SUFFIX;
+  else if (type == TPL_TYPE_CALL_EVENT)
+    return LOG_FILENAME_CALL_SUFFIX;
+  else
+    g_return_val_if_reached (NULL);
+}
 
 static gchar *
-log_store_xml_get_timestamp_filename (void)
+log_store_xml_get_timestamp_filename (GType type)
 {
   gchar *time_str;
   gchar *filename;
@@ -361,7 +371,8 @@ log_store_xml_get_timestamp_filename (void)
 
   now = g_date_time_new_now_local ();
   time_str = g_date_time_format (now, LOG_TIME_FORMAT);
-  filename = g_strconcat (time_str, LOG_FILENAME_SUFFIX, NULL);
+  filename = g_strconcat (time_str, log_store_xml_get_file_suffix (type),
+      NULL);
 
   g_date_time_unref (now);
   g_free (time_str);
@@ -385,17 +396,19 @@ log_store_xml_get_timestamp_from_event (TplEvent *event)
 }
 
 
+
 static gchar *
 log_store_xml_get_filename (TplLogStoreXml *self,
     TpAccount *account,
-    TplEntity *target)
+    TplEntity *target,
+    GType type)
 {
   gchar *id_dir;
   gchar *timestamp;
   gchar *filename;
 
   id_dir = log_store_xml_get_dir (self, account, target);
-  timestamp = log_store_xml_get_timestamp_filename ();
+  timestamp = log_store_xml_get_timestamp_filename (type);
   filename = g_build_filename (id_dir, timestamp, NULL);
 
   g_free (id_dir);
@@ -413,6 +426,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
     TpAccount *account,
     TplEntity *target,
     const gchar *event,
+    GType type,
     GError **error)
 {
   FILE *file;
@@ -425,7 +439,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
   g_return_val_if_fail (TPL_IS_ENTITY (target), FALSE);
 
-  filename = log_store_xml_get_filename (self, account, target);
+  filename = log_store_xml_get_filename (self, account, target, type);
   basedir = g_path_get_dirname (filename);
 
   if (!g_file_test (basedir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
@@ -485,7 +499,7 @@ add_text_event (TplLogStoreXml *self,
   gchar *timestamp = NULL;
   gchar *contact_name = NULL;
   gchar *contact_id = NULL;
-  gchar *event = NULL;
+  gchar *log_str = NULL;
   TpChannelTextMessageType msg_type;
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -521,7 +535,7 @@ add_text_event (TplLogStoreXml *self,
   avatar_token = g_markup_escape_text (tpl_entity_get_avatar_token (sender),
       -1);
 
-  event = g_strdup_printf ("<message time='%s' id='%s' name='%s' "
+  log_str = g_strdup_printf ("<message time='%s' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'>"
       "%s</message>\n" LOG_FOOTER, timestamp,
       contact_id, contact_name,
@@ -535,14 +549,15 @@ add_text_event (TplLogStoreXml *self,
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
-      _tpl_event_get_target (TPL_EVENT (message)), event, error);
+      _tpl_event_get_target (TPL_EVENT (message)), log_str, TPL_TYPE_TEXT_EVENT,
+      error);
 
 out:
   g_free (contact_id);
   g_free (contact_name);
   g_free (timestamp);
   g_free (body);
-  g_free (event);
+  g_free (log_str);
   g_free (avatar_token);
 
   if (bus_daemon != NULL)
@@ -627,7 +642,8 @@ add_call_event (TplLogStoreXml *self,
       tpl_entity_get_identifier (target),
       timestamp);
 
-  ret = _log_store_xml_write_to_store (self, account, target, log_str, error);
+  ret = _log_store_xml_write_to_store (self, account, target, log_str,
+      TPL_TYPE_CALL_EVENT, error);
 
 out:
   g_free (sender_id);
