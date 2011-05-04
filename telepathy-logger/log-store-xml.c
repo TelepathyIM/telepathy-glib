@@ -869,7 +869,6 @@ log_store_xml_get_dates (TplLogStore *store,
   GDir *dir = NULL;
   GString *pattern = NULL;
   GRegex *regex = NULL;
-  GError *error = NULL;
   const gchar *basename;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
@@ -885,59 +884,37 @@ log_store_xml_get_dates (TplLogStore *store,
     }
 
   DEBUG ("Collating a list of dates in:'%s'", directory);
+  regex = log_store_xml_create_filename_regex (type_mask);
 
-  pattern = g_string_new ("");
-
-  if (type_mask & TPL_EVENT_MASK_TEXT)
-    g_string_append (pattern, "<message ");
-
-  if (type_mask & TPL_EVENT_MASK_CALL)
-    g_string_append_printf (pattern,
-        "%s<call ",
-        pattern->len == 0 ? "" : "|");
-
-  if (pattern->len == 0)
-    goto out;
-
-  regex = g_regex_new (pattern->str, G_REGEX_OPTIMIZE, 0, &error);
   if (regex == NULL)
-    {
-      DEBUG ("Failed to create regex: %s", error->message);
-      g_error_free (error);
-      goto out;
-    }
+    goto out;
 
   while ((basename = g_dir_read_name (dir)) != NULL)
     {
-      gchar *filename;
+      const gchar *p;
+      gchar *str;
+      GDate *date;
 
-      if (!g_str_has_suffix (basename, LOG_FILENAME_SUFFIX))
+      if (!g_regex_match (regex, basename, 0, NULL))
         continue;
 
-      filename = g_build_filename (directory, basename, NULL);
+      p = strstr (basename, LOG_FILENAME_CALL_SUFFIX);
 
-      if (CONTAINS_ALL_SUPPORTED_TYPES (type_mask)
-          || log_store_xml_match_in_file (filename, regex))
-        {
-          const gchar *p;
-          gchar *str;
-          GDate *date;
+      if (p == NULL)
+        p = strstr (basename, LOG_FILENAME_SUFFIX);
 
-          p = strstr (basename, LOG_FILENAME_SUFFIX);
-          str = g_strndup (basename, p - basename);
+      str = g_strndup (basename, p - basename);
 
-          if (str == NULL)
-            continue;
+      if (str == NULL)
+        continue;
 
-          date = create_date_from_string (str);
-          if (date != NULL)
-            dates = g_list_insert_sorted (dates, date,
-                (GCompareFunc) g_date_compare);
+      date = create_date_from_string (str);
 
-          g_free (str);
-        }
+      if (date != NULL)
+        dates = g_list_insert_sorted (dates, date,
+            (GCompareFunc) g_date_compare);
 
-      g_free (filename);
+      g_free (str);
     }
 
 out:
