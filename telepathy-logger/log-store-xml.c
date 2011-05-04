@@ -939,7 +939,8 @@ static gchar *
 log_store_xml_get_filename_for_date (TplLogStoreXml *self,
     TpAccount *account,
     TplEntity *target,
-    const GDate *date)
+    const GDate *date,
+    GType type)
 {
   gchar *basedir;
   gchar *timestamp;
@@ -954,7 +955,7 @@ log_store_xml_get_filename_for_date (TplLogStoreXml *self,
   g_date_strftime (str, 9, "%Y%m%d", date);
 
   basedir = log_store_xml_get_dir (self, account, target);
-  timestamp = g_strconcat (str, LOG_FILENAME_SUFFIX, NULL);
+  timestamp = g_strconcat (str, log_store_xml_get_file_suffix (type), NULL);
   filename = g_build_filename (basedir, timestamp, NULL);
 
   g_free (basedir);
@@ -1213,13 +1214,13 @@ parse_call_node (TplLogStoreXml *self,
 }
 
 /* returns a Glist of TplEvent instances */
-static GList *
+static void
 log_store_xml_get_events_for_file (TplLogStoreXml *self,
     TpAccount *account,
     const gchar *filename,
-    gint type_mask)
+    GType type,
+    GQueue *events)
 {
-  GQueue events = { 0 };
   xmlParserCtxtPtr ctxt;
   xmlDocPtr doc;
   xmlNodePtr log_node;
@@ -1230,17 +1231,19 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   gchar *target_id;
   gchar *self_id;
   GError *error = NULL;
+  guint num_events = 0;
+  GList *index;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
-  g_return_val_if_fail (!TPL_STR_EMPTY (filename), NULL);
+  g_return_if_fail (TPL_IS_LOG_STORE_XML (self));
+  g_return_if_fail (TP_IS_ACCOUNT (account));
+  g_return_if_fail (!TPL_STR_EMPTY (filename));
 
   DEBUG ("Attempting to parse filename:'%s'...", filename);
 
   if (!g_file_test (filename, G_FILE_TEST_EXISTS))
     {
       DEBUG ("Filename:'%s' does not exist", filename);
-      return NULL;
+      return;
     }
 
   if (!tp_account_parse_object_path (
@@ -1250,7 +1253,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       DEBUG ("Cannot get self identifier from account: %s",
           error->message);
       g_error_free (error);
-      return NULL;
+      return;
     }
 
   /* Create parser. */
@@ -1263,7 +1266,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       g_warning ("Failed to parse file:'%s'", filename);
       xmlFreeParserCtxt (ctxt);
       g_free (self_id);
-      return NULL;
+      return;
     }
 
   /* The root node, presets. */
@@ -1273,7 +1276,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
       xmlFreeDoc (doc);
       xmlFreeParserCtxt (ctxt);
       g_free (self_id);
-      return NULL;
+      return;
     }
 
   /* Guess the target based on directory name */
@@ -1290,30 +1293,47 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   g_free (tmp);
 
   /* Now get the events. */
+  index = events->head;
   for (node = log_node->children; node; node = node->next)
     {
       TplEvent *event = NULL;
 
-      if (type_mask & TPL_EVENT_MASK_TEXT
+      if (type == TPL_TYPE_TEXT_EVENT
           && strcmp ((const gchar *) node->name, "message") == 0)
         event = parse_text_node (self, node, is_room, target_id, self_id,
             account);
-      else if (type_mask & TPL_EVENT_MASK_CALL
+      else if (type == TPL_TYPE_CALL_EVENT
           && strcmp ((const char*) node->name, "call") == 0)
         event = parse_call_node (self, node, is_room, target_id, self_id,
             account);
 
       if (event != NULL)
-        g_queue_push_tail (&events, event);
+        {
+          while (index != NULL &&
+              tpl_event_get_timestamp (event) <
+              tpl_event_get_timestamp (TPL_EVENT (index->data)))
+            index = g_list_next (index);
+
+          if (index != NULL)
+            {
+              g_queue_insert_after (events, index, event);
+              index = g_list_next (index);
+            }
+          else
+            {
+              g_queue_push_tail (events, event);
+              index = events->head;
+            }
+
+          num_events++;
+        }
     }
 
-  DEBUG ("Parsed %d events", events.length);
+  DEBUG ("Parsed %u events", num_events);
 
   g_free (target_id);
   xmlFreeDoc (doc);
   xmlFreeParserCtxt (ctxt);
-
-  return events.head;
 }
 
 
@@ -1529,19 +1549,32 @@ log_store_xml_get_events_for_date (TplLogStore *store,
 {
   TplLogStoreXml *self = (TplLogStoreXml *) store;
   gchar *filename;
-  GList *events;
+  GQueue events = G_QUEUE_INIT;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (TP_IS_ACCOUNT (account), NULL);
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
   g_return_val_if_fail (date != NULL, NULL);
 
-  filename = log_store_xml_get_filename_for_date (self, account, target,
-      date);
-  events = log_store_xml_get_events_for_file (self, account, filename, type_mask);
-  g_free (filename);
+  if (type_mask & TPL_EVENT_MASK_TEXT)
+    {
+      filename = log_store_xml_get_filename_for_date (self, account, target,
+          date, TPL_TYPE_TEXT_EVENT);
+      log_store_xml_get_events_for_file (self, account, filename,
+          TPL_TYPE_TEXT_EVENT, &events);
+      g_free (filename);
+    }
 
-  return events;
+  if (type_mask & TPL_EVENT_MASK_CALL)
+    {
+      filename = log_store_xml_get_filename_for_date (self, account, target,
+          date, TPL_TYPE_CALL_EVENT);
+      log_store_xml_get_events_for_file (self, account, filename,
+          TPL_TYPE_CALL_EVENT, &events);
+      g_free (filename);
+    }
+
+  return events.head;
 }
 
 
