@@ -59,7 +59,7 @@ claim_cb (GObject *source,
   GPtrArray *channels;
   guint i;
 
-  if (!tp_channel_dispatch_operation_claim_finish (cdo, result, &error))
+  if (!tp_channel_dispatch_operation_claim_with_finish (cdo, result, &error))
     {
       g_print ("Claim() failed: %s\n", error->message);
       g_error_free (error);
@@ -137,7 +137,8 @@ add_dispatch_operation_cb (TpSimpleApprover *self,
     {
       g_print ("Dissaprove channels\n");
 
-      tp_channel_dispatch_operation_claim_async (cdo, claim_cb, NULL);
+      tp_channel_dispatch_operation_claim_with_async (cdo,
+          TP_BASE_CLIENT (self), claim_cb, NULL);
     }
   else
     {
