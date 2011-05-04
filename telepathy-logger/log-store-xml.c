@@ -732,24 +732,14 @@ out:
   return exists;
 }
 
-static gboolean
-log_store_xml_exists (TplLogStore *store,
-    TpAccount *account,
-    TplEntity *target,
-    gint type_mask)
+
+static GRegex *
+log_store_xml_create_filename_regex (gint type_mask)
 {
-  TplLogStoreXml *self = (TplLogStoreXml *) store;
-  gchar *dirname;
   GString *pattern;
-  GRegex *regex;
+  GRegex *regex = NULL;
   GError *error = NULL;
-  gboolean exists = FALSE;
 
-  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
-  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
-  g_return_val_if_fail (target == NULL || TPL_IS_ENTITY (target), FALSE);
-
-  dirname = log_store_xml_get_dir (self, account, target);
   pattern = g_string_new ("");
 
   if (type_mask & TPL_EVENT_MASK_TEXT)
@@ -766,20 +756,46 @@ log_store_xml_exists (TplLogStore *store,
   DEBUG ("Pattern is '%s'", pattern->str);
 
   regex = g_regex_new (pattern->str, G_REGEX_OPTIMIZE, 0, &error);
+
   if (regex == NULL)
     {
       DEBUG ("Failed to create regex: %s", error->message);
       g_error_free (error);
-      goto out;
     }
 
-  exists = log_store_xml_exists_in_directory (dirname, regex, type_mask,
-      target == NULL);
-
 out:
-  g_free (dirname);
   g_string_free (pattern, TRUE);
-  g_regex_unref (regex);
+
+  return regex;
+}
+
+
+static gboolean
+log_store_xml_exists (TplLogStore *store,
+    TpAccount *account,
+    TplEntity *target,
+    gint type_mask)
+{
+  TplLogStoreXml *self = (TplLogStoreXml *) store;
+  gchar *dirname;
+  GRegex *regex;
+  gboolean exists = FALSE;
+
+  g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), FALSE);
+  g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
+  g_return_val_if_fail (target == NULL || TPL_IS_ENTITY (target), FALSE);
+
+  dirname = log_store_xml_get_dir (self, account, target);
+  regex = log_store_xml_create_filename_regex (type_mask);
+
+  if (regex != NULL)
+    exists = log_store_xml_exists_in_directory (dirname, regex, type_mask,
+        target == NULL);
+
+  g_free (dirname);
+
+  if (regex != NULL)
+    g_regex_unref (regex);
 
   return exists;
 }
