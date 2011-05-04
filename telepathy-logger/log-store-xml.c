@@ -1341,12 +1341,14 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
  * Used to make possible the full search vs. specific subtrees search */
 static GList *
 log_store_xml_get_all_files (TplLogStoreXml *self,
-    const gchar *dir)
+    const gchar *dir,
+    gint type_mask)
 {
   GDir *gdir;
   GList *files = NULL;
   const gchar *name;
   const gchar *basedir;
+  GRegex *regex;
 
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   /* dir can be NULL, do not check */
@@ -1357,29 +1359,33 @@ log_store_xml_get_all_files (TplLogStoreXml *self,
   if (!gdir)
     return NULL;
 
+  regex = log_store_xml_create_filename_regex (type_mask);
+
+  if (regex == NULL)
+    goto out;
+
   while ((name = g_dir_read_name (gdir)) != NULL)
     {
       gchar *filename;
 
       filename = g_build_filename (basedir, name, NULL);
-      if (g_str_has_suffix (filename, LOG_FILENAME_SUFFIX))
-        {
-          files = g_list_prepend (files, filename);
-          continue;
-        }
 
-      if (g_file_test (filename, G_FILE_TEST_IS_DIR))
+      if (g_regex_match (regex, name, 0, NULL))
+        files = g_list_prepend (files, filename);
+      else if (g_file_test (filename, G_FILE_TEST_IS_DIR))
         {
           /* Recursively get all log files */
           files = g_list_concat (files,
-              log_store_xml_get_all_files (self,
-                filename));
+              log_store_xml_get_all_files (self, filename, type_mask));
+          g_free (filename);
         }
-
-      g_free (filename);
     }
 
+out:
   g_dir_close (gdir);
+
+  if (regex != NULL)
+    g_regex_unref (regex);
 
   return files;
 }
@@ -1483,7 +1489,7 @@ log_store_xml_search_new (TplLogStore *store,
   g_return_val_if_fail (TPL_IS_LOG_STORE_XML (self), NULL);
   g_return_val_if_fail (!TPL_STR_EMPTY (text), NULL);
 
-  files = log_store_xml_get_all_files (self, NULL);
+  files = log_store_xml_get_all_files (self, NULL, type_mask);
   DEBUG ("Found %d log files in total", g_list_length (files));
 
   return _log_store_xml_search_in_files (self, text, files, type_mask);
