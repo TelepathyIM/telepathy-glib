@@ -57,6 +57,12 @@
 #define LOG_FILE_CREATE_MODE      (S_IRUSR | S_IWUSR)
 #define LOG_DIR_CHATROOMS         "chatrooms"
 #define LOG_FILENAME_SUFFIX       ".log"
+#define LOG_FILENAME_CALL_TAG     ".call"
+#define LOG_FILENAME_CALL_SUFFIX LOG_FILENAME_CALL_TAG LOG_FILENAME_SUFFIX
+#define LOG_DATE_PATTERN          "[0-9]{8,}"
+#define LOG_FILENAME_PATTERN      "^" LOG_DATE_PATTERN "\\" LOG_FILENAME_SUFFIX "$"
+#define LOG_FILENAME_CALL_PATTERN "^" LOG_DATE_PATTERN "\\" LOG_FILENAME_CALL_TAG "\\" LOG_FILENAME_SUFFIX "$"
+
 #define LOG_TIME_FORMAT_FULL      "%Y%m%dT%H:%M:%S"
 #define LOG_TIME_FORMAT           "%Y%m%d"
 #define LOG_HEADER \
@@ -731,11 +737,11 @@ log_store_xml_exists (TplLogStore *store,
   pattern = g_string_new ("");
 
   if (type_mask & TPL_EVENT_MASK_TEXT)
-    g_string_append (pattern, "^[0-9]{8,}\\.log$");
+    g_string_append (pattern, LOG_FILENAME_PATTERN);
 
   if (type_mask & TPL_EVENT_MASK_CALL)
     g_string_append_printf (pattern,
-        "^%s[0-9]{8,}\\.call\\.log$",
+        "%s" LOG_FILENAME_CALL_PATTERN,
         pattern->len == 0 ? "" : "|");
 
   if (pattern->len == 0)
