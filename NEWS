@@ -1,6 +1,10 @@
 telepathy-glib 0.14.6 (UNRELEASED yo)
 ==================================
 
+Fixes:
+
+• tp_dbus_daemon_watch_name_owner leaked a DBusMessage (fledermaus)
+• tp_dbus_daemon_list[_activatable]_names leaked a DBusMessage (fledermaus)
 
 telepathy-glib 0.14.5 (2011-04-20)
 ==================================

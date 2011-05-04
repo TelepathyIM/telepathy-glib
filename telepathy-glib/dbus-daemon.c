@@ -545,6 +545,7 @@ tp_dbus_daemon_watch_name_owner (TpDBusDaemon *self,
           message, &pc, -1))
         ERROR ("Out of memory");
       /* pc is unreffed by _tp_dbus_daemon_get_name_owner_notify */
+      dbus_message_unref (message);
 
       if (pc == NULL || dbus_pending_call_get_completed (pc))
         {
@@ -1160,6 +1161,7 @@ _tp_dbus_daemon_list_names_common (TpDBusDaemon *self,
       message, &pc, timeout_ms))
     ERROR ("Out of memory");
   /* pc is unreffed by _tp_dbus_daemon_list_names_notify */
+  dbus_message_unref (message);
 
   context = list_names_context_new (self, callback, user_data, destroy,
     weak_object);
