@@ -1209,11 +1209,11 @@ claim_cb (TpChannelDispatchOperation *self,
  * method becomes the handler for the channel.
  *
  * If successful, this method will cause the #TpProxy::invalidated signal
- * to be emitted, in the same wayas for
+ * to be emitted, in the same way as for
  * tp_channel_dispatch_operation_handle_with_async().
  *
  * This method may fail because the dispatch operation has already
- * been completed. Again, see tp_channel_dispatch_operation_claim_async()
+ * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
  * for more details. The approver MUST NOT attempt to interact with
  * the channels further in this case.
  *
