@@ -1,10 +1,18 @@
 #include "telepathy-logger/log-store-xml.c"
 
-#include "telepathy-logger/log-manager-internal.h"
-#include "telepathy-logger/log-store-internal.h"
 #include "lib/util.h"
 
+#include "telepathy-logger/debug-internal.h"
+#include "telepathy-logger/log-manager-internal.h"
+#include "telepathy-logger/log-store-internal.h"
+
+#include <telepathy-glib/debug-sender.h>
 #include <glib.h>
+
+/* it was defined in telepathy-logger/log-store-xml.c */
+#undef DEBUG_FLAG
+#define DEBUG_FLAG TPL_DEBUG_TESTSUITE
+
 
 typedef struct
 {
@@ -50,6 +58,12 @@ setup (XmlTestCaseFixture* fixture,
 
   fixture->bus = tp_tests_dbus_daemon_dup_or_die ();
   g_assert (fixture->bus != NULL);
+
+  tp_debug_divert_messages (g_getenv ("TPL_LOGFILE"));
+
+#ifdef ENABLE_DEBUG
+  _tpl_debug_set_flags_from_env ();
+#endif /* ENABLE_DEBUG */
 }
 
 
