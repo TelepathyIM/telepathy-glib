@@ -30,13 +30,16 @@
 #include <telepathy-glib/client-channel-factory.h>
 #include <telepathy-glib/handle-channels-context.h>
 #include <telepathy-glib/observe-channels-context.h>
-#include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 
 G_BEGIN_DECLS
+
+/* forward declaration, see channel-dispatch-operation.h for the rest */
+typedef struct _TpChannelDispatchOperation
+    TpChannelDispatchOperation;
 
 typedef struct _TpBaseClient TpBaseClient;
 typedef struct _TpBaseClientClass TpBaseClientClass;

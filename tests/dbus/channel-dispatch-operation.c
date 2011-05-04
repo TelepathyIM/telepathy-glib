@@ -655,6 +655,9 @@ test_claim (Test *test,
   g_main_loop_run (test->mainloop);
 
   g_assert_no_error (test->error);
+
+  /* tp_channel_dispatch_operation_claim_with_async() is tested in
+   * tests/dbus/base-client.c */
 }
 
 static void

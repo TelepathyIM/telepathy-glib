@@ -1922,14 +1922,14 @@ chan_invalidated_cb (TpChannel *channel,
 }
 
 static void
-ctx_done_cb (TpHandleChannelsContext *context,
-    TpBaseClient *self)
+add_handled_channels (TpBaseClient *self,
+    GPtrArray *channels)
 {
   guint i;
 
-  for (i = 0; i < context->channels->len; i++)
+  for (i = 0; i < channels->len; i++)
     {
-      TpChannel *channel = g_ptr_array_index (context->channels, i);
+      TpChannel *channel = g_ptr_array_index (channels, i);
 
       if (tp_proxy_get_invalidated (channel) == NULL)
         {
@@ -1943,6 +1943,13 @@ ctx_done_cb (TpHandleChannelsContext *context,
               G_CALLBACK (chan_invalidated_cb), self, 0);
         }
     }
+}
+
+static void
+ctx_done_cb (TpHandleChannelsContext *context,
+    TpBaseClient *self)
+{
+  add_handled_channels (self, context->channels);
 }
 
 static void
@@ -2784,4 +2791,17 @@ tp_base_client_is_handling_channel (TpBaseClient *self,
 
   g_list_free (channels);
   return found;
+}
+
+void
+_tp_base_client_now_handling_channels (TpBaseClient *self,
+    GPtrArray *channels)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (channels != NULL);
+
+  /* It only makes sense to update HandledChannels if the client is
+   * a Handler */
+  if (self->priv->flags & CLIENT_IS_HANDLER)
+    add_handled_channels (self, channels);
 }

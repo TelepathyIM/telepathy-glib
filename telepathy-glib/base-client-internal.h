@@ -28,6 +28,9 @@ G_BEGIN_DECLS
 void _tp_base_client_set_only_for_account (TpBaseClient *self,
     TpAccount *account);
 
+void _tp_base_client_now_handling_channels (TpBaseClient *self,
+    GPtrArray *channels);
+
 G_END_DECLS
 
 #endif

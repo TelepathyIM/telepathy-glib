@@ -1109,12 +1109,107 @@ test_handler_requests (Test *test,
   g_hash_table_unref (info);
 }
 
+static void
+claim_with_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_channel_dispatch_operation_claim_with_finish (
+      TP_CHANNEL_DISPATCH_OPERATION (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_channel_dispatch_operation_claim_with_async (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GPtrArray *channels;
+  GHashTable *properties;
+  static const char *interfaces[] = { NULL };
+  static const gchar *possible_handlers[] = {
+    TP_CLIENT_BUS_NAME_BASE ".Badger", NULL, };
+  TpChannelDispatchOperation *cdo;
+  GList *handled;
+
+  /* Register an Approver and Handler */
+  tp_base_client_take_approver_filter (test->base_client, tp_asv_new (
+        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_TEXT,
+        NULL));
+
+  tp_base_client_take_handler_filter (test->base_client, tp_asv_new (
+        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+          TP_IFACE_CHANNEL_TYPE_TEXT,
+        NULL));
+
+  tp_base_client_register (test->base_client, &test->error);
+  g_assert_no_error (test->error);
+
+  /* Call AddDispatchOperation */
+  channels = g_ptr_array_sized_new (2);
+  add_channel_to_ptr_array (channels, test->text_chan);
+  add_channel_to_ptr_array (channels, test->text_chan_2);
+
+  properties = tp_asv_new (
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_INTERFACES,
+        G_TYPE_STRV, interfaces,
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_CONNECTION,
+        DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (test->connection),
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_ACCOUNT,
+        DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (test->account),
+      TP_PROP_CHANNEL_DISPATCH_OPERATION_POSSIBLE_HANDLERS,
+        G_TYPE_STRV, possible_handlers,
+      NULL);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
+      TP_IFACE_QUARK_CLIENT_APPROVER);
+
+  tp_cli_client_approver_call_add_dispatch_operation (test->client, -1,
+      channels, CDO_PATH, properties,
+      no_return_cb, test, NULL, NULL);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  cdo = test->simple_client->add_dispatch_ctx->dispatch_operation;
+  g_assert (TP_IS_CHANNEL_DISPATCH_OPERATION (cdo));
+
+  handled = tp_base_client_get_handled_channels (test->base_client);
+  g_assert (handled == NULL);
+
+  /* Claim the CDO, as the client is also a Handler, it is now handling the
+   * channels */
+  tp_channel_dispatch_operation_claim_with_async (cdo, test->base_client,
+      claim_with_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  handled = tp_base_client_get_handled_channels (test->base_client);
+  g_assert_cmpuint (g_list_length (handled), ==, 2);
+  g_list_free (handled);
+
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan));
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan_2));
+
+  g_ptr_array_foreach (channels, free_channel_details, NULL);
+  g_ptr_array_free (channels, TRUE);
+  g_hash_table_unref (properties);
+}
+
 int
 main (int argc,
       char **argv)
 {
   g_type_init ();
-  tp_tests_abort_after (10);
+  tp_tests_abort_after (5);
   tp_debug_set_flags ("all");
 
   g_test_init (&argc, &argv, NULL);
@@ -1131,6 +1226,8 @@ main (int argc,
       teardown);
   g_test_add ("/base-client/handler-requests", Test, NULL, setup,
       test_handler_requests, teardown);
+  g_test_add ("/cdo/claim_with", Test, NULL, setup,
+      test_channel_dispatch_operation_claim_with_async, teardown);
 
   return g_test_run ();
 }

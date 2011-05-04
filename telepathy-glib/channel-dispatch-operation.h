@@ -23,6 +23,7 @@
 #define TP_CHANNEL_DISPATCH_OPERATION_H
 
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/base-client.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
@@ -30,8 +31,8 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpChannelDispatchOperation
-    TpChannelDispatchOperation;
+
+/* TpChannelDispatchOperation is defined in base-client.h */
 typedef struct _TpChannelDispatchOperationClass
     TpChannelDispatchOperationClass;
 typedef struct _TpChannelDispatchOperationPrivate
@@ -126,6 +127,17 @@ void tp_channel_dispatch_operation_handle_with_time_async (
     gpointer user_data);
 
 gboolean tp_channel_dispatch_operation_handle_with_time_finish (
+    TpChannelDispatchOperation *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_channel_dispatch_operation_claim_with_async (
+    TpChannelDispatchOperation *self,
+    TpBaseClient *client,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_dispatch_operation_claim_with_finish (
     TpChannelDispatchOperation *self,
     GAsyncResult *result,
     GError **error);
