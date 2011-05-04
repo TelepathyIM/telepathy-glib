@@ -450,8 +450,6 @@ assert_cmp_call_event (TplEvent *event,
   actor = tpl_call_event_get_end_actor (TPL_CALL_EVENT (event));
   stored_actor = tpl_call_event_get_end_actor (TPL_CALL_EVENT (stored_event));
 
-  g_print ("%s == %s\n", tpl_entity_get_identifier (actor), tpl_entity_get_identifier (stored_actor));
-  g_print ("%i == %i\n", tpl_entity_get_entity_type (actor), tpl_entity_get_entity_type (stored_actor));
   g_assert (_tpl_entity_compare (actor, stored_actor) == 0);
   g_assert_cmpstr (tpl_entity_get_alias (actor), ==,
       tpl_entity_get_alias (stored_actor));
