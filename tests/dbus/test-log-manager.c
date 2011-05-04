@@ -4,16 +4,15 @@
 #include "lib/simple-account.h"
 #include "lib/simple-account-manager.h"
 
-#include <telepathy-logger/debug-internal.h>
-#include <telepathy-logger/log-manager-internal.h>
-#include <telepathy-logger/log-store-internal.h>
+#include "telepathy-logger/debug-internal.h"
+#include "telepathy-logger/log-manager-internal.h"
+#include "telepathy-logger/log-store-internal.h"
 
 #include <telepathy-glib/debug-sender.h>
 
-/* it was defined in telepathy-logger/log-store-pidgin.c */
+/* it was defined in telepathy-logger/log-manager.c */
 #undef DEBUG_FLAG
 #define DEBUG_FLAG TPL_DEBUG_TESTSUITE
-#include <telepathy-logger/debug-internal.h>
 
 #define ACCOUNT_PATH_JABBER TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk"
 #define MY_ID "user@collabora.co.uk"

@@ -38,19 +38,20 @@
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
 #include <telepathy-glib/util.h>
-#include <telepathy-logger/call-event.h>
-#include <telepathy-logger/call-event-internal.h>
-#include <telepathy-logger/event-internal.h>
-#include <telepathy-logger/text-event.h>
-#include <telepathy-logger/text-event-internal.h>
-#include <telepathy-logger/log-manager.h>
-#include <telepathy-logger/log-store-internal.h>
-#include <telepathy-logger/log-manager-internal.h>
+
+#include "telepathy-logger/call-event.h"
+#include "telepathy-logger/call-event-internal.h"
+#include "telepathy-logger/entity-internal.h"
+#include "telepathy-logger/event-internal.h"
+#include "telepathy-logger/text-event.h"
+#include "telepathy-logger/text-event-internal.h"
+#include "telepathy-logger/log-manager.h"
+#include "telepathy-logger/log-store-internal.h"
+#include "telepathy-logger/log-manager-internal.h"
+#include "telepathy-logger/util-internal.h"
 
 #define DEBUG_FLAG TPL_DEBUG_LOG_STORE
-#include <telepathy-logger/entity-internal.h>
-#include <telepathy-logger/debug-internal.h>
-#include <telepathy-logger/util-internal.h>
+#include "telepathy-logger/debug-internal.h"
 
 #define LOG_DIR_CREATE_MODE       (S_IRUSR | S_IWUSR | S_IXUSR)
 #define LOG_FILE_CREATE_MODE      (S_IRUSR | S_IWUSR)
