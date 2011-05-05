@@ -801,10 +801,8 @@ tp_base_contact_list_simple_finish (TpBaseContactList *self,
 {
   GSimpleAsyncResult *simple = (GSimpleAsyncResult *) result;
 
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-  g_return_val_if_fail (g_async_result_get_source_object (result) ==
-      (GObject *) self, FALSE);
-  /* not using _is_valid here because we want to be source-tag-agnostic */
+  g_return_val_if_fail (g_simple_async_result_is_valid (
+      result, G_OBJECT (self), NULL), FALSE);
 
   return !g_simple_async_result_propagate_error (simple, error);
 }
