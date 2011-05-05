@@ -670,6 +670,113 @@ test_exists (XmlTestCaseFixture *fixture,
   g_object_unref (user3);
 }
 
+
+static void
+test_get_events_for_date (XmlTestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TpAccount *account;
+  TplEntity *user2, *user3, *user4;
+  GList *events;
+  GDate *date;
+  GError *error = NULL;
+
+  account = tp_account_new (fixture->bus,
+      TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
+      &error);
+  g_assert_no_error (error);
+  g_assert (account != NULL);
+
+  date = g_date_new_dmy (13, 1, 2010);
+
+  user2 = tpl_entity_new ("user2@collabora.co.uk", TPL_ENTITY_CONTACT,
+      "User2", "");
+
+  user3 = tpl_entity_new ("user3@collabora.co.uk", TPL_ENTITY_CONTACT,
+      "User3", "");
+
+  user4 = tpl_entity_new ("user4@collabora.co.uk", TPL_ENTITY_CONTACT,
+      "User4", "");
+
+  events = _tpl_log_store_get_events_for_date (fixture->store, account, user4,
+      TPL_EVENT_MASK_ANY, date);
+
+  g_assert_cmpint (g_list_length (events), ==, 6);
+
+  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, 0)));
+  g_assert_cmpstr (
+      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, 0))),
+      ==, "7");
+
+  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, 1)));
+  g_assert_cmpint (
+      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, 1))),
+      ==, 1);
+
+  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, 2)));
+  g_assert_cmpint (
+      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, 2))),
+      ==, 2);
+
+  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, 3)));
+  g_assert_cmpint (
+      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, 3))),
+      ==, 3);
+
+  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, 4)));
+  g_assert_cmpstr (
+      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, 4))),
+      ==, "8");
+
+  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, 5)));
+  g_assert_cmpstr (
+      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, 5))),
+      ==, "9");
+
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
+  g_list_free (events);
+
+  events = _tpl_log_store_get_events_for_date (fixture->store, account, user4,
+      TPL_EVENT_MASK_CALL, date);
+
+  g_assert_cmpint (g_list_length (events), ==, 3);
+  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, 0)));
+  g_assert_cmpint (
+      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, 0))),
+      ==, 1);
+
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
+  g_list_free (events);
+
+  events = _tpl_log_store_get_events_for_date (fixture->store, account, user4,
+      TPL_EVENT_MASK_TEXT, date);
+
+  g_assert_cmpint (g_list_length (events), ==, 3);
+
+  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, 0)));
+  g_assert_cmpstr (
+      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, 0))),
+      ==, "7");
+
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
+  g_list_free (events);
+
+  events = _tpl_log_store_get_events_for_date (fixture->store, account, user2,
+      TPL_EVENT_MASK_CALL, date);
+  g_assert_cmpint (g_list_length (events), ==, 0);
+
+  events = _tpl_log_store_get_events_for_date (fixture->store, account, user3,
+      TPL_EVENT_MASK_TEXT, date);
+  g_assert_cmpint (g_list_length (events), ==, 0);
+
+  g_object_unref (account);
+  g_object_unref (user2);
+  g_object_unref (user3);
+  g_object_unref (user4);
+  g_date_free (date);
+}
+
+
 gint main (gint argc, gchar **argv)
 {
   g_type_init ();
@@ -704,6 +811,10 @@ gint main (gint argc, gchar **argv)
   g_test_add ("/log-store-xml/exists",
       XmlTestCaseFixture, NULL,
       setup, test_exists, teardown);
+
+  g_test_add ("/log-store-xml/get-events-for-date",
+      XmlTestCaseFixture, NULL,
+      setup, test_get_events_for_date, teardown);
 
   return g_test_run ();
 }

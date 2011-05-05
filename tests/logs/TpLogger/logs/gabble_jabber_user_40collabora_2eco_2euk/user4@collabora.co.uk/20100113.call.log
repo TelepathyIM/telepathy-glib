@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<?xml-stylesheet type="text/xsl" href="empathy-log.xsl"?>
+<log>
+<call time='20100113T17:48:01' id='user@collabora.co.uk' name='Nicolas1' isuser='false' token='' duration='1' actor='user@collabora.co.uk' actortype='contact' actorname='User1' actortoken='' reason='user-requested' detail='org.freedesktop.Telepathy.Error.Cancelled' />
+<call time='20100113T17:48:01' id='user@collabora.co.uk' name='Nicolas1' isuser='false' token='' duration='2' actor='user@collabora.co.uk' actortype='contact' actorname='User1' actortoken='' reason='user-requested' detail='org.freedesktop.Telepathy.Error.Cancelled' />
+<call time='20100113T17:48:01' id='user@collabora.co.uk' name='Nicolas1' isuser='false' token='' duration='3' actor='user@collabora.co.uk' actortype='contact' actorname='User1' actortoken='' reason='user-requested' detail='org.freedesktop.Telepathy.Error.Cancelled' />
+</log>
