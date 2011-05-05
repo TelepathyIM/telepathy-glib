@@ -672,7 +672,7 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
 
       GRegex *regex;
       GMatchInfo *match_info;
-      gchar **hits;
+      gchar **hits = NULL;
       gboolean is_html = FALSE;
 
       filename = (gchar *) l->data;
@@ -731,10 +731,14 @@ log_store_pidgin_get_events_for_files (TplLogStore *self,
               0, 0, NULL);
         }
 
-      g_regex_match (regex, lines[0], 0, &match_info);
-      hits = g_match_info_fetch_all (match_info);
+      if (lines[0] != NULL)
+        {
+          g_regex_match (regex, lines[0], 0, &match_info);
+          hits = g_match_info_fetch_all (match_info);
 
-      g_match_info_free (match_info);
+          g_match_info_free (match_info);
+        }
+
       g_regex_unref (regex);
 
       if (hits == NULL)
@@ -970,7 +974,7 @@ _log_store_pidgin_search_in_files (TplLogStorePidgin *self,
       GMappedFile *file;
       gsize length;
       gchar *contents;
-      gchar *contents_casefold;
+      gchar *contents_casefold = NULL;
 
       filename = l->data;
 
@@ -980,9 +984,14 @@ _log_store_pidgin_search_in_files (TplLogStorePidgin *self,
 
       length = g_mapped_file_get_length (file);
       contents = g_mapped_file_get_contents (file);
-      contents_casefold = g_utf8_casefold (contents, length);
+
+      if (contents != NULL)
+        contents_casefold = g_utf8_casefold (contents, length);
 
       g_mapped_file_unref (file);
+
+      if (contents_casefold == NULL)
+        continue;
 
       if (strstr (contents_casefold, text_casefold))
         {
