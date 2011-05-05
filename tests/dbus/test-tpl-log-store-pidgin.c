@@ -21,6 +21,7 @@
 
 #define ACCOUNT_PATH_JABBER TP_ACCOUNT_OBJECT_PATH_BASE "foo/jabber/baz"
 #define ACCOUNT_PATH_IRC    TP_ACCOUNT_OBJECT_PATH_BASE "foo/irc/baz"
+#define ACCOUNT_PATH_ICQ    TP_ACCOUNT_OBJECT_PATH_BASE "foo/icq/baz"
 
 typedef struct
 {
@@ -472,6 +473,36 @@ test_search_new (PidginTestCaseFixture *fixture,
   tpl_log_manager_search_free (l);
 }
 
+static void
+test_get_events_for_empty_file (PidginTestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  GList *l = NULL;
+  TplEntity *entity;
+  GDate *date;
+
+  entity = tpl_entity_new ("87654321", TPL_ENTITY_CONTACT, NULL, NULL);
+
+  /* Check with empty file */
+  date = g_date_new_dmy (7, 2, 2010);
+
+  l = log_store_pidgin_get_events_for_date (TPL_LOG_STORE (fixture->store),
+      fixture->account, entity, TPL_EVENT_MASK_ANY, date);
+
+  g_assert_cmpint (g_list_length (l), ==, 0);
+  g_date_free (date);
+
+  /* Check with file that contains only 1 dot */
+  date = g_date_new_dmy (6, 2, 2010);
+
+  l = log_store_pidgin_get_events_for_date (TPL_LOG_STORE (fixture->store),
+      fixture->account, entity, TPL_EVENT_MASK_ANY, date);
+
+  g_assert_cmpint (g_list_length (l), ==, 0);
+  g_date_free (date);
+
+  g_object_unref (entity);
+}
 
 static void
 setup_debug (void)
@@ -562,6 +593,22 @@ main (int argc, char **argv)
   g_test_add ("/log-store-pidgin/get-dates-irc",
       PidginTestCaseFixture, params,
       setup, test_get_dates_irc, teardown);
+
+  /* Empty file */
+  params = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
+      (GDestroyNotify) tp_g_value_slice_free);
+  g_assert (params != NULL);
+
+  l = g_list_prepend (l, params);
+
+  g_hash_table_insert (params, "account",
+      tp_g_value_slice_new_static_string ("12345678"));
+  g_hash_table_insert (params, "account-path",
+      tp_g_value_slice_new_static_string (ACCOUNT_PATH_ICQ));
+
+  g_test_add ("/log-store-pidgin/get-event-for-empty-file",
+      PidginTestCaseFixture, params,
+      setup, test_get_events_for_empty_file, teardown);
 
   retval = g_test_run ();
 
