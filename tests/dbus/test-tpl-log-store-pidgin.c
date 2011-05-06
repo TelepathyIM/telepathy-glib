@@ -492,7 +492,7 @@ test_get_events_for_empty_file (PidginTestCaseFixture *fixture,
   g_assert_cmpint (g_list_length (l), ==, 0);
   g_date_free (date);
 
-  /* Check with file that contains only 1 dot */
+  /* Check with file that contains null bytes */
   date = g_date_new_dmy (6, 2, 2010);
 
   l = log_store_pidgin_get_events_for_date (TPL_LOG_STORE (fixture->store),
