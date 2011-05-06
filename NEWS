@@ -1,3 +1,27 @@
+telepathy-logger 0.2.9 (2011-05-06)
+===================================
+
+The "Vendredi au soleil" release
+
+This bug fix release most importantly fixes performance issues. This has been
+possible through the rework of Call logs storage method. Note that older Call
+logs will not be retrieved from store. We tolerate this breakage for two
+reasons, Call support is still experimental and a bug in the .client file was
+causing call logs not to be forwarded to the observer. Distributions are
+encourage to update as this release improves performance when opening chat
+windows in Empathy.
+
+Fixes:
+
+* Work around GLib TimeZone cache bug (Gnome bug #646435)
+* Fix client file to effectively observe Call.DRAFT channels
+* Downgraded autotools requirement to 2.65
+* Fix SQL syntax error and pending message order
+* Store Calls log in seperate file (e.g 20110505.call.log)
+* Make Pidgin store robust to empty file
+* And more unit tests
+
+
 telepathy-logger 0.2.8 (2011-03-31)
 ===================================
 
