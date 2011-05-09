@@ -168,10 +168,10 @@
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
           <tp:docstring>
-            The Preferred_Handler is syntactically invalid or does
+            The <var>Preferred_Handler</var> is syntactically invalid or does
             not start with <code>org.freedesktop.Telepathy.Client.</code>,
-            the Account does not exist, or one of the Requested_Properties
-            is invalid
+            the <var>Account</var> does not exist, or one of the
+            <var>Requested_Properties</var> is invalid
           </tp:docstring>
         </tp:error>
       </tp:possible-errors>
@@ -240,10 +240,10 @@
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
           <tp:docstring>
-            The Preferred_Handler is syntactically invalid or does
+            The <var>Preferred_Handler</var> is syntactically invalid or does
             not start with <code>org.freedesktop.Telepathy.Client.</code>,
-            the Account does not exist, or one of the Requested_Properties
-            is invalid
+            the <var>Account</var> does not exist, or one of the
+            <var>Requested_Properties</var> is invalid
           </tp:docstring>
         </tp:error>
       </tp:possible-errors>
@@ -418,10 +418,10 @@
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
           <tp:docstring>
-            The Preferred_Handler is syntactically invalid or does
+            The <var>Preferred_Handler</var> is syntactically invalid or does
             not start with <code>org.freedesktop.Telepathy.Client.</code>,
-            the Account does not exist, or one of the Requested_Properties
-            is invalid
+            the <var>Account</var> does not exist, or one of the
+            <var>Requested_Properties</var> is invalid
           </tp:docstring>
         </tp:error>
       </tp:possible-errors>
@@ -559,14 +559,137 @@
       <tp:possible-errors>
         <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
           <tp:docstring>
-            The Preferred_Handler is syntactically invalid or does
+            The <var>Preferred_Handler</var> is syntactically invalid or does
             not start with <code>org.freedesktop.Telepathy.Client.</code>,
-            the Account does not exist, or one of the Requested_Properties
-            is invalid
+            the <var>Account</var> does not exist, or one of the
+            <var>Requested_Properties</var> is invalid
           </tp:docstring>
         </tp:error>
       </tp:possible-errors>
 
+    </method>
+
+    <method name="DelegateChannels"
+            tp:name-for-bindings="Delegate_Channels">
+      <tp:added version="0.23.1" />
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Called by a
+        <tp:dbus-ref namespace="org.freedesktop.Telepathy.Client">Handler</tp:dbus-ref>
+          to redispatch a bunch of channels it is currently handling.</p>
+
+        <p>If another
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Client">Handler</tp:dbus-ref>
+          can be found,
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Client.Handler">HandleChannels</tp:dbus-ref>
+          will be called on it and this function will succeed. In that case,
+          the original <tp:dbus-ref namespace="org.freedesktop.Telepathy.Client">Handler</tp:dbus-ref>
+          does not longer handle those channels.</p>
+
+        <p>If this method fails, the original
+          <tp:dbus-ref namespace="org.freedesktop.Telepathy.Client">Handler</tp:dbus-ref>
+          is still handling the channels.</p>
+
+      </tp:docstring>
+
+      <arg direction="in" name="Channels" type="ao">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The list of channels to redispatch. The caller has to be the current
+            <tp:dbus-ref namespace="org.freedesktop.Telepathy.Client">Handler</tp:dbus-ref>
+            of all of these channels
+          </p>
+        </tp:docstring>
+      </arg>
+
+      <arg direction="in" name="User_Action_Time" type="x"
+        tp:type="User_Action_Timestamp">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The time at which user action occurred, or 0 if this channels
+            delegation is for some reason not involving user action.</p>
+
+          <p>This parameter is used in the same way as the corresponding
+            parameter to
+            <tp:member-ref>CreateChannelWithHints</tp:member-ref>.</p>
+        </tp:docstring>
+      </arg>
+
+      <arg direction="in" name="Preferred_Handler" type="s"
+        tp:type="DBus_Well_Known_Name">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>Either the well-known bus name (starting with
+            <code>org.freedesktop.Telepathy.Client.</code>)
+            of the preferred new handler for these
+            channels, or an empty string to indicate that any handler would be
+            acceptable. The behaviour and rationale are the same as for the
+            corresponding parameter to
+            <tp:member-ref>CreateChannelWithHints</tp:member-ref>.</p>
+
+        </tp:docstring>
+      </arg>
+
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+          <tp:docstring>
+            The Preferred_Handler is syntactically invalid or does
+            not start with <code>org.freedesktop.Telepathy.Client.</code> or
+            the Account does not exist.
+          </tp:docstring>
+        </tp:error>
+
+        <tp:error name="org.freedesktop.Telepathy.Error.NotYours">
+          <tp:docstring>
+            The caller is not currently handling the channels.
+          </tp:docstring>
+        </tp:error>
+
+        <tp:error name="org.freedesktop.Telepathy.Error.NotCapable">
+          <tp:docstring>
+            There is no other suitable Handler.
+          </tp:docstring>
+        </tp:error>
+      </tp:possible-errors>
+
+    </method>
+
+    <method name="PresentChannel"
+            tp:name-for-bindings="Present_Channel">
+      <tp:added version="0.23.1" />
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>Equivalent of calling
+        <tp:dbus-ref namespace="org.freedesktop.Telepathy.ChannelDispatcher">EnsureChannel</tp:dbus-ref>
+        with a <var>Requested_Properties</var> which would result in ensuring
+        <var>Channel</var>.</p>
+
+         <p>If <var>Channel</var> is handled, its handler will be asked to present it the user
+         (e.g. bring it into the foreground).</p>
+      </tp:docstring>
+
+      <arg direction="in" name="Channel" type="o">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The channel to present.</p>
+        </tp:docstring>
+      </arg>
+
+      <arg direction="in" name="User_Action_Time" type="x"
+        tp:type="User_Action_Timestamp">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          <p>The time at which user action occurred, or 0 if this channel
+            request is for some reason not involving user action.</p>
+
+          <p>This parameter is used in the same way as the corresponding
+            parameter to
+            <tp:member-ref>EnsureChannelWithHints</tp:member-ref>.</p>
+        </tp:docstring>
+      </arg>
+
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.Telepathy.Error.InvalidArgument">
+          <tp:docstring>
+            The Account does not exist, the Channel does not exist or it
+            does not belong to the Account.
+          </tp:docstring>
+        </tp:error>
+
+      </tp:possible-errors>
     </method>
 
     <property name="SupportsRequestHints"
