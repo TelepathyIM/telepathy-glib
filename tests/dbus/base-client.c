@@ -441,7 +441,7 @@ no_return_cb (TpClient *proxy,
 
 out:
   test->wait--;
-  if (test->wait <= 0)
+  if (test->wait == 0)
     g_main_loop_quit (test->mainloop);
 }
 
@@ -534,6 +534,7 @@ test_observer (Test *test,
       channels, "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
+  test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -552,6 +553,7 @@ test_observer (Test *test,
       channels, "/", requests_satisified, info,
       no_return_cb, test, NULL, NULL);
 
+  test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT);
   g_clear_error (&test->error);
@@ -567,6 +569,7 @@ test_observer (Test *test,
 
   tp_tests_text_channel_null_close (test->text_chan_service);
 
+  test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -675,6 +678,7 @@ test_approver (Test *test,
       channels, CDO_PATH, properties,
       no_return_cb, test, NULL, NULL);
 
+  test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -709,6 +713,7 @@ test_approver (Test *test,
 
   tp_tests_text_channel_null_close (test->text_chan_service_2);
 
+  test->wait++;
   g_object_unref (test->text_chan_service_2);
   test->text_chan_service_2 = NULL;
 
@@ -740,6 +745,7 @@ test_approver (Test *test,
   tp_tests_simple_channel_dispatch_operation_lost_channel (test->cdo_service,
       test->text_chan);
 
+  test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -880,6 +886,7 @@ test_handler (Test *test,
       channels, requests_satisified, 0, info,
       no_return_cb, test, NULL, NULL);
 
+  test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -1076,6 +1083,7 @@ test_handler_requests (Test *test,
       channels, requests_satisified, 0, info,
       no_return_cb, test, NULL, NULL);
 
+  test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -1120,7 +1128,7 @@ claim_with_cb (GObject *source,
       TP_CHANNEL_DISPATCH_OPERATION (source), result, &test->error);
 
   test->wait--;
-  if (test->wait <= 0)
+  if (test->wait == 0)
     g_main_loop_quit (test->mainloop);
 }
 
@@ -1173,6 +1181,7 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
       channels, CDO_PATH, properties,
       no_return_cb, test, NULL, NULL);
 
+  test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -1187,6 +1196,7 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
   tp_channel_dispatch_operation_claim_with_async (cdo, test->base_client,
       claim_with_cb, test);
 
+  test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
