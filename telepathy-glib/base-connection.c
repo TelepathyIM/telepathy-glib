@@ -2875,7 +2875,6 @@ tp_base_connection_change_status (TpBaseConnection *self,
     }
 
   prev_status = self->status;
-  self->status = status;
 
   /* make appropriate assertions about our state */
   switch (status)
@@ -2901,6 +2900,10 @@ tp_base_connection_change_status (TpBaseConnection *self,
       CRITICAL ("invalid connection status %d", status);
       return;
     }
+
+  /* now that we've finished return_if_fail'ing, we can start to make
+   * the actual changes */
+  self->status = status;
 
   /* ref self in case user callbacks unref us */
   g_object_ref (self);
