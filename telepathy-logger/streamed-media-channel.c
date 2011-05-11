@@ -204,7 +204,7 @@ get_self_contact_cb (TpConnection *connection,
           "Error resolving self handle for connection %s: %s)",
           conn_path, error->message);
 
-      _tpl_action_chain_terminate (ctx, error);
+      _tpl_action_chain_terminate (ctx, new_error);
       g_error_free (new_error);
       return;
     }
