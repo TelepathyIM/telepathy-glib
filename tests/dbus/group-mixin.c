@@ -195,7 +195,6 @@ static void
 details_contains_ids_for (const GHashTable *details,
                           TpHandle *hs)
 {
-  const GValue *contact_ids_v;
   GHashTable *contact_ids;
   const gchar *id;
   guint n = 0;
@@ -204,8 +203,9 @@ details_contains_ids_for (const GHashTable *details,
   if (details == NULL)
     return;
 
-  contact_ids_v = tp_asv_lookup (details, "contact-ids");
-  contact_ids = g_value_get_boxed (contact_ids_v);
+  contact_ids = tp_asv_get_boxed (details, "contact-ids",
+      TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
+  g_assert (contact_ids != NULL);
 
   for (h = hs; *h != 0; h++)
     {
