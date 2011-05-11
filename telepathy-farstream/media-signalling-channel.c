@@ -170,7 +170,7 @@ tf_media_signalling_channel_class_init (TfMediaSignallingChannelClass *klass)
   signals[GET_CODEC_CONFIG] =
       g_signal_new ("get-codec-config",
           G_OBJECT_CLASS_TYPE (klass),
-          G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+          G_SIGNAL_RUN_LAST,
           0,
           NULL, NULL,
           _tf_marshal_BOXED__UINT,
