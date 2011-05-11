@@ -204,7 +204,7 @@ details_contains_ids_for (const GHashTable *details,
   if (details == NULL)
     return;
 
-  member_ids_v = tp_asv_lookup (details, "member-ids");
+  member_ids_v = tp_asv_lookup (details, "contact-ids");
   member_ids = g_value_get_boxed (member_ids_v);
 
   for (h = hs; *h != 0; h++)
@@ -360,7 +360,7 @@ camel_removed (const GArray *added,
   TpHandle h;
   /* camel2 is the actor. camel shouldn't be in the ids, because they were
    * removed and the spec says that you can leave those out, and we want
-   * tp-glib's automatic construction of member-ids to work in the #ubuntu
+   * tp-glib's automatic construction of contact-ids to work in the #ubuntu
    * case.
    */
   TpHandle hs[] = { camel2, 0 };

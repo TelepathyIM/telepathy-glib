@@ -1419,7 +1419,7 @@ maybe_add_member_ids (TpGroupMixin *mixin,
   /* If the library user had its own ideas about which members' IDs to include
    * in the change details, we'll leave that intact.
    */
-  if (tp_asv_lookup (details, "member-ids") != NULL)
+  if (tp_asv_lookup (details, "contact-ids") != NULL)
     return FALSE;
 
   /* The library user didn't include the new members' IDs in details; let's add
@@ -1439,7 +1439,7 @@ maybe_add_member_ids (TpGroupMixin *mixin,
       g_hash_table_insert (member_ids, GUINT_TO_POINTER (actor), (gchar *) id);
     }
 
-  g_hash_table_insert (details, "member-ids",
+  g_hash_table_insert (details, "contact-ids",
       tp_g_value_slice_new_take_boxed (TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP,
           member_ids));
 
@@ -1450,10 +1450,10 @@ maybe_add_member_ids (TpGroupMixin *mixin,
 static void
 remove_member_ids (GHashTable *details)
 {
-  GValue *member_ids_v = g_hash_table_lookup (details, "member-ids");
+  GValue *member_ids_v = g_hash_table_lookup (details, "contact-ids");
 
   g_assert (member_ids_v != NULL);
-  g_hash_table_steal (details, "member-ids");
+  g_hash_table_steal (details, "contact-ids");
 
   tp_g_value_slice_free (member_ids_v);
 }
