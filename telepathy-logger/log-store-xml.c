@@ -577,14 +577,14 @@ add_call_event (TplLogStoreXml *self,
   TplEntity *sender;
   TplEntity *actor;
   TplEntity *target;
-  gchar *timestamp;
+  gchar *timestamp = NULL;
   gchar *sender_avatar = NULL;
   gchar *sender_name = NULL;
-  gchar *sender_id;
+  gchar *sender_id = NULL;
   gchar *actor_name = NULL;
   gchar *actor_avatar = NULL;
-  gchar *actor_id;
-  gchar *log_str;
+  gchar *actor_id = NULL;
+  gchar *log_str = NULL;
   TplCallEndReason reason;
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);

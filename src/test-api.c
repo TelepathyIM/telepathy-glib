@@ -35,7 +35,7 @@ main (int argc, char *argv[])
   TpDBusDaemon *bus;
   TpProxy *proxy;
   GError *error = NULL;
-  char *account, *identifer;
+  char *account;
 
   g_type_init ();
   mainloop = g_main_loop_new (NULL, FALSE);
@@ -47,7 +47,6 @@ main (int argc, char *argv[])
     }
 
   account = g_strdup_printf ("%s%s", TP_ACCOUNT_OBJECT_PATH_BASE, argv[1]);
-  identifer = argv[2];
 
   bus = tp_dbus_daemon_dup (&error);
   g_assert_no_error (error);

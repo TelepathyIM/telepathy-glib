@@ -439,7 +439,6 @@ test_search_new (PidginTestCaseFixture *fixture,
     gconstpointer user_data)
 {
   GList *l = NULL;
-  TplLogSearchHit *hit;
 
   /* empty search */
   l = log_store_pidgin_search_new (TPL_LOG_STORE (fixture->store),
@@ -457,8 +456,6 @@ test_search_new (PidginTestCaseFixture *fixture,
 
   g_assert_cmpint (g_list_length (l), ==, 1);
 
-  hit = g_list_nth_data (l, 0);
-
   tpl_log_manager_search_free (l);
 
   /* non empty search, checking chatrooms are also searched */
@@ -467,8 +464,6 @@ test_search_new (PidginTestCaseFixture *fixture,
       TPL_EVENT_MASK_ANY);
 
   g_assert_cmpint (g_list_length (l), ==, 1);
-
-  hit = g_list_nth_data (l, 0);
 
   tpl_log_manager_search_free (l);
 }
