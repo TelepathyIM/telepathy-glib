@@ -1390,7 +1390,7 @@ local_pending_remove (TpGroupMixin *mixin,
 
 
 static void
-add_members_in_array (GHashTable *member_ids,
+add_members_in_array (GHashTable *contact_ids,
                       TpHandleRepoIface *repo,
                       const GArray *handles)
 {
@@ -1401,61 +1401,61 @@ add_members_in_array (GHashTable *member_ids,
       TpHandle handle = g_array_index (handles, TpHandle, i);
       const gchar *id = tp_handle_inspect (repo, handle);
 
-      g_hash_table_insert (member_ids, GUINT_TO_POINTER (handle), (gchar *) id);
+      g_hash_table_insert (contact_ids, GUINT_TO_POINTER (handle), (gchar *) id);
     }
 }
 
 
 static gboolean
-maybe_add_member_ids (TpGroupMixin *mixin,
+maybe_add_contact_ids (TpGroupMixin *mixin,
                       const GArray *add,
                       const GArray *local_pending,
                       const GArray *remote_pending,
                       TpHandle actor,
                       GHashTable *details)
 {
-  GHashTable *member_ids;
+  GHashTable *contact_ids;
 
   /* If the library user had its own ideas about which members' IDs to include
    * in the change details, we'll leave that intact.
    */
-  if (tp_asv_lookup (details, "member-ids") != NULL)
+  if (tp_asv_lookup (details, "contact-ids") != NULL)
     return FALSE;
 
   /* The library user didn't include the new members' IDs in details; let's add
    * the IDs of the handles being added to the group (but not removed, as per
    * the spec) and of the actor.
    */
-  member_ids = g_hash_table_new (NULL, NULL);
+  contact_ids = g_hash_table_new (NULL, NULL);
 
-  add_members_in_array (member_ids, mixin->handle_repo, add);
-  add_members_in_array (member_ids, mixin->handle_repo, local_pending);
-  add_members_in_array (member_ids, mixin->handle_repo, remote_pending);
+  add_members_in_array (contact_ids, mixin->handle_repo, add);
+  add_members_in_array (contact_ids, mixin->handle_repo, local_pending);
+  add_members_in_array (contact_ids, mixin->handle_repo, remote_pending);
 
   if (actor != 0)
     {
       const gchar *id = tp_handle_inspect (mixin->handle_repo, actor);
 
-      g_hash_table_insert (member_ids, GUINT_TO_POINTER (actor), (gchar *) id);
+      g_hash_table_insert (contact_ids, GUINT_TO_POINTER (actor), (gchar *) id);
     }
 
-  g_hash_table_insert (details, "member-ids",
+  g_hash_table_insert (details, "contact-ids",
       tp_g_value_slice_new_take_boxed (TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP,
-          member_ids));
+          contact_ids));
 
   return TRUE;
 }
 
 
 static void
-remove_member_ids (GHashTable *details)
+remove_contact_ids (GHashTable *details)
 {
-  GValue *member_ids_v = g_hash_table_lookup (details, "member-ids");
+  GValue *contact_ids_v = g_hash_table_lookup (details, "contact-ids");
 
-  g_assert (member_ids_v != NULL);
-  g_hash_table_steal (details, "member-ids");
+  g_assert (contact_ids_v != NULL);
+  g_hash_table_steal (details, "contact-ids");
 
-  tp_g_value_slice_free (member_ids_v);
+  tp_g_value_slice_free (contact_ids_v);
 }
 
 
@@ -1472,7 +1472,7 @@ emit_members_changed_signals (GObject *channel,
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (channel);
   GHashTable *details_ = (GHashTable *) details; /* Cast the pain away! */
-  gboolean added_member_ids;
+  gboolean added_contact_ids;
 
   if (DEBUGGING)
     {
@@ -1502,7 +1502,7 @@ emit_members_changed_signals (GObject *channel,
       g_free (remote_str);
     }
 
-  added_member_ids = maybe_add_member_ids (mixin, add, local_pending,
+  added_contact_ids = maybe_add_contact_ids (mixin, add, local_pending,
       remote_pending, actor, details_);
 
   tp_svc_channel_interface_group_emit_members_changed (channel, message,
@@ -1525,8 +1525,8 @@ emit_members_changed_signals (GObject *channel,
         }
     }
 
-  if (added_member_ids)
-    remove_member_ids (details_);
+  if (added_contact_ids)
+    remove_contact_ids (details_);
 }
 
 
