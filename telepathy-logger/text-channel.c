@@ -217,6 +217,7 @@ get_remote_contact_cb (TpConnection *connection,
       new_error = g_error_new (error->domain, error->code,
           "Failed to get remote contact: %s", error->message);
       _tpl_action_chain_terminate (ctx, new_error);
+      g_error_free (new_error);
     }
   else if (n_failed > 0)
     {
@@ -224,6 +225,7 @@ get_remote_contact_cb (TpConnection *connection,
           TPL_TEXT_CHANNEL_ERROR_FAILED,
           "Failed to prepare remote contact.");
       _tpl_action_chain_terminate (ctx, new_error);
+      g_error_free (new_error);
     }
   else
     {
