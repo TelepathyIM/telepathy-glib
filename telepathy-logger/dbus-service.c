@@ -203,11 +203,8 @@ favourite_contacts_file_read_line_cb (GObject *object,
   GDataInputStream *data_stream = G_DATA_INPUT_STREAM (object);
   TplActionChain *action_chain = (TplActionChain *) (user_data);
   TplDBusService *self = _tpl_action_chain_get_object (action_chain);
-  TplDBusServicePriv *priv;
   gchar *line;
   GError *error = NULL;
-
-  priv = self->priv;
 
   line = g_data_input_stream_read_line_finish (data_stream, result, NULL, &error);
 
@@ -574,14 +571,11 @@ pendingproc_add_favourite_contact (TplActionChain *action_chain,
 {
   FavouriteContactClosure *closure = user_data;
   gboolean should_add = FALSE;
-  TplDBusServicePriv *priv;
   GError *error = NULL;
 
   g_return_if_fail (closure);
   g_return_if_fail (TPL_IS_DBUS_SERVICE (closure->service));
   g_return_if_fail (closure->context != NULL);
-
-  priv = closure->service->priv;
 
   if (!tp_dbus_check_valid_object_path (closure->account, &error))
     {
