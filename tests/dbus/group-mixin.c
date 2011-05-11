@@ -195,8 +195,8 @@ static void
 details_contains_ids_for (const GHashTable *details,
                           TpHandle *hs)
 {
-  const GValue *member_ids_v;
-  GHashTable *member_ids;
+  const GValue *contact_ids_v;
+  GHashTable *contact_ids;
   const gchar *id;
   guint n = 0;
   TpHandle *h;
@@ -204,19 +204,19 @@ details_contains_ids_for (const GHashTable *details,
   if (details == NULL)
     return;
 
-  member_ids_v = tp_asv_lookup (details, "contact-ids");
-  member_ids = g_value_get_boxed (member_ids_v);
+  contact_ids_v = tp_asv_lookup (details, "contact-ids");
+  contact_ids = g_value_get_boxed (contact_ids_v);
 
   for (h = hs; *h != 0; h++)
     {
       n++;
 
-      id = g_hash_table_lookup (member_ids, GUINT_TO_POINTER (*h));
+      id = g_hash_table_lookup (contact_ids, GUINT_TO_POINTER (*h));
       MYASSERT (id != NULL, ": id for %u in map", *h);
       g_assert_cmpstr (id, ==, tp_handle_inspect (contact_repo, *h));
     }
 
-  MYASSERT (g_hash_table_size (member_ids) == n, ": %u member IDs", n);
+  MYASSERT (g_hash_table_size (contact_ids) == n, ": %u contact IDs", n);
 }
 
 static void
