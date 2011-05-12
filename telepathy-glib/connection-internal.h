@@ -65,10 +65,16 @@ struct _TpConnectionPrivate {
     TpContactInfoFlags contact_info_flags;
     GList *contact_info_supported_fields;
 
+    gint balance;
+    guint balance_scale;
+    gchar *balance_currency;
+    gchar *balance_uri;
+
     TpProxyPendingCall *introspection_call;
     unsigned fetching_rcc:1;
     unsigned fetching_avatar_requirements:1;
     unsigned contact_info_fetched:1;
+    unsigned fetching_balance:1;
 
     unsigned ready:1;
     unsigned has_immortal_handles:1;
