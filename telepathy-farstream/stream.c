@@ -762,6 +762,7 @@ get_all_properties_cb (TpProxy *proxy,
   guint i;
   gboolean do_controlling = FALSE;
   GList *rtp_header_extensions;
+  gboolean res = FALSE;
 
   if (dbus_error &&
       !(dbus_error->domain == DBUS_GERROR &&
@@ -1056,10 +1057,11 @@ get_all_properties_cb (TpProxy *proxy,
   stream->priv->fs_stream = fs_session_new_stream (stream->priv->fs_session,
       stream->priv->fs_participant,
       FS_DIRECTION_NONE,
-      transmitter,
-      n_args,
-      params,
       &myerror);
+
+  if (stream->priv->fs_stream)
+    res = fs_stream_set_transmitter (stream->priv->fs_stream,
+        transmitter, params, n_args, &myerror);
 
   for (i = 0; i < n_args; i++)
     g_value_unset (&params[i].value);
@@ -1068,6 +1070,15 @@ get_all_properties_cb (TpProxy *proxy,
     {
       tf_stream_error (stream, fserror_to_tperror (myerror), myerror->message);
       WARNING (stream, "Error creating stream: %s", myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
+  if (!res)
+    {
+      tf_stream_error (stream, fserror_to_tperror (myerror), myerror->message);
+      WARNING (stream, "Could not set transmitter for stream: %s",
+          myerror->message);
       g_clear_error (&myerror);
       return;
     }
