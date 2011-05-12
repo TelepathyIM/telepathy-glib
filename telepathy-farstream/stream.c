@@ -2154,9 +2154,9 @@ start_sound_telephony_event (TpMediaStreamHandler *proxy, guchar event,
   /* this week, volume is 8, for the sake of argument... */
 
   if (!fs_session_start_telephony_event (self->priv->fs_session, event, 8,
-          FS_DTMF_METHOD_IN_BAND))
+          FS_DTMF_METHOD_SOUND))
     WARNING (self, "sending sound event %u failed", event);
-  self->priv->sending_telephony_event = FS_DTMF_METHOD_IN_BAND;
+  self->priv->sending_telephony_event = FS_DTMF_METHOD_SOUND;
 }
 
 
