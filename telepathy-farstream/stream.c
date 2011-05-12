@@ -41,7 +41,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
-#include <gst/farsight/fs-conference-iface.h>
+#include <gst/farsight/fs-conference.h>
 #include <gst/farsight/fs-rtp.h>
 #include <gst/farsight/fs-utils.h>
 

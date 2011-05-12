@@ -22,7 +22,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 
-#include <gst/farsight/fs-conference-iface.h>
+#include <gst/farsight/fs-conference.h>
 
 #include "session-priv.h"
 #include "tf-signals-marshal.h"
