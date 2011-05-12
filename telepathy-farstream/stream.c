@@ -1492,7 +1492,7 @@ add_remote_candidate (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
 
   fscandidates = tp_transports_to_fs (candidate, transports);
 
-  if (!fs_stream_set_remote_candidates (self->priv->fs_stream,
+  if (!fs_stream_add_remote_candidates (self->priv->fs_stream,
           fscandidates, &error))
     tf_stream_error (self, fserror_to_tperror (error), error->message);
 
@@ -1571,7 +1571,7 @@ set_remote_candidate_list (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
           tp_transports_to_fs (foundation, transports));
     }
 
-  ret = fs_stream_set_remote_candidates (self->priv->fs_stream,
+  ret = fs_stream_add_remote_candidates (self->priv->fs_stream,
       fs_candidates, &error);
   if (!ret && error &&
       error->domain == FS_ERROR && error->code == FS_ERROR_NOT_IMPLEMENTED)
