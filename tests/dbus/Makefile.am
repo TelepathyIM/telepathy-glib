@@ -17,6 +17,7 @@ noinst_PROGRAMS = \
     test-cm \
     test-cm-message \
     test-connection \
+    test-connection-balance \
     test-connection-bug-18845 \
     test-connection-error \
     test-connection-handles \
@@ -105,6 +106,8 @@ test_contact_lists_SOURCES = contact-lists.c
 test_contact_lists_LDADD = \
     $(LDADD) \
     $(top_builddir)/examples/cm/contactlist/libexample-cm-contactlist.la
+
+test_connection_balance_SOURCES = connection-balance.c
 
 test_connection_bug_18845_SOURCES = connection-bug-18845.c
 
