@@ -1675,7 +1675,7 @@ set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
                   TP_ARRAY_TYPE_RTCP_FEEDBACK_MESSAGE_LIST);
 
               val = g_value_array_get_nth (message_props, 0);
-              fs_codec->ABI.ABI.minimum_reporting_interval =
+              fs_codec->minimum_reporting_interval =
                   g_value_get_uint (val);
 
               val = g_value_array_get_nth (message_props, 1);
@@ -2741,15 +2741,15 @@ fs_codecs_to_feedback_messages (GList *fscodecs)
     {
       FsCodec *fs_codec = item->data;
 
-      if (fs_codec->ABI.ABI.minimum_reporting_interval != G_MAXUINT ||
-          fs_codec->ABI.ABI.feedback_params)
+      if (fs_codec->minimum_reporting_interval != G_MAXUINT ||
+          fs_codec->feedback_params)
         {
           GValueArray *codec = g_value_array_new (2);
           GPtrArray *messages = g_ptr_array_new ();
           GValue *val;
           GList *item2;
 
-          for (item2 = fs_codec->ABI.ABI.feedback_params;
+          for (item2 = fs_codec->feedback_params;
                item2;
                item2 = item2->next)
             {
@@ -2778,7 +2778,7 @@ fs_codecs_to_feedback_messages (GList *fscodecs)
           g_value_array_insert (codec, 0, NULL);
           val = g_value_array_get_nth (codec, 0);
           g_value_init (val, G_TYPE_UINT);
-          g_value_set_uint (val, fs_codec->ABI.ABI.minimum_reporting_interval);
+          g_value_set_uint (val, fs_codec->minimum_reporting_interval);
 
           g_value_array_insert (codec, 1, NULL);
           val = g_value_array_get_nth (codec, 1);
