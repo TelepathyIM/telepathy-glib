@@ -342,7 +342,7 @@ log_store_pidgin_get_dir (TplLogStore *self,
         id = g_strdup_printf ("%s.chat", orig_id);
       else if (g_str_has_suffix (orig_id, "#1"))
         /* Small butterfly workaround */
-        id = g_strndup (orig_id, strlen (id) - 2);
+        id = g_strndup (orig_id, strlen (orig_id) - 2);
       else
         id = g_strdup (orig_id);
     }
