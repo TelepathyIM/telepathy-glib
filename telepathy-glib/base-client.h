@@ -185,6 +185,8 @@ void tp_base_client_delegate_channels_async (TpBaseClient *self,
 
 gboolean tp_base_client_delegate_channels_finish (TpBaseClient *self,
     GAsyncResult *result,
+    GPtrArray **delegated,
+    GHashTable **not_delegated,
     GError **error);
 
 const gchar *tp_base_client_get_name (TpBaseClient *self);

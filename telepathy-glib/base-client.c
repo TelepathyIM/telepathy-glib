@@ -2807,8 +2807,70 @@ _tp_base_client_now_handling_channels (TpBaseClient *self,
     add_handled_channels (self, channels);
 }
 
+typedef struct
+{
+  /* Array of reffed TpChannel */
+  GPtrArray *channels;
+  /* Array of reffed TpChannel */
+  GPtrArray *delegated;
+  /* reffed TpChannel => owned GError */
+  GHashTable *not_delegated;
+} DelegateChannelsCtx;
+
+static DelegateChannelsCtx *
+delegate_channels_ctx_new (GList *channels)
+{
+  DelegateChannelsCtx *ctx = g_slice_new0 (DelegateChannelsCtx);
+  GList *l;
+
+  ctx->channels = g_ptr_array_sized_new (g_list_length (channels));
+  g_ptr_array_set_free_func (ctx->channels, g_object_unref);
+
+  for (l = channels; l != NULL; l = g_list_next (l))
+    {
+      TpChannel *channel = l->data;
+
+      g_return_val_if_fail (TP_IS_CHANNEL (channel), NULL);
+
+      g_ptr_array_add (ctx->channels, g_object_ref (channel));
+    }
+
+  ctx->delegated = g_ptr_array_new_with_free_func (g_object_unref);
+  ctx->not_delegated = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+      g_object_unref, (GDestroyNotify) g_error_free);
+
+  return ctx;
+}
+
+static void
+delegate_channels_ctx_free (DelegateChannelsCtx *ctx)
+{
+  g_ptr_array_unref (ctx->channels);
+  g_ptr_array_unref (ctx->delegated);
+  g_hash_table_unref (ctx->not_delegated);
+
+  g_slice_free (DelegateChannelsCtx, ctx);
+}
+
+static gboolean
+path_is_in_array (const GPtrArray *array,
+    const gchar *path)
+{
+  guint i;
+
+  for (i = 0; array->len; i++)
+    {
+      if (!tp_strdiff (g_ptr_array_index (array, i), path))
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
 static void
 delegate_channels_cb (TpChannelDispatcher *cd,
+    const GPtrArray *delegated,
+    GHashTable *not_delegated,
     const GError *error,
     gpointer user_data,
     GObject *weak_object)
@@ -2822,17 +2884,45 @@ delegate_channels_cb (TpChannelDispatcher *cd,
     }
   else
     {
-      /* We are not longer handling the channels */
-      GPtrArray *chans;
+      DelegateChannelsCtx *ctx;
       guint i;
 
-      chans = g_simple_async_result_get_op_res_gpointer (result);
+      ctx = g_simple_async_result_get_op_res_gpointer (result);
 
-      for (i = 0; i < chans->len; i++)
+      for (i = 0; i < ctx->channels->len; i++)
         {
-          const gchar *path = g_ptr_array_index (chans, i);
+          TpChannel *channel = g_ptr_array_index (ctx->channels, i);
+          const gchar *path;
+          GValueArray *v;
+          const gchar *dbus_error, *msg;
+          GError *err = NULL;
 
-          g_hash_table_remove (self->priv->my_chans, path);
+          path = tp_proxy_get_object_path (channel);
+
+          if (path_is_in_array (delegated, path))
+            {
+              /* We are no longer handling this channel */
+              g_hash_table_remove (self->priv->my_chans, path);
+
+              g_ptr_array_add (ctx->delegated, g_object_ref (channel));
+              continue;
+            }
+
+          v = g_hash_table_lookup (not_delegated, path);
+          if (v == NULL)
+            {
+              DEBUG ("MC didn't tell us if we are still handling or not %s",
+                  path);
+              continue;
+            }
+
+          tp_value_array_unpack (v, 2, &dbus_error, &msg);
+
+          tp_proxy_dbus_error_to_gerror (cd, dbus_error, msg, &err);
+
+          /* Pass ownership of the error to the hash table */
+          g_hash_table_insert (ctx->not_delegated, g_object_ref (channel),
+              err);
         }
     }
 
@@ -2869,9 +2959,10 @@ tp_base_client_delegate_channels_async (TpBaseClient *self,
     gpointer user_data)
 {
   TpChannelDispatcher *cd;
+  GSimpleAsyncResult *result;
+  DelegateChannelsCtx *ctx;
   GPtrArray *chans;
   GList *l;
-  GSimpleAsyncResult *result;
 
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (self->priv->flags & CLIENT_IS_HANDLER);
@@ -2893,8 +2984,10 @@ tp_base_client_delegate_channels_async (TpBaseClient *self,
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_base_client_delegate_channels_async);
 
-  g_simple_async_result_set_op_res_gpointer (result, chans,
-      (GDestroyNotify) g_ptr_array_unref);
+  ctx = delegate_channels_ctx_new (channels);
+
+  g_simple_async_result_set_op_res_gpointer (result, ctx,
+      (GDestroyNotify) delegate_channels_ctx_free);
 
   /* DelegateChannels() can takes a while if, for example, some clients are
    * crashing and so MC has to wait for them to time out before calling the
@@ -2905,18 +2998,26 @@ tp_base_client_delegate_channels_async (TpBaseClient *self,
       delegate_channels_cb, result, g_object_unref, G_OBJECT (self));
 
   g_object_unref (cd);
+  g_ptr_array_unref (chans);
 }
 
 /**
  * tp_base_client_delegate_channels_finish:
  * @self: a #TpBaseClient
  * @result: a #GAsyncResult
+ * @delegated: (out) (element-type TelepathyGLib.Channel) (transfer container):
+ * if not %NULL, used to return a #GPtrArray containing the #TpChannel which
+ * have been properly delegated
+ * @not_delegated: (out) (element-type TelepathyGLib.Channel GLib.Error) (transfer container):
+ * fnot not %NULL, used to return a #GHashTable mapping #TpChannel which have
+ * not been delegated to a #GError explaining the reason of the failure
  * @error: a #GError to fill
  *
  * Finishes an async channels delegation request started using
  * tp_base_client_delegate_channels_async().
  *
- * Returns: %TRUE if @self is not longer the handler of the channels,
+ * Returns: %TRUE if the operation succeed, @delegated and @not_delegated
+ * can be used to known the channels that @self is not handling any more,
  * otherwise %FALSE.
  *
  * Since: 0.15.UNRELEASED
@@ -2924,7 +3025,26 @@ tp_base_client_delegate_channels_async (TpBaseClient *self,
 gboolean
 tp_base_client_delegate_channels_finish (TpBaseClient *self,
     GAsyncResult *result,
+    GPtrArray **delegated,
+    GHashTable **not_delegated,
     GError **error)
 {
-  _tp_implement_finish_void (self, tp_base_client_delegate_channels_async)
+  DelegateChannelsCtx *ctx;
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  ctx = g_simple_async_result_get_op_res_gpointer (simple);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (self), tp_base_client_delegate_channels_async), FALSE);
+
+  if (delegated != NULL)
+    *delegated = g_ptr_array_ref (ctx->delegated);
+
+  if (not_delegated != NULL)
+    *not_delegated = g_hash_table_ref (ctx->not_delegated);
+
+  return TRUE;
 }

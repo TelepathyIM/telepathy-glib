@@ -255,7 +255,14 @@ tp_tests_simple_channel_dispatcher_delegate_channels (
     const gchar *preferred_handler,
     DBusGMethodInvocation *context)
 {
-  tp_svc_channel_dispatcher_return_from_delegate_channels (context);
+  GHashTable *not_delegated;
+
+  not_delegated = g_hash_table_new (g_str_hash, g_str_equal);
+
+  tp_svc_channel_dispatcher_return_from_delegate_channels (context, channels,
+      not_delegated);
+
+  g_hash_table_unref (not_delegated);
 }
 
 static void

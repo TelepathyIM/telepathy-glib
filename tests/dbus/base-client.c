@@ -52,6 +52,9 @@ typedef struct {
     GError *error /* initialized where needed */;
     GStrv interfaces;
     gint wait;
+
+    GPtrArray *delegated;
+    GHashTable *not_delegated;
 } Test;
 
 #define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "what/ev/er"
@@ -264,6 +267,9 @@ teardown (Test *test,
   g_object_unref (test->base_connection);
 
   tp_clear_object (&test->cd_service);
+
+  tp_clear_pointer (&test->delegated, g_ptr_array_unref);
+  tp_clear_pointer (&test->not_delegated, g_hash_table_unref);
 }
 
 /* Test Basis */
@@ -1235,7 +1241,8 @@ delegate_channels_cb (GObject *source,
   Test *test = user_data;
 
   tp_base_client_delegate_channels_finish (
-      TP_BASE_CLIENT (source), result, &test->error);
+      TP_BASE_CLIENT (source), result, &test->delegated, &test->not_delegated,
+      &test->error);
 
   test->wait--;
   if (test->wait == 0)
@@ -1299,6 +1306,10 @@ test_delegate_channels (Test *test,
   test->wait++;
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->delegated->len, ==, 1);
+  g_assert (g_ptr_array_index (test->delegated, 0) == test->text_chan);
+  g_assert_cmpuint (g_hash_table_size (test->not_delegated), ==, 0);
 
   /* Client is not handling the channel any more */
   chans = tp_base_client_get_handled_channels (test->base_client);
