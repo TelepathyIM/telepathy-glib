@@ -21,6 +21,7 @@ Makefile
 *.typelib
 .semanticache
 _gen
+Android.mk
 FIXME.out
 INSTALL
 aclocal.m4
