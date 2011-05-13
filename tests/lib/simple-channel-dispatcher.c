@@ -246,6 +246,12 @@ tp_tests_simple_channel_dispatcher_ensure_channel_with_hints (
   g_free (path);
 }
 
+static void
+free_not_delegated_error (gpointer data)
+{
+    g_boxed_free (TP_STRUCT_TYPE_NOT_DELEGATED_ERROR, data);
+}
+
 
 static void
 tp_tests_simple_channel_dispatcher_delegate_channels (
@@ -255,13 +261,39 @@ tp_tests_simple_channel_dispatcher_delegate_channels (
     const gchar *preferred_handler,
     DBusGMethodInvocation *context)
 {
+  TpTestsSimpleChannelDispatcher *self = (TpTestsSimpleChannelDispatcher *)
+    dispatcher;
+  GPtrArray *delegated;
   GHashTable *not_delegated;
+  guint i;
 
-  not_delegated = g_hash_table_new (g_str_hash, g_str_equal);
+  delegated = g_ptr_array_new ();
+  not_delegated = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, free_not_delegated_error);
 
-  tp_svc_channel_dispatcher_return_from_delegate_channels (context, channels,
+  for (i = 0; i < channels->len; i++)
+    {
+      gpointer chan_path = g_ptr_array_index (channels, i);
+      GValueArray *v;
+
+      if (!self->refuse_delegate)
+        {
+          g_ptr_array_add (delegated, chan_path);
+          continue;
+        }
+
+      v = tp_value_array_build (2,
+        G_TYPE_STRING, TP_ERROR_STR_BUSY,
+        G_TYPE_STRING, "Nah!",
+        G_TYPE_INVALID);
+
+      g_hash_table_insert (not_delegated, chan_path, v);
+    }
+
+  tp_svc_channel_dispatcher_return_from_delegate_channels (context, delegated,
       not_delegated);
 
+  g_ptr_array_unref  (delegated);
   g_hash_table_unref (not_delegated);
 }
 

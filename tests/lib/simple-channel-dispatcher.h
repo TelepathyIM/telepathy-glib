@@ -30,6 +30,8 @@ struct _TpTestsSimpleChannelDispatcher {
     GObject parent;
 
     TpTestsSimpleChannelDispatcherPrivate *priv;
+
+    gboolean refuse_delegate;
 };
 
 GType tp_tests_simple_channel_dispatcher_get_type (void);

@@ -1257,6 +1257,7 @@ test_delegate_channels (Test *test,
   GPtrArray *requests_satisified;
   GHashTable *info;
   GList *chans;
+  GError *error = NULL;
 
   tp_base_client_be_a_handler (test->base_client);
 
@@ -1312,6 +1313,36 @@ test_delegate_channels (Test *test,
   g_assert_cmpuint (g_hash_table_size (test->not_delegated), ==, 0);
 
   /* Client is not handling the channel any more */
+  chans = tp_base_client_get_handled_channels (test->base_client);
+  g_assert_cmpuint (g_list_length (chans), ==, 1);
+  g_list_free (chans);
+
+  g_assert (!tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan));
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan_2));
+
+  /* Try delegating the second channel, but MC refuses */
+  test->cd_service->refuse_delegate = TRUE;
+
+  chans = g_list_append (NULL, test->text_chan_2);
+
+  tp_base_client_delegate_channels_async (test->base_client,
+      chans, TP_USER_ACTION_TIME_CURRENT_TIME, NULL,
+      delegate_channels_cb, test);
+
+  g_list_free (chans);
+
+  test->wait++;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->delegated->len, ==, 0);
+  g_assert_cmpuint (g_hash_table_size (test->not_delegated), ==, 1);
+  error = g_hash_table_lookup (test->not_delegated, test->text_chan_2);
+  g_assert_error (error, TP_ERRORS, TP_ERROR_BUSY);
+
+  /* Client is still handling the channel */
   chans = tp_base_client_get_handled_channels (test->base_client);
   g_assert_cmpuint (g_list_length (chans), ==, 1);
   g_list_free (chans);
