@@ -1615,6 +1615,8 @@ TP_STRUCT_TYPE_AVATAR
 # CD, CDO and CR
 TP_STRUCT_TYPE_DISPATCH_OPERATION_DETAILS
 TP_ARRAY_TYPE_DISPATCH_OPERATION_DETAILS_LIST
+TP_HASH_TYPE_NOT_DELEGATED_MAP
+TP_STRUCT_TYPE_NOT_DELEGATED_ERROR
 <SUBSECTION>
 # Debug
 TP_STRUCT_TYPE_DEBUG_MESSAGE
@@ -1660,6 +1662,7 @@ tp_type_dbus_array_uuusa_7bsv_7du
 tp_type_dbus_array_uuuuus
 tp_type_dbus_array_uuuuuu
 tp_type_dbus_array_uv
+tp_type_dbus_hash_o_28ss_29
 tp_type_dbus_hash_oa_7bsv_7d
 tp_type_dbus_hash_s_28ubb_29
 tp_type_dbus_hash_s_28ubba_7bss_7d_29
