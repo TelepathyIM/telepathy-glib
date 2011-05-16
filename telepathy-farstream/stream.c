@@ -1051,6 +1051,18 @@ get_all_properties_cb (TpProxy *proxy,
       return;
     }
 
+  rtp_header_extensions =
+      fs_utils_get_default_rtp_header_extension_preferences (
+          GST_ELEMENT (stream->priv->fs_conference),
+          tp_media_type_to_fs (stream->priv->media_type));
+
+  if (rtp_header_extensions)
+    {
+      g_object_set (stream->priv->fs_session,
+          "rtp-header-extension-preferences", rtp_header_extensions, NULL);
+      fs_rtp_header_extension_list_destroy (rtp_header_extensions);
+    }
+
   if (!stream->priv->local_preferences)
     stream->priv->local_preferences = fs_utils_get_default_codec_preferences (
         GST_ELEMENT (stream->priv->fs_conference));
@@ -1072,19 +1084,6 @@ get_all_properties_cb (TpProxy *proxy,
           }
         g_clear_error (&myerror);
       }
-
-
-  rtp_header_extensions =
-      fs_utils_get_default_rtp_header_extension_preferences (
-          GST_ELEMENT (stream->priv->fs_conference),
-          tp_media_type_to_fs (stream->priv->media_type));
-
-  if (rtp_header_extensions)
-    {
-      g_object_set (stream->priv->fs_session,
-          "rtp-header-extension-preferences", rtp_header_extensions, NULL);
-      fs_rtp_header_extension_list_destroy (rtp_header_extensions);
-    }
 
   if (g_object_class_find_property (
           G_OBJECT_GET_CLASS (stream->priv->fs_session),
