@@ -728,8 +728,8 @@ tp_base_contact_list_constructed (GObject *object)
 
       g_return_if_fail (iface->can_block != NULL);
       g_return_if_fail (iface->dup_blocked_contacts != NULL);
-      g_return_if_fail (iface->block_contacts_async != NULL ||
-          iface->block_contacts_with_abuse_async != NULL);
+      g_return_if_fail ((iface->block_contacts_async != NULL) ^
+          (iface->block_contacts_with_abuse_async != NULL));
       g_return_if_fail (iface->block_contacts_finish != NULL);
       g_return_if_fail (iface->unblock_contacts_async != NULL);
       g_return_if_fail (iface->unblock_contacts_finish != NULL);
