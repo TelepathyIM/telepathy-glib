@@ -3006,18 +3006,19 @@ tp_base_client_delegate_channels_async (TpBaseClient *self,
  * @self: a #TpBaseClient
  * @result: a #GAsyncResult
  * @delegated: (out) (element-type TelepathyGLib.Channel) (transfer container):
- * if not %NULL, used to return a #GPtrArray containing the #TpChannel which
- * have been properly delegated
+ * if not %NULL, used to return a #GPtrArray containing the #TpChannel<!-- -->s
+ * which have been properly delegated
  * @not_delegated: (out) (element-type TelepathyGLib.Channel GLib.Error) (transfer container):
- * fnot not %NULL, used to return a #GHashTable mapping #TpChannel which have
- * not been delegated to a #GError explaining the reason of the failure
+ * if not not %NULL, used to return a #GHashTable mapping #TpChannel<!-- -->s
+ * which have not been delegated to a #GError explaining the reason of
+ * the failure
  * @error: a #GError to fill
  *
  * Finishes an async channels delegation request started using
  * tp_base_client_delegate_channels_async().
  *
  * Returns: %TRUE if the operation succeed, @delegated and @not_delegated
- * can be used to known the channels that @self is not handling any more,
+ * can be used to know the channels that @self is not handling any more,
  * otherwise %FALSE.
  *
  * Since: 0.15.UNRELEASED
