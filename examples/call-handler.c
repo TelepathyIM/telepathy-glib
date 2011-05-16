@@ -360,6 +360,13 @@ main (int argc, char **argv)
           TRUE,
        NULL));
 
+  tp_base_client_add_handler_capabilities_varargs (client,
+    TF_FUTURE_IFACE_CHANNEL_TYPE_CALL "/video/h264",
+    TF_FUTURE_IFACE_CHANNEL_TYPE_CALL "/shm",
+    TF_FUTURE_IFACE_CHANNEL_TYPE_CALL "/ice",
+    TF_FUTURE_IFACE_CHANNEL_TYPE_CALL "/gtalk-p2p",
+    NULL);
+
   tp_base_client_register (client, NULL);
 
   g_main_loop_run (loop);
