@@ -1884,9 +1884,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
 
           while ((context = g_queue_pop_head (
                       &self->priv->blocked_contact_requests)) != NULL)
-            /* Sometimes I think we should either make our method names less
-             * verbose, or relax our 80-column limit.
-             */
             tp_svc_connection_interface_contact_blocking_return_from_request_blocked_contacts (context, map);
 
           g_hash_table_unref (map);
