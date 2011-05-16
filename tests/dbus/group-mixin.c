@@ -195,8 +195,7 @@ static void
 details_contains_ids_for (const GHashTable *details,
                           TpHandle *hs)
 {
-  const GValue *member_ids_v;
-  GHashTable *member_ids;
+  GHashTable *contact_ids;
   const gchar *id;
   guint n = 0;
   TpHandle *h;
@@ -204,19 +203,20 @@ details_contains_ids_for (const GHashTable *details,
   if (details == NULL)
     return;
 
-  member_ids_v = tp_asv_lookup (details, "member-ids");
-  member_ids = g_value_get_boxed (member_ids_v);
+  contact_ids = tp_asv_get_boxed (details, "contact-ids",
+      TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
+  g_assert (contact_ids != NULL);
 
   for (h = hs; *h != 0; h++)
     {
       n++;
 
-      id = g_hash_table_lookup (member_ids, GUINT_TO_POINTER (*h));
+      id = g_hash_table_lookup (contact_ids, GUINT_TO_POINTER (*h));
       MYASSERT (id != NULL, ": id for %u in map", *h);
       g_assert_cmpstr (id, ==, tp_handle_inspect (contact_repo, *h));
     }
 
-  MYASSERT (g_hash_table_size (member_ids) == n, ": %u member IDs", n);
+  MYASSERT (g_hash_table_size (contact_ids) == n, ": %u contact IDs", n);
 }
 
 static void
@@ -360,7 +360,7 @@ camel_removed (const GArray *added,
   TpHandle h;
   /* camel2 is the actor. camel shouldn't be in the ids, because they were
    * removed and the spec says that you can leave those out, and we want
-   * tp-glib's automatic construction of member-ids to work in the #ubuntu
+   * tp-glib's automatic construction of contact-ids to work in the #ubuntu
    * case.
    */
   TpHandle hs[] = { camel2, 0 };

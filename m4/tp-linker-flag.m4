@@ -22,7 +22,7 @@ AC_DEFUN([TP_LINKER_FLAG],
   save_LDFLAGS="$LDFLAGS"
   LDFLAGS="$LDFLAGS $1"
 
-  AC_COMPILE_IFELSE(AC_LANG_PROGRAM([], []), [flag_ok=yes], [flag_ok=no])
+  AC_COMPILE_IFELSE(AC_LANG_SOURCE([]), [flag_ok=yes], [flag_ok=no])
 
   LDFLAGS="$save_LDFLAGS"
 
