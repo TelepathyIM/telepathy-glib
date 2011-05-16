@@ -5927,6 +5927,7 @@ tp_base_contact_list_get_blocking_dbus_property (GObject *conn,
   TpBlockableContactListInterface *iface =
       TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
   static GQuark contact_blocking_capabilities_q = 0;
+  guint flags = 0;
 
   g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
   g_return_if_fail (TP_IS_BLOCKABLE_CONTACT_LIST (self));
@@ -5939,9 +5940,9 @@ tp_base_contact_list_get_blocking_dbus_property (GObject *conn,
   g_return_if_fail (name == contact_blocking_capabilities_q);
 
   if (iface->block_contacts_with_abuse_async != NULL)
-    g_value_set_uint (value, TP_CONTACT_BLOCKING_CAPABILITY_CAN_REPORT_ABUSIVE);
-  else
-    g_value_set_uint (value, 0);
+    flags |= TP_CONTACT_BLOCKING_CAPABILITY_CAN_REPORT_ABUSIVE;
+
+  g_value_set_uint (value, flags);
 }
 
 /**
