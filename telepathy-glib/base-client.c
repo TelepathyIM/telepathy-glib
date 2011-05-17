@@ -2948,7 +2948,7 @@ delegate_channels_cb (TpChannelDispatcher *cd,
  * You can then call tp_base_client_delegate_channels_finish() to
  * get the result of the operation.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.0
  */
 void
 tp_base_client_delegate_channels_async (TpBaseClient *self,
@@ -3021,7 +3021,7 @@ tp_base_client_delegate_channels_async (TpBaseClient *self,
  * can be used to know the channels that @self is not handling any more,
  * otherwise %FALSE.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.0
  */
 gboolean
 tp_base_client_delegate_channels_finish (TpBaseClient *self,

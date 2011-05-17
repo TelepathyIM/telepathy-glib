@@ -199,7 +199,7 @@ present_channel_cb (TpChannelDispatcher *cd,
  * You can then call tp_channel_dispatcher_present_channel_finish() to
  * get the result of the operation.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.0
  */
 void
 tp_channel_dispatcher_present_channel_async (TpChannelDispatcher *self,
@@ -232,7 +232,7 @@ tp_channel_dispatcher_present_channel_async (TpChannelDispatcher *self,
  *
  * Returns: %TRUE if the call succeeded, otherwise %FALSE.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.0
  */
 gboolean
 tp_channel_dispatcher_present_channel_finish (TpChannelDispatcher *self,

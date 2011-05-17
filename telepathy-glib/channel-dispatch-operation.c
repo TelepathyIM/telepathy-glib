@@ -1212,7 +1212,7 @@ claim_cb (TpChannelDispatchOperation *self,
  * the channels further in this case.
  *
  * Since: 0.11.5
- * Deprecated: since 0.15.UNRELEASED. Use
+ * Deprecated: since 0.15.0. Use
  * tp_channel_dispatch_operation_claim_with_async()
  */
 void
@@ -1243,7 +1243,7 @@ tp_channel_dispatch_operation_claim_async (
  * Returns: %TRUE if the Claim() call was successful, otherwise %FALSE
  *
  * Since: 0.11.5
- * Deprecated: since 0.15.UNRELEASED. Use
+ * Deprecated: since 0.15.0. Use
  * tp_channel_dispatch_operation_claim_with_finish()
  */
 gboolean
@@ -1464,7 +1464,7 @@ claim_with_cb (GObject *source,
  * This is an improved version of tp_channel_dispatch_operation_claim_async()
  * as it tells @client about the new channels being handled.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.0
  */
 void
 tp_channel_dispatch_operation_claim_with_async (
@@ -1499,7 +1499,7 @@ tp_channel_dispatch_operation_claim_with_async (
  *
  * Returns: %TRUE if the Claim() call was successful, otherwise %FALSE
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.0
  */
 gboolean
 tp_channel_dispatch_operation_claim_with_finish (
