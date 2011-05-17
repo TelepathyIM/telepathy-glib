@@ -65,6 +65,11 @@ struct _TpConnectionPrivate {
     TpContactInfoFlags contact_info_flags;
     GList *contact_info_supported_fields;
 
+    gint balance;
+    guint balance_scale;
+    gchar *balance_currency;
+    gchar *balance_uri;
+
     TpProxyPendingCall *introspection_call;
 
     unsigned ready:1;
