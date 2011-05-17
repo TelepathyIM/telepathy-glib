@@ -377,15 +377,14 @@ tp_connection_get_balance_cb (TpProxy *proxy,
     GObject *weak_obj)
 {
   TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result = user_data;
   GValueArray *balance = NULL;
-
-  self->priv->fetching_balance = FALSE;
 
   if (in_error != NULL)
     {
       DEBUG ("Failed to get Balance properties: %s", in_error->message);
-
-      goto finally;
+      g_simple_async_result_set_from_error (result, in_error);
+      return;
     }
 
   balance =
@@ -393,7 +392,6 @@ tp_connection_get_balance_cb (TpProxy *proxy,
   self->priv->balance_uri =
     g_strdup (tp_asv_get_string (props, "ManageCreditURI"));
 
-finally:
   g_object_freeze_notify ((GObject *) self);
 
   tp_connection_unpack_balance (self, balance);
@@ -404,6 +402,8 @@ finally:
   g_object_notify ((GObject *) self, "balance-uri");
 
   g_object_thaw_notify ((GObject *) self);
+
+  g_simple_async_result_complete (result);
 }
 
 static void
@@ -416,37 +416,22 @@ tp_connection_balance_changed_cb (TpConnection *self,
 }
 
 static void
-tp_connection_maybe_prepare_balance (TpProxy *proxy)
+tp_connection_prepare_balance_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
   TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result;
 
-  if (self->priv->balance_currency != NULL)
-    return;   /* already done */
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_connection_prepare_balance_async);
 
-  if (!_tp_proxy_is_preparing (proxy, TP_CONNECTION_FEATURE_BALANCE))
-    return;   /* not interested right now */
-
-  if (!self->priv->ready)
-    return;   /* will try again when ready */
-
-  if (self->priv->fetching_balance)
-    return;   /* Another Get operation is running */
-
-  if (!tp_proxy_has_interface_by_id (proxy,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_BALANCE))
-    {
-      /* Connection doesn't support Balance */
-
-      _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_BALANCE,
-          TRUE);
-      return;
-    }
-
-  self->priv->fetching_balance = TRUE;
+  g_assert (self->priv->balance_currency == NULL);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION_INTERFACE_BALANCE,
-      tp_connection_get_balance_cb, NULL, NULL, NULL);
+      tp_connection_get_balance_cb, result, g_object_unref, NULL);
 
   tp_cli_connection_interface_balance_connect_to_balance_changed (self,
       tp_connection_balance_changed_cb,
@@ -1445,6 +1430,7 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   static GQuark need_requests[2] = {0, 0};
   static GQuark need_avatars[2] = {0, 0};
   static GQuark need_contact_info[2] = {0, 0};
+  static GQuark need_balance[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -1473,7 +1459,9 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CONTACT_INFO].interfaces_needed = need_contact_info;
 
   features[FEAT_BALANCE].name = TP_CONNECTION_FEATURE_BALANCE;
-  features[FEAT_BALANCE].start_preparing = tp_connection_maybe_prepare_balance;
+  features[FEAT_BALANCE].prepare_async = tp_connection_prepare_balance_async;
+  need_balance[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_BALANCE;
+  features[FEAT_BALANCE].interfaces_needed = need_balance;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
