@@ -53,12 +53,16 @@ struct _TplTextEventPriv
 {
   TpChannelTextMessageType message_type;
   gchar *message;
+  gchar *token;
+  gchar *supersedes_token;
 };
 
 enum
 {
   PROP_MESSAGE_TYPE = 1,
-  PROP_MESSAGE
+  PROP_MESSAGE,
+  PROP_TOKEN,
+  PROP_SUPERSEDES
 };
 
 static gchar *message_types[] = {
@@ -79,6 +83,12 @@ tpl_text_event_finalize (GObject *obj)
   g_free (priv->message);
   priv->message = NULL;
 
+  g_free (priv->token);
+  priv->token = NULL;
+
+  g_free (priv->supersedes_token);
+  priv->supersedes_token = NULL;
+
   G_OBJECT_CLASS (tpl_text_event_parent_class)->finalize (obj);
 }
 
@@ -98,6 +108,12 @@ tpl_text_event_get_property (GObject *object,
         break;
       case PROP_MESSAGE:
         g_value_set_string (value, priv->message);
+        break;
+      case PROP_TOKEN:
+        g_value_set_string (value, priv->token);
+        break;
+      case PROP_SUPERSEDES:
+        g_value_set_string (value, priv->supersedes_token);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -121,6 +137,14 @@ tpl_text_event_set_property (GObject *object,
       case PROP_MESSAGE:
         g_assert (priv->message == NULL);
         priv->message = g_value_dup_string (value);
+        break;
+      case PROP_TOKEN:
+        g_assert (priv->token == NULL);
+        priv->token = g_value_dup_string (value);
+        break;
+      case PROP_SUPERSEDES:
+        g_assert (priv->supersedes_token == NULL);
+        priv->supersedes_token = g_value_dup_string (value);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -166,6 +190,20 @@ static void tpl_text_event_class_init (TplTextEventClass *klass)
       NULL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE, param_spec);
+
+  param_spec = g_param_spec_string ("message-token",
+      "Message Token",
+      "The message-token field of this message.",
+      NULL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_TOKEN, param_spec);
+
+  param_spec = g_param_spec_string ("supersedes-token",
+      "Message Token",
+      "The message-token field of the message that this one supersedes.",
+      NULL,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SUPERSEDES, param_spec);
 
   g_type_class_add_private (object_class, sizeof (TplTextEventPriv));
 }
@@ -232,6 +270,36 @@ tpl_text_event_get_message (TplTextEvent *self)
   g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), NULL);
 
   return self->priv->message;
+}
+
+
+/**
+ * tpl_text_event_get_message_token
+ * @self: a #TplTextEvent
+ *
+ * Returns: the same message as the #TplTextEvent:message-token property
+ */
+const gchar *
+tpl_text_event_get_message_token (TplTextEvent *self)
+{
+  g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), NULL);
+
+  return self->priv->token;
+}
+
+
+/**
+ * tpl_text_event_get_supersedes_token
+ * @self: a #TplTextEvent
+ *
+ * Returns: the same message as the #TplTextEvent:supersedes-token property
+ */
+const gchar *
+tpl_text_event_get_supersedes_token (TplTextEvent *self)
+{
+  g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), NULL);
+
+  return self->priv->supersedes_token;
 }
 
 
