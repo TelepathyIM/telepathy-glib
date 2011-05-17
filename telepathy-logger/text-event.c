@@ -55,6 +55,10 @@ struct _TplTextEventPriv
   gchar *message;
   gchar *token;
   gchar *supersedes_token;
+  /* A list of TplTextEvent that we supersede.
+   * This is only populated when reading logs (not storing them). */
+  GQueue supersedes;
+  gboolean dispose_has_run;
 };
 
 enum
@@ -73,6 +77,19 @@ static gchar *message_types[] = {
     "delivery-report",
     NULL
 };
+
+
+static void
+tpl_text_event_dispose (GObject *obj)
+{
+  TplTextEventPriv *priv = TPL_TEXT_EVENT (obj)->priv;
+
+  if (priv->dispose_has_run)
+    return;
+  priv->dispose_has_run = TRUE;
+
+  g_list_free_full (priv->supersedes.head, g_object_unref);
+}
 
 
 static void
@@ -171,6 +188,7 @@ static void tpl_text_event_class_init (TplTextEventClass *klass)
   TplEventClass *event_class = TPL_EVENT_CLASS (klass);
   GParamSpec *param_spec;
 
+  object_class->dispose = tpl_text_event_dispose;
   object_class->finalize = tpl_text_event_finalize;
   object_class->get_property = tpl_text_event_get_property;
   object_class->set_property = tpl_text_event_set_property;
@@ -300,6 +318,53 @@ tpl_text_event_get_supersedes_token (TplTextEvent *self)
   g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), NULL);
 
   return self->priv->supersedes_token;
+}
+
+
+/**
+ * tpl_text_event_add_supersedes
+ * @self: a #TplTextEvent
+ * @old_event: (transfer full): an #TplTextEvent which this one supersedes
+ *
+ * If there are other known entries in the message edit/succession chain,
+ * they should be added to old_event before linking these two events,
+ * as they will be copied onto this event for convenience.
+ */
+void
+tpl_text_event_add_supersedes (TplTextEvent *self,
+    TplTextEvent *old_event)
+{
+  GList *l;
+
+  g_object_ref (old_event);
+  g_queue_push_tail (&self->priv->supersedes, old_event);
+
+  for (l = old_event->priv->supersedes.head; l != NULL; l = l->next)
+    g_queue_push_tail (&self->priv->supersedes, g_object_ref (l->data));
+
+  if (self->priv->supersedes_token == NULL)
+    self->priv->supersedes_token = g_strdup (old_event->priv->token);
+}
+
+
+/**
+ * tpl_text_event_dup_supersedes
+ * @self: a #TplTextEvent
+ *
+ * Returns: (transfer full): A #GList of #TplTextEvent that this event
+ * supersedes. Should be freed using g_list_free_full (l, g_object_unref).
+ */
+GList *
+tpl_text_event_dup_supersedes (TplTextEvent *self)
+{
+  GList *supersedes = NULL;
+  GList *l;
+
+  /* Iterate backwards to copy quickly (thanks GList) */
+  for (l = self->priv->supersedes.tail; l != NULL; l = l->prev)
+    supersedes = g_list_prepend (supersedes, g_object_ref (l->data));
+
+  return supersedes;
 }
 
 
