@@ -78,6 +78,8 @@ tp_tests_simple_channel_dispatch_operation_claim (
     TpSvcChannelDispatchOperation *iface,
     DBusGMethodInvocation *context)
 {
+  tp_svc_channel_dispatch_operation_emit_finished (iface);
+
   dbus_g_method_return (context);
 }
 
