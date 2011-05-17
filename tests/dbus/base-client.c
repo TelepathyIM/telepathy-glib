@@ -258,7 +258,7 @@ teardown (Test *test,
     g_object_unref (test->text_chan_service_2);
   g_object_unref (test->text_chan_2);
 
-  g_object_unref (test->cdo_service);
+  tp_clear_object (&test->cdo_service);
 
   tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
   g_assert_no_error (test->error);
@@ -1152,6 +1152,13 @@ claim_with_cb (GObject *source,
 }
 
 static void
+cdo_finished_cb (TpTestsSimpleChannelDispatchOperation *cdo,
+    Test *test)
+{
+  tp_clear_object (&test->cdo_service);
+}
+
+static void
 test_channel_dispatch_operation_claim_with_async (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -1209,6 +1216,11 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
 
   handled = tp_base_client_get_handled_channels (test->base_client);
   g_assert (handled == NULL);
+
+  /* Connect to CDO's Finished signal so we can remove it from the bus when
+   * it's claimed as MC would do. */
+  g_signal_connect (test->cdo_service, "finished",
+      G_CALLBACK (cdo_finished_cb), test);
 
   /* Claim the CDO, as the client is also a Handler, it is now handling the
    * channels */

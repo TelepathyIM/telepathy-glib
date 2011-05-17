@@ -1394,7 +1394,7 @@ gboolean
 }
 
 static void
-claim_with_prepare_cb (GObject *source,
+claim_with_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
@@ -1403,7 +1403,7 @@ claim_with_prepare_cb (GObject *source,
   GError *error = NULL;
   TpBaseClient *client;
 
-  if (!tp_proxy_prepare_finish (self, result, &error))
+  if (!tp_channel_dispatch_operation_claim_finish (self, result, &error))
     {
       g_simple_async_result_take_error (main_result, error);
       goto out;
@@ -1419,16 +1419,15 @@ out:
 }
 
 static void
-claim_with_cb (GObject *source,
+claim_with_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
   TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) source;
   GSimpleAsyncResult *main_result = user_data;
   GError *error = NULL;
-  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
 
-  if (!tp_channel_dispatch_operation_claim_finish (self, result, &error))
+  if (!tp_proxy_prepare_finish (self, result, &error))
     {
       g_simple_async_result_take_error (main_result, error);
       g_simple_async_result_complete (main_result);
@@ -1436,10 +1435,9 @@ claim_with_cb (GObject *source,
       return;
     }
 
-  /* We have to prepare the CDO to be able to get the list of its channels */
-  tp_proxy_prepare_async (self, features, claim_with_prepare_cb,
-      main_result);
+  tp_channel_dispatch_operation_claim_async (self, claim_with_cb, main_result);
 }
+
 
 /**
  * tp_channel_dispatch_operation_claim_with_async:
@@ -1474,6 +1472,7 @@ tp_channel_dispatch_operation_claim_with_async (
     gpointer user_data)
 {
   GSimpleAsyncResult *result;
+  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
 
   g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
 
@@ -1484,8 +1483,10 @@ tp_channel_dispatch_operation_claim_with_async (
   g_simple_async_result_set_op_res_gpointer (result, g_object_ref (client),
       g_object_unref);
 
-  tp_channel_dispatch_operation_claim_async (self, claim_with_cb,
-      result);
+  /* We have to prepare the CDO to be able to get the list of its channels.
+   * We prepare it *before* calling Claim() as MC will destroy the CDO once it
+   * has been claimed. */
+  tp_proxy_prepare_async (self, features, claim_with_prepare_cb, result);
 }
 
 /**
