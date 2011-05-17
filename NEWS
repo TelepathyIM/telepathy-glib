@@ -1,10 +1,14 @@
-telepathy-glib 0.14.6 (UNRELEASED yo)
+telepathy-glib 0.14.6 (2011-05-16)
 ==================================
 
 Fixes:
 
 • tp_dbus_daemon_watch_name_owner leaked a DBusMessage (fledermaus)
 • tp_dbus_daemon_list[_activatable]_names leaked a DBusMessage (fledermaus)
+• tp_base_connection_change_status: delay side-effects until all
+  preconditions are checked (Simon)
+• TpGroupMixin: correctly use contact-ids, not member-ids (Will)
+• TpBaseContactList: fix leak of source object (Mike)
 
 telepathy-glib 0.14.5 (2011-04-20)
 ==================================
