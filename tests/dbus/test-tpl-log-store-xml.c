@@ -290,6 +290,8 @@ assert_cmp_text_event (TplEvent *event,
       ==, tpl_text_event_get_message_type (TPL_TEXT_EVENT (stored_event)));
   g_assert_cmpstr (tpl_text_event_get_message (TPL_TEXT_EVENT (event)),
       ==, tpl_text_event_get_message (TPL_TEXT_EVENT (stored_event)));
+  g_assert_cmpstr (tpl_text_event_get_message_token (TPL_TEXT_EVENT (event)),
+      ==, tpl_text_event_get_message_token (TPL_TEXT_EVENT (stored_event)));
 }
 
 

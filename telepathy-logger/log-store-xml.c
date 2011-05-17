@@ -494,12 +494,13 @@ add_text_event (TplLogStoreXml *self,
   TpAccount *account;
   TplEntity *sender;
   const gchar *body_str;
+  const gchar *token_str;
   gchar *avatar_token = NULL;
   gchar *body = NULL;
   gchar *timestamp = NULL;
   gchar *contact_name = NULL;
   gchar *contact_id = NULL;
-  gchar *log_str = NULL;
+  GString *event = NULL;
   TpChannelTextMessageType msg_type;
 
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -535,29 +536,46 @@ add_text_event (TplLogStoreXml *self,
   avatar_token = g_markup_escape_text (tpl_entity_get_avatar_token (sender),
       -1);
 
-  log_str = g_strdup_printf ("<message time='%s' id='%s' name='%s' "
-      "token='%s' isuser='%s' type='%s'>"
-      "%s</message>\n" LOG_FOOTER, timestamp,
-      contact_id, contact_name,
+  event = g_string_new (NULL);
+  g_string_printf (event, "<message time='%s' id='%s' name='%s' "
+      "token='%s' isuser='%s' type='%s'",
+      timestamp, contact_id, contact_name,
       avatar_token,
       tpl_entity_get_entity_type (sender)
           == TPL_ENTITY_SELF ? "true" : "false",
-      _tpl_text_event_message_type_to_str (msg_type),
-      body);
+      _tpl_text_event_message_type_to_str (msg_type));
+
+  token_str = tpl_text_event_get_message_token (message);
+  if (token_str != NULL)
+    {
+      gchar *message_token = g_markup_escape_text (token_str, -1);
+      g_string_append_printf (event, " message-token='%s'", message_token);
+      g_free (message_token);
+    }
+
+  token_str = tpl_text_event_get_supersedes_token (message);
+  if (token_str != NULL)
+    {
+      gchar *supersedes_token = g_markup_escape_text (token_str, -1);
+      g_string_append_printf (event, " supersedes-token='%s'",
+          supersedes_token);
+    }
+
+  g_string_append_printf (event, ">%s</message>\n" LOG_FOOTER, body);
 
   DEBUG ("writing text event from %s (ts %s)",
       contact_id, timestamp);
 
   ret = _log_store_xml_write_to_store (self, account,
-      _tpl_event_get_target (TPL_EVENT (message)), log_str, TPL_TYPE_TEXT_EVENT,
-      error);
+      _tpl_event_get_target (TPL_EVENT (message)), event->str,
+      TPL_TYPE_TEXT_EVENT, error);
 
 out:
   g_free (contact_id);
   g_free (contact_name);
   g_free (timestamp);
   g_free (body);
-  g_free (log_str);
+  g_string_free (event, TRUE);
   g_free (avatar_token);
 
   if (bus_daemon != NULL)
@@ -1051,6 +1069,8 @@ parse_text_node (TplLogStoreXml *self,
   gchar *sender_name;
   gchar *sender_avatar_token;
   gchar *body;
+  gchar *message_token;
+  gchar *supersedes_token;
   gchar *is_user_str;
   gboolean is_user = FALSE;
   gchar *msg_type_str;
@@ -1062,6 +1082,8 @@ parse_text_node (TplLogStoreXml *self,
   sender_name = (gchar *) xmlGetProp (node, (const xmlChar *) "name");
   sender_avatar_token = (gchar *) xmlGetProp (node,
       (const xmlChar *) "token");
+  message_token = (gchar *) xmlGetProp (node, (const xmlChar *) "message-token");
+  supersedes_token = (gchar *) xmlGetProp (node, (const xmlChar *) "supersedes-token");
   is_user_str = (gchar *) xmlGetProp (node, (const xmlChar *) "isuser");
   msg_type_str = (gchar *) xmlGetProp (node, (const xmlChar *) "type");
 
@@ -1095,6 +1117,8 @@ parse_text_node (TplLogStoreXml *self,
       /* TplTextEvent */
       "message-type", msg_type,
       "message", body,
+      "message-token", message_token,
+      "supersedes-token", supersedes_token,
       NULL);
 
   g_object_unref (sender);
@@ -1103,6 +1127,8 @@ parse_text_node (TplLogStoreXml *self,
   xmlFree (sender_id);
   xmlFree (sender_name);
   xmlFree (body);
+  xmlFree (message_token);
+  xmlFree (supersedes_token);
   xmlFree (is_user_str);
   xmlFree (msg_type_str);
   xmlFree (sender_avatar_token);

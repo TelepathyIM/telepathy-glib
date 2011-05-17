@@ -397,6 +397,8 @@ tpl_text_channel_store_message (TplTextChannel *self,
       "receiver", receiver,
       "sender", sender,
       "timestamp", timestamp,
+      "message-token", tp_message_get_token (message),
+      "supersedes-token", tp_message_get_supersedes (message),
       /* TplTextEvent */
       "message-type", type,
       "message", text,
