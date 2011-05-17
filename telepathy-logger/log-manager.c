@@ -1237,7 +1237,7 @@ _get_entities_async_thread (GSimpleAsyncResult *simple,
   lst = _tpl_log_manager_get_entities (async_data->manager, event_info->account);
 
   g_simple_async_result_set_op_res_gpointer (simple, lst,
-      (GDestroyNotify) tpl_log_manager_search_free);
+      _list_of_object_free);
 }
 
 
