@@ -1006,6 +1006,10 @@ _tp_connection_extract_properties (TpConnection *self,
       if (!sufficient || *self_handle == 0)
         return FALSE;
     }
+  else
+    {
+      *self_handle = 0;
+    }
 
   return TRUE;
 }
