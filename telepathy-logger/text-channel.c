@@ -310,6 +310,8 @@ get_message_pending_id (TpMessage *m)
 static guint
 get_message_timestamp (TpMessage *message)
 {
+  GDateTime *datetime = g_date_time_new_now_utc ();
+  guint64 now = g_date_time_to_unix (datetime);
   gint64 timestamp;
 
   timestamp = tp_message_get_sent_timestamp (message);
@@ -317,13 +319,15 @@ get_message_timestamp (TpMessage *message)
   if (timestamp == 0)
     timestamp = tp_message_get_received_timestamp (message);
 
-  if (timestamp == 0)
-    {
-      GDateTime *datetime = g_date_time_new_now_utc ();
-      timestamp = g_date_time_to_unix (datetime);
-      g_date_time_unref (datetime);
-    }
+  if (timestamp - now > 60 * 60)
+    DEBUG ("timestamp is more than an hour in the future.");
+  else  if (now - timestamp > 60 * 60)
+    DEBUG ("timestamp is more than an hour in the past.");
 
+  if (timestamp == 0)
+    timestamp = now;
+
+  g_date_time_unref (datetime);
   return timestamp;
 }
 
