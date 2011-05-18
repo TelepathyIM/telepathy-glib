@@ -363,19 +363,20 @@ log_store_xml_get_file_suffix (GType type)
 }
 
 static gchar *
-log_store_xml_get_timestamp_filename (GType type)
+log_store_xml_get_timestamp_filename (GType type,
+    guint64 timestamp)
 {
-  gchar *time_str;
+  gchar *date_str;
   gchar *filename;
-  GDateTime *now;
+  GDateTime *date;
 
-  now = g_date_time_new_now_local ();
-  time_str = g_date_time_format (now, LOG_TIME_FORMAT);
-  filename = g_strconcat (time_str, log_store_xml_get_file_suffix (type),
+  date = g_date_time_new_from_unix_local (timestamp);
+  date_str = g_date_time_format (date, LOG_TIME_FORMAT);
+  filename = g_strconcat (date_str, log_store_xml_get_file_suffix (type),
       NULL);
 
-  g_date_time_unref (now);
-  g_free (time_str);
+  g_date_time_unref (date);
+  g_free (date_str);
 
   return filename;
 }
@@ -401,18 +402,19 @@ static gchar *
 log_store_xml_get_filename (TplLogStoreXml *self,
     TpAccount *account,
     TplEntity *target,
-    GType type)
+    GType type,
+    guint64 timestamp)
 {
   gchar *id_dir;
-  gchar *timestamp;
+  gchar *timestamp_str;
   gchar *filename;
 
   id_dir = log_store_xml_get_dir (self, account, target);
-  timestamp = log_store_xml_get_timestamp_filename (type);
-  filename = g_build_filename (id_dir, timestamp, NULL);
+  timestamp_str = log_store_xml_get_timestamp_filename (type, timestamp);
+  filename = g_build_filename (id_dir, timestamp_str, NULL);
 
   g_free (id_dir);
-  g_free (timestamp);
+  g_free (timestamp_str);
 
   return filename;
 }
@@ -427,6 +429,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
     TplEntity *target,
     const gchar *event,
     GType type,
+    guint64 timestamp,
     GError **error)
 {
   FILE *file;
@@ -439,7 +442,8 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
   g_return_val_if_fail (TP_IS_ACCOUNT (account), FALSE);
   g_return_val_if_fail (TPL_IS_ENTITY (target), FALSE);
 
-  filename = log_store_xml_get_filename (self, account, target, type);
+
+  filename = log_store_xml_get_filename (self, account, target, type, timestamp);
   basedir = g_path_get_dirname (filename);
 
   if (!g_file_test (basedir, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
@@ -568,7 +572,8 @@ add_text_event (TplLogStoreXml *self,
 
   ret = _log_store_xml_write_to_store (self, account,
       _tpl_event_get_target (TPL_EVENT (message)), event->str,
-      TPL_TYPE_TEXT_EVENT, error);
+      TPL_TYPE_TEXT_EVENT, tpl_event_get_timestamp (TPL_EVENT (message)),
+      error);
 
 out:
   g_free (contact_id);
@@ -661,7 +666,8 @@ add_call_event (TplLogStoreXml *self,
       timestamp);
 
   ret = _log_store_xml_write_to_store (self, account, target, log_str,
-      TPL_TYPE_CALL_EVENT, error);
+      TPL_TYPE_CALL_EVENT, tpl_event_get_timestamp (TPL_EVENT (event)),
+      error);
 
 out:
   g_free (sender_id);
