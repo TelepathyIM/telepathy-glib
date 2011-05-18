@@ -1239,6 +1239,28 @@ parse_call_node (TplLogStoreXml *self,
   return event;
 }
 
+static GList *
+event_queue_insert_sorted_after (GQueue *events,
+    GList *index,
+    TplEvent *event)
+{
+  while (index != NULL &&
+      tpl_event_get_timestamp (event) <
+      tpl_event_get_timestamp (TPL_EVENT (index->data)))
+    index = g_list_next (index);
+
+  if (index != NULL)
+    {
+      g_queue_insert_after (events, index, event);
+      return g_list_next (index);
+    }
+  else
+    {
+      g_queue_push_tail (events, event);
+      return events->head;
+    }
+}
+
 /* returns a Glist of TplEvent instances */
 static void
 log_store_xml_get_events_for_file (TplLogStoreXml *self,
@@ -1335,22 +1357,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
 
       if (event != NULL)
         {
-          while (index != NULL &&
-              tpl_event_get_timestamp (event) <
-              tpl_event_get_timestamp (TPL_EVENT (index->data)))
-            index = g_list_next (index);
-
-          if (index != NULL)
-            {
-              g_queue_insert_after (events, index, event);
-              index = g_list_next (index);
-            }
-          else
-            {
-              g_queue_push_tail (events, event);
-              index = events->head;
-            }
-
+          index = event_queue_insert_sorted_after (events, index, event);
           num_events++;
         }
     }
