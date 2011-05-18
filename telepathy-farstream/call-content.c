@@ -34,6 +34,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <gst/farsight/fs-conference-iface.h>
 #include <gst/farsight/fs-utils.h>
+#include <gst/farsight/fs-element-added-notifier.h>
 
 #include <stdarg.h>
 #include <string.h>
@@ -44,6 +45,7 @@
 #include "tf-signals-marshal.h"
 #include "utils.h"
 
+#include "extensions/extensions.h"
 
 struct _TfCallContent {
   TfContent parent;
@@ -71,6 +73,13 @@ struct _TfCallContent {
   GPtrArray *fsstreams;
 
   gboolean got_codec_offer_property;
+
+  /* VideoControl API */
+  FsElementAddedNotifier *notifier;
+
+  volatile gint bitrate;
+  volatile gint mtu;
+  gboolean manual_keyframes;
 };
 
 struct _TfCallContentClass{
@@ -226,6 +235,10 @@ tf_call_content_dispose (GObject *object)
       g_ptr_array_unref (self->fsstreams);
   }
   self->fsstreams = NULL;
+
+  if (self->notifier)
+    g_object_unref (self->notifier);
+  self->notifier = NULL;
 
   if (self->fsconference)
     _tf_call_channel_put_conference (self->call_channel,
@@ -450,6 +463,74 @@ process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
 }
 
 static void
+on_content_video_keyframe_requested (TfFutureCallContent *proxy,
+  gpointer user_data,
+  GObject *weak_object)
+{
+  g_message ("keyframe requested\n");
+}
+
+static void
+on_content_video_resolution_changed (TfFutureCallContent *proxy,
+  const GValueArray *resolution,
+  gpointer user_data,
+  GObject *weak_object)
+{
+  guint width, height;
+
+  tp_value_array_unpack ((GValueArray *)resolution, 2,
+    &width, &height, NULL);
+
+  g_message ("requested video resolution: %dx%d", width, height);
+}
+
+static void
+on_content_video_bitrate_changed (TfFutureCallContent *proxy,
+  guint bitrate,
+  gpointer user_data,
+  GObject *weak_object)
+{
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
+
+  g_message ("Setting bitrate to %d bits/s", bitrate);
+  self->bitrate = bitrate;
+
+  if (self->fssession != NULL && self->bitrate > 0)
+    g_object_set (self->fssession, "send-bitrate", self->bitrate, NULL);
+}
+
+static void
+on_content_video_framerate_changed (TfFutureCallContent *proxy,
+  guint framerate,
+  gpointer user_data,
+  GObject *weak_object)
+{
+  g_message ("updated framerate requested: %d", framerate);
+}
+
+static void
+on_content_video_mtu_changed (TfFutureCallContent *proxy,
+  guint mtu,
+  gpointer user_data,
+  GObject *weak_object)
+{
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
+
+  g_atomic_int_set (&self->mtu, mtu);
+
+  if (self->fsconference != NULL)
+    {
+      fs_element_added_notifier_remove (self->notifier,
+          GST_BIN (self->fsconference));
+
+      if (mtu > 0 || self->manual_keyframes)
+        fs_element_added_notifier_add (self->notifier,
+          GST_BIN (self->fsconference));
+    }
+}
+
+
+static void
 got_content_media_properties (TpProxy *proxy, GHashTable *properties,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
@@ -531,7 +612,11 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
       return;
     }
 
-  /* No process outstanding streams */
+  if (self->notifier != NULL)
+    fs_element_added_notifier_add (self->notifier,
+      GST_BIN (self->fsconference));
+
+  /* Now process outstanding streams */
   update_streams (self);
 
   gva = tp_asv_get_boxed (properties, "CodecOffer",
@@ -540,7 +625,6 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
     {
       goto invalid_property;
     }
-
 
   codec_prefs = fs_utils_get_default_codec_preferences (
       GST_ELEMENT (self->fsconference));
@@ -580,7 +664,163 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   return;
 }
 
+static void
+setup_content_media_properties (TfCallContent *self,
+  TpProxy *proxy,
+  GSimpleAsyncResult *res)
+{
+  tp_cli_dbus_properties_call_get_all (proxy, -1,
+      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
+      got_content_media_properties, res, NULL, G_OBJECT (self));
+}
 
+static gboolean
+object_has_property (GObject *object, const gchar *property)
+{
+  return g_object_class_find_property (G_OBJECT_GET_CLASS (object),
+      property) != NULL;
+}
+
+static void
+content_video_element_added (FsElementAddedNotifier *notifier,
+  GstBin *conference,
+  GstElement *element,
+  TfCallContent *self)
+{
+  gint mtu = g_atomic_int_get (&self->mtu);
+
+  if (G_UNLIKELY (mtu == 0 && !self->manual_keyframes))
+    return;
+
+  if (G_UNLIKELY (mtu > 0 && object_has_property (G_OBJECT (element), "mtu")))
+    {
+      g_message ("Setting %d as mtu on payloader", mtu);
+      g_object_set (element, "mtu", mtu, NULL);
+    }
+
+  if (!self->manual_keyframes)
+    return;
+}
+
+static void
+got_content_video_control_properties (TpProxy *proxy, GHashTable *properties,
+    const GError *error, gpointer user_data, GObject *weak_object)
+{
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  GSimpleAsyncResult *res = user_data;
+  guint32 bitrate, mtu;
+  gboolean valid;
+  gboolean manual_keyframes;
+
+  if (error)
+    {
+      tf_content_error (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error getting the Content's VideoControl properties: %s",
+          error->message);
+      g_simple_async_result_set_from_error (res, error);
+      goto error;
+    }
+
+  if (properties == NULL)
+    {
+      tf_content_error_literal (TF_CONTENT (self),
+          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+          "Error getting the Content's VideoControl properties: "
+          "there are none");
+      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Error getting the VideoControl Content's properties: "
+          "there are none");
+      goto error;
+    }
+
+
+  /* Only get the various variables, we will not have an FsSession untill the
+   * media properties are retrieved so no need to act just yet */
+  bitrate = tp_asv_get_uint32 (properties, "Bitrate", &valid);
+  if (valid)
+    self->bitrate = bitrate;
+
+  mtu = tp_asv_get_uint32 (properties, "MTU", &valid);
+  if (valid)
+    self->mtu = mtu;
+
+  manual_keyframes = tp_asv_get_boolean (properties,
+    "ManualKeyFrames", &valid);
+  if (valid)
+    self->manual_keyframes = manual_keyframes;
+
+  self->notifier = fs_element_added_notifier_new ();
+  g_signal_connect (self->notifier, "element-added",
+    G_CALLBACK (content_video_element_added), self);
+
+  setup_content_media_properties (self, proxy, res);
+  return;
+
+error:
+  g_simple_async_result_complete (res);
+  g_object_unref (res);
+  return;
+}
+
+
+static void
+setup_content_video_control (TfCallContent *self,
+  TpProxy *proxy,
+  GSimpleAsyncResult *res)
+{
+  GError *error = NULL;
+
+  tp_proxy_add_interface_by_id (proxy,
+    TF_FUTURE_IFACE_QUARK_CALL_CONTENT_INTERFACE_VIDEO_CONTROL);
+
+  if (tf_future_cli_call_content_interface_video_control_connect_to_key_frame_requested (
+      TF_FUTURE_CALL_CONTENT (proxy),
+      on_content_video_keyframe_requested,
+      NULL, NULL, G_OBJECT (self), &error) == NULL)
+    goto connect_failed;
+
+  if (tf_future_cli_call_content_interface_video_control_connect_to_video_resolution_changed (
+      TF_FUTURE_CALL_CONTENT (proxy),
+      on_content_video_resolution_changed,
+      NULL, NULL, G_OBJECT (self), &error) == NULL)
+    goto connect_failed;
+
+  if (tf_future_cli_call_content_interface_video_control_connect_to_bitrate_changed (
+      TF_FUTURE_CALL_CONTENT (proxy),
+      on_content_video_bitrate_changed,
+      NULL, NULL, G_OBJECT (self), NULL) == NULL)
+    goto connect_failed;
+
+  if (tf_future_cli_call_content_interface_video_control_connect_to_framerate_changed (
+      TF_FUTURE_CALL_CONTENT (proxy),
+      on_content_video_framerate_changed,
+      NULL, NULL, G_OBJECT (self), NULL) == NULL)
+    goto connect_failed;
+
+  if (tf_future_cli_call_content_interface_video_control_connect_to_mtu_changed (
+      TF_FUTURE_CALL_CONTENT (proxy),
+      on_content_video_mtu_changed,
+      NULL, NULL, G_OBJECT (self), NULL) == NULL)
+    goto connect_failed;
+
+  printf ("Connection to the video interface\n");
+
+  tp_cli_dbus_properties_call_get_all (proxy, -1,
+      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
+      got_content_video_control_properties, res, NULL, G_OBJECT (self));
+
+  return;
+
+connect_failed:
+  tf_content_error (TF_CONTENT (self),
+      TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      "Error getting the Content's VideoControl properties: %s",
+      error->message);
+  g_simple_async_result_take_error (res, error);
+  g_simple_async_result_complete (res);
+  g_object_unref (res);
+}
 
 static void
 new_codec_offer (TfFutureCallContent *proxy,
@@ -619,6 +859,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   guint i;
   const gchar * const *interfaces;
   gboolean got_media_interface = FALSE;;
+  gboolean got_video_control_interface = FALSE;;
 
   if (error)
     {
@@ -660,11 +901,15 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
     }
 
   for (i = 0; interfaces[i]; i++)
-    if (!strcmp (interfaces[i], TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA))
-      {
+    {
+      if (!strcmp (interfaces[i],
+            TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA))
         got_media_interface = TRUE;
-        break;
-      }
+
+      if (!strcmp (interfaces[i],
+            TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_VIDEO_CONTROL))
+        got_video_control_interface = TRUE;
+    }
 
   if (!got_media_interface)
     {
@@ -717,9 +962,10 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
       return;
     }
 
-  tp_cli_dbus_properties_call_get_all (proxy, -1,
-      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
-      got_content_media_properties, res, NULL, G_OBJECT (self));
+  if (got_video_control_interface)
+    setup_content_video_control (self, proxy, res);
+  else
+    setup_content_media_properties (self, proxy, res);
 
   return;
 
