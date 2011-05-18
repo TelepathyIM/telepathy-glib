@@ -284,14 +284,14 @@ assert_cmp_text_event (TplEvent *event,
   g_assert (_tpl_entity_compare (receiver, stored_receiver) == 0);
   /* No support for receiver alias/token */
 
-  g_assert_cmpint (tpl_event_get_timestamp (event), ==,
-      tpl_event_get_timestamp (stored_event));
-  g_assert_cmpint (tpl_text_event_get_message_type (TPL_TEXT_EVENT (event)),
-      ==, tpl_text_event_get_message_type (TPL_TEXT_EVENT (stored_event)));
   g_assert_cmpstr (tpl_text_event_get_message (TPL_TEXT_EVENT (event)),
       ==, tpl_text_event_get_message (TPL_TEXT_EVENT (stored_event)));
+  g_assert_cmpint (tpl_text_event_get_message_type (TPL_TEXT_EVENT (event)),
+      ==, tpl_text_event_get_message_type (TPL_TEXT_EVENT (stored_event)));
   g_assert_cmpstr (tpl_text_event_get_message_token (TPL_TEXT_EVENT (event)),
       ==, tpl_text_event_get_message_token (TPL_TEXT_EVENT (stored_event)));
+  g_assert_cmpint (tpl_event_get_timestamp (event), ==,
+      tpl_event_get_timestamp (stored_event));
 }
 
 
