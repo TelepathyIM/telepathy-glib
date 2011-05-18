@@ -468,6 +468,8 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   TplEvent *event;
   TplTextEvent *new_event;
   TplTextEvent *new_new_event;
+  TplTextEvent *late_event;
+  TplTextEvent *early_event;
   GError *error = NULL;
   GList *events;
   GList *superseded;
@@ -518,7 +520,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
       "account", account,
       "sender", me,
       "receiver", contact,
-      "timestamp", timestamp + 5,
+      "timestamp", timestamp,
       /* TplTextEvent */
       "message-token", "OMGCOMPLETELYRANDOMSTRING2",
       "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
@@ -531,6 +533,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_assert_no_error (error);
   events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
       TPL_EVENT_MASK_TEXT, 1, NULL, NULL);
+  assert_cmp_text_event (TPL_EVENT (new_event), events->data);
 
   /* Check that the two events are linked */
   superseded = tpl_text_event_dup_supersedes (events->data);
@@ -547,10 +550,10 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
       "account", account,
       "sender", me,
       "receiver", contact,
-      "timestamp", timestamp + 5,
+      "timestamp", timestamp,
       /* TplTextEvent */
       "message-token", "OMGCOMPLETELYRANDOMSTRING3",
-      "supersedes-token", "OMGCOMPLETELYRANDOMSTRING2",
+      "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "message", "My Message 1 [FIXED] [FIXED]",
       NULL);
@@ -560,6 +563,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_assert_no_error (error);
   events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
       TPL_EVENT_MASK_TEXT, 1, NULL, NULL);
+  assert_cmp_text_event (TPL_EVENT (new_new_event), events->data);
 
   /* Check that the three events are linked */
   superseded = tpl_text_event_dup_supersedes (events->data);
@@ -569,11 +573,84 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (event, superseded->next->data);
   g_assert (tpl_text_event_dup_supersedes (superseded->next->data) == NULL);
   g_list_free_full (superseded, g_object_unref);
-
   g_list_free_full (events, g_object_unref);
+
+  /* Also note that the superseding events *replace* the old ones. */
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
+      TPL_EVENT_MASK_TEXT, 1000000, NULL, NULL);
+  g_assert_cmpint (g_list_length (events), == , 1);
+  assert_cmp_text_event (TPL_EVENT (new_new_event), events->data);
+  g_list_free_full (events, g_object_unref);
+
+  /* 4. Edit comes in with the wrong timestamp. */
+  late_event = g_object_new (TPL_TYPE_TEXT_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", me,
+      "receiver", contact,
+      "timestamp", timestamp + (60 * 60 * 24),
+      /* TplTextEvent */
+      "message-token", "OMGCOMPLETELYRANDOMSTRING4",
+      "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
+      "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "message", "My Message 1 [FIXED_LATE]",
+      NULL);
+
+  /* add and re-retrieve the event */
+  _tpl_log_store_add_event (fixture->store, TPL_EVENT (late_event), &error);
+  g_assert_no_error (error);
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
+      TPL_EVENT_MASK_TEXT, 1, NULL, NULL);
+  assert_cmp_text_event (TPL_EVENT (late_event), events->data);
+
+  /* Check that the events are not linked (and a dummy was inserted instead)
+   * because the timestamp was wrong. */
+  superseded = tpl_text_event_dup_supersedes (events->data);
+  g_assert (superseded != NULL);
+  g_assert_cmpstr (tpl_text_event_get_message (superseded->data), ==, "");
+
+  g_list_free_full (superseded, g_object_unref);
+  g_list_free_full (events, g_object_unref);
+
+  /* And if we ask for all of the events, there will be 2 there. */
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
+      TPL_EVENT_MASK_TEXT, 1000000, NULL, NULL);
+  g_assert_cmpint (g_list_length (events), == , 2);
+  assert_cmp_text_event (TPL_EVENT (new_new_event), events->data);
+  assert_cmp_text_event (TPL_EVENT (late_event), g_list_last (events)->data);
+  g_list_free_full (events, g_object_unref);
+
+  /* 5. If we have an event that is broken in the other direction then it will
+   * also come out as a separate event (since each day is parsed on its own). */
+  early_event = g_object_new (TPL_TYPE_TEXT_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", me,
+      "receiver", contact,
+      "timestamp", timestamp - (60 * 60 * 24),
+      /* TplTextEvent */
+      "message-token", "OMGCOMPLETELYRANDOMSTRING5",
+      "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
+      "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "message", "My Message 1 [FIXED_EARLY]",
+      NULL);
+
+  /* And if we ask for all of the events, there will be 3 there. */
+  _tpl_log_store_add_event (fixture->store, TPL_EVENT (early_event), &error);
+  g_assert_no_error (error);
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
+      TPL_EVENT_MASK_TEXT, 1000000, NULL, NULL);
+  g_assert_cmpint (g_list_length (events), ==, 3);
+  assert_cmp_text_event (TPL_EVENT (early_event), events->data);
+  assert_cmp_text_event (TPL_EVENT (new_new_event), events->next->data);
+  assert_cmp_text_event (TPL_EVENT (late_event), g_list_last (events)->data);
+  g_list_free_full (events, g_object_unref);
+
   g_object_unref (event);
   g_object_unref (new_event);
   g_object_unref (new_new_event);
+  g_object_unref (late_event);
+  g_object_unref (early_event);
 }
 
 static void
