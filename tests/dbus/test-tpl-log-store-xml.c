@@ -399,13 +399,13 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   g_object_unref (events->data);
   g_list_free (events);
 
-  /* 4. Incoming message from a room */
+  /* 4. Incoming message from a room that hit some network lag. */
   event = g_object_new (TPL_TYPE_TEXT_EVENT,
       /* TplEvent */
       "account", account,
       "sender", contact,
       "receiver", room,
-      "timestamp", timestamp,
+      "timestamp", timestamp - 1,
       /* TplTextEvent */
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       "message", "my message 1",
@@ -415,16 +415,48 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   g_assert_no_error (error);
 
   events = _tpl_log_store_get_filtered_events (fixture->store, account, room,
-      TPL_EVENT_MASK_TEXT, 1, NULL, NULL);
+      TPL_EVENT_MASK_TEXT, 2, NULL, NULL);
 
-  g_assert_cmpint (g_list_length (events), ==, 1);
+  /* Events appear in their dbus-order for the most part
+   * (ignoring timestamps). */
+  g_assert_cmpint (g_list_length (events), ==, 2);
+  g_assert (TPL_IS_TEXT_EVENT (g_list_last (events)->data));
+
+  assert_cmp_text_event (event, g_list_last (events)->data);
+
+  g_object_unref (event);
+  g_list_free_full (events, g_object_unref);
+
+  /* 5. Delayed delivery of incoming message from a room */
+  event = g_object_new (TPL_TYPE_TEXT_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", contact,
+      "receiver", room,
+      "timestamp", timestamp - (60 * 60 * 24),
+      /* TplTextEvent */
+      "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "message", "my message 1",
+      NULL);
+
+  _tpl_log_store_add_event (fixture->store, event, &error);
+  g_assert_no_error (error);
+
+  /* Ask for all of the events to this room... */
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, room,
+      TPL_EVENT_MASK_ANY, 1000000, NULL, NULL);
+
+  /* ... but there are only 3. */
+  g_assert_cmpint (g_list_length (events), ==, 3);
   g_assert (TPL_IS_TEXT_EVENT (events->data));
-
+  /* Also, because of the day discrepancy, this event will not appear in the
+   * order it arrived (note that the order is actually undefined (the only
+   * invariant is that we don't lose the message), so don't cry if you break
+   * this assertion, as long as you don't break message edits). */
   assert_cmp_text_event (event, events->data);
 
   g_object_unref (event);
-  g_object_unref (events->data);
-  g_list_free (events);
+  g_list_free_full (events, g_object_unref);
 }
 
 static void
