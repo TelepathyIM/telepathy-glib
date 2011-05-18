@@ -427,6 +427,122 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   g_list_free (events);
 }
 
+static void
+test_add_superseding_event (XmlTestCaseFixture *fixture,
+    gconstpointer user_data)
+{
+  TpAccount *account;
+  TplEntity *me, *contact, *room;
+  TplEvent *event;
+  TplTextEvent *new_event;
+  TplTextEvent *new_new_event;
+  GError *error = NULL;
+  GList *events;
+  GList *superseded;
+  gint64 timestamp = time (NULL);
+
+  account = tp_account_new (fixture->bus,
+      TP_ACCOUNT_OBJECT_PATH_BASE "idle/irc/me",
+      &error);
+  g_assert_no_error (error);
+  g_assert (account != NULL);
+
+  me = tpl_entity_new ("me", TPL_ENTITY_SELF, "my-alias", "my-avatar");
+  contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
+      "contact-token");
+  room = tpl_entity_new_from_room_id ("room");
+
+
+  /* 1. Outgoing message to a contact. */
+  event = g_object_new (TPL_TYPE_TEXT_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", me,
+      "receiver", contact,
+      "message-token", "OMGCOMPLETELYRANDOMSTRING1",
+      "timestamp", timestamp,
+      /* TplTextEvent */
+      "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "message", "my message 1",
+      NULL);
+
+  /* add and re-retrieve the event */
+  _tpl_log_store_add_event (fixture->store, event, &error);
+  g_assert_no_error (error);
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
+      TPL_EVENT_MASK_TEXT, 1, NULL, NULL);
+
+  g_assert_cmpint (g_list_length (events), ==, 1);
+  g_assert (TPL_IS_TEXT_EVENT (events->data));
+
+  assert_cmp_text_event (event, events->data);
+
+  g_object_unref (events->data);
+  g_list_free (events);
+
+  /* 2. Edit message 1. */
+  new_event = g_object_new (TPL_TYPE_TEXT_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", me,
+      "receiver", contact,
+      "timestamp", timestamp + 5,
+      /* TplTextEvent */
+      "message-token", "OMGCOMPLETELYRANDOMSTRING2",
+      "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
+      "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "message", "My message 1 [FIXED]",
+      NULL);
+
+  /* add and re-retrieve the event */
+  _tpl_log_store_add_event (fixture->store, TPL_EVENT (new_event), &error);
+  g_assert_no_error (error);
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
+      TPL_EVENT_MASK_TEXT, 1, NULL, NULL);
+
+  /* Check that the two events are linked */
+  superseded = tpl_text_event_dup_supersedes (events->data);
+  g_assert (superseded != NULL);
+  assert_cmp_text_event (event, superseded->data);
+  g_assert (tpl_text_event_dup_supersedes (superseded->data) == NULL);
+  g_list_free_full (superseded, g_object_unref);
+
+  g_list_free_full (events, g_object_unref);
+
+  /* 3. Edit it again. */
+  new_new_event = g_object_new (TPL_TYPE_TEXT_EVENT,
+      /* TplEvent */
+      "account", account,
+      "sender", me,
+      "receiver", contact,
+      "timestamp", timestamp + 5,
+      /* TplTextEvent */
+      "message-token", "OMGCOMPLETELYRANDOMSTRING3",
+      "supersedes-token", "OMGCOMPLETELYRANDOMSTRING2",
+      "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      "message", "My Message 1 [FIXED] [FIXED]",
+      NULL);
+
+  /* add and re-retrieve the event */
+  _tpl_log_store_add_event (fixture->store, TPL_EVENT (new_new_event), &error);
+  g_assert_no_error (error);
+  events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
+      TPL_EVENT_MASK_TEXT, 1, NULL, NULL);
+
+  /* Check that the three events are linked */
+  superseded = tpl_text_event_dup_supersedes (events->data);
+  g_assert (superseded != NULL);
+  assert_cmp_text_event (TPL_EVENT (new_event), superseded->data);
+  g_assert (superseded->next != NULL);
+  assert_cmp_text_event (event, superseded->next->data);
+  g_assert (tpl_text_event_dup_supersedes (superseded->next->data) == NULL);
+  g_list_free_full (superseded, g_object_unref);
+
+  g_list_free_full (events, g_object_unref);
+  g_object_unref (event);
+  g_object_unref (new_event);
+  g_object_unref (new_new_event);
+}
 
 static void
 assert_cmp_call_event (TplEvent *event,
@@ -804,6 +920,10 @@ gint main (gint argc, gchar **argv)
   g_test_add ("/log-store-xml/add-text-event",
       XmlTestCaseFixture, NULL,
       setup_for_writing, test_add_text_event, teardown);
+
+  g_test_add ("/log-store-xml/add-superseding-event",
+      XmlTestCaseFixture, NULL,
+      setup_for_writing, test_add_superseding_event, teardown);
 
   g_test_add ("/log-store-xml/add-call-event",
       XmlTestCaseFixture, NULL,
