@@ -414,6 +414,22 @@ test_get_filtered_events (TestCaseFixture *fixture,
 
 
 static void
+get_entities_37288_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TestCaseFixture *fixture = user_data;
+  GError *error = NULL;
+
+  tpl_log_manager_get_entities_finish (TPL_LOG_MANAGER (object), result,
+      NULL, &error);
+
+  g_assert_no_error (error);
+  g_main_loop_quit (fixture->main_loop);
+}
+
+
+static void
 get_entities_cb (GObject *object,
     GAsyncResult *result,
     gpointer user_data)
@@ -449,6 +465,13 @@ test_get_entities (TestCaseFixture *fixture,
 
   g_list_foreach (fixture->ret, (GFunc) g_object_unref, NULL);
   g_list_free (fixture->ret);
+
+  /* Check that the GSimpleAsyncResult res_gpointer's GDestroyNotify func
+   * is the appropriate one.
+   * Reproduces: https://bugs.freedesktop.org/show_bug.cgi?id=37288 */
+  tpl_log_manager_get_entities_async (fixture->manager, fixture->account,
+      get_entities_37288_cb, fixture);
+  g_main_loop_run (fixture->main_loop);
 }
 
 
