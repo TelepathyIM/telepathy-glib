@@ -542,9 +542,11 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_assert (superseded != NULL);
   assert_cmp_text_event (event, superseded->data);
   g_assert (tpl_text_event_dup_supersedes (superseded->data) == NULL);
-  g_list_free_full (superseded, g_object_unref);
 
-  g_list_free_full (events, g_object_unref);
+  g_list_foreach (superseded, g_object_unref, NULL);
+  g_list_free (superseded);
+  g_list_foreach (events, g_object_unref, NULL);
+  g_list_free (events);
 
   /* 3. Edit it again. */
   new_new_event = g_object_new (TPL_TYPE_TEXT_EVENT,
@@ -574,15 +576,20 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_assert (superseded->next != NULL);
   assert_cmp_text_event (event, superseded->next->data);
   g_assert (tpl_text_event_dup_supersedes (superseded->next->data) == NULL);
-  g_list_free_full (superseded, g_object_unref);
-  g_list_free_full (events, g_object_unref);
+
+  g_list_foreach (superseded, g_object_unref, NULL);
+  g_list_free (superseded);
+  g_list_foreach (events, g_object_unref, NULL);
+  g_list_free (events);
 
   /* Also note that the superseding events *replace* the old ones. */
   events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
       TPL_EVENT_MASK_TEXT, 1000000, NULL, NULL);
   g_assert_cmpint (g_list_length (events), == , 1);
   assert_cmp_text_event (TPL_EVENT (new_new_event), events->data);
-  g_list_free_full (events, g_object_unref);
+
+  g_list_foreach (events, g_object_unref, NULL);
+  g_list_free (events);
 
   /* 4. Edit comes in with the wrong timestamp. */
   late_event = g_object_new (TPL_TYPE_TEXT_EVENT,
@@ -611,8 +618,10 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_assert (superseded != NULL);
   g_assert_cmpstr (tpl_text_event_get_message (superseded->data), ==, "");
 
-  g_list_free_full (superseded, g_object_unref);
-  g_list_free_full (events, g_object_unref);
+  g_list_foreach (superseded, g_object_unref, NULL);
+  g_list_free (superseded);
+  g_list_foreach (events, g_object_unref, NULL);
+  g_list_free (events);
 
   /* And if we ask for all of the events, there will be 2 there. */
   events = _tpl_log_store_get_filtered_events (fixture->store, account, contact,
@@ -620,7 +629,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_assert_cmpint (g_list_length (events), == , 2);
   assert_cmp_text_event (TPL_EVENT (new_new_event), events->data);
   assert_cmp_text_event (TPL_EVENT (late_event), g_list_last (events)->data);
-  g_list_free_full (events, g_object_unref);
+
+  g_list_foreach (events, g_object_unref, NULL);
+  g_list_free (events);
 
   /* 5. If we have an event that is broken in the other direction then it will
    * also come out as a separate event (since each day is parsed on its own). */
@@ -646,7 +657,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (TPL_EVENT (early_event), events->data);
   assert_cmp_text_event (TPL_EVENT (new_new_event), events->next->data);
   assert_cmp_text_event (TPL_EVENT (late_event), g_list_last (events)->data);
-  g_list_free_full (events, g_object_unref);
+
+  g_list_foreach (events, g_object_unref, NULL);
+  g_list_free (events);
 
   g_object_unref (event);
   g_object_unref (new_event);
