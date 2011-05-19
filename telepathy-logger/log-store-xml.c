@@ -370,7 +370,7 @@ log_store_xml_get_timestamp_filename (GType type,
   gchar *filename;
   GDateTime *date;
 
-  date = g_date_time_new_from_unix_local (timestamp);
+  date = g_date_time_new_from_unix_utc (timestamp);
   date_str = g_date_time_format (date, LOG_TIME_FORMAT);
   filename = g_strconcat (date_str, log_store_xml_get_file_suffix (type),
       NULL);
