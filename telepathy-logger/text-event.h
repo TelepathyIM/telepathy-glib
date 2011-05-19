@@ -45,8 +45,6 @@ const gchar *tpl_text_event_get_message (TplTextEvent *self);
 const gchar *tpl_text_event_get_message_token (TplTextEvent *self);
 const gchar *tpl_text_event_get_supersedes_token (TplTextEvent *self);
 
-void tpl_text_event_add_supersedes (TplTextEvent *self,
-    TplTextEvent *old_event);
 GList *tpl_text_event_dup_supersedes (TplTextEvent *self);
 
 G_END_DECLS

@@ -58,7 +58,6 @@ struct _TplTextEventPriv
   /* A list of TplTextEvent that we supersede.
    * This is only populated when reading logs (not storing them). */
   GQueue supersedes;
-  gboolean dispose_has_run;
 };
 
 enum
@@ -84,11 +83,9 @@ tpl_text_event_dispose (GObject *obj)
 {
   TplTextEventPriv *priv = TPL_TEXT_EVENT (obj)->priv;
 
-  if (priv->dispose_has_run)
-    return;
-  priv->dispose_has_run = TRUE;
-
-  g_list_free_full (priv->supersedes.head, g_object_unref);
+  g_list_foreach (priv->supersedes.head, (GFunc) g_object_unref, NULL);
+  g_list_free (priv->supersedes.head);
+  g_queue_init (&priv->supersedes);
 }
 
 
@@ -322,16 +319,16 @@ tpl_text_event_get_supersedes_token (TplTextEvent *self)
 
 
 /**
- * tpl_text_event_add_supersedes
+ * _tpl_text_event_add_supersedes
  * @self: a #TplTextEvent
- * @old_event: (transfer full): an #TplTextEvent which this one supersedes
+ * @old_event: (transfer none): an #TplTextEvent which this one supersedes
  *
  * If there are other known entries in the message edit/succession chain,
  * they should be added to old_event before linking these two events,
  * as they will be copied onto this event for convenience.
  */
 void
-tpl_text_event_add_supersedes (TplTextEvent *self,
+_tpl_text_event_add_supersedes (TplTextEvent *self,
     TplTextEvent *old_event)
 {
   GList *l;
@@ -339,7 +336,7 @@ tpl_text_event_add_supersedes (TplTextEvent *self,
   g_object_ref (old_event);
   g_queue_push_tail (&self->priv->supersedes, old_event);
 
-  for (l = old_event->priv->supersedes.head; l != NULL; l = l->next)
+  for (l = old_event->priv->supersedes.head; l != NULL; l = g_list_next (l))
     g_queue_push_tail (&self->priv->supersedes, g_object_ref (l->data));
 
   if (self->priv->supersedes_token == NULL)
@@ -352,7 +349,8 @@ tpl_text_event_add_supersedes (TplTextEvent *self,
  * @self: a #TplTextEvent
  *
  * Returns: (transfer full): A #GList of #TplTextEvent that this event
- * supersedes. Should be freed using g_list_free_full (l, g_object_unref).
+ * supersedes. Should be freed using
+ * g_list_foreach (l, g_object_unref, NULL); g_list_free (l).
  */
 GList *
 tpl_text_event_dup_supersedes (TplTextEvent *self)
@@ -361,7 +359,7 @@ tpl_text_event_dup_supersedes (TplTextEvent *self)
   GList *l;
 
   /* Iterate backwards to copy quickly (thanks GList) */
-  for (l = self->priv->supersedes.tail; l != NULL; l = l->prev)
+  for (l = self->priv->supersedes.tail; l != NULL; l = g_list_previous (l))
     supersedes = g_list_prepend (supersedes, g_object_ref (l->data));
 
   return supersedes;

@@ -55,5 +55,7 @@ gint _tpl_text_event_get_pending_msg_id (TplTextEvent *self);
 
 gboolean _tpl_text_event_is_pending (TplTextEvent *self);
 
+void _tpl_text_event_add_supersedes (TplTextEvent *self,
+    TplTextEvent *old_event);
 G_END_DECLS
 #endif // __TPL_TEXT_EVENT_INTERNAL_H__
