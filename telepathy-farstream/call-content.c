@@ -467,7 +467,30 @@ on_content_video_keyframe_requested (TfFutureCallContent *proxy,
   gpointer user_data,
   GObject *weak_object)
 {
-  g_message ("keyframe requested\n");
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  GstPad *pad;
+
+  /* In case there is no session, ignore the request a new session should start
+   * with sending a KeyFrame in any case */
+  if (self->fssession == NULL)
+    return;
+
+  g_object_get (self->fssession, "sink-pad", &pad, NULL);
+
+  if (pad == NULL)
+    {
+      g_warning ("Failed to get a pad for the keyframe request");
+      return;
+    }
+
+  g_message ("Sending out a keyframe request");
+  gst_pad_send_event (pad,
+      gst_event_new_custom (GST_EVENT_CUSTOM_DOWNSTREAM,
+          gst_structure_new ("GstForceKeyUnit",
+            "all-headers", G_TYPE_BOOLEAN, TRUE,
+            NULL)));
+
+  g_object_unref (pad);
 }
 
 static void
