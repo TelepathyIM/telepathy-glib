@@ -425,7 +425,8 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (event, g_list_last (events)->data);
 
   g_object_unref (event);
-  g_list_free_full (events, g_object_unref);
+  g_list_foreach (events, g_object_unref, NULL);
+  g_list_free (events);
 
   /* 5. Delayed delivery of incoming message from a room */
   event = g_object_new (TPL_TYPE_TEXT_EVENT,
@@ -456,7 +457,8 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (event, events->data);
 
   g_object_unref (event);
-  g_list_free_full (events, g_object_unref);
+  g_list_foreach (events, g_object_unref, NULL);
+  g_list_free (events);
 }
 
 static void
