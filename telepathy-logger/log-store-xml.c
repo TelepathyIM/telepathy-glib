@@ -1267,6 +1267,19 @@ event_queue_insert_sorted_after (GQueue *events,
     }
 }
 
+static void
+event_queue_replace_and_supersede (GQueue *events,
+    GList *index,
+    GHashTable *superseded_links,
+    TplEvent *event)
+{
+  _tpl_text_event_add_supersedes (event, index->data);
+  g_hash_table_insert (superseded_links,
+      (gpointer) tpl_text_event_get_message_token(l->data), l);
+  g_object_unref (l->data);
+  l->data = event;
+}
+
 static GList *
 event_queue_add_text_event (GQueue *events,
     GList *index,
@@ -1283,29 +1296,24 @@ event_queue_add_text_event (GQueue *events,
   l = g_hash_table_lookup (superseded_links, supersedes_token);
   if (l != NULL)
     {
-      tpl_text_event_add_supersedes (event, l->data);
-      g_object_unref (l->data);
-      l->data = event;
-      g_hash_table_insert (superseded_links, (gpointer) supersedes_token, l);
+      event_queue_replace_and_supersede (events, l, superseded_links, event);
       return index;
     }
 
   /* Search backwards from "now" and insert (but don't update "now") */
-  for (l = index; l != NULL; l = l->prev)
+  for (l = index; l != NULL; l = g_list_previous (l))
     {
       if (!tp_strdiff (tpl_text_event_get_message_token (l->data),
           supersedes_token))
         {
-          tpl_text_event_add_supersedes (event, l->data);
-          g_object_unref (l->data);
-          l->data = event;
-          g_hash_table_insert (superseded_links, (gpointer) supersedes_token, l);
+          event_queue_replace_and_supersede (events, l, superseded_links,
+              event);
           return index;
         }
     }
 
   DEBUG ("Can't find event %s (superseded by %s). "
-      "Better <s>drink my own piss</s> fake it.",
+      "Adding Dummy event.",
       supersedes_token, tpl_text_event_get_message_token (event));
 
   dummy_event = g_object_new (TPL_TYPE_TEXT_EVENT,
@@ -1321,11 +1329,9 @@ event_queue_add_text_event (GQueue *events,
       "message-token", supersedes_token,
       NULL);
 
-  tpl_text_event_add_supersedes (event, dummy_event);
   index = event_queue_insert_sorted_after (events, index,
-      TPL_EVENT (event));
-  g_hash_table_insert (superseded_links, (gpointer) supersedes_token,
-      index);
+      TPL_EVENT (dummy_event));
+  event_queue_replace_and_supersede (events, index, superseded_links, event);
   return index;
 }
 
@@ -1409,9 +1415,9 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   g_free (dirname);
   g_free (tmp);
 
-  /* Temporary hash from borrowed supersedes-token to borrowed link in
-   * events, so that we can efficiently replace repeatedly superseded
-   * events as their replacements come in. */
+  /* Temporary hash from (borrowed) supersedes-token to (borrowed) link in
+   * events, for any event that was once in events, but has since been
+   * superseded (and therefore won't be found by a linear search). */
   supersedes_links = g_hash_table_new (g_str_hash, g_str_equal);
 
   /* Now get the events. */
@@ -1425,6 +1431,10 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
         {
           event = parse_text_node (self, node, is_room, target_id, self_id,
               account);
+
+          if (event == NULL)
+            continue;
+
           index = event_queue_add_text_event (events, index,
               supersedes_links, TPL_TEXT_EVENT (event));
           num_events++;
@@ -1434,6 +1444,10 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
         {
           event = parse_call_node (self, node, is_room, target_id, self_id,
               account);
+
+          if (event == NULL)
+            continue;
+
           index = event_queue_insert_sorted_after (events, index, event);
           num_events++;
         }
