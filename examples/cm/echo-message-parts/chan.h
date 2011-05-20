@@ -50,6 +50,8 @@ struct _ExampleEcho2Channel {
     ExampleEcho2ChannelPrivate *priv;
 };
 
+#define EXAMPLE_ECHO_2_CHANNEL_MAX_SMS_LENGTH 100
+
 void example_echo_2_channel_set_sms (ExampleEcho2Channel *self,
     gboolean sms);
 

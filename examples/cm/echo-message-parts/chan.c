@@ -13,8 +13,11 @@
 
 #include "chan.h"
 
+#include <string.h>
+
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/channel-iface.h>
+#include <telepathy-glib/message-internal.h>
 #include <telepathy-glib/svc-channel.h>
 
 static void destroyable_iface_init (gpointer iface, gpointer data);
@@ -375,7 +378,44 @@ example_echo_2_channel_set_sms (ExampleEcho2Channel *self,
 }
 
 static void
+sms_get_sms_length (TpSvcChannelInterfaceSMS *self,
+    const GPtrArray *parts,
+    DBusGMethodInvocation *context)
+{
+  TpMessage *message;
+  guint i;
+  gchar *txt;
+  size_t len;
+
+  message = tp_cm_message_new (
+      tp_base_channel_get_connection (TP_BASE_CHANNEL (self)), parts->len);
+
+  for (i = 0; i < parts->len; i++)
+    {
+      tp_g_hash_table_update (g_ptr_array_index (message->parts, i),
+          g_ptr_array_index (parts, i),
+          (GBoxedCopyFunc) g_strdup,
+          (GBoxedCopyFunc) tp_g_value_slice_dup);
+    }
+
+  txt = tp_message_to_text (message, NULL);
+  len = strlen (txt);
+
+  tp_svc_channel_interface_sms_return_from_get_sms_length (context, len,
+      EXAMPLE_ECHO_2_CHANNEL_MAX_SMS_LENGTH - len, -1);
+
+  g_object_unref (message);
+  g_free (txt);
+}
+
+static void
 sms_iface_init (gpointer iface,
     gpointer data)
 {
+  TpSvcChannelInterfaceSMSClass *klass = iface;
+
+#define IMPLEMENT(x) \
+  tp_svc_channel_interface_sms_implement_##x (klass, sms_##x)
+  IMPLEMENT (get_sms_length);
+#undef IMPLEMENT
 }
