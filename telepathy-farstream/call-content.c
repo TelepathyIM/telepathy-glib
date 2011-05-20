@@ -80,6 +80,8 @@ struct _TfCallContent {
   volatile gint bitrate;
   volatile gint mtu;
   gboolean manual_keyframes;
+
+  guint framerate;
 };
 
 struct _TfCallContentClass{
@@ -104,7 +106,8 @@ enum
   PROP_FS_SESSION,
   PROP_SINK_PAD,
   PROP_MEDIA_TYPE,
-  PROP_OBJECT_PATH
+  PROP_OBJECT_PATH,
+  PROP_FRAMERATE
 };
 
 enum
@@ -184,6 +187,14 @@ tf_call_content_class_init (TfCallContentClass *klass)
       "media-type");
   g_object_class_override_property (object_class, PROP_OBJECT_PATH,
       "object-path");
+
+  g_object_class_install_property (object_class, PROP_FRAMERATE,
+    g_param_spec_uint ("framerate",
+      "Framerate",
+      "The framerate as indicated by the VideoControl interface"
+      "or the media layer",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -297,6 +308,9 @@ tf_call_content_get_property (GObject    *object,
       break;
     case PROP_OBJECT_PATH:
       g_object_get_property (G_OBJECT (self->proxy), "object-path", value);
+      break;
+    case PROP_FRAMERATE:
+      g_value_set_uint (value, self->framerate);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -528,7 +542,11 @@ on_content_video_framerate_changed (TfFutureCallContent *proxy,
   gpointer user_data,
   GObject *weak_object)
 {
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
   g_message ("updated framerate requested: %d", framerate);
+
+  self->framerate = framerate;
+  g_object_notify (G_OBJECT (self), "framerate");
 }
 
 static void
