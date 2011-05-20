@@ -425,7 +425,7 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (event, g_list_last (events)->data);
 
   g_object_unref (event);
-  g_list_foreach (events, g_object_unref, NULL);
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
   /* 5. Delayed delivery of incoming message from a room */
@@ -457,7 +457,7 @@ test_add_text_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (event, events->data);
 
   g_object_unref (event);
-  g_list_foreach (events, g_object_unref, NULL);
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 }
 
