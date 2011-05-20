@@ -5610,6 +5610,8 @@ tp_text_channel_supports_message_type
 TP_TEXT_CHANNEL_FEATURE_SMS
 tp_text_channel_is_sms_channel
 tp_text_channel_get_sms_flash
+tp_text_channel_get_sms_length_async
+tp_text_channel_get_sms_length_finish
 <SUBSECTION Standard>
 TP_IS_TEXT_CHANNEL
 TP_IS_TEXT_CHANNEL_CLASS

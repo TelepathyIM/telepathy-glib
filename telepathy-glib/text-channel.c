@@ -1735,3 +1735,153 @@ tp_text_channel_get_sms_flash (TpTextChannel *self)
 
   return self->priv->sms_flash;
 }
+
+typedef struct
+{
+  guint chunks_required;
+  gint remaining_characters;
+  gint estimated_cost;
+} GetSmsLengthReturn;
+
+static GetSmsLengthReturn *
+get_sms_length_return_new (guint chunks_required,
+    gint remaining_characters,
+    gint estimated_cost)
+{
+  GetSmsLengthReturn *result = g_slice_new (GetSmsLengthReturn);
+
+  result->chunks_required = chunks_required;
+  result->remaining_characters = remaining_characters;
+  result->estimated_cost = estimated_cost;
+
+  return result;
+}
+
+static void
+get_sms_length_return_free (GetSmsLengthReturn *r)
+{
+  g_slice_free (GetSmsLengthReturn, r);
+}
+
+static void
+get_sms_length_cb (TpChannel *proxy,
+    guint chunks_required,
+    gint remaining_characters,
+    gint estimated_cost,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+  GetSmsLengthReturn *r;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get SMS length: %s", error->message);
+
+      g_simple_async_result_set_from_error (result, error);
+      goto out;
+    }
+
+  r = get_sms_length_return_new (chunks_required, remaining_characters,
+      estimated_cost);
+
+  g_simple_async_result_set_op_res_gpointer (result, r,
+      (GDestroyNotify) get_sms_length_return_free);
+
+out:
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_text_channel_get_sms_length_async:
+ * @self: a #TpTextChannel
+ * @message: a #TpClientMessage
+ * @callback: a callback to call when the request has been satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Starts an async call to get the number of 140 octet chunks required to
+ * send a #message via SMS on #self, as well as the number of remaining
+ * characters available in the final chunk and, if possible,
+ * an estimate of the cost.
+ *
+ * Once the request has been satisfied, @callback will be called.
+ * You can then call tp_text_channel_get_sms_length_finish() to get the
+ * result of the operation.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_text_channel_get_sms_length_async (TpTextChannel *self,
+    TpMessage *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      tp_text_channel_get_sms_length_async);
+
+  tp_cli_channel_interface_sms_call_get_sms_length ((TpChannel *) self, -1,
+      message->parts, get_sms_length_cb, result, g_object_unref,
+      G_OBJECT (self));
+}
+
+
+/**
+ * tp_text_channel_get_sms_length_finish:
+ * @self: a #TpTextChannel
+ * @result: a #GAsyncResult
+ * @chunks_required: (out): if not %NULL used to return
+ * the number of 140 octet chunks required to send the message.
+ * @remaining_characters: (out): if not %NULL used to return
+ * the number of further characters that can be fit in the final chunk.
+ * A negative value indicates that the message will be truncated by
+ * abs(@remaining_characters).
+ * The value #G_MININT32 indicates the message will be truncated by
+ * an unknown amount.
+ * @estimated_cost: (out): if not %NULL used to return
+ * the estimated cost of sending this message.
+ * The currency and scale of this value are the same as the
+ * values of the #TpConnection:balance-scale and
+ * #TpConnection:balance-currency properties.
+ * A value of -1 indicates the cost could not be estimated.
+ * @error: a #GError to fill
+ *
+ * Finishes an async SMS length request.
+ *
+ * Returns: %TRUE if the number of 140 octet chunks required to send
+ * the message has been retrieved, %FALSE otherwise.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_text_channel_get_sms_length_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    guint *chunks_required,
+    gint *remaining_characters,
+    gint *estimated_cost,
+    GError **error)
+{
+  GSimpleAsyncResult *simple = (GSimpleAsyncResult *) result;
+  GetSmsLengthReturn *r;
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+
+  g_return_val_if_fail (g_simple_async_result_is_valid (result,
+        G_OBJECT (self), tp_text_channel_get_sms_length_async), FALSE);
+
+  r = g_simple_async_result_get_op_res_gpointer (simple);
+
+  if (chunks_required != NULL)
+    *chunks_required = r->chunks_required;
+
+  if (remaining_characters != NULL)
+    *remaining_characters = r->remaining_characters;
+
+  if (estimated_cost != NULL)
+    *estimated_cost = r->estimated_cost;
+
+  return TRUE;
+}

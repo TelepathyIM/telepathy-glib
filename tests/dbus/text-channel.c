@@ -684,6 +684,50 @@ test_sms_feature (Test *test,
   g_assert (!is_sms);
 }
 
+#define MSG "Oh hi!"
+
+static void
+get_sms_length_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+  guint chunks_required;
+  gint remaining_characters;
+  gint estimated_cost;
+
+  tp_text_channel_get_sms_length_finish (TP_TEXT_CHANNEL (source), result,
+      &chunks_required, &remaining_characters, &estimated_cost, &test->error);
+
+  g_assert_cmpuint (chunks_required, ==, strlen (MSG));
+  g_assert_cmpint (remaining_characters, ==,
+      EXAMPLE_ECHO_2_CHANNEL_MAX_SMS_LENGTH - strlen (MSG));
+  g_assert_cmpint (estimated_cost, ==, -1);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+
+static void
+test_get_sms_length (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpMessage *msg;
+
+  msg = tp_client_message_new_text (TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, MSG);
+
+  tp_text_channel_get_sms_length_async (test->channel, msg,
+      get_sms_length_cb, test);
+
+  test->wait++;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_object_unref (msg);
+}
+
 int
 main (int argc,
       char **argv)
@@ -707,6 +751,8 @@ main (int argc,
       test_message_sent, teardown);
   g_test_add ("/text-channel/sms-feature", Test, NULL, setup,
       test_sms_feature, teardown);
+  g_test_add ("/text-channel/get-sms-length", Test, NULL, setup,
+      test_get_sms_length, teardown);
 
   return g_test_run ();
 }
