@@ -30,6 +30,9 @@ typedef struct {
   TpChannel *proxy;
   TfChannel *channel;
   GList *notifiers;
+
+  GstElement *video_input;
+  GstElement *video_capsfilter;
 } ChannelContext;
 
 GMainLoop *loop;
@@ -102,6 +105,94 @@ src_pad_added_cb (TfContent *content,
   g_object_unref (sinkpad);
 }
 
+static void
+on_video_framerate_changed (TfContent *content,
+  GParamSpec *spec,
+  ChannelContext *context)
+{
+  guint framerate;
+  GstCaps *caps;
+  GstClock *clock;
+
+  g_object_get (content, "framerate", &framerate, NULL);
+
+  /* Assuming the pipeline is in playing state */
+  gst_element_set_locked_state (context->video_input, TRUE);
+  if (GST_STATE (context->video_input) > GST_STATE_READY)
+    gst_element_set_state (context->video_input, GST_STATE_READY);
+
+  g_object_get (context->video_capsfilter, "caps", &caps, NULL);
+  caps = gst_caps_make_writable (caps);
+
+  gst_caps_set_simple (caps,
+      "framerate", GST_TYPE_FRACTION, framerate, 1,
+      NULL);
+
+  g_object_set (context->video_capsfilter, "caps", caps, NULL);
+
+  clock = gst_pipeline_get_clock (GST_PIPELINE (context->pipeline));
+  /* Need to reset the clock if we set the pipeline back to ready by hand */
+  if (clock != NULL)
+    {
+      gst_element_set_clock (context->video_input, clock);
+      g_object_unref (clock);
+    }
+
+  gst_element_set_locked_state (context->video_input, FALSE);
+  gst_element_sync_state_with_parent (context->video_input);
+}
+
+static GstElement *
+setup_video_source (ChannelContext *context, TfContent *content)
+{
+  GstElement *result, *input, *rate, *scaler, *colorspace, *capsfilter;
+  GstCaps *caps;
+  guint framerate;
+  GstPad *pad, *ghost;
+
+  result = gst_bin_new ("video_input");
+  input = gst_element_factory_make ("autovideosrc", NULL);
+  rate = gst_element_factory_make ("videomaxrate", NULL);
+  scaler = gst_element_factory_make ("videoscale", NULL);
+  colorspace = gst_element_factory_make ("colorspace", NULL);
+  capsfilter = gst_element_factory_make ("capsfilter", NULL);
+
+  g_assert (input && rate && scaler && colorspace && capsfilter);
+  g_object_get (content, "framerate", &framerate, NULL);
+
+  if (framerate == 0)
+    framerate = 15;
+
+  caps = gst_caps_new_simple ("video/x-raw-yuv",
+      "width", G_TYPE_INT, 320,
+      "height", G_TYPE_INT, 240,
+      "framerate", GST_TYPE_FRACTION, framerate, 1,
+      NULL);
+
+  g_object_set (G_OBJECT (capsfilter), "caps", caps, NULL);
+
+  gst_bin_add_many (GST_BIN (result), input, rate, scaler,
+      colorspace, capsfilter, NULL);
+  g_assert (gst_element_link_many (input, rate, scaler,
+      colorspace, capsfilter, NULL));
+
+  pad = gst_element_get_static_pad (capsfilter, "src");
+  g_assert (pad != NULL);
+
+  ghost = gst_ghost_pad_new ("src", pad);
+  gst_element_add_pad (result, ghost);
+
+  g_object_unref (pad);
+
+  context->video_input = result;
+  context->video_capsfilter = capsfilter;
+
+  g_signal_connect (content, "notify::framerate",
+    G_CALLBACK (on_video_framerate_changed),
+    context);
+
+  return result;
+}
 
 static void
 content_added_cb (TfChannel *channel,
@@ -131,9 +222,7 @@ content_added_cb (TfChannel *channel,
             TRUE, NULL);
         break;
       case FS_MEDIA_TYPE_VIDEO:
-        element = gst_parse_bin_from_description (
-          "autovideosrc ! video/x-raw-yuv,width=320, height=240 ! queue",
-          TRUE, NULL);
+        element = setup_video_source (context, content);
         break;
       default:
         g_warning ("Unknown media type");
