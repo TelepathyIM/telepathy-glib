@@ -543,9 +543,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (event, superseded->data);
   g_assert (tpl_text_event_dup_supersedes (superseded->data) == NULL);
 
-  g_list_foreach (superseded, g_object_unref, NULL);
+  g_list_foreach (superseded, (GFunc) g_object_unref, NULL);
   g_list_free (superseded);
-  g_list_foreach (events, g_object_unref, NULL);
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
   /* 3. Edit it again. */
@@ -577,9 +577,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (event, superseded->next->data);
   g_assert (tpl_text_event_dup_supersedes (superseded->next->data) == NULL);
 
-  g_list_foreach (superseded, g_object_unref, NULL);
+  g_list_foreach (superseded, (GFunc) g_object_unref, NULL);
   g_list_free (superseded);
-  g_list_foreach (events, g_object_unref, NULL);
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
   /* Also note that the superseding events *replace* the old ones. */
@@ -588,7 +588,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_assert_cmpint (g_list_length (events), == , 1);
   assert_cmp_text_event (TPL_EVENT (new_new_event), events->data);
 
-  g_list_foreach (events, g_object_unref, NULL);
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
   /* 4. Edit comes in with the wrong timestamp. */
@@ -618,9 +618,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_assert (superseded != NULL);
   g_assert_cmpstr (tpl_text_event_get_message (superseded->data), ==, "");
 
-  g_list_foreach (superseded, g_object_unref, NULL);
+  g_list_foreach (superseded, (GFunc) g_object_unref, NULL);
   g_list_free (superseded);
-  g_list_foreach (events, g_object_unref, NULL);
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
   /* And if we ask for all of the events, there will be 2 there. */
@@ -630,7 +630,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (TPL_EVENT (new_new_event), events->data);
   assert_cmp_text_event (TPL_EVENT (late_event), g_list_last (events)->data);
 
-  g_list_foreach (events, g_object_unref, NULL);
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
   /* 5. If we have an event that is broken in the other direction then it will
@@ -658,7 +658,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (TPL_EVENT (new_new_event), events->next->data);
   assert_cmp_text_event (TPL_EVENT (late_event), g_list_last (events)->data);
 
-  g_list_foreach (events, g_object_unref, NULL);
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
   g_object_unref (event);
