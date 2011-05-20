@@ -80,6 +80,9 @@ struct _TpTextChannelPrivate
   /* queue of owned TpSignalledMessage */
   GQueue *pending_messages;
   gboolean got_initial_messages;
+
+  gboolean is_sms_channel;
+  gboolean sms_flash;
 };
 
 enum
@@ -88,6 +91,8 @@ enum
   PROP_MESSAGE_PART_SUPPORT_FLAGS,
   PROP_DELIVERY_REPORTING_SUPPORT,
   PROP_MESSAGE_TYPES,
+  PROP_IS_SMS_CHANNEL,
+  PROP_SMS_FLASH,
 };
 
 enum /* signals */
@@ -142,6 +147,14 @@ tp_text_channel_get_property (GObject *object,
       case PROP_MESSAGE_TYPES:
         g_value_set_boxed (value,
             tp_text_channel_get_message_types (self));
+        break;
+
+      case PROP_IS_SMS_CHANNEL:
+        g_value_set_boolean (value, tp_text_channel_is_sms_channel (self));
+        break;
+
+      case PROP_SMS_FLASH:
+        g_value_set_boolean (value, tp_text_channel_get_sms_flash (self));
         break;
 
       default:
@@ -335,6 +348,10 @@ tp_text_channel_constructed (GObject *obj)
           tp_proxy_get_object_path (self), err->message);
       g_error_free (err);
     }
+
+  /* SMS */
+  self->priv->sms_flash = tp_asv_get_boolean (props,
+      TP_PROP_CHANNEL_INTERFACE_SMS_FLASH, NULL);
 }
 
 static void
@@ -828,8 +845,91 @@ fail:
   g_object_unref (result);
 }
 
+static void
+get_sms_channel_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpTextChannel *self = (TpTextChannel *) proxy;
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get SMSChannel property: %s", error->message);
+
+      g_simple_async_result_set_error (result, error->domain, error->code,
+          "Failed to get SMSChannel property: %s", error->message);
+      goto out;
+    }
+
+  if (!G_VALUE_HOLDS (value, G_TYPE_BOOLEAN))
+    {
+      DEBUG ("SMSChannel property is of the wrong type");
+
+      g_simple_async_result_set_error (result, TP_ERRORS, TP_ERROR_CONFUSED,
+          "SMSChannel property is of the wrong type");
+      goto out;
+    }
+
+  self->priv->is_sms_channel = g_value_get_boolean (value);
+
+  /* self->priv->is_sms_channel is set to FALSE by default, so only notify the
+   * property change is it is now set to TRUE. */
+  if (self->priv->is_sms_channel)
+    g_object_notify (G_OBJECT (self), "is-sms-channel");
+
+out:
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+static void
+sms_channel_changed_cb (TpChannel *proxy,
+    gboolean sms,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpTextChannel *self = (TpTextChannel *) proxy;
+
+  if (self->priv->is_sms_channel == sms)
+    return;
+
+  self->priv->is_sms_channel = sms;
+  g_object_notify (weak_object, "is-sms-channel");
+}
+
+static void
+tp_text_channel_prepare_sms_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GError *error = NULL;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_text_channel_prepare_sms_async);
+
+  tp_cli_channel_interface_sms_connect_to_sms_channel_changed (
+      (TpChannel *) proxy, sms_channel_changed_cb, NULL, NULL,
+      G_OBJECT (proxy), &error);
+  if (error != NULL)
+    {
+      WARNING ("Failed to connect to SMS.SMSChannelChanged: %s",
+          error->message);
+      g_error_free (error);
+    }
+
+  tp_cli_dbus_properties_call_get (proxy, -1,
+      TP_IFACE_CHANNEL_INTERFACE_SMS, "SMSChannel",
+      get_sms_channel_cb, result, NULL, G_OBJECT (proxy));
+}
+
 enum {
     FEAT_PENDING_MESSAGES,
+    FEAT_SMS,
     N_FEAT
 };
 
@@ -837,6 +937,7 @@ static const TpProxyFeature *
 tp_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+  static GQuark need_sms[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -845,6 +946,13 @@ tp_text_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
     TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES;
   features[FEAT_PENDING_MESSAGES].prepare_async =
     tp_text_channel_prepare_pending_messages_async;
+
+  features[FEAT_SMS].name =
+    TP_TEXT_CHANNEL_FEATURE_SMS;
+  features[FEAT_SMS].prepare_async =
+    tp_text_channel_prepare_sms_async;
+  need_sms[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_SMS;
+  features[FEAT_SMS].interfaces_needed = need_sms;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
@@ -928,6 +1036,42 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (gobject_class,
       PROP_MESSAGE_TYPES, param_spec);
+
+ /**
+   * TpTextChannel:is-sms-channel:
+   *
+   * %TRUE if messages sent and received on this channel are transmitted
+   * via SMS.
+   *
+   * This property is not guaranteed to have a meaningful value until
+   * TP_TEXT_CHANNEL_FEATURE_SMS has been prepared.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("is-sms-channel",
+      "is SMS channel",
+      "The SMS.SMSChannel property of the channel",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_IS_SMS_CHANNEL,
+      param_spec);
+
+ /**
+   * TpTextChannel:sms-flash:
+   *
+   * %TRUE if this channel is exclusively for receiving class 0 SMSes
+   * (and no SMSes can be sent using tp_text_channel_send_message_async()
+   * on this channel). If %FALSE, no incoming class 0 SMSes will appear
+   * on this channel.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("sms-flash",
+      "SMS flash",
+      "The SMS.Flash property of the channel",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (gobject_class, PROP_SMS_FLASH, param_spec);
 
   /**
    * TpTextChannel::message-received
@@ -1534,4 +1678,60 @@ tp_text_channel_supports_message_type (TpTextChannel *self,
     }
 
   return FALSE;
+}
+
+/**
+ * TP_TEXT_CHANNEL_FEATURE_SMS:
+ *
+ * Expands to a call to a function that returns a quark representing the
+ * SMS feature of a #TpTextChannel.
+ *
+ * When this feature is prepared, the TpTextChannel:is-sms-channel property
+ * will have a meaningful value and will be updated when needed.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+GQuark
+tp_text_channel_get_feature_quark_sms (void)
+{
+  return g_quark_from_static_string ("tp-text-channel-feature-sms");
+}
+
+/**
+ * tp_text_channel_is_sms_channel:
+ * @self: a #TpTextChannel
+ *
+ * Return the #TpTextChannel:is-sms-channel property
+ *
+ * Returns: the value of #TpTextChannel:is-sms-channel property
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_text_channel_is_sms_channel (TpTextChannel *self)
+{
+  g_return_val_if_fail (TP_IS_TEXT_CHANNEL (self), FALSE);
+
+  return self->priv->is_sms_channel;
+}
+
+/**
+ * tp_text_channel_get_sms_flash:
+ * @self: a #TpTextChannel
+ *
+ * Return the #TpTextChannel:sms-flash property
+ *
+ * Returns: the value of #TpTextChannel:sms-flash property
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_text_channel_get_sms_flash (TpTextChannel *self)
+{
+  g_return_val_if_fail (TP_IS_TEXT_CHANNEL (self), FALSE);
+
+  return self->priv->sms_flash;
 }

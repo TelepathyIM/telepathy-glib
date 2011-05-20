@@ -23,11 +23,13 @@ typedef struct {
     /* Service side objects */
     TpBaseConnection *base_connection;
     ExampleEcho2Channel *chan_service;
+    ExampleEcho2Channel *sms_chan_service;
     TpHandleRepoIface *contact_repo;
 
     /* Client side objects */
     TpConnection *connection;
     TpTextChannel *channel;
+    TpTextChannel *sms_channel;
 
     TpMessage *received_msg;
     TpMessage *removed_msg;
@@ -48,6 +50,7 @@ create_contact_chan (Test *test)
   GHashTable *props;
 
   tp_clear_object (&test->chan_service);
+  tp_clear_object (&test->sms_chan_service);
 
   /* Create service-side tube channel object */
   chan_path = g_strdup_printf ("%s/Channel",
@@ -81,9 +84,32 @@ create_contact_chan (Test *test)
   g_assert_no_error (test->error);
 
   g_free (chan_path);
+  g_hash_table_unref (props);
+
+  /* Register channel implementing SMS */
+  chan_path = g_strdup_printf ("%s/ChannelSMS",
+      tp_proxy_get_object_path (test->connection));
+
+  test->sms_chan_service = g_object_new (
+      EXAMPLE_TYPE_ECHO_2_CHANNEL,
+      "connection", test->base_connection,
+      "handle", handle,
+      "object-path", chan_path,
+      "sms", TRUE,
+      NULL);
+
+  g_object_get (test->chan_service,
+      "channel-properties", &props,
+      NULL);
+
+  test->sms_channel = tp_text_channel_new (test->connection, chan_path,
+      props, &test->error);
+  g_assert_no_error (test->error);
+
+  g_free (chan_path);
+  g_hash_table_unref (props);
 
   tp_handle_unref (test->contact_repo, handle);
-  g_hash_table_unref (props);
 }
 
 static void
@@ -113,6 +139,7 @@ teardown (Test *test,
   test->mainloop = NULL;
 
   tp_clear_object (&test->chan_service);
+  tp_clear_object (&test->sms_chan_service);
 
   tp_cli_connection_run_disconnect (test->connection, -1, &test->error, NULL);
   g_assert_no_error (test->error);
@@ -127,6 +154,7 @@ teardown (Test *test,
   tp_clear_pointer (&test->sent_token, g_free);
 
   tp_clear_object (&test->channel);
+  tp_clear_object (&test->sms_channel);
 }
 
 static void
@@ -600,6 +628,62 @@ test_message_sent (Test *test,
   g_assert (test->sent_token == NULL);
 }
 
+static void
+notify_cb (GObject *object,
+    GParamSpec *spec,
+    Test *test)
+{
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+
+static void
+test_sms_feature (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  gboolean is_sms;
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_SMS, 0 };
+
+  g_assert (tp_text_channel_get_sms_flash (test->sms_channel));
+
+  /* SMS feature is not prepared yet */
+  g_assert (!tp_text_channel_is_sms_channel (test->sms_channel));
+
+  g_object_get (test->sms_channel, "is-sms-channel", &is_sms, NULL);
+  g_assert (!is_sms);
+
+  test->wait++;
+  tp_proxy_prepare_async (test->sms_channel, features,
+      proxy_prepare_cb, test);
+
+  test->wait++;
+  g_signal_connect (test->sms_channel, "notify::is-sms-channel",
+      G_CALLBACK (notify_cb), test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Feature has been prepared */
+  g_assert (tp_text_channel_is_sms_channel (test->sms_channel));
+
+  g_object_get (test->sms_channel, "is-sms-channel", &is_sms, NULL);
+  g_assert (is_sms);
+
+  /* Property is changed */
+  example_echo_2_channel_set_sms (test->sms_chan_service, FALSE);
+
+  test->wait++;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (!tp_text_channel_is_sms_channel (test->sms_channel));
+
+  g_object_get (test->sms_channel, "is-sms-channel", &is_sms, NULL);
+  g_assert (!is_sms);
+}
+
 int
 main (int argc,
       char **argv)
@@ -621,6 +705,8 @@ main (int argc,
       test_ack_message, teardown);
   g_test_add ("/text-channel/message-sent", Test, NULL, setup,
       test_message_sent, teardown);
+  g_test_add ("/text-channel/sms-feature", Test, NULL, setup,
+      test_sms_feature, teardown);
 
   return g_test_run ();
 }

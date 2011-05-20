@@ -119,6 +119,14 @@ gboolean tp_text_channel_set_chat_state_finish (TpTextChannel *self,
     GAsyncResult *result,
     GError **error);
 
+#define TP_TEXT_CHANNEL_FEATURE_SMS \
+  tp_text_channel_get_feature_quark_sms ()
+GQuark tp_text_channel_get_feature_quark_sms (void) G_GNUC_CONST;
+
+gboolean tp_text_channel_is_sms_channel (TpTextChannel *self);
+
+gboolean tp_text_channel_get_sms_flash (TpTextChannel *self);
+
 G_END_DECLS
 
 #endif
