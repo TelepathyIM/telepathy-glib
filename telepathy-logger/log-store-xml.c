@@ -1271,13 +1271,13 @@ static void
 event_queue_replace_and_supersede (GQueue *events,
     GList *index,
     GHashTable *superseded_links,
-    TplEvent *event)
+    TplTextEvent *event)
 {
   _tpl_text_event_add_supersedes (event, index->data);
   g_hash_table_insert (superseded_links,
-      (gpointer) tpl_text_event_get_message_token(l->data), l);
-  g_object_unref (l->data);
-  l->data = event;
+      (gpointer) tpl_text_event_get_message_token (index->data), index);
+  g_object_unref (index->data);
+  index->data = event;
 }
 
 static GList *
