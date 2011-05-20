@@ -550,14 +550,14 @@ add_text_event (TplLogStoreXml *self,
       _tpl_text_event_message_type_to_str (msg_type));
 
   token_str = tpl_text_event_get_message_token (message);
-  if (TPL_STR_EMPTY (token_str))
+  if (!TPL_STR_EMPTY (token_str))
     {
       gchar *message_token = g_markup_escape_text (token_str, -1);
       g_string_append_printf (event, " message-token='%s'", message_token);
       g_free (message_token);
 
       token_str = tpl_text_event_get_supersedes_token (message);
-      if (TPL_STR_EMPTY (token_str))
+      if (!TPL_STR_EMPTY (token_str))
         {
           gchar *supersedes_token = g_markup_escape_text (token_str, -1);
           g_string_append_printf (event, " supersedes-token='%s'",
