@@ -345,24 +345,16 @@ _tpl_text_event_add_supersedes (TplTextEvent *self,
 
 
 /**
- * tpl_text_event_dup_supersedes
+ * tpl_text_event_get_supersedes
  * @self: a #TplTextEvent
  *
- * Returns: (transfer full): A #GList of #TplTextEvent that this event
- * supersedes. Should be freed using
- * g_list_foreach (l, g_object_unref, NULL); g_list_free (l).
+ * Returns: (transfer none): A #GList of #TplTextEvent that this event
+ * supersedes.
  */
 GList *
-tpl_text_event_dup_supersedes (TplTextEvent *self)
+tpl_text_event_get_supersedes (TplTextEvent *self)
 {
-  GList *supersedes = NULL;
-  GList *l;
-
-  /* Iterate backwards to copy quickly (thanks GList) */
-  for (l = self->priv->supersedes.tail; l != NULL; l = g_list_previous (l))
-    supersedes = g_list_prepend (supersedes, g_object_ref (l->data));
-
-  return supersedes;
+  return self->priv->supersedes.head;
 }
 
 

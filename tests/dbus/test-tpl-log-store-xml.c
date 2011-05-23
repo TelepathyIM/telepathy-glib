@@ -538,13 +538,11 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (TPL_EVENT (new_event), events->data);
 
   /* Check that the two events are linked */
-  superseded = tpl_text_event_dup_supersedes (events->data);
+  superseded = tpl_text_event_get_supersedes (events->data);
   g_assert (superseded != NULL);
   assert_cmp_text_event (event, superseded->data);
-  g_assert (tpl_text_event_dup_supersedes (superseded->data) == NULL);
+  g_assert (tpl_text_event_get_supersedes (superseded->data) == NULL);
 
-  g_list_foreach (superseded, (GFunc) g_object_unref, NULL);
-  g_list_free (superseded);
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
@@ -570,15 +568,13 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   assert_cmp_text_event (TPL_EVENT (new_new_event), events->data);
 
   /* Check that the three events are linked */
-  superseded = tpl_text_event_dup_supersedes (events->data);
+  superseded = tpl_text_event_get_supersedes (events->data);
   g_assert (superseded != NULL);
   assert_cmp_text_event (TPL_EVENT (new_event), superseded->data);
   g_assert (superseded->next != NULL);
   assert_cmp_text_event (event, superseded->next->data);
-  g_assert (tpl_text_event_dup_supersedes (superseded->next->data) == NULL);
+  g_assert (tpl_text_event_get_supersedes (superseded->next->data) == NULL);
 
-  g_list_foreach (superseded, (GFunc) g_object_unref, NULL);
-  g_list_free (superseded);
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
@@ -614,12 +610,10 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
 
   /* Check that the events are not linked (and a dummy was inserted instead)
    * because the timestamp was wrong. */
-  superseded = tpl_text_event_dup_supersedes (events->data);
+  superseded = tpl_text_event_get_supersedes (events->data);
   g_assert (superseded != NULL);
   g_assert_cmpstr (tpl_text_event_get_message (superseded->data), ==, "");
 
-  g_list_foreach (superseded, (GFunc) g_object_unref, NULL);
-  g_list_free (superseded);
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
