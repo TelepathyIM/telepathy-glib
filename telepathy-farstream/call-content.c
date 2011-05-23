@@ -82,6 +82,8 @@ struct _TfCallContent {
   gboolean manual_keyframes;
 
   guint framerate;
+  guint width;
+  guint height;
 };
 
 struct _TfCallContentClass{
@@ -107,13 +109,19 @@ enum
   PROP_SINK_PAD,
   PROP_MEDIA_TYPE,
   PROP_OBJECT_PATH,
-  PROP_FRAMERATE
+  PROP_FRAMERATE,
+  PROP_WIDTH,
+  PROP_HEIGHT
 };
 
 enum
 {
+  RESOLUTION_CHANGED = 0,
   SIGNAL_COUNT
 };
+
+static guint signals[SIGNAL_COUNT] = {0};
+
 
 struct CallFsStream {
   TfCallChannel *parent_channel;
@@ -122,8 +130,6 @@ struct CallFsStream {
   FsParticipant *fsparticipant;
   FsStream *fsstream;
 };
-
-// static guint signals[SIGNAL_COUNT] = {0};
 
 static void
 tf_call_content_get_property (GObject    *object,
@@ -195,6 +201,29 @@ tf_call_content_class_init (TfCallContentClass *klass)
       "or the media layer",
       0, G_MAXUINT, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_FRAMERATE,
+    g_param_spec_uint ("width",
+      "Width",
+      "The video width indicated by the VideoControl interface"
+      "or the media layer",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_FRAMERATE,
+    g_param_spec_uint ("height",
+      "Height",
+      "The video height as indicated by the VideoControl interface"
+      "or the media layer",
+      0, G_MAXUINT, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  signals[RESOLUTION_CHANGED] = g_signal_new ("resolution-changed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tf_marshal_VOID__UINT_UINT,
+      G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 static void
@@ -311,6 +340,12 @@ tf_call_content_get_property (GObject    *object,
       break;
     case PROP_FRAMERATE:
       g_value_set_uint (value, self->framerate);
+      break;
+    case PROP_WIDTH:
+      g_value_set_uint (value, self->width);
+      break;
+    case PROP_HEIGHT:
+      g_value_set_uint (value, self->height);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -513,10 +548,16 @@ on_content_video_resolution_changed (TfFutureCallContent *proxy,
   gpointer user_data,
   GObject *weak_object)
 {
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
   guint width, height;
 
   tp_value_array_unpack ((GValueArray *)resolution, 2,
     &width, &height, NULL);
+
+  self->width = width;
+  self->height = height;
+
+  g_signal_emit (self, signals[RESOLUTION_CHANGED], 0, width, height);
 
   g_message ("requested video resolution: %dx%d", width, height);
 }
