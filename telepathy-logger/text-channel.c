@@ -307,7 +307,7 @@ get_message_pending_id (TpMessage *m)
 }
 
 
-static guint
+static guint64
 get_message_timestamp (TpMessage *message)
 {
   GDateTime *datetime = g_date_time_new_now_utc ();
@@ -328,6 +328,22 @@ get_message_timestamp (TpMessage *message)
     timestamp = now;
 
   g_date_time_unref (datetime);
+  return timestamp;
+}
+
+
+static guint64
+get_original_message_timestamp (TpMessage *message)
+{
+  gint64 timestamp;
+
+  timestamp = tp_asv_get_int64 (tp_message_peek (message, 0),
+      "original-message-sent", NULL);
+
+  if (timestamp == 0)
+    timestamp = tp_asv_get_int64 (tp_message_peek (message, 0),
+        "original-message-received", NULL);
+
   return timestamp;
 }
 
@@ -403,6 +419,7 @@ tpl_text_channel_store_message (TplTextChannel *self,
       "timestamp", timestamp,
       "message-token", tp_message_get_token (message),
       "supersedes-token", tp_message_get_supersedes (message),
+      "original-timestamp", get_original_message_timestamp (message),
       /* TplTextEvent */
       "message-type", type,
       "message", text,
