@@ -507,7 +507,7 @@ add_text_event (TplLogStoreXml *self,
   const gchar *token_str;
   gchar *avatar_token = NULL;
   gchar *body = NULL;
-  gchar *timestamp = NULL;
+  gchar *time_str = NULL;
   gchar *contact_name = NULL;
   gchar *contact_id = NULL;
   GString *event = NULL;
@@ -537,7 +537,7 @@ add_text_event (TplLogStoreXml *self,
 
   body = g_markup_escape_text (body_str, -1);
   msg_type = tpl_text_event_get_message_type (message);
-  timestamp = log_store_xml_get_timestamp_from_event (
+  time_str = log_store_xml_get_timestamp_from_event (
       TPL_EVENT (message));
 
   sender = tpl_event_get_sender (TPL_EVENT (message));
@@ -549,7 +549,7 @@ add_text_event (TplLogStoreXml *self,
   event = g_string_new (NULL);
   g_string_printf (event, "<message time='%s' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'",
-      timestamp, contact_id, contact_name,
+      time_str, contact_id, contact_name,
       avatar_token,
       tpl_entity_get_entity_type (sender)
           == TPL_ENTITY_SELF ? "true" : "false",
@@ -574,7 +574,7 @@ add_text_event (TplLogStoreXml *self,
   g_string_append_printf (event, ">%s</message>\n" LOG_FOOTER, body);
 
   DEBUG ("writing text event from %s (ts %s)",
-      contact_id, timestamp);
+      contact_id, time_str);
 
   ret = _log_store_xml_write_to_store (self, account,
       _tpl_event_get_target (TPL_EVENT (message)), event->str,
@@ -584,7 +584,7 @@ add_text_event (TplLogStoreXml *self,
 out:
   g_free (contact_id);
   g_free (contact_name);
-  g_free (timestamp);
+  g_free (time_str);
   g_free (body);
   g_string_free (event, TRUE);
   g_free (avatar_token);
@@ -606,7 +606,7 @@ add_call_event (TplLogStoreXml *self,
   TplEntity *sender;
   TplEntity *actor;
   TplEntity *target;
-  gchar *timestamp = NULL;
+  gchar *time_str = NULL;
   gchar *sender_avatar = NULL;
   gchar *sender_name = NULL;
   gchar *sender_id = NULL;
@@ -629,7 +629,7 @@ add_call_event (TplLogStoreXml *self,
 
   account = tpl_event_get_account (TPL_EVENT (event));
 
-  timestamp = log_store_xml_get_timestamp_from_event (
+  time_str = log_store_xml_get_timestamp_from_event (
       TPL_EVENT (event));
   reason = tpl_call_event_get_end_reason (event);
 
@@ -653,7 +653,7 @@ add_call_event (TplLogStoreXml *self,
       "actorname='%s' actortoken='%s' "
       "reason='%s' detail='%s'/>\n"
       LOG_FOOTER,
-        timestamp,
+        time_str,
         sender_id,
         sender_name,
         tpl_entity_get_entity_type (sender) ==
@@ -669,7 +669,7 @@ add_call_event (TplLogStoreXml *self,
 
   DEBUG ("writing call event from %s (ts %s)",
       tpl_entity_get_identifier (target),
-      timestamp);
+      time_str);
 
   ret = _log_store_xml_write_to_store (self, account, target, log_str,
       TPL_TYPE_CALL_EVENT, tpl_event_get_timestamp (TPL_EVENT (event)),
@@ -682,7 +682,7 @@ out:
   g_free (actor_id);
   g_free (actor_name);
   g_free (actor_avatar);
-  g_free (timestamp);
+  g_free (time_str);
   g_free (log_str);
 
   if (bus_daemon != NULL)
