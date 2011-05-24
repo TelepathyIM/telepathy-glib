@@ -500,6 +500,7 @@ add_text_event (TplLogStoreXml *self,
     GError **error)
 {
   gboolean ret = FALSE;
+  guint64 timestamp;
   TpDBusDaemon *bus_daemon;
   TpAccount *account;
   TplEntity *sender;
@@ -568,8 +569,22 @@ add_text_event (TplLogStoreXml *self,
           gchar *supersedes_token = g_markup_escape_text (token_str, -1);
           g_string_append_printf (event, " supersedes-token='%s'",
               supersedes_token);
+
+          timestamp = tpl_text_event_get_original_timestamp (message);
+          if (timestamp != 0)
+            {
+              gchar *original_timestamp_str =
+                  log_store_xml_format_timestamp (timestamp);
+              g_string_append_printf (event, " original-timestamp='%s'",
+                  original_timestamp_str);
+              g_free (original_timestamp_str);
+            }
         }
+
     }
+
+  if (timestamp == 0)
+    timestamp = tpl_event_get_timestamp (TPL_EVENT (message));
 
   g_string_append_printf (event, ">%s</message>\n" LOG_FOOTER, body);
 
@@ -578,8 +593,7 @@ add_text_event (TplLogStoreXml *self,
 
   ret = _log_store_xml_write_to_store (self, account,
       _tpl_event_get_target (TPL_EVENT (message)), event->str,
-      TPL_TYPE_TEXT_EVENT, tpl_event_get_timestamp (TPL_EVENT (message)),
-      error);
+      TPL_TYPE_TEXT_EVENT, timestamp, error);
 
 out:
   g_free (contact_id);
@@ -1077,6 +1091,8 @@ parse_text_node (TplLogStoreXml *self,
   TplEntity *receiver;
   gchar *time_str;
   gint64 timestamp;
+  gchar *original_time_str;
+  gint64 original_timestamp = 0;
   gchar *sender_id;
   gchar *sender_name;
   gchar *sender_avatar_token;
@@ -1090,12 +1106,16 @@ parse_text_node (TplLogStoreXml *self,
 
   body = (gchar *) xmlNodeGetContent (node);
   time_str = (gchar *) xmlGetProp (node, (const xmlChar *) "time");
+  original_time_str = (gchar *) xmlGetProp (node,
+      (const xmlChar *) "original-timestamp");
   sender_id = (gchar *) xmlGetProp (node, (const xmlChar *) "id");
   sender_name = (gchar *) xmlGetProp (node, (const xmlChar *) "name");
   sender_avatar_token = (gchar *) xmlGetProp (node,
       (const xmlChar *) "token");
-  message_token = (gchar *) xmlGetProp (node, (const xmlChar *) "message-token");
-  supersedes_token = (gchar *) xmlGetProp (node, (const xmlChar *) "supersedes-token");
+  message_token = (gchar *) xmlGetProp (node,
+      (const xmlChar *) "message-token");
+  supersedes_token = (gchar *) xmlGetProp (node,
+      (const xmlChar *) "supersedes-token");
   is_user_str = (gchar *) xmlGetProp (node, (const xmlChar *) "isuser");
   msg_type_str = (gchar *) xmlGetProp (node, (const xmlChar *) "type");
 
@@ -1106,6 +1126,11 @@ parse_text_node (TplLogStoreXml *self,
     msg_type = _tpl_text_event_message_type_from_str (msg_type_str);
 
   timestamp = _tpl_time_parse (time_str);
+
+  if (supersedes_token != NULL && original_time_str != NULL)
+    {
+      original_timestamp = _tpl_time_parse (original_time_str);
+    }
 
   if (is_room)
     receiver = tpl_entity_new_from_room_id (target_id);
@@ -1131,11 +1156,13 @@ parse_text_node (TplLogStoreXml *self,
       "message", body,
       "message-token", message_token,
       "supersedes-token", supersedes_token,
+      "original-timestamp", original_timestamp,
       NULL);
 
   g_object_unref (sender);
   g_object_unref (receiver);
   xmlFree (time_str);
+  xmlFree (original_time_str);
   xmlFree (sender_id);
   xmlFree (sender_name);
   xmlFree (body);
