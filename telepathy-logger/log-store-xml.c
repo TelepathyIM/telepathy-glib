@@ -383,12 +383,12 @@ log_store_xml_get_timestamp_filename (GType type,
 
 
 static gchar *
-log_store_xml_get_timestamp_from_event (TplEvent *event)
+log_store_xml_format_timestamp (guint64 timestamp)
 {
   GDateTime *ts;
   gchar *ts_str;
 
-  ts = g_date_time_new_from_unix_utc (tpl_event_get_timestamp (event));
+  ts = g_date_time_new_from_unix_utc (timestamp);
   ts_str = g_date_time_format (ts, LOG_TIME_FORMAT_FULL);
 
   g_date_time_unref (ts);
@@ -396,6 +396,12 @@ log_store_xml_get_timestamp_from_event (TplEvent *event)
   return ts_str;
 }
 
+
+static gchar *
+log_store_xml_get_timestamp_from_event (TplEvent *event)
+{
+  return log_store_xml_format_timestamp (tpl_event_get_timestamp (event));
+}
 
 
 static gchar *
