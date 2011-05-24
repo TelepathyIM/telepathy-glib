@@ -1394,50 +1394,121 @@ gboolean
 }
 
 static void
-claim_with_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
+claim_with_cb (TpChannelDispatchOperation *self,
+    GSimpleAsyncResult *result)
 {
-  TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) source;
-  GSimpleAsyncResult *main_result = user_data;
-  GError *error = NULL;
   TpBaseClient *client;
 
-  if (!tp_channel_dispatch_operation_claim_finish (self, result, &error))
-    {
-      g_simple_async_result_take_error (main_result, error);
-      goto out;
-    }
-
-  client = g_simple_async_result_get_op_res_gpointer (main_result);
+  client = g_simple_async_result_get_op_res_gpointer (result);
 
   _tp_base_client_now_handling_channels (client, self->priv->channels);
 
-out:
-  g_simple_async_result_complete (main_result);
-  g_object_unref (main_result);
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+typedef void (*PrepareCoreAndClaimCb) (TpChannelDispatchOperation *self,
+    GSimpleAsyncResult *result);
+
+typedef struct
+{
+  GSimpleAsyncResult *result;
+  PrepareCoreAndClaimCb callback;
+} PrepareCoreAndClaimCtx;
+
+static PrepareCoreAndClaimCtx *
+prepare_core_and_claim_ctx_new (GSimpleAsyncResult *result,
+    PrepareCoreAndClaimCb callback)
+{
+  PrepareCoreAndClaimCtx *ctx = g_slice_new (PrepareCoreAndClaimCtx);
+
+  ctx->result = g_object_ref (result);
+  ctx->callback = callback;
+  return ctx;
 }
 
 static void
-claim_with_prepare_cb (GObject *source,
+prepare_core_and_claim_ctx_free (PrepareCoreAndClaimCtx *ctx)
+{
+  g_object_unref (ctx->result);
+  g_slice_free (PrepareCoreAndClaimCtx, ctx);
+}
+
+static void
+prepare_core_claim_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
   TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) source;
-  GSimpleAsyncResult *main_result = user_data;
+  PrepareCoreAndClaimCtx *ctx = user_data;
+  GError *error = NULL;
+
+  if (!tp_channel_dispatch_operation_claim_finish (self, result, &error))
+    {
+      DEBUG ("Failed to Claim %s: %s",
+          tp_proxy_get_object_path (self), error->message);
+
+      g_simple_async_result_take_error (ctx->result, error);
+      g_simple_async_result_complete (ctx->result);
+      /* Remove the ref we got from the caller */
+      g_object_unref (ctx->result);
+      goto out;
+    }
+
+  /* Pass the ref we got from the caller */
+  ctx->callback (self, ctx->result);
+
+out:
+  prepare_core_and_claim_ctx_free (ctx);
+}
+
+static void
+prepare_core_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) source;
+  PrepareCoreAndClaimCtx *ctx = user_data;
   GError *error = NULL;
 
   if (!tp_proxy_prepare_finish (self, result, &error))
     {
-      g_simple_async_result_take_error (main_result, error);
-      g_simple_async_result_complete (main_result);
-      g_object_unref (main_result);
+      DEBUG ("Failed to prepare CORE on %s: %s",
+          tp_proxy_get_object_path (self), error->message);
+
+      g_simple_async_result_take_error (ctx->result, error);
+      g_simple_async_result_complete (ctx->result);
+      /* Remove the ref we got from the caller */
+      g_object_unref (ctx->result);
+      prepare_core_and_claim_ctx_free (ctx);
       return;
     }
 
-  tp_channel_dispatch_operation_claim_async (self, claim_with_cb, main_result);
+  tp_channel_dispatch_operation_claim_async (self, prepare_core_claim_cb, ctx);
 }
 
+/* Prepare CORE feature on @self and then call Claim() on it.
+ * If either the preparation or the call failed, complete @result with the
+ * error.
+ * If everything goes fine call @callback.
+ *
+ * Takes the reference on @result and pass it back to @callback.
+ */
+static void
+prepare_core_and_claim (TpChannelDispatchOperation *self,
+    PrepareCoreAndClaimCb callback,
+    GSimpleAsyncResult *result)
+{
+  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
+  PrepareCoreAndClaimCtx *ctx;
+
+  ctx = prepare_core_and_claim_ctx_new (result, callback);
+
+  /* We have to prepare the CDO to be able to get the list of its channels.
+   * We prepare it *before* calling Claim() as MC will destroy the CDO once it
+   * has been claimed. */
+  tp_proxy_prepare_async (self, features, prepare_core_cb, ctx);
+}
 
 /**
  * tp_channel_dispatch_operation_claim_with_async:
@@ -1472,7 +1543,6 @@ tp_channel_dispatch_operation_claim_with_async (
     gpointer user_data)
 {
   GSimpleAsyncResult *result;
-  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
 
   g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
 
@@ -1483,10 +1553,7 @@ tp_channel_dispatch_operation_claim_with_async (
   g_simple_async_result_set_op_res_gpointer (result, g_object_ref (client),
       g_object_unref);
 
-  /* We have to prepare the CDO to be able to get the list of its channels.
-   * We prepare it *before* calling Claim() as MC will destroy the CDO once it
-   * has been claimed. */
-  tp_proxy_prepare_async (self, features, claim_with_prepare_cb, result);
+  prepare_core_and_claim (self, claim_with_cb, result);
 }
 
 /**
