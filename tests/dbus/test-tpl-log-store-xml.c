@@ -522,8 +522,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
       "account", account,
       "sender", me,
       "receiver", contact,
-      "timestamp", timestamp,
+      "timestamp", timestamp + 2,
       /* TplTextEvent */
+      "original-timestamp", timestamp,
       "message-token", "OMGCOMPLETELYRANDOMSTRING2",
       "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -552,8 +553,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
       "account", account,
       "sender", me,
       "receiver", contact,
-      "timestamp", timestamp,
+      "timestamp", timestamp + 3,
       /* TplTextEvent */
+      "original-timestamp", timestamp,
       "message-token", "OMGCOMPLETELYRANDOMSTRING3",
       "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -587,14 +589,15 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
-  /* 4. Edit comes in with the wrong timestamp. */
+  /* 4. Edit comes in with the wrong original-timestamp. */
   late_event = g_object_new (TPL_TYPE_TEXT_EVENT,
       /* TplEvent */
       "account", account,
       "sender", me,
       "receiver", contact,
-      "timestamp", timestamp + (60 * 60 * 24),
+      "timestamp", timestamp + 4,
       /* TplTextEvent */
+      "original-timestamp", timestamp + (60 * 60 * 24),
       "message-token", "OMGCOMPLETELYRANDOMSTRING4",
       "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -634,8 +637,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
       "account", account,
       "sender", me,
       "receiver", contact,
-      "timestamp", timestamp - (60 * 60 * 24),
+      "timestamp", timestamp + 5,
       /* TplTextEvent */
+      "original-timestamp", timestamp - (60 * 60 * 24),
       "message-token", "OMGCOMPLETELYRANDOMSTRING5",
       "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
