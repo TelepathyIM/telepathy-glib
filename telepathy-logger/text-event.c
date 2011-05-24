@@ -52,6 +52,7 @@ G_DEFINE_TYPE (TplTextEvent, tpl_text_event, TPL_TYPE_EVENT)
 struct _TplTextEventPriv
 {
   TpChannelTextMessageType message_type;
+  guint64 original_timestamp;
   gchar *message;
   gchar *token;
   gchar *supersedes_token;
@@ -63,6 +64,7 @@ struct _TplTextEventPriv
 enum
 {
   PROP_MESSAGE_TYPE = 1,
+  PROP_ORIGINAL_TIMESTAMP,
   PROP_MESSAGE,
   PROP_TOKEN,
   PROP_SUPERSEDES
@@ -120,6 +122,9 @@ tpl_text_event_get_property (GObject *object,
       case PROP_MESSAGE_TYPE:
         g_value_set_uint (value, priv->message_type);
         break;
+      case PROP_ORIGINAL_TIMESTAMP:
+        g_value_set_uint64 (value, priv->original_timestamp);
+        break;
       case PROP_MESSAGE:
         g_value_set_string (value, priv->message);
         break;
@@ -147,6 +152,9 @@ tpl_text_event_set_property (GObject *object,
   switch (param_id) {
       case PROP_MESSAGE_TYPE:
         priv->message_type = g_value_get_uint (value);
+        break;
+      case PROP_ORIGINAL_TIMESTAMP:
+        priv->original_timestamp = g_value_get_uint64 (value);
         break;
       case PROP_MESSAGE:
         g_assert (priv->message == NULL);
@@ -198,6 +206,14 @@ static void tpl_text_event_class_init (TplTextEventClass *klass)
       0, G_MAXUINT32, TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE_TYPE, param_spec);
+
+  param_spec = g_param_spec_uint64 ("original-timestamp",
+      "Original Message Timestamp",
+      "original-message-{sent,received} if applicable, or 0.",
+      0, G_MAXUINT64, 0,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ORIGINAL_TIMESTAMP,
+      param_spec);
 
   param_spec = g_param_spec_string ("message",
       "Message",
@@ -371,6 +387,21 @@ tpl_text_event_get_message_type (TplTextEvent *self)
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL);
 
   return self->priv->message_type;
+}
+
+
+/**
+ * tpl_text_event_get_original_timestamp
+ * @self: a #TplTextEvent
+ *
+ * Returns: the same value as the #TplTextEvent:original-timestamp property
+ */
+guint64
+tpl_text_event_get_original_timestamp (TplTextEvent *self)
+{
+  g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), 0);
+
+  return self->priv->original_timestamp;
 }
 
 

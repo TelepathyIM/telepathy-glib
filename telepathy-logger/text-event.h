@@ -40,6 +40,7 @@ typedef struct _TplTextEventPriv TplTextEventPriv;
 GType tpl_text_event_get_type (void);
 
 TpChannelTextMessageType tpl_text_event_get_message_type (TplTextEvent *self);
+guint64 tpl_text_event_get_original_timestamp (TplTextEvent *self);
 
 const gchar *tpl_text_event_get_message (TplTextEvent *self);
 const gchar *tpl_text_event_get_message_token (TplTextEvent *self);
