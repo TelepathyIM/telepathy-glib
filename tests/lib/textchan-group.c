@@ -20,17 +20,21 @@
 #include <telepathy-glib/svc-generic.h>
 
 static void text_iface_init (gpointer iface, gpointer data);
+static void password_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsTextChannelGroup,
     tp_tests_text_channel_group, TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_TEXT, text_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_GROUP,
       tp_group_mixin_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_PASSWORD,
+      password_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init))
 
 static const char *text_channel_group_interfaces[] = {
     TP_IFACE_CHANNEL_INTERFACE_GROUP,
+    TP_IFACE_CHANNEL_INTERFACE_PASSWORD,
     NULL
 };
 
@@ -50,6 +54,8 @@ struct _TpTestsTextChannelGroupPrivate
 
   gboolean closed;
   gboolean disposed;
+
+  gchar *password;
 };
 
 
@@ -215,8 +221,12 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
+  TpTestsTextChannelGroup *self = TP_TESTS_TEXT_CHANNEL_GROUP (object);
+
   tp_text_mixin_finalize (object);
   tp_group_mixin_finalize (object);
+
+  tp_clear_pointer (&self->priv->password, g_free);
 
   ((GObjectClass *) tp_tests_text_channel_group_parent_class)->finalize (object);
 }
@@ -320,4 +330,65 @@ tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self)
 
   tp_intset_destroy (add);
   tp_intset_destroy (empty);
+}
+
+void
+tp_tests_text_channel_set_password (TpTestsTextChannelGroup *self,
+    const gchar *password)
+{
+  gboolean pass_was_needed, pass_needed;
+
+  pass_was_needed = (self->priv->password != NULL);
+
+  tp_clear_pointer (&self->priv->password, g_free);
+
+  self->priv->password = g_strdup (password);
+
+  pass_needed = (self->priv->password != NULL);
+
+  if (pass_needed == pass_was_needed)
+    return;
+
+  if (pass_needed)
+    tp_svc_channel_interface_password_emit_password_flags_changed (self,
+        TP_CHANNEL_PASSWORD_FLAG_PROVIDE, 0);
+  else
+    tp_svc_channel_interface_password_emit_password_flags_changed (self,
+        0, TP_CHANNEL_PASSWORD_FLAG_PROVIDE);
+}
+
+static void
+password_get_password_flags (TpSvcChannelInterfacePassword *chan,
+    DBusGMethodInvocation *context)
+{
+  TpTestsTextChannelGroup *self = (TpTestsTextChannelGroup *) chan;
+  TpChannelPasswordFlags flags = 0;
+
+  if (self->priv->password != NULL)
+    flags |= TP_CHANNEL_PASSWORD_FLAG_PROVIDE;
+
+  tp_svc_channel_interface_password_return_from_get_password_flags (context,
+      flags);
+}
+
+static void
+password_provide_password (TpSvcChannelInterfacePassword *chan,
+    const gchar *password,
+    DBusGMethodInvocation *context)
+{
+  TpTestsTextChannelGroup *self = (TpTestsTextChannelGroup *) chan;
+
+  tp_svc_channel_interface_password_return_from_provide_password (context,
+      !tp_strdiff (password, self->priv->password));
+}
+
+static void
+password_iface_init (gpointer iface, gpointer data)
+{
+  TpSvcChannelInterfacePasswordClass *klass = iface;
+
+#define IMPLEMENT(x) tp_svc_channel_interface_password_implement_##x (klass, password_##x)
+  IMPLEMENT (get_password_flags);
+  IMPLEMENT (provide_password);
+#undef IMPLEMENT
 }

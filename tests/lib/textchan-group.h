@@ -68,6 +68,9 @@ struct _TpTestsTextChannelGroup {
 
 void tp_tests_text_channel_group_join (TpTestsTextChannelGroup *self);
 
+void tp_tests_text_channel_set_password (TpTestsTextChannelGroup *self,
+    const gchar *password);
+
 G_END_DECLS
 
 #endif /* #ifndef __TEST_TEXT_CHANNEL_GROUP_H__ */
