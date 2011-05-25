@@ -53,7 +53,8 @@
  *
  * <itemizedlist>
  *   <listitem>
- *     <para>%TP_CHANNEL_FEATURE_CORE and %TP_CHANNEL_FEATURE_GROUP for all
+ *     <para>%TP_CHANNEL_FEATURE_CORE, %TP_CHANNEL_FEATURE_GROUP
+ *     and %TP_CHANNEL_FEATURE_PASSWORD for all
  *     type of channels.</para>
  *   </listitem>
  *   <listitem>
@@ -183,6 +184,9 @@ tp_automatic_proxy_factory_dup_channel_features_impl (TpChannel *channel)
   g_array_append_val (features, feature);
 
   feature = TP_CHANNEL_FEATURE_GROUP;
+  g_array_append_val (features, feature);
+
+  feature = TP_CHANNEL_FEATURE_PASSWORD;
   g_array_append_val (features, feature);
 
   if (TP_IS_TEXT_CHANNEL (channel))

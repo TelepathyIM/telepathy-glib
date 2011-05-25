@@ -205,9 +205,10 @@ test_auto_stream_tube (Test *test,
 
   features = tp_client_channel_factory_dup_channel_features (test->factory,
       chan);
-  g_assert_cmpuint (features->len, ==, 2);
+  g_assert_cmpuint (features->len, ==, 3);
   g_assert (array_contains_feature (features, TP_CHANNEL_FEATURE_CORE));
   g_assert (array_contains_feature (features, TP_CHANNEL_FEATURE_GROUP));
+  g_assert (array_contains_feature (features, TP_CHANNEL_FEATURE_PASSWORD));
 
   g_free (chan_path);
   g_hash_table_unref (props);
