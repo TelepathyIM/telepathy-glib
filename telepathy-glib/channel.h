@@ -160,6 +160,22 @@ gboolean tp_channel_destroy_finish (TpChannel *self,
     GAsyncResult *result,
     GError **error);
 
+/* Channel.Interface.Password */
+#define TP_CHANNEL_FEATURE_PASSWORD \
+  tp_channel_get_feature_quark_password ()
+GQuark tp_channel_get_feature_quark_password (void) G_GNUC_CONST;
+
+gboolean tp_channel_password_needed (TpChannel *self);
+
+void tp_channel_provide_password_async (TpChannel *self,
+    const gchar *password,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_provide_password_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel.h>

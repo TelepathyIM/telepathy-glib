@@ -100,6 +100,7 @@ enum
   PROP_REQUESTED,
   PROP_INITIATOR_HANDLE,
   PROP_INITIATOR_IDENTIFIER,
+  PROP_PASSWORD_NEEDED,
   N_PROPS
 };
 
@@ -449,6 +450,9 @@ tp_channel_get_property (GObject *object,
       break;
     case PROP_INITIATOR_IDENTIFIER:
       g_value_set_string (value, tp_channel_get_initiator_identifier (self));
+      break;
+    case PROP_PASSWORD_NEEDED:
+      g_value_set_boolean (value, tp_channel_password_needed (self));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1337,10 +1341,78 @@ tp_channel_finalize (GObject *object)
   ((GObjectClass *) tp_channel_parent_class)->finalize (object);
 }
 
+static void
+got_password_flags_cb (TpChannel *self,
+    guint password_flags,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get password flags: %s", error->message);
+    }
+  else
+    {
+      self->priv->password_flags = password_flags;
+
+      if (tp_channel_password_needed (self))
+        {
+          /* password-needed is FALSE by default */
+          g_object_notify (G_OBJECT (self), "password-needed");
+        }
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+static void
+password_flags_changed_cb (TpChannel *self,
+    guint added,
+    guint removed,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  gboolean was_needed, needed;
+
+  was_needed = tp_channel_password_needed (self);
+
+  self->priv->password_flags |= added;
+  self->priv->password_flags ^= removed;
+
+  needed = tp_channel_password_needed (self);
+
+  if (was_needed != needed)
+    g_object_notify (G_OBJECT (self), "password-needed");
+}
+
+static void
+tp_channel_prepare_password_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpChannel *self = (TpChannel *) proxy;
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_channel_prepare_password_async);
+
+  tp_cli_channel_interface_password_connect_to_password_flags_changed (self,
+      password_flags_changed_cb, self, NULL, G_OBJECT (self), NULL);
+
+  tp_cli_channel_interface_password_call_get_password_flags (self, -1,
+      got_password_flags_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+
 enum {
     FEAT_CORE,
     FEAT_GROUP,
     FEAT_CHAT_STATES,
+    FEAT_PASSWORD,
     N_FEAT
 };
 
@@ -1349,6 +1421,7 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
 {
   static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
   static GQuark need_chat_states[2] = {0, 0};
+  static GQuark need_password[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -1363,6 +1436,12 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
     tp_channel_prepare_chat_states_async;
   need_chat_states[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_CHAT_STATE;
   features[FEAT_CHAT_STATES].interfaces_needed = need_chat_states;
+
+  features[FEAT_PASSWORD].name = TP_CHANNEL_FEATURE_PASSWORD;
+  features[FEAT_PASSWORD].prepare_async =
+    tp_channel_prepare_password_async;
+  need_password[0] = TP_IFACE_QUARK_CHANNEL_INTERFACE_PASSWORD;
+  features[FEAT_PASSWORD].interfaces_needed = need_password;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
@@ -1599,6 +1678,28 @@ tp_channel_class_init (TpChannelClass *klass)
       "",
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INITIATOR_IDENTIFIER,
+      param_spec);
+
+  /**
+   * TpChannel:password-needed:
+   *
+   * If %TRUE, tp_channel_provide_password_async() has to be called
+   * to be able to join the channel.
+   *
+   * This is not guaranteed to be meaningful until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_PASSWORD; until then, it may return
+   * %FALSE even if the channel is actually protected by a password.
+   * Preparing %TP_CHANNEL_FEATURE_PASSWORD also ensures that the
+   * notify::password-needed signal will be fired when this property changes.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("password-needed",
+      "Password needed",
+      "Password neede to join the channel",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_PASSWORD_NEEDED,
       param_spec);
 
   /**
@@ -2456,4 +2557,122 @@ tp_channel_destroy_finish (TpChannel *self,
     GError **error)
 {
   _tp_implement_finish_void (self, tp_channel_destroy_async)
+}
+
+/**
+ * TP_CHANNEL_FEATURE_PASSWORD:
+ *
+ * Expands to a call to a function that returns a quark representing the
+ * password feature on a #TpChannel.
+ *
+ * When this feature is prepared, tp_channel_password_needed() and the
+ * #TpChannel:password-needed property become useful.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+
+GQuark
+tp_channel_get_feature_quark_password (void)
+{
+  return g_quark_from_static_string ("tp-channel-feature-password");
+}
+
+/**
+ * tp_channel_password_needed:
+ * @self: a #TpChannel
+ *
+ * Return the #TpChannel:password-needed property
+ *
+ * Returns: the value of #TpChannel:password-needed
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_channel_password_needed (TpChannel *self)
+{
+  return self->priv->password_flags & TP_CHANNEL_PASSWORD_FLAG_PROVIDE;
+}
+
+static void
+provide_password_cb (TpChannel *self,
+    gboolean correct,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+    }
+  else if (!correct)
+    {
+      DEBUG ("Wrong password provided for %s", tp_proxy_get_object_path (self));
+
+      g_simple_async_result_set_error (result, TP_ERRORS,
+          TP_ERROR_AUTHENTICATION_FAILED, "Password was not correct");
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_channel_provide_password_async:
+ * @self: a #TpChannel
+ * @password: the password
+ * @callback: a callback to call when @password has been provided
+ * @user_data: data to pass to @callback
+ *
+ * Provide @password so that @self can be joined.
+ * This function must be called with the correct password in order for
+ * channel joining to proceed if the TpChannel:password-needed property
+ * is set.
+ *
+ * Once the password has been provided, @callback will be
+ * called. You can then call tp_channel_provide_password_finish()
+ * to get the result of the operation.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_channel_provide_password_async (TpChannel *self,
+    const gchar *password,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_channel_provide_password_async);
+
+  tp_cli_channel_interface_password_call_provide_password (self, -1, password,
+      provide_password_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_channel_provide_password_finish:
+ * @self: a #TpChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to provide a password. If the password was rejected, the operation
+ * fails with #TP_ERROR_AUTHENTICATION_FAILED.
+ *
+ * Returns: %TRUE if the password has been provided and accepted,
+ * %FALSE otherwise.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_channel_provide_password_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_channel_provide_password_async);
 }

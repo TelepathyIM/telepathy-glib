@@ -82,6 +82,8 @@ struct _TpChannelPrivate {
     unsigned exists:1;
     /* GetGroupFlags has returned */
     unsigned have_group_flags:1;
+
+    TpChannelPasswordFlags password_flags;
 };
 
 /* channel.c internals */

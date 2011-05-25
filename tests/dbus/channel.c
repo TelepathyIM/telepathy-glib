@@ -440,6 +440,108 @@ test_destroy (Test *test,
   g_assert (tp_proxy_get_invalidated (test->channel_contact) != NULL);
 }
 
+static void
+property_changed_cb (GObject *object,
+    GParamSpec *spec,
+    Test *test)
+{
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_password_feature (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_CHANNEL_FEATURE_PASSWORD, 0 };
+  gboolean pass_needed;
+
+  /* Channel needs a password */
+  tp_tests_text_channel_set_password (test->chan_room_service, "test");
+
+  /* Feature is not yet prepared */
+  g_assert (!tp_channel_password_needed (test->channel_room));
+  g_object_get (test->channel_room, "password-needed", &pass_needed, NULL);
+  g_assert (!pass_needed);
+
+  g_signal_connect (test->channel_room, "notify::password-needed",
+      G_CALLBACK (property_changed_cb), test);
+
+  tp_proxy_prepare_async (test->channel_room, features, channel_prepared_cb,
+      test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_channel_password_needed (test->channel_room));
+  g_object_get (test->channel_room, "password-needed", &pass_needed, NULL);
+  g_assert (pass_needed);
+
+  /* Channel does not need a password any more */
+  tp_tests_text_channel_set_password (test->chan_room_service, NULL);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (!tp_channel_password_needed (test->channel_room));
+  g_object_get (test->channel_room, "password-needed", &pass_needed, NULL);
+  g_assert (!pass_needed);
+
+  /* Channel does not re-need a password */
+  tp_tests_text_channel_set_password (test->chan_room_service, "test");
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_channel_password_needed (test->channel_room));
+  g_object_get (test->channel_room, "password-needed", &pass_needed, NULL);
+  g_assert (pass_needed);
+}
+
+static void
+provide_password_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_clear_error (&test->error);
+
+  tp_channel_provide_password_finish (TP_CHANNEL (source), result,
+      &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_password_provide (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  tp_tests_text_channel_set_password (test->chan_room_service, "test");
+
+  /* Try a wrong password */
+  tp_channel_provide_password_async (test->channel_room, "badger",
+      provide_password_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERRORS, TP_ERROR_AUTHENTICATION_FAILED);
+
+  /* Try the right password */
+  tp_channel_provide_password_async (test->channel_room, "test",
+      provide_password_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -472,6 +574,11 @@ main (int argc,
 
   g_test_add ("/channel/destroy", Test, NULL, setup,
       test_destroy, teardown);
+
+  g_test_add ("/channel/password/feature", Test, NULL, setup,
+      test_password_feature, teardown);
+  g_test_add ("/channel/password/provide", Test, NULL, setup,
+      test_password_provide, teardown);
 
   return g_test_run ();
 }

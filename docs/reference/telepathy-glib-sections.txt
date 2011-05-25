@@ -3084,6 +3084,7 @@ tp_channel_destroy_finish
 tp_channel_get_feature_quark_chat_states
 tp_channel_get_feature_quark_core
 tp_channel_get_feature_quark_group
+tp_channel_get_feature_quark_password
 <SUBSECTION>
 TP_CHANNEL_FEATURE_CHAT_STATES
 tp_channel_get_chat_state
@@ -3097,6 +3098,11 @@ tp_channel_group_get_members
 tp_channel_group_get_remote_pending
 tp_channel_group_get_local_pending_info
 TP_ERRORS_REMOVED_FROM_GROUP
+<SUBSECTION>
+TP_CHANNEL_FEATURE_PASSWORD
+tp_channel_password_needed
+tp_channel_provide_password_async
+tp_channel_provide_password_finish
 <SUBSECTION Standard>
 tp_errors_removed_from_group_quark
 tp_channel_get_type
