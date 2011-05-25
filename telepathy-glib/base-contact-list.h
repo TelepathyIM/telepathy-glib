@@ -286,6 +286,17 @@ gboolean tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error);
 
+void tp_base_contact_list_block_contacts_with_abuse_async (
+    TpBaseContactList *self,
+    TpHandleSet *contacts,
+    gboolean report_abusive,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_base_contact_list_block_contacts_with_abuse_finish (
+    TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error);
+
 void tp_base_contact_list_unblock_contacts_async (TpBaseContactList *self,
     TpHandleSet *contacts,
     GAsyncReadyCallback callback,
@@ -295,6 +306,13 @@ gboolean tp_base_contact_list_unblock_contacts_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error);
 
+typedef void (*TpBaseContactListBlockContactsWithAbuseFunc) (
+    TpBaseContactList *self,
+    TpHandleSet *contacts,
+    gboolean report_abusive,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
 struct _TpBlockableContactListInterface {
     GTypeInterface parent;
 
@@ -302,7 +320,9 @@ struct _TpBlockableContactListInterface {
 
     TpBaseContactListDupContactsFunc dup_blocked_contacts;
 
-    /* _async mandatory-to-implement, _finish has a default implementation
+    /* unblock_contacts_async is mandatory to implement; either
+     * block_contacts_async or block_contacts_with_abuse_async (but not both!)
+     * must also be implemented. _finish have default implementations
      * suitable for a GSimpleAsyncResult */
 
     TpBaseContactListActOnContactsFunc block_contacts_async;
@@ -311,8 +331,11 @@ struct _TpBlockableContactListInterface {
     TpBaseContactListAsyncFinishFunc unblock_contacts_finish;
 
     /* optional to implement */
-
     TpBaseContactListBooleanFunc can_block;
+
+    /* see above. block_contacts_finish is the corresponding _finish function.
+     */
+    TpBaseContactListBlockContactsWithAbuseFunc block_contacts_with_abuse_async;
 };
 
 /* ---- Called by subclasses for ContactGroups ---- */
@@ -540,9 +563,10 @@ void tp_base_contact_list_mixin_register_with_contacts_mixin (
     TpBaseConnection *conn);
 void tp_base_contact_list_mixin_list_iface_init (
     TpSvcConnectionInterfaceContactListClass *klass);
-
 void tp_base_contact_list_mixin_groups_iface_init (
     TpSvcConnectionInterfaceContactGroupsClass *klass);
+void tp_base_contact_list_mixin_blocking_iface_init (
+    TpSvcConnectionInterfaceContactBlockingClass *klass);
 
 G_END_DECLS
 

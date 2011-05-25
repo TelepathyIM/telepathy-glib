@@ -270,6 +270,11 @@ struct _TpBaseContactListPrivate
    * announced via NewChannels yet. */
   GHashTable *channel_requests;
 
+  /* DBusGMethodInvocation *s for calls to RequestBlockedContacts which are
+   * waiting for the contact list to (fail to) be downloaded.
+   */
+  GQueue blocked_contact_requests;
+
   gulong status_changed_id;
 
   /* TRUE if @conn implements TpSvcConnectionInterface$FOO - used to
@@ -277,6 +282,7 @@ struct _TpBaseContactListPrivate
    * the constructor and cleared when we lose @conn. */
   gboolean svc_contact_list;
   gboolean svc_contact_groups;
+  gboolean svc_contact_blocking;
 };
 
 struct _TpBaseContactListClassPrivate
@@ -367,7 +373,8 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  * @dup_blocked_contacts: the implementation of
  *  tp_base_contact_list_dup_blocked_contacts(); must always be provided
  * @block_contacts_async: the implementation of
- *  tp_base_contact_list_block_contacts_async(); must always be provided
+ *  tp_base_contact_list_block_contacts_async(); either this or
+ *  @block_contacts_with_abuse_async must always be provided
  * @block_contacts_finish: the implementation of
  *  tp_base_contact_list_block_contacts_finish(); the default
  *  implementation may be used if @result is a #GSimpleAsyncResult
@@ -379,6 +386,11 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  * @can_block: the implementation of
  *  tp_base_contact_list_can_block(); if not reimplemented,
  *  the default implementation always returns %TRUE
+ * @block_contacts_with_abuse_async: the implementation of
+ *  tp_base_contact_list_block_contacts_async(); either this or
+ *  @block_contacts_async must always be provided. If the underlying protocol
+ *  does not support reporting contacts as abusive, implement
+ *  @block_contacts_async instead. Since: 0.15.UNRELEASED
  *
  * The interface vtable for a %TP_TYPE_BLOCKABLE_CONTACT_LIST.
  *
@@ -496,6 +508,7 @@ tp_base_contact_list_init (TpBaseContactList *self)
   self->priv->groups = g_hash_table_new_full (NULL, NULL, NULL,
       g_object_unref);
   self->priv->channel_requests = g_hash_table_new (NULL, NULL);
+  g_queue_init (&self->priv->blocked_contact_requests);
 }
 
 static void
@@ -535,13 +548,28 @@ tp_base_contact_list_fail_channel_requests (TpBaseContactList *self,
 }
 
 static void
+tp_base_contact_list_fail_blocked_contact_requests (
+    TpBaseContactList *self,
+    const GError *error)
+{
+  DBusGMethodInvocation *context;
+
+  while ((context = g_queue_pop_head (&self->priv->blocked_contact_requests))
+          != NULL)
+    dbus_g_method_return_error (context, error);
+}
+
+static void
 tp_base_contact_list_free_contents (TpBaseContactList *self)
 {
+  GError error = { TP_ERRORS, TP_ERROR_DISCONNECTED,
+      "Disconnected before blocked contacts were retrieved" };
   guint i;
 
   tp_base_contact_list_fail_channel_requests (self, TP_ERRORS,
       TP_ERROR_DISCONNECTED,
       "Unable to complete channel request due to disconnection");
+  tp_base_contact_list_fail_blocked_contact_requests (self, &error);
 
   for (i = 0; i < NUM_TP_LIST_HANDLES; i++)
     tp_clear_object (self->priv->lists + i);
@@ -570,6 +598,7 @@ tp_base_contact_list_free_contents (TpBaseContactList *self)
       tp_clear_object (&self->priv->conn);
       self->priv->svc_contact_list = FALSE;
       self->priv->svc_contact_groups = FALSE;
+      self->priv->svc_contact_blocking = FALSE;
     }
 }
 
@@ -703,6 +732,8 @@ tp_base_contact_list_constructed (GObject *object)
     TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_LIST (self->priv->conn);
   self->priv->svc_contact_groups =
     TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS (self->priv->conn);
+  self->priv->svc_contact_blocking =
+    TP_IS_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING (self->priv->conn);
 
   if (TP_IS_MUTABLE_CONTACT_LIST (self))
     {
@@ -732,7 +763,8 @@ tp_base_contact_list_constructed (GObject *object)
 
       g_return_if_fail (iface->can_block != NULL);
       g_return_if_fail (iface->dup_blocked_contacts != NULL);
-      g_return_if_fail (iface->block_contacts_async != NULL);
+      g_return_if_fail ((iface->block_contacts_async != NULL) ^
+          (iface->block_contacts_with_abuse_async != NULL));
       g_return_if_fail (iface->block_contacts_finish != NULL);
       g_return_if_fail (iface->unblock_contacts_async != NULL);
       g_return_if_fail (iface->unblock_contacts_finish != NULL);
@@ -1775,6 +1807,8 @@ tp_base_contact_list_set_list_failed (TpBaseContactList *self,
       self->priv->conn, self->priv->state);
 
   tp_base_contact_list_fail_channel_requests (self, domain, code, message);
+  tp_base_contact_list_fail_blocked_contact_requests (self,
+      self->priv->failure);
 }
 
 /**
@@ -1874,6 +1908,20 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
         }
 
       tp_base_contact_list_contact_blocking_changed (self, blocked);
+
+      if (self->priv->svc_contact_blocking &&
+          self->priv->blocked_contact_requests.length > 0)
+        {
+          GHashTable *map = tp_handle_set_to_identifier_map (blocked);
+          DBusGMethodInvocation *context;
+
+          while ((context = g_queue_pop_head (
+                      &self->priv->blocked_contact_requests)) != NULL)
+            tp_svc_connection_interface_contact_blocking_return_from_request_blocked_contacts (context, map);
+
+          g_hash_table_unref (map);
+        }
+
       tp_handle_set_destroy (blocked);
     }
 
@@ -2290,7 +2338,7 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 {
   TpHandleSet *now_blocked;
   TpIntset *blocked, *unblocked;
-  GArray *blocked_arr, *unblocked_arr;
+  GHashTable *blocked_contacts, *unblocked_contacts;
   TpIntsetFastIter iter;
   GObject *deny_chan;
   TpHandle handle;
@@ -2313,18 +2361,29 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
 
   blocked = tp_intset_new ();
   unblocked = tp_intset_new ();
+  blocked_contacts = g_hash_table_new (NULL, NULL);
+  unblocked_contacts = g_hash_table_new (NULL, NULL);
 
   tp_intset_fast_iter_init (&iter, tp_handle_set_peek (changed));
 
   while (tp_intset_fast_iter_next (&iter, &handle))
     {
-      if (tp_handle_set_is_member (now_blocked, handle))
-        tp_intset_add (blocked, handle);
-      else
-        tp_intset_add (unblocked, handle);
+      const char *id = tp_handle_inspect (self->priv->contact_repo, handle);
 
-      DEBUG ("Contact %s: blocked=%c",
-          tp_handle_inspect (self->priv->contact_repo, handle),
+      if (tp_handle_set_is_member (now_blocked, handle))
+        {
+          tp_intset_add (blocked, handle);
+          g_hash_table_insert (blocked_contacts, GUINT_TO_POINTER (handle),
+              (gpointer) id);
+        }
+      else
+        {
+          tp_intset_add (unblocked, handle);
+          g_hash_table_insert (unblocked_contacts, GUINT_TO_POINTER (handle),
+              (gpointer) id);
+        }
+
+      DEBUG ("Contact %s: blocked=%c", id,
           tp_handle_set_is_member (now_blocked, handle) ? 'Y' : 'N');
     }
 
@@ -2333,15 +2392,16 @@ tp_base_contact_list_contact_blocking_changed (TpBaseContactList *self,
       tp_base_connection_get_self_handle (self->priv->conn),
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
-  blocked_arr = tp_intset_to_array (blocked);
-  unblocked_arr = tp_intset_to_array (unblocked);
-  /* FIXME: emit ContactBlockingChanged (blocked_arr, unblocked_arr) when the
-   * new D-Bus API is available */
-  g_array_unref (blocked_arr);
-  g_array_unref (unblocked_arr);
+  if (self->priv->svc_contact_blocking &&
+      (g_hash_table_size (blocked_contacts) > 0 ||
+       g_hash_table_size (unblocked_contacts) > 0))
+    tp_svc_connection_interface_contact_blocking_emit_blocked_contacts_changed (
+        self->priv->conn, blocked_contacts, unblocked_contacts);
 
   tp_intset_destroy (blocked);
   tp_intset_destroy (unblocked);
+  g_hash_table_unref (blocked_contacts);
+  g_hash_table_unref (unblocked_contacts);
   tp_handle_set_destroy (now_blocked);
 }
 
@@ -3044,6 +3104,21 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
 }
 
 /**
+ * TpBaseContactListBlockContactsWithAbuseFunc:
+ * @self: the contact list manager
+ * @contacts: the contacts to block
+ * @report_abusive: whether to report the contacts as abusive to the server
+ *  operator
+ * @callback: a callback to call on success, failure or disconnection
+ * @user_data: user data for the callback
+ *
+ * Signature of a virtual method that blocks a set of contacts, optionally
+ * reporting them to the server operator as abusive.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+
+/**
  * tp_base_contact_list_can_block:
  * @self: a contact list manager
  *
@@ -3129,14 +3204,17 @@ tp_base_contact_list_dup_blocked_contacts (TpBaseContactList *self)
  *
  * Request that the given contacts are prevented from communicating with the
  * user, and that presence is not sent to them even if they have a valid
- * presence subscription, if possible.
+ * presence subscription, if possible. This is equivalent to calling
+ * tp_base_contact_list_block_contacts_with_abuse_async(), passing #FALSE as
+ * the report_abusive argument.
  *
  * If the #TpBaseContactList subclass does not implement
  * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
  *
  * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
  * method which must be implemented, using
- * #TpBlockableContactListInterface.block_contacts_async.
+ * #TpBlockableContactListInterface.block_contacts_async or
+ * #TpBlockableContactListInterface.block_contacts_with_abuse_async.
  * The implementation should call
  * tp_base_contact_list_contact_blocking_changed()
  * for any contacts it has changed, before calling @callback.
@@ -3149,13 +3227,59 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  tp_base_contact_list_block_contacts_with_abuse_async (self, contacts, FALSE,
+      callback, user_data);
+}
+
+/**
+ * tp_base_contact_list_block_contacts_with_abuse_async:
+ * @self: a contact list manager
+ * @contacts: contacts whose communications should be blocked
+ * @report_abusive: whether to report the contacts as abusive to the server
+ *  operator
+ * @callback: a callback to call when the operation succeeds or fails
+ * @user_data: optional data to pass to @callback
+ *
+ * Request that the given contacts are prevented from communicating with the
+ * user, and that presence is not sent to them even if they have a valid
+ * presence subscription, if possible. If the #TpBaseContactList subclass
+ * implements #TpBlockableContactListInterface.block_contacts_with_abuse_async
+ * and @report_abusive is #TRUE, also report the given contacts as abusive to
+ * the server operator.
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
+ * method which must be implemented, using
+ * #TpBlockableContactListInterface.block_contacts_async or
+ * #TpBlockableContactListInterface.block_contacts_with_abuse_async.
+ * The implementation should call
+ * tp_base_contact_list_contact_blocking_changed()
+ * for any contacts it has changed, before calling @callback.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_base_contact_list_block_contacts_with_abuse_async (TpBaseContactList *self,
+    TpHandleSet *contacts,
+    gboolean report_abusive,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
   TpBlockableContactListInterface *blockable_iface;
 
   blockable_iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
   g_return_if_fail (blockable_iface != NULL);
-  g_return_if_fail (blockable_iface->block_contacts_async != NULL);
 
-  blockable_iface->block_contacts_async (self, contacts, callback, user_data);
+  if (blockable_iface->block_contacts_async != NULL)
+    blockable_iface->block_contacts_async (self, contacts, callback, user_data);
+  else if (blockable_iface->block_contacts_with_abuse_async != NULL)
+    blockable_iface->block_contacts_with_abuse_async (self, contacts,
+        report_abusive, callback, user_data);
+  else
+    g_critical ("neither block_contacts_async nor "
+        "block_contacts_with_abuse_async is implemented");
 }
 
 /**
@@ -3182,6 +3306,42 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
  */
 gboolean
 tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  TpBlockableContactListInterface *blockable_iface;
+
+  blockable_iface = TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  g_return_val_if_fail (blockable_iface != NULL, FALSE);
+  g_return_val_if_fail (blockable_iface->block_contacts_finish != NULL, FALSE);
+
+  return blockable_iface->block_contacts_finish (self, result, error);
+}
+
+/**
+ * tp_base_contact_list_block_contacts_with_abuse_finish:
+ * @self: a contact list manager
+ * @result: the result passed to @callback by an implementation of
+ *  tp_base_contact_list_block_contacts_with_abuse_async()
+ * @error: used to raise an error if %FALSE is returned
+ *
+ * Interpret the result of an asynchronous call to
+ * tp_base_contact_list_block_contacts_with_abuse_async().
+ *
+ * If the #TpBaseContactList subclass does not implement
+ * %TP_TYPE_BLOCKABLE_CONTACT_LIST, it is an error to call this method.
+ *
+ * For implementations of %TP_TYPE_BLOCKABLE_CONTACT_LIST, this is a virtual
+ * method which may be implemented using
+ * #TpBlockableContactListInterface.block_contacts_finish. If the @result
+ * will be a #GSimpleAsyncResult, the default implementation may be used.
+ *
+ * Returns: %TRUE on success or %FALSE on error
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_base_contact_list_block_contacts_with_abuse_finish (TpBaseContactList *self,
     GAsyncResult *result,
     GError **error)
 {
@@ -5622,6 +5782,202 @@ tp_base_contact_list_mixin_groups_iface_init (
 #undef IMPLEMENT
 }
 
+#define ERROR_IF_BLOCKING_NOT_SUPPORTED(self, context) \
+  if (!self->priv->svc_contact_blocking) \
+    { \
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED, \
+          "ContactBlocking is not supported on this connection" }; \
+      dbus_g_method_return_error (context, &e); \
+      return; \
+    }
+
+static void
+tp_base_contact_list_mixin_request_blocked_contacts (
+    TpSvcConnectionInterfaceContactBlocking *svc,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+
+  ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
+
+  switch (self->priv->state)
+    {
+    case TP_CONTACT_LIST_STATE_NONE:
+    case TP_CONTACT_LIST_STATE_WAITING:
+      g_queue_push_tail (&self->priv->blocked_contact_requests, context);
+      break;
+
+    case TP_CONTACT_LIST_STATE_FAILURE:
+      g_warn_if_fail (self->priv->failure != NULL);
+      dbus_g_method_return_error (context, self->priv->failure);
+      break;
+
+    case TP_CONTACT_LIST_STATE_SUCCESS:
+      {
+        TpHandleSet *blocked = tp_base_contact_list_dup_blocked_contacts (self);
+        GHashTable *map = tp_handle_set_to_identifier_map (blocked);
+
+        tp_svc_connection_interface_contact_blocking_return_from_request_blocked_contacts (context, map);
+
+        g_hash_table_unref (map);
+        tp_handle_set_destroy (blocked);
+        break;
+      }
+
+    default:
+      {
+        GError broken = { TP_ERRORS, TP_ERROR_CONFUSED,
+            "My internal list of blocked contacts is inconsistent! "
+            "I apologise for any inconvenience caused." };
+        dbus_g_method_return_error (context, &broken);
+        g_return_if_reached ();
+      }
+    }
+}
+
+static void
+blocked_cb (
+    GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  DBusGMethodInvocation *context = user_data;
+  GError *error = NULL;
+
+  if (tp_base_contact_list_block_contacts_with_abuse_finish (self, result,
+          &error))
+    {
+      tp_svc_connection_interface_contact_blocking_return_from_block_contacts (
+          context);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+    }
+}
+
+static void
+tp_base_contact_list_mixin_block_contacts (
+    TpSvcConnectionInterfaceContactBlocking *svc,
+    const GArray *contacts_arr,
+    gboolean report_abusive,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpHandleSet *contacts;
+
+  ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
+
+  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts_arr);
+  tp_base_contact_list_block_contacts_with_abuse_async (self, contacts,
+      report_abusive, blocked_cb, context);
+  tp_handle_set_destroy (contacts);
+}
+
+static void
+unblocked_cb (
+    GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseContactList *self = TP_BASE_CONTACT_LIST (source);
+  DBusGMethodInvocation *context = user_data;
+  GError *error = NULL;
+
+  if (tp_base_contact_list_unblock_contacts_finish (self, result, &error))
+    {
+      tp_svc_connection_interface_contact_blocking_return_from_unblock_contacts (context);
+    }
+  else
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+    }
+}
+
+static void
+tp_base_contact_list_mixin_unblock_contacts (
+    TpSvcConnectionInterfaceContactBlocking *svc,
+    const GArray *contacts_arr,
+    DBusGMethodInvocation *context)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) svc, TP_TYPE_BASE_CONTACT_LIST);
+  TpHandleSet *contacts;
+
+  ERROR_IF_BLOCKING_NOT_SUPPORTED (self, context);
+
+  contacts = tp_handle_set_new_from_array (self->priv->contact_repo,
+      contacts_arr);
+  tp_base_contact_list_unblock_contacts_async (self, contacts, unblocked_cb,
+      context);
+  tp_handle_set_destroy (contacts);
+}
+
+/**
+ * tp_base_contact_list_mixin_blocking_iface_init:
+ * @klass: the service-side D-Bus interface
+ *
+ * Use the #TpBaseContactList like a mixin, to implement the ContactBlocking
+ * D-Bus interface.
+ *
+ * This function should be passed to G_IMPLEMENT_INTERFACE() for
+ * #TpSvcConnectionInterfaceContactBlocking
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_base_contact_list_mixin_blocking_iface_init (
+    TpSvcConnectionInterfaceContactBlockingClass *klass)
+{
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_blocking_implement_##x (\
+  klass, tp_base_contact_list_mixin_##x)
+  IMPLEMENT (block_contacts);
+  IMPLEMENT (unblock_contacts);
+  IMPLEMENT (request_blocked_contacts);
+#undef IMPLEMENT
+}
+
+static TpDBusPropertiesMixinPropImpl known_blocking_props[] = {
+    { "ContactBlockingCapabilities" },
+    { NULL }
+};
+
+static void
+tp_base_contact_list_get_blocking_dbus_property (GObject *conn,
+    GQuark interface G_GNUC_UNUSED,
+    GQuark name G_GNUC_UNUSED,
+    GValue *value,
+    gpointer data)
+{
+  TpBaseContactList *self = _tp_base_connection_find_channel_manager (
+      (TpBaseConnection *) conn, TP_TYPE_BASE_CONTACT_LIST);
+  TpBlockableContactListInterface *iface =
+      TP_BLOCKABLE_CONTACT_LIST_GET_INTERFACE (self);
+  static GQuark contact_blocking_capabilities_q = 0;
+  guint flags = 0;
+
+  g_return_if_fail (TP_IS_BASE_CONTACT_LIST (self));
+  g_return_if_fail (TP_IS_BLOCKABLE_CONTACT_LIST (self));
+  g_return_if_fail (self->priv->conn != NULL);
+
+  if (G_UNLIKELY (contact_blocking_capabilities_q == 0))
+    contact_blocking_capabilities_q =
+        g_quark_from_static_string ("ContactBlockingCapabilities");
+
+  g_return_if_fail (name == contact_blocking_capabilities_q);
+
+  if (iface->block_contacts_with_abuse_async != NULL)
+    flags |= TP_CONTACT_BLOCKING_CAPABILITY_CAN_REPORT_ABUSIVE;
+
+  g_value_set_uint (value, flags);
+}
+
 /**
  * tp_base_contact_list_mixin_class_init:
  * @cls: A subclass of #TpBaseConnection that has a #TpContactsMixinClass,
@@ -5661,6 +6017,14 @@ tp_base_contact_list_mixin_class_init (TpBaseConnectionClass *cls)
           TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS,
           tp_base_contact_list_get_group_dbus_property,
           NULL, known_group_props);
+    }
+
+  if (g_type_is_a (type, TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_BLOCKING))
+    {
+      tp_dbus_properties_mixin_implement_interface (obj_cls,
+          TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING,
+          tp_base_contact_list_get_blocking_dbus_property,
+          NULL, known_blocking_props);
     }
 }
 

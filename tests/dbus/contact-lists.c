@@ -18,7 +18,8 @@ typedef enum {
     GROUPS_CHANGED,
     GROUPS_CREATED,
     GROUPS_REMOVED,
-    GROUP_RENAMED
+    GROUP_RENAMED,
+    BLOCKED_CONTACTS_CHANGED
 } LogEntryType;
 
 typedef struct {
@@ -32,6 +33,9 @@ typedef struct {
     GStrv groups_added;
     /* GroupsChanged, GroupsRemoved, GroupRenamed */
     GStrv groups_removed;
+    /* BlockedContactsChanged */
+    GHashTable *blocked_contacts;
+    GHashTable *unblocked_contacts;
 } LogEntry;
 
 static void
@@ -48,6 +52,12 @@ log_entry_free (LogEntry *le)
 
   g_strfreev (le->groups_added);
   g_strfreev (le->groups_removed);
+
+  if (le->blocked_contacts != NULL)
+    g_hash_table_unref (le->blocked_contacts);
+
+  if (le->unblocked_contacts != NULL)
+    g_hash_table_unref (le->unblocked_contacts);
 
   g_slice_free (LogEntry, le);
 }
@@ -280,6 +290,23 @@ group_renamed_cb (TpConnection *connection,
 }
 
 static void
+blocked_contacts_changed_cb (TpConnection *connection,
+    GHashTable *blocked_contacts,
+    GHashTable *unblocked_contacts,
+    gpointer user_data,
+    GObject *weak_object G_GNUC_UNUSED)
+{
+  Test *test = user_data;
+  LogEntry *le = g_slice_new0 (LogEntry);
+
+  le->type = BLOCKED_CONTACTS_CHANGED;
+  le->blocked_contacts = g_hash_table_ref (blocked_contacts);
+  le->unblocked_contacts = g_hash_table_ref (unblocked_contacts);
+
+  g_ptr_array_add (test->log, le);
+}
+
+static void
 maybe_queue_disconnect (TpProxySignalConnection *sc)
 {
   if (sc != NULL)
@@ -288,20 +315,29 @@ maybe_queue_disconnect (TpProxySignalConnection *sc)
 }
 
 static void
-setup (Test *test,
+setup_pre_connect (
+    Test *test,
     gconstpointer data)
 {
   GError *error = NULL;
-  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  const gchar *account;
 
   g_type_init ();
   tp_debug_set_flags ("all");
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
   test->main_loop = g_main_loop_new (NULL, FALSE);
 
+  /* Some tests want 'account' to be an invalid identifier, so that Connect()
+   * will fail (and the status will change to Disconnected).
+   */
+  if (!tp_strdiff (data, "break-account-parameter"))
+    account = "";
+  else
+    account = "me@example.com";
+
   test->service_conn = tp_tests_object_new_static_class (
         EXAMPLE_TYPE_CONTACT_LIST_CONNECTION,
-        "account", "me@example.com",
+        "account", account,
         "simulation-delay", 0,
         "protocol", "example-contact-list",
         NULL);
@@ -320,6 +356,19 @@ setup (Test *test,
       &error);
   g_assert (test->conn != NULL);
   g_assert_no_error (error);
+
+  /* Prepare the connection far enough to know its own interfaces. */
+  tp_tests_proxy_run_until_prepared (test->conn, NULL);
+}
+
+static void
+setup (Test *test,
+    gconstpointer data)
+{
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+
+  setup_pre_connect (test, data);
+
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
   tp_tests_proxy_run_until_prepared (test->conn, features);
 
@@ -347,6 +396,9 @@ setup (Test *test,
   maybe_queue_disconnect (
       tp_cli_connection_interface_contact_groups_connect_to_group_renamed (
         test->conn, group_renamed_cb, test, NULL, NULL, NULL));
+  maybe_queue_disconnect (
+      tp_cli_connection_interface_contact_blocking_connect_to_blocked_contacts_changed (
+        test->conn, blocked_contacts_changed_cb, test, NULL, NULL, NULL));
 
   test->sjoerd = tp_handle_ensure (test->contact_repo, "sjoerd@example.com",
       NULL, NULL);
@@ -378,6 +430,20 @@ test_clear_log (Test *test)
 }
 
 static void
+teardown_pre_connect (
+    Test *test,
+    gconstpointer data)
+{
+  test->service_conn_as_base = NULL;
+  g_object_unref (test->service_conn);
+  g_free (test->conn_name);
+  g_free (test->conn_path);
+  tp_clear_object (&test->conn);
+  tp_clear_object (&test->dbus);
+  tp_clear_pointer (&test->main_loop, g_main_loop_unref);
+}
+
+static void
 teardown (Test *test,
     gconstpointer data)
 {
@@ -397,7 +463,6 @@ teardown (Test *test,
   tp_handle_unref (test->contact_repo, test->ninja);
   tp_handle_unref (test->contact_repo, test->canceller);
 
-  tp_clear_object (&test->conn);
   tp_clear_object (&test->publish);
   tp_clear_object (&test->subscribe);
   tp_clear_object (&test->stored);
@@ -416,14 +481,9 @@ teardown (Test *test,
   g_assert_error (error, TP_ERRORS, TP_ERROR_CANCELLED);
   g_clear_error (&error);
 
-  test->service_conn_as_base = NULL;
-  g_object_unref (test->service_conn);
-  g_free (test->conn_name);
-  g_free (test->conn_path);
-
-  tp_clear_object (&test->dbus);
-  tp_clear_pointer (&test->main_loop, g_main_loop_unref);
   tp_clear_pointer (&test->contact_attributes, g_hash_table_unref);
+
+  teardown_pre_connect (test, data);
 }
 
 static TpChannel *
@@ -570,6 +630,46 @@ test_assert_one_group_removed (Test *test,
 }
 
 static void
+test_assert_one_contact_blocked (Test *test,
+    guint index,
+    TpHandle handle,
+    const gchar *id)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, BLOCKED_CONTACTS_CHANGED);
+
+  g_assert (le->blocked_contacts != NULL);
+  g_assert_cmpuint (g_hash_table_size (le->blocked_contacts), ==, 1);
+  g_assert_cmpstr (g_hash_table_lookup (le->blocked_contacts, GUINT_TO_POINTER (handle)),
+      ==, id);
+
+  g_assert (le->unblocked_contacts != NULL);
+  g_assert_cmpuint (g_hash_table_size (le->unblocked_contacts), ==, 0);
+}
+
+static void
+test_assert_one_contact_unblocked (Test *test,
+    guint index,
+    TpHandle handle,
+    const gchar *id)
+{
+  LogEntry *le;
+
+  le = g_ptr_array_index (test->log, index);
+  g_assert_cmpint (le->type, ==, BLOCKED_CONTACTS_CHANGED);
+
+  g_assert (le->blocked_contacts != NULL);
+  g_assert_cmpuint (g_hash_table_size (le->blocked_contacts), ==, 0);
+
+  g_assert (le->unblocked_contacts != NULL);
+  g_assert_cmpuint (g_hash_table_size (le->unblocked_contacts), ==, 1);
+  g_assert_cmpstr (g_hash_table_lookup (le->unblocked_contacts, GUINT_TO_POINTER (handle)),
+      ==, id);
+}
+
+static void
 test_nothing (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
@@ -653,6 +753,8 @@ test_properties (Test *test,
 {
   GHashTable *asv;
   GError *error = NULL;
+  guint32 blocking_caps;
+  gboolean valid;
 
   tp_cli_dbus_properties_run_get_all (test->conn, -1,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST, &asv, &error, NULL);
@@ -700,6 +802,16 @@ test_properties (Test *test,
   g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"), "Montreal"));
   g_assert (tp_strv_contains (tp_asv_get_strv (asv, "Groups"),
         "Francophones"));
+  g_hash_table_unref (asv);
+
+  tp_cli_dbus_properties_run_get_all (test->conn, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING, &asv, &error, NULL);
+  g_assert_no_error (error);
+  g_assert_cmpuint (g_hash_table_size (asv), ==, 1);
+  blocking_caps = tp_asv_get_uint32 (asv, "ContactBlockingCapabilities",
+      &valid);
+  g_assert (valid);
+  g_assert_cmpuint (blocking_caps, ==, 0);
   g_hash_table_unref (asv);
 
   g_assert_cmpuint (test->log->len, ==, 0);
@@ -2202,9 +2314,14 @@ test_rename_group_absent (Test *test,
   g_clear_error (&error);
 }
 
+/* Signature of a function which does something with test->arr */
+typedef void (*ManipulateContactsFunc) (
+    Test *test,
+    GError **error);
+
 static void
-test_add_to_deny (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+block_contacts (Test *test,
+    ManipulateContactsFunc func)
 {
   GError *error = NULL;
 
@@ -2219,12 +2336,12 @@ test_add_to_deny (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_add_members (test->deny,
-      -1, test->arr, "", &error, NULL);
+  func (test, &error);
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
-   * change-notification, too */
+   * change-notification, on both the deny channel and the ContactBlocking
+   * connection interface */
   g_assert_cmpuint (
       tp_intset_size (tp_channel_group_get_members (test->deny)),
       ==, 3);
@@ -2237,11 +2354,15 @@ test_add_to_deny (Test *test,
         test->ninja));
   test_assert_contact_state (test, test->ninja,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_blocked (test, 0, test->ninja,
+      tp_handle_inspect (test->contact_repo, test->ninja));
 }
 
 static void
-test_add_to_deny_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+block_contacts_no_op (Test *test,
+    ManipulateContactsFunc func)
 {
   GError *error = NULL;
 
@@ -2252,8 +2373,7 @@ test_add_to_deny_no_op (Test *test,
         test->bill));
 
   g_array_append_val (test->arr, test->bill);
-  tp_cli_channel_interface_group_run_add_members (test->deny,
-      -1, test->arr, "", &error, NULL);
+  func (test, &error);
   g_assert_no_error (error);
 
   g_assert (tp_intset_is_member (
@@ -2261,11 +2381,14 @@ test_add_to_deny_no_op (Test *test,
         test->bill));
   test_assert_contact_state (test, test->bill,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+
+  /* We shouldn't emit spurious empty BlockedContactsChanged signals. */
+  g_assert_cmpuint (test->log->len, ==, 0);
 }
 
 static void
-test_remove_from_deny (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+unblock_contacts (Test *test,
+    ManipulateContactsFunc func)
 {
   GError *error = NULL;
 
@@ -2279,8 +2402,7 @@ test_remove_from_deny (Test *test,
         test->bill));
 
   g_array_append_val (test->arr, test->bill);
-  tp_cli_channel_interface_group_run_remove_members (test->deny,
-      -1, test->arr, "", &error, NULL);
+  func (test, &error);
   g_assert_no_error (error);
 
   /* by the time the method returns, we should have had the
@@ -2290,11 +2412,15 @@ test_remove_from_deny (Test *test,
         test->bill));
   test_assert_contact_state (test, test->bill,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+
+  g_assert_cmpuint (test->log->len, ==, 1);
+  test_assert_one_contact_unblocked (test, 0, test->bill,
+      tp_handle_inspect (test->contact_repo, test->bill));
 }
 
 static void
-test_remove_from_deny_no_op (Test *test,
-    gconstpointer nil G_GNUC_UNUSED)
+unblock_contacts_no_op (Test *test,
+    ManipulateContactsFunc func)
 {
   GError *error = NULL;
 
@@ -2305,14 +2431,193 @@ test_remove_from_deny_no_op (Test *test,
         test->ninja));
 
   g_array_append_val (test->arr, test->ninja);
-  tp_cli_channel_interface_group_run_remove_members (test->deny,
-      -1, test->arr, "", &error, NULL);
+  func (test, &error);
   g_assert_no_error (error);
   g_assert (!tp_intset_is_member (
         tp_channel_group_get_members (test->deny),
         test->ninja));
   test_assert_contact_state (test, test->ninja,
       TP_SUBSCRIPTION_STATE_NO, TP_SUBSCRIPTION_STATE_NO, NULL, NULL);
+
+  /* We shouldn't emit spurious empty BlockedContactsChanged signals. */
+  g_assert_cmpuint (test->log->len, ==, 0);
+}
+
+static void
+add_to_deny (Test *test,
+    GError **error)
+{
+  tp_cli_channel_interface_group_run_add_members (test->deny,
+      -1, test->arr, "", error, NULL);
+}
+
+static void
+test_add_to_deny (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  block_contacts (test, add_to_deny);
+}
+
+static void
+test_add_to_deny_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  block_contacts_no_op (test, add_to_deny);
+}
+
+static void
+remove_from_deny (Test *test,
+    GError **error)
+{
+  tp_cli_channel_interface_group_run_remove_members (test->deny,
+      -1, test->arr, "", error, NULL);
+}
+
+static void
+test_remove_from_deny (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  unblock_contacts (test, remove_from_deny);
+}
+
+static void
+test_remove_from_deny_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  unblock_contacts_no_op (test, remove_from_deny);
+}
+
+static void
+test_request_blocked_contacts (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  GHashTable *blocked_contacts;
+  GError *error = NULL;
+
+  tp_cli_connection_interface_contact_blocking_run_request_blocked_contacts (
+      test->conn, -1, &blocked_contacts, &error, NULL);
+  g_assert_no_error (error);
+  g_assert (blocked_contacts != NULL);
+
+  /* Both Bill and the shadowy Steve are blocked; Steve does not appear in this
+   * test, as he is in poor health.
+   */
+  g_assert_cmpuint (g_hash_table_size (blocked_contacts), ==, 2);
+  g_assert_cmpstr (tp_handle_inspect (test->contact_repo, test->bill), ==,
+      g_hash_table_lookup (blocked_contacts, GUINT_TO_POINTER (test->bill)));
+  g_hash_table_unref (blocked_contacts);
+}
+
+static void
+request_blocked_contacts_succeeded_cb (
+    TpConnection *conn,
+    GHashTable *blocked_contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  g_assert_no_error (error);
+
+  /* As above. */
+  g_assert_cmpuint (g_hash_table_size (blocked_contacts), ==, 2);
+}
+
+static void
+test_request_blocked_contacts_pre_connect (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  gboolean ok;
+
+  /* This verifies that calling RequestBlockedContacts()
+   * before Connect(), when Connect() ultimately succeeds, returns correctly.
+   */
+  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+      test->conn, -1, request_blocked_contacts_succeeded_cb,
+      test, test_quit_loop, NULL);
+  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
+  g_main_loop_run (test->main_loop);
+
+  ok = tp_cli_connection_run_disconnect (test->conn, -1, NULL, NULL);
+  g_assert (ok);
+}
+
+static void
+request_blocked_contacts_failed_cb (
+    TpConnection *conn,
+    GHashTable *blocked_contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  g_assert_error (error, TP_ERRORS, TP_ERROR_DISCONNECTED);
+}
+
+static void
+test_request_blocked_contacts_connect_failed (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  /* This verifies that calling RequestBlockedContacts() (twice, no less)
+   * before Connect(), when Connect() ultimately fails, returns an appropriate
+   * error.
+   */
+  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+      test->conn, -1, request_blocked_contacts_failed_cb,
+      test, test_quit_loop, NULL);
+  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+      test->conn, -1, request_blocked_contacts_failed_cb,
+      test, test_quit_loop, NULL);
+
+  /* We expect calling Connect() to fail because the handle was invalid, but
+   * don't wait around for it.
+   */
+  tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
+  /* Spin the mainloop twice, once for each outstanding call. */
+  g_main_loop_run (test->main_loop);
+  g_main_loop_run (test->main_loop);
+}
+
+static void
+call_block_contacts (Test *test,
+    GError **error)
+{
+  tp_cli_connection_interface_contact_blocking_run_block_contacts (test->conn,
+      -1, test->arr, FALSE, error, NULL);
+}
+
+static void
+test_block_contacts (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  block_contacts (test, call_block_contacts);
+}
+
+static void
+test_block_contacts_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  block_contacts_no_op (test, call_block_contacts);
+}
+
+static void
+call_unblock_contacts (Test *test,
+    GError **error)
+{
+  tp_cli_connection_interface_contact_blocking_run_unblock_contacts (
+      test->conn, -1, test->arr, error, NULL);
+}
+
+static void
+test_unblock_contacts (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  unblock_contacts (test, call_unblock_contacts);
+}
+
+static void
+test_unblock_contacts_no_op (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  unblock_contacts_no_op (test, call_unblock_contacts);
 }
 
 int
@@ -2457,6 +2762,24 @@ main (int argc,
       Test, NULL, setup, test_remove_from_deny, teardown);
   g_test_add ("/contact-lists/remove-from-deny/no-op",
       Test, NULL, setup, test_remove_from_deny_no_op, teardown);
+
+  g_test_add ("/contact-lists/request-blocked-contacts",
+      Test, NULL, setup, test_request_blocked_contacts, teardown);
+  g_test_add ("/contact-lists/request-blocked-contacts-before-connect",
+      Test, NULL, setup_pre_connect,
+      test_request_blocked_contacts_pre_connect, teardown_pre_connect);
+  g_test_add ("/contact-lists/request-blocked-contacts-connect-failed",
+      Test, "break-account-parameter", setup_pre_connect,
+      test_request_blocked_contacts_connect_failed,
+      teardown_pre_connect);
+  g_test_add ("/contact-lists/block-contacts",
+      Test, NULL, setup, test_block_contacts, teardown);
+  g_test_add ("/contact-lists/block-contacts/no-op",
+      Test, NULL, setup, test_block_contacts_no_op, teardown);
+  g_test_add ("/contact-lists/unblock-contacts",
+      Test, NULL, setup, test_unblock_contacts, teardown);
+  g_test_add ("/contact-lists/unblock-contacts/no-op",
+      Test, NULL, setup, test_unblock_contacts_no_op, teardown);
 
   return g_test_run ();
 }
