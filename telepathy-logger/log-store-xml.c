@@ -500,7 +500,7 @@ add_text_event (TplLogStoreXml *self,
     GError **error)
 {
   gboolean ret = FALSE;
-  guint64 timestamp;
+  guint64 timestamp = 0;
   TpDBusDaemon *bus_daemon;
   TpAccount *account;
   TplEntity *sender;
