@@ -367,7 +367,7 @@ log_store_xml_get_file_suffix (GType type)
 
 static gchar *
 log_store_xml_get_timestamp_filename (GType type,
-    guint64 timestamp)
+    gint64 timestamp)
 {
   gchar *date_str;
   gchar *filename;
@@ -386,7 +386,7 @@ log_store_xml_get_timestamp_filename (GType type,
 
 
 static gchar *
-log_store_xml_format_timestamp (guint64 timestamp)
+log_store_xml_format_timestamp (gint64 timestamp)
 {
   GDateTime *ts;
   gchar *ts_str;
@@ -412,7 +412,7 @@ log_store_xml_get_filename (TplLogStoreXml *self,
     TpAccount *account,
     TplEntity *target,
     GType type,
-    guint64 timestamp)
+    gint64 timestamp)
 {
   gchar *id_dir;
   gchar *timestamp_str;
@@ -438,7 +438,7 @@ _log_store_xml_write_to_store (TplLogStoreXml *self,
     TplEntity *target,
     const gchar *event,
     GType type,
-    guint64 timestamp,
+    gint64 timestamp,
     GError **error)
 {
   FILE *file;
@@ -503,7 +503,7 @@ add_text_event (TplLogStoreXml *self,
     GError **error)
 {
   gboolean ret = FALSE;
-  guint64 timestamp;
+  gint64 timestamp;
   TpDBusDaemon *bus_daemon;
   TpAccount *account;
   TplEntity *sender;

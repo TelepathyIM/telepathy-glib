@@ -52,7 +52,7 @@ G_DEFINE_TYPE (TplTextEvent, tpl_text_event, TPL_TYPE_EVENT)
 struct _TplTextEventPriv
 {
   TpChannelTextMessageType message_type;
-  guint64 edit_timestamp;
+  gint64 edit_timestamp;
   gchar *message;
   gchar *token;
   gchar *supersedes_token;
@@ -123,7 +123,7 @@ tpl_text_event_get_property (GObject *object,
         g_value_set_uint (value, priv->message_type);
         break;
       case PROP_EDIT_TIMESTAMP:
-        g_value_set_uint64 (value, priv->edit_timestamp);
+        g_value_set_int64 (value, priv->edit_timestamp);
         break;
       case PROP_MESSAGE:
         g_value_set_string (value, priv->message);
@@ -154,7 +154,7 @@ tpl_text_event_set_property (GObject *object,
         priv->message_type = g_value_get_uint (value);
         break;
       case PROP_EDIT_TIMESTAMP:
-        priv->edit_timestamp = g_value_get_uint64 (value);
+        priv->edit_timestamp = g_value_get_int64 (value);
         break;
       case PROP_MESSAGE:
         g_assert (priv->message == NULL);
@@ -207,10 +207,10 @@ static void tpl_text_event_class_init (TplTextEventClass *klass)
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE_TYPE, param_spec);
 
-  param_spec = g_param_spec_uint64 ("edit-timestamp",
+  param_spec = g_param_spec_int64 ("edit-timestamp",
       "Timestamp of edit message",
       "message-{sent,received} if this is an edit, or 0 otherwise.",
-      0, G_MAXUINT64, 0,
+      G_MININT64, G_MAXINT64, 0,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_EDIT_TIMESTAMP,
       param_spec);
@@ -396,7 +396,7 @@ tpl_text_event_get_message_type (TplTextEvent *self)
  *
  * Returns: the same value as the #TplTextEvent:edit-timestamp property
  */
-guint64
+gint64
 tpl_text_event_get_edit_timestamp (TplTextEvent *self)
 {
   g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), 0);

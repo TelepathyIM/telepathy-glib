@@ -307,7 +307,7 @@ get_message_pending_id (TpMessage *m)
 }
 
 
-static guint64
+static gint64
 get_original_message_timestamp (TpMessage *message)
 {
   gint64 timestamp;
@@ -323,11 +323,11 @@ get_original_message_timestamp (TpMessage *message)
 }
 
 
-static guint64
+static gint64
 get_network_timestamp (TpMessage *message)
 {
   GDateTime *datetime = g_date_time_new_now_utc ();
-  guint64 now = g_date_time_to_unix (datetime);
+  gint64 now = g_date_time_to_unix (datetime);
   gint64 timestamp;
 
   timestamp = tp_message_get_sent_timestamp (message);
@@ -352,7 +352,7 @@ get_network_timestamp (TpMessage *message)
 }
 
 
-static guint64
+static gint64
 get_message_edit_timestamp (TpMessage *message)
 {
   if (tp_message_get_supersedes (message) != NULL)
@@ -362,7 +362,7 @@ get_message_edit_timestamp (TpMessage *message)
 }
 
 
-static guint64
+static gint64
 get_message_timestamp (TpMessage *message)
 {
   gint64 timestamp;
