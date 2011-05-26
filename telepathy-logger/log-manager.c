@@ -559,26 +559,6 @@ _tpl_log_manager_get_events_for_date (TplLogManager *manager,
 }
 
 
-static gint
-log_manager_event_date_cmp (gconstpointer a,
-    gconstpointer b)
-{
-  TplEvent *one = (TplEvent *) a;
-  TplEvent *two = (TplEvent *) b;
-  gint64 one_time, two_time;
-
-  g_assert (TPL_IS_EVENT (one));
-  g_assert (TPL_IS_EVENT (two));
-
-  one_time = tpl_event_get_timestamp (one);
-  two_time = tpl_event_get_timestamp (two);
-
-  /* return -1, 0 or 1 depending on event1 being newer, the same or older
-   * than event2 */
-  return CLAMP (one_time - two_time, -1, 1);
-}
-
-
 GList *
 _tpl_log_manager_get_filtered_events (TplLogManager *manager,
     TpAccount *account,
@@ -589,9 +569,8 @@ _tpl_log_manager_get_filtered_events (TplLogManager *manager,
     gpointer user_data)
 {
   TplLogManagerPriv *priv;
-  GList *out = NULL;
+  GQueue out = G_QUEUE_INIT;
   GList *l;
-  guint i = 0;
 
   g_return_val_if_fail (TPL_IS_LOG_MANAGER (manager), NULL);
   g_return_val_if_fail (TPL_IS_ENTITY (target), NULL);
@@ -603,40 +582,26 @@ _tpl_log_manager_get_filtered_events (TplLogManager *manager,
   for (l = priv->readable_stores; l != NULL; l = g_list_next (l))
     {
       TplLogStore *store = TPL_LOG_STORE (l->data);
-      GList *new;
+      GList *new, *index = NULL;
 
       new = _tpl_log_store_get_filtered_events (store, account, target,
           type_mask, num_events, filter, user_data);
+
       while (new != NULL)
         {
-          if (i < num_events)
+          index = _tpl_event_queue_insert_sorted_after (&out, index, new->data);
+
+          if (out.length > num_events)
             {
-              /* We have less events than needed so far. Keep this event. */
-              out = g_list_insert_sorted (out, new->data,
-                  (GCompareFunc) log_manager_event_date_cmp);
-              i++;
-            }
-          else if (log_manager_event_date_cmp (new->data, out->data) > 0)
-            {
-              /* This event is newer than the oldest event we have in out
-               * list. Remove the head of out list and insert this event. */
-              g_object_unref (out->data);
-              out = g_list_delete_link (out, out);
-              out = g_list_insert_sorted (out, new->data,
-                  (GCompareFunc) log_manager_event_date_cmp);
-            }
-          else
-            {
-              /* This event is older than the oldest event we have in out
-               * list. Drop it. */
-              g_object_unref (new->data);
+              /* We have too many elements. Remove the oldest event. */
+              g_object_unref (g_queue_pop_head (&out));
             }
 
           new = g_list_delete_link (new, new);
         }
     }
 
-  return out;
+  return out.head;
 }
 
 
