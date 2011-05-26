@@ -1434,6 +1434,22 @@ prepare_core_and_claim_ctx_free (PrepareCoreAndClaimCtx *ctx)
   g_slice_free (PrepareCoreAndClaimCtx, ctx);
 }
 
+/* Takes ownership of @error */
+static void
+prepare_core_and_claim_ctx_failed (PrepareCoreAndClaimCtx *ctx,
+    GError *error)
+{
+  g_simple_async_result_take_error (ctx->result, error);
+  g_simple_async_result_complete (ctx->result);
+
+  /* We received a reference on result from the caller and was supposed to
+   * give it back when calling the callback. But as something went wrong, we
+   * terminate the operation ourself and so don't call the callback, so we
+   * have to drop this reference. */
+  g_object_unref (ctx->result);
+  prepare_core_and_claim_ctx_free (ctx);
+}
+
 static void
 prepare_core_claim_cb (GObject *source,
     GAsyncResult *result,
@@ -1448,17 +1464,13 @@ prepare_core_claim_cb (GObject *source,
       DEBUG ("Failed to Claim %s: %s",
           tp_proxy_get_object_path (self), error->message);
 
-      g_simple_async_result_take_error (ctx->result, error);
-      g_simple_async_result_complete (ctx->result);
-      /* Remove the ref we got from the caller */
-      g_object_unref (ctx->result);
-      goto out;
+      prepare_core_and_claim_ctx_failed (ctx, error);
+      return;
     }
 
-  /* Pass the ref we got from the caller */
+  /* Pass back the ref we got from the caller */
   ctx->callback (self, ctx->result);
 
-out:
   prepare_core_and_claim_ctx_free (ctx);
 }
 
@@ -1476,11 +1488,7 @@ prepare_core_cb (GObject *source,
       DEBUG ("Failed to prepare CORE on %s: %s",
           tp_proxy_get_object_path (self), error->message);
 
-      g_simple_async_result_take_error (ctx->result, error);
-      g_simple_async_result_complete (ctx->result);
-      /* Remove the ref we got from the caller */
-      g_object_unref (ctx->result);
-      prepare_core_and_claim_ctx_free (ctx);
+      prepare_core_and_claim_ctx_failed (ctx, error);
       return;
     }
 
