@@ -122,6 +122,7 @@ G_DEFINE_TYPE_WITH_CODE (TplLogStoreXml, _tpl_log_store_xml,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TPL_TYPE_LOG_STORE, log_store_iface_init))
 
+
 static void
 log_store_xml_dispose (GObject *object)
 {
@@ -351,6 +352,7 @@ log_store_xml_get_dir (TplLogStoreXml *self,
   return basedir;
 }
 
+
 static const gchar *
 log_store_xml_get_file_suffix (GType type)
 {
@@ -361,6 +363,7 @@ log_store_xml_get_file_suffix (GType type)
   else
     g_return_val_if_reached (NULL);
 }
+
 
 static gchar *
 log_store_xml_get_timestamp_filename (GType type,
@@ -609,6 +612,7 @@ out:
   return ret;
 }
 
+
 static gboolean
 add_call_event (TplLogStoreXml *self,
     TplCallEvent *event,
@@ -728,6 +732,7 @@ log_store_xml_add_event (TplLogStore *store,
    * this Event */
   return TRUE;
 }
+
 
 static gboolean
 log_store_xml_exists_in_directory (const gchar *dirname,
@@ -1325,6 +1330,7 @@ event_queue_replace_and_supersede (GQueue *events,
   index->data = event;
 }
 
+
 static GList *
 event_queue_add_text_event (GQueue *events,
     GList *index,
@@ -1379,6 +1385,7 @@ event_queue_add_text_event (GQueue *events,
   event_queue_replace_and_supersede (events, index, superseded_links, event);
   return index;
 }
+
 
 /* returns a Glist of TplEvent instances */
 static void
@@ -1664,6 +1671,7 @@ log_store_xml_search_new (TplLogStore *store,
 
   return _log_store_xml_search_in_files (self, text, files, type_mask);
 }
+
 
 /* Returns: (GList *) of (TplLogSearchHit *) */
 static GList *
