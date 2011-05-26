@@ -295,6 +295,8 @@ assert_cmp_text_event (TplEvent *event,
       ==, tpl_text_event_get_message_token (TPL_TEXT_EVENT (stored_event)));
   g_assert_cmpint (tpl_event_get_timestamp (event), ==,
       tpl_event_get_timestamp (stored_event));
+  g_assert_cmpint (tpl_text_event_get_edit_timestamp (TPL_TEXT_EVENT (event)),
+      ==, tpl_text_event_get_edit_timestamp (TPL_TEXT_EVENT (stored_event)));
 }
 
 
@@ -525,6 +527,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
       "receiver", contact,
       "timestamp", timestamp,
       /* TplTextEvent */
+      "edit-timestamp", timestamp + 1,
       "message-token", "OMGCOMPLETELYRANDOMSTRING2",
       "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -547,7 +550,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
-  /* 3. Edit it again. */
+  /* 3. Edit it again.
+   * Note that the (broken) edit-timestamp should not make any
+   * difference to the message processing, but it should be preserved.*/
   new_new_event = g_object_new (TPL_TYPE_TEXT_EVENT,
       /* TplEvent */
       "account", account,
@@ -555,6 +560,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
       "receiver", contact,
       "timestamp", timestamp,
       /* TplTextEvent */
+      "edit-timestamp", timestamp + (60 * 60 * 24),
       "message-token", "OMGCOMPLETELYRANDOMSTRING3",
       "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -588,7 +594,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
-  /* 4. Edit comes in with the wrong timestamp. */
+  /* 4. Edit comes in with the wrong timestamp.
+   * Note that the (also broken) edit-timestamp should not make any
+   * difference to the message processing, but it should be preserved.*/
   late_event = g_object_new (TPL_TYPE_TEXT_EVENT,
       /* TplEvent */
       "account", account,
@@ -596,6 +604,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
       "receiver", contact,
       "timestamp", timestamp + (60 * 60 * 24),
       /* TplTextEvent */
+      "edit-timestamp", timestamp - (60 * 60 * 24),
       "message-token", "OMGCOMPLETELYRANDOMSTRING4",
       "supersedes-token", "OMGCOMPLETELYRANDOMSTRING1",
       "message-type", TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
@@ -629,7 +638,9 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   g_list_free (events);
 
   /* 5. If we have an event that is broken in the other direction then it will
-   * also come out as a separate event (since each day is parsed on its own). */
+   * also come out as a separate event (since each day is parsed on its own).
+   * Even though we don't currently omit edit-timestamp, we might as well
+   * see what happens if we forget it. */
   early_event = g_object_new (TPL_TYPE_TEXT_EVENT,
       /* TplEvent */
       "account", account,
