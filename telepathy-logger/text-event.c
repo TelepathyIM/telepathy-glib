@@ -52,7 +52,7 @@ G_DEFINE_TYPE (TplTextEvent, tpl_text_event, TPL_TYPE_EVENT)
 struct _TplTextEventPriv
 {
   TpChannelTextMessageType message_type;
-  guint64 original_timestamp;
+  guint64 edit_timestamp;
   gchar *message;
   gchar *token;
   gchar *supersedes_token;
@@ -64,7 +64,7 @@ struct _TplTextEventPriv
 enum
 {
   PROP_MESSAGE_TYPE = 1,
-  PROP_ORIGINAL_TIMESTAMP,
+  PROP_EDIT_TIMESTAMP,
   PROP_MESSAGE,
   PROP_TOKEN,
   PROP_SUPERSEDES
@@ -122,8 +122,8 @@ tpl_text_event_get_property (GObject *object,
       case PROP_MESSAGE_TYPE:
         g_value_set_uint (value, priv->message_type);
         break;
-      case PROP_ORIGINAL_TIMESTAMP:
-        g_value_set_uint64 (value, priv->original_timestamp);
+      case PROP_EDIT_TIMESTAMP:
+        g_value_set_uint64 (value, priv->edit_timestamp);
         break;
       case PROP_MESSAGE:
         g_value_set_string (value, priv->message);
@@ -153,8 +153,8 @@ tpl_text_event_set_property (GObject *object,
       case PROP_MESSAGE_TYPE:
         priv->message_type = g_value_get_uint (value);
         break;
-      case PROP_ORIGINAL_TIMESTAMP:
-        priv->original_timestamp = g_value_get_uint64 (value);
+      case PROP_EDIT_TIMESTAMP:
+        priv->edit_timestamp = g_value_get_uint64 (value);
         break;
       case PROP_MESSAGE:
         g_assert (priv->message == NULL);
@@ -207,12 +207,12 @@ static void tpl_text_event_class_init (TplTextEventClass *klass)
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MESSAGE_TYPE, param_spec);
 
-  param_spec = g_param_spec_uint64 ("original-timestamp",
-      "Original Message Timestamp",
-      "original-message-{sent,received} if applicable, or 0.",
+  param_spec = g_param_spec_uint64 ("edit-timestamp",
+      "Timestamp of edit message",
+      "message-{sent,received} if this is an edit, or 0 otherwise.",
       0, G_MAXUINT64, 0,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_ORIGINAL_TIMESTAMP,
+  g_object_class_install_property (object_class, PROP_EDIT_TIMESTAMP,
       param_spec);
 
   param_spec = g_param_spec_string ("message",
@@ -391,17 +391,17 @@ tpl_text_event_get_message_type (TplTextEvent *self)
 
 
 /**
- * tpl_text_event_get_original_timestamp
+ * tpl_text_event_get_edit_timestamp
  * @self: a #TplTextEvent
  *
- * Returns: the same value as the #TplTextEvent:original-timestamp property
+ * Returns: the same value as the #TplTextEvent:edit-timestamp property
  */
 guint64
-tpl_text_event_get_original_timestamp (TplTextEvent *self)
+tpl_text_event_get_edit_timestamp (TplTextEvent *self)
 {
   g_return_val_if_fail (TPL_IS_TEXT_EVENT (self), 0);
 
-  return self->priv->original_timestamp;
+  return self->priv->edit_timestamp;
 }
 
 
