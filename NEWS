@@ -1,3 +1,19 @@
+telepathy-logger 0.2.10 (2011-05-26)
+===================================
+
+The "Malade!" release
+
+This release add support for text edits along with bug fixes. Distributions
+are encouraged to update.
+
+Fixes:
+
+* Add support for text message edits (David Laban)
+* Fix events ordering and merging speed (Nicolas Dufresne)
+* Fix destroy function for get_entities_async (Emilio Pozuelo Monfort)
+* Fix crash in pidgin log store (Guillaume Desmottes)
+
+
 telepathy-logger 0.2.9 (2011-05-06)
 ===================================
 
