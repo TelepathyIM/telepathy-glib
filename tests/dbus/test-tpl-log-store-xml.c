@@ -96,7 +96,10 @@ teardown (XmlTestCaseFixture *fixture,
     {
       gchar *command = g_strdup_printf ("rm -rf %s", fixture->tmp_basedir);
 
-      system (command);
+      if (system (command) == -1)
+          g_warning ("Failed to cleanup tempory test log dir: %s",
+                  fixture->tmp_basedir);
+
       g_free (fixture->tmp_basedir);
     }
 
