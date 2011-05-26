@@ -308,31 +308,6 @@ get_message_pending_id (TpMessage *m)
 
 
 static guint64
-get_message_timestamp (TpMessage *message)
-{
-  GDateTime *datetime = g_date_time_new_now_utc ();
-  guint64 now = g_date_time_to_unix (datetime);
-  gint64 timestamp;
-
-  timestamp = tp_message_get_sent_timestamp (message);
-
-  if (timestamp == 0)
-    timestamp = tp_message_get_received_timestamp (message);
-
-  if (timestamp - now > 60 * 60)
-    DEBUG ("timestamp is more than an hour in the future.");
-  else  if (now - timestamp > 60 * 60)
-    DEBUG ("timestamp is more than an hour in the past.");
-
-  if (timestamp == 0)
-    timestamp = now;
-
-  g_date_time_unref (datetime);
-  return timestamp;
-}
-
-
-static guint64
 get_original_message_timestamp (TpMessage *message)
 {
   gint64 timestamp;
@@ -343,6 +318,59 @@ get_original_message_timestamp (TpMessage *message)
   if (timestamp == 0)
     timestamp = tp_asv_get_int64 (tp_message_peek (message, 0),
         "original-message-received", NULL);
+
+  return timestamp;
+}
+
+
+static guint64
+get_network_timestamp (TpMessage *message)
+{
+  GDateTime *datetime = g_date_time_new_now_utc ();
+  guint64 now = g_date_time_to_unix (datetime);
+  gint64 timestamp;
+
+  timestamp = tp_message_get_sent_timestamp (message);
+
+  if (timestamp == 0)
+    timestamp = tp_message_get_received_timestamp (message);
+
+  if (timestamp == 0)
+    {
+      DEBUG ("TpMessage is not timestamped. Using current time instead.");
+      timestamp = now;
+    }
+
+  if (timestamp - now > 60 * 60)
+    DEBUG ("timestamp is more than an hour in the future.");
+  else  if (now - timestamp > 60 * 60)
+    DEBUG ("timestamp is more than an hour in the past.");
+
+  g_date_time_unref (datetime);
+
+  return timestamp;
+}
+
+
+static guint64
+get_message_edit_timestamp (TpMessage *message)
+{
+  if (tp_message_get_supersedes (message) != NULL)
+    return get_network_timestamp (message);
+  else
+    return 0;
+}
+
+
+static guint64
+get_message_timestamp (TpMessage *message)
+{
+  gint64 timestamp;
+
+  timestamp = get_original_message_timestamp (message);
+
+  if (timestamp == 0)
+    timestamp = get_network_timestamp (message);
 
   return timestamp;
 }
@@ -419,7 +447,7 @@ tpl_text_channel_store_message (TplTextChannel *self,
       "timestamp", timestamp,
       "message-token", tp_message_get_token (message),
       "supersedes-token", tp_message_get_supersedes (message),
-      "original-timestamp", get_original_message_timestamp (message),
+      "edit-timestamp", get_message_edit_timestamp (message),
       /* TplTextEvent */
       "message-type", type,
       "message", text,
