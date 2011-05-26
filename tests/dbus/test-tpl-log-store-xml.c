@@ -920,6 +920,7 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   GList *events;
   GDate *date;
   GError *error = NULL;
+  gint idx = -1;
 
   account = tp_account_new (fixture->bus,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
@@ -943,34 +944,34 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
 
   g_assert_cmpint (g_list_length (events), ==, 6);
 
-  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, 0)));
+  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, ++idx)));
   g_assert_cmpstr (
-      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, 0))),
+      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, idx))),
       ==, "7");
 
-  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, 1)));
-  g_assert_cmpint (
-      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, 1))),
-      ==, 1);
-
-  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, 2)));
-  g_assert_cmpint (
-      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, 2))),
-      ==, 2);
-
-  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, 3)));
-  g_assert_cmpint (
-      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, 3))),
-      ==, 3);
-
-  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, 4)));
+  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, ++idx)));
   g_assert_cmpstr (
-      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, 4))),
+      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, idx))),
       ==, "8");
 
-  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, 5)));
+  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, ++idx)));
+  g_assert_cmpint (
+      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, 1);
+
+  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, ++idx)));
+  g_assert_cmpint (
+      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, 2);
+
+  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, ++idx)));
+  g_assert_cmpint (
+      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, 3);
+
+  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, ++idx)));
   g_assert_cmpstr (
-      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, 5))),
+      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, idx))),
       ==, "9");
 
   g_list_foreach (events, (GFunc) g_object_unref, NULL);

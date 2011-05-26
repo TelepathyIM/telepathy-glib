@@ -1283,21 +1283,33 @@ event_queue_insert_sorted_after (GQueue *events,
     GList *index,
     TplEvent *event)
 {
-  while (index != NULL &&
-      tpl_event_get_timestamp (event) <
-      tpl_event_get_timestamp (TPL_EVENT (index->data)))
-    index = g_list_next (index);
-
-  if (index != NULL)
-    {
-      g_queue_insert_after (events, index, event);
-      return g_list_next (index);
-    }
-  else
+  if (g_queue_is_empty (events))
     {
       g_queue_push_tail (events, event);
-      return events->head;
+      return events->tail;
     }
+
+  /* The initial index might go before the first one */
+  if (index == NULL)
+    {
+      index = events->head;
+
+      if (tpl_event_get_timestamp (event) <
+          tpl_event_get_timestamp (TPL_EVENT (index->data)))
+        {
+          g_queue_insert_before (events, index, event);
+          return events->head;
+        }
+    }
+
+  /* Find the last event that this event can go after */
+  while (g_list_next (index) != NULL &&
+      tpl_event_get_timestamp (event) >=
+      tpl_event_get_timestamp (TPL_EVENT (g_list_next (index)->data)))
+    index = g_list_next (index);
+
+  g_queue_insert_after (events, index, event);
+  return g_list_next (index);
 }
 
 static void
@@ -1454,7 +1466,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   supersedes_links = g_hash_table_new (g_str_hash, g_str_equal);
 
   /* Now get the events. */
-  index = events->head;
+  index = NULL;
   for (node = log_node->children; node; node = node->next)
     {
       TplEvent *event = NULL;
