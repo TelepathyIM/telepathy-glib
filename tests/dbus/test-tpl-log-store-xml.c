@@ -916,11 +916,11 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
     gconstpointer user_data)
 {
   TpAccount *account;
-  TplEntity *user2, *user3, *user4;
+  TplEntity *user2, *user3, *user4, *user5;
   GList *events;
   GDate *date;
   GError *error = NULL;
-  gint idx = -1;
+  gint idx;
 
   account = tp_account_new (fixture->bus,
       TP_ACCOUNT_OBJECT_PATH_BASE "gabble/jabber/user_40collabora_2eco_2euk",
@@ -939,12 +939,16 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   user4 = tpl_entity_new ("user4@collabora.co.uk", TPL_ENTITY_CONTACT,
       "User4", "");
 
+  user5 = tpl_entity_new ("user5@collabora.co.uk", TPL_ENTITY_CONTACT,
+      "User5", "");
+
   /* Check that text event and call event are merged properly, call events
    * should come after any older or same timestamp event. */
   events = _tpl_log_store_get_events_for_date (fixture->store, account, user4,
       TPL_EVENT_MASK_ANY, date);
 
   g_assert_cmpint (g_list_length (events), ==, 6);
+  idx = -1;
 
   g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, ++idx)));
   g_assert_cmpstr (
@@ -979,6 +983,27 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
+  /* Check that a call older then any text event is sorted first */
+  events = _tpl_log_store_get_events_for_date (fixture->store, account, user5,
+      TPL_EVENT_MASK_ANY, date);
+
+  g_assert_cmpint (g_list_length (events), ==, 2);
+  idx = -1;
+
+  g_assert (TPL_IS_CALL_EVENT (g_list_nth_data (events, ++idx)));
+  g_assert_cmpint (
+      tpl_call_event_get_duration (TPL_CALL_EVENT (g_list_nth_data (events, idx))),
+      ==, 1);
+
+  g_assert (TPL_IS_TEXT_EVENT (g_list_nth_data (events, ++idx)));
+  g_assert_cmpstr (
+      tpl_text_event_get_message (TPL_TEXT_EVENT (g_list_nth_data (events, idx))),
+      ==, "9");
+
+  g_list_foreach (events, (GFunc) g_object_unref, NULL);
+  g_list_free (events);
+
+  /* Check that call mask work */
   events = _tpl_log_store_get_events_for_date (fixture->store, account, user4,
       TPL_EVENT_MASK_CALL, date);
 
@@ -1018,6 +1043,7 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   g_object_unref (user2);
   g_object_unref (user3);
   g_object_unref (user4);
+  g_object_unref (user5);
   g_date_free (date);
 }
 

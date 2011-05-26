@@ -439,7 +439,7 @@ test_get_entities (TestCaseFixture *fixture,
       get_entities_cb, fixture);
   g_main_loop_run (fixture->main_loop);
 
-  g_assert_cmpint (g_list_length (fixture->ret), ==, 4);
+  g_assert_cmpint (g_list_length (fixture->ret), ==, 5);
 
   /* we do not want duplicates */
   fixture->ret = g_list_sort (fixture->ret, (GCompareFunc) _tpl_entity_compare);
