@@ -939,6 +939,8 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   user4 = tpl_entity_new ("user4@collabora.co.uk", TPL_ENTITY_CONTACT,
       "User4", "");
 
+  /* Check that text event and call event are merged properly, call events
+   * should come after any older or same timestamp event. */
   events = _tpl_log_store_get_events_for_date (fixture->store, account, user4,
       TPL_EVENT_MASK_ANY, date);
 
@@ -989,6 +991,7 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
+  /* Check that text mask work */
   events = _tpl_log_store_get_events_for_date (fixture->store, account, user4,
       TPL_EVENT_MASK_TEXT, date);
 
@@ -1002,6 +1005,7 @@ test_get_events_for_date (XmlTestCaseFixture *fixture,
   g_list_foreach (events, (GFunc) g_object_unref, NULL);
   g_list_free (events);
 
+  /* Check that getting empty list is working */
   events = _tpl_log_store_get_events_for_date (fixture->store, account, user2,
       TPL_EVENT_MASK_CALL, date);
   g_assert_cmpint (g_list_length (events), ==, 0);
