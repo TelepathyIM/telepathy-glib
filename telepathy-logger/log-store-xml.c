@@ -122,6 +122,7 @@ G_DEFINE_TYPE_WITH_CODE (TplLogStoreXml, _tpl_log_store_xml,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (TPL_TYPE_LOG_STORE, log_store_iface_init))
 
+
 static void
 log_store_xml_dispose (GObject *object)
 {
@@ -351,6 +352,7 @@ log_store_xml_get_dir (TplLogStoreXml *self,
   return basedir;
 }
 
+
 static const gchar *
 log_store_xml_get_file_suffix (GType type)
 {
@@ -361,6 +363,7 @@ log_store_xml_get_file_suffix (GType type)
   else
     g_return_val_if_reached (NULL);
 }
+
 
 static gchar *
 log_store_xml_get_timestamp_filename (GType type,
@@ -609,6 +612,7 @@ out:
   return ret;
 }
 
+
 static gboolean
 add_call_event (TplLogStoreXml *self,
     TplCallEvent *event,
@@ -728,6 +732,7 @@ log_store_xml_add_event (TplLogStore *store,
    * this Event */
   return TRUE;
 }
+
 
 static gboolean
 log_store_xml_exists_in_directory (const gchar *dirname,
@@ -1278,27 +1283,6 @@ parse_call_node (TplLogStoreXml *self,
   return event;
 }
 
-static GList *
-event_queue_insert_sorted_after (GQueue *events,
-    GList *index,
-    TplEvent *event)
-{
-  while (index != NULL &&
-      tpl_event_get_timestamp (event) <
-      tpl_event_get_timestamp (TPL_EVENT (index->data)))
-    index = g_list_next (index);
-
-  if (index != NULL)
-    {
-      g_queue_insert_after (events, index, event);
-      return g_list_next (index);
-    }
-  else
-    {
-      g_queue_push_tail (events, event);
-      return events->head;
-    }
-}
 
 static void
 event_queue_replace_and_supersede (GQueue *events,
@@ -1313,6 +1297,7 @@ event_queue_replace_and_supersede (GQueue *events,
   index->data = event;
 }
 
+
 static GList *
 event_queue_add_text_event (GQueue *events,
     GList *index,
@@ -1324,7 +1309,8 @@ event_queue_add_text_event (GQueue *events,
   TplTextEvent *dummy_event;
 
   if (supersedes_token == NULL)
-    return event_queue_insert_sorted_after (events, index, TPL_EVENT (event));
+    return _tpl_event_queue_insert_sorted_after (events, index,
+        TPL_EVENT (event));
 
   l = g_hash_table_lookup (superseded_links, supersedes_token);
   if (l != NULL)
@@ -1362,11 +1348,12 @@ event_queue_add_text_event (GQueue *events,
       "message-token", supersedes_token,
       NULL);
 
-  index = event_queue_insert_sorted_after (events, index,
+  index = _tpl_event_queue_insert_sorted_after (events, index,
       TPL_EVENT (dummy_event));
   event_queue_replace_and_supersede (events, index, superseded_links, event);
   return index;
 }
+
 
 /* returns a Glist of TplEvent instances */
 static void
@@ -1454,7 +1441,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   supersedes_links = g_hash_table_new (g_str_hash, g_str_equal);
 
   /* Now get the events. */
-  index = events->head;
+  index = NULL;
   for (node = log_node->children; node; node = node->next)
     {
       TplEvent *event = NULL;
@@ -1481,7 +1468,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
           if (event == NULL)
             continue;
 
-          index = event_queue_insert_sorted_after (events, index, event);
+          index = _tpl_event_queue_insert_sorted_after (events, index, event);
           num_events++;
         }
     }
@@ -1652,6 +1639,7 @@ log_store_xml_search_new (TplLogStore *store,
 
   return _log_store_xml_search_in_files (self, text, files, type_mask);
 }
+
 
 /* Returns: (GList *) of (TplLogSearchHit *) */
 static GList *
