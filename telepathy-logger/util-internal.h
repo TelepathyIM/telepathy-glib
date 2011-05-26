@@ -26,11 +26,16 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 
+#include "event.h"
+
 #define TPL_STR_EMPTY(x) ((x) == NULL || (x)[0] == '\0')
 
 void _tpl_rmdir_recursively (const gchar *dir_name);
 
 gint64 _tpl_time_parse (const gchar * str);
 
+GList *_tpl_event_queue_insert_sorted_after (GQueue *events,
+    GList *index,
+    TplEvent *event);
 
 #endif // __TPL_UTIL_H__

@@ -22,8 +22,6 @@
 
 #include "util-internal.h"
 
-#include "log-store-sqlite-internal.h"
-
 #include <errno.h>
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -97,4 +95,39 @@ _tpl_time_parse (const gchar *str)
   g_date_time_unref (dt);
 
   return ts;
+}
+
+
+GList *
+_tpl_event_queue_insert_sorted_after (GQueue *events,
+    GList *index,
+    TplEvent *event)
+{
+  if (g_queue_is_empty (events))
+    {
+      g_queue_push_tail (events, event);
+      return events->tail;
+    }
+
+  /* The initial index might go before the first one */
+  if (index == NULL)
+    {
+      index = events->head;
+
+      if (tpl_event_get_timestamp (event) <
+          tpl_event_get_timestamp (TPL_EVENT (index->data)))
+        {
+          g_queue_insert_before (events, index, event);
+          return events->head;
+        }
+    }
+
+  /* Find the last event that this event can go after */
+  while (g_list_next (index) != NULL &&
+      tpl_event_get_timestamp (event) >=
+      tpl_event_get_timestamp (TPL_EVENT (g_list_next (index)->data)))
+    index = g_list_next (index);
+
+  g_queue_insert_after (events, index, event);
+  return g_list_next (index);
 }
