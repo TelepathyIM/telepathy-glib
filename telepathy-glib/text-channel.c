@@ -1484,7 +1484,7 @@ tp_text_channel_set_chat_state_finish (TpTextChannel *self,
     GAsyncResult *result,
     GError **error)
 {
-  _tp_implement_finish_void (self, tp_text_channel_set_chat_state_finish)
+  _tp_implement_finish_void (self, tp_text_channel_set_chat_state_async)
 }
 
 /**
