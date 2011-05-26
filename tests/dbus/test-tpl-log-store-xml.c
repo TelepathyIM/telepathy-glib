@@ -469,7 +469,7 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
     gconstpointer user_data)
 {
   TpAccount *account;
-  TplEntity *me, *contact, *room;
+  TplEntity *me, *contact;
   TplEvent *event;
   TplTextEvent *new_event;
   TplTextEvent *new_new_event;
@@ -489,8 +489,6 @@ test_add_superseding_event (XmlTestCaseFixture *fixture,
   me = tpl_entity_new ("me", TPL_ENTITY_SELF, "my-alias", "my-avatar");
   contact = tpl_entity_new ("contact", TPL_ENTITY_CONTACT, "contact-alias",
       "contact-token");
-  room = tpl_entity_new_from_room_id ("room");
-
 
   /* 1. Outgoing message to a contact. */
   event = g_object_new (TPL_TYPE_TEXT_EVENT,
