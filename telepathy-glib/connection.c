@@ -43,6 +43,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
+#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-connection-body.h"
 
@@ -182,7 +183,8 @@ tp_connection_get_feature_quark_capabilities (void)
  * Balance.ManageCreditURI properties of the Connection have been retrieved.
  * In particular, the %TpConnection:balance, %TpConnection:balance-scale,
  * %TpConnection:balance-currency and %TpConnection:balance-uri properties
- * have been set.
+ * have been set and the TpConnection::balance-changed: will be emitted
+ * when they are changed.
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
@@ -273,6 +275,14 @@ enum
   N_PROPS
 };
 
+enum {
+  SIGNAL_BALANCE_CHANGED,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = { 0 };
+
+
 G_DEFINE_TYPE (TpConnection,
     tp_connection,
     TP_TYPE_PROXY)
@@ -336,6 +346,7 @@ tp_connection_unpack_balance (TpConnection *self,
   gint balance = 0;
   guint scale = G_MAXUINT32;
   const char *currency = "";
+  gboolean changed = FALSE;
 
   if (balance_s == NULL)
     goto finally;
@@ -351,12 +362,14 @@ finally:
     {
       self->priv->balance = balance;
       g_object_notify ((GObject *) self, "balance");
+      changed = TRUE;
     }
 
   if (self->priv->balance_scale != scale)
     {
       self->priv->balance_scale = scale;
       g_object_notify ((GObject *) self, "balance-scale");
+      changed = TRUE;
     }
 
   if (tp_strdiff (self->priv->balance_currency, currency))
@@ -364,9 +377,16 @@ finally:
       g_free (self->priv->balance_currency);
       self->priv->balance_currency = g_strdup (currency);
       g_object_notify ((GObject *) self, "balance-currency");
+      changed = TRUE;
     }
 
   g_object_thaw_notify ((GObject *) self);
+
+  if (changed)
+    {
+      g_signal_emit (self, signals[SIGNAL_BALANCE_CHANGED], 0,
+          balance, scale, currency);
+    }
 }
 
 static void
@@ -1708,6 +1728,30 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_BALANCE_URI,
       param_spec);
+
+  /**
+   * TpConnection::balance-changed:
+   * @self: a channel
+   * @balance: the value of the #TpConnection:balance property
+   * @balance_scale: the value of the #TpConnection:balance-currency property
+   * @balance_currency: the value of the #TpConnection:balance-scale property
+   *
+   * Emitted when at least one of the #TpConnection:balance,
+   * #TpConnection:balance-scale or #TpConnection:balance-currency
+   * property is changed.
+   *
+   * For this signal to be emitted, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_BALANCE.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  signals[SIGNAL_BALANCE_CHANGED] = g_signal_new ("balance-changed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__INT_UINT_STRING,
+      G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_STRING);
 }
 
 /**

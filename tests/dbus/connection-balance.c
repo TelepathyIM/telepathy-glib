@@ -166,6 +166,7 @@ unbalanced_connection_class_init (UnbalancedConnectionClass *cls)
 
 /* -- Tests -- */
 typedef struct {
+    GMainLoop *mainloop;
     TpDBusDaemon *dbus;
     DBusConnection *client_libdbus;
     DBusGConnection *client_dbusglib;
@@ -180,6 +181,9 @@ typedef struct {
     GError *cwr_error /* initialized in setup */;
 
     GAsyncResult *prepare_result;
+
+    GError *error /* initialized where needed */;
+    gint wait;
 } Test;
 
 static void
@@ -224,6 +228,9 @@ setup (Test *test,
   g_type_init ();
   tp_debug_set_flags ("all");
   test->dbus = tp_tests_dbus_daemon_dup_or_die ();
+
+  test->mainloop = g_main_loop_new (NULL, FALSE);
+  test->error = NULL;
 
   test->client_libdbus = dbus_bus_get_private (DBUS_BUS_STARTER, NULL);
   g_assert (test->client_libdbus != NULL);
@@ -274,6 +281,8 @@ teardown (Test *test,
   gboolean ok;
   GError *error = NULL;
 
+  g_clear_error (&test->error);
+  tp_clear_pointer (&test->mainloop, g_main_loop_unref);
   tp_clear_object (&test->conn);
 
   /* disconnect the connection so we don't leak it */
@@ -306,6 +315,22 @@ teardown (Test *test,
 }
 
 static void
+balance_changed_cb (TpConnection *conn,
+    gint balance,
+    guint scale,
+    const gchar *currency,
+    Test *test)
+{
+  g_assert_cmpint (balance, ==, BALANCE * 2);
+  g_assert_cmpuint (scale, ==, BALANCE_SCALE);
+  g_assert_cmpstr (currency, ==, BALANCE_CURRENCY);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_balance (Test *test,
     gconstpointer nil G_GNUC_UNUSED)
 {
@@ -314,6 +339,7 @@ test_balance (Test *test,
   guint scale;
   const gchar *currency, *uri;
   gchar *currency_alloc, *uri_alloc;
+  GValueArray *v;
 
   g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_BALANCE));
 
@@ -341,6 +367,22 @@ test_balance (Test *test,
   g_assert_cmpuint (scale, ==, BALANCE_SCALE);
   g_assert_cmpstr (currency_alloc, ==, BALANCE_CURRENCY);
   g_assert_cmpstr (uri_alloc, ==, MANAGE_CREDIT_URI);
+
+  v = tp_value_array_build (3,
+              G_TYPE_INT, BALANCE * 2,
+              G_TYPE_UINT, BALANCE_SCALE,
+              G_TYPE_STRING, BALANCE_CURRENCY,
+              G_TYPE_INVALID);
+
+  tp_svc_connection_interface_balance_emit_balance_changed (
+      test->service_conn_as_base, v);
+
+  g_signal_connect (test->conn, "balance-changed",
+      G_CALLBACK (balance_changed_cb), test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
 
   g_free (currency_alloc);
   g_free (uri_alloc);
