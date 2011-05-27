@@ -384,7 +384,7 @@ tp_connection_get_balance_cb (TpProxy *proxy,
     {
       DEBUG ("Failed to get Balance properties: %s", in_error->message);
       g_simple_async_result_set_from_error (result, in_error);
-      return;
+      goto finally;
     }
 
   balance =
@@ -403,6 +403,7 @@ tp_connection_get_balance_cb (TpProxy *proxy,
 
   g_object_thaw_notify ((GObject *) self);
 
+finally:
   g_simple_async_result_complete (result);
 }
 
