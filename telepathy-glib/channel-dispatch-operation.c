@@ -1661,7 +1661,7 @@ tp_channel_dispatch_operation_close_channels_async (
  * @error: a #GError to fill
  *
  * Finishes an async operation initiated using
- * tp_channel_dispatch_operation_close_channels_finish().
+ * tp_channel_dispatch_operation_close_channels_async().
  *
  * Returns: %TRUE if the Claim() call was successful and
  * Close() has at least been attempted on all the channels, otherwise %FALSE
@@ -1676,4 +1676,132 @@ tp_channel_dispatch_operation_close_channels_finish (
 {
   _tp_implement_finish_void (self, \
       tp_channel_dispatch_operation_close_channels_async)
+}
+
+typedef struct
+{
+  TpChannelGroupChangeReason reason;
+  gchar *message;
+} LeaveChannelsCtx;
+
+static LeaveChannelsCtx *
+leave_channels_ctx_new (TpChannelGroupChangeReason reason,
+    const gchar *message)
+{
+  LeaveChannelsCtx *ctx = g_slice_new (LeaveChannelsCtx);
+
+  ctx->reason = reason;
+  ctx->message = g_strdup (message);
+  return ctx;
+}
+
+static void
+leave_channels_ctx_free (LeaveChannelsCtx *ctx)
+{
+  g_free (ctx->message);
+  g_slice_free (LeaveChannelsCtx, ctx);
+}
+
+static void
+channel_leave_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  GError *error = NULL;
+
+  if (!tp_channel_leave_finish (TP_CHANNEL (source), result, &error))
+    {
+      DEBUG ("Failed to leave %s: %s", tp_proxy_get_object_path (source),
+          error->message);
+
+      g_error_free (error);
+    }
+}
+
+static void
+claim_leave_channels_cb (TpChannelDispatchOperation *self,
+    GSimpleAsyncResult *result)
+{
+  guint i;
+  LeaveChannelsCtx *ctx;
+
+  ctx = g_simple_async_result_get_op_res_gpointer (result);
+
+  for (i = 0; i < self->priv->channels->len; i++)
+    {
+      TpChannel *channel = g_ptr_array_index (self->priv->channels, i);
+
+      tp_channel_leave_async (channel, ctx->reason, ctx->message,
+          channel_leave_cb, NULL);
+    }
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_channel_dispatch_operation_leave_channels_async:
+ * @self: a #TpChannelDispatchOperation
+ * @reason: the leave reason
+ * @message: the leave message
+ * @callback: a callback to call when the request has been satisfied
+ * @user_data: data to pass to @callback
+ *
+ * Called by an approver to claim channels and leave them all right away.
+ * If this method is called successfully, @self has been claimed and
+ * tp_channel_leave_async() has been called on all of its channels.
+ *
+ * If successful, this method will cause the #TpProxy::invalidated signal
+ * to be emitted, in the same way as for
+ * tp_channel_dispatch_operation_handle_with_async().
+ *
+ * This method may fail because the dispatch operation has already
+ * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
+ * for more details.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_channel_dispatch_operation_leave_channels_async (
+    TpChannelDispatchOperation *self,
+    TpChannelGroupChangeReason reason,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tp_channel_dispatch_operation_leave_channels_async);
+
+  g_simple_async_result_set_op_res_gpointer (result,
+      leave_channels_ctx_new (reason, message),
+      (GDestroyNotify) leave_channels_ctx_free);
+
+  prepare_core_and_claim (self, claim_leave_channels_cb, result);
+}
+
+/**
+ * tp_channel_dispatch_operation_leave_channels_finish:
+ * @self: a #TpChannelDispatchOperation
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes an async operation initiated using
+ * tp_channel_dispatch_operation_leave_channels_async().
+ *
+ * Returns: %TRUE if the Claim() call was successful and
+ * tp_channel_leave_async() has at least been attempted on all the
+ * channels, otherwise %FALSE
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_channel_dispatch_operation_leave_channels_finish (
+    TpChannelDispatchOperation *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, \
+      tp_channel_dispatch_operation_leave_channels_async)
 }
