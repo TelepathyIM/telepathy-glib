@@ -412,6 +412,34 @@ test_close_room (Test *test,
   check_not_removed (test->chan_room_service);
 }
 
+static void
+channel_destroy_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_channel_destroy_finish (TP_CHANNEL (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_destroy (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  g_assert (tp_proxy_get_invalidated (test->channel_contact) == NULL);
+
+  tp_channel_destroy_async (test->channel_contact, channel_destroy_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_proxy_get_invalidated (test->channel_contact) != NULL);
+}
+
 int
 main (int argc,
       char **argv)
@@ -441,6 +469,9 @@ main (int argc,
       test_close, teardown);
   g_test_add ("/channel/close/room", Test, NULL, setup,
       test_close_room, teardown);
+
+  g_test_add ("/channel/destroy", Test, NULL, setup,
+      test_destroy, teardown);
 
   return g_test_run ();
 }

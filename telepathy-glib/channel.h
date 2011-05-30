@@ -152,6 +152,14 @@ gboolean tp_channel_close_finish (TpChannel *self,
     GAsyncResult *result,
     GError **error);
 
+void tp_channel_destroy_async (TpChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_destroy_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-channel.h>

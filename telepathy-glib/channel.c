@@ -2382,3 +2382,98 @@ tp_channel_close_finish (TpChannel *self,
 {
   _tp_implement_finish_void (self, tp_channel_close_async)
 }
+
+static void
+channel_destroy_cb (TpChannel *channel,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Destroy() failed: %s", error->message);
+
+      if (tp_proxy_get_invalidated (channel) != NULL)
+        {
+          DEBUG ("Proxy has been invalidated; succeed");
+          goto succeed;
+        }
+
+      DEBUG ("Close channel then");
+
+      tp_cli_channel_call_close (channel, -1, channel_close_cb, result,
+          NULL, NULL);
+      return;
+    }
+
+ DEBUG ("Destroy() succeeded");
+
+succeed:
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+/**
+ * tp_channel_destroy_async:
+ * @self: a #TpChannel
+ * @callback: a callback to call when we left the channel
+ * @user_data: data to pass to @callback
+ *
+ * Destroy channel @self.
+ * If @self doesn't implement #TP_IFACE_QUARK_CHANNEL_INTERFACE_DESTROYABLE
+ * or if for any reason we can't destroy the channel, we close it.
+ *
+ * When the channel has been destroyed or closed, @callback will be called.
+ * You can then call tp_channel_destroy_finish() to get the result of
+ * the operation.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_channel_destroy_async (TpChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_channel_destroy_async);
+
+  if (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_CORE) &&
+      !tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_DESTROYABLE))
+    {
+      DEBUG ("Channel doesn't implement Destroy; fallback to Close()");
+
+      tp_cli_channel_call_close (self, -1, channel_close_cb, result,
+          NULL, NULL);
+      return;
+    }
+
+  tp_cli_channel_interface_destroyable_call_destroy (self, -1,
+      channel_destroy_cb, result, NULL, NULL);
+}
+
+/**
+ * tp_channel_destroy_finish:
+ * @self: a #TpChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to leave a channel.
+ *
+ * Returns: %TRUE if the channel has been destroyed or closed; %FALSE otherwise
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_channel_destroy_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_channel_destroy_async)
+}
