@@ -1733,8 +1733,8 @@ tp_connection_class_init (TpConnectionClass *klass)
    * TpConnection::balance-changed:
    * @self: a channel
    * @balance: the value of the #TpConnection:balance property
-   * @balance_scale: the value of the #TpConnection:balance-currency property
-   * @balance_currency: the value of the #TpConnection:balance-scale property
+   * @balance_scale: the value of the #TpConnection:balance-scale property
+   * @balance_currency: the value of the #TpConnection:balance-currency property
    *
    * Emitted when at least one of the #TpConnection:balance,
    * #TpConnection:balance-scale or #TpConnection:balance-currency
