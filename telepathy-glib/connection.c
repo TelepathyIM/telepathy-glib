@@ -43,6 +43,7 @@
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/util-internal.h"
+#include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-connection-body.h"
 
@@ -173,6 +174,31 @@ tp_connection_get_feature_quark_capabilities (void)
 }
 
 /**
+ * TP_CONNECTION_FEATURE_BALANCE:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "balance" feature.
+ *
+ * When this feature is prepared, the Balance.AccountBalance and
+ * Balance.ManageCreditURI properties of the Connection have been retrieved.
+ * In particular, the %TpConnection:balance, %TpConnection:balance-scale,
+ * %TpConnection:balance-currency and %TpConnection:balance-uri properties
+ * have been set and the TpConnection::balance-changed: will be emitted
+ * when they are changed.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: UNRELEASED
+ */
+
+GQuark
+tp_connection_get_feature_quark_balance (void)
+{
+  return g_quark_from_static_string ("tp-connection-feature-balance");
+}
+
+/**
  * TP_ERRORS_DISCONNECTED:
  *
  * #GError domain representing a Telepathy connection becoming disconnected.
@@ -242,8 +268,20 @@ enum
   PROP_SELF_CONTACT,
   PROP_SELF_HANDLE,
   PROP_CAPABILITIES,
+  PROP_BALANCE,
+  PROP_BALANCE_SCALE,
+  PROP_BALANCE_CURRENCY,
+  PROP_BALANCE_URI,
   N_PROPS
 };
+
+enum {
+  SIGNAL_BALANCE_CHANGED,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = { 0 };
+
 
 G_DEFINE_TYPE (TpConnection,
     tp_connection,
@@ -283,10 +321,142 @@ tp_connection_get_property (GObject *object,
     case PROP_CAPABILITIES:
       g_value_set_object (value, self->priv->capabilities);
       break;
+    case PROP_BALANCE:
+      g_value_set_int (value, self->priv->balance);
+      break;
+    case PROP_BALANCE_SCALE:
+      g_value_set_uint (value, self->priv->balance_scale);
+      break;
+    case PROP_BALANCE_CURRENCY:
+      g_value_set_string (value, self->priv->balance_currency);
+      break;
+    case PROP_BALANCE_URI:
+      g_value_set_string (value, self->priv->balance_uri);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
     }
+}
+
+static void
+tp_connection_unpack_balance (TpConnection *self,
+    GValueArray *balance_s)
+{
+  gint balance = 0;
+  guint scale = G_MAXUINT32;
+  const char *currency = "";
+  gboolean changed = FALSE;
+
+  if (balance_s == NULL)
+    goto finally;
+
+  tp_value_array_unpack (balance_s, 3,
+      &balance, &scale, &currency);
+
+finally:
+
+  g_object_freeze_notify ((GObject *) self);
+
+  if (self->priv->balance != balance)
+    {
+      self->priv->balance = balance;
+      g_object_notify ((GObject *) self, "balance");
+      changed = TRUE;
+    }
+
+  if (self->priv->balance_scale != scale)
+    {
+      self->priv->balance_scale = scale;
+      g_object_notify ((GObject *) self, "balance-scale");
+      changed = TRUE;
+    }
+
+  if (tp_strdiff (self->priv->balance_currency, currency))
+    {
+      g_free (self->priv->balance_currency);
+      self->priv->balance_currency = g_strdup (currency);
+      g_object_notify ((GObject *) self, "balance-currency");
+      changed = TRUE;
+    }
+
+  g_object_thaw_notify ((GObject *) self);
+
+  if (changed)
+    {
+      g_signal_emit (self, signals[SIGNAL_BALANCE_CHANGED], 0,
+          balance, scale, currency);
+    }
+}
+
+static void
+tp_connection_get_balance_cb (TpProxy *proxy,
+    GHashTable *props,
+    const GError *in_error,
+    gpointer user_data,
+    GObject *weak_obj)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result = user_data;
+  GValueArray *balance = NULL;
+
+  if (in_error != NULL)
+    {
+      DEBUG ("Failed to get Balance properties: %s", in_error->message);
+      g_simple_async_result_set_from_error (result, in_error);
+      goto finally;
+    }
+
+  balance =
+    tp_asv_get_boxed (props, "AccountBalance", TP_STRUCT_TYPE_CURRENCY_AMOUNT);
+  self->priv->balance_uri =
+    g_strdup (tp_asv_get_string (props, "ManageCreditURI"));
+
+  g_object_freeze_notify ((GObject *) self);
+
+  tp_connection_unpack_balance (self, balance);
+
+  _tp_proxy_set_feature_prepared (proxy, TP_CONNECTION_FEATURE_BALANCE,
+      TRUE);
+
+  g_object_notify ((GObject *) self, "balance-uri");
+
+  g_object_thaw_notify ((GObject *) self);
+
+finally:
+  g_simple_async_result_complete (result);
+}
+
+static void
+tp_connection_balance_changed_cb (TpConnection *self,
+    const GValueArray *balance,
+    gpointer user_data,
+    GObject *weak_obj)
+{
+  tp_connection_unpack_balance (self, (GValueArray *) balance);
+}
+
+static void
+tp_connection_prepare_balance_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_connection_prepare_balance_async);
+
+  g_assert (self->priv->balance_currency == NULL);
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CONNECTION_INTERFACE_BALANCE,
+      tp_connection_get_balance_cb, result, g_object_unref, NULL);
+
+  tp_cli_connection_interface_balance_connect_to_balance_changed (self,
+      tp_connection_balance_changed_cb,
+      NULL, NULL, NULL, NULL);
 }
 
 static void
@@ -1202,6 +1372,9 @@ tp_connection_finalize (GObject *object)
   tp_contact_info_spec_list_free (self->priv->contact_info_supported_fields);
   self->priv->contact_info_supported_fields = NULL;
 
+  tp_clear_pointer (&self->priv->balance_currency, g_free);
+  tp_clear_pointer (&self->priv->balance_uri, g_free);
+
   ((GObjectClass *) tp_connection_parent_class)->finalize (object);
 }
 
@@ -1271,6 +1444,7 @@ enum {
     FEAT_CAPABILITIES,
     FEAT_AVATAR_REQUIREMENTS,
     FEAT_CONTACT_INFO,
+    FEAT_BALANCE,
     N_FEAT
 };
 
@@ -1281,6 +1455,7 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   static GQuark need_requests[2] = {0, 0};
   static GQuark need_avatars[2] = {0, 0};
   static GQuark need_contact_info[2] = {0, 0};
+  static GQuark need_balance[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -1307,6 +1482,11 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
     _tp_connection_prepare_contact_info_async;
   need_contact_info[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO;
   features[FEAT_CONTACT_INFO].interfaces_needed = need_contact_info;
+
+  features[FEAT_BALANCE].name = TP_CONNECTION_FEATURE_BALANCE;
+  features[FEAT_BALANCE].prepare_async = tp_connection_prepare_balance_async;
+  need_balance[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_BALANCE;
+  features[FEAT_BALANCE].interfaces_needed = need_balance;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
@@ -1486,6 +1666,96 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CAPABILITIES,
       param_spec);
+
+  /**
+   * TpConnection:balance:
+   *
+   * The Amount field of the Balance.AccountBalance property.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_BALANCE.
+   *
+   * See Also: tp_connection_get_balance()
+   */
+  param_spec = g_param_spec_int ("balance", "Balance Amount",
+      "The Amount field of the Account Balance",
+      G_MININT32, G_MAXINT32, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_BALANCE,
+      param_spec);
+
+  /**
+   * TpConnection:balance-scale:
+   *
+   * The Scale field of the Balance.AccountBalance property.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_BALANCE.
+   *
+   * See Also: tp_connection_get_balance()
+   */
+  param_spec = g_param_spec_uint ("balance-scale", "Balance Scale",
+      "The Scale field of the Account Balance",
+      0, G_MAXUINT32, G_MAXUINT32,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_BALANCE_SCALE,
+      param_spec);
+
+  /**
+   * TpConnection:balance-currency:
+   *
+   * The Currency field of the Balance.AccountBalance property.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_BALANCE.
+   *
+   * See Also: tp_connection_get_balance()
+   */
+  param_spec = g_param_spec_string ("balance-currency", "Balance Currency",
+      "The Currency field of the Account Balance",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_BALANCE_CURRENCY,
+      param_spec);
+
+  /**
+   * TpConnection:balance-uri:
+   *
+   * The Balance.ManageCreditURI property.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_BALANCE.
+   */
+  param_spec = g_param_spec_string ("balance-uri", "Balance URI",
+      "The URI for managing the account balance",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_BALANCE_URI,
+      param_spec);
+
+  /**
+   * TpConnection::balance-changed:
+   * @self: a channel
+   * @balance: the value of the #TpConnection:balance property
+   * @balance_scale: the value of the #TpConnection:balance-scale property
+   * @balance_currency: the value of the #TpConnection:balance-currency property
+   *
+   * Emitted when at least one of the #TpConnection:balance,
+   * #TpConnection:balance-scale or #TpConnection:balance-currency
+   * property is changed.
+   *
+   * For this signal to be emitted, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_BALANCE.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  signals[SIGNAL_BALANCE_CHANGED] = g_signal_new ("balance-changed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__INT_UINT_STRING,
+      G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_STRING);
 }
 
 /**
@@ -2559,4 +2829,74 @@ tp_connection_bind_connection_status_to_property (TpConnection *self,
       G_BINDING_SYNC_CREATE,
       _tp_bind_connection_status_to_boolean,
       NULL, GUINT_TO_POINTER (invert), NULL);
+}
+
+/**
+ * tp_connection_get_balance:
+ * @self: a #TpConnection
+ * @balance: (out): a pointer to store the account balance (or %NULL)
+ * @scale: (out): a pointer to store the balance scale (or %NULL)
+ * @currency: (out) (transfer none): a pointer to store the balance
+ *   currency (or %NULL)
+ *
+ * If @self has a valid account balance, returns %TRUE and sets the variables
+ * pointed to by @balance, @scale and @currency to the appropriate fields
+ * of the Balance.AccountBalance property.
+ *
+ * The monetary value of the balance is expressed as a fixed-point number,
+ * @balance, with a decimal scale defined by @scale; for instance a @balance
+ * of 1234 with @scale of 2 represents a value of "12.34" in the currency
+ * represented by @currency.
+ *
+ * Requires %TP_CONNECTION_FEATURE_BALANCE to be prepared.
+ *
+ * Returns: %TRUE if the balance is valid (and the values set), %FALSE if the
+ *   balance is invalid.
+ * Since: UNRELEASED
+ */
+gboolean
+tp_connection_get_balance (TpConnection *self,
+    gint *balance,
+    guint *scale,
+    const gchar **currency)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  if (self->priv->balance_currency == NULL)
+    return FALSE;
+
+  if (self->priv->balance == 0 &&
+      self->priv->balance_scale == G_MAXUINT32 &&
+      tp_str_empty (self->priv->balance_currency))
+    return FALSE;
+
+  if (balance != NULL)
+    *balance = self->priv->balance;
+
+  if (scale != NULL)
+    *scale = self->priv->balance_scale;
+
+  if (currency != NULL)
+    *currency = self->priv->balance_currency;
+
+  return TRUE;
+}
+
+/**
+ * tp_connection_get_balance_uri:
+ * @self: a #TpConnection
+ *
+ * The value of Balance.ManageCreditURI.
+ *
+ * Requires %TP_CONNECTION_FEATURE_BALANCE to be prepared.
+ *
+ * Returns: (transfer none): the #TpConnection:balance-uri property.
+ * Since: UNRELEASED
+ */
+const gchar *
+tp_connection_get_balance_uri (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  return self->priv->balance_uri;
 }

@@ -274,6 +274,14 @@ GQuark tp_connection_get_feature_quark_avatar_requirements (void) G_GNUC_CONST;
 TpAvatarRequirements * tp_connection_get_avatar_requirements (
     TpConnection *self);
 
+#define TP_CONNECTION_FEATURE_BALANCE \
+  (tp_connection_get_feature_quark_balance ())
+GQuark tp_connection_get_feature_quark_balance (void) G_GNUC_CONST;
+
+gboolean tp_connection_get_balance (TpConnection *self,
+    gint *balance, guint *scale, const gchar **currency);
+const gchar * tp_connection_get_balance_uri (TpConnection *self);
+
 G_END_DECLS
 
 #include <telepathy-glib/_gen/tp-cli-connection.h>
