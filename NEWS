@@ -1,12 +1,36 @@
-telepathy-glib 0.15.1 (UNRELEASED)
+telepathy-glib 0.15.1 (2011-05-30)
 ==================================
+
+The "Bugzilla etiquette" release.
+
+This new release in the 0.15 development cycle contains all the fixes
+released in 0.14.7.
 
 Fixes:
 
 • tp_text_channel_set_chat_state_finish: check the right
   source tag. (Guillaume)
+
 • TpConnection: set the self handle to something sane instead of
   leaving uninitialized. (Jonny)
+
+• Fix a race in tp_channel_dispatch_operation_claim_with_async()
+  (fdo #37280 Guillaume)
+
+Enhancements:
+
+• TpTextChannel: high level API for SMS; the TP_TEXT_CHANNEL_FEATURE_SMS
+  feature is automatically prepared by TpAutomaticProxyFactory.
+  (fdo #37358 Guillaume)
+
+• TpConnection: high level API for Balance.
+  (fdo #36334 Emilio, Danielle, Guillaume)
+
+• tp_channel_dispatch_operation_close_channels_async: convenient API to
+  claim a ChannelDispatchOperation and close all its channels.
+  (fdo #28015 Guillaume)
+
+• TpBaseContactList: add ContactBlocking support (fdo #35331 Will)
 
 telepathy-glib 0.15.0 (2011-05-17)
 ==================================

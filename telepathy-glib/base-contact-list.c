@@ -390,7 +390,7 @@ G_DEFINE_INTERFACE (TpMutableContactList, tp_mutable_contact_list,
  *  tp_base_contact_list_block_contacts_async(); either this or
  *  @block_contacts_async must always be provided. If the underlying protocol
  *  does not support reporting contacts as abusive, implement
- *  @block_contacts_async instead. Since: 0.15.UNRELEASED
+ *  @block_contacts_async instead. Since: 0.15.1
  *
  * The interface vtable for a %TP_TYPE_BLOCKABLE_CONTACT_LIST.
  *
@@ -3115,7 +3115,7 @@ tp_base_contact_list_get_request_uses_message (TpBaseContactList *self)
  * Signature of a virtual method that blocks a set of contacts, optionally
  * reporting them to the server operator as abusive.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 
 /**
@@ -3258,7 +3258,7 @@ tp_base_contact_list_block_contacts_async (TpBaseContactList *self,
  * tp_base_contact_list_contact_blocking_changed()
  * for any contacts it has changed, before calling @callback.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 void
 tp_base_contact_list_block_contacts_with_abuse_async (TpBaseContactList *self,
@@ -3338,7 +3338,7 @@ tp_base_contact_list_block_contacts_finish (TpBaseContactList *self,
  *
  * Returns: %TRUE on success or %FALSE on error
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 gboolean
 tp_base_contact_list_block_contacts_with_abuse_finish (TpBaseContactList *self,
@@ -5929,7 +5929,7 @@ tp_base_contact_list_mixin_unblock_contacts (
  * This function should be passed to G_IMPLEMENT_INTERFACE() for
  * #TpSvcConnectionInterfaceContactBlocking
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.15.1
  */
 void
 tp_base_contact_list_mixin_blocking_iface_init (

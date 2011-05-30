@@ -1046,7 +1046,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * This property is not guaranteed to have a meaningful value until
    * TP_TEXT_CHANNEL_FEATURE_SMS has been prepared.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.1
    */
   param_spec = g_param_spec_boolean ("is-sms-channel",
       "is SMS channel",
@@ -1064,7 +1064,7 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * on this channel). If %FALSE, no incoming class 0 SMSes will appear
    * on this channel.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.1
    */
   param_spec = g_param_spec_boolean ("sms-flash",
       "SMS flash",
@@ -1692,7 +1692,7 @@ tp_text_channel_supports_message_type (TpTextChannel *self,
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 GQuark
 tp_text_channel_get_feature_quark_sms (void)
@@ -1708,7 +1708,7 @@ tp_text_channel_get_feature_quark_sms (void)
  *
  * Returns: the value of #TpTextChannel:is-sms-channel property
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 gboolean
 tp_text_channel_is_sms_channel (TpTextChannel *self)
@@ -1726,7 +1726,7 @@ tp_text_channel_is_sms_channel (TpTextChannel *self)
  *
  * Returns: the value of #TpTextChannel:sms-flash property
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 gboolean
 tp_text_channel_get_sms_flash (TpTextChannel *self)
@@ -1809,7 +1809,7 @@ out:
  * You can then call tp_text_channel_get_sms_length_finish() to get the
  * result of the operation.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 void
 tp_text_channel_get_sms_length_async (TpTextChannel *self,
@@ -1853,7 +1853,7 @@ tp_text_channel_get_sms_length_async (TpTextChannel *self,
  * Returns: %TRUE if the number of 140 octet chunks required to send
  * the message has been retrieved, %FALSE otherwise.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 gboolean
 tp_text_channel_get_sms_length_finish (TpTextChannel *self,

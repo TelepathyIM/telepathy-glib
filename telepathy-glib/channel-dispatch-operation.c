@@ -1638,7 +1638,7 @@ claim_close_channels_cb (TpChannelDispatchOperation *self,
  * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
  * for more details.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 void
 tp_channel_dispatch_operation_close_channels_async (
@@ -1666,7 +1666,7 @@ tp_channel_dispatch_operation_close_channels_async (
  * Returns: %TRUE if the Claim() call was successful and
  * Close() has at least been attempted on all the channels, otherwise %FALSE
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.1
  */
 gboolean
 tp_channel_dispatch_operation_close_channels_finish (

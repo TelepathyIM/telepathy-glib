@@ -189,7 +189,7 @@ tp_connection_get_feature_quark_capabilities (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: UNRELEASED
+ * Since: 0.15.1
  */
 
 GQuark
@@ -1747,7 +1747,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * For this signal to be emitted, you must first call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_BALANCE.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.1
    */
   signals[SIGNAL_BALANCE_CHANGED] = g_signal_new ("balance-changed",
       G_OBJECT_CLASS_TYPE (klass),
@@ -2852,7 +2852,7 @@ tp_connection_bind_connection_status_to_property (TpConnection *self,
  *
  * Returns: %TRUE if the balance is valid (and the values set), %FALSE if the
  *   balance is invalid.
- * Since: UNRELEASED
+ * Since: 0.15.1
  */
 gboolean
 tp_connection_get_balance (TpConnection *self,
@@ -2891,7 +2891,7 @@ tp_connection_get_balance (TpConnection *self,
  * Requires %TP_CONNECTION_FEATURE_BALANCE to be prepared.
  *
  * Returns: (transfer none): the #TpConnection:balance-uri property.
- * Since: UNRELEASED
+ * Since: 0.15.1
  */
 const gchar *
 tp_connection_get_balance_uri (TpConnection *self)
