@@ -2141,27 +2141,17 @@ channel_remove_self_cb (TpChannel *channel,
 {
   GSimpleAsyncResult *result = user_data;
 
-  if (error != NULL)
+  if (tp_proxy_get_invalidated (channel) != NULL &&
+      error != NULL)
     {
-      DEBUG ("RemoveMembersWithDetails() with self handle failed: %s",
-          error->message);
-
-      if (tp_proxy_get_invalidated (channel) != NULL)
-        {
-          DEBUG ("Proxy has been invalidated; succeed");
-          goto succeed;
-        }
-
-      DEBUG ("Close channel then");
+      DEBUG ("RemoveMembersWithDetails() with self handle failed; call Close()"
+          " %s", error->message);
 
       tp_cli_channel_call_close (channel, -1, channel_close_cb, result,
           NULL, NULL);
       return;
     }
 
- DEBUG ("RemoveMembersWithDetails() succeeded");
-
-succeed:
   g_simple_async_result_complete (result);
   g_object_unref (result);
 }
