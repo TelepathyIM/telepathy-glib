@@ -1,3 +1,14 @@
+telepathy-glib 0.14.7 (2011-05-30)
+==================================
+
+Fixes:
+
+• tp_text_channel_set_chat_state_finish: check the right
+  source tag. (Guillaume)
+• TpConnection: set the self handle to something sane instead of
+  leaving uninitialized. (Jonny)
+
+
 telepathy-glib 0.14.6 (2011-05-16)
 ==================================
 
