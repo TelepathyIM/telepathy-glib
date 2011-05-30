@@ -2391,26 +2391,16 @@ channel_destroy_cb (TpChannel *channel,
 {
   GSimpleAsyncResult *result = user_data;
 
-  if (error != NULL)
+  if (tp_proxy_get_invalidated (channel) == NULL &&
+      error != NULL)
     {
-      DEBUG ("Destroy() failed: %s", error->message);
-
-      if (tp_proxy_get_invalidated (channel) != NULL)
-        {
-          DEBUG ("Proxy has been invalidated; succeed");
-          goto succeed;
-        }
-
-      DEBUG ("Close channel then");
+      DEBUG ("Destroy() failed; call Close(): %s", error->message);
 
       tp_cli_channel_call_close (channel, -1, channel_close_cb, result,
           NULL, NULL);
       return;
     }
 
- DEBUG ("Destroy() succeeded");
-
-succeed:
   g_simple_async_result_complete (result);
   g_object_unref (result);
 }
