@@ -2144,7 +2144,6 @@ stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     GObject *object)
 {
   TfStream *self = TF_STREAM (object);
-  FsDTMFMethod method = FS_DTMF_METHOD_AUTO;
 
   g_assert (self->priv->fs_session  != NULL);
 
@@ -2153,8 +2152,6 @@ stop_telephony_event (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
   if (self->priv->sending_telephony_event == -1)
       WARNING (self, "Trying to stop telephony event without having started"
           " one");
-  else
-      method = self->priv->sending_telephony_event;
   self->priv->sending_telephony_event = -1;
 
   if (!fs_session_stop_telephony_event (self->priv->fs_session,
