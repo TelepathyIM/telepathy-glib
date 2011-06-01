@@ -237,6 +237,7 @@ free_content_fsstream (gpointer data)
 {
   struct CallFsStream *cfs = data;
 
+  g_object_run_dispose (G_OBJECT (cfs->fsstream));
   g_object_unref (cfs->fsstream);
   _tf_call_channel_put_participant (cfs->parent_channel, cfs->fsparticipant);
   g_slice_free (struct CallFsStream, cfs);
@@ -262,7 +263,10 @@ tf_call_content_dispose (GObject *object)
   self->streams = NULL;
 
   if (self->fssession)
-    g_object_unref (self->fssession);
+    {
+      g_object_run_dispose (G_OBJECT (self->fssession));
+      g_object_unref (self->fssession);
+    }
   self->fssession = NULL;
 
   if (self->fsstreams)
