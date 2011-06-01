@@ -2831,6 +2831,8 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   GPtrArray *tpcodecs = NULL;
   GHashTable *feedback_messages = NULL;
   GPtrArray *header_extensions = NULL;
+  gboolean sent = FALSE;
+  GList *resend_codecs = NULL;
 
   DEBUG (stream, "called (send_local:%d send_supported:%d)",
       stream->priv->send_local_codecs, stream->priv->send_supported_codecs);
@@ -2875,6 +2877,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           -1, tpcodecs, async_method_callback, "Media.StreamHandler::Ready",
           NULL, (GObject *) stream);
       stream->priv->send_local_codecs = FALSE;
+      sent = TRUE;
       goto out;
     }
 
@@ -2900,6 +2903,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           -1, tpcodecs, async_method_callback,
           "Media.StreamHandler::SupportedCodecs", NULL, (GObject *) stream);
       stream->priv->send_supported_codecs = FALSE;
+      sent = TRUE;
 
       /* Fallthrough to potentially call CodecsUpdated as CMs assume
        * SupportedCodecs will only give the intersection of the already sent
@@ -2910,8 +2914,12 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   /* Only send updates if there was something to update (iotw we sent codecs
    * before) or our list changed */
   if (stream->priv->last_sent_codecs != NULL
-      && !fs_codec_list_are_equal (fscodecs, stream->priv->last_sent_codecs))
+      && (resend_codecs =
+          fs_session_codecs_need_resend (stream->priv->fs_session,
+              stream->priv->last_sent_codecs, fscodecs)) != NULL)
     {
+      fs_codec_list_destroy (resend_codecs);
+
       if (!tpcodecs)
         tpcodecs = fs_codecs_to_tp (stream, fscodecs);
       if (!feedback_messages)
@@ -2935,6 +2943,7 @@ _tf_stream_try_sending_codecs (TfStream *stream)
           stream->priv->stream_handler_proxy,
           -1, tpcodecs, async_method_callback,
           "Media.StreamHandler::CodecsUpdated", NULL, (GObject *) stream);
+      sent = TRUE;
     }
 
 out:
@@ -2944,8 +2953,11 @@ out:
     g_boxed_free (TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP, feedback_messages);
   if (header_extensions)
     g_boxed_free (TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST, header_extensions);
-  fs_codec_list_destroy (stream->priv->last_sent_codecs);
-  stream->priv->last_sent_codecs = fscodecs;
+  if (sent)
+    {
+      fs_codec_list_destroy (stream->priv->last_sent_codecs);
+      stream->priv->last_sent_codecs = fscodecs;
+    }
 }
 
 /**
