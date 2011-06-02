@@ -198,7 +198,7 @@ free_content_fsstream (gpointer data)
 static void
 tf_call_content_init (TfCallContent *self)
 {
-  self->fsstreams = g_ptr_array_new_with_free_func (free_content_fsstream);
+  self->fsstreams = g_ptr_array_new ();
 
   self->mutex = g_mutex_new ();
 }
@@ -219,7 +219,12 @@ tf_call_content_dispose (GObject *object)
   self->fssession = NULL;
 
   if (self->fsstreams)
-    g_ptr_array_unref (self->fsstreams);
+    {
+      while (self->fsstreams->len)
+        free_content_fsstream (
+            g_ptr_array_remove_index_fast (self->fsstreams, 0));
+      g_ptr_array_unref (self->fsstreams);
+  }
   self->fsstreams = NULL;
 
   if (self->fsconference)
@@ -1137,9 +1142,9 @@ void
 _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
 {
   guint i;
+  struct CallFsStream *cfs = NULL;
 
   TF_CALL_CONTENT_LOCK (content);
-
   for (i = 0; i < content->fsstreams->len; i++)
     {
       struct CallFsStream *cfs = g_ptr_array_index (content->fsstreams, i);
@@ -1148,12 +1153,14 @@ _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
         {
           cfs->use_count--;
           if (cfs->use_count <= 0)
-            g_ptr_array_remove_index_fast (content->fsstreams, i);
+            cfs = g_ptr_array_remove_index_fast (content->fsstreams, i);
           break;
         }
     }
-
   TF_CALL_CONTENT_UNLOCK (content);
+
+  if (cfs)
+    free_content_fsstream (cfs);
 }
 
 FsMediaType
