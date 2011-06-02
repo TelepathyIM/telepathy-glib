@@ -1178,6 +1178,12 @@ src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
 
   TF_CALL_CONTENT_LOCK (content);
 
+  if (!content->fsstreams)
+    {
+      TF_CALL_CONTENT_UNLOCK (content);
+      return;
+    }
+
   for (i = 0; i < content->fsstreams->len; i++)
     {
       struct CallFsStream *cfs = g_ptr_array_index (content->fsstreams, i);
