@@ -33,6 +33,10 @@ typedef struct {
 
   GstElement *video_input;
   GstElement *video_capsfilter;
+
+  guint width;
+  guint height;
+  guint framerate;
 } ChannelContext;
 
 GMainLoop *loop;
@@ -106,26 +110,29 @@ src_pad_added_cb (TfContent *content,
 }
 
 static void
-on_video_framerate_changed (TfContent *content,
-  GParamSpec *spec,
-  ChannelContext *context)
+update_video_parameters (ChannelContext *context, gboolean restart)
 {
-  guint framerate;
   GstCaps *caps;
   GstClock *clock;
+  GstState stop_state;
 
-  g_object_get (content, "framerate", &framerate, NULL);
+  if (restart)
+    stop_state = GST_STATE_NULL;
+  else
+    stop_state = GST_STATE_READY;
 
   /* Assuming the pipeline is in playing state */
   gst_element_set_locked_state (context->video_input, TRUE);
-  if (GST_STATE (context->video_input) > GST_STATE_READY)
-    gst_element_set_state (context->video_input, GST_STATE_READY);
+  if (GST_STATE (context->video_input) > stop_state)
+    gst_element_set_state (context->video_input, stop_state);
 
   g_object_get (context->video_capsfilter, "caps", &caps, NULL);
   caps = gst_caps_make_writable (caps);
 
   gst_caps_set_simple (caps,
-      "framerate", GST_TYPE_FRACTION, framerate, 1,
+      "framerate", GST_TYPE_FRACTION, context->framerate, 1,
+      "width", G_TYPE_INT, context->width,
+      "height", G_TYPE_INT, context->height,
       NULL);
 
   g_object_set (context->video_capsfilter, "caps", caps, NULL);
@@ -142,12 +149,41 @@ on_video_framerate_changed (TfContent *content,
   gst_element_sync_state_with_parent (context->video_input);
 }
 
+static void
+on_video_framerate_changed (TfContent *content,
+  GParamSpec *spec,
+  ChannelContext *context)
+{
+  guint framerate;
+
+  g_object_get (content, "framerate", &framerate, NULL);
+
+  if (framerate != 0)
+    context->framerate = framerate;
+
+  update_video_parameters (context, FALSE);
+}
+
+static void
+on_video_resolution_changed (TfContent *content,
+   guint width,
+   guint height,
+   ChannelContext *context)
+{
+  g_assert (width > 0 && height > 0);
+
+  context->width = width;
+  context->height = height;
+
+  update_video_parameters (context, TRUE);
+}
+
 static GstElement *
 setup_video_source (ChannelContext *context, TfContent *content)
 {
   GstElement *result, *input, *rate, *scaler, *colorspace, *capsfilter;
   GstCaps *caps;
-  guint framerate;
+  guint framerate, width, height;
   GstPad *pad, *ghost;
 
   result = gst_bin_new ("video_input");
@@ -158,14 +194,28 @@ setup_video_source (ChannelContext *context, TfContent *content)
   capsfilter = gst_element_factory_make ("capsfilter", NULL);
 
   g_assert (input && rate && scaler && colorspace && capsfilter);
-  g_object_get (content, "framerate", &framerate, NULL);
+  g_object_get (content,
+      "framerate", &framerate,
+      "width", &width,
+      "height", &height,
+      NULL);
 
   if (framerate == 0)
     framerate = 15;
 
+  if (width == 0 || height == 0)
+    {
+      width = 320;
+      height = 320;
+    }
+
+  context->framerate = framerate;
+  context->width = width;
+  context->height = height;
+
   caps = gst_caps_new_simple ("video/x-raw-yuv",
-      "width", G_TYPE_INT, 320,
-      "height", G_TYPE_INT, 240,
+      "width", G_TYPE_INT, width,
+      "height", G_TYPE_INT, height,
       "framerate", GST_TYPE_FRACTION, framerate, 1,
       NULL);
 
@@ -191,8 +241,13 @@ setup_video_source (ChannelContext *context, TfContent *content)
     G_CALLBACK (on_video_framerate_changed),
     context);
 
+  g_signal_connect (content, "resolution-changed",
+    G_CALLBACK (on_video_resolution_changed),
+    context);
+
   return result;
 }
+
 
 static void
 content_added_cb (TfChannel *channel,
