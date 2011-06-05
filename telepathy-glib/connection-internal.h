@@ -78,6 +78,12 @@ struct _TpConnectionPrivate {
     gboolean can_change_contact_list;
     gboolean request_uses_message;
 
+    /* ContactGroups properties */
+    gboolean disjoint_groups;
+    TpContactMetadataStorageType group_storage;
+    GPtrArray *contact_groups;
+    gboolean groups_fetched;
+
     TpProxyPendingCall *introspection_call;
 
     unsigned ready:1;
@@ -131,6 +137,10 @@ void _tp_connection_prepare_avatar_requirements_async (TpProxy *proxy,
 
 /* connection-contact-list.c */
 void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+void _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data);

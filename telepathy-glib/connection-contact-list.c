@@ -19,10 +19,10 @@
  */
 
 #include "telepathy-glib/connection-contact-list.h"
-#include <telepathy-glib/interfaces.h>
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
@@ -115,6 +115,195 @@ void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
       prepare_contact_list_cb, result, g_object_unref, NULL);
+}
+
+static void
+contact_groups_created_cb (TpConnection *self,
+    const gchar **names,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  const gchar **iter;
+
+  if (!self->priv->groups_fetched)
+      return;
+
+  DEBUG ("Groups created:");
+
+  /* Remove the ending NULL */
+  g_ptr_array_remove_index_fast (self->priv->contact_groups,
+      self->priv->contact_groups->len - 1);
+
+  for (iter = names; *iter != NULL; iter++)
+    {
+      DEBUG ("  %s", *iter);
+      g_ptr_array_add (self->priv->contact_groups, g_strdup (*iter));
+    }
+
+  /* Add back the ending NULL */
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+
+  g_object_notify ((GObject *) self, "contact-groups");
+  g_signal_emit_by_name (self, "groups-created", names);
+}
+
+static void
+contact_groups_removed_cb (TpConnection *self,
+    const gchar **names,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  const gchar **iter;
+
+  if (!self->priv->groups_fetched)
+      return;
+
+  DEBUG ("Groups removed:");
+
+  /* Remove the ending NULL */
+  g_ptr_array_remove_index_fast (self->priv->contact_groups,
+      self->priv->contact_groups->len - 1);
+
+  for (iter = names; *iter != NULL; iter++)
+    {
+      guint i;
+
+      for (i = 0; i < self->priv->contact_groups->len; i++)
+        {
+          const gchar *str = g_ptr_array_index (self->priv->contact_groups, i);
+
+          if (!tp_strdiff (str, *iter))
+            {
+              DEBUG ("  %s", str);
+              g_ptr_array_remove_index_fast (self->priv->contact_groups, i);
+              break;
+            }
+        }
+    }
+
+  /* Add back the ending NULL */
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+
+  g_object_notify ((GObject *) self, "contact-groups");
+  g_signal_emit_by_name (self, "groups-removed", names);
+}
+
+static void
+contact_group_renamed_cb (TpConnection *self,
+    const gchar *old_name,
+    const gchar *new_name,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  guint i;
+
+  if (!self->priv->groups_fetched)
+      return;
+
+  DEBUG ("Group renamed: %s -> %s", old_name, new_name);
+
+  /* Remove the ending NULL */
+  g_ptr_array_remove_index_fast (self->priv->contact_groups,
+      self->priv->contact_groups->len - 1);
+
+  for (i = 0; i < self->priv->contact_groups->len; i++)
+    {
+      const gchar *str = g_ptr_array_index (self->priv->contact_groups, i);
+
+      if (!tp_strdiff (str, old_name))
+        {
+          g_ptr_array_remove_index_fast (self->priv->contact_groups, i);
+          break;
+        }
+    }
+  g_ptr_array_add (self->priv->contact_groups, g_strdup (new_name));
+
+  /* Add back the ending NULL */
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+
+  g_object_notify ((GObject *) self, "contact-groups");
+  g_signal_emit_by_name (self, "group-renamed", old_name, new_name);
+}
+
+static void
+prepare_contact_groups_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result = user_data;
+  GStrv groups;
+  gchar **iter;
+  gboolean valid;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+      goto OUT;
+    }
+
+  self->priv->groups_fetched = TRUE;
+
+  self->priv->disjoint_groups = tp_asv_get_boolean (properties,
+      "DisjointGroups", &valid);
+  if (!valid)
+    {
+      DEBUG ("Connection %s doesn't have DisjointGroups property",
+          tp_proxy_get_object_path (self));
+    }
+
+  self->priv->group_storage = tp_asv_get_uint32 (properties,
+      "GroupStorage", &valid);
+  if (!valid)
+    {
+      DEBUG ("Connection %s doesn't have GroupStorage property",
+          tp_proxy_get_object_path (self));
+    }
+
+  DEBUG ("Got contact list groups:");
+
+  /* Remove the ending NULL */
+  g_ptr_array_remove_index_fast (self->priv->contact_groups,
+      self->priv->contact_groups->len - 1);
+
+  groups = tp_asv_get_boxed (properties, "Groups", G_TYPE_STRV);
+  for (iter = groups; *iter != NULL; iter++)
+    {
+      DEBUG ("  %s", *iter);
+      g_ptr_array_add (self->priv->contact_groups, g_strdup (*iter));
+    }
+
+  /* Add back the ending NULL */
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+
+OUT:
+  g_simple_async_result_complete (result);
+}
+
+void
+_tp_connection_prepare_contact_groups_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result;
+
+  tp_cli_connection_interface_contact_groups_connect_to_groups_created (
+      self, contact_groups_created_cb, NULL, NULL, NULL, NULL);
+  tp_cli_connection_interface_contact_groups_connect_to_groups_removed (
+      self, contact_groups_removed_cb, NULL, NULL, NULL, NULL);
+  tp_cli_connection_interface_contact_groups_connect_to_group_renamed (
+      self, contact_group_renamed_cb, NULL, NULL, NULL, NULL);
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      _tp_connection_prepare_contact_groups_async);
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      prepare_contact_groups_cb, result, g_object_unref, NULL);
 }
 
 /**
@@ -487,6 +676,86 @@ tp_connection_unpublish_finish (TpConnection *self,
     GError **error)
 {
   generic_finish (unpublish);
+}
+
+/**
+ * TP_CONNECTION_FEATURE_CONTACT_GROUPS:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "contact-groups" feature.
+ *
+ * When this feature is prepared, the contact groups properties of the
+ * Connection has been retrieved.
+ *
+ * See #TpContact:contact-groups to get the list of groups a contact is member
+ * of.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_connection_get_feature_quark_contact_groups (void)
+{
+  return g_quark_from_static_string ("tp-connection-feature-contact-groups");
+}
+
+/**
+ * tp_connection_get_disjoint_groups:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpConnection:disjoint-groups
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_connection_get_disjoint_groups (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  return self->priv->disjoint_groups;
+}
+
+/**
+ * tp_connection_get_group_storage:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpConnection:group-storage
+ *
+ * Since: 0.UNRELEASED
+ */
+TpContactMetadataStorageType
+tp_connection_get_group_storage (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self),
+      TP_CONTACT_METADATA_STORAGE_TYPE_NONE);
+
+  return self->priv->group_storage;
+}
+
+/**
+ * tp_connection_get_contact_groups:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: (array zero-terminated=1) (transfer none): the value of
+ *  #TpConnection:contact-groups
+ *
+ * Since: 0.UNRELEASED
+ */
+const gchar * const *
+tp_connection_get_contact_groups (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
+
+  return (const gchar * const *) self->priv->contact_groups->pdata;
 }
 
 #define contact_groups_generic_async(method) \

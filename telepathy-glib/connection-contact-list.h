@@ -82,6 +82,14 @@ gboolean tp_connection_unpublish_finish (TpConnection *self,
     GAsyncResult *result,
     GError **error);
 
+#define TP_CONNECTION_FEATURE_CONTACT_GROUPS \
+  (tp_connection_get_feature_quark_contact_groups ())
+GQuark tp_connection_get_feature_quark_contact_groups (void) G_GNUC_CONST;
+
+gboolean tp_connection_get_disjoint_groups (TpConnection *self);
+TpContactMetadataStorageType tp_connection_get_group_storage (TpConnection *self);
+const gchar * const *tp_connection_get_contact_groups (TpConnection *self);
+
 void tp_connection_set_group_members_async (TpConnection *self,
     const gchar *group,
     guint n_contacts,
