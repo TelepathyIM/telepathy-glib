@@ -3778,28 +3778,20 @@ contacts_got_attributes (TpConnection *connection,
   contacts_context_continue (c);
 }
 
-static void
-contacts_get_attributes (ContactsContext *context)
+static const gchar **
+contacts_bind_to_signals (TpConnection *connection,
+    ContactFeatureFlags wanted)
 {
   GArray *contact_attribute_interfaces =
-      context->connection->priv->contact_attribute_interfaces;
+      connection->priv->contact_attribute_interfaces;
   GPtrArray *array;
-  const gchar **supported_interfaces;
   guint i;
   guint len = 0;
 
   if (contact_attribute_interfaces != NULL)
       len = contact_attribute_interfaces->len;
 
-  /* tp_connection_get_contact_attributes insists that you have at least one
-   * handle; skip it if we don't (can only happen if we started from IDs) */
-  if (context->handles->len == 0)
-    {
-      contacts_context_continue (context);
-      return;
-    }
-
-  g_assert (tp_proxy_has_interface_by_id (context->connection,
+  g_assert (tp_proxy_has_interface_by_id (connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS));
 
   array = g_ptr_array_sized_new (len);
@@ -3810,106 +3802,123 @@ contacts_get_attributes (ContactsContext *context)
 
       if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING)
         {
-          if ((context->wanted & CONTACT_FEATURE_FLAG_ALIAS) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_ALIAS) != 0)
             {
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_ALIASING);
-              contacts_bind_to_aliases_changed (context->connection);
+              contacts_bind_to_aliases_changed (connection);
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS)
         {
-          if ((context->wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
             {
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_AVATARS);
-              contacts_bind_to_avatar_updated (context->connection);
+              contacts_bind_to_avatar_updated (connection);
             }
 
-          if ((context->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
             {
-              contacts_bind_to_avatar_retrieved (context->connection);
+              contacts_bind_to_avatar_retrieved (connection);
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE)
         {
-          if ((context->wanted & CONTACT_FEATURE_FLAG_PRESENCE) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_PRESENCE) != 0)
             {
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
-              contacts_bind_to_presences_changed (context->connection);
+              contacts_bind_to_presences_changed (connection);
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION)
         {
-          if ((context->wanted & CONTACT_FEATURE_FLAG_LOCATION) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_LOCATION) != 0)
             {
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_LOCATION);
-              contacts_bind_to_location_updated (context->connection);
+              contacts_bind_to_location_updated (connection);
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_CAPABILITIES)
         {
-          if ((context->wanted & CONTACT_FEATURE_FLAG_CAPABILITIES) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_CAPABILITIES) != 0)
             {
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES);
-              contacts_bind_to_capabilities_updated (context->connection);
+              contacts_bind_to_capabilities_updated (connection);
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO)
         {
-          if ((context->wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO) != 0)
             {
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO);
-              contacts_bind_to_contact_info_changed (context->connection);
+              contacts_bind_to_contact_info_changed (connection);
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CLIENT_TYPES)
         {
-          if ((context->wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES) != 0)
             {
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES);
-              contacts_bind_to_client_types_updated (context->connection);
+              contacts_bind_to_client_types_updated (connection);
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST)
         {
-          if ((context->wanted & CONTACT_FEATURE_FLAG_STATES) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_STATES) != 0)
             {
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST);
-              contacts_bind_to_contacts_changed (context->connection);
+              contacts_bind_to_contacts_changed (connection);
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS)
         {
-          if ((context->wanted & CONTACT_FEATURE_FLAG_CONTACT_GROUPS) != 0)
+          if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_GROUPS) != 0)
             {
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS);
-              contacts_bind_to_contact_groups_changed (context->connection);
+              contacts_bind_to_contact_groups_changed (connection);
             }
         }
     }
 
-  if (array->len == 0 &&
+  g_ptr_array_add (array, NULL);
+  return (const gchar **) g_ptr_array_free (array, FALSE);
+}
+
+static void
+contacts_get_attributes (ContactsContext *context)
+{
+  const gchar **supported_interfaces;
+
+  /* tp_connection_get_contact_attributes insists that you have at least one
+   * handle; skip it if we don't (can only happen if we started from IDs) */
+  if (context->handles->len == 0)
+    {
+      contacts_context_continue (context);
+      return;
+    }
+
+  supported_interfaces = contacts_bind_to_signals (context->connection,
+      context->wanted);
+
+  if (supported_interfaces[0] == NULL &&
       !(context->signature == CB_BY_HANDLE && context->contacts->len == 0) &&
       context->contacts_have_ids)
     {
       /* We're not going to do anything useful: we're not holding/inspecting
        * the handles, and we're not inspecting any extended interfaces
        * either. Skip it. */
-      g_ptr_array_free (array, TRUE);
+      g_free (supported_interfaces);
       contacts_context_continue (context);
       return;
     }
-
-  g_ptr_array_add (array, NULL);
-  supported_interfaces = (const gchar **) g_ptr_array_free (array, FALSE);
 
   /* The Hold parameter is only true if we started from handles, and we don't
    * already have all the contacts we need. */
