@@ -3533,16 +3533,14 @@ contacts_context_queue_features (ContactsContext *context)
 #endif
     }
 
-  if (tp_proxy_has_interface_by_id (context->connection,
+  if (!contacts_context_supports_iface (context,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS) &&
+      tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
     {
-      if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0 &&
-          !contacts_context_supports_iface (context,
-            TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
+      if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
         g_queue_push_tail (&context->todo, contacts_get_avatar_tokens);
 
-      /* There is no contact attribute for avatar data, always use the
-       * slow path for it. */
       if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
         g_queue_push_tail (&context->todo, contacts_get_avatar_data);
     }
@@ -3691,6 +3689,12 @@ contacts_got_attributes (TpConnection *connection,
           g_object_notify ((GObject *) contact, "alias");
         }
 
+      /* There is no attribute for avatar data. If we want it, let's just
+       * pretend it is ready. If avatar is in cache, that will be true as
+       * soon as the token is set from attributes */
+      if ((c->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
+        contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
+
       s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
 
       if (s != NULL)
@@ -3806,6 +3810,11 @@ contacts_get_attributes (ContactsContext *context)
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_AVATARS);
               contacts_bind_to_avatar_updated (context->connection);
+            }
+
+          if ((context->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
+            {
+              contacts_bind_to_avatar_retrieved (context->connection);
             }
         }
       else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE)
