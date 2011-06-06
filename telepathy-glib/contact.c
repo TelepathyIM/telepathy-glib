@@ -3582,6 +3582,127 @@ contacts_context_queue_features (ContactsContext *context)
     }
 }
 
+static gboolean
+tp_contact_set_attributes (TpContact *contact,
+    GHashTable *asv,
+    gboolean want_avatar_data,
+    GError **error)
+{
+  TpConnection *connection = tp_contact_get_connection (contact);
+  const gchar *s;
+  gpointer boxed;
+
+  s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_CONTACT_ID);
+
+  if (s == NULL)
+    {
+       g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "Connection manager %s is broken: contact #%u in the "
+          "GetContactAttributes result has no contact-id",
+          tp_proxy_get_bus_name (connection), contact->priv->handle);
+
+      return FALSE;
+    }
+
+  if (contact->priv->identifier == NULL)
+    {
+      contact->priv->identifier = g_strdup (s);
+    }
+  else if (tp_strdiff (contact->priv->identifier, s))
+    {
+      g_set_error (error, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          "Connection manager %s is broken: contact #%u identifier "
+          "changed from %s to %s",
+          tp_proxy_get_bus_name (connection), contact->priv->handle,
+          contact->priv->identifier, s);
+
+      return FALSE;
+    }
+
+  s = tp_asv_get_string (asv,
+      TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS);
+
+  if (s != NULL)
+    {
+      contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
+      g_free (contact->priv->alias);
+      contact->priv->alias = g_strdup (s);
+      g_object_notify ((GObject *) contact, "alias");
+    }
+
+  /* There is no attribute for avatar data. If we want it, let's just
+   * pretend it is ready. If avatar is in cache, that will be true as
+   * soon as the token is set from attributes */
+  if (want_avatar_data)
+    contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
+
+  s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
+
+  if (s != NULL)
+    contact_set_avatar_token (contact, s, TRUE);
+
+  boxed = tp_asv_get_boxed (asv,
+      TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
+      TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+  contact_maybe_set_simple_presence (contact, boxed);
+
+  /* Location */
+  boxed = tp_asv_get_boxed (asv,
+      TP_TOKEN_CONNECTION_INTERFACE_LOCATION_LOCATION,
+      TP_HASH_TYPE_LOCATION);
+  contact_maybe_set_location (contact, boxed);
+
+  /* Capabilities */
+  boxed = tp_asv_get_boxed (asv,
+      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES_CAPABILITIES,
+      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
+  contact_maybe_set_capabilities (contact, boxed);
+
+  /* ContactInfo */
+  boxed = tp_asv_get_boxed (asv,
+      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO_INFO,
+      TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
+  contact_maybe_set_info (contact, boxed);
+
+  /* ClientTypes */
+  boxed = tp_asv_get_boxed (asv,
+      TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES_CLIENT_TYPES,
+      G_TYPE_STRV);
+  contact_maybe_set_client_types (contact, boxed);
+
+  /* ContactList subscription states */
+  {
+    TpSubscriptionState subscribe;
+    TpSubscriptionState publish;
+    const gchar *publish_request;
+    gboolean subscribe_valid = FALSE;
+    gboolean publish_valid = FALSE;
+
+    subscribe = tp_asv_get_uint32 (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE,
+          &subscribe_valid);
+    publish = tp_asv_get_uint32 (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH,
+          &publish_valid);
+    publish_request = tp_asv_get_string (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST);
+
+    if (subscribe_valid && publish_valid)
+      {
+        contact_set_subscription_states (contact, subscribe, publish,
+            publish_request);
+      }
+  }
+
+  /* ContactGroups */
+  boxed = tp_asv_get_boxed (asv,
+      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS,
+      G_TYPE_STRV);
+  contact_maybe_set_contact_groups (contact, boxed);
+
+  return TRUE;
+}
+
 static void
 contacts_got_attributes (TpConnection *connection,
                          GHashTable *attributes,
@@ -3629,140 +3750,33 @@ contacts_got_attributes (TpConnection *connection,
   for (i = 0; i < c->handles->len; i++)
     {
       TpContact *contact = g_ptr_array_index (c->contacts, i);
-      const gchar *s;
-      gpointer boxed;
       GHashTable *asv = g_hash_table_lookup (attributes,
           GUINT_TO_POINTER (contact->priv->handle));
+      GError *e = NULL;
 
       if (asv == NULL)
         {
-          GError *e = g_error_new (TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
+          g_set_error (&e, TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
               "We hold a ref to handle #%u but it appears to be invalid",
               contact->priv->handle);
+        }
+      else
+        {
+          /* set up the contact with its attributes */
+          tp_contact_set_attributes (contact, asv,
+              (c->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0, &e);
+        }
 
+      if (e != NULL)
+        {
           contacts_context_fail (c, e);
           g_error_free (e);
           return;
         }
-
-      /* set up the contact with its attributes */
-
-      s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_CONTACT_ID);
-
-      if (s == NULL)
-        {
-          GError *e = g_error_new (TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-              "Connection manager %s is broken: contact #%u in the "
-              "GetContactAttributes result has no contact-id",
-              tp_proxy_get_bus_name (connection), contact->priv->handle);
-
-          contacts_context_fail (c, e);
-          g_error_free (e);
-          return;
-        }
-
-      if (contact->priv->identifier == NULL)
-        {
-          contact->priv->identifier = g_strdup (s);
-        }
-      else if (tp_strdiff (contact->priv->identifier, s))
-        {
-          GError *e = g_error_new (TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-              "Connection manager %s is broken: contact #%u identifier "
-              "changed from %s to %s",
-              tp_proxy_get_bus_name (connection), contact->priv->handle,
-              contact->priv->identifier, s);
-
-          contacts_context_fail (c, e);
-          g_error_free (e);
-          return;
-        }
-
-      s = tp_asv_get_string (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS);
-
-      if (s != NULL)
-        {
-          contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
-          g_free (contact->priv->alias);
-          contact->priv->alias = g_strdup (s);
-          g_object_notify ((GObject *) contact, "alias");
-        }
-
-      /* There is no attribute for avatar data. If we want it, let's just
-       * pretend it is ready. If avatar is in cache, that will be true as
-       * soon as the token is set from attributes */
-      if ((c->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
-        contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
-
-      s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
-
-      if (s != NULL)
-        contact_set_avatar_token (contact, s, TRUE);
-
-      boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
-          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
-      contact_maybe_set_simple_presence (contact, boxed);
-
-      /* Location */
-      boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_LOCATION_LOCATION,
-          TP_HASH_TYPE_LOCATION);
-      contact_maybe_set_location (contact, boxed);
-
-      /* Capabilities */
-      boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES_CAPABILITIES,
-          TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
-      contact_maybe_set_capabilities (contact, boxed);
-
-      /* ContactInfo */
-      boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO_INFO,
-          TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
-      contact_maybe_set_info (contact, boxed);
-
-      /* ClientTypes */
-      boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES_CLIENT_TYPES,
-          G_TYPE_STRV);
-      contact_maybe_set_client_types (contact, boxed);
-
-      /* ContactList subscription states */
-      {
-        TpSubscriptionState subscribe;
-        TpSubscriptionState publish;
-        const gchar *publish_request;
-        gboolean subscribe_valid = FALSE;
-        gboolean publish_valid = FALSE;
-
-        subscribe = tp_asv_get_uint32 (asv,
-              TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_SUBSCRIBE,
-              &subscribe_valid);
-        publish = tp_asv_get_uint32 (asv,
-              TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH,
-              &publish_valid);
-        publish_request = tp_asv_get_string (asv,
-              TP_TOKEN_CONNECTION_INTERFACE_CONTACT_LIST_PUBLISH_REQUEST);
-
-        if (subscribe_valid && publish_valid)
-          {
-            contact_set_subscription_states (contact, subscribe, publish,
-                publish_request);
-          }
-      }
-
-      /* ContactGroups */
-      boxed = tp_asv_get_boxed (asv,
-          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_GROUPS_GROUPS,
-          G_TYPE_STRV);
-      contact_maybe_set_contact_groups (contact, boxed);
     }
 
   contacts_context_continue (c);
 }
-
 
 static void
 contacts_get_attributes (ContactsContext *context)
