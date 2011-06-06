@@ -72,6 +72,12 @@ struct _TpConnectionPrivate {
     gchar *balance_currency;
     gchar *balance_uri;
 
+    /* ContactList properties */
+    TpContactListState contact_list_state;
+    gboolean contact_list_persists;
+    gboolean can_change_contact_list;
+    gboolean request_uses_message;
+
     TpProxyPendingCall *introspection_call;
 
     unsigned ready:1;
@@ -119,6 +125,12 @@ TpContactInfoFieldSpec *_tp_contact_info_field_spec_new (const gchar *name,
 
 /* connection-avatars.c */
 void _tp_connection_prepare_avatar_requirements_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+/* connection-contact-list.c */
+void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data);

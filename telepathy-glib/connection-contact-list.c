@@ -21,9 +21,194 @@
 #include "telepathy-glib/connection-contact-list.h"
 #include <telepathy-glib/interfaces.h>
 
+#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/interfaces.h>
+
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/util-internal.h"
+
+static void
+contact_list_state_changed_cb (TpConnection *self,
+    guint state,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  DEBUG ("contact list state changed: %d", state);
+
+  self->priv->contact_list_state = state;
+  g_object_notify ((GObject *) self, "contact-list-state");
+}
+
+static void
+prepare_contact_list_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result = user_data;
+  gboolean valid;
+
+  if (error != NULL)
+    {
+      DEBUG ("Error preparing ContactList properties: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+      goto OUT;
+    }
+
+  self->priv->contact_list_state = tp_asv_get_uint32 (properties,
+      "ContactListState", &valid);
+  if (!valid)
+    {
+      DEBUG ("Connection %s doesn't have ContactListState property",
+          tp_proxy_get_object_path (self));
+    }
+
+  self->priv->contact_list_persists = tp_asv_get_boolean (properties,
+      "ContactListPersists", &valid);
+  if (!valid)
+    {
+      DEBUG ("Connection %s doesn't have ContactListPersists property",
+          tp_proxy_get_object_path (self));
+    }
+
+  self->priv->can_change_contact_list = tp_asv_get_boolean (properties,
+      "CanChangeContactList", &valid);
+  if (!valid)
+    {
+      DEBUG ("Connection %s doesn't have CanChangeContactList property",
+          tp_proxy_get_object_path (self));
+    }
+
+  self->priv->request_uses_message = tp_asv_get_boolean (properties,
+      "RequestUsesMessage", &valid);
+  if (!valid)
+    {
+      DEBUG ("Connection %s doesn't have RequestUsesMessage property",
+          tp_proxy_get_object_path (self));
+    }
+
+  DEBUG ("Got contact list properties; state=%d",
+      self->priv->contact_list_state);
+
+OUT:
+  g_simple_async_result_complete (result);
+}
+
+void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result;
+
+  tp_cli_connection_interface_contact_list_connect_to_contact_list_state_changed (
+      self, contact_list_state_changed_cb, NULL, NULL, NULL, NULL);
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      _tp_connection_prepare_contact_list_async);
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
+      prepare_contact_list_cb, result, g_object_unref, NULL);
+}
+
+/**
+ * TP_CONNECTION_FEATURE_CONTACT_LIST:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "contact-list" feature.
+ *
+ * When this feature is prepared, the contact list properties of the Connection
+ * has been retrieved.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_connection_get_feature_quark_contact_list (void)
+{
+  return g_quark_from_static_string ("tp-connection-feature-contact-list");
+}
+
+/**
+ * tp_connection_get_contact_list_state:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpConnection:contact-list-state property
+ *
+ * Since: 0.UNRELEASED
+ */
+TpContactListState
+tp_connection_get_contact_list_state (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), TP_CONTACT_LIST_STATE_NONE);
+
+  return self->priv->contact_list_state;
+}
+
+/**
+ * tp_connection_get_contact_list_persists:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpConnection:contact-list-persists property
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_connection_get_contact_list_persists (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  return self->priv->contact_list_persists;
+}
+
+/**
+ * tp_connection_get_can_change_contact_list:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpConnection:can-change-contact-list property
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_connection_get_can_change_contact_list (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  return self->priv->can_change_contact_list;
+}
+
+/**
+ * tp_connection_get_request_uses_message:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpConnection:request-uses-message property
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_connection_get_request_uses_message (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  return self->priv->request_uses_message;
+}
 
 static void
 generic_callback (TpConnection *self,

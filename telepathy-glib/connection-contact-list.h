@@ -21,10 +21,20 @@
 #ifndef __TP_CONNECTION_CONTACT_LIST_H__
 #define __TP_CONNECTION_CONTACT_LIST_H__
 
+#include <telepathy-glib/enums.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
 
 G_BEGIN_DECLS
+
+#define TP_CONNECTION_FEATURE_CONTACT_LIST \
+  (tp_connection_get_feature_quark_contact_list ())
+GQuark tp_connection_get_feature_quark_contact_list (void) G_GNUC_CONST;
+
+TpContactListState tp_connection_get_contact_list_state (TpConnection *self);
+gboolean tp_connection_get_contact_list_persists (TpConnection *self);
+gboolean tp_connection_get_can_change_contact_list (TpConnection *self);
+gboolean tp_connection_get_request_uses_message (TpConnection *self);
 
 void tp_connection_request_subscription_async (TpConnection *self,
     guint n_contacts,

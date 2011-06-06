@@ -39,6 +39,7 @@
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/capabilities-internal.h"
 #include "telepathy-glib/connection-internal.h"
+#include "telepathy-glib/connection-contact-list.h"
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
@@ -273,6 +274,10 @@ enum
   PROP_BALANCE_SCALE,
   PROP_BALANCE_CURRENCY,
   PROP_BALANCE_URI,
+  PROP_CONTACT_LIST_STATE,
+  PROP_CONTACT_LIST_PERSISTS,
+  PROP_CAN_CHANGE_CONTACT_LIST,
+  PROP_REQUEST_USES_MESSAGE,
   N_PROPS
 };
 
@@ -282,7 +287,6 @@ enum {
 };
 
 static guint signals[N_SIGNALS] = { 0 };
-
 
 G_DEFINE_TYPE (TpConnection,
     tp_connection,
@@ -333,6 +337,18 @@ tp_connection_get_property (GObject *object,
       break;
     case PROP_BALANCE_URI:
       g_value_set_string (value, self->priv->balance_uri);
+      break;
+    case PROP_CONTACT_LIST_STATE:
+      g_value_set_uint (value, self->priv->contact_list_state);
+      break;
+    case PROP_CONTACT_LIST_PERSISTS:
+      g_value_set_boolean (value, self->priv->contact_list_persists);
+      break;
+    case PROP_CAN_CHANGE_CONTACT_LIST:
+      g_value_set_boolean (value, self->priv->can_change_contact_list);
+      break;
+    case PROP_REQUEST_USES_MESSAGE:
+      g_value_set_boolean (value, self->priv->request_uses_message);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1453,6 +1469,7 @@ enum {
     FEAT_AVATAR_REQUIREMENTS,
     FEAT_CONTACT_INFO,
     FEAT_BALANCE,
+    FEAT_CONTACT_LIST,
     N_FEAT
 };
 
@@ -1464,6 +1481,7 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   static GQuark need_avatars[2] = {0, 0};
   static GQuark need_contact_info[2] = {0, 0};
   static GQuark need_balance[2] = {0, 0};
+  static GQuark need_contact_list[3] = {0, 0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -1495,6 +1513,12 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_BALANCE].prepare_async = tp_connection_prepare_balance_async;
   need_balance[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_BALANCE;
   features[FEAT_BALANCE].interfaces_needed = need_balance;
+
+  features[FEAT_CONTACT_LIST].name = TP_CONNECTION_FEATURE_CONTACT_LIST;
+  features[FEAT_CONTACT_LIST].prepare_async = _tp_connection_prepare_contact_list_async;
+  need_contact_list[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST;
+  need_contact_list[1] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS;
+  features[FEAT_CONTACT_LIST].interfaces_needed = need_contact_list;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
@@ -1764,6 +1788,85 @@ tp_connection_class_init (TpConnectionClass *klass)
       NULL, NULL,
       _tp_marshal_VOID__INT_UINT_STRING,
       G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_STRING);
+
+  /**
+   * TpConnection:contact-list-state:
+   *
+   * The progress made in retrieving the contact list.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_uint ("contact-list-state", "ContactList state",
+      "The state of the contact list",
+      0, G_MAXUINT, TP_CONTACT_LIST_STATE_NONE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONTACT_LIST_STATE,
+      param_spec);
+
+  /**
+   * TpConnection:contact-list-persists:
+   *
+   * If true, presence subscriptions (in both directions) on this connection are
+   * stored by the server or other infrastructure.
+   *
+   * If false, presence subscriptions on this connection are not stored.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("contact-list-persists",
+      "ContactList persists", "Whether the contact list persists",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONTACT_LIST_PERSISTS,
+      param_spec);
+
+  /**
+   * TpConnection:can-change-contact-list:
+   *
+   * If true, presence subscription and publication can be changed using the
+   * RequestSubscription, AuthorizePublication and RemoveContacts methods.
+   *
+   * Rational: link-local XMPP, presence is implicitly published to everyone in
+   * the local subnet, so the user cannot control their presence publication.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("can-change-contact-list",
+      "ContactList can change", "Whether the contact list can change",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CAN_CHANGE_CONTACT_LIST,
+      param_spec);
+
+  /**
+   * TpConnection:request-uses-message:
+   *
+   * If true, the Message parameter to RequestSubscription is likely to be
+   * significant, and user interfaces SHOULD prompt the user for a message to
+   * send with the request; a message such as "I would like to add you to my
+   * contact list", translated into the local user's language, might make a
+   * suitable default.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("request-uses-message",
+      "Request Uses Message", "Whether request uses message",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_REQUEST_USES_MESSAGE,
+      param_spec);
 }
 
 /**
