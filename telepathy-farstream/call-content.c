@@ -780,11 +780,19 @@ content_video_element_added (FsElementAddedNotifier *notifier,
       g_object_set (element, "mtu", mtu, NULL);
     }
 
-  if (G_UNLIKELY (self->manual_keyframes &&
-      object_has_property (G_OBJECT (element), "key-int-max")))
+  if (G_UNLIKELY (self->manual_keyframes))
     {
-      g_message ("Setting key-int-max to max uint");
-      g_object_set (element, "key-int-max", G_MAXUINT, NULL);
+      if (object_has_property (G_OBJECT (element), "key-int-max"))
+        {
+          g_message ("Setting key-int-max to max uint");
+          g_object_set (element, "key-int-max", G_MAXUINT, NULL);
+        }
+
+      if (object_has_property (G_OBJECT (element), "intra-period"))
+        {
+          g_message ("Setting intra-period to 0");
+          g_object_set (element, "intra-period", 0, NULL);
+        }
     }
 }
 
