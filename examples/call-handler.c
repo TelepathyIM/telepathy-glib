@@ -206,7 +206,7 @@ setup_video_source (ChannelContext *context, TfContent *content)
   if (width == 0 || height == 0)
     {
       width = 320;
-      height = 320;
+      height = 240;
     }
 
   context->framerate = framerate;
