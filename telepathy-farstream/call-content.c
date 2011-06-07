@@ -898,8 +898,6 @@ setup_content_video_control (TfCallContent *self,
       NULL, NULL, G_OBJECT (self), NULL) == NULL)
     goto connect_failed;
 
-  printf ("Connection to the video interface\n");
-
   tp_cli_dbus_properties_call_get_all (proxy, -1,
       TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
       got_content_video_control_properties, res, NULL, G_OBJECT (self));
