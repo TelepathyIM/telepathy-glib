@@ -651,7 +651,7 @@ queue_pending (GObject *object, TpMessage *pending)
 
       if (echo != NULL)
         {
-          const GHashTable *echo_header = g_ptr_array_index (echo, 1);
+          const GHashTable *echo_header = g_ptr_array_index (echo, 0);
           TpMessage *echo_msg;
 
           echo_msg = _tp_cm_message_new_from_parts (mixin->priv->connection,
