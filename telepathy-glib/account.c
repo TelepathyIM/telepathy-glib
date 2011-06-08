@@ -127,6 +127,8 @@ struct _TpAccountPrivate {
   TpStorageRestrictionFlags storage_restrictions;
 
   GStrv uri_schemes;
+
+  gboolean connection_prepared;
 };
 
 G_DEFINE_TYPE (TpAccount, tp_account, TP_TYPE_PROXY)
@@ -173,6 +175,11 @@ enum {
   PROP_STORAGE_RESTRICTIONS
 };
 
+static void tp_account_prepare_connection_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
 static void tp_account_prepare_addressing_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
@@ -182,6 +189,15 @@ static void tp_account_prepare_storage_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data);
+
+static gboolean
+connection_is_internal (TpAccount *self)
+{
+  if (!tp_proxy_is_prepared (self, TP_ACCOUNT_FEATURE_CONNECTION))
+    return FALSE;
+
+  return !self->priv->connection_prepared;
+}
 
 /**
  * TP_ACCOUNT_FEATURE_CORE:
@@ -197,6 +213,27 @@ static void tp_account_prepare_storage_async (TpProxy *proxy,
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
  * Since: 0.9.0
+ */
+
+/**
+ * TP_ACCOUNT_FEATURE_CONNECTION:
+ *
+ * Expands to a call to a function that returns a quark for the "connection"
+ * feature on a #TpAccount.
+ *
+ * When this feature is prepared, it is guaranteed that #TpAccount:connection
+ * will always be either %NULL or prepared. If the account was created using a
+ * #TpSimpleClientFactory, the same factory will be used to create #TpConnection
+ * object and to determine desired connection features. Change notification of
+ * #TpAccount:connection property will be delayed until all features (at least
+ * %TP_CONNECTION_FEATURE_CORE) are prepared. See
+ * tp_simple_client_factory_add_account_features() to define which features
+ * needs to be prepared.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.UNRELEASED
  */
 
 /**
@@ -246,6 +283,22 @@ tp_account_get_feature_quark_core (void)
 }
 
 /**
+ * tp_account_get_feature_quark_connection:
+ *
+ * <!-- -->
+ *
+ * Returns: the quark used for representing the connection feature of a
+ *          #TpAccount
+ *
+ * Since: 0.UNRELEASED
+ */
+GQuark
+tp_account_get_feature_quark_connection (void)
+{
+  return g_quark_from_static_string ("tp-account-feature-connection");
+}
+
+/**
  * tp_account_get_feature_quark_storage:
  *
  * <!-- -->
@@ -269,6 +322,7 @@ tp_account_get_feature_quark_addressing (void)
 
 enum {
     FEAT_CORE,
+    FEAT_CONNECTION,
     FEAT_ADDRESSING,
     FEAT_STORAGE,
     N_FEAT
@@ -284,6 +338,10 @@ _tp_account_list_features (TpProxyClass *cls G_GNUC_UNUSED)
       features[FEAT_CORE].name = TP_ACCOUNT_FEATURE_CORE;
       features[FEAT_CORE].core = TRUE;
       /* no need for a prepare_async function - the constructor starts it */
+
+      features[FEAT_CONNECTION].name = TP_ACCOUNT_FEATURE_CONNECTION;
+      features[FEAT_CONNECTION].prepare_async =
+        tp_account_prepare_connection_async;
 
       features[FEAT_ADDRESSING].name = TP_ACCOUNT_FEATURE_ADDRESSING;
       features[FEAT_ADDRESSING].prepare_async =
@@ -375,11 +433,42 @@ _tp_account_removed_cb (TpAccount *self,
 }
 
 static void
+set_connection_prepare_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpConnection *connection = (TpConnection *) object;
+  TpAccount *self = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      DEBUG ("Error preparing connection: %s", error->message);
+      g_clear_error (&error);
+      goto OUT;
+    }
+
+  /* Connection could have changed again while we were preparing it */
+  if (self->priv->connection == connection)
+    {
+      self->priv->connection_prepared = TRUE;
+      g_object_notify ((GObject *) self, "connection");
+    }
+
+OUT:
+  g_object_unref (self);
+}
+
+static void
 _tp_account_set_connection (TpAccount *account,
     const gchar *path)
 {
   TpAccountPrivate *priv = account->priv;
+  gboolean had_public_connection;
+  gboolean have_public_connection;
+  GError *error = NULL;
 
+  /* Do nothing if we already have a connection for the same path */
   if (priv->connection != NULL)
     {
       const gchar *current;
@@ -389,32 +478,57 @@ _tp_account_set_connection (TpAccount *account,
         return;
     }
 
+  had_public_connection = (priv->connection != NULL &&
+      !connection_is_internal (account));
+
   tp_clear_object (&account->priv->connection);
+  g_free (priv->connection_object_path);
+  priv->connection_object_path = g_strdup (path);
+  priv->connection_prepared = FALSE;
 
-  if (tp_strdiff ("/", path))
+  /* The account has no connection */
+  if (!tp_strdiff ("/", path))
     {
-      GError *error = NULL;
-      priv->connection = tp_simple_client_factory_ensure_connection (
-          tp_proxy_get_factory (account), path, NULL, &error);
+      /* Do not emit change notifications if the connection was not yet made
+       * public */
+      if (had_public_connection)
+        g_object_notify (G_OBJECT (account), "connection");
 
-      if (priv->connection == NULL)
+      return;
+    }
+
+  priv->connection = tp_simple_client_factory_ensure_connection (
+      tp_proxy_get_factory (account), path, NULL, &error);
+
+  if (priv->connection == NULL)
+    {
+      DEBUG ("Failed to create a new TpConnection: %s",
+          error->message);
+      g_error_free (error);
+    }
+  else
+    {
+      _tp_connection_set_account (priv->connection, account);
+      if (tp_proxy_is_prepared (account, TP_ACCOUNT_FEATURE_CONNECTION))
         {
-          DEBUG ("Failed to create a new TpConnection: %s",
-              error->message);
-          g_error_free (error);
-        }
-      else
-        {
-          _tp_connection_set_account (priv->connection, account);
+          GArray *features;
+
+          features = tp_simple_client_factory_dup_connection_features (
+              tp_proxy_get_factory (account), priv->connection);
+
+          tp_proxy_prepare_async (priv->connection, (GQuark *) features->data,
+              set_connection_prepare_cb, g_object_ref (account));
+
+          g_array_unref (features);
         }
     }
 
-  if (tp_strdiff (priv->connection_object_path, path))
-    {
-      g_free (priv->connection_object_path);
-      priv->connection_object_path = g_strdup (path);
-      g_object_notify (G_OBJECT (account), "connection");
-    }
+  have_public_connection = (priv->connection != NULL &&
+      !connection_is_internal (account));
+
+  /* Do not emit signal if connection wasn't public and still isn't */
+  if (had_public_connection || have_public_connection)
+    g_object_notify (G_OBJECT (account), "connection");
 }
 
 static void
@@ -753,16 +867,7 @@ _tp_account_update (TpAccount *account,
     {
       const gchar *path = tp_asv_get_object_path (properties, "Connection");
 
-      if (tp_strdiff (path, priv->connection_object_path))
-        {
-          g_free (priv->connection_object_path);
-
-          priv->connection_object_path = g_strdup (path);
-
-          tp_clear_object (&account->priv->connection);
-
-          g_object_notify (G_OBJECT (account), "connection");
-        }
+      _tp_account_set_connection (account, path);
     }
 
   if (g_hash_table_lookup (properties, "ChangingPresence") != NULL)
@@ -1286,11 +1391,14 @@ tp_account_class_init (TpAccountClass *klass)
    * TpAccount:connection:
    *
    * The connection of the account, or NULL if account is offline.
-   * It is not guaranteed that the returned #TpConnection object is ready.
+   * Note that the returned #TpConnection is not guaranteed to have any
+   * features pre-prepared (not even %TP_CONNECTION_FEATURE_CORE) unless
+   * %TP_ACCOUNT_FEATURE_ACCOUNT has been prepared on the account
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
-   * detail.
+   * detail. If %TP_ACCOUNT_FEATURE_CONNECTION has been prepared, this signal
+   * will be delayed until the connection is ready.
    *
    * This is not guaranteed to have been retrieved until
    * tp_proxy_prepare_async() has finished; until then, the value is
@@ -1916,8 +2024,9 @@ tp_account_get_connection (TpAccount *account)
 
   priv = account->priv;
 
-  if (priv->connection == NULL && priv->connection_object_path != NULL)
-    _tp_account_set_connection (account, priv->connection_object_path);
+  /* If we want to expose only prepared connection */
+  if (connection_is_internal (account))
+    return NULL;
 
   return priv->connection;
 }
@@ -3762,6 +3871,57 @@ _tp_account_got_all_addressing_cb (TpProxy *proxy,
     self->priv->uri_schemes = g_new0 (gchar *, 1);
 
   g_simple_async_result_complete (result);
+}
+
+static void
+connection_prepare_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpConnection *connection = (TpConnection *) object;
+  TpAccount *self = tp_connection_get_account (connection);
+  GSimpleAsyncResult *result = user_data;
+  GError *error = NULL;
+
+  self->priv->connection_prepared = TRUE;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      DEBUG ("Error preparing connection: %s", error->message);
+      g_simple_async_result_take_error (result, error);
+    }
+  g_simple_async_result_complete (result);
+
+  g_object_unref (result);
+}
+
+static void
+tp_account_prepare_connection_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpAccount *self = TP_ACCOUNT (proxy);
+  GSimpleAsyncResult *result;
+  GArray *features;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_account_prepare_connection_async);
+
+  if (self->priv->connection == NULL)
+    {
+      g_simple_async_result_complete_in_idle (result);
+      g_object_unref (result);
+      return;
+    }
+
+  features = tp_simple_client_factory_dup_connection_features (
+      tp_proxy_get_factory (self), self->priv->connection);
+
+  tp_proxy_prepare_async (self->priv->connection, (GQuark *) features->data,
+      connection_prepare_cb, result);
+
+  g_array_unref (features);
 }
 
 static void

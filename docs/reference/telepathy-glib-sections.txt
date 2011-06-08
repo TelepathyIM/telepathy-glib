@@ -4399,6 +4399,7 @@ tp_account_set_avatar_finish
 tp_account_bind_connection_status_to_property
 <SUBSECTION>
 TP_ACCOUNT_FEATURE_CORE
+TP_ACCOUNT_FEATURE_CONNECTION
 tp_account_is_prepared
 tp_account_prepare_async
 tp_account_prepare_finish
@@ -4417,6 +4418,7 @@ tp_account_get_storage_specific_information_async
 tp_account_get_storage_specific_information_finish
 <SUBSECTION Private>
 tp_account_get_feature_quark_core
+tp_account_get_feature_quark_connection
 tp_account_get_feature_quark_addressing
 tp_account_get_feature_quark_storage
 <SUBSECTION>
