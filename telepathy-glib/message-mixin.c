@@ -649,7 +649,7 @@ queue_pending (GObject *object, TpMessage *pending)
 
       type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
 
-      if (echo != NULL)
+      if (echo != NULL && echo->len >= 1)
         {
           const GHashTable *echo_header = g_ptr_array_index (echo, 0);
           TpMessage *echo_msg;
