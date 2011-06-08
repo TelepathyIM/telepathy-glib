@@ -3471,6 +3471,7 @@ tp_connection_run_until_ready
 TpConnectionWhenReadyCb
 tp_connection_call_when_ready
 tp_connection_is_ready
+tp_connection_get_account
 tp_connection_get_status
 tp_connection_get_connection_manager_name
 tp_connection_get_protocol_name

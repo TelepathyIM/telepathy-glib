@@ -78,6 +78,8 @@ void tp_contact_info_list_free (GList *list);
 
 /* forward declaration, see contact.h for the rest */
 typedef struct _TpContact TpContact;
+/* forward declaration, see account.h for the rest */
+typedef struct _TpAccount TpAccount;
 
 typedef struct _TpConnection TpConnection;
 typedef struct _TpConnectionPrivate TpConnectionPrivate;
@@ -124,6 +126,8 @@ GQuark tp_errors_disconnected_quark (void);
 
 TpConnection *tp_connection_new (TpDBusDaemon *dbus, const gchar *bus_name,
     const gchar *object_path, GError **error) G_GNUC_WARN_UNUSED_RESULT;
+
+TpAccount *tp_connection_get_account (TpConnection *self);
 
 TpConnectionStatus tp_connection_get_status (TpConnection *self,
     TpConnectionStatusReason *reason);

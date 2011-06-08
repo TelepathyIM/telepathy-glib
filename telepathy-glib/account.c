@@ -403,6 +403,10 @@ _tp_account_set_connection (TpAccount *account,
               error->message);
           g_error_free (error);
         }
+      else
+        {
+          _tp_connection_set_account (priv->connection, account);
+        }
     }
 
   if (tp_strdiff (priv->connection_object_path, path))

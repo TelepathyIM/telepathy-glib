@@ -31,7 +31,7 @@
 
 G_BEGIN_DECLS
 
-typedef struct _TpAccount TpAccount;
+/* TpAccount is forward-declared in connection.h */
 typedef struct _TpAccountClass TpAccountClass;
 typedef struct _TpAccountPrivate TpAccountPrivate;
 typedef struct _TpAccountClassPrivate TpAccountClassPrivate;

@@ -32,6 +32,8 @@ G_BEGIN_DECLS
 typedef void (*TpConnectionProc) (TpConnection *self);
 
 struct _TpConnectionPrivate {
+    TpAccount *account;
+
     /* list of TpConnectionProc */
     GList *introspect_needed;
 
@@ -103,6 +105,8 @@ TpContact *_tp_connection_lookup_contact (TpConnection *self, TpHandle handle);
 /* Actually implemented in contact.c, but having a contact-internal header
  * just for this would be overkill */
 void _tp_contact_connection_invalidated (TpContact *contact);
+
+void _tp_connection_set_account (TpConnection *self, TpAccount *account);
 
 /* connection-contact-info.c */
 void _tp_connection_prepare_contact_info_async (TpProxy *proxy,

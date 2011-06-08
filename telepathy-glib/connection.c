@@ -1395,6 +1395,13 @@ tp_connection_dispose (GObject *object)
 
   DEBUG ("%p", object);
 
+  if (self->priv->account != NULL)
+    {
+      g_object_remove_weak_pointer ((GObject *) self->priv->account,
+          (gpointer) &self->priv->account);
+      self->priv->account = NULL;
+    }
+
   if (self->priv->contacts != NULL)
     {
       g_hash_table_foreach (self->priv->contacts, contact_notify_invalidated,
@@ -1849,6 +1856,43 @@ finally:
   g_free (dup_unique_name);
 
   return ret;
+}
+
+/**
+ * tp_connection_get_account:
+ * @self: a connection
+ *
+ * Return the the #TpAccount associated with this connection. Will return %NULL
+ * if @self was not acquired from a #TpAccount via tp_account_get_connection(),
+ * or if the account object got finalized in the meantime (#TpConnection does
+ * not keep a strong ref on its #TpAccount).
+ *
+ * Returns: (transfer none): the account associated with this connection, or
+ * %NULL.
+ *
+ * Since: 0.UNRELEASED
+ */
+TpAccount *
+tp_connection_get_account (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
+
+  return self->priv->account;
+}
+
+void
+_tp_connection_set_account (TpConnection *self,
+    TpAccount *account)
+{
+  if (self->priv->account == account)
+    return;
+
+  g_assert (self->priv->account == NULL);
+  g_assert (account != NULL);
+
+  self->priv->account = account;
+  g_object_add_weak_pointer ((GObject *) account,
+      (gpointer) &self->priv->account);
 }
 
 /**
