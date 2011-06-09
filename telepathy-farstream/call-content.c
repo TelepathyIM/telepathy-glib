@@ -1480,7 +1480,7 @@ void
 _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
 {
   guint i;
-  struct CallFsStream *cfs = NULL;
+  struct CallFsStream *fs_cfs = NULL;
 
   TF_CALL_CONTENT_LOCK (content);
   for (i = 0; i < content->fsstreams->len; i++)
@@ -1491,14 +1491,14 @@ _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
         {
           cfs->use_count--;
           if (cfs->use_count <= 0)
-            cfs = g_ptr_array_remove_index_fast (content->fsstreams, i);
+            fs_cfs = g_ptr_array_remove_index_fast (content->fsstreams, i);
           break;
         }
     }
   TF_CALL_CONTENT_UNLOCK (content);
 
-  if (cfs)
-    free_content_fsstream (cfs);
+  if (fs_cfs)
+    free_content_fsstream (fs_cfs);
 }
 
 FsMediaType
