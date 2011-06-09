@@ -31,6 +31,7 @@ noinst_PROGRAMS = \
     test-contacts-mixin \
     test-contacts-slow-path \
     test-dbus \
+    test-dbus-tube \
     test-disconnection \
     test-error-enum \
     test-example-no-protocols \
@@ -208,6 +209,8 @@ test_client_channel_factory_SOURCES = client-channel-factory.c
 test_proxy_preparation_SOURCES = proxy-preparation.c
 
 test_channel_manager_request_properties_SOURCES = channel-manager-request-properties.c
+
+test_dbus_tube_SOURCES = dbus-tube.c
 
 # this one uses internal ABI
 test_cm_message_SOURCES = \

@@ -5487,6 +5487,27 @@ TpStreamTubeConnectionPrivate
 </SECTION>
 
 <SECTION>
+<FILE>dbus-tube-channel</FILE>
+<TITLE>dbus-tube-channel</TITLE>
+<INCLUDE>telepathy-glib/dbus-tube-channel.h</INCLUDE>
+<SUBSECTION>
+TpDBusTubeChannel
+TpDBusTubeChannelClass
+tp_dbus_tube_channel_get_parameters
+tp_dbus_tube_channel_get_service_name
+tp_dbus_tube_channel_new
+<SUBSECTION Standard>
+TP_IS_DBUS_TUBE_CHANNEL
+TP_IS_DBUS_TUBE_CHANNEL_CLASS
+TP_DBUS_TUBE_CHANNEL
+TP_DBUS_TUBE_CHANNEL_CLASS
+TP_DBUS_TUBE_CHANNEL_GET_CLASS
+TP_TYPE_DBUS_TUBE_CHANNEL
+tp_dbus_tube_channel_get_type
+TpDBusTubeChannelPrivate
+</SECTION>
+
+<SECTION>
 <FILE>client-channel-factory</FILE>
 <TITLE>client-channel-factory</TITLE>
 <INCLUDE>telepathy-glib/client-channel-factory.h</INCLUDE>
