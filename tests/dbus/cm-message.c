@@ -152,6 +152,100 @@ test_new_text (Test *test,
   g_object_unref (msg);
 }
 
+static void
+test_set_message (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpHandle sender;
+  TpMessage *msg, *echo;
+  const GHashTable *part;
+  GPtrArray *echo_parts;
+
+  sender = tp_handle_ensure (test->contact_repo, "escher@tuxedo.cat", NULL,
+      &test->error);
+  g_assert_no_error (test->error);
+
+  msg = tp_cm_message_new (test->base_connection, 1);
+  echo = tp_cm_message_new_text (test->base_connection, sender,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION, "meows");
+
+  g_assert_cmpuint (tp_message_count_parts (echo), ==, 2);
+
+  tp_message_set_uint32 (msg, 0, "message-type",
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT);
+  tp_message_set_uint32 (msg, 0, "delivery-status",
+      TP_DELIVERY_STATUS_DELIVERED);
+  tp_cm_message_set_message (msg, 0, "delivery-echo", echo);
+
+  /* destroy the echo */
+  g_object_unref (echo);
+
+  part = tp_message_peek (msg, 0);
+  g_assert (G_VALUE_HOLDS (tp_asv_lookup (part, "delivery-echo"),
+        TP_ARRAY_TYPE_MESSAGE_PART_LIST));
+
+  echo_parts = tp_asv_get_boxed (part, "delivery-echo",
+      TP_ARRAY_TYPE_MESSAGE_PART_LIST);
+  g_assert (echo_parts != NULL);
+  g_assert_cmpuint (echo_parts->len, ==, 2);
+
+  part = g_ptr_array_index (echo_parts, 0);
+  g_assert_cmpuint (tp_asv_get_uint32 (part, "message-type", NULL), ==,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+
+  part = g_ptr_array_index (echo_parts, 1);
+  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
+      "meows");
+
+  g_object_unref (msg);
+}
+
+static void
+test_set_message_2 (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpHandle sender;
+  TpMessage *msg, *echo;
+  const GHashTable *part;
+  GPtrArray *echo_parts;
+
+  sender = tp_handle_ensure (test->contact_repo, "escher@tuxedo.cat", NULL,
+      &test->error);
+  g_assert_no_error (test->error);
+
+  msg = tp_cm_message_new (test->base_connection, 1);
+  echo = tp_cm_message_new_text (test->base_connection, sender,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION, "meows");
+
+  tp_message_set_uint32 (msg, 0, "message-type",
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT);
+  tp_message_set_uint32 (msg, 0, "delivery-status",
+      TP_DELIVERY_STATUS_DELIVERED);
+  tp_cm_message_set_message (msg, 0, "delivery-echo", echo);
+
+  /* change the echo */
+  tp_message_set_string (echo, 1, "content", "yawns");
+
+  part = tp_message_peek (msg, 0);
+  g_assert (G_VALUE_HOLDS (tp_asv_lookup (part, "delivery-echo"),
+        TP_ARRAY_TYPE_MESSAGE_PART_LIST));
+
+  echo_parts = tp_asv_get_boxed (part, "delivery-echo",
+      TP_ARRAY_TYPE_MESSAGE_PART_LIST);
+  g_assert (echo_parts != NULL);
+
+  part = g_ptr_array_index (echo_parts, 0);
+  g_assert_cmpuint (tp_asv_get_uint32 (part, "message-type", NULL), ==,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_ACTION);
+
+  part = g_ptr_array_index (echo_parts, 1);
+  g_assert_cmpstr (tp_asv_get_string (part, "content"), ==,
+      "meows");
+
+  g_object_unref (echo);
+  g_object_unref (msg);
+}
+
 int
 main (int argc,
     char **argv)
@@ -165,6 +259,10 @@ main (int argc,
       test_new_from_parts, teardown);
   g_test_add (TEST_PREFIX "new_text", Test, NULL, setup,
       test_new_text, teardown);
+  g_test_add (TEST_PREFIX "set_message", Test, NULL, setup,
+      test_set_message, teardown);
+  g_test_add (TEST_PREFIX "set_message_2", Test, NULL, setup,
+      test_set_message_2, teardown);
 
   return g_test_run ();
 }
