@@ -25,6 +25,8 @@ libtp_glib_tests_la_SOURCES = \
     contact-list-manager.c \
     contact-list-manager.h \
     debug.h \
+    dbus-tube-chan.c \
+    dbus-tube-chan.h \
     echo-chan.h \
     echo-chan.c \
     echo-cm.h \
