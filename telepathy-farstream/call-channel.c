@@ -631,6 +631,8 @@ _tf_call_channel_put_conference (TfCallChannel *channel,
       g_hash_table_remove (channel->fsconferences, cc->conference_type);
       g_object_notify (G_OBJECT (channel), "fs-conferences");
     }
+
+  gst_object_unref (conference);
 }
 
 
