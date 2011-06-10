@@ -631,6 +631,8 @@ _tf_call_channel_put_conference (TfCallChannel *channel,
       g_hash_table_remove (channel->fsconferences, cc->conference_type);
       g_object_notify (G_OBJECT (channel), "fs-conferences");
     }
+
+  gst_object_unref (conference);
 }
 
 
@@ -686,6 +688,8 @@ _tf_call_channel_put_participant (TfCallChannel *channel,
           cp->use_count--;
           if (cp->use_count <= 0)
             g_ptr_array_remove_index_fast (channel->participants, i);
+          else
+            gst_object_unref (cp->fsparticipant);
           return;
         }
     }
