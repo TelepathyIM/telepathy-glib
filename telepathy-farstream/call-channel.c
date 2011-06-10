@@ -688,6 +688,8 @@ _tf_call_channel_put_participant (TfCallChannel *channel,
           cp->use_count--;
           if (cp->use_count <= 0)
             g_ptr_array_remove_index_fast (channel->participants, i);
+          else
+            gst_object_unref (cp->fsparticipant);
           return;
         }
     }
