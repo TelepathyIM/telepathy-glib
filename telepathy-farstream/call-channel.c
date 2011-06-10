@@ -567,6 +567,8 @@ tf_call_channel_error (TfCallChannel *channel)
 }
 
 
+/* This always returns a reference, one should use _put_conference to unref it
+ */
 FsConference *
 _tf_call_channel_get_conference (TfCallChannel *channel,
     const gchar *conference_type)
@@ -597,7 +599,8 @@ _tf_call_channel_get_conference (TfCallChannel *channel,
     return NULL;
   }
 
-  gst_object_ref (cc->fsconference);
+  /* Take ownership of the conference */
+  gst_object_ref_sink (cc->fsconference);
   g_hash_table_insert (channel->fsconferences, cc->conference_type, cc);
 
   g_signal_emit (channel, signals[SIGNAL_FS_CONFERENCE_ADDED], 0,
