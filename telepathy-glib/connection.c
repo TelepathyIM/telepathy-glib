@@ -289,6 +289,7 @@ enum {
   SIGNAL_GROUPS_CREATED,
   SIGNAL_GROUPS_REMOVED,
   SIGNAL_GROUP_RENAMED,
+  SIGNAL_CONTACT_LIST_CHANGED,
   N_SIGNALS
 };
 
@@ -1187,6 +1188,19 @@ tp_connection_invalidated (TpConnection *self)
       tp_proxy_pending_call_cancel (self->priv->introspection_call);
       self->priv->introspection_call = NULL;
     }
+
+  /* Drop the ref we have on all roster contacts, this is to break the refcycle
+   * we have between TpConnection and TpContact, otherwise self would never
+   * run dispose.
+   * Note that invalidated is also called from dispose, so self->priv->roster
+   * could already be NULL.
+   *
+   * FIXME: When we decide to break tp-glib API/guarantees, we should stop
+   * TpContact taking a strong ref on its TpConnection and force user to keep
+   * a ref on the TpConnection to use its TpContact, this would avoid the
+   * refcycle completely. */
+  if (self->priv->roster != NULL)
+    g_hash_table_remove_all (self->priv->roster);
 }
 
 static gboolean
@@ -1357,6 +1371,9 @@ tp_connection_init (TpConnection *self)
   self->priv->interests = tp_intset_new ();
   self->priv->contact_groups = g_ptr_array_new_with_free_func (g_free);
   g_ptr_array_add (self->priv->contact_groups, NULL);
+  self->priv->roster = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+      NULL, g_object_unref);
+  self->priv->contacts_changed_queue = g_queue_new ();
 }
 
 static void
@@ -1436,6 +1453,10 @@ tp_connection_dispose (GObject *object)
     }
 
   tp_clear_pointer (&self->priv->contact_groups, g_ptr_array_unref);
+  tp_clear_pointer (&self->priv->roster, g_hash_table_unref);
+  g_queue_foreach (self->priv->contacts_changed_queue,
+      (GFunc) _tp_connection_contacts_changed_item_free, NULL);
+  tp_clear_pointer (&self->priv->contacts_changed_queue, g_queue_free);
 
   if (self->priv->contacts != NULL)
     {
@@ -2049,6 +2070,34 @@ tp_connection_class_init (TpConnectionClass *klass)
       NULL, NULL,
       _tp_marshal_VOID__STRING_STRING,
       G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
+  /**
+   * TpConnection::contact-list-changed:
+   * @self: a #TpConnection
+   * @added: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact added to contacts list
+   * @removed: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact removed from contacts list
+   *
+   * Notify of changes in the list of contacts as returned by
+   * tp_connection_dup_contact_list(). It is guaranteed that all contacts have
+   * desired features prepared. See
+   * tp_simple_client_factory_add_contact_features() to define which features
+   * needs to be prepared.
+   *
+   * For this signal to be emitted, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   *
+   * Since: 0.UNRELEASED
+   */
+  signals[SIGNAL_CONTACT_LIST_CHANGED] = g_signal_new (
+      "contact-list-changed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__BOXED_BOXED,
+      G_TYPE_NONE, 2, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY);
 }
 
 /**

@@ -35,6 +35,7 @@ TpContactListState tp_connection_get_contact_list_state (TpConnection *self);
 gboolean tp_connection_get_contact_list_persists (TpConnection *self);
 gboolean tp_connection_get_can_change_contact_list (TpConnection *self);
 gboolean tp_connection_get_request_uses_message (TpConnection *self);
+GPtrArray *tp_connection_dup_contact_list (TpConnection *self);
 
 void tp_connection_request_subscription_async (TpConnection *self,
     guint n_contacts,
