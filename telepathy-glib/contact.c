@@ -3292,6 +3292,20 @@ contact_set_subscription_states (TpContact *self,
       self->priv->subscribe, self->priv->publish, self->priv->publish_request);
 }
 
+void
+_tp_contact_set_subscription_states (TpContact *self,
+    GValueArray *value_array)
+{
+  TpSubscriptionState subscribe;
+  TpSubscriptionState publish;
+  const gchar *publish_request;
+
+  tp_value_array_unpack (value_array, 3,
+      &subscribe, &publish, &publish_request);
+
+  contact_set_subscription_states (self, subscribe, publish, publish_request);
+}
+
 static void
 contacts_changed_cb (TpConnection *connection,
     GHashTable *changes,
@@ -3307,20 +3321,10 @@ contacts_changed_cb (TpConnection *connection,
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       TpHandle handle = GPOINTER_TO_UINT (key);
-      GValueArray *value_array = value;
       TpContact *contact = _tp_connection_lookup_contact (connection, handle);
-      TpSubscriptionState subscribe;
-      TpSubscriptionState publish;
-      const gchar *publish_request;
 
-      if (contact == NULL)
-        continue;
-
-      tp_value_array_unpack (value_array, 3,
-          &subscribe, &publish, &publish_request);
-
-      contact_set_subscription_states (contact, subscribe, publish,
-          publish_request);
+      if (contact != NULL)
+        _tp_contact_set_subscription_states (contact, value);
     }
 
   for (i = 0; i < removals->len; i++)
@@ -3705,6 +3709,24 @@ tp_contact_set_attributes (TpContact *contact,
   return TRUE;
 }
 
+static gboolean get_feature_flags (guint n_features,
+    const TpContactFeature *features, ContactFeatureFlags *flags);
+
+gboolean
+_tp_contact_set_attributes (TpContact *contact,
+    GHashTable *asv,
+    guint n_features,
+    const TpContactFeature *features,
+    GError **error)
+{
+  ContactFeatureFlags feature_flags = 0;
+
+  if (!get_feature_flags (n_features, features, &feature_flags))
+    return FALSE;
+
+  return tp_contact_set_attributes (contact, asv, feature_flags, error);
+}
+
 static void
 contacts_got_attributes (TpConnection *connection,
                          GHashTable *attributes,
@@ -3891,6 +3913,19 @@ contacts_bind_to_signals (TpConnection *connection,
 
   g_ptr_array_add (array, NULL);
   return (const gchar **) g_ptr_array_free (array, FALSE);
+}
+
+const gchar **
+_tp_contacts_bind_to_signals (TpConnection *connection,
+    guint n_features,
+    const TpContactFeature *features)
+{
+  ContactFeatureFlags feature_flags = 0;
+
+  if (!get_feature_flags (n_features, features, &feature_flags))
+    return NULL;
+
+  return contacts_bind_to_signals (connection, feature_flags);
 }
 
 static void
