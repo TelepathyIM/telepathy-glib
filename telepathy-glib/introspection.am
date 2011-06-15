@@ -17,9 +17,11 @@ INTROSPECTION_FILES = \
 	$(srcdir)/client-channel-factory.c $(srcdir)/client-channel-factory.h \
 	$(srcdir)/connection.c $(srcdir)/connection.h \
 	$(srcdir)/connection-handles.c $(srcdir)/connection-contact-info.c \
+	$(srcdir)/connection-avatars.c \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
 	$(srcdir)/connection-manager.c $(srcdir)/connection-manager.h \
 	$(srcdir)/channel.c $(srcdir)/channel.h \
+	$(srcdir)/channel-group.c \
 	$(srcdir)/handle.c $(srcdir)/handle.h \
 	$(srcdir)/handle-channels-context.c $(srcdir)/handle-channels-context.h \
 	$(srcdir)/dbus-daemon.c $(srcdir)/dbus-daemon.h \
