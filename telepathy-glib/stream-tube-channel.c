@@ -834,7 +834,10 @@ create_client_socket (TpStreamTubeChannel *self)
         g_assert_not_reached ();
     }
 
-  /* Create socket to connect to the CM */
+  /* Create socket to connect to the CM. We use a GSocket and not a
+   * GSocketClient because it creates the underlying socket when trying to
+   * connect and we need to be able to get the local port (needed for
+   * TP_SOCKET_ACCESS_CONTROL_PORT) of the socket before actually connecting. */
   self->priv->client_socket = g_socket_new (family, G_SOCKET_TYPE_STREAM,
       G_SOCKET_PROTOCOL_DEFAULT, &error);
   if (self->priv->client_socket == NULL)
@@ -849,7 +852,9 @@ create_client_socket (TpStreamTubeChannel *self)
   if (self->priv->socket_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ||
       self->priv->socket_type == TP_SOCKET_ADDRESS_TYPE_IPV6)
     {
-      /* Bind local address */
+      /* Bind local address. This is needed to be able to get the local port
+       * of the socket and pass it to the CM when using
+       * TP_SOCKET_ACCESS_CONTROL_PORT. */
       GSocketAddress *local_address;
       GInetAddress *tmp;
       gboolean success;
