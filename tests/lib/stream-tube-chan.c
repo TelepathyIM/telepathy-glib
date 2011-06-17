@@ -60,13 +60,6 @@ struct _TpTestsStreamTubeChannelPrivate {
 };
 
 static void
-destroy_socket_control_list (gpointer data)
-{
-  GArray *tab = data;
-  g_array_free (tab, TRUE);
-}
-
-static void
 create_supported_socket_types (TpTestsStreamTubeChannel *self)
 {
   TpSocketAccessControl access_control;
@@ -74,7 +67,7 @@ create_supported_socket_types (TpTestsStreamTubeChannel *self)
 
   g_assert (self->priv->supported_socket_types == NULL);
   self->priv->supported_socket_types = g_hash_table_new_full (NULL, NULL,
-      NULL, destroy_socket_control_list);
+      NULL, _tp_destroy_socket_control_list);
 
   /* Socket_Address_Type_Unix */
   unix_tab = g_array_sized_new (FALSE, FALSE, sizeof (TpSocketAccessControl),

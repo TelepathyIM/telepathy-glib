@@ -310,6 +310,13 @@ tp_tests_init (int *argc,
   g_test_init (argc, argv, NULL);
 }
 
+void
+_tp_destroy_socket_control_list (gpointer data)
+{
+  GArray *tab = data;
+  g_array_free (tab, TRUE);
+}
+
 GValue *
 _tp_create_local_socket (TpSocketAddressType address_type,
     TpSocketAccessControl access_control,

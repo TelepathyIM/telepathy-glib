@@ -63,4 +63,6 @@ GValue *_tp_create_local_socket (TpSocketAddressType address_type,
     gchar **unix_address,
     GError **error);
 
+void _tp_destroy_socket_control_list (gpointer data);
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */
