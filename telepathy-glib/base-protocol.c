@@ -1442,12 +1442,11 @@ tp_base_protocol_sanitize_parameters (TpBaseProtocol *self,
         {
           GValue *value = param_default_value (parameters + i);
 
-          DEBUG ("using default value for %s", name);
           g_hash_table_insert (combined, g_strdup (name), value);
         }
       else
         {
-          DEBUG ("no default value for %s", name);
+          /* no default */
         }
     }
 
