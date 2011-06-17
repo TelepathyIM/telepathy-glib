@@ -57,4 +57,10 @@ void tp_tests_abort_after (guint sec);
 void tp_tests_init (int *argc,
     char ***argv);
 
+GValue *_tp_create_local_socket (TpSocketAddressType address_type,
+    TpSocketAccessControl access_control,
+    GSocketService **service,
+    gchar **unix_address,
+    GError **error);
+
 #endif /* #ifndef __TP_TESTS_LIB_UTIL_H__ */

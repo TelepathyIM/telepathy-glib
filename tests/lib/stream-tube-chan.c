@@ -11,6 +11,7 @@
 #include "config.h"
 
 #include "stream-tube-chan.h"
+#include "util.h"
 
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/channel-iface.h>
@@ -457,106 +458,6 @@ service_incoming_cb (GSocketService *service,
   g_signal_emit (self, signals[SIG_INCOMING_CONNECTION], 0, connection);
 }
 
-static GValue *
-create_local_socket (TpTestsStreamTubeChannel *self,
-    TpSocketAddressType address_type,
-    TpSocketAccessControl access_control,
-    GError **error)
-{
-  gboolean success;
-  GSocketAddress *address, *effective_address;
-  GValue *address_gvalue;
-
-  switch (access_control)
-    {
-      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
-      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
-      case TP_SOCKET_ACCESS_CONTROL_PORT:
-        break;
-
-      default:
-        g_assert_not_reached ();
-    }
-
-  switch (address_type)
-    {
-#ifdef HAVE_GIO_UNIX
-      case TP_SOCKET_ADDRESS_TYPE_UNIX:
-        {
-          address = g_unix_socket_address_new (tmpnam (NULL));
-          break;
-        }
-#endif
-
-      case TP_SOCKET_ADDRESS_TYPE_IPV4:
-      case TP_SOCKET_ADDRESS_TYPE_IPV6:
-        {
-          GInetAddress *localhost;
-
-          localhost = g_inet_address_new_loopback (
-              address_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ?
-              G_SOCKET_FAMILY_IPV4 : G_SOCKET_FAMILY_IPV6);
-          address = g_inet_socket_address_new (localhost, 0);
-
-          g_object_unref (localhost);
-          break;
-        }
-
-      default:
-        g_assert_not_reached ();
-    }
-
-  self->priv->service = g_socket_service_new ();
-
-  success = g_socket_listener_add_address (
-      G_SOCKET_LISTENER (self->priv->service),
-      address, G_SOCKET_TYPE_STREAM,
-      G_SOCKET_PROTOCOL_DEFAULT,
-      NULL, &effective_address, NULL);
-  g_assert (success);
-
-  tp_g_signal_connect_object (self->priv->service, "incoming",
-      G_CALLBACK (service_incoming_cb), self, 0);
-
-  switch (address_type)
-    {
-#ifdef HAVE_GIO_UNIX
-      case TP_SOCKET_ADDRESS_TYPE_UNIX:
-        self->priv->unix_address = g_strdup (g_unix_socket_address_get_path (
-              G_UNIX_SOCKET_ADDRESS (effective_address)));
-        address_gvalue =  tp_g_value_slice_new_bytes (
-            g_unix_socket_address_get_path_len (
-              G_UNIX_SOCKET_ADDRESS (effective_address)),
-            g_unix_socket_address_get_path (
-              G_UNIX_SOCKET_ADDRESS (effective_address)));
-        break;
-#endif
-
-      case TP_SOCKET_ADDRESS_TYPE_IPV4:
-      case TP_SOCKET_ADDRESS_TYPE_IPV6:
-        address_gvalue = tp_g_value_slice_new_take_boxed (
-            TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4,
-            dbus_g_type_specialized_construct (
-              TP_STRUCT_TYPE_SOCKET_ADDRESS_IPV4));
-
-        dbus_g_type_struct_set (address_gvalue,
-            0, address_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ?
-              "127.0.0.1" : "::1",
-            1, g_inet_socket_address_get_port (
-              G_INET_SOCKET_ADDRESS (effective_address)),
-            G_MAXUINT);
-        break;
-
-      default:
-        g_assert_not_reached ();
-    }
-
-
-  g_object_unref (address);
-  g_object_unref (effective_address);
-  return address_gvalue;
-}
-
 static void
 stream_tube_accept (TpSvcChannelTypeStreamTube *iface,
     TpSocketAddressType address_type,
@@ -582,7 +483,10 @@ stream_tube_accept (TpSvcChannelTypeStreamTube *iface,
       goto fail;
     }
 
-  address = create_local_socket (self, address_type, access_control, &error);
+  address = _tp_create_local_socket (address_type, access_control,
+      &self->priv->service, &self->priv->unix_address, &error);
+  tp_g_signal_connect_object (self->priv->service, "incoming",
+      G_CALLBACK (service_incoming_cb), self, 0);
 
   self->priv->access_control = access_control;
   self->priv->access_control_param = tp_g_value_slice_dup (
