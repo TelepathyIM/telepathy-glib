@@ -38,6 +38,8 @@
 #include <gio/gunixconnection.h>
 #endif /* HAVE_GIO_UNIX */
 
+#include <telepathy-glib/enums.h>
+#include <telepathy-glib/errors.h>
 #include <telepathy-glib/util-internal.h>
 #include <telepathy-glib/util.h>
 
@@ -1685,4 +1687,204 @@ _tp_g_ptr_array_sized_new_with_free_func (guint reserved_size,
   g_ptr_array_set_free_func (array, element_free_func);
 
   return array;
+}
+
+/*
+ * _tp_determine_socket_address_type:
+ *
+ * Determines the best available socket address type.
+ *
+ */
+static gboolean
+_tp_determine_socket_address_type (GHashTable *supported_sockets,
+    TpSocketAddressType *address_type,
+    GError **error)
+{
+  guint i;
+  TpSocketAddressType types[] = {
+#ifdef HAVE_GIO_UNIX
+      TP_SOCKET_ADDRESS_TYPE_UNIX,
+#endif /* HAVE_GIO_UNIX */
+      TP_SOCKET_ADDRESS_TYPE_IPV4,
+      TP_SOCKET_ADDRESS_TYPE_IPV6
+  };
+
+  for (i = 0; i < G_N_ELEMENTS (types); i++)
+    {
+      GArray *arr = g_hash_table_lookup (supported_sockets,
+          GUINT_TO_POINTER (types[i]));
+
+      if (arr != NULL)
+        {
+          *address_type = types[i];
+          return TRUE;
+        }
+    }
+
+  /* This should never happen */
+  g_set_error (error, TP_ERRORS,
+      TP_ERROR_NOT_IMPLEMENTED, "No supported socket types");
+
+  return FALSE;
+}
+
+/*
+ * _tp_determine_access_control_type:
+ *
+ * Determines the best available socket access control type, falling back to
+ * TP_SOCKET_ACCESS_CONTROL_LOCALHOST if needed.
+ *
+ */
+static gboolean
+_tp_determine_access_control_type (GHashTable *supported_sockets,
+    TpSocketAddressType address_type,
+    TpSocketAccessControl *access_control,
+    GError **error)
+{
+  gboolean support_localhost = FALSE;
+  GArray *arr;
+  guint i;
+
+  arr = g_hash_table_lookup (supported_sockets,
+      GUINT_TO_POINTER (address_type));
+
+  switch (address_type)
+    {
+#ifdef HAVE_GIO_UNIX
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+      case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
+        {
+          /* Preferred order: credentials, localhost */
+          for (i = 0; i < arr->len; i++)
+            {
+              TpSocketAccessControl _access = g_array_index (arr,
+                  TpSocketAccessControl, i);
+
+              if (_access == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
+                {
+                  *access_control = _access;
+                  return TRUE;
+                }
+              else if (_access == TP_SOCKET_ACCESS_CONTROL_LOCALHOST)
+                {
+                  support_localhost = TRUE;
+                }
+            }
+        }
+        break;
+#endif
+
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
+      case TP_SOCKET_ADDRESS_TYPE_IPV4:
+        {
+          /* Preferred order: port, localhost */
+          for (i = 0; i < arr->len; i++)
+            {
+              TpSocketAccessControl _access = g_array_index (arr,
+                  TpSocketAccessControl, i);
+
+              if (_access == TP_SOCKET_ACCESS_CONTROL_PORT)
+                {
+                  *access_control = _access;
+                  return TRUE;
+                }
+              else if (_access == TP_SOCKET_ACCESS_CONTROL_LOCALHOST)
+                {
+                  support_localhost = TRUE;
+                }
+            }
+        }
+        break;
+    }
+
+  /* This should never happen */
+  if (!support_localhost)
+    {
+      g_set_error (error, TP_ERRORS,
+          TP_ERROR_NOT_IMPLEMENTED, "No supported access control");
+      return FALSE;
+    }
+
+  *access_control = TP_SOCKET_ACCESS_CONTROL_LOCALHOST;
+  return TRUE;
+}
+
+gboolean
+_tp_set_socket_address_type_and_access_control_type (
+    GHashTable *supported_sockets,
+    TpSocketAddressType *address_type,
+    TpSocketAccessControl *access_control,
+    GError **error)
+{
+  g_return_val_if_fail (address_type != NULL, FALSE);
+  g_return_val_if_fail (access_control != NULL, FALSE);
+
+  if (!_tp_determine_socket_address_type (supported_sockets, address_type,
+        error))
+    return FALSE;
+
+  return _tp_determine_access_control_type (supported_sockets,
+      *address_type, access_control, error);
+}
+
+GSocket *
+_tp_create_client_socket (TpSocketAddressType socket_type,
+    GError **error)
+{
+  GSocket *client_socket;
+  GSocketFamily family;
+
+  switch (socket_type)
+    {
+#ifdef HAVE_GIO_UNIX
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+        family = G_SOCKET_FAMILY_UNIX;
+        break;
+#endif
+
+      case TP_SOCKET_ADDRESS_TYPE_IPV4:
+        family = G_SOCKET_FAMILY_IPV4;
+        break;
+
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
+        family = G_SOCKET_FAMILY_IPV6;
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
+
+  /* Create socket to connect to the CM. We use a GSocket and not a
+   * GSocketClient because it creates the underlying socket when trying to
+   * connect and we need to be able to get the local port (needed for
+   * TP_SOCKET_ACCESS_CONTROL_PORT) of the socket before actually connecting. */
+  client_socket = g_socket_new (family, G_SOCKET_TYPE_STREAM,
+      G_SOCKET_PROTOCOL_DEFAULT, error);
+  if (client_socket == NULL)
+    return NULL;
+
+  if (socket_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ||
+      socket_type == TP_SOCKET_ADDRESS_TYPE_IPV6)
+    {
+      /* Bind local address. This is needed to be able to get the local port
+       * of the socket and pass it to the CM when using
+       * TP_SOCKET_ACCESS_CONTROL_PORT. */
+      GSocketAddress *local_address;
+      GInetAddress *tmp;
+      gboolean success;
+
+      tmp = g_inet_address_new_any (family);
+      local_address = g_inet_socket_address_new (tmp, 0);
+
+      success = g_socket_bind (client_socket, local_address,
+          TRUE, error);
+
+      g_object_unref (tmp);
+      g_object_unref (local_address);
+
+      if (!success)
+        return NULL;
+    }
+
+  return client_socket;
 }

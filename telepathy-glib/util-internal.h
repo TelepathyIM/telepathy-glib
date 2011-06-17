@@ -81,4 +81,13 @@ gboolean _tp_bind_connection_status_to_boolean (GBinding *binding,
 GPtrArray *_tp_g_ptr_array_sized_new_with_free_func (guint reserved_size,
     GDestroyNotify element_free_func);
 
+gboolean _tp_set_socket_address_type_and_access_control_type (
+    GHashTable *supported_sockets,
+    TpSocketAddressType *address_type,
+    TpSocketAccessControl *access_control,
+    GError **error);
+
+GSocket * _tp_create_client_socket (TpSocketAddressType socket_type,
+    GError **error);
+
 #endif /* __TP_UTIL_INTERNAL_H__ */

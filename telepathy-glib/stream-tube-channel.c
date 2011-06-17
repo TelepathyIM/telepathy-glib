@@ -513,123 +513,6 @@ tp_stream_tube_channel_new (TpConnection *conn,
        NULL);
 }
 
-/* Return the 'best' TpSocketAccessControl for the socket type, falling back
- * to TP_SOCKET_ACCESS_CONTROL_LOCALHOST if needed. */
-static TpSocketAccessControl
-find_best_access_control (GArray *arr,
-    TpSocketAddressType socket_type,
-    GError **error)
-{
-  gboolean support_localhost = FALSE;
-  TpSocketAccessControl best = TP_SOCKET_ACCESS_CONTROL_LOCALHOST;
-  guint i;
-
-  switch (socket_type)
-    {
-    case TP_SOCKET_ADDRESS_TYPE_UNIX:
-    case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
-      {
-        for (i = 0; i < arr->len; i++)
-          {
-            TpSocketAccessControl _access = g_array_index (arr,
-              TpSocketAccessControl, i);
-
-            if (_access == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
-              best = _access;
-            else if (_access == TP_SOCKET_ACCESS_CONTROL_LOCALHOST)
-              support_localhost = TRUE;
-          }
-
-        if (best == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
-          return TP_SOCKET_ACCESS_CONTROL_CREDENTIALS;
-      }
-      break;
-
-    case TP_SOCKET_ADDRESS_TYPE_IPV4:
-    case TP_SOCKET_ADDRESS_TYPE_IPV6:
-      {
-        for (i = 0; i < arr->len; i++)
-          {
-            TpSocketAccessControl _access = g_array_index (arr,
-              TpSocketAccessControl, i);
-
-            if (_access == TP_SOCKET_ACCESS_CONTROL_PORT)
-              best = _access;
-            else if (_access == TP_SOCKET_ACCESS_CONTROL_LOCALHOST)
-              support_localhost = TRUE;
-          }
-
-        if (best == TP_SOCKET_ACCESS_CONTROL_PORT)
-          return TP_SOCKET_ACCESS_CONTROL_PORT;
-      }
-      break;
-    }
-
-  if (!support_localhost)
-    {
-      g_set_error (error, TP_ERRORS,
-          TP_ERROR_NOT_IMPLEMENTED, "No supported access control");
-    }
-
-  return TP_SOCKET_ACCESS_CONTROL_LOCALHOST;
-}
-
-static TpSocketAddressType
-determine_socket_type (TpStreamTubeChannel *self,
-    GError **error)
-{
-  GHashTable *properties;
-  GHashTable *supported_sockets;
-  GArray *arr;
-
-  properties = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
-
-  supported_sockets = tp_asv_get_boxed (properties,
-      TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SUPPORTED_SOCKET_TYPES,
-      TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
-
-#ifdef HAVE_GIO_UNIX
-  arr = g_hash_table_lookup (supported_sockets,
-      GUINT_TO_POINTER (TP_SOCKET_ADDRESS_TYPE_UNIX));
-
-  if (arr != NULL)
-    {
-      self->priv->access_control = find_best_access_control (arr,
-          TP_SOCKET_ADDRESS_TYPE_UNIX, error);
-
-      return TP_SOCKET_ADDRESS_TYPE_UNIX;
-    }
-#endif /* HAVE_GIO_UNIX */
-
-  arr = g_hash_table_lookup (supported_sockets,
-      GUINT_TO_POINTER (TP_SOCKET_ADDRESS_TYPE_IPV4));
-  if (arr != NULL)
-    {
-      self->priv->access_control = find_best_access_control (arr,
-          TP_SOCKET_ADDRESS_TYPE_IPV4, error);
-
-      return TP_SOCKET_ADDRESS_TYPE_IPV4;
-    }
-
-  arr = g_hash_table_lookup (supported_sockets,
-      GUINT_TO_POINTER (TP_SOCKET_ADDRESS_TYPE_IPV6));
-  if (arr != NULL)
-    {
-      self->priv->access_control = find_best_access_control (arr,
-          TP_SOCKET_ADDRESS_TYPE_IPV6, error);
-
-      return TP_SOCKET_ADDRESS_TYPE_IPV6;
-    }
-
-  /* this should never happen */
-  DEBUG ("Unable to find a supported socket type");
-
-  g_set_error (error, TP_ERRORS,
-      TP_ERROR_NOT_IMPLEMENTED, "No supported socket types");
-
-  return 0;
-}
-
 static void
 operation_failed (TpStreamTubeChannel *self,
     const GError *error)
@@ -807,79 +690,6 @@ new_local_connection_cb (TpChannel *proxy,
 }
 
 static void
-create_client_socket (TpStreamTubeChannel *self)
-{
-  GSocketFamily family;
-  GError *error = NULL;
-
-  g_assert (self->priv->client_socket == NULL);
-
-  switch (self->priv->socket_type)
-    {
-#ifdef HAVE_GIO_UNIX
-      case TP_SOCKET_ADDRESS_TYPE_UNIX:
-        family = G_SOCKET_FAMILY_UNIX;
-        break;
-#endif
-
-      case TP_SOCKET_ADDRESS_TYPE_IPV4:
-        family = G_SOCKET_FAMILY_IPV4;
-        break;
-
-      case TP_SOCKET_ADDRESS_TYPE_IPV6:
-        family = G_SOCKET_FAMILY_IPV6;
-        break;
-
-      default:
-        g_assert_not_reached ();
-    }
-
-  /* Create socket to connect to the CM. We use a GSocket and not a
-   * GSocketClient because it creates the underlying socket when trying to
-   * connect and we need to be able to get the local port (needed for
-   * TP_SOCKET_ACCESS_CONTROL_PORT) of the socket before actually connecting. */
-  self->priv->client_socket = g_socket_new (family, G_SOCKET_TYPE_STREAM,
-      G_SOCKET_PROTOCOL_DEFAULT, &error);
-  if (self->priv->client_socket == NULL)
-    {
-      DEBUG ("Failed to create socket: %s", error->message);
-
-      operation_failed (self, error);
-      g_error_free (error);
-      return;
-    }
-
-  if (self->priv->socket_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ||
-      self->priv->socket_type == TP_SOCKET_ADDRESS_TYPE_IPV6)
-    {
-      /* Bind local address. This is needed to be able to get the local port
-       * of the socket and pass it to the CM when using
-       * TP_SOCKET_ACCESS_CONTROL_PORT. */
-      GSocketAddress *local_address;
-      GInetAddress *tmp;
-      gboolean success;
-
-      tmp = g_inet_address_new_any (family);
-      local_address = g_inet_socket_address_new (tmp, 0);
-
-      success = g_socket_bind (self->priv->client_socket, local_address,
-          TRUE, &error);
-
-      g_object_unref (tmp);
-      g_object_unref (local_address);
-
-      if (!success)
-        {
-          DEBUG ("Failed to bind local address: %s", error->message);
-
-          operation_failed (self, error);
-          g_error_free (error);
-          return;
-        }
-    }
-}
-
-static void
 _channel_accepted (TpChannel *channel,
     const GValue *addressv,
     const GError *in_error,
@@ -979,6 +789,8 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  GHashTable *properties;
+  GHashTable *supported_sockets;
   GError *error = NULL;
 
   g_return_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self));
@@ -995,8 +807,13 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_stream_tube_channel_accept_async);
 
-  self->priv->socket_type = determine_socket_type (self, &error);
-  if (error != NULL)
+  properties = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  supported_sockets = tp_asv_get_boxed (properties,
+      TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SUPPORTED_SOCKET_TYPES,
+      TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
+
+  if (!_tp_set_socket_address_type_and_access_control_type (supported_sockets,
+      &self->priv->socket_type, &self->priv->access_control, &error))
     {
       operation_failed (self, error);
 
@@ -1007,7 +824,17 @@ tp_stream_tube_channel_accept_async (TpStreamTubeChannel *self,
   DEBUG ("Using socket type %u with access control %u", self->priv->socket_type,
       self->priv->access_control);
 
-  create_client_socket (self);
+  self->priv->client_socket = _tp_create_client_socket (self->priv->socket_type,
+      &error);
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to create socket: %s", error->message);
+
+      operation_failed (self, error);
+      g_clear_error (&error);
+      return;
+    }
 
   switch (self->priv->access_control)
     {
@@ -1496,6 +1323,8 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  GHashTable *properties;
+  GHashTable *supported_sockets;
   GError *error = NULL;
 
   g_return_if_fail (TP_IS_STREAM_TUBE_CHANNEL (self));
@@ -1511,8 +1340,13 @@ tp_stream_tube_channel_offer_async (TpStreamTubeChannel *self,
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_stream_tube_channel_offer_async);
 
-  self->priv->socket_type = determine_socket_type (self, &error);
-  if (error != NULL)
+  properties = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
+  supported_sockets = tp_asv_get_boxed (properties,
+      TP_PROP_CHANNEL_TYPE_STREAM_TUBE_SUPPORTED_SOCKET_TYPES,
+      TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
+
+  if (!_tp_set_socket_address_type_and_access_control_type (supported_sockets,
+      &self->priv->socket_type, &self->priv->access_control, &error))
     {
       operation_failed (self, error);
 
