@@ -1692,7 +1692,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * Preparing %TP_CHANNEL_FEATURE_PASSWORD also ensures that the
    * notify::password-needed signal will be fired when this property changes.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.2
    */
   param_spec = g_param_spec_boolean ("password-needed",
       "Password needed",
@@ -2510,7 +2510,7 @@ channel_destroy_cb (TpChannel *channel,
  * You can then call tp_channel_destroy_finish() to get the result of
  * the operation.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 void
 tp_channel_destroy_async (TpChannel *self,
@@ -2549,7 +2549,7 @@ tp_channel_destroy_async (TpChannel *self,
  *
  * Returns: %TRUE if the channel has been destroyed or closed; %FALSE otherwise
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 gboolean
 tp_channel_destroy_finish (TpChannel *self,
@@ -2571,7 +2571,7 @@ tp_channel_destroy_finish (TpChannel *self,
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 
 GQuark
@@ -2588,7 +2588,7 @@ tp_channel_get_feature_quark_password (void)
  *
  * Returns: the value of #TpChannel:password-needed
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 gboolean
 tp_channel_password_needed (TpChannel *self)
@@ -2636,7 +2636,7 @@ provide_password_cb (TpChannel *self,
  * called. You can then call tp_channel_provide_password_finish()
  * to get the result of the operation.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 void
 tp_channel_provide_password_async (TpChannel *self,
@@ -2667,7 +2667,7 @@ tp_channel_provide_password_async (TpChannel *self,
  * Returns: %TRUE if the password has been provided and accepted,
  * %FALSE otherwise.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 gboolean
 tp_channel_provide_password_finish (TpChannel *self,

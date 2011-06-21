@@ -1759,7 +1759,7 @@ claim_leave_channels_cb (TpChannelDispatchOperation *self,
  * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
  * for more details.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 void
 tp_channel_dispatch_operation_leave_channels_async (
@@ -1794,7 +1794,7 @@ tp_channel_dispatch_operation_leave_channels_async (
  * tp_channel_leave_async() has at least been attempted on all the
  * channels, otherwise %FALSE
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 gboolean
 tp_channel_dispatch_operation_leave_channels_finish (
@@ -1857,7 +1857,7 @@ claim_destroy_channels_cb (TpChannelDispatchOperation *self,
  * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
  * for more details.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 void
 tp_channel_dispatch_operation_destroy_channels_async (
@@ -1886,7 +1886,7 @@ tp_channel_dispatch_operation_destroy_channels_async (
  * tp_channel_destroy_async() has at least been attempted on all the
  * channels, otherwise %FALSE
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.2
  */
 gboolean
 tp_channel_dispatch_operation_destroy_channels_finish (

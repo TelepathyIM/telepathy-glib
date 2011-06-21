@@ -1,0 +1,14 @@
+Version: TELEPATHY_GLIB_0.15.2
+Extends: TELEPATHY_GLIB_0.15.1
+Release: 0.15.2
+
+tp_channel_destroy_async
+tp_channel_destroy_finish
+tp_channel_dispatch_operation_destroy_channels_async
+tp_channel_dispatch_operation_destroy_channels_finish
+tp_channel_dispatch_operation_leave_channels_async
+tp_channel_dispatch_operation_leave_channels_finish
+tp_channel_get_feature_quark_password
+tp_channel_password_needed
+tp_channel_provide_password_async
+tp_channel_provide_password_finish
