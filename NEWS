@@ -1,3 +1,13 @@
+telepathy-glib 0.14.8 (2011-06-21)
+==================================
+
+The “I'm a MUC” release.
+
+Fixes:
+
+• fd.o#38524: TpChannelIface: set TP_UNKNOWN_HANDLE_TYPE as default handle
+  type (Guillaume)
+
 telepathy-glib 0.14.7 (2011-05-30)
 ==================================
 
