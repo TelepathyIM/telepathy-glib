@@ -1897,3 +1897,54 @@ tp_text_channel_get_sms_length_finish (TpTextChannel *self,
 
   return TRUE;
 }
+
+/**
+ * tp_text_channel_ack_all_pending_messages_async:
+ * @self: a #TpTextChannel
+ * @callback: a callback to call when the messages have been acked
+ * @user_data: data to pass to @callback
+ *
+ * Acknowledge all the pending messages. This is equivalent of calling
+ * tp_text_channel_ack_messages_async() with the list of #TpSignalledMessage
+ * returned by tp_text_channel_get_pending_messages().
+ *
+ * Once the messages have been acked, @callback will be called.
+ * You can then call tp_text_channel_ack_all_pending_messages_finish() to get
+ * the result of the operation.
+ *
+ * See tp_text_channel_ack_message_async() about acknowledging messages.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_text_channel_ack_all_pending_messages_async (TpTextChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GList *messages;
+
+  messages = g_queue_peek_head_link (self->priv->pending_messages);
+
+  tp_text_channel_ack_messages_async (self, messages,
+      callback, user_data);
+}
+
+/**
+ * tp_text_channel_ack_all_pending_messages_finish:
+ * @self: a #TpTextChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finish an asynchronous acknowledgement operation of all messages.
+ *
+ * Returns: %TRUE if the messages have been acked, %FALSE otherwise.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+gboolean
+tp_text_channel_ack_all_pending_messages_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  return tp_text_channel_ack_messages_finish (self, result, error);
+}

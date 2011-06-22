@@ -110,6 +110,14 @@ gboolean tp_text_channel_ack_message_finish (TpTextChannel *self,
     GAsyncResult *result,
     GError **error);
 
+void tp_text_channel_ack_all_pending_messages_async (TpTextChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_text_channel_ack_all_pending_messages_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
 void tp_text_channel_set_chat_state_async (TpTextChannel *self,
     TpChannelChatState state,
     GAsyncReadyCallback callback,
