@@ -2114,7 +2114,9 @@ static void
 tp_proxy_poll_features (TpProxy *self,
     const GError *error)
 {
+#ifdef ENABLE_DEBUG
   const gchar *error_source = "temporarily failed";
+#endif
   GList *iter;
   GList *next;
 
@@ -2131,7 +2133,9 @@ tp_proxy_poll_features (TpProxy *self,
 
       if (error == NULL)
         {
+#ifdef ENABLE_DEBUG
           error_source = "invalidated";
+#endif
           error = self->invalidated;
         }
 

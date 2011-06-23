@@ -451,21 +451,12 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
     TpDBusPropertiesMixinSetter setter,
     TpDBusPropertiesMixinPropImpl *props)
 {
-  GQuark offset_quark = _prop_mixin_offset_quark ();
   GQuark extras_quark = _extra_prop_impls_quark ();
   GType type = G_OBJECT_CLASS_TYPE (cls);
   GType *interfaces = g_type_interfaces (type, NULL);
-  TpDBusPropertiesMixinClass *mixin = NULL;
-  gpointer offset_qdata;
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
 
   g_return_if_fail (G_IS_OBJECT_CLASS (cls));
-
-  offset_qdata = g_type_get_qdata (type, offset_quark);
-
-  if (offset_qdata != NULL)
-    mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass, cls,
-        GPOINTER_TO_SIZE (offset_qdata));
 
   /* never freed - intentional per-class leak */
   iface_impl = g_new0 (TpDBusPropertiesMixinIfaceImpl, 1);
@@ -480,7 +471,14 @@ tp_dbus_properties_mixin_implement_interface (GObjectClass *cls,
       TpDBusPropertiesMixinIfaceImpl *next = g_type_get_qdata (type,
           extras_quark);
 #ifdef ENABLE_DEBUG
+      GQuark offset_quark = _prop_mixin_offset_quark ();
+      gpointer offset_qdata = g_type_get_qdata (type, offset_quark);
+      TpDBusPropertiesMixinClass *mixin = NULL;
       TpDBusPropertiesMixinIfaceImpl *iter;
+
+      if (offset_qdata != NULL)
+        mixin = &G_STRUCT_MEMBER (TpDBusPropertiesMixinClass, cls,
+            GPOINTER_TO_SIZE (offset_qdata));
 
       /* assert that we're not trying to implement the same interface twice */
       for (iter = next;
