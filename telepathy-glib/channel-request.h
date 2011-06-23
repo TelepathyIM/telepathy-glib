@@ -22,6 +22,7 @@
 #ifndef TP_CHANNEL_REQUEST_H
 #define TP_CHANNEL_REQUEST_H
 
+#include <telepathy-glib/account.h>
 #include <telepathy-glib/client-channel-factory.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/defs.h>
@@ -76,6 +77,12 @@ void tp_channel_request_set_channel_factory (TpChannelRequest *self,
 
 const GHashTable * tp_channel_request_get_immutable_properties (
     TpChannelRequest *self);
+
+TpAccount * tp_channel_request_get_account (TpChannelRequest *self);
+
+gint64 tp_channel_request_get_user_action_time (TpChannelRequest *self);
+
+const gchar * tp_channel_request_get_preferred_handler (TpChannelRequest *self);
 
 const GHashTable * tp_channel_request_get_hints (TpChannelRequest *self);
 

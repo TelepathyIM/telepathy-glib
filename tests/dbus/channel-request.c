@@ -332,16 +332,24 @@ test_immutable_properties (Test *test,
   g_hash_table_unref (props);
 }
 
+#define ACCOUNT_PATH TP_ACCOUNT_OBJECT_PATH_BASE "a/b/c"
+
 static void
-test_hints (Test *test,
+test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   gboolean ok;
   GHashTable *props, *hints;
+  TpAccount *account;
+  gint64 user_action_time;
+  const gchar *handler;
 
   hints = tp_asv_new ("test", G_TYPE_STRING, "hi", NULL);
 
   props = tp_asv_new (
+      TP_PROP_CHANNEL_REQUEST_ACCOUNT, DBUS_TYPE_G_OBJECT_PATH, ACCOUNT_PATH,
+      TP_PROP_CHANNEL_REQUEST_USER_ACTION_TIME, G_TYPE_INT64, 12345,
+      TP_PROP_CHANNEL_REQUEST_PREFERRED_HANDLER, G_TYPE_STRING, "Badger",
       TP_PROP_CHANNEL_REQUEST_HINTS, TP_HASH_TYPE_STRING_VARIANT_MAP, hints,
       NULL);
 
@@ -355,6 +363,31 @@ test_hints (Test *test,
   g_hash_table_unref (props);
   g_hash_table_unref (hints);
 
+  /* Account */
+  account = tp_channel_request_get_account (test->cr);
+  g_assert (TP_IS_ACCOUNT (account));
+  g_assert_cmpstr (tp_proxy_get_object_path (account), ==, ACCOUNT_PATH);
+
+  g_object_get (test->cr, "account", &account, NULL);
+  g_assert (TP_IS_ACCOUNT (account));
+  g_assert_cmpstr (tp_proxy_get_object_path (account), ==, ACCOUNT_PATH);
+  g_object_unref (account);
+
+  /* UserActionTime */
+  user_action_time = tp_channel_request_get_user_action_time (test->cr);
+  g_assert_cmpint (user_action_time, ==, 12345);
+
+  g_object_get (test->cr, "user-action-time", &user_action_time, NULL);
+  g_assert_cmpint (user_action_time, ==, 12345);
+
+  /* PreferredHandler */
+  handler = tp_channel_request_get_preferred_handler (test->cr);
+  g_assert_cmpstr (handler, ==, "Badger");
+
+  g_object_get (test->cr, "preferred-handler", &handler, NULL);
+  g_assert_cmpstr (handler, ==, "Badger");
+
+  /* Hints */
   hints = (GHashTable *) tp_channel_request_get_hints (test->cr);
   g_assert_cmpstr (tp_asv_get_string (hints, "test"), ==, "hi");
 
@@ -377,7 +410,7 @@ main (int argc,
   g_test_add ("/cr/failed", Test, NULL, setup, test_failed, teardown);
   g_test_add ("/cr/immutable-properties", Test, NULL, setup,
       test_immutable_properties, teardown);
-  g_test_add ("/cr/hints", Test, NULL, setup, test_hints, teardown);
+  g_test_add ("/cr/properties", Test, NULL, setup, test_properties, teardown);
 
   return g_test_run ();
 }

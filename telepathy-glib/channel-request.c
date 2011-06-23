@@ -21,6 +21,7 @@
 
 #include "telepathy-glib/channel-request.h"
 
+#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/automatic-proxy-factory.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/connection.h>
@@ -102,6 +103,9 @@ enum {
 enum {
   PROP_CHANNEL_FACTORY = 1,
   PROP_IMMUTABLE_PROPERTIES,
+  PROP_ACCOUNT,
+  PROP_USER_ACTION_TIME,
+  PROP_PREFERRED_HANDLER,
   PROP_HINTS,
 };
 
@@ -165,6 +169,20 @@ tp_channel_request_get_property (GObject *object,
 
       case PROP_IMMUTABLE_PROPERTIES:
         g_value_set_boxed (value, self->priv->immutable_properties);
+        break;
+
+      case PROP_ACCOUNT:
+        g_value_set_object (value, tp_channel_request_get_account (self));
+        break;
+
+      case PROP_USER_ACTION_TIME:
+        g_value_set_int64 (value,
+            tp_channel_request_get_user_action_time (self));
+        break;
+
+      case PROP_PREFERRED_HANDLER:
+        g_value_set_string (value,
+            tp_channel_request_get_preferred_handler (self));
         break;
 
       case PROP_HINTS:
@@ -387,6 +405,57 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
       param_spec);
 
   /**
+   * TpChannelRequest:account:
+   *
+   * The #TpAccount on which this request was made, not guaranteed
+   * to be prepared.
+   *
+   * Read-only.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("account", "Account", "Account",
+      TP_TYPE_ACCOUNT,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+
+  /**
+   * TpChannelRequest:user-action-time:
+   *
+   * The time at which user action occurred, or
+   * #TP_USER_ACTION_TIME_NOT_USER_ACTION if this channel request is
+   * for some reason not involving user action.
+   *
+   * Read-only.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  param_spec = g_param_spec_int64 ("user-action-time", "UserActionTime",
+      "UserActionTime",
+      0, G_MAXINT64, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_USER_ACTION_TIME,
+      param_spec);
+
+  /**
+   * TpChannelRequest:preferred-handler:
+   *
+   * Either the well-known bus name (starting with #TP_CLIENT_BUS_NAME_BASE)
+   * of the preferred handler for this channel request,
+   * or %NULL to indicate that any handler would be acceptable.
+   *
+   * Read-only.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  param_spec = g_param_spec_string ("preferred-handler", "PreferredHandler",
+      "PreferredHandler",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_PREFERRED_HANDLER,
+      param_spec);
+
+  /**
    * TpChannelRequest:hints:
    *
    * A #TP_HASH_TYPE_STRING_VARIANT_MAP of metadata provided by
@@ -567,6 +636,85 @@ tp_channel_request_get_immutable_properties (TpChannelRequest *self)
   g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
 
   return self->priv->immutable_properties;
+}
+
+/**
+ * tp_channel_request_get_account:
+ * @self: a #tpchannelrequest
+ *
+ * Return the value of the #TpChannelRequest:account construct-only property
+ *
+ * returns: (transfer none): the value of #TpChannelRequest:account
+ *
+ * since: 0.15.UNRELEASED
+ */
+TpAccount *
+tp_channel_request_get_account (TpChannelRequest *self)
+{
+  const gchar *path;
+  TpAccountManager *mgr;
+  TpAccount *account;
+
+  g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
+
+  if (self->priv->immutable_properties == NULL)
+    return NULL;
+
+  path = tp_asv_get_object_path (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_REQUEST_ACCOUNT);
+  if (path == NULL)
+    return NULL;
+
+  mgr = tp_account_manager_dup ();
+
+  account = tp_account_manager_ensure_account (mgr, path);
+
+  g_object_unref (mgr);
+  return account;
+}
+
+/**
+ * tp_channel_request_get_user_action_time:
+ * @self: a #tpchannelrequest
+ *
+ * return the #TpChannelRequest:user-action-time construct-only property
+ *
+ * returns: the value of #TpChannelRequest:user-action-time
+ *
+ * since: 0.15.UNRELEASED
+ */
+gint64
+tp_channel_request_get_user_action_time (TpChannelRequest *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), 0);
+
+  if (self->priv->immutable_properties == NULL)
+    return 0;
+
+  return tp_asv_get_int64 (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_REQUEST_USER_ACTION_TIME, NULL);
+}
+
+/**
+ * tp_channel_request_get_preferred_handler:
+ * @self: a #tpchannelrequest
+ *
+ * return the #TpChannelRequest:preferred-handler construct-only property
+ *
+ * returns: the value of #TpChannelRequest:preferred-handler
+ *
+ * since: 0.15.UNRELEASED
+ */
+const gchar *
+tp_channel_request_get_preferred_handler (TpChannelRequest *self)
+{
+  g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
+
+  if (self->priv->immutable_properties == NULL)
+    return NULL;
+
+  return tp_asv_get_string (self->priv->immutable_properties,
+      TP_PROP_CHANNEL_REQUEST_PREFERRED_HANDLER);
 }
 
 /**
