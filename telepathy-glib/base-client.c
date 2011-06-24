@@ -157,6 +157,19 @@
  * Since: 0.11.6
  */
 
+/**
+ * TpBaseClientDelegatedChannelsCb
+ * @client: a #TpBaseClient instance
+ * @channels: (element-type TelepathyGLib.Channel): a #GPtrArray of #TpChannel
+ * @user_data: arbitrary user-supplied data passed to
+ * tp_base_client_set_delegated_channels_callback()
+ *
+ * Called when a client asked us to delegate @channels to another Handler.
+ * When this function is called @client is not longer handling @channels.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+
 #include "telepathy-glib/base-client.h"
 #include "telepathy-glib/base-client-internal.h"
 
@@ -264,6 +277,10 @@ struct _TpBaseClientPrivate
   GArray *account_features;
   GArray *connection_features;
   GArray *channel_features;
+
+  TpBaseClientDelegatedChannelsCb delegated_channels_cb;
+  gpointer delegated_channels_data;
+  GDestroyNotify delegated_channels_destroy;
 };
 
 /*
@@ -974,6 +991,13 @@ tp_base_client_dispose (GObject *object)
         g_hash_table_size (self->priv->my_chans));
 
   tp_clear_pointer (&self->priv->my_chans, g_hash_table_unref);
+
+  if (self->priv->delegated_channels_destroy != NULL)
+    {
+      self->priv->delegated_channels_destroy (
+          self->priv->delegated_channels_data);
+      self->priv->delegated_channels_destroy = NULL;
+    }
 
   if (dispose != NULL)
     dispose (object);
@@ -1954,6 +1978,111 @@ ctx_done_cb (TpHandleChannelsContext *context,
 }
 
 static void
+delegate_to_preferred_handler_delegate_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpBaseClient *self = (TpBaseClient *) source;
+  GError *error = NULL;
+  GPtrArray *delegated;
+
+  if (!tp_base_client_delegate_channels_finish (self, result, &delegated, NULL,
+        &error))
+    {
+      DEBUG ("DelegateChannels failed; we are still handling channels: %s",
+          error->message);
+
+      g_error_free (error);
+      return;
+    }
+
+  self->priv->delegated_channels_cb (self, delegated,
+      self->priv->delegated_channels_data);
+
+  g_ptr_array_unref (delegated);
+}
+
+static gboolean
+delegate_channels_if_needed (TpBaseClient *self,
+    TpHandleChannelsContext *ctx)
+{
+  GList *requests, *l;
+  const gchar *handler_to_delegate = NULL;
+  gint64 user_action_time;
+  guint i;
+  GList *chans = NULL;
+  gboolean delegate = FALSE;
+
+  /* User has to explicitely enable this feature */
+  if (self->priv->delegated_channels_cb == NULL)
+    return FALSE;
+
+  requests = tp_handle_channels_context_get_requests (ctx);
+  for (l = requests; l != NULL; l = g_list_next (l))
+    {
+      TpChannelRequest *cr = l->data;
+      const GHashTable *hints;
+      gboolean should_delegate;
+
+      hints = tp_channel_request_get_hints (cr);
+      if (hints == NULL)
+        continue;
+
+      should_delegate = tp_asv_get_boolean (hints,
+          "org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler",
+          NULL);
+
+      if (!should_delegate)
+        continue;
+
+      /* As stated in the spec, we should use the first CR having the
+       * DelegateToPreferredHandler hint */
+      handler_to_delegate = tp_channel_request_get_preferred_handler (cr);
+      user_action_time = tp_channel_request_get_user_action_time (cr);
+    }
+
+  if (handler_to_delegate == NULL)
+      /* No need to delegate */
+      goto out;
+
+  if (!tp_strdiff (handler_to_delegate, self->priv->name))
+    /* We are already the one handling the channels */
+    goto out;
+
+  /* We are supposed to delegate the channels; check if we are handling
+   * them */
+  for (i = 0; i < ctx->channels->len; i++)
+    {
+      TpChannel *channel = g_ptr_array_index (ctx->channels, i);
+
+      if (!tp_base_client_is_handling_channel (self, channel))
+        {
+          /* Don't delegate as there is at least one channel we are not
+           * handling */
+          DEBUG ("We have been asked to delegate channels but we are "
+              "not handling %s", tp_proxy_get_object_path (channel));
+          goto out;
+        }
+
+      chans = g_list_prepend (chans, channel);
+    }
+
+  DEBUG ("Delegate channels as requested");
+  delegate = TRUE;
+
+  tp_base_client_delegate_channels_async (self, chans, user_action_time,
+      handler_to_delegate, delegate_to_preferred_handler_delegate_cb, self);
+
+  g_list_free (chans);
+
+  tp_handle_channels_context_accept (ctx);
+
+out:
+  g_list_free_full (requests, g_object_unref);
+  return delegate;
+}
+
+static void
 handle_channels_context_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -1971,6 +2100,9 @@ handle_channels_context_prepare_cb (GObject *source,
       g_error_free (error);
       return;
     }
+
+  if (delegate_channels_if_needed (self, ctx))
+      return;
 
   channels_list = ptr_array_to_list (ctx->channels);
   requests_list = ptr_array_to_list (ctx->requests_satisfied);
@@ -3048,4 +3180,40 @@ tp_base_client_delegate_channels_finish (TpBaseClient *self,
     *not_delegated = g_hash_table_ref (ctx->not_delegated);
 
   return TRUE;
+}
+
+/**
+ * tp_base_client_set_delegated_channels_callback:
+ * @self: a #TpBaseClient implementing Handler
+ * @callback: function called when channels currently handled by @self are
+ * delegated, may not be %NULL
+ * @user_data: arbitrary user-supplied data passed to @callback
+ * @destroy: called with the @user_data as argument, when @self is destroyed
+ *
+ * Turn on support for
+ * the org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler
+ * hint.
+ *
+ * When receiving a request containing this hint, @self will automatically
+ * delegate the channels to the preferred handler of the request and then call
+ * @callback to inform the client that it is no longer handling those
+ * channels.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_base_client_set_delegated_channels_callback (TpBaseClient *self,
+    TpBaseClientDelegatedChannelsCb callback,
+    gpointer user_data,
+    GDestroyNotify destroy)
+{
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (self->priv->flags & CLIENT_IS_HANDLER);
+  g_return_if_fail (!self->priv->registered);
+
+  g_return_if_fail (self->priv->delegated_channels_cb == NULL);
+
+  self->priv->delegated_channels_cb = callback;
+  self->priv->delegated_channels_data = user_data;
+  self->priv->delegated_channels_destroy = destroy;
 }

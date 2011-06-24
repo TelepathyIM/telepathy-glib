@@ -23,6 +23,7 @@
 #include "tests/lib/simple-account.h"
 #include "tests/lib/simple-channel-dispatch-operation.h"
 #include "tests/lib/simple-channel-dispatcher.h"
+#include "tests/lib/simple-channel-request.h"
 #include "tests/lib/simple-client.h"
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/textchan-null.h"
@@ -1403,6 +1404,177 @@ test_present_channel (Test *test,
   g_object_unref (cd);
 }
 
+#define PREFERRED_HANDLER_NAME TP_CLIENT_BUS_NAME_BASE ".Badger"
+
+static gboolean
+channel_in_array (GPtrArray *array,
+    TpChannel *channel)
+{
+  guint i;
+
+  for (i = 0; i < array->len; i++)
+    {
+      TpChannel *c = g_ptr_array_index (array, i);
+
+      if (!tp_strdiff (tp_proxy_get_object_path (channel),
+            tp_proxy_get_object_path (c)))
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+static void
+delegated_channels_cb (TpBaseClient *client,
+    GPtrArray *channels,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_assert_cmpuint (channels->len, ==, 2);
+
+  g_assert (channel_in_array (channels, test->text_chan));
+  g_assert (channel_in_array (channels, test->text_chan_2));
+
+  test->wait--;
+  if (test->wait == 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+delegate_to_preferred_handler (Test *test,
+    gboolean supported)
+{
+  GPtrArray *channels;
+  GPtrArray *requests_satisified;
+  GPtrArray *requests;
+  GHashTable *request_props;
+  GHashTable *info;
+  TpTestsSimpleChannelRequest *cr;
+  GHashTable *hints;
+
+  tp_base_client_be_a_handler (test->base_client);
+
+  if (supported)
+    {
+      tp_base_client_set_delegated_channels_callback (test->base_client,
+          delegated_channels_cb, test, NULL);
+    }
+
+  tp_base_client_register (test->base_client, &test->error);
+  g_assert_no_error (test->error);
+
+  /* Call HandleChannels */
+  channels = g_ptr_array_sized_new (2);
+  add_channel_to_ptr_array (channels, test->text_chan);
+  add_channel_to_ptr_array (channels, test->text_chan_2);
+
+  requests_satisified = g_ptr_array_sized_new (0);
+  info = g_hash_table_new (NULL, NULL);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (test->client),
+      TP_IFACE_QUARK_CLIENT_HANDLER);
+
+  tp_cli_client_handler_call_handle_channels (test->client, -1,
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
+      channels, requests_satisified, 0, info,
+      no_return_cb, test, NULL, NULL);
+
+  test->wait++;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* The client is handling the 2 channels */
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan));
+  g_assert (tp_base_client_is_handling_channel (test->base_client,
+        test->text_chan_2));
+
+  /* Another client asks to dispatch the channel to it */
+  requests = g_ptr_array_new ();
+
+  hints = tp_asv_new (
+      "org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler",
+        G_TYPE_BOOLEAN, TRUE,
+      NULL);
+
+  cr = tp_tests_simple_channel_request_new ("/CR",
+      TP_TESTS_SIMPLE_CONNECTION (test->base_connection), ACCOUNT_PATH,
+      TP_USER_ACTION_TIME_CURRENT_TIME, PREFERRED_HANDLER_NAME,
+      requests, hints);
+
+  g_ptr_array_add (requests_satisified, "/CR");
+
+  request_props = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, (GDestroyNotify) g_hash_table_unref);
+
+  g_hash_table_insert (request_props, "/CR",
+      tp_tests_simple_channel_request_dup_immutable_props (cr));
+
+  tp_asv_set_boxed (info,
+      "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
+      request_props);
+
+  tp_cli_client_handler_call_handle_channels (test->client, -1,
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
+      channels, requests_satisified, 0, info,
+      no_return_cb, test, NULL, NULL);
+
+  test->wait = 1;
+
+  /* If we support the DelegateToPreferredHandler hint, we wait for
+   * delegated_channels_cb to be called */
+  if (supported)
+    test->wait++;
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  if (supported)
+    {
+      /* We are not handling the channels any more */
+      g_assert (!tp_base_client_is_handling_channel (test->base_client,
+            test->text_chan));
+      g_assert (!tp_base_client_is_handling_channel (test->base_client,
+            test->text_chan_2));
+    }
+  else
+    {
+      /* We are still handling the channels */
+      g_assert (tp_base_client_is_handling_channel (test->base_client,
+            test->text_chan));
+      g_assert (tp_base_client_is_handling_channel (test->base_client,
+            test->text_chan_2));
+    }
+
+  tp_base_client_unregister (test->base_client);
+
+  g_object_unref (cr);
+  g_ptr_array_foreach (channels, free_channel_details, NULL);
+  g_ptr_array_free (channels, TRUE);
+  g_ptr_array_free (requests_satisified, TRUE);
+  g_ptr_array_free (requests, TRUE);
+  g_hash_table_unref (info);
+  g_hash_table_unref (hints);
+  g_hash_table_unref (request_props);
+}
+
+static void
+test_delegate_to_preferred_handler_not_supported (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  delegate_to_preferred_handler (test, FALSE);
+}
+
+static void
+test_delegate_to_preferred_handler_supported (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  delegate_to_preferred_handler (test, TRUE);
+}
+
 int
 main (int argc,
       char **argv)
@@ -1428,6 +1600,10 @@ main (int argc,
       test_delegate_channels, teardown);
   g_test_add ("/cd/present-channel", Test, NULL, setup,
       test_present_channel, teardown);
+  g_test_add ("/cd/delegate-to-preferred-handler/not-supported", Test, NULL,
+      setup, test_delegate_to_preferred_handler_not_supported, teardown);
+  g_test_add ("/cd/delegate-to-preferred-handler/supported", Test, NULL,
+      setup, test_delegate_to_preferred_handler_supported, teardown);
 
   return g_test_run ();
 }

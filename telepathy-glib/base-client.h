@@ -160,6 +160,16 @@ void tp_base_client_set_channel_factory (TpBaseClient *self,
 TpClientChannelFactory *tp_base_client_get_channel_factory (
     TpBaseClient *self);
 
+typedef void (*TpBaseClientDelegatedChannelsCb) (
+    TpBaseClient *client,
+    GPtrArray *channels,
+    gpointer user_data);
+
+void tp_base_client_set_delegated_channels_callback (TpBaseClient *self,
+    TpBaseClientDelegatedChannelsCb callback,
+    gpointer user_data,
+    GDestroyNotify destroy);
+
 /* future, potentially (currently in spec as a draft):
 void tp_base_client_set_handler_related_conferences_bypass_approval (
     TpBaseClient *self, gboolean bypass_approval);
