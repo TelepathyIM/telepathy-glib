@@ -1,6 +1,14 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+/**
+ * tp_media_type_to_fs:
+ * @type: A Telepathy Media Stream Type
+ *
+ * Converts a Telepathy Media Stream Type to the Farsight2 equivalent
+ *
+ * Return: A Farsight2 Stream Type
+ */
 
 static inline FsMediaType
 tp_media_type_to_fs (TpMediaStreamType type)

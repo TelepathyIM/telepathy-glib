@@ -284,7 +284,7 @@ _tf_content_emit_src_pad_added (TfContent *self, guint handle,
 }
 
 /**
- * tf_content_error:
+ * tf_content_error_literal:
  * @content: a #TfContent
  * @reason: the reason (a #TfContentRemovalReason)
  * @detailed_reason: The detailled error (as a DBus name)
@@ -313,7 +313,8 @@ tf_content_error_literal (TfContent *content,
  * @content: a #TfContent
  * @reason: the reason (a #TfContentRemovalReason)
  * @detailed_reason: The detailled error (as a DBus name)
- * @message: error Message
+ * @message_format: error Message with printf style formatting
+ * @...:  Parameters to insert into the @message_format string
  *
  * Send an error to the Content to the CM, the effect is most likely that the
  * content will be removed.
@@ -323,7 +324,8 @@ void
 tf_content_error (TfContent *content,
     guint reason, /* TfFutureContentRemovalReason */
     const gchar *detailed_reason,
-    const gchar *message_format, ...)
+    const gchar *message_format,
+    ...)
 {
   gchar *message;
   va_list valist;

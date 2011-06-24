@@ -1,6 +1,7 @@
 <SECTION>
-<TITLE>Initializers</TITLE>
+<TITLE>Core</TITLE>
 tf_init
+tp_media_type_to_fs
 </SECTION>
 
 <SECTION>
@@ -8,8 +9,9 @@ tf_init
 <TITLE>TfContent</TITLE>
 TfContent
 TfContentClass
-tf_content_error
 tf_content_iterate_src_pads
+tf_content_error
+tf_content_error_literal
 <SUBSECTION Private>
 TfContentPrivate
 <SUBSECTION Standard>
@@ -27,7 +29,6 @@ TF_IS_CONTENT_CLASS
 <TITLE>TfChannel</TITLE>
 TfChannel
 tf_channel_new_async
-tf_channel_error
 tf_channel_bus_message
 <SUBSECTION Private>
 TfChannelPrivate

@@ -54,10 +54,10 @@ void tf_content_error_literal (TfContent *content,
 void tf_content_error (TfContent *content,
     guint reason, /* TfFutureContentRemovalReason */
     const gchar *detailed_reason,
-    const gchar *message, ...) G_GNUC_PRINTF (4, 5);
+    const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
 
 GstIterator *tf_content_iterate_src_pads (TfContent *content,
-    guint *handle, guint handle_count);
+    guint *handles, guint handle_count);
 
 G_END_DECLS
 
