@@ -63,6 +63,9 @@ tp_tests_simple_channel_request_new (const gchar *path,
     GPtrArray *requests,
     GHashTable *hints);
 
+GHashTable * tp_tests_simple_channel_request_dup_immutable_props (
+    TpTestsSimpleChannelRequest *self);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TESTS_SIMPLE_CHANNEL_REQUEST_H__ */

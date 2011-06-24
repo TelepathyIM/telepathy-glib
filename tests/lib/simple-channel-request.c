@@ -115,8 +115,9 @@ free_channel_details (gpointer data,
   g_boxed_free (TP_STRUCT_TYPE_CHANNEL_DETAILS, data);
 }
 
-static GHashTable *
-dup_immutable_props (TpTestsSimpleChannelRequest *self)
+GHashTable *
+tp_tests_simple_channel_request_dup_immutable_props (
+    TpTestsSimpleChannelRequest *self)
 {
   return tp_asv_new (
       TP_PROP_CHANNEL_REQUEST_ACCOUNT, DBUS_TYPE_G_OBJECT_PATH,
@@ -228,7 +229,7 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
       g_free, (GDestroyNotify) g_hash_table_unref);
 
   g_hash_table_insert (request_props, g_strdup (self->priv->path),
-      dup_immutable_props (self));
+      tp_tests_simple_channel_request_dup_immutable_props (self));
 
   info = tp_asv_new (
       "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
