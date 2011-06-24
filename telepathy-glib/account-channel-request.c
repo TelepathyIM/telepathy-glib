@@ -1573,3 +1573,32 @@ tp_account_channel_request_set_hints (TpAccountChannelRequest *self,
   tp_clear_pointer (&self->priv->hints, g_hash_table_unref);
   self->priv->hints = g_hash_table_ref (hints);
 }
+
+/**
+ * tp_account_channel_request_set_delegate_to_preferred_handler:
+ * @self: a #TpAccountChannelRequest
+ * @delegate: %TRUE to request to delegate channels
+ *
+ * If @delegate is %TRUE, asks to the client currently handling the channels to
+ * delegate them to the preferred handler (passed when calling
+ * tp_account_channel_request_ensure_channel_async() for example).
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+void
+tp_account_channel_request_set_delegate_to_preferred_handler (
+    TpAccountChannelRequest *self,
+    gboolean delegate)
+{
+  g_return_if_fail (!self->priv->requested);
+
+  if (self->priv->hints == NULL)
+    self->priv->hints = tp_asv_new (NULL, NULL);
+
+  tp_asv_set_boolean (self->priv->hints,
+      "org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler",
+      delegate);
+}

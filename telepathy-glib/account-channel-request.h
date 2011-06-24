@@ -82,6 +82,10 @@ TpChannelRequest * tp_account_channel_request_get_channel_request (
 void tp_account_channel_request_set_hints (TpAccountChannelRequest *self,
     GHashTable *hints);
 
+void tp_account_channel_request_set_delegate_to_preferred_handler (
+    TpAccountChannelRequest *self,
+    gboolean delegate);
+
 /* Request and handle API */
 
 void tp_account_channel_request_create_and_handle_channel_async (
