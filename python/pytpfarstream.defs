@@ -82,9 +82,9 @@
   (return-type "GType")
 )
 
-(define-method error
+(define-method error_literal
   (of-object "TfContent")
-  (c-name "tf_content_error")
+  (c-name "tf_content_error_literal")
   (return-type "none")
   (parameters
     '("guint" "reason")
@@ -101,6 +101,18 @@
     '("GList*" "codec_preferences")
     '("GError**" "error")
   )
+)
+
+(define-method error
+  (of-object "TfContent")
+  (c-name "tf_content_error")
+  (return-type "none")
+  (parameters
+    '("guint" "reason")
+    '("const-gchar*" "detailed_reason")
+    '("const-gchar*" "message")
+  )
+  (varargs #t)
 )
 
 
