@@ -1,7 +1,8 @@
-telepathy-farstream 0.0.0 (UNRELEASED)
+telepathy-farstream 0.1.0 (27 Jun 2011)
 ======================================
 - Rename from telepathy-farsight to telepathy-farstream 
 - Implement Call API
+- Also implement Streamed Media API under the same C api
 
 telepathy-farsight 0.0.16 (22 Dec 2010)
 =======================================
