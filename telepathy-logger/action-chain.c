@@ -109,7 +109,10 @@ void
 _tpl_action_chain_continue (TplActionChain *self)
 {
   if (g_queue_is_empty (self->chain))
-    g_simple_async_result_complete (self->simple);
+    {
+      g_simple_async_result_complete (self->simple);
+      _tpl_action_chain_free (self);
+    }
   else
     {
       TplActionLink *l = g_queue_pop_head (self->chain);
@@ -130,6 +133,7 @@ _tpl_action_chain_terminate (TplActionChain *self,
 
   g_simple_async_result_set_from_error (simple, error);
   g_simple_async_result_complete (simple);
+  _tpl_action_chain_free (self);
 }
 
 
@@ -164,6 +168,5 @@ _tpl_action_chain_new_finish (GObject *source,
         error))
     return FALSE;
 
-  _tpl_action_chain_free (chain);
   return TRUE;
 }
