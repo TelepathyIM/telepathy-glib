@@ -3026,6 +3026,7 @@ cb_fs_component_state_changed (TfStream *self,
     FsStreamState fsstate)
 {
   TpMediaStreamState state;
+  const gchar *state_str;
 
   if (component != 1)
     return;
@@ -3035,17 +3036,23 @@ cb_fs_component_state_changed (TfStream *self,
     case FS_STREAM_STATE_FAILED:
     case FS_STREAM_STATE_DISCONNECTED:
       state = TP_MEDIA_STREAM_STATE_DISCONNECTED;
+      state_str = "disconnected";
       break;
     case FS_STREAM_STATE_GATHERING:
     case FS_STREAM_STATE_CONNECTING:
     case FS_STREAM_STATE_CONNECTED:
+      state_str = "connecting";
       state = TP_MEDIA_STREAM_STATE_CONNECTING;
       break;
     case FS_STREAM_STATE_READY:
     default:
+      state_str = "connected";
       state = TP_MEDIA_STREAM_STATE_CONNECTED;
       break;
   }
+
+  DEBUG (self, "calling MediaStreamHandler::StreamState (%u: %s)", state,
+         state_str);
 
   self->priv->current_state = state;
 
