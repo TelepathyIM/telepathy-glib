@@ -117,7 +117,7 @@ tp_channel_group_get_flags (TpChannel *self)
  *
  * If @self is not a group, return %NULL.
  *
- * Returns: the members, or %NULL
+ * Returns: (transfer none): the members, or %NULL
  * Since: 0.7.12
  */
 const TpIntset *
@@ -141,7 +141,7 @@ tp_channel_group_get_members (TpChannel *self)
  *
  * If @self is not a group, return %NULL.
  *
- * Returns: the local-pending members, or %NULL
+ * Returns: (transfer none): the local-pending members, or %NULL
  * Since: 0.7.12
  */
 const TpIntset *
@@ -165,7 +165,7 @@ tp_channel_group_get_local_pending (TpChannel *self)
  *
  * If @self is not a group, return %NULL.
  *
- * Returns: the remote-pending members, or %NULL
+ * Returns: (transfer none): the remote-pending members, or %NULL
  * Since: 0.7.12
   */
 const TpIntset *
@@ -182,10 +182,12 @@ tp_channel_group_get_remote_pending (TpChannel *self)
  * @self: a channel
  * @local_pending: the handle of a local-pending contact about whom more
  *  information is needed
- * @actor: either %NULL or a location to return the contact who requested
- *  the change
- * @reason: either %NULL or a location to return the reason for the change
- * @message: either %NULL or a location to return the user-supplied message
+ * @actor: (out) (allow-none): either %NULL or a location to return the contact
+ * who requested the change
+ * @reason: (out) (allow-none): either %NULL or a location to return the reason
+ * for the change
+ * @message: (out) (transfer none) (allow-none): either %NULL or a location to
+ * return the user-supplied message
  *
  * If @local_pending is actually the handle of a local-pending contact,
  * write additional information into @actor, @reason and @message and return
