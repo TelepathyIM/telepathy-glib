@@ -558,9 +558,10 @@ tp_debug_sender_log_handler (const gchar *log_domain,
     const gchar *message,
     gpointer exclude)
 {
+  GTimeVal now = { 0, 0 };
+
   if (debug_sender != NULL && ((TpDebugSender *) debug_sender)->priv->timestamps)
     {
-      GTimeVal now;
       gchar *now_str, *tmp;
 
       g_get_current_time (&now);
@@ -580,8 +581,8 @@ tp_debug_sender_log_handler (const gchar *log_domain,
 
   if (exclude == NULL || tp_strdiff (log_domain, exclude))
     {
-      GTimeVal now;
-      g_get_current_time (&now);
+      if (now.tv_sec == 0)
+        g_get_current_time (&now);
 
       g_idle_add_full (G_PRIORITY_HIGH, tp_debug_sender_idle,
           debug_message_new (&now, log_domain, log_level, message),
