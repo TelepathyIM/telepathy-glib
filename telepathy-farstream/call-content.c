@@ -804,6 +804,7 @@ got_content_video_control_properties (TpProxy *proxy, GHashTable *properties,
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
   GSimpleAsyncResult *res = user_data;
+  GValueArray *array;
   guint32 bitrate, mtu;
   gboolean valid;
   gboolean manual_keyframes;
@@ -845,6 +846,12 @@ got_content_video_control_properties (TpProxy *proxy, GHashTable *properties,
     "ManualKeyFrames", &valid);
   if (valid)
     self->manual_keyframes = manual_keyframes;
+
+  array = tp_asv_get_boxed (properties, "VideoResolution",
+      TF_FUTURE_STRUCT_TYPE_VIDEO_RESOLUTION);
+  if (array)
+    on_content_video_resolution_changed (TF_FUTURE_CALL_CONTENT (proxy), array,
+        NULL, G_OBJECT (self));
 
   self->notifier = fs_element_added_notifier_new ();
   g_signal_connect (self->notifier, "element-added",
