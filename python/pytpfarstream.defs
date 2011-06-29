@@ -22,20 +22,7 @@
          '("GAsyncReadyCallback" "callback")
   )
 )
-
-;; Overide these because TpMediaStreamError is not a real GObject enum
-;
-; Can we directly override it instead ?
-
-(define-method error
-  (of-object "TfChannel")
-  (c-name "tf_channel_error")
-  (return-type "none")
-  (parameters
-    '("gint" "error")
-    '("const-gchar*" "message")
-  )
-);; -*- scheme -*-
+;; -*- scheme -*-
 ; object definitions ...
 ;; Enumerations and flags ...
 
@@ -100,7 +87,7 @@
   (parameters
     '("guint" "reason")
     '("const-gchar*" "detailed_reason")
-    '("const-gchar*" "message")
+    '("const-gchar*" "message_format")
   )
   (varargs #t)
 )
@@ -110,7 +97,7 @@
   (c-name "tf_content_iterate_src_pads")
   (return-type "GstIterator*")
   (parameters
-    '("guint*" "handle")
+    '("guint*" "handles")
     '("guint" "handle_count")
   )
 )
