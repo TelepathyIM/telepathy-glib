@@ -560,7 +560,8 @@ tp_debug_sender_log_handler (const gchar *log_domain,
 {
   GTimeVal now = { 0, 0 };
 
-  if (debug_sender != NULL && ((TpDebugSender *) debug_sender)->priv->timestamps)
+  if (debug_sender != NULL &&
+      ((TpDebugSender *) debug_sender)->priv->timestamps)
     {
       gchar *now_str, *tmp;
 
