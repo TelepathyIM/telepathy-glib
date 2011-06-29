@@ -460,9 +460,10 @@ tp_group_mixin_change_self_handle (GObject *obj,
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
   TpHandle old_self_handle = mixin->self_handle;
+  const gchar *new_self_id = tp_handle_inspect (mixin->handle_repo,
+      new_self_handle);
 
-  DEBUG ("%u '%s'", new_self_handle,
-      tp_handle_inspect (mixin->handle_repo, new_self_handle));
+  DEBUG ("%u '%s'", new_self_handle, new_self_id);
 
   mixin->self_handle = 0;
 
@@ -472,6 +473,8 @@ tp_group_mixin_change_self_handle (GObject *obj,
 
   tp_svc_channel_interface_group_emit_self_handle_changed (obj,
       new_self_handle);
+  tp_svc_channel_interface_group_emit_self_contact_changed (obj,
+      new_self_handle, new_self_id);
 
   if (old_self_handle != 0)
     tp_handle_unref (mixin->handle_repo, old_self_handle);
@@ -1657,6 +1660,8 @@ change_members (GObject *obj,
 
           tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
               empty_hash_table, arr_owners_removed);
+          tp_svc_channel_interface_group_emit_handle_owners_changed_detailed (
+              obj, empty_hash_table, arr_owners_removed, empty_hash_table);
 
           if (mixin->priv->externals != NULL)
             {
@@ -1667,6 +1672,9 @@ change_members (GObject *obj,
                   tp_svc_channel_interface_group_emit_handle_owners_changed (
                       g_ptr_array_index (mixin->priv->externals, i),
                       empty_hash_table, arr_owners_removed);
+                  tp_svc_channel_interface_group_emit_handle_owners_changed_detailed (
+                      g_ptr_array_index (mixin->priv->externals, i),
+                      empty_hash_table, arr_owners_removed, empty_hash_table);
                 }
             }
 
@@ -1896,6 +1904,45 @@ tp_group_mixin_add_handle_owner (GObject *obj,
 
 
 static void
+add_us_mapping_for_handleset (GHashTable *map,
+    TpHandleRepoIface *repo,
+    TpHandleSet *handles)
+{
+  TpIntset *set;
+  TpIntsetFastIter iter;
+  TpHandle handle;
+
+  set = tp_handle_set_peek (handles);
+  tp_intset_fast_iter_init (&iter, set);
+  while (tp_intset_fast_iter_next (&iter, &handle))
+    g_hash_table_insert (map, GUINT_TO_POINTER (handle),
+        (gchar *) tp_handle_inspect (repo, handle));
+}
+
+static void
+add_us_mapping_for_owners_map (GHashTable *map,
+    TpHandleRepoIface *repo,
+    GHashTable *owners)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+
+  g_hash_table_iter_init (&iter, owners);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpHandle local_handle = GPOINTER_TO_UINT (key);
+      TpHandle owner_handle = GPOINTER_TO_UINT (value);
+
+      g_hash_table_insert (map, key,
+          (gchar *) tp_handle_inspect (repo, local_handle));
+
+      if (owner_handle != 0)
+        g_hash_table_insert (map, value,
+            (gchar *) tp_handle_inspect (repo, owner_handle));
+    }
+}
+
+static void
 add_handle_owners_helper (gpointer key,
                           gpointer value,
                           gpointer user_data)
@@ -1926,7 +1973,6 @@ add_handle_owners_helper (gpointer key,
   g_hash_table_insert (mixin->priv->handle_owners, key, value);
 }
 
-
 /**
  * tp_group_mixin_add_handle_owners: (skip)
  * @obj: A GObject implementing the group interface with this mixin
@@ -1950,6 +1996,7 @@ tp_group_mixin_add_handle_owners (GObject *obj,
 {
   TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
   GArray *empty_array;
+  GHashTable *ids = g_hash_table_new (NULL, NULL);
 
   if (g_hash_table_size (local_to_owner_handle) == 0)
     return;
@@ -1962,7 +2009,12 @@ tp_group_mixin_add_handle_owners (GObject *obj,
   tp_svc_channel_interface_group_emit_handle_owners_changed (obj,
       local_to_owner_handle, empty_array);
 
+  add_us_mapping_for_owners_map (ids, mixin->handle_repo, local_to_owner_handle);
+  tp_svc_channel_interface_group_emit_handle_owners_changed_detailed (obj,
+      local_to_owner_handle, empty_array, ids);
+
   g_array_free (empty_array, TRUE);
+  g_hash_table_unref (ids);
 }
 
 
@@ -2000,6 +2052,26 @@ remove_handle_owners_if_exist (GObject *obj,
           g_hash_table_remove (priv->handle_owners, GUINT_TO_POINTER (handle));
         }
     }
+
+  return ret;
+}
+
+static GHashTable *
+dup_member_identifiers (GObject *obj)
+{
+  TpGroupMixin *mixin = TP_GROUP_MIXIN (obj);
+  GHashTable *ret = g_hash_table_new (NULL, NULL);
+
+  g_hash_table_insert (ret, GUINT_TO_POINTER (mixin->self_handle),
+      (gchar *) tp_handle_inspect (mixin->handle_repo, mixin->self_handle));
+
+  add_us_mapping_for_handleset (ret, mixin->handle_repo, mixin->priv->actors);
+  add_us_mapping_for_handleset (ret, mixin->handle_repo, mixin->members);
+  add_us_mapping_for_handleset (ret, mixin->handle_repo, mixin->local_pending);
+  add_us_mapping_for_handleset (ret, mixin->handle_repo, mixin->remote_pending);
+
+  add_us_mapping_for_owners_map (ret, mixin->handle_repo,
+      mixin->priv->handle_owners);
 
   return ret;
 }
@@ -2042,6 +2114,7 @@ enum {
     MIXIN_DP_MEMBERS,
     MIXIN_DP_REMOTE_PENDING_MEMBERS,
     MIXIN_DP_SELF_HANDLE,
+    MIXIN_DP_MEMBER_IDENTIFIERS,
     NUM_MIXIN_DBUS_PROPERTIES
 };
 
@@ -2082,6 +2155,7 @@ tp_group_mixin_get_dbus_property (GObject *object,
       q[MIXIN_DP_REMOTE_PENDING_MEMBERS] = g_quark_from_static_string (
           "RemotePendingMembers");
       q[MIXIN_DP_SELF_HANDLE] = g_quark_from_static_string ("SelfHandle");
+      q[MIXIN_DP_MEMBER_IDENTIFIERS] = g_quark_from_static_string ("MemberIdentifiers");
     }
 
   g_return_if_fail (object != NULL);
@@ -2138,6 +2212,11 @@ tp_group_mixin_get_dbus_property (GObject *object,
       g_return_if_fail (G_VALUE_HOLDS_UINT (value));
       g_value_set_uint (value, mixin->self_handle);
     }
+  else if (name == q[MIXIN_DP_MEMBER_IDENTIFIERS])
+    {
+      g_return_if_fail (G_VALUE_HOLDS (value, TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP));
+      g_value_take_boxed (value, dup_member_identifiers (object));
+    }
   else
     {
       g_return_if_reached ();
@@ -2151,6 +2230,7 @@ static TpDBusPropertiesMixinPropImpl known_group_props[] = {
     { "Members", NULL, NULL },
     { "RemotePendingMembers", NULL, NULL },
     { "SelfHandle", NULL, NULL },
+    { "MemberIdentifiers", NULL, NULL },
     { NULL }
 };
 
@@ -2294,6 +2374,8 @@ tp_external_group_mixin_get_dbus_property (GObject *object,
       /* for certain boxed types we need to supply an empty value */
 
       if (G_VALUE_HOLDS (value, TP_HASH_TYPE_HANDLE_OWNER_MAP))
+        g_value_take_boxed (value, g_hash_table_new (NULL, NULL));
+      else if (G_VALUE_HOLDS (value, TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP))
         g_value_take_boxed (value, g_hash_table_new (NULL, NULL));
       else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_UINT_ARRAY))
         g_value_take_boxed (value, g_array_sized_new (FALSE, FALSE,
