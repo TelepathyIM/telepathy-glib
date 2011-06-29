@@ -545,7 +545,7 @@ tp_debug_sender_idle (gpointer data)
  * used.
  *
  * If timestamps should be prepended to messages (like in
- * tp_debug_timestamped_log_handler()), tp_debug_sender_set_messages()
+ * tp_debug_timestamped_log_handler()), tp_debug_sender_set_timestamps()
  * should also be called.
  *
  * Since version 0.11.15, this function can be called from any thread.
