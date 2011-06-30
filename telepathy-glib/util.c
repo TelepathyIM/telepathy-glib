@@ -1888,3 +1888,33 @@ _tp_create_client_socket (TpSocketAddressType socket_type,
 
   return client_socket;
 }
+
+gboolean
+_tp_contacts_to_handles (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    GArray **handles)
+{
+    guint i;
+
+    g_return_val_if_fail (handles != NULL, FALSE);
+
+    *handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
+
+    for (i = 0; i < n_contacts; i++)
+      {
+        TpHandle handle;
+
+        if (!TP_IS_CONTACT (contacts[i]) ||
+            tp_contact_get_connection (contacts[i]) != connection)
+          {
+            tp_clear_pointer (handles, g_array_unref);
+            return FALSE;
+          }
+
+        handle = tp_contact_get_handle (contacts[i]);
+        g_array_append_val (*handles, handle);
+      }
+
+  return TRUE;
+}

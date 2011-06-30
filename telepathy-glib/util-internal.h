@@ -27,6 +27,8 @@
 #include <gio/gio.h>
 
 #include <telepathy-glib/channel-request.h>
+#include <telepathy-glib/connection.h>
+#include <telepathy-glib/contact.h>
 
 GArray *_tp_quark_array_copy (const GQuark *quarks) G_GNUC_WARN_UNUSED_RESULT;
 void _tp_quark_array_merge (GArray *array, const GQuark *quarks, gssize n);
@@ -89,5 +91,10 @@ gboolean _tp_set_socket_address_type_and_access_control_type (
 
 GSocket * _tp_create_client_socket (TpSocketAddressType socket_type,
     GError **error);
+
+gboolean _tp_contacts_to_handles (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    GArray **handles);
 
 #endif /* __TP_UTIL_INTERNAL_H__ */
