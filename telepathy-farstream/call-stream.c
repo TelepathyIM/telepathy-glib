@@ -113,8 +113,7 @@ local_sending_state_changed (TfFutureCallStream *proxy,
   if (!self->fsstream)
     return;
 
-  if (arg_State == TF_FUTURE_SENDING_STATE_PENDING_SEND ||
-      arg_State == TF_FUTURE_SENDING_STATE_SENDING)
+  if (arg_State == TF_FUTURE_SENDING_STATE_SENDING)
     {
       if (!self->has_send_resource)
         {
