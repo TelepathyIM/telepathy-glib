@@ -200,7 +200,7 @@ tf_call_content_class_init (TfCallContentClass *klass)
       0, G_MAXUINT, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_FRAMERATE,
+  g_object_class_install_property (object_class, PROP_WIDTH,
     g_param_spec_uint ("width",
       "Width",
       "The video width indicated by the VideoControl interface"
@@ -208,7 +208,7 @@ tf_call_content_class_init (TfCallContentClass *klass)
       0, G_MAXUINT, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_FRAMERATE,
+  g_object_class_install_property (object_class, PROP_HEIGHT,
     g_param_spec_uint ("height",
       "Height",
       "The video height as indicated by the VideoControl interface"
