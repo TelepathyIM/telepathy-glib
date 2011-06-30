@@ -183,7 +183,7 @@ setup_video_source (ChannelContext *context, TfContent *content)
 {
   GstElement *result, *input, *rate, *scaler, *colorspace, *capsfilter;
   GstCaps *caps;
-  guint framerate, width, height;
+  guint framerate = 0, width = 0, height = 0;
   GstPad *pad, *ghost;
 
   result = gst_bin_new ("video_input");
