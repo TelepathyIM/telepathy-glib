@@ -18,6 +18,10 @@
 #include "tests/lib/simple-conn.h"
 #include "tests/lib/stream-tube-chan.h"
 
+#ifdef HAVE_GIO_UNIX
+# include <gio/gio.h>
+#endif
+
 #define BUFFER_SIZE 128
 
 typedef struct {
@@ -44,6 +48,7 @@ TestContext contexts[] = {
 };
 
 static gboolean have_ipv6 = FALSE;
+static gboolean have_creds = FALSE;
 
 typedef struct {
     GMainLoop *mainloop;
@@ -411,6 +416,14 @@ test_accept_success (Test *test,
   guint i = GPOINTER_TO_UINT (data);
   TpContact *contact;
 
+  if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_UNIX &&
+      contexts[i].access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS &&
+      !have_creds)
+    {
+      g_message ("skipped: credentials-passing not supported here");
+      return;
+    }
+
   if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
       !have_ipv6)
     {
@@ -517,6 +530,14 @@ test_offer_success (Test *test,
   GSocketClient *client;
   TpHandle bob_handle;
   TpContact *contact;
+
+  if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_UNIX &&
+      contexts[i].access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS &&
+      !have_creds)
+    {
+      g_message ("skipped: credentials-passing not supported here");
+      return;
+    }
 
   if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
       !have_ipv6)
@@ -713,6 +734,14 @@ test_offer_race (Test *test,
   GIOStream *alice_stream, *bob_stream;
   GSocketConnection *conn;
   TpContact *contact;
+
+  if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_UNIX &&
+      contexts[i].access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS &&
+      !have_creds)
+    {
+      g_message ("skipped: credentials-passing not supported here");
+      return;
+    }
 
   if (contexts[i].address_type == TP_SOCKET_ADDRESS_TYPE_IPV6 &&
       !have_ipv6)
@@ -1022,6 +1051,12 @@ main (int argc,
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
   have_ipv6 = check_ipv6_support ();
+
+#ifdef HAVE_GIO_UNIX
+  have_creds = g_unix_credentials_message_is_supported ();
+#else
+  have_creds = FALSE;
+#endif
 
   g_test_add ("/stream-tube/creation", Test, NULL, setup, test_creation,
       teardown);
