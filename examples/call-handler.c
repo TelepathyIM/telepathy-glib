@@ -51,6 +51,18 @@ bus_watch_cb (GstBus *bus,
   if (context->channel != NULL)
     tf_channel_bus_message (context->channel, message);
 
+  if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
+    {
+      GError *error = NULL;
+      gchar *debug = NULL;
+      gst_message_parse_error (message, &error, &debug);
+      g_printerr ("ERROR from element %s: %s\n",
+          GST_OBJECT_NAME (message->src), error->message);
+      g_printerr ("Debugging info: %s\n", (debug) ? debug : "none");
+      g_error_free (error);
+      g_free (debug);
+    }
+
   return TRUE;
 }
 
