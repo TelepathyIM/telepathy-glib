@@ -1335,6 +1335,9 @@ tp_connection_finalize (GObject *object)
 
   DEBUG ("%p", self);
 
+  tp_clear_pointer (&self->priv->cm_name, g_free);
+  tp_clear_pointer (&self->priv->proto_name, g_free);
+ 
   /* not true unless we were finalized before we were ready */
   if (self->priv->introspect_needed != NULL)
     {
