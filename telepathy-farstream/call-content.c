@@ -908,7 +908,7 @@ setup_content_video_control (TfCallContent *self,
     goto connect_failed;
 
   tp_cli_dbus_properties_call_get_all (proxy, -1,
-      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
+      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_VIDEO_CONTROL,
       got_content_video_control_properties, res, NULL, G_OBJECT (self));
 
   return;
