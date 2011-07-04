@@ -114,17 +114,13 @@ update_video_parameters (ChannelContext *context, gboolean restart)
 {
   GstCaps *caps;
   GstClock *clock;
-  GstState stop_state;
 
   if (restart)
-    stop_state = GST_STATE_NULL;
-  else
-    stop_state = GST_STATE_READY;
-
-  /* Assuming the pipeline is in playing state */
-  gst_element_set_locked_state (context->video_input, TRUE);
-  if (GST_STATE (context->video_input) > stop_state)
-    gst_element_set_state (context->video_input, stop_state);
+    {
+      /* Assuming the pipeline is in playing state */
+      gst_element_set_locked_state (context->video_input, TRUE);
+      gst_element_set_state (context->video_input, GST_STATE_NULL);
+    }
 
   g_object_get (context->video_capsfilter, "caps", &caps, NULL);
   caps = gst_caps_make_writable (caps);
@@ -137,16 +133,19 @@ update_video_parameters (ChannelContext *context, gboolean restart)
 
   g_object_set (context->video_capsfilter, "caps", caps, NULL);
 
-  clock = gst_pipeline_get_clock (GST_PIPELINE (context->pipeline));
-  /* Need to reset the clock if we set the pipeline back to ready by hand */
-  if (clock != NULL)
+  if (restart)
     {
-      gst_element_set_clock (context->video_input, clock);
-      g_object_unref (clock);
-    }
+      clock = gst_pipeline_get_clock (GST_PIPELINE (context->pipeline));
+      /* Need to reset the clock if we set the pipeline back to ready by hand */
+      if (clock != NULL)
+        {
+          gst_element_set_clock (context->video_input, clock);
+          g_object_unref (clock);
+        }
 
-  gst_element_set_locked_state (context->video_input, FALSE);
-  gst_element_sync_state_with_parent (context->video_input);
+      gst_element_set_locked_state (context->video_input, FALSE);
+      gst_element_sync_state_with_parent (context->video_input);
+    }
 }
 
 static void
