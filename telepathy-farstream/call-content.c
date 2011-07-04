@@ -787,7 +787,7 @@ content_video_element_added (FsElementAddedNotifier *notifier,
       if (object_has_property (G_OBJECT (element), "key-int-max"))
         {
           g_message ("Setting key-int-max to max uint");
-          g_object_set (element, "key-int-max", G_MAXUINT, NULL);
+          g_object_set (element, "key-int-max", G_MAXINT, NULL);
         }
 
       if (object_has_property (G_OBJECT (element), "intra-period"))
