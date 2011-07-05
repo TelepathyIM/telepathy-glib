@@ -112,6 +112,17 @@ TpChannel * tp_account_channel_request_ensure_and_handle_channel_finish (
     TpHandleChannelsContext **context,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
+typedef void (*TpAccountChannelRequestDelegatedChannelCb) (
+    TpAccountChannelRequest *request,
+    TpChannel *channel,
+    gpointer user_data);
+
+void tp_account_channel_request_set_delegated_channel_callback (
+    TpAccountChannelRequest *self,
+    TpAccountChannelRequestDelegatedChannelCb callback,
+    gpointer user_data,
+    GDestroyNotify destroy);
+
 /* Request and forget API */
 
 void tp_account_channel_request_create_channel_async (

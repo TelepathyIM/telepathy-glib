@@ -55,7 +55,21 @@
  * Since: 0.11.12
  */
 
+/**
+ * TpAccountChannelRequestDelegatedChannelCb:
+ * @request: a #TpAccountChannelRequest instance
+ * @channel: a #TpChannel
+ * @user_data: arbitrary user-supplied data passed to
+ * tp_account_channel_request_set_delegated_channel_callback()
+ *
+ * Called when a client asked us to delegate @channel to another Handler.
+ * When this function is called you are no longer handling @channel.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+
 #include "telepathy-glib/account-channel-request.h"
+#include "telepathy-glib/account-channel-request-internal.h"
 
 #include <telepathy-glib/automatic-proxy-factory.h>
 #include "telepathy-glib/base-client-internal.h"
@@ -132,6 +146,10 @@ struct _TpAccountChannelRequestPrivate
   gboolean requested;
 
   ActionType action_type;
+
+  TpAccountChannelRequestDelegatedChannelCb delegated_channel_cb;
+  gpointer delegated_channel_data;
+  GDestroyNotify delegated_channel_destroy;
 };
 
 static void
@@ -186,6 +204,13 @@ tp_account_channel_request_dispose (GObject *object)
   tp_clear_object (&self->priv->dbus);
   tp_clear_object (&self->priv->factory);
   tp_clear_pointer (&self->priv->hints, g_hash_table_unref);
+
+  if (self->priv->delegated_channel_destroy != NULL)
+    {
+      self->priv->delegated_channel_destroy (
+          self->priv->delegated_channel_data);
+      self->priv->delegated_channel_destroy = NULL;
+    }
 
   if (dispose != NULL)
     dispose (object);
@@ -811,6 +836,27 @@ fail:
 }
 
 static void
+delegated_channels_cb (TpBaseClient *client,
+    GPtrArray *channels,
+    gpointer user_data)
+{
+  TpAccountChannelRequest *self = user_data;
+  TpChannel *channel;
+
+  g_return_if_fail (channels->len == 1);
+
+  /* TpBaseClient is supposed to check we are actually handling the channel
+   * before calling this callback so we can assert that's the right one. */
+  channel = g_ptr_array_index (channels, 0);
+  g_return_if_fail (TP_IS_CHANNEL (channel));
+  g_return_if_fail (!tp_strdiff (tp_proxy_get_object_path (channel),
+      tp_proxy_get_object_path (self->priv->channel)));
+
+  self->priv->delegated_channel_cb (self, channel,
+      self->priv->delegated_channel_data);
+}
+
+static void
 request_and_handle_channel_async (TpAccountChannelRequest *self,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
@@ -846,6 +892,12 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
 
   tp_base_client_set_channel_factory (self->priv->handler,
       self->priv->factory);
+
+  if (self->priv->delegated_channel_cb != NULL)
+    {
+      tp_base_client_set_delegated_channels_callback (self->priv->handler,
+          delegated_channels_cb, self, NULL);
+    }
 
   if (!tp_base_client_register (self->priv->handler, &error))
     {
@@ -1601,4 +1653,55 @@ tp_account_channel_request_set_delegate_to_preferred_handler (
   tp_asv_set_boolean (self->priv->hints,
       "org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler",
       delegate);
+}
+
+/**
+ * tp_account_channel_request_set_delegated_channel_callback:
+ * @self: a #TpAccountChannelRequest
+ * @callback: function called the channel requested using @self is
+ * delegated, may not be %NULL
+ * @user_data: arbitrary user-supplied data passed to @callback
+ * @destroy: called with the @user_data as argument, when @self is destroyed
+ *
+ * Turn on support for
+ * the org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler
+ * hint.
+ *
+ * When receiving a request containing this hint, @self will automatically
+ * delegate the channel to the preferred handler of the request and then call
+ * @callback to inform the client that it is no longer handling this channel.
+ *
+ * @callback may be called any time after (and only after) requesting and
+ * handling the channel (i.e. you have called create_and_handle or
+ * ensure_and_handle).
+ *
+ * This function can't be called once @self has been used to request a
+ * channel.
+ *
+ * Since: 0.15.UNRELEASED
+ * @see_also: tp_base_client_set_delegated_channels_callback ()
+ */
+void
+tp_account_channel_request_set_delegated_channel_callback (
+    TpAccountChannelRequest *self,
+    TpAccountChannelRequestDelegatedChannelCb callback,
+    gpointer user_data,
+    GDestroyNotify destroy)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self));
+  g_return_if_fail (!self->priv->requested);
+
+  g_return_if_fail (self->priv->delegated_channel_cb == NULL);
+
+  self->priv->delegated_channel_cb = callback;
+  self->priv->delegated_channel_data = user_data;
+  self->priv->delegated_channel_destroy = destroy;
+}
+
+TpBaseClient *
+_tp_account_channel_request_get_client (TpAccountChannelRequest *self)
+{
+  g_return_val_if_fail (TP_IS_ACCOUNT_CHANNEL_REQUEST (self), NULL);
+
+  return self->priv->handler;
 }

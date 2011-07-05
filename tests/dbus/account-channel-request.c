@@ -9,6 +9,10 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
+#include <telepathy-glib/account-channel-request-internal.h>
+#include <telepathy-glib/client.h>
+#include <telepathy-glib/proxy-subclass.h>
+
 #include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
 #include "tests/lib/simple-conn.h"
@@ -531,6 +535,156 @@ test_handle_create_success_hints (Test *test,
   g_assert_no_error (test->error);
 }
 
+static void
+channel_delegated_cb (TpAccountChannelRequest *req,
+    TpChannel *channel,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_assert (TP_IS_ACCOUNT_CHANNEL_REQUEST (req));
+
+  g_assert (TP_IS_CHANNEL (channel));
+  g_assert_cmpstr (tp_proxy_get_object_path (channel), ==,
+      tp_proxy_get_object_path (test->channel));
+
+  test->count--;
+  if (test->count <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+add_channel_to_ptr_array (GPtrArray *arr,
+    TpChannel *channel)
+{
+  GValueArray *tmp;
+
+  g_assert (arr != NULL);
+  g_assert (channel != NULL);
+
+  tmp = tp_value_array_build (2,
+      DBUS_TYPE_G_OBJECT_PATH, tp_proxy_get_object_path (channel),
+      TP_HASH_TYPE_STRING_VARIANT_MAP, tp_channel_borrow_immutable_properties (
+        channel),
+      G_TYPE_INVALID);
+
+  g_ptr_array_add (arr, tmp);
+}
+
+static void
+no_return_cb (TpClient *proxy,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  Test *test = user_data;
+
+  g_clear_error (&test->error);
+
+  if (error != NULL)
+    {
+      test->error = g_error_copy (error);
+      goto out;
+    }
+
+out:
+  test->count--;
+  if (test->count == 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+#define PREFERRED_HANDLER_NAME TP_CLIENT_BUS_NAME_BASE ".Badger"
+
+static void
+test_handle_delegated (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *request;
+  TpAccountChannelRequest *req;
+  GPtrArray *requests, *requests_satisified, *channels;
+  GHashTable *hints, *request_props, *info;
+  TpTestsSimpleChannelRequest *cr;
+  TpBaseClient *base_client;
+  TpClient *client;
+
+  request = create_request ();
+  req = tp_account_channel_request_new (test->account, request, 0);
+
+  /* Allow other clients to preempt the channel */
+  tp_account_channel_request_set_delegated_channel_callback (req,
+      channel_delegated_cb, test, NULL);
+
+  tp_account_channel_request_create_and_handle_channel_async (req,
+      NULL, create_and_handle_cb, test);
+
+  g_hash_table_unref (request);
+  g_object_unref (req);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Another client asks to dispatch the channel to it */
+  requests = g_ptr_array_new ();
+
+  hints = tp_asv_new (
+      "org.freedesktop.Telepathy.ChannelRequest.DelegateToPreferredHandler",
+        G_TYPE_BOOLEAN, TRUE,
+      NULL);
+
+  cr = tp_tests_simple_channel_request_new ("/CR",
+      TP_TESTS_SIMPLE_CONNECTION (test->base_connection),
+      tp_proxy_get_object_path (test->account),
+      TP_USER_ACTION_TIME_CURRENT_TIME, PREFERRED_HANDLER_NAME,
+      requests, hints);
+
+  requests_satisified = g_ptr_array_sized_new (1);
+  g_ptr_array_add (requests_satisified, "/CR");
+
+  request_props = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, (GDestroyNotify) g_hash_table_unref);
+
+  g_hash_table_insert (request_props, "/CR",
+      tp_tests_simple_channel_request_dup_immutable_props (cr));
+
+  info = tp_asv_new (
+      "request-properties", TP_HASH_TYPE_OBJECT_IMMUTABLE_PROPERTIES_MAP,
+        request_props, NULL);
+
+  channels = g_ptr_array_sized_new (1);
+  add_channel_to_ptr_array (channels, test->channel);
+
+  base_client = _tp_account_channel_request_get_client (req);
+  g_assert (TP_IS_BASE_CLIENT (base_client));
+
+  client = tp_tests_object_new_static_class (TP_TYPE_CLIENT,
+      "dbus-daemon", tp_base_client_get_dbus_daemon (base_client),
+      "bus-name", tp_base_client_get_bus_name (base_client),
+      "object-path",  tp_base_client_get_object_path (base_client),
+      NULL);
+
+  tp_proxy_add_interface_by_id (TP_PROXY (client),
+      TP_IFACE_QUARK_CLIENT_HANDLER);
+
+  tp_cli_client_handler_call_handle_channels (client, -1,
+      tp_proxy_get_object_path (test->account),
+      tp_proxy_get_object_path (test->connection),
+      channels, requests_satisified, 0, info,
+      no_return_cb, test, NULL, NULL);
+
+  test->count = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_ptr_array_unref (requests);
+  g_hash_table_unref (hints);
+  g_object_unref (cr);
+  g_ptr_array_unref (requests_satisified);
+  g_ptr_array_unref (channels);
+  g_hash_table_unref (request_props);
+  g_hash_table_unref (info);
+  g_object_unref (client);
+}
+
 /* Request and forget tests */
 
 static void
@@ -977,6 +1131,8 @@ main (int argc,
       setup, test_handle_re_handle, teardown);
   g_test_add ("/account-channels/request-handle/create-success-hints", Test,
       NULL, setup, test_handle_create_success_hints, teardown);
+  g_test_add ("/account-channels/request-handle/delegated", Test, NULL,
+      setup, test_handle_delegated, teardown);
 
   /* Request and forget tests */
   g_test_add ("/account-channels/request-forget/create-success", Test, NULL,

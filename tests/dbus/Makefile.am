@@ -67,7 +67,12 @@ LDADD = \
 
 test_account_SOURCES = account.c
 
+# this one uses internal ABI
 test_account_channel_request_SOURCES = account-channel-request.c
+test_account_channel_request_LDADD = \
+    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
+    $(GLIB_LIBS)
 
 test_account_manager_SOURCES = account-manager.c
 

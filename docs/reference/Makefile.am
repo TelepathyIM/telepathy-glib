@@ -64,6 +64,7 @@ CFILE_GLOB=$(top_srcdir)/telepathy-glib/*.c $(top_builddir)/telepathy-glib/_gen/
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
 IGNORE_HFILES=\
     add-dispatch-operation-context-internal.h \
+    account-channel-request-internal.h \
     base-connection-internal.h \
     base-contact-list-internal.h \
     channel-dispatch-operation-internal.h \
