@@ -223,7 +223,7 @@ setup (Test *test,
 {
   GError *error = NULL;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
-  GType conn_type = GPOINTER_TO_UINT (data);
+  GType conn_type = GPOINTER_TO_SIZE (data);
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -415,13 +415,13 @@ main (int argc,
   g_test_init (&argc, &argv, NULL);
 
   g_test_add ("/conn/balance", Test,
-      GUINT_TO_POINTER (TYPE_BALANCED_CONNECTION),
+      GSIZE_TO_POINTER (TYPE_BALANCED_CONNECTION),
       setup, test_balance, teardown);
   g_test_add ("/conn/balance-unknown", Test,
-      GUINT_TO_POINTER (TYPE_UNBALANCED_CONNECTION),
+      GSIZE_TO_POINTER (TYPE_UNBALANCED_CONNECTION),
       setup, test_balance_unknown, teardown);
   g_test_add ("/conn/balance-unimplemented", Test,
-      GUINT_TO_POINTER (TP_TESTS_TYPE_SIMPLE_CONNECTION),
+      GSIZE_TO_POINTER (TP_TESTS_TYPE_SIMPLE_CONNECTION),
       setup, test_balance_unknown, teardown);
 
   return g_test_run ();
