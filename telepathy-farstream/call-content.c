@@ -556,6 +556,10 @@ on_content_video_resolution_changed (TfFutureCallContent *proxy,
   tp_value_array_unpack ((GValueArray *)resolution, 2,
     &width, &height, NULL);
 
+  /* Can be 0 in the initial property dump, shouldn't be at any other time */
+  if (width == 0 || height == 0)
+    return;
+
   self->width = width;
   self->height = height;
 
