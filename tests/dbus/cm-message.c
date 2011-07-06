@@ -49,6 +49,7 @@ test_new_from_parts (Test *test,
   TpHandle sender;
   TpMessage *msg;
   const GHashTable *part;
+  gboolean valid;
 
   parts = g_ptr_array_sized_new (2);
   g_ptr_array_set_free_func (parts, (GDestroyNotify) g_hash_table_unref);
@@ -63,6 +64,7 @@ test_new_from_parts (Test *test,
         "message-sent", G_TYPE_INT64, G_GINT64_CONSTANT (42),
         "message-received", G_TYPE_INT64, G_GINT64_CONSTANT (666),
         "scrollback", G_TYPE_BOOLEAN, TRUE,
+        "pending-message-id", G_TYPE_UINT, 666,
         NULL));
 
   g_ptr_array_add (parts, tp_asv_new (
@@ -102,6 +104,8 @@ test_new_from_parts (Test *test,
   g_assert_cmpstr (tp_message_get_supersedes (msg), ==, NULL);
   g_assert_cmpstr (tp_message_get_specific_to_interface (msg), ==, NULL);
   g_assert_cmpint (tp_message_is_delivery_report (msg), ==, FALSE);
+  g_assert_cmpuint (tp_message_get_pending_message_id (msg, &valid), ==, 666);
+  g_assert (valid);
 
   g_object_unref (msg);
 }

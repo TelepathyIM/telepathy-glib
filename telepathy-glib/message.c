@@ -1048,13 +1048,34 @@ tp_message_is_delivery_report (TpMessage *self)
   return valid;
 }
 
+/**
+ * tp_message_get_pending_message_id:
+ * @self: a message
+ * @valid: (out): either %NULL, or a location in which to store %TRUE if @self
+ * contains a pending message ID.
+ *
+ * Return the incoming message ID of @self. Only incoming messages have such
+ * ID, for outgoing ones this function returns 0 and set @valid to %FALSE.
+ *
+ * Returns: the incoming message ID.
+ *
+ * Since: 0.15.UNRELEASED
+ */
+guint32
+tp_message_get_pending_message_id (TpMessage *self,
+    gboolean *valid)
+{
+  g_return_val_if_fail (TP_IS_MESSAGE (self), FALSE);
+
+  return tp_asv_get_uint32 (tp_message_peek (self, 0),
+      "pending-message-id", valid);
+}
+
 /*
  * Omitted for now:
  *
  * sender-nickname - perhaps better done in TpSignalledMessage, so we can use
  *  the TpContact's nickname if the message doesn't specify?
- *
- * pending-message-id - special-purpose, should be encapsulated
  *
  * delivery reporting stuff other than "is this a report?" - later
  */

@@ -95,6 +95,8 @@ gboolean tp_message_is_rescued (TpMessage *self);
 const gchar *tp_message_get_supersedes (TpMessage *self);
 const gchar *tp_message_get_specific_to_interface (TpMessage *self);
 gboolean tp_message_is_delivery_report (TpMessage *self);
+guint32 tp_message_get_pending_message_id (TpMessage *self,
+    gboolean *valid);
 
 G_END_DECLS
 

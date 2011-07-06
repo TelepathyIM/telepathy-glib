@@ -2291,6 +2291,7 @@ tp_message_get_token
 tp_message_is_delivery_report
 tp_message_is_rescued
 tp_message_is_scrollback
+tp_message_get_pending_message_id
 <SUBSECTION>
 tp_message_is_mutable
 tp_message_append_part
