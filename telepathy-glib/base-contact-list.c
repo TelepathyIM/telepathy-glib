@@ -1972,7 +1972,6 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       self->priv->conn, self->priv->state);
 }
 
-#ifdef ENABLE_DEBUG
 static char
 presence_state_to_letter (TpSubscriptionState ps)
 {
@@ -1997,7 +1996,6 @@ presence_state_to_letter (TpSubscriptionState ps)
       return '!';
     }
 }
-#endif
 
 /**
  * tp_base_contact_list_contacts_changed:

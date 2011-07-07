@@ -421,9 +421,7 @@ tp_message_mixin_acknowledge_pending_messages_async (
   for (i = 0; i < ids->len; i++)
     {
       TpMessage *item = nodes[i]->data;
-#ifdef ENABLE_DEBUG
       TpCMMessage *cm_msg = nodes[i]->data;
-#endif
 
       DEBUG ("acknowledging message id %u", cm_msg->incoming_id);
 
