@@ -2087,11 +2087,6 @@ tp_base_connection_dbus_get_status (TpSvcConnection *iface,
         (TpBaseConnection *) iface));
 }
 
-
-#undef DEBUG_FLAG
-#define DEBUG_FLAG TP_DEBUG_HANDLES
-#include "telepathy-glib/debug-internal.h"
-
 static void
 tp_base_connection_hold_handles (TpSvcConnection *iface,
                                  guint handle_type,
@@ -2165,10 +2160,6 @@ tp_base_connection_inspect_handles (TpSvcConnection *iface,
 
   g_free (ret);
 }
-
-#undef DEBUG_FLAG
-#define DEBUG_FLAG TP_DEBUG_CONNECTION
-#include "telepathy-glib/debug-internal.h"
 
 /*
  * list_channel_factory_foreach_one:
@@ -2496,11 +2487,6 @@ ERROR:
   channel_request_free (request);
 }
 
-
-#undef DEBUG_FLAG
-#define DEBUG_FLAG TP_DEBUG_HANDLES
-#include "telepathy-glib/debug-internal.h"
-
 static void
 tp_base_connection_release_handles (TpSvcConnection *iface,
                                     guint handle_type,
@@ -2615,10 +2601,6 @@ out:
       g_array_free (handles, TRUE);
     }
 }
-
-#undef DEBUG_FLAG
-#define DEBUG_FLAG TP_DEBUG_CONNECTION
-#include "telepathy-glib/debug-internal.h"
 
 /**
  * tp_base_connection_get_handles:
