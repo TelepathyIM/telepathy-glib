@@ -1,3 +1,38 @@
+telepathy-glib 0.15.3 (2011-07-08)
+==================================
+
+This new release in the 0.15 development cycle contains all the fixes
+released in 0.14.9 except the TpChannelIface:handle-type change which has
+*not* been reverted in 0.15.3. Connection managers should be fixed to work
+properly with the new default value.
+
+Enhancements:
+
+• TpTextChannel: tp_text_channel_ack_all_pending_messages_async: convenient
+  function to easily ack all the pending messages. (fdo #38559 Guillaume)
+
+• TpChannelRequest: add properties and accessors for Account, UserActionTime
+  and PreferredHandler preferred-handler and user-action-time.
+  (fdo #38605 Guillaume)
+
+• TpAccountChannelRequest and TpBaseClient: API to use the
+  DelegateToPreferredHandler hint. (Guillaume)
+
+• TpMessage: tp_message_get_pending_message_id: convenient function to get the
+  pending-message-id of the message. (Guillaume)
+
+• TpChannel: Annotate tp_channe_group_ methods. (Guillaume)
+
+Fixes:
+
+• Fix some set-but-not-used warnings with --disable-debug. (Will)
+
+• Honor NOCONFIGURE for compatibility with gnome-autogen.sh. (Colin)
+
+• Fix tests failing on some arch. (Will, Adam, Emilio)
+
+• Fix memory leaks in TpConnection. (fdo #38944 Siraj)
+
 telepathy-glib 0.15.2 (2011-06-21)
 ==================================
 

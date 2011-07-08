@@ -167,7 +167,7 @@
  * Called when a client asked us to delegate @channels to another Handler.
  * When this function is called @client is not longer handling @channels.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.3
  */
 
 #include "telepathy-glib/base-client.h"
@@ -3199,7 +3199,7 @@ tp_base_client_delegate_channels_finish (TpBaseClient *self,
  * @callback to inform the client that it is no longer handling those
  * channels.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.3
  */
 void
 tp_base_client_set_delegated_channels_callback (TpBaseClient *self,

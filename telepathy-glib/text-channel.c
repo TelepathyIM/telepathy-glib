@@ -1914,7 +1914,7 @@ tp_text_channel_get_sms_length_finish (TpTextChannel *self,
  *
  * See tp_text_channel_ack_message_async() about acknowledging messages.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.3
  */
 void
 tp_text_channel_ack_all_pending_messages_async (TpTextChannel *self,
@@ -1939,7 +1939,7 @@ tp_text_channel_ack_all_pending_messages_async (TpTextChannel *self,
  *
  * Returns: %TRUE if the messages have been acked, %FALSE otherwise.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.3
  */
 gboolean
 tp_text_channel_ack_all_pending_messages_finish (TpTextChannel *self,

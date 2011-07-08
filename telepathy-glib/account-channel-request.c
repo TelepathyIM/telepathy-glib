@@ -65,7 +65,7 @@
  * Called when a client asked us to delegate @channel to another Handler.
  * When this function is called you are no longer handling @channel.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.3
  */
 
 #include "telepathy-glib/account-channel-request.h"
@@ -1638,7 +1638,7 @@ tp_account_channel_request_set_hints (TpAccountChannelRequest *self,
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.3
  */
 void
 tp_account_channel_request_set_delegate_to_preferred_handler (
@@ -1678,7 +1678,7 @@ tp_account_channel_request_set_delegate_to_preferred_handler (
  * This function can't be called once @self has been used to request a
  * channel.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.3
  * @see_also: tp_base_client_set_delegated_channels_callback ()
  */
 void

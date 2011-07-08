@@ -412,7 +412,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Read-only.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.3
    */
   param_spec = g_param_spec_object ("account", "Account", "Account",
       TP_TYPE_ACCOUNT,
@@ -428,7 +428,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Read-only.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.3
    */
   param_spec = g_param_spec_int64 ("user-action-time", "UserActionTime",
       "UserActionTime",
@@ -446,7 +446,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    *
    * Read-only.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.3
    */
   param_spec = g_param_spec_string ("preferred-handler", "PreferredHandler",
       "PreferredHandler",
@@ -646,7 +646,7 @@ tp_channel_request_get_immutable_properties (TpChannelRequest *self)
  *
  * returns: (transfer none): the value of #TpChannelRequest:account
  *
- * since: 0.15.UNRELEASED
+ * since: 0.15.3
  */
 TpAccount *
 tp_channel_request_get_account (TpChannelRequest *self)
@@ -681,7 +681,7 @@ tp_channel_request_get_account (TpChannelRequest *self)
  *
  * returns: the value of #TpChannelRequest:user-action-time
  *
- * since: 0.15.UNRELEASED
+ * since: 0.15.3
  */
 gint64
 tp_channel_request_get_user_action_time (TpChannelRequest *self)
@@ -703,7 +703,7 @@ tp_channel_request_get_user_action_time (TpChannelRequest *self)
  *
  * returns: the value of #TpChannelRequest:preferred-handler
  *
- * since: 0.15.UNRELEASED
+ * since: 0.15.3
  */
 const gchar *
 tp_channel_request_get_preferred_handler (TpChannelRequest *self)

@@ -1059,7 +1059,7 @@ tp_message_is_delivery_report (TpMessage *self)
  *
  * Returns: the incoming message ID.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.3
  */
 guint32
 tp_message_get_pending_message_id (TpMessage *self,
