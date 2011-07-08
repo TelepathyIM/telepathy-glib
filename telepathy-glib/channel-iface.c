@@ -30,6 +30,7 @@
  */
 
 #include <telepathy-glib/channel-iface.h>
+#include <telepathy-glib/handle.h>
 
 static void
 tp_channel_iface_base_init (gpointer klass)
@@ -95,7 +96,7 @@ tp_channel_iface_base_init (gpointer klass)
      */
     param_spec = g_param_spec_uint ("handle-type", "Handle type",
         "The TpHandleType of this channel's associated handle.",
-        0, G_MAXUINT32, 0,
+        0, G_MAXUINT32, TP_UNKNOWN_HANDLE_TYPE,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
         G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB | G_PARAM_STATIC_NICK);
     g_object_interface_install_property (klass, param_spec);
