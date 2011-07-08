@@ -7,6 +7,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include <telepathy-glib/stream-tube-channel.h>
@@ -19,7 +21,8 @@
 #include "tests/lib/stream-tube-chan.h"
 
 #ifdef HAVE_GIO_UNIX
-# include <gio/gio.h>
+#include <gio/gio.h>
+#include <gio/gunixcredentialsmessage.h>
 #endif
 
 #define BUFFER_SIZE 128
