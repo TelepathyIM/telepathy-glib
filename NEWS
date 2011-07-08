@@ -1,3 +1,16 @@
+telepathy-glib 0.14.9 (2011-07-08)
+==================================
+
+This release reverts the patch introduced in 0.14.8 changing the default value
+of the TpChannelIface:handle-type property. While being correct, this fix
+introduces assertion errors in some connection managers and so was not
+appropriate for a stable branch.
+
+Fixes:
+
+• fd.o#36801: skip stream tube credentials-passing tests where unsupported.
+  (Simon)
+
 telepathy-glib 0.14.8 (2011-06-21)
 ==================================
 
