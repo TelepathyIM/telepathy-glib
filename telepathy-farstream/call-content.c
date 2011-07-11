@@ -728,10 +728,10 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
     }
 
   /* First complete so we get signalled and the preferences can be set, then
-   * start looking at the offer */
+   * start looking at the offer. We only unref the result later, to avoid
+   * self possibly being disposed early */
   g_simple_async_result_set_op_res_gboolean (res, TRUE);
   g_simple_async_result_complete (res);
-  g_object_unref (res);
 
   tp_value_array_unpack (gva, 3, &offer_objpath, &contact, &codecs);
 
@@ -739,6 +739,9 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
 
   self->got_codec_offer_property = TRUE;
 
+  /* The async result holds a ref to self which may be the last one, so this
+   * comes after we're done with self */
+  g_object_unref (res);
   return;
 
  invalid_property:
