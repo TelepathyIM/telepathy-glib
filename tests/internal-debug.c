@@ -12,9 +12,8 @@
 static void
 test_debugging (void)
 {
-#ifndef DEBUG
-#error internal-debug.h should always define DEBUG
-#endif
+  DEBUG ("internal-debug.h should always define DEBUG %s",
+    "(either as a macro or as a no-op static inline function");
 
 #ifndef DEBUGGING
 #error internal-debug.h should always define DEBUGGING
@@ -34,9 +33,8 @@ test_debugging (void)
 static void
 test_not_debugging (void)
 {
-#ifndef DEBUG
-#error internal-debug.h should always define DEBUG
-#endif
+  DEBUG ("internal-debug.h should always define DEBUG %s",
+    "(either as a macro or as a no-op static inline function");
 
 #ifndef DEBUGGING
 #error internal-debug.h should always define DEBUGGING
@@ -52,9 +50,8 @@ test_not_debugging (void)
 static void
 test_debugging_again (void)
 {
-#ifndef DEBUG
-#error internal-debug.h should always define DEBUG
-#endif
+  DEBUG ("internal-debug.h should always define DEBUG %s",
+    "(either as a macro or as a no-op static inline function");
 
 #ifndef DEBUGGING
 #error internal-debug.h should always define DEBUGGING

@@ -100,7 +100,16 @@ G_END_DECLS
           G_STRFUNC, ##__VA_ARGS__)
 #   define DEBUGGING _tp_debug_flag_is_set (DEBUG_FLAG)
 #else /* !defined (ENABLE_DEBUG) */
-#   define DEBUG(format, ...) do {} while (0)
+#   ifndef DEBUG_STUB_DEFINED
+static inline void
+DEBUG (
+    const gchar *format,
+    ...)
+{
+}
+#   define DEBUG_STUB_DEFINED 1
+#   endif // ifndef DEBUG_STUB_DEFINED
+
 #   define DEBUGGING 0
 #endif /* !defined (ENABLE_DEBUG) */
 
