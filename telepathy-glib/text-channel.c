@@ -702,7 +702,8 @@ get_pending_messages_cb (TpProxy *proxy,
   guint i;
   GPtrArray *messages;
   TpIntSet *senders;
-  GList *parts_list = NULL;
+  /* Messages we're waiting for a sender for */
+  GQueue outstanding = G_QUEUE_INIT;
   GPtrArray *sender_ids;
 
   self->priv->got_initial_messages = TRUE;
@@ -762,8 +763,7 @@ get_pending_messages_cb (TpProxy *proxy,
       if (sender_id != NULL)
         g_ptr_array_add (sender_ids, (gpointer) sender_id);
 
-      /* We'll revert the list below when requesting the TpContact objects */
-      parts_list = g_list_prepend (parts_list, copy_parts (parts));
+      g_queue_push_tail (&outstanding, copy_parts (parts));
     }
 
   if (tp_intset_size (senders) == 0)
@@ -772,22 +772,18 @@ get_pending_messages_cb (TpProxy *proxy,
     }
   else
     {
-      TpConnection *conn;
-
-      parts_list = g_list_reverse (parts_list);
-
-      conn = tp_channel_borrow_connection (TP_CHANNEL (proxy));
+      TpConnection *conn = tp_channel_borrow_connection (TP_CHANNEL (proxy));
 
       DEBUG ("Pending messages may be re-ordered, please fix CM (%s)",
           tp_proxy_get_object_path (conn));
 
-      /* Pass ownership of parts_list to the callback */
-      if (sender_ids->len == g_list_length (parts_list))
+      /* Pass ownership of outstanding messages to the callback */
+      if (sender_ids->len == outstanding.length)
         {
           /* Use the sender ID rather than the handles */
           tp_connection_get_contacts_by_id (conn, sender_ids->len,
               (const gchar * const *) sender_ids->pdata,
-              0, NULL, got_pending_senders_contact_by_id_cb, parts_list,
+              0, NULL, got_pending_senders_contact_by_id_cb, outstanding.head,
               (GDestroyNotify) free_parts_list, g_object_ref (result));
         }
       else
@@ -796,7 +792,7 @@ get_pending_messages_cb (TpProxy *proxy,
 
           tp_connection_get_contacts_by_handle (conn, tmp->len,
               (TpHandle *) tmp->data,
-              0, NULL, got_pending_senders_contact_by_handle_cb, parts_list,
+              0, NULL, got_pending_senders_contact_by_handle_cb, outstanding.head,
               (GDestroyNotify) free_parts_list, g_object_ref (result));
 
           g_array_unref (tmp);
