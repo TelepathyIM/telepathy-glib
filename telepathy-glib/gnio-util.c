@@ -354,7 +354,7 @@ tp_unix_connection_send_credentials_with_byte (GSocketConnection *connection,
   return _tp_unix_connection_send_credentials_with_byte (
       G_UNIX_CONNECTION (connection), byte, cancellable, error);
 #else
-  g_set_error (G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+  g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
       "Unix sockets not supported");
   return FALSE;
 #endif
@@ -565,7 +565,7 @@ tp_unix_connection_receive_credentials_with_byte (GSocketConnection *connection,
   return _tp_unix_connection_receive_credentials_with_byte (
       G_UNIX_CONNECTION (connection), byte, cancellable, error);
 #else
-  g_set_error (G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+  g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
       "Unix sockets not supported");
   return FALSE;
 #endif
