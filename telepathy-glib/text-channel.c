@@ -713,6 +713,7 @@ get_pending_messages_cb (TpProxy *proxy,
           "Failed to get PendingMessages property: %s", error->message);
 
       g_simple_async_result_complete (result);
+      return;
     }
 
   if (!G_VALUE_HOLDS (value, ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST))
@@ -723,6 +724,7 @@ get_pending_messages_cb (TpProxy *proxy,
           "PendingMessages property is of the wrong type");
 
       g_simple_async_result_complete (result);
+      return;
     }
 
   senders = tp_intset_new ();
