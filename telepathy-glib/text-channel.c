@@ -777,10 +777,15 @@ get_pending_messages_cb (TpProxy *proxy,
       DEBUG ("Pending messages may be re-ordered, please fix CM (%s)",
           tp_proxy_get_object_path (conn));
 
-      /* Pass ownership of outstanding messages to the callback */
+      /* If we have an identifier for the sender of every outstanding message,
+       * use those rather than handles to get the contacts. (There may be
+       * duplicates, but telepathy-glib copes.)
+       *
+       * Ownership of the parts list in 'outstanding' is transferred to the
+       * callbacks.
+       */
       if (sender_ids->len == outstanding.length)
         {
-          /* Use the sender ID rather than the handles */
           tp_connection_get_contacts_by_id (conn, sender_ids->len,
               (const gchar * const *) sender_ids->pdata,
               0, NULL, got_pending_senders_contact_by_id_cb, outstanding.head,
@@ -797,6 +802,7 @@ get_pending_messages_cb (TpProxy *proxy,
 
           g_array_unref (tmp);
         }
+
     }
 
   tp_intset_destroy (senders);
