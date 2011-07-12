@@ -25,6 +25,7 @@ typedef struct {
     ExampleEcho2Channel *chan_service;
     ExampleEcho2Channel *sms_chan_service;
     TpHandleRepoIface *contact_repo;
+    TpHandle bob;
 
     /* Client side objects */
     TpConnection *connection;
@@ -46,7 +47,6 @@ static void
 create_contact_chan (Test *test)
 {
   gchar *chan_path;
-  TpHandle handle, alf_handle;
   GHashTable *props;
 
   tp_clear_object (&test->chan_service);
@@ -60,18 +60,14 @@ create_contact_chan (Test *test)
       TP_HANDLE_TYPE_CONTACT);
   g_assert (test->contact_repo != NULL);
 
-  handle = tp_handle_ensure (test->contact_repo, "bob", NULL, &test->error);
-
+  test->bob = tp_handle_ensure (test->contact_repo, "bob", NULL, &test->error);
   g_assert_no_error (test->error);
-
-  alf_handle = tp_handle_ensure (test->contact_repo, "alf", NULL, &test->error);
-  g_assert (alf_handle);
-  g_assert_no_error (test->error);
+  g_assert (test->bob != 0);
 
   test->chan_service = g_object_new (
       EXAMPLE_TYPE_ECHO_2_CHANNEL,
       "connection", test->base_connection,
-      "handle", handle,
+      "handle", test->bob,
       "object-path", chan_path,
       NULL);
 
@@ -93,7 +89,7 @@ create_contact_chan (Test *test)
   test->sms_chan_service = g_object_new (
       EXAMPLE_TYPE_ECHO_2_CHANNEL,
       "connection", test->base_connection,
-      "handle", handle,
+      "handle", test->bob,
       "object-path", chan_path,
       "sms", TRUE,
       NULL);
@@ -108,8 +104,6 @@ create_contact_chan (Test *test)
 
   g_free (chan_path);
   g_hash_table_unref (props);
-
-  tp_handle_unref (test->contact_repo, handle);
 }
 
 static void
