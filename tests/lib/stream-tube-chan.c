@@ -8,6 +8,8 @@
  * notice and this notice are preserved.
  */
 
+#include "config.h"
+
 #include "stream-tube-chan.h"
 
 #include <telepathy-glib/telepathy-glib.h>
@@ -15,8 +17,10 @@
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/gnio-util.h>
 
+#ifdef HAVE_GIO_UNIX
 #include <gio/gunixsocketaddress.h>
 #include <gio/gunixconnection.h>
+#endif
 
 #include <glib/gstdio.h>
 
@@ -412,6 +416,7 @@ service_incoming_cb (GSocketService *service,
 
   if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
     {
+#ifdef HAVE_GIO_UNIX
       GCredentials *creds;
       guchar byte;
 
@@ -423,6 +428,10 @@ service_incoming_cb (GSocketService *service,
       g_assert_cmpuint (byte, ==,
           g_value_get_uchar (self->priv->access_control_param));
       g_object_unref (creds);
+#else
+      /* Tests shouldn't use this if not supported */
+      g_assert_not_reached ();
+#endif
     }
   else if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_PORT)
     {
@@ -471,11 +480,13 @@ create_local_socket (TpTestsStreamTubeChannel *self,
 
   switch (address_type)
     {
+#ifdef HAVE_GIO_UNIX
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
         {
           address = g_unix_socket_address_new (tmpnam (NULL));
           break;
         }
+#endif
 
       case TP_SOCKET_ADDRESS_TYPE_IPV4:
       case TP_SOCKET_ADDRESS_TYPE_IPV6:
@@ -509,6 +520,7 @@ create_local_socket (TpTestsStreamTubeChannel *self,
 
   switch (address_type)
     {
+#ifdef HAVE_GIO_UNIX
       case TP_SOCKET_ADDRESS_TYPE_UNIX:
         self->priv->unix_address = g_strdup (g_unix_socket_address_get_path (
               G_UNIX_SOCKET_ADDRESS (effective_address)));
@@ -518,6 +530,7 @@ create_local_socket (TpTestsStreamTubeChannel *self,
             g_unix_socket_address_get_path (
               G_UNIX_SOCKET_ADDRESS (effective_address)));
         break;
+#endif
 
       case TP_SOCKET_ADDRESS_TYPE_IPV4:
       case TP_SOCKET_ADDRESS_TYPE_IPV6:
@@ -620,6 +633,7 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
 
       case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
         {
+#ifdef HAVE_GIO_UNIX
           GError *error = NULL;
           guchar byte = g_random_int_range (0, G_MAXUINT8);
 
@@ -629,6 +643,10 @@ tp_tests_stream_tube_channel_peer_connected (TpTestsStreamTubeChannel *self,
           g_assert_no_error (error);
 
           connection_param = tp_g_value_slice_new_byte (byte);
+#else
+          /* Tests shouldn't use this if not supported */
+          g_assert_not_reached ();
+#endif
         }
         break;
 
