@@ -35,16 +35,20 @@ typedef struct {
 } TestContext;
 
 TestContext contexts[] = {
+#ifdef HAVE_GIO_UNIX
   { FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS },
+#endif
   { FALSE, TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
   { FALSE, TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
-  { FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS },
   { FALSE, TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_PORT },
 
+#ifdef HAVE_GIO_UNIX
   { TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
+  { TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS },
+#endif
   { TRUE, TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
   { TRUE, TP_SOCKET_ADDRESS_TYPE_IPV6, TP_SOCKET_ACCESS_CONTROL_LOCALHOST },
-  { TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX, TP_SOCKET_ACCESS_CONTROL_CREDENTIALS },
   { TRUE, TP_SOCKET_ADDRESS_TYPE_IPV4, TP_SOCKET_ACCESS_CONTROL_PORT },
 
   { FALSE, NUM_TP_SOCKET_ADDRESS_TYPES, NUM_TP_SOCKET_ACCESS_CONTROLS }
@@ -629,7 +633,7 @@ static void
 test_accept_twice (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
+  create_tube_service (test, FALSE, TP_SOCKET_ADDRESS_TYPE_IPV4,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
 
   tp_stream_tube_channel_accept_async (test->tube, tube_accept_cb, test);
@@ -650,7 +654,7 @@ test_accept_outgoing (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   /* Try to accept an outgoing channel */
-  create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
+  create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_IPV4,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST, FALSE);
 
   tp_stream_tube_channel_accept_async (test->tube, tube_accept_cb, test);
@@ -881,7 +885,7 @@ test_offer_bad_connection_conn_first (Test *test,
   gchar cm_buffer[BUFFER_SIZE];
 
   /* Offer a tube to Bob */
-  create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
+  create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_IPV4,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST, TRUE);
 
   tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
@@ -943,7 +947,7 @@ test_offer_bad_connection_sig_first (Test *test,
   gchar cm_buffer[BUFFER_SIZE];
 
   /* Offer a tube to Bob */
-  create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
+  create_tube_service (test, TRUE, TP_SOCKET_ADDRESS_TYPE_IPV4,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST, TRUE);
 
   tp_stream_tube_channel_offer_async (test->tube, NULL, tube_offer_cb, test);
