@@ -626,6 +626,7 @@ got_pending_senders_contact_by_handle_cb (TpConnection *connection,
   if (error != NULL)
     {
       DEBUG ("Failed to prepare TpContact: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
       goto out;
     }
 
@@ -637,8 +638,7 @@ got_pending_senders_contact_by_handle_cb (TpConnection *connection,
   got_pending_senders_contact (self, parts_list, n_contacts, contacts);
 
 out:
-  _tp_proxy_set_feature_prepared (TP_PROXY (self),
-      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
+  g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
@@ -660,6 +660,7 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
   if (error != NULL)
     {
       DEBUG ("Failed to prepare TpContact: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
       goto out;
     }
 
@@ -679,8 +680,7 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
   got_pending_senders_contact (self, parts_list, n_contacts, contacts);
 
 out:
-  _tp_proxy_set_feature_prepared (TP_PROXY (self),
-      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
+  g_simple_async_result_complete (result);
   g_object_unref (result);
 }
 
