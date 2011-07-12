@@ -1,3 +1,22 @@
+telepathy-glib 0.15.4 (2011-07-12)
+==================================
+
+The “A-level magical theory” release.
+
+This new release in the 0.15 development cycle fixes a bug introduced in 0.15.0
+which could lead to you losing incoming messages. We strongly advise upgrading
+to this release if you're already using 0.15.0 or later. 0.14.x releases are
+not affected by this bug.
+
+Fixes:
+
+• TpTextChannel never finishes preparing if there are pending messages with no
+  message-sender-id (fd.o#39172, Will, ably assisted by Jonny)
+
+• Cope better if UNIX sockets are unsupported (fd.o#38997, Guillaume)
+
+• Fix some compiler warnings (Xavier)
+
 telepathy-glib 0.15.3 (2011-07-08)
 ==================================
 
