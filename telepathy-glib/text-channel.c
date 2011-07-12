@@ -640,6 +640,7 @@ got_pending_senders_contact_by_handle_cb (TpConnection *connection,
 out:
   g_simple_async_result_complete (result);
   g_object_unref (result);
+  g_object_unref (self);
 }
 
 static void
@@ -682,6 +683,7 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
 out:
   g_simple_async_result_complete (result);
   g_object_unref (result);
+  g_object_unref (self);
 }
 
 /* There is no TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST (fdo #32433) */
