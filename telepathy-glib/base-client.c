@@ -2008,7 +2008,7 @@ delegate_channels_if_needed (TpBaseClient *self,
 {
   GList *requests, *l;
   const gchar *handler_to_delegate = NULL;
-  gint64 user_action_time;
+  gint64 user_action_time = 0;
   guint i;
   GList *chans = NULL;
   gboolean delegate = FALSE;
