@@ -333,6 +333,7 @@ add_content (TfCallChannel *self, const gchar *content_path)
     {
       /* Error was already transmitted to the CM by TfCallContent */
       g_clear_error (&error);
+      g_object_unref (self);
       return FALSE;
     }
 
