@@ -380,9 +380,8 @@ tp_channel_dispatch_operation_set_property (GObject *object,
           if (tmp == NULL)
             break;
 
-          self->priv->channels = g_ptr_array_sized_new (tmp->len);
-          g_ptr_array_set_free_func (self->priv->channels,
-              (GDestroyNotify) g_object_unref);
+          self->priv->channels = _tp_g_ptr_array_sized_new_with_free_func (
+              tmp->len, g_object_unref);
 
           for (i = 0; i < tmp->len; i++)
             g_ptr_array_add (self->priv->channels,
@@ -536,9 +535,8 @@ update_channels_array (TpChannelDispatchOperation *self,
       old = self->priv->channels;
     }
 
-  self->priv->channels = g_ptr_array_sized_new (channels->len);
-  g_ptr_array_set_free_func (self->priv->channels,
-      (GDestroyNotify) g_object_unref);
+  self->priv->channels = _tp_g_ptr_array_sized_new_with_free_func (channels->len,
+      g_object_unref);
 
   for (i = 0; i < channels->len; i++)
     {

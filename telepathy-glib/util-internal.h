@@ -77,4 +77,8 @@ GList * _tp_create_channel_request_list (TpDBusDaemon *dbus,
 gboolean _tp_bind_connection_status_to_boolean (GBinding *binding,
     const GValue *src_value, GValue *dest_value, gpointer user_data);
 
+/* Suggested to include in GLib: bug #654450 */
+GPtrArray *_tp_g_ptr_array_sized_new_with_free_func (guint reserved_size,
+    GDestroyNotify element_free_func);
+
 #endif /* __TP_UTIL_INTERNAL_H__ */
