@@ -789,6 +789,52 @@ test_ack_all_pending_messages (Test *test,
   g_assert_cmpuint (g_list_length (messages), ==, 0);
 }
 
+static void
+test_pending_messages_with_no_sender_id (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, 0 };
+  TpMessage *cm_message;
+  TpMessage *signalled_message;
+  GList *messages;
+  TpContact *sender;
+  gchar *text;
+
+  g_test_bug ("39172");
+
+  /* Deliberately passing sender=0 so we can set message-sender manually; if we set
+   * it here, or using tp_cm_message_set_sender(), message-sender-id will be
+   * filled in, which is exactly what we don't want.
+   */
+  cm_message = tp_cm_message_new_text (test->base_connection, 0,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL, "hi mum");
+  tp_message_set_uint32 (cm_message, 0, "message-sender", test->bob);
+  g_assert_cmpstr (NULL, ==,
+      tp_asv_get_string (tp_message_peek (cm_message, 0), "message-sender-id"));
+  tp_message_mixin_take_received (G_OBJECT (test->chan_service), cm_message);
+
+  test->wait = 1;
+  tp_proxy_prepare_async (test->channel, features,
+      proxy_prepare_cb, test);
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  messages = tp_text_channel_get_pending_messages (test->channel);
+  g_assert (messages != NULL);
+  g_assert_cmpuint (g_list_length (messages), ==, 1);
+
+  signalled_message = messages->data;
+  sender = tp_signalled_message_get_sender (signalled_message);
+  g_assert (sender != NULL);
+  g_assert_cmpstr (tp_contact_get_identifier (sender), ==, "bob");
+
+  text = tp_message_to_text ((TpMessage *) signalled_message, NULL);
+  g_assert_cmpstr (text, ==, "hi mum");
+  g_free (text);
+
+  g_list_free (messages);
+}
+
 int
 main (int argc,
       char **argv)
@@ -816,6 +862,9 @@ main (int argc,
       test_get_sms_length, teardown);
   g_test_add ("/text-channel/ack-all-pending-messages", Test, NULL, setup,
       test_ack_all_pending_messages, teardown);
+
+  g_test_add ("/text-channel/pending-messages-with-no-sender-id", Test, NULL,
+      setup, test_pending_messages_with_no_sender_id, teardown);
 
   return g_test_run ();
 }
