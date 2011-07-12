@@ -626,6 +626,7 @@ got_pending_senders_contact_by_handle_cb (TpConnection *connection,
   if (error != NULL)
     {
       DEBUG ("Failed to prepare TpContact: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
       goto out;
     }
 
@@ -637,8 +638,9 @@ got_pending_senders_contact_by_handle_cb (TpConnection *connection,
   got_pending_senders_contact (self, parts_list, n_contacts, contacts);
 
 out:
-  _tp_proxy_set_feature_prepared (TP_PROXY (self),
-      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+  g_object_unref (self);
 }
 
 static void
@@ -659,6 +661,7 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
   if (error != NULL)
     {
       DEBUG ("Failed to prepare TpContact: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
       goto out;
     }
 
@@ -678,8 +681,9 @@ got_pending_senders_contact_by_id_cb (TpConnection *connection,
   got_pending_senders_contact (self, parts_list, n_contacts, contacts);
 
 out:
-  _tp_proxy_set_feature_prepared (TP_PROXY (self),
-      TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, TRUE);
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+  g_object_unref (self);
 }
 
 /* There is no TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST (fdo #32433) */
@@ -698,7 +702,8 @@ get_pending_messages_cb (TpProxy *proxy,
   guint i;
   GPtrArray *messages;
   TpIntSet *senders;
-  GList *parts_list = NULL;
+  /* Messages we're waiting for a sender for */
+  GQueue outstanding = G_QUEUE_INIT;
   GPtrArray *sender_ids;
 
   self->priv->got_initial_messages = TRUE;
@@ -711,6 +716,7 @@ get_pending_messages_cb (TpProxy *proxy,
           "Failed to get PendingMessages property: %s", error->message);
 
       g_simple_async_result_complete (result);
+      return;
     }
 
   if (!G_VALUE_HOLDS (value, ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST))
@@ -721,6 +727,7 @@ get_pending_messages_cb (TpProxy *proxy,
           "PendingMessages property is of the wrong type");
 
       g_simple_async_result_complete (result);
+      return;
     }
 
   senders = tp_intset_new ();
@@ -756,8 +763,7 @@ get_pending_messages_cb (TpProxy *proxy,
       if (sender_id != NULL)
         g_ptr_array_add (sender_ids, (gpointer) sender_id);
 
-      /* We'll revert the list below when requesting the TpContact objects */
-      parts_list = g_list_prepend (parts_list, copy_parts (parts));
+      g_queue_push_tail (&outstanding, copy_parts (parts));
     }
 
   if (tp_intset_size (senders) == 0)
@@ -766,23 +772,24 @@ get_pending_messages_cb (TpProxy *proxy,
     }
   else
     {
-      TpConnection *conn;
-
-      parts_list = g_list_reverse (parts_list);
-
-      conn = tp_channel_borrow_connection (TP_CHANNEL (proxy));
+      TpConnection *conn = tp_channel_borrow_connection (TP_CHANNEL (proxy));
 
       DEBUG ("Pending messages may be re-ordered, please fix CM (%s)",
           tp_proxy_get_object_path (conn));
 
-      /* Pass ownership of parts_list to the callback */
-      if (sender_ids->len == g_list_length (parts_list))
+      /* If we have an identifier for the sender of every outstanding message,
+       * use those rather than handles to get the contacts. (There may be
+       * duplicates, but telepathy-glib copes.)
+       *
+       * Ownership of the parts list in 'outstanding' is transferred to the
+       * callbacks.
+       */
+      if (sender_ids->len == outstanding.length)
         {
-          /* Use the sender ID rather than the handles */
           tp_connection_get_contacts_by_id (conn, sender_ids->len,
               (const gchar * const *) sender_ids->pdata,
-              0, NULL, got_pending_senders_contact_by_id_cb, parts_list,
-              (GDestroyNotify) free_parts_list, G_OBJECT (result));
+              0, NULL, got_pending_senders_contact_by_id_cb, outstanding.head,
+              (GDestroyNotify) free_parts_list, g_object_ref (result));
         }
       else
         {
@@ -790,11 +797,12 @@ get_pending_messages_cb (TpProxy *proxy,
 
           tp_connection_get_contacts_by_handle (conn, tmp->len,
               (TpHandle *) tmp->data,
-              0, NULL, got_pending_senders_contact_by_handle_cb, parts_list,
-              (GDestroyNotify) free_parts_list, G_OBJECT (result));
+              0, NULL, got_pending_senders_contact_by_handle_cb, outstanding.head,
+              (GDestroyNotify) free_parts_list, g_object_ref (result));
 
           g_array_unref (tmp);
         }
+
     }
 
   tp_intset_destroy (senders);
