@@ -31,6 +31,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CONTACTS
 #include "telepathy-glib/connection-internal.h"
+#include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/util-internal.h"
 
@@ -1337,6 +1338,19 @@ tp_contact_class_init (TpContactClass *klass)
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_STRING);
 }
 
+TpContact *
+_tp_contact_new (TpConnection *connection,
+    TpHandle handle,
+    const gchar *identifier)
+{
+  TpContact *self = TP_CONTACT (g_object_new (TP_TYPE_CONTACT, NULL));
+
+  self->priv->connection = g_object_ref (connection);
+  self->priv->handle = handle;
+  self->priv->identifier = g_strdup (identifier);
+
+  return self;
+}
 
 static TpContact *
 tp_contact_ensure (TpConnection *connection,
@@ -1350,11 +1364,8 @@ tp_contact_ensure (TpConnection *connection,
       return g_object_ref (self);
     }
 
-  self = TP_CONTACT (g_object_new (TP_TYPE_CONTACT, NULL));
-
-  self->priv->handle = handle;
+  self = _tp_contact_new (connection, handle, NULL);
   _tp_connection_add_contact (connection, handle, self);
-  self->priv->connection = g_object_ref (connection);
 
   return self;
 }

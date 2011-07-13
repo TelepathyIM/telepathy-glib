@@ -73,6 +73,7 @@ IGNORE_HFILES=\
     channel-internal.h \
     cm-message-internal.h \
     connection-internal.h \
+    contact-internal.h \
     contact-list-channel-internal.h \
     debug-internal.h \
     handle-channels-context-internal.h \
