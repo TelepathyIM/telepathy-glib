@@ -406,8 +406,11 @@ tf_channel_dispose (GObject *object)
   g_debug (G_STRFUNC);
 
 
-  g_hash_table_unref (self->priv->media_signalling_contents);
-  self->priv->media_signalling_contents = NULL;
+  if (self->priv->media_signalling_contents != NULL)
+    {
+      g_hash_table_unref (self->priv->media_signalling_contents);
+      self->priv->media_signalling_contents = NULL;
+    }
 
   tp_clear_object (&self->priv->media_signalling_channel);
   tp_clear_object (&self->priv->call_channel);
