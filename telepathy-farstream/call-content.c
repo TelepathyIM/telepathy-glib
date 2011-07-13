@@ -966,8 +966,8 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   GError *myerror = NULL;
   guint i;
   const gchar * const *interfaces;
-  gboolean got_media_interface = FALSE;;
-  gboolean got_video_control_interface = FALSE;;
+  gboolean got_media_interface = FALSE;
+  gboolean got_video_control_interface = FALSE;
 
   if (error)
     {
