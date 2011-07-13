@@ -231,9 +231,31 @@ tf_call_channel_dispose (GObject *object)
 
   g_debug (G_STRFUNC);
 
+  /* Some of the contents may have more than our ref - if they're in the
+     middle of an async op, they're reffed by the async result.
+     In this case, unreffing them (implicitely) through destruction of
+     the hash table they're in will not dispose them just yet.
+     However, they keep an unreffed pointer to the call channel, and will,
+     when eventually disposed of, call upon the call channel to put their
+     conference back. Since that call channel will then be disposed of,
+     I think we can all agree that this is a bit unfortunate.
+     So we force dispose the contents as other objects already do, and
+     add checks to the content routines to bail out when the object has
+     already been disposed of. */
   if (self->contents)
-    g_hash_table_destroy (self->contents);
-  self->contents = NULL;
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+
+      g_hash_table_iter_init (&iter, self->contents);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          g_object_run_dispose (G_OBJECT (value));
+        }
+
+      g_hash_table_destroy (self->contents);
+      self->contents = NULL;
+    }
 
   if (self->participants)
     g_ptr_array_unref (self->participants);

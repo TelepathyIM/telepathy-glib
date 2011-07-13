@@ -291,6 +291,10 @@ tf_call_content_dispose (GObject *object)
     g_object_unref (self->proxy);
   self->proxy = NULL;
 
+  /* We do not hold a ref to the call channel, and use it as a flag to ensure
+   * we will bail out when disposed */
+  self->call_channel = NULL;
+
   if (G_OBJECT_CLASS (tf_call_content_parent_class)->dispose)
     G_OBJECT_CLASS (tf_call_content_parent_class)->dispose (object);
 }
@@ -478,6 +482,10 @@ process_codec_offer (TfCallContent *self, const gchar *offer_objpath,
   FsStream *fsstream;
   GList *fscodecs;
 
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+      return;
+
   if (!tp_dbus_check_valid_object_path (offer_objpath, &error))
     {
       tf_content_error (TF_CONTENT (self),
@@ -521,6 +529,10 @@ on_content_video_keyframe_requested (TfFutureCallContent *proxy,
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
   GstPad *pad;
 
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    return;
+
   /* In case there is no session, ignore the request a new session should start
    * with sending a KeyFrame in any case */
   if (self->fssession == NULL)
@@ -553,6 +565,10 @@ on_content_video_resolution_changed (TfFutureCallContent *proxy,
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
   guint width, height;
 
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    return;
+
   tp_value_array_unpack ((GValueArray *)resolution, 2,
     &width, &height, NULL);
 
@@ -576,6 +592,10 @@ on_content_video_bitrate_changed (TfFutureCallContent *proxy,
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
 
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    return;
+
   g_message ("Setting bitrate to %d bits/s", bitrate);
   self->bitrate = bitrate;
 
@@ -590,6 +610,11 @@ on_content_video_framerate_changed (TfFutureCallContent *proxy,
   GObject *weak_object)
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
+
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    return;
+
   g_message ("updated framerate requested: %d", framerate);
 
   self->framerate = framerate;
@@ -603,6 +628,10 @@ on_content_video_mtu_changed (TfFutureCallContent *proxy,
   GObject *weak_object)
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
+
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    return;
 
   g_atomic_int_set (&self->mtu, mtu);
 
@@ -633,6 +662,16 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   const gchar *conference_type;
   gboolean valid;
   GList *codec_prefs;
+
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    {
+      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Call content has been disposed of");
+      g_simple_async_result_complete (res);
+      g_object_unref (res);
+      return;
+    }
 
   if (error != NULL)
     {
@@ -826,6 +865,14 @@ got_content_video_control_properties (TpProxy *proxy, GHashTable *properties,
       goto error;
     }
 
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    {
+      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Call content has been disposed of");
+      goto error;
+    }
+
   if (properties == NULL)
     {
       tf_content_error_literal (TF_CONTENT (self),
@@ -940,6 +987,10 @@ new_codec_offer (TfFutureCallContent *proxy,
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
 
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    return;
+
   /* Ignore signals before we get the first codec offer property */
   if (!self->got_codec_offer_property)
     return;
@@ -975,6 +1026,16 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
           TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
           "Error getting the Content's properties: %s", error->message);
       g_simple_async_result_set_from_error (res, error);
+      g_simple_async_result_complete (res);
+      g_object_unref (res);
+      return;
+    }
+
+  /* Guard against early disposal */
+  if (self->call_channel == NULL)
+    {
+      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+          "Call content has been disposed of");
       g_simple_async_result_complete (res);
       g_object_unref (res);
       return;
@@ -1325,6 +1386,10 @@ tf_call_content_bus_message (TfCallContent *content,
   const gchar *debug;
   GHashTableIter iter;
   gpointer key, value;
+
+  /* Guard against early disposal */
+  if (content->call_channel == NULL)
+    return FALSE;
 
   if (!content->fssession)
     return FALSE;
