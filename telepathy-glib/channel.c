@@ -2218,7 +2218,7 @@ channel_join_cb (TpChannel *self,
       DEBUG ("join failed: %s", error->message);
       g_simple_async_result_set_from_error (result, error);
     }
-    
+
   g_simple_async_result_complete_in_idle (result);
 }
 
