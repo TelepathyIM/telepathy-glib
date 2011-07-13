@@ -2206,6 +2206,89 @@ tp_channel_get_initiator_identifier (TpChannel *self)
 /* tp_cli callbacks can potentially be called in a re-entrant way,
  * so we can't necessarily complete @result without using an idle. */
 static void
+channel_join_cb (TpChannel *self,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("join failed: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+    
+  g_simple_async_result_complete_in_idle (result);
+}
+
+/**
+ * tp_channel_join_async:
+ * @self: a #TpChannel
+ * @message: the join message
+ * @callback: a callback to call when we joined the channel
+ * @user_data: data to pass to @callback
+ *
+ * Join channel @self with @message as join message.
+ *
+ * When we joined the channel, @callback will be called.
+ * You can then call tp_channel_join_finish() to get the result of
+ * the operation.
+ *
+ * Note that unlike tp_channel_leave_async(), %TP_CHANNEL_FEATURE_GROUP feature
+ * must be prepared before calling this function.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_channel_join_async (TpChannel *self,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GArray *array;
+  TpHandle self_handle;
+
+  g_return_if_fail (TP_IS_CHANNEL (self));
+  g_return_if_fail (tp_proxy_is_prepared (self, TP_CHANNEL_FEATURE_GROUP));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_channel_join_async);
+
+  self_handle = tp_channel_group_get_self_handle (self);
+  array = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), 1);
+  g_array_append_val (array, self_handle);
+
+  tp_cli_channel_interface_group_call_add_members (self, -1, array, message,
+      channel_join_cb, result, g_object_unref, NULL);
+
+  g_array_unref (array);
+}
+
+/**
+ * tp_channel_join_finish:
+ * @self: a #TpChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to join a channel.
+ *
+ * Returns: %TRUE if the channel has been joined; %FALSE otherwise
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_channel_join_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_channel_join_async);
+}
+
+/* tp_cli callbacks can potentially be called in a re-entrant way,
+ * so we can't necessarily complete @result without using an idle. */
+static void
 channel_close_cb (TpChannel *channel,
     const GError *error,
     gpointer user_data,
@@ -2384,6 +2467,10 @@ leave_channel_async (TpChannel *self,
  * When we left the channel, @callback will be called.
  * You can then call tp_channel_leave_finish() to get the result of
  * the operation.
+ *
+ * Note that unlike tp_channel_join_async(), %TP_CHANNEL_FEATURE_GROUP feature
+ * does not have to be prepared and will be prepared for you. But this is a
+ * deprecated behaviour.
  *
  * Since: 0.13.10
  */

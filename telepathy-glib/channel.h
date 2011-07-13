@@ -134,6 +134,15 @@ GQuark tp_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;
 TpChannelChatState tp_channel_get_chat_state (TpChannel *self,
     TpHandle contact);
 
+void tp_channel_join_async (TpChannel *self,
+    const gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_channel_join_finish (TpChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
 void tp_channel_leave_async (TpChannel *self,
     TpChannelGroupChangeReason reason,
     const gchar *message,

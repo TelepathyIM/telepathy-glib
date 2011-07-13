@@ -542,6 +542,39 @@ test_password_provide (Test *test,
   g_assert_no_error (test->error);
 }
 
+static void
+join_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_channel_join_finish (TP_CHANNEL (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_join_room (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_CHANNEL_FEATURE_GROUP, 0 };
+
+  tp_proxy_prepare_async (test->channel_room, features,
+      channel_prepared_cb, test);
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  tp_channel_join_async (test->channel_room, "Hello World",
+      join_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+}
+
 int
 main (int argc,
       char **argv)
@@ -579,6 +612,9 @@ main (int argc,
       test_password_feature, teardown);
   g_test_add ("/channel/password/provide", Test, NULL, setup,
       test_password_provide, teardown);
+
+  g_test_add ("/channel/join/room", Test, NULL, setup,
+      test_join_room, teardown);
 
   return g_test_run ();
 }

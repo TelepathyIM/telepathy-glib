@@ -3075,6 +3075,8 @@ tp_channel_get_identifier
 tp_channel_get_requested
 tp_channel_get_initiator_handle
 tp_channel_get_initiator_identifier
+tp_channel_join_async
+tp_channel_join_finish
 tp_channel_leave_async
 tp_channel_leave_finish
 tp_channel_close_async
