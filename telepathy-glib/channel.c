@@ -2418,8 +2418,30 @@ call_close:
   leave_ctx_free (ctx);
 }
 
-static void
-leave_channel_async (TpChannel *self,
+/**
+ * tp_channel_leave_async:
+ * @self: a #TpChannel
+ * @reason: the leave reason
+ * @message: the leave message
+ * @callback: a callback to call when we left the channel
+ * @user_data: data to pass to @callback
+ *
+ * Leave channel @self with @reason as reason and @message as leave message.
+ * If @self doesn't implement #TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP or if
+ * for any reason we can't properly leave the channel, we close it.
+ *
+ * When we left the channel, @callback will be called.
+ * You can then call tp_channel_leave_finish() to get the result of
+ * the operation.
+ *
+ * Note that unlike tp_channel_join_async(), %TP_CHANNEL_FEATURE_GROUP feature
+ * does not have to be prepared and will be prepared for you. But this is a
+ * deprecated behaviour.
+ *
+ * Since: 0.13.10
+ */
+void
+tp_channel_leave_async (TpChannel *self,
     TpChannelGroupChangeReason reason,
     const gchar *message,
     GAsyncReadyCallback callback,
@@ -2450,38 +2472,6 @@ leave_channel_async (TpChannel *self,
   ctx = leave_ctx_new (result, message, reason);
 
   tp_proxy_prepare_async (self, features, group_prepared_cb, ctx);
-}
-
-/**
- * tp_channel_leave_async:
- * @self: a #TpChannel
- * @reason: the leave reason
- * @message: the leave message
- * @callback: a callback to call when we left the channel
- * @user_data: data to pass to @callback
- *
- * Leave channel @self with @reason as reason and @message as leave message.
- * If @self doesn't implement #TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP or if
- * for any reason we can't properly leave the channel, we close it.
- *
- * When we left the channel, @callback will be called.
- * You can then call tp_channel_leave_finish() to get the result of
- * the operation.
- *
- * Note that unlike tp_channel_join_async(), %TP_CHANNEL_FEATURE_GROUP feature
- * does not have to be prepared and will be prepared for you. But this is a
- * deprecated behaviour.
- *
- * Since: 0.13.10
- */
-void
-tp_channel_leave_async (TpChannel *self,
-    TpChannelGroupChangeReason reason,
-    const gchar *message,
-    GAsyncReadyCallback callback,
-    gpointer user_data)
-{
-  leave_channel_async (self, reason, message, callback, user_data);
 }
 
 /**
