@@ -1288,53 +1288,15 @@ tp_channel_finalize (GObject *object)
 
   DEBUG ("%p", self);
 
-  if (self->priv->group_remove_error != NULL)
-    g_clear_error (&self->priv->group_remove_error);
-
-  if (self->priv->group_local_pending_info != NULL)
-    {
-      g_hash_table_destroy (self->priv->group_local_pending_info);
-      self->priv->group_local_pending_info = NULL;
-    }
-
-  if (self->priv->group_members != NULL)
-    {
-      tp_intset_destroy (self->priv->group_members);
-      self->priv->group_members = NULL;
-    }
-
-  if (self->priv->group_local_pending != NULL)
-    {
-      tp_intset_destroy (self->priv->group_local_pending);
-      self->priv->group_local_pending = NULL;
-    }
-
-  if (self->priv->group_remote_pending != NULL)
-    {
-      tp_intset_destroy (self->priv->group_remote_pending);
-      self->priv->group_remote_pending = NULL;
-    }
-
-  if (self->priv->group_handle_owners != NULL)
-    {
-      g_hash_table_destroy (self->priv->group_handle_owners);
-      self->priv->group_handle_owners = NULL;
-    }
-
-  if (self->priv->introspect_needed != NULL)
-    {
-      g_queue_free (self->priv->introspect_needed);
-      self->priv->introspect_needed = NULL;
-    }
-
-  if (self->priv->chat_states != NULL)
-    {
-      g_hash_table_destroy (self->priv->chat_states);
-      self->priv->chat_states = NULL;
-    }
-
-  g_assert (self->priv->channel_properties != NULL);
-  g_hash_table_destroy (self->priv->channel_properties);
+  g_clear_error (&self->priv->group_remove_error);
+  tp_clear_pointer (&self->priv->group_local_pending_info, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->group_members, tp_intset_destroy);
+  tp_clear_pointer (&self->priv->group_local_pending, tp_intset_destroy);
+  tp_clear_pointer (&self->priv->group_remote_pending, tp_intset_destroy);
+  tp_clear_pointer (&self->priv->group_handle_owners, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->introspect_needed, g_queue_free);
+  tp_clear_pointer (&self->priv->chat_states, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->channel_properties, g_hash_table_unref);
 
   g_free (self->priv->identifier);
 
