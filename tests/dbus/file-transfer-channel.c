@@ -61,6 +61,18 @@ typedef struct {
 /* Callbacks */
 
 static void
+state_notify_cb (GObject *source,
+    GParamSpec *pspec,
+    Test *test)
+{
+  DEBUG ("state_notify_cb was triggered");
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 channel_prepared_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -73,6 +85,39 @@ channel_prepared_cb (GObject *source,
   if (test->wait <= 0)
     g_main_loop_quit (test->mainloop);
 }
+
+static void
+file_offer_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+  DEBUG ("file_offer_cb reached");
+
+  tp_file_transfer_channel_offer_file_finish (
+      TP_FILE_TRANSFER_CHANNEL (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+file_accept_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+  DEBUG ("file_accept_cb reached");
+
+  tp_file_transfer_channel_accept_file_finish (
+      TP_FILE_TRANSFER_CHANNEL (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
 
 /* Internal functions */
 
@@ -213,6 +258,79 @@ teardown (Test *test,
 
 typedef void (*TestFunc) (Test *, gconstpointer);
 
+static gchar *
+test_context_to_str (TestContext *ctx,
+    const gchar *base)
+{
+  const gchar *socket, *access_control;
+
+  switch (ctx->address_type)
+    {
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+        socket = "unix";
+        break;
+      case TP_SOCKET_ADDRESS_TYPE_IPV4:
+        socket = "ipv4";
+        break;
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
+        socket = "ipv6";
+        break;
+      default:
+        g_assert_not_reached ();
+    }
+
+  switch (ctx->access_control)
+    {
+      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
+        access_control = "localhost";
+        break;
+      case TP_SOCKET_ACCESS_CONTROL_PORT:
+        access_control = "port";
+        break;
+      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
+        access_control = "credentials";
+        break;
+      default:
+        g_assert_not_reached ();
+    }
+
+  return g_strdup_printf ("%s/%s/%s", base, socket, access_control);
+}
+
+static void
+socket_connected (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_clear_object (&test->cm_stream);
+
+  test->cm_stream = G_IO_STREAM (g_socket_client_connect_finish (
+        G_SOCKET_CLIENT (source), result, &test->error));
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+run_file_transfer_test (const char *test_path,
+    TestFunc ftest)
+{
+  guint i;
+
+  for (i = 0; contexts[i].address_type != NUM_TP_SOCKET_ADDRESS_TYPES; i++)
+    {
+      gchar *path = test_context_to_str (&contexts[i], test_path);
+
+      g_test_add (path, Test, GUINT_TO_POINTER (i), setup, ftest, teardown);
+
+      g_free (path);
+    }
+}
+
+
 /* Tests */
 
 /* Test channel creation */
@@ -254,6 +372,7 @@ test_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GDateTime *date1, *date2;
+  TpFileTransferStateChangeReason reason;
   const GError *error = NULL;
 
   create_file_transfer_channel (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
@@ -276,11 +395,166 @@ test_properties (Test *test,
   g_assert_cmpuint (tp_file_transfer_channel_get_size (test->channel),
       ==, 9001);
 
+  g_assert_cmpuint (tp_file_transfer_channel_get_state (test->channel, &reason),
+      ==, TP_FILE_TRANSFER_STATE_PENDING);
+
   g_assert_cmpuint (tp_file_transfer_channel_get_transferred_bytes
       (test->channel), ==, 42);
 
   error = tp_proxy_get_invalidated (test->channel);
   g_assert_no_error (error);
+}
+
+/* Test sending files */
+static void
+test_provide_success (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GSocketAddress *address;
+  GSocketClient *client;
+  GFile *file;
+  TpFileTransferStateChangeReason reason;
+  guint i = GPOINTER_TO_UINT (data);
+
+  create_file_transfer_channel (test, TRUE, contexts[i].address_type,
+      contexts[i].access_control);
+
+  g_assert_cmpuint (tp_file_transfer_channel_get_state (test->channel, &reason),
+      ==, TP_FILE_TRANSFER_STATE_PENDING);
+
+  file = g_file_new_for_uri ("file:///badger/mushroom/snake.txt");
+  tp_file_transfer_channel_offer_file_async (test->channel,
+      file, file_offer_cb, test);
+  g_object_unref (file);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert_cmpuint (tp_file_transfer_channel_get_state (test->channel, &reason),
+      ==, TP_FILE_TRANSFER_STATE_PENDING);
+
+  g_signal_connect (test->channel, "notify::state",
+      G_CALLBACK (state_notify_cb), test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* File transfer should be in the open state by now */
+  g_assert_cmpuint (tp_file_transfer_channel_get_state (test->channel, &reason),
+      ==, TP_FILE_TRANSFER_STATE_OPEN);
+
+  /* A wild CLIENT appears */
+  address = tp_tests_file_transfer_channel_get_server_address
+    (test->chan_service);
+  g_assert (address != NULL);
+  client = g_socket_client_new ();
+  g_socket_client_connect_async (client, G_SOCKET_CONNECTABLE (address),
+      NULL, socket_connected, test);
+
+  g_object_unref (client);
+  g_object_unref (address);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+  g_assert (test->cm_stream != NULL);
+}
+
+static void
+test_cancel_transfer (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpFileTransferStateChangeReason reason;
+
+  create_file_transfer_channel (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+
+  g_assert_cmpuint (tp_file_transfer_channel_get_state (test->channel, &reason),
+      ==, TP_FILE_TRANSFER_STATE_PENDING);
+}
+
+/* Test receiving files */
+static void
+test_accept_success (Test *test, gconstpointer data G_GNUC_UNUSED)
+{
+  GFile *file;
+  TpFileTransferStateChangeReason reason;
+  guint i = GPOINTER_TO_UINT (data);
+
+  create_file_transfer_channel (test, FALSE, contexts[i].address_type,
+      contexts[i].access_control);
+
+  g_assert_cmpuint (tp_file_transfer_channel_get_state (test->channel, &reason),
+      ==, TP_FILE_TRANSFER_STATE_PENDING);
+
+  file = g_file_new_for_uri ("file:///tmp/file-transfer");
+  tp_file_transfer_channel_accept_file_async (test->channel,
+      file, 0, file_accept_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert_cmpuint (tp_file_transfer_channel_get_state (test->channel, &reason),
+      ==, TP_FILE_TRANSFER_STATE_ACCEPTED);
+
+  g_signal_connect (test->channel, "notify::state",
+      G_CALLBACK (state_notify_cb), test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* File transfer should be in the open state by now */
+  g_assert_cmpuint (tp_file_transfer_channel_get_state (test->channel, &reason),
+      ==, TP_FILE_TRANSFER_STATE_OPEN);
+
+  g_object_unref (file);
+}
+
+static void
+test_accept_twice (Test *test, gconstpointer data G_GNUC_UNUSED)
+{
+  GFile *file;
+
+  create_file_transfer_channel (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+
+  file = g_file_new_for_uri ("file:///tmp/file-transfer");
+
+  tp_file_transfer_channel_accept_file_async (test->channel,
+      file, 0, file_accept_cb, test);
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Try to re-accept the transfer */
+  tp_file_transfer_channel_accept_file_async (test->channel,
+      file, 0, file_accept_cb, test);
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
+
+  g_object_unref (file);
+}
+
+static void
+test_accept_outgoing (Test *test, gconstpointer data G_GNUC_UNUSED)
+{
+  GFile *file;
+
+  create_file_transfer_channel (test, TRUE, TP_SOCKET_ADDRESS_TYPE_UNIX,
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
+
+  file = g_file_new_for_uri ("file:///tmp/file-transfer");
+
+  tp_file_transfer_channel_accept_file_async (test->channel,
+      file, 0, file_accept_cb, test);
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_error (test->error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT);
 }
 
 int
@@ -301,6 +575,21 @@ main (int argc,
       test_create_unrequested, teardown);
   g_test_add ("/file-transfer-channel/properties", Test, NULL, setup,
       test_properties, teardown);
+
+  /* Run provide and accept in different contexts */
+  run_file_transfer_test ("/file-transfer-channel/accept/success",
+      test_accept_success);
+  run_file_transfer_test ("/file-transfer-channel/provide/success",
+      test_provide_success);
+
+  /* Test edge cases */
+  /* FIXME: accept_twice has to be after provide/accept_success */
+  g_test_add ("/file-transfer-channel/accept/twice", Test, NULL, setup,
+      test_accept_twice, teardown);
+  g_test_add ("/file-transfer-channel/accept/outgoing", Test, NULL, setup,
+      test_accept_outgoing, teardown);
+  g_test_add ("/file-transfer-channel/provide/cancel", Test, NULL, setup,
+      test_cancel_transfer, teardown);
 
   return g_test_run ();
 }
