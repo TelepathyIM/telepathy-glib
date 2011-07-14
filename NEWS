@@ -1,3 +1,8 @@
+telepathy-farstream 0.1.1 (14 Jul 2011)
+======================================
+- Fix the python bindings
+- Make the VideoControl interface actually work
+
 telepathy-farstream 0.1.0 (27 Jun 2011)
 ======================================
 - Rename from telepathy-farsight to telepathy-farstream 
