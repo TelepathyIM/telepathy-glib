@@ -84,6 +84,7 @@
     <xi:include href="xml/client-message.xml"/>
     <xi:include href="xml/signalled-message.xml"/>
     <xi:include href="xml/text-channel.xml"/>
+    <xi:include href="xml/file-transfer-channel.xml"/>
   </chapter>
 
   <chapter id="ch-service-dbus">
