@@ -84,6 +84,7 @@ IGNORE_HFILES=\
     proxy-internal.h \
     proxy-introspectable.h \
     signalled-message-internal.h \
+    simple-client-factory-internal.h \
     util-internal.h
 
 # Images to copy into HTML directory.

@@ -35,6 +35,7 @@
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/simple-client-factory-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-account-manager-body.h"
 
@@ -681,6 +682,13 @@ tp_account_manager_init_known_interfaces (void)
 TpAccountManager *
 tp_account_manager_new (TpDBusDaemon *bus_daemon)
 {
+  return _tp_account_manager_new_with_factory (NULL, bus_daemon);
+}
+
+TpAccountManager *
+_tp_account_manager_new_with_factory (TpSimpleClientFactory *factory,
+    TpDBusDaemon *bus_daemon)
+{
   TpAccountManager *self;
 
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (bus_daemon), NULL);
@@ -690,6 +698,7 @@ tp_account_manager_new (TpDBusDaemon *bus_daemon)
           "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
           "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
           "object-path", TP_ACCOUNT_MANAGER_OBJECT_PATH,
+          "factory", factory,
           NULL));
 
   return self;

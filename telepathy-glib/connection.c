@@ -42,6 +42,7 @@
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/util-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 
@@ -1786,6 +1787,17 @@ tp_connection_new (TpDBusDaemon *dbus,
                    const gchar *object_path,
                    GError **error)
 {
+  return _tp_connection_new_with_factory (NULL, dbus, bus_name, object_path,
+      error);
+}
+
+TpConnection *
+_tp_connection_new_with_factory (TpSimpleClientFactory *factory,
+    TpDBusDaemon *dbus,
+    const gchar *bus_name,
+    const gchar *object_path,
+    GError **error)
+{
   gchar *dup_path = NULL;
   gchar *dup_name = NULL;
   gchar *dup_unique_name = NULL;
@@ -1831,6 +1843,7 @@ tp_connection_new (TpDBusDaemon *dbus,
         "dbus-daemon", dbus,
         "bus-name", bus_name,
         "object-path", object_path,
+        "factory", factory,
         NULL));
 
 finally:

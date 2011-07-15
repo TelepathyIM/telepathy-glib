@@ -91,6 +91,7 @@ our_headers = \
     run.h \
     signalled-message.h \
     simple-approver.h \
+    simple-client-factory.h \
     simple-handler.h \
     simple-observer.h \
     simple-password-manager.h \
@@ -239,6 +240,8 @@ libtelepathy_glib_internal_la_SOURCES = \
     signalled-message.c \
     signalled-message-internal.h \
     simple-approver.c \
+    simple-client-factory.c \
+    simple-client-factory-internal.h \
     simple-handler.c \
     simple-observer.c \
     simple-password-manager.c \

@@ -36,6 +36,7 @@
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "telepathy-glib/_gen/tp-cli-channel-dispatch-operation-body.h"
@@ -912,6 +913,17 @@ tp_channel_dispatch_operation_new (TpDBusDaemon *bus_daemon,
     GHashTable *immutable_properties,
     GError **error)
 {
+  return _tp_channel_dispatch_operation_new_with_factory (NULL, bus_daemon,
+      object_path, immutable_properties, error);
+}
+
+TpChannelDispatchOperation *
+_tp_channel_dispatch_operation_new_with_factory (TpSimpleClientFactory *factory,
+    TpDBusDaemon *bus_daemon,
+    const gchar *object_path,
+    GHashTable *immutable_properties,
+    GError **error)
+{
   TpChannelDispatchOperation *self;
   gchar *unique_name;
 
@@ -932,6 +944,7 @@ tp_channel_dispatch_operation_new (TpDBusDaemon *bus_daemon,
         "bus-name", unique_name,
         "object-path", object_path,
         "cdo-properties", immutable_properties,
+        "factory", factory,
         NULL));
 
   g_free (unique_name);

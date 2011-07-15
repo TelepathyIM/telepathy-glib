@@ -32,6 +32,7 @@
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 
 #include "_gen/tp-cli-channel-body.h"
@@ -1787,6 +1788,17 @@ tp_channel_new_from_properties (TpConnection *conn,
                                 const GHashTable *immutable_properties,
                                 GError **error)
 {
+  return _tp_channel_new_with_factory (NULL, conn, object_path,
+      immutable_properties, error);
+}
+
+TpChannel *
+_tp_channel_new_with_factory (TpSimpleClientFactory *factory,
+    TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *immutable_properties,
+    GError **error)
+{
   TpProxy *conn_proxy = (TpProxy *) conn;
   TpChannel *ret = NULL;
 
@@ -1809,6 +1821,7 @@ tp_channel_new_from_properties (TpConnection *conn,
         "object-path", object_path,
         "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
         "channel-properties", immutable_properties,
+        "factory", factory,
         NULL));
 
 finally:

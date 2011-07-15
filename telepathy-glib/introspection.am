@@ -38,6 +38,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/debug.c $(srcdir)/debug.h \
 	$(srcdir)/base-client.c $(srcdir)/base-client.h \
 	$(srcdir)/simple-approver.c $(srcdir)/simple-approver.h \
+	$(srcdir)/simple-client-factory.c $(srcdir)/simple-client-factory.h \
 	$(srcdir)/simple-handler.c $(srcdir)/simple-handler.h \
 	$(srcdir)/simple-observer.c $(srcdir)/simple-observer.h \
 	$(srcdir)/dbus-properties-mixin.c $(srcdir)/dbus-properties-mixin.h \

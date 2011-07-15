@@ -35,6 +35,7 @@
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/simple-client-factory-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-channel-request-body.h"
 
@@ -573,6 +574,17 @@ tp_channel_request_new (TpDBusDaemon *bus_daemon,
     GHashTable *immutable_properties,
     GError **error)
 {
+  return _tp_channel_request_new_with_factory (NULL, bus_daemon, object_path,
+      immutable_properties, error);
+}
+
+TpChannelRequest *
+_tp_channel_request_new_with_factory (TpSimpleClientFactory *factory,
+    TpDBusDaemon *bus_daemon,
+    const gchar *object_path,
+    GHashTable *immutable_properties,
+    GError **error)
+{
   TpChannelRequest *self;
   gchar *unique_name;
 
@@ -593,6 +605,7 @@ tp_channel_request_new (TpDBusDaemon *bus_daemon,
         "bus-name", unique_name,
         "object-path", object_path,
         "immutable-properties", immutable_properties,
+        "factory", factory,
         NULL));
 
   g_free (unique_name);
@@ -636,6 +649,17 @@ tp_channel_request_get_immutable_properties (TpChannelRequest *self)
   g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
 
   return self->priv->immutable_properties;
+}
+
+void
+_tp_channel_request_ensure_immutable_properties (TpChannelRequest *self,
+    GHashTable *immutable_properties)
+{
+  if (self->priv->immutable_properties == NULL && immutable_properties != NULL)
+    {
+      self->priv->immutable_properties = g_hash_table_ref (immutable_properties);
+      g_object_notify ((GObject *) self, "immutable-properties");
+    }
 }
 
 /**

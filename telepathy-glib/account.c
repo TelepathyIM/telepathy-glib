@@ -36,6 +36,7 @@
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
+#include "telepathy-glib/simple-client-factory-internal.h"
 #include <telepathy-glib/util-internal.h>
 
 #include "telepathy-glib/_gen/signals-marshal.h"
@@ -1838,6 +1839,15 @@ tp_account_new (TpDBusDaemon *bus_daemon,
     const gchar *object_path,
     GError **error)
 {
+  return _tp_account_new_with_factory (NULL, bus_daemon, object_path, error);
+}
+
+TpAccount *
+_tp_account_new_with_factory (TpSimpleClientFactory *factory,
+    TpDBusDaemon *bus_daemon,
+    const gchar *object_path,
+    GError **error)
+{
   TpAccount *self;
 
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (bus_daemon), NULL);
@@ -1852,6 +1862,7 @@ tp_account_new (TpDBusDaemon *bus_daemon,
           "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
           "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
           "object-path", object_path,
+          "factory", factory,
           NULL));
 
   return self;

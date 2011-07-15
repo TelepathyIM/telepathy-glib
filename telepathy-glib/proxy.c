@@ -386,6 +386,8 @@ struct _TpProxyPrivate {
     guint pending_will_announce_calls;
 
     gboolean dispose_has_run;
+
+    TpSimpleClientFactory *factory;
 };
 
 G_DEFINE_TYPE (TpProxy, tp_proxy, G_TYPE_OBJECT)
@@ -397,6 +399,7 @@ enum
   PROP_BUS_NAME,
   PROP_OBJECT_PATH,
   PROP_INTERFACES,
+  PROP_FACTORY,
   N_PROPS
 };
 
@@ -876,6 +879,9 @@ tp_proxy_get_property (GObject *object,
           g_value_take_boxed (value, g_ptr_array_free (strings, FALSE));
         }
       break;
+    case PROP_FACTORY:
+      g_value_set_object (value, self->priv->factory);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -940,6 +946,10 @@ tp_proxy_set_property (GObject *object,
     case PROP_OBJECT_PATH:
       g_assert (self->object_path == NULL);
       self->object_path = g_value_dup_string (value);
+      break;
+    case PROP_FACTORY:
+      g_assert (self->priv->factory == NULL);
+      self->priv->factory = g_value_dup_object (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1119,6 +1129,7 @@ tp_proxy_dispose (GObject *object)
   tp_proxy_invalidate (self, &e);
 
   tp_clear_object (&self->dbus_daemon);
+  tp_clear_object (&self->priv->factory);
 
   G_OBJECT_CLASS (tp_proxy_parent_class)->dispose (object);
 }
@@ -1324,6 +1335,20 @@ tp_proxy_class_init (TpProxyClass *klass)
       param_spec);
 
   /**
+   * TpProxy:factory:
+   *
+   * The #TpSimpleClientFactory that has been used to create this proxy,
+   * or %NULL if proxy was not created through a factory.
+   */
+  param_spec = g_param_spec_object ("factory", "Simple Client Factory",
+      "The TpSimpleClientFactory used to create this proxy",
+      TP_TYPE_SIMPLE_CLIENT_FACTORY,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_NAME |
+      G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (object_class, PROP_FACTORY,
+      param_spec);
+
+  /**
    * TpProxy::interface-added: (skip)
    * @self: the proxy object
    * @id: the GQuark representing the interface
@@ -1363,6 +1388,26 @@ tp_proxy_class_init (TpProxyClass *klass)
       NULL, NULL,
       _tp_marshal_VOID__UINT_INT_STRING,
       G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_INT, G_TYPE_STRING);
+}
+
+/**
+ * tp_proxy_get_factory:
+ * @self: a #TpProxy or subclass
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none): the same value as #TpProxy:factory property
+ *
+ * Since: 0.UNRELEASED
+ */
+TpSimpleClientFactory *
+tp_proxy_get_factory (gpointer self)
+{
+  TpProxy *proxy = self;
+
+  g_return_val_if_fail (TP_IS_PROXY (self), NULL);
+
+  return proxy->priv->factory;
 }
 
 /**
