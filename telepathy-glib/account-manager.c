@@ -470,6 +470,8 @@ _tp_account_manager_constructed (GObject *object)
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
 
+  _tp_proxy_ensure_factory (self, NULL);
+
   tp_cli_account_manager_connect_to_account_validity_changed (self,
       _tp_account_manager_validity_changed_cb, NULL,
       NULL, G_OBJECT (self), NULL);
@@ -912,7 +914,8 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
   if (account != NULL)
     return account;
 
-  account = tp_account_new (tp_proxy_get_dbus_daemon (manager), path, &error);
+  account = tp_simple_client_factory_ensure_account (
+      tp_proxy_get_factory (manager), path, NULL, &error);
   if (account == NULL)
     {
       DEBUG ("tp_account_new() failed: %s", error->message);
