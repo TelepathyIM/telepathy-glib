@@ -263,7 +263,7 @@ tp_channel_request_succeeded_with_channel_cb (TpChannelRequest *self,
     {
       DEBUG ("Failed to create TpChannel: %s", error->message);
       g_error_free (error);
-      g_object_unref (channel);
+      g_object_unref (connection);
       return;
     }
 
