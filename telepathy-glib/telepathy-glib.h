@@ -43,6 +43,7 @@
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/client-channel-factory.h>
+#include <telepathy-glib/connection-contact-list.h>
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>

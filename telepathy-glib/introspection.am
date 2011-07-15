@@ -16,6 +16,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/basic-proxy-factory.c $(srcdir)/basic-proxy-factory.h \
 	$(srcdir)/client-channel-factory.c $(srcdir)/client-channel-factory.h \
 	$(srcdir)/connection.c $(srcdir)/connection.h \
+	$(srcdir)/connection-contact-list.c $(srcdir)/connection-contact-list.h \
 	$(srcdir)/connection-handles.c $(srcdir)/connection-contact-info.c \
 	$(srcdir)/connection-avatars.c \
 	$(srcdir)/protocol.c $(srcdir)/protocol.h \
