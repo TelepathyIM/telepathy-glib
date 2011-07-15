@@ -1669,8 +1669,10 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
     }
   else
     {
-      dispatch_operation = tp_channel_dispatch_operation_new (self->priv->dbus,
-            dispatch_operation_path, NULL, &error);
+      dispatch_operation =
+          _tp_simple_client_factory_ensure_channel_dispatch_operation (
+              tp_proxy_get_factory (self->priv->account_mgr),
+              dispatch_operation_path, NULL, &error);
      if (dispatch_operation == NULL)
        {
          DEBUG ("Failed to create TpChannelDispatchOperation: %s",
@@ -1883,14 +1885,17 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       g_ptr_array_add (channels, channel);
     }
 
-  dispatch_operation = _tp_channel_dispatch_operation_new_with_objects (
-      self->priv->dbus, dispatch_operation_path, properties,
-      account, connection, channels, &error);
+  dispatch_operation =
+      _tp_simple_client_factory_ensure_channel_dispatch_operation (
+          tp_proxy_get_factory (self->priv->account_mgr),
+          dispatch_operation_path, properties, &error);
   if (dispatch_operation == NULL)
     {
       DEBUG ("Failed to create TpChannelDispatchOperation: %s", error->message);
       goto out;
     }
+
+  _tp_channel_dispatch_operation_ensure_channels (dispatch_operation, channels);
 
   ctx = _tp_add_dispatch_operation_context_new (account, connection, channels,
       dispatch_operation, context);

@@ -244,7 +244,6 @@ static void
 maybe_set_connection (TpChannelDispatchOperation *self,
     const gchar *path)
 {
-  TpDBusDaemon *dbus;
   GError *error = NULL;
 
   if (self->priv->connection != NULL)
@@ -253,9 +252,8 @@ maybe_set_connection (TpChannelDispatchOperation *self,
   if (path == NULL)
     return;
 
-  dbus = tp_proxy_get_dbus_daemon (self);
-
-  self->priv->connection = tp_connection_new (dbus, NULL, path, &error);
+  self->priv->connection = tp_simple_client_factory_ensure_connection (
+      tp_proxy_get_factory (self), path, NULL, &error);
   if (self->priv->connection == NULL)
     {
       DEBUG ("Failed to create connection %s: %s", path, error->message);
@@ -278,7 +276,6 @@ static void
 maybe_set_account (TpChannelDispatchOperation *self,
     const gchar *path)
 {
-  TpDBusDaemon *dbus;
   GError *error = NULL;
 
   if (self->priv->account != NULL)
@@ -287,9 +284,8 @@ maybe_set_account (TpChannelDispatchOperation *self,
   if (path == NULL)
     return;
 
-  dbus = tp_proxy_get_dbus_daemon (self);
-
-  self->priv->account = tp_account_new (dbus, path, &error);
+  self->priv->account = tp_simple_client_factory_ensure_account (
+      tp_proxy_get_factory (self), path, NULL, &error);
   if (self->priv->account == NULL)
     {
       DEBUG ("Failed to create account %s: %s", path, error->message);
@@ -366,28 +362,9 @@ tp_channel_dispatch_operation_set_property (GObject *object,
         break;
 
       case PROP_CHANNELS:
-        {
-          GPtrArray *tmp;
-          guint i;
-
-          g_assert (self->priv->channels == NULL);  /* construct-only */
-
-          /* g_value_dup_boxed returns a new reference to the same
-           * GPtrArray which is not what we want (removing a channel from the
-           * CDO array shouldn't remove it from the caller). Copying the
-           * GPtrArray to avoid this problem.*/
-          tmp = g_value_get_boxed (value);
-
-          if (tmp == NULL)
-            break;
-
-          self->priv->channels = _tp_g_ptr_array_sized_new_with_free_func (
-              tmp->len, g_object_unref);
-
-          for (i = 0; i < tmp->len; i++)
-            g_ptr_array_add (self->priv->channels,
-                g_object_ref (g_ptr_array_index (tmp, i)));
-        }
+        g_assert (self->priv->channels == NULL);  /* construct-only */
+        _tp_channel_dispatch_operation_ensure_channels (self,
+            g_value_get_boxed (value));
         break;
 
       case PROP_CDO_PROPERTIES:
@@ -422,6 +399,8 @@ tp_channel_dispatch_operation_constructed (GObject *object)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
+
+  _tp_proxy_ensure_factory (self, NULL);
 
   maybe_set_connection (self,
       tp_asv_get_boxed (self->priv->immutable_properties,
@@ -1279,45 +1258,24 @@ tp_channel_dispatch_operation_claim_finish (
   return TRUE;
 }
 
-/* This can be used by tp-glib to create a new CDO using existing proxies
- * (account, connection, channels) rather than creating new ones. */
-TpChannelDispatchOperation *
-_tp_channel_dispatch_operation_new_with_objects (TpDBusDaemon *bus_daemon,
-    const gchar *object_path,
-    GHashTable *immutable_properties,
-    TpAccount *account,
-    TpConnection *connection,
-    GPtrArray *channels,
-    GError **error)
+/* FIXME: This is temporary solution to share TpChannel objects until
+ * TpSimpleClientFactory can be used for that */
+void
+_tp_channel_dispatch_operation_ensure_channels (TpChannelDispatchOperation *self,
+    GPtrArray *channels)
 {
-  TpChannelDispatchOperation *self;
-  gchar *unique_name;
+  guint i;
 
-  g_return_val_if_fail (bus_daemon != NULL, NULL);
-  g_return_val_if_fail (object_path != NULL, NULL);
-  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+  if (self->priv->channels != NULL || channels == NULL)
+    return;
 
-  if (!tp_dbus_check_valid_object_path (object_path, error))
-    return NULL;
+  /* Do not just ref the GPtrArray because we'll modify its content */
+  self->priv->channels = _tp_g_ptr_array_sized_new_with_free_func (
+      channels->len, g_object_unref);
 
-  if (!_tp_dbus_daemon_get_name_owner (bus_daemon, -1,
-      TP_CHANNEL_DISPATCHER_BUS_NAME, &unique_name, error))
-    return NULL;
-
-  self = TP_CHANNEL_DISPATCH_OPERATION (g_object_new (
-        TP_TYPE_CHANNEL_DISPATCH_OPERATION,
-        "dbus-daemon", bus_daemon,
-        "bus-name", unique_name,
-        "object-path", object_path,
-        "cdo-properties", immutable_properties,
-        "account", account,
-        "connection", connection,
-        "channels", channels,
-        NULL));
-
-  g_free (unique_name);
-
-  return self;
+  for (i = 0; i < channels->len; i++)
+    g_ptr_array_add (self->priv->channels,
+        g_object_ref (g_ptr_array_index (channels, i)));
 }
 
 /**

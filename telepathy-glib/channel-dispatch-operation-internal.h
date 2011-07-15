@@ -25,14 +25,9 @@
 
 G_BEGIN_DECLS
 
-TpChannelDispatchOperation * _tp_channel_dispatch_operation_new_with_objects (
-    TpDBusDaemon *bus_daemon,
-    const gchar *object_path,
-    GHashTable *immutable_properties,
-    TpAccount *account,
-    TpConnection *connection,
-    GPtrArray *channels,
-    GError **error);
+void _tp_channel_dispatch_operation_ensure_channels (
+    TpChannelDispatchOperation *self,
+    GPtrArray *channels);
 
 G_END_DECLS
 
