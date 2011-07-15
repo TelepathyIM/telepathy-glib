@@ -195,6 +195,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
+#include <telepathy-glib/simple-client-factory-internal.h>
 #include "telepathy-glib/_gen/signals-marshal.h"
 #include "telepathy-glib/util-internal.h"
 
@@ -1685,7 +1686,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       const gchar *req_path = g_ptr_array_index (requests_arr, i);
       TpChannelRequest *request;
 
-      request = tp_channel_request_new (self->priv->dbus, req_path, NULL,
+      request = _tp_simple_client_factory_ensure_channel_request (
+          tp_proxy_get_factory (self->priv->account_mgr), req_path, NULL,
           &error);
       if (request == NULL)
         {
@@ -2242,7 +2244,8 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
         }
       else
         {
-          request = tp_channel_request_new (self->priv->dbus, req_path, NULL,
+          request = _tp_simple_client_factory_ensure_channel_request (
+              tp_proxy_get_factory (self->priv->account_mgr), req_path, NULL,
               &error);
           if (request == NULL)
             {
@@ -2352,7 +2355,9 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   GError *error = NULL;
   channel_request_prepare_account_ctx *ctx;
 
-  request = tp_channel_request_new (self->priv->dbus, path, properties, &error);
+  request = _tp_simple_client_factory_ensure_channel_request (
+      tp_proxy_get_factory (self->priv->account_mgr), path, properties,
+      &error);
   if (request == NULL)
     {
       DEBUG ("Failed to create TpChannelRequest: %s", error->message);

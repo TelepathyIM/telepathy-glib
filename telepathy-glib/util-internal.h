@@ -38,7 +38,7 @@ GSocketAddress * _tp_create_temp_unix_socket (GSocketService *service,
     GError **error);
 #endif /* HAVE_GIO_UNIX */
 
-GList * _tp_create_channel_request_list (TpDBusDaemon *dbus,
+GList * _tp_create_channel_request_list (TpSimpleClientFactory *factory,
     GHashTable *request_props);
 
 /* Copied from wocky/wocky-utils.h */

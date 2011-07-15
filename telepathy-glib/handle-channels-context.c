@@ -749,5 +749,5 @@ tp_handle_channels_context_get_requests (
     return NULL;
 
   return _tp_create_channel_request_list (
-      tp_proxy_get_dbus_daemon (self->account), request_props);
+      tp_proxy_get_factory (self->account), request_props);
 }

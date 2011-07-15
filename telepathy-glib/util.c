@@ -48,6 +48,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_MISC
 #include "debug-internal.h"
+#include "simple-client-factory-internal.h"
 
 /**
  * tp_verify:
@@ -1570,7 +1571,7 @@ _tp_create_temp_unix_socket (GSocketService *service,
 #endif /* HAVE_GIO_UNIX */
 
 GList *
-_tp_create_channel_request_list (TpDBusDaemon *dbus,
+_tp_create_channel_request_list (TpSimpleClientFactory *factory,
     GHashTable *request_props)
 {
   GHashTableIter iter;
@@ -1585,7 +1586,8 @@ _tp_create_channel_request_list (TpDBusDaemon *dbus,
       GHashTable *props = value;
       GError *error = NULL;
 
-      req = tp_channel_request_new (dbus, path, props, &error);
+      req = _tp_simple_client_factory_ensure_channel_request (factory, path,
+          props, &error);
       if (req == NULL)
         {
           DEBUG ("Failed to create TpChannelRequest: %s", error->message);

@@ -83,6 +83,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
+#include <telepathy-glib/simple-client-factory-internal.h>
 #include "telepathy-glib/_gen/signals-marshal.h"
 
 struct _TpAccountChannelRequestClass {
@@ -794,9 +795,9 @@ acr_request_cb (TpChannelDispatcher *cd,
 
   DEBUG ("Got ChannelRequest: %s", channel_request_path);
 
-  self->priv->chan_request = tp_channel_request_new (
-      self->priv->dbus, channel_request_path, NULL, &err);
-
+  self->priv->chan_request = _tp_simple_client_factory_ensure_channel_request (
+      tp_proxy_get_factory (self->priv->account), channel_request_path, NULL,
+      &err);
   if (self->priv->chan_request == NULL)
     {
       DEBUG ("Failed to create ChannelRequest: %s", err->message);
