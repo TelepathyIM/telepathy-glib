@@ -24,11 +24,14 @@
 
 #include <string.h>
 
-#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/automatic-client-factory.h>
+#include <telepathy-glib/util.h>
 
 #include "dbus-internal.h"
 #define DEBUG_FLAG TP_DEBUG_PROXY
 #include "debug-internal.h"
+#include "simple-client-factory-internal.h"
 #include "util-internal.h"
 
 #include "_gen/signals-marshal.h"
@@ -1408,6 +1411,28 @@ tp_proxy_get_factory (gpointer self)
   g_return_val_if_fail (TP_IS_PROXY (self), NULL);
 
   return proxy->priv->factory;
+}
+
+void
+_tp_proxy_ensure_factory (gpointer proxy,
+    TpSimpleClientFactory *factory)
+{
+  TpProxy *self = proxy;
+
+  if (self->priv->factory != NULL)
+    return;
+
+  if (factory != NULL)
+    {
+      self->priv->factory = g_object_ref (factory);
+    }
+  else
+    {
+      self->priv->factory = (TpSimpleClientFactory *)
+          tp_automatic_client_factory_new (self->dbus_daemon);
+    }
+
+  _tp_simple_client_factory_insert_proxy (self->priv->factory, self);
 }
 
 /**

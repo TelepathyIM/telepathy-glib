@@ -43,4 +43,7 @@ gboolean _tp_proxy_will_announce_connected_finish (TpProxy *self,
     GAsyncResult *result,
     GError **error);
 
+void _tp_proxy_ensure_factory (gpointer self,
+    TpSimpleClientFactory *factory);
+
 #endif
