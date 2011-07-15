@@ -1291,6 +1291,8 @@ tp_connection_constructor (GType type,
   TpConnection *self = TP_CONNECTION (object_class->constructor (type,
         n_params, params));
 
+  _tp_proxy_ensure_factory (self, NULL);
+
   /* Connect to my own StatusChanged signal.
    * The connection hasn't had a chance to become invalid yet, so we can
    * assume that this signal connection will work */
