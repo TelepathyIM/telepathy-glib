@@ -53,6 +53,7 @@ our_headers = \
     contact-search-result.h \
     capabilities.h \
     contact.h \
+    contact-operations.h \
     base-contact-list.h \
     contacts-mixin.h \
     dbus.h \
@@ -182,6 +183,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     contact.c \
     contact-list-channel-internal.h \
     contact-list-channel.c \
+    contact-operations.c \
     contact-search.c \
     contact-search-internal.h \
     contact-search-result.c \

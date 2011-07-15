@@ -47,6 +47,7 @@
 #include <telepathy-glib/connection-manager.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
+#include <telepathy-glib/contact-operations.h>
 #include <telepathy-glib/contact-search.h>
 #include <telepathy-glib/contact-search-result.h>
 #include <telepathy-glib/dbus.h>

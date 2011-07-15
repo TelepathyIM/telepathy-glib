@@ -31,6 +31,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/dbus.c $(srcdir)/dbus.h \
 	$(srcdir)/capabilities.c $(srcdir)/capabilities.h \
 	$(srcdir)/contact.c $(srcdir)/contact.h \
+	$(srcdir)/contact-operations.c $(srcdir)/contact-operations.h \
 	$(srcdir)/contact-search.c $(srcdir)/contact-search.h \
 	$(srcdir)/contact-search-result.c $(srcdir)/contact-search-result.h \
 	$(srcdir)/defs.h \
