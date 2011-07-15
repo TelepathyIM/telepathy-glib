@@ -199,7 +199,7 @@ tp_automatic_client_factory_class_init (TpAutomaticClientFactoryClass *cls)
  * tp_automatic_client_factory_new:
  * @dbus: a #TpDBusDaemon
  *
- * Convenient function to create a new #TpAutomaticClientFactory instance.
+ * Returns a new #TpAutomaticClientFactory instance.
  *
  * Returns: a new #TpAutomaticClientFactory
  *

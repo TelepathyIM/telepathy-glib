@@ -37,7 +37,8 @@
  *
  * One can subclass #TpSimpleClientFactory and override some of its virtual
  * methods to construct more specialized objects. See #TpAutomaticClientFactory
- * for more specialized factory.
+ * for a subclass which automatically constructs subclasses of #TpChannel for
+ * common channel types.
  *
  * Since: 0.UNRELEASED
  */
@@ -402,7 +403,7 @@ tp_simple_client_factory_class_init (TpSimpleClientFactoryClass *klass)
  * tp_simple_client_factory_new:
  * @dbus: a #TpDBusDaemon
  *
- * Convenient function to create a new #TpSimpleClientFactory instance.
+ * Creates a new #TpSimpleClientFactory instance.
  *
  * Returns: a new #TpSimpleClientFactory
  *
@@ -422,7 +423,7 @@ tp_simple_client_factory_new (TpDBusDaemon *dbus)
  *
  * <!-- -->
  *
- * Returns: (transfer none): same value as #TpSimpleClientFactory:dbus-daemon
+ * Returns: (transfer none): the value of the #TpSimpleClientFactory:dbus-daemon
  *  property
  *
  * Since: 0.UNRELEASED
@@ -439,12 +440,14 @@ tp_simple_client_factory_get_dbus_daemon (TpSimpleClientFactory *self)
  * tp_simple_client_factory_ensure_account_manager:
  * @self: a #TpSimpleClientFactory object
  *
+ * Returns a #TpAccountManager object.
+ *
  * The returned #TpAccountManager is cached; the same #TpAccountManager object
  * will be returned by this function repeatedly, as long as at least one
  * reference exists. Note that the returned #TpAccountManager is not guaranteed
  * to be ready on return.
  *
- * Returns: (transfer full): a reference on a new or existing #TpAccountManager;
+ * Returns: (transfer full): a reference to a #TpAccountManager;
  *  see tp_account_manager_new().
  *
  * Since: 0.UNRELEASED
@@ -472,7 +475,7 @@ tp_simple_client_factory_ensure_account_manager (TpSimpleClientFactory *self)
  * @self: a #TpSimpleClientFactory object
  * @manager: a #TpAccountManager
  *
- * Return a zero terminated #GArray containing the #TpAccountManager features
+ * Returns a zero-terminated #GArray containing the #TpAccountManager features
  * that should be prepared on @manager.
  *
  * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
@@ -507,8 +510,8 @@ tp_simple_client_factory_dup_account_manager_features (
  * It is not necessary to add %TP_ACCOUNT_MANAGER_FEATURE_CORE as it is already
  * included by default.
  *
- * Note that existing proxy won't be upgraded unless done manually using
- * tp_proxy_prepare_async().
+ * Note that these features will not be added to existing #TpAccountManager
+ * objects; the user must call tp_proxy_prepare_async() themself.
  *
  * Since: 0.UNRELEASED
  */
@@ -526,20 +529,20 @@ tp_simple_client_factory_add_account_manager_features (
 /**
  * tp_simple_client_factory_ensure_account:
  * @self: a #TpSimpleClientFactory object
- * @object_path: the non-NULL object path of this account
+ * @object_path: the object path of an account
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the account. Currently unused.
+ *  the immutable properties of the account.
  * @error: Used to raise an error if @object_path is not valid
  *
- * The returned #TpAccount is cached; the same #TpAccount object
- * will be returned by this function repeatedly, as long as at least one
- * reference exists. Note that the returned #TpAccount is not guaranteed
- * to be ready on return.
+ * Returns a #TpAccount proxy for the account at @object_path. The returned
+ * #TpAccount is cached; the same #TpAccount object will be returned by this
+ * function repeatedly, as long as at least one reference exists.
  *
- * Caller is responsible to call tp_proxy_prepare_async() with the desired
- * features as given by tp_simple_client_factory_dup_account_features().
+ * Note that the returned #TpAccount is not guaranteed to be ready; the caller
+ * is responsible for calling tp_proxy_prepare_async() with the desired
+ * features (as given by tp_simple_client_factory_dup_account_features()).
  *
- * Returns: (transfer full): a reference on a new or existing #TpAccount;
+ * Returns: (transfer full): a reference to a #TpAccount;
  *  see tp_account_new().
  *
  * Since: 0.UNRELEASED
@@ -571,7 +574,7 @@ tp_simple_client_factory_ensure_account (TpSimpleClientFactory *self,
  * @self: a #TpSimpleClientFactory object
  * @account: a #TpAccount
  *
- * Return a zero terminated #GArray containing the #TpAccount features that
+ * Return a zero-terminated #GArray containing the #TpAccount features that
  * should be prepared on @account.
  *
  * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
@@ -605,8 +608,8 @@ tp_simple_client_factory_dup_account_features (TpSimpleClientFactory *self,
  * It is not necessary to add %TP_ACCOUNT_FEATURE_CORE as it is already
  * included by default.
  *
- * Note that existing proxies won't be upgraded unless done manually using
- * tp_proxy_prepare_async().
+ * Note that these features will not be added to existing #TpAccount
+ * objects; the user must call tp_proxy_prepare_async() themself.
  *
  * Since: 0.UNRELEASED
  */
@@ -623,20 +626,21 @@ tp_simple_client_factory_add_account_features (
 /**
  * tp_simple_client_factory_ensure_connection:
  * @self: a #TpSimpleClientFactory object
- * @object_path: the non-NULL object path of this connection
+ * @object_path: the object path of a connection
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the connection. Currently unused.
+ *  the immutable properties of the connection.
  * @error: Used to raise an error if @object_path is not valid
  *
+ * Returns a #TpConnection proxy for the connection at @object_path.
  * The returned #TpConnection is cached; the same #TpConnection object
  * will be returned by this function repeatedly, as long as at least one
- * reference exists. Note that the returned #TpConnection is not guaranteed
- * to be ready on return.
+ * reference exists.
  *
- * Caller is responsible to call tp_proxy_prepare_async() with the desired
- * features as given by tp_simple_client_factory_dup_connection_features().
+ * Note that the returned #TpConnection is not guaranteed to be ready; the
+ * caller is responsible for calling tp_proxy_prepare_async() with the desired
+ * features (as given by tp_simple_client_factory_dup_connection_features()).
  *
- * Returns: (transfer full): a reference on a new or existing #TpConnection;
+ * Returns: (transfer full): a reference to a #TpConnection;
  *  see tp_connection_new().
  *
  * Since: 0.UNRELEASED
@@ -668,7 +672,7 @@ tp_simple_client_factory_ensure_connection (TpSimpleClientFactory *self,
  * @self: a #TpSimpleClientFactory object
  * @connection: a #TpConnection
  *
- * Return a zero terminated #GArray containing the #TpConnection features that
+ * Return a zero-terminated #GArray containing the #TpConnection features that
  * should be prepared on @connection.
  *
  * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
@@ -702,8 +706,8 @@ tp_simple_client_factory_dup_connection_features (TpSimpleClientFactory *self,
  * It is not necessary to add %TP_CONNECTION_FEATURE_CORE as it is already
  * included by default.
  *
- * Note that existing proxies won't be upgraded unless done manually using
- * tp_proxy_prepare_async().
+ * Note that these features will not be added to existing #TpConnection
+ * objects; the user must call tp_proxy_prepare_async() themself.
  *
  * Since: 0.UNRELEASED
  */
@@ -721,20 +725,21 @@ tp_simple_client_factory_add_connection_features (
  * tp_simple_client_factory_ensure_channel:
  * @self: a #TpSimpleClientFactory object
  * @connection: a #TpConnection
- * @object_path: the non-NULL object path of this connection
+ * @object_path: the object path of a channel on @connection
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
  *  the immutable properties of the channel
  * @error: Used to raise an error if @object_path is not valid
  *
+ * Returns a #TpChannel proxy for the channel at @object_path on @connection.
  * The returned #TpChannel is cached; the same #TpChannel object
  * will be returned by this function repeatedly, as long as at least one
- * reference exists. Note that the returned #TpChannel is not guaranteed
- * to be ready on return.
+ * reference exists.
  *
- * Caller is responsible to call tp_proxy_prepare_async() with the desired
- * features as given by tp_simple_client_factory_dup_channel_features().
+ * Note that the returned #TpChannel is not guaranteed to be ready; the
+ * caller is responsible for calling tp_proxy_prepare_async() with the desired
+ * features (as given by tp_simple_client_factory_dup_channel_features()).
  *
- * Returns: (transfer full): a reference on a new or existing #TpChannel;
+ * Returns: (transfer full): a reference to a #TpChannel;
  *  see tp_channel_new_with_properties().
  *
  * Since: 0.UNRELEASED
@@ -769,7 +774,7 @@ tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
  * @self: a #TpSimpleClientFactory object
  * @channel: a #TpChannel
  *
- * Return a zero terminated #GArray containing the #TpChannel features that
+ * Return a zero-terminated #GArray containing the #TpChannel features that
  * should be prepared on @channel.
  *
  * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
@@ -803,8 +808,8 @@ tp_simple_client_factory_dup_channel_features (TpSimpleClientFactory *self,
  * It is not necessary to add %TP_CHANNEL_FEATURE_CORE as it is already
  * included by default.
  *
- * Note that existing proxies won't be upgraded unless done manually using
- * tp_proxy_prepare_async().
+ * Note that these features will not be added to existing #TpChannel
+ * objects; the user must call tp_proxy_prepare_async() themself.
  *
  * Since: 0.UNRELEASED
  */
@@ -825,18 +830,19 @@ tp_simple_client_factory_add_channel_features (
  * @handle: a #TpHandle
  * @identifier: a string representing the contact's identifier
  *
+ * Returns a #TpContact representing @identifier (and @handle) on @connection.
  * The returned #TpContact is cached; the same #TpContact object
  * will be returned by this function repeatedly, as long as at least one
- * reference exists. Note that the returned #TpContact is not guaranteed
- * to be ready on return.
+ * reference exists.
  *
- * Caller is responsible to call tp_connection_upgrade_contacts() with the
- * desired features as given by tp_simple_client_factory_dup_contact_features().
+ * Note that the returned #TpContact is not guaranteed to be ready; the caller
+ * is responsible for calling tp_connection_upgrade_contacts() with the desired
+ * features (as given by tp_simple_client_factory_dup_contact_features()).
  *
- * For this to work properly tp_connection_has_immortal_handles() has to return
- * %TRUE for @connection.
+ * For this function to work properly, tp_connection_has_immortal_handles()
+ * must return %TRUE for @connection.
  *
- * Returns: (transfer full): a reference on a new or existing #TpContact.
+ * Returns: (transfer full): a reference to a #TpContact.
  *
  * Since: 0.UNRELEASED
  */
@@ -902,8 +908,8 @@ tp_simple_client_factory_dup_contact_features (TpSimpleClientFactory *self,
  * objects. Those features will be added to the features already returned be
  * tp_simple_client_factory_dup_contact_features().
  *
- * Note that existing contacts won't be upgraded unless done manually using
- * tp_connection_upgrade_contacts().
+ * Note that these features will not be added to existing #TpContact
+ * objects; the user must call tp_connection_upgrade_contacts() themself.
  *
  * Since: 0.UNRELEASED
  */
@@ -939,19 +945,20 @@ tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
 /**
  * tp_simple_client_factory_ensure_channel_request:
  * @self: a #TpSimpleClientFactory object
- * @object_path: the non-NULL object path of this connection
+ * @object_path: the object path of a channel request
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
  *  the immutable properties of the channel request
  * @error: Used to raise an error if @object_path is not valid
  *
- * The returned #TpChannelRequest is cached; the same #TpChannelRequest object
- * will be returned by this function repeatedly, as long as at least one
- * reference exists. Note that the returned #TpChannelRequest is not guaranteed
- * to be ready on return.
+ * Returns a #TpChannelRequest for @object_path. The returned
+ * #TpChannelRequest is cached; the same #TpChannelRequest object will be
+ * returned by this function repeatedly, as long as at least one reference
+ * exists.
  *
- * Caller is responsible to call tp_proxy_prepare_async().
+ * Note that the returned #TpChannelRequest is not guaranteed to be ready; the
+ * caller is responsible for calling tp_proxy_prepare_async().
  *
- * Returns: (transfer full): a reference on a new or existing #TpChannelRequest;
+ * Returns: (transfer full): a reference to a #TpChannelRequest;
  *  see tp_channel_request_new().
  *
  * Since: 0.UNRELEASED
@@ -990,19 +997,20 @@ _tp_simple_client_factory_ensure_channel_request (TpSimpleClientFactory *self,
 /**
  * tp_simple_client_factory_ensure_channel_dispatch_operation:
  * @self: a #TpSimpleClientFactory object
- * @object_path: the non-NULL object path of this connection
+ * @object_path: the object path of a channel dispatch operation
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
  *  the immutable properties of the channel dispatch operation
  * @error: Used to raise an error if @object_path is not valid
  *
+ * Returns a #TpChannelDispatchOperation for @object_path.
  * The returned #TpChannelDispatchOperation is cached; the same
  * #TpChannelDispatchOperation object will be returned by this function
- * repeatedly, as long as at least one reference exists. Note that the returned
- * #TpChannelDispatchOperation is not guaranteed to be ready on return.
+ * repeatedly, as long as at least one reference exists.
  *
- * Caller is responsible to call tp_proxy_prepare_async().
+ * Note that the returned #TpChannelDispatchOperation is not guaranteed to be
+ * ready; the caller is responsible for calling tp_proxy_prepare_async().
  *
- * Returns: (transfer full): a reference on a new or existing
+ * Returns: (transfer full): a reference to a
  *  #TpChannelDispatchOperation; see tp_channel_dispatch_operation_new().
  *
  * Since: 0.UNRELEASED

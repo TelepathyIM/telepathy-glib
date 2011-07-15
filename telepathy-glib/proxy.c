@@ -1340,8 +1340,8 @@ tp_proxy_class_init (TpProxyClass *klass)
   /**
    * TpProxy:factory:
    *
-   * The #TpSimpleClientFactory that has been used to create this proxy,
-   * or %NULL if proxy was not created through a factory.
+   * The #TpSimpleClientFactory used to create this proxy,
+   * or %NULL if this proxy was not created through a factory.
    */
   param_spec = g_param_spec_object ("factory", "Simple Client Factory",
       "The TpSimpleClientFactory used to create this proxy",
