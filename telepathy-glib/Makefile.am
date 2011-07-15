@@ -26,6 +26,7 @@ our_headers = \
     account.h \
     account-channel-request.h \
     account-manager.h \
+    automatic-client-factory.h \
     automatic-proxy-factory.h \
     add-dispatch-operation-context.h \
     base-client.h \
@@ -147,6 +148,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-internal.h \
     account-manager.c \
     account-manager-internal.h \
+    automatic-client-factory.c \
     automatic-proxy-factory.c \
     add-dispatch-operation-context-internal.h \
     add-dispatch-operation-context.c \

@@ -36,6 +36,7 @@
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/automatic-proxy-factory.h>
+#include <telepathy-glib/automatic-client-factory.h>
 #include <telepathy-glib/base-client.h>
 #include <telepathy-glib/basic-proxy-factory.h>
 #include <telepathy-glib/channel-dispatch-operation.h>

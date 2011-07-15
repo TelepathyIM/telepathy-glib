@@ -5751,3 +5751,20 @@ TP_TYPE_SIMPLE_CLIENT_FACTORY
 tp_simple_client_factory_get_type
 TpSimpleClientFactoryPrivate
 </SECTION>
+
+<SECTION>
+<FILE>automatic-client-factory</FILE>
+<TITLE>automatic-client-factory</TITLE>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+TpAutomaticClientFactory
+TpAutomaticClientFactoryClass
+tp_automatic_client_factory_new
+<SUBSECTION Standard>
+TP_IS_AUTOMATIC_CLIENT_FACTORY
+TP_IS_AUTOMATIC_CLIENT_FACTORY_CLASS
+TP_AUTOMATIC_CLIENT_FACTORY
+TP_AUTOMATIC_CLIENT_FACTORY_CLASS
+TP_AUTOMATIC_CLIENT_FACTORY_GET_CLASS
+TP_TYPE_AUTOMATIC_CLIENT_FACTORY
+tp_automatic_client_factory_get_type
+</SECTION>

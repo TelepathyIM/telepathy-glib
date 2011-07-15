@@ -12,6 +12,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/account.c $(srcdir)/account.h \
 	$(srcdir)/account-channel-request.c $(srcdir)/account-channel-request.h \
 	$(srcdir)/account-manager.c $(srcdir)/account-manager.h \
+	$(srcdir)/automatic-client-factory.c $(srcdir)/automatic-client-factory.h \
 	$(srcdir)/automatic-proxy-factory.c $(srcdir)/automatic-proxy-factory.h \
 	$(srcdir)/basic-proxy-factory.c $(srcdir)/basic-proxy-factory.h \
 	$(srcdir)/client-channel-factory.c $(srcdir)/client-channel-factory.h \

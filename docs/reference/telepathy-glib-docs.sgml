@@ -82,6 +82,7 @@
     <xi:include href="xml/basic-proxy-factory.xml"/>
     <xi:include href="xml/automatic-proxy-factory.xml"/>
     <xi:include href="xml/simple-client-factory.xml"/>
+    <xi:include href="xml/automatic-client-factory.xml"/>
     <xi:include href="xml/client-message.xml"/>
     <xi:include href="xml/signalled-message.xml"/>
     <xi:include href="xml/text-channel.xml"/>
