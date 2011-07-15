@@ -545,18 +545,24 @@ add_text_event (TplLogStoreXml *self,
       TPL_EVENT (message));
 
   sender = tpl_event_get_sender (TPL_EVENT (message));
-  contact_id = g_markup_escape_text (tpl_entity_get_identifier (sender), -1);
-  contact_name = g_markup_escape_text (tpl_entity_get_alias (sender), -1);
-  avatar_token = g_markup_escape_text (tpl_entity_get_avatar_token (sender),
-      -1);
+
+  if (sender != NULL)
+    {
+      contact_id = g_markup_escape_text (tpl_entity_get_identifier (sender), -1);
+      contact_name = g_markup_escape_text (tpl_entity_get_alias (sender), -1);
+      avatar_token = g_markup_escape_text (tpl_entity_get_avatar_token (sender),
+          -1);
+    }
 
   event = g_string_new (NULL);
   g_string_printf (event, "<message time='%s' id='%s' name='%s' "
       "token='%s' isuser='%s' type='%s'",
-      time_str, contact_id, contact_name,
-      avatar_token,
-      tpl_entity_get_entity_type (sender)
-          == TPL_ENTITY_SELF ? "true" : "false",
+      time_str,
+      contact_id ? contact_id : "",
+      contact_name ? contact_name : "",
+      avatar_token ? avatar_token : "",
+      (sender && tpl_entity_get_entity_type (sender)
+          == TPL_ENTITY_SELF) ? "true" : "false",
       _tpl_text_event_message_type_to_str (msg_type));
 
   token_str = tpl_text_event_get_message_token (message);
@@ -654,14 +660,22 @@ add_call_event (TplLogStoreXml *self,
   sender = tpl_event_get_sender (TPL_EVENT (event));
   actor = tpl_call_event_get_end_actor (event);
   target = _tpl_event_get_target (TPL_EVENT (event));
-  sender_id = g_markup_escape_text (tpl_entity_get_identifier (sender), -1);
-  sender_name = g_markup_escape_text (tpl_entity_get_alias (sender), -1);
-  sender_avatar = g_markup_escape_text (tpl_entity_get_avatar_token (sender),
-      -1);
-  actor_id = g_markup_escape_text (tpl_entity_get_identifier (actor), -1);
-  actor_name = g_markup_escape_text (tpl_entity_get_alias (actor), -1);
-  actor_avatar = g_markup_escape_text (tpl_entity_get_avatar_token (actor),
-      -1);
+
+  if (sender != NULL)
+    {
+      sender_id = g_markup_escape_text (tpl_entity_get_identifier (sender), -1);
+      sender_name = g_markup_escape_text (tpl_entity_get_alias (sender), -1);
+      sender_avatar = g_markup_escape_text (tpl_entity_get_avatar_token (sender),
+          -1);
+    }
+
+  if (actor != NULL)
+    {
+      actor_id = g_markup_escape_text (tpl_entity_get_identifier (actor), -1);
+      actor_name = g_markup_escape_text (tpl_entity_get_alias (actor), -1);
+      actor_avatar = g_markup_escape_text (tpl_entity_get_avatar_token (actor),
+          -1);
+    }
 
 
   log_str = g_strdup_printf ("<call time='%s' "
@@ -672,16 +686,16 @@ add_call_event (TplLogStoreXml *self,
       "reason='%s' detail='%s'/>\n"
       LOG_FOOTER,
         time_str,
-        sender_id,
-        sender_name,
-        tpl_entity_get_entity_type (sender) ==
-            TPL_ENTITY_SELF ? "true" : "false",
-        sender_avatar,
+        sender_id ? sender_id : "",
+        sender_name ? sender_name : "",
+        (sender && tpl_entity_get_entity_type (sender) ==
+            TPL_ENTITY_SELF) ? "true" : "false",
+        sender_avatar ? sender_avatar : "",
         tpl_call_event_get_duration (event),
-        actor_id,
-        _tpl_entity_type_to_str (tpl_entity_get_entity_type (actor)),
-        actor_name,
-        actor_avatar,
+        actor_id ? actor_id : "",
+        actor ? _tpl_entity_type_to_str (tpl_entity_get_entity_type (actor)) : "",
+        actor_name ? actor_name : "",
+        actor_avatar ? actor_avatar : "",
         _tpl_call_event_end_reason_to_str (reason),
         tpl_call_event_get_detailed_end_reason (event));
 
