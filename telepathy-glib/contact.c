@@ -1352,6 +1352,15 @@ _tp_contact_new (TpConnection *connection,
   return self;
 }
 
+/* FIXME: Ideally this should be replaced with
+ *
+ * tp_simple_client_factory_dup_contact (tp_proxy_get_factory (connection),
+ *     handle, identifier);
+ *
+ * but we cannot assert CM has immortal handles (yet). That means we cannot
+ * guarantee that all TpContact objects are created through the factory and so
+ * let it make TpContact subclasses.
+ */
 static TpContact *
 tp_contact_ensure (TpConnection *connection,
                    TpHandle handle)
