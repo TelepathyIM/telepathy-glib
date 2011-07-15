@@ -35,6 +35,7 @@
 #define DEBUG_FLAG TP_DEBUG_DISPATCHER
 #include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
 
 #include "telepathy-glib/_gen/tp-cli-channel-request-body.h"
@@ -243,14 +244,12 @@ tp_channel_request_succeeded_with_channel_cb (TpChannelRequest *self,
     gpointer unused G_GNUC_UNUSED,
     GObject *object G_GNUC_UNUSED)
 {
-  TpDBusDaemon *dbus;
   TpConnection *connection;
   TpChannel *channel;
   GError *error = NULL;
 
-  dbus = tp_proxy_get_dbus_daemon (self);
-
-  connection = tp_connection_new (dbus, NULL, conn_path, &error);
+  connection = tp_simple_client_factory_ensure_connection (
+      tp_proxy_get_factory (self), conn_path, NULL, &error);
   if (connection == NULL)
     {
       DEBUG ("Failed to create TpConnection: %s", error->message);
@@ -290,6 +289,8 @@ tp_channel_request_constructed (GObject *object)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
+
+  _tp_proxy_ensure_factory (self, NULL);
 
   if (self->priv->channel_factory == NULL)
     {
@@ -689,7 +690,8 @@ tp_channel_request_get_account (TpChannelRequest *self)
   if (path == NULL)
     return NULL;
 
-  mgr = tp_account_manager_dup ();
+  mgr = tp_simple_client_factory_ensure_account_manager (
+      tp_proxy_get_factory (self));
 
   account = tp_account_manager_ensure_account (mgr, path);
 
