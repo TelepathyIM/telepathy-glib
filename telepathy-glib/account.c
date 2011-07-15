@@ -394,8 +394,8 @@ _tp_account_set_connection (TpAccount *account,
   if (tp_strdiff ("/", path))
     {
       GError *error = NULL;
-      priv->connection = tp_connection_new (tp_proxy_get_dbus_daemon (account),
-          NULL, path, &error);
+      priv->connection = tp_simple_client_factory_ensure_connection (
+          tp_proxy_get_factory (account), path, NULL, &error);
 
       if (priv->connection == NULL)
         {
@@ -848,6 +848,8 @@ _tp_account_constructed (GObject *object)
     chain_up (object);
 
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
+
+  _tp_proxy_ensure_factory (self, NULL);
 
   sc = tp_cli_account_connect_to_removed (self, _tp_account_removed_cb,
       NULL, NULL, NULL, &error);
