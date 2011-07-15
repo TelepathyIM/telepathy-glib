@@ -21,7 +21,7 @@
 /**
  * SECTION:automatic-client-factory
  * @title: TpAutomaticClientFactory
- * @short_description: factory creating higher level objects
+ * @short_description: Factory for specialized #TpChannel subclasses.
  * @see_also: #TpSimpleClientFactory
  *
  * This factory overrides some #TpSimpleClientFactory virtual methods to
