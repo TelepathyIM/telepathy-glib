@@ -97,4 +97,6 @@ gboolean _tp_contacts_to_handles (TpConnection *connection,
     TpContact * const *contacts,
     GArray **handles);
 
+GPtrArray *_tp_contacts_from_values (GHashTable *table);
+
 #endif /* __TP_UTIL_INTERNAL_H__ */

@@ -1920,3 +1920,25 @@ _tp_contacts_to_handles (TpConnection *connection,
 
   return TRUE;
 }
+
+/* table's key can be anything (usually TpHandle) but value must be a
+ * GObject (usually TpContact) */
+GPtrArray *
+_tp_contacts_from_values (GHashTable *table)
+{
+  GPtrArray *contacts;
+  GHashTableIter iter;
+  gpointer value;
+
+  contacts = _tp_g_ptr_array_new_full (g_hash_table_size (table),
+      g_object_unref);
+
+  g_hash_table_iter_init (&iter, table);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      g_assert (G_IS_OBJECT (value));
+      g_ptr_array_add (contacts, g_object_ref (value));
+    }
+
+  return contacts;
+}
