@@ -59,7 +59,7 @@ test_asv_SOURCES = \
 test_capabilities_SOURCES = \
     capabilities.c
 test_capabilities_LDADD = \
-    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
     $(GLIB_LIBS)
 
@@ -67,7 +67,7 @@ test_capabilities_LDADD = \
 test_contact_search_result_SOURCES = \
     contact-search-result.c
 test_contact_search_result_LDADD = \
-    $(top_builddir)/tests/lib/libtp-glib-tests.la \
+    $(top_builddir)/tests/lib/libtp-glib-tests-internal.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la \
     $(GLIB_LIBS)
 

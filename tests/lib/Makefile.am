@@ -1,4 +1,17 @@
-noinst_LTLIBRARIES = libtp-glib-tests.la
+# It's necessary to distinguish between modules that link to
+# libtelepathy-glib.la (normally a shared library, containing a copy of
+# libtelepathy-glib-internal.la) and libtelepathy-glib-internal.la (a static
+# convenience library). Under -Bsymbolic, you can't safely link both.
+#
+# You can either link to libtp-glib-tests.la and libtelepathy-glib.la,
+# or to libtp-glib-tests-internal.la and libtelepathy-glib-internal.la.
+# Do not mix the versions.
+#
+# See https://bugs.freedesktop.org/show_bug.cgi?id=39183
+noinst_LTLIBRARIES = \
+    libtp-glib-tests.la \
+    libtp-glib-tests-internal.la \
+    $(NULL)
 
 libtp_glib_tests_la_SOURCES = \
     bug-19101-conn.c \
@@ -51,6 +64,7 @@ libtp_glib_tests_la_SOURCES = \
     textchan-group.h \
     util.c \
     util.h
+libtp_glib_tests_internal_la_SOURCES = $(libtp_glib_tests_la_SOURCES)
 
 check_c_sources = *.c
 include $(top_srcdir)/tools/check-coding-style.mk
@@ -64,6 +78,11 @@ AM_CFLAGS = \
 AM_LDFLAGS = \
     $(ERROR_LDFLAGS) \
     $(NULL)
+
+libtp_glib_tests_internal_la_LIBADD = \
+    $(DBUS_LIBS) \
+    $(GLIB_LIBS) \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib-internal.la
 
 libtp_glib_tests_la_LIBADD = \
     $(DBUS_LIBS) \
