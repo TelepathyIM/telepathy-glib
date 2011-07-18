@@ -1,5 +1,5 @@
 /*
- * Factory creating higher level objects
+ * Factory for specialized TpChannel subclasses.
  *
  * Copyright © 2011 Collabora Ltd.
  *

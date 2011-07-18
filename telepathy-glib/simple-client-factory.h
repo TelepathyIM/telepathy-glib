@@ -1,5 +1,5 @@
 /*
- * Simple client factory
+ * A factory for TpContacts and plain subclasses of TpProxy
  *
  * Copyright © 2011 Collabora Ltd.
  *

@@ -1,5 +1,5 @@
 /*
- * Simple client factory internal
+ * Internal methods of TpSimpleClientFactory
  *
  * Copyright © 2011 Collabora Ltd.
  *

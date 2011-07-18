@@ -1,5 +1,5 @@
 /*
- * Simple client factory
+ * A factory for TpContacts and plain subclasses of TpProxy
  *
  * Copyright © 2011 Collabora Ltd.
  *
@@ -21,7 +21,8 @@
 /**
  * SECTION:simple-client-factory
  * @title: TpSimpleClientFactory
- * @short_description: simple client factory
+ * @short_description: a factory for #TpContact<!-- -->s and plain subclasses
+ *  of #TpProxy
  * @see_also: #TpAutomaticClientFactory
  *
  * This factory constructs various #TpProxy subclasses as well as #TpContact. It
