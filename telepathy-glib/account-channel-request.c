@@ -1678,8 +1678,9 @@ tp_account_channel_request_set_delegate_to_preferred_handler (
  * This function can't be called once @self has been used to request a
  * channel.
  *
+ * See also: tp_base_client_set_delegated_channels_callback()
+ *
  * Since: 0.15.3
- * @see_also: tp_base_client_set_delegated_channels_callback ()
  */
 void
 tp_account_channel_request_set_delegated_channel_callback (
