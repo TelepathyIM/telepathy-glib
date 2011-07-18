@@ -750,7 +750,7 @@ tp_simple_client_factory_add_connection_features (
  * features (as given by tp_simple_client_factory_dup_channel_features()).
  *
  * Returns: (transfer full): a reference to a #TpChannel;
- *  see tp_channel_new_with_properties().
+ *  see tp_channel_new_from_properties().
  *
  * Since: 0.UNRELEASED
  */
