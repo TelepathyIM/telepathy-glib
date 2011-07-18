@@ -68,7 +68,7 @@
  *  see tp_simple_client_factory_ensure_account_manager()
  * @dup_account_manager_features: virtual method returning account manager
  *  features that have to be prepared on newly created account manager;
- *  see tp_simple_client_factory_dup_account_features()
+ *  see tp_simple_client_factory_dup_account_manager_features()
  * @create_account: virtual method used to create a #TpAccount;
  *  see tp_simple_client_factory_ensure_account()
  * @dup_account_features: virtual method returning account features that
