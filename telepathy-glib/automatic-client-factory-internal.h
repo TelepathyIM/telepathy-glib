@@ -1,5 +1,5 @@
 /*
- * Automatic client factory internal
+ * Internal constructors for TpChannel subclasses
  *
  * Copyright © 2011 Collabora Ltd.
  *
