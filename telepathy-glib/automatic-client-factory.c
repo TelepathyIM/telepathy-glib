@@ -63,7 +63,7 @@
  *   </listitem>
  *   <listitem>
  *     <para>%TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES and
- *     TP_TEXT_CHANNEL_FEATURE_SMS for #TpTextChannel</para>
+ *     %TP_TEXT_CHANNEL_FEATURE_SMS for #TpTextChannel</para>
  *   </listitem>
  *   <listitem>
  *     <para>%TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE
