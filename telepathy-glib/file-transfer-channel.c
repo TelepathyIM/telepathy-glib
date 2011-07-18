@@ -479,7 +479,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
   /**
    * TpFileTransferChannel:size
    *
-   * A guint64 holding the size of the file to be transferred,
+   * The size of the file to be transferred,
    * or %G_MAXUINT64 if not known.
    *
    * Since 0.15.UNRELEASED
@@ -495,10 +495,10 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
   /**
    * TpFileTransferChannel:transferred-bytes
    *
-   * A guint64 holding the number of bytes transferred so far in this
+   * The number of bytes transferred so far in this
    * file transfer.
    *
-   * The TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be prepared for
+   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be prepared for
    * this property to be meaningful and kept up to date.
    *
    * Since: 0.15.UNRELEASED
@@ -528,7 +528,7 @@ tp_file_transfer_channel_init (TpFileTransferChannel *self)
  * Expands to a call to a function that returns a quark for the "core"
  * feature on a #TpFileTransferChannel.
  *
- * When this feature is prepared, the TpFileTransferChannel:transferred-bytes
+ * When this feature is prepared, the #TpFileTransferChannel:transferred-bytes
  * property has been retrieved and will be updated.
  *
  * One can ask for a feature to be prepared using the tp_proxy_prepare_async()
