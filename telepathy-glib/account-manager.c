@@ -58,6 +58,12 @@
  * their configuration, places accounts online on request, and manipulates
  * accounts' presence, nicknames and avatars.
  *
+ * #TpAccountManager is the "top level" object, its #TpProxy:factory will be
+ * propagated to all other objects like #TpAccountManager -> #TpAccount ->
+ * #TpConnection -> #TpContact and #TpChannel.
+ *
+ * <example id="account-manager"><title>TpAccountManager example</title><programlisting><xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../examples/client/contact-list.c"><xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback></xi:include></programlisting></example>
+ *
  * Since: 0.7.32
  */
 
