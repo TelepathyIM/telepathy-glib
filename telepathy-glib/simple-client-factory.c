@@ -25,16 +25,18 @@
  *  of #TpProxy
  * @see_also: #TpAutomaticClientFactory
  *
- * This factory constructs various #TpProxy subclasses as well as #TpContact. It
- * guarantees uniqueness of those objects. It is also used to describe the
- * features desired for each of those object classes.
+ * This factory constructs various #TpProxy subclasses as well as #TpContact,
+ * which guarantees that at most one instance of those objects will exist for a
+ * given remote object or contact. It also stores the desired features for
+ * contacts and each type of proxy.
  *
- * Note that the factory will not prepare the desired features, it is caller's
- * responsibility to do so. By default only core features are requested.
+ * Note that the factory will not prepare the desired features: it is the
+ * caller's responsibility to do so. By default, only core features are
+ * requested.
  *
  * Currently supported classes are #TpAccountManager, #TpAccount, #TpConnection,
  * #TpChannel and #TpContact. Those objects should always be acquired through a
- * factory and not created directly.
+ * factory, rather than being constructed directly.
  *
  * One can subclass #TpSimpleClientFactory and override some of its virtual
  * methods to construct more specialized objects. See #TpAutomaticClientFactory
@@ -64,33 +66,40 @@
 /**
  * TpSimpleClientFactoryClass:
  * @parent_class: the parent
- * @create_account_manager: virtual method used to create a #TpAccountManager;
+ * @create_account_manager: create a #TpAccountManager;
  *  see tp_simple_client_factory_ensure_account_manager()
- * @dup_account_manager_features: virtual method returning account manager
- *  features that have to be prepared on newly created account manager;
- *  see tp_simple_client_factory_dup_account_manager_features()
- * @create_account: virtual method used to create a #TpAccount;
+ * @dup_account_manager_features: implementation of
+ *  tp_simple_client_factory_dup_account_manager_features()
+ * @create_account: create a #TpAccount;
  *  see tp_simple_client_factory_ensure_account()
- * @dup_account_features: virtual method returning account features that
- *  have to be prepared on newly created accounts;
- *  see tp_simple_client_factory_dup_account_features()
- * @create_connection: virtual method used to create a #TpConnection;
+ * @dup_account_features: implementation of tp_simple_client_factory_dup_account_features()
+ * @create_connection: create a #TpConnection;
  *  see tp_simple_client_factory_ensure_connection()
- * @dup_connection_features: virtual method returning connection features that
- *  have to be prepared on newly created connections;
- *  see tp_simple_client_factory_dup_connection_features()
- * @create_channel: virtual method used to create a #TpChannel;
+ * @dup_connection_features: implementation of
+ *  tp_simple_client_factory_dup_connection_features()
+ * @create_channel: create a #TpChannel;
  *  see tp_simple_client_factory_ensure_channel()
- * @dup_channel_features: virtual method returning connection features that
- *  have to be prepared on newly created channel;
- *  see tp_simple_client_factory_dup_channel_features()
- * @create_contact: virtual method used to create a #TpContact;
+ * @dup_channel_features: implementation of tp_simple_client_factory_dup_channel_features()
+ * @create_contact: create a #TpContact;
  *  see tp_simple_client_factory_ensure_contact()
- * @dup_contact_features: virtual method returning contact features that
- *  have to be prepared on newly created contacts;
- *  see tp_simple_client_factory_dup_contact_features()
+ * @dup_contact_features: implementation of tp_simple_client_factory_dup_contact_features()
  *
- * V-Table for #TpSimpleClientFactory sub-classing
+ * The class structure for #TpSimpleClientFactory.
+ *
+ * #TpSimpleClientFactory maintains a cache of previously-constructed proxy
+ * objects, so the implementations of @create_account_manager, @create_account,
+ * @create_connection, @create_channel, and @create_contact may assume that a
+ * new object should be created when they are called. The default
+ * implementations create unadorned instances of the relevant classes;
+ * subclasses of the factory may choose to create more interesting proxy
+ * subclasses.
+ *
+ * The default implementation of @dup_channel_features returns
+ * #TP_CHANNEL_FEATURE_CORE, plus all features passed to
+ * tp_simple_client_factory_add_channel_features() by the application.
+ * Subclasses may override this method to prepare more interesting features
+ * from subclasses of #TpChannel, for instance. The default implementations of
+ * the other <function>dup_x_features</function> methods behave similarly.
  *
  * Since: 0.UNRELEASED
  */
