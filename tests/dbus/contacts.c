@@ -790,6 +790,46 @@ test_by_handle (Fixture *f,
   g_main_loop_unref (result.loop);
 }
 
+/* Silently removes the TpBaseConnection object from D-Bus, so that if the test
+ * makes any D-Bus calls on it, it will fail (but the TpConnection proxy isn't
+ * invalidated otherwise)
+ */
+static void
+make_the_connection_disappear (Fixture *f)
+{
+  GError *error = NULL;
+  gboolean ok;
+
+  tp_dbus_daemon_unregister_object (
+      tp_base_connection_get_dbus_daemon (f->base_connection),
+      f->base_connection);
+  /* check that that worked */
+  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
+      &error, NULL);
+  g_assert_error (error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+  g_assert (!ok);
+  g_clear_error (&error);
+}
+
+/* Returns the TpBaseConnection to D-Bus (after a previous call to
+ * make_the_connection_disappear())
+ */
+static void
+put_the_connection_back (Fixture *f)
+{
+  GError *error = NULL;
+  gboolean ok;
+
+  tp_dbus_daemon_register_object (
+      tp_base_connection_get_dbus_daemon (f->base_connection),
+      f->base_connection->object_path, f->base_connection);
+  /* check that *that* worked */
+  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
+      &error, NULL);
+  g_assert_no_error (error);
+  g_assert (ok);
+}
+
 static void
 test_by_handle_again (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
@@ -802,7 +842,6 @@ test_by_handle_again (Fixture *f,
   gpointer weak_pointer;
   const gchar *alias = "Alice in Wonderland";
   TpContactFeature feature = TP_CONTACT_FEATURE_ALIAS;
-  gboolean ok;
 
   g_test_bug ("25181");
 
@@ -831,18 +870,7 @@ test_by_handle_again (Fixture *f,
   reset_result (&result);
   g_assert (result.error == NULL);
 
-  /* silently remove the object from D-Bus, so that if the second request
-   * makes any D-Bus calls, it will fail (but the client conn isn't
-   * invalidated) */
-  tp_dbus_daemon_unregister_object (
-      tp_base_connection_get_dbus_daemon (f->base_connection),
-      f->base_connection);
-  /* check that that worked */
-  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
-      &result.error, NULL);
-  g_assert_error (result.error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
-  g_assert (!ok);
-  g_clear_error (&result.error);
+  make_the_connection_disappear (f);
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
@@ -857,15 +885,7 @@ test_by_handle_again (Fixture *f,
   g_assert (g_ptr_array_index (result.contacts, 0) == contact);
   g_assert_cmpstr (tp_contact_get_alias (contact), ==, "Alice in Wonderland");
 
-  /* OK, put it back so teardown() can use it */
-  tp_dbus_daemon_register_object (
-      tp_base_connection_get_dbus_daemon (f->base_connection),
-      f->base_connection->object_path, f->base_connection);
-  /* check that *that* worked */
-  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
-      &result.error, NULL);
-  g_assert_no_error (result.error);
-  g_assert (ok);
+  put_the_connection_back (f);
 
   g_assert (result.error == NULL);
   reset_result (&result);
