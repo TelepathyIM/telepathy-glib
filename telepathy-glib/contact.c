@@ -2431,69 +2431,6 @@ contacts_bind_to_location_updated (TpConnection *connection)
 }
 
 static void
-contacts_got_locations (TpConnection *connection,
-    GHashTable *locations,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  if (error != NULL)
-    {
-      DEBUG ("GetLocations failed with %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-    }
-  else
-    {
-      GHashTableIter iter;
-      gpointer key, value;
-
-      g_hash_table_iter_init (&iter, locations);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          contacts_location_updated (connection, GPOINTER_TO_UINT (key),
-              value, NULL, NULL);
-        }
-      /* FIXME: because contacts whose location is not yet known (as opposed to
-       * known to be unpublished) are omitted from this dictionary, not calling
-       * contact_maybe_set_location() (via contacts_location_updated) here
-       * triggers <https://bugs.freedesktop.org/show_bug.cgi?id=39377>. But …
-       * Location post-dates Contacts, so it's really not clear why this
-       * fallback path even exists.
-       */
-    }
-
-  contacts_context_continue (c);
-}
-
-static void
-contacts_get_locations (ContactsContext *c)
-{
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  contacts_bind_to_location_updated (c->connection);
-
-  for (i = 0; i < c->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_LOCATION) == 0)
-        {
-          c->refcount++;
-          tp_cli_connection_interface_location_call_get_locations (
-              c->connection, -1, c->handles, contacts_got_locations,
-              c, contacts_context_unref, c->weak_object);
-          return;
-        }
-    }
-
-  contacts_context_continue (c);
-}
-
-static void
 contact_maybe_set_client_types (TpContact *self,
     const gchar * const *types)
 {
@@ -3567,7 +3504,9 @@ contacts_context_queue_features (ContactsContext *context)
       tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION))
     {
-      g_queue_push_tail (&context->todo, contacts_get_locations);
+      WARNING ("%s supports Location but not Contacts! Where did you find "
+          "this CM? TP_CONTACT_FEATURE_LOCATION is not gonna work",
+          tp_proxy_get_object_path (context->connection));
     }
 
   /* Don't implement slow path for ContactCapabilities as Contacts is now
