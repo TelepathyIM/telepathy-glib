@@ -7,9 +7,9 @@
  * - having to fall back to RequestAliases
  * - get_contacts_by_id with features (but it's trivial)
  *
- * Copyright (C) 2008 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2008 Nokia Corporation
- * Copyright (C) 2007 Will Thompson
+ * Copyright © 2008–2011 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2008 Nokia Corporation
+ * Copyright © 2007 Will Thompson
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -841,7 +841,24 @@ test_by_handle_again (Fixture *f,
   TpContact *contact;
   gpointer weak_pointer;
   const gchar *alias = "Alice in Wonderland";
-  TpContactFeature feature = TP_CONTACT_FEATURE_ALIAS;
+  /* We only actively test TP_CONTACT_FEATURE_ALIAS, but preparing any of these
+   * once should be enough, assuming that the CM is not broken.
+   *
+   * FIXME: commented-out features are currently broken, either in TpContact or
+   * in TpTestsContactsConnection.
+   */
+  TpContactFeature features[] = {
+      TP_CONTACT_FEATURE_ALIAS,
+      // TP_CONTACT_FEATURE_AVATAR_TOKEN,
+      TP_CONTACT_FEATURE_PRESENCE,
+      TP_CONTACT_FEATURE_LOCATION,
+      // TP_CONTACT_FEATURE_CAPABILITIES,
+      // TP_CONTACT_FEATURE_AVATAR_DATA,
+      // TP_CONTACT_FEATURE_CONTACT_INFO,
+      // TP_CONTACT_FEATURE_CLIENT_TYPES,
+      TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
+      TP_CONTACT_FEATURE_CONTACT_GROUPS
+  };
 
   g_test_bug ("25181");
 
@@ -852,7 +869,7 @@ test_by_handle_again (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      1, &feature,
+      G_N_ELEMENTS (features), features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -874,7 +891,7 @@ test_by_handle_again (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      1, &feature,
+      G_N_ELEMENTS (features), features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
