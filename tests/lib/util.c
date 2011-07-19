@@ -13,6 +13,7 @@
 #include "tests/lib/util.h"
 
 #include <glib/gstdio.h>
+#include <string.h>
 
 #ifdef G_OS_UNIX
 # include <unistd.h> /* for alarm() */
@@ -286,7 +287,27 @@ time_out (gpointer nil G_GNUC_UNUSED)
 void
 tp_tests_abort_after (guint sec)
 {
-  if (g_getenv ("TP_TESTS_NO_TIMEOUT") != NULL)
+  gboolean debugger = FALSE;
+  gchar *contents;
+
+  if (g_file_get_contents ("/proc/self/status", &contents, NULL, NULL))
+    {
+/* http://www.youtube.com/watch?v=SXmv8quf_xM */
+#define TRACER_T "\nTracerPid:\t"
+      gchar *line = strstr (contents, TRACER_T);
+
+      if (line != NULL)
+        {
+          gchar *value = line + strlen (TRACER_T);
+
+          if (value[0] != '0' || value[1] != '\n')
+            debugger = TRUE;
+        }
+
+      g_free (contents);
+    }
+
+  if (g_getenv ("TP_TESTS_NO_TIMEOUT") != NULL || debugger)
     return;
 
   g_timeout_add_seconds (sec, time_out, NULL);
