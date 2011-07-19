@@ -2257,6 +2257,143 @@ test_contact_groups (Fixture *f,
 }
 
 static void
+assert_no_location (TpContact *contact)
+{
+  /* We could reasonably represent “no published location” as NULL or as an
+   * empty a{sv}, so allow both.
+   */
+  GHashTable *retrieved_location = tp_contact_get_location (contact);
+
+  if (retrieved_location != NULL)
+    g_assert (g_hash_table_size (retrieved_location) == 0);
+}
+
+/* This is a regression test for an issue where the LOCATION feature would
+ * never be marked as prepared for contacts with no published location, so
+ * repeated calls to tp_connection_get_contacts_by_handle() would call
+ * GetContactAttributes() over and over. It's really a special case of
+ * test_by_handle_again(), but presented separately for clarity.
+ */
+static void
+test_no_location (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle handle;
+  TpContact *contact;
+  gpointer weak_pointer;
+  TpContactFeature feature = TP_CONTACT_FEATURE_LOCATION;
+  GHashTable *norway = tp_asv_new ("country",  G_TYPE_STRING, "Norway", NULL);
+  notify_ctx notify_ctx_alice;
+
+  g_test_bug ("39377");
+
+  handle = tp_handle_ensure (f->service_repo, "alice", NULL, NULL);
+  g_assert_cmpuint (handle, !=, 0);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &feature,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  contact = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, handle);
+  assert_no_location (contact);
+  reset_result (&f->result);
+
+  /* Although Alice doesn't have a published location, the feature's still been
+   * prepared, so we shouldn't need any D-Bus traffic to re-fetch her TpContact.
+   */
+  make_the_connection_disappear (f);
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &feature,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_no_error (f->result.error);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) == contact);
+  assert_no_location (contact);
+
+  put_the_connection_back (f);
+  g_assert (f->result.error == NULL);
+  reset_result (&f->result);
+
+  /* Despite Alice not currently having a published location, we should
+   * certainly be listening to changes to her location.
+   */
+  notify_ctx_init (&notify_ctx_alice);
+  g_signal_connect (contact, "notify",
+      G_CALLBACK (contact_notify_cb), &notify_ctx_alice);
+
+  tp_tests_contacts_connection_change_locations (f->service_conn,
+      1, &handle, &norway);
+  tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
+  g_assert (notify_ctx_alice.location_changed);
+  ASSERT_SAME_LOCATION (tp_contact_get_location (contact), norway);
+
+  weak_pointer = contact;
+  g_object_add_weak_pointer ((GObject *) contact, &weak_pointer);
+  g_object_unref (contact);
+  g_assert (weak_pointer == NULL);
+
+  /* Check that first retrieving a contact without the LOCATION feature, and
+   * later upgrading it to have the LOCATION feature, does the right thing.
+   */
+  handle = tp_handle_ensure (f->service_repo, "rupert", NULL, NULL);
+  g_assert_cmpuint (handle, !=, 0);
+
+  tp_tests_contacts_connection_change_locations (f->service_conn,
+      1, &handle, &norway);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  contact = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, handle);
+  assert_no_location (contact);
+
+  /* clean up before doing the second request */
+  reset_result (&f->result);
+
+  tp_connection_upgrade_contacts (f->client_conn,
+      1, &contact,
+      1, &feature,
+      upgrade_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_no_error (f->result.error);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) == contact);
+  ASSERT_SAME_LOCATION (tp_contact_get_location (contact), norway);
+  reset_result (&f->result);
+
+  weak_pointer = contact;
+  g_object_add_weak_pointer ((GObject *) contact, &weak_pointer);
+  g_object_unref (contact);
+  g_assert (weak_pointer == NULL);
+
+  tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
+}
+
+static void
 setup (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -2354,6 +2491,8 @@ main (int argc,
    * an empty set of capabilities if the connection doesn't support
    * ContactCapabilities and Requests. */
   ADD (prepare_contact_caps_without_request);
+
+  ADD (no_location);
 
   return g_test_run ();
 }

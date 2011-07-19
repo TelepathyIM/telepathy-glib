@@ -2272,14 +2272,23 @@ static void
 contact_maybe_set_location (TpContact *self,
     GHashTable *location)
 {
-  if (self == NULL || location == NULL)
+  if (self == NULL)
     return;
 
   if (self->priv->location != NULL)
     g_hash_table_unref (self->priv->location);
 
+  /* We guarantee that, if we've fetched a location for a contact, the
+   * :location property is non-NULL. This is mainly because Empathy assumed
+   * this and would crash if not.
+   */
+  if (location == NULL)
+    location = tp_asv_new (NULL, NULL);
+  else
+    g_hash_table_ref (location);
+
   self->priv->has_features |= CONTACT_FEATURE_FLAG_LOCATION;
-  self->priv->location = g_hash_table_ref (location);
+  self->priv->location = location;
   g_object_notify ((GObject *) self, "location");
 }
 
@@ -2446,6 +2455,13 @@ contacts_got_locations (TpConnection *connection,
           contacts_location_updated (connection, GPOINTER_TO_UINT (key),
               value, NULL, NULL);
         }
+      /* FIXME: because contacts whose location is not yet known (as opposed to
+       * known to be unpublished) are omitted from this dictionary, not calling
+       * contact_maybe_set_location() (via contacts_location_updated) here
+       * triggers <https://bugs.freedesktop.org/show_bug.cgi?id=39377>. But …
+       * Location post-dates Contacts, so it's really not clear why this
+       * fallback path even exists.
+       */
     }
 
   contacts_context_continue (c);
@@ -3647,10 +3663,13 @@ tp_contact_set_attributes (TpContact *contact,
   contact_maybe_set_simple_presence (contact, boxed);
 
   /* Location */
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_LOCATION_LOCATION,
-      TP_HASH_TYPE_LOCATION);
-  contact_maybe_set_location (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_LOCATION)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_LOCATION_LOCATION,
+          TP_HASH_TYPE_LOCATION);
+      contact_maybe_set_location (contact, boxed);
+    }
 
   /* Capabilities */
   boxed = tp_asv_get_boxed (asv,
