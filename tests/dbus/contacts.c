@@ -849,7 +849,7 @@ test_by_handle_again (Fixture *f,
    */
   TpContactFeature features[] = {
       TP_CONTACT_FEATURE_ALIAS,
-      // TP_CONTACT_FEATURE_AVATAR_TOKEN,
+      TP_CONTACT_FEATURE_AVATAR_TOKEN,
       TP_CONTACT_FEATURE_PRESENCE,
       TP_CONTACT_FEATURE_LOCATION,
       // TP_CONTACT_FEATURE_CAPABILITIES,

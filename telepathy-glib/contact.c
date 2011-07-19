@@ -2798,7 +2798,12 @@ static void
 contact_set_avatar_token (TpContact *self, const gchar *new_token,
     gboolean request)
 {
-  if (!tp_strdiff (self->priv->avatar_token, new_token))
+  /* A no-op change (specifically from NULL to NULL) is still interesting if we
+   * don't have the AVATAR_TOKEN feature yet: it indicates that we've
+   * discovered it.
+   */
+  if ((self->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) &&
+      !tp_strdiff (self->priv->avatar_token, new_token))
     return;
 
   DEBUG ("contact#%u token is %s", self->priv->handle, new_token);
@@ -3591,10 +3596,12 @@ tp_contact_set_attributes (TpContact *contact,
   if (wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA)
     contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
 
-  s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
-
-  if (s != NULL)
-    contact_set_avatar_token (contact, s, TRUE);
+  if (wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN)
+    {
+      s = tp_asv_get_string (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
+      contact_set_avatar_token (contact, s, TRUE);
+    }
 
   boxed = tp_asv_get_boxed (asv,
       TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
