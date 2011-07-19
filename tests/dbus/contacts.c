@@ -878,9 +878,9 @@ test_by_handle_again (Fixture *f,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
   g_assert_cmpuint (result.contacts->len, ==, 1);
   g_assert_cmpuint (result.invalid->len, ==, 0);
-  g_assert_no_error (result.error);
 
   g_assert (g_ptr_array_index (result.contacts, 0) == contact);
   g_assert_cmpstr (tp_contact_get_alias (contact), ==, "Alice in Wonderland");
