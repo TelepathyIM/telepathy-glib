@@ -1162,7 +1162,7 @@ test_upgrade (Fixture *f,
   static const gchar * const messages[] = { "", "Fixing it",
       "GON OUT BACKSON" };
   GHashTable *location_1 = tp_asv_new (
-      "country",  G_TYPE_STRING, "United-kingdoms", NULL);
+      "country",  G_TYPE_STRING, "United Kingdom of Great Britain and Northern Ireland", NULL);
   GHashTable *location_2 = tp_asv_new (
       "country",  G_TYPE_STRING, "Atlantis", NULL);
   GHashTable *location_3 = tp_asv_new (
@@ -1436,7 +1436,7 @@ test_features (Fixture *f,
   static const gchar * const new_messages[] = { "At the Mad Hatter's",
       "It'll cost you" };
   GHashTable *location_1 = tp_asv_new (
-      "country",  G_TYPE_STRING, "United-kingdoms", NULL);
+      "country",  G_TYPE_STRING, "United Kingdom of Great Britain and Northern Ireland", NULL);
   GHashTable *location_2 = tp_asv_new (
       "country",  G_TYPE_STRING, "Atlantis", NULL);
   GHashTable *location_3 = tp_asv_new (
@@ -1445,7 +1445,7 @@ test_features (Fixture *f,
   GHashTable *location_4 = tp_asv_new (
       "country",  G_TYPE_STRING, "France", NULL);
   GHashTable *location_5 = tp_asv_new (
-      "country",  G_TYPE_STRING, "Irland", NULL);
+      "country",  G_TYPE_STRING, "Éire", NULL);
   GHashTable *new_locations[] = { location_4, location_5 };
   GHashTable *capabilities, *new_capabilities;
   gboolean support_text_chats[] = { TRUE, FALSE, FALSE };
