@@ -3645,10 +3645,13 @@ tp_contact_set_attributes (TpContact *contact,
     }
 
   /* Capabilities */
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES_CAPABILITIES,
-      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
-  contact_maybe_set_capabilities (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_CAPABILITIES)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES_CAPABILITIES,
+          TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
+      contact_maybe_set_capabilities (contact, boxed);
+    }
 
   /* ContactInfo */
   if (wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO)
