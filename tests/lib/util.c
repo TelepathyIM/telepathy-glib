@@ -218,8 +218,9 @@ _tp_tests_assert_strv_equals (const char *file,
 }
 
 void
-tp_tests_create_and_connect_conn (GType conn_type,
+tp_tests_create_conn (GType conn_type,
     const gchar *account,
+    gboolean connect,
     TpBaseConnection **service_conn,
     TpConnection **client_conn)
 {
@@ -227,7 +228,6 @@ tp_tests_create_and_connect_conn (GType conn_type,
   gchar *name;
   gchar *conn_path;
   GError *error = NULL;
-  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
 
   g_assert (service_conn != NULL);
   g_assert (client_conn != NULL);
@@ -250,13 +250,27 @@ tp_tests_create_and_connect_conn (GType conn_type,
   g_assert (*client_conn != NULL);
   g_assert_no_error (error);
 
-  tp_cli_connection_call_connect (*client_conn, -1, NULL, NULL, NULL, NULL);
-  tp_tests_proxy_run_until_prepared (*client_conn, conn_features);
+  if (connect)
+    {
+      GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+
+      tp_cli_connection_call_connect (*client_conn, -1, NULL, NULL, NULL, NULL);
+      tp_tests_proxy_run_until_prepared (*client_conn, conn_features);
+    }
 
   g_free (name);
   g_free (conn_path);
 
   g_object_unref (dbus);
+}
+
+void
+tp_tests_create_and_connect_conn (GType conn_type,
+    const gchar *account,
+    TpBaseConnection **service_conn,
+    TpConnection **client_conn)
+{
+  tp_tests_create_conn (conn_type, account, TRUE, service_conn, client_conn);
 }
 
 /* This object exists solely so that tests/tests.supp can ignore "leaked"

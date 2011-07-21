@@ -2527,25 +2527,67 @@ test_superfluous_attributes (Fixture *f,
 }
 
 static void
-setup (Fixture *f,
+test_contact_list (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
-      "me@test.com", &f->base_connection, &f->client_conn);
+  const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+
+  /* Connection is OFFLINE initially */
+  tp_tests_proxy_run_until_prepared (f->client_conn, conn_features);
+  g_assert_cmpint (tp_connection_get_contact_list_state (f->client_conn), ==,
+      TP_CONTACT_LIST_STATE_NONE);
+  g_assert (tp_connection_get_contact_list_persists (f->client_conn));
+  g_assert (!tp_connection_get_can_change_contact_list (f->client_conn));
+  g_assert (!tp_connection_get_request_uses_message (f->client_conn));
+
+  /* Now put it online and wait for contact list state move to success */
+  g_signal_connect_swapped (f->client_conn, "notify::contact-list-state",
+      G_CALLBACK (finish), &result);
+  tp_cli_connection_call_connect (f->client_conn, -1,
+      NULL, NULL, NULL, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  g_assert_cmpint (tp_connection_get_contact_list_state (f->client_conn), ==,
+      TP_CONTACT_LIST_STATE_SUCCESS);
+}
+
+static void
+setup_internal (Fixture *f,
+    gboolean connect,
+    gconstpointer user_data)
+{
+  tp_tests_create_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
+      "me@test.com", connect, &f->base_connection, &f->client_conn);
 
   f->service_conn = TP_TESTS_CONTACTS_CONNECTION (f->base_connection);
   g_object_ref (f->service_conn);
 
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
-      "me2@test.com", &f->legacy_base_connection, &f->legacy_client_conn);
+  tp_tests_create_conn (TP_TESTS_TYPE_LEGACY_CONTACTS_CONNECTION,
+      "me2@test.com", connect, &f->legacy_base_connection, &f->legacy_client_conn);
 
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_NO_REQUESTS_CONNECTION,
-      "me3@test.com", &f->no_requests_base_connection,
+  tp_tests_create_conn (TP_TESTS_TYPE_NO_REQUESTS_CONNECTION,
+      "me3@test.com", connect, &f->no_requests_base_connection,
       &f->no_requests_client_conn);
 
   f->service_repo = tp_base_connection_get_handles (f->base_connection,
       TP_HANDLE_TYPE_CONTACT);
   f->result.loop = g_main_loop_new (NULL, FALSE);
+}
+
+static void
+setup (Fixture *f,
+    gconstpointer user_data)
+{
+  setup_internal (f, TRUE, user_data);
+}
+
+static void
+setup_no_connect (Fixture *f,
+    gconstpointer user_data)
+{
+  setup_internal (f, FALSE, user_data);
 }
 
 static void
@@ -2630,6 +2672,9 @@ main (int argc,
   g_test_add ("/contacts/superfluous-attributes", Fixture, NULL,
       setup_broken_client_types_conn, test_superfluous_attributes,
       teardown);
+
+  g_test_add ("/contacts/contact-list", Fixture, NULL,
+      setup_no_connect, test_contact_list, teardown);
 
   return g_test_run ();
 }
