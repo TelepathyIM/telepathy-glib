@@ -348,9 +348,14 @@ client_types_fill_contact_attributes (
     const GArray *contacts,
     GHashTable *attributes)
 {
-  /* Do nothing: a no-op implementation is valid, relatively speaking. The spec
-   * sez the /client-types attribute should be “omitted from the result if the
-   * contact's client types are not known.”
+  TpTestsContactsConnectionClass *klass =
+      TP_TESTS_CONTACTS_CONNECTION_GET_CLASS (object);
+
+  if (klass->fill_client_types != NULL)
+    klass->fill_client_types (object, contacts, attributes);
+  /* …else do nothing: a no-op implementation is valid, relatively speaking.
+   * The spec sez the /client-types attribute should be “omitted from the
+   * result if the contact's client types are not known.”
    */
 }
 

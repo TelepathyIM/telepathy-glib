@@ -25,6 +25,7 @@
 #include <telepathy-glib/debug.h>
 
 #include "tests/lib/contacts-conn.h"
+#include "tests/lib/broken-client-types-conn.h"
 #include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
@@ -2411,6 +2412,105 @@ test_no_location (Fixture *f,
 }
 
 static void
+setup_broken_client_types_conn (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  tp_tests_create_and_connect_conn (
+      TP_TESTS_TYPE_BROKEN_CLIENT_TYPES_CONNECTION,
+      "me@test.com", &f->base_connection, &f->client_conn);
+
+  f->service_conn = TP_TESTS_CONTACTS_CONNECTION (f->base_connection);
+  g_object_ref (f->service_conn);
+
+  f->service_repo = tp_base_connection_get_handles (f->base_connection,
+      TP_HANDLE_TYPE_CONTACT);
+  f->result.loop = g_main_loop_new (NULL, FALSE);
+}
+
+static void
+test_superfluous_attributes (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle handle;
+  TpContact *contact;
+  const gchar * const *client_types;
+  TpContactFeature client_types_feature = TP_CONTACT_FEATURE_CLIENT_TYPES;
+  TpContactFeature presence_feature = TP_CONTACT_FEATURE_PRESENCE;
+
+  g_assert (TP_TESTS_IS_BROKEN_CLIENT_TYPES_CONNECTION (f->service_conn));
+
+  handle = tp_handle_ensure (f->service_repo, "helge", NULL, NULL);
+  g_assert_cmpuint (handle, !=, 0);
+
+  /* We ask for ClientTypes; the CM is broken and adds SimplePresence
+   * information to the reply... it also omits the /client-types attribute from
+   * the reply, which, since the spec says “Omitted from the result if the
+   * contact's client types are not known.” leaves us in the exciting position
+   * of having to decide between marking the feature as prepared anyway or
+   * saying it failed, and also deciding whether get_client_types returns [] or
+   * NULL...
+   */
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &client_types_feature,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  contact = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, handle);
+
+  /* She doesn't have any client types. There are two reasonable ways to
+   * represent this.
+   */
+  client_types = tp_contact_get_client_types (contact);
+  if (client_types != NULL)
+    g_assert_cmpstr (client_types[0], ==, NULL);
+
+  /* She also shouldn't have any presence information, despite it being
+   * inexplicably included in the GetContactAttributes reply. Specifically:
+   * because we have not connected to PresencesChanged, it's not safe to just
+   * randomly stash this information and mark the feature as prepared.
+   *
+   * (If we wanted to be really smart we could do something like: if the
+   * information's there for some reason, and we happen already to be bound to
+   * PresencesChanged due to preparing that feature on another contact … then
+   * accept the mysterious information. But that seems fragile and prone to
+   * people relying on sketchy behaviour.)
+   */
+  g_assert_cmpstr (tp_contact_get_presence_message (contact), ==, "");
+  g_assert_cmpstr (tp_contact_get_presence_status (contact), ==, "");
+  g_assert_cmpuint (tp_contact_get_presence_type (contact), ==,
+      TP_CONNECTION_PRESENCE_TYPE_UNSET);
+
+  reset_result (&f->result);
+
+  /* So now if we try to prepare TP_CONTACT_FEATURE_PRESENCE, we should need to
+   * make some D-Bus calls: it shouldn't have been marked prepared by the
+   * previous call. Successfully upgrading to this feature is tested
+   * elsewhere, so we'll test that upgrading fails if the connection's
+   * mysteriously died.
+   */
+  make_the_connection_disappear (f);
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &presence_feature,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  /* Not gonna make any particular assertions about what the error is. */
+  g_assert_error (f->result.error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+
+  put_the_connection_back (f);
+  reset_result (&f->result);
+  g_object_unref (contact);
+}
+
+static void
 setup (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -2510,6 +2610,10 @@ main (int argc,
   ADD (prepare_contact_caps_without_request);
 
   ADD (no_location);
+
+  g_test_add ("/contacts/superfluous-attributes", Fixture, NULL,
+      setup_broken_client_types_conn, test_superfluous_attributes,
+      teardown);
 
   return g_test_run ();
 }

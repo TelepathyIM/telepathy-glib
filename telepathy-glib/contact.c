@@ -2244,9 +2244,10 @@ contact_maybe_set_simple_presence (TpContact *contact,
   const gchar *status;
   const gchar *message;
 
-  if (contact == NULL || presence == NULL)
+  if (contact == NULL)
     return;
 
+  g_return_if_fail (presence != NULL);
   contact->priv->has_features |= CONTACT_FEATURE_FLAG_PRESENCE;
 
   tp_value_array_unpack (presence, 3, &type, &status, &message);
@@ -3604,10 +3605,21 @@ tp_contact_set_attributes (TpContact *contact,
       contact_set_avatar_token (contact, s, TRUE);
     }
 
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
-      TP_STRUCT_TYPE_SIMPLE_PRESENCE);
-  contact_maybe_set_simple_presence (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_PRESENCE)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
+          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
+
+      if (boxed == NULL)
+        WARNING ("%s supposedly implements Contacts and SimplePresence, "
+            "but omitted the mandatory "
+            TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE
+            " attribute",
+            tp_proxy_get_object_path (connection));
+      else
+        contact_maybe_set_simple_presence (contact, boxed);
+    }
 
   /* Location */
   if (wanted & CONTACT_FEATURE_FLAG_LOCATION)
