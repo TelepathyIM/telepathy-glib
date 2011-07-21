@@ -2926,9 +2926,9 @@ contact_maybe_set_info (TpContact *self,
 
   if (contact_info != NULL)
     {
-      for (i = 0; i < contact_info->len; i++)
+      for (i = contact_info->len; i > 0; i--)
         {
-          GValueArray *va = g_ptr_array_index (contact_info, i);
+          GValueArray *va = g_ptr_array_index (contact_info, i - 1);
           const gchar *field_name;
           GStrv parameters;
           GStrv field_value;
@@ -2937,7 +2937,6 @@ contact_maybe_set_info (TpContact *self,
           self->priv->contact_info = g_list_prepend (self->priv->contact_info,
               tp_contact_info_field_new (field_name, parameters, field_value));
         }
-      self->priv->contact_info = g_list_reverse (self->priv->contact_info);
     }
   /* else we don't know, but an empty list is perfectly valid. */
 
