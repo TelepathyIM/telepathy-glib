@@ -1185,7 +1185,8 @@ tp_contact_class_init (TpContactClass *klass)
    * A #GStrv containing the client types of this contact.
    *
    * This is set to %NULL if %TP_CONTACT_FEATURE_CLIENT_TYPES is not
-   * set on this contact.
+   * set on this contact; it may also be %NULL if that feature is prepared, but
+   * the contact's client types are unknown.
    *
    * Since: 0.13.1
    */
@@ -2434,7 +2435,7 @@ static void
 contact_maybe_set_client_types (TpContact *self,
     const gchar * const *types)
 {
-  if (self == NULL || types == NULL)
+  if (self == NULL)
     return;
 
   if (self->priv->client_types != NULL)
@@ -3630,10 +3631,13 @@ tp_contact_set_attributes (TpContact *contact,
   contact_maybe_set_info (contact, boxed);
 
   /* ClientTypes */
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES_CLIENT_TYPES,
-      G_TYPE_STRV);
-  contact_maybe_set_client_types (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES_CLIENT_TYPES,
+          G_TYPE_STRV);
+      contact_maybe_set_client_types (contact, boxed);
+    }
 
   /* ContactList subscription states */
   {
