@@ -2916,25 +2916,30 @@ contact_maybe_set_info (TpContact *self,
 {
   guint i;
 
-  if (self == NULL || contact_info == NULL)
+  if (self == NULL)
     return;
 
   tp_contact_info_list_free (self->priv->contact_info);
   self->priv->contact_info = NULL;
 
   self->priv->has_features |= CONTACT_FEATURE_FLAG_CONTACT_INFO;
-  for (i = 0; i < contact_info->len; i++)
-    {
-      GValueArray *va = g_ptr_array_index (contact_info, i);
-      const gchar *field_name;
-      GStrv parameters;
-      GStrv field_value;
 
-      tp_value_array_unpack (va, 3, &field_name, &parameters, &field_value);
-      self->priv->contact_info = g_list_prepend (self->priv->contact_info,
-          tp_contact_info_field_new (field_name, parameters, field_value));
+  if (contact_info != NULL)
+    {
+      for (i = 0; i < contact_info->len; i++)
+        {
+          GValueArray *va = g_ptr_array_index (contact_info, i);
+          const gchar *field_name;
+          GStrv parameters;
+          GStrv field_value;
+
+          tp_value_array_unpack (va, 3, &field_name, &parameters, &field_value);
+          self->priv->contact_info = g_list_prepend (self->priv->contact_info,
+              tp_contact_info_field_new (field_name, parameters, field_value));
+        }
+      self->priv->contact_info = g_list_reverse (self->priv->contact_info);
     }
-  self->priv->contact_info = g_list_reverse (self->priv->contact_info);
+  /* else we don't know, but an empty list is perfectly valid. */
 
   g_object_notify ((GObject *) self, "contact-info");
 }
@@ -3647,10 +3652,13 @@ tp_contact_set_attributes (TpContact *contact,
   contact_maybe_set_capabilities (contact, boxed);
 
   /* ContactInfo */
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO_INFO,
-      TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
-  contact_maybe_set_info (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO_INFO,
+          TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
+      contact_maybe_set_info (contact, boxed);
+    }
 
   /* ClientTypes */
   if (wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES)
