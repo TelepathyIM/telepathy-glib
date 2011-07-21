@@ -1988,7 +1988,7 @@ test_prepare_contact_caps_without_request (Fixture *f,
   guint i;
   TpContactFeature features[] = { TP_CONTACT_FEATURE_CAPABILITIES };
 
-  g_message (G_STRFUNC);
+  g_test_bug ("27686");
 
   for (i = 0; i < 3; i++)
     handles[i] = tp_handle_ensure (service_repo, ids[i], NULL, NULL);
