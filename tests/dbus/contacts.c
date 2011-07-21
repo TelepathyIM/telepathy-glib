@@ -842,6 +842,7 @@ test_by_handle_again (Fixture *f,
   TpContact *contact;
   gpointer weak_pointer;
   const gchar *alias = "Alice in Wonderland";
+  GHashTable *capabilities;
   /* We only actively test TP_CONTACT_FEATURE_ALIAS, but preparing any of these
    * once should be enough, assuming that the CM is not broken.
    *
@@ -853,7 +854,7 @@ test_by_handle_again (Fixture *f,
       TP_CONTACT_FEATURE_AVATAR_TOKEN,
       TP_CONTACT_FEATURE_PRESENCE,
       TP_CONTACT_FEATURE_LOCATION,
-      // TP_CONTACT_FEATURE_CAPABILITIES,
+      TP_CONTACT_FEATURE_CAPABILITIES,
       // TP_CONTACT_FEATURE_AVATAR_DATA,
       TP_CONTACT_FEATURE_CONTACT_INFO,
       TP_CONTACT_FEATURE_CLIENT_TYPES,
@@ -867,6 +868,20 @@ test_by_handle_again (Fixture *f,
   g_assert_cmpuint (handle, !=, 0);
   tp_tests_contacts_connection_change_aliases (f->service_conn, 1, &handle,
       &alias);
+  /* Unlike almost every other feature, with capabilities “not sure” and “none”
+   * are different: you really might care about the difference between “I don't
+   * know if blah can do video” versus “I know blah cannot do video”.
+   *
+   * It happens that we get the repeated-reintrospection behaviour for the
+   * former case of contact caps. I can't really be bothered to fix this.
+   */
+  capabilities = g_hash_table_new_full (NULL, NULL, NULL,
+      (GDestroyNotify) g_ptr_array_unref);
+  g_hash_table_insert (capabilities, GUINT_TO_POINTER (handle),
+      g_ptr_array_new ());
+  tp_tests_contacts_connection_change_capabilities (f->service_conn,
+      capabilities);
+  g_hash_table_unref (capabilities);
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
