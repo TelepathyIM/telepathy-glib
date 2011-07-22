@@ -14,6 +14,7 @@ AM_CFLAGS = \
 EXTRA_DIST = \
     all.xml \
     Call_Content_Codec_Offer.xml \
+    Call_Content_Interface_Audio_Control.xml \
     Call_Content_Interface_Media.xml \
     Call_Content_Interface_Mute.xml \
     Call_Content_Interface_Video_Control.xml \

@@ -1,0 +1,113 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node name="/Call_Content_Interface_Audio_Control"
+  xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <tp:copyright>Copyright © 2009-2010 Collabora Ltd.</tp:copyright>
+  <tp:copyright>Copyright © 2009-2010 Nokia Corporation</tp:copyright>
+  <tp:license xmlns="http://www.w3.org/1999/xhtml">
+    <p>This library is free software; you can redistribute it and/or
+      modify it under the terms of the GNU Lesser General Public
+      License as published by the Free Software Foundation; either
+      version 2.1 of the License, or (at your option) any later version.</p>
+
+    <p>This library is distributed in the hope that it will be useful,
+      but WITHOUT ANY WARRANTY; without even the implied warranty of
+      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+      Lesser General Public License for more details.</p>
+
+    <p>You should have received a copy of the GNU Lesser General Public
+      License along with this library; if not, write to the Free Software
+      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+      02110-1301, USA.</p>
+  </tp:license>
+
+  <interface name="org.freedesktop.Telepathy.Call.Content.Interface.AudioControl.DRAFT"
+    tp:causes-havoc="experimental">
+    <tp:added version="0.24.UNRELEASED">(draft 1)</tp:added>
+    <tp:requires interface="org.freedesktop.Telepathy.Call.Content.Interface.Media.DRAFT"/>
+
+    <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+      <p>An interface that allows the connection manager to control the audio
+          stream.</p>
+      <p>This interface is generally not needed. In cases where the connection
+          manager handles the network communication and the media is transferred
+          from the client to the connection manager via shared memory, it can
+          sometimes be beneficial for the connection manager to be able to
+          control certain aspects of the audio stream.</p>
+    </tp:docstring>
+
+    <property name="InputVolume" type="u" access="read"
+      tp:name-for-bindings="Input_Volume">
+      <tp:docstring>
+        The volume the streaming engine should be sending at.
+
+        <p>Change notification is via the
+          <tp:member-ref>InputVolumeChanged</tp:member-ref> signal.</p>
+      </tp:docstring>
+    </property>
+
+    <signal name="InputVolumeChanged"
+      tp:name-for-bindings="Input_Volume_Changed">
+      <tp:docstring>
+        Emitted to indicate that the input volume has changed for this
+        call content.
+
+        This may occur as a consequence of the client calling
+        <tp:member-ref>SetInputVolume</tp:member-ref>, or as an indication
+        that another client has (un)muted the content.
+      </tp:docstring>
+      <arg type="u" name="NewVolume" />
+    </signal>
+
+    <method name="SetInputVolume" tp:name-for-bindings="Set_Input_Volume">
+      <arg direction="in" name="NewVolume" type="u">
+        <tp:docstring>
+          The new input volume level to use.
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        <p>Inform the CM that the call content's input volume has been
+          changed by the client.</p>
+
+        <p>It is the client's responsibility to actually change the
+          input volume used for the content. However, the client
+          MUST call this whenever it changes input volume for the
+          content.</p>
+      </tp:docstring>
+    </method>
+
+    <property name="OutputVolume" type="u" access="read"
+      tp:name-for-bindings="Output_Volume">
+      <tp:docstring>
+        The volume the streaming engine should be outputting at.
+
+        <p>Change notification is via the
+          <tp:member-ref>OutputVolumeChanged</tp:member-ref> signal.</p>
+      </tp:docstring>
+    </property>
+
+    <signal name="OutputVolumeChanged"
+      tp:name-for-bindings="Output_Volume_Changed">
+      <tp:docstring>
+        The desired output volume has changed
+      </tp:docstring>
+      <arg type="u" name="NewVolume" />
+    </signal>
+
+    <method name="SetOutputVolume" tp:name-for-bindings="Set_Output_Volume">
+      <arg direction="in" name="NewVolume" type="u">
+        <tp:docstring>
+          The new output volume level to use.
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        <p>Inform the CM that the call content's output volume has been
+          changed by the client.</p>
+
+        <p>It is the client's responsibility to actually change the
+          output volume used for the content. However, the client
+          MUST call this whenever it changes output volume for the
+          content.</p>
+      </tp:docstring>
+    </method>
+  </interface>
+</node>
