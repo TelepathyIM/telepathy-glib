@@ -3395,7 +3395,7 @@ contact_maybe_set_contact_groups (TpContact *self,
   self->priv->has_features |= CONTACT_FEATURE_FLAG_CONTACT_GROUPS;
 
   tp_clear_pointer (&self->priv->contact_groups, g_ptr_array_unref);
-  self->priv->contact_groups = _tp_g_ptr_array_sized_new_with_free_func (
+  self->priv->contact_groups = _tp_g_ptr_array_new_full (
       g_strv_length (contact_groups) + 1, g_free);
 
   for (iter = contact_groups; *iter != NULL; iter++)

@@ -515,7 +515,7 @@ update_channels_array (TpChannelDispatchOperation *self,
       old = self->priv->channels;
     }
 
-  self->priv->channels = _tp_g_ptr_array_sized_new_with_free_func (channels->len,
+  self->priv->channels = _tp_g_ptr_array_new_full (channels->len,
       g_object_unref);
 
   for (i = 0; i < channels->len; i++)
@@ -1270,8 +1270,8 @@ _tp_channel_dispatch_operation_ensure_channels (TpChannelDispatchOperation *self
     return;
 
   /* Do not just ref the GPtrArray because we'll modify its content */
-  self->priv->channels = _tp_g_ptr_array_sized_new_with_free_func (
-      channels->len, g_object_unref);
+  self->priv->channels = _tp_g_ptr_array_new_full (channels->len,
+      g_object_unref);
 
   for (i = 0; i < channels->len; i++)
     g_ptr_array_add (self->priv->channels,

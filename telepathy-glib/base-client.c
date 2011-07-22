@@ -1641,8 +1641,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       goto out;
     }
 
-  channels = _tp_g_ptr_array_sized_new_with_free_func (channels_arr->len,
-      g_object_unref);
+  channels = _tp_g_ptr_array_new_full (channels_arr->len, g_object_unref);
   for (i = 0; i < channels_arr->len; i++)
     {
       const gchar *chan_path;
@@ -1681,8 +1680,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
         }
     }
 
-  requests = _tp_g_ptr_array_sized_new_with_free_func (requests_arr->len,
-      g_object_unref);
+  requests = _tp_g_ptr_array_new_full (requests_arr->len, g_object_unref);
   for (i = 0; i < requests_arr->len; i++)
     {
       const gchar *req_path = g_ptr_array_index (requests_arr, i);
@@ -1863,8 +1861,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  channels = _tp_g_ptr_array_sized_new_with_free_func (channels_arr->len,
-      g_object_unref);
+  channels = _tp_g_ptr_array_new_full (channels_arr->len, g_object_unref);
   for (i = 0; i < channels_arr->len; i++)
     {
       const gchar *chan_path;
@@ -2213,8 +2210,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       goto out;
     }
 
-  channels = _tp_g_ptr_array_sized_new_with_free_func (channels_arr->len,
-      g_object_unref);
+  channels = _tp_g_ptr_array_new_full (channels_arr->len, g_object_unref);
   for (i = 0; i < channels_arr->len; i++)
     {
       const gchar *chan_path;
@@ -2235,8 +2231,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       g_ptr_array_add (channels, channel);
     }
 
-  requests = _tp_g_ptr_array_sized_new_with_free_func (requests_arr->len,
-      g_object_unref);
+  requests = _tp_g_ptr_array_new_full (requests_arr->len, g_object_unref);
   for (i = 0; i < requests_arr->len; i++)
     {
       const gchar *req_path = g_ptr_array_index (requests_arr, i);
@@ -2965,8 +2960,8 @@ delegate_channels_ctx_new (GList *channels)
   DelegateChannelsCtx *ctx = g_slice_new0 (DelegateChannelsCtx);
   GList *l;
 
-  ctx->channels = _tp_g_ptr_array_sized_new_with_free_func (
-      g_list_length (channels), g_object_unref);
+  ctx->channels = _tp_g_ptr_array_new_full (g_list_length (channels),
+      g_object_unref);
 
   for (l = channels; l != NULL; l = g_list_next (l))
     {
@@ -3111,8 +3106,7 @@ tp_base_client_delegate_channels_async (TpBaseClient *self,
 
   cd = tp_channel_dispatcher_new (self->priv->dbus);
 
-  chans = _tp_g_ptr_array_sized_new_with_free_func (g_list_length (channels),
-      g_free);
+  chans = _tp_g_ptr_array_new_full (g_list_length (channels), g_free);
 
   for (l = channels; l != NULL; l = g_list_next (l))
     {
