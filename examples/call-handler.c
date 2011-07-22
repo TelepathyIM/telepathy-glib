@@ -190,6 +190,19 @@ on_video_resolution_changed (TfContent *content,
 }
 
 static GstElement *
+setup_audio_source (ChannelContext *context, TfContent *content)
+{
+  GstElement *result;
+
+  result = gst_parse_bin_from_description (
+      "audiotestsrc is-live=1 ! audio/x-raw-int,rate=8000 ! queue"
+      " ! audioconvert ! audioresample ! audioconvert ",
+      TRUE, NULL);
+
+  return result;
+}
+
+static GstElement *
 setup_video_source (ChannelContext *context, TfContent *content)
 {
   GstElement *result, *input, *rate, *scaler, *colorspace, *capsfilter;
@@ -281,11 +294,7 @@ content_added_cb (TfChannel *channel,
   switch (mtype)
     {
       case FS_MEDIA_TYPE_AUDIO:
-        element = gst_parse_bin_from_description (
-          "audiotestsrc is-live=1 ! audio/x-raw-int,rate=8000 ! queue"
-          " ! audioconvert ! audioresample ! audioconvert ",
-
-            TRUE, NULL);
+        element = setup_audio_source (context, content);
         break;
       case FS_MEDIA_TYPE_VIDEO:
         element = setup_video_source (context, content);
