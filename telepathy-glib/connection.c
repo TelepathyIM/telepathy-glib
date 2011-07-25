@@ -1282,14 +1282,14 @@ _tp_connection_got_properties (TpProxy *proxy,
     }
 }
 
-static GObject *
-tp_connection_constructor (GType type,
-                           guint n_params,
-                           GObjectConstructParam *params)
+static void
+tp_connection_constructed (GObject *object)
 {
   GObjectClass *object_class = (GObjectClass *) tp_connection_parent_class;
-  TpConnection *self = TP_CONNECTION (object_class->constructor (type,
-        n_params, params));
+  TpConnection *self = TP_CONNECTION (object);
+
+  if (object_class->constructed != NULL)
+    object_class->constructed (object);
 
   _tp_proxy_ensure_factory (self, NULL);
 
@@ -1309,8 +1309,6 @@ tp_connection_constructor (GType type,
 
   g_signal_connect (self, "invalidated",
       G_CALLBACK (tp_connection_invalidated), NULL);
-
-  return (GObject *) self;
 }
 
 static void
@@ -1508,7 +1506,7 @@ tp_connection_class_init (TpConnectionClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpConnectionPrivate));
 
-  object_class->constructor = tp_connection_constructor;
+  object_class->constructed = tp_connection_constructed;
   object_class->get_property = tp_connection_get_property;
   object_class->dispose = tp_connection_dispose;
   object_class->finalize = tp_connection_finalize;
