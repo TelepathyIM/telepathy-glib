@@ -649,9 +649,16 @@ queue_pending (GObject *object, TpMessage *pending)
 
       type = TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL;
 
-      if (echo != NULL)
+      text = NULL;
+      timestamp = 0;
+
+      if (echo != NULL && echo->len < 1)
         {
-          const GHashTable *echo_header = g_ptr_array_index (echo, 1);
+          WARNING ("delivery-echo should contain at least 1 part");
+        }
+      else if (echo != NULL)
+        {
+          const GHashTable *echo_header = g_ptr_array_index (echo, 0);
           TpMessage *echo_msg;
 
           echo_msg = _tp_cm_message_new_from_parts (mixin->priv->connection,
@@ -670,11 +677,6 @@ queue_pending (GObject *object, TpMessage *pending)
           timestamp = tp_asv_get_uint32 (echo_header, "message-sent", NULL);
 
           g_object_unref (echo_msg);
-        }
-      else
-        {
-          text = NULL;
-          timestamp = 0;
         }
 
       tp_svc_channel_type_text_emit_send_error (object, send_error, timestamp,
