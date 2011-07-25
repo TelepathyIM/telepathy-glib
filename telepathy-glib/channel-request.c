@@ -257,8 +257,12 @@ tp_channel_request_succeeded_with_channel_cb (TpChannelRequest *self,
       return;
     }
 
-  channel = tp_client_channel_factory_create_channel (
-      self->priv->channel_factory, connection, chan_path, chan_props, &error);
+  if (self->priv->channel_factory != NULL)
+    channel = tp_client_channel_factory_create_channel (
+        self->priv->channel_factory, connection, chan_path, chan_props, &error);
+  else
+    channel = tp_simple_client_factory_ensure_channel (tp_proxy_get_factory (self),
+        connection, chan_path, chan_props, &error);
   if (channel == NULL)
     {
       DEBUG ("Failed to create TpChannel: %s", error->message);
@@ -291,12 +295,6 @@ tp_channel_request_constructed (GObject *object)
   g_return_if_fail (tp_proxy_get_dbus_daemon (self) != NULL);
 
   _tp_proxy_ensure_factory (self, NULL);
-
-  if (self->priv->channel_factory == NULL)
-    {
-      self->priv->channel_factory = TP_CLIENT_CHANNEL_FACTORY (
-          tp_automatic_proxy_factory_dup ());
-    }
 
   sc = tp_cli_channel_request_connect_to_failed (self,
       tp_channel_request_failed_cb, NULL, NULL, NULL, &error);
@@ -503,10 +501,10 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    * @channel will be %NULL. When using newer versions, they will be correctly
    * set to the newly-created channel, and the connection which owns it.
    *
-   * The #TpChannel is created using #TpChannelRequest:channel-factory but
-   * the features of the factory are NOT prepared. It's up to the user to
-   * prepare the features returned by
-   * tp_client_channel_factory_dup_channel_features() himself.
+   * The #TpChannel is created using #TpChannelRequest:channel-factory or
+   * #TpProxy:factory but the features of the factory are NOT prepared.
+   * It's up to the user to prepare the features returned by
+   * tp_simple_client_factory_dup_channel_features() himself.
    *
    * Since: 0.13.14
    */
@@ -629,7 +627,9 @@ tp_channel_request_set_channel_factory (TpChannelRequest *self,
     TpClientChannelFactory *factory)
 {
   tp_clear_object (&self->priv->channel_factory);
-  self->priv->channel_factory = g_object_ref (factory);
+
+  if (factory != NULL)
+    self->priv->channel_factory = g_object_ref (factory);
   g_object_notify (G_OBJECT (self), "channel-factory");
 }
 

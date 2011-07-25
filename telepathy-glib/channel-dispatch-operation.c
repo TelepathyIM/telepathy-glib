@@ -537,7 +537,8 @@ update_channels_array (TpChannelDispatchOperation *self,
         }
       else
         {
-          channel = tp_channel_new_from_properties (self->priv->connection,
+          channel = tp_simple_client_factory_ensure_channel (
+              tp_proxy_get_factory (self), self->priv->connection,
               path, chan_props, &err);
 
           if (channel == NULL)

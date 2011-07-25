@@ -1165,16 +1165,6 @@ tp_base_client_constructed (GObject *object)
   g_strdelimit (self->priv->object_path, ".", '/');
 
   self->priv->bus_name = g_string_free (string, FALSE);
-
-  if (self->priv->channel_factory == NULL)
-    {
-      self->priv->channel_factory = TP_CLIENT_CHANNEL_FACTORY (
-          tp_automatic_proxy_factory_dup ());
-    }
-  else
-    {
-      g_assert (TP_IS_CLIENT_CHANNEL_FACTORY (self->priv->channel_factory));
-    }
 }
 
 typedef enum {
@@ -1563,8 +1553,12 @@ get_features_for_channel (TpBaseClient *self,
 {
   GArray *features;
 
-  features = tp_client_channel_factory_dup_channel_features (
-      self->priv->channel_factory, channel);
+  if (self->priv->channel_factory != NULL)
+    features = tp_client_channel_factory_dup_channel_features (
+        self->priv->channel_factory, channel);
+  else
+    features = tp_simple_client_factory_dup_channel_features (
+        tp_proxy_get_factory (self->priv->account_mgr), channel);
 
   g_assert (features != NULL);
 
@@ -1577,6 +1571,23 @@ get_features_for_channel (TpBaseClient *self,
       self->priv->channel_features->len);
 
   return features;
+}
+
+static TpChannel *
+ensure_channel (TpBaseClient *self,
+    TpConnection *connection,
+    const gchar *chan_path,
+    GHashTable *chan_props,
+    GError **error)
+{
+  /* Use legacy channel factory if one is set */
+  if (self->priv->channel_factory != NULL)
+    return tp_client_channel_factory_create_channel (
+        self->priv->channel_factory, connection, chan_path, chan_props, error);
+
+  return tp_simple_client_factory_ensure_channel (
+      tp_proxy_get_factory (self->priv->account_mgr), connection, chan_path,
+      chan_props, error);
 }
 
 static void
@@ -1650,8 +1661,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
           &chan_path, &chan_props);
 
-      channel = tp_client_channel_factory_create_channel (
-          self->priv->channel_factory, connection, chan_path, chan_props,
+      channel = ensure_channel (self, connection, chan_path, chan_props,
           &error);
       if (channel == NULL)
         {
@@ -1870,8 +1880,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
           &chan_path, &chan_props);
 
-      channel = tp_client_channel_factory_create_channel (
-          self->priv->channel_factory, connection, chan_path, chan_props,
+      channel = ensure_channel (self, connection, chan_path, chan_props,
           &error);
       if (channel == NULL)
         {
@@ -2219,8 +2228,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       tp_value_array_unpack (g_ptr_array_index (channels_arr, i), 2,
           &chan_path, &chan_props);
 
-      channel = tp_client_channel_factory_create_channel (
-          self->priv->channel_factory, connection, chan_path, chan_props,
+      channel = ensure_channel (self, connection, chan_path, chan_props,
           &error);
       if (channel == NULL)
         {
@@ -2872,11 +2880,12 @@ tp_base_client_set_channel_factory (TpBaseClient *self,
 {
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-  g_return_if_fail (TP_IS_CLIENT_CHANNEL_FACTORY (factory));
+  g_return_if_fail (factory == NULL || TP_IS_CLIENT_CHANNEL_FACTORY (factory));
 
   tp_clear_object (&self->priv->channel_factory);
 
-  self->priv->channel_factory = g_object_ref (factory);
+  if (factory != NULL)
+    self->priv->channel_factory = g_object_ref (factory);
   g_object_notify (G_OBJECT (self), "channel-factory");
 }
 

@@ -159,9 +159,6 @@ tp_account_channel_request_init (TpAccountChannelRequest *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TYPE_ACCOUNT_CHANNEL_REQUEST,
       TpAccountChannelRequestPrivate);
-
-  self->priv->factory = TP_CLIENT_CHANNEL_FACTORY (
-      tp_automatic_proxy_factory_dup ());
 }
 
 static void
@@ -724,8 +721,12 @@ acr_channel_request_succeeded_with_channel (TpChannelRequest *chan_req,
         }
 
       /* Operation will be complete once the channel have been prepared */
-      features = tp_client_channel_factory_dup_channel_features (
-          self->priv->factory, self->priv->channel);
+      if (self->priv->factory != NULL)
+        features = tp_client_channel_factory_dup_channel_features (
+            self->priv->factory, self->priv->channel);
+      else
+        features = tp_simple_client_factory_dup_channel_features (
+            tp_proxy_get_factory (self->priv->account), self->priv->channel);
       g_assert (features != NULL);
 
       tp_proxy_prepare_async (self->priv->channel, (GQuark *) features->data,
@@ -866,6 +867,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
 {
   GError *error = NULL;
   TpChannelDispatcher *cd;
+  TpAccountManager *manager;
 
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
@@ -886,10 +888,13 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   self->priv->ensure = ensure;
 
   /* Create a temp handler */
-  self->priv->handler = tp_simple_handler_new (self->priv->dbus, TRUE, FALSE,
+  manager = tp_simple_client_factory_ensure_account_manager (
+      tp_proxy_get_factory (self->priv->account));
+  self->priv->handler = tp_simple_handler_new_with_am (manager, TRUE, FALSE,
       "TpGLibRequestAndHandle", TRUE, handle_channels, self, NULL);
   _tp_base_client_set_only_for_account (self->priv->handler,
       self->priv->account);
+  g_object_unref (manager);
 
   tp_base_client_set_channel_factory (self->priv->handler,
       self->priv->factory);
@@ -1388,7 +1393,9 @@ tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,
   g_return_if_fail (!self->priv->requested);
 
   tp_clear_object (&self->priv->factory);
-  self->priv->factory = g_object_ref (factory);
+
+  if (factory != NULL)
+    self->priv->factory = g_object_ref (factory);
 }
 
 
