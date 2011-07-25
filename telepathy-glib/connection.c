@@ -1282,21 +1282,20 @@ _tp_connection_got_properties (TpProxy *proxy,
     }
 }
 
-static GObject *
-tp_connection_constructor (GType type,
-                           guint n_params,
-                           GObjectConstructParam *params)
+static void
+tp_connection_constructed (GObject *object)
 {
   GObjectClass *object_class = (GObjectClass *) tp_connection_parent_class;
-  TpConnection *self = TP_CONNECTION (object_class->constructor (type,
-        n_params, params));
+  TpConnection *self = TP_CONNECTION (object);
+
+  if (object_class->constructed != NULL)
+    object_class->constructed (object);
 
   _tp_proxy_ensure_factory (self, NULL);
 
   /* Connect to my own StatusChanged signal.
    * The connection hasn't had a chance to become invalid yet, so we can
    * assume that this signal connection will work */
-  DEBUG ("Connecting to StatusChanged and ConnectionError");
   tp_cli_connection_connect_to_status_changed (self,
       tp_connection_status_changed_cb, NULL, NULL, NULL, NULL);
   tp_cli_connection_connect_to_connection_error (self,
@@ -1305,15 +1304,11 @@ tp_connection_constructor (GType type,
   tp_connection_parse_object_path (self, &(self->priv->proto_name),
           &(self->priv->cm_name));
 
-  /* get the properties, currently only for HasImmortalHandles */
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
 
   g_signal_connect (self, "invalidated",
       G_CALLBACK (tp_connection_invalidated), NULL);
-
-  DEBUG ("Returning %p", self);
-  return (GObject *) self;
 }
 
 static void
@@ -1511,7 +1506,7 @@ tp_connection_class_init (TpConnectionClass *klass)
 
   g_type_class_add_private (klass, sizeof (TpConnectionPrivate));
 
-  object_class->constructor = tp_connection_constructor;
+  object_class->constructed = tp_connection_constructed;
   object_class->get_property = tp_connection_get_property;
   object_class->dispose = tp_connection_dispose;
   object_class->finalize = tp_connection_finalize;
