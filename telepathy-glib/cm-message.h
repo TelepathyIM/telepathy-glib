@@ -49,6 +49,10 @@ TpMessage *tp_cm_message_new_text (TpBaseConnection *conn,
     TpChannelTextMessageType type,
     const gchar *text);
 
+void tp_cm_message_set_message (TpMessage *self,
+    guint part,
+    const gchar *key,
+    TpMessage *message);
 void tp_cm_message_take_message (TpMessage *self,
     guint part,
     const gchar *key,

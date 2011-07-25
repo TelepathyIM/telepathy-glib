@@ -124,6 +124,60 @@ tp_cm_message_new (TpBaseConnection *connection,
 }
 
 /**
+ * tp_cm_message_set_message:
+ * @self: a message
+ * @part: a part number, which must be strictly less than the number
+ *  returned by tp_message_count_parts()
+ * @key: a key in the mapping representing the part
+ * @message: another (distinct) message created for the same #TpBaseConnection
+ *
+ * Set @key in part @part of @self to have @message as an aa{sv} value (that
+ * is, an array of Message_Part).
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_cm_message_set_message (TpMessage *self,
+    guint part,
+    const gchar *key,
+    TpMessage *message)
+{
+  GPtrArray *parts;
+  guint i;
+
+  g_return_if_fail (self != NULL);
+  g_return_if_fail (part < self->parts->len);
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (message != NULL);
+  g_return_if_fail (self != message);
+  g_return_if_fail (TP_IS_CM_MESSAGE (self));
+  g_return_if_fail (TP_IS_CM_MESSAGE (message));
+
+  g_return_if_fail (TP_CM_MESSAGE (self)->priv->connection ==
+      TP_CM_MESSAGE (message)->priv->connection);
+
+  parts = g_ptr_array_sized_new (message->parts->len);
+
+  for (i = 0; i < message->parts->len; i++)
+    {
+      GHashTable *src, *dest;
+
+      src = g_ptr_array_index (message->parts, i);
+      dest = g_hash_table_new_full (g_str_hash, g_str_equal,
+          g_free, (GDestroyNotify) tp_g_value_slice_free);
+
+      tp_g_hash_table_update (dest, src,
+          (GBoxedCopyFunc) g_strdup,
+          (GBoxedCopyFunc) tp_g_value_slice_dup);
+      g_ptr_array_add (parts, dest);
+    }
+
+  g_hash_table_insert (g_ptr_array_index (self->parts, part),
+      g_strdup (key),
+      tp_g_value_slice_new_take_boxed (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts));
+}
+
+/**
  * tp_cm_message_take_message:
  * @self: a message
  * @part: a part number, which must be strictly less than the number

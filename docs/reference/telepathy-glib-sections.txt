@@ -2331,6 +2331,7 @@ tp_message_get_type
 TpCMMessage
 tp_cm_message_new
 tp_cm_message_new_text
+tp_cm_message_set_message
 tp_cm_message_take_message
 tp_cm_message_get_sender
 tp_cm_message_set_sender
