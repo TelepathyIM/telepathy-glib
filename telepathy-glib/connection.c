@@ -1305,7 +1305,6 @@ tp_connection_constructor (GType type,
   tp_connection_parse_object_path (self, &(self->priv->proto_name),
           &(self->priv->cm_name));
 
-  /* get the properties, currently only for HasImmortalHandles */
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION, _tp_connection_got_properties, NULL, NULL, NULL);
 
