@@ -1296,7 +1296,6 @@ tp_connection_constructor (GType type,
   /* Connect to my own StatusChanged signal.
    * The connection hasn't had a chance to become invalid yet, so we can
    * assume that this signal connection will work */
-  DEBUG ("Connecting to StatusChanged and ConnectionError");
   tp_cli_connection_connect_to_status_changed (self,
       tp_connection_status_changed_cb, NULL, NULL, NULL, NULL);
   tp_cli_connection_connect_to_connection_error (self,
@@ -1311,7 +1310,6 @@ tp_connection_constructor (GType type,
   g_signal_connect (self, "invalidated",
       G_CALLBACK (tp_connection_invalidated), NULL);
 
-  DEBUG ("Returning %p", self);
   return (GObject *) self;
 }
 
