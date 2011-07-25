@@ -195,7 +195,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
-#include <telepathy-glib/simple-client-factory-internal.h>
+#include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 #include "telepathy-glib/util-internal.h"
 
