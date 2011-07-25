@@ -23,6 +23,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
+
 G_BEGIN_DECLS
 
 typedef struct _TpAutomaticProxyFactory TpAutomaticProxyFactory;
@@ -56,8 +58,8 @@ GType tp_automatic_proxy_factory_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_AUTOMATIC_PROXY_FACTORY, \
                               TpAutomaticProxyFactoryClass))
 
-TpAutomaticProxyFactory * tp_automatic_proxy_factory_new (void);
-TpAutomaticProxyFactory * tp_automatic_proxy_factory_dup (void);
+TpAutomaticProxyFactory * tp_automatic_proxy_factory_new (void) _TP_GNUC_DEPRECATED;
+TpAutomaticProxyFactory * tp_automatic_proxy_factory_dup (void) _TP_GNUC_DEPRECATED;
 
 G_END_DECLS
 

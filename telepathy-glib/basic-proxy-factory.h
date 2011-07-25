@@ -23,6 +23,8 @@
 
 #include <glib-object.h>
 
+#include <telepathy-glib/defs.h>
+
 G_BEGIN_DECLS
 
 typedef struct _TpBasicProxyFactory TpBasicProxyFactory;
@@ -56,9 +58,9 @@ GType tp_basic_proxy_factory_get_type (void);
   (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASIC_PROXY_FACTORY, \
                               TpBasicProxyFactoryClass))
 
-TpBasicProxyFactory * tp_basic_proxy_factory_new (void);
+TpBasicProxyFactory * tp_basic_proxy_factory_new (void) _TP_GNUC_DEPRECATED;
 
-TpBasicProxyFactory * tp_basic_proxy_factory_dup (void);
+TpBasicProxyFactory * tp_basic_proxy_factory_dup (void) _TP_GNUC_DEPRECATED;
 
 G_END_DECLS
 

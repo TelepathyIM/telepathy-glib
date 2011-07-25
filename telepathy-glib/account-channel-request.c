@@ -83,6 +83,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/deprecated-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 
@@ -805,7 +806,7 @@ acr_request_cb (TpChannelDispatcher *cd,
       goto fail;
     }
 
-  tp_channel_request_set_channel_factory (self->priv->chan_request,
+  _tp_channel_request_set_channel_factory (self->priv->chan_request,
       self->priv->factory);
 
   self->priv->invalidated_sig = g_signal_connect (self->priv->chan_request,
@@ -896,7 +897,7 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
       self->priv->account);
   g_object_unref (manager);
 
-  tp_base_client_set_channel_factory (self->priv->handler,
+  _tp_base_client_set_channel_factory (self->priv->handler,
       self->priv->factory);
 
   if (self->priv->delegated_channel_cb != NULL)
@@ -1385,9 +1386,18 @@ tp_account_channel_request_ensure_channel_finish (
  * channel.
  *
  * Since: 0.13.2
+ * Deprecated: since 0.UNRELEASED. The factory is taken from
+ *  #TpAccountChannelRequest:account.
  */
 void
 tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,
+    TpClientChannelFactory *factory)
+{
+  _tp_account_channel_request_set_channel_factory (self, factory);
+}
+
+void
+_tp_account_channel_request_set_channel_factory (TpAccountChannelRequest *self,
     TpClientChannelFactory *factory)
 {
   g_return_if_fail (!self->priv->requested);

@@ -80,12 +80,19 @@ tp_basic_proxy_factory_class_init (TpBasicProxyFactoryClass *cls)
  * Returns: a new #TpBasicProxyFactory
  *
  * Since: 0.13.2
+ * Deprecated: New code should use #TpSimpleClientFactory instead
  */
-TpBasicProxyFactory *
-tp_basic_proxy_factory_new (void)
+static TpBasicProxyFactory *
+_tp_basic_proxy_factory_new (void)
 {
   return g_object_new (TP_TYPE_BASIC_PROXY_FACTORY,
       NULL);
+}
+
+TpBasicProxyFactory *
+tp_basic_proxy_factory_new (void)
+{
+  return _tp_basic_proxy_factory_new ();
 }
 
 /**
@@ -98,6 +105,7 @@ tp_basic_proxy_factory_new (void)
  * Returns: (transfer full): a #TpBasicProxyFactory
  *
  * Since: 0.13.2
+ * Deprecated: New code should use #TpSimpleClientFactory instead
  */
 TpBasicProxyFactory *
 tp_basic_proxy_factory_dup (void)
@@ -107,7 +115,7 @@ tp_basic_proxy_factory_dup (void)
   if (singleton != NULL)
     return g_object_ref (singleton);
 
-  singleton = tp_basic_proxy_factory_new ();
+  singleton = _tp_basic_proxy_factory_new ();
 
   g_object_add_weak_pointer (G_OBJECT (singleton), (gpointer) &singleton);
 

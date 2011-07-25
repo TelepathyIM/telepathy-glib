@@ -155,10 +155,10 @@ void tp_base_client_add_connection_features_varargs (TpBaseClient *self,
     GQuark feature, ...);
 
 void tp_base_client_set_channel_factory (TpBaseClient *self,
-    TpClientChannelFactory *factory);
+    TpClientChannelFactory *factory) _TP_GNUC_DEPRECATED;
 
 TpClientChannelFactory *tp_base_client_get_channel_factory (
-    TpBaseClient *self);
+    TpBaseClient *self) _TP_GNUC_DEPRECATED;
 
 typedef void (*TpBaseClientDelegatedChannelsCb) (
     TpBaseClient *client,

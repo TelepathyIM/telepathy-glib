@@ -202,6 +202,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     dbus-properties-mixin.c \
     debug.c \
     debug-sender.c \
+    deprecated-internal.h \
     dtmf.c \
     interfaces.c \
     debug-internal.h \

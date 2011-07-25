@@ -256,12 +256,19 @@ client_proxy_factory_iface_init (gpointer g_iface,
  * Returns: a new #TpAutomaticProxyFactory
  *
  * Since: 0.13.2
+ * Deprecated: New code should use #TpAutomaticClientFactory instead
  */
-TpAutomaticProxyFactory *
-tp_automatic_proxy_factory_new (void)
+static TpAutomaticProxyFactory *
+_tp_automatic_proxy_factory_new (void)
 {
   return g_object_new (TP_TYPE_AUTOMATIC_PROXY_FACTORY,
       NULL);
+}
+
+TpAutomaticProxyFactory *
+tp_automatic_proxy_factory_new (void)
+{
+  return _tp_automatic_proxy_factory_new ();
 }
 
 /**
@@ -274,6 +281,7 @@ tp_automatic_proxy_factory_new (void)
  * Returns: (transfer full): a #TpAutomaticProxyFactory
  *
  * Since: 0.13.2
+ * Deprecated: New code should use #TpAutomaticClientFactory instead
  */
 TpAutomaticProxyFactory *
 tp_automatic_proxy_factory_dup (void)
@@ -283,7 +291,7 @@ tp_automatic_proxy_factory_dup (void)
   if (singleton != NULL)
     return g_object_ref (singleton);
 
-  singleton = tp_automatic_proxy_factory_new ();
+  singleton = _tp_automatic_proxy_factory_new ();
 
   g_object_add_weak_pointer (G_OBJECT (singleton), (gpointer) &singleton);
 

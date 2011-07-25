@@ -29,6 +29,7 @@
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/channel-request.h>
 #include <telepathy-glib/client-channel-factory.h>
+#include <telepathy-glib/defs.h>
 #include <telepathy-glib/handle-channels-context.h>
 
 G_BEGIN_DECLS
@@ -73,7 +74,7 @@ gint64 tp_account_channel_request_get_user_action_time (
 
 void tp_account_channel_request_set_channel_factory (
     TpAccountChannelRequest *self,
-    TpClientChannelFactory *factory);
+    TpClientChannelFactory *factory) _TP_GNUC_DEPRECATED;
 
 
 TpChannelRequest * tp_account_channel_request_get_channel_request (

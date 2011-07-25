@@ -195,6 +195,7 @@
 
 #define DEBUG_FLAG TP_DEBUG_CLIENT
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/deprecated-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 #include "telepathy-glib/util-internal.h"
@@ -1419,6 +1420,8 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * If no channel factory is specified then #TpAutomaticProxyFactory is used.
    *
    * Since: 0.13.2
+   * Deprecated: since 0.UNRELEASED. The factory is taken from
+   *  #TpBaseClient:account-manager.
    */
   param_spec = g_param_spec_object ("channel-factory", "Channel factory",
       "Object implementing TpClientChannelFactoryInterface",
@@ -2873,9 +2876,18 @@ tp_base_client_add_connection_features (TpBaseClient *self,
  * It can't be changed once @self has been registered.
  *
  * Since: 0.13.2
+ * Deprecated: since 0.UNRELEASED. The factory is taken from
+ *  #TpBaseClient:account-manager.
  */
 void
 tp_base_client_set_channel_factory (TpBaseClient *self,
+    TpClientChannelFactory *factory)
+{
+  _tp_base_client_set_channel_factory (self, factory);
+}
+
+void
+_tp_base_client_set_channel_factory (TpBaseClient *self,
     TpClientChannelFactory *factory)
 {
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
@@ -2897,6 +2909,8 @@ tp_base_client_set_channel_factory (TpBaseClient *self,
  *
  * Returns: the value of #TpBaseClient:channel-factory
  * Since: 0.13.2
+ * Deprecated: since 0.UNRELEASED. The factory is taken from
+ *  #TpBaseClient:account-manager.
  */
 TpClientChannelFactory *
 tp_base_client_get_channel_factory (TpBaseClient *self)
