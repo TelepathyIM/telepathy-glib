@@ -1185,7 +1185,8 @@ tp_contact_class_init (TpContactClass *klass)
    * A #GStrv containing the client types of this contact.
    *
    * This is set to %NULL if %TP_CONTACT_FEATURE_CLIENT_TYPES is not
-   * set on this contact.
+   * set on this contact; it may also be %NULL if that feature is prepared, but
+   * the contact's client types are unknown.
    *
    * Since: 0.13.1
    */
@@ -2243,9 +2244,10 @@ contact_maybe_set_simple_presence (TpContact *contact,
   const gchar *status;
   const gchar *message;
 
-  if (contact == NULL || presence == NULL)
+  if (contact == NULL)
     return;
 
+  g_return_if_fail (presence != NULL);
   contact->priv->has_features |= CONTACT_FEATURE_FLAG_PRESENCE;
 
   tp_value_array_unpack (presence, 3, &type, &status, &message);
@@ -2272,14 +2274,23 @@ static void
 contact_maybe_set_location (TpContact *self,
     GHashTable *location)
 {
-  if (self == NULL || location == NULL)
+  if (self == NULL)
     return;
 
   if (self->priv->location != NULL)
     g_hash_table_unref (self->priv->location);
 
+  /* We guarantee that, if we've fetched a location for a contact, the
+   * :location property is non-NULL. This is mainly because Empathy assumed
+   * this and would crash if not.
+   */
+  if (location == NULL)
+    location = tp_asv_new (NULL, NULL);
+  else
+    g_hash_table_ref (location);
+
   self->priv->has_features |= CONTACT_FEATURE_FLAG_LOCATION;
-  self->priv->location = g_hash_table_ref (location);
+  self->priv->location = location;
   g_object_notify ((GObject *) self, "location");
 }
 
@@ -2422,66 +2433,10 @@ contacts_bind_to_location_updated (TpConnection *connection)
 }
 
 static void
-contacts_got_locations (TpConnection *connection,
-    GHashTable *locations,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  if (error != NULL)
-    {
-      DEBUG ("GetLocations failed with %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-    }
-  else
-    {
-      GHashTableIter iter;
-      gpointer key, value;
-
-      g_hash_table_iter_init (&iter, locations);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          contacts_location_updated (connection, GPOINTER_TO_UINT (key),
-              value, NULL, NULL);
-        }
-    }
-
-  contacts_context_continue (c);
-}
-
-static void
-contacts_get_locations (ContactsContext *c)
-{
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  contacts_bind_to_location_updated (c->connection);
-
-  for (i = 0; i < c->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_LOCATION) == 0)
-        {
-          c->refcount++;
-          tp_cli_connection_interface_location_call_get_locations (
-              c->connection, -1, c->handles, contacts_got_locations,
-              c, contacts_context_unref, c->weak_object);
-          return;
-        }
-    }
-
-  contacts_context_continue (c);
-}
-
-static void
 contact_maybe_set_client_types (TpContact *self,
     const gchar * const *types)
 {
-  if (self == NULL || types == NULL)
+  if (self == NULL)
     return;
 
   if (self->priv->client_types != NULL)
@@ -2845,7 +2800,12 @@ static void
 contact_set_avatar_token (TpContact *self, const gchar *new_token,
     gboolean request)
 {
-  if (!tp_strdiff (self->priv->avatar_token, new_token))
+  /* A no-op change (specifically from NULL to NULL) is still interesting if we
+   * don't have the AVATAR_TOKEN feature yet: it indicates that we've
+   * discovered it.
+   */
+  if ((self->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) &&
+      !tp_strdiff (self->priv->avatar_token, new_token))
     return;
 
   DEBUG ("contact#%u token is %s", self->priv->handle, new_token);
@@ -2956,25 +2916,29 @@ contact_maybe_set_info (TpContact *self,
 {
   guint i;
 
-  if (self == NULL || contact_info == NULL)
+  if (self == NULL)
     return;
 
   tp_contact_info_list_free (self->priv->contact_info);
   self->priv->contact_info = NULL;
 
   self->priv->has_features |= CONTACT_FEATURE_FLAG_CONTACT_INFO;
-  for (i = 0; i < contact_info->len; i++)
-    {
-      GValueArray *va = g_ptr_array_index (contact_info, i);
-      const gchar *field_name;
-      GStrv parameters;
-      GStrv field_value;
 
-      tp_value_array_unpack (va, 3, &field_name, &parameters, &field_value);
-      self->priv->contact_info = g_list_prepend (self->priv->contact_info,
-          tp_contact_info_field_new (field_name, parameters, field_value));
+  if (contact_info != NULL)
+    {
+      for (i = contact_info->len; i > 0; i--)
+        {
+          GValueArray *va = g_ptr_array_index (contact_info, i - 1);
+          const gchar *field_name;
+          GStrv parameters;
+          GStrv field_value;
+
+          tp_value_array_unpack (va, 3, &field_name, &parameters, &field_value);
+          self->priv->contact_info = g_list_prepend (self->priv->contact_info,
+              tp_contact_info_field_new (field_name, parameters, field_value));
+        }
     }
-  self->priv->contact_info = g_list_reverse (self->priv->contact_info);
+  /* else we don't know, but an empty list is perfectly valid. */
 
   g_object_notify ((GObject *) self, "contact-info");
 }
@@ -3551,7 +3515,9 @@ contacts_context_queue_features (ContactsContext *context)
       tp_proxy_has_interface_by_id (context->connection,
         TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION))
     {
-      g_queue_push_tail (&context->todo, contacts_get_locations);
+      WARNING ("%s supports Location but not Contacts! Where did you find "
+          "this CM? TP_CONTACT_FEATURE_LOCATION is not gonna work",
+          tp_proxy_get_object_path (context->connection));
     }
 
   /* Don't implement slow path for ContactCapabilities as Contacts is now
@@ -3585,7 +3551,7 @@ contacts_context_queue_features (ContactsContext *context)
 static gboolean
 tp_contact_set_attributes (TpContact *contact,
     GHashTable *asv,
-    gboolean want_avatar_data,
+    ContactFeatureFlags wanted,
     GError **error)
 {
   TpConnection *connection = tp_contact_get_connection (contact);
@@ -3619,56 +3585,91 @@ tp_contact_set_attributes (TpContact *contact,
       return FALSE;
     }
 
-  s = tp_asv_get_string (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS);
 
-  if (s != NULL)
+  if (wanted & CONTACT_FEATURE_FLAG_ALIAS)
     {
-      contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
-      g_free (contact->priv->alias);
-      contact->priv->alias = g_strdup (s);
-      g_object_notify ((GObject *) contact, "alias");
+      s = tp_asv_get_string (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS);
+
+      if (s == NULL)
+        {
+          WARNING ("%s supposedly implements Contacts and Aliasing, but "
+              "omitted " TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS,
+              tp_proxy_get_object_path (connection));
+        }
+      else
+        {
+          contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
+          g_free (contact->priv->alias);
+          contact->priv->alias = g_strdup (s);
+          g_object_notify ((GObject *) contact, "alias");
+        }
     }
 
   /* There is no attribute for avatar data. If we want it, let's just
    * pretend it is ready. If avatar is in cache, that will be true as
    * soon as the token is set from attributes */
-  if (want_avatar_data)
+  if (wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA)
     contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
 
-  s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
+  if (wanted & CONTACT_FEATURE_FLAG_AVATAR_TOKEN)
+    {
+      s = tp_asv_get_string (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
+      contact_set_avatar_token (contact, s, TRUE);
+    }
 
-  if (s != NULL)
-    contact_set_avatar_token (contact, s, TRUE);
+  if (wanted & CONTACT_FEATURE_FLAG_PRESENCE)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
+          TP_STRUCT_TYPE_SIMPLE_PRESENCE);
 
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
-      TP_STRUCT_TYPE_SIMPLE_PRESENCE);
-  contact_maybe_set_simple_presence (contact, boxed);
+      if (boxed == NULL)
+        WARNING ("%s supposedly implements Contacts and SimplePresence, "
+            "but omitted the mandatory "
+            TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE
+            " attribute",
+            tp_proxy_get_object_path (connection));
+      else
+        contact_maybe_set_simple_presence (contact, boxed);
+    }
 
   /* Location */
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_LOCATION_LOCATION,
-      TP_HASH_TYPE_LOCATION);
-  contact_maybe_set_location (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_LOCATION)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_LOCATION_LOCATION,
+          TP_HASH_TYPE_LOCATION);
+      contact_maybe_set_location (contact, boxed);
+    }
 
   /* Capabilities */
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES_CAPABILITIES,
-      TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
-  contact_maybe_set_capabilities (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_CAPABILITIES)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_CAPABILITIES_CAPABILITIES,
+          TP_ARRAY_TYPE_REQUESTABLE_CHANNEL_CLASS_LIST);
+      contact_maybe_set_capabilities (contact, boxed);
+    }
 
   /* ContactInfo */
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO_INFO,
-      TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
-  contact_maybe_set_info (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_CONTACT_INFO)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_INFO_INFO,
+          TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
+      contact_maybe_set_info (contact, boxed);
+    }
 
   /* ClientTypes */
-  boxed = tp_asv_get_boxed (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES_CLIENT_TYPES,
-      G_TYPE_STRV);
-  contact_maybe_set_client_types (contact, boxed);
+  if (wanted & CONTACT_FEATURE_FLAG_CLIENT_TYPES)
+    {
+      boxed = tp_asv_get_boxed (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CLIENT_TYPES_CLIENT_TYPES,
+          G_TYPE_STRV);
+      contact_maybe_set_client_types (contact, boxed);
+    }
 
   /* ContactList subscription states */
   {
@@ -3763,8 +3764,7 @@ contacts_got_attributes (TpConnection *connection,
       else
         {
           /* set up the contact with its attributes */
-          tp_contact_set_attributes (contact, asv,
-              (c->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0, &e);
+          tp_contact_set_attributes (contact, asv, c->wanted, &e);
         }
 
       if (e != NULL)

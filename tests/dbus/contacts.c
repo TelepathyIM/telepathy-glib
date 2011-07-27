@@ -7,9 +7,9 @@
  * - having to fall back to RequestAliases
  * - get_contacts_by_id with features (but it's trivial)
  *
- * Copyright (C) 2008 Collabora Ltd. <http://www.collabora.co.uk/>
- * Copyright (C) 2008 Nokia Corporation
- * Copyright (C) 2007 Will Thompson
+ * Copyright © 2008–2011 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2008 Nokia Corporation
+ * Copyright © 2007 Will Thompson
  *
  * Copying and distribution of this file, with or without modification,
  * are permitted in any medium without royalty provided the copyright
@@ -25,6 +25,7 @@
 #include <telepathy-glib/debug.h>
 
 #include "tests/lib/contacts-conn.h"
+#include "tests/lib/broken-client-types-conn.h"
 #include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
@@ -790,6 +791,46 @@ test_by_handle (Fixture *f,
   g_main_loop_unref (result.loop);
 }
 
+/* Silently removes the TpBaseConnection object from D-Bus, so that if the test
+ * makes any D-Bus calls on it, it will fail (but the TpConnection proxy isn't
+ * invalidated otherwise)
+ */
+static void
+make_the_connection_disappear (Fixture *f)
+{
+  GError *error = NULL;
+  gboolean ok;
+
+  tp_dbus_daemon_unregister_object (
+      tp_base_connection_get_dbus_daemon (f->base_connection),
+      f->base_connection);
+  /* check that that worked */
+  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
+      &error, NULL);
+  g_assert_error (error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+  g_assert (!ok);
+  g_clear_error (&error);
+}
+
+/* Returns the TpBaseConnection to D-Bus (after a previous call to
+ * make_the_connection_disappear())
+ */
+static void
+put_the_connection_back (Fixture *f)
+{
+  GError *error = NULL;
+  gboolean ok;
+
+  tp_dbus_daemon_register_object (
+      tp_base_connection_get_dbus_daemon (f->base_connection),
+      f->base_connection->object_path, f->base_connection);
+  /* check that *that* worked */
+  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
+      &error, NULL);
+  g_assert_no_error (error);
+  g_assert (ok);
+}
+
 static void
 test_by_handle_again (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
@@ -801,19 +842,51 @@ test_by_handle_again (Fixture *f,
   TpContact *contact;
   gpointer weak_pointer;
   const gchar *alias = "Alice in Wonderland";
-  TpContactFeature feature = TP_CONTACT_FEATURE_ALIAS;
-  gboolean ok;
+  GHashTable *capabilities;
+  /* We only really actively test TP_CONTACT_FEATURE_ALIAS, but preparing any
+   * of these once should be enough, assuming that the CM is not broken.
+   */
+  TpContactFeature features[] = {
+      TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_AVATAR_TOKEN,
+      TP_CONTACT_FEATURE_PRESENCE,
+      TP_CONTACT_FEATURE_LOCATION,
+      TP_CONTACT_FEATURE_CAPABILITIES,
+      TP_CONTACT_FEATURE_AVATAR_DATA,
+      TP_CONTACT_FEATURE_CONTACT_INFO,
+      TP_CONTACT_FEATURE_CLIENT_TYPES,
+      TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
+      TP_CONTACT_FEATURE_CONTACT_GROUPS
+  };
 
   g_test_bug ("25181");
+  /* If people add new features, they should add them to this test. We could
+   * generate the list dynamically but this seems less brittle.
+   */
+  g_assert_cmpuint (G_N_ELEMENTS (features), ==, NUM_TP_CONTACT_FEATURES);
 
   handle = tp_handle_ensure (service_repo, "alice", NULL, NULL);
   g_assert_cmpuint (handle, !=, 0);
   tp_tests_contacts_connection_change_aliases (f->service_conn, 1, &handle,
       &alias);
+  /* Unlike almost every other feature, with capabilities “not sure” and “none”
+   * are different: you really might care about the difference between “I don't
+   * know if blah can do video” versus “I know blah cannot do video”.
+   *
+   * It happens that we get the repeated-reintrospection behaviour for the
+   * former case of contact caps. I can't really be bothered to fix this.
+   */
+  capabilities = g_hash_table_new_full (NULL, NULL, NULL,
+      (GDestroyNotify) g_ptr_array_unref);
+  g_hash_table_insert (capabilities, GUINT_TO_POINTER (handle),
+      g_ptr_array_new ());
+  tp_tests_contacts_connection_change_capabilities (f->service_conn,
+      capabilities);
+  g_hash_table_unref (capabilities);
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      1, &feature,
+      G_N_ELEMENTS (features), features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -831,41 +904,22 @@ test_by_handle_again (Fixture *f,
   reset_result (&result);
   g_assert (result.error == NULL);
 
-  /* silently remove the object from D-Bus, so that if the second request
-   * makes any D-Bus calls, it will fail (but the client conn isn't
-   * invalidated) */
-  tp_dbus_daemon_unregister_object (
-      tp_base_connection_get_dbus_daemon (f->base_connection),
-      f->base_connection);
-  /* check that that worked */
-  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
-      &result.error, NULL);
-  g_assert_error (result.error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
-  g_assert (!ok);
-  g_clear_error (&result.error);
+  make_the_connection_disappear (f);
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      1, &feature,
+      G_N_ELEMENTS (features), features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
   g_assert_cmpuint (result.contacts->len, ==, 1);
   g_assert_cmpuint (result.invalid->len, ==, 0);
-  g_assert_no_error (result.error);
 
   g_assert (g_ptr_array_index (result.contacts, 0) == contact);
   g_assert_cmpstr (tp_contact_get_alias (contact), ==, "Alice in Wonderland");
 
-  /* OK, put it back so teardown() can use it */
-  tp_dbus_daemon_register_object (
-      tp_base_connection_get_dbus_daemon (f->base_connection),
-      f->base_connection->object_path, f->base_connection);
-  /* check that *that* worked */
-  ok = tp_cli_connection_run_get_self_handle (f->client_conn, -1, NULL,
-      &result.error, NULL);
-  g_assert_no_error (result.error);
-  g_assert (ok);
+  put_the_connection_back (f);
 
   g_assert (result.error == NULL);
   reset_result (&result);
@@ -1162,7 +1216,7 @@ test_upgrade (Fixture *f,
   static const gchar * const messages[] = { "", "Fixing it",
       "GON OUT BACKSON" };
   GHashTable *location_1 = tp_asv_new (
-      "country",  G_TYPE_STRING, "United-kingdoms", NULL);
+      "country",  G_TYPE_STRING, "United Kingdom of Great Britain and Northern Ireland", NULL);
   GHashTable *location_2 = tp_asv_new (
       "country",  G_TYPE_STRING, "Atlantis", NULL);
   GHashTable *location_3 = tp_asv_new (
@@ -1436,7 +1490,7 @@ test_features (Fixture *f,
   static const gchar * const new_messages[] = { "At the Mad Hatter's",
       "It'll cost you" };
   GHashTable *location_1 = tp_asv_new (
-      "country",  G_TYPE_STRING, "United-kingdoms", NULL);
+      "country",  G_TYPE_STRING, "United Kingdom of Great Britain and Northern Ireland", NULL);
   GHashTable *location_2 = tp_asv_new (
       "country",  G_TYPE_STRING, "Atlantis", NULL);
   GHashTable *location_3 = tp_asv_new (
@@ -1445,7 +1499,7 @@ test_features (Fixture *f,
   GHashTable *location_4 = tp_asv_new (
       "country",  G_TYPE_STRING, "France", NULL);
   GHashTable *location_5 = tp_asv_new (
-      "country",  G_TYPE_STRING, "Irland", NULL);
+      "country",  G_TYPE_STRING, "Éire", NULL);
   GHashTable *new_locations[] = { location_4, location_5 };
   GHashTable *capabilities, *new_capabilities;
   gboolean support_text_chats[] = { TRUE, FALSE, FALSE };
@@ -1950,7 +2004,7 @@ test_prepare_contact_caps_without_request (Fixture *f,
   guint i;
   TpContactFeature features[] = { TP_CONTACT_FEATURE_CAPABILITIES };
 
-  g_message (G_STRFUNC);
+  g_test_bug ("27686");
 
   for (i = 0; i < 3; i++)
     handles[i] = tp_handle_ensure (service_repo, ids[i], NULL, NULL);
@@ -2237,6 +2291,242 @@ test_contact_groups (Fixture *f,
 }
 
 static void
+assert_no_location (TpContact *contact)
+{
+  /* We could reasonably represent “no published location” as NULL or as an
+   * empty a{sv}, so allow both.
+   */
+  GHashTable *retrieved_location = tp_contact_get_location (contact);
+
+  if (retrieved_location != NULL)
+    g_assert (g_hash_table_size (retrieved_location) == 0);
+}
+
+/* This is a regression test for an issue where the LOCATION feature would
+ * never be marked as prepared for contacts with no published location, so
+ * repeated calls to tp_connection_get_contacts_by_handle() would call
+ * GetContactAttributes() over and over. It's really a special case of
+ * test_by_handle_again(), but presented separately for clarity.
+ */
+static void
+test_no_location (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle handle;
+  TpContact *contact;
+  gpointer weak_pointer;
+  TpContactFeature feature = TP_CONTACT_FEATURE_LOCATION;
+  GHashTable *norway = tp_asv_new ("country",  G_TYPE_STRING, "Norway", NULL);
+  notify_ctx notify_ctx_alice;
+
+  g_test_bug ("39377");
+
+  handle = tp_handle_ensure (f->service_repo, "alice", NULL, NULL);
+  g_assert_cmpuint (handle, !=, 0);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &feature,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  contact = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, handle);
+  assert_no_location (contact);
+  reset_result (&f->result);
+
+  /* Although Alice doesn't have a published location, the feature's still been
+   * prepared, so we shouldn't need any D-Bus traffic to re-fetch her TpContact.
+   */
+  make_the_connection_disappear (f);
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &feature,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_no_error (f->result.error);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) == contact);
+  assert_no_location (contact);
+
+  put_the_connection_back (f);
+  g_assert (f->result.error == NULL);
+  reset_result (&f->result);
+
+  /* Despite Alice not currently having a published location, we should
+   * certainly be listening to changes to her location.
+   */
+  notify_ctx_init (&notify_ctx_alice);
+  g_signal_connect (contact, "notify",
+      G_CALLBACK (contact_notify_cb), &notify_ctx_alice);
+
+  tp_tests_contacts_connection_change_locations (f->service_conn,
+      1, &handle, &norway);
+  tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
+  g_assert (notify_ctx_alice.location_changed);
+  ASSERT_SAME_LOCATION (tp_contact_get_location (contact), norway);
+
+  weak_pointer = contact;
+  g_object_add_weak_pointer ((GObject *) contact, &weak_pointer);
+  g_object_unref (contact);
+  g_assert (weak_pointer == NULL);
+
+  /* Check that first retrieving a contact without the LOCATION feature, and
+   * later upgrading it to have the LOCATION feature, does the right thing.
+   */
+  handle = tp_handle_ensure (f->service_repo, "rupert", NULL, NULL);
+  g_assert_cmpuint (handle, !=, 0);
+
+  tp_tests_contacts_connection_change_locations (f->service_conn,
+      1, &handle, &norway);
+
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      0, NULL,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  contact = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, handle);
+  assert_no_location (contact);
+
+  /* clean up before doing the second request */
+  reset_result (&f->result);
+
+  tp_connection_upgrade_contacts (f->client_conn,
+      1, &contact,
+      1, &feature,
+      upgrade_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_no_error (f->result.error);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) == contact);
+  ASSERT_SAME_LOCATION (tp_contact_get_location (contact), norway);
+  reset_result (&f->result);
+
+  weak_pointer = contact;
+  g_object_add_weak_pointer ((GObject *) contact, &weak_pointer);
+  g_object_unref (contact);
+  g_assert (weak_pointer == NULL);
+
+  tp_tests_proxy_run_until_dbus_queue_processed (f->client_conn);
+}
+
+static void
+setup_broken_client_types_conn (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  tp_tests_create_and_connect_conn (
+      TP_TESTS_TYPE_BROKEN_CLIENT_TYPES_CONNECTION,
+      "me@test.com", &f->base_connection, &f->client_conn);
+
+  f->service_conn = TP_TESTS_CONTACTS_CONNECTION (f->base_connection);
+  g_object_ref (f->service_conn);
+
+  f->service_repo = tp_base_connection_get_handles (f->base_connection,
+      TP_HANDLE_TYPE_CONTACT);
+  f->result.loop = g_main_loop_new (NULL, FALSE);
+}
+
+static void
+test_superfluous_attributes (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  TpHandle handle;
+  TpContact *contact;
+  const gchar * const *client_types;
+  TpContactFeature client_types_feature = TP_CONTACT_FEATURE_CLIENT_TYPES;
+  TpContactFeature presence_feature = TP_CONTACT_FEATURE_PRESENCE;
+
+  g_assert (TP_TESTS_IS_BROKEN_CLIENT_TYPES_CONNECTION (f->service_conn));
+
+  handle = tp_handle_ensure (f->service_repo, "helge", NULL, NULL);
+  g_assert_cmpuint (handle, !=, 0);
+
+  /* We ask for ClientTypes; the CM is broken and adds SimplePresence
+   * information to the reply... it also omits the /client-types attribute from
+   * the reply, which, since the spec says “Omitted from the result if the
+   * contact's client types are not known.” leaves us in the exciting position
+   * of having to decide between marking the feature as prepared anyway or
+   * saying it failed, and also deciding whether get_client_types returns [] or
+   * NULL...
+   */
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &client_types_feature,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  g_assert_cmpuint (f->result.contacts->len, ==, 1);
+  g_assert_cmpuint (f->result.invalid->len, ==, 0);
+  g_assert_no_error (f->result.error);
+
+  g_assert (g_ptr_array_index (f->result.contacts, 0) != NULL);
+  contact = g_object_ref (g_ptr_array_index (f->result.contacts, 0));
+  g_assert_cmpuint (tp_contact_get_handle (contact), ==, handle);
+
+  /* She doesn't have any client types. There are two reasonable ways to
+   * represent this.
+   */
+  client_types = tp_contact_get_client_types (contact);
+  if (client_types != NULL)
+    g_assert_cmpstr (client_types[0], ==, NULL);
+
+  /* She also shouldn't have any presence information, despite it being
+   * inexplicably included in the GetContactAttributes reply. Specifically:
+   * because we have not connected to PresencesChanged, it's not safe to just
+   * randomly stash this information and mark the feature as prepared.
+   *
+   * (If we wanted to be really smart we could do something like: if the
+   * information's there for some reason, and we happen already to be bound to
+   * PresencesChanged due to preparing that feature on another contact … then
+   * accept the mysterious information. But that seems fragile and prone to
+   * people relying on sketchy behaviour.)
+   */
+  g_assert_cmpstr (tp_contact_get_presence_message (contact), ==, "");
+  g_assert_cmpstr (tp_contact_get_presence_status (contact), ==, "");
+  g_assert_cmpuint (tp_contact_get_presence_type (contact), ==,
+      TP_CONNECTION_PRESENCE_TYPE_UNSET);
+
+  reset_result (&f->result);
+
+  /* So now if we try to prepare TP_CONTACT_FEATURE_PRESENCE, we should need to
+   * make some D-Bus calls: it shouldn't have been marked prepared by the
+   * previous call. Successfully upgrading to this feature is tested
+   * elsewhere, so we'll test that upgrading fails if the connection's
+   * mysteriously died.
+   */
+  make_the_connection_disappear (f);
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      1, &presence_feature,
+      by_handle_cb,
+      &f->result, finish, NULL);
+  g_main_loop_run (f->result.loop);
+  /* Not gonna make any particular assertions about what the error is. */
+  g_assert_error (f->result.error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
+
+  put_the_connection_back (f);
+  reset_result (&f->result);
+  g_object_unref (contact);
+}
+
+static void
 setup (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -2334,6 +2624,12 @@ main (int argc,
    * an empty set of capabilities if the connection doesn't support
    * ContactCapabilities and Requests. */
   ADD (prepare_contact_caps_without_request);
+
+  ADD (no_location);
+
+  g_test_add ("/contacts/superfluous-attributes", Fixture, NULL,
+      setup_broken_client_types_conn, test_superfluous_attributes,
+      teardown);
 
   return g_test_run ();
 }

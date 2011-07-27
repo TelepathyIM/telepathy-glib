@@ -517,23 +517,13 @@ tp_presence_mixin_finalize (GObject *obj)
   /* free any data held directly by the object here */
 }
 
-
-struct _i_absolutely_love_g_hash_table_foreach {
-    const TpPresenceStatusSpec *supported_statuses;
-    GHashTable *contact_statuses;
-    GHashTable *presence_hash;
-};
-
-
 static void
-construct_presence_hash_foreach (gpointer key,
-                                 gpointer value,
-                                 gpointer user_data)
+construct_presence_hash_foreach (
+    GHashTable *presence_hash,
+    const TpPresenceStatusSpec *supported_statuses,
+    TpHandle handle,
+    TpPresenceStatus *status)
 {
-  TpHandle handle = GPOINTER_TO_UINT (key);
-  TpPresenceStatus *status = (TpPresenceStatus *) value;
-  struct _i_absolutely_love_g_hash_table_foreach *data =
-    (struct _i_absolutely_love_g_hash_table_foreach *) user_data;
   GHashTable *parameters;
   GHashTable *contact_status;
   GValueArray *vals;
@@ -547,7 +537,7 @@ construct_presence_hash_foreach (gpointer key,
     parameters = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
 
   g_hash_table_insert (contact_status,
-      (gpointer) data->supported_statuses[status->index].name, parameters);
+      (gpointer) supported_statuses[status->index].name, parameters);
 
   vals = g_value_array_new (2);
 
@@ -561,7 +551,7 @@ construct_presence_hash_foreach (gpointer key,
       TP_HASH_TYPE_MULTIPLE_STATUS_MAP);
   g_value_take_boxed (g_value_array_get_nth (vals, 1), contact_status);
 
-  g_hash_table_insert (data->presence_hash, GUINT_TO_POINTER (handle), vals);
+  g_hash_table_insert (presence_hash, GUINT_TO_POINTER (handle), vals);
 }
 
 
@@ -569,18 +559,19 @@ static GHashTable *
 construct_presence_hash (const TpPresenceStatusSpec *supported_statuses,
                          GHashTable *contact_statuses)
 {
-  struct _i_absolutely_love_g_hash_table_foreach data = { supported_statuses,
-    contact_statuses, NULL };
+  GHashTable *presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
+      (GDestroyNotify) g_value_array_free);
+  GHashTableIter iter;
+  gpointer key, value;
 
   DEBUG ("called.");
 
-  data.presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_value_array_free);
+  g_hash_table_iter_init (&iter, contact_statuses);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    construct_presence_hash_foreach (presence_hash, supported_statuses,
+        GPOINTER_TO_UINT (key), value);
 
-  g_hash_table_foreach (contact_statuses, construct_presence_hash_foreach,
-      &data);
-
-  return data.presence_hash;
+  return presence_hash;
 }
 
 
@@ -1061,13 +1052,6 @@ tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
   g_hash_table_destroy (contact_statuses);
 }
 
-
-struct _i_hate_g_hash_table_foreach {
-  GObject *obj;
-  GError **error;
-  gboolean retval;
-};
-
 static int
 check_for_status (GObject *object, const gchar *status, GError **error)
 {
@@ -1100,16 +1084,19 @@ check_for_status (GObject *object, const gchar *status, GError **error)
   return i;
 }
 
-static void
-set_status_foreach (gpointer key, gpointer value, gpointer user_data)
+static gboolean
+set_status (
+    GObject *obj,
+    const gchar *status_name,
+    GHashTable *provided_arguments,
+    GError **error)
 {
-  struct _i_hate_g_hash_table_foreach *data =
-    (struct _i_hate_g_hash_table_foreach*) user_data;
   TpPresenceMixinClass *mixin_cls =
-    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (data->obj));
+    TP_PRESENCE_MIXIN_CLASS (G_OBJECT_GET_CLASS (obj));
   TpPresenceStatus status_to_set = { 0, };
   int status;
   GHashTable *optional_arguments = NULL;
+  gboolean ret = TRUE;
 
   DEBUG ("called.");
 
@@ -1118,19 +1105,15 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
    * tp_presence_mixin_set_status(). Therefore there are no problems with
    * sharing the foreach data like this.
    */
-  status = check_for_status (data->obj, (const gchar *) key, data->error);
+  status = check_for_status (obj, status_name, error);
 
   if (status == -1)
-    {
-      data->retval = FALSE;
-      return;
-    }
+    return FALSE;
 
   DEBUG ("The status is available.");
 
-  if (value)
+  if (provided_arguments != NULL)
     {
-      GHashTable *provided_arguments = (GHashTable *) value;
       int j;
       const TpPresenceStatusOptionalArgumentSpec *specs =
         mixin_cls->statuses[status].optional_arguments;
@@ -1169,14 +1152,12 @@ set_status_foreach (gpointer key, gpointer value, gpointer user_data)
   DEBUG ("About to try setting status \"%s\"",
       mixin_cls->statuses[status].name);
 
-  if (!mixin_cls->set_own_status (data->obj, &status_to_set, data->error))
-    {
-      DEBUG ("failed to set status");
-      data->retval = FALSE;
-    }
+  ret = mixin_cls->set_own_status (obj, &status_to_set, error);
 
   if (optional_arguments)
     g_hash_table_destroy (optional_arguments);
+
+  return ret;
 }
 
 
@@ -1196,14 +1177,17 @@ tp_presence_mixin_set_status (TpSvcConnectionInterfacePresence *iface,
 {
   GObject *obj = (GObject *) iface;
   TpBaseConnection *conn = TP_BASE_CONNECTION (iface);
-  struct _i_hate_g_hash_table_foreach data = { NULL, NULL, TRUE };
+  GHashTableIter iter;
+  gpointer key, value;
   GError *error = NULL;
 
   DEBUG ("called.");
 
   TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (conn, context);
 
-  if (g_hash_table_size (statuses) != 1)
+  g_hash_table_iter_init (&iter, statuses);
+  if (!g_hash_table_iter_next (&iter, &key, &value) ||
+      g_hash_table_iter_next (&iter, NULL, NULL))
     {
       GError invalid = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "Only one status may be set at a time in this protocol" };
@@ -1212,17 +1196,13 @@ tp_presence_mixin_set_status (TpSvcConnectionInterfacePresence *iface,
       return;
     }
 
-  data.obj = obj;
-  data.error = &error;
-  g_hash_table_foreach (statuses, set_status_foreach, &data);
-
-  if (data.retval)
+  if (set_status (obj, key, value, &error))
     {
-      tp_svc_connection_interface_presence_return_from_set_status (
-          context);
+      tp_svc_connection_interface_presence_return_from_set_status (context);
     }
   else
     {
+      DEBUG ("failed: %s", error->message);
       dbus_g_method_return_error (context, error);
       g_error_free (error);
     }
@@ -1486,39 +1466,35 @@ construct_simple_presence_value_array (TpPresenceStatus *status,
 }
 
 static void
-construct_simple_presence_hash_foreach (gpointer key,
-                                        gpointer value,
-                                        gpointer user_data)
+construct_simple_presence_hash_foreach (
+    GHashTable *presence_hash,
+    const TpPresenceStatusSpec *supported_statuses,
+    TpHandle handle,
+    TpPresenceStatus *status)
 {
-  TpHandle handle = GPOINTER_TO_UINT (key);
-  TpPresenceStatus *status = (TpPresenceStatus *) value;
-  struct _i_absolutely_love_g_hash_table_foreach *data =
-    (struct _i_absolutely_love_g_hash_table_foreach *) user_data;
   GValueArray *presence;
 
-  presence = construct_simple_presence_value_array (status,
-    data->supported_statuses);
-
-  g_hash_table_insert (data->presence_hash, GUINT_TO_POINTER (handle),
-      presence);
+  presence = construct_simple_presence_value_array (status, supported_statuses);
+  g_hash_table_insert (presence_hash, GUINT_TO_POINTER (handle), presence);
 }
 
 static GHashTable *
 construct_simple_presence_hash (const TpPresenceStatusSpec *supported_statuses,
                          GHashTable *contact_statuses)
 {
-  struct _i_absolutely_love_g_hash_table_foreach data = { supported_statuses,
-    contact_statuses, NULL };
+  GHashTable *presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
+      (GDestroyNotify) g_value_array_free);
+  GHashTableIter iter;
+  gpointer key, value;
 
   DEBUG ("called.");
 
-  data.presence_hash = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) (GDestroyNotify) g_value_array_free);
+  g_hash_table_iter_init (&iter, contact_statuses);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    construct_simple_presence_hash_foreach (presence_hash, supported_statuses,
+        GPOINTER_TO_UINT (key), value);
 
-  g_hash_table_foreach (contact_statuses,
-      construct_simple_presence_hash_foreach, &data);
-
-  return data.presence_hash;
+  return presence_hash;
 }
 
 /**
@@ -1609,26 +1585,6 @@ tp_presence_mixin_simple_presence_iface_init (gpointer g_iface,
 }
 
 static void
-simple_presence_fill_contact_attributes_foreach (gpointer key,
-                                                 gpointer value,
-                                                 gpointer user_data)
-{
-  TpHandle handle = GPOINTER_TO_UINT (key);
-  TpPresenceStatus *status = (TpPresenceStatus *) value;
-  struct _i_absolutely_love_g_hash_table_foreach *data =
-    (struct _i_absolutely_love_g_hash_table_foreach *) user_data;
-  GValueArray *presence;
-
-  presence = construct_simple_presence_value_array (status,
-    data->supported_statuses);
-
-  tp_contacts_mixin_set_contact_attribute (data->presence_hash,
-    handle,
-    TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
-    tp_g_value_slice_new_take_boxed (G_TYPE_VALUE_ARRAY, presence));
-}
-
-static void
 tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
   const GArray *contacts, GHashTable *attributes_hash)
 {
@@ -1646,11 +1602,21 @@ tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
     }
   else
     {
-      struct _i_absolutely_love_g_hash_table_foreach data = {
-          mixin_cls->statuses, contact_statuses, attributes_hash };
+      GHashTableIter iter;
+      gpointer key, value;
 
-      g_hash_table_foreach (contact_statuses,
-          simple_presence_fill_contact_attributes_foreach, &data);
+      g_hash_table_iter_init (&iter, contact_statuses);
+      while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+          TpHandle handle = GPOINTER_TO_UINT (key);
+          TpPresenceStatus *status = value;
+          GValueArray *presence = construct_simple_presence_value_array (
+              status, mixin_cls->statuses);
+
+          tp_contacts_mixin_set_contact_attribute (attributes_hash, handle,
+              TP_TOKEN_CONNECTION_INTERFACE_SIMPLE_PRESENCE_PRESENCE,
+              tp_g_value_slice_new_take_boxed (G_TYPE_VALUE_ARRAY, presence));
+        }
 
       g_hash_table_destroy (contact_statuses);
     }
