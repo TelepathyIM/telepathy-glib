@@ -843,11 +843,8 @@ test_by_handle_again (Fixture *f,
   gpointer weak_pointer;
   const gchar *alias = "Alice in Wonderland";
   GHashTable *capabilities;
-  /* We only actively test TP_CONTACT_FEATURE_ALIAS, but preparing any of these
-   * once should be enough, assuming that the CM is not broken.
-   *
-   * FIXME: commented-out features are currently broken, either in TpContact or
-   * in TpTestsContactsConnection.
+  /* We only really actively test TP_CONTACT_FEATURE_ALIAS, but preparing any
+   * of these once should be enough, assuming that the CM is not broken.
    */
   TpContactFeature features[] = {
       TP_CONTACT_FEATURE_ALIAS,
@@ -863,6 +860,10 @@ test_by_handle_again (Fixture *f,
   };
 
   g_test_bug ("25181");
+  /* If people add new features, they should add them to this test. We could
+   * generate the list dynamically but this seems less brittle.
+   */
+  g_assert_cmpuint (G_N_ELEMENTS (features), ==, NUM_TP_CONTACT_FEATURES);
 
   handle = tp_handle_ensure (service_repo, "alice", NULL, NULL);
   g_assert_cmpuint (handle, !=, 0);
