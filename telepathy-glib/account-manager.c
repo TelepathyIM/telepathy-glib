@@ -905,6 +905,8 @@ insert_account (TpAccountManager *self,
  *  not a valid account path.
  *
  * Since: 0.9.0
+ * Deprecated: New code should use tp_simple_client_factory_ensure_account()
+ *  instead.
  */
 TpAccount *
 tp_account_manager_ensure_account (TpAccountManager *self,

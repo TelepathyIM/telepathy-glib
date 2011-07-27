@@ -304,7 +304,7 @@ _tp_base_client_set_only_for_account (TpBaseClient *self,
 }
 
 static TpAccount *
-tp_base_client_get_account (TpBaseClient *self,
+tp_base_client_dup_account (TpBaseClient *self,
     const gchar *path,
     GError **error)
 {
@@ -319,10 +319,11 @@ tp_base_client_get_account (TpBaseClient *self,
           return NULL;
         }
 
-      return self->priv->only_for_account;
+      return g_object_ref (self->priv->only_for_account);
     }
 
-  return tp_account_manager_ensure_account (self->priv->account_mgr, path);
+  return tp_simple_client_factory_ensure_account (
+      tp_proxy_get_factory (self->priv->account_mgr), path, NULL, error);
 }
 
 static GHashTable *
@@ -1644,7 +1645,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       goto out;
     }
 
-  account = tp_base_client_get_account (self, account_path, &error);
+  account = tp_base_client_dup_account (self, account_path, &error);
 
   if (account == NULL)
     goto out;
@@ -1730,6 +1731,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   g_array_free (channel_features, TRUE);
 
 out:
+  g_clear_object (&account);
+
   if (channels != NULL)
     g_ptr_array_unref (channels);
 
@@ -1848,7 +1851,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  account = tp_base_client_get_account (self, path, &error);
+  account = tp_base_client_dup_account (self, path, &error);
 
   if (account == NULL)
     goto out;
@@ -1925,6 +1928,8 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   g_array_free (channel_features, TRUE);
 
 out:
+  g_clear_object (&account);
+
   if (channels != NULL)
     g_ptr_array_unref (channels);
 
@@ -2214,7 +2219,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       goto out;
     }
 
-  account = tp_base_client_get_account (self, account_path, &error);
+  account = tp_base_client_dup_account (self, account_path, &error);
 
   if (account == NULL)
     goto out;
@@ -2287,6 +2292,8 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   g_array_free (channel_features, TRUE);
 
 out:
+  g_clear_object (&account);
+
   if (channels != NULL)
     g_ptr_array_unref (channels);
 
@@ -2389,7 +2396,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
       goto err;
     }
 
-  account = tp_base_client_get_account (self, path, &error);
+  account = tp_base_client_dup_account (self, path, &error);
 
   if (account == NULL)
     goto err;
@@ -2407,6 +2414,8 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   return;
 
 err:
+  g_clear_object (&account);
+
   dbus_g_method_return_error (context, error);
   g_error_free (error);
 }

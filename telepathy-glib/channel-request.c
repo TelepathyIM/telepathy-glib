@@ -118,6 +118,7 @@ struct _TpChannelRequestPrivate {
 
     TpClientChannelFactory *channel_factory;
     gboolean succeeded_with_chan_fired;
+    TpAccount *account;
 };
 
 G_DEFINE_TYPE (TpChannelRequest, tp_channel_request, TP_TYPE_PROXY)
@@ -339,6 +340,7 @@ tp_channel_request_dispose (GObject *object)
   tp_clear_pointer (&self->priv->immutable_properties, g_hash_table_unref);
 
   tp_clear_object (&self->priv->channel_factory);
+  tp_clear_object (&self->priv->account);
 
   if (dispose != NULL)
     dispose (object);
@@ -685,27 +687,26 @@ _tp_channel_request_ensure_immutable_properties (TpChannelRequest *self,
 TpAccount *
 tp_channel_request_get_account (TpChannelRequest *self)
 {
-  const gchar *path;
-  TpAccountManager *mgr;
-  TpAccount *account;
-
   g_return_val_if_fail (TP_IS_CHANNEL_REQUEST (self), NULL);
 
-  if (self->priv->immutable_properties == NULL)
-    return NULL;
+  /* lazily initialize self->priv->account */
+  if (self->priv->account == NULL)
+    {
+      const gchar *path;
 
-  path = tp_asv_get_object_path (self->priv->immutable_properties,
-      TP_PROP_CHANNEL_REQUEST_ACCOUNT);
-  if (path == NULL)
-    return NULL;
+      if (self->priv->immutable_properties == NULL)
+        return NULL;
 
-  mgr = tp_simple_client_factory_ensure_account_manager (
-      tp_proxy_get_factory (self));
+      path = tp_asv_get_object_path (self->priv->immutable_properties,
+          TP_PROP_CHANNEL_REQUEST_ACCOUNT);
+      if (path == NULL)
+        return NULL;
 
-  account = tp_account_manager_ensure_account (mgr, path);
+      self->priv->account = tp_simple_client_factory_ensure_account (
+          tp_proxy_get_factory (self), path, NULL, NULL);
+    }
 
-  g_object_unref (mgr);
-  return account;
+  return self->priv->account;
 }
 
 /**
