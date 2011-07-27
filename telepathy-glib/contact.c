@@ -3585,7 +3585,7 @@ contacts_context_queue_features (ContactsContext *context)
 static gboolean
 tp_contact_set_attributes (TpContact *contact,
     GHashTable *asv,
-    gboolean want_avatar_data,
+    ContactFeatureFlags wanted,
     GError **error)
 {
   TpConnection *connection = tp_contact_get_connection (contact);
@@ -3633,7 +3633,7 @@ tp_contact_set_attributes (TpContact *contact,
   /* There is no attribute for avatar data. If we want it, let's just
    * pretend it is ready. If avatar is in cache, that will be true as
    * soon as the token is set from attributes */
-  if (want_avatar_data)
+  if (wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA)
     contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
 
   s = tp_asv_get_string (asv, TP_TOKEN_CONNECTION_INTERFACE_AVATARS_TOKEN);
@@ -3763,8 +3763,7 @@ contacts_got_attributes (TpConnection *connection,
       else
         {
           /* set up the contact with its attributes */
-          tp_contact_set_attributes (contact, asv,
-              (c->wanted & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0, &e);
+          tp_contact_set_attributes (contact, asv, c->wanted, &e);
         }
 
       if (e != NULL)
