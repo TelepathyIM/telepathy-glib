@@ -3581,15 +3581,25 @@ tp_contact_set_attributes (TpContact *contact,
       return FALSE;
     }
 
-  s = tp_asv_get_string (asv,
-      TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS);
 
-  if (s != NULL)
+  if (wanted & CONTACT_FEATURE_FLAG_ALIAS)
     {
-      contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
-      g_free (contact->priv->alias);
-      contact->priv->alias = g_strdup (s);
-      g_object_notify ((GObject *) contact, "alias");
+      s = tp_asv_get_string (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS);
+
+      if (s == NULL)
+        {
+          WARNING ("%s supposedly implements Contacts and Aliasing, but "
+              "omitted " TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS,
+              tp_proxy_get_object_path (connection));
+        }
+      else
+        {
+          contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
+          g_free (contact->priv->alias);
+          contact->priv->alias = g_strdup (s);
+          g_object_notify ((GObject *) contact, "alias");
+        }
     }
 
   /* There is no attribute for avatar data. If we want it, let's just
