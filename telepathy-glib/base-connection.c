@@ -3570,9 +3570,9 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
       tp_handle_unref (handles, target_handle);
     }
 
-  /* If we made a new table, we should destroy it, and the GValue holding
-   * TargetHandle.  The other GValues are borrowed from the supplied
-   * requested_properties table.
+  /* If we made a new table, we should destroy it, and whichever of the GValues
+   * holding TargetHandle or TargetID we filled in.  The other GValues are
+   * borrowed from the supplied requested_properties table.
    */
   if (altered_properties != NULL)
     {
