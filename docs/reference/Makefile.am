@@ -97,13 +97,6 @@ HTML_IMAGES=
 # e.g. content_files=running.sgml building.sgml changes-2.0.sgml
 content_files=tp-svc.xml version.xml
 
-html-build.stamp: $(srcdir)/version.xml
-pdf-build.stamp: $(srcdir)/version.xml
-
-$(srcdir)/version.xml: Makefile
-	@-chmod u+w $(srcdir) $(srcdir)/version.xml
-	echo @PACKAGE_VERSION@ > $(srcdir)/version.xml
-
 # SGML files where gtk-doc abbrevations (#GtkWidget) are expanded
 # These files must be listed here *and* in content_files
 # e.g. expand_content_files=running.sgml
@@ -121,6 +114,10 @@ GTKDOC_LIBS=$(top_builddir)/telepathy-glib/libtelepathy-glib.la \
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
+
+# Other files to distribute
+# e.g. EXTRA_DIST += version.xml.in
+EXTRA_DIST += version.xml.in
 
 if ENABLE_GTK_DOC
 check-local:
