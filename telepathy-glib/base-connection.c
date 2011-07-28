@@ -2324,7 +2324,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
   ChannelRequest *request;
   GHashTable *request_properties;
   gboolean claimed_by_channel_manager = FALSE;
-  TpHandleRepoIface *handle_repo;
+  TpHandleRepoIface *handle_repo = NULL;
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
@@ -2378,13 +2378,9 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
 
   if (handle != 0)
     {
-      /* Guaranteed to be not-NULL because of above */
-      handle_repo = tp_base_connection_get_handles (self,
-          handle_type);
-
       tp_asv_set_uint32 (request_properties,
           TP_PROP_CHANNEL_TARGET_HANDLE, handle);
-
+      g_assert (handle_repo != NULL);
       tp_asv_set_string (request_properties,
           TP_PROP_CHANNEL_TARGET_ID,
           tp_handle_inspect (handle_repo, handle));
