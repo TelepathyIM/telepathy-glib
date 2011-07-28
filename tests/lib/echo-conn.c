@@ -118,17 +118,7 @@ tp_tests_echo_normalize_contact (TpHandleRepoIface *repo,
 
   hash = g_utf8_strchr (id, -1, '#');
 
-  if (hash != NULL)
-    {
-      gchar *tmp = g_strndup (id, (hash - id));
-      gchar *out = g_utf8_strdown (tmp, -1);
-      g_free (tmp);
-      return out;
-    }
-  else
-    {
-      return g_utf8_strdown (id, -1);
-    }
+  return g_utf8_strdown (id, hash != NULL ? (hash - id) : -1);
 }
 
 static void
