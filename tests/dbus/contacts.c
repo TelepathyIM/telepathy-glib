@@ -2532,6 +2532,17 @@ test_contact_list (Fixture *f,
 {
   const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  TestContactListManager *manager;
+  TpSimpleClientFactory *factory;
+  const gchar *id = "contact-list-id";
+  const gchar *alias = "Contact List Alias";
+  const gchar *message = "I'm your best friend";
+  TpHandle handle;
+  GPtrArray *contacts;
+  TpContact *contact;
+
+  manager = tp_tests_contacts_connection_get_contact_list_manager (
+      f->service_conn);
 
   /* Connection is OFFLINE initially */
   tp_tests_proxy_run_until_prepared (f->client_conn, conn_features);
@@ -2540,6 +2551,18 @@ test_contact_list (Fixture *f,
   g_assert (tp_connection_get_contact_list_persists (f->client_conn));
   g_assert (!tp_connection_get_can_change_contact_list (f->client_conn));
   g_assert (!tp_connection_get_request_uses_message (f->client_conn));
+
+  /* Add a remote-pending contact in our roster CM-side */
+  handle = tp_handle_ensure (f->service_repo, id, NULL, NULL);
+  tp_tests_contacts_connection_change_aliases (f->service_conn,
+      1, &handle, &alias);
+  test_contact_list_manager_request_subscription (manager, 1, &handle, message);
+
+  /* Tell connection's factory contact features we want */
+  factory = tp_proxy_get_factory (f->client_conn);
+  tp_simple_client_factory_add_contact_features_varargs (factory,
+      TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_INVALID);
 
   /* Now put it online and wait for contact list state move to success */
   g_signal_connect_swapped (f->client_conn, "notify::contact-list-state",
@@ -2551,6 +2574,19 @@ test_contact_list (Fixture *f,
 
   g_assert_cmpint (tp_connection_get_contact_list_state (f->client_conn), ==,
       TP_CONTACT_LIST_STATE_SUCCESS);
+
+  /* SUCCESS state must have been delayed until TpContact is prepared */
+  contacts = tp_connection_dup_contact_list (f->client_conn);
+  g_assert (contacts != NULL);
+  g_assert_cmpint (contacts->len, ==, 1);
+  contact = g_ptr_array_index (contacts, 0);
+  g_assert (contact != NULL);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, id);
+  g_assert_cmpstr (tp_contact_get_alias (contact), ==, alias);
+  /* Even if we didn't explicitely asked that feature, we should have it for free */
+  g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_SUBSCRIPTION_STATES));
+  g_assert_cmpint (tp_contact_get_subscribe_state (contact), ==, TP_SUBSCRIPTION_STATE_ASK);
+  g_ptr_array_unref (contacts);
 }
 
 static void
