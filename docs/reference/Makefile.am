@@ -126,31 +126,31 @@ if ENABLE_GTK_DOC
 check-local:
 	@err=0; \
 	if grep '^0 symbols incomplete' \
-		$(srcdir)/telepathy-glib-undocumented.txt; then\
+		telepathy-glib-undocumented.txt; then\
 		:; \
 	else \
-		cat $(srcdir)/telepathy-glib-undocumented.txt; \
+		cat telepathy-glib-undocumented.txt; \
 		err=1; \
 	fi; \
 	if grep '^0 not documented' \
-		$(srcdir)/telepathy-glib-undocumented.txt; then\
+		telepathy-glib-undocumented.txt; then\
 		:; \
 	else \
-		cat $(srcdir)/telepathy-glib-undocumented.txt; \
+		cat telepathy-glib-undocumented.txt; \
 		err=1; \
 	fi; \
-	if grep . $(srcdir)/telepathy-glib-unused.txt; then\
+	if grep . telepathy-glib-unused.txt; then\
 		echo "^^^ Unused symbols" >&2; \
 		err=1; \
 	fi; \
-	if test -e $(srcdir)/telepathy-glib-undeclared.txt &&\
-		grep . $(srcdir)/telepathy-glib-undeclared.txt; then\
+	if test -e telepathy-glib-undeclared.txt &&\
+		grep . telepathy-glib-undeclared.txt; then\
 		echo "^^^ Undeclared symbols" >&2; \
 		err=1; \
 	fi; \
-	sed -n -e 's,<FILE>\(.*\)</FILE>,\1,p' $(srcdir)/telepathy-glib-sections.txt |\
+	sed -n -e 's,<FILE>\(.*\)</FILE>,\1,p' telepathy-glib-sections.txt |\
 	while read file; do \
-		if grep -F "xml/$$file.xml" $(srcdir)/telepathy-glib-docs.sgml \
+		if grep -F "xml/$$file.xml" telepathy-glib-docs.sgml \
 			>/dev/null;\
 		then \
 		:; \
