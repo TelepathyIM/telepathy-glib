@@ -93,10 +93,9 @@ expand_content_files=
 # CFLAGS and LDFLAGS for compiling gtkdoc-scangobj with your library.
 # Only needed if you are using gtkdoc-scangobj to dynamically query widget
 # signals and properties.
-# e.g. INCLUDES=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
+# e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-INCLUDES=-I$(top_srcdir) -I$(top_builddir) \
-	 @DBUS_CFLAGS@ @GLIB_CFLAGS@
+GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) @DBUS_CFLAGS@ @GLIB_CFLAGS@
 GTKDOC_LIBS=$(top_builddir)/telepathy-glib/libtelepathy-glib.la \
             @DBUS_LIBS@ @GLIB_LIBS@
 
