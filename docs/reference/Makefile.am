@@ -1,7 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 
-abs_top_builddir = @abs_top_builddir@
-
 # We require automake 1.6 at least.
 AUTOMAKE_OPTIONS = 1.6
 
@@ -13,14 +11,18 @@ AUTOMAKE_OPTIONS = 1.6
 # The name of the module, e.g. 'glib'.
 DOC_MODULE=telepathy-glib
 
+# Uncomment for versioned docs and specify the version of the module, e.g. '2'.
+#DOC_MODULE_VERSION=2
+
+
 # The top-level SGML file. You can change this if you want to.
 DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.sgml
 
-# The directory containing the source code. Relative to $(srcdir).
-# gtk-doc will search all .c & .h files beneath here for inline comments
-# documenting the functions and macros.
-# e.g. DOC_SOURCE_DIR=../../../gtk
-DOC_SOURCE_DIR=../../telepathy-glib
+# Directories containing the source code, relative to $(srcdir).
+# gtk-doc will search all .c and .h files beneath these paths
+# for inline comments documenting functions and macros.
+# e.g. DOC_SOURCE_DIR=../../../gtk ../../../gdk
+DOC_SOURCE_DIR=$(abs_top_srcdir)/telepathy-glib $(abs_top_builddir)/telepathy-glib
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
 SCANGOBJ_OPTIONS=
@@ -33,22 +35,15 @@ SCAN_OPTIONS=\
     --rebuild-types
 
 # Extra options to supply to gtkdoc-mkdb.
-# e.g. MKDB_OPTIONS=--sgml-mode --output-format=xml
+# e.g. MKDB_OPTIONS=--xml-mode --output-format=xml
 MKDB_OPTIONS=--sgml-mode --output-format=xml
-
-# If _gen is a subdirectory of $(top_srcdir)/telepathy-glib then we
-# already get it scanned by virtue of setting DOC_SOURCE_DIR. If
-# it's not a subdirectory, we'll have to add a second --source-dir
-# so both get scanned (we want the declarations and doc-comments in
-# the generated source to take effect).
-if OUT_OF_TREE_BUILD
-SCAN_OPTIONS += --source-dir=$(abs_top_builddir)/telepathy-glib/_gen
-MKDB_OPTIONS += --source-dir=$(abs_top_builddir)/telepathy-glib/_gen
-endif
 
 # Extra options to supply to gtkdoc-mktmpl
 # e.g. MKTMPL_OPTIONS=--only-section-tmpl
 MKTMPL_OPTIONS=
+
+# Extra options to supply to gtkdoc-mkhtml
+MKHTML_OPTIONS=
 
 # Extra options to supply to gtkdoc-fixref. Not normally needed.
 # e.g. FIXXREF_OPTIONS=--extra-dir=../gdk-pixbuf/html --extra-dir=../gdk/html
@@ -60,8 +55,12 @@ FIXXREF_OPTIONS=
 HFILE_GLOB=$(top_srcdir)/telepathy-glib/*.h $(top_builddir)/telepathy-glib/_gen/*.h
 CFILE_GLOB=$(top_srcdir)/telepathy-glib/*.c $(top_builddir)/telepathy-glib/_gen/*.c
 
-# Header files to ignore when scanning.
-# e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h
+# Extra header to include when scanning, which are not under DOC_SOURCE_DIR
+# e.g. EXTRA_HFILES=$(top_srcdir}/contrib/extra.h
+EXTRA_HFILES=
+
+# Header files or dirs to ignore when scanning. Use base file/dir names
+# e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h private_code
 IGNORE_HFILES=\
     account-channel-request-internal.h \
     add-dispatch-operation-context-internal.h \
@@ -95,14 +94,7 @@ HTML_IMAGES=
 
 # Extra SGML files that are included by $(DOC_MAIN_SGML_FILE).
 # e.g. content_files=running.sgml building.sgml changes-2.0.sgml
-content_files=tp-svc.xml
-
-html-build.stamp: $(srcdir)/version.xml
-pdf-build.stamp: $(srcdir)/version.xml
-
-$(srcdir)/version.xml: Makefile
-	@-chmod u+w $(srcdir) $(srcdir)/version.xml
-	echo @PACKAGE_VERSION@ > $(srcdir)/version.xml
+content_files=tp-svc.xml version.xml
 
 # SGML files where gtk-doc abbrevations (#GtkWidget) are expanded
 # These files must be listed here *and* in content_files
@@ -112,45 +104,53 @@ expand_content_files=
 # CFLAGS and LDFLAGS for compiling gtkdoc-scangobj with your library.
 # Only needed if you are using gtkdoc-scangobj to dynamically query widget
 # signals and properties.
-# e.g. INCLUDES=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
+# e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-INCLUDES=-I$(top_srcdir) -I$(top_builddir) \
-	 @DBUS_CFLAGS@ @GLIB_CFLAGS@
+GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) @DBUS_CFLAGS@ @GLIB_CFLAGS@
 GTKDOC_LIBS=$(top_builddir)/telepathy-glib/libtelepathy-glib.la \
             @DBUS_LIBS@ @GLIB_LIBS@
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
 
+# Other files to distribute
+# e.g. EXTRA_DIST += version.xml.in
+EXTRA_DIST += version.xml.in
+
+# Files not to distribute
+# for --rebuild-types in $(SCAN_OPTIONS), e.g. $(DOC_MODULE).types
+# for --rebuild-sections in $(SCAN_OPTIONS) e.g. $(DOC_MODULE)-sections.txt
+#DISTCLEANFILES +=
+
 if ENABLE_GTK_DOC
 check-local:
 	@err=0; \
 	if grep '^0 symbols incomplete' \
-		$(srcdir)/telepathy-glib-undocumented.txt; then\
+		telepathy-glib-undocumented.txt; then\
 		:; \
 	else \
-		cat $(srcdir)/telepathy-glib-undocumented.txt; \
+		cat telepathy-glib-undocumented.txt; \
 		err=1; \
 	fi; \
 	if grep '^0 not documented' \
-		$(srcdir)/telepathy-glib-undocumented.txt; then\
+		telepathy-glib-undocumented.txt; then\
 		:; \
 	else \
-		cat $(srcdir)/telepathy-glib-undocumented.txt; \
+		cat telepathy-glib-undocumented.txt; \
 		err=1; \
 	fi; \
-	if grep . $(srcdir)/telepathy-glib-unused.txt; then\
+	if grep . telepathy-glib-unused.txt; then\
 		echo "^^^ Unused symbols" >&2; \
 		err=1; \
 	fi; \
-	if test -e $(srcdir)/telepathy-glib-undeclared.txt &&\
-		grep . $(srcdir)/telepathy-glib-undeclared.txt; then\
+	if test -e telepathy-glib-undeclared.txt &&\
+		grep . telepathy-glib-undeclared.txt; then\
 		echo "^^^ Undeclared symbols" >&2; \
 		err=1; \
 	fi; \
-	sed -n -e 's,<FILE>\(.*\)</FILE>,\1,p' $(srcdir)/telepathy-glib-sections.txt |\
+	sed -n -e 's,<FILE>\(.*\)</FILE>,\1,p' telepathy-glib-sections.txt |\
 	while read file; do \
-		if grep -F "xml/$$file.xml" $(srcdir)/telepathy-glib-docs.sgml \
+		if grep -F "xml/$$file.xml" telepathy-glib-docs.sgml \
 			>/dev/null;\
 		then \
 		:; \

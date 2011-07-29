@@ -57,7 +57,7 @@ AM_PROG_MKDIR_P
 # pkg-config 0.21 adds CFLAGS from Requires.private, which we need
 PKG_PROG_PKG_CONFIG([0.21])
 
-GTK_DOC_CHECK([1.15])
+GTK_DOC_CHECK([1.17])
 
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
@@ -295,6 +295,7 @@ AM_CONDITIONAL([HAVE_CXX], [test $tp_cxx_works = yes])
 AC_OUTPUT( Makefile \
 	   docs/Makefile \
 	   docs/reference/Makefile \
+	   docs/reference/version.xml \
 	   examples/Makefile \
 	   examples/client/Makefile \
 	   examples/client/python/Makefile \
