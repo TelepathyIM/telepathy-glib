@@ -148,6 +148,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     account-internal.h \
     account-manager.c \
     account-manager-internal.h \
+    automatic-client-factory-internal.h \
     automatic-client-factory.c \
     automatic-proxy-factory.c \
     add-dispatch-operation-context-internal.h \
