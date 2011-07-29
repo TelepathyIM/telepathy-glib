@@ -1,7 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 
-abs_top_builddir = @abs_top_builddir@
-
 # We require automake 1.6 at least.
 AUTOMAKE_OPTIONS = 1.6
 
@@ -20,7 +18,7 @@ DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.sgml
 # gtk-doc will search all .c & .h files beneath here for inline comments
 # documenting the functions and macros.
 # e.g. DOC_SOURCE_DIR=../../../gtk
-DOC_SOURCE_DIR=../../telepathy-glib
+DOC_SOURCE_DIR=$(abs_top_srcdir)/telepathy-glib $(abs_top_builddir)/telepathy-glib
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
 SCANGOBJ_OPTIONS=
@@ -35,16 +33,6 @@ SCAN_OPTIONS=\
 # Extra options to supply to gtkdoc-mkdb.
 # e.g. MKDB_OPTIONS=--sgml-mode --output-format=xml
 MKDB_OPTIONS=--sgml-mode --output-format=xml
-
-# If _gen is a subdirectory of $(top_srcdir)/telepathy-glib then we
-# already get it scanned by virtue of setting DOC_SOURCE_DIR. If
-# it's not a subdirectory, we'll have to add a second --source-dir
-# so both get scanned (we want the declarations and doc-comments in
-# the generated source to take effect).
-if OUT_OF_TREE_BUILD
-SCAN_OPTIONS += --source-dir=$(abs_top_builddir)/telepathy-glib/_gen
-MKDB_OPTIONS += --source-dir=$(abs_top_builddir)/telepathy-glib/_gen
-endif
 
 # Extra options to supply to gtkdoc-mktmpl
 # e.g. MKTMPL_OPTIONS=--only-section-tmpl
