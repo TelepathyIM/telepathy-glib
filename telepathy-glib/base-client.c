@@ -67,15 +67,16 @@
  * TpBaseClientClassObserveChannelsImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
- *  features added via tp_base_client_add_account_features(), prepared if
+ *  features added via tp_base_client_add_account_features(), or
+ *  tp_simple_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via tp_base_client_add_connection_features(),
- *  prepared if possible
+ *  or tp_simple_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_base_client_add_channel_features(),
- *  prepared if possible
+ *  tp_base_client_add_channel_features(), or
+ *  tp_simple_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  *  the dispatch_operation is not guaranteed to be prepared
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
@@ -97,15 +98,16 @@
  * TpBaseClientClassAddDispatchOperationImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
- *  features added via tp_base_client_add_account_features(), prepared if
+ *  features added via tp_base_client_add_account_features(), or
+ *  tp_simple_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via tp_base_client_add_connection_features(),
- *  prepared if possible
+ *  or tp_simple_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_base_client_add_channel_features(),
- *  prepared if possible
+ *  tp_base_client_add_channel_features(), or
+ *  tp_simple_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: a #TpChannelDispatchOperation having
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE prepared if possible
  * @context: a #TpObserveChannelsContext representing the context of this
@@ -129,15 +131,16 @@
  * TpBaseClientClassHandleChannelsImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
- *  features added via tp_base_client_add_account_features(), prepared if
+ *  features added via tp_base_client_add_account_features(), or
+ *  tp_simple_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via tp_base_client_add_connection_features(),
- *  prepared if possible
+ *  or tp_simple_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_base_client_add_channel_features(),
- *  prepared if possible
+ *  tp_base_client_add_channel_features(), or
+ *  tp_simple_client_factory_add_channel_features(), prepared if possible
  * @requests_satisfied: (element-type TelepathyGLib.ChannelRequest): a #GList of
  *  #TpChannelRequest having their object-path defined but are not guaranteed
  *  to be prepared.
@@ -1440,7 +1443,8 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * @self: a #TpBaseClient
    * @account: the #TpAccount on which the request was made,
    *  with %TP_ACCOUNT_FEATURE_CORE, and any other features added via
-   *  tp_base_client_add_account_features(), prepared if possible
+   *  tp_base_client_add_account_features(), or
+   *  tp_simple_client_factory_add_account_features(), prepared if possible
    * @request: a #TpChannelRequest having its object-path defined but
    * is not guaranteed to be prepared.
    *
@@ -2757,6 +2761,8 @@ tp_base_client_unregister (TpBaseClient *self)
  * convenient calling convention from C.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_account_features_varargs() instead.
  */
 void
 tp_base_client_add_account_features_varargs (TpBaseClient *self,
@@ -2783,6 +2789,8 @@ tp_base_client_add_account_features_varargs (TpBaseClient *self,
  * convenient calling convention from C.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_connection_features_varargs() instead.
  */
 void
 tp_base_client_add_connection_features_varargs (TpBaseClient *self,
@@ -2809,6 +2817,8 @@ tp_base_client_add_connection_features_varargs (TpBaseClient *self,
  * convenient calling convention from C.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_channel_features_varargs() instead.
  */
 void
 tp_base_client_add_channel_features_varargs (TpBaseClient *self,
@@ -2839,6 +2849,8 @@ tp_base_client_add_channel_features_varargs (TpBaseClient *self,
  * #TpBaseClient::request-added.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_account_features() instead.
  */
 void
 tp_base_client_add_account_features (TpBaseClient *self,
@@ -2850,6 +2862,7 @@ tp_base_client_add_account_features (TpBaseClient *self,
 
   _tp_quark_array_merge (self->priv->account_features, features, n);
 }
+
 
 /**
  * tp_base_client_add_channel_features:
@@ -2864,6 +2877,8 @@ tp_base_client_add_account_features (TpBaseClient *self,
  * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_channel_features() instead.
  */
 void
 tp_base_client_add_channel_features (TpBaseClient *self,
@@ -2889,6 +2904,8 @@ tp_base_client_add_channel_features (TpBaseClient *self,
  * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_connection_features() instead.
  */
 void
 tp_base_client_add_connection_features (TpBaseClient *self,
