@@ -1122,6 +1122,40 @@ missing:
       TP_IFACE_CHANNEL, _tp_channel_got_properties, NULL, NULL, NULL);
 }
 
+static void
+connection_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpChannel *self = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      _tp_channel_abort_introspection (self, "Preparing connection failed", error);
+      g_clear_error (&error);
+    }
+  else
+    {
+      _tp_channel_continue_introspection (self);
+    }
+
+  g_object_unref (self);
+}
+
+static void
+_tp_channel_prepare_connection (TpChannel *self)
+{
+  /* Skip if connection is already prepared */
+  if (tp_proxy_is_prepared (self->priv->connection, TP_CONNECTION_FEATURE_CORE))
+    {
+      _tp_channel_continue_introspection (self);
+      return;
+    }
+
+  tp_proxy_prepare_async (self->priv->connection, NULL,
+      connection_prepared_cb, g_object_ref (self));
+}
 
 static void
 tp_channel_closed_cb (TpChannel *self,
@@ -1210,6 +1244,10 @@ tp_channel_constructor (GType type,
       self->priv->handle, self->priv->handle_type);
 
   self->priv->introspect_needed = g_queue_new ();
+
+  /* this does nothing if connection already has CORE prepared */
+  g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_prepare_connection);
 
   /* this does nothing if we already know all the Channel properties this
    * code is aware of */
