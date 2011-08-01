@@ -1,13 +1,13 @@
 noinst_PROGRAMS = call-handler
 
 LDADD =  \
+   ../telepathy-farstream/libtelepathy-farstream.la \
+   ../extensions/libfuture-extensions.la \
    $(GLIB_LIBS) \
    $(DBUS_LIBS) \
    $(GST_LIBS) \
    $(FARSIGHT2_LIBS) \
-   $(TELEPATHY_LIBS) \
-   ../telepathy-farstream/libtelepathy-farstream.la \
-   ../extensions/libfuture-extensions.la
+   $(TELEPATHY_LIBS)
 
 AM_CFLAGS = \
    $(ERROR_CFLAGS) \
