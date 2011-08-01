@@ -31,6 +31,9 @@ typedef struct {
   TfChannel *channel;
   GList *notifiers;
 
+  guint input_volume;
+  guint output_volume;
+
   GstElement *video_input;
   GstElement *video_capsfilter;
 
@@ -189,15 +192,58 @@ on_video_resolution_changed (TfContent *content,
   update_video_parameters (context, TRUE);
 }
 
+static void
+on_audio_input_volume_changed (TfContent *content,
+  GParamSpec *spec,
+  ChannelContext *context)
+{
+  GstElement *volume;
+  guint input_volume;
+
+  g_object_get (content, "input-volume", &input_volume, NULL);
+
+  volume = gst_bin_get_by_name (GST_BIN (context->pipeline), "input_volume");
+  g_object_set (volume, "volume", (double)input_volume / 65536.0, NULL);
+  gst_object_unref (volume);
+}
+
+static void
+on_audio_output_volume_changed (TfContent *content,
+  GParamSpec *spec,
+  ChannelContext *context)
+{
+}
+
 static GstElement *
 setup_audio_source (ChannelContext *context, TfContent *content)
 {
   GstElement *result;
+  GstElement *volume;
+  guint input_volume = 0;
+  guint output_volume = 0;
 
   result = gst_parse_bin_from_description (
       "audiotestsrc is-live=1 ! audio/x-raw-int,rate=8000 ! queue"
-      " ! audioconvert ! audioresample ! audioconvert ",
+      " ! audioconvert ! audioresample"
+      " ! volume name=input_volume ! audioconvert ",
       TRUE, NULL);
+
+  g_object_get (content,
+      "input-volume", &input_volume,
+      "output-volume", &output_volume,
+      NULL);
+
+  volume = gst_bin_get_by_name (GST_BIN (result), "input_volume");
+  g_object_set (volume, "volume", (double)input_volume / 65536.0, NULL);
+  gst_object_unref (volume);
+
+  g_signal_connect (content, "notify::input-volume",
+      G_CALLBACK (on_audio_input_volume_changed),
+      context);
+
+  g_signal_connect (content, "notify::output-volume",
+      G_CALLBACK (on_audio_output_volume_changed),
+      context);
 
   return result;
 }
