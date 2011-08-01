@@ -223,7 +223,7 @@ setup_audio_source (ChannelContext *context, TfContent *content)
   guint output_volume = 0;
 
   result = gst_parse_bin_from_description (
-      "audiotestsrc is-live=1 ! audio/x-raw-int,rate=8000 ! queue"
+      "pulsesrc ! audio/x-raw-int,rate=8000 ! queue"
       " ! audioconvert ! audioresample"
       " ! volume name=input_volume ! audioconvert ",
       TRUE, NULL);
