@@ -2164,6 +2164,7 @@ tp_dbus_properties_mixin_iface_init
 tp_dbus_properties_mixin_get
 tp_dbus_properties_mixin_fill_properties_hash
 tp_dbus_properties_mixin_make_properties_hash
+tp_dbus_properties_mixin_emit_properties_changed
 <SUBSECTION Standard>
 tp_dbus_properties_mixin_flags_get_type
 </SECTION>

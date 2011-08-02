@@ -161,36 +161,87 @@ test_get_all (TpProxy *proxy)
   g_hash_table_destroy (hash);
 }
 
+static void
+properties_changed_cb (
+    TpProxy *proxy,
+    const gchar *interface_name,
+    GHashTable *changed_properties,
+    const gchar **invalidated_properties,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GMainLoop *loop = user_data;
+  guint value;
+  gboolean valid;
+
+  g_assert_cmpuint (g_hash_table_size (changed_properties), ==, 1);
+  value = tp_asv_get_uint32 (changed_properties, "ReadOnly", &valid);
+  g_assert (valid);
+  g_assert_cmpuint (value, ==, 42);
+
+  g_assert_cmpuint (g_strv_length ((gchar **) invalidated_properties), ==, 1);
+  g_assert_cmpstr (invalidated_properties[0], ==, "ReadWrite");
+
+  g_main_loop_quit (loop);
+}
+
+typedef struct {
+    TestProperties *obj;
+    TpProxy *proxy;
+} Context;
+
+static void
+test_emit_changed (Context *ctx)
+{
+  GMainLoop *loop = g_main_loop_new (NULL, FALSE);
+  TpProxySignalConnection *signal_conn;
+  const gchar *changed[] = { "ReadOnly", NULL };
+  const gchar *invalidated[] = { "ReadWrite", NULL };
+  GError *error = NULL;
+
+  signal_conn = tp_cli_dbus_properties_connect_to_properties_changed (
+      ctx->proxy, properties_changed_cb, loop, NULL, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (signal_conn != NULL);
+
+  tp_dbus_properties_mixin_emit_properties_changed (G_OBJECT (ctx->obj),
+      WITH_PROPERTIES_IFACE, changed, invalidated);
+  g_main_loop_run (loop);
+
+  tp_proxy_signal_connection_disconnect (signal_conn);
+}
+
 int
 main (int argc, char **argv)
 {
-  TestProperties *obj;
+  Context ctx;
   TpDBusDaemon *dbus_daemon;
-  TpProxy *proxy;
 
   tp_tests_init (&argc, &argv);
 
   dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
-  obj = tp_tests_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
-  tp_dbus_daemon_register_object (dbus_daemon, "/", obj);
+  ctx.obj = tp_tests_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
+  tp_dbus_daemon_register_object (dbus_daemon, "/", ctx.obj);
 
   /* Open a D-Bus connection to myself */
-  proxy = TP_PROXY (tp_tests_object_new_static_class (TP_TYPE_PROXY,
+  ctx.proxy = TP_PROXY (tp_tests_object_new_static_class (TP_TYPE_PROXY,
       "dbus-daemon", dbus_daemon,
       "bus-name", tp_dbus_daemon_get_unique_name (dbus_daemon),
       "object-path", "/",
       NULL));
 
-  g_assert (tp_proxy_has_interface (proxy, "org.freedesktop.DBus.Properties"));
+  g_assert (tp_proxy_has_interface (ctx.proxy, "org.freedesktop.DBus.Properties"));
 
-  g_test_add_data_func ("/properties/get", proxy, (GTestDataFunc) test_get);
-  g_test_add_data_func ("/properties/set", proxy, (GTestDataFunc) test_set);
-  g_test_add_data_func ("/properties/get-all", proxy, (GTestDataFunc) test_get_all);
+  g_test_add_data_func ("/properties/get", ctx.proxy, (GTestDataFunc) test_get);
+  g_test_add_data_func ("/properties/set", ctx.proxy, (GTestDataFunc) test_set);
+  g_test_add_data_func ("/properties/get-all", ctx.proxy, (GTestDataFunc) test_get_all);
+
+  g_test_add_data_func ("/properties/changed", &ctx, (GTestDataFunc) test_emit_changed);
 
   g_test_run ();
 
-  g_object_unref (obj);
-  g_object_unref (proxy);
+  g_object_unref (ctx.obj);
+  g_object_unref (ctx.proxy);
   g_object_unref (dbus_daemon);
 
   return 0;

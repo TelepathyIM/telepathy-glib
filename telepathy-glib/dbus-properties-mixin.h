@@ -133,6 +133,12 @@ void tp_dbus_properties_mixin_fill_properties_hash (GObject *object,
     ...)
   G_GNUC_NULL_TERMINATED;
 
+void tp_dbus_properties_mixin_emit_properties_changed (
+    GObject *object,
+    const gchar *interface_name,
+    const gchar * const *changed,
+    const gchar * const *invalidated);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_DBUS_PROPERTIES_MIXIN_H__ */

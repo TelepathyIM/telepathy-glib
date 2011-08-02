@@ -740,9 +740,12 @@ _iface_impl_get_property (
       return FALSE;
     }
 
-  g_value_init (value, prop_info->type);
-  iface_impl->getter (self, iface_info->dbus_interface,
-      prop_info->name, value, prop_impl->getter_data);
+  if (value != NULL)
+    {
+      g_value_init (value, prop_info->type);
+      iface_impl->getter (self, iface_info->dbus_interface,
+          prop_info->name, value, prop_impl->getter_data);
+    }
 
   return TRUE;
 }
@@ -930,6 +933,96 @@ tp_dbus_properties_mixin_make_properties_hash (
   return table;
 }
 
+/**
+ * tp_dbus_properties_mixin_emit_properties_changed:
+ * @object: an object which uses the D-Bus properties mixin
+ * @interface_name: the interface on which properties have changed
+ * @changed: (allow-none): a %NULL-terminated array of (unqualified) property
+ *  names whose new values should be included in the signal
+ * @invalidated: (allow-none): a %NULL-terminated array of (unqualified)
+ *  property names which should be announced as invalidated, but without
+ *  including their new values.
+ *
+ * Emits the PropertiesChanged signal for the provided properties. The current
+ * values of properties in @changed will be included in the signal, whereas
+ * just the names of @invalidated properties are signalled. The latter may be
+ * useful for properties whose values are extremely rarely needed by other
+ * processes, or where more fine-grained change notification (such as a delta)
+ * by another signal is available.
+ *
+ * |[
+ *    const gchar *changed[] = { "CanEditTracks", NULL };
+ *    const gchar *invalidated[] = { "Tracks", NULL };
+ *
+ *    tp_dbus_properties_mixin_emit_properties_changed (G_OBJECT (self),
+ *        "org.mpris.MediaPlayer2.TrackList", changed, invalidated);
+ * ]|
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_dbus_properties_mixin_emit_properties_changed (
+    GObject *object,
+    const gchar *interface_name,
+    const gchar * const *changed,
+    const gchar * const *invalidated)
+{
+  TpDBusPropertiesMixinIfaceImpl *iface_impl;
+  GHashTable *changed_properties;
+  const gchar * const *prop_name;
+
+  g_return_if_fail (interface_name != NULL);
+  iface_impl = _tp_dbus_properties_mixin_find_iface_impl (object,
+      interface_name);
+  g_return_if_fail (iface_impl != NULL);
+
+  changed_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, (GDestroyNotify) tp_g_value_slice_free);
+
+  if (changed != NULL)
+    {
+      for (prop_name = changed; *prop_name != NULL; prop_name++)
+        {
+          GValue v = { 0, };
+          GError *error = NULL;
+
+          if (_iface_impl_get_property (object, iface_impl, interface_name,
+                  *prop_name, &v, &error))
+            {
+              g_hash_table_insert (changed_properties, (gchar *) *prop_name,
+                  tp_g_value_slice_dup (&v));
+            }
+          else
+            {
+              WARNING ("Couldn't get value for '%s.%s': %s", interface_name,
+                  *prop_name, error->message);
+              g_clear_error (&error);
+              g_return_if_reached ();
+            }
+        }
+    }
+
+  if (invalidated != NULL)
+    {
+      for (prop_name = invalidated; *prop_name != NULL; prop_name++)
+        {
+          GError *error = NULL;
+
+          if (!_iface_impl_get_property (object, iface_impl, interface_name,
+                  *prop_name, NULL, &error))
+            {
+              WARNING ("Checking that '%s.%s' exists failed: %s",
+                  interface_name, *prop_name, error->message);
+              g_clear_error (&error);
+              g_return_if_reached ();
+            }
+        }
+    }
+
+  tp_svc_dbus_properties_emit_properties_changed (object, interface_name,
+      changed_properties, (const gchar **) invalidated);
+  g_hash_table_unref (changed_properties);
+}
 
 static void
 _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
