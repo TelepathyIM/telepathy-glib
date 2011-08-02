@@ -102,20 +102,73 @@ test_properties_class_init (TestPropertiesClass *cls)
       G_STRUCT_OFFSET (TestPropertiesClass, props));
 }
 
+static void
+test_get (TpProxy *proxy)
+{
+  GValue *value;
+
+  g_assert (tp_cli_dbus_properties_run_get (proxy, -1,
+        "com.example.WithProperties", "ReadOnly", &value, NULL, NULL));
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
+
+  g_boxed_free (G_TYPE_VALUE, value);
+}
+
+static void
+test_set (TpProxy *proxy)
+{
+  GValue value = { 0, };
+
+  g_value_init (&value, G_TYPE_UINT);
+  g_value_set_uint (&value, 57);
+
+  g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
+        "com.example.WithProperties", "ReadWrite", &value, NULL, NULL));
+  g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
+        "com.example.WithProperties", "WriteOnly", &value, NULL, NULL));
+
+  g_value_unset (&value);
+}
+
+static void
+test_get_all (TpProxy *proxy)
+{
+  GHashTable *hash;
+  GValue *value;
+
+  g_assert (tp_cli_dbus_properties_run_get_all (proxy, -1,
+        "com.example.WithProperties", &hash, NULL, NULL));
+  g_assert (hash != NULL);
+  tp_asv_dump (hash);
+  g_assert_cmpuint (g_hash_table_size (hash), ==, 2);
+
+  value = g_hash_table_lookup (hash, "WriteOnly");
+  g_assert (value == NULL);
+
+  value = g_hash_table_lookup (hash, "ReadOnly");
+  g_assert (value != NULL);
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
+
+  value = g_hash_table_lookup (hash, "ReadWrite");
+  g_assert (value != NULL);
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
+
+  g_hash_table_destroy (hash);
+}
+
 int
 main (int argc, char **argv)
 {
   TestProperties *obj;
   TpDBusDaemon *dbus_daemon;
   TpProxy *proxy;
-  GValue *value;
-  GHashTable *hash;
 
-  tp_tests_abort_after (10);
-  tp_debug_set_flags ("all");
-  g_type_init ();
+  tp_tests_init (&argc, &argv);
+
   dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
-
   obj = tp_tests_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
   tp_dbus_daemon_register_object (dbus_daemon, "/", obj);
 
@@ -128,38 +181,11 @@ main (int argc, char **argv)
 
   g_assert (tp_proxy_has_interface (proxy, "org.freedesktop.DBus.Properties"));
 
-  g_assert (tp_cli_dbus_properties_run_get (proxy, -1,
-        "com.example.WithProperties", "ReadOnly", &value, NULL, NULL));
-  g_assert (G_VALUE_HOLDS_UINT (value));
-  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
+  g_test_add_data_func ("/properties/get", proxy, (GTestDataFunc) test_get);
+  g_test_add_data_func ("/properties/set", proxy, (GTestDataFunc) test_set);
+  g_test_add_data_func ("/properties/get-all", proxy, (GTestDataFunc) test_get_all);
 
-  g_value_set_uint (value, 57);
-
-  g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
-        "com.example.WithProperties", "ReadWrite", value, NULL, NULL));
-
-  g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
-        "com.example.WithProperties", "WriteOnly", value, NULL, NULL));
-
-  g_boxed_free (G_TYPE_VALUE, value);
-
-  g_assert (tp_cli_dbus_properties_run_get_all (proxy, -1,
-        "com.example.WithProperties", &hash, NULL, NULL));
-  g_assert (hash != NULL);
-  tp_asv_dump (hash);
-  g_assert_cmpuint (g_hash_table_size (hash), ==, 2);
-  value = g_hash_table_lookup (hash, "WriteOnly");
-  g_assert (value == NULL);
-  value = g_hash_table_lookup (hash, "ReadOnly");
-  g_assert (value != NULL);
-  g_assert (G_VALUE_HOLDS_UINT (value));
-  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
-  value = g_hash_table_lookup (hash, "ReadWrite");
-  g_assert (value != NULL);
-  g_assert (G_VALUE_HOLDS_UINT (value));
-  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
-
-  g_hash_table_destroy (hash);
+  g_test_run ();
 
   g_object_unref (obj);
   g_object_unref (proxy);
