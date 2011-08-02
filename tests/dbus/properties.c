@@ -102,25 +102,6 @@ test_properties_class_init (TestPropertiesClass *cls)
       G_STRUCT_OFFSET (TestPropertiesClass, props));
 }
 
-static void
-print_asv_item (gpointer key,
-                gpointer value,
-                gpointer unused)
-{
-  gchar *value_str = g_strdup_value_contents (value);
-
-  g_print ("  \"%s\" -> %s\n", (gchar *) key, value_str);
-  g_free (value_str);
-}
-
-static void
-print_asv (GHashTable *hash)
-{
-  g_print ("{\n");
-  g_hash_table_foreach (hash, print_asv_item, NULL);
-  g_print ("}\n");
-}
-
 int
 main (int argc, char **argv)
 {
@@ -166,7 +147,7 @@ main (int argc, char **argv)
   MYASSERT (tp_cli_dbus_properties_run_get_all (proxy, -1,
         "com.example.WithProperties", &hash, NULL, NULL), "");
   MYASSERT (hash != NULL, "");
-  print_asv (hash);
+  tp_asv_dump (hash);
   MYASSERT (g_hash_table_size (hash) == 2, "%u", g_hash_table_size (hash));
   value = g_hash_table_lookup (hash, "WriteOnly");
   MYASSERT (value == NULL, "");
