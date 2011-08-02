@@ -33,6 +33,7 @@
 #include "telepathy-glib/_gen/signals-marshal.h"
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
+#include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
@@ -732,6 +733,34 @@ _tp_account_manager_new_with_factory (TpSimpleClientFactory *factory,
 }
 
 static gpointer starter_account_manager_proxy = NULL;
+
+/**
+ * tp_account_manager_set_default:
+ * @manager: a #TpAccountManager
+ *
+ * Define the #TpAccountManager singleton that will be returned by
+ * tp_account_manager_dup().
+ *
+ * This function can only be called before the first usage of
+ * tp_account_manager_dup(). It is useful for applications using a custom
+ * #TpSimpleClientFactory and want the default Account Manager to use it. See
+ * tp_account_manager_new_with_factory().
+ *
+ * Note that @manager must use the default dbus-daemon as returned by
+ * tp_dbus_daemon_dup()
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_account_manager_set_default (TpAccountManager *manager)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
+  g_return_if_fail (_tp_dbus_daemon_is_the_shared_one (
+      tp_proxy_get_dbus_daemon (manager)));
+  g_return_if_fail (starter_account_manager_proxy == NULL);
+
+  starter_account_manager_proxy = g_object_ref (manager);
+}
 
 /**
  * tp_account_manager_dup:
