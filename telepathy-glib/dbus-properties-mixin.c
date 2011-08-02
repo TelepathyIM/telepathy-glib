@@ -701,54 +701,18 @@ _tp_dbus_properties_mixin_find_prop_impl
   return NULL;
 }
 
-
-/**
- * tp_dbus_properties_mixin_get:
- * @self: an object with this mixin
- * @interface_name: a D-Bus interface name
- * @property_name: a D-Bus property name
- * @value: an unset GValue (initialized to all zeroes)
- * @error: used to return an error on failure
- *
- * Initialize @value with the type of the property @property_name on
- * @interface_name, and write the value of that property into it as if
- * by calling the D-Bus method org.freedesktop.DBus.Properties.Get.
- *
- * If Get would return a D-Bus error, @value remains unset and @error
- * is filled in instead.
- *
- * Returns: %TRUE (filling @value) on success, %FALSE (setting @error)
- *  on failure
- * Since: 0.7.13
- */
-gboolean
-tp_dbus_properties_mixin_get (GObject *self,
-                              const gchar *interface_name,
-                              const gchar *property_name,
-                              GValue *value,
-                              GError **error)
+static gboolean
+_iface_impl_get_property (
+    GObject *self,
+    TpDBusPropertiesMixinIfaceImpl *iface_impl,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GValue *value,
+    GError **error)
 {
-  TpDBusPropertiesMixinIfaceImpl *iface_impl;
-  TpDBusPropertiesMixinIfaceInfo *iface_info;
+  TpDBusPropertiesMixinIfaceInfo *iface_info = iface_impl->mixin_priv;
   TpDBusPropertiesMixinPropImpl *prop_impl;
   TpDBusPropertiesMixinPropInfo *prop_info;
-
-  g_return_val_if_fail (G_IS_OBJECT (self), FALSE);
-  g_return_val_if_fail (interface_name != NULL, FALSE);
-  g_return_val_if_fail (property_name != NULL, FALSE);
-  g_return_val_if_fail (value != NULL, FALSE);
-
-  iface_impl = _tp_dbus_properties_mixin_find_iface_impl (self,
-      interface_name);
-
-  if (iface_impl == NULL)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "No properties known for interface %s", interface_name);
-      return FALSE;
-    }
-
-  iface_info = iface_impl->mixin_priv;
 
   prop_impl = _tp_dbus_properties_mixin_find_prop_impl (iface_impl,
       property_name);
@@ -781,6 +745,52 @@ tp_dbus_properties_mixin_get (GObject *self,
       prop_info->name, value, prop_impl->getter_data);
 
   return TRUE;
+}
+
+/**
+ * tp_dbus_properties_mixin_get:
+ * @self: an object with this mixin
+ * @interface_name: a D-Bus interface name
+ * @property_name: a D-Bus property name
+ * @value: an unset GValue (initialized to all zeroes)
+ * @error: used to return an error on failure
+ *
+ * Initialize @value with the type of the property @property_name on
+ * @interface_name, and write the value of that property into it as if
+ * by calling the D-Bus method org.freedesktop.DBus.Properties.Get.
+ *
+ * If Get would return a D-Bus error, @value remains unset and @error
+ * is filled in instead.
+ *
+ * Returns: %TRUE (filling @value) on success, %FALSE (setting @error)
+ *  on failure
+ * Since: 0.7.13
+ */
+gboolean
+tp_dbus_properties_mixin_get (GObject *self,
+                              const gchar *interface_name,
+                              const gchar *property_name,
+                              GValue *value,
+                              GError **error)
+{
+  TpDBusPropertiesMixinIfaceImpl *iface_impl;
+
+  g_return_val_if_fail (G_IS_OBJECT (self), FALSE);
+  g_return_val_if_fail (interface_name != NULL, FALSE);
+  g_return_val_if_fail (property_name != NULL, FALSE);
+  g_return_val_if_fail (value != NULL, FALSE);
+
+  iface_impl = _tp_dbus_properties_mixin_find_iface_impl (self,
+      interface_name);
+
+  if (iface_impl == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "No properties known for interface %s", interface_name);
+      return FALSE;
+    }
+
+  return _iface_impl_get_property (self, iface_impl, interface_name, property_name, value, error);
 }
 
 
