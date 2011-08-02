@@ -13,6 +13,8 @@
 #include "_gen/svc.h"
 #include "tests/lib/util.h"
 
+#define WITH_PROPERTIES_IFACE "com.example.WithProperties"
+
 typedef struct _TestProperties {
     GObject parent;
 } TestProperties;
@@ -91,7 +93,7 @@ test_properties_class_init (TestPropertiesClass *cls)
         { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl interfaces[] = {
-      { "com.example.WithProperties", prop_getter, prop_setter,
+      { WITH_PROPERTIES_IFACE, prop_getter, prop_setter,
         with_properties_props },
       { NULL }
   };
@@ -108,7 +110,7 @@ test_get (TpProxy *proxy)
   GValue *value;
 
   g_assert (tp_cli_dbus_properties_run_get (proxy, -1,
-        "com.example.WithProperties", "ReadOnly", &value, NULL, NULL));
+        WITH_PROPERTIES_IFACE, "ReadOnly", &value, NULL, NULL));
   g_assert (G_VALUE_HOLDS_UINT (value));
   g_assert_cmpuint (g_value_get_uint (value), ==, 42);
 
@@ -124,9 +126,9 @@ test_set (TpProxy *proxy)
   g_value_set_uint (&value, 57);
 
   g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
-        "com.example.WithProperties", "ReadWrite", &value, NULL, NULL));
+        WITH_PROPERTIES_IFACE, "ReadWrite", &value, NULL, NULL));
   g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
-        "com.example.WithProperties", "WriteOnly", &value, NULL, NULL));
+        WITH_PROPERTIES_IFACE, "WriteOnly", &value, NULL, NULL));
 
   g_value_unset (&value);
 }
@@ -138,7 +140,7 @@ test_get_all (TpProxy *proxy)
   GValue *value;
 
   g_assert (tp_cli_dbus_properties_run_get_all (proxy, -1,
-        "com.example.WithProperties", &hash, NULL, NULL));
+        WITH_PROPERTIES_IFACE, &hash, NULL, NULL));
   g_assert (hash != NULL);
   tp_asv_dump (hash);
   g_assert_cmpuint (g_hash_table_size (hash), ==, 2);
