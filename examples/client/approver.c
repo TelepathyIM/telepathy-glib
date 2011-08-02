@@ -150,23 +150,15 @@ int
 main (int argc,
       char **argv)
 {
-  TpDBusDaemon *bus_daemon;
+  TpAccountManager *manager;
   GError *error = NULL;
   TpBaseClient *approver;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
-  bus_daemon = tp_dbus_daemon_dup (&error);
-
-  if (bus_daemon == NULL)
-    {
-      g_warning ("%s", error->message);
-      g_error_free (error);
-      return 1;
-    }
-
-  approver = tp_simple_approver_new (bus_daemon, "ExampleApprover",
+  manager = tp_account_manager_dup ();
+  approver = tp_simple_approver_new_with_am (manager, "ExampleApprover",
       FALSE, add_dispatch_operation_cb, NULL, NULL);
 
   /* contact text chat */
@@ -217,7 +209,7 @@ main (int argc,
     g_main_loop_unref (mainloop);
 
 out:
-  g_object_unref (bus_daemon);
+  g_object_unref (manager);
   g_object_unref (approver);
 
   return 0;

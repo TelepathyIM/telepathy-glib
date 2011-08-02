@@ -303,6 +303,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
  * Since: 0.11.5
+ * Deprecated: New code should use tp_simple_observer_new_with_am() instead.
  */
 TpBaseClient *
 tp_simple_observer_new (TpDBusDaemon *dbus,

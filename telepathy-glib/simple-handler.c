@@ -331,6 +331,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
  * Since: 0.11.6
+ * Deprecated: New code should use tp_simple_handler_new_with_am() instead.
  */
 TpBaseClient *
 tp_simple_handler_new (TpDBusDaemon *dbus,

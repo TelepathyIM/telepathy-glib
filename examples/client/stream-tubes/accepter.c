@@ -139,17 +139,15 @@ int
 main (int argc,
     const char **argv)
 {
-  TpDBusDaemon *dbus;
+  TpAccountManager *manager;
   TpBaseClient *handler;
   GError *error = NULL;
 
   g_type_init ();
 
-  dbus = tp_dbus_daemon_dup (&error);
-  g_assert_no_error (error);
-
-  handler = tp_simple_handler_new (dbus, FALSE, FALSE, "ExampleServiceHandler",
-      FALSE, _handle_channels, NULL, NULL);
+  manager = tp_account_manager_dup ();
+  handler = tp_simple_handler_new_with_am (manager, FALSE, FALSE,
+      "ExampleServiceHandler", FALSE, _handle_channels, NULL, NULL);
 
   tp_base_client_take_handler_filter (handler, tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE,
@@ -176,6 +174,7 @@ main (int argc,
 
   g_main_loop_unref (loop);
   g_object_unref (handler);
+  g_object_unref (manager);
 
   return 0;
 }

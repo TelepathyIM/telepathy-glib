@@ -25,6 +25,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/base-client.h>
+#include <telepathy-glib/defs.h>
 
 G_BEGIN_DECLS
 
@@ -79,7 +80,7 @@ TpBaseClient * tp_simple_handler_new (TpDBusDaemon *dbus,
     gboolean uniquify,
     TpSimpleHandlerHandleChannelsImpl callback,
     gpointer user_data,
-    GDestroyNotify destroy);
+    GDestroyNotify destroy) _TP_GNUC_DEPRECATED;
 
 TpBaseClient *tp_simple_handler_new_with_am (TpAccountManager *account_manager,
     gboolean bypass_approval,

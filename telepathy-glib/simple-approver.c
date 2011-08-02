@@ -277,6 +277,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
  * Since: 0.11.5
+ * Deprecated: New code should use tp_simple_approver_new_with_am() instead.
  */
 TpBaseClient *
 tp_simple_approver_new (TpDBusDaemon *dbus,
