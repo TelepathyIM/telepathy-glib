@@ -795,6 +795,7 @@ tp_dbus_properties_mixin_fill_properties_hash_va (
        iface = va_arg (ap, gchar *))
     {
       GValue *value = g_slice_new0 (GValue);
+      GError *error = NULL;
 
       if (first)
         {
@@ -811,13 +812,21 @@ tp_dbus_properties_mixin_fill_properties_hash_va (
        */
       g_assert (property != NULL);
 
-      tp_dbus_properties_mixin_get (object, iface, property,
-            value, NULL);
-      /* Fetching our immutable properties had better not fail... */
-      g_assert (G_IS_VALUE (value));
+      if (tp_dbus_properties_mixin_get (object, iface, property, value,
+              &error))
+        {
+          g_assert (G_IS_VALUE (value));
+          g_hash_table_insert (table,
+              g_strdup_printf ("%s.%s", iface, property), value);
+        }
+      else
+        {
+          /* This is bad and definitely indicates a programming error. */
+          CRITICAL ("Couldn't fetch '%s' on interface '%s': %s",
+              property, iface, error->message);
+          g_clear_error (&error);
+        }
 
-      g_hash_table_insert (table,
-          g_strdup_printf ("%s.%s", iface, property), value);
     }
 }
 
