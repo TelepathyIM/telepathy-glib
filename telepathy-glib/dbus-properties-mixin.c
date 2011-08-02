@@ -733,6 +733,11 @@ tp_dbus_properties_mixin_get (GObject *self,
   TpDBusPropertiesMixinPropImpl *prop_impl;
   TpDBusPropertiesMixinPropInfo *prop_info;
 
+  g_return_val_if_fail (G_IS_OBJECT (self), FALSE);
+  g_return_val_if_fail (interface_name != NULL, FALSE);
+  g_return_val_if_fail (property_name != NULL, FALSE);
+  g_return_val_if_fail (value != NULL, FALSE);
+
   iface_impl = _tp_dbus_properties_mixin_find_iface_impl (self,
       interface_name);
 
