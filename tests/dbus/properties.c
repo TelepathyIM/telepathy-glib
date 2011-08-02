@@ -11,7 +11,6 @@
 #include <telepathy-glib/util.h>
 
 #include "_gen/svc.h"
-#include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
 
 typedef struct _TestProperties {
@@ -59,9 +58,9 @@ prop_getter (GObject *object,
              GValue *value,
              gpointer user_data)
 {
-  MYASSERT (!tp_strdiff (user_data, "read") ||
-            !tp_strdiff (user_data, "full-access"),
-            "%s", (gchar *) user_data);
+  if (tp_strdiff (user_data, "read"))
+    g_assert_cmpstr (user_data, ==, "full-access");
+
   g_value_set_uint (value, 42);
 }
 
@@ -73,11 +72,12 @@ prop_setter (GObject *object,
              gpointer user_data,
              GError **error)
 {
-  MYASSERT (G_VALUE_HOLDS_UINT (value), "");
-  MYASSERT (!tp_strdiff (user_data, "FULL ACCESS") ||
-            !tp_strdiff (user_data, "BLACK HOLE"),
-            "%s", (gchar *) user_data);
-  MYASSERT (g_value_get_uint (value) == 57, "%u", g_value_get_uint (value));
+  g_assert (G_VALUE_HOLDS_UINT (value));
+
+  if (tp_strdiff (user_data, "FULL ACCESS"))
+    g_assert_cmpstr (user_data, ==, "BLACK HOLE");
+
+  g_assert_cmpuint (g_value_get_uint (value), ==, 57);
   return TRUE;
 }
 
@@ -126,39 +126,38 @@ main (int argc, char **argv)
       "object-path", "/",
       NULL));
 
-  MYASSERT (tp_proxy_has_interface (proxy, "org.freedesktop.DBus.Properties"),
-      "");
+  g_assert (tp_proxy_has_interface (proxy, "org.freedesktop.DBus.Properties"));
 
-  MYASSERT (tp_cli_dbus_properties_run_get (proxy, -1,
-        "com.example.WithProperties", "ReadOnly", &value, NULL, NULL), "");
-  MYASSERT (G_VALUE_HOLDS_UINT (value), "");
-  MYASSERT (g_value_get_uint (value) == 42, "%u", g_value_get_uint (value));
+  g_assert (tp_cli_dbus_properties_run_get (proxy, -1,
+        "com.example.WithProperties", "ReadOnly", &value, NULL, NULL));
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
 
   g_value_set_uint (value, 57);
 
-  MYASSERT (tp_cli_dbus_properties_run_set (proxy, -1,
-        "com.example.WithProperties", "ReadWrite", value, NULL, NULL), "");
+  g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
+        "com.example.WithProperties", "ReadWrite", value, NULL, NULL));
 
-  MYASSERT (tp_cli_dbus_properties_run_set (proxy, -1,
-        "com.example.WithProperties", "WriteOnly", value, NULL, NULL), "");
+  g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
+        "com.example.WithProperties", "WriteOnly", value, NULL, NULL));
 
   g_boxed_free (G_TYPE_VALUE, value);
 
-  MYASSERT (tp_cli_dbus_properties_run_get_all (proxy, -1,
-        "com.example.WithProperties", &hash, NULL, NULL), "");
-  MYASSERT (hash != NULL, "");
+  g_assert (tp_cli_dbus_properties_run_get_all (proxy, -1,
+        "com.example.WithProperties", &hash, NULL, NULL));
+  g_assert (hash != NULL);
   tp_asv_dump (hash);
-  MYASSERT (g_hash_table_size (hash) == 2, "%u", g_hash_table_size (hash));
+  g_assert_cmpuint (g_hash_table_size (hash), ==, 2);
   value = g_hash_table_lookup (hash, "WriteOnly");
-  MYASSERT (value == NULL, "");
+  g_assert (value == NULL);
   value = g_hash_table_lookup (hash, "ReadOnly");
-  MYASSERT (value != NULL, "");
-  MYASSERT (G_VALUE_HOLDS_UINT (value), "");
-  MYASSERT (g_value_get_uint (value) == 42, "%u", g_value_get_uint (value));
+  g_assert (value != NULL);
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
   value = g_hash_table_lookup (hash, "ReadWrite");
-  MYASSERT (value != NULL, "");
-  MYASSERT (G_VALUE_HOLDS_UINT (value), "");
-  MYASSERT (g_value_get_uint (value) == 42, "%u", g_value_get_uint (value));
+  g_assert (value != NULL);
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
 
   g_hash_table_destroy (hash);
 
