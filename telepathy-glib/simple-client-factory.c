@@ -34,7 +34,7 @@
  * caller's responsibility to do so. By default, only core features are
  * requested.
  *
- * Currently supported classes are #TpAccountManager, #TpAccount, #TpConnection,
+ * Currently supported classes are #TpAccount, #TpConnection,
  * #TpChannel and #TpContact. Those objects should always be acquired through a
  * factory, rather than being constructed directly.
  *
@@ -66,10 +66,6 @@
 /**
  * TpSimpleClientFactoryClass:
  * @parent_class: the parent
- * @create_account_manager: create a #TpAccountManager;
- *  see tp_simple_client_factory_ensure_account_manager()
- * @dup_account_manager_features: implementation of
- *  tp_simple_client_factory_dup_account_manager_features()
  * @create_account: create a #TpAccount;
  *  see tp_simple_client_factory_ensure_account()
  * @dup_account_features: implementation of tp_simple_client_factory_dup_account_features()
@@ -87,7 +83,7 @@
  * The class structure for #TpSimpleClientFactory.
  *
  * #TpSimpleClientFactory maintains a cache of previously-constructed proxy
- * objects, so the implementations of @create_account_manager, @create_account,
+ * objects, so the implementations of @create_account,
  * @create_connection, @create_channel, and @create_contact may assume that a
  * new object should be created when they are called. The default
  * implementations create unadorned instances of the relevant classes;
@@ -120,7 +116,6 @@ struct _TpSimpleClientFactoryPrivate
   TpDBusDaemon *dbus;
   /* Owned object-path -> weakref to TpProxy */
   GHashTable *proxy_cache;
-  GArray *desired_account_manager_features;
   GArray *desired_account_features;
   GArray *desired_connection_features;
   GArray *desired_channel_features;
@@ -177,20 +172,6 @@ _tp_simple_client_factory_insert_proxy (TpSimpleClientFactory *self,
       tp_proxy_get_object_path (proxy)) == NULL);
 
   insert_proxy (self, proxy);
-}
-
-static TpAccountManager *
-create_account_manager_impl (TpSimpleClientFactory *self)
-{
-  return _tp_account_manager_new_with_factory (self, self->priv->dbus);
-}
-
-static GArray *
-dup_account_manager_features_impl (TpSimpleClientFactory *self,
-    TpAccountManager *manager)
-{
-  return _tp_quark_array_copy (
-      (GQuark *) self->priv->desired_account_manager_features->data);
 }
 
 static TpAccount *
@@ -327,8 +308,6 @@ tp_simple_client_factory_finalize (GObject *object)
 
   g_clear_object (&self->priv->dbus);
   tp_clear_pointer (&self->priv->proxy_cache, g_hash_table_unref);
-  tp_clear_pointer (&self->priv->desired_account_manager_features,
-      g_array_unref);
   tp_clear_pointer (&self->priv->desired_account_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_connection_features, g_array_unref);
   tp_clear_pointer (&self->priv->desired_channel_features, g_array_unref);
@@ -346,11 +325,6 @@ tp_simple_client_factory_init (TpSimpleClientFactory *self)
       TpSimpleClientFactoryPrivate);
 
   self->priv->proxy_cache = g_hash_table_new (g_str_hash, g_str_equal);
-
-  self->priv->desired_account_manager_features = g_array_new (TRUE, FALSE,
-      sizeof (GQuark));
-  feature = TP_ACCOUNT_MANAGER_FEATURE_CORE;
-  g_array_append_val (self->priv->desired_account_manager_features, feature);
 
   self->priv->desired_account_features = g_array_new (TRUE, FALSE,
       sizeof (GQuark));
@@ -384,8 +358,6 @@ tp_simple_client_factory_class_init (TpSimpleClientFactoryClass *klass)
   object_class->constructed = tp_simple_client_factory_constructed;
   object_class->finalize = tp_simple_client_factory_finalize;
 
-  klass->create_account_manager = create_account_manager_impl;
-  klass->dup_account_manager_features = dup_account_manager_features_impl;
   klass->create_account = create_account_impl;
   klass->dup_account_features = dup_account_features_impl;
   klass->create_connection = create_connection_impl;
@@ -444,96 +416,6 @@ tp_simple_client_factory_get_dbus_daemon (TpSimpleClientFactory *self)
   g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
 
   return self->priv->dbus;
-}
-
-/**
- * tp_simple_client_factory_ensure_account_manager:
- * @self: a #TpSimpleClientFactory object
- *
- * Returns a #TpAccountManager object.
- *
- * The returned #TpAccountManager is cached; the same #TpAccountManager object
- * will be returned by this function repeatedly, as long as at least one
- * reference exists. Note that the returned #TpAccountManager is not guaranteed
- * to be ready on return.
- *
- * Returns: (transfer full): a reference to a #TpAccountManager;
- *  see tp_account_manager_new().
- *
- * Since: 0.UNRELEASED
- */
-TpAccountManager *
-tp_simple_client_factory_ensure_account_manager (TpSimpleClientFactory *self)
-{
-  TpAccountManager *manager;
-
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
-
-  manager = lookup_proxy (self, TP_ACCOUNT_MANAGER_OBJECT_PATH);
-  if (manager != NULL)
-    return g_object_ref (manager);
-
-  manager = TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->create_account_manager (
-      self);
-  insert_proxy (self, manager);
-
-  return manager;
-}
-
-/**
- * tp_simple_client_factory_dup_account_manager_features:
- * @self: a #TpSimpleClientFactory object
- * @manager: a #TpAccountManager
- *
- * Returns a zero-terminated #GArray containing the #TpAccountManager features
- * that should be prepared on @manager.
- *
- * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
- *  #GArray
- *
- * Since: 0.UNRELEASED
- */
-GArray *
-tp_simple_client_factory_dup_account_manager_features (
-    TpSimpleClientFactory *self,
-    TpAccountManager *manager)
-{
-  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self), NULL);
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
-  g_return_val_if_fail (tp_proxy_get_factory (manager) == self, NULL);
-
-  return TP_SIMPLE_CLIENT_FACTORY_GET_CLASS (self)->dup_account_manager_features
-      (self, manager);
-}
-
-/**
- * tp_simple_client_factory_add_account_manager_features:
- * @self: a #TpSimpleClientFactory object
- * @features: (transfer none) (array zero-terminated=1) (allow-none): an array
- *  of desired features, ending with 0; %NULL is equivalent to an array
- *  containing only 0
- *
- * Add @features to the desired features to be prepared on #TpAccountManager
- * object. Those features will be added to the features already returned be
- * tp_simple_client_factory_dup_account_manager_features().
- *
- * It is not necessary to add %TP_ACCOUNT_MANAGER_FEATURE_CORE as it is already
- * included by default.
- *
- * Note that these features will not be added to existing #TpAccountManager
- * objects; the user must call tp_proxy_prepare_async() themself.
- *
- * Since: 0.UNRELEASED
- */
-void
-tp_simple_client_factory_add_account_manager_features (
-    TpSimpleClientFactory *self,
-    const GQuark *features)
-{
-  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
-
-  _tp_quark_array_merge (self->priv->desired_account_manager_features, features,
-      -1);
 }
 
 /**

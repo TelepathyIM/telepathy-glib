@@ -41,9 +41,6 @@ _tp_simple_client_factory_ensure_channel_dispatch_operation (
     GHashTable *immutable_properties,
     GError **error);
 
-TpAccountManager *_tp_account_manager_new_with_factory (
-    TpSimpleClientFactory *factory, TpDBusDaemon *bus_daemon);
-
 TpAccount *_tp_account_new_with_factory (TpSimpleClientFactory *factory,
     TpDBusDaemon *bus_daemon,
     const gchar *object_path,

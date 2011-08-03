@@ -694,6 +694,19 @@ tp_account_manager_init_known_interfaces (void)
     }
 }
 
+static TpAccountManager *
+_tp_account_manager_new_internal (TpSimpleClientFactory *factory,
+    TpDBusDaemon *bus_daemon)
+{
+  return TP_ACCOUNT_MANAGER (g_object_new (TP_TYPE_ACCOUNT_MANAGER,
+          "dbus-daemon", bus_daemon,
+          "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
+          "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
+          "object-path", TP_ACCOUNT_MANAGER_OBJECT_PATH,
+          "factory", factory,
+          NULL));
+}
+
 /**
  * tp_account_manager_new:
  * @bus_daemon: Proxy for the D-Bus daemon
@@ -710,26 +723,32 @@ tp_account_manager_init_known_interfaces (void)
 TpAccountManager *
 tp_account_manager_new (TpDBusDaemon *bus_daemon)
 {
-  return _tp_account_manager_new_with_factory (NULL, bus_daemon);
-}
-
-TpAccountManager *
-_tp_account_manager_new_with_factory (TpSimpleClientFactory *factory,
-    TpDBusDaemon *bus_daemon)
-{
-  TpAccountManager *self;
-
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (bus_daemon), NULL);
 
-  self = TP_ACCOUNT_MANAGER (g_object_new (TP_TYPE_ACCOUNT_MANAGER,
-          "dbus-daemon", bus_daemon,
-          "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
-          "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
-          "object-path", TP_ACCOUNT_MANAGER_OBJECT_PATH,
-          "factory", factory,
-          NULL));
+  return _tp_account_manager_new_internal (NULL, bus_daemon);
+}
 
-  return self;
+/**
+ * tp_account_manager_new_with_factory:
+ * @factory: a #TpSimpleClientFactory
+ *
+ * Convenience function to create a new account manager proxy. The returned
+ * #TpAccountManager is not guaranteed to be ready on return.
+ *
+ * Should be used only by applications having their own #TpSimpleClientFactory
+ * subclass. Usually this should be done at application startup and followed by
+ * a call to tp_account_manager_set_default() to ensure other libraries/plugins
+ * will use this custom factory as well.
+ *
+ * Returns: a new reference to an account manager proxy
+ */
+TpAccountManager *
+tp_account_manager_new_with_factory (TpSimpleClientFactory *factory)
+{
+  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (factory), NULL);
+
+  return _tp_account_manager_new_internal (factory,
+      tp_simple_client_factory_get_dbus_daemon (factory));
 }
 
 static gpointer starter_account_manager_proxy = NULL;

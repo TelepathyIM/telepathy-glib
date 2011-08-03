@@ -73,6 +73,9 @@ GQuark tp_account_manager_get_feature_quark_core (void) G_GNUC_CONST;
 TpAccountManager *tp_account_manager_new (TpDBusDaemon *bus_daemon)
   G_GNUC_WARN_UNUSED_RESULT;
 
+TpAccountManager *tp_account_manager_new_with_factory (
+    TpSimpleClientFactory *factory) G_GNUC_WARN_UNUSED_RESULT;
+
 void tp_account_manager_set_default (TpAccountManager *manager);
 TpAccountManager *tp_account_manager_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 

@@ -21,7 +21,6 @@
 #ifndef __TP_SIMPLE_CLIENT_FACTORY_H__
 #define __TP_SIMPLE_CLIENT_FACTORY_H__
 
-#include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
@@ -39,11 +38,6 @@ typedef struct _TpSimpleClientFactoryClass TpSimpleClientFactoryClass;
 struct _TpSimpleClientFactoryClass {
     /*<public>*/
     GObjectClass parent_class;
-
-    /* TpAccountManager */
-    TpAccountManager * (*create_account_manager) (TpSimpleClientFactory *self);
-    GArray * (*dup_account_manager_features) (TpSimpleClientFactory *self,
-        TpAccountManager *manager);
 
     /* TpAccount */
     TpAccount * (*create_account) (TpSimpleClientFactory *self,
@@ -110,16 +104,6 @@ TpSimpleClientFactory * tp_simple_client_factory_new (TpDBusDaemon *dbus);
 
 TpDBusDaemon *tp_simple_client_factory_get_dbus_daemon (
     TpSimpleClientFactory *self);
-
-/* TpAccountManager */
-TpAccountManager *tp_simple_client_factory_ensure_account_manager (
-    TpSimpleClientFactory *self);
-GArray *tp_simple_client_factory_dup_account_manager_features (
-    TpSimpleClientFactory *self,
-    TpAccountManager *manager);
-void tp_simple_client_factory_add_account_manager_features (
-    TpSimpleClientFactory *self,
-    const GQuark *features);
 
 /* TpAccount */
 TpAccount *tp_simple_client_factory_ensure_account (TpSimpleClientFactory *self,
