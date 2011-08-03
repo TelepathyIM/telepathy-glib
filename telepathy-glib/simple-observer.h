@@ -90,6 +90,15 @@ TpBaseClient *tp_simple_observer_new_with_am (
     gpointer user_data,
     GDestroyNotify destroy);
 
+TpBaseClient *tp_simple_observer_new_with_factory (
+    TpSimpleClientFactory *factory,
+    gboolean recover,
+    const gchar *name,
+    gboolean uniquify,
+    TpSimpleObserverObserveChannelsImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy);
+
 G_END_DECLS
 
 #endif

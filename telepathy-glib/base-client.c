@@ -221,6 +221,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
 enum {
     PROP_DBUS_DAEMON = 1,
     PROP_ACCOUNT_MANAGER,
+    PROP_FACTORY,
     PROP_NAME,
     PROP_UNIQUIFY_NAME,
     PROP_CHANNEL_FACTORY,
@@ -249,6 +250,7 @@ typedef enum {
 
 struct _TpBaseClientPrivate
 {
+  TpSimpleClientFactory *factory;
   TpDBusDaemon *dbus;
   gchar *name;
   gboolean uniquify_name;
@@ -303,6 +305,8 @@ _tp_base_client_set_only_for_account (TpBaseClient *self,
     TpAccount *account)
 {
   g_return_if_fail (self->priv->only_for_account == NULL);
+  g_return_if_fail (tp_proxy_get_factory (account) == self->priv->factory);
+
   self->priv->only_for_account = g_object_ref (account);
 }
 
@@ -325,8 +329,8 @@ tp_base_client_dup_account (TpBaseClient *self,
       return g_object_ref (self->priv->only_for_account);
     }
 
-  return tp_simple_client_factory_ensure_account (
-      tp_proxy_get_factory (self->priv->account_mgr), path, NULL, error);
+  return tp_simple_client_factory_ensure_account (self->priv->factory,
+      path, NULL, error);
 }
 
 static GHashTable *
@@ -988,6 +992,7 @@ tp_base_client_dispose (GObject *object)
 
   tp_clear_object (&self->priv->dbus);
   tp_clear_object (&self->priv->account_mgr);
+  tp_clear_object (&self->priv->factory);
   tp_clear_object (&self->priv->only_for_account);
   tp_clear_object (&self->priv->channel_factory);
 
@@ -1056,6 +1061,10 @@ tp_base_client_get_property (GObject *object,
         g_value_set_object (value, self->priv->account_mgr);
         break;
 
+      case PROP_FACTORY:
+        g_value_set_object (value, self->priv->factory);
+        break;
+
       case PROP_NAME:
         g_value_set_string (value, self->priv->name);
         break;
@@ -1094,6 +1103,11 @@ tp_base_client_set_property (GObject *object,
         self->priv->account_mgr = g_value_dup_object (value);
         break;
 
+      case PROP_FACTORY:
+        g_assert (self->priv->factory == NULL); /* construct-only */
+        self->priv->factory = g_value_dup_object (value);
+        break;
+
       case PROP_NAME:
         g_assert (self->priv->name == NULL);    /* construct-only */
         self->priv->name = g_value_dup_string (value);
@@ -1126,11 +1140,17 @@ tp_base_client_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  g_assert (self->priv->dbus != NULL || self->priv->account_mgr != NULL);
-  g_assert (self->priv->name != NULL);
-
-  if (self->priv->account_mgr == NULL)
+  /* What we really need is a factory. For historical reasons,
+   * constructor could get a TpDBusDaemon or a TpAccountManager.
+   * We need to do some fallbacks for compatibility... */
+  if (self->priv->account_mgr == NULL &&
+      self->priv->factory == NULL)
     {
+      /* This case happens only from deprecated API, for compatibility we still
+       * need to create a TpAccountManager even if a factory would be enough */
+
+      g_assert (self->priv->dbus != NULL);
+
       if (_tp_dbus_daemon_is_the_shared_one (self->priv->dbus))
         {
           /* The AM is guaranteed to be the one from
@@ -1143,18 +1163,29 @@ tp_base_client_constructed (GObject *object)
           self->priv->account_mgr = tp_account_manager_new (self->priv->dbus);
         }
     }
-  else if (self->priv->dbus == NULL)
+
+  if (self->priv->factory == NULL)
     {
-      self->priv->dbus = g_object_ref (tp_proxy_get_dbus_daemon (
-            self->priv->account_mgr));
-    }
-  else
-    {
-      g_assert (self->priv->dbus ==
-          tp_proxy_get_dbus_daemon (self->priv->account_mgr));
+      g_assert (self->priv->account_mgr != NULL);
+
+      self->priv->factory = tp_proxy_get_factory (self->priv->account_mgr);
+      g_object_ref (self->priv->factory);
     }
 
+  if (self->priv->dbus == NULL)
+    {
+      g_assert (self->priv->factory != NULL);
+
+      self->priv->dbus = tp_simple_client_factory_get_dbus_daemon (
+          self->priv->factory);
+      g_object_ref (self->priv->dbus);
+    }
+
+  g_assert (tp_simple_client_factory_get_dbus_daemon (self->priv->factory) ==
+      self->priv->dbus);
+
   /* Bus name */
+  g_assert (self->priv->name != NULL);
   string = g_string_new (TP_CLIENT_BUS_NAME_BASE);
   g_string_append (string, self->priv->name);
 
@@ -1378,12 +1409,29 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * account manager's #TpProxy:dbus-daemon.
    *
    * Since: 0.11.14
+   * Deprecated: New code should not use this property, it may be %NULL in
+   *  the case @self was constructed with a #TpSimpleClientFactory.
    */
   param_spec = g_param_spec_object ("account-manager", "TpAccountManager",
       "The TpAccountManager used look up or create TpAccount objects",
       TP_TYPE_ACCOUNT_MANAGER,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT_MANAGER,
+      param_spec);
+
+  /**
+   * TpBaseClient:factory:
+   *
+   * Factory for this base client, used to look up or create
+   * #TpAccount objects.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("factory", "TpSimpleClientFactory",
+      "The TpSimpleClientFactory used look up or create TpAccount objects",
+      TP_TYPE_SIMPLE_CLIENT_FACTORY,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_FACTORY,
       param_spec);
 
   /**
@@ -1556,8 +1604,8 @@ dup_features_for_account (TpBaseClient *self,
 {
   GArray *features;
 
-  features = tp_simple_client_factory_dup_account_features (
-      tp_proxy_get_factory (self->priv->account_mgr), account);
+  features = tp_simple_client_factory_dup_account_features (self->priv->factory,
+      account);
 
   g_assert (features != NULL);
 
@@ -1576,7 +1624,7 @@ dup_features_for_connection (TpBaseClient *self,
   GArray *features;
 
   features = tp_simple_client_factory_dup_connection_features (
-      tp_proxy_get_factory (self->priv->account_mgr), connection);
+      self->priv->factory, connection);
 
   g_assert (features != NULL);
 
@@ -1600,7 +1648,7 @@ dup_features_for_channel (TpBaseClient *self,
         self->priv->channel_factory, channel);
   else
     features = tp_simple_client_factory_dup_channel_features (
-        tp_proxy_get_factory (self->priv->account_mgr), channel);
+        self->priv->factory, channel);
 
   g_assert (features != NULL);
 
@@ -1624,9 +1672,8 @@ ensure_channel (TpBaseClient *self,
     return tp_client_channel_factory_create_channel (
         self->priv->channel_factory, connection, chan_path, chan_props, error);
 
-  return tp_simple_client_factory_ensure_channel (
-      tp_proxy_get_factory (self->priv->account_mgr), connection, chan_path,
-      chan_props, error);
+  return tp_simple_client_factory_ensure_channel (self->priv->factory,
+      connection, chan_path, chan_props, error);
 }
 
 static void
@@ -1721,8 +1768,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
     {
       dispatch_operation =
           _tp_simple_client_factory_ensure_channel_dispatch_operation (
-              tp_proxy_get_factory (self->priv->account_mgr),
-              dispatch_operation_path, NULL, &error);
+              self->priv->factory, dispatch_operation_path, NULL, &error);
      if (dispatch_operation == NULL)
        {
          DEBUG ("Failed to create TpChannelDispatchOperation: %s",
@@ -1738,8 +1784,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       TpChannelRequest *request;
 
       request = _tp_simple_client_factory_ensure_channel_request (
-          tp_proxy_get_factory (self->priv->account_mgr), req_path, NULL,
-          &error);
+          self->priv->factory, req_path, NULL, &error);
       if (request == NULL)
         {
           DEBUG ("Failed to create TpChannelRequest: %s", error->message);
@@ -1942,8 +1987,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
 
   dispatch_operation =
       _tp_simple_client_factory_ensure_channel_dispatch_operation (
-          tp_proxy_get_factory (self->priv->account_mgr),
-          dispatch_operation_path, properties, &error);
+          self->priv->factory, dispatch_operation_path, properties, &error);
   if (dispatch_operation == NULL)
     {
       DEBUG ("Failed to create TpChannelDispatchOperation: %s", error->message);
@@ -2310,8 +2354,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       else
         {
           request = _tp_simple_client_factory_ensure_channel_request (
-              tp_proxy_get_factory (self->priv->account_mgr), req_path, NULL,
-              &error);
+              self->priv->factory, req_path, NULL, &error);
           if (request == NULL)
             {
               DEBUG ("Failed to create TpChannelRequest: %s", error->message);
@@ -2428,8 +2471,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   GArray *account_features;
 
   request = _tp_simple_client_factory_ensure_channel_request (
-      tp_proxy_get_factory (self->priv->account_mgr), path, properties,
-      &error);
+      self->priv->factory, path, properties, &error);
   if (request == NULL)
     {
       DEBUG ("Failed to create TpChannelRequest: %s", error->message);
@@ -2643,6 +2685,8 @@ tp_base_client_get_dbus_daemon (TpBaseClient *self)
  *
  * Returns: (transfer none): the value of #TpBaseClient:account-manager
  * Since: 0.11.14
+ * Deprecated: New code should not use this function, it may return %NULL in
+ *  the case @self was constructed with a #TpSimpleClientFactory.
  */
 TpAccountManager *
 tp_base_client_get_account_manager (TpBaseClient *self)

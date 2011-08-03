@@ -204,7 +204,8 @@ gboolean tp_base_client_get_uniquify_name (TpBaseClient *self);
 const gchar *tp_base_client_get_bus_name (TpBaseClient *self);
 const gchar *tp_base_client_get_object_path (TpBaseClient *self);
 TpDBusDaemon *tp_base_client_get_dbus_daemon (TpBaseClient *self);
-TpAccountManager *tp_base_client_get_account_manager (TpBaseClient *self);
+TpAccountManager *tp_base_client_get_account_manager (TpBaseClient *self)
+    _TP_GNUC_DEPRECATED;
 
 void tp_base_client_unregister (TpBaseClient *self);
 

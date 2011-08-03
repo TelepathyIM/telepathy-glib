@@ -87,6 +87,14 @@ TpBaseClient *tp_simple_approver_new_with_am (
     gpointer user_data,
     GDestroyNotify destroy);
 
+TpBaseClient *tp_simple_approver_new_with_factory (
+    TpSimpleClientFactory *factory,
+    const gchar *name,
+    gboolean uniquify,
+    TpSimpleApproverAddDispatchOperationImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy);
+
 G_END_DECLS
 
 #endif

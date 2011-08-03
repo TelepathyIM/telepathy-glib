@@ -91,6 +91,16 @@ TpBaseClient *tp_simple_handler_new_with_am (TpAccountManager *account_manager,
     gpointer user_data,
     GDestroyNotify destroy);
 
+TpBaseClient *tp_simple_handler_new_with_factory (
+    TpSimpleClientFactory *factory,
+    gboolean bypass_approval,
+    gboolean requests,
+    const gchar *name,
+    gboolean uniquify,
+    TpSimpleHandlerHandleChannelsImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy);
+
 G_END_DECLS
 
 #endif

@@ -4949,6 +4949,7 @@ TpSimpleObserver
 TpSimpleObserverObserveChannelsImpl
 tp_simple_observer_new
 tp_simple_observer_new_with_am
+tp_simple_observer_new_with_factory
 <SUBSECTION Standard>
 tp_simple_observer_get_type
 TP_TYPE_SIMPLE_OBSERVER
@@ -4989,6 +4990,7 @@ TpSimpleApprover
 TpSimpleApproverAddDispatchOperationImpl
 tp_simple_approver_new
 tp_simple_approver_new_with_am
+tp_simple_approver_new_with_factory
 <SUBSECTION Standard>
 tp_simple_approver_get_type
 TP_TYPE_SIMPLE_APPROVER
@@ -5031,6 +5033,7 @@ TpSimpleHandler
 TpSimpleHandlerHandleChannelsImpl
 tp_simple_handler_new
 tp_simple_handler_new_with_am
+tp_simple_handler_new_with_factory
 <SUBSECTION Standard>
 tp_simple_handler_get_type
 TP_TYPE_SIMPLE_HANDLER

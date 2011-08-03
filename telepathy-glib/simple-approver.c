@@ -334,3 +334,38 @@ tp_simple_approver_new_with_am (TpAccountManager *account_manager,
       "destroy", destroy,
       NULL);
 }
+
+/**
+ * tp_simple_approver_new_with_factory:
+ * @factory: an #TpSimpleClientFactory, which may not be %NULL
+ * @name: the name of the Approver (see #TpBaseClient:name for details)
+ * @uniquify: the value of the #TpBaseClient:uniquify-name property
+ * @callback: the function called when AddDispatchOperation is called
+ * @user_data: arbitrary user-supplied data passed to @callback
+ * @destroy: called with @user_data as its argument when the #TpSimpleApprover
+ * is destroyed
+ *
+ * Convenient function to create a new #TpSimpleApprover instance with a
+ * specified #TpSimpleClientFactory.
+ *
+ * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
+ *
+ * Since: 0.UNRELEASED
+ */
+TpBaseClient *
+tp_simple_approver_new_with_factory (TpSimpleClientFactory *factory,
+    const gchar *name,
+    gboolean uniquify,
+    TpSimpleApproverAddDispatchOperationImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy)
+{
+  return g_object_new (TP_TYPE_SIMPLE_APPROVER,
+      "factory", factory,
+      "name", name,
+      "uniquify-name", uniquify,
+      "callback", callback,
+      "user-data", user_data,
+      "destroy", destroy,
+      NULL);
+}
