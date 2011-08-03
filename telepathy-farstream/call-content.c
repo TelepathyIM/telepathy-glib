@@ -425,7 +425,7 @@ tf_call_content_set_property (GObject    *object,
       if (self->call_channel == NULL)
         break;
 
-      self->input_volume = g_value_get_uint (value);
+      self->output_volume = g_value_get_uint (value);
       tf_future_cli_call_content_interface_audio_control_call_set_output_volume (
           self->proxy, -1, self->output_volume, NULL, NULL, NULL, NULL);
       g_object_notify_by_pspec (object, pspec);
