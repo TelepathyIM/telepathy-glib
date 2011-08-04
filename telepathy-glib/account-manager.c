@@ -231,6 +231,37 @@ _tp_account_manager_name_owner_cb (TpDBusDaemon *proxy,
     }
 }
 
+static void insert_account (TpAccountManager *self, TpAccount *account);
+
+static void
+validity_changed_account_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpAccountManager *self = user_data;
+  TpAccount *account = (TpAccount *) object;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      DEBUG ("Error preparing account: %s", error->message);
+      g_clear_error (&error);
+      goto OUT;
+    }
+
+  /* Account could have been invalidated while we were preparing it */
+  if (tp_account_is_valid (account) &&
+      tp_proxy_get_invalidated (account) == NULL)
+    {
+      insert_account (self, account);
+      g_signal_emit (self, signals[ACCOUNT_VALIDITY_CHANGED], 0,
+          account, TRUE);
+    }
+
+OUT:
+  g_object_unref (self);
+}
+
 static void
 _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
     const gchar *path,
@@ -241,17 +272,44 @@ _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
   TpAccountManagerPrivate *priv = manager->priv;
   TpAccount *account;
-
-  account = tp_account_manager_ensure_account (manager, path);
-
-  g_object_ref (account);
+  GArray *features;
+  GError *error = NULL;
 
   if (!valid)
-    g_hash_table_remove (priv->accounts, path);
+    {
+      /* If account became invalid, but we didn't have it anyway, ignore. */
+      account = g_hash_table_lookup (priv->accounts, path);
+      if (account == NULL)
+        return;
 
-  g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
-      account, valid);
+      g_object_ref (account);
+      g_hash_table_remove (priv->accounts, path);
 
+      g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
+          account, FALSE);
+
+      g_object_unref (account);
+
+      return;
+    }
+
+  account = tp_simple_client_factory_ensure_account (
+      tp_proxy_get_factory (manager), path, NULL, &error);
+  if (account == NULL)
+    {
+      DEBUG ("failed to create TpAccount: %s", error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  /* Delay signal emission until until account is prepared */
+  features = tp_simple_client_factory_dup_account_features (
+      tp_proxy_get_factory (manager), account);
+
+  tp_proxy_prepare_async (account, (GQuark *) features->data,
+      validity_changed_account_prepared_cb, g_object_ref (manager));
+
+  g_array_unref (features);
   g_object_unref (account);
 }
 
@@ -822,6 +880,27 @@ _tp_account_manager_account_invalidated_cb (TpProxy *proxy,
 
   g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
   g_object_unref (account);
+}
+
+static void
+insert_account (TpAccountManager *self,
+    TpAccount *account)
+{
+  g_hash_table_insert (self->priv->accounts,
+      g_strdup (tp_proxy_get_object_path (account)),
+      g_object_ref (account));
+
+  tp_g_signal_connect_object (account, "notify::enabled",
+      G_CALLBACK (_tp_account_manager_account_enabled_cb),
+      G_OBJECT (self), 0);
+
+  tp_g_signal_connect_object (account, "presence-changed",
+      G_CALLBACK (_tp_account_manager_account_presence_changed_cb),
+      G_OBJECT (self), 0);
+
+  tp_g_signal_connect_object (account, "invalidated",
+      G_CALLBACK (_tp_account_manager_account_invalidated_cb),
+      G_OBJECT (self), 0);
 }
 
 static void
