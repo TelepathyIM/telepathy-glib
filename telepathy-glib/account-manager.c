@@ -563,8 +563,11 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    * @account: a #TpAccount
    * @valid: %TRUE if the account is now valid
    *
-   * Emitted when the validity on @account changes. @account is not guaranteed
-   * to be ready when this signal is emitted.
+   * Emitted when the validity on @account changes.
+   *
+   * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
+   * with all features previously passed to
+   * tp_simple_client_factory_add_account_features().
    *
    * Since: 0.9.0
    */
@@ -602,8 +605,9 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * Emitted when an account from @manager is enabled.
    *
-   * Note that the returned #TpAccount @account is not guaranteed to have any
-   * features pre-prepared, including %TP_ACCOUNT_FEATURE_CORE.
+   * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
+   * with all features previously passed to
+   * tp_simple_client_factory_add_account_features().
    *
    * Since: 0.9.0
    */
@@ -954,6 +958,10 @@ tp_account_manager_ensure_account (TpAccountManager *self,
  * account = tp_account_manager_get_valid_accounts (manager);
  * g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
  * ]|
+ *
+ * The returned #TpAccount<!-- -->s are guaranteed to have
+ * %TP_ACCOUNT_FEATURE_CORE prepared, along with all features previously passed
+ * to tp_simple_client_factory_add_account_features().
  *
  * The list of valid accounts returned is not guaranteed to have been retrieved
  * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
