@@ -967,6 +967,10 @@ tp_base_client_init (TpBaseClient *self)
 
   self->priv->my_chans = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, g_object_unref);
+
+  self->priv->account_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
+  self->priv->connection_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
+  self->priv->channel_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
 }
 
 static void
@@ -2684,33 +2688,6 @@ tp_base_client_unregister (TpBaseClient *self)
   self->priv->registered = FALSE;
 }
 
-static void
-varargs_helper (TpBaseClient *self,
-    GQuark feature,
-    va_list ap,
-    void (*method) (TpBaseClient *, const GQuark *, gssize))
-{
-  GQuark f;
-  gsize n = 0;
-  GQuark *features;
-  va_list ap_copy;
-
-  G_VA_COPY (ap_copy, ap);
-
-  for (f = feature; f != 0; f = va_arg (ap, GQuark))
-    n++;
-
-  features = g_malloc_n (n, sizeof (GQuark));
-
-  n = 0;
-
-  for (f = feature; f != 0; f = va_arg (ap_copy, GQuark))
-    features[n++] = f;
-
-  method (self, features, n);
-  g_free (features);
-}
-
 /**
  * tp_base_client_add_account_features_varargs: (skip)
  * @self: a client
@@ -2729,8 +2706,11 @@ tp_base_client_add_account_features_varargs (TpBaseClient *self,
 {
   va_list ap;
 
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
   va_start (ap, feature);
-  varargs_helper (self, feature, ap, tp_base_client_add_account_features);
+  _tp_quark_array_merge_valist (self->priv->account_features, feature, ap);
   va_end (ap);
 }
 
@@ -2752,8 +2732,11 @@ tp_base_client_add_connection_features_varargs (TpBaseClient *self,
 {
   va_list ap;
 
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
   va_start (ap, feature);
-  varargs_helper (self, feature, ap, tp_base_client_add_connection_features);
+  _tp_quark_array_merge_valist (self->priv->connection_features, feature, ap);
   va_end (ap);
 }
 
@@ -2775,8 +2758,11 @@ tp_base_client_add_channel_features_varargs (TpBaseClient *self,
 {
   va_list ap;
 
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
   va_start (ap, feature);
-  varargs_helper (self, feature, ap, tp_base_client_add_channel_features);
+  _tp_quark_array_merge_valist (self->priv->channel_features, feature, ap);
   va_end (ap);
 }
 
@@ -2803,9 +2789,6 @@ tp_base_client_add_account_features (TpBaseClient *self,
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
 
-  if (self->priv->account_features == NULL)
-    self->priv->account_features = g_array_new (TRUE, TRUE, sizeof (GQuark));
-
   _tp_quark_array_merge (self->priv->account_features, features, n);
 }
 
@@ -2831,9 +2814,6 @@ tp_base_client_add_channel_features (TpBaseClient *self,
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
 
-  if (self->priv->channel_features == NULL)
-    self->priv->channel_features = g_array_new (TRUE, TRUE, sizeof (GQuark));
-
   _tp_quark_array_merge (self->priv->channel_features, features, n);
 }
 
@@ -2858,10 +2838,6 @@ tp_base_client_add_connection_features (TpBaseClient *self,
 {
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-
-  if (self->priv->connection_features == NULL)
-    self->priv->connection_features = g_array_new (TRUE, TRUE,
-        sizeof (GQuark));
 
   _tp_quark_array_merge (self->priv->connection_features, features, n);
 }

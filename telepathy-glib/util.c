@@ -1538,6 +1538,25 @@ next_i:
     }
 }
 
+/* Helper to implement functions with 0-terminated list of features in args */
+void
+_tp_quark_array_merge_valist (GArray *array,
+    GQuark feature,
+    va_list var_args)
+{
+  GArray *features;
+  GQuark f;
+
+  features = g_array_new (FALSE, FALSE, sizeof (GQuark));
+
+  for (f = feature; f != 0; f = va_arg (var_args, GQuark))
+    g_array_append_val (features, f);
+
+  _tp_quark_array_merge (array, (GQuark *) features->data, features->len);
+
+  g_array_unref (features);
+}
+
 #ifdef HAVE_GIO_UNIX
 GSocketAddress *
 _tp_create_temp_unix_socket (GSocketService *service,

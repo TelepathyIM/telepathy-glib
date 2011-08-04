@@ -634,6 +634,33 @@ tp_simple_client_factory_add_account_features (
 }
 
 /**
+ * tp_simple_client_factory_add_account_features_varargs: (skip)
+ * @self: a #TpSimpleClientFactory
+ * @feature: the first feature
+ * @...: the second and subsequent features, if any, ending with 0
+ *
+ * The same as tp_simple_client_factory_add_account_features(), but with a more
+ * convenient calling convention from C.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_simple_client_factory_add_account_features_varargs (
+    TpSimpleClientFactory *self,
+    GQuark feature,
+    ...)
+{
+  va_list var_args;
+
+  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+
+  va_start (var_args, feature);
+  _tp_quark_array_merge_valist (self->priv->desired_account_features, feature,
+      var_args);
+  va_end (var_args);
+}
+
+/**
  * tp_simple_client_factory_ensure_connection:
  * @self: a #TpSimpleClientFactory object
  * @object_path: the object path of a connection
@@ -729,6 +756,33 @@ tp_simple_client_factory_add_connection_features (
   g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
 
   _tp_quark_array_merge (self->priv->desired_connection_features, features, -1);
+}
+
+/**
+ * tp_simple_client_factory_add_connection_features_varargs: (skip)
+ * @self: a #TpSimpleClientFactory
+ * @feature: the first feature
+ * @...: the second and subsequent features, if any, ending with 0
+ *
+ * The same as tp_simple_client_factory_add_connection_features(), but with a
+ * more convenient calling convention from C.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_simple_client_factory_add_connection_features_varargs (
+    TpSimpleClientFactory *self,
+    GQuark feature,
+    ...)
+{
+  va_list var_args;
+
+  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+
+  va_start (var_args, feature);
+  _tp_quark_array_merge_valist (self->priv->desired_connection_features,
+      feature, var_args);
+  va_end (var_args);
 }
 
 /**
@@ -831,6 +885,33 @@ tp_simple_client_factory_add_channel_features (
   g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
 
   _tp_quark_array_merge (self->priv->desired_channel_features, features, -1);
+}
+
+/**
+ * tp_simple_client_factory_add_channel_features_varargs: (skip)
+ * @self: a #TpSimpleClientFactory
+ * @feature: the first feature
+ * @...: the second and subsequent features, if any, ending with 0
+ *
+ * The same as tp_simple_client_factory_add_channel_features(), but with a
+ * more convenient calling convention from C.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_simple_client_factory_add_channel_features_varargs (
+    TpSimpleClientFactory *self,
+    GQuark feature,
+    ...)
+{
+  va_list var_args;
+
+  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+
+  va_start (var_args, feature);
+  _tp_quark_array_merge_valist (self->priv->desired_channel_features,
+      feature, var_args);
+  va_end (var_args);
 }
 
 /**
@@ -950,6 +1031,42 @@ tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
       if (!found)
         g_array_append_val (self->priv->desired_contact_features, features[i]);
     }
+}
+
+/**
+ * tp_simple_client_factory_add_contact_features_varargs: (skip)
+ * @self: a #TpSimpleClientFactory
+ * @feature: the first feature
+ * @...: the second and subsequent features, if any, ending with 0
+ *
+ * The same as tp_simple_client_factory_add_contact_features(), but with a
+ * more convenient calling convention from C.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_simple_client_factory_add_contact_features_varargs (
+    TpSimpleClientFactory *self,
+    TpContactFeature feature,
+    ...)
+{
+  va_list var_args;
+  GArray *features;
+  GQuark f;
+
+  g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
+
+  va_start (var_args, feature);
+  features = g_array_new (FALSE, FALSE, sizeof (TpContactFeature));
+
+  for (f = feature; f != 0; f = va_arg (var_args, TpContactFeature))
+    g_array_append_val (features, f);
+
+  tp_simple_client_factory_add_contact_features (self, features->len,
+      (TpContactFeature *) features->data);
+
+  g_array_unref (features);
+  va_end (var_args);
 }
 
 /**

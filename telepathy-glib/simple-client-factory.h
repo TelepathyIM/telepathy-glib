@@ -131,6 +131,10 @@ GArray *tp_simple_client_factory_dup_account_features (
     TpAccount *account);
 void tp_simple_client_factory_add_account_features (TpSimpleClientFactory *self,
     const GQuark *features);
+void tp_simple_client_factory_add_account_features_varargs (
+    TpSimpleClientFactory *self,
+    GQuark feature,
+    ...);
 
 /* TpConnection */
 TpConnection *tp_simple_client_factory_ensure_connection (
@@ -144,6 +148,10 @@ GArray *tp_simple_client_factory_dup_connection_features (
 void tp_simple_client_factory_add_connection_features (
     TpSimpleClientFactory *self,
     const GQuark *features);
+void tp_simple_client_factory_add_connection_features_varargs (
+    TpSimpleClientFactory *self,
+    GQuark feature,
+    ...);
 
 /* TpChannel */
 TpChannel *tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
@@ -156,6 +164,10 @@ GArray *tp_simple_client_factory_dup_channel_features (
     TpChannel *channel);
 void tp_simple_client_factory_add_channel_features (TpSimpleClientFactory *self,
     const GQuark *features);
+void tp_simple_client_factory_add_channel_features_varargs (
+    TpSimpleClientFactory *self,
+    GQuark feature,
+    ...);
 
 /* TpContact */
 TpContact *tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
@@ -168,6 +180,10 @@ GArray *tp_simple_client_factory_dup_contact_features (
 void tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
     guint n_features,
     const TpContactFeature *features);
+void tp_simple_client_factory_add_contact_features_varargs (
+    TpSimpleClientFactory *self,
+    TpContactFeature feature,
+    ...);
 
 G_END_DECLS
 
