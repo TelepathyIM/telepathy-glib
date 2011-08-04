@@ -43,6 +43,29 @@
  * for a subclass which automatically constructs subclasses of #TpChannel for
  * common channel types.
  *
+ * An application using its own factory subclass would look like this:
+ * |[
+ * int main(int argc, char *argv[])
+ * {
+ *   TpSimpleClientFactory *factory;
+ *   TpAccountManager *manager;
+ *
+ *   g_type_init ();
+ *
+ *   factory = my_factory_new ();
+ *   manager = tp_account_manager_new_with_factory (factory);
+ *   tp_account_manager_set_default (manager);
+ *
+ *   ...
+ *   tp_proxy_prepare_async (manager, am_features, callback, user_data);
+ *   ...
+ * }
+ * ]|
+ *
+ * The call to tp_account_manager_set_default() near the beginning of main()
+ * will ensure that any libraries or plugins which also use Telepathy (and call
+ * tp_account_manager_dup()) will share your #TpAccountManager.
+ *
  * Since: 0.UNRELEASED
  */
 
