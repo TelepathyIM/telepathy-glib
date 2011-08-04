@@ -967,16 +967,9 @@ tp_account_manager_ensure_account (TpAccountManager *self,
 GList *
 tp_account_manager_get_valid_accounts (TpAccountManager *manager)
 {
-  TpAccountManagerPrivate *priv;
-  GList *ret;
-
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
 
-  priv = manager->priv;
-
-  ret = g_hash_table_get_values (priv->accounts);
-
-  return ret;
+  return g_hash_table_get_values (manager->priv->accounts);
 }
 
 /**
