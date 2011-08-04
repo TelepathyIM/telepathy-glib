@@ -1037,7 +1037,8 @@ tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
  * tp_simple_client_factory_add_contact_features_varargs: (skip)
  * @self: a #TpSimpleClientFactory
  * @feature: the first feature
- * @...: the second and subsequent features, if any, ending with 0
+ * @...: the second and subsequent features, if any, ending with
+ *  %TP_CONTACT_FEATURE_INVALID
  *
  * The same as tp_simple_client_factory_add_contact_features(), but with a
  * more convenient calling convention from C.
@@ -1052,14 +1053,15 @@ tp_simple_client_factory_add_contact_features_varargs (
 {
   va_list var_args;
   GArray *features;
-  GQuark f;
+  TpContactFeature f;
 
   g_return_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (self));
 
   va_start (var_args, feature);
   features = g_array_new (FALSE, FALSE, sizeof (TpContactFeature));
 
-  for (f = feature; f != 0; f = va_arg (var_args, TpContactFeature))
+  for (f = feature; f != TP_CONTACT_FEATURE_INVALID;
+      f = va_arg (var_args, TpContactFeature))
     g_array_append_val (features, f);
 
   tp_simple_client_factory_add_contact_features (self, features->len,

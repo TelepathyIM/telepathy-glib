@@ -131,6 +131,15 @@ struct _TpContact {
  */
 
 /**
+ * TP_CONTACT_FEATURE_INVALID: (skip)
+ *
+ * An invalid TpContactFeature. Used as list termination. See for example
+ * tp_simple_client_factory_add_contact_features_varargs().
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
  * TP_TYPE_CONTACT_FEATURE:
  *
  * The #GEnumClass type of a #TpContactFeature.

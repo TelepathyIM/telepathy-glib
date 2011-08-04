@@ -67,6 +67,7 @@ typedef enum {
     TP_CONTACT_FEATURE_CONTACT_GROUPS,
 } TpContactFeature;
 #define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_GROUPS + 1)
+#define TP_CONTACT_FEATURE_INVALID ((TpContactFeature) -1)
 
 /* Basic functionality, always available */
 TpConnection *tp_contact_get_connection (TpContact *self);
