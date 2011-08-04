@@ -2324,6 +2324,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
   ChannelRequest *request;
   GHashTable *request_properties;
   gboolean claimed_by_channel_manager = FALSE;
+  TpHandleRepoIface *handle_repo = NULL;
 
   g_assert (TP_IS_BASE_CONNECTION (self));
 
@@ -2344,7 +2345,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
     }
   else
     {
-      TpHandleRepoIface *handle_repo = tp_base_connection_get_handles (self,
+      handle_repo = tp_base_connection_get_handles (self,
           handle_type);
 
       if (handle_repo == NULL)
@@ -2377,9 +2378,12 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
 
   if (handle != 0)
     {
-      g_hash_table_insert (request_properties,
-          TP_PROP_CHANNEL_TARGET_HANDLE,
-          tp_g_value_slice_new_uint (handle));
+      tp_asv_set_uint32 (request_properties,
+          TP_PROP_CHANNEL_TARGET_HANDLE, handle);
+      g_assert (handle_repo != NULL);
+      tp_asv_set_string (request_properties,
+          TP_PROP_CHANNEL_TARGET_ID,
+          tp_handle_inspect (handle_repo, handle));
     }
 
   for (i = 0; i < priv->channel_managers->len; i++)
@@ -3463,6 +3467,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
   TpHandleRepoIface *handles = NULL;
   GHashTable *altered_properties = NULL;
   GValue *target_handle_value = NULL;
+  GValue *target_id_value = NULL;
 
   /* Handle type 0 cannot have a handle */
   if (target_handle_type == TP_HANDLE_TYPE_NONE && target_handle != 0)
@@ -3523,9 +3528,6 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
           g_hash_table_insert (altered_properties,
               TP_PROP_CHANNEL_TARGET_HANDLE, target_handle_value);
 
-          g_hash_table_remove (altered_properties,
-              TP_PROP_CHANNEL_TARGET_ID);
-
           requested_properties = altered_properties;
         }
       else
@@ -3539,6 +3541,19 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
               g_error_free (error);
               return;
             }
+
+          altered_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
+              NULL, NULL);
+          tp_g_hash_table_update (altered_properties, requested_properties,
+              NULL, NULL);
+
+          target_id_value = tp_g_value_slice_new_string (
+              tp_handle_inspect (handles, target_handle));
+          g_hash_table_insert (altered_properties,
+              TP_PROP_CHANNEL_TARGET_ID,
+              target_id_value);
+
+          requested_properties = altered_properties;
 
           tp_handle_ref (handles, target_handle);
         }
@@ -3555,14 +3570,19 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
       tp_handle_unref (handles, target_handle);
     }
 
-  /* If we made a new table, we should destroy it, and the GValue holding
-   * TargetHandle.  The other GValues are borrowed from the supplied
-   * requested_properties table.
+  /* If we made a new table, we should destroy it, and whichever of the GValues
+   * holding TargetHandle or TargetID we filled in.  The other GValues are
+   * borrowed from the supplied requested_properties table.
    */
   if (altered_properties != NULL)
     {
       g_hash_table_destroy (altered_properties);
-      tp_g_value_slice_free (target_handle_value);
+
+      if (target_handle_value != NULL)
+        tp_g_value_slice_free (target_handle_value);
+
+      if (target_id_value != NULL)
+        tp_g_value_slice_free (target_id_value);
     }
 }
 

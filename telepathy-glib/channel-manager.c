@@ -152,11 +152,12 @@
  *     if TargetHandleType is not None, TargetHandle is a valid #TpHandle of
  *     that #TpHandleType
  *   </listitem>
- *   <listitem>
- *     the TargetID property is not present (if supplied by the client, it will
- *     be converted to a TargetHandle before being passed to this function)
- *   </listitem>
  * </itemizedlist>
+ *
+ * Changed in version 0.13.UNRELEASED: Previously the TargetID
+ * property was guaranteed to be missing from @request_properties. Now
+ * it is always present, whether it was in the original channel
+ * request or not.
  *
  * Returns: %TRUE if @manager will handle this request, else %FALSE.
  */

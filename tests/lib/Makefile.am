@@ -31,6 +31,8 @@ libtp_glib_tests_la_SOURCES = \
     echo-cm.c \
     echo-conn.h \
     echo-conn.c \
+    echo-channel-manager-conn.h \
+    echo-channel-manager-conn.c \
     echo-im-manager.h \
     echo-im-manager.c \
     file-transfer-chan.h \
@@ -44,6 +46,8 @@ libtp_glib_tests_la_SOURCES = \
     simple-account.h \
     simple-account-manager.c\
     simple-account-manager.h\
+    simple-channel-manager.c \
+    simple-channel-manager.h \
     simple-channel-dispatch-operation.c \
     simple-channel-dispatch-operation.h \
     simple-channel-dispatcher.c \
