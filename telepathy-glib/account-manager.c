@@ -77,6 +77,7 @@
 struct _TpAccountManagerPrivate {
   /* (owned) object path -> (reffed) TpAccount */
   GHashTable *accounts;
+  GHashTable *legacy_accounts;
   gboolean dispose_run;
 
   /* most available presence */
@@ -197,6 +198,8 @@ tp_account_manager_init (TpAccountManager *self)
 
   priv->accounts = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) g_object_unref);
+  self->priv->legacy_accounts = g_hash_table_new_full (
+      g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void
@@ -506,11 +509,16 @@ _tp_account_manager_finalize (GObject *object)
   G_OBJECT_CLASS (tp_account_manager_parent_class)->finalize (object);
 }
 
+static void legacy_account_invalidated_cb (TpProxy *account, guint domain,
+    gint code, gchar *message, gpointer user_data);
+
 static void
 _tp_account_manager_dispose (GObject *object)
 {
   TpAccountManager *self = TP_ACCOUNT_MANAGER (object);
   TpAccountManagerPrivate *priv = self->priv;
+  GHashTableIter iter;
+  gpointer value;
 
   if (priv->dispose_run)
     return;
@@ -518,6 +526,14 @@ _tp_account_manager_dispose (GObject *object)
   priv->dispose_run = TRUE;
 
   g_hash_table_destroy (priv->accounts);
+
+  g_hash_table_iter_init (&iter, self->priv->legacy_accounts);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      g_signal_handlers_disconnect_by_func (value,
+          legacy_account_invalidated_cb, self);
+    }
+  tp_clear_pointer (&priv->legacy_accounts, g_hash_table_unref);
 
   tp_dbus_daemon_cancel_name_owner_watch (tp_proxy_get_dbus_daemon (self),
       TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb, self);
@@ -833,6 +849,19 @@ _tp_account_manager_account_invalidated_cb (TpProxy *proxy,
 }
 
 static void
+legacy_account_invalidated_cb (TpProxy *account,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
+{
+  TpAccountManager *self = user_data;
+
+  g_hash_table_remove (self->priv->legacy_accounts,
+      tp_proxy_get_object_path (account));
+}
+
+static void
 insert_account (TpAccountManager *self,
     TpAccount *account)
 {
@@ -851,45 +880,6 @@ insert_account (TpAccountManager *self,
   tp_g_signal_connect_object (account, "invalidated",
       G_CALLBACK (_tp_account_manager_account_invalidated_cb),
       G_OBJECT (self), 0);
-}
-
-static void
-_tp_account_manager_account_ready_cb (GObject *source_object,
-    GAsyncResult *res,
-    gpointer user_data)
-{
-  TpAccountManager *manager = TP_ACCOUNT_MANAGER (user_data);
-  TpAccountManagerPrivate *priv = manager->priv;
-  TpAccount *account = TP_ACCOUNT (source_object);
-
-  if (!tp_account_prepare_finish (account, res, NULL))
-    {
-      g_object_ref (account);
-      g_hash_table_remove (priv->accounts,
-          tp_proxy_get_object_path (account));
-
-      g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
-      g_object_unref (account);
-
-      goto out;
-    }
-
-  tp_g_signal_connect_object (account, "notify::enabled",
-      G_CALLBACK (_tp_account_manager_account_enabled_cb),
-      G_OBJECT (manager), 0);
-
-  tp_g_signal_connect_object (account, "presence-changed",
-      G_CALLBACK (_tp_account_manager_account_presence_changed_cb),
-      G_OBJECT (manager), 0);
-
-  tp_g_signal_connect_object (account, "invalidated",
-      G_CALLBACK (_tp_account_manager_account_invalidated_cb),
-      G_OBJECT (manager), 0);
-
-out:
-  _tp_account_manager_check_core_ready (manager);
-
-  g_object_unref (manager);
 }
 
 /**
@@ -913,35 +903,38 @@ out:
  * Since: 0.9.0
  */
 TpAccount *
-tp_account_manager_ensure_account (TpAccountManager *manager,
+tp_account_manager_ensure_account (TpAccountManager *self,
     const gchar *path)
 {
-  TpAccountManagerPrivate *priv;
   TpAccount *account;
-  GQuark fs[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
   GError *error = NULL;
 
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (self), NULL);
   g_return_val_if_fail (path != NULL, NULL);
 
-  priv = manager->priv;
-
-  account = g_hash_table_lookup (priv->accounts, path);
+  account = g_hash_table_lookup (self->priv->legacy_accounts, path);
   if (account != NULL)
     return account;
 
   account = tp_simple_client_factory_ensure_account (
-      tp_proxy_get_factory (manager), path, NULL, &error);
+      tp_proxy_get_factory (self), path, NULL, &error);
   if (account == NULL)
     {
-      DEBUG ("tp_account_new() failed: %s", error->message);
+      DEBUG ("failed to create account: %s", error->message);
       g_clear_error (&error);
       return NULL;
     }
 
-  g_hash_table_insert (priv->accounts, g_strdup (path), account);
-  tp_account_prepare_async (account, fs, _tp_account_manager_account_ready_cb,
-      g_object_ref (manager));
+  /* We don't want to insert in self->priv->accounts random accounts we
+   * don't even know if they are valid. For compatibility we can't return a ref,
+   * so keep them into a legacy table */
+  g_hash_table_insert (self->priv->legacy_accounts, g_strdup (path),
+      account);
+  tp_g_signal_connect_object (account, "invalidated",
+      G_CALLBACK (legacy_account_invalidated_cb), self, 0);
+
+  tp_proxy_prepare_async (account, NULL, NULL, NULL);
+
   return account;
 }
 
