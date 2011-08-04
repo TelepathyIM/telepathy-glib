@@ -91,8 +91,6 @@ struct _TpAccountManagerPrivate {
   TpConnectionPresenceType requested_presence;
   gchar *requested_status;
   gchar *requested_status_message;
-
-  GHashTable *create_results;
 };
 
 typedef struct {
@@ -197,8 +195,6 @@ tp_account_manager_init (TpAccountManager *self)
 
   priv->accounts = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) g_object_unref);
-
-  priv->create_results = g_hash_table_new (g_direct_hash, g_direct_equal);
 }
 
 static void
@@ -512,12 +508,6 @@ _tp_account_manager_dispose (GObject *object)
     return;
 
   priv->dispose_run = TRUE;
-
-  /* GSimpleAsyncResult keeps a ref to the source GObject, so this hash
-   * table should be empty. */
-  g_assert_cmpuint (g_hash_table_size (priv->create_results), ==, 0);
-  g_hash_table_destroy (priv->create_results);
-  priv->create_results = NULL;
 
   g_hash_table_destroy (priv->accounts);
 
@@ -842,7 +832,6 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (user_data);
   TpAccountManagerPrivate *priv = manager->priv;
   TpAccount *account = TP_ACCOUNT (source_object);
-  GSimpleAsyncResult *result;
 
   if (!tp_account_prepare_finish (account, res, NULL))
     {
@@ -854,19 +843,6 @@ _tp_account_manager_account_ready_cb (GObject *source_object,
       g_object_unref (account);
 
       goto out;
-    }
-
-  /* see if there's any pending callbacks for this account */
-  result = g_hash_table_lookup (priv->create_results, account);
-  if (result != NULL)
-    {
-      g_simple_async_result_set_op_res_gpointer (
-          G_SIMPLE_ASYNC_RESULT (result), account, NULL);
-
-      g_simple_async_result_complete (result);
-
-      g_hash_table_remove (priv->create_results, account);
-      g_object_unref (result);
     }
 
   tp_g_signal_connect_object (account, "notify::enabled",
@@ -1092,6 +1068,24 @@ tp_account_manager_get_most_available_presence (TpAccountManager *manager,
 }
 
 static void
+create_account_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *my_res = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      DEBUG ("Error preparing account: %s", error->message);
+      g_simple_async_result_take_error (my_res, error);
+    }
+
+  g_simple_async_result_complete (my_res);
+  g_object_unref (my_res);
+}
+
+static void
 _tp_account_manager_created_cb (TpAccountManager *proxy,
     const gchar *account_path,
     const GError *error,
@@ -1099,22 +1093,37 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
     GObject *weak_object)
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
-  TpAccountManagerPrivate *priv = manager->priv;
   GSimpleAsyncResult *my_res = user_data;
   TpAccount *account;
+  GArray *features;
+  GError *e = NULL;
 
   if (error != NULL)
     {
       g_simple_async_result_set_from_error (my_res, error);
       g_simple_async_result_complete (my_res);
-      g_object_unref (my_res);
-
       return;
     }
 
-  account = tp_account_manager_ensure_account (manager, account_path);
+  account = tp_simple_client_factory_ensure_account (
+      tp_proxy_get_factory (manager), account_path, NULL, &e);
+  if (account == NULL)
+    {
+      g_simple_async_result_take_error (my_res, e);
+      g_simple_async_result_complete (my_res);
+      return;
+    }
 
-  g_hash_table_insert (priv->create_results, account, my_res);
+  /* Give account's ref to the result */
+  g_simple_async_result_set_op_res_gpointer (my_res, account, g_object_unref);
+
+  features = tp_simple_client_factory_dup_account_features (
+      tp_proxy_get_factory (manager), account);
+
+  tp_proxy_prepare_async (account, (GQuark *) features->data,
+      create_account_prepared_cb, g_object_ref (my_res));
+
+  g_array_unref (features);
 }
 
 /**
@@ -1167,7 +1176,7 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
 
   tp_cli_account_manager_call_create_account (manager,
       -1, connection_manager, protocol, display_name, parameters,
-      properties, _tp_account_manager_created_cb, res, NULL,
+      properties, _tp_account_manager_created_cb, res, g_object_unref,
       G_OBJECT (manager));
 }
 
