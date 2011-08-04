@@ -91,6 +91,8 @@ struct _TpAccountManagerPrivate {
   TpConnectionPresenceType requested_presence;
   gchar *requested_status;
   gchar *requested_status_message;
+
+  guint n_preparing_accounts;
 };
 
 typedef struct {
@@ -314,99 +316,6 @@ _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
 }
 
 static void
-_tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
-    GPtrArray *valid_accounts,
-    GPtrArray *invalid_accounts)
-{
-  guint i, missing_accounts;
-  GHashTableIter iter;
-  TpAccountManagerPrivate *priv = manager->priv;
-  gpointer value;
-  TpAccount *account;
-  gboolean found_in_valid = FALSE;
-  gboolean found_in_invalid = FALSE;
-  const gchar *name;
-
-  /* ensure all accounts coming from MC5 first */
-  for (i = 0; i < valid_accounts->len; i++)
-    {
-      name = g_ptr_array_index (valid_accounts, i);
-
-      account = tp_account_manager_ensure_account (manager, name);
-      _tp_account_refresh_properties (account);
-    }
-
-  missing_accounts = g_hash_table_size (priv->accounts) - valid_accounts->len;
-
-  if (missing_accounts > 0)
-    {
-      /* look for accounts we have and the TpAccountManager doesn't,
-       * and remove them from our cache. */
-
-      DEBUG ("%d missing accounts", missing_accounts);
-
-      g_hash_table_iter_init (&iter, priv->accounts);
-
-      while (g_hash_table_iter_next (&iter, NULL, &value) && missing_accounts > 0)
-        {
-          account = value;
-
-          /* look for this account in the valid accounts array */
-          for (i = 0; i < valid_accounts->len; i++)
-            {
-              name = g_ptr_array_index (valid_accounts, i);
-
-              if (!tp_strdiff (name, tp_proxy_get_object_path (account)))
-                {
-                  found_in_valid = TRUE;
-                  break;
-                }
-            }
-
-          if (!found_in_valid)
-            {
-              /* look for this account in the invalid accounts array */
-              for (i = 0; i < invalid_accounts->len; i++)
-                {
-                  name = g_ptr_array_index (invalid_accounts, i);
-
-                  if (!tp_strdiff (name, tp_proxy_get_object_path (account)))
-                    {
-                      found_in_invalid = TRUE;
-                      break;
-                    }
-                }
-
-              if (found_in_invalid)
-                {
-                  DEBUG ("Account %s's validity changed",
-                      tp_proxy_get_object_path (account));
-
-                  _tp_account_manager_validity_changed_cb (manager,
-                      tp_proxy_get_object_path (account), FALSE, NULL,
-                      G_OBJECT (manager));
-                }
-              else
-                {
-                  DEBUG ("Account %s was not found, remove it from the cache",
-                      tp_proxy_get_object_path (account));
-
-                  g_object_ref (account);
-                  g_hash_table_iter_remove (&iter);
-                  g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
-                  g_object_unref (account);
-                }
-
-              missing_accounts--;
-            }
-
-          found_in_valid = FALSE;
-          found_in_invalid = FALSE;
-        }
-    }
-}
-
-static void
 _tp_account_manager_update_most_available_presence (TpAccountManager *manager)
 {
   TpAccountManagerPrivate *priv = manager->priv;
@@ -457,20 +366,12 @@ static void
 _tp_account_manager_check_core_ready (TpAccountManager *manager)
 {
   TpAccountManagerPrivate *priv = manager->priv;
-  GHashTableIter iter;
-  gpointer value;
 
   if (tp_proxy_is_prepared (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE))
     return;
 
-  g_hash_table_iter_init (&iter, priv->accounts);
-  while (g_hash_table_iter_next (&iter, NULL, &value))
-    {
-      TpAccount *account = TP_ACCOUNT (value);
-
-      if (!tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE))
-        return;
-    }
+  if (priv->n_preparing_accounts > 0)
+    return;
 
   /* Rerequest most available presence on the initial set of accounts for cases
    * where a most available presence was requested before the manager was ready
@@ -489,6 +390,35 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
 }
 
 static void
+account_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpAccountManager *self = user_data;
+  TpAccount *account = (TpAccount *) object;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      DEBUG ("Error preparing account: %s", error->message);
+      g_clear_error (&error);
+      goto OUT;
+    }
+
+  /* Account could have been invalidated while we were preparing it */
+  if (tp_account_is_valid (account) &&
+      tp_proxy_get_invalidated (account) == NULL)
+    {
+      insert_account (self, account);
+    }
+
+OUT:
+  self->priv->n_preparing_accounts--;
+  _tp_account_manager_check_core_ready (self);
+  g_object_unref (self);
+}
+
+static void
 _tp_account_manager_got_all_cb (TpProxy *proxy,
     GHashTable *properties,
     const GError *error,
@@ -497,7 +427,7 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
   GPtrArray *valid_accounts;
-  GPtrArray *invalid_accounts;
+  guint i;
 
   if (error != NULL)
     {
@@ -509,12 +439,32 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
   valid_accounts = tp_asv_get_boxed (properties, "ValidAccounts",
       TP_ARRAY_TYPE_OBJECT_PATH_LIST);
 
-  invalid_accounts = tp_asv_get_boxed (properties, "InvalidAccounts",
-      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+  for (i = 0; i < valid_accounts->len; i++)
+    {
+      const gchar *path = g_ptr_array_index (valid_accounts, i);
+      TpAccount *account;
+      GArray *features;
+      GError *e = NULL;
 
-  if (valid_accounts != NULL && invalid_accounts != NULL)
-    _tp_account_manager_ensure_all_accounts (manager, valid_accounts,
-        invalid_accounts);
+      account = tp_simple_client_factory_ensure_account (
+          tp_proxy_get_factory (manager), path, NULL, &e);
+      if (account == NULL)
+        {
+          DEBUG ("failed to create TpAccount: %s", e->message);
+          g_clear_error (&e);
+          continue;
+        }
+
+      features = tp_simple_client_factory_dup_account_features (
+          tp_proxy_get_factory (manager), account);
+
+      manager->priv->n_preparing_accounts++;
+      tp_proxy_prepare_async (account, (GQuark *) features->data,
+          account_prepared_cb, g_object_ref (manager));
+
+      g_array_unref (features);
+      g_object_unref (account);
+    }
 
   _tp_account_manager_check_core_ready (manager);
 }
