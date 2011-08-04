@@ -4190,6 +4190,7 @@ tp_cli_media_stream_handler_signal_callback_set_remote_header_extensions
 <TITLE>contact</TITLE>
 TpContact
 TpContactFeature
+TP_CONTACT_FEATURE_INVALID
 NUM_TP_CONTACT_FEATURES
 TP_TYPE_CONTACT_FEATURE
 TpConnectionContactsByHandleCb
