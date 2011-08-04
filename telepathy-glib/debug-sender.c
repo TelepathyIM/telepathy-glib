@@ -78,6 +78,7 @@ static void debug_iface_init (gpointer g_iface, gpointer iface_data);
 struct _TpDebugSenderPrivate
 {
   gboolean enabled;
+  gboolean timestamps;
   GQueue *messages;
 };
 
@@ -543,6 +544,10 @@ tp_debug_sender_idle (gpointer data)
  * It can easily be re-implemented in services, and does not need to be
  * used.
  *
+ * If timestamps should be prepended to messages (like in
+ * tp_debug_timestamped_log_handler()), tp_debug_sender_set_timestamps()
+ * should also be called.
+ *
  * Since version 0.11.15, this function can be called from any thread.
  *
  * Since: 0.7.36
@@ -553,15 +558,58 @@ tp_debug_sender_log_handler (const gchar *log_domain,
     const gchar *message,
     gpointer exclude)
 {
-  g_log_default_handler (log_domain, log_level, message, NULL);
+  GTimeVal now = { 0, 0 };
+
+  if (debug_sender != NULL &&
+      ((TpDebugSender *) debug_sender)->priv->timestamps)
+    {
+      gchar *now_str, *tmp;
+
+      g_get_current_time (&now);
+      now_str = g_time_val_to_iso8601 (&now);
+
+      tmp = g_strdup_printf ("%s: %s", now_str, message);
+
+      g_log_default_handler (log_domain, log_level, tmp, NULL);
+
+      g_free (now_str);
+      g_free (tmp);
+    }
+  else
+    {
+      g_log_default_handler (log_domain, log_level, message, NULL);
+    }
 
   if (exclude == NULL || tp_strdiff (log_domain, exclude))
     {
-      GTimeVal now;
-      g_get_current_time (&now);
+      if (now.tv_sec == 0)
+        g_get_current_time (&now);
 
       g_idle_add_full (G_PRIORITY_HIGH, tp_debug_sender_idle,
           debug_message_new (&now, log_domain, log_level, message),
           NULL);
     }
+}
+
+/**
+ * tp_debug_sender_set_timestamps:
+ * @self: a #TpDebugSender
+ * @maybe: whether to display message timestamps
+ *
+ * If the log handler is tp_debug_sender_log_handler() then calling
+ * this function with %TRUE on the debug sender will prepend the
+ * message to be printed to stdout with the UTC time (currently in ISO
+ * 8601 format, with microsecond resolution). This is equivalent to
+ * using tp_debug_timestamped_log_handler() as the log handler, but
+ * also logging to the debug sender.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+void
+tp_debug_sender_set_timestamps (TpDebugSender *self,
+    gboolean maybe)
+{
+  g_return_if_fail (TP_IS_DEBUG_SENDER (self));
+
+  self->priv->timestamps = maybe;
 }

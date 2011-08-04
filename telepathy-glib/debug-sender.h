@@ -88,6 +88,8 @@ void tp_debug_sender_add_message_printf (TpDebugSender *self,
 void tp_debug_sender_log_handler (const gchar *log_domain,
     GLogLevelFlags log_level, const gchar *message, gpointer exclude);
 
+void tp_debug_sender_set_timestamps (TpDebugSender *self, gboolean maybe);
+
 G_END_DECLS
 
 #endif /* __TP_DEBUG_SENDER_H__ */
