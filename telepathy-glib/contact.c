@@ -1755,7 +1755,8 @@ contacts_context_fail (ContactsContext *c,
  * @connection: The connection
  * @n_contacts: The number of TpContact objects for which an upgrade was
  *  requested
- * @contacts: An array of @n_contacts TpContact objects (this callback is
+ * @contacts: (array length=n_contacts): An array of @n_contacts TpContact
+ *  objects (this callback is
  *  not given an extra reference to any of these objects, and must call
  *  g_object_ref() on any that it will keep)
  * @error: An unrecoverable error, or %NULL if the connection remains valid
