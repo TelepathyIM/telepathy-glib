@@ -82,7 +82,8 @@ TpAccountManager *tp_account_manager_dup (void) G_GNUC_WARN_UNUSED_RESULT;
 void tp_account_manager_init_known_interfaces (void);
 
 TpAccount *tp_account_manager_ensure_account (TpAccountManager *manager,
-    const gchar *path) _TP_GNUC_DEPRECATED;
+    const gchar *path)
+    _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_ensure_account);
 
 GList *tp_account_manager_get_valid_accounts (TpAccountManager *manager)
   G_GNUC_WARN_UNUSED_RESULT;

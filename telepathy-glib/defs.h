@@ -146,8 +146,10 @@ G_BEGIN_DECLS
  * deprecated bits of other libraries */
 #ifdef _TP_IGNORE_DEPRECATIONS
 #define _TP_GNUC_DEPRECATED /* nothing */
+#define _TP_GNUC_DEPRECATED_FOR(f) /* nothing */
 #else
 #define _TP_GNUC_DEPRECATED G_GNUC_DEPRECATED
+#define _TP_GNUC_DEPRECATED_FOR(f) G_GNUC_DEPRECATED_FOR(f)
 #endif
 
 G_END_DECLS
