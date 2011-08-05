@@ -1546,21 +1546,51 @@ context_prepare_cb (GObject *source,
     }
 }
 
-static inline gpointer
-array_data_or_null (GArray *array)
+static GArray *
+dup_features_for_account (TpBaseClient *self,
+    TpAccount *account)
 {
-  if (array == NULL)
-    return NULL;
-  else
-    return array->data;
+  GArray *features;
+
+  features = tp_simple_client_factory_dup_account_features (
+      tp_proxy_get_factory (self->priv->account_mgr), account);
+
+  g_assert (features != NULL);
+
+  /* Deprecated - Merge features set on self instead of factory */
+  _tp_quark_array_merge (features,
+      (GQuark *) self->priv->account_features->data,
+      self->priv->account_features->len);
+
+  return features;
 }
 
 static GArray *
-get_features_for_channel (TpBaseClient *self,
+dup_features_for_connection (TpBaseClient *self,
+    TpConnection *connection)
+{
+  GArray *features;
+
+  features = tp_simple_client_factory_dup_connection_features (
+      tp_proxy_get_factory (self->priv->account_mgr), connection);
+
+  g_assert (features != NULL);
+
+  /* Deprecated - Merge features set on self instead of factory */
+  _tp_quark_array_merge (features,
+      (GQuark *) self->priv->connection_features->data,
+      self->priv->connection_features->len);
+
+  return features;
+}
+
+static GArray *
+dup_features_for_channel (TpBaseClient *self,
     TpChannel *channel)
 {
   GArray *features;
 
+  /* Use legacy channel factory if one is set */
   if (self->priv->channel_factory != NULL)
     features = tp_client_channel_factory_dup_channel_features (
         self->priv->channel_factory, channel);
@@ -1570,10 +1600,7 @@ get_features_for_channel (TpBaseClient *self,
 
   g_assert (features != NULL);
 
-  /* Add TpBaseClient's own features, if any */
-  if (self->priv->channel_features == NULL)
-    return features;
-
+  /* Deprecated - Merge features set on self instead of factory */
   _tp_quark_array_merge (features,
       (GQuark *) self->priv->channel_features->data,
       self->priv->channel_features->len);
@@ -1618,6 +1645,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   TpChannelDispatchOperation *dispatch_operation = NULL;
   guint i;
   TpChannel *channel = NULL;
+  GArray *account_features;
+  GArray *connection_features;
   GArray *channel_features;
 
   if (!(self->priv->flags & CLIENT_IS_OBSERVER))
@@ -1719,16 +1748,20 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   ctx = _tp_observe_channels_context_new (account, connection, channels,
       dispatch_operation, requests, observer_info, context);
 
-  channel_features = get_features_for_channel (self, channel);
+  account_features = dup_features_for_account (self, account);
+  connection_features = dup_features_for_connection (self, connection);
+  channel_features = dup_features_for_channel (self, channel);
 
   _tp_observe_channels_context_prepare_async (ctx,
-      array_data_or_null (self->priv->account_features),
-      array_data_or_null (self->priv->connection_features),
-      array_data_or_null (channel_features),
+      (GQuark *) account_features->data,
+      (GQuark *) connection_features->data,
+      (GQuark *) channel_features->data,
       context_prepare_cb, self);
 
   g_object_unref (ctx);
-  g_array_free (channel_features, TRUE);
+  g_array_unref (account_features);
+  g_array_unref (connection_features);
+  g_array_unref (channel_features);
 
 out:
   g_clear_object (&account);
@@ -1822,6 +1855,8 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   guint i;
   const gchar *path;
   TpChannel *channel = NULL;
+  GArray *account_features;
+  GArray *connection_features;
   GArray *channel_features;
 
   if (!(self->priv->flags & CLIENT_IS_APPROVER))
@@ -1916,16 +1951,20 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   ctx = _tp_add_dispatch_operation_context_new (account, connection, channels,
       dispatch_operation, context);
 
-  channel_features = get_features_for_channel (self, channel);
+  account_features = dup_features_for_account (self, account);
+  connection_features = dup_features_for_connection (self, connection);
+  channel_features = dup_features_for_channel (self, channel);
 
   _tp_add_dispatch_operation_context_prepare_async (ctx,
-      array_data_or_null (self->priv->account_features),
-      array_data_or_null (self->priv->connection_features),
-      array_data_or_null (channel_features),
+      (GQuark *) account_features->data,
+      (GQuark *) connection_features->data,
+      (GQuark *) channel_features->data,
       add_dispatch_context_prepare_cb, self);
 
   g_object_unref (ctx);
-  g_array_free (channel_features, TRUE);
+  g_array_unref (account_features);
+  g_array_unref (connection_features);
+  g_array_unref (channel_features);
 
 out:
   g_clear_object (&account);
@@ -2192,6 +2231,8 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   GPtrArray *channels = NULL, *requests = NULL;
   guint i;
   TpChannel *channel = NULL;
+  GArray *account_features;
+  GArray *connection_features;
   GArray *channel_features;
 
   if (!(self->priv->flags & CLIENT_IS_HANDLER))
@@ -2280,16 +2321,20 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   ctx = _tp_handle_channels_context_new (account, connection, channels,
       requests, user_action_time, handler_info, context);
 
-  channel_features = get_features_for_channel (self, channel);
+  account_features = dup_features_for_account (self, account);
+  connection_features = dup_features_for_connection (self, connection);
+  channel_features = dup_features_for_channel (self, channel);
 
   _tp_handle_channels_context_prepare_async (ctx,
-      array_data_or_null (self->priv->account_features),
-      array_data_or_null (self->priv->connection_features),
-      array_data_or_null (channel_features),
+      (GQuark *) account_features->data,
+      (GQuark *) connection_features->data,
+      (GQuark *) channel_features->data,
       handle_channels_context_prepare_cb, self);
 
   g_object_unref (ctx);
-  g_array_free (channel_features, TRUE);
+  g_array_unref (account_features);
+  g_array_unref (connection_features);
+  g_array_unref (channel_features);
 
 out:
   g_clear_object (&account);
@@ -2376,6 +2421,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   TpAccount *account;
   GError *error = NULL;
   channel_request_prepare_account_ctx *ctx;
+  GArray *account_features;
 
   request = _tp_simple_client_factory_ensure_channel_request (
       tp_proxy_get_factory (self->priv->account_mgr), path, properties,
@@ -2406,9 +2452,13 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
 
   ctx = channel_request_prepare_account_ctx_new (self, request);
 
+  account_features = dup_features_for_account (self, account);
+
   tp_proxy_prepare_async (account,
-      array_data_or_null (self->priv->account_features),
+      (GQuark *) account_features->data,
       channel_request_account_prepare_cb, ctx);
+
+  g_array_unref (account_features);
 
   tp_svc_client_interface_requests_return_from_add_request (context);
   return;
