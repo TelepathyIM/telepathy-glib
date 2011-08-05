@@ -60,7 +60,8 @@
  *
  * #TpAccountManager is the "top level" object, its #TpProxy:factory will be
  * propagated to all other objects like #TpAccountManager -> #TpAccount ->
- * #TpConnection -> #TpContact and #TpChannel.
+ * #TpConnection -> #TpContact and #TpChannel. This means that desired features
+ * set on that factory will be prepared on all those objects.
  *
  * <example id="account-manager"><title>TpAccountManager example</title><programlisting><xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../examples/client/contact-list.c"><xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback></xi:include></programlisting></example>
  *
