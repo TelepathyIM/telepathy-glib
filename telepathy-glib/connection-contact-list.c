@@ -608,10 +608,12 @@ _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
  * "contact-list" feature.
  *
  * When this feature is prepared, the contact list properties of the Connection
- * has been retrieved, and all #TpContact objects has been prepared with the
- * desired features. See tp_connection_dup_contact_list() to get the list of
- * contacts, and tp_simple_client_factory_add_contact_features() to define which
- * features needs to be prepared on them.
+ * has been retrieved. If #TpConnection:contact-list-state is
+ * %TP_CONTACT_LIST_STATE_SUCCESS, all #TpContact objects will also be created
+ * and prepared with the desired features. See tp_connection_dup_contact_list()
+ * to get the list of contacts, and
+ * tp_simple_client_factory_add_contact_features() to define which features
+ * needs to be prepared on them.
  *
  * This feature will fail to prepare when using obsolete Telepathy connection
  * managers which do not implement the ContactList interface.
