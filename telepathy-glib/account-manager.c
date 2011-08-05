@@ -775,9 +775,20 @@ void
 tp_account_manager_set_default (TpAccountManager *manager)
 {
   g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
-  g_return_if_fail (_tp_dbus_daemon_is_the_shared_one (
-      tp_proxy_get_dbus_daemon (manager)));
-  g_return_if_fail (starter_account_manager_proxy == NULL);
+
+  if (!_tp_dbus_daemon_is_the_shared_one (tp_proxy_get_dbus_daemon (manager)))
+    {
+      CRITICAL ("'manager' must use the TpDBusDaemon returned by"
+          "tp_dbus_daemon_dup()");
+      g_return_if_reached ();
+    }
+
+  if (starter_account_manager_proxy != NULL)
+    {
+      CRITICAL ("tp_account_manager_set_default() may only be called once and"
+          "before first call of tp_account_manager_dup()");
+      g_return_if_reached ();
+    }
 
   starter_account_manager_proxy = g_object_ref (manager);
 }
