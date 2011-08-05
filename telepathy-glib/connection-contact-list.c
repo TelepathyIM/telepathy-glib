@@ -706,18 +706,13 @@ tp_connection_get_request_uses_message (TpConnection *self)
  * tp_connection_dup_contact_list:
  * @self: a #TpConnection
  *
- * The list of contacts associated with the user, but MAY contain other
- * contacts. This list does not contain every visible contact: for instance,
- * contacts seen in XMPP or IRC chatrooms does not appear here. Blocked contacts
- * does not appear here, unless they still have a non-No subscribe or publish
- * attribute for some reason.
+ * Retrieves the user's contact list. In general, blocked contacts are not
+ * included in this list. The #TpContact objects returned are guaranteed to
+ * have all of the features previously passed to
+ * tp_simple_client_factory_add_contact_features() prepared.
  *
- * It is guaranteed that all those contacts have the desired features prepared.
- * See tp_simple_client_factory_add_contact_features() to define which features
- * needs to be prepared.
- *
- * For this method to be valid, you must first call tp_proxy_prepare_async()
- * with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST and verify the
+ * Before calling this method, you must first call tp_proxy_prepare_async() with
+ * the %TP_CONNECTION_FEATURE_CONTACT_LIST feature, and verify that
  * #TpConnection:contact-list-state is set to %TP_CONTACT_LIST_STATE_SUCCESS.
  *
  * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
