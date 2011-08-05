@@ -35,6 +35,9 @@ account_manager_prepared_cb (GObject *object,
       GPtrArray *contacts;
       guint i;
 
+      /* Verify account is online and received its contact list. If state is not
+       * SUCCESS this means we didn't received the roster from server yet and
+       * we would have to wait for the "notify:contact-list-state" signal. */
       if (connection == NULL ||
           tp_connection_get_contact_list_state (connection) !=
               TP_CONTACT_LIST_STATE_SUCCESS)

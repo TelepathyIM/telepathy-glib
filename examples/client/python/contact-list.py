@@ -11,6 +11,10 @@ def manager_prepared_cb(manager, result, loop):
 
     for account in manager.get_valid_accounts():
         connection = account.get_connection()
+
+        # Verify account is online and received its contact list. If state is not
+        # SUCCESS this means we didn't received the roster from server yet and
+        # we would have to wait for the "notify:contact-list-state" signal. */
         if connection is not None and \
            connection.get_contact_list_state() == Tp.ContactListState.SUCCESS:
             contacts = connection.dup_contact_list()
