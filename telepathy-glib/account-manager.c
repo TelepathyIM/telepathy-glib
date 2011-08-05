@@ -730,14 +730,18 @@ TpAccountManager *
 tp_account_manager_dup (void)
 {
   TpDBusDaemon *dbus;
+  GError *error = NULL;
 
   if (starter_account_manager_proxy != NULL)
     return g_object_ref (starter_account_manager_proxy);
 
-  dbus = tp_dbus_daemon_dup (NULL);
-
+  dbus = tp_dbus_daemon_dup (&error);
   if (dbus == NULL)
-    return NULL;
+    {
+      WARNING ("Error getting default TpDBusDaemon: %s", error->message);
+      g_clear_error (&error);
+      return NULL;
+    }
 
   starter_account_manager_proxy = tp_account_manager_new (dbus);
   g_assert (starter_account_manager_proxy != NULL);
