@@ -203,7 +203,7 @@ on_audio_input_volume_changed (TfContent *content,
   g_object_get (content, "input-volume", &input_volume, NULL);
 
   volume = gst_bin_get_by_name (GST_BIN (context->pipeline), "input_volume");
-  g_object_set (volume, "volume", (double)input_volume / 65536.0, NULL);
+  g_object_set (volume, "volume", (double)input_volume / 255.0, NULL);
   gst_object_unref (volume);
 }
 
@@ -234,7 +234,7 @@ setup_audio_source (ChannelContext *context, TfContent *content)
       NULL);
 
   volume = gst_bin_get_by_name (GST_BIN (result), "input_volume");
-  g_object_set (volume, "volume", (double)input_volume / 65536.0, NULL);
+  g_object_set (volume, "volume", (double)input_volume / 255.0, NULL);
   gst_object_unref (volume);
 
   g_signal_connect (content, "notify::input-volume",
