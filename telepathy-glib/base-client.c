@@ -67,7 +67,7 @@
  * TpBaseClientClassObserveChannelsImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
- *  features added via tp_base_client_add_account_features(), or
+ *  features added via tp_base_client_add_account_features() or
  *  tp_simple_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
@@ -75,7 +75,7 @@
  *  or tp_simple_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_base_client_add_channel_features(), or
+ *  tp_base_client_add_channel_features() or
  *  tp_simple_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  *  the dispatch_operation is not guaranteed to be prepared
@@ -98,7 +98,7 @@
  * TpBaseClientClassAddDispatchOperationImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
- *  features added via tp_base_client_add_account_features(), or
+ *  features added via tp_base_client_add_account_features() or
  *  tp_simple_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
@@ -106,7 +106,7 @@
  *  or tp_simple_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_base_client_add_channel_features(), or
+ *  tp_base_client_add_channel_features() or
  *  tp_simple_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: a #TpChannelDispatchOperation having
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE prepared if possible
@@ -131,7 +131,7 @@
  * TpBaseClientClassHandleChannelsImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
- *  features added via tp_base_client_add_account_features(), or
+ *  features added via tp_base_client_add_account_features() or
  *  tp_simple_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
@@ -139,7 +139,7 @@
  *  or tp_simple_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_base_client_add_channel_features(), or
+ *  tp_base_client_add_channel_features() or
  *  tp_simple_client_factory_add_channel_features(), prepared if possible
  * @requests_satisfied: (element-type TelepathyGLib.ChannelRequest): a #GList of
  *  #TpChannelRequest having their object-path defined but are not guaranteed
@@ -1491,7 +1491,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * @self: a #TpBaseClient
    * @account: the #TpAccount on which the request was made,
    *  with %TP_ACCOUNT_FEATURE_CORE, and any other features added via
-   *  tp_base_client_add_account_features(), or
+   *  tp_base_client_add_account_features() or
    *  tp_simple_client_factory_add_account_features(), prepared if possible
    * @request: a #TpChannelRequest having its object-path defined but
    * is not guaranteed to be prepared.

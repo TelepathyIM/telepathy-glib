@@ -760,12 +760,13 @@ static gpointer starter_account_manager_proxy = NULL;
  * Define the #TpAccountManager singleton that will be returned by
  * tp_account_manager_dup().
  *
- * This function can only be called before the first usage of
- * tp_account_manager_dup(). It is useful for applications using a custom
- * #TpSimpleClientFactory and want the default Account Manager to use it. See
+ * This function may only be called before the first call to
+ * tp_account_manager_dup(), and may not be called more than once. Applications
+ * which use a custom #TpSimpleClientFactory and want the default
+ * #TpAccountManager to use that factory should call this after calling
  * tp_account_manager_new_with_factory().
  *
- * Note that @manager must use the default dbus-daemon as returned by
+ * Note that @manager must use the default #TpDBusDaemon as returned by
  * tp_dbus_daemon_dup()
  *
  * Since: 0.UNRELEASED
