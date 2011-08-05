@@ -77,6 +77,12 @@ struct _TpConnectionPrivate {
     gboolean contact_list_persists;
     gboolean can_change_contact_list;
     gboolean request_uses_message;
+    /* TpHandle => ref to TpContact */
+    GHashTable *roster;
+    /* Queue of owned ContactsChangedItem */
+    GQueue *contacts_changed_queue;
+    gboolean roster_fetched;
+    gboolean contact_list_properties_fetched;
 
     /* ContactGroups properties */
     gboolean disjoint_groups;
@@ -144,6 +150,7 @@ void _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data);
+void _tp_connection_contacts_changed_item_free (gpointer data);
 
 G_END_DECLS
 
