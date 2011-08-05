@@ -35,7 +35,9 @@ account_manager_prepared_cb (GObject *object,
       GPtrArray *contacts;
       guint i;
 
-      if (connection == NULL)
+      if (connection == NULL ||
+          tp_connection_get_contact_list_state (connection) !=
+              TP_CONTACT_LIST_STATE_SUCCESS)
         continue;
 
       contacts = tp_connection_dup_contact_list (connection);

@@ -11,7 +11,8 @@ def manager_prepared_cb(manager, result, loop):
 
     for account in manager.get_valid_accounts():
         connection = account.get_connection()
-        if connection is not None:
+        if connection is not None and \
+           connection.get_contact_list_state() == TelepathyGLib.ContactListState.SUCCESS:
             contacts = connection.dup_contact_list()
             for contact in contacts:
                 print "%s (%s)" % (contact.get_identifier(), contact.get_contact_groups())
