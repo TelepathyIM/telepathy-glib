@@ -70,6 +70,17 @@ bus_watch_cb (GstBus *bus,
 }
 
 static void
+on_audio_output_volume_changed (TfContent *content,
+  GParamSpec *spec,
+  GstElement *volume)
+{
+  guint output_volume;
+
+  g_object_get (content, "output-volume", &output_volume, NULL);
+  g_object_set (volume, "volume", (double)output_volume / 255.0, NULL);
+}
+
+static void
 src_pad_added_cb (TfContent *content,
     TpHandle handle,
     FsStream *stream,
@@ -90,10 +101,27 @@ src_pad_added_cb (TfContent *content,
   switch (mtype)
     {
       case FS_MEDIA_TYPE_AUDIO:
-        element = gst_parse_bin_from_description (
-          "audioconvert ! audioresample ! audioconvert ! autoaudiosink",
-            TRUE, NULL);
-        break;
+        {
+          GstElement *volume = NULL;
+          gchar *tmp_str = g_strdup_printf ("audioconvert ! audioresample "
+              "! volume name=\"output_volume%s\" "
+              "! audioconvert ! autoaudiosink", cstr);
+          element = gst_parse_bin_from_description (tmp_str,
+              TRUE, NULL);
+          g_free (tmp_str);
+
+          tmp_str = g_strdup_printf ("output_volume%s", cstr);
+          volume = gst_bin_get_by_name (GST_BIN (element), tmp_str);
+          g_free (tmp_str);
+
+          tp_g_signal_connect_object (content, "notify::output-volume",
+              G_CALLBACK (on_audio_output_volume_changed),
+              volume, 0);
+
+          gst_object_unref (volume);
+
+          break;
+        }
       case FS_MEDIA_TYPE_VIDEO:
         element = gst_parse_bin_from_description (
           "ffmpegcolorspace ! videoscale ! autovideosink",
@@ -207,13 +235,6 @@ on_audio_input_volume_changed (TfContent *content,
   gst_object_unref (volume);
 }
 
-static void
-on_audio_output_volume_changed (TfContent *content,
-  GParamSpec *spec,
-  ChannelContext *context)
-{
-}
-
 static GstElement *
 setup_audio_source (ChannelContext *context, TfContent *content)
 {
@@ -239,10 +260,6 @@ setup_audio_source (ChannelContext *context, TfContent *content)
 
   g_signal_connect (content, "notify::input-volume",
       G_CALLBACK (on_audio_input_volume_changed),
-      context);
-
-  g_signal_connect (content, "notify::output-volume",
-      G_CALLBACK (on_audio_output_volume_changed),
       context);
 
   return result;
