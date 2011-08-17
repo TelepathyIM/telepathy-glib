@@ -603,7 +603,7 @@ tp_debug_sender_log_handler (const gchar *log_domain,
  * using tp_debug_timestamped_log_handler() as the log handler, but
  * also logging to the debug sender.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_debug_sender_set_timestamps (TpDebugSender *self,

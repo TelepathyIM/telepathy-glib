@@ -233,7 +233,7 @@ connection_is_internal (TpAccount *self)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 /**
@@ -290,7 +290,7 @@ tp_account_get_feature_quark_core (void)
  * Returns: the quark used for representing the connection feature of a
  *          #TpAccount
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 GQuark
 tp_account_get_feature_quark_connection (void)

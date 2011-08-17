@@ -1425,7 +1425,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * Factory for this base client, used to look up or create
    * #TpAccount objects.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_object ("factory", "TpSimpleClientFactory",
       "The TpSimpleClientFactory used look up or create TpAccount objects",
@@ -1476,7 +1476,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * If no channel factory is specified then #TpAutomaticProxyFactory is used.
    *
    * Since: 0.13.2
-   * Deprecated: since 0.UNRELEASED. The factory is taken from
+   * Deprecated: since 0.15.5. The factory is taken from
    *  #TpBaseClient:account-manager.
    */
   param_spec = g_param_spec_object ("channel-factory", "Channel factory",
@@ -2972,7 +2972,7 @@ tp_base_client_add_connection_features (TpBaseClient *self,
  * It can't be changed once @self has been registered.
  *
  * Since: 0.13.2
- * Deprecated: since 0.UNRELEASED. The factory is taken from
+ * Deprecated: since 0.15.5. The factory is taken from
  *  #TpBaseClient:account-manager.
  */
 void
@@ -3005,7 +3005,7 @@ _tp_base_client_set_channel_factory (TpBaseClient *self,
  *
  * Returns: the value of #TpBaseClient:channel-factory
  * Since: 0.13.2
- * Deprecated: since 0.UNRELEASED. The factory is taken from
+ * Deprecated: since 0.15.5. The factory is taken from
  *  #TpBaseClient:account-manager.
  */
 TpClientChannelFactory *

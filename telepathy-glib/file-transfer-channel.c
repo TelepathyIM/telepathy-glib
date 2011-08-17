@@ -33,7 +33,7 @@
  *
  * Data structure representing a #TpFileTransferChannel.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 
 /**
@@ -41,7 +41,7 @@
  *
  * The class of a #TpFileTransferChannel.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 
 #include <config.h>
@@ -418,7 +418,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    *
    * The MIME type of the file to be transferred.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_string ("mime-type",
       "ContentType",
@@ -434,7 +434,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * A #GDateTime representing the last modification time of the file to be
    * transferred.
    *
-   * Since 0.15.UNRELEASED
+   * Since 0.15.5
    */
   param_spec = g_param_spec_boxed ("date",
       "Date",
@@ -450,7 +450,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * The description of the file transfer, defined by the sender when offering
    * the file.
    *
-   * Since 0.15.UNRELEASED
+   * Since 0.15.5
    */
   param_spec = g_param_spec_string ("description",
       "Description",
@@ -466,7 +466,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * The name of the file on the sender's side. This is therefore given as a
    * suggested filename for the receiver.
    *
-   * Since 0.15.UNRELEASED
+   * Since 0.15.5
    */
   param_spec = g_param_spec_string ("filename",
       "Filename",
@@ -482,7 +482,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * The size of the file to be transferred,
    * or %G_MAXUINT64 if not known.
    *
-   * Since 0.15.UNRELEASED
+   * Since 0.15.5
    */
   param_spec = g_param_spec_uint64 ("size",
       "Size",
@@ -501,7 +501,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be prepared for
    * this property to be meaningful and kept up to date.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_uint64 ("transferred-bytes",
       "TransferredBytes",
@@ -534,7 +534,7 @@ tp_file_transfer_channel_init (TpFileTransferChannel *self)
  * One can ask for a feature to be prepared using the tp_proxy_prepare_async()
  * function, and waiting for it to trigger the callback.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 
 GQuark
@@ -561,7 +561,7 @@ tp_file_transfer_channel_get_feature_quark_core (void)
  *
  * Returns: (transfer full): a newly created #TpFileTransferChannel
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 TpFileTransferChannel *
 tp_file_transfer_channel_new (TpConnection *conn,
@@ -612,7 +612,7 @@ _tp_file_transfer_channel_new_with_factory (
  * Returns: (transfer none): the value of the
  * #TpFileTransferChannel:mime-type property
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 const char *
 tp_file_transfer_channel_get_mime_type (TpFileTransferChannel *self)
@@ -631,7 +631,7 @@ tp_file_transfer_channel_get_mime_type (TpFileTransferChannel *self)
  * Returns: (transfer none): the value of the #TpFileTransferChannel:date
  * property
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 GDateTime *
 tp_file_transfer_channel_get_date (TpFileTransferChannel *self)
@@ -650,7 +650,7 @@ tp_file_transfer_channel_get_date (TpFileTransferChannel *self)
  * Returns: (transfer none): the value of the #TpFileTransferChannel:description
  * property
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 const gchar *
 tp_file_transfer_channel_get_description (TpFileTransferChannel *self)
@@ -669,7 +669,7 @@ tp_file_transfer_channel_get_description (TpFileTransferChannel *self)
  * Returns: (transfer none): the value of the #TpFileTransferChannel:filename
  * property
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 const gchar *
 tp_file_transfer_channel_get_filename (TpFileTransferChannel *self)
@@ -687,7 +687,7 @@ tp_file_transfer_channel_get_filename (TpFileTransferChannel *self)
  *
  * Returns: the value of the #TpFileTransferChannel:size property
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 guint64
 tp_file_transfer_channel_get_size (TpFileTransferChannel *self)
@@ -705,7 +705,7 @@ tp_file_transfer_channel_get_size (TpFileTransferChannel *self)
  *
  * Returns: the value of the #TpFileTransferChannel:transferred-bytes property
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.5
  */
 guint64
 tp_file_transfer_channel_get_transferred_bytes (TpFileTransferChannel *self)

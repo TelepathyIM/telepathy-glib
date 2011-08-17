@@ -134,7 +134,7 @@ tp_cm_message_new (TpBaseConnection *connection,
  * Set @key in part @part of @self to have @message as an aa{sv} value (that
  * is, an array of Message_Part).
  *
- * Since: UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_cm_message_set_message (TpMessage *self,

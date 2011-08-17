@@ -769,7 +769,7 @@ static gpointer starter_account_manager_proxy = NULL;
  * Note that @manager must use the default #TpDBusDaemon as returned by
  * tp_dbus_daemon_dup()
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_account_manager_set_default (TpAccountManager *manager)

@@ -2251,7 +2251,7 @@ channel_join_cb (TpChannel *self,
  * Note that unlike tp_channel_leave_async(), %TP_CHANNEL_FEATURE_GROUP feature
  * must be prepared before calling this function.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_channel_join_async (TpChannel *self,
@@ -2289,7 +2289,7 @@ tp_channel_join_async (TpChannel *self,
  *
  * Returns: %TRUE if the channel has been joined; %FALSE otherwise
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_channel_join_finish (TpChannel *self,

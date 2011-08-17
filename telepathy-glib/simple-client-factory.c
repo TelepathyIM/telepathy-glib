@@ -66,7 +66,7 @@
  * will ensure that any libraries or plugins which also use Telepathy (and call
  * tp_account_manager_dup()) will share your #TpAccountManager.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 /**
@@ -74,7 +74,7 @@
  *
  * Data structure representing a #TpSimpleClientFactory
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 /**
@@ -83,7 +83,7 @@
  *
  * The class of a #TpSimpleClientFactory.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 /**
@@ -120,7 +120,7 @@
  * from subclasses of #TpChannel, for instance. The default implementations of
  * the other <function>dup_x_features</function> methods behave similarly.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 #include "telepathy-glib/simple-client-factory.h"
@@ -412,7 +412,7 @@ tp_simple_client_factory_class_init (TpSimpleClientFactoryClass *klass)
  *
  * Returns: a new #TpSimpleClientFactory
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpSimpleClientFactory *
 tp_simple_client_factory_new (TpDBusDaemon *dbus)
@@ -431,7 +431,7 @@ tp_simple_client_factory_new (TpDBusDaemon *dbus)
  * Returns: (transfer none): the value of the #TpSimpleClientFactory:dbus-daemon
  *  property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpDBusDaemon *
 tp_simple_client_factory_get_dbus_daemon (TpSimpleClientFactory *self)
@@ -460,7 +460,7 @@ tp_simple_client_factory_get_dbus_daemon (TpSimpleClientFactory *self)
  * Returns: (transfer full): a reference to a #TpAccount;
  *  see tp_account_new().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpAccount *
 tp_simple_client_factory_ensure_account (TpSimpleClientFactory *self,
@@ -495,7 +495,7 @@ tp_simple_client_factory_ensure_account (TpSimpleClientFactory *self,
  * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
  *  #GArray
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 GArray *
 tp_simple_client_factory_dup_account_features (TpSimpleClientFactory *self,
@@ -526,7 +526,7 @@ tp_simple_client_factory_dup_account_features (TpSimpleClientFactory *self,
  * Note that these features will not be added to existing #TpAccount
  * objects; the user must call tp_proxy_prepare_async() themself.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_simple_client_factory_add_account_features (
@@ -547,7 +547,7 @@ tp_simple_client_factory_add_account_features (
  * The same as tp_simple_client_factory_add_account_features(), but with a more
  * convenient calling convention from C.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_simple_client_factory_add_account_features_varargs (
@@ -585,7 +585,7 @@ tp_simple_client_factory_add_account_features_varargs (
  * Returns: (transfer full): a reference to a #TpConnection;
  *  see tp_connection_new().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpConnection *
 tp_simple_client_factory_ensure_connection (TpSimpleClientFactory *self,
@@ -620,7 +620,7 @@ tp_simple_client_factory_ensure_connection (TpSimpleClientFactory *self,
  * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
  *  #GArray
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 GArray *
 tp_simple_client_factory_dup_connection_features (TpSimpleClientFactory *self,
@@ -651,7 +651,7 @@ tp_simple_client_factory_dup_connection_features (TpSimpleClientFactory *self,
  * Note that these features will not be added to existing #TpConnection
  * objects; the user must call tp_proxy_prepare_async() themself.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_simple_client_factory_add_connection_features (
@@ -672,7 +672,7 @@ tp_simple_client_factory_add_connection_features (
  * The same as tp_simple_client_factory_add_connection_features(), but with a
  * more convenient calling convention from C.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_simple_client_factory_add_connection_features_varargs (
@@ -711,7 +711,7 @@ tp_simple_client_factory_add_connection_features_varargs (
  * Returns: (transfer full): a reference to a #TpChannel;
  *  see tp_channel_new_from_properties().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpChannel *
 tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
@@ -749,7 +749,7 @@ tp_simple_client_factory_ensure_channel (TpSimpleClientFactory *self,
  * Returns: (transfer full) (element-type GLib.Quark): a newly allocated
  *  #GArray
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 GArray *
 tp_simple_client_factory_dup_channel_features (TpSimpleClientFactory *self,
@@ -780,7 +780,7 @@ tp_simple_client_factory_dup_channel_features (TpSimpleClientFactory *self,
  * Note that these features will not be added to existing #TpChannel
  * objects; the user must call tp_proxy_prepare_async() themself.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_simple_client_factory_add_channel_features (
@@ -801,7 +801,7 @@ tp_simple_client_factory_add_channel_features (
  * The same as tp_simple_client_factory_add_channel_features(), but with a
  * more convenient calling convention from C.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_simple_client_factory_add_channel_features_varargs (
@@ -840,7 +840,7 @@ tp_simple_client_factory_add_channel_features_varargs (
  *
  * Returns: (transfer full): a reference to a #TpContact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpContact *
 tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
@@ -879,7 +879,7 @@ tp_simple_client_factory_ensure_contact (TpSimpleClientFactory *self,
  * Returns: (transfer full) (element-type TelepathyGLib.ContactFeature): a newly
  *  allocated #GArray
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 GArray *
 tp_simple_client_factory_dup_contact_features (TpSimpleClientFactory *self,
@@ -907,7 +907,7 @@ tp_simple_client_factory_dup_contact_features (TpSimpleClientFactory *self,
  * Note that these features will not be added to existing #TpContact
  * objects; the user must call tp_connection_upgrade_contacts() themself.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
@@ -948,7 +948,7 @@ tp_simple_client_factory_add_contact_features (TpSimpleClientFactory *self,
  * The same as tp_simple_client_factory_add_contact_features(), but with a
  * more convenient calling convention from C.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_simple_client_factory_add_contact_features_varargs (
@@ -995,7 +995,7 @@ tp_simple_client_factory_add_contact_features_varargs (
  * Returns: (transfer full): a reference to a #TpChannelRequest;
  *  see tp_channel_request_new().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpChannelRequest *
 _tp_simple_client_factory_ensure_channel_request (TpSimpleClientFactory *self,
@@ -1047,7 +1047,7 @@ _tp_simple_client_factory_ensure_channel_request (TpSimpleClientFactory *self,
  * Returns: (transfer full): a reference to a
  *  #TpChannelDispatchOperation; see tp_channel_dispatch_operation_new().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpChannelDispatchOperation *
 _tp_simple_client_factory_ensure_channel_dispatch_operation (

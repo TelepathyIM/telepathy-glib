@@ -376,7 +376,7 @@ tp_channel_request_class_init (TpChannelRequestClass *klass)
    * If no channel factory is specified then #TpAutomaticProxyFactory is used.
    *
    * Since: 0.13.14
-   * Deprecated: since 0.UNRELEASED. Use #TpProxy:factory instead.
+   * Deprecated: since 0.15.5. Use #TpProxy:factory instead.
    */
   param_spec = g_param_spec_object ("channel-factory", "Channel factory",
       "Object implementing TpClientChannelFactoryInterface",
@@ -624,7 +624,7 @@ _tp_channel_request_new_with_factory (TpSimpleClientFactory *factory,
  * Change the value of the #TpChannelRequest:channel-factory property.
  *
  * Since: 0.13.14
- * Deprecated: since 0.UNRELEASED. Use #TpProxy:factory instead.
+ * Deprecated: since 0.15.5. Use #TpProxy:factory instead.
  */
 void
 tp_channel_request_set_channel_factory (TpChannelRequest *self,

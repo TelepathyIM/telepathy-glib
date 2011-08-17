@@ -420,7 +420,7 @@ tp_simple_handler_new_with_am (TpAccountManager *account_manager,
  *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpBaseClient *
 tp_simple_handler_new_with_factory (TpSimpleClientFactory *factory,

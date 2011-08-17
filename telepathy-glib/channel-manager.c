@@ -154,7 +154,7 @@
  *   </listitem>
  * </itemizedlist>
  *
- * Changed in version 0.13.UNRELEASED: Previously the TargetID
+ * Changed in version 0.15.5: Previously the TargetID
  * property was guaranteed to be missing from @request_properties. Now
  * it is always present, whether it was in the original channel
  * request or not.

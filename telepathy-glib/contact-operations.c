@@ -34,7 +34,7 @@
  * Convenience wrapper for tp_connection_request_subscription_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_request_subscription_async (TpContact *self,
@@ -56,7 +56,7 @@ tp_contact_request_subscription_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_request_subscription_finish (TpContact *self,
@@ -76,7 +76,7 @@ tp_contact_request_subscription_finish (TpContact *self,
  * Convenience wrapper for tp_connection_authorize_publication_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_authorize_publication_async (TpContact *self,
@@ -97,7 +97,7 @@ tp_contact_authorize_publication_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_authorize_publication_finish (TpContact *self,
@@ -117,7 +117,7 @@ tp_contact_authorize_publication_finish (TpContact *self,
  * Convenience wrapper for tp_connection_remove_contacts_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_remove_async (TpContact *self,
@@ -138,7 +138,7 @@ tp_contact_remove_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_remove_finish (TpContact *self,
@@ -158,7 +158,7 @@ tp_contact_remove_finish (TpContact *self,
  * Convenience wrapper for tp_connection_unsubscribe_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_unsubscribe_async (TpContact *self,
@@ -179,7 +179,7 @@ tp_contact_unsubscribe_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_unsubscribe_finish (TpContact *self,
@@ -199,7 +199,7 @@ tp_contact_unsubscribe_finish (TpContact *self,
  * Convenience wrapper for tp_connection_unpublish_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_unpublish_async (TpContact *self,
@@ -220,7 +220,7 @@ tp_contact_unpublish_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_unpublish_finish (TpContact *self,
@@ -241,7 +241,7 @@ tp_contact_unpublish_finish (TpContact *self,
  * Convenience wrapper for tp_connection_add_to_group_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_add_to_group_async (TpContact *self,
@@ -263,7 +263,7 @@ tp_contact_add_to_group_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_add_to_group_finish (TpContact *self,
@@ -284,7 +284,7 @@ tp_contact_add_to_group_finish (TpContact *self,
  * Convenience wrapper for tp_connection_remove_from_group_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_remove_from_group_async (TpContact *self,
@@ -306,7 +306,7 @@ tp_contact_remove_from_group_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_remove_from_group_finish (TpContact *self,

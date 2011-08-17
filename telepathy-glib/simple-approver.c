@@ -350,7 +350,7 @@ tp_simple_approver_new_with_am (TpAccountManager *account_manager,
  *
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpBaseClient *
 tp_simple_approver_new_with_factory (TpSimpleClientFactory *factory,

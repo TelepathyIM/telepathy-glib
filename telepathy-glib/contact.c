@@ -136,7 +136,7 @@ struct _TpContact {
  * An invalid TpContactFeature. Used as list termination. See for example
  * tp_simple_client_factory_add_contact_features_varargs().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 /**

@@ -1401,7 +1401,7 @@ tp_proxy_class_init (TpProxyClass *klass)
  *
  * Returns: (transfer none): the same value as #TpProxy:factory property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpSimpleClientFactory *
 tp_proxy_get_factory (gpointer self)

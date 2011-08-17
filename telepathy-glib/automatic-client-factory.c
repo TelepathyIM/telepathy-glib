@@ -71,7 +71,7 @@
  *   </listitem>
  * </itemizedlist>
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 /**
@@ -79,7 +79,7 @@
  *
  * Data structure representing a #TpAutomaticClientFactory
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 /**
@@ -88,7 +88,7 @@
  *
  * The class of a #TpAutomaticClientFactory.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 #include "telepathy-glib/automatic-client-factory.h"
@@ -203,7 +203,7 @@ tp_automatic_client_factory_class_init (TpAutomaticClientFactoryClass *cls)
  *
  * Returns: a new #TpAutomaticClientFactory
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpAutomaticClientFactory *
 tp_automatic_client_factory_new (TpDBusDaemon *dbus)

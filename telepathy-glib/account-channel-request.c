@@ -1383,7 +1383,7 @@ tp_account_channel_request_ensure_channel_finish (
  * channel.
  *
  * Since: 0.13.2
- * Deprecated: since 0.UNRELEASED. The factory is taken from
+ * Deprecated: since 0.15.5. The factory is taken from
  *  #TpAccountChannelRequest:account.
  */
 void

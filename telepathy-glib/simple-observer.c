@@ -382,7 +382,7 @@ tp_simple_observer_new_with_am (TpAccountManager *account_manager,
  *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpBaseClient *
 tp_simple_observer_new_with_factory (TpSimpleClientFactory *factory,

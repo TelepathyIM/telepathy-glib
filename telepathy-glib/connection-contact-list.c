@@ -626,7 +626,7 @@ _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 GQuark
@@ -643,7 +643,7 @@ tp_connection_get_feature_quark_contact_list (void)
  *
  * Returns: the value of #TpConnection:contact-list-state property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpContactListState
 tp_connection_get_contact_list_state (TpConnection *self)
@@ -661,7 +661,7 @@ tp_connection_get_contact_list_state (TpConnection *self)
  *
  * Returns: the value of #TpConnection:contact-list-persists property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_get_contact_list_persists (TpConnection *self)
@@ -679,7 +679,7 @@ tp_connection_get_contact_list_persists (TpConnection *self)
  *
  * Returns: the value of #TpConnection:can-change-contact-list property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_get_can_change_contact_list (TpConnection *self)
@@ -697,7 +697,7 @@ tp_connection_get_can_change_contact_list (TpConnection *self)
  *
  * Returns: the value of #TpConnection:request-uses-message property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_get_request_uses_message (TpConnection *self)
@@ -723,7 +723,7 @@ tp_connection_get_request_uses_message (TpConnection *self)
  * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
  *  a new #GPtrArray of #TpContact. Use g_ptr_array_unref() when done.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 GPtrArray *
 tp_connection_dup_contact_list (TpConnection *self)
@@ -790,7 +790,7 @@ generic_callback (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_request_subscription_async (TpConnection *self,
@@ -813,7 +813,7 @@ tp_connection_request_subscription_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_request_subscription_finish (TpConnection *self,
@@ -839,7 +839,7 @@ tp_connection_request_subscription_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_authorize_publication_async (TpConnection *self,
@@ -861,7 +861,7 @@ tp_connection_authorize_publication_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_authorize_publication_finish (TpConnection *self,
@@ -886,7 +886,7 @@ tp_connection_authorize_publication_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_remove_contacts_async (TpConnection *self,
@@ -908,7 +908,7 @@ tp_connection_remove_contacts_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_remove_contacts_finish (TpConnection *self,
@@ -933,7 +933,7 @@ tp_connection_remove_contacts_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_unsubscribe_async (TpConnection *self,
@@ -955,7 +955,7 @@ tp_connection_unsubscribe_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_unsubscribe_finish (TpConnection *self,
@@ -980,7 +980,7 @@ tp_connection_unsubscribe_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_unpublish_async (TpConnection *self,
@@ -1002,7 +1002,7 @@ tp_connection_unpublish_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_unpublish_finish (TpConnection *self,
@@ -1027,7 +1027,7 @@ tp_connection_unpublish_finish (TpConnection *self,
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 GQuark
@@ -1044,7 +1044,7 @@ tp_connection_get_feature_quark_contact_groups (void)
  *
  * Returns: the value of #TpConnection:disjoint-groups
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_get_disjoint_groups (TpConnection *self)
@@ -1062,7 +1062,7 @@ tp_connection_get_disjoint_groups (TpConnection *self)
  *
  * Returns: the value of #TpConnection:group-storage
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpContactMetadataStorageType
 tp_connection_get_group_storage (TpConnection *self)
@@ -1082,7 +1082,7 @@ tp_connection_get_group_storage (TpConnection *self)
  * Returns: (array zero-terminated=1) (transfer none): the value of
  *  #TpConnection:contact-groups
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 const gchar * const *
 tp_connection_get_contact_groups (TpConnection *self)
@@ -1126,7 +1126,7 @@ tp_connection_get_contact_groups (TpConnection *self)
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_set_group_members_async (TpConnection *self,
@@ -1149,7 +1149,7 @@ tp_connection_set_group_members_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_set_group_members_finish (TpConnection *self,
@@ -1174,7 +1174,7 @@ tp_connection_set_group_members_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_add_to_group_async (TpConnection *self,
@@ -1197,7 +1197,7 @@ tp_connection_add_to_group_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_add_to_group_finish (TpConnection *self,
@@ -1223,7 +1223,7 @@ tp_connection_add_to_group_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_remove_from_group_async (TpConnection *self,
@@ -1246,7 +1246,7 @@ tp_connection_remove_from_group_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_remove_from_group_finish (TpConnection *self,
@@ -1268,7 +1268,7 @@ tp_connection_remove_from_group_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_remove_group_async (TpConnection *self,
@@ -1298,7 +1298,7 @@ tp_connection_remove_group_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_remove_group_finish (TpConnection *self,
@@ -1325,7 +1325,7 @@ tp_connection_remove_group_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_rename_group_async (TpConnection *self,
@@ -1357,7 +1357,7 @@ tp_connection_rename_group_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_rename_group_finish (TpConnection *self,

@@ -1843,7 +1843,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_uint ("contact-list-state", "ContactList state",
       "The state of the contact list",
@@ -1863,7 +1863,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_boolean ("contact-list-persists",
       "ContactList persists", "Whether the contact list persists",
@@ -1884,7 +1884,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_boolean ("can-change-contact-list",
       "ContactList can change", "Whether the contact list can change",
@@ -1905,7 +1905,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_boolean ("request-uses-message",
       "Request Uses Message", "Whether request uses message",
@@ -1928,7 +1928,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_boolean ("disjoint-groups",
       "Disjoint Groups", "Whether groups are disjoint",
@@ -1950,7 +1950,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_uint ("group-storage",
       "Group Storage", "Group storage capabilities",
@@ -1974,7 +1974,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_boxed ("contact-groups",
       "Contact Groups",
@@ -1998,7 +1998,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   signals[SIGNAL_GROUPS_CREATED] = g_signal_new (
       "groups-created",
@@ -2024,7 +2024,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   signals[SIGNAL_GROUPS_REMOVED] = g_signal_new (
       "groups-removed",
@@ -2059,7 +2059,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   signals[SIGNAL_GROUP_RENAMED] = g_signal_new (
       "group-renamed",
@@ -2087,7 +2087,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   signals[SIGNAL_CONTACT_LIST_CHANGED] = g_signal_new (
       "contact-list-changed",
@@ -2203,7 +2203,7 @@ finally:
  * Returns: (transfer none): the account associated with this connection, or
  * %NULL.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpAccount *
 tp_connection_get_account (TpConnection *self)
