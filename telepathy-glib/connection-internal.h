@@ -150,7 +150,7 @@ void _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data);
-void _tp_connection_contacts_changed_item_free (gpointer data);
+void _tp_connection_contacts_changed_queue_free (GQueue *queue);
 
 G_END_DECLS
 

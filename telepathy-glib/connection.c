@@ -1454,9 +1454,8 @@ tp_connection_dispose (GObject *object)
 
   tp_clear_pointer (&self->priv->contact_groups, g_ptr_array_unref);
   tp_clear_pointer (&self->priv->roster, g_hash_table_unref);
-  g_queue_foreach (self->priv->contacts_changed_queue,
-      (GFunc) _tp_connection_contacts_changed_item_free, NULL);
-  tp_clear_pointer (&self->priv->contacts_changed_queue, g_queue_free);
+  tp_clear_pointer (&self->priv->contacts_changed_queue,
+      _tp_connection_contacts_changed_queue_free);
 
   if (self->priv->contacts != NULL)
     {

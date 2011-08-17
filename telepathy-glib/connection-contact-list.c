@@ -55,16 +55,21 @@ contacts_changed_item_new (GHashTable *changes,
   return item;
 }
 
-void
-_tp_connection_contacts_changed_item_free (gpointer data)
+static void
+contacts_changed_item_free (ContactsChangedItem *item)
 {
-  ContactsChangedItem *item = data;
-
   tp_clear_pointer (&item->changes, g_hash_table_unref);
   tp_clear_pointer (&item->identifiers, g_hash_table_unref);
   tp_clear_pointer (&item->removals, g_hash_table_unref);
   tp_clear_pointer (&item->new_contacts, g_ptr_array_unref);
   g_slice_free (ContactsChangedItem, item);
+}
+
+void
+_tp_connection_contacts_changed_queue_free (GQueue *queue)
+{
+  g_queue_foreach (queue, (GFunc) contacts_changed_item_free, NULL);
+  g_queue_free (queue);
 }
 
 static void process_queued_contacts_changed (TpConnection *self);
@@ -121,7 +126,7 @@ contacts_changed_head_ready (TpConnection *self)
 
   g_ptr_array_unref (added);
   g_ptr_array_unref (removed);
-  _tp_connection_contacts_changed_item_free (item);
+  contacts_changed_item_free (item);
 
   process_queued_contacts_changed (self);
 }
