@@ -146,7 +146,6 @@ void tp_base_client_add_account_features (TpBaseClient *self,
 void tp_base_client_add_account_features_varargs (TpBaseClient *self,
     GQuark feature, ...)
     _TP_GNUC_DEPRECATED_FOR (tp_simple_client_factory_add_account_features_varargs);
-;
 
 void tp_base_client_add_channel_features (TpBaseClient *self,
     const GQuark *features, gssize n)
