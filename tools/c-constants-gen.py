@@ -123,7 +123,7 @@ extern "C" {
 
         self.d("""\
 /**
- * NUM_%(upper-plural)s:
+ * NUM_%(upper-plural)s: (skip)
  *
  * 1 higher than the highest valid value of #%(mixed-name)s.
  */

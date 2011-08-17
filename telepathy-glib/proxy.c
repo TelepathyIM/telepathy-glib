@@ -105,7 +105,7 @@ tp_dbus_errors_quark (void)
  */
 
 /**
- * NUM_TP_DBUS_ERRORS:
+ * NUM_TP_DBUS_ERRORS: (skip)
  *
  * 1 more than the highest valid #TpDBusError at the time of compilation
  *
