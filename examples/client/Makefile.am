@@ -1,4 +1,4 @@
-SUBDIRS = stream-tubes python
+SUBDIRS = stream-tubes python js
 
 EXAMPLES =
 

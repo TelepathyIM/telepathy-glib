@@ -298,6 +298,7 @@ AC_OUTPUT( Makefile \
 	   docs/reference/version.xml \
 	   examples/Makefile \
 	   examples/client/Makefile \
+	   examples/client/js/Makefile \
 	   examples/client/python/Makefile \
 	   examples/client/stream-tubes/Makefile \
 	   examples/cm/Makefile \
