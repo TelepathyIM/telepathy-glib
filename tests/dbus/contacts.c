@@ -2527,6 +2527,20 @@ test_superfluous_attributes (Fixture *f,
 }
 
 static void
+contact_list_changed_cb (TpConnection *connection,
+    GPtrArray *added,
+    GPtrArray *removed,
+    gpointer user_data)
+{
+  gboolean *received = user_data;
+
+  g_assert (added != NULL);
+  g_assert (removed != NULL);
+
+  *received = TRUE;
+}
+
+static void
 test_contact_list (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
@@ -2540,6 +2554,7 @@ test_contact_list (Fixture *f,
   TpHandle handle;
   GPtrArray *contacts;
   TpContact *contact;
+  gboolean got_contact_list_changed = FALSE;
 
   manager = tp_tests_contacts_connection_get_contact_list_manager (
       f->service_conn);
@@ -2565,6 +2580,8 @@ test_contact_list (Fixture *f,
       TP_CONTACT_FEATURE_INVALID);
 
   /* Now put it online and wait for contact list state move to success */
+  g_signal_connect (f->client_conn, "contact-list-changed",
+      G_CALLBACK (contact_list_changed_cb), &got_contact_list_changed);
   g_signal_connect_swapped (f->client_conn, "notify::contact-list-state",
       G_CALLBACK (finish), &result);
   tp_cli_connection_call_connect (f->client_conn, -1,
@@ -2575,7 +2592,9 @@ test_contact_list (Fixture *f,
   g_assert_cmpint (tp_connection_get_contact_list_state (f->client_conn), ==,
       TP_CONTACT_LIST_STATE_SUCCESS);
 
-  /* SUCCESS state must have been delayed until TpContact is prepared */
+  /* SUCCESS state must have been delayed until TpContact is prepared,
+     and contact-list-changed must have been emitted just before */
+  g_assert (got_contact_list_changed);
   contacts = tp_connection_dup_contact_list (f->client_conn);
   g_assert (contacts != NULL);
   g_assert_cmpint (contacts->len, ==, 1);

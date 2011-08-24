@@ -268,6 +268,19 @@ got_contact_list_attributes_cb (TpConnection *self,
       g_hash_table_insert (self->priv->roster, key, contact);
     }
 
+  /* emit initial set if roster is not empty */
+  if (g_hash_table_size (self->priv->roster) != 0)
+    {
+      GPtrArray *added;
+      GPtrArray *removed;
+
+      added = tp_connection_dup_contact_list (self);
+      removed = g_ptr_array_new ();
+      g_signal_emit_by_name (self, "contact-list-changed", added, removed);
+      g_ptr_array_unref (added);
+      g_ptr_array_unref (removed);
+    }
+
   self->priv->contact_list_state = TP_CONTACT_LIST_STATE_SUCCESS;
   g_object_notify ((GObject *) self, "contact-list-state");
 

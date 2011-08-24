@@ -2083,6 +2083,8 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_simple_client_factory_add_contact_features() to define which features
    * needs to be prepared.
    *
+   * This signal is also emitted for the initial set of contacts once retrieved.
+   *
    * For this signal to be emitted, you must first call
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_LIST.
