@@ -764,8 +764,8 @@ generic_callback (TpConnection *self,
     result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
         tp_connection_##method##_async); \
     \
-    tp_cli_connection_interface_contact_list_call_##method (self, -1, \
-    handles, ##__VA_ARGS__, generic_callback, result, g_object_unref, NULL); \
+    tp_cli_connection_interface_contact_list_call_##method (self, -1, handles, \
+        ##__VA_ARGS__, generic_callback, result, g_object_unref, NULL); \
     g_array_unref (handles); \
   } G_STMT_END
 
@@ -1106,7 +1106,7 @@ tp_connection_get_contact_groups (TpConnection *self)
         tp_connection_##method##_async); \
     \
     tp_cli_connection_interface_contact_groups_call_##method (self, -1, \
-    group, handles, generic_callback, result, g_object_unref, NULL); \
+        group, handles, generic_callback, result, g_object_unref, NULL); \
     g_array_unref (handles); \
   } G_STMT_END
 
