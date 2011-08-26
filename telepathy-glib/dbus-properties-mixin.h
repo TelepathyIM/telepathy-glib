@@ -30,8 +30,11 @@ G_BEGIN_DECLS
 /* ---- Semi-abstract property definition (used in TpSvc*) ---------- */
 
 typedef enum { /*< flags >*/
+    /*<public>*/
     TP_DBUS_PROPERTIES_MIXIN_FLAG_READ = 1,
-    TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE = 2
+    TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE = 2,
+    TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED = 4,
+    TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED = 8
 } TpDBusPropertiesMixinFlags;
 
 typedef struct {

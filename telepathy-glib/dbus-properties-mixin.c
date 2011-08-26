@@ -64,8 +64,15 @@
  * @TP_DBUS_PROPERTIES_MIXIN_FLAG_READ: The property can be read using Get and
  *  GetAll
  * @TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE: The property can be written using Set
+ * @TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED: The property's new value is
+ *  included in emissions of PropertiesChanged
+ * @TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED: The property is announced
+ *  as invalidated, without its value, in emissions of PropertiesChanged
  *
- * Bitfield representing allowed access to a property.
+ * Bitfield representing allowed access to a property. At most one of
+ * %TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED and
+ * %TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED may be specified for a
+ * property.
  *
  * Since 0.11.5, there is a corresponding #GFlagsClass type,
  * %TP_TYPE_DBUS_PROPERTIES_MIXIN_FLAGS.
@@ -157,8 +164,24 @@ tp_svc_interface_set_dbus_properties_info (GType g_interface,
   for (prop = info->props; prop->name != 0; prop++)
     {
       g_return_if_fail (prop->flags != 0);
-      g_return_if_fail (prop->flags <= (TP_DBUS_PROPERTIES_MIXIN_FLAG_READ |
-            TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE));
+      g_return_if_fail (
+        (prop->flags & ~( TP_DBUS_PROPERTIES_MIXIN_FLAG_READ
+                        | TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE
+                        | TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED
+                        | TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED
+                        )) == 0);
+
+      /* Check that at most one change-related flag is set. */
+      if ((prop->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED) &&
+          (prop->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED))
+        {
+          CRITICAL ("at most one of EMITS_CHANGED and EMITS_INVALIDATED may be "
+              "specified for a property, but %s.%s has both",
+              g_quark_to_string (info->dbus_interface),
+              g_quark_to_string (prop->name));
+          g_return_if_reached ();
+        }
+
       g_return_if_fail (prop->dbus_signature != NULL);
       g_return_if_fail (prop->dbus_signature[0] != '\0');
       g_return_if_fail (prop->type != 0);
