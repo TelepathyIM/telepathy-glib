@@ -1074,6 +1074,41 @@ tp_dbus_properties_mixin_emit_properties_changed (
   g_ptr_array_unref (invalidated_properties);
 }
 
+/**
+ * tp_dbus_properties_mixin_emit_properties_changed_varargs: (skip)
+ * @object: an object which uses the D-Bus properties mixin
+ * @interface_name: the interface on which properties have changed
+ * @...: (unqualified) property names whose values have changed, terminated by
+ *  %NULL.
+ *
+ * A shortcut for calling tp_dbus_properties_mixin_emit_properties_changed().
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_dbus_properties_mixin_emit_properties_changed_varargs (
+    GObject *object,
+    const gchar *interface_name,
+    ...)
+{
+  GPtrArray *property_names = g_ptr_array_new ();
+  char *property_name;
+  va_list ap;
+
+  va_start (ap, interface_name);
+  do
+    {
+      property_name = va_arg (ap, char *);
+      g_ptr_array_add (property_names, property_name);
+    }
+  while (property_name != NULL);
+  va_end (ap);
+
+  tp_dbus_properties_mixin_emit_properties_changed (object, interface_name,
+      (const gchar * const *) property_names->pdata);
+  g_ptr_array_unref (property_names);
+}
+
 static void
 _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,
                                const gchar *interface_name,

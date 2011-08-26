@@ -140,6 +140,12 @@ void tp_dbus_properties_mixin_emit_properties_changed (
     const gchar *interface_name,
     const gchar * const *properties);
 
+void tp_dbus_properties_mixin_emit_properties_changed_varargs (
+    GObject *object,
+    const gchar *interface_name,
+    ...)
+  G_GNUC_NULL_TERMINATED;
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_DBUS_PROPERTIES_MIXIN_H__ */

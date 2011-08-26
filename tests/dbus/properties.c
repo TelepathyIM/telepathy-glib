@@ -207,6 +207,10 @@ test_emit_changed (Context *ctx)
       WITH_PROPERTIES_IFACE, properties);
   g_main_loop_run (loop);
 
+  tp_dbus_properties_mixin_emit_properties_changed_varargs (G_OBJECT (ctx->obj),
+      WITH_PROPERTIES_IFACE, "ReadOnly", "ReadWrite", NULL);
+  g_main_loop_run (loop);
+
   tp_proxy_signal_connection_disconnect (signal_conn);
 }
 
