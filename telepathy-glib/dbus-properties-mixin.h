@@ -30,7 +30,6 @@ G_BEGIN_DECLS
 /* ---- Semi-abstract property definition (used in TpSvc*) ---------- */
 
 typedef enum { /*< flags >*/
-    /*<public>*/
     TP_DBUS_PROPERTIES_MIXIN_FLAG_READ = 1,
     TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE = 2,
     TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED = 4,
@@ -139,8 +138,7 @@ void tp_dbus_properties_mixin_fill_properties_hash (GObject *object,
 void tp_dbus_properties_mixin_emit_properties_changed (
     GObject *object,
     const gchar *interface_name,
-    const gchar * const *changed,
-    const gchar * const *invalidated);
+    const gchar * const *properties);
 
 G_END_DECLS
 

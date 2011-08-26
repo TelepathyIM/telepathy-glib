@@ -724,16 +724,14 @@ _tp_dbus_properties_mixin_find_prop_impl
   return NULL;
 }
 
-static gboolean
-_iface_impl_get_property (
+static TpDBusPropertiesMixinPropImpl *
+_iface_impl_get_property_impl (
     GObject *self,
     TpDBusPropertiesMixinIfaceImpl *iface_impl,
     const gchar *interface_name,
     const gchar *property_name,
-    GValue *value,
     GError **error)
 {
-  TpDBusPropertiesMixinIfaceInfo *iface_info = iface_impl->mixin_priv;
   TpDBusPropertiesMixinPropImpl *prop_impl;
   TpDBusPropertiesMixinPropInfo *prop_info;
 
@@ -763,14 +761,7 @@ _iface_impl_get_property (
       return FALSE;
     }
 
-  if (value != NULL)
-    {
-      g_value_init (value, prop_info->type);
-      iface_impl->getter (self, iface_info->dbus_interface,
-          prop_info->name, value, prop_impl->getter_data);
-    }
-
-  return TRUE;
+  return prop_impl;
 }
 
 /**
@@ -800,6 +791,7 @@ tp_dbus_properties_mixin_get (GObject *self,
                               GError **error)
 {
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
+  TpDBusPropertiesMixinPropImpl *prop_impl;
 
   g_return_val_if_fail (G_IS_OBJECT (self), FALSE);
   g_return_val_if_fail (interface_name != NULL, FALSE);
@@ -816,7 +808,23 @@ tp_dbus_properties_mixin_get (GObject *self,
       return FALSE;
     }
 
-  return _iface_impl_get_property (self, iface_impl, interface_name, property_name, value, error);
+  prop_impl = _iface_impl_get_property_impl (self, iface_impl, interface_name,
+      property_name, error);
+
+  if (prop_impl != NULL)
+    {
+      TpDBusPropertiesMixinIfaceInfo *iface_info = iface_impl->mixin_priv;
+      TpDBusPropertiesMixinPropInfo *prop_info = prop_impl->mixin_priv;
+
+      g_value_init (value, prop_info->type);
+      iface_impl->getter (self, iface_info->dbus_interface,
+          prop_info->name, value, prop_impl->getter_data);
+      return TRUE;
+    }
+  else
+    {
+      return FALSE;
+    }
 }
 
 
@@ -960,26 +968,29 @@ tp_dbus_properties_mixin_make_properties_hash (
  * tp_dbus_properties_mixin_emit_properties_changed:
  * @object: an object which uses the D-Bus properties mixin
  * @interface_name: the interface on which properties have changed
- * @changed: (allow-none): a %NULL-terminated array of (unqualified) property
- *  names whose new values should be included in the signal
- * @invalidated: (allow-none): a %NULL-terminated array of (unqualified)
- *  property names which should be announced as invalidated, but without
- *  including their new values.
+ * @properties: (allow-none): a %NULL-terminated array of (unqualified)
+ *  property names whose values have changed.
  *
- * Emits the PropertiesChanged signal for the provided properties. The current
- * values of properties in @changed will be included in the signal, whereas
- * just the names of @invalidated properties are signalled. The latter may be
- * useful for properties whose values are extremely rarely needed by other
- * processes, or where more fine-grained change notification (such as a delta)
- * by another signal is available.
+ * Emits the PropertiesChanged signal for the provided properties. Depending on
+ * the EmitsChangedSignal annotations in the introspection XML, either the new
+ * value of the property will be included in the signal, or merely the fact
+ * that the property has changed.
+ *
+ * For example, the MPRIS specification defines a TrackList interface with two
+ * properties, one of which is annotated with EmitsChangedSignal=true and one
+ * annotated with EmitsChangedSignal=invalidates. The following call would
+ * include the new value of CanEditTracks and list Tracks as invalidated:
  *
  * |[
- *    const gchar *changed[] = { "CanEditTracks", NULL };
- *    const gchar *invalidated[] = { "Tracks", NULL };
+ *    const gchar *properties[] = { "CanEditTracks", "Tracks", NULL };
  *
  *    tp_dbus_properties_mixin_emit_properties_changed (G_OBJECT (self),
- *        "org.mpris.MediaPlayer2.TrackList", changed, invalidated);
+ *        "org.mpris.MediaPlayer2.TrackList", properties);
  * ]|
+ *
+ * It is an error to pass a property to this
+ * function if the property is annotated with EmitsChangedSignal=false, or is
+ * unannotated.
  *
  * Since: UNRELEASED
  */
@@ -987,11 +998,12 @@ void
 tp_dbus_properties_mixin_emit_properties_changed (
     GObject *object,
     const gchar *interface_name,
-    const gchar * const *changed,
-    const gchar * const *invalidated)
+    const gchar * const *properties)
 {
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
+  TpDBusPropertiesMixinIfaceInfo *iface_info;
   GHashTable *changed_properties;
+  GPtrArray *invalidated_properties;
   const gchar * const *prop_name;
 
   g_return_if_fail (interface_name != NULL);
@@ -999,52 +1011,67 @@ tp_dbus_properties_mixin_emit_properties_changed (
       interface_name);
   g_return_if_fail (iface_impl != NULL);
 
+  iface_info = iface_impl->mixin_priv;
+
+  /* If someone passes no property names, well … that's fine, we have nothing
+   * to do.
+   */
+  if (properties == NULL || properties[0] == NULL)
+    return;
+
   changed_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, (GDestroyNotify) tp_g_value_slice_free);
+  invalidated_properties = g_ptr_array_new ();
 
-  if (changed != NULL)
+  for (prop_name = properties; *prop_name != NULL; prop_name++)
     {
-      for (prop_name = changed; *prop_name != NULL; prop_name++)
+      TpDBusPropertiesMixinPropImpl *prop_impl;
+      TpDBusPropertiesMixinPropInfo *prop_info;
+      GError *error = NULL;
+
+      prop_impl = _iface_impl_get_property_impl (object, iface_impl,
+          interface_name, *prop_name, &error);
+
+      if (prop_impl == NULL)
+        {
+          WARNING ("Couldn't get value for '%s.%s': %s", interface_name,
+              *prop_name, error->message);
+          g_clear_error (&error);
+          g_return_if_reached ();
+        }
+
+      prop_info = prop_impl->mixin_priv;
+
+      if (prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED)
         {
           GValue v = { 0, };
-          GError *error = NULL;
 
-          if (_iface_impl_get_property (object, iface_impl, interface_name,
-                  *prop_name, &v, &error))
-            {
-              g_hash_table_insert (changed_properties, (gchar *) *prop_name,
-                  tp_g_value_slice_dup (&v));
-            }
-          else
-            {
-              WARNING ("Couldn't get value for '%s.%s': %s", interface_name,
-                  *prop_name, error->message);
-              g_clear_error (&error);
-              g_return_if_reached ();
-            }
+          g_value_init (&v, prop_info->type);
+          iface_impl->getter (object, iface_info->dbus_interface,
+              prop_info->name, &v, prop_impl->getter_data);
+          g_hash_table_insert (changed_properties, (gchar *) *prop_name,
+              tp_g_value_slice_dup (&v));
+
+          g_value_unset (&v);
         }
-    }
-
-  if (invalidated != NULL)
-    {
-      for (prop_name = invalidated; *prop_name != NULL; prop_name++)
+      else if (prop_info->flags &
+                  TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED)
         {
-          GError *error = NULL;
-
-          if (!_iface_impl_get_property (object, iface_impl, interface_name,
-                  *prop_name, NULL, &error))
-            {
-              WARNING ("Checking that '%s.%s' exists failed: %s",
-                  interface_name, *prop_name, error->message);
-              g_clear_error (&error);
-              g_return_if_reached ();
-            }
+          g_ptr_array_add (invalidated_properties, (gchar *) *prop_name);
+        }
+      else
+        {
+          WARNING ("'%s.%s' is not annotated with EmitsChangedSignal'",
+              interface_name, *prop_name);
         }
     }
+
+  g_ptr_array_add (invalidated_properties, NULL);
 
   tp_svc_dbus_properties_emit_properties_changed (object, interface_name,
-      changed_properties, (const gchar **) invalidated);
+      changed_properties, (const gchar **) invalidated_properties->pdata);
   g_hash_table_unref (changed_properties);
+  g_ptr_array_unref (invalidated_properties);
 }
 
 static void

@@ -5,10 +5,18 @@
 
   <node name="/With_Properties">
     <interface name="com.example.WithProperties">
+      <!-- We verify that this is used for the otherwise-unannotated
+           properties … -->
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal"
+                  value="true"/>
 
-      <property name="ReadOnly" access="read" type="u" />
-      <property name="WriteOnly" access="write" type="u" />
-      <property name="ReadWrite" access="readwrite" type="u" />
+      <property name="ReadOnly" access="read" type="u"/>
+      <property name="WriteOnly" access="write" type="u"/>
+      <property name="ReadWrite" access="readwrite" type="u">
+        <!-- … and that this overrides the global annotation. -->
+        <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal"
+                    value="invalidates"/>
+      </property>
 
     </interface>
   </node>

@@ -195,8 +195,7 @@ test_emit_changed (Context *ctx)
 {
   GMainLoop *loop = g_main_loop_new (NULL, FALSE);
   TpProxySignalConnection *signal_conn;
-  const gchar *changed[] = { "ReadOnly", NULL };
-  const gchar *invalidated[] = { "ReadWrite", NULL };
+  const gchar *properties[] = { "ReadOnly", "ReadWrite", NULL };
   GError *error = NULL;
 
   signal_conn = tp_cli_dbus_properties_connect_to_properties_changed (
@@ -205,7 +204,7 @@ test_emit_changed (Context *ctx)
   g_assert (signal_conn != NULL);
 
   tp_dbus_properties_mixin_emit_properties_changed (G_OBJECT (ctx->obj),
-      WITH_PROPERTIES_IFACE, changed, invalidated);
+      WITH_PROPERTIES_IFACE, properties);
   g_main_loop_run (loop);
 
   tp_proxy_signal_connection_disconnect (signal_conn);
