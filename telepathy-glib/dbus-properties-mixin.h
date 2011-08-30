@@ -56,6 +56,8 @@ typedef struct {
 
 void tp_svc_interface_set_dbus_properties_info (GType g_interface,
     TpDBusPropertiesMixinIfaceInfo *info);
+TpDBusPropertiesMixinIfaceInfo *tp_svc_interface_get_dbus_properties_info (
+    GType g_interface);
 
 /* ---- Concrete implementation (in GObject subclasses) ------------- */
 

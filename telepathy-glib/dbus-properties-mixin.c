@@ -193,8 +193,20 @@ tp_svc_interface_set_dbus_properties_info (GType g_interface,
   g_type_set_qdata (g_interface, q, info);
 }
 
-/* could make this public, but it doesn't seem necessary yet */
-static TpDBusPropertiesMixinIfaceInfo *
+/**
+ * tp_svc_interface_get_dbus_properties_info:
+ * @g_interface: The #GType of a service interface
+ *
+ * Retrieves the D-Bus property metadata for the given interface, if any.
+ * This function is typically not useful outside telepathy-glib itself, but may
+ * be useful for domain-specific variations on the theme of SetProperty. If in
+ * doubt, you probably don't need this function.
+ *
+ * Returns: D-Bus property metadata for @g_interface, or %NULL if it has
+ *  none.
+ * Since: UNRELEASED
+ */
+TpDBusPropertiesMixinIfaceInfo *
 tp_svc_interface_get_dbus_properties_info (GType g_interface)
 {
   return g_type_get_qdata (g_interface, _iface_prop_info_quark ());
