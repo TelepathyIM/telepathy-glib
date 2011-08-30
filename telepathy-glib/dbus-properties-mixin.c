@@ -147,6 +147,9 @@ _iface_prop_info_quark (void)
  * given properties. This may only be called once per GInterface, usually from
  * a section of its base_init function that only runs once.
  *
+ * This is typically only used within generated code; there is normally no
+ * reason to call it manually.
+ *
  * Since: 0.7.3
  */
 void
