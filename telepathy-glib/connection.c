@@ -1190,6 +1190,9 @@ tp_connection_finalize (GObject *object)
   tp_contact_info_spec_list_free (self->priv->contact_info_supported_fields);
   self->priv->contact_info_supported_fields = NULL;
 
+  tp_clear_pointer (&self->priv->cm_name, g_free);
+  tp_clear_pointer (&self->priv->proto_name, g_free);
+
   ((GObjectClass *) tp_connection_parent_class)->finalize (object);
 }
 
