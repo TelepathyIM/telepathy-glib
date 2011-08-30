@@ -23,6 +23,54 @@
 
 #define DEBUG_FLAG TP_DEBUG_CONTACTS
 #include "telepathy-glib/debug-internal.h"
+#include "telepathy-glib/util-internal.h"
+
+static void
+generic_callback (TpConnection *self,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Operation failed: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  /* tp_cli callbacks can potentially be called in a re-entrant way,
+   * so we can't necessarily complete @result without using an idle. */
+  g_simple_async_result_complete_in_idle (result);
+}
+
+/* Small macro trick because DBus method is remove_contacts and in this
+ * TpContact helper API we removed the redundant _contacts. */
+#define tp_contact_remove_contacts_async tp_contact_remove_async
+
+#define contact_list_generic_async(method, ...) \
+  G_STMT_START { \
+    GSimpleAsyncResult *result; \
+    TpHandle handle; \
+    GArray *handles; \
+    \
+    g_return_if_fail (TP_IS_CONTACT (self)); \
+    \
+    handle = tp_contact_get_handle (self); \
+    handles = g_array_new (FALSE, FALSE, sizeof (TpHandle)); \
+    g_array_append_val (handles, handle); \
+    \
+    result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
+        tp_contact_##method##_async); \
+    \
+    tp_cli_connection_interface_contact_list_call_##method ( \
+        tp_contact_get_connection (self), -1, handles, ##__VA_ARGS__, \
+        generic_callback, result, g_object_unref, NULL); \
+    g_array_unref (handles); \
+  } G_STMT_END
+
+#define generic_finish(method) \
+    _tp_implement_finish_void (self, tp_contact_##method##_async);
 
 /**
  * tp_contact_request_subscription_async:
@@ -34,7 +82,7 @@
  * Convenience wrapper for tp_connection_request_subscription_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_request_subscription_async (TpContact *self,
@@ -42,8 +90,7 @@ tp_contact_request_subscription_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  tp_connection_request_subscription_async (tp_contact_get_connection (self),
-      1, &self, message, callback, user_data);
+  contact_list_generic_async (request_subscription, message);
 }
 
 /**
@@ -56,15 +103,14 @@ tp_contact_request_subscription_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_request_subscription_finish (TpContact *self,
     GAsyncResult *result,
     GError **error)
 {
-  return tp_connection_request_subscription_finish (
-      tp_contact_get_connection (self), result, error);
+  generic_finish (request_subscription);
 }
 
 /**
@@ -76,15 +122,14 @@ tp_contact_request_subscription_finish (TpContact *self,
  * Convenience wrapper for tp_connection_authorize_publication_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_authorize_publication_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  tp_connection_authorize_publication_async (tp_contact_get_connection (self),
-      1, &self, callback, user_data);
+  contact_list_generic_async (authorize_publication);
 }
 
 /**
@@ -97,15 +142,14 @@ tp_contact_authorize_publication_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_authorize_publication_finish (TpContact *self,
     GAsyncResult *result,
     GError **error)
 {
-  return tp_connection_authorize_publication_finish (
-      tp_contact_get_connection (self), result, error);
+  generic_finish (authorize_publication);
 }
 
 /**
@@ -117,15 +161,14 @@ tp_contact_authorize_publication_finish (TpContact *self,
  * Convenience wrapper for tp_connection_remove_contacts_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_remove_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  tp_connection_remove_contacts_async (tp_contact_get_connection (self),
-      1, &self, callback, user_data);
+  contact_list_generic_async (remove_contacts);
 }
 
 /**
@@ -138,15 +181,14 @@ tp_contact_remove_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_remove_finish (TpContact *self,
     GAsyncResult *result,
     GError **error)
 {
-  return tp_connection_remove_contacts_finish (
-      tp_contact_get_connection (self), result, error);
+  generic_finish (remove_contacts);
 }
 
 /**
@@ -158,15 +200,14 @@ tp_contact_remove_finish (TpContact *self,
  * Convenience wrapper for tp_connection_unsubscribe_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_unsubscribe_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  tp_connection_unsubscribe_async (tp_contact_get_connection (self),
-      1, &self, callback, user_data);
+  contact_list_generic_async (unsubscribe);
 }
 
 /**
@@ -179,15 +220,14 @@ tp_contact_unsubscribe_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_unsubscribe_finish (TpContact *self,
     GAsyncResult *result,
     GError **error)
 {
-  return tp_connection_unsubscribe_finish (
-      tp_contact_get_connection (self), result, error);
+  generic_finish (unsubscribe);
 }
 
 /**
@@ -199,15 +239,14 @@ tp_contact_unsubscribe_finish (TpContact *self,
  * Convenience wrapper for tp_connection_unpublish_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_unpublish_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  tp_connection_unpublish_async (tp_contact_get_connection (self),
-      1, &self, callback, user_data);
+  contact_list_generic_async (unpublish);
 }
 
 /**
@@ -220,16 +259,36 @@ tp_contact_unpublish_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_unpublish_finish (TpContact *self,
     GAsyncResult *result,
     GError **error)
 {
-  return tp_connection_unpublish_finish (
-      tp_contact_get_connection (self), result, error);
+  generic_finish (unpublish);
 }
+
+#define contact_groups_generic_async(method) \
+  G_STMT_START { \
+    GSimpleAsyncResult *result; \
+    TpHandle handle; \
+    GArray *handles; \
+    \
+    g_return_if_fail (TP_IS_CONTACT (self)); \
+    \
+    handle = tp_contact_get_handle (self); \
+    handles = g_array_new (FALSE, FALSE, sizeof (TpHandle)); \
+    g_array_append_val (handles, handle); \
+    \
+    result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
+        tp_contact_##method##_async); \
+    \
+    tp_cli_connection_interface_contact_groups_call_##method ( \
+        tp_contact_get_connection (self), -1, group, handles, \
+        generic_callback, result, g_object_unref, NULL); \
+    g_array_unref (handles); \
+  } G_STMT_END
 
 /**
  * tp_contact_add_to_group_async:
@@ -241,7 +300,7 @@ tp_contact_unpublish_finish (TpContact *self,
  * Convenience wrapper for tp_connection_add_to_group_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_add_to_group_async (TpContact *self,
@@ -249,8 +308,7 @@ tp_contact_add_to_group_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  tp_connection_add_to_group_async (tp_contact_get_connection (self),
-      group, 1, &self, callback, user_data);
+  contact_groups_generic_async (add_to_group);
 }
 
 /**
@@ -263,15 +321,14 @@ tp_contact_add_to_group_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_add_to_group_finish (TpContact *self,
     GAsyncResult *result,
     GError **error)
 {
-  return tp_connection_add_to_group_finish (
-      tp_contact_get_connection (self), result, error);
+  generic_finish (add_to_group);
 }
 
 /**
@@ -284,7 +341,7 @@ tp_contact_add_to_group_finish (TpContact *self,
  * Convenience wrapper for tp_connection_remove_from_group_async()
  * on a single contact.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_contact_remove_from_group_async (TpContact *self,
@@ -292,8 +349,7 @@ tp_contact_remove_from_group_async (TpContact *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  tp_connection_remove_from_group_async (tp_contact_get_connection (self),
-      group, 1, &self, callback, user_data);
+  contact_groups_generic_async (remove_from_group);
 }
 
 /**
@@ -306,13 +362,12 @@ tp_contact_remove_from_group_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_contact_remove_from_group_finish (TpContact *self,
     GAsyncResult *result,
     GError **error)
 {
-  return tp_connection_remove_from_group_finish (
-      tp_contact_get_connection (self), result, error);
+  generic_finish (remove_from_group);
 }

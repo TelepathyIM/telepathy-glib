@@ -1,4 +1,4 @@
-SUBDIRS = stream-tubes python
+SUBDIRS = stream-tubes python js
 
 EXAMPLES =
 
@@ -34,6 +34,9 @@ telepathy_example_approver_SOURCES = approver.c
 
 EXAMPLES += telepathy-example-text-handler
 telepathy_example_text_handler_SOURCES = text-handler.c
+
+EXAMPLES += telepathy-example-contact-list
+telepathy_example_contact_list_SOURCES = contact-list.c
 
 if INSTALL_EXAMPLES
 bin_PROGRAMS = $(EXAMPLES)

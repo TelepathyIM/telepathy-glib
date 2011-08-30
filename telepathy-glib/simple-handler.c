@@ -400,3 +400,46 @@ tp_simple_handler_new_with_am (TpAccountManager *account_manager,
       "destroy", destroy,
       NULL);
 }
+
+/**
+ * tp_simple_handler_new_with_factory:
+ * @factory: a #TpSimpleClientFactory, which may not be %NULL
+ * @bypass_approval: the value of the Handler.BypassApproval D-Bus property
+ * (see tp_base_client_set_handler_bypass_approval() for details)
+ * @requests: whether this handler should implement Requests (see
+ * tp_base_client_set_handler_request_notification() for details)
+ * @name: the name of the Handler (see #TpBaseClient:name for details)
+ * @uniquify: the value of the #TpBaseClient:uniquify-name property
+ * @callback: the function called when HandleChannels is called
+ * @user_data: arbitrary user-supplied data passed to @callback
+ * @destroy: called with @user_data as its argument when the #TpSimpleHandler
+ * is destroyed
+ *
+ * Convenient function to create a new #TpSimpleHandler instance with a
+ * specified #TpSimpleClientFactory.
+ *
+ * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
+ *
+ * Since: 0.15.5
+ */
+TpBaseClient *
+tp_simple_handler_new_with_factory (TpSimpleClientFactory *factory,
+    gboolean bypass_approval,
+    gboolean requests,
+    const gchar *name,
+    gboolean uniquify,
+    TpSimpleHandlerHandleChannelsImpl callback,
+    gpointer user_data,
+    GDestroyNotify destroy)
+{
+  return g_object_new (TP_TYPE_SIMPLE_HANDLER,
+      "factory", factory,
+      "bypass-approval", bypass_approval,
+      "requests", requests,
+      "name", name,
+      "uniquify-name", uniquify,
+      "callback", callback,
+      "user-data", user_data,
+      "destroy", destroy,
+      NULL);
+}

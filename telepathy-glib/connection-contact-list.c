@@ -19,15 +19,306 @@
  */
 
 #include "telepathy-glib/connection-contact-list.h"
-#include <telepathy-glib/interfaces.h>
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/simple-client-factory.h>
+#include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONNECTION
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/connection-internal.h"
+#include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/util-internal.h"
+
+typedef struct
+{
+  GHashTable *changes;
+  GHashTable *identifiers;
+  GHashTable *removals;
+  GPtrArray *new_contacts;
+} ContactsChangedItem;
+
+static ContactsChangedItem *
+contacts_changed_item_new (GHashTable *changes,
+    GHashTable *identifiers,
+    GHashTable *removals)
+{
+  ContactsChangedItem *item;
+
+  item = g_slice_new0 (ContactsChangedItem);
+  item->changes = g_hash_table_ref (changes);
+  item->identifiers = g_hash_table_ref (identifiers);
+  item->removals = g_hash_table_ref (removals);
+  item->new_contacts = g_ptr_array_new_with_free_func (g_object_unref);
+
+  return item;
+}
+
+static void
+contacts_changed_item_free (ContactsChangedItem *item)
+{
+  tp_clear_pointer (&item->changes, g_hash_table_unref);
+  tp_clear_pointer (&item->identifiers, g_hash_table_unref);
+  tp_clear_pointer (&item->removals, g_hash_table_unref);
+  tp_clear_pointer (&item->new_contacts, g_ptr_array_unref);
+  g_slice_free (ContactsChangedItem, item);
+}
+
+void
+_tp_connection_contacts_changed_queue_free (GQueue *queue)
+{
+  g_queue_foreach (queue, (GFunc) contacts_changed_item_free, NULL);
+  g_queue_free (queue);
+}
+
+static void process_queued_contacts_changed (TpConnection *self);
+
+static void
+contacts_changed_head_ready (TpConnection *self)
+{
+  ContactsChangedItem *item;
+  GHashTableIter iter;
+  gpointer key;
+  GPtrArray *added;
+  GPtrArray *removed;
+  guint i;
+
+  item = g_queue_pop_head (self->priv->contacts_changed_queue);
+
+  added = _tp_g_ptr_array_new_full (g_hash_table_size (item->removals),
+      g_object_unref);
+  removed = _tp_g_ptr_array_new_full (item->new_contacts->len,
+      g_object_unref);
+
+  /* Remove contacts from roster, and build a list of contacts really removed */
+  g_hash_table_iter_init (&iter, item->removals);
+  while (g_hash_table_iter_next (&iter, &key, NULL))
+    {
+      TpContact *contact;
+
+      contact = g_hash_table_lookup (self->priv->roster, key);
+      if (contact == NULL)
+        {
+          DEBUG ("handle %u removed but not in our table - broken CM",
+              GPOINTER_TO_UINT (key));
+          continue;
+        }
+
+      g_ptr_array_add (removed, g_object_ref (contact));
+      g_hash_table_remove (self->priv->roster, key);
+    }
+
+  /* Add contacts to roster and build a list of contacts added */
+  for (i = 0; i < item->new_contacts->len; i++)
+    {
+      TpContact *contact = g_ptr_array_index (item->new_contacts, i);
+
+      g_ptr_array_add (added, g_object_ref (contact));
+      g_hash_table_insert (self->priv->roster,
+          GUINT_TO_POINTER (tp_contact_get_handle (contact)),
+          g_object_ref (contact));
+    }
+
+  DEBUG ("roster changed: %d added, %d removed", added->len, removed->len);
+  if (added->len > 0 || removed->len > 0)
+    g_signal_emit_by_name (self, "contact-list-changed", added, removed);
+
+  g_ptr_array_unref (added);
+  g_ptr_array_unref (removed);
+  contacts_changed_item_free (item);
+
+  process_queued_contacts_changed (self);
+}
+
+static void
+new_contacts_upgraded_cb (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  if (error != NULL)
+    {
+      DEBUG ("Error upgrading new roster contacts: %s", error->message);
+    }
+
+  contacts_changed_head_ready (self);
+}
+
+static void
+process_queued_contacts_changed (TpConnection *self)
+{
+  ContactsChangedItem *item;
+  GHashTableIter iter;
+  gpointer key, value;
+  GArray *features;
+
+  item = g_queue_peek_head (self->priv->contacts_changed_queue);
+  if (item == NULL)
+    return;
+
+  g_hash_table_iter_init (&iter, item->changes);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpContact *contact = g_hash_table_lookup (self->priv->roster, key);
+      const gchar *identifier = g_hash_table_lookup (item->identifiers, key);
+      TpHandle handle = GPOINTER_TO_UINT (key);
+
+      /* If the contact is already in the roster, it is only a change of
+       * subscription states. That's already handled by the TpContact itself so
+       * we have nothing more to do for it here. */
+      if (contact != NULL)
+        continue;
+
+      contact = tp_simple_client_factory_ensure_contact (
+          tp_proxy_get_factory (self), self, handle, identifier);
+      _tp_contact_set_subscription_states (contact, value);
+      g_ptr_array_add (item->new_contacts, contact);
+    }
+
+  if (item->new_contacts->len == 0)
+    {
+      contacts_changed_head_ready (self);
+      return;
+    }
+
+  features = tp_simple_client_factory_dup_contact_features (
+      tp_proxy_get_factory (self), self);
+
+  tp_connection_upgrade_contacts (self,
+      item->new_contacts->len, (TpContact **) item->new_contacts->pdata,
+      features->len, (TpContactFeature *) features->data,
+      new_contacts_upgraded_cb, NULL, NULL, NULL);
+
+  g_array_unref (features);
+}
+
+static void
+contacts_changed_cb (TpConnection *self,
+    GHashTable *changes,
+    GHashTable *identifiers,
+    GHashTable *removals,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  ContactsChangedItem *item;
+
+  /* Ignore ContactsChanged signal if we didn't receive initial roster yet */
+  if (!self->priv->roster_fetched)
+    return;
+
+  /* We need a queue to make sure we don't reorder signals if we get a 2nd
+   * ContactsChanged signal before the previous one finished preparing TpContact
+   * objects. */
+  item = contacts_changed_item_new (changes, identifiers, removals);
+  g_queue_push_tail (self->priv->contacts_changed_queue, item);
+
+  /* If this is the only item in the queue, we can process it right away */
+  if (self->priv->contacts_changed_queue->length == 1)
+    process_queued_contacts_changed (self);
+}
+
+static void
+got_contact_list_attributes_cb (TpConnection *self,
+    GHashTable *attributes,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = (GSimpleAsyncResult *) weak_object;
+  GArray *features = user_data;
+  GHashTableIter iter;
+  gpointer key, value;
+
+  if (error != NULL)
+    {
+      self->priv->contact_list_state = TP_CONTACT_LIST_STATE_FAILURE;
+      g_object_notify ((GObject *) self, "contact-list-state");
+
+      if (result != NULL)
+        g_simple_async_result_set_from_error (result, error);
+
+      goto OUT;
+    }
+
+  DEBUG ("roster fetched with %d contacts", g_hash_table_size (attributes));
+  self->priv->roster_fetched = TRUE;
+
+  g_hash_table_iter_init (&iter, attributes);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpHandle handle = GPOINTER_TO_UINT (key);
+      const gchar *id = tp_asv_get_string (value,
+          TP_TOKEN_CONNECTION_CONTACT_ID);
+      TpContact *contact;
+      GError *e = NULL;
+
+      contact = tp_simple_client_factory_ensure_contact (
+          tp_proxy_get_factory (self), self, handle, id);
+      if (!_tp_contact_set_attributes (contact, value,
+              features->len, (TpContactFeature *) features->data, &e))
+        {
+          DEBUG ("Error setting contact attributes: %s", e->message);
+          g_clear_error (&e);
+        }
+
+      /* Give the contact ref to the table */
+      g_hash_table_insert (self->priv->roster, key, contact);
+    }
+
+  /* emit initial set if roster is not empty */
+  if (g_hash_table_size (self->priv->roster) != 0)
+    {
+      GPtrArray *added;
+      GPtrArray *removed;
+
+      added = tp_connection_dup_contact_list (self);
+      removed = g_ptr_array_new ();
+      g_signal_emit_by_name (self, "contact-list-changed", added, removed);
+      g_ptr_array_unref (added);
+      g_ptr_array_unref (removed);
+    }
+
+  self->priv->contact_list_state = TP_CONTACT_LIST_STATE_SUCCESS;
+  g_object_notify ((GObject *) self, "contact-list-state");
+
+OUT:
+  if (result != NULL)
+    {
+      g_simple_async_result_complete (result);
+      g_object_unref (result);
+    }
+}
+
+static void
+prepare_roster (TpConnection *self,
+    GSimpleAsyncResult *result)
+{
+  GArray *features;
+  const gchar **supported_interfaces;
+
+  DEBUG ("CM has the roster for connection %s, fetch it now.",
+      tp_proxy_get_object_path (self));
+
+  tp_cli_connection_interface_contact_list_connect_to_contacts_changed_with_id (
+      self, contacts_changed_cb, NULL, NULL, NULL, NULL);
+
+  features = tp_simple_client_factory_dup_contact_features (
+      tp_proxy_get_factory (self), self);
+
+  supported_interfaces = _tp_contacts_bind_to_signals (self, features->len,
+      (TpContactFeature *) features->data);
+
+  tp_connection_get_contact_list_attributes (self, -1,
+      supported_interfaces, TRUE,
+      got_contact_list_attributes_cb,
+      features, (GDestroyNotify) g_array_unref,
+      result ? g_object_ref (result) : NULL);
+
+  g_free (supported_interfaces);
+}
 
 static void
 contact_list_state_changed_cb (TpConnection *self,
@@ -35,7 +326,20 @@ contact_list_state_changed_cb (TpConnection *self,
     gpointer user_data,
     GObject *weak_object)
 {
+  /* Ignore StateChanged if we didn't had the initial state or if
+   * duplicate signal */
+  if (!self->priv->contact_list_properties_fetched ||
+      state == self->priv->contact_list_state)
+    return;
+
   DEBUG ("contact list state changed: %d", state);
+
+  /* If state goes to success, delay notification until roster is ready */
+  if (state == TP_CONTACT_LIST_STATE_SUCCESS)
+    {
+      prepare_roster (self, NULL);
+      return;
+    }
 
   self->priv->contact_list_state = state;
   g_object_notify ((GObject *) self, "contact-list-state");
@@ -51,6 +355,8 @@ prepare_contact_list_cb (TpProxy *proxy,
   TpConnection *self = (TpConnection *) proxy;
   GSimpleAsyncResult *result = user_data;
   gboolean valid;
+
+  self->priv->contact_list_properties_fetched = TRUE;
 
   if (error != NULL)
     {
@@ -94,6 +400,13 @@ prepare_contact_list_cb (TpProxy *proxy,
   DEBUG ("Got contact list properties; state=%d",
       self->priv->contact_list_state);
 
+  /* If the CM has the contact list, prepare it right away */
+  if (self->priv->contact_list_state == TP_CONTACT_LIST_STATE_SUCCESS)
+    {
+      prepare_roster (self, result);
+      return;
+    }
+
 OUT:
   g_simple_async_result_complete (result);
 }
@@ -106,8 +419,8 @@ void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
   TpConnection *self = (TpConnection *) proxy;
   GSimpleAsyncResult *result;
 
-  tp_cli_connection_interface_contact_list_connect_to_contact_list_state_changed (
-      self, contact_list_state_changed_cb, NULL, NULL, NULL, NULL);
+  tp_cli_connection_interface_contact_list_connect_to_contact_list_state_changed
+      (self, contact_list_state_changed_cb, NULL, NULL, NULL, NULL);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       _tp_connection_prepare_contact_list_async);
@@ -117,6 +430,195 @@ void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
       prepare_contact_list_cb, result, g_object_unref, NULL);
 }
 
+static void
+contact_groups_created_cb (TpConnection *self,
+    const gchar **names,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  const gchar **iter;
+
+  if (!self->priv->groups_fetched)
+      return;
+
+  DEBUG ("Groups created:");
+
+  /* Remove the ending NULL */
+  g_ptr_array_remove_index_fast (self->priv->contact_groups,
+      self->priv->contact_groups->len - 1);
+
+  for (iter = names; *iter != NULL; iter++)
+    {
+      DEBUG ("  %s", *iter);
+      g_ptr_array_add (self->priv->contact_groups, g_strdup (*iter));
+    }
+
+  /* Add back the ending NULL */
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+
+  g_object_notify ((GObject *) self, "contact-groups");
+  g_signal_emit_by_name (self, "groups-created", names);
+}
+
+static void
+contact_groups_removed_cb (TpConnection *self,
+    const gchar **names,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  const gchar **iter;
+
+  if (!self->priv->groups_fetched)
+      return;
+
+  DEBUG ("Groups removed:");
+
+  /* Remove the ending NULL */
+  g_ptr_array_remove_index_fast (self->priv->contact_groups,
+      self->priv->contact_groups->len - 1);
+
+  for (iter = names; *iter != NULL; iter++)
+    {
+      guint i;
+
+      for (i = 0; i < self->priv->contact_groups->len; i++)
+        {
+          const gchar *str = g_ptr_array_index (self->priv->contact_groups, i);
+
+          if (!tp_strdiff (str, *iter))
+            {
+              DEBUG ("  %s", str);
+              g_ptr_array_remove_index_fast (self->priv->contact_groups, i);
+              break;
+            }
+        }
+    }
+
+  /* Add back the ending NULL */
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+
+  g_object_notify ((GObject *) self, "contact-groups");
+  g_signal_emit_by_name (self, "groups-removed", names);
+}
+
+static void
+contact_group_renamed_cb (TpConnection *self,
+    const gchar *old_name,
+    const gchar *new_name,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  guint i;
+
+  if (!self->priv->groups_fetched)
+      return;
+
+  DEBUG ("Group renamed: %s -> %s", old_name, new_name);
+
+  /* Remove the ending NULL */
+  g_ptr_array_remove_index_fast (self->priv->contact_groups,
+      self->priv->contact_groups->len - 1);
+
+  for (i = 0; i < self->priv->contact_groups->len; i++)
+    {
+      const gchar *str = g_ptr_array_index (self->priv->contact_groups, i);
+
+      if (!tp_strdiff (str, old_name))
+        {
+          g_ptr_array_remove_index_fast (self->priv->contact_groups, i);
+          break;
+        }
+    }
+  g_ptr_array_add (self->priv->contact_groups, g_strdup (new_name));
+
+  /* Add back the ending NULL */
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+
+  g_object_notify ((GObject *) self, "contact-groups");
+  g_signal_emit_by_name (self, "group-renamed", old_name, new_name);
+}
+
+static void
+prepare_contact_groups_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result = user_data;
+  GStrv groups;
+  gchar **iter;
+  gboolean valid;
+
+  if (error != NULL)
+    {
+      g_simple_async_result_set_from_error (result, error);
+      goto OUT;
+    }
+
+  self->priv->groups_fetched = TRUE;
+
+  self->priv->disjoint_groups = tp_asv_get_boolean (properties,
+      "DisjointGroups", &valid);
+  if (!valid)
+    {
+      DEBUG ("Connection %s doesn't have DisjointGroups property",
+          tp_proxy_get_object_path (self));
+    }
+
+  self->priv->group_storage = tp_asv_get_uint32 (properties,
+      "GroupStorage", &valid);
+  if (!valid)
+    {
+      DEBUG ("Connection %s doesn't have GroupStorage property",
+          tp_proxy_get_object_path (self));
+    }
+
+  DEBUG ("Got contact list groups:");
+
+  /* Remove the ending NULL */
+  g_ptr_array_remove_index_fast (self->priv->contact_groups,
+      self->priv->contact_groups->len - 1);
+
+  groups = tp_asv_get_boxed (properties, "Groups", G_TYPE_STRV);
+  for (iter = groups; *iter != NULL; iter++)
+    {
+      DEBUG ("  %s", *iter);
+      g_ptr_array_add (self->priv->contact_groups, g_strdup (*iter));
+    }
+
+  /* Add back the ending NULL */
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+
+OUT:
+  g_simple_async_result_complete (result);
+}
+
+void
+_tp_connection_prepare_contact_groups_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result;
+
+  tp_cli_connection_interface_contact_groups_connect_to_groups_created (
+      self, contact_groups_created_cb, NULL, NULL, NULL, NULL);
+  tp_cli_connection_interface_contact_groups_connect_to_groups_removed (
+      self, contact_groups_removed_cb, NULL, NULL, NULL, NULL);
+  tp_cli_connection_interface_contact_groups_connect_to_group_renamed (
+      self, contact_group_renamed_cb, NULL, NULL, NULL, NULL);
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      _tp_connection_prepare_contact_groups_async);
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      prepare_contact_groups_cb, result, g_object_unref, NULL);
+}
+
 /**
  * TP_CONNECTION_FEATURE_CONTACT_LIST:
  *
@@ -124,12 +626,20 @@ void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
  * "contact-list" feature.
  *
  * When this feature is prepared, the contact list properties of the Connection
- * has been retrieved.
+ * has been retrieved. If #TpConnection:contact-list-state is
+ * %TP_CONTACT_LIST_STATE_SUCCESS, all #TpContact objects will also be created
+ * and prepared with the desired features. See tp_connection_dup_contact_list()
+ * to get the list of contacts, and
+ * tp_simple_client_factory_add_contact_features() to define which features
+ * needs to be prepared on them.
+ *
+ * This feature will fail to prepare when using obsolete Telepathy connection
+ * managers which do not implement the ContactList interface.
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 
 GQuark
@@ -146,7 +656,7 @@ tp_connection_get_feature_quark_contact_list (void)
  *
  * Returns: the value of #TpConnection:contact-list-state property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpContactListState
 tp_connection_get_contact_list_state (TpConnection *self)
@@ -164,7 +674,7 @@ tp_connection_get_contact_list_state (TpConnection *self)
  *
  * Returns: the value of #TpConnection:contact-list-persists property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_get_contact_list_persists (TpConnection *self)
@@ -182,7 +692,7 @@ tp_connection_get_contact_list_persists (TpConnection *self)
  *
  * Returns: the value of #TpConnection:can-change-contact-list property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_get_can_change_contact_list (TpConnection *self)
@@ -200,7 +710,7 @@ tp_connection_get_can_change_contact_list (TpConnection *self)
  *
  * Returns: the value of #TpConnection:request-uses-message property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_get_request_uses_message (TpConnection *self)
@@ -208,6 +718,32 @@ tp_connection_get_request_uses_message (TpConnection *self)
   g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
 
   return self->priv->request_uses_message;
+}
+
+/**
+ * tp_connection_dup_contact_list:
+ * @self: a #TpConnection
+ *
+ * Retrieves the user's contact list. In general, blocked contacts are not
+ * included in this list. The #TpContact objects returned are guaranteed to
+ * have all of the features previously passed to
+ * tp_simple_client_factory_add_contact_features() prepared.
+ *
+ * Before calling this method, you must first call tp_proxy_prepare_async() with
+ * the %TP_CONNECTION_FEATURE_CONTACT_LIST feature, and verify that
+ * #TpConnection:contact-list-state is set to %TP_CONTACT_LIST_STATE_SUCCESS.
+ *
+ * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+ *  a new #GPtrArray of #TpContact. Use g_ptr_array_unref() when done.
+ *
+ * Since: 0.15.5
+ */
+GPtrArray *
+tp_connection_dup_contact_list (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
+
+  return _tp_contacts_from_values (self->priv->roster);
 }
 
 static void
@@ -241,8 +777,8 @@ generic_callback (TpConnection *self,
     result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
         tp_connection_##method##_async); \
     \
-    tp_cli_connection_interface_contact_list_call_##method (self, -1, \
-    handles, ##__VA_ARGS__, generic_callback, result, g_object_unref, NULL); \
+    tp_cli_connection_interface_contact_list_call_##method (self, -1, handles, \
+        ##__VA_ARGS__, generic_callback, result, g_object_unref, NULL); \
     g_array_unref (handles); \
   } G_STMT_END
 
@@ -267,7 +803,7 @@ generic_callback (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_request_subscription_async (TpConnection *self,
@@ -290,7 +826,7 @@ tp_connection_request_subscription_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_request_subscription_finish (TpConnection *self,
@@ -316,7 +852,7 @@ tp_connection_request_subscription_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_authorize_publication_async (TpConnection *self,
@@ -338,7 +874,7 @@ tp_connection_authorize_publication_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_authorize_publication_finish (TpConnection *self,
@@ -363,7 +899,7 @@ tp_connection_authorize_publication_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_remove_contacts_async (TpConnection *self,
@@ -385,7 +921,7 @@ tp_connection_remove_contacts_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_remove_contacts_finish (TpConnection *self,
@@ -410,7 +946,7 @@ tp_connection_remove_contacts_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_unsubscribe_async (TpConnection *self,
@@ -432,7 +968,7 @@ tp_connection_unsubscribe_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_unsubscribe_finish (TpConnection *self,
@@ -457,7 +993,7 @@ tp_connection_unsubscribe_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_unpublish_async (TpConnection *self,
@@ -479,7 +1015,7 @@ tp_connection_unpublish_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_unpublish_finish (TpConnection *self,
@@ -487,6 +1023,86 @@ tp_connection_unpublish_finish (TpConnection *self,
     GError **error)
 {
   generic_finish (unpublish);
+}
+
+/**
+ * TP_CONNECTION_FEATURE_CONTACT_GROUPS:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "contact-groups" feature.
+ *
+ * When this feature is prepared, the contact groups properties of the
+ * Connection has been retrieved.
+ *
+ * See #TpContact:contact-groups to get the list of groups a contact is member
+ * of.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.15.5
+ */
+
+GQuark
+tp_connection_get_feature_quark_contact_groups (void)
+{
+  return g_quark_from_static_string ("tp-connection-feature-contact-groups");
+}
+
+/**
+ * tp_connection_get_disjoint_groups:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpConnection:disjoint-groups
+ *
+ * Since: 0.15.5
+ */
+gboolean
+tp_connection_get_disjoint_groups (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), FALSE);
+
+  return self->priv->disjoint_groups;
+}
+
+/**
+ * tp_connection_get_group_storage:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpConnection:group-storage
+ *
+ * Since: 0.15.5
+ */
+TpContactMetadataStorageType
+tp_connection_get_group_storage (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self),
+      TP_CONTACT_METADATA_STORAGE_TYPE_NONE);
+
+  return self->priv->group_storage;
+}
+
+/**
+ * tp_connection_get_contact_groups:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: (array zero-terminated=1) (transfer none): the value of
+ *  #TpConnection:contact-groups
+ *
+ * Since: 0.15.5
+ */
+const gchar * const *
+tp_connection_get_contact_groups (TpConnection *self)
+{
+  g_return_val_if_fail (TP_IS_CONNECTION (self), NULL);
+
+  return (const gchar * const *) self->priv->contact_groups->pdata;
 }
 
 #define contact_groups_generic_async(method) \
@@ -503,7 +1119,7 @@ tp_connection_unpublish_finish (TpConnection *self,
         tp_connection_##method##_async); \
     \
     tp_cli_connection_interface_contact_groups_call_##method (self, -1, \
-    group, handles, generic_callback, result, g_object_unref, NULL); \
+        group, handles, generic_callback, result, g_object_unref, NULL); \
     g_array_unref (handles); \
   } G_STMT_END
 
@@ -523,7 +1139,7 @@ tp_connection_unpublish_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_set_group_members_async (TpConnection *self,
@@ -546,7 +1162,7 @@ tp_connection_set_group_members_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_set_group_members_finish (TpConnection *self,
@@ -571,7 +1187,7 @@ tp_connection_set_group_members_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_add_to_group_async (TpConnection *self,
@@ -594,7 +1210,7 @@ tp_connection_add_to_group_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_add_to_group_finish (TpConnection *self,
@@ -620,7 +1236,7 @@ tp_connection_add_to_group_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_remove_from_group_async (TpConnection *self,
@@ -643,7 +1259,7 @@ tp_connection_remove_from_group_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_remove_from_group_finish (TpConnection *self,
@@ -665,7 +1281,7 @@ tp_connection_remove_from_group_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_remove_group_async (TpConnection *self,
@@ -695,7 +1311,7 @@ tp_connection_remove_group_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_remove_group_finish (TpConnection *self,
@@ -722,7 +1338,7 @@ tp_connection_remove_group_finish (TpConnection *self,
  * For this to work properly @self must have interface
  * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 void
 tp_connection_rename_group_async (TpConnection *self,
@@ -754,7 +1370,7 @@ tp_connection_rename_group_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 gboolean
 tp_connection_rename_group_finish (TpConnection *self,

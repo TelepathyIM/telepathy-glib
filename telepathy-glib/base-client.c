@@ -67,15 +67,16 @@
  * TpBaseClientClassObserveChannelsImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
- *  features added via tp_base_client_add_account_features(), prepared if
+ *  features added via tp_base_client_add_account_features() or
+ *  tp_simple_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via tp_base_client_add_connection_features(),
- *  prepared if possible
+ *  or tp_simple_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_base_client_add_channel_features(),
- *  prepared if possible
+ *  tp_base_client_add_channel_features() or
+ *  tp_simple_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: (allow-none): a #TpChannelDispatchOperation or %NULL;
  *  the dispatch_operation is not guaranteed to be prepared
  * @requests: (element-type TelepathyGLib.ChannelRequest): a #GList of
@@ -97,15 +98,16 @@
  * TpBaseClientClassAddDispatchOperationImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
- *  features added via tp_base_client_add_account_features(), prepared if
+ *  features added via tp_base_client_add_account_features() or
+ *  tp_simple_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via tp_base_client_add_connection_features(),
- *  prepared if possible
+ *  or tp_simple_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_base_client_add_channel_features(),
- *  prepared if possible
+ *  tp_base_client_add_channel_features() or
+ *  tp_simple_client_factory_add_channel_features(), prepared if possible
  * @dispatch_operation: a #TpChannelDispatchOperation having
  * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE prepared if possible
  * @context: a #TpObserveChannelsContext representing the context of this
@@ -129,15 +131,16 @@
  * TpBaseClientClassHandleChannelsImpl:
  * @client: a #TpBaseClient instance
  * @account: a #TpAccount with %TP_ACCOUNT_FEATURE_CORE, and any other
- *  features added via tp_base_client_add_account_features(), prepared if
+ *  features added via tp_base_client_add_account_features() or
+ *  tp_simple_client_factory_add_account_features(), prepared if
  *  possible
  * @connection: a #TpConnection with %TP_CONNECTION_FEATURE_CORE,
  *  and any other features added via tp_base_client_add_connection_features(),
- *  prepared if possible
+ *  or tp_simple_client_factory_add_connection_features(), prepared if possible
  * @channels: (element-type TelepathyGLib.Channel): a #GList of #TpChannel,
  *  each with %TP_CHANNEL_FEATURE_CORE, and any other features added via
- *  tp_base_client_add_channel_features(),
- *  prepared if possible
+ *  tp_base_client_add_channel_features() or
+ *  tp_simple_client_factory_add_channel_features(), prepared if possible
  * @requests_satisfied: (element-type TelepathyGLib.ChannelRequest): a #GList of
  *  #TpChannelRequest having their object-path defined but are not guaranteed
  *  to be prepared.
@@ -218,6 +221,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE(TpBaseClient, tp_base_client, G_TYPE_OBJECT,
 enum {
     PROP_DBUS_DAEMON = 1,
     PROP_ACCOUNT_MANAGER,
+    PROP_FACTORY,
     PROP_NAME,
     PROP_UNIQUIFY_NAME,
     PROP_CHANNEL_FACTORY,
@@ -246,6 +250,7 @@ typedef enum {
 
 struct _TpBaseClientPrivate
 {
+  TpSimpleClientFactory *factory;
   TpDBusDaemon *dbus;
   gchar *name;
   gboolean uniquify_name;
@@ -300,11 +305,13 @@ _tp_base_client_set_only_for_account (TpBaseClient *self,
     TpAccount *account)
 {
   g_return_if_fail (self->priv->only_for_account == NULL);
+  g_return_if_fail (tp_proxy_get_factory (account) == self->priv->factory);
+
   self->priv->only_for_account = g_object_ref (account);
 }
 
 static TpAccount *
-tp_base_client_get_account (TpBaseClient *self,
+tp_base_client_dup_account (TpBaseClient *self,
     const gchar *path,
     GError **error)
 {
@@ -319,10 +326,11 @@ tp_base_client_get_account (TpBaseClient *self,
           return NULL;
         }
 
-      return self->priv->only_for_account;
+      return g_object_ref (self->priv->only_for_account);
     }
 
-  return tp_account_manager_ensure_account (self->priv->account_mgr, path);
+  return tp_simple_client_factory_ensure_account (self->priv->factory,
+      path, NULL, error);
 }
 
 static GHashTable *
@@ -967,6 +975,10 @@ tp_base_client_init (TpBaseClient *self)
 
   self->priv->my_chans = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, g_object_unref);
+
+  self->priv->account_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
+  self->priv->connection_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
+  self->priv->channel_features = g_array_new (TRUE, FALSE, sizeof (GQuark));
 }
 
 static void
@@ -980,6 +992,7 @@ tp_base_client_dispose (GObject *object)
 
   tp_clear_object (&self->priv->dbus);
   tp_clear_object (&self->priv->account_mgr);
+  tp_clear_object (&self->priv->factory);
   tp_clear_object (&self->priv->only_for_account);
   tp_clear_object (&self->priv->channel_factory);
 
@@ -1048,6 +1061,10 @@ tp_base_client_get_property (GObject *object,
         g_value_set_object (value, self->priv->account_mgr);
         break;
 
+      case PROP_FACTORY:
+        g_value_set_object (value, self->priv->factory);
+        break;
+
       case PROP_NAME:
         g_value_set_string (value, self->priv->name);
         break;
@@ -1086,6 +1103,11 @@ tp_base_client_set_property (GObject *object,
         self->priv->account_mgr = g_value_dup_object (value);
         break;
 
+      case PROP_FACTORY:
+        g_assert (self->priv->factory == NULL); /* construct-only */
+        self->priv->factory = g_value_dup_object (value);
+        break;
+
       case PROP_NAME:
         g_assert (self->priv->name == NULL);    /* construct-only */
         self->priv->name = g_value_dup_string (value);
@@ -1118,11 +1140,17 @@ tp_base_client_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  g_assert (self->priv->dbus != NULL || self->priv->account_mgr != NULL);
-  g_assert (self->priv->name != NULL);
-
-  if (self->priv->account_mgr == NULL)
+  /* What we really need is a factory. For historical reasons,
+   * constructor could get a TpDBusDaemon or a TpAccountManager.
+   * We need to do some fallbacks for compatibility... */
+  if (self->priv->account_mgr == NULL &&
+      self->priv->factory == NULL)
     {
+      /* This case happens only from deprecated API, for compatibility we still
+       * need to create a TpAccountManager even if a factory would be enough */
+
+      g_assert (self->priv->dbus != NULL);
+
       if (_tp_dbus_daemon_is_the_shared_one (self->priv->dbus))
         {
           /* The AM is guaranteed to be the one from
@@ -1135,18 +1163,29 @@ tp_base_client_constructed (GObject *object)
           self->priv->account_mgr = tp_account_manager_new (self->priv->dbus);
         }
     }
-  else if (self->priv->dbus == NULL)
+
+  if (self->priv->factory == NULL)
     {
-      self->priv->dbus = g_object_ref (tp_proxy_get_dbus_daemon (
-            self->priv->account_mgr));
-    }
-  else
-    {
-      g_assert (self->priv->dbus ==
-          tp_proxy_get_dbus_daemon (self->priv->account_mgr));
+      g_assert (self->priv->account_mgr != NULL);
+
+      self->priv->factory = tp_proxy_get_factory (self->priv->account_mgr);
+      g_object_ref (self->priv->factory);
     }
 
+  if (self->priv->dbus == NULL)
+    {
+      g_assert (self->priv->factory != NULL);
+
+      self->priv->dbus = tp_simple_client_factory_get_dbus_daemon (
+          self->priv->factory);
+      g_object_ref (self->priv->dbus);
+    }
+
+  g_assert (tp_simple_client_factory_get_dbus_daemon (self->priv->factory) ==
+      self->priv->dbus);
+
   /* Bus name */
+  g_assert (self->priv->name != NULL);
   string = g_string_new (TP_CLIENT_BUS_NAME_BASE);
   g_string_append (string, self->priv->name);
 
@@ -1370,12 +1409,29 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * account manager's #TpProxy:dbus-daemon.
    *
    * Since: 0.11.14
+   * Deprecated: New code should not use this property, it may be %NULL in
+   *  the case @self was constructed with a #TpSimpleClientFactory.
    */
   param_spec = g_param_spec_object ("account-manager", "TpAccountManager",
       "The TpAccountManager used look up or create TpAccount objects",
       TP_TYPE_ACCOUNT_MANAGER,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACCOUNT_MANAGER,
+      param_spec);
+
+  /**
+   * TpBaseClient:factory:
+   *
+   * Factory for this base client, used to look up or create
+   * #TpAccount objects.
+   *
+   * Since: 0.15.5
+   */
+  param_spec = g_param_spec_object ("factory", "TpSimpleClientFactory",
+      "The TpSimpleClientFactory used look up or create TpAccount objects",
+      TP_TYPE_SIMPLE_CLIENT_FACTORY,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_FACTORY,
       param_spec);
 
   /**
@@ -1420,7 +1476,7 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * If no channel factory is specified then #TpAutomaticProxyFactory is used.
    *
    * Since: 0.13.2
-   * Deprecated: since 0.UNRELEASED. The factory is taken from
+   * Deprecated: since 0.15.5. The factory is taken from
    *  #TpBaseClient:account-manager.
    */
   param_spec = g_param_spec_object ("channel-factory", "Channel factory",
@@ -1435,7 +1491,8 @@ tp_base_client_class_init (TpBaseClientClass *cls)
    * @self: a #TpBaseClient
    * @account: the #TpAccount on which the request was made,
    *  with %TP_ACCOUNT_FEATURE_CORE, and any other features added via
-   *  tp_base_client_add_account_features(), prepared if possible
+   *  tp_base_client_add_account_features() or
+   *  tp_simple_client_factory_add_account_features(), prepared if possible
    * @request: a #TpChannelRequest having its object-path defined but
    * is not guaranteed to be prepared.
    *
@@ -1541,34 +1598,61 @@ context_prepare_cb (GObject *source,
     }
 }
 
-static inline gpointer
-array_data_or_null (GArray *array)
+static GArray *
+dup_features_for_account (TpBaseClient *self,
+    TpAccount *account)
 {
-  if (array == NULL)
-    return NULL;
-  else
-    return array->data;
+  GArray *features;
+
+  features = tp_simple_client_factory_dup_account_features (self->priv->factory,
+      account);
+
+  g_assert (features != NULL);
+
+  /* Deprecated - Merge features set on self instead of factory */
+  _tp_quark_array_merge (features,
+      (GQuark *) self->priv->account_features->data,
+      self->priv->account_features->len);
+
+  return features;
 }
 
 static GArray *
-get_features_for_channel (TpBaseClient *self,
+dup_features_for_connection (TpBaseClient *self,
+    TpConnection *connection)
+{
+  GArray *features;
+
+  features = tp_simple_client_factory_dup_connection_features (
+      self->priv->factory, connection);
+
+  g_assert (features != NULL);
+
+  /* Deprecated - Merge features set on self instead of factory */
+  _tp_quark_array_merge (features,
+      (GQuark *) self->priv->connection_features->data,
+      self->priv->connection_features->len);
+
+  return features;
+}
+
+static GArray *
+dup_features_for_channel (TpBaseClient *self,
     TpChannel *channel)
 {
   GArray *features;
 
+  /* Use legacy channel factory if one is set */
   if (self->priv->channel_factory != NULL)
     features = tp_client_channel_factory_dup_channel_features (
         self->priv->channel_factory, channel);
   else
     features = tp_simple_client_factory_dup_channel_features (
-        tp_proxy_get_factory (self->priv->account_mgr), channel);
+        self->priv->factory, channel);
 
   g_assert (features != NULL);
 
-  /* Add TpBaseClient's own features, if any */
-  if (self->priv->channel_features == NULL)
-    return features;
-
+  /* Deprecated - Merge features set on self instead of factory */
   _tp_quark_array_merge (features,
       (GQuark *) self->priv->channel_features->data,
       self->priv->channel_features->len);
@@ -1588,9 +1672,8 @@ ensure_channel (TpBaseClient *self,
     return tp_client_channel_factory_create_channel (
         self->priv->channel_factory, connection, chan_path, chan_props, error);
 
-  return tp_simple_client_factory_ensure_channel (
-      tp_proxy_get_factory (self->priv->account_mgr), connection, chan_path,
-      chan_props, error);
+  return tp_simple_client_factory_ensure_channel (self->priv->factory,
+      connection, chan_path, chan_props, error);
 }
 
 static void
@@ -1613,6 +1696,8 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   TpChannelDispatchOperation *dispatch_operation = NULL;
   guint i;
   TpChannel *channel = NULL;
+  GArray *account_features;
+  GArray *connection_features;
   GArray *channel_features;
 
   if (!(self->priv->flags & CLIENT_IS_OBSERVER))
@@ -1640,7 +1725,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       goto out;
     }
 
-  account = tp_base_client_get_account (self, account_path, &error);
+  account = tp_base_client_dup_account (self, account_path, &error);
 
   if (account == NULL)
     goto out;
@@ -1683,8 +1768,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
     {
       dispatch_operation =
           _tp_simple_client_factory_ensure_channel_dispatch_operation (
-              tp_proxy_get_factory (self->priv->account_mgr),
-              dispatch_operation_path, NULL, &error);
+              self->priv->factory, dispatch_operation_path, NULL, &error);
      if (dispatch_operation == NULL)
        {
          DEBUG ("Failed to create TpChannelDispatchOperation: %s",
@@ -1700,8 +1784,7 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
       TpChannelRequest *request;
 
       request = _tp_simple_client_factory_ensure_channel_request (
-          tp_proxy_get_factory (self->priv->account_mgr), req_path, NULL,
-          &error);
+          self->priv->factory, req_path, NULL, &error);
       if (request == NULL)
         {
           DEBUG ("Failed to create TpChannelRequest: %s", error->message);
@@ -1714,18 +1797,24 @@ _tp_base_client_observe_channels (TpSvcClientObserver *iface,
   ctx = _tp_observe_channels_context_new (account, connection, channels,
       dispatch_operation, requests, observer_info, context);
 
-  channel_features = get_features_for_channel (self, channel);
+  account_features = dup_features_for_account (self, account);
+  connection_features = dup_features_for_connection (self, connection);
+  channel_features = dup_features_for_channel (self, channel);
 
   _tp_observe_channels_context_prepare_async (ctx,
-      array_data_or_null (self->priv->account_features),
-      array_data_or_null (self->priv->connection_features),
-      array_data_or_null (channel_features),
+      (GQuark *) account_features->data,
+      (GQuark *) connection_features->data,
+      (GQuark *) channel_features->data,
       context_prepare_cb, self);
 
   g_object_unref (ctx);
-  g_array_free (channel_features, TRUE);
+  g_array_unref (account_features);
+  g_array_unref (connection_features);
+  g_array_unref (channel_features);
 
 out:
+  g_clear_object (&account);
+
   if (channels != NULL)
     g_ptr_array_unref (channels);
 
@@ -1815,6 +1904,8 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   guint i;
   const gchar *path;
   TpChannel *channel = NULL;
+  GArray *account_features;
+  GArray *connection_features;
   GArray *channel_features;
 
   if (!(self->priv->flags & CLIENT_IS_APPROVER))
@@ -1844,7 +1935,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
       goto out;
     }
 
-  account = tp_base_client_get_account (self, path, &error);
+  account = tp_base_client_dup_account (self, path, &error);
 
   if (account == NULL)
     goto out;
@@ -1896,8 +1987,7 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
 
   dispatch_operation =
       _tp_simple_client_factory_ensure_channel_dispatch_operation (
-          tp_proxy_get_factory (self->priv->account_mgr),
-          dispatch_operation_path, properties, &error);
+          self->priv->factory, dispatch_operation_path, properties, &error);
   if (dispatch_operation == NULL)
     {
       DEBUG ("Failed to create TpChannelDispatchOperation: %s", error->message);
@@ -1909,18 +1999,24 @@ _tp_base_client_add_dispatch_operation (TpSvcClientApprover *iface,
   ctx = _tp_add_dispatch_operation_context_new (account, connection, channels,
       dispatch_operation, context);
 
-  channel_features = get_features_for_channel (self, channel);
+  account_features = dup_features_for_account (self, account);
+  connection_features = dup_features_for_connection (self, connection);
+  channel_features = dup_features_for_channel (self, channel);
 
   _tp_add_dispatch_operation_context_prepare_async (ctx,
-      array_data_or_null (self->priv->account_features),
-      array_data_or_null (self->priv->connection_features),
-      array_data_or_null (channel_features),
+      (GQuark *) account_features->data,
+      (GQuark *) connection_features->data,
+      (GQuark *) channel_features->data,
       add_dispatch_context_prepare_cb, self);
 
   g_object_unref (ctx);
-  g_array_free (channel_features, TRUE);
+  g_array_unref (account_features);
+  g_array_unref (connection_features);
+  g_array_unref (channel_features);
 
 out:
+  g_clear_object (&account);
+
   if (channels != NULL)
     g_ptr_array_unref (channels);
 
@@ -2183,6 +2279,8 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   GPtrArray *channels = NULL, *requests = NULL;
   guint i;
   TpChannel *channel = NULL;
+  GArray *account_features;
+  GArray *connection_features;
   GArray *channel_features;
 
   if (!(self->priv->flags & CLIENT_IS_HANDLER))
@@ -2210,7 +2308,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       goto out;
     }
 
-  account = tp_base_client_get_account (self, account_path, &error);
+  account = tp_base_client_dup_account (self, account_path, &error);
 
   if (account == NULL)
     goto out;
@@ -2256,8 +2354,7 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
       else
         {
           request = _tp_simple_client_factory_ensure_channel_request (
-              tp_proxy_get_factory (self->priv->account_mgr), req_path, NULL,
-              &error);
+              self->priv->factory, req_path, NULL, &error);
           if (request == NULL)
             {
               DEBUG ("Failed to create TpChannelRequest: %s", error->message);
@@ -2271,18 +2368,24 @@ _tp_base_client_handle_channels (TpSvcClientHandler *iface,
   ctx = _tp_handle_channels_context_new (account, connection, channels,
       requests, user_action_time, handler_info, context);
 
-  channel_features = get_features_for_channel (self, channel);
+  account_features = dup_features_for_account (self, account);
+  connection_features = dup_features_for_connection (self, connection);
+  channel_features = dup_features_for_channel (self, channel);
 
   _tp_handle_channels_context_prepare_async (ctx,
-      array_data_or_null (self->priv->account_features),
-      array_data_or_null (self->priv->connection_features),
-      array_data_or_null (channel_features),
+      (GQuark *) account_features->data,
+      (GQuark *) connection_features->data,
+      (GQuark *) channel_features->data,
       handle_channels_context_prepare_cb, self);
 
   g_object_unref (ctx);
-  g_array_free (channel_features, TRUE);
+  g_array_unref (account_features);
+  g_array_unref (connection_features);
+  g_array_unref (channel_features);
 
 out:
+  g_clear_object (&account);
+
   if (channels != NULL)
     g_ptr_array_unref (channels);
 
@@ -2365,10 +2468,10 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
   TpAccount *account;
   GError *error = NULL;
   channel_request_prepare_account_ctx *ctx;
+  GArray *account_features;
 
   request = _tp_simple_client_factory_ensure_channel_request (
-      tp_proxy_get_factory (self->priv->account_mgr), path, properties,
-      &error);
+      self->priv->factory, path, properties, &error);
   if (request == NULL)
     {
       DEBUG ("Failed to create TpChannelRequest: %s", error->message);
@@ -2385,7 +2488,7 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
       goto err;
     }
 
-  account = tp_base_client_get_account (self, path, &error);
+  account = tp_base_client_dup_account (self, path, &error);
 
   if (account == NULL)
     goto err;
@@ -2395,14 +2498,20 @@ _tp_base_client_add_request (TpSvcClientInterfaceRequests *iface,
 
   ctx = channel_request_prepare_account_ctx_new (self, request);
 
+  account_features = dup_features_for_account (self, account);
+
   tp_proxy_prepare_async (account,
-      array_data_or_null (self->priv->account_features),
+      (GQuark *) account_features->data,
       channel_request_account_prepare_cb, ctx);
+
+  g_array_unref (account_features);
 
   tp_svc_client_interface_requests_return_from_add_request (context);
   return;
 
 err:
+  g_clear_object (&account);
+
   dbus_g_method_return_error (context, error);
   g_error_free (error);
 }
@@ -2576,6 +2685,8 @@ tp_base_client_get_dbus_daemon (TpBaseClient *self)
  *
  * Returns: (transfer none): the value of #TpBaseClient:account-manager
  * Since: 0.11.14
+ * Deprecated: New code should not use this function, it may return %NULL in
+ *  the case @self was constructed with a #TpSimpleClientFactory.
  */
 TpAccountManager *
 tp_base_client_get_account_manager (TpBaseClient *self)
@@ -2684,33 +2795,6 @@ tp_base_client_unregister (TpBaseClient *self)
   self->priv->registered = FALSE;
 }
 
-static void
-varargs_helper (TpBaseClient *self,
-    GQuark feature,
-    va_list ap,
-    void (*method) (TpBaseClient *, const GQuark *, gssize))
-{
-  GQuark f;
-  gsize n = 0;
-  GQuark *features;
-  va_list ap_copy;
-
-  G_VA_COPY (ap_copy, ap);
-
-  for (f = feature; f != 0; f = va_arg (ap, GQuark))
-    n++;
-
-  features = g_malloc_n (n, sizeof (GQuark));
-
-  n = 0;
-
-  for (f = feature; f != 0; f = va_arg (ap_copy, GQuark))
-    features[n++] = f;
-
-  method (self, features, n);
-  g_free (features);
-}
-
 /**
  * tp_base_client_add_account_features_varargs: (skip)
  * @self: a client
@@ -2721,6 +2805,8 @@ varargs_helper (TpBaseClient *self,
  * convenient calling convention from C.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_account_features_varargs() instead.
  */
 void
 tp_base_client_add_account_features_varargs (TpBaseClient *self,
@@ -2729,8 +2815,11 @@ tp_base_client_add_account_features_varargs (TpBaseClient *self,
 {
   va_list ap;
 
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
   va_start (ap, feature);
-  varargs_helper (self, feature, ap, tp_base_client_add_account_features);
+  _tp_quark_array_merge_valist (self->priv->account_features, feature, ap);
   va_end (ap);
 }
 
@@ -2744,6 +2833,8 @@ tp_base_client_add_account_features_varargs (TpBaseClient *self,
  * convenient calling convention from C.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_connection_features_varargs() instead.
  */
 void
 tp_base_client_add_connection_features_varargs (TpBaseClient *self,
@@ -2752,8 +2843,11 @@ tp_base_client_add_connection_features_varargs (TpBaseClient *self,
 {
   va_list ap;
 
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
   va_start (ap, feature);
-  varargs_helper (self, feature, ap, tp_base_client_add_connection_features);
+  _tp_quark_array_merge_valist (self->priv->connection_features, feature, ap);
   va_end (ap);
 }
 
@@ -2767,6 +2861,8 @@ tp_base_client_add_connection_features_varargs (TpBaseClient *self,
  * convenient calling convention from C.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_channel_features_varargs() instead.
  */
 void
 tp_base_client_add_channel_features_varargs (TpBaseClient *self,
@@ -2775,8 +2871,11 @@ tp_base_client_add_channel_features_varargs (TpBaseClient *self,
 {
   va_list ap;
 
+  g_return_if_fail (TP_IS_BASE_CLIENT (self));
+  g_return_if_fail (!self->priv->registered);
+
   va_start (ap, feature);
-  varargs_helper (self, feature, ap, tp_base_client_add_channel_features);
+  _tp_quark_array_merge_valist (self->priv->channel_features, feature, ap);
   va_end (ap);
 }
 
@@ -2794,6 +2893,8 @@ tp_base_client_add_channel_features_varargs (TpBaseClient *self,
  * #TpBaseClient::request-added.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_account_features() instead.
  */
 void
 tp_base_client_add_account_features (TpBaseClient *self,
@@ -2803,11 +2904,9 @@ tp_base_client_add_account_features (TpBaseClient *self,
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
 
-  if (self->priv->account_features == NULL)
-    self->priv->account_features = g_array_new (TRUE, TRUE, sizeof (GQuark));
-
   _tp_quark_array_merge (self->priv->account_features, features, n);
 }
+
 
 /**
  * tp_base_client_add_channel_features:
@@ -2822,6 +2921,8 @@ tp_base_client_add_account_features (TpBaseClient *self,
  * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_channel_features() instead.
  */
 void
 tp_base_client_add_channel_features (TpBaseClient *self,
@@ -2830,9 +2931,6 @@ tp_base_client_add_channel_features (TpBaseClient *self,
 {
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-
-  if (self->priv->channel_features == NULL)
-    self->priv->channel_features = g_array_new (TRUE, TRUE, sizeof (GQuark));
 
   _tp_quark_array_merge (self->priv->channel_features, features, n);
 }
@@ -2850,6 +2948,8 @@ tp_base_client_add_channel_features (TpBaseClient *self,
  * #TpBaseClientClass.handle_channels.
  *
  * Since: 0.11.14
+ * Deprecated: New code should use
+ *  tp_simple_client_factory_add_connection_features() instead.
  */
 void
 tp_base_client_add_connection_features (TpBaseClient *self,
@@ -2858,10 +2958,6 @@ tp_base_client_add_connection_features (TpBaseClient *self,
 {
   g_return_if_fail (TP_IS_BASE_CLIENT (self));
   g_return_if_fail (!self->priv->registered);
-
-  if (self->priv->connection_features == NULL)
-    self->priv->connection_features = g_array_new (TRUE, TRUE,
-        sizeof (GQuark));
 
   _tp_quark_array_merge (self->priv->connection_features, features, n);
 }
@@ -2876,7 +2972,7 @@ tp_base_client_add_connection_features (TpBaseClient *self,
  * It can't be changed once @self has been registered.
  *
  * Since: 0.13.2
- * Deprecated: since 0.UNRELEASED. The factory is taken from
+ * Deprecated: since 0.15.5. The factory is taken from
  *  #TpBaseClient:account-manager.
  */
 void
@@ -2909,7 +3005,7 @@ _tp_base_client_set_channel_factory (TpBaseClient *self,
  *
  * Returns: the value of #TpBaseClient:channel-factory
  * Since: 0.13.2
- * Deprecated: since 0.UNRELEASED. The factory is taken from
+ * Deprecated: since 0.15.5. The factory is taken from
  *  #TpBaseClient:account-manager.
  */
 TpClientChannelFactory *

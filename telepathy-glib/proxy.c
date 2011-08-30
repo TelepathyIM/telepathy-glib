@@ -105,7 +105,7 @@ tp_dbus_errors_quark (void)
  */
 
 /**
- * NUM_TP_DBUS_ERRORS:
+ * NUM_TP_DBUS_ERRORS: (skip)
  *
  * 1 more than the highest valid #TpDBusError at the time of compilation
  *
@@ -1401,7 +1401,7 @@ tp_proxy_class_init (TpProxyClass *klass)
  *
  * Returns: (transfer none): the same value as #TpProxy:factory property
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpSimpleClientFactory *
 tp_proxy_get_factory (gpointer self)

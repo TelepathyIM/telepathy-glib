@@ -35,6 +35,7 @@ TpContactListState tp_connection_get_contact_list_state (TpConnection *self);
 gboolean tp_connection_get_contact_list_persists (TpConnection *self);
 gboolean tp_connection_get_can_change_contact_list (TpConnection *self);
 gboolean tp_connection_get_request_uses_message (TpConnection *self);
+GPtrArray *tp_connection_dup_contact_list (TpConnection *self);
 
 void tp_connection_request_subscription_async (TpConnection *self,
     guint n_contacts,
@@ -81,6 +82,14 @@ void tp_connection_unpublish_async (TpConnection *self,
 gboolean tp_connection_unpublish_finish (TpConnection *self,
     GAsyncResult *result,
     GError **error);
+
+#define TP_CONNECTION_FEATURE_CONTACT_GROUPS \
+  (tp_connection_get_feature_quark_contact_groups ())
+GQuark tp_connection_get_feature_quark_contact_groups (void) G_GNUC_CONST;
+
+gboolean tp_connection_get_disjoint_groups (TpConnection *self);
+TpContactMetadataStorageType tp_connection_get_group_storage (TpConnection *self);
+const gchar * const *tp_connection_get_contact_groups (TpConnection *self);
 
 void tp_connection_set_group_members_async (TpConnection *self,
     const gchar *group,

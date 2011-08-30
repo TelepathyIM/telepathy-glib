@@ -28,6 +28,19 @@ TpContact *_tp_contact_new (TpConnection *connection,
     TpHandle handle,
     const gchar *identifier);
 
+gboolean _tp_contact_set_attributes (TpContact *contact,
+    GHashTable *asv,
+    guint n_features,
+    const TpContactFeature *features,
+    GError **error);
+
+const gchar **_tp_contacts_bind_to_signals (TpConnection *connection,
+    guint n_features,
+    const TpContactFeature *features);
+
+void _tp_contact_set_subscription_states (TpContact *self,
+    GValueArray *value_array);
+
 G_END_DECLS
 
 #endif

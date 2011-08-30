@@ -378,6 +378,8 @@ tp_base_channel_close (TpBaseChannel *chan)
 {
   TpBaseChannelClass *klass = TP_BASE_CHANNEL_GET_CLASS (chan);
 
+  g_return_if_fail (klass->close != NULL);
+
   if (!tp_base_channel_is_destroyed (chan))
     klass->close (chan);
 }

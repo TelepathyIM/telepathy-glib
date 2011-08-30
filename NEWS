@@ -1,3 +1,66 @@
+telepathy-glib 0.15.5 (2011-12-17)
+==================================
+
+The “feel. experience. know” release. This is a pretty big release,
+containing over ten thousand lines of changes, which should make various
+aspects of application development easier. Fasten your seatbelts.
+
+Dependencies:
+
+• Valac ≥0.11.2 is now required for the Vala bindings.
+
+• gtk-doc ≥1.17 is now required if you want to build documentation.
+  Relatedly, building documentation for releases works again.
+  (fd.o#39666)
+
+Enhancements:
+
+• A new pair of classes, TpSimpleClientFactory and
+  TpAutomaticClientFactory, have been added, which make it much easier
+  for application to provide custom subclasses of specific channel
+  types and to request that certain features always be prepared on proxy
+  objects before they are given to the application. These replace the
+  prevous TpBasicProxyFactory and TpAutomaticProxyFactory classes, which
+  are now deprecated. (Xavier)
+
+• A new TpAccount feature, TP_ACCOUNT_FEATURE_CONNECTION, has been
+  added, to ask TpAccount to prepare TpConnection objects before
+  announcing them. Relatedly, TpAccountManager no longer signals new
+  TpAccount objects until they are prepared. (Xavier)
+
+• TpConnection now has API for managing the user's contact list! Hooray.
+  This only works with CMs that implement the new ContactList API; dear
+  Python CM folks, please do this and we can move forward with grace and
+  speed.
+
+• fd.o#26516: Add tp_debug_sender_set_timestamps. (Jonny)
+
+• A metric tonne of new methods were added for joining chat rooms and
+  managing members. (Xavier)
+
+• TpFileTransferChannel, a high-level API for file transfer
+  channels, was added. (Morten Mjelva)
+
+• fd.o#38061: tp_cm_message_set_message() was added to complement
+  tp_cm_message_take_message(). (Danni)
+
+Fixes:
+
+• fd.o#38060: fix a crash caused by an off-by-one error when
+  constructing the SendError signal. (Danni)
+
+• fd.o#38997: cope more gracefully if UNIX sockets are unsupported,
+  which should improve Windows portability. (Guillaume)
+
+• fd.o#39377: TpContact no longer erroneously re-prepares many features
+  if existing contacts are re-requested. (Will)
+
+• fd.o#27855: TpChannelManagers now have access to the original TargetID
+  specified in the channel request, if any. Previously, it was
+  transformed into a TargetHandle and the TargetID was removed from the
+  dictionary.  The TargetHandle is still synthesised (validating the
+  TargetID in the process) but the ID is left intact. (Will)
+
 telepathy-glib 0.15.4 (2011-07-12)
 ==================================
 

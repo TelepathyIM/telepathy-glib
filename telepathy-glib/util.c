@@ -1538,6 +1538,25 @@ next_i:
     }
 }
 
+/* Helper to implement functions with 0-terminated list of features in args */
+void
+_tp_quark_array_merge_valist (GArray *array,
+    GQuark feature,
+    va_list var_args)
+{
+  GArray *features;
+  GQuark f;
+
+  features = g_array_new (FALSE, FALSE, sizeof (GQuark));
+
+  for (f = feature; f != 0; f = va_arg (var_args, GQuark))
+    g_array_append_val (features, f);
+
+  _tp_quark_array_merge (array, (GQuark *) features->data, features->len);
+
+  g_array_unref (features);
+}
+
 #ifdef HAVE_GIO_UNIX
 GSocketAddress *
 _tp_create_temp_unix_socket (GSocketService *service,
@@ -1919,4 +1938,26 @@ _tp_contacts_to_handles (TpConnection *connection,
       }
 
   return TRUE;
+}
+
+/* table's key can be anything (usually TpHandle) but value must be a
+ * GObject (usually TpContact) */
+GPtrArray *
+_tp_contacts_from_values (GHashTable *table)
+{
+  GPtrArray *contacts;
+  GHashTableIter iter;
+  gpointer value;
+
+  contacts = _tp_g_ptr_array_new_full (g_hash_table_size (table),
+      g_object_unref);
+
+  g_hash_table_iter_init (&iter, table);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      g_assert (G_IS_OBJECT (value));
+      g_ptr_array_add (contacts, g_object_ref (value));
+    }
+
+  return contacts;
 }

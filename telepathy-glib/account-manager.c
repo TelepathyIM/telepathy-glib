@@ -33,6 +33,7 @@
 #include "telepathy-glib/_gen/signals-marshal.h"
 
 #define DEBUG_FLAG TP_DEBUG_ACCOUNTS
+#include "telepathy-glib/dbus-internal.h"
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/proxy-internal.h"
 #include "telepathy-glib/simple-client-factory-internal.h"
@@ -58,6 +59,13 @@
  * their configuration, places accounts online on request, and manipulates
  * accounts' presence, nicknames and avatars.
  *
+ * #TpAccountManager is the "top level" object, its #TpProxy:factory will be
+ * propagated to all other objects like #TpAccountManager -> #TpAccount ->
+ * #TpConnection -> #TpContact and #TpChannel. This means that desired features
+ * set on that factory will be prepared on all those objects.
+ *
+ * <example id="account-manager"><title>TpAccountManager example</title><programlisting><xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../examples/client/contact-list.c"><xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback></xi:include></programlisting></example>
+ *
  * Since: 0.7.32
  */
 
@@ -70,6 +78,7 @@
 struct _TpAccountManagerPrivate {
   /* (owned) object path -> (reffed) TpAccount */
   GHashTable *accounts;
+  GHashTable *legacy_accounts;
   gboolean dispose_run;
 
   /* most available presence */
@@ -85,7 +94,7 @@ struct _TpAccountManagerPrivate {
   gchar *requested_status;
   gchar *requested_status_message;
 
-  GHashTable *create_results;
+  guint n_preparing_accounts;
 };
 
 typedef struct {
@@ -190,8 +199,8 @@ tp_account_manager_init (TpAccountManager *self)
 
   priv->accounts = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, (GDestroyNotify) g_object_unref);
-
-  priv->create_results = g_hash_table_new (g_direct_hash, g_direct_equal);
+  self->priv->legacy_accounts = g_hash_table_new_full (
+      g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void
@@ -228,6 +237,37 @@ _tp_account_manager_name_owner_cb (TpDBusDaemon *proxy,
     }
 }
 
+static void insert_account (TpAccountManager *self, TpAccount *account);
+
+static void
+validity_changed_account_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpAccountManager *self = user_data;
+  TpAccount *account = (TpAccount *) object;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      DEBUG ("Error preparing account: %s", error->message);
+      g_clear_error (&error);
+      goto OUT;
+    }
+
+  /* Account could have been invalidated while we were preparing it */
+  if (tp_account_is_valid (account) &&
+      tp_proxy_get_invalidated (account) == NULL)
+    {
+      insert_account (self, account);
+      g_signal_emit (self, signals[ACCOUNT_VALIDITY_CHANGED], 0,
+          account, TRUE);
+    }
+
+OUT:
+  g_object_unref (self);
+}
+
 static void
 _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
     const gchar *path,
@@ -238,111 +278,45 @@ _tp_account_manager_validity_changed_cb (TpAccountManager *proxy,
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
   TpAccountManagerPrivate *priv = manager->priv;
   TpAccount *account;
-
-  account = tp_account_manager_ensure_account (manager, path);
-
-  g_object_ref (account);
+  GArray *features;
+  GError *error = NULL;
 
   if (!valid)
-    g_hash_table_remove (priv->accounts, path);
+    {
+      /* If account became invalid, but we didn't have it anyway, ignore. */
+      account = g_hash_table_lookup (priv->accounts, path);
+      if (account == NULL)
+        return;
 
-  g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
-      account, valid);
+      g_object_ref (account);
+      g_hash_table_remove (priv->accounts, path);
 
+      g_signal_emit (manager, signals[ACCOUNT_VALIDITY_CHANGED], 0,
+          account, FALSE);
+
+      g_object_unref (account);
+
+      return;
+    }
+
+  account = tp_simple_client_factory_ensure_account (
+      tp_proxy_get_factory (manager), path, NULL, &error);
+  if (account == NULL)
+    {
+      DEBUG ("failed to create TpAccount: %s", error->message);
+      g_clear_error (&error);
+      return;
+    }
+
+  /* Delay signal emission until until account is prepared */
+  features = tp_simple_client_factory_dup_account_features (
+      tp_proxy_get_factory (manager), account);
+
+  tp_proxy_prepare_async (account, (GQuark *) features->data,
+      validity_changed_account_prepared_cb, g_object_ref (manager));
+
+  g_array_unref (features);
   g_object_unref (account);
-}
-
-static void
-_tp_account_manager_ensure_all_accounts (TpAccountManager *manager,
-    GPtrArray *valid_accounts,
-    GPtrArray *invalid_accounts)
-{
-  guint i, missing_accounts;
-  GHashTableIter iter;
-  TpAccountManagerPrivate *priv = manager->priv;
-  gpointer value;
-  TpAccount *account;
-  gboolean found_in_valid = FALSE;
-  gboolean found_in_invalid = FALSE;
-  const gchar *name;
-
-  /* ensure all accounts coming from MC5 first */
-  for (i = 0; i < valid_accounts->len; i++)
-    {
-      name = g_ptr_array_index (valid_accounts, i);
-
-      account = tp_account_manager_ensure_account (manager, name);
-      _tp_account_refresh_properties (account);
-    }
-
-  missing_accounts = g_hash_table_size (priv->accounts) - valid_accounts->len;
-
-  if (missing_accounts > 0)
-    {
-      /* look for accounts we have and the TpAccountManager doesn't,
-       * and remove them from our cache. */
-
-      DEBUG ("%d missing accounts", missing_accounts);
-
-      g_hash_table_iter_init (&iter, priv->accounts);
-
-      while (g_hash_table_iter_next (&iter, NULL, &value) && missing_accounts > 0)
-        {
-          account = value;
-
-          /* look for this account in the valid accounts array */
-          for (i = 0; i < valid_accounts->len; i++)
-            {
-              name = g_ptr_array_index (valid_accounts, i);
-
-              if (!tp_strdiff (name, tp_proxy_get_object_path (account)))
-                {
-                  found_in_valid = TRUE;
-                  break;
-                }
-            }
-
-          if (!found_in_valid)
-            {
-              /* look for this account in the invalid accounts array */
-              for (i = 0; i < invalid_accounts->len; i++)
-                {
-                  name = g_ptr_array_index (invalid_accounts, i);
-
-                  if (!tp_strdiff (name, tp_proxy_get_object_path (account)))
-                    {
-                      found_in_invalid = TRUE;
-                      break;
-                    }
-                }
-
-              if (found_in_invalid)
-                {
-                  DEBUG ("Account %s's validity changed",
-                      tp_proxy_get_object_path (account));
-
-                  _tp_account_manager_validity_changed_cb (manager,
-                      tp_proxy_get_object_path (account), FALSE, NULL,
-                      G_OBJECT (manager));
-                }
-              else
-                {
-                  DEBUG ("Account %s was not found, remove it from the cache",
-                      tp_proxy_get_object_path (account));
-
-                  g_object_ref (account);
-                  g_hash_table_iter_remove (&iter);
-                  g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
-                  g_object_unref (account);
-                }
-
-              missing_accounts--;
-            }
-
-          found_in_valid = FALSE;
-          found_in_invalid = FALSE;
-        }
-    }
 }
 
 static void
@@ -396,20 +370,12 @@ static void
 _tp_account_manager_check_core_ready (TpAccountManager *manager)
 {
   TpAccountManagerPrivate *priv = manager->priv;
-  GHashTableIter iter;
-  gpointer value;
 
   if (tp_proxy_is_prepared (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE))
     return;
 
-  g_hash_table_iter_init (&iter, priv->accounts);
-  while (g_hash_table_iter_next (&iter, NULL, &value))
-    {
-      TpAccount *account = TP_ACCOUNT (value);
-
-      if (!tp_account_is_prepared (account, TP_ACCOUNT_FEATURE_CORE))
-        return;
-    }
+  if (priv->n_preparing_accounts > 0)
+    return;
 
   /* Rerequest most available presence on the initial set of accounts for cases
    * where a most available presence was requested before the manager was ready
@@ -428,6 +394,35 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
 }
 
 static void
+account_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpAccountManager *self = user_data;
+  TpAccount *account = (TpAccount *) object;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      DEBUG ("Error preparing account: %s", error->message);
+      g_clear_error (&error);
+      goto OUT;
+    }
+
+  /* Account could have been invalidated while we were preparing it */
+  if (tp_account_is_valid (account) &&
+      tp_proxy_get_invalidated (account) == NULL)
+    {
+      insert_account (self, account);
+    }
+
+OUT:
+  self->priv->n_preparing_accounts--;
+  _tp_account_manager_check_core_ready (self);
+  g_object_unref (self);
+}
+
+static void
 _tp_account_manager_got_all_cb (TpProxy *proxy,
     GHashTable *properties,
     const GError *error,
@@ -436,7 +431,7 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
   GPtrArray *valid_accounts;
-  GPtrArray *invalid_accounts;
+  guint i;
 
   if (error != NULL)
     {
@@ -448,12 +443,32 @@ _tp_account_manager_got_all_cb (TpProxy *proxy,
   valid_accounts = tp_asv_get_boxed (properties, "ValidAccounts",
       TP_ARRAY_TYPE_OBJECT_PATH_LIST);
 
-  invalid_accounts = tp_asv_get_boxed (properties, "InvalidAccounts",
-      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
+  for (i = 0; i < valid_accounts->len; i++)
+    {
+      const gchar *path = g_ptr_array_index (valid_accounts, i);
+      TpAccount *account;
+      GArray *features;
+      GError *e = NULL;
 
-  if (valid_accounts != NULL && invalid_accounts != NULL)
-    _tp_account_manager_ensure_all_accounts (manager, valid_accounts,
-        invalid_accounts);
+      account = tp_simple_client_factory_ensure_account (
+          tp_proxy_get_factory (manager), path, NULL, &e);
+      if (account == NULL)
+        {
+          DEBUG ("failed to create TpAccount: %s", e->message);
+          g_clear_error (&e);
+          continue;
+        }
+
+      features = tp_simple_client_factory_dup_account_features (
+          tp_proxy_get_factory (manager), account);
+
+      manager->priv->n_preparing_accounts++;
+      tp_proxy_prepare_async (account, (GQuark *) features->data,
+          account_prepared_cb, g_object_ref (manager));
+
+      g_array_unref (features);
+      g_object_unref (account);
+    }
 
   _tp_account_manager_check_core_ready (manager);
 }
@@ -495,24 +510,31 @@ _tp_account_manager_finalize (GObject *object)
   G_OBJECT_CLASS (tp_account_manager_parent_class)->finalize (object);
 }
 
+static void legacy_account_invalidated_cb (TpProxy *account, guint domain,
+    gint code, gchar *message, gpointer user_data);
+
 static void
 _tp_account_manager_dispose (GObject *object)
 {
   TpAccountManager *self = TP_ACCOUNT_MANAGER (object);
   TpAccountManagerPrivate *priv = self->priv;
+  GHashTableIter iter;
+  gpointer value;
 
   if (priv->dispose_run)
     return;
 
   priv->dispose_run = TRUE;
 
-  /* GSimpleAsyncResult keeps a ref to the source GObject, so this hash
-   * table should be empty. */
-  g_assert_cmpuint (g_hash_table_size (priv->create_results), ==, 0);
-  g_hash_table_destroy (priv->create_results);
-  priv->create_results = NULL;
-
   g_hash_table_destroy (priv->accounts);
+
+  g_hash_table_iter_init (&iter, self->priv->legacy_accounts);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      g_signal_handlers_disconnect_by_func (value,
+          legacy_account_invalidated_cb, self);
+    }
+  tp_clear_pointer (&priv->legacy_accounts, g_hash_table_unref);
 
   tp_dbus_daemon_cancel_name_owner_watch (tp_proxy_get_dbus_daemon (self),
       TP_ACCOUNT_MANAGER_BUS_NAME, _tp_account_manager_name_owner_cb, self);
@@ -542,8 +564,11 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    * @account: a #TpAccount
    * @valid: %TRUE if the account is now valid
    *
-   * Emitted when the validity on @account changes. @account is not guaranteed
-   * to be ready when this signal is emitted.
+   * Emitted when the validity on @account changes.
+   *
+   * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
+   * with all features previously passed to
+   * tp_simple_client_factory_add_account_features().
    *
    * Since: 0.9.0
    */
@@ -581,8 +606,9 @@ tp_account_manager_class_init (TpAccountManagerClass *klass)
    *
    * Emitted when an account from @manager is enabled.
    *
-   * Note that the returned #TpAccount @account is not guaranteed to have any
-   * features pre-prepared, including %TP_ACCOUNT_FEATURE_CORE.
+   * @account is guaranteed to have %TP_ACCOUNT_FEATURE_CORE prepared, along
+   * with all features previously passed to
+   * tp_simple_client_factory_add_account_features().
    *
    * Since: 0.9.0
    */
@@ -668,6 +694,19 @@ tp_account_manager_init_known_interfaces (void)
     }
 }
 
+static TpAccountManager *
+_tp_account_manager_new_internal (TpSimpleClientFactory *factory,
+    TpDBusDaemon *bus_daemon)
+{
+  return TP_ACCOUNT_MANAGER (g_object_new (TP_TYPE_ACCOUNT_MANAGER,
+          "dbus-daemon", bus_daemon,
+          "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
+          "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
+          "object-path", TP_ACCOUNT_MANAGER_OBJECT_PATH,
+          "factory", factory,
+          NULL));
+}
+
 /**
  * tp_account_manager_new:
  * @bus_daemon: Proxy for the D-Bus daemon
@@ -684,29 +723,75 @@ tp_account_manager_init_known_interfaces (void)
 TpAccountManager *
 tp_account_manager_new (TpDBusDaemon *bus_daemon)
 {
-  return _tp_account_manager_new_with_factory (NULL, bus_daemon);
-}
-
-TpAccountManager *
-_tp_account_manager_new_with_factory (TpSimpleClientFactory *factory,
-    TpDBusDaemon *bus_daemon)
-{
-  TpAccountManager *self;
-
   g_return_val_if_fail (TP_IS_DBUS_DAEMON (bus_daemon), NULL);
 
-  self = TP_ACCOUNT_MANAGER (g_object_new (TP_TYPE_ACCOUNT_MANAGER,
-          "dbus-daemon", bus_daemon,
-          "dbus-connection", ((TpProxy *) bus_daemon)->dbus_connection,
-          "bus-name", TP_ACCOUNT_MANAGER_BUS_NAME,
-          "object-path", TP_ACCOUNT_MANAGER_OBJECT_PATH,
-          "factory", factory,
-          NULL));
+  return _tp_account_manager_new_internal (NULL, bus_daemon);
+}
 
-  return self;
+/**
+ * tp_account_manager_new_with_factory:
+ * @factory: a #TpSimpleClientFactory
+ *
+ * Convenience function to create a new account manager proxy. The returned
+ * #TpAccountManager is not guaranteed to be ready on return.
+ *
+ * Should be used only by applications having their own #TpSimpleClientFactory
+ * subclass. Usually this should be done at application startup and followed by
+ * a call to tp_account_manager_set_default() to ensure other libraries/plugins
+ * will use this custom factory as well.
+ *
+ * Returns: a new reference to an account manager proxy
+ */
+TpAccountManager *
+tp_account_manager_new_with_factory (TpSimpleClientFactory *factory)
+{
+  g_return_val_if_fail (TP_IS_SIMPLE_CLIENT_FACTORY (factory), NULL);
+
+  return _tp_account_manager_new_internal (factory,
+      tp_simple_client_factory_get_dbus_daemon (factory));
 }
 
 static gpointer starter_account_manager_proxy = NULL;
+
+/**
+ * tp_account_manager_set_default:
+ * @manager: a #TpAccountManager
+ *
+ * Define the #TpAccountManager singleton that will be returned by
+ * tp_account_manager_dup().
+ *
+ * This function may only be called before the first call to
+ * tp_account_manager_dup(), and may not be called more than once. Applications
+ * which use a custom #TpSimpleClientFactory and want the default
+ * #TpAccountManager to use that factory should call this after calling
+ * tp_account_manager_new_with_factory().
+ *
+ * Note that @manager must use the default #TpDBusDaemon as returned by
+ * tp_dbus_daemon_dup()
+ *
+ * Since: 0.15.5
+ */
+void
+tp_account_manager_set_default (TpAccountManager *manager)
+{
+  g_return_if_fail (TP_IS_ACCOUNT_MANAGER (manager));
+
+  if (!_tp_dbus_daemon_is_the_shared_one (tp_proxy_get_dbus_daemon (manager)))
+    {
+      CRITICAL ("'manager' must use the TpDBusDaemon returned by"
+          "tp_dbus_daemon_dup()");
+      g_return_if_reached ();
+    }
+
+  if (starter_account_manager_proxy != NULL)
+    {
+      CRITICAL ("tp_account_manager_set_default() may only be called once and"
+          "before first call of tp_account_manager_dup()");
+      g_return_if_reached ();
+    }
+
+  starter_account_manager_proxy = g_object_ref (manager);
+}
 
 /**
  * tp_account_manager_dup:
@@ -730,14 +815,18 @@ TpAccountManager *
 tp_account_manager_dup (void)
 {
   TpDBusDaemon *dbus;
+  GError *error = NULL;
 
   if (starter_account_manager_proxy != NULL)
     return g_object_ref (starter_account_manager_proxy);
 
-  dbus = tp_dbus_daemon_dup (NULL);
-
+  dbus = tp_dbus_daemon_dup (&error);
   if (dbus == NULL)
-    return NULL;
+    {
+      WARNING ("Error getting default TpDBusDaemon: %s", error->message);
+      g_clear_error (&error);
+      return NULL;
+    }
 
   starter_account_manager_proxy = tp_account_manager_new (dbus);
   g_assert (starter_account_manager_proxy != NULL);
@@ -824,56 +913,37 @@ _tp_account_manager_account_invalidated_cb (TpProxy *proxy,
 }
 
 static void
-_tp_account_manager_account_ready_cb (GObject *source_object,
-    GAsyncResult *res,
+legacy_account_invalidated_cb (TpProxy *account,
+    guint domain,
+    gint code,
+    gchar *message,
     gpointer user_data)
 {
-  TpAccountManager *manager = TP_ACCOUNT_MANAGER (user_data);
-  TpAccountManagerPrivate *priv = manager->priv;
-  TpAccount *account = TP_ACCOUNT (source_object);
-  GSimpleAsyncResult *result;
+  TpAccountManager *self = user_data;
 
-  if (!tp_account_prepare_finish (account, res, NULL))
-    {
-      g_object_ref (account);
-      g_hash_table_remove (priv->accounts,
-          tp_proxy_get_object_path (account));
+  g_hash_table_remove (self->priv->legacy_accounts,
+      tp_proxy_get_object_path (account));
+}
 
-      g_signal_emit (manager, signals[ACCOUNT_REMOVED], 0, account);
-      g_object_unref (account);
-
-      goto out;
-    }
-
-  /* see if there's any pending callbacks for this account */
-  result = g_hash_table_lookup (priv->create_results, account);
-  if (result != NULL)
-    {
-      g_simple_async_result_set_op_res_gpointer (
-          G_SIMPLE_ASYNC_RESULT (result), account, NULL);
-
-      g_simple_async_result_complete (result);
-
-      g_hash_table_remove (priv->create_results, account);
-      g_object_unref (result);
-    }
+static void
+insert_account (TpAccountManager *self,
+    TpAccount *account)
+{
+  g_hash_table_insert (self->priv->accounts,
+      g_strdup (tp_proxy_get_object_path (account)),
+      g_object_ref (account));
 
   tp_g_signal_connect_object (account, "notify::enabled",
       G_CALLBACK (_tp_account_manager_account_enabled_cb),
-      G_OBJECT (manager), 0);
+      G_OBJECT (self), 0);
 
   tp_g_signal_connect_object (account, "presence-changed",
       G_CALLBACK (_tp_account_manager_account_presence_changed_cb),
-      G_OBJECT (manager), 0);
+      G_OBJECT (self), 0);
 
   tp_g_signal_connect_object (account, "invalidated",
       G_CALLBACK (_tp_account_manager_account_invalidated_cb),
-      G_OBJECT (manager), 0);
-
-out:
-  _tp_account_manager_check_core_ready (manager);
-
-  g_object_unref (manager);
+      G_OBJECT (self), 0);
 }
 
 /**
@@ -895,37 +965,42 @@ out:
  *  not a valid account path.
  *
  * Since: 0.9.0
+ * Deprecated: New code should use tp_simple_client_factory_ensure_account()
+ *  instead.
  */
 TpAccount *
-tp_account_manager_ensure_account (TpAccountManager *manager,
+tp_account_manager_ensure_account (TpAccountManager *self,
     const gchar *path)
 {
-  TpAccountManagerPrivate *priv;
   TpAccount *account;
-  GQuark fs[] = { TP_ACCOUNT_FEATURE_CORE, 0 };
   GError *error = NULL;
 
-  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
+  g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (self), NULL);
   g_return_val_if_fail (path != NULL, NULL);
 
-  priv = manager->priv;
-
-  account = g_hash_table_lookup (priv->accounts, path);
+  account = g_hash_table_lookup (self->priv->legacy_accounts, path);
   if (account != NULL)
     return account;
 
   account = tp_simple_client_factory_ensure_account (
-      tp_proxy_get_factory (manager), path, NULL, &error);
+      tp_proxy_get_factory (self), path, NULL, &error);
   if (account == NULL)
     {
-      DEBUG ("tp_account_new() failed: %s", error->message);
+      DEBUG ("failed to create account: %s", error->message);
       g_clear_error (&error);
       return NULL;
     }
 
-  g_hash_table_insert (priv->accounts, g_strdup (path), account);
-  tp_account_prepare_async (account, fs, _tp_account_manager_account_ready_cb,
-      g_object_ref (manager));
+  /* We don't want to insert in self->priv->accounts random accounts we
+   * don't even know if they are valid. For compatibility we can't return a ref,
+   * so keep them into a legacy table */
+  g_hash_table_insert (self->priv->legacy_accounts, g_strdup (path),
+      account);
+  tp_g_signal_connect_object (account, "invalidated",
+      G_CALLBACK (legacy_account_invalidated_cb), self, 0);
+
+  tp_proxy_prepare_async (account, NULL, NULL, NULL);
+
   return account;
 }
 
@@ -946,6 +1021,10 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
  * g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
  * ]|
  *
+ * The returned #TpAccount<!-- -->s are guaranteed to have
+ * %TP_ACCOUNT_FEATURE_CORE prepared, along with all features previously passed
+ * to tp_simple_client_factory_add_account_features().
+ *
  * The list of valid accounts returned is not guaranteed to have been retrieved
  * until %TP_ACCOUNT_MANAGER_FEATURE_CORE is prepared
  * (tp_proxy_prepare_async() has returned). Until this feature has
@@ -958,16 +1037,9 @@ tp_account_manager_ensure_account (TpAccountManager *manager,
 GList *
 tp_account_manager_get_valid_accounts (TpAccountManager *manager)
 {
-  TpAccountManagerPrivate *priv;
-  GList *ret;
-
   g_return_val_if_fail (TP_IS_ACCOUNT_MANAGER (manager), NULL);
 
-  priv = manager->priv;
-
-  ret = g_hash_table_get_values (priv->accounts);
-
-  return ret;
+  return g_hash_table_get_values (manager->priv->accounts);
 }
 
 /**
@@ -1081,6 +1153,24 @@ tp_account_manager_get_most_available_presence (TpAccountManager *manager,
 }
 
 static void
+create_account_prepared_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *my_res = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (object, res, &error))
+    {
+      DEBUG ("Error preparing account: %s", error->message);
+      g_simple_async_result_take_error (my_res, error);
+    }
+
+  g_simple_async_result_complete (my_res);
+  g_object_unref (my_res);
+}
+
+static void
 _tp_account_manager_created_cb (TpAccountManager *proxy,
     const gchar *account_path,
     const GError *error,
@@ -1088,22 +1178,37 @@ _tp_account_manager_created_cb (TpAccountManager *proxy,
     GObject *weak_object)
 {
   TpAccountManager *manager = TP_ACCOUNT_MANAGER (weak_object);
-  TpAccountManagerPrivate *priv = manager->priv;
   GSimpleAsyncResult *my_res = user_data;
   TpAccount *account;
+  GArray *features;
+  GError *e = NULL;
 
   if (error != NULL)
     {
       g_simple_async_result_set_from_error (my_res, error);
       g_simple_async_result_complete (my_res);
-      g_object_unref (my_res);
-
       return;
     }
 
-  account = tp_account_manager_ensure_account (manager, account_path);
+  account = tp_simple_client_factory_ensure_account (
+      tp_proxy_get_factory (manager), account_path, NULL, &e);
+  if (account == NULL)
+    {
+      g_simple_async_result_take_error (my_res, e);
+      g_simple_async_result_complete (my_res);
+      return;
+    }
 
-  g_hash_table_insert (priv->create_results, account, my_res);
+  /* Give account's ref to the result */
+  g_simple_async_result_set_op_res_gpointer (my_res, account, g_object_unref);
+
+  features = tp_simple_client_factory_dup_account_features (
+      tp_proxy_get_factory (manager), account);
+
+  tp_proxy_prepare_async (account, (GQuark *) features->data,
+      create_account_prepared_cb, g_object_ref (my_res));
+
+  g_array_unref (features);
 }
 
 /**
@@ -1156,7 +1261,7 @@ tp_account_manager_create_account_async (TpAccountManager *manager,
 
   tp_cli_account_manager_call_create_account (manager,
       -1, connection_manager, protocol, display_name, parameters,
-      properties, _tp_account_manager_created_cb, res, NULL,
+      properties, _tp_account_manager_created_cb, res, g_object_unref,
       G_OBJECT (manager));
 }
 

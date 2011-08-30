@@ -32,6 +32,9 @@
 
 GArray *_tp_quark_array_copy (const GQuark *quarks) G_GNUC_WARN_UNUSED_RESULT;
 void _tp_quark_array_merge (GArray *array, const GQuark *quarks, gssize n);
+void _tp_quark_array_merge_valist (GArray *array,
+    GQuark feature,
+    va_list var_args);
 
 #ifdef HAVE_GIO_UNIX
 GSocketAddress * _tp_create_temp_unix_socket (GSocketService *service,
@@ -96,5 +99,7 @@ gboolean _tp_contacts_to_handles (TpConnection *connection,
     guint n_contacts,
     TpContact * const *contacts,
     GArray **handles);
+
+GPtrArray *_tp_contacts_from_values (GHashTable *table);
 
 #endif /* __TP_UTIL_INTERNAL_H__ */

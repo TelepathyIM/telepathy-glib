@@ -278,11 +278,18 @@ enum
   PROP_CONTACT_LIST_PERSISTS,
   PROP_CAN_CHANGE_CONTACT_LIST,
   PROP_REQUEST_USES_MESSAGE,
+  PROP_DISJOINT_GROUPS,
+  PROP_GROUP_STORAGE,
+  PROP_CONTACT_GROUPS,
   N_PROPS
 };
 
 enum {
   SIGNAL_BALANCE_CHANGED,
+  SIGNAL_GROUPS_CREATED,
+  SIGNAL_GROUPS_REMOVED,
+  SIGNAL_GROUP_RENAMED,
+  SIGNAL_CONTACT_LIST_CHANGED,
   N_SIGNALS
 };
 
@@ -349,6 +356,15 @@ tp_connection_get_property (GObject *object,
       break;
     case PROP_REQUEST_USES_MESSAGE:
       g_value_set_boolean (value, self->priv->request_uses_message);
+      break;
+    case PROP_DISJOINT_GROUPS:
+      g_value_set_boolean (value, self->priv->disjoint_groups);
+      break;
+    case PROP_GROUP_STORAGE:
+      g_value_set_uint (value, self->priv->group_storage);
+      break;
+    case PROP_CONTACT_GROUPS:
+      g_value_set_boxed (value, self->priv->contact_groups);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1172,6 +1188,19 @@ tp_connection_invalidated (TpConnection *self)
       tp_proxy_pending_call_cancel (self->priv->introspection_call);
       self->priv->introspection_call = NULL;
     }
+
+  /* Drop the ref we have on all roster contacts, this is to break the refcycle
+   * we have between TpConnection and TpContact, otherwise self would never
+   * run dispose.
+   * Note that invalidated is also called from dispose, so self->priv->roster
+   * could already be NULL.
+   *
+   * FIXME: When we decide to break tp-glib API/guarantees, we should stop
+   * TpContact taking a strong ref on its TpConnection and force user to keep
+   * a ref on the TpConnection to use its TpContact, this would avoid the
+   * refcycle completely. */
+  if (self->priv->roster != NULL)
+    g_hash_table_remove_all (self->priv->roster);
 }
 
 static gboolean
@@ -1340,6 +1369,11 @@ tp_connection_init (TpConnection *self)
   self->priv->contacts = g_hash_table_new (g_direct_hash, g_direct_equal);
   self->priv->introspection_call = NULL;
   self->priv->interests = tp_intset_new ();
+  self->priv->contact_groups = g_ptr_array_new_with_free_func (g_free);
+  g_ptr_array_add (self->priv->contact_groups, NULL);
+  self->priv->roster = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+      NULL, g_object_unref);
+  self->priv->contacts_changed_queue = g_queue_new ();
 }
 
 static void
@@ -1418,6 +1452,11 @@ tp_connection_dispose (GObject *object)
       self->priv->account = NULL;
     }
 
+  tp_clear_pointer (&self->priv->contact_groups, g_ptr_array_unref);
+  tp_clear_pointer (&self->priv->roster, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->contacts_changed_queue,
+      _tp_connection_contacts_changed_queue_free);
+
   if (self->priv->contacts != NULL)
     {
       g_hash_table_foreach (self->priv->contacts, contact_notify_invalidated,
@@ -1470,6 +1509,7 @@ enum {
     FEAT_CONTACT_INFO,
     FEAT_BALANCE,
     FEAT_CONTACT_LIST,
+    FEAT_CONTACT_GROUPS,
     N_FEAT
 };
 
@@ -1482,6 +1522,7 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   static GQuark need_contact_info[2] = {0, 0};
   static GQuark need_balance[2] = {0, 0};
   static GQuark need_contact_list[3] = {0, 0, 0};
+  static GQuark need_contact_groups[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -1519,6 +1560,11 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   need_contact_list[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST;
   need_contact_list[1] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS;
   features[FEAT_CONTACT_LIST].interfaces_needed = need_contact_list;
+
+  features[FEAT_CONTACT_GROUPS].name = TP_CONNECTION_FEATURE_CONTACT_GROUPS;
+  features[FEAT_CONTACT_GROUPS].prepare_async = _tp_connection_prepare_contact_groups_async;
+  need_contact_groups[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS;
+  features[FEAT_CONTACT_GROUPS].interfaces_needed = need_contact_groups;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
@@ -1797,7 +1843,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_uint ("contact-list-state", "ContactList state",
       "The state of the contact list",
@@ -1817,7 +1863,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_boolean ("contact-list-persists",
       "ContactList persists", "Whether the contact list persists",
@@ -1838,7 +1884,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_boolean ("can-change-contact-list",
       "ContactList can change", "Whether the contact list can change",
@@ -1859,7 +1905,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.5
    */
   param_spec = g_param_spec_boolean ("request-uses-message",
       "Request Uses Message", "Whether request uses message",
@@ -1867,6 +1913,192 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_REQUEST_USES_MESSAGE,
       param_spec);
+
+  /**
+   * TpConnection:disjoint-groups:
+   *
+   * True if each contact can be in at most one group; false if each contact
+   * can be in many groups.
+   *
+   * This property cannot change after the connection has moved to the
+   * %TP_CONNECTION_STATUS_CONNECTED state. Until then, its value is undefined,
+   * and it may change at any time, without notification.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
+   *
+   * Since: 0.15.5
+   */
+  param_spec = g_param_spec_boolean ("disjoint-groups",
+      "Disjoint Groups", "Whether groups are disjoint",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_DISJOINT_GROUPS,
+      param_spec);
+
+  /**
+   * TpConnection:group-storage:
+   *
+   * Indicates the extent to which contacts' groups can be set and stored.
+   *
+   * This property cannot change after the connection has moved to the
+   * %TP_CONNECTION_STATUS_CONNECTED state. Until then, its value is undefined,
+   * and it may change at any time, without notification.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
+   *
+   * Since: 0.15.5
+   */
+  param_spec = g_param_spec_uint ("group-storage",
+      "Group Storage", "Group storage capabilities",
+      0, G_MAXUINT, TP_CONTACT_METADATA_STORAGE_TYPE_NONE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_GROUP_STORAGE,
+      param_spec);
+
+  /**
+   * TpConnection:contact-groups:
+   *
+   * The names of all groups that currently exist. This may be a larger set than
+   * the union of all #TpContact:contact-groups properties, if the connection
+   * allows groups to be empty.
+   *
+   * This property's value is not meaningful until the
+   * #TpConnection:contact-list-state property has become
+   * %TP_CONTACT_LIST_STATE_SUCCESS.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
+   *
+   * Since: 0.15.5
+   */
+  param_spec = g_param_spec_boxed ("contact-groups",
+      "Contact Groups",
+      "All existing contact groups",
+      G_TYPE_STRV,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CONTACT_GROUPS,
+      param_spec);
+
+  /**
+   * TpConnection::groups-created:
+   * @self: a #TpConnection
+   * @added: a #GStrv with the names of the new groups.
+   *
+   * Emitted when new, empty groups are created. This will often be followed by
+   * #TpContact::contact-groups-changed signals that add some members. When this
+   * signal is emitted, #TpConnection:contact-groups property is already
+   * updated.
+   *
+   * For this signal to be emited, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
+   *
+   * Since: 0.15.5
+   */
+  signals[SIGNAL_GROUPS_CREATED] = g_signal_new (
+      "groups-created",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__BOXED,
+      G_TYPE_NONE, 1, G_TYPE_STRV);
+
+  /**
+   * TpConnection::groups-removed:
+   * @self: A #TpConnection
+   * @added: A #GStrv with the names of the groups.
+   *
+   * Emitted when one or more groups are removed. If they had members at the
+   * time that they were removed, then immediately after this signal is emitted,
+   * #TpContact::contact-groups-changed signals that their members were removed.
+   * When this signal is emitted, #TpConnection:contact-groups property is
+   * already updated.
+   *
+   * For this signal to be emited, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
+   *
+   * Since: 0.15.5
+   */
+  signals[SIGNAL_GROUPS_REMOVED] = g_signal_new (
+      "groups-removed",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__BOXED,
+      G_TYPE_NONE, 1, G_TYPE_STRV);
+
+  /**
+   * TpConnection::group-renamed:
+   * @self: a #TpConnection
+   * @old_name: the old name of the group.
+   * @new_name: the new name of the group.
+   *
+   * Emitted when a group is renamed, in protocols where this can be
+   * distinguished from group creation, removal and membership changes.
+   *
+   * Immediately after this signal is emitted, #TpConnection::groups-created
+   * signal the creation of a group with the new name, and
+   * #TpConnection::groups-removed signal the removal of a group with the old
+   * name.
+   * If the group was not empty, immediately after those signals are emitted,
+   * #TpContact::contact-groups-changed signal that the members of that group
+   * were removed from the old name and added to the new name.
+   *
+   * When this signal is emitted, #TpConnection:contact-groups property is
+   * already updated.
+   *
+   * For this signal to be emited, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_GROUPS.
+   *
+   * Since: 0.15.5
+   */
+  signals[SIGNAL_GROUP_RENAMED] = g_signal_new (
+      "group-renamed",
+      G_TYPE_FROM_CLASS (object_class),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__STRING_STRING,
+      G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
+  /**
+   * TpConnection::contact-list-changed:
+   * @self: a #TpConnection
+   * @added: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact added to contacts list
+   * @removed: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact removed from contacts list
+   *
+   * Notify of changes in the list of contacts as returned by
+   * tp_connection_dup_contact_list(). It is guaranteed that all contacts have
+   * desired features prepared. See
+   * tp_simple_client_factory_add_contact_features() to define which features
+   * needs to be prepared.
+   *
+   * This signal is also emitted for the initial set of contacts once retrieved.
+   *
+   * For this signal to be emitted, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   *
+   * Since: 0.15.5
+   */
+  signals[SIGNAL_CONTACT_LIST_CHANGED] = g_signal_new (
+      "contact-list-changed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__BOXED_BOXED,
+      G_TYPE_NONE, 2, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY);
 }
 
 /**
@@ -1973,7 +2205,7 @@ finally:
  * Returns: (transfer none): the account associated with this connection, or
  * %NULL.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.5
  */
 TpAccount *
 tp_connection_get_account (TpConnection *self)

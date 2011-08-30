@@ -62,7 +62,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/signalled-message.c $(srcdir)/signalled-message.h \
 	$(srcdir)/channel-dispatcher.c $(srcdir)/channel-dispatcher.h \
 	$(srcdir)/errors.c $(srcdir)/errors.h \
-	_gen/telepathy-enums.h \
+	_gen/telepathy-enums.h _gen/telepathy-enums-gtk-doc.h \
 	_gen/telepathy-interfaces.h \
 	$(NULL)
 

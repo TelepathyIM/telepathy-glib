@@ -23,6 +23,7 @@
 #include <glib-object.h>
 
 #include <telepathy-glib/capabilities.h>
+#include <telepathy-glib/connection.h>
 #include <telepathy-glib/proxy.h>
 
 G_BEGIN_DECLS
@@ -101,6 +102,8 @@ const gchar *tp_protocol_get_vcard_field (TpProtocol *self);
 const gchar *tp_protocol_get_english_name (TpProtocol *self);
 const gchar *tp_protocol_get_icon_name (TpProtocol *self);
 TpCapabilities *tp_protocol_get_capabilities (TpProtocol *self);
+
+TpAvatarRequirements * tp_protocol_get_avatar_requirements (TpProtocol *self);
 
 G_END_DECLS
 

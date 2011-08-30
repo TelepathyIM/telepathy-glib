@@ -868,7 +868,6 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
 {
   GError *error = NULL;
   TpChannelDispatcher *cd;
-  TpAccountManager *manager;
 
   g_return_if_fail (!self->priv->requested);
   self->priv->requested = TRUE;
@@ -889,13 +888,11 @@ request_and_handle_channel_async (TpAccountChannelRequest *self,
   self->priv->ensure = ensure;
 
   /* Create a temp handler */
-  manager = tp_simple_client_factory_ensure_account_manager (
-      tp_proxy_get_factory (self->priv->account));
-  self->priv->handler = tp_simple_handler_new_with_am (manager, TRUE, FALSE,
+  self->priv->handler = tp_simple_handler_new_with_factory (
+      tp_proxy_get_factory (self->priv->account), TRUE, FALSE,
       "TpGLibRequestAndHandle", TRUE, handle_channels, self, NULL);
   _tp_base_client_set_only_for_account (self->priv->handler,
       self->priv->account);
-  g_object_unref (manager);
 
   _tp_base_client_set_channel_factory (self->priv->handler,
       self->priv->factory);
@@ -1386,7 +1383,7 @@ tp_account_channel_request_ensure_channel_finish (
  * channel.
  *
  * Since: 0.13.2
- * Deprecated: since 0.UNRELEASED. The factory is taken from
+ * Deprecated: since 0.15.5. The factory is taken from
  *  #TpAccountChannelRequest:account.
  */
 void

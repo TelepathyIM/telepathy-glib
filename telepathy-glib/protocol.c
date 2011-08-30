@@ -141,6 +141,7 @@ struct _TpProtocolPrivate
   gchar *icon_name;
   GStrv authentication_types;
   TpCapabilities *capabilities;
+  TpAvatarRequirements *avatar_req;
 };
 
 enum
@@ -153,6 +154,7 @@ enum
     PROP_CAPABILITIES,
     PROP_PARAM_NAMES,
     PROP_AUTHENTICATION_TYPES,
+    PROP_AVATAR_REQUIREMENTS,
     N_PROPS
 };
 
@@ -279,6 +281,10 @@ tp_protocol_get_property (GObject *object,
       g_value_set_boxed (value, tp_protocol_get_authentication_types (self));
       break;
 
+    case PROP_AVATAR_REQUIREMENTS:
+      g_value_set_pointer (value, tp_protocol_get_avatar_requirements (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -356,6 +362,8 @@ tp_protocol_dispose (GObject *object)
       g_strfreev (self->priv->authentication_types);
       self->priv->authentication_types = NULL;
     }
+
+  tp_clear_pointer (&self->priv->avatar_req, tp_avatar_requirements_destroy);
 
   if (dispose != NULL)
     dispose (object);
@@ -507,6 +515,28 @@ tp_protocol_constructed (GObject *object)
       TP_PROP_PROTOCOL_INTERFACES);
 
   tp_proxy_add_interfaces (proxy, interfaces);
+
+  if (tp_proxy_has_interface_by_id (self,
+        TP_IFACE_QUARK_PROTOCOL_INTERFACE_AVATARS))
+    {
+      self->priv->avatar_req = tp_avatar_requirements_new (
+          (GStrv) tp_asv_get_strv (self->priv->protocol_properties,
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS_SUPPORTED_AVATAR_MIME_TYPES),
+          tp_asv_get_uint32 (self->priv->protocol_properties,
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MINIMUM_AVATAR_WIDTH, NULL),
+          tp_asv_get_uint32 (self->priv->protocol_properties,
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MINIMUM_AVATAR_HEIGHT, NULL),
+          tp_asv_get_uint32 (self->priv->protocol_properties,
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS_RECOMMENDED_AVATAR_WIDTH, NULL),
+          tp_asv_get_uint32 (self->priv->protocol_properties,
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS_RECOMMENDED_AVATAR_HEIGHT, NULL),
+          tp_asv_get_uint32 (self->priv->protocol_properties,
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_WIDTH, NULL),
+          tp_asv_get_uint32 (self->priv->protocol_properties,
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_HEIGHT, NULL),
+          tp_asv_get_uint32 (self->priv->protocol_properties,
+            TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_BYTES, NULL));
+    }
 
   /* become ready immediately */
   _tp_proxy_set_feature_prepared (proxy, TP_PROTOCOL_FEATURE_PARAMETERS,
@@ -690,6 +720,21 @@ tp_protocol_class_init (TpProtocolClass *klass)
         "AuthenticationTypes",
         "A list of authentication types",
         G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * TpProtocol:avatar-requirements:
+   *
+   * A #TpAvatarRequirements representing the avatar requirements on this
+   * protocol, or %NULL if %TP_PROTOCOL_FEATURE_CORE has not been prepared or
+   * if the protocol doesn't support avatars.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  g_object_class_install_property (object_class, PROP_AVATAR_REQUIREMENTS,
+      g_param_spec_pointer ("avatar-requirements",
+        "Avatars requirements",
+        "Avatars requirements",
+        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   proxy_class->list_features = tp_protocol_list_features;
   proxy_class->must_have_unique_name = FALSE;
@@ -1461,6 +1506,34 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
       G_TYPE_STRV, g_key_file_get_string_list (file, group,
           "AuthenticationTypes", NULL, NULL));
 
+  /* Avatars */
+  tp_asv_take_boxed (immutables,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS_SUPPORTED_AVATAR_MIME_TYPES,
+      G_TYPE_STRV,
+      g_key_file_get_string_list (file, group, "SupportedAvatarMIMETypes",
+        NULL, NULL));
+  tp_asv_set_uint32 (immutables,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MINIMUM_AVATAR_HEIGHT,
+      g_key_file_get_uint64 (file, group, "MinimumAvatarHeight", NULL));
+  tp_asv_set_uint32 (immutables,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MINIMUM_AVATAR_WIDTH,
+      g_key_file_get_uint64 (file, group, "MinimumAvatarWidth", NULL));
+  tp_asv_set_uint32 (immutables,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS_RECOMMENDED_AVATAR_HEIGHT,
+      g_key_file_get_uint64 (file, group, "RecommendedAvatarHeight", NULL));
+  tp_asv_set_uint32 (immutables,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS_RECOMMENDED_AVATAR_WIDTH,
+      g_key_file_get_uint64 (file, group, "RecommendedAvatarWidth", NULL));
+  tp_asv_set_uint32 (immutables,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_HEIGHT,
+      g_key_file_get_uint64 (file, group, "MaximumAvatarHeight", NULL));
+  tp_asv_set_uint32 (immutables,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_WIDTH,
+      g_key_file_get_uint64 (file, group, "MaximumAvatarWidth", NULL));
+  tp_asv_set_uint32 (immutables,
+      TP_PROP_PROTOCOL_INTERFACE_AVATARS_MAXIMUM_AVATAR_BYTES,
+      g_key_file_get_uint64 (file, group, "MaximumAvatarBytes", NULL));
+
   rccs = g_ptr_array_new ();
 
   rcc_groups = g_key_file_get_string_list (file, group,
@@ -1481,4 +1554,22 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
     *protocol_name = g_strdup (name);
 
   return immutables;
+}
+
+/**
+ * tp_protocol_get_avatar_requirements
+ * @self: a #TpProtocol
+ *
+ * Return the #TpProtocol:avatar-requirements property
+ *
+ * Returns: (transfer none): the value of #TpProtocol:avatar-requirements
+ *
+ * Since: 0.15.UNRELEASED
+ */
+TpAvatarRequirements *
+tp_protocol_get_avatar_requirements (TpProtocol *self)
+{
+  g_return_val_if_fail (TP_IS_PROTOCOL (self), NULL);
+
+  return self->priv->avatar_req;
 }
