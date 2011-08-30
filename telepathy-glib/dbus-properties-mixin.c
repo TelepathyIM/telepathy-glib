@@ -1189,31 +1189,50 @@ out:
   g_hash_table_destroy (values);
 }
 
-static void
-_tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
-                               const gchar *interface_name,
-                               const gchar *property_name,
-                               const GValue *value,
-                               DBusGMethodInvocation *context)
+/**
+ * tp_dbus_properties_mixin_set:
+ * @self: an object with this mixin
+ * @interface_name: a D-Bus interface name
+ * @property_name: a D-Bus property name
+ * @value: a GValue containing the new value for this property.
+ * @error: used to return an error on failure
+ *
+ * Sets a property to the value specified by @value, as if by
+ * calling the D-Bus method org.freedesktop.DBus.Properties.Set.
+ *
+ * If Set would return a D-Bus error, sets @error and returns %FALSE
+ *
+ * Returns: %TRUE on success; %FALSE (setting @error) on failure
+ * Since: UNRELEASED
+ */
+gboolean
+tp_dbus_properties_mixin_set (
+    GObject *self,
+    const gchar *interface_name,
+    const gchar *property_name,
+    const GValue *value,
+    GError **error)
 {
-  GObject *self = G_OBJECT (iface);
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
   TpDBusPropertiesMixinIfaceInfo *iface_info;
   TpDBusPropertiesMixinPropImpl *prop_impl;
   TpDBusPropertiesMixinPropInfo *prop_info;
   GValue copy = { 0 };
-  GError *error = NULL;
+  gboolean ret;
+
+  g_return_val_if_fail (G_IS_OBJECT (self), FALSE);
+  g_return_val_if_fail (interface_name != NULL, FALSE);
+  g_return_val_if_fail (property_name != NULL, FALSE);
+  g_return_val_if_fail (G_IS_VALUE (value), FALSE);
 
   iface_impl = _tp_dbus_properties_mixin_find_iface_impl (self,
       interface_name);
 
   if (iface_impl == NULL)
     {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "No properties known for that interface" };
-
-      dbus_g_method_return_error (context, &e);
-      return;
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "No properties known for interface '%s'", interface_name);
+      return FALSE;
     }
 
   iface_info = iface_impl->mixin_priv;
@@ -1223,31 +1242,26 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
 
   if (prop_impl == NULL)
     {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Unknown property" };
-
-      dbus_g_method_return_error (context, &e);
-      return;
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Unknown property '%s' on interface '%s'", property_name,
+          interface_name);
+      return FALSE;
     }
 
   prop_info = prop_impl->mixin_priv;
 
   if ((prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE) == 0)
     {
-      GError e = { TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
-          "This property is read-only" };
-
-      dbus_g_method_return_error (context, &e);
-      return;
+      g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+          "'%s.%s' is read-only", interface_name, property_name);
+      return FALSE;
     }
 
   if (iface_impl->setter == NULL)
     {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Setting properties on this interface is unimplemented" };
-
-      dbus_g_method_return_error (context, &e);
-      return;
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Setting properties on '%s' is unimplemented", interface_name);
+      return FALSE;
     }
 
   if (G_VALUE_TYPE (value) != prop_info->type)
@@ -1256,14 +1270,12 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
 
       if (!g_value_transform (value, &copy))
         {
-          error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
               "Cannot convert %s to %s for property %s",
               g_type_name (G_VALUE_TYPE (value)),
               g_type_name (prop_info->type),
               property_name);
-
-          dbus_g_method_return_error (context, error);
-          g_error_free (error);
+          ret = FALSE;
           goto out;
         }
 
@@ -1271,8 +1283,28 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
       value = &copy;
     }
 
-  if (iface_impl->setter (self, iface_info->dbus_interface,
-        prop_info->name, value, prop_impl->setter_data, &error))
+  ret = iface_impl->setter (self, iface_info->dbus_interface,
+        prop_info->name, value, prop_impl->setter_data, error);
+
+out:
+  if (G_IS_VALUE (&copy))
+    g_value_unset (&copy);
+
+  return ret;
+}
+
+static void
+_tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
+                               const gchar *interface_name,
+                               const gchar *property_name,
+                               const GValue *value,
+                               DBusGMethodInvocation *context)
+{
+  GObject *self = G_OBJECT (iface);
+  GError *error = NULL;
+
+  if (tp_dbus_properties_mixin_set (self, interface_name, property_name, value,
+          &error))
     {
       tp_svc_dbus_properties_return_from_set (context);
     }
@@ -1281,10 +1313,6 @@ _tp_dbus_properties_mixin_set (TpSvcDBusProperties *iface,
       dbus_g_method_return_error (context, error);
       g_error_free (error);
     }
-
-out:
-  if (G_IS_VALUE (&copy))
-    g_value_unset (&copy);
 }
 
 /**

@@ -124,6 +124,12 @@ void tp_dbus_properties_mixin_iface_init (gpointer g_iface,
 gboolean tp_dbus_properties_mixin_get (GObject *self,
     const gchar *interface_name, const gchar *property_name,
     GValue *value, GError **error);
+gboolean tp_dbus_properties_mixin_set (
+    GObject *self,
+    const gchar *interface_name,
+    const gchar *property_name,
+    const GValue *value,
+    GError **error);
 
 GHashTable *tp_dbus_properties_mixin_make_properties_hash (
     GObject *object, const gchar *first_interface,
