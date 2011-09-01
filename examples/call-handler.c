@@ -74,9 +74,13 @@ on_audio_output_volume_changed (TfContent *content,
   GParamSpec *spec,
   GstElement *volume)
 {
-  guint output_volume;
+  guint output_volume = 0;
 
   g_object_get (content, "output-volume", &output_volume, NULL);
+
+  if (output_volume == 0)
+    return;
+
   g_object_set (volume, "volume", (double)output_volume / 255.0, NULL);
 }
 
@@ -226,9 +230,12 @@ on_audio_input_volume_changed (TfContent *content,
   ChannelContext *context)
 {
   GstElement *volume;
-  guint input_volume;
+  guint input_volume = 0;
 
   g_object_get (content, "input-volume", &input_volume, NULL);
+
+  if (input_volume == 0)
+    return;
 
   volume = gst_bin_get_by_name (GST_BIN (context->pipeline), "input_volume");
   g_object_set (volume, "volume", (double)input_volume / 255.0, NULL);
@@ -241,7 +248,6 @@ setup_audio_source (ChannelContext *context, TfContent *content)
   GstElement *result;
   GstElement *volume;
   guint input_volume = 0;
-  guint output_volume = 0;
 
   result = gst_parse_bin_from_description (
       "pulsesrc ! audio/x-raw-int,rate=8000 ! queue"
@@ -251,12 +257,14 @@ setup_audio_source (ChannelContext *context, TfContent *content)
 
   g_object_get (content,
       "input-volume", &input_volume,
-      "output-volume", &output_volume,
       NULL);
 
-  volume = gst_bin_get_by_name (GST_BIN (result), "input_volume");
-  g_object_set (volume, "volume", (double)input_volume / 255.0, NULL);
-  gst_object_unref (volume);
+  if (input_volume != 0)
+    {
+      volume = gst_bin_get_by_name (GST_BIN (result), "input_volume");
+      g_object_set (volume, "volume", (double)input_volume / 255.0, NULL);
+      gst_object_unref (volume);
+    }
 
   g_signal_connect (content, "notify::input-volume",
       G_CALLBACK (on_audio_input_volume_changed),
