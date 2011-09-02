@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import gobject
-gobject.threads_init()
+from gi.repository import GObject
+GObject.threads_init()
 
 from gi.repository import TelepathyGLib
 
@@ -64,5 +64,5 @@ if __name__ == '__main__':
 
     handler.register()
 
-    main_loop = gobject.MainLoop()
+    main_loop = GObject.MainLoop()
     main_loop.run()
