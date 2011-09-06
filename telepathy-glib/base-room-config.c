@@ -451,7 +451,10 @@ find_myself (GObject *parent)
 {
   TpBaseRoomConfig *self = g_object_get_qdata (parent, find_myself_q);
 
+  DEBUG ("retrieved %p from channel %p", self, parent);
+
   g_return_val_if_fail (TP_IS_BASE_CHANNEL (parent), NULL);
+  g_return_val_if_fail (self != NULL, NULL);
   g_return_val_if_fail (TP_IS_BASE_ROOM_CONFIG (self), NULL);
 
   return self;
@@ -481,6 +484,7 @@ tp_base_room_config_dispose (GObject *object)
 
   if (priv->channel != NULL)
     {
+      g_object_set_qdata (G_OBJECT (priv->channel), find_myself_q, NULL);
       g_object_weak_unref (G_OBJECT (priv->channel), channel_died_cb, self);
       priv->channel = NULL;
     }
