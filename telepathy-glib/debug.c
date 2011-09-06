@@ -113,6 +113,7 @@ static GDebugKey keys[] = {
   { "client",        TP_DEBUG_CLIENT },
   { "contact-lists", TP_DEBUG_CONTACT_LISTS },
   { "sasl",          TP_DEBUG_SASL },
+  { "room-config",   TP_DEBUG_ROOM_CONFIG },
   { 0, }
 };
 
@@ -145,6 +146,7 @@ static DebugKeyToDomain key_to_domain[] = {
   { TP_DEBUG_CLIENT,     G_LOG_DOMAIN "/client" },
   { TP_DEBUG_CONTACT_LISTS, G_LOG_DOMAIN "/contact-lists" },
   { TP_DEBUG_SASL,       G_LOG_DOMAIN "/sasl" },
+  { TP_DEBUG_ROOM_CONFIG, G_LOG_DOMAIN "/room-config" },
   { 0, NULL }
 };
 

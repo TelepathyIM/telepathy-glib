@@ -137,6 +137,7 @@
     <xi:include href="xml/base-channel.xml"/>
     <xi:include href="xml/presence-mixin.xml"/>
     <xi:include href="xml/properties-mixin.xml"/>
+    <xi:include href="xml/base-room-config.xml"/>
     <xi:include href="xml/group-mixin.xml"/>
     <xi:include href="xml/message-mixin.xml"/>
     <xi:include href="xml/message.xml"/>
