@@ -77,6 +77,9 @@ void tp_base_room_config_iface_init (
     gpointer g_iface,
     gpointer iface_data);
 
+TpBaseChannel *tp_base_room_config_dup_channel (
+    TpBaseRoomConfig *self);
+
 void tp_base_room_config_set_can_update_configuration (
     TpBaseRoomConfig *self,
     gboolean can_update_configuration);

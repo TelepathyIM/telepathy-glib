@@ -985,6 +985,24 @@ tp_base_room_config_iface_init (
 }
 
 /**
+ * tp_base_room_config_dup_channel:
+ * @self: a #TpBaseChannel
+ *
+ * Returns the channel to which @self is attached.
+ *
+ * Returns: (transfer full): the #TpBaseChannel:channel property.
+ */
+TpBaseChannel *
+tp_base_room_config_dup_channel (
+    TpBaseRoomConfig *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_ROOM_CONFIG (self), NULL);
+  g_return_val_if_fail (self->priv->channel != NULL, NULL);
+
+  return g_object_ref (self->priv->channel);
+}
+
+/**
  * tp_base_room_config_set_can_update_configuration:
  * @self: a #TpBaseRoomConfig object.
  * @can_update_configuration: %TRUE if the local user has permission to modify
