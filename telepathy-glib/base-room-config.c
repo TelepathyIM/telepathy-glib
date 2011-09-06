@@ -119,7 +119,7 @@
 
 /**
  * TpBaseRoomConfigUpdateAsync:
- * @channel: a channel instance which uses #TpBaseRoomConfig
+ * @self: a #TpBaseRoomConfig
  * @validated_properties: a mapping from #TpBaseRoomConfigProperty to #GValue,
  *  whose types have already been validated. The function should not modify
  *  this hash table.
@@ -137,7 +137,7 @@
 
 /**
  * TpBaseRoomConfigUpdateFinish:
- * @channel: a channel instance which uses #TpBaseRoomConfig
+ * @self: a #TpBaseRoomConfig
  * @result: the result passed to the callback
  * @error: used to return an error if %FALSE is returned.
  *
@@ -232,7 +232,7 @@ enum {
 G_DEFINE_TYPE (TpBaseRoomConfig, tp_base_room_config, G_TYPE_OBJECT)
 
 static gboolean tp_base_room_config_update_finish (
-    TpBaseChannel *channel,
+    TpBaseRoomConfig *self,
     GAsyncResult *result,
     GError **error);
 
@@ -831,16 +831,19 @@ update_cb (
     GAsyncResult *result,
     gpointer user_data)
 {
-  TpBaseChannel *channel = TP_BASE_CHANNEL (source);
-  TpBaseRoomConfig *self = TP_BASE_ROOM_CONFIG (user_data);
+  TpBaseRoomConfig *self = TP_BASE_ROOM_CONFIG (source);
   TpBaseRoomConfigPrivate *priv = self->priv;
   GError *error = NULL;
 
   g_return_if_fail (priv->update_configuration_ctx != NULL);
   g_return_if_fail (priv->validated_properties != NULL);
+  /* We took a ref to the channel before calling out to application code; it
+   * shouldn't have died in the meantime.
+   */
+  g_return_if_fail (priv->channel != NULL);
 
   if (TP_BASE_ROOM_CONFIG_GET_CLASS (self)->update_finish (
-        channel, result, &error))
+        self, result, &error))
     {
       GHashTableIter iter;
       gpointer k, v;
@@ -871,20 +874,18 @@ update_cb (
 
   priv->update_configuration_ctx = NULL;
   tp_clear_pointer (&priv->validated_properties, g_hash_table_unref);
-  g_object_unref (self);
+  g_object_unref (priv->channel);
 }
 
 static gboolean
 tp_base_room_config_update_finish (
-    TpBaseChannel *channel,
+    TpBaseRoomConfig *self,
     GAsyncResult *result,
     GError **error)
 {
-  TpBaseRoomConfig *config = TP_BASE_ROOM_CONFIG (
-      g_async_result_get_user_data (result));
-  gpointer source_tag = TP_BASE_ROOM_CONFIG_GET_CLASS (config)->update_async;
+  gpointer source_tag = TP_BASE_ROOM_CONFIG_GET_CLASS (self)->update_async;
 
-  _tp_implement_finish_void (channel, source_tag);
+  _tp_implement_finish_void (self, source_tag);
 }
 
 static void
@@ -894,6 +895,7 @@ tp_base_room_config_update_configuration (
     DBusGMethodInvocation *context)
 {
   TpBaseRoomConfig *self = find_myself ((GObject *) iface);
+  TpBaseChannel *channel = TP_BASE_CHANNEL (iface);
   TpBaseRoomConfigPrivate *priv;
   TpBaseRoomConfigUpdateAsync update_async;
   GError *error = NULL;
@@ -904,7 +906,7 @@ tp_base_room_config_update_configuration (
           "Internal error: couldn't find TpBaseRoomConfig object "
           "attached to (TpBaseChannel *) %p at %s",
           iface,
-          tp_base_channel_get_object_path (TP_BASE_CHANNEL (iface)));
+          tp_base_channel_get_object_path (channel));
 
       CRITICAL ("%s", error->message);
       goto err;
@@ -953,12 +955,18 @@ tp_base_room_config_update_configuration (
     goto err;
 
   priv->update_configuration_ctx = context;
+  /* We ensure our channel stays alive for the duration of the call. This is
+   * mainly as a convenience to the subclass, which would probably like
+   * tp_base_room_config_get_channel() to work reliably.
+   *
+   * If the DBusGMethodInvocation kept the object alive, we wouldn't need this.
+   */
+  g_object_ref (priv->channel);
   /* This means the CM could modify validated_properties if it wanted. This is
    * good in some ways: it means it can further sanitize the values if it
    * wants, for instance. But I guess it's also possible for the CM to mess up.
    */
-  update_async (priv->channel, priv->validated_properties, update_cb,
-      g_object_ref (self));
+  update_async (self, priv->validated_properties, update_cb, NULL);
   return;
 
 err:

@@ -29,12 +29,12 @@ typedef struct _TpBaseRoomConfigClass TpBaseRoomConfigClass;
 typedef struct _TpBaseRoomConfigPrivate TpBaseRoomConfigPrivate;
 
 typedef void (*TpBaseRoomConfigUpdateAsync) (
-    TpBaseChannel *channel,
+    TpBaseRoomConfig *self,
     GHashTable *validated_properties,
     GAsyncReadyCallback callback,
     gpointer user_data);
 typedef gboolean (*TpBaseRoomConfigUpdateFinish) (
-    TpBaseChannel *channel,
+    TpBaseRoomConfig *self,
     GAsyncResult *result,
     GError **error);
 
