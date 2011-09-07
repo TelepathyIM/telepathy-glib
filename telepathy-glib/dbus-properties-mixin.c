@@ -64,8 +64,15 @@
  * @TP_DBUS_PROPERTIES_MIXIN_FLAG_READ: The property can be read using Get and
  *  GetAll
  * @TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE: The property can be written using Set
+ * @TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED: The property's new value is
+ *  included in emissions of PropertiesChanged
+ * @TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED: The property is announced
+ *  as invalidated, without its value, in emissions of PropertiesChanged
  *
- * Bitfield representing allowed access to a property.
+ * Bitfield representing allowed access to a property. At most one of
+ * %TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED and
+ * %TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED may be specified for a
+ * property.
  *
  * Since 0.11.5, there is a corresponding #GFlagsClass type,
  * %TP_TYPE_DBUS_PROPERTIES_MIXIN_FLAGS.
@@ -157,8 +164,24 @@ tp_svc_interface_set_dbus_properties_info (GType g_interface,
   for (prop = info->props; prop->name != 0; prop++)
     {
       g_return_if_fail (prop->flags != 0);
-      g_return_if_fail (prop->flags <= (TP_DBUS_PROPERTIES_MIXIN_FLAG_READ |
-            TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE));
+      g_return_if_fail (
+        (prop->flags & ~( TP_DBUS_PROPERTIES_MIXIN_FLAG_READ
+                        | TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE
+                        | TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED
+                        | TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED
+                        )) == 0);
+
+      /* Check that at most one change-related flag is set. */
+      if ((prop->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED) &&
+          (prop->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED))
+        {
+          CRITICAL ("at most one of EMITS_CHANGED and EMITS_INVALIDATED may be "
+              "specified for a property, but %s.%s has both",
+              g_quark_to_string (info->dbus_interface),
+              g_quark_to_string (prop->name));
+          g_return_if_reached ();
+        }
+
       g_return_if_fail (prop->dbus_signature != NULL);
       g_return_if_fail (prop->dbus_signature[0] != '\0');
       g_return_if_fail (prop->type != 0);
@@ -701,6 +724,45 @@ _tp_dbus_properties_mixin_find_prop_impl
   return NULL;
 }
 
+static TpDBusPropertiesMixinPropImpl *
+_iface_impl_get_property_impl (
+    GObject *self,
+    TpDBusPropertiesMixinIfaceImpl *iface_impl,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GError **error)
+{
+  TpDBusPropertiesMixinPropImpl *prop_impl;
+  TpDBusPropertiesMixinPropInfo *prop_info;
+
+  prop_impl = _tp_dbus_properties_mixin_find_prop_impl (iface_impl,
+      property_name);
+
+  if (prop_impl == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Unknown property %s on %s", property_name, interface_name);
+      return FALSE;
+    }
+
+  prop_info = prop_impl->mixin_priv;
+
+  if ((prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_READ) == 0)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
+          "Property %s on %s is write-only", property_name, interface_name);
+      return FALSE;
+    }
+
+  if (iface_impl->getter == NULL)
+    {
+      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Getting properties on %s is unimplemented", interface_name);
+      return FALSE;
+    }
+
+  return prop_impl;
+}
 
 /**
  * tp_dbus_properties_mixin_get:
@@ -729,9 +791,12 @@ tp_dbus_properties_mixin_get (GObject *self,
                               GError **error)
 {
   TpDBusPropertiesMixinIfaceImpl *iface_impl;
-  TpDBusPropertiesMixinIfaceInfo *iface_info;
   TpDBusPropertiesMixinPropImpl *prop_impl;
-  TpDBusPropertiesMixinPropInfo *prop_info;
+
+  g_return_val_if_fail (G_IS_OBJECT (self), FALSE);
+  g_return_val_if_fail (interface_name != NULL, FALSE);
+  g_return_val_if_fail (property_name != NULL, FALSE);
+  g_return_val_if_fail (value != NULL, FALSE);
 
   iface_impl = _tp_dbus_properties_mixin_find_iface_impl (self,
       interface_name);
@@ -743,39 +808,23 @@ tp_dbus_properties_mixin_get (GObject *self,
       return FALSE;
     }
 
-  iface_info = iface_impl->mixin_priv;
+  prop_impl = _iface_impl_get_property_impl (self, iface_impl, interface_name,
+      property_name, error);
 
-  prop_impl = _tp_dbus_properties_mixin_find_prop_impl (iface_impl,
-      property_name);
-
-  if (prop_impl == NULL)
+  if (prop_impl != NULL)
     {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Unknown property %s on %s", property_name, interface_name);
+      TpDBusPropertiesMixinIfaceInfo *iface_info = iface_impl->mixin_priv;
+      TpDBusPropertiesMixinPropInfo *prop_info = prop_impl->mixin_priv;
+
+      g_value_init (value, prop_info->type);
+      iface_impl->getter (self, iface_info->dbus_interface,
+          prop_info->name, value, prop_impl->getter_data);
+      return TRUE;
+    }
+  else
+    {
       return FALSE;
     }
-
-  prop_info = prop_impl->mixin_priv;
-
-  if ((prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_READ) == 0)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
-          "Property %s on %s is write-only", property_name, interface_name);
-      return FALSE;
-    }
-
-  if (iface_impl->getter == NULL)
-    {
-      g_set_error (error, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Getting properties on %s is unimplemented", interface_name);
-      return FALSE;
-    }
-
-  g_value_init (value, prop_info->type);
-  iface_impl->getter (self, iface_info->dbus_interface,
-      prop_info->name, value, prop_impl->getter_data);
-
-  return TRUE;
 }
 
 
@@ -795,6 +844,7 @@ tp_dbus_properties_mixin_fill_properties_hash_va (
        iface = va_arg (ap, gchar *))
     {
       GValue *value = g_slice_new0 (GValue);
+      GError *error = NULL;
 
       if (first)
         {
@@ -811,13 +861,21 @@ tp_dbus_properties_mixin_fill_properties_hash_va (
        */
       g_assert (property != NULL);
 
-      tp_dbus_properties_mixin_get (object, iface, property,
-            value, NULL);
-      /* Fetching our immutable properties had better not fail... */
-      g_assert (G_IS_VALUE (value));
+      if (tp_dbus_properties_mixin_get (object, iface, property, value,
+              &error))
+        {
+          g_assert (G_IS_VALUE (value));
+          g_hash_table_insert (table,
+              g_strdup_printf ("%s.%s", iface, property), value);
+        }
+      else
+        {
+          /* This is bad and definitely indicates a programming error. */
+          CRITICAL ("Couldn't fetch '%s' on interface '%s': %s",
+              property, iface, error->message);
+          g_clear_error (&error);
+        }
 
-      g_hash_table_insert (table,
-          g_strdup_printf ("%s.%s", iface, property), value);
     }
 }
 
@@ -906,6 +964,150 @@ tp_dbus_properties_mixin_make_properties_hash (
   return table;
 }
 
+/**
+ * tp_dbus_properties_mixin_emit_properties_changed:
+ * @object: an object which uses the D-Bus properties mixin
+ * @interface_name: the interface on which properties have changed
+ * @properties: (allow-none): a %NULL-terminated array of (unqualified)
+ *  property names whose values have changed.
+ *
+ * Emits the PropertiesChanged signal for the provided properties. Depending on
+ * the EmitsChangedSignal annotations in the introspection XML, either the new
+ * value of the property will be included in the signal, or merely the fact
+ * that the property has changed.
+ *
+ * For example, the MPRIS specification defines a TrackList interface with two
+ * properties, one of which is annotated with EmitsChangedSignal=true and one
+ * annotated with EmitsChangedSignal=invalidates. The following call would
+ * include the new value of CanEditTracks and list Tracks as invalidated:
+ *
+ * |[
+ *    const gchar *properties[] = { "CanEditTracks", "Tracks", NULL };
+ *
+ *    tp_dbus_properties_mixin_emit_properties_changed (G_OBJECT (self),
+ *        "org.mpris.MediaPlayer2.TrackList", properties);
+ * ]|
+ *
+ * It is an error to pass a property to this
+ * function if the property is annotated with EmitsChangedSignal=false, or is
+ * unannotated.
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_dbus_properties_mixin_emit_properties_changed (
+    GObject *object,
+    const gchar *interface_name,
+    const gchar * const *properties)
+{
+  TpDBusPropertiesMixinIfaceImpl *iface_impl;
+  TpDBusPropertiesMixinIfaceInfo *iface_info;
+  GHashTable *changed_properties;
+  GPtrArray *invalidated_properties;
+  const gchar * const *prop_name;
+
+  g_return_if_fail (interface_name != NULL);
+  iface_impl = _tp_dbus_properties_mixin_find_iface_impl (object,
+      interface_name);
+  g_return_if_fail (iface_impl != NULL);
+
+  iface_info = iface_impl->mixin_priv;
+
+  /* If someone passes no property names, well … that's fine, we have nothing
+   * to do.
+   */
+  if (properties == NULL || properties[0] == NULL)
+    return;
+
+  changed_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
+      NULL, (GDestroyNotify) tp_g_value_slice_free);
+  invalidated_properties = g_ptr_array_new ();
+
+  for (prop_name = properties; *prop_name != NULL; prop_name++)
+    {
+      TpDBusPropertiesMixinPropImpl *prop_impl;
+      TpDBusPropertiesMixinPropInfo *prop_info;
+      GError *error = NULL;
+
+      prop_impl = _iface_impl_get_property_impl (object, iface_impl,
+          interface_name, *prop_name, &error);
+
+      if (prop_impl == NULL)
+        {
+          WARNING ("Couldn't get value for '%s.%s': %s", interface_name,
+              *prop_name, error->message);
+          g_clear_error (&error);
+          g_return_if_reached ();
+        }
+
+      prop_info = prop_impl->mixin_priv;
+
+      if (prop_info->flags & TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED)
+        {
+          GValue v = { 0, };
+
+          g_value_init (&v, prop_info->type);
+          iface_impl->getter (object, iface_info->dbus_interface,
+              prop_info->name, &v, prop_impl->getter_data);
+          g_hash_table_insert (changed_properties, (gchar *) *prop_name,
+              tp_g_value_slice_dup (&v));
+
+          g_value_unset (&v);
+        }
+      else if (prop_info->flags &
+                  TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED)
+        {
+          g_ptr_array_add (invalidated_properties, (gchar *) *prop_name);
+        }
+      else
+        {
+          WARNING ("'%s.%s' is not annotated with EmitsChangedSignal'",
+              interface_name, *prop_name);
+        }
+    }
+
+  g_ptr_array_add (invalidated_properties, NULL);
+
+  tp_svc_dbus_properties_emit_properties_changed (object, interface_name,
+      changed_properties, (const gchar **) invalidated_properties->pdata);
+  g_hash_table_unref (changed_properties);
+  g_ptr_array_unref (invalidated_properties);
+}
+
+/**
+ * tp_dbus_properties_mixin_emit_properties_changed_varargs: (skip)
+ * @object: an object which uses the D-Bus properties mixin
+ * @interface_name: the interface on which properties have changed
+ * @...: (unqualified) property names whose values have changed, terminated by
+ *  %NULL.
+ *
+ * A shortcut for calling tp_dbus_properties_mixin_emit_properties_changed().
+ *
+ * Since: UNRELEASED
+ */
+void
+tp_dbus_properties_mixin_emit_properties_changed_varargs (
+    GObject *object,
+    const gchar *interface_name,
+    ...)
+{
+  GPtrArray *property_names = g_ptr_array_new ();
+  char *property_name;
+  va_list ap;
+
+  va_start (ap, interface_name);
+  do
+    {
+      property_name = va_arg (ap, char *);
+      g_ptr_array_add (property_names, property_name);
+    }
+  while (property_name != NULL);
+  va_end (ap);
+
+  tp_dbus_properties_mixin_emit_properties_changed (object, interface_name,
+      (const gchar * const *) property_names->pdata);
+  g_ptr_array_unref (property_names);
+}
 
 static void
 _tp_dbus_properties_mixin_get (TpSvcDBusProperties *iface,

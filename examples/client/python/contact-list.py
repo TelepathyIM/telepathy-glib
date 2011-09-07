@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import os
-import gobject
-gobject.threads_init()
+from gi.repository import GObject
+GObject.threads_init()
 
 from gi.repository import TelepathyGLib as Tp
 
@@ -25,7 +25,7 @@ def manager_prepared_cb(manager, result, loop):
 if __name__ == '__main__':
     Tp.debug_set_flags(os.getenv('EXAMPLE_DEBUG', ''))
 
-    loop = gobject.MainLoop()
+    loop = GObject.MainLoop()
     manager = Tp.AccountManager.dup()
     factory = manager.get_factory()
     factory.add_account_features([Tp.Account.get_feature_quark_connection()])

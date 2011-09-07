@@ -1937,11 +1937,15 @@ tp_asv_dump (GHashTable *asv)
 
   g_return_if_fail (asv != NULL);
 
+  g_debug ("{");
+
   g_hash_table_iter_init (&iter, asv);
   while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
   {
     char *str = g_strdup_value_contents (value);
-    g_debug ("'%s' : %s", key, str);
+    g_debug ("  '%s' : %s", key, str);
     g_free (str);
   }
+
+  g_debug ("}");
 }

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import sys
 
-import gobject
-gobject.threads_init()
+from gi.repository import GObject
+GObject.threads_init()
 
 from gi.repository import TelepathyGLib
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # FIXME: for some reason TelepathyGLib.USER_ACTION_TIME_CURRENT_TIME is
     # not defined (bgo #639206)
 
-    main_loop = gobject.MainLoop()
+    main_loop = GObject.MainLoop()
 
     request.ensure_channel_async("", None, ensure_channel_cb, main_loop)
 
