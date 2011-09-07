@@ -692,6 +692,7 @@ got_contact_attribute_interfaces (TpProxy *proxy,
 
   g_assert (self->priv->contact_attribute_interfaces == NULL);
   self->priv->contact_attribute_interfaces = arr;
+  self->priv->ready_enough_for_contacts = TRUE;
 
   tp_connection_continue_introspection (self);
 }
@@ -789,6 +790,34 @@ tp_connection_got_self_contact_cb (TpConnection *self,
 }
 
 static void
+get_self_contact (TpConnection *self)
+{
+  TpSimpleClientFactory *factory;
+  GArray *features;
+
+  factory = tp_proxy_get_factory (self);
+  features = tp_simple_client_factory_dup_contact_features (factory, self);
+
+  /* FIXME: We should use tp_simple_client_factory_dup_contact(), but that would
+   * require immortal-handles and spec change to give the self identifier. */
+  /* This relies on the special case in tp_connection_get_contacts_by_handle()
+   * which makes it start working slightly early. */
+   tp_connection_get_contacts_by_handle (self,
+       1, &self->priv->last_known_self_handle,
+      features->len, (TpContactFeature *) features->data,
+      tp_connection_got_self_contact_cb, NULL, NULL, NULL);
+
+  g_array_unref (features);
+}
+
+static void
+introspect_self_contact (TpConnection *self)
+{
+  self->priv->introspecting_self_contact = TRUE;
+  get_self_contact (self);
+}
+
+static void
 got_self_handle (TpConnection *self,
                  guint self_handle,
                  const GError *error,
@@ -815,11 +844,9 @@ got_self_handle (TpConnection *self,
     }
 
   self->priv->last_known_self_handle = self_handle;
-  self->priv->introspecting_self_contact = TRUE;
-  /* This relies on the special case in tp_connection_get_contacts_by_handle()
-   * which makes it start working slightly early. */
-  tp_connection_get_contacts_by_handle (self, 1, &self_handle, 0, NULL,
-      tp_connection_got_self_contact_cb, NULL, NULL, NULL);
+  self->priv->introspect_needed = g_list_append (self->priv->introspect_needed,
+    introspect_self_contact);
+  tp_connection_continue_introspection (self);
 }
 
 static void
@@ -836,12 +863,11 @@ on_self_handle_changed (TpConnection *self,
 
   DEBUG ("SelfHandleChanged to %u, I wonder what that means?", self_handle);
   self->priv->last_known_self_handle = self_handle;
-  tp_connection_get_contacts_by_handle (self, 1, &self_handle, 0, NULL,
-      tp_connection_got_self_contact_cb, NULL, NULL, NULL);
+  get_self_contact (self);
 }
 
 static void
-get_self_handle (TpConnection *self)
+introspect_self_handle (TpConnection *self)
 {
   if (!self->priv->introspecting_after_connected)
     {
@@ -876,6 +902,10 @@ tp_connection_add_interfaces_from_introspection (TpConnection *self,
       self->priv->introspect_needed = g_list_append (
           self->priv->introspect_needed, introspect_contacts);
     }
+  else
+    {
+      self->priv->ready_enough_for_contacts = TRUE;
+    }
 }
 
 static void
@@ -905,11 +935,12 @@ tp_connection_got_interfaces_cb (TpConnection *self,
     }
 
   g_assert (self->priv->introspect_needed == NULL);
-  self->priv->introspect_needed = g_list_append (self->priv->introspect_needed,
-    get_self_handle);
 
   if (interfaces != NULL)
     tp_connection_add_interfaces_from_introspection (self, interfaces);
+
+  self->priv->introspect_needed = g_list_append (self->priv->introspect_needed,
+    introspect_self_handle);
 
   /* FIXME: give subclasses a chance to influence the definition of "ready"
    * now that we have our interfaces? */
@@ -1277,25 +1308,18 @@ _tp_connection_got_properties (TpProxy *proxy,
       if (status == TP_CONNECTION_STATUS_CONNECTED)
         {
           self->priv->introspecting_after_connected = TRUE;
-
           self->priv->last_known_self_handle = self_handle;
-          self->priv->introspecting_self_contact = TRUE;
 
-          /* This relies on the special case in tp_connection_get_contacts_by_handle()
-           * which makes it start working slightly early. */
-          tp_connection_get_contacts_by_handle (self, 1, &self_handle, 0, NULL,
-              tp_connection_got_self_contact_cb, NULL, NULL, NULL);
-
-          /* tp_connection_got_self_contact_cb will resume the introspection */
+          self->priv->introspect_needed = g_list_append (
+              self->priv->introspect_needed, introspect_self_contact);
         }
       else
         {
           tp_connection_status_changed (self, status,
               TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED);
-
-          tp_connection_continue_introspection (self);
         }
 
+      tp_connection_continue_introspection (self);
       return;
     }
   else if (error != NULL)
@@ -1679,6 +1703,9 @@ tp_connection_class_init (TpConnectionClass *klass)
    * If the local user's unique identifier changes (for instance by using
    * /nick on IRC), this property will change to a different #TpContact object
    * representing the new identifier, and #GObject::notify will be emitted.
+   *
+   * The #TpContact object is guaranteed to have all of the features previously
+   * passed to tp_simple_client_factory_add_contact_features() prepared.
    *
    * To wait for a non-%NULL self-contact (and other properties), call
    * tp_proxy_prepare_async() with the feature
