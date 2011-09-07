@@ -1,3 +1,12 @@
+telepathy-glib 0.14.10 (UNRELEASED)
+==================================
+
+Fixes:
+
+• fd.o#40555: Memory leaks in TpConnection and protocol.c (Vivek)
+
+• Memory leak if the debug message cache is disabled (Vivek)
+
 telepathy-glib 0.14.9 (2011-07-08)
 ==================================
 
