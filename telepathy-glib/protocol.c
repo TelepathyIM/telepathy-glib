@@ -1331,6 +1331,8 @@ cleanup:
       g_free (value);
     }
 
+  g_strfreev (keys);
+
   return ret;
 }
 

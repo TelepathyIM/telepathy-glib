@@ -374,6 +374,11 @@ _tp_debug_sender_take (TpDebugSender *self,
       tp_svc_debug_emit_new_debug_message (self, new_msg->timestamp,
           new_msg->domain, new_msg->level, new_msg->string);
     }
+
+#ifndef ENABLE_DEBUG_CACHE
+  /* if there's cache, these are freed when they fall of its end instead */
+  debug_message_free (new_msg);
+#endif
 }
 
 /**
