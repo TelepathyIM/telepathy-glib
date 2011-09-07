@@ -798,7 +798,7 @@ get_self_contact (TpConnection *self)
   factory = tp_proxy_get_factory (self);
   features = tp_simple_client_factory_dup_contact_features (factory, self);
 
-  /* FIXME: We should use tp_simple_client_factory_dup_contact(), but that would
+  /* FIXME: We should use tp_simple_client_factory_ensure_contact(), but that would
    * require immortal-handles and spec change to give the self identifier. */
   /* This relies on the special case in tp_connection_get_contacts_by_handle()
    * which makes it start working slightly early. */
