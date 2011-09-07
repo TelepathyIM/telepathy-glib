@@ -33,6 +33,16 @@ from libglibcodegen import Signature, type_to_gtype, cmp_by_name, \
 
 NS_TP = "http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
 
+def get_emits_changed(node):
+    try:
+        return [
+            annotation.getAttribute('value')
+            for annotation in node.getElementsByTagName('annotation')
+            if annotation.getAttribute('name') == 'org.freedesktop.DBus.Property.EmitsChangedSignal'
+            ][0]
+    except IndexError:
+        return None
+
 class Generator(object):
 
     def __init__(self, dom, prefix, basename, signal_marshal_prefix,
@@ -107,6 +117,8 @@ class Generator(object):
         tmp = interface.getAttribute('tp:causes-havoc')
         if tmp and not self.allow_havoc:
             raise AssertionError('%s is %s' % (self.iface_name, tmp))
+
+        iface_emits_changed = get_emits_changed(interface)
 
         self.b('static const DBusGObjectInfo _%s%s_object_info;'
                % (self.prefix_, node_name_lc))
@@ -269,6 +281,16 @@ class Generator(object):
                 else:
                     flags = ('TP_DBUS_PROPERTIES_MIXIN_FLAG_READ | '
                              'TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE')
+
+                prop_emits_changed = get_emits_changed(m)
+
+                if prop_emits_changed is None:
+                    prop_emits_changed = iface_emits_changed
+
+                if prop_emits_changed == 'true':
+                    flags += ' | TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED'
+                elif prop_emits_changed == 'invalidates':
+                    flags += ' | TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED'
 
                 self.b('      { 0, %s, "%s", 0, NULL, NULL }, /* %s */'
                        % (flags, m.getAttribute('type'), m.getAttribute('name')))

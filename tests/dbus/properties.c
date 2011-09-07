@@ -11,8 +11,9 @@
 #include <telepathy-glib/util.h>
 
 #include "_gen/svc.h"
-#include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
+
+#define WITH_PROPERTIES_IFACE "com.example.WithProperties"
 
 typedef struct _TestProperties {
     GObject parent;
@@ -59,9 +60,9 @@ prop_getter (GObject *object,
              GValue *value,
              gpointer user_data)
 {
-  MYASSERT (!tp_strdiff (user_data, "read") ||
-            !tp_strdiff (user_data, "full-access"),
-            "%s", (gchar *) user_data);
+  if (tp_strdiff (user_data, "read"))
+    g_assert_cmpstr (user_data, ==, "full-access");
+
   g_value_set_uint (value, 42);
 }
 
@@ -73,11 +74,12 @@ prop_setter (GObject *object,
              gpointer user_data,
              GError **error)
 {
-  MYASSERT (G_VALUE_HOLDS_UINT (value), "");
-  MYASSERT (!tp_strdiff (user_data, "FULL ACCESS") ||
-            !tp_strdiff (user_data, "BLACK HOLE"),
-            "%s", (gchar *) user_data);
-  MYASSERT (g_value_get_uint (value) == 57, "%u", g_value_get_uint (value));
+  g_assert (G_VALUE_HOLDS_UINT (value));
+
+  if (tp_strdiff (user_data, "FULL ACCESS"))
+    g_assert_cmpstr (user_data, ==, "BLACK HOLE");
+
+  g_assert_cmpuint (g_value_get_uint (value), ==, 57);
   return TRUE;
 }
 
@@ -91,7 +93,7 @@ test_properties_class_init (TestPropertiesClass *cls)
         { NULL }
   };
   static TpDBusPropertiesMixinIfaceImpl interfaces[] = {
-      { "com.example.WithProperties", prop_getter, prop_setter,
+      { WITH_PROPERTIES_IFACE, prop_getter, prop_setter,
         with_properties_props },
       { NULL }
   };
@@ -103,86 +105,146 @@ test_properties_class_init (TestPropertiesClass *cls)
 }
 
 static void
-print_asv_item (gpointer key,
-                gpointer value,
-                gpointer unused)
+test_get (TpProxy *proxy)
 {
-  gchar *value_str = g_strdup_value_contents (value);
+  GValue *value;
 
-  g_print ("  \"%s\" -> %s\n", (gchar *) key, value_str);
-  g_free (value_str);
+  g_assert (tp_cli_dbus_properties_run_get (proxy, -1,
+        WITH_PROPERTIES_IFACE, "ReadOnly", &value, NULL, NULL));
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
+
+  g_boxed_free (G_TYPE_VALUE, value);
 }
 
 static void
-print_asv (GHashTable *hash)
+test_set (TpProxy *proxy)
 {
-  g_print ("{\n");
-  g_hash_table_foreach (hash, print_asv_item, NULL);
-  g_print ("}\n");
+  GValue value = { 0, };
+
+  g_value_init (&value, G_TYPE_UINT);
+  g_value_set_uint (&value, 57);
+
+  g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
+        WITH_PROPERTIES_IFACE, "ReadWrite", &value, NULL, NULL));
+  g_assert (tp_cli_dbus_properties_run_set (proxy, -1,
+        WITH_PROPERTIES_IFACE, "WriteOnly", &value, NULL, NULL));
+
+  g_value_unset (&value);
+}
+
+static void
+test_get_all (TpProxy *proxy)
+{
+  GHashTable *hash;
+  GValue *value;
+
+  g_assert (tp_cli_dbus_properties_run_get_all (proxy, -1,
+        WITH_PROPERTIES_IFACE, &hash, NULL, NULL));
+  g_assert (hash != NULL);
+  tp_asv_dump (hash);
+  g_assert_cmpuint (g_hash_table_size (hash), ==, 2);
+
+  value = g_hash_table_lookup (hash, "WriteOnly");
+  g_assert (value == NULL);
+
+  value = g_hash_table_lookup (hash, "ReadOnly");
+  g_assert (value != NULL);
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
+
+  value = g_hash_table_lookup (hash, "ReadWrite");
+  g_assert (value != NULL);
+  g_assert (G_VALUE_HOLDS_UINT (value));
+  g_assert_cmpuint (g_value_get_uint (value), ==, 42);
+
+  g_hash_table_destroy (hash);
+}
+
+static void
+properties_changed_cb (
+    TpProxy *proxy,
+    const gchar *interface_name,
+    GHashTable *changed_properties,
+    const gchar **invalidated_properties,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GMainLoop *loop = user_data;
+  guint value;
+  gboolean valid;
+
+  g_assert_cmpuint (g_hash_table_size (changed_properties), ==, 1);
+  value = tp_asv_get_uint32 (changed_properties, "ReadOnly", &valid);
+  g_assert (valid);
+  g_assert_cmpuint (value, ==, 42);
+
+  g_assert_cmpuint (g_strv_length ((gchar **) invalidated_properties), ==, 1);
+  g_assert_cmpstr (invalidated_properties[0], ==, "ReadWrite");
+
+  g_main_loop_quit (loop);
+}
+
+typedef struct {
+    TestProperties *obj;
+    TpProxy *proxy;
+} Context;
+
+static void
+test_emit_changed (Context *ctx)
+{
+  GMainLoop *loop = g_main_loop_new (NULL, FALSE);
+  TpProxySignalConnection *signal_conn;
+  const gchar *properties[] = { "ReadOnly", "ReadWrite", NULL };
+  GError *error = NULL;
+
+  signal_conn = tp_cli_dbus_properties_connect_to_properties_changed (
+      ctx->proxy, properties_changed_cb, loop, NULL, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (signal_conn != NULL);
+
+  tp_dbus_properties_mixin_emit_properties_changed (G_OBJECT (ctx->obj),
+      WITH_PROPERTIES_IFACE, properties);
+  g_main_loop_run (loop);
+
+  tp_dbus_properties_mixin_emit_properties_changed_varargs (G_OBJECT (ctx->obj),
+      WITH_PROPERTIES_IFACE, "ReadOnly", "ReadWrite", NULL);
+  g_main_loop_run (loop);
+
+  tp_proxy_signal_connection_disconnect (signal_conn);
 }
 
 int
 main (int argc, char **argv)
 {
-  TestProperties *obj;
+  Context ctx;
   TpDBusDaemon *dbus_daemon;
-  TpProxy *proxy;
-  GValue *value;
-  GHashTable *hash;
 
-  tp_tests_abort_after (10);
-  tp_debug_set_flags ("all");
-  g_type_init ();
+  tp_tests_init (&argc, &argv);
+
   dbus_daemon = tp_tests_dbus_daemon_dup_or_die ();
-
-  obj = tp_tests_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
-  tp_dbus_daemon_register_object (dbus_daemon, "/", obj);
+  ctx.obj = tp_tests_object_new_static_class (TEST_TYPE_PROPERTIES, NULL);
+  tp_dbus_daemon_register_object (dbus_daemon, "/", ctx.obj);
 
   /* Open a D-Bus connection to myself */
-  proxy = TP_PROXY (tp_tests_object_new_static_class (TP_TYPE_PROXY,
+  ctx.proxy = TP_PROXY (tp_tests_object_new_static_class (TP_TYPE_PROXY,
       "dbus-daemon", dbus_daemon,
       "bus-name", tp_dbus_daemon_get_unique_name (dbus_daemon),
       "object-path", "/",
       NULL));
 
-  MYASSERT (tp_proxy_has_interface (proxy, "org.freedesktop.DBus.Properties"),
-      "");
+  g_assert (tp_proxy_has_interface (ctx.proxy, "org.freedesktop.DBus.Properties"));
 
-  MYASSERT (tp_cli_dbus_properties_run_get (proxy, -1,
-        "com.example.WithProperties", "ReadOnly", &value, NULL, NULL), "");
-  MYASSERT (G_VALUE_HOLDS_UINT (value), "");
-  MYASSERT (g_value_get_uint (value) == 42, "%u", g_value_get_uint (value));
+  g_test_add_data_func ("/properties/get", ctx.proxy, (GTestDataFunc) test_get);
+  g_test_add_data_func ("/properties/set", ctx.proxy, (GTestDataFunc) test_set);
+  g_test_add_data_func ("/properties/get-all", ctx.proxy, (GTestDataFunc) test_get_all);
 
-  g_value_set_uint (value, 57);
+  g_test_add_data_func ("/properties/changed", &ctx, (GTestDataFunc) test_emit_changed);
 
-  MYASSERT (tp_cli_dbus_properties_run_set (proxy, -1,
-        "com.example.WithProperties", "ReadWrite", value, NULL, NULL), "");
+  g_test_run ();
 
-  MYASSERT (tp_cli_dbus_properties_run_set (proxy, -1,
-        "com.example.WithProperties", "WriteOnly", value, NULL, NULL), "");
-
-  g_boxed_free (G_TYPE_VALUE, value);
-
-  MYASSERT (tp_cli_dbus_properties_run_get_all (proxy, -1,
-        "com.example.WithProperties", &hash, NULL, NULL), "");
-  MYASSERT (hash != NULL, "");
-  print_asv (hash);
-  MYASSERT (g_hash_table_size (hash) == 2, "%u", g_hash_table_size (hash));
-  value = g_hash_table_lookup (hash, "WriteOnly");
-  MYASSERT (value == NULL, "");
-  value = g_hash_table_lookup (hash, "ReadOnly");
-  MYASSERT (value != NULL, "");
-  MYASSERT (G_VALUE_HOLDS_UINT (value), "");
-  MYASSERT (g_value_get_uint (value) == 42, "%u", g_value_get_uint (value));
-  value = g_hash_table_lookup (hash, "ReadWrite");
-  MYASSERT (value != NULL, "");
-  MYASSERT (G_VALUE_HOLDS_UINT (value), "");
-  MYASSERT (g_value_get_uint (value) == 42, "%u", g_value_get_uint (value));
-
-  g_hash_table_destroy (hash);
-
-  g_object_unref (obj);
-  g_object_unref (proxy);
+  g_object_unref (ctx.obj);
+  g_object_unref (ctx.proxy);
   g_object_unref (dbus_daemon);
 
   return 0;

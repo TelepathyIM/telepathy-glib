@@ -31,7 +31,9 @@ G_BEGIN_DECLS
 
 typedef enum { /*< flags >*/
     TP_DBUS_PROPERTIES_MIXIN_FLAG_READ = 1,
-    TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE = 2
+    TP_DBUS_PROPERTIES_MIXIN_FLAG_WRITE = 2,
+    TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_CHANGED = 4,
+    TP_DBUS_PROPERTIES_MIXIN_FLAG_EMITS_INVALIDATED = 8
 } TpDBusPropertiesMixinFlags;
 
 typedef struct {
@@ -130,6 +132,17 @@ void tp_dbus_properties_mixin_fill_properties_hash (GObject *object,
     GHashTable *table,
     const gchar *first_interface,
     const gchar *first_property,
+    ...)
+  G_GNUC_NULL_TERMINATED;
+
+void tp_dbus_properties_mixin_emit_properties_changed (
+    GObject *object,
+    const gchar *interface_name,
+    const gchar * const *properties);
+
+void tp_dbus_properties_mixin_emit_properties_changed_varargs (
+    GObject *object,
+    const gchar *interface_name,
     ...)
   G_GNUC_NULL_TERMINATED;
 
