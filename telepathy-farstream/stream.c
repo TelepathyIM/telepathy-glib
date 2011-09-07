@@ -131,6 +131,7 @@ enum
   REQUEST_RESOURCE,
   FREE_RESOURCE,
   SRC_PAD_ADDED,
+  RESTART_SOURCE,
   SIGNAL_COUNT
 };
 
@@ -719,6 +720,24 @@ tf_stream_class_init (TfStreamClass *klass)
           NULL, NULL,
           _tf_marshal_VOID__OBJECT_BOXED,
           G_TYPE_NONE, 2, GST_TYPE_PAD, FS_TYPE_CODEC);
+
+
+  /**
+   * TfStream::restart-source:
+   * @stream: the stream
+   *
+   * This is emitted when there is a caps change and the source should be
+   * restarted to take this into account.
+   */
+
+  signals[RESTART_SOURCE] =
+      g_signal_new ("restart-source",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0,
+          NULL, NULL,
+          _tf_marshal_VOID__VOID,
+          G_TYPE_NONE, 0);
 }
 
 static void
@@ -2624,6 +2643,21 @@ _tf_stream_bus_message (TfStream *stream,
         return TRUE;
 
       cb_fs_component_state_changed (stream, component, fsstate);
+      return TRUE;
+    }
+  else if (gst_structure_has_name (s, "farsight-renegotiate"))
+    {
+      FsSession *fssession;
+      const GValue *value;
+
+      value = gst_structure_get_value (s, "session");
+      fssession = g_value_get_object (value);
+
+      if (fssession != stream->priv->fs_session)
+        return FALSE;
+
+      g_signal_emit (stream, signals[RESTART_SOURCE], 0);
+
       return TRUE;
     }
 
