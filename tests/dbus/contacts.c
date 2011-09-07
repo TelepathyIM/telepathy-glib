@@ -2609,6 +2609,27 @@ test_contact_list (Fixture *f,
 }
 
 static void
+test_self_contact (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
+  TpSimpleClientFactory *factory;
+  TpContact *contact;
+
+  factory = tp_proxy_get_factory (f->client_conn);
+  tp_simple_client_factory_add_contact_features_varargs (factory,
+      TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_INVALID);
+
+  tp_cli_connection_call_connect (f->client_conn, -1, NULL, NULL, NULL, NULL);
+  tp_tests_proxy_run_until_prepared (f->client_conn, conn_features);
+
+  contact = tp_connection_get_self_contact (f->client_conn);
+  g_assert (contact != NULL);
+  g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_ALIAS));
+}
+
+static void
 setup_internal (Fixture *f,
     gboolean connect,
     gconstpointer user_data)
@@ -2730,6 +2751,9 @@ main (int argc,
 
   g_test_add ("/contacts/contact-list", Fixture, NULL,
       setup_no_connect, test_contact_list, teardown);
+
+  g_test_add ("/contacts/self-contact", Fixture, NULL,
+      setup_no_connect, test_self_contact, teardown);
 
   return g_test_run ();
 }
