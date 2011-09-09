@@ -446,7 +446,7 @@ tp_simple_client_factory_get_dbus_daemon (TpSimpleClientFactory *self)
  * @self: a #TpSimpleClientFactory object
  * @object_path: the object path of an account
  * @immutable_properties: (transfer none) (element-type utf8 GObject.Value):
- *  the immutable properties of the account.
+ *  the immutable properties of the account, or %NULL.
  * @error: Used to raise an error if @object_path is not valid
  *
  * Returns a #TpAccount proxy for the account at @object_path. The returned
