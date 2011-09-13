@@ -149,6 +149,8 @@ constructor (GType type,
   if (self->priv->properties)
     flags |= TP_CHANNEL_GROUP_FLAG_PROPERTIES;
 
+  flags |= TP_CHANNEL_GROUP_FLAG_CAN_ADD;
+
   tp_group_mixin_init (object, G_STRUCT_OFFSET (TpTestsTextChannelGroup, group),
       contact_repo, self->conn->self_handle);
   tp_group_mixin_change_flags (object, flags, 0);

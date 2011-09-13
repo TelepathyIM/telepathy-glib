@@ -14,7 +14,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "tests/lib/util.h"
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/textchan-null.h"
 #include "tests/lib/textchan-group.h"
 
@@ -127,7 +127,7 @@ setup (Test *test,
   test->error = NULL;
 
   /* Create (service and client sides) connection objects */
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
 
   create_contact_chan (test);
@@ -575,6 +575,94 @@ test_join_room (Test *test,
   g_assert_no_error (test->error);
 }
 
+static void
+group_contacts_changed_cb (TpChannel *self,
+    GPtrArray *added,
+    GPtrArray *removed,
+    GPtrArray *local_pending,
+    GPtrArray *remote_pending,
+    TpContact *actor,
+    GHashTable *details,
+    Test *test)
+{
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_contacts (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  TpSimpleClientFactory *factory;
+  const gchar *id = "badger";
+  const gchar *alias1 = "Alias 1";
+  const gchar *alias2 = "Alias 2";
+  GQuark channel_features[] = { TP_CHANNEL_FEATURE_CONTACTS, 0 };
+  TpHandle handle;
+  GArray *handles;
+  TpContact *contact;
+  GPtrArray *contacts;
+
+  /* Tell factory we want to prepare ALIAS feature on TpContact objects */
+  factory = tp_proxy_get_factory (test->connection);
+  tp_simple_client_factory_add_contact_features_varargs (factory,
+      TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_INVALID);
+
+  /* Set an alias for channel's target contact */
+  handle = tp_channel_get_handle (test->channel_contact, NULL);
+  g_assert (handle != 0);
+  tp_tests_contacts_connection_change_aliases (
+      TP_TESTS_CONTACTS_CONNECTION (test->base_connection),
+      1, &handle, &alias1);
+
+  /* Prepare channel with CONTACTS feature. assert it has created its TpContact
+   * and prepared alias feature. */
+  tp_tests_proxy_run_until_prepared (test->channel_contact, channel_features);
+
+  contact = tp_channel_get_target_contact (test->channel_contact);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "bob");
+  g_assert_cmpstr (tp_contact_get_alias (contact), ==, alias1);
+
+  contact = tp_channel_get_initiator_contact (test->channel_contact);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "me@test.com");
+
+  /* Prepare room channel and assert it prepared the self contact */
+  tp_tests_proxy_run_until_prepared (test->channel_room, channel_features);
+
+  contact = tp_channel_group_get_self_contact (test->channel_room);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, "me@test.com");
+
+  /* Add a member in the room, assert that the member fetched its alias before
+   * being signaled. */
+  handle = tp_handle_ensure (test->contact_repo, id, NULL, NULL);
+  tp_tests_contacts_connection_change_aliases (
+      TP_TESTS_CONTACTS_CONNECTION (test->base_connection),
+      1, &handle, &alias2);
+
+  g_signal_connect (test->channel_room, "group-contacts-changed",
+      G_CALLBACK (group_contacts_changed_cb), test);
+
+  handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
+  g_array_append_val (handles, handle);
+  tp_cli_channel_interface_group_call_add_members (test->channel_room, -1,
+      handles, "hello", NULL, NULL, NULL, NULL);
+  g_array_unref (handles);
+
+  g_main_loop_run (test->mainloop);
+
+  /* There is ourself and the new contact, get the new one */
+  contacts = tp_channel_group_dup_members_contacts (test->channel_room);
+  g_assert (contacts != NULL);
+  g_assert (contacts->len == 2);
+  contact = g_ptr_array_index (contacts, 0);
+  if (!tp_strdiff (tp_contact_get_identifier (contact), "me@test.com"))
+    contact = g_ptr_array_index (contacts, 1);
+  g_assert_cmpstr (tp_contact_get_identifier (contact), ==, id);
+  g_assert_cmpstr (tp_contact_get_alias (contact), ==, alias2);
+}
+
 int
 main (int argc,
       char **argv)
@@ -615,6 +703,9 @@ main (int argc,
 
   g_test_add ("/channel/join/room", Test, NULL, setup,
       test_join_room, teardown);
+
+  g_test_add ("/channel/contacts", Test, NULL, setup,
+      test_contacts, teardown);
 
   return g_test_run ();
 }

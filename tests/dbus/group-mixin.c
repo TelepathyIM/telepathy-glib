@@ -186,7 +186,8 @@ check_initial_properties (void)
   MYASSERT (flags, ": GroupFlags property should be defined");
   g_assert_cmpuint (flags, ==,
       TP_CHANNEL_GROUP_FLAG_PROPERTIES |
-      TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED);
+      TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED |
+      TP_CHANNEL_GROUP_FLAG_CAN_ADD);
 
   g_hash_table_unref (props);
 }
