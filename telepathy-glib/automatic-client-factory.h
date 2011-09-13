@@ -21,6 +21,7 @@
 #ifndef __TP_AUTOMATIC_CLIENT_FACTORY_H__
 #define __TP_AUTOMATIC_CLIENT_FACTORY_H__
 
+#include <telepathy-glib/dbus-tube-channel.h>
 #include <telepathy-glib/file-transfer-channel.h>
 #include <telepathy-glib/simple-client-factory.h>
 #include <telepathy-glib/stream-tube-channel.h>

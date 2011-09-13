@@ -36,6 +36,10 @@
  *     %TP_IFACE_CHANNEL_TYPE_STREAM_TUBE;</para>
  *   </listitem>
  *   <listitem>
+ *     <para>a #TpDBusTubeChannel, if the channel is of type
+ *     %TP_IFACE_CHANNEL_TYPE_DBUS_TUBE;</para>
+ *   </listitem>
+ *   <listitem>
  *     <para>a #TpTextChannel, if the channel is of type
  *     %TP_IFACE_CHANNEL_TYPE_TEXT and implements
  *     %TP_IFACE_CHANNEL_INTERFACE_MESSAGES;</para>
@@ -120,6 +124,11 @@ create_channel_impl (TpSimpleClientFactory *self,
   if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_STREAM_TUBE))
     {
       return (TpChannel *) _tp_stream_tube_channel_new_with_factory (self, conn,
+          object_path, properties, error);
+    }
+  else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_DBUS_TUBE))
+    {
+      return (TpChannel *) _tp_dbus_tube_channel_new_with_factory (self, conn,
           object_path, properties, error);
     }
   else if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_TEXT))

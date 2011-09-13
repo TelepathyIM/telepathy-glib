@@ -60,6 +60,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
+#include "telepathy-glib/automatic-client-factory-internal.h"
 #include "telepathy-glib/debug-internal.h"
 
 #include "_gen/signals-marshal.h"
@@ -250,6 +251,18 @@ tp_dbus_tube_channel_new (TpConnection *conn,
     const GHashTable *immutable_properties,
     GError **error)
 {
+  return _tp_dbus_tube_channel_new_with_factory (NULL, conn, object_path,
+      immutable_properties, error);
+}
+
+TpDBusTubeChannel *
+_tp_dbus_tube_channel_new_with_factory (
+    TpSimpleClientFactory *factory,
+    TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *immutable_properties,
+    GError **error)
+{
   TpProxy *conn_proxy = (TpProxy *) conn;
 
   g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
@@ -266,6 +279,7 @@ tp_dbus_tube_channel_new (TpConnection *conn,
       "object-path", object_path,
       "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
       "channel-properties", immutable_properties,
+      "factory", factory,
       NULL);
 }
 

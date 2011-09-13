@@ -39,6 +39,13 @@ TpStreamTubeChannel *_tp_stream_tube_channel_new_with_factory (
     const GHashTable *immutable_properties,
     GError **error);
 
+TpDBusTubeChannel *_tp_dbus_tube_channel_new_with_factory (
+    TpSimpleClientFactory *factory,
+    TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *immutable_properties,
+    GError **error);
+
 TpFileTransferChannel *_tp_file_transfer_channel_new_with_factory (
     TpSimpleClientFactory *factory,
     TpConnection *conn,
