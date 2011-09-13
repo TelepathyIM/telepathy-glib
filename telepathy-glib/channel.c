@@ -102,6 +102,9 @@ enum
   PROP_INITIATOR_HANDLE,
   PROP_INITIATOR_IDENTIFIER,
   PROP_PASSWORD_NEEDED,
+  PROP_TARGET_CONTACT,
+  PROP_INITIATOR_CONTACT,
+  PROP_GROUP_SELF_CONTACT,
   N_PROPS
 };
 
@@ -109,6 +112,7 @@ enum {
   SIGNAL_GROUP_FLAGS_CHANGED,
   SIGNAL_GROUP_MEMBERS_CHANGED,
   SIGNAL_GROUP_MEMBERS_CHANGED_DETAILED,
+  SIGNAL_GROUP_CONTACTS_CHANGED,
   SIGNAL_CHAT_STATE_CHANGED,
   N_SIGNALS
 };
@@ -183,6 +187,30 @@ GQuark
 tp_channel_get_feature_quark_group (void)
 {
   return g_quark_from_static_string ("tp-channel-feature-group");
+}
+
+/**
+ * TP_CHANNEL_FEATURE_CONTACTS:
+ *
+ * Expands to a call to a function that returns a quark representing the
+ * Contacts features of a TpChannel.
+ *
+ * When this feature is prepared, the #TpContact objects of this channel are
+ * guaranteed to have all of the features previously passed to
+ * tp_simple_client_factory_add_contact_features() prepared.
+ *
+ * On older connection managers, this feature may fail to prepare.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_channel_get_feature_quark_contacts (void)
+{
+  return g_quark_from_static_string ("tp-channel-feature-contacts");
 }
 
 /**
@@ -454,6 +482,15 @@ tp_channel_get_property (GObject *object,
       break;
     case PROP_PASSWORD_NEEDED:
       g_value_set_boolean (value, tp_channel_password_needed (self));
+      break;
+    case PROP_TARGET_CONTACT:
+      g_value_set_object (value, tp_channel_get_target_contact (self));
+      break;
+    case PROP_INITIATOR_CONTACT:
+      g_value_set_object (value, tp_channel_get_initiator_contact (self));
+      break;
+    case PROP_GROUP_SELF_CONTACT:
+      g_value_set_object (value, tp_channel_group_get_self_contact (self));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1158,6 +1195,13 @@ _tp_channel_prepare_connection (TpChannel *self)
 }
 
 static void
+_tp_channel_create_contacts (TpChannel *self)
+{
+  _tp_channel_contacts_init (self);
+  _tp_channel_continue_introspection (self);
+}
+
+static void
 tp_channel_closed_cb (TpChannel *self,
                       gpointer user_data,
                       GObject *weak_object)
@@ -1266,6 +1310,9 @@ tp_channel_constructor (GType type,
   g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_get_channel_type);
 
+  g_queue_push_tail (self->priv->introspect_needed,
+      _tp_channel_create_contacts);
+
   /* This makes a call unless (a) we already know the Interfaces by now, and
    * (b) priv->exists is TRUE (i.e. either GetAll, GetHandle or GetChannelType
    * has succeeded).
@@ -1296,6 +1343,7 @@ tp_channel_init (TpChannel *self)
   self->priv->handle = 0;
   self->priv->channel_properties = g_hash_table_new_full (g_str_hash,
       g_str_equal, g_free, (GDestroyNotify) tp_g_value_slice_free);
+  self->priv->contacts_queue = g_queue_new ();
 }
 
 static void
@@ -1314,7 +1362,18 @@ tp_channel_dispose (GObject *object)
 
   self->priv->conn_invalidated_id = 0;
 
-  tp_clear_object (&self->priv->connection);
+  g_clear_object (&self->priv->connection);
+  g_clear_object (&self->priv->target_contact);
+  g_clear_object (&self->priv->initiator_contact);
+  g_clear_object (&self->priv->group_self_contact);
+  tp_clear_pointer (&self->priv->group_members_contacts,
+      g_hash_table_unref);
+  tp_clear_pointer (&self->priv->group_local_pending_contacts,
+      g_hash_table_unref);
+  tp_clear_pointer (&self->priv->group_remote_pending_contacts,
+      g_hash_table_unref);
+  tp_clear_pointer (&self->priv->group_contact_owners,
+      g_hash_table_unref);
 
 finally:
   ((GObjectClass *) tp_channel_parent_class)->dispose (object);
@@ -1336,6 +1395,7 @@ tp_channel_finalize (GObject *object)
   tp_clear_pointer (&self->priv->introspect_needed, g_queue_free);
   tp_clear_pointer (&self->priv->chat_states, g_hash_table_unref);
   tp_clear_pointer (&self->priv->channel_properties, g_hash_table_unref);
+  tp_clear_pointer (&self->priv->contacts_queue, g_queue_free);
 
   g_free (self->priv->identifier);
 
@@ -1412,6 +1472,7 @@ tp_channel_prepare_password_async (TpProxy *proxy,
 enum {
     FEAT_CORE,
     FEAT_GROUP,
+    FEAT_CONTACTS,
     FEAT_CHAT_STATES,
     FEAT_PASSWORD,
     N_FEAT
@@ -1431,6 +1492,10 @@ tp_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CORE].core = TRUE;
 
   features[FEAT_GROUP].name = TP_CHANNEL_FEATURE_GROUP;
+
+  features[FEAT_CONTACTS].name = TP_CHANNEL_FEATURE_CONTACTS;
+  features[FEAT_CONTACTS].prepare_async =
+    _tp_channel_contacts_prepare_async;
 
   features[FEAT_CHAT_STATES].name = TP_CHANNEL_FEATURE_CHAT_STATES;
   features[FEAT_CHAT_STATES].prepare_async =
@@ -1800,8 +1865,113 @@ tp_channel_class_init (TpChannelClass *klass)
       NULL, NULL,
       _tp_marshal_VOID__UINT_UINT,
       G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-}
 
+  /**
+   * TpChannel:target-contact:
+   *
+   * If this channel is for communication with a single contact (that is,
+   * #TpChannelIface:handle-type is %TP_HANDLE_TYPE_CONTACT), then a #TpContact
+   * representing the remote contact. For chat rooms, contact search channels and
+   * other channels without a single remote contact, %NULL.
+   *
+   * This is not guaranteed to be set until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CONTACTS; until then, it may be
+   * %NULL.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("target-contact", "Target Contact",
+      "The channel's target contact", TP_TYPE_CONTACT,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_TARGET_CONTACT,
+      param_spec);
+
+  /**
+   * TpChannel:initiator-contact:
+   *
+   * The #TpContact of the initiator of this channel, or %NULL if there is no
+   * particular initiator.
+   *
+   * If the channel was initiated by a remote contact, this represents
+   * that contact, and #TpChannel:requested will be %FALSE. For instance,
+   * for an incoming call this property indicates the caller, and for a
+   * chatroom invitation this property indicates who sent the invitation.
+   *
+   * If the channel was requested by the local user, #TpChannel:requested
+   * will be %TRUE, and this property may be the #TpChannel:group-self-contact
+   * or #TpConnection:self-contact.
+   *
+   * If the channel appeared for some other reason (for instance as a
+   * side-effect of connecting to the server), this property may be %NULL.
+   *
+   * This is not guaranteed to be set until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CONTACTS; until then, it may be
+   * %NULL.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("initiator-contact", "Initiator Contact",
+      "Undefined if not a group", TP_TYPE_CONTACT,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIATOR_CONTACT,
+      param_spec);
+
+  /**
+   * TpChannel:group-self-contact:
+   *
+   * If this channel is a group and %TP_CHANNEL_FEATURE_CONTACTS has been
+   * prepared, and the user is a member of the group, the #TpContact
+   * representing them in this group.
+   *
+   * Otherwise, the result may be either a contact representing the user,
+   * or %NULL.
+   *
+   * Change notification is via notify::group-self-contact.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_object ("group-self-contact", "Group.SelfHandle",
+      "Undefined if not a group", TP_TYPE_CONTACT,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_GROUP_SELF_CONTACT,
+      param_spec);
+
+  /**
+   * TpChannel::group-contacts-changed:
+   * @self: a channel
+   * @added: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact containing the full members added
+   * @removed: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact containing the members (full, local-pending or
+   *  remote-pending) removed
+   * @local_pending: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact containing the local-pending members added
+   * @remote_pending: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact containing the remote-pending members added
+   * @actor: a #TpContact for the "actor" handle in @details
+   * @details: (type GLib.HashTable) (element-type utf8 GObject.Value):
+   *  a #GHashTable mapping (gchar *) to #GValue containing details
+   *  about the change, as described in the specification of the
+   *  MembersChangedDetailed signal.
+   *
+   * Emitted when the group members change in a Group channel.
+   *
+   * This is not guaranteed to be emitted until tp_proxy_prepare_async() has
+   * finished preparing %TP_CHANNEL_FEATURE_CONTACTS; until then, it may be
+   * omitted.
+   *
+   * Since: 0.UNRELEASED
+   */
+  signals[SIGNAL_GROUP_CONTACTS_CHANGED] = g_signal_new (
+      "group-contacts-changed", G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__BOXED_BOXED_BOXED_BOXED_OBJECT_BOXED,
+      G_TYPE_NONE, 6,
+      G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY,
+      TP_TYPE_CONTACT, TP_HASH_TYPE_STRING_VARIANT_MAP);
+}
 
 /**
  * tp_channel_new_from_properties:

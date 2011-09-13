@@ -19,6 +19,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/basic-proxy-factory.c $(srcdir)/basic-proxy-factory.h \
 	$(srcdir)/capabilities.c $(srcdir)/capabilities.h \
 	$(srcdir)/channel.c $(srcdir)/channel.h \
+	$(srcdir)/channel-contacts.c \
 	$(srcdir)/channel-dispatcher.c $(srcdir)/channel-dispatcher.h \
 	$(srcdir)/channel-dispatch-operation.c $(srcdir)/channel-dispatch-operation.h \
 	$(srcdir)/channel-group.c \

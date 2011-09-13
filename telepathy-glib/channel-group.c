@@ -63,6 +63,7 @@ static void
 local_pending_info_free (LocalPendingInfo *info)
 {
   g_free (info->message);
+  g_clear_object (&info->actor_contact);
   g_slice_free (LocalPendingInfo, info);
 }
 
@@ -422,6 +423,21 @@ tp_channel_group_self_handle_changed_cb (TpChannel *self,
 
 
 static void
+tp_channel_group_self_contact_changed_cb (TpChannel *self,
+    guint self_handle,
+    const gchar *identifier,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  tp_channel_group_self_handle_changed_cb (self, self_handle, user_data,
+      weak_object);
+
+  _tp_channel_contacts_self_contact_changed (self, self_handle,
+      identifier);
+}
+
+
+static void
 tp_channel_got_self_handle_0_16_cb (TpChannel *self,
                                     guint self_handle,
                                     const GError *error,
@@ -731,7 +747,7 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
     }
   else
     {
-      GHashTable *handle_owners;
+      GHashTable *table;
       GArray *arr;
 
       DEBUG ("Received %u group properties", g_hash_table_size (asv));
@@ -779,15 +795,42 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
           tp_asv_get_boxed (asv, "LocalPendingMembers",
               TP_ARRAY_TYPE_LOCAL_PENDING_INFO_LIST));
 
-      handle_owners = tp_asv_get_boxed (asv, "HandleOwners",
+      table = tp_asv_get_boxed (asv, "HandleOwners",
           TP_HASH_TYPE_HANDLE_OWNER_MAP);
 
       self->priv->group_handle_owners = g_hash_table_new (g_direct_hash,
           g_direct_equal);
 
-      if (handle_owners != NULL)
+      if (table != NULL)
         tp_g_hash_table_update (self->priv->group_handle_owners,
-            handle_owners, NULL, NULL);
+            table, NULL, NULL);
+
+      table = tp_asv_get_boxed (asv, "MemberIdentifiers",
+          TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
+
+      /* If CM implements MemberIdentifiers property, assume it also emits
+       * SelfContactChanged and HandleOwnersChangedDetailed */
+      if (table != NULL)
+        {
+          tp_proxy_signal_connection_disconnect (
+              self->priv->self_handle_changed_sig);
+          tp_proxy_signal_connection_disconnect (
+              self->priv->handle_owners_changed_sig);
+        }
+      else
+        {
+          tp_proxy_signal_connection_disconnect (
+              self->priv->self_contact_changed_sig);
+          tp_proxy_signal_connection_disconnect (
+              self->priv->handle_owners_changed_detailed_sig);
+        }
+
+      self->priv->self_handle_changed_sig = NULL;
+      self->priv->self_contact_changed_sig = NULL;
+      self->priv->handle_owners_changed_sig = NULL;
+      self->priv->handle_owners_changed_detailed_sig = NULL;
+
+      _tp_channel_contacts_group_init (self, table);
 
       goto OUT;
     }
@@ -814,6 +857,8 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
 
   g_queue_push_tail (self->priv->introspect_needed,
       _tp_channel_glpmwi_0_16);
+
+  self->priv->cm_too_old_for_contacts = TRUE;
 
 OUT:
 
@@ -1084,6 +1129,9 @@ handle_members_changed (TpChannel *self,
       added, removed, local_pending, remote_pending, actor, reason);
   g_signal_emit_by_name (self, "group-members-changed-detailed", added,
       removed, local_pending, remote_pending, details);
+
+  _tp_channel_contacts_members_changed (self, added, removed,
+      local_pending, remote_pending, actor, details);
 }
 
 
@@ -1183,6 +1231,23 @@ tp_channel_handle_owners_changed_cb (TpChannel *self,
           GUINT_TO_POINTER (g_array_index (removed, guint, i)));
     }
 }
+
+
+static void
+tp_channel_handle_owners_changed_detailed_cb (TpChannel *self,
+    GHashTable *added,
+    const GArray *removed,
+    GHashTable *identifiers,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  tp_channel_handle_owners_changed_cb (self, added, removed, user_data,
+      weak_object);
+
+  _tp_channel_contacts_handle_owners_changed (self, added, removed,
+      identifiers);
+}
+
 
 #define IMMUTABLE_FLAGS \
   (TP_CHANNEL_GROUP_FLAG_PROPERTIES | \
@@ -1284,17 +1349,34 @@ _tp_channel_get_group_properties (TpChannel *self)
   if (sc == NULL)
     DIE ("GroupFlagsChanged");
 
-  sc = tp_cli_channel_interface_group_connect_to_self_handle_changed (self,
-      tp_channel_group_self_handle_changed_cb, NULL, NULL, NULL, &error);
+  priv->self_handle_changed_sig =
+      tp_cli_channel_interface_group_connect_to_self_handle_changed (self,
+          tp_channel_group_self_handle_changed_cb, NULL, NULL, NULL, &error);
 
-  if (sc == NULL)
+  if (priv->self_handle_changed_sig == NULL)
     DIE ("SelfHandleChanged");
 
-  sc = tp_cli_channel_interface_group_connect_to_handle_owners_changed (self,
-      tp_channel_handle_owners_changed_cb, NULL, NULL, NULL, &error);
+  priv->self_contact_changed_sig =
+      tp_cli_channel_interface_group_connect_to_self_contact_changed (self,
+          tp_channel_group_self_contact_changed_cb, NULL, NULL, NULL, &error);
 
-  if (sc == NULL)
+  if (priv->self_contact_changed_sig == NULL)
+    DIE ("SelfContactChanged");
+
+  priv->handle_owners_changed_sig =
+      tp_cli_channel_interface_group_connect_to_handle_owners_changed (self,
+          tp_channel_handle_owners_changed_cb, NULL, NULL, NULL, &error);
+
+  if (priv->handle_owners_changed_sig == NULL)
     DIE ("HandleOwnersChanged");
+
+  priv->handle_owners_changed_detailed_sig =
+      tp_cli_channel_interface_group_connect_to_handle_owners_changed_detailed (
+          self, tp_channel_handle_owners_changed_detailed_cb, NULL, NULL, NULL,
+          &error);
+
+  if (priv->handle_owners_changed_detailed_sig == NULL)
+    DIE ("HandleOwnersChangedDetailed");
 
   /* First try the 0.17 API (properties). If this fails we'll fall back */
   tp_cli_dbus_properties_call_get_all (self, -1,

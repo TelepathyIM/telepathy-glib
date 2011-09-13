@@ -128,6 +128,22 @@ GQuark tp_channel_get_feature_quark_core (void) G_GNUC_CONST;
   tp_channel_get_feature_quark_group ()
 GQuark tp_channel_get_feature_quark_group (void) G_GNUC_CONST;
 
+#define TP_CHANNEL_FEATURE_CONTACTS \
+  tp_channel_get_feature_quark_contacts ()
+GQuark tp_channel_get_feature_quark_contacts (void) G_GNUC_CONST;
+
+TpContact *tp_channel_get_target_contact (TpChannel *self);
+TpContact *tp_channel_get_initiator_contact (TpChannel *self);
+TpContact *tp_channel_group_get_self_contact (TpChannel *self);
+GPtrArray *tp_channel_group_dup_members_contacts (TpChannel *self);
+GPtrArray *tp_channel_group_dup_local_pending_contacts (TpChannel *self);
+GPtrArray *tp_channel_group_dup_remote_pending_contacts (TpChannel *self);
+gboolean tp_channel_group_get_local_pending_contact_info (TpChannel *self,
+    TpContact *local_pending, TpContact **actor,
+    TpChannelGroupChangeReason *reason, const gchar **message);
+TpContact *tp_channel_group_get_contact_owner (TpChannel *self,
+    TpContact *contact);
+
 #define TP_CHANNEL_FEATURE_CHAT_STATES \
   tp_channel_get_feature_quark_chat_states ()
 GQuark tp_channel_get_feature_quark_chat_states (void) G_GNUC_CONST;

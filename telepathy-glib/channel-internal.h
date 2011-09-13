@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 typedef void (*TpChannelProc) (TpChannel *self);
 
 typedef struct {
+    TpContact *actor_contact;
     TpHandle actor;
     TpChannelGroupChangeReason reason;
     gchar *message;
@@ -54,6 +55,10 @@ struct _TpChannelPrivate {
      */
     TpProxySignalConnection *members_changed_sig;
     TpProxySignalConnection *members_changed_detailed_sig;
+    TpProxySignalConnection *self_handle_changed_sig;
+    TpProxySignalConnection *self_contact_changed_sig;
+    TpProxySignalConnection *handle_owners_changed_sig;
+    TpProxySignalConnection *handle_owners_changed_detailed_sig;
 
     TpHandle group_self_handle;
     TpChannelGroupFlags group_flags;
@@ -68,6 +73,19 @@ struct _TpChannelPrivate {
     GError *group_remove_error /* implicitly zero-initialized */ ;
     /* guint => guint, NULL if not discovered yet */
     GHashTable *group_handle_owners;
+
+    /* reffed TpContact */
+    TpContact *target_contact;
+    TpContact *initiator_contact;
+    TpContact *group_self_contact;
+    /* TpHandle -> reffed TpContact */
+    GHashTable *group_members_contacts;
+    GHashTable *group_local_pending_contacts;
+    GHashTable *group_remote_pending_contacts;
+    GHashTable *group_contact_owners;
+    gboolean cm_too_old_for_contacts;
+
+    GQueue *contacts_queue;
 
     /* NULL, or TpHandle => TpChannelChatState;
      * if non-NULL, we're watching for ChatStateChanged */
@@ -96,6 +114,39 @@ void _tp_channel_abort_introspection (TpChannel *self,
 /* channel-group.c internals */
 
 void _tp_channel_get_group_properties (TpChannel *self);
+
+/* channel-contacts.c internals */
+
+void _tp_channel_contacts_init (TpChannel *self);
+void _tp_channel_contacts_group_init (TpChannel *self, GHashTable *identifiers);
+void _tp_channel_contacts_members_changed (TpChannel *self,
+    const GArray *added, const GArray *removed, const GArray *local_pending,
+    const GArray *remote_pending, guint actor, GHashTable *details);
+void _tp_channel_contacts_handle_owners_changed (TpChannel *self,
+    GHashTable *added, const GArray *removed, GHashTable *identifiers);
+void _tp_channel_contacts_self_contact_changed (TpChannel *self,
+    guint self_handle, const gchar *identifier);
+void _tp_channel_contacts_prepare_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+void _tp_channel_contacts_queue_prepare_async (TpChannel *self,
+    GPtrArray *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+void _tp_channel_contacts_queue_prepare_by_id_async (TpChannel *self,
+    GPtrArray *ids,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+void _tp_channel_contacts_queue_prepare_by_handle_async (TpChannel *self,
+    GArray *handles,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean _tp_channel_contacts_queue_prepare_finish (TpChannel *self,
+    GAsyncResult *result,
+    GPtrArray **contacts,
+    GError **error);
 
 G_END_DECLS
 

@@ -167,6 +167,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     capabilities.c \
     capabilities-internal.h \
     channel.c \
+    channel-contacts.c \
     channel-group.c \
     channel-internal.h \
     channel-dispatcher.c \

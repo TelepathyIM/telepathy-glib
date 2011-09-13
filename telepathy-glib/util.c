@@ -1949,6 +1949,9 @@ _tp_contacts_from_values (GHashTable *table)
   GHashTableIter iter;
   gpointer value;
 
+  if (table == NULL)
+      return NULL;
+
   contacts = _tp_g_ptr_array_new_full (g_hash_table_size (table),
       g_object_unref);
 
