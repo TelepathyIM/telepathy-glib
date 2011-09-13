@@ -54,6 +54,7 @@ INTROSPECTION_FILES = \
 	$(srcdir)/base-connection.c $(srcdir)/base-connection.h \
 	$(srcdir)/handle-repo.c $(srcdir)/handle-repo.h $(srcdir)/handle-set.c \
 	$(srcdir)/stream-tube-channel.c $(srcdir)/stream-tube-channel.h \
+	$(srcdir)/dbus-tube-channel.c $(srcdir)/dbus-tube-channel.h \
 	$(srcdir)/stream-tube-connection.c $(srcdir)/stream-tube-connection.h \
 	$(srcdir)/text-channel.c $(srcdir)/text-channel.h \
 	$(srcdir)/file-transfer-channel.c $(srcdir)/file-transfer-channel.h \
