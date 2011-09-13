@@ -3069,16 +3069,16 @@ tp_connection_get_detailed_error (TpConnection *self,
   else
     {
       /* no detailed error, but we *have* been invalidated - guess one based
-       * on the invalidation reason, and don't give any details */
+       * on the invalidation reason */
 
       if (details != NULL)
         {
           if (self->priv->connection_error_details == NULL)
-            self->priv->connection_error_details = g_hash_table_new (
-                g_str_hash, g_str_equal);
-
-          g_assert (g_hash_table_size (self->priv->connection_error_details)
-              == 0);
+            {
+              self->priv->connection_error_details = tp_asv_new (
+                  "debug-message", G_TYPE_STRING, proxy->invalidated->message,
+                  NULL);
+            }
 
           *details = self->priv->connection_error_details;
         }
