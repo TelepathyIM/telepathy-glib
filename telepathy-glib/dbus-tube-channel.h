@@ -52,11 +52,6 @@ struct _TpDBusTubeChannelClass
 
 GType tp_dbus_tube_channel_get_type (void);
 
-TpDBusTubeChannel *tp_dbus_tube_channel_new (TpConnection *conn,
-    const gchar *object_path,
-    const GHashTable *immutable_properties,
-    GError **error);
-
 const gchar * tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self);
 
 GHashTable * tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self);
