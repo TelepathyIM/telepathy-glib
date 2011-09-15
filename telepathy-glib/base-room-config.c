@@ -801,6 +801,18 @@ validate_property (
   return TRUE;
 }
 
+/*
+ * validate_properties:
+ * @self: it's me!
+ * @properties: a mapping from unqualified property names (gchar *) to
+ *              corresponding new values (GValue *).
+ * @error: set to a TP_ERROR if validation fails.
+ *
+ * Validates the names and types and mutability of @properties.
+ *
+ * Returns: a mapping from TpBaseRoomConfigProperty elements to corresponding
+ *          new values (GValue *).
+ */
 static GHashTable *
 validate_properties (
     TpBaseRoomConfig *self,
