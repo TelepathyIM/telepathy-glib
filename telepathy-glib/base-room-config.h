@@ -71,6 +71,23 @@ typedef enum {
     TP_NUM_BASE_ROOM_CONFIG_PROPERTIES /*< skip >*/
 } TpBaseRoomConfigProperty;
 
+GType tp_base_room_config_get_type (void);
+
+#define TP_TYPE_BASE_ROOM_CONFIG \
+  (tp_base_room_config_get_type ())
+#define TP_BASE_ROOM_CONFIG(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TYPE_BASE_ROOM_CONFIG, TpBaseRoomConfig))
+#define TP_BASE_ROOM_CONFIG_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TYPE_BASE_ROOM_CONFIG,\
+                           TpBaseRoomConfigClass))
+#define TP_IS_BASE_ROOM_CONFIG(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TYPE_BASE_ROOM_CONFIG))
+#define TP_IS_BASE_ROOM_CONFIG_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TYPE_BASE_ROOM_CONFIG))
+#define TP_BASE_ROOM_CONFIG_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_ROOM_CONFIG, \
+                              TpBaseRoomConfigClass))
+
 void tp_base_room_config_register_class (
     TpBaseChannelClass *base_channel_class);
 void tp_base_room_config_iface_init (
@@ -96,21 +113,5 @@ void tp_base_room_config_set_retrieved (
     TpBaseRoomConfig *self);
 
 /* TYPE MACROS */
-GType tp_base_room_config_get_type (void);
-
-#define TP_TYPE_BASE_ROOM_CONFIG \
-  (tp_base_room_config_get_type ())
-#define TP_BASE_ROOM_CONFIG(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TYPE_BASE_ROOM_CONFIG, TpBaseRoomConfig))
-#define TP_BASE_ROOM_CONFIG_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TYPE_BASE_ROOM_CONFIG,\
-                           TpBaseRoomConfigClass))
-#define TP_IS_BASE_ROOM_CONFIG(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TYPE_BASE_ROOM_CONFIG))
-#define TP_IS_BASE_ROOM_CONFIG_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TYPE_BASE_ROOM_CONFIG))
-#define TP_BASE_ROOM_CONFIG_GET_CLASS(obj) \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_ROOM_CONFIG, \
-                              TpBaseRoomConfigClass))
 
 #endif /* TP_BASE_ROOM_CONFIG_H */
