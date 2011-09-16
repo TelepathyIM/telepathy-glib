@@ -63,6 +63,7 @@
 #define DEBUG_FLAG TP_DEBUG_CHANNEL
 #include "telepathy-glib/debug-internal.h"
 #include "telepathy-glib/automatic-client-factory-internal.h"
+#include "telepathy-glib/channel-internal.h"
 
 #include "_gen/signals-marshal.h"
 
@@ -77,6 +78,9 @@ struct _TpTextChannelPrivate
   TpMessagePartSupportFlags message_part_support_flags;
   TpDeliveryReportingSupportFlags delivery_reporting_support;
   GArray *message_types;
+
+  GSimpleAsyncResult *pending_messages_result;
+  guint n_preparing_pending_messages;
 
   /* queue of owned TpSignalledMessage */
   GQueue *pending_messages;
@@ -211,41 +215,133 @@ out:
 }
 
 static void
+prepare_sender_async (TpTextChannel *self,
+    const GPtrArray *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpChannel *channel = (TpChannel *) self;
+  TpContact *contact;
+  TpHandle handle;
+  const gchar *id;
+
+  handle = get_sender (self, message, &contact, &id);
+
+  if (contact != NULL)
+    {
+      GPtrArray *contacts = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (contacts, contact);
+      _tp_channel_contacts_queue_prepare_async (channel,
+          contacts, callback, user_data);
+      g_ptr_array_unref (contacts);
+    }
+  else if (id != NULL)
+    {
+      GPtrArray *ids = g_ptr_array_new_with_free_func (g_free);
+
+      g_ptr_array_add (ids, g_strdup (id));
+      _tp_channel_contacts_queue_prepare_by_id_async (channel,
+          ids, callback, user_data);
+      g_ptr_array_unref (ids);
+    }
+  else if (handle != 0)
+    {
+      GArray *handles = g_array_new (FALSE, FALSE, sizeof (TpHandle));
+
+      g_array_append_val (handles, handle);
+      _tp_channel_contacts_queue_prepare_by_handle_async (channel,
+          handles, callback, user_data);
+      g_array_unref (handles);
+    }
+  else
+    {
+      /* No sender. Still need to go through the queue to prevent reordering */
+      _tp_channel_contacts_queue_prepare_async (channel,
+          NULL, callback, user_data);
+    }
+}
+
+static TpContact *
+prepare_sender_finish (TpTextChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  GPtrArray *contacts;
+  TpContact *sender = NULL;
+
+  _tp_channel_contacts_queue_prepare_finish ((TpChannel *) self, result,
+      &contacts, error);
+
+  if (contacts != NULL && contacts->len > 0)
+    sender = g_object_ref (g_ptr_array_index (contacts, 0));
+
+  tp_clear_pointer (&contacts, g_ptr_array_unref);
+
+  return sender;
+}
+
+static GPtrArray *
+copy_parts (const GPtrArray *parts)
+{
+  return g_boxed_copy (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
+}
+
+static void
+free_parts (GPtrArray *parts)
+{
+  g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
+}
+
+typedef struct
+{
+  GPtrArray *parts;
+  guint flags;
+  gchar *token;
+} MessageSentData;
+
+static void
+message_sent_sender_ready_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpTextChannel *self = (TpTextChannel *) object;
+  MessageSentData *data = user_data;
+  TpContact *sender;
+  TpMessage *msg;
+
+  sender = prepare_sender_finish (self, result, NULL);
+  msg = _tp_signalled_message_new (data->parts, sender);
+
+  g_signal_emit (self, signals[SIG_MESSAGE_SENT], 0, msg, data->flags,
+      data->token);
+
+  g_object_unref (msg);
+  free_parts (data->parts);
+  g_free (data->token);
+  g_slice_free (MessageSentData, data);
+}
+
+static void
 message_sent_cb (TpChannel *channel,
-    const GPtrArray *content,
+    const GPtrArray *parts,
     guint flags,
     const gchar *token,
     gpointer user_data,
     GObject *weak_object)
 {
   TpTextChannel *self = (TpTextChannel *) channel;
-  TpMessage *msg;
-  TpContact *contact;
+  MessageSentData *data;
 
-  get_sender (self, content, &contact, NULL);
+  DEBUG ("New message sent");
 
-  if (contact == NULL)
-    {
-      TpConnection *conn;
+  data = g_slice_new (MessageSentData);
+  data->parts = copy_parts (parts);
+  data->flags = flags;
+  data->token = tp_str_empty (token) ? NULL : g_strdup (token);
 
-      conn = tp_channel_borrow_connection (channel);
-
-      DEBUG ("Failed to get our self contact, please fix CM (%s)",
-          tp_proxy_get_object_path (conn));
-
-      /* Use the connection self contact as a fallback */
-      contact = tp_connection_get_self_contact (conn);
-      if (contact != NULL)
-        g_object_ref (contact);
-    }
-
-  msg = _tp_signalled_message_new (content, contact);
-
-  g_signal_emit (channel, signals[SIG_MESSAGE_SENT], 0, msg, flags,
-      tp_str_empty (token) ? NULL : token);
-
-  g_object_unref (msg);
-  tp_clear_object (&contact);
+  prepare_sender_async (self, parts,
+      message_sent_sender_ready_cb, data);
 }
 
 static void
@@ -372,88 +468,18 @@ add_message_received (TpTextChannel *self,
 }
 
 static void
-got_sender_contact_by_handle_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+message_received_sender_ready_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  TpTextChannel *self = (TpTextChannel *) weak_object;
+  TpTextChannel *self = (TpTextChannel *) object;
   GPtrArray *parts = user_data;
-  TpContact *sender = NULL;
+  TpContact *sender;
 
-  if (error != NULL)
-    {
-      DEBUG ("Failed to prepare TpContact: %s", error->message);
-    }
-  else if (n_failed > 0)
-    {
-      DEBUG ("Failed to prepare TpContact (InvalidHandle)");
-    }
-  else if (n_contacts > 0)
-    {
-      sender = contacts[0];
-    }
-  else
-    {
-      DEBUG ("TpContact of the sender hasn't been prepared");
-    }
-
+  sender = prepare_sender_finish (self, result, NULL);
   add_message_received (self, parts, sender, TRUE);
-  g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
-}
 
-static void
-got_sender_contact_by_id_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    const gchar * const *requested_ids,
-    GHashTable *failed_id_errors,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TpTextChannel *self = (TpTextChannel *) weak_object;
-  GPtrArray *parts = user_data;
-  TpContact *sender = NULL;
-
-  if (error != NULL)
-    {
-      DEBUG ("Failed to prepare TpContact: %s", error->message);
-    }
-  else if (n_contacts > 0)
-    {
-      sender = contacts[0];
-    }
-  else
-    {
-      DEBUG ("TpContact of the sender hasn't be prepared");
-
-      if (DEBUGGING)
-        {
-          GHashTableIter iter;
-          gpointer key, value;
-
-          g_hash_table_iter_init (&iter, failed_id_errors);
-          while (g_hash_table_iter_next (&iter, &key, &value))
-            {
-              DEBUG ("Failed to get a TpContact for %s: %s",
-                  (const gchar *) key, ((GError *) value)->message);
-            }
-        }
-    }
-
-  add_message_received (self, parts, sender, TRUE);
-  g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
-}
-
-static GPtrArray *
-copy_parts (const GPtrArray *parts)
-{
-  return g_boxed_copy (TP_ARRAY_TYPE_MESSAGE_PART_LIST, parts);
+  free_parts (parts);
 }
 
 static void
@@ -463,10 +489,6 @@ message_received_cb (TpChannel *proxy,
     GObject *weak_object)
 {
   TpTextChannel *self = user_data;
-  TpHandle sender;
-  TpConnection *conn;
-  TpContact *contact;
-  const gchar *sender_id;
 
   /* If we are still retrieving pending messages, no need to add the message,
    * it will be in the initial set of messages retrieved. */
@@ -475,39 +497,9 @@ message_received_cb (TpChannel *proxy,
 
   DEBUG ("New message received");
 
-  sender = get_sender (self, message, &contact, &sender_id);
-
-  if (sender == 0)
-    {
-      add_message_received (self, message, NULL, TRUE);
-      return;
-    }
-
-  if (contact != NULL)
-    {
-      /* We have the sender, all good */
-      add_message_received (self, message, contact, TRUE);
-
-      g_object_unref (contact);
-      return;
-    }
-
-  conn = tp_channel_borrow_connection (proxy);
-
-  /* We have to request the sender which may result in message re-ordering. We
-   * use the ID if possible as the handle may have expired so it's safer. */
-  if (sender_id != NULL)
-    {
-      tp_connection_get_contacts_by_id (conn, 1, &sender_id,
-          0, NULL, got_sender_contact_by_id_cb, copy_parts (message),
-          NULL, G_OBJECT (self));
-    }
-  else
-    {
-      tp_connection_get_contacts_by_handle (conn, 1, &sender,
-          0, NULL, got_sender_contact_by_handle_cb, copy_parts (message),
-          NULL, G_OBJECT (self));
-    }
+  prepare_sender_async (self, message,
+      message_received_sender_ready_cb,
+      copy_parts (message));
 }
 
 static gint
@@ -527,16 +519,16 @@ find_msg_by_id (gconstpointer a,
 }
 
 static void
-pending_messages_removed_cb (TpChannel *proxy,
-    const GArray *ids,
-    gpointer user_data,
-    GObject *weak_object)
+pending_messages_removed_ready_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  TpTextChannel *self = (TpTextChannel *) proxy;
+  TpTextChannel *self = (TpTextChannel *) object;
+  TpChannel *channel = (TpChannel *) self;
+  GArray *ids = user_data;
   guint i;
 
-  if (!self->priv->got_initial_messages)
-    return;
+  _tp_channel_contacts_queue_prepare_finish (channel, result, NULL, NULL);
 
   for (i = 0; i < ids->len; i++)
     {
@@ -561,130 +553,51 @@ pending_messages_removed_cb (TpChannel *proxy,
 
       g_object_unref (msg);
     }
+
+  g_array_unref (ids);
 }
 
 static void
-got_pending_senders_contact (TpTextChannel *self,
-    GList *parts_list,
-    guint n_contacts,
-    TpContact * const *contacts)
-{
-  GList *l;
-
-  for (l = parts_list; l != NULL; l = g_list_next (l))
-    {
-      GPtrArray *parts = l->data;
-      const GHashTable *header;
-      TpHandle sender;
-      guint i;
-
-      header = g_ptr_array_index (parts, 0);
-      sender = tp_asv_get_uint32 (header, "message-sender", NULL);
-
-      if (sender == 0)
-        continue;
-
-      for (i = 0; i < n_contacts; i++)
-        {
-          TpContact *contact = contacts[i];
-
-          if (tp_contact_get_handle (contact) == sender)
-            {
-              add_message_received (self, parts, contact, FALSE);
-
-              break;
-            }
-        }
-    }
-}
-
-static void
-free_parts_list (GList *parts_list)
-{
-  GList *l;
-
-  for (l = parts_list; l != NULL; l = g_list_next (l))
-    g_boxed_free (TP_ARRAY_TYPE_MESSAGE_PART_LIST, l->data);
-
-  g_list_free (parts_list);
-}
-
-static void
-got_pending_senders_contact_by_handle_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    guint n_failed,
-    const TpHandle *failed,
-    const GError *error,
+pending_messages_removed_cb (TpChannel *channel,
+    const GArray *ids,
     gpointer user_data,
     GObject *weak_object)
 {
-  GSimpleAsyncResult *result = (GSimpleAsyncResult *) weak_object;
-  GList *parts_list = user_data;
-  TpTextChannel *self = TP_TEXT_CHANNEL (g_async_result_get_source_object (
-        G_ASYNC_RESULT (result)));
+  TpTextChannel *self = (TpTextChannel *) channel;
+  GArray *ids_dup;
 
-  if (error != NULL)
-    {
-      DEBUG ("Failed to prepare TpContact: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
-      goto out;
-    }
+  if (!self->priv->got_initial_messages)
+    return;
 
-  if (n_failed > 0)
-    {
-      DEBUG ("Failed to prepare some TpContact (InvalidHandle)");
-    }
+  /* We have nothing to prepare, but still we have to hook into the queue
+   * to preserve order. Messages removed here could still be in that queue. */
+  ids_dup = g_array_sized_new (FALSE, FALSE, sizeof (guint), ids->len);
+  g_array_append_vals (ids_dup, ids->data, ids->len);
 
-  got_pending_senders_contact (self, parts_list, n_contacts, contacts);
-
-out:
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
-  g_object_unref (self);
+  _tp_channel_contacts_queue_prepare_async (channel, NULL,
+      pending_messages_removed_ready_cb, ids_dup);
 }
 
 static void
-got_pending_senders_contact_by_id_cb (TpConnection *connection,
-    guint n_contacts,
-    TpContact * const *contacts,
-    const gchar * const *requested_ids,
-    GHashTable *failed_id_errors,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
+pending_message_sender_ready_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  GSimpleAsyncResult *result = (GSimpleAsyncResult *) weak_object;
-  GList *parts_list = user_data;
-  TpTextChannel *self = TP_TEXT_CHANNEL (g_async_result_get_source_object (
-        G_ASYNC_RESULT (result)));
+  TpTextChannel *self = (TpTextChannel *) object;
+  GPtrArray *parts = user_data;
+  TpContact *sender;
 
-  if (error != NULL)
+  sender = prepare_sender_finish (self, result, NULL);
+  add_message_received (self, parts, sender, FALSE);
+
+  self->priv->n_preparing_pending_messages--;
+  if (self->priv->n_preparing_pending_messages == 0)
     {
-      DEBUG ("Failed to prepare TpContact: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
-      goto out;
+      g_simple_async_result_complete (self->priv->pending_messages_result);
+      g_clear_object (&self->priv->pending_messages_result);
     }
 
-  if (DEBUGGING)
-    {
-      GHashTableIter iter;
-      gpointer key, value;
-
-      g_hash_table_iter_init (&iter, failed_id_errors);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          DEBUG ("Failed to get a TpContact for %s: %s",
-              (const gchar *) key, ((GError *) value)->message);
-        }
-    }
-
-  got_pending_senders_contact (self, parts_list, n_contacts, contacts);
-
-out:
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
-  g_object_unref (self);
+  free_parts (parts);
 }
 
 /* There is no TP_ARRAY_TYPE_PENDING_TEXT_MESSAGE_LIST_LIST (fdo #32433) */
@@ -699,13 +612,8 @@ get_pending_messages_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpTextChannel *self = (TpTextChannel *) proxy;
-  GSimpleAsyncResult *result = user_data;
-  guint i;
   GPtrArray *messages;
-  TpIntSet *senders;
-  /* Messages we're waiting for a sender for */
-  GQueue outstanding = G_QUEUE_INIT;
-  GPtrArray *sender_ids;
+  guint i;
 
   self->priv->got_initial_messages = TRUE;
 
@@ -713,10 +621,12 @@ get_pending_messages_cb (TpProxy *proxy,
     {
       DEBUG ("Failed to get PendingMessages property: %s", error->message);
 
-      g_simple_async_result_set_error (result, error->domain, error->code,
+      g_simple_async_result_set_error (self->priv->pending_messages_result,
+          error->domain, error->code,
           "Failed to get PendingMessages property: %s", error->message);
 
-      g_simple_async_result_complete (result);
+      g_simple_async_result_complete (self->priv->pending_messages_result);
+      g_clear_object (&self->priv->pending_messages_result);
       return;
     }
 
@@ -724,90 +634,33 @@ get_pending_messages_cb (TpProxy *proxy,
     {
       DEBUG ("PendingMessages property is of the wrong type");
 
-      g_simple_async_result_set_error (result, TP_ERRORS, TP_ERROR_CONFUSED,
+      g_simple_async_result_set_error (self->priv->pending_messages_result,
+          TP_ERRORS, TP_ERROR_CONFUSED,
           "PendingMessages property is of the wrong type");
 
-      g_simple_async_result_complete (result);
+      g_simple_async_result_complete (self->priv->pending_messages_result);
+      g_clear_object (&self->priv->pending_messages_result);
       return;
     }
 
-  senders = tp_intset_new ();
-  sender_ids = g_ptr_array_new ();
-
   messages = g_value_get_boxed (value);
+
+  if (messages->len == 0)
+    {
+      g_simple_async_result_complete (self->priv->pending_messages_result);
+      g_clear_object (&self->priv->pending_messages_result);
+      return;
+    }
+
+  self->priv->n_preparing_pending_messages = messages->len;
   for (i = 0; i < messages->len; i++)
     {
       GPtrArray *parts = g_ptr_array_index (messages, i);
-      TpHandle sender;
-      TpContact *contact;
-      const gchar *sender_id;
 
-      sender = get_sender (self, parts, &contact, &sender_id);
-
-      if (sender == 0)
-        {
-          DEBUG ("Message doesn't have a sender");
-          add_message_received (self, parts, NULL, FALSE);
-          continue;
-        }
-
-      if (contact != NULL)
-        {
-          /* We have the sender */
-          add_message_received (self, parts, contact, FALSE);
-          g_object_unref (contact);
-          continue;
-        }
-
-      tp_intset_add (senders, sender);
-
-      if (sender_id != NULL)
-        g_ptr_array_add (sender_ids, (gpointer) sender_id);
-
-      g_queue_push_tail (&outstanding, copy_parts (parts));
+      prepare_sender_async (self, parts,
+          pending_message_sender_ready_cb,
+          copy_parts (parts));
     }
-
-  if (tp_intset_size (senders) == 0)
-    {
-      g_simple_async_result_complete (result);
-    }
-  else
-    {
-      TpConnection *conn = tp_channel_borrow_connection (TP_CHANNEL (proxy));
-
-      DEBUG ("Pending messages may be re-ordered, please fix CM (%s)",
-          tp_proxy_get_object_path (conn));
-
-      /* If we have an identifier for the sender of every outstanding message,
-       * use those rather than handles to get the contacts. (There may be
-       * duplicates, but telepathy-glib copes.)
-       *
-       * Ownership of the parts list in 'outstanding' is transferred to the
-       * callbacks.
-       */
-      if (sender_ids->len == outstanding.length)
-        {
-          tp_connection_get_contacts_by_id (conn, sender_ids->len,
-              (const gchar * const *) sender_ids->pdata,
-              0, NULL, got_pending_senders_contact_by_id_cb, outstanding.head,
-              (GDestroyNotify) free_parts_list, g_object_ref (result));
-        }
-      else
-        {
-          GArray *tmp = tp_intset_to_array (senders);
-
-          tp_connection_get_contacts_by_handle (conn, tmp->len,
-              (TpHandle *) tmp->data,
-              0, NULL, got_pending_senders_contact_by_handle_cb, outstanding.head,
-              (GDestroyNotify) free_parts_list, g_object_ref (result));
-
-          g_array_unref (tmp);
-        }
-
-    }
-
-  tp_intset_destroy (senders);
-  g_ptr_array_free (sender_ids, TRUE);
 }
 
 static void
@@ -816,19 +669,17 @@ tp_text_channel_prepare_pending_messages_async (TpProxy *proxy,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpChannel *channel = (TpChannel *) proxy;
+  TpTextChannel *self = (TpTextChannel *) proxy;
+  TpChannel *channel = (TpChannel *) self;
   GError *error = NULL;
-  GSimpleAsyncResult *result;
-
-  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
-      tp_text_channel_prepare_pending_messages_async);
 
   tp_cli_channel_interface_messages_connect_to_message_received (channel,
       message_received_cb, proxy, NULL, G_OBJECT (proxy), &error);
   if (error != NULL)
     {
-      DEBUG ("Failed to connect to MessageReceived signal: %s", error->message);
-      goto fail;
+      g_simple_async_report_take_gerror_in_idle ((GObject *) self,
+          callback, user_data, error);
+      return;
     }
 
   tp_cli_channel_interface_messages_connect_to_pending_messages_removed (
@@ -836,22 +687,20 @@ tp_text_channel_prepare_pending_messages_async (TpProxy *proxy,
       &error);
   if (error != NULL)
     {
-      DEBUG ("Failed to connect to PendingMessagesRemoved signal: %s",
-          error->message);
-      goto fail;
+      g_simple_async_report_take_gerror_in_idle ((GObject *) self,
+          callback, user_data, error);
+      return;
     }
+
+  g_assert (self->priv->pending_messages_result == NULL);
+  self->priv->pending_messages_result = g_simple_async_result_new (
+      (GObject *) proxy, callback, user_data,
+      tp_text_channel_prepare_pending_messages_async);
+
 
   tp_cli_dbus_properties_call_get (proxy, -1,
       TP_IFACE_CHANNEL_INTERFACE_MESSAGES, "PendingMessages",
-      get_pending_messages_cb, result, g_object_unref, G_OBJECT (proxy));
-
-  return;
-
-fail:
-  g_simple_async_result_take_error (result, error);
-
-  g_simple_async_result_complete_in_idle (result);
-  g_object_unref (result);
+      get_pending_messages_cb, NULL, NULL, G_OBJECT (proxy));
 }
 
 static void
@@ -1097,6 +946,10 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    * Note that this signal is only fired once the
    * #TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES has been prepared.
    *
+   * It is guaranteed that @message's #TpSignalledMessage:sender has all of the
+   * features previously passed to
+   * tp_simple_client_factory_add_contact_features() prepared.
+   *
    * Since: 0.13.10
    */
   signals[SIG_MESSAGE_RECEIVED] = g_signal_new ("message-received",
@@ -1117,6 +970,10 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    *
    * Note that this signal is only fired once the
    * #TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES has been prepared.
+   *
+   * It is guaranteed that @message's #TpSignalledMessage:sender has all of the
+   * features previously passed to
+   * tp_simple_client_factory_add_contact_features() prepared.
    *
    * Since: 0.13.10
    */
@@ -1140,6 +997,10 @@ tp_text_channel_class_init (TpTextChannelClass *klass)
    *
    * The ::message-sent signal is emitted when @message
    * has been submitted for sending.
+   *
+   * It is guaranteed that @message's #TpSignalledMessage:sender has all of the
+   * features previously passed to
+   * tp_simple_client_factory_add_contact_features() prepared.
    *
    * Since: 0.13.10
    */
@@ -1307,6 +1168,10 @@ tp_text_channel_get_feature_quark_incoming_messages (void)
  * Return a newly allocated list of unacknowledged #TpSignalledMessage
  * objects.
  *
+ * It is guaranteed that the #TpSignalledMessage:sender of each
+ * #TpSignalledMessage has all of the features previously passed to
+ * tp_simple_client_factory_add_contact_features() prepared.
+ *
  * Returns: (transfer container) (element-type TelepathyGLib.SignalledMessage):
  * a #GList of borrowed #TpSignalledMessage
  *
@@ -1405,6 +1270,20 @@ tp_text_channel_send_message_finish (TpTextChannel *self,
 }
 
 static void
+acknowledge_pending_messages_ready_cb (GObject *object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpChannel *channel = (TpChannel *) object;
+  GSimpleAsyncResult *result = user_data;
+
+  _tp_channel_contacts_queue_prepare_finish (channel, res, NULL, NULL);
+
+  g_simple_async_result_complete (result);
+  g_object_unref (result);
+}
+
+static void
 acknowledge_pending_messages_cb (TpChannel *channel,
     const GError *error,
     gpointer user_data,
@@ -1417,10 +1296,16 @@ acknowledge_pending_messages_cb (TpChannel *channel,
       DEBUG ("Failed to ack messages: %s", error->message);
 
       g_simple_async_result_set_from_error (result, error);
+      g_simple_async_result_complete (result);
+      g_object_unref (result);
+      return;
     }
 
-  g_simple_async_result_complete (result);
-  g_object_unref (result);
+  /* We should have already got MessagesRemoved signal, but it could still be
+   * in the queue. So we have to hook into that queue before complete to be
+   * sure messages are removed from pending_messages */
+  _tp_channel_contacts_queue_prepare_async (channel, NULL,
+      acknowledge_pending_messages_ready_cb, result);
 }
 
 /**
