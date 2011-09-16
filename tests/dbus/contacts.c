@@ -18,6 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <glib/gstdio.h>
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/contact.h>
@@ -29,6 +32,11 @@
 #include "tests/lib/debug.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
+
+#define MEMBERS_CHANGED_MATCH_RULE \
+  "type='signal'," \
+  "interface='" TP_IFACE_CHANNEL_INTERFACE_GROUP "'," \
+  "member='MembersChanged'"
 
 typedef struct {
     GMainLoop *loop;
@@ -2584,8 +2592,7 @@ test_contact_list (Fixture *f,
       G_CALLBACK (contact_list_changed_cb), &got_contact_list_changed);
   g_signal_connect_swapped (f->client_conn, "notify::contact-list-state",
       G_CALLBACK (finish), &result);
-  tp_cli_connection_call_connect (f->client_conn, -1,
-      NULL, NULL, NULL, NULL);
+  tp_cli_connection_call_connect (f->client_conn, -1, NULL, NULL, NULL, NULL);
   g_main_loop_run (result.loop);
   g_assert_no_error (result.error);
 
@@ -2606,6 +2613,157 @@ test_contact_list (Fixture *f,
   g_assert (tp_contact_has_feature (contact, TP_CONTACT_FEATURE_SUBSCRIPTION_STATES));
   g_assert_cmpint (tp_contact_get_subscribe_state (contact), ==, TP_SUBSCRIPTION_STATE_ASK);
   g_ptr_array_unref (contacts);
+}
+
+typedef struct
+{
+  Fixture *f;
+  GMainLoop *loop;
+  gboolean expecting_signal;
+  gboolean got_stored;
+  gboolean got_publish;
+  gboolean got_subscribe;
+} MembersChangedClosure;
+
+static void
+channel_prepared_cb (GObject *source_object,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpChannel *channel = TP_CHANNEL (source_object);
+  MembersChangedClosure *closure = user_data;
+  const gchar *identifier;
+  GError *error = NULL;
+
+  tp_proxy_prepare_finish (channel, res, &error);
+  g_assert_no_error (error);
+
+  g_assert (closure->expecting_signal);
+
+  /* We expect to just get the stored, publish and subscribe lists exactly
+   * once */
+  identifier = tp_channel_get_identifier (channel);
+  if (g_strcmp0 (identifier, "stored") == 0)
+    {
+      g_assert (!closure->got_stored);
+      closure->got_stored = TRUE;
+    }
+  else if (g_strcmp0 (identifier, "publish") == 0)
+    {
+      g_assert (!closure->got_publish);
+      closure->got_publish = TRUE;
+    }
+  else if (g_strcmp0 (identifier, "subscribe") == 0)
+    {
+      g_assert (!closure->got_subscribe);
+      closure->got_subscribe = TRUE;
+    }
+  else
+    {
+      g_assert_not_reached ();
+    }
+
+  if (closure->got_stored && closure->got_publish && closure->got_subscribe)
+    g_main_loop_quit (closure->loop);
+}
+
+static DBusHandlerResult
+message_filter (DBusConnection *connection,
+    DBusMessage *msg,
+    gpointer user_data)
+{
+  MembersChangedClosure *closure = user_data;
+
+  if (dbus_message_is_signal (msg, TP_IFACE_CHANNEL_INTERFACE_GROUP,
+      "MembersChanged"))
+    {
+      TpChannel *channel;
+      DBusMessageIter iter, sub_iter;
+      gint type;
+      dbus_int32_t *added;
+      gint n_added;
+
+      channel = tp_channel_new (closure->f->client_conn,
+          dbus_message_get_path (msg), TP_IFACE_CHANNEL_INTERFACE_GROUP,
+          TP_HANDLE_TYPE_LIST, 0, NULL);
+      tp_proxy_prepare_async (channel, NULL, channel_prepared_cb, closure);
+
+      /* Extract the number of added handles */
+      dbus_message_iter_init (msg, &iter);
+      dbus_message_iter_next (&iter); /* Skipe the message */
+      type = dbus_message_iter_get_arg_type (&iter);
+      g_assert_cmpint (type, ==, DBUS_TYPE_ARRAY);
+      dbus_message_iter_recurse (&iter, &sub_iter);
+      type = dbus_message_iter_get_arg_type (&sub_iter);
+      g_assert_cmpint (type, ==, DBUS_TYPE_UINT32);
+      dbus_message_iter_get_fixed_array (&sub_iter, &added, &n_added);
+
+      /* Bob, Alice and Carol == 3 */
+      g_assert_cmpint (n_added, ==, 3);
+    }
+
+  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+static void
+test_initial_contact_list (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  const GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
+  TestContactListManager *manager;
+  MembersChangedClosure closure;
+  DBusConnection *dbus_connection;
+  TpHandle alice;
+  const gchar *alice_id = "alice";
+  TpHandle bob_carol[2];
+  const gchar *bob_id = "bob";
+  const gchar *carol_id = "carol";
+
+  manager = tp_tests_contacts_connection_get_contact_list_manager (
+      f->service_conn);
+
+  /* We use a filter to be sure not to miss the initial MembersChanged
+   * signals */
+  closure.f = f;
+  closure.loop = g_main_loop_new (NULL, FALSE);
+  closure.got_stored = FALSE;
+  closure.got_publish = FALSE;
+  closure.got_subscribe = FALSE;
+  /* No signal is expected until after we connect */
+  closure.expecting_signal = FALSE;
+
+  dbus_connection = dbus_g_connection_get_connection (
+      tp_proxy_get_dbus_connection (TP_PROXY (f->client_conn)));
+  dbus_connection_ref (dbus_connection);
+  dbus_connection_add_filter (dbus_connection, message_filter, &closure, NULL);
+  dbus_bus_add_match (dbus_connection, MEMBERS_CHANGED_MATCH_RULE, NULL);
+
+  /* Connection is OFFLINE initially */
+  tp_tests_proxy_run_until_prepared (f->client_conn, conn_features);
+  g_assert_cmpint (tp_connection_get_contact_list_state (f->client_conn), ==,
+      TP_CONTACT_LIST_STATE_NONE);
+
+  /* Add contacts in our initial roster CM-side */
+  alice = tp_handle_ensure (f->service_repo, alice_id, NULL, NULL);
+  test_contact_list_manager_add_initial_contacts (manager, 1, &alice);
+
+  bob_carol[0] = tp_handle_ensure (f->service_repo, bob_id, NULL, NULL);
+  bob_carol[1] = tp_handle_ensure (f->service_repo, carol_id, NULL, NULL);
+  test_contact_list_manager_add_initial_contacts (manager, 2, bob_carol);
+
+  /* Now put it online and wait for the contact list state to move to
+   * success */
+  closure.expecting_signal = TRUE;
+  tp_cli_connection_call_connect (f->client_conn, -1,
+      NULL, NULL, NULL, NULL);
+
+  g_main_loop_run (closure.loop);
+
+  dbus_bus_remove_match (dbus_connection, MEMBERS_CHANGED_MATCH_RULE, NULL);
+  dbus_connection_remove_filter (dbus_connection, message_filter, &closure);
+  dbus_connection_unref (dbus_connection);
+
+  g_main_loop_unref (closure.loop);
 }
 
 static void
@@ -2751,6 +2909,9 @@ main (int argc,
 
   g_test_add ("/contacts/contact-list", Fixture, NULL,
       setup_no_connect, test_contact_list, teardown);
+
+  g_test_add ("/contacts/initial-contact-list", Fixture, NULL,
+      setup_no_connect, test_initial_contact_list, teardown);
 
   g_test_add ("/contacts/self-contact", Fixture, NULL,
       setup_no_connect, test_self_contact, teardown);

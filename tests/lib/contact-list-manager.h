@@ -63,6 +63,8 @@ void test_contact_list_manager_unpublish (TestContactListManager *self,
     guint n_members, TpHandle *members);
 void test_contact_list_manager_remove (TestContactListManager *self,
     guint n_members, TpHandle *members);
+void test_contact_list_manager_add_initial_contacts (TestContactListManager *self,
+    guint n_members, TpHandle *members);
 
 G_END_DECLS
 

@@ -743,3 +743,32 @@ test_contact_list_manager_remove (TestContactListManager *self,
   tp_handle_set_destroy (handles);
 }
 
+void
+test_contact_list_manager_add_initial_contacts (TestContactListManager *self,
+    guint n_members, TpHandle *members)
+{
+  TpHandleSet *handles;
+  guint i;
+
+  g_assert_cmpint (self->priv->conn->status, ==,
+      TP_INTERNAL_CONNECTION_STATUS_NEW);
+
+  handles = tp_handle_set_new (self->priv->contact_repo);
+  for (i = 0; i < n_members; i++)
+    {
+      ContactDetails *d;
+
+      g_assert (lookup_contact (self, members[i]) == NULL);
+      d = ensure_contact (self, members[i]);
+
+      d->subscribe = TP_SUBSCRIPTION_STATE_YES;
+      d->publish = TP_SUBSCRIPTION_STATE_YES;
+
+      tp_handle_set_add (handles, members[i]);
+    }
+
+  tp_base_contact_list_contacts_changed (TP_BASE_CONTACT_LIST (self), handles,
+      NULL);
+
+  tp_handle_set_destroy (handles);
+}

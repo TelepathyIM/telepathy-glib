@@ -502,6 +502,10 @@ enum {
 };
 
 static void
+tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
+    TpHandleSet *changed, TpHandleSet *removed, gboolean is_initial_roster);
+
+static void
 tp_base_contact_list_init (TpBaseContactList *self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_BASE_CONTACT_LIST,
@@ -1886,7 +1890,7 @@ tp_base_contact_list_set_list_received (TpBaseContactList *self)
       g_free (tmp);
     }
 
-  tp_base_contact_list_contacts_changed (self, contacts, NULL);
+  tp_base_contact_list_contacts_changed_internal (self, contacts, NULL, TRUE);
 
   if (tp_base_contact_list_can_block (self))
     {
@@ -2020,12 +2024,22 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
     TpHandleSet *changed,
     TpHandleSet *removed)
 {
+  tp_base_contact_list_contacts_changed_internal (self, changed, removed,
+      FALSE);
+}
+
+static void
+tp_base_contact_list_contacts_changed_internal (TpBaseContactList *self,
+    TpHandleSet *changed,
+    TpHandleSet *removed,
+    gboolean is_initial_roster)
+{
   GHashTable *changes;
   GHashTable *change_ids;
   GArray *removals;
   GHashTable *removal_ids;
   TpIntsetFastIter iter;
-  TpIntset *pub, *sub_rp, *unpub, *unsub, *store;
+  TpIntset *pub, *sub, *sub_rp, *unpub, *unsub, *store;
   GObject *sub_chan, *pub_chan, *stored_chan;
   TpHandle self_handle;
   TpHandle contact;
@@ -2054,6 +2068,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
   pub = tp_intset_new ();
   unpub = tp_intset_new ();
   unsub = tp_intset_new ();
+  sub = tp_intset_new ();
   sub_rp = tp_intset_new ();
   store = tp_intset_new ();
 
@@ -2150,16 +2165,22 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
           break;
 
         case TP_SUBSCRIPTION_STATE_YES:
+          if (is_initial_roster)
+            {
+              tp_intset_add (sub, contact);
+            }
+          else
             {
               /* If our subscription request was accepted, the actor is the
                * other guy accepting */
-              TpIntset *sub = tp_intset_new_containing (contact);
+              TpIntset *sub_approved = tp_intset_new_containing (contact);
 
               tp_group_mixin_change_members (sub_chan, "",
-                  sub, NULL, NULL, NULL, contact,
+                  sub_approved, NULL, NULL, NULL, contact,
                   TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
-              tp_intset_destroy (sub);
+              tp_intset_destroy (sub_approved);
             }
+
           break;
 
         default:
@@ -2215,6 +2236,14 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
   tp_group_mixin_change_members (pub_chan, "",
       pub, NULL, NULL, NULL, self_handle, TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
 
+  /* sub is the set of contacts with subscribe=Yes while retrieving the
+   * initial roster. We don't know if the contacts were already in the roster
+   * or if they were added while we were offline, so the actor is 0.
+   * Having all the initial contacts grouped together means we emit a single
+   * MembersChanged and one MembersChangedDetailed for the whole roster. */
+  tp_group_mixin_change_members (sub_chan, "", sub, NULL, NULL, NULL, 0,
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE);
+
   /* sub_rp is the set of contacts changing to subscribe=Ask, which was
    * presumably our idea. */
   tp_group_mixin_change_members (sub_chan, "", NULL, NULL, NULL, sub_rp,
@@ -2250,6 +2279,7 @@ tp_base_contact_list_contacts_changed (TpBaseContactList *self,
   tp_intset_destroy (unpub);
   tp_intset_destroy (unsub);
   tp_intset_destroy (sub_rp);
+  tp_intset_destroy (sub);
   tp_intset_destroy (store);
 
   g_hash_table_unref (changes);
