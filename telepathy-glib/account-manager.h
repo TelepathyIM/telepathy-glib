@@ -107,10 +107,13 @@ gboolean tp_account_manager_is_prepared (TpAccountManager *manager,
     GQuark feature);
 
 void tp_account_manager_prepare_async (TpAccountManager *manager,
-    const GQuark *features, GAsyncReadyCallback callback, gpointer user_data);
+    const GQuark *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
 
 gboolean tp_account_manager_prepare_finish (TpAccountManager *manager,
-    GAsyncResult *result, GError **error);
+    GAsyncResult *result,
+    GError **error) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_finish);
 
 void tp_account_manager_enable_restart (TpAccountManager *manager);
 
