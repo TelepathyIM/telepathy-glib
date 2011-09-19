@@ -3413,6 +3413,7 @@ tp_account_is_prepared (TpAccount *account,
  * tp_proxy_prepare_async() with the same arguments.
  *
  * Since: 0.9.0
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_prepare_async() instead.
  */
 void
 tp_account_prepare_async (TpAccount *account,
@@ -3434,6 +3435,7 @@ tp_account_prepare_async (TpAccount *account,
  * Returns: %TRUE if the preparation was successful, otherwise %FALSE
  *
  * Since: 0.9.0
+ * Deprecated: since 0.UNRELEASED, use tp_proxy_prepare_finish() instead.
  */
 gboolean
 tp_account_prepare_finish (TpAccount *account,

@@ -214,11 +214,14 @@ const GArray *tp_account_get_avatar_finish (TpAccount *account,
 
 gboolean tp_account_is_prepared (TpAccount *account, GQuark feature);
 
-void tp_account_prepare_async (TpAccount *account, const GQuark *features,
-    GAsyncReadyCallback callback, gpointer user_data);
+void tp_account_prepare_async (TpAccount *account,
+    const GQuark *features,
+    GAsyncReadyCallback callback,
+    gpointer user_data) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_async);
 
-gboolean tp_account_prepare_finish (TpAccount *account, GAsyncResult *result,
-    GError **error);
+gboolean tp_account_prepare_finish (TpAccount *account,
+    GAsyncResult *result,
+    GError **error) _TP_GNUC_DEPRECATED_FOR (tp_proxy_prepare_finish);
 
 void tp_account_set_avatar_async (TpAccount *self,
     const guchar *avatar,
