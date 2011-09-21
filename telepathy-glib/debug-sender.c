@@ -466,7 +466,7 @@ tp_debug_sender_add_message_vprintf (TpDebugSender *self,
  * @domain: Message domain
  * @level: The message level
  * @format: The printf() format string
- * @Varargs: The parameters to insert into @format
+ * @...: The parameters to insert into @format
  *
  * Formats and adds a new message to the debug sender message queue. If the
  * #TpDebugSender:enabled property is set to %TRUE, then a NewDebugMessage
