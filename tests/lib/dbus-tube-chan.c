@@ -27,11 +27,21 @@ enum
   PROP_STATE,
 };
 
+enum
+{
+  SIG_NEW_CONNECTION,
+  LAST_SIGNAL
+};
+
+static guint _signals[LAST_SIGNAL] = { 0, };
+
 struct _TpTestsDBusTubeChannelPrivate {
     TpTubeChannelState state;
 
     /* TpHandle -> gchar * */
     GHashTable *dbus_names;
+
+    GDBusServer *dbus_server;
 };
 
 static void
@@ -139,6 +149,12 @@ dispose (GObject *object)
 
   tp_clear_pointer (&self->priv->dbus_names, g_hash_table_unref);
 
+  if (self->priv->dbus_server != NULL)
+    {
+      g_dbus_server_stop (self->priv->dbus_server);
+      g_clear_object (&self->priv->dbus_server);
+    }
+
   ((GObjectClass *) tp_tests_dbus_tube_channel_parent_class)->dispose (
     object);
 }
@@ -242,6 +258,14 @@ tp_tests_dbus_tube_channel_class_init (TpTestsDBusTubeChannelClass *klass)
   g_object_class_install_property (object_class, PROP_STATE,
       param_spec);
 
+  _signals[SIG_NEW_CONNECTION] = g_signal_new ("new-connection",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      g_cclosure_marshal_VOID__OBJECT,
+      G_TYPE_NONE,
+      1, G_TYPE_DBUS_CONNECTION);
+
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CHANNEL_TYPE_DBUS_TUBE,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL,
@@ -256,7 +280,6 @@ tp_tests_dbus_tube_channel_class_init (TpTestsDBusTubeChannelClass *klass)
       sizeof (TpTestsDBusTubeChannelPrivate));
 }
 
-#if 0
 static void
 change_state (TpTestsDBusTubeChannel *self,
   TpTubeChannelState state)
@@ -265,19 +288,63 @@ change_state (TpTestsDBusTubeChannel *self,
 
   tp_svc_channel_interface_tube_emit_tube_channel_state_changed (self, state);
 }
-#endif
+
+static void
+dbus_new_connection_cb (GDBusServer *server,
+    GDBusConnection *connection,
+    gpointer user_data)
+{
+  TpTestsDBusTubeChannel *self = user_data;
+
+  g_signal_emit (self, _signals[SIG_NEW_CONNECTION], 0, connection);
+}
+
+static void
+open_tube (TpTestsDBusTubeChannel *self)
+{
+  GError *error = NULL;
+  gchar *guid;
+
+  guid = g_dbus_generate_guid ();
+
+  self->priv->dbus_server = g_dbus_server_new_sync (
+      "unix:abstract=dbus-tube-test",
+      G_DBUS_SERVER_FLAGS_NONE, guid, NULL, NULL, &error);
+  g_assert_no_error (error);
+
+  g_free (guid);
+
+  g_signal_connect (self->priv->dbus_server, "new-connection",
+      G_CALLBACK (dbus_new_connection_cb), self);
+
+  g_dbus_server_start (self->priv->dbus_server);
+
+  change_state (self, TP_TUBE_CHANNEL_STATE_OPEN);
+}
+
+static void
+dbus_tube_offer (TpSvcChannelTypeDBusTube *chan,
+    GHashTable *parameters,
+    guint access_control,
+    DBusGMethodInvocation *context)
+{
+  TpTestsDBusTubeChannel *self = (TpTestsDBusTubeChannel *) chan;
+
+  open_tube (self);
+
+  tp_svc_channel_type_dbus_tube_return_from_offer (context,
+      g_dbus_server_get_client_address (self->priv->dbus_server));
+}
 
 static void
 dbus_tube_iface_init (gpointer iface,
     gpointer data)
 {
-#if 0
-  /* TODO: implement methods */
   TpSvcChannelTypeDBusTubeClass *klass = iface;
 
 #define IMPLEMENT(x) tp_svc_channel_type_dbus_tube_implement_##x (klass, dbus_tube_##x)
+  IMPLEMENT (offer);
 #undef IMPLEMENT
-#endif
 }
 
 /* Contact DBus Tube */
