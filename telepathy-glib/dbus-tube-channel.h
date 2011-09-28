@@ -50,6 +50,10 @@ struct _TpDBusTubeChannelClass
   GCallback _padding[7];
 };
 
+#define TP_DBUS_TUBE_CHANNEL_FEATURE_CORE \
+  tp_dbus_tube_channel_feature_quark_core ()
+GQuark tp_dbus_tube_channel_feature_quark_core (void) G_GNUC_CONST;
+
 GType tp_dbus_tube_channel_get_type (void);
 
 const gchar * tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self);

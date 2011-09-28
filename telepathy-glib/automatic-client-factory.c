@@ -81,6 +81,10 @@
  *     <para>%TP_CALL_CHANNEL_FEATURE_CORE
  *     for #TpCallChannel</para>
  *   </listitem>
+ *   <listitem>
+ *     <para>%TP_DBUS_TUBE_CHANNEL_FEATURE_CORE
+ *     for #TpDBusTubeChannel</para>
+ *   </listitem>
  * </itemizedlist>
  *
  * Since: 0.15.5
@@ -175,7 +179,8 @@ build_channel_type_mapping (void)
         TP_TYPE_DBUS_TUBE_CHANNEL,
         NULL,
         (NewFunc) _tp_dbus_tube_channel_new_with_factory,
-        { 0 },
+        { TP_DBUS_TUBE_CHANNEL_FEATURE_CORE,
+          0 },
       },
       { TP_IFACE_CHANNEL_TYPE_TEXT,
         TP_TYPE_TEXT_CHANNEL,

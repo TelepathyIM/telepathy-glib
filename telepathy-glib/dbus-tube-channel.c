@@ -71,6 +71,7 @@ G_DEFINE_TYPE (TpDBusTubeChannel, tp_dbus_tube_channel, TP_TYPE_CHANNEL)
 struct _TpDBusTubeChannelPrivate
 {
   GHashTable *parameters;
+  TpTubeChannelState state;
 };
 
 enum
@@ -112,6 +113,17 @@ tp_dbus_tube_channel_get_property (GObject *object,
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
     }
+}
+
+static void
+tube_state_changed_cb (TpChannel *channel,
+    TpTubeChannelState state,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpDBusTubeChannel *self = (TpDBusTubeChannel *) channel;
+
+  self->priv->state = state;
 }
 
 static void
@@ -178,14 +190,93 @@ tp_dbus_tube_channel_constructed (GObject *obj)
 }
 
 static void
+get_state_cb (TpProxy *proxy,
+    const GValue *value,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpDBusTubeChannel *self = (TpDBusTubeChannel *) proxy;
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to get Tube.State property: %s", error->message);
+
+      g_simple_async_result_set_error (result, error->domain, error->code,
+          "Failed to get Tube.State property: %s", error->message);
+    }
+  else
+    {
+      self->priv->state = g_value_get_uint (value);
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+static void
+tp_dbus_tube_channel_prepare_core_feature_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GError *error = NULL;
+  TpChannel *chan = (TpChannel *) proxy;
+
+  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+      tp_dbus_tube_channel_prepare_core_feature_async);
+
+  if (tp_cli_channel_interface_tube_connect_to_tube_channel_state_changed (chan,
+        tube_state_changed_cb, proxy, NULL, NULL, &error) == NULL)
+    {
+      WARNING ("Failed to connect to TubeChannelStateChanged on %s: %s",
+          tp_proxy_get_object_path (proxy), error->message);
+      g_error_free (error);
+    }
+
+  tp_cli_dbus_properties_call_get (proxy, -1,
+      TP_IFACE_CHANNEL_INTERFACE_TUBE, "State",
+      get_state_cb, result, g_object_unref, G_OBJECT (proxy));
+}
+
+enum {
+    FEAT_CORE,
+    N_FEAT
+};
+
+static const TpProxyFeature *
+tp_dbus_tube_channel_list_features (TpProxyClass *cls G_GNUC_UNUSED)
+{
+  static TpProxyFeature features[N_FEAT + 1] = { { 0 } };
+
+  if (G_LIKELY (features[0].name != 0))
+    return features;
+
+  features[FEAT_CORE].name =
+    TP_DBUS_TUBE_CHANNEL_FEATURE_CORE;
+  features[FEAT_CORE].prepare_async =
+    tp_dbus_tube_channel_prepare_core_feature_async;
+  features[FEAT_CORE].core = TRUE;
+
+  /* assert that the terminator at the end is there */
+  g_assert (features[N_FEAT].name == 0);
+
+  return features;
+}
+
+static void
 tp_dbus_tube_channel_class_init (TpDBusTubeChannelClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GParamSpec *param_spec;
+  TpProxyClass *proxy_class = (TpProxyClass *) klass;
 
   gobject_class->constructed = tp_dbus_tube_channel_constructed;
   gobject_class->get_property = tp_dbus_tube_channel_get_property;
   gobject_class->dispose = tp_dbus_tube_channel_dispose;
+
+  proxy_class->list_features = tp_dbus_tube_channel_list_features;
 
   /**
    * TpDBusTubeChannel:service-name:
@@ -289,4 +380,21 @@ GHashTable *
 tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self)
 {
   return self->priv->parameters;
+}
+
+/**
+ * TP_DBUS_TUBE_CHANNEL_FEATURE_CORE:
+ *
+ * Expands to a call to a function that returns a quark representing the
+ * core feature of a #TpDBusTubeChannel.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.UNRELEASED
+ */
+GQuark
+tp_dbus_tube_channel_feature_quark_core (void)
+{
+  return g_quark_from_static_string ("tp-dbus-tube-channel-feature-core");
 }

@@ -6224,6 +6224,7 @@ TpStreamTubeConnectionPrivate
 <SUBSECTION>
 TpDBusTubeChannel
 TpDBusTubeChannelClass
+TP_DBUS_TUBE_CHANNEL_FEATURE_CORE
 tp_dbus_tube_channel_get_parameters
 tp_dbus_tube_channel_get_service_name
 <SUBSECTION Standard>
@@ -6235,6 +6236,7 @@ TP_DBUS_TUBE_CHANNEL_GET_CLASS
 TP_TYPE_DBUS_TUBE_CHANNEL
 tp_dbus_tube_channel_get_type
 TpDBusTubeChannelPrivate
+tp_dbus_tube_channel_feature_quark_core
 </SECTION>
 
 <SECTION>
