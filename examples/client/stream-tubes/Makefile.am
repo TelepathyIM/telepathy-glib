@@ -9,9 +9,9 @@ accepter_SOURCES = accepter.c
 # In an external project you'd use $(TP_GLIB_LIBS) (obtained from
 # pkg-config via autoconf) instead of the .la path
 LDADD = \
+    $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
     @DBUS_LIBS@ \
-    @GLIB_LIBS@ \
-    $(top_builddir)/telepathy-glib/libtelepathy-glib.la
+    @GLIB_LIBS@
 
 AM_CFLAGS = \
     $(ERROR_CFLAGS) \
