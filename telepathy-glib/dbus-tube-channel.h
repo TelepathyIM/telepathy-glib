@@ -60,6 +60,17 @@ const gchar * tp_dbus_tube_channel_get_service_name (TpDBusTubeChannel *self);
 
 GHashTable * tp_dbus_tube_channel_get_parameters (TpDBusTubeChannel *self);
 
+/* Outgoing tube methods */
+
+void tp_dbus_tube_channel_offer_async (TpDBusTubeChannel *self,
+    GHashTable *params,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+GDBusConnection * tp_dbus_tube_channel_offer_finish (TpDBusTubeChannel *self,
+    GAsyncResult *result,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
+
 G_END_DECLS
 
 #endif

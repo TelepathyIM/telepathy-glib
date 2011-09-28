@@ -72,6 +72,9 @@ struct _TpDBusTubeChannelPrivate
 {
   GHashTable *parameters;
   TpTubeChannelState state;
+
+  GSimpleAsyncResult *result;
+  gchar *address;
 };
 
 enum
@@ -86,6 +89,8 @@ tp_dbus_tube_channel_dispose (GObject *obj)
   TpDBusTubeChannel *self = (TpDBusTubeChannel *) obj;
 
   tp_clear_pointer (&self->priv->parameters, g_hash_table_unref);
+  g_clear_object (&self->priv->result);
+  tp_clear_pointer (&self->priv->address, g_free);
 
   G_OBJECT_CLASS (tp_dbus_tube_channel_parent_class)->dispose (obj);
 }
@@ -116,6 +121,57 @@ tp_dbus_tube_channel_get_property (GObject *object,
 }
 
 static void
+complete_operation (TpDBusTubeChannel *self)
+{
+  g_simple_async_result_complete (self->priv->result);
+  g_clear_object (&self->priv->result);
+}
+
+static void
+dbus_connection_new_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpDBusTubeChannel *self = user_data;
+  GDBusConnection *conn;
+  GError *error = NULL;
+
+  conn = g_dbus_connection_new_for_address_finish (result, &error);
+  if (conn == NULL)
+    {
+      DEBUG ("Failed to create GDBusConnection: %s", error->message);
+      g_simple_async_result_take_error (self->priv->result, error);
+    }
+  else
+    {
+      g_simple_async_result_set_op_res_gpointer (self->priv->result,
+          conn, g_object_unref);
+    }
+
+  complete_operation (self);
+}
+
+static void
+check_tube_open (TpDBusTubeChannel *self)
+{
+  if (self->priv->result == NULL)
+    return;
+
+  if (self->priv->address == NULL)
+    return;
+
+  if (self->priv->state != TP_TUBE_CHANNEL_STATE_OPEN)
+    return;
+
+  DEBUG ("Tube %s opened: %s", tp_proxy_get_object_path (self),
+      self->priv->address);
+
+  g_dbus_connection_new_for_address (self->priv->address,
+      G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT, NULL,
+      NULL, dbus_connection_new_cb, self);
+}
+
+static void
 tube_state_changed_cb (TpChannel *channel,
     TpTubeChannelState state,
     gpointer user_data,
@@ -124,6 +180,8 @@ tube_state_changed_cb (TpChannel *channel,
   TpDBusTubeChannel *self = (TpDBusTubeChannel *) channel;
 
   self->priv->state = state;
+
+  check_tube_open (self);
 }
 
 static void
@@ -397,4 +455,128 @@ GQuark
 tp_dbus_tube_channel_feature_quark_core (void)
 {
   return g_quark_from_static_string ("tp-dbus-tube-channel-feature-core");
+}
+
+static void
+dbus_tube_offer_cb (TpChannel *channel,
+    const gchar *address,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpDBusTubeChannel *self = (TpDBusTubeChannel *) channel;
+
+  if (error != NULL)
+    {
+      DEBUG ("Offer() failed: %s", error->message);
+
+      g_simple_async_result_set_from_error (self->priv->result, error);
+      complete_operation (self);
+      return;
+    }
+
+  self->priv->address = g_strdup (address);
+
+  /* We have to wait that the tube is opened before being allowed to use it */
+  check_tube_open (self);
+}
+
+static void
+proxy_prepare_offer_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpDBusTubeChannel *self = (TpDBusTubeChannel *) source;
+  GHashTable *params = user_data;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      g_simple_async_result_take_error (self->priv->result, error);
+      complete_operation (self);
+      goto out;
+    }
+
+  if (self->priv->state != TP_TUBE_CHANNEL_STATE_NOT_OFFERED)
+    {
+      g_simple_async_result_set_error (self->priv->result, TP_ERRORS,
+          TP_ERROR_INVALID_ARGUMENT, "Tube is not in the NotOffered state");
+      complete_operation (self);
+      goto out;
+    }
+
+  g_assert (self->priv->parameters == NULL);
+  if (params != NULL)
+    self->priv->parameters = g_hash_table_ref (params);
+  else
+    self->priv->parameters = tp_asv_new (NULL, NULL);
+
+  g_object_notify (G_OBJECT (self), "parameters");
+
+  /* TODO: use TP_SOCKET_ACCESS_CONTROL_CREDENTIALS if supported */
+
+  tp_cli_channel_type_dbus_tube_call_offer (TP_CHANNEL (self), -1,
+      self->priv->parameters, TP_SOCKET_ACCESS_CONTROL_LOCALHOST,
+      dbus_tube_offer_cb, NULL, NULL, G_OBJECT (self));
+
+out:
+  tp_clear_pointer (&params, g_hash_table_unref);
+}
+
+/**
+ * tp_dbus_tube_channel_offer_async
+ * @self: an outgoing #TpDBusTubeChannel
+ * @params: (allow-none) (transfer none): parameters of the tube, or %NULL
+ * @callback: a callback to call when the tube has been offered
+ * @user_data: data to pass to @callback
+ *
+ * Offer an outgoing D-Bus tube. When the tube has been offered and accepted
+ * @callback will be called. You can then call
+ * tp_dbus_tube_channel_offer_finish() to get the #GDBusConnection that will
+ * be used to communicate through the tube.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_dbus_tube_channel_offer_async (TpDBusTubeChannel *self,
+    GHashTable *params,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GQuark features[] = { TP_DBUS_TUBE_CHANNEL_FEATURE_CORE, 0 };
+
+  g_return_if_fail (TP_IS_DBUS_TUBE_CHANNEL (self));
+  g_return_if_fail (self->priv->result == NULL);
+  g_return_if_fail (tp_channel_get_requested (TP_CHANNEL (self)));
+  g_return_if_fail (self->priv->parameters == NULL);
+
+  self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_dbus_tube_channel_offer_async);
+
+  /* We need CORE to be prepared as we rely on State changes */
+  tp_proxy_prepare_async (self, features, proxy_prepare_offer_cb,
+      params != NULL ? g_hash_table_ref (params) : params);
+}
+
+/**
+ * tp_dbus_tube_channel_offer_finish:
+ * @self: a #TpDBusTubeChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to offer an outgoing D-Bus tube. The returned #GDBusConnection
+ * is ready to be used to exchange data through the tube.
+ *
+ * Returns: (transfer full): a reference on a #GDBusConnection if the tube
+ * has been successfully offered and opened; %NULL otherwise.
+ *
+ * Since: 0.UNRELEASED
+ */
+GDBusConnection *
+tp_dbus_tube_channel_offer_finish (TpDBusTubeChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_dbus_tube_channel_offer_async, g_object_ref)
 }
