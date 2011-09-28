@@ -340,6 +340,19 @@ dbus_tube_offer (TpSvcChannelTypeDBusTube *chan,
 }
 
 static void
+dbus_tube_accept (TpSvcChannelTypeDBusTube *chan,
+    guint access_control,
+    DBusGMethodInvocation *context)
+{
+  TpTestsDBusTubeChannel *self = (TpTestsDBusTubeChannel *) chan;
+
+  open_tube (self);
+
+  tp_svc_channel_type_dbus_tube_return_from_accept (context,
+      g_dbus_server_get_client_address (self->priv->dbus_server));
+}
+
+static void
 dbus_tube_iface_init (gpointer iface,
     gpointer data)
 {
@@ -347,6 +360,7 @@ dbus_tube_iface_init (gpointer iface,
 
 #define IMPLEMENT(x) tp_svc_channel_type_dbus_tube_implement_##x (klass, dbus_tube_##x)
   IMPLEMENT (offer);
+  IMPLEMENT (accept);
 #undef IMPLEMENT
 }
 

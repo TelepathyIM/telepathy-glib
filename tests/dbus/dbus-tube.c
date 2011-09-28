@@ -369,6 +369,45 @@ test_offer (Test *test,
   use_tube (test, test->tube_conn, test->cm_conn);
 }
 
+static void
+tube_accept_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_clear_object (&test->tube_conn);
+
+  test->tube_conn = tp_dbus_tube_channel_accept_finish (
+      TP_DBUS_TUBE_CHANNEL (source), result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_accept (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  /* Incoming tube */
+  create_tube_service (test, FALSE, TRUE);
+
+  g_signal_connect (test->tube_chan_service, "new-connection",
+      G_CALLBACK (new_connection_cb), test);
+
+  tp_dbus_tube_channel_accept_async (test->tube, tube_accept_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (G_IS_DBUS_CONNECTION (test->tube_conn));
+  g_assert (G_IS_DBUS_CONNECTION (test->cm_conn));
+
+  use_tube (test, test->cm_conn, test->tube_conn);
+}
+
 int
 main (int argc,
       char **argv)
@@ -381,6 +420,8 @@ main (int argc,
   g_test_add ("/dbus-tube/properties", Test, NULL, setup, test_properties,
       teardown);
   g_test_add ("/dbus-tube/offer", Test, NULL, setup, test_offer,
+      teardown);
+  g_test_add ("/dbus-tube/accept", Test, NULL, setup, test_accept,
       teardown);
 
   return g_test_run ();

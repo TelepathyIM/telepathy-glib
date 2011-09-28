@@ -580,3 +580,111 @@ tp_dbus_tube_channel_offer_finish (TpDBusTubeChannel *self,
   _tp_implement_finish_return_copy_pointer (self,
       tp_dbus_tube_channel_offer_async, g_object_ref)
 }
+
+static void
+dbus_tube_accept_cb (TpChannel *channel,
+    const gchar *address,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpDBusTubeChannel *self = (TpDBusTubeChannel *) channel;
+
+  if (error != NULL)
+    {
+      DEBUG ("Accept() failed: %s", error->message);
+
+      g_simple_async_result_set_from_error (self->priv->result, error);
+      complete_operation (self);
+      return;
+    }
+
+  self->priv->address = g_strdup (address);
+
+  /* We have to wait that the tube is opened before being allowed to use it */
+  check_tube_open (self);
+}
+
+static void
+proxy_prepare_accept_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpDBusTubeChannel *self = (TpDBusTubeChannel *) source;
+  GError *error = NULL;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      g_simple_async_result_take_error (self->priv->result, error);
+      complete_operation (self);
+      return;
+    }
+
+  if (self->priv->state != TP_TUBE_CHANNEL_STATE_LOCAL_PENDING)
+    {
+      g_simple_async_result_set_error (self->priv->result, TP_ERRORS,
+          TP_ERROR_INVALID_ARGUMENT, "Tube is not in the LocalPending state");
+      complete_operation (self);
+      return;
+    }
+
+  /* TODO: use TP_SOCKET_ACCESS_CONTROL_CREDENTIALS if supported */
+
+  tp_cli_channel_type_dbus_tube_call_accept (TP_CHANNEL (self), -1,
+      TP_SOCKET_ACCESS_CONTROL_LOCALHOST, dbus_tube_accept_cb,
+      NULL, NULL, G_OBJECT (self));
+}
+
+/**
+ * tp_dbus_tube_channel_accept_async
+ * @self: an incoming #TpDBusTubeChannel
+ * @callback: a callback to call when the tube has been offered
+ * @user_data: data to pass to @callback
+ *
+ * Accept an incoming D-Bus tube. When the tube has been accepted
+ * @callback will be called. You can then call
+ * tp_dbus_tube_channel_accept_finish() to get the #GDBusConnection that will
+ * be used to communicate through the tube.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_dbus_tube_channel_accept_async (TpDBusTubeChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GQuark features[] = { TP_DBUS_TUBE_CHANNEL_FEATURE_CORE, 0 };
+
+  g_return_if_fail (TP_IS_DBUS_TUBE_CHANNEL (self));
+  g_return_if_fail (self->priv->result == NULL);
+  g_return_if_fail (!tp_channel_get_requested (TP_CHANNEL (self)));
+
+  self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_dbus_tube_channel_accept_async);
+
+  /* We need CORE to be prepared as we rely on State changes */
+  tp_proxy_prepare_async (self, features, proxy_prepare_accept_cb, NULL);
+}
+
+/**
+ * tp_dbus_tube_channel_accept_finish:
+ * @self: a #TpDBusTubeChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes to accept an incoming D-Bus tube. The returned #GDBusConnection
+ * is ready to be used to exchange data through the tube.
+ *
+ * Returns: (transfer full): a reference on a #GDBusConnection if the tube
+ * has been successfully accepted and opened; %NULL otherwise.
+ *
+ * Since: 0.UNRELEASED
+ */
+GDBusConnection *
+tp_dbus_tube_channel_accept_finish (TpDBusTubeChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_dbus_tube_channel_accept_async, g_object_ref)
+}

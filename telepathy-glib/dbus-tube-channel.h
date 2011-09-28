@@ -71,6 +71,16 @@ GDBusConnection * tp_dbus_tube_channel_offer_finish (TpDBusTubeChannel *self,
     GAsyncResult *result,
     GError **error) G_GNUC_WARN_UNUSED_RESULT;
 
+/* Incoming tube methods */
+
+void tp_dbus_tube_channel_accept_async (TpDBusTubeChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+GDBusConnection * tp_dbus_tube_channel_accept_finish (TpDBusTubeChannel *self,
+    GAsyncResult *result,
+    GError **error) G_GNUC_WARN_UNUSED_RESULT;
+
 G_END_DECLS
 
 #endif
