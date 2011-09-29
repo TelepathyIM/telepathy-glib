@@ -224,6 +224,10 @@ tp_stream_tube_connection_class_init (TpStreamTubeConnectionClass *cls)
    * The #TpContact with who we are exchanging data through this tube, or
    * %NULL if we can't safely identify the contact.
    *
+   * If not %NULL, the #TpContact objects is guaranteed to have all of the
+   * features previously passed to
+   * tp_simple_client_factory_add_contact_features() prepared.
+   *
    * Since: 0.13.2
    */
   param_spec = g_param_spec_object ("contact", "TpContact",

@@ -586,6 +586,8 @@ new_local_connection_identified (TpStreamTubeChannel *self,
 {
   TpHandle initiator_handle;
   TpStreamTubeConnection *tube_conn;
+  TpConnection *connection;
+  GArray *features;
 
   tube_conn = _tp_stream_tube_connection_new (conn, self);
 
@@ -599,12 +601,19 @@ new_local_connection_identified (TpStreamTubeChannel *self,
    * initiator of the tube */
   initiator_handle = tp_channel_get_initiator_handle (TP_CHANNEL (self));
 
+
+  connection = tp_channel_borrow_connection (TP_CHANNEL (self));
+  features = tp_simple_client_factory_dup_contact_features (
+      tp_proxy_get_factory (connection), connection);
+
   /* Pass ownership of tube_conn to the function */
-  tp_connection_get_contacts_by_handle (
-      tp_channel_borrow_connection (TP_CHANNEL (self)),
-      1, &initiator_handle, 0, NULL,
+  tp_connection_get_contacts_by_handle (connection,
+      1, &initiator_handle,
+      features->len, (TpContactFeature *) features->data,
       new_local_connection_with_contact,
       tube_conn, g_object_unref, G_OBJECT (self));
+
+  g_array_unref (features);
 }
 
 static void
@@ -1051,12 +1060,21 @@ connection_identified (TpStreamTubeChannel *self,
 
   if (can_identify_contact (self))
     {
+      TpConnection *connection;
+      GArray *features;
+
+      connection = tp_channel_borrow_connection (TP_CHANNEL (self));
+      features = tp_simple_client_factory_dup_contact_features (
+          tp_proxy_get_factory (connection), connection);
+
       /* Pass the ref on tube_conn to the function */
-      tp_connection_get_contacts_by_handle (
-          tp_channel_borrow_connection (TP_CHANNEL (self)),
-          1, &handle, 0, NULL,
+      tp_connection_get_contacts_by_handle (connection,
+          1, &handle,
+          features->len, (TpContactFeature *) features->data,
           _new_remote_connection_with_contact,
           tube_conn, g_object_unref, G_OBJECT (self));
+
+      g_array_unref (features);
     }
   else
     {
