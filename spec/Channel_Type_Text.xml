@@ -555,14 +555,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <p>Simple one-to-one chats (such as streams of private messages in
         XMPP or IRC) should be represented by a Text channel whose
         <tp:dbus-ref namespace="ofdT.Channel">TargetHandleType</tp:dbus-ref>
-        is <tp:type>Handle_Type</tp:type>_Contact. The expected way to
-        request such a channel is to set the ChannelType, TargetHandleType,
-        and either TargetHandle or TargetID in a call to EnsureChannel.</p>
+        is <tp:value-ref type="Handle_Type">Contact</tp:value-ref>. The
+        expected way to request such a channel is to set the <tp:dbus-ref
+        namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>, <tp:dbus-ref
+        namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>,
+        and either <tp:dbus-ref
+        namespace='ofdT.Channel'>TargetHandle</tp:dbus-ref> or <tp:dbus-ref
+        namespace='ofdT.Channel'>TargetID</tp:dbus-ref> in a call to
+        <tp:dbus-ref
+        namespace='ofdT.ChannelDispatcher'>EnsureChannel</tp:dbus-ref>.</p>
 
       <p>Named chat rooms whose identity can be saved and used again later
         (IRC channels, Jabber MUCs) are expected to be represented by Text
-        channels with <tp:type>Handle_Type</tp:type>_Room and the <tp:dbus-ref
-          namespace="ofdT.Channel.Interface">Group</tp:dbus-ref>
+        channels with <tp:dbus-ref
+        namespace="ofdT.Channel">TargetHandleType</tp:dbus-ref> =
+        <tp:value-ref type="Handle_Type">Room</tp:value-ref> and the
+        <tp:dbus-ref namespace="ofdT.Channel.Interface">Group</tp:dbus-ref>
         interface. In protocols where a chatroom can be used as a continuation
         of one or more one-to-one chats, these channels should also have the
         <tp:dbus-ref namespace="ofdT.Channel.Interface">Conference</tp:dbus-ref>
@@ -571,7 +579,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <p>Unnamed, transient chat rooms which cannot be rejoined by their
         unique identifier (e.g. a conversation on MSN which has, or once had,
         three or more participants) are expected to be represented by Text
-        channels with Handle_Type_None (and hence TargetHandle 0), the
+        channels with <tp:dbus-ref
+        namespace="ofdT.Channel">TargetHandleType</tp:dbus-ref> = <tp:value-ref
+        type="Handle_Type">None</tp:value-ref> (and hence <tp:dbus-ref
+        namespace="ofdT.Channel">TargetHandle</tp:dbus-ref> = 0),
         <tp:dbus-ref namespace="ofdT.Channel.Interface">Group</tp:dbus-ref>
         interface, and optionally the
         <tp:dbus-ref namespace="ofdT.Channel.Interface">Conference</tp:dbus-ref>
@@ -580,7 +591,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
       <p>On protocols like MSN where a conversation with a user is actually
         just a nameless chat room starting with exactly two members, to which
         more members can be invited, the initial one-to-one conversation
-        SHOULD be represented with Handle_Type_Contact. If a third participant
+        SHOULD be represented with <tp:dbus-ref
+        namespace="ofdT.Channel">TargetHandleType</tp:dbus-ref> =
+        <tp:value-ref type="Handle_Type">Contact</tp:value-ref>. If a third
+        participant
         joins or is invited, this SHOULD be represented by signalling
         a new <tp:dbus-ref
           namespace="ofdT.Channel.Interface">Conference</tp:dbus-ref> channel
@@ -606,8 +620,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
         <tp:dbus-ref
           namespace="ofdT.Connection.Interface.Requests">NewChannels</tp:dbus-ref>
         signal. The new channel should resemble the old channel, but have
-        Requested = FALSE regardless of its previous value; the InitiatorHandle
-        and InitiatorID should correspond to the sender of one of the pending
+        <tp:dbus-ref namespace='ofdT.Channel'>Requested</tp:dbus-ref> = FALSE
+        regardless of its previous value; the <tp:dbus-ref
+        namespace='ofdT.Channel'>InitiatorHandle</tp:dbus-ref>
+        and <tp:dbus-ref namespace='ofdT.Channel'>InitiatorID</tp:dbus-ref>
+        should correspond to the sender of one of the pending
         messages.</p>
 
       <tp:rationale>

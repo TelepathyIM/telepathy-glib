@@ -723,11 +723,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 
     <tp:struct name="RTCP_Feedback_Message_Properties">
       <tp:added version="0.22.1"/>
+      <tp:changed version="0.23.4">This struct is also used by Call, but
+        in call, the CM should know about RTP profiles, and never use MAXUINT
+        as a default value, because it complicates things unnecessarily.
+      </tp:changed>
       <tp:member type="u" name="RTCPMinimumInterval">
         <tp:docstring>
           The minimum interval between two regular RTCP packets in
           milliseconds for this content. If no special value is desired, one
           should put MAXUINT (0xFFFFFFFF).
+
+          Implementors and users of Call's <tp:dbus-ref
+          namespace="ofdT.Call1.Content.MediaDescription.Interface"
+          >RTCPFeedback</tp:dbus-ref> should not use the MAXUINT default.
+          Instead, in RTP/AVP, the default should be 5000 (5 seconds).
+          If using the RTP/AVPF profile, it can be set to a lower value,
+          the default being 0.
         </tp:docstring>
       </tp:member>
       <tp:member type="a(sss)" tp:type="RTCP_Feedback_Message[]"

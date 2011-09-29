@@ -50,7 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 { ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
       ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>,<br/>
   ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>:
-      <tp:type>Handle_Type</tp:type>_Contact,<br/>
+      <tp:value-ref type="Handle_Type">Contact</tp:value-ref>,<br/>
   ...<tp:dbus-ref namespace='ofdT.Channel.Interface'>SMS.Flash</tp:dbus-ref>:
       True,<br/>
 }</code></blockquote>
@@ -74,7 +74,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  ({ ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
      ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>,<br/>
     ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>:
-       <tp:type>Handle_Type</tp:type>_Contact,<br/>
+       <tp:value-ref type="Handle_Type">Contact</tp:value-ref>,<br/>
   },<br/>
   [ ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandle</tp:dbus-ref>,
     ...<tp:dbus-ref namespace='ofdT.Channel'>TargetID</tp:dbus-ref> ]),<br/>
@@ -82,7 +82,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  ({ ...<tp:dbus-ref namespace='ofdT.Channel'>ChannelType</tp:dbus-ref>:
        ...<tp:dbus-ref namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>,<br/>
     ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandleType</tp:dbus-ref>:
-       <tp:type>Handle_Type</tp:type>_Contact,<br/>
+       <tp:value-ref type="Handle_Type">Contact</tp:value-ref>,<br/>
     ...<tp:member-ref>SMSChannel</tp:member-ref>: True,<br/>
   },<br/>
   [ ...<tp:dbus-ref namespace='ofdT.Channel'>TargetHandle</tp:dbus-ref>,

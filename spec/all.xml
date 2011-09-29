@@ -3,7 +3,7 @@
   xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <tp:title>Telepathy D-Bus Interface Specification</tp:title>
-<tp:version>0.23.2</tp:version>
+<tp:version>0.23.4</tp:version>
 
 <tp:copyright>Copyright © 2005-2011 Collabora Limited</tp:copyright>
 <tp:copyright>Copyright © 2005-2011 Nokia Corporation</tp:copyright>
@@ -191,7 +191,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
        namespace='ofdT.Channel.Interface'>Hold</tp:dbus-ref> and
        <tp:dbus-ref namespace="ofdT.Channel.Interface">DTMF</tp:dbus-ref>
        interfaces, which may also appear on <tp:dbus-ref
-       namespace='ofdT.Channel.Type'>Call.DRAFT</tp:dbus-ref> channels.</p>
+       namespace='ofdT.Channel.Type'>Call1</tp:dbus-ref> channels.</p>
     </tp:docstring>
 
     <xi:include href="Channel_Interface_Call_State.xml"/>
@@ -206,7 +206,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
        chat rooms. They are primarily intended for <tp:dbus-ref
        namespace='ofdT.Channel.Type'>Text</tp:dbus-ref>, <tp:dbus-ref
        namespace='ofdT.Channel.Type'>StreamedMedia</tp:dbus-ref> and
-       <tp:dbus-ref namespace='ofdT.Channel.Type'>Call.DRAFT</tp:dbus-ref>
+       <tp:dbus-ref namespace='ofdT.Channel.Type'>Call1</tp:dbus-ref>
        channels, but may also appear on other types of channel.</p>
     </tp:docstring>
 
@@ -236,9 +236,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
  <tp:section name="Calls">
    <xi:include href="Call_Content.xml"/>
    <xi:include href="Call_Content_Interface_Media.xml"/>
-   <xi:include href="Call_Content_Interface_Mute.xml"/>
+   <xi:include href="Call_Interface_Mute.xml"/>
    <xi:include href="Call_Content_Interface_Video_Control.xml"/>
-   <xi:include href="Call_Content_Codec_Offer.xml"/>
+   <xi:include href="Call_Content_Media_Description.xml"/>
+   <xi:include href="Call_Content_Media_Description_Interface_RTP_Header_Extensions.xml"/>
+   <xi:include href="Call_Content_Media_Description_Interface_RTCP_Feedback.xml"/>
+   <xi:include
+   href="Call_Content_Media_Description_Interface_RTCP_Extended_Reports.xml"/>
    <xi:include href="Call_Stream.xml"/>
    <xi:include href="Call_Stream_Interface_Media.xml"/>
    <xi:include href="Call_Stream_Endpoint.xml"/>

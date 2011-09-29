@@ -90,6 +90,9 @@ typedef enum {
     TP_ERROR_EMERGENCY_CALLS_NOT_SUPPORTED, /*< nick=EmergencyCallsNotSupported >*/
     TP_ERROR_SOFTWARE_UPGRADE_REQUIRED, /*< nick=SoftwareUpgradeRequired >*/
     TP_ERROR_INSUFFICIENT_BALANCE, /*< nick=InsufficientBalance >*/
+    TP_ERROR_MEDIA_CODECS_INCOMPATIBLE, /*< nick=Media.CodecsIncompatible >*/
+    TP_ERROR_MEDIA_UNSUPPORTED_TYPE, /*< nick=Media.UnsupportedType >*/
+    TP_ERROR_MEDIA_STREAMING_ERROR, /*< nick=Media.StreamingError >*/
 } TpError;
 
 const gchar *tp_error_get_dbus_name (TpError error);
