@@ -1,3 +1,44 @@
+telepathy-glib 0.15.6 (2011-09-30)
+==================================
+
+Enhancements:
+
+• New JavaScript (gjs) code example to demonstrate GObject-Introspection
+  of the API.
+
+• TpProtocol: new API to get avatars requirements.
+
+• Factory features are now prepared on various contacts:
+    • TpConnection's self contact;
+    • TpChannel's target, initiator and self contacts;
+    • TpChannel's group memebers;
+    • TpTextChannel's message sender; and
+    • TpStreamTubeChannel's connection contact.
+
+• New object TpDBusTubeChannel to represent a D-Bus tube channel.
+  Its API is still incomplete.
+
+• Group the MembersChanged signals for the initial roster (fd.o#40933). This
+  improve login performance.
+
+• Spec upgraded to 0.23.4 except for draft call interfaces. Mixins implement the
+  new additions.
+
+• TpDBusPropertiesMixin now has a method for emitting the standard
+  PropertiesChanged signal; in conjunction with the code generator, it respects
+  the EmitsChangedSignal annotation. Note that the signal is not emitted
+  automatically.
+
+Fixes:
+
+• Python examples now works with latest pygobject (stop using static bindings).
+
+Deprecations:
+
+• tp_account_prepare_{async,finish} replaced by tp_proxy_prepare_{async,finish}
+• tp_account_manager_prepare_{async,finish} replaced by
+  tp_proxy_prepare_{async,finish}
+
 telepathy-glib 0.15.5 (2011-12-17)
 ==================================
 
