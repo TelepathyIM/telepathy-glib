@@ -728,7 +728,7 @@ tp_protocol_class_init (TpProtocolClass *klass)
    * protocol, or %NULL if %TP_PROTOCOL_FEATURE_CORE has not been prepared or
    * if the protocol doesn't support avatars.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.15.6
    */
   g_object_class_install_property (object_class, PROP_AVATAR_REQUIREMENTS,
       g_param_spec_pointer ("avatar-requirements",
@@ -1566,7 +1566,7 @@ _tp_protocol_parse_manager_file (GKeyFile *file,
  *
  * Returns: (transfer none): the value of #TpProtocol:avatar-requirements
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.15.6
  */
 TpAvatarRequirements *
 tp_protocol_get_avatar_requirements (TpProtocol *self)

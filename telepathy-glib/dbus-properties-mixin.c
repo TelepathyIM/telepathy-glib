@@ -992,7 +992,7 @@ tp_dbus_properties_mixin_make_properties_hash (
  * function if the property is annotated with EmitsChangedSignal=false, or is
  * unannotated.
  *
- * Since: UNRELEASED
+ * Since: 0.15.6
  */
 void
 tp_dbus_properties_mixin_emit_properties_changed (
@@ -1083,7 +1083,7 @@ tp_dbus_properties_mixin_emit_properties_changed (
  *
  * A shortcut for calling tp_dbus_properties_mixin_emit_properties_changed().
  *
- * Since: UNRELEASED
+ * Since: 0.15.6
  */
 void
 tp_dbus_properties_mixin_emit_properties_changed_varargs (

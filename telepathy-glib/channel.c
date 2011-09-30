@@ -204,7 +204,7 @@ tp_channel_get_feature_quark_group (void)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.6
  */
 
 GQuark
@@ -1878,7 +1878,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * finished preparing %TP_CHANNEL_FEATURE_CONTACTS; until then, it may be
    * %NULL.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.6
    */
   param_spec = g_param_spec_object ("target-contact", "Target Contact",
       "The channel's target contact", TP_TYPE_CONTACT,
@@ -1908,7 +1908,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * finished preparing %TP_CHANNEL_FEATURE_CONTACTS; until then, it may be
    * %NULL.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.6
    */
   param_spec = g_param_spec_object ("initiator-contact", "Initiator Contact",
       "Undefined if not a group", TP_TYPE_CONTACT,
@@ -1928,7 +1928,7 @@ tp_channel_class_init (TpChannelClass *klass)
    *
    * Change notification is via notify::group-self-contact.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.6
    */
   param_spec = g_param_spec_object ("group-self-contact", "Group.SelfHandle",
       "Undefined if not a group", TP_TYPE_CONTACT,
@@ -1960,7 +1960,7 @@ tp_channel_class_init (TpChannelClass *klass)
    * finished preparing %TP_CHANNEL_FEATURE_CONTACTS; until then, it may be
    * omitted.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.15.6
    */
   signals[SIGNAL_GROUP_CONTACTS_CHANGED] = g_signal_new (
       "group-contacts-changed", G_OBJECT_CLASS_TYPE (klass),

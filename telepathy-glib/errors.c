@@ -234,17 +234,17 @@
  *   <code>org.freedesktop.Telepathy.Error.Media.CodecsIncompatible</code>:
  *     Raised when the local streaming implementation has no codecs in common
  *     with the remote side.
- *     Since: 0.UNRELEASED
+ *     Since: 0.15.6
  * @TP_ERROR_MEDIA_UNSUPPORTED_TYPE:
  *   <code>org.freedesktop.Telepathy.Error.Media.UnsupportedType</code>:
  *     The media stream type requested is not supported by either the local or
  *     remote side.
- *     Since: 0.UNRELEASED
+ *     Since: 0.15.6
  * @TP_ERROR_MEDIA_STREAMING_ERROR:
  *   <code>org.freedesktop.Telepathy.Error.Media.StreamingError</code>:
  *     Raised when the call's streaming implementation has some kind of internal
  *     error.
- *     Since: 0.UNRELEASED
+ *     Since: 0.15.6
  *
  * Enumerated type representing the Telepathy D-Bus errors.
  */

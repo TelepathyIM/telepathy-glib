@@ -773,7 +773,7 @@ _tp_channel_contacts_self_contact_changed (TpChannel *self,
  * <!-- -->
  *
  * Returns: (transfer none): the value of #TpChannel:target-contact
- * Since: 0.UNRELEASED
+ * Since: 0.15.6
  */
 TpContact *
 tp_channel_get_target_contact (TpChannel *self)
@@ -790,7 +790,7 @@ tp_channel_get_target_contact (TpChannel *self)
  * <!-- -->
  *
  * Returns: (transfer none): the value of #TpChannel:initiator-contact
- * Since: 0.UNRELEASED
+ * Since: 0.15.6
  */
 TpContact *
 tp_channel_get_initiator_contact (TpChannel *self)
@@ -807,7 +807,7 @@ tp_channel_get_initiator_contact (TpChannel *self)
  * <!-- -->
  *
  * Returns: (transfer none): the value of #TpChannel:group-self-contact
- * Since: 0.UNRELEASED
+ * Since: 0.15.6
  */
 TpContact *
 tp_channel_group_get_self_contact (TpChannel *self)
@@ -832,7 +832,7 @@ tp_channel_group_get_self_contact (TpChannel *self)
  * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
  *  a new #GPtrArray of #TpContact, free it with g_ptr_array_unref(), or %NULL.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.6
  */
 GPtrArray *
 tp_channel_group_dup_members_contacts (TpChannel *self)
@@ -857,7 +857,7 @@ tp_channel_group_dup_members_contacts (TpChannel *self)
  * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
  *  a new #GPtrArray of #TpContact, free it with g_ptr_array_unref(), or %NULL.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.6
  */
 GPtrArray *
 tp_channel_group_dup_local_pending_contacts (TpChannel *self)
@@ -882,7 +882,7 @@ tp_channel_group_dup_local_pending_contacts (TpChannel *self)
  * Returns: (transfer container) (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
  *  a new #GPtrArray of #TpContact, free it with g_ptr_array_unref(), or %NULL.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.6
  */
 GPtrArray *
 tp_channel_group_dup_remote_pending_contacts (TpChannel *self)
@@ -915,7 +915,7 @@ tp_channel_group_dup_remote_pending_contacts (TpChannel *self)
  * and "" into @message, and return %FALSE.
  *
  * Returns: %TRUE if the contact is in fact local-pending
- * Since: 0.UNRELEASED
+ * Since: 0.15.6
  */
 gboolean
 tp_channel_group_get_local_pending_contact_info (TpChannel *self,
@@ -1014,7 +1014,7 @@ tp_channel_group_get_local_pending_contact_info (TpChannel *self,
  *
  * Returns: (transfer none): the global contact that owns the given contact,
  *  or %NULL.
- * Since: 0.UNRELEASED
+ * Since: 0.15.6
  */
 TpContact *
 tp_channel_group_get_contact_owner (TpChannel *self,
