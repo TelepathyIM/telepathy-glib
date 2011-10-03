@@ -390,6 +390,7 @@ tp_message_mixin_acknowledge_pending_messages_async (
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
   GPtrArray *links = g_ptr_array_sized_new (ids->len);
+  TpIntset *seen = tp_intset_new ();
   guint i;
 
   for (i = 0; i < ids->len; i++)
@@ -397,6 +398,10 @@ tp_message_mixin_acknowledge_pending_messages_async (
       guint id = g_array_index (ids, guint, i);
       GList *link_;
 
+      if (tp_intset_is_member (seen, id))
+        continue;
+
+      tp_intset_add (seen, id);
       link_ = g_queue_find_custom (mixin->priv->pending,
           GUINT_TO_POINTER (id), pending_item_id_equals_data);
 
@@ -410,6 +415,7 @@ tp_message_mixin_acknowledge_pending_messages_async (
           g_error_free (error);
 
           g_ptr_array_unref (links);
+          tp_intset_destroy (seen);
           return;
         }
 
@@ -434,6 +440,7 @@ tp_message_mixin_acknowledge_pending_messages_async (
     }
 
   g_ptr_array_unref (links);
+  tp_intset_destroy (seen);
   tp_svc_channel_type_text_return_from_acknowledge_pending_messages (context);
 }
 

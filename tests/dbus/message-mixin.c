@@ -1043,8 +1043,14 @@ main (int argc,
   g_print ("\n\n==== Acknowledging one message ====\n");
 
     {
-      GArray *msgid = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+      /* As a regression test for
+       * <https://bugs.freedesktop.org/show_bug.cgi?id=40523>, we include the
+       * ID of the message we want to ack twice. This used to cause a
+       * double-free.
+       */
+      GArray *msgid = g_array_sized_new (FALSE, FALSE, sizeof (guint), 2);
 
+      g_array_append_val (msgid, last_received_id);
       g_array_append_val (msgid, last_received_id);
 
       tp_cli_channel_type_text_run_acknowledge_pending_messages (chan, -1,
