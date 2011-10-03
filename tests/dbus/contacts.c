@@ -1387,6 +1387,48 @@ test_upgrade (Fixture *f,
   g_main_loop_unref (result.loop);
 }
 
+/* Regression test case for fd.o#41414 */
+static void
+test_upgrade_noop (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  static TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS };
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  TpHandle handle;
+  TpContact *contact;
+
+  g_test_bug ("41414");
+
+  /* Get a contact by handle */
+  handle = tp_handle_ensure (f->service_repo, "test-upgrade-noop",
+      NULL, NULL);
+  tp_connection_get_contacts_by_handle (f->client_conn,
+      1, &handle,
+      G_N_ELEMENTS (features), features,
+      by_handle_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+
+  contact = g_object_ref (g_ptr_array_index (result.contacts, 0));
+  reset_result (&result);
+
+  /* Upgrade it, but it should already have all features */
+  make_the_connection_disappear (f);
+  tp_connection_upgrade_contacts (f->client_conn,
+      1, &contact,
+      G_N_ELEMENTS (features), features,
+      upgrade_cb,
+      &result, finish, NULL);
+  g_main_loop_run (result.loop);
+  g_assert_no_error (result.error);
+  reset_result (&f->result);
+
+  put_the_connection_back (f);
+
+  g_object_unref (contact);
+}
+
 typedef struct
 {
   gboolean alias_changed;
@@ -2884,6 +2926,7 @@ main (int argc,
   ADD (no_features);
   ADD (features);
   ADD (upgrade);
+  ADD (upgrade_noop);
   ADD (by_id);
   ADD (avatar_requirements);
   ADD (avatar_data);
