@@ -59,6 +59,28 @@ typedef struct {
   TpConnection *no_requests_client_conn;
 } Fixture;
 
+/* We only really actively test TP_CONTACT_FEATURE_ALIAS, but preparing any
+ * of these once should be enough, assuming that the CM is not broken.
+ */
+static TpContactFeature all_contact_features[] = {
+  TP_CONTACT_FEATURE_ALIAS,
+  TP_CONTACT_FEATURE_AVATAR_TOKEN,
+  TP_CONTACT_FEATURE_PRESENCE,
+  TP_CONTACT_FEATURE_LOCATION,
+  TP_CONTACT_FEATURE_CAPABILITIES,
+  TP_CONTACT_FEATURE_AVATAR_DATA,
+  TP_CONTACT_FEATURE_CONTACT_INFO,
+  TP_CONTACT_FEATURE_CLIENT_TYPES,
+  TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
+  TP_CONTACT_FEATURE_CONTACT_GROUPS
+};
+
+/* If people add new features, they should add them to this test. We could
+ * generate the list dynamically but this seems less brittle.
+ */
+G_STATIC_ASSERT (G_N_ELEMENTS (all_contact_features) == NUM_TP_CONTACT_FEATURES);
+
+
 static void
 by_handle_cb (TpConnection *connection,
               guint n_contacts,
@@ -839,44 +861,16 @@ put_the_connection_back (Fixture *f)
   g_assert (ok);
 }
 
-static void
-test_by_handle_again (Fixture *f,
-    gconstpointer unused G_GNUC_UNUSED)
+static TpHandle
+get_handle_with_no_caps (Fixture *f,
+    const gchar *id)
 {
-  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handle;
-  TpHandleRepoIface *service_repo = tp_base_connection_get_handles (
-      f->base_connection, TP_HANDLE_TYPE_CONTACT);
-  TpContact *contact;
-  gpointer weak_pointer;
-  const gchar *alias = "Alice in Wonderland";
   GHashTable *capabilities;
-  /* We only really actively test TP_CONTACT_FEATURE_ALIAS, but preparing any
-   * of these once should be enough, assuming that the CM is not broken.
-   */
-  TpContactFeature features[] = {
-      TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_AVATAR_TOKEN,
-      TP_CONTACT_FEATURE_PRESENCE,
-      TP_CONTACT_FEATURE_LOCATION,
-      TP_CONTACT_FEATURE_CAPABILITIES,
-      TP_CONTACT_FEATURE_AVATAR_DATA,
-      TP_CONTACT_FEATURE_CONTACT_INFO,
-      TP_CONTACT_FEATURE_CLIENT_TYPES,
-      TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
-      TP_CONTACT_FEATURE_CONTACT_GROUPS
-  };
 
-  g_test_bug ("25181");
-  /* If people add new features, they should add them to this test. We could
-   * generate the list dynamically but this seems less brittle.
-   */
-  g_assert_cmpuint (G_N_ELEMENTS (features), ==, NUM_TP_CONTACT_FEATURES);
-
-  handle = tp_handle_ensure (service_repo, "alice", NULL, NULL);
+  handle = tp_handle_ensure (f->service_repo, id, NULL, NULL);
   g_assert_cmpuint (handle, !=, 0);
-  tp_tests_contacts_connection_change_aliases (f->service_conn, 1, &handle,
-      &alias);
+
   /* Unlike almost every other feature, with capabilities “not sure” and “none”
    * are different: you really might care about the difference between “I don't
    * know if blah can do video” versus “I know blah cannot do video”.
@@ -892,9 +886,28 @@ test_by_handle_again (Fixture *f,
       capabilities);
   g_hash_table_unref (capabilities);
 
+  return handle;
+}
+
+static void
+test_by_handle_again (Fixture *f,
+    gconstpointer unused G_GNUC_UNUSED)
+{
+  Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
+  TpHandle handle;
+  TpContact *contact;
+  gpointer weak_pointer;
+  const gchar *alias = "Alice in Wonderland";
+
+  g_test_bug ("25181");
+
+  handle = get_handle_with_no_caps (f, "alice");
+  tp_tests_contacts_connection_change_aliases (f->service_conn, 1, &handle,
+      &alias);
+
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      G_N_ELEMENTS (features), features,
+      G_N_ELEMENTS (all_contact_features), all_contact_features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -916,7 +929,7 @@ test_by_handle_again (Fixture *f,
 
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      G_N_ELEMENTS (features), features,
+      G_N_ELEMENTS (all_contact_features), all_contact_features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -1392,7 +1405,6 @@ static void
 test_upgrade_noop (Fixture *f,
     gconstpointer unused G_GNUC_UNUSED)
 {
-  static TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS };
   Result result = { g_main_loop_new (NULL, FALSE), NULL, NULL, NULL };
   TpHandle handle;
   TpContact *contact;
@@ -1400,11 +1412,10 @@ test_upgrade_noop (Fixture *f,
   g_test_bug ("41414");
 
   /* Get a contact by handle */
-  handle = tp_handle_ensure (f->service_repo, "test-upgrade-noop",
-      NULL, NULL);
+  handle = get_handle_with_no_caps (f, "test-upgrade-noop");
   tp_connection_get_contacts_by_handle (f->client_conn,
       1, &handle,
-      G_N_ELEMENTS (features), features,
+      G_N_ELEMENTS (all_contact_features), all_contact_features,
       by_handle_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
@@ -1417,7 +1428,7 @@ test_upgrade_noop (Fixture *f,
   make_the_connection_disappear (f);
   tp_connection_upgrade_contacts (f->client_conn,
       1, &contact,
-      G_N_ELEMENTS (features), features,
+      G_N_ELEMENTS (all_contact_features), all_contact_features,
       upgrade_cb,
       &result, finish, NULL);
   g_main_loop_run (result.loop);
