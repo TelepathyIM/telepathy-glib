@@ -435,7 +435,7 @@ tp_message_mixin_acknowledge_pending_messages_async (
 
       DEBUG ("acknowledging message id %u", cm_msg->incoming_id);
 
-      g_queue_remove (mixin->priv->pending, item);
+      g_queue_delete_link (mixin->priv->pending, link_);
       tp_message_destroy (item);
     }
 
