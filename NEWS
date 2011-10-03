@@ -1,4 +1,4 @@
-telepathy-glib 0.15.7 (UNRELEASED)
+telepathy-glib 0.15.7 (2011-10-04)
 ==================================
 
 Fixes:
@@ -14,6 +14,16 @@ Fixes:
 
 • fd.o#40523: Connection Manager crash when a client acks the same
   message twice. (Will)
+
+• fd.o#41414: Make sure tp_connection_upgrade_contacts() is no-op if all
+  features are already prepared (Xavier).
+
+• fd.o#41368: Fix introspection by reverting
+  48998822d5e9575af822c1936b35be514dc2401b. The order in which files are given
+  to gi-scanner matters (Xavier).
+
+• fd.o#41435: Ensure sent messages have a sender even with butterfly, which does
+  not set "message-sender" (Xavier).
 
 telepathy-glib 0.15.6 (2011-09-30)
 ==================================
