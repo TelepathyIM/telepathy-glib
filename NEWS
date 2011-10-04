@@ -7,6 +7,14 @@ Fixes:
 
 • Memory leak if the debug message cache is disabled (Vivek)
 
+• fd.o#38060: Fix a crash in TpMessageMixin, triggered by delivery
+  reports. (Danni)
+
+• fd.o#38997: Cope beter if UNIX sockets are not supported. (Guillaume)
+
+• fd.o#40523: Connection Manager crash when a client acks the same
+  message twice. (Will)
+
 telepathy-glib 0.14.9 (2011-07-08)
 ==================================
 
