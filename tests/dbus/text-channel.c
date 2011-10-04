@@ -886,6 +886,43 @@ test_sender_prepared (Test *test,
   g_assert (tp_contact_has_feature (sender, TP_CONTACT_FEATURE_ALIAS));
 }
 
+static void
+test_sent_with_no_sender (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GPtrArray *parts;
+  TpContact *sender;
+
+  tp_tests_proxy_run_until_prepared (test->channel, NULL);
+
+  /* Simulate a message sent with no sender, it must fallback to
+   * connection's self-contact. Unfortunately we cannot use the message mixin
+   * because it force setting a sender, and we can't use TpCMMessage to create
+   * parts because it's kept private. So back to old school. */
+  parts = g_ptr_array_new_with_free_func ((GDestroyNotify) g_hash_table_unref);
+  g_ptr_array_add (parts, tp_asv_new (
+      "message-type", G_TYPE_UINT, TP_CHANNEL_TEXT_MESSAGE_TYPE_NORMAL,
+      NULL));
+  g_ptr_array_add (parts, tp_asv_new (
+      "content-type", G_TYPE_STRING, "text/plain",
+      "content", G_TYPE_STRING, "bla bla bla",
+      NULL));
+
+  g_signal_connect (test->channel, "message-sent",
+      G_CALLBACK (message_sent_cb), test);
+
+  tp_svc_channel_interface_messages_emit_message_sent (test->chan_service,
+      parts, 0, "this-is-a-token");
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  sender = tp_signalled_message_get_sender (test->sent_msg);
+  g_assert (sender == tp_connection_get_self_contact (test->connection));
+
+  g_ptr_array_unref (parts);
+}
+
 int
 main (int argc,
       char **argv)
@@ -917,6 +954,8 @@ main (int argc,
       setup, test_pending_messages_with_no_sender_id, teardown);
   g_test_add ("/text-channel/sender-prepared", Test, NULL, setup,
       test_sender_prepared, teardown);
+  g_test_add ("/text-channel/sent-with-no-sender", Test, NULL, setup,
+      test_sent_with_no_sender, teardown);
 
   return g_test_run ();
 }
