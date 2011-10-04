@@ -55,6 +55,7 @@
 #include <telepathy-glib/message-mixin.h>
 
 #include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-lowlevel.h>
 #include <string.h>
 
 #include <telepathy-glib/cm-message.h>
@@ -389,19 +390,30 @@ tp_message_mixin_acknowledge_pending_messages_async (
     DBusGMethodInvocation *context)
 {
   TpMessageMixin *mixin = TP_MESSAGE_MIXIN (iface);
-  GList **nodes;
+  GPtrArray *links = g_ptr_array_sized_new (ids->len);
+  TpIntset *seen = tp_intset_new ();
   guint i;
-
-  nodes = g_new (GList *, ids->len);
 
   for (i = 0; i < ids->len; i++)
     {
       guint id = g_array_index (ids, guint, i);
+      GList *link_;
 
-      nodes[i] = g_queue_find_custom (mixin->priv->pending,
+      if (tp_intset_is_member (seen, id))
+        {
+          gchar *client = dbus_g_method_get_sender (context);
+
+          DEBUG ("%s passed message id %u more than once in one call to "
+              "AcknowledgePendingMessages. Foolish pup.", client, id);
+          g_free (client);
+          continue;
+        }
+
+      tp_intset_add (seen, id);
+      link_ = g_queue_find_custom (mixin->priv->pending,
           GUINT_TO_POINTER (id), pending_item_id_equals_data);
 
-      if (nodes[i] == NULL)
+      if (link_ == NULL)
         {
           GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
               "invalid message id %u", id);
@@ -410,28 +422,33 @@ tp_message_mixin_acknowledge_pending_messages_async (
           dbus_g_method_return_error (context, error);
           g_error_free (error);
 
-          g_free (nodes);
+          g_ptr_array_unref (links);
+          tp_intset_destroy (seen);
           return;
         }
+
+      g_ptr_array_add (links, link_);
     }
 
   tp_svc_channel_interface_messages_emit_pending_messages_removed (iface,
       ids);
 
-  for (i = 0; i < ids->len; i++)
+  for (i = 0; i < links->len; i++)
     {
-      TpMessage *item = nodes[i]->data;
+      GList *link_ = g_ptr_array_index (links, i);
+      TpMessage *item = link_->data;
 #ifdef ENABLE_DEBUG
-      TpCMMessage *cm_msg = nodes[i]->data;
+      TpCMMessage *cm_msg = link_->data;
 #endif
 
       DEBUG ("acknowledging message id %u", cm_msg->incoming_id);
 
-      g_queue_remove (mixin->priv->pending, item);
+      g_queue_delete_link (mixin->priv->pending, link_);
       tp_message_destroy (item);
     }
 
-  g_free (nodes);
+  g_ptr_array_unref (links);
+  tp_intset_destroy (seen);
   tp_svc_channel_type_text_return_from_acknowledge_pending_messages (context);
 }
 
