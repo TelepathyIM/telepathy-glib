@@ -217,6 +217,7 @@ out:
 static void
 prepare_sender_async (TpTextChannel *self,
     const GPtrArray *message,
+    gboolean fallback_to_self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -226,11 +227,26 @@ prepare_sender_async (TpTextChannel *self,
   const gchar *id;
 
   handle = get_sender (self, message, &contact, &id);
+  if (contact == NULL && fallback_to_self)
+    {
+      TpConnection *conn;
+
+      conn = tp_channel_borrow_connection ((TpChannel *) self);
+
+      DEBUG ("Failed to get our self contact, please fix CM (%s)",
+          tp_proxy_get_object_path (conn));
+
+      /* Use the connection self contact as a fallback */
+      contact = tp_connection_get_self_contact (conn);
+      if (contact != NULL)
+        g_object_ref (contact);
+    }
 
   if (contact != NULL)
     {
       GPtrArray *contacts = g_ptr_array_new_with_free_func (g_object_unref);
 
+      /* get_sender() refs the contact, we give that ref to the ptr-array */
       g_ptr_array_add (contacts, contact);
       _tp_channel_contacts_queue_prepare_async (channel,
           contacts, callback, user_data);
@@ -340,7 +356,7 @@ message_sent_cb (TpChannel *channel,
   data->flags = flags;
   data->token = tp_str_empty (token) ? NULL : g_strdup (token);
 
-  prepare_sender_async (self, parts,
+  prepare_sender_async (self, parts, TRUE,
       message_sent_sender_ready_cb, data);
 }
 
@@ -497,7 +513,7 @@ message_received_cb (TpChannel *proxy,
 
   DEBUG ("New message received");
 
-  prepare_sender_async (self, message,
+  prepare_sender_async (self, message, FALSE,
       message_received_sender_ready_cb,
       copy_parts (message));
 }
@@ -657,7 +673,7 @@ get_pending_messages_cb (TpProxy *proxy,
     {
       GPtrArray *parts = g_ptr_array_index (messages, i);
 
-      prepare_sender_async (self, parts,
+      prepare_sender_async (self, parts, FALSE,
           pending_message_sender_ready_cb,
           copy_parts (parts));
     }
