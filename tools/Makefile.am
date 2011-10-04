@@ -6,6 +6,16 @@ telepathy-glib-env: telepathy-glib-env.in Makefile
 	sed -e 's![@]abs_top_builddir[@]!$(abs_top_builddir)!' $< > $@
 	chmod +x $@
 
+if ENABLE_INSTALLED_TESTS
+toolsdir = @tpglibtestsdir@/tools
+tools_SCRIPTS = \
+	with-session-bus.sh \
+	test-wrapper.sh \
+	libglibcodegen.py \
+	libtpcodegen.py \
+	$(NULL)
+endif
+
 EXTRA_DIST = \
     c-constants-gen.py \
     check-coding-style.mk \

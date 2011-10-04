@@ -170,16 +170,34 @@ fi
 
 AC_SUBST(COVERAGE_CFLAGS)
 
+AC_ARG_ENABLE([installed-tests],
+ AC_HELP_STRING([--enable-installed-tests],
+ [make tests installable]),
+ [installed_tests=$enableval], [installed_tests=no])
+
+if test x$installed_tests = xyes; then
+ AC_DEFINE(ENABLE_INSTALLED_TESTS, [],
+ [Make tests installable])
+fi
+AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], [test "x$installed_tests" = xyes])
+
 AC_ARG_ENABLE([installed-examples],
   AC_HELP_STRING([--enable-installed-examples],
     [install examples as well as the library]),
     [enable_installed_examples="$enableval"],
-    [enable_installed_examples=no])
+    [enable_installed_examples=$installed_tests])
 AM_CONDITIONAL([INSTALL_EXAMPLES], [test "$enable_installed_examples" = yes])
+
+if test x$installed_tests = xyes -a x$enable_installed_examples != xyes; then
+  AC_MSG_ERROR([examples must be installed when tests are installed.])
+fi
 
 dnl docs/Makefile.am needs to know whether it's an out of tree build
 dnl (srcdir != builddir)
 AM_CONDITIONAL([OUT_OF_TREE_BUILD], [test "z$ac_srcdir" != z.])
+
+tpglibtestsdir=${libdir}/telepathy-glib-tests
+AC_SUBST(tpglibtestsdir)
 
 dnl Check for Glib
 PKG_CHECK_MODULES(GLIB,

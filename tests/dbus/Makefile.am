@@ -1,4 +1,4 @@
-noinst_PROGRAMS = \
+tests_list = \
     test-account \
     test-account-channel-request \
     test-account-manager \
@@ -60,7 +60,26 @@ noinst_PROGRAMS = \
     test-text-respawn \
     test-unsupported-interface
 
-TESTS = $(noinst_PROGRAMS)
+if ENABLE_INSTALLED_TESTS
+managersdir = @tpglibtestsdir@/telepathy/managers/
+managers_DATA = \
+	telepathy/managers/spurious.manager \
+	telepathy/managers/test_manager_file_invalid.manager \
+	telepathy/managers/test_manager_file.manager \
+	$(NULL)
+
+testsdir = @tpglibtestsdir@
+tests_PROGRAMS = $(tests_list)
+tests_SCRIPTS = run-test.sh
+tests_DATA = tpglib-dbus-tests.list
+else
+noinst_PROGRAMS = $(tests_list)
+endif
+
+TESTS = $(tests_list)
+
+tpglib-dbus-tests.list:
+	$(AM_V_GEN)echo $(tests_list) > $@
 
 LDADD = \
     $(top_builddir)/tests/lib/libtp-glib-tests.la \
@@ -256,7 +275,7 @@ TESTS_ENVIRONMENT = \
     G_DEBUG=fatal_warnings,fatal_criticals$(maybe_gc_friendly) \
     $(top_srcdir)/tools/test-wrapper.sh \
     sh $(top_srcdir)/tools/with-session-bus.sh \
-        --config-file=dbus-1/session.conf -- \
+        --config-file=dbus-uninstalled/session.conf -- \
     $(EXTRA_TESTS_ENVIRONMENT)
 
 EXTRA_TESTS_ENVIRONMENT =
@@ -275,10 +294,13 @@ VALGRIND_TESTS_ENVIRONMENT = \
     $(VALGRIND) --suppressions=$(top_srcdir)/tests/tests.supp $(VALGRIND_FLAGS)
 
 BUILT_SOURCES = \
-	dbus-1/session.conf \
+	dbus-installed/session.conf \
+	dbus-uninstalled/session.conf \
 	_gen/errors-check.h \
 	_gen/svc.h \
-	_gen/svc.c
+	_gen/svc.c \
+	run-test.sh \
+	$(NULL)
 
 CLEANFILES = \
     $(BUILT_SOURCES)
@@ -288,16 +310,43 @@ distclean-local:
 	rm -rf _gen
 
 EXTRA_DIST = \
-    dbus-1/session.conf.in \
-    dbus-1/services/spurious.service \
+    dbus-installed/session.conf.in \
+    dbus-installed/services/spurious.service \
+    dbus-uninstalled/session.conf.in \
+    dbus-uninstalled/services/spurious.service \
     telepathy/managers/spurious.manager \
     telepathy/managers/test_manager_file.manager \
     telepathy/managers/test_manager_file_invalid.manager \
-    with-properties.xml
+    with-properties.xml \
+    run-test.sh.in \
+    $(NULL)
 
-dbus-1/%.conf: $(srcdir)/dbus-1/%.conf.in
-	$(AM_V_at)$(mkdir_p) dbus-1
+run-test.sh: run-test.sh.in
+	$(AM_V_GEN)sed \
+		-e "s|[@]tpglibtestsdir[@]|@tpglibtestsdir@|g" \
+		-e "s|[@]libexec[@]|${libexecdir}|g" \
+		$< > $@
+	@chmod +x $@
+
+dbus-uninstalled/%.conf: $(srcdir)/dbus-uninstalled/%.conf.in
+	$(AM_V_at)$(mkdir_p) dbus-uninstalled
 	$(AM_V_GEN)sed -e "s|[@]abs_top_builddir[@]|@abs_top_builddir@|g" $< > $@
+
+dbus-installed/%.conf: $(srcdir)/dbus-installed/%.conf.in
+	$(AM_V_at)$(mkdir_p) dbus-installed
+	$(AM_V_GEN)sed -e "s|[@]tpglibtestsdir[@]|@tpglibtestsdir@|g" $< > $@
+
+service_files = dbus-installed/services/spurious.service
+conf_in_files = dbus-installed/session.conf.in
+conf_files = $(conf_in_files:.conf.in=.conf)
+
+if ENABLE_INSTALLED_TESTS
+dbusservicedir = @tpglibtestsdir@/dbus-installed/services
+dbusservice_DATA = $(service_files)
+
+dbusconfigdir = @tpglibtestsdir@/dbus-installed
+dbusconfig_DATA = $(conf_files)
+endif
 
 _gen/svc.c _gen/svc.h: with-properties.xml \
 	$(top_srcdir)/tools/glib-ginterface-gen.py \

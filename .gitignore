@@ -76,12 +76,16 @@ stamp-h1
 tags
 /telepathy-glib-0.*
 /telepathy-glib/tmp-introspect*/
-tests/dbus/dbus-1/session.conf
+tests/dbus/dbus-installed/session.conf
+tests/dbus/dbus-uninstalled/session.conf
+tests/dbus/run-test.sh
 tests/dbus/test-*
+tests/dbus/tpglib-dbus-tests.list
 tests/test-*
 /tests/tools/actual.h
 /tests/tools/actual-body.h
 /tests/tools/actual-gtk-doc.h
+tests/tpglib-tests.list
 tools/telepathy-glib-env
 /vala/telepathy-glib-generated.gi
 /vala/telepathy-glib.files

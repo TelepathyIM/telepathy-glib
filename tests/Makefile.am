@@ -4,7 +4,7 @@ SUBDIRS = \
     dbus \
     tools
 
-noinst_PROGRAMS = \
+programs_list = \
     test-asv \
     test-capabilities \
     test-availability-cmp \
@@ -17,9 +17,26 @@ noinst_PROGRAMS = \
     test-signal-connect-object \
     test-util \
     test-debug-domain \
-    test-contact-search-result
+    test-contact-search-result \
+    $(NULL)
 
-TESTS = $(noinst_PROGRAMS) \
+if HAVE_CXX
+programs_list += \
+    test-util-cxx
+endif
+
+if ENABLE_INSTALLED_TESTS
+testsdir = @tpglibtestsdir@
+tests_PROGRAMS = $(programs_list)
+tests_DATA = tpglib-tests.list
+else
+noinst_PROGRAMS = $(programs_list)
+endif
+
+tpglib-tests.list:
+	$(AM_V_GEN)echo $(programs_list) > $@
+
+TESTS = $(programs_list) \
     all-errors-documented.py
 
 TESTS_ENVIRONMENT = \
@@ -44,7 +61,7 @@ VALGRIND_TESTS_ENVIRONMENT = \
 check-valgrind:
 	$(MAKE) check-TESTS \
 		maybe_gc_friendly=,gc-friendly \
-		TESTS='$$(noinst_PROGRAMS)' \
+		TESTS='$$(programs_list)' \
 		TESTS_ENVIRONMENT="$(VALGRIND_TESTS_ENVIRONMENT)"
 	$(MAKE) -C dbus check-valgrind
 
@@ -137,8 +154,5 @@ AM_CFLAGS = $(ERROR_CFLAGS)
 AM_CXXFLAGS = $(ERROR_CXXFLAGS)
 
 if HAVE_CXX
-noinst_PROGRAMS += \
-    test-util-cxx
-
 test_util_cxx_SOURCES = util-cxx.cpp
 endif
