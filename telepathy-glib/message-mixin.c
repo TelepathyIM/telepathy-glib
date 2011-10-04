@@ -55,6 +55,7 @@
 #include <telepathy-glib/message-mixin.h>
 
 #include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-lowlevel.h>
 #include <string.h>
 
 #include <telepathy-glib/cm-message.h>
@@ -399,7 +400,14 @@ tp_message_mixin_acknowledge_pending_messages_async (
       GList *link_;
 
       if (tp_intset_is_member (seen, id))
-        continue;
+        {
+          gchar *client = dbus_g_method_get_sender (context);
+
+          DEBUG ("%s passed message id %u more than once in one call to "
+              "AcknowledgePendingMessages. Foolish pup.", client, id);
+          g_free (client);
+          continue;
+        }
 
       tp_intset_add (seen, id);
       link_ = g_queue_find_custom (mixin->priv->pending,
