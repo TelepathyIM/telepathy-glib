@@ -96,6 +96,37 @@
  */
 
 /**
+ * SECTION:svc-channel-room
+ * @title: Service-side room interfaces
+ * @short_description: room-related functionality for channels
+ *
+ * This collection of interfaces is used to expose various aspects of the
+ * configuration of chat rooms.
+ *
+ * #TpSvcChannelInterfaceRoom consists only of a pair of requestable, immutable
+ * properties: <code>"RoomName"</code> and <code>"Server"</code>. It has no
+ * methods or signals. It should be implemented on channels representing a chat
+ * room (whether it be a text chat, a multi-user call, or some other media
+ * type).
+ *
+ * #TpSvcChannelInterfaceSubject may be implemented by channels which have a
+ * subject (or topic, depending on your protocol's terminology of choice). This
+ * will usually be in addition to #TpSvcChannelInterfaceRoom, though in theory
+ * a 1-1 channel could have a subject. In addition to its single method, it
+ * defines a set of read-only properties, namely <code>"Subject"</code>,
+ * <code>"Actor"</code>, <code>"ActorHandle"</code>, <code>"Timestamp"</code>,
+ * and <code>"CanSet"</code>. Changes should be signalled using
+ * tp_dbus_properties_mixin_emit_properties_changed().
+ *
+ * #TpSvcChannelInterfaceRoomConfig provides a vast array of properties for
+ * other aspects of a chat room's configuration (such as the maximum number of
+ * participants, and whether the room is password-protected). Channels with
+ * this interface will typically implement the other two, too.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
  * SECTION:svc-channel-text
  * @title: Text channels
  * @short_description: service-side interfaces for the Text channel type, and
@@ -450,6 +481,33 @@
  * Some Group channels also have the Conference interface, representing a
  * group which can be initiated by upgrading or merging one or more 1-1
  * channels.
+ */
+
+/**
+ * SECTION:channel-room
+ * @title: Room-related interfaces on Channels
+ * @short_description: client-side wrappers for Room, RoomConfig and Subject
+ *
+ * This family of interfaces exposes aspects of chat rooms' configuration, and
+ * provides API to modify it (where permitted). Most of the API is in terms of
+ * D-Bus properties; they may be retrieved using
+ * tp_cli_dbus_properties_call_get_all(), and changes monitored using
+ * tp_cli_dbus_properties_connect_to_properties_changed().
+ *
+ * #TP_IFACE_CHANNEL_INTERFACE_ROOM consists only of a pair of requestable,
+ * immutable properties: #TP_PROP_CHANNEL_INTERFACE_ROOM_ROOM_NAME and
+ * #TP_PROP_CHANNEL_INTERFACE_ROOM_SERVER.
+ *
+ * In addition to #TP_IFACE_CHANNEL_INTERFACE_SUBJECT's single method, it
+ * defines a set of read-only properties: <code>"Subject"</code>,
+ * <code>"Actor"</code>, <code>"ActorHandle"</code>, <code>"Timestamp"</code>,
+ * and <code>"CanSet"</code>.
+ *
+ * #TP_IFACE_CHANNEL_INTERFACE_ROOM_CONFIG provides a vast array of properties
+ * for other aspects of a chat room's configuration (such as the maximum number
+ * of participants, and whether the room is password-protected).
+ *
+ * Since: 0.UNRELEASED
  */
 
 /**
