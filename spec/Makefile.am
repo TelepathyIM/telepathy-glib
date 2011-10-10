@@ -9,10 +9,13 @@ EXTRA_DIST = \
     Account_Manager_Interface_Hidden.xml \
     Authentication_TLS_Certificate.xml \
     Call_Content.xml \
-    Call_Content_Codec_Offer.xml \
     Call_Content_Interface_Media.xml \
-    Call_Content_Interface_Mute.xml \
     Call_Content_Interface_Video_Control.xml \
+    Call_Content_Media_Description.xml \
+    Call_Content_Media_Description_Interface_RTCP_Extended_Reports.xml \
+    Call_Content_Media_Description_Interface_RTCP_Feedback.xml \
+    Call_Content_Media_Description_Interface_RTP_Header_Extensions.xml \
+    Call_Interface_Mute.xml \
     Call_Stream.xml \
     Call_Stream_Endpoint.xml \
     Call_Stream_Interface_Media.xml \
@@ -38,11 +41,13 @@ EXTRA_DIST = \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
     Channel_Interface_Room.xml \
+    Channel_Interface_Room_Config.xml \
     Channel_Interface_SASL_Authentication.xml \
     Channel_Interface_SMS.xml \
     Channel_Interface_Securable.xml \
     Channel_Interface_Service_Point.xml \
     Channel_Interface_Splittable.xml \
+    Channel_Interface_Subject.xml \
     Channel_Interface_Transfer.xml \
     Channel_Interface_Tube.xml \
     Channel_Request.xml \
