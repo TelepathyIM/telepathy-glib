@@ -370,7 +370,7 @@ process_contacts_queue (TpChannel *self)
   features = tp_simple_client_factory_dup_contact_features (
       tp_proxy_get_factory (self->priv->connection), self->priv->connection);
 
-  if (item->contacts != NULL)
+  if (item->contacts != NULL && item->contacts->len > 0)
     {
       g_assert (item->ids == NULL);
       g_assert (item->handles == NULL);
@@ -382,7 +382,7 @@ process_contacts_queue (TpChannel *self)
           item, NULL,
           (GObject *) self);
     }
-  else if (item->ids != NULL)
+  else if (item->ids != NULL && item->ids->len > 0)
     {
       g_assert (item->contacts == NULL);
       g_assert (item->handles == NULL);
@@ -394,7 +394,7 @@ process_contacts_queue (TpChannel *self)
           item, NULL,
           (GObject *) self);
     }
-  else if (item->handles != NULL)
+  else if (item->handles != NULL && item->handles->len > 0)
     {
       g_assert (item->contacts == NULL);
       g_assert (item->ids == NULL);
