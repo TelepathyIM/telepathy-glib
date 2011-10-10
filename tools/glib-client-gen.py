@@ -56,8 +56,16 @@ class Generator(object):
             % opts.get('--subclass', 'TpProxy'))
         if self.proxy_arg == 'void *':
             self.proxy_arg = 'gpointer '
-        self.generate_reentrant = ('--generate-reentrant' in opts or
-                '--deprecate-reentrant' in opts)
+
+        self.reentrant_symbols = set()
+        try:
+            filename = opts['--generate-reentrant']
+            with open(filename, 'r') as f:
+                for line in f.readlines():
+                    self.reentrant_symbols.add(line.strip())
+        except KeyError:
+            pass
+
         self.deprecate_reentrant = opts.get('--deprecate-reentrant', None)
         self.deprecation_attribute = opts.get('--deprecation-attribute',
                 'G_GNUC_DEPRECATED')
@@ -846,9 +854,8 @@ class Generator(object):
         self.b('}')
         self.b('')
 
-        if self.generate_reentrant:
-            self.do_method_reentrant(method, iface_lc, member, member_lc,
-                                     in_args, out_args, collect_callback)
+        self.do_method_reentrant(method, iface_lc, member, member_lc,
+                                 in_args, out_args, collect_callback)
 
         # leave a gap for the end of the method
         self.d('')
@@ -866,6 +873,10 @@ class Generator(object):
         #       GPtrArray **out0,
         #       GError **error,
         #       GMainLoop **loop);
+
+        run_method_name = '%s_%s_run_%s' % (self.prefix_lc, iface_lc, member_lc)
+        if run_method_name not in self.reentrant_symbols:
+            return
 
         self.b('typedef struct {')
         self.b('    GMainLoop *loop;')
@@ -944,12 +955,12 @@ class Generator(object):
         if self.deprecate_reentrant:
             self.h('#ifndef %s' % self.deprecate_reentrant)
 
-        self.h('gboolean %s_%s_run_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.h('gboolean %s (%sproxy,'
+               % (run_method_name, self.proxy_arg))
         self.h('    gint timeout_ms,')
 
         self.d('/**')
-        self.d(' * %s_%s_run_%s:' % (self.prefix_lc, iface_lc, member_lc))
+        self.d(' * %s:' % run_method_name)
         self.d(' * @proxy: %s' % self.proxy_doc)
         self.d(' * @timeout_ms: Timeout in milliseconds, or -1 for default')
 
@@ -1000,8 +1011,8 @@ class Generator(object):
         self.d(' */')
         self.d('')
 
-        self.b('gboolean\n%s_%s_run_%s (%sproxy,'
-               % (self.prefix_lc, iface_lc, member_lc, self.proxy_arg))
+        self.b('gboolean\n%s (%sproxy,'
+               % (run_method_name, self.proxy_arg))
         self.b('    gint timeout_ms,')
 
         for arg in in_args:
@@ -1230,7 +1241,7 @@ if __name__ == '__main__':
     options, argv = gnu_getopt(sys.argv[1:], '',
                                ['group=', 'subclass=', 'subclass-assert=',
                                 'iface-quark-prefix=', 'tp-proxy-api=',
-                                'generate-reentrant', 'deprecate-reentrant=',
+                                'generate-reentrant=', 'deprecate-reentrant=',
                                 'deprecation-attribute='])
 
     opts = {}

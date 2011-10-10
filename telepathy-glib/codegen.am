@@ -29,7 +29,8 @@ codegen_sources = \
     $(nodist_geninclude_HEADERS) \
     _gen/stable-spec.xml \
     _gen/spec-stamp \
-    _gen/stable-stamp
+    _gen/stable-stamp \
+    _gen/reentrant-methods.list
 
 nodist_geninclude_HEADERS = \
     _gen/error-str.h \
@@ -124,6 +125,11 @@ _gen/stable-stamp: $(wildcard $(abs_srcdir)/*.xml) _gen/spec-stamp
 _gen/stable-spec.xml: stable-interfaces.xml _gen/stable-stamp $(tools_dir)/xincludator.py
 	$(AM_V_GEN)$(PYTHON) $(tools_dir)/xincludator.py $< > $@
 
+# Grab a list of re-entrant tp_cli_*_run_* methods we are committed to
+# generating for backwards compatibility.
+_gen/reentrant-methods.list: $(top_srcdir)/docs/reference/telepathy-glib-sections.txt
+	$(AM_V_GEN)$(GREP) 'tp_cli_.*_run_.*' $< > $@
+
 # Things generated from the whole spec at once
 
 _gen/gtypes.h _gen/gtypes-body.h: _gen/stable-spec.xml \
@@ -193,6 +199,7 @@ _gen/tp-svc-%.c _gen/tp-svc-%.h: _gen/tp-spec-%.xml \
 		$< Tp_Svc_
 
 _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
+	_gen/reentrant-methods.list \
 	$(tools_dir)/glib-client-gen.py \
 	codegen.am
 	$(AM_V_GEN)set -e; \
@@ -200,7 +207,6 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 	subclass_assert= ; \
 	case $* in \
 		generic) \
-			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		account-manager) \
 			subclass=--subclass=TpAccountManager; \
@@ -213,7 +219,6 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		channel) \
 			subclass=--subclass=TpChannel; \
 			subclass_assert=--subclass-assert=TP_IS_CHANNEL; \
-			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		channel-dispatcher) \
 			subclass=--subclass=TpChannelDispatcher; \
@@ -234,27 +239,22 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		connection-manager) \
 			subclass=--subclass=TpConnectionManager; \
 			subclass_assert=--subclass-assert=TP_IS_CONNECTION_MANAGER \
-			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		connection) \
 			subclass=--subclass=TpConnection; \
 			subclass_assert=--subclass-assert=TP_IS_CONNECTION; \
-			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		media-session-handler) \
 			subclass=--subclass=TpMediaSessionHandler; \
 			subclass_assert=--subclass-assert=TP_IS_MEDIA_SESSION_HANDLER; \
-			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		media-stream-handler) \
 			subclass=--subclass=TpMediaStreamHandler; \
 			subclass_assert=--subclass-assert=TP_IS_MEDIA_STREAM_HANDLER; \
-			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 		dbus-daemon) \
 			subclass=--subclass=TpDBusDaemon; \
 			subclass_assert=--subclass-assert=TP_IS_DBUS_DAEMON; \
-			maybe_reentrant=--deprecate-reentrant=TP_DISABLE_DEPRECATED; \
 			;; \
 	esac; \
 	$(PYTHON) $(tools_dir)/glib-client-gen.py \
@@ -263,7 +263,8 @@ _gen/tp-cli-%-body.h _gen/tp-cli-%.h: _gen/tp-spec-%.xml \
 		--iface-quark-prefix=TP_IFACE_QUARK \
 		--tp-proxy-api=0.7.6 \
 		--deprecation-attribute=_TP_GNUC_DEPRECATED \
-		$$maybe_reentrant \
+		--deprecate-reentrant=TP_DISABLE_DEPRECATED \
+		--generate-reentrant=_gen/reentrant-methods.list \
 		$< Tp_Cli _gen/tp-cli-$*
 
 # vim:set ft=automake:
