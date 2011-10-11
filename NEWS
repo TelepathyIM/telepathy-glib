@@ -1,3 +1,27 @@
+telepathy-glib 0.15.8 (UNRELEASED)
+==================================
+
+The “fretting about the now” release.
+
+Enhancements:
+
+• telepathy-glib now generates code for spec version 0.24.0, including
+  the Room, Subject and RoomConfig interfaces. It also includes a new
+  TpBaseRoomConfig object, which vaguely resembles the good bits of
+  TpPropertiesMixin. (The latter is not deprecated yet, but just you
+  wait…)
+
+• It is now possible to set D-Bus properties as if in response to a call
+  to Set() on the bus, using tp_dbus_properties_mixin_set(). This
+  complements the existing tp_dbus_properties_mixin_get() method, and
+  makes it possible to fix fd.o#32416.
+
+Fixes:
+
+• fd.o#41470: crash in some situations when using
+  TP_CHANNEL_FEATURE_CONTACTS. This was specifically triggered by
+  test-cli-group as of the last release.
+
 telepathy-glib 0.15.7 (2011-10-04)
 ==================================
 
