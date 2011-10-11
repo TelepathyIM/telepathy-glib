@@ -102,6 +102,7 @@ static gboolean request_resource (TfStream *stream, guint direction,
     TfMediaSignallingContent *self);
 static void free_resource (TfStream *stream, guint direction,
     TfMediaSignallingContent *self);
+static void restart_source (TfStream *stream, TfMediaSignallingContent *self);
 
 
 static void
@@ -208,6 +209,8 @@ tf_media_signalling_content_new (
       G_CALLBACK (request_resource), G_OBJECT (self), 0);
   tp_g_signal_connect_object (stream, "free-resource",
       G_CALLBACK (free_resource), G_OBJECT (self), 0);
+  tp_g_signal_connect_object (stream, "restart-source",
+      G_CALLBACK (restart_source), G_OBJECT (self), 0);
 
   g_object_get (stream,
       "farsight-conference", &conf,
@@ -275,6 +278,11 @@ free_resource (TfStream *stream, guint direction,
     }
 }
 
+static void
+restart_source (TfStream *stream, TfMediaSignallingContent *self)
+{
+  g_signal_emit_by_name (self, "restart-source");
+}
 
 static void
 tf_media_signalling_content_error (TfContent *content,

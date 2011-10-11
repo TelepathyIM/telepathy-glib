@@ -580,6 +580,7 @@ on_content_video_resolution_changed (TfFutureCallContent *proxy,
   self->height = height;
 
   g_signal_emit (self, signals[RESOLUTION_CHANGED], 0, width, height);
+  g_signal_emit_by_name (self, "restart-source");
 
   g_message ("requested video resolution: %dx%d", width, height);
 }
@@ -619,6 +620,7 @@ on_content_video_framerate_changed (TfFutureCallContent *proxy,
 
   self->framerate = framerate;
   g_object_notify (G_OBJECT (self), "framerate");
+  g_signal_emit_by_name (self, "restart-source");
 }
 
 static void

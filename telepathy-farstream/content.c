@@ -43,6 +43,7 @@ enum
   SIGNAL_SRC_PAD_ADDED,
   SIGNAL_START_RECEIVING,
   SIGNAL_STOP_RECEIVING,
+  SIGNAL_RESTART_SOURCE,
   SIGNAL_COUNT
 };
 
@@ -222,6 +223,22 @@ tf_content_class_init (TfContentClass *klass)
           0, NULL, NULL,
           _tf_marshal_VOID__POINTER_UINT,
           G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_UINT);
+
+  /**
+   * TfContent::restart-source:
+   * @content: the #TfContent
+   *
+   * This signal requests that the source be restarted so that the caps can
+   * be renegotiated with a new resolutions and framerate.
+   */
+
+  signals[SIGNAL_RESTART_SOURCE] =
+      g_signal_new ("restart-source",
+          G_OBJECT_CLASS_TYPE (klass),
+          G_SIGNAL_RUN_LAST,
+          0, NULL, NULL,
+          _tf_marshal_VOID__VOID,
+          G_TYPE_NONE, 0);
 }
 
 
