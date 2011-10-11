@@ -123,7 +123,7 @@
  * participants, and whether the room is password-protected). Channels with
  * this interface will typically implement the other two, too.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.8
  */
 
 /**
@@ -507,7 +507,7 @@
  * for other aspects of a chat room's configuration (such as the maximum number
  * of participants, and whether the room is password-protected).
  *
- * Since: 0.UNRELEASED
+ * Since: 0.15.8
  */
 
 /**

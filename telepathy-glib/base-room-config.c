@@ -95,7 +95,7 @@
  * On joining the room, once the entire room configuration has been retrieved
  * from the network, the CM should call tp_base_room_config_set_retrieved().
  *
- * Since: UNRELEASED
+ * Since: 0.15.8
  */
 
 /**

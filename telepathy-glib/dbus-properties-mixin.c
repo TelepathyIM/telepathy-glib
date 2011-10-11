@@ -204,7 +204,7 @@ tp_svc_interface_set_dbus_properties_info (GType g_interface,
  *
  * Returns: D-Bus property metadata for @g_interface, or %NULL if it has
  *  none.
- * Since: UNRELEASED
+ * Since: 0.15.8
  */
 TpDBusPropertiesMixinIfaceInfo *
 tp_svc_interface_get_dbus_properties_info (GType g_interface)
@@ -1203,7 +1203,7 @@ out:
  * If Set would return a D-Bus error, sets @error and returns %FALSE
  *
  * Returns: %TRUE on success; %FALSE (setting @error) on failure
- * Since: UNRELEASED
+ * Since: 0.15.8
  */
 gboolean
 tp_dbus_properties_mixin_set (
