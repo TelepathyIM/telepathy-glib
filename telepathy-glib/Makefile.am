@@ -35,6 +35,7 @@ our_headers = \
     base-connection-manager.h \
     base-password-channel.h \
     base-protocol.h \
+    base-room-config.h \
     basic-proxy-factory.h \
     channel.h \
     channel-iface.h \
@@ -163,6 +164,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     base-password-channel.c \
     base-protocol-internal.h \
     base-protocol.c \
+    base-room-config.c \
     basic-proxy-factory.c \
     capabilities.c \
     capabilities-internal.h \
