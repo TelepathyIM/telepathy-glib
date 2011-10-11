@@ -4,7 +4,6 @@
 
 <tp:title>Miscellaneous extensions from the future</tp:title>
 
-<xi:include href="../spec/Call_Content_Codec_Offer.xml"/>
 <xi:include href="../spec/Call_Stream_Endpoint.xml"/>
 
 </tp:spec>

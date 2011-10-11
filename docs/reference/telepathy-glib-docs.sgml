@@ -58,6 +58,7 @@
     <xi:include href="xml/contact-search-result.xml"/>
     <xi:include href="xml/channel.xml"/>
     <xi:include href="xml/channel-group.xml"/>
+    <xi:include href="xml/channel-room.xml"/>
     <xi:include href="xml/channel-text.xml"/>
     <xi:include href="xml/channel-media.xml"/>
     <xi:include href="xml/channel-file-transfer.xml"/>
@@ -96,6 +97,7 @@
     <xi:include href="xml/svc-generic.xml"/>
     <xi:include href="xml/svc-channel.xml"/>
     <xi:include href="xml/svc-channel-group.xml"/>
+    <xi:include href="xml/svc-channel-room.xml"/>
     <xi:include href="xml/svc-channel-contactlist.xml"/>
     <xi:include href="xml/svc-channel-contactsearch.xml"/>
     <xi:include href="xml/svc-channel-text.xml"/>

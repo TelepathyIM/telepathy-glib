@@ -367,6 +367,8 @@ example_call_stream_close (ExampleCallStream *self)
 void
 example_call_stream_accept_proposed_direction (ExampleCallStream *self)
 {
+  GValueArray *reason;
+
   if (self->priv->removed ||
       self->priv->local_sending_state != FUTURE_SENDING_STATE_PENDING_SEND)
     return;
@@ -375,8 +377,15 @@ example_call_stream_accept_proposed_direction (ExampleCallStream *self)
       self->priv->object_path);
 
   self->priv->local_sending_state = FUTURE_SENDING_STATE_SENDING;
+  reason = tp_value_array_build (4,
+      G_TYPE_UINT, 0,
+      G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      G_TYPE_STRING, "",
+      G_TYPE_STRING, "",
+      G_TYPE_INVALID);
   future_svc_call_stream_emit_local_sending_state_changed (self,
-      self->priv->local_sending_state);
+      self->priv->local_sending_state, reason);
+  g_value_array_free (reason);
 }
 
 void
@@ -384,6 +393,7 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
 {
   GHashTable *updated_members;
   GArray *removed_members;
+  GValueArray *reason;
 
   if (self->priv->removed ||
       self->priv->remote_sending_state != FUTURE_SENDING_STATE_PENDING_SEND)
@@ -398,10 +408,17 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
   removed_members = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
   g_hash_table_insert (updated_members, GUINT_TO_POINTER (self->priv->handle),
       GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
+  reason = tp_value_array_build (4,
+      G_TYPE_UINT, 0,
+      G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      G_TYPE_STRING, "",
+      G_TYPE_STRING, "",
+      G_TYPE_INVALID);
   future_svc_call_stream_emit_remote_members_changed (self, updated_members,
-      removed_members);
+      removed_members, reason);
   g_hash_table_unref (updated_members);
   g_array_free (removed_members, TRUE);
+  g_value_array_free (reason);
 }
 
 static gboolean
@@ -416,6 +433,12 @@ example_call_stream_change_direction (ExampleCallStream *self,
     gboolean want_to_send, gboolean want_to_receive)
 {
   GHashTable *updated_members = g_hash_table_new (NULL, NULL);
+  GValueArray *reason = tp_value_array_build (4,
+      G_TYPE_UINT, 0,
+      G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      G_TYPE_STRING, "",
+      G_TYPE_STRING, "",
+      G_TYPE_INVALID);
 
   if (want_to_send)
     {
@@ -432,7 +455,7 @@ example_call_stream_change_direction (ExampleCallStream *self,
               self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_SENDING;
           future_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state);
+              self->priv->local_sending_state, reason);
         }
     }
   else
@@ -445,7 +468,7 @@ example_call_stream_change_direction (ExampleCallStream *self,
               self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
           future_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state);
+              self->priv->local_sending_state, reason);
         }
       else if (self->priv->local_sending_state ==
           FUTURE_SENDING_STATE_PENDING_SEND)
@@ -454,7 +477,7 @@ example_call_stream_change_direction (ExampleCallStream *self,
               self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
           future_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state);
+              self->priv->local_sending_state, reason);
         }
     }
 
@@ -496,12 +519,13 @@ example_call_stream_change_direction (ExampleCallStream *self,
           sizeof (guint), 0);
 
       future_svc_call_stream_emit_remote_members_changed (self,
-          updated_members, removed_members);
+          updated_members, removed_members, reason);
 
       g_array_free (removed_members, TRUE);
     }
 
   g_hash_table_unref (updated_members);
+  g_value_array_free (reason);
 }
 
 /* The remote user wants to change the direction of this stream according
@@ -512,7 +536,12 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
     gboolean remote_send)
 {
   GHashTable *updated_members = g_hash_table_new (NULL, NULL);
-
+  GValueArray *reason = tp_value_array_build (4,
+      G_TYPE_UINT, 0,
+      G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      G_TYPE_STRING, "",
+      G_TYPE_STRING, "",
+      G_TYPE_INVALID);
   /* In some protocols, streams cannot be neither sending nor receiving, so
    * if a stream is set to TP_MEDIA_STREAM_DIRECTION_NONE, this is equivalent
    * to removing it. (This is true in XMPP, for instance.)
@@ -531,7 +560,7 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           /* ask the user for permission */
           self->priv->local_sending_state = FUTURE_SENDING_STATE_PENDING_SEND;
           future_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state);
+              self->priv->local_sending_state, reason);
         }
       else
         {
@@ -552,14 +581,14 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
               self->priv->object_path);
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
           future_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state);
+              self->priv->local_sending_state, reason);
         }
       else if (self->priv->local_sending_state ==
           FUTURE_SENDING_STATE_PENDING_SEND)
         {
           self->priv->local_sending_state = FUTURE_SENDING_STATE_NONE;
           future_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state);
+              self->priv->local_sending_state, reason);
         }
       else
         {
@@ -613,12 +642,13 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           sizeof (guint), 0);
 
       future_svc_call_stream_emit_remote_members_changed (self,
-          updated_members, removed_members);
+          updated_members, removed_members, reason);
 
       g_array_free (removed_members, TRUE);
     }
 
   g_hash_table_unref (updated_members);
+  g_value_array_free (reason);
 }
 
 static void

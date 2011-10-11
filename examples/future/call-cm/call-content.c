@@ -337,6 +337,7 @@ example_call_content_stream_removed_cb (ExampleCallContent *self,
 {
   GPtrArray *paths;
   gchar *path;
+  GValueArray *reason;
 
   g_return_if_fail (EXAMPLE_IS_CALL_CONTENT (self));
   g_return_if_fail (EXAMPLE_IS_CALL_STREAM (stream));
@@ -347,9 +348,16 @@ example_call_content_stream_removed_cb (ExampleCallContent *self,
       NULL);
   paths = g_ptr_array_sized_new (1);
   g_ptr_array_add (paths, path);
-  future_svc_call_content_emit_streams_removed (self, paths);
+  reason = tp_value_array_build (4,
+      G_TYPE_UINT, 0,
+      G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      G_TYPE_STRING, "",
+      G_TYPE_STRING, "",
+      G_TYPE_INVALID);
+  future_svc_call_content_emit_streams_removed (self, paths, reason);
   g_free (path);
   g_ptr_array_free (paths, TRUE);
+  g_value_array_free (reason);
 
   g_object_unref (self->priv->stream);
   self->priv->stream = NULL;
