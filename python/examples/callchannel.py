@@ -28,7 +28,7 @@ pygst.require("0.10")
 import gst
 
 import tpfarstream
-import farsight
+import farstream
 from util import *
 import gc
 
@@ -59,7 +59,7 @@ class CallChannel:
         self.pipeline = gst.Pipeline()
         self.pipeline.get_bus().add_watch(self.async_handler)
 
-        self.notifier = notifier = farsight.ElementAddedNotifier()
+        self.notifier = notifier = farstream.ElementAddedNotifier()
         notifier.set_properties_from_file("element-properties")
         notifier.add(self.pipeline)
 
@@ -111,9 +111,9 @@ class CallChannel:
 
     def src_pad_added (self, content, handle, stream, pad, codec):
         type = content.get_property ("media-type")
-        if type == farsight.MEDIA_TYPE_AUDIO:
+        if type == farstream.MEDIA_TYPE_AUDIO:
             sink = gst.parse_bin_from_description("audioconvert ! audioresample ! audioconvert ! autoaudiosink", True)
-        elif type == farsight.MEDIA_TYPE_VIDEO:
+        elif type == farstream.MEDIA_TYPE_VIDEO:
             sink = gst.parse_bin_from_description("ffmpegcolorspace ! videoscale ! autovideosink", True)
 
         self.pipeline.add(sink)
@@ -121,32 +121,32 @@ class CallChannel:
         sink.set_state(gst.STATE_PLAYING)
 
     def get_codec_config (self, media_type):
-        if media_type == farsight.MEDIA_TYPE_VIDEO:
-            codecs = [ farsight.Codec(farsight.CODEC_ID_ANY, "H264",
-                farsight.MEDIA_TYPE_VIDEO, 0) ]
+        if media_type == farstream.MEDIA_TYPE_VIDEO:
+            codecs = [ farstream.Codec(farstream.CODEC_ID_ANY, "H264",
+                farstream.MEDIA_TYPE_VIDEO, 0) ]
             if self.conn.GetProtocol() == "sip" :
-                codecs += [ farsight.Codec(farsight.CODEC_ID_DISABLE, "THEORA",
-                                        farsight.MEDIA_TYPE_VIDEO, 0) ]
+                codecs += [ farstream.Codec(farstream.CODEC_ID_DISABLE, "THEORA",
+                                        farstream.MEDIA_TYPE_VIDEO, 0) ]
             else:
-                codecs += [ farsight.Codec(farsight.CODEC_ID_ANY, "THEORA",
-                                        farsight.MEDIA_TYPE_VIDEO, 0) ]
+                codecs += [ farstream.Codec(farstream.CODEC_ID_ANY, "THEORA",
+                                        farstream.MEDIA_TYPE_VIDEO, 0) ]
             codecs += [
-                farsight.Codec(farsight.CODEC_ID_ANY, "H263",
-                                        farsight.MEDIA_TYPE_VIDEO, 0),
-                farsight.Codec(farsight.CODEC_ID_DISABLE, "DV",
-                                        farsight.MEDIA_TYPE_VIDEO, 0),
-                farsight.Codec(farsight.CODEC_ID_ANY, "JPEG",
-                                        farsight.MEDIA_TYPE_VIDEO, 0),
-                farsight.Codec(farsight.CODEC_ID_ANY, "MPV",
-                                       farsight.MEDIA_TYPE_VIDEO, 0),
+                farstream.Codec(farstream.CODEC_ID_ANY, "H263",
+                                        farstream.MEDIA_TYPE_VIDEO, 0),
+                farstream.Codec(farstream.CODEC_ID_DISABLE, "DV",
+                                        farstream.MEDIA_TYPE_VIDEO, 0),
+                farstream.Codec(farstream.CODEC_ID_ANY, "JPEG",
+                                        farstream.MEDIA_TYPE_VIDEO, 0),
+                farstream.Codec(farstream.CODEC_ID_ANY, "MPV",
+                                       farstream.MEDIA_TYPE_VIDEO, 0),
             ]
 
         else:
             codecs = [
-                farsight.Codec(farsight.CODEC_ID_ANY, "SPEEX",
-                    farsight.MEDIA_TYPE_AUDIO, 16000 ),
-                farsight.Codec(farsight.CODEC_ID_ANY, "SPEEX",
-                    farsight.MEDIA_TYPE_AUDIO, 8000 )
+                farstream.Codec(farstream.CODEC_ID_ANY, "SPEEX",
+                    farstream.MEDIA_TYPE_AUDIO, 16000 ),
+                farstream.Codec(farstream.CODEC_ID_ANY, "SPEEX",
+                    farstream.MEDIA_TYPE_AUDIO, 8000 )
                 ]
         return codecs
 
@@ -163,10 +163,10 @@ class CallChannel:
 
         content.connect ("src-pad-added", self.src_pad_added)
 
-        if mtype == farsight.MEDIA_TYPE_AUDIO:
+        if mtype == farstream.MEDIA_TYPE_AUDIO:
             src = gst.parse_bin_from_description("audiotestsrc is-live=1 ! " \
                 "queue", True)
-        elif mtype == farsight.MEDIA_TYPE_VIDEO:
+        elif mtype == farstream.MEDIA_TYPE_VIDEO:
             src = gst.parse_bin_from_description("videotestsrc is-live=1 ! " \
                 "capsfilter caps=video/x-raw-yuv,width=320,height=240", True)
 

@@ -23,8 +23,7 @@
 #include <glib-object.h>
 
 #include <gst/gst.h>
-#include <gst/farsight/fs-conference-iface.h>
-#include <gst/farsight/fs-participant.h>
+#include <farstream/fs-conference.h>
 #include <telepathy-glib/channel.h>
 
 G_BEGIN_DECLS

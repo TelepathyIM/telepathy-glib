@@ -20,8 +20,8 @@
 #include <gst/gst.h>
 #include <telepathy-glib/telepathy-glib.h>
 #include <extensions/extensions.h>
-#include <gst/farsight/fs-element-added-notifier.h>
-#include <gst/farsight/fs-utils.h>
+#include <farstream/fs-element-added-notifier.h>
+#include <farstream/fs-utils.h>
 #include <telepathy-farstream/telepathy-farstream.h>
 
 typedef struct {

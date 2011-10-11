@@ -24,7 +24,7 @@
  *
  * This class handles the
  * org.freedesktop.Telepathy.Channel.Interface.Call on a
- * channel using Farsight2.
+ * channel using Farstream.
  */
 
 
@@ -32,9 +32,9 @@
 
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
-#include <gst/farsight/fs-conference-iface.h>
-#include <gst/farsight/fs-utils.h>
-#include <gst/farsight/fs-element-added-notifier.h>
+#include <farstream/fs-conference.h>
+#include <farstream/fs-utils.h>
+#include <farstream/fs-element-added-notifier.h>
 
 #include <stdarg.h>
 #include <string.h>
@@ -1401,7 +1401,7 @@ tf_call_content_bus_message (TfCallContent *content,
 
   s = gst_message_get_structure (message);
 
-  if (gst_structure_has_name (s, "farsight-error"))
+  if (gst_structure_has_name (s, "farstream-error"))
     {
       GObject *object;
       const GValue *value = NULL;
@@ -1433,7 +1433,7 @@ tf_call_content_bus_message (TfCallContent *content,
           ret = TRUE;
         }
     }
-  else if (gst_structure_has_name (s, "farsight-codecs-changed"))
+  else if (gst_structure_has_name (s, "farstream-codecs-changed"))
     {
       FsSession *fssession;
       const GValue *value;
@@ -1523,11 +1523,18 @@ _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
   if (!p)
     return NULL;
 
-  s = fs_session_new_stream (content->fssession, p, FS_DIRECTION_RECV,
-      transmitter, stream_transmitter_n_parameters,
-      stream_transmitter_parameters, error);
+  s = fs_session_new_stream (content->fssession, p, FS_DIRECTION_RECV, error);
   if (!s)
     {
+      _tf_call_channel_put_participant (content->call_channel, p);
+      return NULL;
+    }
+
+  if (!fs_stream_set_transmitter (s, transmitter,
+          stream_transmitter_parameters, stream_transmitter_n_parameters,
+          error))
+    {
+      g_object_unref (s);
       _tf_call_channel_put_participant (content->call_channel, p);
       return NULL;
     }
@@ -1664,7 +1671,7 @@ streams_src_pads_iter_item (GstIterator *it, gpointer item)
 {
   struct CallFsStream *cfs = item;
 
-  gst_iterator_push (it, fs_stream_get_src_pads_iterator (cfs->fsstream));
+  gst_iterator_push (it, fs_stream_iterate_src_pads (cfs->fsstream));
 
   return GST_ITERATOR_ITEM_SKIP;
 }

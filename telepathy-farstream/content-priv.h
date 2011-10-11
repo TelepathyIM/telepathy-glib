@@ -4,7 +4,7 @@
 
 #include <glib-object.h>
 
-#include <gst/farsight/fs-conference-iface.h>
+#include <farstream/fs-conference.h>
 
 
 G_BEGIN_DECLS

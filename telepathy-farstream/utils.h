@@ -5,9 +5,9 @@
  * tp_media_type_to_fs:
  * @type: A Telepathy Media Stream Type
  *
- * Converts a Telepathy Media Stream Type to the Farsight2 equivalent
+ * Converts a Telepathy Media Stream Type to the Farstream equivalent
  *
- * Return: A Farsight2 Stream Type
+ * Return: A Farstream Stream Type
  */
 
 static inline FsMediaType

@@ -5,7 +5,7 @@
 #include <telepathy-glib/enums.h>
 #include <telepathy-glib/media-interfaces.h>
 
-#include <gst/farsight/fs-conference-iface.h>
+#include <farstream/fs-conference.h>
 
 G_BEGIN_DECLS
 

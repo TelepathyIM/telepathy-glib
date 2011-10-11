@@ -24,7 +24,7 @@
  *
  * This class handles the
  * org.freedesktop.Telepathy.Channel.Interface.MediaSignalling on a
- * channel using Farsight2.
+ * channel using Farstream.
  */
 
 
@@ -475,8 +475,8 @@ new_stream_cb (TfSession *session,
       &local_codec_config);
 
   g_object_get (session,
-      "farsight-conference", &fs_conference,
-      "farsight-participant", &fs_participant,
+      "farstream-conference", &fs_conference,
+      "farstream-participant", &fs_participant,
       NULL);
 
   stream = _tf_stream_new ((gpointer) self, fs_conference,
@@ -568,7 +568,7 @@ add_session (TfMediaSignallingChannel *self,
       G_CALLBACK (session_invalidated_cb), self);
 
   g_object_get (self->session,
-      "farsight-conference", &conf,
+      "farstream-conference", &conf,
       NULL);
 
   g_signal_emit (self, signals[SESSION_CREATED], 0, conf);

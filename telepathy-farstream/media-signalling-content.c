@@ -25,14 +25,14 @@
  *
  * This class handles the
  * org.freedesktop.Telepathy.Channel.Interface.MediaSignalling on a
- * channel using Farsight2.
+ * channel using Farstream.
  */
 
 
 #include "media-signalling-content.h"
 
-#include <gst/farsight/fs-conference-iface.h>
-#include <gst/farsight/fs-utils.h>
+#include <farstream/fs-conference.h>
+#include <farstream/fs-utils.h>
 
 #include <stdarg.h>
 #include <string.h>
@@ -162,11 +162,11 @@ tf_media_signalling_content_get_property (GObject    *object,
       break;
     case PROP_FS_CONFERENCE:
       g_object_get_property (G_OBJECT (self->stream),
-          "farsight-conference", value);
+          "farstream-conference", value);
       break;
     case PROP_FS_SESSION:
       g_object_get_property (G_OBJECT (self->stream),
-          "farsight-session", value);
+          "farstream-session", value);
       break;
     case PROP_SINK_PAD:
       g_object_get_property (G_OBJECT (self->stream),
@@ -213,8 +213,8 @@ tf_media_signalling_content_new (
       G_CALLBACK (restart_source), G_OBJECT (self), 0);
 
   g_object_get (stream,
-      "farsight-conference", &conf,
-      "farsight-session", &session,
+      "farstream-conference", &conf,
+      "farstream-session", &session,
       NULL);
 
   codec_prefs = fs_utils_get_default_codec_preferences (conf);
@@ -235,7 +235,7 @@ src_pad_added (TfStream *stream, GstPad *pad, FsCodec *codec,
 {
   FsStream *fs_stream;
 
-  g_object_get (stream, "farsight-stream", &fs_stream, NULL);
+  g_object_get (stream, "farstream-stream", &fs_stream, NULL);
   _tf_content_emit_src_pad_added (TF_CONTENT (self), self->handle, fs_stream,
       pad, codec);
   g_object_unref (fs_stream);
@@ -316,8 +316,8 @@ tf_media_signalling_content_iterate_src_pads (TfContent *content,
 
   g_return_val_if_fail (handle_count <= 1, NULL);
 
-  g_object_get (self->stream, "farsight-stream", &fs_stream, NULL);
-  iter = fs_stream_get_src_pads_iterator (fs_stream);
+  g_object_get (self->stream, "farstream-stream", &fs_stream, NULL);
+  iter = fs_stream_iterate_src_pads (fs_stream);
   g_object_unref (fs_stream);
 
   return iter;

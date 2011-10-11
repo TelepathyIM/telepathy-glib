@@ -50,7 +50,7 @@ AM_CFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GST_CFLAGS) \
-	$(FARSIGHT2_CFLAGS) \
+	$(FARSTREAM_CFLAGS) \
 	$(TELEPATHY_CFLAGS) \
 	-I$(top_srcdir) \
 	-I$(top_builddir)
@@ -59,7 +59,7 @@ libtelepathy_farstream_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(GST_LIBS) \
-	$(FARSIGHT2_LIBS) \
+	$(FARSTREAM_LIBS) \
 	$(TELEPATHY_LIBS) \
 	../extensions/libfuture-extensions.la
 

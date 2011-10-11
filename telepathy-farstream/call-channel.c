@@ -24,7 +24,7 @@
  *
  * This class handles the
  * org.freedesktop.Telepathy.Channel.Interface.Call on a
- * channel using Farsight2.
+ * channel using Farstream.
  */
 
 
@@ -32,7 +32,7 @@
 
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
-#include <gst/farsight/fs-conference-iface.h>
+#include <farstream/fs-conference.h>
 
 #include "extensions/extensions.h"
 
@@ -108,8 +108,8 @@ tf_call_channel_class_init (TfCallChannelClass *klass)
 
   g_object_class_install_property (object_class, PROP_FS_CONFERENCES,
       g_param_spec_boxed ("fs-conferences",
-          "Farsight2 FsConference object",
-          "GPtrArray of Farsight2 FsConferences for this channel",
+          "Farstream FsConference object",
+          "GPtrArray of Farstream FsConferences for this channel",
           G_TYPE_PTR_ARRAY,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
@@ -684,7 +684,7 @@ _tf_call_channel_get_participant (TfCallChannel *channel,
         }
     }
 
-  p = fs_conference_new_participant (fsconference, NULL, error);
+  p = fs_conference_new_participant (fsconference, error);
   if (!p)
     return NULL;
 

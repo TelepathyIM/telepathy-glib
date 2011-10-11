@@ -72,7 +72,7 @@ INCLUDES= \
 	$(X11_CFLAGS) \
 	$(GST_CFLAGS) \
 	$(GST_INTERFACES_CFLAGS) \
-	$(FARSIGHT2_CFLAGS) \
+	$(FARSTREAM_CFLAGS) \
 	$(TELEPATHY_CFLAGS) \
 	-I$(top_srcdir) -I$(top_builddir)
 GTKDOC_LIBS= \
@@ -82,7 +82,7 @@ GTKDOC_LIBS= \
 	$(GST_LIBS) \
 	$(GST_INTERFACES_LIBS) \
 	$(TELEPATHY_LIBS) \
-	$(FARSIGHT2_LIBS) \
+	$(FARSTREAM_LIBS) \
 	$(top_builddir)/telepathy-farstream/libtelepathy-farstream.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.

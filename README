@@ -2,7 +2,7 @@
 telepathy-farstream
 =======================
 
-Telepathy Farstream is a Telepathy client library that uses Farsight2
+Telepathy Farstream is a Telepathy client library that uses Farstream
 to handle Call channels.
 
 Telepathy is a D-Bus framework for unifying real time communication,
@@ -15,7 +15,7 @@ Requirements
 
 telepathy-farstream requires:
   telepathy-glib <http://telepathy.freedesktop.org/releases/telepathy-glib/>
-  Farsight2 <http://farsight.freedesktop.org/releases/farsight/>
+  Farstream <http://farsight.freedesktop.org/releases/farstream/>
   GStreamer base plugins <http://gstreamer.freedesktop.org/>
   GLib, GObject <http://ftp.gnome.org/pub/GNOME/sources/glib/>
   libdbus <http://dbus.freedesktop.org/releases/dbus/>

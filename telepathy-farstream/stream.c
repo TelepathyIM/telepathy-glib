@@ -22,7 +22,7 @@
  * SECTION:stream
  * @short_description: Handles a media Stream
  *
- * These objects handle media streams and wrap the appropriate Farsight 2
+ * These objects handle media streams and wrap the appropriate Farstream
  * objects. It is used to interact on a stream level with the other parts
  * of the media pipeline and the proper UI.
  */
@@ -41,9 +41,9 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
-#include <gst/farsight/fs-conference.h>
-#include <gst/farsight/fs-rtp.h>
-#include <gst/farsight/fs-utils.h>
+#include <farstream/fs-conference.h>
+#include <farstream/fs-rtp.h>
+#include <farstream/fs-utils.h>
 
 #include "stream.h"
 #include "stream-priv.h"
@@ -141,10 +141,10 @@ static guint signals[SIGNAL_COUNT] = {0};
 enum
 {
   PROP_CHANNEL = 1,
-  PROP_FARSIGHT_CONFERENCE,
-  PROP_FARSIGHT_SESSION,
-  PROP_FARSIGHT_STREAM,
-  PROP_FARSIGHT_PARTICIPANT,
+  PROP_FARSTREAM_CONFERENCE,
+  PROP_FARSTREAM_SESSION,
+  PROP_FARSTREAM_STREAM,
+  PROP_FARSTREAM_PARTICIPANT,
   PROP_PROXY,
   PROP_STREAM_ID,
   PROP_MEDIA_TYPE,
@@ -270,16 +270,16 @@ tf_stream_get_property (GObject    *object,
     case PROP_CHANNEL:
       g_value_set_object (value, self->priv->channel);
       break;
-    case PROP_FARSIGHT_CONFERENCE:
+    case PROP_FARSTREAM_CONFERENCE:
       g_value_set_object (value, self->priv->fs_conference);
       break;
-    case PROP_FARSIGHT_PARTICIPANT:
+    case PROP_FARSTREAM_PARTICIPANT:
       g_value_set_object (value, self->priv->fs_participant);
       break;
-    case PROP_FARSIGHT_SESSION:
+    case PROP_FARSTREAM_SESSION:
       g_value_set_object (value, self->priv->fs_session);
       break;
-    case PROP_FARSIGHT_STREAM:
+    case PROP_FARSTREAM_STREAM:
       g_value_set_object (value, self->priv->fs_stream);
       break;
     case PROP_PROXY:
@@ -334,11 +334,11 @@ tf_stream_set_property (GObject      *object,
       self->priv->channel =
           TF_CHANNEL (g_value_get_object (value));
       break;
-    case PROP_FARSIGHT_CONFERENCE:
+    case PROP_FARSTREAM_CONFERENCE:
       self->priv->fs_conference =
           FS_CONFERENCE (g_value_dup_object (value));
       break;
-    case PROP_FARSIGHT_PARTICIPANT:
+    case PROP_FARSTREAM_PARTICIPANT:
       self->priv->fs_participant =
           FS_PARTICIPANT (g_value_dup_object (value));
       break;
@@ -509,33 +509,33 @@ tf_stream_class_init (TfStreamClass *klass)
           TF_TYPE_CHANNEL,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_FARSIGHT_CONFERENCE,
-      g_param_spec_object ("farsight-conference",
-          "Farsight conference",
-          "The Farsight conference this stream will "
+  g_object_class_install_property (object_class, PROP_FARSTREAM_CONFERENCE,
+      g_param_spec_object ("farstream-conference",
+          "Farstream conference",
+          "The Farstream conference this stream will "
           "create streams within.",
           FS_TYPE_CONFERENCE,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_FARSIGHT_PARTICIPANT,
-      g_param_spec_object ("farsight-participant",
-          "Farsight participant",
-          "The Farsight participant this stream will "
+  g_object_class_install_property (object_class, PROP_FARSTREAM_PARTICIPANT,
+      g_param_spec_object ("farstream-participant",
+          "Farstream participant",
+          "The Farstream participant this stream will "
           "create streams for.",
           FS_TYPE_PARTICIPANT,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_FARSIGHT_SESSION,
-      g_param_spec_object ("farsight-session",
-          "Farsight session",
-          "The Farsight session",
+  g_object_class_install_property (object_class, PROP_FARSTREAM_SESSION,
+      g_param_spec_object ("farstream-session",
+          "Farstream session",
+          "The Farstream session",
           FS_TYPE_SESSION,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_FARSIGHT_STREAM,
-      g_param_spec_object ("farsight-stream",
-          "Farsight stream",
-          "The Farsight stream",
+  g_object_class_install_property (object_class, PROP_FARSTREAM_STREAM,
+      g_param_spec_object ("farstream-stream",
+          "Farstream stream",
+          "The Farstream stream",
           FS_TYPE_STREAM,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
@@ -1306,7 +1306,7 @@ tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
           type = FS_CANDIDATE_TYPE_RELAY;
           break;
         default:
-          g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+          g_critical ("%s: FarstreamTransportInfo.proto has an invalid value",
               G_STRFUNC);
           type = FS_CANDIDATE_TYPE_HOST;
         }
@@ -1320,7 +1320,7 @@ tp_transports_to_fs (const gchar* foundation, const GPtrArray *transports)
           proto = FS_NETWORK_PROTOCOL_TCP;
           break;
         default:
-          g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+          g_critical ("%s: FarstreamTransportInfo.proto has an invalid value",
               G_STRFUNC);
           proto = FS_NETWORK_PROTOCOL_UDP;
         }
@@ -1358,7 +1358,7 @@ fs_network_proto_to_tp (FsNetworkProtocol proto, gboolean *valid)
   case FS_NETWORK_PROTOCOL_TCP:
     return TP_MEDIA_STREAM_BASE_PROTO_TCP;
   default:
-    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+    g_critical ("%s: FarstreamTransportInfo.proto has an invalid value",
         G_STRFUNC);
     if (valid != NULL)
       *valid = FALSE;
@@ -1381,7 +1381,7 @@ fs_candidate_type_to_tp (FsCandidateType type, gboolean *valid)
   case FS_CANDIDATE_TYPE_RELAY:
     return TP_MEDIA_STREAM_TRANSPORT_TYPE_RELAY;
   default:
-    g_critical ("%s: FarsightTransportInfo.proto has an invalid value",
+    g_critical ("%s: FarstreamTransportInfo.proto has an invalid value",
         G_STRFUNC);
     if (valid != NULL)
       *valid = FALSE;
@@ -1421,7 +1421,7 @@ fs_candidate_to_tp_array (const FsCandidate *candidate)
 }
 
 /*
- * Small helper function to help converting a list of FarsightCodecs
+ * Small helper function to help converting a list of FarstreamCodecs
  * to a Telepathy codec list.
  */
 static GPtrArray *
@@ -1449,7 +1449,7 @@ fs_codecs_to_tp (TfStream *stream,
           type = TP_MEDIA_STREAM_TYPE_VIDEO;
           break;
         default:
-          g_critical ("%s: FarsightCodec [%d, %s]'s media_type has an invalid value",
+          g_critical ("%s: FarstreamCodec [%d, %s]'s media_type has an invalid value",
               G_STRFUNC, fsc->id, fsc->encoding_name);
           return NULL;
       }
@@ -2463,7 +2463,7 @@ _tf_stream_bus_message (TfStream *stream,
   if (!stream->priv->fs_stream || !stream->priv->fs_session)
     return FALSE;
 
-  if (gst_structure_has_name (s, "farsight-error"))
+  if (gst_structure_has_name (s, "farstream-error"))
     {
       GObject *object;
       const GValue *value = NULL;
@@ -2493,7 +2493,7 @@ _tf_stream_bus_message (TfStream *stream,
           return TRUE;
         }
     }
-  else if (gst_structure_has_name (s, "farsight-new-local-candidate"))
+  else if (gst_structure_has_name (s, "farstream-new-local-candidate"))
     {
       FsStream *fsstream;
       FsCandidate *candidate;
@@ -2511,7 +2511,7 @@ _tf_stream_bus_message (TfStream *stream,
       cb_fs_new_local_candidate (stream, candidate);
       return TRUE;
     }
-  else if (gst_structure_has_name (s, "farsight-local-candidates-prepared"))
+  else if (gst_structure_has_name (s, "farstream-local-candidates-prepared"))
     {
       FsStream *fsstream;
       const GValue *value;
@@ -2526,7 +2526,7 @@ _tf_stream_bus_message (TfStream *stream,
 
       return TRUE;
     }
-  else if (gst_structure_has_name (s, "farsight-new-active-candidate-pair"))
+  else if (gst_structure_has_name (s, "farstream-new-active-candidate-pair"))
     {
       FsStream *fsstream;
       FsCandidate *local_candidate;
@@ -2548,7 +2548,7 @@ _tf_stream_bus_message (TfStream *stream,
       cb_fs_new_active_candidate_pair (stream, local_candidate, remote_candidate);
       return TRUE;
     }
-  else if (gst_structure_has_name (s, "farsight-current-recv-codecs-changed"))
+  else if (gst_structure_has_name (s, "farstream-current-recv-codecs-changed"))
     {
       FsStream *fsstream;
       GList *codecs;
@@ -2566,7 +2566,7 @@ _tf_stream_bus_message (TfStream *stream,
       cb_fs_recv_codecs_changed (stream, codecs);
       return TRUE;
     }
-  else if (gst_structure_has_name (s, "farsight-codecs-changed"))
+  else if (gst_structure_has_name (s, "farstream-codecs-changed"))
     {
       FsSession *fssession;
       const GValue *value;
@@ -2583,7 +2583,7 @@ _tf_stream_bus_message (TfStream *stream,
 
       return TRUE;
     }
-  else if (gst_structure_has_name (s, "farsight-send-codec-changed"))
+  else if (gst_structure_has_name (s, "farstream-send-codec-changed"))
     {
       FsSession *fssession;
       const GValue *value;
@@ -2622,7 +2622,7 @@ _tf_stream_bus_message (TfStream *stream,
       fs_codec_list_destroy (secondary_codecs);
       return TRUE;
     }
-  else if (gst_structure_has_name (s, "farsight-component-state-changed"))
+  else if (gst_structure_has_name (s, "farstream-component-state-changed"))
     {
       FsStream *fsstream;
       const GValue *value;
@@ -2643,7 +2643,7 @@ _tf_stream_bus_message (TfStream *stream,
       cb_fs_component_state_changed (stream, component, fsstate);
       return TRUE;
     }
-  else if (gst_structure_has_name (s, "farsight-renegotiate"))
+  else if (gst_structure_has_name (s, "farstream-renegotiate"))
     {
       FsSession *fssession;
       const GValue *value;
@@ -2726,8 +2726,8 @@ _tf_stream_new (gpointer channel,
 
   self = g_object_new (TF_TYPE_STREAM,
       "channel", channel,
-      "farsight-conference", conference,
-      "farsight-participant", participant,
+      "farstream-conference", conference,
+      "farstream-participant", participant,
       "proxy", proxy,
       "stream-id", stream_id,
       "media-type", media_type,

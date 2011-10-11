@@ -22,7 +22,7 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 
-#include <gst/farsight/fs-conference.h>
+#include <farstream/fs-conference.h>
 
 #include "session-priv.h"
 #include "tf-signals-marshal.h"
@@ -44,8 +44,8 @@ enum
 {
   PROP_PROXY = 1,
   PROP_SESSION_TYPE,
-  PROP_FARSIGHT_CONFERENCE,
-  PROP_FARSIGHT_PARTICIPANT,
+  PROP_FARSTREAM_CONFERENCE,
+  PROP_FARSTREAM_PARTICIPANT,
 };
 
 enum
@@ -79,10 +79,10 @@ _tf_session_get_property (GObject    *object,
     case PROP_SESSION_TYPE:
       g_value_set_string (value, self->priv->session_type);
       break;
-    case PROP_FARSIGHT_CONFERENCE:
+    case PROP_FARSTREAM_CONFERENCE:
       g_value_set_object (value, self->priv->fs_conference);
       break;
-    case PROP_FARSIGHT_PARTICIPANT:
+    case PROP_FARSTREAM_PARTICIPANT:
       g_value_set_object (value, self->priv->fs_participant);
       break;
     case PROP_PROXY:
@@ -232,23 +232,23 @@ _tf_session_class_init (TfSessionClass *klass)
 
   g_object_class_install_property (object_class, PROP_SESSION_TYPE,
       g_param_spec_string ("conference-type",
-          "Farsight conference type",
-          "Name of the Farsight conference type this "
+          "Farstream conference type",
+          "Name of the Farstream conference type this "
           "session will create (rtp, msn, etc).",
           NULL,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_FARSIGHT_CONFERENCE,
-      g_param_spec_object ("farsight-conference",
-          "Farsight conference",
-          "The Farsight conference to add to the pipeline",
+  g_object_class_install_property (object_class, PROP_FARSTREAM_CONFERENCE,
+      g_param_spec_object ("farstream-conference",
+          "Farstream conference",
+          "The Farstream conference to add to the pipeline",
           FS_TYPE_CONFERENCE,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_FARSIGHT_PARTICIPANT,
-      g_param_spec_object ("farsight-participant",
-          "Farsight participant",
-          "The Farsight participant for this session",
+  g_object_class_install_property (object_class, PROP_FARSTREAM_PARTICIPANT,
+      g_param_spec_object ("farstream-participant",
+          "Farstream participant",
+          "The Farstream participant for this session",
           FS_TYPE_PARTICIPANT,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
@@ -418,7 +418,7 @@ _tf_session_bus_message (TfSession *session,
       {
         const GstStructure *s = gst_message_get_structure (message);
 
-        if (gst_structure_has_name (s, "farsight-error"))
+        if (gst_structure_has_name (s, "farstream-error"))
           {
             GObject *object;
             const GValue *value = NULL;

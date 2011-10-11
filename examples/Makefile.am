@@ -6,7 +6,7 @@ LDADD =  \
    $(GLIB_LIBS) \
    $(DBUS_LIBS) \
    $(GST_LIBS) \
-   $(FARSIGHT2_LIBS) \
+   $(FARSTREAM_LIBS) \
    $(TELEPATHY_LIBS)
 
 AM_CFLAGS = \
@@ -14,7 +14,7 @@ AM_CFLAGS = \
    $(GLIB_CFLAGS) \
    $(DBUS_CFLAGS) \
    $(GST_CFLAGS) \
-   $(FARSIGHT2_CFLAGS) \
+   $(FARSTREAM_CFLAGS) \
    $(TELEPATHY_CFLAGS) \
    -I$(top_srcdir) \
    -I$(top_builddir)

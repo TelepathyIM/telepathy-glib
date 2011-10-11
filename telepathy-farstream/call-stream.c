@@ -24,14 +24,14 @@
  *
  * This class handles the
  * org.freedesktop.Telepathy.Channel.Interface.Stream on a
- * channel using Farsight2.
+ * channel using Farstream.
  */
 
 #include "call-stream.h"
 
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
-#include <gst/farsight/fs-conference-iface.h>
+#include <farstream/fs-conference.h>
 
 #include <stdarg.h>
 #include <string.h>
@@ -475,7 +475,7 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
 
   if (self->fsstream)
     {
-      if (!fs_stream_set_remote_candidates (self->fsstream, fscandidates,
+      if (!fs_stream_add_remote_candidates (self->fsstream, fscandidates,
               &error))
         {
           tf_content_error (TF_CONTENT (self->call_content),
@@ -1066,7 +1066,7 @@ tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
 
   s = gst_message_get_structure (message);
 
-  if (gst_structure_has_name (s, "farsight-error"))
+  if (gst_structure_has_name (s, "farstream-error"))
     {
       GObject *object;
       const gchar *msg;
@@ -1105,7 +1105,7 @@ tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
   if (g_value_get_object (val) != stream->fsstream)
     return FALSE;
 
-  if (gst_structure_has_name (s, "farsight-new-local-candidate"))
+  if (gst_structure_has_name (s, "farstream-new-local-candidate"))
     {
       FsCandidate *candidate;
 
@@ -1115,11 +1115,11 @@ tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
       cb_fs_new_local_candidate (stream, candidate);
       return TRUE;
     }
-  else if (gst_structure_has_name (s, "farsight-local-candidates-prepared"))
+  else if (gst_structure_has_name (s, "farstream-local-candidates-prepared"))
     {
       cb_fs_local_candidates_prepared (stream);
     }
-  else if (gst_structure_has_name (s, "farsight-component-state-changed"))
+  else if (gst_structure_has_name (s, "farstream-component-state-changed"))
     {
       guint component;
       FsStreamState fsstate;

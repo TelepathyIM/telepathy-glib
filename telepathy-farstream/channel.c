@@ -25,7 +25,7 @@
  *
  * This class handles the
  * org.freedesktop.Telepathy.Channel.Interface.MediaSignalling on a
- * channel using Farsight2 or the media part of the
+ * channel using Farstream or the media part of the
  * org.freedesktop.Telepathy.Channel.Type.Call that has HardwareStreaming=FALSE
  */
 
@@ -38,7 +38,7 @@
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 
-#include <gst/farsight/fs-conference-iface.h>
+#include <farstream/fs-conference.h>
 
 #include "extensions/extensions.h"
 
@@ -462,8 +462,8 @@ tf_channel_class_init (TfChannelClass *klass)
 
   g_object_class_install_property (object_class, PROP_FS_CONFERENCES,
       g_param_spec_boxed ("fs-conferences",
-          "Farsight2 FsConferences objects",
-          "GPtrArray of Farsight2 FsConferences for this channel",
+          "Farstream FsConferences objects",
+          "GPtrArray of Farstream FsConferences for this channel",
           G_TYPE_PTR_ARRAY,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
