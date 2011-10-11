@@ -2009,7 +2009,7 @@ _tp_contacts_to_handles (TpConnection *connection,
 }
 
 /* table's key can be anything (usually TpHandle) but value must be a
- * GObject (usually TpContact) */
+ * TpContact */
 GPtrArray *
 _tp_contacts_from_values (GHashTable *table)
 {
@@ -2026,7 +2026,10 @@ _tp_contacts_from_values (GHashTable *table)
   g_hash_table_iter_init (&iter, table);
   while (g_hash_table_iter_next (&iter, NULL, &value))
     {
-      g_assert (G_IS_OBJECT (value));
+      if (value == NULL)
+        continue;
+      g_assert (TP_IS_CONTACT (value));
+
       g_ptr_array_add (contacts, g_object_ref (value));
     }
 
