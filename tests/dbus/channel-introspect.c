@@ -117,8 +117,8 @@ main (int argc,
   TpTestsPropsTextChannel *service_props_chan;
   TpTestsPropsGroupTextChannel *service_props_group_chan;
   TpDBusDaemon *dbus;
-  TpConnection *conn;
-  TpChannel *chan;
+  TpConnection *conn, *conn2;
+  TpChannel *chan, *chan2;
   GError *error = NULL;
   gchar *name;
   gchar *conn_path;
@@ -714,6 +714,50 @@ main (int argc,
   g_assert_no_error (invalidated);
 
   assert_chan_sane (chan, handle, FALSE, 0, "");
+
+  /* regression test for fdo#41729
+   *
+   * tp-glib uses to rely on its introspection queue to add the interface ID
+   * of its channel type even when the type was already known during
+   * construction.
+   *
+   * This test create new proxies, ensuring that the TpConnection of the
+   * TpChannel isn't prepared yet, and check that the interface is added right
+   * away after its construction.
+   * */
+  conn2 = tp_connection_new (dbus, name, conn_path, &error);
+  g_assert_no_error (error);
+
+  {
+    const gchar *interfaces[] = {
+        TP_IFACE_CHANNEL_INTERFACE_GROUP,
+        NULL
+    };
+
+    asv = tp_asv_new (
+        TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+            TP_IFACE_CHANNEL_TYPE_TEXT,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+            TP_HANDLE_TYPE_CONTACT,
+        TP_PROP_CHANNEL_TARGET_HANDLE, G_TYPE_UINT, handle,
+        TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, IDENTIFIER,
+        TP_PROP_CHANNEL_INITIATOR_HANDLE, G_TYPE_UINT, handle,
+        TP_PROP_CHANNEL_INITIATOR_ID, G_TYPE_STRING, IDENTIFIER,
+        TP_PROP_CHANNEL_INTERFACES, G_TYPE_STRV, interfaces,
+        TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
+        NULL);
+  }
+
+  chan2 = tp_channel_new_from_properties (conn2, props_group_chan_path, asv,
+      &error);
+  g_assert_no_error (error);
+
+  g_assert (tp_proxy_has_interface_by_id (chan2,
+        TP_IFACE_QUARK_CHANNEL_TYPE_TEXT));
+  g_assert (tp_proxy_has_interface_by_id (chan2,
+        TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP));
+
+  g_hash_table_unref (asv);
 
   /* ... keep the same channel for the next test */
 

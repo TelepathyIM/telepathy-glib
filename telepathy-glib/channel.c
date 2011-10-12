@@ -550,6 +550,9 @@ _tp_channel_maybe_set_channel_type (TpChannel *self,
   g_hash_table_insert (self->priv->channel_properties,
       g_strdup (TP_PROP_CHANNEL_CHANNEL_TYPE),
       tp_g_value_slice_new_static_string (g_quark_to_string (q)));
+
+  tp_proxy_add_interface_by_id ((TpProxy *) self,
+      self->priv->channel_type);
 }
 
 
@@ -879,9 +882,6 @@ tp_channel_got_channel_type_cb (TpChannel *self,
       _tp_channel_maybe_set_channel_type (self, channel_type);
       g_object_notify ((GObject *) self, "channel-type");
 
-      tp_proxy_add_interface_by_id ((TpProxy *) self,
-          self->priv->channel_type);
-
       _tp_channel_continue_introspection (self);
     }
   else
@@ -906,8 +906,6 @@ _tp_channel_get_channel_type (TpChannel *self)
     {
       DEBUG ("%p: channel type %s already determined", self,
           g_quark_to_string (self->priv->channel_type));
-      tp_proxy_add_interface_by_id ((TpProxy *) self,
-          self->priv->channel_type);
       _tp_channel_continue_introspection (self);
     }
 }
