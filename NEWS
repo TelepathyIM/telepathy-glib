@@ -1,7 +1,13 @@
-telepathy-glib 0.15.9 (UNRELEASED)
+telepathy-glib 0.15.9 (2011-10-12)
 ==================================
 
-…
+The “important lessons of the past” release. This will teach me to make
+releases without checking nothing more's been merged overnight.
+
+Fixes:
+
+. fd.o#41697: unknown handle owners in chat rooms no longer crashes
+  TpChannel. (Guillaume)
 
 telepathy-glib 0.15.8 (2011-10-12)
 ==================================
