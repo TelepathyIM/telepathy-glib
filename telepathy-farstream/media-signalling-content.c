@@ -28,16 +28,16 @@
  * channel using Farstream.
  */
 
-
 #include "media-signalling-content.h"
 
 #include <farstream/fs-conference.h>
 #include <farstream/fs-utils.h>
 
+#include <telepathy-glib/proxy-subclass.h>
+#include <telepathy-glib/util.h>
+
 #include <stdarg.h>
 #include <string.h>
-
-#include <telepathy-glib/proxy-subclass.h>
 
 #include "tf-signals-marshal.h"
 #include "utils.h"
@@ -86,7 +86,7 @@ tf_media_signalling_content_get_property (GObject    *object,
     GParamSpec *pspec);
 
 static void tf_media_signalling_content_error (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
+    TpCallStateChangeReason reason,
     const gchar *detailed_reason,
     const gchar *message);
 
@@ -286,7 +286,7 @@ restart_source (TfStream *stream, TfMediaSignallingContent *self)
 
 static void
 tf_media_signalling_content_error (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
+    TpCallStateChangeReason reason,
     const gchar *detailed_reason,
     const gchar *message)
 {
@@ -295,7 +295,7 @@ tf_media_signalling_content_error (TfContent *content,
 
   switch (reason)
     {
-    case TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR:
+    case TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR:
       stream_error = TP_MEDIA_STREAM_ERROR_MEDIA_ERROR;
       break;
     default:

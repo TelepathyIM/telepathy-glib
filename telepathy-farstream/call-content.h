@@ -25,7 +25,6 @@
 #include <gst/gst.h>
 #include <telepathy-glib/channel.h>
 
-#include "extensions/extensions.h"
 #include "call-channel.h"
 #include "content.h"
 #include "content-priv.h"

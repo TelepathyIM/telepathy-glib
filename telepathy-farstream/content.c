@@ -303,7 +303,7 @@ _tf_content_emit_src_pad_added (TfContent *self, guint handle,
 /**
  * tf_content_error_literal:
  * @content: a #TfContent
- * @reason: the reason (a #TfContentRemovalReason)
+ * @reason: the reason
  * @detailed_reason: The detailled error (as a DBus name)
  * @message: error Message
  *
@@ -313,7 +313,7 @@ _tf_content_emit_src_pad_added (TfContent *self, guint handle,
 
 void
 tf_content_error_literal (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
+    TpCallStateChangeReason reason,
     const gchar *detailed_reason,
     const gchar *message)
 {
@@ -328,7 +328,7 @@ tf_content_error_literal (TfContent *content,
 /**
  * tf_content_error:
  * @content: a #TfContent
- * @reason: the reason (a #TfContentRemovalReason)
+ * @reason: the reason
  * @detailed_reason: The detailled error (as a DBus name)
  * @message_format: error Message with printf style formatting
  * @...:  Parameters to insert into the @message_format string
@@ -339,7 +339,7 @@ tf_content_error_literal (TfContent *content,
 
 void
 tf_content_error (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
+    TpCallStateChangeReason reason,
     const gchar *detailed_reason,
     const gchar *message_format,
     ...)

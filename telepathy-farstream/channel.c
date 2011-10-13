@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 
+#include <telepathy-glib/call-1.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/enums.h>
@@ -40,7 +41,6 @@
 
 #include <farstream/fs-conference.h>
 
-#include "extensions/extensions.h"
 
 #include "channel.h"
 #include "channel-priv.h"
@@ -328,7 +328,7 @@ channel_prepared (GObject *obj,
       g_simple_async_result_set_op_res_gboolean (res, TRUE);
     }
   else if (tp_proxy_has_interface_by_id (as_proxy,
-          TF_FUTURE_IFACE_QUARK_CHANNEL_TYPE_CALL))
+          TP_IFACE_QUARK_CHANNEL_TYPE_CALL))
     {
       tf_call_channel_new_async (channel_proxy, call_channel_ready, res);
 
@@ -341,7 +341,7 @@ channel_prepared (GObject *obj,
       g_simple_async_result_set_error (res, TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
           "Channel does not implement "
           TP_IFACE_CHANNEL_INTERFACE_MEDIA_SIGNALLING " or "
-          TF_FUTURE_IFACE_CHANNEL_TYPE_CALL);
+          TP_IFACE_CHANNEL_TYPE_CALL);
       goto error;
     }
 

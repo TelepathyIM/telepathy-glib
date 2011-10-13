@@ -23,11 +23,5 @@
 #include <telepathy-farstream/channel.h>
 #include <telepathy-farstream/content.h>
 
-G_BEGIN_DECLS
-
-void tf_init (void);
-
-G_END_DECLS
-
 #endif /* __TF_FARSTREAM_H__ */
 

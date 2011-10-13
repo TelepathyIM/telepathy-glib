@@ -17,8 +17,8 @@ dnl - library source changed -> increment REVISION
 dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
 dnl - interfaces added -> increment AGE
 dnl - interfaces removed -> AGE = 0
-m4_define([tp_farstream_lt_current], [0])
-m4_define([tp_farstream_lt_revision], [1])
+m4_define([tp_farstream_lt_current], [1])
+m4_define([tp_farstream_lt_revision], [0])
 m4_define([tp_farstream_lt_age], [0])
 
 
@@ -142,7 +142,6 @@ AC_OUTPUT( Makefile \
           doc/Makefile \
           doc/lib/Makefile \
           m4/Makefile \
-          extensions/Makefile \
           examples/Makefile \
           telepathy-farstream/Makefile  \
           telepathy-farstream/telepathy-farstream.pc \

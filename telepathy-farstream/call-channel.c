@@ -34,8 +34,6 @@
 #include <telepathy-glib/interfaces.h>
 #include <farstream/fs-conference.h>
 
-#include "extensions/extensions.h"
-
 #include "call-content.h"
 #include "tf-signals-marshal.h"
 
@@ -201,7 +199,7 @@ tf_call_channel_init_async (GAsyncInitable *initable,
       tf_call_channel_init_async);
 
   tp_cli_dbus_properties_call_get (self->proxy, -1,
-      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL,
+      TP_IFACE_CHANNEL_TYPE_CALL,
       "HardwareStreaming",
       got_hardware_streaming, res, NULL, G_OBJECT (self));
 }
@@ -418,6 +416,7 @@ content_added (TpChannel *proxy,
 static void
 content_removed (TpChannel *proxy,
     const gchar *arg_Content,
+    const GValueArray *arg_Reason,
     gpointer user_data,
     GObject *weak_object)
 {
@@ -465,7 +464,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       goto error;
     }
 
-  tf_future_cli_channel_type_call_connect_to_content_added (TP_CHANNEL (proxy),
+  tp_cli_channel_type_call_connect_to_content_added (TP_CHANNEL (proxy),
       content_added, NULL, NULL, G_OBJECT (self), &myerror);
   if (myerror)
     {
@@ -476,7 +475,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       goto error;
     }
 
-  tf_future_cli_channel_type_call_connect_to_content_removed (
+  tp_cli_channel_type_call_connect_to_content_removed (
       TP_CHANNEL (proxy), content_removed, NULL, NULL, G_OBJECT (self),
       &myerror);
   if (myerror)
@@ -489,7 +488,7 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
     }
 
   tp_cli_dbus_properties_call_get (proxy, -1,
-      TF_FUTURE_IFACE_CHANNEL_TYPE_CALL, "Contents",
+      TP_IFACE_CHANNEL_TYPE_CALL, "Contents",
       got_contents, res, NULL, G_OBJECT (self));
 
   return;
@@ -584,8 +583,8 @@ tf_call_channel_bus_message (TfCallChannel *channel,
 void
 tf_call_channel_error (TfCallChannel *channel)
 {
-  tf_future_cli_channel_type_call_call_hangup (channel->proxy,
-      -1, TF_FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "",
+  tp_cli_channel_type_call_call_hangup (channel->proxy,
+      -1, TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "",
       NULL, NULL, NULL, NULL);
 }
 

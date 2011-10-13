@@ -27,19 +27,28 @@
  * channel using Farstream.
  */
 
+/*
+ * TODO:
+ * - Support multiple handles
+ * - Allow app to fail sending or receiving during call
+ *
+ * Endpoints:
+ * - Support multiple Endpoints (ie SIP forking with ICE)
+ * - Call SetControlling
+ * - Listen to CandidatePairSelected and call AcceptSelectedCandidatePair/RejectSelectedCandidatePair
+ * - Support IsICELite
+ */
+
 #include "call-stream.h"
 
-#include <telepathy-glib/util.h>
-#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/telepathy-glib.h>
+#include <telepathy-glib/proxy-subclass.h>
 #include <farstream/fs-conference.h>
 
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include <telepathy-glib/proxy-subclass.h>
-
-#include "extensions/extensions.h"
 
 #include "tf-signals-marshal.h"
 #include "utils.h"
@@ -48,6 +57,18 @@
 G_DEFINE_TYPE (TfCallStream, tf_call_stream, G_TYPE_OBJECT);
 
 static void tf_call_stream_dispose (GObject *object);
+
+static void tf_call_stream_fail_literal (TfCallStream *self,
+    TpCallStateChangeReason reason,
+    const gchar *detailed_reason,
+    const gchar *message);
+
+static void tf_call_stream_fail (TfCallStream *self,
+    TpCallStateChangeReason reason,
+    const gchar *detailed_reason,
+    const gchar *message_format,
+    ...);
+
 
 static void
 tf_call_stream_class_init (TfCallStreamClass *klass)
@@ -101,45 +122,42 @@ tf_call_stream_dispose (GObject *object)
     G_OBJECT_CLASS (tf_call_stream_parent_class)->dispose (object);
 }
 
+
+
 static void
-local_sending_state_changed (TfFutureCallStream *proxy,
+sending_state_changed (TpProxy *proxy,
     guint arg_State,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
 
-  self->local_sending_state = arg_State;
-
-  if (!self->fsstream)
-    return;
-
-  if (arg_State == TF_FUTURE_SENDING_STATE_SENDING)
-    {
-      if (!self->has_send_resource)
-        {
-          if (_tf_content_start_sending (TF_CONTENT (self->call_content)))
-            {
-              self->has_send_resource = TRUE;
-            }
-          else
-            {
-              /* FIXME add a way to call to report media errors */
-              g_warning ("Sending failed");
-              return;
-            }
-        }
-    }
+  self->sending_state = arg_State;
 
   switch (arg_State)
     {
-    case TF_FUTURE_SENDING_STATE_PENDING_STOP_SENDING:
-    case TF_FUTURE_SENDING_STATE_PENDING_SEND:
-      /* the UI should respond to these */
+    case TP_STREAM_FLOW_STATE_PENDING_START:
+      if (self->fsstream)
+        {
+          if (self->has_send_resource ||
+              _tf_content_start_sending (TF_CONTENT (self->call_content)))
+            {
+              self->has_send_resource = TRUE;
+              tp_cli_call_stream_interface_media_call_complete_sending_state_change (
+                  proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
+                  NULL, NULL, NULL, NULL);
+            }
+          else
+            {
+              tp_cli_call_stream_interface_media_call_report_sending_failure (
+                  proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+                  TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+                  "Could not start sending", NULL, NULL, NULL, NULL);
+              return;
+            }
+        }
       break;
-    case TF_FUTURE_SENDING_STATE_SENDING:
-      g_object_set (self->fsstream, "direction", FS_DIRECTION_BOTH, NULL);
-      break;
-    case TF_FUTURE_SENDING_STATE_NONE:
+    case TP_STREAM_FLOW_STATE_PENDING_STOP:
+    case TP_STREAM_FLOW_STATE_PENDING_PAUSE:
       if (self->has_send_resource)
         {
           _tf_content_stop_sending (TF_CONTENT (self->call_content));
@@ -147,10 +165,71 @@ local_sending_state_changed (TfFutureCallStream *proxy,
           self->has_send_resource = FALSE;
         }
       g_object_set (self->fsstream, "direction", FS_DIRECTION_RECV, NULL);
+      tp_cli_call_stream_interface_media_call_complete_sending_state_change (
+          proxy, -1, arg_State == TP_STREAM_FLOW_STATE_PENDING_STOP ?
+          TP_STREAM_FLOW_STATE_STOPPED : TP_STREAM_FLOW_STATE_PAUSED,
+          NULL, NULL, NULL, NULL);
+      break;
+    default:
       break;
     }
 }
 
+static void
+receiving_state_changed (TpProxy *proxy,
+    guint arg_State,
+    gpointer user_data, GObject *weak_object)
+{
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+
+  self->receiving_state = arg_State;
+
+  if (!self->fsstream)
+    return;
+
+  switch (arg_State)
+    {
+    case TP_STREAM_FLOW_STATE_PENDING_START:
+      if (self->fsstream)
+        {
+          if (self->has_receive_resource ||
+              _tf_content_start_receiving (TF_CONTENT (self->call_content),
+                  &self->contact_handle, 1))
+            {
+              self->has_receive_resource = TRUE;
+              tp_cli_call_stream_interface_media_call_complete_receiving_state_change (
+                  proxy, -1, TP_STREAM_FLOW_STATE_STARTED,
+                  NULL, NULL, NULL, NULL);
+            }
+          else
+            {
+              tp_cli_call_stream_interface_media_call_report_receiving_failure (
+                  proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+                  TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+                  "Could not start receiving", NULL, NULL, NULL, NULL);
+              return;
+            }
+        }
+      break;
+    case TP_STREAM_FLOW_STATE_PENDING_STOP:
+    case TP_STREAM_FLOW_STATE_PENDING_PAUSE:
+      if (self->has_receive_resource)
+        {
+          _tf_content_stop_receiving (TF_CONTENT (self->call_content),
+              &self->contact_handle, 1);
+
+          self->has_receive_resource = FALSE;
+        }
+      g_object_set (self->fsstream, "direction", FS_DIRECTION_RECV, NULL);
+      tp_cli_call_stream_interface_media_call_complete_receiving_state_change (
+          proxy, -1, arg_State == TP_STREAM_FLOW_STATE_PENDING_STOP ?
+          TP_STREAM_FLOW_STATE_STOPPED : TP_STREAM_FLOW_STATE_PAUSED,
+          NULL, NULL, NULL, NULL);
+      break;
+    default:
+      break;
+    }
+}
 
 static void
 tf_call_stream_try_adding_fsstream (TfCallStream *self)
@@ -171,7 +250,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
 
   switch (self->transport_type)
     {
-    case TF_FUTURE_STREAM_TRANSPORT_TYPE_RAW_UDP:
+    case TP_STREAM_TRANSPORT_TYPE_RAW_UDP:
       transmitter = "rawudp";
 
       switch (tf_call_content_get_fs_media_type (self->call_content))
@@ -198,25 +277,28 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
           n_params++;
         }
       break;
-    case TF_FUTURE_STREAM_TRANSPORT_TYPE_ICE:
-    case TF_FUTURE_STREAM_TRANSPORT_TYPE_GTALK_P2P:
-    case TF_FUTURE_STREAM_TRANSPORT_TYPE_WLM_2009:
+    case TP_STREAM_TRANSPORT_TYPE_ICE:
+    case TP_STREAM_TRANSPORT_TYPE_GTALK_P2P:
+    case TP_STREAM_TRANSPORT_TYPE_WLM_2009:
       transmitter = "nice";
 
-      /* MISSING: Set Controlling mode property here */
+      params[n_params].name = "controlling-mode";
+      g_value_init (&params[n_params].value, G_TYPE_BOOLEAN);
+      g_value_set_boolean (&params[n_params].value, self->controlling);
+      n_params++;
 
       params[n_params].name = "compatibility-mode";
       g_value_init (&params[n_params].value, G_TYPE_UINT);
       switch (self->transport_type)
         {
-        case TF_FUTURE_STREAM_TRANSPORT_TYPE_ICE:
+        case TP_STREAM_TRANSPORT_TYPE_ICE:
           g_value_set_uint (&params[n_params].value, 0);
           break;
-        case TF_FUTURE_STREAM_TRANSPORT_TYPE_GTALK_P2P:
+        case TP_STREAM_TRANSPORT_TYPE_GTALK_P2P:
           g_value_set_uint (&params[n_params].value, 1);
           self->multiple_usernames = TRUE;
           break;
-        case TF_FUTURE_STREAM_TRANSPORT_TYPE_WLM_2009:
+        case TP_STREAM_TRANSPORT_TYPE_WLM_2009:
           g_value_set_uint (&params[n_params].value, 3);
           break;
         default:
@@ -224,7 +306,7 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
         }
       n_params++;
       break;
-    case TF_FUTURE_STREAM_TRANSPORT_TYPE_SHM:
+    case TP_STREAM_TRANSPORT_TYPE_SHM:
       transmitter = "shm";
       params[n_params].name = "create-local-candidates";
       g_value_init (&params[n_params].value, G_TYPE_BOOLEAN);
@@ -232,9 +314,8 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
       n_params++;
       break;
     default:
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "org.freedesktop.Telepathy.Error.NotImplemented",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
           "Unknown transport type %d", self->transport_type);
       return;
     }
@@ -343,22 +424,25 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
 
   if (!self->fsstream)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_MEDIA_STREAMING_ERROR,
           "Could not create FsStream: %s", error->message);
       g_clear_error (&error);
       return;
     }
 
-  if (self->local_sending_state == TF_FUTURE_SENDING_STATE_PENDING_SEND ||
-      self->local_sending_state == TF_FUTURE_SENDING_STATE_SENDING)
-    local_sending_state_changed (self->proxy, self->local_sending_state,
-        NULL, (GObject *) self);
+  if (self->sending_state == TP_STREAM_FLOW_STATE_PENDING_START)
+    sending_state_changed (TP_PROXY (self->proxy),
+        self->sending_state, NULL, (GObject *) self);
+
+  if (self->receiving_state == TP_STREAM_FLOW_STATE_PENDING_START)
+    receiving_state_changed (TP_PROXY (self->proxy),
+        self->receiving_state, NULL, (GObject *) self);
 }
 
 static void
-server_info_retrieved (TfFutureCallStream *proxy,
+server_info_retrieved (TpProxy *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
@@ -369,7 +453,7 @@ server_info_retrieved (TfFutureCallStream *proxy,
 }
 
 static void
-relay_info_changed (TfFutureCallStream *proxy,
+relay_info_changed (TpProxy *proxy,
     const GPtrArray *arg_Relay_Info,
     gpointer user_data, GObject *weak_object)
 {
@@ -377,9 +461,9 @@ relay_info_changed (TfFutureCallStream *proxy,
 
   if (self->server_info_retrieved)
     {
-      tf_content_error_literal (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "org.freedesktop.Telepathy.Error.NotImplemented",
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_NOT_IMPLEMENTED,
           "Changing relay servers after ServerInfoRetrived is not implemented");
       return;
     }
@@ -394,7 +478,7 @@ relay_info_changed (TfFutureCallStream *proxy,
 }
 
 static void
-stun_servers_changed (TfFutureCallStream *proxy,
+stun_servers_changed (TpProxy *proxy,
     const GPtrArray *arg_Servers,
     gpointer user_data, GObject *weak_object)
 {
@@ -402,9 +486,9 @@ stun_servers_changed (TfFutureCallStream *proxy,
 
   if (self->server_info_retrieved)
     {
-      tf_content_error_literal (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "org.freedesktop.Telepathy.Error.NotImplemented",
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_NOT_IMPLEMENTED,
           "Changing STUN servers after ServerInfoRetrived is not implemented");
       return;
     }
@@ -424,7 +508,6 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
 {
   GList *fscandidates = NULL;
   guint i;
-  GError *error = NULL;
 
   /* No candidates to add, ignore. This could either be caused by the CM
    * accidentally emitting an empty RemoteCandidatesAdded or when there are no
@@ -475,11 +558,32 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
 
   if (self->fsstream)
     {
-      if (!fs_stream_add_remote_candidates (self->fsstream, fscandidates,
-              &error))
+      gboolean ret;
+      GError *error = NULL;
+
+      switch (self->transport_type)
         {
-          tf_content_error (TF_CONTENT (self->call_content),
-              TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+        case TP_STREAM_TRANSPORT_TYPE_RAW_UDP:
+        case TP_STREAM_TRANSPORT_TYPE_SHM:
+        case TP_STREAM_TRANSPORT_TYPE_MULTICAST:
+          ret = fs_stream_force_remote_candidates (self->fsstream,
+              fscandidates, &error);
+          break;
+        case TP_STREAM_TRANSPORT_TYPE_ICE:
+        case TP_STREAM_TRANSPORT_TYPE_GTALK_P2P:
+        case TP_STREAM_TRANSPORT_TYPE_WLM_2009:
+          ret = fs_stream_add_remote_candidates (self->fsstream, fscandidates,
+              &error);
+          break;
+        default:
+          ret = FALSE;
+        }
+
+      if (!ret)
+        {
+          tf_call_stream_fail (self,
+              TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+              TP_ERROR_STR_MEDIA_STREAMING_ERROR,
               "Error setting the remote candidates: %s", error->message);
           g_clear_error (&error);
         }
@@ -534,26 +638,30 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
   GValueArray *credentials;
   gchar *username, *password;
   GPtrArray *candidates;
+  gboolean valid = FALSE;
+  guint transport_type;
 
   if (error)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_CONFUSED,
           "Error getting the Streams's media properties: %s", error->message);
       return;
     }
 
   if (!out_Properties)
     {
-      tf_content_error_literal (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_CONFUSED,
           "Error getting the Stream's media properties: there are none");
       return;
     }
 
 
   credentials = tp_asv_get_boxed (out_Properties, "RemoteCredentials",
-      TF_FUTURE_STRUCT_TYPE_STREAM_CREDENTIALS);
+      TP_STRUCT_TYPE_STREAM_CREDENTIALS);
   if (!credentials)
     goto invalid_property;
   tp_value_array_unpack (credentials, 2, &username, &password);
@@ -561,9 +669,30 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
   self->creds_password = g_strdup (password);
 
   candidates = tp_asv_get_boxed (out_Properties, "RemoteCandidates",
-      TF_FUTURE_ARRAY_TYPE_CANDIDATE_LIST);
+      TP_ARRAY_TYPE_CANDIDATE_LIST);
   if (!candidates)
     goto invalid_property;
+
+  transport_type = tp_asv_get_uint32 (out_Properties, "Transport", &valid);
+  if (!valid)
+  {
+    g_warning ("No valid transport");
+    goto invalid_property;
+  }
+
+  if (transport_type != self->transport_type)
+    {
+      if (transport_type != TP_STREAM_TRANSPORT_TYPE_RAW_UDP)
+        {
+          tf_call_stream_fail (self,
+              TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+              TP_ERROR_STR_INVALID_ARGUMENT,
+              "The Transport of a Endpoint can only be changed to rawudp: %d invalid", transport_type);
+          return;
+        }
+      self->transport_type = transport_type;
+    }
+
 
   tf_call_stream_add_remote_candidates (self, candidates);
 
@@ -571,8 +700,9 @@ got_endpoint_properties (TpProxy *proxy, GHashTable *out_Properties,
   return;
 
  invalid_property:
-  tf_content_error_literal (TF_CONTENT (self->call_content),
-      TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+  tf_call_stream_fail_literal (self,
+      TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+      TP_ERROR_STR_CONFUSED,
       "Error getting the Endpoint's properties: invalid type");
 }
 
@@ -587,28 +717,30 @@ tf_call_stream_add_endpoint (TfCallStream *self)
       "object-path", self->endpoint_objpath,
       NULL);
   tp_proxy_add_interface_by_id (TP_PROXY (self->endpoint),
-      TF_FUTURE_IFACE_QUARK_CALL_STREAM_ENDPOINT);
+      TP_IFACE_QUARK_CALL_STREAM_ENDPOINT);
 
-  tf_future_cli_call_stream_endpoint_connect_to_remote_credentials_set (
+  tp_cli_call_stream_endpoint_connect_to_remote_credentials_set (
       TP_PROXY (self->endpoint), remote_credentials_set, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_CONFUSED,
           "Error connectiong to RemoteCredentialsSet signal: %s",
           error->message);
       g_clear_error (&error);
       return;
     }
 
-  tf_future_cli_call_stream_endpoint_connect_to_remote_candidates_added (
+  tp_cli_call_stream_endpoint_connect_to_remote_candidates_added (
       TP_PROXY (self->endpoint), remote_candidates_added, NULL, NULL,
       G_OBJECT (self), &error);
   if (error)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_CONFUSED,
           "Error connectiong to RemoteCandidatesAdded signal: %s",
           error->message);
       g_clear_error (&error);
@@ -616,13 +748,13 @@ tf_call_stream_add_endpoint (TfCallStream *self)
     }
 
   tp_cli_dbus_properties_call_get_all (self->endpoint, -1,
-      TF_FUTURE_IFACE_CALL_STREAM_ENDPOINT,
+      TP_IFACE_CALL_STREAM_ENDPOINT,
       got_endpoint_properties, NULL, NULL, G_OBJECT (self));
 }
 
 
 static void
-endpoints_changed (TfFutureCallStream *proxy,
+endpoints_changed (TpProxy *proxy,
     const GPtrArray *arg_Endpoints_Added,
     const GPtrArray *arg_Endpoints_Removed,
     gpointer user_data, GObject *weak_object)
@@ -635,18 +767,18 @@ endpoints_changed (TfFutureCallStream *proxy,
 
   if (arg_Endpoints_Removed->len != 0)
     {
-      tf_content_error_literal (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "org.freedesktop.Telepathy.Error.NotImplemented",
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_NOT_IMPLEMENTED,
           "Removing Endpoints is not implemented");
       return;
     }
 
   if (arg_Endpoints_Added->len != 1)
     {
-      tf_content_error_literal (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "org.freedesktop.Telepathy.Error.NotImplemented",
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_NOT_IMPLEMENTED,
           "Having more than one endpoint is not implemented");
       return;
     }
@@ -655,8 +787,9 @@ endpoints_changed (TfFutureCallStream *proxy,
     {
       if (strcmp (g_ptr_array_index (arg_Endpoints_Added, 0),
               self->endpoint_objpath))
-        tf_content_error_literal (TF_CONTENT (self->call_content),
-            TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+        tf_call_stream_fail_literal (self,
+            TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+            TP_ERROR_STR_INVALID_ARGUMENT,
             "Trying to give a different endpoint, CM bug");
       return;
     }
@@ -679,8 +812,9 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (error)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_CONFUSED,
           "Error getting the Streams's media properties: %s",
           error->message);
       return;
@@ -688,8 +822,9 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!out_Properties)
     {
-      tf_content_error_literal (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_INVALID_ARGUMENT,
           "Error getting the Stream's media properties: there are none");
       return;
     }
@@ -727,6 +862,14 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
   }
 
 
+  self->controlling = tp_asv_get_boolean (out_Properties,
+      "Controlling", &valid);
+  if (!valid)
+  {
+    g_warning ("No Controlling property");
+    goto invalid_property;
+  }
+
   self->stun_servers = g_boxed_copy (TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST,
       stun_servers);
   self->relay_info = g_boxed_copy (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST,
@@ -737,9 +880,9 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (endpoints->len > 1)
     {
-      tf_content_error_literal (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "org.freedesktop.Telepathy.Error.NotImplemented",
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_NOT_IMPLEMENTED,
           "Having more than one endpoint is not implemented");
       return;
     }
@@ -756,40 +899,76 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   return;
  invalid_property:
-  tf_content_error_literal (TF_CONTENT (self->call_content),
-      TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+  tf_call_stream_fail_literal (self,
+      TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+      TP_ERROR_STR_INVALID_ARGUMENT,
       "Error getting the Stream's properties: invalid type");
   return;
 }
 
+static void
+ice_restart_requested (TpProxy *proxy,
+    gpointer user_data, GObject *weak_object)
+{
+  TfCallStream *self = TF_CALL_STREAM (weak_object);
+  GError *myerror = NULL;
+
+  if (!self->fsstream)
+    return;
+
+  if (self->multiple_usernames)
+    {
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_INVALID_ARGUMENT,
+          "CM tried to ICE restart an ICE-6 or Google compatible connection");
+      return;
+    }
+
+  if (fs_stream_add_remote_candidates (self->fsstream, NULL, &myerror))
+    {
+      g_free (self->last_local_username);
+      g_free (self->last_local_password);
+      self->last_local_username = NULL;
+      self->last_local_password = NULL;
+    }
+  else
+    {
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+          "Error restarting the ICE process: %s", myerror->message);
+      g_clear_error (&myerror);
+    }
+}
 
 static void
 got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
     const GError *error, gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
-  gboolean valid;
   GError *myerror = NULL;
   guint i;
   const gchar * const * interfaces;
   gboolean got_media_interface = FALSE;
-  guint32 local_sending_state;
   GHashTable *members;
   GHashTableIter iter;
   gpointer key, value;
 
   if (error)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_CONFUSED,
           "Error getting the Streams's properties: %s", error->message);
       return;
     }
 
   if (!out_Properties)
     {
-      tf_content_error_literal (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_INVALID_ARGUMENT,
           "Error getting the Content's properties: there are none");
       return;
     }
@@ -797,7 +976,7 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
   interfaces = tp_asv_get_strv (out_Properties, "Interfaces");
 
   for (i = 0; interfaces[i]; i++)
-    if (!strcmp (interfaces[i], TF_FUTURE_IFACE_CALL_STREAM_INTERFACE_MEDIA))
+    if (!strcmp (interfaces[i], TP_IFACE_CALL_STREAM_INTERFACE_MEDIA))
       {
         got_media_interface = TRUE;
         break;
@@ -805,30 +984,24 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!got_media_interface)
     {
-      tf_content_error_literal (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail_literal (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_INVALID_ARGUMENT,
           "Stream does not have the media interface,"
           " but HardwareStreaming was NOT true");
       return;
     }
 
   members = tp_asv_get_boxed (out_Properties, "RemoteMembers",
-      TF_FUTURE_HASH_TYPE_CONTACT_SENDING_STATE_MAP);
+      TP_HASH_TYPE_CONTACT_SENDING_STATE_MAP);
   if (!members)
     goto invalid_property;
 
-  local_sending_state = tp_asv_get_uint32 (out_Properties, "LocalSendingState",
-      &valid);
-  if (!valid)
-    goto invalid_property;
-
-  self->local_sending_state = local_sending_state;
-
   if (g_hash_table_size (members) != 1)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR,
-          "org.freedesktop.Telepathy.Error.NotImplemented",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_NOT_IMPLEMENTED,
           "Only one Member per Stream is supported, there are %d",
           g_hash_table_size (members));
       return;
@@ -843,42 +1016,57 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
     }
 
   tp_proxy_add_interface_by_id (TP_PROXY (self->proxy),
-      TF_FUTURE_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA);
+      TP_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA);
 
-  tf_future_cli_call_stream_interface_media_connect_to_server_info_retrieved (
-      TF_FUTURE_CALL_STREAM (proxy), server_info_retrieved, NULL, NULL,
+
+  tp_cli_call_stream_interface_media_connect_to_sending_state_changed (
+      TP_CALL_STREAM (proxy), sending_state_changed, NULL, NULL,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
-          "Error connectiong to ServerInfoRetrived signal: %s",
-          myerror->message);
-      g_clear_error (&myerror);
-      return;
-    }
-
-  tf_future_cli_call_stream_interface_media_connect_to_stun_servers_changed (
-      TF_FUTURE_CALL_STREAM (proxy), stun_servers_changed, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
-    {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
-          "Error connectiong to ServerInfoRetrived signal: %s",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
+          "Error connectiong to SendingStateChanged signal: %s",
           myerror->message);
       g_clear_error (&myerror);
       return;
     }
 
 
-  tf_future_cli_call_stream_interface_media_connect_to_relay_info_changed (
-      TF_FUTURE_CALL_STREAM (proxy), relay_info_changed, NULL, NULL,
+
+  tp_cli_call_stream_interface_media_connect_to_receiving_state_changed (
+      TP_CALL_STREAM (proxy), receiving_state_changed, NULL, NULL,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
+          "Error connectiong to ReceivingStateChanged signal: %s",
+          myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
+  tp_cli_call_stream_interface_media_connect_to_server_info_retrieved (
+      TP_CALL_STREAM (proxy), server_info_retrieved, NULL, NULL,
+      G_OBJECT (self), &myerror);
+  if (myerror)
+    {
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
+          "Error connectiong to ServerInfoRetrived signal: %s",
+          myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
+  tp_cli_call_stream_interface_media_connect_to_stun_servers_changed (
+      TP_CALL_STREAM (proxy), stun_servers_changed, NULL, NULL,
+      G_OBJECT (self), &myerror);
+  if (myerror)
+    {
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
           "Error connectiong to ServerInfoRetrived signal: %s",
           myerror->message);
       g_clear_error (&myerror);
@@ -886,28 +1074,57 @@ got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
     }
 
 
-  tf_future_cli_call_stream_interface_media_connect_to_endpoints_changed (
-      TF_FUTURE_CALL_STREAM (proxy), endpoints_changed, NULL, NULL,
+  tp_cli_call_stream_interface_media_connect_to_relay_info_changed (
+      TP_CALL_STREAM (proxy), relay_info_changed, NULL, NULL,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
+          "Error connectiong to ServerInfoRetrived signal: %s",
+          myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
+
+  tp_cli_call_stream_interface_media_connect_to_endpoints_changed (
+      TP_CALL_STREAM (proxy), endpoints_changed, NULL, NULL,
+      G_OBJECT (self), &myerror);
+  if (myerror)
+    {
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
           "Error connectiong to EndpointsChanged signal: %s",
           myerror->message);
       g_clear_error (&myerror);
       return;
     }
 
+
+  tp_cli_call_stream_interface_media_connect_to_ice_restart_requested (
+      TP_CALL_STREAM (proxy), ice_restart_requested, NULL, NULL,
+      G_OBJECT (self), &myerror);
+  if (myerror)
+    {
+      tf_call_stream_fail (self,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
+          "Error connectiong to ICERestartRequested signal: %s",
+          myerror->message);
+      g_clear_error (&myerror);
+      return;
+    }
+
   tp_cli_dbus_properties_call_get_all (proxy, -1,
-      TF_FUTURE_IFACE_CALL_STREAM_INTERFACE_MEDIA,
+      TP_IFACE_CALL_STREAM_INTERFACE_MEDIA,
       got_stream_media_properties, NULL, NULL, G_OBJECT (self));
 
   return;
 
  invalid_property:
-  tf_content_error_literal (TF_CONTENT (self->call_content),
-      TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
+  tf_call_stream_fail_literal (self,
+      TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+      TP_ERROR_STR_INVALID_ARGUMENT,
       "Error getting the Stream's properties: invalid type");
   return;
 }
@@ -919,9 +1136,8 @@ tf_call_stream_new (TfCallChannel *call_channel,
     GError **error)
 {
   TfCallStream *self;
-  TfFutureCallStream *proxy = tf_future_call_stream_new (call_channel->proxy,
+  TpCallStream *proxy = tp_call_stream_new (call_channel->proxy,
       object_path, error);
-  GError *myerror = NULL;
 
   if (!proxy)
     return NULL;
@@ -931,31 +1147,15 @@ tf_call_stream_new (TfCallChannel *call_channel,
   self->call_content = call_content;
   self->proxy = proxy;
 
-  tf_future_cli_call_stream_connect_to_local_sending_state_changed (
-      TF_FUTURE_CALL_STREAM (proxy), local_sending_state_changed, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
-    {
-      tf_content_error (TF_CONTENT (self->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "",
-          "Error connectiong to LocalSendingStateChanged signal: %s",
-          myerror->message);
-      g_object_unref (self);
-      g_propagate_error (error, myerror);
-      return NULL;
-    }
-
-  tp_cli_dbus_properties_call_get_all (proxy, -1, TF_FUTURE_IFACE_CALL_STREAM,
+  tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_CALL_STREAM,
       got_stream_properties, NULL, NULL, G_OBJECT (self));
 
   return self;
 }
 
-static void
-cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
+static GValueArray *
+fscandidate_to_tpcandidate (TfCallStream *stream, FsCandidate *candidate)
 {
-  GPtrArray *candidate_list = g_ptr_array_sized_new (1);
-  GValueArray *gva;
   GHashTable *extra_info;
 
   extra_info = tp_asv_new (NULL, NULL);
@@ -972,7 +1172,22 @@ cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
       if (candidate->password)
         tp_asv_set_string (extra_info, "Password", candidate->password);
     }
-  else
+
+
+  return tp_value_array_build (4,
+      G_TYPE_UINT, candidate->component_id,
+      G_TYPE_STRING, candidate->ip,
+      G_TYPE_UINT, candidate->port,
+      TP_HASH_TYPE_CANDIDATE_INFO, extra_info,
+      G_TYPE_INVALID);
+}
+
+static void
+cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
+{
+  GPtrArray *candidate_list = g_ptr_array_sized_new (1);
+
+  if (!stream->multiple_usernames)
     {
       if ((!stream->last_local_username && candidate->username) ||
           (!stream->last_local_password && candidate->password) ||
@@ -992,34 +1207,29 @@ cb_fs_new_local_candidate (TfCallStream *stream, FsCandidate *candidate)
             stream->last_local_password = g_strdup ("");
 
           /* Add a callback to kill Call on errors */
-          tf_future_cli_call_stream_interface_media_call_set_credentials (
+          tp_cli_call_stream_interface_media_call_set_credentials (
               stream->proxy, -1, stream->last_local_username,
               stream->last_local_password, NULL, NULL, NULL, NULL);
 
         }
     }
 
-  gva = tp_value_array_build (4,
-      G_TYPE_UINT, candidate->component_id,
-      G_TYPE_STRING, candidate->ip,
-      G_TYPE_UINT, candidate->port,
-      TF_FUTURE_HASH_TYPE_CANDIDATE_INFO, extra_info,
-      G_TYPE_INVALID);
 
-  g_ptr_array_add (candidate_list, gva);
+  g_ptr_array_add (candidate_list,
+      fscandidate_to_tpcandidate (stream, candidate));
 
   /* Should also check for errors */
-  tf_future_cli_call_stream_interface_media_call_add_candidates (stream->proxy,
+  tp_cli_call_stream_interface_media_call_add_candidates (stream->proxy,
       -1, candidate_list, NULL, NULL, NULL, NULL);
 
 
-  g_boxed_free (TF_FUTURE_ARRAY_TYPE_CANDIDATE_LIST, candidate_list);
+  g_boxed_free (TP_ARRAY_TYPE_CANDIDATE_LIST, candidate_list);
 }
 
 static void
 cb_fs_local_candidates_prepared (TfCallStream *stream)
 {
-  tf_future_cli_call_stream_interface_media_call_candidates_prepared (
+  tp_cli_call_stream_interface_media_call_finish_initial_candidates (
       stream->proxy, -1, NULL, NULL, NULL, NULL);
 
 }
@@ -1036,24 +1246,42 @@ cb_fs_component_state_changed (TfCallStream *stream, guint component,
   switch (fsstate)
   {
     case FS_STREAM_STATE_FAILED:
-    case FS_STREAM_STATE_DISCONNECTED:
-      state = TP_MEDIA_STREAM_STATE_DISCONNECTED;
+    default:
+      state = TP_STREAM_ENDPOINT_STATE_EXHAUSTED_CANDIDATES;
       break;
+    case FS_STREAM_STATE_DISCONNECTED:
     case FS_STREAM_STATE_GATHERING:
     case FS_STREAM_STATE_CONNECTING:
-    case FS_STREAM_STATE_CONNECTED:
-      state = TP_MEDIA_STREAM_STATE_CONNECTING;
+      state = TP_STREAM_ENDPOINT_STATE_CONNECTING;
       break;
+    case FS_STREAM_STATE_CONNECTED:
+      state = TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED;
     case FS_STREAM_STATE_READY:
-    default:
-      state = TP_MEDIA_STREAM_STATE_CONNECTED;
+      state = TP_STREAM_ENDPOINT_STATE_FULLY_CONNECTED;
       break;
   }
 
-  tf_future_cli_call_stream_endpoint_call_set_stream_state (stream->endpoint,
-      -1, state, NULL, NULL, NULL, NULL);
+  tp_cli_call_stream_endpoint_call_set_endpoint_state (stream->endpoint,
+      -1, component, state, NULL, NULL, NULL, NULL);
 }
 
+static void
+cb_fs_new_active_candidate_pair (TfCallStream *stream,
+    FsCandidate *local_candidate,
+    FsCandidate *remote_candidate)
+{
+  GValueArray *local_tp_candidate =
+      fscandidate_to_tpcandidate (stream, local_candidate);
+  GValueArray *remote_tp_candidate =
+      fscandidate_to_tpcandidate (stream, remote_candidate);
+
+  tp_cli_call_stream_endpoint_call_set_selected_candidate_pair (
+      stream->endpoint, -1, local_tp_candidate, remote_tp_candidate,
+      NULL, NULL, NULL, NULL);
+
+  g_boxed_free (TP_STRUCT_TYPE_CANDIDATE, local_tp_candidate);
+  g_boxed_free (TP_STRUCT_TYPE_CANDIDATE, remote_tp_candidate);
+}
 
 gboolean
 tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
@@ -1092,8 +1320,9 @@ tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
           enumvalue->value_nick, errorno, msg, debug);
       g_type_class_unref (enumclass);
 
-      tf_content_error_literal (TF_CONTENT (stream->call_content),
-          TF_FUTURE_CONTENT_REMOVAL_REASON_ERROR, "", msg);
+      tf_call_stream_fail_literal (stream,
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_MEDIA_STREAMING_ERROR, msg);
       return TRUE;
     }
 
@@ -1131,10 +1360,57 @@ tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
 
       cb_fs_component_state_changed (stream, component, fsstate);
     }
+  else if (gst_structure_has_name (s, "farstream-new-active-candidate-pair"))
+    {
+      FsCandidate *local_candidate;
+      FsCandidate *remote_candidate;
+
+      val = gst_structure_get_value (s, "local-candidate");
+      local_candidate = g_value_get_boxed (val);
+
+      val = gst_structure_get_value (s, "remote-candidate");
+      remote_candidate = g_value_get_boxed (val);
+
+      cb_fs_new_active_candidate_pair (stream, local_candidate,
+          remote_candidate);
+      return TRUE;
+    }
   else
     {
       return FALSE;
     }
 
   return TRUE;
+}
+
+static void
+tf_call_stream_fail_literal (TfCallStream *self,
+    TpCallStateChangeReason reason,
+    const gchar *detailed_reason,
+    const gchar *message)
+{
+  g_warning ("%s", message);
+  tp_cli_call_stream_interface_media_call_fail (
+      self->proxy, -1,
+      tp_value_array_build (0, reason, detailed_reason, message),
+      NULL, NULL, NULL, NULL);
+}
+
+
+static void
+tf_call_stream_fail (TfCallStream *self,
+    TpCallStateChangeReason reason,
+    const gchar *detailed_reason,
+    const gchar *message_format,
+    ...)
+{
+  gchar *message;
+  va_list valist;
+
+  va_start (valist, message_format);
+  message = g_strdup_vprintf (message_format, valist);
+  va_end (valist);
+
+  tf_call_stream_fail_literal (self, reason, detailed_reason, message);
+  g_free (message);
 }

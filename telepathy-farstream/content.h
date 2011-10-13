@@ -2,6 +2,7 @@
 #define __TF_CONTENT_H__
 
 #include <glib-object.h>
+#include <telepathy-glib/call-1.h>
 #include <farstream/fs-conference.h>
 
 G_BEGIN_DECLS
@@ -47,12 +48,12 @@ typedef struct _TfContentClass TfContentClass;
 GType tf_content_get_type (void);
 
 void tf_content_error_literal (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
+    TpCallStateChangeReason reason,
     const gchar *detailed_reason,
     const gchar *message);
 
 void tf_content_error (TfContent *content,
-    guint reason, /* TfFutureContentRemovalReason */
+    TpCallStateChangeReason reason,
     const gchar *detailed_reason,
     const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
 

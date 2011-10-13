@@ -27,7 +27,6 @@
 
 #include "call-channel.h"
 #include "call-content.h"
-#include "extensions/extensions.h"
 
 G_BEGIN_DECLS
 
@@ -76,7 +75,7 @@ struct _TfCallStream {
 
   TfCallContent *call_content;
 
-  TfFutureCallStream *proxy;
+  TpCallStream *proxy;
 
   gchar *endpoint_objpath;
   TpProxy *endpoint;
@@ -84,19 +83,23 @@ struct _TfCallStream {
   gchar *creds_password;
   GList *stored_remote_candidates;
   gboolean multiple_usernames;
+  gboolean controlling;
 
   gchar *last_local_username;
   gchar *last_local_password;
 
-  TfFutureSendingState local_sending_state;
+  TpStreamFlowState sending_state;
   gboolean has_send_resource;
+
+  TpStreamFlowState receiving_state;
+  gboolean has_receive_resource;
 
   gboolean has_contact;
   guint contact_handle;
   FsStream *fsstream;
 
   gboolean has_media_properties;
-  TfFutureStreamTransportType transport_type;
+  TpStreamTransportType transport_type;
   gboolean server_info_retrieved;
   GPtrArray *stun_servers;
   GPtrArray *relay_info;

@@ -7,7 +7,6 @@ endif
 
 SUBDIRS = m4 \
           tools \
-          extensions \
           telepathy-farstream \
           doc \
           $(PYTHON_SUBDIR) \
