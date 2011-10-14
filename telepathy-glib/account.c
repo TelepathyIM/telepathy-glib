@@ -1766,7 +1766,9 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:normalized-name
    *
-   * The normalized form of the user's own identifier on this protocol.
+   * The normalized form of the user's own unique identifier on this
+   * protocol. For example, on XMPP accounts this is the user's JID; on
+   * ICQ this is the user's UIN; and so on.
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal
