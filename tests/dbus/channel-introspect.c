@@ -74,15 +74,15 @@ assert_chan_sane (TpChannel *chan,
   GHashTable *asv;
   TpHandleType type;
 
-  MYASSERT (tp_channel_is_ready (chan), "");
-  MYASSERT (tp_channel_get_handle (chan, NULL) == handle, "");
-  MYASSERT (tp_channel_get_handle (chan, &type) == handle, "");
-  MYASSERT (type == TP_HANDLE_TYPE_CONTACT, "%u", type);
-  MYASSERT (g_str_equal (tp_channel_get_channel_type (chan),
-        TP_IFACE_CHANNEL_TYPE_TEXT), "");
-  MYASSERT (tp_channel_get_channel_type_id (chan) ==
-        TP_IFACE_QUARK_CHANNEL_TYPE_TEXT, "");
-  MYASSERT (TP_IS_CONNECTION (tp_channel_borrow_connection (chan)), "");
+  g_assert (tp_channel_is_ready (chan));
+  g_assert_cmpuint (tp_channel_get_handle (chan, NULL), ==, handle);
+  g_assert_cmpuint (tp_channel_get_handle (chan, &type), ==, handle);
+  g_assert_cmpuint (type, ==, TP_HANDLE_TYPE_CONTACT);
+  g_assert_cmpstr (tp_channel_get_channel_type (chan), ==,
+      TP_IFACE_CHANNEL_TYPE_TEXT);
+  g_assert_cmpuint (tp_channel_get_channel_type_id (chan), ==,
+      TP_IFACE_QUARK_CHANNEL_TYPE_TEXT);
+  g_assert (TP_IS_CONNECTION (tp_channel_borrow_connection (chan)));
   g_assert_cmpstr (tp_channel_get_identifier (chan), ==, IDENTIFIER);
   g_assert (tp_channel_get_requested (chan) == requested);
   g_assert_cmpuint (tp_channel_get_initiator_handle (chan), ==,
@@ -91,7 +91,7 @@ assert_chan_sane (TpChannel *chan,
       initiator_id);
 
   asv = tp_channel_borrow_immutable_properties (chan);
-  MYASSERT (asv != NULL, "");
+  g_assert (asv != NULL);
   g_assert_cmpstr (
       tp_asv_get_string (asv, TP_PROP_CHANNEL_CHANNEL_TYPE), ==,
       TP_IFACE_CHANNEL_TYPE_TEXT);
@@ -145,15 +145,15 @@ main (int argc,
         "protocol", "simple",
         NULL));
   service_conn_as_base = TP_BASE_CONNECTION (service_conn);
-  MYASSERT (service_conn != NULL, "");
-  MYASSERT (service_conn_as_base != NULL, "");
+  g_assert (service_conn != NULL);
+  g_assert (service_conn_as_base != NULL);
 
   MYASSERT (tp_base_connection_register (service_conn_as_base, "simple",
         &name, &conn_path, &error), "");
   g_assert_no_error (error);
 
   conn = tp_connection_new (dbus, name, conn_path, &error);
-  MYASSERT (conn != NULL, "");
+  g_assert (conn != NULL);
   g_assert_no_error (error);
 
   MYASSERT (tp_connection_run_until_ready (conn, TRUE, &error, NULL),
@@ -162,7 +162,7 @@ main (int argc,
 
   contact_repo = tp_base_connection_get_handles (service_conn_as_base,
       TP_HANDLE_TYPE_CONTACT);
-  MYASSERT (contact_repo != NULL, "");
+  g_assert (contact_repo != NULL);
 
   handle = tp_handle_ensure (contact_repo, IDENTIFIER, NULL, &error);
   g_assert_no_error (error);
@@ -215,7 +215,6 @@ main (int argc,
   tp_proxy_prepare_async (chan, NULL, channel_prepared_cb, &prepare_result);
 
   MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
-  MYASSERT (error != NULL, "");
   g_assert_error (error, invalidated_for_test.domain,
       invalidated_for_test.code);
   g_assert_cmpstr (error->message, ==, invalidated_for_test.message);
@@ -256,8 +255,8 @@ main (int argc,
 
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
   tp_proxy_invalidate ((TpProxy *) chan, &invalidated_for_test);
-  MYASSERT (was_ready == TRUE, "");
-  MYASSERT (invalidated != NULL, "");
+  g_assert (was_ready);
+  g_assert (invalidated != NULL);
   g_assert_error (invalidated, invalidated_for_test.domain,
       invalidated_for_test.code);
   g_assert_cmpstr (invalidated->message, ==, invalidated_for_test.message);
@@ -265,7 +264,7 @@ main (int argc,
   invalidated = NULL;
 
   /* prepare_async never calls back synchronously */
-  MYASSERT (prepare_result == NULL, "");
+  g_assert (prepare_result == NULL);
   g_main_loop_run (mainloop);
   MYASSERT (!tp_proxy_prepare_finish (chan, prepare_result, &error), "");
   g_assert_error (error, invalidated_for_test.domain,
@@ -497,11 +496,11 @@ main (int argc,
   g_assert_cmpuint (g_hash_table_size (
       TP_TESTS_PROPS_TEXT_CHANNEL (service_props_group_chan)
       ->dbus_property_interfaces_retrieved), ==, 1);
-  MYASSERT (g_hash_table_lookup (
+  /* Only Chan.I.Group's properties should have been retrieved */
+  g_assert (g_hash_table_lookup (
       TP_TESTS_PROPS_TEXT_CHANNEL (service_props_group_chan)
       ->dbus_property_interfaces_retrieved,
-      GUINT_TO_POINTER (TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)) != NULL,
-      "Only Chan.I.Group's properties should have been retrieved");
+      GUINT_TO_POINTER (TP_IFACE_QUARK_CHANNEL_INTERFACE_GROUP)) != NULL);
 
   assert_chan_sane (chan, handle, FALSE, handle, IDENTIFIER);
 
@@ -590,12 +589,8 @@ main (int argc,
   was_ready = FALSE;
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
   g_main_loop_run (mainloop);
-  MYASSERT (was_ready == TRUE, "");
-  MYASSERT (invalidated != NULL, "");
-  MYASSERT (invalidated->domain == DBUS_GERROR,
-      "%s", g_quark_to_string (invalidated->domain));
-  MYASSERT (invalidated->code == DBUS_GERROR_UNKNOWN_METHOD,
-      "%u", invalidated->code);
+  g_assert (was_ready);
+  g_assert_error (invalidated, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
   g_error_free (invalidated);
   invalidated = NULL;
 
@@ -612,11 +607,7 @@ main (int argc,
   g_assert_no_error (error);
 
   MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
-  MYASSERT (error != NULL, "");
-  MYASSERT (error->domain == DBUS_GERROR,
-      "%s", g_quark_to_string (error->domain));
-  MYASSERT (error->code == DBUS_GERROR_UNKNOWN_METHOD,
-      "%u", error->code);
+  g_assert_error (error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
   g_error_free (error);
   error = NULL;
 
@@ -664,11 +655,7 @@ main (int argc,
   asv = NULL;
 
   MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");
-  MYASSERT (error != NULL, "");
-  MYASSERT (error->domain == DBUS_GERROR,
-      "%s", g_quark_to_string (error->domain));
-  MYASSERT (error->code == DBUS_GERROR_UNKNOWN_METHOD,
-      "%u", error->code);
+  g_assert_error (error, DBUS_GERROR, DBUS_GERROR_UNKNOWN_METHOD);
   g_error_free (error);
   error = NULL;
 
@@ -696,7 +683,7 @@ main (int argc,
   g_message ("Entering main loop");
   g_main_loop_run (mainloop);
   g_message ("Leaving main loop");
-  MYASSERT (was_ready == TRUE, "");
+  g_assert (was_ready);
   g_assert_no_error (invalidated);
   g_assert_cmpuint (service_chan->get_handle_called, ==, 0);
   g_assert_cmpuint (service_chan->get_interfaces_called, ==, 1);
@@ -710,7 +697,7 @@ main (int argc,
 
   was_ready = FALSE;
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
-  MYASSERT (was_ready == TRUE, "");
+  g_assert (was_ready);
   g_assert_no_error (invalidated);
 
   assert_chan_sane (chan, handle, FALSE, 0, "");
@@ -781,12 +768,8 @@ main (int argc,
       &prepare_result);
 
   tp_channel_call_when_ready (chan, channel_ready, &was_ready);
-  MYASSERT (was_ready == TRUE, "");
-  MYASSERT (invalidated != NULL, "");
-  MYASSERT (invalidated->domain == TP_ERRORS,
-      ": %s", g_quark_to_string (invalidated->domain));
-  MYASSERT (invalidated->code == TP_ERROR_CANCELLED,
-      ": %u", invalidated->code);
+  g_assert (was_ready);
+  g_assert_error (invalidated, TP_ERRORS, TP_ERROR_CANCELLED);
 
   /* is_prepared becomes FALSE because the channel broke */
   g_assert_cmpint (tp_proxy_is_prepared (chan, TP_CHANNEL_FEATURE_CORE), ==,
