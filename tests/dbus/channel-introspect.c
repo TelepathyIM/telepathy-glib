@@ -759,6 +759,9 @@ main (int argc,
 
   g_hash_table_unref (asv);
 
+  g_clear_object (&chan2);
+  g_clear_object (&conn2);
+
   /* ... keep the same channel for the next test */
 
   g_message ("Channel already dead, so we are called back synchronously");
