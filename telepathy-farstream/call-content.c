@@ -1332,9 +1332,9 @@ fscodecs_to_tpcodecs (GList *codecs)
 static void
 tf_call_content_try_sending_codecs (TfCallContent *self)
 {
-  gboolean ready;
   GList *codecs;
   GPtrArray *tpcodecs;
+  const gchar *codecs_prop = NULL;
 
   if (self->current_offer_fscodecs != NULL)
   {
@@ -1345,14 +1345,14 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
   g_debug ("updating local codecs");
 
   if (TF_CONTENT (self)->sending_count == 0)
-    ready = TRUE;
+    codecs_prop = "codecs-without-config";
   else
-    g_object_get (self->fssession, "codecs-ready", &ready, NULL);
+    codecs_prop = "codecs";
 
-  if (!ready)
+  g_object_get (self->fssession, codecs_prop, &codecs, NULL);
+
+  if (!codecs)
     return;
-
-  g_object_get (self->fssession, "codecs", &codecs, NULL);
 
   if (fs_codec_list_are_equal (codecs, self->current_codecs))
     {

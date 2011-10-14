@@ -2857,7 +2857,6 @@ _tf_stream_get_header_extensions (TfStream *stream)
 void
 _tf_stream_try_sending_codecs (TfStream *stream)
 {
-  gboolean ready = FALSE;
   GList *fscodecs = NULL;
   GList *item = NULL;
   GPtrArray *tpcodecs = NULL;
@@ -2865,20 +2864,25 @@ _tf_stream_try_sending_codecs (TfStream *stream)
   GPtrArray *header_extensions = NULL;
   gboolean sent = FALSE;
   GList *resend_codecs = NULL;
+  const gchar *codecs_prop = NULL;
 
   DEBUG (stream, "called (send_local:%d send_supported:%d)",
       stream->priv->send_local_codecs, stream->priv->send_supported_codecs);
 
-  g_object_get (stream->priv->fs_session, "codecs-ready", &ready, NULL);
 
-  if (!ready && stream->priv->has_resource & TP_MEDIA_STREAM_DIRECTION_SEND)
+  if (stream->priv->has_resource & TP_MEDIA_STREAM_DIRECTION_SEND)
+    codecs_prop = "codecs";
+  else
+    codecs_prop = "codecs-without-config";
+
+  g_object_get (stream->priv->fs_session, codecs_prop, &fscodecs, NULL);
+
+  if (!fscodecs)
     {
       DEBUG (stream, "Ignoring new codecs because we're sending,"
           " but we're not ready");
       return;
     }
-
-  g_object_get (stream->priv->fs_session, "codecs", &fscodecs, NULL);
 
   for(item = fscodecs; item; item = g_list_next (item))
     {
