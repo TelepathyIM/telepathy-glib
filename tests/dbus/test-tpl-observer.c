@@ -21,11 +21,11 @@ main (int argc, char **argv)
 
   g_type_init ();
 
-  obs = _tpl_observer_new ();
+  obs = _tpl_observer_dup (NULL);
 
   /* TplObserver is a singleton, be sure both references point to the same
    * memory address  */
-  obs2 = _tpl_observer_new ();
+  obs2 = _tpl_observer_dup (NULL);
   g_assert (obs == obs2);
 
   /* unref the second singleton pointer and check that the it is still

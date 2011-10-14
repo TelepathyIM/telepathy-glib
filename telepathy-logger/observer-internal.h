@@ -60,7 +60,7 @@ typedef struct
 
 GType _tpl_observer_get_type (void);
 
-TplObserver * _tpl_observer_new (void);
+TplObserver * _tpl_observer_dup (GError **error);
 
 gboolean _tpl_observer_unregister_channel (TplObserver *self,
     TplChannel *channel);

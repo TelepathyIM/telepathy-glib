@@ -187,7 +187,15 @@ main (int argc,
   DEBUG ("- TplCallChannel registered.");
 #endif /* ENABLE_CALL */
 
-  observer = _tpl_observer_new ();
+
+  observer = _tpl_observer_dup (&error);
+
+  if (observer == NULL) {
+    g_critical ("Failed to create observer: %s", error->message);
+    g_error_free (error);
+    goto out;
+  }
+
   DEBUG ("Registering channel factory into TplObserver");
   _tpl_observer_set_channel_factory (observer, _tpl_channel_factory_build);
 

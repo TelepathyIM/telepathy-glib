@@ -291,36 +291,12 @@ tpl_observer_get_property (GObject *object,
     }
 }
 
-/* Singleton Constructor */
-static GObject *
-tpl_observer_constructor (GType type,
-    guint n_props,
-    GObjectConstructParam *props)
-{
-  GObject *retval;
-
-  if (observer_singleton)
-    retval = g_object_ref (observer_singleton);
-  else
-    {
-      retval = G_OBJECT_CLASS (_tpl_observer_parent_class)->constructor (type,
-          n_props, props);
-
-      observer_singleton = TPL_OBSERVER (retval);
-      g_object_add_weak_pointer (retval, (gpointer *) & observer_singleton);
-    }
-
-  return retval;
-}
-
-
 static void
 _tpl_observer_class_init (TplObserverClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   TpBaseClientClass *base_clt_cls = TP_BASE_CLIENT_CLASS (klass);
 
-  object_class->constructor = tpl_observer_constructor;
   object_class->dispose = tpl_observer_dispose;
   object_class->get_property = tpl_observer_get_property;
 
@@ -431,22 +407,47 @@ tpl_observer_dispose (GObject *obj)
 
 
 TplObserver *
-_tpl_observer_new (void)
+_tpl_observer_dup (GError **error)
 {
-  TpDBusDaemon *dbus;
-  TplObserver *result;
+  /* WARNING Not thread safe */
+  if (G_UNLIKELY (observer_singleton == NULL))
+    {
+      GError *dbus_error = NULL;
+      TpDBusDaemon *dbus = tp_dbus_daemon_dup (&dbus_error);
+      TpSimpleClientFactory *factory;
 
-  dbus = tp_dbus_daemon_dup (NULL);
-  g_return_val_if_fail (dbus != NULL, NULL);
+      if (dbus == NULL)
+        {
+          g_propagate_error (error, dbus_error);
+          return NULL;
+        }
 
-  result = g_object_new (TPL_TYPE_OBSERVER,
-      "dbus-daemon", dbus,
-      "name", "Logger",
-      "uniquify-name", FALSE,
-      NULL);
+      factory = (TpSimpleClientFactory *) tp_automatic_client_factory_new (dbus);
 
-  g_object_unref (dbus);
-  return result;
+      /* Pre-select feature to be initialized. */
+      tp_simple_client_factory_add_contact_features_varargs (factory,
+          TP_CONTACT_FEATURE_ALIAS,
+          TP_CONTACT_FEATURE_AVATAR_TOKEN,
+          TP_CONTACT_FEATURE_INVALID);
+
+      observer_singleton = g_object_new (TPL_TYPE_OBSERVER,
+          "factory", factory,
+          "name", "Logger",
+          "uniquify-name", FALSE,
+          NULL);
+
+      g_object_add_weak_pointer (G_OBJECT (observer_singleton),
+          (gpointer *) &observer_singleton);
+
+      g_object_unref (dbus);
+      g_object_unref (factory);
+    }
+  else
+    {
+      g_object_ref (observer_singleton);
+    }
+
+  return observer_singleton;
 }
 
 /**

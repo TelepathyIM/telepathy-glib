@@ -527,7 +527,9 @@ channel_invalidated_cb (TpProxy *proxy,
     gpointer user_data)
 {
   TplChannel *tpl_chan = TPL_CHANNEL (user_data);
-  TplObserver *observer = _tpl_observer_new ();
+  TplObserver *observer = _tpl_observer_dup (NULL);
+
+  g_return_if_fail (observer);
 
   PATH_DEBUG (tpl_chan, "%s #%d %s",
       g_quark_to_string (domain), code, message);
