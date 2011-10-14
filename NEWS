@@ -1,7 +1,37 @@
-telepathy-glib 0.15.10 (UNRELEASED)
+telepathy-glib 0.16.0 (UNRELEASED)
 ===================================
 
-…
+The “irrelevant details” release. This is the start of a new stable
+branch (which will be spoken of by robot historians of the future in
+hushed, reverent voices). We encourage those shipping Gnome 3.2 to track
+this stable branch.
+
+Fixes since 0.15.9:
+
+• fd.o#41729: TpChannel now trusts the ChannelType property included in
+  the dictionary of immutable properties passed to its constructor.
+  Practically speaking, this resolves a race condition where channels
+  would sometimes fail to prepare (and hence, conversation windows would
+  fail to open). (Guillaume)
+
+• fd.o#41714: TpAccount:normalized-name now refers to XMPP JIDs and ICQ
+  UINs, to give examples of what its value means.
+
+Summary of particularly noteworthy changes since 0.14.x:
+
+• telepathy-glib depends on GLib 2.28.0;
+
+• Applications can now define their own features on TpProxy subclasses,
+  and can create their own proxy factory classes to automatically create
+  their own proxy subclasses.
+
+• There's a bunch of new API to make it easier to work with channels,
+  particularly text channels and TpContacts affiliated with channels.
+
+• There is now API on TpConnection for managing the user's contact list,
+  at long last! Note that this currently doesn't work with
+  telepathy-butterfly and telepathy-sunshine, since they do not
+  implement the new, dramatically simpler ContactList D-Bus API.
 
 telepathy-glib 0.15.9 (2011-10-12)
 ==================================
