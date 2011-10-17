@@ -138,6 +138,26 @@ gboolean tp_connection_rename_group_finish (TpConnection *self,
     GAsyncResult *result,
     GError **error);
 
+/* ContactBlocking */
+
+void tp_connection_block_contacts_async (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    gboolean report_abusive,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_connection_block_contacts_finish (TpConnection *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_connection_unblock_contacts_async (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_connection_unblock_contacts_finish (TpConnection *self,
+    GAsyncResult *result,
+    GError **error);
 G_END_DECLS
 
 #endif

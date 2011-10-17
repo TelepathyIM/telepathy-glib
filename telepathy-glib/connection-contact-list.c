@@ -1385,3 +1385,125 @@ tp_connection_rename_group_finish (TpConnection *self,
 {
   generic_finish (rename_group);
 }
+
+/* ContactBlocking */
+
+/**
+ * tp_connection_block_contacts_async:
+ * @self: a #TpConnection
+ * @n_contacts: the number of contacts in @contacts (must be at least 1)
+ * @contacts: (array length=n_contacts): An array of #TpContact objects to
+ *  block
+ * @report_abusive: if %TRUE, in addition to blocking, report these contacts as
+ * abusive to the server administrators, if supported, see
+ * #TpConnection:can-report-abusive
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Direct the server to block @contacts.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_connection_block_contacts_async (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    gboolean report_abusive,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GArray *handles;
+  gboolean supplied_contacts_are_valid;
+
+  g_return_if_fail (TP_IS_CONNECTION (self));
+
+  supplied_contacts_are_valid = _tp_contacts_to_handles (self, n_contacts,
+      contacts, &handles);
+  g_return_if_fail (supplied_contacts_are_valid);
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      tp_connection_block_contacts_async);
+
+  tp_cli_connection_interface_contact_blocking_call_block_contacts (self, -1,
+      handles, report_abusive, generic_callback, result, g_object_unref, NULL);
+  g_array_unref (handles);
+}
+
+/**
+ * tp_connection_block_contacts_finish:
+ * @self: a #TpConnection
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_connection_block_contacts_async()
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE.
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_connection_block_contacts_finish (TpConnection *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  generic_finish (block_contacts);
+}
+
+/**
+ * tp_connection_unblock_contacts_async:
+ * @self: a #TpConnection
+ * @n_contacts: the number of contacts in @contacts (must be at least 1)
+ * @contacts: (array length=n_contacts): An array of #TpContact objects to
+ *  block
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Direct the server to unblock @contacts.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_connection_unblock_contacts_async (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+  GArray *handles;
+  gboolean supplied_contacts_are_valid;
+
+  g_return_if_fail (TP_IS_CONNECTION (self));
+
+  supplied_contacts_are_valid = _tp_contacts_to_handles (self, n_contacts,
+      contacts, &handles);
+  g_return_if_fail (supplied_contacts_are_valid);
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      tp_connection_unblock_contacts_async);
+
+  tp_cli_connection_interface_contact_blocking_call_unblock_contacts (self, -1,
+      handles, generic_callback, result, g_object_unref, NULL);
+  g_array_unref (handles);
+}
+
+/**
+ * tp_connection_unblock_contacts_finish:
+ * @self: a #TpConnection
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_connection_unblock_contacts_async()
+ *
+ * Returns: %TRUE if the operation was successful, otherwise %FALSE.
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_connection_unblock_contacts_finish (TpConnection *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  generic_finish (unblock_contacts);
+}
