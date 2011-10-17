@@ -1507,3 +1507,93 @@ tp_connection_unblock_contacts_finish (TpConnection *self,
 {
   generic_finish (unblock_contacts);
 }
+
+/**
+ * TP_CONNECTION_FEATURE_CONTACT_BLOCKING:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "contact-blocking" feature.
+ *
+ * When this feature is prepared, the #TpConnection:can-report-abusive and
+ * #TpConnection:blocked-contacts properties of the Connection have been
+ * retrieved. The #TpContact objects from #TpConnection:blocked-contacts
+ * have been prepared with the desired features. See
+ * tp_connection_dup_contact_list() to get the list of contacts, and
+ * tp_simple_client_factory_add_contact_features() to define which features
+ * needs to be prepared on them.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+GQuark
+tp_connection_get_feature_quark_contact_blocking (void)
+{
+  return g_quark_from_static_string ("tp-connection-feature-contact-blocking");
+}
+
+static void
+prepare_contact_blocking_cb (TpProxy *proxy,
+    GHashTable *properties,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result = user_data;
+  gboolean valid;
+
+  if (error != NULL)
+    {
+      DEBUG ("Error preparing ContactBlocking properties: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+      goto out;
+    }
+
+  self->priv->contact_blocking_capabilities = tp_asv_get_uint32 (properties,
+      "ContactBlockingCapabilities", &valid);
+  if (!valid)
+    {
+      DEBUG ("Connection %s doesn't have ContactBlockingCapabilities property",
+          tp_proxy_get_object_path (self));
+    }
+
+out:
+  g_simple_async_result_complete (result);
+}
+
+void
+_tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      _tp_connection_prepare_contact_blocking_async);
+
+  tp_cli_dbus_properties_call_get_all (self, -1,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING,
+      prepare_contact_blocking_cb, result, g_object_unref, NULL);
+}
+
+/**
+ * tp_connection_can_report_abusive:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: the value of #TpConnection:can-report-abusive
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_connection_can_report_abusive (TpConnection *self)
+{
+  return (self->priv->contact_blocking_capabilities &
+    TP_CONTACT_BLOCKING_CAPABILITY_CAN_REPORT_ABUSIVE) != 0;
+}

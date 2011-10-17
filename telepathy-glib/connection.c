@@ -281,6 +281,7 @@ enum
   PROP_DISJOINT_GROUPS,
   PROP_GROUP_STORAGE,
   PROP_CONTACT_GROUPS,
+  PROP_CAN_REPORT_ABUSIVE,
   N_PROPS
 };
 
@@ -365,6 +366,9 @@ tp_connection_get_property (GObject *object,
       break;
     case PROP_CONTACT_GROUPS:
       g_value_set_boxed (value, self->priv->contact_groups);
+      break;
+    case PROP_CAN_REPORT_ABUSIVE:
+      g_value_set_boolean (value, tp_connection_can_report_abusive (self));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1591,6 +1595,7 @@ enum {
     FEAT_BALANCE,
     FEAT_CONTACT_LIST,
     FEAT_CONTACT_GROUPS,
+    FEAT_CONTACT_BLOCKING,
     N_FEAT
 };
 
@@ -1604,6 +1609,7 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   static GQuark need_balance[2] = {0, 0};
   static GQuark need_contact_list[3] = {0, 0, 0};
   static GQuark need_contact_groups[2] = {0, 0};
+  static GQuark need_contact_blocking[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -1646,6 +1652,11 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   features[FEAT_CONTACT_GROUPS].prepare_async = _tp_connection_prepare_contact_groups_async;
   need_contact_groups[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_GROUPS;
   features[FEAT_CONTACT_GROUPS].interfaces_needed = need_contact_groups;
+
+  features[FEAT_CONTACT_BLOCKING].name = TP_CONNECTION_FEATURE_CONTACT_BLOCKING;
+  features[FEAT_CONTACT_BLOCKING].prepare_async = _tp_connection_prepare_contact_blocking_async;
+  need_contact_blocking[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING;
+  features[FEAT_CONTACT_BLOCKING].interfaces_needed = need_contact_blocking;
 
   /* assert that the terminator at the end is there */
   g_assert (features[N_FEAT].name == 0);
@@ -2066,6 +2077,27 @@ tp_connection_class_init (TpConnectionClass *klass)
       G_TYPE_STRV,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONTACT_GROUPS,
+      param_spec);
+
+  /**
+   * TpConnection:can-report-abusive:
+   *
+   * When calling tp_connection_block_contacts_async(), the contacts may be
+   * reporting as abusive to the server administrators by setting
+   * report_abusive to %TRUE.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_BLOCKING.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("can-report-abusive",
+      "Can report abusive",
+      "Can report abusive",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_CAN_REPORT_ABUSIVE,
       param_spec);
 
   /**

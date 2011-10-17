@@ -93,6 +93,9 @@ struct _TpConnectionPrivate {
     GPtrArray *contact_groups;
     gboolean groups_fetched;
 
+    /* ContactBlocking properies */
+    TpContactBlockingCapabilities contact_blocking_capabilities;
+
     TpProxyPendingCall *introspection_call;
 
     unsigned ready:1;
@@ -164,6 +167,11 @@ void _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
     GAsyncReadyCallback callback,
     gpointer user_data);
 void _tp_connection_contacts_changed_queue_free (GQueue *queue);
+
+void _tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 G_END_DECLS
 

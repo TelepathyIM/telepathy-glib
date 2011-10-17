@@ -171,6 +171,47 @@ test_block_unblock (Test *test,
   g_ptr_array_unref (arr);
 }
 
+static void
+proxy_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_proxy_prepare_finish (source, result, &test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_can_report_abusive (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONTACT_BLOCKING, 0 };
+  gboolean abuse;
+
+  /* Feature is not prepared yet */
+  g_object_get (test->connection, "can-report-abusive", &abuse, NULL);
+  g_assert (!abuse);
+  g_assert (!tp_connection_can_report_abusive (test->connection));
+
+  tp_proxy_prepare_async (test->connection, features,
+      proxy_prepare_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_proxy_is_prepared (test->connection,
+        TP_CONNECTION_FEATURE_CONTACT_BLOCKING));
+
+  g_object_get (test->connection, "can-report-abusive", &abuse, NULL);
+  g_assert (abuse);
+  g_assert (tp_connection_can_report_abusive (test->connection));
+}
+
 int
 main (int argc,
       char **argv)
@@ -180,6 +221,8 @@ main (int argc,
 
   g_test_add ("/contact-list-clt/blocking/block-unblock", Test, NULL, setup,
       test_block_unblock, teardown);
+  g_test_add ("/contact-list-clt/blocking/can-report-abusive", Test, NULL,
+      setup, test_can_report_abusive, teardown);
 
   return g_test_run ();
 }

@@ -158,6 +158,13 @@ void tp_connection_unblock_contacts_async (TpConnection *self,
 gboolean tp_connection_unblock_contacts_finish (TpConnection *self,
     GAsyncResult *result,
     GError **error);
+
+#define TP_CONNECTION_FEATURE_CONTACT_BLOCKING \
+  (tp_connection_get_feature_quark_contact_blocking ())
+GQuark tp_connection_get_feature_quark_contact_blocking (void) G_GNUC_CONST;
+
+gboolean tp_connection_can_report_abusive (TpConnection *self);
+
 G_END_DECLS
 
 #endif
