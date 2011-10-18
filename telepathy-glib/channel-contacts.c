@@ -108,6 +108,17 @@ dup_contacts_table (TpChannel *self,
   return target;
 }
 
+/* self->priv->group_contact_owners may contain NULL TpContact and
+ * g_object_unref isn't NULL safe */
+static void
+safe_g_object_unref (gpointer data)
+{
+  if (data == NULL)
+    return;
+
+  g_object_unref (data);
+}
+
 static GHashTable *
 dup_owners_table (TpChannel *self,
     GHashTable *source,
@@ -117,7 +128,7 @@ dup_owners_table (TpChannel *self,
   GHashTableIter iter;
   gpointer key, value;
 
-  target = g_hash_table_new_full (NULL, NULL, NULL, g_object_unref);
+  target = g_hash_table_new_full (NULL, NULL, NULL, safe_g_object_unref);
 
   g_hash_table_iter_init (&iter, source);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -484,7 +495,12 @@ _tp_channel_contacts_queue_prepare_finish (TpChannel *self,
   item = g_simple_async_result_get_op_res_gpointer (simple);
 
   if (contacts != NULL)
-    *contacts = g_ptr_array_ref (item->contacts);
+    {
+      if (item->contacts != NULL)
+        *contacts = g_ptr_array_ref (item->contacts);
+      else
+        *contacts = g_ptr_array_new ();
+    }
 
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;

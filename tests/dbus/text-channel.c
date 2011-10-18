@@ -923,6 +923,52 @@ test_sent_with_no_sender (Test *test,
   g_ptr_array_unref (parts);
 }
 
+static void
+test_receive_muc_delivery (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, 0 };
+  GPtrArray *parts;
+  GHashTable *header;
+
+  g_test_bug ("41929 ");
+
+  /* We have to prepare the pending messages feature to be notified about
+   * incoming messages */
+  tp_proxy_prepare_async (test->channel, features,
+      proxy_prepare_cb, test);
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_signal_connect (test->channel, "message-received",
+      G_CALLBACK (message_received_cb), test);
+
+  /* build delivery report */
+  parts = g_ptr_array_new_with_free_func ((GDestroyNotify) g_hash_table_unref);
+  header = tp_asv_new (NULL, NULL);
+  g_ptr_array_add (parts, header);
+
+  tp_asv_set_uint32 (header, "message-type",
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT);
+  tp_asv_set_uint32 (header, "pending-message-id", 5);
+  tp_asv_set_string (header, "message-token", "message_token");
+  tp_asv_set_string (header, "delivery-token", "delivery_token");
+  tp_asv_set_uint32 (header, "delivery-status", TP_DELIVERY_STATUS_DELIVERED);
+
+  tp_svc_channel_interface_messages_emit_message_received (test->chan_service,
+      parts);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert_cmpuint (tp_message_get_message_type (test->received_msg), ==,
+      TP_CHANNEL_TEXT_MESSAGE_TYPE_DELIVERY_REPORT);
+
+  g_ptr_array_unref (parts);
+}
+
 int
 main (int argc,
       char **argv)
@@ -956,6 +1002,8 @@ main (int argc,
       test_sender_prepared, teardown);
   g_test_add ("/text-channel/sent-with-no-sender", Test, NULL, setup,
       test_sent_with_no_sender, teardown);
+  g_test_add ("/text-channel/receive-muc-delivery", Test, NULL, setup,
+      test_receive_muc_delivery, teardown);
 
   return g_test_run ();
 }
