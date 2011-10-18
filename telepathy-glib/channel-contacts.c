@@ -484,7 +484,12 @@ _tp_channel_contacts_queue_prepare_finish (TpChannel *self,
   item = g_simple_async_result_get_op_res_gpointer (simple);
 
   if (contacts != NULL)
-    *contacts = g_ptr_array_ref (item->contacts);
+    {
+      if (item->contacts != NULL)
+        *contacts = g_ptr_array_ref (item->contacts);
+      else
+        *contacts = g_ptr_array_new ();
+    }
 
   if (g_simple_async_result_propagate_error (simple, error))
     return FALSE;
