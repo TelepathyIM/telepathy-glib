@@ -7,8 +7,12 @@ introspection_extra_dist = \
 
 if HAVE_INTROSPECTION
 
+include $(INTROSPECTION_MAKEFILE)
+
+INTROSPECTION_GIRS = TelepathyGLib-0.12.gir
+
 # /!\ Order matters, see https://bugzilla.gnome.org/show_bug.cgi?id=660629
-INTROSPECTION_FILES = \
+TelepathyGLib_0_12_gir_FILES = \
 	$(srcdir)/proxy.c _gen/proxy-introspectable.h \
 	$(srcdir)/account.c $(srcdir)/account.h \
 	$(srcdir)/account-channel-request.c $(srcdir)/account-channel-request.h \
@@ -69,46 +73,38 @@ INTROSPECTION_FILES = \
 	_gen/telepathy-interfaces.h \
 	$(NULL)
 
+TelepathyGLib_0_12_gir_NAMESPACE = TelepathyGLib
+TelepathyGLib_0_12_gir_VERSION = 0.12
+TelepathyGLib_0_12_gir_LIBS = libtelepathy-glib.la
+TelepathyGLib_0_12_gir_EXPORT_PACKAGES = telepathy-glib
+
+TelepathyGLib_0_12_gir_SCANNERFLAGS = \
+	--identifier-prefix=Tp \
+	-I$(top_builddir) \
+	-I$(top_srcdir) \
+	--c-include="telepathy-glib/telepathy-glib.h" \
+	--warn-all \
+	$(NULL)
+
+TelepathyGLib_0_12_gir_INCLUDES = \
+	GLib-2.0 \
+	Gio-2.0 \
+	$(NULL)
+
+TelepathyGLib_0_12_gir_PACKAGES = \
+	gio-2.0	\
+	dbus-glib-1 \
+	$(NULL)
+
 _gen/proxy-introspectable.h: proxy.h introspection.am
 	@$(mkdir_p) _gen
 	$(AM_V_GEN)sed -e 's/gpointer self/TpProxy *self/' < $< > $@
 
-TelepathyGLib-0.12.gir: $(INTROSPECTION_SCANNER) \
-		libtelepathy-glib.la \
-		$(srcdir)/kludge.xsl \
-		$(INTROSPECTION_FILES)
-	$(AM_V_GEN)$(INTROSPECTION_SCANNER) -v \
-		--namespace TelepathyGLib \
-		--nsversion=0.12 \
-		--identifier-prefix=Tp \
-		-I$(top_builddir) \
-		-I$(top_srcdir) \
-		--include=GLib-2.0 \
-		--include=Gio-2.0 \
-		--libtool="$(top_builddir)/libtool" \
-		--library=libtelepathy-glib.la \
-		--pkg gio-2.0 \
-		--pkg dbus-glib-1 \
-		--pkg-export telepathy-glib \
-		--c-include="telepathy-glib/telepathy-glib.h" \
-		--warn-all \
-		--output _gen/$@.tmp \
-		$(INTROSPECTION_FILES)
-	@xsltproc $(srcdir)/kludge.xsl _gen/$@.tmp > $@
-	@rm -f _gen/$@.tmp
-
 girdir = $(datadir)/gir-1.0
-gir_DATA = TelepathyGLib-0.12.gir
-
-%.typelib: %.gir $(INTROSPECTION_COMPILER)
-	$(AM_V_GEN)$(top_builddir)/libtool --mode=execute \
-	    $(INTROSPECTION_COMPILER) \
-	        --includedir=$(srcdir) \
-	        --includedir=. \
-	        $(INTROSPECTION_COMPILER_OPTS) $< -o $(@F)
+dist_gir_DATA = TelepathyGLib-0.12.gir
 
 typelibsdir = $(libdir)/girepository-1.0/
-typelibs_DATA = $(gir_DATA:.gir=.typelib)
+typelibs_DATA = $(dist_gir_DATA:.gir=.typelib)
 
 CLEANFILES += \
     $(gir_DATA) \
