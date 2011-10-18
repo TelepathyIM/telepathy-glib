@@ -923,7 +923,6 @@ test_sent_with_no_sender (Test *test,
   g_ptr_array_unref (parts);
 }
 
-/* regression test for fdo #41929 */
 static void
 test_receive_muc_delivery (Test *test,
     gconstpointer data G_GNUC_UNUSED)
@@ -931,6 +930,8 @@ test_receive_muc_delivery (Test *test,
   GQuark features[] = { TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES, 0 };
   GPtrArray *parts;
   GHashTable *header;
+
+  g_test_bug ("41929 ");
 
   /* We have to prepare the pending messages feature to be notified about
    * incoming messages */
