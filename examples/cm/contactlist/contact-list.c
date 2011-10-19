@@ -1458,8 +1458,10 @@ example_contact_list_dup_blocked_contacts (TpBaseContactList *contact_list)
 }
 
 static void
-example_contact_list_block_contacts_async (TpBaseContactList *contact_list,
+example_contact_list_block_contacts_with_abuse_async (
+    TpBaseContactList *contact_list,
     TpHandleSet *contacts,
+    gboolean report_abusive,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
@@ -1484,7 +1486,7 @@ example_contact_list_block_contacts_async (TpBaseContactList *contact_list,
   tp_base_contact_list_contact_blocking_changed (contact_list, changed);
   tp_handle_set_destroy (changed);
   tp_simple_async_report_success_in_idle ((GObject *) self, callback,
-      user_data, example_contact_list_block_contacts_async);
+      user_data, example_contact_list_block_contacts_with_abuse_async);
 }
 
 static void
@@ -1701,7 +1703,8 @@ blockable_contact_list_iface_init (TpBlockableContactListInterface *iface)
 {
   iface->can_block = tp_base_contact_list_true_func;
   iface->dup_blocked_contacts = example_contact_list_dup_blocked_contacts;
-  iface->block_contacts_async = example_contact_list_block_contacts_async;
+  iface->block_contacts_with_abuse_async =
+    example_contact_list_block_contacts_with_abuse_async;
   iface->unblock_contacts_async = example_contact_list_unblock_contacts_async;
 }
 

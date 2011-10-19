@@ -811,7 +811,8 @@ test_properties (Test *test,
   blocking_caps = tp_asv_get_uint32 (asv, "ContactBlockingCapabilities",
       &valid);
   g_assert (valid);
-  g_assert_cmpuint (blocking_caps, ==, 0);
+  g_assert_cmpuint (blocking_caps, ==,
+      TP_CONTACT_BLOCKING_CAPABILITY_CAN_REPORT_ABUSIVE);
   g_hash_table_unref (asv);
 
   g_assert_cmpuint (test->log->len, ==, 0);
