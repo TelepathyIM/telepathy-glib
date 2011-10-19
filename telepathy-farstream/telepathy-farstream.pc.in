@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: Telepathy-Farstream
 Description: Library implementing the Telepathy Call API using Farstream
 Version: @VERSION@
-Requires.private: dbus-glib-1 >= 0.73, glib-2.0 >= 2.10, gobject-2.0 >= 2.10, farstream-0.10, telepathy-glib >= 0.7.23, gstreamer-0.10
+Requires.private: dbus-glib-1 >= 0.73, glib-2.0 >= 2.10, gobject-2.0 >= 2.10, farstream-0.1, telepathy-glib >= 0.7.23, gstreamer-0.10
 Libs: -L${libdir} -ltelepathy-farstream
 Cflags: -I${includedir}/telepathy-1.0
