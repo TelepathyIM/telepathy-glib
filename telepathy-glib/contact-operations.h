@@ -76,6 +76,23 @@ gboolean tp_contact_remove_from_group_finish (TpContact *self,
     GAsyncResult *result,
     GError **error);
 
+/* ContactBlocking */
+
+void tp_contact_block_async (TpContact *self,
+    gboolean report_abusive,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_contact_block_finish (TpContact *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_contact_unblock_async (TpContact *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_contact_unblock_finish (TpContact *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #endif

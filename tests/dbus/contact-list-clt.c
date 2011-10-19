@@ -129,6 +129,36 @@ unblock_contacts_cb (GObject *source,
 }
 
 static void
+contact_block_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_contact_block_finish (TP_CONTACT (source), result, &test->error);
+  g_assert_no_error (test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+contact_unblock_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  tp_contact_unblock_finish (TP_CONTACT (source), result, &test->error);
+  g_assert_no_error (test->error);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_block_unblock (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
@@ -243,6 +273,7 @@ test_blocked_contacts (Test *test,
   GPtrArray *blocked;
   TpHandle handle;
   TpContact *alice;
+  gboolean use_contact_api = GPOINTER_TO_UINT (data);
 
   /* Feature is not prepared yet */
   g_object_get (test->connection, "blocked-contacts", &blocked, NULL);
@@ -279,8 +310,15 @@ test_blocked_contacts (Test *test,
   g_signal_connect (test->connection, "blocked-contacts-changed",
       G_CALLBACK (blocked_contacts_changed_cb), test);
 
-  tp_connection_block_contacts_async (test->connection,
-      1,  &alice, FALSE, block_contacts_cb, test);
+  if (use_contact_api)
+    {
+      tp_contact_block_async (alice, FALSE, contact_block_cb, test);
+    }
+  else
+    {
+      tp_connection_block_contacts_async (test->connection,
+          1,  &alice, FALSE, block_contacts_cb, test);
+    }
 
   g_object_unref (alice);
 
@@ -299,8 +337,15 @@ test_blocked_contacts (Test *test,
   g_assert_cmpuint (blocked->len, == , 3);
 
   /* Cool, now unblock the poor Alice */
-  tp_connection_unblock_contacts_async (test->connection,
-      1,  &alice, unblock_contacts_cb, test);
+  if (use_contact_api)
+    {
+      tp_contact_unblock_async (alice, contact_unblock_cb, test);
+    }
+  else
+    {
+      tp_connection_unblock_contacts_async (test->connection,
+          1,  &alice, unblock_contacts_cb, test);
+    }
 
   test->wait = 2;
   g_main_loop_run (test->mainloop);
@@ -328,8 +373,10 @@ main (int argc,
       test_block_unblock, teardown);
   g_test_add ("/contact-list-clt/blocking/can-report-abusive", Test, NULL,
       setup, test_can_report_abusive, teardown);
-  g_test_add ("/contact-list-clt/blocking/blocked-contacts", Test, NULL,
-      setup, test_blocked_contacts, teardown);
+  g_test_add ("/contact-list-clt/blocking/connection/blocked-contacts", Test,
+      GUINT_TO_POINTER (FALSE), setup, test_blocked_contacts, teardown);
+  g_test_add ("/contact-list-clt/blocking/contact/blocked-contacts", Test,
+      GUINT_TO_POINTER (TRUE), setup, test_blocked_contacts, teardown);
 
   return g_test_run ();
 }

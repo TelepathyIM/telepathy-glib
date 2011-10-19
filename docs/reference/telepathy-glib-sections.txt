@@ -4386,6 +4386,10 @@ tp_contact_add_to_group_async
 tp_contact_add_to_group_finish
 tp_contact_remove_from_group_async
 tp_contact_remove_from_group_finish
+tp_contact_block_async
+tp_contact_block_finish
+tp_contact_unblock_async
+tp_contact_unblock_finish
 <SUBSECTION Standard>
 tp_contact_feature_get_type
 tp_contact_get_type
