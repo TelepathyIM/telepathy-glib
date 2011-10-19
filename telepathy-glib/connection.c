@@ -282,6 +282,7 @@ enum
   PROP_GROUP_STORAGE,
   PROP_CONTACT_GROUPS,
   PROP_CAN_REPORT_ABUSIVE,
+  PROP_BLOCKED_CONTACTS,
   N_PROPS
 };
 
@@ -369,6 +370,9 @@ tp_connection_get_property (GObject *object,
       break;
     case PROP_CAN_REPORT_ABUSIVE:
       g_value_set_boolean (value, tp_connection_can_report_abusive (self));
+      break;
+    case PROP_BLOCKED_CONTACTS:
+      g_value_set_boxed (value, tp_connection_get_blocked_contacts (self));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1457,6 +1461,9 @@ tp_connection_init (TpConnection *self)
   self->priv->contacts_changed_queue = g_queue_new ();
 
   g_queue_init (&self->priv->capabilities_queue);
+
+  self->priv->blocked_contacts = g_ptr_array_new_with_free_func (
+      g_object_unref);
 }
 
 static void
@@ -1582,6 +1589,8 @@ tp_connection_dispose (GObject *object)
       tp_intset_destroy (self->priv->interests);
       self->priv->interests = NULL;
     }
+
+  tp_clear_pointer (&self->priv->blocked_contacts, g_ptr_array_unref);
 
   ((GObjectClass *) tp_connection_parent_class)->dispose (object);
 }
@@ -2098,6 +2107,25 @@ tp_connection_class_init (TpConnectionClass *klass)
       FALSE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CAN_REPORT_ABUSIVE,
+      param_spec);
+
+  /**
+   * TpConnection:blocked-contacts:
+   *
+   * A #GPtrArray of blocked #TpContact.
+   *
+   * For this property to be valid, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_BLOCKING.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("blocked-contacts",
+      "blocked contacts",
+      "Blocked contacts",
+      G_TYPE_PTR_ARRAY,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_BLOCKED_CONTACTS,
       param_spec);
 
   /**

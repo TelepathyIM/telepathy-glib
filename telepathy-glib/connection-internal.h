@@ -95,6 +95,7 @@ struct _TpConnectionPrivate {
 
     /* ContactBlocking properies */
     TpContactBlockingCapabilities contact_blocking_capabilities;
+    GPtrArray *blocked_contacts;
 
     TpProxyPendingCall *introspection_call;
 

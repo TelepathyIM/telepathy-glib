@@ -165,6 +165,8 @@ GQuark tp_connection_get_feature_quark_contact_blocking (void) G_GNUC_CONST;
 
 gboolean tp_connection_can_report_abusive (TpConnection *self);
 
+GPtrArray * tp_connection_get_blocked_contacts (TpConnection *self);
+
 G_END_DECLS
 
 #endif

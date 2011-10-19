@@ -212,6 +212,38 @@ test_can_report_abusive (Test *test,
   g_assert (tp_connection_can_report_abusive (test->connection));
 }
 
+static void
+test_blocked_contacts (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark features[] = { TP_CONNECTION_FEATURE_CONTACT_BLOCKING, 0 };
+  GPtrArray *blocked;
+
+  /* Feature is not prepared yet */
+  g_object_get (test->connection, "blocked-contacts", &blocked, NULL);
+  g_assert_cmpuint (blocked->len, == , 0);
+  g_ptr_array_unref (blocked);
+
+  blocked = tp_connection_get_blocked_contacts (test->connection);
+  g_assert_cmpuint (blocked->len, == , 0);
+
+  /* Prepare the feature */
+  tp_proxy_prepare_async (test->connection, features,
+      proxy_prepare_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* 2 contacts are already blocked in the CM */
+  g_object_get (test->connection, "blocked-contacts", &blocked, NULL);
+  g_assert_cmpuint (blocked->len, == , 2);
+  g_ptr_array_unref (blocked);
+
+  blocked = tp_connection_get_blocked_contacts (test->connection);
+  g_assert_cmpuint (blocked->len, == , 2);
+}
+
 int
 main (int argc,
       char **argv)
@@ -223,6 +255,8 @@ main (int argc,
       test_block_unblock, teardown);
   g_test_add ("/contact-list-clt/blocking/can-report-abusive", Test, NULL,
       setup, test_can_report_abusive, teardown);
+  g_test_add ("/contact-list-clt/blocking/blocked-contacts", Test, NULL,
+      setup, test_blocked_contacts, teardown);
 
   return g_test_run ();
 }

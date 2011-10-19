@@ -1535,6 +1535,96 @@ tp_connection_get_feature_quark_contact_blocking (void)
 }
 
 static void
+blocked_contacts_upgraded_cb (TpConnection *self,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+  guint i;
+
+  if (error != NULL)
+    {
+      DEBUG ("Error upgrading blocked contacts: %s", error->message);
+      goto out;
+    }
+
+  for (i = 0; i < n_contacts; i++)
+    {
+      g_ptr_array_add (self->priv->blocked_contacts,
+          g_object_ref (contacts[i]));
+    }
+
+  g_object_notify (G_OBJECT (self), "blocked-contacts");
+
+out:
+  g_simple_async_result_complete (result);
+}
+
+static void
+request_blocked_contacts_cb (TpConnection *self,
+    GHashTable *contacts,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+  GHashTableIter iter;
+  gpointer key, value;
+  GPtrArray *contacts_arr;
+  GArray *features;
+
+  if (error != NULL)
+    {
+      DEBUG ("Error calling RequestBlockedContacts: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+      g_simple_async_result_complete (result);
+      return;
+    }
+
+  contacts_arr = g_ptr_array_new_with_free_func (g_object_unref);
+
+  g_hash_table_iter_init (&iter, contacts);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpHandle handle = GPOINTER_TO_UINT (key);
+      const gchar *id = value;
+      TpContact *contact;
+
+      contact = tp_connection_dup_contact_if_possible (self, handle, id);
+      if (contact == NULL)
+        {
+          DEBUG ("Failed to create contact %s (%d)", id, handle);
+          continue;
+        }
+
+      g_ptr_array_add (contacts_arr, contact);
+    }
+
+  if (contacts_arr->len == 0)
+    {
+      /* No blocked contacts, we're done */
+      g_simple_async_result_complete (result);
+      g_ptr_array_unref (contacts_arr);
+      return;
+    }
+
+  features = tp_simple_client_factory_dup_contact_features (
+      tp_proxy_get_factory (self), self);
+
+  tp_connection_upgrade_contacts (self,
+      contacts_arr->len, (TpContact **) contacts_arr->pdata,
+      features->len, (TpContactFeature *) features->data,
+      blocked_contacts_upgraded_cb,
+      g_object_ref (result), g_object_unref, G_OBJECT (self));
+
+  g_array_unref (features);
+  g_ptr_array_unref (contacts_arr);
+}
+
+static void
 prepare_contact_blocking_cb (TpProxy *proxy,
     GHashTable *properties,
     const GError *error,
@@ -1548,7 +1638,6 @@ prepare_contact_blocking_cb (TpProxy *proxy,
   if (error != NULL)
     {
       DEBUG ("Error preparing ContactBlocking properties: %s", error->message);
-      g_simple_async_result_set_from_error (result, error);
       goto out;
     }
 
@@ -1561,7 +1650,9 @@ prepare_contact_blocking_cb (TpProxy *proxy,
     }
 
 out:
-  g_simple_async_result_complete (result);
+  tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
+      self, -1, request_blocked_contacts_cb, g_object_ref (result),
+      g_object_unref, G_OBJECT (self));
 }
 
 void
@@ -1596,4 +1687,21 @@ tp_connection_can_report_abusive (TpConnection *self)
 {
   return (self->priv->contact_blocking_capabilities &
     TP_CONTACT_BLOCKING_CAPABILITY_CAN_REPORT_ABUSIVE) != 0;
+}
+
+/**
+ * tp_connection_get_blocked_contacts:
+ * @self: a #TpConnection
+ *
+ * <!-- -->
+ *
+ * Returns: (transfer none) (element-type TelepathyGLib.Contact): the value of
+ * #TpConnection:blocked-contacts
+ *
+ * Since: 0.UNRELEASED
+ */
+GPtrArray *
+tp_connection_get_blocked_contacts (TpConnection *self)
+{
+  return self->priv->blocked_contacts;
 }
