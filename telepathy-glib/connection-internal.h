@@ -92,10 +92,13 @@ struct _TpConnectionPrivate {
     TpContactMetadataStorageType group_storage;
     GPtrArray *contact_groups;
     gboolean groups_fetched;
+    /* Queue of owned BlockedChangedItem */
+    GQueue *blocked_changed_queue;
 
     /* ContactBlocking properies */
     TpContactBlockingCapabilities contact_blocking_capabilities;
     GPtrArray *blocked_contacts;
+    gboolean blocked_contacts_fetched;
 
     TpProxyPendingCall *introspection_call;
 
@@ -168,6 +171,7 @@ void _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
     GAsyncReadyCallback callback,
     gpointer user_data);
 void _tp_connection_contacts_changed_queue_free (GQueue *queue);
+void _tp_connection_blocked_changed_queue_free (GQueue *queue);
 
 void _tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
     const TpProxyFeature *feature,

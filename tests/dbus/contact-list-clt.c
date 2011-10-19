@@ -29,6 +29,9 @@ typedef struct {
     TpTextChannel *channel;
     TpTextChannel *sms_channel;
 
+    GPtrArray *blocked_added;
+    GPtrArray *blocked_removed;
+
     GError *error /* initialized where needed */;
     gint wait;
 } Test;
@@ -88,6 +91,9 @@ teardown (Test *test,
 
   g_object_unref (test->connection);
   g_object_unref (test->base_connection);
+
+  tp_clear_pointer (&test->blocked_added, g_ptr_array_unref);
+  tp_clear_pointer (&test->blocked_removed, g_ptr_array_unref);
 }
 
 static void
@@ -213,11 +219,30 @@ test_can_report_abusive (Test *test,
 }
 
 static void
+blocked_contacts_changed_cb (TpConnection *conn,
+    GPtrArray *added,
+    GPtrArray *removed,
+    Test *test)
+{
+  tp_clear_pointer (&test->blocked_added, g_ptr_array_unref);
+  tp_clear_pointer (&test->blocked_removed, g_ptr_array_unref);
+
+  test->blocked_added = g_ptr_array_ref (added);
+  test->blocked_removed = g_ptr_array_ref (removed);
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
 test_blocked_contacts (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
   GQuark features[] = { TP_CONNECTION_FEATURE_CONTACT_BLOCKING, 0 };
   GPtrArray *blocked;
+  TpHandle handle;
+  TpContact *alice;
 
   /* Feature is not prepared yet */
   g_object_get (test->connection, "blocked-contacts", &blocked, NULL);
@@ -239,6 +264,54 @@ test_blocked_contacts (Test *test,
   g_object_get (test->connection, "blocked-contacts", &blocked, NULL);
   g_assert_cmpuint (blocked->len, == , 2);
   g_ptr_array_unref (blocked);
+
+  blocked = tp_connection_get_blocked_contacts (test->connection);
+  g_assert_cmpuint (blocked->len, == , 2);
+
+  /* Let's block another contact */
+  handle = tp_handle_ensure (test->contact_repo, "alice", NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  alice = tp_connection_dup_contact_if_possible (test->connection, handle,
+      "alice");
+  g_assert (alice != NULL);
+
+  g_signal_connect (test->connection, "blocked-contacts-changed",
+      G_CALLBACK (blocked_contacts_changed_cb), test);
+
+  tp_connection_block_contacts_async (test->connection,
+      1,  &alice, FALSE, block_contacts_cb, test);
+
+  g_object_unref (alice);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->blocked_added->len, ==, 1);
+  g_assert_cmpuint (test->blocked_removed->len, ==, 0);
+
+  alice = g_ptr_array_index (test->blocked_added, 0);
+  g_assert (TP_IS_CONTACT (alice));
+  g_assert_cmpstr (tp_contact_get_identifier (alice), ==, "alice");
+
+  blocked = tp_connection_get_blocked_contacts (test->connection);
+  g_assert_cmpuint (blocked->len, == , 3);
+
+  /* Cool, now unblock the poor Alice */
+  tp_connection_unblock_contacts_async (test->connection,
+      1,  &alice, unblock_contacts_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert_cmpuint (test->blocked_added->len, ==, 0);
+  g_assert_cmpuint (test->blocked_removed->len, ==, 1);
+
+  alice = g_ptr_array_index (test->blocked_removed, 0);
+  g_assert (TP_IS_CONTACT (alice));
+  g_assert_cmpstr (tp_contact_get_identifier (alice), ==, "alice");
 
   blocked = tp_connection_get_blocked_contacts (test->connection);
   g_assert_cmpuint (blocked->len, == , 2);

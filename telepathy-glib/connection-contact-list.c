@@ -1534,6 +1534,75 @@ tp_connection_get_feature_quark_contact_blocking (void)
   return g_quark_from_static_string ("tp-connection-feature-contact-blocking");
 }
 
+typedef struct
+{
+  /* TpHandle -> (const gchar *) identifier */
+  GHashTable *added;
+  /* TpHandle -> (const gchar *) identifier */
+  GHashTable *removed;
+
+  /* array of reffed TpContact */
+  GPtrArray *added_contacts;
+  /* array of reffed TpContact */
+  GPtrArray *removed_contacts;
+
+  GSimpleAsyncResult *result;
+} BlockedChangedItem;
+
+static BlockedChangedItem *
+blocked_changed_item_new (TpConnection *conn,
+    GHashTable *added,
+    GHashTable *removed,
+    GSimpleAsyncResult *result)
+{
+  BlockedChangedItem *item = g_slice_new0 (BlockedChangedItem);
+
+  item->added = g_hash_table_ref (added);
+
+  if (removed != NULL)
+    item->removed = g_hash_table_ref (removed);
+  else
+    item->removed = g_hash_table_new (NULL, NULL);
+
+  item->added_contacts = g_ptr_array_new_with_free_func (g_object_unref);
+  item->removed_contacts = g_ptr_array_new_with_free_func (g_object_unref);
+
+  if (result != NULL)
+    item->result = g_object_ref (result);
+
+  return item;
+}
+
+static void
+blocked_changed_item_free (BlockedChangedItem *item)
+{
+  g_hash_table_unref (item->added);
+  g_hash_table_unref (item->removed);
+  g_ptr_array_unref (item->added_contacts);
+  g_ptr_array_unref (item->removed_contacts);
+  g_clear_object (&item->result);
+
+  g_slice_free (BlockedChangedItem, item);
+}
+
+static void process_queued_blocked_changed (TpConnection *self);
+
+static void
+blocked_changed_head_ready (TpConnection *self)
+{
+  BlockedChangedItem *item;
+
+  item = g_queue_pop_head (self->priv->blocked_changed_queue);
+
+  if (item->result != NULL)
+    {
+      g_simple_async_result_complete (item->result);
+    }
+
+  blocked_changed_item_free (item);
+  process_queued_blocked_changed (self);
+}
+
 static void
 blocked_contacts_upgraded_cb (TpConnection *self,
     guint n_contacts,
@@ -1542,8 +1611,11 @@ blocked_contacts_upgraded_cb (TpConnection *self,
     gpointer user_data,
     GObject *weak_object)
 {
-  GSimpleAsyncResult *result = user_data;
+  BlockedChangedItem *item;
   guint i;
+  GPtrArray *added, *removed;
+
+  item = g_queue_peek_head (self->priv->blocked_changed_queue);
 
   if (error != NULL)
     {
@@ -1551,16 +1623,132 @@ blocked_contacts_upgraded_cb (TpConnection *self,
       goto out;
     }
 
+  added = g_ptr_array_new ();
+  removed = g_ptr_array_new_with_free_func (g_object_unref);
+
   for (i = 0; i < n_contacts; i++)
     {
-      g_ptr_array_add (self->priv->blocked_contacts,
-          g_object_ref (contacts[i]));
+      TpContact *contact = contacts[i];
+      TpHandle handle;
+
+      handle = tp_contact_get_handle (contact);
+
+      if (g_hash_table_lookup (item->added, GUINT_TO_POINTER (handle)) != NULL)
+        {
+          DEBUG ("Contact %s is blocked",
+              tp_contact_get_identifier (contact));
+
+          g_ptr_array_add (self->priv->blocked_contacts,
+              g_object_ref (contact));
+
+          g_ptr_array_add (added, contact);
+        }
+      else if (g_hash_table_lookup (item->removed,
+            GUINT_TO_POINTER (handle)) != NULL)
+        {
+          DEBUG ("Contact %s is no longer blocked",
+              tp_contact_get_identifier (contact));
+
+          /* Ref the contact as removing it from blocked_contacts may drop its
+           * last ref. */
+          g_ptr_array_add (removed, g_object_ref (contact));
+
+          g_ptr_array_remove (self->priv->blocked_contacts, contact);
+        }
+      else
+        {
+          g_assert_not_reached ();
+        }
     }
 
   g_object_notify (G_OBJECT (self), "blocked-contacts");
 
+  g_signal_emit_by_name (self, "blocked-contacts-changed", added, removed);
+
+  g_ptr_array_unref (added);
+  g_ptr_array_unref (removed);
+
 out:
-  g_simple_async_result_complete (result);
+  blocked_changed_head_ready (self);
+}
+
+static void
+process_queued_blocked_changed (TpConnection *self)
+{
+  BlockedChangedItem *item;
+  GHashTableIter iter;
+  gpointer key, value;
+  GArray *features;
+  GPtrArray *contacts;
+
+  item = g_queue_peek_head (self->priv->blocked_changed_queue);
+  if (item == NULL)
+    return;
+
+  /* contacts will contain the union of item->added_contacts and
+   * item->removed_contacts */
+  contacts = g_ptr_array_new ();
+
+  g_hash_table_iter_init (&iter, item->added);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpHandle handle = GPOINTER_TO_UINT (key);
+      const gchar *identifier = value;
+      TpContact *contact;
+
+      contact = tp_simple_client_factory_ensure_contact (
+          tp_proxy_get_factory (self), self, handle, identifier);
+
+      /* TODO: set contact as blocked in TpContact */
+      g_ptr_array_add (item->added_contacts, contact);
+      g_ptr_array_add (contacts, contact);
+    }
+
+  g_hash_table_iter_init (&iter, item->removed);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      TpHandle handle = GPOINTER_TO_UINT (key);
+      const gchar *identifier = value;
+      TpContact *contact;
+
+      contact = tp_simple_client_factory_ensure_contact (
+          tp_proxy_get_factory (self), self, handle, identifier);
+
+      /* TODO: set contact as unblocked in TpContact */
+      g_ptr_array_add (item->removed_contacts, contact);
+      g_ptr_array_add (contacts, contact);
+    }
+
+  if (contacts->len == 0)
+    {
+      blocked_changed_head_ready (self);
+      return;
+    }
+
+  features = tp_simple_client_factory_dup_contact_features (
+      tp_proxy_get_factory (self), self);
+
+  tp_connection_upgrade_contacts (self,
+      contacts->len, (TpContact **) contacts->pdata,
+      features->len, (TpContactFeature *) features->data,
+      blocked_contacts_upgraded_cb, NULL, NULL, NULL);
+
+  g_array_unref (features);
+}
+
+static void
+add_to_blocked_changed_queue (TpConnection *self,
+    GHashTable *added,
+    GHashTable *removed,
+    GSimpleAsyncResult *result)
+{
+  BlockedChangedItem *item;
+
+  item = blocked_changed_item_new (self, added, removed, result);
+  g_queue_push_tail (self->priv->blocked_changed_queue, item);
+
+  if (self->priv->blocked_changed_queue->length == 1)
+    process_queued_blocked_changed (self);
 }
 
 static void
@@ -1571,10 +1759,8 @@ request_blocked_contacts_cb (TpConnection *self,
     GObject *weak_object)
 {
   GSimpleAsyncResult *result = user_data;
-  GHashTableIter iter;
-  gpointer key, value;
-  GPtrArray *contacts_arr;
-  GArray *features;
+
+  self->priv->blocked_contacts_fetched = TRUE;
 
   if (error != NULL)
     {
@@ -1584,44 +1770,11 @@ request_blocked_contacts_cb (TpConnection *self,
       return;
     }
 
-  contacts_arr = g_ptr_array_new_with_free_func (g_object_unref);
+  /* We are not supposed to add items to this queue while the blocked contacts
+   * have been fetched. */
+  g_assert_cmpuint (self->priv->blocked_changed_queue->length, ==, 0);
 
-  g_hash_table_iter_init (&iter, contacts);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      TpHandle handle = GPOINTER_TO_UINT (key);
-      const gchar *id = value;
-      TpContact *contact;
-
-      contact = tp_connection_dup_contact_if_possible (self, handle, id);
-      if (contact == NULL)
-        {
-          DEBUG ("Failed to create contact %s (%d)", id, handle);
-          continue;
-        }
-
-      g_ptr_array_add (contacts_arr, contact);
-    }
-
-  if (contacts_arr->len == 0)
-    {
-      /* No blocked contacts, we're done */
-      g_simple_async_result_complete (result);
-      g_ptr_array_unref (contacts_arr);
-      return;
-    }
-
-  features = tp_simple_client_factory_dup_contact_features (
-      tp_proxy_get_factory (self), self);
-
-  tp_connection_upgrade_contacts (self,
-      contacts_arr->len, (TpContact **) contacts_arr->pdata,
-      features->len, (TpContactFeature *) features->data,
-      blocked_contacts_upgraded_cb,
-      g_object_ref (result), g_object_unref, G_OBJECT (self));
-
-  g_array_unref (features);
-  g_ptr_array_unref (contacts_arr);
+  add_to_blocked_changed_queue (self, contacts, NULL, result);
 }
 
 static void
@@ -1655,6 +1808,19 @@ out:
       g_object_unref, G_OBJECT (self));
 }
 
+static void
+blocked_contacts_changed_cb (TpConnection *self,
+    GHashTable *blocked,
+    GHashTable *unblocked,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  if (!self->priv->blocked_contacts_fetched)
+    return;
+
+  add_to_blocked_changed_queue (self, blocked, unblocked, NULL);
+}
+
 void
 _tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
     const TpProxyFeature *feature,
@@ -1663,6 +1829,7 @@ _tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
 {
   TpConnection *self = (TpConnection *) proxy;
   GSimpleAsyncResult *result;
+  GError *error = NULL;
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       _tp_connection_prepare_contact_blocking_async);
@@ -1670,6 +1837,13 @@ _tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING,
       prepare_contact_blocking_cb, result, g_object_unref, NULL);
+
+  if (tp_cli_connection_interface_contact_blocking_connect_to_blocked_contacts_changed (self,
+        blocked_contacts_changed_cb, NULL, NULL, NULL, &error) == NULL)
+    {
+      DEBUG ("Failed to connect to BlockedContactsChanged: %s", error->message);
+      g_error_free (error);
+    }
 }
 
 /**
@@ -1704,4 +1878,10 @@ GPtrArray *
 tp_connection_get_blocked_contacts (TpConnection *self)
 {
   return self->priv->blocked_contacts;
+}
+
+void _tp_connection_blocked_changed_queue_free (GQueue *queue)
+{
+  g_queue_foreach (queue, (GFunc) blocked_changed_item_free, NULL);
+  g_queue_free (queue);
 }

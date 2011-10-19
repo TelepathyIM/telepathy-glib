@@ -292,6 +292,7 @@ enum {
   SIGNAL_GROUPS_REMOVED,
   SIGNAL_GROUP_RENAMED,
   SIGNAL_CONTACT_LIST_CHANGED,
+  SIGNAL_BLOCKED_CONTACTS_CHANGED,
   N_SIGNALS
 };
 
@@ -1464,6 +1465,8 @@ tp_connection_init (TpConnection *self)
 
   self->priv->blocked_contacts = g_ptr_array_new_with_free_func (
       g_object_unref);
+
+  self->priv->blocked_changed_queue = g_queue_new ();
 }
 
 static void
@@ -1548,6 +1551,8 @@ tp_connection_dispose (GObject *object)
   tp_clear_pointer (&self->priv->roster, g_hash_table_unref);
   tp_clear_pointer (&self->priv->contacts_changed_queue,
       _tp_connection_contacts_changed_queue_free);
+  tp_clear_pointer (&self->priv->blocked_changed_queue,
+      _tp_connection_blocked_changed_queue_free);
 
   if (self->priv->contacts != NULL)
     {
@@ -2112,7 +2117,8 @@ tp_connection_class_init (TpConnectionClass *klass)
   /**
    * TpConnection:blocked-contacts:
    *
-   * A #GPtrArray of blocked #TpContact.
+   * A #GPtrArray of blocked #TpContact. Changes are notified using the
+   * #TpConnection::blocked-contacts-changed signal.
    *
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature
@@ -2243,6 +2249,38 @@ tp_connection_class_init (TpConnectionClass *klass)
       NULL, NULL,
       _tp_marshal_VOID__BOXED_BOXED,
       G_TYPE_NONE, 2, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY);
+
+  /**
+   * TpConnection::blocked-contacts-changed:
+   * @self: a #TpConnection
+   * @added: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact which have been blocked
+   * @removed: (type GLib.PtrArray) (element-type TelepathyGLib.Contact):
+   *  a #GPtrArray of #TpContact which are no longer blocked
+   *
+   * Notify of changes in #TpConnection:blocked-contacts.
+   *  It is guaranteed that all contacts have desired features prepared. See
+   * tp_simple_client_factory_add_contact_features() to define which features
+   * needs to be prepared.
+   *
+   * This signal is also emitted for the initial set of blocked contacts once
+   * retrieved.
+   *
+   * For this signal to be emitted, you must first call
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_BLOCKING.
+   *
+   * Since: 0.UNRELEASED
+   */
+  signals[SIGNAL_BLOCKED_CONTACTS_CHANGED] = g_signal_new (
+      "blocked-contacts-changed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0,
+      NULL, NULL,
+      _tp_marshal_VOID__BOXED_BOXED,
+      G_TYPE_NONE, 2, G_TYPE_PTR_ARRAY, G_TYPE_PTR_ARRAY);
+
 }
 
 /**
