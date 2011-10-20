@@ -65,8 +65,9 @@ typedef enum {
     TP_CONTACT_FEATURE_CLIENT_TYPES,
     TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
     TP_CONTACT_FEATURE_CONTACT_GROUPS,
+    TP_CONTACT_FEATURE_CONTACT_BLOCKING,
 } TpContactFeature;
-#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_GROUPS + 1)
+#define NUM_TP_CONTACT_FEATURES (TP_CONTACT_FEATURE_CONTACT_BLOCKING + 1)
 #define TP_CONTACT_FEATURE_INVALID ((TpContactFeature) -1)
 
 /* Basic functionality, always available */
@@ -163,6 +164,10 @@ void tp_connection_get_contacts_by_id (TpConnection *self,
 
 TpContact *tp_connection_dup_contact_if_possible (TpConnection *connection,
     TpHandle handle, const gchar *identifier);
+
+/* TP_CONTACT_FEATURE_CONTACT_BLOCKING */
+
+gboolean tp_contact_is_blocked (TpContact *self);
 
 G_END_DECLS
 

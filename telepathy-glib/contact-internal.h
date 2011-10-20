@@ -41,6 +41,9 @@ const gchar **_tp_contacts_bind_to_signals (TpConnection *connection,
 void _tp_contact_set_subscription_states (TpContact *self,
     GValueArray *value_array);
 
+void _tp_contact_set_is_blocked (TpContact *self,
+    gboolean is_blocked);
+
 G_END_DECLS
 
 #endif

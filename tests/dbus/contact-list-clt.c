@@ -31,6 +31,7 @@ typedef struct {
 
     GPtrArray *blocked_added;
     GPtrArray *blocked_removed;
+    TpContact *contact;
 
     GError *error /* initialized where needed */;
     gint wait;
@@ -94,6 +95,7 @@ teardown (Test *test,
 
   tp_clear_pointer (&test->blocked_added, g_ptr_array_unref);
   tp_clear_pointer (&test->blocked_removed, g_ptr_array_unref);
+  g_clear_object (&test->contact);
 }
 
 static void
@@ -362,6 +364,117 @@ test_blocked_contacts (Test *test,
   g_assert_cmpuint (blocked->len, == , 2);
 }
 
+static void
+get_contacts_by_id_cb (TpConnection *connection,
+    guint n_contacts,
+    TpContact * const *contacts,
+    const gchar * const *requested_ids,
+    GHashTable *failed_id_errors,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  Test *test = user_data;
+
+  g_clear_object (&test->contact);
+
+  if (error != NULL)
+    {
+      test->error = g_error_copy (error);
+    }
+  else
+    {
+      test->contact = g_object_ref (contacts[0]);
+    }
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+contact_list_state_change_cb (GObject *object,
+    GParamSpec *pspec,
+    gpointer user_data)
+{
+  TpConnection *conn = (TpConnection *) object;
+  Test *test = user_data;
+
+  if (tp_connection_get_contact_list_state (conn) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
+    return;
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+property_change_cb (GObject *object,
+    GParamSpec *pspec,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  test->wait--;
+  if (test->wait <= 0)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+test_is_blocked (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  const gchar *id = "bill@example.com";
+  TpContactFeature features[] = { TP_CONTACT_FEATURE_CONTACT_BLOCKING };
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
+
+  tp_proxy_prepare_async (test->connection, conn_features,
+      proxy_prepare_cb, test);
+
+  test->wait = 1;
+
+  /* We have to wait that the ContactList has been fetched by the CM */
+  if (tp_connection_get_contact_list_state (test->connection) !=
+      TP_CONTACT_LIST_STATE_SUCCESS)
+    {
+      g_signal_connect (test->connection, "notify::contact-list-state",
+          G_CALLBACK (contact_list_state_change_cb), test);
+
+      test->wait++;
+    }
+
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  /* Bill is already blocked in the CM */
+  tp_connection_get_contacts_by_id (test->connection, 1, &id,
+      G_N_ELEMENTS (features), features, get_contacts_by_id_cb, test,
+      NULL, NULL);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (TP_IS_CONTACT (test->contact));
+
+  g_assert (tp_contact_has_feature (test->contact,
+        TP_CONTACT_FEATURE_CONTACT_BLOCKING));
+  g_assert (tp_contact_is_blocked (test->contact));
+
+  /* Unblock Bill */
+  g_signal_connect (test->contact, "notify::is-blocked",
+      G_CALLBACK (property_change_cb), test);
+
+  tp_contact_unblock_async (test->contact, contact_unblock_cb, test);
+
+  test->wait = 2;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (!tp_contact_is_blocked (test->contact));
+}
+
 int
 main (int argc,
       char **argv)
@@ -377,6 +490,8 @@ main (int argc,
       GUINT_TO_POINTER (FALSE), setup, test_blocked_contacts, teardown);
   g_test_add ("/contact-list-clt/blocking/contact/blocked-contacts", Test,
       GUINT_TO_POINTER (TRUE), setup, test_blocked_contacts, teardown);
+  g_test_add ("/contact-list-clt/blocking/is-blocked", Test, NULL,
+      setup, test_is_blocked, teardown);
 
   return g_test_run ();
 }

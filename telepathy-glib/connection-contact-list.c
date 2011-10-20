@@ -1699,9 +1699,10 @@ process_queued_blocked_changed (TpConnection *self)
       contact = tp_simple_client_factory_ensure_contact (
           tp_proxy_get_factory (self), self, handle, identifier);
 
-      /* TODO: set contact as blocked in TpContact */
       g_ptr_array_add (item->added_contacts, contact);
       g_ptr_array_add (contacts, contact);
+
+      _tp_contact_set_is_blocked (contact, TRUE);
     }
 
   g_hash_table_iter_init (&iter, item->removed);
@@ -1714,9 +1715,10 @@ process_queued_blocked_changed (TpConnection *self)
       contact = tp_simple_client_factory_ensure_contact (
           tp_proxy_get_factory (self), self, handle, identifier);
 
-      /* TODO: set contact as unblocked in TpContact */
       g_ptr_array_add (item->removed_contacts, contact);
       g_ptr_array_add (contacts, contact);
+
+      _tp_contact_set_is_blocked (contact, FALSE);
     }
 
   if (contacts->len == 0)

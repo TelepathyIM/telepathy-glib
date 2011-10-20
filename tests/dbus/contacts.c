@@ -72,7 +72,8 @@ static TpContactFeature all_contact_features[] = {
   TP_CONTACT_FEATURE_CONTACT_INFO,
   TP_CONTACT_FEATURE_CLIENT_TYPES,
   TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
-  TP_CONTACT_FEATURE_CONTACT_GROUPS
+  TP_CONTACT_FEATURE_CONTACT_GROUPS,
+  TP_CONTACT_FEATURE_CONTACT_BLOCKING
 };
 
 /* If people add new features, they should add them to this test. We could

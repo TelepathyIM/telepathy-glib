@@ -30,6 +30,7 @@
 #include <telepathy-glib/util.h>
 
 #define DEBUG_FLAG TP_DEBUG_CONTACTS
+#include "telepathy-glib/connection-contact-list.h"
 #include "telepathy-glib/connection-internal.h"
 #include "telepathy-glib/contact-internal.h"
 #include "telepathy-glib/debug-internal.h"
@@ -109,6 +110,9 @@ struct _TpContact {
  *  interface. (available since 0.13.12)
  * @TP_CONTACT_FEATURE_CONTACT_GROUPS: #TpContact:contact-groups
  *  (available since 0.13.14)
+ * @TP_CONTACT_FEATURE_CONTACT_BLOCKING: #TpContact:is-blocking. Require
+ *  Connection implementing the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING
+ *  interface. (available since 0.UNRELEASED)
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -169,6 +173,7 @@ enum {
     PROP_PUBLISH_STATE,
     PROP_PUBLISH_REQUEST,
     PROP_CONTACT_GROUPS,
+    PROP_IS_BLOCKED,
     N_PROPS
 };
 
@@ -194,6 +199,7 @@ typedef enum {
     CONTACT_FEATURE_FLAG_CLIENT_TYPES = 1 << TP_CONTACT_FEATURE_CLIENT_TYPES,
     CONTACT_FEATURE_FLAG_STATES = 1 << TP_CONTACT_FEATURE_SUBSCRIPTION_STATES,
     CONTACT_FEATURE_FLAG_CONTACT_GROUPS = 1 << TP_CONTACT_FEATURE_CONTACT_GROUPS,
+    CONTACT_FEATURE_FLAG_CONTACT_BLOCKING = 1 << TP_CONTACT_FEATURE_CONTACT_BLOCKING,
 } ContactFeatureFlags;
 
 struct _TpContactPrivate {
@@ -236,6 +242,9 @@ struct _TpContactPrivate {
     /* ContactGroups */
     /* array of dupped strings */
     GPtrArray *contact_groups;
+
+    /* ContactBlocking */
+    gboolean is_blocked;
 };
 
 
@@ -913,6 +922,10 @@ tp_contact_get_property (GObject *object,
       g_value_set_boxed (value, tp_contact_get_contact_groups (self));
       break;
 
+    case PROP_IS_BLOCKED:
+      g_value_set_boolean (value, tp_contact_is_blocked (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -1287,6 +1300,24 @@ tp_contact_class_init (TpContactClass *klass)
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CONTACT_GROUPS,
       param_spec);
+
+/**
+   * TpContact:is-blocked:
+   *
+   * %TRUE if the contact has been blocked.
+   *
+   * This is set to %FALSE if %TP_CONTACT_FEATURE_CONTACT_BLOCKING is not
+   * prepared on this contact, or if the connection does not implement
+   * ContactBlocking interface.
+   *
+   * Since: 0.UNRELEASED
+   */
+  param_spec = g_param_spec_boolean ("is-blocked",
+      "is blocked",
+      "TRUE if contact is blocked",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_IS_BLOCKED, param_spec);
 
   /**
    * TpContact::contact-groups-changed:
@@ -3716,6 +3747,18 @@ tp_contact_set_attributes (TpContact *contact,
       G_TYPE_STRV);
   contact_maybe_set_contact_groups (contact, boxed);
 
+  /* ContactBlocking */
+  if (wanted & CONTACT_FEATURE_FLAG_CONTACT_BLOCKING)
+    {
+      gboolean is_blocked, valid;
+
+      is_blocked = tp_asv_get_boolean (asv,
+          TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING_BLOCKED, &valid);
+
+      if (valid)
+        _tp_contact_set_is_blocked (contact, is_blocked);
+    }
+
   return TRUE;
 }
 
@@ -3917,6 +3960,26 @@ contacts_bind_to_signals (TpConnection *connection,
               g_ptr_array_add (array,
                   TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS);
               contacts_bind_to_contact_groups_changed (connection);
+            }
+        }
+      else if (q == TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_BLOCKING)
+        {
+          if ((wanted & CONTACT_FEATURE_FLAG_CONTACT_BLOCKING) != 0)
+            {
+              GQuark features[] = { TP_CONNECTION_FEATURE_CONTACT_BLOCKING, 0 };
+
+              g_ptr_array_add (array,
+                  TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING);
+
+              /* The BlockedContactsChanged signal is already handled by
+               * connection-contact-list.c so we just have to prepare
+               * TP_CONNECTION_FEATURE_CONTACT_BLOCKING to make sure it's
+               * connected. */
+              if (!tp_proxy_is_prepared (connection,
+                    TP_CONNECTION_FEATURE_CONTACT_BLOCKING))
+                {
+                  tp_proxy_prepare_async (connection, features, NULL, NULL);
+                }
             }
         }
     }
@@ -4481,4 +4544,39 @@ tp_connection_get_contacts_by_id (TpConnection *self,
       (const gchar * const *) context->request_ids->pdata,
       contacts_requested_handles, context, contacts_context_unref,
       weak_object);
+}
+
+void
+_tp_contact_set_is_blocked (TpContact *self,
+    gboolean is_blocked)
+{
+  if (self == NULL)
+    return;
+
+  self->priv->has_features |= CONTACT_FEATURE_FLAG_CONTACT_BLOCKING;
+
+  if (self->priv->is_blocked == is_blocked)
+    return;
+
+  self->priv->is_blocked = is_blocked;
+
+  g_object_notify ((GObject *) self, "is-blocked");
+}
+
+/**
+ * tp_contact_is_blocked:
+ * @self: a #TpContact
+ *
+ * <!-- -->
+
+ * Returns: the value of #TpContact:is-blocked.
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_contact_is_blocked (TpContact *self)
+{
+  g_return_val_if_fail (TP_IS_CONTACT (self), FALSE);
+
+  return self->priv->is_blocked;
 }

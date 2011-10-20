@@ -4362,6 +4362,7 @@ tp_contact_get_presence_type
 tp_contact_get_location
 tp_contact_get_capabilities
 tp_contact_get_contact_info
+tp_contact_is_blocked
 tp_contact_request_contact_info_async
 tp_contact_request_contact_info_finish
 tp_contact_get_subscribe_state
