@@ -160,27 +160,32 @@ contact_unblock_cb (GObject *source,
     g_main_loop_quit (test->mainloop);
 }
 
+static TpContact *
+create_contact (Test *test,
+    const gchar *id)
+{
+  TpHandle handle;
+  TpContact *contact;
+
+  handle = tp_handle_ensure (test->contact_repo, id, NULL, &test->error);
+  g_assert_no_error (test->error);
+
+  contact = tp_connection_dup_contact_if_possible (test->connection, handle,
+      id);
+  g_assert (contact != NULL);
+
+  return contact;
+}
+
 static void
 test_block_unblock (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  TpHandle handle;
   TpContact *alice, *bob;
   GPtrArray *arr;
 
-  /* Create contacts */
-  handle = tp_handle_ensure (test->contact_repo, "alice", NULL, &test->error);
-  g_assert_no_error (test->error);
-
-  alice = tp_connection_dup_contact_if_possible (test->connection, handle,
-      "alice");
-  g_assert (alice != NULL);
-
-  handle = tp_handle_ensure (test->contact_repo, "bob", NULL, &test->error);
-  g_assert_no_error (test->error);
-
-  bob = tp_connection_dup_contact_if_possible (test->connection, handle, "bob");
-  g_assert (bob != NULL);
+  alice = create_contact (test, "alice");
+  bob = create_contact (test, "bob");
 
   arr = g_ptr_array_sized_new (2);
   g_ptr_array_add (arr, alice);
@@ -273,9 +278,11 @@ test_blocked_contacts (Test *test,
 {
   GQuark features[] = { TP_CONNECTION_FEATURE_CONTACT_BLOCKING, 0 };
   GPtrArray *blocked;
-  TpHandle handle;
-  TpContact *alice;
+  TpContact *alice, *bill, *guillaume, *sjoerd, *steve;
   gboolean use_contact_api = GPOINTER_TO_UINT (data);
+
+  sjoerd = create_contact (test, "sjoerd@example.com");
+  steve = create_contact (test, "steve@example.com");
 
   /* Feature is not prepared yet */
   g_object_get (test->connection, "blocked-contacts", &blocked, NULL);
@@ -301,13 +308,34 @@ test_blocked_contacts (Test *test,
   blocked = tp_connection_get_blocked_contacts (test->connection);
   g_assert_cmpuint (blocked->len, == , 2);
 
-  /* Let's block another contact */
-  handle = tp_handle_ensure (test->contact_repo, "alice", NULL, &test->error);
-  g_assert_no_error (test->error);
+  /* Preparing TP_CONNECTION_FEATURE_CONTACT_BLOCKING gives us
+   * TP_CONTACT_FEATURE_CONTACT_BLOCKING for free. Test that this work with
+   * and and new TpContact. */
+  bill = create_contact (test, "bill@example.com");
+  guillaume = create_contact (test, "guillaume@example.com");
 
-  alice = tp_connection_dup_contact_if_possible (test->connection, handle,
-      "alice");
-  g_assert (alice != NULL);
+  g_assert (tp_contact_has_feature (sjoerd,
+        TP_CONTACT_FEATURE_CONTACT_BLOCKING));
+  g_assert (!tp_contact_is_blocked (sjoerd));
+
+  g_assert (tp_contact_has_feature (steve,
+        TP_CONTACT_FEATURE_CONTACT_BLOCKING));
+  g_assert (tp_contact_is_blocked (steve));
+
+  g_assert (tp_contact_has_feature (bill, TP_CONTACT_FEATURE_CONTACT_BLOCKING));
+  g_assert (tp_contact_is_blocked (bill));
+
+  g_assert (tp_contact_has_feature (guillaume,
+        TP_CONTACT_FEATURE_CONTACT_BLOCKING));
+  g_assert (!tp_contact_is_blocked (guillaume));
+
+  g_object_unref (steve);
+  g_object_unref (sjoerd);
+  g_object_unref (bill);
+  g_object_unref (guillaume);
+
+  /* Let's block another contact */
+  alice = create_contact (test, "alice");
 
   g_signal_connect (test->connection, "blocked-contacts-changed",
       G_CALLBACK (blocked_contacts_changed_cb), test);

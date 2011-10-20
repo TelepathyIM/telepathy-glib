@@ -1587,6 +1587,18 @@ blocked_changed_item_free (BlockedChangedItem *item)
 
 static void process_queued_blocked_changed (TpConnection *self);
 
+void
+_tp_connection_set_contact_blocked (TpConnection *self,
+    TpContact *contact)
+{
+  gboolean blocked;
+
+  blocked = tp_g_ptr_array_contains (self->priv->blocked_contacts,
+      contact);
+
+  _tp_contact_set_is_blocked (contact, blocked);
+}
+
 static void
 blocked_changed_head_ready (TpConnection *self)
 {
@@ -1596,6 +1608,18 @@ blocked_changed_head_ready (TpConnection *self)
 
   if (item->result != NULL)
     {
+      /* Finish to prepare TP_CONNECTION_FEATURE_CONTACT_BLOCKING, we can
+       * prepare TP_CONTACT_FEATURE_CONTACT_BLOCKING on all contacts as we
+       * have now the list of blocked contacts. */
+      GHashTableIter iter;
+      gpointer contact;
+
+      g_hash_table_iter_init (&iter, self->priv->contacts);
+      while (g_hash_table_iter_next (&iter, NULL, &contact))
+        {
+          _tp_connection_set_contact_blocked (self, contact);
+        }
+
       g_simple_async_result_complete (item->result);
     }
 

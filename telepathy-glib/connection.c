@@ -3146,6 +3146,12 @@ _tp_connection_add_contact (TpConnection *self,
 
   g_hash_table_insert (self->priv->contacts, GUINT_TO_POINTER (handle),
       contact);
+
+  /* Set TP_CONTACT_FEATURE_CONTACT_BLOCKING if possible */
+  if (tp_proxy_is_prepared (self, TP_CONNECTION_FEATURE_CONTACT_BLOCKING))
+    {
+      _tp_connection_set_contact_blocked (self, contact);
+    }
 }
 
 

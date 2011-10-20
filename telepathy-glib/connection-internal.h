@@ -178,6 +178,9 @@ void _tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
+void _tp_connection_set_contact_blocked (TpConnection *self,
+    TpContact *contact);
+
 G_END_DECLS
 
 #endif
