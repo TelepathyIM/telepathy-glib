@@ -559,7 +559,8 @@ signal_connected (TpConnection *self)
 {
   /* we shouldn't have gone to status CONNECTED for any reason
    * that isn't REQUESTED :-) */
-  DEBUG ("%p: CORE and CONNECTED ready", self);
+  DEBUG ("%s (%p): CORE and CONNECTED ready",
+    tp_proxy_get_object_path (self), self);
   self->priv->status = TP_CONNECTION_STATUS_CONNECTED;
   self->priv->status_reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
   self->priv->ready = TRUE;
@@ -1360,6 +1361,8 @@ tp_connection_constructed (GObject *object)
   if (object_class->constructed != NULL)
     object_class->constructed (object);
 
+  DEBUG ("%s (%p) constructed", tp_proxy_get_object_path (object), object);
+
   _tp_proxy_ensure_factory (self, NULL);
 
   /* Connect to my own StatusChanged signal.
@@ -1383,8 +1386,6 @@ tp_connection_constructed (GObject *object)
 static void
 tp_connection_init (TpConnection *self)
 {
-  DEBUG ("%p", self);
-
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONNECTION,
       TpConnectionPrivate);
 
