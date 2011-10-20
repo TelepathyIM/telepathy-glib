@@ -371,6 +371,8 @@ _tp_account_manager_check_core_ready (TpAccountManager *manager)
 {
   TpAccountManagerPrivate *priv = manager->priv;
 
+  DEBUG ("manager has %d accounts left to prepare",
+    priv->n_preparing_accounts);
   if (tp_proxy_is_prepared (manager, TP_ACCOUNT_MANAGER_FEATURE_CORE))
     return;
 
@@ -415,6 +417,9 @@ account_prepared_cb (GObject *object,
     {
       insert_account (self, account);
     }
+
+  DEBUG ("Account %s was prepared",
+      tp_proxy_get_object_path (object));
 
 OUT:
   self->priv->n_preparing_accounts--;
