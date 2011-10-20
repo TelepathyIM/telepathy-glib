@@ -972,6 +972,44 @@ test_contact_list_attrs (Test *test,
 }
 
 static void
+test_assert_contact_blocking_attrs (Test *test,
+    TpHandle handle,
+    gboolean expected_blocked)
+{
+  GHashTable *asv;
+  gboolean blocked, valid;
+
+  g_assert_cmpuint (g_hash_table_size (test->contact_attributes), >=, 1);
+  asv = g_hash_table_lookup (test->contact_attributes,
+      GUINT_TO_POINTER (handle));
+  g_assert (asv != NULL);
+  tp_asv_dump (asv);
+
+  blocked = tp_asv_get_boolean (asv,
+      TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING_BLOCKED, &valid);
+  g_assert (valid);
+  g_assert (blocked == expected_blocked);
+}
+
+static void
+test_contact_blocking_attrs (Test *test,
+    gconstpointer nil G_GNUC_UNUSED)
+{
+  const gchar * const interfaces[] = {
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING,
+      NULL };
+  TpHandle handles[] = { test->sjoerd, test->bill };
+
+  tp_connection_get_contact_attributes (test->conn, -1,
+      G_N_ELEMENTS (handles), handles,
+      interfaces, FALSE, contact_attrs_cb, test, test_quit_loop, NULL);
+  g_main_loop_run (test->main_loop);
+
+  test_assert_contact_blocking_attrs (test, test->sjoerd, FALSE);
+  test_assert_contact_blocking_attrs (test, test->bill, TRUE);
+}
+
+static void
 test_accept_publish_request (Test *test,
     gconstpointer mode)
 {
@@ -2641,6 +2679,8 @@ main (int argc,
       Test, NULL, setup, test_contacts, teardown);
   g_test_add ("/contact-lists/contact-list-attrs",
       Test, NULL, setup, test_contact_list_attrs, teardown);
+  g_test_add ("/contact-lists/contact-blocking-attrs",
+      Test, NULL, setup, test_contact_blocking_attrs, teardown);
 
   g_test_add ("/contact-lists/accept-publish-request",
       Test, NULL, setup, test_accept_publish_request, teardown);
