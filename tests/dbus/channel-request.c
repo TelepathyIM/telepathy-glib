@@ -17,7 +17,7 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"
 
 /* This object implements no methods and no properties - TpChannelRequest
@@ -93,7 +93,7 @@ setup (Test *test,
   g_assert (test->private_dbus != NULL);
 
   /* Create (service and client sides) connection objects */
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
   test->cr = NULL;
 

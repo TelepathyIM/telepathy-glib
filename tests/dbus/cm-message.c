@@ -4,7 +4,7 @@
 #include "telepathy-glib/cm-message-internal.h"
 #include <telepathy-glib/util-internal.h>
 
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"
 
 typedef struct {
@@ -23,7 +23,7 @@ setup (Test *test,
   g_type_init ();
   tp_debug_set_flags ("all");
 
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
 
   test->contact_repo = tp_base_connection_get_handles (test->base_connection,

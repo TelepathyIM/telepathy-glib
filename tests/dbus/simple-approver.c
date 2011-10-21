@@ -16,7 +16,7 @@
 #include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
 #include "tests/lib/simple-channel-dispatch-operation.h"
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/textchan-null.h"
 
 typedef struct {
@@ -78,7 +78,7 @@ setup (Test *test,
   g_object_ref (test->account);
 
   /* Create (service and client sides) connection objects */
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
 
   /* Create service-side text channel object */

@@ -15,7 +15,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/base-connection.h>
 
-#include "simple-conn.h"
+#include "contacts-conn.h"
 
 G_BEGIN_DECLS
 
@@ -24,11 +24,11 @@ typedef struct _TpTestsBug16307ConnectionClass TpTestsBug16307ConnectionClass;
 typedef struct _TpTestsBug16307ConnectionPrivate TpTestsBug16307ConnectionPrivate;
 
 struct _TpTestsBug16307ConnectionClass {
-    TpTestsSimpleConnectionClass parent_class;
+    TpTestsContactsConnectionClass parent_class;
 };
 
 struct _TpTestsBug16307Connection {
-    TpTestsSimpleConnection parent;
+    TpTestsContactsConnection parent;
 
     TpTestsBug16307ConnectionPrivate *priv;
 };

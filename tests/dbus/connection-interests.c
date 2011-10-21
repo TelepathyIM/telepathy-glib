@@ -17,18 +17,18 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"
 
 /* an almost-no-op subclass... */
-typedef TpTestsSimpleConnection InterestedConnection;
-typedef TpTestsSimpleConnectionClass InterestedConnectionClass;
+typedef TpTestsContactsConnection InterestedConnection;
+typedef TpTestsContactsConnectionClass InterestedConnectionClass;
 
 static GType interested_connection_get_type (void);
 
 G_DEFINE_TYPE_WITH_CODE (InterestedConnection,
     interested_connection,
-    TP_TESTS_TYPE_SIMPLE_CONNECTION,
+    TP_TESTS_TYPE_CONTACTS_CONNECTION,
     G_STMT_START { } G_STMT_END)
 
 /* Lord Pearson of Rannoch: My Lords, I beg leave to ask the Question

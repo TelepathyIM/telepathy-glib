@@ -1552,9 +1552,6 @@ struct _ContactsContext {
     /* Whether or not our weak object died*/
     gboolean no_purpose_in_life;
 
-    /* queue of ContactsProc */
-    GQueue todo;
-
     /* index into handles or ids, only used when the first HoldHandles call
      * failed with InvalidHandle, or the RequestHandles call failed with
      * NotAvailable */
@@ -1608,8 +1605,6 @@ contacts_context_new (TpConnection *connection,
   if (c->weak_object != NULL)
     g_object_weak_ref (c->weak_object, contacts_context_weak_notify, c);
 
-  g_queue_init (&c->todo);
-
   return c;
 }
 
@@ -1624,8 +1619,6 @@ contacts_context_unref (gpointer p)
 
   g_assert (c->connection != NULL);
   tp_clear_object (&c->connection);
-
-  g_queue_clear (&c->todo);
 
   g_assert (c->contacts != NULL);
   g_ptr_array_foreach (c->contacts, (GFunc) g_object_unref, NULL);
@@ -1700,6 +1693,46 @@ contacts_context_fail (ContactsContext *c,
     default:
       g_assert_not_reached ();
     }
+}
+
+
+static gboolean
+contacts_context_complete (ContactsContext *c)
+{
+  switch (c->signature)
+    {
+    case CB_BY_HANDLE:
+      c->callback.by_handle (c->connection,
+          c->contacts->len, (TpContact * const *) c->contacts->pdata,
+          c->invalid->len, (const TpHandle *) c->invalid->data,
+          NULL, c->user_data, c->weak_object);
+      break;
+   case CB_BY_ID:
+     c->callback.by_id (c->connection,
+         c->contacts->len, (TpContact * const *) c->contacts->pdata,
+         (const gchar * const *) c->request_ids->pdata,
+         c->request_errors, NULL, c->user_data, c->weak_object);
+      break;
+    case CB_UPGRADE:
+      c->callback.upgrade (c->connection,
+          c->contacts->len, (TpContact * const *) c->contacts->pdata,
+          NULL, c->user_data, c->weak_object);
+      break;
+    default:
+      g_assert_not_reached ();
+    }
+
+  return FALSE;
+}
+
+
+static void
+contacts_context_complete_in_idle (ContactsContext *c)
+{
+  c->refcount++;
+  g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+      (GSourceFunc) contacts_context_complete,
+      c, contacts_context_unref);
 }
 
 
@@ -1815,398 +1848,6 @@ contacts_context_fail (ContactsContext *c,
  * Since: 0.7.18
  */
 
-
-static void
-contacts_context_continue (ContactsContext *c)
-{
-  if (c->no_purpose_in_life)
-    return;
-
-  if (g_queue_is_empty (&c->todo))
-    {
-      /* do some final sanity checking then hand over the contacts to the
-       * library user */
-      guint i;
-
-      g_assert (c->contacts != NULL);
-      g_assert (c->invalid != NULL);
-
-      for (i = 0; i < c->contacts->len; i++)
-        {
-          TpContact *contact = TP_CONTACT (g_ptr_array_index (c->contacts, i));
-
-          g_assert (contact->priv->identifier != NULL);
-          g_assert (contact->priv->handle != 0);
-        }
-
-      switch (c->signature)
-        {
-        case CB_BY_HANDLE:
-          c->callback.by_handle (c->connection,
-              c->contacts->len, (TpContact * const *) c->contacts->pdata,
-              c->invalid->len, (const TpHandle *) c->invalid->data,
-              NULL, c->user_data, c->weak_object);
-          break;
-        case CB_BY_ID:
-          c->callback.by_id (c->connection,
-              c->contacts->len, (TpContact * const *) c->contacts->pdata,
-              (const gchar * const *) c->request_ids->pdata,
-              c->request_errors, NULL, c->user_data, c->weak_object);
-          break;
-        case CB_UPGRADE:
-          c->callback.upgrade (c->connection,
-              c->contacts->len, (TpContact * const *) c->contacts->pdata,
-              NULL, c->user_data, c->weak_object);
-          break;
-        default:
-          g_assert_not_reached ();
-        }
-    }
-  else
-    {
-      /* bah! */
-      ContactsProc next = g_queue_pop_head (&c->todo);
-
-      if (G_UNLIKELY (tp_proxy_get_invalidated (c->connection) != NULL))
-        {
-          DEBUG ("failing due to connection having been invalidated: %s",
-              tp_proxy_get_invalidated (c->connection)->message);
-          contacts_context_fail (c, tp_proxy_get_invalidated (c->connection));
-        }
-      else
-        {
-          next (c);
-        }
-    }
-}
-
-static gboolean
-contacts_context_idle_continue (gpointer data)
-{
-  contacts_context_continue (data);
-  return FALSE;
-}
-
-static void
-contacts_held_one (TpConnection *connection,
-                   TpHandleType handle_type,
-                   guint n_handles,
-                   const TpHandle *handles,
-                   const GError *error,
-                   gpointer user_data,
-                   GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  g_assert (handle_type == TP_HANDLE_TYPE_CONTACT);
-  g_assert (c->next_index < c->handles->len);
-
-  if (error == NULL)
-    {
-      /* I have a handle of my very own. Just what I always wanted! */
-      TpContact *contact;
-
-      g_assert (n_handles == 1);
-      g_assert (handles[0] != 0);
-      g_debug ("%u vs %u", g_array_index (c->handles, TpHandle, c->next_index),
-          handles[0]);
-      g_assert (g_array_index (c->handles, TpHandle, c->next_index)
-          == handles[0]);
-
-      contact = tp_contact_ensure (connection, handles[0]);
-      g_ptr_array_add (c->contacts, contact);
-      c->next_index++;
-    }
-  else if (error->domain == TP_ERRORS &&
-      error->code == TP_ERROR_INVALID_HANDLE)
-    {
-      g_array_append_val (c->invalid,
-          g_array_index (c->handles, TpHandle, c->next_index));
-      /* ignore the bad handle - we just won't return a TpContact for it */
-      g_array_remove_index_fast (c->handles, c->next_index);
-      /* do not increment next_index - another handle has been moved into that
-       * position */
-    }
-  else
-    {
-      /* the connection fell down a well or something */
-      contacts_context_fail (c, error);
-      return;
-    }
-
-  /* Either continue to hold handles, or proceed along the slow path. */
-  contacts_context_continue (c);
-}
-
-
-static void
-contacts_hold_one (ContactsContext *c)
-{
-  c->refcount++;
-  tp_connection_hold_handles (c->connection, -1,
-      TP_HANDLE_TYPE_CONTACT, 1,
-      &g_array_index (c->handles, TpHandle, c->next_index),
-      contacts_held_one, c, contacts_context_unref, c->weak_object);
-}
-
-
-static void
-contacts_held_handles (TpConnection *connection,
-                       TpHandleType handle_type,
-                       guint n_handles,
-                       const TpHandle *handles,
-                       const GError *error,
-                       gpointer user_data,
-                       GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  g_assert (handle_type == TP_HANDLE_TYPE_CONTACT);
-  g_assert (weak_object == c->weak_object);
-
-  if (error == NULL)
-    {
-      /* I now own all n handles. It's like Christmas morning! */
-      guint i;
-
-      g_assert (n_handles == c->handles->len);
-      g_assert (c->contacts->len == 0);
-
-      for (i = 0; i < c->handles->len; i++)
-        {
-          g_ptr_array_add (c->contacts,
-              tp_contact_ensure (connection,
-                g_array_index (c->handles, TpHandle, i)));
-        }
-    }
-  else if (error->domain == TP_ERRORS &&
-      error->code == TP_ERROR_INVALID_HANDLE)
-    {
-      /* One of the handles is bad. We don't know which one :-( so split
-       * the batch into a chain of calls. */
-      guint i;
-
-      for (i = 0; i < c->handles->len; i++)
-        {
-          g_queue_push_head (&c->todo, contacts_hold_one);
-        }
-
-      g_assert (c->next_index == 0);
-    }
-  else
-    {
-      /* the connection fell down a well or something */
-      contacts_context_fail (c, error);
-      return;
-    }
-
-  /* Either hold the handles individually, or proceed along the slow path. */
-  contacts_context_continue (c);
-}
-
-
-static void
-contacts_inspected (TpConnection *connection,
-                    const gchar **ids,
-                    const GError *error,
-                    gpointer user_data,
-                    GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  g_assert (weak_object == c->weak_object);
-  g_assert (c->handles->len == c->contacts->len);
-
-  if (error != NULL)
-    {
-      /* the connection fell down a well or something */
-      contacts_context_fail (c, error);
-      return;
-    }
-  else if (G_UNLIKELY (g_strv_length ((GStrv) ids) != c->handles->len))
-    {
-      GError *e = g_error_new (TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-          "Connection manager %s is broken: we inspected %u "
-          "handles but InspectHandles returned %u strings",
-          tp_proxy_get_bus_name (connection), c->handles->len,
-          g_strv_length ((GStrv) ids));
-
-      WARNING ("%s", e->message);
-      contacts_context_fail (c, e);
-      g_error_free (e);
-      return;
-    }
-  else
-    {
-      guint i;
-
-      for (i = 0; i < c->contacts->len; i++)
-        {
-          TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-          g_assert (ids[i] != NULL);
-
-          if (contact->priv->identifier == NULL)
-            {
-              contact->priv->identifier = g_strdup (ids[i]);
-            }
-          else if (tp_strdiff (contact->priv->identifier, ids[i]))
-            {
-              GError *e = g_error_new (TP_DBUS_ERRORS,
-                  TP_DBUS_ERROR_INCONSISTENT,
-                  "Connection manager %s is broken: contact handle %u "
-                  "identifier changed from %s to %s",
-                  tp_proxy_get_bus_name (connection), contact->priv->handle,
-                  contact->priv->identifier, ids[i]);
-
-              WARNING ("%s", e->message);
-              contacts_context_fail (c, e);
-              g_error_free (e);
-              return;
-            }
-        }
-    }
-
-  contacts_context_continue (c);
-}
-
-
-static void
-contacts_inspect (ContactsContext *c)
-{
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  for (i = 0; i < c->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-      if (contact->priv->identifier == NULL)
-        {
-          c->refcount++;
-          tp_cli_connection_call_inspect_handles (c->connection, -1,
-              TP_HANDLE_TYPE_CONTACT, c->handles, contacts_inspected,
-              c, contacts_context_unref, c->weak_object);
-          return;
-        }
-    }
-
-  /* else there's no need to inspect the contacts' handles, because we already
-   * know all their identifiers */
-  contacts_context_continue (c);
-}
-
-
-static void
-contacts_requested_aliases (TpConnection *connection,
-                            const gchar **aliases,
-                            const GError *error,
-                            gpointer user_data,
-                            GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  if (error == NULL)
-    {
-      guint i;
-
-      if (G_UNLIKELY (g_strv_length ((GStrv) aliases) != c->contacts->len))
-        {
-          WARNING ("Connection manager %s is broken: we requested %u "
-              "handles' aliases but got %u strings back",
-              tp_proxy_get_bus_name (connection), c->contacts->len,
-              g_strv_length ((GStrv) aliases));
-
-          /* give up on the possibility of getting aliases, and just
-           * move on */
-          contacts_context_continue (c);
-          return;
-        }
-
-      for (i = 0; i < c->contacts->len; i++)
-        {
-          TpContact *contact = g_ptr_array_index (c->contacts, i);
-          const gchar *alias = aliases[i];
-
-          contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
-          g_free (contact->priv->alias);
-          contact->priv->alias = g_strdup (alias);
-          g_object_notify ((GObject *) contact, "alias");
-        }
-    }
-  else
-    {
-      /* never mind, we can live without aliases */
-      DEBUG ("GetAliases failed with %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-    }
-
-  contacts_context_continue (c);
-}
-
-
-static void
-contacts_got_aliases (TpConnection *connection,
-                      GHashTable *handle_to_alias,
-                      const GError *error,
-                      gpointer user_data,
-                      GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  if (error == NULL)
-    {
-      guint i;
-
-      for (i = 0; i < c->contacts->len; i++)
-        {
-          TpContact *contact = g_ptr_array_index (c->contacts, i);
-          const gchar *alias = g_hash_table_lookup (handle_to_alias,
-              GUINT_TO_POINTER (contact->priv->handle));
-
-          contact->priv->has_features |= CONTACT_FEATURE_FLAG_ALIAS;
-          g_free (contact->priv->alias);
-          contact->priv->alias = NULL;
-
-          if (alias != NULL)
-            {
-              contact->priv->alias = g_strdup (alias);
-            }
-          else
-            {
-              WARNING ("No alias returned for %u, will use ID instead",
-                  contact->priv->handle);
-            }
-
-          g_object_notify ((GObject *) contact, "alias");
-        }
-    }
-  else if ((error->domain == TP_ERRORS &&
-      error->code == TP_ERROR_NOT_IMPLEMENTED) ||
-      (error->domain == DBUS_GERROR &&
-       error->code == DBUS_GERROR_UNKNOWN_METHOD))
-    {
-      /* GetAliases not implemented, fall back to (slow?) RequestAliases */
-      c->refcount++;
-      tp_cli_connection_interface_aliasing_call_request_aliases (connection,
-          -1, c->handles, contacts_requested_aliases,
-          c, contacts_context_unref, weak_object);
-      return;
-    }
-  else
-    {
-      /* never mind, we can live without aliases */
-      DEBUG ("GetAliases failed with %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-    }
-
-  contacts_context_continue (c);
-}
-
-
 static void
 contacts_aliases_changed (TpConnection *connection,
                           const GPtrArray *alias_structs,
@@ -2246,36 +1887,6 @@ contacts_bind_to_aliases_changed (TpConnection *connection)
           connection, contacts_aliases_changed, NULL, NULL, NULL, NULL);
     }
 }
-
-
-static void
-contacts_get_aliases (ContactsContext *c)
-{
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  contacts_bind_to_aliases_changed (c->connection);
-
-  for (i = 0; i < c->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_ALIAS) == 0)
-        {
-          c->refcount++;
-          tp_cli_connection_interface_aliasing_call_get_aliases (c->connection,
-              -1, c->handles, contacts_got_aliases, c, contacts_context_unref,
-              c->weak_object);
-          return;
-        }
-    }
-
-  /* else there's no need to get the contacts' aliases, because we already
-   * know them all */
-  contacts_context_continue (c);
-}
-
 
 static void
 contact_maybe_set_simple_presence (TpContact *contact,
@@ -2383,30 +1994,6 @@ contacts_presences_changed (TpConnection *connection,
 
 
 static void
-contacts_got_simple_presence (TpConnection *connection,
-                              GHashTable *presences,
-                              const GError *error,
-                              gpointer user_data,
-                              GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  if (error == NULL)
-    {
-      contacts_presences_changed (connection, presences, NULL, NULL);
-    }
-  else
-    {
-      /* never mind, we can live without presences */
-      DEBUG ("GetPresences failed with %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-    }
-
-  contacts_context_continue (c);
-}
-
-
-static void
 contacts_bind_to_presences_changed (TpConnection *connection)
 {
   if (!connection->priv->tracking_presences_changed)
@@ -2416,33 +2003,6 @@ contacts_bind_to_presences_changed (TpConnection *connection)
       tp_cli_connection_interface_simple_presence_connect_to_presences_changed
         (connection, contacts_presences_changed, NULL, NULL, NULL, NULL);
     }
-}
-
-static void
-contacts_get_simple_presence (ContactsContext *c)
-{
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  contacts_bind_to_presences_changed (c->connection);
-
-  for (i = 0; i < c->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_PRESENCE) == 0)
-        {
-          c->refcount++;
-          tp_cli_connection_interface_simple_presence_call_get_presences (
-              c->connection, -1,
-              c->handles, contacts_got_simple_presence,
-              c, contacts_context_unref, c->weak_object);
-          return;
-        }
-    }
-
-  contacts_context_continue (c);
 }
 
 static void
@@ -2511,59 +2071,6 @@ contacts_bind_to_client_types_updated (TpConnection *connection)
       tp_cli_connection_interface_client_types_connect_to_client_types_updated
         (connection, contacts_client_types_updated, NULL, NULL, NULL, NULL);
     }
-}
-
-static void
-set_conn_capabilities_on_contacts (GPtrArray *contacts,
-    TpConnection *connection)
-{
-  guint i;
-  TpCapabilities *conn_caps = tp_connection_get_capabilities (connection);
-  GPtrArray *rcc;
-
-  /* If the connection has no capabilities then don't bother setting them on
-   * the contact and pretend we just don't know.. In practise this will only
-   * happen if there was an error in getting the connections capabilities so
-   * claiming ignorance seems the most sensible thing to do */
-  if (conn_caps == NULL)
-     return;
-
-  rcc = tp_capabilities_get_channel_classes (conn_caps);
-  if (rcc == NULL || rcc->len == 0)
-    return;
-
-  for (i = 0; i < contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (contacts, i);
-
-      contact_set_capabilities (contact, conn_caps);
-    }
-}
-
-static void
-connection_capabilities_fetched_cb (GObject *object,
-    GAsyncResult *res,
-    gpointer user_data)
-{
-  ContactsContext *c = user_data;
-
-  DEBUG ("Connection capabilities prepared");
-
-  set_conn_capabilities_on_contacts (c->contacts, c->connection);
-  contacts_context_continue (c);
-  contacts_context_unref (c);
-}
-
-static void
-contacts_get_conn_capabilities (ContactsContext *c)
-{
-  g_assert (c->handles->len == c->contacts->len);
-
-  DEBUG ("Getting connection capabilities");
-
-  c->refcount++;
-  _tp_connection_get_capabilities_async (c->connection,
-    connection_capabilities_fetched_cb, c);
 }
 
 static void
@@ -2815,28 +2322,6 @@ contacts_bind_to_avatar_retrieved (TpConnection *connection)
     }
 }
 
-static void
-contacts_get_avatar_data (ContactsContext *c)
-{
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  contacts_bind_to_avatar_retrieved (c->connection);
-
-  for (i = 0; i < c->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_DATA) == 0)
-        {
-          contact->priv->has_features |= CONTACT_FEATURE_FLAG_AVATAR_DATA;
-          contact_update_avatar_data (contact);
-        }
-    }
-
-  contacts_context_continue (c);
-}
 
 static void
 contact_set_avatar_token (TpContact *self, const gchar *new_token,
@@ -2876,42 +2361,6 @@ contacts_avatar_updated (TpConnection *connection,
 
 
 static void
-contacts_got_known_avatar_tokens (TpConnection *connection,
-                                  GHashTable *handle_to_token,
-                                  const GError *error,
-                                  gpointer user_data,
-                                  GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-  GHashTableIter iter;
-  gpointer key, value;
-
-  if (error == NULL)
-    {
-      g_hash_table_iter_init (&iter, handle_to_token);
-
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          contacts_avatar_updated (connection, GPOINTER_TO_UINT (key), value,
-              NULL, NULL);
-        }
-
-    }
-  /* FIXME: perhaps we could fall back to GetAvatarTokens (which should have
-   * been called RequestAvatarTokens, because it blocks on network traffic)
-   * if GetKnownAvatarTokens doesn't work? */
-  else
-    {
-      /* never mind, we can live without avatar tokens */
-      DEBUG ("GetKnownAvatarTokens failed with %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-    }
-
-  contacts_context_continue (c);
-}
-
-
-static void
 contacts_bind_to_avatar_updated (TpConnection *connection)
 {
   if (!connection->priv->tracking_avatar_updated)
@@ -2921,35 +2370,6 @@ contacts_bind_to_avatar_updated (TpConnection *connection)
       tp_cli_connection_interface_avatars_connect_to_avatar_updated
         (connection, contacts_avatar_updated, NULL, NULL, NULL, NULL);
     }
-}
-
-
-static void
-contacts_get_avatar_tokens (ContactsContext *c)
-{
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  contacts_bind_to_avatar_updated (c->connection);
-
-  for (i = 0; i < c->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_AVATAR_TOKEN)
-          == 0)
-        {
-          c->refcount++;
-          tp_cli_connection_interface_avatars_call_get_known_avatar_tokens (
-              c->connection, -1,
-              c->handles, contacts_got_known_avatar_tokens,
-              c, contacts_context_unref, c->weak_object);
-          return;
-        }
-    }
-
-  contacts_context_continue (c);
 }
 
 static void
@@ -2997,35 +2417,6 @@ contact_info_changed (TpConnection *connection,
   contact_maybe_set_info (self, contact_info);
 }
 
-static void
-contacts_got_contact_info (TpConnection *connection,
-    GHashTable *info,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  ContactsContext *c = user_data;
-
-  if (error != NULL)
-    {
-      DEBUG ("GetContactInfo failed with %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-    }
-  else
-    {
-      GHashTableIter iter;
-      gpointer key, value;
-
-      g_hash_table_iter_init (&iter, info);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          contact_info_changed (connection, GPOINTER_TO_UINT (key),
-              value, NULL, NULL);
-        }
-    }
-
-  contacts_context_continue (c);
-}
 
 static void
 contacts_bind_to_contact_info_changed (TpConnection *connection)
@@ -3037,32 +2428,6 @@ contacts_bind_to_contact_info_changed (TpConnection *connection)
       tp_cli_connection_interface_contact_info_connect_to_contact_info_changed (
           connection, contact_info_changed, NULL, NULL, NULL, NULL);
     }
-}
-
-static void
-contacts_get_contact_info (ContactsContext *c)
-{
-  guint i;
-
-  g_assert (c->handles->len == c->contacts->len);
-
-  contacts_bind_to_contact_info_changed (c->connection);
-
-  for (i = 0; i < c->contacts->len; i++)
-    {
-      TpContact *contact = g_ptr_array_index (c->contacts, i);
-
-      if ((contact->priv->has_features & CONTACT_FEATURE_FLAG_CONTACT_INFO) == 0)
-        {
-          c->refcount++;
-          tp_cli_connection_interface_contact_info_call_get_contact_info (
-              c->connection, -1, c->handles, contacts_got_contact_info,
-              c, contacts_context_unref, c->weak_object);
-          return;
-        }
-    }
-
-  contacts_context_continue (c);
 }
 
 typedef struct
@@ -3481,120 +2846,6 @@ contacts_bind_to_contact_groups_changed (TpConnection *connection)
 }
 
 static gboolean
-contacts_context_supports_iface (ContactsContext *context,
-    GQuark iface)
-{
-  GArray *contact_attribute_interfaces =
-      context->connection->priv->contact_attribute_interfaces;
-  guint i;
-
-  if (!tp_proxy_has_interface_by_id (context->connection,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    return FALSE;
-
-  if (contact_attribute_interfaces == NULL)
-    return FALSE;
-
-  for (i = 0; i < contact_attribute_interfaces->len; i++)
-    {
-      GQuark q = g_array_index (contact_attribute_interfaces, GQuark, i);
-
-      if (q == iface)
-        return TRUE;
-    }
-
-  return FALSE;
-}
-
-static void
-contacts_context_queue_features (ContactsContext *context)
-{
-  ContactFeatureFlags feature_flags = context->wanted;
-
-  /* Start slow path for requested features that are not in
-   * ContactAttributeInterfaces */
-
-  if ((feature_flags & CONTACT_FEATURE_FLAG_ALIAS) != 0 &&
-      !contacts_context_supports_iface (context,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING) &&
-      tp_proxy_has_interface_by_id (context->connection,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_ALIASING))
-    {
-      g_queue_push_tail (&context->todo, contacts_get_aliases);
-    }
-
-  if ((feature_flags & CONTACT_FEATURE_FLAG_PRESENCE) != 0 &&
-      !contacts_context_supports_iface (context,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE))
-    {
-      if (tp_proxy_has_interface_by_id (context->connection,
-            TP_IFACE_QUARK_CONNECTION_INTERFACE_SIMPLE_PRESENCE))
-        {
-          g_queue_push_tail (&context->todo, contacts_get_simple_presence);
-        }
-#if 0
-      /* FIXME: Before doing this for the first time, we'd need to download
-       * from the CM the definition of what each status actually *means* */
-      else if (tp_proxy_has_interface_by_id (context->connection,
-            TP_IFACE_QUARK_CONNECTION_INTERFACE_PRESENCE))
-        {
-          g_queue_push_tail (&context->todo, contacts_get_complex_presence);
-        }
-#endif
-    }
-
-  if (!contacts_context_supports_iface (context,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS) &&
-      tp_proxy_has_interface_by_id (context->connection,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_AVATARS))
-    {
-      if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_TOKEN) != 0)
-        g_queue_push_tail (&context->todo, contacts_get_avatar_tokens);
-
-      if ((feature_flags & CONTACT_FEATURE_FLAG_AVATAR_DATA) != 0)
-        g_queue_push_tail (&context->todo, contacts_get_avatar_data);
-    }
-
-  if ((feature_flags & CONTACT_FEATURE_FLAG_LOCATION) != 0 &&
-      !contacts_context_supports_iface (context,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION) &&
-      tp_proxy_has_interface_by_id (context->connection,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_LOCATION))
-    {
-      WARNING ("%s supports Location but not Contacts! Where did you find "
-          "this CM? TP_CONTACT_FEATURE_LOCATION is not gonna work",
-          tp_proxy_get_object_path (context->connection));
-    }
-
-  /* Don't implement slow path for ContactCapabilities as Contacts is now
-   * mandatory so any CM supporting ContactCapabilities will implement
-   * Contacts as well.
-   *
-   * But if ContactCapabilities is NOT supported, we fallback to connection
-   * capabilities.
-   * */
-
-  if ((feature_flags & CONTACT_FEATURE_FLAG_CAPABILITIES) != 0 &&
-      !tp_proxy_has_interface_by_id (context->connection,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_CAPABILITIES))
-    {
-      DEBUG ("Connection doesn't support ContactCapabilities; fallback to "
-          "connection capabilities");
-
-      g_queue_push_tail (&context->todo, contacts_get_conn_capabilities);
-    }
-
-  if ((feature_flags & CONTACT_FEATURE_FLAG_CONTACT_INFO) != 0 &&
-      !contacts_context_supports_iface (context,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO) &&
-      tp_proxy_has_interface_by_id (context->connection,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_INFO))
-    {
-      g_queue_push_tail (&context->todo, contacts_get_contact_info);
-    }
-}
-
-static gboolean
 tp_contact_set_attributes (TpContact *contact,
     GHashTable *asv,
     ContactFeatureFlags wanted,
@@ -3851,7 +3102,7 @@ contacts_got_attributes (TpConnection *connection,
         }
     }
 
-  contacts_context_continue (c);
+  contacts_context_complete (c);
 }
 
 static const gchar **
@@ -4006,11 +3257,25 @@ contacts_get_attributes (ContactsContext *context)
 {
   const gchar **supported_interfaces;
 
+  if (!tp_proxy_has_interface_by_id (context->connection,
+        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
+    {
+      GError *error = g_error_new_literal (TP_ERRORS,
+          TP_ERROR_SOFTWARE_UPGRADE_REQUIRED,
+          "Connection does not implement CONTACTS interface. Legacy CMs "
+          "are not supported anymore");
+
+      WARNING ("%s", error->message);
+      contacts_context_fail (context, error);
+      g_clear_error (&error);
+      return;
+    }
+
   /* tp_connection_get_contact_attributes insists that you have at least one
    * handle; skip it if we don't (can only happen if we started from IDs) */
   if (context->handles->len == 0)
     {
-      contacts_context_continue (context);
+      contacts_context_complete_in_idle (context);
       return;
     }
 
@@ -4025,7 +3290,7 @@ contacts_get_attributes (ContactsContext *context)
        * the handles, and we're not inspecting any extended interfaces
        * either. Skip it. */
       g_free (supported_interfaces);
-      contacts_context_continue (context);
+      contacts_context_complete_in_idle (context);
       return;
     }
 
@@ -4181,59 +3446,17 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
   g_array_append_vals (context->handles, handles, n_handles);
 
   contacts = lookup_all_contacts (context);
-
   if (contacts != NULL)
     {
-      /* We have already held (and possibly inspected) handles, so we can
-       * skip that. */
-
       g_ptr_array_foreach (contacts, (GFunc) g_object_ref, NULL);
       tp_g_ptr_array_extend (context->contacts, contacts);
+      g_ptr_array_unref (contacts);
 
       contacts_context_remove_common_features (context);
-
-      /* We do need to retrieve any features that aren't there yet, though. */
-      if (tp_proxy_has_interface_by_id (self,
-            TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-        {
-          g_queue_push_head (&context->todo, contacts_get_attributes);
-        }
-
-      contacts_context_queue_features (context);
-
-      g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
-          contacts_context_idle_continue, context, contacts_context_unref);
-
-      g_ptr_array_unref (contacts);
-      return;
     }
 
-  if (tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      /* we support the Contacts interface, so we can hold the handles and
-       * simultaneously inspect them. After that, we'll fill in any
-       * features that are necessary (this becomes a no-op if Contacts
-       * will give us everything). */
-      g_queue_push_head (&context->todo, contacts_get_attributes);
-      contacts_context_queue_features (context);
-      g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
-          contacts_context_idle_continue, context, contacts_context_unref);
-      return;
-    }
-
-  /* if we haven't already returned, we're on the slow path */
-
-  /* Before we return anything we'll want to inspect the handles */
-  g_queue_push_head (&context->todo, contacts_inspect);
-
-  /* After that we'll get the features */
-  contacts_context_queue_features (context);
-
-  /* but first, we need to hold onto them */
-  tp_connection_hold_handles (self, -1,
-      TP_HANDLE_TYPE_CONTACT, n_handles, handles,
-      contacts_held_handles, context, contacts_context_unref, weak_object);
+  contacts_get_attributes (context);
+  contacts_context_unref (context);
 }
 
 
@@ -4310,22 +3533,12 @@ tp_connection_upgrade_contacts (TpConnection *self,
   g_assert (context->handles->len == n_contacts);
 
   contacts_context_remove_common_features (context);
-
-  if (tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      g_queue_push_head (&context->todo, contacts_get_attributes);
-    }
-
-  contacts_context_queue_features (context);
-
-  /* use an idle to make sure the callback is called after we return,
-   * even if all the contacts actually have all the features, just to be
-   * consistent */
-  g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
-      contacts_context_idle_continue, context, contacts_context_unref);
+  contacts_get_attributes (context);
+  contacts_context_unref (context);
 }
 
+
+static void contacts_request_one_handle (ContactsContext *c);
 
 static void
 contacts_requested_one_handle (TpConnection *connection,
@@ -4372,7 +3585,13 @@ contacts_requested_one_handle (TpConnection *connection,
       return;
     }
 
-  contacts_context_continue (c);
+  /* Continue requesting handles one by one until we did them all. The -1 here
+   * is because the array is NULL-terminated. When they are all done, we can
+   * request contact attributes */
+  if (c->next_index < c->request_ids->len -1)
+    contacts_request_one_handle (c);
+  else
+    contacts_get_attributes (c);
 }
 
 
@@ -4418,6 +3637,7 @@ contacts_requested_handles (TpConnection *connection,
           g_array_append_val (c->handles, handles[i]);
           g_ptr_array_add (c->contacts, contact);
         }
+      contacts_get_attributes (c);
     }
   else if (error->domain == TP_ERRORS &&
       (error->code == TP_ERROR_INVALID_HANDLE ||
@@ -4425,28 +3645,18 @@ contacts_requested_handles (TpConnection *connection,
        error->code == TP_ERROR_INVALID_ARGUMENT))
     {
       /* One of the strings is bad. We don't know which, so split them. */
-      guint i;
-
       DEBUG ("A handle was bad, trying to recover: %s %u: %s",
           g_quark_to_string (error->domain), error->code, error->message);
 
-      /* -1 because NULL terminator is explicit */
-      for (i = 0; i < c->request_ids->len - 1; i++)
-        {
-          g_queue_push_head (&c->todo, contacts_request_one_handle);
-        }
-
       g_assert (c->next_index == 0);
+      contacts_request_one_handle (c);
     }
   else
     {
       DEBUG ("RequestHandles failed: %s %u: %s",
           g_quark_to_string (error->domain), error->code, error->message);
       contacts_context_fail (c, error);
-      return;
     }
-
-  contacts_context_continue (c);
 }
 
 
@@ -4523,20 +3733,6 @@ tp_connection_get_contacts_by_id (TpConnection *self,
     }
 
   g_ptr_array_add (context->request_ids, NULL);
-
-  /* set up the queue of feature introspection */
-
-  if (tp_proxy_has_interface_by_id (self,
-        TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS))
-    {
-      g_queue_push_head (&context->todo, contacts_get_attributes);
-    }
-  else
-    {
-      g_queue_push_head (&context->todo, contacts_inspect);
-    }
-
-  contacts_context_queue_features (context);
 
   /* but first, we need to get the handles in the first place */
   tp_connection_request_handles (self, -1,

@@ -17,7 +17,7 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"
 
 #define BALANCE 1234
@@ -26,15 +26,15 @@
 #define MANAGE_CREDIT_URI "http://chat.badger.net/topup"
 
 /* -- BalancedConnection -- */
-typedef TpTestsSimpleConnection BalancedConnection;
-typedef TpTestsSimpleConnectionClass BalancedConnectionClass;
+typedef TpTestsContactsConnection BalancedConnection;
+typedef TpTestsContactsConnectionClass BalancedConnectionClass;
 
 #define TYPE_BALANCED_CONNECTION (balanced_connection_get_type ())
 static GType balanced_connection_get_type (void);
 
 G_DEFINE_TYPE_WITH_CODE (BalancedConnection,
     balanced_connection,
-    TP_TESTS_TYPE_SIMPLE_CONNECTION,
+    TP_TESTS_TYPE_CONTACTS_CONNECTION,
 
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_BALANCE, NULL))
 
@@ -116,8 +116,8 @@ balanced_connection_class_init (BalancedConnectionClass *cls)
 }
 
 /* -- UnbalancedConnection -- */
-typedef TpTestsSimpleConnection UnbalancedConnection;
-typedef TpTestsSimpleConnectionClass UnbalancedConnectionClass;
+typedef TpTestsContactsConnection UnbalancedConnection;
+typedef TpTestsContactsConnectionClass UnbalancedConnectionClass;
 
 #define TYPE_UNBALANCED_CONNECTION (unbalanced_connection_get_type ())
 static GType unbalanced_connection_get_type (void);
@@ -192,6 +192,8 @@ setup (Test *test,
   GError *error = NULL;
   GQuark features[] = { TP_CONNECTION_FEATURE_CONNECTED, 0 };
   GType conn_type = GPOINTER_TO_SIZE (data);
+
+  g_print ("setup for %s\n", g_type_name (conn_type));
 
   g_type_init ();
   tp_debug_set_flags ("all");
@@ -389,7 +391,7 @@ main (int argc,
       GSIZE_TO_POINTER (TYPE_UNBALANCED_CONNECTION),
       setup, test_balance_unknown, teardown);
   g_test_add ("/conn/balance-unimplemented", Test,
-      GSIZE_TO_POINTER (TP_TESTS_TYPE_SIMPLE_CONNECTION),
+      GSIZE_TO_POINTER (TP_TESTS_TYPE_CONTACTS_CONNECTION),
       setup, test_balance_unknown, teardown);
 
   return g_test_run ();

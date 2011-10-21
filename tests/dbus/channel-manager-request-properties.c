@@ -14,7 +14,7 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/interfaces.h>
 
-#include "tests/lib/echo-channel-manager-conn.h"
+#include "tests/lib/echo-conn.h"
 #include "tests/lib/simple-channel-manager.h"
 #include "tests/lib/myassert.h"
 #include "tests/lib/util.h"
@@ -23,7 +23,7 @@ typedef struct
 {
   GMainLoop *mainloop;
   TpDBusDaemon *dbus;
-  TpTestsEchoChannelManagerConnection *service_conn;
+  TpTestsEchoConnection *service_conn;
   TpTestsSimpleChannelManager *channel_manager;
 
   TpConnection *conn;
@@ -50,9 +50,9 @@ setup (Test *test,
       TP_TESTS_TYPE_SIMPLE_CHANNEL_MANAGER, NULL);
   g_assert (test->channel_manager != NULL);
 
-  test->service_conn = TP_TESTS_ECHO_CHANNEL_MANAGER_CONNECTION (
+  test->service_conn = TP_TESTS_ECHO_CONNECTION (
       tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_ECHO_CHANNEL_MANAGER_CONNECTION,
+        TP_TESTS_TYPE_ECHO_CONNECTION,
         "account", "me@example",
         "protocol", "example",
         "channel-manager", test->channel_manager,

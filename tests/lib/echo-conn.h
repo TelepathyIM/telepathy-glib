@@ -13,7 +13,8 @@
 #define __TP_TESTS_ECHO_CONN_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/base-connection.h>
+
+#include "contacts-conn.h"
 
 G_BEGIN_DECLS
 
@@ -22,11 +23,11 @@ typedef struct _TpTestsEchoConnectionClass TpTestsEchoConnectionClass;
 typedef struct _TpTestsEchoConnectionPrivate TpTestsEchoConnectionPrivate;
 
 struct _TpTestsEchoConnectionClass {
-    TpBaseConnectionClass parent_class;
+    TpTestsContactsConnectionClass parent_class;
 };
 
 struct _TpTestsEchoConnection {
-    TpBaseConnection parent;
+    TpTestsContactsConnection parent;
 
     TpTestsEchoConnectionPrivate *priv;
 };

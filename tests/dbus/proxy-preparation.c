@@ -11,7 +11,7 @@
 
 #include "tests/lib/util.h"
 #include "tests/lib/simple-account.h"
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/my-conn-proxy.h"
 
 typedef struct {
@@ -39,7 +39,7 @@ setup (Test *test,
   test->error = NULL;
 
   /* Create (service and client sides) connection objects */
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
 
   test->my_conn = g_object_new (TP_TESTS_TYPE_MY_CONN_PROXY,
@@ -304,7 +304,7 @@ recreate_connection (Test *test)
   disconnect_and_destroy_conn (test);
 
   test->base_connection = tp_tests_object_new_static_class (
-      TP_TESTS_TYPE_SIMPLE_CONNECTION,
+      TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "account", "me@test.com",
       "protocol", "simple",
       NULL);

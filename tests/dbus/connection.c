@@ -15,7 +15,7 @@
 #include <telepathy-glib/proxy-subclass.h>
 
 #include "tests/lib/myassert.h"
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"
 
 typedef struct {
@@ -61,7 +61,7 @@ setup (Test *test,
 
   test->service_conn = TP_TESTS_SIMPLE_CONNECTION (
     tp_tests_object_new_static_class (
-        TP_TESTS_TYPE_SIMPLE_CONNECTION,
+        TP_TESTS_TYPE_CONTACTS_CONNECTION,
         "account", "me@example.com",
         "protocol", "simple-protocol",
         NULL));
@@ -266,7 +266,7 @@ test_prepare (Test *test,
   g_assert (caps != NULL);
   classes = tp_capabilities_get_channel_classes (caps);
   g_assert (classes != NULL);
-  g_assert_cmpint (classes->len, ==, 0);
+  g_assert_cmpint (classes->len, ==, 2);
 }
 
 static void

@@ -23,7 +23,7 @@ static void service_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (TpTestsBug16307Connection,
     tp_tests_bug16307_connection,
-    TP_TESTS_TYPE_SIMPLE_CONNECTION,
+    TP_TESTS_TYPE_CONTACTS_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION,
       service_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING,

@@ -16,24 +16,27 @@
 #include <telepathy-glib/telepathy-glib.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
 
+
 #include "echo-im-manager.h"
+#include "simple-channel-manager.h"
 
 G_DEFINE_TYPE (TpTestsEchoConnection,
     tp_tests_echo_connection,
-    TP_TYPE_BASE_CONNECTION)
+    TP_TESTS_TYPE_CONTACTS_CONNECTION)
 
 /* type definition stuff */
 
 enum
 {
-  PROP_ACCOUNT = 1,
+  PROP_CHANNEL_MANAGER = 1,
   N_PROPS
 };
 
 struct _TpTestsEchoConnectionPrivate
 {
-  gchar *account;
+  TpTestsSimpleChannelManager *channel_manager;
 };
+
 
 static void
 tp_tests_echo_connection_init (TpTestsEchoConnection *self)
@@ -49,59 +52,6 @@ tp_tests_echo_connection_init (TpTestsEchoConnection *self)
    * override interfaces set in TpTestsSimpleConnection */
   tp_base_connection_add_interfaces ((TpBaseConnection *) self,
       interfaces_always_present);
-}
-
-static void
-get_property (GObject *object,
-              guint property_id,
-              GValue *value,
-              GParamSpec *spec)
-{
-  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (object);
-
-  switch (property_id) {
-    case PROP_ACCOUNT:
-      g_value_set_string (value, self->priv->account);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
-  }
-}
-
-static void
-set_property (GObject *object,
-              guint property_id,
-              const GValue *value,
-              GParamSpec *spec)
-{
-  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (object);
-
-  switch (property_id) {
-    case PROP_ACCOUNT:
-      g_free (self->priv->account);
-      self->priv->account = g_utf8_strdown (g_value_get_string (value), -1);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
-  }
-}
-
-static void
-finalize (GObject *object)
-{
-  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (object);
-
-  g_free (self->priv->account);
-
-  G_OBJECT_CLASS (tp_tests_echo_connection_parent_class)->finalize (object);
-}
-
-static gchar *
-get_unique_connection_name (TpBaseConnection *conn)
-{
-  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (conn);
-
-  return g_strdup (self->priv->account);
 }
 
 /* Returns the same id given in but in lowercase. If '#' is present,
@@ -134,6 +84,12 @@ static void
 create_handle_repos (TpBaseConnection *conn,
                      TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES])
 {
+  ((TpBaseConnectionClass *)
+      tp_tests_echo_connection_parent_class)->create_handle_repos (conn, repos);
+
+  /* Replace the contacts handle repo with our own, for special normalization */
+  g_assert (repos[TP_HANDLE_TYPE_CONTACT] != NULL);
+  g_object_unref (repos[TP_HANDLE_TYPE_CONTACT]);
   repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new
       (TP_HANDLE_TYPE_CONTACT, tp_tests_echo_normalize_contact, NULL);
 }
@@ -141,43 +97,59 @@ create_handle_repos (TpBaseConnection *conn,
 static GPtrArray *
 create_channel_managers (TpBaseConnection *conn)
 {
-  GPtrArray *ret = g_ptr_array_sized_new (1);
+  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (conn);
+  GPtrArray *ret;
 
-  g_ptr_array_add (ret, g_object_new (TP_TESTS_TYPE_ECHO_IM_MANAGER,
-        "connection", conn,
-        NULL));
+  ret = ((TpBaseConnectionClass *)
+      tp_tests_echo_connection_parent_class)->create_channel_managers (conn);
+
+  if (self->priv->channel_manager == NULL)
+    {
+      self->priv->channel_manager = g_object_new (TP_TESTS_TYPE_ECHO_IM_MANAGER,
+          "connection", conn,
+          NULL);
+    }
+
+  /* tp-glib will free this for us so we don't need to worry about
+     doing it ourselves. */
+  g_ptr_array_add (ret, self->priv->channel_manager);
 
   return ret;
 }
 
-static gboolean
-start_connecting (TpBaseConnection *conn,
-                  GError **error)
+static void
+get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *spec)
 {
-  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (conn);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (conn,
-      TP_HANDLE_TYPE_CONTACT);
+  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (object);
 
-  /* In a real connection manager we'd ask the underlying implementation to
-   * start connecting, then go to state CONNECTED when finished, but here
-   * we can do it immediately. */
-
-  conn->self_handle = tp_handle_ensure (contact_repo, self->priv->account,
-      NULL, NULL);
-
-  tp_base_connection_change_status (conn, TP_CONNECTION_STATUS_CONNECTED,
-      TP_CONNECTION_STATUS_REASON_REQUESTED);
-
-  return TRUE;
+  switch (property_id) {
+    case PROP_CHANNEL_MANAGER:
+      g_assert (self->priv->channel_manager == NULL); /* construct-only */
+      g_value_set_object (value, self->priv->channel_manager);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
+  }
 }
 
 static void
-shut_down (TpBaseConnection *conn)
+set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *spec)
 {
-  /* In a real connection manager we'd ask the underlying implementation to
-   * start shutting down, then call this function when finished, but here
-   * we can do it immediately. */
-  tp_base_connection_finish_shutdown (conn);
+  TpTestsEchoConnection *self = TP_TESTS_ECHO_CONNECTION (object);
+
+  switch (property_id) {
+    case PROP_CHANNEL_MANAGER:
+      self->priv->channel_manager = g_value_dup_object (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
+  }
 }
 
 static void
@@ -190,18 +162,14 @@ tp_tests_echo_connection_class_init (TpTestsEchoConnectionClass *klass)
 
   object_class->get_property = get_property;
   object_class->set_property = set_property;
-  object_class->finalize = finalize;
   g_type_class_add_private (klass, sizeof (TpTestsEchoConnectionPrivate));
 
   base_class->create_handle_repos = create_handle_repos;
-  base_class->get_unique_connection_name = get_unique_connection_name;
   base_class->create_channel_managers = create_channel_managers;
-  base_class->start_connecting = start_connecting;
-  base_class->shut_down = shut_down;
 
-  param_spec = g_param_spec_string ("account", "Account name",
-      "The username of this user", NULL,
+  param_spec = g_param_spec_object ("channel-manager", "Channel manager",
+      "The channel manager", TP_TESTS_TYPE_SIMPLE_CHANNEL_MANAGER,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
+  g_object_class_install_property (object_class, PROP_CHANNEL_MANAGER, param_spec);
 }

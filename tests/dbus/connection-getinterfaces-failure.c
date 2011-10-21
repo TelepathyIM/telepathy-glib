@@ -14,19 +14,19 @@
 #include <telepathy-glib/interfaces.h>
 
 #include "tests/lib/myassert.h"
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/util.h"
 
 static GType bug15306_connection_get_type (void);
 
-typedef TpTestsSimpleConnection Bug15306Connection;
-typedef TpTestsSimpleConnectionClass Bug15306ConnectionClass;
+typedef TpTestsContactsConnection Bug15306Connection;
+typedef TpTestsContactsConnectionClass Bug15306ConnectionClass;
 
 static void bug15306_conn_iface_init (gpointer, gpointer);
 
 G_DEFINE_TYPE_WITH_CODE (Bug15306Connection,
     bug15306_connection,
-    TP_TESTS_TYPE_SIMPLE_CONNECTION,
+    TP_TESTS_TYPE_CONTACTS_CONNECTION,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, bug15306_conn_iface_init))
 
 static void

@@ -33,8 +33,6 @@ libtp_glib_tests_la_SOURCES = \
     echo-cm.c \
     echo-conn.h \
     echo-conn.c \
-    echo-channel-manager-conn.h \
-    echo-channel-manager-conn.c \
     echo-im-manager.h \
     echo-im-manager.c \
     file-transfer-chan.h \

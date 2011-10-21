@@ -15,7 +15,7 @@
 #include <telepathy-glib/dbus.h>
 
 #include "tests/lib/util.h"
-#include "tests/lib/simple-conn.h"
+#include "tests/lib/contacts-conn.h"
 #include "tests/lib/dbus-tube-chan.h"
 
 typedef struct {
@@ -46,7 +46,7 @@ setup (Test *test,
   test->error = NULL;
 
   /* Create (service and client sides) connection objects */
-  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_SIMPLE_CONNECTION,
+  tp_tests_create_and_connect_conn (TP_TESTS_TYPE_CONTACTS_CONNECTION,
       "me@test.com", &test->base_connection, &test->connection);
 }
 
