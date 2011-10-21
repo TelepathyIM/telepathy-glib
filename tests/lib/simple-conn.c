@@ -25,41 +25,27 @@
 #include "textchan-null.h"
 #include "util.h"
 
-static void conn_iface_init (TpSvcConnectionClass *);
-
 G_DEFINE_TYPE_WITH_CODE (TpTestsSimpleConnection, tp_tests_simple_connection,
     TP_TYPE_BASE_CONNECTION,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, conn_iface_init))
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION, NULL))
 
 /* type definition stuff */
 
 enum
 {
   PROP_ACCOUNT = 1,
-  PROP_BREAK_PROPS = 2,
-  PROP_DBUS_STATUS = 3,
+  PROP_DBUS_STATUS,
   N_PROPS
 };
-
-enum
-{
-  SIGNAL_GOT_SELF_HANDLE,
-  N_SIGNALS
-};
-
-static guint signals[N_SIGNALS] = {0};
 
 struct _TpTestsSimpleConnectionPrivate
 {
   gchar *account;
   guint connect_source;
   guint disconnect_source;
-  gboolean break_fastpath_props;
 
   /* TpHandle => reffed TpTestsTextChannelNull */
   GHashTable *channels;
-
-  GError *get_self_handle_error /* initially NULL */ ;
 };
 
 static void
@@ -84,16 +70,7 @@ get_property (GObject *object,
     case PROP_ACCOUNT:
       g_value_set_string (value, self->priv->account);
       break;
-    case PROP_BREAK_PROPS:
-      g_value_set_boolean (value, self->priv->break_fastpath_props);
-      break;
     case PROP_DBUS_STATUS:
-      if (self->priv->break_fastpath_props)
-        {
-          g_debug ("returning broken value for Connection.Status");
-          g_value_set_uint (value, 0xdeadbeefU);
-        }
-      else
         {
           guint32 status = TP_BASE_CONNECTION (self)->status;
 
@@ -120,9 +97,6 @@ set_property (GObject *object,
     case PROP_ACCOUNT:
       g_free (self->priv->account);
       self->priv->account = g_utf8_strdown (g_value_get_string (value), -1);
-      break;
-    case PROP_BREAK_PROPS:
-      self->priv->break_fastpath_props = g_value_get_boolean (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, spec);
@@ -154,7 +128,6 @@ finalize (GObject *object)
       g_source_remove (self->priv->disconnect_source);
     }
 
-  g_clear_error (&self->priv->get_self_handle_error);
   g_free (self->priv->account);
 
   G_OBJECT_CLASS (tp_tests_simple_connection_parent_class)->finalize (object);
@@ -310,13 +283,6 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
       G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
   g_object_class_install_property (object_class, PROP_ACCOUNT, param_spec);
 
-  param_spec = g_param_spec_boolean ("break-0192-properties",
-      "Break 0.19.2 properties",
-      "Break Connection D-Bus properties introduced in spec 0.19.2", FALSE,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (object_class, PROP_BREAK_PROPS, param_spec);
-
   param_spec = g_param_spec_uint ("dbus-status",
       "Connection.Status",
       "The connection status as visible on D-Bus (overridden so can break it)",
@@ -324,14 +290,6 @@ tp_tests_simple_connection_class_init (TpTestsSimpleConnectionClass *klass)
       TP_CONNECTION_STATUS_DISCONNECTED,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DBUS_STATUS, param_spec);
-
-  signals[SIGNAL_GOT_SELF_HANDLE] = g_signal_new ("got-self-handle",
-      G_OBJECT_CLASS_TYPE (klass),
-      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
-      0,
-      NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
-      G_TYPE_NONE, 0);
 }
 
 void
@@ -409,45 +367,4 @@ tp_tests_simple_connection_ensure_text_chan (TpTestsSimpleConnection *self,
     *props = tp_tests_text_channel_get_props (chan);
 
   return chan_path;
-}
-
-void
-tp_tests_simple_connection_set_get_self_handle_error (
-    TpTestsSimpleConnection *self,
-    GQuark domain,
-    gint code,
-    const gchar *message)
-{
-  self->priv->get_self_handle_error = g_error_new_literal (domain, code,
-      message);
-}
-
-static void
-get_self_handle (TpSvcConnection *iface,
-    DBusGMethodInvocation *context)
-{
-  TpTestsSimpleConnection *self = TP_TESTS_SIMPLE_CONNECTION (iface);
-  TpBaseConnection *base = TP_BASE_CONNECTION (iface);
-
-  g_assert (TP_IS_BASE_CONNECTION (base));
-
-  TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED (base, context);
-
-  if (self->priv->get_self_handle_error != NULL)
-    {
-      dbus_g_method_return_error (context, self->priv->get_self_handle_error);
-      return;
-    }
-
-  tp_svc_connection_return_from_get_self_handle (context, base->self_handle);
-  g_signal_emit (self, signals[SIGNAL_GOT_SELF_HANDLE], 0);
-}
-
-static void
-conn_iface_init (TpSvcConnectionClass *iface)
-{
-#define IMPLEMENT(prefix,x) \
-  tp_svc_connection_implement_##x (iface, prefix##x)
-  IMPLEMENT(,get_self_handle);
-#undef IMPLEMENT
 }
