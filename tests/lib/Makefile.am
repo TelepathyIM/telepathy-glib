@@ -16,8 +16,6 @@ noinst_LTLIBRARIES = \
 libtp_glib_tests_la_SOURCES = \
     bug-19101-conn.c \
     bug-19101-conn.h \
-    bug16307-conn.c \
-    bug16307-conn.h \
     broken-client-types-conn.c \
     broken-client-types-conn.h \
     contacts-conn.c \

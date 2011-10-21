@@ -23,7 +23,6 @@ tests_list = \
     test-connection-bug-18845 \
     test-connection-error \
     test-connection-handles \
-    test-connection-inject-bug16307 \
     test-connection-interests \
     test-connection-getinterfaces-failure \
     test-contact-lists \
@@ -153,8 +152,6 @@ test_connection_bug_18845_SOURCES = connection-bug-18845.c
 test_connection_handles_SOURCES = connection-handles.c
 
 test_connection_error_SOURCES = connection-error.c
-
-test_connection_inject_bug16307_SOURCES = connection-inject-bug16307.c
 
 test_connection_interests_SOURCES = connection-interests.c
 
