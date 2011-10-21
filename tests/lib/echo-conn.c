@@ -38,8 +38,17 @@ struct _TpTestsEchoConnectionPrivate
 static void
 tp_tests_echo_connection_init (TpTestsEchoConnection *self)
 {
+  static const gchar *interfaces_always_present[] = {
+      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+      NULL };
+
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_ECHO_CONNECTION,
       TpTestsEchoConnectionPrivate);
+
+  /* We cannot set base_class->interfaces_always_present because that would
+   * override interfaces set in TpTestsSimpleConnection */
+  tp_base_connection_add_interfaces ((TpBaseConnection *) self,
+      interfaces_always_present);
 }
 
 static void
@@ -174,9 +183,6 @@ shut_down (TpBaseConnection *conn)
 static void
 tp_tests_echo_connection_class_init (TpTestsEchoConnectionClass *klass)
 {
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-      NULL };
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
@@ -192,7 +198,6 @@ tp_tests_echo_connection_class_init (TpTestsEchoConnectionClass *klass)
   base_class->create_channel_managers = create_channel_managers;
   base_class->start_connecting = start_connecting;
   base_class->shut_down = shut_down;
-  base_class->interfaces_always_present = interfaces_always_present;
 
   param_spec = g_param_spec_string ("account", "Account name",
       "The username of this user", NULL,

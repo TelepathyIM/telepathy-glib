@@ -156,6 +156,8 @@
  *  by subclasses. The default is to list no additional interfaces.
  *  Individual instances may detect which additional interfaces they support
  *  and signal them before going to state CONNECTED by calling
+ *  tp_base_connection_add_interfaces(). Note that subclasses override this
+ *  value; so if you're doing a sub-subclass of TpBaseConnection, you should use
  *  tp_base_connection_add_interfaces().
  * @create_channel_managers: Create an array of channel managers for this
  *  Connection. At least one of this or @create_channel_factories must be set

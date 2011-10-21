@@ -145,6 +145,21 @@ free_rcc_list (GPtrArray *rccs)
 static void
 tp_tests_contacts_connection_init (TpTestsContactsConnection *self)
 {
+  static const gchar *interfaces_always_present[] = {
+      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_LOCATION,
+      TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES,
+      TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,
+      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+      NULL };
+
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TESTS_TYPE_CONTACTS_CONNECTION,
       TpTestsContactsConnectionPrivate);
   self->priv->aliases = g_hash_table_new_full (g_direct_hash, g_direct_equal,
@@ -161,6 +176,11 @@ tp_tests_contacts_connection_init (TpTestsContactsConnection *self)
       g_direct_equal, NULL, (GDestroyNotify) free_rcc_list);
   self->priv->contact_info = g_hash_table_new_full (g_direct_hash,
       g_direct_equal, NULL, (GDestroyNotify) g_ptr_array_unref);
+
+  /* We cannot set base_class->interfaces_always_present because that would
+   * override interfaces set in TpTestsSimpleConnection */
+  tp_base_connection_add_interfaces ((TpBaseConnection *) self,
+      interfaces_always_present);
 }
 
 static void
@@ -516,20 +536,6 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
   TpPresenceMixinClass *mixin_class;
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
-      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
-      TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
-      TP_IFACE_CONNECTION_INTERFACE_LOCATION,
-      TP_IFACE_CONNECTION_INTERFACE_CLIENT_TYPES,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_CAPABILITIES,
-      TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
-      NULL };
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
         { TP_IFACE_CONNECTION_INTERFACE_AVATARS,
           conn_avatars_properties_getter,
@@ -548,7 +554,6 @@ tp_tests_contacts_connection_class_init (TpTestsContactsConnectionClass *klass)
   object_class->finalize = finalize;
   g_type_class_add_private (klass, sizeof (TpTestsContactsConnectionPrivate));
 
-  base_class->interfaces_always_present = interfaces_always_present;
   base_class->create_channel_managers = create_channel_managers;
 
   tp_contacts_mixin_class_init (object_class,

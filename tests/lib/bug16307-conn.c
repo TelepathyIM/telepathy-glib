@@ -57,8 +57,20 @@ struct _TpTestsBug16307ConnectionPrivate
 static void
 tp_tests_bug16307_connection_init (TpTestsBug16307Connection *self)
 {
+  static const gchar *interfaces_always_present[] = {
+      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+      TP_IFACE_CONNECTION_INTERFACE_CAPABILITIES,
+      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
+      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+      NULL };
+
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       TP_TESTS_TYPE_BUG16307_CONNECTION, TpTestsBug16307ConnectionPrivate);
+
+  /* We cannot set base_class->interfaces_always_present because that would
+   * override interfaces set in TpTestsSimpleConnection */
+  tp_base_connection_add_interfaces ((TpBaseConnection *) self,
+      interfaces_always_present);
 }
 
 static void
@@ -144,12 +156,6 @@ tp_tests_bug16307_connection_class_init (TpTestsBug16307ConnectionClass *klass)
   TpBaseConnectionClass *base_class =
       (TpBaseConnectionClass *) klass;
   GObjectClass *object_class = (GObjectClass *) klass;
-  static const gchar *interfaces_always_present[] = {
-      TP_IFACE_CONNECTION_INTERFACE_ALIASING,
-      TP_IFACE_CONNECTION_INTERFACE_CAPABILITIES,
-      TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
-      TP_IFACE_CONNECTION_INTERFACE_AVATARS,
-      NULL };
   static TpDBusPropertiesMixinPropImpl connection_properties[] = {
       { "Status", "dbus-status-except-i-broke-it", NULL },
       { NULL }
@@ -159,8 +165,6 @@ tp_tests_bug16307_connection_class_init (TpTestsBug16307ConnectionClass *klass)
   g_type_class_add_private (klass, sizeof (TpTestsBug16307ConnectionPrivate));
 
   base_class->start_connecting = start_connecting;
-
-  base_class->interfaces_always_present = interfaces_always_present;
 
   signals[SIGNAL_GET_STATUS_RECEIVED] = g_signal_new ("get-status-received",
       G_OBJECT_CLASS_TYPE (klass),
