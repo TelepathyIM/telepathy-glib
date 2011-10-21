@@ -31,7 +31,6 @@ tests_list = \
     test-contacts \
     test-contacts-bug-19101 \
     test-contacts-mixin \
-    test-contacts-slow-path \
     test-dbus \
     test-dbus-tube \
     test-disconnection \
@@ -167,8 +166,6 @@ test_contacts_SOURCES = contacts.c
 test_contacts_bug_19101_SOURCES = contacts-bug-19101.c
 
 test_contacts_mixin_SOURCES = contacts-mixin.c
-
-test_contacts_slow_path_SOURCES = contacts-slow-path.c
 
 test_dbus_SOURCES = dbus.c
 
