@@ -880,38 +880,6 @@ introspect_self_contact (TpConnection *self)
 }
 
 static void
-got_self_handle (TpConnection *self,
-                 guint self_handle,
-                 const GError *error,
-                 gpointer user_data G_GNUC_UNUSED,
-                 GObject *user_object G_GNUC_UNUSED)
-{
-  g_assert (self->priv->introspection_call != NULL);
-  self->priv->introspection_call = NULL;
-
-  if (error != NULL)
-    {
-      DEBUG ("%p: GetSelfHandle() failed: %s", self, error->message);
-      tp_proxy_invalidate ((TpProxy *) self, error);
-      return;
-    }
-
-  if (self_handle == 0)
-    {
-      GError e = { TP_DBUS_ERRORS, TP_DBUS_ERROR_INCONSISTENT,
-          "GetSelfHandle() returned 0" };
-      DEBUG ("%s", e.message);
-      tp_proxy_invalidate ((TpProxy *) self, &e);
-      return;
-    }
-
-  self->priv->last_known_self_handle = self_handle;
-  self->priv->introspect_needed = g_list_append (self->priv->introspect_needed,
-    introspect_self_contact);
-  tp_connection_continue_introspection (self);
-}
-
-static void
 on_self_handle_changed (TpConnection *self,
                         guint self_handle,
                         gpointer user_data G_GNUC_UNUSED,
@@ -925,26 +893,9 @@ on_self_handle_changed (TpConnection *self,
 
   DEBUG ("SelfHandleChanged to %u, I wonder what that means?", self_handle);
   self->priv->last_known_self_handle = self_handle;
-  get_self_contact (self);
-}
 
-static void
-introspect_self_handle (TpConnection *self)
-{
-  if (!self->priv->introspecting_after_connected)
-    {
-      tp_connection_continue_introspection (self);
-      return;
-    }
-
-  /* this only happens when we introspect after CONNECTED, so there's no need
-   * to track whether this is the first time */
-  tp_cli_connection_connect_to_self_handle_changed (self,
-      on_self_handle_changed, NULL, NULL, NULL, NULL);
-
-  g_assert (self->priv->introspection_call == NULL);
-  self->priv->introspection_call = tp_cli_connection_call_get_self_handle (
-      self, -1, got_self_handle, NULL, NULL, NULL);
+  if (tp_connection_get_status (self, NULL) == TP_CONNECTION_STATUS_CONNECTED)
+    get_self_contact (self);
 }
 
 /* Appending callbacks to self->priv->introspect_needed relies on this */
@@ -968,46 +919,6 @@ tp_connection_add_interfaces_from_introspection (TpConnection *self,
     {
       self->priv->ready_enough_for_contacts = TRUE;
     }
-}
-
-static void
-tp_connection_got_interfaces_cb (TpConnection *self,
-                                 const gchar **interfaces,
-                                 const GError *error,
-                                 gpointer user_data,
-                                 GObject *user_object)
-{
-  g_assert (self->priv->introspection_call != NULL);
-  self->priv->introspection_call = NULL;
-
-  if (error != NULL)
-    {
-      DEBUG ("%p: GetInterfaces() failed, assuming no interfaces: %s",
-          self, error->message);
-      interfaces = NULL;
-    }
-
-  DEBUG ("%p: Introspected interfaces", self);
-
-  if (tp_proxy_get_invalidated (self) != NULL)
-    {
-      DEBUG ("%p: already invalidated, not trying to become ready: %s",
-          self, tp_proxy_get_invalidated (self)->message);
-      return;
-    }
-
-  g_assert (self->priv->introspect_needed == NULL);
-
-  if (interfaces != NULL)
-    tp_connection_add_interfaces_from_introspection (self, interfaces);
-
-  self->priv->introspect_needed = g_list_append (self->priv->introspect_needed,
-    introspect_self_handle);
-
-  /* FIXME: give subclasses a chance to influence the definition of "ready"
-   * now that we have our interfaces? */
-
-  tp_connection_continue_introspection (self);
 }
 
 static void
@@ -1238,41 +1149,6 @@ tp_connection_status_changed_cb (TpConnection *self,
 }
 
 static void
-tp_connection_got_status_cb (TpConnection *self,
-                             guint status,
-                             const GError *error,
-                             gpointer unused,
-                             GObject *user_object)
-{
-  DEBUG ("%p", self);
-
-  g_assert (self->priv->introspection_call != NULL);
-  self->priv->introspection_call = NULL;
-
-  if (error == NULL)
-    {
-      DEBUG ("%p: Initial status is %d", self, status);
-      tp_connection_status_changed (self, status,
-          TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED);
-
-      /* try introspecting before CONNECTED - it might work... */
-      if (status != TP_CONNECTION_STATUS_CONNECTED &&
-          self->priv->introspection_call == NULL)
-        {
-          self->priv->introspection_call =
-            tp_cli_connection_call_get_interfaces (self, -1,
-                tp_connection_got_interfaces_cb, NULL, NULL, NULL);
-        }
-    }
-  else
-    {
-      DEBUG ("%p: GetStatus() failed with %s %d \"%s\"",
-          self, g_quark_to_string (error->domain), error->code,
-          error->message);
-    }
-}
-
-static void
 tp_connection_invalidated (TpConnection *self)
 {
   if (self->priv->introspection_call != NULL)
@@ -1346,6 +1222,7 @@ _tp_connection_got_properties (TpProxy *proxy,
   guint32 status;
   guint32 self_handle;
   const gchar **interfaces;
+  GError *e = NULL;
 
   if (tp_proxy_get_invalidated (self) != NULL)
     {
@@ -1354,11 +1231,17 @@ _tp_connection_got_properties (TpProxy *proxy,
       return;
     }
 
+  if (error != NULL)
+    {
+      /* Properties are now mandatory */
+      tp_proxy_invalidate (proxy, error);
+      return;
+    }
+
   if (self->priv->introspection_call)
     self->priv->introspection_call = NULL;
 
-  if (error == NULL &&
-      _tp_connection_extract_properties (
+  if (_tp_connection_extract_properties (
         self,
         asv,
         &status,
@@ -1384,33 +1267,13 @@ _tp_connection_got_properties (TpProxy *proxy,
       tp_connection_continue_introspection (self);
       return;
     }
-  else if (error != NULL)
-    {
-      DEBUG ("GetAll failed: %s", error->message);
-    }
 
-
-  DEBUG ("Could not extract all required properties from GetAll return, "
-         "will use 0.18 API instead");
-
-  if (self->priv->introspection_call == NULL)
-    {
-      if (self->priv->status == TP_UNKNOWN_CONNECTION_STATUS &&
-          !self->priv->introspecting_after_connected)
-        {
-          /* get my initial status */
-          DEBUG ("Calling GetStatus");
-          self->priv->introspection_call =
-            tp_cli_connection_call_get_status (self, -1,
-              tp_connection_got_status_cb, NULL, NULL, NULL);
-        }
-      else
-        {
-          self->priv->introspection_call =
-            tp_cli_connection_call_get_interfaces (self, -1,
-                tp_connection_got_interfaces_cb, NULL, NULL, NULL);
-        }
-    }
+  e = g_error_new_literal (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+      "Connection does not implement all properties, legacy CMs are not "
+      "supported anymore.");
+  WARNING ("%s", e->message);
+  tp_proxy_invalidate (proxy, e);
+  g_clear_error (&e);
 }
 
 static void
@@ -1433,6 +1296,8 @@ tp_connection_constructed (GObject *object)
       tp_connection_status_changed_cb, NULL, NULL, NULL, NULL);
   tp_cli_connection_connect_to_connection_error (self,
       tp_connection_connection_error_cb, NULL, NULL, NULL, NULL);
+  tp_cli_connection_connect_to_self_handle_changed (self,
+      on_self_handle_changed, NULL, NULL, NULL, NULL);
 
   tp_connection_parse_object_path (self, &(self->priv->proto_name),
           &(self->priv->cm_name));
