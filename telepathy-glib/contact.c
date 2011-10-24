@@ -2487,38 +2487,38 @@ set_conn_capabilities_on_contacts (GPtrArray *contacts,
     TpConnection *connection)
 {
   guint i;
+  TpCapabilities *conn_caps = tp_connection_get_capabilities (connection);
+  GPtrArray *rcc;
+
+  /* If the connection has no capabilities then don't bother setting them on
+   * the contact and pretend we just don't know.. In practise this will only
+   * happen if there was an error in getting the connections capabilities so
+   * claiming ignorance seems the most sensible thing to do */
+  if (conn_caps == NULL)
+     return;
+
+  rcc = tp_capabilities_get_channel_classes (conn_caps);
+  if (rcc == NULL || rcc->len == 0)
+    return;
 
   for (i = 0; i < contacts->len; i++)
     {
       TpContact *contact = g_ptr_array_index (contacts, i);
 
-      contact_set_capabilities (contact, tp_connection_get_capabilities (
-            connection));
+      contact_set_capabilities (contact, conn_caps);
     }
 }
 
 static void
-connection_capabilities_prepare_cb (GObject *object,
+connection_capabilities_fetched_cb (GObject *object,
     GAsyncResult *res,
     gpointer user_data)
 {
-  GError *error = NULL;
   ContactsContext *c = user_data;
 
-  if (!tp_proxy_prepare_finish (object, res, &error))
-    {
-      DEBUG ("Failed to prepare Connection capabilities feature: %s %u: %s",
-          g_quark_to_string (error->domain), error->code, error->message);
-    }
-  else if (!tp_proxy_is_prepared (object, TP_CONNECTION_FEATURE_CAPABILITIES))
-    {
-      DEBUG ("Connection capabilities feature has not been actually prepared");
-    }
-  else
-    {
-      set_conn_capabilities_on_contacts (c->contacts, c->connection);
-    }
+  DEBUG ("Connection capabilities prepared");
 
+  set_conn_capabilities_on_contacts (c->contacts, c->connection);
   contacts_context_continue (c);
   contacts_context_unref (c);
 }
@@ -2526,12 +2526,13 @@ connection_capabilities_prepare_cb (GObject *object,
 static void
 contacts_get_conn_capabilities (ContactsContext *c)
 {
-  GQuark features[] = { TP_CONNECTION_FEATURE_CAPABILITIES, 0 };
   g_assert (c->handles->len == c->contacts->len);
 
+  DEBUG ("Getting connection capabilities");
+
   c->refcount++;
-  tp_proxy_prepare_async (c->connection, features,
-      connection_capabilities_prepare_cb, c);
+  _tp_connection_get_capabilities_async (c->connection,
+    connection_capabilities_fetched_cb, c);
 }
 
 static void

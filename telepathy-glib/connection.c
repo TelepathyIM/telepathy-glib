@@ -500,7 +500,7 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
     GObject *weak_object)
 {
   TpConnection *self = (TpConnection *) proxy;
-  GSimpleAsyncResult *result = user_data;
+  GSimpleAsyncResult *result;
 
   if (error != NULL)
     {
@@ -530,9 +530,63 @@ tp_connection_get_rcc_cb (TpProxy *proxy,
       FALSE);
 
 finally:
-  g_simple_async_result_complete (result);
+  while ((result = g_queue_pop_head (&self->priv->capabilities_queue)) != NULL)
+    {
+      g_simple_async_result_complete (result);
+      g_object_unref (result);
+    }
 
   g_object_notify ((GObject *) self, "capabilities");
+}
+
+static void
+_tp_connection_do_get_capabilities_async (TpConnection *self,
+    GSimpleAsyncResult *result)
+{
+  if (self->priv->capabilities != NULL)
+    {
+      /* been there, done that, bored now */
+      g_simple_async_result_complete_in_idle (result);
+      g_object_unref (result);
+    }
+  else
+    {
+      g_queue_push_tail (&self->priv->capabilities_queue, result);
+      if (g_queue_get_length (&self->priv->capabilities_queue) == 1)
+        {
+          DEBUG ("%s: Retrieving capabilities",
+            tp_proxy_get_object_path (self));
+
+          /* We don't check whether we actually have this interface here. The
+           * quark is dbus properties quark is guaranteed to be on every
+           * TpProxy and only very very old CMs won't have Requests, in case
+           * someone still has such a relic we'll we'll just handle it when
+           * they reply to us with an error */
+          tp_cli_dbus_properties_call_get (self, -1,
+            TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+              "RequestableChannelClasses",
+            tp_connection_get_rcc_cb, NULL, NULL, NULL);
+        }
+    }
+}
+
+void
+_tp_connection_get_capabilities_async (TpConnection *self,
+  GAsyncReadyCallback callback,
+  gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      _tp_connection_get_capabilities_async);
+  _tp_connection_do_get_capabilities_async (self, result);
+}
+
+gboolean
+_tp_connection_get_capabilities_finish (TpConnection *self,
+  GAsyncResult *result, GError **error)
+{
+  _tp_implement_finish_void (self, _tp_connection_get_capabilities_async);
 }
 
 static void
@@ -544,14 +598,12 @@ tp_connection_prepare_capabilities_async (TpProxy *proxy,
   TpConnection *self = (TpConnection *) proxy;
   GSimpleAsyncResult *result;
 
-  result = g_simple_async_result_new ((GObject *) proxy, callback, user_data,
+  DEBUG ("%s: Preparing capabilities", tp_proxy_get_object_path (self));
+
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
       tp_connection_prepare_capabilities_async);
 
-  g_assert (self->priv->capabilities == NULL);
-
-  tp_cli_dbus_properties_call_get (self, -1,
-      TP_IFACE_CONNECTION_INTERFACE_REQUESTS, "RequestableChannelClasses",
-      tp_connection_get_rcc_cb, result, g_object_unref, NULL);
+  _tp_connection_do_get_capabilities_async (self, result);
 }
 
 static void
@@ -559,7 +611,8 @@ signal_connected (TpConnection *self)
 {
   /* we shouldn't have gone to status CONNECTED for any reason
    * that isn't REQUESTED :-) */
-  DEBUG ("%p: CORE and CONNECTED ready", self);
+  DEBUG ("%s (%p): CORE and CONNECTED ready",
+    tp_proxy_get_object_path (self), self);
   self->priv->status = TP_CONNECTION_STATUS_CONNECTED;
   self->priv->status_reason = TP_CONNECTION_STATUS_REASON_REQUESTED;
   self->priv->ready = TRUE;
@@ -1360,6 +1413,8 @@ tp_connection_constructed (GObject *object)
   if (object_class->constructed != NULL)
     object_class->constructed (object);
 
+  DEBUG ("%s (%p) constructed", tp_proxy_get_object_path (object), object);
+
   _tp_proxy_ensure_factory (self, NULL);
 
   /* Connect to my own StatusChanged signal.
@@ -1383,8 +1438,6 @@ tp_connection_constructed (GObject *object)
 static void
 tp_connection_init (TpConnection *self)
 {
-  DEBUG ("%p", self);
-
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, TP_TYPE_CONNECTION,
       TpConnectionPrivate);
 
@@ -1398,6 +1451,8 @@ tp_connection_init (TpConnection *self)
   self->priv->roster = g_hash_table_new_full (g_direct_hash, g_direct_equal,
       NULL, g_object_unref);
   self->priv->contacts_changed_queue = g_queue_new ();
+
+  g_queue_init (&self->priv->capabilities_queue);
 }
 
 static void

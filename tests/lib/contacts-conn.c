@@ -362,6 +362,7 @@ client_types_fill_contact_attributes (
 static void
 constructed (GObject *object)
 {
+  TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (object);
   TpBaseConnection *base = TP_BASE_CONNECTION (object);
   void (*parent_impl) (GObject *) =
     G_OBJECT_CLASS (tp_tests_contacts_connection_parent_class)->constructed;
@@ -372,7 +373,8 @@ constructed (GObject *object)
   tp_contacts_mixin_init (object,
       G_STRUCT_OFFSET (TpTestsContactsConnection, contacts_mixin));
   tp_base_connection_register_with_contacts_mixin (base);
-  tp_base_contact_list_mixin_register_with_contacts_mixin (base);
+  if (self->priv->list_manager)
+    tp_base_contact_list_mixin_register_with_contacts_mixin (base);
   tp_contacts_mixin_add_contact_attributes_iface (object,
       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
       aliasing_fill_contact_attributes);
@@ -1346,4 +1348,5 @@ tp_tests_no_requests_connection_class_init (
       (TpBaseConnectionClass *) klass;
 
   base_class->interfaces_always_present = interfaces_always_present;
+  base_class->create_channel_managers = NULL;
 }

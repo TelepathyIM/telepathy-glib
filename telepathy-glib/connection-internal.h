@@ -59,6 +59,9 @@ struct _TpConnectionPrivate {
     GHashTable *contacts;
 
     TpCapabilities *capabilities;
+    /* Queue of owned GSimpleAsyncResult, each result being a pending call
+     * started using _tp_connection_do_get_capabilities_async */
+    GQueue capabilities_queue;
 
     TpAvatarRequirements *avatar_requirements;
     GArray *avatar_request_queue;
@@ -114,6 +117,15 @@ void _tp_connection_status_reason_to_gerror (TpConnectionStatusReason reason,
     TpConnectionStatus prev_status,
     const gchar **ret_str,
     GError **error);
+
+/* Internal hook to break potential dependency loop between Connection and
+ * Contacts */
+void _tp_connection_get_capabilities_async (TpConnection *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean _tp_connection_get_capabilities_finish (TpConnection *self,
+    GAsyncResult *result, GError **error);
 
 void _tp_connection_add_contact (TpConnection *self, TpHandle handle,
     TpContact *contact);
