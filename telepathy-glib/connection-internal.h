@@ -59,6 +59,8 @@ struct _TpConnectionPrivate {
     GHashTable *contacts;
 
     TpCapabilities *capabilities;
+    /* Queue of owned GSimpleAsyncResult, each result being a pending call
+     * started using _tp_connection_do_get_capabilities_async */
     GQueue capabilities_queue;
 
     TpAvatarRequirements *avatar_requirements;
