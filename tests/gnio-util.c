@@ -203,7 +203,8 @@ test_variant_to_sockaddr_unix (void)
 
   unixaddr = G_UNIX_SOCKET_ADDRESS (sockaddr);
 
-  g_assert (g_unix_socket_address_get_is_abstract (unixaddr) == FALSE);
+  g_assert (g_unix_socket_address_get_address_type (unixaddr) !=
+            G_UNIX_SOCKET_ADDRESS_ABSTRACT);
   g_assert_cmpuint (g_unix_socket_address_get_path_len (unixaddr), ==, pathlen);
   g_assert_cmpstr (g_unix_socket_address_get_path (unixaddr), ==, UNIX_ADDR);
 
@@ -235,7 +236,8 @@ test_variant_to_sockaddr_abstract_unix (void)
 
   unixaddr = G_UNIX_SOCKET_ADDRESS (sockaddr);
 
-  g_assert (g_unix_socket_address_get_is_abstract (unixaddr) == TRUE);
+  g_assert (g_unix_socket_address_get_address_type (unixaddr) ==
+            G_UNIX_SOCKET_ADDRESS_ABSTRACT);
   g_assert_cmpuint (g_unix_socket_address_get_path_len (unixaddr), ==,
       ABST_ADDR_LEN);
   g_assert (memcmp (g_unix_socket_address_get_path (unixaddr), ABST_ADDR,
@@ -271,8 +273,9 @@ test_sockaddr_to_variant_unix (void)
 static void
 test_sockaddr_to_variant_abstract_unix (void)
 {
-  GSocketAddress *sockaddr = g_unix_socket_address_new_abstract (
-      ABST_ADDR, ABST_ADDR_LEN);
+  GSocketAddress *sockaddr = g_unix_socket_address_new_with_type (
+      ABST_ADDR, ABST_ADDR_LEN, G_UNIX_SOCKET_ADDRESS_ABSTRACT);
+
   GValue *variant;
   GArray *array;
   TpSocketAddressType type;

@@ -117,8 +117,8 @@ tp_g_socket_address_from_variant (TpSocketAddressType type,
           {
             GArray *address = g_value_get_boxed (variant);
 
-            addr = g_unix_socket_address_new_abstract (
-                address->data, address->len);
+            addr = g_unix_socket_address_new_with_type (
+                address->data, address->len, G_UNIX_SOCKET_ADDRESS_ABSTRACT);
           }
         break;
 #endif /* HAVE_GIO_UNIX */
@@ -207,10 +207,15 @@ tp_address_variant_from_g_socket_address (GSocketAddress *address,
             const char *path = g_unix_socket_address_get_path (unixaddr);
             gsize len = g_unix_socket_address_get_path_len (unixaddr);
 
-            if (g_unix_socket_address_get_is_abstract (unixaddr))
+            if (g_unix_socket_address_get_address_type (unixaddr) ==
+                G_UNIX_SOCKET_ADDRESS_ABSTRACT)
+              {
                 type = TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX;
+              }
             else
+              {
                 type = TP_SOCKET_ADDRESS_TYPE_UNIX;
+              }
 
             array = g_array_sized_new (TRUE, FALSE, sizeof (char), len);
             array = g_array_append_vals (array, path, len);
