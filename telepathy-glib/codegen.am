@@ -127,7 +127,9 @@ _gen/stable-spec.xml: stable-interfaces.xml _gen/stable-stamp $(tools_dir)/xincl
 
 # Grab a list of re-entrant tp_cli_*_run_* methods we are committed to
 # generating for backwards compatibility.
-_gen/reentrant-methods.list: $(top_srcdir)/docs/reference/telepathy-glib-sections.txt
+_gen/reentrant-methods.list: \
+	$(top_srcdir)/docs/reference/telepathy-glib-sections.txt \
+	_gen/spec-stamp
 	$(AM_V_GEN)$(GREP) 'tp_cli_.*_run_.*' $< > $@
 
 # Things generated from the whole spec at once
