@@ -143,9 +143,6 @@ constructor (GType type,
       TP_CHANNEL_TEXT_MESSAGE_TYPE_NOTICE,
       G_MAXUINT);
 
-  if (self->priv->detailed)
-    flags |= TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED;
-
   if (self->priv->properties)
     flags |= TP_CHANNEL_GROUP_FLAG_PROPERTIES;
 
@@ -153,6 +150,16 @@ constructor (GType type,
 
   tp_group_mixin_init (object, G_STRUCT_OFFSET (TpTestsTextChannelGroup, group),
       contact_repo, self->conn->self_handle);
+
+  if (!self->priv->detailed)
+    {
+      /* TpGroupMixin always set the Members_Changed_Detailed flag so we have
+       * to cheat and manually remove it to pretend we don't implement it. */
+      TpGroupMixin *group = TP_GROUP_MIXIN (self);
+
+      group->group_flags &= ~TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED;
+    }
+
   tp_group_mixin_change_flags (object, flags, 0);
 
   return object;

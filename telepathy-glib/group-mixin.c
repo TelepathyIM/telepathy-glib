@@ -334,7 +334,7 @@ tp_group_mixin_init (GObject *obj,
   if (self_handle != 0)
     mixin->self_handle = tp_handle_ref (handle_repo, self_handle);
 
-  mixin->group_flags = 0;
+  mixin->group_flags = TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED;
 
   mixin->members = tp_handle_set_new (handle_repo);
   mixin->local_pending = tp_handle_set_new (handle_repo);
