@@ -2,7 +2,6 @@
 
 introspection_extra_dist = \
 	TelepathyGLib-0.12.metadata \
-	kludge.xsl \
 	$(NULL)
 
 if HAVE_INTROSPECTION
