@@ -2,7 +2,6 @@
 
 introspection_extra_dist = \
 	TelepathyGLib-0.12.metadata \
-	kludge.xsl \
 	$(NULL)
 
 if HAVE_INTROSPECTION
@@ -107,7 +106,7 @@ typelibsdir = $(libdir)/girepository-1.0/
 typelibs_DATA = $(dist_gir_DATA:.gir=.typelib)
 
 CLEANFILES += \
-    $(gir_DATA) \
+    $(dist_gir_DATA) \
     $(typelibs_DATA)
 
 endif
