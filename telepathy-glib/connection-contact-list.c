@@ -769,10 +769,13 @@ generic_callback (TpConnection *self,
   G_STMT_START { \
     GSimpleAsyncResult *result; \
     GArray *handles; \
+    gboolean supplied_contacts_are_valid; \
     \
     g_return_if_fail (TP_IS_CONNECTION (self)); \
-    g_return_if_fail (_tp_contacts_to_handles (self, n_contacts, contacts, \
-        &handles)); \
+    \
+    supplied_contacts_are_valid = _tp_contacts_to_handles (self, n_contacts, \
+        contacts, &handles); \
+    g_return_if_fail (supplied_contacts_are_valid); \
     \
     result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
         tp_connection_##method##_async); \
@@ -1109,11 +1112,14 @@ tp_connection_get_contact_groups (TpConnection *self)
   G_STMT_START { \
     GSimpleAsyncResult *result; \
     GArray *handles; \
+    gboolean supplied_contacts_are_valid; \
     \
     g_return_if_fail (TP_IS_CONNECTION (self)); \
     g_return_if_fail (group != NULL); \
-    g_return_if_fail (_tp_contacts_to_handles (self, n_contacts, contacts, \
-        &handles)); \
+    \
+    supplied_contacts_are_valid = _tp_contacts_to_handles (self, n_contacts, \
+        contacts, &handles); \
+    g_return_if_fail (supplied_contacts_are_valid); \
     \
     result = g_simple_async_result_new ((GObject *) self, callback, user_data, \
         tp_connection_##method##_async); \
