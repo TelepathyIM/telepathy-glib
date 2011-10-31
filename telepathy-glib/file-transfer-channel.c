@@ -869,8 +869,8 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * The number of bytes transferred so far in this
    * file transfer.
    *
-   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be prepared for
-   * this property to be meaningful and kept up to date.
+   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
+   * prepared for this property to be meaningful and kept up to date.
    *
    * Since: 0.15.5
    */
@@ -1287,13 +1287,13 @@ tp_file_transfer_channel_offer_file_finish (TpFileTransferChannel *self,
 /* Property accessors */
 
 /**
- * tp_file_transfer_channel_get_mime_type
+ * tp_file_transfer_channel_get_mime_type:
  * @self: a #TpFileTransferChannel
  *
  * Return the #TpFileTransferChannel:mime-type property
  *
  * Returns: (transfer none): the value of the
- * #TpFileTransferChannel:mime-type property
+ *   #TpFileTransferChannel:mime-type property
  *
  * Since: 0.15.5
  */
@@ -1306,13 +1306,13 @@ tp_file_transfer_channel_get_mime_type (TpFileTransferChannel *self)
 }
 
 /**
- * tp_file_transfer_channel_get_date
+ * tp_file_transfer_channel_get_date:
  * @self: a #TpFileTransferChannel
  *
  * Return the #TpFileTransferChannel:date property
  *
  * Returns: (transfer none): the value of the #TpFileTransferChannel:date
- * property
+ *   property
  *
  * Since: 0.15.5
  */
@@ -1325,13 +1325,13 @@ tp_file_transfer_channel_get_date (TpFileTransferChannel *self)
 }
 
 /**
- * tp_file_transfer_channel_get_description
+ * tp_file_transfer_channel_get_description:
  * @self: a #TpFileTransferChannel
  *
  * Return the #TpFileTransferChannel:description property
  *
- * Returns: (transfer none): the value of the #TpFileTransferChannel:description
- * property
+ * Returns: (transfer none): the value of the
+ *   #TpFileTransferChannel:description property
  *
  * Since: 0.15.5
  */
@@ -1344,13 +1344,13 @@ tp_file_transfer_channel_get_description (TpFileTransferChannel *self)
 }
 
 /**
- * tp_file_transfer_channel_get_filename
+ * tp_file_transfer_channel_get_filename:
  * @self: a #TpFileTransferChannel
  *
  * Return the #TpFileTransferChannel:filename property
  *
- * Returns: (transfer none): the value of the #TpFileTransferChannel:filename
- * property
+ * Returns: (transfer none): the value of the
+ *   #TpFileTransferChannel:filename property
  *
  * Since: 0.15.5
  */
@@ -1363,7 +1363,7 @@ tp_file_transfer_channel_get_filename (TpFileTransferChannel *self)
 }
 
 /**
- * tp_file_transfer_channel_get_size
+ * tp_file_transfer_channel_get_size:
  * @self: a #TpFileTransferChannel
  *
  * Return the #TpFileTransferChannel:size property
@@ -1381,7 +1381,7 @@ tp_file_transfer_channel_get_size (TpFileTransferChannel *self)
 }
 
 /**
- * tp_file_transfer_channel_get_state
+ * tp_file_transfer_channel_get_state:
  * @self: a #TpFileTransferChannel
  * @reason: (out): a #TpFileTransferStateChangeReason, or %NULL
  *
@@ -1406,7 +1406,7 @@ tp_file_transfer_channel_get_state (TpFileTransferChannel *self,
 }
 
 /**
- * tp_file_transfer_channel_get_transferred_bytes
+ * tp_file_transfer_channel_get_transferred_bytes:
  * @self: a #TpFileTransferChannel
  *
  * Return the #TpFileTransferChannel:transferred-bytes property
