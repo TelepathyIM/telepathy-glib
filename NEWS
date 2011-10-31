@@ -1,3 +1,20 @@
+telepathy-logger 0.2.11 (2011-10-31)
+===================================
+
+The "Halloween" release
+
+This is a bug fix release. Distributions are encouraged to update.
+
+Fixes:
+
+* Fix crash caused by used after free (Nicolas Dufresne)
+* Fix crash wen call sender or actor is not set (Vincent Penquerc'h)
+* Fix missing alias feature when receiving messages (Nicolas Dufresne)
+* Remove use of deprecated g_thread_init() (Nicolas Dufresne)
+* Improve silent build rulesa (Nicolas Dufresne)
+* Improve introspection annotation (Nicolas Dufresne)
+
+
 telepathy-logger 0.2.10 (2011-05-26)
 ===================================
 
