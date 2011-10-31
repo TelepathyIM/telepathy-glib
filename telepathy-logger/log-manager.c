@@ -117,6 +117,10 @@ typedef struct
 
 
 G_DEFINE_TYPE (TplLogManager, tpl_log_manager, G_TYPE_OBJECT);
+G_DEFINE_BOXED_TYPE (TplLogSearchHit,
+    _tpl_log_manager_search_hit,
+    _tpl_log_manager_search_hit_copy,
+    _tpl_log_manager_search_hit_free);
 
 static TplLogManager *manager_singleton = NULL;
 
@@ -719,7 +723,7 @@ _tpl_log_manager_search_hit_free (TplLogSearchHit *hit)
 
 
 /**
- * tpl_log_manager_search_free:
+ * tpl_log_manager_search_free: (skip):
  * @hits: a #GList of #TplLogSearchHit
  *
  * Free @hits and its content.
@@ -931,7 +935,8 @@ tpl_log_manager_get_dates_async (TplLogManager *manager,
  * tpl_log_manager_get_dates_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @dates: a pointer to a #GList used to return the list of #GDate
+ * @dates: (out) (transfer full) (element-type GLib.Date): a pointer to a
+ *  #GList used to return the list of #GDate
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
@@ -1041,7 +1046,8 @@ tpl_log_manager_get_events_for_date_async (TplLogManager *manager,
  * tpl_log_manager_get_events_for_date_finish
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @events: a pointer to a #GList used to return the list of #TplEvent
+ * @events: (out) (transfer full) (element-type TelepathyLogger.Event): a
+ *  pointer to a #GList used to return the list of #TplEvent
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
@@ -1158,7 +1164,7 @@ tpl_log_manager_get_filtered_events_async (TplLogManager *manager,
  * @result: a #GAsyncResult
  * @events: (out) (transfer full) (element-type TelepathyLogger.Event):
  *  a pointer to a #GList used to return the list #TplEvent
- * @error: (out caller-allocates): a #GError to fill
+ * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE.
  */
@@ -1252,8 +1258,9 @@ tpl_log_manager_get_entities_async (TplLogManager *self,
  * tpl_log_manager_get_entities_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @entities: a pointer to a #GList used to return the list of #TplEntity, to be
- *         freed using something like g_list_free_full (lst, g_object_unref)
+ * @entities: (out) (transfer full) (element-type TelepathyLogger.Entity): a
+ *  pointer to a #GList used to return the list of #TplEntity, to be freed
+ *  using something like g_list_free_full (lst, g_object_unref)
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE
@@ -1351,7 +1358,8 @@ tpl_log_manager_search_async (TplLogManager *manager,
  * tpl_log_manager_search_finish:
  * @self: a #TplLogManager
  * @result: a #GAsyncResult
- * @hits: a pointer to a #GList used to return the list of #TplLogSearchHit
+ * @hits: (out) (transfer full) (element-type TelepathyLogger.SearchHit): a
+ *  pointer to a #GList used to return the list of #TplLogSearchHit
  * @error: a #GError to fill
  *
  * Returns: #TRUE if the operation was successful, otherwise #FALSE

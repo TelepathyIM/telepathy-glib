@@ -30,6 +30,7 @@
 
 G_BEGIN_DECLS
 #define TPL_TYPE_LOG_MANAGER  (tpl_log_manager_get_type ())
+#define TPL_TYPE_LOG_SEARCH_HIT (_tpl_log_manager_search_hit_get_type ())
 #define TPL_LOG_MANAGER(o)  (G_TYPE_CHECK_INSTANCE_CAST ((o), TPL_TYPE_LOG_MANAGER, TplLogManager))
 #define TPL_LOG_MANAGER_CLASS(k)  (G_TYPE_CHECK_CLASS_CAST ((k), TPL_TYPE_LOG_MANAGER, TplLogManagerClass))
 #define TPL_IS_LOG_MANAGER(o) (G_TYPE_CHECK_INSTANCE_TYPE ((o), TPL_TYPE_LOG_MANAGER))
@@ -97,6 +98,7 @@ typedef gboolean (*TplLogEventFilter) (TplEvent *event,
     gpointer user_data);
 
 GType tpl_log_manager_get_type (void);
+GType _tpl_log_manager_search_hit_get_type (void);
 
 TplLogManager *tpl_log_manager_dup_singleton (void);
 

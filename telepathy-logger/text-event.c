@@ -364,7 +364,8 @@ _tpl_text_event_add_supersedes (TplTextEvent *self,
  * tpl_text_event_get_supersedes
  * @self: a #TplTextEvent
  *
- * Returns: (transfer none): A #GList of #TplTextEvent that this event
+ * Returns: (transfer none) (element-type TelepathyLogger.TextEvent): A #GList
+ *  of #TplTextEvent that this event
  * supersedes.
  */
 GList *
