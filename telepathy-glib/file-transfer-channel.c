@@ -335,7 +335,7 @@ accept_file_cb (TpChannel *proxy,
   GSocketAddress *remote_address;
   GError *error = NULL;
 
-  DEBUG ("Entering accept_file_cb");
+  DEBUG ("enter");
 
   if (error != NULL)
     {
@@ -407,7 +407,7 @@ provide_file_cb (TpChannel *proxy,
   GSocketAddress *remote_address;
   GError *error = NULL;
 
-  DEBUG ("Entering provide_file_cb");
+  DEBUG ("enter");
 
   if (error != NULL)
     {
@@ -1131,7 +1131,7 @@ tp_file_transfer_channel_accept_file_finish (TpFileTransferChannel *self,
     GAsyncResult *result,
     GError **error)
 {
-  DEBUG ("Entering tp_file_transfer_channel_accept_file_finish");
+  DEBUG ("enter");
   _tp_implement_finish_void (self, tp_file_transfer_channel_accept_file_async)
 }
 
@@ -1158,7 +1158,7 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
   GHashTable *supported_sockets;
   GError *error = NULL;
 
-  DEBUG ("Entering tp_file_transfer_channel_offer_file_async");
+  DEBUG ("enter");
 
   g_return_if_fail (TP_IS_FILE_TRANSFER_CHANNEL (self));
   g_return_if_fail (G_IS_FILE (file));
@@ -1279,7 +1279,7 @@ tp_file_transfer_channel_offer_file_finish (TpFileTransferChannel *self,
     GAsyncResult *result,
     GError **error)
 {
-  DEBUG ("Entering tp_file_transfer_channel_offer_file_finish");
+  DEBUG ("enter");
   _tp_implement_finish_void (self, tp_file_transfer_channel_offer_file_async)
 }
 
