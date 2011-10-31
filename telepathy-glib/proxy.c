@@ -1383,6 +1383,14 @@ tp_proxy_class_init (TpProxyClass *klass)
    *
    * Emitted when this proxy has been become invalid for
    * whatever reason. Any more specific signal should be emitted first.
+   *
+   * An invalidated proxy is one which can make no more method calls and will
+   * emit no more D-Bus signals. This is typically because the D-Bus object
+   * represented by the proxy ceased to exist, or there was some error
+   * obtaining the initial state.
+   *
+   * Any pending or future method calls made on this proxy will fail gracefully
+   * with the same error as returned by tp_proxy_get_invalidated().
    */
   signals[SIGNAL_INVALIDATED] = g_signal_new ("invalidated",
       G_OBJECT_CLASS_TYPE (klass),
