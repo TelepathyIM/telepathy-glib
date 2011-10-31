@@ -108,8 +108,6 @@ guint64 tp_file_transfer_channel_get_size (TpFileTransferChannel *self);
 guint64 tp_file_transfer_channel_get_transferred_bytes (
     TpFileTransferChannel *self);
 
-const gchar * tp_file_transfer_channel_get_uri (TpFileTransferChannel *self);
-
 G_END_DECLS
 
 #endif
