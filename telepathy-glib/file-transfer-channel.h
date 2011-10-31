@@ -108,6 +108,14 @@ guint64 tp_file_transfer_channel_get_size (TpFileTransferChannel *self);
 guint64 tp_file_transfer_channel_get_transferred_bytes (
     TpFileTransferChannel *self);
 
+/* Metadata */
+
+const gchar * tp_file_transfer_channel_get_service_name (
+    TpFileTransferChannel *self);
+
+const GHashTable * tp_file_transfer_channel_get_metadata (
+    TpFileTransferChannel *self);
+
 G_END_DECLS
 
 #endif

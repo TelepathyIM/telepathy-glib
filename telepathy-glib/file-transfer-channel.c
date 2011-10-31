@@ -116,6 +116,9 @@ struct _TpFileTransferChannelPrivate
     const gchar *content_hash;
     TpFileHashType content_hash_type;
     goffset initial_offset;
+    /* Metadata */
+    const gchar *service_name;
+    const GHashTable *metadata; /* const gchar* => const gchar* */
 
     /* Streams and sockets for sending and receiving the actual file */
     GSocket *client_socket;
@@ -144,6 +147,8 @@ enum /* properties */
   PROP_TRANSFERRED_BYTES,
   PROP_FILE,
   PROP_INITIAL_OFFSET,
+  PROP_SERVICE_NAME,
+  PROP_METADATA,
   N_PROPS
 };
 
@@ -536,6 +541,23 @@ tp_file_transfer_channel_constructed (GObject *obj)
   uri = tp_asv_get_string (properties, TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_URI);
   if (uri != NULL)
     self->priv->file = g_file_new_for_uri (uri);
+
+  self->priv->service_name = tp_asv_get_string (properties,
+      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME);
+  if (self->priv->service_name == NULL)
+    {
+      DEBUG ("Channel %s doesn't have Chan.I.FileTransfer.Metadata.ServiceName "
+          "in its immutable properties", tp_proxy_get_object_path (self));
+    }
+
+  self->priv->metadata = tp_asv_get_boxed (properties,
+     TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA,
+     TP_HASH_TYPE_STRING_STRING_MAP);
+  if (self->priv->metadata == NULL)
+    {
+      DEBUG ("Channel %s doesn't have Chan.I.FileTransfer.Metadata.Metadata "
+          "in its immutable properties", tp_proxy_get_object_path (self));
+    }
 }
 
 static void
@@ -582,6 +604,14 @@ tp_file_transfer_channel_get_property (GObject *object,
 
       case PROP_INITIAL_OFFSET:
         g_value_set_uint64 (value, self->priv->initial_offset);
+        break;
+
+      case PROP_SERVICE_NAME:
+        g_value_set_string (value, self->priv->service_name);
+        break;
+
+      case PROP_METADATA:
+        g_value_set_boxed (value, self->priv->metadata);
         break;
 
       default:
@@ -813,6 +843,44 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       0, G_MAXUINT64, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INITIAL_OFFSET,
+      param_spec);
+
+  /**
+   * TpFileTransferChannel:service-name:
+   *
+   * A string representing the service name that will be used over
+   * this file transfer channel or %NULL.
+   *
+   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be prepared for
+   * this property to be meaningful.
+   *
+   * Since: 0.16.UNRELEASED
+   */
+  param_spec = g_param_spec_string ("service-name",
+      "ServiceName",
+      "The Metadata.ServiceName property of this channel",
+      "",
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SERVICE_NAME,
+      param_spec);
+
+  /**
+   * TpFileTransferChannel:metadata:
+   *
+   * Additional information about the file transfer set by the channel
+   * initiator or %NULL.
+   *
+   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be prepared for
+   * this property to be meaningful.
+   *
+   * Since: 0.16.UNRELEASED
+   */
+  param_spec = g_param_spec_boxed ("metadata",
+      "Metadata",
+      "The Metadata.Metadata property of this channel",
+      TP_HASH_TYPE_STRING_STRING_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_METADATA,
       param_spec);
 
   g_type_class_add_private (object_class, sizeof
@@ -1465,4 +1533,41 @@ tp_file_transfer_channel_get_transferred_bytes (TpFileTransferChannel *self)
   g_return_val_if_fail (TP_IS_FILE_TRANSFER_CHANNEL (self), 0);
 
   return self->priv->transferred_bytes;
+}
+
+/**
+ * tp_file_transfer_channel_get_service_name:
+ * @self: a #TpFileTransferChannel
+ *
+ * Return the #TpFileTransferChannel:service-name property
+ *
+ * Returns: the value of the #TpFileTransferChannel:service-name property
+ *
+ * Since: 0.16.UNRELEASED
+ */
+const gchar *
+tp_file_transfer_channel_get_service_name (TpFileTransferChannel *self)
+{
+  g_return_val_if_fail (TP_IS_FILE_TRANSFER_CHANNEL (self), NULL);
+
+  return self->priv->service_name;
+}
+
+/**
+ * tp_file_transfer_channel_get_metadata:
+ * @self: a #TpFileTransferChannel
+ *
+ * Return the #TpFileTransferChannel:metadata property
+ *
+ * Returns: (transfer none) (element-type utf8 utf8): the
+ *   value of the #TpFileTransferChannel:metadata property
+ *
+ * Since: 0.16.UNRELEASED
+ */
+const GHashTable *
+tp_file_transfer_channel_get_metadata (TpFileTransferChannel *self)
+{
+  g_return_val_if_fail (TP_IS_FILE_TRANSFER_CHANNEL (self), NULL);
+
+  return self->priv->metadata;
 }
