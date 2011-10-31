@@ -117,6 +117,7 @@ enum /* properties */
   PROP_STATE,
   PROP_TRANSFERRED_BYTES,
   PROP_FILE,
+  PROP_INITIAL_OFFSET,
   N_PROPS
 };
 
@@ -663,6 +664,10 @@ tp_file_transfer_channel_get_property (GObject *object,
         g_value_set_object (value, self->priv->file);
         break;
 
+      case PROP_INITIAL_OFFSET:
+        g_value_set_uint64 (value, self->priv->initial_offset);
+        break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -880,6 +885,24 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       0, G_MAXUINT64, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TRANSFERRED_BYTES,
+      param_spec);
+
+  /**
+   * TpFileTransferChannel:initial-offset
+   *
+   * The offset in bytes from where the file should be sent.
+   *
+   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
+   * prepared for this property to be meaningful and kept up to date.
+   *
+   * Since: 0.15.UNRELEASED
+   */
+  param_spec = g_param_spec_uint64 ("initial-offset",
+      "InitialOffset",
+      "The InitialOffset property of this channel",
+      0, G_MAXUINT64, 0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIAL_OFFSET,
       param_spec);
 
   g_type_class_add_private (object_class, sizeof
