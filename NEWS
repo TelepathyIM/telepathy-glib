@@ -3,6 +3,23 @@ telepathy-glib 0.17.0 (UNRELEASED)
 
 …
 
+telepathy-glib 0.16.1 (2011-10-24)
+==================================
+
+Fixes:
+
+• fd.o#42063: circular introspection dependency between connection and
+  contacts. (Sjoerd)
+
+• fd.o#42049: TpBaseContactList now implements
+  TP_TOKEN_CONNECTION_INTERFACE_CONTACT_BLOCKING_BLOCKED. (Guillaume)
+
+• fd.o#41928: Don't crash if the owner of some members of a TpChannel are
+  unknown. (Guillaume)
+
+• fd.o#41929: Don't crash if a TpTextChannel receives a message not having a
+  sender. (Guillaume)
+
 telepathy-glib 0.16.0 (2011-10-14)
 ==================================
 
