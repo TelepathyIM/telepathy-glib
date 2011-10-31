@@ -135,7 +135,6 @@ incoming_splice_done_cb (GObject *output,
     GAsyncResult *result,
     gpointer user_data)
 {
-  //TpFileTransferChannel *self = (TpFileTransferChannel *) user_data;
   gssize size;
   GError *error = NULL;
 
