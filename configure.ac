@@ -31,7 +31,7 @@ m4_define(tpl_version, tpl_full_version[]tpl_maybe_datestamp)
 
 
 AC_INIT([telepathy-logger],[tpl_version],[https://bugs.freedesktop.org/buglist.cgi?product=Telepathy&component=logger])
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+AM_SILENT_RULES([yes])
 
 DBUS_SERVICES_DIR="$datadir/dbus-1/services"
 AC_SUBST(DBUS_SERVICES_DIR)
