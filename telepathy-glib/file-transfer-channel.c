@@ -327,7 +327,7 @@ out:
 static void
 accept_file_cb (TpChannel *proxy,
     const GValue *addressv,
-    const GError *in_error,
+    const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
@@ -337,9 +337,9 @@ accept_file_cb (TpChannel *proxy,
 
   DEBUG ("Entering accept_file_cb");
 
-  if (in_error != NULL)
+  if (error != NULL)
     {
-      DEBUG ("Failed to accept file: %s", in_error->message);
+      DEBUG ("Failed to accept file: %s", error->message);
 
       operation_failed (self, error);
       return;
@@ -399,7 +399,7 @@ out:
 static void
 provide_file_cb (TpChannel *proxy,
     const GValue *addressv,
-    const GError *in_error,
+    const GError *error,
     gpointer user_data,
     GObject *weak_object)
 {
@@ -409,7 +409,7 @@ provide_file_cb (TpChannel *proxy,
 
   DEBUG ("Entering provide_file_cb");
 
-  if (in_error != NULL)
+  if (error != NULL)
     {
       DEBUG ("Failed to offer file: %s", error->message);
 
@@ -1213,21 +1213,21 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
     case TP_SOCKET_ADDRESS_TYPE_IPV4:
         {
           GInetAddress *localhost;
-          GSocketAddress *in_address;
+          GSocketAddress *inet_address;
 
           localhost = g_inet_address_new_loopback (
               self->priv->socket_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ?
               G_SOCKET_FAMILY_IPV4 : G_SOCKET_FAMILY_IPV6);
 
-          in_address = g_inet_socket_address_new (localhost, 0);
+          inet_address = g_inet_socket_address_new (localhost, 0);
 
           g_socket_listener_add_address (
-              G_SOCKET_LISTENER (self->priv->service), in_address,
+              G_SOCKET_LISTENER (self->priv->service), inet_address,
               G_SOCKET_TYPE_STREAM, G_SOCKET_PROTOCOL_DEFAULT,
               NULL, &self->priv->address, &error);
 
           g_object_unref (localhost);
-          g_object_unref (in_address);
+          g_object_unref (inet_address);
 
           if (error != NULL)
             {
