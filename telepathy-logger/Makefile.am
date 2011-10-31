@@ -56,11 +56,11 @@ LIBTPL_HEADERS = \
 		$(NULL)
 
 %-marshal.c: %-marshal.list Makefile.am
-	$(QUIET_GEN)echo "#include \"tpl-marshal.h\"" > $@
-	$(QUIET_GEN)glib-genmarshal --body --prefix=tpl_marshal $< >> $@
+	$(AM_V_GEN)echo "#include \"tpl-marshal.h\"" > $@
+	$(AM_V_GEN)glib-genmarshal --body --prefix=tpl_marshal $< >> $@
 
 %-marshal.h: %-marshal.list Makefile.am
-	$(QUIET_GEN)glib-genmarshal --header --prefix=tpl_marshal $< > $@
+	$(AM_V_GEN)glib-genmarshal --header --prefix=tpl_marshal $< > $@
 
 BUILT_SOURCES = \
 	tpl-marshal.c tpl-marshal.h \

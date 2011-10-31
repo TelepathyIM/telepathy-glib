@@ -35,10 +35,10 @@ CLEANFILES = \
 
 # Generates Logger.client file
 Logger.client: $(clientfile_parts)
-	cp $(top_srcdir)/data/Logger.Observer.client.in $(clientfile_DATA)
-	cat $(top_srcdir)/data/Logger.Text.client.in >> $(clientfile_DATA)
+	@cp $(top_srcdir)/data/Logger.Observer.client.in $(clientfile_DATA)
+	@cat $(top_srcdir)/data/Logger.Text.client.in >> $(clientfile_DATA)
 if ENABLE_CALL
-	cat $(top_srcdir)/data/Logger.Call.client.in >> $(clientfile_DATA)
+	@cat $(top_srcdir)/data/Logger.Call.client.in >> $(clientfile_DATA)
 endif
-	cat $(top_srcdir)/data/Logger.Recover.client.in >> $(clientfile_DATA)
+	$(AM_V_GEN)cat $(top_srcdir)/data/Logger.Recover.client.in >> $(clientfile_DATA)
 
