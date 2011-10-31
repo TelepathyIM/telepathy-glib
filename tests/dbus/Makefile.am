@@ -26,7 +26,7 @@ noinst_PROGRAMS = \
     test-connection-interests \
     test-connection-getinterfaces-failure \
     test-contact-lists \
-    test-contact-list-clt \
+    test-contact-list-client \
     test-contacts \
     test-contacts-bug-19101 \
     test-contacts-mixin \
@@ -117,8 +117,8 @@ test_contact_lists_LDADD = \
     $(LDADD) \
     $(top_builddir)/examples/cm/contactlist/libexample-cm-contactlist.la
 
-test_contact_list_clt_SOURCES = contact-list-clt.c
-test_contact_list_clt_LDADD = \
+test_contact_list_client_SOURCES = contact-list-client.c
+test_contact_list_client_LDADD = \
     $(LDADD) \
     $(top_builddir)/examples/cm/contactlist/libexample-cm-contactlist.la
 
