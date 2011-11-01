@@ -309,8 +309,8 @@ test_blocked_contacts (Test *test,
   g_assert_cmpuint (blocked->len, == , 2);
 
   /* Preparing TP_CONNECTION_FEATURE_CONTACT_BLOCKING gives us
-   * TP_CONTACT_FEATURE_CONTACT_BLOCKING for free. Test that this work with
-   * and and new TpContact. */
+   * TP_CONTACT_FEATURE_CONTACT_BLOCKING for free. Test that this works with
+   * existing and newly created TpContact. */
   bill = create_contact (test, "bill@example.com");
   guillaume = create_contact (test, "guillaume@example.com");
 

@@ -1607,7 +1607,7 @@ blocked_changed_head_ready (TpConnection *self)
 
   if (item->result != NULL)
     {
-      /* Finish to prepare TP_CONNECTION_FEATURE_CONTACT_BLOCKING, we can
+      /* Finish preparing TP_CONNECTION_FEATURE_CONTACT_BLOCKING; we can
        * prepare TP_CONTACT_FEATURE_CONTACT_BLOCKING on all contacts as we
        * have now the list of blocked contacts. */
       GHashTableIter iter;
@@ -1797,7 +1797,7 @@ request_blocked_contacts_cb (TpConnection *self,
       return;
     }
 
-  /* We are not supposed to add items to this queue while the blocked contacts
+  /* We are not supposed to add items to this queue until the blocked contacts
    * have been fetched. */
   g_assert_cmpuint (self->priv->blocked_changed_queue->length, ==, 0);
 
