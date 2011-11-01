@@ -399,7 +399,7 @@ accept_file_cb (TpChannel *proxy,
 
 out:
   g_object_unref (remote_address);
-//  g_simple_async_result_complete (self->priv->result);
+  g_simple_async_result_complete (self->priv->result);
 }
 
 static void
