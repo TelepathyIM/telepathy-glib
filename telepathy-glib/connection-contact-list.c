@@ -1816,18 +1816,18 @@ prepare_contact_blocking_cb (TpProxy *proxy,
   if (error != NULL)
     {
       DEBUG ("Error preparing ContactBlocking properties: %s", error->message);
-      goto out;
     }
-
-  self->priv->contact_blocking_capabilities = tp_asv_get_uint32 (properties,
-      "ContactBlockingCapabilities", &valid);
-  if (!valid)
+  else
     {
-      DEBUG ("Connection %s doesn't have ContactBlockingCapabilities property",
-          tp_proxy_get_object_path (self));
+      self->priv->contact_blocking_capabilities = tp_asv_get_uint32 (properties,
+          "ContactBlockingCapabilities", &valid);
+      if (!valid)
+        {
+          DEBUG ("Connection %s doesn't have ContactBlockingCapabilities "
+              "property", tp_proxy_get_object_path (self));
+        }
     }
 
-out:
   tp_cli_connection_interface_contact_blocking_call_request_blocked_contacts (
       self, -1, request_blocked_contacts_cb, g_object_ref (result),
       g_object_unref, G_OBJECT (self));
