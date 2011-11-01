@@ -1086,6 +1086,7 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
   switch (self->priv->access_control)
     {
       case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
+      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
         /* Dummy value */
         self->priv->access_control_param = tp_g_value_slice_new_uint (0);
         break;
@@ -1113,11 +1114,6 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
 
           g_object_unref (addr);
         }
-        break;
-
-      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
-        self->priv->access_control_param = tp_g_value_slice_new_byte (
-            g_random_int_range (0, G_MAXUINT8));
         break;
 
       default:
