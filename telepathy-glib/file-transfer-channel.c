@@ -1147,6 +1147,8 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
  *
  * Finishes a file transfer accept.
  *
+ * Returns: %TRUE if the accept operation was a success, or %FALSE
+ *
  * Since: 0.15.UNRELEASED
  */
 gboolean
@@ -1293,7 +1295,9 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
  *
  * Finishes a file transfer offer.
  *
- * Returns: %TRUE if the file has been successfully offered, or %FALSE.
+ * Returns: %TRUE if the file has been successfully offered, or
+ * %FALSE. This does not mean that the file transfer has completed or
+ * has even started at all.
  *
  * Since: 0.15.UNRELEASED
  */
