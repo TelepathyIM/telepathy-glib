@@ -1093,7 +1093,6 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
       case TP_SOCKET_ACCESS_CONTROL_PORT:
         {
           GSocketAddress *addr;
-          guint16 port;
 
           addr = g_socket_get_local_address (self->priv->client_socket,
               &error);
@@ -1107,9 +1106,8 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
               return;
             }
 
-          port = g_inet_socket_address_get_port (G_INET_SOCKET_ADDRESS (
-                  addr));
-          self->priv->access_control_param = tp_g_value_slice_new_uint (port);
+          self->priv->access_control_param =
+            tp_address_variant_from_g_socket_address (addr, NULL, NULL);
 
           g_object_unref (addr);
         }
