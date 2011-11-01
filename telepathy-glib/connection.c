@@ -2096,9 +2096,9 @@ tp_connection_class_init (TpConnectionClass *klass)
   /**
    * TpConnection:can-report-abusive:
    *
-   * When calling tp_connection_block_contacts_async(), the contacts may be
-   * reporting as abusive to the server administrators by setting
-   * report_abusive to %TRUE.
+   * If this property is %TRUE, contacts may be reported as abusive to the
+   * server administrators by setting report_abusive to %TRUE when calling
+   * tp_connection_block_contacts_async().
    *
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature
