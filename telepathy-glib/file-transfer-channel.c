@@ -176,7 +176,7 @@ client_socket_connected (TpFileTransferChannel *self)
 
       /* FIXME: we should an async version of this API (bgo #629503) */
       if (!tp_unix_connection_send_credentials_with_byte (
-            conn, byte, NULL, &error))
+              conn, byte, NULL, &error))
         {
           DEBUG ("Failed to send credentials: %s", error->message);
 
@@ -226,7 +226,6 @@ client_socket_cb (GSocket *socket,
 
   return FALSE;
 }
-
 
 /* Callbacks */
 
@@ -1061,7 +1060,7 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
       TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
 
   if (!_tp_set_socket_address_type_and_access_control_type (supported_sockets,
-      &self->priv->socket_type, &self->priv->access_control, &error))
+          &self->priv->socket_type, &self->priv->access_control, &error))
     {
       operation_failed (self, error);
 
@@ -1108,8 +1107,8 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
               return;
             }
 
-          port = g_inet_socket_address_get_port (G_INET_SOCKET_ADDRESS
-              (addr));
+          port = g_inet_socket_address_get_port (G_INET_SOCKET_ADDRESS (
+                  addr));
           self->priv->access_control_param = tp_g_value_slice_new_uint (port);
 
           g_object_unref (addr);
@@ -1197,13 +1196,13 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
       TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
 
   if (!_tp_set_socket_address_type_and_access_control_type (supported_sockets,
-        &self->priv->socket_type, &self->priv->access_control, &error))
-      {
-        operation_failed (self, error);
+          &self->priv->socket_type, &self->priv->access_control, &error))
+    {
+      operation_failed (self, error);
 
-        g_clear_error (&error);
-        return;
-      }
+      g_clear_error (&error);
+      return;
+    }
 
   DEBUG ("Using socket type %u with access control %u",
       self->priv->socket_type, self->priv->access_control);
@@ -1213,8 +1212,8 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
   switch (self->priv->socket_type)
     {
 #ifdef HAVE_GIO_UNIX
-    case TP_SOCKET_ADDRESS_TYPE_UNIX:
-    case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
+      case TP_SOCKET_ADDRESS_TYPE_UNIX:
+      case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
         {
           self->priv->address = _tp_create_temp_unix_socket (
               self->priv->service, &error);
@@ -1226,13 +1225,13 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
               g_clear_error (&error);
               return;
             }
-
-        break;
         }
+        break;
+
 #endif /* HAVE_GIO_UNIX */
 
-    case TP_SOCKET_ADDRESS_TYPE_IPV6:
-    case TP_SOCKET_ADDRESS_TYPE_IPV4:
+      case TP_SOCKET_ADDRESS_TYPE_IPV6:
+      case TP_SOCKET_ADDRESS_TYPE_IPV4:
         {
           GInetAddress *localhost;
           GSocketAddress *inet_address;
@@ -1258,9 +1257,8 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
               g_clear_error (&error);
               return;
             }
-
-        break;
         }
+        break;
 
       default:
         /* should have already errored */
