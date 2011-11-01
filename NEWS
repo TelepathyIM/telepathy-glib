@@ -1,3 +1,12 @@
+telepathy-logger 0.2.12 (2011-11-01)
+===================================
+
+The "Oops" release
+
+This bug fix release correct the accidental so-name bump. Distributions
+should use this release instead of 0.2.11.
+
+
 telepathy-logger 0.2.11 (2011-10-31)
 ===================================
 
