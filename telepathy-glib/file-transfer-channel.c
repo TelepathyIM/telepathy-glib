@@ -136,11 +136,16 @@ incoming_splice_done_cb (GObject *output,
     GAsyncResult *result,
     gpointer user_data)
 {
-  gssize size;
   GError *error = NULL;
 
-  size = g_output_stream_splice_finish (G_OUTPUT_STREAM (output), result,
+  g_output_stream_splice_finish (G_OUTPUT_STREAM (output), result,
       &error);
+
+  if (error != NULL)
+    {
+      DEBUG ("splice operation failed: %s", error->message);
+      g_clear_error (&error);
+    }
 }
 
 static void
@@ -328,7 +333,7 @@ out:
 static void
 accept_file_cb (TpChannel *proxy,
     const GValue *addressv,
-    const GError *error,
+    const GError *accept_error,
     gpointer user_data,
     GObject *weak_object)
 {
@@ -338,11 +343,11 @@ accept_file_cb (TpChannel *proxy,
 
   DEBUG ("enter");
 
-  if (error != NULL)
+  if (accept_error != NULL)
     {
-      DEBUG ("Failed to accept file: %s", error->message);
+      DEBUG ("Failed to accept file: %s", accept_error->message);
 
-      operation_failed (self, error);
+      operation_failed (self, accept_error);
       return;
     }
 
@@ -405,8 +410,6 @@ provide_file_cb (TpChannel *proxy,
     GObject *weak_object)
 {
   TpFileTransferChannel *self = (TpFileTransferChannel *) proxy;
-  GSocketAddress *remote_address;
-  GError *error = NULL;
 
   DEBUG ("enter");
 
@@ -418,8 +421,6 @@ provide_file_cb (TpChannel *proxy,
       return;
     }
 
-  remote_address = tp_g_socket_address_from_variant (self->priv->socket_type,
-      addressv, &error);
   /* FIXME: Isn't really offered (but at least we haven't crashed) */
   DEBUG ("File offered");
 
