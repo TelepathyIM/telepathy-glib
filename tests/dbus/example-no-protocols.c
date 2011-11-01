@@ -11,14 +11,23 @@ prepare (void)
 {
   GError *error = NULL;
   const gchar *abs_top_builddir = g_getenv ("abs_top_builddir");
-  gchar *command[] = {
-      g_strdup_printf ("%s/%s",
-          abs_top_builddir,
-          "examples/cm/no-protocols/telepathy-example-no-protocols"),
-      NULL
-  };
+  const gchar *libexec = g_getenv ("libexec");
+  gchar *command[] = { NULL, NULL };
 
-  g_assert (abs_top_builddir != NULL);
+  g_assert (abs_top_builddir != NULL || libexec != NULL);
+
+  if (abs_top_builddir != NULL)
+    {
+      command[0] = g_strdup_printf ("%s/%s",
+            abs_top_builddir,
+            "examples/cm/no-protocols/telepathy-example-no-protocols");
+    }
+  else
+    {
+      command[0] = g_strdup_printf ("%s/%s",
+          libexec,
+          "telepathy-example-no-protocols");
+    }
 
   if (!g_spawn_async (NULL, command, NULL, 0, NULL, NULL, NULL, &error))
     {
