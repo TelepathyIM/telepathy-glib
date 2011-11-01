@@ -1272,6 +1272,23 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
         break;
     }
 
+  switch (self->priv->access_control)
+    {
+      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
+      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
+        /* Dummy value */
+        self->priv->access_control_param = tp_g_value_slice_new_uint (0);
+        break;
+
+      case TP_SOCKET_ACCESS_CONTROL_PORT:
+        self->priv->access_control_param =
+          tp_address_variant_from_g_socket_address (self->priv->address, NULL, NULL);
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
+
   tp_g_signal_connect_object (self->priv->service, "incoming",
       G_CALLBACK (service_incoming_cb), self, 0);
 
