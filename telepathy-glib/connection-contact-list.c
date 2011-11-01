@@ -772,6 +772,7 @@ generic_callback (TpConnection *self,
     gboolean supplied_contacts_are_valid; \
     \
     g_return_if_fail (TP_IS_CONNECTION (self)); \
+    g_return_if_fail (n_contacts > 0); \
     \
     supplied_contacts_are_valid = _tp_contacts_to_handles (self, n_contacts, \
         contacts, &handles); \
@@ -1116,6 +1117,7 @@ tp_connection_get_contact_groups (TpConnection *self)
     \
     g_return_if_fail (TP_IS_CONNECTION (self)); \
     g_return_if_fail (group != NULL); \
+    g_return_if_fail (n_contacts > 0); \
     \
     supplied_contacts_are_valid = _tp_contacts_to_handles (self, n_contacts, \
         contacts, &handles); \
@@ -1419,6 +1421,7 @@ tp_connection_block_contacts_async (TpConnection *self,
   gboolean supplied_contacts_are_valid;
 
   g_return_if_fail (TP_IS_CONNECTION (self));
+  g_return_if_fail (n_contacts > 0);
 
   supplied_contacts_are_valid = _tp_contacts_to_handles (self, n_contacts,
       contacts, &handles);
@@ -1477,6 +1480,7 @@ tp_connection_unblock_contacts_async (TpConnection *self,
   gboolean supplied_contacts_are_valid;
 
   g_return_if_fail (TP_IS_CONNECTION (self));
+  g_return_if_fail (n_contacts > 0);
 
   supplied_contacts_are_valid = _tp_contacts_to_handles (self, n_contacts,
       contacts, &handles);
