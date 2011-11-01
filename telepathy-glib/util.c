@@ -1987,6 +1987,7 @@ _tp_contacts_to_handles (TpConnection *connection,
     guint i;
 
     g_return_val_if_fail (handles != NULL, FALSE);
+    g_return_val_if_fail (n_contacts > 0, FALSE);
 
     *handles = g_array_sized_new (FALSE, FALSE, sizeof (TpHandle), n_contacts);
 
