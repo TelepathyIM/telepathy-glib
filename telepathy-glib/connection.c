@@ -2120,6 +2120,10 @@ tp_connection_class_init (TpConnectionClass *klass)
    * A #GPtrArray of blocked #TpContact. Changes are notified using the
    * #TpConnection::blocked-contacts-changed signal.
    *
+   * These TpContact objects have been prepared with the desired features.
+   * See tp_simple_client_factory_add_contact_features() to define which
+   * features needs to be prepared on them.
+   *
    * For this property to be valid, you must first call
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_BLOCKING.

@@ -1516,13 +1516,10 @@ tp_connection_unblock_contacts_finish (TpConnection *self,
  * Expands to a call to a function that returns a #GQuark representing the
  * "contact-blocking" feature.
  *
- * When this feature is prepared, the #TpConnection:can-report-abusive and
- * #TpConnection:blocked-contacts properties of the Connection have been
- * retrieved. The #TpContact objects from #TpConnection:blocked-contacts
- * have been prepared with the desired features. See
- * tp_connection_dup_contact_list() to get the list of contacts, and
- * tp_simple_client_factory_add_contact_features() to define which features
- * needs to be prepared on them.
+ * When this feature is prepared, #TpConnection:blocked-contacts will contain an
+ * up-to-date list of #TpContact<!-- -->s the user has blocked, and
+ * #TpConnection:can-report-abusive will indicate whether abusive contacts can
+ * be reported to the server administrator.
  *
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
