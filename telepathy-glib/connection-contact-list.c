@@ -1394,9 +1394,11 @@ tp_connection_rename_group_finish (TpConnection *self,
  * @n_contacts: the number of contacts in @contacts (must be at least 1)
  * @contacts: (array length=n_contacts): An array of #TpContact objects to
  *  block
- * @report_abusive: if %TRUE, in addition to blocking, report these contacts as
- * abusive to the server administrators, if supported, see
- * #TpConnection:can-report-abusive
+ * @report_abusive: If %TRUE, report these contacts as abusive to the
+ * server administrators as well as blocking them. See
+ * #TpConnection:can-report-abusive to discover whether reporting abuse is
+ * supported. If #TpConnection:can-report-abusive is %FALSE, this parameter will
+ * be ignored.
  * @callback: a callback to call when the operation finishes
  * @user_data: data to pass to @callback
  *

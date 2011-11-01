@@ -377,9 +377,11 @@ tp_contact_remove_from_group_finish (TpContact *self,
 /**
  * tp_contact_block_async:
  * @self: a #TpContact
- * @report_abusive: if %TRUE, in addition to blocking, report these contacts as
- * abusive to the server administrators, if supported, see
- * #TpConnection:can-report-abusive
+ * @report_abusive: If %TRUE, report this contact as abusive to the
+ * server administrators as well as blocking him. See
+ * #TpConnection:can-report-abusive to discover whether reporting abuse is
+ * supported. If #TpConnection:can-report-abusive is %FALSE, this parameter will
+ * be ignored.
  * @callback: a callback to call when the operation finishes
  * @user_data: data to pass to @callback
  *
