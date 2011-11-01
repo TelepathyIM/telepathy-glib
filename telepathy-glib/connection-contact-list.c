@@ -1747,6 +1747,7 @@ process_queued_blocked_changed (TpConnection *self)
   if (contacts->len == 0)
     {
       blocked_changed_head_ready (self);
+      g_ptr_array_unref (contacts);
       return;
     }
 
@@ -1759,6 +1760,7 @@ process_queued_blocked_changed (TpConnection *self)
       blocked_contacts_upgraded_cb, NULL, NULL, NULL);
 
   g_array_unref (features);
+  g_ptr_array_unref (contacts);
 }
 
 static void
