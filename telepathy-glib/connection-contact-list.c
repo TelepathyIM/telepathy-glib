@@ -1907,7 +1907,8 @@ tp_connection_get_blocked_contacts (TpConnection *self)
   return self->priv->blocked_contacts;
 }
 
-void _tp_connection_blocked_changed_queue_free (GQueue *queue)
+void
+_tp_connection_blocked_changed_queue_free (GQueue *queue)
 {
   g_queue_foreach (queue, (GFunc) blocked_changed_item_free, NULL);
   g_queue_free (queue);
