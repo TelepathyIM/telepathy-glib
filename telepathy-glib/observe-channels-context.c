@@ -529,6 +529,31 @@ context_check_prepare (TpObserveChannelsContext *self)
 }
 
 static void
+cdo_prepare_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpObserveChannelsContext *self = user_data;
+  GError *error = NULL;
+
+  if (self->priv->result == NULL)
+    goto out;
+
+  if (!tp_proxy_prepare_finish (source, result, &error))
+    {
+      DEBUG ("Failed to prepare ChannelDispatchOperation: %s", error->message);
+
+      g_error_free (error);
+    }
+
+  self->priv->num_pending--;
+  context_check_prepare (self);
+
+out:
+  g_object_unref (self);
+}
+
+static void
 account_prepare_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
@@ -606,6 +631,7 @@ context_prepare (TpObserveChannelsContext *self,
     const GQuark *connection_features,
     const GQuark *channel_features)
 {
+  GQuark cdo_features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
   guint i;
 
   self->priv->num_pending = 2;
@@ -615,6 +641,13 @@ context_prepare (TpObserveChannelsContext *self,
 
   tp_proxy_prepare_async (self->connection, connection_features,
       conn_prepare_cb, g_object_ref (self));
+
+  if (self->dispatch_operation != NULL)
+    {
+      self->priv->num_pending++;
+      tp_proxy_prepare_async (self->dispatch_operation, cdo_features,
+          cdo_prepare_cb, g_object_ref (self));
+    }
 
   for (i = 0; i < self->channels->len; i++)
     {
