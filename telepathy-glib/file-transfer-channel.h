@@ -76,12 +76,12 @@ gboolean tp_file_transfer_channel_accept_file_finish (
     GAsyncResult *result,
     GError **error);
 
-void tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
+void tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
     GFile *file,
     GAsyncReadyCallback callback,
     gpointer user_data);
 
-gboolean tp_file_transfer_channel_offer_file_finish (
+gboolean tp_file_transfer_channel_provide_file_finish (
     TpFileTransferChannel *self,
     GAsyncResult *result,
     GError **error);

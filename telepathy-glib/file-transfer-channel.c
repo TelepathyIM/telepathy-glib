@@ -98,7 +98,7 @@ struct _TpFileTransferChannelPrivate
     /* The access_control_param we passed to Accept */
     GValue *access_control_param;
 
-    /* Offering side */
+    /* Providing side */
     GSocketService *service;
     GSocketAddress *address;
 
@@ -414,14 +414,14 @@ provide_file_cb (TpChannel *proxy,
 
   if (error != NULL)
     {
-      DEBUG ("Failed to offer file: %s", error->message);
+      DEBUG ("Failed to provide file: %s", error->message);
 
       operation_failed (self, error);
       return;
     }
 
-  /* FIXME: Isn't really offered (but at least we haven't crashed) */
-  DEBUG ("File offered");
+  /* FIXME: Isn't really provided (but at least we haven't crashed) */
+  DEBUG ("File provided");
 
   g_simple_async_result_complete (self->priv->result);
   tp_clear_object (&self->priv->result);
@@ -785,8 +785,8 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
   /**
    * TpFileTransferChannel:description
    *
-   * The description of the file transfer, defined by the sender when offering
-   * the file.
+   * The description of the file transfer, defined by the sender when
+   * sending the file transfer offer.
    *
    * Since 0.15.5
    */
@@ -1003,8 +1003,8 @@ _tp_file_transfer_channel_new_with_factory (
  * @callback: a callback to call when the transfer has been accepted
  * @user_data: data to pass to @callback
  *
- * Accept an offered file transfer. Once the accept has been processed,
- * @callback will be called. You can then call
+ * Accept an incoming file transfer. Once the accept has been
+ * processed, @callback will be called. You can then call
  * tp_file_transfer_channel_accept_file_finish() to get the result of
  * the operation.
  *
@@ -1155,20 +1155,28 @@ tp_file_transfer_channel_accept_file_finish (TpFileTransferChannel *self,
 }
 
 /**
- * tp_file_transfer_channel_offer_file_async:
+ * tp_file_transfer_channel_provide_file_async:
  * @self: a #TpFileTransferChannel
  * @file: a #GFile
  * @callback: a callback to call when the transfer has been accepted
  * @user_data: data to pass to @callback
  *
- * Offer a file transfer. Once the offer has been sent, @callback will be
- * called. You can then call tp_file_transfer_channel_offer_file_finish()
- * to get the result of the operation.
+ * Provide a file transfer. This should be called when the file
+ * transfer state changes (tp_file_transfer_get_state() and
+ * #TpFileTransferChannel::notify::state) to
+ * %TP_FILE_TRANSFER_STATE_ACCEPTED or
+ * %TP_FILE_TRANSFER_STATE_PENDING. Once the file has been provided,
+ * the channel #TpFileTransferChannel:state will change to
+ * %TP_FILE_TRANSFER_STATE_OPEN.
+ *
+ * Once the file has been provided, @callback will be called. You
+ * should then call tp_file_transfer_channel_provide_file_finish() to
+ * get the result of the operation.
  *
  * Since: 0.15.UNRELEASED
  */
 void
-tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
+tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
     GFile *file,
     GAsyncReadyCallback callback,
     gpointer user_data)
@@ -1186,7 +1194,7 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
   self->priv->file = g_object_ref (file);
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
-      user_data, tp_file_transfer_channel_offer_file_async);
+      user_data, tp_file_transfer_channel_provide_file_async);
 
   properties = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
   supported_sockets = tp_asv_get_boxed (properties,
@@ -1298,26 +1306,30 @@ tp_file_transfer_channel_offer_file_async (TpFileTransferChannel *self,
 }
 
 /**
- * tp_file_transfer_channel_offer_file_finish:
+ * tp_file_transfer_channel_provide_file_finish:
  * @self: a #TpFileTransferChannel
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes a file transfer offer.
+ * Finishes a file transfer provide operation.
  *
- * Returns: %TRUE if the file has been successfully offered, or
- * %FALSE. This does not mean that the file transfer has completed or
- * has even started at all.
+ * Successful return from this function does not mean that the file
+ * transfer has completed or has even started at all. The state of the
+ * file transfer should be monitored with
+ * #TpFileTransferChannel::notify::state.
+ *
+ * Returns: %TRUE if the file has been successfully provided, or
+ * %FALSE.
  *
  * Since: 0.15.UNRELEASED
  */
 gboolean
-tp_file_transfer_channel_offer_file_finish (TpFileTransferChannel *self,
+tp_file_transfer_channel_provide_file_finish (TpFileTransferChannel *self,
     GAsyncResult *result,
     GError **error)
 {
   DEBUG ("enter");
-  _tp_implement_finish_void (self, tp_file_transfer_channel_offer_file_async)
+  _tp_implement_finish_void (self, tp_file_transfer_channel_provide_file_async)
 }
 
 

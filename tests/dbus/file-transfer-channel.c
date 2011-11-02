@@ -87,14 +87,14 @@ channel_prepared_cb (GObject *source,
 }
 
 static void
-file_offer_cb (GObject *source,
+file_provide_cb (GObject *source,
     GAsyncResult *result,
     gpointer user_data)
 {
   Test *test = user_data;
-  DEBUG ("file_offer_cb reached");
+  DEBUG ("file_provide_cb reached");
 
-  tp_file_transfer_channel_offer_file_finish (
+  tp_file_transfer_channel_provide_file_finish (
       TP_FILE_TRANSFER_CHANNEL (source), result, &test->error);
 
   test->wait--;
@@ -423,8 +423,8 @@ test_provide_success (Test *test,
       ==, TP_FILE_TRANSFER_STATE_PENDING);
 
   file = g_file_new_for_uri ("file:///badger/mushroom/snake.txt");
-  tp_file_transfer_channel_offer_file_async (test->channel,
-      file, file_offer_cb, test);
+  tp_file_transfer_channel_provide_file_async (test->channel,
+      file, file_provide_cb, test);
   g_object_unref (file);
 
   test->wait = 1;
