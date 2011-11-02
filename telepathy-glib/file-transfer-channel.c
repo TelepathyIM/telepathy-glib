@@ -1181,6 +1181,7 @@ tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  TpFileTransferState state;
   GHashTable *properties;
   GHashTable *supported_sockets;
   GError *error = NULL;
@@ -1190,6 +1191,11 @@ tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
   g_return_if_fail (TP_IS_FILE_TRANSFER_CHANNEL (self));
   g_return_if_fail (G_IS_FILE (file));
   g_return_if_fail (tp_channel_get_requested (TP_CHANNEL (self)));
+
+  state = tp_file_transfer_channel_get_state (self, NULL);
+
+  g_return_if_fail (state == TP_FILE_TRANSFER_STATE_PENDING
+      || state == TP_FILE_TRANSFER_STATE_ACCEPTED);
 
   self->priv->file = g_object_ref (file);
 
