@@ -1365,8 +1365,11 @@ gboolean
 
 static void
 claim_with_cb (TpChannelDispatchOperation *self,
-    GSimpleAsyncResult *result)
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
+  GSimpleAsyncResult *result = user_data;
   TpBaseClient *client;
 
   client = g_simple_async_result_get_op_res_gpointer (result);
@@ -1375,117 +1378,6 @@ claim_with_cb (TpChannelDispatchOperation *self,
 
   g_simple_async_result_complete (result);
   g_object_unref (result);
-}
-
-typedef void (*PrepareCoreAndClaimCb) (TpChannelDispatchOperation *self,
-    GSimpleAsyncResult *result);
-
-typedef struct
-{
-  GSimpleAsyncResult *result;
-  PrepareCoreAndClaimCb callback;
-} PrepareCoreAndClaimCtx;
-
-static PrepareCoreAndClaimCtx *
-prepare_core_and_claim_ctx_new (GSimpleAsyncResult *result,
-    PrepareCoreAndClaimCb callback)
-{
-  PrepareCoreAndClaimCtx *ctx = g_slice_new (PrepareCoreAndClaimCtx);
-
-  ctx->result = g_object_ref (result);
-  ctx->callback = callback;
-  return ctx;
-}
-
-static void
-prepare_core_and_claim_ctx_free (PrepareCoreAndClaimCtx *ctx)
-{
-  g_object_unref (ctx->result);
-  g_slice_free (PrepareCoreAndClaimCtx, ctx);
-}
-
-/* Takes ownership of @error */
-static void
-prepare_core_and_claim_ctx_failed (PrepareCoreAndClaimCtx *ctx,
-    GError *error)
-{
-  g_simple_async_result_take_error (ctx->result, error);
-  g_simple_async_result_complete (ctx->result);
-
-  /* We received a reference on result from the caller and was supposed to
-   * give it back when calling the callback. But as something went wrong, we
-   * terminate the operation ourself and so don't call the callback, so we
-   * have to drop this reference. */
-  g_object_unref (ctx->result);
-  prepare_core_and_claim_ctx_free (ctx);
-}
-
-static void
-prepare_core_claim_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) source;
-  PrepareCoreAndClaimCtx *ctx = user_data;
-  GError *error = NULL;
-
-  if (!tp_channel_dispatch_operation_claim_finish (self, result, &error))
-    {
-      DEBUG ("Failed to Claim %s: %s",
-          tp_proxy_get_object_path (self), error->message);
-
-      prepare_core_and_claim_ctx_failed (ctx, error);
-      return;
-    }
-
-  /* Pass back the ref we got from the caller */
-  ctx->callback (self, ctx->result);
-
-  prepare_core_and_claim_ctx_free (ctx);
-}
-
-static void
-prepare_core_cb (GObject *source,
-    GAsyncResult *result,
-    gpointer user_data)
-{
-  TpChannelDispatchOperation *self = (TpChannelDispatchOperation *) source;
-  PrepareCoreAndClaimCtx *ctx = user_data;
-  GError *error = NULL;
-
-  if (!tp_proxy_prepare_finish (self, result, &error))
-    {
-      DEBUG ("Failed to prepare CORE on %s: %s",
-          tp_proxy_get_object_path (self), error->message);
-
-      prepare_core_and_claim_ctx_failed (ctx, error);
-      return;
-    }
-
-  tp_channel_dispatch_operation_claim_async (self, prepare_core_claim_cb, ctx);
-}
-
-/* Prepare CORE feature on @self and then call Claim() on it.
- * If either the preparation or the call failed, complete @result with the
- * error.
- * If everything goes fine call @callback.
- *
- * Takes the reference on @result and pass it back to @callback.
- */
-static void
-prepare_core_and_claim (TpChannelDispatchOperation *self,
-    PrepareCoreAndClaimCb callback,
-    GSimpleAsyncResult *result)
-{
-  GQuark features[] = { TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE, 0 };
-  PrepareCoreAndClaimCtx *ctx;
-
-  ctx = prepare_core_and_claim_ctx_new (result, callback);
-
-  /* We have to prepare the CDO to be able to get the list of its channels.
-   * We prepare it *before* calling Claim() as MC will destroy the CDO once it
-   * has been claimed. */
-  tp_proxy_prepare_async (self, features, prepare_core_cb, ctx);
 }
 
 /**
@@ -1511,6 +1403,9 @@ prepare_core_and_claim (TpChannelDispatchOperation *self,
  * This is an improved version of tp_channel_dispatch_operation_claim_async()
  * as it tells @client about the new channels being handled.
  *
+ * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE feature must be prepared before
+ * calling this function.
+ *
  * Since: 0.15.0
  */
 void
@@ -1523,6 +1418,8 @@ tp_channel_dispatch_operation_claim_with_async (
   GSimpleAsyncResult *result;
 
   g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
+  g_return_if_fail (tp_proxy_is_prepared (self,
+      TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
 
   result = g_simple_async_result_new (G_OBJECT (self),
       callback, user_data,
@@ -1531,7 +1428,8 @@ tp_channel_dispatch_operation_claim_with_async (
   g_simple_async_result_set_op_res_gpointer (result, g_object_ref (client),
       g_object_unref);
 
-  prepare_core_and_claim (self, claim_with_cb, result);
+  tp_cli_channel_dispatch_operation_call_claim (self, -1,
+      claim_with_cb, result, NULL, G_OBJECT (self));
 }
 
 /**
@@ -1575,8 +1473,11 @@ channel_close_cb (GObject *source,
 
 static void
 claim_close_channels_cb (TpChannelDispatchOperation *self,
-    GSimpleAsyncResult *result)
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
+  GSimpleAsyncResult *result = user_data;
   guint i;
 
   for (i = 0; i < self->priv->channels->len; i++)
@@ -1608,6 +1509,9 @@ claim_close_channels_cb (TpChannelDispatchOperation *self,
  * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
  * for more details.
  *
+ * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE feature must be prepared before
+ * calling this function.
+ *
  * Since: 0.15.1
  */
 void
@@ -1618,10 +1522,15 @@ tp_channel_dispatch_operation_close_channels_async (
 {
   GSimpleAsyncResult *result;
 
+  g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
+  g_return_if_fail (tp_proxy_is_prepared (self,
+      TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
+
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_channel_dispatch_operation_close_channels_async);
 
-  prepare_core_and_claim (self, claim_close_channels_cb, result);
+  tp_cli_channel_dispatch_operation_call_claim (self, -1,
+      claim_close_channels_cb, result, NULL, G_OBJECT (self));
 }
 
 /**
@@ -1690,8 +1599,11 @@ channel_leave_cb (GObject *source,
 
 static void
 claim_leave_channels_cb (TpChannelDispatchOperation *self,
-    GSimpleAsyncResult *result)
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
+  GSimpleAsyncResult *result = user_data;
   guint i;
   LeaveChannelsCtx *ctx;
 
@@ -1729,6 +1641,9 @@ claim_leave_channels_cb (TpChannelDispatchOperation *self,
  * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
  * for more details.
  *
+ * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE feature must be prepared before
+ * calling this function.
+ *
  * Since: 0.15.2
  */
 void
@@ -1741,6 +1656,10 @@ tp_channel_dispatch_operation_leave_channels_async (
 {
   GSimpleAsyncResult *result;
 
+  g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
+  g_return_if_fail (tp_proxy_is_prepared (self,
+      TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
+
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_channel_dispatch_operation_leave_channels_async);
 
@@ -1748,7 +1667,8 @@ tp_channel_dispatch_operation_leave_channels_async (
       leave_channels_ctx_new (reason, message),
       (GDestroyNotify) leave_channels_ctx_free);
 
-  prepare_core_and_claim (self, claim_leave_channels_cb, result);
+  tp_cli_channel_dispatch_operation_call_claim (self, -1,
+      claim_leave_channels_cb, result, NULL, G_OBJECT (self));
 }
 
 /**
@@ -1794,8 +1714,11 @@ channel_destroy_cb (GObject *source,
 
 static void
 claim_destroy_channels_cb (TpChannelDispatchOperation *self,
-    GSimpleAsyncResult *result)
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
 {
+  GSimpleAsyncResult *result = user_data;
   guint i;
 
   for (i = 0; i < self->priv->channels->len; i++)
@@ -1827,6 +1750,9 @@ claim_destroy_channels_cb (TpChannelDispatchOperation *self,
  * been completed. Again, see tp_channel_dispatch_operation_handle_with_async()
  * for more details.
  *
+ * %TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE feature must be prepared before
+ * calling this function.
+ *
  * Since: 0.15.2
  */
 void
@@ -1837,10 +1763,15 @@ tp_channel_dispatch_operation_destroy_channels_async (
 {
   GSimpleAsyncResult *result;
 
+  g_return_if_fail (TP_IS_CHANNEL_DISPATCH_OPERATION (self));
+  g_return_if_fail (tp_proxy_is_prepared (self,
+      TP_CHANNEL_DISPATCH_OPERATION_FEATURE_CORE));
+
   result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tp_channel_dispatch_operation_destroy_channels_async);
 
-  prepare_core_and_claim (self, claim_destroy_channels_cb, result);
+  tp_cli_channel_dispatch_operation_call_claim (self, -1,
+      claim_destroy_channels_cb, result, NULL, G_OBJECT (self));
 }
 
 /**

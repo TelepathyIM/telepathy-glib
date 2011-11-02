@@ -816,6 +816,8 @@ test_close_channels (Test *test,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
 
+  tp_tests_proxy_run_until_prepared (test->cdo, NULL);
+
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
   g_signal_connect (test->text_chan_2, "invalidated",
@@ -852,6 +854,8 @@ test_leave_channels (Test *test,
   test->cdo = tp_channel_dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
+
+  tp_tests_proxy_run_until_prepared (test->cdo, NULL);
 
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
@@ -890,6 +894,8 @@ test_destroy_channels (Test *test,
   test->cdo = tp_channel_dispatch_operation_new (test->dbus,
       "/whatever", NULL, &test->error);
   g_assert_no_error (test->error);
+
+  tp_tests_proxy_run_until_prepared (test->cdo, NULL);
 
   g_signal_connect (test->text_chan, "invalidated",
       G_CALLBACK (channel_invalidated_cb), test);
