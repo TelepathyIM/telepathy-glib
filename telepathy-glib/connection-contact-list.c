@@ -335,7 +335,8 @@ contact_list_state_changed_cb (TpConnection *self,
   DEBUG ("contact list state changed: %d", state);
 
   /* If state goes to success, delay notification until roster is ready */
-  if (state == TP_CONTACT_LIST_STATE_SUCCESS)
+  if (state == TP_CONTACT_LIST_STATE_SUCCESS &&
+      tp_proxy_is_prepared (self, TP_CONNECTION_FEATURE_CONTACT_LIST))
     {
       prepare_roster (self, NULL);
       return;
@@ -346,7 +347,7 @@ contact_list_state_changed_cb (TpConnection *self,
 }
 
 static void
-prepare_contact_list_cb (TpProxy *proxy,
+prepare_contact_list_props_cb (TpProxy *proxy,
     GHashTable *properties,
     const GError *error,
     gpointer user_data,
@@ -400,13 +401,6 @@ prepare_contact_list_cb (TpProxy *proxy,
   DEBUG ("Got contact list properties; state=%d",
       self->priv->contact_list_state);
 
-  /* If the CM has the contact list, prepare it right away */
-  if (self->priv->contact_list_state == TP_CONTACT_LIST_STATE_SUCCESS)
-    {
-      prepare_roster (self, result);
-      return;
-    }
-
 OUT:
   g_simple_async_result_complete (result);
 }
@@ -419,15 +413,41 @@ void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
   TpConnection *self = (TpConnection *) proxy;
   GSimpleAsyncResult *result;
 
+  result = g_simple_async_result_new ((GObject *) self, callback, user_data,
+      _tp_connection_prepare_contact_list_async);
+
+  /* If the CM has the contact list, prepare it right away */
+  if (self->priv->contact_list_state == TP_CONTACT_LIST_STATE_SUCCESS)
+    {
+      prepare_roster (self, result);
+      return;
+    }
+
+  /* Contacts will be prepared once the CM has fetched the contact list from
+   * the server.
+   * Complete the preparation as it's not supposed to wait for the contact
+   * list. */
+  g_simple_async_result_complete_in_idle (result);
+  g_object_unref (result);
+}
+
+void _tp_connection_prepare_contact_list_props_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  TpConnection *self = (TpConnection *) proxy;
+  GSimpleAsyncResult *result;
+
   tp_cli_connection_interface_contact_list_connect_to_contact_list_state_changed
       (self, contact_list_state_changed_cb, NULL, NULL, NULL, NULL);
 
   result = g_simple_async_result_new ((GObject *) self, callback, user_data,
-      _tp_connection_prepare_contact_list_async);
+      _tp_connection_prepare_contact_list_props_async);
 
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
-      prepare_contact_list_cb, result, g_object_unref, NULL);
+      prepare_contact_list_props_cb, result, g_object_unref, NULL);
 }
 
 static void
@@ -625,8 +645,10 @@ _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
  * Expands to a call to a function that returns a #GQuark representing the
  * "contact-list" feature.
  *
- * When this feature is prepared, the contact list properties of the Connection
- * has been retrieved. If #TpConnection:contact-list-state is
+ * When this feature is prepared, the
+ * %TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES has been prepared, so the
+ * contact list properties of the Connection has been retrieved.
+ * If #TpConnection:contact-list-state is
  * %TP_CONTACT_LIST_STATE_SUCCESS, all #TpContact objects will also be created
  * and prepared with the desired features. See tp_connection_dup_contact_list()
  * to get the list of contacts, and
@@ -1916,4 +1938,27 @@ _tp_connection_blocked_changed_queue_free (GQueue *queue)
 {
   g_queue_foreach (queue, (GFunc) blocked_changed_item_free, NULL);
   g_queue_free (queue);
+}
+
+/**
+ * TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES:
+ *
+ * Expands to a call to a function that returns a #GQuark representing the
+ * "contact-list-properties" feature.
+ *
+ * When this feature is prepared, the contact list properties of the Connection
+ * has been retrieved.
+ * This feature will fail to prepare when using obsolete Telepathy connection
+ * managers which do not implement the ContactList interface.
+ *
+ * One can ask for a feature to be prepared using the
+ * tp_proxy_prepare_async() function, and waiting for it to callback.
+ *
+ * Since: 0.UNRELEASED
+ */
+GQuark
+tp_connection_get_feature_quark_contact_list_properties (void)
+{
+  return g_quark_from_static_string (
+      "tp-connection-feature-contact-list-properties");
 }

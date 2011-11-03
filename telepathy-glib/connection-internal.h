@@ -166,6 +166,10 @@ void _tp_connection_prepare_contact_list_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,
     gpointer user_data);
+void _tp_connection_prepare_contact_list_props_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 void _tp_connection_prepare_contact_groups_async (TpProxy *proxy,
     const TpProxyFeature *feature,
     GAsyncReadyCallback callback,

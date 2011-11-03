@@ -1608,6 +1608,7 @@ enum {
     FEAT_CONTACT_INFO,
     FEAT_BALANCE,
     FEAT_CONTACT_LIST,
+    FEAT_CONTACT_LIST_PROPS,
     FEAT_CONTACT_GROUPS,
     FEAT_CONTACT_BLOCKING,
     N_FEAT
@@ -1624,6 +1625,7 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   static GQuark need_contact_list[3] = {0, 0, 0};
   static GQuark need_contact_groups[2] = {0, 0};
   static GQuark need_contact_blocking[2] = {0, 0};
+  static GQuark depends_contact_list[2] = {0, 0};
 
   if (G_LIKELY (features[0].name != 0))
     return features;
@@ -1661,6 +1663,12 @@ tp_connection_list_features (TpProxyClass *cls G_GNUC_UNUSED)
   need_contact_list[0] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACT_LIST;
   need_contact_list[1] = TP_IFACE_QUARK_CONNECTION_INTERFACE_CONTACTS;
   features[FEAT_CONTACT_LIST].interfaces_needed = need_contact_list;
+  depends_contact_list[0] = TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES;
+  features[FEAT_CONTACT_LIST].depends_on = depends_contact_list;
+
+  features[FEAT_CONTACT_LIST_PROPS].name = TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES;
+  features[FEAT_CONTACT_LIST_PROPS].prepare_async = _tp_connection_prepare_contact_list_props_async;
+  features[FEAT_CONTACT_LIST_PROPS].interfaces_needed = need_contact_list;
 
   features[FEAT_CONTACT_GROUPS].name = TP_CONNECTION_FEATURE_CONTACT_GROUPS;
   features[FEAT_CONTACT_GROUPS].prepare_async = _tp_connection_prepare_contact_groups_async;
@@ -1950,7 +1958,9 @@ tp_connection_class_init (TpConnectionClass *klass)
    * The progress made in retrieving the contact list.
    *
    * For this property to be valid, you must first call
-   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES or
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
    * Since: 0.15.5
    */
@@ -1970,7 +1980,9 @@ tp_connection_class_init (TpConnectionClass *klass)
    * If false, presence subscriptions on this connection are not stored.
    *
    * For this property to be valid, you must first call
-   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES or
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
    * Since: 0.15.5
    */
@@ -1991,7 +2003,9 @@ tp_connection_class_init (TpConnectionClass *klass)
    * the local subnet, so the user cannot control their presence publication.
    *
    * For this property to be valid, you must first call
-   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES or
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
    * Since: 0.15.5
    */
@@ -2012,7 +2026,9 @@ tp_connection_class_init (TpConnectionClass *klass)
    * suitable default.
    *
    * For this property to be valid, you must first call
-   * tp_proxy_prepare_async() with the feature %TP_CONNECTION_FEATURE_CONTACT_LIST.
+   * tp_proxy_prepare_async() with the feature
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES or
+   * %TP_CONNECTION_FEATURE_CONTACT_LIST.
    *
    * Since: 0.15.5
    */

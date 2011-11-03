@@ -507,11 +507,20 @@ static void
 test_contact_list_properties (Test *test,
     gconstpointer data G_GNUC_UNUSED)
 {
-  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
+  gboolean props_only = GPOINTER_TO_UINT (data);
+  GQuark conn_features[] = { 0, 0 };
+  GPtrArray *contacts;
+
+  if (props_only)
+    conn_features[0] = TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES;
+  else
+    conn_features[0] = TP_CONNECTION_FEATURE_CONTACT_LIST;
 
   /* Feature isn't prepared yet */
   g_assert (!tp_proxy_is_prepared (test->connection,
         TP_CONNECTION_FEATURE_CONTACT_LIST));
+  g_assert (!tp_proxy_is_prepared (test->connection,
+        TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES));
 
   g_assert_cmpuint (tp_connection_get_contact_list_state (test->connection), ==,
       TP_CONTACT_LIST_STATE_NONE);
@@ -526,9 +535,26 @@ test_contact_list_properties (Test *test,
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
+  g_assert (tp_proxy_is_prepared (test->connection,
+        TP_CONNECTION_FEATURE_CONTACT_LIST) == !props_only);
+  g_assert (tp_proxy_is_prepared (test->connection,
+        TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES));
+
   g_assert (tp_connection_get_contact_list_persists (test->connection));
   g_assert (tp_connection_get_can_change_contact_list (test->connection));
   g_assert (tp_connection_get_request_uses_message (test->connection));
+
+  contacts = tp_connection_dup_contact_list (test->connection);
+  if (props_only)
+    {
+      /* Contacts haven't be fetched */
+      g_assert_cmpuint (contacts->len, ==, 0);
+    }
+  else
+    {
+      g_assert_cmpuint (contacts->len, >, 0);
+    }
+  g_ptr_array_unref (contacts);
 }
 
 int
@@ -549,8 +575,10 @@ main (int argc,
   g_test_add ("/contact-list-client/blocking/is-blocked", Test, NULL,
       setup, test_is_blocked, teardown);
 
-  g_test_add ("/contact-list-client/contact-list/properties", Test, NULL,
-      setup, test_contact_list_properties, teardown);
+  g_test_add ("/contact-list-client/contact-list/properties", Test,
+      GUINT_TO_POINTER (FALSE), setup, test_contact_list_properties, teardown);
+  g_test_add ("/contact-list-client/contact-list/properties", Test,
+      GUINT_TO_POINTER (TRUE), setup, test_contact_list_properties, teardown);
 
   return g_test_run ();
 }
