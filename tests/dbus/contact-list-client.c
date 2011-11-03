@@ -510,15 +510,15 @@ main (int argc,
   tp_tests_init (&argc, &argv);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
 
-  g_test_add ("/contact-list-clt/blocking/block-unblock", Test, NULL, setup,
+  g_test_add ("/contact-list-client/blocking/block-unblock", Test, NULL, setup,
       test_block_unblock, teardown);
-  g_test_add ("/contact-list-clt/blocking/can-report-abusive", Test, NULL,
+  g_test_add ("/contact-list-client/blocking/can-report-abusive", Test, NULL,
       setup, test_can_report_abusive, teardown);
-  g_test_add ("/contact-list-clt/blocking/connection/blocked-contacts", Test,
+  g_test_add ("/contact-list-client/blocking/connection/blocked-contacts", Test,
       GUINT_TO_POINTER (FALSE), setup, test_blocked_contacts, teardown);
-  g_test_add ("/contact-list-clt/blocking/contact/blocked-contacts", Test,
+  g_test_add ("/contact-list-client/blocking/contact/blocked-contacts", Test,
       GUINT_TO_POINTER (TRUE), setup, test_blocked_contacts, teardown);
-  g_test_add ("/contact-list-clt/blocking/is-blocked", Test, NULL,
+  g_test_add ("/contact-list-client/blocking/is-blocked", Test, NULL,
       setup, test_is_blocked, teardown);
 
   return g_test_run ();
