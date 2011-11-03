@@ -475,17 +475,16 @@ int
 main (int argc, char **argv)
 {
   TpBaseClient *client;
-  TpDBusDaemon *bus;
+  TpAccountManager *am;
 
   g_type_init ();
-  tf_init ();
   gst_init (&argc, &argv);
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  bus = tp_dbus_daemon_dup (NULL);
+  am = tp_account_manager_dup ();
 
-  client = tp_simple_handler_new (bus,
+  client = tp_simple_handler_new_with_am (am,
     FALSE,
     FALSE,
     "TpFsCallHandlerDemo",
@@ -525,7 +524,7 @@ main (int argc, char **argv)
 
   g_main_loop_run (loop);
 
-  g_object_unref (bus);
+  g_object_unref (am);
   g_object_unref (client);
   g_main_loop_unref (loop);
 
