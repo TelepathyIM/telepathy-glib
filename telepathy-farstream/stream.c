@@ -2811,23 +2811,6 @@ fs_codecs_to_feedback_messages (GList *fscodecs)
 }
 
 
-static TpMediaStreamDirection
-fsdirection_to_tpdirection (FsStreamDirection dir)
-{
-  switch (dir) {
-  case FS_DIRECTION_NONE:
-    return TP_MEDIA_STREAM_DIRECTION_NONE;
-  case FS_DIRECTION_SEND:
-    return TP_MEDIA_STREAM_DIRECTION_SEND;
-  case FS_DIRECTION_RECV:
-    return TP_MEDIA_STREAM_DIRECTION_RECEIVE;
-  case FS_DIRECTION_BOTH:
-    return TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL;
-  default:
-    g_assert_not_reached ();
-  }
-}
-
 
 static GPtrArray *
 _tf_stream_get_header_extensions (TfStream *stream)
