@@ -1406,8 +1406,12 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs,
 
   fs_codec_list_destroy (resend_codecs);
 
-  return tp_asv_new ("Codecs", TP_ARRAY_TYPE_CODEC_LIST, tpcodecs,
-      "FurtherNegotiationRequired", G_TYPE_BOOLEAN, !!resend_codecs, NULL);
+  return tp_asv_new (
+      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_CODECS,
+      TP_ARRAY_TYPE_CODEC_LIST, tpcodecs,
+      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_FURTHER_NEGOTIATION_REQUIRED,
+      G_TYPE_BOOLEAN, !!resend_codecs,
+      NULL);
 }
 
 static void
