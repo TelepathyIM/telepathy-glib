@@ -503,6 +503,34 @@ test_is_blocked (Test *test,
   g_assert (!tp_contact_is_blocked (test->contact));
 }
 
+static void
+test_contact_list_properties (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GQuark conn_features[] = { TP_CONNECTION_FEATURE_CONTACT_LIST, 0 };
+
+  /* Feature isn't prepared yet */
+  g_assert (!tp_proxy_is_prepared (test->connection,
+        TP_CONNECTION_FEATURE_CONTACT_LIST));
+
+  g_assert_cmpuint (tp_connection_get_contact_list_state (test->connection), ==,
+      TP_CONTACT_LIST_STATE_NONE);
+  g_assert (!tp_connection_get_contact_list_persists (test->connection));
+  g_assert (!tp_connection_get_can_change_contact_list (test->connection));
+  g_assert (!tp_connection_get_request_uses_message (test->connection));
+
+  tp_proxy_prepare_async (test->connection, conn_features,
+      proxy_prepare_cb, test);
+
+  test->wait = 1;
+  g_main_loop_run (test->mainloop);
+  g_assert_no_error (test->error);
+
+  g_assert (tp_connection_get_contact_list_persists (test->connection));
+  g_assert (tp_connection_get_can_change_contact_list (test->connection));
+  g_assert (tp_connection_get_request_uses_message (test->connection));
+}
+
 int
 main (int argc,
       char **argv)
@@ -520,6 +548,9 @@ main (int argc,
       GUINT_TO_POINTER (TRUE), setup, test_blocked_contacts, teardown);
   g_test_add ("/contact-list-client/blocking/is-blocked", Test, NULL,
       setup, test_is_blocked, teardown);
+
+  g_test_add ("/contact-list-client/contact-list/properties", Test, NULL,
+      setup, test_contact_list_properties, teardown);
 
   return g_test_run ();
 }
