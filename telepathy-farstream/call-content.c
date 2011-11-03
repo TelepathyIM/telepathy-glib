@@ -27,9 +27,7 @@
  * channel using Farstream.
  */
 
-/*
- * TODO:
- * - Implement DTMF
+/* TODO:
  *
  * In MediaDescription:
  * - HasRemoteInformation
@@ -54,6 +52,8 @@
 #include "call-stream.h"
 #include "tf-signals-marshal.h"
 #include "utils.h"
+
+#define DTMF_TONE_VOLUME (8)
 
 struct _TfCallContent {
   TfContent parent;
@@ -83,6 +83,11 @@ struct _TfCallContent {
   GList *outstanding_streams;
 
   GMutex *mutex;
+
+  gboolean remote_codecs_set;
+
+  TpSendingState dtmf_sending_state;
+  guint current_dtmf_event;
 
   /* Content protected by the Mutex */
   GPtrArray *fsstreams;
@@ -262,6 +267,7 @@ static void
 tf_call_content_init (TfCallContent *self)
 {
   self->fsstreams = g_ptr_array_new ();
+  self->dtmf_sending_state = TP_SENDING_STATE_NONE;
 
   self->mutex = g_mutex_new ();
 }
@@ -534,6 +540,87 @@ object_has_property (GObject *object, const gchar *property)
       property) != NULL;
 }
 
+static void
+on_content_dtmf_change_requested (TpProxy *proxy,
+    guchar arg_Event,
+    guint arg_State,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TfCallContent *self = TF_CALL_CONTENT (weak_object);
+
+  /* Ignore the signal until we've got the original properties and codecs */
+  if (!self->fssession || !self->remote_codecs_set) {
+    self->dtmf_sending_state = arg_State;
+    self->current_dtmf_event = arg_Event;
+    return;
+  }
+
+  switch (arg_State)
+    {
+    case TP_SENDING_STATE_PENDING_STOP_SENDING:
+      if (self->dtmf_sending_state != TP_SENDING_STATE_SENDING)
+        {
+          tf_content_error (TF_CONTENT (self),
+              TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+              TP_ERROR_STR_CONFUSED,
+              "Tried to stop a %u DTMF event while state is %d",
+              arg_Event, self->dtmf_sending_state);
+        }
+
+      if (fs_session_stop_telephony_event (self->fssession))
+        {
+          self->dtmf_sending_state = TP_SENDING_STATE_PENDING_STOP_SENDING;
+        }
+      else
+        {
+          tf_content_error (TF_CONTENT (self),
+              TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+              TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+              "Could not stop DTMF event %d", arg_Event);
+          tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (
+              self->proxy, -1, arg_Event, TP_SENDING_STATE_SENDING,
+              NULL, NULL, NULL, NULL);
+        }
+      break;
+    case TP_SENDING_STATE_PENDING_SEND:
+      if (self->dtmf_sending_state != TP_SENDING_STATE_NONE)
+        {
+          tf_content_error (TF_CONTENT (self),
+              TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+              TP_ERROR_STR_CONFUSED,
+              "Tried to start a new DTMF event %u while %d is already playing",
+              arg_Event, self->current_dtmf_event);
+          fs_session_stop_telephony_event (self->fssession);
+        }
+
+      if (fs_session_start_telephony_event (self->fssession,
+              arg_Event, DTMF_TONE_VOLUME))
+        {
+          self->current_dtmf_event = arg_Event;
+          self->dtmf_sending_state = TP_SENDING_STATE_PENDING_SEND;
+        }
+      else
+        {
+          tf_content_error (TF_CONTENT (self),
+              TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+              TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+              "Could not start DTMF event %d", arg_Event);
+          tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (
+              self->proxy, -1, arg_Event, TP_SENDING_STATE_NONE,
+              NULL, NULL, NULL, NULL);
+        }
+      break;
+    default:
+      tf_content_error (TF_CONTENT (self),
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_CONFUSED,
+          "Invalid State %d in DTMFChangeRequested signal for event %d",
+          arg_State, arg_Event);
+      break;
+    }
+}
+
 
 static void
 process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
@@ -554,6 +641,14 @@ process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
         }
 
       success = fs_stream_set_remote_codecs (fsstream, fscodecs, &error);
+
+      if (success)
+        {
+          if (!self->remote_codecs_set)
+            on_content_dtmf_change_requested (NULL, self->current_dtmf_event,
+                self->dtmf_sending_state, NULL, G_OBJECT (self));
+          self->remote_codecs_set = TRUE;
+        }
 
       if (!success &&
           object_has_property (G_OBJECT (fsstream), "rtp-header-extensions"))
@@ -576,7 +671,6 @@ process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
           -1, NULL, NULL, NULL, NULL);
       g_object_unref (media_description);
     }
-
 }
 
 static void
@@ -828,6 +922,9 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   const gchar *conference_type;
   gboolean valid;
   GList *codec_prefs;
+  guchar dtmf_event;
+  guint dtmf_state;
+  const GValue *dtmf_event_value;
 
   /* Guard against early disposal */
   if (self->call_channel == NULL)
@@ -952,6 +1049,19 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
     }
   self->got_media_description_property = TRUE;
 
+
+  dtmf_state = tp_asv_get_uint32 (properties, "CurrentDTMFState", &valid);
+  if (!valid)
+    goto invalid_property;
+
+  dtmf_event_value = tp_asv_lookup (properties, "CurrentDTMFEvent");
+  if (!dtmf_event_value || !G_VALUE_HOLDS_UCHAR (dtmf_event_value))
+    goto invalid_property;
+  dtmf_event = g_value_get_uchar (dtmf_event_value);
+
+  on_content_dtmf_change_requested (NULL, dtmf_event, dtmf_state, NULL,
+      G_OBJECT (self));
+
   /* The async result holds a ref to self which may be the last one, so this
    * comes after we're done with self */
   g_object_unref (res);
@@ -974,9 +1084,30 @@ setup_content_media_properties (TfCallContent *self,
   TpProxy *proxy,
   GSimpleAsyncResult *res)
 {
+  GError *error = NULL;
+
+
+  if (tp_cli_call_content_interface_media_connect_to_dtmf_change_requested (
+          TP_CALL_CONTENT (proxy),
+          on_content_dtmf_change_requested,
+          NULL, NULL, G_OBJECT (self), &error) == NULL)
+    goto connect_failed;
+
   tp_cli_dbus_properties_call_get_all (proxy, -1,
       TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
       got_content_media_properties, res, NULL, G_OBJECT (self));
+
+  return;
+
+ connect_failed:
+  tf_content_error (TF_CONTENT (self),
+      TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+      TP_ERROR_STR_CONFUSED,
+      "Error getting the Content's VideoControl properties: %s",
+      error->message);
+  g_simple_async_result_take_error (res, error);
+  g_simple_async_result_complete (res);
+  g_object_unref (res);
 }
 
 static void
@@ -1696,6 +1827,65 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
     }
 }
 
+static void
+tf_call_content_dtmf_started (TfCallContent *self, FsDTMFMethod method,
+    FsDTMFEvent event, guint8 volume)
+{
+  if (volume != DTMF_TONE_VOLUME)
+    {
+      tf_content_error (TF_CONTENT (self),
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+          "DTMF volume is %d, while we use %d", volume, DTMF_TONE_VOLUME);
+      return;
+    }
+
+  if (self->dtmf_sending_state != TP_SENDING_STATE_PENDING_SEND)
+    {
+      tf_content_error (TF_CONTENT (self),
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+          "Farstream started a DTMFevent, but we were in the %d state",
+          self->dtmf_sending_state);
+      return;
+    }
+
+  if (self->current_dtmf_event != event)
+    {
+      tf_content_error (TF_CONTENT (self),
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+          "Farstream started the wrong dtmf event, got %d but "
+          "expected %d", event, self->current_dtmf_event);
+      return;
+    }
+
+  tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (
+      self->proxy, -1, event, TP_SENDING_STATE_SENDING,
+      NULL, NULL, NULL, NULL);
+  self->dtmf_sending_state = TP_SENDING_STATE_SENDING;
+}
+
+static void
+tf_call_content_dtmf_stopped (TfCallContent *self, FsDTMFMethod method)
+{
+  if (self->dtmf_sending_state != TP_SENDING_STATE_PENDING_STOP_SENDING)
+    {
+      tf_content_error (TF_CONTENT (self),
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+          "Farstream stopped a DTMFevent, but we were in the %d state",
+          self->dtmf_sending_state);
+      return;
+    }
+
+  tp_cli_call_content_interface_media_call_acknowledge_dtmf_change (
+      self->proxy, -1, self->current_dtmf_event, TP_SENDING_STATE_NONE,
+      NULL, NULL, NULL, NULL);
+  self->dtmf_sending_state = TP_SENDING_STATE_NONE;
+}
+
+
 gboolean
 tf_call_content_bus_message (TfCallContent *content,
     GstMessage *message)
@@ -1705,6 +1895,10 @@ tf_call_content_bus_message (TfCallContent *content,
   const gchar *debug;
   GHashTableIter iter;
   gpointer key, value;
+  FsDTMFMethod method;
+  FsDTMFEvent event;
+  guint8 volume;
+
 
   /* Guard against early disposal */
   if (content->call_channel == NULL)
@@ -1756,6 +1950,20 @@ tf_call_content_bus_message (TfCallContent *content,
       g_debug ("Codecs changed");
 
       tf_call_content_try_sending_codecs (content);
+
+      ret = TRUE;
+    }
+  else if (fs_session_parse_telephony_event_started (message,
+          content->fssession, &method, &event, &volume))
+    {
+      tf_call_content_dtmf_started (content, method, event, volume);
+
+      ret = TRUE;
+    }
+  else if (fs_session_parse_telephony_event_stopped (message,
+          content->fssession, &method))
+    {
+      tf_call_content_dtmf_stopped (content, method);
 
       ret = TRUE;
     }

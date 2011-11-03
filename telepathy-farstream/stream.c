@@ -2606,8 +2606,6 @@ _tf_stream_bus_message (TfStream *stream,
 
       cb_fs_send_codec_changed (stream, codec, secondary_codecs);
 
-      if (codec)
-        fs_codec_destroy (codec);
       fs_codec_list_destroy (secondary_codecs);
       return TRUE;
     }
