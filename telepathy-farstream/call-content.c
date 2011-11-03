@@ -34,7 +34,6 @@
  * In MediaDescription:
  * - RTCP Feedback
  * - RTP Header extensions
- * - FurtherNegotiationRequired
  * - HasRemoteInformation
  * - SSRCs
  */
@@ -68,10 +67,11 @@ struct _TfCallContent {
   FsSession *fssession;
   TpMediaStreamType media_type;
 
-  GList *current_codecs;
   TpProxy *current_media_description;
   guint current_md_contact_handle;
   GList *current_md_fscodecs;
+
+  GList *last_sent_codecs;
 
   GHashTable *streams; /* NULL before getting the first streams */
   /* Streams for which we don't have a session yet*/
@@ -300,6 +300,9 @@ tf_call_content_dispose (GObject *object)
   if (self->proxy)
     g_object_unref (self->proxy);
   self->proxy = NULL;
+
+  fs_codec_list_destroy (self->last_sent_codecs);
+  self->last_sent_codecs = NULL;
 
   /* We do not hold a ref to the call channel, and use it as a flag to ensure
    * we will bail out when disposed */
@@ -1332,13 +1335,33 @@ tf_call_content_new_async (TfCallChannel *call_channel,
   return g_object_ref (self);
 }
 
+static gboolean
+find_codec (GList *codecs, FsCodec *codec)
+{
+  GList *item;
+
+  for (item = codecs; item ; item = item->next)
+    if (fs_codec_are_equal (item->data, codec))
+      return TRUE;
+
+  return FALSE;
+}
 
 
 static GHashTable *
-fscodecs_to_media_descriptions (GList *codecs)
+fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs,
+    gboolean check_resend)
 {
   GPtrArray *tpcodecs = g_ptr_array_new ();
   GList *item;
+  GList *resend_codecs = NULL;
+
+  if (self->last_sent_codecs)
+    resend_codecs = fs_session_codecs_need_resend (self->fssession,
+        self->last_sent_codecs, codecs);
+
+  if (check_resend && !resend_codecs)
+    return NULL;
 
   for (item = codecs; item; item = item->next)
     {
@@ -1346,6 +1369,7 @@ fscodecs_to_media_descriptions (GList *codecs)
       GValue tpcodec = { 0, };
       GHashTable *params;
       GList *param_item;
+      gboolean updated;
 
       params = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
@@ -1359,6 +1383,8 @@ fscodecs_to_media_descriptions (GList *codecs)
                                g_strdup (param->value));
         }
 
+      updated = find_codec (resend_codecs, fscodec);
+
       g_value_init (&tpcodec, TP_STRUCT_TYPE_CODEC);
       g_value_take_boxed (&tpcodec,
           dbus_g_type_specialized_construct (TP_STRUCT_TYPE_CODEC));
@@ -1368,7 +1394,8 @@ fscodecs_to_media_descriptions (GList *codecs)
           1, fscodec->encoding_name,
           2, fscodec->clock_rate,
           3, fscodec->channels,
-          4, params,
+          4, updated,
+          5, params,
           G_MAXUINT);
 
 
@@ -1377,7 +1404,10 @@ fscodecs_to_media_descriptions (GList *codecs)
       g_ptr_array_add (tpcodecs, g_value_get_boxed (&tpcodec));
     }
 
-  return tp_asv_new ("Codecs", TP_ARRAY_TYPE_CODEC_LIST, tpcodecs, NULL);
+  fs_codec_list_destroy (resend_codecs);
+
+  return tp_asv_new ("Codecs", TP_ARRAY_TYPE_CODEC_LIST, tpcodecs,
+      "FurtherNegotiationRequired", G_TYPE_BOOLEAN, !!resend_codecs, NULL);
 }
 
 static void
@@ -1406,30 +1436,47 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
   if (!codecs)
     return;
 
-  if (fs_codec_list_are_equal (codecs, self->current_codecs))
+  if (fs_codec_list_are_equal (codecs, self->last_sent_codecs))
     {
       fs_codec_list_destroy (codecs);
       return;
     }
 
-  media_description = fscodecs_to_media_descriptions (codecs);
+  media_description = fscodecs_to_media_descriptions (self, codecs,
+      !!self->current_media_description);
+
 
   if (self->current_media_description)
     {
+
       tp_cli_call_content_media_description_call_accept (
           self->current_media_description, -1, media_description,
           NULL, NULL, NULL, NULL);
 
       g_object_unref (self->current_media_description);
       self->current_media_description = NULL;
+      fs_codec_list_destroy (self->last_sent_codecs);
+      self->last_sent_codecs = codecs;
+
     }
   else
     {
-      tp_cli_call_content_interface_media_call_update_local_media_description (
-          self->proxy, -1, 0, media_description, NULL, NULL, NULL, NULL);
+      if (media_description)
+        {
+          tp_cli_call_content_interface_media_call_update_local_media_description (
+              self->proxy, -1, 0, media_description, NULL, NULL, NULL, NULL);
+
+          fs_codec_list_destroy (self->last_sent_codecs);
+          self->last_sent_codecs = codecs;
+        }
+      else
+        {
+          fs_codec_list_destroy (codecs);
+        }
     }
 
-  g_boxed_free (TP_HASH_TYPE_MEDIA_DESCRIPTION_PROPERTIES, media_description);
+  if (media_description)
+    g_boxed_free (TP_HASH_TYPE_MEDIA_DESCRIPTION_PROPERTIES, media_description);
 }
 
 gboolean
