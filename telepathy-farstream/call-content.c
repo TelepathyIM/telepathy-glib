@@ -441,6 +441,7 @@ tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs)
       guint channels;
       GHashTable *params;
       FsCodec *fscodec;
+      gchar *tmp;
 
       tp_value_array_unpack (tpcodec, 5, &pt, &name, &clock_rate, &channels,
           &params);
@@ -450,6 +451,10 @@ tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs)
 
       g_hash_table_foreach (params, tpparam_to_fsparam, fscodec);
 
+
+      tmp = fs_codec_to_string (fscodec);
+      g_debug ("%s", tmp);
+      g_free (tmp);
       fscodecs = g_list_prepend (fscodecs, fscodec);
     }
 
@@ -529,6 +534,7 @@ process_media_description (TfCallContent *self,
       TP_IFACE_QUARK_CALL_CONTENT_MEDIA_DESCRIPTION);
 
 
+  g_debug ("Got MediaDescription");
   fscodecs = tpcodecs_to_fscodecs (tp_media_type_to_fs (self->media_type),
       codecs);
 
