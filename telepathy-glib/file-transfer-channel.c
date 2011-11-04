@@ -1094,12 +1094,13 @@ file_replace_async_cb (GObject *source,
 /**
  * tp_file_transfer_channel_accept_file_async:
  * @self: a #TpFileTransferChannel
- * @file: a #GFile
+ * @file: a #GFile where the file should be saved
  * @offset: Offset from the start of @file where transfer begins
  * @callback: a callback to call when the transfer has been accepted
  * @user_data: data to pass to @callback
  *
- * Accept an incoming file transfer. Once the accept has been
+ * Accept an incoming file transfer in the
+ * %TP_FILE_TRANSFER_STATE_PENDING state. Once the accept has been
  * processed, @callback will be called. You can then call
  * tp_file_transfer_channel_accept_file_finish() to get the result of
  * the operation.
@@ -1158,7 +1159,7 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes a file transfer accept.
+ * Finishes a file transfer accept operation.
  *
  * Returns: %TRUE if the accept operation was a success, or %FALSE
  *
@@ -1212,7 +1213,7 @@ file_read_async_cb (GObject *source,
 /**
  * tp_file_transfer_channel_provide_file_async:
  * @self: a #TpFileTransferChannel
- * @file: a #GFile
+ * @file: a #GFile to send to the remote contact
  * @callback: a callback to call when the transfer has been accepted
  * @user_data: data to pass to @callback
  *
@@ -1284,8 +1285,7 @@ tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
  *
  * Successful return from this function does not mean that the file
  * transfer has completed or has even started at all. The state of the
- * file transfer should be monitored with
- * #TpFileTransferChannel::notify::state.
+ * file transfer should be monitored with the "notify::state" signal.
  *
  * Returns: %TRUE if the file has been successfully provided, or
  * %FALSE.
@@ -1402,6 +1402,8 @@ tp_file_transfer_channel_get_size (TpFileTransferChannel *self)
  * tp_file_transfer_channel_get_state:
  * @self: a #TpFileTransferChannel
  * @reason: (out): a #TpFileTransferStateChangeReason, or %NULL
+ *
+ * Returns the #TpFileTransfer:state property.
  *
  * If @reason is not %NULL it is set to the reason why
  * #TpFileTransferChannel:state changed to its current value.
