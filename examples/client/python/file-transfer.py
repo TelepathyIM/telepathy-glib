@@ -3,11 +3,10 @@ import sys
 import os
 import mimetypes
 
-import gobject
-gobject.threads_init()
+from gi.repository import GObject
+GObject.threads_init()
 
-import magic
-
+from gi.repository import Gio
 from gi.repository import TelepathyGLib
 
 def usage():
@@ -18,12 +17,23 @@ def usage():
 
     sys.exit(1)
 
-def create_channel_cb(request, result, main_loop):
-    (chan, context) = request.create_and_handle_channel_finish(result)
-    print chan
-    print chan.get_description
+def provide_file_cb(channel, result, data):
+    if not channel.provide_file_finish(result):
+        print 'failed to provide'
 
-    #main_loop.quit()
+def state_changed_cb(channel, pspec, data):
+    main_loop, file_path = data
+    state, _ = channel.get_state()
+    print 'state is now', state
+
+    if state == TelepathyGLib.FileTransferState.ACCEPTED:
+        file = Gio.File.new_for_path(file_path)
+        channel.provide_file_async(file, provide_file_cb, None)
+
+def create_channel_cb(request, result, data):
+    (chan, context) = request.create_and_handle_channel_finish(result)
+
+    chan.connect('notify::state', state_changed_cb, data)
 
 if __name__ == '__main__':
     #TelepathyGLib.debug_set_flags("all")
@@ -69,10 +79,8 @@ if __name__ == '__main__':
 
     request = TelepathyGLib.AccountChannelRequest.new(account, request_dict, 0)
 
-    main_loop = gobject.MainLoop()
+    main_loop = GObject.MainLoop()
 
-    print TelepathyGLib
-
-    request.create_and_handle_channel_async(None, create_channel_cb, main_loop)
+    request.create_and_handle_channel_async(None, create_channel_cb, (main_loop, file_path))
 
     main_loop.run()
