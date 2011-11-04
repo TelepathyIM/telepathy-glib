@@ -422,7 +422,10 @@ test_provide_success (Test *test,
   g_assert_cmpuint (tp_file_transfer_channel_get_state (test->channel, &reason),
       ==, TP_FILE_TRANSFER_STATE_PENDING);
 
-  file = g_file_new_for_uri ("file:///badger/mushroom/snake.txt");
+  /* not very pretty */
+  g_file_set_contents ("/tmp/file-transfer", "test", -1, NULL);
+
+  file = g_file_new_for_uri ("file:///tmp/file-transfer");
   tp_file_transfer_channel_provide_file_async (test->channel,
       file, file_provide_cb, test);
   g_object_unref (file);
