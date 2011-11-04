@@ -32,8 +32,6 @@
  * - Implement DTMF
  *
  * In MediaDescription:
- * - RTCP Feedback
- * - RTP Header extensions
  * - HasRemoteInformation
  * - SSRCs
  */
@@ -46,6 +44,7 @@
 #include <telepathy-glib/proxy-subclass.h>
 #include <farstream/fs-conference.h>
 #include <farstream/fs-utils.h>
+#include <farstream/fs-rtp.h>
 #include <farstream/fs-element-added-notifier.h>
 
 #include <stdarg.h>
@@ -70,6 +69,12 @@ struct _TfCallContent {
   TpProxy *current_media_description;
   guint current_md_contact_handle;
   GList *current_md_fscodecs;
+  GList *current_md_rtp_hdrext;
+
+  gboolean current_has_rtp_hdrext;
+  gboolean current_has_rtcp_fb;
+  gboolean has_rtp_hdrext;
+  gboolean has_rtcp_fb;
 
   GList *last_sent_codecs;
 
@@ -97,7 +102,7 @@ struct _TfCallContent {
   guint height;
 };
 
-struct _TfCallContentClass{
+struct _TfCallContentClass {
   TfContentClass parent_class;
 };
 
@@ -430,7 +435,8 @@ tpparam_to_fsparam (gpointer key, gpointer value, gpointer user_data)
 }
 
 static GList *
-tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs)
+tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs,
+    gboolean does_avpf, GHashTable *rtcp_fb)
 {
   GList *fscodecs = NULL;
   guint i;
@@ -445,6 +451,7 @@ tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs)
       GHashTable *params;
       FsCodec *fscodec;
       gchar *tmp;
+      GValueArray *feedback_params;
 
       tp_value_array_unpack (tpcodec, 5, &pt, &name, &clock_rate, &channels,
           &params);
@@ -454,6 +461,34 @@ tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs)
 
       g_hash_table_foreach (params, tpparam_to_fsparam, fscodec);
 
+      if (does_avpf)
+        fscodec->minimum_reporting_interval = 0;
+
+      feedback_params = g_hash_table_lookup (rtcp_fb, GUINT_TO_POINTER (pt));
+
+      if (feedback_params)
+        {
+          guint rtcp_minimum_interval;
+          GPtrArray *messages;
+          guint j;
+
+          tp_value_array_unpack (feedback_params, 2, &rtcp_minimum_interval,
+              &messages);
+          if (rtcp_minimum_interval != G_MAXUINT)
+            fscodec->minimum_reporting_interval = rtcp_minimum_interval;
+
+          for (j = 0; j < messages->len ; j++)
+            {
+              GValueArray *message = g_ptr_array_index (messages, j);
+              const gchar *type, *subtype, *extra_params;
+
+              tp_value_array_unpack (message, 3, &type, &subtype,
+                  &extra_params);
+
+              fs_codec_add_feedback_parameter (fscodec, type, subtype,
+                  extra_params);
+            }
+        }
 
       tmp = fs_codec_to_string (fscodec);
       g_debug ("%s", tmp);
@@ -466,16 +501,68 @@ tpcodecs_to_fscodecs (FsMediaType fsmediatype, const GPtrArray *tpcodecs)
   return fscodecs;
 }
 
+static GList *
+tprtphdrext_to_fsrtphdrext (GPtrArray *rtp_hdrext)
+{
+  GQueue ret = G_QUEUE_INIT;
+  guint i;
+
+  if (!rtp_hdrext)
+    return NULL;
+
+  for (i = 0; i < rtp_hdrext->len; i++)
+    {
+      GValueArray *extension = g_ptr_array_index (rtp_hdrext, i);
+      guint id;
+      TpMediaStreamDirection direction;
+      const char *uri;
+      const gchar *parameters;
+
+      tp_value_array_unpack (extension, 4, &id, &direction, &uri, &parameters);
+
+      g_queue_push_tail (&ret, fs_rtp_header_extension_new (id,
+              tpdirection_to_fsdirection (direction), uri));
+    }
+
+  return ret.head;
+}
+
+static gboolean
+object_has_property (GObject *object, const gchar *property)
+{
+  return g_object_class_find_property (G_OBJECT_GET_CLASS (object),
+      property) != NULL;
+}
+
+
 static void
 process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
-    TpProxy *media_description, GList *fscodecs)
+    TpProxy *media_description, GList *fscodecs, GList *rtp_hdrext)
 {
   gboolean success = TRUE;
   GError *error = NULL;
 
   if (fscodecs != NULL)
-    success = fs_stream_set_remote_codecs (fsstream, fscodecs, &error);
+    {
+      GList *old_rtp_hdrext = NULL;
 
+      if (object_has_property (G_OBJECT (fsstream), "rtp-header-extensions"))
+        {
+          g_object_get (fsstream, "rtp-header-extensions", &old_rtp_hdrext,
+              NULL);
+          g_object_set (fsstream, "rtp-header-extensions", rtp_hdrext, NULL);
+        }
+
+      success = fs_stream_set_remote_codecs (fsstream, fscodecs, &error);
+
+      if (!success &&
+          object_has_property (G_OBJECT (fsstream), "rtp-header-extensions"))
+        g_object_set (fsstream, "rtp-header-extensions", old_rtp_hdrext, NULL);
+
+      fs_rtp_header_extension_list_destroy (old_rtp_hdrext);
+    }
+
+  fs_rtp_header_extension_list_destroy (rtp_hdrext);
   fs_codec_list_destroy (fscodecs);
 
   if (success)
@@ -501,7 +588,13 @@ process_media_description (TfCallContent *self,
   GError *error = NULL;
   FsStream *fsstream;
   GPtrArray *codecs;
+  GPtrArray *rtp_hdrext = NULL;
+  GHashTable *rtcp_fb = NULL;
+  gboolean does_avpf = FALSE;
   GList *fscodecs;
+  const gchar * const *interfaces;
+  guint i;
+  GList *fsrtp_hdrext;
 
   /* Guard against early disposal */
   if (self->call_channel == NULL)
@@ -536,10 +629,44 @@ process_media_description (TfCallContent *self,
   tp_proxy_add_interface_by_id (TP_PROXY (proxy),
       TP_IFACE_QUARK_CALL_CONTENT_MEDIA_DESCRIPTION);
 
+  interfaces = tp_asv_get_strv (properties,
+      TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACES);
+
+
+  self->current_has_rtcp_fb = FALSE;
+  self->current_has_rtp_hdrext = FALSE;
+  for (i = 0; interfaces[i]; i++)
+    {
+      if (!strcmp (interfaces[i],
+              TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK))
+        {
+          gboolean valid;
+
+          self->current_has_rtcp_fb = TRUE;
+          rtcp_fb = tp_asv_get_boxed (properties,
+              TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK_FEEDBACK_MESSAGES,
+              TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP);
+          does_avpf = tp_asv_get_boolean (properties,
+              TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK_DOES_AVPF, &valid);
+          if (!valid)
+            does_avpf = FALSE;
+        }
+      else if (!strcmp (interfaces[i],
+              TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS))
+        {
+          self->current_has_rtp_hdrext = TRUE;
+          rtp_hdrext = tp_asv_get_boxed (properties,
+              TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS_HEADER_EXTENSIONS,
+              TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST);
+        }
+    }
+
 
   g_debug ("Got MediaDescription");
   fscodecs = tpcodecs_to_fscodecs (tp_media_type_to_fs (self->media_type),
-      codecs);
+      codecs, does_avpf, rtcp_fb);
+
+  fsrtp_hdrext = tprtphdrext_to_fsrtphdrext (rtp_hdrext);
 
   fsstream = tf_call_content_get_existing_fsstream_by_handle (self,
       contact_handle);
@@ -550,10 +677,12 @@ process_media_description (TfCallContent *self,
       self->current_media_description = proxy;
       self->current_md_contact_handle = contact_handle;
       self->current_md_fscodecs = fscodecs;
+      self->current_md_rtp_hdrext = fsrtp_hdrext;
       return;
     }
 
-  process_media_description_try_codecs (self, fsstream, proxy, fscodecs);
+  process_media_description_try_codecs (self, fsstream, proxy, fscodecs,
+      fsrtp_hdrext);
 }
 
 static void
@@ -850,13 +979,6 @@ setup_content_media_properties (TfCallContent *self,
       got_content_media_properties, res, NULL, G_OBJECT (self));
 }
 
-static gboolean
-object_has_property (GObject *object, const gchar *property)
-{
-  return g_object_class_find_property (G_OBJECT_GET_CLASS (object),
-      property) != NULL;
-}
-
 static void
 content_video_element_added (FsElementAddedNotifier *notifier,
   GstBin *conference,
@@ -1047,8 +1169,10 @@ new_media_description_offer (TpProxy *proxy,
   if (self->current_media_description) {
     g_object_unref (self->current_media_description);
     fs_codec_list_destroy (self->current_md_fscodecs);
+    fs_rtp_header_extension_list_destroy (self->current_md_rtp_hdrext);
     self->current_media_description = NULL;
     self->current_md_fscodecs = NULL;
+    self->current_md_rtp_hdrext = NULL;
   }
 
   process_media_description (self, arg_Media_Description, arg_Contact, arg_Properties);
@@ -1349,19 +1473,32 @@ find_codec (GList *codecs, FsCodec *codec)
 
 
 static GHashTable *
-fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs,
-    gboolean check_resend)
+fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
 {
   GPtrArray *tpcodecs = g_ptr_array_new ();
   GList *item;
   GList *resend_codecs = NULL;
+  GHashTable *retval;
+  GPtrArray *rtp_hdrext = NULL;
+  GHashTable *rtcp_fb = NULL;
+  GPtrArray *interfaces;
 
   if (self->last_sent_codecs)
     resend_codecs = fs_session_codecs_need_resend (self->fssession,
         self->last_sent_codecs, codecs);
 
-  if (check_resend && !resend_codecs)
+  if (!self->current_media_description && !resend_codecs)
     return NULL;
+
+  if ((self->current_media_description && self->current_has_rtp_hdrext)
+      || self->has_rtp_hdrext)
+    rtp_hdrext = dbus_g_type_specialized_construct (
+        TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST);
+
+  if ((self->current_media_description && self->current_has_rtcp_fb)
+      || self->has_rtcp_fb)
+    rtcp_fb = dbus_g_type_specialized_construct (
+        TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP);
 
   for (item = codecs; item; item = item->next)
     {
@@ -1402,16 +1539,93 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs,
       g_hash_table_destroy (params);
 
       g_ptr_array_add (tpcodecs, g_value_get_boxed (&tpcodec));
+
+      if (fscodec->minimum_reporting_interval != G_MAXUINT ||
+          fscodec->feedback_params)
+        {
+          GPtrArray *messages = g_ptr_array_new ();
+          GList *item2;
+
+          for (item2 = fscodec->feedback_params; item2; item2 = item2->next)
+            {
+              FsFeedbackParameter *fb = item2->data;
+
+              g_ptr_array_add (messages, tp_value_array_build (3,
+                      G_TYPE_STRING, fb->type,
+                      G_TYPE_STRING, fb->subtype,
+                      G_TYPE_STRING, fb->extra_params));
+            }
+
+          g_hash_table_insert (rtcp_fb, GUINT_TO_POINTER (fscodec->id),
+              tp_value_array_build (2,
+                  G_TYPE_UINT,
+                  fscodec->minimum_reporting_interval != G_MAXUINT ?
+                  fscodec->minimum_reporting_interval : 5000,
+                  TP_ARRAY_TYPE_RTCP_FEEDBACK_MESSAGE_LIST,
+                  messages));
+
+          g_boxed_free (TP_ARRAY_TYPE_RTCP_FEEDBACK_MESSAGE_LIST, messages);
+        }
     }
 
   fs_codec_list_destroy (resend_codecs);
 
-  return tp_asv_new (
+
+  if (rtp_hdrext)
+    {
+      GList *fs_rtp_hdrexts;
+
+      g_object_get (self->fssession, "rtp-header-extensions", &fs_rtp_hdrexts,
+                    NULL);
+
+      for (item = fs_rtp_hdrexts; item; item = item->next)
+        {
+          FsRtpHeaderExtension *hdrext = item->data;
+
+          g_ptr_array_add (rtp_hdrext, tp_value_array_build (4,
+                  G_TYPE_UINT, hdrext->id,
+                  G_TYPE_UINT, fsdirection_to_tpdirection (hdrext->direction),
+                  G_TYPE_STRING, hdrext->uri,
+                  G_TYPE_STRING, "",
+                  NULL));
+        }
+
+      fs_rtp_header_extension_list_destroy (fs_rtp_hdrexts);
+    }
+
+  retval = tp_asv_new (
       TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_CODECS,
       TP_ARRAY_TYPE_CODEC_LIST, tpcodecs,
       TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_FURTHER_NEGOTIATION_REQUIRED,
       G_TYPE_BOOLEAN, !!resend_codecs,
       NULL);
+
+  interfaces = g_ptr_array_new ();
+
+  if (rtp_hdrext)
+    {
+      tp_asv_take_boxed (retval, TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS_HEADER_EXTENSIONS,
+          TP_ARRAY_TYPE_RTP_HEADER_EXTENSIONS_LIST,
+          rtp_hdrext);
+      g_ptr_array_add (interfaces,
+          g_strdup (TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS));
+    }
+
+  if (rtcp_fb)
+    {
+      tp_asv_set_boolean (retval, TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK_DOES_AVPF, g_hash_table_size (rtcp_fb));
+      tp_asv_take_boxed (retval, TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTCP_FEEDBACK_FEEDBACK_MESSAGES,
+          TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP, rtcp_fb);
+      g_ptr_array_add (interfaces,
+          g_strdup (TP_IFACE_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACE_RTP_HEADER_EXTENSIONS));
+    }
+
+  g_ptr_array_add (interfaces, NULL);
+  tp_asv_take_boxed (retval, TP_PROP_CALL_CONTENT_MEDIA_DESCRIPTION_INTERFACES,
+      G_TYPE_STRV, interfaces->pdata);
+  g_ptr_array_free (interfaces, FALSE);
+
+  return retval;
 }
 
 static void
@@ -1446,9 +1660,7 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
       return;
     }
 
-  media_description = fscodecs_to_media_descriptions (self, codecs,
-      !!self->current_media_description);
-
+  media_description = fscodecs_to_media_descriptions (self, codecs);
 
   if (self->current_media_description)
     {
@@ -1459,9 +1671,6 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
 
       g_object_unref (self->current_media_description);
       self->current_media_description = NULL;
-      fs_codec_list_destroy (self->last_sent_codecs);
-      self->last_sent_codecs = codecs;
-
     }
   else
     {
@@ -1469,9 +1678,6 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
         {
           tp_cli_call_content_interface_media_call_update_local_media_description (
               self->proxy, -1, 0, media_description, NULL, NULL, NULL, NULL);
-
-          fs_codec_list_destroy (self->last_sent_codecs);
-          self->last_sent_codecs = codecs;
         }
       else
         {
@@ -1480,7 +1686,14 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
     }
 
   if (media_description)
-    g_boxed_free (TP_HASH_TYPE_MEDIA_DESCRIPTION_PROPERTIES, media_description);
+    {
+      fs_codec_list_destroy (self->last_sent_codecs);
+      self->last_sent_codecs = codecs;
+      self->has_rtcp_fb = self->current_has_rtcp_fb;
+      self->has_rtp_hdrext = self->current_has_rtp_hdrext;
+
+      g_boxed_free (TP_HASH_TYPE_MEDIA_DESCRIPTION_PROPERTIES, media_description);
+    }
 }
 
 gboolean
@@ -1662,12 +1875,15 @@ _tf_call_content_get_fsstream_by_handle (TfCallContent *content,
   {
     GList *codecs = content->current_md_fscodecs;
     TpProxy *current_media_description = content->current_media_description;
+    GList *rtp_hdrext = content->current_md_rtp_hdrext;
+
     content->current_md_fscodecs = NULL;
     content->current_media_description = NULL;
+    content->current_md_rtp_hdrext = NULL;
 
     /* ownership transfers to try_codecs */
     process_media_description_try_codecs (content, s,
-        current_media_description, codecs);
+        current_media_description, codecs, rtp_hdrext);
   }
 
   return s;

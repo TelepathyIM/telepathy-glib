@@ -41,6 +41,22 @@ fsdirection_to_tpdirection (FsStreamDirection dir)
   }
 }
 
+static inline FsStreamDirection
+tpdirection_to_fsdirection (TpMediaStreamDirection dir)
+{
+  switch (dir) {
+  case TP_MEDIA_STREAM_DIRECTION_NONE:
+    return FS_DIRECTION_NONE;
+  case TP_MEDIA_STREAM_DIRECTION_SEND:
+    return FS_DIRECTION_SEND;
+  case TP_MEDIA_STREAM_DIRECTION_RECEIVE:
+    return FS_DIRECTION_RECV;
+  case TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL:
+    return FS_DIRECTION_BOTH;
+  default:
+    g_assert_not_reached ();
+  }
+}
 
 
 #endif /* __UTILS_H__ */

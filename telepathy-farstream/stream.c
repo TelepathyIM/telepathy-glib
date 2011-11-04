@@ -1606,23 +1606,6 @@ fill_fs_params (gpointer key, gpointer value, gpointer user_data)
   fs_codec_add_optional_parameter (codec, key, value);
 }
 
-static FsStreamDirection
-tpdirection_to_fsdirection (TpMediaStreamDirection dir)
-{
-  switch (dir) {
-  case TP_MEDIA_STREAM_DIRECTION_NONE:
-    return FS_DIRECTION_NONE;
-  case TP_MEDIA_STREAM_DIRECTION_SEND:
-    return FS_DIRECTION_SEND;
-  case TP_MEDIA_STREAM_DIRECTION_RECEIVE:
-    return FS_DIRECTION_RECV;
-  case TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL:
-    return FS_DIRECTION_BOTH;
-  default:
-    g_assert_not_reached ();
-  }
-}
-
 static void
 set_remote_codecs (TpMediaStreamHandler *proxy G_GNUC_UNUSED,
     const GPtrArray *codecs,
