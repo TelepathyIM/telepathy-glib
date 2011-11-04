@@ -44,8 +44,10 @@
  *  tp_observe_channels_context_accept (context);
  * }
  *
- * client = tp_simple_observer_new (dbus, TRUE, "MyObserver", FALSE,
- *    my_observe_channels, user_data);
+ * factory = tp_automatic_client_factory_new (dbus);
+ * client = tp_simple_observer_new_with_factory (factory, TRUE, "MyObserver",
+ *     FALSE, my_observe_channels, user_data);
+ * g_object_unref (factory);
  *
  * tp_base_client_take_observer_filter (client, tp_asv_new (
  *      TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_TEXT,
