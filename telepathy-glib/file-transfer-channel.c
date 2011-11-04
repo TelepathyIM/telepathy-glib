@@ -93,17 +93,19 @@ struct _TpFileTransferChannelPrivate
     TpFileHashType content_hash_type;
     goffset initial_offset;
 
-    /* Accepting side */
-    GSocket*client_socket;
-    /* The access_control_param we passed to Accept */
-    GValue *access_control_param;
-
-    /* Providing side */
-    GSocketService *service;
-    GSocketAddress *address;
+    /* Streams and sockets for sending and receiving the actual file */
+    GSocket *client_socket;
+    GInputStream *in_stream;
+    GOutputStream *out_stream;
+    GSocketAddress *remote_address;
+    /* The value passed to Accept; this shouldn't be stored in
+     * initial_offset as they can easily be different. */
+    guint requested_offset;
 
     TpSocketAddressType socket_type;
     TpSocketAccessControl access_control;
+    GValue *access_control_param;
+
     GSimpleAsyncResult *result;
 };
 
@@ -132,10 +134,11 @@ operation_failed (TpFileTransferChannel *self,
 }
 
 static void
-incoming_splice_done_cb (GObject *output,
+splice_stream_ready_cb (GObject *output,
     GAsyncResult *result,
     gpointer user_data)
 {
+  TpFileTransferChannel *self = user_data;
   GError *error = NULL;
 
   g_output_stream_splice_finish (G_OUTPUT_STREAM (output), result,
@@ -144,6 +147,7 @@ incoming_splice_done_cb (GObject *output,
   if (error != NULL)
     {
       DEBUG ("splice operation failed: %s", error->message);
+      operation_failed (self, error);
       g_clear_error (&error);
     }
 }
@@ -152,8 +156,6 @@ static void
 client_socket_connected (TpFileTransferChannel *self)
 {
   GSocketConnection *conn;
-  GFileOutputStream *out;
-  GInputStream *in;
   GError *error = NULL;
 
   conn = g_socket_connection_factory_create_connection (
@@ -187,22 +189,30 @@ client_socket_connected (TpFileTransferChannel *self)
     }
 #endif
 
-  /* Get an input/output streams from the SocketConnection and the GFile */
-  in = g_io_stream_get_input_stream (G_IO_STREAM (conn));
-
-  out = g_file_replace (self->priv->file, NULL, FALSE,
-      G_FILE_CREATE_REPLACE_DESTINATION, NULL, &error);
-  if (out == NULL)
+  if (tp_channel_get_requested (TP_CHANNEL (self)))
     {
-      DEBUG ("Failed to get output stream: %s", error->message);
-      operation_failed (self, error);
-      return;
+      GOutputStream *stream;
+
+      stream = g_io_stream_get_output_stream (G_IO_STREAM (conn));
+
+      g_output_stream_splice_async (stream, self->priv->in_stream,
+          G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE |
+          G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
+          G_PRIORITY_DEFAULT, NULL,
+          splice_stream_ready_cb, self);
     }
+  else
+    {
+      GInputStream *stream;
 
-  g_output_stream_splice_async (G_OUTPUT_STREAM (out), in,
-      G_OUTPUT_STREAM_SPLICE_NONE, 0, NULL, incoming_splice_done_cb, self);
+      stream = g_io_stream_get_input_stream (G_IO_STREAM (conn));
 
-  DEBUG ("Leaving client_socket_connected");
+      g_output_stream_splice_async (self->priv->out_stream, stream,
+          G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE |
+          G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
+          G_PRIORITY_DEFAULT, NULL,
+          splice_stream_ready_cb, self);
+    }
 }
 
 static gboolean
@@ -229,6 +239,8 @@ client_socket_cb (GSocket *socket,
 
 /* Callbacks */
 
+static void start_transfer (TpFileTransferChannel *self);
+
 static void
 tp_file_transfer_channel_state_changed_cb (TpChannel *proxy,
     guint state,
@@ -238,8 +250,29 @@ tp_file_transfer_channel_state_changed_cb (TpChannel *proxy,
 {
   TpFileTransferChannel *self = (TpFileTransferChannel *) proxy;
 
+  if (state == self->priv->state)
+    return;
+
+  DEBUG ("File transfer state changed: "
+      "old state = %u, state = %u, reason = %u, "
+      "requested = %s, in_stream = %s, out_stream = %s",
+      self->priv->state, state, reason,
+      tp_channel_get_requested (proxy) ? "yes" : "no",
+      self->priv->in_stream ? "present" : "not present",
+      self->priv->out_stream ? "present" : "not present");
+
   self->priv->state = state;
   self->priv->state_reason = reason;
+
+  /* If the channel is open AND we have the socket path, we can start the
+   * transfer. The socket path could be NULL if we are not doing the actual
+   * data transfer but are just an observer for the channel. */
+  if (state == TP_FILE_TRANSFER_STATE_OPEN
+      && self->priv->remote_address != NULL)
+    {
+      start_transfer (self);
+    }
+
   g_object_notify (G_OBJECT (self), "state");
 }
 
@@ -327,147 +360,6 @@ tp_file_transfer_channel_prepare_core_cb (TpProxy *proxy,
 
 out:
   g_simple_async_result_complete (result);
-}
-
-static void
-accept_file_cb (TpChannel *proxy,
-    const GValue *addressv,
-    const GError *accept_error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TpFileTransferChannel *self = (TpFileTransferChannel *) proxy;
-  GSocketAddress *remote_address;
-  GError *error = NULL;
-
-  DEBUG ("enter");
-
-  if (accept_error != NULL)
-    {
-      DEBUG ("Failed to accept file: %s", accept_error->message);
-
-      operation_failed (self, accept_error);
-      return;
-    }
-
-  remote_address = tp_g_socket_address_from_variant (self->priv->socket_type,
-      addressv, &error);
-  if (remote_address == NULL)
-    {
-      DEBUG ("Failed to convert address: %s", error->message);
-      operation_failed (self, error);
-      g_error_free (error);
-      return;
-    }
-
-  /* TODO: Async? */
-  g_socket_set_blocking (self->priv->client_socket, FALSE);
-
-  /* g_socket_connect returns true on successful connection */
-  if (g_socket_connect (self->priv->client_socket, remote_address, NULL,
-        &error))
-    {
-      DEBUG ("Client socket connected immediately");
-      client_socket_connected (self);
-      goto out;
-    }
-  else if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_PENDING))
-    {
-      /* The connection is pending */
-      GSource *source;
-
-      source = g_socket_create_source (self->priv->client_socket, G_IO_OUT,
-          NULL);
-
-      g_source_attach (source, g_main_context_get_thread_default ());
-      g_source_set_callback (source, (GSourceFunc) client_socket_cb, self,
-          NULL);
-
-      g_error_free (error);
-      g_source_unref (source);
-    }
-  else
-    {
-      DEBUG ("Failed to connect to socket: %s:", error->message);
-
-      operation_failed (self, error);
-      g_error_free (error);
-    }
-
-/* TODO: Don't return until the file transfer completes */
-
-out:
-  g_object_unref (remote_address);
-  g_simple_async_result_complete (self->priv->result);
-}
-
-static void
-provide_file_cb (TpChannel *proxy,
-    const GValue *addressv,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TpFileTransferChannel *self = (TpFileTransferChannel *) proxy;
-
-  DEBUG ("enter");
-
-  if (error != NULL)
-    {
-      DEBUG ("Failed to provide file: %s", error->message);
-
-      operation_failed (self, error);
-      return;
-    }
-
-  /* FIXME: Isn't really provided (but at least we haven't crashed) */
-  DEBUG ("File provided");
-
-  g_simple_async_result_complete (self->priv->result);
-  tp_clear_object (&self->priv->result);
-}
-
-static void
-service_incoming_cb (GSocketService *service,
-    GSocketConnection *conn,
-    GObject *source_object,
-    gpointer user_data)
-{
-  TpFileTransferChannel *self = (TpFileTransferChannel *) user_data;
-  guchar byte = 0;
-
-  DEBUG ("New incoming connection");
-
-#ifdef HAVE_GIO_UNIX
-  /* Check the credentials if needed */
-  if (self->priv->access_control == TP_SOCKET_ACCESS_CONTROL_CREDENTIALS)
-    {
-      GCredentials *creds;
-      uid_t uid;
-      GError *error = NULL;
-
-      /* Should be async */
-      creds = tp_unix_connection_receive_credentials_with_byte (
-          conn, &byte, NULL, &error);
-      if (creds == NULL)
-        {
-          DEBUG ("Failed to receive credentials: %s", error->message);
-
-          g_error_free (error);
-          return;
-        }
-
-      uid = g_credentials_get_unix_user (creds, &error);
-      g_object_unref (creds);
-
-      if (uid != geteuid ())
-        {
-          DEBUG ("Wrong credentials received (user: %u)", uid);
-
-          return;
-        }
-    }
-#endif /* HAVE_GIO_UNIX */
 }
 
 /* Private methods */
@@ -707,27 +599,21 @@ tp_file_transfer_channel_dispose (GObject *obj)
   tp_clear_pointer (&self->priv->date, g_date_time_unref);
   g_clear_object (&self->priv->file);
 
-  if (self->priv->service != NULL)
-    {
-      g_socket_service_stop (self->priv->service);
-      tp_clear_object (&self->priv->service);
-    }
-
-  if (self->priv->address != NULL)
+  if (self->priv->remote_address != NULL)
     {
 #ifdef HAVE_GIO_UNIX
       /* Check if we need to remove our temp file */
-      if (G_IS_UNIX_SOCKET_ADDRESS (self->priv->address))
+      if (G_IS_UNIX_SOCKET_ADDRESS (self->priv->remote_address))
         {
           const gchar *path;
 
           path = g_unix_socket_address_get_path (
-              G_UNIX_SOCKET_ADDRESS (self->priv->address));
+              G_UNIX_SOCKET_ADDRESS (self->priv->remote_address));
           g_unlink (path);
         }
 #endif /* HAVE_GIO_UNIX */
-      g_object_unref (self->priv->address);
-      self->priv->address = NULL;
+      g_object_unref (self->priv->remote_address);
+      self->priv->remote_address = NULL;
     }
 
   tp_clear_pointer (&self->priv->access_control_param, tp_g_value_slice_free);
@@ -995,6 +881,216 @@ _tp_file_transfer_channel_new_with_factory (
       NULL);
 }
 
+static void
+start_transfer (TpFileTransferChannel *self)
+{
+  GError *error = NULL;
+
+  g_socket_set_blocking (self->priv->client_socket, FALSE);
+
+  /* g_socket_connect returns true on successful connection */
+  if (g_socket_connect (self->priv->client_socket,
+          self->priv->remote_address, NULL, &error))
+    {
+      DEBUG ("Client socket connected immediately");
+      client_socket_connected (self);
+    }
+  else if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_PENDING))
+    {
+      /* The connection is pending */
+      GSource *source;
+
+      source = g_socket_create_source (self->priv->client_socket, G_IO_OUT,
+          NULL);
+
+      g_source_attach (source, g_main_context_get_thread_default ());
+      g_source_set_callback (source, (GSourceFunc) client_socket_cb, self,
+          NULL);
+
+      g_error_free (error);
+      g_source_unref (source);
+    }
+  else
+    {
+      DEBUG ("Failed to connect to socket: %s:", error->message);
+
+      operation_failed (self, error);
+      g_error_free (error);
+    }
+}
+
+static void
+accept_or_provide_file_cb (TpChannel *proxy,
+    const GValue *address,
+    const GError *dbus_error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpFileTransferChannel *self = TP_FILE_TRANSFER_CHANNEL (weak_object);
+  GError *error = NULL;
+
+  if (dbus_error != NULL)
+    {
+      DEBUG ("Error: %s", dbus_error->message);
+      operation_failed (self, dbus_error);
+      return;
+    }
+
+  self->priv->remote_address = tp_g_socket_address_from_variant (self->priv->socket_type,
+      address, &error);
+  if (self->priv->remote_address == NULL)
+    {
+      DEBUG ("Failed to convert address: %s", error->message);
+      operation_failed (self, error);
+      g_clear_error (&error);
+      return;
+    }
+
+  /* If the channel state is already Open, start the transfer
+   * now. Otherwise, wait for the state change signal. */
+  if (tp_file_transfer_channel_get_state (self, NULL)
+      == TP_FILE_TRANSFER_STATE_OPEN)
+    {
+      start_transfer (self);
+    }
+
+  g_simple_async_result_complete (self->priv->result);
+}
+
+static gboolean
+set_address_and_access_control (TpFileTransferChannel *self)
+{
+  GError *error = NULL;
+
+  if (!_tp_set_socket_address_type_and_access_control_type (
+          self->priv->available_socket_types,
+          &self->priv->socket_type, &self->priv->access_control, &error))
+    {
+      operation_failed (self, error);
+
+      g_clear_error (&error);
+      return FALSE;
+    }
+
+  DEBUG ("Using socket type %u with access control %u",
+      self->priv->socket_type, self->priv->access_control);
+
+  self->priv->client_socket =
+    _tp_create_client_socket (self->priv->socket_type, &error);
+  if (self->priv->client_socket == NULL)
+    {
+      DEBUG ("Failed to create socket: %s", error->message);
+
+      operation_failed (self, error);
+      g_clear_error (&error);
+      return FALSE;
+    }
+
+  switch (self->priv->access_control)
+    {
+      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
+      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
+        /* Dummy value */
+        self->priv->access_control_param = tp_g_value_slice_new_uint (0);
+        break;
+
+      case TP_SOCKET_ACCESS_CONTROL_PORT:
+        {
+          GSocketAddress *addr;
+
+          addr = g_socket_get_local_address (self->priv->client_socket,
+              &error);
+          if (addr == NULL)
+            {
+              DEBUG ("Failed to get address of local socket: %s",
+                  error->message);
+
+              operation_failed (self, error);
+              g_error_free (error);
+              return FALSE;
+            }
+
+          self->priv->access_control_param =
+            tp_address_variant_from_g_socket_address (addr, NULL, NULL);
+
+          g_object_unref (addr);
+        }
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
+
+  return TRUE;
+}
+
+static void
+file_transfer_set_uri_cb (TpProxy *proxy,
+    const GError *uri_error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpFileTransferChannel *self = TP_FILE_TRANSFER_CHANNEL (weak_object);
+
+  if (uri_error != NULL)
+    {
+      DEBUG ("Failed to set FileTransfer.URI: %s", uri_error->message);
+      /* oh well */
+    }
+
+  if (!set_address_and_access_control (self))
+    return;
+
+  /* Call accept */
+  tp_cli_channel_type_file_transfer_call_accept_file (TP_CHANNEL (self), -1,
+      self->priv->socket_type,
+      self->priv->access_control,
+      self->priv->access_control_param,
+      self->priv->requested_offset,
+      accept_or_provide_file_cb,
+      NULL,
+      NULL,
+      G_OBJECT (self));
+}
+
+static void
+file_replace_async_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  TpFileTransferChannel *self = user_data;
+  GFile *file = G_FILE (source);
+  GFileOutputStream *out_stream;
+  gchar *uri;
+  GError *error = NULL;
+  GValue *value;
+
+  out_stream = g_file_replace_finish (file, result, &error);
+
+  if (error != NULL)
+    {
+      DEBUG ("Failed to replace file: %s", error->message);
+      operation_failed (self, error);
+      g_clear_error (&error);
+      return;
+    }
+
+  self->priv->out_stream = G_OUTPUT_STREAM (out_stream);
+
+  g_clear_object (&self->priv->file);
+  self->priv->file = g_object_ref (file);
+
+  /* Try setting FileTransfer.URI before accepting the file */
+  uri = g_file_get_uri (file);
+  value = tp_g_value_slice_new_take_string (uri);
+
+  tp_cli_dbus_properties_call_set (self, -1,
+      TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER, "URI", value,
+      file_transfer_set_uri_cb, NULL, NULL, G_OBJECT (self));
+
+  tp_g_value_slice_free (value);
+}
+
 /**
  * tp_file_transfer_channel_accept_file_async:
  * @self: a #TpFileTransferChannel
@@ -1017,10 +1113,6 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  GHashTable *properties;
-  GHashTable *supported_sockets;
-  GError *error = NULL;
-
   g_return_if_fail (TP_IS_FILE_TRANSFER_CHANNEL (self));
   g_return_if_fail (G_IS_FILE (file));
 
@@ -1054,83 +1146,10 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_file_transfer_channel_accept_file_async);
 
-  properties = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
-  supported_sockets = tp_asv_get_boxed (properties,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_AVAILABLE_SOCKET_TYPES,
-      TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
+  self->priv->requested_offset = offset;
 
-  if (!_tp_set_socket_address_type_and_access_control_type (supported_sockets,
-          &self->priv->socket_type, &self->priv->access_control, &error))
-    {
-      operation_failed (self, error);
-
-      g_clear_error (&error);
-      return;
-    }
-
-  DEBUG ("Using socket type %u with access control %u",
-      self->priv->socket_type, self->priv->access_control);
-
-  self->priv->client_socket =
-    _tp_create_client_socket (self->priv->socket_type, &error);
-  if (self->priv->client_socket == NULL)
-    {
-      DEBUG ("Failed to create socket: %s", error->message);
-
-      operation_failed (self, error);
-      g_clear_error (&error);
-      return;
-    }
-
-  switch (self->priv->access_control)
-    {
-      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
-      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
-        /* Dummy value */
-        self->priv->access_control_param = tp_g_value_slice_new_uint (0);
-        break;
-
-      case TP_SOCKET_ACCESS_CONTROL_PORT:
-        {
-          GSocketAddress *addr;
-
-          addr = g_socket_get_local_address (self->priv->client_socket,
-              &error);
-          if (addr == NULL)
-            {
-              DEBUG ("Failed to get address of local socket: %s",
-                  error->message);
-
-              operation_failed (self, error);
-              g_error_free (error);
-              return;
-            }
-
-          self->priv->access_control_param =
-            tp_address_variant_from_g_socket_address (addr, NULL, NULL);
-
-          g_object_unref (addr);
-        }
-        break;
-
-      default:
-        g_assert_not_reached ();
-    }
-
-  /* FIXME: What if an approver already set a file? */
-  g_clear_object (&self->priv->file);
-  self->priv->file = g_object_ref (file);
-
-  /* Call accept */
-  tp_cli_channel_type_file_transfer_call_accept_file (TP_CHANNEL (self), -1,
-      self->priv->socket_type,
-      self->priv->access_control,
-      self->priv->access_control_param,
-      self->priv->initial_offset,
-      accept_file_cb,
-      NULL,
-      NULL,
-      G_OBJECT (self));
+  g_file_replace_async (file, NULL, FALSE, G_FILE_CREATE_NONE,
+      G_PRIORITY_DEFAULT, NULL, file_replace_async_cb, self);
 }
 
 /**
@@ -1152,6 +1171,42 @@ tp_file_transfer_channel_accept_file_finish (TpFileTransferChannel *self,
 {
   DEBUG ("enter");
   _tp_implement_finish_void (self, tp_file_transfer_channel_accept_file_async)
+}
+
+static void
+file_read_async_cb (GObject *source,
+    GAsyncResult *res,
+    gpointer user_data)
+{
+  TpFileTransferChannel *self = user_data;
+  GFileInputStream *in_stream;
+  GError *error = NULL;
+  GFile *file = G_FILE (source);
+
+  in_stream = g_file_read_finish (file, res, &error);
+
+  if (error != NULL)
+    {
+      operation_failed (self, error);
+      g_clear_error (&error);
+      return;
+    }
+
+  self->priv->in_stream = G_INPUT_STREAM (in_stream);
+
+  g_clear_object (&self->priv->file);
+  self->priv->file = g_object_ref (file);
+
+  if (!set_address_and_access_control (self))
+    return;
+
+  /* Call Provide */
+  tp_cli_channel_type_file_transfer_call_provide_file (TP_CHANNEL (self), -1,
+      self->priv->socket_type,
+      self->priv->access_control,
+      self->priv->access_control_param,
+      accept_or_provide_file_cb,
+      NULL, NULL, G_OBJECT (self));
 }
 
 /**
@@ -1181,134 +1236,42 @@ tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
-  TpFileTransferState state;
-  GHashTable *properties;
-  GHashTable *supported_sockets;
-  GError *error = NULL;
-
-  DEBUG ("enter");
-
   g_return_if_fail (TP_IS_FILE_TRANSFER_CHANNEL (self));
   g_return_if_fail (G_IS_FILE (file));
-  g_return_if_fail (tp_channel_get_requested (TP_CHANNEL (self)));
 
-  state = tp_file_transfer_channel_get_state (self, NULL);
+  if (self->priv->access_control_param != NULL)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
+          user_data, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Can't provide already provided transfer");
 
-  g_return_if_fail (state == TP_FILE_TRANSFER_STATE_PENDING
-      || state == TP_FILE_TRANSFER_STATE_ACCEPTED);
+      return;
+    }
 
-  self->priv->file = g_object_ref (file);
+  if (self->priv->state != TP_FILE_TRANSFER_STATE_ACCEPTED
+      && self->priv->state != TP_FILE_TRANSFER_STATE_PENDING)
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
+          user_data, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Can't provide a transfer that isn't pending or accepted");
+
+      return;
+    }
+
+  if (!tp_channel_get_requested (TP_CHANNEL (self)))
+    {
+      g_simple_async_report_error_in_idle (G_OBJECT (self), callback,
+          user_data, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Can't provide incoming transfer");
+
+      return;
+    }
 
   self->priv->result = g_simple_async_result_new (G_OBJECT (self), callback,
       user_data, tp_file_transfer_channel_provide_file_async);
 
-  properties = tp_channel_borrow_immutable_properties (TP_CHANNEL (self));
-  supported_sockets = tp_asv_get_boxed (properties,
-      TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_AVAILABLE_SOCKET_TYPES,
-      TP_HASH_TYPE_SUPPORTED_SOCKET_MAP);
-
-  if (!_tp_set_socket_address_type_and_access_control_type (supported_sockets,
-          &self->priv->socket_type, &self->priv->access_control, &error))
-    {
-      operation_failed (self, error);
-
-      g_clear_error (&error);
-      return;
-    }
-
-  DEBUG ("Using socket type %u with access control %u",
-      self->priv->socket_type, self->priv->access_control);
-
-  self->priv->service = g_socket_service_new ();
-
-  switch (self->priv->socket_type)
-    {
-#ifdef HAVE_GIO_UNIX
-      case TP_SOCKET_ADDRESS_TYPE_UNIX:
-      case TP_SOCKET_ADDRESS_TYPE_ABSTRACT_UNIX:
-        {
-          self->priv->address = _tp_create_temp_unix_socket (
-              self->priv->service, &error);
-
-          if (self->priv->address == NULL)
-            {
-              operation_failed (self, error);
-
-              g_clear_error (&error);
-              return;
-            }
-        }
-        break;
-
-#endif /* HAVE_GIO_UNIX */
-
-      case TP_SOCKET_ADDRESS_TYPE_IPV6:
-      case TP_SOCKET_ADDRESS_TYPE_IPV4:
-        {
-          GInetAddress *localhost;
-          GSocketAddress *inet_address;
-
-          localhost = g_inet_address_new_loopback (
-              self->priv->socket_type == TP_SOCKET_ADDRESS_TYPE_IPV4 ?
-              G_SOCKET_FAMILY_IPV4 : G_SOCKET_FAMILY_IPV6);
-
-          inet_address = g_inet_socket_address_new (localhost, 0);
-
-          g_socket_listener_add_address (
-              G_SOCKET_LISTENER (self->priv->service), inet_address,
-              G_SOCKET_TYPE_STREAM, G_SOCKET_PROTOCOL_DEFAULT,
-              NULL, &self->priv->address, &error);
-
-          g_object_unref (localhost);
-          g_object_unref (inet_address);
-
-          if (error != NULL)
-            {
-              operation_failed (self, error);
-
-              g_clear_error (&error);
-              return;
-            }
-        }
-        break;
-
-      default:
-        /* should have already errored */
-        g_assert_not_reached ();
-        break;
-    }
-
-  switch (self->priv->access_control)
-    {
-      case TP_SOCKET_ACCESS_CONTROL_LOCALHOST:
-      case TP_SOCKET_ACCESS_CONTROL_CREDENTIALS:
-        /* Dummy value */
-        self->priv->access_control_param = tp_g_value_slice_new_uint (0);
-        break;
-
-      case TP_SOCKET_ACCESS_CONTROL_PORT:
-        self->priv->access_control_param =
-          tp_address_variant_from_g_socket_address (self->priv->address, NULL, NULL);
-        break;
-
-      default:
-        g_assert_not_reached ();
-    }
-
-  tp_g_signal_connect_object (self->priv->service, "incoming",
-      G_CALLBACK (service_incoming_cb), self, 0);
-
-  g_socket_service_start (self->priv->service);
-
-  DEBUG ("Calling ProvideFile");
-
-  /* Call provide */
-  tp_cli_channel_type_file_transfer_call_provide_file (TP_CHANNEL (self), -1,
-      self->priv->socket_type,
-      self->priv->access_control,
-      self->priv->access_control_param,
-      provide_file_cb,
-      NULL, NULL, NULL);
+  g_file_read_async (file, G_PRIORITY_DEFAULT, NULL,
+      file_read_async_cb, self);
 }
 
 /**
