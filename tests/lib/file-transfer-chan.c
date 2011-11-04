@@ -529,7 +529,7 @@ file_transfer_accept_file (TpSvcChannelTypeFileTransfer *iface,
   change_state (self, TP_FILE_TRANSFER_STATE_ACCEPTED,
       TP_FILE_TRANSFER_STATE_CHANGE_REASON_REQUESTED);
 
-  DEBUG ("Waiting 50ms and setting state to OPEN");
+  DEBUG ("Waiting 500ms and setting state to OPEN");
   g_timeout_add (500, start_file_transfer, self);
 
   tp_svc_channel_type_file_transfer_return_from_accept_file (context,
