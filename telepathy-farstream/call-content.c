@@ -414,7 +414,6 @@ tf_call_content_set_property (GObject    *object,
       self->input_volume = g_value_get_uint (value);
       tf_future_cli_call_content_interface_audio_control_call_set_input_volume (
           self->proxy, -1, self->input_volume, NULL, NULL, NULL, NULL);
-      g_object_notify_by_pspec (object, pspec);
 
       break;
     case PROP_OUTPUT_VOLUME:
@@ -428,7 +427,6 @@ tf_call_content_set_property (GObject    *object,
       self->output_volume = g_value_get_uint (value);
       tf_future_cli_call_content_interface_audio_control_call_set_output_volume (
           self->proxy, -1, self->output_volume, NULL, NULL, NULL, NULL);
-      g_object_notify_by_pspec (object, pspec);
 
       break;
     default:
