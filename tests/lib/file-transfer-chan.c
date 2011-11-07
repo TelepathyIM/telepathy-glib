@@ -30,6 +30,8 @@ G_DEFINE_TYPE_WITH_CODE (TpTestsFileTransferChannel,
     TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_FILE_TRANSFER,
       file_transfer_iface_init);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA,
+      NULL);
     )
 
 static const char *
@@ -49,6 +51,8 @@ enum /* properties */
   PROP_STATE,
   PROP_TRANSFERRED_BYTES,
   PROP_URI,
+  PROP_SERVICE_NAME,
+  PROP_METADATA,
   N_PROPS,
 };
 
@@ -62,6 +66,8 @@ struct _TpTestsFileTransferChannelPrivate {
     TpFileTransferState state;
     guint64 transferred_bytes;
     gchar *uri;
+    gchar *service_name;
+    GHashTable *metadata;
 
     /* Hidden properties */
     TpFileHashType content_hash_type;
@@ -138,10 +144,12 @@ dispose (GObject *object)
   g_free (self->priv->description);
   g_free (self->priv->filename);
   g_free (self->priv->uri);
+  g_free (self->priv->service_name);
 
   tp_clear_pointer (&self->priv->address, tp_g_value_slice_free);
   tp_clear_pointer (&self->priv->available_socket_types, g_hash_table_unref);
   tp_clear_pointer (&self->priv->access_control_param, tp_g_value_slice_free);
+  tp_clear_pointer (&self->priv->metadata, g_hash_table_unref);
 
   if (self->priv->unix_address != NULL)
     g_unlink (self->priv->unix_address);
@@ -209,6 +217,14 @@ get_property (GObject *object,
         g_value_set_string (value, self->priv->uri);
         break;
 
+      case PROP_SERVICE_NAME:
+        g_value_set_string (value, self->priv->service_name);
+        break;
+
+      case PROP_METADATA:
+        g_value_set_boxed (value, self->priv->metadata);
+        break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -272,6 +288,14 @@ set_property (GObject *object,
         self->priv->uri = g_value_dup_string (value);
         break;
 
+      case PROP_SERVICE_NAME:
+        self->priv->service_name = g_value_dup_string (value);
+        break;
+
+      case PROP_METADATA:
+        self->priv->metadata = g_value_dup_boxed (value);
+        break;
+
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
         break;
@@ -302,6 +326,8 @@ fill_immutable_properties (TpBaseChannel *self,
       TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER, "Size",
       TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER, "Description",
       TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER, "Date",
+      TP_IFACE_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA, "ServiceName",
+      TP_IFACE_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA, "Metadata",
       NULL);
 
   /* URI is immutable only for outgoing transfers */
@@ -565,6 +591,12 @@ tp_tests_file_transfer_channel_class_init (
       { NULL }
   };
 
+  static TpDBusPropertiesMixinPropImpl metadata_props[] = {
+      { "ServiceName", "service-name", NULL },
+      { "Metadata", "metadata", NULL },
+      { NULL }
+  };
+
   object_class->constructor = constructor;
   object_class->get_property = get_property;
   object_class->set_property = set_property;
@@ -660,10 +692,31 @@ tp_tests_file_transfer_channel_class_init (
   g_object_class_install_property (object_class, PROP_URI,
       param_spec);
 
+  param_spec = g_param_spec_string ("service-name",
+      "ServiceName",
+      "The Metadata.ServiceName property of this channel",
+      "",
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SERVICE_NAME,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("metadata",
+      "Metadata",
+      "The Metadata.Metadata property of this channel",
+      TP_HASH_TYPE_STRING_STRING_MAP,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_METADATA,
+      param_spec);
+
   tp_dbus_properties_mixin_implement_interface (object_class,
       TP_IFACE_QUARK_CHANNEL_TYPE_FILE_TRANSFER,
       tp_dbus_properties_mixin_getter_gobject_properties, NULL,
       file_transfer_props);
+
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      metadata_props);
 
   g_type_class_add_private (object_class,
       sizeof (TpTestsFileTransferChannelPrivate));

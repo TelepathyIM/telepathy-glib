@@ -156,6 +156,7 @@ create_file_transfer_channel (Test *test,
   TpHandle handle, alf_handle;
   GHashTable *props;
   GHashTable *sockets;
+  GHashTable *metadata;
   GQuark features[] = { TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE, 0};
 
   /* Create service-side file transfer channel object */
@@ -174,6 +175,9 @@ create_file_transfer_channel (Test *test,
   g_assert_no_error (test->error);
 
   sockets = create_available_socket_types_hash (address_type, access_control);
+
+  metadata = g_hash_table_new (g_str_hash, g_str_equal);
+  g_hash_table_insert (metadata, "banana", "cheese");
 
   test->chan_service = g_object_new (
       TP_TESTS_TYPE_FILE_TRANSFER_CHANNEL,
@@ -196,6 +200,9 @@ create_file_transfer_channel (Test *test,
       "size", (guint64) 9001,
       "state", TP_FILE_TRANSFER_STATE_PENDING,
       "transferred-bytes", (guint64) 42,
+      /* Metadata properties */
+      "service-name", "fit.service.name",
+      "metadata", metadata,
       NULL);
 
   /* Create client-side file transfer channel object */
@@ -215,6 +222,7 @@ create_file_transfer_channel (Test *test,
   g_assert_no_error (test->error);
 
   g_free (chan_path);
+  g_hash_table_unref (metadata);
   g_hash_table_unref (props);
   g_hash_table_unref (sockets);
   tp_handle_unref (test->contact_repo, handle);
@@ -374,6 +382,7 @@ test_properties (Test *test,
   GDateTime *date1, *date2;
   TpFileTransferStateChangeReason reason;
   const GError *error = NULL;
+  const GHashTable *metadata;
 
   create_file_transfer_channel (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
@@ -400,6 +409,14 @@ test_properties (Test *test,
 
   g_assert_cmpuint (tp_file_transfer_channel_get_transferred_bytes
       (test->channel), ==, 42);
+
+  g_assert_cmpstr (tp_file_transfer_channel_get_service_name (test->channel),
+      ==, "fit.service.name");
+
+  metadata = tp_file_transfer_channel_get_metadata (test->channel);
+  g_assert_cmpuint (g_hash_table_size ((GHashTable *) metadata), ==, 1);
+  g_assert_cmpstr (g_hash_table_lookup ((GHashTable *) metadata, "banana"),
+      ==, "cheese");
 
   error = tp_proxy_get_invalidated (test->channel);
   g_assert_no_error (error);
