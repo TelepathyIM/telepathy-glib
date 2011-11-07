@@ -1093,7 +1093,12 @@ append_contacts (GPtrArray *contacts,
 
   g_hash_table_iter_init (&iter, table);
   while (g_hash_table_iter_next (&iter, NULL, &value))
-    g_ptr_array_add (contacts, value);
+    {
+      if (value == NULL)
+        continue;
+
+      g_ptr_array_add (contacts, value);
+    }
 }
 
 void
