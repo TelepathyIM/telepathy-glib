@@ -99,7 +99,6 @@ struct _TpSimplePasswordManagerPrivate
   guint status_changed_id;
 
   TpBasePasswordChannel *channel;
-  GAsyncResult *result;
 
   gboolean dispose_has_run;
 };
@@ -344,16 +343,14 @@ tp_simple_password_manager_prompt_common_async (
   g_return_if_fail (channel != NULL);
   g_return_if_fail (TP_IS_SIMPLE_PASSWORD_MANAGER (self));
   g_return_if_fail (priv->channel == NULL);
-  g_return_if_fail (priv->result == NULL);
 
   priv->channel = g_object_ref (channel);
-  priv->result = g_object_ref (result);
 
   tp_g_signal_connect_object (priv->channel, "closed",
       G_CALLBACK (tp_simple_password_manager_channel_closed_cb), self, 0);
   tp_g_signal_connect_object (priv->channel, "finished",
       G_CALLBACK (tp_simple_password_manager_channel_finished_cb),
-      priv->result, 0);
+      g_object_ref (result), 0);
 
   tp_base_channel_register ((TpBaseChannel *) priv->channel);
 
