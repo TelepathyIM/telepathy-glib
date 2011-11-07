@@ -26,6 +26,30 @@
  *
  * #TpFileTransferChannel is a sub-class of #TpChannel providing convenient
  * API to send and receive files.
+ *
+ * The channel properties are available in
+ * #TpFileTransferChannel:date, #TpFileTransferChannel:description,
+ * #TpFileTransferChannel:filename,
+ * #TpFileTransferChannel:initial-offset,
+ * #TpFileTransferChannel:mime-type, #TpFileTransferChannel:size,
+ * #TpFileTransferChannel:state, and
+ * #TpFileTransferChannel:transferred-bytes GObject properties, with
+ * accessor functions too.
+ *
+ * To send a file to a contact, one should create a File Transfer
+ * channel with the appropriate D-Bus properties set by specifying
+ * their values in the channel creation method call. The file transfer
+ * invitation will be sent to the remote contact when the channel is
+ * created. Once a #TpFileTransferChannel is created as a proxy to the
+ * channel on D-Bus, the "notify::state" GObject signal should be
+ * monitored and when at %TP_FILE_TRANSFER_STATE_ACCEPTED
+ * tp_file_transfer_channel_provide_file_async() should be called.
+ *
+ * When an incoming File Transfer channel appears, one should call
+ * tp_file_transfer_channel_accept_file_async().
+ *
+ * To cancel or reject a pending or ongoing file transfer, one should
+ * close the channel using tp_channel_close_async().
  */
 
 /**
@@ -1218,8 +1242,8 @@ file_read_async_cb (GObject *source,
  * @user_data: data to pass to @callback
  *
  * Provide a file transfer. This should be called when the file
- * transfer state changes (tp_file_transfer_get_state() and
- * #TpFileTransferChannel::notify::state) to
+ * transfer state changes (tp_file_transfer_channel_get_state() and
+ * the "notify::state" signal) to
  * %TP_FILE_TRANSFER_STATE_ACCEPTED or
  * %TP_FILE_TRANSFER_STATE_PENDING. Once the file has been provided,
  * the channel #TpFileTransferChannel:state will change to
@@ -1403,12 +1427,12 @@ tp_file_transfer_channel_get_size (TpFileTransferChannel *self)
  * @self: a #TpFileTransferChannel
  * @reason: (out): a #TpFileTransferStateChangeReason, or %NULL
  *
- * Returns the #TpFileTransfer:state property.
+ * Returns the #TpFileTransferChannel:state property.
  *
  * If @reason is not %NULL it is set to the reason why
  * #TpFileTransferChannel:state changed to its current value.
  *
- * Returns: the value of the #TpFileTransferState:state property
+ * Returns: the value of the #TpFileTransferChannel:state property
  *
  * Since: 0.15.UNRELEASED
  */
