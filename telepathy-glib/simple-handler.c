@@ -314,7 +314,7 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
 
 /**
  * tp_simple_handler_new:
- * @dbus: a #TpDBusDaemon object, may not be %NULL
+ * @dbus: a #TpDBusDaemon object, or %NULL
  * @bypass_approval: the value of the Handler.BypassApproval D-Bus property
  * (see tp_base_client_set_handler_bypass_approval() for details)
  * @requests: whether this handler should implement Requests (see
@@ -328,14 +328,18 @@ tp_simple_handler_class_init (TpSimpleHandlerClass *cls)
  *
  * Convenient function to create a new #TpSimpleHandler instance.
  *
- * If @dbus is not the result of tp_dbus_daemon_dup(), you should call
- * tp_simple_handler_new_with_am() instead, so that #TpAccount,
- * #TpConnection and #TpContact instances can be shared between modules.
+ * Since 0.UNRELEASED @dbus can be %NULL in which case
+ * tp_dbus_daemon_dup() will be used internally.
+ *
+ * Since 0.UNRELEASED this won't create a #TpAccountManager anymore, but will
+ * instead create a new #TpAutomaticClientFactory. If user already has a
+ * #TpAccountManager or #TpSimpleClientFactory it is recommended to use
+ * tp_simple_handle_new_with_am() or tp_simple_handle_new_with_factory()
+ * instead.
  *
  * Returns: (type TelepathyGLib.SimpleHandler): a new #TpSimpleHandler
  *
  * Since: 0.11.6
- * Deprecated: New code should use tp_simple_handler_new_with_am() instead.
  */
 TpBaseClient *
 tp_simple_handler_new (TpDBusDaemon *dbus,

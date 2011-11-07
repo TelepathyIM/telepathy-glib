@@ -114,15 +114,13 @@ main (int argc,
       char **argv)
 {
   GMainLoop *mainloop;
-  TpAccountManager *manager;
   GError *error = NULL;
   TpBaseClient *handler;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
-  manager = tp_account_manager_dup ();
-  handler = tp_simple_handler_new_with_am (manager, FALSE, FALSE,
+  handler = tp_simple_handler_new (NULL, FALSE, FALSE,
       "ExampleHandler", FALSE, handle_channels_cb, NULL, NULL);
 
   tp_base_client_take_handler_filter (handler, tp_asv_new (
@@ -149,7 +147,6 @@ main (int argc,
     g_main_loop_unref (mainloop);
 
 out:
-  g_object_unref (manager);
   g_object_unref (handler);
 
   return 0;

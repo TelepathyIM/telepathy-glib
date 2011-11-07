@@ -80,8 +80,7 @@ TpBaseClient * tp_simple_handler_new (TpDBusDaemon *dbus,
     gboolean uniquify,
     TpSimpleHandlerHandleChannelsImpl callback,
     gpointer user_data,
-    GDestroyNotify destroy)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_handler_new_with_factory);
+    GDestroyNotify destroy);
 
 
 TpBaseClient *tp_simple_handler_new_with_am (TpAccountManager *account_manager,

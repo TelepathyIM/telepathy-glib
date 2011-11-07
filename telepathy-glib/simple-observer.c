@@ -289,7 +289,7 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
 
 /**
  * tp_simple_observer_new:
- * @dbus: a #TpDBusDaemon object, may not be %NULL
+ * @dbus: a #TpDBusDaemon object, or %NULL
  * @recover: the value of the Observer.Recover D-Bus property
  * @name: the name of the Observer (see #TpBaseClient:name: for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name: property
@@ -300,14 +300,18 @@ tp_simple_observer_class_init (TpSimpleObserverClass *cls)
  *
  * Convenient function to create a new #TpSimpleObserver instance.
  *
- * If @dbus is not the result of tp_dbus_daemon_dup(), you should call
- * tp_simple_observer_new_with_am() instead, so that #TpAccount,
- * #TpConnection and #TpContact instances can be shared between modules.
+ * Since 0.UNRELEASED @dbus can be %NULL in which case
+ * tp_dbus_daemon_dup() will be used internally.
+ *
+ * Since 0.UNRELEASED this won't create a #TpAccountManager anymore, but will
+ * instead create a new #TpAutomaticClientFactory. If user already has a
+ * #TpAccountManager or #TpSimpleClientFactory it is recommended to use
+ * tp_simple_observer_new_with_am() or tp_simple_observer_new_with_factory()
+ * instead.
  *
  * Returns: (type TelepathyGLib.SimpleObserver): a new #TpSimpleObserver
  *
  * Since: 0.11.5
- * Deprecated: New code should use tp_simple_observer_new_with_am() instead.
  */
 TpBaseClient *
 tp_simple_observer_new (TpDBusDaemon *dbus,

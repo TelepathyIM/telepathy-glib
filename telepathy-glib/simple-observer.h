@@ -79,8 +79,7 @@ TpBaseClient * tp_simple_observer_new (TpDBusDaemon *dbus,
     gboolean uniquify,
     TpSimpleObserverObserveChannelsImpl callback,
     gpointer user_data,
-    GDestroyNotify destroy)
-    _TP_GNUC_DEPRECATED_FOR (tp_simple_observer_new_with_factory);
+    GDestroyNotify destroy);
 
 
 TpBaseClient *tp_simple_observer_new_with_am (

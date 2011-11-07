@@ -153,15 +153,13 @@ int
 main (int argc,
       char **argv)
 {
-  TpAccountManager *manager;
   GError *error = NULL;
   TpBaseClient *approver;
 
   g_type_init ();
   tp_debug_set_flags (g_getenv ("EXAMPLE_DEBUG"));
 
-  manager = tp_account_manager_dup ();
-  approver = tp_simple_approver_new_with_am (manager, "ExampleApprover",
+  approver = tp_simple_approver_new (NULL, "ExampleApprover",
       FALSE, add_dispatch_operation_cb, NULL, NULL);
 
   /* contact text chat */
@@ -213,7 +211,6 @@ main (int argc,
     g_main_loop_unref (mainloop);
 
 out:
-  g_object_unref (manager);
   g_object_unref (approver);
 
   return 0;

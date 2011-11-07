@@ -243,3 +243,15 @@ tp_tests_simple_client_new (TpDBusDaemon *dbus_daemon,
       "uniquify-name", uniquify_name,
       NULL);
 }
+
+TpTestsSimpleClient *
+tp_tests_simple_client_new_with_am (TpAccountManager *account_mgr,
+    const gchar *name,
+    gboolean uniquify_name)
+{
+  return tp_tests_object_new_static_class (TP_TESTS_TYPE_SIMPLE_CLIENT,
+      "account-manager", account_mgr,
+      "name", name,
+      "uniquify-name", uniquify_name,
+      NULL);
+}

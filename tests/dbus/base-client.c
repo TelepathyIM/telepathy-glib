@@ -91,7 +91,8 @@ setup (Test *test,
   g_assert_no_error (test->error);
 
   /* Create service-side Client object */
-  test->simple_client = tp_tests_simple_client_new (test->dbus, "Test", FALSE);
+  test->simple_client = tp_tests_simple_client_new_with_am (test->account_mgr,
+      "Test", FALSE);
   g_assert (test->simple_client != NULL);
   test->base_client = TP_BASE_CLIENT (test->simple_client);
 

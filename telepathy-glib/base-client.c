@@ -185,6 +185,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <telepathy-glib/add-dispatch-operation-context-internal.h>
+#include <telepathy-glib/automatic-client-factory.h>
 #include <telepathy-glib/automatic-proxy-factory.h>
 #include <telepathy-glib/channel-dispatch-operation-internal.h>
 #include <telepathy-glib/channel-dispatcher.h>
@@ -1142,45 +1143,29 @@ tp_base_client_constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  /* What we really need is a factory. For historical reasons,
-   * constructor could get a TpDBusDaemon or a TpAccountManager.
-   * We need to do some fallbacks for compatibility... */
-  if (self->priv->account_mgr == NULL &&
-      self->priv->factory == NULL)
+  /* Ensure we have a factory */
+  if (self->priv->factory == NULL)
     {
-      /* This case happens only from deprecated API, for compatibility we still
-       * need to create a TpAccountManager even if a factory would be enough */
-
-      g_assert (self->priv->dbus != NULL);
-
-      if (_tp_dbus_daemon_is_the_shared_one (self->priv->dbus))
+      if (self->priv->account_mgr != NULL)
         {
-          /* The AM is guaranteed to be the one from
-           * tp_account_manager_dup() */
-          self->priv->account_mgr = tp_account_manager_dup ();
+          self->priv->factory = g_object_ref (
+              tp_proxy_get_factory (self->priv->account_mgr));
         }
       else
         {
-          /* No guarantee, create a new AM */
-          self->priv->account_mgr = tp_account_manager_new (self->priv->dbus);
+          if (self->priv->dbus == NULL)
+            self->priv->dbus = tp_dbus_daemon_dup (NULL);
+
+          self->priv->factory = (TpSimpleClientFactory *)
+              tp_automatic_client_factory_new (self->priv->dbus);
         }
     }
 
-  if (self->priv->factory == NULL)
-    {
-      g_assert (self->priv->account_mgr != NULL);
-
-      self->priv->factory = tp_proxy_get_factory (self->priv->account_mgr);
-      g_object_ref (self->priv->factory);
-    }
-
+  /* Ensure we have a TpDBusDaemon */
   if (self->priv->dbus == NULL)
     {
-      g_assert (self->priv->factory != NULL);
-
-      self->priv->dbus = tp_simple_client_factory_get_dbus_daemon (
-          self->priv->factory);
-      g_object_ref (self->priv->dbus);
+      self->priv->dbus = g_object_ref (
+          tp_simple_client_factory_get_dbus_daemon (self->priv->factory));
     }
 
   g_assert (tp_simple_client_factory_get_dbus_daemon (self->priv->factory) ==

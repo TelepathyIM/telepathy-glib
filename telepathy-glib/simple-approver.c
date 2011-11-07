@@ -264,7 +264,7 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
 
 /**
  * tp_simple_approver_new:
- * @dbus: a #TpDBusDaemon object, may not be %NULL
+ * @dbus: a #TpDBusDaemon object, or %NULL
  * @name: the name of the Approver (see #TpBaseClient:name for details)
  * @uniquify: the value of the #TpBaseClient:uniquify-name property
  * @callback: the function called when AddDispatchOperation is called
@@ -274,14 +274,18 @@ tp_simple_approver_class_init (TpSimpleApproverClass *cls)
  *
  * Convenient function to create a new #TpSimpleApprover instance.
  *
- * If @dbus is not the result of tp_dbus_daemon_dup(), you should call
- * tp_simple_approver_new_with_am() instead, so that #TpAccount,
- * #TpConnection and #TpContact instances can be shared between modules.
+ * Since 0.UNRELEASED @dbus can be %NULL in which case
+ * tp_dbus_daemon_dup() will be used internally.
+ *
+ * Since 0.UNRELEASED this won't create a #TpAccountManager anymore, but will
+ * instead create a new #TpAutomaticClientFactory. If user already has a
+ * #TpAccountManager or #TpSimpleClientFactory it is recommended to use
+ * tp_simple_approver_new_with_am() or tp_simple_approver_new_with_factory()
+ * instead.
  *
  * Returns: (type TelepathyGLib.SimpleApprover): a new #TpSimpleApprover
  *
  * Since: 0.11.5
- * Deprecated: New code should use tp_simple_approver_new_with_am() instead.
  */
 TpBaseClient *
 tp_simple_approver_new (TpDBusDaemon *dbus,

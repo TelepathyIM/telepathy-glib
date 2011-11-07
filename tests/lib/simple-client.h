@@ -54,6 +54,11 @@ TpTestsSimpleClient * tp_tests_simple_client_new (TpDBusDaemon *dbus_daemon,
     const gchar *name,
     gboolean uniquify_name);
 
+TpTestsSimpleClient * tp_tests_simple_client_new_with_am (
+   TpAccountManager *account_mgr,
+    const gchar *name,
+    gboolean uniquify_name);
+
 G_END_DECLS
 
 #endif /* #ifndef __TP_TESTS_SIMPLE_CONN_H__ */
