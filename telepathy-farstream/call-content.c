@@ -1751,17 +1751,8 @@ tf_call_content_bus_message (TfCallContent *content,
           ret = TRUE;
         }
     }
-  else if (gst_structure_has_name (s, "farstream-codecs-changed"))
+  else if (fs_session_parse_codecs_changed (message, content->fssession))
     {
-      FsSession *fssession;
-      const GValue *value;
-
-      value = gst_structure_get_value (s, "session");
-      fssession = g_value_get_object (value);
-
-      if (fssession != content->fssession)
-        return FALSE;
-
       g_debug ("Codecs changed");
 
       tf_call_content_try_sending_codecs (content);
