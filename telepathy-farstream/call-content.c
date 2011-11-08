@@ -523,11 +523,17 @@ tprtphdrext_to_fsrtphdrext (GPtrArray *rtp_hdrext)
       TpMediaStreamDirection direction;
       const char *uri;
       const gchar *parameters;
+      FsRtpHeaderExtension *ext;
 
       tp_value_array_unpack (extension, 4, &id, &direction, &uri, &parameters);
 
-      g_queue_push_tail (&ret, fs_rtp_header_extension_new (id,
-              tpdirection_to_fsdirection (direction), uri));
+      ext = fs_rtp_header_extension_new (id,
+          tpdirection_to_fsdirection (direction), uri);
+
+      g_debug ("hdrext: " FS_RTP_HEADER_EXTENSION_FORMAT,
+          FS_RTP_HEADER_EXTENSION_ARGS (ext));
+
+      g_queue_push_tail (&ret, ext);
     }
 
   return ret.head;
@@ -667,6 +673,7 @@ process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
     }
   else
     {
+      g_debug ("Rejecting Media Description");
       tp_cli_call_content_media_description_call_reject (media_description,
           -1, NULL, NULL, NULL, NULL);
       g_object_unref (media_description);
@@ -1631,6 +1638,8 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
     rtcp_fb = dbus_g_type_specialized_construct (
         TP_HASH_TYPE_RTCP_FEEDBACK_MESSAGE_MAP);
 
+  g_debug ("Local codecs:");
+
   for (item = codecs; item; item = item->next)
     {
       FsCodec *fscodec = item->data;
@@ -1638,6 +1647,11 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
       GHashTable *params;
       GList *param_item;
       gboolean updated;
+      gchar *tmp;
+
+      tmp = fs_codec_to_string (fscodec);
+      g_debug ("%s", tmp);
+      g_free (tmp);
 
       params = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
@@ -1712,6 +1726,9 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
       for (item = fs_rtp_hdrexts; item; item = item->next)
         {
           FsRtpHeaderExtension *hdrext = item->data;
+
+          g_debug (FS_RTP_HEADER_EXTENSION_FORMAT,
+              FS_RTP_HEADER_EXTENSION_ARGS (hdrext));
 
           g_ptr_array_add (rtp_hdrext, tp_value_array_build (4,
                   G_TYPE_UINT, hdrext->id,
@@ -1795,6 +1812,7 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
 
   if (self->current_media_description)
     {
+      g_debug ("Accepting Media Description");
 
       tp_cli_call_content_media_description_call_accept (
           self->current_media_description, -1, media_description,
@@ -1807,6 +1825,7 @@ tf_call_content_try_sending_codecs (TfCallContent *self)
     {
       if (media_description)
         {
+          g_debug ("Updating local Media Description");
           tp_cli_call_content_interface_media_call_update_local_media_description (
               self->proxy, -1, 0, media_description, NULL, NULL, NULL, NULL);
         }
@@ -1958,6 +1977,9 @@ tf_call_content_bus_message (TfCallContent *content,
   else if (fs_session_parse_telephony_event_started (message,
           content->fssession, &method, &event, &volume))
     {
+      g_debug ("DTMF started: method: %d event: %u volume: %u",
+          method, event, volume);
+
       tf_call_content_dtmf_started (content, method, event, volume);
 
       ret = TRUE;
@@ -1965,6 +1987,8 @@ tf_call_content_bus_message (TfCallContent *content,
   else if (fs_session_parse_telephony_event_stopped (message,
           content->fssession, &method))
     {
+      g_debug ("DTMF stopped: method: %d", method);
+
       tf_call_content_dtmf_stopped (content, method);
 
       ret = TRUE;
