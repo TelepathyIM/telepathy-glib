@@ -64,6 +64,9 @@ TelepathyGLib_0_12_gir_FILES = \
 	$(srcdir)/stream-tube-connection.c $(srcdir)/stream-tube-connection.h \
 	$(srcdir)/text-channel.c $(srcdir)/text-channel.h \
 	$(srcdir)/file-transfer-channel.c $(srcdir)/file-transfer-channel.h \
+	$(srcdir)/call-channel.c $(srcdir)/call-channel.h \
+	$(srcdir)/call-content.c $(srcdir)/call-content.h \
+	$(srcdir)/call-stream.c $(srcdir)/call-stream.h \
 	$(srcdir)/client-message.c $(srcdir)/client-message.h \
 	$(srcdir)/message.c $(srcdir)/message.h \
 	$(srcdir)/signalled-message.c $(srcdir)/signalled-message.h \

@@ -995,3 +995,53 @@
  *
  * Since: 0.17.1
  */
+
+/**
+ * SECTION:svc-channel-call
+ * @title: Service-side Channel Call interface
+ * @short_description: GInterface to implement call channels
+ *
+ * The Call channel represents a call.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * SECTION:cli-call-channel
+ * @title: Channel Call interfaces
+ * @short_description: client-side wrappers for call channels
+ *
+ * The Call channel type represents a call.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * SECTION:cli-call-content
+ * @title: Channel Call content interfaces
+ * @short_description: client-side wrappers for call contents
+ *
+ * Represents the contents of a call.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * SECTION:cli-call-stream
+ * @title: Channel Call stream interfaces
+ * @short_description: client-side wrappers for call streams
+ *
+ * Represents the streams of a call.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * SECTION:cli-call-misc
+ * @title: Channel Call misc interfaces
+ * @short_description: client-side wrappers for misc call interfaces
+ *
+ * Misc interfaces for calls.
+ *
+ * Since: 0.UNRELEASED
+ */

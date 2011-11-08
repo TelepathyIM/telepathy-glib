@@ -39,6 +39,10 @@
 #include <telepathy-glib/automatic-client-factory.h>
 #include <telepathy-glib/base-client.h>
 #include <telepathy-glib/basic-proxy-factory.h>
+#include <telepathy-glib/call-channel.h>
+#include <telepathy-glib/call-content.h>
+#include <telepathy-glib/call-misc.h>
+#include <telepathy-glib/call-stream.h>
 #include <telepathy-glib/channel-dispatch-operation.h>
 #include <telepathy-glib/channel-dispatcher.h>
 #include <telepathy-glib/channel-request.h>

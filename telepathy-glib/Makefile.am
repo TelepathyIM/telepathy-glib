@@ -37,6 +37,10 @@ our_headers = \
     base-protocol.h \
     base-room-config.h \
     basic-proxy-factory.h \
+    call-channel.h \
+    call-content.h \
+    call-misc.h \
+    call-stream.h \
     channel.h \
     channel-iface.h \
     channel-dispatcher.h \
@@ -102,6 +106,7 @@ our_headers = \
     stream-tube-connection.h \
     svc-account.h \
     svc-account-manager.h \
+    svc-call.h \
     svc-channel-dispatcher.h \
     svc-channel-dispatch-operation.h \
     svc-channel.h \
@@ -168,6 +173,10 @@ libtelepathy_glib_internal_la_SOURCES = \
     basic-proxy-factory.c \
     capabilities.c \
     capabilities-internal.h \
+    call-channel.c \
+    call-content.c \
+    call-misc.c \
+    call-stream.c \
     channel.c \
     channel-contacts.c \
     channel-group.c \

@@ -6,6 +6,7 @@
 
 <xi:include href="../spec/Channel.xml"/>
 
+<xi:include href="../spec/Channel_Type_Call.xml" />
 <xi:include href="../spec/Channel_Type_Contact_List.xml"/>
 <xi:include href="../spec/Channel_Type_Contact_Search.xml"/>
 <xi:include href="../spec/Channel_Type_File_Transfer.xml"/>
