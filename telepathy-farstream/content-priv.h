@@ -19,8 +19,6 @@ struct _TfContentClass{
   GObjectClass parent_class;
 
   void (*content_error) (TfContent *content,
-      TpCallStateChangeReason reason,
-      const gchar *detailed_reason,
       const gchar *message);
 
   GstIterator * (*iterate_src_pads) (TfContent *content, guint *handle,

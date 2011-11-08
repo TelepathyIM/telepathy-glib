@@ -48,14 +48,10 @@ typedef struct _TfContentClass TfContentClass;
 GType tf_content_get_type (void);
 
 void tf_content_error_literal (TfContent *content,
-    TpCallStateChangeReason reason,
-    const gchar *detailed_reason,
     const gchar *message);
 
 void tf_content_error (TfContent *content,
-    TpCallStateChangeReason reason,
-    const gchar *detailed_reason,
-    const gchar *message_format, ...) G_GNUC_PRINTF (4, 5);
+    const gchar *message_format, ...) G_GNUC_PRINTF (2, 3);
 
 GstIterator *tf_content_iterate_src_pads (TfContent *content,
     guint *handles, guint handle_count);

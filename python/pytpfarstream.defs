@@ -29,11 +29,6 @@
 
 ;; From telepathy-farstream.h
 
-(define-function tf_init
-  (c-name "tf_init")
-  (return-type "none")
-)
-
 
 ;; -*- scheme -*-
 ; object definitions ...
@@ -74,8 +69,6 @@
   (c-name "tf_content_error_literal")
   (return-type "none")
   (parameters
-    '("guint" "reason")
-    '("const-gchar*" "detailed_reason")
     '("const-gchar*" "message")
   )
 )
@@ -85,8 +78,6 @@
   (c-name "tf_content_error")
   (return-type "none")
   (parameters
-    '("guint" "reason")
-    '("const-gchar*" "detailed_reason")
     '("const-gchar*" "message_format")
   )
   (varargs #t)

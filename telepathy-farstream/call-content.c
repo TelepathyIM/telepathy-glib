@@ -183,10 +183,19 @@ static void src_pad_added (FsStream *fsstream, GstPad *pad, FsCodec *codec,
 static GstIterator * tf_call_content_iterate_src_pads (TfContent *content,
     guint *handles, guint handle_count);
 
-static void tf_call_content_error (TfContent *content,
+static void tf_call_content_error (TfCallContent *self,
+    TpCallStateChangeReason reason,
+    const gchar *detailed_reason,
+    const gchar *message_format,
+    ...)  G_GNUC_PRINTF (4, 5);
+static void tf_call_content_error_literal (TfCallContent *self,
     TpCallStateChangeReason reason,
     const gchar *detailed_reason,
     const gchar *message);
+
+static void
+tf_call_content_error_impl (TfContent *content,
+        const gchar *message);
 
 static void
 tf_call_content_class_init (TfCallContentClass *klass)
@@ -196,7 +205,7 @@ tf_call_content_class_init (TfCallContentClass *klass)
 
   content_class->iterate_src_pads = tf_call_content_iterate_src_pads;
 
-  content_class->content_error = tf_call_content_error;
+  content_class->content_error = tf_call_content_error_impl;
 
   object_class->dispose = tf_call_content_dispose;
   object_class->finalize = tf_call_content_finalize;
@@ -396,7 +405,7 @@ create_stream (TfCallContent *self, gchar *stream_path)
   if (error)
     {
       /* TODO: Use per-stream errors */
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR,
           "Error creating the stream object: %s", error->message);
@@ -570,7 +579,7 @@ on_content_dtmf_change_requested (TpProxy *proxy,
     case TP_SENDING_STATE_PENDING_STOP_SENDING:
       if (self->dtmf_sending_state != TP_SENDING_STATE_SENDING)
         {
-          tf_content_error (TF_CONTENT (self),
+          tf_call_content_error (self,
               TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
               TP_ERROR_STR_CONFUSED,
               "Tried to stop a %u DTMF event while state is %d",
@@ -583,7 +592,7 @@ on_content_dtmf_change_requested (TpProxy *proxy,
         }
       else
         {
-          tf_content_error (TF_CONTENT (self),
+          tf_call_content_error (self,
               TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
               TP_ERROR_STR_MEDIA_STREAMING_ERROR,
               "Could not stop DTMF event %d", arg_Event);
@@ -595,7 +604,7 @@ on_content_dtmf_change_requested (TpProxy *proxy,
     case TP_SENDING_STATE_PENDING_SEND:
       if (self->dtmf_sending_state != TP_SENDING_STATE_NONE)
         {
-          tf_content_error (TF_CONTENT (self),
+          tf_call_content_error (self,
               TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
               TP_ERROR_STR_CONFUSED,
               "Tried to start a new DTMF event %u while %d is already playing",
@@ -611,7 +620,7 @@ on_content_dtmf_change_requested (TpProxy *proxy,
         }
       else
         {
-          tf_content_error (TF_CONTENT (self),
+          tf_call_content_error (self,
               TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
               TP_ERROR_STR_MEDIA_STREAMING_ERROR,
               "Could not start DTMF event %d", arg_Event);
@@ -621,7 +630,7 @@ on_content_dtmf_change_requested (TpProxy *proxy,
         }
       break;
     default:
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Invalid State %d in DTMFChangeRequested signal for event %d",
@@ -706,7 +715,7 @@ process_media_description (TfCallContent *self,
 
   if (!tp_dbus_check_valid_object_path (media_description_objpath, &error))
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
           "Invalid MediaDescription path: %s", error->message);
       g_clear_error (&error);
@@ -718,7 +727,7 @@ process_media_description (TfCallContent *self,
 
   if (!codecs)
     {
-      tf_content_error_literal (TF_CONTENT (self),
+      tf_call_content_error_literal (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
           "MediaDescription does not contain codecs");
       g_clear_error (&error);
@@ -948,7 +957,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
 
   if (error != NULL)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR,
           "Error getting the Content's media properties: %s", error->message);
@@ -974,7 +983,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
         conference_type = "raw";
         break;
       default:
-        tf_content_error (TF_CONTENT (self),
+        tf_call_content_error (self,
             TP_CALL_STATE_CHANGE_REASON_MEDIA_ERROR,
             TP_ERROR_STR_MEDIA_UNSUPPORTED_TYPE,
             "Could not create FsConference for type %d", packetization);
@@ -989,7 +998,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
       conference_type);
   if (!self->fsconference)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_MEDIA_ERROR,
           TP_ERROR_STR_MEDIA_UNSUPPORTED_TYPE,
           "Could not create FsConference for type %s", conference_type);
@@ -1005,7 +1014,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
 
   if (!self->fssession)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_MEDIA_ERROR,
           TP_ERROR_STR_MEDIA_UNSUPPORTED_TYPE,
           "Could not create FsSession: %s", myerror->message);
@@ -1078,7 +1087,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
   return;
 
  invalid_property:
-  tf_content_error_literal (TF_CONTENT (self),
+  tf_call_content_error_literal (self,
       TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
       TP_ERROR_STR_CONFUSED,
       "Error getting the Content's properties: invalid type");
@@ -1110,7 +1119,7 @@ setup_content_media_properties (TfCallContent *self,
   return;
 
  connect_failed:
-  tf_content_error (TF_CONTENT (self),
+  tf_call_content_error (self,
       TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
       TP_ERROR_STR_CONFUSED,
       "Error getting the Content's VideoControl properties: %s",
@@ -1166,7 +1175,7 @@ got_content_video_control_properties (TpProxy *proxy, GHashTable *properties,
 
   if (error)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Error getting the Content's VideoControl properties: %s",
@@ -1185,7 +1194,7 @@ got_content_video_control_properties (TpProxy *proxy, GHashTable *properties,
 
   if (properties == NULL)
     {
-      tf_content_error_literal (TF_CONTENT (self),
+      tf_call_content_error_literal (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Error getting the Content's VideoControl properties: "
@@ -1279,7 +1288,7 @@ setup_content_video_control (TfCallContent *self,
   return;
 
 connect_failed:
-  tf_content_error (TF_CONTENT (self),
+  tf_call_content_error (self,
       TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
       TP_ERROR_STR_CONFUSED,
       "Error getting the Content's VideoControl properties: %s",
@@ -1336,7 +1345,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (error)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Error getting the Content's properties: %s", error->message);
@@ -1358,7 +1367,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!out_Properties)
     {
-      tf_content_error_literal (TF_CONTENT (self),
+      tf_call_content_error_literal (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Error getting the Content's properties: there are none");
@@ -1373,7 +1382,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (interfaces == NULL)
     {
-      tf_content_error_literal (TF_CONTENT (self),
+      tf_call_content_error_literal (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Content does not have the Interfaces property, "
@@ -1399,7 +1408,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (!got_media_interface)
     {
-      tf_content_error_literal (TF_CONTENT (self),
+      tf_call_content_error_literal (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Content does not have the media interface,"
@@ -1438,7 +1447,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
 
   if (myerror)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Error connectiong to NewCodecMediaDescription signal: %s",
@@ -1458,7 +1467,7 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
   return;
 
  invalid_property:
-  tf_content_error_literal (TF_CONTENT (self),
+  tf_call_content_error_literal (self,
       TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
       "Error getting the Content's properties: invalid type");
   g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
@@ -1530,7 +1539,7 @@ tf_call_content_init_async (GAsyncInitable *initable,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
           "Error connectiong to StreamAdded signal: %s", myerror->message);
       g_simple_async_report_gerror_in_idle (G_OBJECT (self), callback,
@@ -1543,7 +1552,7 @@ tf_call_content_init_async (GAsyncInitable *initable,
       G_OBJECT (self), &myerror);
   if (myerror)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
           "Error connectiong to StreamRemoved signal: %s", myerror->message);
       g_simple_async_report_gerror_in_idle (G_OBJECT (self), callback,
@@ -1855,7 +1864,7 @@ tf_call_content_dtmf_started (TfCallContent *self, FsDTMFMethod method,
 {
   if (volume != DTMF_TONE_VOLUME)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR,
           "DTMF volume is %d, while we use %d", volume, DTMF_TONE_VOLUME);
@@ -1864,7 +1873,7 @@ tf_call_content_dtmf_started (TfCallContent *self, FsDTMFMethod method,
 
   if (self->dtmf_sending_state != TP_SENDING_STATE_PENDING_SEND)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR,
           "Farstream started a DTMFevent, but we were in the %d state",
@@ -1874,7 +1883,7 @@ tf_call_content_dtmf_started (TfCallContent *self, FsDTMFMethod method,
 
   if (self->current_dtmf_event != event)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR,
           "Farstream started the wrong dtmf event, got %d but "
@@ -1893,7 +1902,7 @@ tf_call_content_dtmf_stopped (TfCallContent *self, FsDTMFMethod method)
 {
   if (self->dtmf_sending_state != TP_SENDING_STATE_PENDING_STOP_SENDING)
     {
-      tf_content_error (TF_CONTENT (self),
+      tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR,
           "Farstream stopped a DTMFevent, but we were in the %d state",
@@ -1947,7 +1956,7 @@ tf_call_content_bus_message (TfCallContent *content,
           enumvalue->value_nick, error_no, error_msg);
       g_type_class_unref (enumclass);
 
-      tf_content_error_literal (TF_CONTENT (content),
+      tf_call_content_error_literal (content,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR, error_msg);
     }
@@ -2003,14 +2012,32 @@ tf_call_content_bus_message (TfCallContent *content,
   return ret;
 }
 
+
 static void
-tf_call_content_error (TfContent *content,
+tf_call_content_error (TfCallContent *self,
+    TpCallStateChangeReason reason,
+    const gchar *detailed_reason,
+    const gchar *message_format,
+    ...)
+{
+  gchar *message;
+  va_list valist;
+
+  va_start (valist, message_format);
+  message = g_strdup_vprintf (message_format, valist);
+  va_end (valist);
+
+  tf_call_content_error_literal (self, reason, detailed_reason, message);
+  g_free (message);
+}
+
+
+static void
+tf_call_content_error_literal (TfCallContent *self,
     TpCallStateChangeReason reason,
     const gchar *detailed_reason,
     const gchar *message)
 {
-  TfCallContent *self = TF_CALL_CONTENT (content);
-
   g_warning ("%s", message);
   tp_cli_call_content_interface_media_call_fail (
       self->proxy, -1,
@@ -2018,6 +2045,15 @@ tf_call_content_error (TfContent *content,
       NULL, NULL, NULL, NULL);
 }
 
+
+static void
+tf_call_content_error_impl (TfContent *content,
+    const gchar *message)
+{
+  tf_call_content_error_literal (TF_CALL_CONTENT (content),
+      TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+      TP_ERROR_STR_MEDIA_STREAMING_ERROR, message);
+}
 
 
 static FsStream *

@@ -86,8 +86,6 @@ tf_media_signalling_content_get_property (GObject    *object,
     GParamSpec *pspec);
 
 static void tf_media_signalling_content_error (TfContent *content,
-    TpCallStateChangeReason reason,
-    const gchar *detailed_reason,
     const gchar *message);
 
 static GstIterator * tf_media_signalling_content_iterate_src_pads (
@@ -286,23 +284,11 @@ restart_source (TfStream *stream, TfMediaSignallingContent *self)
 
 static void
 tf_media_signalling_content_error (TfContent *content,
-    TpCallStateChangeReason reason,
-    const gchar *detailed_reason,
     const gchar *message)
 {
   TfMediaSignallingContent *self = TF_MEDIA_SIGNALLING_CONTENT (content);
-  TpMediaStreamError stream_error;
 
-  switch (reason)
-    {
-    case TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR:
-      stream_error = TP_MEDIA_STREAM_ERROR_MEDIA_ERROR;
-      break;
-    default:
-      stream_error = TP_MEDIA_STREAM_ERROR_UNKNOWN;
-    }
-
-  tf_stream_error (self->stream,  stream_error, message);
+  tf_stream_error (self->stream, TP_MEDIA_STREAM_ERROR_MEDIA_ERROR, message);
 }
 
 static GstIterator *

@@ -303,24 +303,20 @@ _tf_content_emit_src_pad_added (TfContent *self, guint handle,
 /**
  * tf_content_error_literal:
  * @content: a #TfContent
- * @reason: the reason
- * @detailed_reason: The detailled error (as a DBus name)
  * @message: error Message
  *
- * Send an error to the Content to the CM, the effect is most likely that the
- * content will be removed.
+ * Send a fatal streaming error to the Content to the CM, the effect is most
+ * likely that the content will be removed.
  */
 
 void
 tf_content_error_literal (TfContent *content,
-    TpCallStateChangeReason reason,
-    const gchar *detailed_reason,
     const gchar *message)
 {
    TfContentClass *klass = TF_CONTENT_GET_CLASS (content);
 
    if (klass->content_error)
-     klass->content_error (content, reason, detailed_reason, message);
+     klass->content_error (content, message);
    else
      GST_WARNING ("content_error not defined in class: %s", message);
 }
@@ -328,19 +324,15 @@ tf_content_error_literal (TfContent *content,
 /**
  * tf_content_error:
  * @content: a #TfContent
- * @reason: the reason
- * @detailed_reason: The detailled error (as a DBus name)
  * @message_format: error Message with printf style formatting
  * @...:  Parameters to insert into the @message_format string
  *
- * Send an error to the Content to the CM, the effect is most likely that the
- * content will be removed.
+ * Send a fatal streaming error to the Content to the CM, the effect is most
+ * likely that the content will be removed.
  */
 
 void
 tf_content_error (TfContent *content,
-    TpCallStateChangeReason reason,
-    const gchar *detailed_reason,
     const gchar *message_format,
     ...)
 {
@@ -351,7 +343,7 @@ tf_content_error (TfContent *content,
   message = g_strdup_vprintf (message_format, valist);
   va_end (valist);
 
-  tf_content_error_literal (content, reason, detailed_reason, message);
+  tf_content_error_literal (content, message);
   g_free (message);
 }
 
