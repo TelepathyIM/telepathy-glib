@@ -32,8 +32,6 @@
 #include <telepathy-glib/errors.h>
 #include <telepathy-glib/interfaces.h>
 
-#include "extensions/extensions.h"
-
 #include "call-channel.h"
 
 static void channel_manager_iface_init (gpointer, gpointer);
@@ -356,28 +354,28 @@ new_channel (ExampleCallManager *self,
 static const gchar * const audio_fixed_properties[] = {
     TP_PROP_CHANNEL_CHANNEL_TYPE,
     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
-    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+    TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
     NULL
 };
 
 static const gchar * const video_fixed_properties[] = {
     TP_PROP_CHANNEL_CHANNEL_TYPE,
     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
-    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+    TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
     NULL
 };
 
 static const gchar * const audio_allowed_properties[] = {
     TP_PROP_CHANNEL_TARGET_HANDLE,
     TP_PROP_CHANNEL_TARGET_ID,
-    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+    TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
     NULL
 };
 
 static const gchar * const video_allowed_properties[] = {
     TP_PROP_CHANNEL_TARGET_HANDLE,
     TP_PROP_CHANNEL_TARGET_ID,
-    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+    TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
     NULL
 };
 
@@ -388,15 +386,15 @@ example_call_manager_type_foreach_channel_class (GType type,
 {
   GHashTable *table = tp_asv_new (
       TP_PROP_CHANNEL_CHANNEL_TYPE,
-          G_TYPE_STRING, FUTURE_IFACE_CHANNEL_TYPE_CALL,
+          G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_CALL,
       TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
-    FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
+    TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN, TRUE,
       NULL);
 
   func (type, table, audio_allowed_properties, user_data);
 
-  g_hash_table_remove (table, FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO);
-  tp_asv_set_boolean (table, FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+  g_hash_table_remove (table, TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO);
+  tp_asv_set_boolean (table, TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
       TRUE);
 
   func (type, table, video_allowed_properties, user_data);
@@ -416,7 +414,7 @@ example_call_manager_request (ExampleCallManager *self,
 
   if (tp_strdiff (tp_asv_get_string (request_properties,
           TP_PROP_CHANNEL_CHANNEL_TYPE),
-      FUTURE_IFACE_CHANNEL_TYPE_CALL))
+      TP_IFACE_CHANNEL_TYPE_CALL))
     {
       return FALSE;
     }
@@ -432,9 +430,9 @@ example_call_manager_request (ExampleCallManager *self,
   g_assert (handle != 0);
 
   initial_audio = tp_asv_get_boolean (request_properties,
-      FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL);
+      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, NULL);
   initial_video = tp_asv_get_boolean (request_properties,
-        FUTURE_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL);
+        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, NULL);
 
   if (!initial_audio && !initial_video)
     {

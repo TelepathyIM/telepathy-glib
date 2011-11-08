@@ -54,7 +54,6 @@ clean-local:
 # pkg-config via autoconf) instead of the .la path, and put it last; we use
 # a different format here because we're part of the telepathy-glib source tree.
 LDADD = \
-    $(top_builddir)/extensions/libfuture-extensions.la \
     $(top_builddir)/telepathy-glib/libtelepathy-glib.la \
     $(GLIB_LIBS) \
     $(DBUS_LIBS) \

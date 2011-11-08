@@ -325,7 +325,6 @@ AC_OUTPUT( Makefile \
 	   examples/extensions/Makefile \
 	   examples/future/Makefile \
 	   examples/future/call-cm/Makefile \
-	   extensions/Makefile \
 	   spec/Makefile \
 	   telepathy-glib/Makefile \
 	   telepathy-glib/telepathy-glib.pc \

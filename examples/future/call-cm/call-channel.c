@@ -43,9 +43,8 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/svc-call.h>
 #include <telepathy-glib/telepathy-glib.h>
-
-#include "extensions/extensions.h"
 
 #include "call-content.h"
 #include "call-stream.h"
@@ -60,7 +59,7 @@ G_DEFINE_TYPE_WITH_CODE (ExampleCallChannel,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
       tp_dbus_properties_mixin_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
-    G_IMPLEMENT_INTERFACE (FUTURE_TYPE_SVC_CHANNEL_TYPE_CALL,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_CALL,
       call_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
       hold_iface_init);
@@ -104,11 +103,11 @@ struct _ExampleCallChannelPrivate
   TpHandle handle;
   TpHandle initiator;
 
-  FutureCallState call_state;
-  FutureCallFlags call_flags;
+  TpCallState call_state;
+  TpCallFlags call_flags;
   GValueArray *call_state_reason;
   GHashTable *call_state_details;
-  FutureCallMemberFlags peer_flags;
+  TpCallMemberFlags peer_flags;
 
   guint simulation_delay;
 
@@ -140,10 +139,10 @@ static const char * example_call_channel_interfaces[] = {
 
 G_GNUC_NULL_TERMINATED static void
 example_call_channel_set_state (ExampleCallChannel *self,
-    FutureCallState state,
-    FutureCallFlags flags,
+    TpCallState state,
+    TpCallFlags flags,
     TpHandle actor,
-    FutureCallStateChangeReason reason,
+    TpCallStateChangeReason reason,
     const gchar *error,
     ...)
 {
@@ -200,7 +199,7 @@ example_call_channel_set_state (ExampleCallChannel *self,
 
   va_end (va);
 
-  future_svc_channel_type_call_emit_call_state_changed (self,
+  tp_svc_channel_type_call_emit_call_state_changed (self,
       self->priv->call_state, self->priv->call_flags,
       self->priv->call_state_reason, self->priv->call_state_details);
 }
@@ -216,11 +215,11 @@ example_call_channel_init (ExampleCallChannel *self)
   self->priv->contents = g_hash_table_new_full (g_str_hash,
       g_str_equal, g_free, g_object_unref);
 
-  self->priv->call_state = FUTURE_CALL_STATE_UNKNOWN; /* set in constructed */
+  self->priv->call_state = TP_CALL_STATE_UNKNOWN; /* set in constructed */
   self->priv->call_flags = 0;
   self->priv->call_state_reason = tp_value_array_build (4,
       G_TYPE_UINT, 0,   /* actor */
-      G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      G_TYPE_UINT, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
       G_TYPE_STRING, "",
       G_TYPE_STRING, "",
       G_TYPE_INVALID);
@@ -263,8 +262,8 @@ constructed (GObject *object)
        * remote-pending state when we actually contact them, which is done
        * in example_call_channel_initiate_outgoing. */
       example_call_channel_set_state (self,
-          FUTURE_CALL_STATE_PENDING_INITIATOR, 0, 0,
-          FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+          TP_CALL_STATE_PENDING_INITIATOR, 0, 0,
+          TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
           NULL);
     }
   else
@@ -272,8 +271,8 @@ constructed (GObject *object)
       /* This is an incoming call, so the self-handle is locally
        * pending, to indicate that we need to answer. */
       example_call_channel_set_state (self,
-          FUTURE_CALL_STATE_RINGING, 0, self->priv->handle,
-          FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+          TP_CALL_STATE_RINGING, 0, self->priv->handle,
+          TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
           NULL);
     }
 
@@ -329,7 +328,7 @@ get_property (GObject *object,
       break;
 
     case PROP_CHANNEL_TYPE:
-      g_value_set_static_string (value, FUTURE_IFACE_CHANNEL_TYPE_CALL);
+      g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_CALL);
       break;
 
     case PROP_HANDLE_TYPE:
@@ -378,7 +377,7 @@ get_property (GObject *object,
 
     case PROP_CHANNEL_DESTROYED:
       g_value_set_boolean (value,
-          (self->priv->call_state == FUTURE_CALL_STATE_ENDED));
+          (self->priv->call_state == TP_CALL_STATE_ENDED));
       break;
 
     case PROP_CHANNEL_PROPERTIES:
@@ -460,7 +459,7 @@ get_property (GObject *object,
     case PROP_INITIAL_TRANSPORT:
       /* this implementation has hardware_streaming, so the initial
        * transport is rather meaningless */
-      g_value_set_uint (value, FUTURE_STREAM_TRANSPORT_TYPE_UNKNOWN);
+      g_value_set_uint (value, TP_STREAM_TRANSPORT_TYPE_UNKNOWN);
       break;
 
     case PROP_CALL_MEMBERS:
@@ -556,24 +555,24 @@ static void
 example_call_channel_terminate (ExampleCallChannel *self,
     TpHandle actor,
     TpChannelGroupChangeReason reason,
-    FutureCallStateChangeReason call_reason,
+    TpCallStateChangeReason call_reason,
     const gchar *error_name)
 {
-  if (self->priv->call_state != FUTURE_CALL_STATE_ENDED)
+  if (self->priv->call_state != TP_CALL_STATE_ENDED)
     {
       GList *values;
       GHashTable *empty_uu_map = g_hash_table_new (NULL, NULL);
       GArray *au = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
 
       example_call_channel_set_state (self,
-          FUTURE_CALL_STATE_ENDED, 0, actor,
+          TP_CALL_STATE_ENDED, 0, actor,
           call_reason, error_name,
           NULL);
 
       /* FIXME: fd.o #24936 #c20: it's unclear in the spec whether we should
        * remove peers on call termination or not. For now this example does. */
       g_array_append_val (au, self->priv->handle);
-      future_svc_channel_type_call_emit_call_members_changed (self,
+      tp_svc_channel_type_call_emit_call_members_changed (self,
           empty_uu_map, empty_uu_map, au, self->priv->call_state_reason);
       g_hash_table_unref (empty_uu_map);
       g_array_unref (au);
@@ -625,7 +624,7 @@ example_call_channel_disconnected (ExampleCallChannel *self)
 {
   example_call_channel_terminate (self, 0,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
       TP_ERROR_STR_DISCONNECTED);
 
   if (!self->priv->closed)
@@ -652,7 +651,7 @@ dispose (GObject *object)
   example_call_channel_terminate (self,
       tp_base_connection_get_self_handle (self->priv->conn),
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
+      TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
 
   /* the manager is meant to hold a ref to us until we've closed */
   g_assert (self->priv->closed);
@@ -713,7 +712,7 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
         NULL,
         channel_props,
       },
-      { FUTURE_IFACE_CHANNEL_TYPE_CALL,
+      { TP_IFACE_CHANNEL_TYPE_CALL,
         tp_dbus_properties_mixin_getter_gobject_properties,
         NULL,
         call_props,
@@ -813,7 +812,7 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
 
   param_spec = g_param_spec_uint ("call-state", "Call state",
       "High-level state of the call",
-      0, NUM_FUTURE_CALL_STATES - 1, FUTURE_CALL_STATE_PENDING_INITIATOR,
+      0, NUM_TP_CALL_STATES - 1, TP_CALL_STATE_PENDING_INITIATOR,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CALL_STATE,
       param_spec);
@@ -826,7 +825,7 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
 
   param_spec = g_param_spec_boxed ("call-state-reason", "Call state reason",
       "Reason for call-state and call-flags",
-      FUTURE_STRUCT_TYPE_CALL_STATE_REASON,
+      TP_STRUCT_TYPE_CALL_STATE_REASON,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CALL_STATE_REASON,
       param_spec);
@@ -848,7 +847,7 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
 
   param_spec = g_param_spec_boxed ("call-members", "Call members",
       "A map from call members (only one in this example) to their states",
-      FUTURE_HASH_TYPE_CALL_MEMBER_MAP,
+      TP_HASH_TYPE_CALL_MEMBER_MAP,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CALL_MEMBERS,
       param_spec);
@@ -862,8 +861,8 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
 
   param_spec = g_param_spec_uint ("initial-transport", "Initial transport",
       "The initial transport for this channel (there is none)",
-      0, NUM_FUTURE_STREAM_TRANSPORT_TYPES,
-      FUTURE_STREAM_TRANSPORT_TYPE_UNKNOWN,
+      0, NUM_TP_STREAM_TRANSPORT_TYPES,
+      TP_STREAM_TRANSPORT_TYPE_UNKNOWN,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INITIAL_TRANSPORT,
       param_spec);
@@ -890,7 +889,7 @@ channel_close (TpSvcChannel *iface,
   example_call_channel_terminate (self,
       tp_base_connection_get_self_handle (self->priv->conn),
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
 
   if (!self->priv->closed)
     {
@@ -906,7 +905,7 @@ channel_get_channel_type (TpSvcChannel *iface G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
   tp_svc_channel_return_from_get_channel_type (context,
-      FUTURE_IFACE_CHANNEL_TYPE_CALL);
+      TP_IFACE_CHANNEL_TYPE_CALL);
 }
 
 static void
@@ -988,7 +987,7 @@ media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
 static void
 streams_removed_cb (ExampleCallContent *content,
     const GPtrArray *stream_paths G_GNUC_UNUSED,
-    const GArray *reason G_GNUC_UNUSED,
+    const GValueArray *reason,
     ExampleCallChannel *self)
 {
   gchar *path, *name;
@@ -1003,9 +1002,8 @@ streams_removed_cb (ExampleCallContent *content,
 
   g_hash_table_remove (self->priv->contents, name);
 
-  future_svc_call_content_emit_removed (content);
-  future_svc_channel_type_call_emit_content_removed (self, path,
-      self->priv->call_state_reason);
+  tp_svc_call_content_emit_removed (content);
+  tp_svc_channel_type_call_emit_content_removed (self, path, reason);
   g_free (path);
   g_free (name);
 
@@ -1014,7 +1012,7 @@ streams_removed_cb (ExampleCallContent *content,
       /* no contents left, so the call terminates */
       example_call_channel_terminate (self, 0,
           TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-          FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
+          TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
       /* FIXME: is there an appropriate error? */
     }
 }
@@ -1026,14 +1024,14 @@ simulate_contact_ended_cb (gpointer p)
 
   /* if the call has been cancelled while we were waiting for the
    * contact to do so, do nothing! */
-  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
+  if (self->priv->call_state == TP_CALL_STATE_ENDED)
     return FALSE;
 
   g_message ("SIGNALLING: receive: call terminated: <call-terminated/>");
 
   example_call_channel_terminate (self, self->priv->handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
 
   return FALSE;
 }
@@ -1049,18 +1047,18 @@ simulate_contact_answered_cb (gpointer p)
 
   /* if the call has been cancelled while we were waiting for the
    * contact to answer, do nothing! */
-  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
+  if (self->priv->call_state == TP_CALL_STATE_ENDED)
     return FALSE;
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert_cmpuint (self->priv->call_state, ==, FUTURE_CALL_STATE_RINGING);
+  g_assert_cmpuint (self->priv->call_state, ==, TP_CALL_STATE_RINGING);
 
   g_message ("SIGNALLING: receive: contact answered our call");
 
   example_call_channel_set_state (self,
-      FUTURE_CALL_STATE_ACCEPTED, 0, self->priv->handle,
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TP_CALL_STATE_ACCEPTED, 0, self->priv->handle,
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
 
   g_hash_table_iter_init (&iter, self->priv->contents);
@@ -1100,18 +1098,18 @@ simulate_contact_busy_cb (gpointer p)
 
   /* if the call has been cancelled while we were waiting for the
    * contact to answer, do nothing */
-  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
+  if (self->priv->call_state == TP_CALL_STATE_ENDED)
     return FALSE;
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert_cmpuint (self->priv->call_state, ==, FUTURE_CALL_STATE_RINGING);
+  g_assert_cmpuint (self->priv->call_state, ==, TP_CALL_STATE_RINGING);
 
   g_message ("SIGNALLING: receive: call terminated: <user-is-busy/>");
 
   example_call_channel_terminate (self, self->priv->handle,
       TP_CHANNEL_GROUP_CHANGE_REASON_BUSY,
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       TP_ERROR_STR_BUSY);
 
   return FALSE;
@@ -1132,8 +1130,8 @@ example_call_channel_add_content (ExampleCallChannel *self,
   TpHandle creator;
   gchar *name;
   gchar *path;
-  FutureCallContentDisposition disposition =
-    FUTURE_CALL_CONTENT_DISPOSITION_NONE;
+  TpCallContentDisposition disposition =
+    TP_CALL_CONTENT_DISPOSITION_NONE;
   guint i;
 
   type_str = (media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
@@ -1173,7 +1171,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
     }
 
   if (initial)
-    disposition = FUTURE_CALL_CONTENT_DISPOSITION_INITIAL;
+    disposition = TP_CALL_CONTENT_DISPOSITION_INITIAL;
 
   if (locally_requested)
     {
@@ -1192,7 +1190,7 @@ example_call_channel_add_content (ExampleCallChannel *self,
       NULL);
 
   g_hash_table_insert (self->priv->contents, name, content);
-  future_svc_channel_type_call_emit_content_added (self, path);
+  tp_svc_channel_type_call_emit_content_added (self, path);
   g_free (path);
 
   path = g_strdup_printf ("%s/Stream%u", self->priv->object_path, id);
@@ -1224,12 +1222,12 @@ simulate_contact_ringing_cb (gpointer p)
   GArray *empty_au = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
 
   /* ring, ring! */
-  self->priv->peer_flags = FUTURE_CALL_MEMBER_FLAG_RINGING;
+  self->priv->peer_flags = TP_CALL_MEMBER_FLAG_RINGING;
   g_hash_table_insert (uu_map, GUINT_TO_POINTER (self->priv->handle),
       GUINT_TO_POINTER (self->priv->peer_flags));
   g_hash_table_insert (us_map, GUINT_TO_POINTER (self->priv->handle),
       (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
-  future_svc_channel_type_call_emit_call_members_changed (self,
+  tp_svc_channel_type_call_emit_call_members_changed (self,
       uu_map, us_map, empty_au, self->priv->call_state_reason);
   g_hash_table_unref (uu_map);
   g_array_unref (empty_au);
@@ -1268,9 +1266,9 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
 {
   g_message ("SIGNALLING: send: new streamed media call");
   example_call_channel_set_state (self,
-      FUTURE_CALL_STATE_RINGING, 0,
+      TP_CALL_STATE_RINGING, 0,
       tp_base_connection_get_self_handle (self->priv->conn),
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
 
   /* After a moment, we're sent an informational message saying it's ringing */
@@ -1281,7 +1279,7 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
 }
 
 static void
-call_set_ringing (FutureSvcChannelTypeCall *iface,
+call_set_ringing (TpSvcChannelTypeCall *iface,
     DBusGMethodInvocation *context)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
@@ -1294,7 +1292,7 @@ call_set_ringing (FutureSvcChannelTypeCall *iface,
       goto finally;
     }
 
-  if (self->priv->call_state != FUTURE_CALL_STATE_RINGING)
+  if (self->priv->call_state != TP_CALL_STATE_RINGING)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "Ringing() makes no sense now that we're not pending receiver");
@@ -1303,15 +1301,15 @@ call_set_ringing (FutureSvcChannelTypeCall *iface,
 
   g_message ("SIGNALLING: send: ring, ring!");
 
-  example_call_channel_set_state (self, FUTURE_CALL_STATE_RINGING,
-      self->priv->call_flags | FUTURE_CALL_FLAG_LOCALLY_RINGING,
+  example_call_channel_set_state (self, TP_CALL_STATE_RINGING,
+      self->priv->call_flags | TP_CALL_FLAG_LOCALLY_RINGING,
       tp_base_connection_get_self_handle (self->priv->conn),
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
 
 finally:
   if (error == NULL)
     {
-      future_svc_channel_type_call_return_from_set_ringing (context);
+      tp_svc_channel_type_call_return_from_set_ringing (context);
     }
   else
     {
@@ -1328,15 +1326,15 @@ accept_incoming_call (ExampleCallChannel *self)
   GHashTableIter iter;
   gpointer v;
 
-  g_assert_cmpint (self->priv->call_state, ==, FUTURE_CALL_STATE_RINGING);
+  g_assert_cmpint (self->priv->call_state, ==, TP_CALL_STATE_RINGING);
 
   g_message ("SIGNALLING: send: Accepting incoming call from %s",
       tp_handle_inspect (contact_repo, self->priv->handle));
 
   example_call_channel_set_state (self,
-      FUTURE_CALL_STATE_ACCEPTED, 0,
+      TP_CALL_STATE_ACCEPTED, 0,
       tp_base_connection_get_self_handle (self->priv->conn),
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
 
   g_hash_table_iter_init (&iter, self->priv->contents);
@@ -1351,7 +1349,7 @@ accept_incoming_call (ExampleCallChannel *self)
           NULL);
 
       if (stream == NULL ||
-          disposition != FUTURE_CALL_CONTENT_DISPOSITION_INITIAL)
+          disposition != TP_CALL_CONTENT_DISPOSITION_INITIAL)
         continue;
 
       /* we accept the proposed stream direction */
@@ -1360,21 +1358,21 @@ accept_incoming_call (ExampleCallChannel *self)
 }
 
 static void
-call_accept (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
+call_accept (TpSvcChannelTypeCall *iface G_GNUC_UNUSED,
     DBusGMethodInvocation *context)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
 
   if (self->priv->locally_requested)
     {
-      if (self->priv->call_state == FUTURE_CALL_STATE_PENDING_INITIATOR)
+      if (self->priv->call_state == TP_CALL_STATE_PENDING_INITIATOR)
         {
           /* Take the contents we've already added, and make them happen */
           example_call_channel_initiate_outgoing (self);
 
-          future_svc_channel_type_call_return_from_accept (context);
+          tp_svc_channel_type_call_return_from_accept (context);
         }
-      else if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
+      else if (self->priv->call_state == TP_CALL_STATE_ENDED)
         {
           GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
               "This call has already ended" };
@@ -1391,12 +1389,12 @@ call_accept (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
     }
   else
     {
-      if (self->priv->call_state == FUTURE_CALL_STATE_RINGING)
+      if (self->priv->call_state == TP_CALL_STATE_RINGING)
         {
           accept_incoming_call (self);
-          future_svc_channel_type_call_return_from_accept (context);
+          tp_svc_channel_type_call_return_from_accept (context);
         }
-      else if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
+      else if (self->priv->call_state == TP_CALL_STATE_ENDED)
         {
           GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
               "This call has already ended" };
@@ -1414,7 +1412,7 @@ call_accept (FutureSvcChannelTypeCall *iface G_GNUC_UNUSED,
 }
 
 static void
-call_hangup (FutureSvcChannelTypeCall *iface,
+call_hangup (TpSvcChannelTypeCall *iface,
     guint reason,
     const gchar *detailed_reason,
     const gchar *message G_GNUC_UNUSED,
@@ -1422,7 +1420,7 @@ call_hangup (FutureSvcChannelTypeCall *iface,
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
 
-  if (self->priv->call_state == FUTURE_CALL_STATE_ENDED)
+  if (self->priv->call_state == TP_CALL_STATE_ENDED)
     {
       GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
           "This call has already ended" };
@@ -1435,12 +1433,12 @@ call_hangup (FutureSvcChannelTypeCall *iface,
       example_call_channel_terminate (self,
           tp_base_connection_get_self_handle (self->priv->conn),
           TP_CHANNEL_GROUP_CHANGE_REASON_NONE, reason, detailed_reason);
-      future_svc_channel_type_call_return_from_hangup (context);
+      tp_svc_channel_type_call_return_from_hangup (context);
     }
 }
 
 static void
-call_add_content (FutureSvcChannelTypeCall *iface,
+call_add_content (TpSvcChannelTypeCall *iface,
     const gchar *content_name,
     guint content_type,
     DBusGMethodInvocation *context)
@@ -1471,7 +1469,7 @@ call_add_content (FutureSvcChannelTypeCall *iface,
   g_object_get (content,
       "object-path", &content_path,
       NULL);
-  future_svc_channel_type_call_return_from_add_content (context,
+  tp_svc_channel_type_call_return_from_add_content (context,
       content_path);
   g_free (content_path);
 
@@ -1486,10 +1484,10 @@ static void
 call_iface_init (gpointer iface,
     gpointer data)
 {
-  FutureSvcChannelTypeCallClass *klass = iface;
+  TpSvcChannelTypeCallClass *klass = iface;
 
 #define IMPLEMENT(x) \
-  future_svc_channel_type_call_implement_##x (klass, call_##x)
+  tp_svc_channel_type_call_implement_##x (klass, call_##x)
   IMPLEMENT (set_ringing);
   IMPLEMENT (hangup);
   IMPLEMENT (accept);
@@ -1508,9 +1506,9 @@ simulate_hold (gpointer p)
       self->priv->hold_state, self->priv->hold_state_reason);
 
   example_call_channel_set_state (self, self->priv->call_state,
-      self->priv->call_flags | FUTURE_CALL_FLAG_LOCALLY_HELD,
+      self->priv->call_flags | TP_CALL_FLAG_LOCALLY_HELD,
       tp_base_connection_get_self_handle (self->priv->conn),
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
 
   return FALSE;
 }
@@ -1526,9 +1524,9 @@ simulate_unhold (gpointer p)
       self->priv->hold_state, self->priv->hold_state_reason);
 
   example_call_channel_set_state (self, self->priv->call_state,
-      self->priv->call_flags & ~FUTURE_CALL_FLAG_LOCALLY_HELD,
+      self->priv->call_flags & ~TP_CALL_FLAG_LOCALLY_HELD,
       tp_base_connection_get_self_handle (self->priv->conn),
-      FUTURE_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
 
   return FALSE;
 }

@@ -24,8 +24,6 @@
 #include <telepathy-glib/debug.h>
 #include <telepathy-glib/run.h>
 
-#include "extensions/extensions.h"
-
 #include "cm.h"
 
 static TpBaseConnectionManager *
@@ -54,7 +52,6 @@ main (int argc,
   /* strictly speaking, this is only necessary for client code, but it's
    * harmless here */
   g_type_init ();
-  future_cli_init ();
 
   return tp_run_connection_manager ("telepathy-example-cm-call",
       VERSION, construct_cm, argc, argv);
