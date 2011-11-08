@@ -134,6 +134,7 @@ struct _TpFileTransferChannelPrivate
     GValue *access_control_param;
 
     GSimpleAsyncResult *result;
+    GCancellable *cancellable;
 };
 
 enum /* properties */
@@ -173,12 +174,13 @@ splice_stream_ready_cb (GObject *output,
   g_output_stream_splice_finish (G_OUTPUT_STREAM (output), result,
       &error);
 
-  if (error != NULL)
+  if (error != NULL && !g_cancellable_is_cancelled (self->priv->cancellable))
     {
       DEBUG ("splice operation failed: %s", error->message);
       operation_failed (self, error);
-      g_clear_error (&error);
     }
+
+  g_clear_error (&error);
 }
 
 static void
@@ -227,7 +229,7 @@ client_socket_connected (TpFileTransferChannel *self)
       g_output_stream_splice_async (stream, self->priv->in_stream,
           G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE |
           G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
-          G_PRIORITY_DEFAULT, NULL,
+          G_PRIORITY_DEFAULT, self->priv->cancellable,
           splice_stream_ready_cb, self);
     }
   else
@@ -239,7 +241,7 @@ client_socket_connected (TpFileTransferChannel *self)
       g_output_stream_splice_async (self->priv->out_stream, stream,
           G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE |
           G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
-          G_PRIORITY_DEFAULT, NULL,
+          G_PRIORITY_DEFAULT, self->priv->cancellable,
           splice_stream_ready_cb, self);
     }
 }
@@ -389,6 +391,17 @@ tp_file_transfer_channel_prepare_core_cb (TpProxy *proxy,
 
 out:
   g_simple_async_result_complete (result);
+}
+
+static void
+invalidated_cb (TpFileTransferChannel *self,
+    guint domain,
+    gint code,
+    gchar *message,
+    gpointer user_data)
+{
+  /* stop splicing */
+  g_cancellable_cancel (self->priv->cancellable);
 }
 
 /* Private methods */
@@ -558,6 +571,10 @@ tp_file_transfer_channel_constructed (GObject *obj)
       DEBUG ("Channel %s doesn't have Chan.I.FileTransfer.Metadata.Metadata "
           "in its immutable properties", tp_proxy_get_object_path (self));
     }
+
+  self->priv->cancellable = g_cancellable_new ();
+  g_signal_connect (self, "invalidated",
+      G_CALLBACK (invalidated_cb), NULL);
 }
 
 static void
@@ -652,6 +669,7 @@ tp_file_transfer_channel_dispose (GObject *obj)
 
   tp_clear_pointer (&self->priv->date, g_date_time_unref);
   g_clear_object (&self->priv->file);
+  g_clear_object (&self->priv->cancellable);
 
   if (self->priv->remote_address != NULL)
     {
