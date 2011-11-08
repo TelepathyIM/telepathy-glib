@@ -30,7 +30,6 @@
 /* TODO:
  *
  * In MediaDescription:
- * - HasRemoteInformation
  * - SSRCs
  */
 
