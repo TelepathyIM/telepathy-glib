@@ -502,6 +502,46 @@ stun_servers_changed (TpProxy *proxy,
       arg_Servers);
 }
 
+static FsCandidateType
+tpcandidate_type_to_fs (TpCallStreamCandidateType type)
+{
+  switch(type)
+    {
+    case TP_CALL_STREAM_CANDIDATE_TYPE_NONE:
+      g_warning ("Candidate type NONE, assigning to HOST");
+      /* fallthrough */
+    case TP_CALL_STREAM_CANDIDATE_TYPE_HOST:
+      return FS_CANDIDATE_TYPE_HOST;
+    case TP_CALL_STREAM_CANDIDATE_TYPE_SERVER_REFLEXIVE:
+      return FS_CANDIDATE_TYPE_SRFLX;
+    case TP_CALL_STREAM_CANDIDATE_TYPE_PEER_REFLEXIVE:
+      return FS_CANDIDATE_TYPE_PRFLX;
+    case TP_CALL_STREAM_CANDIDATE_TYPE_RELAY:
+      return FS_CANDIDATE_TYPE_RELAY;
+    case TP_CALL_STREAM_CANDIDATE_TYPE_MULTICAST:
+      return FS_CANDIDATE_TYPE_MULTICAST;
+    default:
+      g_warning ("Candidate type %d unknown, assigning to HOST", type);
+      return FS_CANDIDATE_TYPE_HOST;
+    }
+}
+
+static FsNetworkProtocol
+tpnetworkproto_to_fs (TpMediaStreamBaseProto proto)
+{
+  switch(proto)
+    {
+    case TP_MEDIA_STREAM_BASE_PROTO_UDP:
+      return FS_NETWORK_PROTOCOL_UDP;
+    case TP_MEDIA_STREAM_BASE_PROTO_TCP:
+      return FS_NETWORK_PROTOCOL_TCP;
+    default:
+      g_debug ("Network protocol %d unknown, assigning to UDP", proto);
+      return FS_NETWORK_PROTOCOL_UDP;
+    }
+}
+
+
 static void
 tf_call_stream_add_remote_candidates (TfCallStream *self,
     const GPtrArray *candidates)
@@ -528,30 +568,57 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
       const gchar *password;
       gboolean valid;
       FsCandidate *cand;
+      guint type;
+      guint protocol;
+      guint ttl;
+      const gchar *base_ip;
+      guint base_port;
 
       tp_value_array_unpack (tpcandidate, 4, &component, &ip, &port,
           &extra_info);
 
-      foundation = tp_asv_get_string (extra_info, "Foundation");
+      foundation = tp_asv_get_string (extra_info, "foundation");
       if (!foundation)
         foundation = "";
-      priority = tp_asv_get_uint32 (extra_info, "Priority", &valid);
+      priority = tp_asv_get_uint32 (extra_info, "priority", &valid);
       if (!valid)
         priority = 0;
 
-      username = tp_asv_get_string (extra_info, "Username");
+      username = tp_asv_get_string (extra_info, "username");
       if (!username)
         username = self->creds_username;
 
-      password = tp_asv_get_string (extra_info, "Password");
+      password = tp_asv_get_string (extra_info, "password");
       if (!password)
         password = self->creds_password;
 
-      cand = fs_candidate_new (foundation, component, FS_CANDIDATE_TYPE_HOST,
-          FS_NETWORK_PROTOCOL_UDP, ip, port);
+      type = tp_asv_get_uint32 (extra_info, "type", &valid);
+      if (!valid)
+        type = TP_CALL_STREAM_CANDIDATE_TYPE_HOST;
+
+      protocol = tp_asv_get_uint32 (extra_info, "protocol", &valid);
+      if (!valid)
+        protocol = TP_MEDIA_STREAM_BASE_PROTO_UDP;
+
+      base_ip = tp_asv_get_string (extra_info, "base-ip");
+      base_port = tp_asv_get_uint32 (extra_info, "base-port", &valid);
+      if (!valid)
+        base_port = 0;
+
+
+      ttl = tp_asv_get_uint32 (extra_info, "ttl", &valid);
+      if (!valid)
+        ttl = 0;
+
+      cand = fs_candidate_new (foundation, component,
+          tpcandidate_type_to_fs (type), tpnetworkproto_to_fs (protocol),
+          ip, port);
       cand->priority = priority;
       cand->username = g_strdup (username);
       cand->password = g_strdup (password);
+      cand->ttl = ttl;
+      cand->base_ip = base_ip;
+      cand->base_port = base_port;
 
       fscandidates = g_list_append (fscandidates, cand);
     }
