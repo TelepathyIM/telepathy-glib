@@ -27,7 +27,7 @@ m4_define([tp_glib_nano_version], [1])
 # never seen in a release).
 
 m4_define([tp_glib_lt_current], [63])
-m4_define([tp_glib_lt_revision], [2])
+m4_define([tp_glib_lt_revision], [3])
 m4_define([tp_glib_lt_age], [63])
 
 # Some magic

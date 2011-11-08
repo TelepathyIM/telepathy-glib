@@ -3,6 +3,21 @@ telepathy-glib 0.17.0 (UNRELEASED)
 
 …
 
+telepathy-glib 0.16.2 (2011-11-08)
+==================================
+
+The “destructive substance” release.
+
+Fixes:
+
+• Improve documentation of the TpProxy::invalidated signal. (Danni)
+
+• fdo#42305: TpGroupMixin: always set the Members_Changed_Detailed
+  flag. (Guillaume)
+
+• fdo#42670: fix a crash when preparing TP_CHANNEL_FEATURE_CONTACTS
+  on a channel containing contacts without known owners. (Guillaume)
+
 telepathy-glib 0.16.1 (2011-10-24)
 ==================================
 
