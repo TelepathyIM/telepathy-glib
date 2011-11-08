@@ -1912,9 +1912,7 @@ gboolean
 tf_call_content_bus_message (TfCallContent *content,
     GstMessage *message)
 {
-  const GstStructure *s;
-  gboolean ret = FALSE;
-  const gchar *debug;
+  gboolean ret = TRUE;
   GHashTableIter iter;
   gpointer key, value;
   FsDTMFMethod method;
@@ -1922,6 +1920,8 @@ tf_call_content_bus_message (TfCallContent *content,
   guint8 volume;
   FsCodec *codec;
   GList *secondary_codecs;
+  FsError error_no;
+  const gchar *error_msg;
 
 
   /* Guard against early disposal */
@@ -1934,69 +1934,45 @@ tf_call_content_bus_message (TfCallContent *content,
   if (GST_MESSAGE_TYPE (message) != GST_MESSAGE_ELEMENT)
     return FALSE;
 
-  s = gst_message_get_structure (message);
 
-  if (gst_structure_has_name (s, "farstream-error"))
+  if (fs_parse_error (G_OBJECT (content->fssession), message, &error_no,
+          &error_msg))
     {
-      GObject *object;
-      const GValue *value = NULL;
+      GEnumClass *enumclass;
+      GEnumValue *enumvalue;
 
-      value = gst_structure_get_value (s, "src-object");
-      object = g_value_get_object (value);
+      enumclass = g_type_class_ref (FS_TYPE_ERROR);
+      enumvalue = g_enum_get_value (enumclass, error_no);
+      g_warning ("error (%s (%d)): %s",
+          enumvalue->value_nick, error_no, error_msg);
+      g_type_class_unref (enumclass);
 
-      if (object == (GObject*) content->fssession)
-        {
-          const gchar *msg;
-          FsError errorno;
-          GEnumClass *enumclass;
-          GEnumValue *enumvalue;
-
-          value = gst_structure_get_value (s, "error-no");
-          errorno = g_value_get_enum (value);
-          msg = gst_structure_get_string (s, "error-msg");
-          debug = gst_structure_get_string (s, "debug-msg");
-
-          enumclass = g_type_class_ref (FS_TYPE_ERROR);
-          enumvalue = g_enum_get_value (enumclass, errorno);
-          g_warning ("error (%s (%d)): %s : %s",
-              enumvalue->value_nick, errorno, msg, debug);
-          g_type_class_unref (enumclass);
-
-          tf_content_error_literal (TF_CONTENT (content),
-              TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-              TP_ERROR_STR_MEDIA_STREAMING_ERROR, msg);
-
-          ret = TRUE;
-        }
+      tf_content_error_literal (TF_CONTENT (content),
+          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+          TP_ERROR_STR_MEDIA_STREAMING_ERROR, error_msg);
     }
-  else if (fs_session_parse_codecs_changed (message, content->fssession))
+  else if (fs_session_parse_codecs_changed (content->fssession, message))
     {
       g_debug ("Codecs changed");
 
       tf_call_content_try_sending_codecs (content);
-
-      ret = TRUE;
     }
-  else if (fs_session_parse_telephony_event_started (message,
-          content->fssession, &method, &event, &volume))
+  else if (fs_session_parse_telephony_event_started (content->fssession,
+          message, &method, &event, &volume))
     {
       g_debug ("DTMF started: method: %d event: %u volume: %u",
           method, event, volume);
 
       tf_call_content_dtmf_started (content, method, event, volume);
-
-      ret = TRUE;
     }
-  else if (fs_session_parse_telephony_event_stopped (message,
-          content->fssession, &method))
+  else if (fs_session_parse_telephony_event_stopped (content->fssession,
+          message, &method))
     {
       g_debug ("DTMF stopped: method: %d", method);
 
       tf_call_content_dtmf_stopped (content, method);
-
-      ret = TRUE;
     }
-  else if (fs_session_parse_send_codec_changed (message, content->fssession,
+  else if (fs_session_parse_send_codec_changed (content->fssession, message,
           &codec, &secondary_codecs))
     {
       gchar *tmp;
@@ -2013,6 +1989,10 @@ tf_call_content_bus_message (TfCallContent *content,
           g_free (tmp);
           secondary_codecs = secondary_codecs->next;
         }
+    }
+  else
+    {
+      ret = FALSE;
     }
 
   g_hash_table_iter_init (&iter, content->streams);
