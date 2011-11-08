@@ -1410,94 +1410,52 @@ cb_fs_new_active_candidate_pair (TfCallStream *stream,
 gboolean
 tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message)
 {
-  const GstStructure *s;
-  const GValue *val;
+  FsError errorno;
+  const gchar *msg;
+  FsCandidate *candidate;
+  guint component;
+  FsStreamState fsstate;
+  FsCandidate *local_candidate;
+  FsCandidate *remote_candidate;
 
   if (!stream->fsstream)
     return FALSE;
 
-  s = gst_message_get_structure (message);
-
-  if (gst_structure_has_name (s, "farstream-error"))
+  if (fs_parse_error (G_OBJECT (stream->fsstream), message, &errorno, &msg))
     {
-      GObject *object;
-      const gchar *msg;
-      FsError errorno;
       GEnumClass *enumclass;
       GEnumValue *enumvalue;
-      const gchar *debug;
-
-      val = gst_structure_get_value (s, "src-object");
-      object = g_value_get_object (val);
-
-      if (object != (GObject*) stream->fsstream)
-        return FALSE;
-
-      val = gst_structure_get_value (s, "error-no");
-      errorno = g_value_get_enum (val);
-      msg = gst_structure_get_string (s, "error-msg");
-      debug = gst_structure_get_string (s, "debug-msg");
 
       enumclass = g_type_class_ref (FS_TYPE_ERROR);
       enumvalue = g_enum_get_value (enumclass, errorno);
-      g_warning ("error (%s (%d)): %s : %s",
-          enumvalue->value_nick, errorno, msg, debug);
+      g_warning ("error (%s (%d)): %s",
+          enumvalue->value_nick, errorno, msg);
       g_type_class_unref (enumclass);
 
       tf_call_stream_fail_literal (stream,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_MEDIA_STREAMING_ERROR, msg);
-      return TRUE;
     }
-
-  val = gst_structure_get_value (s, "stream");
-  if (!val)
-    return FALSE;
-  if (!G_VALUE_HOLDS_OBJECT (val))
-    return FALSE;
-  if (g_value_get_object (val) != stream->fsstream)
-    return FALSE;
-
-  if (gst_structure_has_name (s, "farstream-new-local-candidate"))
+  else if (fs_stream_parse_new_local_candidate (stream->fsstream, message,
+          &candidate))
     {
-      FsCandidate *candidate;
-
-      val = gst_structure_get_value (s, "candidate");
-      candidate = g_value_get_boxed (val);
-
       cb_fs_new_local_candidate (stream, candidate);
-      return TRUE;
     }
-  else if (gst_structure_has_name (s, "farstream-local-candidates-prepared"))
+  else if (fs_stream_parse_local_candidates_prepared (stream->fsstream,
+          message))
     {
       cb_fs_local_candidates_prepared (stream);
     }
-  else if (gst_structure_has_name (s, "farstream-component-state-changed"))
+  else if (fs_stream_parse_component_state_changed (stream->fsstream, message,
+          &component, &fsstate))
     {
-      guint component;
-      FsStreamState fsstate;
-
-      if (!gst_structure_get_uint (s, "component", &component) ||
-          !gst_structure_get_enum (s, "state", FS_TYPE_STREAM_STATE,
-              (gint*) &fsstate))
-        return TRUE;
-
       cb_fs_component_state_changed (stream, component, fsstate);
     }
-  else if (gst_structure_has_name (s, "farstream-new-active-candidate-pair"))
+  else if (fs_stream_parse_new_active_candidate_pair (stream->fsstream, message,
+          &local_candidate, &remote_candidate))
     {
-      FsCandidate *local_candidate;
-      FsCandidate *remote_candidate;
-
-      val = gst_structure_get_value (s, "local-candidate");
-      local_candidate = g_value_get_boxed (val);
-
-      val = gst_structure_get_value (s, "remote-candidate");
-      remote_candidate = g_value_get_boxed (val);
-
       cb_fs_new_active_candidate_pair (stream, local_candidate,
           remote_candidate);
-      return TRUE;
     }
   else
     {
