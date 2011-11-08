@@ -1222,24 +1222,79 @@ tf_call_stream_new (TfCallChannel *call_channel,
   return self;
 }
 
+static TpCallStreamCandidateType
+fscandidatetype_to_tp (FsCandidateType type)
+{
+ switch(type)
+    {
+    case FS_CANDIDATE_TYPE_HOST:
+      return TP_CALL_STREAM_CANDIDATE_TYPE_HOST;
+    case FS_CANDIDATE_TYPE_SRFLX:
+      return TP_CALL_STREAM_CANDIDATE_TYPE_SERVER_REFLEXIVE;
+    case FS_CANDIDATE_TYPE_PRFLX:
+      return TP_CALL_STREAM_CANDIDATE_TYPE_PEER_REFLEXIVE;
+    case FS_CANDIDATE_TYPE_RELAY:
+      return TP_CALL_STREAM_CANDIDATE_TYPE_RELAY;
+    case FS_CANDIDATE_TYPE_MULTICAST:
+      return TP_CALL_STREAM_CANDIDATE_TYPE_MULTICAST;
+    default:
+      g_warning ("Unkown candidate type, assigning type NONE");
+      return TP_CALL_STREAM_CANDIDATE_TYPE_NONE;
+    }
+}
+
+
+static TpMediaStreamBaseProto
+fs_network_proto_to_tp (FsNetworkProtocol proto)
+{
+  switch (proto)
+    {
+    case FS_NETWORK_PROTOCOL_UDP:
+      return TP_MEDIA_STREAM_BASE_PROTO_UDP;
+    case FS_NETWORK_PROTOCOL_TCP:
+      return TP_MEDIA_STREAM_BASE_PROTO_TCP;
+    default:
+      g_warning ("Invalid protocl, assigning to UDP");
+      return TP_MEDIA_STREAM_BASE_PROTO_UDP;
+    }
+}
+
+
 static GValueArray *
 fscandidate_to_tpcandidate (TfCallStream *stream, FsCandidate *candidate)
 {
   GHashTable *extra_info;
 
   extra_info = tp_asv_new (NULL, NULL);
-  if (candidate->priority)
-    tp_asv_set_uint32 (extra_info, "Priority", candidate->priority);
+
+  tp_asv_set_uint32 (extra_info, "type",
+      fscandidatetype_to_tp (candidate->type));
 
   if (candidate->foundation)
-    tp_asv_set_string (extra_info, "Foundation", candidate->foundation);
+    tp_asv_set_string (extra_info, "foundation", candidate->foundation);
+
+  tp_asv_set_uint32 (extra_info, "protocol",
+      fs_network_proto_to_tp (candidate->proto));
+
+  if (candidate->base_ip)
+    {
+      tp_asv_set_string (extra_info, "base-ip", candidate->base_ip);
+      tp_asv_set_uint32 (extra_info, "base-port", candidate->base_port);
+    }
+
+  if (candidate->priority)
+    tp_asv_set_uint32 (extra_info, "priority", candidate->priority);
+
+
+  if (candidate->type == FS_CANDIDATE_TYPE_MULTICAST)
+    tp_asv_set_uint32 (extra_info, "ttl", candidate->ttl);
 
   if (stream->multiple_usernames)
     {
       if (candidate->username)
-        tp_asv_set_string (extra_info, "Username", candidate->username);
+        tp_asv_set_string (extra_info, "username", candidate->username);
       if (candidate->password)
-        tp_asv_set_string (extra_info, "Password", candidate->password);
+        tp_asv_set_string (extra_info, "password", candidate->password);
     }
 
 
