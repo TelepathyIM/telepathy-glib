@@ -15,10 +15,10 @@
  * Objects of this class allow the user to handle the media side of a Telepathy
  * channel handled by #TfChannel.
  *
- * This object is created by the #TfChannel and the user is notified of its
- * creation by the #TfChannel::content-added signal. In the callback for this
- * signal, the user should call tf_content_set_codec_preferences() and connect
- * to the #TfContent::src-pad-added signal.
+ * This object is created by the #TfChannel and the user is notified
+ * of its creation by the #TfChannel::content-added signal. In the
+ * callback for this signal, the user should connect to the
+ * #TfContent::src-pad-added signal.
  *
  */
 
@@ -315,6 +315,9 @@ tf_content_error_literal (TfContent *content,
 {
    TfContentClass *klass = TF_CONTENT_GET_CLASS (content);
 
+   g_return_if_fail (content != NULL);
+   g_return_if_fail (message != NULL);
+
    if (klass->content_error)
      klass->content_error (content, message);
    else
@@ -338,6 +341,9 @@ tf_content_error (TfContent *content,
 {
   gchar *message;
   va_list valist;
+
+  g_return_if_fail (content != NULL);
+  g_return_if_fail (message_format != NULL);
 
   va_start (valist, message_format);
   message = g_strdup_vprintf (message_format, valist);
@@ -364,6 +370,8 @@ tf_content_iterate_src_pads (TfContent *content, guint *handles,
     guint handle_count)
 {
   TfContentClass *klass = TF_CONTENT_GET_CLASS (content);
+
+  g_return_val_if_fail (content != NULL, NULL);
 
   if (klass->iterate_src_pads)
     return klass->iterate_src_pads (content, handles, handle_count);
@@ -413,4 +421,126 @@ _tf_content_stop_receiving (TfContent *self, guint *handles,
 {
   g_signal_emit (self, signals[SIGNAL_STOP_SENDING], 0, handles,
       handle_count);
+}
+
+
+/**
+ * tf_content_sending_failed_literal:
+ * @content: a #TfContent
+ * @message_format: Message with printf style formatting
+ * @...:  Parameters to insert into the @message_format string
+ *
+ * Informs the Connection Manager that sending has failed for this
+ * content. This is a transient error and it may or not not end the Content
+ * and the call.
+ */
+
+void
+tf_content_sending_failed_literal (TfContent *content,
+    const gchar *message)
+{
+  TfContentClass *klass = TF_CONTENT_GET_CLASS (content);
+
+  g_return_if_fail (content != NULL);
+  g_return_if_fail (message != NULL);
+
+   if (klass->content_error)
+     klass->sending_failed (content, message);
+   else
+     GST_WARNING ("sending_failed not defined in class, ignoring error: %s",
+         message);
+}
+
+/**
+ * tf_content_sending_failed:
+ * @content: a #TfContent
+ * @message: The error message
+ *
+ * Informs the Connection Manager that sending has failed for this
+ * content. This is a transient error and it may or not not end the Content
+ * and the call.
+ */
+
+void
+tf_content_sending_failed (TfContent *content,
+    const gchar *message_format, ...)
+{
+  gchar *message;
+  va_list valist;
+
+  g_return_if_fail (content != NULL);
+  g_return_if_fail (message_format != NULL);
+
+  va_start (valist, message_format);
+  message = g_strdup_vprintf (message_format, valist);
+  va_end (valist);
+
+  tf_content_sending_failed_literal (content, message);
+  g_free (message);
+}
+
+/**
+ * tf_content_receiving_failed_literal:
+ * @content: a #TfContent
+ * @handles: an array of #guint representing Telepathy handles, may be %NULL
+ * @handle_count: the numner of handles in @handles
+ * @message: The error message
+ *
+ * Informs the Connection Manager that receiving has failed for this
+ * content. This is a transient error and it may or not not end the Content
+ * and the call.
+ *
+ * If handles are not specific, it assumes that it is valid for all handles.
+ */
+
+void
+tf_content_receiving_failed_literal (TfContent *content,
+    guint *handles, guint handle_count,
+    const gchar *message)
+{
+  TfContentClass *klass = TF_CONTENT_GET_CLASS (content);
+
+  g_return_if_fail (content != NULL);
+  g_return_if_fail (message != NULL);
+
+  if (klass->content_error)
+    klass->receiving_failed (content, handles, handle_count, message);
+  else
+    GST_WARNING ("receiving_failed not defined in class, ignoring error: %s",
+        message);
+}
+
+
+/**
+ * tf_content_receiving_failed:
+ * @content: a #TfContent
+ * @handles: an array of #guint representing Telepathy handles, may be %NULL
+ * @handle_count: the numner of handles in @handles
+ * @message_format: Message with printf style formatting
+ * @...:  Parameters to insert into the @message_format string
+ *
+ * Informs the Connection Manager that receiving has failed for this
+ * content. This is a transient error and it may or not not end the Content
+ * and the call.
+ *
+ * If handles are not specific, it assumes that it is valid for all handles.
+ */
+
+void
+tf_content_receiving_failed (TfContent *content,
+    guint *handles, guint handle_count,
+    const gchar *message_format, ...)
+{
+  gchar *message;
+  va_list valist;
+
+  g_return_if_fail (content != NULL);
+  g_return_if_fail (message_format != NULL);
+
+  va_start (valist, message_format);
+  message = g_strdup_vprintf (message_format, valist);
+  va_end (valist);
+
+  tf_content_receiving_failed_literal (content, handles, handle_count, message);
+  g_free (message);
 }

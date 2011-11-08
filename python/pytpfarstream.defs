@@ -83,6 +83,48 @@
   (varargs #t)
 )
 
+(define-method sending_failed_literal
+  (of-object "TfContent")
+  (c-name "tf_content_sending_failed_literal")
+  (return-type "none")
+  (parameters
+    '("const-gchar*" "message")
+  )
+)
+
+(define-method sending_failed
+  (of-object "TfContent")
+  (c-name "tf_content_sending_failed")
+  (return-type "none")
+  (parameters
+    '("const-gchar*" "message_format")
+  )
+  (varargs #t)
+)
+
+(define-method receiving_failed_literal
+  (of-object "TfContent")
+  (c-name "tf_content_receiving_failed_literal")
+  (return-type "none")
+  (parameters
+    '("guint*" "handles")
+    '("guint" "handle_count")
+    '("const-gchar*" "message")
+  )
+)
+
+(define-method receiving_failed
+  (of-object "TfContent")
+  (c-name "tf_content_receiving_failed")
+  (return-type "none")
+  (parameters
+    '("guint*" "handles")
+    '("guint" "handle_count")
+    '("const-gchar*" "message_format")
+  )
+  (varargs #t)
+)
+
 (define-method iterate_src_pads
   (of-object "TfContent")
   (c-name "tf_content_iterate_src_pads")

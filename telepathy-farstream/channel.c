@@ -606,6 +606,9 @@ tf_channel_new_async (TpChannel *channel_proxy,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
+  g_return_if_fail (channel_proxy != NULL);
+  g_return_if_fail (callback != NULL);
+
   return g_async_initable_new_async (TF_TYPE_CHANNEL,
       0, NULL, callback, user_data,
       "channel", channel_proxy,
@@ -627,6 +630,9 @@ gboolean
 tf_channel_bus_message (TfChannel *channel,
     GstMessage *message)
 {
+  g_return_val_if_fail (channel != NULL, FALSE);
+  g_return_val_if_fail (message != NULL, FALSE);
+
   if (channel->priv->media_signalling_channel)
     return tf_media_signalling_channel_bus_message (
         channel->priv->media_signalling_channel, message);

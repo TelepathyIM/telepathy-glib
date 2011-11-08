@@ -193,9 +193,13 @@ static void tf_call_content_error_literal (TfCallContent *self,
     const gchar *detailed_reason,
     const gchar *message);
 
-static void
-tf_call_content_error_impl (TfContent *content,
+static void tf_call_content_error_impl (TfContent *content,
         const gchar *message);
+static void tf_call_content_sending_failed (TfContent *content,
+    const gchar *message);
+static void tf_call_content_receiving_failed (TfContent *content,
+    guint *handles, guint handle_count,
+    const gchar *message);
 
 static void
 tf_call_content_class_init (TfCallContentClass *klass)
@@ -206,6 +210,8 @@ tf_call_content_class_init (TfCallContentClass *klass)
   content_class->iterate_src_pads = tf_call_content_iterate_src_pads;
 
   content_class->content_error = tf_call_content_error_impl;
+  content_class->sending_failed = tf_call_content_sending_failed;
+  content_class->receiving_failed = tf_call_content_receiving_failed;
 
   object_class->dispose = tf_call_content_dispose;
   object_class->finalize = tf_call_content_finalize;
@@ -2303,4 +2309,44 @@ tf_call_content_iterate_src_pads (TfContent *content, guint *handles,
   iter->self = g_object_ref (self);
 
   return (GstIterator *) iter;
+}
+
+static void
+tf_call_content_sending_failed (TfContent *content,
+    const gchar *message)
+{
+  TfCallContent *self = TF_CALL_CONTENT (content);
+  GHashTableIter iter;
+  gpointer key, value;
+
+  if (!self->streams)
+    {
+      g_warning ("Too early, ignoring sending error");
+      return;
+    }
+
+  g_hash_table_iter_init (&iter, self->streams);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    tf_call_stream_sending_failed (value, message);
+}
+
+
+static void
+tf_call_content_receiving_failed (TfContent *content,
+    guint *handles, guint handle_count,
+    const gchar *message)
+{
+  TfCallContent *self = TF_CALL_CONTENT (content);
+  GHashTableIter iter;
+  gpointer key, value;
+
+  if (!self->streams)
+    {
+      g_warning ("Too early, ignoring sending error");
+      return;
+    }
+
+  g_hash_table_iter_init (&iter, self->streams);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    tf_call_stream_receiving_failed (value, handles, handle_count, message);
 }

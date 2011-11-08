@@ -1496,3 +1496,39 @@ tf_call_stream_fail (TfCallStream *self,
   tf_call_stream_fail_literal (self, reason, detailed_reason, message);
   g_free (message);
 }
+
+void
+tf_call_stream_sending_failed (TfCallStream *self, const gchar *message)
+{
+  g_warning ("Reporting sending failure: %s", message);
+
+  tp_cli_call_stream_interface_media_call_report_sending_failure (
+      self->proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+      TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+      message, NULL, NULL, NULL, NULL);
+}
+
+
+void
+tf_call_stream_receiving_failed (TfCallStream *self,
+    guint *handles, guint handle_count,
+    const gchar *message)
+{
+  if (handle_count && handle_count > 0)
+    {
+      guint i;
+
+      for (i = 0; i < handle_count; i++)
+        if (handles[i] == self->contact_handle)
+          goto ok;
+      return;
+    }
+ ok:
+
+  g_warning ("Reporting receiving failure: %s", message);
+
+  tp_cli_call_stream_interface_media_call_report_receiving_failure (
+      self->proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+      TP_ERROR_STR_MEDIA_STREAMING_ERROR,
+      message, NULL, NULL, NULL, NULL);
+}

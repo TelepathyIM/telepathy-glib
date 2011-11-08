@@ -21,6 +21,12 @@ struct _TfContentClass{
   void (*content_error) (TfContent *content,
       const gchar *message);
 
+  void (*sending_failed) (TfContent *content,
+      const gchar *message);
+  void (*receiving_failed) (TfContent *content,
+      guint *handles, guint handle_count,
+      const gchar *message);
+
   GstIterator * (*iterate_src_pads) (TfContent *content, guint *handle,
       guint handle_count);
 };

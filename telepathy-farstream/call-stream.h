@@ -120,6 +120,13 @@ TfCallStream *tf_call_stream_new (
 
 gboolean tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message);
 
+void tf_call_stream_sending_failed (TfCallStream *stream, const gchar *message);
+
+void tf_call_stream_receiving_failed (TfCallStream *stream,
+    guint *handles, guint handle_count,
+    const gchar *message);
+
+
 G_END_DECLS
 
 #endif /* __TF_CALL_STREAM_H__ */
