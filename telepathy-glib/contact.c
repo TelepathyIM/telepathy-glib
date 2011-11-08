@@ -112,7 +112,7 @@ struct _TpContact {
  *  (available since 0.13.14)
  * @TP_CONTACT_FEATURE_CONTACT_BLOCKING: #TpContact:is-blocking. Require
  *  Connection implementing the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING
- *  interface. (available since 0.UNRELEASED)
+ *  interface. (available since 0.17.0)
  *
  * Enumeration representing the features a #TpContact can optionally support.
  * When requesting a #TpContact, library users specify the desired features;
@@ -1310,7 +1310,7 @@ tp_contact_class_init (TpContactClass *klass)
    * prepared on this contact, or if the connection does not implement
    * ContactBlocking interface.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.0
    */
   param_spec = g_param_spec_boolean ("is-blocked",
       "is blocked",
@@ -4571,7 +4571,7 @@ _tp_contact_set_is_blocked (TpContact *self,
 
  * Returns: the value of #TpContact:is-blocked.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 gboolean
 tp_contact_is_blocked (TpContact *self)

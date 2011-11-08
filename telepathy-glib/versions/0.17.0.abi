@@ -1,0 +1,17 @@
+Version: TELEPATHY_GLIB_0.17.0
+Extends: TELEPATHY_GLIB_0.15.8
+Release: 0.17.0
+
+tp_connection_block_contacts_async
+tp_connection_block_contacts_finish
+tp_connection_can_report_abusive
+tp_connection_get_blocked_contacts
+tp_connection_get_feature_quark_contact_blocking
+tp_connection_get_feature_quark_contact_list_properties
+tp_connection_unblock_contacts_async
+tp_connection_unblock_contacts_finish
+tp_contact_block_async
+tp_contact_block_finish
+tp_contact_is_blocked
+tp_contact_unblock_async
+tp_contact_unblock_finish

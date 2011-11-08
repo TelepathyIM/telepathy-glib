@@ -2120,7 +2120,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_BLOCKING.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.0
    */
   param_spec = g_param_spec_boolean ("can-report-abusive",
       "Can report abusive",
@@ -2144,7 +2144,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_BLOCKING.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.0
    */
   param_spec = g_param_spec_boxed ("blocked-contacts",
       "blocked contacts",
@@ -2290,7 +2290,7 @@ tp_connection_class_init (TpConnectionClass *klass)
    * tp_proxy_prepare_async() with the feature
    * %TP_CONNECTION_FEATURE_CONTACT_BLOCKING.
    *
-   * Since: 0.UNRELEASED
+   * Since: 0.17.0
    */
   signals[SIGNAL_BLOCKED_CONTACTS_CHANGED] = g_signal_new (
       "blocked-contacts-changed",

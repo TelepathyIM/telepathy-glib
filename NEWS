@@ -1,7 +1,22 @@
-telepathy-glib 0.17.0 (UNRELEASED)
+telepathy-glib 0.17.0 (2011-11-08)
 ==================================
 
-…
+The “Perrier-cassis” release. This is the start of a new development branch
+that will lead to 0.18 in roughly 6 months. This release contains all the
+fixes from 0.16.2.
+
+Enhancements:
+
+• fdo #41801: add high level API to block/unblock contacts. (Guillaume)
+
+• fdo #42546: add TP_CONNECTION_FEATURE_CONTACT_LIST_PROPERTIES a feature
+  preparing ContactList's properties without preparing the contact list
+  itself. (Guillaume)
+
+• fdo #42503: the TpChannelDispatchOperation passed to
+  TpBaseClientClassObserveChannelsImpl is now prepared. (Xavier)
+
+• fdo #41455: it's now possible to install tp-glib's test suite. (albanc)
 
 telepathy-glib 0.16.2 (2011-11-08)
 ==================================

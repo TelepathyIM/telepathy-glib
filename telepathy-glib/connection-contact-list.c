@@ -1428,7 +1428,7 @@ tp_connection_rename_group_finish (TpConnection *self,
  *
  * Direct the server to block @contacts.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 void
 tp_connection_block_contacts_async (TpConnection *self,
@@ -1467,7 +1467,7 @@ tp_connection_block_contacts_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 gboolean
 tp_connection_block_contacts_finish (TpConnection *self,
@@ -1488,7 +1488,7 @@ tp_connection_block_contacts_finish (TpConnection *self,
  *
  * Direct the server to unblock @contacts.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 void
 tp_connection_unblock_contacts_async (TpConnection *self,
@@ -1526,7 +1526,7 @@ tp_connection_unblock_contacts_async (TpConnection *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 gboolean
 tp_connection_unblock_contacts_finish (TpConnection *self,
@@ -1550,7 +1550,7 @@ tp_connection_unblock_contacts_finish (TpConnection *self,
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 
 GQuark
@@ -1907,7 +1907,7 @@ _tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
  *
  * Returns: the value of #TpConnection:can-report-abusive
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 gboolean
 tp_connection_can_report_abusive (TpConnection *self)
@@ -1925,7 +1925,7 @@ tp_connection_can_report_abusive (TpConnection *self)
  * Returns: (transfer none) (element-type TelepathyGLib.Contact): the value of
  * #TpConnection:blocked-contacts
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 GPtrArray *
 tp_connection_get_blocked_contacts (TpConnection *self)
@@ -1954,7 +1954,7 @@ _tp_connection_blocked_changed_queue_free (GQueue *queue)
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 GQuark
 tp_connection_get_feature_quark_contact_list_properties (void)

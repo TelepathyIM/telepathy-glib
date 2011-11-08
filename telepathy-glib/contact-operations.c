@@ -389,7 +389,7 @@ tp_contact_remove_from_group_finish (TpContact *self,
  * abusive to the server administrators. To block more than one contact at once,
  * see tp_connection_block_contacts_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 void
 tp_contact_block_async (TpContact *self,
@@ -427,7 +427,7 @@ tp_contact_block_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 gboolean
 tp_contact_block_finish (TpContact *self,
@@ -446,7 +446,7 @@ tp_contact_block_finish (TpContact *self,
  * Unblock communications with a contact. To unblock more than one contact
  * at once, see tp_connection_unblock_contacts_async().
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 void
 tp_contact_unblock_async (TpContact *self,
@@ -483,7 +483,7 @@ tp_contact_unblock_async (TpContact *self,
  *
  * Returns: %TRUE if the operation was successful, otherwise %FALSE.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.0
  */
 gboolean
 tp_contact_unblock_finish (TpContact *self,
