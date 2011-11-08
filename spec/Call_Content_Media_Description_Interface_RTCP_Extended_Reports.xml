@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
   </tp:license>
 
   <interface name="org.freedesktop.Telepathy.Call1.Content.MediaDescription.Interface.RTCPExtendedReports"
-    tp:causes-havoc="experimental">
+    >
     <tp:added version="0.23.4">(draft version, not API-stable)</tp:added>
     <tp:requires
     interface="org.freedesktop.Telepathy.Call1.Content.MediaDescription"/>
