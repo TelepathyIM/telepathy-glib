@@ -1898,6 +1898,8 @@ tf_call_content_bus_message (TfCallContent *content,
   FsDTMFMethod method;
   FsDTMFEvent event;
   guint8 volume;
+  FsCodec *codec;
+  GList *secondary_codecs;
 
 
   /* Guard against early disposal */
@@ -1966,6 +1968,24 @@ tf_call_content_bus_message (TfCallContent *content,
       tf_call_content_dtmf_stopped (content, method);
 
       ret = TRUE;
+    }
+  else if (fs_session_parse_send_codec_changed (message, content->fssession,
+          &codec, &secondary_codecs))
+    {
+      gchar *tmp;
+      guint i = 1;
+
+      tmp = fs_codec_to_string (codec);
+      g_debug ("Send codec changed: %s", tmp);
+      g_free (tmp);
+
+      while (secondary_codecs)
+        {
+          tmp = fs_codec_to_string (secondary_codecs->data);
+          g_debug ("Secondary send codec %u changed: %s", i++, tmp);
+          g_free (tmp);
+          secondary_codecs = secondary_codecs->next;
+        }
     }
 
   g_hash_table_iter_init (&iter, content->streams);
