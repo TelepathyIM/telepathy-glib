@@ -925,6 +925,8 @@ ice_restart_requested (TpProxy *proxy,
       return;
     }
 
+  g_debug ("Restarting ICE");
+
   if (fs_stream_add_remote_candidates (self->fsstream, NULL, &myerror))
     {
       g_free (self->last_local_username);
