@@ -20,11 +20,15 @@
 /**
  * SECTION:call-content
 
- * @short_description: Handle the Call interface on a Channel
+ * @short_description: Handle the Content objects on a Call channel
  *
- * This class handles the
- * org.freedesktop.Telepathy.Channel.Interface.Call on a
- * channel using Farstream.
+ * This class handles the org.freedesktop.Telepathy.Call1.Content,
+ * org.freedesktop.Telepathy.Call1.Content.Interface.Media,
+ * org.freedesktop.Telepathy.Call1.Content.Interface.VideoControl,
+ * org.freedesktop.Telepathy.Call1.Content.MediaDescription,
+ * prg.freedesktop.Telepathy.Call1.Content.MediaDescription.Interface.RTPHeaderExtensions
+ * and org.freedesktop.Telepathy.Call1.Content.MediaDescription.Interface.RTCPFeedback interfaces
+ *
  */
 
 /* TODO:

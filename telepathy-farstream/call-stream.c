@@ -20,11 +20,11 @@
 /**
  * SECTION:tfcallstream
  *
- * @short_description: Handle the Stream interface on a Channel
+ * @short_description: Handle the Stream objects for a Call1 channel
  *
- * This class handles the
- * org.freedesktop.Telepathy.Channel.Interface.Stream on a
- * channel using Farstream.
+ * This class handles the org.freedesktop.Telepathy.Call1.Stream,
+ * org.freedesktop.Telepathy.Call1.Stream.Interface.Media and
+ * org.freedesktop.Telepathy.Call1.Stream.Endpoint interfaces.
  */
 
 /*
