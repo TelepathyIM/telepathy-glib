@@ -703,7 +703,7 @@ tp_tests_file_transfer_channel_class_init (
   param_spec = g_param_spec_boxed ("metadata",
       "Metadata",
       "The Metadata.Metadata property of this channel",
-      TP_HASH_TYPE_STRING_STRING_MAP,
+      TP_HASH_TYPE_METADATA,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_METADATA,
       param_spec);

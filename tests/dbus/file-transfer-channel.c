@@ -158,6 +158,7 @@ create_file_transfer_channel (Test *test,
   GHashTable *sockets;
   GHashTable *metadata;
   GQuark features[] = { TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE, 0};
+  const gchar * const metadata_values[] = { "cheese", NULL };
 
   /* Create service-side file transfer channel object */
   tp_proxy_get_object_path (test->connection);
@@ -177,7 +178,7 @@ create_file_transfer_channel (Test *test,
   sockets = create_available_socket_types_hash (address_type, access_control);
 
   metadata = g_hash_table_new (g_str_hash, g_str_equal);
-  g_hash_table_insert (metadata, "banana", "cheese");
+  g_hash_table_insert (metadata, "banana", (gpointer) metadata_values);
 
   test->chan_service = g_object_new (
       TP_TESTS_TYPE_FILE_TRANSFER_CHANNEL,
@@ -383,6 +384,7 @@ test_properties (Test *test,
   TpFileTransferStateChangeReason reason;
   const GError *error = NULL;
   const GHashTable *metadata;
+  const gchar * const *metadata_values;
 
   create_file_transfer_channel (test, FALSE, TP_SOCKET_ADDRESS_TYPE_UNIX,
       TP_SOCKET_ACCESS_CONTROL_LOCALHOST);
@@ -415,8 +417,9 @@ test_properties (Test *test,
 
   metadata = tp_file_transfer_channel_get_metadata (test->channel);
   g_assert_cmpuint (g_hash_table_size ((GHashTable *) metadata), ==, 1);
-  g_assert_cmpstr (g_hash_table_lookup ((GHashTable *) metadata, "banana"),
-      ==, "cheese");
+  metadata_values = g_hash_table_lookup ((GHashTable *) metadata, "banana");
+  g_assert_cmpuint (g_strv_length ((GStrv) metadata_values), ==, 1);
+  g_assert_cmpstr (metadata_values[0], ==, "cheese");
 
   error = tp_proxy_get_invalidated (test->channel);
   g_assert_no_error (error);

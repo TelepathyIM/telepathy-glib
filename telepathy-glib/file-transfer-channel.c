@@ -118,7 +118,7 @@ struct _TpFileTransferChannelPrivate
     goffset initial_offset;
     /* Metadata */
     const gchar *service_name;
-    const GHashTable *metadata; /* const gchar* => const gchar* */
+    const GHashTable *metadata; /* const gchar* => const gchar* const* */
 
     /* Streams and sockets for sending and receiving the actual file */
     GSocket *client_socket;
@@ -565,7 +565,7 @@ tp_file_transfer_channel_constructed (GObject *obj)
 
   self->priv->metadata = tp_asv_get_boxed (properties,
      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA,
-     TP_HASH_TYPE_STRING_STRING_MAP);
+     TP_HASH_TYPE_METADATA);
   if (self->priv->metadata == NULL)
     {
       DEBUG ("Channel %s doesn't have Chan.I.FileTransfer.Metadata.Metadata "
@@ -896,7 +896,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
   param_spec = g_param_spec_boxed ("metadata",
       "Metadata",
       "The Metadata.Metadata property of this channel",
-      TP_HASH_TYPE_STRING_STRING_MAP,
+      TP_HASH_TYPE_METADATA,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_METADATA,
       param_spec);
@@ -1577,7 +1577,7 @@ tp_file_transfer_channel_get_service_name (TpFileTransferChannel *self)
  *
  * Return the #TpFileTransferChannel:metadata property
  *
- * Returns: (transfer none) (element-type utf8 utf8): the
+ * Returns: (transfer none) (element-type utf8 GObject.Strv): the
  *   value of the #TpFileTransferChannel:metadata property
  *
  * Since: 0.16.UNRELEASED
