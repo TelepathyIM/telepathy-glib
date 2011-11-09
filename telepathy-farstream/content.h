@@ -2,7 +2,6 @@
 #define __TF_CONTENT_H__
 
 #include <glib-object.h>
-#include <telepathy-glib/call-1.h>
 #include <farstream/fs-conference.h>
 
 G_BEGIN_DECLS

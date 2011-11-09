@@ -31,13 +31,7 @@
 
 #include <stdlib.h>
 
-#include <telepathy-glib/call-1.h>
-#include <telepathy-glib/channel.h>
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/enums.h>
-#include <telepathy-glib/errors.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/util.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <farstream/fs-conference.h>
 
@@ -346,11 +340,22 @@ channel_prepared (GObject *obj,
   else if (tp_proxy_has_interface_by_id (as_proxy,
           TP_IFACE_QUARK_CHANNEL_TYPE_CALL))
     {
-      tf_call_channel_new_async (channel_proxy, call_channel_ready, res);
+      if (!TP_IS_CALL_CHANNEL (channel_proxy))
+        {
+          g_simple_async_result_set_error (res, TP_ERROR,
+              TP_ERROR_INVALID_ARGUMENT,
+              "You must pass a TpCallChannel object if its a Call channel");
+          g_simple_async_result_set_op_res_gboolean (res, FALSE);
+          g_simple_async_result_complete (res);
+        }
+      else
+        {
+          tf_call_channel_new_async (channel_proxy, call_channel_ready, res);
 
-      self->priv->channel_invalidated_handler = g_signal_connect (
-          self->priv->channel_proxy,
-          "invalidated", G_CALLBACK (channel_invalidated), self);
+          self->priv->channel_invalidated_handler = g_signal_connect (
+              self->priv->channel_proxy,
+              "invalidated", G_CALLBACK (channel_invalidated), self);
+        }
     }
   else
     {

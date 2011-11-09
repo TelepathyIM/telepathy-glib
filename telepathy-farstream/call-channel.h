@@ -76,7 +76,7 @@ struct _TfCallChannel {
 
   GHashTable *fsconferences;
 
-  GHashTable *contents; /* NULL before getting the first contents */
+  GPtrArray *contents; /* NULL before getting the first contents */
 
   GPtrArray *participants;
 };

@@ -125,7 +125,7 @@ tf_call_stream_dispose (GObject *object)
 
 
 static void
-sending_state_changed (TpProxy *proxy,
+sending_state_changed (TpCallStream *proxy,
     guint arg_State,
     gpointer user_data, GObject *weak_object)
 {
@@ -176,7 +176,7 @@ sending_state_changed (TpProxy *proxy,
 }
 
 static void
-receiving_state_changed (TpProxy *proxy,
+receiving_state_changed (TpCallStream *proxy,
     guint arg_State,
     gpointer user_data, GObject *weak_object)
 {
@@ -433,16 +433,16 @@ tf_call_stream_try_adding_fsstream (TfCallStream *self)
     }
 
   if (self->sending_state == TP_STREAM_FLOW_STATE_PENDING_START)
-    sending_state_changed (TP_PROXY (self->proxy),
+    sending_state_changed (self->proxy,
         self->sending_state, NULL, (GObject *) self);
 
   if (self->receiving_state == TP_STREAM_FLOW_STATE_PENDING_START)
-    receiving_state_changed (TP_PROXY (self->proxy),
+    receiving_state_changed (self->proxy,
         self->receiving_state, NULL, (GObject *) self);
 }
 
 static void
-server_info_retrieved (TpProxy *proxy,
+server_info_retrieved (TpCallStream *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
@@ -453,7 +453,7 @@ server_info_retrieved (TpProxy *proxy,
 }
 
 static void
-relay_info_changed (TpProxy *proxy,
+relay_info_changed (TpCallStream *proxy,
     const GPtrArray *arg_Relay_Info,
     gpointer user_data, GObject *weak_object)
 {
@@ -478,7 +478,7 @@ relay_info_changed (TpProxy *proxy,
 }
 
 static void
-stun_servers_changed (TpProxy *proxy,
+stun_servers_changed (TpCallStream *proxy,
     const GPtrArray *arg_Servers,
     gpointer user_data, GObject *weak_object)
 {
@@ -821,7 +821,7 @@ tf_call_stream_add_endpoint (TfCallStream *self)
 
 
 static void
-endpoints_changed (TpProxy *proxy,
+endpoints_changed (TpCallStream *proxy,
     const GPtrArray *arg_Endpoints_Added,
     const GPtrArray *arg_Endpoints_Removed,
     gpointer user_data, GObject *weak_object)
@@ -974,7 +974,7 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
 }
 
 static void
-ice_restart_requested (TpProxy *proxy,
+ice_restart_requested (TpCallStream *proxy,
     gpointer user_data, GObject *weak_object)
 {
   TfCallStream *self = TF_CALL_STREAM (weak_object);
@@ -1012,212 +1012,173 @@ ice_restart_requested (TpProxy *proxy,
 }
 
 static void
-got_stream_properties (TpProxy *proxy, GHashTable *out_Properties,
-    const GError *error, gpointer user_data, GObject *weak_object)
+stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
 {
-  TfCallStream *self = TF_CALL_STREAM (weak_object);
-  GError *myerror = NULL;
-  guint i;
-  const gchar * const * interfaces;
-  gboolean got_media_interface = FALSE;
+  TfCallStream *self = TF_CALL_STREAM (user_data);
+  TpProxy *proxy = TP_PROXY (src_object);
+  GError *error = NULL;
   GHashTable *members;
   GHashTableIter iter;
   gpointer key, value;
 
-  if (error)
+  if (!tp_proxy_prepare_finish (src_object, res, &error))
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
-          "Error getting the Streams's properties: %s", error->message);
+          "Error preparing the stream Streams: %s", error->message);
+      g_clear_error (&error);
       return;
     }
 
-  if (!out_Properties)
-    {
-      tf_call_stream_fail_literal (self,
-          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-          TP_ERROR_STR_INVALID_ARGUMENT,
-          "Error getting the Content's properties: there are none");
+ if (!tp_proxy_has_interface_by_id (proxy,
+         TP_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA))
+   {
+     tf_call_stream_fail_literal (self,
+         TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+         TP_ERROR_STR_INVALID_ARGUMENT,
+         "Stream does not have the media interface,"
+         " but HardwareStreaming was NOT true");
       return;
-    }
+   }
 
-  interfaces = tp_asv_get_strv (out_Properties, "Interfaces");
+ members = tp_call_stream_get_remote_members (self->proxy);
 
-  for (i = 0; interfaces[i]; i++)
-    if (!strcmp (interfaces[i], TP_IFACE_CALL_STREAM_INTERFACE_MEDIA))
-      {
-        got_media_interface = TRUE;
-        break;
-      }
-
-  if (!got_media_interface)
-    {
-      tf_call_stream_fail_literal (self,
-          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-          TP_ERROR_STR_INVALID_ARGUMENT,
-          "Stream does not have the media interface,"
-          " but HardwareStreaming was NOT true");
-      return;
-    }
-
-  members = tp_asv_get_boxed (out_Properties, "RemoteMembers",
-      TP_HASH_TYPE_CONTACT_SENDING_STATE_MAP);
-  if (!members)
-    goto invalid_property;
-
-  if (g_hash_table_size (members) != 1)
-    {
-      tf_call_stream_fail (self,
-          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-          TP_ERROR_STR_NOT_IMPLEMENTED,
-          "Only one Member per Stream is supported, there are %d",
-          g_hash_table_size (members));
-      return;
-    }
+ if (g_hash_table_size (members) != 1)
+   {
+     tf_call_stream_fail (self,
+         TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
+         TP_ERROR_STR_NOT_IMPLEMENTED,
+         "Only one Member per Stream is supported, there are %d",
+         g_hash_table_size (members));
+     return;
+   }
 
   g_hash_table_iter_init (&iter, members);
-
   if (g_hash_table_iter_next (&iter, &key, &value))
     {
       self->has_contact = TRUE;
       self->contact_handle = GPOINTER_TO_UINT (key);
     }
 
-  tp_proxy_add_interface_by_id (TP_PROXY (self->proxy),
-      TP_IFACE_QUARK_CALL_STREAM_INTERFACE_MEDIA);
-
-
   tp_cli_call_stream_interface_media_connect_to_sending_state_changed (
       TP_CALL_STREAM (proxy), sending_state_changed, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
+      G_OBJECT (self), &error);
+  if (error)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
           "Error connectiong to SendingStateChanged signal: %s",
-          myerror->message);
-      g_clear_error (&myerror);
+          error->message);
+      g_clear_error (&error);
       return;
     }
 
 
-
   tp_cli_call_stream_interface_media_connect_to_receiving_state_changed (
       TP_CALL_STREAM (proxy), receiving_state_changed, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
+      G_OBJECT (self), &error);
+  if (error)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
           "Error connectiong to ReceivingStateChanged signal: %s",
-          myerror->message);
-      g_clear_error (&myerror);
+          error->message);
+      g_clear_error (&error);
       return;
     }
 
   tp_cli_call_stream_interface_media_connect_to_server_info_retrieved (
       TP_CALL_STREAM (proxy), server_info_retrieved, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
+      G_OBJECT (self), &error);
+  if (error)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
           "Error connectiong to ServerInfoRetrived signal: %s",
-          myerror->message);
-      g_clear_error (&myerror);
+          error->message);
+      g_clear_error (&error);
       return;
     }
 
   tp_cli_call_stream_interface_media_connect_to_stun_servers_changed (
       TP_CALL_STREAM (proxy), stun_servers_changed, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
+      G_OBJECT (self), &error);
+  if (error)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
           "Error connectiong to ServerInfoRetrived signal: %s",
-          myerror->message);
-      g_clear_error (&myerror);
+          error->message);
+      g_clear_error (&error);
       return;
     }
 
 
   tp_cli_call_stream_interface_media_connect_to_relay_info_changed (
       TP_CALL_STREAM (proxy), relay_info_changed, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
+      G_OBJECT (self), &error);
+  if (error)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
           "Error connectiong to ServerInfoRetrived signal: %s",
-          myerror->message);
-      g_clear_error (&myerror);
+          error->message);
+      g_clear_error (&error);
       return;
     }
 
 
   tp_cli_call_stream_interface_media_connect_to_endpoints_changed (
       TP_CALL_STREAM (proxy), endpoints_changed, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
+      G_OBJECT (self), &error);
+  if (error)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
           "Error connectiong to EndpointsChanged signal: %s",
-          myerror->message);
-      g_clear_error (&myerror);
+          error->message);
+      g_clear_error (&error);
       return;
     }
 
 
   tp_cli_call_stream_interface_media_connect_to_ice_restart_requested (
       TP_CALL_STREAM (proxy), ice_restart_requested, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
+      G_OBJECT (self), &error);
+  if (error)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
           "Error connectiong to ICERestartRequested signal: %s",
-          myerror->message);
-      g_clear_error (&myerror);
+          error->message);
+      g_clear_error (&error);
       return;
     }
 
-  tp_cli_dbus_properties_call_get_all (proxy, -1,
+  tp_cli_dbus_properties_call_get_all (TP_PROXY (self->proxy), -1,
       TP_IFACE_CALL_STREAM_INTERFACE_MEDIA,
       got_stream_media_properties, NULL, NULL, G_OBJECT (self));
 
   return;
-
- invalid_property:
-  tf_call_stream_fail_literal (self,
-      TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-      TP_ERROR_STR_INVALID_ARGUMENT,
-      "Error getting the Stream's properties: invalid type");
-  return;
 }
 
 TfCallStream *
-tf_call_stream_new (TfCallChannel *call_channel,
-    TfCallContent *call_content,
-    const gchar *object_path,
-    GError **error)
+tf_call_stream_new (TfCallContent *call_content,
+    TpCallStream *stream_proxy)
 {
   TfCallStream *self;
-  TpCallStream *proxy = tp_call_stream_new (call_channel->proxy,
-      object_path, error);
 
-  if (!proxy)
-    return NULL;
+  g_assert (call_content != NULL);
+  g_assert (stream_proxy != NULL);
 
-  self = g_object_new (TF_TYPE_STREAM, NULL);
+  self = g_object_new (TF_TYPE_CALL_STREAM, NULL);
 
   self->call_content = call_content;
-  self->proxy = proxy;
+  self->proxy = stream_proxy;
 
-  tp_cli_dbus_properties_call_get_all (proxy, -1, TP_IFACE_CALL_STREAM,
-      got_stream_properties, NULL, NULL, G_OBJECT (self));
+  tp_proxy_prepare_async (self->proxy, NULL, stream_prepared,
+      g_object_ref (self));
 
   return self;
 }
@@ -1531,4 +1492,13 @@ tf_call_stream_receiving_failed (TfCallStream *self,
       self->proxy, -1, TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
       TP_ERROR_STR_MEDIA_STREAMING_ERROR,
       message, NULL, NULL, NULL, NULL);
+}
+
+
+TpCallStream *
+tf_call_stream_get_proxy (TfCallStream *stream)
+{
+  g_return_val_if_fail (TF_IS_CALL_STREAM (stream), NULL);
+
+  return stream->proxy;
 }

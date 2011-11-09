@@ -23,32 +23,32 @@
 #include <glib-object.h>
 
 #include <gst/gst.h>
-#include <telepathy-glib/channel.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "call-channel.h"
 #include "call-content.h"
 
 G_BEGIN_DECLS
 
-#define TF_TYPE_STREAM tf_call_stream_get_type()
+#define TF_TYPE_CALL_STREAM tf_call_stream_get_type()
 
 #define TF_CALL_STREAM(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-  TF_TYPE_STREAM, TfCallStream))
+  TF_TYPE_CALL_STREAM, TfCallStream))
 
 #define TF_CALL_STREAM_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST ((klass), \
-  TF_TYPE_STREAM, TfCallStreamClass))
+  TF_TYPE_CALL_STREAM, TfCallStreamClass))
 
-#define TF_IS_STREAM(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TF_TYPE_STREAM))
+#define TF_IS_CALL_STREAM(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TF_TYPE_CALL_STREAM))
 
-#define TF_IS_STREAM_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass), TF_TYPE_STREAM))
+#define TF_IS_CALL_STREAM_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), TF_TYPE_CALL_STREAM))
 
 #define TF_CALL_STREAM_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), \
-  TF_TYPE_STREAM, TfCallStreamClass))
+  TF_TYPE_CALL_STREAM, TfCallStreamClass))
 
 typedef struct _TfCallStreamPrivate TfCallStreamPrivate;
 
@@ -113,10 +113,8 @@ struct _TfCallStreamClass{
 GType tf_call_stream_get_type (void);
 
 TfCallStream *tf_call_stream_new (
-    TfCallChannel *channel,
     TfCallContent *content,
-    const gchar *object_path,
-    GError **error);
+    TpCallStream *stream_proxy);
 
 gboolean tf_call_stream_bus_message (TfCallStream *stream, GstMessage *message);
 
@@ -125,6 +123,9 @@ void tf_call_stream_sending_failed (TfCallStream *stream, const gchar *message);
 void tf_call_stream_receiving_failed (TfCallStream *stream,
     guint *handles, guint handle_count,
     const gchar *message);
+
+TpCallStream *
+tf_call_stream_get_proxy (TfCallStream *stream);
 
 
 G_END_DECLS

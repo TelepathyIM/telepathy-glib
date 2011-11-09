@@ -67,7 +67,6 @@ struct _TfCallContent {
   TpCallContent *proxy;
 
   FsSession *fssession;
-  TpMediaStreamType media_type;
 
   TpProxy *current_media_description;
   guint current_md_contact_handle;
@@ -81,7 +80,7 @@ struct _TfCallContent {
 
   GList *last_sent_codecs;
 
-  GHashTable *streams; /* NULL before getting the first streams */
+  GPtrArray *streams; /* NULL before getting the first streams */
   /* Streams for which we don't have a session yet*/
   GList *outstanding_streams;
 
@@ -298,7 +297,7 @@ tf_call_content_dispose (GObject *object)
   g_debug (G_STRFUNC);
 
   if (self->streams)
-    g_hash_table_destroy (self->streams);
+    g_ptr_array_free (self->streams, TRUE);
   self->streams = NULL;
 
   if (self->fssession)
@@ -402,35 +401,22 @@ tf_call_content_get_property (GObject    *object,
 }
 
 static void
-create_stream (TfCallContent *self, gchar *stream_path)
+create_stream (TfCallContent *self, TpCallStream *stream_proxy)
 {
-  GError *error = NULL;
-  TfCallStream *stream = tf_call_stream_new (self->call_channel, self,
-      stream_path, &error);
-
-  if (error)
-    {
-      /* TODO: Use per-stream errors */
-      tf_call_content_error (self,
-          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-          TP_ERROR_STR_MEDIA_STREAMING_ERROR,
-          "Error creating the stream object: %s", error->message);
-      return;
-    }
-
-  g_hash_table_insert (self->streams, stream_path, stream);
+  g_ptr_array_add (self->streams,
+      tf_call_stream_new (self, stream_proxy));
 }
 
 static void
-add_stream (TfCallContent *self, const gchar *stream_path)
+add_stream (TfCallContent *self, TpCallStream *stream_proxy)
 {
 
   if (!self->fsconference)
   {
     self->outstanding_streams = g_list_prepend (self->outstanding_streams,
-      g_strdup (stream_path));
+        stream_proxy);
   } else {
-    create_stream (self, g_strdup (stream_path));
+    create_stream (self, stream_proxy);
   }
 }
 
@@ -565,7 +551,7 @@ object_has_property (GObject *object, const gchar *property)
 }
 
 static void
-on_content_dtmf_change_requested (TpProxy *proxy,
+on_content_dtmf_change_requested (TpCallContent *proxy,
     guchar arg_Event,
     guint arg_State,
     gpointer user_data,
@@ -782,7 +768,7 @@ process_media_description (TfCallContent *self,
 
 
   g_debug ("Got MediaDescription");
-  fscodecs = tpcodecs_to_fscodecs (tp_media_type_to_fs (self->media_type),
+  fscodecs = tpcodecs_to_fscodecs (tf_call_content_get_fs_media_type (self),
       codecs, does_avpf, rtcp_fb);
 
   fsrtp_hdrext = tprtphdrext_to_fsrtphdrext (rtp_hdrext);
@@ -805,7 +791,7 @@ process_media_description (TfCallContent *self,
 }
 
 static void
-on_content_video_keyframe_requested (TpProxy *proxy,
+on_content_video_keyframe_requested (TpCallContent *proxy,
   gpointer user_data,
   GObject *weak_object)
 {
@@ -840,7 +826,7 @@ on_content_video_keyframe_requested (TpProxy *proxy,
 }
 
 static void
-on_content_video_resolution_changed (TpProxy *proxy,
+on_content_video_resolution_changed (TpCallContent *proxy,
   const GValueArray *resolution,
   gpointer user_data,
   GObject *weak_object)
@@ -869,7 +855,7 @@ on_content_video_resolution_changed (TpProxy *proxy,
 }
 
 static void
-on_content_video_bitrate_changed (TpProxy *proxy,
+on_content_video_bitrate_changed (TpCallContent *proxy,
   guint bitrate,
   gpointer user_data,
   GObject *weak_object)
@@ -888,7 +874,7 @@ on_content_video_bitrate_changed (TpProxy *proxy,
 }
 
 static void
-on_content_video_framerate_changed (TpProxy *proxy,
+on_content_video_framerate_changed (TpCallContent *proxy,
   guint framerate,
   gpointer user_data,
   GObject *weak_object)
@@ -907,7 +893,7 @@ on_content_video_framerate_changed (TpProxy *proxy,
 }
 
 static void
-on_content_video_mtu_changed (TpProxy *proxy,
+on_content_video_mtu_changed (TpCallContent *proxy,
   guint mtu,
   gpointer user_data,
   GObject *weak_object)
@@ -1016,7 +1002,7 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
     }
 
   self->fssession = fs_conference_new_session (self->fsconference,
-      tp_media_type_to_fs (self->media_type), &myerror);
+      tf_call_content_get_fs_media_type (self), &myerror);
 
   if (!self->fssession)
     {
@@ -1105,20 +1091,17 @@ got_content_media_properties (TpProxy *proxy, GHashTable *properties,
 }
 
 static void
-setup_content_media_properties (TfCallContent *self,
-  TpProxy *proxy,
-  GSimpleAsyncResult *res)
+setup_content_media_properties (TfCallContent *self, GSimpleAsyncResult *res)
 {
   GError *error = NULL;
 
 
   if (tp_cli_call_content_interface_media_connect_to_dtmf_change_requested (
-          TP_CALL_CONTENT (proxy),
-          on_content_dtmf_change_requested,
+          self->proxy, on_content_dtmf_change_requested,
           NULL, NULL, G_OBJECT (self), &error) == NULL)
     goto connect_failed;
 
-  tp_cli_dbus_properties_call_get_all (proxy, -1,
+  tp_cli_dbus_properties_call_get_all (TP_PROXY (self->proxy), -1,
       TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA,
       got_content_media_properties, res, NULL, G_OBJECT (self));
 
@@ -1230,14 +1213,14 @@ got_content_video_control_properties (TpProxy *proxy, GHashTable *properties,
   array = tp_asv_get_boxed (properties, "VideoResolution",
       TP_STRUCT_TYPE_VIDEO_RESOLUTION);
   if (array)
-    on_content_video_resolution_changed (proxy, array,
+    on_content_video_resolution_changed (TP_CALL_CONTENT (proxy), array,
         NULL, G_OBJECT (self));
 
   self->notifier = fs_element_added_notifier_new ();
   g_signal_connect (self->notifier, "element-added",
     G_CALLBACK (content_video_element_added), self);
 
-  setup_content_media_properties (self, proxy, res);
+  setup_content_media_properties (self, res);
   return;
 
 error:
@@ -1248,46 +1231,36 @@ error:
 
 
 static void
-setup_content_video_control (TfCallContent *self,
-  TpProxy *proxy,
-  GSimpleAsyncResult *res)
+setup_content_video_control (TfCallContent *self, GSimpleAsyncResult *res)
 {
   GError *error = NULL;
 
-  tp_proxy_add_interface_by_id (proxy,
-    TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_VIDEO_CONTROL);
-
   if (tp_cli_call_content_interface_video_control_connect_to_key_frame_requested (
-      TP_CALL_CONTENT (proxy),
-      on_content_video_keyframe_requested,
+      self->proxy, on_content_video_keyframe_requested,
       NULL, NULL, G_OBJECT (self), &error) == NULL)
     goto connect_failed;
 
   if (tp_cli_call_content_interface_video_control_connect_to_video_resolution_changed (
-      TP_CALL_CONTENT (proxy),
-      on_content_video_resolution_changed,
+      self->proxy, on_content_video_resolution_changed,
       NULL, NULL, G_OBJECT (self), &error) == NULL)
     goto connect_failed;
 
   if (tp_cli_call_content_interface_video_control_connect_to_bitrate_changed (
-      TP_CALL_CONTENT (proxy),
-      on_content_video_bitrate_changed,
+      self->proxy, on_content_video_bitrate_changed,
       NULL, NULL, G_OBJECT (self), NULL) == NULL)
     goto connect_failed;
 
   if (tp_cli_call_content_interface_video_control_connect_to_framerate_changed (
-      TP_CALL_CONTENT (proxy),
-      on_content_video_framerate_changed,
+      self->proxy, on_content_video_framerate_changed,
       NULL, NULL, G_OBJECT (self), NULL) == NULL)
     goto connect_failed;
 
   if (tp_cli_call_content_interface_video_control_connect_to_mtu_changed (
-      TP_CALL_CONTENT (proxy),
-      on_content_video_mtu_changed,
+      self->proxy, on_content_video_mtu_changed,
       NULL, NULL, G_OBJECT (self), NULL) == NULL)
     goto connect_failed;
 
-  tp_cli_dbus_properties_call_get_all (proxy, -1,
+  tp_cli_dbus_properties_call_get_all (TP_PROXY (self->proxy), -1,
       TP_IFACE_CALL_CONTENT_INTERFACE_VIDEO_CONTROL,
       got_content_video_control_properties, res, NULL, G_OBJECT (self));
 
@@ -1305,7 +1278,7 @@ connect_failed:
 }
 
 static void
-new_media_description_offer (TpProxy *proxy,
+new_media_description_offer (TpCallContent *proxy,
     const gchar *arg_Media_Description,
     guint arg_Contact,
     GHashTable *arg_Properties,
@@ -1336,26 +1309,24 @@ new_media_description_offer (TpProxy *proxy,
 
 
 static void
-got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
-    const GError *error, gpointer user_data, GObject *weak_object)
+content_prepared (GObject *src, GAsyncResult *prepare_res,
+    gpointer user_data)
 {
-  TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  TpCallContent *proxy = TP_CALL_CONTENT (src);
   GSimpleAsyncResult *res = user_data;
-  gboolean valid;
+  TfCallContent *self =
+      TF_CALL_CONTENT (g_async_result_get_source_object (G_ASYNC_RESULT (res)));
   GPtrArray *streams;
-  GError *myerror = NULL;
+  GError *error = NULL;
   guint i;
-  const gchar * const *interfaces;
-  gboolean got_media_interface = FALSE;
-  gboolean got_video_control_interface = FALSE;
 
-  if (error)
+  if (!tp_proxy_prepare_finish (proxy, prepare_res, &error))
     {
       tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Error getting the Content's properties: %s", error->message);
-      g_simple_async_result_set_from_error (res, error);
+      g_simple_async_result_take_error (res, error);
       g_simple_async_result_complete (res);
       g_object_unref (res);
       return;
@@ -1371,48 +1342,8 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
       return;
     }
 
-  if (!out_Properties)
-    {
-      tf_call_content_error_literal (self,
-          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-          TP_ERROR_STR_CONFUSED,
-          "Error getting the Content's properties: there are none");
-      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-          "Error getting the Content's properties: there are none");
-      g_simple_async_result_complete (res);
-      g_object_unref (res);
-      return;
-    }
-
-  interfaces = tp_asv_get_strv (out_Properties, "Interfaces");
-
-  if (interfaces == NULL)
-    {
-      tf_call_content_error_literal (self,
-          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
-          TP_ERROR_STR_CONFUSED,
-          "Content does not have the Interfaces property, "
-          "but HardwareStreaming was NOT true");
-      g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-          "Content does not have the Interfaces property, "
-          "but HardwareStreaming was NOT true");
-      g_simple_async_result_complete (res);
-      g_object_unref (res);
-      return;
-    }
-
-  for (i = 0; interfaces[i]; i++)
-    {
-      if (!strcmp (interfaces[i],
-            TP_IFACE_CALL_CONTENT_INTERFACE_MEDIA))
-        got_media_interface = TRUE;
-
-      if (!strcmp (interfaces[i],
-            TP_IFACE_CALL_CONTENT_INTERFACE_VIDEO_CONTROL))
-        got_video_control_interface = TRUE;
-    }
-
-  if (!got_media_interface)
+  if (!tp_proxy_has_interface_by_id (proxy,
+          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_MEDIA))
     {
       tf_call_content_error_literal (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
@@ -1427,69 +1358,45 @@ got_content_properties (TpProxy *proxy, GHashTable *out_Properties,
       return;
     }
 
-  self->media_type = tp_asv_get_uint32 (out_Properties, "Type", &valid);
-  if (!valid)
-    goto invalid_property;
+  self->streams = g_ptr_array_new_with_free_func (g_object_unref);
 
-
-  streams = tp_asv_get_boxed (out_Properties, "Streams",
-      TP_ARRAY_TYPE_OBJECT_PATH_LIST);
-  if (!streams)
-    goto invalid_property;
-
-  self->streams = g_hash_table_new_full (g_str_hash, g_str_equal,
-      g_free, g_object_unref);
+  streams = tp_call_content_get_streams (proxy);
 
   for (i = 0; i < streams->len; i++)
     add_stream (self, g_ptr_array_index (streams, i));
 
-  tp_proxy_add_interface_by_id (TP_PROXY (self->proxy),
-      TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_MEDIA);
-
-
   tp_cli_call_content_interface_media_connect_to_new_media_description_offer (
-      TP_CALL_CONTENT (proxy), new_media_description_offer, NULL, NULL,
-      G_OBJECT (self), &myerror);
+      self->proxy, new_media_description_offer, NULL, NULL,
+      G_OBJECT (self), &error);
 
-  if (myerror)
+  if (error)
     {
       tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
           "Error connectiong to NewCodecMediaDescription signal: %s",
-          myerror->message);
-      g_simple_async_result_set_from_error (res, myerror);
+          error->message);
+      g_simple_async_result_set_from_error (res, error);
       g_simple_async_result_complete (res);
       g_object_unref (res);
-      g_clear_error (&myerror);
+      g_clear_error (&error);
       return;
     }
 
-  if (got_video_control_interface)
-    setup_content_video_control (self, proxy, res);
+  if (tp_proxy_has_interface_by_id (proxy,
+          TP_IFACE_QUARK_CALL_CONTENT_INTERFACE_VIDEO_CONTROL))
+    setup_content_video_control (self, res);
   else
-    setup_content_media_properties (self, proxy, res);
+    setup_content_media_properties (self, res);
 
-  return;
-
- invalid_property:
-  tf_call_content_error_literal (self,
-      TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
-      "Error getting the Content's properties: invalid type");
-  g_simple_async_result_set_error (res, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-      "Error getting the Content's properties: invalid type");
-  g_simple_async_result_complete (res);
-  g_object_unref (res);
   return;
 }
 
 static void
-streams_added (TpProxy *proxy,
-    const GPtrArray *arg_Streams,
-    gpointer user_data,
-    GObject *weak_object)
+streams_added (TpCallContent *proxy,
+    GPtrArray *streams,
+    TfCallContent *self)
 {
-  TfCallContent *self = TF_CALL_CONTENT (weak_object);
   guint i;
 
   /* Ignore signals before we got the "Contents" property to avoid races that
@@ -1499,25 +1406,28 @@ streams_added (TpProxy *proxy,
   if (!self->streams)
     return;
 
-  for (i = 0; i < arg_Streams->len; i++)
-    add_stream (self, g_ptr_array_index (arg_Streams, i));
+  for (i = 0; i < streams->len; i++)
+    add_stream (self, g_ptr_array_index (streams, i));
 }
 
 static void
-streams_removed (TpProxy *proxy,
-    const GPtrArray *arg_Streams,
-    const GValueArray *arg_Reason,
-    gpointer user_data,
-    GObject *weak_object)
+streams_removed (TpCallContent *proxy,
+    const GPtrArray *streams,
+    TfCallContent *self)
 {
-  TfCallContent *self = TF_CALL_CONTENT (weak_object);
-  guint i;
+  guint i, j;
 
   if (!self->streams)
     return;
 
-  for (i = 0; i < arg_Streams->len; i++)
-    g_hash_table_remove (self->streams, g_ptr_array_index (arg_Streams, i));
+  for (i = 0; i < streams->len; i++)
+    for (j = 0; j < self->streams->len; j++)
+      if (g_ptr_array_index (streams, i) ==
+          tf_call_stream_get_proxy (g_ptr_array_index (self->streams, j)))
+        {
+          g_ptr_array_remove_index_fast (self->streams, j);
+          break;
+        }
 }
 
 
@@ -1529,7 +1439,6 @@ tf_call_content_init_async (GAsyncInitable *initable,
     gpointer user_data)
 {
   TfCallContent *self = TF_CALL_CONTENT (initable);
-  GError *myerror = NULL;
   GSimpleAsyncResult *res;
 
   if (cancellable != NULL)
@@ -1540,39 +1449,16 @@ tf_call_content_init_async (GAsyncInitable *initable,
       return;
     }
 
-  tp_cli_call_content_connect_to_streams_added (
-      TP_CALL_CONTENT (self->proxy), streams_added, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
-    {
-      tf_call_content_error (self,
-          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
-          "Error connectiong to StreamAdded signal: %s", myerror->message);
-      g_simple_async_report_gerror_in_idle (G_OBJECT (self), callback,
-          user_data, myerror);
-      return;
-    }
-
-  tp_cli_call_content_connect_to_streams_removed (
-      TP_CALL_CONTENT (self->proxy), streams_removed, NULL, NULL,
-      G_OBJECT (self), &myerror);
-  if (myerror)
-    {
-      tf_call_content_error (self,
-          TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, TP_ERROR_STR_CONFUSED,
-          "Error connectiong to StreamRemoved signal: %s", myerror->message);
-      g_simple_async_report_gerror_in_idle (G_OBJECT (self), callback,
-          user_data, myerror);
-      return;
-    }
+  tp_g_signal_connect_object (self->proxy, "streams-added",
+      G_CALLBACK (streams_added), self, 0);
+  tp_g_signal_connect_object (self->proxy, "streams-removed",
+      G_CALLBACK (streams_removed), self, 0);
 
 
   res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tf_call_content_init_async);
 
-  tp_cli_dbus_properties_call_get_all (self->proxy, -1,
-      TP_IFACE_CALL_CONTENT, got_content_properties, res,
-      NULL, G_OBJECT (self));
+  tp_proxy_prepare_async (self->proxy, NULL, content_prepared, res);
 }
 
 static gboolean
@@ -1594,20 +1480,18 @@ tf_call_content_init_finish (GAsyncInitable *initable,
 
 TfCallContent *
 tf_call_content_new_async (TfCallChannel *call_channel,
-    const gchar *object_path, GError **error,
+    TpCallContent *content_proxy, GError **error,
     GAsyncReadyCallback callback, gpointer user_data)
 {
   TfCallContent *self;
-  TpCallContent *proxy = tp_call_content_new (
-      call_channel->proxy, object_path, error);
 
-  if (!proxy)
-    return NULL;
+  g_return_val_if_fail (call_channel != NULL, NULL);
+  g_return_val_if_fail (content_proxy != NULL, NULL);
 
   self = g_object_new (TF_TYPE_CALL_CONTENT, NULL);
 
   self->call_channel = call_channel;
-  self->proxy = proxy;
+  self->proxy = content_proxy;
 
   g_async_initable_init_async (G_ASYNC_INITABLE (self), 0, NULL,
       callback, user_data);
@@ -1928,8 +1812,6 @@ tf_call_content_bus_message (TfCallContent *content,
     GstMessage *message)
 {
   gboolean ret = TRUE;
-  GHashTableIter iter;
-  gpointer key, value;
   FsDTMFMethod method;
   FsDTMFEvent event;
   guint8 volume;
@@ -1937,6 +1819,7 @@ tf_call_content_bus_message (TfCallContent *content,
   GList *secondary_codecs;
   FsError error_no;
   const gchar *error_msg;
+  guint i;
 
 
   /* Guard against early disposal */
@@ -2010,9 +1893,9 @@ tf_call_content_bus_message (TfCallContent *content,
       ret = FALSE;
     }
 
-  g_hash_table_iter_init (&iter, content->streams);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    if (tf_call_stream_bus_message (value, message))
+  for (i = 0; i < content->streams->len; i++)
+    if (tf_call_stream_bus_message (g_ptr_array_index (content->streams, i),
+            message))
       return TRUE;
 
   return ret;
@@ -2188,7 +2071,7 @@ _tf_call_content_put_fsstream (TfCallContent *content, FsStream *fsstream)
 FsMediaType
 tf_call_content_get_fs_media_type (TfCallContent *content)
 {
-  return tp_media_type_to_fs (content->media_type);
+  return tp_media_type_to_fs (tp_call_content_get_media_type (content->proxy));
 }
 
 static void
@@ -2316,8 +2199,7 @@ tf_call_content_sending_failed (TfContent *content,
     const gchar *message)
 {
   TfCallContent *self = TF_CALL_CONTENT (content);
-  GHashTableIter iter;
-  gpointer key, value;
+  guint i;
 
   if (!self->streams)
     {
@@ -2325,9 +2207,9 @@ tf_call_content_sending_failed (TfContent *content,
       return;
     }
 
-  g_hash_table_iter_init (&iter, self->streams);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    tf_call_stream_sending_failed (value, message);
+  for (i = 0; i < self->streams->len; i++)
+    tf_call_stream_sending_failed (g_ptr_array_index (self->streams, i),
+        message);
 }
 
 
@@ -2337,8 +2219,7 @@ tf_call_content_receiving_failed (TfContent *content,
     const gchar *message)
 {
   TfCallContent *self = TF_CALL_CONTENT (content);
-  GHashTableIter iter;
-  gpointer key, value;
+  guint i;
 
   if (!self->streams)
     {
@@ -2346,7 +2227,16 @@ tf_call_content_receiving_failed (TfContent *content,
       return;
     }
 
-  g_hash_table_iter_init (&iter, self->streams);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    tf_call_stream_receiving_failed (value, handles, handle_count, message);
+  for (i = 0; i < self->streams->len; i++)
+    tf_call_stream_receiving_failed (g_ptr_array_index (self->streams, i),
+        handles, handle_count, message);
+}
+
+
+TpCallContent *
+tf_call_content_get_proxy (TfCallContent *content)
+{
+  g_return_val_if_fail (TF_IS_CALL_CONTENT (content), NULL);
+
+  return content->proxy;
 }

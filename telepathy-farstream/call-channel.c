@@ -92,8 +92,13 @@ static gboolean tf_call_channel_init_finish (GAsyncInitable *initable,
     GAsyncResult *res,
     GError **error);
 
-static void got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
-    const GError *error, gpointer user_data, GObject *weak_object);
+static void content_added (TpCallChannel *proxy,
+    TpCallContent *context_proxy, TfCallChannel *self);
+static void content_removed (TpCallChannel *proxy,
+    TpCallContent *content_proxy, TfCallChannel *self);
+static void channel_prepared (GObject *proxy, GAsyncResult *prepare_res,
+    gpointer user_data);
+
 
 
 static void
@@ -198,10 +203,12 @@ tf_call_channel_init_async (GAsyncInitable *initable,
   res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
       tf_call_channel_init_async);
 
-  tp_cli_dbus_properties_call_get (self->proxy, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL,
-      "HardwareStreaming",
-      got_hardware_streaming, res, NULL, G_OBJECT (self));
+  tp_g_signal_connect_object (self->proxy, "content-added",
+      G_CALLBACK (content_added), self, 0);
+  tp_g_signal_connect_object (self->proxy, "content-removed",
+      G_CALLBACK (content_removed), self, 0);
+
+  tp_proxy_prepare_async (self->proxy, NULL, channel_prepared, res);
 }
 
 static gboolean
@@ -242,17 +249,8 @@ tf_call_channel_dispose (GObject *object)
      already been disposed of. */
   if (self->contents)
     {
-      GHashTableIter iter;
-      gpointer key, value;
-
-      g_hash_table_iter_init (&iter, self->contents);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          g_object_run_dispose (G_OBJECT (value));
-        }
-
-      g_hash_table_destroy (self->contents);
-      self->contents = NULL;
+      g_ptr_array_foreach (self->contents, (GFunc) g_object_run_dispose, NULL);
+      g_ptr_array_free (self->contents, TRUE);
     }
 
   if (self->participants)
@@ -319,34 +317,31 @@ content_ready (GObject *object, GAsyncResult *res, gpointer user_data)
     }
   else
     {
-      GHashTableIter iter;
-      gpointer key, value;
-
-      g_hash_table_iter_init (&iter, self->contents);
-      while (g_hash_table_iter_next (&iter, &key, &value))
-        {
-          if (value == object)
-            {
-              g_hash_table_iter_remove (&iter);
-              break;
-            }
-        }
+      g_ptr_array_remove_fast (self->contents, content);
     }
 
   g_object_unref (self);
 }
 
 static gboolean
-add_content (TfCallChannel *self, const gchar *content_path)
+add_content (TfCallChannel *self, TpCallContent *content_proxy)
 {
   GError *error = NULL;
   TfCallContent *content;
+  guint i;
 
   /* Check if content already added */
-  if (g_hash_table_lookup (self->contents, content_path))
-    return TRUE;
+  if (!self->contents)
+    return FALSE;
 
-  content = tf_call_content_new_async (self, content_path,
+  for (i = 0; i < self->contents->len; i++)
+    {
+      if (tf_call_content_get_proxy (g_ptr_array_index (self->contents, i)) ==
+          content_proxy)
+        return TRUE;
+    }
+
+  content = tf_call_content_new_async (self, content_proxy,
       &error, content_ready, g_object_ref (self));
 
   if (error)
@@ -357,52 +352,16 @@ add_content (TfCallChannel *self, const gchar *content_path)
       return FALSE;
     }
 
-  g_hash_table_insert (self->contents, g_strdup (content_path), content);
+  g_ptr_array_add (self->contents, content);
 
   return TRUE;
 }
 
 static void
-got_contents (TpProxy *proxy, const GValue *out_value,
-    const GError *error, gpointer user_data, GObject *weak_object)
+content_added (TpCallChannel *proxy,
+    TpCallContent *content_proxy,
+    TfCallChannel *self)
 {
-  TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
-  GSimpleAsyncResult *res = user_data;
-  GPtrArray *contents;
-  guint i;
-
-  if (error)
-    {
-      g_warning ("Error getting the Contents property: %s",
-          error->message);
-      g_simple_async_result_set_from_error (res, error);
-      goto out;
-    }
-
-  contents = g_value_get_boxed (out_value);
-
-  self->contents = g_hash_table_new_full (g_str_hash, g_str_equal,
-      g_free, g_object_unref);
-
-  for (i = 0; i < contents->len; i++)
-    if (!add_content (self, g_ptr_array_index (contents, i)))
-      break;
-
-  g_simple_async_result_set_op_res_gboolean (res, TRUE);
-
-out:
-  g_simple_async_result_complete (res);
-  g_object_unref (res);
-}
-
-static void
-content_added (TpChannel *proxy,
-    const gchar *arg_Content,
-    gpointer user_data,
-    GObject *weak_object)
-{
-  TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
-
   /* Ignore signals before we got the "Contents" property to avoid races that
    * could cause the same content to be added twice
    */
@@ -410,52 +369,54 @@ content_added (TpChannel *proxy,
   if (!self->contents)
     return;
 
-  add_content (self, arg_Content);
+  add_content (self, content_proxy);
 }
 
 static void
-content_removed (TpChannel *proxy,
-    const gchar *arg_Content,
-    const GValueArray *arg_Reason,
-    gpointer user_data,
-    GObject *weak_object)
+content_removed (TpCallChannel *proxy,
+    TpCallContent *content_proxy,
+    TfCallChannel *self)
 {
-  TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
-  TfCallContent *content;
-
+  guint i;
   if (!self->contents)
     return;
 
-  content = g_hash_table_lookup (self->contents, arg_Content);
-
-  if (content)
+  for (i = 0; i < self->contents->len; i++)
     {
-      g_object_ref (content);
-      g_hash_table_remove (self->contents, arg_Content);
 
-      g_signal_emit (self, signals[SIGNAL_CONTENT_REMOVED], 0, content);
-      g_object_unref (content);
+      if (tf_call_content_get_proxy (g_ptr_array_index (self->contents, i)) ==
+          content_proxy)
+        {
+          TfCallContent *content = g_ptr_array_index (self->contents, i);
+
+          g_object_ref (content);
+          g_ptr_array_remove_index_fast (self->contents, i);
+          g_signal_emit (self, signals[SIGNAL_CONTENT_REMOVED], 0, content);
+          g_object_unref (content);
+          return;
+        }
     }
 }
 
-
 static void
-got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
-    const GError *error, gpointer user_data, GObject *weak_object)
+channel_prepared (GObject *proxy, GAsyncResult *prepare_res, gpointer user_data)
 {
-  TfCallChannel *self = TF_CALL_CHANNEL (weak_object);
   GSimpleAsyncResult *res = user_data;
-  GError *myerror = NULL;
+  TfCallChannel *self =
+      TF_CALL_CHANNEL (g_async_result_get_source_object (G_ASYNC_RESULT (res)));
+  GError *error = NULL;
+  GPtrArray *contents;
+  guint i;
 
-  if (error)
+  if (!tp_proxy_prepare_finish (proxy, prepare_res, &error))
     {
-      g_warning ("Error getting the hardware streaming property: %s",
+      g_warning ("Preparing the channel: %s",
           error->message);
-      g_simple_async_result_set_from_error (res, error);
+      g_simple_async_result_take_error (res, error);
       goto error;
     }
 
-  if (g_value_get_boolean (out_value))
+  if (!tp_call_channel_has_hardware_streaming (TP_CALL_CHANNEL (proxy)))
     {
       g_warning ("Hardware streaming property is TRUE, ignoring");
 
@@ -464,38 +425,24 @@ got_hardware_streaming (TpProxy *proxy, const GValue *out_value,
       goto error;
     }
 
-  tp_cli_channel_type_call_connect_to_content_added (TP_CHANNEL (proxy),
-      content_added, NULL, NULL, G_OBJECT (self), &myerror);
-  if (myerror)
-    {
-      g_warning ("Error connectiong to ContentAdded signal: %s",
-          myerror->message);
-      g_simple_async_result_set_from_error (res, myerror);
-      g_clear_error (&myerror);
-      goto error;
-    }
+  contents = tp_call_channel_get_contents (TP_CALL_CHANNEL (proxy));
 
-  tp_cli_channel_type_call_connect_to_content_removed (
-      TP_CHANNEL (proxy), content_removed, NULL, NULL, G_OBJECT (self),
-      &myerror);
-  if (myerror)
-    {
-      g_warning ("Error connectiong to ContentRemoved signal: %s",
-          myerror->message);
-      g_simple_async_result_set_from_error (res, myerror);
-      g_clear_error (&myerror);
-      goto error;
-    }
+  self->contents = g_ptr_array_new_with_free_func (g_object_unref);
 
-  tp_cli_dbus_properties_call_get (proxy, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, "Contents",
-      got_contents, res, NULL, G_OBJECT (self));
+  for (i = 0; i < contents->len; i++)
+    if (!add_content (self, g_ptr_array_index (contents, i)))
+      break;
+
+  g_simple_async_result_set_op_res_gboolean (res, TRUE);
+
+  g_object_unref (self);
 
   return;
 
 error:
   g_simple_async_result_complete (res);
   g_object_unref (res);
+  g_object_unref (self);
 }
 
 void
@@ -540,9 +487,8 @@ tf_call_channel_bus_message (TfCallChannel *channel,
 {
   GError *error = NULL;
   gchar *debug;
-  GHashTableIter iter;
-  gpointer key, value;
   struct CallConference *cc;
+  guint i;
 
   cc = find_call_conference_by_conference (channel, GST_MESSAGE_SRC (message));
   if (!cc)
@@ -572,9 +518,9 @@ tf_call_channel_bus_message (TfCallChannel *channel,
       break;
     }
 
-  g_hash_table_iter_init (&iter, channel->contents);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    if (tf_call_content_bus_message (value, message))
+  for (i = 0; i < channel->contents->len; i++)
+    if (tf_call_content_bus_message (g_ptr_array_index (channel->contents, i),
+            message))
       return TRUE;
 
   return FALSE;
@@ -718,5 +664,4 @@ _tf_call_channel_put_participant (TfCallChannel *channel,
           return;
         }
     }
-
 }
