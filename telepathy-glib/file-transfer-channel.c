@@ -155,9 +155,9 @@ enum /* properties */
 
 static void
 operation_failed (TpFileTransferChannel *self,
-    const GError *error)
+    GError *error)
 {
-  g_simple_async_result_set_from_error (self->priv->result, error);
+  g_simple_async_result_take_error (self->priv->result, error);
 
   g_simple_async_result_complete (self->priv->result);
   tp_clear_object (&self->priv->result);
@@ -179,8 +179,6 @@ splice_stream_ready_cb (GObject *output,
       DEBUG ("splice operation failed: %s", error->message);
       operation_failed (self, error);
     }
-
-  g_clear_error (&error);
 }
 
 static void
@@ -214,7 +212,6 @@ client_socket_connected (TpFileTransferChannel *self)
           DEBUG ("Failed to send credentials: %s", error->message);
 
           operation_failed (self, error);
-          g_clear_error (&error);
           return;
         }
     }
@@ -258,7 +255,6 @@ client_socket_cb (GSocket *socket,
       DEBUG ("Failed to connect to socket: %s", error->message);
 
       operation_failed (self, error);
-      g_error_free (error);
       return FALSE;
     }
 
@@ -1025,7 +1021,6 @@ start_transfer (TpFileTransferChannel *self)
       DEBUG ("Failed to connect to socket: %s:", error->message);
 
       operation_failed (self, error);
-      g_error_free (error);
     }
 }
 
@@ -1042,7 +1037,7 @@ accept_or_provide_file_cb (TpChannel *proxy,
   if (dbus_error != NULL)
     {
       DEBUG ("Error: %s", dbus_error->message);
-      operation_failed (self, dbus_error);
+      operation_failed (self, g_error_copy (dbus_error));
       return;
     }
 
@@ -1052,7 +1047,6 @@ accept_or_provide_file_cb (TpChannel *proxy,
     {
       DEBUG ("Failed to convert address: %s", error->message);
       operation_failed (self, error);
-      g_clear_error (&error);
       return;
     }
 
@@ -1077,8 +1071,6 @@ set_address_and_access_control (TpFileTransferChannel *self)
           &self->priv->socket_type, &self->priv->access_control, &error))
     {
       operation_failed (self, error);
-
-      g_clear_error (&error);
       return FALSE;
     }
 
@@ -1090,9 +1082,7 @@ set_address_and_access_control (TpFileTransferChannel *self)
   if (self->priv->client_socket == NULL)
     {
       DEBUG ("Failed to create socket: %s", error->message);
-
       operation_failed (self, error);
-      g_clear_error (&error);
       return FALSE;
     }
 
@@ -1116,7 +1106,6 @@ set_address_and_access_control (TpFileTransferChannel *self)
                   error->message);
 
               operation_failed (self, error);
-              g_error_free (error);
               return FALSE;
             }
 
@@ -1181,7 +1170,6 @@ file_replace_async_cb (GObject *source,
     {
       DEBUG ("Failed to replace file: %s", error->message);
       operation_failed (self, error);
-      g_clear_error (&error);
       return;
     }
 
@@ -1299,7 +1287,6 @@ file_read_async_cb (GObject *source,
   if (error != NULL)
     {
       operation_failed (self, error);
-      g_clear_error (&error);
       return;
     }
 
