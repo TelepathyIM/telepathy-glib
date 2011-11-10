@@ -423,7 +423,8 @@ invalidated_cb (TpFileTransferChannel *self,
     gpointer user_data)
 {
   /* stop splicing */
-  g_cancellable_cancel (self->priv->cancellable);
+  if (self->priv->cancellable != NULL)
+    g_cancellable_cancel (self->priv->cancellable);
 }
 
 /* Private methods */
@@ -691,6 +692,9 @@ tp_file_transfer_channel_dispose (GObject *obj)
 
   tp_clear_pointer (&self->priv->date, g_date_time_unref);
   g_clear_object (&self->priv->file);
+
+  if (self->priv->cancellable != NULL)
+    g_cancellable_cancel (self->priv->cancellable);
   g_clear_object (&self->priv->cancellable);
 
   if (self->priv->remote_address != NULL)
