@@ -580,20 +580,10 @@ tp_file_transfer_channel_constructed (GObject *obj)
 
   self->priv->service_name = tp_asv_get_string (properties,
       TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME);
-  if (self->priv->service_name == NULL)
-    {
-      DEBUG ("Channel %s doesn't have Chan.I.FileTransfer.Metadata.ServiceName "
-          "in its immutable properties", tp_proxy_get_object_path (self));
-    }
 
   self->priv->metadata = tp_asv_get_boxed (properties,
      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA,
      TP_HASH_TYPE_METADATA);
-  if (self->priv->metadata == NULL)
-    {
-      DEBUG ("Channel %s doesn't have Chan.I.FileTransfer.Metadata.Metadata "
-          "in its immutable properties", tp_proxy_get_object_path (self));
-    }
 
   self->priv->cancellable = g_cancellable_new ();
   g_signal_connect (self, "invalidated",
