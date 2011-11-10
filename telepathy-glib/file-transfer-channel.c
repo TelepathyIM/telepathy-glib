@@ -142,7 +142,7 @@ struct _TpFileTransferChannelPrivate
     goffset initial_offset;
     /* Metadata */
     const gchar *service_name;
-    const GHashTable *metadata; /* const gchar* => const gchar* const* */
+    GHashTable *metadata; /* const gchar* => const gchar* const* */
 
     /* Streams and sockets for sending and receiving the actual file */
     GSocket *client_socket;
@@ -585,6 +585,11 @@ tp_file_transfer_channel_constructed (GObject *obj)
      TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA,
      TP_HASH_TYPE_METADATA);
 
+  if (self->priv->metadata == NULL)
+    self->priv->metadata = g_hash_table_new (g_str_hash, g_str_equal);
+  else
+    g_hash_table_ref (self->priv->metadata);
+
   self->priv->cancellable = g_cancellable_new ();
   g_signal_connect (self, "invalidated",
       G_CALLBACK (invalidated_cb), NULL);
@@ -682,6 +687,7 @@ tp_file_transfer_channel_dispose (GObject *obj)
 
   tp_clear_pointer (&self->priv->date, g_date_time_unref);
   g_clear_object (&self->priv->file);
+  tp_clear_pointer (&self->priv->metadata, g_hash_table_unref);
 
   if (self->priv->cancellable != NULL)
     g_cancellable_cancel (self->priv->cancellable);
@@ -775,19 +781,23 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
   /**
     * TpFileTransferChannel:file
     *
-    * For incoming, this property may be set to the location where the file
-    * will be saved once the transfer starts. The feature
-    * %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE must already be prepared for this
-    * property to have a meaningful value, and to receive change notification.
-    * Once the initial value is set, this can no be changed.
+    * For incoming file transfers, this property will be set to a
+    * #GFile for the location where the file will be saved (given by
+    * tp_file_transfer_channel_accept_file_async()) when the transfer
+    * starts. The feature %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE must
+    * already be prepared for this property to have a meaningful
+    * value, and to receive change notification.  Once the initial
+    * value is set, this property will not be changed.
     *
-    * For outgoing, this property may be set to the location of the file being
-    * sent. The feature %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE does not have
-    * to be prepared and there is no change notification.
+    * For outgoing file transfers, this property is a #GFile for the
+    * location of the file being sent (given by
+    * tp_file_transfer_provide_file_async()). The feature
+    * %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE does not have to be
+    * prepared and there is no change notification.
     *
     * Since: 0.15.UNRELEASED
     */
-  param_spec = g_param_spec_object ("file" ,
+  param_spec = g_param_spec_object ("file",
       "File",
       "A GFile corresponding to the URI property of this channel",
       G_TYPE_FILE,
@@ -831,6 +841,9 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * TpFileTransferChannel:state
    *
    * A TpFileTransferState holding the state of the file transfer.
+   *
+   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
+   * prepared for this property to be meaningful and kept up to date.
    *
    * Since 0.15.UNRELEASED
    */
@@ -882,11 +895,29 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
   /**
    * TpFileTransferChannel:service-name:
    *
-   * A string representing the service name that will be used over
-   * this file transfer channel or %NULL.
+   * A string representing the name of the service suggested to handle
+   * this file transfer channel, or %NULL if the initiator did not
+   * provide one.
    *
-   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be prepared for
-   * this property to be meaningful.
+   * This is a useful way of requesting file transfer channels with a
+   * hint of what handler they should be handled by on the remote
+   * side. If a channel request is made with this property set (to a
+   * contact who also supports the metadata extension; see the
+   * requestable channel classes for said contact), this property will
+   * be set to the same value on the remote incoming channel and
+   * handlers can match on this in their handler filter. For example,
+   * a remote handler could call the following:
+   *
+   * <informalexample><programlisting>tp_base_client_take_handler_filter (handler, tp_asv_new (
+   *               TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+   *               TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+   *                TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
+   *               TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME, G_TYPE_STRING, "service.name",
+   *               NULL));
+   * </programlisting></informalexample>
+   *
+   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
+   * prepared for this property to be meaningful.
    *
    * Since: 0.16.UNRELEASED
    */
@@ -902,10 +933,11 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * TpFileTransferChannel:metadata:
    *
    * Additional information about the file transfer set by the channel
-   * initiator or %NULL.
+   * initiator, or an empty #GHashTable if the initiator did not
+   * provide any additional information.
    *
-   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be prepared for
-   * this property to be meaningful.
+   * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
+   * prepared for this property to be meaningful.
    *
    * Since: 0.16.UNRELEASED
    */
@@ -1277,7 +1309,7 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes a file transfer accept operation.
+ * Finishes a call to tp_file_transfer_channel_accept_file_async().
  *
  * Returns: %TRUE if the accept operation was a success, or %FALSE
  *
@@ -1398,7 +1430,8 @@ tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
  * @result: a #GAsyncResult
  * @error: a #GError to fill
  *
- * Finishes a file transfer provide operation.
+ * Finishes a call to tp_file_transfer_channel_provide_file_async().
+ *
  *
  * Successful return from this function does not mean that the file
  * transfer has completed or has even started at all. The state of the
