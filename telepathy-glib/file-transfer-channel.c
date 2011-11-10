@@ -191,7 +191,9 @@ client_socket_connected (TpFileTransferChannel *self)
       self->priv->client_socket);
   if (conn == NULL)
     {
-      DEBUG ("Failed to create client connection: %s", error->message);
+      error = g_error_new (G_IO_ERROR, G_IO_ERROR_FAILED,
+          "Failed to create client connection");
+      DEBUG ("%s", error->message);
       operation_failed (self, error);
       return;
     }
