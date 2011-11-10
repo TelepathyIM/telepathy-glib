@@ -1266,6 +1266,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
           flags have changed.
         </tp:docstring>
       </arg>
+      <arg name="Identifiers" type="a{us}" tp:type="Handle_Identifier_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          The identifiers of the contacts in the <var>Flags_Changed</var> map.
+        </tp:docstring>
+      </arg>
       <arg name="Removed"  type="au" tp:type="Contact_Handle[]">
         <tp:docstring>
           A list of members who have left the call, i.e. keys to be removed
@@ -1298,6 +1303,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
         <p>Anonymous members are exposed as channel-specific handles
           with no owner.</p>
+      </tp:docstring>
+    </property>
+
+    <property name="MemberIdentifiers" type="a{us}" tp:type="Handle_Identifier_Map"
+      access="read" tp:name-for-bindings="Member_Identifiers">
+      <tp:docstring>
+        The string identifiers for handles mentioned in
+        <tp:member-ref>CallMembers</tp:member-ref>, to
+        give clients the minimal information necessary to create contacts
+        without waiting for round-trips.
       </tp:docstring>
     </property>
 

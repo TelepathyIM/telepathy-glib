@@ -160,6 +160,7 @@
  * @TP_BASE_ROOM_CONFIG_PRIVATE: corresponds to #TpBaseRoomConfig:private
  * @TP_BASE_ROOM_CONFIG_PASSWORD_PROTECTED: corresponds to #TpBaseRoomConfig:password-protected
  * @TP_BASE_ROOM_CONFIG_PASSWORD: corresponds to #TpBaseRoomConfig:password
+ * @TP_BASE_ROOM_CONFIG_PASSWORD_HINT: corresponds to #TpBaseRoomConfig:password-hint
  * @TP_NUM_BASE_ROOM_CONFIG_PROPERTIES: the number of configuration properties
  *  currently defined.
  *
@@ -187,6 +188,7 @@ struct _TpBaseRoomConfigPrivate {
     gboolean private;
     gboolean password_protected;
     gchar *password;
+    gchar *password_hint;
 
     gboolean can_update_configuration;
     TpIntset *mutable_properties;
@@ -223,6 +225,7 @@ enum {
     PROP_PRIVATE,
     PROP_PASSWORD_PROTECTED,
     PROP_PASSWORD,
+    PROP_PASSWORD_HINT,
 
     PROP_CAN_UPDATE_CONFIGURATION,
     PROP_MUTABLE_PROPERTIES,
@@ -312,6 +315,9 @@ tp_base_room_config_get_property (
         break;
       case PROP_PASSWORD:
         g_value_set_string (value, priv->password);
+        break;
+      case PROP_PASSWORD_HINT:
+        g_value_set_string (value, priv->password_hint);
         break;
       case PROP_CAN_UPDATE_CONFIGURATION:
         g_value_set_boolean (value, priv->can_update_configuration);
@@ -419,6 +425,7 @@ CASE_BOOL (PERSISTENT, persistent)
 CASE_BOOL (PRIVATE, private)
 CASE_BOOL (PASSWORD_PROTECTED, password_protected)
 CASE_STRING (PASSWORD, password)
+CASE_STRING (PASSWORD_HINT, password_hint)
 #undef CASE_BOOL
 #undef CASE_STRING
 
@@ -503,6 +510,7 @@ tp_base_room_config_finalize (GObject *object)
   g_free (priv->title);
   g_free (priv->description);
   g_free (priv->password);
+  g_free (priv->password_hint);
   tp_intset_destroy (priv->mutable_properties);
   tp_intset_destroy (priv->changed_properties);
 
@@ -609,6 +617,13 @@ tp_base_room_config_class_init (TpBaseRoomConfigClass *klass)
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_PASSWORD, param_spec);
 
+  param_spec = g_param_spec_string ("password-hint", "PasswordHint",
+      "If PasswordProtected is True, a hint for the password. If the password"
+      "password is unknown, or PasswordProtected is False, the empty string.",
+      "",
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_PASSWORD_HINT, param_spec);
+
   param_spec = g_param_spec_boolean ("can-update-configuration",
       "CanUpdateConfiguration",
       "If True, the user may call UpdateConfiguration to change the values of "
@@ -671,6 +686,7 @@ static TpDBusPropertiesMixinPropImpl room_config_properties[] = {
   { "Private", "private", NULL },
   { "PasswordProtected", "password-protected", NULL },
   { "Password", "password", NULL },
+  { "PasswordHint", "password-hint", NULL },
 
   /* Meta-data */
   { "CanUpdateConfiguration", "can-update-configuration", NULL },

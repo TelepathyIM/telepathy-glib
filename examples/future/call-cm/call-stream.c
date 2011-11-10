@@ -45,6 +45,7 @@ enum
   PROP_LOCALLY_REQUESTED,
   PROP_LOCAL_SENDING_STATE,
   PROP_REMOTE_MEMBERS,
+  PROP_REMOTE_MEMBER_IDENTIFIERS,
   N_PROPS
 };
 
@@ -168,6 +169,19 @@ get_property (GObject *object,
         }
       break;
 
+    case PROP_REMOTE_MEMBER_IDENTIFIERS:
+        {
+          GHashTable *identifiers = g_hash_table_new (NULL, NULL);
+          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+
+          g_hash_table_insert (identifiers, GUINT_TO_POINTER (self->priv->handle),
+              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
+
+          g_value_take_boxed (value, identifiers);
+        }
+      break;
+
     case PROP_LOCAL_SENDING_STATE:
       g_value_set_uint (value, self->priv->local_sending_state);
       break;
@@ -257,6 +271,7 @@ static void
 example_call_stream_class_init (ExampleCallStreamClass *klass)
 {
   static TpDBusPropertiesMixinPropImpl stream_props[] = {
+      { "RemoteMemberIdentifiers", "remote-member-identifiers", NULL },
       { "LocalSendingState", "local-sending-state", NULL },
       { "RemoteMembers", "remote-members", NULL },
       { "Interfaces", "interfaces", NULL },
@@ -304,6 +319,13 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
       0, G_MAXUINT32, 1000,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("remote-member-identifiers", "RemoteMemberIdentifiers",
+      "Map from contact handles to their identifiers",
+      TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_REMOTE_MEMBER_IDENTIFIERS,
       param_spec);
 
   param_spec = g_param_spec_boolean ("locally-requested", "Locally requested?",
@@ -391,13 +413,17 @@ example_call_stream_accept_proposed_direction (ExampleCallStream *self)
 void
 example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
 {
-  GHashTable *updated_members;
+  GHashTable *updated_members, *identifiers;
   GArray *removed_members;
   GValueArray *reason;
+  TpHandleRepoIface *contact_handles;
 
   if (self->priv->removed ||
       self->priv->remote_sending_state != FUTURE_SENDING_STATE_PENDING_SEND)
     return;
+
+  contact_handles = tp_base_connection_get_handles (
+      self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
   g_message ("%s: SIGNALLING: received: OK, I'll send you media",
       self->priv->object_path);
@@ -406,8 +432,11 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
 
   updated_members = g_hash_table_new (NULL, NULL);
   removed_members = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
+  identifiers = g_hash_table_new (NULL, NULL);
   g_hash_table_insert (updated_members, GUINT_TO_POINTER (self->priv->handle),
       GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
+  g_hash_table_insert (identifiers, GUINT_TO_POINTER (self->priv->handle),
+      (gpointer) tp_handle_inspect (contact_handles, self->priv->handle));
   reason = tp_value_array_build (4,
       G_TYPE_UINT, 0,
       G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
@@ -415,8 +444,9 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
       G_TYPE_STRING, "",
       G_TYPE_INVALID);
   future_svc_call_stream_emit_remote_members_changed (self, updated_members,
-      removed_members, reason);
+      identifiers, removed_members, reason);
   g_hash_table_unref (updated_members);
+  g_hash_table_unref (identifiers);
   g_array_free (removed_members, TRUE);
   g_value_array_free (reason);
 }
@@ -433,12 +463,15 @@ example_call_stream_change_direction (ExampleCallStream *self,
     gboolean want_to_send, gboolean want_to_receive)
 {
   GHashTable *updated_members = g_hash_table_new (NULL, NULL);
+  GHashTable *updated_member_identifiers = g_hash_table_new (NULL, NULL);
   GValueArray *reason = tp_value_array_build (4,
       G_TYPE_UINT, 0,
       G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
       G_TYPE_STRING, "",
       G_TYPE_STRING, "",
       G_TYPE_INVALID);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+      self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
   if (want_to_send)
     {
@@ -495,6 +528,9 @@ example_call_stream_change_direction (ExampleCallStream *self,
           g_hash_table_insert (updated_members,
               GUINT_TO_POINTER (self->priv->handle),
               GUINT_TO_POINTER (FUTURE_SENDING_STATE_PENDING_SEND));
+          g_hash_table_insert (updated_member_identifiers,
+              GUINT_TO_POINTER (self->priv->handle),
+              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
         }
     }
   else
@@ -510,6 +546,9 @@ example_call_stream_change_direction (ExampleCallStream *self,
           g_hash_table_insert (updated_members,
               GUINT_TO_POINTER (self->priv->handle),
               GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
+          g_hash_table_insert (updated_member_identifiers,
+              GUINT_TO_POINTER (self->priv->handle),
+              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
         }
     }
 
@@ -519,12 +558,14 @@ example_call_stream_change_direction (ExampleCallStream *self,
           sizeof (guint), 0);
 
       future_svc_call_stream_emit_remote_members_changed (self,
-          updated_members, removed_members, reason);
+          updated_members, updated_member_identifiers,
+          removed_members, reason);
 
       g_array_free (removed_members, TRUE);
     }
 
   g_hash_table_unref (updated_members);
+  g_hash_table_unref (updated_member_identifiers);
   g_value_array_free (reason);
 }
 
@@ -536,12 +577,15 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
     gboolean remote_send)
 {
   GHashTable *updated_members = g_hash_table_new (NULL, NULL);
+  GHashTable *updated_member_identifiers = g_hash_table_new (NULL, NULL);
   GValueArray *reason = tp_value_array_build (4,
       G_TYPE_UINT, 0,
       G_TYPE_UINT, FUTURE_CALL_STATE_CHANGE_REASON_UNKNOWN,
       G_TYPE_STRING, "",
       G_TYPE_STRING, "",
       G_TYPE_INVALID);
+  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
+      self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   /* In some protocols, streams cannot be neither sending nor receiving, so
    * if a stream is set to TP_MEDIA_STREAM_DIRECTION_NONE, this is equivalent
    * to removing it. (This is true in XMPP, for instance.)
@@ -608,6 +652,9 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           g_hash_table_insert (updated_members,
               GUINT_TO_POINTER (self->priv->handle),
               GUINT_TO_POINTER (FUTURE_SENDING_STATE_SENDING));
+          g_hash_table_insert (updated_member_identifiers,
+              GUINT_TO_POINTER (self->priv->handle),
+              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
         }
     }
   else
@@ -622,6 +669,9 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           g_hash_table_insert (updated_members,
               GUINT_TO_POINTER (self->priv->handle),
               GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
+          g_hash_table_insert (updated_member_identifiers,
+              GUINT_TO_POINTER (self->priv->handle),
+              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
         }
       else if (self->priv->remote_sending_state ==
           FUTURE_SENDING_STATE_SENDING)
@@ -633,6 +683,9 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           g_hash_table_insert (updated_members,
               GUINT_TO_POINTER (self->priv->handle),
               GUINT_TO_POINTER (FUTURE_SENDING_STATE_NONE));
+          g_hash_table_insert (updated_member_identifiers,
+              GUINT_TO_POINTER (self->priv->handle),
+              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
         }
     }
 
@@ -642,12 +695,14 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           sizeof (guint), 0);
 
       future_svc_call_stream_emit_remote_members_changed (self,
-          updated_members, removed_members, reason);
+          updated_members, updated_member_identifiers,
+          removed_members, reason);
 
       g_array_free (removed_members, TRUE);
     }
 
   g_hash_table_unref (updated_members);
+  g_hash_table_unref (updated_member_identifiers);
   g_value_array_free (reason);
 }
 

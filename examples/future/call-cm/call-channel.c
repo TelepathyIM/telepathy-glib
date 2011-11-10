@@ -91,6 +91,7 @@ enum
   PROP_CALL_STATE_DETAILS,
   PROP_HARDWARE_STREAMING,
   PROP_CALL_MEMBERS,
+  PROP_MEMBER_IDENTIFIERS,
   PROP_INITIAL_TRANSPORT,
   PROP_MUTABLE_CONTENTS,
   N_PROPS
@@ -473,6 +474,19 @@ get_property (GObject *object,
         }
       break;
 
+    case PROP_MEMBER_IDENTIFIERS:
+        {
+          GHashTable *us_map = g_hash_table_new (NULL, NULL);
+          TpHandleRepoIface *contact_handles = tp_base_connection_get_handles (
+              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+
+          /* There is one contact, other than the self-handle. */
+          g_hash_table_insert (us_map, GUINT_TO_POINTER (self->priv->handle),
+              (gpointer) tp_handle_inspect (contact_handles, self->priv->handle));
+          g_value_take_boxed (value, us_map);
+        }
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -560,7 +574,7 @@ example_call_channel_terminate (ExampleCallChannel *self,
        * remove peers on call termination or not. For now this example does. */
       g_array_append_val (au, self->priv->handle);
       future_svc_channel_type_call_emit_call_members_changed (self,
-          empty_uu_map, au, self->priv->call_state_reason);
+          empty_uu_map, empty_uu_map, au, self->priv->call_state_reason);
       g_hash_table_unref (empty_uu_map);
       g_array_free (au, TRUE);
 
@@ -686,6 +700,7 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
       { "CallStateDetails", "call-state-details", NULL },
       { "HardwareStreaming", "hardware-streaming", NULL },
       { "CallMembers", "call-members", NULL },
+      { "MemberIdentifiers", "member-identifiers", NULL },
       { "InitialTransport", "initial-transport", NULL },
       { "InitialAudio", "initial-audio", NULL },
       { "InitialVideo", "initial-video", NULL },
@@ -836,6 +851,13 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
       FUTURE_HASH_TYPE_CALL_MEMBER_MAP,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_CALL_MEMBERS,
+      param_spec);
+
+  param_spec = g_param_spec_boxed ("member-identifiers", "Call member identifiers",
+      "A map from call members (only one in this example) to their identifiers",
+      TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_MEMBER_IDENTIFIERS,
       param_spec);
 
   param_spec = g_param_spec_uint ("initial-transport", "Initial transport",
@@ -1198,14 +1220,17 @@ simulate_contact_ringing_cb (gpointer p)
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   const gchar *peer;
   GHashTable *uu_map = g_hash_table_new (NULL, NULL);
+  GHashTable *us_map = g_hash_table_new (NULL, NULL);
   GArray *empty_au = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
 
   /* ring, ring! */
   self->priv->peer_flags = FUTURE_CALL_MEMBER_FLAG_RINGING;
   g_hash_table_insert (uu_map, GUINT_TO_POINTER (self->priv->handle),
       GUINT_TO_POINTER (self->priv->peer_flags));
+  g_hash_table_insert (us_map, GUINT_TO_POINTER (self->priv->handle),
+      (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
   future_svc_channel_type_call_emit_call_members_changed (self,
-      uu_map, empty_au, self->priv->call_state_reason);
+      uu_map, us_map, empty_au, self->priv->call_state_reason);
   g_hash_table_unref (uu_map);
   g_array_free (empty_au, TRUE);
 

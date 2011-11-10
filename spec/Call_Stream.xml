@@ -25,11 +25,14 @@
     <tp:added version="0.19.0">(draft 1)</tp:added>
 
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-      One stream inside a <tp:dbus-ref
+      <p>One stream inside a <tp:dbus-ref
       namespace="ofdT.Call1">Content</tp:dbus-ref>.  A stream is
       a single flow of packets to and from a single remote endpoint.
       If your call connects to multiple people, you could have
-      multiple streams.
+      multiple streams.</p>
+      <p>For protocols that support muting streams separately, this object MAY
+      also implement the <tp:dbus-ref
+      namespace="ofdT.Call1.Interface">Mute</tp:dbus-ref> interface</p>
     </tp:docstring>
 
     <method name="SetSending" tp:name-for-bindings="Set_Sending">
@@ -116,6 +119,11 @@
           A mapping from channel-specific handles to their updated sending
           state, whose keys include at least the members who were added,
           and the members whose states changed.
+        </tp:docstring>
+      </arg>
+      <arg name="Identifiers" type="a{us}" tp:type="Handle_Identifier_Map">
+        <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+          The identifiers of the contacts in the <var>Updates</var> map.
         </tp:docstring>
       </arg>
       <arg name="Removed" type="au" tp:type="Contact_Handle[]">
@@ -236,6 +244,16 @@
           <tp:dbus-ref namespace="ofdT.Call1.Content.Interface.Media"
           >RemoteMediaDescriptions</tp:dbus-ref>. This use-case should not
           affect anything that does not handle media streaming.</p>
+      </tp:docstring>
+    </property>
+
+    <property name="RemoteMemberIdentifiers" type="a{us}" tp:type="Handle_Identifier_Map"
+      access="read" tp:name-for-bindings="Remote_Member_Identifiers">
+      <tp:docstring>
+        The string identifiers for handles mentioned in
+        <tp:member-ref>RemoteMembers</tp:member-ref>, to
+        give clients the minimal information necessary to create contacts
+        without waiting for round-trips.
       </tp:docstring>
     </property>
 

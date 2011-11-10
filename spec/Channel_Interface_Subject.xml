@@ -32,7 +32,7 @@
         the <tp:dbus-ref
         namespace="ofdT.Channel.Interface">Room2</tp:dbus-ref>
         interface, but some protocols support subjects in 1-to-1 chats
-        (such as Skype). Note that this interface is not restricted to
+        (such as XMPP). Note that this interface is not restricted to
         Text channels, and can also be used on Call channels.</p>
     </tp:docstring>
 
@@ -86,7 +86,8 @@
     <property name="ActorHandle" tp:name-for-bindings="Actor_Handle"
               type="u" tp:type="Contact_Handle" access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
-        <p>The handle corresponding to <tp:member-ref>Actor</tp:member-ref>.</p>
+        <p>The handle corresponding to <tp:member-ref>Actor</tp:member-ref>,
+        or 0 if the <tp:member-ref>Actor</tp:member-ref> is unknown.</p>
       </tp:docstring>
     </property>
 
@@ -94,7 +95,7 @@
               type="x" tp:type="Unix_Timestamp64" access="read">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>A unix timestamp indicating when the subject was last
-         modified.</p>
+         modified, or <code>INT_MAX64</code> if unknown.</p>
 
         <tp:rationale>This property replaces the subject-timestamp
           Telepathy property of Text channels, as Telepathy properties

@@ -132,6 +132,25 @@
       </tp:docstring>
     </property>
 
+    <property name="PasswordHint" tp:name-for-bindings="Password_Hint"
+              type="s" access="read">
+      <tp:added version="0.25.0"/>
+      <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
+        <p>If <tp:member-ref>PasswordProtected</tp:member-ref> is
+          <code>True</code>, an optional hint for the password.</p>
+
+        <p>On protocols supporting PasswordHint (indicated by its presence
+          in <tp:member-ref>MutableProperties</tp:member-ref>),
+          <tp:member-ref>Password</tp:member-ref> and PasswordHint MUST be
+          set in a single call to
+          <tp:member-ref>UpdateConfiguration</tp:member-ref>.</p>
+
+        <tp:rationale>
+          Skype requires that the password and its hint be supplied together.
+        </tp:rationale>
+      </tp:docstring>
+    </property>
+
     <property name="CanUpdateConfiguration" type="b" access="read"
               tp:name-for-bindings="Can_Update_Configuration">
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">

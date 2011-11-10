@@ -67,6 +67,7 @@ typedef enum {
     TP_BASE_ROOM_CONFIG_PRIVATE, /*< nick=Private >*/
     TP_BASE_ROOM_CONFIG_PASSWORD_PROTECTED, /*< nick=PasswordProtected >*/
     TP_BASE_ROOM_CONFIG_PASSWORD, /*< nick=Password >*/
+    TP_BASE_ROOM_CONFIG_PASSWORD_HINT, /*< nick=PasswordHint >*/
 
     TP_NUM_BASE_ROOM_CONFIG_PROPERTIES /*< skip >*/
 } TpBaseRoomConfigProperty;

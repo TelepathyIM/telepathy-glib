@@ -103,11 +103,13 @@
  * This collection of interfaces is used to expose various aspects of the
  * configuration of chat rooms.
  *
- * #TpSvcChannelInterfaceRoom consists only of a pair of requestable, immutable
- * properties: <code>"RoomName"</code> and <code>"Server"</code>. It has no
- * methods or signals. It should be implemented on channels representing a chat
- * room (whether it be a text chat, a multi-user call, or some other media
- * type).
+ * #TpSvcChannelInterfaceRoom consists of a pair of requestable,
+ * immutable properties: <code>"RoomName"</code> and
+ * <code>"Server"</code>; and a pair of immutable properties:
+ * <code>"Creator"</code>, <code>"CreatorHandle"</code>, and
+ * <code>"CreationTimestamp"</code>. It has no methods or signals. It
+ * should be implemented on channels representing a chat room (whether
+ * it be a text chat, a multi-user call, or some other media type).
  *
  * #TpSvcChannelInterfaceSubject may be implemented by channels which have a
  * subject (or topic, depending on your protocol's terminology of choice). This
