@@ -182,7 +182,6 @@ operation_failed (TpFileTransferChannel *self,
     GError *error)
 {
   g_simple_async_result_take_error (self->priv->result, error);
-
   g_simple_async_result_complete (self->priv->result);
   tp_clear_object (&self->priv->result);
 }
