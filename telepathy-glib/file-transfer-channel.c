@@ -40,9 +40,33 @@
  * channel with the appropriate D-Bus properties set by specifying
  * their values in the channel creation method call. The file transfer
  * invitation will be sent to the remote contact when the channel is
- * created. Once a #TpFileTransferChannel is created as a proxy to the
- * channel on D-Bus, the "notify::state" GObject signal should be
- * monitored and when at %TP_FILE_TRANSFER_STATE_ACCEPTED
+ * created. For example:
+ *
+ * <informalexample><programlisting>GHashTable *request = tp_asv_new (
+ *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+ *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+ *     TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "foo@bar.com",
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE, G_TYPE_STRING, "text/plain",
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, G_TYPE_INT64, 1320925992,
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION, G_TYPE_STRING, "",
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME, G_TYPE_STRING, "test.pdf",
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, G_TYPE_UINT64, 0,
+ *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, 165710,
+ *     NULL);
+ *
+ * TpAccountChannelRequest *channel_request = tp_account_channel_request_new (
+ *     account, request,
+ *     TP_USER_ACTION_TIME_CURRENT_TIME);
+ *
+ * tp_account_channel_request_create_and_handle_channel_async (channel_request, NULL,
+ *     create_and_handle_cb, NULL);
+ *
+ * g_hash_table_unref (request);
+ * </programlisting></informalexample>
+ *
+ * Once a #TpFileTransferChannel is created as a proxy to the channel
+ * on D-Bus, the "notify::state" GObject signal should be monitored
+ * and when at %TP_FILE_TRANSFER_STATE_ACCEPTED
  * tp_file_transfer_channel_provide_file_async() should be called.
  *
  * When an incoming File Transfer channel appears, one should call
