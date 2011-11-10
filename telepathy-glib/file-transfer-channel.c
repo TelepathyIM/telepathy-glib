@@ -1320,7 +1320,6 @@ tp_file_transfer_channel_accept_file_finish (TpFileTransferChannel *self,
     GAsyncResult *result,
     GError **error)
 {
-  DEBUG ("enter");
   _tp_implement_finish_void (self, tp_file_transfer_channel_accept_file_async)
 }
 
@@ -1447,7 +1446,6 @@ tp_file_transfer_channel_provide_file_finish (TpFileTransferChannel *self,
     GAsyncResult *result,
     GError **error)
 {
-  DEBUG ("enter");
   _tp_implement_finish_void (self, tp_file_transfer_channel_provide_file_async)
 }
 
