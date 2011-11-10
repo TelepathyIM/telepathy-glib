@@ -103,6 +103,7 @@
     <xi:include href="xml/svc-channel-text.xml"/>
     <xi:include href="xml/svc-channel-media.xml"/>
     <xi:include href="xml/svc-channel-file-transfer.xml"/>
+    <xi:include href="xml/svc-channel-ft-metadata.xml"/>
     <xi:include href="xml/svc-channel-tubes.xml"/>
     <xi:include href="xml/svc-channel-tube.xml"/>
     <xi:include href="xml/svc-channel-roomlist.xml"/>

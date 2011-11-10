@@ -981,3 +981,17 @@
  *
  * Since: 0.13.7
  */
+
+/**
+ * SECTION:svc-channel-ft-metadata
+ * @title: File transfer Metadata interface
+ * @short_description: GInterface to implement metadata file transfer interface
+ *
+ * The Metadata file transfer channel interface exists to provide a
+ * mechanism to include arbitrary additional information in file
+ * transfers. For example, one might want to send a document and
+ * include the number of times the character P appeared in the file,
+ * so would add NumberOfPs=42 to the Metadata property.
+ *
+ * Since: 0.17.UNRELEASED
+ */

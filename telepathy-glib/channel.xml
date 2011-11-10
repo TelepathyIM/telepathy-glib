@@ -24,6 +24,7 @@
 <xi:include href="../spec/Channel_Interface_Conference.xml"/>
 <xi:include href="../spec/Channel_Interface_Destroyable.xml"/>
 <xi:include href="../spec/Channel_Interface_DTMF.xml"/>
+<xi:include href="../spec/Channel_Interface_File_Transfer_Metadata.xml"/>
 <xi:include href="../spec/Channel_Interface_Group.xml"/>
 <xi:include href="../spec/Channel_Interface_Hold.xml"/>
 <xi:include href="../spec/Channel_Interface_Media_Signalling.xml"/>
