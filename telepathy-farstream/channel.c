@@ -152,8 +152,23 @@ tf_channel_get_property (GObject    *object,
       break;
     case PROP_FS_CONFERENCES:
       if (self->priv->call_channel)
-        g_object_get_property (G_OBJECT (self->priv->call_channel),
-            "fs-conferences", value);
+        {
+          g_object_get_property (G_OBJECT (self->priv->call_channel),
+              "fs-conferences", value);
+        }
+      else if (self->priv->media_signalling_channel &&
+               self->priv->media_signalling_channel->session)
+        {
+          GPtrArray *array =
+              g_ptr_array_new_with_free_func ((GDestroyNotify) gst_object_unref);
+          FsConference *conf = NULL;
+
+          g_object_get (self->priv->media_signalling_channel->session,
+              "farstream-conference", &conf, NULL);
+          g_ptr_array_add (array, conf);
+          g_value_take_boxed (value, array);
+        }
+
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -326,6 +341,7 @@ channel_prepared (GObject *obj,
           "stream-created", G_CALLBACK (channel_stream_created),
           self, 0);
       g_simple_async_result_set_op_res_gboolean (res, TRUE);
+      g_simple_async_result_complete (res);
     }
   else if (tp_proxy_has_interface_by_id (as_proxy,
           TP_IFACE_QUARK_CHANNEL_TYPE_CALL))

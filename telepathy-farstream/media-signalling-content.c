@@ -245,18 +245,20 @@ request_resource (TfStream *stream, guint direction,
 {
   if (direction & TP_MEDIA_STREAM_DIRECTION_SEND)
     return _tf_content_start_sending (TF_CONTENT (self));
-
-  if (!self->receiving && direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
+  else if (direction & TP_MEDIA_STREAM_DIRECTION_RECEIVE)
     {
-      guint handles[2] = { self->handle, 0};
+      if (!self->receiving)
+        {
+          guint handles[2] = { self->handle, 0};
 
-      self->receiving = _tf_content_start_receiving (TF_CONTENT (self),
-          handles, 1);
+          self->receiving = _tf_content_start_receiving (TF_CONTENT (self),
+              handles, 1);
+        }
 
       return self->receiving;
     }
-
-  return FALSE;
+  else
+    g_assert_not_reached ();
 }
 
 

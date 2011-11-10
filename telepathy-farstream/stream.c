@@ -46,8 +46,7 @@
 #include <farstream/fs-utils.h>
 
 #include "stream.h"
-#include "stream-priv.h"
-#include "channel.h"
+#include "media-signalling-channel.h"
 #include "tf-signals-marshal.h"
 #include "utils.h"
 
@@ -83,7 +82,7 @@ struct DtmfEvent {
 
 struct _TfStreamPrivate
 {
-  TfChannel *channel;
+  TfMediaSignallingChannel *channel;
   FsConference *fs_conference;
   FsParticipant *fs_participant;
   FsSession *fs_session;
@@ -332,7 +331,7 @@ tf_stream_set_property (GObject      *object,
     {
     case PROP_CHANNEL:
       self->priv->channel =
-          TF_CHANNEL (g_value_get_object (value));
+          TF_MEDIA_SIGNALLING_CHANNEL (g_value_get_object (value));
       break;
     case PROP_FARSTREAM_CONFERENCE:
       self->priv->fs_conference =
@@ -506,7 +505,7 @@ tf_stream_class_init (TfStreamClass *klass)
       g_param_spec_object ("channel",
           "Telepathy channel",
           "The TfChannel this stream is in",
-          TF_TYPE_CHANNEL,
+          TF_TYPE_MEDIA_SIGNALLING_CHANNEL,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_FARSTREAM_CONFERENCE,
@@ -2491,11 +2490,15 @@ _tf_stream_bus_message (TfStream *stream,
       value = gst_structure_get_value (s, "stream");
       fsstream = g_value_get_object (value);
 
+      g_debug ("new local fs: %p s:%p", stream->priv->fs_stream, stream);
+
       if (fsstream != stream->priv->fs_stream)
         return FALSE;
 
       value = gst_structure_get_value (s, "candidate");
       candidate = g_value_get_boxed (value);
+
+      g_debug ("NEW LOCAL CAND");
 
       cb_fs_new_local_candidate (stream, candidate);
       return TRUE;
@@ -2508,8 +2511,12 @@ _tf_stream_bus_message (TfStream *stream,
       value = gst_structure_get_value (s, "stream");
       fsstream = g_value_get_object (value);
 
+      g_debug ("local cand prep fs: %p s:%p", stream->priv->fs_stream, stream);
+
       if (fsstream != stream->priv->fs_stream)
         return FALSE;
+
+      g_debug ("LOCAL CAND PREP");
 
       cb_fs_local_candidates_prepared (stream);
 
@@ -2605,8 +2612,6 @@ _tf_stream_bus_message (TfStream *stream,
             FS_CODEC_ARGS (codec));
 
       cb_fs_send_codec_changed (stream, codec, secondary_codecs);
-
-      fs_codec_list_destroy (secondary_codecs);
       return TRUE;
     }
   else if (gst_structure_has_name (s, "farstream-component-state-changed"))

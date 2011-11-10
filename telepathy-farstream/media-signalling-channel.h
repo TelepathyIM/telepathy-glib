@@ -26,6 +26,7 @@
 
 #include <telepathy-glib/channel.h>
 #include "stream.h"
+#include "session-priv.h"
 
 G_BEGIN_DECLS
 
@@ -65,6 +66,29 @@ typedef struct _TfMediaSignallingChannel TfMediaSignallingChannel;
  *
  * There are no overridable functions
  */
+
+
+struct _TfMediaSignallingChannel {
+  GObject parent;
+
+  TpChannel *channel_proxy;
+
+  TfNatProperties nat_props;
+  guint prop_id_nat_traversal;
+  guint prop_id_stun_server;
+  guint prop_id_stun_port;
+  guint prop_id_gtalk_p2p_relay_token;
+
+  /* sessions is NULL until we've had a reply from GetSessionHandlers */
+  TfSession *session;
+  gboolean got_sessions;
+  GPtrArray *streams;
+};
+
+struct _TfMediaSignallingChannelClass{
+  GObjectClass parent_class;
+};
+
 
 typedef struct _TfMediaSignallingChannelClass TfMediaSignallingChannelClass;
 

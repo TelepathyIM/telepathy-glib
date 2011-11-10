@@ -20,7 +20,6 @@ libtelepathy_farstream_la_SOURCES = \
 	session.c \
 	channel.c \
 	channel.h \
-	stream-priv.h \
 	session-priv.h \
 	channel-priv.h \
 	media-signalling-channel.c \
