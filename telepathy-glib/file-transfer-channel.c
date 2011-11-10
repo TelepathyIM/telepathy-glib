@@ -360,6 +360,7 @@ tp_file_transfer_channel_uri_defined_cb (TpChannel *proxy,
 {
   TpFileTransferChannel *self = (TpFileTransferChannel *) proxy;
 
+  g_clear_object (&self->priv->file);
   self->priv->file = g_file_new_for_uri (uri);
   g_object_notify (G_OBJECT (self), "file");
 }
