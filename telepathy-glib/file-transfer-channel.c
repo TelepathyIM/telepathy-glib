@@ -65,8 +65,9 @@
  * </programlisting></informalexample>
  *
  * Once a #TpFileTransferChannel is created as a proxy to the channel
- * on D-Bus, the "notify::state" GObject signal should be monitored
- * and when at %TP_FILE_TRANSFER_STATE_ACCEPTED
+ * on D-Bus. The "notify::state" GObject signals on the resulting
+ * channel should be monitored; when the channel moves to state
+ * %TP_FILE_TRANSFER_STATE_ACCEPTED,
  * tp_file_transfer_channel_provide_file_async() should be called.
  *
  * When an incoming File Transfer channel appears, one should call
@@ -911,7 +912,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * <informalexample><programlisting>tp_base_client_take_handler_filter (handler, tp_asv_new (
    *               TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
    *               TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
-   *                TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
+   *               TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
    *               TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME, G_TYPE_STRING, "service.name",
    *               NULL));
    * </programlisting></informalexample>
