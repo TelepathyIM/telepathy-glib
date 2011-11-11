@@ -53,6 +53,13 @@ TpFileTransferChannel *_tp_file_transfer_channel_new_with_factory (
     const GHashTable *immutable_properties,
     GError **error);
 
+TpCallChannel *_tp_call_channel_new_with_factory (
+    TpSimpleClientFactory *factory,
+    TpConnection *conn,
+    const gchar *object_path,
+    const GHashTable *immutable_properties,
+    GError **error);
+
 G_END_DECLS
 
 #endif

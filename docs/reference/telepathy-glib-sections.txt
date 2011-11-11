@@ -6402,6 +6402,17 @@ tp_cli_channel_type_call_signal_callback_content_removed
 <SUBSECTION>
 TpCallChannel
 TpCallChannelClass
+TP_CALL_CHANNEL_FEATURE_CORE
+<SUBSECTION>
+TpCallStateReason
+<SUBSECTION>
+tp_call_channel_get_contents
+tp_call_channel_get_state
+tp_call_channel_has_hardware_streaming
+tp_call_channel_has_initial_audio
+tp_call_channel_has_initial_video
+tp_call_channel_has_mutable_contents
+tp_call_channel_get_members
 <SUBSECTION Standard>
 TpCallChannelPrivate
 tp_call_channel_get_type
@@ -6411,6 +6422,9 @@ TP_CALL_CHANNEL_GET_CLASS
 TP_TYPE_CALL_CHANNEL
 TP_IS_CALL_CHANNEL
 TP_IS_CALL_CHANNEL_CLASS
+tp_call_state_reason_get_type
+TP_TYPE_CALL_STATE_REASON
+tp_call_channel_get_feature_quark_core
 </SECTION>
 
 <SECTION>

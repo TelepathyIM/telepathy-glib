@@ -52,6 +52,37 @@ struct _TpCallChannelClass
 
 GType tp_call_channel_get_type (void);
 
+typedef struct _TpCallStateReason TpCallStateReason;
+struct _TpCallStateReason
+{
+  TpHandle actor;
+  TpCallStateChangeReason reason;
+  gchar *dbus_reason;
+
+  /*<private>*/
+  guint ref_count;
+};
+
+#define TP_TYPE_CALL_STATE_REASON (tp_call_state_reason_get_type ())
+GType tp_call_state_reason_get_type (void);
+
+#define TP_CALL_CHANNEL_FEATURE_CORE \
+  tp_call_channel_get_feature_quark_core ()
+GQuark tp_call_channel_get_feature_quark_core (void) G_GNUC_CONST;
+
+GPtrArray *tp_call_channel_get_contents (TpCallChannel *self);
+TpCallState tp_call_channel_get_state (TpCallChannel *self,
+    TpCallFlags *flags,
+    GHashTable **details,
+    TpCallStateReason **reason);
+gboolean tp_call_channel_has_hardware_streaming (TpCallChannel *self);
+gboolean tp_call_channel_has_initial_audio (TpCallChannel *self,
+    const gchar **initial_audio_name);
+gboolean tp_call_channel_has_initial_video (TpCallChannel *self,
+    const gchar **initial_video_name);
+gboolean tp_call_channel_has_mutable_contents (TpCallChannel *self);
+GHashTable *tp_call_channel_get_members (TpCallChannel *self);
+
 G_END_DECLS
 
 #endif

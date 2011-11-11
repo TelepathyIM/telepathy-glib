@@ -175,6 +175,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     capabilities-internal.h \
     call-channel.c \
     call-content.c \
+    call-internal.h \
     call-misc.c \
     call-stream.c \
     channel.c \
