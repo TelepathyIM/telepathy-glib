@@ -748,7 +748,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       param_spec);
 
   /**
-   * TpFileTransferChannel:date
+   * TpFileTransferChannel:date:
    *
    * A #GDateTime representing the last modification time of the file to be
    * transferred.
@@ -764,7 +764,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       param_spec);
 
   /**
-   * TpFileTransferChannel:description
+   * TpFileTransferChannel:description:
    *
    * The description of the file transfer, defined by the sender when
    * sending the file transfer offer.
@@ -780,7 +780,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       param_spec);
 
   /**
-    * TpFileTransferChannel:file
+    * TpFileTransferChannel:file:
     *
     * For incoming file transfers, this property will be set to a
     * #GFile for the location where the file will be saved (given by
@@ -807,7 +807,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       param_spec);
 
   /**
-   * TpFileTransferChannel:filename
+   * TpFileTransferChannel:filename:
    *
    * The name of the file on the sender's side. This is therefore given as a
    * suggested filename for the receiver.
@@ -823,7 +823,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       param_spec);
 
   /**
-   * TpFileTransferChannel:size
+   * TpFileTransferChannel:size:
    *
    * The size of the file to be transferred,
    * or %G_MAXUINT64 if not known.
@@ -839,7 +839,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       param_spec);
 
   /**
-   * TpFileTransferChannel:state
+   * TpFileTransferChannel:state:
    *
    * A TpFileTransferState holding the state of the file transfer.
    *
@@ -857,7 +857,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       param_spec);
 
   /**
-   * TpFileTransferChannel:transferred-bytes
+   * TpFileTransferChannel:transferred-bytes:
    *
    * The number of bytes transferred so far in this
    * file transfer.
@@ -876,7 +876,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
       param_spec);
 
   /**
-   * TpFileTransferChannel:initial-offset
+   * TpFileTransferChannel:initial-offset:
    *
    * The offset in bytes from where the file should be sent.
    *
