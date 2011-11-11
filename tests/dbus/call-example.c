@@ -157,6 +157,7 @@ _tp_call_stream_new (TpChannel *channel,
       "dbus-daemon", tp_proxy_get_dbus_daemon (channel),
       "bus-name", tp_proxy_get_bus_name (channel),
       "object-path", object_path,
+      "connection", tp_channel_borrow_connection (channel),
       NULL);
 }
 

@@ -22,6 +22,7 @@
 #define __TP_CALL_STREAM_H__
 
 #include <telepathy-glib/proxy.h>
+#include <telepathy-glib/call-channel.h>
 
 G_BEGIN_DECLS
 
@@ -53,6 +54,14 @@ struct _TpCallStreamClass
 GType tp_call_stream_get_type (void);
 
 void tp_call_stream_init_known_interfaces (void);
+
+#define TP_CALL_STREAM_FEATURE_CORE \
+  tp_call_stream_get_feature_quark_core ()
+GQuark tp_call_stream_get_feature_quark_core (void) G_GNUC_CONST;
+
+TpSendingState tp_call_stream_get_local_sending_state (TpCallStream *self);
+gboolean tp_call_stream_can_request_receiving (TpCallStream *self);
+GHashTable *tp_call_stream_get_remote_members (TpCallStream *self);
 
 G_END_DECLS
 

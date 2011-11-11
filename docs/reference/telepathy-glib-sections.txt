@@ -6556,6 +6556,11 @@ tp_cli_call_stream_interface_media_signal_callback_stun_servers_changed
 TpCallStream
 TpCallStreamClass
 tp_call_stream_init_known_interfaces
+TP_CALL_STREAM_FEATURE_CORE
+<SUBSECTION>
+tp_call_stream_can_request_receiving
+tp_call_stream_get_local_sending_state
+tp_call_stream_get_remote_members
 <SUBSECTION Standard>
 tp_call_stream_get_type
 TpCallStreamPrivate
@@ -6565,6 +6570,7 @@ TP_CALL_STREAM_GET_CLASS
 TP_IS_CALL_STREAM
 TP_IS_CALL_STREAM_CLASS
 TP_TYPE_CALL_STREAM
+tp_call_stream_get_feature_quark_core
 </SECTION>
 
 <SECTION>
