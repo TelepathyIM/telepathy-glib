@@ -33,6 +33,7 @@ EXTRA_DIST = \
     Channel_Interface_Credentials_Storage.xml \
     Channel_Interface_DTMF.xml \
     Channel_Interface_Destroyable.xml \
+    Channel_Interface_File_Transfer_Metadata.xml \
     Channel_Interface_Group.xml \
     Channel_Interface_HTML.xml \
     Channel_Interface_Hold.xml \
@@ -40,6 +41,7 @@ EXTRA_DIST = \
     Channel_Interface_Mergeable_Conference.xml \
     Channel_Interface_Messages.xml \
     Channel_Interface_Password.xml \
+    Channel_Interface_Picture.xml \
     Channel_Interface_Room.xml \
     Channel_Interface_Room_Config.xml \
     Channel_Interface_SASL_Authentication.xml \
