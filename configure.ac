@@ -59,7 +59,7 @@ PKG_PROG_PKG_CONFIG([0.21])
 
 GTK_DOC_CHECK([1.17],[--flavour no-tmpl])
 
-GOBJECT_INTROSPECTION_CHECK([0.10.8])
+GOBJECT_INTROSPECTION_CHECK([1.30])
 
 LT_CURRENT=tp_glib_lt_current
 LT_REVISION=tp_glib_lt_revision
@@ -240,7 +240,7 @@ if test x$enable_vala_bindings = xyes; then
     AC_MSG_ERROR([GObject-Introspection must be enabled for Vala bindings])
   fi
 
-  AM_PROG_VALAC([0.11.2])
+  AM_PROG_VALAC([0.14.0])
   have_vala=yes
 
   AC_PATH_PROG(VALAC, valac, valac)
