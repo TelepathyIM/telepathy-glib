@@ -22,6 +22,7 @@
 #define __TP_CALL_CONTENT_H__
 
 #include <telepathy-glib/proxy.h>
+#include <telepathy-glib/call-channel.h>
 
 G_BEGIN_DECLS
 
@@ -53,6 +54,15 @@ struct _TpCallContentClass
 GType tp_call_content_get_type (void);
 
 void tp_call_content_init_known_interfaces (void);
+
+#define TP_CALL_CONTENT_FEATURE_CORE \
+  tp_call_content_get_feature_quark_core ()
+GQuark tp_call_content_get_feature_quark_core (void) G_GNUC_CONST;
+
+const gchar *tp_call_content_get_name (TpCallContent *self);
+TpMediaStreamType tp_call_content_get_media_type (TpCallContent *self);
+TpCallContentDisposition tp_call_content_get_disposition (TpCallContent *self);
+GPtrArray *tp_call_content_get_streams (TpCallContent *self);
 
 G_END_DECLS
 

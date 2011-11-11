@@ -6480,6 +6480,12 @@ tp_cli_call_content_interface_video_control_signal_callback_video_resolution_cha
 TpCallContent
 TpCallContentClass
 tp_call_content_init_known_interfaces
+TP_CALL_CONTENT_FEATURE_CORE
+<SUBSECTION>
+tp_call_content_get_disposition
+tp_call_content_get_media_type
+tp_call_content_get_name
+tp_call_content_get_streams
 <SUBSECTION Standard>
 TpCallContentPrivate
 tp_call_content_get_type
@@ -6489,6 +6495,7 @@ TP_CALL_CONTENT_GET_CLASS
 TP_IS_CALL_CONTENT
 TP_IS_CALL_CONTENT_CLASS
 TP_TYPE_CALL_CONTENT
+tp_call_content_get_feature_quark_core
 </SECTION>
 
 <SECTION>
