@@ -59,7 +59,7 @@ PKG_PROG_PKG_CONFIG([0.21])
 
 GTK_DOC_CHECK([1.17],[--flavour no-tmpl])
 
-GOBJECT_INTROSPECTION_CHECK([0.9.6])
+GOBJECT_INTROSPECTION_CHECK([1.30])
 
 LT_CURRENT=tp_glib_lt_current
 LT_REVISION=tp_glib_lt_revision
