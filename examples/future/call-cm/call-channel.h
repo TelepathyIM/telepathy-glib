@@ -33,8 +33,6 @@ typedef struct _ExampleCallChannelPrivate
 
 typedef struct _ExampleCallChannelClass
     ExampleCallChannelClass;
-typedef struct _ExampleCallChannelClassPrivate
-    ExampleCallChannelClassPrivate;
 
 GType example_call_channel_get_type (void);
 
@@ -55,14 +53,11 @@ GType example_call_channel_get_type (void);
                               ExampleCallChannelClass))
 
 struct _ExampleCallChannelClass {
-    GObjectClass parent_class;
-    TpDBusPropertiesMixinClass dbus_properties_class;
-
-    ExampleCallChannelClassPrivate *priv;
+    TpBaseChannelClass parent_class;
 };
 
 struct _ExampleCallChannel {
-    GObject parent;
+    TpBaseChannel parent;
 
     ExampleCallChannelPrivate *priv;
 };

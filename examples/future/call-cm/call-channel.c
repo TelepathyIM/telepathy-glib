@@ -50,39 +50,23 @@
 #include "call-stream.h"
 
 static void call_iface_init (gpointer iface, gpointer data);
-static void channel_iface_init (gpointer iface, gpointer data);
 static void hold_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleCallChannel,
     example_call_channel,
-    G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-      tp_dbus_properties_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL, channel_iface_init);
+    TP_TYPE_BASE_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_CALL,
       call_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
-      hold_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_CHANNEL_IFACE, NULL);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_EXPORTABLE_CHANNEL, NULL))
+      hold_iface_init))
 
 enum
 {
-  PROP_OBJECT_PATH = 1,
-  PROP_CHANNEL_TYPE,
-  PROP_HANDLE_TYPE,
-  PROP_HANDLE,
-  PROP_TARGET_ID,
-  PROP_REQUESTED,
-  PROP_INITIATOR_HANDLE,
-  PROP_INITIATOR_ID,
-  PROP_CONNECTION,
-  PROP_INTERFACES,
-  PROP_CHANNEL_DESTROYED,
-  PROP_CHANNEL_PROPERTIES,
-  PROP_SIMULATION_DELAY,
+  PROP_SIMULATION_DELAY = 1,
   PROP_INITIAL_AUDIO,
   PROP_INITIAL_VIDEO,
+  PROP_INITIAL_AUDIO_NAME,
+  PROP_INITIAL_VIDEO_NAME,
   PROP_CONTENT_PATHS,
   PROP_CALL_STATE,
   PROP_CALL_FLAGS,
@@ -243,11 +227,20 @@ constructed (GObject *object)
   void (*chain_up) (GObject *) =
       ((GObjectClass *) example_call_channel_parent_class)->constructed;
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (object);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  TpHandleRepoIface *contact_repo;
+  TpBaseChannel *base = (TpBaseChannel *) self;
 
   if (chain_up != NULL)
     chain_up (object);
+
+  self->priv->object_path = g_strdup (tp_base_channel_get_object_path (base));
+  self->priv->handle = tp_base_channel_get_target_handle (base);
+  self->priv->initiator = tp_base_channel_get_initiator (base);
+  self->priv->locally_requested = tp_base_channel_is_requested (base);
+  self->priv->conn = tp_base_channel_get_connection (base);
+
+  contact_repo = tp_base_connection_get_handles (self->priv->conn,
+      TP_HANDLE_TYPE_CONTACT);
 
   tp_handle_ref (contact_repo, self->priv->handle);
   tp_handle_ref (contact_repo, self->priv->initiator);
@@ -323,77 +316,6 @@ get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_OBJECT_PATH:
-      g_value_set_string (value, self->priv->object_path);
-      break;
-
-    case PROP_CHANNEL_TYPE:
-      g_value_set_static_string (value, TP_IFACE_CHANNEL_TYPE_CALL);
-      break;
-
-    case PROP_HANDLE_TYPE:
-      g_value_set_uint (value, TP_HANDLE_TYPE_CONTACT);
-      break;
-
-    case PROP_HANDLE:
-      g_value_set_uint (value, self->priv->handle);
-      break;
-
-    case PROP_TARGET_ID:
-        {
-          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-          g_value_set_string (value,
-              tp_handle_inspect (contact_repo, self->priv->handle));
-        }
-      break;
-
-    case PROP_REQUESTED:
-      g_value_set_boolean (value, self->priv->locally_requested);
-      break;
-
-    case PROP_INITIATOR_HANDLE:
-      g_value_set_uint (value, self->priv->initiator);
-      break;
-
-    case PROP_INITIATOR_ID:
-        {
-          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-          g_value_set_string (value,
-              tp_handle_inspect (contact_repo, self->priv->initiator));
-        }
-      break;
-
-    case PROP_CONNECTION:
-      g_value_set_object (value, self->priv->conn);
-      break;
-
-    case PROP_INTERFACES:
-      g_value_set_boxed (value, example_call_channel_interfaces);
-      break;
-
-    case PROP_CHANNEL_DESTROYED:
-      g_value_set_boolean (value,
-          (self->priv->call_state == TP_CALL_STATE_ENDED));
-      break;
-
-    case PROP_CHANNEL_PROPERTIES:
-      g_value_take_boxed (value,
-          tp_dbus_properties_mixin_make_properties_hash (object,
-              TP_IFACE_CHANNEL, "ChannelType",
-              TP_IFACE_CHANNEL, "TargetHandleType",
-              TP_IFACE_CHANNEL, "TargetHandle",
-              TP_IFACE_CHANNEL, "TargetID",
-              TP_IFACE_CHANNEL, "InitiatorHandle",
-              TP_IFACE_CHANNEL, "InitiatorID",
-              TP_IFACE_CHANNEL, "Requested",
-              TP_IFACE_CHANNEL, "Interfaces",
-              NULL));
-      break;
-
     case PROP_SIMULATION_DELAY:
       g_value_set_uint (value, self->priv->simulation_delay);
       break;
@@ -404,6 +326,14 @@ get_property (GObject *object,
 
     case PROP_INITIAL_VIDEO:
       g_value_set_boolean (value, self->priv->initial_video);
+      break;
+
+    case PROP_INITIAL_AUDIO_NAME:
+      g_value_set_string (value, self->priv->initial_audio ? "audio" : NULL);
+      break;
+
+    case PROP_INITIAL_VIDEO_NAME:
+      g_value_set_string (value, self->priv->initial_video ? "video" : NULL);
       break;
 
     case PROP_CONTENT_PATHS:
@@ -502,37 +432,6 @@ set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_OBJECT_PATH:
-      g_assert (self->priv->object_path == NULL);   /* construct-only */
-      self->priv->object_path = g_value_dup_string (value);
-      break;
-
-    case PROP_HANDLE:
-      /* we don't ref it here because we don't necessarily have access to the
-       * contact repo yet - instead we ref it in the constructor.
-       */
-      self->priv->handle = g_value_get_uint (value);
-      break;
-
-    case PROP_INITIATOR_HANDLE:
-      /* likewise */
-      self->priv->initiator = g_value_get_uint (value);
-      break;
-
-    case PROP_REQUESTED:
-      self->priv->locally_requested = g_value_get_boolean (value);
-      break;
-
-    case PROP_HANDLE_TYPE:
-    case PROP_CHANNEL_TYPE:
-      /* these properties are writable in the interface, but not actually
-       * meaningfully changable on this channel, so we do nothing */
-      break;
-
-    case PROP_CONNECTION:
-      self->priv->conn = g_value_get_object (value);
-      break;
-
     case PROP_SIMULATION_DELAY:
       self->priv->simulation_delay = g_value_get_uint (value);
       break;
@@ -678,19 +577,44 @@ finalize (GObject *object)
 }
 
 static void
+close_channel (TpBaseChannel *base)
+{
+  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (base);
+
+  example_call_channel_terminate (self,
+      tp_base_connection_get_self_handle (self->priv->conn),
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
+
+  self->priv->closed = TRUE;
+
+  tp_base_channel_destroyed (base);
+}
+
+static void
+fill_immutable_properties (TpBaseChannel *self,
+    GHashTable *properties)
+{
+  TpBaseChannelClass *klass = TP_BASE_CHANNEL_CLASS (
+      example_call_channel_parent_class);
+
+  klass->fill_immutable_properties (self, properties);
+
+  tp_dbus_properties_mixin_fill_properties_hash (
+      G_OBJECT (self), properties,
+      TP_IFACE_CHANNEL_TYPE_CALL, "HardwareStreaming",
+      TP_IFACE_CHANNEL_TYPE_CALL, "InitialTransport",
+      TP_IFACE_CHANNEL_TYPE_CALL, "InitialAudio",
+      TP_IFACE_CHANNEL_TYPE_CALL, "InitialVideo",
+      TP_IFACE_CHANNEL_TYPE_CALL, "InitialAudioName",
+      TP_IFACE_CHANNEL_TYPE_CALL, "InitialVideoName",
+      TP_IFACE_CHANNEL_TYPE_CALL, "MutableContents",
+      NULL);
+}
+
+static void
 example_call_channel_class_init (ExampleCallChannelClass *klass)
 {
-  static TpDBusPropertiesMixinPropImpl channel_props[] = {
-      { "TargetHandleType", "handle-type", NULL },
-      { "TargetHandle", "handle", NULL },
-      { "ChannelType", "channel-type", NULL },
-      { "Interfaces", "interfaces", NULL },
-      { "TargetID", "target-id", NULL },
-      { "Requested", "requested", NULL },
-      { "InitiatorHandle", "initiator-handle", NULL },
-      { "InitiatorID", "initiator-id", NULL },
-      { NULL }
-  };
   static TpDBusPropertiesMixinPropImpl call_props[] = {
       { "Contents", "content-paths", NULL },
       { "CallState", "call-state", NULL },
@@ -703,84 +627,30 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
       { "InitialTransport", "initial-transport", NULL },
       { "InitialAudio", "initial-audio", NULL },
       { "InitialVideo", "initial-video", NULL },
+      { "InitialAudioName", "initial-audio-name", NULL },
+      { "InitialVideoName", "initial-video-name", NULL },
       { "MutableContents", "mutable-contents", NULL },
-      { NULL }
-  };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CHANNEL,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        channel_props,
-      },
-      { TP_IFACE_CHANNEL_TYPE_CALL,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        call_props,
-      },
       { NULL }
   };
   GObjectClass *object_class = (GObjectClass *) klass;
   GParamSpec *param_spec;
+  TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
 
   g_type_class_add_private (klass,
       sizeof (ExampleCallChannelPrivate));
+
+  base_class->channel_type = TP_IFACE_CHANNEL_TYPE_CALL;
+  base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
+  base_class->interfaces = example_call_channel_interfaces;
+
+  base_class->close = close_channel;
+  base_class->fill_immutable_properties = fill_immutable_properties;
 
   object_class->constructed = constructed;
   object_class->set_property = set_property;
   object_class->get_property = get_property;
   object_class->dispose = dispose;
   object_class->finalize = finalize;
-
-  g_object_class_override_property (object_class, PROP_OBJECT_PATH,
-      "object-path");
-  g_object_class_override_property (object_class, PROP_CHANNEL_TYPE,
-      "channel-type");
-  g_object_class_override_property (object_class, PROP_HANDLE_TYPE,
-      "handle-type");
-  g_object_class_override_property (object_class, PROP_HANDLE, "handle");
-
-  g_object_class_override_property (object_class, PROP_CHANNEL_DESTROYED,
-      "channel-destroyed");
-  g_object_class_override_property (object_class, PROP_CHANNEL_PROPERTIES,
-      "channel-properties");
-
-  param_spec = g_param_spec_object ("connection", "TpBaseConnection object",
-      "Connection object that owns this channel",
-      TP_TYPE_BASE_CONNECTION,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
-
-  param_spec = g_param_spec_boxed ("interfaces", "Extra D-Bus interfaces",
-      "Additional Channel.Interface.* interfaces",
-      G_TYPE_STRV,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
-
-  param_spec = g_param_spec_string ("target-id", "Peer's ID",
-      "The string obtained by inspecting the target handle",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_TARGET_ID, param_spec);
-
-  param_spec = g_param_spec_uint ("initiator-handle", "Initiator's handle",
-      "The contact who initiated the channel",
-      0, G_MAXUINT32, 0,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIATOR_HANDLE,
-      param_spec);
-
-  param_spec = g_param_spec_string ("initiator-id", "Initiator's ID",
-      "The string obtained by inspecting the initiator-handle",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIATOR_ID,
-      param_spec);
-
-  param_spec = g_param_spec_boolean ("requested", "Requested?",
-      "True if this channel was requested by the local user",
-      FALSE,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_REQUESTED, param_spec);
 
   param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
       "Delay between simulated network events",
@@ -801,6 +671,20 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
       FALSE,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INITIAL_VIDEO,
+      param_spec);
+
+  param_spec = g_param_spec_string ("initial-audio-name", "Initial audio name",
+      "The name of the initial audio, if any",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIAL_AUDIO_NAME,
+      param_spec);
+
+  param_spec = g_param_spec_string ("initial-video-name", "Initial video name",
+      "The name of the initial video, if any",
+      NULL,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_INITIAL_VIDEO_NAME,
       param_spec);
 
   param_spec = g_param_spec_boxed ("content-paths", "Content paths",
@@ -874,70 +758,10 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
   g_object_class_install_property (object_class, PROP_MUTABLE_CONTENTS,
       param_spec);
 
-  klass->dbus_properties_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCallChannelClass,
-        dbus_properties_class));
-}
-
-static void
-channel_close (TpSvcChannel *iface,
-    DBusGMethodInvocation *context)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-
-  example_call_channel_terminate (self,
-      tp_base_connection_get_self_handle (self->priv->conn),
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "");
-
-  if (!self->priv->closed)
-    {
-      self->priv->closed = TRUE;
-      tp_svc_channel_emit_closed (self);
-    }
-
-  tp_svc_channel_return_from_close (context);
-}
-
-static void
-channel_get_channel_type (TpSvcChannel *iface G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
-{
-  tp_svc_channel_return_from_get_channel_type (context,
-      TP_IFACE_CHANNEL_TYPE_CALL);
-}
-
-static void
-channel_get_handle (TpSvcChannel *iface,
-    DBusGMethodInvocation *context)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-
-  tp_svc_channel_return_from_get_handle (context, TP_HANDLE_TYPE_CONTACT,
-      self->priv->handle);
-}
-
-static void
-channel_get_interfaces (TpSvcChannel *iface G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
-{
-  tp_svc_channel_return_from_get_interfaces (context,
-      example_call_channel_interfaces);
-}
-
-static void
-channel_iface_init (gpointer iface,
-                    gpointer data)
-{
-  TpSvcChannelClass *klass = iface;
-
-#define IMPLEMENT(x) tp_svc_channel_implement_##x (klass, channel_##x)
-  IMPLEMENT (close);
-  IMPLEMENT (get_channel_type);
-  IMPLEMENT (get_handle);
-  IMPLEMENT (get_interfaces);
-#undef IMPLEMENT
+  tp_dbus_properties_mixin_implement_interface (object_class,
+      TP_IFACE_QUARK_CHANNEL_TYPE_CALL,
+      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
+      call_props);
 }
 
 #if 0
