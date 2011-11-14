@@ -1,6 +1,6 @@
-/* Feature test for example StreamedMedia CM code.
+/* Tests for TpCallChannel, TpCallContent and TpCallStream
  *
- * Copyright © 2009 Collabora Ltd. <http://www.collabora.co.uk/>
+ * Copyright © 2009-2011 Collabora Ltd. <http://www.collabora.co.uk/>
  * Copyright © 2009 Nokia Corporation
  *
  * This library is free software; you can redistribute it and/or
@@ -35,13 +35,13 @@ typedef struct
 
   ExampleCallConnectionManager *service_cm;
 
+  TpSimpleClientFactory *factory;
   TpConnectionManager *cm;
   TpConnection *conn;
   TpChannel *chan;
+  TpCallChannel *call_chan;
   TpHandle self_handle;
   TpHandle peer_handle;
-
-  GHashTable *get_all_return;
 
   GArray *audio_request;
   GArray *video_request;
@@ -49,17 +49,8 @@ typedef struct
 
   GArray *stream_ids;
   GArray *contacts;
-  GPtrArray *get_contents_return;
-  GHashTable *get_members_return;
-  guint uint_return;
-
-  gulong members_changed_detailed_id;
 
   TpCallContent *added_content;
-  TpCallContent *audio_content;
-  TpCallContent *video_content;
-  TpCallStream *audio_stream;
-  TpCallStream *video_stream;
 } Test;
 
 static void
@@ -109,9 +100,15 @@ setup (Test *test,
       "example", parameters, &bus_name, &object_path, &test->error, NULL);
   g_assert_no_error (test->error);
 
-  test->conn = tp_connection_new (test->dbus, bus_name, object_path,
-      &test->error);
-  g_assert_no_error (test->error);
+  test->factory = (TpSimpleClientFactory *)
+      tp_automatic_client_factory_new (test->dbus);
+  tp_simple_client_factory_add_channel_features_varargs (test->factory,
+      TP_CHANNEL_FEATURE_CONTACTS,
+      0);
+
+  test->conn = tp_simple_client_factory_ensure_connection (test->factory,
+      object_path, NULL, &test->error);
+    g_assert_no_error (test->error);
   g_assert (test->conn != NULL);
   tp_cli_connection_call_connect (test->conn, -1, NULL, NULL, NULL, NULL);
   tp_tests_proxy_run_until_prepared (test->conn, conn_features);
@@ -135,32 +132,6 @@ setup (Test *test,
   g_free (object_path);
 }
 
-static TpCallContent *
-_tp_call_content_new (TpChannel *channel,
-    const gchar *object_path,
-    GError **error)
-{
-  return g_object_new (TP_TYPE_CALL_CONTENT,
-      "dbus-daemon", tp_proxy_get_dbus_daemon (channel),
-      "bus-name", tp_proxy_get_bus_name (channel),
-      "object-path", object_path,
-      "connection", tp_channel_borrow_connection (channel),
-      NULL);
-}
-
-static TpCallStream *
-_tp_call_stream_new (TpChannel *channel,
-    const gchar *object_path,
-    GError **error)
-{
-  return g_object_new (TP_TYPE_CALL_STREAM,
-      "dbus-daemon", tp_proxy_get_dbus_daemon (channel),
-      "bus-name", tp_proxy_get_bus_name (channel),
-      "object-path", object_path,
-      "connection", tp_channel_borrow_connection (channel),
-      NULL);
-}
-
 static void
 channel_created_cb (TpConnection *connection,
                     const gchar *object_path,
@@ -174,150 +145,16 @@ channel_created_cb (TpConnection *connection,
 
   g_assert_no_error ((GError *) error);
 
-  test->chan = tp_channel_new_from_properties (connection, object_path,
-      immutable_properties, &new_error);
+  test->chan = tp_simple_client_factory_ensure_channel (test->factory,
+      connection, object_path, immutable_properties, &new_error);
   g_assert_no_error (new_error);
+
+  g_assert (TP_IS_CALL_CHANNEL (test->chan));
+  test->call_chan = (TpCallChannel *) test->chan;
 
   test->peer_handle = tp_channel_get_handle (test->chan, NULL);
 
   g_main_loop_quit (test->mainloop);
-}
-
-static void
-channel_ready_cb (TpChannel *channel G_GNUC_UNUSED,
-                  const GError *error,
-                  gpointer user_data)
-{
-  Test *test = user_data;
-
-  g_assert_no_error ((GError *) error);
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-added_content_cb (TpChannel *chan G_GNUC_UNUSED,
-    const gchar *object_path,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  tp_clear_object (&test->added_content);
-
-  if (error != NULL)
-    {
-      test->error = g_error_copy (error);
-    }
-  else
-    {
-      test->added_content = _tp_call_content_new (test->chan, object_path,
-          NULL);
-      g_assert (test->added_content != NULL);
-    }
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-got_all_cb (TpProxy *proxy,
-    GHashTable *properties,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  g_assert_no_error ((GError *) error);
-
-  tp_clear_pointer (&test->get_all_return, g_hash_table_unref);
-  test->get_all_return = g_hash_table_new_full (g_str_hash, g_str_equal,
-      g_free, (GDestroyNotify) tp_g_value_slice_free);
-  tp_g_hash_table_update (test->get_all_return, properties,
-      (GBoxedCopyFunc) g_strdup, (GBoxedCopyFunc) tp_g_value_slice_dup);
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-got_contents_cb (TpProxy *proxy,
-    const GValue *value,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  g_assert_no_error ((GError *) error);
-
-  tp_clear_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
-  g_assert (G_VALUE_HOLDS (value, TP_ARRAY_TYPE_OBJECT_PATH_LIST));
-  test->get_contents_return = g_value_dup_boxed (value);
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-got_members_cb (TpProxy *proxy,
-    const GValue *value,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  tp_clear_pointer (&test->get_members_return, g_hash_table_unref);
-
-  if (test->error != NULL)
-    g_clear_error (&test->error);
-
-  g_assert_no_error ((GError *) error);
-
-  g_assert (G_VALUE_HOLDS (value, TP_HASH_TYPE_CONTACT_SENDING_STATE_MAP));
-  test->get_members_return = g_value_dup_boxed (value);
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-got_uint_cb (TpProxy *proxy,
-    const GValue *value,
-    const GError *error,
-    gpointer user_data,
-    GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  if (test->error != NULL)
-    g_clear_error (&test->error);
-
-  g_assert_no_error ((GError *) error);
-
-  g_assert (G_VALUE_HOLDS (value, G_TYPE_UINT));
-  test->uint_return = g_value_get_uint (value);
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-void_cb (TpChannel *chan G_GNUC_UNUSED,
-         const GError *error,
-         gpointer user_data,
-         GObject *weak_object G_GNUC_UNUSED)
-{
-  Test *test = user_data;
-
-  if (error != NULL)
-    {
-      test->error = g_error_copy (error);
-    }
-
-  g_main_loop_quit (test->mainloop);
-}
-
-static void
-test_connect_channel_signals (Test *test)
-{
 }
 
 static void
@@ -343,16 +180,11 @@ outgoing_call (Test *test,
   request = NULL;
   g_main_loop_run (test->mainloop);
 
-  /* Do this before waiting for it to become ready - we knew its channel type
-   * and interfaces anyway */
-  test_connect_channel_signals (test);
-
-  tp_channel_call_when_ready (test->chan, channel_ready_cb, test);
-  g_main_loop_run (test->mainloop);
+  tp_tests_proxy_run_until_prepared (test->chan, NULL);
 }
 
 static void
-assert_call_properties (GHashTable *get_all_return,
+assert_call_properties (TpCallChannel *channel,
     TpCallState call_state,
     TpHandle actor,
     TpCallStateChangeReason reason,
@@ -360,101 +192,60 @@ assert_call_properties (GHashTable *get_all_return,
     gboolean check_call_flags, TpCallFlags call_flags,
     gboolean check_initials, gboolean initial_audio, gboolean initial_video)
 {
-  gboolean valid;
-  GValueArray *state_reason;
+  TpCallState state;
+  TpCallFlags flags;
+  GHashTable *details;
+  TpCallStateReason *r;
 
-  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "CallState",
-        &valid), ==, call_state);
-  g_assert (valid);
-  state_reason = tp_asv_get_boxed (get_all_return, "CallStateReason",
-      TP_STRUCT_TYPE_CALL_STATE_REASON);
-  g_assert (state_reason != NULL);
-  g_assert_cmpuint (g_value_get_uint (state_reason->values + 0), ==,
-      actor);
-  g_assert_cmpuint (g_value_get_uint (state_reason->values + 1), ==,
-      reason);
-  g_assert_cmpstr (g_value_get_string (state_reason->values + 2), ==,
-      dbus_reason);
+  state = tp_call_channel_get_state (channel, &flags, &details, &r);
+
+  /* FIXME: details */
+  g_assert_cmpuint (state, ==, call_state);
+  g_assert_cmpuint (r->actor, ==, actor);
+  g_assert_cmpuint (r->reason, ==, reason);
+  g_assert_cmpstr (r->dbus_reason, ==, dbus_reason);
+  if (check_call_flags)
+    g_assert_cmpuint (flags, ==, call_flags);
 
   /* Hard-coded properties */
-  g_assert_cmpint (tp_asv_get_boolean (get_all_return,
-        "HardwareStreaming", &valid), ==, TRUE);
-  g_assert (valid);
-  g_assert_cmpint (tp_asv_get_boolean (get_all_return,
-        "MutableContents", &valid), ==, TRUE);
-  g_assert (valid);
-  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return,
-        "InitialTransport", &valid), ==, TP_STREAM_TRANSPORT_TYPE_UNKNOWN);
-  g_assert (valid);
-
-  if (check_call_flags)
-    {
-      g_assert_cmpuint (tp_asv_get_uint32 (get_all_return,
-            "CallFlags", &valid), ==, 0);
-      g_assert (valid);
-    }
+  g_assert_cmpint (tp_call_channel_has_hardware_streaming (channel), ==, TRUE);
+  g_assert_cmpint (tp_call_channel_has_mutable_contents (channel), ==, TRUE);
 
   if (check_initials)
     {
-      g_assert_cmpint (tp_asv_get_boolean (get_all_return,
-            "InitialAudio", &valid), ==, initial_audio);
-      g_assert (valid);
+      const gchar *initial_audio_name;
+      const gchar *initial_video_name;
 
-      g_assert_cmpint (tp_asv_get_boolean (get_all_return,
-            "InitialVideo", &valid), ==, initial_video);
-      g_assert (valid);
+      g_assert_cmpint (tp_call_channel_has_initial_audio (channel,
+          &initial_audio_name), ==, initial_audio);
+      g_assert_cmpint (tp_call_channel_has_initial_video (channel,
+          &initial_video_name), ==, initial_video);
+      g_assert_cmpstr (initial_audio_name, ==, initial_audio ? "audio" : NULL);
+      g_assert_cmpstr (initial_video_name, ==, initial_video ? "video" : NULL);
     }
-
-  /* FIXME: CallStateDetails */
 }
 
 static void
-assert_content_properties (GHashTable *get_all_return,
+assert_content_properties (TpCallContent *content,
     TpMediaStreamType type,
     TpCallContentDisposition disposition)
 {
-  gboolean valid;
-
-  g_assert_cmpstr (tp_asv_get_string (get_all_return, "Name"), !=, NULL);
-  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "Type", &valid),
-      ==, type);
-  g_assert_cmpint (valid, ==, TRUE);
-  g_assert_cmpint (valid, ==, TRUE);
-  g_assert_cmpuint (tp_asv_get_uint32 (get_all_return, "Disposition",
-        &valid), ==, disposition);
-  g_assert_cmpint (valid, ==, TRUE);
+  g_assert_cmpstr (tp_call_content_get_name (content), !=, NULL);
+  g_assert_cmpuint (tp_call_content_get_media_type (content), ==, type);
+  g_assert_cmpuint (tp_call_content_get_disposition (content), ==, disposition);
 }
 
 static void
-loop_until_ended (Test *test)
+close_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
 {
-  while (1)
-    {
-      tp_cli_dbus_properties_call_get_all (test->chan, -1,
-          TP_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
-      g_main_loop_run (test->mainloop);
-      g_assert_no_error (test->error);
+  Test *test = user_data;
 
-      if (tp_asv_get_uint32 (test->get_all_return, "CallState",
-            NULL) == TP_CALL_STATE_ENDED)
-        return;
-    }
-}
+  g_clear_error (&test->error);
 
-static void
-loop_until_answered (Test *test)
-{
-  while (1)
-    {
-      tp_cli_dbus_properties_call_get_all (test->chan, -1,
-          TP_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
-      g_main_loop_run (test->mainloop);
-      g_assert_no_error (test->error);
-
-      if (tp_asv_get_uint32 (test->get_all_return, "CallState",
-            NULL) != TP_CALL_STATE_RINGING)
-        return;
-    }
+  tp_channel_close_finish (test->chan, result, &test->error);
+  g_main_loop_quit (test->mainloop);
 }
 
 static void
@@ -463,12 +254,12 @@ assert_ended_and_run_close (Test *test,
     TpCallStateChangeReason expected_reason,
     const gchar *expected_error)
 {
+  GPtrArray *contents;
+
+  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
+
   /* In response to whatever we just did, the call ends... */
-  tp_cli_dbus_properties_call_get_all (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-  assert_call_properties (test->get_all_return,
+  assert_call_properties (test->call_chan,
       TP_CALL_STATE_ENDED,
       expected_actor,
       expected_reason,
@@ -477,19 +268,14 @@ assert_ended_and_run_close (Test *test,
       FALSE, FALSE, FALSE); /* ignore initial audio/video */
 
   /* ... which means there are no contents ... */
-  tp_cli_dbus_properties_call_get (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, "Contents",
-      got_contents_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-  g_assert_cmpuint (test->get_contents_return->len, ==, 0);
+  contents = tp_call_channel_get_contents (test->call_chan);
+  g_assert_cmpuint (contents->len, ==, 0);
 
   /* ... but the channel doesn't close */
-  tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
   g_assert (tp_proxy_get_invalidated (test->chan) == NULL);
 
   /* When we call Close it finally closes */
-  tp_cli_channel_call_close (test->chan, -1, void_cb, test, NULL, NULL);
+  tp_channel_close_async (test->chan, close_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
   tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
@@ -497,21 +283,133 @@ assert_ended_and_run_close (Test *test,
 }
 
 static void
+run_until_answered_cb (TpCallChannel *channel,
+    TpCallState state,
+    TpCallFlags flags,
+    TpCallStateReason *reason,
+    GHashTable *details,
+    Test *test)
+{
+  if (state != TP_CALL_STATE_RINGING)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+run_until_answered (Test *test)
+{
+  TpCallState state;
+  guint id;
+
+  state = tp_call_channel_get_state (test->call_chan, NULL, NULL, NULL);
+  if (state != TP_CALL_STATE_RINGING)
+    return;
+
+  id = g_signal_connect (test->call_chan, "state-changed",
+      G_CALLBACK (run_until_answered_cb), test);
+  g_main_loop_run (test->mainloop);
+  g_signal_handler_disconnect (test->call_chan, id);
+}
+
+static void
+run_until_ended_cb (TpCallChannel *channel,
+    TpCallState state,
+    TpCallFlags flags,
+    TpCallStateReason *reason,
+    GHashTable *details,
+    Test *test)
+{
+  if (state == TP_CALL_STATE_ENDED)
+    g_main_loop_quit (test->mainloop);
+}
+
+static void
+run_until_ended (Test *test)
+{
+  TpCallState state;
+  guint id;
+
+  state = tp_call_channel_get_state (test->call_chan, NULL, NULL, NULL);
+  if (state == TP_CALL_STATE_ENDED)
+    return;
+
+  id = g_signal_connect (test->call_chan, "state-changed",
+      G_CALLBACK (run_until_ended_cb), test);
+  g_main_loop_run (test->mainloop);
+  g_signal_handler_disconnect (test->call_chan, id);
+}
+
+static void
+accept_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_clear_error (&test->error);
+
+  tp_call_channel_accept_finish (test->call_chan, result, &test->error);
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+hangup_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_clear_error (&test->error);
+
+  tp_call_channel_hangup_finish (test->call_chan, result, &test->error);
+  g_main_loop_quit (test->mainloop);
+}
+
+static void
+add_content_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_clear_error (&test->error);
+  tp_clear_object (&test->added_content);
+
+  test->added_content = tp_call_channel_add_content_finish (test->call_chan,
+      result, &test->error);
+  g_main_loop_quit (test->mainloop);
+}
+
+/*
+static void
+content_remove_cb (GObject *object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  Test *test = user_data;
+
+  g_clear_error (&test->error);
+
+  tp_call_content_remove_finish ((TpCallContent *) object,
+      result, &test->error);
+  g_main_loop_quit (test->mainloop);
+}
+*/
+
+static void
 test_basics (Test *test,
              gconstpointer data G_GNUC_UNUSED)
 {
-  const GPtrArray *stream_paths;
+  GPtrArray *contents;
+  GPtrArray *streams;
+  TpCallContent *audio_content;
+  TpCallContent *video_content;
+  TpCallStream *audio_stream;
+  TpCallStream *video_stream;
+  GHashTable *remote_members;
   gpointer v;
 
   outgoing_call (test, "basic-test", TRUE, FALSE);
-
-  /* Get initial state */
-  tp_cli_dbus_properties_call_get_all (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  assert_call_properties (test->get_all_return,
+  assert_call_properties (test->call_chan,
       TP_CALL_STATE_PENDING_INITIATOR, 0,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
@@ -519,216 +417,124 @@ test_basics (Test *test,
 
   /* We have one audio content but it's not active just yet */
 
-  tp_cli_dbus_properties_call_get (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, "Contents",
-      got_contents_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
+  contents = tp_call_channel_get_contents (test->call_chan);
+  g_assert_cmpuint (contents->len, ==, 1);
 
-  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
-
-  g_assert (test->audio_content == NULL);
-  test->audio_content = _tp_call_content_new (test->chan,
-      g_ptr_array_index (test->get_contents_return, 0), NULL);
-  g_assert (test->audio_content != NULL);
-
-  tp_cli_dbus_properties_call_get_all (test->audio_content, -1,
-      TP_IFACE_CALL_CONTENT, got_all_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-  assert_content_properties (test->get_all_return,
+  audio_content = g_ptr_array_index (contents, 0);
+  tp_tests_proxy_run_until_prepared (audio_content, NULL);
+  assert_content_properties (audio_content,
       TP_MEDIA_STREAM_TYPE_AUDIO,
       TP_CALL_CONTENT_DISPOSITION_INITIAL);
 
-  stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
-          TP_ARRAY_TYPE_OBJECT_PATH_LIST);
-  g_assert (stream_paths != NULL);
-  g_assert_cmpuint (stream_paths->len, ==, 1);
+  streams = tp_call_content_get_streams (audio_content);
+  g_assert_cmpuint (streams->len, ==, 1);
 
-  g_assert (test->audio_stream == NULL);
-  test->audio_stream = _tp_call_stream_new (test->chan,
-      g_ptr_array_index (stream_paths, 0), NULL);
-  g_assert (test->audio_stream != NULL);
-
-  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
-      TP_IFACE_CALL_STREAM, "RemoteMembers",
-      got_members_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  g_assert_cmpuint (g_hash_table_size (test->get_members_return), ==, 1);
-  g_assert (!g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (0), NULL, NULL));
-  g_assert (!g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
-  g_assert (g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
-        NULL, &v));
+  audio_stream = g_ptr_array_index (streams, 0);
+  tp_tests_proxy_run_until_prepared (audio_stream, NULL);
+  remote_members = tp_call_stream_get_remote_members (audio_stream);
+  g_assert_cmpuint (g_hash_table_size (remote_members), ==, 1);
+  v = g_hash_table_lookup (remote_members,
+      tp_channel_get_target_contact (test->chan));
   g_assert_cmpuint (GPOINTER_TO_UINT (v), ==,
       TP_SENDING_STATE_PENDING_SEND);
 
-  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
-      TP_IFACE_CALL_STREAM, "LocalSendingState",
-      got_uint_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-  g_assert_cmpuint (test->uint_return, ==, TP_SENDING_STATE_SENDING);
+  g_assert_cmpuint (tp_call_stream_get_local_sending_state (audio_stream),
+      ==, TP_SENDING_STATE_SENDING);
 
   /* OK, that looks good. Actually make the call */
-  tp_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
-      test, NULL, NULL);
+  tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   /* Calling Accept again makes no sense, but mustn't crash */
-  tp_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
-      test, NULL, NULL);
+  tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
   g_clear_error (&test->error);
 
   /* Wait for the remote contact to answer, if they haven't already */
-
-  loop_until_answered (test);
+  run_until_answered (test);
 
   /* Calling Accept again makes no sense, but mustn't crash */
-  tp_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
-      test, NULL, NULL);
+  tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_error (test->error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE);
   g_clear_error (&test->error);
 
   /* Check the call state */
-
-  tp_cli_dbus_properties_call_get_all (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  assert_call_properties (test->get_all_return,
+  assert_call_properties (test->call_chan,
       TP_CALL_STATE_ACCEPTED, tp_channel_get_handle (test->chan, NULL),
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       FALSE, FALSE, FALSE); /* don't care about initial audio/video */
 
   /* There's still one content */
-  tp_clear_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
-  test->get_contents_return = g_boxed_copy (TP_ARRAY_TYPE_OBJECT_PATH_LIST,
-      tp_asv_get_boxed (test->get_all_return,
-        "Contents", TP_ARRAY_TYPE_OBJECT_PATH_LIST));
-  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
-  g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 0),
-      ==, tp_proxy_get_object_path (test->audio_content));
+  contents = tp_call_channel_get_contents (test->call_chan);
+  g_assert_cmpuint (contents->len, ==, 1);
+  g_assert (g_ptr_array_index (contents, 0) == audio_content);
 
   /* Other contact is sending now */
-  tp_clear_pointer (&test->get_members_return, g_hash_table_unref);
-  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
-      TP_IFACE_CALL_STREAM, "RemoteMembers", got_members_cb, test,
-      NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  g_assert_cmpuint (g_hash_table_size (test->get_members_return), ==, 1);
-  g_assert (!g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (0), NULL, NULL));
-  g_assert (!g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
-  g_assert (g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
-        NULL, &v));
+  remote_members = tp_call_stream_get_remote_members (audio_stream);
+  g_assert_cmpuint (g_hash_table_size (remote_members), == , 1);
+  v = g_hash_table_lookup (remote_members,
+      tp_channel_get_target_contact (test->chan));
   g_assert_cmpuint (GPOINTER_TO_UINT (v), ==, TP_SENDING_STATE_SENDING);
-
-  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
-      TP_IFACE_CALL_STREAM, "LocalSendingState",
-      got_uint_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-  g_assert_cmpuint (test->uint_return, ==, TP_SENDING_STATE_SENDING);
+  g_assert_cmpuint (tp_call_stream_get_local_sending_state (audio_stream),
+      ==, TP_SENDING_STATE_SENDING);
 
   /* AddContent with bad content-type must fail */
 
-  tp_cli_channel_type_call_call_add_content (test->chan, -1,
-      "", 31337, added_content_cb, test, NULL, NULL);
+  tp_call_channel_add_content_async (test->call_chan,
+      "", 31337, add_content_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert (test->error != NULL);
+  g_assert (test->added_content == NULL);
   g_clear_error (&test->error);
 
   /* AddContent again, to add a video stream */
 
-  tp_cli_channel_type_call_call_add_content (test->chan, -1,
-      "", TP_MEDIA_STREAM_TYPE_VIDEO, added_content_cb,
-      test, NULL, NULL);
+  tp_call_channel_add_content_async (test->call_chan,
+      "", TP_MEDIA_STREAM_TYPE_VIDEO, add_content_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   g_assert (test->added_content != NULL);
-  tp_clear_object (&test->video_content);
-  test->video_content = g_object_ref (test->added_content);
+  video_content = test->added_content;
+  tp_tests_proxy_run_until_prepared (video_content, NULL);
 
   /* There are two Contents, because now we have the video content too */
-
-  tp_cli_dbus_properties_call_get (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, "Contents",
-      got_contents_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  g_assert_cmpuint (test->get_contents_return->len, ==, 2);
+  contents = tp_call_channel_get_contents (test->call_chan);
+  g_assert_cmpuint (contents->len, ==, 2);
 
   /* they could be either way round */
-  if (!tp_strdiff (g_ptr_array_index (test->get_contents_return, 0),
-        tp_proxy_get_object_path (test->audio_content)))
+  if (g_ptr_array_index (contents, 0) == audio_content)
     {
-      g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 1),
-          ==, tp_proxy_get_object_path (test->video_content));
+      g_assert (g_ptr_array_index (contents, 1) == video_content);
     }
   else
     {
-      g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 0),
-          ==, tp_proxy_get_object_path (test->video_content));
-      g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 1),
-          ==, tp_proxy_get_object_path (test->audio_content));
+      g_assert (g_ptr_array_index (contents, 0) == video_content);
+      g_assert (g_ptr_array_index (contents, 1) == audio_content);
     }
 
-  tp_cli_dbus_properties_call_get_all (test->video_content, -1,
-      TP_IFACE_CALL_CONTENT, got_all_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-  assert_content_properties (test->get_all_return,
+  assert_content_properties (video_content,
       TP_MEDIA_STREAM_TYPE_VIDEO,
       TP_CALL_CONTENT_DISPOSITION_NONE);
 
-  stream_paths = tp_asv_get_boxed (test->get_all_return, "Streams",
-          TP_ARRAY_TYPE_OBJECT_PATH_LIST);
-  g_assert (stream_paths != NULL);
-  g_assert_cmpuint (stream_paths->len, ==, 1);
+  streams = tp_call_content_get_streams (video_content);
+  g_assert (streams != NULL);
+  g_assert_cmpuint (streams->len, ==, 1);
 
-  g_assert (test->video_stream == NULL);
-  test->video_stream = _tp_call_stream_new (test->chan,
-      g_ptr_array_index (stream_paths, 0), NULL);
-  g_assert (test->video_stream != NULL);
+  video_stream = g_ptr_array_index (streams, 0);
+  tp_tests_proxy_run_until_prepared (video_stream, NULL);
 
-  tp_cli_dbus_properties_call_get (test->audio_stream, -1,
-      TP_IFACE_CALL_STREAM, "LocalSendingState",
-      got_uint_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-  g_assert_cmpuint (test->uint_return, ==, TP_SENDING_STATE_SENDING);
+  g_assert_cmpuint (tp_call_stream_get_local_sending_state (video_stream),
+      ==, TP_SENDING_STATE_SENDING);
 
-  tp_cli_dbus_properties_call_get (test->video_stream, -1,
-      TP_IFACE_CALL_STREAM, "RemoteMembers", got_members_cb, test,
-      NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  g_assert_cmpuint (g_hash_table_size (test->get_members_return), ==, 1);
-  g_assert (!g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (0), NULL, NULL));
-  g_assert (!g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (test->self_handle), NULL, NULL));
-  g_assert (g_hash_table_lookup_extended (test->get_members_return,
-        GUINT_TO_POINTER (tp_channel_get_handle (test->chan, NULL)),
-        NULL, &v));
+  remote_members = tp_call_stream_get_remote_members (video_stream);
+  g_assert_cmpuint (g_hash_table_size (remote_members), ==, 1);
+  v = g_hash_table_lookup (remote_members,
+      tp_channel_get_target_contact (test->chan));
 
   /* After a moment, the video stream becomes connected, and the remote user
    * accepts our proposed direction change. These might happen in either
@@ -739,59 +545,32 @@ test_basics (Test *test,
         TP_SENDING_STATE_PENDING_SEND);
 
 #if 0
-  /* FIXME: Call has no equivalent of RemoveStreams yet, afaics... */
+  /* FIXME: Content.Remove() is not implemented in example CM */
 
-  /* RemoveStreams with a bad stream ID must fail */
+  /* Drop the video content */
 
-  g_array_set_size (test->stream_ids, 0);
-  g_array_append_val (test->stream_ids, not_a_stream_id);
-  tp_cli_channel_type_streamed_media_call_remove_streams (test->chan, -1,
-      test->stream_ids,
-      void_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert (test->error != NULL);
-  g_clear_error (&test->error);
-
-  /* Drop the video stream with RemoveStreams */
-
-  g_array_set_size (test->stream_ids, 0);
-  g_array_append_val (test->stream_ids, video_stream_id);
-  tp_cli_channel_type_streamed_media_call_remove_streams (test->chan, -1,
-      test->stream_ids,
-      void_cb, test, NULL, NULL);
+  tp_call_content_remove_async (video_content,
+      content_remove_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   /* Get contents again: now there's only the audio */
 
-  tp_cli_dbus_properties_call_get (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, "Contents",
-      got_contents_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
-  g_assert_cmpstr (g_ptr_array_index (test->get_contents_return, 0), ==,
-      tp_proxy_get_object_path (test->audio_content));
+  contents = tp_call_channel_get_contents (test->call_chan);
+  g_assert_cmpuint (contents->len, ==, 1);
+  g_assert (g_ptr_array_index (contents, 0) == audio_content);
 #endif
 
   /* Hang up the call in the recommended way */
 
-  tp_cli_channel_type_call_call_hangup (test->chan,
-      -1, TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
-      void_cb, test, NULL, NULL);
+  tp_call_channel_hangup_async (test->call_chan,
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
+      hangup_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
   assert_ended_and_run_close (test, test->self_handle,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       "");
-
-  /* FIXME: untested things include:
-   *
-   * RequestStreamDirection
-   * StreamDirectionChanged being emitted correctly (part of RSD)
-   * RequestStreamDirection failing (invalid direction, stream ID)
-   */
 }
 
 static void
@@ -802,29 +581,23 @@ test_no_answer (Test *test,
    * example will never answer. */
   outgoing_call (test, "smcv (no answer)", TRUE, FALSE);
 
-  tp_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
-      test, NULL, NULL);
+  tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   /* After the initial flurry of D-Bus messages, smcv still hasn't answered */
   tp_tests_proxy_run_until_dbus_queue_processed (test->conn);
 
-  tp_cli_dbus_properties_call_get_all (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  assert_call_properties (test->get_all_return,
+  assert_call_properties (test->call_chan,
       TP_CALL_STATE_RINGING, test->self_handle,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */
 
   /* assume we're never going to get an answer, and hang up */
-  tp_cli_channel_type_call_call_hangup (test->chan,
-      -1, TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
-      void_cb, test, NULL, NULL);
+  tp_call_channel_hangup_async (test->call_chan,
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
+      hangup_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -841,13 +614,12 @@ test_busy (Test *test,
    * will simulate rejection of the call as busy rather than accepting it. */
   outgoing_call (test, "Robot101 (busy)", TRUE, FALSE);
 
-  tp_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
-      test, NULL, NULL);
+  tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   /* Wait for the remote contact to end the call as busy */
-  loop_until_ended (test);
+  run_until_ended (test);
   assert_ended_and_run_close (test, tp_channel_get_handle (test->chan, NULL),
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       TP_ERROR_STR_BUSY);
@@ -861,17 +633,16 @@ test_terminated_by_peer (Test *test,
    * simulates answering the call but then terminating it */
   outgoing_call (test, "The Governator (terminate)", TRUE, TRUE);
 
-  tp_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
-      test, NULL, NULL);
+  tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
-  loop_until_answered (test);
+  run_until_answered (test);
 
   /* After that, the remote contact immediately ends the call */
-  loop_until_ended (test);
+  run_until_ended (test);
   assert_ended_and_run_close (test, tp_channel_get_handle (test->chan, NULL),
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED,
       "");
@@ -883,21 +654,15 @@ test_terminate_via_close (Test *test,
 {
   outgoing_call (test, "basic-test", FALSE, TRUE);
 
-  tp_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
-      test, NULL, NULL);
+  tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
   /* Wait for the remote contact to answer, if they haven't already */
 
-  loop_until_answered (test);
+  run_until_answered (test);
 
-  tp_cli_dbus_properties_call_get_all (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  assert_call_properties (test->get_all_return,
+  assert_call_properties (test->call_chan,
       TP_CALL_STATE_ACCEPTED, test->peer_handle,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
@@ -907,7 +672,7 @@ test_terminate_via_close (Test *test,
    * graceful hangup; rather, it's what the ChannelDispatcher would do to
    * signal a client crash, undispatchability, or whatever */
 
-  tp_cli_channel_call_close (test->chan, -1, void_cb, test, NULL, NULL);
+  tp_channel_close_async (test->chan, close_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -919,8 +684,7 @@ test_terminate_via_close (Test *test,
    * transition before invalidation */
 }
 
-/* FIXME: try removing the last stream. In StreamedMedia that terminated the
- * call, but in Call it's meant to just fail */
+/* FIXME: try removing the last stream, it should fail */
 
 /* FIXME: add a special contact who refuses to have video */
 
@@ -942,29 +706,19 @@ expect_incoming_call_cb (TpConnection *conn,
       GValueArray *va = g_ptr_array_index (channels, i);
       const gchar *object_path = g_value_get_boxed (va->values + 0);
       GHashTable *properties = g_value_get_boxed (va->values + 1);
-      const gchar *channel_type;
-
-      channel_type = tp_asv_get_string (properties,
-          TP_PROP_CHANNEL_CHANNEL_TYPE);
-      if (tp_strdiff (channel_type, TP_IFACE_CHANNEL_TYPE_CALL))
-        {
-          /* don't care about this channel */
-          continue;
-        }
-
-      g_assert_cmpuint (tp_asv_get_uint32 (properties,
-            TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, NULL),
-          ==, TP_HANDLE_TYPE_CONTACT);
-      g_assert_cmpint (tp_asv_get_boolean (properties,
-            TP_PROP_CHANNEL_REQUESTED, NULL), ==, FALSE);
+      GError *error = NULL;
 
       /* we only expect to receive one call */
       g_assert (test->chan == NULL);
 
-      /* save the channel */
-      test->chan = tp_channel_new_from_properties (conn, object_path,
-          properties, &test->error);
-      g_assert_no_error (test->error);
+      test->chan = tp_simple_client_factory_ensure_channel (test->factory,
+          conn, object_path, properties, &error);
+      g_assert_no_error (error);
+
+      g_assert (TP_IS_CALL_CHANNEL (test->chan));
+      test->call_chan = (TpCallChannel *) test->chan;
+
+      g_assert_cmpint (tp_channel_get_requested (test->chan), ==, FALSE);
     }
 }
 
@@ -1002,51 +756,42 @@ trigger_incoming_call (Test *test,
 
   tp_proxy_signal_connection_disconnect (new_channels_sig);
 
-  tp_channel_call_when_ready (test->chan, channel_ready_cb, test);
-  g_main_loop_run (test->mainloop);
-  test_connect_channel_signals (test);
+  tp_tests_proxy_run_until_prepared (test->chan, NULL);
 }
 
 static void
 test_incoming (Test *test,
                gconstpointer data G_GNUC_UNUSED)
 {
+  GPtrArray *contents;
+  TpCallContent *audio_content;
+
   trigger_incoming_call (test, "call me?", "caller");
 
   /* ring, ring! */
-  tp_cli_dbus_properties_call_get_all (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-  assert_call_properties (test->get_all_return,
+  assert_call_properties (test->call_chan,
       TP_CALL_STATE_RINGING, test->peer_handle,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
       TRUE, TRUE, FALSE);  /* initial audio/video must be TRUE, FALSE */
 
-  /* Get Contents: we have an audio content (FIXME: assert that) */
+  /* Get Contents: we have an audio content */
 
-  tp_cli_dbus_properties_call_get (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, "Contents",
-      got_contents_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-
-  g_assert_cmpuint (test->get_contents_return->len, ==, 1);
+  contents = tp_call_channel_get_contents (test->call_chan);
+  g_assert_cmpuint (contents->len, ==, 1);
+  audio_content = g_ptr_array_index (contents, 0);
+  tp_tests_proxy_run_until_prepared (audio_content, NULL);
+  g_assert_cmpuint (tp_call_content_get_media_type (audio_content), ==,
+      TP_MEDIA_STREAM_TYPE_AUDIO);
 
   /* FIXME: assert about the properties of the content and the stream */
 
   /* Accept the call */
-  tp_cli_channel_type_call_call_accept (test->chan, -1, void_cb,
-      test, NULL, NULL);
+  tp_call_channel_accept_async (test->call_chan, accept_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
-  tp_cli_dbus_properties_call_get_all (test->chan, -1,
-      TP_IFACE_CHANNEL_TYPE_CALL, got_all_cb, test, NULL, NULL);
-  g_main_loop_run (test->mainloop);
-  g_assert_no_error (test->error);
-  assert_call_properties (test->get_all_return,
+  assert_call_properties (test->call_chan,
       TP_CALL_STATE_ACCEPTED, test->self_handle,
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       TRUE, 0,              /* call flags */
@@ -1055,9 +800,9 @@ test_incoming (Test *test,
   /* FIXME: check for stream directionality changes */
 
   /* Hang up the call */
-  tp_cli_channel_type_call_call_hangup (test->chan,
-      -1, TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
-      void_cb, test, NULL, NULL);
+  tp_call_channel_hangup_async (test->call_chan,
+      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", "",
+      hangup_cb, test);
   g_main_loop_run (test->mainloop);
   g_assert_no_error (test->error);
 
@@ -1072,26 +817,12 @@ teardown (Test *test,
   tp_cli_connection_run_disconnect (test->conn, -1, &test->error, NULL);
   g_assert_no_error (test->error);
 
-  if (test->members_changed_detailed_id != 0)
-    {
-      g_signal_handler_disconnect (test->chan,
-          test->members_changed_detailed_id);
-    }
-
   g_array_unref (test->audio_request);
   g_array_unref (test->video_request);
   g_array_unref (test->invalid_request);
   g_array_unref (test->stream_ids);
-  tp_clear_pointer (&test->get_all_return, g_hash_table_unref);
 
-  tp_clear_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
-  tp_clear_pointer (&test->get_members_return, g_hash_table_unref);
-
-  tp_clear_object (&test->audio_stream);
-  tp_clear_object (&test->video_stream);
   tp_clear_object (&test->added_content);
-  tp_clear_object (&test->audio_content);
-  tp_clear_object (&test->video_content);
   tp_clear_object (&test->chan);
   tp_clear_object (&test->conn);
   tp_clear_object (&test->cm);
