@@ -794,7 +794,7 @@ tf_call_stream_add_endpoint (TfCallStream *self)
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
-          "Error connectiong to RemoteCredentialsSet signal: %s",
+          "Error connecting to RemoteCredentialsSet signal: %s",
           error->message);
       g_clear_error (&error);
       return;
@@ -808,7 +808,7 @@ tf_call_stream_add_endpoint (TfCallStream *self)
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
-          "Error connectiong to RemoteCandidatesAdded signal: %s",
+          "Error connecting to RemoteCandidatesAdded signal: %s",
           error->message);
       g_clear_error (&error);
       return;
@@ -1068,7 +1068,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
-          "Error connectiong to SendingStateChanged signal: %s",
+          "Error connecting to SendingStateChanged signal: %s",
           error->message);
       g_clear_error (&error);
       return;
@@ -1082,7 +1082,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
-          "Error connectiong to ReceivingStateChanged signal: %s",
+          "Error connecting to ReceivingStateChanged signal: %s",
           error->message);
       g_clear_error (&error);
       return;
@@ -1095,7 +1095,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
-          "Error connectiong to ServerInfoRetrived signal: %s",
+          "Error connecting to ServerInfoRetrived signal: %s",
           error->message);
       g_clear_error (&error);
       return;
@@ -1108,7 +1108,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
-          "Error connectiong to ServerInfoRetrived signal: %s",
+          "Error connecting to ServerInfoRetrived signal: %s",
           error->message);
       g_clear_error (&error);
       return;
@@ -1122,7 +1122,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
-          "Error connectiong to ServerInfoRetrived signal: %s",
+          "Error connecting to ServerInfoRetrived signal: %s",
           error->message);
       g_clear_error (&error);
       return;
@@ -1136,7 +1136,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
-          "Error connectiong to EndpointsChanged signal: %s",
+          "Error connecting to EndpointsChanged signal: %s",
           error->message);
       g_clear_error (&error);
       return;
@@ -1150,7 +1150,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
     {
       tf_call_stream_fail (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR, "",
-          "Error connectiong to ICERestartRequested signal: %s",
+          "Error connecting to ICERestartRequested signal: %s",
           error->message);
       g_clear_error (&error);
       return;

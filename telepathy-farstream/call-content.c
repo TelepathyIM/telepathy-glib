@@ -1374,7 +1374,7 @@ content_prepared (GObject *src, GAsyncResult *prepare_res,
       tf_call_content_error (self,
           TP_CALL_STATE_CHANGE_REASON_INTERNAL_ERROR,
           TP_ERROR_STR_CONFUSED,
-          "Error connectiong to NewCodecMediaDescription signal: %s",
+          "Error connecting to NewCodecMediaDescription signal: %s",
           error->message);
       g_simple_async_result_set_from_error (res, error);
       g_simple_async_result_complete (res);
