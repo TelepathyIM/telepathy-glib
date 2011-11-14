@@ -423,9 +423,9 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
 /**
  * TpProtocolAddressingInterface:
  * @parent: the parent interface
- * @get_supported_uri_schemes: provides the supported URI schemes. Must always
+ * @dup_supported_uri_schemes: provides the supported URI schemes. Must always
  * be implemented.
- * @get_supported_vcard_fields: provides the supported vCard fields. Must
+ * @dup_supported_vcard_fields: provides the supported vCard fields. Must
  * always be implemented.
  * @normalize_vcard_address: protocol-specific implementation for normalizing
  * vCard addresses.
@@ -437,7 +437,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
- * TpBaseProtocolGetSupportedVCardFields:
+ * TpBaseProtocolDupSupportedVCardFields:
  * @self: a protocol
  *
  * Signature of a virtual method to get the supported vCard fields supported by
@@ -450,7 +450,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
- * TpBaseProtocolGetSupportedURISchemes:
+ * TpBaseProtocolDupSupportedURISchemes:
  * @self: a protocol
  *
  * Signature of a virtual method to get the supported URI schemes supported by
@@ -1034,15 +1034,15 @@ protocol_prop_addressing_getter (GObject *object,
   switch (GPOINTER_TO_INT (getter_data))
     {
       case PADP_ADDRESSABLE_VCARD_FIELDS:
-        g_assert (addr_iface->get_supported_vcard_fields != NULL);
+        g_assert (addr_iface->dup_supported_vcard_fields != NULL);
         g_value_take_boxed (value,
-            addr_iface->get_supported_vcard_fields (self));
+            addr_iface->dup_supported_vcard_fields (self));
         break;
 
       case PADP_ADDRESSABLE_URI_SCHEMES:
-        g_assert (addr_iface->get_supported_uri_schemes != NULL);
+        g_assert (addr_iface->dup_supported_uri_schemes != NULL);
         g_value_take_boxed (value,
-            addr_iface->get_supported_uri_schemes (self));
+            addr_iface->dup_supported_uri_schemes (self));
         break;
 
       default:

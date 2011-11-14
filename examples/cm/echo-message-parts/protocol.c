@@ -212,13 +212,13 @@ get_avatar_details (TpBaseProtocol *self,
 }
 
 static GStrv
-get_supported_uri_schemes (TpBaseProtocol *self)
+dup_supported_uri_schemes (TpBaseProtocol *self)
 {
   return g_strdupv ((GStrv) addressing_uri_schemes);
 }
 
 static GStrv
-get_supported_vcard_fields (TpBaseProtocol *self)
+dup_supported_vcard_fields (TpBaseProtocol *self)
 {
   return g_strdupv ((GStrv) addressing_vcard_fields);
 }
@@ -243,6 +243,6 @@ example_echo_2_protocol_class_init (
 static void
 addressing_iface_init (TpProtocolAddressingInterface *iface)
 {
-  iface->get_supported_vcard_fields = get_supported_vcard_fields;
-  iface->get_supported_uri_schemes = get_supported_uri_schemes;
+  iface->dup_supported_vcard_fields = dup_supported_vcard_fields;
+  iface->dup_supported_uri_schemes = dup_supported_uri_schemes;
 }
