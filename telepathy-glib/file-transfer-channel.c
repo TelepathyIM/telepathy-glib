@@ -939,6 +939,33 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * initiator, or an empty #GHashTable if the initiator did not
    * provide any additional information.
    *
+   * To provide metadata along with a file offer, include
+   * %TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA in the
+   * channel request. For example:
+   *
+   * |[
+   * GHashTable *request;
+   * GHashTable *metadata = g_hash_table_new (g_str_hash, g_str_equal);
+   * const gchar * const values[] = { "Jason Derulo", "Tinie Tempah", NULL };
+   *
+   * g_hash_table_insert (metadata, "best buds", values);
+   *
+   * request = tp_asv_new (
+   *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
+   *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
+   *     TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "foo@bar.com",
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_CONTENT_TYPE, G_TYPE_STRING, "text/plain",
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DATE, G_TYPE_INT64, 1320925992,
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_DESCRIPTION, G_TYPE_STRING, "",
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_FILENAME, G_TYPE_STRING, "test.pdf",
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_INITIAL_OFFSET, G_TYPE_UINT64, 0,
+   *     TP_PROP_CHANNEL_TYPE_FILE_TRANSFER_SIZE, G_TYPE_UINT64, 165710,
+   *     TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_METADATA, TP_TYPE_METADATA, metadata,
+   *     NULL);
+   *
+   * ...
+   * ]|
+   *
    * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
    * prepared for this property to be meaningful.
    *
