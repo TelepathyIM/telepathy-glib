@@ -445,7 +445,7 @@ file_transfer_provide_file (TpSvcChannelTypeFileTransfer *iface,
   TpBaseChannel *base_chan = (TpBaseChannel *) iface;
   GError *error = NULL;
 
-  if (tp_base_channel_is_requested(base_chan) != TRUE)
+  if (tp_base_channel_is_requested (base_chan) != TRUE)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "File transfer is not outgoing. Cannot offer file");
@@ -519,7 +519,7 @@ file_transfer_accept_file (TpSvcChannelTypeFileTransfer *iface,
   GError *error = NULL;
   GValue *address;
 
-  if (tp_base_channel_is_requested(base_chan) == TRUE)
+  if (tp_base_channel_is_requested (base_chan) == TRUE)
     {
       g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
           "File transfer is not incoming. Cannot accept file");
