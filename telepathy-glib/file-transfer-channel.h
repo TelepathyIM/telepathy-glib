@@ -65,12 +65,37 @@ TpFileTransferChannel * tp_file_transfer_channel_new (TpConnection *conn,
     const GHashTable *immutable_properties,
     GError **error);
 
+void tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
+    GFile *file,
+    guint64 offset,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_file_transfer_channel_accept_file_finish (
+    TpFileTransferChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
+    GFile *file,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean tp_file_transfer_channel_provide_file_finish (
+    TpFileTransferChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
 /* Property accessors */
 
 const char * tp_file_transfer_channel_get_mime_type (
     TpFileTransferChannel *self);
 
 GDateTime * tp_file_transfer_channel_get_date (TpFileTransferChannel *self);
+
+TpFileTransferState tp_file_transfer_channel_get_state (
+    TpFileTransferChannel *self,
+    TpFileTransferStateChangeReason *reason);
 
 const gchar * tp_file_transfer_channel_get_description (
     TpFileTransferChannel *self);
@@ -81,6 +106,14 @@ const gchar * tp_file_transfer_channel_get_filename (
 guint64 tp_file_transfer_channel_get_size (TpFileTransferChannel *self);
 
 guint64 tp_file_transfer_channel_get_transferred_bytes (
+    TpFileTransferChannel *self);
+
+/* Metadata */
+
+const gchar * tp_file_transfer_channel_get_service_name (
+    TpFileTransferChannel *self);
+
+const GHashTable * tp_file_transfer_channel_get_metadata (
     TpFileTransferChannel *self);
 
 G_END_DECLS
