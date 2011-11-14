@@ -529,9 +529,8 @@ tf_call_channel_bus_message (TfCallChannel *channel,
 void
 tf_call_channel_error (TfCallChannel *channel)
 {
-  tp_cli_channel_type_call_call_hangup (channel->proxy,
-      -1, TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "",
-      NULL, NULL, NULL, NULL);
+  tp_call_channel_hangup_async (TP_CALL_CHANNEL (channel->proxy),
+      TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "", NULL, NULL);
 }
 
 
