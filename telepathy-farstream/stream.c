@@ -3037,7 +3037,7 @@ cb_fs_component_state_changed (TfStream *self,
     FsStreamState fsstate)
 {
   TpMediaStreamState state;
-  const gchar *state_str;
+  const gchar *state_str = "";
 
   if (component != 1)
     return;
