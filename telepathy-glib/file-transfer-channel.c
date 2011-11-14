@@ -42,7 +42,8 @@
  * invitation will be sent to the remote contact when the channel is
  * created. For example:
  *
- * <informalexample><programlisting>GHashTable *request = tp_asv_new (
+ * |[
+ * GHashTable *request = tp_asv_new (
  *     TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
  *     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
  *     TP_PROP_CHANNEL_TARGET_ID, G_TYPE_STRING, "foo@bar.com",
@@ -62,7 +63,7 @@
  *     create_and_handle_cb, NULL);
  *
  * g_hash_table_unref (request);
- * </programlisting></informalexample>
+ * |]
  *
  * Once a #TpFileTransferChannel is created as a proxy to the channel
  * on D-Bus. The "notify::state" GObject signals on the resulting
@@ -909,13 +910,14 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * handlers can match on this in their handler filter. For example,
    * a remote handler could call the following:
    *
-   * <informalexample><programlisting>tp_base_client_take_handler_filter (handler, tp_asv_new (
+   * |[
+   * tp_base_client_take_handler_filter (handler, tp_asv_new (
    *               TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING, TP_IFACE_CHANNEL_TYPE_FILE_TRANSFER,
    *               TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT, TP_HANDLE_TYPE_CONTACT,
    *               TP_PROP_CHANNEL_REQUESTED, G_TYPE_BOOLEAN, FALSE,
    *               TP_PROP_CHANNEL_INTERFACE_FILE_TRANSFER_METADATA_SERVICE_NAME, G_TYPE_STRING, "service.name",
    *               NULL));
-   * </programlisting></informalexample>
+   * ]|
    *
    * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
    * prepared for this property to be meaningful.
