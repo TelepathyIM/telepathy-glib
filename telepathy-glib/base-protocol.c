@@ -443,6 +443,9 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Signature of a virtual method to get the supported vCard fields supported by
  * #self.
  *
+ * Returns: (allow-none) (out) (transfer full): a list of vCard fields in lower
+ * case, e.g. [x-sip, tel]
+ *
  * Since: 0.13.UNRELEASED
  */
 
@@ -452,6 +455,8 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * Signature of a virtual method to get the supported URI schemes supported by
  * #self.
+ *
+ * Returns: (allow-none) (out) (transfer full): a list of uri schemes, e.g. [sip, sips, tel]
  *
  * Since: 0.13.UNRELEASED
  */
