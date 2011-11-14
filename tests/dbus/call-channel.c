@@ -843,7 +843,7 @@ main (int argc,
 {
   tp_tests_init (&argc, &argv);
   g_test_bug_base ("http://bugs.freedesktop.org/show_bug.cgi?id=");
-  g_set_prgname ("call-example");
+  g_set_prgname ("call-channel");
 
   g_test_add ("/call/basics", Test, NULL, setup, test_basics, teardown);
   g_test_add ("/call/busy", Test, NULL, setup, test_busy, teardown);
