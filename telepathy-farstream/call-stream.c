@@ -1058,7 +1058,7 @@ stream_prepared (GObject *src_object, GAsyncResult *res, gpointer user_data)
   if (g_hash_table_iter_next (&iter, &key, &value))
     {
       self->has_contact = TRUE;
-      self->contact_handle = GPOINTER_TO_UINT (key);
+      self->contact_handle = tp_contact_get_handle (key);
     }
 
   tp_cli_call_stream_interface_media_connect_to_sending_state_changed (
