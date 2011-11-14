@@ -437,7 +437,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
- * TpBaseProtocolDupSupportedVCardFields:
+ * TpBaseProtocolDupSupportedVCardFieldsFunc:
  * @self: a protocol
  *
  * Signature of a virtual method to get the supported vCard fields supported by
@@ -450,7 +450,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
- * TpBaseProtocolDupSupportedURISchemes:
+ * TpBaseProtocolDupSupportedURISchemesFunc:
  * @self: a protocol
  *
  * Signature of a virtual method to get the supported URI schemes supported by

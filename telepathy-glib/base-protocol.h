@@ -197,9 +197,9 @@ TpBaseConnection *tp_base_protocol_new_connection (TpBaseProtocol *self,
 
 typedef struct _TpProtocolAddressingInterface TpProtocolAddressingInterface;
 
-typedef GStrv (*TpBaseProtocolDupSupportedVCardFields) (TpBaseProtocol *self);
+typedef GStrv (*TpBaseProtocolDupSupportedVCardFieldsFunc) (TpBaseProtocol *self);
 
-typedef GStrv (*TpBaseProtocolDupSupportedURISchemes) (TpBaseProtocol *self);
+typedef GStrv (*TpBaseProtocolDupSupportedURISchemesFunc) (TpBaseProtocol *self);
 
 typedef gchar *(*TpBaseProtocolNormalizeVCardAddressFunc) (
     TpBaseProtocol *self,
@@ -215,9 +215,9 @@ typedef gchar *(*TpBaseProtocolNormalizeURIFunc) (
 struct _TpProtocolAddressingInterface {
   GTypeInterface parent;
 
-  TpBaseProtocolDupSupportedVCardFields dup_supported_vcard_fields;
+  TpBaseProtocolDupSupportedVCardFieldsFunc dup_supported_vcard_fields;
 
-  TpBaseProtocolDupSupportedURISchemes dup_supported_uri_schemes;
+  TpBaseProtocolDupSupportedURISchemesFunc dup_supported_uri_schemes;
 
   TpBaseProtocolNormalizeVCardAddressFunc normalize_vcard_address;
 
