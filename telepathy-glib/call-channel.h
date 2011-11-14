@@ -32,6 +32,9 @@ G_BEGIN_DECLS
 #define TP_IS_CALL_CHANNEL_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE ((obj), TP_TYPE_CALL_CHANNEL))
 #define TP_CALL_CHANNEL_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CALL_CHANNEL, TpCallChannelClass))
 
+/* forward declaration, see call-content.h for the rest */
+typedef struct _TpCallContent TpCallContent;
+
 typedef struct _TpCallChannel TpCallChannel;
 typedef struct _TpCallChannelClass TpCallChannelClass;
 typedef struct _TpCallChannelPrivate TpCallChannelPrivate;
@@ -82,6 +85,46 @@ gboolean tp_call_channel_has_initial_video (TpCallChannel *self,
     const gchar **initial_video_name);
 gboolean tp_call_channel_has_mutable_contents (TpCallChannel *self);
 GHashTable *tp_call_channel_get_members (TpCallChannel *self);
+
+void tp_call_channel_set_ringing_async (TpCallChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_channel_set_ringing_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_call_channel_set_queued_async (TpCallChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_channel_set_queued_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_call_channel_accept_async (TpCallChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_channel_accept_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_call_channel_hangup_async (TpCallChannel *self,
+    TpCallStateChangeReason reason,
+    gchar *detailed_reason,
+    gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_channel_hangup_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_call_channel_add_content_async (TpCallChannel *self,
+    gchar *name,
+    TpMediaStreamType type,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+TpCallContent *tp_call_channel_add_content_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error);
 
 G_END_DECLS
 

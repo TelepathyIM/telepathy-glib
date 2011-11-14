@@ -268,6 +268,30 @@ _tp_call_members_convert_array (TpConnection *connection,
   return result;
 }
 
+static TpCallContent *
+ensure_content (TpCallChannel *self,
+    const gchar *object_path)
+{
+  TpCallContent *content;
+  guint i;
+
+  for (i = 0; i < self->priv->contents->len; i++)
+    {
+      content = g_ptr_array_index (self->priv->contents, i);
+
+      if (!tp_strdiff (tp_proxy_get_object_path (content), object_path))
+          return content;
+    }
+
+  DEBUG ("Content added: %s", object_path);
+
+  content = _tp_call_content_new (self, object_path);
+  g_ptr_array_add (self->priv->contents, content);
+  g_signal_emit (self, _signals[CONTENT_ADDED], 0, content);
+
+  return content;
+}
+
 static void
 content_added_cb (TpChannel *channel,
     const gchar *object_path,
@@ -275,16 +299,11 @@ content_added_cb (TpChannel *channel,
     GObject *weak_object)
 {
   TpCallChannel *self = (TpCallChannel *) channel;
-  TpCallContent *content;
 
   if (!self->priv->properties_retrieved)
     return;
 
-  DEBUG ("Content added: %s", object_path);
-
-  content = _tp_call_content_new (self, object_path);
-  g_ptr_array_add (self->priv->contents, content);
-  g_signal_emit (self, _signals[CONTENT_ADDED], 0, content);
+  ensure_content (self, object_path);
 }
 
 static void
@@ -1162,4 +1181,296 @@ tp_call_channel_get_members (TpCallChannel *self)
   g_return_val_if_fail (TP_IS_CALL_CHANNEL (self), NULL);
 
   return self->priv->members;
+}
+
+static void
+generic_async_cb (TpChannel *channel,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Error: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_call_channel_set_ringing_async:
+ * @self: a #TpCallChannel
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Indicate that the local user has been alerted about the incoming call.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_channel_set_ringing_async (TpCallChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CALL_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_call_channel_set_ringing_async);
+
+  tp_cli_channel_type_call_call_set_ringing (TP_CHANNEL (self), -1,
+      generic_async_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_call_channel_set_ringing_finish:
+ * @self: a #TpCallChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_channel_set_ringing_async().
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_channel_set_ringing_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_channel_set_ringing_async);
+}
+
+/**
+ * tp_call_channel_set_queued_async:
+ * @self: a #TpCallChannel
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Notifies the CM that the local user is already in a call, so this call has
+ * been put in a call-waiting style queue.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_channel_set_queued_async (TpCallChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CALL_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_call_channel_set_queued_async);
+
+  tp_cli_channel_type_call_call_set_queued (TP_CHANNEL (self), -1,
+      generic_async_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_call_channel_set_queued_finish:
+ * @self: a #TpCallChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_channel_set_queued_async().
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_channel_set_queued_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_channel_set_queued_async);
+}
+
+/**
+ * tp_call_channel_accept_async:
+ * @self: a #TpCallChannel
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * For incoming calls with #TpCallChannel:state set to %TP_CALL_STATE_RINGING,
+ * accept the incoming call. This changes #TpCallChannel:state to
+ * %TP_CALL_STATE_ACCEPTED.
+ *
+ * For outgoing calls with #TpCallChannel:state set to
+ * %TP_CALL_STATE_PENDING_INITIATOR, actually call the remote contact; this
+ * changes #TpCallChannel:state to
+ * %TP_CALL_STATE_INITIALISING.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_channel_accept_async (TpCallChannel *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CALL_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_call_channel_accept_async);
+
+  tp_cli_channel_type_call_call_accept (TP_CHANNEL (self), -1,
+      generic_async_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_call_channel_accept_finish:
+ * @self: a #TpCallChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_channel_accept_async().
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_channel_accept_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_channel_accept_async);
+}
+
+/**
+ * tp_call_channel_hangup_async:
+ * @self: a #TpCallChannel
+ * @reason: a TpCallStateChangeReason
+ * @detailed_reason: a more specific reason for the call hangup, if one is
+ *  available, or an empty or %NULL string otherwise
+ * @message: a human-readable message to be sent to the remote contact(s)
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Request that the call is ended. All contents will be removed from @self so
+ * that the #TpCallChannel:contents property will be the empty list.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_channel_hangup_async (TpCallChannel *self,
+    TpCallStateChangeReason reason,
+    gchar *detailed_reason,
+    gchar *message,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CALL_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_call_channel_hangup_async);
+
+  tp_cli_channel_type_call_call_hangup (TP_CHANNEL (self), -1,
+      reason, detailed_reason, message,
+      generic_async_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_call_channel_hangup_finish:
+ * @self: a #TpCallChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_channel_hangup_async().
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_channel_hangup_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_channel_hangup_async);
+}
+
+static void
+add_content_cb (TpChannel *channel,
+    const gchar *object_path,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  TpCallChannel *self = (TpCallChannel *) channel;
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Error: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+  else
+    {
+      g_simple_async_result_set_op_res_gpointer (result,
+          g_object_ref (ensure_content (self, object_path)),
+          g_object_unref);
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_call_channel_add_content_async:
+ * @self: a #TpCallChannel
+ * @name: the suggested name of the content to add
+ * @type: the media stream type of the content to be added to the call, from
+ *  #TpMediaStreamType
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Request that a new Content of type @type is added to @self. Callers should
+ * check the value of the #TpCallChannel:mutable-contents property before trying
+ * to add another content as it might not be allowed.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_channel_add_content_async (TpCallChannel *self,
+    gchar *name,
+    TpMediaStreamType type,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CALL_CHANNEL (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_call_channel_add_content_async);
+
+  tp_cli_channel_type_call_call_add_content (TP_CHANNEL (self), -1,
+      name, type,
+      add_content_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_call_channel_add_content_finish:
+ * @self: a #TpCallChannel
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_channel_add_content_async().
+ *
+ * The returned #TpCallContent is NOT guaranteed to have
+ * %TP_CALL_CONTENT_FEATURE_CORE prepared.
+ *
+ * Returns: (transfer full) reference to the new #TpCallContent.
+ * Since: 0.UNRELEASED
+ */
+TpCallContent *
+tp_call_channel_add_content_finish (TpCallChannel *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_return_copy_pointer (self,
+      tp_call_channel_add_content_async, g_object_ref);
 }

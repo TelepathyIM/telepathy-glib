@@ -6413,6 +6413,17 @@ tp_call_channel_has_initial_audio
 tp_call_channel_has_initial_video
 tp_call_channel_has_mutable_contents
 tp_call_channel_get_members
+<SUBSECTION>
+tp_call_channel_set_ringing_async
+tp_call_channel_set_ringing_finish
+tp_call_channel_set_queued_async
+tp_call_channel_set_queued_finish
+tp_call_channel_accept_async
+tp_call_channel_accept_finish
+tp_call_channel_hangup_async
+tp_call_channel_hangup_finish
+tp_call_channel_add_content_async
+tp_call_channel_add_content_finish
 <SUBSECTION Standard>
 TpCallChannelPrivate
 tp_call_channel_get_type
@@ -6486,6 +6497,9 @@ tp_call_content_get_disposition
 tp_call_content_get_media_type
 tp_call_content_get_name
 tp_call_content_get_streams
+<SUBSECTION>
+tp_call_content_remove_async
+tp_call_content_remove_finish
 <SUBSECTION Standard>
 TpCallContentPrivate
 tp_call_content_get_type
@@ -6561,6 +6575,11 @@ TP_CALL_STREAM_FEATURE_CORE
 tp_call_stream_can_request_receiving
 tp_call_stream_get_local_sending_state
 tp_call_stream_get_remote_members
+<SUBSECTION>
+tp_call_stream_request_receiving_async
+tp_call_stream_request_receiving_finish
+tp_call_stream_set_sending_async
+tp_call_stream_set_sending_finish
 <SUBSECTION Standard>
 tp_call_stream_get_type
 TpCallStreamPrivate

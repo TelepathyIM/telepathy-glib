@@ -63,6 +63,23 @@ TpSendingState tp_call_stream_get_local_sending_state (TpCallStream *self);
 gboolean tp_call_stream_can_request_receiving (TpCallStream *self);
 GHashTable *tp_call_stream_get_remote_members (TpCallStream *self);
 
+void tp_call_stream_set_sending_async (TpCallStream *self,
+    gboolean send,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_stream_set_sending_finish (TpCallStream *self,
+    GAsyncResult *result,
+    GError **error);
+
+void tp_call_stream_request_receiving_async (TpCallStream *self,
+    TpContact *contact,
+    gboolean receive,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_stream_request_receiving_finish (TpCallStream *self,
+    GAsyncResult *result,
+    GError **error);
+
 G_END_DECLS
 
 #include "_gen/tp-cli-call-stream.h"

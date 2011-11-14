@@ -641,3 +641,65 @@ tp_call_content_get_streams (TpCallContent *self)
 
   return self->priv->streams;
 }
+
+static void
+generic_async_cb (TpCallContent *self,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Error: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_call_content_remove_async:
+ * @self: a #TpCallContent
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Remove the content from the call. This will cause #TpCallContent::removed
+ * to be emitted.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_content_remove_async (TpCallContent *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CALL_CONTENT (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_call_content_remove_async);
+
+  tp_cli_call_content_call_remove (self, -1,
+      generic_async_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_call_content_remove_finish:
+ * @self: a #TpCallContent
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_content_remove_async().
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_content_remove_finish (TpCallContent *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_content_remove_async);
+}

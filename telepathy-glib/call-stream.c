@@ -535,3 +535,130 @@ tp_call_stream_get_remote_members (TpCallStream *self)
 
   return self->priv->remote_members;
 }
+
+static void
+generic_async_cb (TpCallStream *self,
+    const GError *error,
+    gpointer user_data,
+    GObject *weak_object)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  if (error != NULL)
+    {
+      DEBUG ("Error: %s", error->message);
+      g_simple_async_result_set_from_error (result, error);
+    }
+
+  g_simple_async_result_complete (result);
+}
+
+/**
+ * tp_call_stream_set_sending_async:
+ * @self: a #TpCallStream
+ * @send: the requested sending state
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Set the stream to start or stop sending media from the local user to other
+ * contacts.
+ *
+ * If @send is %TRUE, #TpCallStream:local-sending-state should change to
+ * %TP_SENDING_STATE_SENDING, if it isn't already.
+ * If @send is %FALSE, #TpCallStream:local-sending-state should change to
+ * %TP_SENDING_STATE_NONE, if it isn't already.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_stream_set_sending_async (TpCallStream *self,
+    gboolean send,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CALL_STREAM (self));
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_call_stream_set_sending_async);
+
+  tp_cli_call_stream_call_set_sending (self, -1, send,
+      generic_async_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_call_stream_set_sending_finish:
+ * @self: a #TpCallStream
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_stream_set_sending_async().
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_stream_set_sending_finish (TpCallStream *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_stream_set_sending_async);
+}
+
+/**
+ * tp_call_stream_request_receiving_async:
+ * @self: a #TpCallStream
+ * @contact: contact from which sending is requested
+ * @receive: the requested receiving state
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
+ *
+ * Request that a remote contact stops or starts sending on this stream.
+ *
+ * The #TpCallStream:can-request-receiving property defines whether the protocol
+ * allows the local user to request the other side start sending on this stream.
+ *
+ * If @receive is %TRUE, request that the given contact starts to send media.
+ * If @receive is %FALSE, request that the given contact stops sending media.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_call_stream_request_receiving_async (TpCallStream *self,
+    TpContact *contact,
+    gboolean receive,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
+{
+  GSimpleAsyncResult *result;
+
+  g_return_if_fail (TP_IS_CALL_STREAM (self));
+  g_return_if_fail (TP_IS_CONTACT (contact));
+  g_return_if_fail (tp_contact_get_connection (contact) ==
+      self->priv->connection);
+
+  result = g_simple_async_result_new (G_OBJECT (self), callback,
+      user_data, tp_call_stream_set_sending_async);
+
+  tp_cli_call_stream_call_request_receiving (self, -1,
+      tp_contact_get_handle (contact), receive,
+      generic_async_cb, result, g_object_unref, G_OBJECT (self));
+}
+
+/**
+ * tp_call_stream_request_receiving_finish:
+ * @self: a #TpCallStream
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_call_stream_request_receiving_async().
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_stream_request_receiving_finish (TpCallStream *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self, tp_call_stream_request_receiving_async);
+}

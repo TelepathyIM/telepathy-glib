@@ -33,7 +33,7 @@ G_BEGIN_DECLS
 #define TP_IS_CALL_CONTENT_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE ((obj), TP_TYPE_CALL_CONTENT))
 #define TP_CALL_CONTENT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_CALL_CONTENT, TpCallContentClass))
 
-typedef struct _TpCallContent TpCallContent;
+/* TpCallContent is forward-declared in call-channel.h */
 typedef struct _TpCallContentClass TpCallContentClass;
 typedef struct _TpCallContentPrivate TpCallContentPrivate;
 
@@ -63,6 +63,13 @@ const gchar *tp_call_content_get_name (TpCallContent *self);
 TpMediaStreamType tp_call_content_get_media_type (TpCallContent *self);
 TpCallContentDisposition tp_call_content_get_disposition (TpCallContent *self);
 GPtrArray *tp_call_content_get_streams (TpCallContent *self);
+
+void tp_call_content_remove_async (TpCallContent *self,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_call_content_remove_finish (TpCallContent *self,
+    GAsyncResult *result,
+    GError **error);
 
 G_END_DECLS
 
