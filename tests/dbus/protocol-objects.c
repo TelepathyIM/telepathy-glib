@@ -114,6 +114,7 @@ const gchar * const expected_interfaces[] = {
 
 const gchar * const expected_protocol_interfaces[] = {
     TP_IFACE_PROTOCOL_INTERFACE_AVATARS,
+    TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING,
     NULL };
 
 const gchar * const expected_supported_avatar_mime_types[] = {
