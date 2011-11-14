@@ -63,7 +63,7 @@
  *     create_and_handle_cb, NULL);
  *
  * g_hash_table_unref (request);
- * |]
+ * ]|
  *
  * Once a #TpFileTransferChannel is created as a proxy to the channel
  * on D-Bus. The "notify::state" GObject signals on the resulting
