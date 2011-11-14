@@ -1183,6 +1183,25 @@ tp_call_channel_get_members (TpCallChannel *self)
   return self->priv->members;
 }
 
+/**
+ * tp_call_channel_has_dtmf:
+ * @self: a #TpCallChannel
+ *
+ * Whether or not %self has the %TP_IFACE_CHANNEL_INTERFACE_DTMF
+ * interfaces
+ *
+ * Returns: whether or not @self supports DTMF
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_call_channel_has_dtmf (TpCallChannel *self)
+{
+  g_return_val_if_fail (TP_IS_CALL_CHANNEL (self), FALSE);
+
+  return tp_proxy_has_interface_by_id (self,
+      TP_IFACE_QUARK_CHANNEL_INTERFACE_DTMF);
+}
+
 static void
 generic_async_cb (TpChannel *channel,
     const GError *error,

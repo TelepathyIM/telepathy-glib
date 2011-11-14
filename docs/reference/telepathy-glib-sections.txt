@@ -6414,6 +6414,8 @@ tp_call_channel_has_initial_video
 tp_call_channel_has_mutable_contents
 tp_call_channel_get_members
 <SUBSECTION>
+tp_call_channel_has_dtmf
+<SUBSECTION>
 tp_call_channel_set_ringing_async
 tp_call_channel_set_ringing_finish
 tp_call_channel_set_queued_async
