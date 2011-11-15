@@ -127,10 +127,6 @@ then
   AC_DEFINE([ENABLE_DEBUG_CACHE], [1], [Define to enable debug message cache])
 fi
 
-AC_ARG_ENABLE(handle-leak-debug,
-  AC_HELP_STRING([--enable-handle-leak-debug],[compile with handle leak debugging code (the CM should be built with -rdynamic)]),
-    enable_handle_leak_debug=$enableval, enable_handle_leak_debug=no )
-
 AC_ARG_ENABLE(backtrace,
   AC_HELP_STRING([--enable-backtrace],[enable printing out the backtrace in case of crash (in most GLib connection managers)]),
     enable_backtrace=$enableval, enable_backtrace=no )
