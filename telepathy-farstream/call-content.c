@@ -412,7 +412,7 @@ tf_call_content_set_property (GObject    *object,
         break;
 
       self->input_volume = g_value_get_uint (value);
-      tf_future_cli_call_content_interface_audio_control_call_set_input_volume (
+      tf_future_cli_call_content_interface_audio_control_call_report_input_volume (
           self->proxy, -1, self->input_volume, NULL, NULL, NULL, NULL);
 
       break;
@@ -425,7 +425,7 @@ tf_call_content_set_property (GObject    *object,
         break;
 
       self->output_volume = g_value_get_uint (value);
-      tf_future_cli_call_content_interface_audio_control_call_set_output_volume (
+      tf_future_cli_call_content_interface_audio_control_call_report_output_volume (
           self->proxy, -1, self->output_volume, NULL, NULL, NULL, NULL);
 
       break;
@@ -883,41 +883,46 @@ setup_content_media_properties (TfCallContent *self,
 }
 
 static void
-on_content_input_volume_changed (TfFutureCallContent *proxy,
-  guint volume,
-  gpointer user_data,
-  GObject *weak_object)
+update_audio_control (TfCallContent *self, GHashTable *properties)
 {
-  TfCallContent *self = TF_CALL_CONTENT (weak_object);
+  gint32 input_volume, output_volume;
+  gboolean valid;
 
-  /* Guard against early disposal */
-  if (self->call_channel == NULL)
-    return;
+  input_volume = tp_asv_get_uint32 (properties, "RequestedInputVolume", &valid);
+  if (valid)
+    {
+      self->input_volume = input_volume;
+      g_object_notify (G_OBJECT (self), "input-volume");
+    }
 
-  if (self->input_volume == volume)
-    return;
+  output_volume = tp_asv_get_uint32 (properties, "RequestedOutputVolume", &valid);
+  if (valid)
+    {
+      self->output_volume = output_volume;
+      g_object_notify (G_OBJECT (self), "output-volume");
+    }
 
-  self->input_volume = volume;
-  g_object_notify (weak_object, "input-volume");
 }
 
 static void
-on_content_output_volume_changed (TfFutureCallContent *proxy,
-  guint volume,
+on_content_audio_control_properties_changed (TpProxy *proxy,
+  const gchar *interface_name,
+  GHashTable *changed,
+  const gchar **invalidated,
   gpointer user_data,
   GObject *weak_object)
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
 
+  if (tp_strdiff (interface_name,
+      TF_FUTURE_IFACE_CALL_CONTENT_INTERFACE_AUDIO_CONTROL))
+    return;
+
   /* Guard against early disposal */
   if (self->call_channel == NULL)
     return;
 
-  if (self->output_volume == volume)
-    return;
-
-  self->output_volume = volume;
-  g_object_notify (weak_object, "output-volume");
+  update_audio_control (self, changed);
 }
 
 static void
@@ -926,8 +931,6 @@ got_content_audio_control_properties (TpProxy *proxy, GHashTable *properties,
 {
   TfCallContent *self = TF_CALL_CONTENT (weak_object);
   GSimpleAsyncResult *res = user_data;
-  guint32 input_volume, output_volume;
-  gboolean valid;
 
   if (error)
     {
@@ -959,14 +962,7 @@ got_content_audio_control_properties (TpProxy *proxy, GHashTable *properties,
       goto error;
     }
 
-
-  input_volume = tp_asv_get_uint32 (properties, "InputVolume", &valid);
-  if (valid)
-    self->input_volume = input_volume;
-
-  output_volume = tp_asv_get_uint32 (properties, "OutputVolume", &valid);
-  if (valid)
-    self->output_volume = output_volume;
+  update_audio_control (self, properties);
 
   setup_content_media_properties (self, proxy, res);
   return;
@@ -987,15 +983,8 @@ setup_content_audio_control (TfCallContent *self,
   tp_proxy_add_interface_by_id (proxy,
     TF_FUTURE_IFACE_QUARK_CALL_CONTENT_INTERFACE_AUDIO_CONTROL);
 
-  if (tf_future_cli_call_content_interface_audio_control_connect_to_input_volume_changed (
-      TF_FUTURE_CALL_CONTENT (proxy),
-      on_content_input_volume_changed,
-      NULL, NULL, G_OBJECT (self), &error) == NULL)
-    goto connect_failed;
-
-  if (tf_future_cli_call_content_interface_audio_control_connect_to_output_volume_changed (
-      TF_FUTURE_CALL_CONTENT (proxy),
-      on_content_output_volume_changed,
+  if (tp_cli_dbus_properties_connect_to_properties_changed (proxy,
+      on_content_audio_control_properties_changed,
       NULL, NULL, G_OBJECT (self), &error) == NULL)
     goto connect_failed;
 
