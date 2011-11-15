@@ -993,5 +993,5 @@
  * include the number of times the character P appeared in the file,
  * so would add NumberOfPs=42 to the Metadata property.
  *
- * Since: 0.17.UNRELEASED
+ * Since: 0.17.1
  */

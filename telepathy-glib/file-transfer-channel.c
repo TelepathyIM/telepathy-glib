@@ -797,7 +797,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
     * %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE does not have to be
     * prepared and there is no change notification.
     *
-    * Since: 0.15.UNRELEASED
+    * Since: 0.17.1
     */
   param_spec = g_param_spec_object ("file",
       "File",
@@ -847,7 +847,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
    * prepared for this property to be meaningful and kept up to date.
    *
-   * Since 0.15.UNRELEASED
+   * Since 0.17.1
    */
   param_spec = g_param_spec_uint ("state",
       "State",
@@ -884,7 +884,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
    * prepared for this property to be meaningful and kept up to date.
    *
-   * Since: 0.15.UNRELEASED
+   * Since: 0.17.1
    */
   param_spec = g_param_spec_uint64 ("initial-offset",
       "InitialOffset",
@@ -922,7 +922,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
    * prepared for this property to be meaningful.
    *
-   * Since: 0.16.UNRELEASED
+   * Since: 0.17.1
    */
   param_spec = g_param_spec_string ("service-name",
       "ServiceName",
@@ -969,7 +969,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
    * The %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE feature has to be
    * prepared for this property to be meaningful.
    *
-   * Since: 0.16.UNRELEASED
+   * Since: 0.17.1
    */
   param_spec = g_param_spec_boxed ("metadata",
       "Metadata",
@@ -1285,7 +1285,7 @@ file_replace_async_cb (GObject *source,
  * tp_file_transfer_channel_accept_file_finish() to get the result of
  * the operation.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.17.1
  */
 void
 tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
@@ -1343,7 +1343,7 @@ tp_file_transfer_channel_accept_file_async (TpFileTransferChannel *self,
  *
  * Returns: %TRUE if the accept operation was a success, or %FALSE
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.17.1
  */
 gboolean
 tp_file_transfer_channel_accept_file_finish (TpFileTransferChannel *self,
@@ -1407,7 +1407,7 @@ file_read_async_cb (GObject *source,
  * should then call tp_file_transfer_channel_provide_file_finish() to
  * get the result of the operation.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.17.1
  */
 void
 tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
@@ -1469,7 +1469,7 @@ tp_file_transfer_channel_provide_file_async (TpFileTransferChannel *self,
  * Returns: %TRUE if the file has been successfully provided, or
  * %FALSE.
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.17.1
  */
 gboolean
 tp_file_transfer_channel_provide_file_finish (TpFileTransferChannel *self,
@@ -1588,7 +1588,7 @@ tp_file_transfer_channel_get_size (TpFileTransferChannel *self)
  *
  * Returns: the value of the #TpFileTransferChannel:state property
  *
- * Since: 0.15.UNRELEASED
+ * Since: 0.17.1
  */
 TpFileTransferState
 tp_file_transfer_channel_get_state (TpFileTransferChannel *self,
@@ -1629,7 +1629,7 @@ tp_file_transfer_channel_get_transferred_bytes (TpFileTransferChannel *self)
  *
  * Returns: the value of the #TpFileTransferChannel:service-name property
  *
- * Since: 0.16.UNRELEASED
+ * Since: 0.17.1
  */
 const gchar *
 tp_file_transfer_channel_get_service_name (TpFileTransferChannel *self)
@@ -1648,7 +1648,7 @@ tp_file_transfer_channel_get_service_name (TpFileTransferChannel *self)
  * Returns: (transfer none) (element-type utf8 GObject.Strv): the
  *   value of the #TpFileTransferChannel:metadata property
  *
- * Since: 0.16.UNRELEASED
+ * Since: 0.17.1
  */
 const GHashTable *
 tp_file_transfer_channel_get_metadata (TpFileTransferChannel *self)

@@ -1,3 +1,19 @@
+telepathy-glib 0.17.1 (2011-11-15)
+==================================
+
+Dependencies:
+
+• gobject-introspection ≥ 1.30 is now required.
+
+• valac ≥ 0.14 is now required.
+
+Enhancements:
+
+• telepathy-glib now generates code for spec version 0.25.0.
+
+• fdo #39188: add high level API to accept and provide file transfers.
+  (morten, jonny)
+
 telepathy-glib 0.17.0 (2011-11-08)
 ==================================
 
