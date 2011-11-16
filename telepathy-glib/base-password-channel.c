@@ -409,7 +409,7 @@ tp_base_password_channel_finalize (GObject *object)
   TpBasePasswordChannel *self = TP_BASE_PASSWORD_CHANNEL (object);
   TpBasePasswordChannelPrivate *priv = self->priv;
 
-  tp_clear_pointer (&priv->sasl_error_details, g_hash_table_destroy);
+  tp_clear_pointer (&priv->sasl_error_details, g_hash_table_unref);
   tp_clear_pointer (&priv->sasl_error, g_free);
   tp_clear_pointer (&priv->authorization_identity, g_free);
   tp_clear_pointer (&priv->default_username, g_free);

@@ -63,7 +63,7 @@ connection_manager_got_info (TpConnectionManager *cm,
 
   g_main_loop_quit (mainloop);
 
-  g_hash_table_destroy (empty);
+  g_hash_table_unref (empty);
 }
 
 static void

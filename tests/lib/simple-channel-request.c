@@ -243,8 +243,8 @@ tp_tests_simple_channel_request_proceed (TpSvcChannelRequest *request,
 
   g_free (client_path);
   g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_free (channels, TRUE);
-  g_ptr_array_free (satisfied, TRUE);
+  g_ptr_array_unref (channels);
+  g_ptr_array_unref (satisfied);
   g_hash_table_unref (info);
   g_hash_table_unref (request_props);
   g_object_unref (dbus);

@@ -1081,7 +1081,7 @@ get_properties (TpSvcPropertiesInterface *iface,
     }
   tp_svc_properties_interface_return_from_get_properties (
       context, ret);
-  g_ptr_array_free (ret, TRUE);
+  g_ptr_array_unref (ret);
 }
 
 
@@ -1118,7 +1118,7 @@ list_properties (TpSvcPropertiesInterface *iface,
   for (i = 0; i < ret->len; i++)
     g_boxed_free (TP_STRUCT_TYPE_PROPERTY_SPEC, ret->pdata[i]);
 
-  g_ptr_array_free (ret, TRUE);
+  g_ptr_array_unref (ret);
 }
 
 

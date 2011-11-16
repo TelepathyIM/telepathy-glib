@@ -256,7 +256,7 @@ teardown (Test *test,
   dbus_connection_close (test->client_libdbus);
   dbus_connection_unref (test->client_libdbus);
 
-  g_ptr_array_free (test->log, TRUE);
+  g_ptr_array_unref (test->log);
 }
 
 static void

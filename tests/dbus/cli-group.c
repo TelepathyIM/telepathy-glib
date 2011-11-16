@@ -182,8 +182,8 @@ test_channel_proxy (TpTestsTextChannelGroup *service_chan,
       g_hash_table_unref (details);
     }
 
-  g_array_free (yarr, TRUE);
-  g_array_free (arr, TRUE);
+  g_array_unref (yarr);
+  g_array_unref (arr);
 
   tp_tests_proxy_run_until_dbus_queue_processed (conn);
 

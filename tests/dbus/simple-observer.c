@@ -366,8 +366,8 @@ call_observe_channels (Test *test)
   g_main_loop_run (test->mainloop);
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_free (channels, TRUE);
-  g_ptr_array_free (requests_satisified, TRUE);
+  g_ptr_array_unref (channels);
+  g_ptr_array_unref (requests_satisified);
   g_hash_table_unref (info);
 }
 

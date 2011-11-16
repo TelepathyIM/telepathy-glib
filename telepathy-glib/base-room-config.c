@@ -330,7 +330,7 @@ tp_base_room_config_get_property (
         g_ptr_array_add (property_names, NULL);
         g_value_take_boxed (value,
             g_strdupv ((gchar **) property_names->pdata));
-        g_ptr_array_free (property_names, TRUE);
+        g_ptr_array_unref (property_names);
         break;
       }
       case PROP_CONFIGURATION_RETRIEVED:

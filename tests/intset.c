@@ -196,7 +196,7 @@ int main (int argc, char **argv)
     arr = tp_intset_to_array (a);
     tmp = tp_intset_from_array (arr);
     g_assert (tp_intset_is_equal (a, tmp));
-    g_array_free (arr, TRUE);
+    g_array_unref (arr);
     tp_intset_destroy (tmp);
     arr = NULL;
     tmp = NULL;
@@ -204,7 +204,7 @@ int main (int argc, char **argv)
     arr = tp_intset_to_array (b);
     tmp = tp_intset_from_array (arr);
     g_assert (tp_intset_is_equal (b, tmp));
-    g_array_free (arr, TRUE);
+    g_array_unref (arr);
     tp_intset_destroy (tmp);
     arr = NULL;
     tmp = NULL;

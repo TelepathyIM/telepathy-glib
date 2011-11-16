@@ -55,7 +55,7 @@ test_no_features (TpTestsContactsConnection *service_conn,
       tp_asv_get_string (attrs, TP_IFACE_CONNECTION "/contact-id"), ==,
       "chris");
 
-  g_hash_table_destroy (contacts);
+  g_hash_table_unref (contacts);
 }
 
 static void
@@ -125,7 +125,7 @@ test_features (TpTestsContactsConnection *service_conn,
           TP_IFACE_CONNECTION_INTERFACE_AVATARS "/token"), ==,
       "ccccc");
 
-  g_hash_table_destroy (contacts);
+  g_hash_table_unref (contacts);
 }
 
 int
@@ -216,7 +216,7 @@ main (int argc,
   g_free (conn_path);
 
   g_object_unref (dbus);
-  g_array_free (handles, TRUE);
+  g_array_unref (handles);
 
   return 0;
 }

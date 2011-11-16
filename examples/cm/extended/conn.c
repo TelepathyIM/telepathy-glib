@@ -104,7 +104,7 @@ finalize (GObject *object)
   tp_contacts_mixin_finalize (object);
   g_free (self->priv->account);
   g_free (self->priv->hat_color);
-  g_hash_table_destroy (self->priv->hat_properties);
+  g_hash_table_unref (self->priv->hat_properties);
 
   G_OBJECT_CLASS (example_extended_connection_parent_class)->finalize (object);
 }

@@ -1027,10 +1027,10 @@ tp_base_client_finalize (GObject *object)
 
   g_free (self->priv->name);
 
-  g_ptr_array_free (self->priv->observer_filters, TRUE);
-  g_ptr_array_free (self->priv->approver_filters, TRUE);
-  g_ptr_array_free (self->priv->handler_filters, TRUE);
-  g_ptr_array_free (self->priv->handler_caps, TRUE);
+  g_ptr_array_unref (self->priv->observer_filters);
+  g_ptr_array_unref (self->priv->approver_filters);
+  g_ptr_array_unref (self->priv->handler_filters);
+  g_ptr_array_unref (self->priv->handler_caps);
 
   g_free (self->priv->bus_name);
   g_free (self->priv->object_path);

@@ -668,7 +668,7 @@ tp_connection_manager_end_introspection (TpConnectionManager *self,
       for (i = 0; i < self->priv->pending_protocols->len; i++)
         g_free (self->priv->pending_protocols->pdata[i]);
 
-      g_ptr_array_free (self->priv->pending_protocols, TRUE);
+      g_ptr_array_unref (self->priv->pending_protocols);
       self->priv->pending_protocols = NULL;
     }
 
@@ -686,7 +686,7 @@ tp_connection_manager_update_protocol_structs (TpConnectionManager *self)
   g_assert (self->priv->protocol_objects != NULL);
 
   if (self->priv->protocol_structs != NULL)
-    g_ptr_array_free (self->priv->protocol_structs, TRUE);
+    g_ptr_array_unref (self->priv->protocol_structs);
 
   self->priv->protocol_structs = g_ptr_array_sized_new (
       g_hash_table_size (self->priv->protocol_objects) + 1);
@@ -1233,7 +1233,7 @@ tp_connection_manager_dispose (GObject *object)
 
   if (self->priv->protocol_structs != NULL)
     {
-      g_ptr_array_free (self->priv->protocol_structs, TRUE);
+      g_ptr_array_unref (self->priv->protocol_structs);
       self->priv->protocol_structs = NULL;
     }
 
@@ -1272,7 +1272,7 @@ tp_connection_manager_finalize (GObject *object)
       for (i = 0; i < self->priv->pending_protocols->len; i++)
         g_free (self->priv->pending_protocols->pdata[i]);
 
-      g_ptr_array_free (self->priv->pending_protocols, TRUE);
+      g_ptr_array_unref (self->priv->pending_protocols);
     }
 
   G_OBJECT_CLASS (tp_connection_manager_parent_class)->finalize (object);
@@ -1704,10 +1704,10 @@ list_context_unref (_ListContext *list_context)
             g_object_unref (cm);
         }
 
-      g_ptr_array_free (list_context->arr, TRUE);
+      g_ptr_array_unref (list_context->arr);
     }
 
-  g_hash_table_destroy (list_context->table);
+  g_hash_table_unref (list_context->table);
   g_slice_free (_ListContext, list_context);
 }
 

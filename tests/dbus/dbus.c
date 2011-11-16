@@ -229,7 +229,7 @@ test_watch_name_owner (void)
       g_free (events->pdata[i]);
     }
 
-  g_ptr_array_free (events, TRUE);
+  g_ptr_array_unref (events);
   g_main_loop_unref (mainloop);
   mainloop = NULL;
 }

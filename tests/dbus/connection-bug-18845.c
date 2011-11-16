@@ -82,7 +82,7 @@ main (int argc,
         TP_HANDLE_TYPE_CONTACT, ids, &handles, &error, NULL), "");
     g_assert_no_error (error);
 
-    g_array_free (handles, TRUE);
+    g_array_unref (handles);
   }
 
   /* The bug was in cleaning up handle refs when the CM fell off the bus.

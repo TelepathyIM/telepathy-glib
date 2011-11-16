@@ -99,7 +99,7 @@ create_channel_request (TpTestsSimpleChannelDispatcher *self,
 
   self->priv->requests = g_slist_append (self->priv->requests, chan_request);
 
-  g_ptr_array_free (requests, TRUE);
+  g_ptr_array_unref (requests);
 
   dbus = tp_dbus_daemon_dup (NULL);
   g_assert (dbus != NULL);

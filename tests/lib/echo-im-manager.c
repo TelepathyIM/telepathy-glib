@@ -161,7 +161,7 @@ tp_tests_echo_im_manager_close_all (TpTestsEchoImManager *self)
       GHashTable *tmp = self->priv->channels;
 
       self->priv->channels = NULL;
-      g_hash_table_destroy (tmp);
+      g_hash_table_unref (tmp);
     }
 
   if (self->priv->status_changed_id != 0)
@@ -282,7 +282,7 @@ tp_tests_echo_im_manager_foreach_channel_class (TpChannelManager *manager,
 
   func (manager, table, allowed_properties, user_data);
 
-  g_hash_table_destroy (table);
+  g_hash_table_unref (table);
 }
 
 static gboolean

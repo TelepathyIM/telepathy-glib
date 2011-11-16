@@ -178,7 +178,7 @@ example_csh_room_manager_close_all (ExampleCSHRoomManager *self)
       GHashTable *tmp = self->priv->channels;
 
       self->priv->channels = NULL;
-      g_hash_table_destroy (tmp);
+      g_hash_table_unref (tmp);
     }
 
   if (self->priv->status_changed_id != 0)
@@ -284,7 +284,7 @@ example_csh_room_manager_type_foreach_channel_class (GType type,
 
     func (type, table, allowed_properties, user_data);
 
-    g_hash_table_destroy (table);
+    g_hash_table_unref (table);
 }
 
 static gboolean

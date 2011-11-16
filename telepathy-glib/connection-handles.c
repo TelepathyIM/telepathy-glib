@@ -62,7 +62,7 @@ hold_handles_context_free (gpointer p)
   if (context->destroy != NULL)
     context->destroy (context->user_data);
 
-  g_array_free (context->handles, TRUE);
+  g_array_unref (context->handles);
 
   g_slice_free (HoldHandlesContext, context);
 }
@@ -431,7 +431,7 @@ tp_connection_get_contact_attributes (TpConnection *self,
   tp_cli_connection_interface_contacts_call_get_contact_attributes (self, -1,
       a, (const gchar **) interfaces, TRUE, callback,
       user_data, destroy, weak_object);
-  g_array_free (a, TRUE);
+  g_array_unref (a);
 }
 
 /**

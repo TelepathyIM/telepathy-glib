@@ -79,10 +79,10 @@ tp_message_dispose (GObject *object)
     {
       for (i = 0; i < self->parts->len; i++)
         {
-          g_hash_table_destroy (g_ptr_array_index (self->parts, i));
+          g_hash_table_unref (g_ptr_array_index (self->parts, i));
         }
 
-      g_ptr_array_free (self->parts, TRUE);
+      g_ptr_array_unref (self->parts);
       self->parts = NULL;
     }
 
@@ -755,7 +755,7 @@ tp_message_to_text (TpMessage *message,
                * that counts as "non-text content" I think */
               DEBUG ("... didn't understand it, setting NON_TEXT_CONTENT");
               flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
-              tp_clear_pointer (&alternatives_needed, g_hash_table_destroy);
+              tp_clear_pointer (&alternatives_needed, g_hash_table_unref);
             }
         }
       else if ((flags & TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT) == 0)
@@ -769,7 +769,7 @@ tp_message_to_text (TpMessage *message,
                * (attached image or something, perhaps) */
               DEBUG ("... ... yes, no possibility of a text alternative");
               flags |= TP_CHANNEL_TEXT_MESSAGE_FLAG_NON_TEXT_CONTENT;
-              tp_clear_pointer (&alternatives_needed, g_hash_table_destroy);
+              tp_clear_pointer (&alternatives_needed, g_hash_table_unref);
             }
           else if (alternatives_used != NULL &&
               g_hash_table_lookup (alternatives_used, (gpointer) alternative)
@@ -804,10 +804,10 @@ tp_message_to_text (TpMessage *message,
     }
 
   if (alternatives_needed != NULL)
-    g_hash_table_destroy (alternatives_needed);
+    g_hash_table_unref (alternatives_needed);
 
   if (alternatives_used != NULL)
-    g_hash_table_destroy (alternatives_used);
+    g_hash_table_unref (alternatives_used);
 
   if (out_flags != NULL)
     {

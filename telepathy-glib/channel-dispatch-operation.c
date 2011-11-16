@@ -467,7 +467,7 @@ tp_channel_dispatch_operation_dispose (GObject *object)
   if (self->priv->channels != NULL)
     {
       /* channels array has 'g_object_unref' has free_func */
-      g_ptr_array_free (self->priv->channels, TRUE);
+      g_ptr_array_unref (self->priv->channels);
       self->priv->channels = NULL;
     }
 

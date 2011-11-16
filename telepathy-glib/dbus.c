@@ -751,10 +751,10 @@ tp_g_value_slice_new_take_object_path (gchar *path)
  * </example>
  *
  * Allocated values will be automatically free'd when overwritten, removed or
- * the hash table destroyed with g_hash_table_destroy().
+ * the hash table destroyed with g_hash_table_unref().
  *
  * Returns: a newly created #GHashTable for storing a{sv} maps, free with
- * g_hash_table_destroy().
+ * g_hash_table_unref().
  * Since: 0.7.29
  */
 GHashTable *

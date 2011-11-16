@@ -603,17 +603,17 @@ tp_base_connection_dispose (GObject *object)
   tp_clear_object (&priv->bus_proxy);
 
   g_ptr_array_foreach (priv->channel_factories, (GFunc) g_object_unref, NULL);
-  g_ptr_array_free (priv->channel_factories, TRUE);
+  g_ptr_array_unref (priv->channel_factories);
   priv->channel_factories = NULL;
 
   g_ptr_array_foreach (priv->channel_managers, (GFunc) g_object_unref, NULL);
-  g_ptr_array_free (priv->channel_managers, TRUE);
+  g_ptr_array_unref (priv->channel_managers);
   priv->channel_managers = NULL;
 
   if (priv->channel_requests)
     {
       g_assert (priv->channel_requests->len == 0);
-      g_ptr_array_free (priv->channel_requests, TRUE);
+      g_ptr_array_unref (priv->channel_requests);
       priv->channel_requests = NULL;
     }
 
@@ -622,7 +622,7 @@ tp_base_connection_dispose (GObject *object)
 
   if (priv->interfaces)
     {
-      g_array_free (priv->interfaces, TRUE);
+      g_array_unref (priv->interfaces);
     }
 
   if (G_OBJECT_CLASS (tp_base_connection_parent_class)->dispose)
@@ -716,7 +716,7 @@ exportable_channel_get_old_info (TpExportableChannel *channel,
         }
     }
 
-  g_hash_table_destroy (channel_properties);
+  g_hash_table_unref (channel_properties);
 }
 
 
@@ -879,7 +879,7 @@ satisfy_request (TpBaseConnection *conn,
               NULL);
           tp_svc_connection_interface_requests_return_from_create_channel (
               request->context, object_path, properties);
-          g_hash_table_destroy (properties);
+          g_hash_table_unref (properties);
         }
         break;
 
@@ -893,7 +893,7 @@ satisfy_request (TpBaseConnection *conn,
               NULL);
           tp_svc_connection_interface_requests_return_from_ensure_channel (
               request->context, request->yours, object_path, properties);
-          g_hash_table_destroy (properties);
+          g_hash_table_unref (properties);
         }
         break;
 
@@ -945,13 +945,13 @@ factory_satisfy_requests (TpBaseConnection *conn,
       g_ptr_array_add (array, get_channel_details (G_OBJECT (chan)));
       tp_svc_connection_interface_requests_emit_new_channels (conn, array);
       g_value_array_free (g_ptr_array_index (array, 0));
-      g_ptr_array_free (array, TRUE);
+      g_ptr_array_unref (array);
 
       tp_svc_connection_emit_new_channel (conn, object_path, channel_type,
           handle_type, handle, suppress_handler);
     }
 
-  g_ptr_array_free (tmp, TRUE);
+  g_ptr_array_unref (tmp);
 
   g_free (object_path);
   g_free (channel_type);
@@ -1040,7 +1040,7 @@ factory_channel_error_cb (TpChannelFactoryIface *factory,
   for (i = 0; i < tmp->len; i++)
     fail_channel_request (conn, g_ptr_array_index (tmp, i), error);
 
-  g_ptr_array_free (tmp, TRUE);
+  g_ptr_array_unref (tmp);
   g_free (channel_type);
 }
 
@@ -1180,7 +1180,7 @@ manager_new_channels_cb (TpChannelManager *manager,
       array);
 
   g_ptr_array_foreach (array, (GFunc) g_value_array_free, NULL);
-  g_ptr_array_free (array, TRUE);
+  g_ptr_array_unref (array);
 
   /* Emit NewChannel */
   g_hash_table_iter_init (&iter, channels);
@@ -1202,7 +1202,7 @@ manager_new_channels_cb (TpChannelManager *manager,
       g_free (channel_type);
     }
 
-  g_hash_table_destroy (context.suppress_handler);
+  g_hash_table_unref (context.suppress_handler);
 }
 
 
@@ -2299,12 +2299,12 @@ tp_base_connection_list_channels (TpSvcConnection *iface,
 
   tp_svc_connection_return_from_list_channels (context, channels);
 
-  g_ptr_array_free (channels, TRUE);
+  g_ptr_array_unref (channels);
   for (i = 0; i < values->len; i++)
     {
       tp_g_value_slice_free (g_ptr_array_index (values, i));
     }
-  g_ptr_array_free (values, TRUE);
+  g_ptr_array_unref (values);
 }
 
 static void
@@ -2399,7 +2399,7 @@ tp_base_connection_request_channel (TpSvcConnection *iface,
         }
     }
 
-  g_hash_table_destroy (request_properties);
+  g_hash_table_unref (request_properties);
 
   if (claimed_by_channel_manager)
     return;
@@ -2602,7 +2602,7 @@ out:
   if (handles != NULL)
     {
       tp_handles_unref (handle_repo, handles);
-      g_array_free (handles, TRUE);
+      g_array_unref (handles);
     }
 }
 
@@ -2691,7 +2691,7 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
             i));
     }
 
-  g_ptr_array_free (contexts, TRUE);
+  g_ptr_array_unref (contexts);
 
   g_signal_emit (self, signals[SHUTDOWN_FINISHED], 0);
 }
@@ -2752,7 +2752,7 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
       reason);
 
   if (dup_ != NULL)
-    g_hash_table_destroy (dup_);
+    g_hash_table_unref (dup_);
 }
 
 /**
@@ -3576,7 +3576,7 @@ conn_requests_requestotron_validate_handle (TpBaseConnection *self,
    */
   if (altered_properties != NULL)
     {
-      g_hash_table_destroy (altered_properties);
+      g_hash_table_unref (altered_properties);
 
       if (target_handle_value != NULL)
         tp_g_value_slice_free (target_handle_value);

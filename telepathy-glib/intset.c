@@ -267,7 +267,7 @@ tp_intset_destroy (TpIntset *set)
 {
   g_return_if_fail (set != NULL);
 
-  g_hash_table_destroy (set->table);
+  g_hash_table_unref (set->table);
   g_slice_free (TpIntset, set);
 }
 

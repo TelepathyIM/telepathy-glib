@@ -258,7 +258,7 @@ tp_contacts_mixin_finalize (GObject *obj)
   DEBUG ("%p", obj);
 
   /* free any data held directly by the object here */
-  g_hash_table_destroy (mixin->priv->interfaces);
+  g_hash_table_unref (mixin->priv->interfaces);
   g_slice_free (TpContactsMixinPrivate, mixin->priv);
 }
 
@@ -308,7 +308,7 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
   valid_handles = g_array_sized_new (TRUE, TRUE, sizeof (TpHandle),
       handles->len);
   result = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL,
-      (GDestroyNotify) g_hash_table_destroy);
+      (GDestroyNotify) g_hash_table_unref);
 
   for (i = 0 ; i < handles->len ; i++)
     {
@@ -353,7 +353,7 @@ tp_contacts_mixin_get_contact_attributes (GObject *obj,
     }
 
   tp_handles_unref (contact_repo, valid_handles);
-  g_array_free (valid_handles, TRUE);
+  g_array_unref (valid_handles);
 
   return result;
 }
@@ -386,7 +386,7 @@ tp_contacts_mixin_get_contact_attributes_impl (
       context, result);
 
   g_free (sender);
-  g_hash_table_destroy (result);
+  g_hash_table_unref (result);
 }
 
 /**

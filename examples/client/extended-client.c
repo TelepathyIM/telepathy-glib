@@ -162,7 +162,7 @@ contacts_ready_cb (TpConnection *conn,
       "red", EXAMPLE_HAT_STYLE_FEDORA, asv,
       set_hat_cb, pair, contact_pair_free, NULL);
 
-  g_hash_table_destroy (asv);
+  g_hash_table_unref (asv);
 }
 
 static void
@@ -272,7 +272,7 @@ connection_manager_got_info (TpConnectionManager *cm,
       tp_cli_connection_manager_call_request_connection (cm,
           -1, "example", params, cm_requested_connection, NULL, NULL, NULL);
 
-      g_hash_table_destroy (params);
+      g_hash_table_unref (params);
     }
 }
 

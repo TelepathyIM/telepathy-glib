@@ -209,11 +209,11 @@ test_complex_presence (TpTestsContactsConnection *service_conn,
         client_conn, -1, monster, &error, NULL), "");
   g_assert_no_error (error);
 
-  g_hash_table_destroy (params);
+  g_hash_table_unref (params);
   params = NULL;
-  g_hash_table_destroy (monster);
+  g_hash_table_unref (monster);
   monster = NULL;
-  g_hash_table_destroy (statuses);
+  g_hash_table_unref (statuses);
   statuses = NULL;
 }
 

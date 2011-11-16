@@ -280,7 +280,7 @@ get_contact_statuses (GObject *object,
 
       g_hash_table_insert (result, GUINT_TO_POINTER (contact),
           tp_presence_status_new (presence, parameters));
-      g_hash_table_destroy (parameters);
+      g_hash_table_unref (parameters);
     }
 
   return result;
@@ -335,7 +335,7 @@ set_own_status (GObject *object,
   g_hash_table_insert (presences, GUINT_TO_POINTER (base->self_handle),
       (gpointer) status);
   tp_presence_mixin_emit_presence_update (object, presences);
-  g_hash_table_destroy (presences);
+  g_hash_table_unref (presences);
 
   if (!self->priv->away)
     {

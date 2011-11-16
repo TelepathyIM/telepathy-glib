@@ -176,9 +176,9 @@ test_by_handle (Fixture *f,
   g_assert_cmpstr (tp_contact_get_identifier (contacts[3]), ==, "chris");
 
   /* clean up before doing the second request */
-  g_array_free (result.invalid, TRUE);
+  g_array_unref (result.invalid);
   result.invalid = NULL;
-  g_ptr_array_free (result.contacts, TRUE);
+  g_ptr_array_unref (result.contacts);
   result.contacts = NULL;
   g_assert (result.error == NULL);
 
@@ -244,8 +244,8 @@ test_by_handle (Fixture *f,
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
-  g_array_free (result.invalid, TRUE);
-  g_ptr_array_free (result.contacts, TRUE);
+  g_array_unref (result.invalid);
+  g_ptr_array_unref (result.contacts);
   g_assert (result.error == NULL);
 }
 
@@ -319,8 +319,8 @@ test_no_features (Fixture *f,
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
-  g_array_free (result.invalid, TRUE);
-  g_ptr_array_free (result.contacts, TRUE);
+  g_array_unref (result.invalid);
+  g_ptr_array_unref (result.contacts);
   g_assert (result.error == NULL);
 }
 
@@ -453,9 +453,9 @@ test_upgrade (Fixture *f,
     }
 
   /* clean up before doing the second request */
-  g_array_free (result.invalid, TRUE);
+  g_array_unref (result.invalid);
   result.invalid = NULL;
-  g_ptr_array_free (result.contacts, TRUE);
+  g_ptr_array_unref (result.contacts);
   result.contacts = NULL;
   g_assert (result.error == NULL);
 
@@ -520,7 +520,7 @@ test_upgrade (Fixture *f,
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
-  g_ptr_array_free (result.contacts, TRUE);
+  g_ptr_array_unref (result.contacts);
   g_assert (result.invalid == NULL);
   g_assert (result.error == NULL);
 }
@@ -778,8 +778,8 @@ test_features (Fixture *f,
 
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
-  g_array_free (result.invalid, TRUE);
-  g_ptr_array_free (result.contacts, TRUE);
+  g_array_unref (result.invalid);
+  g_ptr_array_unref (result.contacts);
   g_assert (result.error == NULL);
 }
 
@@ -888,11 +888,11 @@ test_by_id (Fixture *f,
   e = g_hash_table_lookup (result.bad_ids, "Not valid");
   MYASSERT (e != NULL, "");
 
-  g_ptr_array_free (result.contacts, TRUE);
+  g_ptr_array_unref (result.contacts);
   result.contacts = NULL;
   g_strfreev (result.good_ids);
   result.good_ids = NULL;
-  g_hash_table_destroy (result.bad_ids);
+  g_hash_table_unref (result.bad_ids);
   result.bad_ids = NULL;
 
   g_message ("%s: all good", G_STRFUNC);
@@ -924,11 +924,11 @@ test_by_id (Fixture *f,
       g_object_unref (contacts[i]);
     }
 
-  g_ptr_array_free (result.contacts, TRUE);
+  g_ptr_array_unref (result.contacts);
   result.contacts = NULL;
   g_strfreev (result.good_ids);
   result.good_ids = NULL;
-  g_hash_table_destroy (result.bad_ids);
+  g_hash_table_unref (result.bad_ids);
   result.bad_ids = NULL;
 
   g_message ("%s: not all good", G_STRFUNC);
@@ -978,11 +978,11 @@ test_by_id (Fixture *f,
   /* remaining cleanup */
   g_main_loop_unref (result.loop);
 
-  g_ptr_array_free (result.contacts, TRUE);
+  g_ptr_array_unref (result.contacts);
   result.contacts = NULL;
   g_strfreev (result.good_ids);
   result.good_ids = NULL;
-  g_hash_table_destroy (result.bad_ids);
+  g_hash_table_unref (result.bad_ids);
   result.bad_ids = NULL;
 }
 

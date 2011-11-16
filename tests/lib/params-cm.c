@@ -201,7 +201,7 @@ tp_tests_param_connection_manager_free_params (TpTestsCMParams *p)
   g_free (p->a_string);
   g_strfreev (p->a_array_of_strings);
   if (p->a_array_of_bytes != NULL)
-    g_array_free (p->a_array_of_bytes, TRUE);
+    g_array_unref (p->a_array_of_bytes);
   g_free (p->a_object_path);
 
   g_slice_free (TpTestsCMParams, p);

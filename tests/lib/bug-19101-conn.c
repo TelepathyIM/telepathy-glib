@@ -66,7 +66,7 @@ tp_tests_bug19101_connection_get_contact_attributes (
   DEBUG ("called; returning rubbish");
 
   result = g_hash_table_new_full (NULL, NULL, NULL,
-      (GDestroyNotify) g_hash_table_destroy);
+      (GDestroyNotify) g_hash_table_unref);
 
   for (i = 0 ; i < handles->len ; i++)
     {

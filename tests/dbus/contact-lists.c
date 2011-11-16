@@ -451,10 +451,10 @@ teardown (Test *test,
   gboolean ok;
   GError *error = NULL;
 
-  g_array_free (test->arr, TRUE);
+  g_array_unref (test->arr);
 
   test_clear_log (test);
-  g_ptr_array_free (test->log, TRUE);
+  g_ptr_array_unref (test->log);
 
   tp_handle_unref (test->contact_repo, test->sjoerd);
   tp_handle_unref (test->contact_repo, test->helen);

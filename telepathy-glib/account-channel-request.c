@@ -733,7 +733,7 @@ acr_channel_request_succeeded_with_channel (TpChannelRequest *chan_req,
       tp_proxy_prepare_async (self->priv->channel, (GQuark *) features->data,
           channel_prepare_cb, self);
 
-      g_array_free (features, TRUE);
+      g_array_unref (features);
     }
   else
     {

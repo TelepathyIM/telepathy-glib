@@ -169,13 +169,13 @@ finalize (GObject *object)
   TpTestsContactsConnection *self = TP_TESTS_CONTACTS_CONNECTION (object);
 
   tp_contacts_mixin_finalize (object);
-  g_hash_table_destroy (self->priv->aliases);
-  g_hash_table_destroy (self->priv->avatars);
-  g_hash_table_destroy (self->priv->presence_statuses);
-  g_hash_table_destroy (self->priv->presence_messages);
-  g_hash_table_destroy (self->priv->locations);
-  g_hash_table_destroy (self->priv->capabilities);
-  g_hash_table_destroy (self->priv->contact_info);
+  g_hash_table_unref (self->priv->aliases);
+  g_hash_table_unref (self->priv->avatars);
+  g_hash_table_unref (self->priv->presence_statuses);
+  g_hash_table_unref (self->priv->presence_messages);
+  g_hash_table_unref (self->priv->locations);
+  g_hash_table_unref (self->priv->capabilities);
+  g_hash_table_unref (self->priv->contact_info);
 
   if (self->priv->default_contact_info != NULL)
     g_ptr_array_unref (self->priv->default_contact_info);
@@ -460,7 +460,7 @@ my_get_contact_statuses (GObject *object,
 
       g_hash_table_insert (result, key,
           tp_presence_status_new (index, parameters));
-      g_hash_table_destroy (parameters);
+      g_hash_table_unref (parameters);
     }
 
   return result;
@@ -611,7 +611,7 @@ tp_tests_contacts_connection_change_aliases (TpTestsContactsConnection *self,
       structs);
 
   g_ptr_array_foreach (structs, (GFunc) g_value_array_free, NULL);
-  g_ptr_array_free (structs, TRUE);
+  g_ptr_array_unref (structs);
 }
 
 void
@@ -648,12 +648,12 @@ tp_tests_contacts_connection_change_presences (
 
       g_hash_table_insert (presences, key, tp_presence_status_new (indexes[i],
             parameters));
-      g_hash_table_destroy (parameters);
+      g_hash_table_unref (parameters);
     }
 
   tp_presence_mixin_emit_presence_update ((GObject *) self,
       presences);
-  g_hash_table_destroy (presences);
+  g_hash_table_unref (presences);
 }
 
 void
@@ -804,7 +804,7 @@ my_get_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
 
   tp_svc_connection_interface_aliasing_return_from_get_aliases (context,
       result);
-  g_hash_table_destroy (result);
+  g_hash_table_unref (result);
 }
 
 static void
@@ -915,7 +915,7 @@ my_get_avatar_tokens (TpSvcConnectionInterfaceAvatars *avatars,
 
   tp_svc_connection_interface_avatars_return_from_get_known_avatar_tokens (
       context, result);
-  g_hash_table_destroy (result);
+  g_hash_table_unref (result);
 }
 
 static void
@@ -955,7 +955,7 @@ my_get_known_avatar_tokens (TpSvcConnectionInterfaceAvatars *avatars,
 
   tp_svc_connection_interface_avatars_return_from_get_known_avatar_tokens (
       context, result);
-  g_hash_table_destroy (result);
+  g_hash_table_unref (result);
 }
 
 static void
@@ -1069,7 +1069,7 @@ my_get_locations (TpSvcConnectionInterfaceLocation *avatars,
 
   tp_svc_connection_interface_location_return_from_get_locations (
       context, result);
-  g_hash_table_destroy (result);
+  g_hash_table_unref (result);
 }
 
 static void
@@ -1123,7 +1123,7 @@ my_get_contact_capabilities (TpSvcConnectionInterfaceContactCapabilities *obj,
   tp_svc_connection_interface_contact_capabilities_return_from_get_contact_capabilities (
       context, result);
 
-  g_hash_table_destroy (result);
+  g_hash_table_unref (result);
 }
 
 static void

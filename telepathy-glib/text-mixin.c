@@ -262,7 +262,7 @@ tp_text_mixin_finalize (GObject *obj)
 
   g_queue_free (mixin->priv->pending);
 
-  g_array_free (mixin->priv->msg_types, TRUE);
+  g_array_unref (mixin->priv->msg_types);
 
   g_slice_free (TpTextMixinPrivate, mixin->priv);
 }
@@ -536,7 +536,7 @@ tp_text_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
       for (i = 0; i < ret->len; i++)
         g_value_array_free (g_ptr_array_index (ret, i));
 
-      g_ptr_array_free (ret, TRUE);
+      g_ptr_array_unref (ret);
     }
   else
     {

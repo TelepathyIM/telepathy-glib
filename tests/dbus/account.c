@@ -181,7 +181,7 @@ teardown (Test *test,
       test->account = NULL;
     }
 
-  g_hash_table_destroy (test->times_notified);
+  g_hash_table_unref (test->times_notified);
   test->times_notified = NULL;
 
   /* make sure any pending calls on the account have happened, so it can die */
@@ -703,7 +703,7 @@ test_connection (Test *test,
   g_assert_cmpstr (tp_proxy_get_object_path (conn), ==, CONN1_PATH);
   g_assert_cmpuint (test_get_times_notified (test, "connection"), ==, 1);
 
-  g_hash_table_destroy (change);
+  g_hash_table_unref (change);
 }
 
 int

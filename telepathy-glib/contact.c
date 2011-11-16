@@ -1629,15 +1629,15 @@ contacts_context_unref (gpointer p)
 
   g_assert (c->contacts != NULL);
   g_ptr_array_foreach (c->contacts, (GFunc) g_object_unref, NULL);
-  g_ptr_array_free (c->contacts, TRUE);
+  g_ptr_array_unref (c->contacts);
   c->contacts = NULL;
 
   g_assert (c->handles != NULL);
-  g_array_free (c->handles, TRUE);
+  g_array_unref (c->handles);
   c->handles = NULL;
 
   g_assert (c->invalid != NULL);
-  g_array_free (c->invalid, TRUE);
+  g_array_unref (c->invalid);
   c->invalid = NULL;
 
   if (c->request_ids != NULL)
@@ -1645,7 +1645,7 @@ contacts_context_unref (gpointer p)
 
   c->request_ids = NULL;
 
-  tp_clear_pointer (&c->request_errors, g_hash_table_destroy);
+  tp_clear_pointer (&c->request_errors, g_hash_table_unref);
 
   if (c->destroy != NULL)
     c->destroy (c->user_data);
@@ -2715,7 +2715,7 @@ connection_avatar_request_idle_cb (gpointer user_data)
   tp_cli_connection_interface_avatars_call_request_avatars (connection, -1,
       connection->priv->avatar_request_queue, NULL, NULL, NULL, NULL);
 
-  g_array_free (connection->priv->avatar_request_queue, TRUE);
+  g_array_unref (connection->priv->avatar_request_queue);
   connection->priv->avatar_request_queue = NULL;
   connection->priv->avatar_request_idle_id = 0;
 
@@ -3300,7 +3300,7 @@ tp_connection_refresh_contact_info (TpConnection *self,
   tp_cli_connection_interface_contact_info_call_refresh_contact_info (self, -1,
       handles, NULL, NULL, NULL, NULL);
 
-  g_array_free (handles, TRUE);
+  g_array_unref (handles);
 }
 
 static void
@@ -4061,7 +4061,7 @@ lookup_all_contacts (ContactsContext *context)
         }
       else
         {
-          g_ptr_array_free (contacts, TRUE);
+          g_ptr_array_unref (contacts);
           contacts = NULL;
           break;
         }
@@ -4204,7 +4204,7 @@ tp_connection_get_contacts_by_handle (TpConnection *self,
       g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
           contacts_context_idle_continue, context, contacts_context_unref);
 
-      g_ptr_array_free (contacts, TRUE);
+      g_ptr_array_unref (contacts);
       return;
     }
 

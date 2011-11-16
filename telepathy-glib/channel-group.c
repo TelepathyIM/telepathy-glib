@@ -713,8 +713,8 @@ _tp_channel_emit_initial_sets (TpChannel *self)
           reason);
     }
 
-  g_array_free (added, TRUE);
-  g_array_free (remote_pending, TRUE);
+  g_array_unref (added);
+  g_array_unref (remote_pending);
 
   _tp_channel_continue_introspection (self);
 }

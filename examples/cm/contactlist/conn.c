@@ -177,7 +177,7 @@ alias_updated_cb (ExampleContactList *contact_list,
 
   tp_svc_connection_interface_aliasing_emit_aliases_changed (self, aliases);
 
-  g_ptr_array_free (aliases, TRUE);
+  g_ptr_array_unref (aliases);
   g_value_array_free (pair);
 }
 
@@ -350,7 +350,7 @@ get_contact_statuses (GObject *object,
           g_str_equal, NULL, (GDestroyNotify) tp_g_value_slice_free);
       g_hash_table_insert (result, GUINT_TO_POINTER (contact),
           tp_presence_status_new (presence, parameters));
-      g_hash_table_destroy (parameters);
+      g_hash_table_unref (parameters);
     }
 
   return result;
@@ -386,7 +386,7 @@ set_own_status (GObject *object,
   g_hash_table_insert (presences, GUINT_TO_POINTER (base->self_handle),
       (gpointer) status);
   tp_presence_mixin_emit_presence_update (object, presences);
-  g_hash_table_destroy (presences);
+  g_hash_table_unref (presences);
   return TRUE;
 }
 
@@ -504,7 +504,7 @@ get_aliases (TpSvcConnectionInterfaceAliasing *aliasing,
 
   tp_svc_connection_interface_aliasing_return_from_get_aliases (context,
       result);
-  g_hash_table_destroy (result);
+  g_hash_table_unref (result);
 }
 
 static void

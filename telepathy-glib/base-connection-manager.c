@@ -313,7 +313,7 @@ tp_base_connection_manager_dispose (GObject *object)
 
   if (priv->protocols != NULL)
     {
-      g_hash_table_destroy (priv->protocols);
+      g_hash_table_unref (priv->protocols);
       priv->protocols = NULL;
     }
 
@@ -327,7 +327,7 @@ tp_base_connection_manager_finalize (GObject *object)
   TpBaseConnectionManager *self = TP_BASE_CONNECTION_MANAGER (object);
   TpBaseConnectionManagerPrivate *priv = self->priv;
 
-  g_hash_table_destroy (priv->connections);
+  g_hash_table_unref (priv->connections);
 
   G_OBJECT_CLASS (tp_base_connection_manager_parent_class)->finalize (object);
 }
@@ -774,7 +774,7 @@ tp_cm_param_setter_offset (const TpCMParamSpec *paramspec,
 
                 if (*save_to != NULL)
                   {
-                    g_array_free (*save_to, TRUE);
+                    g_array_unref (*save_to);
                   }
                 *save_to = g_value_dup_boxed (value);
                 DEBUG ("%s = ...[%u]", paramspec->name, (*save_to)->len);
@@ -901,7 +901,7 @@ tp_base_connection_manager_get_parameters (TpSvcConnectionManager *iface,
       g_value_array_free (g_ptr_array_index (ret, i));
     }
 
-  g_ptr_array_free (ret, TRUE);
+  g_ptr_array_unref (ret);
 }
 
 
@@ -937,7 +937,7 @@ tp_base_connection_manager_list_protocols (TpSvcConnectionManager *iface,
 
   tp_svc_connection_manager_return_from_list_protocols (
       context, (const gchar **) protocols->pdata);
-  g_ptr_array_free (protocols, TRUE);
+  g_ptr_array_unref (protocols);
 }
 
 

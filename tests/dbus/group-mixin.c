@@ -302,7 +302,7 @@ check_incoming_invitation (void)
     MYASSERT (!outstanding_signals (),
         ": MembersChanged and MembersChangedDetailed should have fired once");
 
-    g_array_free (contacts, TRUE);
+    g_array_unref (contacts);
   }
 }
 
@@ -480,7 +480,7 @@ in_the_desert (void)
     MYASSERT (a == self_handle || b == self_handle, "");
     MYASSERT (a == camel2 || b == camel2, "");
 
-    g_array_free (service_members, TRUE);
+    g_array_unref (service_members);
   }
 
   tp_handle_unref (contact_repo, camel);

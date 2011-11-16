@@ -250,7 +250,7 @@ main (int argc,
       g_error_free (error);
       error = NULL;
 
-      g_array_free (ids, TRUE);
+      g_array_unref (ids);
 
       /* The next test, "Acknowledging one message", will fail if the
        * last_received_id was acknowledged despite the error */
@@ -267,7 +267,7 @@ main (int argc,
           ids, &error, NULL);
       g_assert_no_error (error);
 
-      g_array_free (ids, TRUE);
+      g_array_unref (ids);
     }
 
   g_print ("\n\n==== Acknowledging all remaining messages using deprecated "

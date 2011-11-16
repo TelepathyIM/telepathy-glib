@@ -398,11 +398,11 @@ tp_group_mixin_finalize (GObject *obj)
                         handle_owners_foreach_unref,
                         mixin);
 
-  g_hash_table_destroy (mixin->priv->handle_owners);
-  g_hash_table_destroy (mixin->priv->local_pending_info);
+  g_hash_table_unref (mixin->priv->handle_owners);
+  g_hash_table_unref (mixin->priv->local_pending_info);
 
   if (mixin->priv->externals)
-    g_ptr_array_free (mixin->priv->externals, TRUE);
+    g_ptr_array_unref (mixin->priv->externals);
 
   g_slice_free (TpGroupMixinPrivate, mixin->priv);
 
@@ -859,7 +859,7 @@ tp_group_mixin_get_members_async (TpSvcChannelInterfaceGroup *obj,
     {
       tp_svc_channel_interface_group_return_from_get_members (
           context, ret);
-      g_array_free (ret, TRUE);
+      g_array_unref (ret);
     }
   else
     {
@@ -901,7 +901,7 @@ tp_group_mixin_get_local_pending_members_async (TpSvcChannelInterfaceGroup *obj,
     {
       tp_svc_channel_interface_group_return_from_get_local_pending_members (
           context, ret);
-      g_array_free (ret, TRUE);
+      g_array_unref (ret);
     }
   else
     {
@@ -990,7 +990,7 @@ tp_group_mixin_get_local_pending_members_with_info_async (
       for (i = 0 ; i < ret->len; i++) {
         g_value_array_free (g_ptr_array_index (ret,i));
       }
-      g_ptr_array_free (ret, TRUE);
+      g_ptr_array_unref (ret);
     }
   else
     {
@@ -1034,7 +1034,7 @@ tp_group_mixin_get_remote_pending_members_async (TpSvcChannelInterfaceGroup *obj
     {
       tp_svc_channel_interface_group_return_from_get_remote_pending_members (
           context, ret);
-      g_array_free (ret, TRUE);
+      g_array_unref (ret);
     }
   else
     {
@@ -1086,9 +1086,9 @@ tp_group_mixin_get_all_members_async (TpSvcChannelInterfaceGroup *obj,
     {
       tp_svc_channel_interface_group_return_from_get_all_members (
           context, mem, local, remote);
-      g_array_free (mem, TRUE);
-      g_array_free (local, TRUE);
-      g_array_free (remote, TRUE);
+      g_array_unref (mem);
+      g_array_unref (local);
+      g_array_unref (remote);
     }
   else
     {
@@ -1148,7 +1148,7 @@ tp_group_mixin_get_handle_owners (GObject *obj,
           g_set_error (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
               "handle %u is not a member", local_handle);
 
-          g_array_free (*ret, TRUE);
+          g_array_unref (*ret);
           *ret = NULL;
 
           return FALSE;
@@ -1177,7 +1177,7 @@ tp_group_mixin_get_handle_owners_async (TpSvcChannelInterfaceGroup *obj,
     {
       tp_svc_channel_interface_group_return_from_get_handle_owners (
           context, ret);
-      g_array_free (ret, TRUE);
+      g_array_unref (ret);
     }
   else
     {
@@ -1680,15 +1680,15 @@ change_members (GObject *obj,
 
           tp_handles_unref (mixin->handle_repo, arr_owners_removed);
 
-          g_hash_table_destroy (empty_hash_table);
+          g_hash_table_unref (empty_hash_table);
         }
 
       /* free arrays */
-      g_array_free (arr_add, TRUE);
-      g_array_free (arr_remove, TRUE);
-      g_array_free (arr_local, TRUE);
-      g_array_free (arr_remote, TRUE);
-      g_array_free (arr_owners_removed, TRUE);
+      g_array_unref (arr_add);
+      g_array_unref (arr_remove);
+      g_array_unref (arr_local);
+      g_array_unref (arr_remote);
+      g_array_unref (arr_owners_removed);
 
       ret = TRUE;
     }
@@ -1780,7 +1780,7 @@ tp_group_mixin_change_members (GObject *obj,
   ret = change_members (obj, message, add, del, add_local_pending,
       add_remote_pending, actor, reason, details);
 
-  g_hash_table_destroy (details);
+  g_hash_table_unref (details);
   return ret;
 }
 
@@ -1899,7 +1899,7 @@ tp_group_mixin_add_handle_owner (GObject *obj,
 
   tp_group_mixin_add_handle_owners (obj, tmp);
 
-  g_hash_table_destroy (tmp);
+  g_hash_table_unref (tmp);
 }
 
 
@@ -2013,7 +2013,7 @@ tp_group_mixin_add_handle_owners (GObject *obj,
   tp_svc_channel_interface_group_emit_handle_owners_changed_detailed (obj,
       local_to_owner_handle, empty_array, ids);
 
-  g_array_free (empty_array, TRUE);
+  g_array_unref (empty_array);
   g_hash_table_unref (ids);
 }
 

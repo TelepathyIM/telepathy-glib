@@ -214,8 +214,8 @@ dynamic_finalize (GObject *obj)
             TpHandlePriv, i));
     }
 
-  g_array_free (self->handle_to_priv, TRUE);
-  g_hash_table_destroy (self->string_to_handle);
+  g_array_unref (self->handle_to_priv);
+  g_hash_table_unref (self->string_to_handle);
 
   if (parent->finalize)
     parent->finalize (obj);

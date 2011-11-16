@@ -349,7 +349,7 @@ void
 _tp_destroy_socket_control_list (gpointer data)
 {
   GArray *tab = data;
-  g_array_free (tab, TRUE);
+  g_array_unref (tab);
 }
 
 GValue *

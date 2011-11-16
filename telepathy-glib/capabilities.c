@@ -263,7 +263,7 @@ _tp_capabilities_new (const GPtrArray *classes,
       NULL);
 
   if (empty != NULL)
-    g_ptr_array_free (empty, TRUE);
+    g_ptr_array_unref (empty);
 
   return self;
 }

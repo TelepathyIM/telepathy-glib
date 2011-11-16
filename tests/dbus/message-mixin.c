@@ -286,7 +286,7 @@ main (int argc,
           request, &chan_path, NULL, &error, NULL);
       g_assert_no_error (error);
 
-      g_hash_table_destroy (request);
+      g_hash_table_unref (request);
     }
 
   chan = tp_channel_new (conn, chan_path, TP_IFACE_CHANNEL_TYPE_TEXT,
@@ -361,7 +361,7 @@ main (int argc,
             "DeliveryReportingSupport", NULL), ==,
           TP_DELIVERY_REPORTING_SUPPORT_FLAG_RECEIVE_FAILURES);
 
-      g_hash_table_destroy (properties);
+      g_hash_table_unref (properties);
     }
 
   /* Send three messages using the old Text API:
@@ -575,9 +575,9 @@ main (int argc,
       g_free (token);
 
       for (i = 0; i < send_parts->len; i++)
-        g_hash_table_destroy (g_ptr_array_index (send_parts, i));
+        g_hash_table_unref (g_ptr_array_index (send_parts, i));
 
-      g_ptr_array_free (send_parts, TRUE);
+      g_ptr_array_unref (send_parts);
     }
 
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
@@ -684,9 +684,9 @@ main (int argc,
       g_free (token);
 
       for (i = 0; i < send_parts->len; i++)
-        g_hash_table_destroy (g_ptr_array_index (send_parts, i));
+        g_hash_table_unref (g_ptr_array_index (send_parts, i));
 
-      g_ptr_array_free (send_parts, TRUE);
+      g_ptr_array_unref (send_parts);
     }
 
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
@@ -777,9 +777,9 @@ main (int argc,
       g_free (token);
 
       for (i = 0; i < send_parts->len; i++)
-        g_hash_table_destroy (g_ptr_array_index (send_parts, i));
+        g_hash_table_unref (g_ptr_array_index (send_parts, i));
 
-      g_ptr_array_free (send_parts, TRUE);
+      g_ptr_array_unref (send_parts);
     }
 
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
@@ -874,9 +874,9 @@ main (int argc,
       g_free (token);
 
       for (i = 0; i < send_parts->len; i++)
-        g_hash_table_destroy (g_ptr_array_index (send_parts, i));
+        g_hash_table_unref (g_ptr_array_index (send_parts, i));
 
-      g_ptr_array_free (send_parts, TRUE);
+      g_ptr_array_unref (send_parts);
     }
 
   MYASSERT (sent_count == 1, ": %u != 1", sent_count);
@@ -926,7 +926,7 @@ main (int argc,
           g_hash_table_size (ret));
 
       g_hash_table_foreach (ret, print_part_content, NULL);
-      g_hash_table_destroy (ret);
+      g_hash_table_unref (ret);
 
       i = 47;
       g_array_append_val (part_numbers, i);
@@ -939,7 +939,7 @@ main (int argc,
       g_error_free (error);
       error = NULL;
 
-      g_array_free (part_numbers, TRUE);
+      g_array_unref (part_numbers);
     }
 
   g_print ("\n\n==== Listing messages ====\n");
@@ -977,7 +977,7 @@ main (int argc,
       g_error_free (error);
       error = NULL;
 
-      g_array_free (ids, TRUE);
+      g_array_unref (ids);
 
       /* The test "Acknowledging one message", will fail if the
        * last_received_id was acknowledged despite the error */
@@ -1037,7 +1037,7 @@ main (int argc,
             }
         }
 
-      g_hash_table_destroy (properties);
+      g_hash_table_unref (properties);
     }
 
   g_print ("\n\n==== Acknowledging one message ====\n");
@@ -1057,7 +1057,7 @@ main (int argc,
           msgid, &error, NULL);
       g_assert_no_error (error);
 
-      g_array_free (msgid, TRUE);
+      g_array_unref (msgid);
     }
 
   g_print ("\n\n==== Acknowledging all remaining messages using deprecated "

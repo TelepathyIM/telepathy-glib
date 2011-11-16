@@ -301,7 +301,7 @@ int main (int argc, char **argv)
   g_assert (tp_g_ptr_array_contains (ptrarray, GINT_TO_POINTER (23)));
   g_assert (tp_g_ptr_array_contains (ptrarray, GINT_TO_POINTER (42)));
   g_assert (!tp_g_ptr_array_contains (ptrarray, GINT_TO_POINTER (666)));
-  g_ptr_array_free (ptrarray, TRUE);
+  g_ptr_array_unref (ptrarray);
 
   string = tp_escape_as_identifier ("");
   g_assert (!tp_strdiff (string, "_"));

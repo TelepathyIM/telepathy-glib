@@ -364,7 +364,7 @@ tp_proxy_prepare_request_finish (TpProxyPrepareRequest *req,
       g_object_unref (req->result);
     }
 
-  g_array_free (req->features, TRUE);
+  g_array_unref (req->features);
   g_slice_free (TpProxyPrepareRequest, req);
 }
 
@@ -1083,7 +1083,7 @@ tp_proxy_constructor (GType type,
               g_type_name (ancestor_type));
         }
 
-      g_array_free (core_features, TRUE);
+      g_array_unref (core_features);
     }
 
   g_return_val_if_fail (self->dbus_connection != NULL, NULL);

@@ -176,7 +176,7 @@ test_basic_stream_tube (Test *test,
 
   g_free (chan_path);
   g_hash_table_unref (props);
-  g_array_free (features, TRUE);
+  g_array_unref (features);
 }
 
 static void
@@ -212,7 +212,7 @@ test_auto_stream_tube (Test *test,
 
   g_free (chan_path);
   g_hash_table_unref (props);
-  g_array_free (features, TRUE);
+  g_array_unref (features);
 }
 
 static void

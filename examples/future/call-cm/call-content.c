@@ -356,7 +356,7 @@ example_call_content_stream_removed_cb (ExampleCallContent *self,
       G_TYPE_INVALID);
   future_svc_call_content_emit_streams_removed (self, paths, reason);
   g_free (path);
-  g_ptr_array_free (paths, TRUE);
+  g_ptr_array_unref (paths);
   g_value_array_free (reason);
 
   g_object_unref (self->priv->stream);
@@ -382,7 +382,7 @@ example_call_content_add_stream (ExampleCallContent *self,
   g_ptr_array_add (paths, path);
   future_svc_call_content_emit_streams_added (self, paths);
   g_free (path);
-  g_ptr_array_free (paths, TRUE);
+  g_ptr_array_unref (paths);
 
   tp_g_signal_connect_object (stream, "removed",
       G_CALLBACK (example_call_content_stream_removed_cb), self,

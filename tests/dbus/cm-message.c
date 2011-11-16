@@ -74,7 +74,7 @@ test_new_from_parts (Test *test,
 
   msg = _tp_cm_message_new_from_parts (test->base_connection, parts);
 
-  g_ptr_array_free (parts, TRUE);
+  g_ptr_array_unref (parts);
 
   g_assert (TP_IS_CM_MESSAGE (msg));
   g_assert_cmpuint (tp_message_count_parts (msg), ==, 2);

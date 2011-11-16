@@ -375,7 +375,7 @@ tp_message_mixin_finalize (GObject *obj)
   tp_message_mixin_clear (obj);
   g_assert (g_queue_is_empty (mixin->priv->pending));
   g_queue_free (mixin->priv->pending);
-  g_array_free (mixin->priv->msg_types, TRUE);
+  g_array_unref (mixin->priv->msg_types);
   g_strfreev (mixin->priv->supported_content_types);
 
   g_object_unref (mixin->priv->connection);
@@ -522,7 +522,7 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
 
       tp_svc_channel_interface_messages_emit_pending_messages_removed (iface,
           ids);
-      g_array_free (ids, TRUE);
+      g_array_unref (ids);
     }
 
   tp_svc_channel_type_text_return_from_list_pending_messages (context,
@@ -531,7 +531,7 @@ tp_message_mixin_list_pending_messages_async (TpSvcChannelTypeText *iface,
   for (i = 0; i < messages->len; i++)
     g_value_array_free (g_ptr_array_index (messages, i));
 
-  g_ptr_array_free (messages, TRUE);
+  g_ptr_array_unref (messages);
 }
 
 static void
@@ -611,7 +611,7 @@ tp_message_mixin_get_pending_message_content_async (
   tp_svc_channel_interface_messages_return_from_get_pending_message_content (
       context, ret);
 
-  g_hash_table_destroy (ret);
+  g_hash_table_unref (ret);
 }
 
 static void

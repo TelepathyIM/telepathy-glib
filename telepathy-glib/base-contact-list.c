@@ -548,7 +548,7 @@ tp_base_contact_list_fail_channel_requests (TpBaseContactList *self,
           g_hash_table_iter_steal (&iter);
         }
 
-      g_hash_table_destroy (tmp);
+      g_hash_table_unref (tmp);
     }
 }
 
@@ -989,7 +989,7 @@ tp_base_contact_list_type_foreach_channel_class (GType type,
       func (type, table, allowed_properties, user_data);
     }
 
-  g_hash_table_destroy (table);
+  g_hash_table_unref (table);
 }
 
 static void
@@ -4731,7 +4731,7 @@ tp_base_contact_list_mixin_get_contact_list_attributes (
       tp_svc_connection_interface_contact_list_return_from_get_contact_list_attributes (
           context, result);
 
-      g_array_free (contacts, TRUE);
+      g_array_unref (contacts);
       tp_handle_set_destroy (set);
       g_free (sender);
       g_hash_table_unref (result);

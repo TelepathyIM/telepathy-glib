@@ -180,7 +180,7 @@ tp_tests_simple_channel_dispatch_operation_finalize (GObject *object)
 
   g_free (self->priv->conn_path);
   g_free (self->priv->account_path);
-  g_ptr_array_free (self->priv->channels, TRUE);
+  g_ptr_array_unref (self->priv->channels);
 
   if (finalize != NULL)
     finalize (object);

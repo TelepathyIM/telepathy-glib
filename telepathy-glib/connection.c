@@ -1488,7 +1488,7 @@ tp_connection_finalize (GObject *object)
 
   if (self->priv->contact_attribute_interfaces != NULL)
     {
-      g_array_free (self->priv->contact_attribute_interfaces, TRUE);
+      g_array_unref (self->priv->contact_attribute_interfaces);
       self->priv->contact_attribute_interfaces = NULL;
     }
 
@@ -1503,7 +1503,7 @@ tp_connection_finalize (GObject *object)
 
   if (self->priv->avatar_request_queue != NULL)
     {
-      g_array_free (self->priv->avatar_request_queue, TRUE);
+      g_array_unref (self->priv->avatar_request_queue);
       self->priv->avatar_request_queue = NULL;
     }
 
@@ -1558,7 +1558,7 @@ tp_connection_dispose (GObject *object)
     {
       g_hash_table_foreach (self->priv->contacts, contact_notify_invalidated,
           NULL);
-      tp_clear_pointer (&self->priv->contacts, g_hash_table_destroy);
+      tp_clear_pointer (&self->priv->contacts, g_hash_table_unref);
     }
 
   tp_clear_object (&self->priv->capabilities);
@@ -2823,7 +2823,7 @@ tp_list_connection_names_helper (TpDBusDaemon *bus_daemon,
       (const gchar * const *) protocols->pdata,
       NULL, list_context->user_data, user_object);
 
-  g_ptr_array_free (bus_names, TRUE);
+  g_ptr_array_unref (bus_names);
   g_strfreev ((char **) g_ptr_array_free (cms, FALSE));
   g_strfreev ((char **) g_ptr_array_free (protocols, FALSE));
 }

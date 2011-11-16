@@ -172,8 +172,8 @@ test_set_params (Test *test,
   g_assert (!tp_strdiff (params->uc_string, "FILTER ME"));
 
   tp_tests_param_connection_manager_free_params (params);
-  g_hash_table_destroy (parameters);
-  g_array_free (array_of_bytes, TRUE);
+  g_hash_table_unref (parameters);
+  g_array_unref (array_of_bytes);
 }
 
 static void
@@ -201,7 +201,7 @@ test_defaults (Test *test,
   g_assert_cmpint (params->a_int32, ==, 42);
   tp_tests_param_connection_manager_free_params (params);
 
-  g_hash_table_destroy (parameters);
+  g_hash_table_unref (parameters);
 }
 
 static void
@@ -228,7 +228,7 @@ test_missing_required (Test *test,
       tp_tests_param_connection_manager_free_params (params);
     }
 
-  g_hash_table_destroy (parameters);
+  g_hash_table_unref (parameters);
 }
 
 static void
@@ -261,7 +261,7 @@ test_fail_filter (Test *test,
       tp_tests_param_connection_manager_free_params (params);
     }
 
-  g_hash_table_destroy (parameters);
+  g_hash_table_unref (parameters);
 }
 
 static void
@@ -290,7 +290,7 @@ test_wrong_type (Test *test,
       tp_tests_param_connection_manager_free_params (params);
     }
 
-  g_hash_table_destroy (parameters);
+  g_hash_table_unref (parameters);
 }
 
 static void
@@ -321,7 +321,7 @@ test_unwelcome (Test *test,
       tp_tests_param_connection_manager_free_params (params);
     }
 
-  g_hash_table_destroy (parameters);
+  g_hash_table_unref (parameters);
 }
 
 static void

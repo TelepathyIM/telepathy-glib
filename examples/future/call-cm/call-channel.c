@@ -576,7 +576,7 @@ example_call_channel_terminate (ExampleCallChannel *self,
       future_svc_channel_type_call_emit_call_members_changed (self,
           empty_uu_map, empty_uu_map, au, self->priv->call_state_reason);
       g_hash_table_unref (empty_uu_map);
-      g_array_free (au, TRUE);
+      g_array_unref (au);
 
       if (actor == tp_base_connection_get_self_handle (self->priv->conn))
         {
@@ -645,7 +645,7 @@ dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
-  g_hash_table_destroy (self->priv->contents);
+  g_hash_table_unref (self->priv->contents);
   self->priv->contents = NULL;
 
   /* FIXME: right error code? arguably this should always be a no-op */
@@ -668,7 +668,7 @@ finalize (GObject *object)
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
 
   g_value_array_free (self->priv->call_state_reason);
-  g_hash_table_destroy (self->priv->call_state_details);
+  g_hash_table_unref (self->priv->call_state_details);
 
   tp_handle_unref (contact_handles, self->priv->handle);
   tp_handle_unref (contact_handles, self->priv->initiator);
@@ -1232,7 +1232,7 @@ simulate_contact_ringing_cb (gpointer p)
   future_svc_channel_type_call_emit_call_members_changed (self,
       uu_map, us_map, empty_au, self->priv->call_state_reason);
   g_hash_table_unref (uu_map);
-  g_array_free (empty_au, TRUE);
+  g_array_unref (empty_au);
 
 
   /* In this example there is no real contact, so just simulate them

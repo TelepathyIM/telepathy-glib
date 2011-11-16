@@ -77,7 +77,7 @@ group_event_destroy (GroupEvent *ge)
     tp_intset_destroy (ge->remote_pending);
 
   if (ge->details != NULL)
-    g_hash_table_destroy (ge->details);
+    g_hash_table_unref (ge->details);
 
   g_slice_free (GroupEvent, ge);
 }
@@ -272,7 +272,7 @@ setup (Test *test,
   test->stream_ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 2);
   test->contacts = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
 
-  g_hash_table_destroy (parameters);
+  g_hash_table_unref (parameters);
   g_free (bus_name);
   g_free (object_path);
 }
@@ -535,7 +535,7 @@ outgoing_call (Test *test,
 
   tp_cli_connection_interface_requests_call_create_channel (test->conn, -1,
       request, channel_created_cb, test, NULL, NULL);
-  g_hash_table_destroy (request);
+  g_hash_table_unref (request);
   request = NULL;
   g_main_loop_run (test->mainloop);
 
@@ -1509,11 +1509,11 @@ teardown (Test *test,
           test->members_changed_detailed_id);
     }
 
-  g_array_free (test->audio_request, TRUE);
-  g_array_free (test->video_request, TRUE);
-  g_array_free (test->invalid_request, TRUE);
-  g_array_free (test->stream_ids, TRUE);
-  g_array_free (test->contacts, TRUE);
+  g_array_unref (test->audio_request);
+  g_array_unref (test->video_request);
+  g_array_unref (test->invalid_request);
+  g_array_unref (test->stream_ids);
+  g_array_unref (test->contacts);
 
   g_slist_foreach (test->group_events, (GFunc) group_event_destroy, NULL);
   g_slist_free (test->group_events);
@@ -1526,9 +1526,9 @@ teardown (Test *test,
   tp_clear_boxed (TP_ARRAY_TYPE_MEDIA_STREAM_INFO_LIST,
       &test->request_streams_return);
 
-  g_hash_table_destroy (test->stream_directions);
-  g_hash_table_destroy (test->stream_pending_sends);
-  g_hash_table_destroy (test->stream_states);
+  g_hash_table_unref (test->stream_directions);
+  g_hash_table_unref (test->stream_pending_sends);
+  g_hash_table_unref (test->stream_states);
 
   tp_clear_object (&test->chan);
   tp_clear_object (&test->conn);

@@ -401,7 +401,7 @@ example_call_manager_type_foreach_channel_class (GType type,
 
   func (type, table, video_allowed_properties, user_data);
 
-  g_hash_table_destroy (table);
+  g_hash_table_unref (table);
 }
 
 static gboolean

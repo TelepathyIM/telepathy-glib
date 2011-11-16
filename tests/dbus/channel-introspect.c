@@ -421,7 +421,7 @@ main (int argc,
   chan = tp_channel_new_from_properties (conn, props_chan_path, asv, &error);
   g_assert_no_error (error);
 
-  g_hash_table_destroy (asv);
+  g_hash_table_unref (asv);
   asv = NULL;
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
@@ -482,7 +482,7 @@ main (int argc,
   chan = tp_channel_new_from_properties (conn, props_group_chan_path, asv, &error);
   g_assert_no_error (error);
 
-  g_hash_table_destroy (asv);
+  g_hash_table_unref (asv);
   asv = NULL;
 
   MYASSERT (tp_channel_run_until_ready (chan, &error, NULL), "");
@@ -651,7 +651,7 @@ main (int argc,
   chan = tp_channel_new_from_properties (conn, chan_path, asv, &error);
   g_assert_no_error (error);
 
-  g_hash_table_destroy (asv);
+  g_hash_table_unref (asv);
   asv = NULL;
 
   MYASSERT (!tp_channel_run_until_ready (chan, &error, NULL), "");

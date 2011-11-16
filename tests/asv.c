@@ -687,7 +687,7 @@ int main (int argc, char **argv)
 
   /* Teardown */
 
-  g_hash_table_destroy (hash);
+  g_hash_table_unref (hash);
 
   return 0;
 }

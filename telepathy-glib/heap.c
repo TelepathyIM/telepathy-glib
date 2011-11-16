@@ -89,7 +89,7 @@ tp_heap_destroy (TpHeap * heap)
         }
     }
 
-  g_ptr_array_free (heap->data, TRUE);
+  g_ptr_array_unref (heap->data);
   g_slice_free (TpHeap, heap);
 }
 
@@ -115,7 +115,7 @@ tp_heap_clear (TpHeap *heap)
         }
     }
 
-  g_ptr_array_free (heap->data, TRUE);
+  g_ptr_array_unref (heap->data);
   heap->data = g_ptr_array_sized_new (DEFAULT_SIZE);
 }
 

@@ -158,7 +158,7 @@ test_request_and_release (TpTestsSimpleConnection *service_conn,
   /* clean up */
 
   g_strfreev (result.ids);
-  g_array_free (result.handles, TRUE);
+  g_array_unref (result.handles);
   g_assert (result.error == NULL);
   g_main_loop_unref (result.loop);
 }
@@ -242,7 +242,7 @@ test_request_hold_release (TpTestsSimpleConnection *service_conn,
       MYASSERT (want == got, "%u != %u", want, got);
     }
 
-  g_array_free (saved_handles, TRUE);
+  g_array_unref (saved_handles);
 
   /* unref the handles */
 
@@ -273,7 +273,7 @@ test_request_hold_release (TpTestsSimpleConnection *service_conn,
 
   g_main_loop_unref (result.loop);
   g_strfreev (result.ids);
-  g_array_free (result.handles, TRUE);
+  g_array_unref (result.handles);
   g_assert (result.error == NULL);
 }
 

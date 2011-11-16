@@ -310,7 +310,7 @@ get_messages (TpSvcDebug *self,
   for (j = 0; j < messages->len; j++)
     g_boxed_free (TP_STRUCT_TYPE_DEBUG_MESSAGE, messages->pdata[j]);
 
-  g_ptr_array_free (messages, TRUE);
+  g_ptr_array_unref (messages);
 }
 
 static void

@@ -1394,7 +1394,7 @@ tp_text_channel_ack_messages_async (TpTextChannel *self,
   tp_cli_channel_type_text_call_acknowledge_pending_messages (chan, -1, ids,
       acknowledge_pending_messages_cb, result, NULL, G_OBJECT (self));
 
-  g_array_free (ids, TRUE);
+  g_array_unref (ids);
 }
 
 /**
@@ -1475,7 +1475,7 @@ tp_text_channel_ack_message_async (TpTextChannel *self,
   tp_cli_channel_type_text_call_acknowledge_pending_messages (chan, -1, ids,
       acknowledge_pending_messages_cb, result, NULL, G_OBJECT (self));
 
-  g_array_free (ids, TRUE);
+  g_array_unref (ids);
 }
 
 /**

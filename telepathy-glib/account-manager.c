@@ -531,7 +531,7 @@ _tp_account_manager_dispose (GObject *object)
 
   priv->dispose_run = TRUE;
 
-  g_hash_table_destroy (priv->accounts);
+  g_hash_table_unref (priv->accounts);
 
   g_hash_table_iter_init (&iter, self->priv->legacy_accounts);
   while (g_hash_table_iter_next (&iter, NULL, &value))

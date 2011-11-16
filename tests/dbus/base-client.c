@@ -598,8 +598,8 @@ test_observer (Test *test,
   g_assert (tp_proxy_get_invalidated (chan) != NULL);
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_free (channels, TRUE);
-  g_ptr_array_free (requests_satisified, TRUE);
+  g_ptr_array_unref (channels);
+  g_ptr_array_unref (requests_satisified);
   g_hash_table_unref (info);
 }
 
@@ -770,7 +770,7 @@ test_approver (Test *test,
   g_assert_no_error (test->error);
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_free (channels, TRUE);
+  g_ptr_array_unref (channels);
   g_hash_table_unref (properties);
 }
 
@@ -955,8 +955,8 @@ test_handler (Test *test,
   g_object_unref (client_2);
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_free (channels, TRUE);
-  g_ptr_array_free (requests_satisified, TRUE);
+  g_ptr_array_unref (channels);
+  g_ptr_array_unref (requests_satisified);
   g_hash_table_unref (info);
 }
 
@@ -1132,8 +1132,8 @@ test_handler_requests (Test *test,
 
   g_hash_table_unref (properties);
   g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_free (channels, TRUE);
-  g_ptr_array_free (requests_satisified, TRUE);
+  g_ptr_array_unref (channels);
+  g_ptr_array_unref (requests_satisified);
   g_hash_table_unref (info);
 }
 
@@ -1242,7 +1242,7 @@ test_channel_dispatch_operation_claim_with_async (Test *test,
         test->text_chan_2));
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_free (channels, TRUE);
+  g_ptr_array_unref (channels);
   g_hash_table_unref (properties);
 }
 
@@ -1366,8 +1366,8 @@ test_delegate_channels (Test *test,
         test->text_chan_2));
 
   g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_free (channels, TRUE);
-  g_ptr_array_free (requests_satisified, TRUE);
+  g_ptr_array_unref (channels);
+  g_ptr_array_unref (requests_satisified);
   g_hash_table_unref (info);
 }
 
@@ -1553,9 +1553,9 @@ delegate_to_preferred_handler (Test *test,
 
   g_object_unref (cr);
   g_ptr_array_foreach (channels, free_channel_details, NULL);
-  g_ptr_array_free (channels, TRUE);
-  g_ptr_array_free (requests_satisified, TRUE);
-  g_ptr_array_free (requests, TRUE);
+  g_ptr_array_unref (channels);
+  g_ptr_array_unref (requests_satisified);
+  g_ptr_array_unref (requests);
   g_hash_table_unref (info);
   g_hash_table_unref (hints);
   g_hash_table_unref (request_props);

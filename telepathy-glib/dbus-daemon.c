@@ -1338,7 +1338,7 @@ tp_dbus_daemon_dispose (GObject *object)
           g_hash_table_iter_remove (&iter);
         }
 
-      g_hash_table_destroy (tmp);
+      g_hash_table_unref (tmp);
     }
 
   if (self->priv->libdbus != NULL)

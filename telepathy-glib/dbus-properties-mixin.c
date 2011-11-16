@@ -1186,7 +1186,7 @@ _tp_dbus_properties_mixin_get_all (TpSvcDBusProperties *iface,
 
 out:
   tp_svc_dbus_properties_return_from_get_all (context, values);
-  g_hash_table_destroy (values);
+  g_hash_table_unref (values);
 }
 
 /**

@@ -447,7 +447,7 @@ example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
       identifiers, removed_members, reason);
   g_hash_table_unref (updated_members);
   g_hash_table_unref (identifiers);
-  g_array_free (removed_members, TRUE);
+  g_array_unref (removed_members);
   g_value_array_free (reason);
 }
 
@@ -561,7 +561,7 @@ example_call_stream_change_direction (ExampleCallStream *self,
           updated_members, updated_member_identifiers,
           removed_members, reason);
 
-      g_array_free (removed_members, TRUE);
+      g_array_unref (removed_members);
     }
 
   g_hash_table_unref (updated_members);
@@ -698,7 +698,7 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
           updated_members, updated_member_identifiers,
           removed_members, reason);
 
-      g_array_free (removed_members, TRUE);
+      g_array_unref (removed_members);
     }
 
   g_hash_table_unref (updated_members);

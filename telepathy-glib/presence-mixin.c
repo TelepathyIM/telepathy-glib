@@ -191,7 +191,7 @@
  * contacts. The returned hash table should have contact handles mapped to
  * their respective presence statuses in #TpPresenceStatus structs.
  *
- * The returned hash table will be freed with g_hash_table_destroy. The
+ * The returned hash table will be freed with g_hash_table_unref. The
  * callback is responsible for ensuring that this does any cleanup that
  * may be necessary.
  *
@@ -359,7 +359,7 @@ tp_presence_status_free (TpPresenceStatus *status)
     return;
 
   if (status->optional_arguments)
-    g_hash_table_destroy (status->optional_arguments);
+    g_hash_table_unref (status->optional_arguments);
 
   g_slice_free (TpPresenceStatus, status);
 }
@@ -529,7 +529,7 @@ construct_presence_hash_foreach (
   GValueArray *vals;
 
   contact_status = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-      (GDestroyNotify) g_hash_table_destroy);
+      (GDestroyNotify) g_hash_table_unref);
 
   parameters = deep_copy_hashtable (status->optional_arguments);
 
@@ -603,7 +603,7 @@ tp_presence_mixin_emit_presence_update (GObject *obj,
       tp_svc_connection_interface_presence_emit_presence_update (obj,
           presence_hash);
 
-      g_hash_table_destroy (presence_hash);
+      g_hash_table_unref (presence_hash);
     }
 
   if (g_type_interface_peek (G_OBJECT_GET_CLASS (obj),
@@ -614,7 +614,7 @@ tp_presence_mixin_emit_presence_update (GObject *obj,
       tp_svc_connection_interface_simple_presence_emit_presences_changed (obj,
         presence_hash);
 
-      g_hash_table_destroy (presence_hash);
+      g_hash_table_unref (presence_hash);
     }
 }
 
@@ -642,7 +642,7 @@ tp_presence_mixin_emit_one_presence_update (GObject *obj,
       (gpointer) status);
   tp_presence_mixin_emit_presence_update (obj, contact_statuses);
 
-  g_hash_table_destroy (contact_statuses);
+  g_hash_table_unref (contact_statuses);
 }
 
 
@@ -740,7 +740,7 @@ tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
       presence_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
       tp_svc_connection_interface_presence_return_from_get_presence (context,
           presence_hash);
-      g_hash_table_destroy (presence_hash);
+      g_hash_table_unref (presence_hash);
       return;
     }
 
@@ -764,8 +764,8 @@ tp_presence_mixin_get_presence (TpSvcConnectionInterfacePresence *iface,
       contact_statuses);
   tp_svc_connection_interface_presence_return_from_get_presence (context,
       presence_hash);
-  g_hash_table_destroy (presence_hash);
-  g_hash_table_destroy (contact_statuses);
+  g_hash_table_unref (presence_hash);
+  g_hash_table_unref (contact_statuses);
 }
 
 
@@ -894,7 +894,7 @@ tp_presence_mixin_get_statuses (TpSvcConnectionInterfacePresence *iface,
     }
 
   tp_svc_connection_interface_presence_return_from_get_statuses (context, ret);
-  g_hash_table_destroy (ret);
+  g_hash_table_unref (ret);
 }
 
 
@@ -957,7 +957,7 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
     {
       dbus_g_method_return_error (context, error);
       g_error_free (error);
-      g_array_free (self_contacts, TRUE);
+      g_array_unref (self_contacts);
       return;
     }
 
@@ -967,8 +967,8 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
   if (!self_status)
     {
       DEBUG ("Got no self status, assuming we already have default status");
-      g_array_free (self_contacts, TRUE);
-      g_hash_table_destroy (self_contact_statuses);
+      g_array_unref (self_contacts);
+      g_hash_table_unref (self_contact_statuses);
       tp_svc_connection_interface_presence_return_from_remove_status (context);
       return;
     }
@@ -992,8 +992,8 @@ tp_presence_mixin_remove_status (TpSvcConnectionInterfacePresence *iface,
       dbus_g_method_return_error (context, &nonexistent);
     }
 
-  g_array_free (self_contacts, TRUE);
-  g_hash_table_destroy (self_contact_statuses);
+  g_array_unref (self_contacts);
+  g_hash_table_unref (self_contact_statuses);
 }
 
 
@@ -1049,7 +1049,7 @@ tp_presence_mixin_request_presence (TpSvcConnectionInterfacePresence *iface,
   tp_presence_mixin_emit_presence_update (obj, contact_statuses);
   tp_svc_connection_interface_presence_return_from_request_presence (context);
 
-  g_hash_table_destroy (contact_statuses);
+  g_hash_table_unref (contact_statuses);
 }
 
 static int
@@ -1155,7 +1155,7 @@ set_status (
   ret = mixin_cls->set_own_status (obj, &status_to_set, error);
 
   if (optional_arguments)
-    g_hash_table_destroy (optional_arguments);
+    g_hash_table_unref (optional_arguments);
 
   return ret;
 }
@@ -1422,7 +1422,7 @@ out:
     }
 
   if (optional_arguments != NULL)
-    g_hash_table_destroy (optional_arguments);
+    g_hash_table_unref (optional_arguments);
 }
 
 static GValueArray *
@@ -1531,7 +1531,7 @@ tp_presence_mixin_simple_presence_get_presences (
       presence_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
       tp_svc_connection_interface_simple_presence_return_from_get_presences (
         context, presence_hash);
-      g_hash_table_destroy (presence_hash);
+      g_hash_table_unref (presence_hash);
       return;
     }
 
@@ -1555,8 +1555,8 @@ tp_presence_mixin_simple_presence_get_presences (
       contact_statuses);
   tp_svc_connection_interface_simple_presence_return_from_get_presences (
       context, presence_hash);
-  g_hash_table_destroy (presence_hash);
-  g_hash_table_destroy (contact_statuses);
+  g_hash_table_unref (presence_hash);
+  g_hash_table_unref (contact_statuses);
 }
 
 /**
@@ -1618,7 +1618,7 @@ tp_presence_mixin_simple_presence_fill_contact_attributes (GObject *obj,
               tp_g_value_slice_new_take_boxed (G_TYPE_VALUE_ARRAY, presence));
         }
 
-      g_hash_table_destroy (contact_statuses);
+      g_hash_table_unref (contact_statuses);
     }
 }
 

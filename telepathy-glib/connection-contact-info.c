@@ -611,7 +611,7 @@ tp_connection_set_contact_info_async (TpConnection *self,
       contact_info, set_info_cb, result, g_object_unref, NULL);
 
   g_ptr_array_foreach (contact_info, (GFunc) g_value_array_free, NULL);
-  g_ptr_array_free (contact_info, TRUE);
+  g_ptr_array_unref (contact_info);
 }
 
 /**

@@ -397,7 +397,7 @@ tp_channel_manager_emit_new_channel (gpointer instance,
       NULL, NULL);
   g_hash_table_insert (channels, channel, request_tokens);
   g_signal_emit (instance, signals[S_NEW_CHANNELS], 0, channels);
-  g_hash_table_destroy (channels);
+  g_hash_table_unref (channels);
 }
 
 

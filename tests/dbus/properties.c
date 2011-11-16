@@ -158,7 +158,7 @@ test_get_all (TpProxy *proxy)
   g_assert (G_VALUE_HOLDS_UINT (value));
   g_assert_cmpuint (g_value_get_uint (value), ==, 42);
 
-  g_hash_table_destroy (hash);
+  g_hash_table_unref (hash);
 }
 
 static void

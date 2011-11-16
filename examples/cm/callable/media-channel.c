@@ -355,7 +355,7 @@ dispose (GObject *object)
 
   self->priv->disposed = TRUE;
 
-  g_hash_table_destroy (self->priv->streams);
+  g_hash_table_unref (self->priv->streams);
   self->priv->streams = NULL;
 
   example_callable_media_channel_close (self, self->group.self_handle,
@@ -548,7 +548,7 @@ media_list_streams (TpSvcChannelTypeStreamedMedia *iface,
   tp_svc_channel_type_streamed_media_return_from_list_streams (context,
       array);
   g_ptr_array_foreach (array, (GFunc) g_value_array_free, NULL);
-  g_ptr_array_free (array, TRUE);
+  g_ptr_array_unref (array);
 }
 
 static void

@@ -131,7 +131,7 @@ setup (Test *test,
 
   test->stream_ids = g_array_sized_new (FALSE, FALSE, sizeof (guint), 2);
 
-  g_hash_table_destroy (parameters);
+  g_hash_table_unref (parameters);
   g_free (bus_name);
   g_free (object_path);
 }
@@ -314,7 +314,7 @@ outgoing_call (Test *test,
 
   tp_cli_connection_interface_requests_call_create_channel (test->conn, -1,
       request, channel_created_cb, test, NULL, NULL);
-  g_hash_table_destroy (request);
+  g_hash_table_unref (request);
   request = NULL;
   g_main_loop_run (test->mainloop);
 
@@ -1053,10 +1053,10 @@ teardown (Test *test,
           test->members_changed_detailed_id);
     }
 
-  g_array_free (test->audio_request, TRUE);
-  g_array_free (test->video_request, TRUE);
-  g_array_free (test->invalid_request, TRUE);
-  g_array_free (test->stream_ids, TRUE);
+  g_array_unref (test->audio_request);
+  g_array_unref (test->video_request);
+  g_array_unref (test->invalid_request);
+  g_array_unref (test->stream_ids);
   tp_clear_pointer (&test->get_all_return, g_hash_table_unref);
 
   tp_clear_boxed (TP_ARRAY_TYPE_OBJECT_PATH_LIST, &test->get_contents_return);
