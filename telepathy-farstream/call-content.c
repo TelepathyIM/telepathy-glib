@@ -76,8 +76,10 @@ struct _TfCallContent {
   gboolean got_codec_offer_property;
 
   /* AudioControl API */
-  guint input_volume;
-  guint output_volume;
+  gint requested_input_volume;
+  gint requested_output_volume;
+  gint reported_input_volume;
+  gint reported_output_volume;
 
   /* VideoControl API */
   FsElementAddedNotifier *notifier;
@@ -114,8 +116,10 @@ enum
   PROP_SINK_PAD,
   PROP_MEDIA_TYPE,
   PROP_OBJECT_PATH,
-  PROP_INPUT_VOLUME,
-  PROP_OUTPUT_VOLUME,
+  PROP_REQUESTED_INPUT_VOLUME,
+  PROP_REQUESTED_OUTPUT_VOLUME,
+  PROP_REPORTED_INPUT_VOLUME,
+  PROP_REPORTED_OUTPUT_VOLUME,
   PROP_FRAMERATE,
   PROP_WIDTH,
   PROP_HEIGHT
@@ -212,20 +216,32 @@ tf_call_content_class_init (TfCallContentClass *klass)
       0, G_MAXUINT, 0,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_INPUT_VOLUME,
-    g_param_spec_uint ("input-volume",
-      "Input volume",
-      "The input volume indicated by the AudioControl interface"
-      "or the media layer",
-      0, G_MAXUINT, 0,
+  g_object_class_install_property (object_class, PROP_REQUESTED_INPUT_VOLUME,
+    g_param_spec_int ("requested-input-volume",
+      "Requested input volume",
+      "The requested input volume indicated by the AudioControl interface",
+      -1, 255, -1,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_property (object_class, PROP_OUTPUT_VOLUME,
-    g_param_spec_uint ("output-volume",
+  g_object_class_install_property (object_class, PROP_REQUESTED_OUTPUT_VOLUME,
+    g_param_spec_int ("requested-output-volume",
+      "Requested output volume",
+      "The requested output volume indicated by the AudioControl interface",
+      -1, 255, -1,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_REPORTED_INPUT_VOLUME,
+    g_param_spec_int ("reported-input-volume",
+      "Reported input volume",
+      "The input volume indicated by or the media layer",
+      -1, 255, -1,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_REPORTED_OUTPUT_VOLUME,
+    g_param_spec_int ("reported-output-volume",
       "Output volume",
-      "The output volume indicated by the AudioControl interface"
-      "or the media layer",
-      0, G_MAXUINT, 0,
+      "The output volume indicated by the the media layer",
+      -1, 255, -1,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_WIDTH,
@@ -277,6 +293,11 @@ tf_call_content_init (TfCallContent *self)
   self->fsstreams = g_ptr_array_new ();
 
   self->mutex = g_mutex_new ();
+  self->requested_input_volume = -1;
+  self->requested_output_volume = -1;
+
+  self->reported_input_volume = -1;
+  self->reported_output_volume = -1;
 }
 
 static void
@@ -372,11 +393,17 @@ tf_call_content_get_property (GObject    *object,
     case PROP_OBJECT_PATH:
       g_object_get_property (G_OBJECT (self->proxy), "object-path", value);
       break;
-    case PROP_INPUT_VOLUME:
-      g_value_set_uint (value, self->input_volume);
+    case PROP_REQUESTED_INPUT_VOLUME:
+      g_value_set_int (value, self->requested_input_volume);
       break;
-    case PROP_OUTPUT_VOLUME:
-      g_value_set_uint (value, self->output_volume);
+    case PROP_REQUESTED_OUTPUT_VOLUME:
+      g_value_set_int (value, self->requested_output_volume);
+      break;
+    case PROP_REPORTED_INPUT_VOLUME:
+      g_value_set_int (value, self->reported_input_volume);
+      break;
+    case PROP_REPORTED_OUTPUT_VOLUME:
+      g_value_set_int (value, self->reported_output_volume);
       break;
     case PROP_FRAMERATE:
       g_value_set_uint (value, self->framerate);
@@ -403,31 +430,26 @@ tf_call_content_set_property (GObject    *object,
 
   switch (property_id)
     {
-    case PROP_INPUT_VOLUME:
-      if (self->input_volume == g_value_get_uint (value))
-        break;
-
+    case PROP_REPORTED_INPUT_VOLUME:
       /* Guard against early disposal */
       if (self->call_channel == NULL)
         break;
 
-      self->input_volume = g_value_get_uint (value);
+      self->reported_input_volume = g_value_get_int (value);
       tf_future_cli_call_content_interface_audio_control_call_report_input_volume (
-          self->proxy, -1, self->input_volume, NULL, NULL, NULL, NULL);
+          self->proxy, -1, self->reported_input_volume,
+          NULL, NULL, NULL, NULL);
 
       break;
-    case PROP_OUTPUT_VOLUME:
-      if (self->output_volume == g_value_get_uint (value))
-        break;
-
+    case PROP_REPORTED_OUTPUT_VOLUME:
       /* Guard against early disposal */
       if (self->call_channel == NULL)
         break;
 
-      self->output_volume = g_value_get_uint (value);
+      self->reported_output_volume = g_value_get_int (value);
       tf_future_cli_call_content_interface_audio_control_call_report_output_volume (
-          self->proxy, -1, self->output_volume, NULL, NULL, NULL, NULL);
-
+          self->proxy, -1, self->reported_output_volume,
+          NULL, NULL, NULL, NULL);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -891,15 +913,15 @@ update_audio_control (TfCallContent *self, GHashTable *properties)
   input_volume = tp_asv_get_uint32 (properties, "RequestedInputVolume", &valid);
   if (valid)
     {
-      self->input_volume = input_volume;
-      g_object_notify (G_OBJECT (self), "input-volume");
+      self->requested_input_volume = input_volume;
+      g_object_notify (G_OBJECT (self), "requested-input-volume");
     }
 
   output_volume = tp_asv_get_uint32 (properties, "RequestedOutputVolume", &valid);
   if (valid)
     {
-      self->output_volume = output_volume;
-      g_object_notify (G_OBJECT (self), "output-volume");
+      self->requested_output_volume = output_volume;
+      g_object_notify (G_OBJECT (self), "requested-output-volume");
     }
 
 }
