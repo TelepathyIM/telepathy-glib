@@ -287,7 +287,7 @@ tpl_dbus_service_dispose (GObject *obj)
 
   if (priv->accounts_contacts_map != NULL)
     {
-      g_hash_table_destroy (priv->accounts_contacts_map);
+      g_hash_table_unref (priv->accounts_contacts_map);
       priv->accounts_contacts_map = NULL;
     }
 
@@ -355,7 +355,7 @@ _tpl_dbus_service_init (TplDBusService *self)
   self->priv = priv;
   priv->manager = tpl_log_manager_dup_singleton ();
   priv->accounts_contacts_map = g_hash_table_new_full (g_str_hash, g_str_equal,
-      (GDestroyNotify) g_free, (GDestroyNotify) g_hash_table_destroy);
+      (GDestroyNotify) g_free, (GDestroyNotify) g_hash_table_unref);
   priv->favourite_contacts_actions = NULL;
 }
 

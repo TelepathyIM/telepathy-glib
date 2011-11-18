@@ -1492,7 +1492,7 @@ log_store_xml_get_events_for_file (TplLogStoreXml *self,
   g_free (target_id);
   xmlFreeDoc (doc);
   xmlFreeParserCtxt (ctxt);
-  g_hash_table_destroy (supersedes_links);
+  g_hash_table_unref (supersedes_links);
 }
 
 
