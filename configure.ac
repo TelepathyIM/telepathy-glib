@@ -128,7 +128,7 @@ if test "x$WANT_PYTHON" = "xyes"; then
 fi
 AM_CONDITIONAL(WANT_PYTHON, test "x$WANT_PYTHON" = "xyes")
 
-GTK_DOC_CHECK([1.10])
+GTK_DOC_CHECK([1.17], [--flavour no-tmpl])
 
 LT_CURRENT=tp_farstream_lt_current
 LT_REVISION=tp_farstream_lt_revision
