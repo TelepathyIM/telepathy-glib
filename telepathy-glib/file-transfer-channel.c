@@ -148,6 +148,7 @@ struct _TpFileTransferChannelPrivate
 
     /* Streams and sockets for sending and receiving the actual file */
     GSocket *client_socket;
+    GIOStream *stream;
     GInputStream *in_stream;
     GOutputStream *out_stream;
     GSocketAddress *remote_address;
@@ -189,6 +190,27 @@ operation_failed (TpFileTransferChannel *self,
 }
 
 static void
+stream_close_cb (GObject *source,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+  GIOStream *stream = G_IO_STREAM (source);
+  TpFileTransferChannel *self = user_data;
+  GError *error = NULL;
+
+  if (!g_io_stream_close_finish (stream, result, &error))
+    {
+      DEBUG ("Failed to close stream: %s\n", error->message);
+      g_clear_error (&error);
+      /* Don't fail the accept/provide operation as this is just a
+       * close operation. */
+    }
+
+  /* Now that this is closed in both ways, let's just remove it. */
+  g_clear_object (&self->priv->stream);
+}
+
+static void
 splice_stream_ready_cb (GObject *output,
     GAsyncResult *result,
     gpointer user_data)
@@ -204,6 +226,9 @@ splice_stream_ready_cb (GObject *output,
       DEBUG ("splice operation failed: %s", error->message);
       operation_failed (self, error);
     }
+
+  g_io_stream_close_async (self->priv->stream, G_PRIORITY_DEFAULT,
+      NULL, stream_close_cb, self);
 }
 
 static void
@@ -239,10 +264,13 @@ client_socket_connected (TpFileTransferChannel *self)
           DEBUG ("Failed to send credentials: %s", error->message);
 
           operation_failed (self, error);
+          g_object_unref (conn);
           return;
         }
     }
 #endif
+
+  self->priv->stream = G_IO_STREAM (conn);
 
   if (tp_channel_get_requested (TP_CHANNEL (self)))
     {
@@ -690,6 +718,7 @@ tp_file_transfer_channel_dispose (GObject *obj)
   tp_clear_pointer (&self->priv->date, g_date_time_unref);
   g_clear_object (&self->priv->file);
   tp_clear_pointer (&self->priv->metadata, g_hash_table_unref);
+  g_clear_object (&self->priv->stream);
 
   if (self->priv->cancellable != NULL)
     g_cancellable_cancel (self->priv->cancellable);
