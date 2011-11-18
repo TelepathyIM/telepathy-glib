@@ -15,7 +15,7 @@ DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.sgml
 # gtk-doc will search all .c & .h files beneath here for inline comments
 # documenting the functions and macros.
 # e.g. DOC_SOURCE_DIR=../../../gtk
-DOC_SOURCE_DIR=../../telepathy-farstream
+DOC_SOURCE_DIR=$(abs_top_srcdir)/telepathy-farstream
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
 SCANGOBJ_OPTIONS=
@@ -91,16 +91,16 @@ include $(top_srcdir)/gtk-doc.make
 if ENABLE_GTK_DOC
 check-local:
 	@if grep '^0 symbols incomplete' \
-		$(srcdir)/telepathy-farstream-undocumented.txt; then\
+		$(top_builddir)/doc/lib/telepathy-farstream-undocumented.txt; then\
 		:; else \
-		cat $(srcdir)/telepathy-farstream-undocumented.txt; exit 1; fi
+		cat $(top_builddir)/doc/lib/telepathy-farstream-undocumented.txt; exit 1; fi
 	@if grep '^0 not documented' \
-		$(srcdir)/telepathy-farstream-undocumented.txt; then\
+		$(top_builddir)/doc/lib/telepathy-farstream-undocumented.txt; then\
 		:; else \
-		cat $(srcdir)/telepathy-farstream-undocumented.txt; exit 1; fi
-	@if grep . $(srcdir)/telepathy-farstream-unused.txt; then\
+		cat $(top_builddir)/doc/lib/telepathy-farstream-undocumented.txt; exit 1; fi
+	@if grep . $(top_builddir)/doc/lib/telepathy-farstream-unused.txt; then\
 		echo "^^^ Unused symbols" >&2; exit 1; fi
-	@if test -e $(srcdir)/telepathy-farstream-undeclared.txt &&\
-		grep . $(srcdir)/telepathy-farstream-undeclared.txt; then\
+	@if test -e $(top_builddir)/doc/lib/telepathy-farstream-undeclared.txt &&\
+		grep . $(top_builddir)/doc/lib/telepathy-farstream-undeclared.txt; then\
 		echo "^^^ Undeclared symbols" >&2; exit 1; fi
 endif
