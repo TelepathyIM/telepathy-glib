@@ -53,16 +53,14 @@ GType example_call_channel_get_type (void);
                               ExampleCallChannelClass))
 
 struct _ExampleCallChannelClass {
-    TpBaseChannelClass parent_class;
+    TpBaseCallChannelClass parent_class;
 };
 
 struct _ExampleCallChannel {
-    TpBaseChannel parent;
+    TpBaseCallChannel parent;
 
     ExampleCallChannelPrivate *priv;
 };
-
-void example_call_channel_disconnected (ExampleCallChannel *self);
 
 G_END_DECLS
 

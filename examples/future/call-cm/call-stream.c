@@ -25,51 +25,23 @@
 #include <telepathy-glib/gtypes.h>
 #include <telepathy-glib/svc-call.h>
 
-static void stream_iface_init (gpointer, gpointer);
-
-G_DEFINE_TYPE_WITH_CODE (ExampleCallStream,
+G_DEFINE_TYPE (ExampleCallStream,
     example_call_stream,
-    G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_DBUS_PROPERTIES,
-      tp_dbus_properties_mixin_iface_init);
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CALL_STREAM, stream_iface_init))
+    TP_TYPE_BASE_CALL_STREAM)
 
 enum
 {
-  PROP_OBJECT_PATH = 1,
-  PROP_CONNECTION,
-  PROP_INTERFACES,
-  PROP_HANDLE,
-  PROP_SIMULATION_DELAY,
+  PROP_SIMULATION_DELAY = 1,
   PROP_LOCALLY_REQUESTED,
-  PROP_LOCAL_SENDING_STATE,
-  PROP_REMOTE_MEMBERS,
-  PROP_REMOTE_MEMBER_IDENTIFIERS,
+  PROP_HANDLE,
   N_PROPS
 };
 
-enum
-{
-  SIGNAL_REMOVED,
-  N_SIGNALS
-};
-
-static guint signals[N_SIGNALS] = { 0 };
-
 struct _ExampleCallStreamPrivate
 {
-  gchar *object_path;
-  TpBaseConnection *conn;
-  TpHandle handle;
-  TpSendingState local_sending_state;
-  TpSendingState remote_sending_state;
-
   guint simulation_delay;
-
-  guint connected_event_id;
-
   gboolean locally_requested;
-  gboolean removed;
+  TpHandle handle;
 };
 
 static void
@@ -78,10 +50,6 @@ example_call_stream_init (ExampleCallStream *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       EXAMPLE_TYPE_CALL_STREAM,
       ExampleCallStreamPrivate);
-
-  /* start off directionless */
-  self->priv->local_sending_state = TP_SENDING_STATE_NONE;
-  self->priv->remote_sending_state = TP_SENDING_STATE_NONE;
 }
 
 static void example_call_stream_receive_direction_request (
@@ -99,10 +67,6 @@ constructed (GObject *object)
   if (chain_up != NULL)
     chain_up (object);
 
-  tp_dbus_daemon_register_object (
-      tp_base_connection_get_dbus_daemon (self->priv->conn),
-      self->priv->object_path, self);
-
   if (self->priv->locally_requested)
     {
       example_call_stream_change_direction (self, TRUE, TRUE);
@@ -111,17 +75,7 @@ constructed (GObject *object)
     {
       example_call_stream_receive_direction_request (self, TRUE, TRUE);
     }
-
-  if (self->priv->handle != 0)
-    {
-      TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-          self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-      tp_handle_ref (contact_repo, self->priv->handle);
-    }
 }
-
-static const gchar * const empty_strv[] = { NULL };
 
 static void
 get_property (GObject *object,
@@ -133,22 +87,6 @@ get_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_OBJECT_PATH:
-      g_value_set_string (value, self->priv->object_path);
-      break;
-
-    case PROP_INTERFACES:
-      g_value_set_static_boxed (value, empty_strv);
-      break;
-
-    case PROP_HANDLE:
-      g_value_set_uint (value, self->priv->handle);
-      break;
-
-    case PROP_CONNECTION:
-      g_value_set_object (value, self->priv->conn);
-      break;
-
     case PROP_SIMULATION_DELAY:
       g_value_set_uint (value, self->priv->simulation_delay);
       break;
@@ -157,32 +95,8 @@ get_property (GObject *object,
       g_value_set_boolean (value, self->priv->locally_requested);
       break;
 
-    case PROP_REMOTE_MEMBERS:
-        {
-          GHashTable *members = g_hash_table_new (NULL, NULL);
-
-          g_hash_table_insert (members, GUINT_TO_POINTER (self->priv->handle),
-              GUINT_TO_POINTER (self->priv->remote_sending_state));
-
-          g_value_take_boxed (value, members);
-        }
-      break;
-
-    case PROP_REMOTE_MEMBER_IDENTIFIERS:
-        {
-          GHashTable *identifiers = g_hash_table_new (NULL, NULL);
-          TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-          g_hash_table_insert (identifiers, GUINT_TO_POINTER (self->priv->handle),
-              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
-
-          g_value_take_boxed (value, identifiers);
-        }
-      break;
-
-    case PROP_LOCAL_SENDING_STATE:
-      g_value_set_uint (value, self->priv->local_sending_state);
+    case PROP_HANDLE:
+      g_value_set_uint (value, self->priv->handle);
       break;
 
     default:
@@ -201,20 +115,6 @@ set_property (GObject *object,
 
   switch (property_id)
     {
-    case PROP_OBJECT_PATH:
-      g_assert (self->priv->object_path == NULL);   /* construct-only */
-      self->priv->object_path = g_value_dup_string (value);
-      break;
-
-    case PROP_HANDLE:
-      self->priv->handle = g_value_get_uint (value);
-      break;
-
-    case PROP_CONNECTION:
-      g_assert (self->priv->conn == NULL);
-      self->priv->conn = g_value_dup_object (value);
-      break;
-
     case PROP_SIMULATION_DELAY:
       self->priv->simulation_delay = g_value_get_uint (value);
       break;
@@ -223,108 +123,45 @@ set_property (GObject *object,
       self->priv->locally_requested = g_value_get_boolean (value);
       break;
 
+    case PROP_HANDLE:
+      self->priv->handle = g_value_get_uint (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
     }
 }
 
-static void
-dispose (GObject *object)
-{
-  ExampleCallStream *self = EXAMPLE_CALL_STREAM (object);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-      self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-  example_call_stream_close (self);
-
-  if (self->priv->handle != 0)
-    {
-      tp_handle_unref (contact_repo, self->priv->handle);
-      self->priv->handle = 0;
-    }
-
-  if (self->priv->conn != NULL)
-    {
-      g_object_unref (self->priv->conn);
-      self->priv->conn = NULL;
-    }
-
-  ((GObjectClass *) example_call_stream_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-  ExampleCallStream *self = EXAMPLE_CALL_STREAM (object);
-  void (*chain_up) (GObject *) =
-    ((GObjectClass *) example_call_stream_parent_class)->finalize;
-
-  g_free (self->priv->object_path);
-
-  if (chain_up != NULL)
-    chain_up (object);
-}
+static gboolean stream_request_receiving (TpBaseCallStream *base,
+    TpHandle contact,
+    gboolean receive,
+    GError **error);
+static gboolean stream_set_sending (TpBaseCallStream *base,
+    gboolean sending,
+    GError **error);
 
 static void
 example_call_stream_class_init (ExampleCallStreamClass *klass)
 {
-  static TpDBusPropertiesMixinPropImpl stream_props[] = {
-      { "RemoteMemberIdentifiers", "remote-member-identifiers", NULL },
-      { "LocalSendingState", "local-sending-state", NULL },
-      { "RemoteMembers", "remote-members", NULL },
-      { "Interfaces", "interfaces", NULL },
-      { NULL }
-  };
-  static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
-      { TP_IFACE_CALL_STREAM,
-        tp_dbus_properties_mixin_getter_gobject_properties,
-        NULL,
-        stream_props,
-      },
-      { NULL }
-  };
   GObjectClass *object_class = (GObjectClass *) klass;
+  TpBaseCallStreamClass *stream_class = (TpBaseCallStreamClass *) klass;
   GParamSpec *param_spec;
 
-  g_type_class_add_private (klass,
-      sizeof (ExampleCallStreamPrivate));
+  g_type_class_add_private (klass, sizeof (ExampleCallStreamPrivate));
 
   object_class->constructed = constructed;
   object_class->set_property = set_property;
   object_class->get_property = get_property;
-  object_class->dispose = dispose;
-  object_class->finalize = finalize;
 
-  param_spec = g_param_spec_string ("object-path", "D-Bus object path",
-      "The D-Bus object path used for this object on the bus.", NULL,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_OBJECT_PATH, param_spec);
-
-  param_spec = g_param_spec_object ("connection", "TpBaseConnection",
-      "Connection that (indirectly) owns this stream",
-      TP_TYPE_BASE_CONNECTION,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CONNECTION, param_spec);
-
-  param_spec = g_param_spec_uint ("handle", "Peer's TpHandle",
-      "The handle with which this stream communicates or 0 if not applicable",
-      0, G_MAXUINT32, 0,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_HANDLE, param_spec);
+  stream_class->request_receiving = stream_request_receiving;
+  stream_class->set_sending = stream_set_sending;
 
   param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
       "Delay between simulated network events",
       0, G_MAXUINT32, 1000,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
-      param_spec);
-
-  param_spec = g_param_spec_boxed ("remote-member-identifiers", "RemoteMemberIdentifiers",
-      "Map from contact handles to their identifiers",
-      TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_REMOTE_MEMBER_IDENTIFIERS,
       param_spec);
 
   param_spec = g_param_spec_boolean ("locally-requested", "Locally requested?",
@@ -334,120 +171,42 @@ example_call_stream_class_init (ExampleCallStreamClass *klass)
   g_object_class_install_property (object_class, PROP_LOCALLY_REQUESTED,
       param_spec);
 
-  param_spec = g_param_spec_boxed ("remote-members", "RemoteMembers",
-      "Map from contact handles to their sending states",
-      TP_HASH_TYPE_CONTACT_SENDING_STATE_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_REMOTE_MEMBERS,
-      param_spec);
-
-  param_spec = g_param_spec_boxed ("interfaces", "Interfaces",
-      "List of D-Bus interfaces",
-      G_TYPE_STRV, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INTERFACES, param_spec);
-
-  param_spec = g_param_spec_uint ("local-sending-state", "LocalSendingState",
-      "Local sending state",
-      0, NUM_TP_SENDING_STATES, TP_SENDING_STATE_NONE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_LOCAL_SENDING_STATE,
-      param_spec);
-
-  signals[SIGNAL_REMOVED] = g_signal_new ("removed",
-      G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
-      G_TYPE_NONE, 0);
-
-  klass->dbus_properties_class.interfaces = prop_interfaces;
-  tp_dbus_properties_mixin_class_init (object_class,
-      G_STRUCT_OFFSET (ExampleCallStreamClass,
-        dbus_properties_class));
-}
-
-void
-example_call_stream_close (ExampleCallStream *self)
-{
-  if (!self->priv->removed)
-    {
-      self->priv->removed = TRUE;
-
-      g_message ("%s: Sending to server: Closing stream",
-          self->priv->object_path);
-
-      if (self->priv->connected_event_id != 0)
-        {
-          g_source_remove (self->priv->connected_event_id);
-        }
-
-      /* this has to come last, because the MediaChannel may unref us in
-       * response to the removed signal */
-      g_signal_emit (self, signals[SIGNAL_REMOVED], 0);
-    }
+  param_spec = g_param_spec_uint ("handle", "Peer's TpHandle",
+      "The handle with which this stream communicates or 0 if not applicable",
+      0, G_MAXUINT32, 0,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_HANDLE, param_spec);
 }
 
 void
 example_call_stream_accept_proposed_direction (ExampleCallStream *self)
 {
-  GValueArray *reason;
+  TpBaseCallStream *base = (TpBaseCallStream *) self;
+  TpSendingState state = tp_base_call_stream_get_local_sending_state (base);
 
-  if (self->priv->removed ||
-      self->priv->local_sending_state != TP_SENDING_STATE_PENDING_SEND)
+  if (state != TP_SENDING_STATE_PENDING_SEND)
     return;
 
-  g_message ("%s: SIGNALLING: Sending to server: OK, I'll send you media",
-      self->priv->object_path);
-
-  self->priv->local_sending_state = TP_SENDING_STATE_SENDING;
-  reason = tp_value_array_build (4,
-      G_TYPE_UINT, 0,
-      G_TYPE_UINT, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
-      G_TYPE_STRING, "",
-      G_TYPE_STRING, "",
-      G_TYPE_INVALID);
-  tp_svc_call_stream_emit_local_sending_state_changed (self,
-      self->priv->local_sending_state, reason);
-  g_value_array_free (reason);
+  tp_base_call_stream_update_local_sending_state (base,
+      TP_SENDING_STATE_SENDING, 0, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
+      "", "");
 }
 
 void
 example_call_stream_simulate_contact_agreed_to_send (ExampleCallStream *self)
 {
-  GHashTable *updated_members, *identifiers;
-  GArray *removed_members;
-  GValueArray *reason;
-  TpHandleRepoIface *contact_handles;
+  TpBaseCallStream *base = (TpBaseCallStream *) self;
+  TpSendingState state = tp_base_call_stream_get_remote_sending_state (base,
+      self->priv->handle);
 
-  if (self->priv->removed ||
-      self->priv->remote_sending_state != TP_SENDING_STATE_PENDING_SEND)
-    return;
+  if (state != TP_SENDING_STATE_PENDING_SEND)
 
-  contact_handles = tp_base_connection_get_handles (
-      self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  g_message ("%s: SIGNALLING: Sending to server: OK, I'll send you media",
+      tp_base_call_stream_get_object_path (base));
 
-  g_message ("%s: SIGNALLING: received: OK, I'll send you media",
-      self->priv->object_path);
-
-  self->priv->remote_sending_state = TP_SENDING_STATE_SENDING;
-
-  updated_members = g_hash_table_new (NULL, NULL);
-  removed_members = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
-  identifiers = g_hash_table_new (NULL, NULL);
-  g_hash_table_insert (updated_members, GUINT_TO_POINTER (self->priv->handle),
-      GUINT_TO_POINTER (TP_SENDING_STATE_SENDING));
-  g_hash_table_insert (identifiers, GUINT_TO_POINTER (self->priv->handle),
-      (gpointer) tp_handle_inspect (contact_handles, self->priv->handle));
-  reason = tp_value_array_build (4,
-      G_TYPE_UINT, 0,
-      G_TYPE_UINT, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
-      G_TYPE_STRING, "",
-      G_TYPE_STRING, "",
-      G_TYPE_INVALID);
-  tp_svc_call_stream_emit_remote_members_changed (self, updated_members,
-      identifiers, removed_members, reason);
-  g_hash_table_unref (updated_members);
-  g_hash_table_unref (identifiers);
-  g_array_unref (removed_members);
-  g_value_array_free (reason);
+  tp_base_call_stream_update_remote_sending_state ((TpBaseCallStream *) self,
+    self->priv->handle, TP_SENDING_STATE_SENDING, 0,
+    TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "");
 }
 
 static gboolean
@@ -461,111 +220,86 @@ static void
 example_call_stream_change_direction (ExampleCallStream *self,
     gboolean want_to_send, gboolean want_to_receive)
 {
-  GHashTable *updated_members = g_hash_table_new (NULL, NULL);
-  GHashTable *updated_member_identifiers = g_hash_table_new (NULL, NULL);
-  GValueArray *reason = tp_value_array_build (4,
-      G_TYPE_UINT, 0,
-      G_TYPE_UINT, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
-      G_TYPE_STRING, "",
-      G_TYPE_STRING, "",
-      G_TYPE_INVALID);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-      self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  TpBaseCallStream *base = (TpBaseCallStream *) self;
+  TpSendingState local_sending_state =
+      tp_base_call_stream_get_local_sending_state (base);
+  TpSendingState remote_sending_state =
+      tp_base_call_stream_get_remote_sending_state (base, self->priv->handle);
 
   if (want_to_send)
     {
-      if (self->priv->local_sending_state != TP_SENDING_STATE_SENDING)
+      if (local_sending_state != TP_SENDING_STATE_SENDING)
         {
-          if (self->priv->local_sending_state ==
-              TP_SENDING_STATE_PENDING_SEND)
+          if (local_sending_state == TP_SENDING_STATE_PENDING_SEND)
             {
               g_message ("%s: SIGNALLING: send: I will now send you media",
-                  self->priv->object_path);
+                  tp_base_call_stream_get_object_path (base));
             }
 
           g_message ("%s: MEDIA: sending media to peer",
-              self->priv->object_path);
-          self->priv->local_sending_state = TP_SENDING_STATE_SENDING;
-          tp_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state, reason);
+              tp_base_call_stream_get_object_path (base));
+
+          tp_base_call_stream_update_local_sending_state (base,
+              TP_SENDING_STATE_SENDING, 0, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
+              "", "");
         }
     }
   else
     {
-      if (self->priv->local_sending_state == TP_SENDING_STATE_SENDING)
+      if (local_sending_state == TP_SENDING_STATE_SENDING)
         {
           g_message ("%s: SIGNALLING: send: I will no longer send you media",
-              self->priv->object_path);
+              tp_base_call_stream_get_object_path (base));
           g_message ("%s: MEDIA: no longer sending media to peer",
-              self->priv->object_path);
-          self->priv->local_sending_state = TP_SENDING_STATE_NONE;
-          tp_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state, reason);
+              tp_base_call_stream_get_object_path (base));
+
+          tp_base_call_stream_update_local_sending_state (base,
+              TP_SENDING_STATE_NONE, 0, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
+              "", "");
         }
-      else if (self->priv->local_sending_state ==
-          TP_SENDING_STATE_PENDING_SEND)
+      else if (local_sending_state == TP_SENDING_STATE_PENDING_SEND)
         {
           g_message ("%s: SIGNALLING: send: refusing to send you media",
-              self->priv->object_path);
-          self->priv->local_sending_state = TP_SENDING_STATE_NONE;
-          tp_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state, reason);
+              tp_base_call_stream_get_object_path (base));
+
+          tp_base_call_stream_update_local_sending_state (base,
+              TP_SENDING_STATE_NONE, 0, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
+              "", "");
         }
     }
 
   if (want_to_receive)
     {
-      if (self->priv->remote_sending_state == TP_SENDING_STATE_NONE)
+      if (remote_sending_state == TP_SENDING_STATE_NONE)
         {
           g_message ("%s: SIGNALLING: send: send me media, please?",
-              self->priv->object_path);
-          self->priv->remote_sending_state = TP_SENDING_STATE_PENDING_SEND;
+              tp_base_call_stream_get_object_path (base));
+
+          tp_base_call_stream_update_remote_sending_state (
+              (TpBaseCallStream *) self,
+              self->priv->handle, TP_SENDING_STATE_PENDING_SEND, 0,
+              TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "");
+
           g_timeout_add_full (G_PRIORITY_DEFAULT, self->priv->simulation_delay,
               simulate_contact_agreed_to_send_cb, g_object_ref (self),
               g_object_unref);
-
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (self->priv->handle),
-              GUINT_TO_POINTER (TP_SENDING_STATE_PENDING_SEND));
-          g_hash_table_insert (updated_member_identifiers,
-              GUINT_TO_POINTER (self->priv->handle),
-              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
         }
     }
   else
     {
-      if (self->priv->remote_sending_state != TP_SENDING_STATE_NONE)
+      if (remote_sending_state != TP_SENDING_STATE_NONE)
         {
           g_message ("%s: SIGNALLING: send: Please stop sending me media",
-              self->priv->object_path);
+              tp_base_call_stream_get_object_path (base));
           g_message ("%s: MEDIA: suppressing output of stream",
-              self->priv->object_path);
-          self->priv->remote_sending_state = TP_SENDING_STATE_NONE;
+              tp_base_call_stream_get_object_path (base));
 
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (self->priv->handle),
-              GUINT_TO_POINTER (TP_SENDING_STATE_NONE));
-          g_hash_table_insert (updated_member_identifiers,
-              GUINT_TO_POINTER (self->priv->handle),
-              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
+          tp_base_call_stream_update_remote_sending_state (
+              (TpBaseCallStream *) self,
+              self->priv->handle, TP_SENDING_STATE_NONE, 0,
+              TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "");
         }
     }
-
-  if (g_hash_table_size (updated_members) != 0)
-    {
-      GArray *removed_members = g_array_sized_new (FALSE, FALSE,
-          sizeof (guint), 0);
-
-      tp_svc_call_stream_emit_remote_members_changed (self,
-          updated_members, updated_member_identifiers,
-          removed_members, reason);
-
-      g_array_unref (removed_members);
-    }
-
-  g_hash_table_unref (updated_members);
-  g_hash_table_unref (updated_member_identifiers);
-  g_value_array_free (reason);
 }
 
 /* The remote user wants to change the direction of this stream according
@@ -575,16 +309,12 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
     gboolean local_send,
     gboolean remote_send)
 {
-  GHashTable *updated_members = g_hash_table_new (NULL, NULL);
-  GHashTable *updated_member_identifiers = g_hash_table_new (NULL, NULL);
-  GValueArray *reason = tp_value_array_build (4,
-      G_TYPE_UINT, 0,
-      G_TYPE_UINT, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
-      G_TYPE_STRING, "",
-      G_TYPE_STRING, "",
-      G_TYPE_INVALID);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles (
-      self->priv->conn, TP_HANDLE_TYPE_CONTACT);
+  TpBaseCallStream *base = (TpBaseCallStream *) self;
+  TpSendingState local_sending_state =
+      tp_base_call_stream_get_local_sending_state (base);
+  TpSendingState remote_sending_state =
+      tp_base_call_stream_get_remote_sending_state (base, self->priv->handle);
+
   /* In some protocols, streams cannot be neither sending nor receiving, so
    * if a stream is set to TP_MEDIA_STREAM_DIRECTION_NONE, this is equivalent
    * to removing it. (This is true in XMPP, for instance.)
@@ -596,14 +326,15 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
   if (local_send)
     {
       g_message ("%s: SIGNALLING: send: Please start sending me media",
-          self->priv->object_path);
+          tp_base_call_stream_get_object_path (base));
 
-      if (self->priv->local_sending_state == TP_SENDING_STATE_NONE)
+      if (local_sending_state == TP_SENDING_STATE_NONE)
         {
           /* ask the user for permission */
-          self->priv->local_sending_state = TP_SENDING_STATE_PENDING_SEND;
-          tp_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state, reason);
+          tp_base_call_stream_update_local_sending_state (base,
+              TP_SENDING_STATE_PENDING_SEND, 0,
+              TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
+              "", "");
         }
       else
         {
@@ -614,24 +345,26 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
   else
     {
       g_message ("%s: SIGNALLING: receive: Please stop sending me media",
-          self->priv->object_path);
+          tp_base_call_stream_get_object_path (base));
       g_message ("%s: SIGNALLING: reply: OK!",
-          self->priv->object_path);
+          tp_base_call_stream_get_object_path (base));
 
-      if (self->priv->local_sending_state == TP_SENDING_STATE_SENDING)
+      if (local_sending_state == TP_SENDING_STATE_SENDING)
         {
           g_message ("%s: MEDIA: no longer sending media to peer",
-              self->priv->object_path);
-          self->priv->local_sending_state = TP_SENDING_STATE_NONE;
-          tp_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state, reason);
+              tp_base_call_stream_get_object_path (base));
+
+          tp_base_call_stream_update_local_sending_state (base,
+              TP_SENDING_STATE_NONE, 0,
+              TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
+              "", "");
         }
-      else if (self->priv->local_sending_state ==
-          TP_SENDING_STATE_PENDING_SEND)
+      else if (local_sending_state == TP_SENDING_STATE_PENDING_SEND)
         {
-          self->priv->local_sending_state = TP_SENDING_STATE_NONE;
-          tp_svc_call_stream_emit_local_sending_state_changed (self,
-              self->priv->local_sending_state, reason);
+          tp_base_call_stream_update_local_sending_state (base,
+              TP_SENDING_STATE_NONE, 0,
+              TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
+              "", "");
         }
       else
         {
@@ -642,131 +375,72 @@ example_call_stream_receive_direction_request (ExampleCallStream *self,
   if (remote_send)
     {
       g_message ("%s: SIGNALLING: receive: I will now send you media",
-          self->priv->object_path);
+          tp_base_call_stream_get_object_path (base));
 
-      if (self->priv->remote_sending_state != TP_SENDING_STATE_SENDING)
+      if (remote_sending_state != TP_SENDING_STATE_SENDING)
         {
-          self->priv->remote_sending_state = TP_SENDING_STATE_SENDING;
-
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (self->priv->handle),
-              GUINT_TO_POINTER (TP_SENDING_STATE_SENDING));
-          g_hash_table_insert (updated_member_identifiers,
-              GUINT_TO_POINTER (self->priv->handle),
-              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
+          tp_base_call_stream_update_remote_sending_state (
+              (TpBaseCallStream *) self,
+              self->priv->handle, TP_SENDING_STATE_SENDING, 0,
+              TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "");
         }
     }
   else
     {
-      if (self->priv->remote_sending_state ==
-          TP_SENDING_STATE_PENDING_SEND)
+      if (remote_sending_state == TP_SENDING_STATE_PENDING_SEND)
         {
           g_message ("%s: SIGNALLING: receive: No, I refuse to send you media",
-              self->priv->object_path);
-          self->priv->remote_sending_state = TP_SENDING_STATE_NONE;
+              tp_base_call_stream_get_object_path (base));
 
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (self->priv->handle),
-              GUINT_TO_POINTER (TP_SENDING_STATE_NONE));
-          g_hash_table_insert (updated_member_identifiers,
-              GUINT_TO_POINTER (self->priv->handle),
-              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
+          tp_base_call_stream_update_remote_sending_state (
+              (TpBaseCallStream *) self,
+              self->priv->handle, TP_SENDING_STATE_NONE, 0,
+              TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "");
         }
-      else if (self->priv->remote_sending_state ==
-          TP_SENDING_STATE_SENDING)
+      else if (remote_sending_state == TP_SENDING_STATE_SENDING)
         {
           g_message ("%s: SIGNALLING: receive: I will no longer send media",
-              self->priv->object_path);
-          self->priv->remote_sending_state = TP_SENDING_STATE_NONE;
+              tp_base_call_stream_get_object_path (base));
 
-          g_hash_table_insert (updated_members,
-              GUINT_TO_POINTER (self->priv->handle),
-              GUINT_TO_POINTER (TP_SENDING_STATE_NONE));
-          g_hash_table_insert (updated_member_identifiers,
-              GUINT_TO_POINTER (self->priv->handle),
-              (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
+          tp_base_call_stream_update_remote_sending_state (
+              (TpBaseCallStream *) self,
+              self->priv->handle, TP_SENDING_STATE_NONE, 0,
+              TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "");
         }
     }
-
-  if (g_hash_table_size (updated_members) != 0)
-    {
-      GArray *removed_members = g_array_sized_new (FALSE, FALSE,
-          sizeof (guint), 0);
-
-      tp_svc_call_stream_emit_remote_members_changed (self,
-          updated_members, updated_member_identifiers,
-          removed_members, reason);
-
-      g_array_unref (removed_members);
-    }
-
-  g_hash_table_unref (updated_members);
-  g_hash_table_unref (updated_member_identifiers);
-  g_value_array_free (reason);
 }
 
-static void
-stream_set_sending (TpSvcCallStream *iface G_GNUC_UNUSED,
+static gboolean
+stream_set_sending (TpBaseCallStream *base,
     gboolean sending,
-    DBusGMethodInvocation *context)
+    GError **error)
 {
-  ExampleCallStream *self = EXAMPLE_CALL_STREAM (iface);
+  ExampleCallStream *self = EXAMPLE_CALL_STREAM (base);
+  TpSendingState remote_sending_state =
+      tp_base_call_stream_get_remote_sending_state (base, self->priv->handle);
 
   example_call_stream_change_direction (self, sending,
-      (self->priv->remote_sending_state == TP_SENDING_STATE_SENDING));
+      (remote_sending_state == TP_SENDING_STATE_SENDING));
 
-  tp_svc_call_stream_return_from_set_sending (context);
+  return TRUE;
 }
 
-static void
-stream_request_receiving (TpSvcCallStream *iface,
+static gboolean
+stream_request_receiving (TpBaseCallStream *base,
     TpHandle contact,
     gboolean receive,
-    DBusGMethodInvocation *context)
+    GError **error)
 {
-  ExampleCallStream *self = EXAMPLE_CALL_STREAM (iface);
-  TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  GError *error = NULL;
+  ExampleCallStream *self = EXAMPLE_CALL_STREAM (base);
+  TpSendingState local_sending_state =
+      tp_base_call_stream_get_local_sending_state (base);
 
-  if (!tp_handle_is_valid (contact_repo, contact, &error))
-    {
-      goto finally;
-    }
-
-  if (contact != self->priv->handle)
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Can't receive from contact #%u: this stream only contains #%u",
-          contact, self->priv->handle);
-      goto finally;
-    }
+  /* This is the only member */
+  g_assert (contact == self->priv->handle);
 
   example_call_stream_change_direction (self,
-      (self->priv->local_sending_state == TP_SENDING_STATE_SENDING),
+      (local_sending_state == TP_SENDING_STATE_SENDING),
       receive);
 
-finally:
-  if (error == NULL)
-    {
-      tp_svc_call_stream_return_from_request_receiving (context);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
-}
-
-static void
-stream_iface_init (gpointer iface,
-    gpointer data)
-{
-  TpSvcCallStreamClass *klass = iface;
-
-#define IMPLEMENT(x) \
-  tp_svc_call_stream_implement_##x (klass, stream_##x)
-  IMPLEMENT (set_sending);
-  IMPLEMENT (request_receiving);
-#undef IMPLEMENT
+  return TRUE;
 }

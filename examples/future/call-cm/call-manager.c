@@ -96,7 +96,7 @@ example_call_manager_close_all (ExampleCallManager *self)
       g_hash_table_iter_init (&iter, tmp);
 
       while (g_hash_table_iter_next (&iter, NULL, &v))
-        example_call_channel_disconnected (v);
+        tp_base_channel_close (v);
 
       g_hash_table_unref (tmp);
     }
@@ -333,6 +333,7 @@ new_channel (ExampleCallManager *self,
       "simulation-delay", self->priv->simulation_delay,
       "initial-audio", initial_audio,
       "initial-video", initial_video,
+      "mutable-contents", TRUE,
       NULL);
 
   g_free (object_path);

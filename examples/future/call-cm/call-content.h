@@ -58,14 +58,13 @@ GType example_call_content_get_type (void);
                               ExampleCallContentClass))
 
 struct _ExampleCallContentClass {
-    GObjectClass parent_class;
-    TpDBusPropertiesMixinClass dbus_properties_class;
+    TpBaseCallContentClass parent_class;
 
     ExampleCallContentClassPrivate *priv;
 };
 
 struct _ExampleCallContent {
-    GObject parent;
+    TpBaseCallContent parent;
 
     ExampleCallContentPrivate *priv;
 };
@@ -75,6 +74,8 @@ ExampleCallStream *example_call_content_get_stream (ExampleCallContent *self);
 
 void example_call_content_add_stream (ExampleCallContent *self,
     ExampleCallStream *stream);
+
+void example_call_content_remove_stream (ExampleCallContent *self);
 
 G_END_DECLS
 

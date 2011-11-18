@@ -49,64 +49,31 @@
 #include "call-content.h"
 #include "call-stream.h"
 
-static void call_iface_init (gpointer iface, gpointer data);
 static void hold_iface_init (gpointer iface, gpointer data);
 
 G_DEFINE_TYPE_WITH_CODE (ExampleCallChannel,
     example_call_channel,
-    TP_TYPE_BASE_CHANNEL,
-    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_TYPE_CALL,
-      call_iface_init);
+    TP_TYPE_BASE_CALL_CHANNEL,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_HOLD,
       hold_iface_init))
 
 enum
 {
   PROP_SIMULATION_DELAY = 1,
-  PROP_INITIAL_AUDIO,
-  PROP_INITIAL_VIDEO,
-  PROP_INITIAL_AUDIO_NAME,
-  PROP_INITIAL_VIDEO_NAME,
-  PROP_CONTENT_PATHS,
-  PROP_CALL_STATE,
-  PROP_CALL_FLAGS,
-  PROP_CALL_STATE_REASON,
-  PROP_CALL_STATE_DETAILS,
-  PROP_HARDWARE_STREAMING,
-  PROP_CALL_MEMBERS,
-  PROP_MEMBER_IDENTIFIERS,
-  PROP_INITIAL_TRANSPORT,
-  PROP_MUTABLE_CONTENTS,
   N_PROPS
 };
 
 struct _ExampleCallChannelPrivate
 {
-  TpBaseConnection *conn;
-  gchar *object_path;
-  TpHandle handle;
-  TpHandle initiator;
-
-  TpCallState call_state;
-  TpCallFlags call_flags;
-  GValueArray *call_state_reason;
-  GHashTable *call_state_details;
-  TpCallMemberFlags peer_flags;
-
   guint simulation_delay;
-
-  guint next_stream_id;
-
-  /* strdup'd name => referenced ExampleCallContent */
-  GHashTable *contents;
+  TpBaseConnection *conn;
+  TpHandle handle;
+  gboolean locally_requested;
 
   guint hold_state;
   guint hold_state_reason;
 
-  gboolean locally_requested;
-  gboolean initial_audio;
-  gboolean initial_video;
-  gboolean disposed;
+  guint next_stream_id;
   gboolean closed;
 };
 
@@ -130,62 +97,9 @@ example_call_channel_set_state (ExampleCallChannel *self,
     const gchar *error,
     ...)
 {
-  TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  TpHandle old_actor;
-  const gchar *key;
-  va_list va;
-
-  self->priv->call_state = state;
-  self->priv->call_flags = flags;
-
-  old_actor = g_value_get_uint (self->priv->call_state_reason->values + 0);
-
-  if (actor != 0)
-    tp_handle_ref (contact_handles, actor);
-
-  if (old_actor != 0)
-    tp_handle_unref (contact_handles, old_actor);
-
-  g_value_set_uint (self->priv->call_state_reason->values + 0, actor);
-  g_value_set_uint (self->priv->call_state_reason->values + 1, reason);
-  g_value_set_string (self->priv->call_state_reason->values + 2, error);
-
-  g_hash_table_remove_all (self->priv->call_state_details);
-
-  va_start (va, error);
-
-  /* This is basically tp_asv_new_va(), but that doesn't exist yet
-   * (and when it does, we still won't want to use it in this example
-   * just yet, because examples shouldn't use unreleased API) */
-  for (key = va_arg (va, const gchar *);
-       key != NULL;
-       key = va_arg (va, const gchar *))
-    {
-      GType type = va_arg (va, GType);
-      GValue *value = tp_g_value_slice_new (type);
-      gchar *collect_error = NULL;
-
-      G_VALUE_COLLECT (value, va, 0, &collect_error);
-
-      if (collect_error != NULL)
-        {
-          g_critical ("key %s: %s", key, collect_error);
-          g_free (collect_error);
-          collect_error = NULL;
-          tp_g_value_slice_free (value);
-          continue;
-        }
-
-      g_hash_table_insert (self->priv->call_state_details,
-          (gchar *) key, value);
-    }
-
-  va_end (va);
-
-  tp_svc_channel_type_call_emit_call_state_changed (self,
-      self->priv->call_state, self->priv->call_flags,
-      self->priv->call_state_reason, self->priv->call_state_details);
+  /* FIXME: TpBaseCallChannel is not that flexible */
+  tp_base_call_channel_set_state ((TpBaseCallChannel *) self,
+      state, actor, reason, error, "");
 }
 
 static void
@@ -196,19 +110,6 @@ example_call_channel_init (ExampleCallChannel *self)
       ExampleCallChannelPrivate);
 
   self->priv->next_stream_id = 1;
-  self->priv->contents = g_hash_table_new_full (g_str_hash,
-      g_str_equal, g_free, g_object_unref);
-
-  self->priv->call_state = TP_CALL_STATE_UNKNOWN; /* set in constructed */
-  self->priv->call_flags = 0;
-  self->priv->call_state_reason = tp_value_array_build (4,
-      G_TYPE_UINT, 0,   /* actor */
-      G_TYPE_UINT, TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
-      G_TYPE_STRING, "",
-      G_TYPE_STRING, "",
-      G_TYPE_INVALID);
-  self->priv->call_state_details = tp_asv_new (
-      NULL, NULL);
 
   self->priv->hold_state = TP_LOCAL_HOLD_STATE_UNHELD;
   self->priv->hold_state_reason = TP_LOCAL_HOLD_STATE_REASON_NONE;
@@ -227,27 +128,18 @@ constructed (GObject *object)
   void (*chain_up) (GObject *) =
       ((GObjectClass *) example_call_channel_parent_class)->constructed;
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (object);
-  TpHandleRepoIface *contact_repo;
   TpBaseChannel *base = (TpBaseChannel *) self;
+  TpBaseCallChannel *call = (TpBaseCallChannel *) self;
 
   if (chain_up != NULL)
     chain_up (object);
 
-  self->priv->object_path = g_strdup (tp_base_channel_get_object_path (base));
   self->priv->handle = tp_base_channel_get_target_handle (base);
-  self->priv->initiator = tp_base_channel_get_initiator (base);
   self->priv->locally_requested = tp_base_channel_is_requested (base);
   self->priv->conn = tp_base_channel_get_connection (base);
 
-  contact_repo = tp_base_connection_get_handles (self->priv->conn,
-      TP_HANDLE_TYPE_CONTACT);
-
-  tp_handle_ref (contact_repo, self->priv->handle);
-  tp_handle_ref (contact_repo, self->priv->initiator);
-
-  tp_dbus_daemon_register_object (
-      tp_base_connection_get_dbus_daemon (self->priv->conn),
-      self->priv->object_path, self);
+  tp_base_call_channel_update_member_flags (call, self->priv->handle, 0,
+      0, TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "");
 
   if (self->priv->locally_requested)
     {
@@ -269,41 +161,22 @@ constructed (GObject *object)
           NULL);
     }
 
-  if (self->priv->locally_requested)
+  /* FIXME: should respect initial names */
+  if (tp_base_call_channel_has_initial_audio (call, NULL))
     {
-      if (self->priv->initial_audio)
-        {
-          g_message ("Channel initially has an audio stream");
-          example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_AUDIO, TRUE, TRUE, NULL, NULL);
-        }
-
-      if (self->priv->initial_video)
-        {
-          g_message ("Channel initially has a video stream");
-          example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_VIDEO, TRUE, TRUE, NULL, NULL);
-        }
+      g_message ("Channel initially has an audio stream");
+      example_call_channel_add_content (self, TP_MEDIA_STREAM_TYPE_AUDIO,
+          self->priv->locally_requested, TRUE, NULL, NULL);
     }
-  else
+
+  if (tp_base_call_channel_has_initial_video (call, NULL))
     {
-      /* the caller has almost certainly asked us for some streams - there's
-       * not much point in having a call otherwise */
-
-      if (self->priv->initial_audio)
-        {
-          g_message ("Channel initially has an audio stream");
-          example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_AUDIO, FALSE, TRUE, NULL, NULL);
-        }
-
-      if (self->priv->initial_video)
-        {
-          g_message ("Channel initially has a video stream");
-          example_call_channel_add_content (self,
-              TP_MEDIA_STREAM_TYPE_VIDEO, FALSE, TRUE, NULL, NULL);
-        }
+      g_message ("Channel initially has a video stream");
+      example_call_channel_add_content (self, TP_MEDIA_STREAM_TYPE_VIDEO,
+      self->priv->locally_requested, TRUE, NULL, NULL);
     }
+
+  tp_base_channel_register (base);
 }
 
 static void
@@ -318,102 +191,6 @@ get_property (GObject *object,
     {
     case PROP_SIMULATION_DELAY:
       g_value_set_uint (value, self->priv->simulation_delay);
-      break;
-
-    case PROP_INITIAL_AUDIO:
-      g_value_set_boolean (value, self->priv->initial_audio);
-      break;
-
-    case PROP_INITIAL_VIDEO:
-      g_value_set_boolean (value, self->priv->initial_video);
-      break;
-
-    case PROP_INITIAL_AUDIO_NAME:
-      g_value_set_string (value, self->priv->initial_audio ? "audio" : NULL);
-      break;
-
-    case PROP_INITIAL_VIDEO_NAME:
-      g_value_set_string (value, self->priv->initial_video ? "video" : NULL);
-      break;
-
-    case PROP_CONTENT_PATHS:
-        {
-          GPtrArray *paths = g_ptr_array_sized_new (g_hash_table_size (
-                self->priv->contents));
-          GHashTableIter iter;
-          gpointer v;
-
-          g_hash_table_iter_init (&iter, self->priv->contents);
-
-          while (g_hash_table_iter_next (&iter, NULL, &v))
-            {
-              gchar *path;
-
-              g_object_get (v,
-                  "object-path", &path,
-                  NULL);
-
-              g_ptr_array_add (paths, path);
-            }
-
-          g_value_take_boxed (value, paths);
-        }
-      break;
-
-    case PROP_CALL_STATE:
-      g_value_set_uint (value, self->priv->call_state);
-      break;
-
-    case PROP_CALL_FLAGS:
-      g_value_set_uint (value, self->priv->call_flags);
-      break;
-
-    case PROP_CALL_STATE_REASON:
-      g_value_set_boxed (value, self->priv->call_state_reason);
-      break;
-
-    case PROP_CALL_STATE_DETAILS:
-      g_value_set_boxed (value, self->priv->call_state_details);
-      break;
-
-    case PROP_HARDWARE_STREAMING:
-      /* yes, this implementation has hardware streaming */
-      g_value_set_boolean (value, TRUE);
-      break;
-
-    case PROP_MUTABLE_CONTENTS:
-      /* yes, this implementation can add contents */
-      g_value_set_boolean (value, TRUE);
-      break;
-
-    case PROP_INITIAL_TRANSPORT:
-      /* this implementation has hardware_streaming, so the initial
-       * transport is rather meaningless */
-      g_value_set_uint (value, TP_STREAM_TRANSPORT_TYPE_UNKNOWN);
-      break;
-
-    case PROP_CALL_MEMBERS:
-        {
-          GHashTable *uu_map = g_hash_table_new (NULL, NULL);
-
-          /* There is one contact, other than the self-handle. */
-          g_hash_table_insert (uu_map, GUINT_TO_POINTER (self->priv->handle),
-              GUINT_TO_POINTER (self->priv->peer_flags));
-          g_value_take_boxed (value, uu_map);
-        }
-      break;
-
-    case PROP_MEMBER_IDENTIFIERS:
-        {
-          GHashTable *us_map = g_hash_table_new (NULL, NULL);
-          TpHandleRepoIface *contact_handles = tp_base_connection_get_handles (
-              self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-          /* There is one contact, other than the self-handle. */
-          g_hash_table_insert (us_map, GUINT_TO_POINTER (self->priv->handle),
-              (gpointer) tp_handle_inspect (contact_handles, self->priv->handle));
-          g_value_take_boxed (value, us_map);
-        }
       break;
 
     default:
@@ -436,14 +213,6 @@ set_property (GObject *object,
       self->priv->simulation_delay = g_value_get_uint (value);
       break;
 
-    case PROP_INITIAL_AUDIO:
-      self->priv->initial_audio = g_value_get_boolean (value);
-      break;
-
-    case PROP_INITIAL_VIDEO:
-      self->priv->initial_video = g_value_get_boolean (value);
-      break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -457,11 +226,12 @@ example_call_channel_terminate (ExampleCallChannel *self,
     TpCallStateChangeReason call_reason,
     const gchar *error_name)
 {
-  if (self->priv->call_state != TP_CALL_STATE_ENDED)
+  TpBaseCallChannel *base = (TpBaseCallChannel *) self;
+  TpCallState call_state = tp_base_call_channel_get_state (base);
+
+  if (call_state != TP_CALL_STATE_ENDED)
     {
-      GList *values;
-      GHashTable *empty_uu_map = g_hash_table_new (NULL, NULL);
-      GArray *au = g_array_sized_new (FALSE, FALSE, sizeof (guint), 1);
+      GList *contents;
 
       example_call_channel_set_state (self,
           TP_CALL_STATE_ENDED, 0, actor,
@@ -470,11 +240,8 @@ example_call_channel_terminate (ExampleCallChannel *self,
 
       /* FIXME: fd.o #24936 #c20: it's unclear in the spec whether we should
        * remove peers on call termination or not. For now this example does. */
-      g_array_append_val (au, self->priv->handle);
-      tp_svc_channel_type_call_emit_call_members_changed (self,
-          empty_uu_map, empty_uu_map, au, self->priv->call_state_reason);
-      g_hash_table_unref (empty_uu_map);
-      g_array_unref (au);
+      tp_base_call_channel_remove_member (base, self->priv->handle,
+          actor, call_reason, error_name, NULL);
 
       if (actor == tp_base_connection_get_self_handle (self->priv->conn))
         {
@@ -502,34 +269,14 @@ example_call_channel_terminate (ExampleCallChannel *self,
       /* terminate all streams: to avoid modifying the hash table (in the
        * streams-removed handler) while iterating over it, we have to copy the
        * keys and iterate over those */
-      values = g_hash_table_get_values (self->priv->contents);
-      g_list_foreach (values, (GFunc) g_object_ref, NULL);
-
-      for (; values != NULL; values = g_list_delete_link (values, values))
+      contents = tp_base_call_channel_get_contents (base);
+      contents = g_list_copy (contents);
+      for (; contents != NULL; contents = g_list_delete_link (contents, contents))
         {
-          ExampleCallStream *stream =
-            example_call_content_get_stream (values->data);
-
-          if (stream != NULL)
-            example_call_stream_close (stream);
-
-          g_object_unref (values->data);
+          example_call_content_remove_stream (contents->data);
+          tp_base_call_channel_remove_content (base, contents->data,
+              0, call_reason, error_name, "");
         }
-    }
-}
-
-void
-example_call_channel_disconnected (ExampleCallChannel *self)
-{
-  example_call_channel_terminate (self, 0,
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      TP_CALL_STATE_CHANGE_REASON_UNKNOWN,
-      TP_ERROR_STR_DISCONNECTED);
-
-  if (!self->priv->closed)
-    {
-      self->priv->closed = TRUE;
-      tp_svc_channel_emit_closed (self);
     }
 }
 
@@ -538,42 +285,10 @@ dispose (GObject *object)
 {
   ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (object);
 
-  if (self->priv->disposed)
-    return;
-
-  self->priv->disposed = TRUE;
-
-  g_hash_table_unref (self->priv->contents);
-  self->priv->contents = NULL;
-
-  /* FIXME: right error code? arguably this should always be a no-op */
-  example_call_channel_terminate (self,
-      tp_base_connection_get_self_handle (self->priv->conn),
-      TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-      TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
-
   /* the manager is meant to hold a ref to us until we've closed */
   g_assert (self->priv->closed);
 
   ((GObjectClass *) example_call_channel_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (object);
-  TpHandleRepoIface *contact_handles = tp_base_connection_get_handles
-      (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-
-  g_value_array_free (self->priv->call_state_reason);
-  g_hash_table_unref (self->priv->call_state_details);
-
-  tp_handle_unref (contact_handles, self->priv->handle);
-  tp_handle_unref (contact_handles, self->priv->initiator);
-
-  g_free (self->priv->object_path);
-
-  ((GObjectClass *) example_call_channel_parent_class)->finalize (object);
 }
 
 static void
@@ -591,66 +306,39 @@ close_channel (TpBaseChannel *base)
   tp_base_channel_destroyed (base);
 }
 
-static void
-fill_immutable_properties (TpBaseChannel *self,
-    GHashTable *properties)
-{
-  TpBaseChannelClass *klass = TP_BASE_CHANNEL_CLASS (
-      example_call_channel_parent_class);
-
-  klass->fill_immutable_properties (self, properties);
-
-  tp_dbus_properties_mixin_fill_properties_hash (
-      G_OBJECT (self), properties,
-      TP_IFACE_CHANNEL_TYPE_CALL, "HardwareStreaming",
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialTransport",
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialAudio",
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialVideo",
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialAudioName",
-      TP_IFACE_CHANNEL_TYPE_CALL, "InitialVideoName",
-      TP_IFACE_CHANNEL_TYPE_CALL, "MutableContents",
-      NULL);
-}
+static void call_accept (TpBaseCallChannel *self);
+static TpBaseCallContent * call_add_content (TpBaseCallChannel *self,
+      const gchar *name,
+      TpMediaStreamType media,
+      GError **error);
+static void call_hangup (TpBaseCallChannel *self,
+      guint reason,
+      const gchar *detailed_reason,
+      const gchar *message);
 
 static void
 example_call_channel_class_init (ExampleCallChannelClass *klass)
 {
-  static TpDBusPropertiesMixinPropImpl call_props[] = {
-      { "Contents", "content-paths", NULL },
-      { "CallState", "call-state", NULL },
-      { "CallFlags", "call-flags", NULL },
-      { "CallStateReason", "call-state-reason", NULL },
-      { "CallStateDetails", "call-state-details", NULL },
-      { "HardwareStreaming", "hardware-streaming", NULL },
-      { "CallMembers", "call-members", NULL },
-      { "MemberIdentifiers", "member-identifiers", NULL },
-      { "InitialTransport", "initial-transport", NULL },
-      { "InitialAudio", "initial-audio", NULL },
-      { "InitialVideo", "initial-video", NULL },
-      { "InitialAudioName", "initial-audio-name", NULL },
-      { "InitialVideoName", "initial-video-name", NULL },
-      { "MutableContents", "mutable-contents", NULL },
-      { NULL }
-  };
   GObjectClass *object_class = (GObjectClass *) klass;
-  GParamSpec *param_spec;
   TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS (klass);
+  TpBaseCallChannelClass *call_class = (TpBaseCallChannelClass *) klass;
+  GParamSpec *param_spec;
 
   g_type_class_add_private (klass,
       sizeof (ExampleCallChannelPrivate));
 
-  base_class->channel_type = TP_IFACE_CHANNEL_TYPE_CALL;
+  call_class->accept = call_accept;
+  call_class->add_content = call_add_content;
+  call_class->hangup = call_hangup;
+
   base_class->target_handle_type = TP_HANDLE_TYPE_CONTACT;
   base_class->interfaces = example_call_channel_interfaces;
-
   base_class->close = close_channel;
-  base_class->fill_immutable_properties = fill_immutable_properties;
 
   object_class->constructed = constructed;
   object_class->set_property = set_property;
   object_class->get_property = get_property;
   object_class->dispose = dispose;
-  object_class->finalize = finalize;
 
   param_spec = g_param_spec_uint ("simulation-delay", "Simulation delay",
       "Delay between simulated network events",
@@ -658,197 +346,18 @@ example_call_channel_class_init (ExampleCallChannelClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_SIMULATION_DELAY,
       param_spec);
-
-  param_spec = g_param_spec_boolean ("initial-audio", "Initial audio?",
-      "True if this channel had an audio stream when first announced",
-      FALSE,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIAL_AUDIO,
-      param_spec);
-
-  param_spec = g_param_spec_boolean ("initial-video", "Initial video?",
-      "True if this channel had a video stream when first announced",
-      FALSE,
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIAL_VIDEO,
-      param_spec);
-
-  param_spec = g_param_spec_string ("initial-audio-name", "Initial audio name",
-      "The name of the initial audio, if any",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIAL_AUDIO_NAME,
-      param_spec);
-
-  param_spec = g_param_spec_string ("initial-video-name", "Initial video name",
-      "The name of the initial video, if any",
-      NULL,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIAL_VIDEO_NAME,
-      param_spec);
-
-  param_spec = g_param_spec_boxed ("content-paths", "Content paths",
-      "A list of the object paths of contents",
-      TP_ARRAY_TYPE_OBJECT_PATH_LIST,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CONTENT_PATHS,
-      param_spec);
-
-  param_spec = g_param_spec_uint ("call-state", "Call state",
-      "High-level state of the call",
-      0, NUM_TP_CALL_STATES - 1, TP_CALL_STATE_PENDING_INITIATOR,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CALL_STATE,
-      param_spec);
-
-  param_spec = g_param_spec_uint ("call-flags", "Call flags",
-      "Flags for additional sub-states",
-      0, G_MAXUINT32, 0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CALL_FLAGS,
-      param_spec);
-
-  param_spec = g_param_spec_boxed ("call-state-reason", "Call state reason",
-      "Reason for call-state and call-flags",
-      TP_STRUCT_TYPE_CALL_STATE_REASON,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CALL_STATE_REASON,
-      param_spec);
-
-  param_spec = g_param_spec_boxed ("call-state-details", "Call state details",
-      "Additional details of the call state/flags/reason",
-      TP_HASH_TYPE_STRING_VARIANT_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CALL_STATE_DETAILS,
-      param_spec);
-
-  param_spec = g_param_spec_boolean ("hardware-streaming",
-      "Hardware streaming?",
-      "True if this channel does all of its own streaming (it does)",
-      TRUE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_HARDWARE_STREAMING,
-      param_spec);
-
-  param_spec = g_param_spec_boxed ("call-members", "Call members",
-      "A map from call members (only one in this example) to their states",
-      TP_HASH_TYPE_CALL_MEMBER_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_CALL_MEMBERS,
-      param_spec);
-
-  param_spec = g_param_spec_boxed ("member-identifiers", "Call member identifiers",
-      "A map from call members (only one in this example) to their identifiers",
-      TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_MEMBER_IDENTIFIERS,
-      param_spec);
-
-  param_spec = g_param_spec_uint ("initial-transport", "Initial transport",
-      "The initial transport for this channel (there is none)",
-      0, NUM_TP_STREAM_TRANSPORT_TYPES,
-      TP_STREAM_TRANSPORT_TYPE_UNKNOWN,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_INITIAL_TRANSPORT,
-      param_spec);
-
-  param_spec = g_param_spec_boolean ("mutable-contents", "Mutable contents?",
-      "True if contents can be added to this channel (they can)",
-      TRUE,
-      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_MUTABLE_CONTENTS,
-      param_spec);
-
-  tp_dbus_properties_mixin_implement_interface (object_class,
-      TP_IFACE_QUARK_CHANNEL_TYPE_CALL,
-      tp_dbus_properties_mixin_getter_gobject_properties, NULL,
-      call_props);
-}
-
-#if 0
-/* FIXME: there's no equivalent of this in Call (yet?) */
-
-/* This is expressed in terms of streams because it's the old API, but it
- * really means removing contents. */
-static void
-media_remove_streams (TpSvcChannelTypeStreamedMedia *iface,
-    const GArray *stream_ids,
-    DBusGMethodInvocation *context)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-  guint i;
-
-  for (i = 0; i < stream_ids->len; i++)
-    {
-      guint id = g_array_index (stream_ids, guint, i);
-
-      if (g_hash_table_lookup (self->priv->contents,
-            GUINT_TO_POINTER (id)) == NULL)
-        {
-          GError *error = g_error_new (TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-              "No stream with ID %u in this channel", id);
-
-          dbus_g_method_return_error (context, error);
-          g_error_free (error);
-          return;
-        }
-    }
-
-  for (i = 0; i < stream_ids->len; i++)
-    {
-      guint id = g_array_index (stream_ids, guint, i);
-      ExampleCallContent *content =
-        g_hash_table_lookup (self->priv->contents, GUINT_TO_POINTER (id));
-      ExampleCallStream *stream = example_call_content_get_stream (content);
-
-      if (stream != NULL)
-        example_call_stream_close (stream);
-    }
-
-  tp_svc_channel_type_streamed_media_return_from_remove_streams (context);
-}
-#endif
-
-static void
-streams_removed_cb (ExampleCallContent *content,
-    const GPtrArray *stream_paths G_GNUC_UNUSED,
-    const GValueArray *reason,
-    ExampleCallChannel *self)
-{
-  gchar *path, *name;
-
-  /* Contents in this example CM can only have one stream, so if their
-   * stream disappears, the content has to be removed too. */
-
-  g_object_get (content,
-      "object-path", &path,
-      "name", &name,
-      NULL);
-
-  g_hash_table_remove (self->priv->contents, name);
-
-  tp_svc_call_content_emit_removed (content);
-  tp_svc_channel_type_call_emit_content_removed (self, path, reason);
-  g_free (path);
-  g_free (name);
-
-  if (g_hash_table_size (self->priv->contents) == 0)
-    {
-      /* no contents left, so the call terminates */
-      example_call_channel_terminate (self, 0,
-          TP_CHANNEL_GROUP_CHANGE_REASON_NONE,
-          TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "");
-      /* FIXME: is there an appropriate error? */
-    }
 }
 
 static gboolean
 simulate_contact_ended_cb (gpointer p)
 {
   ExampleCallChannel *self = p;
+  TpBaseCallChannel *base = (TpBaseCallChannel *) self;
+  TpCallState call_state = tp_base_call_channel_get_state (base);
 
   /* if the call has been cancelled while we were waiting for the
    * contact to do so, do nothing! */
-  if (self->priv->call_state == TP_CALL_STATE_ENDED)
+  if (call_state == TP_CALL_STATE_ENDED)
     return FALSE;
 
   g_message ("SIGNALLING: receive: call terminated: <call-terminated/>");
@@ -864,19 +373,20 @@ static gboolean
 simulate_contact_answered_cb (gpointer p)
 {
   ExampleCallChannel *self = p;
-  GHashTableIter iter;
-  gpointer v;
+  TpBaseCallChannel *base = (TpBaseCallChannel *) self;
+  TpCallState call_state = tp_base_call_channel_get_state (base);
+  GList *contents;
   TpHandleRepoIface *contact_repo;
   const gchar *peer;
 
   /* if the call has been cancelled while we were waiting for the
    * contact to answer, do nothing! */
-  if (self->priv->call_state == TP_CALL_STATE_ENDED)
+  if (call_state == TP_CALL_STATE_ENDED)
     return FALSE;
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert_cmpuint (self->priv->call_state, ==, TP_CALL_STATE_RINGING);
+  g_assert_cmpuint (call_state, ==, TP_CALL_STATE_RINGING);
 
   g_message ("SIGNALLING: receive: contact answered our call");
 
@@ -885,11 +395,10 @@ simulate_contact_answered_cb (gpointer p)
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
 
-  g_hash_table_iter_init (&iter, self->priv->contents);
-
-  while (g_hash_table_iter_next (&iter, NULL, &v))
+  contents = tp_base_call_channel_get_contents (base);
+  for (; contents != NULL; contents = contents->next)
     {
-      ExampleCallStream *stream = example_call_content_get_stream (v);
+      ExampleCallStream *stream = example_call_content_get_stream (contents->data);
 
       if (stream == NULL)
         continue;
@@ -919,15 +428,17 @@ static gboolean
 simulate_contact_busy_cb (gpointer p)
 {
   ExampleCallChannel *self = p;
+  TpBaseCallChannel *base = (TpBaseCallChannel *) self;
+  TpCallState call_state = tp_base_call_channel_get_state (base);
 
   /* if the call has been cancelled while we were waiting for the
    * contact to answer, do nothing */
-  if (self->priv->call_state == TP_CALL_STATE_ENDED)
+  if (call_state == TP_CALL_STATE_ENDED)
     return FALSE;
 
   /* otherwise, we're waiting for a response from the contact, which now
    * arrives */
-  g_assert_cmpuint (self->priv->call_state, ==, TP_CALL_STATE_RINGING);
+  g_assert_cmpuint (call_state, ==, TP_CALL_STATE_RINGING);
 
   g_message ("SIGNALLING: receive: call terminated: <user-is-busy/>");
 
@@ -947,30 +458,31 @@ example_call_channel_add_content (ExampleCallChannel *self,
     const gchar *requested_name,
     GError **error)
 {
-  ExampleCallContent *content;
-  ExampleCallStream *stream;
-  guint id = self->priv->next_stream_id++;
+  TpBaseCallChannel *base = (TpBaseCallChannel *) self;
+  GList *contents;
   const gchar *type_str;
-  TpHandle creator;
-  gchar *name;
-  gchar *path;
+  TpHandle creator = self->priv->handle;
   TpCallContentDisposition disposition =
     TP_CALL_CONTENT_DISPOSITION_NONE;
+  guint id = self->priv->next_stream_id++;
+  ExampleCallContent *content;
+  ExampleCallStream *stream;
+  gchar *name;
+  gchar *path;
   guint i;
-
-  type_str = (media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
-  creator = self->priv->handle;
 
   /* an arbitrary limit much less than 2**32 means we don't use ridiculous
    * amounts of memory, and also means @i can't wrap around when we use it to
    * uniquify content names. */
-  if (g_hash_table_size (self->priv->contents) > MAX_CONTENTS_PER_CALL)
+  contents = tp_base_call_channel_get_contents (base);
+  if (g_list_length (contents) > MAX_CONTENTS_PER_CALL)
     {
       g_set_error (error, TP_ERRORS, TP_ERROR_PERMISSION_DENIED,
           "What are you doing with all those contents anyway?!");
       return NULL;
     }
 
+  type_str = (media_type == TP_MEDIA_STREAM_TYPE_AUDIO ? "audio" : "video");
   if (tp_str_empty (requested_name))
     {
       requested_name = type_str;
@@ -978,13 +490,20 @@ example_call_channel_add_content (ExampleCallChannel *self,
 
   for (i = 0; ; i++)
     {
+      GList *l;
+
       if (i == 0)
         name = g_strdup (requested_name);
       else
         name = g_strdup_printf ("%s (%u)", requested_name, i);
 
-      if (!g_hash_table_lookup_extended (self->priv->contents, name,
-            NULL, NULL))
+      for (l = contents; l != NULL; l = l->next)
+        {
+          if (!tp_strdiff (tp_base_call_content_get_name (l->data), name))
+            break;
+        }
+
+      if (l == NULL)
         {
           /* this name hasn't been used - good enough */
           break;
@@ -1003,21 +522,24 @@ example_call_channel_add_content (ExampleCallChannel *self,
       creator = self->priv->conn->self_handle;
     }
 
-  path = g_strdup_printf ("%s/Content%u", self->priv->object_path, id);
+  path = g_strdup_printf ("%s/Content%u",
+      tp_base_channel_get_object_path ((TpBaseChannel *) self),
+      id);
   content = g_object_new (EXAMPLE_TYPE_CALL_CONTENT,
       "connection", self->priv->conn,
       "creator", creator,
-      "type", media_type,
+      "media-type", media_type,
       "name", name,
       "disposition", disposition,
       "object-path", path,
       NULL);
 
-  g_hash_table_insert (self->priv->contents, name, content);
-  tp_svc_channel_type_call_emit_content_added (self, path);
+  tp_base_call_channel_add_content (base, (TpBaseCallContent *) content);
   g_free (path);
 
-  path = g_strdup_printf ("%s/Stream%u", self->priv->object_path, id);
+  path = g_strdup_printf ("%s/Stream%u",
+      tp_base_channel_get_object_path ((TpBaseChannel *) self),
+      id);
   stream = g_object_new (EXAMPLE_TYPE_CALL_STREAM,
       "connection", self->priv->conn,
       "handle", self->priv->handle,
@@ -1028,8 +550,8 @@ example_call_channel_add_content (ExampleCallChannel *self,
   example_call_content_add_stream (content, stream);
   g_free (path);
 
-  tp_g_signal_connect_object (content, "streams-removed",
-      G_CALLBACK (streams_removed_cb), self, 0);
+  g_object_unref (content);
+  g_object_unref (stream);
 
   return content;
 }
@@ -1041,21 +563,10 @@ simulate_contact_ringing_cb (gpointer p)
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
   const gchar *peer;
-  GHashTable *uu_map = g_hash_table_new (NULL, NULL);
-  GHashTable *us_map = g_hash_table_new (NULL, NULL);
-  GArray *empty_au = g_array_sized_new (FALSE, FALSE, sizeof (guint), 0);
 
-  /* ring, ring! */
-  self->priv->peer_flags = TP_CALL_MEMBER_FLAG_RINGING;
-  g_hash_table_insert (uu_map, GUINT_TO_POINTER (self->priv->handle),
-      GUINT_TO_POINTER (self->priv->peer_flags));
-  g_hash_table_insert (us_map, GUINT_TO_POINTER (self->priv->handle),
-      (gpointer) tp_handle_inspect (contact_repo, self->priv->handle));
-  tp_svc_channel_type_call_emit_call_members_changed (self,
-      uu_map, us_map, empty_au, self->priv->call_state_reason);
-  g_hash_table_unref (uu_map);
-  g_array_unref (empty_au);
-
+  tp_base_call_channel_update_member_flags ((TpBaseCallChannel *) self,
+      self->priv->handle, TP_CALL_MEMBER_FLAG_RINGING,
+      0, TP_CALL_STATE_CHANGE_REASON_UNKNOWN, "", "");
 
   /* In this example there is no real contact, so just simulate them
    * answering after a short time - unless the contact's name
@@ -1089,6 +600,7 @@ static void
 example_call_channel_initiate_outgoing (ExampleCallChannel *self)
 {
   g_message ("SIGNALLING: send: new streamed media call");
+
   example_call_channel_set_state (self,
       TP_CALL_STATE_RINGING, 0,
       tp_base_connection_get_self_handle (self->priv->conn),
@@ -1103,54 +615,12 @@ example_call_channel_initiate_outgoing (ExampleCallChannel *self)
 }
 
 static void
-call_set_ringing (TpSvcChannelTypeCall *iface,
-    DBusGMethodInvocation *context)
-{
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-  GError *error = NULL;
-
-  if (self->priv->locally_requested)
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Ringing() makes no sense on an outgoing call");
-      goto finally;
-    }
-
-  if (self->priv->call_state != TP_CALL_STATE_RINGING)
-    {
-      g_set_error (&error, TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "Ringing() makes no sense now that we're not pending receiver");
-      goto finally;
-    }
-
-  g_message ("SIGNALLING: send: ring, ring!");
-
-  example_call_channel_set_state (self, TP_CALL_STATE_RINGING,
-      self->priv->call_flags | TP_CALL_FLAG_LOCALLY_RINGING,
-      tp_base_connection_get_self_handle (self->priv->conn),
-      TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
-
-finally:
-  if (error == NULL)
-    {
-      tp_svc_channel_type_call_return_from_set_ringing (context);
-    }
-  else
-    {
-      dbus_g_method_return_error (context, error);
-      g_error_free (error);
-    }
-}
-
-static void
 accept_incoming_call (ExampleCallChannel *self)
 {
+  TpBaseCallChannel *base = (TpBaseCallChannel *) self;
   TpHandleRepoIface *contact_repo = tp_base_connection_get_handles
       (self->priv->conn, TP_HANDLE_TYPE_CONTACT);
-  GHashTableIter iter;
-  gpointer v;
-
-  g_assert_cmpint (self->priv->call_state, ==, TP_CALL_STATE_RINGING);
+  GList *contents;
 
   g_message ("SIGNALLING: send: Accepting incoming call from %s",
       tp_handle_inspect (contact_repo, self->priv->handle));
@@ -1161,19 +631,13 @@ accept_incoming_call (ExampleCallChannel *self)
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "",
       NULL);
 
-  g_hash_table_iter_init (&iter, self->priv->contents);
-
-  while (g_hash_table_iter_next (&iter, NULL, &v))
+  contents = tp_base_call_channel_get_contents (base);
+  for (; contents != NULL; contents = contents->next)
     {
-      ExampleCallStream *stream = example_call_content_get_stream (v);
-      guint disposition;
+      ExampleCallStream *stream = example_call_content_get_stream (contents->data);
+      guint disposition = tp_base_call_content_get_disposition (contents->data);
 
-      g_object_get (v,
-          "disposition", &disposition,
-          NULL);
-
-      if (stream == NULL ||
-          disposition != TP_CALL_CONTENT_DISPOSITION_INITIAL)
+      if (stream == NULL || disposition != TP_CALL_CONTENT_DISPOSITION_INITIAL)
         continue;
 
       /* we accept the proposed stream direction */
@@ -1182,155 +646,61 @@ accept_incoming_call (ExampleCallChannel *self)
 }
 
 static void
-call_accept (TpSvcChannelTypeCall *iface G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
+call_accept (TpBaseCallChannel *base)
 {
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
+  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (base);
 
   if (self->priv->locally_requested)
     {
-      if (self->priv->call_state == TP_CALL_STATE_PENDING_INITIATOR)
-        {
-          /* Take the contents we've already added, and make them happen */
-          example_call_channel_initiate_outgoing (self);
-
-          tp_svc_channel_type_call_return_from_accept (context);
-        }
-      else if (self->priv->call_state == TP_CALL_STATE_ENDED)
-        {
-          GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "This call has already ended" };
-
-          dbus_g_method_return_error (context, &na);
-        }
-      else
-        {
-          GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "This outgoing call has already been started" };
-
-          dbus_g_method_return_error (context, &na);
-        }
+      /* Take the contents we've already added, and make them happen */
+      example_call_channel_initiate_outgoing (self);
     }
   else
     {
-      if (self->priv->call_state == TP_CALL_STATE_RINGING)
-        {
-          accept_incoming_call (self);
-          tp_svc_channel_type_call_return_from_accept (context);
-        }
-      else if (self->priv->call_state == TP_CALL_STATE_ENDED)
-        {
-          GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "This call has already ended" };
-
-          dbus_g_method_return_error (context, &na);
-        }
-      else
-        {
-          GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-              "This incoming call has already been accepted" };
-
-          dbus_g_method_return_error (context, &na);
-        }
+      accept_incoming_call (self);
     }
 }
 
 static void
-call_hangup (TpSvcChannelTypeCall *iface,
+call_hangup (TpBaseCallChannel *base,
     guint reason,
     const gchar *detailed_reason,
-    const gchar *message G_GNUC_UNUSED,
-    DBusGMethodInvocation *context)
+    const gchar *message G_GNUC_UNUSED)
 {
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
+  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (base);
 
-  if (self->priv->call_state == TP_CALL_STATE_ENDED)
-    {
-      GError na = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "This call has already ended" };
-
-      dbus_g_method_return_error (context, &na);
-      return;
-    }
-  else
-    {
-      example_call_channel_terminate (self,
-          tp_base_connection_get_self_handle (self->priv->conn),
-          TP_CHANNEL_GROUP_CHANGE_REASON_NONE, reason, detailed_reason);
-      tp_svc_channel_type_call_return_from_hangup (context);
-    }
+  example_call_channel_terminate (self,
+      tp_base_connection_get_self_handle (self->priv->conn),
+      TP_CHANNEL_GROUP_CHANGE_REASON_NONE, reason, detailed_reason);
 }
 
-static void
-call_add_content (TpSvcChannelTypeCall *iface,
+static TpBaseCallContent *
+call_add_content (TpBaseCallChannel *base,
     const gchar *content_name,
     guint content_type,
-    DBusGMethodInvocation *context)
+    GError **error)
 {
-  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (iface);
-  GError *error = NULL;
-  gchar *content_path;
-  ExampleCallContent *content;
+  ExampleCallChannel *self = EXAMPLE_CALL_CHANNEL (base);
 
-  switch (content_type)
-    {
-    case TP_MEDIA_STREAM_TYPE_AUDIO:
-    case TP_MEDIA_STREAM_TYPE_VIDEO:
-      break;
-
-    default:
-      g_set_error (&error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "%u is not a supported Media_Stream_Type", content_type);
-      goto error;
-    }
-
-  content = example_call_channel_add_content (self, content_type, TRUE, FALSE,
-      content_name, &error);
-
-  if (content == NULL)
-    goto error;
-
-  g_object_get (content,
-      "object-path", &content_path,
-      NULL);
-  tp_svc_channel_type_call_return_from_add_content (context,
-      content_path);
-  g_free (content_path);
-
-  return;
-
-error:
-  dbus_g_method_return_error (context, error);
-  g_error_free (error);
-}
-
-static void
-call_iface_init (gpointer iface,
-    gpointer data)
-{
-  TpSvcChannelTypeCallClass *klass = iface;
-
-#define IMPLEMENT(x) \
-  tp_svc_channel_type_call_implement_##x (klass, call_##x)
-  IMPLEMENT (set_ringing);
-  IMPLEMENT (hangup);
-  IMPLEMENT (accept);
-  IMPLEMENT (add_content);
-#undef IMPLEMENT
+  return (TpBaseCallContent *) example_call_channel_add_content (self,
+      content_type, TRUE, FALSE, content_name, error);
 }
 
 static gboolean
 simulate_hold (gpointer p)
 {
   ExampleCallChannel *self = p;
+  TpBaseCallChannel *base = (TpBaseCallChannel *) self;
+  TpCallState call_state = tp_base_call_channel_get_state (base);
+  TpCallFlags call_flags = 0; /* FIXME */
 
   self->priv->hold_state = TP_LOCAL_HOLD_STATE_HELD;
   g_message ("SIGNALLING: hold state changed to held");
   tp_svc_channel_interface_hold_emit_hold_state_changed (self,
       self->priv->hold_state, self->priv->hold_state_reason);
 
-  example_call_channel_set_state (self, self->priv->call_state,
-      self->priv->call_flags | TP_CALL_FLAG_LOCALLY_HELD,
+  example_call_channel_set_state (self, call_state,
+      call_flags | TP_CALL_FLAG_LOCALLY_HELD,
       tp_base_connection_get_self_handle (self->priv->conn),
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
 
@@ -1341,14 +711,17 @@ static gboolean
 simulate_unhold (gpointer p)
 {
   ExampleCallChannel *self = p;
+  TpBaseCallChannel *base = (TpBaseCallChannel *) self;
+  TpCallState call_state = tp_base_call_channel_get_state (base);
+  TpCallFlags call_flags = 0; /* FIXME */
 
   self->priv->hold_state = TP_LOCAL_HOLD_STATE_UNHELD;
   g_message ("SIGNALLING: hold state changed to unheld");
   tp_svc_channel_interface_hold_emit_hold_state_changed (self,
       self->priv->hold_state, self->priv->hold_state_reason);
 
-  example_call_channel_set_state (self, self->priv->call_state,
-      self->priv->call_flags & ~TP_CALL_FLAG_LOCALLY_HELD,
+  example_call_channel_set_state (self, call_state,
+      call_flags & ~TP_CALL_FLAG_LOCALLY_HELD,
       tp_base_connection_get_self_handle (self->priv->conn),
       TP_CALL_STATE_CHANGE_REASON_USER_REQUESTED, "", NULL);
 

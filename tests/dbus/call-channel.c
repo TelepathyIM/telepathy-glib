@@ -208,7 +208,7 @@ assert_call_properties (TpCallChannel *channel,
     g_assert_cmpuint (flags, ==, call_flags);
 
   /* Hard-coded properties */
-  g_assert_cmpint (tp_call_channel_has_hardware_streaming (channel), ==, TRUE);
+  g_assert_cmpint (tp_call_channel_has_hardware_streaming (channel), ==, FALSE);
   g_assert_cmpint (tp_call_channel_has_mutable_contents (channel), ==, TRUE);
 
   if (check_initials)
