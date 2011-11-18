@@ -420,7 +420,7 @@ pendingproc_get_favourite_contacts (TplActionChain *action_chain,
 
   tpl_svc_logger_return_from_get_favourite_contacts (closure->context, packed);
 
-  g_ptr_array_free (packed, TRUE);
+  g_ptr_array_unref (packed);
   favourite_contact_closure_free (closure);
 
   if (action_chain != NULL)

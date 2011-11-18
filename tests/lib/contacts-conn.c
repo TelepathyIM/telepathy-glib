@@ -539,7 +539,7 @@ tp_tests_contacts_connection_change_aliases (TpTestsContactsConnection *self,
       structs);
 
   g_ptr_array_foreach (structs, (GFunc) g_value_array_free, NULL);
-  g_ptr_array_free (structs, TRUE);
+  g_ptr_array_unref (structs);
 }
 
 void

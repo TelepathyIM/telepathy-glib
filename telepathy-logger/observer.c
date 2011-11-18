@@ -279,7 +279,7 @@ tpl_observer_get_property (GObject *object,
 
           g_value_set_boxed (value, array);
 
-          g_ptr_array_free (array, TRUE);
+          g_ptr_array_unref (array);
           g_list_free (keys);
 
           break;
