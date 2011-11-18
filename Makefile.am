@@ -21,14 +21,14 @@ EXTRA_DIST = \
 
 maintainer-upload-release: _maintainer-upload-release-local
 _maintainer-upload-release-local: _maintainer-upload-release-check
-	rsync -rtvzPp --chmod=Dg+s,ug+rwX,o=rX doc/lib/html/ \
+	rsync -rvzPp --chmod=Dg+s,ug+rwX,o=rX doc/lib/html/ \
 	telepathy.freedesktop.org:/srv/telepathy.freedesktop.org/www/doc/telepathy-farstream/
 
 BRANCH = misc
 UPLOAD_BRANCH_TO = people.freedesktop.org:public_html/telepathy-farstream
 
 upload-branch-docs: all
-	rsync -rtzvPp --chmod=a+rX doc/lib/html/ \
+	rsync -rzvPp --chmod=a+rX doc/lib/html/ \
 		$(UPLOAD_BRANCH_TO)-$(BRANCH)/
 
 include tools/telepathy.am

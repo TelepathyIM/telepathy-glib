@@ -9,7 +9,7 @@ AC_PREREQ([2.59])
 
 m4_define([tp_farstream_major_version], [0])
 m4_define([tp_farstream_minor_version], [1])
-m4_define([tp_farstream_micro_version], [1])
+m4_define([tp_farstream_micro_version], [2])
 m4_define([tp_farstream_nano_version], [1])
 
 dnl CURRENT, REVISION, AGE
@@ -18,7 +18,7 @@ dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
 dnl - interfaces added -> increment AGE
 dnl - interfaces removed -> AGE = 0
 m4_define([tp_farstream_lt_current], [0])
-m4_define([tp_farstream_lt_revision], [1])
+m4_define([tp_farstream_lt_revision], [2])
 m4_define([tp_farstream_lt_age], [0])
 
 
@@ -34,7 +34,7 @@ AC_INIT([Telepathy-Farstream], [tp_farstream_version],
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.9 -Wno-portability])
+AM_INIT_AUTOMAKE([1.11 -Wno-portability])
 AM_CONFIG_HEADER(config.h)
 
 dnl use pretty build output with automake >= 1.11
@@ -128,7 +128,7 @@ if test "x$WANT_PYTHON" = "xyes"; then
 fi
 AM_CONDITIONAL(WANT_PYTHON, test "x$WANT_PYTHON" = "xyes")
 
-GTK_DOC_CHECK([1.10])
+GTK_DOC_CHECK([1.17], [--flavour no-tmpl])
 
 LT_CURRENT=tp_farstream_lt_current
 LT_REVISION=tp_farstream_lt_revision

@@ -31,6 +31,9 @@ typedef struct {
   TfChannel *channel;
   GList *notifiers;
 
+  guint input_volume;
+  guint output_volume;
+
   GstElement *video_input;
   GstElement *video_capsfilter;
 
@@ -67,6 +70,21 @@ bus_watch_cb (GstBus *bus,
 }
 
 static void
+on_audio_output_volume_changed (TfContent *content,
+  GParamSpec *spec,
+  GstElement *volume)
+{
+  guint output_volume = 0;
+
+  g_object_get (content, "output-volume", &output_volume, NULL);
+
+  if (output_volume == 0)
+    return;
+
+  g_object_set (volume, "volume", (double)output_volume / 255.0, NULL);
+}
+
+static void
 src_pad_added_cb (TfContent *content,
     TpHandle handle,
     FsStream *stream,
@@ -87,10 +105,27 @@ src_pad_added_cb (TfContent *content,
   switch (mtype)
     {
       case FS_MEDIA_TYPE_AUDIO:
-        element = gst_parse_bin_from_description (
-          "audioconvert ! audioresample ! audioconvert ! autoaudiosink",
-            TRUE, NULL);
-        break;
+        {
+          GstElement *volume = NULL;
+          gchar *tmp_str = g_strdup_printf ("audioconvert ! audioresample "
+              "! volume name=\"output_volume%s\" "
+              "! audioconvert ! autoaudiosink", cstr);
+          element = gst_parse_bin_from_description (tmp_str,
+              TRUE, NULL);
+          g_free (tmp_str);
+
+          tmp_str = g_strdup_printf ("output_volume%s", cstr);
+          volume = gst_bin_get_by_name (GST_BIN (element), tmp_str);
+          g_free (tmp_str);
+
+          tp_g_signal_connect_object (content, "notify::output-volume",
+              G_CALLBACK (on_audio_output_volume_changed),
+              volume, 0);
+
+          gst_object_unref (volume);
+
+          break;
+        }
       case FS_MEDIA_TYPE_VIDEO:
         element = gst_parse_bin_from_description (
           "ffmpegcolorspace ! videoscale ! autovideosink",
@@ -189,6 +224,55 @@ on_video_resolution_changed (TfContent *content,
   update_video_parameters (context, TRUE);
 }
 
+static void
+on_audio_input_volume_changed (TfContent *content,
+  GParamSpec *spec,
+  ChannelContext *context)
+{
+  GstElement *volume;
+  guint input_volume = 0;
+
+  g_object_get (content, "input-volume", &input_volume, NULL);
+
+  if (input_volume == 0)
+    return;
+
+  volume = gst_bin_get_by_name (GST_BIN (context->pipeline), "input_volume");
+  g_object_set (volume, "volume", (double)input_volume / 255.0, NULL);
+  gst_object_unref (volume);
+}
+
+static GstElement *
+setup_audio_source (ChannelContext *context, TfContent *content)
+{
+  GstElement *result;
+  GstElement *volume;
+  guint input_volume = 0;
+
+  result = gst_parse_bin_from_description (
+      "pulsesrc ! audio/x-raw-int,rate=8000 ! queue"
+      " ! audioconvert ! audioresample"
+      " ! volume name=input_volume ! audioconvert ",
+      TRUE, NULL);
+
+  g_object_get (content,
+      "input-volume", &input_volume,
+      NULL);
+
+  if (input_volume != 0)
+    {
+      volume = gst_bin_get_by_name (GST_BIN (result), "input_volume");
+      g_object_set (volume, "volume", (double)input_volume / 255.0, NULL);
+      gst_object_unref (volume);
+    }
+
+  g_signal_connect (content, "notify::input-volume",
+      G_CALLBACK (on_audio_input_volume_changed),
+      context);
+
+  return result;
+}
+
 static GstElement *
 setup_video_source (ChannelContext *context, TfContent *content)
 {
@@ -281,11 +365,7 @@ content_added_cb (TfChannel *channel,
   switch (mtype)
     {
       case FS_MEDIA_TYPE_AUDIO:
-        element = gst_parse_bin_from_description (
-          "audiotestsrc is-live=1 ! audio/x-raw-int,rate=8000 ! queue"
-          " ! audioconvert ! audioresample ! audioconvert ",
-
-            TRUE, NULL);
+        element = setup_audio_source (context, content);
         break;
       case FS_MEDIA_TYPE_VIDEO:
         element = setup_video_source (context, content);
@@ -476,7 +556,7 @@ int
 main (int argc, char **argv)
 {
   TpBaseClient *client;
-  TpDBusDaemon *bus;
+  TpAccountManager *account_manager;
 
   g_type_init ();
   tf_init ();
@@ -484,9 +564,9 @@ main (int argc, char **argv)
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  bus = tp_dbus_daemon_dup (NULL);
+  account_manager = tp_account_manager_dup ();
 
-  client = tp_simple_handler_new (bus,
+  client = tp_simple_handler_new_with_am (account_manager,
     FALSE,
     FALSE,
     "TpFsCallHandlerDemo",
@@ -526,7 +606,7 @@ main (int argc, char **argv)
 
   g_main_loop_run (loop);
 
-  g_object_unref (bus);
+  g_object_unref (account_manager);
   g_object_unref (client);
   g_main_loop_unref (loop);
 
