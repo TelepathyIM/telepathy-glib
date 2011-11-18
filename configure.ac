@@ -34,7 +34,7 @@ AC_INIT([Telepathy-Farstream], [tp_farstream_version],
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.9 -Wno-portability])
+AM_INIT_AUTOMAKE([1.11 -Wno-portability])
 AM_CONFIG_HEADER(config.h)
 
 dnl use pretty build output with automake >= 1.11
