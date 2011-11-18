@@ -244,11 +244,11 @@ get_call_members_cb (TpProxy *proxy,
           G_N_ELEMENTS (features), features, get_remote_contacts_cb, ctx, NULL,
           G_OBJECT (self));
 
-      g_array_free (arr, TRUE);
+      g_array_unref (arr);
     }
   else
     {
-      g_array_free (arr, TRUE);
+      g_array_unref (arr);
       _tpl_action_chain_continue (ctx);
     }
 }
@@ -450,7 +450,7 @@ call_members_changed_cb (DBusGProxy *proxy,
           G_OBJECT (self));
     }
 
-  g_array_free (added, TRUE);
+  g_array_unref (added);
 }
 
 

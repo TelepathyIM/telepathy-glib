@@ -170,7 +170,7 @@ pendingproc_get_remote_contacts (TplActionChain *ctx,
       G_N_ELEMENTS (features), features, get_remote_contact_cb, ctx, NULL,
       G_OBJECT (self));
 
-  g_array_free (arr, TRUE);
+  g_array_unref (arr);
 }
 
 
