@@ -65,6 +65,7 @@ IGNORE_HFILES=\
     account-channel-request-internal.h \
     add-dispatch-operation-context-internal.h \
     automatic-client-factory-internal.h \
+    base-call-internal.h \
     base-connection-internal.h \
     base-contact-list-internal.h \
     base-protocol-internal.h \

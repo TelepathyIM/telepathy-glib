@@ -162,6 +162,9 @@
     <xi:include href="xml/simple-approver.xml"/>
     <xi:include href="xml/simple-handler.xml"/>
     <xi:include href="xml/dtmf.xml"/>
+    <xi:include href="xml/base-call-channel.xml"/>
+    <xi:include href="xml/base-call-content.xml"/>
+    <xi:include href="xml/base-call-stream.xml"/>
   </chapter>
   <chapter id="ch-service-handles">
     <title>Service-side handle repositories</title>

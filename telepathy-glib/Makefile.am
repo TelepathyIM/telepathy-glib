@@ -29,6 +29,9 @@ our_headers = \
     automatic-client-factory.h \
     automatic-proxy-factory.h \
     add-dispatch-operation-context.h \
+    base-call-channel.h \
+    base-call-content.h \
+    base-call-stream.h \
     base-client.h \
     base-channel.h \
     base-connection.h \
@@ -160,6 +163,10 @@ libtelepathy_glib_internal_la_SOURCES = \
     automatic-proxy-factory.c \
     add-dispatch-operation-context-internal.h \
     add-dispatch-operation-context.c \
+    base-call-channel.c \
+    base-call-content.c \
+    base-call-stream.c \
+    base-call-internal.h \
     base-channel.c \
     base-client.c \
     base-client-internal.h \

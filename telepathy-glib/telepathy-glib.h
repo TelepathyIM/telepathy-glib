@@ -73,6 +73,9 @@
 #include <telepathy-glib/svc-generic.h>
 #include <telepathy-glib/svc-client.h>
 
+#include <telepathy-glib/base-call-channel.h>
+#include <telepathy-glib/base-call-content.h>
+#include <telepathy-glib/base-call-stream.h>
 #include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-connection-manager.h>
