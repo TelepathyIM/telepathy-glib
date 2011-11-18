@@ -1,3 +1,10 @@
+telepathy-farstream 0.1.2 (18 Nov 2011)
+======================================
+
+- Fix linking with ld --as-needed (bigon)
+- Add AudioControl support (mike, sjoerd)
+- respond to farsight-negotiate events (olivier)
+
 telepathy-farstream 0.1.1 (14 Jul 2011)
 ======================================
 - Fix the python bindings
