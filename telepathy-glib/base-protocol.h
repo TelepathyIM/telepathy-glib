@@ -221,7 +221,7 @@ struct _TpProtocolAddressingInterface {
 
   TpBaseProtocolNormalizeVCardAddressFunc normalize_vcard_address;
 
-  TpBaseProtocolNormalizeURIFunc normalize_uri;
+  TpBaseProtocolNormalizeURIFunc normalize_contact_uri;
 };
 
 GType tp_protocol_addressing_get_type (void) G_GNUC_CONST;

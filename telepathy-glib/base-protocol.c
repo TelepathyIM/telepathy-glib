@@ -429,7 +429,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * always be implemented.
  * @normalize_vcard_address: protocol-specific implementation for normalizing
  * vCard addresses.
- * @normalize_uri: protocol-specific implementation for normalizing URIs.
+ * @normalize_contact_uri: protocol-specific implementation for normalizing contact URIs.
  *
  * The interface vtable for a %TP_TYPE_PROTOCOL_ADDRESSING.
  *
@@ -1725,7 +1725,7 @@ protocol_identify_account (TpSvcProtocol *protocol,
 }
 
 static void
-addressing_normalize_uri (TpSvcProtocolInterfaceAddressing *protocol,
+addressing_normalize_contact_uri (TpSvcProtocolInterfaceAddressing *protocol,
     const gchar *uri,
     DBusGMethodInvocation *context)
 {
@@ -1739,10 +1739,10 @@ addressing_normalize_uri (TpSvcProtocolInterfaceAddressing *protocol,
 
   iface = TP_PROTOCOL_ADDRESSING_GET_INTERFACE (self);
 
-  if (iface->normalize_uri == NULL)
+  if (iface->normalize_contact_uri == NULL)
     goto notimplemented;
 
-  ret = iface->normalize_uri (self, uri, &error);
+  ret = iface->normalize_contact_uri (self, uri, &error);
 
   if (ret == NULL)
     {
@@ -1751,7 +1751,7 @@ addressing_normalize_uri (TpSvcProtocolInterfaceAddressing *protocol,
       return;
     }
 
-  tp_svc_protocol_interface_addressing_return_from_normalize_uri (context,
+  tp_svc_protocol_interface_addressing_return_from_normalize_contact_uri (context,
       ret);
 
   g_free (ret);
@@ -1822,7 +1822,7 @@ static void
 addressing_iface_init (TpSvcProtocolInterfaceAddressingClass *cls)
 {
 #define IMPLEMENT(x) tp_svc_protocol_interface_addressing_implement_##x (cls, addressing_##x)
-  IMPLEMENT (normalize_uri);
+  IMPLEMENT (normalize_contact_uri);
   IMPLEMENT (normalize_vcard_address);
 #undef IMPLEMENT
 }
