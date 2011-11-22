@@ -207,6 +207,7 @@
 #include <telepathy-glib/channel-iface.h>
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/exportable-channel.h>
+#include "telepathy-glib/group-mixin.h"
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/svc-generic.h>
@@ -420,6 +421,32 @@ tp_base_channel_get_connection (TpBaseChannel *chan)
   g_return_val_if_fail (TP_IS_BASE_CHANNEL (chan), NULL);
 
   return chan->priv->conn;
+}
+
+/**
+ * tp_base_channel_get_self_handle:
+ * @chan: a channel
+ *
+ * If @chan has a #TpGroupMixin, returns the value of group's self handle.
+ * Otherwise return the value of #TpBaseConnection:self-handle.
+ *
+ * Returns: the self handle of @chan
+ *
+ * Since: 0.UNRELEASED
+ */
+TpHandle
+tp_base_channel_get_self_handle (TpBaseChannel *chan)
+{
+  if (TP_HAS_GROUP_MIXIN (chan))
+    {
+      guint ret = 0;
+
+      tp_group_mixin_get_self_handle (G_OBJECT (chan), &ret, NULL);
+      if (ret != 0)
+        return ret;
+    }
+
+  return tp_base_connection_get_self_handle (chan->priv->conn);
 }
 
 /**
