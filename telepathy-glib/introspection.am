@@ -10,6 +10,7 @@ include $(INTROSPECTION_MAKEFILE)
 
 INTROSPECTION_GIRS = TelepathyGLib-0.12.gir
 
+TelepathyGLib-0.12.gir: libtelepathy-glib.la
 # /!\ Order matters, see https://bugzilla.gnome.org/show_bug.cgi?id=660629
 TelepathyGLib_0_12_gir_FILES = \
 	$(srcdir)/proxy.c _gen/proxy-introspectable.h \
