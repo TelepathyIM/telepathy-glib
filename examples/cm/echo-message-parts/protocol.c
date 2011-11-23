@@ -15,18 +15,31 @@
 #include "conn.h"
 #include "im-manager.h"
 
-G_DEFINE_TYPE (ExampleEcho2Protocol,
-    example_echo_2_protocol,
-    TP_TYPE_BASE_PROTOCOL)
+static void addressing_iface_init (TpProtocolAddressingInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (ExampleEcho2Protocol, example_echo_2_protocol,
+    TP_TYPE_BASE_PROTOCOL,
+    G_IMPLEMENT_INTERFACE (TP_TYPE_PROTOCOL_ADDRESSING, addressing_iface_init))
 
 const gchar * const protocol_interfaces[] = {
   TP_IFACE_PROTOCOL_INTERFACE_AVATARS,
+  TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING,
   NULL };
 
 const gchar * const supported_avatar_mime_types[] = {
   "image/png",
   "image/jpeg",
   "image/gif",
+  NULL };
+
+const gchar * const addressing_vcard_fields[] = {
+  "x-jabber",
+  "tel",
+  NULL };
+
+const gchar * const addressing_uri_schemes[] = {
+  "xmpp",
+  "tel",
   NULL };
 
 static void
@@ -198,6 +211,18 @@ get_avatar_details (TpBaseProtocol *self,
     *max_bytes = 37748736;
 }
 
+static GStrv
+dup_supported_uri_schemes (TpBaseProtocol *self)
+{
+  return g_strdupv ((GStrv) addressing_uri_schemes);
+}
+
+static GStrv
+dup_supported_vcard_fields (TpBaseProtocol *self)
+{
+  return g_strdupv ((GStrv) addressing_vcard_fields);
+}
+
 static void
 example_echo_2_protocol_class_init (
     ExampleEcho2ProtocolClass *klass)
@@ -213,4 +238,11 @@ example_echo_2_protocol_class_init (
   base_class->get_interfaces = get_interfaces;
   base_class->get_connection_details = get_connection_details;
   base_class->get_avatar_details = get_avatar_details;
+}
+
+static void
+addressing_iface_init (TpProtocolAddressingInterface *iface)
+{
+  iface->dup_supported_vcard_fields = dup_supported_vcard_fields;
+  iface->dup_supported_uri_schemes = dup_supported_uri_schemes;
 }

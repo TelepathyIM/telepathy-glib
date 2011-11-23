@@ -114,12 +114,23 @@ const gchar * const expected_interfaces[] = {
 
 const gchar * const expected_protocol_interfaces[] = {
     TP_IFACE_PROTOCOL_INTERFACE_AVATARS,
+    TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING,
     NULL };
 
 const gchar * const expected_supported_avatar_mime_types[] = {
   "image/png",
   "image/jpeg",
   "image/gif",
+  NULL };
+
+const gchar * const expected_addressable_vcard_fields[] = {
+  "x-jabber",
+  "tel",
+  NULL };
+
+const gchar * const expected_addressable_uri_schemes[] = {
+  "xmpp",
+  "tel",
   NULL };
 
 static void
@@ -220,6 +231,29 @@ test_protocol_avatar_properties (Test *test,
   num = tp_asv_get_uint32 (properties, "MaximumAvatarBytes", &is_set);
   g_assert (is_set);
   g_assert_cmpuint (num, ==, 37748736);
+}
+
+static void
+test_protocol_addressing_properties (Test *test,
+    gconstpointer data G_GNUC_UNUSED)
+{
+  GHashTable *properties = NULL;
+
+  test->protocol = tp_protocol_new (test->dbus, "example_echo_2",
+      "example", NULL, NULL);
+  g_assert (test->protocol != NULL);
+
+  tp_cli_dbus_properties_run_get_all (test->protocol, -1,
+      TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING, &properties, &test->error, NULL);
+  g_assert_no_error (test->error);
+
+  tp_tests_assert_strv_equals (
+      tp_asv_get_boxed (properties, "AddressableVCardFields", G_TYPE_STRV),
+      expected_addressable_vcard_fields);
+
+  tp_tests_assert_strv_equals (
+      tp_asv_get_boxed (properties, "AddressableURISchemes", G_TYPE_STRV),
+      expected_addressable_uri_schemes);
 }
 
 static void
@@ -481,6 +515,8 @@ main (int argc,
       test_protocol_properties, teardown);
   g_test_add ("/protocol-objects/protocol-avatar-properties", Test, NULL,
       setup, test_protocol_avatar_properties, teardown);
+  g_test_add ("/protocol-objects/protocol-addressing-properties", Test, NULL,
+      setup, test_protocol_addressing_properties, teardown);
   g_test_add ("/protocol-objects/protocols-property", Test, NULL, setup,
       test_protocols_property, teardown);
   g_test_add ("/protocol-objects/protocols-property-old", Test, NULL, setup,

@@ -412,6 +412,88 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  */
 
 /**
+ * TP_TYPE_PROTOCOL_ADDRESSING:
+ *
+ * Interface representing a #TpBaseProtocol that implements
+ * Protocol.Interface.Addressing.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpProtocolAddressingInterface:
+ * @parent: the parent interface
+ * @dup_supported_uri_schemes: provides the supported URI schemes. Must always
+ * be implemented.
+ * @dup_supported_vcard_fields: provides the supported vCard fields. Must
+ * always be implemented.
+ * @normalize_vcard_address: protocol-specific implementation for normalizing
+ * vCard addresses.
+ * @normalize_contact_uri: protocol-specific implementation for normalizing contact URIs.
+ *
+ * The interface vtable for a %TP_TYPE_PROTOCOL_ADDRESSING.
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpBaseProtocolDupSupportedVCardFieldsFunc:
+ * @self: a protocol
+ *
+ * Signature of a virtual method to get the supported vCard fields supported by
+ * #self.
+ *
+ * Returns: (allow-none) (out) (transfer full): a list of vCard fields in lower
+ * case, e.g. [x-sip, tel]
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpBaseProtocolDupSupportedURISchemesFunc:
+ * @self: a protocol
+ *
+ * Signature of a virtual method to get the supported URI schemes supported by
+ * #self.
+ *
+ * Returns: (allow-none) (out) (transfer full): a list of uri schemes, e.g. [sip, sips, tel]
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpBaseProtocolNormalizeVCardAddressFunc:
+ * @self: a protocol
+ * @vcard_field: The vCard field of the address to be normalized.
+ * @vcard_address: The address to normalize.
+ * @error: used to return an error if %NULL is returned
+ *
+ * Signature of a virtual method to perform best-effort offline normalization
+ * of a vCard address. It must either return a newly allocated string
+ * that is the normalized form of @vcard_address, or raise an error and
+ * return %NULL.
+ *
+ * Returns: (transfer full): a normalized identifier, or %NULL on error
+ *
+ * Since: 0.13.UNRELEASED
+ */
+
+/**
+ * TpBaseProtocolNormalizeURIFunc:
+ * @self: a protocol
+ * @uri: The URI to normalize.
+ * @error: used to return an error if %NULL is returned
+ *
+ * Signature of a virtual method to perform best-effort offline normalization
+ * of a URI. It must either return a newly allocated string
+ * that is the normalized form of @uri, or raise an error and return %NULL.
+ *
+ * Returns: (transfer full): a normalized identifier, or %NULL on error
+ *
+ * Since: 0.13.11
+ */
+
+/**
  * TpBaseProtocolClass:
  * @parent_class: the parent class
  * @dbus_properties_class: a D-Bus properties mixin
@@ -453,6 +535,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
 
 static void protocol_iface_init (TpSvcProtocolClass *cls);
 static void presence_iface_init (TpSvcProtocolInterfacePresenceClass *cls);
+static void addressing_iface_init (TpSvcProtocolInterfaceAddressingClass *cls);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseProtocol, tp_base_protocol,
     G_TYPE_OBJECT,
@@ -462,7 +545,12 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (TpBaseProtocol, tp_base_protocol,
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_PRESENCE,
       presence_iface_init);
     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_AVATARS,
-        NULL))
+      NULL);
+    G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_PROTOCOL_INTERFACE_ADDRESSING,
+      addressing_iface_init))
+
+G_DEFINE_INTERFACE (TpProtocolAddressing, tp_protocol_addressing,
+    TP_TYPE_BASE_PROTOCOL)
 
 typedef struct
 {
@@ -699,6 +787,13 @@ tp_base_protocol_get_immutable_properties (TpBaseProtocol *self)
           NULL);
     }
 
+  if (tp_strv_contains ((const gchar * const *) self->priv->interfaces,
+          TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING))
+    tp_dbus_properties_mixin_fill_properties_hash ((GObject *) self, table,
+        TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING, "AddressableVCardFields",
+        TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING, "AddressableURISchemes",
+        NULL);
+
   /* FIXME: we should add Presence properties as well */
 
   return table;
@@ -803,6 +898,12 @@ typedef enum {
     PAP_MAX_AVATAR_BYTES,
     N_PPA
 } ProtocolAvatarProp;
+
+typedef enum {
+    PADP_ADDRESSABLE_VCARD_FIELDS,
+    PADP_ADDRESSABLE_URI_SCHEMES,
+    N_PADP
+} ProtocolAddressingProp;
 
 static void
 protocol_prop_presence_getter (GObject *object,
@@ -917,6 +1018,39 @@ protocol_prop_avatar_getter (GObject *object,
 }
 
 static void
+protocol_prop_addressing_getter (GObject *object,
+    GQuark iface G_GNUC_UNUSED,
+    GQuark name G_GNUC_UNUSED,
+    GValue *value,
+    gpointer getter_data)
+{
+  TpBaseProtocol *self = (TpBaseProtocol *) object;
+  TpProtocolAddressingInterface *addr_iface;
+
+  g_return_if_fail (TP_IS_PROTOCOL_ADDRESSING (self));
+
+  addr_iface = TP_PROTOCOL_ADDRESSING_GET_INTERFACE (self);
+
+  switch (GPOINTER_TO_INT (getter_data))
+    {
+      case PADP_ADDRESSABLE_VCARD_FIELDS:
+        g_assert (addr_iface->dup_supported_vcard_fields != NULL);
+        g_value_take_boxed (value,
+            addr_iface->dup_supported_vcard_fields (self));
+        break;
+
+      case PADP_ADDRESSABLE_URI_SCHEMES:
+        g_assert (addr_iface->dup_supported_uri_schemes != NULL);
+        g_value_take_boxed (value,
+            addr_iface->dup_supported_uri_schemes (self));
+        break;
+
+      default:
+        g_assert_not_reached ();
+    }
+}
+
+static void
 protocol_properties_getter (GObject *object,
     GQuark iface G_GNUC_UNUSED,
     GQuark name G_GNUC_UNUSED,
@@ -1014,12 +1148,22 @@ tp_base_protocol_class_init (TpBaseProtocolClass *klass)
       { NULL }
   };
 
+  static TpDBusPropertiesMixinPropImpl addressing_props[] = {
+    { "AddressableVCardFields",
+      GINT_TO_POINTER (PADP_ADDRESSABLE_VCARD_FIELDS), NULL },
+    { "AddressableURISchemes",
+      GINT_TO_POINTER (PADP_ADDRESSABLE_URI_SCHEMES), NULL },
+    { NULL }
+  };
+
   static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
       { TP_IFACE_PROTOCOL, protocol_properties_getter, NULL, channel_props },
       { TP_IFACE_PROTOCOL_INTERFACE_PRESENCE, protocol_prop_presence_getter,
         NULL, presence_props },
       { TP_IFACE_PROTOCOL_INTERFACE_AVATARS, protocol_prop_avatar_getter,
         NULL, avatar_props },
+      { TP_IFACE_PROTOCOL_INTERFACE_ADDRESSING,
+        protocol_prop_addressing_getter, NULL, addressing_props },
       { NULL }
   };
 
@@ -1581,6 +1725,86 @@ protocol_identify_account (TpSvcProtocol *protocol,
 }
 
 static void
+addressing_normalize_contact_uri (TpSvcProtocolInterfaceAddressing *protocol,
+    const gchar *uri,
+    DBusGMethodInvocation *context)
+{
+  TpBaseProtocol *self = TP_BASE_PROTOCOL (protocol);
+  TpProtocolAddressingInterface *iface;
+  GError *error = NULL;
+  gchar *ret = NULL;
+
+  if (!TP_IS_PROTOCOL_ADDRESSING (self))
+    goto notimplemented;
+
+  iface = TP_PROTOCOL_ADDRESSING_GET_INTERFACE (self);
+
+  if (iface->normalize_contact_uri == NULL)
+    goto notimplemented;
+
+  ret = iface->normalize_contact_uri (self, uri, &error);
+
+  if (ret == NULL)
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  tp_svc_protocol_interface_addressing_return_from_normalize_contact_uri (context,
+      ret);
+
+  g_free (ret);
+
+  return;
+
+ notimplemented:
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+static void
+addressing_normalize_vcard_address (TpSvcProtocolInterfaceAddressing *protocol,
+    const gchar *vcard_field,
+    const gchar *vcard_address,
+    DBusGMethodInvocation *context)
+{
+  TpBaseProtocol *self = TP_BASE_PROTOCOL (protocol);
+  TpProtocolAddressingInterface *iface;
+  GError *error = NULL;
+  gchar *ret = NULL;
+
+  if (!TP_IS_PROTOCOL_ADDRESSING (self))
+    goto notimplemented;
+
+  iface = TP_PROTOCOL_ADDRESSING_GET_INTERFACE (self);
+
+  if (iface->normalize_vcard_address == NULL)
+    goto notimplemented;
+
+  ret = iface->normalize_vcard_address (self, vcard_field, vcard_address,
+      &error);
+
+  if (ret == NULL)
+    {
+      dbus_g_method_return_error (context, error);
+      g_error_free (error);
+      return;
+    }
+
+  tp_svc_protocol_interface_addressing_return_from_normalize_vcard_address (
+      context,
+      ret);
+
+  g_free (ret);
+
+  return;
+
+ notimplemented:
+  tp_dbus_g_method_return_not_implemented (context);
+}
+
+
+static void
 protocol_iface_init (TpSvcProtocolClass *cls)
 {
 #define IMPLEMENT(x) tp_svc_protocol_implement_##x (cls, protocol_##x)
@@ -1591,5 +1815,19 @@ protocol_iface_init (TpSvcProtocolClass *cls)
 
 static void
 presence_iface_init (TpSvcProtocolInterfacePresenceClass *cls)
+{
+}
+
+static void
+addressing_iface_init (TpSvcProtocolInterfaceAddressingClass *cls)
+{
+#define IMPLEMENT(x) tp_svc_protocol_interface_addressing_implement_##x (cls, addressing_##x)
+  IMPLEMENT (normalize_contact_uri);
+  IMPLEMENT (normalize_vcard_address);
+#undef IMPLEMENT
+}
+
+static void
+tp_protocol_addressing_default_init (TpProtocolAddressingInterface *iface)
 {
 }
