@@ -1167,7 +1167,7 @@ tp_connection_get_contact_groups (TpConnection *self)
  * remove all other members.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
  *
  * Since: 0.15.5
  */
@@ -1215,7 +1215,7 @@ tp_connection_set_group_members_finish (TpConnection *self,
  * Add the given @contacts to the given @group, creating it if necessary.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
  *
  * Since: 0.15.5
  */
@@ -1264,7 +1264,7 @@ tp_connection_add_to_group_finish (TpConnection *self,
  * left in the group afterwards, the group MAY itself be removed.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
  *
  * Since: 0.15.5
  */
@@ -1309,7 +1309,7 @@ tp_connection_remove_from_group_finish (TpConnection *self,
  * Remove all members from the given group, then remove the group itself.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
  *
  * Since: 0.15.5
  */
@@ -1366,7 +1366,7 @@ tp_connection_remove_group_finish (TpConnection *self,
  * the old group.
  *
  * For this to work properly @self must have interface
- * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUP.
+ * %TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS.
  *
  * Since: 0.15.5
  */

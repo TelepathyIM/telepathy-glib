@@ -1367,7 +1367,7 @@ tp_account_class_init (TpAccountClass *klass)
    * <ulink url="http://telepathy.freedesktop.org/spec/">the Telepathy D-Bus
    * Interface Specification</ulink>. They will typically include
    * <literal>debug-message</literal>, which is a debugging message in the C
-   * locale, analogous to #GError.message.
+   * locale, analogous to #GError<!-- -->.message.
    *
    * One can receive change notifications on this property by connecting
    * to the #TpAccount::status-changed signal, or by connecting
@@ -1390,10 +1390,10 @@ tp_account_class_init (TpAccountClass *klass)
   /**
    * TpAccount:connection:
    *
-   * The connection of the account, or NULL if account is offline.
+   * The connection of the account, or %NULL if account is offline.
    * Note that the returned #TpConnection is not guaranteed to have any
    * features pre-prepared (not even %TP_CONNECTION_FEATURE_CORE) unless
-   * %TP_ACCOUNT_FEATURE_ACCOUNT has been prepared on the account
+   * %TP_ACCOUNT_FEATURE_CONNECTION has been prepared on the account
    *
    * One can receive change notifications on this property by connecting
    * to the #GObject::notify signal and using this property as the signal

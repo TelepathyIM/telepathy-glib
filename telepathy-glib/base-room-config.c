@@ -1030,7 +1030,7 @@ tp_base_room_config_iface_init (
  *
  * Returns the channel to which @self is attached.
  *
- * Returns: (transfer full): the #TpBaseChannel:channel property.
+ * Returns: (transfer full): the #TpBaseRoomConfig:channel property.
  */
 TpBaseChannel *
 tp_base_room_config_dup_channel (

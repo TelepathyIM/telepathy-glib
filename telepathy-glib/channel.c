@@ -299,7 +299,7 @@ tp_channel_get_channel_type_id (TpChannel *self)
  * guaranteed to have its final value until the %TP_CHANNEL_FEATURE_CORE
  * feature is ready.
  *
- * If %handle_type is not %NULL, the type of handle is written into it.
+ * If @handle_type is not %NULL, the type of handle is written into it.
  * This will be %TP_UNKNOWN_HANDLE_TYPE if the handle has not yet been
  * discovered, or %TP_HANDLE_TYPE_NONE if there is no handle with which this
  * channel will always communicate. This is the same as the

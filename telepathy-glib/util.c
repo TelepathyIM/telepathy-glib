@@ -1629,7 +1629,7 @@ _tp_create_channel_request_list (TpSimpleClientFactory *factory,
  * character (U+FFFD).
  *
  * This method is a verbatim copy of glib's internal
- * _g_utf8_make_valid() function, and will be deprecated as
+ * _g_utf8_make_valid<!-- -->() function, and will be deprecated as
  * soon as the glib one becomes public.
  *
  * Returns: a new valid UTF8 string
