@@ -22,8 +22,9 @@
 
   <interface
      name="org.freedesktop.Telepathy.Protocol.Interface.Addressing">
-    <tp:added version="0.25.UNRELEASED">(as stable API)</tp:added>
-    <tp:changed version="0.25.UNRELEASED">(renamed NormalizeURI)</tp:changed>
+    <tp:added version="0.25.1">(as stable API). From the draft,
+      NormalizeURI was renamed to NormalizeContactURI, clarifying that
+      it removes any actions from the URI.</tp:added>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>An interface for protocols that support multiple forms of
         addressing contacts, for example through vCard addresses and URIs.</p>
@@ -242,7 +243,7 @@ AddressableURISchemes=tel;sip;
 
     <method name="NormalizeContactURI"
       tp:name-for-bindings="Normalize_Contact_URI">
-      <tp:added version="0.25.UNRELEASED">(renamed from NormalizeURI)</tp:added>
+      <tp:added version="0.25.1">(renamed from NormalizeURI)</tp:added>
       <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
         <p>Attempt to normalize the given contact URI. Where possible, this
           SHOULD return an address that would appear in the

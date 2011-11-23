@@ -21,6 +21,7 @@
     <tp:requires interface="org.freedesktop.Telepathy.Connection"/>
     <tp:requires interface="org.freedesktop.Telepathy.Connection.Interface.Contacts"/>
     <tp:added version="0.19.12">(as draft)</tp:added>
+    <tp:changed version="0.25.1">Both methods now return two dictionaries.</tp:changed>
     <tp:docstring xmlns="http://www.w3.org/1999/xhtml">
       <p>This interface deals with the multiple address types that can
       refer to the same contact, such as vCard fields and URIs.</p>
@@ -224,7 +225,7 @@
       <tp:docstring>
         A map from URIs/vCard addresses to the corresponding handle.
       </tp:docstring>
-      <tp:added version="0.25.UNRELEASED"/>
+      <tp:added version="0.25.1"/>
 
       <tp:member type="s" name="Requested_String">
         <tp:docstring>
