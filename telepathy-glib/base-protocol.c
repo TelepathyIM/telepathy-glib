@@ -417,7 +417,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Interface representing a #TpBaseProtocol that implements
  * Protocol.Interface.Addressing.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.17.2
  */
 
 /**
@@ -433,7 +433,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * The interface vtable for a %TP_TYPE_PROTOCOL_ADDRESSING.
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.17.2
  */
 
 /**
@@ -446,7 +446,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  * Returns: (allow-none) (out) (transfer full): a list of vCard fields in lower
  * case, e.g. [x-sip, tel]
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.17.2
  */
 
 /**
@@ -458,7 +458,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * Returns: (allow-none) (out) (transfer full): a list of uri schemes, e.g. [sip, sips, tel]
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.17.2
  */
 
 /**
@@ -475,7 +475,7 @@ tp_cm_param_filter_string_nonempty (const TpCMParamSpec *paramspec,
  *
  * Returns: (transfer full): a normalized identifier, or %NULL on error
  *
- * Since: 0.13.UNRELEASED
+ * Since: 0.17.2
  */
 
 /**
