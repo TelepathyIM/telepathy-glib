@@ -316,7 +316,6 @@ AC_OUTPUT( Makefile \
 	   examples/client/python/Makefile \
 	   examples/client/stream-tubes/Makefile \
 	   examples/cm/Makefile \
-	   examples/cm/callable/Makefile \
 	   examples/cm/channelspecific/Makefile \
 	   examples/cm/contactlist/Makefile \
 	   examples/cm/echo-message-parts/Makefile \
