@@ -194,7 +194,7 @@ tp_svc_interface_set_dbus_properties_info (GType g_interface,
 }
 
 /**
- * tp_svc_interface_get_dbus_properties_info:
+ * tp_svc_interface_get_dbus_properties_info: (skip)
  * @g_interface: The #GType of a service interface
  *
  * Retrieves the D-Bus property metadata for the given interface, if any.
