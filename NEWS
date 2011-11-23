@@ -1,7 +1,28 @@
 telepathy-glib 0.17.2 (UNRELEASED)
 ==================================
 
-Y U NO FILL NEWS FILE?!
+The “maple syrup bread” release.
+
+Enhancements:
+
+• TpBaseProtocol now supports the freshly-undrafted
+  Protocol.Interface.Addressing from spec 0.25.1. (Eitan, Andre)
+
+• Building on Android using 'androgenizer' is now supported (Derek
+  Foreman)
+
+Fixes:
+
+• Speculatively replace _free/_destroy with _unref everywhere, and add a
+  coding style check. (Xavier)
+
+• Ensure GSocketConnection objects are properly closed and freed for
+  incoming TpFileTransferChannels. (Jonathan)
+
+• Many documentation nits have been fixed. (Jonathan)
+
+• Building the GObject-Introspection repository now works reliably when
+  using `make -j`. (Will)
 
 telepathy-glib 0.17.1 (2011-11-15)
 ==================================
