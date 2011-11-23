@@ -110,7 +110,7 @@ struct _TpContact {
  *  interface. (available since 0.13.12)
  * @TP_CONTACT_FEATURE_CONTACT_GROUPS: #TpContact:contact-groups
  *  (available since 0.13.14)
- * @TP_CONTACT_FEATURE_CONTACT_BLOCKING: #TpContact:is-blocking. Require
+ * @TP_CONTACT_FEATURE_CONTACT_BLOCKING: #TpContact:is-blocked. Require
  *  Connection implementing the %TP_IFACE_CONNECTION_INTERFACE_CONTACT_BLOCKING
  *  interface. (available since 0.17.0)
  *
@@ -719,7 +719,7 @@ set_contact_groups_cb (TpConnection *connection,
  * If the operation is successful and %TP_CONTACT_FEATURE_CONTACT_GROUPS is
  * prepared, the #TpContact:contact-groups property will be
  * updated (emitting "notify::contact-groups" signal) and
- * #TpContact:contact-groups-changed signal will be emitted before @callback
+ * #TpContact::contact-groups-changed signal will be emitted before @callback
  * is called. That means you can call tp_contact_get_contact_groups() to get the
  * new contact groups inside @callback.
  *

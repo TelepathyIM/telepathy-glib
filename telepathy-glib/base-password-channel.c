@@ -23,14 +23,16 @@
  * @short_description: a simple X-TELEPATHY-PASSWORD channel
  *
  * This class implements a SASL Authentication channel with the
- * X-TELEPATHY-PASSWORD SASL mechanism.  Most of the time, you should not use
- * or instantiate this class directly.  It is used by #TpBasePasswordManager
- * behind the scenes.  In some special circumstances (e.g. when the authentication
- * channel needs to implement additional interfaces), it may be necessary to
- * create your own custom authentication channels instead of letting
- * #TpBasePasswordManager create them automatically.  In this case, you
- * should derive your channel from this class and then pass the channel as an
- * argument to tp_simple_password_manager_prompt_for_channel_async().
+ * X-TELEPATHY-PASSWORD SASL mechanism.  Most of the time, you should
+ * not use or instantiate this class directly.  It is used by
+ * #TpSimplePasswordManager behind the scenes.  In some special
+ * circumstances (e.g. when the authentication channel needs to
+ * implement additional interfaces), it may be necessary to create
+ * your own custom authentication channels instead of letting
+ * #TpSimplePasswordManager create them automatically.  In this case,
+ * you should derive your channel from this class and then pass the
+ * channel as an argument to
+ * tp_simple_password_manager_prompt_for_channel_async().
  *
  * Since: 0.13.15
  */

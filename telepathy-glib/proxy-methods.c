@@ -386,7 +386,7 @@ tp_proxy_pending_call_free (TpProxyPendingCall *pc)
 
 /**
  * tp_proxy_pending_call_v0_completed:
- * @p: a #TpProxyPendingCall allocated with tp_proxy_pending_call_new_v0()
+ * @p: a #TpProxyPendingCall allocated with tp_proxy_pending_call_v0_new()
  *
  * Indicate that dbus-glib has finished with this pending call, and therefore
  * either tp_proxy_pending_call_v0_take_results() has already been called,

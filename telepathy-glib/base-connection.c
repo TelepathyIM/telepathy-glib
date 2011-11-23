@@ -1355,9 +1355,9 @@ tp_base_connection_constructor (GType type, guint n_construct_properties,
  * #TpBaseConnection::clients-interested and
  * #TpBaseConnection::clients-uninterested.
  *
- * This method must be called from the #GObjectClass.constructed or
- * #GObjectClass.constructor callback (otherwise, it will run too late to be
- * useful).
+ * This method must be called from the #GObjectClass<!--
+ * -->.constructed or #GObjectClass<!-- -->.constructor callback
+ * (otherwise, it will run too late to be useful).
  */
 void
 tp_base_connection_add_possible_client_interest (TpBaseConnection *self,
@@ -1573,8 +1573,9 @@ tp_base_connection_class_init (TpBaseConnectionClass *klass)
    * TpBaseConnection:dbus-status: (skip)
    *
    * The Connection.Status as visible on D-Bus, which is the same as
-   * #TpBaseConnection.status except that %TP_INTERNAL_CONNECTION_STATUS_NEW
-   * is replaced by %TP_CONNECTION_STATUS_DISCONNECTED.
+   * #TpBaseConnection<!-- -->.status except that
+   * %TP_INTERNAL_CONNECTION_STATUS_NEW is replaced by
+   * %TP_CONNECTION_STATUS_DISCONNECTED.
    *
    * The #GObject::notify signal is not currently emitted for this property.
    *
@@ -2708,7 +2709,7 @@ void tp_base_connection_finish_shutdown (TpBaseConnection *self)
  * @reason: The reason code to use in the StatusChanged signal
  *          (a less specific, non-extensible version of @error_name)
  *
- * Changes the #TpBaseConnection.status of @self to
+ * Changes the #TpBaseConnection<!-- -->.status of @self to
  * %TP_CONNECTION_STATUS_DISCONNECTED, as if by a call to
  * tp_base_connection_change_status(), but additionally emits the
  * <code>ConnectionError</code> D-Bus signal to provide more details about the
@@ -2787,7 +2788,7 @@ tp_base_connection_disconnect_with_dbus_error (TpBaseConnection *self,
  * Any other valid transition does the following, in this order:
  *
  * <itemizedlist>
- * <listitem>Update #TpBaseConnection.status;</listitem>
+ * <listitem>Update #TpBaseConnection<!-- -->.status;</listitem>
  * <listitem>If the new state is #TP_CONNECTION_STATUS_DISCONNECTED, call
  *    tp_channel_factory_iface_close_all() on all channel factories</listitem>
  * <listitem>Emit the D-Bus StatusChanged signal;</listitem>

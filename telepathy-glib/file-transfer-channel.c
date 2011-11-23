@@ -822,7 +822,7 @@ tp_file_transfer_channel_class_init (TpFileTransferChannelClass *klass)
     *
     * For outgoing file transfers, this property is a #GFile for the
     * location of the file being sent (given by
-    * tp_file_transfer_provide_file_async()). The feature
+    * tp_file_transfer_channel_provide_file_async()). The feature
     * %TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE does not have to be
     * prepared and there is no change notification.
     *

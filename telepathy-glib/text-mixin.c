@@ -203,7 +203,7 @@ tp_text_mixin_init (GObject *obj,
  * tp_text_mixin_set_message_types:
  * @obj: An object with this mixin
  * @...: guints representing members of #TpChannelTextMessageType, terminated
- *  by %G_MAXUINT
+ *  by G_MAXUINT
  *
  * Set the supported message types.
  */
