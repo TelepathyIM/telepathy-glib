@@ -20,10 +20,10 @@
 
 #include <telepathy-glib/telepathy-glib.h>
 
-#include "examples/future/call-cm/cm.h"
-#include "examples/future/call-cm/conn.h"
-#include "examples/future/call-cm/call-channel.h"
-#include "examples/future/call-cm/call-stream.h"
+#include "examples/cm/call/cm.h"
+#include "examples/cm/call/conn.h"
+#include "examples/cm/call/call-channel.h"
+#include "examples/cm/call/call-stream.h"
 
 #include "tests/lib/util.h"
 

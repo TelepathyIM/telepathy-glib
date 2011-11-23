@@ -116,7 +116,7 @@ test_channel_request_SOURCES = channel-request.c
 test_call_channel_SOURCES = call-channel.c
 test_call_channel_LDADD = \
     $(LDADD) \
-    $(top_builddir)/examples/future/call-cm/libexample-cm-call.la
+    $(top_builddir)/examples/cm/call/libexample-cm-call.la
 
 test_client_SOURCES = client.c
 
