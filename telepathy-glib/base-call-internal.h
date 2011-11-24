@@ -22,8 +22,11 @@
 #ifndef __TP_BASE_CALL_INTERNAL_H__
 #define __TP_BASE_CALL_INTERNAL_H__
 
+#include <telepathy-glib/base-connection.h>
+
 G_BEGIN_DECLS
 
+/* Forward declaration */
 typedef struct _TpBaseCallChannel TpBaseCallChannel;
 typedef struct _TpBaseCallContent TpBaseCallContent;
 typedef struct _TpBaseCallStream  TpBaseCallStream;
@@ -31,13 +34,19 @@ typedef struct _TpBaseCallStream  TpBaseCallStream;
 /* Implemented in base-call-content.c */
 void _tp_base_call_content_set_channel (TpBaseCallContent *self,
     TpBaseCallChannel *channel);
+TpBaseCallChannel *_tp_base_call_content_get_channel (TpBaseCallContent *self);
 void _tp_base_call_content_accepted (TpBaseCallContent *self,
     TpHandle actor_handle);
 void _tp_base_call_content_deinit (TpBaseCallContent *self);
+void _tp_base_call_content_remove_stream_internal (TpBaseCallContent *self,
+    TpBaseCallStream *stream,
+    const GValueArray *reason_array);
 
 /* Implemented in base-call-stream.c */
-void _tp_base_call_stream_set_channel (TpBaseCallStream *self,
-    TpBaseCallChannel *channel);
+void _tp_base_call_stream_set_content (TpBaseCallStream *self,
+    TpBaseCallContent *content);
+TpBaseCallContent *_tp_base_call_stream_get_content (TpBaseCallStream *self);
+TpBaseCallChannel *_tp_base_call_stream_get_channel (TpBaseCallStream *self);
 gboolean _tp_base_call_stream_set_sending (TpBaseCallStream *self,
     gboolean send,
     TpHandle actor_handle,
@@ -53,6 +62,9 @@ GValueArray *_tp_base_call_state_reason_new (TpHandle actor_handle,
     TpCallStateChangeReason reason,
     const gchar *dbus_reason,
     const gchar *message);
+void _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
+    TpBaseCallContent *content,
+    const GValueArray *reason_array);
 
 G_END_DECLS
 

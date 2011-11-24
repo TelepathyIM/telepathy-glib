@@ -815,6 +815,28 @@ tp_base_call_channel_get_contents (TpBaseCallChannel *self)
   return self->priv->contents;
 }
 
+void
+_tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
+    TpBaseCallContent *content,
+    const GValueArray *reason_array)
+{
+  GList *l;
+  const gchar *path;
+
+  l = g_list_find (self->priv->contents, content);
+  g_return_if_fail (l != NULL);
+
+  self->priv->contents = g_list_delete_link (self->priv->contents, l);
+
+  path = tp_base_call_content_get_object_path (
+      TP_BASE_CALL_CONTENT (content));
+  tp_svc_channel_type_call_emit_content_removed (self, path, reason_array);
+  tp_svc_call_content_emit_removed (TP_BASE_CALL_CONTENT (content));
+
+  _tp_base_call_content_deinit (TP_BASE_CALL_CONTENT (content));
+  g_object_unref (content);
+}
+
 /**
  * tp_base_call_channel_remove_content:
  * @self: a #TpBaseCallChannel
@@ -841,29 +863,17 @@ tp_base_call_channel_remove_content (TpBaseCallChannel *self,
     const gchar *dbus_reason,
     const gchar *message)
 {
-  GList *l;
-  const gchar *path;
   GValueArray *reason_array;
 
   g_return_if_fail (TP_IS_BASE_CALL_CHANNEL (self));
   g_return_if_fail (TP_IS_BASE_CALL_CONTENT (content));
 
-  l = g_list_find (self->priv->contents, content);
-  g_return_if_fail (l != NULL);
-
-  self->priv->contents = g_list_delete_link (self->priv->contents, l);
-
-  path = tp_base_call_content_get_object_path (
-      TP_BASE_CALL_CONTENT (content));
   reason_array = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
-  tp_svc_channel_type_call_emit_content_removed (self, path, reason_array);
-  tp_svc_call_content_emit_removed (TP_BASE_CALL_CONTENT (content));
+
+  _tp_base_call_channel_remove_content_internal (self, content, reason_array);
 
   g_value_array_free (reason_array);
-
-  _tp_base_call_content_deinit (TP_BASE_CALL_CONTENT (content));
-  g_object_unref (content);
 }
 
 /**

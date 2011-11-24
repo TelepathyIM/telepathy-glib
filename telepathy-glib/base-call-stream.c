@@ -132,6 +132,7 @@ struct _TpBaseCallStreamPrivate
 
   /* Borrowed */
   TpBaseCallChannel *channel;
+  TpBaseCallContent *content;
 };
 
 static void
@@ -737,16 +738,36 @@ call_stream_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
-/* This function should only be used from TpBaseCallContent */
+/* These functions are used only internally */
+
 void
-_tp_base_call_stream_set_channel (TpBaseCallStream *self,
-    TpBaseCallChannel *channel)
+_tp_base_call_stream_set_content (TpBaseCallStream *self,
+    TpBaseCallContent *content)
 {
   g_return_if_fail (TP_IS_BASE_CALL_STREAM (self));
-  g_return_if_fail (TP_IS_BASE_CALL_CHANNEL (channel));
-  g_return_if_fail (self->priv->channel == NULL);
+  g_return_if_fail (TP_IS_BASE_CALL_CONTENT (content));
+  g_return_if_fail (self->priv->content == NULL);
 
-  self->priv->channel = channel;
+  self->priv->content = content;
+  self->priv->channel = _tp_base_call_content_get_channel (content);
+}
+
+TpBaseCallContent *
+_tp_base_call_stream_get_content (TpBaseCallStream *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_STREAM (self), NULL);
+  g_return_val_if_fail (self->priv->content != NULL, NULL);
+
+  return self->priv->content;
+}
+
+TpBaseCallChannel *
+_tp_base_call_stream_get_channel (TpBaseCallStream *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_STREAM (self), NULL);
+  g_return_val_if_fail (self->priv->channel != NULL, NULL);
+
+  return self->priv->channel;
 }
 
 gboolean

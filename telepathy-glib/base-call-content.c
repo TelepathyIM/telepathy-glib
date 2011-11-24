@@ -559,7 +559,7 @@ tp_base_call_content_add_stream (TpBaseCallContent *self,
   g_return_if_fail (self->priv->channel != NULL);
   g_return_if_fail (g_list_find (self->priv->streams, stream) == NULL);
 
-  _tp_base_call_stream_set_channel (stream, self->priv->channel);
+  _tp_base_call_stream_set_content (stream, self);
 
   self->priv->streams = g_list_prepend (self->priv->streams,
       g_object_ref (stream));
@@ -571,6 +571,29 @@ tp_base_call_content_add_stream (TpBaseCallContent *self,
          TP_BASE_CALL_STREAM (stream))));
   tp_svc_call_content_emit_streams_added (self, paths);
   g_ptr_array_unref (paths);
+}
+
+void
+_tp_base_call_content_remove_stream_internal (TpBaseCallContent *self,
+    TpBaseCallStream *stream,
+    const GValueArray *reason_array)
+{
+  GList *l;
+  GPtrArray *paths;
+
+  l = g_list_find (self->priv->streams, stream);
+  g_return_if_fail (l != NULL);
+
+  self->priv->streams = g_list_delete_link (self->priv->streams, l);
+
+  paths = g_ptr_array_new ();
+  g_ptr_array_add (paths, (gpointer)
+      tp_base_call_stream_get_object_path (stream));
+
+  tp_svc_call_content_emit_streams_removed (self, paths, reason_array);
+
+  g_ptr_array_unref (paths);
+  g_object_unref (stream);
 }
 
 /**
@@ -600,26 +623,17 @@ tp_base_call_content_remove_stream (TpBaseCallContent *self,
     const gchar *dbus_reason,
     const gchar *message)
 {
-  GList *l;
-  GPtrArray *paths;
   GValueArray *reason_array;
 
   g_return_if_fail (TP_IS_BASE_CALL_CONTENT (self));
   g_return_if_fail (TP_IS_BASE_CALL_STREAM (stream));
 
-  l = g_list_find (self->priv->streams, stream);
-  g_return_if_fail (l != NULL);
-
-  self->priv->streams = g_list_remove_link (self->priv->streams, l);
-  paths = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
-  g_ptr_array_add (paths, g_strdup (tp_base_call_stream_get_object_path (
-      stream)));
   reason_array = _tp_base_call_state_reason_new (actor_handle, reason,
       dbus_reason, message);
-  tp_svc_call_content_emit_streams_removed (self, paths, reason_array);
+
+  _tp_base_call_content_remove_stream_internal (self, stream, reason_array);
+
   g_value_array_free (reason_array);
-  g_ptr_array_unref (paths);
-  g_object_unref (stream);
 }
 
 static void
@@ -656,7 +670,8 @@ call_content_iface_init (gpointer g_iface, gpointer iface_data)
 #undef IMPLEMENT
 }
 
-/* These functions should only be used from TpBaseCallChannel */
+/* These functions are used only internally */
+
 void
 _tp_base_call_content_set_channel (TpBaseCallContent *self,
     TpBaseCallChannel *channel)
@@ -666,6 +681,15 @@ _tp_base_call_content_set_channel (TpBaseCallContent *self,
   g_return_if_fail (self->priv->channel == NULL);
 
   self->priv->channel = channel;
+}
+
+TpBaseCallChannel *
+_tp_base_call_content_get_channel (TpBaseCallContent *self)
+{
+  g_return_val_if_fail (TP_IS_BASE_CALL_CONTENT (self), NULL);
+  g_return_val_if_fail (self->priv->channel != NULL, NULL);
+
+  return self->priv->channel;
 }
 
 void
