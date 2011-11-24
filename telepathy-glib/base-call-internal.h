@@ -30,6 +30,7 @@ G_BEGIN_DECLS
 typedef struct _TpBaseCallChannel TpBaseCallChannel;
 typedef struct _TpBaseCallContent TpBaseCallContent;
 typedef struct _TpBaseCallStream  TpBaseCallStream;
+typedef struct _TpCallContentMediaDescription  TpCallContentMediaDescription;
 
 /* Implemented in base-call-content.c */
 void _tp_base_call_content_set_channel (TpBaseCallContent *self,
@@ -65,6 +66,20 @@ GValueArray *_tp_base_call_state_reason_new (TpHandle actor_handle,
 void _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
     TpBaseCallContent *content,
     const GValueArray *reason_array);
+
+/* Implemented in call-content-media-description.c */
+void _tp_call_content_media_description_offer_async (
+    TpCallContentMediaDescription *self,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean _tp_call_content_media_description_offer_finish (
+    TpCallContentMediaDescription *self,
+    GAsyncResult *result,
+    GHashTable **properties,
+    GError **error);
+GHashTable *_tp_call_content_media_description_dup_properties (
+    TpCallContentMediaDescription *self);
 
 G_END_DECLS
 

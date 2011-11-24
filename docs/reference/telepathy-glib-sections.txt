@@ -6799,3 +6799,48 @@ tp_base_call_stream_get_type
 <SUBSECTION Private>
 TpBaseCallStreamPrivate
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<FILE>base-media-call-content</FILE>
+<TITLE>TpBaseMediaCallContent</TITLE>
+<SUBSECTION>
+TpBaseMediaCallContent
+TpBaseMediaCallContentClass
+tp_base_media_call_content_get_local_media_description
+tp_base_media_call_content_offer_media_description
+<SUBSECTION Standard>
+TP_BASE_MEDIA_CALL_CONTENT
+TP_BASE_MEDIA_CALL_CONTENT_CLASS
+TP_BASE_MEDIA_CALL_CONTENT_GET_CLASS
+TP_IS_BASE_MEDIA_CALL_CONTENT
+TP_IS_BASE_MEDIA_CALL_CONTENT_CLASS
+TP_TYPE_BASE_MEDIA_CALL_CONTENT
+tp_base_media_call_content_get_type
+<SUBSECTION Private>
+TpBaseMediaCallContentPrivate
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<FILE>call-content-media-description</FILE>
+<TITLE>TpCallContentMediaDescription</TITLE>
+<SUBSECTION>
+TpCallContentMediaDescription
+TpCallContentMediaDescriptionClass
+tp_call_content_media_description_new
+tp_call_content_media_description_get_object_path
+tp_call_content_media_description_get_remote_contact
+tp_call_content_media_description_append_codec
+tp_call_content_media_description_add_ssrc
+<SUBSECTION Standard>
+TP_CALL_CONTENT_MEDIA_DESCRIPTION
+TP_CALL_CONTENT_MEDIA_DESCRIPTION_CLASS
+TP_CALL_CONTENT_MEDIA_DESCRIPTION_GET_CLASS
+TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION
+TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION_CLASS
+TP_TYPE_CALL_CONTENT_MEDIA_DESCRIPTION
+tp_call_content_media_description_get_type
+<SUBSECTION Private>
+TpBaseMediaCallContentPrivate
+</SECTION>

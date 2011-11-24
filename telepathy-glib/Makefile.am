@@ -36,12 +36,14 @@ our_headers = \
     base-channel.h \
     base-connection.h \
     base-connection-manager.h \
+    base-media-call-content.h \
     base-password-channel.h \
     base-protocol.h \
     base-room-config.h \
     basic-proxy-factory.h \
     call-channel.h \
     call-content.h \
+    call-content-media-description.h \
     call-misc.h \
     call-stream.h \
     channel.h \
@@ -173,6 +175,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     base-connection.c \
     base-connection-internal.h \
     base-connection-manager.c \
+    base-media-call-content.c \
     base-password-channel.c \
     base-protocol-internal.h \
     base-protocol.c \
@@ -182,6 +185,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     capabilities-internal.h \
     call-channel.c \
     call-content.c \
+    call-content-media-description.c \
     call-internal.h \
     call-misc.c \
     call-stream.c \
