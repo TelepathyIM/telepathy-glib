@@ -1,6 +1,8 @@
 include $(top_srcdir)/tools/flymake.mk
 
--include $(INTROSPECTION_MAKEFILE)
+if HAVE_INTROSPECTION
+include $(INTROSPECTION_MAKEFILE)
+endif
 INTROSPECTION_GIRS =
 INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir) --add-include-path=$(top_srcdir) -I$(top_srcdir)
 INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir) --includedir=$(top_srcdir)
