@@ -50,7 +50,7 @@
  *     TP_TYPE_BASE_CHANNEL,
  *     // ...
  *     G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CHANNEL_INTERFACE_ROOM_CONFIG,
- *         tp_base_room_config_iface_init);
+ *         tp_base_room_config_iface_init)
  *     // ...
  *     )
  * ]|
