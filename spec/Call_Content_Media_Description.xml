@@ -69,7 +69,7 @@
         Reject the proposed update to the remote description.
       </tp:docstring>
       <arg name="Reason" type="(uuss)" tp:type="Call_State_Reason"
-        direction="out">
+        direction="in">
         <tp:docstring>
           A structured reason for the rejection.
         </tp:docstring>
