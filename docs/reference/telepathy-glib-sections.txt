@@ -6844,3 +6844,53 @@ tp_call_content_media_description_get_type
 <SUBSECTION Private>
 TpBaseMediaCallContentPrivate
 </SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<FILE>base-media-call-stream</FILE>
+<TITLE>TpBaseMediaCallStream</TITLE>
+<SUBSECTION>
+TpBaseMediaCallStream
+TpBaseMediaCallStreamClass
+TpBaseMediaCallStreamAddCandidatesFunc
+TpBaseMediaCallStreamVoidFunc
+tp_base_media_call_stream_set_relay_info
+tp_base_media_call_stream_set_stun_servers
+tp_base_media_call_stream_add_endpoint
+tp_base_media_call_stream_get_endpoints
+tp_base_media_call_stream_get_password
+tp_base_media_call_stream_get_username
+<SUBSECTION Standard>
+TP_BASE_MEDIA_CALL_STREAM
+TP_BASE_MEDIA_CALL_STREAM_CLASS
+TP_BASE_MEDIA_CALL_STREAM_GET_CLASS
+TP_IS_BASE_MEDIA_CALL_STREAM
+TP_IS_BASE_MEDIA_CALL_STREAM_CLASS
+TP_TYPE_BASE_MEDIA_CALL_STREAM
+tp_base_media_call_stream_get_type
+<SUBSECTION Private>
+TpBaseMediaCallStreamPrivate
+</SECTION>
+
+<SECTION>
+<INCLUDE>telepathy-glib/telepathy-glib.h</INCLUDE>
+<FILE>call-stream-endpoint</FILE>
+<TITLE>TpCallStreamEndpoint</TITLE>
+<SUBSECTION>
+TpCallStreamEndpoint
+TpCallStreamEndpointClass
+tp_call_stream_endpoint_new
+tp_call_stream_endpoint_get_object_path
+tp_call_stream_endpoint_add_new_candidates
+tp_call_stream_endpoint_add_new_candidate
+<SUBSECTION Standard>
+TP_CALL_STREAM_ENDPOINT
+TP_CALL_STREAM_ENDPOINT_CLASS
+TP_CALL_STREAM_ENDPOINT_GET_CLASS
+TP_IS_CALL_STREAM_ENDPOINT
+TP_IS_CALL_STREAM_ENDPOINT_CLASS
+TP_TYPE_CALL_STREAM_ENDPOINT
+tp_call_stream_endpoint_get_type
+<SUBSECTION Private>
+TpCallStreamEndpointPrivate
+</SECTION>

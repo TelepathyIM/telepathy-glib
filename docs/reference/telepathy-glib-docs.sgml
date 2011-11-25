@@ -167,6 +167,8 @@
     <xi:include href="xml/base-call-stream.xml"/>
     <xi:include href="xml/base-media-call-content.xml"/>
     <xi:include href="xml/call-content-media-description.xml"/>
+    <xi:include href="xml/base-media-call-stream.xml"/>
+    <xi:include href="xml/call-stream-endpoint.xml"/>
   </chapter>
   <chapter id="ch-service-handles">
     <title>Service-side handle repositories</title>

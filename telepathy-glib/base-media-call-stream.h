@@ -1,0 +1,90 @@
+/*
+ * base-media-call-stream.h - Header for TpBaseMediaCallStream
+ * Copyright (C) 2009-2011 Collabora Ltd.
+ * @author Sjoerd Simons <sjoerd.simons@collabora.co.uk>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#ifndef __TP_BASE_MEDIA_CALL_STREAM_H__
+#define __TP_BASE_MEDIA_CALL_STREAM_H__
+
+#include <telepathy-glib/base-call-stream.h>
+#include <telepathy-glib/call-stream-endpoint.h>
+
+G_BEGIN_DECLS
+
+typedef struct _TpBaseMediaCallStream TpBaseMediaCallStream;
+typedef struct _TpBaseMediaCallStreamPrivate TpBaseMediaCallStreamPrivate;
+typedef struct _TpBaseMediaCallStreamClass TpBaseMediaCallStreamClass;
+
+typedef void (*TpBaseMediaCallStreamVoidFunc) (TpBaseMediaCallStream *self);
+typedef GPtrArray *(*TpBaseMediaCallStreamAddCandidatesFunc) (
+    TpBaseMediaCallStream *self,
+    const GPtrArray *candidates,
+    GError **error);
+
+struct _TpBaseMediaCallStreamClass {
+  /*<private>*/
+  TpBaseCallStreamClass parent_class;
+
+  /*< public >*/
+  TpBaseMediaCallStreamAddCandidatesFunc add_local_candidates;
+  TpBaseMediaCallStreamVoidFunc finish_initial_candidates;
+
+  /*<private>*/
+  gpointer future[4];
+};
+
+struct _TpBaseMediaCallStream {
+  /*<private>*/
+  TpBaseCallStream parent;
+
+  TpBaseMediaCallStreamPrivate *priv;
+};
+
+GType tp_base_media_call_stream_get_type (void);
+
+/* TYPE MACROS */
+#define TP_TYPE_BASE_MEDIA_CALL_STREAM \
+  (tp_base_media_call_stream_get_type ())
+#define TP_BASE_MEDIA_CALL_STREAM(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), TP_TYPE_BASE_MEDIA_CALL_STREAM, TpBaseMediaCallStream))
+#define TP_BASE_MEDIA_CALL_STREAM_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), TP_TYPE_BASE_MEDIA_CALL_STREAM, \
+    TpBaseMediaCallStreamClass))
+#define TP_IS_BASE_MEDIA_CALL_STREAM(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), TP_TYPE_BASE_MEDIA_CALL_STREAM))
+#define TP_IS_BASE_MEDIA_CALL_STREAM_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), TP_TYPE_BASE_MEDIA_CALL_STREAM))
+#define TP_BASE_MEDIA_CALL_STREAM_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), TP_TYPE_BASE_MEDIA_CALL_STREAM, \
+    TpBaseMediaCallStreamClass))
+
+void tp_base_media_call_stream_set_relay_info (TpBaseMediaCallStream *self,
+    GPtrArray *relays);
+void tp_base_media_call_stream_set_stun_servers (TpBaseMediaCallStream *self,
+    GPtrArray *stun_servers);
+void tp_base_media_call_stream_add_endpoint (TpBaseMediaCallStream *self,
+    TpCallStreamEndpoint *endpoint);
+GList *tp_base_media_call_stream_get_endpoints (TpBaseMediaCallStream *self);
+const gchar *tp_base_media_call_stream_get_username (
+    TpBaseMediaCallStream *self);
+const gchar *tp_base_media_call_stream_get_password (
+    TpBaseMediaCallStream *self);
+
+G_END_DECLS
+
+#endif /* #ifndef __TP_BASE_MEDIA_CALL_STREAM_H__*/

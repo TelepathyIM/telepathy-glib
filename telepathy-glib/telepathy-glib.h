@@ -78,11 +78,13 @@
 #include <telepathy-glib/base-call-stream.h>
 #include <telepathy-glib/base-channel.h>
 #include <telepathy-glib/base-media-call-content.h>
+#include <telepathy-glib/base-media-call-stream.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/base-contact-list.h>
 #include <telepathy-glib/base-protocol.h>
 #include <telepathy-glib/call-content-media-description.h>
+#include <telepathy-glib/call-stream-endpoint.h>
 
 #undef  __TP_IN_GLIB_H__
 #endif /* __TP_GLIB_H__ */
