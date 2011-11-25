@@ -100,6 +100,9 @@ struct _TpConnectionPrivate {
     GPtrArray *blocked_contacts;
     gboolean blocked_contacts_fetched;
 
+    /* Aliasing */
+    TpConnectionAliasFlags alias_flags;
+
     TpProxyPendingCall *introspection_call;
 
     unsigned ready:1;
@@ -184,6 +187,12 @@ void _tp_connection_prepare_contact_blocking_async (TpProxy *proxy,
 
 void _tp_connection_set_contact_blocked (TpConnection *self,
     TpContact *contact);
+
+/* connection-aliasing.c */
+void _tp_connection_prepare_aliasing_async (TpProxy *proxy,
+    const TpProxyFeature *feature,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
 
 G_END_DECLS
 

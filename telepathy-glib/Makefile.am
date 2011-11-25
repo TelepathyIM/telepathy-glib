@@ -182,6 +182,7 @@ libtelepathy_glib_internal_la_SOURCES = \
     client-message.c \
     client-message-internal.h \
     connection.c \
+    connection-aliasing.c \
     connection-avatars.c \
     connection-contact-info.c \
     connection-contact-list.c \
