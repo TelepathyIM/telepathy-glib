@@ -40,7 +40,7 @@
  * One can ask for a feature to be prepared using the
  * tp_proxy_prepare_async() function, and waiting for it to callback.
  *
- * Since: 0.UNRELEASED
+ * Since: 0.17.3
  */
 GQuark
 tp_connection_get_feature_quark_aliasing (void)
@@ -59,7 +59,7 @@ tp_connection_get_feature_quark_aliasing (void)
  * Returns: %TRUE if the aliases of contacts on @self
  * may be changed by the user of the service, not just by the
  * contacts themselves; %FALSE otherwise.
- * Since: 0.UNRELEASED
+ * Since: 0.17.3
  */
 gboolean
 tp_connection_can_set_contact_alias (TpConnection *self)

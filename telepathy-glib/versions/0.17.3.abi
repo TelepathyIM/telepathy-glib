@@ -1,0 +1,6 @@
+Version: TELEPATHY_GLIB_0.17.3
+Extends: TELEPATHY_GLIB_0.17.2
+Release: 0.17.3
+
+tp_connection_can_set_contact_alias
+tp_connection_get_feature_quark_aliasing

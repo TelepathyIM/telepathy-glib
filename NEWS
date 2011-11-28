@@ -1,4 +1,4 @@
-telepathy-glib 0.17.3 (UNRELEASED)
+telepathy-glib 0.17.3 (2011-11-28)
 ==================================
 
        I DON'T ALWAYS
@@ -22,6 +22,11 @@ Dependencies:
 Fixes:
 
 • Fix a crash in TpSimplePasswordManager (Mikhail)
+
+Enhancements:
+
+• Add high level API to check if a connection supports settings aliases
+  on contacts. (Guillaume)
 
 telepathy-glib 0.17.2 (2011-11-23)
 ==================================
