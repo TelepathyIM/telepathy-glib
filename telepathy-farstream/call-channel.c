@@ -416,7 +416,7 @@ channel_prepared (GObject *proxy, GAsyncResult *prepare_res, gpointer user_data)
       goto error;
     }
 
-  if (!tp_call_channel_has_hardware_streaming (TP_CALL_CHANNEL (proxy)))
+  if (tp_call_channel_has_hardware_streaming (TP_CALL_CHANNEL (proxy)))
     {
       g_warning ("Hardware streaming property is TRUE, ignoring");
 

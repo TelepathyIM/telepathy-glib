@@ -679,7 +679,7 @@ process_media_description_try_codecs (TfCallContent *self, FsStream *fsstream,
     {
       g_debug ("Rejecting Media Description");
       tp_cli_call_content_media_description_call_reject (media_description,
-          -1, NULL, NULL, NULL, NULL);
+          -1, NULL, NULL, NULL, NULL, NULL);
       g_object_unref (media_description);
     }
 }
@@ -726,6 +726,7 @@ process_media_description (TfCallContent *self,
       return;
     }
 
+  tp_call_content_media_description_init_known_interfaces ();
   proxy = g_object_new (TP_TYPE_PROXY,
       "dbus-daemon", tp_proxy_get_dbus_daemon (self->proxy),
       "bus-name", tp_proxy_get_bus_name (self->proxy),
@@ -1587,8 +1588,9 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
 
       g_ptr_array_add (tpcodecs, g_value_get_boxed (&tpcodec));
 
-      if (fscodec->minimum_reporting_interval != G_MAXUINT ||
-          fscodec->feedback_params)
+      if (rtcp_fb != NULL &&
+          (fscodec->minimum_reporting_interval != G_MAXUINT ||
+           fscodec->feedback_params))
         {
           GPtrArray *messages = g_ptr_array_new ();
           GList *item2;
@@ -1600,7 +1602,8 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
               g_ptr_array_add (messages, tp_value_array_build (3,
                       G_TYPE_STRING, fb->type,
                       G_TYPE_STRING, fb->subtype,
-                      G_TYPE_STRING, fb->extra_params));
+                      G_TYPE_STRING, fb->extra_params,
+                      G_TYPE_INVALID));
             }
 
           g_hash_table_insert (rtcp_fb, GUINT_TO_POINTER (fscodec->id),
@@ -1608,8 +1611,8 @@ fscodecs_to_media_descriptions (TfCallContent *self, GList *codecs)
                   G_TYPE_UINT,
                   fscodec->minimum_reporting_interval != G_MAXUINT ?
                   fscodec->minimum_reporting_interval : 5000,
-                  TP_ARRAY_TYPE_RTCP_FEEDBACK_MESSAGE_LIST,
-                  messages));
+                  TP_ARRAY_TYPE_RTCP_FEEDBACK_MESSAGE_LIST, messages,
+                  G_TYPE_INVALID));
 
           g_boxed_free (TP_ARRAY_TYPE_RTCP_FEEDBACK_MESSAGE_LIST, messages);
         }

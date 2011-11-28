@@ -778,6 +778,7 @@ tf_call_stream_add_endpoint (TfCallStream *self)
 {
   GError *error = NULL;
 
+  tp_call_stream_endpoint_init_known_interfaces ();
   self->endpoint = g_object_new (TP_TYPE_PROXY,
       "dbus-daemon", tp_proxy_get_dbus_daemon (self->proxy),
       "bus-name", tp_proxy_get_bus_name (self->proxy),
@@ -928,7 +929,7 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
     goto invalid_property;
   }
 
-
+/* FIXME: controlling is on the endpoint
   self->controlling = tp_asv_get_boolean (out_Properties,
       "Controlling", &valid);
   if (!valid)
@@ -936,7 +937,7 @@ got_stream_media_properties (TpProxy *proxy, GHashTable *out_Properties,
     g_warning ("No Controlling property");
     goto invalid_property;
   }
-
+*/
   self->stun_servers = g_boxed_copy (TP_ARRAY_TYPE_SOCKET_ADDRESS_IP_LIST,
       stun_servers);
   self->relay_info = g_boxed_copy (TP_ARRAY_TYPE_STRING_VARIANT_MAP_LIST,
