@@ -14,6 +14,15 @@ telepathy-glib 0.17.3 (UNRELEASED)
      BUT WHEN I DO, THE
     COMMUNITY DEVOURS IT
 
+Dependencies:
+
+• gobject-introspection ≥ 1.30
+• Valac ≥ 0.14.0 is now required for the Vala bindings.
+
+Fixes:
+
+• Fix a crash in TpSimplePasswordManager (Mikhail)
+
 telepathy-glib 0.17.2 (2011-11-23)
 ==================================
 
