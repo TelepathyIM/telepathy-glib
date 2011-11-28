@@ -180,42 +180,9 @@ typedef struct {
     gboolean cwr_ready;
     GError *cwr_error /* initialized in setup */;
 
-    GAsyncResult *prepare_result;
-
     GError *error /* initialized where needed */;
     gint wait;
 } Test;
-
-static void
-connection_prepared_cb (GObject *object,
-    GAsyncResult *res,
-    gpointer user_data)
-{
-  Test *test = user_data;
-
-  g_message ("%p prepared", object);
-  g_assert (test->prepare_result == NULL);
-  test->prepare_result = g_object_ref (res);
-}
-
-static void
-run_prepare_proxy (Test *test,
-    GQuark *features)
-{
-  GError *error = NULL;
-
-  tp_proxy_prepare_async (test->conn, features, connection_prepared_cb, test);
-  g_assert (test->prepare_result == NULL);
-
-  while (test->prepare_result == NULL)
-    g_main_context_iteration (NULL, TRUE);
-
-  g_assert (tp_proxy_prepare_finish (test->conn, test->prepare_result,
-        &error));
-  g_assert_no_error (error);
-
-  tp_clear_object (&test->prepare_result);
-}
 
 static void
 setup (Test *test,
@@ -270,7 +237,7 @@ setup (Test *test,
         TP_CONNECTION_FEATURE_CONNECTED));
   g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_BALANCE));
 
-  run_prepare_proxy (test, features);
+  tp_tests_proxy_run_until_prepared (test->conn, features);
 }
 
 static void
@@ -343,7 +310,7 @@ test_balance (Test *test,
 
   g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_BALANCE));
 
-  run_prepare_proxy (test, features);
+  tp_tests_proxy_run_until_prepared (test->conn, features);
 
   g_assert (tp_connection_get_balance (test->conn,
         &balance, &scale, &currency));
@@ -399,7 +366,7 @@ test_balance_unknown (Test *test,
 
   g_assert (!tp_proxy_is_prepared (test->conn, TP_CONNECTION_FEATURE_BALANCE));
 
-  run_prepare_proxy (test, features);
+  tp_tests_proxy_run_until_prepared (test->conn, features);
 
   g_assert (!tp_connection_get_balance (test->conn,
         &balance, &scale, &currency));
