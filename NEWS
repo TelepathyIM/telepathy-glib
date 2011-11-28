@@ -1,3 +1,17 @@
+telepathy-glib 0.16.3 (2011-11-28)
+==================================
+
+The “visage d'ange” release.
+
+Dependencies:
+
+• gobject-introspection ≥ 1.30
+• Valac ≥ 0.14.0 is now required for the Vala bindings.
+
+Fixes:
+
+• Fix a crash in TpSimplePasswordManager (Mikhail)
+
 telepathy-glib 0.16.2 (2011-11-08)
 ==================================
 
