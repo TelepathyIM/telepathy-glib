@@ -1181,9 +1181,13 @@ _tp_connection_extract_properties (TpConnection *self,
 {
   gboolean sufficient;
 
-  /* has_immortal_handles is a bitfield, so we can't pass a pointer to it */
+  /* has_immortal_handles is a bitfield, so we can't pass a pointer to it.
+   * It is now mandatory for CM to have immortal handles. If we don't have it,
+   * returning FALSE will invalidate the proxy. */
   if (tp_asv_get_boolean (asv, "HasImmortalHandles", NULL))
     self->priv->has_immortal_handles = TRUE;
+  else
+    return FALSE;
 
   *status = tp_asv_get_uint32 (asv, "Status", &sufficient);
 
