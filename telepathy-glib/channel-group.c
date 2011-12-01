@@ -329,83 +329,6 @@ tp_channel_group_get_handle_owner (TpChannel *self,
     }
 }
 
-
-/* This must be called before the local group members lists are created.  Until
- * this is called, the proxy is listening to both MembersChanged and
- * MembersChangedDetailed, but they are ignored until priv->group_members
- * exists.  If that list is created before one signal is disconnected, the
- * proxy will react to state changes twice and madness will ensue.
- */
-static void
-_got_initial_group_flags (TpChannel *self,
-                          TpChannelGroupFlags flags)
-{
-  TpChannelPrivate *priv = self->priv;
-
-  g_assert (priv->group_flags == 0);
-  g_assert (self->priv->group_members == NULL);
-
-  priv->group_flags = flags;
-  DEBUG ("Initial GroupFlags: %u", flags);
-  priv->have_group_flags = TRUE;
-
-  if (flags != 0)
-    g_object_notify ((GObject *) self, "group-flags");
-
-  if (tp_proxy_get_invalidated (self) != NULL)
-    {
-      /* Because the proxy has been invalidated, it is not safe to call
-       * tp_proxy_signal_connection_disconnect (below), so just return early */
-      return;
-    }
-
-  /* If the channel claims to support MembersChangedDetailed, disconnect from
-   * MembersChanged. Otherwise, disconnect from MembersChangedDetailed in case
-   * it secretly emits it anyway, so we're only listening to one change
-   * notification.
-   */
-  if (flags & TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED)
-    tp_proxy_signal_connection_disconnect (priv->members_changed_sig);
-  else
-    tp_proxy_signal_connection_disconnect (priv->members_changed_detailed_sig);
-
-  priv->members_changed_sig = NULL;
-  priv->members_changed_detailed_sig = NULL;
-}
-
-
-static void
-tp_channel_got_group_flags_0_16_cb (TpChannel *self,
-                                    guint flags,
-                                    const GError *error,
-                                    gpointer user_data G_GNUC_UNUSED,
-                                    GObject *weak_object G_GNUC_UNUSED)
-{
-  g_assert (self->priv->group_flags == 0);
-
-  if (error != NULL)
-    {
-      /* GetGroupFlags() has existed with its current signature since November
-       * 2005. I think it's reasonable to say that if it doesn't work, the
-       * channel is broken.
-       */
-      _tp_channel_abort_introspection (self, "GetGroupFlags() failed", error);
-      return;
-    }
-
-  /* If we reach this point, GetAll has already failed... */
-  if (flags & TP_CHANNEL_GROUP_FLAG_PROPERTIES)
-    {
-      DEBUG ("Treason uncloaked! The channel claims to support Group "
-          "properties, but GetAll didn't work");
-      flags &= ~TP_CHANNEL_GROUP_FLAG_PROPERTIES;
-    }
-
-  _got_initial_group_flags (self, flags);
-  _tp_channel_continue_introspection (self);
-}
-
-
 static void
 tp_channel_group_self_handle_changed_cb (TpChannel *self,
                                          guint self_handle,
@@ -421,6 +344,21 @@ tp_channel_group_self_handle_changed_cb (TpChannel *self,
   g_object_notify ((GObject *) self, "group-self-handle");
 }
 
+static void
+_got_initial_group_flags (TpChannel *self,
+                          TpChannelGroupFlags flags)
+{
+  TpChannelPrivate *priv = self->priv;
+
+  g_assert (priv->group_flags == 0);
+
+  DEBUG ("Initial GroupFlags: %u", flags);
+  priv->group_flags = flags;
+  priv->have_group_flags = TRUE;
+
+  if (flags != 0)
+    g_object_notify ((GObject *) self, "group-flags");
+}
 
 static void
 tp_channel_group_self_contact_changed_cb (TpChannel *self,
@@ -435,46 +373,6 @@ tp_channel_group_self_contact_changed_cb (TpChannel *self,
   _tp_channel_contacts_self_contact_changed (self, self_handle,
       identifier);
 }
-
-
-static void
-tp_channel_got_self_handle_0_16_cb (TpChannel *self,
-                                    guint self_handle,
-                                    const GError *error,
-                                    gpointer user_data G_GNUC_UNUSED,
-                                    GObject *weak_object G_GNUC_UNUSED)
-{
-  if (error != NULL)
-    {
-      DEBUG ("%p Group.GetSelfHandle() failed, assuming 0: %s", self,
-          error->message);
-      tp_channel_group_self_handle_changed_cb (self, 0, NULL, NULL);
-    }
-  else
-    {
-      DEBUG ("Initial Group.SelfHandle: %u", self_handle);
-      tp_channel_group_self_handle_changed_cb (self, self_handle, NULL, NULL);
-    }
-
-  _tp_channel_continue_introspection (self);
-}
-
-
-static void
-_tp_channel_get_self_handle_0_16 (TpChannel *self)
-{
-  tp_cli_channel_interface_group_call_get_self_handle (self, -1,
-      tp_channel_got_self_handle_0_16_cb, NULL, NULL, NULL);
-}
-
-
-static void
-_tp_channel_get_group_flags_0_16 (TpChannel *self)
-{
-  tp_cli_channel_interface_group_call_get_group_flags (self, -1,
-      tp_channel_got_group_flags_0_16_cb, NULL, NULL, NULL);
-}
-
 
 static void
 _tp_channel_group_set_one_lp (TpChannel *self,
@@ -580,108 +478,6 @@ _tp_channel_group_set_lp (TpChannel *self,
     }
 }
 
-
-static void
-tp_channel_got_all_members_0_16_cb (TpChannel *self,
-                                    const GArray *members,
-                                    const GArray *local_pending,
-                                    const GArray *remote_pending,
-                                    const GError *error,
-                                    gpointer user_data G_GNUC_UNUSED,
-                                    GObject *weak_object G_GNUC_UNUSED)
-{
-  g_assert (self->priv->group_local_pending == NULL);
-  g_assert (self->priv->group_local_pending_info == NULL);
-  g_assert (self->priv->group_members == NULL);
-  g_assert (self->priv->group_remote_pending == NULL);
-
-  if (error == NULL)
-    {
-      DEBUG ("%p GetAllMembers returned %u members + %u LP + %u RP",
-          self, members->len, local_pending->len, remote_pending->len);
-
-      self->priv->group_local_pending = tp_intset_from_array (local_pending);
-      self->priv->group_members = tp_intset_from_array (members);
-      self->priv->group_remote_pending = tp_intset_from_array (remote_pending);
-
-      if (tp_intset_remove (self->priv->group_members, 0))
-        {
-          DEBUG ("Ignoring handle 0, claimed to be in group");
-        }
-
-      if (tp_intset_remove (self->priv->group_local_pending, 0))
-        {
-          DEBUG ("Ignoring handle 0, claimed to be in local-pending");
-        }
-
-      if (tp_intset_remove (self->priv->group_remote_pending, 0))
-        {
-          DEBUG ("Ignoring handle 0, claimed to be in remote-pending");
-        }
-
-      /* the local-pending info will be filled in with the result of
-       * GetLocalPendingMembersWithInfo, if it succeeds */
-    }
-  else
-    {
-      DEBUG ("%p GetAllMembers failed, assuming empty: %s", self,
-          error->message);
-
-      self->priv->group_local_pending = tp_intset_new ();
-      self->priv->group_members = tp_intset_new ();
-      self->priv->group_remote_pending = tp_intset_new ();
-    }
-
-  g_assert (self->priv->group_local_pending != NULL);
-  g_assert (self->priv->group_members != NULL);
-  g_assert (self->priv->group_remote_pending != NULL);
-
-  _tp_channel_continue_introspection (self);
-}
-
-
-static void
-_tp_channel_get_all_members_0_16 (TpChannel *self)
-{
-  tp_cli_channel_interface_group_call_get_all_members (self, -1,
-      tp_channel_got_all_members_0_16_cb, NULL, NULL, NULL);
-}
-
-
-static void
-tp_channel_glpmwi_0_16_cb (TpChannel *self,
-                           const GPtrArray *info,
-                           const GError *error,
-                           gpointer user_data G_GNUC_UNUSED,
-                           GObject *object G_GNUC_UNUSED)
-{
-  /* this should always run after tp_channel_got_all_members_0_16 */
-  g_assert (self->priv->group_local_pending != NULL);
-  g_assert (self->priv->group_local_pending_info == NULL);
-
-  if (error == NULL)
-    {
-      DEBUG ("%p GetLocalPendingMembersWithInfo returned %u records",
-          self, info->len);
-      _tp_channel_group_set_lp (self, info);
-    }
-  else
-    {
-      DEBUG ("%p GetLocalPendingMembersWithInfo failed, keeping result of "
-          "GetAllMembers instead: %s", self, error->message);
-    }
-
-  _tp_channel_continue_introspection (self);
-}
-
-
-static void
-_tp_channel_glpmwi_0_16 (TpChannel *self)
-{
-  tp_cli_channel_interface_group_call_get_local_pending_members_with_info (
-      self, -1, tp_channel_glpmwi_0_16_cb, NULL, NULL, NULL);
-}
-
 static void
 _tp_channel_emit_initial_sets (TpChannel *self)
 {
@@ -690,14 +486,13 @@ _tp_channel_emit_initial_sets (TpChannel *self)
   TpIntsetFastIter iter;
   TpHandle handle;
 
-  tp_intset_fast_iter_init (&iter, self->priv->group_local_pending);
-
   added = tp_intset_to_array (self->priv->group_members);
   remote_pending = tp_intset_to_array (self->priv->group_remote_pending);
 
   g_signal_emit_by_name (self, "group-members-changed", "",
       added, &empty_array, &empty_array, remote_pending, 0, 0);
 
+  tp_intset_fast_iter_init (&iter, self->priv->group_local_pending);
   while (tp_intset_fast_iter_next (&iter, &handle))
     {
       GArray local_pending = { (gchar *) &handle, 1 };
@@ -715,8 +510,6 @@ _tp_channel_emit_initial_sets (TpChannel *self)
 
   g_array_unref (added);
   g_array_unref (remote_pending);
-
-  _tp_channel_continue_introspection (self);
 }
 
 static void
@@ -736,14 +529,8 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
 
   if (error != NULL)
     {
-      DEBUG ("Error getting group properties, falling back to 0.16 API: %s",
-          error->message);
-    }
-  else if ((tp_asv_get_uint32 (asv, "GroupFlags", NULL)
-      & TP_CHANNEL_GROUP_FLAG_PROPERTIES) == 0)
-    {
-      DEBUG ("Got group properties, but no Properties flag: assuming a "
-          "broken implementation and falling back to 0.16 API");
+      _tp_channel_abort_introspection (self, "GetAll on GROUP iface failed",
+          error);
     }
   else
     {
@@ -754,6 +541,16 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
 
       _got_initial_group_flags (self,
           tp_asv_get_uint32 (asv, "GroupFlags", NULL));
+
+      if ((self->priv->group_flags & TP_CHANNEL_GROUP_FLAG_MEMBERS_CHANGED_DETAILED) == 0 ||
+          (self->priv->group_flags & TP_CHANNEL_GROUP_FLAG_PROPERTIES) == 0)
+        {
+          GError e = { TP_ERRORS, TP_ERROR_SOFTWARE_UPGRADE_REQUIRED,
+              "MembersChangedDetailed and Properties group flags are "
+              "mandatory" };
+          _tp_channel_abort_introspection (self, "Invalid group flags", &e);
+          return;
+        }
 
       tp_channel_group_self_handle_changed_cb (self,
           tp_asv_get_uint32 (asv, "SelfHandle", NULL), NULL, NULL);
@@ -808,64 +605,10 @@ tp_channel_got_group_properties_cb (TpProxy *proxy,
       table = tp_asv_get_boxed (asv, "MemberIdentifiers",
           TP_HASH_TYPE_HANDLE_IDENTIFIER_MAP);
 
-      /* If CM implements MemberIdentifiers property, assume it also emits
-       * SelfContactChanged and HandleOwnersChangedDetailed */
-      if (table != NULL)
-        {
-          tp_proxy_signal_connection_disconnect (
-              self->priv->self_handle_changed_sig);
-          tp_proxy_signal_connection_disconnect (
-              self->priv->handle_owners_changed_sig);
-        }
-      else
-        {
-          tp_proxy_signal_connection_disconnect (
-              self->priv->self_contact_changed_sig);
-          tp_proxy_signal_connection_disconnect (
-              self->priv->handle_owners_changed_detailed_sig);
-        }
-
-      self->priv->self_handle_changed_sig = NULL;
-      self->priv->self_contact_changed_sig = NULL;
-      self->priv->handle_owners_changed_sig = NULL;
-      self->priv->handle_owners_changed_detailed_sig = NULL;
-
       _tp_channel_contacts_group_init (self, table);
-
-      goto OUT;
+      _tp_channel_emit_initial_sets (self);
+      _tp_channel_continue_introspection (self);
     }
-
-  /* Failure case: fall back. This is quite annoying, as we need to combine:
-   *
-   * - GetGroupFlags
-   * - GetAllMembers
-   * - GetLocalPendingMembersWithInfo
-   *
-   * Channel-specific handles can't really have a sane client API (without
-   * lots of silly round-trips) unless the CM implements the HandleOwners
-   * property, so I intend to ignore this in the fallback case.
-   */
-
-  g_queue_push_tail (self->priv->introspect_needed,
-      _tp_channel_get_group_flags_0_16);
-
-  g_queue_push_tail (self->priv->introspect_needed,
-      _tp_channel_get_self_handle_0_16);
-
-  g_queue_push_tail (self->priv->introspect_needed,
-      _tp_channel_get_all_members_0_16);
-
-  g_queue_push_tail (self->priv->introspect_needed,
-      _tp_channel_glpmwi_0_16);
-
-  self->priv->cm_too_old_for_contacts = TRUE;
-
-OUT:
-
-  g_queue_push_tail (self->priv->introspect_needed,
-      _tp_channel_emit_initial_sets);
-
-  _tp_channel_continue_introspection (self);
 }
 
 /*
@@ -1134,52 +877,6 @@ handle_members_changed (TpChannel *self,
       local_pending, remote_pending, actor, details);
 }
 
-
-static void
-tp_channel_group_members_changed_cb (TpChannel *self,
-                                     const gchar *message,
-                                     const GArray *added,
-                                     const GArray *removed,
-                                     const GArray *local_pending,
-                                     const GArray *remote_pending,
-                                     guint actor,
-                                     guint reason,
-                                     gpointer unused G_GNUC_UNUSED,
-                                     GObject *unused_object G_GNUC_UNUSED)
-{
-  GHashTable *details = g_hash_table_new_full (g_str_hash, g_str_equal, NULL,
-      (GDestroyNotify) tp_g_value_slice_free);
-
-  DEBUG ("%p MembersChanged: added %u, removed %u, "
-      "moved %u to LP and %u to RP, actor %u, reason %u, message %s",
-      self, added->len, removed->len, local_pending->len, remote_pending->len,
-      actor, reason, message);
-
-  if (actor != 0)
-    {
-      g_hash_table_insert (details, "actor",
-          tp_g_value_slice_new_uint (actor));
-    }
-
-  if (reason != TP_CHANNEL_GROUP_CHANGE_REASON_NONE)
-    {
-      g_hash_table_insert (details, "change-reason",
-          tp_g_value_slice_new_uint (reason));
-    }
-
-  if (*message != '\0')
-    {
-      g_hash_table_insert (details, "message",
-          tp_g_value_slice_new_string (message));
-    }
-
-  handle_members_changed (self, message, added, removed, local_pending,
-      remote_pending, actor, reason, details);
-
-  g_hash_table_unref (details);
-}
-
-
 static void
 tp_channel_group_members_changed_detailed_cb (TpChannel *self,
                                               const GArray *added,
@@ -1300,7 +997,6 @@ tp_channel_group_flags_changed_cb (TpChannel *self,
 void
 _tp_channel_get_group_properties (TpChannel *self)
 {
-  TpChannelPrivate *priv = self->priv;
   TpProxySignalConnection *sc;
   GError *error = NULL;
 
@@ -1328,19 +1024,10 @@ _tp_channel_get_group_properties (TpChannel *self)
     return; \
   }
 
-  priv->members_changed_sig =
-      tp_cli_channel_interface_group_connect_to_members_changed (self,
-          tp_channel_group_members_changed_cb, NULL, NULL, NULL, &error);
+  sc = tp_cli_channel_interface_group_connect_to_members_changed_detailed (self,
+      tp_channel_group_members_changed_detailed_cb, NULL, NULL, NULL, &error);
 
-  if (priv->members_changed_sig == NULL)
-    DIE ("MembersChanged");
-
-  priv->members_changed_detailed_sig =
-      tp_cli_channel_interface_group_connect_to_members_changed_detailed (self,
-          tp_channel_group_members_changed_detailed_cb, NULL, NULL, NULL,
-          &error);
-
-  if (priv->members_changed_detailed_sig == NULL)
+  if (sc == NULL)
     DIE ("MembersChangedDetailed");
 
   sc = tp_cli_channel_interface_group_connect_to_group_flags_changed (self,
@@ -1349,36 +1036,19 @@ _tp_channel_get_group_properties (TpChannel *self)
   if (sc == NULL)
     DIE ("GroupFlagsChanged");
 
-  priv->self_handle_changed_sig =
-      tp_cli_channel_interface_group_connect_to_self_handle_changed (self,
-          tp_channel_group_self_handle_changed_cb, NULL, NULL, NULL, &error);
+  sc = tp_cli_channel_interface_group_connect_to_self_contact_changed (self,
+      tp_channel_group_self_contact_changed_cb, NULL, NULL, NULL, &error);
 
-  if (priv->self_handle_changed_sig == NULL)
-    DIE ("SelfHandleChanged");
-
-  priv->self_contact_changed_sig =
-      tp_cli_channel_interface_group_connect_to_self_contact_changed (self,
-          tp_channel_group_self_contact_changed_cb, NULL, NULL, NULL, &error);
-
-  if (priv->self_contact_changed_sig == NULL)
+  if (sc == NULL)
     DIE ("SelfContactChanged");
 
-  priv->handle_owners_changed_sig =
-      tp_cli_channel_interface_group_connect_to_handle_owners_changed (self,
-          tp_channel_handle_owners_changed_cb, NULL, NULL, NULL, &error);
+  sc = tp_cli_channel_interface_group_connect_to_handle_owners_changed_detailed (
+      self, tp_channel_handle_owners_changed_detailed_cb, NULL, NULL, NULL,
+      &error);
 
-  if (priv->handle_owners_changed_sig == NULL)
-    DIE ("HandleOwnersChanged");
-
-  priv->handle_owners_changed_detailed_sig =
-      tp_cli_channel_interface_group_connect_to_handle_owners_changed_detailed (
-          self, tp_channel_handle_owners_changed_detailed_cb, NULL, NULL, NULL,
-          &error);
-
-  if (priv->handle_owners_changed_detailed_sig == NULL)
+  if (sc == NULL)
     DIE ("HandleOwnersChangedDetailed");
 
-  /* First try the 0.17 API (properties). If this fails we'll fall back */
   tp_cli_dbus_properties_call_get_all (self, -1,
       TP_IFACE_CHANNEL_INTERFACE_GROUP, tp_channel_got_group_properties_cb,
       NULL, NULL, NULL);

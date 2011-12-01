@@ -205,9 +205,6 @@ channel_invalidated_cb (TpProxy *proxy,
 {
   DEBUG ("called");
   MYASSERT (expecting_invalidated, ": I've been EXPECTING YOU");
-  g_assert_cmpuint (domain, ==, TP_DBUS_ERRORS);
-  MYASSERT (code == TP_DBUS_ERROR_INCONSISTENT, ": was %i", code);
-
   expecting_invalidated = FALSE;
 }
 
@@ -273,6 +270,15 @@ run_membership_test (guint channel_number,
   expecting_invalidated = FALSE;
   g_signal_connect (chan, "invalidated", (GCallback) channel_invalidated_cb,
       NULL);
+
+  if (!detailed || !properties)
+    {
+      expecting_invalidated = TRUE;
+      g_assert (!tp_channel_run_until_ready (chan, &error, NULL));
+      g_assert_error (error, TP_ERRORS, TP_ERROR_SOFTWARE_UPGRADE_REQUIRED);
+      g_assert (!expecting_invalidated);
+      return;
+    }
 
   test_channel_proxy (service_chan, chan, detailed, properties);
   test_invalidated_on_illegal_change (service_chan, chan, detailed, properties);
