@@ -89,6 +89,8 @@
 #include "base-media-call-stream.h"
 
 #define DEBUG_FLAG TP_DEBUG_CALL
+#include "telepathy-glib/base-call-content.h"
+#include "telepathy-glib/base-call-internal.h"
 #include "telepathy-glib/base-connection.h"
 #include "telepathy-glib/call-stream-endpoint.h"
 #include "telepathy-glib/dbus.h"
@@ -721,6 +723,31 @@ tp_base_media_call_stream_finish_initial_candidates (
 }
 
 static void
+tp_base_media_call_stream_fail (TpSvcCallStreamInterfaceMedia *iface,
+    const GValueArray *reason_array,
+    DBusGMethodInvocation *context)
+{
+  TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
+  TpBaseCallStream *base = TP_BASE_CALL_STREAM (self);
+  TpBaseCallChannel *channel;
+  TpBaseCallContent *content;
+
+  channel = _tp_base_call_stream_get_channel (base);
+  content = _tp_base_call_stream_get_content (base);
+
+  _tp_base_call_content_remove_stream_internal (content, base, reason_array);
+
+  /* If it was the last stream, remove the content */
+  if (tp_base_call_content_get_streams (content) == NULL)
+    {
+      _tp_base_call_channel_remove_content_internal (channel, content,
+          reason_array);
+    }
+
+  tp_svc_call_stream_interface_media_return_from_fail (context);
+}
+
+static void
 call_stream_media_iface_init (gpointer g_iface, gpointer iface_data)
 {
   TpSvcCallStreamInterfaceMediaClass *klass =
@@ -735,6 +762,6 @@ call_stream_media_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(set_credentials);
   IMPLEMENT(add_candidates);
   IMPLEMENT(finish_initial_candidates);
-  //IMPLEMENT(fail);
+  IMPLEMENT(fail);
 #undef IMPLEMENT
 }
