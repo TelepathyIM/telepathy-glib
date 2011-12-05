@@ -568,6 +568,16 @@ validate_candidate (const GValueArray *candidate,
   return TRUE;
 }
 
+static TpStreamComponent
+get_candidate_component (const GValueArray *candidate)
+{
+  GValue *component_value;
+
+  component_value = g_value_array_get_nth ((GValueArray *) candidate, 0);
+
+  return g_value_get_uint (component_value);
+}
+
 static void
 call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface,
     const GValueArray *local_candidate,
@@ -575,8 +585,18 @@ call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface
     DBusGMethodInvocation *context)
 {
   TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (iface);
+  TpStreamComponent component;
   GValueArray *pair;
+  guint i;
   GError *error = NULL;
+
+  if (!self->priv->controlling)
+    {
+      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Only controlling side can call SetSelectedCandidatePair" };
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
 
   if (!validate_candidate (local_candidate, &error) ||
       !validate_candidate (remote_candidate, &error))
@@ -586,7 +606,32 @@ call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface
       return;
     }
 
-  /* FIXME: probably not exactly that... */
+  component = get_candidate_component (local_candidate);
+  if (component != get_candidate_component (remote_candidate))
+    {
+      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Component must be the same in local and remote candidate" };
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
+  /* Remove the pair for that component if we already had one */
+  for (i = 0; i < self->priv->selected_candidate_pairs->len; i++)
+    {
+      GValueArray *this_pair;
+      TpStreamComponent this_component;
+
+      this_pair = g_ptr_array_index (self->priv->selected_candidate_pairs, i);
+      this_component = get_candidate_component (
+          g_value_get_boxed (g_value_array_get_nth (this_pair, 0)));
+
+      if (this_component == component)
+        {
+          g_ptr_array_remove_index (self->priv->selected_candidate_pairs, i);
+          break;
+        }
+    }
+
   pair = tp_value_array_build (2,
       TP_STRUCT_TYPE_CANDIDATE, local_candidate,
       TP_STRUCT_TYPE_CANDIDATE, remote_candidate,
