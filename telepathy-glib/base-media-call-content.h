@@ -70,9 +70,15 @@ GHashTable *tp_base_media_call_content_get_local_media_description (
     TpBaseMediaCallContent *self,
     TpHandle contact);
 
-void tp_base_media_call_content_offer_media_description (
+void tp_base_media_call_content_offer_media_description_async (
     TpBaseMediaCallContent *self,
-    TpCallContentMediaDescription *md);
+    TpCallContentMediaDescription *md,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+gboolean tp_base_media_call_content_offer_media_description_finish (
+    TpCallContentMediaDescription *self,
+    GAsyncResult *result,
+    GError **error);
 
 G_END_DECLS
 

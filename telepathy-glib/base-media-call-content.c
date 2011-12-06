@@ -64,6 +64,7 @@
 #include "telepathy-glib/svc-call.h"
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/util.h"
+#include "telepathy-glib/util-internal.h"
 #include "telepathy-glib/_gen/signals-marshal.h"
 
 static void call_content_media_iface_init (gpointer, gpointer);
@@ -110,8 +111,10 @@ struct _TpBaseMediaCallContentPrivate
   TpDTMFEvent current_dtmf_event;
   TpSendingState current_dtmf_state;
 
-  /* GQueue of reffed TpCallContentMediaDescription */
+  /* GQueue of GSimpleAsyncResult with a TpCallContentMediaDescription
+   * as op_res_gpointer */
   GQueue *outstanding_offers;
+  GSimpleAsyncResult *current_offer_result;
   GCancellable *current_offer_cancellable;
 };
 
@@ -149,6 +152,7 @@ tp_base_media_call_content_dispose (GObject *object)
   TpBaseMediaCallContent *self = TP_BASE_MEDIA_CALL_CONTENT (object);
 
   g_assert (self->priv->current_offer == NULL);
+  g_assert (self->priv->current_offer_result == NULL);
   g_assert (g_queue_is_empty (self->priv->outstanding_offers));
 
   tp_clear_pointer (&self->priv->local_media_descriptions, g_hash_table_unref);
@@ -437,7 +441,8 @@ offer_finished_cb (GObject *source,
           &local_properties, &error))
     {
       DEBUG ("Offer failed: %s", error->message);
-      g_clear_error (&error);
+      g_simple_async_result_take_error (self->priv->current_offer_result,
+          error);
       goto out;
     }
 
@@ -451,7 +456,9 @@ offer_finished_cb (GObject *source,
   set_remote_properties (self, contact, remote_properties);
 
 out:
+  g_simple_async_result_complete (self->priv->current_offer_result);
   g_clear_object (&self->priv->current_offer);
+  g_clear_object (&self->priv->current_offer_result);
   g_clear_object (&self->priv->current_offer_cancellable);
   tp_svc_call_content_interface_media_emit_media_description_offer_done (self);
 
@@ -469,21 +476,27 @@ next_offer (TpBaseMediaCallContent *self)
   TpHandle contact;
   GHashTable *properties;
 
-  if (self->priv->current_offer != NULL)
+  if (self->priv->current_offer_result != NULL)
     {
       DEBUG ("Waiting for the current offer to finish"
         " before starting the next one");
       return;
     }
 
-  self->priv->current_offer = g_queue_pop_head (self->priv->outstanding_offers);
-  if (self->priv->current_offer == NULL)
+  self->priv->current_offer_result = g_queue_pop_head (
+      self->priv->outstanding_offers);
+  if (self->priv->current_offer_result == NULL)
     {
       DEBUG ("No more offers outstanding");
       return;
     }
 
+  g_assert (self->priv->current_offer == NULL);
   g_assert (self->priv->current_offer_cancellable == NULL);
+
+  self->priv->current_offer = g_simple_async_result_get_op_res_gpointer (
+      self->priv->current_offer_result);
+  g_object_ref (self->priv->current_offer);
   self->priv->current_offer_cancellable = g_cancellable_new ();
 
   _tp_call_content_media_description_offer_async (self->priv->current_offer,
@@ -526,24 +539,56 @@ tp_base_media_call_content_get_local_media_description (
 }
 
 /**
- * tp_base_media_call_content_offer_media_description:
+ * tp_base_media_call_content_offer_media_description_async:
  * @self: a #TpBaseMediaCallContent
  * @md: a #TpCallContentMediaDescription
+ * @callback: a callback to call when the operation finishes
+ * @user_data: data to pass to @callback
  *
  * Offer @md for media description negociation.
  *
  * Since: 0.UNRELEASED
  */
 void
-tp_base_media_call_content_offer_media_description (
+tp_base_media_call_content_offer_media_description_async (
     TpBaseMediaCallContent *self,
-    TpCallContentMediaDescription *md)
+    TpCallContentMediaDescription *md,
+    GAsyncReadyCallback callback,
+    gpointer user_data)
 {
+  GSimpleAsyncResult *result;
+
   g_return_if_fail (TP_IS_BASE_MEDIA_CALL_CONTENT (self));
   g_return_if_fail (TP_IS_CALL_CONTENT_MEDIA_DESCRIPTION (md));
 
-  g_queue_push_tail (self->priv->outstanding_offers, g_object_ref (md));
+  result = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+      tp_base_media_call_content_offer_media_description_async);
+
+  g_simple_async_result_set_op_res_gpointer (result,
+      g_object_ref (md), g_object_unref);
+
+  g_queue_push_tail (self->priv->outstanding_offers, result);
   next_offer (self);
+}
+
+/**
+ * tp_base_media_call_content_offer_media_description_finish:
+ * @self: a #TpCallContentMediaDescription
+ * @result: a #GAsyncResult
+ * @error: a #GError to fill
+ *
+ * Finishes tp_base_media_call_content_offer_media_description_async().
+ *
+ * Since: 0.UNRELEASED
+ */
+gboolean
+tp_base_media_call_content_offer_media_description_finish (
+    TpCallContentMediaDescription *self,
+    GAsyncResult *result,
+    GError **error)
+{
+  _tp_implement_finish_void (self,
+      tp_base_media_call_content_offer_media_description_async);
 }
 
 static void
@@ -559,8 +604,8 @@ tp_base_media_call_content_update_local_media_description (
   if (self->priv->current_offer != NULL)
     {
       GError error = { TP_ERRORS, TP_ERROR_NOT_AVAILABLE,
-          "There is a codec offer around so "
-          "UpdateCodecs shouldn't be called." };
+          "There is a media description offer around so "
+          "UpdateMediaDescription shouldn't be called." };
       dbus_g_method_return_error (context, &error);
       return;
     }
