@@ -61,6 +61,7 @@
 #include "telepathy-glib/svc-properties-interface.h"
 #include "telepathy-glib/util.h"
 #include "telepathy-glib/util-internal.h"
+#include "telepathy-glib/_gen/signals-marshal.h"
 
 static void call_stream_endpoint_iface_init (gpointer, gpointer);
 
@@ -87,6 +88,16 @@ enum
   PROP_CONTROLLING,
   PROP_IS_ICE_LITE
 };
+
+enum /* signals */
+{
+  CANDIDATE_SELECTED,
+  CANDIDATE_ACCEPTED,
+  CANDIDATE_REJECTED,
+  LAST_SIGNAL
+};
+
+static guint _signals[LAST_SIGNAL] = { 0, };
 
 struct _TpCallStreamEndpointPrivate
 {
@@ -405,6 +416,63 @@ tp_call_stream_endpoint_class_init (TpCallStreamEndpointClass *klass)
   klass->dbus_props_class.interfaces = prop_interfaces;
   tp_dbus_properties_mixin_class_init (object_class,
       G_STRUCT_OFFSET (TpCallStreamEndpointClass, dbus_props_class));
+
+  /**
+   * TpCallStreamEndpoint::candidate-selected
+   * @self: the #TpCallStreamEndpoint
+   * @local_candidate: the local candidate
+   * @remote_candidate: the remote candidate
+   *
+   * The ::candidate-selected signal is emitted whenever
+   * SetSelectedCandidatePair DBus method has been called on this object.
+   *
+   * Since: 0.UNRELEASED
+   */
+  _signals[CANDIDATE_SELECTED] = g_signal_new ("candidate-selected",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tp_marshal_VOID__BOXED_BOXED,
+      G_TYPE_NONE,
+      2, TP_STRUCT_TYPE_CANDIDATE, TP_STRUCT_TYPE_CANDIDATE);
+
+  /**
+   * TpCallStreamEndpoint::candidate-accepted
+   * @self: the #TpCallStreamEndpoint
+   * @local_candidate: the local candidate
+   * @remote_candidate: the remote candidate
+   *
+   * The ::candidate-accepted signal is emitted whenever
+   * AcceptSelectedCandidatePair DBus method has been called on this object.
+   *
+   * Since: 0.UNRELEASED
+   */
+  _signals[CANDIDATE_ACCEPTED] = g_signal_new ("candidate-accepted",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tp_marshal_VOID__BOXED_BOXED,
+      G_TYPE_NONE,
+      2, TP_STRUCT_TYPE_CANDIDATE, TP_STRUCT_TYPE_CANDIDATE);
+
+  /**
+   * TpCallStreamEndpoint::candidate-rejected
+   * @self: the #TpCallStreamEndpoint
+   * @local_candidate: the local candidate
+   * @remote_candidate: the remote candidate
+   *
+   * The ::candidate-rejected signal is emitted whenever
+   * RejectSelectedCandidatePair DBus method has been called on this object.
+   *
+   * Since: 0.UNRELEASED
+   */
+  _signals[CANDIDATE_REJECTED] = g_signal_new ("candidate-rejected",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST,
+      0, NULL, NULL,
+      _tp_marshal_VOID__BOXED_BOXED,
+      G_TYPE_NONE,
+      2, TP_STRUCT_TYPE_CANDIDATE, TP_STRUCT_TYPE_CANDIDATE);
 }
 
 /**
@@ -578,6 +646,35 @@ get_candidate_component (const GValueArray *candidate)
   return g_value_get_uint (component_value);
 }
 
+static gboolean
+common_checks (TpCallStreamEndpoint *self,
+    const GValueArray *local_candidate,
+    const GValueArray *remote_candidate,
+    GError **error)
+{
+  if (!validate_candidate (local_candidate, error))
+    return FALSE;
+  if (!validate_candidate (remote_candidate, error))
+    return FALSE;
+
+  if (get_candidate_component (local_candidate) !=
+      get_candidate_component (remote_candidate))
+    {
+      g_set_error_literal (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Component must be the same in local and remote candidate");
+      return FALSE;
+    }
+
+  if (!self->priv->controlling)
+    {
+      g_set_error_literal (error, TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Only controlling side can call SetSelectedCandidatePair");
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
 static void
 call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface,
     const GValueArray *local_candidate,
@@ -590,16 +687,7 @@ call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface
   guint i;
   GError *error = NULL;
 
-  if (!self->priv->controlling)
-    {
-      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Only controlling side can call SetSelectedCandidatePair" };
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
-
-  if (!validate_candidate (local_candidate, &error) ||
-      !validate_candidate (remote_candidate, &error))
+  if (!common_checks (self, local_candidate, remote_candidate, &error))
     {
       dbus_g_method_return_error (context, error);
       g_clear_error (&error);
@@ -607,13 +695,6 @@ call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface
     }
 
   component = get_candidate_component (local_candidate);
-  if (component != get_candidate_component (remote_candidate))
-    {
-      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
-          "Component must be the same in local and remote candidate" };
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
 
   /* Remove the pair for that component if we already had one */
   for (i = 0; i < self->priv->selected_candidate_pairs->len; i++)
@@ -639,6 +720,9 @@ call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface
   g_ptr_array_add (self->priv->selected_candidate_pairs, pair);
 
   tp_svc_call_stream_endpoint_emit_candidate_pair_selected (self,
+      local_candidate, remote_candidate);
+
+  g_signal_emit (self, _signals[CANDIDATE_SELECTED], 0,
       local_candidate, remote_candidate);
 
   tp_svc_call_stream_endpoint_return_from_set_selected_candidate_pair (context);
@@ -681,6 +765,54 @@ call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
 }
 
 static void
+call_stream_endpoint_accept_selected_candidate_pair (
+    TpSvcCallStreamEndpoint *iface,
+    const GValueArray *local_candidate,
+    const GValueArray *remote_candidate,
+    DBusGMethodInvocation *context)
+{
+  TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (iface);
+  GError *error = NULL;
+
+  if (!common_checks (self, local_candidate, remote_candidate, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+      return;
+    }
+
+  g_signal_emit (self, _signals[CANDIDATE_ACCEPTED], 0,
+      local_candidate, remote_candidate);
+
+  tp_svc_call_stream_endpoint_return_from_accept_selected_candidate_pair (
+      context);
+}
+
+static void
+call_stream_endpoint_reject_selected_candidate_pair (
+    TpSvcCallStreamEndpoint *iface,
+    const GValueArray *local_candidate,
+    const GValueArray *remote_candidate,
+    DBusGMethodInvocation *context)
+{
+  TpCallStreamEndpoint *self = TP_CALL_STREAM_ENDPOINT (iface);
+  GError *error = NULL;
+
+  if (!common_checks (self, local_candidate, remote_candidate, &error))
+    {
+      dbus_g_method_return_error (context, error);
+      g_clear_error (&error);
+      return;
+    }
+
+  g_signal_emit (self, _signals[CANDIDATE_REJECTED], 0,
+      local_candidate, remote_candidate);
+
+  tp_svc_call_stream_endpoint_return_from_reject_selected_candidate_pair (
+      context);
+}
+
+static void
 call_stream_endpoint_set_controlling (TpSvcCallStreamEndpoint *iface,
     gboolean controlling,
     DBusGMethodInvocation *context)
@@ -703,8 +835,8 @@ call_stream_endpoint_iface_init (gpointer iface, gpointer data)
     klass, call_stream_endpoint_##x)
   IMPLEMENT(set_selected_candidate_pair);
   IMPLEMENT(set_endpoint_state);
-  //IMPLEMENT(accept_selected_candidate_pair);
-  //IMPLEMENT(reject_selected_candidate_pair);
+  IMPLEMENT(accept_selected_candidate_pair);
+  IMPLEMENT(reject_selected_candidate_pair);
   IMPLEMENT(set_controlling);
 #undef IMPLEMENT
 }
