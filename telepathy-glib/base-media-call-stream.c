@@ -48,6 +48,10 @@
 
 /**
  * TpBaseMediaCallStreamClass:
+ * @report_sending_failure: called to indicate a failure in the outgoing portion
+ *  of the stream
+ * @report_receiving_failure: called to indicate a failure in the incoming
+ *  portion of the stream
  * @add_local_candidates: called when new candidates are added
  * @finish_initial_candidates: called when the initial batch of candidates has
  *  been added, and should now be processed/sent to the remote side
@@ -81,6 +85,24 @@
  * #GPtrArray build in a way that g_ptr_array_unref() is enough to free all its
  * memory. It is fine to just add element pointers from @candidates to the
  * returned #GPtrArray without deep-copy them.
+ *
+ * Since: 0.UNRELEASED
+ */
+
+/**
+ * TpBaseMediaCallStreamReportFailureFunc:
+ * @self: a #TpBaseMediaCallStream
+ * @reason: the #TpCallStateChangeReason of the change
+ * @dbus_reason: a specific reason for the change, which may be a D-Bus error in
+ *  the Telepathy namespace, a D-Bus error in any other namespace (for
+ *  implementation-specific errors), or the empty string to indicate that the
+ *  state change was not an error.
+ * @message: an optional debug message, to expediate debugging the potentially
+ *  many processes involved in a call.
+ *
+ * Signature of an implementation of
+ * #TpBaseMediaCallStreamClass.report_sending_failure and
+ * #TpBaseMediaCallStreamClass.report_receiving_failure.
  *
  * Since: 0.UNRELEASED
  */
@@ -628,6 +650,123 @@ tp_base_media_call_stream_get_endpoints (TpBaseMediaCallStream *self)
   return self->priv->endpoints;
 }
 
+static gboolean
+correct_state_transition (TpStreamFlowState old_state,
+    TpStreamFlowState new_state)
+{
+  switch (new_state)
+    {
+      case TP_STREAM_FLOW_STATE_STARTED:
+        return (old_state == TP_STREAM_FLOW_STATE_PENDING_START);
+      case TP_STREAM_FLOW_STATE_STOPPED:
+        return (old_state == TP_STREAM_FLOW_STATE_PENDING_STOP);
+      case TP_STREAM_FLOW_STATE_PAUSED:
+        return (old_state == TP_STREAM_FLOW_STATE_PENDING_PAUSE);
+      default:
+        return FALSE;
+    }
+}
+
+static void
+tp_base_media_call_stream_complete_sending_state_change (
+    TpSvcCallStreamInterfaceMedia *iface,
+    TpStreamFlowState state,
+    DBusGMethodInvocation *context)
+{
+  TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
+
+  if (!correct_state_transition (self->priv->sending_state, state))
+    {
+      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid sending state transition" };
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
+  self->priv->sending_state = state;
+
+  tp_svc_call_stream_interface_media_emit_sending_state_changed (self, state);
+  tp_svc_call_stream_interface_media_return_from_complete_sending_state_change
+      (context);
+}
+
+static void
+tp_base_media_call_stream_report_sending_failure (
+    TpSvcCallStreamInterfaceMedia *iface,
+    TpCallStateChangeReason reason,
+    const gchar *dbus_reason,
+    const gchar *message,
+    DBusGMethodInvocation *context)
+{
+  TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
+  TpBaseMediaCallStreamClass *klass =
+      TP_BASE_MEDIA_CALL_STREAM_GET_CLASS (self);
+
+  if (klass->report_sending_failure == NULL)
+    {
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Connection Manager did not implement "
+          "TpBaseMediaCallStream::report_sending_failure vmethod" };
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
+  klass->report_sending_failure (self, reason, dbus_reason, message);
+
+  tp_svc_call_stream_interface_media_return_from_report_sending_failure (
+      context);
+}
+
+static void
+tp_base_media_call_stream_complete_receiving_state_change (
+    TpSvcCallStreamInterfaceMedia *iface,
+    TpStreamFlowState state,
+    DBusGMethodInvocation *context)
+{
+  TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
+
+  if (!correct_state_transition (self->priv->receiving_state, state))
+    {
+      GError e = { TP_ERRORS, TP_ERROR_INVALID_ARGUMENT,
+          "Invalid receiving state transition" };
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
+  self->priv->receiving_state = state;
+
+  tp_svc_call_stream_interface_media_emit_receiving_state_changed (self, state);
+  tp_svc_call_stream_interface_media_return_from_complete_receiving_state_change
+      (context);
+}
+
+static void
+tp_base_media_call_stream_report_receiving_failure (
+    TpSvcCallStreamInterfaceMedia *iface,
+    TpCallStateChangeReason reason,
+    const gchar *dbus_reason,
+    const gchar *message,
+    DBusGMethodInvocation *context)
+{
+  TpBaseMediaCallStream *self = TP_BASE_MEDIA_CALL_STREAM (iface);
+  TpBaseMediaCallStreamClass *klass =
+      TP_BASE_MEDIA_CALL_STREAM_GET_CLASS (self);
+
+  if (klass->report_receiving_failure == NULL)
+    {
+      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
+          "Connection Manager did not implement "
+          "TpBaseMediaCallStream::report_receiving_failure vmethod" };
+      dbus_g_method_return_error (context, &e);
+      return;
+    }
+
+  klass->report_receiving_failure (self, reason, dbus_reason, message);
+
+  tp_svc_call_stream_interface_media_return_from_report_receiving_failure (
+      context);
+}
+
 static void
 tp_base_media_call_stream_set_credentials (TpSvcCallStreamInterfaceMedia *iface,
     const gchar *username,
@@ -755,10 +894,10 @@ call_stream_media_iface_init (gpointer g_iface, gpointer iface_data)
 
 #define IMPLEMENT(x) tp_svc_call_stream_interface_media_implement_##x (\
     klass, tp_base_media_call_stream_##x)
-  //IMPLEMENT(complete_sending_state_change);
-  //IMPLEMENT(report_sending_failure);
-  //IMPLEMENT(complete_receiving_state_change);
-  //IMPLEMENT(report_receiving_failure);
+  IMPLEMENT(complete_sending_state_change);
+  IMPLEMENT(report_sending_failure);
+  IMPLEMENT(complete_receiving_state_change);
+  IMPLEMENT(report_receiving_failure);
   IMPLEMENT(set_credentials);
   IMPLEMENT(add_candidates);
   IMPLEMENT(finish_initial_candidates);

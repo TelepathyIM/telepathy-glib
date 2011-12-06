@@ -35,12 +35,19 @@ typedef GPtrArray *(*TpBaseMediaCallStreamAddCandidatesFunc) (
     TpBaseMediaCallStream *self,
     const GPtrArray *candidates,
     GError **error);
+typedef void (*TpBaseMediaCallStreamReportFailureFunc) (
+    TpBaseMediaCallStream *self,
+    TpCallStateChangeReason reason,
+    const gchar *dbus_reason,
+    const gchar *message);
 
 struct _TpBaseMediaCallStreamClass {
   /*<private>*/
   TpBaseCallStreamClass parent_class;
 
   /*< public >*/
+  TpBaseMediaCallStreamReportFailureFunc report_sending_failure;
+  TpBaseMediaCallStreamReportFailureFunc report_receiving_failure;
   TpBaseMediaCallStreamAddCandidatesFunc add_local_candidates;
   TpBaseMediaCallStreamVoidFunc finish_initial_candidates;
 
