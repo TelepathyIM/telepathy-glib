@@ -91,6 +91,10 @@ const gchar *tp_base_media_call_stream_get_username (
     TpBaseMediaCallStream *self);
 const gchar *tp_base_media_call_stream_get_password (
     TpBaseMediaCallStream *self);
+void tp_base_media_call_stream_set_sending_state (TpBaseMediaCallStream *self,
+    TpStreamFlowState state);
+void tp_base_media_call_stream_set_receiving_state (TpBaseMediaCallStream *self,
+    TpStreamFlowState state);
 
 G_END_DECLS
 

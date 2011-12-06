@@ -650,6 +650,56 @@ tp_base_media_call_stream_get_endpoints (TpBaseMediaCallStream *self)
   return self->priv->endpoints;
 }
 
+/**
+ * tp_base_media_call_stream_set_sending_state:
+ * @self: a #TpBaseMediaCallStream
+ * @state: a #TpStreamFlowState
+ *
+ * Request a change in the sending state. Only PENDING values are accepted,
+ * state will change to the corresponding non-pending value once the stream
+ * state effectively changed.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_base_media_call_stream_set_sending_state (TpBaseMediaCallStream *self,
+    TpStreamFlowState state)
+{
+  g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
+  g_return_if_fail (state == TP_STREAM_FLOW_STATE_PENDING_START ||
+      state == TP_STREAM_FLOW_STATE_PENDING_STOP ||
+      state == TP_STREAM_FLOW_STATE_PENDING_PAUSE);
+
+  self->priv->sending_state = state;
+
+  tp_svc_call_stream_interface_media_emit_sending_state_changed (self, state);
+}
+
+/**
+ * tp_base_media_call_stream_set_receiving_state:
+ * @self: a #TpBaseMediaCallStream
+ * @state: a #TpStreamFlowState
+ *
+ * Request a change in the receiving state. Only PENDING values are accepted,
+ * state will change to the corresponding non-pending value once the stream
+ * state effectively changed.
+ *
+ * Since: 0.UNRELEASED
+ */
+void
+tp_base_media_call_stream_set_receiving_state (TpBaseMediaCallStream *self,
+    TpStreamFlowState state)
+{
+  g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
+  g_return_if_fail (state == TP_STREAM_FLOW_STATE_PENDING_START ||
+      state == TP_STREAM_FLOW_STATE_PENDING_STOP ||
+      state == TP_STREAM_FLOW_STATE_PENDING_PAUSE);
+
+  self->priv->receiving_state = state;
+
+  tp_svc_call_stream_interface_media_emit_receiving_state_changed (self, state);
+}
+
 static gboolean
 correct_state_transition (TpStreamFlowState old_state,
     TpStreamFlowState new_state)
