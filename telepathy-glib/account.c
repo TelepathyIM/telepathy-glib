@@ -4053,21 +4053,7 @@ tp_account_set_uri_scheme_association_finish (TpAccount *self,
     GAsyncResult *result,
     GError **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (TP_IS_ACCOUNT (self), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_return_val_if_fail (g_simple_async_result_is_valid (result,
-          G_OBJECT (self), tp_account_set_uri_scheme_association_async),
-      FALSE);
-
-  return TRUE;
+  _tp_implement_finish_void (self, tp_account_set_uri_scheme_association_async)
 }
 
 /**
