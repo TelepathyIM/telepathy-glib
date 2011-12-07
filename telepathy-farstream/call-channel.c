@@ -413,7 +413,7 @@ channel_prepared (GObject *proxy, GAsyncResult *prepare_res, gpointer user_data)
       g_warning ("Preparing the channel: %s",
           error->message);
       g_simple_async_result_take_error (res, error);
-      goto error;
+      goto out;
     }
 
   if (tp_call_channel_has_hardware_streaming (TP_CALL_CHANNEL (proxy)))
@@ -422,7 +422,7 @@ channel_prepared (GObject *proxy, GAsyncResult *prepare_res, gpointer user_data)
 
       g_simple_async_result_set_error (res, TP_ERROR, TP_ERROR_NOT_CAPABLE,
           "This channel does hardware streaming, not handled here");
-      goto error;
+      goto out;
     }
 
   contents = tp_call_channel_get_contents (TP_CALL_CHANNEL (proxy));
@@ -435,11 +435,7 @@ channel_prepared (GObject *proxy, GAsyncResult *prepare_res, gpointer user_data)
 
   g_simple_async_result_set_op_res_gboolean (res, TRUE);
 
-  g_object_unref (self);
-
-  return;
-
-error:
+out:
   g_simple_async_result_complete (res);
   g_object_unref (res);
   g_object_unref (self);
