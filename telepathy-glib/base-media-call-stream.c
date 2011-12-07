@@ -534,6 +534,9 @@ maybe_got_server_info (TpBaseMediaCallStream *self)
       self->priv->relay_info == NULL)
     return;
 
+  DEBUG ("Got server info for stream %s",
+      tp_base_call_stream_get_object_path ((TpBaseCallStream *) self));
+
   self->priv->has_server_info = TRUE;
   tp_svc_call_stream_interface_media_emit_server_info_retrieved (self);
 }
@@ -611,19 +614,24 @@ void
 tp_base_media_call_stream_add_endpoint (TpBaseMediaCallStream *self,
     TpCallStreamEndpoint *endpoint)
 {
+  const gchar *object_path;
   GPtrArray *added;
   GPtrArray *removed;
 
   g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
   g_return_if_fail (TP_IS_CALL_STREAM_ENDPOINT (endpoint));
 
+  object_path = tp_call_stream_endpoint_get_object_path (endpoint);
+
+  DEBUG ("Add endpoint %s to stream %s", object_path,
+      tp_base_call_stream_get_object_path ((TpBaseCallStream *) self));
+
   self->priv->endpoints = g_list_append (self->priv->endpoints,
       g_object_ref (endpoint));
 
   added = g_ptr_array_new ();
   removed = g_ptr_array_new ();
-  g_ptr_array_add (added,
-      (gpointer) tp_call_stream_endpoint_get_object_path (endpoint));
+  g_ptr_array_add (added, (gpointer) object_path);
 
   tp_svc_call_stream_interface_media_emit_endpoints_changed (self,
       added, removed);
@@ -863,6 +871,9 @@ tp_base_media_call_stream_add_candidates (TpSvcCallStreamInterfaceMedia *iface,
       dbus_g_method_return_error (context, &e);
       return;
     }
+
+  DEBUG ("Adding %d candidates to stream %s", candidates->len,
+      tp_base_call_stream_get_object_path ((TpBaseCallStream *) self));
 
   accepted_candidates = klass->add_local_candidates (self, candidates, &error);
   if (accepted_candidates == NULL)

@@ -543,6 +543,9 @@ tp_call_stream_endpoint_add_new_candidates (TpCallStreamEndpoint *self,
   if (candidates == NULL || candidates->len == 0)
     return;
 
+  DEBUG ("Add %d candidates to endpoint %s",
+      candidates->len, self->priv->object_path);
+
   for (i = 0; i < candidates->len; i++)
     {
       GValueArray *c = g_ptr_array_index (candidates, i);
@@ -579,6 +582,8 @@ tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
   GValueArray *c;
 
   g_return_if_fail (TP_IS_CALL_STREAM_ENDPOINT (self));
+
+  DEBUG ("Add one candidates to endpoint %s", self->priv->object_path);
 
   c = tp_value_array_build (4,
       G_TYPE_UINT, component,
@@ -696,6 +701,9 @@ call_stream_endpoint_set_selected_candidate_pair (TpSvcCallStreamEndpoint *iface
 
   component = get_candidate_component (local_candidate);
 
+  DEBUG ("Candidate selected for component %d for endpoint %s", component,
+      self->priv->object_path);
+
   /* Remove the pair for that component if we already had one */
   for (i = 0; i < self->priv->selected_candidate_pairs->len; i++)
     {
@@ -754,6 +762,9 @@ call_stream_endpoint_set_endpoint_state (TpSvcCallStreamEndpoint *iface,
       return;
     }
 
+  DEBUG ("State changed to %d for component %d for endpoint %s",
+      state, component, self->priv->object_path);
+
   g_hash_table_insert (self->priv->endpoint_state,
       GUINT_TO_POINTER (component),
       GUINT_TO_POINTER (state));
@@ -781,6 +792,9 @@ call_stream_endpoint_accept_selected_candidate_pair (
       return;
     }
 
+  DEBUG ("Selected candidate accepted for endpoint %s",
+      self->priv->object_path);
+
   g_signal_emit (self, _signals[CANDIDATE_ACCEPTED], 0,
       local_candidate, remote_candidate);
 
@@ -804,6 +818,9 @@ call_stream_endpoint_reject_selected_candidate_pair (
       g_clear_error (&error);
       return;
     }
+
+  DEBUG ("Selected candidate rejected for endpoint %s",
+      self->priv->object_path);
 
   g_signal_emit (self, _signals[CANDIDATE_REJECTED], 0,
       local_candidate, remote_candidate);

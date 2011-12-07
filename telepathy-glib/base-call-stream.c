@@ -501,6 +501,9 @@ tp_base_call_stream_update_local_sending_state (TpBaseCallStream *self,
   if (self->priv->local_sending_state == new_state)
     return FALSE;
 
+  DEBUG ("Updating local sending state: %d => %d for stream %s",
+      self->priv->local_sending_state, new_state, self->priv->object_path);
+
   self->priv->local_sending_state = new_state;
   g_object_notify (G_OBJECT (self), "local-sending-state");
 
@@ -585,8 +588,8 @@ tp_base_call_stream_update_remote_sending_state (TpBaseCallStream *self,
   if (exists && GPOINTER_TO_UINT (state_p) == new_state)
     return FALSE;
 
-  DEBUG ("Updating remote member %d state: %d => %d",
-      contact, GPOINTER_TO_UINT (state_p), new_state);
+  DEBUG ("Updating remote member %d state: %d => %d for stream %s",
+      contact, GPOINTER_TO_UINT (state_p), new_state, self->priv->object_path);
 
   g_hash_table_insert (self->priv->remote_members,
       GUINT_TO_POINTER (contact),
