@@ -20,23 +20,23 @@ from telepathy.interfaces import CHANNEL_INTERFACE
 CHANNEL = CHANNEL_INTERFACE
 
 CHANNEL_TYPE = CHANNEL + ".ChannelType"
-CHANNEL_TYPE_CALL = CHANNEL + ".Type.Call.DRAFT"
+CHANNEL_TYPE_CALL = CHANNEL + ".Type.Call1"
 CALL_INITIAL_AUDIO = CHANNEL_TYPE_CALL + '.InitialAudio'
 CALL_INITIAL_VIDEO = CHANNEL_TYPE_CALL + '.InitialVideo'
 CALL_MUTABLE_CONTENTS = CHANNEL_TYPE_CALL + '.MutableContents'
 
-CALL_CONTENT = 'org.freedesktop.Telepathy.Call.Content.DRAFT'
+CALL_CONTENT = 'org.freedesktop.Telepathy.Call1.Content'
 CALL_CONTENT_IFACE_MEDIA = \
-    'org.freedesktop.Telepathy.Call.Content.Interface.Media.DRAFT'
+    'org.freedesktop.Telepathy.Call1.Content.Interface.Media'
 
 CALL_CONTENT_CODECOFFER = \
-    'org.freedesktop.Telepathy.Call.Content.CodecOffer.DRAFT'
+    'org.freedesktop.Telepathy.Call1.Content.CodecOffer'
 
-CALL_STREAM = 'org.freedesktop.Telepathy.Call.Stream.DRAFT'
+CALL_STREAM = 'org.freedesktop.Telepathy.Call1.Stream'
 CALL_STREAM_IFACE_MEDIA = \
-    'org.freedesktop.Telepathy.Call.Stream.Interface.Media.DRAFT'
+    'org.freedesktop.Telepathy.Call1.Stream.Interface.Media'
 
-CALL_STREAM_ENDPOINT = 'org.freedesktop.Telepathy.Call.Stream.Endpoint.DRAFT'
+CALL_STREAM_ENDPOINT = 'org.freedesktop.Telepathy.Call1.Stream.Endpoint'
 
 STREAM_TRANSPORT_RAW_UDP = 1
 STREAM_TRANSPORT_ICE_UDP = 2
