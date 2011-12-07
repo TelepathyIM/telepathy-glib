@@ -90,18 +90,18 @@ const gchar *tp_base_call_stream_get_object_path (
     TpBaseCallStream *self);
 
 TpSendingState tp_base_call_stream_get_local_sending_state (
-  TpBaseCallStream *self);
+    TpBaseCallStream *self);
 gboolean tp_base_call_stream_update_local_sending_state (
-  TpBaseCallStream *self,
-  TpSendingState new_state,
-  TpHandle actor_handle,
-  TpCallStateChangeReason reason,
-  const gchar *dbus_reason,
-  const gchar *message);
+    TpBaseCallStream *self,
+    TpSendingState new_state,
+    TpHandle actor_handle,
+    TpCallStateChangeReason reason,
+    const gchar *dbus_reason,
+    const gchar *message);
 
 TpSendingState tp_base_call_stream_get_remote_sending_state (
-  TpBaseCallStream *self,
-  TpHandle contact);
+    TpBaseCallStream *self,
+    TpHandle contact);
 gboolean tp_base_call_stream_update_remote_sending_state (
     TpBaseCallStream *self,
     TpHandle contact,
