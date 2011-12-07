@@ -4029,7 +4029,7 @@ tp_account_set_uri_scheme_association_async (TpAccount *self,
   g_return_if_fail (scheme != NULL);
 
   result = g_simple_async_result_new (G_OBJECT (self), callback,
-      user_data, tp_account_set_uri_scheme_association_finish);
+      user_data, tp_account_set_uri_scheme_association_async);
 
   tp_cli_account_interface_addressing_call_set_uri_scheme_association (
       self, -1, scheme, associate,
