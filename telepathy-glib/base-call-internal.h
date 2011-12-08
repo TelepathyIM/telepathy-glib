@@ -31,6 +31,8 @@ typedef struct _TpBaseCallChannel TpBaseCallChannel;
 typedef struct _TpBaseCallContent TpBaseCallContent;
 typedef struct _TpBaseCallStream  TpBaseCallStream;
 typedef struct _TpCallContentMediaDescription  TpCallContentMediaDescription;
+typedef struct _TpBaseMediaCallStream TpBaseMediaCallStream;
+typedef struct _TpCallStreamEndpoint TpCallStreamEndpoint;
 
 /* Implemented in base-call-content.c */
 void _tp_base_call_content_set_channel (TpBaseCallContent *self,
@@ -80,6 +82,10 @@ gboolean _tp_call_content_media_description_offer_finish (
     GError **error);
 GHashTable *_tp_call_content_media_description_dup_properties (
     TpCallContentMediaDescription *self);
+
+/* Implemented in call-stream-endpoint.c */
+void _tp_call_stream_endpoint_set_stream (TpCallStreamEndpoint *self,
+    TpBaseMediaCallStream *stream);
 
 G_END_DECLS
 

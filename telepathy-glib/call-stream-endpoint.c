@@ -50,6 +50,8 @@
 #include "call-stream-endpoint.h"
 
 #define DEBUG_FLAG TP_DEBUG_CALL
+#include "telepathy-glib/base-call-internal.h"
+#include "telepathy-glib/base-media-call-stream.h"
 #include "telepathy-glib/dbus.h"
 #include "telepathy-glib/dbus-properties-mixin.h"
 #include "telepathy-glib/debug-internal.h"
@@ -115,6 +117,9 @@ struct _TpCallStreamEndpointPrivate
   TpStreamTransportType transport;
   gboolean controlling;
   gboolean is_ice_lite;
+
+  /* borrowed */
+  TpBaseMediaCallStream *stream;
 };
 
 static void
@@ -877,4 +882,17 @@ call_stream_endpoint_iface_init (gpointer iface, gpointer data)
   IMPLEMENT(reject_selected_candidate_pair);
   IMPLEMENT(set_controlling);
 #undef IMPLEMENT
+}
+
+/* Internal functions */
+
+void
+_tp_call_stream_endpoint_set_stream (TpCallStreamEndpoint *self,
+    TpBaseMediaCallStream *stream)
+{
+  g_return_if_fail (TP_IS_CALL_STREAM_ENDPOINT (self));
+  g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (stream));
+  g_return_if_fail (self->priv->stream == NULL);
+
+  self->priv->stream = stream;
 }

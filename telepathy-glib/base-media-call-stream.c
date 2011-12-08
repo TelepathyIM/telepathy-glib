@@ -624,8 +624,9 @@ tp_base_media_call_stream_add_endpoint (TpBaseMediaCallStream *self,
   g_return_if_fail (TP_IS_BASE_MEDIA_CALL_STREAM (self));
   g_return_if_fail (TP_IS_CALL_STREAM_ENDPOINT (endpoint));
 
-  object_path = tp_call_stream_endpoint_get_object_path (endpoint);
+  _tp_call_stream_endpoint_set_stream (endpoint, self);
 
+  object_path = tp_call_stream_endpoint_get_object_path (endpoint);
   DEBUG ("Add endpoint %s to stream %s", object_path,
       tp_base_call_stream_get_object_path ((TpBaseCallStream *) self));
 
