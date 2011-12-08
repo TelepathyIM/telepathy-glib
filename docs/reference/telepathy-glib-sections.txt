@@ -6885,6 +6885,7 @@ TpCallStreamEndpoint
 TpCallStreamEndpointClass
 tp_call_stream_endpoint_new
 tp_call_stream_endpoint_get_object_path
+tp_call_stream_endpoint_get_state
 tp_call_stream_endpoint_add_new_candidates
 tp_call_stream_endpoint_add_new_candidate
 <SUBSECTION Standard>

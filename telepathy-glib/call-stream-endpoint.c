@@ -523,6 +523,27 @@ tp_call_stream_endpoint_get_object_path (TpCallStreamEndpoint *self)
 }
 
 /**
+ * tp_call_stream_endpoint_get_state:
+ * @self: a #TpCallStreamEndpoint
+ * @component: a #TpStreamComponent
+ *
+ * <!-- -->
+ *
+ * Returns: the state of @self's @component
+ * Since: 0.UNRELEASED
+ */
+TpStreamEndpointState
+tp_call_stream_endpoint_get_state (TpCallStreamEndpoint *self,
+    TpStreamComponent component)
+{
+  g_return_val_if_fail (TP_IS_CALL_STREAM_ENDPOINT (self),
+      TP_MEDIA_STREAM_STATE_DISCONNECTED);
+
+  return GPOINTER_TO_UINT (g_hash_table_lookup (self->priv->endpoint_state,
+      GUINT_TO_POINTER (component)));
+}
+
+/**
  * tp_call_stream_endpoint_add_new_candidates:
  * @self: a #TpCallStreamEndpoint
  * @candidates: #GPtrArray of #GValueArray defining the candidates to add

@@ -75,6 +75,10 @@ TpCallStreamEndpoint *tp_call_stream_endpoint_new (TpDBusDaemon *dbus_daemon,
 const gchar *tp_call_stream_endpoint_get_object_path (
     TpCallStreamEndpoint *self);
 
+TpStreamEndpointState tp_call_stream_endpoint_get_state (
+    TpCallStreamEndpoint *self,
+    TpStreamComponent component);
+
 void tp_call_stream_endpoint_add_new_candidates (TpCallStreamEndpoint *self,
     const GPtrArray *candidates);
 void tp_call_stream_endpoint_add_new_candidate (TpCallStreamEndpoint *self,
