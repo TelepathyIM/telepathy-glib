@@ -313,7 +313,6 @@ content_ready (GObject *object, GAsyncResult *res, gpointer user_data)
   if (g_async_initable_init_finish (G_ASYNC_INITABLE (object), res, NULL))
     {
       g_signal_emit (self, signals[SIGNAL_CONTENT_ADDED], 0, content);
-      g_object_unref (content);
     }
   else
     {
