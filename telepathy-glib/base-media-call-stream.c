@@ -180,6 +180,8 @@ tp_base_media_call_stream_init (TpBaseMediaCallStream *self)
 
   self->priv->local_candidates = g_ptr_array_new_with_free_func (
       (GDestroyNotify) g_value_array_free);
+  self->priv->username = g_strdup ("");
+  self->priv->password = g_strdup ("");
 }
 
 static void
