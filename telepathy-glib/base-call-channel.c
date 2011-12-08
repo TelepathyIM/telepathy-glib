@@ -881,7 +881,13 @@ tp_base_call_channel_remove_content (TpBaseCallChannel *self,
  * @self: a #TpBaseCallChannel
  * @content: a #TpBaseCallContent to add
  *
- * Add @content to @self.
+ * Add @content to @self. If @content's #TpBaseCallContent:disposition is
+ * %TP_CALL_CONTENT_DISPOSITION_INITIAL, also set
+ * #TpBaseCallChannel:initial-audio and #TpBaseCallChannel:initial-audio-name
+ * properties (or #TpBaseCallChannel:initial-video and
+ * #TpBaseCallChannel:initial-video-name).
+ * Note that it is not allowed to add INITIAL contents after having registered
+ * @self on the bus.
  *
  * Since: 0.UNRELEASED
  */
@@ -897,8 +903,34 @@ tp_base_call_channel_add_content (TpBaseCallChannel *self,
 
   self->priv->contents = g_list_prepend (self->priv->contents,
       g_object_ref (content));
-
   _tp_base_call_content_set_channel (content, self);
+
+  if (tp_base_call_content_get_disposition (content) ==
+      TP_CALL_CONTENT_DISPOSITION_INITIAL)
+    {
+      if (tp_base_channel_is_registered ((TpBaseChannel *) self))
+        {
+          WARNING ("Adding a content with TP_CALL_CONTENT_DISPOSITION_INITIAL "
+              "after channel has been registered on the bus is not allowed."
+              "Initial contents are supposed immutable");
+        }
+      else if (tp_base_call_content_get_media_type (content) ==
+          TP_MEDIA_STREAM_TYPE_AUDIO)
+        {
+          self->priv->initial_audio = TRUE;
+          g_free (self->priv->initial_audio_name);
+          self->priv->initial_audio_name = g_strdup (
+              tp_base_call_content_get_name (content));
+        }
+      else if (tp_base_call_content_get_media_type (content) ==
+          TP_MEDIA_STREAM_TYPE_VIDEO)
+        {
+          self->priv->initial_video = TRUE;
+          g_free (self->priv->initial_video_name);
+          self->priv->initial_video_name = g_strdup (
+              tp_base_call_content_get_name (content));
+        }
+    }
 
   tp_svc_channel_type_call_emit_content_added (self,
      tp_base_call_content_get_object_path (content));
