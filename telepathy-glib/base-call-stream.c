@@ -48,10 +48,11 @@
  * TpBaseCallStreamClass:
  * @extra_interfaces: extra interfaces provided by this stream (this SHOULD NOT
  *  include %TP_IFACE_CALL_STREAM itself)
- * @request_receiving: virtual method called when user requested receiving from
- *  the given remote contact.
- * @set_sending: virtual method called when user requested to start/stop
- *  sending to remote contacts.
+ * @request_receiving: optional (see #TpBaseCallStream:can-request-receiving);
+ *  virtual method called when user requested receiving from the given remote
+ *  contact.
+ * @set_sending: mandatory; virtual method called when user requested to
+ *  start/stop sending to remote contacts.
  *
  * The class structure for #TpBaseCallStream
  *
@@ -396,7 +397,8 @@ tp_base_call_stream_class_init (TpBaseCallStreamClass *bsc_class)
    * TpBaseCallStream:can-request-receiving:
    *
    * Whether or not user can request receiving from remote contact using the
-   * RequestSending DBus method call.
+   * RequestSending DBus method call. The value is determined by whether or not
+   * #TpBaseCallStreamClass.request_receiving is implemented.
    *
    * Since: 0.UNRELEASED
    */

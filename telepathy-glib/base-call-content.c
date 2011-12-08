@@ -47,8 +47,8 @@
  * TpBaseCallContentClass:
  * @extra_interfaces: extra interfaces provided by this content (this SHOULD NOT
  *  include %TP_IFACE_CALL_CONTENT itself)
- * @deinit: virtual method called by #TpBaseCallChannel when removing the
- *  content
+ * @deinit: optional; virtual method called by #TpBaseCallChannel when removing
+ *  the content
  *
  * The class structure for #TpBaseCallContent
  *

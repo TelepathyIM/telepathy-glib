@@ -48,13 +48,14 @@
 
 /**
  * TpBaseMediaCallStreamClass:
- * @report_sending_failure: called to indicate a failure in the outgoing portion
- *  of the stream
- * @report_receiving_failure: called to indicate a failure in the incoming
- *  portion of the stream
- * @add_local_candidates: called when new candidates are added
- * @finish_initial_candidates: called when the initial batch of candidates has
- *  been added, and should now be processed/sent to the remote side
+ * @report_sending_failure: optional; called to indicate a failure in the
+ *  outgoing portion of the stream
+ * @report_receiving_failure: optional; called to indicate a failure in the
+ *  incoming portion of the stream
+ * @add_local_candidates: mandatory; called when new candidates are added
+ * @finish_initial_candidates: optional; called when the initial batch of
+ *  candidates has been added, and should now be processed/sent to the remote
+ *  side
  *
  * The class structure for #TpBaseMediaCallStream
  *
@@ -762,16 +763,8 @@ tp_base_media_call_stream_report_sending_failure (
   TpBaseMediaCallStreamClass *klass =
       TP_BASE_MEDIA_CALL_STREAM_GET_CLASS (self);
 
-  if (klass->report_sending_failure == NULL)
-    {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Connection Manager did not implement "
-          "TpBaseMediaCallStream::report_sending_failure vmethod" };
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
-
-  klass->report_sending_failure (self, reason, dbus_reason, message);
+  if (klass->report_sending_failure != NULL)
+    klass->report_sending_failure (self, reason, dbus_reason, message);
 
   tp_svc_call_stream_interface_media_return_from_report_sending_failure (
       context);
@@ -812,16 +805,8 @@ tp_base_media_call_stream_report_receiving_failure (
   TpBaseMediaCallStreamClass *klass =
       TP_BASE_MEDIA_CALL_STREAM_GET_CLASS (self);
 
-  if (klass->report_receiving_failure == NULL)
-    {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Connection Manager did not implement "
-          "TpBaseMediaCallStream::report_receiving_failure vmethod" };
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
-
-  klass->report_receiving_failure (self, reason, dbus_reason, message);
+  if (klass->report_receiving_failure != NULL)
+    klass->report_receiving_failure (self, reason, dbus_reason, message);
 
   tp_svc_call_stream_interface_media_return_from_report_receiving_failure (
       context);
@@ -909,16 +894,8 @@ tp_base_media_call_stream_finish_initial_candidates (
   TpBaseMediaCallStreamClass *klass =
       TP_BASE_MEDIA_CALL_STREAM_GET_CLASS (self);
 
-  if (klass->finish_initial_candidates == NULL)
-    {
-      GError e = { TP_ERRORS, TP_ERROR_NOT_IMPLEMENTED,
-          "Connection Manager did not implement "
-          "TpBaseMediaCallStream::finish_initial_candidates vmethod" };
-      dbus_g_method_return_error (context, &e);
-      return;
-    }
-
-  klass->finish_initial_candidates (self);
+  if (klass->finish_initial_candidates != NULL)
+    klass->finish_initial_candidates (self);
 
   tp_svc_call_stream_interface_media_return_from_finish_initial_candidates (
       context);
