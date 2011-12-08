@@ -101,6 +101,7 @@
 
 #include "telepathy-glib/base-call-content.h"
 #include "telepathy-glib/base-call-internal.h"
+#include "telepathy-glib/base-media-call-stream.h"
 #include "telepathy-glib/base-connection.h"
 #include "telepathy-glib/channel-iface.h"
 #include "telepathy-glib/debug-internal.h"
@@ -1289,4 +1290,44 @@ call_iface_init (gpointer g_iface, gpointer iface_data)
   IMPLEMENT(hangup,);
   IMPLEMENT(add_content, _dbus);
 #undef IMPLEMENT
+}
+
+/* Internal functions */
+
+void
+_tp_base_call_channel_maybe_initizalised (TpBaseCallChannel *self)
+{
+  GList *l;
+
+  g_return_if_fail (TP_IS_BASE_CALL_CHANNEL (self));
+
+  /* This is called from TpCallStreamEndpoint when it is connected. Check if
+   * they are all connected now. */
+  for (l = self->priv->contents; l != NULL; l = l->next)
+    {
+      GList *streams = tp_base_call_content_get_streams (l->data);
+
+      for (; streams != NULL; streams = streams->next)
+        {
+          GList *endpoints;
+
+          if (!TP_IS_BASE_MEDIA_CALL_STREAM (streams->data))
+            continue;
+
+          endpoints = tp_base_media_call_stream_get_endpoints (streams->data);
+          for (; endpoints != NULL; endpoints = endpoints->next)
+            {
+              if (tp_call_stream_endpoint_get_state (endpoints->data,
+                      TP_STREAM_COMPONENT_DATA) !=
+                  TP_STREAM_ENDPOINT_STATE_PROVISIONALLY_CONNECTED)
+                return;
+            }
+        }
+    }
+
+  /* Ok, all endpoints are connected, we can move to RINGING state */
+  tp_base_call_channel_set_state (self, TP_CALL_STATE_RINGING,
+      tp_base_channel_get_self_handle ((TpBaseChannel *) self),
+      TP_CALL_STATE_CHANGE_REASON_PROGRESS_MADE, "",
+      "All endpoints DATA component are CONNECTED");
 }

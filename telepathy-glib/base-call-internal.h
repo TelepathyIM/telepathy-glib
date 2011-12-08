@@ -68,6 +68,7 @@ GValueArray *_tp_base_call_state_reason_new (TpHandle actor_handle,
 void _tp_base_call_channel_remove_content_internal (TpBaseCallChannel *self,
     TpBaseCallContent *content,
     const GValueArray *reason_array);
+void _tp_base_call_channel_maybe_initizalised (TpBaseCallChannel *self);
 
 /* Implemented in call-content-media-description.c */
 void _tp_call_content_media_description_offer_async (
