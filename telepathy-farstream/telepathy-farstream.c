@@ -18,7 +18,7 @@
  */
 
 #include "extensions/extensions.h"
-#include <telepathy-farstream/telepathy-farstream.h>
+#include "telepathy-farstream.h"
 
 /**
  * tf_init:

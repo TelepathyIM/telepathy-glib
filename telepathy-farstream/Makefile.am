@@ -45,15 +45,15 @@ pkgconfigdir = ${libdir}/pkgconfig
 pkgconfig_DATA = telepathy-farstream.pc
 
 AM_CFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_builddir) \
 	-DG_LOG_DOMAIN=\"tp-fs\" \
 	$(ERROR_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GST_CFLAGS) \
 	$(FARSTREAM_CFLAGS) \
-	$(TELEPATHY_CFLAGS) \
-	-I$(top_srcdir) \
-	-I$(top_builddir)
+	$(TELEPATHY_CFLAGS)
 
 libtelepathy_farstream_la_LIBADD = \
 	$(GLIB_LIBS) \

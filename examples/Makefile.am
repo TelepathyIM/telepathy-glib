@@ -10,11 +10,11 @@ LDADD =  \
    $(TELEPATHY_LIBS)
 
 AM_CFLAGS = \
+   -I$(top_srcdir) \
+   -I$(top_builddir) \
    $(ERROR_CFLAGS) \
    $(GLIB_CFLAGS) \
    $(DBUS_CFLAGS) \
    $(GST_CFLAGS) \
    $(FARSTREAM_CFLAGS) \
-   $(TELEPATHY_CFLAGS) \
-   -I$(top_srcdir) \
-   -I$(top_builddir)
+   $(TELEPATHY_CFLAGS)
