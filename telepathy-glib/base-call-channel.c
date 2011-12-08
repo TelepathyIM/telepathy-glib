@@ -981,12 +981,6 @@ tp_base_call_channel_update_member_flags (TpBaseCallChannel *self,
 
   DEBUG ("Member %d (flags: %d) updated", contact, new_flags);
 
-  /* FIXME: Should emit StateChanged */
-  if ((new_flags & TP_CALL_MEMBER_FLAG_RINGING) != 0 &&
-      self->priv->state == TP_CALL_STATE_INITIALISING &&
-      tp_base_channel_is_requested ((TpBaseChannel *) self))
-    self->priv->state = TP_CALL_STATE_RINGING;
-
   g_hash_table_insert (self->priv->call_members,
       GUINT_TO_POINTER (contact),
       GUINT_TO_POINTER (new_flags));
