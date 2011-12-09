@@ -424,7 +424,6 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
 {
   GList *fscandidates = NULL;
   guint i;
-  GError *error = NULL;
 
   /* No candidates to add, ignore. This could either be caused by the CM
    * accidentally emitting an empty RemoteCandidatesAdded or when there are no
@@ -480,15 +479,15 @@ tf_call_stream_add_remote_candidates (TfCallStream *self,
 
       switch (self->transport_type)
         {
-        case TP_STREAM_TRANSPORT_TYPE_RAW_UDP:
-        case TP_STREAM_TRANSPORT_TYPE_SHM:
-        case TP_STREAM_TRANSPORT_TYPE_MULTICAST:
+        case TF_FUTURE_STREAM_TRANSPORT_TYPE_RAW_UDP:
+        case TF_FUTURE_STREAM_TRANSPORT_TYPE_SHM:
+        case TF_FUTURE_STREAM_TRANSPORT_TYPE_MULTICAST:
           ret = fs_stream_force_remote_candidates (self->fsstream,
               fscandidates, &error);
           break;
-        case TP_STREAM_TRANSPORT_TYPE_ICE:
-        case TP_STREAM_TRANSPORT_TYPE_GTALK_P2P:
-        case TP_STREAM_TRANSPORT_TYPE_WLM_2009:
+        case TF_FUTURE_STREAM_TRANSPORT_TYPE_ICE:
+        case TF_FUTURE_STREAM_TRANSPORT_TYPE_GTALK_P2P:
+        case TF_FUTURE_STREAM_TRANSPORT_TYPE_WLM_2009:
           ret = fs_stream_add_remote_candidates (self->fsstream, fscandidates,
               &error);
           break;
